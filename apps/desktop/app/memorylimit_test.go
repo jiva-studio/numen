@@ -12,7 +12,7 @@ type fakeLimit struct {
 
 func (f *fakeLimit) setLimit(n int64) int64 {
 	previous := f.current
-	if n >= 0 {
+	if n != -1 {
 		f.current = n
 		f.set = append(f.set, n)
 	}
@@ -22,10 +22,12 @@ func (f *fakeLimit) setLimit(n int64) int64 {
 func noEnv(string) (string, bool) { return "", false }
 
 func TestApplyMemoryLimit_SetsTheLimitInBytes(t *testing.T) {
-	f := &fakeLimit{current: math.MaxInt64}
-	applyMemoryLimit(1024, f.setLimit, noEnv)
-	if len(f.set) != 1 || f.set[0] != 1024<<20 {
-		t.Fatalf("set = %v, want one call of %d", f.set, int64(1024<<20))
+	for _, mb := range []int64{1, 1024} {
+		f := &fakeLimit{current: math.MaxInt64}
+		applyMemoryLimit(mb, f.setLimit, noEnv)
+		if len(f.set) != 1 || f.set[0] != mb<<20 {
+			t.Fatalf("set = %v, want one call of %d", f.set, mb<<20)
+		}
 	}
 }
 

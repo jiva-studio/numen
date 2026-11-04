@@ -10,12 +10,11 @@ import {
 import type { LiveText, Selector, TextSegment, TextVersion, VaultTexts } from '@numen/plugin-sdk'
 
 const readSelector = (raw: string): Selector | undefined => {
-  if (raw === '') return undefined
   try {
     const parsed: unknown = JSON.parse(raw)
     return typeof parsed === 'object' && parsed !== null ? (parsed as Selector) : undefined
   } catch {
-    return undefined
+    // Empty or invalid JSON selectors resolve to undefined.
   }
 }
 

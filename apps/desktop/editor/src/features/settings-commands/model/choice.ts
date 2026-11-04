@@ -83,6 +83,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
       return
     }
     pendingItem.value = null
+    // Stryker disable next-line ArrowFunction: applyTheme handles errors internally.
     applyAppearance().catch((error: unknown) => write(formatErrorMessage(error), 'error'))
   }
 

@@ -49,7 +49,7 @@ const create = (
     getMenuAt,
     tell,
   })
-  return { gestures, notified: notifiedCalls }
+  return { gestures, notified: notifiedCalls, rows, selection }
 }
 
 describe('the menu key on a row with no place on screen', () => {
@@ -97,12 +97,27 @@ describe('the menu keys on a row with a place on screen', () => {
 })
 
 describe('a name field losing the keyboard', () => {
-  it('stops the renaming', () => {
+  it('stops the renaming, and renaming or abandoning returns focus to the row', async () => {
     const renamingPath = ref<string | null>('notes')
-    const { gestures } = create(renamingPath)
+    const { gestures, notified, rows } = create(renamingPath)
+    const focusSpy = vi.spyOn(rows, 'focusRow')
 
     gestures.onFieldBlur()
-
     expect(renamingPath.value).toBeNull()
+
+    renamingPath.value = 'notes'
+    gestures.onRename('notes', 'Renamed')
+    expect(renamingPath.value).toBeNull()
+    expect(notified).toStrictEqual([['rename', 'notes', 'Renamed']])
+    expect(focusSpy).toHaveBeenCalledWith('notes')
+
+    renamingPath.value = 'notes'
+    gestures.onAbandon('notes')
+    expect(renamingPath.value).toBeNull()
+    expect(focusSpy).toHaveBeenCalledTimes(2)
+
+    gestures.onKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
+    expect(focusSpy).toHaveBeenCalledTimes(3)
+    expect(focusSpy).toHaveBeenLastCalledWith('notes')
   })
 })

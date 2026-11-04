@@ -4,6 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
 import { SEARCH_DEBOUNCE_MS, useDebouncedSearch, useSearchResults } from './search'
+import { getUserAgent, listenWindowPointerAndEscape } from './lib/dom'
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -143,18 +144,84 @@ describe('the answers to a search', () => {
   })
 
   it('are cleared by a blank text', async () => {
-    const { results, setQuery } = useSearchResults(async () => ['a'])
+    const { results, isLoading, setQuery } = useSearchResults(async () => ['a'])
 
     started.push(setQuery('q'))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
     expect(results.value).toStrictEqual(['a'])
 
+    started.push(setQuery('next'))
+    expect(isLoading.value).toBe(true)
     await setQuery('')
+    expect(isLoading.value).toBe(false)
     expect(results.value).toStrictEqual([])
   })
 
-  it('starts not loading', () => {
-    const { isLoading } = useSearchResults(async () => [])
+  it('starts not loading and with empty results', () => {
+    const { results, isLoading } = useSearchResults(async () => ['x'])
+    expect(isLoading.value).toBe(false)
+    expect(results.value).toStrictEqual([])
+  })
+
+  it('does not close the guard immediately when created outside an effect scope', () => {
+    let isClosed = false
+    useDebouncedSearch({
+      guard: {
+        acquireRequest: () => ({ isCurrent: true, claim: () => true }),
+        cancel: vi.fn(),
+        close: () => {
+          isClosed = true
+        },
+        open: () => true,
+      },
+    })
+    expect(isClosed).toBe(false)
+  })
+
+  it('ignores failure and completion of an outdated query while a newer query is still running', async () => {
+    const first = deferred<readonly string[]>()
+    const second = deferred<readonly string[]>()
+    const search = vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+    const { results, isLoading, setQuery } = useSearchResults<string>(search)
+
+    started.push(setQuery('first'))
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
+    results.value = ['kept']
+    started.push(setQuery('second'))
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
+
+    first.resolve(['stale'])
+    await vi.advanceTimersByTimeAsync(0)
+    expect(results.value).toStrictEqual(['kept'])
+    expect(isLoading.value).toBe(true)
+
+    second.resolve(['fresh'])
+    await vi.advanceTimersByTimeAsync(0)
+    expect(results.value).toStrictEqual(['fresh'])
+    expect(isLoading.value).toBe(false)
+  })
+
+  it('ignores rejection of an outdated query when a newer query has already succeeded', async () => {
+    let rejectFirst!: (err: unknown) => void
+    const firstPromise = new Promise<readonly string[]>((_, reject) => {
+      rejectFirst = reject
+    })
+    const second = deferred<readonly string[]>()
+    const search = vi.fn().mockReturnValueOnce(firstPromise).mockReturnValueOnce(second.promise)
+    const { results, isLoading, setQuery } = useSearchResults<string>(search)
+
+    started.push(setQuery('first'))
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
+    started.push(setQuery('second'))
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
+
+    second.resolve(['winner'])
+    await vi.advanceTimersByTimeAsync(0)
+    expect(results.value).toStrictEqual(['winner'])
+
+    rejectFirst(new Error('late error'))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(results.value).toStrictEqual(['winner'])
     expect(isLoading.value).toBe(false)
   })
 
@@ -173,5 +240,27 @@ describe('the answers to a search', () => {
     started.push(setQuery('q2'))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
     expect(results.value).toStrictEqual([])
+  })
+})
+
+describe('dom helpers', () => {
+  it('reads navigator.userAgent and registers/removes pointerdown and keydown listeners', () => {
+    expect(getUserAgent()).toBe(navigator.userAgent)
+    expect(getUserAgent().length).toBeGreaterThan(0)
+
+    const onPointer = vi.fn()
+    const onKey = vi.fn()
+    const stop = listenWindowPointerAndEscape(onPointer, onKey)
+
+    window.dispatchEvent(new Event('pointerdown'))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(onPointer).toHaveBeenCalledTimes(1)
+    expect(onKey).toHaveBeenCalledTimes(1)
+
+    stop()
+    window.dispatchEvent(new Event('pointerdown'))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(onPointer).toHaveBeenCalledTimes(1)
+    expect(onKey).toHaveBeenCalledTimes(1)
   })
 })

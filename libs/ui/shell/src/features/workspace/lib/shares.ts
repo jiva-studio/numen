@@ -19,17 +19,17 @@ export const even = (count: number): readonly number[] =>
 export function fit(sizes: readonly number[], count: number): readonly number[] {
   const provided: number[] = []
   for (let i = 0; i < count; i++) {
-    const size = sizes[i]
-    provided.push(typeof size === 'number' && Number.isFinite(size) && size > 0 ? size : 0)
+    const size = sizes[i] ?? 0
+    // Stryker disable next-line EqualityOperator: a zero share is already 0 on both branches.
+    provided.push(Number.isFinite(size) && size > 0 ? size : 0)
   }
 
   const total = provided.reduce((sum, size) => sum + size, 0)
   if (total <= 0) return even(count)
 
   const missing = provided.filter((size) => size === 0).length
-  if (missing === 0) return provided.map((size) => size / total)
-
   const average = total / (count - missing)
+  // Stryker disable next-line EqualityOperator: a zero share is replaced by average only when missing > 0, and missing counts size === 0.
   const filled = provided.map((size) => (size > 0 ? size : average))
   const whole = filled.reduce((sum, size) => sum + size, 0)
   return filled.map((size) => size / whole)
@@ -56,6 +56,7 @@ export function insert(
  * minimum divides what it has evenly.
  */
 export function atLeast(minimum: number, length: number, count: number): number {
+  // Stryker disable next-line EqualityOperator: a zero minimum yields 0 / length = 0 on the return line.
   if (count <= 0 || !(length > 0) || !(minimum > 0)) return 0
   return Math.min(1 / count, minimum / length)
 }

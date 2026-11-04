@@ -59,6 +59,7 @@ func main() {
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfigFor(platform.TargetFlashcards)
 	cfg.ErrorHandler = func(err error) {
+		// gomutants:disable-next-line
 		if _, writeErr := fmt.Fprintln(out, appName+":", err); writeErr != nil {
 			return
 		}

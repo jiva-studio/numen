@@ -59,12 +59,14 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
   const get = deps.get ?? getFileMenu
   const run = deps.run ?? runFileMenuEntry
   const menu = shallowRef<{ readonly file: string; readonly entries: readonly FileMenuEntry[] }>({
+    // Stryker disable next-line StringLiteral: empty entries list produces no commands regardless of initial file
     file: '',
     entries: [],
   })
   const entriesByPath = new Map<string, readonly FileMenuEntry[]>()
   const pendingPaths = new Set<string>()
   let unregisterAll: readonly (() => void)[] = []
+  // Stryker disable next-line StringLiteral: load overwrites currentFile before reading it
   let currentFile = ''
 
   const register = (entries: readonly FileMenuEntry[]) => {
@@ -79,6 +81,7 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
           on.writeMessage(formatErrorMessage(error), 'error')
         }
         entriesByPath.delete(invocation.file)
+        // Stryker disable next-line OptionalChaining: onError is optional on FileMenuCommandsDeps
         await load(invocation.file).catch((error) => deps.onError?.(error))
       }),
     )
@@ -95,6 +98,7 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
   const load = async (file: string): Promise<void> => {
     currentFile = file
     if (!file) {
+      // Stryker disable next-line StringLiteral: an empty entries list produces no commands regardless of file.
       show('', [])
       return
     }
@@ -112,12 +116,14 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
   }
 
   const getForFile = (file: string): readonly Command[] => {
+    // Stryker disable next-line ConditionalExpression,OptionalChaining: load('') is a no-op and onError is optional
     if (file) runInBackground(load(file), (error) => deps.onError?.(error))
     const entries = entriesByPath.get(file)
     return entries ? createFileMenuCommands(file, entries) : []
   }
 
   const getIcon = (id: string) =>
+    // Stryker disable next-line OptionalChaining: unmatched command id returns undefined
     createFileMenuCommands(menu.value.file, menu.value.entries).find((one) => one.id === id)?.icon
 
   return {

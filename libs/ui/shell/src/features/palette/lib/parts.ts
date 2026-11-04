@@ -15,9 +15,9 @@ export interface PalettePart {
  * how a string is sliced. A boundary landing inside a character is moved off it,
  * outwards, so no run ends on half of one.
  */
-// Stryker disable next-line ArrayDeclaration: the mutated default is ["Stryker was here"], whose one entry has no span bounds and is dropped as empty.
 export const getParts = (
   text: string,
+  // Stryker disable next-line ArrayDeclaration: the mutated default is ["Stryker was here"], whose one entry has no span bounds and is dropped as empty.
   spans: readonly TextRange[] = [],
 ): readonly PalettePart[] => {
   const runs = mergeRanges(text, spans)

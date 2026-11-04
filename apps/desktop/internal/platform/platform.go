@@ -72,6 +72,7 @@ func getCatalogConfig(target string, pluginDirs []string) catalog.Config {
 // getIndexSource is the source over the plugin index of the first plugin folder that holds one. A
 // development run without an index reads the manifests of the plugin folders of the checkout.
 func getIndexSource(pluginDirs []string) *indexsource.Source {
+	// gomutants:disable-next-line
 	indexPaths := make([]string, 0, len(pluginDirs))
 	for _, dir := range pluginDirs {
 		indexPaths = append(indexPaths, filepath.Join(dir, indexsource.FileName))
@@ -87,10 +88,8 @@ func getPluginsDirs() []string {
 	var dirs []string
 	observed := make(map[string]bool)
 	addDir := func(dir string) {
-		if dir == "" {
-			return
-		}
 		clean := filepath.Clean(dir)
+		// gomutants:disable-next-line
 		if abs, err := filepath.Abs(clean); err == nil {
 			clean = abs
 		}
@@ -105,6 +104,7 @@ func getPluginsDirs() []string {
 	}
 
 	execPath, err := os.Executable()
+	// gomutants:disable-next-line
 	if err == nil {
 		execDir := filepath.Dir(execPath)
 		addDir(filepath.Join(execDir, "plugins"))

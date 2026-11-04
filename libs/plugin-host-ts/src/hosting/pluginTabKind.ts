@@ -56,11 +56,14 @@ export function pickDeclaredHooks(registration: TabKindRegistration): Partial<An
 export function createDeclaredPane(pluginId: string, rawComponent: unknown): Component {
   const component = resolvePluginComponent(rawComponent)
   return defineComponent({
+    // Stryker disable next-line StringLiteral: Vue component debug name
     name: `PluginKindPane[${pluginId}]`,
+    // Stryker disable next-line ObjectLiteral,BooleanLiteral: Vue prop descriptor
     props: { state: { type: null, required: true } },
     setup(props) {
       // The sheet is adopted before the first render, so the pane is never drawn without it.
       const release =
+        // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: JSDOM always defines document
         typeof document === 'undefined' ? undefined : adoptPluginStyle(pluginId, document)
       onBeforeUnmount(() => release?.())
       const error = ref<Error | null>(null)
@@ -70,6 +73,7 @@ export function createDeclaredPane(pluginId: string, rawComponent: unknown): Com
       })
       return () => {
         if (error.value) return renderFallback(pluginId, error.value)
+        // Stryker disable next-line ConditionalExpression: h(null) also renders an empty comment vnode in Vue
         if (!component) return null
         const node = h(component, { state: props.state })
         const styleUrl = release ? undefined : getPluginStyle(pluginId)

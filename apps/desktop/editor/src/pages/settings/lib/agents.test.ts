@@ -48,7 +48,7 @@ const PLUGINS = [ASKING, createPluginInfo('test.plain', 'Plain')]
 
 describe('the agents', () => {
   it('are the programs the plugins list, each with the models it reports', () => {
-    expect(AGENTS).toStrictEqual([
+    expect(getAgents(createSource())).toStrictEqual([
       { id: 'alpha', name: 'Alpha', isDefault: true, models: [] },
       {
         id: 'zeta',
@@ -69,6 +69,9 @@ describe('the agents', () => {
     expect(
       getAgents(createSource({ agent: { use: '' } })).map((one) => one.isDefault),
     ).toStrictEqual([false, false])
+    expect(
+      getAgents(createSource({}, [{ name: 'notitle', title: '', isDefault: false }]))[0]?.name,
+    ).toBe('notitle')
   })
 
   it('are found by id, and by the default where none is named', () => {
@@ -106,14 +109,35 @@ describe('the agents the default can name', () => {
     })
   })
 
-  it('say so where no agent answers', () => {
-    expect(createDefaultAgentChoices([], '', words)).toStrictEqual([{ id: '', text: 'None' }])
+  it('say so where no agent answers and keeps a selected missing agent when agents exist', () => {
+    expect(createDefaultAgentChoices([], 'missing', words)).toStrictEqual([
+      { id: '', text: 'None' },
+    ])
+    expect(createDefaultAgentChoices(AGENTS, 'alpha', words)).toStrictEqual([
+      { id: '', text: 'Agent of the panel (Alpha)' },
+      { id: 'alpha', text: 'Alpha' },
+      { id: 'zeta', text: 'Zeta' },
+    ])
+    expect(createDefaultAgentChoices(AGENTS, 'missing', words)).toStrictEqual([
+      { id: '', text: 'Agent of the panel (Alpha)' },
+      { id: 'alpha', text: 'Alpha' },
+      { id: 'zeta', text: 'Zeta' },
+      { id: 'missing', text: 'missing', detail: 'not installed' },
+    ])
   })
 })
 
 describe('the models of an agent', () => {
   it('start with the agent default, then those it lists', () => {
+    expect(createAgentModelChoices(undefined, '', words)).toStrictEqual([
+      { id: '', text: 'Agent default' },
+    ])
     expect(createAgentModelChoices(ZETA, '', words)).toStrictEqual([
+      { id: '', text: 'Agent default' },
+      { id: 'z-small', text: 'Z small' },
+      { id: 'z-large', text: 'z-large' },
+    ])
+    expect(createAgentModelChoices(ZETA, 'z-small', words)).toStrictEqual([
       { id: '', text: 'Agent default' },
       { id: 'z-small', text: 'Z small' },
       { id: 'z-large', text: 'z-large' },
@@ -123,6 +147,12 @@ describe('the models of an agent', () => {
   it('keep a model the settings name that the agent does not list', () => {
     expect(createAgentModelChoices(ALPHA, 'own-model', words)).toStrictEqual([
       { id: '', text: 'Agent default' },
+      { id: 'own-model', text: 'own-model' },
+    ])
+    expect(createAgentModelChoices(ZETA, 'own-model', words)).toStrictEqual([
+      { id: '', text: 'Agent default' },
+      { id: 'z-small', text: 'Z small' },
+      { id: 'z-large', text: 'z-large' },
       { id: 'own-model', text: 'own-model' },
     ])
   })

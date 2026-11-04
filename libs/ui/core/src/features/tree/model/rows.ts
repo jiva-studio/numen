@@ -42,6 +42,7 @@ export function useDrawnRows(
 
   const setRowElement = (row: RowId, element: unknown): void => {
     const found = (element as { $el?: unknown } | null)?.$el
+    // Stryker disable next-line ConditionalExpression: deleting absent elements prevents map retention while getRowElement coalesces undefined to null
     if (found) viewElement.set(row, found as HTMLElement)
     else viewElement.delete(row)
   }

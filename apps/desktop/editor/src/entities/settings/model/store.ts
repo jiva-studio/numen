@@ -54,11 +54,13 @@ const getPathKey = (path: readonly string[]): string => path.join(PATH_JOIN)
 
 /** The value an edit writes, and nothing where its text is not JSON. */
 const readEditValue = (edit: SettingEdit): unknown => {
+  /* Stryker disable BlockStatement: falling off catch returns undefined */
   try {
     return JSON.parse(edit.value)
   } catch {
     return undefined
   }
+  /* Stryker restore BlockStatement */
 }
 
 /** The default a plugin declares for the setting at a path, and nothing where it declares none. */

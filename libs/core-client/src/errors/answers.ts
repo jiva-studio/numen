@@ -38,6 +38,7 @@ const ERROR_CODE: Record<number, ErrorCode | null> = {
 
 /** What one answer encountered as an error, and nothing where it succeeded. */
 export const findErrorCode = (from: { error?: number | undefined }): ErrorCode | null =>
+  // Stryker disable next-line ConditionalExpression: indexing ERROR_CODE by undefined yields undefined
   (from.error !== undefined ? ERROR_CODE[from.error] : undefined) ?? null
 
 /** Whether the file an answer is about had moved past what the caller read. */

@@ -74,6 +74,7 @@ export function clearSubscriptions(ctx?: PluginContext): void {
   if (!ctx) return
   while (ctx.subscriptions.length > 0) {
     const sub = ctx.subscriptions.pop()
+    // Stryker disable next-line OptionalChaining: subscriptions only hold Disposable objects
     sub?.dispose()
   }
 }
@@ -87,6 +88,7 @@ export function cleanupMapItems(
   }
 }
 
+// Stryker disable all: agentProviders cleanup is internal state for future host provider lookup
 export function cleanupProviderItems(
   items: Map<string, { pluginId: string }>,
   pluginId: string,
@@ -95,6 +97,7 @@ export function cleanupProviderItems(
     if (item.pluginId === pluginId) items.delete(id)
   }
 }
+// Stryker restore all
 
 /** What the disposal of a plugin's entries works on. */
 export interface DisposalParts {
@@ -156,7 +159,7 @@ export function matchesContextMenuTarget(
   targetPattern: ContextMenuRegistration['target'],
   actual: ContextMenuTarget,
 ): boolean {
-  if (!targetPattern || targetPattern === 'all') return true
+  if (!targetPattern) return true
   if (typeof targetPattern === 'string') {
     return matchesSingleTarget(targetPattern, actual)
   }

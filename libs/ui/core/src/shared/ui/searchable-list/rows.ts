@@ -28,7 +28,9 @@ export type ListRow =
  * or group, in any case; no words name every item.
  */
 export const filterItems = (items: readonly ListItem[], query: string): readonly ListItem[] => {
+  // Stryker disable next-line MethodExpression,Regex: filter(Boolean) removes empty segments from whitespace runs
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
+  // Stryker disable next-line ConditionalExpression: words.every on an empty array returns true for every item
   if (words.length === 0) return items
   return items.filter((item) => {
     const haystack = [item.text, item.detail ?? '', item.group ?? ''].join('\n').toLowerCase()
@@ -67,7 +69,7 @@ export const getHeadings = (rows: readonly ListRow[]): readonly (string | undefi
   let above: string | undefined
   return rows.map((row) => {
     const group = row.kind === 'item' ? row.item.group : undefined
-    const heading = group !== undefined && group !== above ? group : undefined
+    const heading = group !== above ? group : undefined
     above = group
     return heading
   })

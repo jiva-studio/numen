@@ -24,6 +24,7 @@ export type ExternalOpener = (url: string) => Promise<void>
 let runtime: Promise<BrowserRuntime | undefined> | undefined
 
 /** Loads the Wails runtime module once. */
+// Stryker disable next-line all: dynamic import of /wails/runtime.js is only resolvable in the Wails webview
 const loadRuntime: RuntimeLoader = () => {
   runtime ??= import(/* @vite-ignore */ RUNTIME_PATH).then(
     (loaded: BrowserRuntime) => loaded,

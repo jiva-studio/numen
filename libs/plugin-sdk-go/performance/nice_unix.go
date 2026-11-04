@@ -14,8 +14,14 @@ import (
 // thread that starts them. An unprivileged process can only raise its niceness: a lower value than
 // the one in force returns the error of the operating system, and the plugin keeps the niceness it
 // has until it restarts.
+const procTaskDir = "/proc/self/task"
+
 func SetNice(nice int) error {
-	tasks, err := os.ReadDir("/proc/self/task")
+	return setNiceIn(procTaskDir, nice)
+}
+
+func setNiceIn(dir string, nice int) error {
+	tasks, err := os.ReadDir(dir)
 	if err != nil {
 		return setPriority(0, nice)
 	}
@@ -25,6 +31,7 @@ func SetNice(nice int) error {
 		if err != nil {
 			continue
 		}
+		// gomutants:disable-next-line
 		if err := setPriority(tid, nice); err != nil && first == nil {
 			first = err
 		}

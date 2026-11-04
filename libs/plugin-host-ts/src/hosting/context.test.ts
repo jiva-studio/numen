@@ -154,13 +154,44 @@ describe('PluginContext', () => {
     expect(openedTab).toBe('opened-tab-id')
     expect(host.openTab).toHaveBeenCalledWith('url', 'https://example.com')
 
+    expect(ctx.navigateTab?.('url', 'https://example.com')).toBeUndefined()
+    expect(() => ctx.closeTab?.('tab-1')).not.toThrow()
+
+    const navigateTab = vi.fn(async () => 'tab-new')
+    const closeTab = vi.fn()
+    const hostWithTabs = createPluginContext('tabs.plugin', { ...host, navigateTab, closeTab })
+    await expect(hostWithTabs.navigateTab?.('note', 'a.md')).resolves.toBe('tab-new')
+    expect(navigateTab).toHaveBeenCalledWith('note', 'a.md')
+    hostWithTabs.closeTab?.('tab-9')
+    expect(closeTab).toHaveBeenCalledWith('tab-9')
+
+    const hostWithoutOpen = { ...host }
+    delete (hostWithoutOpen as { openTab?: unknown }).openTab
+    const ctxWithoutOpen = createPluginContext('noopen.plugin', hostWithoutOpen)
+    expect(ctxWithoutOpen.openTab?.('note', 'a.md')).toBeUndefined()
+
+    const mountedEl = document.createElement('div')
+    const mounted = ctx.mountView('cap', mountedEl, { k: 1 })
+    mounted.focus()
+    const mountResult = vi.mocked(host.mountView).mock.results[0]?.value
+    expect(mountResult.focus).toHaveBeenCalledTimes(1)
+    mounted.dispose()
+
+    expect(ctx.hasPermission?.('vault:read')).toBe(true)
+    expect(ctx.hasPermission?.('unknown:perm')).toBe(false)
+
+    // Calling dispose twice on sub1 must not splice another subscription
     sub1.dispose()
+    expect(ctx.subscriptions).toHaveLength(6)
+    sub1.dispose()
+    expect(ctx.subscriptions).toHaveLength(6)
     sub2.dispose()
     sub3.dispose()
     sub4.dispose()
     sub5.dispose()
     sub6.dispose()
     sub7.dispose()
+    expect(ctx.subscriptions).toHaveLength(0)
   })
 
   it('enforces vault:read permission for onVaultChange, onFileSelect, and emitFileSelect', () => {
@@ -172,9 +203,27 @@ describe('PluginContext', () => {
       permissions: [],
     })
 
-    expect(() => ctxNoPerms.onVaultChange(vi.fn())).toThrowError(/vault:read/)
-    expect(() => ctxNoPerms.onFileSelect(vi.fn())).toThrowError(/vault:read/)
-    expect(() => ctxNoPerms.emitFileSelect({ path: '/test.md' })).toThrowError(/vault:read/)
+    expect(() => ctxNoPerms.onVaultChange(vi.fn())).toThrowError(
+      'Plugin "restricted.plugin" lacks required permission "vault:read" for onVaultChange',
+    )
+    expect(() => ctxNoPerms.onFileSelect(vi.fn())).toThrowError(
+      'Plugin "restricted.plugin" lacks required permission "vault:read" for onFileSelect',
+    )
+    expect(() => ctxNoPerms.emitFileSelect({ path: '/test.md' })).toThrowError(
+      'Plugin "restricted.plugin" lacks required permission "vault:read" for emitFileSelect',
+    )
+
+    const ctxUndefinedManifest = createPluginContext('no.manifest', host)
+    expect(ctxUndefinedManifest.hasPermission?.('vault:read')).toBe(false)
+    expect(() => ctxUndefinedManifest.onVaultChange(vi.fn())).toThrowError(
+      'Plugin "no.manifest" lacks required permission "vault:read" for onVaultChange',
+    )
+
+    const ctxEmptyManifest = createPluginContext('empty.manifest', host, {})
+    expect(ctxEmptyManifest.hasPermission?.('vault:read')).toBe(false)
+    expect(() => ctxEmptyManifest.onVaultChange(vi.fn())).toThrowError(
+      'Plugin "empty.manifest" lacks required permission "vault:read" for onVaultChange',
+    )
 
     const ctxWithRead = createPluginContext('reader.plugin', host, {
       id: 'reader.plugin',
@@ -197,7 +246,9 @@ describe('PluginContext', () => {
       permissions: ['vault:read'],
     })
 
-    expect(() => ctxReadOnly.emitVaultChange({ vaultPath: '/test' })).toThrowError(/vault:write/)
+    expect(() => ctxReadOnly.emitVaultChange({ vaultPath: '/test' })).toThrowError(
+      'Plugin "readonly.plugin" lacks required permission "vault:write" for emitVaultChange',
+    )
 
     const ctxWrite = createPluginContext('writer.plugin', host, {
       id: 'writer.plugin',

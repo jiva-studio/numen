@@ -113,6 +113,7 @@ describe('how a shortcut a plugin declares is drawn', () => {
     expect(findShortcutKeys('shift+x', 'MacIntel')).toBeUndefined()
     expect(findShortcutKeys('mod+alt+x', 'MacIntel')).toBeUndefined()
     expect(findShortcutKeys('mod+f5', 'MacIntel')).toBeUndefined()
+    expect(findShortcutKeys('mod+enter', 'MacIntel')).toBeUndefined()
     expect(findShortcutKeys('', 'MacIntel')).toBeUndefined()
   })
 })

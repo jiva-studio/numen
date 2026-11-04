@@ -96,6 +96,7 @@ const useFollowed = (
   }
 
   onMounted(() => follow(area.value))
+  // Stryker disable next-line ObjectLiteral,StringLiteral: post flush timing aligns with Vue template ref updates
   watch(area, follow, { flush: 'post' })
   onBeforeUnmount(() => stop?.())
 }
@@ -167,6 +168,7 @@ export function useFreeSpace(
     })
   })
 
+  // Stryker disable next-line OptionalChaining: stop is assigned on mount before unmount runs
   onBeforeUnmount(() => stop?.())
 
   return { room }

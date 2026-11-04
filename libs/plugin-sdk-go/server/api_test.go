@@ -2,9 +2,11 @@ package server
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -115,6 +117,9 @@ func TestHandle_MapsFailuresToCodes(t *testing.T) {
 		if res.Code != c.status || failure.Code != c.code {
 			t.Errorf("%s: status %d code %q, want %d %q", c.body, res.Code, failure.Code, c.status, c.code)
 		}
+		if ct := res.Header().Get("Content-Type"); ct != "application/json" {
+			t.Errorf("%s: Content-Type = %q, want application/json", c.body, ct)
+		}
 	}
 }
 
@@ -159,19 +164,102 @@ func TestStream_EndsWithAnErrorEvent(t *testing.T) {
 }
 
 func TestNewAPI_ReportsAnInvalidName(t *testing.T) {
-	api := New().NewAPI("a/b")
-	if api.Err() == nil {
-		t.Error("a service name with a slash was accepted")
+	for _, bad := range []string{"", "a/b"} {
+		s := New()
+		api := s.NewAPI(bad)
+		if api.Err() == nil {
+			t.Errorf("service name %q was accepted", bad)
+		}
+		firstErr := api.Err()
+		Handle(api, "bad/method", func(_ context.Context, _ echoRequest) (echoResponse, error) {
+			return echoResponse{}, nil
+		})
+		if api.Err() != firstErr {
+			t.Errorf("Err() changed from %v to %v after mounting on invalid API", firstErr, api.Err())
+		}
 	}
 }
 
 func TestHandle_ReportsAnInvalidMethodName(t *testing.T) {
-	api := New().NewAPI("org.example.echo")
-	Handle(api, "a/b", func(_ context.Context, _ echoRequest) (echoResponse, error) {
-		return echoResponse{}, nil
-	})
-	if api.Err() == nil {
-		t.Error("a method name with a slash was accepted")
+	for _, bad := range []string{"", "a/b"} {
+		api := New().NewAPI("org.example.echo")
+		Handle(api, bad, func(_ context.Context, _ echoRequest) (echoResponse, error) {
+			return echoResponse{}, nil
+		})
+		if api.Err() == nil {
+			t.Errorf("method name %q was accepted", bad)
+		}
+	}
+}
+
+type failingResponseWriter struct {
+	header   http.Header
+	failStep int
+	writes   int
+	flushErr error
+}
+
+func (f *failingResponseWriter) Header() http.Header {
+	if f.header == nil {
+		f.header = make(http.Header)
+	}
+	return f.header
+}
+
+func (f *failingResponseWriter) WriteHeader(int) {}
+
+func (f *failingResponseWriter) Write(p []byte) (int, error) {
+	f.writes++
+	if f.writes == f.failStep {
+		return 0, errors.New("write failed")
+	}
+	return len(p), nil
+}
+
+func (f *failingResponseWriter) FlushError() error {
+	return f.flushErr
+}
+
+func TestStream_RejectsInvalidJSONAndWriteEventErrors(t *testing.T) {
+	handler := createAPIHandler(t)
+	res := postAPI(t, handler, "/org.example.echo/Count", `{"text":`, "api-token")
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("Stream invalid JSON status = %d, want 400", res.Code)
+	}
+
+	fw := &failingResponseWriter{}
+	flusher := http.NewResponseController(fw)
+	if err := writeEvent(fw, flusher, "end", make(chan int)); err == nil {
+		t.Fatal("expected marshal error for channel payload")
+	}
+
+	fw1 := &failingResponseWriter{failStep: 1}
+	if err := writeEvent(fw1, http.NewResponseController(fw1), "end", struct{}{}); err == nil {
+		t.Fatal("expected error when writing event name fails")
+	}
+
+	fw2 := &failingResponseWriter{failStep: 2}
+	if err := writeEvent(fw2, http.NewResponseController(fw2), "end", struct{}{}); err == nil {
+		t.Fatal("expected error when writing event data fails")
+	}
+
+	fwFlush := &failingResponseWriter{flushErr: errors.New("flush failed")}
+	if err := writeEvent(fwFlush, http.NewResponseController(fwFlush), "", struct{}{}); err == nil || err.Error() != "flush failed" {
+		t.Fatalf("expected flush error, got %v", err)
+	}
+
+	var logBuf bytes.Buffer
+	origLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logBuf, &slog.HandlerOptions{Level: slog.LevelDebug})))
+	t.Cleanup(func() { slog.SetDefault(origLogger) })
+
+	logWriteError(nil)
+	if logBuf.Len() != 0 {
+		t.Fatalf("expected no log on nil error, got %q", logBuf.String())
+	}
+	logWriteError(errors.New("disconnect"))
+	if !strings.Contains(logBuf.String(), "disconnect") {
+		t.Fatalf("expected log to contain disconnect, got %q", logBuf.String())
 	}
 }
 

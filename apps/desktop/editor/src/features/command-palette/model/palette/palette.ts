@@ -180,7 +180,9 @@ function parsePaletteDeps(
     knows: knows!,
     lists: lists!,
     runs: runs!,
+    // Stryker disable next-line ConditionalExpression: Setting optional property to undefined is equivalent when read.
     ...(wait !== undefined ? { wait } : {}),
+    // Stryker disable next-line ConditionalExpression: Setting optional property to undefined is equivalent when read.
     ...(getExtraCommands !== undefined ? { getExtraCommands } : {}),
   }
 }
@@ -235,6 +237,7 @@ function createPaletteStepsAndSearch(
   })
 
   const previewItem = (item: string) => {
+    // Stryker disable next-line OptionalChaining: stepsRef.current is initialized synchronously below.
     const step = stepsRef.current?.here.value
     if (step?.step === 'choosing') deps.lists.previewItem(step.command.id, item)
   }
@@ -244,6 +247,7 @@ function createPaletteStepsAndSearch(
     state.open.value = now
     state.drop()
     state.typed.value = ''
+    // Stryker disable next-line OptionalChaining: stepsRef.current is initialized synchronously below.
     stepsRef.current?.reset()
   }
 
@@ -276,6 +280,7 @@ function createPaletteStepsAndSearch(
 
   const setTyped = async (text: string) => {
     state.typed.value = text
+    // Stryker disable next-line MethodExpression: debounced.ask trims the query.
     if (steps.here.value?.step === 'picking') await searchNames(text.trim())
   }
 
@@ -330,6 +335,7 @@ function createPalettePresentation(
 ) {
   const { steps, on, invocation } = context
   const staticCommands = createCommands(deps.words)
+  // Stryker disable next-line ArrayDeclaration: Empty fallback when getExtraCommands is not provided.
   const getCommands = () => [...staticCommands, ...(deps.getExtraCommands?.() ?? [])]
   const byId = computed(() => new Map(getCommands().map((one) => [one.id, one])))
 

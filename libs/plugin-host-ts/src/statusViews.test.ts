@@ -29,12 +29,15 @@ describe('the status view registry', () => {
   it('replaces the view a plugin registers under an id again', () => {
     const registry = createStatusViewRegistry()
     const earlier = registry.registerStatusView('a.one', view('first'))
+    const other = view('second')
+    registry.registerStatusView('a.one', other)
     const later = { id: 'first', component: { replaced: true } }
 
     registry.registerStatusView('a.one', later)
-    earlier.dispose()
+    expect(registry.views.value.map((one) => one.registration)).toEqual([other, later])
 
-    expect(registry.views.value.map((one) => one.registration)).toEqual([later])
+    earlier.dispose()
+    expect(registry.views.value.map((one) => one.registration)).toEqual([other, later])
   })
 
   it('keeps the views of two plugins that use the same id apart', () => {

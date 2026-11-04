@@ -65,6 +65,7 @@ function resolveSelectionAction(
         })
       : null
   }
+  // Stryker disable next-line ConditionalExpression: Caller guarantees step is picking or vaults.
   if (step.step === 'vaults') {
     const one = choice.vaults.find((vault) => vault.id === choice.item)
     if (!one || choice.isAside(one)) return null
@@ -82,6 +83,7 @@ function resolveInputOrChoiceAction(
 ): CommandInvocation | null {
   const name = deps.text.value.trim()
   if (step.step === 'naming') return name ? deps.invocation(step.command.id, step.on, name) : null
+  // Stryker disable next-line ConditionalExpression: Caller guarantees step is naming or choosing.
   if (step.step === 'choosing') {
     const rows = deps.lists.getStepGroups(step.command.id, deps.text.value).flatMap((g) => g.items)
     const one = rows.find((r) => r.id === item)
@@ -120,7 +122,7 @@ function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): Command
   if (!value && prompt.isRequired) return null
   const values = value ? { ...step.values, [prompt.name]: value } : { ...step.values }
   const promptIndex = (step.promptIndex ?? 0) + 1
-  if (promptIndex < (step.command.prompts?.length ?? 0)) {
+  if (promptIndex < step.command.prompts!.length) {
     deps.pushStep({ step: 'arguments', command: step.command, on: step.on, promptIndex, values })
     return null
   }

@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -390,8 +394,8 @@ func TestServerShutdownTimeoutError(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected shutdown error, got nil")
 		}
-		if !strings.Contains(err.Error(), "shutdown:") {
-			t.Fatalf("expected error wrapping shutdown:, got %v", err)
+		if !strings.Contains(err.Error(), "shutdown:") || !errors.Is(err, context.DeadlineExceeded) {
+			t.Fatalf("expected error wrapping shutdown: and DeadlineExceeded, got %v", err)
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("ServeContext did not return within timeout")
@@ -598,5 +602,389 @@ func waitServe(t *testing.T, serveErrCh <-chan error) {
 	t.Helper()
 	if err := <-serveErrCh; err != nil {
 		t.Errorf("Serve returned error: %v", err)
+	}
+}
+
+type errWriter struct{}
+
+var errWriteFailed = errors.New("write failed")
+
+func (errWriter) Write([]byte) (int, error) {
+	return 0, errWriteFailed
+}
+
+type errReader struct{}
+
+var errReadFailed = errors.New("read failed")
+
+func (errReader) Read([]byte) (int, error) {
+	return 0, errReadFailed
+}
+
+type multiStepStdinReader struct {
+	step int
+	mode string
+}
+
+func (r *multiStepStdinReader) Read(p []byte) (int, error) {
+	r.step++
+	if r.mode == "zero-nil" {
+		return 0, nil
+	}
+	if r.step == 1 {
+		p[0] = 'a'
+		return 1, nil
+	}
+	return 1, io.EOF
+}
+
+type closeErrListener struct {
+	net.Listener
+	closeErr error
+	acceptFn func() (net.Conn, error)
+}
+
+func (l *closeErrListener) Close() error {
+	if err := l.Listener.Close(); err != nil && l.closeErr == nil {
+		return err
+	}
+	return l.closeErr
+}
+
+func (l *closeErrListener) Accept() (net.Conn, error) {
+	if l.acceptFn != nil {
+		return l.acceptFn()
+	}
+	return l.Listener.Accept()
+}
+
+type stepTokenReader struct {
+	step int
+}
+
+func (r *stepTokenReader) Read(p []byte) (int, error) {
+	r.step++
+	switch r.step {
+	case 1:
+		p[0] = 'x'
+		return 1, nil
+	default:
+		return 0, io.EOF
+	}
+}
+
+type bufSizeReader struct {
+	sizes chan int
+}
+
+func (r *bufSizeReader) Read(p []byte) (int, error) {
+	r.sizes <- len(p)
+	return 0, io.EOF
+}
+
+func TestAuthInterceptor_EdgeCases(t *testing.T) {
+	emptyAuth := NewAuthInterceptor("")
+	if err := emptyAuth.checkToken(http.Header{"Authorization": {"Bearer "}}); err == nil {
+		t.Fatal("expected error for empty configured token even with Bearer header")
+	}
+	if !emptyAuth.mu.TryLock() {
+		t.Fatal("RUnlock was not called")
+	}
+	emptyAuth.mu.Unlock()
+
+	auth := NewAuthInterceptor("secret")
+	if err := auth.checkToken(http.Header{"Authorization": {"secret"}}); err == nil {
+		t.Fatal("expected error when Authorization header lacks Bearer prefix")
+	}
+}
+
+func TestLifecycleServer_EdgeCases(t *testing.T) {
+	called := false
+	ls := NewLifecycleServer(
+		make(chan struct{}),
+		WithLifecycleConfigure(func(context.Context, map[string]string) error {
+			called = true
+			return nil
+		}),
+		WithLifecycleUpdateConfig(nil),
+		WithLifecycleShutdown(func() error {
+			return errors.New("shutdown hook error")
+		}),
+	)
+	if err := ls.configure(t.Context(), map[string]string{"k1": "v1"}); err != nil || called {
+		t.Fatalf("expected nil callback after WithLifecycleUpdateConfig(nil), got err=%v called=%v", err, called)
+	}
+	if err := ls.configure(t.Context(), map[string]string{"k2": "v2"}); err != nil {
+		t.Fatal(err)
+	}
+	if v, ok := ls.GetConfig("k1"); !ok || v != "v1" {
+		t.Fatalf("expected k1=v1 to be preserved across configure calls, got %q %v", v, ok)
+	}
+	if ok, err := ls.RequestShutdown(t.Context()); ok || err == nil || err.Error() != "shutdown hook error" {
+		t.Fatalf("expected shutdown hook error, got ok=%v err=%v", ok, err)
+	}
+
+	var zeroLS LifecycleServer
+	if err := zeroLS.configure(t.Context(), map[string]string{"z": "1"}); err != nil {
+		t.Fatal(err)
+	}
+	if v, ok := zeroLS.GetConfig("z"); !ok || v != "1" {
+		t.Fatalf("expected z=1 on zero LifecycleServer, got %q %v", v, ok)
+	}
+}
+
+func TestParseDefaultFlagsAndOptions(t *testing.T) {
+	origCmd := flag.CommandLine
+	origArgs := os.Args
+	t.Cleanup(func() {
+		flag.CommandLine = origCmd
+		os.Args = origArgs
+	})
+
+	flag.CommandLine = flag.NewFlagSet("test", flag.ContinueOnError)
+	os.Args = []string{"test", "-port=6123"}
+	if got := parseDefaultFlags(); got != 6123 {
+		t.Fatalf("parseDefaultFlags with -port=6123 = %d, want 6123", got)
+	}
+
+	flag.CommandLine = flag.NewFlagSet("test", flag.ContinueOnError)
+	os.Args = []string{"test"}
+	t.Setenv("NUMEN_PLUGIN_PORT", "")
+	if got := parseDefaultFlags(); got != 0 {
+		t.Fatalf("parseDefaultFlags with default -port = %d, want 0", got)
+	}
+
+	flag.CommandLine = flag.NewFlagSet("test", flag.ContinueOnError)
+	os.Args = []string{"test"}
+	if err := flag.CommandLine.Parse(nil); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("NUMEN_PLUGIN_PORT", "7234")
+	if got := parseDefaultFlags(); got != 7234 {
+		t.Fatalf("parseDefaultFlags with NUMEN_PLUGIN_PORT=7234 = %d, want 7234", got)
+	}
+
+	t.Setenv("NUMEN_PLUGIN_PORT", "not-a-number")
+	if got := readEnvPort(); got != 0 {
+		t.Fatalf("readEnvPort invalid = %d, want 0", got)
+	}
+
+	s := New(WithPort(8123), WithSignals(syscall.SIGUSR1))
+	if s.Port() != 8123 {
+		t.Fatalf("s.Port() = %d, want 8123", s.Port())
+	}
+	if len(s.signals) != 1 || s.signals[0] != syscall.SIGUSR1 {
+		t.Fatalf("s.signals = %v, want [SIGUSR1]", s.signals)
+	}
+	if s.shutdownTimeout != 2*time.Second || s.readHeaderTimeout != 5*time.Second {
+		t.Fatalf("default timeouts = %v, %v; want 2s, 5s", s.shutdownTimeout, s.readHeaderTimeout)
+	}
+
+	s.SetConfigure(func(context.Context, map[string]string) error { return nil })
+	if s.onConfigure == nil {
+		t.Fatal("expected s.onConfigure to be set")
+	}
+
+	_, err := NewLinkedHandler(map[string]string{tokenVar: "tok"}, func(ls *Server) error {
+		if ls.Port() != 0 {
+			t.Errorf("linked server Port() = %d, want 0", ls.Port())
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if code := run(errWriter{}, func(*Server) error { return errors.New("boom") }); code != 2 {
+		t.Fatalf("run with failing errOut = %d, want 2", code)
+	}
+}
+
+func TestServerListenServeAndHelpers(t *testing.T) {
+	sBad := New(WithPort(-1), WithToken("tok"), WithStdout(nil), WithStdin(nil))
+	var opErr *net.OpError
+	if port, err := sBad.Listen(); err == nil || port != 0 || !errors.As(err, &opErr) {
+		t.Fatalf("expected wrapped *net.OpError on port -1, got port=%d err=%v", port, err)
+	}
+	if err := sBad.Serve(); err == nil || !strings.Contains(err.Error(), "listen on") {
+		t.Fatalf("expected Serve listen error, got %v", err)
+	}
+
+	s := New(WithPort(0), WithToken("tok"), WithStdout(nil), WithStdin(nil), WithSignals())
+	p1, err := s.Listen()
+	if err != nil || p1 <= 0 || s.Port() != p1 {
+		t.Fatalf("first Listen = %d, %v, Port()=%d", p1, err, s.Port())
+	}
+	p2, err := s.Listen()
+	if err != nil || p2 != p1 {
+		t.Fatalf("second Listen = %d, %v; want %d, nil", p2, err, p1)
+	}
+	if err := s.closeListener(); err != nil {
+		t.Fatalf("first closeListener: %v", err)
+	}
+	if err := s.closeListener(); err != nil {
+		t.Fatalf("second closeListener (already closed): %v", err)
+	}
+
+	// closeListener returning non-ErrClosed error
+	var lc net.ListenConfig
+	ln, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantCloseErr := errors.New("custom close err")
+	sCloseErr := New(WithPort(0), WithToken("tok"), WithStdout(nil), WithStdin(nil), WithSignals())
+	sCloseErr.listener = &closeErrListener{Listener: ln, closeErr: wantCloseErr}
+	tcpAddr, ok := ln.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatal("expected *net.TCPAddr")
+	}
+	sCloseErr.actualPort = tcpAddr.Port
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if err := sCloseErr.ServeContext(ctx); !errors.Is(err, wantCloseErr) {
+		t.Fatalf("expected wrapped custom close err from ServeContext, got %v", err)
+	}
+
+	// ServeContext with OnClose returning error
+	sCloserErr := New(WithPort(0), WithToken("tok"), WithStdout(nil), WithStdin(nil), WithSignals())
+	sCloserErr.OnClose(func() error { return errors.New("closer boom") })
+	if err := sCloserErr.ServeContext(ctx); err == nil || !strings.Contains(err.Error(), "closer boom") {
+		t.Fatalf("expected closer boom from ServeContext, got %v", err)
+	}
+
+	// ServeContext with failing stdout in announceReady
+	sStdoutErr := New(WithPort(0), WithToken("tok"), WithStdout(errWriter{}), WithStdin(nil), WithSignals())
+	if err := sStdoutErr.Serve(); !errors.Is(err, errWriteFailed) {
+		t.Fatalf("expected wrapped write ready line error, got %v", err)
+	}
+
+	// ServeContext where serveHTTP fails immediately
+	lnFail, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantAcceptErr := errors.New("accept boom")
+	sServeFail := New(WithPort(0), WithToken("tok"), WithStdout(nil), WithStdin(nil), WithSignals())
+	sServeFail.listener = &closeErrListener{
+		Listener: lnFail,
+		acceptFn: func() (net.Conn, error) {
+			return nil, wantAcceptErr
+		},
+	}
+	tcpAddrFail, ok := lnFail.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatal("expected *net.TCPAddr")
+	}
+	sServeFail.actualPort = tcpAddrFail.Port
+	if err := sServeFail.Serve(); !errors.Is(err, wantAcceptErr) {
+		t.Fatalf("expected wrapped serve: error when accept fails, got %v", err)
+	}
+
+	// serveHTTP closes errs channel on ErrServerClosed
+	lnClose, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := lnClose.Close(); err != nil {
+		t.Fatal(err)
+	}
+	errsCh := make(chan error, 1)
+	httpSrv := &http.Server{}
+	if err := httpSrv.Close(); err != nil {
+		t.Fatal(err)
+	}
+	serveHTTP(httpSrv, lnClose, errsCh)
+	if _, open := <-errsCh; open {
+		t.Fatal("expected serveHTTP to close errs channel")
+	}
+
+	// notifySignals with empty and non-empty signals
+	guardSig := make(chan os.Signal, 1)
+	signal.Notify(guardSig, syscall.SIGUSR1)
+	defer signal.Stop(guardSig)
+
+	sNoSig := New(WithSignals())
+	sigCh, stop := sNoSig.notifySignals()
+	if sigCh == nil {
+		t.Fatal("expected non-nil sigCh when signals is empty")
+	}
+	stop()
+
+	sWithSig := New(WithSignals(syscall.SIGUSR1))
+	sigCh2, stop2 := sWithSig.notifySignals()
+	if sigCh2 == nil {
+		t.Fatal("expected non-nil sigCh when signals is non-empty")
+	}
+	if err := syscall.Kill(os.Getpid(), syscall.SIGUSR1); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-sigCh2:
+	case <-time.After(time.Second):
+		t.Fatal("expected SIGUSR1 on sigCh2")
+	}
+	stop2()
+	if err := syscall.Kill(os.Getpid(), syscall.SIGUSR1); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-guardSig:
+	case <-time.After(time.Second):
+		t.Fatal("expected SIGUSR1 on guardSig")
+	}
+	time.Sleep(10 * time.Millisecond)
+	select {
+	case <-sigCh2:
+		t.Fatal("expected no SIGUSR1 on sigCh2 after stop2()")
+	default:
+	}
+
+	// authenticate edge cases
+	sTokenStdin := New(WithToken("preset"), WithStdin(strings.NewReader("stdin-tok\n")))
+	if err := sTokenStdin.authenticate(); err != nil || sTokenStdin.token != "preset" {
+		t.Fatalf("expected preset token to be kept, got %q err=%v", sTokenStdin.token, err)
+	}
+
+	sReadErr := New(WithStdin(errReader{}))
+	if err := sReadErr.authenticate(); !errors.Is(err, errReadFailed) {
+		t.Fatalf("expected wrapped read auth token error, got %v", err)
+	}
+
+	sBadEnv := New(WithToken("bad\x00token"), WithStdin(nil))
+	if err := sBadEnv.authenticate(); !errors.Is(err, syscall.EINVAL) {
+		t.Fatalf("expected wrapped EINVAL setenv error for NUL byte token, got %v", err)
+	}
+
+	// watchStdin edge cases
+	sNilStdin := New(WithStdin(nil))
+	if sNilStdin.watchStdin() == nil {
+		t.Fatal("expected non-nil channel from watchStdin when stdin is nil")
+	}
+	bsr := &bufSizeReader{sizes: make(chan int, 1)}
+	sBufStdin := New(WithStdin(bsr))
+	eofCh := sBufStdin.watchStdin()
+	if gotSize := <-bsr.sizes; gotSize != 1 {
+		t.Fatalf("watchStdin read buffer size = %d, want 1", gotSize)
+	}
+	<-eofCh
+
+	sZeroNil := New(WithStdin(&multiStepStdinReader{mode: "zero-nil"}))
+	<-sZeroNil.watchStdin()
+
+	stepReader := &multiStepStdinReader{mode: "step-eof"}
+	sStepEOF := New(WithStdin(stepReader))
+	<-sStepEOF.watchStdin()
+	if stepReader.step != 2 {
+		t.Fatalf("watchStdin step = %d, want 2", stepReader.step)
+	}
+
+	// readTokenLine edge cases
+	tok, err := readTokenLine(&stepTokenReader{})
+	if err != nil || tok != "x" {
+		t.Fatalf("readTokenLine stepTokenReader = %q, %v; want 'x', nil", tok, err)
+	}
+	if _, err := readTokenLine(errReader{}); err == nil {
+		t.Fatal("expected error from readTokenLine with errReader")
 	}
 }

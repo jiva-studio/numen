@@ -10,6 +10,7 @@ import { asFailure, asValue } from '@numen/core-client'
 import type { RelatedNoteRequest, RelationError } from '@numen/plugin-host'
 
 import { createNoteWriter, type NoteMaker } from './maker'
+import { getNoteIcon, registerNoteIcon } from './icons'
 import type { NewNote } from '@/entities/note'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import { writer } from '@/testing/writer'
@@ -51,8 +52,10 @@ describe('making an untitled note', () => {
     const { core, write, messages } = fake({ ok: false, error: 'alreadyExists' })
 
     expect(await createNoteWriter(core, write).createUntitled('')).toBe('')
-    expect(messages.at(-1)?.kind).toBe('error')
-    expect(messages.at(-1)?.text).not.toBe('')
+    expect(messages.at(-1)).toStrictEqual({
+      text: 'a file with this name exists',
+      kind: 'error',
+    })
   })
 
   it('says a core that could not be reached', async () => {
@@ -73,12 +76,13 @@ describe('making an untitled note', () => {
 
 describe('making a note under a name a person gave it', () => {
   it('files a note with no relation at the root under the title', async () => {
-    const { core, notes, write } = fake({ ok: true, value: { path: 'Entropy.md' } })
+    const { core, notes, write, last } = fake({ ok: true, value: { path: 'Entropy.md' } })
 
     const made = await createNoteWriter(core, write).createWithTitle('Entropy', '', null)
 
     expect(made).toStrictEqual({ path: 'Entropy.md', title: 'Entropy' })
     expect(notes).toStrictEqual([{ title: 'Entropy', folder: '' }])
+    expect(last()).toBe('')
   })
 
   it('leaves the relation of a related note to the core', async () => {
@@ -129,5 +133,20 @@ describe('making a note under a name a person gave it', () => {
     ).toBeNull()
     expect(last()).toContain('Numen is not responding')
     expect(messages.at(-1)?.kind).toBe('error')
+  })
+})
+
+describe('registerNoteIcon', () => {
+  it('keeps the newer icon when an older disposer runs late', () => {
+    const first = { name: 'FirstIcon' }
+    const second = { name: 'SecondIcon' }
+    const disposeFirst = registerNoteIcon('sample', first)
+    const disposeSecond = registerNoteIcon('sample', second)
+
+    disposeFirst()
+    expect(getNoteIcon('sample')).toBe(second)
+
+    disposeSecond()
+    expect(getNoteIcon('sample')).not.toBe(second)
   })
 })

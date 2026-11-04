@@ -297,6 +297,23 @@ describe('answers arriving', () => {
     expect(meaningGroup?.items[0]?.id).toBe('meaning:note.md:0')
   })
 
+  it('shows text search results with text item ids and omits locate action when getTravel is absent', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    vault.names[0]?.answer([createNameMatch()])
+    vault.mode('words')?.answer([passage()])
+    await flushPromises()
+
+    const textGroup = getGroup(palette.groups.value, 'text')
+    expect(textGroup?.items[0]?.id).toBe('text:notes/heat.md:0')
+    const namesItem = getGroup(palette.groups.value, 'names')?.items[0] as
+      { id: string; actions?: readonly { id: string; text: string }[] } | undefined
+    expect(namesItem?.actions).toStrictEqual([{ id: 'note', text: WORDS.read }])
+  })
+
   it('lets go of everything when the palette is put away', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {

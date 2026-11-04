@@ -225,8 +225,14 @@ func TestFatalReport_DistinguishesIndexFaults(t *testing.T) {
 	}
 
 	folder, noWriteFolder := delta["an index path that is a folder"], delta["an index folder nobody may write in"]
-	if folder.Sentence == noWriteFolder.Sentence {
-		t.Errorf("two faults are said in one sentence: %q", folder.Sentence)
+	if folder.Sentence != "The index path is a folder." {
+		t.Errorf("folder sentence = %q", folder.Sentence)
+	}
+	if noWriteFolder.Sentence != "The index can't be opened or created here." {
+		t.Errorf("noWriteFolder sentence = %q", noWriteFolder.Sentence)
+	}
+	if len(noWriteFolder.Facts) != 2 || noWriteFolder.Facts[1].Name != "folder" {
+		t.Errorf("noWriteFolder facts = %+v, want folder fact", noWriteFolder.Facts)
 	}
 	if !strings.Contains(folder.Remedy, "-index") {
 		t.Errorf("a path that is a folder is answered with %q", folder.Remedy)
@@ -236,8 +242,31 @@ func TestFatalReport_DistinguishesIndexFaults(t *testing.T) {
 	}
 
 	corrupt := delta["an index that is not a database"]
-	if strings.Contains(corrupt.Sentence, "(26)") || strings.Contains(corrupt.Sentence, "not a database") {
-		t.Errorf("the page uses sqlite's format: %q", corrupt.Sentence)
+	if corrupt.Sentence != "This file is not a Numen index." {
+		t.Errorf("corrupt sentence = %q", corrupt.Sentence)
+	}
+
+	otherOnFolder := getIndexFatalReport(container.Config{IndexPath: t.TempDir()}, 1, errors.New("other sqlite error"))
+	if otherOnFolder.Sentence != "The index can't be opened." || otherOnFolder.Remedy == "" || otherOnFolder.Error != "other sqlite error" {
+		t.Errorf("otherOnFolder = %+v", otherOnFolder)
+	}
+}
+
+func TestGetSettingsPathResolvesConfiguredAndDefaultPaths(t *testing.T) {
+	if got := getSettingsPath(container.Config{SettingsPath: "/custom/settings.json", RegistryPath: "/reg/vaults.json"}); got != "/custom/settings.json" {
+		t.Errorf("got %q, want /custom/settings.json", got)
+	}
+	if got := getSettingsPath(container.Config{RegistryPath: "/reg/vaults.json"}); got != filepath.Join("/reg", "numen.json") {
+		t.Errorf("got %q, want /reg/numen.json", got)
+	}
+	t.Setenv("XDG_CONFIG_HOME", "/cfg")
+	if got := getSettingsPath(container.Config{}); got == "" {
+		t.Error("expected non-empty default settings path")
+	}
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("HOME", "")
+	if got := getSettingsPath(container.Config{}); got != "" {
+		t.Errorf("got %q with no config or home dir, want empty", got)
 	}
 }
 

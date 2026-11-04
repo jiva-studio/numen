@@ -17,7 +17,37 @@ describe('what a button is', () => {
 
   it('is drawn solid and at the default size where it is told nothing', () => {
     const button = mount(Button)
-    expect(button.classes()).toEqual(expect.arrayContaining(['bg-accent', 'h-8', 'px-3']))
+    expect(button.classes()).toEqual(
+      expect.arrayContaining([
+        'inline-flex',
+        'shrink-0',
+        'items-center',
+        'justify-center',
+        'gap-2',
+        'whitespace-nowrap',
+        'font-sans',
+        'text-base',
+        'font-medium',
+        'duration-hover',
+        'ease-numen',
+        'cursor-pointer',
+        'transition-[background-color,color]',
+        'ring-numen',
+        'outline-none',
+        'disabled:pointer-events-none',
+        'disabled:opacity-50',
+        '[&_svg]:pointer-events-none',
+        '[&_svg]:shrink-0',
+        'bg-accent',
+        'text-accent-ink',
+        'hover:bg-[color-mix(in_oklab,var(--numen-accent),var(--numen-ink)_8%)]',
+        'rounded-node',
+        'h-8',
+        'px-3',
+      ]),
+    )
+    expect(buttonVariants()).toContain('bg-accent')
+    expect(buttonVariants()).toContain('h-8')
   })
 
   it('is a link that looks like a button where it is rendered as an anchor', () => {
@@ -39,22 +69,48 @@ describe('what a button is', () => {
 
 describe('the variants', () => {
   it.each([
-    ['solid', 'bg-accent'],
-    ['outline', 'border-field-rule'],
-    ['danger', 'border-alarm'],
-    ['ghost', 'hover:bg-raised'],
+    [
+      'solid',
+      [
+        'bg-accent',
+        'text-accent-ink',
+        'hover:bg-[color-mix(in_oklab,var(--numen-accent),var(--numen-ink)_8%)]',
+      ],
+    ],
+    [
+      'outline',
+      [
+        'border-field-rule',
+        'bg-field',
+        'text-ink',
+        'border',
+        'hover:bg-[color-mix(in_oklab,var(--numen-field-bg),var(--numen-ink)_8%)]',
+      ],
+    ],
+    [
+      'danger',
+      [
+        'border-alarm',
+        'text-alarm',
+        'border',
+        'bg-[var(--numen-alarm-bg)]',
+        'hover:bg-[color-mix(in_oklab,var(--numen-alarm-bg),var(--numen-surface)_40%)]',
+      ],
+    ],
+    ['ghost', ['text-ink', 'hover:bg-raised']],
   ] as const)('draws the %s variant with its own ground', (variant, own) => {
     const button = mount(Button, { props: { variant } })
-    expect(button.classes()).toContain(own)
+    expect(button.classes()).toEqual(expect.arrayContaining([...own]))
   })
 
   it.each([
-    ['small', 'h-7'],
-    ['icon', 'size-action'],
-    ['icon-small', 'size-7'],
+    ['default', ['rounded-node', 'h-8', 'px-3']],
+    ['small', ['rounded-node', 'text-small', 'h-7', 'px-2']],
+    ['icon', ['size-action', 'rounded-pill']],
+    ['icon-small', ['rounded-pill', 'size-7']],
   ] as const)('draws the %s size at its own height', (size, own) => {
     const button = mount(Button, { props: { size } })
-    expect(button.classes()).toContain(own)
+    expect(button.classes()).toEqual(expect.arrayContaining([...own]))
   })
 
   it('leaves out the colour of a variant that the next one does not have', () => {

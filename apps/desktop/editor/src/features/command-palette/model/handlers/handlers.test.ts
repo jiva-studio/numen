@@ -260,6 +260,18 @@ describe('pluggable command registry', () => {
     await carry(createInvocation('read', front()), one.on)
     expect(one.actions).toContain('openFile physics/Ontology.md Ontology current')
   })
+
+  it('does not delete a newer handler when an older unregister function is called', () => {
+    const firstUnregister = commands.registerCommand('dup', () => undefined)
+    const secondHandler = () => undefined
+    const secondUnregister = commands.registerCommand('dup', secondHandler)
+
+    firstUnregister()
+    expect(commands.get('dup')).toBe(secondHandler)
+
+    secondUnregister()
+    expect(commands.get('dup')).toBeUndefined()
+  })
 })
 
 describe('a note put in front of the person', () => {
@@ -904,6 +916,7 @@ describe('nothing to carry out', () => {
     await runInvocation(createInvocation('remove', front()), broken, words)
 
     expect(one.notices).toStrictEqual(['Numen is not responding; retrying'])
+    expect(one.severities).toStrictEqual(['error'])
   })
 })
 
@@ -1157,5 +1170,26 @@ describe('plugin setting invocation', () => {
     expect(one.actions[2]).toBe(
       'plugin md.numen.engines.transcription model parakeet-tdt-0.6b-v2-int8',
     )
+
+    await carry(createInvocation('plugin-setting::autoRun', front(), 'on'), one.on)
+    await carry(
+      createInvocation('plugin-setting:md.numen.engines.transcription:', front(), 'on'),
+      one.on,
+    )
+    expect(one.actions).toHaveLength(3)
+
+    const withoutChoosePlugin: CommandDeps = {
+      ...one.on,
+      settings: {
+        chooseAppearance: one.on.settings.chooseAppearance,
+        chooseSync: one.on.settings.chooseSync,
+        choosePerformance: one.on.settings.choosePerformance,
+      },
+    }
+    await carry(
+      createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'on'),
+      withoutChoosePlugin,
+    )
+    expect(one.actions).toHaveLength(3)
   })
 })

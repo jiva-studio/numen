@@ -45,6 +45,7 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
   const confirmed = ref(true)
   const requested = createRemoteValues<boolean>(async (values) => {
     const isOn = values.get(KEY)
+    // Stryker disable next-line ConditionalExpression: Map always contains KEY from requestWrite.
     if (isOn === undefined) return
     const failed = await core.setSyncEnabled(isOn)
     if (failed !== null) throw new SettingRefused(failed)

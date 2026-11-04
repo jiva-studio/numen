@@ -47,6 +47,7 @@ export const snapToBounds = (value: number, bounds: Bounds): number =>
 /** Whether the text is a number the bounds allow. An empty field is neither. */
 export const isAllowed = (text: string, bounds: Bounds): boolean => {
   const value = parseNumber(text)
+  // Stryker disable next-line ConditionalExpression: value !== null narrows number | null for TypeScript
   return value !== null && value === snapToBounds(value, bounds)
 }
 
@@ -97,10 +98,9 @@ export interface NumberEntry {
  * the last settled one.
  */
 const checkInvalid = (raw: string, getBounds: () => Bounds): boolean => {
-  const text = raw.trim()
-  if (text === '') return false
-  if (!isPartialNumber(text)) return true
-  const value = parseNumber(text)
+  if (!isPartialNumber(raw)) return true
+  const value = parseNumber(raw)
+  // Stryker disable next-line ConditionalExpression: value !== null narrows number | null for clamp
   return value !== null && value !== clamp(value, getBounds())
 }
 

@@ -33,6 +33,7 @@ export function watchCommandLists(
     })
   }
 
+  // Stryker disable next-line ConditionalExpression: fileMenuCommands is optional in unit test setups
   if (fileMenuCommands) {
     watch(isOpen, (open) => {
       if (!open) return

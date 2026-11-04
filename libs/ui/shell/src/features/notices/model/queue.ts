@@ -51,6 +51,7 @@ export function createNoticeQueue(): NoticeQueue {
 
   const setTasks = (source: string, tasks: readonly Task[]): void => {
     const next = new Map(work.value)
+    // Stryker disable next-line ConditionalExpression: deleting the empty entry or storing an empty list yields the same flattened notices.
     if (tasks.length === 0) next.delete(source)
     else
       next.set(

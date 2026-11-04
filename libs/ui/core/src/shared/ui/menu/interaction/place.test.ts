@@ -36,12 +36,27 @@ describe('where a menu is placed', () => {
   it('stays inside the browser window where the caller measures no area', () => {
     vi.stubGlobal('innerWidth', 500)
     vi.stubGlobal('innerHeight', 400)
-    const { placed, setSize } = useMenuPlacement({
+    const { placed, setSize, resetSize, menuStyle } = useMenuPlacement({
       at: () => ({ x: 450, y: 350 }),
       viewport: () => null,
       margin: () => 0,
     })
+    expect(menuStyle.value['--asking']).toBe('0px')
+    expect(menuStyle.value['--opened-width']).toBe('0px')
     setSize({ width: 100, height: 100 })
     expect(placed.value).toStrictEqual({ x: 350, y: 250 })
+    expect(menuStyle.value['--opened-width']).toBe('100px')
+    setSize({ width: 60, height: 100 })
+    expect(menuStyle.value['--opened-width']).toBe('100px')
+    resetSize()
+    expect(menuStyle.value['--opened-width']).toBe('0px')
+
+    const withAsking = useMenuPlacement({
+      at: () => ({ x: 10, y: 20 }),
+      viewport: () => ROOM,
+      margin: () => 8,
+      asking: () => 180,
+    })
+    expect(withAsking.menuStyle.value['--asking']).toBe('180px')
   })
 })

@@ -22,13 +22,13 @@ const createElement = (): HTMLElement => {
   return element
 }
 
-const setup = (menuElement: HTMLElement | null = null) => {
+const setup = (menuElement: HTMLElement | null = null, isIgnored?: (event: Event) => boolean) => {
   const dismiss = vi.fn<() => void>()
   const menu: ShallowRef<HTMLElement | null> = shallowRef(menuElement)
   let dismissal: MenuDismissalState | null = null
   const host = defineComponent({
     setup() {
-      dismissal = useMenuDismissal(menu, dismiss)
+      dismissal = useMenuDismissal(menu, dismiss, isIgnored)
       return () => null
     },
   })
@@ -135,12 +135,26 @@ describe('letting go of the window', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
   }
 
-  it('hears nothing once released', () => {
-    const { dismiss, ground } = setup()
+  it('hears nothing once released, and registers passive capture listeners', () => {
+    const addSpy = vi.spyOn(window, 'addEventListener')
+    const removeSpy = vi.spyOn(window, 'removeEventListener')
+    const { dismiss, ground } = setup(null, (event) => event.type === 'resize')
     ground.listen()
+
+    expect(addSpy).toHaveBeenCalledWith('wheel', expect.any(Function), {
+      capture: true,
+      passive: true,
+    })
+    window.dispatchEvent(new Event('resize'))
+    expect(dismiss).not.toHaveBeenCalled()
+
     ground.release()
+    expect(removeSpy).toHaveBeenCalledWith('wheel', expect.any(Function), { capture: true })
+    expect(removeSpy).toHaveBeenCalledWith('scroll', expect.any(Function), true)
     fire()
     expect(dismiss).not.toHaveBeenCalled()
+    addSpy.mockRestore()
+    removeSpy.mockRestore()
   })
 
   it('hears nothing once the menu is unmounted while still open', () => {

@@ -107,6 +107,7 @@ export async function runInvocation(
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)
   try {
+    // Stryker disable next-line LogicalOperator: Line 106 guarantees handler is defined when isPlugin is false.
     if (handler && !isPlugin) {
       await handler(withCurrentNotePath(invocation, on), on, words)
     } else {

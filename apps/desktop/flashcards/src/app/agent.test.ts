@@ -19,21 +19,25 @@ const links: LinkClient = {
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /** The agent service, answering the state given and keeping every request. */
-const createClient = (state: () => Promise<{ unreachable: string }>) => {
+const createClient = (state: (signal: AbortSignal) => Promise<{ unreachable: string }>) => {
   const requests: unknown[] = []
+  const finished: unknown[] = []
   const signals: AbortSignal[] = []
   const client: WindowAgentClient = {
     getAgentState: (_request, options) => {
       signals.push(options.signal)
-      return state()
+      return state(options.signal)
     },
     async *askAgent(request): AsyncIterable<AskAgentResponse> {
       requests.push(request)
       yield* [] as AskAgentResponse[]
     },
-    finishConversation: async () => ({}),
+    finishConversation: async (request) => {
+      finished.push(request)
+      return {}
+    },
   }
-  return { client, requests, signals }
+  return { client, requests, finished, signals }
 }
 
 describe('createWindowAgent', () => {
@@ -75,13 +79,34 @@ describe('createWindowAgent', () => {
     expect(agent.getUnreachable()).toBe(WORDS.agentUnreachable)
   })
 
-  it('aborts the state request on dispose', () => {
-    const { client, signals } = createClient(() => new Promise<never>(() => undefined))
-    const { dispose } = createWindowAgent(client, links)
+  it('aborts the state request on dispose and ignores its rejection', async () => {
+    const { client, signals } = createClient(
+      (signal) =>
+        new Promise((_, reject) => {
+          signal.addEventListener('abort', () => reject(new Error('aborted')))
+        }),
+    )
+    const { agent, dispose } = createWindowAgent(client, links)
 
     dispose()
+    await settle()
 
     expect(signals[0]?.aborted).toBe(true)
+    expect(agent.getUnreachable()).toBe('')
+  })
+
+  it('finishes a conversation and exposes no local settings or models', async () => {
+    const { client, finished } = createClient(async () => ({ unreachable: '' }))
+    const { agent } = createWindowAgent(client, links)
+
+    await agent.finish('card-0')
+
+    expect(finished).toStrictEqual([{ conversation: 'card-0' }])
+    expect(agent.getSetting(['model'])).toBeUndefined()
+    expect(agent.getModelsAt(['provider'])).toStrictEqual([])
+    await expect(agent.writeSetting(['model'], 'claude')).rejects.toThrow(
+      'this window keeps no agent settings',
+    )
   })
 
   it('resolves the wikilinks of a text in the vault named', async () => {

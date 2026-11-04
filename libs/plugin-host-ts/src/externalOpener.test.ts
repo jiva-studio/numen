@@ -33,7 +33,7 @@ describe('opening an address from a plugin', () => {
 
     const result = await createExternalOpener(open)('file:///etc/passwd')
 
-    expect(result.ok).toBe(false)
+    expect(result).toEqual({ ok: false, error: 'not a web address: file:///etc/passwd' })
     expect(open).not.toHaveBeenCalled()
   })
 
@@ -61,7 +61,9 @@ describe('opening an address in the system browser', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null)
 
     await openExternalUrl('https://example.org/', async () => undefined)
+    await openExternalUrl('https://example.org/', async () => ({}))
 
+    expect(open).toHaveBeenCalledTimes(2)
     expect(open).toHaveBeenCalledWith('https://example.org/', '_blank')
   })
 

@@ -10,7 +10,14 @@ import { useWindow } from './useWindow'
 const h = vi.hoisted(() => ({
   args: {} as Record<string, any>,
   f: {} as Record<string, any>,
-  core: { name: 'core', fileKinds: vi.fn() },
+  core: {
+    name: 'core',
+    fileKinds: vi.fn(),
+    readOpenTabs: vi.fn(async () => ({ tabs: [], activeId: '' })),
+    resolveLinks: vi.fn(async () => [{ path: 'resolved.md' }]),
+    cancelTask: vi.fn(async () => undefined),
+    detachTab: vi.fn(),
+  },
 }))
 
 vi.mock('../vault', () => ({ core: h.core }))
@@ -23,9 +30,17 @@ vi.mock('@/entities/tab', () => ({
     h.args.openers = args
     return h.f.tabOpeners
   },
-  useWindowTabs: () => h.f.windowTabs,
+  useWindowTabs: (args: unknown) => {
+    h.args.windowTabs = args
+    return h.f.windowTabs
+  },
 }))
-vi.mock('../tabs/useTabSync', () => ({ createTabSync: () => ({ name: 'tabSync' }) }))
+vi.mock('../tabs/useTabSync', () => ({
+  createTabSync: (args: unknown) => {
+    h.args.tabSync = args
+    return { name: 'tabSync' }
+  },
+}))
 vi.mock('../tabs/useNoteEditors', () => ({
   createNoteEditors: (args: unknown) => {
     h.args.editing = args
@@ -39,11 +54,26 @@ vi.mock('./useSettings', () => ({
   },
 }))
 vi.mock('./useVaults', () => ({ useVaults: () => h.f.vaults }))
-vi.mock('../tabs/useOpenTabs', () => ({ useOpenTabs: () => h.f.openTabs }))
+vi.mock('../tabs/useOpenTabs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../tabs/useOpenTabs')>()
+  return {
+    ...actual,
+    useOpenTabs: (args: unknown) => {
+      h.args.openTabs = args
+      return h.f.openTabs
+    },
+  }
+})
 vi.mock('../commands/useCommands', () => ({
   useCommands: (args: unknown) => {
     h.args.commands = args
     return h.f.commands
+  },
+}))
+vi.mock('../commands/fileMenuCommands', () => ({
+  useFileMenuCommands: (args: unknown) => {
+    h.args.fileMenu = args
+    return h.f.fileMenu
   },
 }))
 vi.mock('./useWindowDisplay', () => ({
@@ -52,7 +82,12 @@ vi.mock('./useWindowDisplay', () => ({
     return h.f.display
   },
 }))
-vi.mock('../shell/useNoticeTasks', () => ({ useNoticeTasks: () => ({ value: [] }) }))
+vi.mock('../shell/useNoticeTasks', () => ({
+  useNoticeTasks: (args: unknown) => {
+    h.args.noticeTasks = args
+    return { value: [{ id: 'notice:1' }] }
+  },
+}))
 vi.mock('./useWindowKinds', () => ({
   useWindowKinds: (args: unknown) => {
     h.args.kinds = args
@@ -60,15 +95,27 @@ vi.mock('./useWindowKinds', () => ({
   },
 }))
 vi.mock('../shell/useWindowStatusBar', () => ({
-  useWindowStatusBar: () => ({ name: 'statusBar' }),
+  useWindowStatusBar: (args: unknown) => {
+    h.args.statusBar = args
+    return { name: 'statusBar' }
+  },
 }))
 vi.mock('../commands/useAppHotkeys', () => ({ useAppHotkeys: vi.fn() }))
+vi.mock('../tabs/useCrossWindowTabs', () => ({
+  useCrossWindowTabs: (args: unknown) => {
+    h.args.crossWindow = args
+    return { dockToOtherWindow: vi.fn(), windowId: 'win-1' }
+  },
+}))
 vi.mock('../plugins/useWindowPlugins', () => ({
   createPluginSupport: (args: unknown) => {
     h.args.plugins = args
-    return { pluginHost: h.f.pluginHost, pluginLoader: {} }
+    return { pluginHost: h.f.pluginHost, pluginLoader: h.f.pluginLoader }
   },
-  watchPluginSettings: vi.fn(),
+  getFrontendPluginIds: (plugins: { id: string }[]) => plugins.map((p) => p.id),
+  watchPluginSettings: (settings: unknown, loader: unknown, onError: (err: unknown) => void) => {
+    h.args.watchPlugins = { settings, loader, onError }
+  },
 }))
 vi.mock('./useAppBootstrap', () => ({
   useAppBootstrap: (args: unknown) => {
@@ -108,6 +155,8 @@ beforeEach(() => {
       releaseTab: vi.fn(() => true),
       reconcileTab: vi.fn(),
       openTabOfKind: vi.fn(),
+      restoreTabs: vi.fn(),
+      openPlacedTabs: vi.fn(async () => undefined),
       close: vi.fn(),
     },
     editing: {
@@ -124,7 +173,7 @@ beforeEach(() => {
       chunks: {},
       embedded: {},
       isEmbedding: {},
-      tasks: ref([]),
+      tasks: ref([{ id: 'task:1' }]),
       failure: ref(null),
       opening: ref('opening'),
       start: vi.fn(),
@@ -135,7 +184,11 @@ beforeEach(() => {
       appearance: {},
       oneName: {},
       nesting: {},
-      rest: {},
+      rest: {
+        plugins: ref([{ id: 'p1', name: 'Plugin One' }]),
+        writeSetting: vi.fn(async () => undefined),
+      },
+      configured: { openSettings: vi.fn() },
       start: vi.fn(),
       close: vi.fn(),
     },
@@ -149,7 +202,11 @@ beforeEach(() => {
       vaultList: ref({ vaults: [], showing: '' }),
       listed: {},
     },
-    openTabs: { getTabIcon: vi.fn() },
+    openTabs: { getTabIcon: vi.fn(), pause: vi.fn(async () => undefined), resume: vi.fn() },
+    fileMenu: {
+      getForFile: vi.fn(() => ['file-item']),
+      getIcon: vi.fn((id: string) => (id === 'file:cmd' ? 'file-icon' : undefined)),
+    },
     commands: {
       commands: { applyRenames: vi.fn() },
       runCommand: vi.fn(),
@@ -163,6 +220,16 @@ beforeEach(() => {
     pluginHost: {
       notifyVaultChange: vi.fn(),
       getPaletteCommands: vi.fn(() => [{ id: 'plugin:share', title: 'Share', icon: 'icon' }]),
+      getRegisteredSettingsViews: vi.fn(() => ['view-1']),
+      getContextMenuItems: vi.fn(() => ['ctx-item']),
+      runContextMenu: vi.fn(),
+      getContextMenuIcon: vi.fn(() => 'ctx-icon'),
+      statusViews: ref([]),
+    },
+    pluginLoader: {
+      trackPlugins: vi.fn(async () => undefined),
+      start: vi.fn(async () => undefined),
+      close: vi.fn(async () => undefined),
     },
     kinds: {
       travel: vi.fn(),
@@ -434,5 +501,211 @@ describe('the services a plugin is given', () => {
     const { taskList, ...made } = h.args.plugins.services
     expect(made).toStrictEqual(h.f.kinds.services)
     expect(taskList).toBe(h.f.display.tasks)
+  })
+
+  it('wires plugin support, windowTabs, settings, kinds, commands, statusBar, and lifecycle callbacks', async () => {
+    const window = useWindow()
+
+    // useWindowTabs options
+    expect(h.args.windowTabs.arePluginsStarting.value).toBe(true)
+    await h.args.windowTabs.enablePlugin('p1')
+    expect(h.f.settings.rest.writeSetting).toHaveBeenCalledWith(['plugins', 'p1', 'enabled'], true)
+
+    const dispatched: CustomEvent[] = []
+    const listener = (e: Event) => dispatched.push(e as CustomEvent)
+    globalThis.addEventListener('numen:open-settings', listener)
+    try {
+      h.args.windowTabs.openPlugin('p1')
+      expect(dispatched).toHaveLength(1)
+      expect(dispatched[0]?.detail).toEqual({ pluginId: 'p1' })
+    } finally {
+      globalThis.removeEventListener('numen:open-settings', listener)
+    }
+
+    // createPluginSupport callbacks
+    h.args.plugins.reportError('p1', new Error('plugin err'))
+    expect(h.f.log.getWriter).toHaveBeenCalledWith('plugin:p1')
+    expect(h.f.writer).toHaveBeenCalledWith(expect.stringContaining('Plugin One'), 'error')
+
+    h.args.plugins.reportLoadError('unknown-plugin', new Error('load err'))
+    expect(h.f.writer).toHaveBeenCalledWith(expect.stringContaining('unknown-plugin'), 'error')
+
+    expect(await h.args.plugins.resolveLink('from.md', 'name://Target')).toBe('resolved.md')
+    expect(h.core.resolveLinks).toHaveBeenCalledWith('from.md', '[[Target]]')
+    h.core.resolveLinks.mockResolvedValueOnce([])
+    expect(await h.args.plugins.resolveLink('from.md', 'Plain')).toBe('')
+
+    // createTabSync & watchPluginSettings & useOpenTabs error callbacks
+    h.f.writer.mockClear()
+    h.args.tabSync.onError(new Error('tab sync err'))
+    expect(h.f.writer).toHaveBeenCalledWith('Numen is not responding; retrying', 'error')
+
+    h.args.watchPlugins.onError(new Error('watch plugins err'))
+    expect(h.f.writer).toHaveBeenCalledWith(
+      'Plugins were not tracked: Numen is not responding; retrying',
+      'error',
+    )
+
+    expect(h.args.openTabs.isWriting.value).toBe(false)
+    expect(window.isLayoutReady.value).toBe(false)
+    h.args.openTabs.reportError(new Error('save tabs err'))
+    expect(h.f.writer).toHaveBeenCalledWith(
+      'The open tabs were not saved: Numen is not responding; retrying',
+      'error',
+    )
+
+    // useSettings callbacks
+    h.args.settings.onSizeChanged()
+    expect(h.f.editing.noted.measureAll).toHaveBeenCalledOnce()
+    expect(h.args.settings.getSettingsViews('p1')).toEqual(['view-1'])
+
+    // useFileMenuCommands callbacks
+    h.args.fileMenu.onRun('notes/a.md')
+    expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths: ['notes/a.md'] })
+    h.f.writer.mockClear()
+    h.args.fileMenu.onError(new Error('file menu err'))
+    expect(h.f.writer).toHaveBeenCalledWith('Numen is not responding; retrying', 'error')
+
+    // useWindowKinds callbacks
+    const target = window.getTarget()
+    h.args.kinds.runCommand('cmd-1', target)
+    expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-1', target)
+    expect(h.args.kinds.getContextMenuItems(target)).toEqual(['ctx-item'])
+    h.args.kinds.runContextMenu('ctx-1', target)
+    expect(h.f.pluginHost.runContextMenu).toHaveBeenCalledWith('ctx-1', target)
+    expect(h.args.kinds.getFileMenuItems('a.md')).toEqual(['file-item'])
+    expect(h.args.kinds.getContextMenuIcon('ctx-1')).toBe('ctx-icon')
+    expect(h.args.kinds.getPluginCommandIcon('file:cmd')).toBe('file-icon')
+
+    // tabsHold callbacks
+    await h.args.commands.tabsHold.pause()
+    expect(h.f.openTabs.pause).toHaveBeenCalledOnce()
+    h.args.commands.tabsHold.resume()
+    expect(h.f.openTabs.resume).toHaveBeenCalledOnce()
+
+    // statusBar & noticeTasks
+    expect(h.args.noticeTasks.window).toBe(h.f.display)
+    expect(h.args.statusBar.tasks.value).toEqual([{ id: 'task:1' }, { id: 'notice:1' }])
+    await h.args.statusBar.cancelTask('task:1')
+    expect(h.core.cancelTask).toHaveBeenCalledWith('task:1')
+    h.args.statusBar.reportCancelError(new Error('cancel failed'))
+    expect(h.f.writer).toHaveBeenCalledWith(
+      'The task was not cancelled: Numen is not responding; retrying',
+      'error',
+    )
+    h.args.statusBar.onAction('p1')
+    expect(h.f.settings.configured.openSettings).toHaveBeenCalledWith('p1')
+
+    // Returned window methods
+    window.runCommand('cmd-2', target)
+    expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-2', target)
+    window.openSettings('p1', 'ocr')
+    expect(h.f.settings.configured.openSettings).toHaveBeenCalledWith('p1', 'ocr')
+
+    h.f.windowTabs.openPlacedTabs.mockImplementationOnce(
+      async (onErr: (kind: string, err: unknown) => void) => {
+        onErr('graph', new Error('graph failed'))
+      },
+    )
+    window.openCurrentVault()
+    await Promise.resolve()
+    expect(h.f.writer).toHaveBeenCalledWith(
+      'The graph tab did not open: Numen is not responding; retrying',
+      'error',
+    )
+
+    h.f.windowTabs.openPlacedTabs.mockRejectedValueOnce(new Error('all tabs failed'))
+    window.openCurrentVault()
+    await new Promise((r) => setTimeout(r, 10))
+    expect(h.f.writer).toHaveBeenCalledWith(
+      'The tabs did not open: Numen is not responding; retrying',
+      'error',
+    )
+
+    // Bootstrap lifecycle callbacks
+    await h.args.bootstrap.loadVaults()
+    expect(h.f.vaults.loadVaults).toHaveBeenCalledOnce()
+    await h.args.bootstrap.startSettings()
+    expect(h.f.settings.start).toHaveBeenCalledOnce()
+    await h.args.bootstrap.startWindow()
+    expect(h.f.display.start).toHaveBeenCalledOnce()
+
+    await h.args.bootstrap.startPlugins()
+    expect(h.f.pluginLoader.trackPlugins).toHaveBeenCalledWith(['p1'])
+    expect(h.f.pluginLoader.start).toHaveBeenCalledOnce()
+    expect(h.args.windowTabs.arePluginsStarting.value).toBe(false)
+
+    await h.args.bootstrap.closePlugins()
+    expect(h.f.pluginLoader.close).toHaveBeenCalledOnce()
+
+    h.args.bootstrap.reportError(new Error('boot failed'))
+    expect(h.f.writer).toHaveBeenCalledWith(
+      'The window did not start cleanly: Numen is not responding; retrying',
+      'error',
+    )
+
+    h.f.editing.fileFlush.start.mockRejectedValueOnce(new Error('flush died'))
+    h.args.bootstrap.startEditing()
+    await new Promise((r) => setTimeout(r, 10))
+    expect(h.f.writer).toHaveBeenCalledWith(
+      'Saving on quit stopped: Numen is not responding; retrying',
+      'error',
+    )
+  })
+
+  it('restores saved tabs or opens placed tabs in startLayout and handles secondary windows', async () => {
+    try {
+      vi.stubGlobal('location', new URL('http://localhost/'))
+      const window = useWindow()
+      expect(h.args.crossWindow.closeWindowIfEmpty).toBeUndefined()
+
+      // Empty activeVault id returns early
+      h.f.vaults.activeVault.value = { id: '' }
+      await h.args.bootstrap.startLayout()
+      expect(window.isLayoutReady.value).toBe(false)
+
+      // Saved tabs present -> restores them
+      h.f.vaults.activeVault.value = { id: 'vault' }
+      h.core.readOpenTabs.mockResolvedValueOnce({
+        tabs: [{ id: 'note:a', kind: 'note', title: 'A', path: 'a.md', state: '' }] as never,
+        activeId: 'note:a',
+      })
+      await h.args.bootstrap.startLayout()
+      expect(h.f.windowTabs.restoreTabs).toHaveBeenCalledWith(
+        [{ id: 'note:a', kind: 'note', title: 'A', path: 'a.md', saved: undefined }],
+        'note:a',
+      )
+      expect(window.isLayoutReady.value).toBe(true)
+      expect(h.args.openTabs.isWriting.value).toBe(true)
+
+      // Initial tab without colon that fails to open -> falls back to openPlacedTabs when readOpenTabs rejects
+      vi.stubGlobal('location', new URL('http://localhost/?window=secondary'))
+      useWindow()
+      expect(typeof h.args.crossWindow.closeWindowIfEmpty).toBe('function')
+
+      vi.stubGlobal('location', new URL('http://localhost/?secondary&tab=files'))
+      const secondaryWin = useWindow()
+      expect(typeof h.args.crossWindow.closeWindowIfEmpty).toBe('function')
+      h.args.crossWindow.closeWindowIfEmpty()
+      expect(h.f.display.close).toHaveBeenCalledOnce()
+
+      h.f.windowTabs.openTabOfKind.mockResolvedValueOnce(undefined)
+      h.core.readOpenTabs.mockRejectedValueOnce(new Error('offline'))
+      h.f.windowTabs.openPlacedTabs.mockImplementationOnce(
+        async (onErr: (kind: string, err: unknown) => void) => {
+          onErr('files', new Error('placed err'))
+        },
+      )
+      await h.args.bootstrap.startLayout()
+      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('files', '')
+      expect(h.f.writer).toHaveBeenCalledWith(
+        'The files tab did not open: Numen is not responding; retrying',
+        'error',
+      )
+      expect(secondaryWin.isLayoutReady.value).toBe(true)
+      expect(h.args.openTabs.isWriting.value).toBe(false)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

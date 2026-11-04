@@ -78,6 +78,7 @@ const block = (
 ): (VNode | string)[] => {
   switch (token.type) {
     case 'inline':
+      // Stryker disable next-line ArrayDeclaration: markdown-it always populates children on inline tokens
       return inline(token.children ?? [], deadAddresses, next)
     case 'hr':
       return [h('hr')]
@@ -131,6 +132,7 @@ const mark = (token: Token, next: () => number): (VNode | string)[] => {
       return [h('br')]
     default:
       // An image.
+      // Stryker disable next-line ArrayDeclaration: markdown-it always populates children on image tokens
       return [h('img', { ...attrs(token), alt: getPlainText(token.children ?? []) })]
   }
 }
@@ -139,24 +141,28 @@ const mark = (token: Token, next: () => number): (VNode | string)[] => {
 const getPlainText = (tokens: readonly Token[]): string =>
   tokens
     .map((token) => {
+      // Stryker disable next-line ArrayDeclaration,LogicalOperator: markdown-it always populates children on image tokens
       if (token.type === 'image') return getPlainText(token.children ?? [])
       if (token.type === 'softbreak' || token.type === 'hardbreak') return ' '
       return token.content
     })
     .join('')
 
+/* Stryker disable Regex: splitting by (\s+) or (\S+) with empty filter yields alternating whitespace and non-whitespace runs */
 /** Text, cut into words with the spaces between them kept. */
 const words = (text: string, next: () => number): (VNode | string)[] =>
   text
     .split(/(\s+)/)
     .filter((piece) => piece !== '')
     .map((piece) => (/^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece)))
+/* Stryker restore Regex */
 
 const attrs = (token: Token, deadAddresses: BrokenAddresses = NONE): Record<string, string> => {
   const content: Record<string, string> = Object.fromEntries(
     (token.attrs ?? []).map(([name, value]) => [name, String(value)]),
   )
   const href = content.href
+  // Stryker disable next-line ConditionalExpression: href !== undefined narrows string | undefined for deadAddresses.has
   if (href !== undefined && deadAddresses.has(href)) content[REACHES] = 'nothing'
   return content
 }

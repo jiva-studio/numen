@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -121,12 +123,50 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	notes := makeNotes(cfg, db, vaults)
 	api := makeWindowAPI(cfg, notes)
 
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
+		return errors.New("boom")
+	})
+	for {
+		state, err := api.EnsureIndexed(t.Context(), target[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if state.Reason == "boom" {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
 	bindVaultIndexer(t.Context(), api, vaults)
 
 	if vaults.RecordVault == nil {
 		t.Fatal("a vault updated is recorded nowhere")
 	}
+	moved, err := api.WatchMoves(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	vaults.RecordVault(target[0])
+	select {
+	case <-moved:
+	case <-time.After(time.Second):
+		t.Error("RecordVault did not report a change")
+	}
+
+	for {
+		state, err := api.EnsureIndexed(t.Context(), target[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if state.Status == pluginport.PluginIndexFailed {
+			t.Fatalf("expected SetVaultIndexer to replace failing indexer, got %+v", state)
+		}
+		if state.Status == pluginport.PluginIndexed {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
 }
 
 // The plugins receive every vault the installation holds, each keyed by its

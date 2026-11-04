@@ -50,4 +50,15 @@ describe('a change of the vault', () => {
 
     await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledWith(expect.any(String), 'error'))
   })
+
+  it('reports a file that failed to open at spans', async () => {
+    const { wiring, writeMessage } = createWiring(() => Promise.resolve())
+    vi.mocked(wiring.tabOpeners.openFileAt).mockRejectedValueOnce(new Error('cannot open'))
+
+    createDisplayOptions(wiring).openFileAt('a.pdf', [{ start: 1, end: 2 }])
+
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith('Numen is not responding; retrying', 'error'),
+    )
+  })
 })

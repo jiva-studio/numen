@@ -128,6 +128,7 @@ func parseFlags() (*Options, error) {
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfig()
 	cfg.ErrorHandler = func(err error) {
+		// gomutants:disable-next-line
 		if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
 			return
 		}

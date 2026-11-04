@@ -31,6 +31,7 @@ export const useMenuOpen = (options: MenuOpenOptions): void => {
   let isAnchored = false
 
   const enter = async (): Promise<void> => {
+    // Stryker disable next-line ConditionalExpression: watch only invokes enter on false-to-true transitions after leave
     if (isAnchored) return
     isAnchored = true
     options.listen()

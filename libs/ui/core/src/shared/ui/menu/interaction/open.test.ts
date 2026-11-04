@@ -4,8 +4,9 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, nextTick, ref } from 'vue'
+import { defineComponent, h, nextTick, ref, triggerRef } from 'vue'
 import { useMenuOpen } from './open'
+import { useMenuLifecycle } from './useMenuLifecycle'
 
 const create = (start: boolean, from: HTMLElement | null = null) => {
   const isOpen = ref(start)
@@ -57,14 +58,20 @@ describe('opening and closing', () => {
     expect(calls).toStrictEqual(['release', 'reset'])
   })
 
-  it('stays put for an open that repeats', async () => {
+  it('stays put for an open that repeats, and re-enters after closing', async () => {
     const { isOpen, calls } = create(true)
     await nextTick()
 
-    isOpen.value = true
+    triggerRef(isOpen)
     await nextTick()
 
     expect(calls.filter((call) => call === 'listen')).toHaveLength(1)
+
+    isOpen.value = false
+    await nextTick()
+    isOpen.value = true
+    await nextTick()
+    expect(calls.filter((call) => call === 'listen')).toHaveLength(2)
   })
 
   it('gives the keyboard back to where it came from, while that is on the page', async () => {
@@ -101,5 +108,44 @@ describe('opening and closing', () => {
     wrapper.unmount()
 
     expect(calls).toStrictEqual(['release', 'reset'])
+  })
+
+  it('re-measures watched dependencies only while open', async () => {
+    const isOpen = ref(false)
+    const dep = ref(0)
+    const calls: string[] = []
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          useMenuLifecycle({
+            isOpen: () => isOpen.value,
+            listen: () => calls.push('listen'),
+            release: () => calls.push('release'),
+            measure: () => calls.push('measure'),
+            focusInitial: () => calls.push('focusInitial'),
+            onReset: () => calls.push('reset'),
+            getFrom: () => null,
+            getWatchedDeps: () => [dep.value],
+          })
+          return () => h('div')
+        },
+      }),
+    )
+
+    dep.value = 1
+    await nextTick()
+    await nextTick()
+    expect(calls).toStrictEqual([])
+
+    isOpen.value = true
+    await nextTick()
+    await nextTick()
+    calls.length = 0
+
+    dep.value = 2
+    await nextTick()
+    await nextTick()
+    expect(calls).toStrictEqual(['measure'])
+    wrapper.unmount()
   })
 })

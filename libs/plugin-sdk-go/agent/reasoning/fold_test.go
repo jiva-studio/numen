@@ -9,6 +9,8 @@ func TestTheTitleIsSplitIntoNameAndLevel(t *testing.T) {
 	cases := []struct{ title, name, level string }{
 		{"Gemini 3.8 Flash (High)", "Gemini 3.8 Flash", "high"},
 		{"  Model (Extra) (XHigh) ", "Model (Extra)", "xhigh"},
+		{"M(High)", "M", "high"},
+		{"Gemini (Highx", "Gemini (Highx", ""},
 		{"Model (Preview)", "Model (Preview)", ""},
 		{"(High)", "(High)", ""},
 		{"Plain", "Plain", ""},
@@ -60,6 +62,18 @@ func TestTheFamilyNameFallsBackToTheFirstListedName(t *testing.T) {
 	if got[0].Name != "alpha" || got[0].GetVariant("high") != "beta" {
 		t.Errorf("got %+v", got[0])
 	}
+	mismatched := Fold([]Listed{{"alpha-low", "M (Low)"}, {"beta-high", "M (High)"}})
+	if mismatched[0].Name != "alpha-low" {
+		t.Errorf("mismatched prefix family name = %q, want alpha-low", mismatched[0].Name)
+	}
+	emptyPrefix := Fold([]Listed{{"-low", "M (Low)"}, {"-high", "M (High)"}})
+	if emptyPrefix[0].Name != "-low" {
+		t.Errorf("empty prefix family name = %q, want -low", emptyPrefix[0].Name)
+	}
+	unleveled := Fold([]Listed{{"a", "Plain"}, {"b", "Plain"}})
+	if len(unleveled) != 2 || unleveled[0].Name != "a" || unleveled[1].Name != "b" {
+		t.Errorf("unleveled models folded into %+v, want two separate families", unleveled)
+	}
 }
 
 func TestAChosenLevelResolvesToTheListedModel(t *testing.T) {
@@ -89,18 +103,21 @@ func TestTheFamilyIsOfferedWithItsLevelsAndDefault(t *testing.T) {
 }
 
 func TestLevelHelpers(t *testing.T) {
-	levels := NewLevels("max", "low", "xhigh", "weird")
+	levels := NewLevels("max", "minimal", "low", "xhigh", "weird")
 	Sort(levels)
-	if levels[0].Name != "low" || levels[1].Name != "xhigh" || levels[3].Name != "weird" {
+	if levels[0].Name != "minimal" || levels[1].Name != "low" || levels[2].Name != "xhigh" || levels[4].Name != "weird" {
 		t.Errorf("sorted %v", levels)
 	}
-	if levels[1].Title != "Extra high" {
-		t.Errorf("title %q", levels[1].Title)
+	if levels[2].Title != "Extra high" {
+		t.Errorf("title %q", levels[2].Title)
 	}
-	if GetDefault(levels) != "low" || GetDefault(nil) != "" || GetDefault(NewLevels("high", "medium")) != "medium" {
+	if NewLevel("  XHigh ").Name != "xhigh" || NewLevel("  High ").Title != "High" {
+		t.Error("NewLevel did not normalize case and whitespace")
+	}
+	if GetDefault(levels) != "minimal" || GetDefault(nil) != "" || GetDefault(NewLevels("high", "medium")) != "medium" {
 		t.Error("the default is wrong")
 	}
-	if Normalize(levels, "max") != "max" || Normalize(levels, "none") != "low" {
+	if Normalize(levels, "max") != "max" || Normalize(levels, "none") != "minimal" {
 		t.Error("the normalized level is wrong")
 	}
 	if NewModel("m", "M", NewLevels("low", "high"), "bogus").DefaultReasoning != "" || Pick(levels, "max") != "max" || Pick(levels, "none") != "" {

@@ -11,12 +11,12 @@ describe('a queue of notices from several sources', () => {
     queue.show('sample', 'The sample was saved.', 'info')
 
     const ids = queue.notices.value.map((one) => one.id)
+    expect(ids).toEqual(['sample#1', 'graph#2', 'sample#3'])
     expect(queue.notices.value.map((one) => one.text)).toEqual([
       'The sample was saved.',
       'The note is gone.',
       'The sample was saved.',
     ])
-    expect(new Set(ids).size).toBe(3)
   })
 
   it('lets an info notice go once read and keeps any other until it is dismissed', () => {
@@ -44,6 +44,46 @@ describe('a queue of notices from several sources', () => {
 
     expect(queue.notices.value.map((one) => one.text)).toEqual(['Reading the vault', 'Saved.'])
     expect(queue.notices.value[0]?.isWorking).toBe(true)
+    expect(queue.notices.value[0]?.isUserStarted).toBe(false)
+    expect(queue.notices.value[0]?.severity).toBeUndefined()
+    expect(queue.notices.value[0]?.done).toBeUndefined()
+    expect(queue.notices.value[0]?.total).toBeUndefined()
+  })
+
+  it('turns a failed or counted task into a notice with its error and progress', () => {
+    const queue = createNoticeQueue()
+    queue.setTasks('sample', [
+      { ...TASK, id: 'one', error: 'Disk full', isUserStarted: false },
+      { ...TASK, id: 'two', isUserStarted: true, done: 3, total: 10, counting: 'files' as never },
+      { ...TASK, id: 'three', done: 2, total: 5 },
+      { ...TASK, id: 'four', done: 0, total: 0 },
+      { ...TASK, id: 'five', done: 1 },
+      { ...TASK, id: 'six', total: 4 },
+    ])
+
+    const [failed, counted, plainCount, zeroTotal, noTotal, noDone] = queue.notices.value
+    expect(failed).toMatchObject({
+      id: 'sample:one',
+      text: 'Disk full',
+      isWorking: false,
+      isUserStarted: true,
+      severity: 'error',
+      stay: 'kept',
+    })
+    expect(counted).toMatchObject({
+      id: 'sample:two',
+      isWorking: true,
+      isUserStarted: true,
+      done: 3,
+      total: 10,
+      counting: 'files',
+    })
+    expect(plainCount).toMatchObject({ id: 'sample:three', done: 2, total: 5 })
+    expect('counting' in plainCount!).toBe(false)
+    expect(zeroTotal?.done).toBeUndefined()
+    expect(zeroTotal?.total).toBeUndefined()
+    expect(noTotal?.done).toBeUndefined()
+    expect(noDone?.total).toBeUndefined()
   })
 
   it('replaces only the work of the source that gives a new list', () => {

@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
+import { createNoticeQueue } from '@numen/shell'
+import { createMessageLog } from '@/shared/notices/messages'
+import { useNoticeTasks } from './useNoticeTasks'
 import { useWindowStatusBar } from './useWindowStatusBar'
 import type { Task } from '@/shared/notices/task'
 import { pick } from '@/testing/pick'
@@ -100,6 +103,7 @@ describe('useWindowStatusBar handlers', () => {
     expect(cancelTask).toHaveBeenCalledTimes(1)
 
     tasks.value = [{ ...base, completedCount: 2 }]
+    await nextTick()
     expect(bar.tasks.value[0]?.state).toBe('cancelling')
 
     tasks.value = []
@@ -121,6 +125,12 @@ describe('useWindowStatusBar handlers', () => {
 
     expect(bar.tasks.value[0]?.state).toBe('running')
     expect(reportCancelError).toHaveBeenCalledWith(error)
+
+    const barNoReporter = useWindowStatusBar({
+      tasks: ref([base]),
+      cancelTask: () => Promise.reject(error),
+    })
+    await expect(barNoReporter.onCancelTask('t')).resolves.toBeUndefined()
   })
 
   it('offers no cancel for a task the core cannot cancel', () => {
@@ -136,17 +146,23 @@ describe('useWindowStatusBar handlers', () => {
       pluginId: 'md.example.agent',
     }
     const statusBar = useWindowStatusBar({
-      tasks: ref([task]),
+      tasks: ref([base, task]),
       resolveAction: (one) => ({ label: 'Configure in settings', pluginId: one.pluginId }),
       onAction,
     })
 
-    const [item] = statusBar.tasks.value
+    const [, item] = statusBar.tasks.value
     expect(item?.actionLabel).toBe('Configure in settings')
     expect(item?.actionId).toBe('md.example.agent')
 
     statusBar.onActionTask('task-err')
     expect(onAction).toHaveBeenCalledWith('md.example.agent')
+
+    statusBar.onActionTask('unknown-id')
+    expect(onAction).toHaveBeenCalledTimes(1)
+
+    const barNoAction = useWindowStatusBar({ tasks: ref([task]) })
+    expect(() => barNoAction.onActionTask('task-err')).not.toThrow()
   })
 
   it('does not call onAction for a core task', () => {
@@ -175,5 +191,81 @@ describe('useWindowStatusBar handlers', () => {
     }
     expect(first).toEqual(['vectors', 'texts', 'lost'])
     expect(pick(statusBar.tasks.value, 0).about).toBe('file 20')
+  })
+})
+
+describe('useNoticeTasks', () => {
+  it('converts window state, error/warning messages, and plugin notices into failed tasks', () => {
+    const log = createMessageLog()
+    const queue = createNoticeQueue()
+    const extraNotices = ref<readonly Record<string, unknown>[]>([])
+    const unwatched = ref('')
+    const error = ref('')
+    const windowLost = ref('')
+    const appearanceLost = ref('')
+
+    const tasks = useNoticeTasks({
+      log,
+      plugins: {
+        ...queue,
+        notices: {
+          get value() {
+            return [...queue.notices.value, ...extraNotices.value]
+          },
+        },
+      } as never,
+      window: { unwatched, error, lost: windowLost } as never,
+      settings: { appearance: { lost: appearanceLost } } as never,
+    })
+
+    expect(tasks.value).toStrictEqual([])
+
+    unwatched.value = 'notes/sub'
+    error.value = 'scan failed'
+    appearanceLost.value = 'theme stream lost'
+    log.getWriter('a')('info msg', 'info')
+    log.getWriter('b')('warn msg', 'warning')
+    log.getWriter('c')('err msg', 'error')
+    queue.show('p', 'info notice', 'info')
+    queue.show('p', '', 'error')
+    queue.show('p', 'plugin warn', 'warning')
+    queue.show('p', 'plugin err', 'error')
+    extraNotices.value = [
+      { id: 'n-empty', pluginId: 'p', text: '', severity: 'error', about: 'notes/empty.md' },
+      {
+        id: 'n-custom',
+        pluginId: 'p',
+        text: 'about notice',
+        severity: 'error',
+        about: 'notes/a.md',
+      },
+    ]
+
+    expect(tasks.value).toHaveLength(8)
+    expect(tasks.value[0]).toStrictEqual({
+      id: 'unwatched',
+      label: expect.any(String),
+      about: 'notes/sub',
+      completedCount: 0,
+      total: 0,
+      counting: 'items',
+      error: expect.any(String),
+      isUserStarted: true,
+      pluginId: '',
+      pluginName: '',
+      isCancellable: false,
+    })
+    expect(tasks.value[1]?.id).toBe('unread')
+    expect(tasks.value[2]?.id).toBe('lost')
+    expect(tasks.value[2]?.label).toBe('theme stream lost')
+    expect(tasks.value[2]?.about).toBe('')
+    expect(tasks.value[3]?.label).toBe('warn msg')
+    expect(tasks.value[4]?.label).toBe('err msg')
+    expect(tasks.value[5]).toMatchObject({ label: 'plugin warn', about: '' })
+    expect(tasks.value[6]).toMatchObject({ label: 'plugin err', about: '' })
+    expect(tasks.value[7]).toMatchObject({ label: 'about notice', about: 'notes/a.md' })
+
+    windowLost.value = 'window stream lost'
+    expect(tasks.value[2]?.label).toBe('window stream lost')
   })
 })

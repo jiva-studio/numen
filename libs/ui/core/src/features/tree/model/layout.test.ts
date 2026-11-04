@@ -39,14 +39,16 @@ function mountLayout(count: number, height: number, withBox = true) {
       return () =>
         h('div', {
           ref: (element: unknown) => {
-            if (withBox) box.value = element as HTMLElement
+            if (withBox && element) {
+              Object.defineProperty(element, 'clientHeight', { value: height, configurable: true })
+              box.value = element as HTMLElement
+            }
           },
         })
     },
   })
   const view = mount(Host)
   const element = view.element as HTMLElement
-  Object.defineProperty(element, 'clientHeight', { value: height, configurable: true })
   return { view, element, layout, box }
 }
 
@@ -68,8 +70,8 @@ describe('following the box', () => {
 
   it('draws more rows once the box grows', async () => {
     const { element, layout } = mountLayout(100, 100)
-    FakeObserver.all[0]?.run()
     const small = layout.virtualRows.value.length
+    expect(small).toBeLessThan(100)
 
     Object.defineProperty(element, 'clientHeight', { value: 400, configurable: true })
     FakeObserver.all[0]?.run()

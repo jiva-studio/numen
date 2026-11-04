@@ -71,6 +71,7 @@ export function useAppearance(notices: NoticeQueue, services: AppearanceServices
     }
     query.value = ''
     isOpen.value = true
+    // Stryker disable next-line all: refreshPluginNames and appearance.refresh catch their own errors
     Promise.all([refreshPluginNames(), appearance.refresh()]).catch((error: unknown) =>
       showError(formatErrorMessage(error)),
     )
@@ -88,13 +89,17 @@ export function useAppearance(notices: NoticeQueue, services: AppearanceServices
   /* ---------------------------------- Hooks --------------------------------- */
   onMounted(() => {
     window.addEventListener('keydown', onKeyDown)
+    // Stryker disable next-line all: appearance.refresh catches its own errors
     appearance.refresh().catch((error: unknown) => showError(formatErrorMessage(error)))
     follow(
       () => client.watchThemes(abortController.signal),
       async (names) => {
         if (names.length > 0) await appearance.refresh()
       },
-    ).catch((error: unknown) => showError(formatErrorMessage(error)))
+    ).catch(
+      // Stryker disable next-line all: createFollower catches stream errors and reports them through setLost
+      (error: unknown) => showError(formatErrorMessage(error)),
+    )
   })
   onUnmounted(() => {
     isMounted = false

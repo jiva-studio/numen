@@ -18,12 +18,12 @@ const loadCatalog = (): Promise<Catalog> => {
 }
 
 /** What the module exports besides icons: the base component and the helpers. */
-const isIconKey = (key: string): boolean =>
+export const isIconKey = (key: string): boolean =>
   /^[A-Z]/.test(key) && key !== 'Icon' && !key.startsWith('Lucide')
 
 /** The icon for a Lucide name or one of its aliases, and null when there is none. */
 export async function findNamedIcon(name: string): Promise<Component | null> {
   const key = getIconKey(name)
-  if (name === '' || !isIconKey(key)) return null
+  if (!isIconKey(key)) return null
   return ((await loadCatalog())[key] as Component | undefined) ?? null
 }

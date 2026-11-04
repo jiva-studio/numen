@@ -55,5 +55,6 @@ describe('the icon of an entry', () => {
     expect(getEntryIcon(entry({ isNote: false, type: 'sample' }), false, () => undefined)).toBe(
       File,
     )
+    expect(getEntryIcon(entry({ isNote: false, type: 'sample' }), false)).toBe(File)
   })
 })

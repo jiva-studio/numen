@@ -19,6 +19,7 @@ export const createNoteWriter = (
   let hasWriteError = false
   return (body) => {
     if (!writeNote) return
+    // Stryker disable next-line UpdateOperator: turn counter only compares equality with writes
     const turn = ++writes
     writeNote(path, body).then(
       () => {

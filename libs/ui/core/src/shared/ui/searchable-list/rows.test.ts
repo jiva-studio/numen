@@ -39,6 +39,8 @@ describe('which items a query keeps', () => {
   it('wants every word found', () => {
     expect(filterItems(MODELS, 'claude son').map((one) => one.id)).toStrictEqual(['c'])
     expect(filterItems(MODELS, 'claude gpt')).toStrictEqual([])
+    expect(filterItems([{ id: 'x', text: 'ab', detail: 'cd' }], 'bc')).toStrictEqual([])
+    expect(filterItems([{ id: 'x', text: 'ab' }], 'stryker')).toStrictEqual([])
   })
 })
 
@@ -50,6 +52,7 @@ describe('the item whose text is the query', () => {
   it('is none for a part of a text, and for nothing typed', () => {
     expect(findExactItem(MODELS, 'sonn')).toBeUndefined()
     expect(findExactItem(MODELS, '  ')).toBeUndefined()
+    expect(findExactItem([{ id: 'empty', text: '' }], '  ')).toBeUndefined()
   })
 })
 
@@ -100,6 +103,15 @@ describe('the group names over the rows', () => {
   it('are none for items that name no group, and none over the action row', () => {
     const rows = buildRows([{ id: 'n', text: 'Note' }], 'x', true)
     expect(getHeadings(rows)).toStrictEqual([undefined, undefined])
+    const mixed = buildRows(
+      [
+        { id: 'a', text: 'A', group: 'G' },
+        { id: 'b', text: 'B' },
+      ],
+      '',
+      false,
+    )
+    expect(getHeadings(mixed)).toStrictEqual(['G', undefined])
   })
 })
 

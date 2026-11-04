@@ -85,11 +85,27 @@ describe('a passage searched for', () => {
 
   it('is untitled and empty where the answer names no note and no run', async () => {
     search.searchPassages.mockResolvedValue({
-      found: [{ path: 'library/book.epub', text: 'grass', line: 0, ranges: [] }],
+      found: [
+        {
+          path: 'library/book.epub',
+          text: 'grass',
+          line: 0,
+          ranges: [],
+          selector: '{"chapter":2}',
+        },
+        { path: 'library/null.epub', text: 'grass', line: 0, ranges: [], selector: 'null' },
+        { path: 'library/prim.epub', text: 'grass', line: 0, ranges: [], selector: '42' },
+        { path: 'library/bad.epub', text: 'grass', line: 0, ranges: [], selector: '{bad' },
+        { path: 'library/empty.epub', text: 'grass', line: 0, ranges: [], selector: '' },
+      ],
     })
 
     expect(await searchCore.search('grass', 'words', 8)).toMatchObject([
-      { title: '', start: 0, length: 0 },
+      { title: '', start: 0, length: 0, selector: { chapter: 2 } },
+      { selector: null },
+      { selector: null },
+      { selector: null },
+      { selector: null },
     ])
   })
 })

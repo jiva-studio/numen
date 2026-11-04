@@ -5,7 +5,7 @@
  * is served. Nothing here runs on a phone: what a WebView makes of the policy is
  * answered by a device and by nothing else.
  */
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -23,7 +23,10 @@ const PAGE = 'http://localhost'
 
 /** This module, on disk. The runner serves it, so its own address is one. */
 const rawHere = new URL('..', import.meta.url).pathname.replace(/^\/@fs/, '')
-const here = rawHere === '/' ? process.cwd() : rawHere
+const here =
+  [rawHere, process.cwd(), join(process.cwd(), 'apps/mobile')].find((dir) =>
+    existsSync(join(dir, 'index.html')),
+  ) ?? process.cwd()
 
 /** The policy the page carries, directive by directive. */
 const policy: Record<string, string[]> = Object.fromEntries(

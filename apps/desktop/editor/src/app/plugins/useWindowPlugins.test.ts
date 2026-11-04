@@ -11,7 +11,8 @@ import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
 import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginSupport, getFrontendPluginIds } from './useWindowPlugins'
+import { createPluginSupport, getFrontendPluginIds, watchPluginSettings } from './useWindowPlugins'
+import { getNoteIcon } from '@/entities/note'
 
 const createSupport = () => {
   const windowTabs = useWindowTabs()
@@ -232,5 +233,101 @@ describe('the plugins the window loads', () => {
     ]
 
     expect(getFrontendPluginIds(plugins)).toStrictEqual(['md.numen.views.sketch'])
+  })
+
+  it('tracks frontend plugins when settings change and wires host capabilities', async () => {
+    const windowTabs = useWindowTabs()
+    const reportError = vi.fn()
+    const readNote = vi.fn(async () => ({ body: 'text' }))
+    const writeNote = vi.fn(async () => undefined)
+    const resolveLink = vi.fn(async () => 'Target.md')
+    const taskList = ref([])
+    const workspace = {
+      getNoteInFocus: () => ({ path: 'a.md', title: 'A' }),
+    } as unknown as WorkspaceHost
+    const notes = { read: vi.fn() } as never
+    const relations = { roles: [] } as never
+    const files = { list: vi.fn() } as never
+    const agent = { finish: vi.fn() } as unknown as AgentHost
+    const buffers = { register: vi.fn() } as never
+    const noteBuffer = { open: vi.fn() } as never
+    const settings = ref<Record<string, unknown>>({ fontSize: 14 })
+    const pluginsRef = ref([{ id: 'md.numen.a', hasFrontend: true }])
+    const rest = {
+      getSetting: (path: readonly string[]) =>
+        path[0] === 'plugins' ? settings.value[path[2] ?? ''] : undefined,
+      plugins: pluginsRef,
+    }
+    const { pluginHost } = createPluginSupport({
+      windowTabs,
+      tabLinks: { removeClosedTab: vi.fn() } as never,
+      tabOpeners: {
+        registerExtensionReader: vi.fn(() => () => undefined),
+        registerEditor: vi.fn(() => () => undefined),
+      } as never,
+      settingsHolder: { current: { rest } as never },
+      reportError,
+      readNote,
+      writeNote,
+      resolveLink,
+      services: {
+        workspace,
+        notes,
+        relations,
+        files,
+        agent,
+        buffers,
+        noteBuffer,
+        taskList,
+      },
+    })
+
+    const ctx = pluginHost.createContext('md.numen.a')
+    const icon = { name: 'CustomIcon' }
+    ctx.registerTabKind({
+      kind: 'sample' as never,
+      component: null,
+      title: 'Sample',
+      icon,
+    })
+    expect(getNoteIcon('sample')).toBe(icon)
+    const tabId = await windowTabs.openTabOfKind('sample', 'a.md')
+    expect(windowTabs.getTab(tabId!)).toBeDefined()
+
+    // Failing onSettingChange handler reports to reportError
+    ctx.onSettingChange('fontSize', (() => Promise.reject(new Error('bad handler'))) as never)
+    settings.value = { fontSize: 18 }
+    await nextTick()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(reportError).toHaveBeenCalledWith('md.numen.a', expect.any(Error))
+
+    // Empty pluginId in disposePlugin does not close tabs
+    const closeSpy = vi.spyOn(windowTabs, 'closeTabsOfPlugin')
+    pluginHost.disposePlugin('')
+    expect(closeSpy).not.toHaveBeenCalled()
+
+    // Services and tasks accessors
+    expect(ctx.workspace).toBeDefined()
+    expect(ctx.notes).toBeDefined()
+    expect(ctx.relations).toBeDefined()
+    expect(ctx.files).toBeDefined()
+    expect(ctx.agent).toBeDefined()
+    expect(ctx.buffers).toBeDefined()
+    expect(ctx.tasks).toBeDefined()
+    expect(ctx.texts).toBeDefined()
+
+    pluginHost.disposePlugin('md.numen.a')
+    expect(getNoteIcon('sample')).not.toBe(icon)
+
+    // watchPluginSettings tracks frontend plugins when pluginsRef updates
+    const trackPlugins = vi.fn(() => Promise.resolve())
+    const watchErr = vi.fn()
+    watchPluginSettings({ rest } as never, { trackPlugins } as never, watchErr)
+    pluginsRef.value = [
+      { id: 'md.numen.a', hasFrontend: true },
+      { id: 'md.numen.b', hasFrontend: false },
+    ]
+    await nextTick()
+    expect(trackPlugins).toHaveBeenCalledWith(['md.numen.a'])
   })
 })

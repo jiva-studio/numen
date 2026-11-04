@@ -40,11 +40,33 @@ describe('createPluginCatalog', () => {
   })
 
   it('returns the entry that provides a kind of tab', async () => {
-    const answer = await createPluginCatalog(createClient()).findByTabKind('note')
+    const askedKinds: Array<string | undefined> = []
+    const client = createClient({
+      findCatalogEntryByTabKind: (req) => {
+        askedKinds.push(req.kind)
+        return Promise.resolve(create(FindCatalogEntryByTabKindResponseSchema, { entry: notes }))
+      },
+    })
+    const answer = await createPluginCatalog(client).findByTabKind('note')
 
+    expect(askedKinds).toStrictEqual(['note'])
     expect(answer.ok).toBe(true)
     if (!answer.ok) return
     expect(answer.value.entry.contributes?.feature).toBe('Markdown notes')
+  })
+
+  it('gets the entry for a requested plugin id', async () => {
+    const askedIds: Array<string | undefined> = []
+    const client = createClient({
+      getCatalogEntry: (req) => {
+        askedIds.push(req.id)
+        return Promise.resolve(create(GetCatalogEntryResponseSchema, { entry: notes }))
+      },
+    })
+    const answer = await createPluginCatalog(client).get('notes')
+
+    expect(askedIds).toStrictEqual(['notes'])
+    expect(answer.ok).toBe(true)
   })
 
   it('reports not-found when the catalog has no entry for the kind', async () => {
@@ -53,6 +75,7 @@ describe('createPluginCatalog', () => {
         Promise.resolve(
           create(FindCatalogEntryByTabKindResponseSchema, {
             error: CATALOG_ERROR_CODE.NOT_FOUND,
+            entry: notes,
           }),
         ),
     })
@@ -66,7 +89,7 @@ describe('createPluginCatalog', () => {
     const client = createClient({
       getCatalogEntry: () =>
         Promise.resolve(
-          create(GetCatalogEntryResponseSchema, { error: CATALOG_ERROR_CODE.NOT_FOUND }),
+          create(GetCatalogEntryResponseSchema, { error: CATALOG_ERROR_CODE.UNSPECIFIED }),
         ),
     })
 

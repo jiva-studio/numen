@@ -5,12 +5,13 @@ import { useTabLinkMenu } from './useTabLinkMenu'
 const KINDS: Record<string, string> = { a: 'note', b: 'files', c: 'agent' }
 
 const setup = (groups: Record<string, TabLinkGroup> = {}, targets: string[] = []) => {
+  const getGroupOf = vi.fn((tab: string) => groups[tab] ?? null)
   const tabLinks = {
-    getGroupOf: (tab: string) => groups[tab] ?? null,
+    getGroupOf,
     getLinkedTargets: () => targets,
     linkTabs: vi.fn(),
     unlinkTab: vi.fn(),
-  } as unknown as TabLinksState
+  } as unknown as TabLinksState & { getGroupOf: ReturnType<typeof vi.fn> }
   const menu = useTabLinkMenu({
     tabLinks,
     getTabs: () => [
@@ -26,9 +27,21 @@ const setup = (groups: Record<string, TabLinkGroup> = {}, targets: string[] = []
 
 describe('the menu on a tab', () => {
   it('is closed until requested for', () => {
-    const { menu } = setup()
+    const group = { id: 'g', colorIndex: 0, tabs: ['a', 'b'] }
+    const { menu, tabLinks } = setup({ a: group }, ['b'])
     expect(menu.tabId.value).toBeNull()
+    expect(menu.at.value).toStrictEqual({ x: 0, y: 0 })
     expect(menu.eligibleTabs.value).toStrictEqual([])
+    expect(menu.linkedTargetTitle.value).toBe('')
+    expect(menu.isLinked.value).toBe(false)
+    expect(tabLinks.getGroupOf).not.toHaveBeenCalled()
+  })
+
+  it('reports an unlinked tab as not linked when open', () => {
+    const { menu } = setup()
+    menu.open('a', { x: 5, y: 6 })
+    expect(menu.isLinked.value).toBe(false)
+    expect(menu.linkedTargetTitle.value).toBe('')
   })
 
   it('opens on a tab of a kind that can be linked, where it was requested', () => {

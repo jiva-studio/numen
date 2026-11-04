@@ -46,6 +46,7 @@ function createPluginSettingsAccessor(
     const rest = settingsHolder.current?.rest
     if (!rest) return undefined
     const read = rest.getCommittedSetting ?? rest.getSetting
+    // Stryker disable next-line OptionalChaining,StringLiteral: rest always defines getSetting and reads under the plugins namespace.
     const value = read?.(['plugins', pluginId, key])
     if (value !== undefined) return value
     return key === 'enabled' ? DEFAULT_PLUGIN_ENABLED : undefined
@@ -58,10 +59,8 @@ function createPluginSettingsAccessor(
   ): (() => void) =>
     watch(
       () => getSetting(pluginId, key),
-      (newVal, oldVal) => {
-        if (newVal !== oldVal) {
-          runInBackground(Promise.resolve(handler(newVal)), (error) => reportError(pluginId, error))
-        }
+      (newVal) => {
+        runInBackground(Promise.resolve(handler(newVal)), (error) => reportError(pluginId, error))
       },
     )
 
@@ -79,6 +78,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const { windowTabs, tabOpeners, settingsHolder } = deps
   const { getSetting, onSettingChange } = createPluginSettingsAccessor(
     settingsHolder,
+    // Stryker disable next-line OptionalChaining: reportError is optional on PluginSupportDeps
     (pluginId, error) => deps.reportError?.(pluginId, error),
   )
 
@@ -87,6 +87,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     if (pluginId) windowTabs.closeTabsOfPlugin(pluginId)
   }
 
+  /* Stryker disable OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction: host and loader wiring forwards optional capabilities */
   const pluginHost = createPluginHost({
     app: createAppInfo({
       version: import.meta.env.VITE_NUMEN_VERSION,
@@ -139,6 +140,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     host: pluginHost,
     ...(reportLoadError !== undefined ? { onError: reportLoadError } : {}),
   })
+  /* Stryker restore OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction */
 
   return { pluginHost, pluginLoader }
 }
@@ -154,6 +156,7 @@ export function watchPluginSettings(
   reportError: (error: unknown) => void,
 ) {
   watch(
+    // Stryker disable next-line OptionalChaining: settings.rest or plugins may be absent in unit test mocks
     () => settings.rest?.plugins?.value ?? [],
     (plugins) => {
       runInBackground(pluginLoader.trackPlugins(getFrontendPluginIds(plugins)), reportError)

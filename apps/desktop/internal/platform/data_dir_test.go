@@ -68,11 +68,33 @@ func TestStorageRootsAreInsideTheCacheAndDataFolders(t *testing.T) {
 }
 
 func TestAFolderTheMachineDoesNotProvideHasNoRoot(t *testing.T) {
-	fail := func() (string, error) { return "", errors.New("no folder") }
+	fail := func() (string, error) { return "/ignored", errors.New("no folder") }
+	empty := func() (string, error) { return "", nil }
+	env := func(string) string { return "" }
 
-	cacheRoot, dataRoot := getStorageRoots("linux", func(string) string { return "" }, fail, fail)
+	if _, err := getDataDir("darwin", env, fail); err == nil {
+		t.Error("expected error on darwin when getHome fails")
+	}
+	if _, err := getDataDir("linux", env, fail); err == nil {
+		t.Error("expected error on linux when getHome fails")
+	}
 
+	cacheRoot, dataRoot := getStorageRoots("linux", env, fail, fail)
 	if cacheRoot != "" || dataRoot != "" {
 		t.Errorf("roots %q and %q, want both empty", cacheRoot, dataRoot)
+	}
+
+	cacheRoot, _ = getStorageRoots("linux", env, empty, fail)
+	if cacheRoot != "" {
+		t.Errorf("cache root %q, want empty", cacheRoot)
+	}
+
+	t.Setenv("XDG_DATA_HOME", "")
+	t.Setenv("HOME", "")
+	if _, err := GetIndexPath(); err == nil {
+		t.Error("expected GetIndexPath error when home is unset")
+	}
+	if got := GetConfig().IndexPath; got != "" {
+		t.Errorf("IndexPath = %q, want empty when home is unset", got)
 	}
 }

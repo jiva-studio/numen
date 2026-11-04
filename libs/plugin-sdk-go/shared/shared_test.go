@@ -1,6 +1,7 @@
 package shared_test
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -8,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -145,6 +147,29 @@ func TestALockedDirectoryIsCreatedForTheUserAlone(t *testing.T) {
 	if runtime.GOOS != "windows" && info.Mode().Perm() != 0o700 {
 		t.Errorf("mode = %o, want 700", info.Mode().Perm())
 	}
+	lockInfo, err := os.Stat(filepath.Join(dir, ".lock"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runtime.GOOS != "windows" && lockInfo.Mode().Perm() != 0o600 {
+		t.Errorf("lock file mode = %o, want 600", lockInfo.Mode().Perm())
+	}
+
+	blockingFile := filepath.Join(t.TempDir(), "not-a-dir")
+	if err := os.WriteFile(blockingFile, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := shared.Lock(filepath.Join(blockingFile, "sub")); err == nil || strings.HasPrefix(err.Error(), "lock ") {
+		t.Errorf("expected direct MkdirAll error without lock prefix, got %v", err)
+	}
+
+	badLockDir := t.TempDir()
+	if err := os.Mkdir(filepath.Join(badLockDir, ".lock"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := shared.Lock(badLockDir); err == nil || !strings.HasPrefix(err.Error(), "lock ") || !errors.Is(err, syscall.EISDIR) {
+		t.Errorf("expected wrapped EISDIR lock error when .lock is a directory, got %v", err)
+	}
 }
 
 func TestAModelTheHostProvisionedIsKeyedByTheSumItWasVerifiedAgainst(t *testing.T) {
@@ -181,5 +206,26 @@ func TestAModelTheHostDidNotProvisionIsKeyedByItsStat(t *testing.T) {
 
 	if err != nil || first == second || !strings.HasPrefix(first, "stat-") {
 		t.Errorf("keys %q and %q, %v, want two different stat keys", first, second, err)
+	}
+
+	if _, err := shared.GetModelKey(filepath.Join(t.TempDir(), "missing.onnx")); err == nil {
+		t.Fatal("expected error for missing model file")
+	}
+
+	sum := strings.Repeat("cd", 32)
+	readyPath := filepath.Join(filepath.Dir(model), ".ready")
+	for _, invalidReady := range []string{
+		"own.onnx\n",
+		"other.onnx\n" + sum + "\n",
+		"own.onnx\nabcd\n",
+		"own.onnx\n" + strings.Repeat("zz", 32) + "\n",
+	} {
+		if err := os.WriteFile(readyPath, []byte(invalidReady), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		key, err := shared.GetModelKey(model)
+		if err != nil || !strings.HasPrefix(key, "stat-") {
+			t.Errorf("ready %q: got key=%q err=%v, want stat- key", invalidReady, key, err)
+		}
 	}
 }

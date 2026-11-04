@@ -79,6 +79,7 @@ describe('a run of a declared command', () => {
       value: { message: 'Made a sample', openedPath: 'Verbs.md' },
     })
     const declared = useDeclaredCommands({ list: async () => [createSample], run })
+    expect(declared.paletteCommands.value).toStrictEqual([])
     await declared.load()
     const writeMessage = vi.fn()
     const openFile = vi.fn()
@@ -180,5 +181,35 @@ describe('a run that opens a file and says nothing', () => {
 
     expect(writeMessage).not.toHaveBeenCalled()
     expect(openFile).toHaveBeenCalledWith('Verbs.md', '', 'current')
+  })
+
+  it('does not open a file when openedPath is empty', async () => {
+    const declared = useDeclaredCommands({
+      list: async () => [createSample],
+      run: async () => ({ ok: true, value: { message: 'Done', openedPath: '' } }),
+    })
+    await declared.load()
+    const writeMessage = vi.fn()
+    const openFile = vi.fn()
+
+    await commands.get(getPaletteId(createSample))?.(
+      {
+        id: getPaletteId(createSample),
+        path: '',
+        vault: { id: 'v', name: 'V' },
+        note: null,
+        title: '',
+        file: '',
+        others: [],
+        name: '',
+        kind: null,
+        tab: 'tab',
+      },
+      { writeMessage, notes: { openFile } } as unknown as CommandDeps,
+      ANSWER_WORDS,
+    )
+
+    expect(writeMessage).toHaveBeenCalledWith('Done', 'info')
+    expect(openFile).not.toHaveBeenCalled()
   })
 })

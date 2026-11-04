@@ -20,12 +20,12 @@ name: Mutation
 # workspace package with a Vitest config.
 on:
   schedule:
-    - cron: "23 1 * * 1-6"
-    - cron: "23 1 * * 0"
+    - cron: '23 1 * * 1-6'
+    - cron: '23 1 * * 0'
   workflow_dispatch:
     inputs:
       target:
-        description: "Target, as `node tools/ci-mutation/shards.mjs` names it, or all"
+        description: 'Target, as `node tools/ci-mutation/shards.mjs` names it, or all'
         type: string
         default: all
 
@@ -103,7 +103,9 @@ jobs:
       # The windows reach the shared components through their build.
       - name: Build the components
         if: matrix.kind == 'ts'
-        run: npm run build --prefix libs/ui/core
+        run: |
+          npm run build --prefix libs/ui/core
+          npm run build --prefix libs/ui/shell
 
       # `-run-` ends the target's name in the key, so `apps-desktop` matches no key of `apps-desktop-editor`.
       - name: Restore the target's cache
@@ -126,7 +128,7 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
           SHARD: ${{ matrix.shard }}
-          VITE_CONFIG_NATIVE_IGNORE_WARNING: "true"
+          VITE_CONFIG_NATIVE_IGNORE_WARNING: 'true'
         run: |
           while sleep 30; do
             memory=$(free -m | awk '/^Mem:/ {printf "mem_avail=%s/%sM", $7, $2} /^Swap:/ {printf " swap_used=%s/%sM", $3, $2}')

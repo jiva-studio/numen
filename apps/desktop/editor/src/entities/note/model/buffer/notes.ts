@@ -40,7 +40,7 @@ function discardTab(context: NoteStoreContext, id: string): void {
   context.reportedIds.delete(id)
 }
 
-// Stryker disable next-line all: effects handled by queue do not overlap with outer effect switch.
+// Stryker disable all: effects handled by queue do not overlap with outer effect switch.
 function executeQueueEffect(context: NoteStoreContext, id: string, effect: Effect): boolean {
   const { queue, dispatch } = context
   switch (effect.kind) {
@@ -70,12 +70,14 @@ function executeQueueEffect(context: NoteStoreContext, id: string, effect: Effec
       return false
   }
 }
+// Stryker restore all
 
 function executeEffect(context: NoteStoreContext, id: string, effect: Effect): void {
   if (executeQueueEffect(context, id, effect)) return
   switch (effect.kind) {
     case 'replace':
       context.bodies.set(id, effect.body)
+      // Stryker disable next-line OptionalChaining: applyTabTransition stores next.tab before executing effects.
       context.onReplaced(context.tabs.get(id)?.path ?? id)
       return
     // Stryker disable next-line StringLiteral: keepOpen is checked at transition level, no-op in effect execution.
@@ -134,6 +136,7 @@ function createNoteStoreContext(
       },
     }),
     onReplaced,
+    // Stryker disable next-line ArrowFunction: context.dispatch is only used by queue fallback.
     dispatch: (id, event) => dispatch(id, event),
   }
 

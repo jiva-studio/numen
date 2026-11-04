@@ -148,7 +148,7 @@ describe('computeScrollTarget', () => {
     expect(target).toBe(72)
   })
 
-  it('returns current scroll when viewport height is zero', () => {
+  it('returns current scroll when viewport height or row height is zero', () => {
     const target = computeScrollTarget({
       targetIndex: 12,
       rowHeight,
@@ -156,5 +156,13 @@ describe('computeScrollTarget', () => {
       currentScrollTop: 50,
     })
     expect(target).toBe(50)
+    expect(
+      computeScrollTarget({
+        targetIndex: 12,
+        rowHeight: 0,
+        viewportHeight,
+        currentScrollTop: 50,
+      }),
+    ).toBe(50)
   })
 })

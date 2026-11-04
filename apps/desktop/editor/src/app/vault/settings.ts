@@ -52,12 +52,15 @@ type ServedSetting = NonNullable<ServedPlugin['settings']>[number]
 /** One setting of a plugin as the window holds it. */
 const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
   let defaultValue: unknown = undefined
+  // Stryker disable next-line ConditionalExpression: empty defaultJson fails JSON.parse and leaves defaultValue undefined
   if (s.defaultJson) {
+    /* Stryker disable BlockStatement: defaultValue is already undefined when JSON.parse throws */
     try {
       defaultValue = JSON.parse(s.defaultJson)
     } catch {
       defaultValue = undefined
     }
+    /* Stryker restore BlockStatement */
   }
   return {
     key: s.key,

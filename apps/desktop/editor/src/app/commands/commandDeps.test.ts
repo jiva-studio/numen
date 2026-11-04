@@ -108,8 +108,9 @@ describe('the commands reach the window', () => {
     expect(deps.vaults.list).toBeTypeOf('function')
   })
 
-  it('routes where a command points', async () => {
-    const { deps, calls } = createOptions()
+  it('routes where a command points and reports openTab errors', async () => {
+    const writeMessage = vi.fn()
+    const { deps, calls } = createOptions({ writeMessage })
 
     deps.navigator.openTab('settings')
     deps.navigator.closeTab('tab-1')
@@ -117,6 +118,17 @@ describe('the commands reach the window', () => {
       ['openTabOfKind', 'settings'],
       ['requestClose', 'tab-1'],
     ])
+
+    const failing = createOptions({
+      writeMessage,
+      windowTabs: {
+        openTabOfKind: () => Promise.reject(new Error('tab failed')),
+        requestClose: vi.fn(),
+      } as never,
+    })
+    failing.deps.navigator.openTab('broken')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
   })
 
   it('travels and leaves through the window', async () => {
@@ -166,12 +178,71 @@ describe('the commands reach the window', () => {
     expect(() => createOptions().deps.navigator.search()).not.toThrow()
   })
 
-  it('copies a path to the clipboard', () => {
+  it('copies a path to the clipboard and reports clipboard errors', async () => {
     const writeText = vi.fn(() => Promise.resolve())
     vi.stubGlobal('navigator', { clipboard: { writeText } })
 
     createOptions().deps.copyPath('zoo/Llama.md')
     expect(writeText).toHaveBeenCalledWith('zoo/Llama.md')
+
+    const writeMessage = vi.fn()
+    writeText.mockReturnValueOnce(Promise.reject(new Error('denied')))
+    createOptions({ writeMessage }).deps.copyPath('zoo/Llama.md')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
+  })
+
+  it('delegates notes, tabsHold, and emitEvent through createCommandDeps', async () => {
+    const pause = vi.fn(() => Promise.resolve())
+    const resume = vi.fn()
+    const emitEvent = vi.fn()
+    const flushTab = vi.fn(() => Promise.resolve())
+    const closeReached = vi.fn()
+    const requestClose = vi.fn()
+    const { deps } = createOptions({
+      core: { emitEvent } as never,
+      tabsHold: { pause, resume },
+      reached: {
+        getTabAt: (p: string) => (p === 'Reached.md' ? 'reached:1' : null),
+        getPath: (id: string) => (id === 'reached:1' ? 'Reached.md' : id),
+        asking: (id: string) => id === 'asking:1',
+        flushPending: vi.fn(() => Promise.resolve()),
+        close: closeReached,
+      } as never,
+      windowTabs: {
+        tabs: { value: [{ id: 'tab:1', title: 'One' }] },
+        getTab: (id: string) =>
+          id === 'tab:1'
+            ? {
+                state: {},
+                kind: {
+                  getOpenTab: () => ({ path: 'Tab.md' }),
+                  isAsking: () => true,
+                  flushPending: flushTab,
+                },
+              }
+            : null,
+        requestClose,
+      } as never,
+    })
+
+    expect(deps.notes.getTabAt('Reached.md')).toBe('reached:1')
+    expect(deps.notes.getTabAt('Tab.md')).toBe('tab:1')
+    expect(deps.notes.getPath('reached:1')).toBe('Reached.md')
+    expect(deps.notes.getPath('tab:1')).toBe('Tab.md')
+    expect(deps.notes.asking('asking:1')).toBe(true)
+    expect(deps.notes.asking('tab:1')).toBe(true)
+    await deps.notes.flushPending('tab:1')
+    expect(flushTab).toHaveBeenCalledOnce()
+    deps.notes.close('tab:1')
+    expect(closeReached).toHaveBeenCalledWith('tab:1')
+    expect(requestClose).toHaveBeenCalledWith('tab:1')
+
+    deps.emitEvent?.('custom:event')
+    expect(emitEvent).toHaveBeenCalledWith('custom:event')
+
+    await deps.vaults.open('vault-id').catch(() => undefined)
+    expect(pause).toHaveBeenCalledOnce()
   })
 })
 

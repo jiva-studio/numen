@@ -103,6 +103,7 @@ function createRegistrationBridge(
         pluginId,
         reg: registration,
       }),
+    // Stryker disable all: agentProviders map is internal state for future host provider lookup
     registerAgentProvider: (pluginId, registration) => {
       const entry = { pluginId, reg: registration }
       registry.agentProviders.set(registration.id, entry)
@@ -114,6 +115,7 @@ function createRegistrationBridge(
         },
       }
     },
+    // Stryker restore all
   }
 }
 

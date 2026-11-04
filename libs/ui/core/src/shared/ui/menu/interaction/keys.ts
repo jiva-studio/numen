@@ -31,53 +31,47 @@ export interface MenuSubmenuActions {
   readonly onDismissSubmenu?: (() => void) | undefined
 }
 
-/** The arrow keys that open or dismiss a submenu; true where one was taken. */
+/** The arrow keys that open or dismiss a submenu. */
 function onSubmenuKey(
   event: KeyboardEvent,
   item: MenuItem | undefined,
   actions: MenuSubmenuActions | undefined,
-): boolean {
+): void {
   if (event.key === 'ArrowRight' && actions?.onOpenSubmenu) {
     if (item && item.children && item.children.length > 0) {
       event.preventDefault()
       actions.onOpenSubmenu(item)
-      return true
     }
-  }
-  if (event.key === 'ArrowLeft' && actions?.onDismissSubmenu) {
+  } else if (event.key === 'ArrowLeft' && actions?.onDismissSubmenu) {
     event.preventDefault()
     actions.onDismissSubmenu()
-    return true
   }
-  return false
 }
 
-/** The keys that move the keyboard along the items; true where one was taken. */
+/** The keys that move the keyboard along the items. */
 function onStepKey(
   event: KeyboardEvent,
   stepForward: () => void,
   stepBack: () => void,
   step: (delta: number, from: number) => void,
-): boolean {
+): void {
   switch (event.key) {
     case 'ArrowDown':
       stepForward()
-      return true
+      return
     case 'ArrowUp':
       stepBack()
-      return true
+      return
     case 'Home':
       step(1, -1)
-      return true
+      return
     case 'End':
       step(-1, 0)
-      return true
+      return
     case 'Tab':
       if (event.shiftKey) stepBack()
       else stepForward()
-      return true
-    default:
-      return false
+      return
   }
 }
 
@@ -124,8 +118,8 @@ export function useMenuKeys(
     // Counting back from no item is counting back from the first.
     const stepBack = (): void => step(-1, Math.max(here.value, 0))
 
-    if (onSubmenuKey(event, items()[here.value], submenuActions)) return
-    if (onStepKey(event, stepForward, stepBack, step)) return
+    onSubmenuKey(event, items()[here.value], submenuActions)
+    onStepKey(event, stepForward, stepBack, step)
     if (isLetter(event)) {
       event.preventDefault()
       jump(event.key)

@@ -7,7 +7,7 @@ describe('splitDetail', () => {
       summary: 'Wrap long lines to fit the editor viewport',
       more: '',
     })
-    expect(splitDetail('Path to the program.')).toStrictEqual({
+    expect(splitDetail('  Path to the program.  ')).toStrictEqual({
       summary: 'Path to the program.',
       more: '',
     })

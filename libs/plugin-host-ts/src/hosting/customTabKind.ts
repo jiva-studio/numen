@@ -52,7 +52,9 @@ export function createPluginPaneWrapper(
   }
 
   return defineComponent({
+    // Stryker disable next-line StringLiteral: Vue component debug name
     name: `PluginPaneWrapper[${pluginId}]`,
+    // Stryker disable next-line ObjectLiteral,BooleanLiteral: Vue prop descriptor
     props: { state: { type: null, required: true } },
     setup(props) {
       const error = ref<Error | null>(null)
@@ -94,6 +96,7 @@ export function createPluginPaneWrapper(
 
 /** Whether a saved value is a selector: a JSON object. */
 const isSelector = (value: unknown): value is Selector =>
+  // Stryker disable next-line ConditionalExpression: null saved value maps to null place in both branches
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 export function createReaderTabKind(
@@ -224,17 +227,14 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
   const defaultName = stripMarkdownExtension(extractFilename(targetPath))
   const noteRef = ref({ path: targetPath, body: '' })
   const errorMessageRef = ref('')
-  const isLoading = ref(deps.hostDeps?.readNote !== undefined)
+  const isLoading = ref(false)
   let currentPath = targetPath
   let hasEdited = false
   let write = createNoteWriter(targetPath, deps.hostDeps?.writeNote, errorMessageRef)
 
   const readAt = (pathToRead: string): void => {
     const readNote = deps.hostDeps?.readNote
-    if (!readNote) {
-      isLoading.value = false
-      return
-    }
+    if (!readNote) return
     isLoading.value = true
     startNoteRead(pathToRead, readNote, {
       note: noteRef,
@@ -309,7 +309,7 @@ function notifyCustomTabShown(state: unknown, id: string | undefined, deps?: Plu
   const s = state as { path?: string; at?: string; title?: unknown } | undefined
   const path = s?.path || s?.at
   if (path) {
-    deps.getWorkspace()?.syncPath(id, path, extractTitleValue(s?.title))
+    deps.getWorkspace()?.syncPath(id, path, extractTitleValue((state as { title?: unknown }).title))
   }
 }
 

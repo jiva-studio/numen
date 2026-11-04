@@ -57,6 +57,7 @@ export function useMenuPlacement(options: MenuPlacementOptions): MenuPlacementSt
 
   const setSize = (now: Size): void => {
     size.value = now
+    // Stryker disable next-line EqualityOperator: assigning an equal width is a no-op
     if (now.width > openedWidth.value) {
       openedWidth.value = now.width
     }

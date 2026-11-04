@@ -16,12 +16,10 @@ const cacheFolder = "wazero"
 // holds machine code that the runtime loads without checking it. A directory that cannot be used
 // leaves the compiled module in memory for the life of the process.
 func NewCompilationCache(dir string) wazero.CompilationCache {
-	if dir == "" {
-		return wazero.NewCompilationCache()
+	if dir != "" {
+		if diskCache, err := wazero.NewCompilationCacheWithDir(filepath.Join(dir, cacheFolder)); err == nil {
+			return diskCache
+		}
 	}
-	diskCache, err := wazero.NewCompilationCacheWithDir(filepath.Join(dir, cacheFolder))
-	if err != nil {
-		return wazero.NewCompilationCache()
-	}
-	return diskCache
+	return wazero.NewCompilationCache()
 }

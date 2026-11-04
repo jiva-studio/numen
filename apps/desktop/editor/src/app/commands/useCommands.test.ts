@@ -60,6 +60,7 @@ const setup = (isPrevented = false) => {
     kept: {},
     runs: {},
     coverage: () => ({}),
+    rest: {},
     writeMessage: (text: string, severity: string) => content.push([text, severity]),
   } as unknown as CommandsDepsOptions
   return { messages: content, press, ...useCommands(options) }
@@ -96,6 +97,7 @@ describe('running a command', () => {
     })
     expect(h.setPaletteOpen).not.toHaveBeenCalled()
     expect(one.messages).toStrictEqual([])
+    expect(h.getExtraCommands?.()).toStrictEqual([])
   })
 
   it('closes the search palette where the command palette is open and starts nothing', () => {
@@ -191,7 +193,12 @@ describe('a key press', () => {
 })
 
 describe('a plugin command over a note', () => {
-  const SUMMARY = { id: 'plugin:summary', title: 'Open summary', scope: 'note' as const }
+  const SUMMARY = {
+    id: 'plugin:summary',
+    title: 'Open summary',
+    scope: 'note' as const,
+    shortcut: 'mod+k',
+  }
   const GRAPH = {
     id: 'plugin:graph',
     title: 'New graph',
@@ -207,29 +214,34 @@ describe('a plugin command over a note', () => {
 
   const setupPlugin = (declared: readonly object[] = [SUMMARY]) => {
     const executeCommand = vi.fn(async () => true)
+    const handleShortcut = vi.fn(() => false)
+    const writeMessage = vi.fn()
     const pluginHost = {
       getPaletteCommands: () => declared,
       hasCommand: (id: string) => id === 'summary',
       executeCommand,
-      handleShortcut: () => false,
+      handleShortcut,
     }
     const fileKinds = vi.fn(
-      async (paths: readonly string[]) => new Map(paths.map((one) => [one, { type: 'sample' }])),
+      async (paths: readonly string[]) =>
+        new Map(
+          paths.filter((one) => one !== 'Unknown.md').map((one) => [one, { type: 'sample' }]),
+        ),
     )
     const options = {
       core: { fileKinds },
       words: {},
       windowTabs: { onKeyPress: () => false },
-      getTarget: () => target,
+      getTarget: () => ({ path: 'Animals.md', title: 'Animals' }),
       knows: {},
       kept: {},
       runs: {},
       coverage: () => ({}),
       rest: {},
-      writeMessage: vi.fn(),
+      writeMessage,
       pluginHost,
     } as unknown as CommandsDepsOptions
-    return { executeCommand, ...useCommands(options) }
+    return { executeCommand, handleShortcut, writeMessage, ...useCommands(options) }
   }
 
   const findCommand = () => {
@@ -275,11 +287,15 @@ describe('a plugin command over a note', () => {
     setupPlugin([GRAPH])
     const offers = (h.getExtraCommands?.() ?? []) as {
       id: string
+      group: string
       keys?: unknown
       icon?: unknown
+      isAvailable: (target: CommandTarget) => boolean
     }[]
     const offer = offers.find((one) => one.id === GRAPH.id)
 
+    expect(offer?.group).toBe('window')
+    expect(offer?.isAvailable({ isReady: false, path: '' } as unknown as CommandTarget)).toBe(true)
     expect(offer?.keys).toStrictEqual({ letter: 'mod+shift+x' })
     expect(offer?.icon).toBe('graph icon')
   })
@@ -306,6 +322,20 @@ describe('a plugin command over a note', () => {
       type: 'sample',
     })
     expect(h.searchOptions?.getTravel?.()).toBe(SHOW.title)
+
+    await one.showNote('')
+    expect(one.executeCommand).toHaveBeenLastCalledWith(SHOW.id, {
+      path: '',
+      title: '',
+      type: 'note',
+    })
+
+    await one.showNote('Unknown.md')
+    expect(one.executeCommand).toHaveBeenLastCalledWith(SHOW.id, {
+      path: 'Unknown.md',
+      title: '',
+      type: 'note',
+    })
   })
 
   it('puts no note in front where no plugin declares a command for it', async () => {
@@ -317,17 +347,52 @@ describe('a plugin command over a note', () => {
     expect(h.searchOptions?.getTravel?.()).toBe('')
   })
 
-  it('runs by id with the note of the target', async () => {
+  it('runs by id with the note of the target and reports errors', async () => {
     const one = setupPlugin()
 
     one.runCommand('summary', { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget)
     await vi.waitFor(() => expect(one.executeCommand).toHaveBeenCalled())
 
+    expect(h.setCommandsOpen).toHaveBeenCalledWith(false)
     expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith('summary', {
       path: 'Animals.md',
       title: 'Animals',
       type: 'sample',
     })
     expect(h.startCommand).not.toHaveBeenCalled()
+
+    one.executeCommand.mockRejectedValueOnce(new Error('plugin command failed'))
+    one.runCommand('summary', { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget)
+    await vi.waitFor(() => expect(one.writeMessage).toHaveBeenCalled())
+    expect(one.writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
+  })
+
+  it('delegates shortcuts to pluginHost.handleShortcut with a lazy note getter', async () => {
+    const one = setupPlugin()
+    let resolvedNote: unknown = null
+    one.handleShortcut.mockImplementationOnce(((
+      _ev: KeyboardEvent,
+      getNote: () => Promise<unknown>,
+    ) => {
+      getNote().then(
+        (n) => {
+          resolvedNote = n
+        },
+        () => undefined,
+      )
+      return true
+    }) as never)
+    const event = keyEvent('k')
+
+    one.onKeyDown(event)
+    await vi.waitFor(() =>
+      expect(resolvedNote).toStrictEqual({
+        path: 'Animals.md',
+        title: 'Animals',
+        type: 'sample',
+      }),
+    )
+    expect(event.preventDefault).toHaveBeenCalledOnce()
+    expect(h.isChord).not.toHaveBeenCalled()
   })
 })

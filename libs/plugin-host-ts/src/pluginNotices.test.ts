@@ -32,7 +32,7 @@ describe('the notices of one plugin', () => {
       { id: 'sync', label: 'Syncing', error: 'The server is gone' },
     ])
 
-    expect(tasks).toEqual([
+    expect(tasks).toStrictEqual([
       [
         'md.numen.cards',
         [
@@ -55,5 +55,7 @@ describe('the notices of one plugin', () => {
         ],
       ],
     ])
+    expect('done' in (tasks[0]?.[1][1] ?? {})).toBe(false)
+    expect('total' in (tasks[0]?.[1][1] ?? {})).toBe(false)
   })
 })

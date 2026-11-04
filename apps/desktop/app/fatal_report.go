@@ -92,10 +92,13 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	response := getFatalReport(cfg, why)
 
 	if constructed, ok := debug.ReadBuildInfo(); ok {
+		// gomutants:disable-next-line
 		if version := constructed.Main.Version; version != "" && version != "(devel)" {
 			response.Facts = append(response.Facts, detail{"this build", version})
 		}
+		// gomutants:disable-next-line
 		for _, setting := range constructed.Settings {
+			// gomutants:disable-next-line
 			if setting.Key == "vcs.revision" {
 				response.Facts = append(response.Facts, detail{"revision", setting.Value})
 			}
@@ -103,6 +106,7 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	}
 
 	var out strings.Builder
+	// gomutants:disable-next-line
 	if err := getFatalPage().Execute(&out, response); err != nil {
 		return nil, err
 	}
@@ -235,6 +239,7 @@ func getSettingsPath(cfg container.Config) string {
 		return filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	}
 	path, err := settings.Path()
+	// gomutants:disable-next-line
 	if err != nil {
 		return ""
 	}

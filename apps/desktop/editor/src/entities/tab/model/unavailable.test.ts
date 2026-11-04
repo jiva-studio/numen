@@ -56,14 +56,21 @@ describe('createUnavailableKind', () => {
   })
 
   it('keeps the original tab title when provided', () => {
-    const kind = createUnavailableKind('files', { title: 'Files' })
+    const icon = { name: 'FilesIcon' }
+    const kind = createUnavailableKind('files', { title: 'Files', icon })
 
+    expect(kind.icon).toBe(icon)
     expect(kind.getTitle?.(kind.open('', 'tab'))).toBe('Files')
   })
 
   it('names a tab with no path and no title after the kind the catalog declares once it answers', async () => {
     const catalog = createMockPluginCatalog([
-      createMockCatalogEntry('sample.decks', { tabKinds: [{ kind: 'deck', title: 'Deck' }] }),
+      createMockCatalogEntry('sample.decks', {
+        tabKinds: [
+          { kind: 'other', title: 'Other' },
+          { kind: 'deck', title: 'Deck' },
+        ],
+      }),
     ])
     const kind = createUnavailableKind('deck', undefined, { catalog })
     const state = kind.open('', 'tab')
@@ -73,6 +80,42 @@ describe('createUnavailableKind', () => {
 
     expect(kind.getTitle?.(state)).toBe('Deck')
     expect(catalog.getAskedKinds()).toStrictEqual(['deck'])
+
+    // Falls back to kind when contributes is undefined or tabKind is not in contributes.tabKinds
+    const entryWithoutContributes = {
+      ...createMockCatalogEntry('sample.bare'),
+      contributes: undefined,
+    }
+    const bareCatalog = {
+      ...createMockPluginCatalog(),
+      findByTabKind: async () => ({
+        ok: true as const,
+        value: { entry: entryWithoutContributes, sourceErrors: [] },
+      }),
+    }
+    const bareKind = createUnavailableKind('bare', undefined, { catalog: bareCatalog })
+    const bareState = bareKind.open('', 'tab')
+    await flushPromises()
+    expect(bareKind.getTitle?.(bareState)).toBe('bare')
+
+    const unmatchedCatalog = createMockPluginCatalog([
+      createMockCatalogEntry('sample.other', { tabKinds: [{ kind: 'other', title: 'Other' }] }),
+    ])
+    const unmatchedEntry = createMockCatalogEntry('sample.other', {
+      tabKinds: [{ kind: 'other', title: 'Other' }],
+    })
+    const mismatchKind = createUnavailableKind('missing-kind', undefined, {
+      catalog: {
+        ...unmatchedCatalog,
+        findByTabKind: async () => ({
+          ok: true as const,
+          value: { entry: unmatchedEntry, sourceErrors: [] },
+        }),
+      },
+    })
+    const mismatchState = mismatchKind.open('', 'tab')
+    await flushPromises()
+    expect(mismatchKind.getTitle?.(mismatchState)).toBe('missing-kind')
   })
 })
 
@@ -191,7 +234,50 @@ describe('getUnavailableView', () => {
   it('names no plugin for a kind the catalog does not know', () => {
     expect(getUnavailableView({ status: 'missing' }, false)).toMatchObject({
       heading: 'Plugin unavailable',
+      action: 'inspect',
       pluginId: undefined,
+    })
+  })
+
+  it('returns the view action and message for incompatible, available, and not-running entries', () => {
+    const incompatible = createMockCatalogEntry('sample.notes', {
+      ...notesOptions,
+      incompatibility: CATALOG_INCOMPATIBILITY.PROTOCOL,
+      incompatibilityDetail: 'needs 2.0',
+    })
+    expect(getUnavailableView({ status: 'found', entry: incompatible }, false)).toStrictEqual({
+      heading: 'Plugin incompatible',
+      message: 'Notes cannot run in this application: needs 2.0',
+      action: 'inspect',
+      actionText: 'Open Settings',
+      pluginId: 'sample.notes',
+    })
+
+    const available = {
+      ...createMockCatalogEntry('sample.notes', {
+        ...notesOptions,
+        state: CATALOG_STATE.AVAILABLE,
+      }),
+      contributes: undefined,
+    }
+    expect(getUnavailableView({ status: 'found', entry: available }, false)).toStrictEqual({
+      heading: 'Plugin not installed',
+      message: 'The plugin for Notes is not installed.',
+      action: 'install',
+      actionText: 'Install Notes',
+      pluginId: 'sample.notes',
+    })
+
+    const notRunning = createMockCatalogEntry('sample.notes', {
+      ...notesOptions,
+      state: CATALOG_STATE.INSTALLED,
+    })
+    expect(getUnavailableView({ status: 'found', entry: notRunning }, false)).toStrictEqual({
+      heading: 'Plugin not running',
+      message: 'The plugin for Markdown notes is not running.',
+      action: 'inspect',
+      actionText: 'Open Settings',
+      pluginId: 'sample.notes',
     })
   })
 })

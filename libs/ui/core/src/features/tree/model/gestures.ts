@@ -116,6 +116,7 @@ function createTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardH
   function applyStep(step: Step, press: Press): void {
     if (step.turn?.isOpen) tell('open', step.turn.row)
     else if (step.turn) tell('close', step.turn.row)
+    // Stryker disable next-line ConditionalExpression: step.at is non-null whenever getShownRows() has a tabbed row
     if (step.at !== null) selection.selectRow(step.at, press)
     focusInBackground(rows, step.at)
   }

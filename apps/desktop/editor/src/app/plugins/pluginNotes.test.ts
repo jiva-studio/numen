@@ -127,16 +127,24 @@ describe('createPluginNotes', () => {
     const running = notes.writeNote('a.md', 'A')
     const before = notes.writeNote('a.md', 'B')
     const readItem = notes.readNote('a.md')
-    const after = notes.writeNote('a.md', 'C')
+    const after1 = notes.writeNote('a.md', 'C1')
 
     getPending(deps.pending, 0).finish()
     await tick()
+    // While B is in flight, a second write after the read merges into C1 (jobC was not deleted by jobB)
+    const after2 = notes.writeNote('a.md', 'C2')
+    // And a read queued while B is in flight waits for B and C2 (tail was not deleted early by A)
+    const secondRead = notes.readNote('a.md')
+
     getPending(deps.pending, 1).finish()
     expect(await readItem).toEqual({ body: 'B' })
+    await tick()
+    expect(deps.read).toHaveBeenCalledTimes(1)
 
     getPending(deps.pending, 2).finish()
-    await Promise.all([running, before, after])
-    expect(deps.write.mock.calls.map((call) => call[1])).toEqual(['A', 'B', 'C'])
+    await Promise.all([running, before, after1, after2])
+    expect(await secondRead).toEqual({ body: 'C2' })
+    expect(deps.write.mock.calls.map((call) => call[1])).toEqual(['A', 'B', 'C2'])
   })
 
   it('does not let a failed write reject or block the writes after it', async () => {
@@ -193,11 +201,21 @@ describe('createPluginNotes', () => {
 
   it('words the error of a note that cannot be read', async () => {
     const deps = createDeps()
-    deps.read.mockResolvedValueOnce({ ok: false, error: 'unreadable' } as NoteResult)
+    deps.read
+      .mockResolvedValueOnce({ ok: false, error: 'unreadable' } as NoteResult)
+      .mockResolvedValueOnce({ ok: false, error: 'notText' } as NoteResult)
     const notes = createPluginNotes(deps)
 
-    const reply = await notes.readNote('a.md')
-    expect(reply.body).toBe('')
-    expect(reply.error).toBeTruthy()
+    const reply1 = await notes.readNote('a.md')
+    expect(reply1).toStrictEqual({
+      body: '',
+      error: 'frontmatter unreadable',
+    })
+
+    const reply2 = await notes.readNote('a.md')
+    expect(reply2).toStrictEqual({
+      body: '',
+      error: 'not a text file',
+    })
   })
 })

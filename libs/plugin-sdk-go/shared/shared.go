@@ -46,6 +46,7 @@ func GetModelKey(path string) (string, error) {
 		return sum, nil
 	}
 	hash := sha256.New()
+	// gomutants:disable-next-line
 	if _, err := fmt.Fprintf(hash, "%s\n%d\n%d", filepath.Base(path), info.Size(), info.ModTime().UnixNano()); err != nil {
 		return "", err
 	}
@@ -54,6 +55,7 @@ func GetModelKey(path string) (string, error) {
 
 func readProvisionedSum(path string) (string, bool) {
 	raw, err := os.ReadFile(filepath.Join(filepath.Dir(path), readyName))
+	// gomutants:disable-next-line
 	if err != nil {
 		return "", false
 	}

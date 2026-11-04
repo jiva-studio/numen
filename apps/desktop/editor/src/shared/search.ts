@@ -33,6 +33,7 @@ export function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
   const wait = options.wait ?? sleep
   const guard = options.guard ?? createRequestGuard()
 
+  // Stryker disable next-line ConditionalExpression: guards onScopeDispose when called outside an active effectScope
   if (getCurrentScope()) onScopeDispose(guard.close)
 
   const search = async (text: string, steps: DebouncedSearchSteps): Promise<void> => {

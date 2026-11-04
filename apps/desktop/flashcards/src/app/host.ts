@@ -81,6 +81,7 @@ function createFrontView(views: Readonly<ShallowRef<readonly PluginView[]>>) {
   return computed<PluginView | null>(() => {
     const mainViews = views.value.filter((one) => one.registration.placement?.pane === 'main')
     mainViews.sort(
+      // Stryker disable next-line OptionalChaining: mainViews only holds registrations with defined placement
       (a, b) => (a.registration.placement?.order ?? 0) - (b.registration.placement?.order ?? 0),
     )
     return mainViews[0] ?? null

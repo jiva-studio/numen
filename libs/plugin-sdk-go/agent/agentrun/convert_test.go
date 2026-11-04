@@ -190,7 +190,9 @@ func TestToolSetRoundTripsThroughTheProtocol(t *testing.T) {
 
 func TestNilValuesStayNil(t *testing.T) {
 	if requestToProto(nil) != nil || requestFromProto(nil) != nil || responseToProto(nil) != nil ||
-		responseFromProto(nil) != nil || toolCallToProto(nil) != nil || toolCallFromProto(nil) != nil {
+		responseFromProto(nil) != nil || toolCallToProto(nil) != nil || toolCallFromProto(nil) != nil ||
+		editProgressToProto(nil) != nil || editProgressFromProto(nil) != nil ||
+		toolDefinitionToProto(nil) != nil || toolDefinitionFromProto(nil) != nil {
 		t.Error("a nil value converts to a value")
 	}
 }

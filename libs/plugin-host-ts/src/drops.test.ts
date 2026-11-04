@@ -8,7 +8,7 @@ describe('createDropRegistry', () => {
     const drops = createDropRegistry()
     const calls: string[] = []
     drops.registerDropHandler('md.numen.links', {
-      types: [URI_LIST],
+      types: [URI_LIST, 'text/html'],
       drop: async (folder, data) => {
         calls.push(`${folder} ${data[URI_LIST]}`)
         return ['talks/clip.md']
@@ -23,16 +23,22 @@ describe('createDropRegistry', () => {
     expect(calls).toEqual(['talks https://video.example/clip'])
   })
 
-  it('returns no paths after dispose or for an unregistered type', async () => {
+  it('returns no paths after dispose or for an unregistered or empty type', async () => {
     const drops = createDropRegistry()
     const registered = drops.registerDropHandler('md.numen.links', {
       types: [URI_LIST],
       drop: async () => ['talks/clip.md'],
     })
+    drops.registerDropHandler('md.numen.plain', {
+      types: ['text/plain'],
+      drop: async () => ['talks/plain.md'],
+    })
 
-    expect(await drops.drop('', { 'text/plain': 'https://video.example/clip' })).toEqual([])
+    expect(await drops.drop('', { [URI_LIST]: '', 'text/html': '<b>x</b>' })).toEqual([])
+    registered.dispose()
     registered.dispose()
     expect(drops.canDrop([URI_LIST])).toBe(false)
+    expect(drops.canDrop(['text/plain'])).toBe(true)
     expect(await drops.drop('', { [URI_LIST]: 'https://video.example/clip' })).toEqual([])
   })
 })

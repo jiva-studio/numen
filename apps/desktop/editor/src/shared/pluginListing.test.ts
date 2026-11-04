@@ -33,6 +33,25 @@ describe('createPluginListing', () => {
     expect(createPluginListing(available).isOffered).toBe(true)
     expect(createPluginListing(disabled).isOffered).toBe(false)
   })
+
+  it('falls back to top-level category and empty defaults when contributes is absent', () => {
+    const base = createMockCatalogEntry('legacy')
+    const withoutContributes = {
+      ...base,
+      category: 'Tools',
+      contributes: undefined,
+    }
+    expect(createPluginListing(withoutContributes)).toStrictEqual({
+      id: 'legacy',
+      name: 'legacy',
+      version: '1.0.0',
+      description: '',
+      category: 'tools',
+      feature: '',
+      tabKinds: [],
+      isOffered: false,
+    })
+  })
 })
 
 describe('createManagedFromEntries', () => {

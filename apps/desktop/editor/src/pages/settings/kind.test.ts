@@ -75,9 +75,28 @@ describe('the settings tab', () => {
     expect(settings.isOpen.value).toBe(true)
   })
 
-  it('is open once the settings are requested for', () => {
+  it('is open once the settings are requested for, tracking pluginId and filter', () => {
     const settings = useSettingsTab(window_().handle, installation(), vi.fn())
-    settings.openSettings()
+    expect(settings.state.initialPluginId?.value).toBeNull()
+    expect(settings.state.initialSearchQuery?.value).toBe('')
+
+    settings.kind.open('plugin-a', 'tab')
+    expect(settings.state.initialPluginId?.value).toBe('plugin-a')
+    settings.kind.open(undefined as never, 'tab')
+    expect(settings.state.initialPluginId?.value).toBe('plugin-a')
+
+    settings.openSettings('plugin-b')
     expect(settings.isOpen.value).toBe(true)
+    expect(settings.state.initialPluginId?.value).toBe('plugin-b')
+    expect(settings.state.initialSearchQuery?.value).toBe('')
+
+    settings.openSettings('plugin-c', 'theme')
+    expect(settings.state.initialPluginId?.value).toBeNull()
+    expect(settings.state.initialSearchQuery?.value).toBe('theme')
+
+    settings.state.initialPluginId!.value = 'kept'
+    settings.openSettings()
+    expect(settings.state.initialPluginId?.value).toBe('kept')
+    expect(settings.state.initialSearchQuery?.value).toBe('theme')
   })
 })

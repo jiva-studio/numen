@@ -96,6 +96,11 @@ describe('the backlinks of an answer', () => {
         marker: NOTE_MARKER.UNSPECIFIED,
       },
     ])
-    expect(one).toMatchObject({ role: 'ref', roleFromHere: null, marker: null })
+    expect(one).toMatchObject({
+      from: { path: '', title: '' },
+      role: 'ref',
+      roleFromHere: null,
+      marker: null,
+    })
   })
 })

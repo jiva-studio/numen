@@ -32,6 +32,14 @@ describe('the window', () => {
     expect(hasWindow()).toBe(true)
     expect(hasDocument()).toBe(true)
   })
+
+  it('answers 800 by 600 where there is no window or document', () => {
+    vi.stubGlobal('window', undefined)
+    vi.stubGlobal('document', undefined)
+    expect(hasWindow()).toBe(false)
+    expect(hasDocument()).toBe(false)
+    expect(measureWindow()).toEqual({ width: 800, height: 600 })
+  })
 })
 
 describe('the measurements of an element', () => {

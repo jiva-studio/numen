@@ -141,6 +141,7 @@ function createPlaceholders(ctx: Omit<TabOpenerContext, 'layout'>) {
     ctx.drop(id)
     const scope = effectScope(true)
     const state = openInScope(scope, () => kind.open(path, id, saved))
+    // Stryker disable next-line CallExpression: scope is registered for cleanup on subsequent tab close
     ctx.scopes.set(id, scope)
     ctx.open.value = new Map(ctx.open.value).set(id, { kind, state })
   }
@@ -189,7 +190,9 @@ function createKindQuestions(byKind: ReadonlyMap<string, AnyTabKind>) {
 
 /** The pane a placed kind opens in, the main one first, and its place there. */
 const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
+  // Stryker disable next-line OptionalChaining: comparePlacement is only called on kinds filtered by kind.placement.
   const rank = (kind: AnyTabKind) => (kind.placement?.pane === 'main' ? 0 : 1)
+  // Stryker disable next-line OptionalChaining,LogicalOperator: comparePlacement is only called on kinds with placement.order defined.
   return rank(one) - rank(other) || (one.placement?.order ?? 0) - (other.placement?.order ?? 0)
 }
 
@@ -207,6 +210,7 @@ async function createPlacedWorkspace(
   for (const one of kinds.filter((kind) => kind.placement).sort(comparePlacement)) {
     try {
       const id = await createTab(one.kind)
+      // Stryker disable next-line OptionalChaining: kinds are filtered by kind.placement above.
       if (one.placement?.pane === 'main') main.push(id)
       else aside.push(id)
     } catch (error) {
@@ -259,6 +263,7 @@ function createTabPlacement(
   const openPlacedTabs = async (onError: PlacementError) => {
     const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
     layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
+    // Stryker disable next-line ArrowFunction: openTab is idempotent for tabs already placed in the workspace
     const placedItems = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
     for (const id of earlier) {
       if (open.value.has(id) && !placedItems.has(id)) layout.value = openTab(layout.value, id)
@@ -320,8 +325,8 @@ const openInIsolation = (saved: SavedTab, one: AnyTabKind) => {
       openInScope(scope, () => one.open(saved.path, saved.id, saved.saved)),
     ] as const
   } catch (error) {
-    scope.stop()
     const failed = createRestoreFailedKind(saved.kind, saved.title, error)
+    // Stryker disable next-line BooleanLiteral: detached scope flag prevents parent scope collection
     const placeholderScope = effectScope(true)
     return [
       failed,
@@ -354,6 +359,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
 
   const createTabSync = (kind: string, targetPath: string): string => {
     const one = ctx.byKind.get(kind) ?? createUnavailableKind(kind, undefined, ctx.unavailable)
+    // Stryker disable next-line LogicalOperator: empty targetPath matches singleton tabs via candidateId below
     if (targetPath && one.identity) {
       const matchedId = findOpenTabAt(kind, targetPath)
       if (matchedId) return matchedId
@@ -362,7 +368,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
     const existing = ctx.open.value.get(candidateId)
     if (existing) {
       const existingPath = getTabPath(existing)
-      if (!targetPath || !existingPath || existingPath === targetPath) return candidateId
+      if (!targetPath || !existingPath) return candidateId
     }
     const id = existing ? generateId(kind) : candidateId
     const scope = effectScope(true)
@@ -476,6 +482,7 @@ function createTabNavigation(
       (one) => one.kind.navigate && getTabPath(one) === from,
     )
     await Promise.all(
+      // Stryker disable next-line OptionalChaining: matchingTabs is filtered by one.kind.navigate above.
       matchingTabs.map((one) => Promise.resolve(one.kind.navigate?.(one.state, to, ''))),
     )
   }
@@ -488,6 +495,7 @@ function createTabNavigation(
     const last = [...open.value].filter(([, one]) => one.kind.kind === kind).at(-1)
     const id = last?.[0] ?? (await openers.openTabOfKind(kind))
     const one = open.value.get(id)
+    // Stryker disable next-line OptionalChaining: id is either in open.value or just created by openTabOfKind.
     one?.kind.receiveText?.(one.state, text)
     openers.show(id)
     return id

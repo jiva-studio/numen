@@ -188,6 +188,36 @@ describe('a setting written', () => {
       'error',
     )
   })
+
+  it('updates committed target tree preserving sibling keys and replacing non-object intermediates', async () => {
+    let shouldFailRead = false
+    const core: SettingsStoreDeps = {
+      getSettings: () =>
+        shouldFailRead
+          ? Promise.reject(new Error('offline'))
+          : Promise.resolve({
+              written: '{"agent":{"keep":1},"nullBranch":null,"primBranch":42}',
+              path: '/numen.json',
+              models: [],
+            }),
+      updateSettings: () => Promise.resolve(),
+    }
+    const store = createSettingsStore(core, words, vi.fn())
+    await store.start()
+
+    shouldFailRead = true
+    await store.writeSettings([
+      { at: ['agent', 'use'], value: '"claude"' },
+      { at: ['nullBranch', 'nested'], value: '"ok"' },
+      { at: ['primBranch', 'nested'], value: '"ok2"' },
+      { at: ['agent', 'keep'], value: 'not-json' },
+    ])
+
+    expect(store.getCommittedSetting(['agent', 'keep'])).toBe(1)
+    expect(store.getCommittedSetting(['agent', 'use'])).toBe('claude')
+    expect(store.getCommittedSetting(['nullBranch', 'nested'])).toBe('ok')
+    expect(store.getCommittedSetting(['primBranch', 'nested'])).toBe('ok2')
+  })
 })
 
 /** A promise that the test resolves manually. */

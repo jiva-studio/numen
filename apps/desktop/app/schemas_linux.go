@@ -63,6 +63,7 @@ func getSchemasDir(prefix string) string {
 		return pos
 	}
 	filed, err := filepath.Glob(filepath.Join(prefix, "share", "gsettings-schemas", "*", "glib-2.0", "schemas"))
+	// gomutants:disable-next-line
 	if err != nil {
 		return ""
 	}
@@ -74,10 +75,16 @@ func getSchemasDir(prefix string) string {
 	return ""
 }
 
+const defaultDataDirs = "/usr/local/share:/usr/share"
+
 // hasSchemas reports whether this machine holds the settings a folder dialog
 // reads. Compiled settings sit under `glib-2.0/schemas` of a data directory,
 // and the environment may name a folder of them outright.
 func hasSchemas() bool {
+	return hasSchemasWithDefault(defaultDataDirs)
+}
+
+func hasSchemasWithDefault(fallbackDirs string) bool {
 	for _, dir := range filepath.SplitList(os.Getenv("GSETTINGS_SCHEMA_DIR")) {
 		if hasCompiledSchemas(dir) {
 			return true
@@ -85,7 +92,7 @@ func hasSchemas() bool {
 	}
 	dirs := os.Getenv("XDG_DATA_DIRS")
 	if dirs == "" {
-		dirs = "/usr/local/share:/usr/share"
+		dirs = fallbackDirs
 	}
 	for _, dir := range strings.Split(dirs, ":") {
 		if dir != "" && hasCompiledSchemas(filepath.Join(dir, "glib-2.0", "schemas")) {

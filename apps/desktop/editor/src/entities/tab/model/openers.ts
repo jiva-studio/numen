@@ -59,8 +59,10 @@ const ORDINARY: FileKind = { isNote: true, type: 'note' }
 
 /** The extension of a path, lowercase and without the dot, and empty where it has none. */
 const getExtension = (path: string): string => {
+  // Stryker disable next-line LogicalOperator: split('/').pop() on a string always returns a string.
   const name = path.split('/').pop() ?? path
   const dot = name.lastIndexOf('.')
+  // Stryker disable next-line StringLiteral: fallback when a filename has no extension matches no registered extension.
   return dot > 0 ? name.slice(dot + 1).toLowerCase() : ''
 }
 
