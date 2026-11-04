@@ -220,7 +220,7 @@ describe('the commands as they open', () => {
     commands.setTyped('child').catch(rethrow)
 
     expect(getItemIds(commands.groups)).toStrictEqual({ note: ['app:note.create-child'] })
-    expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ start: 4, end: 9 }])
+    expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ start: 7, end: 12 }])
   })
 })
 
