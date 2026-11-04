@@ -12,7 +12,7 @@ import (
 // hasSystemFrame is whether the windows of this platform keep the system title bar.
 func hasSystemFrame() bool { return runtime.GOOS == "darwin" }
 
-func TestMainWindowDrawsItsOwnTitleBar(t *testing.T) {
+func TestMainWindowOptions_DropsSystemFrame(t *testing.T) {
 	opened, _ := windowOn(t)
 
 	got := getMainWindowOptions(opened)
@@ -25,7 +25,7 @@ func TestMainWindowDrawsItsOwnTitleBar(t *testing.T) {
 	}
 }
 
-func TestSecondaryWindowDrawsItsOwnTitleBar(t *testing.T) {
+func TestSecondaryWindowOptions_DropsSystemFrame(t *testing.T) {
 	opened, _ := windowOn(t)
 
 	got := getSecondaryWindowOptions(opened, editor.DetachedTab{ID: "a", X: 10, Y: 20})
@@ -38,7 +38,7 @@ func TestSecondaryWindowDrawsItsOwnTitleBar(t *testing.T) {
 	}
 }
 
-func TestFatalReportDrawsItsOwnTitleBar(t *testing.T) {
+func TestFatalReportPage_DrawsTitleBar(t *testing.T) {
 	page, err := fatalReport{}.page(container.NewConfig(container.Config{}), errFatalSample)
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +51,7 @@ func TestFatalReportDrawsItsOwnTitleBar(t *testing.T) {
 	}
 }
 
-func TestFatalWindowIsFramelessWhereTheBarIsDrawn(t *testing.T) {
+func TestFatalWindowOptions_DropsSystemFrame(t *testing.T) {
 	got := getFatalWindowOptions()
 
 	if got.Frameless == hasSystemFrame() {
