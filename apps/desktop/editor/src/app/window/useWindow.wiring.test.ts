@@ -259,7 +259,6 @@ beforeEach(() => {
       commandDeps: { name: 'commandDeps' },
       palette: {},
       onKeyDown: vi.fn(),
-      showNote: vi.fn(() => Promise.resolve(true)),
       getNoteCommands: vi.fn(() => [
         { id: 'org.example.sample:share.run', text: 'Share', group: 'note' },
       ]),
@@ -394,8 +393,6 @@ describe('the parts of the window', () => {
   it('hand the kinds what the commands declare of the plugins', async () => {
     useWindow()
 
-    await expect(h.args.kinds.showNote('a.md')).resolves.toBe(true)
-    expect(h.f.commands.showNote).toHaveBeenCalledWith('a.md')
     expect(h.args.kinds.getNoteCommands()).toStrictEqual([
       { id: 'org.example.sample:share.run', text: 'Share', group: 'note' },
     ])

@@ -76,8 +76,10 @@ export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
   const { pluginHost } = options
 
-  const { getPaletteEntries, getCommandNote, showNote, getNoteCommands, pluginWays } =
-    usePluginCommands(core, pluginHost)
+  const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = usePluginCommands(
+    core,
+    pluginHost,
+  )
 
   const palette = useSearch(core, words, { coverage })
   const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [

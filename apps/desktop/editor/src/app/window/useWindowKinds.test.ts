@@ -38,11 +38,7 @@ interface Graph {
 /** A tab kind that accepts text. */
 const CHAT = { kind: 'chat', isTool: true, receiveText: vi.fn() }
 
-const create = ({
-  graph,
-  hasChat = true,
-  showsNotes = true,
-}: { graph?: Graph; hasChat?: boolean; showsNotes?: boolean } = {}) => {
+const create = ({ graph, hasChat = true }: { graph?: Graph; hasChat?: boolean } = {}) => {
   const writer = vi.fn()
   const graphKind = {
     kind: 'graph',
@@ -71,7 +67,6 @@ const create = ({
       tabs: ref(graph ? [{ id: 'graph:1' }, { id: 'chat:1' }] : [{ id: 'chat:1' }]),
       getTab: vi.fn((id: string) => open.get(id)),
     },
-    showNote: vi.fn(() => Promise.resolve(showsNotes)),
     getNoteCommands: () => [],
     editing: { making: {}, fileFlush: { addHandler: vi.fn(), raise: vi.fn() } },
     settings: { kinds: ['settings'] },
@@ -170,19 +165,10 @@ describe('the note the window relies on', () => {
 })
 
 describe('a note travelled to', () => {
-  it('is put in front by the command a plugin declares for it', async () => {
+  it('is opened in its editor', async () => {
     const { deps, window } = create()
 
     await window.travel('a.md')
-
-    expect(deps.showNote).toHaveBeenCalledWith('a.md')
-    expect(deps.tabOpeners.openFile).not.toHaveBeenCalled()
-  })
-
-  it('is opened in its editor where no plugin declares one', async () => {
-    const { deps, window } = create({ showsNotes: false })
-
-    await window.destinations.travel('a.md')
 
     expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', '', 'current')
   })
