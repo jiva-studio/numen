@@ -4,7 +4,7 @@
   box-sizing: border-box;
   height: 2rem;
   min-height: 2rem;
-  background: var(--numen-titlebar, var(--numen-raised));
+  background: var(--numen-titlebar);
   border-bottom: 1px solid var(--numen-rule);
   color: var(--numen-ink);
   font-size: var(--numen-text-1);

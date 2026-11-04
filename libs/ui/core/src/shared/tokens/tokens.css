@@ -10,8 +10,8 @@
   --numen-raised: light-dark(#fffbf2, #27221d);
   --numen-ink: light-dark(#3a322a, #ece0cd);
   --numen-rule: light-dark(#e0d6c4, #373029);
-  /* The ground under the title bar of a window. */
-  --numen-titlebar: light-dark(#f2e9d8, #221d19);
+  /* The ground under the title bar of a window: the raised surface until a theme sets its own. */
+  --numen-titlebar: var(--numen-raised);
   /* What a video is letterboxed against. It is the same in either scheme: the
      black a film is cut against is not the interface's. */
   --numen-media-backdrop: light-dark(#000, #000);
