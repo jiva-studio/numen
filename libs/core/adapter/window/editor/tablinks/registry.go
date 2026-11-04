@@ -328,7 +328,7 @@ func (r *Registry) acceptTab(windowID string, tab Tab) bool {
 	case !isKnown:
 		r.tabOrder = append(r.tabOrder, tab.ID)
 	case previous.WindowID == windowID:
-	case len(r.watches[previous.WindowID]) > 0:
+	case r.isLive(previous.WindowID):
 		return false
 	}
 	r.setOwner(windowID, tab)
@@ -448,7 +448,36 @@ func (r *Registry) endDetach(tabID string, pending *detach, outcome MoveError) {
 }
 
 // expiry is a pending removal of a window and the cancel func of its run.
-type expiry struct{ cancel func() bool }
+// hasAccepted marks a window that accepted a tab while it had no watch.
+type expiry struct {
+	cancel      func() bool
+	hasAccepted bool
+}
+
+// isLive reports whether a window keeps its tabs against the reports of other
+// windows: it watches, or it accepted a tab and its grace period has not ended.
+func (r *Registry) isLive(windowID string) bool {
+	if len(r.watches[windowID]) > 0 {
+		return true
+	}
+	pending, ok := r.pendingWindowRemovals[windowID]
+	return ok && pending.hasAccepted
+}
+
+// keepAcceptingWindow keeps a window with no watch that accepted a tab as the
+// owner of its tabs until its grace period ends without a watch.
+func (r *Registry) keepAcceptingWindow(windowID string) {
+	if len(r.watches[windowID]) > 0 {
+		return
+	}
+	pending, ok := r.pendingWindowRemovals[windowID]
+	if !ok {
+		pending = &expiry{}
+		r.pendingWindowRemovals[windowID] = pending
+		pending.cancel = r.schedule(r.grace, func() { r.expireWindow(windowID, pending) })
+	}
+	pending.hasAccepted = true
+}
 
 // CancelDetach cancels the pending detach of a tab and drops its stored state.
 // A tab missing from the last report of its window is unlinked.

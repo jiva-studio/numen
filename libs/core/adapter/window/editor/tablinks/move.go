@@ -91,7 +91,8 @@ func (r *Registry) Move(sourceWindowID, targetWindowID string, tab MovedTab) <-c
 }
 
 // Accept completes the move or the detach moveID of a tab into a window. A
-// known tab changes owner to that window and keeps its group. An Accept
+// known tab changes owner to that window and keeps its group. A window with no
+// watch keeps the tab until its grace period ends without a watch. An Accept
 // repeated within the grace period after the move completed returns
 // MoveErrorNone again.
 func (r *Registry) Accept(windowID, tabID, moveID string) MoveError {
@@ -124,6 +125,7 @@ func (r *Registry) takeTab(windowID, tabID string) {
 	if !isKnown {
 		return
 	}
+	r.keepAcceptingWindow(windowID)
 	r.setOwner(windowID, tab)
 	r.windows[windowID] = appendMissing(r.windows[windowID], tabID)
 	r.publishSnapshot()

@@ -745,3 +745,25 @@ func TestDetachAcceptedBeforeTheNewWindowWatchesKeepsLinksAfterStaleSourceReport
 		t.Errorf("plex:2 is in window %q, want window-b", got.Tabs[1].WindowID)
 	}
 }
+
+func TestTabOfAWindowThatNeverWatchesIsUnlinkedAfterGracePeriod(t *testing.T) {
+	r, clock := newTestRegistry(t)
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "Orbits")})
+	r.Link("plex:1", "plex:2")
+	r.Detach(newOrbits())
+	r.Accept("window-b", "plex:2", readDetachID(r, "window-b", "plex:2"))
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
+	if len(r.GetSnapshot().Groups) != 1 {
+		t.Fatalf("plex:2 left its group before the grace period of window-b ended")
+	}
+
+	clock.fireAll()
+
+	got := r.GetSnapshot()
+	if len(got.Groups) != 0 {
+		t.Errorf("groups are %+v, want none", got.Groups)
+	}
+	if want := []string{"plex:1"}; !reflect.DeepEqual(getTabIDs(got), want) {
+		t.Errorf("tabs are %v, want %v", getTabIDs(got), want)
+	}
+}
