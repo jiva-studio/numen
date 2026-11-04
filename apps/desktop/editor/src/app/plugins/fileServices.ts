@@ -203,8 +203,8 @@ export function createPathCommandHost(
       })
     },
     getCommandIcon: (id) =>
-      findIcon(id) ??
       ((getContextMenuIcon?.(id) ?? getPluginCommandIcon?.(id)) as Component | undefined) ??
+      findIcon(id) ??
       null,
     getEntryIcon: (entry, isOpen) => getEntryIcon(entry, isOpen, deps.findFileIcon),
   }
