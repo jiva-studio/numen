@@ -376,8 +376,9 @@ func TestTextServerLifecycleAndFailures(t *testing.T) {
 	srv7 := NewTextServer(files, texts, texts.GetStore(pluginID), q7)
 	t.Cleanup(srv7.Close)
 	createText(t, srv7, host.TextCreation{Path: "book.epub"})
-	files.File("book.epub", string(createGuidedEpub(t)))
-	texts.File("book.epub", createGuidedEpub(t))
+	guided := createGuidedEpub(t)
+	files.File("book.epub", string(guided))
+	texts.File("book.epub", guided)
 	createText(t, srv7, host.TextCreation{Path: "book.epub"})
 	if live := readLive(t, texts, "book.epub"); !strings.Contains(live.Text, "Prologue") {
 		t.Errorf("second CreateText did not update live version, got %q", live.Text)

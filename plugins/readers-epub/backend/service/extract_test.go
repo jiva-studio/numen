@@ -3,10 +3,12 @@ package service
 import (
 	"archive/zip"
 	"bytes"
+	"maps"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -39,8 +41,8 @@ func createZipEpub(t *testing.T, entries map[string][]byte) []byte {
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles><rootfile full-path="EPUB/package.opf" media-type="application/oebps-package+xml"/></rootfiles>
 </container>`))
-	for name, content := range entries {
-		write(name, content)
+	for _, name := range slices.Sorted(maps.Keys(entries)) {
+		write(name, entries[name])
 	}
 	if err := zw.Close(); err != nil {
 		t.Fatal(err)

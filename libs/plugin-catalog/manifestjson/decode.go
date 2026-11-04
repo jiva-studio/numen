@@ -382,7 +382,10 @@ func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
 // JSON name, at every depth, and returns the path of each key removed. Values of the well-known
 // types are left as written, except the options of a setting.
 func pruneUnknown(value any, message protoreflect.MessageDescriptor, path string, unknown []string) []string {
-	object, _ := value.(map[string]any)
+	object, ok := value.(map[string]any)
+	if !ok {
+		return unknown
+	}
 	for _, key := range slices.Sorted(maps.Keys(object)) {
 		field := message.Fields().ByJSONName(key)
 		if field == nil {
@@ -405,12 +408,18 @@ func joinPath(path, key string) string {
 func pruneField(value any, field protoreflect.FieldDescriptor, path string, unknown []string) []string {
 	switch {
 	case field.IsMap():
-		entries, _ := value.(map[string]any)
+		entries, ok := value.(map[string]any)
+		if !ok {
+			return unknown
+		}
 		for _, name := range slices.Sorted(maps.Keys(entries)) {
 			unknown = pruneEntry(entries[name], field.MapValue(), joinPath(path, name), unknown)
 		}
 	case field.IsList():
-		items, _ := value.([]any)
+		items, ok := value.([]any)
+		if !ok {
+			return unknown
+		}
 		for index, item := range items {
 			unknown = pruneEntry(item, field, fmt.Sprintf("%s[%d]", path, index), unknown)
 		}
@@ -440,7 +449,10 @@ const listValueName protoreflect.FullName = "google.protobuf.ListValue"
 
 // pruneOptionList prunes each option written as an object in a list of options.
 func pruneOptionList(value any, path string, unknown []string) []string {
-	items, _ := value.([]any)
+	items, ok := value.([]any)
+	if !ok {
+		return unknown
+	}
 	descriptor := (&v1.ManifestSettingOption{}).ProtoReflect().Descriptor()
 	for index, item := range items {
 		unknown = pruneUnknown(item, descriptor, fmt.Sprintf("%s[%d]", path, index), unknown)

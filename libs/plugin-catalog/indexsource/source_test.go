@@ -101,17 +101,17 @@ func TestWithNeitherAnIndexNorFoldersNothingIsListed(t *testing.T) {
 
 func TestAnInvalidManifestIsReportedAndDoesNotHideTheOthers(t *testing.T) {
 	path := filepath.Join(t.TempDir(), indexsource.FileName)
-	good := manifestOf(catalogtest.OfferedEntries()[0])
-	writeIndex(t, path, []map[string]any{{"id": "org.example.broken"}, good})
+	entry := catalogtest.OfferedEntries()[0]
+	writeIndex(t, path, []map[string]any{{"id": "org.example.broken"}, manifestOf(entry)})
 	src := indexsource.New([]string{path}, nil)
 
 	listed, err := src.List(t.Context())
-	got, getErr := src.Get(t.Context(), good["id"].(string))
+	got, getErr := src.Get(t.Context(), entry.ID)
 
-	if !errors.Is(err, manifest.ErrEmptyName) || len(listed) != 1 || listed[0].ID != good["id"] {
+	if !errors.Is(err, manifest.ErrEmptyName) || len(listed) != 1 || listed[0].ID != entry.ID {
 		t.Errorf("List = %+v, %v; want the valid plugin and ErrEmptyName for the other", listed, err)
 	}
-	if !errors.Is(getErr, manifest.ErrEmptyName) || got.ID != good["id"] {
+	if !errors.Is(getErr, manifest.ErrEmptyName) || got.ID != entry.ID {
 		t.Errorf("Get = %+v, %v; want the valid plugin and ErrEmptyName", got, getErr)
 	}
 }

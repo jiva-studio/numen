@@ -76,7 +76,8 @@ func TestGetExtensionsAndRuntimeConfig(t *testing.T) {
 
 func TestOpenPDFPropagatesWorkerAndDocumentErrors(t *testing.T) {
 	poolErr := errors.New("pool error")
-	reader := &Reader{mu: NewReader().mu, workers: &stubPool{Pool: nil, timeout: 0, instance: nil, err: poolErr}, compilationCache: nil}
+	reader := NewReader()
+	reader.workers = &stubPool{Pool: nil, timeout: 0, instance: nil, err: poolErr}
 	if _, err := reader.Open("scan.pdf", []byte("x")); !errors.Is(err, poolErr) {
 		t.Fatalf("Open with failing pool returned %v, want %v", err, poolErr)
 	}
@@ -88,7 +89,8 @@ func TestOpenPDFPropagatesWorkerAndDocumentErrors(t *testing.T) {
 		closeErr: closeErr, renderReq: nil, renderImage: nil, renderErr: nil,
 	}
 	pool := &stubPool{Pool: nil, timeout: 0, instance: worker, err: nil}
-	reader = &Reader{mu: NewReader().mu, workers: pool, compilationCache: nil}
+	reader = NewReader()
+	reader.workers = pool
 	_, err := reader.Open("scan.pdf", []byte("x"))
 	if !errors.Is(err, ErrUnreadable) || !errors.Is(err, openErr) || !errors.Is(err, closeErr) {
 		t.Fatalf("Open with failing OpenDocument returned %v", err)
