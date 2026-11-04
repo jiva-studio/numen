@@ -37,11 +37,13 @@ type heardModel struct {
 	transcribeErr error
 }
 
+var errNoDecoder = errors.New("no decoder reads this")
+
 func (m *heardModel) Open(context.Context, []byte) (engine.Recording, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.isBroken {
-		return nil, errors.New("no decoder reads this")
+		return nil, errNoDecoder
 	}
 	m.opened++
 	return heardRecording{model: m}, nil
@@ -227,8 +229,8 @@ func TestTranscribeReportsUnopenableRecording(t *testing.T) {
 	s.model.isBroken = true
 
 	err := s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture)
-	if err == nil || errors.Unwrap(err) == nil {
-		t.Fatalf("a recording that cannot be opened returned %v (unwrap=%v)", err, errors.Unwrap(err))
+	if !errors.Is(err, errNoDecoder) {
+		t.Fatalf("a recording that cannot be opened returned %v, want it to wrap the decoder error", err)
 	}
 
 	tasks := s.queue.ListTasks()
@@ -400,7 +402,7 @@ func (f *faultyStore) Rename(ctx context.Context, from, to string) error {
 
 type faultyTexts struct {
 	host.Texts
-	listRes host.TextVersionList
+	listRes host.TextListing
 	listErr error
 	putErr  error
 	puts    int
@@ -408,9 +410,9 @@ type faultyTexts struct {
 
 func (f *faultyTexts) With(_ domain.VaultID) host.Texts { return f }
 
-func (f *faultyTexts) ListVersions(ctx context.Context, path string) (host.TextVersionList, error) {
+func (f *faultyTexts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
 	if f.listErr != nil {
-		return host.TextVersionList{}, f.listErr
+		return host.TextListing{}, f.listErr
 	}
 	if len(f.listRes.Versions) > 0 {
 		return f.listRes, nil
@@ -603,7 +605,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		t.Fatalf("expected listErr, got %v", err)
 	}
 	ft.listErr = nil
-	ft.listRes = host.TextVersionList{
+	ft.listRes = host.TextListing{
 		Versions: []domain.TextVersion{
 			{Key: "other", PluginID: PluginID},
 			{Key: "k1", PluginID: "other.plugin"},
@@ -613,7 +615,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	if err := s.transcriber.putWholeVersion(ctx, j); err != nil || ft.puts != 0 {
 		t.Fatalf("expected existing matching version to skip PutVersion, puts=%d, err=%v", ft.puts, err)
 	}
-	ft.listRes = host.TextVersionList{
+	ft.listRes = host.TextListing{
 		Versions: []domain.TextVersion{
 			{Key: "other", PluginID: PluginID},
 			{Key: "k1", PluginID: "other.plugin"},
