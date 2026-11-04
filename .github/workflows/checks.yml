@@ -121,7 +121,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # The phrase check diffs against the base, the first parent of the merge commit.
         with:
+          fetch-depth: 2
           persist-credentials: false
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -133,6 +135,11 @@ jobs:
       # The scan reads files and needs nothing installed.
       - name: Check narrative identifiers, test names, comments and documents
         run: make lint_narrative
+
+      # Narrative phrases in test titles and comments fail on the lines the pull request adds.
+      - name: Check narrative phrases on added lines
+        if: github.event_name == 'pull_request'
+        run: make lint_narrative_changed NARRATIVE_BASE=HEAD^1
 
       - if: inputs.code
         uses: ./.github/actions/install-node-modules

@@ -597,6 +597,14 @@ lint_narrative: ## reject narrative identifiers, test names, comments, documents
 	node --test $(NARRATIVE)/scan.test.mjs
 	node $(NARRATIVE)/scan.mjs . --check
 
+# The phrase rules (category 24) fail only on lines added since the merge base of NARRATIVE_BASE and HEAD;
+# a full scan reports them as advisory. CI passes the pull request base as HEAD^1.
+NARRATIVE_BASE ?= origin/main
+
+.PHONY: lint_narrative_changed
+lint_narrative_changed: ## reject narrative phrases in test titles and comments on the lines added since NARRATIVE_BASE
+	node $(NARRATIVE)/scan.mjs . --check --changed-since $(NARRATIVE_BASE)
+
 .PHONY: check_typecheck
 check_typecheck: lib_ui_build ## typecheck every frontend package and plugin with vue-tsc
 	$(MAKE) typecheck_packages
