@@ -26,12 +26,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const items = computed(() =>
-  createLinkMenuItems(
-    props.eligibleTabs,
-    props.isLinked,
-    props.linkedTargetTitle,
-    props.canDetach,
-  ),
+  createLinkMenuItems(props.eligibleTabs, props.isLinked, props.linkedTargetTitle, props.canDetach),
 )
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -53,7 +48,9 @@ function onDismiss() {
 function getIconFor(id: string): Component | null {
   if (id === DETACH_ID) return ExternalLink
   if (id === UNLINK_ID) return Link2Off
-  return props.eligibleTabs.some((t) => t.id === id) ? props.getTabIcon(id) : null
+  const tab = props.eligibleTabs.find((one) => one.id === id)
+  if (!tab) return null
+  return props.getTabIcon(id) ?? props.getKindIcon?.(tab.kind) ?? null
 }
 </script>
 

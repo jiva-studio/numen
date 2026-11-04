@@ -43,6 +43,8 @@ const create = (
         },
       }
     },
+    findKind: (isWanted: (kind: { kind: string; icon?: unknown }) => boolean) =>
+      entries.map((one) => ({ kind: one.kind ?? 'note', icon: one.icon })).find(isWanted),
   } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
   return {
     ...useOpenTabs({ core: { writeOpenTabs }, windowTabs, isWriting, reportError: vi.fn() }),
@@ -319,5 +321,20 @@ describe('the open tabs while the window leaves its vault', () => {
       { id: 'a', kind: 'note', title: 'A', path: 'a.md', saved: { scroll: 10 } },
       { id: 'c', kind: 'note', path: 'c.md', saved: undefined },
     ])
+  })
+})
+
+describe('the icon of a kind', () => {
+  it('is the icon the kind declares, for a tab of another window', () => {
+    const icon = { name: 'DeclaredIcon' }
+    const target = create([{ id: 'p', title: 'P', kind: 'agent', icon }])
+
+    expect(target.getKindIcon('agent')).toBe(icon)
+  })
+
+  it('is the one the window keeps for a kind no open tab declares an icon for', () => {
+    const target = create([])
+
+    expect(target.getKindIcon('note')).toBe(findTabKindIcon('note'))
   })
 })

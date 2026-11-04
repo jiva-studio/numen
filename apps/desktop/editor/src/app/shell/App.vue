@@ -50,6 +50,7 @@ const {
   destinations,
   closeTab,
   getTabIcon,
+  getKindIcon,
   getTitle,
   getTarget,
   tabLinks,
@@ -159,6 +160,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       :can-detach="linkMenu.canDetach.value"
       :linked-target-title="linkMenu.linkedTargetTitle.value"
       :get-tab-icon="getTabIcon"
+      :get-kind-icon="getKindIcon"
       @link="linkMenu.link"
       @unlink="linkMenu.unlink"
       @detach="linkMenu.detach"

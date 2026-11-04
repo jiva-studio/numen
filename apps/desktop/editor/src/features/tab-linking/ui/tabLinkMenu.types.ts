@@ -7,6 +7,8 @@ export interface TabLinkMenuProps {
   eligibleTabs: readonly EligibleLinkTab[]
   at: Position
   getTabIcon: (tab: TabId) => Component | null
+  /** The icon of a kind, for a tab of another window. */
+  getKindIcon?: (kind: string) => Component | null
   isLinked?: boolean
   linkedTargetTitle?: string
   /** Offers to open the tab in a new window. */

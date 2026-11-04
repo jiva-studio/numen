@@ -584,6 +584,7 @@ export const useWindow = () => {
     destinations: getKinds(ctx).destinations,
     closeTab,
     getTabIcon: openTabs.getTabIcon,
+    getKindIcon: openTabs.getKindIcon,
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,

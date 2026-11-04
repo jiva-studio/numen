@@ -95,3 +95,20 @@ describe('the icon a tab carries in the link menu', () => {
     expect(wrapper.findAllComponents(PlexIcon)).toHaveLength(1)
   })
 })
+
+describe('the icon of a tab of another window', () => {
+  it('is the icon of its kind', () => {
+    const FilesIcon = defineComponent({ name: 'FilesIcon', render: () => h('svg') })
+    const wrapper = mount(TabLinkMenu, {
+      props: {
+        tabId: 'plex:main',
+        eligibleTabs: [{ id: 'files:other', title: 'Files', kind: 'files', isLinked: false }],
+        at: { x: 0, y: 0 },
+        getTabIcon: () => null,
+        getKindIcon: (kind: string) => (kind === 'files' ? FilesIcon : null),
+      },
+    })
+
+    expect(wrapper.findAllComponents(FilesIcon)).toHaveLength(1)
+  })
+})
