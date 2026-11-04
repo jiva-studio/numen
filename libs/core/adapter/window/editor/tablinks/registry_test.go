@@ -41,11 +41,12 @@ func (s *timers) fireAll() {
 
 const grace = 30 * time.Second
 
-func newTestRegistry() (*Registry, *timers) {
+func newTestRegistry(t *testing.T) (*Registry, *timers) {
+	t.Helper()
 	clock := &timers{}
 	r, err := NewRegistry(grace, clock.schedule)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	return r, clock
 }
@@ -69,7 +70,7 @@ func getGroupTabs(s Snapshot) [][]string {
 }
 
 func TestLinkGroupsTabsOfTwoWindows(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "Orbits")})
 	writeTabs(r, "window-b", []Tab{files("files:1", "Files")})
 
@@ -88,7 +89,7 @@ func TestLinkGroupsTabsOfTwoWindows(t *testing.T) {
 }
 
 func TestLinkIgnoresUnreportedTab(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "Orbits")})
 
 	r.Link("plex:1", "plex:ghost")
@@ -100,7 +101,7 @@ func TestLinkIgnoresUnreportedTab(t *testing.T) {
 }
 
 func TestLinkAddsTabToGroupOfEitherSide(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B"), plex("plex:3", "C"), plex("plex:4", "D")})
 
 	r.Link("plex:1", "plex:2")
@@ -113,7 +114,7 @@ func TestLinkAddsTabToGroupOfEitherSide(t *testing.T) {
 }
 
 func TestLinkMergesTwoGroups(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	writeTabs(r, "window-b", []Tab{plex("plex:3", "C"), plex("plex:4", "D")})
 	r.Link("plex:1", "plex:2")
@@ -134,7 +135,7 @@ func TestLinkMergesTwoGroups(t *testing.T) {
 }
 
 func TestUnlinkDeletesGroupWithOneTabLeft(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B"), plex("plex:3", "C")})
 	r.Link("plex:1", "plex:2")
 	r.Link("plex:1", "plex:3")
@@ -151,7 +152,7 @@ func TestUnlinkDeletesGroupWithOneTabLeft(t *testing.T) {
 }
 
 func TestWriteTabsUnlinksTabMissingFromReport(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
 
@@ -167,7 +168,7 @@ func TestWriteTabsUnlinksTabMissingFromReport(t *testing.T) {
 }
 
 func TestCloseOfLastWatchUnlinksWindowTabsAfterGracePeriod(t *testing.T) {
-	r, clock := newTestRegistry()
+	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	watch := r.Watch("window-b")
 	writeTabs(r, "window-b", []Tab{files("files:1", "Files")})
@@ -190,7 +191,7 @@ func TestCloseOfLastWatchUnlinksWindowTabsAfterGracePeriod(t *testing.T) {
 }
 
 func TestCloseKeepsTabsOfWindowWithAnotherWatch(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	first := r.Watch("window-a")
 	second := r.Watch("window-a")
 	defer second.Close()
@@ -205,7 +206,7 @@ func TestCloseKeepsTabsOfWindowWithAnotherWatch(t *testing.T) {
 }
 
 func TestDetachKeepsLinksWhenNewWindowReportsTab(t *testing.T) {
-	r, clock := newTestRegistry()
+	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
 
@@ -230,7 +231,7 @@ func TestDetachKeepsLinksWhenNewWindowReportsTab(t *testing.T) {
 }
 
 func TestDetachUnlinksUnreportedTabAfterGracePeriod(t *testing.T) {
-	r, clock := newTestRegistry()
+	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
 	r.Detach("plex:2")
@@ -248,7 +249,7 @@ func TestDetachUnlinksUnreportedTabAfterGracePeriod(t *testing.T) {
 }
 
 func TestFailedDetachKeepsTabInItsWindow(t *testing.T) {
-	r, clock := newTestRegistry()
+	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
 	r.Detach("plex:2")
@@ -261,7 +262,7 @@ func TestFailedDetachKeepsTabInItsWindow(t *testing.T) {
 }
 
 func TestDetachKeepsLinksAfterOldWindowClosesUntilGracePeriodEnds(t *testing.T) {
-	r, clock := newTestRegistry()
+	r, clock := newTestRegistry(t)
 	watch := r.Watch("window-a")
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
 	writeTabs(r, "window-c", []Tab{plex("plex:3", "C")})
@@ -280,7 +281,7 @@ func TestDetachKeepsLinksAfterOldWindowClosesUntilGracePeriodEnds(t *testing.T) 
 }
 
 func TestWatchStartsFromCurrentState(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
 
@@ -296,7 +297,7 @@ func TestWatchStartsFromCurrentState(t *testing.T) {
 }
 
 func TestEveryWatchReceivesEachChangeAndSync(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	first, second := r.Watch("window-a"), r.Watch("window-b")
 	defer first.Close()
 	defer second.Close()
@@ -321,7 +322,7 @@ func TestEveryWatchReceivesEachChangeAndSync(t *testing.T) {
 }
 
 func TestSyncPathOfUnlinkedTabSendsNothing(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
 
 	if r.SyncPath("plex:1", "notes/Orbits.md", "") {
@@ -330,7 +331,7 @@ func TestSyncPathOfUnlinkedTabSendsNothing(t *testing.T) {
 }
 
 func TestCancelEndsEveryWatchOfTheWindow(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	mine, other := r.Watch("window-a"), r.Watch("window-b")
 	defer mine.Close()
 	defer other.Close()
@@ -388,7 +389,7 @@ func writeTabs(r *Registry, windowID string, tabs []Tab) {
 }
 
 func TestWriteTabsIgnoresAWindowWithNoWatch(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	watch := r.Watch("window-a")
 	watch.Close()
 
@@ -401,7 +402,7 @@ func TestWriteTabsIgnoresAWindowWithNoWatch(t *testing.T) {
 }
 
 func TestWriteTabsKeepsTabOfAnotherLiveWindowOutsideDetach(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
 
 	writeTabs(r, "window-b", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
@@ -417,7 +418,7 @@ func TestWriteTabsKeepsTabOfAnotherLiveWindowOutsideDetach(t *testing.T) {
 }
 
 func TestDetachIgnoresStaleOldWindowReportAfterNewWindow(t *testing.T) {
-	r, clock := newTestRegistry()
+	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
 	r.Detach("plex:2")
@@ -437,7 +438,7 @@ func TestDetachIgnoresStaleOldWindowReportAfterNewWindow(t *testing.T) {
 }
 
 func TestDetachSurvivesOldWindowReportBeforeNewWindow(t *testing.T) {
-	r, clock := newTestRegistry()
+	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
 	r.Detach("plex:2")
@@ -457,7 +458,7 @@ func TestDetachSurvivesOldWindowReportBeforeNewWindow(t *testing.T) {
 }
 
 func TestSlowWatchReceivesLastSyncOfEachGroup(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	watch := r.Watch("window-a")
 	defer watch.Close()
 	const groups = 20
@@ -500,7 +501,7 @@ func TestNewRegistryRequiresASchedule(t *testing.T) {
 }
 
 func TestWriteTabsAfterReloadKeepsTabsOfTheNewWindow(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	old := r.Watch("window-old")
 	r.WriteTabs("window-old", []Tab{plex("plex:1", "A")})
 	reloaded := r.Watch("window-new")
@@ -519,7 +520,7 @@ func TestWriteTabsAfterReloadKeepsTabsOfTheNewWindow(t *testing.T) {
 }
 
 func TestRemovalOfReloadedWindowKeepsTabsOfTheNewWindow(t *testing.T) {
-	r, clock := newTestRegistry()
+	r, clock := newTestRegistry(t)
 	old := r.Watch("window-old")
 	r.WriteTabs("window-old", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
@@ -536,7 +537,7 @@ func TestRemovalOfReloadedWindowKeepsTabsOfTheNewWindow(t *testing.T) {
 }
 
 func TestWatchDeliversSnapshotBeforeLaterSync(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B"), plex("plex:3", "C")})
 	r.Link("plex:1", "plex:2")
 	watch := r.Watch("window-b")
@@ -566,7 +567,7 @@ func TestWatchDeliversSnapshotBeforeLaterSync(t *testing.T) {
 }
 
 func TestReconnectKeepsLinksOfTheWindow(t *testing.T) {
-	r, clock := newTestRegistry()
+	r, clock := newTestRegistry(t)
 	first := r.Watch("window-a")
 	r.WriteTabs("window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
@@ -583,7 +584,7 @@ func TestReconnectKeepsLinksOfTheWindow(t *testing.T) {
 }
 
 func TestFailedDetachDropsTabClosedInItsWindow(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B"), plex("plex:3", "C")})
 	r.Link("plex:1", "plex:2")
 	r.Link("plex:1", "plex:3")
@@ -598,7 +599,7 @@ func TestFailedDetachDropsTabClosedInItsWindow(t *testing.T) {
 }
 
 func TestCancelDetachDropsTabItsWindowNoLongerReports(t *testing.T) {
-	r, _ := newTestRegistry()
+	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
 	r.Detach("plex:2")

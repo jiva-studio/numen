@@ -272,7 +272,7 @@ describe('linked tabs in two windows', () => {
   const GROUP: TabLinkGroup = { id: 'group-1', colorIndex: 1, tabs: ['plex:a', 'plex:b'] }
 
   /** Returns one window with one plex tab whose navigate reports the path back at once. */
-  const createWindow = (tabId: string, paths: Map<string, string>, sent: TabPathSync[]) => {
+  const createWindow = (tabId: string, paths: Map<string, string>, outbox: TabPathSync[]) => {
     const window = {} as { sync: ReturnType<typeof createTabSync> }
     const navigate: Navigate = (_state, path) => {
       paths.set(tabId, path)
@@ -285,7 +285,7 @@ describe('linked tabs in two windows', () => {
         getGroupOf: (id) => (GROUP.tabs.includes(id) ? GROUP : null),
       },
       sendSync: (sync) => {
-        sent.push({ groupId: GROUP.id, ...sync })
+        outbox.push({ groupId: GROUP.id, ...sync })
         return Promise.resolve()
       },
       onError: () => undefined,
@@ -295,21 +295,21 @@ describe('linked tabs in two windows', () => {
 
   it('ends on one path after both windows navigate before either sync arrives', () => {
     const paths = new Map<string, string>()
-    const sent: TabPathSync[] = []
-    const windowA = createWindow('plex:a', paths, sent)
-    const windowB = createWindow('plex:b', paths, sent)
+    const outbox: TabPathSync[] = []
+    const windowA = createWindow('plex:a', paths, outbox)
+    const windowB = createWindow('plex:b', paths, outbox)
 
     paths.set('plex:a', 'first.md')
     windowA.syncPathFromTab('plex:a', 'first.md')
     paths.set('plex:b', 'second.md')
     windowB.syncPathFromTab('plex:b', 'second.md')
-    for (const sync of sent.splice(0)) {
+    for (const sync of outbox.splice(0)) {
       windowA.applySync(sync)
       windowB.applySync(sync)
     }
 
     expect(paths.get('plex:a')).toBe('second.md')
     expect(paths.get('plex:b')).toBe('second.md')
-    expect(sent).toEqual([])
+    expect(outbox).toEqual([])
   })
 })
