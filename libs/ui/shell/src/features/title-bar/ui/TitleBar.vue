@@ -20,7 +20,7 @@ const props = withDefaults(
     /** The vault in the window; empty where none is open. */
     vaultName?: string
     controls?: ControlsStyle
-    maximised?: boolean
+    isMaximised?: boolean
     /** Sorted as they are to be drawn. */
     actions?: readonly TitleBarAction[]
     words?: Partial<TitleBarWords>
@@ -28,7 +28,7 @@ const props = withDefaults(
   {
     vaultName: '',
     controls: 'windows',
-    maximised: false,
+    isMaximised: false,
     actions: () => [],
     words: () => ({}),
   },
@@ -72,7 +72,7 @@ function onDoubleClick(event: MouseEvent): void {
     <WindowControls
       v-if="controls === 'mac'"
       look="mac"
-      :maximised="maximised"
+      :is-maximised="isMaximised"
       :words="allWords"
       @minimise="emit('minimise')"
       @toggle-maximise="emit('toggle-maximise')"
@@ -90,7 +90,7 @@ function onDoubleClick(event: MouseEvent): void {
     <WindowControls
       v-if="controls === 'windows'"
       look="windows"
-      :maximised="maximised"
+      :is-maximised="isMaximised"
       :words="allWords"
       @minimise="emit('minimise')"
       @toggle-maximise="emit('toggle-maximise')"

@@ -15,7 +15,7 @@ const action = (id: string, group?: string, shortcut?: string): TitleBarAction =
 interface Options {
   vaultName?: string
   controls?: ControlsStyle
-  maximised?: boolean
+  isMaximised?: boolean
   actions?: readonly TitleBarAction[]
 }
 
@@ -26,7 +26,7 @@ const mountBar = (options: Options = {}): VueWrapper =>
       appName: 'numen',
       vaultName: 'Orchard notes',
       controls: 'windows' as ControlsStyle,
-      maximised: false,
+      isMaximised: false,
       actions: [],
       ...options,
     },
@@ -124,15 +124,15 @@ describe('the actions', () => {
 
 describe('the window drag area', () => {
   it('lets the empty part drag the window', () => {
-    expect(mountBar().find('[data-title-bar]').element.style.getPropertyValue('--wails-draggable'))
+    expect((mountBar().find('[data-title-bar]').element as HTMLElement).style.getPropertyValue('--wails-draggable'))
       .toBe('drag')
   })
 
   it('keeps the buttons out of the drag area', () => {
     const wrapper = mountBar({ actions: [action('a')] })
 
-    expect(button(wrapper, 'a').element.style.getPropertyValue('--wails-draggable')).toBe('no-drag')
-    expect(control(wrapper, 'close').element.style.getPropertyValue('--wails-draggable')).toBe(
+    expect((button(wrapper, 'a').element as HTMLElement).style.getPropertyValue('--wails-draggable')).toBe('no-drag')
+    expect((control(wrapper, 'close').element as HTMLElement).style.getPropertyValue('--wails-draggable')).toBe(
       'no-drag',
     )
   })
@@ -200,10 +200,10 @@ describe('the window controls', () => {
   })
 
   it('show the restore icon instead of maximise while the window is maximised', () => {
-    const wrapper = mountBar({ maximised: true })
+    const wrapper = mountBar({ isMaximised: true })
 
     expect(control(wrapper, 'toggle-maximise').attributes('data-maximised')).toBe('true')
-    expect(mountBar({ maximised: false }).find('[data-control="toggle-maximise"]').attributes(
+    expect(mountBar({ isMaximised: false }).find('[data-control="toggle-maximise"]').attributes(
       'data-maximised',
     )).toBe('false')
   })

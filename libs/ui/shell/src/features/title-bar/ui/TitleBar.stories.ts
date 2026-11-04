@@ -14,7 +14,7 @@ interface Knobs {
   appName: string
   vaultName: string
   controls: ControlsStyle
-  maximised: boolean
+  isMaximised: boolean
   actions: readonly TitleBarAction[]
   /** The width the window is drawn at. */
   width: string
@@ -49,13 +49,13 @@ const meta: Meta<Knobs> = {
   component: TitleBar,
   argTypes: {
     controls: { control: 'inline-radio', options: ['windows', 'mac', 'native-mac'] },
-    maximised: { control: 'boolean' },
+    isMaximised: { control: 'boolean' },
   },
   args: {
     appName: 'numen',
     vaultName: 'Orchard notes',
     controls: 'windows',
-    maximised: false,
+    isMaximised: false,
     actions: [FILES, PLEX, NEW_NOTE],
     width: '60rem',
   },
@@ -101,7 +101,7 @@ export const Dark: Story = {
 
 /** A maximised window shows the restore icon. */
 export const Maximised: Story = {
-  args: { maximised: true },
+  args: { isMaximised: true },
   play: async ({ canvasElement }) => {
     const toggle = canvasElement.querySelector('[data-control="toggle-maximise"]')!
     await expect(toggle.getAttribute('data-maximised')).toBe('true')

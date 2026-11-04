@@ -4,7 +4,7 @@
  */
 import { computed, onMounted, onUpdated, ref, useTemplateRef } from 'vue'
 import { Ellipsis } from '@lucide/vue'
-import { Menu, type MenuItem } from '@numen/ui'
+import { Menu, measureRect, type MenuItem } from '@numen/ui'
 import { findGroupStarts } from '../lib/groups'
 import { splitActions } from '../lib/overflow'
 import { formatTooltip } from '../lib/title'
@@ -51,7 +51,7 @@ onUpdated(measureButton)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onOpenMenu(): void {
-  const box = more.value?.getBoundingClientRect()
+  const box = measureRect(more.value)
   at.value = { x: box?.left ?? 0, y: box?.bottom ?? 0 }
   asking.value = box?.width ?? 0
   isOpen.value = true

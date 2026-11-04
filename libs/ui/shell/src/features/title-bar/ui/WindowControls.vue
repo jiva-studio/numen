@@ -9,7 +9,7 @@ import type { TitleBarWords } from '../model/words'
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
   look: 'windows' | 'mac'
-  maximised: boolean
+  isMaximised: boolean
   words: TitleBarWords
 }>()
 
@@ -39,13 +39,13 @@ const emit = defineEmits<{
       class="window-controls__button window-controls__button--maximise"
       data-control="toggle-maximise"
       tabindex="-1"
-      :data-maximised="String(maximised)"
-      :title="maximised ? words.restore : words.maximise"
+      :data-maximised="String(isMaximised)"
+      :title="isMaximised ? words.restore : words.maximise"
       style="--wails-draggable: no-drag"
       @click="emit('toggle-maximise')"
     >
       <template v-if="look === 'windows'">
-        <Copy v-if="maximised" :size="12" />
+        <Copy v-if="isMaximised" :size="12" />
         <Square v-else :size="12" />
       </template>
     </button>
