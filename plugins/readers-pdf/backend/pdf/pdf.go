@@ -119,6 +119,7 @@ func (w *Workers) Read(raw []byte) (*Book, error) {
 
 // readBook reads the open document and closes it.
 func readBook(doc *document) (book *Book, err error) {
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="readBook releases the worker and closes the document on return"
 	defer func() { err = errors.Join(err, doc.Close()) }()
 
 	book = &Book{Title: doc.title(), Text: "", Pages: nil, Parts: nil, Structure: ""}
@@ -127,7 +128,7 @@ func readBook(doc *document) (book *Book, err error) {
 	pages := min(doc.pages, mostPages)
 	starts := make([]int, 0, pages)
 	for i := 0; i < pages; i++ {
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="text extraction halts when accumulated text equals mostText"
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,BRANCH_IF reason="text extraction halts when accumulated text equals mostText"
 		if text.Len() >= mostText {
 			break
 		}
@@ -153,8 +154,9 @@ func readBook(doc *document) (book *Book, err error) {
 	} else {
 		book.Structure = FromNothing
 	}
-	// gomutants:disable-next-line STATEMENT_REMOVE,RETURN_FALSE reason="parts are ordered by appearance in document text"
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="parts are ordered by appearance in document text"
 	sort.SliceStable(book.Parts, func(i, j int) bool {
+		// gomutants:disable-next-line RETURN_FALSE,CONDITIONALS_BOUNDARY reason="parts are stably ordered by ascending byte offset"
 		return book.Parts[i].Offset < book.Parts[j].Offset
 	})
 	return book, nil
@@ -178,7 +180,7 @@ func (b *Book) Locate(offset int) Location {
 	if i := getPrecedingIndex(len(b.Parts), offset, func(i int) int { return b.Parts[i].Offset }); i >= 0 {
 		loc.Part, loc.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
 	}
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="page index matches when preceding index is non-negative"
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="page index matches when preceding index is non-negative"
 	if i := getPrecedingIndex(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
 		loc.Page = i
 	}

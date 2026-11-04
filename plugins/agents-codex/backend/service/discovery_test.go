@@ -3,8 +3,10 @@ package service
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 )
 
@@ -46,5 +48,59 @@ func TestDiscoveryWithCustomPath(t *testing.T) {
 	}
 	if got := FindCodex(custom); got != custom {
 		t.Errorf("expected %s, got %s", custom, got)
+	}
+}
+
+func TestDiscoveryPlacesAndFallbacks(t *testing.T) {
+	if len(getCodexPlaces()) == 0 {
+		t.Fatal("expected non-empty getCodexPlaces")
+	}
+	withoutAgentsAnywhere(t)
+
+	if IsCodexInstalled("") {
+		t.Error("expected empty customPath to fall through and report not installed")
+	}
+	if IsCodexInstalled("/nonexistent/codex-bin") {
+		t.Error("expected nonexistent customPath to report not installed")
+	}
+	if got := findCodexIn(nil, ""); got != "codex" {
+		t.Errorf("findCodexIn(\"\", nil) = %q, want codex", got)
+	}
+	if got := findCodexIn(nil, "/nonexistent/codex-bin"); got != "codex" {
+		t.Errorf("findCodexIn(nonexistent) = %q, want codex", got)
+	}
+
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	inHome := filepath.Join(home, ".local", "bin", "codex")
+	if err := os.MkdirAll(filepath.Dir(inHome), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(inHome, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if got := findCodexIn([]string{"~/.local/bin/codex"}); got != inHome {
+		t.Errorf("findCodexIn(~/...) = %q, want %q", got, inHome)
+	}
+
+	// Empty HOME does not expand ~/ and falls through to absolute place.
+	absBin := filepath.Join(t.TempDir(), "abs-codex")
+	if err := os.WriteFile(absBin, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", "")
+	if got := findCodexIn([]string{"~/.local/bin/codex", absBin}); got != absBin {
+		t.Errorf("findCodexIn with empty HOME = %q, want %q", got, absBin)
+	}
+
+	cmds := []agentrun.ProgramCommand{
+		{Program: "other", Command: []string{"other-bin"}},
+		{Program: "codex", Command: []string{"codex-bin", "--arg"}},
+	}
+	if got := programCommand(cmds, "codex"); !slices.Equal(got, []string{"codex-bin", "--arg"}) {
+		t.Errorf("programCommand(codex) = %v", got)
+	}
+	if got := programCommand(cmds, "missing"); got != nil {
+		t.Errorf("programCommand(missing) = %v, want nil", got)
 	}
 }

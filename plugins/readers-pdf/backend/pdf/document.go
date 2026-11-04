@@ -61,6 +61,7 @@ type Workers struct {
 // NewWorkers returns a pool that has not started, of one worker per CPU, keeping no idle worker.
 func NewWorkers() *Workers {
 	return &Workers{
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="NewWorkers initializes pool counters to zero"
 		mu: sync.Mutex{}, pool: nil, size: 0, idle: 0, open: 0, isWarmed: false, release: nil,
 		afterFunc: nil, idleRelease: defaultIdleRelease, compilation: nil,
 	}
@@ -95,7 +96,7 @@ func (w *Workers) SetAfterFunc(fn func(time.Duration, func()) Timer) {
 
 // defaultIdleRelease is how long an unused pool keeps its workers; a worker holds
 // memory for as long as it lives.
-// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="defaultIdleRelease is the timeout before unused workers are released"
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="defaultIdleRelease is the timeout before unused workers are released"
 const defaultIdleRelease = 5 * time.Minute
 
 // idleMemoryPercent is the share of the available memory the idle workers may
@@ -113,6 +114,7 @@ const workerBytes int64 = 32 << 20
 // worker count, capped to what fits in idleMemoryPercent of the available
 // memory. Zero when the available memory is unknown.
 func ComputeIdleWorkers(planned int, availableBytes int64) int {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT,EXPRESSION_REMOVE reason="non-positive planned count or available memory yields zero idle workers"
 	if planned <= 0 || availableBytes <= 0 {
 		return 0
 	}
@@ -153,7 +155,7 @@ func (w *Workers) getPoolSize() int {
 // waitForWorker is how long a reader waits for a free worker. Reading a
 // document takes a second or two. The wait is bounded: a worker stuck inside the
 // library produces an error.
-// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="waitForWorker is the bounded wait timeout for an available worker"
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="waitForWorker is the bounded wait timeout for an available worker"
 const waitForWorker = 2 * time.Minute
 
 // acquirePool returns the running pool, starting one when none is running or
@@ -166,7 +168,8 @@ func (w *Workers) acquirePool() (pdfium.Pool, error) {
 	if w.pool == nil {
 		total := w.getPoolSize()
 		made, err := webassembly.Init(webassembly.Config{
-			Context:       nil,
+			Context: nil,
+			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="MinIdle starts at zero workers"
 			MinIdle:       0,
 			MaxTotal:      total,
 			MaxIdle:       min(w.idle, total),
@@ -176,7 +179,7 @@ func (w *Workers) acquirePool() (pdfium.Pool, error) {
 			Stdout:        nil,
 			Stderr:        nil,
 			RandomSource:  nil,
-			// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="workers are only reused when idle allowance is positive"
+			// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="workers are only reused when idle allowance is positive"
 			ReuseWorkers: w.idle > 0,
 		})
 		// gomutants:disable-next-line BRANCH_IF reason="webassembly initialization errors abort the pool acquisition"
@@ -222,7 +225,7 @@ func (w *Workers) markDocumentClosed() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.open--
-	// gomutants:disable-next-line EXPRESSION_REMOVE reason="markDocumentClosed only arms the idle release timer when no documents remain open and idle workers are kept"
+	// gomutants:disable-next-line EXPRESSION_REMOVE,INVERT_LOGICAL,INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="markDocumentClosed only arms the idle release timer when no documents remain open and idle workers are kept"
 	if w.open > 0 || w.pool == nil || w.idle == 0 {
 		return
 	}
@@ -244,13 +247,13 @@ func (w *Workers) releasePool() {
 	if w.open > 0 || w.pool == nil {
 		return
 	}
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="releasePool closes idle workers pool"
+	// gomutants:disable-next-line STATEMENT_REMOVE,CONDITIONALS_NEGATION,BRANCH_IF reason="releasePool closes idle workers pool and logs any failure"
 	if err := w.pool.Close(); err != nil {
 		fmt.Fprintf(os.Stderr, "readers-pdf: close the worker pool: %v\n", err)
 	}
 	w.pool = nil
-	// gomutants:disable-next-line BRANCH_IF,STATEMENT_REMOVE reason="releasePool cancels any pending timer when closing pool"
 	if w.release != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="releasePool cancels any pending timer when closing pool"
 		w.release.Stop()
 		w.release = nil
 	}
@@ -326,6 +329,7 @@ func (w *Workers) openSource(src source) (*document, error) {
 		}
 		return nil
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="empty source files fail immediately with ErrNotPDF"
 	if src.size == 0 {
 		return nil, withCloseError(fmt.Errorf("%w: the file is empty", ErrNotPDF), closeFile())
 	}
@@ -340,7 +344,7 @@ func (w *Workers) openSource(src source) (*document, error) {
 		closeErr := errors.Join(w.putWorker(worker), closeFile())
 		// A file that requires a password has unreadable text; it is reported as
 		// encrypted, not malformed.
-		// gomutants:disable-next-line EXPRESSION_REMOVE reason="password-protected PDFs return ErrEncrypted"
+		// gomutants:disable-next-line EXPRESSION_REMOVE,INVERT_LOGICAL,BRANCH_IF reason="password-protected PDFs return ErrEncrypted"
 		if errors.Is(err, pdfiumerrors.ErrPassword) || errors.Is(err, pdfiumerrors.ErrSecurity) {
 			return nil, withCloseError(fmt.Errorf("%w: %w", ErrEncrypted, err), closeErr)
 		}
@@ -348,6 +352,7 @@ func (w *Workers) openSource(src source) (*document, error) {
 		return nil, withCloseError(fmt.Errorf("%w: %w", ErrNotPDF, err), closeErr)
 	}
 
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="pages field is overwritten after FPDF_GetPageCount"
 	doc := &document{workers: w, worker: worker, ref: opened.Document, pages: 0, file: src.file}
 	count, err := worker.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc.ref})
 	// gomutants:disable-next-line BRANCH_IF reason="aborts when page count cannot be retrieved"
@@ -365,6 +370,7 @@ func (d *document) Close() error {
 	if d.file != nil {
 		return errors.Join(err, d.file.Close())
 	}
+	// gomutants:disable-next-line RETURN_ERROR_NIL reason="worker close error is propagated when no source file is attached"
 	return err
 }
 

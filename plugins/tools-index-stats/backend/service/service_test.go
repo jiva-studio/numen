@@ -138,15 +138,17 @@ func TestAPluginWithoutThePermissionIsDeniedAndAnyOtherFailureIsInternal(t *test
 	}
 
 	_, err = newStats(failingIndex{}, clock.NewFake(getStart()), 8).get(t.Context(), api.GetStatsRequest{})
-	if err == nil || errors.As(err, &failure) {
-		t.Errorf("error = %v, want a plain error the server answers as internal", err)
+	if !errors.Is(err, errHostUnreachable) || errors.As(err, &failure) {
+		t.Errorf("error = %v, want wrapped errHostUnreachable", err)
 	}
 }
+
+var errHostUnreachable = errors.New("host unreachable")
 
 type failingIndex struct{}
 
 func (failingIndex) GetIndexStats(context.Context) (host.IndexStats, error) {
-	return host.IndexStats{}, errors.New("host unreachable")
+	return host.IndexStats{}, errHostUnreachable
 }
 
 // post calls the path of the plugin with a JSON body and returns the status and the body of the answer.

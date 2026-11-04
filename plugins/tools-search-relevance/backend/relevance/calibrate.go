@@ -197,6 +197,7 @@ func clipText(text string, limit int) string {
 // collectNoise gathers the similarities of the sample into one list, and counts the queries that had
 // a vector. A query without a vector is not measured.
 func collectNoise(queries []host.SimilarityQuery, sample host.SimilaritySample) ([]float64, int) {
+	// gomutants:disable-next-line ARITHMETIC_BASE reason="Slice capacity hint does not affect collected values."
 	similarities := make([]float64, 0, len(queries)*sample.PassageCount)
 	measured := 0
 	for i, query := range queries {

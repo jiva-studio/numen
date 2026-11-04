@@ -116,6 +116,12 @@ func TestGetCfi_ErrorsOnEmptyPath(t *testing.T) {
 	if codeOf(err) != server.CodeInvalidArgument {
 		t.Errorf("GetCfi without a path: %v, want invalid argument", err)
 	}
+	if _, err := books.GetCfi(t.Context(), api.GetCfiRequest{Path: "missing.epub"}); codeOf(err) != server.CodeNotFound {
+		t.Errorf("GetCfi on missing file: %v, want not found", err)
+	}
+	if _, err := books.FindOffset(t.Context(), api.FindOffsetRequest{Path: "missing.epub", Cfi: "epubcfi(/6/2!/4/2/1:0)"}); codeOf(err) != server.CodeNotFound {
+		t.Errorf("FindOffset on missing file: %v, want not found", err)
+	}
 }
 
 func TestGetCfiFindsNothingInABookWithNoText(t *testing.T) {
@@ -127,6 +133,7 @@ func TestGetCfiFindsNothingInABookWithNoText(t *testing.T) {
 	})
 	files := hosttest.New("vault")
 	files.File("blank.epub", string(raw))
+	files.File("corrupt.epub", "not an epub")
 	books := NewBookServer(files)
 	t.Cleanup(books.Close)
 
@@ -134,5 +141,8 @@ func TestGetCfiFindsNothingInABookWithNoText(t *testing.T) {
 
 	if codeOf(err) != server.CodeNotFound {
 		t.Errorf("GetCfi in a book with no text: %v, want not found", err)
+	}
+	if _, err := books.GetCfi(t.Context(), api.GetCfiRequest{Path: "corrupt.epub"}); codeOf(err) != server.CodeInvalidArgument {
+		t.Errorf("GetCfi on corrupt file: %v, want invalid argument", err)
 	}
 }

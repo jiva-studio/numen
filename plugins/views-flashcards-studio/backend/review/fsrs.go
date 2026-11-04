@@ -36,6 +36,7 @@ type FSRS struct {
 // produce a different schedule on every launch.
 func NewFSRS() FSRS {
 	p := fsrs.DefaultParam()
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="DefaultParam initializes EnableFuzz to false."
 	p.EnableFuzz = false
 	return FSRS{p: p, name: FSRSName + "." + hashParameters(p)}
 }
@@ -45,6 +46,7 @@ func NewFSRS() FSRS {
 // the nearest end of it.
 func NewFSRSAt(retention float64) FSRS {
 	p := fsrs.DefaultParam()
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="DefaultParam initializes EnableFuzz to false."
 	p.EnableFuzz = false
 	p.RequestRetention = math.Min(math.Max(retention, GetRetentionBounds().Min), GetRetentionBounds().Max)
 	return FSRS{p: p, name: FSRSName + "." + hashParameters(p)}
@@ -82,6 +84,7 @@ func hashParameters(p fsrs.Parameters) string {
 // writeNumber writes one number of the parameters into the name being worked
 // out.
 func writeNumber(sum hash.Hash, name string, value float64) {
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="Any negative precision in strconv.FormatFloat selects shortest-width formatting."
 	sum.Write([]byte(name + "=" + strconv.FormatFloat(value, 'x', -1, 64) + "\n"))
 }
 

@@ -50,6 +50,18 @@ func TestTheDefaultsReadAtThreeHundredDPIAndFetchWhatIsMissing(t *testing.T) {
 	if !cfg.ShouldDownload {
 		t.Error("the defaults do not fetch a missing model")
 	}
+	if cfg.Layout.Minimum != 0 || cfg.Layout.Overlap != 0 || cfg.Layout.Margin != 0 {
+		t.Errorf("unexpected layout numeric defaults: %+v", cfg.Layout)
+	}
+	if cfg.Detect.MaxSide != 0 || cfg.Detect.Expand != 0 || cfg.Detect.Minimum != 0 {
+		t.Errorf("unexpected detect numeric defaults: %+v", cfg.Detect)
+	}
+	if cfg.Recognise.Classes != 0 || cfg.Recognise.Height != 0 || cfg.Recognise.Jobs != 0 || cfg.Recognise.Threads != 0 {
+		t.Errorf("unexpected recognise numeric defaults: %+v", cfg.Recognise)
+	}
+	if cfg.Compute.Threads != 0 || cfg.Compute.Jobs != 0 {
+		t.Errorf("unexpected compute defaults: %+v", cfg.Compute)
+	}
 	for name, got := range map[string]string{
 		"layout":     cfg.Layout.Name,
 		"detector":   cfg.Detect.Name,

@@ -39,7 +39,14 @@ func TestShippedProfilesAreValid(t *testing.T) {
 
 func TestShippedProfilesPinTheFilesOfEveryLocalModel(t *testing.T) {
 	table := getShipped(t)
-	for _, p := range table.GetCurated() {
+	curated := table.GetCurated()
+	if len(curated) < 2 {
+		t.Fatalf("GetCurated() returned %d profiles, want at least 2", len(curated))
+	}
+	for _, p := range curated {
+		if p.Remote || p.Tier == "" {
+			t.Errorf("%s: unexpected curated profile Remote=%v Tier=%q", p.ID, p.Remote, p.Tier)
+		}
 		if len(p.Revision) != 40 {
 			t.Errorf("%s: revision %q is no commit", p.ID, p.Revision)
 		}
@@ -75,6 +82,9 @@ func TestGetLocalAcceptsAnAliasAndAnyCase(t *testing.T) {
 }
 
 func TestGetLocalOfAnUnknownModelNamesWhereToAddAProfile(t *testing.T) {
+	if _, err := getShipped(t).GetLocal("owner/unknown"); err == nil || !strings.Contains(err.Error(), "plugin data directory") {
+		t.Errorf("default user folder error = %v", err)
+	}
 	table := getShipped(t).WithUserProfiles("/data/profiles", func(string, error) {})
 	for _, name := range []string{"owner/unknown", "openai/text-embedding-3-small", ""} {
 		_, err := table.GetLocal(name)
@@ -84,6 +94,9 @@ func TestGetLocalOfAnUnknownModelNamesWhereToAddAProfile(t *testing.T) {
 		if !strings.Contains(err.Error(), "/data/profiles") || !strings.Contains(err.Error(), ".json") {
 			t.Errorf("error %q does not name the folder to add a profile to", err)
 		}
+		if !strings.HasSuffix(err.Error(), "choose one of "+DefaultModel+", onnx-community/harrier-oss-v1-270m-ONNX, Xenova/bge-m3") {
+			t.Errorf("error %q does not list local IDs accurately", err)
+		}
 	}
 }
 
@@ -92,6 +105,9 @@ func TestGetRemoteOfAnUnlistedModelUsesTheFallbackWithItsOwnID(t *testing.T) {
 	shipped := table.GetRemote("text-embedding-3-large")
 	if shipped.Dimensions != 3072 {
 		t.Errorf("dims = %d, want 3072", shipped.Dimensions)
+	}
+	if fromLocal := table.GetRemote(DefaultModel); !fromLocal.Remote || fromLocal.Dimensions != 1024 {
+		t.Errorf("GetRemote(DefaultModel) = %+v, want fallback remote profile", fromLocal)
 	}
 	other := table.GetRemote("vendor/some-embedder")
 	if other.ID != "vendor/some-embedder" || other.Dimensions != 1024 || !other.Remote {
@@ -156,6 +172,14 @@ func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
 	if p.OnnxFile != "onnx/model_int8.onnx" || p.Revision != "" || p.SHA256 != nil {
 		t.Errorf("pins of the old file kept: %+v", p)
 	}
+
+	dirPinned := t.TempDir()
+	writeProfile(t, dirPinned, "e5.json", `{"id":"Xenova/multilingual-e5-small","onnxFile":"onnx/model_int8.onnx","sha256":{"onnx/model_int8.onnx":"abc"}}`)
+	tablePinned := getShipped(t).WithUserProfiles(dirPinned, func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
+	p2, err := tablePinned.GetLocal(DefaultModel)
+	if err != nil || p2.SHA256["onnx/model_int8.onnx"] != "abc" || p2.Revision == "" {
+		t.Errorf("explicit sha256 pin lost: %+v, %v", p2, err)
+	}
 }
 
 func TestUserProfileByAnAliasOverridesTheModelOfTheAlias(t *testing.T) {
@@ -179,17 +203,21 @@ func TestMalformedUserFilesAreReportedAndSkipped(t *testing.T) {
 	writeProfile(t, dir, "c-unknown-field.json", `{"id":"owner/z","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","querryPrefix":"x"}`)
 	writeProfile(t, dir, "d-half.json", `[{"id":"owner/ok","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"},{"id":"owner/bad","dims":8,"maxTokens":8,"pooling":"median","onnxFile":"m.onnx"}]`)
 	writeProfile(t, dir, "e-good.json", `{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"}`)
+	writeProfile(t, dir, "f-array.json", `[broken`)
+	if err := os.MkdirAll(filepath.Join(dir, "sub.json"), 0o700); err != nil {
+		t.Fatal(err)
+	}
 	writeProfile(t, dir, "notes.txt", `not a profile`)
 	reported := map[string]error{}
 	table := getShipped(t).WithUserProfiles(dir, func(file string, err error) { reported[filepath.Base(file)] = err })
 
-	for _, name := range []string{"a-broken.json", "b-nodims.json", "c-unknown-field.json", "d-half.json"} {
+	for _, name := range []string{"a-broken.json", "b-nodims.json", "c-unknown-field.json", "d-half.json", "f-array.json"} {
 		if reported[name] == nil {
 			t.Errorf("%s was not reported", name)
 		}
 	}
-	if len(reported) != 4 {
-		t.Errorf("reported %v, want the four broken files", reported)
+	if len(reported) != 5 {
+		t.Errorf("reported %v, want the five broken files", reported)
 	}
 	for _, id := range []string{"owner/x", "owner/y", "owner/z", "owner/ok", "owner/bad"} {
 		if _, err := table.GetLocal(id); err == nil {
@@ -255,8 +283,8 @@ func TestHandlingApplyAddsTheRolePrefixInFrontOfEveryText(t *testing.T) {
 	if !slices.Equal(texts, []string{"a", "b"}) {
 		t.Errorf("Apply changed its input: %q", texts)
 	}
-	if got := (Handling{}).Apply(RoleQuery, texts); !slices.Equal(got, texts) {
-		t.Errorf("no prefix changed the texts: %q", got)
+	if got := (Handling{}).Apply(RoleQuery, texts); !slices.Equal(got, texts) || &got[0] != &texts[0] {
+		t.Errorf("no prefix changed or reallocated the texts: %q", got)
 	}
 }
 
@@ -276,8 +304,8 @@ func TestEveryCuratedModelWithAQueryPrefixAppliesItToQueries(t *testing.T) {
 func TestHandlingHashChangesWithWhatItCoversAndWithNothingElse(t *testing.T) {
 	base := Handling{QueryPrefix: "query: ", DocumentPrefix: "passage: ", File: "model.onnx", Normalise: true}
 	want := base.Hash(512)
-	if len(want) != handlingHashLength {
-		t.Errorf("hash %q is not %d characters", want, handlingHashLength)
+	if len(want) != 8 {
+		t.Errorf("hash %q is not 8 characters", want)
 	}
 	same := base
 	same.ExtraInputs = []string{InputPositionIDs}
@@ -323,7 +351,7 @@ func TestOptionTextsNameTierSizeAndWidth(t *testing.T) {
 }
 
 func TestValidateRefusesWhatCannotRun(t *testing.T) {
-	ok := Profile{ID: "a/b", Dimensions: 4, MaxTokens: 8, Pooling: PoolMean, OnnxFile: "m.onnx"}
+	ok := Profile{ID: "a/b", Dimensions: 1, MaxTokens: 1, Pooling: PoolMean, OnnxFile: "m.onnx"}
 	if err := ok.Validate(); err != nil {
 		t.Fatal(err)
 	}
@@ -332,6 +360,7 @@ func TestValidateRefusesWhatCannotRun(t *testing.T) {
 		"no dims":        func(p *Profile) { p.Dimensions = 0 },
 		"no tokens":      func(p *Profile) { p.MaxTokens = 0 },
 		"unknown pool":   func(p *Profile) { p.Pooling = "max" },
+		"floor negative": func(p *Profile) { p.FloorHint = -0.1 },
 		"floor too high": func(p *Profile) { p.FloorHint = 1 },
 		"unknown input":  func(p *Profile) { p.ExtraInputs = []string{"past_key_values"} },
 		"no file":        func(p *Profile) { p.OnnxFile = "" },
@@ -341,5 +370,75 @@ func TestValidateRefusesWhatCannotRun(t *testing.T) {
 		if err := p.Validate(); err == nil {
 			t.Errorf("%s: no error", name)
 		}
+	}
+}
+
+func TestProfileNormaliseCloneAndErrorPaths(t *testing.T) {
+	isTrue, isFalse := true, false
+	if !(Profile{Normalise: &isTrue}).IsNormalised() {
+		t.Error("expected Normalise=true to be normalised")
+	}
+	if (Profile{Normalise: &isFalse}).IsNormalised() {
+		t.Error("expected Normalise=false not to be normalised")
+	}
+
+	if _, err := ReadProfiles([]byte("[broken")); err == nil {
+		t.Error("expected ReadProfiles to fail on broken array")
+	}
+	if _, err := ReadProfiles([]byte(`[{"unknown":1}]`)); err == nil {
+		t.Error("expected ReadProfiles to fail on unknown field")
+	}
+
+	origEmbedded := embeddedProfiles
+	defer func() { embeddedProfiles = origEmbedded }()
+	embeddedProfiles = []byte("[broken")
+	if _, err := GetShippedProfiles(); err == nil {
+		t.Error("expected GetShippedProfiles to fail on broken JSON")
+	}
+	embeddedProfiles = []byte(`[{"id":"x","dims":0}]`)
+	if _, err := GetShippedProfiles(); err == nil {
+		t.Error("expected GetShippedProfiles to fail on invalid profile")
+	}
+	embeddedProfiles = []byte(`[{"id":"x","dims":8,"maxTokens":8,"pooling":"head","onnxFile":"m.onnx"}]`)
+	headTable, err := GetShippedProfiles()
+	if err != nil {
+		t.Fatalf("GetShippedProfiles with head pooling: %v", err)
+	}
+	if hp, err := headTable.GetLocal("x"); err != nil || hp.Pooling != PoolCLS {
+		t.Errorf("GetLocal(x) = %+v, %v", hp, err)
+	}
+	embeddedProfiles = origEmbedded
+
+	table := getShipped(t)
+	fileAsDir := filepath.Join(t.TempDir(), "not-a-dir")
+	if err := os.WriteFile(fileAsDir, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	reportedDir := false
+	table.WithUserProfiles(fileAsDir, func(string, error) { reportedDir = true })
+	if !reportedDir {
+		t.Error("expected WithUserProfiles to report non-directory path")
+	}
+	if _, err := table.readUserFile(filepath.Join(t.TempDir(), "missing.json")); err == nil {
+		t.Error("expected readUserFile to fail on missing file")
+	}
+
+	dir := t.TempDir()
+	writeProfile(t, dir, "extra.json", `{"id":"Xenova/bge-m3","extraInputs":["position_ids"]}`)
+	withExtra := table.WithUserProfiles(dir, func(string, error) {})
+	m3, err := withExtra.GetLocal("Xenova/bge-m3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m3.Aliases[0] = "changed"
+	m3.ExtraInputs[0] = "changed"
+	m3.SHA256[TokenizerFile] = "changed"
+
+	m3Again, err := withExtra.GetLocal("Xenova/bge-m3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m3Again.Aliases[0] == "changed" || m3Again.ExtraInputs[0] == "changed" || m3Again.SHA256[TokenizerFile] == "changed" {
+		t.Errorf("mutating returned Profile mutated table state: %+v", m3Again)
 	}
 }

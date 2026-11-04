@@ -125,7 +125,8 @@ func Read(raw []byte) (*Book, error) {
 		mediaTypes: map[string]string{},
 		spineStep:  pkg.SpineStep,
 		itemSteps:  nil,
-		pageBytes:  0,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="pageBytes is computed and overwritten after extracting text"
+		pageBytes: 0,
 	}
 	remaining := int64(archive.MostPerBook)
 	for _, item := range pkg.Spine {

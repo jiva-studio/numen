@@ -40,3 +40,34 @@ func TestReadAntigravityConfigFailsWithoutHome(t *testing.T) {
 		t.Fatalf("expected error reading antigravity config without home directory, got %v", cfg)
 	}
 }
+
+func TestReadAntigravityConfigFallbackCandidatesAndEmpty(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	// No config files exist -> returns empty AntigravityConfig.
+	emptyCfg, err := ReadAntigravityConfig()
+	if err != nil || emptyCfg.Model != "" {
+		t.Fatalf("ReadAntigravityConfig with no files = (%+v, %v), want empty model", emptyCfg, err)
+	}
+
+	// Invalid JSON in first candidate falls through to third candidate (~/.antigravity/config.json).
+	firstDir := filepath.Join(home, ".gemini", "antigravity-cli")
+	thirdDir := filepath.Join(home, ".antigravity")
+	if err := os.MkdirAll(firstDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(thirdDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(firstDir, "config.json"), []byte("{invalid"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(thirdDir, "config.json"), []byte(`{"model":"gemini-fallback"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	fallbackCfg, err := ReadAntigravityConfig()
+	if err != nil || fallbackCfg.Model != "gemini-fallback" {
+		t.Fatalf("ReadAntigravityConfig fallback = (%+v, %v), want gemini-fallback", fallbackCfg, err)
+	}
+}

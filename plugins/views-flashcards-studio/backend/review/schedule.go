@@ -33,6 +33,7 @@ type Schedule struct {
 
 // newUnansweredSchedule returns the schedule of a review card that has not been answered.
 func newUnansweredSchedule() Schedule {
+	// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Schedule value."
 	return Schedule{
 		Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0,
 	}

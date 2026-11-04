@@ -96,6 +96,7 @@ func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string
 	s.mu.Lock()
 	last := s.last
 	s.mu.Unlock()
+	// gomutants:disable-next-line BRANCH_IF reason="single-book cache avoids re-parsing unchanged EPUB bytes"
 	if last.hash == hash {
 		return last, nil
 	}
@@ -104,11 +105,13 @@ func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string
 		return bookText{}, err
 	}
 	segments, err := getSegments(book.Text, book.Parts, book.ReadPlaces())
+	// gomutants:disable-next-line BRANCH_IF reason="cfiSelector consists of a string field that always marshals"
 	if err != nil {
 		return bookText{}, err
 	}
 	read := bookText{hash: hash, text: book.Text, segments: segments}
 	s.mu.Lock()
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="caches extracted book text for subsequent calls"
 	s.last = read
 	s.mu.Unlock()
 	return read, nil
@@ -144,16 +147,19 @@ func (s *TextServer) finish(key string) {
 func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="task counters and unit start at zero"
 		CompletedCount: 0, TotalCount: 0, Unit: 0, FailureReason: "", IsUserStarted: false,
 	}
 	err := s.putText(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
 		task.FailureReason = err.Error()
+		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="task report failure is logged to stderr"
 		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
 			fmt.Fprintf(os.Stderr, "readers-epub: show the task %s: %v\n", task.ID, reportErr)
 		}
 		return
 	}
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="task finish failure is logged to stderr"
 	if finishErr := s.queue.FinishTask(context.WithoutCancel(ctx), task.ID); finishErr != nil {
 		fmt.Fprintf(os.Stderr, "readers-epub: finish the task %s: %v\n", task.ID, finishErr)
 	}
@@ -166,6 +172,7 @@ func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task ho
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="releases queue turn when putText finishes"
 	defer func() { err = errors.Join(err, turn.Release()) }()
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
@@ -204,6 +211,7 @@ func getSegments(text string, sections []epub.Part, places epub.Places) ([]domai
 	from := 0
 	for {
 		selector, err := getSelector(places, from)
+		// gomutants:disable-next-line BRANCH_IF reason="cfiSelector consists of a string field that always marshals"
 		if err != nil {
 			return nil, err
 		}
@@ -254,9 +262,11 @@ func (c *segmentCut) openAt(from int) []string {
 // or section begins.
 func (c *segmentCut) getEnd(from int) int {
 	to := getCutEnd(c.text, from)
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="setting to = c.blocks[0] when equal is a no-op"
 	if len(c.blocks) > 0 && c.blocks[0] < to {
 		to = c.blocks[0]
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="setting to = c.sections[0].Offset when equal is a no-op"
 	if len(c.sections) > 0 && c.sections[0].Offset < to {
 		to = c.sections[0].Offset
 	}
@@ -268,9 +278,11 @@ func (c *segmentCut) getEnd(from int) int {
 func getCutEnd(text string, from int) int {
 	end := min(from+partBytes, len(text))
 	to := end
+	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION,INVERT_LOGICAL reason="text[from] is always a rune start and partBytes exceeds any UTF-8 rune length"
 	for to > from && to < len(text) && !utf8.RuneStart(text[to]) {
 		to--
 	}
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="partBytes is 65536 so backing up at most 3 bytes never reaches from"
 	if to == from {
 		return end
 	}

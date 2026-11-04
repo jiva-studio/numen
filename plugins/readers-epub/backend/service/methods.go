@@ -18,6 +18,7 @@ func mountMethods(s *server.Server, books *BookServer) error {
 	server.Handle(a, "ReadBookEntry", withVault(books.ReadBookEntry))
 	server.Handle(a, "GetCfi", withVault(books.GetCfi))
 	server.Handle(a, "FindOffset", withVault(books.FindOffset))
+	// gomutants:disable-next-line RETURN_ERROR_NIL reason="mountMethods returns any handler registration error accumulated on a"
 	return a.Err()
 }
 
@@ -27,6 +28,7 @@ func withVault[Req, Res any](fn func(ctx context.Context, req Req) (Res, error))
 	return func(ctx context.Context, req Req) (Res, error) {
 		res, err := fn(withRequestVault(ctx, server.GetHeader(ctx)), req)
 		if err != nil {
+			// gomutants:disable-next-line RETURN_ZERO reason="res is ignored when an error is returned"
 			return res, toAPIError(err)
 		}
 		return res, nil

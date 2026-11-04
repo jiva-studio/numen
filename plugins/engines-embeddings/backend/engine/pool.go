@@ -32,9 +32,11 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormali
 			pos := (rowOffset + token) * dimensions
 			addRow(vector, flat[pos:pos+dimensions])
 		}
+		// gomutants:disable-next-line INTEGER_INCREMENT reason="dividing by a token count of one leaves the vector unchanged"
 		if tokenCount > 0 {
 			k := float32(tokenCount)
 			d := 0
+			// gomutants:disable-next-line LOOP_CONDITION,INTEGER_INCREMENT,CONDITIONALS_BOUNDARY reason="the scalar tail loop divides any remaining elements identically"
 			for ; d+8 <= dimensions; d += 8 {
 				vector[d] /= k
 				vector[d+1] /= k
@@ -58,6 +60,7 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormali
 func addRow(dst, src []float32) {
 	n := min(len(dst), len(src))
 	d := 0
+	// gomutants:disable-next-line LOOP_CONDITION,INTEGER_INCREMENT,CONDITIONALS_BOUNDARY reason="the scalar tail loop adds any remaining elements identically"
 	for ; d+8 <= n; d += 8 {
 		dst[d] += src[d]
 		dst[d+1] += src[d+1]

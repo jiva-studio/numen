@@ -10,7 +10,9 @@ import "github.com/ebitengine/purego"
 // system to hold it. Loading it here first, into the global namespace, is what
 // resolves that name on a machine that keeps the file somewhere else.
 func preloadCppRuntime() {
+	// gomutants:disable-next-line RANGE_BREAK reason="preloading libstdc++.so is an environment-dependent side effect for Linux dynamic linkers"
 	for _, p := range FindInstalled("libstdc++.so", "*-gcc-*-lib") {
+		// gomutants:disable-next-line INVERT_BITWISE,CONDITIONALS_NEGATION,BRANCH_IF reason="preloading libstdc++.so is an environment-dependent side effect for Linux dynamic linkers"
 		if _, err := purego.Dlopen(p, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
 			return
 		}

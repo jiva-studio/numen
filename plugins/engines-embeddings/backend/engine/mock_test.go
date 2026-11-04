@@ -3,8 +3,12 @@ package engine
 import (
 	"context"
 	"errors"
+	"io"
 	"math"
+	"os"
+	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 )
@@ -79,5 +83,99 @@ func TestAMockVectorIsUnitLengthAndTheSameEveryTime(t *testing.T) {
 	}
 	if len(first) != GetMockModel().Dimensions {
 		t.Errorf("got %d dimensions, want %d", len(first), GetMockModel().Dimensions)
+	}
+}
+
+func TestGetMockModelAndEmbedderDetails(t *testing.T) {
+	info := GetMockModel()
+	if info.Dimensions != 2112 || info.MaxTokens != 512 || info.Pooling != PoolMean || info.From != "mock" {
+		t.Errorf("GetMockModel() = %+v", info)
+	}
+	if info.Concurrency != 1 || info.FloorHint != 0 || info.MinChunkLength != 0 {
+		t.Errorf("GetMockModel() limits = %+v", info)
+	}
+	if info.Handling.QueryPrefix != MockQueryPrefix || info.Handling.DocumentPrefix != MockDocumentPrefix || !info.Handling.Normalise {
+		t.Errorf("GetMockModel() handling = %+v", info.Handling)
+	}
+
+	logFile := filepath.Join(t.TempDir(), "mock.jsonl")
+	m := MockEmbedder{LogPath: logFile}
+	vectors, err := m.Embed(t.Context(), []string{MockQueryPrefix + "boat", MockDocumentPrefix + "ferry"})
+	if err != nil || len(vectors) != 2 {
+		t.Fatalf("Embed() = %d vectors, %v", len(vectors), err)
+	}
+	if !slices.Equal(vectors[0], vectors[1]) || !slices.Equal(vectors[1], embedMock("boat")) {
+		t.Error("query and document prefixes were not stripped to the same concept vector")
+	}
+	logged, err := os.ReadFile(logFile)
+	if err != nil || !strings.Contains(string(logged), "passage: ferry") {
+		t.Errorf("log file = %q, %v", logged, err)
+	}
+
+	origStderr := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = w
+	(MockEmbedder{}).record([]string{"quiet"})
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = origStderr
+	stderrBytes, err := io.ReadAll(r)
+	if closeErr := r.Close(); closeErr != nil {
+		t.Fatal(closeErr)
+	}
+	if err != nil || len(stderrBytes) != 0 {
+		t.Errorf("empty LogPath wrote to stderr: %q, %v", stderrBytes, err)
+	}
+}
+
+func TestEmbedMockDimensionsTermsAndConcepts(t *testing.T) {
+	if got := getConcept("ferry"); got != "boat" {
+		t.Errorf("getConcept(ferry) = %q, want boat", got)
+	}
+	if got := getConcept("automobile"); got != "car" {
+		t.Errorf("getConcept(automobile) = %q, want car", got)
+	}
+	if got := getConcept("kitten"); got != "cat" {
+		t.Errorf("getConcept(kitten) = %q, want cat", got)
+	}
+	if got := getConcept("entropy"); got != "entropy" {
+		t.Errorf("getConcept(entropy) = %q, want entropy", got)
+	}
+
+	digits := embedMock("42")
+	if got := math.Sqrt(cosine(digits, digits)); math.Abs(got-1) > 1e-5 {
+		t.Errorf("digit token length = %.6f, want 1", got)
+	}
+
+	boat := embedMock("boat")
+	if boat[0] <= 0 || boat[63] != boat[0] || boat[64] == boat[0] {
+		t.Errorf("shared dimensions boundary mismatch: boat[0]=%f, boat[63]=%f, boat[64]=%f", boat[0], boat[63], boat[64])
+	}
+	nonZero, posCount, negCount, firstIdx := 0, 0, 0, -1
+	for i, val := range boat[64:] {
+		if val != 0 {
+			nonZero++
+			if firstIdx == -1 {
+				firstIdx = i
+			}
+			if val > 0 {
+				posCount++
+			} else {
+				negCount++
+			}
+		}
+	}
+	if nonZero != 4 || posCount != 2 || negCount != 2 || firstIdx != 439 || boat[64+firstIdx] >= 0 {
+		t.Errorf("word dimensions: nonZero=%d, pos=%d, neg=%d, firstIdx=%d, val=%f", nonZero, posCount, negCount, firstIdx, boat[64+max(firstIdx, 0)])
+	}
+
+	accum := []float32{10}
+	addTerm(accum, "boat", 2)
+	if accum[0] < 5 {
+		t.Errorf("addTerm overwrote instead of accumulating: %f", accum[0])
 	}
 }

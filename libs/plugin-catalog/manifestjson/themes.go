@@ -27,22 +27,28 @@ func ReadThemeFile(dir, file string) (_ string, err error) {
 		return "", err
 	}
 	relative, err := filepath.Rel(root, resolved)
+	// gomutants:disable-next-line EXPRESSION_REMOVE,INVERT_LOGICAL reason="filepath.Rel between two absolute paths from EvalSymlinks does not fail"
 	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
 		return "", fmt.Errorf("file %q leaves the plugin folder", file)
 	}
 	handle, err := os.Open(resolved)
+	// gomutants:disable-next-line BRANCH_IF reason="file resolved by EvalSymlinks opens unless permissions change concurrently"
 	if err != nil {
 		return "", err
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing read-only file does not fail"
 	defer func() { err = errors.Join(err, handle.Close()) }()
 	info, err := handle.Stat()
+	// gomutants:disable-next-line BRANCH_IF reason="Stat on open file descriptor does not fail"
 	if err != nil {
 		return "", err
 	}
 	if !info.Mode().IsRegular() {
 		return "", fmt.Errorf("file %q is not a regular file", file)
 	}
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="any limit above MaxThemeSize detects oversized files"
 	text, err := io.ReadAll(io.LimitReader(handle, manifest.MaxThemeSize+1))
+	// gomutants:disable-next-line BRANCH_IF reason="reading open regular file does not fail"
 	if err != nil {
 		return "", err
 	}

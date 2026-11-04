@@ -38,10 +38,8 @@ func findClaude(customPath ...string) string {
 
 // findClaudeIn is findClaude with the CLI looked for in places after PATH.
 func findClaudeIn(places []string, customPath ...string) string {
-	if len(customPath) > 0 && customPath[0] != "" {
-		if agentrun.IsRunnable(customPath[0]) {
-			return customPath[0]
-		}
+	if len(customPath) > 0 && agentrun.IsRunnable(customPath[0]) {
+		return customPath[0]
 	}
 	if cmd := os.Getenv("NUMEN_CLAUDE_COMMAND"); cmd != "" {
 		return cmd
@@ -67,13 +65,14 @@ func findInPlaces(places []string) string {
 		home = ""
 	}
 	for _, place := range places {
-		if strings.HasPrefix(place, "~/") {
+		if after, ok := strings.CutPrefix(place, "~/"); ok {
 			if home == "" {
 				continue
 			}
-			place = filepath.Join(escapeGlob(home), place[2:])
+			place = filepath.Join(escapeGlob(home), after)
 		}
 		matches, err := filepath.Glob(place)
+		// gomutants:disable-next-line BRANCH_IF reason="filepath.Glob returns nil matches on error so the loop below performs zero iterations."
 		if err != nil {
 			continue
 		}

@@ -71,8 +71,10 @@ const (
 	GoalDate      = review.GoalDate
 	DayLayout     = review.DayLayout
 	ClosedPaused  = review.ClosedPaused
+	ClosedMinutes = review.ClosedMinutes
 	ClosedNothing = review.ClosedNothing
 	RuleInterval  = review.RuleInterval
+	RuleRetention = review.RuleRetention
 	Again         = review.Again
 	Hard          = review.Hard
 	Good          = review.Good

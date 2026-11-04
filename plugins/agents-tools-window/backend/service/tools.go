@@ -39,7 +39,7 @@ func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
 		tabs, activeID := manager.GetOpenTabs()
 		requestContext := tools.GetCallContext(ctx)
 
-		if len(tabs) == 0 && requestContext != nil {
+		if len(tabs) == 0 {
 			if focus := requestContext["focus"]; focus != "" {
 				inferredTab := TabInfo{
 					ID:       "front-tab",

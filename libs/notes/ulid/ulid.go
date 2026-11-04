@@ -63,6 +63,7 @@ func encode(b [16]byte) string {
 	for i := 15; i >= 0; i-- {
 		carry |= uint16(b[i]) << bits
 		bits += 8
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="uint16 carry holds 13 bits when a 5-bit flush is deferred"
 		for bits >= 5 {
 			out[idx] = alphabet[carry&0x1f]
 			idx--
@@ -73,6 +74,7 @@ func encode(b [16]byte) string {
 	for idx >= 0 {
 		out[idx] = alphabet[carry&0x1f]
 		idx--
+		// gomutants:disable-next-line INVERT_BITWISE_ASSIGNMENTS,REMOVE_SELF_ASSIGNMENTS,INTEGER_DECREMENT,INTEGER_INCREMENT reason="the loop runs once for idx 0 and carry is unread afterwards"
 		carry >>= 5
 	}
 	return string(out)

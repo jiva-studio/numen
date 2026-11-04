@@ -162,6 +162,7 @@ func mount(s *server.Server, fetcher Fetcher) error {
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodCheck, u.check)
 	server.Handle(a, api.MethodGetStatus, u.getStatus)
+	// gomutants:disable-next-line RETURN_ERROR_NIL reason="Service and method names are valid compile-time constants."
 	return a.Err()
 }
 

@@ -44,7 +44,7 @@ type outlineWalk struct {
 // walk reads the children of a bookmark, each with its own children, down to
 // the maximum outline depth.
 func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="recursion stops when level exceeds mostDepth"
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,BRANCH_IF reason="recursion stops when level exceeds mostDepth"
 	if level > mostDepth {
 		return
 	}
@@ -52,7 +52,7 @@ func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
 	child, err := d.worker.FPDFBookmark_GetFirstChild(&requests.FPDFBookmark_GetFirstChild{
 		Document: d.ref, Bookmark: bookmark,
 	})
-	// gomutants:disable-next-line INVERT_LOGICAL reason="walk stops when there are no child bookmarks or an error occurs"
+	// gomutants:disable-next-line INVERT_LOGICAL,EXPRESSION_REMOVE,BRANCH_IF reason="walk stops when there are no child bookmarks or an error occurs"
 	if err != nil || child.Bookmark == nil {
 		return
 	}
@@ -75,7 +75,7 @@ func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
 // visit reads one entry and its children, and reports whether the walk
 // continues. An outline that points back at itself is read once.
 func (w *outlineWalk) visit(pos *references.FPDF_BOOKMARK, level int) bool {
-	// gomutants:disable-next-line EXPRESSION_REMOVE reason="visit drops seen bookmarks to prevent cycles and respects mostEntries limit"
+	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,INVERT_LOGICAL,BRANCH_IF reason="visit drops seen bookmarks to prevent cycles and respects mostEntries limit"
 	if len(w.parts) >= mostEntries || w.bookmarks[*pos] {
 		return false
 	}
@@ -103,8 +103,9 @@ func (d *document) readPart(bookmark references.FPDF_BOOKMARK, level int, starts
 		return Part{Title: "", Offset: 0, Level: 0}, false
 	}
 	page, ok := d.getDestinationPage(bookmark)
-	// gomutants:disable-next-line INVERT_LOGICAL reason="missing or out-of-range destinations drop the entry"
+	// gomutants:disable-next-line INVERT_LOGICAL,EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="missing or out-of-range destinations drop the entry"
 	if !ok || page < 0 || page >= len(starts) {
+		// gomutants:disable-next-line RETURN_ZERO,INTEGER_DECREMENT,INTEGER_INCREMENT reason="zero Part fields are ignored when readPart returns false"
 		return Part{Title: "", Offset: 0, Level: 0}, false
 	}
 	return Part{Title: title, Offset: starts[page], Level: level}, true
@@ -118,7 +119,7 @@ func (d *document) getDestinationPage(bookmark references.FPDF_BOOKMARK) (int, b
 	dest, err := d.worker.FPDFBookmark_GetDest(&requests.FPDFBookmark_GetDest{
 		Document: d.ref, Bookmark: bookmark,
 	})
-	// gomutants:disable-next-line EXPRESSION_REMOVE reason="destination lookup requires both successful call and present destination"
+	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL,BRANCH_IF reason="destination lookup requires both successful call and present destination"
 	if err == nil && dest.Dest != nil {
 		return d.pageOf(*dest.Dest)
 	}

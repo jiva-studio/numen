@@ -21,8 +21,10 @@ func NewAddCard(read Read, write Write) AddCard { return AddCard{read: read, wri
 func (u AddCard) Execute(
 	ctx context.Context, v domain.Vault, version DeckVersion, cardModel string, values []format.Value, section *int,
 ) (AddedCard, error) {
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial position is overwritten inside changeDeck before use."
 	position := 0
 	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(contents DeckContents, file *format.DeckFile) error {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Card section field is ignored by AddCard and AddCardUnder."
 		card := format.Card{Heading: "", CardID: "", CardModelLink: cardModel, Preamble: "", Section: 0, Values: values}
 		if section == nil {
 			position = len(contents.Body.Cards)

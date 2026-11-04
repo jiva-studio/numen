@@ -79,7 +79,7 @@ func (c Contributes) GetTabKind(kind string) (TabKind, bool) {
 			return declared, true
 		}
 	}
-	return TabKind{Kind: "", Title: "", Icon: ""}, false
+	return TabKind{}, false
 }
 
 // ListTabKinds returns the ids of the kinds of tab the plugin registers.

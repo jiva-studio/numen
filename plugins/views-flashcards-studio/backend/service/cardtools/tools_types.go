@@ -123,6 +123,7 @@ func newTemplates(templates []format.CardTemplate) []CardTemplate {
 // faults lists the problems of a deck, each on the card it concerns. The position is counted from
 // the deck's first card, whichever range of cards a call requested.
 func faults(problems []format.Problem) []Fault {
+	// gomutants:disable-next-line INTEGER_DECREMENT,BRANCH_IF reason="Slice length is never negative, and an empty slice with omitempty serializes identically to nil."
 	if len(problems) == 0 {
 		return nil
 	}

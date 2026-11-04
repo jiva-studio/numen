@@ -34,11 +34,14 @@ func TestConnectionValidation(t *testing.T) {
 			AB: &domain.Side{Role: domain.RoleParent}, BA: &domain.Side{Role: domain.RoleChild}}, true},
 		"an arrow with no label": {domain.Connection{A: "a", B: "b",
 			AB: &domain.Side{Role: domain.RoleJump, Marker: arrow}}, true},
-		"empty":      {domain.Connection{A: "a", B: "b"}, true},
-		"same note":  {domain.Connection{A: "a", B: "a"}, false},
-		"no note":    {domain.Connection{A: "a"}, false},
-		"bad role":   {domain.Connection{A: "a", B: "b", AB: &domain.Side{Role: "sideways"}}, false},
-		"bad marker": {domain.Connection{A: "a", B: "b", AB: &domain.Side{Role: domain.RoleJump, Marker: "circle"}}, false},
+		"empty":       {domain.Connection{A: "a", B: "b"}, true},
+		"same note":   {domain.Connection{A: "a", B: "a"}, false},
+		"no note":     {domain.Connection{A: "a"}, false},
+		"no note A":   {domain.Connection{B: "b"}, false},
+		"only BA":     {domain.Connection{A: "a", B: "b", BA: &domain.Side{Role: domain.RoleParent}}, true},
+		"bad role":    {domain.Connection{A: "a", B: "b", AB: &domain.Side{Role: "sideways"}}, false},
+		"bad role BA": {domain.Connection{A: "a", B: "b", BA: &domain.Side{Role: "sideways"}}, false},
+		"bad marker":  {domain.Connection{A: "a", B: "b", AB: &domain.Side{Role: domain.RoleJump, Marker: "circle"}}, false},
 		"same role on both ends": {domain.Connection{A: "a", B: "b",
 			AB: &domain.Side{Role: domain.RoleParent}, BA: &domain.Side{Role: domain.RoleParent}}, false},
 		"attachment pair": {domain.Connection{A: "a", B: "b",
@@ -62,9 +65,17 @@ func TestTheHierarchyEdgeIsReadFromEitherSide(t *testing.T) {
 	if p, c, ok := ab.GetHierarchyEdge(); !ok || p != "b" || c != "a" {
 		t.Errorf("parent in A: %s, %s, %v", p, c, ok)
 	}
+	abChild := domain.Connection{A: "a", B: "b", AB: &domain.Side{Role: domain.RoleChild}}
+	if p, c, ok := abChild.GetHierarchyEdge(); !ok || p != "a" || c != "b" {
+		t.Errorf("child in A: %s, %s, %v", p, c, ok)
+	}
 	ba := domain.Connection{A: "a", B: "b", BA: &domain.Side{Role: domain.RoleParent}}
 	if p, c, ok := ba.GetHierarchyEdge(); !ok || p != "a" || c != "b" {
 		t.Errorf("parent in B: %s, %s, %v", p, c, ok)
+	}
+	baChild := domain.Connection{A: "a", B: "b", BA: &domain.Side{Role: domain.RoleChild}}
+	if p, c, ok := baChild.GetHierarchyEdge(); !ok || p != "b" || c != "a" {
+		t.Errorf("child in B: %s, %s, %v", p, c, ok)
 	}
 	jump := domain.Connection{A: "a", B: "b", AB: &domain.Side{Role: domain.RoleJump}}
 	if _, _, ok := jump.GetHierarchyEdge(); ok {
@@ -108,5 +119,55 @@ func TestAJumpIsNeverACycle(t *testing.T) {
 	c := domain.Connection{A: "b", B: "a", AB: &domain.Side{Role: domain.RoleJump}}
 	if err := c.CheckAcyclic(parentsOf(edges)); err != nil {
 		t.Errorf("err = %v", err)
+	}
+}
+
+func TestCheckAcyclicHandlesVisitedErrorsAndPairDirections(t *testing.T) {
+	// Reverse pair direction: b currently has parent a, and connection makes b parent of a.
+	reverseEdges := map[string][]string{"b": {"a"}}
+	reverseConn := domain.Connection{A: "a", B: "b", AB: &domain.Side{Role: domain.RoleParent}}
+	if err := reverseConn.CheckAcyclic(parentsOf(reverseEdges)); err != nil {
+		t.Errorf("reverse pair replacement failed: %v", err)
+	}
+
+	// Pair edge followed by another parent that creates a cycle.
+	pairPlusCycle := map[string][]string{"a": {"b", "c"}, "c": {"b"}}
+	childConn := domain.Connection{A: "a", B: "b", AB: &domain.Side{Role: domain.RoleChild}}
+	if err := childConn.CheckAcyclic(parentsOf(pairPlusCycle)); !errors.Is(err, domain.ErrHierarchyCycle) {
+		t.Errorf("got %v, want ErrHierarchyCycle", err)
+	}
+
+	// Non-pair edges touching A or B individually still form a cycle.
+	threeCycle := map[string][]string{"a": {"c"}, "c": {"b"}}
+	if err := childConn.CheckAcyclic(parentsOf(threeCycle)); !errors.Is(err, domain.ErrHierarchyCycle) {
+		t.Errorf("got %v, want ErrHierarchyCycle", err)
+	}
+
+	// Visited node is queried only once, and remaining pending branches are still explored.
+	diamondThenCycle := map[string][]string{
+		"d": {"x", "b", "c"},
+		"b": {"a"},
+		"c": {"a"},
+		"x": {"child"},
+	}
+	calls := map[string]int{}
+	err := (domain.Connection{A: "child", B: "d", AB: &domain.Side{Role: domain.RoleParent}}).CheckAcyclic(func(path string) ([]string, error) {
+		calls[path]++
+		if calls[path] > 1 {
+			return nil, errors.New("visited node queried twice")
+		}
+		return diamondThenCycle[path], nil
+	})
+	if !errors.Is(err, domain.ErrHierarchyCycle) {
+		t.Errorf("got %v, want ErrHierarchyCycle", err)
+	}
+
+	// Error from getParents is propagated.
+	wantErr := errors.New("storage failure")
+	err = reverseConn.CheckAcyclic(func(string) ([]string, error) {
+		return nil, wantErr
+	})
+	if !errors.Is(err, wantErr) {
+		t.Errorf("got %v, want %v", err, wantErr)
 	}
 }

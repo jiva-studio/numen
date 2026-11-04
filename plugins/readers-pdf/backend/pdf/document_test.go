@@ -7,18 +7,33 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 )
+
+type recordingTimer struct {
+	stopped bool
+}
+
+func (r *recordingTimer) Stop() bool {
+	r.stopped = true
+	return true
+}
 
 type seekFailCloser struct {
 	err             error
 	failOnSeekEnd   bool
 	failOnSeekStart bool
 	isClosed        bool
+	lastOffset      int64
 }
 
 func (s *seekFailCloser) Read([]byte) (int, error) { return 0, io.EOF }
 
-func (s *seekFailCloser) Seek(_ int64, whence int) (int64, error) {
+func (s *seekFailCloser) Seek(offset int64, whence int) (int64, error) {
+	s.lastOffset = offset
+	if offset != 0 {
+		return 0, errors.New("expected zero seek offset")
+	}
 	if whence == io.SeekEnd && s.failOnSeekEnd {
 		return 0, s.err
 	}
@@ -150,4 +165,73 @@ func TestDocumentTextInvalidPageIndex(t *testing.T) {
 	if got := doc.text(9999); got != "" {
 		t.Errorf("doc.text(9999) = %q, want empty string", got)
 	}
+}
+
+func TestGetRuntimeConfigAndTimerLifecycle(t *testing.T) {
+	w := NewWorkers()
+	if cfg := w.getRuntimeConfig(); cfg != nil {
+		t.Fatalf("expected nil RuntimeConfig when compilation cache is nil, got %v", cfg)
+	}
+	w.SetCompilationCache(newCompilation(t))
+	if cfg := w.getRuntimeConfig(); cfg == nil {
+		t.Fatal("expected non-nil RuntimeConfig when compilation cache is set")
+	}
+
+	var timers []*recordingTimer
+	w.SetIdleWorkers(2)
+	w.SetAfterFunc(func(_ time.Duration, _ func()) Timer {
+		tr := &recordingTimer{}
+		timers = append(timers, tr)
+		return tr
+	})
+	raw, err := os.ReadFile("testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err := w.openBytes(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanup.Close(t, doc)
+	if len(timers) != 1 || timers[0].stopped {
+		t.Fatalf("expected 1 active timer after closing document, got %d", len(timers))
+	}
+	doc2, err := w.openBytes(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !timers[0].stopped {
+		t.Error("expected first timer to be stopped when acquiring pool again")
+	}
+	cleanup.Close(t, doc2)
+	if len(timers) != 2 || timers[1].stopped {
+		t.Fatalf("expected 2nd active timer after closing second document, got %d", len(timers))
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if !timers[1].stopped {
+		t.Error("expected second timer to be stopped on Workers.Close()")
+	}
+}
+
+func TestOpenSourceSizeValidation(t *testing.T) {
+	w := newWorkers(t)
+	fcNeg := &seekFailCloser{}
+	if _, err := w.openSource(source{reader: bytes.NewReader(nil), size: 0, file: fcNeg}); !errors.Is(err, ErrNotPDF) || !fcNeg.isClosed {
+		t.Errorf("expected ErrNotPDF and closed file for size 0, got %v, closed=%v", err, fcNeg.isClosed)
+	}
+	raw, err := os.ReadFile("testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &seekFailCloser{}
+	doc, err := w.openReader(&struct {
+		*bytes.Reader
+		io.Closer
+	}{Reader: bytes.NewReader(raw), Closer: s})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanup.Close(t, doc)
 }

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -167,11 +169,11 @@ func TestChangesCloserThanTheIntervalAreReportedOnce(t *testing.T) {
 
 func TestParseLines_VaultMcpFailure(t *testing.T) {
 	cases := map[string]string{
-		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"failed"}]}`:          "the agent could not reach this vault",
-		`{"type":"system","subtype":"init","mcp_servers":[]}`:                                            "the agent was started without this vault",
-		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"connected"}]}`:       "",
-		`{"type":"system","subtype":"init"}`:                                                             "",
-		`{"type":"system","subtype":"init","mcp_server_errors":[{"name":"numen","message":"rejected"}]}`: "the agent was not given this vault: rejected",
+		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"failed"}]}`:                                      "the agent could not reach this vault",
+		`{"type":"system","subtype":"init","mcp_servers":[]}`:                                                                        "the agent was started without this vault",
+		`{"type":"system","subtype":"init","mcp_servers":[{"name":"other","status":"failed"},{"name":"numen","status":"connected"}]}`: "",
+		`{"type":"system","subtype":"init"}`:                                                                                         "",
+		`{"type":"system","subtype":"init","mcp_server_errors":[{"name":"numen","message":"rejected"}]}`:                             "the agent was not given this vault: rejected",
 	}
 	for line, want := range cases {
 		if _, reason := parseLines(t, nil, line); reason != want {
@@ -192,6 +194,7 @@ func TestParseLines_ErrorResultFormatting(t *testing.T) {
 	cases := map[string]string{
 		`{"type":"result","is_error":true,"subtype":"error_max_turns"}`:                            "the agent reached the limit of steps without finishing",
 		`{"type":"result","is_error":true,"subtype":"error_context_length_exceeded"}`:              "the conversation is too long for the model",
+		`{"type":"result","is_error":true,"subtype":"error_overloaded"}`:                           "the model is overloaded",
 		`{"type":"result","is_error":true,"subtype":"error_something_new"}`:                        "something new",
 		`{"type":"result","is_error":true,"subtype":"error_max_turns","result":"error_max_turns"}`: "the agent reached the limit of steps without finishing",
 		`{"type":"result","is_error":true,"result":"overloaded, try later"}`:                       "overloaded, try later",
@@ -228,7 +231,21 @@ func TestTheAllowanceNamesTheSearchAndTheTasksTools(t *testing.T) {
 
 func TestTheDefaultNumberOfTurnsIsOneHundred(t *testing.T) {
 	assertPair(t, buildClaudeArguments(claudeArguments{tools: []string{"note_read"}}), "--max-turns", "100")
+	assertPair(t, buildClaudeArguments(claudeArguments{turns: 1, tools: []string{"note_read"}}), "--max-turns", "1")
 	assertPair(t, buildClaudeArguments(claudeArguments{turns: 7, tools: []string{"note_read"}}), "--max-turns", "7")
+
+	withFlags := buildClaudeArguments(claudeArguments{
+		tools:        []string{"note_read"},
+		instructions: "inst",
+		session:      "sess-1",
+	})
+	assertPair(t, withFlags, "--append-system-prompt", "inst")
+	assertPair(t, withFlags, "--resume", "sess-1")
+
+	withoutFlags := buildClaudeArguments(claudeArguments{tools: []string{"note_read"}})
+	if slices.Contains(withoutFlags, "--append-system-prompt") || slices.Contains(withoutFlags, "--resume") {
+		t.Errorf("unexpected flags in %v", withoutFlags)
+	}
 }
 
 func assertPair(t *testing.T, args []string, flag, want string) {
@@ -288,6 +305,19 @@ func TestStreamParserPreviewIntervalPacing(t *testing.T) {
 	edits := editProgress(got)
 	if len(edits) != 2 {
 		t.Fatalf("expected 2 edit progress steps spaced by 50ms, got %d", len(edits))
+	}
+
+	// At 49ms pacing, the second edit within the interval is suppressed.
+	got = nil
+	r49 := strings.NewReader(strings.Join([]string{
+		startEdit,
+		delta(`{"path":"a.md","text":"first"}`),
+		delta(`{"path":"a.md","text":"second"}`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+	}, "\n") + "\n")
+	parseStreamWithClock(t.Context(), r49, send, words, nil, &steppingClock{tick: time.Unix(0, 0), step: 49 * time.Millisecond})
+	if len(editProgress(got)) != 1 {
+		t.Fatalf("expected 1 edit progress step when spaced by 49ms, got %d", len(editProgress(got)))
 	}
 }
 
@@ -411,5 +441,114 @@ func TestTheLevelOfReasoningIsHandedToTheProgramAsItsEffort(t *testing.T) {
 		if slices.Contains(buildClaudeArguments(claudeArguments{tools: tools}), "--effort") {
 			t.Error("a run that names no level is given an effort")
 		}
+	}
+}
+
+func TestStreamParserEdgeCasesAndBoundaries(t *testing.T) {
+	// Canceled context returns "canceled" immediately.
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if got := parseStream(ctx, strings.NewReader(""), func(*agentrun.Response) error { return nil }, streamOptions{}); got != "canceled" {
+		t.Errorf("parseStream canceled = %q, want \"canceled\"", got)
+	}
+
+	// Send error stops subsequent sends and becomes the reason unless result error was set.
+	sendCalls := 0
+	reason := parseStream(t.Context(), strings.NewReader(strings.Join([]string{
+		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"one"}}}`,
+		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"two"}}}`,
+	}, "\n")+"\n"), func(*agentrun.Response) error {
+		sendCalls++
+		return os.ErrClosed
+	}, streamOptions{})
+	if sendCalls != 1 || reason != os.ErrClosed.Error() {
+		t.Errorf("send error: calls=%d reason=%q", sendCalls, reason)
+	}
+
+	reasonWithResult := parseStream(t.Context(), strings.NewReader(strings.Join([]string{
+		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"one"}}}`,
+		`{"type":"result","is_error":true,"subtype":"error_rate_limit"}`,
+	}, "\n")+"\n"), func(*agentrun.Response) error {
+		return os.ErrClosed
+	}, streamOptions{})
+	if reasonWithResult != "the rate limit was reached" {
+		t.Errorf("reasonWithResult = %q, want rate limit reason", reasonWithResult)
+	}
+
+	// Partial invalid JSON in parseLine, hasToolAnswer, and parseAssistantMessage does not emit steps.
+	if (event{Message: []byte(`{"content":[{"type":"tool_result"}],bad}`)}).hasToolAnswer() {
+		t.Error("expected hasToolAnswer false on invalid JSON")
+	}
+	steps, badReason := parseLines(t, getTestWords(),
+		`{"type":"result","is_error":true,bad`,
+		`{"type":"system","subtype":"init","session_id":"s-no-record"}`,
+		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":""}}}`,
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+		`{"type":"assistant","message":{"content":[{"type":"text","text":"bad"}],bad}`,
+	)
+	if len(steps) != 0 || badReason != "" {
+		t.Errorf("expected no steps and empty reason on ignored events, got %d steps, reason %q", len(steps), badReason)
+	}
+
+	// content_block_start (tool_use) sets isStreaming=true (ignoring later assistant message),
+	// resets offset=0 and last=time.Time{}, and content_block_stop clears tool state.
+	var collected []*agentrun.Response
+	fakeClock := clock.NewFake(time.Unix(100, 0))
+	chunk199 := strings.Repeat("a", 199)
+	parseStreamWithClock(t.Context(), strings.NewReader(strings.Join([]string{
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c1","name":"mcp__numen__note_edit"}}}`,
+		delta(`{"path":"a.md","stood":"m","becomes":"` + chunk199 + `"}`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+		delta(chunk199),
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c2","name":"mcp__numen__note_edit"}}}`,
+		delta(chunk199),
+		delta("b"),
+		delta(`{"path":"b.md","stood":"m2","becomes":"t2"}`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+		`{"type":"assistant","message":{"content":[{"type":"text","text":"ignored"}]}}`,
+	}, "\n")+"\n"), func(r *agentrun.Response) error {
+		collected = append(collected, r)
+		return nil
+	}, getTestWords(), nil, fakeClock)
+
+	// Both c1 and c2 must emit EditProgress even though fakeClock did not advance between c1 and c2.
+	if gotEdits := editProgress(collected); len(gotEdits) != 2 {
+		t.Errorf("expected 2 edit progress events across two tool blocks with fixed clock, got %d", len(gotEdits))
+	}
+	// c2 had 199 chars (no chunk emit), then +1 char (=200, 1 chunk emit), then stop (1 stop emit), plus start (1 start emit) = 3 calls for c2.
+	c2Calls := 0
+	for _, c := range toolCalls(collected) {
+		if c.Call == "c2" {
+			c2Calls++
+		}
+		if c.Call == "c1" && c.Tool == "" {
+			t.Errorf("unexpected empty tool on c1: %+v", c)
+		}
+	}
+	if c2Calls != 3 {
+		t.Errorf("expected 3 tool call steps for c2 (start, 200-char chunk, stop), got %d", c2Calls)
+	}
+	for _, s := range collected {
+		if s.GetText() != "" {
+			t.Errorf("expected assistant message to be ignored after tool_use streaming, got %q", s.GetText())
+		}
+	}
+
+	// reportEdit when words.Text is empty (even when args contain "") or when match is empty does not emit.
+	var noEdits []*agentrun.Response
+	parseStreamWithClock(t.Context(), strings.NewReader(strings.Join([]string{
+		startEdit,
+		delta(`{"path":"a.md","stood":"","becomes":"val"}`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c2","name":"mcp__numen__note_read"}}}`,
+		delta(`{"path":"a.md","empty":""}`),
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+	}, "\n")+"\n"), func(r *agentrun.Response) error {
+		noEdits = append(noEdits, r)
+		return nil
+	}, getTestWords(), nil, &steppingClock{tick: time.Unix(0, 0), step: time.Second})
+	if len(editProgress(noEdits)) != 0 {
+		t.Errorf("expected 0 edit progress steps when match or words.Text is empty, got %d", len(editProgress(noEdits)))
 	}
 }

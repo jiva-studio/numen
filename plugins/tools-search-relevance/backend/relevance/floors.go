@@ -143,6 +143,7 @@ func getSource(record Record, applied host.SearchFloor) Source {
 	case host.FloorFromModelHint:
 		return SourceModel
 	case host.FloorFromDefault:
+		// gomutants:disable-next-line BRANCH_CASE reason="The switch fallback also returns SourceDefault."
 		return SourceDefault
 	}
 	return SourceDefault
@@ -238,6 +239,7 @@ func apply(ctx context.Context, s scope, record Record) error {
 	switch {
 	case record.IsManual && record.ManualFloor > 0:
 		wanted = record.ManualFloor
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="Assigning a zero floor in the final case leaves wanted at zero."
 	case record.Calibration != nil && record.Calibration.Floor > 0:
 		wanted = record.Calibration.Floor
 	}
@@ -309,6 +311,7 @@ func (f *Floors) Ensure(ctx context.Context, vault domain.VaultID) error {
 		return apply(ctx, s, record)
 	}
 	outcome, calibration, err := f.calibrator.Calibrate(ctx, s.search, s.notes, embedding)
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="Failed calibration always returns a zero outcome."
 	if err != nil || outcome != Calibrated {
 		return err
 	}

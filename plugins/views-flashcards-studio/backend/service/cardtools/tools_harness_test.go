@@ -1,9 +1,12 @@
 package cardtools_test
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
@@ -106,8 +109,77 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 		t.Errorf("the call read %+v", read.Cards)
 	}
 
-	s.vault = ""
-	if got := getToolError(t, s, "card_read", map[string]any{"path": "Animals.md"}); got != "the call names no vault" {
-		t.Errorf("a call naming no vault answered %q", got)
+	s.vault = "unknown-vault"
+	if got := getToolError(t, s, "card_read", map[string]any{"path": "Animals.md"}); got != "the agent vault is not registered in this installation" {
+		t.Errorf("a call naming an unknown vault answered %q", got)
 	}
+
+	s.vault = ""
+	for toolName, args := range map[string]map[string]any{
+		"card_read":           {"path": "Animals.md"},
+		"card_model_list":     {},
+		"card_model_read":     {"path": "Animal.md"},
+		"card_section_add":    {"path": "Animals.md", "name": "S", "fingerprint": "1-1"},
+		"card_model_edit":     {"path": "Animal.md", "fields": []string{"Name"}, "fingerprint": "1-1"},
+		"card_deck_create":    {"title": "D"},
+		"card_model_create":   {"title": "M", "fields": []string{"Name"}},
+		"card_field_rename":   {"path": "Animal.md", "from": "Name", "to": "Species"},
+	} {
+		if got := getToolError(t, s, toolName, args); got != "the call names no vault" {
+			t.Errorf("%s naming no vault answered %q", toolName, got)
+		}
+	}
+
+	// Transport errors from GetVault and VaultNotes/FileAccess propagate through tools.
+	fv := &errHostVault{Vault: installation.Host, getVaultErr: errors.New("transport down")}
+	errReg, err := service.New(service.Config{Vault: fv, Store: installation.Host.Store(), Now: vaulttest.NewClock()}).Tools()
+	if err != nil {
+		t.Fatal(err)
+	}
+	errSession := &session{registry: errReg, vault: garden.ID}
+	if got := getToolError(t, errSession, "card_read", map[string]any{"path": "Animals.md"}); got != "transport down" {
+		t.Errorf("got %q, want transport down", got)
+	}
+	fv.getVaultErr = nil
+	fv.opErr = errors.New("io down")
+	for toolName, args := range map[string]map[string]any{
+		"card_model_list": {},
+		"card_model_read": {"path": "Animal.md"},
+		"card_model_edit": {"path": "Animal.md", "fields": []string{"Name"}, "fingerprint": "1-1"},
+	} {
+		if got := getToolError(t, errSession, toolName, args); got == "" {
+			t.Errorf("%s expected error on io down", toolName)
+		}
+	}
+}
+
+type errHostVault struct {
+	host.Vault
+	getVaultErr error
+	opErr       error
+}
+
+func (e *errHostVault) With(id domain.VaultID) host.Vault {
+	return &errHostVault{Vault: e.Vault.With(id), getVaultErr: e.getVaultErr, opErr: e.opErr}
+}
+
+func (e *errHostVault) GetVault(ctx context.Context) (domain.Vault, error) {
+	if e.getVaultErr != nil {
+		return domain.Vault{}, e.getVaultErr
+	}
+	return e.Vault.GetVault(ctx)
+}
+
+func (e *errHostVault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	if e.opErr != nil {
+		return nil, e.opErr
+	}
+	return e.Vault.GetPathsOfType(ctx, noteType)
+}
+
+func (e *errHostVault) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
+	if e.opErr != nil {
+		return domain.FileStat{}, e.opErr
+	}
+	return e.Vault.StatFile(ctx, path)
 }

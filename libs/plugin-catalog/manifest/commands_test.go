@@ -43,6 +43,13 @@ func TestAManifestDeclaresCommandsWithTheirFilesAndArguments(t *testing.T) {
 	if !command.CanRunOn("application/pdf", "") || !command.CanRunOn("image/vnd.djvu", "") || command.CanRunOn("application/epub+zip", "") || command.CanRunOn(domain.UnknownContentType, "") {
 		t.Error("the command runs over the wrong files")
 	}
+	if (manifest.Command{}).HasFiles() {
+		t.Error("an empty command should not have files")
+	}
+	noteCmd := manifest.Command{NoteTypes: []string{"link"}}
+	if !noteCmd.HasFiles() || !noteCmd.CanRunOn("", "link") || noteCmd.CanRunOn("", "other") {
+		t.Error("note command runs over the wrong note types")
+	}
 }
 
 func TestACommandOverAnyFileRunsOverEveryFile(t *testing.T) {
@@ -92,6 +99,10 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 		"a required argument hidden in the palette": {
 			`[{"id":"convert","title":"C","arguments":[{"name":"wait","title":"W","type":"boolean","required":true,"hiddenInPalette":true}]}]`,
 			manifest.ErrInvalidCommandArgument,
+		},
+		"an undeclared note type": {
+			`[{"id":"convert","title":"C","noteTypes":["undeclared"]}]`,
+			manifest.ErrInvalidCommand,
 		},
 	}
 	for name, one := range cases {
@@ -146,7 +157,7 @@ func TestManifestDeclaresCommandWithContextCondition(t *testing.T) {
 	if len(deletion.When) != 1 || deletion.When[0].Key != "version.plugin" {
 		t.Errorf("the condition on the plugin came out as %+v", deletion.When)
 	}
-	if !proofread.HasFiles() || !proofread.CanRunOn(domain.UnknownContentType, "") {
+	if !proofread.HasFiles() || !proofread.CanRunOn(domain.UnknownContentType, "") || !deletion.HasFiles() || !deletion.CanRunOn(domain.UnknownContentType, "") {
 		t.Error("a command with a condition does not run over any file")
 	}
 }
@@ -185,10 +196,12 @@ func TestACommandWithAnInvalidConditionIsRefused(t *testing.T) {
 		"a condition that names no key":   `{"id":"a","title":"A","when":[{"is":["x"]}]}`,
 		"a condition that names no value": `{"id":"a","title":"A","when":[{"key":"k"}]}`,
 		"a condition and a content type":  `{"id":"a","title":"A","contentTypes":["audio/*"],"when":[{"key":"k","is":["x"]}]}`,
+		"a condition and a note type":     `{"id":"a","title":"A","noteTypes":["link"],"when":[{"key":"k","is":["x"]}]}`,
 		"a value with no name":            `{"id":"a","title":"A","when":[{"key":"k","is":[" "]}]}`,
 		"the argument the host gives":     `{"id":"a","title":"A","when":[{"key":"k","is":["x"]}],"arguments":[{"name":"version-id","title":"V","type":"string"}]}`,
 	} {
-		_, err := manifestjson.Read(strings.NewReader(commandManifestHead + `[` + command + `]}`))
+		head := `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"contributes":{"noteTypes":[{"type":"link"}]},"commands":`
+		_, err := manifestjson.Read(strings.NewReader(head + `[` + command + `]}`))
 		if !errors.Is(err, manifest.ErrInvalidCommand) && !errors.Is(err, manifest.ErrInvalidCommandArgument) {
 			t.Errorf("%s: got %v", name, err)
 		}

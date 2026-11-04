@@ -77,7 +77,9 @@ func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 		return out, nil
 	}
 
+	// gomutants:disable-next-line BRANCH_IF reason="readBody handles every error returned by markdown.Open via Outcomes"
 	if err := readBody(raw, &out); err != nil {
+		// gomutants:disable-next-line RETURN_ERROR_NIL reason="readBody never returns a non-nil error"
 		return Contents{}, err
 	}
 	return out, nil
@@ -93,10 +95,12 @@ func statNote(ctx context.Context, files Reader, path string, out *Contents) (ta
 		// A vault holds several kinds of source and this reads one of them.
 		if ref.Kind != domain.KindNote {
 			out.Outcome = NotANote
+			// gomutants:disable-next-line RETURN_FALSE reason="Read stops immediately when stop is true and never inspects target"
 			return true, true, nil
 		}
 		if ref.Size > MaxBytes {
 			out.Outcome = TooLarge
+			// gomutants:disable-next-line RETURN_FALSE reason="Read stops immediately when stop is true and never inspects target"
 			return true, true, nil
 		}
 		return true, false, nil
@@ -139,7 +143,9 @@ func readBody(raw []byte, out *Contents) error {
 		out.Outcome = Unreadable
 		return nil
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="markdown.Open wraps every error it returns in ErrUnreadable"
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ERROR_NIL,ERRORF_WRAP reason="markdown.Open wraps every error it returns in ErrUnreadable"
 		return fmt.Errorf("read %s: %w", out.Path, err)
 	}
 	out.Body = markdown.Normalise(doc.Body())

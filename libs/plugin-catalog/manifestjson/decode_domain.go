@@ -3,10 +3,7 @@ package manifestjson
 import "github.com/jiva-studio/numen/libs/notes/domain"
 
 func newContentTypes(texts []string) []domain.ContentType {
-	if texts == nil {
-		return nil
-	}
-	out := make([]domain.ContentType, 0, len(texts))
+	var out []domain.ContentType
 	for _, text := range texts {
 		out = append(out, domain.ContentType(text))
 	}

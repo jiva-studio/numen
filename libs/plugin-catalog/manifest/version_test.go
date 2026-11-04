@@ -21,10 +21,14 @@ func TestVersionsAreOrderedByPrecedence(t *testing.T) {
 		{"1.0.0+build1", "1.0.0+build2", 0},
 		{"1.0.0-alpha", "1.0.0", -1},
 		{"1.0.0-alpha", "1.0.0-alpha.1", -1},
+		{"1.0.0-alpha.1", "1.0.0-alpha.1", 0},
 		{"1.0.0-alpha.1", "1.0.0-alpha.beta", -1},
+		{"1.0.0-9", "1.0.0-1a", -1},
 		{"1.0.0-beta.2", "1.0.0-beta.11", -1},
 		{"1.0.0-rc.1", "1.0.0-beta.11", 1},
 		{"1.10.0", "1.9.0", 1},
+		{"18446744073709551615.0.0", "1.0.0", 1},
+		{"1.0.0-18446744073709551615", "1.0.0-9", 1},
 	}
 	for _, one := range cases {
 		got, err := manifest.CompareVersions(one.a, one.b)
@@ -43,9 +47,12 @@ func TestVersionsAreOrderedByPrecedence(t *testing.T) {
 }
 
 func TestAVersionThatIsNoVersionCannotBeCompared(t *testing.T) {
-	for _, text := range []string{"", "1.0", "one", "1.0.0.0", "01.0.0"} {
-		if _, err := manifest.CompareVersions(text, "1.0.0"); !errors.Is(err, manifest.ErrInvalidVersion) {
-			t.Errorf("CompareVersions(%q) error = %v, want an invalid version", text, err)
+	for _, text := range []string{"", "1.0", "one", "1.0.0.0", "01.0.0", "18446744073709551616.0.0"} {
+		if got, err := manifest.CompareVersions(text, "1.0.0"); !errors.Is(err, manifest.ErrInvalidVersion) || got != 0 {
+			t.Errorf("CompareVersions(%q, 1.0.0) = %d, %v; want 0, invalid version", text, got, err)
+		}
+		if got, err := manifest.CompareVersions("1.0.0", text); !errors.Is(err, manifest.ErrInvalidVersion) || got != 0 {
+			t.Errorf("CompareVersions(1.0.0, %q) = %d, %v; want 0, invalid version", text, got, err)
 		}
 	}
 }
@@ -76,13 +83,25 @@ func TestAnIncompatibleManifestReportsItsReason(t *testing.T) {
 		if !errors.As(err, &incompatible) || incompatible.Reason != one.reason || incompatible.Detail == "" {
 			t.Errorf("%s: error = %v, want reason %q with a detail", one.name, err, one.reason)
 		}
-		if !errors.Is(err, manifest.ErrIncompatible) {
+		if !errors.Is(err, manifest.ErrIncompatible) || errors.Is(err, manifest.ErrInvalidID) {
 			t.Errorf("%s: error is not ErrIncompatible", one.name)
 		}
 	}
 }
 
 func TestAPluginRunsWhereItsRequirementsAreMet(t *testing.T) {
+	if manifest.ProtocolVersion != 1 {
+		t.Fatalf("ProtocolVersion = %d, want 1", manifest.ProtocolVersion)
+	}
+	if got := (manifest.Manifest{}).GetProtocol(); got != 1 {
+		t.Errorf("GetProtocol() = %d, want 1", got)
+	}
+	if got := (manifest.Manifest{Protocol: 2}).GetProtocol(); got != 2 {
+		t.Errorf("GetProtocol(2) = %d, want 2", got)
+	}
+	if !(manifest.Manifest{}).CanTarget("desktop.editor") {
+		t.Error("empty targets should support any target")
+	}
 	m, err := manifestjson.Read(strings.NewReader(
 		`{"id":"a.b","name":"A","version":"1.0.0","targets":["desktop.editor"]}`))
 	if err != nil {

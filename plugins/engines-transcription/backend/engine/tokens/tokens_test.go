@@ -40,6 +40,30 @@ func TestTokensReadsTheFilePublishedAdjacentAModel(t *testing.T) {
 	if len(response) != 4 || response[1] != " a" || response.GetIndex("<blk>") != 3 {
 		t.Errorf("the file names %v", response)
 	}
+
+	if _, err := Read(t.TempDir() + "/missing.txt"); err == nil {
+		t.Fatal("expected error for missing file")
+	}
+	if _, err := Read(t.TempDir()); err == nil {
+		t.Fatal("expected scanner error when reading directory")
+	}
+
+	emptyPath := t.TempDir() + "/empty.txt"
+	if err := os.WriteFile(emptyPath, []byte("invalid\na b c\nbad nan\nneg -1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Read(emptyPath); err == nil {
+		t.Fatal("expected error when no valid pieces exist")
+	}
+
+	singlePath := t.TempDir() + "/single.txt"
+	if err := os.WriteFile(singlePath, []byte("onlyone\na b c\nbad nan\nneg -1\n<unk> 0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	single, err := Read(singlePath)
+	if err != nil || len(single) != 1 || single[0] != "<unk>" {
+		t.Fatalf("expected single piece [<unk>], got %v, err %v", single, err)
+	}
 }
 
 func decodeReference(p Pieces, response []int) string {

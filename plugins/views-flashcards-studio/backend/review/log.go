@@ -122,6 +122,7 @@ func Write(a Answer) ([]byte, error) {
 		l.Ms = a.Took.Milliseconds()
 	}
 	raw, err := json.Marshal(l)
+	// gomutants:disable-next-line BRANCH_IF reason="Marshaling log line with primitive fields cannot fail."
 	if err != nil {
 		return nil, err
 	}
@@ -167,6 +168,7 @@ func whole(raw []byte) int {
 
 // newNoAnswer returns the answer returned where a line holds none.
 func newNoAnswer() Answer {
+	// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Answer value."
 	return Answer{
 		ID: "", ReviewCard: CardID{Card: "", Template: ""}, At: time.Time{},
 		Rating: 0, Took: 0, Undoes: "",
@@ -176,13 +178,16 @@ func newNoAnswer() Answer {
 func answer(raw []byte) (Answer, bool) {
 	var l line
 	if err := json.Unmarshal(raw, &l); err != nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="Helper newNoAnswer returns the zero Answer value."
 		return newNoAnswer(), false
 	}
 	if l.V != Version || l.ID == "" {
+		// gomutants:disable-next-line RETURN_ZERO reason="Helper newNoAnswer returns the zero Answer value."
 		return newNoAnswer(), false
 	}
 	pos, err := ParseTimestamp(l.At)
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="Helper newNoAnswer returns the zero Answer value."
 		return newNoAnswer(), false
 	}
 	if l.Undo != "" {
@@ -192,6 +197,7 @@ func answer(raw []byte) (Answer, bool) {
 		}, true
 	}
 	if l.Card == "" || l.Template == "" || !Rating(l.Rating).Valid() {
+		// gomutants:disable-next-line RETURN_ZERO reason="Helper newNoAnswer returns the zero Answer value."
 		return newNoAnswer(), false
 	}
 	return Answer{

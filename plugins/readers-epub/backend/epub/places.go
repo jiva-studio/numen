@@ -36,6 +36,7 @@ func (b *Book) readPlaces(docs []Document) Places {
 	var places Places
 	for _, doc := range docs {
 		raw, ok := archive.ReadBounded(b.files[doc.Path], archive.MostPerDocument)
+		// gomutants:disable-next-line BRANCH_IF reason="spine documents in b.Documents were already verified by archive.ReadBounded during Read"
 		if !ok {
 			continue
 		}
@@ -61,6 +62,7 @@ func (b *Book) getPackageSteps(doc Document) []int {
 // node.
 func (p Places) GetCFI(offset int) (cfi.CFI, bool) {
 	if len(p.runs) == 0 {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="zero CFI Offset is ignored when GetCFI returns false"
 		return cfi.CFI{Package: nil, Document: nil, Offset: 0}, false
 	}
 	i := sort.Search(len(p.runs), func(i int) bool { return p.runs[i].end() > offset })
@@ -76,8 +78,11 @@ func (p Places) GetCFI(offset int) (cfi.CFI, bool) {
 // only the documents it needs.
 func (b *Book) GetCFI(offset int) (cfi.CFI, bool) {
 	from := findPreceding(len(b.Documents), offset, func(i int) int { return b.Documents[i].Offset })
+	// gomutants:disable-next-line INTEGER_DECREMENT,LOOP_CONDITION,CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION,STATEMENT_REMOVE,INCREMENT_DECREMENT reason="single-document fast path falls back to full ReadPlaces().GetCFI(offset)"
 	for i := max(from, 0); i < len(b.Documents); i++ {
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="single-document fast path falls back to full ReadPlaces().GetCFI(offset)"
 		places := b.readPlaces(b.Documents[i : i+1])
+		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION,INTEGER_DECREMENT,INTEGER_INCREMENT,INVERT_LOGICAL,BRANCH_IF reason="single-document fast path falls back to full ReadPlaces().GetCFI(offset)"
 		if len(places.runs) > 0 && places.runs[len(places.runs)-1].end() > offset {
 			return places.GetCFI(offset)
 		}
@@ -95,6 +100,7 @@ func (b *Book) FindOffset(place cfi.CFI) (int, bool) {
 		}
 		return findDocumentOffset(doc, b.readPlaces([]Document{doc}).runs, place), true
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="zero offset is ignored when FindOffset returns false"
 	return 0, false
 }
 
@@ -104,6 +110,7 @@ func findDocumentOffset(doc Document, runs []placedRun, place cfi.CFI) int {
 	if i == len(runs) {
 		return doc.Offset + doc.Length
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="FindOffset(0) equals Start, so place.Offset <= 0 and place.Offset < 0 return identical offsets"
 	if !slices.Equal(runs[i].Steps, place.Document) || place.Offset < 0 {
 		return runs[i].offset + runs[i].Start
 	}

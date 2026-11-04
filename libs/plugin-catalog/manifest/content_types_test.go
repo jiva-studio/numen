@@ -56,11 +56,18 @@ func TestReadManifestRejectsAnInvalidReader(t *testing.T) {
 		"a reader with no id":      {`"readers":[{"contentTypes":["application/pdf"],"rank":"default"}]`, manifest.ErrInvalidReader},
 		"a reader declared twice":  {`"readers":[{"id":"r","contentTypes":["text/plain"],"rank":"default"},{"id":"r","contentTypes":["text/plain"],"rank":"default"}]`, manifest.ErrInvalidReader},
 		"a reader of an extension": {`"readers":[{"id":"r","contentTypes":[".pdf"],"rank":"default"}]`, manifest.ErrInvalidReader},
+		"a reader in capitals":     {`"readers":[{"id":"r","contentTypes":["Application/PDF"],"rank":"default"}]`, manifest.ErrInvalidReader},
 	}
 	for name, one := range cases {
 		_, err := manifestjson.Read(strings.NewReader(readerManifestHead + `,"contributes":{` + one.fields + "}}"))
 		if !errors.Is(err, one.want) {
 			t.Errorf("%s: ReadManifest = %v; want %v", name, err, one.want)
+		}
+		if name == "a reader of an extension" && (!errors.Is(err, domain.ErrInvalidContentType) || strings.Contains(err.Error(), "not written in lowercase")) {
+			t.Errorf("%s: unexpected content type error %v", name, err)
+		}
+		if name == "a reader in capitals" && (!errors.Is(err, domain.ErrInvalidContentType) || !strings.Contains(err.Error(), "not written in lowercase")) {
+			t.Errorf("%s: unexpected uppercase content type error %v", name, err)
 		}
 	}
 }

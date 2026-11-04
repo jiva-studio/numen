@@ -14,6 +14,9 @@ func TestParseReadsTheStepsAndTheOffset(t *testing.T) {
 		"epubcfi(/6/4!/4/2,/1:3,/1:9)":                     {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
 		"epubcfi(/6/4,!/4/2/1:3,!/4/2/1:9)":                {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
 		"epubcfi(/6/4!/4/2/1:3~2.5@10:20)":                 {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
+		"epubcfi(/6/4!/4/2/9:0[a][b],/1:3,/1:9)":           {Package: []int{6, 4}, Document: []int{4, 2, 9, 1}, Offset: 3},
+		"epubcfi(/6/4!/4/2~2.5@10:20[x^,y],/1:3,/1:9)":     {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
+		"epubcfi(/6/4!/4/2@10:20,/1:3,/1:9)":               {Package: []int{6, 4}, Document: []int{4, 2, 1}, Offset: 3},
 		"epubcfi(/6/4!)":                                   {Package: []int{6, 4}, Offset: -1},
 	} {
 		got, err := Parse(text)
@@ -30,7 +33,8 @@ func TestParseReadsTheStepsAndTheOffset(t *testing.T) {
 func TestParseRejectsWhatIsNoCFIIntoADocument(t *testing.T) {
 	for _, text := range []string{
 		"", "/6/4!/4", "epubcfi(/6/4!/4", "epubcfi(/6/4/4/2)", "epubcfi(/6!/4/2)", "epubcfi(/6/4!/4!/2)",
-		"epubcfi(/6/x!/4)", "epubcfi(/6/4!/4/2 junk)", "epubcfi(/6/4!:3)", "epubcfi(/6/4!/4,/2)",
+		"epubcfi(/6/x!/4)", "epubcfi(/6/4!/4/2 junk)", "epubcfi(/6/4!:3)", "epubcfi(/6/4!:0)", "epubcfi(/6/4!/4,/2)",
+		"epubcfi(/6/4!/4:)", "epubcfi(/6/4!/4,/x,/2)", "epubcfi(/6/4[unclosed!/4/2)",
 	} {
 		if got, err := Parse(text); !errors.Is(err, ErrSyntax) {
 			t.Errorf("Parse(%q) = %+v, %v, want ErrSyntax", text, got, err)

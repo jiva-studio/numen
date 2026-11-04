@@ -66,6 +66,7 @@ func (t transcripts) readReached(ctx context.Context, key string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="writing partial[:progress.Size] when len(partial) equals progress.Size writes identical bytes"
 	if int64(len(partial)) > progress.Size {
 		if err := t.store.Write(ctx, getPartialName(key), partial[:progress.Size]); err != nil {
 			return 0, err
@@ -78,6 +79,7 @@ func (t transcripts) readReached(ctx context.Context, key string) (int, error) {
 // millisecond given.
 func (t transcripts) appendBatch(ctx context.Context, key string, cues []transcript.Cue, ms int) error {
 	segments, err := transcript.GetSegments(cues)
+	// gomutants:disable-next-line BRANCH_IF reason="transcript.GetSegments on finite integer timestamps cannot fail"
 	if err != nil {
 		return err
 	}
@@ -89,6 +91,7 @@ func (t transcripts) appendBatch(ctx context.Context, key string, cues []transcr
 		return err
 	}
 	raw, err := json.Marshal(reached{MS: ms, Size: int64(len(partial))})
+	// gomutants:disable-next-line BRANCH_IF reason="json.Marshal of integer struct reached cannot fail"
 	if err != nil {
 		return err
 	}

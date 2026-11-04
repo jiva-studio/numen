@@ -52,3 +52,44 @@ func TestReadCodexConfigFailsWithoutHome(t *testing.T) {
 		t.Fatalf("expected error reading codex config without home directory, got %v", cfg)
 	}
 }
+
+func TestReadCodexConfigJsonFallbackAndDefaults(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	// Neither config.toml nor config.json exists.
+	emptyCfg, err := ReadCodexConfig()
+	if err != nil || emptyCfg.Model != "" {
+		t.Fatalf("ReadCodexConfig empty = (%+v, %v), want empty model", emptyCfg, err)
+	}
+
+	codexDir := filepath.Join(home, ".codex")
+	if err := os.MkdirAll(codexDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	jsonPath := filepath.Join(codexDir, "config.json")
+
+	// Invalid config.json falls back to empty config.
+	if err := os.WriteFile(jsonPath, []byte("{invalid"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	badJSONCfg, err := ReadCodexConfig()
+	if err != nil || badJSONCfg.Model != "" {
+		t.Fatalf("ReadCodexConfig invalid json = (%+v, %v), want empty model", badJSONCfg, err)
+	}
+
+	// Valid config.json returns parsed config.
+	if err := os.WriteFile(jsonPath, []byte(`{"model":"gpt-4.1"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	jsonCfg, err := ReadCodexConfig()
+	if err != nil || jsonCfg.Model != "gpt-4.1" {
+		t.Fatalf("ReadCodexConfig valid json = (%+v, %v), want gpt-4.1", jsonCfg, err)
+	}
+
+	// parseSimpleToml trims whitespace, ignores comments/blank/non-matching lines, and unquotes values.
+	tomlCfg := parseSimpleToml("  # model = \"commented\"  \n\nno_equals_line\nother = \"ignored\"\n  model  =  'o4-mini'  \n")
+	if tomlCfg.Model != "o4-mini" || tomlCfg.MCPServers == nil {
+		t.Fatalf("parseSimpleToml = %+v, want Model=o4-mini and non-nil MCPServers", tomlCfg)
+	}
+}

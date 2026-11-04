@@ -40,6 +40,7 @@ func alphabet(model string, cfg RecogniserModel) (int64, string, error) {
 	if _, err := file.WriteString(strings.Join(lines, "\n") + "\n"); err != nil {
 		return 0, "", errors.Join(err, file.Close())
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="Closing a temporary file after a successful write only fails on an OS I/O fault."
 	if err := file.Close(); err != nil {
 		return 0, "", err
 	}

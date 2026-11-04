@@ -101,6 +101,7 @@ func findQuotedEnd(front []byte, start int, quote byte) (int, bool) {
 		case quote:
 			if isEscapedSingleQuote(front, pos, quote) {
 				pos++
+				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="breaking from the switch at the end of the loop body advances to the next iteration identically to continue"
 				continue
 			}
 			return pos + 1, true
@@ -114,10 +115,13 @@ func findQuotedEnd(front []byte, start int, quote byte) (int, bool) {
 func scalar(value string) (string, error) {
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)
+	// gomutants:disable-next-line STATEMENT_REMOVE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="SetIndent does not affect encoding of a single scalar string"
 	enc.SetIndent(2)
+	// gomutants:disable-next-line BRANCH_IF reason="encoding a Go string to bytes.Buffer cannot fail"
 	if err := enc.Encode(value); err != nil {
 		return "", err
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="closing a yaml.Encoder backed by bytes.Buffer cannot fail"
 	if err := enc.Close(); err != nil {
 		return "", err
 	}
@@ -133,16 +137,20 @@ func scalarLike(value string, style yaml.Style) (string, error) {
 	}
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)
+	// gomutants:disable-next-line STATEMENT_REMOVE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="SetIndent does not affect encoding of a single scalar node"
 	enc.SetIndent(2)
+	// gomutants:disable-next-line BRANCH_IF reason="encoding a scalar yaml.Node to bytes.Buffer cannot fail"
 	if err := enc.Encode(&yaml.Node{Kind: yaml.ScalarNode, Style: style, Value: value}); err != nil {
 		return "", err
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="closing a yaml.Encoder backed by bytes.Buffer cannot fail"
 	if err := enc.Close(); err != nil {
 		return "", err
 	}
 	content := strings.TrimRight(out.String(), "\n")
 
 	var parsed string
+	// gomutants:disable-next-line INVERT_LOGICAL reason="yaml.Encoder output for a scalar node is always valid YAML so err is always nil"
 	if err := yaml.Unmarshal([]byte(content), &parsed); err != nil || parsed != value {
 		return scalar(value)
 	}

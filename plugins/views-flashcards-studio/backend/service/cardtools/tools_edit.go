@@ -284,6 +284,7 @@ func (t *Tools) writeCardCardModelEdit(ctx context.Context, in cardModelEditInpu
 		return WriteOutcome{}, err
 	}
 	if current.Outcome != note.Ok {
+		// gomutants:disable-next-line BRANCH_IF reason="All non-Ok ReadOutcome values map to an ErrorCode in convertOutcomeToErrorCode."
 		if reason, ok := convertOutcomeToErrorCode(current.Outcome); ok {
 			return WriteOutcome{}, errors.New(describeCode(reason))
 		}
@@ -293,6 +294,7 @@ func (t *Tools) writeCardCardModelEdit(ctx context.Context, in cardModelEditInpu
 		return WriteOutcome{}, errors.New(describeCode(api.ErrorCodeNotACardModel))
 	}
 	body, err := format.CardModelBody(current.Body.Preamble, newCardTemplates(in.Templates), current.Body.Tail)
+	// gomutants:disable-next-line BRANCH_IF reason="CardModelBody on in-memory strings does not fail."
 	if err != nil {
 		return WriteOutcome{}, err
 	}

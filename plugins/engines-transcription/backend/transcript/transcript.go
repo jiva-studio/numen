@@ -32,6 +32,7 @@ func GetSegments(cues []Cue) ([]domain.TextSegment, error) {
 			continue
 		}
 		selector, err := timeSelector{T: []float64{toSeconds(cue.From), toSeconds(cue.To)}}.encode()
+		// gomutants:disable-next-line BRANCH_IF reason="json.Marshal of finite float64 slice cannot fail"
 		if err != nil {
 			return nil, err
 		}

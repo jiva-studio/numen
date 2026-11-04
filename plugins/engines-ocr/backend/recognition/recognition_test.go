@@ -27,16 +27,24 @@ const cacheEnv = "NUMEN_TEST_WASM_CACHE"
 // TestMain gives every reader of the tests one folder to cache the compiled PDFium in, because each
 // reader compiles it again otherwise and a run under the race detector takes minutes for each.
 func TestMain(m *testing.M) {
-	dir, err := os.MkdirTemp("", "numen-ocr-wasm-")
-	if err != nil {
-		os.Exit(1)
-	}
-	if err := os.Setenv(cacheEnv, dir); err != nil {
-		os.Exit(1)
+	dir := os.Getenv(cacheEnv)
+	isOwned := false
+	if dir == "" {
+		var err error
+		dir, err = os.MkdirTemp("", "numen-ocr-wasm-")
+		if err != nil {
+			os.Exit(1)
+		}
+		if err := os.Setenv(cacheEnv, dir); err != nil {
+			os.Exit(1)
+		}
+		isOwned = true
 	}
 	code := m.Run()
-	if err := os.RemoveAll(dir); err != nil && code == 0 {
-		code = 1
+	if isOwned {
+		if err := os.RemoveAll(dir); err != nil && code == 0 {
+			code = 1
+		}
 	}
 	os.Exit(code)
 }

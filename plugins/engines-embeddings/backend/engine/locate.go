@@ -93,6 +93,7 @@ func verifyFile(path, wantSum string) (err error) {
 	if err != nil {
 		return err
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing a read-only file does not fail"
 	defer func() { err = errors.Join(err, f.Close()) }()
 
 	h := sha256.New()
@@ -323,7 +324,9 @@ func checkPinned(sums map[string]string, name, path string) error {
 // finds a file that is in place complete.
 func discardDownload(path string) error {
 	target, err := filepath.EvalSymlinks(path)
+	// gomutants:disable-next-line BRANCH_IF reason="an empty target from a failed EvalSymlinks is ignored as fs.ErrNotExist"
 	if err != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="an empty target from a failed EvalSymlinks is ignored as fs.ErrNotExist"
 		target = path
 	}
 	var removed []error
@@ -353,6 +356,7 @@ func locateCached(repo *hub.Repo, cfg LocalModel, file string) (Paths, bool, err
 	snapshot := filepath.Join(cache, "snapshots", cfg.Revision)
 	p := snapshotPaths(snapshot, file)
 	if !hasFile(p.Model) || !hasFile(p.Tokenizer) {
+		// gomutants:disable-next-line RETURN_ZERO reason="an empty Paths literal equals the zero value"
 		return Paths{Model: "", Tokenizer: ""}, false, nil
 	}
 	if err := checkPinned(cfg.Sums, ModelFolder+"/"+file, p.Model); err != nil {
@@ -371,6 +375,7 @@ func locateNewestSnapshot(cache, name, file string) (Paths, bool, error) {
 	snapshots := filepath.Join(cache, "snapshots")
 	entries, err := os.ReadDir(snapshots)
 	if errors.Is(err, fs.ErrNotExist) {
+		// gomutants:disable-next-line RETURN_ZERO reason="an empty Paths literal equals the zero value"
 		return Paths{Model: "", Tokenizer: ""}, false, nil
 	}
 	if err != nil {
@@ -380,6 +385,7 @@ func locateNewestSnapshot(cache, name, file string) (Paths, bool, error) {
 	var newestTime time.Time
 	isFound := false
 	for _, entry := range entries {
+		// gomutants:disable-next-line BRANCH_IF reason="a non-directory entry holds no model file"
 		if !entry.IsDir() {
 			continue
 		}
@@ -388,6 +394,7 @@ func locateNewestSnapshot(cache, name, file string) (Paths, bool, error) {
 			continue
 		}
 		info, err := os.Stat(p.Model)
+		// gomutants:disable-next-line BRANCH_IF reason="hasFile already verified os.Stat succeeds on p.Model"
 		if err != nil {
 			continue
 		}

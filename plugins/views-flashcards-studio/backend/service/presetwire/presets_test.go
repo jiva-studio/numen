@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
@@ -68,6 +68,40 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 	}
 	if index := got.At[2]; index.Learns == nil || *index.Learns != 12 {
 		t.Errorf("a place learned on day 12 carries %+v", index.Learns)
+	}
+	if got.Now == nil || got.Suggested == nil {
+		t.Errorf("expected Now and Suggested curve points, got %v, %v", got.Now, got.Suggested)
+	}
+}
+
+func TestConvertCurveToWireCopiesBacklogAndConvertSettingsFromWireHandlesNil(t *testing.T) {
+	got := ConvertCurveToWire(projection.Curve{
+		Points: []projection.Point{
+			{Backlog: []int{3, 7}},
+		},
+	})
+	if len(got.At) != 1 || !reflect.DeepEqual(got.At[0].Backlog, []int32{3, 7}) {
+		t.Errorf("got backlog %v, want [3 7]", got.At[0].Backlog)
+	}
+
+	p, err := ConvertSettingsFromWire(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(p, review.Preset{}) {
+		t.Errorf("got %+v, want empty preset", p)
+	}
+
+	bounds := GetSettingsBounds()
+	if bounds == nil || bounds.MinutesADay == nil || bounds.NewADay == nil {
+		t.Fatalf("got bounds %+v, want non-nil bounds", bounds)
+	}
+	wirePreset := ConvertPresetToWire(flashcards.PresetContents{Path: "Preset.md"}, "My Preset")
+	if wirePreset == nil || wirePreset.Title != "My Preset" {
+		t.Fatalf("got preset %+v, want My Preset", wirePreset)
+	}
+	if gotBudget := ConvertBudgetToWire(review.BudgetName("unknown")); gotBudget != api.BudgetNameUnspecified {
+		t.Fatalf("got %v, want BudgetNameUnspecified", gotBudget)
 	}
 }
 

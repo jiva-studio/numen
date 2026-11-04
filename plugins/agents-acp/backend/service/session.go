@@ -114,6 +114,7 @@ func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*a
 	}
 	s.cmd = exec.CommandContext(running, agent.Command[0], agent.Command[1:]...)
 	s.cmd.Dir = dir
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="exec.Cmd uses os.Environ when Env is nil."
 	s.cmd.Env = os.Environ()
 	s.cmd.Stderr = s.stderr
 	process.Supervise(s.cmd)

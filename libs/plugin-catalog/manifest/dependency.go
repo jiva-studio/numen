@@ -80,7 +80,7 @@ func (m Manifest) listDependencyIssues() []error {
 			issues = append(issues, fmt.Errorf("%w: id cannot be empty", ErrInvalidDependency))
 		case observed[req.ID]:
 			issues = append(issues, fmt.Errorf("%w: %s is declared twice", ErrInvalidDependency, req.ID))
-		case req.Kind == "" || !slices.Contains(GetDependencyKinds(), req.Kind):
+		case !slices.Contains(GetDependencyKinds(), req.Kind):
 			issues = append(issues, fmt.Errorf("%w: %s has kind %q, expected one of %v", ErrInvalidDependency, req.ID, req.Kind, GetDependencyKinds()))
 		}
 		observed[req.ID] = true

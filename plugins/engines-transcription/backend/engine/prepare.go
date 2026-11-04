@@ -55,10 +55,12 @@ func GetModelBytes(cfg Config) int64 {
 	var total int64
 	for _, t := range targets {
 		pos, err := locateModel(t.explicit, t.repo, t.envVar, t.fileName, cfg.Dir)
+		// gomutants:disable-next-line BRANCH_IF reason="an empty path from locateModel fails os.Stat on the next line"
 		if err != nil {
 			return 0
 		}
 		info, err := os.Stat(pos)
+		// gomutants:disable-next-line BRANCH_IF reason="locateModel already verified the file with os.Stat"
 		if err != nil {
 			return 0
 		}

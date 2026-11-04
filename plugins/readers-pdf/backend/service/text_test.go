@@ -151,6 +151,14 @@ func TestARunOfTheLayerIsLitOverTheWordsItCovers(t *testing.T) {
 			t.Errorf("box %+v covers nothing", box.Rect)
 		}
 	}
+
+	customVersion := domain.NewVersionText(domain.TextVersion{}, []domain.TextSegment{
+		{Text: "hello", Selector: `{"page":1,"boxes":[[0.1,0.2,0.3,0.4]]}`},
+	})
+	customBoxes := getBoxes(customVersion, pdf.ByteRange{Start: 0, End: 5})
+	if len(customBoxes) != 1 || customBoxes[0].MinX != 0.1 || customBoxes[0].MinY != 0.2 || customBoxes[0].MaxX != 0.3 || customBoxes[0].MaxY != 0.4 {
+		t.Errorf("customBoxes = %+v, want [0.1, 0.2, 0.3, 0.4]", customBoxes)
+	}
 }
 
 func TestTheOutlineOpensTheSectionsOfTheLayer(t *testing.T) {
@@ -330,5 +338,49 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	}
 	if len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
+	}
+}
+
+func TestTextServerLifecycleAndVaultStatus(t *testing.T) {
+	if got := getStatus(host.ErrNoVault); got != 403 {
+		t.Errorf("getStatus(ErrNoVault) = %d, want 403", got)
+	}
+	if got := getStatus(host.ErrOutside); got != 403 {
+		t.Errorf("getStatus(ErrOutside) = %d, want 403", got)
+	}
+	if got := getStatus(host.ErrNotExist); got != 404 {
+		t.Errorf("getStatus(ErrNotExist) = %d, want 404", got)
+	}
+
+	raw, err := os.ReadFile(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(raw)})
+	texts := hosttest.NewTexts("vault", pluginID)
+	texts.File("tiny.pdf", raw)
+	queue := hosttest.NewQueue()
+	held, err := queue.EnqueueWork(t.Context(), host.Work{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := NewTextServer(files, texts, texts.GetStore(pluginID), queue, newTestWorkers(t))
+
+	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+	// Duplicate call while running is a no-op
+	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+	// Close cancels running task and unlocks
+	srv.Close()
+	if err := held.Release(); err != nil {
+		t.Error(err)
+	}
+
+	// CreateText after Close is a no-op
+	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
+		t.Fatal(err)
 	}
 }

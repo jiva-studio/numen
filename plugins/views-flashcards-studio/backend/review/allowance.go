@@ -152,11 +152,15 @@ func (p Preset) GetAllowance(
 ) Allowance {
 	date := d.GetDate(now)
 	out := Allowance{
-		Keeps:   p.getBudget(date.Weekday()),
-		New:     0,
+		Keeps: p.getBudget(date.Weekday()),
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Field New is unconditionally overwritten from Keeps and used before return."
+		New: 0,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Field Reviews is unconditionally overwritten from Keeps and used before return."
 		Reviews: 0,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Field Minutes is unconditionally overwritten from Keeps and used before return."
 		Minutes: 0,
 		Limits:  p.getLimits(),
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Field Backlog is unconditionally overwritten before return."
 		Backlog: 0,
 		Stops:   p.GetStopReason(d, now),
 	}

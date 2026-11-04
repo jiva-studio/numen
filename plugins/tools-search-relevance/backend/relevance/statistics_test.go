@@ -61,6 +61,7 @@ func TestSummarizeClampsTheFloorAndTheSpread(t *testing.T) {
 		wantFloor  float64
 		wantSpread float64
 	}{
+		{"single value uses the minimum spread", []float64{0.4}, 0.4 + 2*0.01, 0.01},
 		{"low sample takes the lower bound", []float64{0, 0, 0, 0, 0}, 0.10, 0.01},
 		{"identical values take the minimum spread", []float64{0.4, 0.4, 0.4, 0.4}, 0.4 + 2*0.01, 0.01},
 		{"high sample takes the upper bound", []float64{0.99, 0.99, 0.99}, 0.95, 0.01},
@@ -79,9 +80,9 @@ func TestSummarizeClampsTheFloorAndTheSpread(t *testing.T) {
 }
 
 func TestSummarizeHistogramClampsToTheRange(t *testing.T) {
-	got := relevance.Summarize([]float64{-0.3, 0, 0.049, 0.05, 0.5, 0.999, 1, 1.4})
+	got := relevance.Summarize([]float64{math.NaN(), -0.3, 0, 0.049, 0.05, 0.5, 0.999, 1, 1.4})
 	want := make([]int, 20)
-	want[0] = 3  // -0.3, 0, 0.049
+	want[0] = 4  // NaN, -0.3, 0, 0.049
 	want[1] = 1  // 0.05
 	want[10] = 1 // 0.5
 	want[19] = 3 // 0.999, 1, 1.4
@@ -100,7 +101,7 @@ func TestSummarizeDoesNotChangeTheSample(t *testing.T) {
 
 func TestSummarizeAnEmptySampleHasTheLowerBound(t *testing.T) {
 	got := relevance.Summarize(nil)
-	if got.Floor != 0.10 || len(got.Histogram) != 20 {
+	if got.Median != 0 || got.Spread != 0.01 || got.Floor != 0.10 || len(got.Histogram) != 20 {
 		t.Errorf("got %+v", got)
 	}
 }

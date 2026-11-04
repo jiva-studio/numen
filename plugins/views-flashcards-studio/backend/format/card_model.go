@@ -137,7 +137,8 @@ func ReadCardModel(n domain.Note) CardModel {
 	r := cardModelReader{
 		body:     body,
 		declared: declared,
-		read:     0,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial read offset is only read when Templates is non-empty, which always overwrites read."
+		read: 0,
 		cardModel: CardModel{
 			Ref:       n.FileStat,
 			Fields:    declaredFields,

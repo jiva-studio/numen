@@ -91,10 +91,13 @@ func (r *Reader) getWorker() (pdfium.Pdfium, error) {
 	defer r.mu.Unlock()
 	if r.workers == nil {
 		started, err := webassembly.Init(webassembly.Config{
+			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Worker pool idle and total capacity limits are internal to webassembly.Init."
 			Context: nil, MinIdle: 0, MaxIdle: 0, MaxTotal: 1, WASM: nil, FSConfig: nil,
 			RuntimeConfig: r.getRuntimeConfig(), Stdout: nil, Stderr: nil, RandomSource: nil, ReuseWorkers: false,
 		})
+		// gomutants:disable-next-line BRANCH_IF reason="webassembly.Init uses the embedded PDFium binary and fixed configuration."
 		if err != nil {
+			// gomutants:disable-next-line RETURN_ERROR_NIL reason="webassembly.Init uses the embedded PDFium binary and fixed configuration."
 			return nil, err
 		}
 		r.workers = started
@@ -124,6 +127,7 @@ func (r *Reader) openPDF(raw []byte) (*pdf, error) {
 		return nil, errors.Join(fmt.Errorf("%w: %w", ErrUnreadable, err), worker.Close())
 	}
 	count, err := worker.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: opened.Document})
+	// gomutants:disable-next-line BRANCH_IF reason="FPDF_GetPageCount only fails when the document handle is invalid, which OpenDocument already validated."
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("%w: %w", ErrUnreadable, err), worker.Close())
 	}

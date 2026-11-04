@@ -103,5 +103,6 @@ type SessionSettings struct {
 
 // GetDefaultThreads returns the default intra-op thread count for ONNX sessions.
 func GetDefaultThreads() int {
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="runtime.GOMAXPROCS queries without changing the setting for any argument less than 1."
 	return min(runtime.GOMAXPROCS(0), 8)
 }

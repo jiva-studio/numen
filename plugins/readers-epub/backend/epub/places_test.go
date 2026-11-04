@@ -128,3 +128,47 @@ func TestPlacesListWhereEachBlockBegins(t *testing.T) {
 		t.Errorf("blocks begin at %q, want Iota, Alpha and Lambdamu", got)
 	}
 }
+
+func TestPlacesEdgeCases(t *testing.T) {
+	var empty epub.Places
+	if _, ok := empty.GetCFI(0); ok {
+		t.Error("expected false from empty Places.GetCFI")
+	}
+
+	book := readGuidedBook(t)
+	places := book.ReadPlaces()
+	endCfi, ok := places.GetCFI(len(book.Text) + 100)
+	if !ok || endCfi.String() != "epubcfi(/10/4!/4/2/1:14)" {
+		t.Errorf("GetCFI past end = %s (%v), want epubcfi(/10/4!/4/2/1:14)", endCfi, ok)
+	}
+
+	// CFI step past all runs in document 1 returns end of document 1
+	pastDoc1, err := cfi.Parse("epubcfi(/10/2!/99/99:5)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	offset, ok := book.FindOffset(pastDoc1)
+	if !ok || offset != book.Documents[0].Offset+book.Documents[0].Length {
+		t.Errorf("FindOffset past doc 1 = %d (%v), want %d", offset, ok, book.Documents[0].Offset+book.Documents[0].Length)
+	}
+
+	// Non-matching steps with positive offset still returns run's Start
+	unmatchedWithOffset, err := cfi.Parse("epubcfi(/10/2!/4/3:10)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	offset2, ok := book.FindOffset(unmatchedWithOffset)
+	if !ok || !strings.HasPrefix(book.Text[offset2:], "Alpha") {
+		t.Errorf("FindOffset unmatched step with offset = %d (%v), text %q", offset2, ok, book.Text[offset2:])
+	}
+
+	// Comment-split runs boundary: "Lambda<!-- note -->mu &amp; nu." has run 0 [0..6) and run 1 [6..15)
+	atBoundary, err := cfi.Parse("epubcfi(/10/4!/4/2/1:6)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	offsetBoundary, ok := book.FindOffset(atBoundary)
+	if !ok || !strings.HasPrefix(book.Text[offsetBoundary:], "mu") {
+		t.Errorf("FindOffset at comment split boundary 6 = %d (%v), text %q", offsetBoundary, ok, book.Text[offsetBoundary:])
+	}
+}

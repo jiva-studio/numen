@@ -1,11 +1,14 @@
 package manifestjson_test
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
+	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
 func TestDiscover(t *testing.T) {
@@ -132,9 +135,11 @@ func TestDiscoverPluginsSameDirectoryRepeated(t *testing.T) {
 	}
 
 	// Passing same directory twice (e.g. from NUMEN_PLUGINS_PATH and executable relative path)
-	found, problems := manifestjson.Discover([]string{tempDir, tempDir})
-	if len(problems) != 0 || len(found) != 1 {
-		t.Fatalf("expected one plugin and no problem when a directory is repeated, got %d and %v", len(found), problems)
+	otherDir := t.TempDir()
+	writeSamplePlugin(t, otherDir)
+	found, problems := manifestjson.Discover([]string{"", tempDir, tempDir, otherDir})
+	if len(problems) != 0 || len(found) != 2 {
+		t.Fatalf("expected two plugins and no problem when a directory is repeated, got %d and %v", len(found), problems)
 	}
 }
 
@@ -148,13 +153,36 @@ func TestABrokenManifestDoesNotHideTheOtherPlugins(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(broken, "manifest.json"), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.Mkdir(filepath.Join(tempDir, "empty-dir"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	notADir := filepath.Join(tempDir, "file.txt")
+	if err := os.WriteFile(notADir, []byte("hi"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 
 	found, problems := manifestjson.Discover([]string{tempDir})
 
 	if len(found) != 1 || found[0].Manifest.ID != "org.example.sample" {
 		t.Fatalf("expected the valid plugin to be discovered, got %v", found)
 	}
-	if len(problems) != 1 || problems[0].Dir != broken || problems[0].Err == nil {
-		t.Fatalf("expected the broken manifest to be reported, got %v", problems)
+	var syntaxErr *json.SyntaxError
+	if len(problems) != 1 || problems[0].Dir != broken || !errors.As(problems[0].Err, &syntaxErr) {
+		t.Fatalf("expected the broken manifest syntax error to be reported, got %v", problems)
+	}
+
+	if _, err := manifestjson.ReadFile(filepath.Join(tempDir, "nonexistent.json")); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("ReadFile nonexistent = %v", err)
+	}
+	if f, p := manifestjson.Discover([]string{filepath.Join(tempDir, "nonexistent")}); len(f) != 0 || len(p) != 0 {
+		t.Errorf("Discover nonexistent = %v, %v", f, p)
+	}
+	if f, p := manifestjson.Discover([]string{notADir}); len(f) != 0 || len(p) != 1 {
+		t.Errorf("Discover regular file = %v, %v", f, p)
+	}
+	t.Chdir(tempDir)
+	relFound, relProblems := manifestjson.Discover([]string{"."})
+	if len(relProblems) != 1 || len(relFound) != 1 || !filepath.IsAbs(relFound[0].Dir) {
+		t.Errorf("Discover relative = %v, %v", relFound, relProblems)
 	}
 }

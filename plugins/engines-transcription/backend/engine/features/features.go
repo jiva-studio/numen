@@ -49,6 +49,7 @@ func GetLogMel(samples []float32, workers int) ([]float32, int) {
 	var wg sync.WaitGroup
 	wg.Add(workers)
 	for worker := range workers {
+		// gomutants:disable-next-line ARITHMETIC_BASE reason="shrinking start only repeats deterministic band work"
 		start := worker * MelBands / workers
 		end := (worker + 1) * MelBands / workers
 		go func(start, end int) {
@@ -127,6 +128,7 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 	var wg sync.WaitGroup
 	wg.Add(workers)
 	for worker := range workers {
+		// gomutants:disable-next-line ARITHMETIC_BASE reason="shrinking start only repeats deterministic frame work"
 		start := worker * frames / workers
 		end := (worker + 1) * frames / workers
 		go func(start, end int) {
@@ -153,12 +155,14 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 // padReflect is one signal with by samples of itself mirrored onto each end, the
 // edge sample not repeated.
 func padReflect(x []float64, delta int) []float64 {
+	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="slice capacity preallocation does not alter reflected elements"
 	out := make([]float64, 0, len(x)+2*delta)
 	for i := delta; i > 0; i-- {
 		out = append(out, x[getMirroredIndex(i, len(x))])
 	}
 	out = append(out, x...)
 	for i := 1; i <= delta; i++ {
+		// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES reason="getMirroredIndex is symmetric around len(x)-1"
 		out = append(out, x[getMirroredIndex(len(x)-1-i, len(x))])
 	}
 	return out
@@ -183,6 +187,7 @@ func getMirroredIndex(i, n int) int {
 func getHannWindow() []float64 {
 	out := make([]float64, fftSize)
 	offset := (fftSize - windowSize) / 2
+	// gomutants:disable-next-line INTEGER_INCREMENT,CONDITIONALS_BOUNDARY reason="the Hann window is zero at both endpoints and out is zero-initialized"
 	for i := 0; i < windowSize; i++ {
 		out[offset+i] = 0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/float64(windowSize))
 	}
@@ -200,10 +205,13 @@ type melFilter struct {
 // carries. The triangles are laid out on the Slaney mel scale and each is
 // scaled by the width of the frequencies it spans.
 func getMelBank() []melFilter {
+	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="bins at and above Nyquist have non-positive filter weight"
 	bins := fftSize/2 + 1
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="extra trailing edge elements are never read"
 	edges := make([]float64, MelBands+2)
 	low, high := hzToMel(melFloor), hzToMel(melCeiling)
 	for i := range edges {
+		// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES reason="low is zero at melFloor"
 		edges[i] = melToHz(low + (high-low)*float64(i)/float64(MelBands+1))
 	}
 
@@ -229,6 +237,7 @@ func getMelBank() []melFilter {
 				weights = append(weights, w*scale)
 			}
 		}
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="every mel band overlaps at least one FFT bin"
 		if first == -1 {
 			first = 0
 		}
@@ -252,6 +261,7 @@ func getMelStep() float64 {
 }
 
 func hzToMel(hz float64) float64 {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the Slaney mel curve is continuous at the knee"
 	if hz >= melKnee {
 		return melKnee/melLinear + math.Log(hz/melKnee)/getMelStep()
 	}
@@ -259,6 +269,7 @@ func hzToMel(hz float64) float64 {
 }
 
 func melToHz(mel float64) float64 {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the Slaney mel curve is continuous at the knee"
 	if knee := melKnee / melLinear; mel >= knee {
 		return melKnee * math.Exp(getMelStep()*(mel-knee))
 	}
@@ -269,16 +280,19 @@ func melToHz(mel float64) float64 {
 // which is the only size this is ever given.
 func fft(a, w []complex128) {
 	n := len(a)
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at i == n the bit-reversed index is 0 so i < j is false"
 	for i, j := 1, 0; i < n; i++ {
 		bit := n >> 1
 		for ; j&bit != 0; bit >>= 1 {
 			j ^= bit
 		}
 		j |= bit
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION reason="bit-reversal is symmetric and self-swaps are no-ops"
 		if i < j {
 			a[i], a[j] = a[j], a[i]
 		}
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="length 1 has length/2 == 0 and executes zero butterfly steps"
 	for length := 2; length <= n; length <<= 1 {
 		stride := n / length
 		for i := 0; i < n; i += length {

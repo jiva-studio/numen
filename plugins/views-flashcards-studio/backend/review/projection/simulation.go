@@ -72,12 +72,15 @@ const mostAnswers = 1000
 // newNoCost, newNoSpent and newNoSchedule return the zero values of their types.
 
 func newNoCost() AnswerCost {
+	// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero AnswerCost value."
 	return AnswerCost{New: 0, Review: 0, ShouldReadNew: false, ShouldReadReview: false}
 }
 
+// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Spent value."
 func newNoSpent() Spent { return Spent{Answered: 0, New: 0, Reviews: 0, Took: 0} }
 
 func newNoSchedule() Schedule {
+	// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Schedule value."
 	return Schedule{Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0}
 }
 
@@ -95,10 +98,13 @@ func newNoSchedule() Schedule {
 // week, so the pace holds for a review card begun on any of them.
 func GetDaysToLearn(scheduler Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Helper getDaysToLearn uses LongestLearning and does not read Simulation.Days."
 		By: scheduler, Day: d, Cost: newNoCost(), Days: 0, Retains: nil, Recalls: nil, Spent: newNoSpent(),
 	}
 	from := d.GetStart(now)
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="Every non-failing weekday returns a non-negative day count that supersedes -1 in max."
 	out := 0
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="Seven consecutive days already cover every weekday in the periodic weekly load."
 	for range 7 {
 		one := s.getDaysToLearn(p, from)
 		if one == NeverLearns {

@@ -15,8 +15,9 @@ func isAllIntact(domain.TextVersion) bool { return true }
 
 func TestFindLiveVersionReturnsTheNewestValidVersion(t *testing.T) {
 	versions := []domain.TextVersion{
-		{Path: "a.pdf", PluginID: "reader", Key: "a", SourceHash: "file-1", Hash: "ha", CreateTime: getEpoch()},
 		{Path: "a.pdf", PluginID: "fixer", Key: "b", Source: "reader/a", SourceHash: "ha", Hash: "hb", CreateTime: getEpoch().Add(time.Minute)},
+		{Path: "a.pdf", PluginID: "reader", Key: "a", SourceHash: "file-1", Hash: "ha", CreateTime: getEpoch()},
+		{Path: "a.pdf", PluginID: "stale", Key: "c", SourceHash: "old-file", Hash: "hc", CreateTime: getEpoch().Add(2 * time.Minute)},
 	}
 	got, ok := domain.FindLiveVersion(versions, "file-1", isAllIntact)
 	if !ok || got.GetID() != "fixer/b" {
@@ -67,6 +68,9 @@ func TestIsChainValidFailsWhenTheFileChanged(t *testing.T) {
 }
 
 func TestIsChainValidFailsOnAMissingSourceAndOnACycle(t *testing.T) {
+	if domain.IsChainValid(nil, "missing/id", "") {
+		t.Fatal("an unknown version id is valid")
+	}
 	missing := []domain.TextVersion{{PluginID: "fixer", Key: "b", Source: "reader/a"}}
 	if domain.IsChainValid(missing, "fixer/b", "f") {
 		t.Fatal("a version whose source is gone is valid")
@@ -81,11 +85,11 @@ func TestIsChainValidFailsOnAMissingSourceAndOnACycle(t *testing.T) {
 }
 
 func TestFileInputComparesExtensionsWithoutCase(t *testing.T) {
-	in := domain.FileInput{".pdf"}
-	if !in.IsFileAccepted("books/A.PDF") {
-		t.Fatal("A.PDF is a pdf")
+	in := domain.FileInput{".pdf", ".pdf/readme"}
+	if !in.IsFileAccepted("books/A.PDF") || !in.IsFileAccepted(".pdf") {
+		t.Fatal("A.PDF and .pdf should be accepted")
 	}
-	if in.IsFileAccepted("books.pdf/readme") || in.IsFileAccepted("notes/a.md") {
+	if in.IsFileAccepted("books.pdf/readme") || in.IsFileAccepted("notes/a.md") || in.IsFileAccepted("readme") {
 		t.Fatal("a file of another type is accepted")
 	}
 }
@@ -99,8 +103,26 @@ func TestVersionTextLocatesHeadingsAndSelectors(t *testing.T) {
 	if text.Text != "Intro body end" {
 		t.Fatalf("text %q", text.Text)
 	}
+	if got := text.Locate(-1); got != "" {
+		t.Fatalf("locate -1: %q", got)
+	}
+	if got := text.Locate(6); got != "One" {
+		t.Fatalf("locate 6: %q", got)
+	}
 	if got := text.Locate(7); got != "One" {
 		t.Fatalf("locate 7: %q", got)
+	}
+	if got := text.Locate(11); got != "Two" {
+		t.Fatalf("locate 11: %q", got)
+	}
+	if got := text.GetSelector(-1); got != "" {
+		t.Fatalf("selector at -1: %q", got)
+	}
+	if got := text.GetSelector(0); got != `{"page":1}` {
+		t.Fatalf("selector at 0: %q", got)
+	}
+	if got := text.GetSelector(6); got != `{"page":2}` {
+		t.Fatalf("selector at 6: %q", got)
 	}
 	if got := text.GetSelector(7); got != `{"page":2}` {
 		t.Fatalf("selector at 7: %q", got)
@@ -110,6 +132,9 @@ func TestVersionTextLocatesHeadingsAndSelectors(t *testing.T) {
 	}
 	if got := text.GetHeadings(); len(got) != 2 || got[1].Offset != 11 || got[1].Title != "Two" {
 		t.Fatalf("headings %+v", got)
+	}
+	if got := text.GetHeadingsAt(6); len(got) != 0 {
+		t.Fatalf("headings at 6: %v", got)
 	}
 	if got := text.GetHeadingsAt(11); len(got) != 1 || got[0] != "Two" {
 		t.Fatalf("headings at 11: %v", got)

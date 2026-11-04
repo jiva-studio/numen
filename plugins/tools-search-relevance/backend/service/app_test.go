@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
@@ -184,6 +186,10 @@ func TestTheServiceAnswersCodesForWhatItCannotServe(t *testing.T) {
 	if failure.Code != server.CodeUnavailable {
 		t.Errorf("a model that fails gave %+v", failure)
 	}
+	_, failure = f.call(t, api.MethodProbeFloor, api.ProbeFloorRequest{Query: "entropy"}, &api.ProbeFloorResponse{})
+	if failure.Code != server.CodeUnavailable {
+		t.Errorf("a probe on a model that fails gave %+v", failure)
+	}
 	f.search.Deny(host.PermissionIndexRead)
 	_, failure = f.call(t, api.MethodGetFloor, api.GetFloorRequest{}, &api.GetFloorResponse{})
 	if failure.Code != server.CodePermissionDenied {
@@ -235,9 +241,11 @@ func TestTheFirstEventOfAnyKindChecksAVaultWhoseVectorsAlreadyExist(t *testing.T
 		t.Fatal("a plugin that started after the vectors existed did not measure the vault")
 	}
 
-	setNotes(f.vault, 0)
+	f.search.FailEmbedding(errors.New("model stopped"))
+	f.search.SetModel(hosttest.SearchModel{Name: "other", Recipe: "other|recipe", FloorHint: 0.4})
+	f.search.SetPassages("other|recipe", passages(60, 3))
 	if err := f.app.HandleEvent(ctx, "onFile:md"); err != nil {
-		t.Fatal(err)
+		t.Fatalf("a later non-vector event ran Ensure again: %v", err)
 	}
 	if batches := f.search.EmbeddedBatches(); len(batches) != 1 {
 		t.Errorf("a later event of another kind measured again: %d measurements", len(batches))
@@ -272,8 +280,8 @@ func TestAFailedMeasurementIsListedAsATaskAndAFinishedOneRemovesIt(t *testing.T)
 		t.Fatalf("got %v, want the failure of the model", err)
 	}
 	tasks := f.queue.ListTasks()
-	if len(tasks) != 1 || tasks[0].FailureReason == "" {
-		t.Fatalf("tasks %v, want the failure listed", tasks)
+	if len(tasks) != 1 || tasks[0].FailureReason == "" || tasks[0].CompletedCount != 0 || tasks[0].TotalCount != 0 {
+		t.Fatalf("tasks %+v, want the failure listed with zero counts", tasks)
 	}
 
 	f.search.FailEmbedding(nil)
@@ -282,6 +290,96 @@ func TestAFailedMeasurementIsListedAsATaskAndAFinishedOneRemovesIt(t *testing.T)
 	}
 	if tasks := f.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("tasks %v, want the failure taken out", tasks)
+	}
+
+	cancelledCtx, cancel := context.WithCancel(ctx)
+	cancel()
+	if err := f.app.HandleEvent(cancelledCtx, event); !errors.Is(err, context.Canceled) {
+		t.Errorf("cancelled event gave %v, want context.Canceled", err)
+	}
+	if tasks := f.queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("cancelled event listed tasks %v, want none", tasks)
+	}
+}
+
+type failingQueue struct {
+	host.Queue
+	reportErr error
+	finishErr error
+}
+
+func (q failingQueue) ReportTask(ctx context.Context, task host.Task) error {
+	if q.reportErr != nil {
+		return q.reportErr
+	}
+	return q.Queue.ReportTask(ctx, task)
+}
+
+func (q failingQueue) FinishTask(ctx context.Context, id string) error {
+	if q.finishErr != nil {
+		return q.finishErr
+	}
+	return q.Queue.FinishTask(ctx, id)
+}
+
+func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) {
+	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, service.NewApp().Mount); !errors.Is(err, hostcall.ErrNoHost) {
+		t.Errorf("Mount without host env gave %v, want ErrNoHost", err)
+	}
+
+	search := hosttest.NewSearch("physics")
+	vault := hosttest.New("physics")
+	queue := hosttest.NewQueue()
+	clk := clock.NewFake(getMeasuredAt())
+
+	for _, tc := range []struct {
+		name  string
+		hosts service.Hosts
+	}{
+		{"missing search", service.Hosts{Floors: relevance.Host{Vault: vault, Store: vault.Store()}, Queue: queue}},
+		{"missing vault", service.Hosts{Floors: relevance.Host{Search: search, Store: vault.Store()}, Queue: queue}},
+		{"missing store", service.Hosts{Floors: relevance.Host{Search: search, Vault: vault}, Queue: queue}},
+		{"missing queue", service.Hosts{Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			app := service.NewAppOver(tc.hosts, clk)
+			if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount); err == nil {
+				t.Error("Mount succeeded with incomplete host")
+			}
+		})
+	}
+
+	errReport := errors.New("report task failed")
+	errFinish := errors.New("finish task failed")
+	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: 0.4})
+	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
+	search.SetPassages(modelRecipe, passages(60, 3))
+	search.SetProgress(60, 60)
+	setNotes(vault, 25)
+
+	appReportFail := service.NewAppOver(service.Hosts{
+		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
+		Queue:  failingQueue{Queue: queue, reportErr: errReport},
+	}, clk)
+	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
+		t.Fatal(err)
+	}
+	search.FailEmbedding(errors.New("embed fail"))
+	err := appReportFail.HandleEvent(t.Context(), host.GetVectorsReadyEvent("physics"))
+	if !errors.Is(err, host.ErrEmbeddingFailed) || !errors.Is(err, errReport) {
+		t.Errorf("HandleEvent with failing ReportTask gave %v, want both errors", err)
+	}
+
+	search.FailEmbedding(nil)
+	appFinishFail := service.NewAppOver(service.Hosts{
+		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
+		Queue:  failingQueue{Queue: queue, finishErr: errFinish},
+	}, clk)
+	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
+		t.Fatal(err)
+	}
+	if err := appFinishFail.HandleEvent(t.Context(), host.GetVectorsReadyEvent("physics")); !errors.Is(err, errFinish) {
+		t.Errorf("HandleEvent with failing FinishTask gave %v, want errFinish", err)
 	}
 }
 

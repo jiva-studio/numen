@@ -28,6 +28,7 @@ func bodyLinks(body []byte) []domain.Link {
 			// A link inside a code fence is an example of a link, not one.
 			continue
 		}
+		// gomutants:disable-next-line BRANCH_IF reason="WikilinksIn returns no links when the line contains no opening brackets"
 		if !bytes.Contains(line, []byte("[[")) {
 			continue
 		}
@@ -54,6 +55,7 @@ const NoRole = " has no role"
 // else in the file still shows.
 func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 	raw, ok := frontmatter["links"].([]any)
+	// gomutants:disable-next-line BRANCH_IF reason="ranging over a nil slice after a failed type assertion also returns nil, nil"
 	if !ok {
 		return nil, nil
 	}
@@ -108,6 +110,7 @@ func str(v any) string {
 // readText returns v when it is a string, or "" otherwise.
 func readText(v any) string {
 	s, isString := v.(string)
+	// gomutants:disable-next-line BRANCH_IF reason="a failed string type assertion leaves s as the empty string"
 	if !isString {
 		return ""
 	}

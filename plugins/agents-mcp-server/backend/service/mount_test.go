@@ -2,36 +2,129 @@ package service
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+func getServerPort(t *testing.T, rawURL string) string {
+	t.Helper()
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, port, err := net.SplitHostPort(parsed.Host)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return port
+}
+
 func TestMountAndConfigure(t *testing.T) {
-	t.Parallel()
+	t.Setenv("NUMEN_HOST_PORT", "")
+	t.Setenv("NUMEN_PLUGIN_TOKEN", "")
+	t.Setenv("MCP_PORT", "")
+	t.Setenv("MCP_TOKEN", "")
+
+	host := &standInHost{}
+	mux := http.NewServeMux()
+	mux.Handle(tools.NewServiceHandler(host))
+	served := httptest.NewServer(mux)
+	t.Cleanup(served.Close)
+	hostPort := getServerPort(t, served.URL)
+
+	// Reserve an ephemeral port so we can verify s.Close() releases srv's listener.
+	probeLn, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rebindAddr := probeLn.Addr().String()
+	if err := probeLn.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	s := server.New(server.WithPort(0))
-
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount failed: %v", err)
 	}
 
-	_, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{
-		"token":           "configured-token",
-		"NUMEN_HOST_PORT": "12345",
+	_, err = s.Lifecycle().ApplyConfig(t.Context(), map[string]string{
+		"addr":               rebindAddr,
+		"token":              "configured-token",
+		"NUMEN_HOST_PORT":    hostPort,
+		"NUMEN_PLUGIN_TOKEN": "plugin-token",
 	})
 	if err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
 
+	host.mu.Lock()
+	syncCalls := len(host.headers)
+	host.mu.Unlock()
+	if syncCalls == 0 {
+		t.Fatal("expected SyncTools to query host during ApplyConfig")
+	}
+
 	if err := s.Close(); err != nil {
 		t.Errorf("close failed: %v", err)
+	}
+
+	// Verify OnClose closed srv's listener on rebindAddr.
+	verifyLn, err := new(net.ListenConfig).Listen(t.Context(), "tcp", rebindAddr)
+	if err != nil {
+		t.Fatalf("expected listener on %s to be closed after s.Close(), got: %v", rebindAddr, err)
+	}
+	cleanup.Close(t, verifyLn)
+}
+
+func TestMountFromEnvAndStartError(t *testing.T) {
+	host := &standInHost{}
+	mux := http.NewServeMux()
+	mux.Handle(tools.NewServiceHandler(host))
+	served := httptest.NewServer(mux)
+	t.Cleanup(served.Close)
+	hostPort := getServerPort(t, served.URL)
+
+	t.Setenv("NUMEN_HOST_PORT", hostPort)
+	t.Setenv("NUMEN_PLUGIN_TOKEN", "plugin-token")
+	t.Setenv("MCP_PORT", "")
+
+	s := server.New(server.WithPort(0))
+	if err := Mount(s); err != nil {
+		t.Fatalf("Mount with env host failed: %v", err)
+	}
+
+	// ApplyConfig with an unreachable host port keeps the initial client created from env.
+	_, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{
+		"NUMEN_HOST_PORT": "1",
+	})
+	if err != nil {
+		t.Fatalf("configure failed: %v", err)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	host.mu.Lock()
+	syncCalls := len(host.headers)
+	host.mu.Unlock()
+	if syncCalls < 2 {
+		t.Fatalf("expected at least 2 host sync calls (initial + configure), got %d", syncCalls)
+	}
+
+	// Mount fails when srv.Start() cannot listen on MCP_PORT.
+	t.Setenv("MCP_PORT", "invalid-port")
+	sErr := server.New(server.WithPort(0))
+	if err := Mount(sErr); err == nil {
+		t.Fatal("expected Mount to fail with invalid MCP_PORT")
 	}
 }
 
@@ -48,12 +141,22 @@ func TestNewHandler(t *testing.T) {
 		t.Fatal("expected non-nil handler")
 	}
 
-	// Request to /sse without token returns 401
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/sse", nil)
-	handler.ServeHTTP(rec, req)
-	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d", rec.Code)
+	paths := []string{
+		"/sse",
+		"/sse/sub",
+		"/mcp",
+		"/mcp/sub",
+		"/messages",
+		"/messages/sub",
+		"/md.numen.agents.mcp.server/sub",
+	}
+	for _, path := range paths {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
+		handler.ServeHTTP(rec, req)
+		if rec.Code != http.StatusUnauthorized {
+			t.Fatalf("path %s: expected 401, got %d", path, rec.Code)
+		}
 	}
 }
 

@@ -2,6 +2,7 @@ package cardtools_test
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -292,14 +293,17 @@ func TestACardAddedReachesBackBelowTheMarkItIsAddressedBy(t *testing.T) {
 	session, _ := newSession(t, vault())
 
 	made := call[struct {
-		CardID string `json:"cardId"`
+		Path        string `json:"path"`
+		Fingerprint string `json:"fingerprint"`
+		Cards       int    `json:"cards"`
+		CardID      string `json:"cardId"`
 	}](t, session, "card_add", map[string]any{
 		"path": "Animals.md", "cardModel": "Animal",
 		"values":      []map[string]string{{"field": "Name", "text": "Vicuña"}},
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
-	if made.CardID == "" {
-		t.Fatal("the card that was written came back with nothing to address it by")
+	if made.CardID == "" || made.Path != "Animals.md" || made.Fingerprint == "" || made.Cards != 3 {
+		t.Fatalf("unexpected card_add outcome: %+v", made)
 	}
 
 	// The card id addresses that card and no other.
@@ -950,13 +954,14 @@ func TestACardModelIsReadAndEditedInPlace(t *testing.T) {
 	outcome := call[struct {
 		Path        string `json:"path"`
 		Fingerprint string `json:"fingerprint"`
+		Cards       int    `json:"cards"`
 	}](t, session, "card_model_edit", map[string]any{
 		"path":        "Animal.md",
 		"fields":      []string{"Name", "Weight"},
 		"templates":   []map[string]string{{"name": "Recognise", "front": "{{Name}}", "back": "{{Weight}}"}},
 		"fingerprint": s.Fingerprint,
 	})
-	if outcome.Path != "Animal.md" || outcome.Fingerprint == "" || outcome.Fingerprint == s.Fingerprint {
+	if outcome.Path != "Animal.md" || outcome.Fingerprint == "" || outcome.Fingerprint == s.Fingerprint || outcome.Cards != 0 {
 		t.Fatalf("edit outcome = %+v", outcome)
 	}
 
@@ -996,6 +1001,104 @@ func TestCardModelRead_ErrorsOnNonCardModel(t *testing.T) {
 	})
 	if !strings.Contains(response, "not a card model") {
 		t.Errorf("reading non-card model was answered %q", response)
+	}
+}
+
+func TestCardToolsLimitsAndEdgeCases(t *testing.T) {
+	notes := vault()
+	notes["Titled.md"] = titled
+	notes["EmptyModel.md"] = "---\ntype: card-model\n---\n"
+	notes["DeckA.md"] = "---\ntype: deck\n---\n\n## One ^k7m2xq9fzp\n\n[[Animal]]\n\n### Height\n\n1\n"
+	notes["DeckB.md"] = "---\ntype: deck\n---\n\n## Two ^zpqrstvwxy\n\n[[Animal]]\n\n### Height\n\n2\n"
+	session, v := newSession(t, notes)
+
+	// card_model_list limit == 50 succeeds, limit == 51 fails, limit == 1 returns 1 item.
+	list50 := call[struct {
+		CardModels []map[string]any `json:"cardModels"`
+		Total      int              `json:"total"`
+	}](t, session, "card_model_list", map[string]any{"limit": 50})
+	if list50.Total != 3 || len(list50.CardModels) != 3 {
+		t.Fatalf("unexpected list50: %+v", list50)
+	}
+	list1 := call[struct {
+		CardModels []map[string]any `json:"cardModels"`
+		Total      int              `json:"total"`
+	}](t, session, "card_model_list", map[string]any{"limit": 1})
+	if list1.Total != 3 || len(list1.CardModels) != 1 {
+		t.Fatalf("unexpected list1: %+v", list1)
+	}
+	if msg := getToolError(t, session, "card_model_list", map[string]any{"limit": 51}); !strings.Contains(msg, "at most 50") {
+		t.Fatalf("unexpected limit 51 error: %q", msg)
+	}
+
+	// card_read limit == 50 succeeds.
+	if read50 := readCards(t, session, map[string]any{"path": "Animals.md", "limit": 50}); len(read50.Cards) != 2 {
+		t.Fatalf("unexpected read50: %+v", read50)
+	}
+
+	// card_model_read on titled card model keeps explicit title, on empty fields returns empty slice, on missing fails.
+	readTitled := readCardModel(t, session, "Titled.md")
+	if readTitled.Title != "Beast" {
+		t.Fatalf("expected title Beast, got %q", readTitled.Title)
+	}
+	readEmpty := readCardModel(t, session, "EmptyModel.md")
+	if readEmpty.Fields == nil || len(readEmpty.Fields) != 0 {
+		t.Fatalf("expected empty non-nil fields slice, got %v", readEmpty.Fields)
+	}
+	if msg := getToolError(t, session, "card_model_read", map[string]any{"path": "Missing.md"}); !strings.Contains(msg, "no note") {
+		t.Fatalf("unexpected missing card_model_read error: %q", msg)
+	}
+
+	// card_model_edit error branches.
+	for _, tc := range []struct{ path, fingerprint, want, label string }{
+		{"Animal.md", "", "fingerprint", "fingerprint"},
+		{"Missing.md", "1-1", "no note", "missing"},
+		{"Entropy.md", "1-1", "not a card model", "not a card model"},
+	} {
+		msg := getToolError(t, session, "card_model_edit", map[string]any{
+			"path": tc.path, "fields": []string{"Name"}, "fingerprint": tc.fingerprint,
+		})
+		if !strings.Contains(msg, tc.want) {
+			t.Fatalf("expected %s error, got %q", tc.label, msg)
+		}
+	}
+
+	// Oversized card_add and card_edit, and invalid fingerprint on writeDeck.
+	huge := strings.Repeat("x", (4<<20)+1)
+	for tool, target := range map[string]map[string]any{
+		"card_add":  {"cardModel": "Animal"},
+		"card_edit": {"cardId": llama},
+	} {
+		args := map[string]any{
+			"path":        "Animals.md",
+			"values":      []map[string]string{{"field": "Name", "text": huge}},
+			"fingerprint": "1-1",
+		}
+		maps.Copy(args, target)
+		if msg := getToolError(t, session, tool, args); !strings.Contains(msg, "more than this writes at once") {
+			t.Fatalf("expected size error on %s, got %q", tool, msg)
+		}
+	}
+	if msg := getToolError(t, session, "card_section_add", map[string]any{
+		"path": "Animals.md", "name": "Sec", "fingerprint": "",
+	}); !strings.Contains(msg, "fingerprint") {
+		t.Fatalf("expected fingerprint error on card_section_add, got %q", msg)
+	}
+
+	// Remove DeckA.md and DeckB.md from disk so card_field_rename populates 2 items in NotWritten.
+	if err := os.Remove(filepath.Join(v.Path, "DeckA.md")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(v.Path, "DeckB.md")); err != nil {
+		t.Fatal(err)
+	}
+	renameOut := call[struct {
+		NotWritten []string `json:"notWritten"`
+	}](t, session, "card_field_rename", map[string]any{
+		"path": "Animal.md", "from": "Height", "to": "Stature",
+	})
+	if len(renameOut.NotWritten) != 2 {
+		t.Fatalf("expected 2 NotWritten decks, got %+v", renameOut.NotWritten)
 	}
 }
 

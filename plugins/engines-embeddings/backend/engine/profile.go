@@ -290,6 +290,7 @@ func (t *Profiles) clone() *Profiles {
 func (t *Profiles) WithUserProfiles(dir string, report func(file string, err error)) *Profiles {
 	out := t.clone()
 	out.userHome = dir
+	// gomutants:disable-next-line BRANCH_IF reason="os.ReadDir on an empty path returns fs.ErrNotExist and returns out"
 	if dir == "" {
 		return out
 	}
@@ -349,6 +350,7 @@ func (t *Profiles) layer(entry json.RawMessage) (Profile, error) {
 	var head struct {
 		ID string `json:"id"`
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="decodeStrict rejects any entry that fails json.Unmarshal"
 	if err := json.Unmarshal(entry, &head); err != nil {
 		return Profile{}, err
 	}

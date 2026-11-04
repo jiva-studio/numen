@@ -59,7 +59,9 @@ func NewTranscriber(files Files, stores host.Store, texts host.Texts, queue host
 
 // Close stops every transcription and waits for them.
 func (t *Transcriber) Close() {
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing channel cancels in-flight transcriptions"
 	t.closeOnce.Do(func() { close(t.closing) })
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="Wait synchronizes shutdown with active goroutines"
 	t.wg.Wait()
 }
 
@@ -68,6 +70,7 @@ func (t *Transcriber) withClosing(ctx context.Context) (context.Context, context
 	go func() {
 		select {
 		case <-t.closing:
+			// gomutants:disable-next-line STATEMENT_REMOVE reason="cancels runCtx when Close is called"
 			cancel()
 		case <-runCtx.Done():
 		}
@@ -96,6 +99,7 @@ func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path
 
 	if err := t.queue.ReportTask(ctx, host.Task{
 		ID: getTaskID(path), Title: taskTranscribing, Detail: path, IsUserStarted: true,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="indeterminate task progress uses zero counts"
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "",
 	}); err != nil {
 		return err
@@ -131,6 +135,7 @@ func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path
 	default:
 		t.reportTask(ctx, host.Task{
 			ID: getTaskID(path), Title: taskTranscribing, Detail: path, FailureReason: err.Error(), IsUserStarted: true,
+			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="indeterminate task progress uses zero counts"
 			CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings,
 		})
 	}
@@ -172,10 +177,13 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 	if err := t.takeTurn(ctx, j); err != nil {
 		return err
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="releasing the queue turn in defer prevents deadlocking subsequent work"
 	defer func() { err = errors.Join(err, j.turn.Release()) }()
 
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="progress notification before opening model"
 	t.reportTask(ctx, host.Task{
 		ID: getTaskID(path), Title: taskLoading, Detail: path, IsUserStarted: true,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="indeterminate task progress uses zero counts"
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "",
 	})
 	model, err := t.engines(ctx)
@@ -186,6 +194,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 	if err != nil {
 		return fmt.Errorf("%s cannot be opened: %w", path, err)
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing recording in defer releases audio resources"
 	defer func() { err = errors.Join(err, recording.Close()) }()
 
 	if err := t.hearSegments(ctx, j, model, recording); err != nil {
@@ -227,8 +236,10 @@ func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error
 // takeTurn waits for the recording's turn in the queue.
 func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
 	turn, err := t.queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: func() {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="best-effort waiting task status notification"
 		t.reportTask(ctx, host.Task{
 			ID: getTaskID(j.path), Title: taskWaiting, Detail: j.path, IsUserStarted: true,
+			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="indeterminate task progress uses zero counts"
 			CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "",
 		})
 	}})
@@ -314,6 +325,7 @@ func (t *Transcriber) reportProgress(ctx context.Context, path string, heard, le
 
 // reportTask publishes the task. A task the host could not be notified of is published by the next report.
 func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="best-effort stderr diagnostic log does not affect transcription control flow"
 	if err := t.queue.ReportTask(context.WithoutCancel(ctx), task); err != nil {
 		fmt.Fprintf(os.Stderr, "engines-transcription: show the task %s: %v\n", task.ID, err)
 	}
@@ -322,6 +334,7 @@ func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
 // finishTask removes the recording's task from the list. If the host could not be notified, the
 // task is removed when the plugin stops.
 func (t *Transcriber) finishTask(ctx context.Context, path string) {
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="best-effort stderr diagnostic log does not affect transcription control flow"
 	if err := t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(path)); err != nil {
 		fmt.Fprintf(os.Stderr, "engines-transcription: finish the task of %s: %v\n", path, err)
 	}

@@ -33,6 +33,9 @@ func TestLocate_ErrorsWhenDownloadDisabled(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "enable download") {
 		t.Fatalf("Locate() error = %v", err)
 	}
+	if _, err := Locate(t.Context(), LocalModel{ShouldDownload: true}, nil); err == nil || !strings.Contains(err.Error(), "no model to run") {
+		t.Fatalf("Locate() empty name error = %v", err)
+	}
 }
 
 func TestCheckPinned(t *testing.T) {
@@ -59,6 +62,9 @@ func TestCheckPinned(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "nonexistent")
 	if err := checkPinned(map[string]string{"onnx/model.onnx": sum}, "onnx/model.onnx", missing); !errors.Is(err, fs.ErrNotExist) {
 		t.Fatalf("checkPinned error = %v, want fs.ErrNotExist", err)
+	}
+	if err := verifyFile(t.TempDir(), sumOf("")); err == nil {
+		t.Fatal("verifyFile on a directory returned nil error")
 	}
 }
 
@@ -214,6 +220,9 @@ func TestLocateFromDir(t *testing.T) {
 	if err := os.WriteFile(modelPath, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := Locate(t.Context(), LocalModel{Dir: dir}, nil); err == nil {
+		t.Fatal("Locate() succeeded with missing tokenizer")
+	}
 	if err := os.WriteFile(tokenPath, []byte("tokens"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -235,8 +244,8 @@ func TestLocateErrorsWhenModelsHomeFails(t *testing.T) {
 	t.Setenv(cache.EnvSharedDataDir, "")
 	t.Setenv(cache.EnvDataDir, "")
 	_, err := Locate(t.Context(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
-	if err == nil || !strings.Contains(err.Error(), "models folder") {
-		t.Fatalf("Locate() error = %v, want models folder error", err)
+	if err == nil || !strings.Contains(err.Error(), "models folder") || errors.Unwrap(err) == nil {
+		t.Fatalf("Locate() error = %v, want wrapped models folder error", err)
 	}
 }
 
@@ -246,9 +255,9 @@ func TestLocateCachedFailsWhenCacheDirErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(blocker, "sub"))
-	_, _, err := locateCached(repo, LocalModel{Name: "owner/repo", Revision: "rev"}, "model.onnx")
-	if err == nil || !strings.Contains(err.Error(), "cache folder of owner/repo") {
-		t.Fatalf("locateCached() error = %v, want cache folder error", err)
+	_, ok, err := locateCached(repo, LocalModel{Name: "owner/repo", Revision: "rev"}, "model.onnx")
+	if ok || err == nil || !strings.Contains(err.Error(), "cache folder of owner/repo") || errors.Unwrap(err) == nil {
+		t.Fatalf("locateCached() = %v, %v, want false and wrapped cache folder error", ok, err)
 	}
 }
 
@@ -310,11 +319,16 @@ func TestLocatePassesRevision(t *testing.T) {
 		Revision:       "custom-rev",
 		ShouldDownload: true,
 	}
-	if _, err := Locate(t.Context(), cfg, nil); err == nil {
-		t.Fatal("Locate succeeded against a server that answers 404")
+	if _, err := Locate(t.Context(), cfg, nil); err == nil || !strings.Contains(err.Error(), "listing owner/repo:") || errors.Unwrap(err) == nil {
+		t.Fatalf("Locate against 404 = %v, want wrapped listing error", err)
 	}
 	if !strings.Contains(getPath(), "/revision/custom-rev") {
 		t.Fatalf("requested path = %q, want revision custom-rev", getPath())
+	}
+
+	repo := hub.New("owner/repo").WithProgressBar(false).WithCacheDir(filepath.Join(t.TempDir(), "hf"))
+	if _, _, tokSize, err := listRepoFiles(repo); err == nil || tokSize != 0 {
+		t.Fatalf("listRepoFiles against 404 = %d, %v", tokSize, err)
 	}
 
 	resetPath()
@@ -364,5 +378,69 @@ func TestSelectModelFilesSelectsTheDataFileOfTheNamedModelOnly(t *testing.T) {
 	want := []string{"model_quantized.onnx", "model_quantized.onnx_data"}
 	if !slices.Equal(got, want) {
 		t.Errorf("selectModelFiles = %v, want %v", got, want)
+	}
+}
+
+func TestDiscardDownloadAndSnapshotEdgeCases(t *testing.T) {
+	if err := discardDownload(filepath.Join(t.TempDir(), "missing")); err != nil {
+		t.Errorf("discardDownload(missing) = %v, want nil", err)
+	}
+	regular := filepath.Join(t.TempDir(), "regular")
+	if err := os.WriteFile(regular, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := discardDownload(regular); err != nil {
+		t.Errorf("discardDownload(regular) = %v, want nil", err)
+	}
+	nonEmptyDir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(nonEmptyDir, "child"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	err = discardDownload(nonEmptyDir)
+	if err == nil {
+		t.Fatal("discardDownload(nonEmptyDir) = nil, want error")
+	}
+	if joined, ok := err.(interface{ Unwrap() []error }); !ok || len(joined.Unwrap()) != 1 {
+		t.Errorf("discardDownload(nonEmptyDir) unwrapped errors = %v, want 1 error", err)
+	}
+
+	cacheDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(cacheDir, "snapshots"), []byte("file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, err := locateNewestSnapshot(cacheDir, "owner/repo", "model.onnx"); ok || err == nil {
+		t.Errorf("locateNewestSnapshot with file snapshots = %v, %v", ok, err)
+	}
+
+	snapRoot := t.TempDir()
+	// Snapshot "a-incomplete" has tokenizer.json as a file and onnx/model.onnx as a directory.
+	if err := os.MkdirAll(filepath.Join(snapRoot, "snapshots", "a-incomplete", "onnx", "model.onnx"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(snapRoot, "snapshots", "a-incomplete", TokenizerFile), []byte("t"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Snapshot "b-complete" has both files with zero Time.
+	bModel := filepath.Join(snapRoot, "snapshots", "b-complete", "onnx", "model.onnx")
+	if err := os.MkdirAll(filepath.Dir(bModel), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(bModel, []byte("m"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(snapRoot, "snapshots", "b-complete", TokenizerFile), []byte("t"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	zeroTime := time.Time{}
+	if err := os.Chtimes(bModel, zeroTime, zeroTime); err != nil {
+		t.Fatal(err)
+	}
+
+	got, ok, err := locateNewestSnapshot(snapRoot, "owner/repo", "model.onnx")
+	if err != nil || !ok || got.Model != bModel {
+		t.Errorf("locateNewestSnapshot = %+v, %v, %v, want %q", got, ok, err, bModel)
 	}
 }

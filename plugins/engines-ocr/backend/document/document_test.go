@@ -119,8 +119,15 @@ func TestOpenRejectsInvalidBytes(t *testing.T) {
 	for path, raw := range map[string][]byte{
 		"a.pdf": []byte("INVALID_PDF_HEADER"), "b.pdf": nil, "c.png": []byte("not an image"),
 	} {
-		if _, err := reader.Open(path, raw); !errors.Is(err, document.ErrUnreadable) {
+		_, err := reader.Open(path, raw)
+		if !errors.Is(err, document.ErrUnreadable) {
 			t.Errorf("%s opened with %v", path, err)
+		}
+		if path == "b.pdf" && (err == nil || !bytes.Contains([]byte(err.Error()), []byte("the file is empty"))) {
+			t.Errorf("empty pdf error = %v, want 'the file is empty'", err)
+		}
+		if path == "c.png" && !errors.Is(err, image.ErrFormat) {
+			t.Errorf("invalid image error = %v, want image.ErrFormat", err)
 		}
 	}
 }

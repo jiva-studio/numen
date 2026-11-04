@@ -147,6 +147,7 @@ func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[strin
 	// addresses are neither read here nor missing, and drawing them as notes with
 	// unresolved names would report a vault problem that does not exist.
 	if l.Target.Scheme != domain.SchemeName && l.Target.Scheme != domain.SchemeNote {
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
 		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	one := Neighbour{
@@ -165,6 +166,7 @@ func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, visited map[strin
 	}
 	if l.ToVault != v.ID || visited[l.To] {
 		// A link into another vault has nothing here to read it with.
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
 		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	visited[l.To] = true
@@ -184,6 +186,7 @@ func getNeighbourTitle(
 	if !isNote {
 		// The index reported where the link lands but holds no note there: the entry
 		// changed during this read.
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
 		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	// An ordinary note is what the cards were written from, and is
@@ -194,14 +197,17 @@ func getNeighbourTitle(
 		// Every card names the card model it is cut by, so a deck points at
 		// its card models. A card model is how a card is laid out and not what
 		// it was written from.
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
 		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	case format.TypePreset:
 		// A deck points at the preset it is scheduled by. A preset is how
 		// the cards come round and not what they were written from.
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
 		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	case format.TypeDeck:
 		// Another deck holds more cards to answer and is not a source of the cards under
 		// review.
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero Neighbour value."
 		return Neighbour{Written: "", Path: "", Title: "", Body: "", Label: "", IsBacklink: false, IsAmbiguous: false, Outcome: ""}, false
 	}
 	one.Title = ref.Title
@@ -309,6 +315,7 @@ func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardI
 		// the deck being made whole on the way past, which is where a card id is
 		// minted.
 		body, err := format.DeckBody(deck.Body)
+		// gomutants:disable-next-line BRANCH_IF reason="Parsed decks always have valid section indices and card model links."
 		if err != nil {
 			out.Unwritten = append(out.Unwritten, path)
 			continue

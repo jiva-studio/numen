@@ -18,9 +18,20 @@ func TestNoMoreWorkersThanJobsShareTheWork(t *testing.T) {
 }
 
 func TestAWorkerCountOfNoneConsumesOneWorkerPerCPU(t *testing.T) {
-	want := runtime.GOMAXPROCS(0)
-	if got := GetWorkerCount(0, want+10); got != want {
-		t.Errorf("%d workers share the work, want %d", got, want)
+	prev := runtime.GOMAXPROCS(4)
+	defer runtime.GOMAXPROCS(prev)
+
+	if got := GetWorkerCount(0, 10); got != 4 {
+		t.Errorf("%d workers share the work for 0, want 4", got)
+	}
+	if got := runtime.GOMAXPROCS(0); got != 4 {
+		t.Errorf("GOMAXPROCS changed to %d, want 4", got)
+	}
+	if got := GetWorkerCount(-1, 10); got != 4 {
+		t.Errorf("%d workers share the work for -1, want 4", got)
+	}
+	if got := GetWorkerCount(1, 10); got != 1 {
+		t.Errorf("%d workers share the work for 1, want 1", got)
 	}
 }
 

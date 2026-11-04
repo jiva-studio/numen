@@ -101,6 +101,7 @@ func (e *engines) close() error {
 // dropLocked closes the recogniser so the next page reopens it. A close failure
 // is written to standard error, the stream the host keeps for the plugin.
 func (e *engines) dropLocked() {
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Stderr logging of close failure does not affect engine state."
 	if err := e.closeLocked(); err != nil {
 		fmt.Fprintln(os.Stderr, "engines-ocr: close the recogniser:", err)
 	}

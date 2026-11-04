@@ -1,6 +1,7 @@
 package markdown
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -20,6 +21,10 @@ func TestALineEndingIsWhatEveryBreakUses(t *testing.T) {
 		"one at the very end":    {"first\n", "\n"},
 		"nothing to break at":    {"one long line", "\n"},
 		"empty":                  {"", "\n"},
+		"leading lf before crlf": {"\n\r\n", "\n"},
+		"trailing cr after crlf": {"\r\n\r", "\n"},
+		"mid cr after crlf":      {"\r\n\rx\r\n", "\n"},
+		"short crlf":             {"a\r\n", "\r\n"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if got := lineEnding([]byte(c.raw)); got != c.want {
@@ -96,5 +101,68 @@ func TestOffsetLineFindsTheNextLineWhenNoneBeginsThere(t *testing.T) {
 				t.Errorf("offsetLine(%v, %d) = %d, want %d", lines, c.offset, got, c.want)
 			}
 		})
+	}
+}
+
+func TestBreakWidthsEndsWithBreakAndLineOffsets(t *testing.T) {
+	widthCases := []struct {
+		block  []byte
+		offset int
+		want   int
+	}{
+		{[]byte("\r"), 0, 1},
+		{[]byte("a\r"), 1, 1},
+		{[]byte("\n\r"), 1, 1},
+		{[]byte("a\r\n"), 1, 2},
+		{[]byte("\n"), 0, 1},
+		{[]byte{0xC2}, 0, 0},
+		{[]byte{'a', 0xC2}, 1, 0},
+		{[]byte{0xC2, 0x84}, 0, 0},
+		{[]byte{0xC2, 0x85}, 0, 2},
+		{[]byte{0xC2, 0x86}, 0, 0},
+		{[]byte{0xE2}, 0, 0},
+		{[]byte{0xE2, 0x80}, 0, 0},
+		{[]byte{'a', 'b', 0xE2, 0x80}, 2, 0},
+		{[]byte{0xE2, 0x81, 0xA8}, 0, 0},
+		{[]byte{0xE2, 0x80, 0xA7}, 0, 0},
+		{[]byte{0xE2, 0x80, 0xA8}, 0, 3},
+		{[]byte{0xE2, 0x80, 0xA9}, 0, 3},
+		{[]byte{0xE2, 0x80, 0xAA}, 0, 0},
+		{[]byte("x"), 0, 0},
+	}
+	for _, tc := range widthCases {
+		if got := breakWidth(tc.block, tc.offset); got != tc.want {
+			t.Errorf("breakWidth(%x, %d) = %d, want %d", tc.block, tc.offset, got, tc.want)
+		}
+	}
+
+	for _, tc := range []struct {
+		block []byte
+		want  bool
+	}{
+		{[]byte(""), false},
+		{[]byte("a"), false},
+		{[]byte("abcd"), false},
+		{[]byte("a\n"), true},
+		{[]byte("a\r"), true},
+		{[]byte("a\r\n"), true},
+		{[]byte("a\u0085"), true},
+		{[]byte("a\u2028"), true},
+		{[]byte("a\u2029"), true},
+		{[]byte("\u2028a"), false},
+	} {
+		if got := endsWithBreak(tc.block); got != tc.want {
+			t.Errorf("endsWithBreak(%q) = %v, want %v", tc.block, got, tc.want)
+		}
+	}
+
+	if got := lineOffsets([]byte("\na")); !slices.Equal(got, []int{0, 1, 2}) {
+		t.Errorf("lineOffsets(\\na) = %v", got)
+	}
+	if got := lineOffsets([]byte("a\n")); !slices.Equal(got, []int{0, 2}) {
+		t.Errorf("lineOffsets(a\\n) = %v", got)
+	}
+	if got := lineOffsets([]byte("a\nb")); !slices.Equal(got, []int{0, 2, 3}) {
+		t.Errorf("lineOffsets(a\\nb) = %v", got)
 	}
 }

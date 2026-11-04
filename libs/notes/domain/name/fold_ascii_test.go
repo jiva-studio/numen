@@ -71,4 +71,7 @@ func TestAnASCIINameAlreadyFoldedIsReturnedWithoutAllocating(t *testing.T) {
 	if got := FoldName(name); got != name {
 		t.Errorf("FoldName(%q) = %q", name, got)
 	}
+	if folded, ok := foldASCII("AbC"); !ok || folded != "abc" {
+		t.Errorf("foldASCII(\"AbC\") = %q, %v; want \"abc\", true", folded, ok)
+	}
 }

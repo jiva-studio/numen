@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/klippa-app/go-pdfium/enums"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
 	"github.com/tetratelabs/wazero"
@@ -271,9 +272,15 @@ func TestATurnedPageIsLitTheWayItIsGenerated(t *testing.T) {
 func TestIsWordContinued(t *testing.T) {
 	w := responses.CharPosition{Left: 10, Right: 20, Top: 30, Bottom: 10} // width 10, height 20
 	// 1. Same line, normal gap (high = 20, wordGap * 20 = 5)
-	mark := responses.CharPosition{Left: 22, Right: 30, Top: 30, Bottom: 10} // gap 2 <= 5
+	mark := responses.CharPosition{Left: 25, Right: 30, Top: 25, Bottom: 5} // gap = 5 == 5, shared = 15 >= 10
 	if !isWordContinued(w, mark) {
-		t.Error("expected word continued for adjacent char")
+		t.Error("expected word continued for adjacent char at exact wordGap boundary")
+	}
+
+	// Exact shared height boundary: shared = 10 == 0.5 * 20
+	exactShared := responses.CharPosition{Left: 22, Right: 30, Top: 20, Bottom: 0}
+	if !isWordContinued(w, exactShared) {
+		t.Error("expected word continued at exact sameLine shared height boundary")
 	}
 
 	// 2. Gap too wide: gap 6 > 5
@@ -288,16 +295,61 @@ func TestIsWordContinued(t *testing.T) {
 		t.Error("expected word NOT continued when characters share less than sameLine of height")
 	}
 
-	// 4. Zero height
+	// 4. Zero or negative height
 	zeroHigh := responses.CharPosition{Left: 22, Right: 30, Top: 10, Bottom: 10}
 	if isWordContinued(w, zeroHigh) {
 		t.Error("expected word NOT continued for zero height char")
 	}
+	negHigh := responses.CharPosition{Left: 22, Right: 30, Top: 5, Bottom: 10}
+	if isWordContinued(w, negHigh) {
+		t.Error("expected word NOT continued for negative height char")
+	}
+	if isWordContinued(zeroHigh, mark) {
+		t.Error("expected word NOT continued when word has zero height")
+	}
 
-	// 5. Backwards: mark.Right <= word.Right
-	backwards := responses.CharPosition{Left: 15, Right: 19, Top: 30, Bottom: 10}
+	// 5. Backwards or equal Right: mark.Right <= word.Right
+	backwards := responses.CharPosition{Left: 15, Right: 20, Top: 30, Bottom: 10}
 	if isWordContinued(w, backwards) {
-		t.Error("expected word NOT continued when char is backwards")
+		t.Error("expected word NOT continued when char Right equals word Right")
+	}
+}
+
+func TestWordReadingAddAndFinish(t *testing.T) {
+	sheet := pageGeometry{width: 100, height: 100, rotation: 0}
+	r := &wordReading{sheet: sheet, index: 0}
+	r.finish()
+	if len(r.boxes) != 0 {
+		t.Fatalf("expected 0 boxes after finishing empty wordReading, got %d", len(r.boxes))
+	}
+
+	validMark := responses.CharPosition{Left: 10, Right: 20, Top: 30, Bottom: 10}
+	r.add(0, 1, validMark, false)
+	// Degenerate width mark finishes the current word
+	r.add(1, 1, responses.CharPosition{Left: 20, Right: 20, Top: 30, Bottom: 10}, false)
+	if len(r.boxes) != 1 || r.length != 0 {
+		t.Fatalf("expected 1 box and length 0 after degenerate width mark, got %d boxes, length %d", len(r.boxes), r.length)
+	}
+
+	r.add(2, 1, validMark, false)
+	// Negative width mark finishes the current word
+	r.add(3, 1, responses.CharPosition{Left: 25, Right: 20, Top: 30, Bottom: 10}, false)
+	if len(r.boxes) != 2 || r.length != 0 {
+		t.Fatalf("expected 2 boxes and length 0 after negative width mark, got %d boxes, length %d", len(r.boxes), r.length)
+	}
+
+	r.add(4, 1, validMark, false)
+	// Degenerate height mark finishes the current word
+	r.add(5, 1, responses.CharPosition{Left: 10, Right: 20, Top: 10, Bottom: 10}, false)
+	if len(r.boxes) != 3 || r.length != 0 {
+		t.Fatalf("expected 3 boxes and length 0 after degenerate height mark, got %d boxes, length %d", len(r.boxes), r.length)
+	}
+
+	r.add(6, 1, validMark, false)
+	// Negative height mark finishes the current word
+	r.add(7, 1, responses.CharPosition{Left: 10, Right: 20, Top: 5, Bottom: 10}, false)
+	if len(r.boxes) != 4 || r.length != 0 {
+		t.Fatalf("expected 4 boxes and length 0 after negative height mark, got %d boxes, length %d", len(r.boxes), r.length)
 	}
 }
 
@@ -395,8 +447,9 @@ func TestDocumentWordsInvalidPage(t *testing.T) {
 }
 
 type mockPageWorker struct {
-	width  float64
-	height float64
+	width    float64
+	height   float64
+	rotation int
 }
 
 func (m *mockPageWorker) GetPageSize(_ *requests.GetPageSize) (*responses.GetPageSize, error) {
@@ -404,7 +457,7 @@ func (m *mockPageWorker) GetPageSize(_ *requests.GetPageSize) (*responses.GetPag
 }
 
 func (m *mockPageWorker) GetPageRotation(_ *requests.FPDFPage_GetRotation) (*responses.FPDFPage_GetRotation, error) {
-	return &responses.FPDFPage_GetRotation{}, nil
+	return &responses.FPDFPage_GetRotation{PageRotation: enums.FPDF_PAGE_ROTATION(m.rotation)}, nil
 }
 
 func TestGetSheetRejectsZeroDimensions(t *testing.T) {
@@ -412,15 +465,34 @@ func TestGetSheetRejectsZeroDimensions(t *testing.T) {
 	if _, ok := getSheet(docZeroWidth, requests.Page{}); ok {
 		t.Error("expected getSheet to reject zero width")
 	}
+	docOneWidth := &mockPageWorker{width: 1, height: 100}
+	if _, ok := getSheet(docOneWidth, requests.Page{}); !ok {
+		t.Error("expected getSheet to accept width 1")
+	}
 
 	docZeroHeight := &mockPageWorker{width: 100, height: 0}
 	if _, ok := getSheet(docZeroHeight, requests.Page{}); ok {
 		t.Error("expected getSheet to reject zero height")
 	}
+	docOneHeight := &mockPageWorker{width: 100, height: 1}
+	if _, ok := getSheet(docOneHeight, requests.Page{}); !ok {
+		t.Error("expected getSheet to accept height 1")
+	}
 
-	docValid := &mockPageWorker{width: 100, height: 200}
+	docValid := &mockPageWorker{width: 100, height: 200, rotation: 0}
 	sheet, ok := getSheet(docValid, requests.Page{})
 	if !ok || sheet.width != 100 || sheet.height != 200 {
 		t.Errorf("expected valid sheet (100, 200), got %+v, %v", sheet, ok)
+	}
+
+	for _, rot := range []int{1, 3} {
+		turnedSheet, ok := getSheet(&mockPageWorker{width: 100, height: 200, rotation: rot}, requests.Page{})
+		if !ok || turnedSheet.width != 200 || turnedSheet.height != 100 {
+			t.Errorf("rot %d: expected swapped sheet (200, 100), got %+v, %v", rot, turnedSheet, ok)
+		}
+	}
+	rot2Sheet, ok := getSheet(&mockPageWorker{width: 100, height: 200, rotation: 2}, requests.Page{})
+	if !ok || rot2Sheet.width != 100 || rot2Sheet.height != 200 {
+		t.Errorf("rot 2: expected unswapped sheet (100, 200), got %+v, %v", rot2Sheet, ok)
 	}
 }

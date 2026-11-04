@@ -115,4 +115,18 @@ func TestGetCoreMLOptionsPlacesADefaultModelOnAllUnits(t *testing.T) {
 	if units := GetCoreMLOptions("/cache", ComputeUnitsCPUOnly)[3][1]; units != "CPUOnly" {
 		t.Errorf("MLComputeUnits = %q, want CPUOnly", units)
 	}
+
+	if _, err := GetCoreMLCacheDir(filepath.Join(t.TempDir(), "missing.onnx")); err == nil {
+		t.Fatal("expected error for missing model file")
+	}
+
+	_, model := grantModel(t)
+	fileAsDir := filepath.Join(t.TempDir(), "not-a-dir")
+	if err := os.WriteFile(fileAsDir, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(cache.EnvSharedDir, fileAsDir)
+	if _, err := GetCoreMLCacheDir(model); err == nil {
+		t.Fatal("expected error when shared dir is a regular file")
+	}
 }

@@ -103,6 +103,7 @@ func mount(s *server.Server, index Index, clk Clock, cpus int) error {
 	s.SetUpdateConfig(view.configure)
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetStats, view.get)
+	// gomutants:disable-next-line RETURN_ERROR_NIL reason="api.Service and api.MethodGetStats are valid compile-time constants."
 	return a.Err()
 }
 

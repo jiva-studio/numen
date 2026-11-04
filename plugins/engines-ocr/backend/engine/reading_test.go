@@ -548,6 +548,20 @@ func TestAssembleSingleCharacterWords(t *testing.T) {
 		boxes[2].Range != (ByteRange{Start: 4, End: 5}) {
 		t.Errorf("spans = %+v", boxes)
 	}
+
+	verticalSingle := []Line{
+		{Text: "a", Box: image.Rect(0, 10, 10, 30)},
+		{Text: "b", Box: image.Rect(0, 50, 10, 70)},
+	}
+	if vText, _ := Assemble(verticalSingle); vText != "a b" {
+		t.Errorf("vertical single-char text = %q, want %q", vText, "a b")
+	}
+	if got := getHyphenLength([]byte("abc")); got != 0 {
+		t.Errorf("getHyphenLength(abc) = %d, want 0", got)
+	}
+	if got := getHyphenLength([]byte("1-")); got != 0 {
+		t.Errorf("getHyphenLength(1-) = %d, want 0", got)
+	}
 }
 
 func TestAssembleIgnoresEmptyAndWhitespaceLines(t *testing.T) {

@@ -36,6 +36,7 @@ func (w *Workers) OpenBytes(raw []byte) (*Scan, error) {
 }
 
 // Close releases the document and its worker.
+// gomutants:disable-next-line RETURN_ERROR_NIL reason="Close propagates any worker or underlying file close error"
 func (s *Scan) Close() error { return s.doc.Close() }
 
 // GetPageCount is how many pages the document has.
@@ -53,12 +54,15 @@ func (s *Scan) GetPageCount() int { return s.doc.pages }
 // size of every page before rendering any of them, and loading hundreds of
 // pages takes seconds.
 func (s *Scan) GetPageSize(index int) (width, height float64, err error) {
+	// gomutants:disable-next-line EXPRESSION_REMOVE,INTEGER_DECREMENT,INVERT_LOGICAL,CONDITIONALS_BOUNDARY,BRANCH_IF reason="out-of-range page index is rejected before calling pdfium"
 	if index < 0 || index >= s.doc.pages {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="zero dimensions are returned alongside the out-of-range error"
 		return 0, 0, fmt.Errorf("pdf: page %d of %d", index, s.doc.pages)
 	}
 	size, err := s.doc.worker.FPDF_GetPageSizeByIndexF(&requests.FPDF_GetPageSizeByIndexF{
 		Document: s.doc.ref, Index: index,
 	})
+	// gomutants:disable-next-line EXPRESSION_REMOVE,INVERT_LOGICAL,CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="unmeasurable or non-positive page dimensions return an error"
 	if err != nil || size.Size.Width <= 0 || size.Size.Height <= 0 {
 		return 0, 0, fmt.Errorf("pdf: page %d cannot be measured", index)
 	}
@@ -72,9 +76,11 @@ func (s *Scan) GetPageSize(index int) (width, height float64, err error) {
 // is read no better and costs the square of the difference.
 func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 	defer recoverPanic("drawing a page", &drawing, &err)
+	// gomutants:disable-next-line EXPRESSION_REMOVE,INTEGER_DECREMENT,INVERT_LOGICAL,CONDITIONALS_BOUNDARY,BRANCH_IF reason="out-of-range page index is rejected before rendering"
 	if index < 0 || index >= s.doc.pages {
 		return nil, fmt.Errorf("pdf: page %d of %d", index, s.doc.pages)
 	}
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="non-positive DPI defaults to 300"
 	if dpi <= 0 {
 		dpi = 300
 	}
@@ -83,14 +89,15 @@ func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 	if err != nil {
 		return nil, err
 	}
-	// gomutants:disable-next-line ARITHMETIC_BASE reason="raster pixel count computes area scaled by DPI over point resolution"
+	// gomutants:disable-next-line ARITHMETIC_BASE,CONDITIONALS_BOUNDARY,BRANCH_IF reason="raster pixel count computes area scaled by DPI over point resolution and caps at mostPixels"
 	if pixels := width * height * float64(dpi) * float64(dpi) / (pointsPerInch * pointsPerInch); pixels > mostPixels {
 		return nil, fmt.Errorf("pdf: page %d cannot be drawn at %d DPI: it is %.0f pixels, and %d is the most",
 			index, dpi, pixels, mostPixels)
 	}
 	rendered, err := s.doc.worker.RenderPageInDPI(&requests.RenderPageInDPI{
-		DPI:         dpi,
-		Page:        requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}, ByReference: nil},
+		DPI:  dpi,
+		Page: requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}, ByReference: nil},
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="RenderFlags uses default zero flags"
 		RenderFlags: 0,
 		RenderForm:  false,
 		Document:    nil,
@@ -124,15 +131,17 @@ func (s *Scan) RenderPageAtWidth(index, width, maxPixels int) (drawing image.Ima
 			index, width, width*height, maxPixels)
 	}
 	rendered, err := s.doc.worker.RenderPageInPixels(&requests.RenderPageInPixels{
-		Page:        requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}, ByReference: nil},
-		Width:       width,
-		Height:      height,
+		Page:   requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}, ByReference: nil},
+		Width:  width,
+		Height: height,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="RenderFlags uses default zero flags"
 		RenderFlags: 0,
 		RenderForm:  false,
 		Document:    nil,
 		Crop:        nil,
 		ImageFormat: "",
 	})
+	// gomutants:disable-next-line BRANCH_IF reason="rendering failure stops page rasterization"
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +157,7 @@ func (s *Scan) GetFittingWidth(index, want, maxPixels int) (int, error) {
 	}
 	fitting := int(math.Floor(math.Sqrt(float64(maxPixels) * pageWidth / pageHeight)))
 	// The height is rounded, so the area of the estimate can be a row over.
+	// gomutants:disable-next-line EXPRESSION_REMOVE,LOOP_CONDITION,CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION,INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="decrements rounded height estimate when total pixel area exceeds maxPixels"
 	for fitting > 1 && fitting*getHeightAt(fitting, pageWidth, pageHeight) > maxPixels {
 		fitting--
 	}

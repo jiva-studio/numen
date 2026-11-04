@@ -112,6 +112,7 @@ func TestPageRouteRejectsABadRequest(t *testing.T) {
 
 	for path, want := range map[string]int{
 		"/plugin/pages/0":                          http.StatusBadRequest,
+		"/plugin/pages/0?wide=400":                 http.StatusBadRequest,
 		"/plugin/pages/0?path=tiny.pdf":            http.StatusBadRequest,
 		"/plugin/pages/0?path=tiny.pdf&wide=0":     http.StatusBadRequest,
 		"/plugin/pages/0?path=tiny.pdf&wide=x":     http.StatusBadRequest,
@@ -171,6 +172,21 @@ func TestPageRouteDrawsAPageNoLargerThanTheMostPixels(t *testing.T) {
 	}
 	if pixels := drawing.Bounds().Dx() * drawing.Bounds().Dy(); pixels > mostPixels || pixels < mostPixels/2 {
 		t.Errorf("the page has %d pixels, want just under %d", pixels, mostPixels)
+	}
+	drawnOne := getPage(t, web, "/plugin/pages/0?path=tiny.pdf&wide=1")
+	if drawnOne.status != http.StatusOK {
+		t.Errorf("wide=1 answered %d, want 200", drawnOne.status)
+	}
+}
+
+func TestPageServerServeHTTPCanceledAndHeaders(t *testing.T) {
+	srv := NewPageServer(newTestdataVault(t), newTestWorkers(t))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf&wide=100", nil)
+	req.SetPathValue("page", "0")
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != "image/jpeg" {
+		t.Fatalf("ServeHTTP = %d %q, want 200 image/jpeg", rec.Code, rec.Header().Get("Content-Type"))
 	}
 }
 

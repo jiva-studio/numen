@@ -15,11 +15,13 @@ func TestOnlyTheEncoderConsumesMoreThanOneThread(t *testing.T) {
 }
 
 func TestTheEncoderConsumesTheThreadsItIsGiven(t *testing.T) {
-	cfg := Defaults()
-	cfg.Threads = 3
-	got := cfg.sessionThreads()
-	want := sessionThreads{encoder: 3, decoder: 1, joiner: 1, segmenter: 1}
-	if got != want {
-		t.Errorf("the sessions take %+v threads, want %+v", got, want)
+	for _, count := range []int{1, 3} {
+		cfg := Defaults()
+		cfg.Threads = count
+		got := cfg.sessionThreads()
+		want := sessionThreads{encoder: count, decoder: 1, joiner: 1, segmenter: 1}
+		if got != want {
+			t.Errorf("the sessions take %+v threads, want %+v", got, want)
+		}
 	}
 }
