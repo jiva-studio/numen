@@ -57,11 +57,12 @@ jobs:
         with:
           filters: .github/filters.yml
           predicate-quantifier: some-with-excludes
-          list-files: json
 
       - id: areas
         env:
           EVENT: ${{ github.event_name }}
+          PULL: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
           FILTERS: ${{ toJSON(steps.filter.outputs) }}
         run: .github/scripts/areas.sh | tee -a "$GITHUB_OUTPUT"
 
