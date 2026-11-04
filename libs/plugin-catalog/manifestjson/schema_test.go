@@ -39,7 +39,7 @@ const everyFieldManifest = `{
 		"when": [{"key": "version.kind", "is": ["k"]}],
 		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false, "hiddenInPalette": true},
 			{"name": "m", "title": "M", "type": "number", "required": true}],
-		"scope": "note", "shortcut": "mod+shift+r", "noteDestination": true}],
+		"scope": "note", "shortcut": "mod+shift+r"}],
 		"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views",
 		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
 		"statusViews": [{"id": "gauge"}],

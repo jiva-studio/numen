@@ -28,8 +28,7 @@
         "title": "Show note in plex",
         "icon": "waypoints",
         "scope": "note",
-        "shortcut": "mod+shift+p",
-        "noteDestination": true
+        "shortcut": "mod+shift+p"
       }
     ]
   },

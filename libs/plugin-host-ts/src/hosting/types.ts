@@ -60,7 +60,6 @@ export interface CommandDeclaration {
   readonly shortcut?: string
   /** 'note' where it is offered only while a note is in front. */
   readonly scope?: 'note'
-  readonly isNoteDestination?: boolean
 }
 
 export interface PluginPaletteCommand {
@@ -71,8 +70,6 @@ export interface PluginPaletteCommand {
   readonly scope?: 'note'
   /** The Lucide name of the icon it is drawn with. */
   readonly icon?: string
-  /** Whether it presents a note. */
-  readonly isNoteDestination?: boolean
 }
 
 export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unknown

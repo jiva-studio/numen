@@ -50,7 +50,7 @@ export interface Passage {
  * file the selector its reader moves to.
  */
 export interface SearchDestination {
-  at: 'locate' | 'file'
+  at: 'file'
   path: string
   /** What the note is called, for a tab that has not been opened before. */
   title: string
@@ -60,12 +60,7 @@ export interface SearchDestination {
   selector?: Selector
 }
 
-/**
- * The things that can be done to anything the palette turns up. A note is put
- * in front where the plugin that shows notes puts it, which only a window with
- * such a plugin offers.
- */
-export const LOCATE = 'locate'
+/** The action that opens a note or a file the palette turns up. */
 export const NOTE = 'note'
 
 /**
@@ -90,23 +85,13 @@ export interface SearchRow {
   hit: SearchHit
 }
 
-/** The search results over a note, including the action that shows it where one exists. */
-const getNoteActions = (travel: string, first: { id: string; text: string }) => ({
-  actions: travel ? [first, { id: LOCATE, text: travel }] : [first],
-  offers: travel ? [first.id, LOCATE] : [first.id],
-})
-
 /**
- * A name the search turned up. A note found by its name is put in front first,
- * and a heading is opened at first. The last argument is the words of the action
- * that puts a note in front, and empty where nothing does.
+ * A name the search turned up. A name offers to open the note, and a heading offers to open the note
+ * at that heading.
  */
-export function createNameItem(one: NameMatch, words: Words, travel: string): SearchRow {
-  const atHeading = getNoteActions(travel, { id: NOTE, text: words.readAt })
-  const read = { id: NOTE, text: words.read }
-  const byName = travel
-    ? { actions: [{ id: LOCATE, text: travel }, read], offers: [LOCATE, NOTE] }
-    : { actions: [read], offers: [NOTE] }
+export function createNameItem(one: NameMatch, words: Words): SearchRow {
+  const atHeading = { actions: [{ id: NOTE, text: words.readAt }], offers: [NOTE] }
+  const byName = { actions: [{ id: NOTE, text: words.read }], offers: [NOTE] }
   return one.heading
     ? {
         item: {
@@ -147,13 +132,8 @@ export function createNameItem(one: NameMatch, words: Words, travel: string): Se
       }
 }
 
-export function createPassageItem(
-  group: string,
-  one: Passage,
-  words: Words,
-  travel: string,
-): SearchRow {
-  const note = getNoteActions(travel, { id: NOTE, text: words.read })
+export function createPassageItem(group: string, one: Passage, words: Words): SearchRow {
+  const note = { actions: [{ id: NOTE, text: words.read }], offers: [NOTE] }
   return {
     item: {
       id: `${group}:${one.path}:${one.start}`,
@@ -181,7 +161,6 @@ export function resolveDestination(
 ): SearchDestination | null {
   if (!hit || !hit.offers.includes(action)) return null
   const named = { path: hit.path, title: hit.title }
-  if (action === LOCATE) return { at: 'locate', ...named }
   if (hit.selector) return { at: 'file', ...named, selector: hit.selector }
   return hit.line >= 0 ? { at: 'file', ...named, line: hit.line } : { at: 'file', ...named }
 }

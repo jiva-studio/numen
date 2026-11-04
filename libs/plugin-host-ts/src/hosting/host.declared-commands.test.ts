@@ -35,7 +35,6 @@ describe('the commands a plugin declares in its manifest', () => {
         id: 'tree.revealNote',
         title: 'Show note in file tree',
         scope: 'note',
-        isNoteDestination: true,
       }),
     ])
 
@@ -48,7 +47,6 @@ describe('the commands a plugin declares in its manifest', () => {
         icon: 'folder-tree',
         shortcut: 'mod+shift+e',
         scope: 'note',
-        isNoteDestination: true,
       },
     ])
   })

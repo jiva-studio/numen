@@ -1387,11 +1387,9 @@ type ManifestCommand struct {
 	// window.
 	Scope string `protobuf:"bytes,9,opt,name=scope,proto3" json:"scope,omitempty"`
 	// shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
-	Shortcut string `protobuf:"bytes,10,opt,name=shortcut,proto3" json:"shortcut,omitempty"`
-	// is_note_destination marks the command that puts a note in front.
-	IsNoteDestination bool `protobuf:"varint,11,opt,name=is_note_destination,json=noteDestination,proto3" json:"is_note_destination,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	Shortcut      string `protobuf:"bytes,10,opt,name=shortcut,proto3" json:"shortcut,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ManifestCommand) Reset() {
@@ -1485,13 +1483,6 @@ func (x *ManifestCommand) GetShortcut() string {
 		return x.Shortcut
 	}
 	return ""
-}
-
-func (x *ManifestCommand) GetIsNoteDestination() bool {
-	if x != nil {
-		return x.IsNoteDestination
-	}
-	return false
 }
 
 type ManifestReader struct {
@@ -1736,7 +1727,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x14is_hidden_in_palette\x18\x05 \x01(\bR\x0fhiddenInPalette\"<\n" +
 	"\x18ManifestContextCondition\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xe8\x02\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xba\x02\n" +
 	"\x0fManifestCommand\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
@@ -1748,8 +1739,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\targuments\x18\a \x03(\v2!.numen.v1.ManifestCommandArgumentR\targuments\x12\x14\n" +
 	"\x05scope\x18\t \x01(\tR\x05scope\x12\x1a\n" +
 	"\bshortcut\x18\n" +
-	" \x01(\tR\bshortcut\x12,\n" +
-	"\x13is_note_destination\x18\v \x01(\bR\x0fnoteDestination\"Y\n" +
+	" \x01(\tR\bshortcut\"Y\n" +
 	"\x0eManifestReader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
 	"\rcontent_types\x18\x02 \x03(\tR\fcontentTypes\x12\x12\n" +

@@ -108,7 +108,6 @@ describe('asking', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     expect(palette.groups.value).toHaveLength(0)
@@ -119,7 +118,6 @@ describe('asking', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setTyped('ent').catch(rethrow)
@@ -134,7 +132,6 @@ describe('asking', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setTyped('  ent  ').catch(rethrow)
@@ -147,7 +144,6 @@ describe('asking', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setTyped('ent').catch(rethrow)
@@ -165,7 +161,6 @@ describe('answers arriving', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setTyped('ent').catch(rethrow)
@@ -184,7 +179,6 @@ describe('answers arriving', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setTyped('ent').catch(rethrow)
@@ -206,7 +200,6 @@ describe('answers arriving', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setTyped('ent').catch(rethrow)
@@ -225,7 +218,6 @@ describe('answers arriving', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setTyped('ent').catch(rethrow)
@@ -272,7 +264,6 @@ describe('answers arriving', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setTyped('ent').catch(rethrow)
@@ -297,7 +288,7 @@ describe('answers arriving', () => {
     expect(meaningGroup?.items[0]?.id).toBe('meaning:note.md:0')
   })
 
-  it('shows text search results with text item ids and omits locate action when getTravel is absent', async () => {
+  it('shows text search results with text item ids', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })
 
@@ -318,7 +309,6 @@ describe('answers arriving', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setOpen(true)
@@ -340,7 +330,6 @@ describe('where a thing found takes the person', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -359,15 +348,10 @@ describe('where a thing found takes the person', () => {
     return palette
   }
 
-  it('puts a note found by its own name in front, and opens its text on the other key', async () => {
+  it('opens a note found by its own name', async () => {
     const palette = await createFilledPalette()
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
 
-    expect(palette.chooseItem(item.id, 'locate')).toEqual({
-      at: 'locate',
-      path: 'notes/entropy.md',
-      title: 'Entropy',
-    })
     expect(palette.chooseItem(item.id, 'note')).toEqual({
       at: 'file',
       path: 'notes/entropy.md',
@@ -385,19 +369,12 @@ describe('where a thing found takes the person', () => {
       title: 'The Carnot cycle',
       line: 12,
     })
-    // A note is put in front whole, and not at the lines inside it.
-    expect(palette.chooseItem(item.id, 'locate')).toEqual({
-      at: 'locate',
-      path: 'notes/carnot.md',
-      title: 'The Carnot cycle',
-    })
   })
 
   it('opens a passage as the note it was read out of, on the line it relies on', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -417,16 +394,15 @@ describe('where a thing found takes the person', () => {
 
   it('takes nobody anywhere for an item it is not drawing', async () => {
     const palette = await createFilledPalette()
-    expect(palette.chooseItem('notes/nowhere.md', 'locate')).toBeNull()
+    expect(palette.chooseItem('notes/nowhere.md', 'note')).toBeNull()
   })
 })
 
 describe('what a key reaches, per kind of thing found', () => {
-  it('offers putting it in front first for a name and the note first for a place', async () => {
+  it('offers opening the note for a name, a heading and a passage', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -443,9 +419,9 @@ describe('what a key reaches, per kind of thing found', () => {
         (one) => one.id,
       )
 
-    expect(getActions('names', 0)).toEqual(['locate', 'note'])
-    expect(getActions('names', 1)).toEqual(['note', 'locate'])
-    expect(getActions('text', 0)).toEqual(['note', 'locate'])
+    expect(getActions('names', 0)).toEqual(['note'])
+    expect(getActions('names', 1)).toEqual(['note'])
+    expect(getActions('text', 0)).toEqual(['note'])
   })
 })
 
@@ -454,7 +430,6 @@ describe('a passage from something that is not a note', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('war').catch(rethrow)
     await flushPromises()
@@ -487,8 +462,6 @@ describe('a passage from something that is not a note', () => {
       title: '',
       selector: { cfi: 'epubcfi(/6/4!/4/2)' },
     })
-    // It is no note, and cannot be located as one.
-    expect(palette.chooseItem(item.id, 'locate')).toBeNull()
   })
 })
 
@@ -497,7 +470,6 @@ describe('what a row is drawn as', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -523,7 +495,6 @@ describe('what a row is drawn as', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -547,7 +518,6 @@ describe('what a row is drawn as', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -572,7 +542,6 @@ describe('what a row is drawn as', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -598,7 +567,6 @@ describe('what a row is drawn as', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -617,7 +585,6 @@ describe('what a row is drawn as', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     expect(palette.findNoteType('notes/entropy.md')).toBeNull()
     expect(palette.findHitFile('notes/entropy.md')).toBeNull()
@@ -629,7 +596,6 @@ describe('a group landing under the keyboard', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('war').catch(rethrow)
     await flushPromises()
@@ -701,7 +667,6 @@ describe('the hold before a question', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setTyped('ent').catch(rethrow)
@@ -755,7 +720,6 @@ describe('what was typed taken back', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
 
     palette.setTyped('   ').catch(rethrow)
@@ -770,7 +734,6 @@ describe('answers to a question overtaken', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -789,7 +752,6 @@ describe('answers to a question overtaken', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -806,7 +768,6 @@ describe('answers to a question overtaken', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
@@ -823,7 +784,6 @@ describe('the palette opened and put away', () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
-      getTravel: () => 'Show in the graph',
     })
     palette.setOpen(true)
     palette.setTyped('ent').catch(rethrow)

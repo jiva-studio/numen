@@ -25,7 +25,6 @@ const openPreset: DeclaredCommand = {
   title: 'Open preset',
   scope: 'note',
   shortcut: 'mod+shift+o',
-  isNoteDestination: false,
 }
 const openTree: DeclaredCommand = {
   ...base,

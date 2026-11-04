@@ -19,9 +19,6 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
       ...(cmd.icon ? { icon: getNamedIcon(cmd.icon) } : {}),
     }
   }
-  /** The command a plugin declares to put a note in front, and nothing where none does. */
-  const findNoteDestination = () => getPluginCommands().find((cmd) => cmd.isNoteDestination)
-
   /** The commands the plugins declare, as the palette lists them, each available where its scope is. */
   const getPaletteEntries = () =>
     getPluginCommands().map((cmd) => ({
@@ -55,13 +52,6 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
     type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
   })
 
-  /** The note put in front by the command a plugin declares for it; false where none declares one. */
-  const showNote = async (path: string): Promise<boolean> => {
-    const destination = findNoteDestination()
-    if (!destination || !pluginHost) return false
-    return pluginHost.executeCommand(destination.id, await getCommandNote(path, ''))
-  }
-
   if (pluginHost) {
     let unregisterAll: readonly (() => void)[] = []
     watch(
@@ -83,9 +73,7 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
 
   return {
     getPaletteEntries,
-    findNoteDestination,
     getCommandNote,
-    showNote,
     getNoteCommands,
     pluginWays,
   }

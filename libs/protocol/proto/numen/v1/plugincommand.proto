@@ -107,9 +107,6 @@ message PluginCommand {
 
   // shortcut is the keystroke the plugin suggests for the command.
   string shortcut = 9;
-
-  // is_note_destination marks the command that puts a note in front.
-  bool is_note_destination = 10;
 }
 
 // CommandArgument is one argument a command takes.

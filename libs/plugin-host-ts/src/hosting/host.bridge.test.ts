@@ -248,7 +248,6 @@ describe('a tab kind component', () => {
           shortcut: 'ctrl+b',
           scope: 'note',
           icon: 'star',
-          isNoteDestination: true,
         },
       ],
       getRelations: () => relations as never,
@@ -304,7 +303,6 @@ describe('a tab kind component', () => {
         shortcut: 'ctrl+b',
         scope: 'note',
         icon: 'star',
-        isNoteDestination: true,
       },
     ])
 

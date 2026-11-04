@@ -423,7 +423,6 @@ function initWindowKindsAndCommands(
       const name = base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon
       return name ? getNamedIcon(name) : fileMenuCommands.getIcon(id)
     },
-    showNote: (path) => getCommands(ctx).showNote(path),
     getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
 

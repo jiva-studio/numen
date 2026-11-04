@@ -315,11 +315,9 @@ type PluginCommand struct {
 	// scope is "note" for a command offered only while a note is in front.
 	Scope string `protobuf:"bytes,8,opt,name=scope,proto3" json:"scope,omitempty"`
 	// shortcut is the keystroke the plugin suggests for the command.
-	Shortcut string `protobuf:"bytes,9,opt,name=shortcut,proto3" json:"shortcut,omitempty"`
-	// is_note_destination marks the command that puts a note in front.
-	IsNoteDestination bool `protobuf:"varint,10,opt,name=is_note_destination,json=isNoteDestination,proto3" json:"is_note_destination,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	Shortcut      string `protobuf:"bytes,9,opt,name=shortcut,proto3" json:"shortcut,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PluginCommand) Reset() {
@@ -413,13 +411,6 @@ func (x *PluginCommand) GetShortcut() string {
 		return x.Shortcut
 	}
 	return ""
-}
-
-func (x *PluginCommand) GetIsNoteDestination() bool {
-	if x != nil {
-		return x.IsNoteDestination
-	}
-	return false
 }
 
 // CommandArgument is one argument a command takes.
@@ -634,7 +625,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"openedPath\"\x15\n" +
 	"\x13ListCommandsRequest\"K\n" +
 	"\x14ListCommandsResponse\x123\n" +
-	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xc6\x02\n" +
+	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\x96\x02\n" +
 	"\rPluginCommand\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
@@ -646,9 +637,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\targuments\x18\x05 \x03(\v2\x19.numen.v1.CommandArgumentR\targuments\x12\x12\n" +
 	"\x04icon\x18\a \x01(\tR\x04icon\x12\x14\n" +
 	"\x05scope\x18\b \x01(\tR\x05scope\x12\x1a\n" +
-	"\bshortcut\x18\t \x01(\tR\bshortcut\x12.\n" +
-	"\x13is_note_destination\x18\n" +
-	" \x01(\bR\x11isNoteDestination\"\\\n" +
+	"\bshortcut\x18\t \x01(\tR\bshortcut\"\\\n" +
 	"\x0fCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1f\n" +

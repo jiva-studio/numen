@@ -29,19 +29,18 @@ func TestACommandScopeOutsideTheKnownOnesIsInvalid(t *testing.T) {
 	}
 }
 
-func TestAFrontendCommandKeepsItsShortcutAndNoteDestination(t *testing.T) {
-	text := `{"id":"a.b","name":"A","version":"1.0.0","frontend":{},"backend":{"entrypoint":"bin/a"},"contributes":{"commands":[{"id":"tree.open","title":"T","scope":"note","shortcut":"mod+shift+e","noteDestination":true}]}}`
+func TestAFrontendCommandKeepsItsScopeAndShortcut(t *testing.T) {
+	text := `{"id":"a.b","name":"A","version":"1.0.0","frontend":{},"backend":{"entrypoint":"bin/a"},"contributes":{"commands":[{"id":"tree.open","title":"T","scope":"note","shortcut":"mod+shift+e"}]}}`
 
 	if _, err := manifestjson.Read(strings.NewReader(text)); err != nil {
 		t.Errorf("a plugin with both parts was refused: %v", err)
 	}
 }
 
-func TestACommandOfAPluginWithOnlyABackendDeclaresNoScopeShortcutOrDestination(t *testing.T) {
+func TestACommandOfAPluginWithOnlyABackendDeclaresNeitherScopeNorShortcut(t *testing.T) {
 	for name, fields := range map[string]string{
-		"a scope":            `"scope":"note"`,
-		"a shortcut":         `"shortcut":"mod+shift+e"`,
-		"a note destination": `"noteDestination":true`,
+		"a scope":    `"scope":"note"`,
+		"a shortcut": `"shortcut":"mod+shift+e"`,
 	} {
 		text := `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"contributes":{"commands":[{"id":"deck.create","title":"T",` + fields + `}]}}`
 

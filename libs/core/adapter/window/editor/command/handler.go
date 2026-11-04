@@ -92,16 +92,15 @@ func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCo
 		})
 	}
 	return &v1.PluginCommand{
-		PluginId:          entry.PluginID,
-		Id:                entry.Command.ID,
-		Title:             entry.Command.Title,
-		Icon:              entry.Command.Icon,
-		ContentTypes:      getContentTypeTexts(entry.Command.ContentTypes),
-		Extensions:        extensions,
-		Arguments:         arguments,
-		Scope:             entry.Command.Scope,
-		Shortcut:          entry.Command.Shortcut,
-		IsNoteDestination: entry.Command.IsNoteDestination,
+		PluginId:     entry.PluginID,
+		Id:           entry.Command.ID,
+		Title:        entry.Command.Title,
+		Icon:         entry.Command.Icon,
+		ContentTypes: getContentTypeTexts(entry.Command.ContentTypes),
+		Extensions:   extensions,
+		Arguments:    arguments,
+		Scope:        entry.Command.Scope,
+		Shortcut:     entry.Command.Shortcut,
 	}
 }
 

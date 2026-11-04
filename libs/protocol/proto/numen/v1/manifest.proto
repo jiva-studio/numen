@@ -222,8 +222,6 @@ message ManifestCommand {
   string scope = 9;
   // shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
   string shortcut = 10;
-  // is_note_destination marks the command that puts a note in front.
-  bool is_note_destination = 11 [json_name = "noteDestination"];
 }
 
 message ManifestReader {

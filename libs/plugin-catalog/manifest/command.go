@@ -83,8 +83,6 @@ type Command struct {
 	Scope string
 	// Shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
 	Shortcut string
-	// IsNoteDestination marks the command that puts a note in front.
-	IsNoteDestination bool
 }
 
 // CommandArgument is one argument a command takes.
@@ -140,8 +138,8 @@ func (m Manifest) listCommandIssues() []error {
 		if strings.TrimSpace(command.Title) == "" {
 			issues = append(issues, fmt.Errorf("%w: %q has no title", ErrInvalidCommand, command.ID))
 		}
-		if m.Backend != (Backend{}) && !m.HasFrontend() && (command.Scope != "" || command.Shortcut != "" || command.IsNoteDestination) {
-			issues = append(issues, fmt.Errorf("%w: %q declares a scope, a shortcut or a note destination, and its plugin has no frontend to run it", ErrInvalidCommand, command.ID))
+		if m.Backend != (Backend{}) && !m.HasFrontend() && (command.Scope != "" || command.Shortcut != "") {
+			issues = append(issues, fmt.Errorf("%w: %q declares a scope or a shortcut, and its plugin has no frontend to run it", ErrInvalidCommand, command.ID))
 		}
 		if command.Scope != "" && command.Scope != CommandScopeNote {
 			issues = append(issues, fmt.Errorf("%w: %q has scope %q, which is none of the scopes %q", ErrInvalidCommand, command.ID, command.Scope, CommandScopeNote))

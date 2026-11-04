@@ -65,7 +65,6 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
   ...(command.icon ? { icon: command.icon } : {}),
   ...(command.scope ? { scope: command.scope } : {}),
   ...(command.shortcut ? { shortcut: command.shortcut } : {}),
-  ...(command.isNoteDestination ? { isNoteDestination: true } : {}),
 })
 
 /**

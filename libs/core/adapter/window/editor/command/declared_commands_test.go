@@ -18,7 +18,7 @@ type declaredByTwoPlugins struct{}
 func (declaredByTwoPlugins) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "md.numen.tree", Command: plugincommand.Command{
-			ID: "tree.revealNote", Title: "Show note in file tree", Icon: "folder-open", Scope: "note", Shortcut: "mod+shift+e", IsNoteDestination: true,
+			ID: "tree.revealNote", Title: "Show note in file tree", Icon: "folder-open", Scope: "note", Shortcut: "mod+shift+e",
 		}},
 		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"}},
 	}
@@ -48,7 +48,7 @@ func TestListCommands_CarriesTheDeclarationOfEachCommand(t *testing.T) {
 		t.Fatalf("got %v", items)
 	}
 	tree := items[0]
-	if tree.GetScope() != "note" || tree.GetShortcut() != "mod+shift+e" || !tree.GetIsNoteDestination() {
+	if tree.GetScope() != "note" || tree.GetShortcut() != "mod+shift+e" {
 		t.Errorf("the frontend command came out as %v", tree)
 	}
 }

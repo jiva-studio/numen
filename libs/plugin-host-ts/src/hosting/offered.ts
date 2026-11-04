@@ -90,6 +90,5 @@ export function createPaletteCommand({ id, declaration }: OfferedCommand): Plugi
     ...(declaration.shortcut ? { shortcut: declaration.shortcut } : {}),
     ...(declaration.scope ? { scope: declaration.scope } : {}),
     ...(declaration.icon ? { icon: declaration.icon } : {}),
-    ...(declaration.isNoteDestination ? { isNoteDestination: true } : {}),
   }
 }

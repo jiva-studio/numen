@@ -56,8 +56,6 @@ export interface Words extends EmptyWords {
 export interface SearchOptions {
   wait?: Wait
   coverage?(): IndexCoverage
-  /** The words of the action that puts a note in front, and empty where no plugin offers one. */
-  getTravel?(): string
 }
 
 interface FillOptions<T> {
@@ -90,7 +88,6 @@ interface BuildGroupsDeps {
   readonly texts: readonly Passage[]
   readonly meanings: readonly Passage[]
   readonly words: Words
-  readonly travel: string
   readonly isWorking: Record<SearchGroup, boolean>
   readonly getSilence: (id: SearchGroup) => string
 }
@@ -112,17 +109,17 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
     group(
       'names',
       deps.words.names,
-      deps.names.map((one) => createNameItem(one, deps.words, deps.travel)),
+      deps.names.map((one) => createNameItem(one, deps.words)),
     ),
     group(
       'text',
       deps.words.text,
-      deps.texts.map((one) => createPassageItem('text', one, deps.words, deps.travel)),
+      deps.texts.map((one) => createPassageItem('text', one, deps.words)),
     ),
     group(
       'meaning',
       deps.words.meaning,
-      deps.meanings.map((one) => createPassageItem('meaning', one, deps.words, deps.travel)),
+      deps.meanings.map((one) => createPassageItem('meaning', one, deps.words)),
     ),
   ]
 
@@ -240,7 +237,6 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       texts: texts.value,
       meanings: meanings.value,
       words,
-      travel: how.getTravel?.() ?? '',
       isWorking: isWorking.value,
       getSilence: getEmptyGroupMessage,
     })
