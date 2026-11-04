@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/tablinks"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
@@ -545,30 +546,53 @@ func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 	}
 }
 
+// newTabLinks returns a tab links registry on the real clock.
+func newTabLinks(t *testing.T) *tablinks.Registry {
+	t.Helper()
+	tabLinks, err := tablinks.NewRegistry(linkGrace, tablinks.ScheduleAfter)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return tabLinks
+}
+
 func TestDetachTabInvokesState(t *testing.T) {
 	var got DetachedTab
-	state := &State{
-		DetachTab: func(_ context.Context, tab DetachedTab) error {
-			got = tab
-			return nil
-		},
+	state := &State{TabLinks: newTabLinks(t)}
+	state.DetachTab = func(_ context.Context, tab DetachedTab) error {
+		got = tab
+		// The new window reads and accepts the tab, so DetachTab responds.
+		_, moveID, _ := state.TabLinks.ReadDetached("window-b", tab.ID)
+		state.TabLinks.Accept("window-b", tab.ID, moveID)
+		return nil
 	}
 	api := &workspaceHandler{state: state}
 
 	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{
-		Id:   "plex:7a2e",
-		Kind: "plex",
-		Path: "physics/Ontology.md",
-		X:    150,
-		Y:    250,
+		Tab: &v1.Tab{Id: "plex:7a2e", Kind: "plex", Path: "physics/Ontology.md"},
+		X:   150,
+		Y:   250,
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := DetachedTab{ID: "plex:7a2e", Kind: "plex", Path: "physics/Ontology.md", X: 150, Y: 250}
+	want := DetachedTab{ID: "plex:7a2e", X: 150, Y: 250}
 	if got != want {
 		t.Errorf("detached tab: got %+v, want %+v", got, want)
+	}
+}
+
+func TestDetachTabRequiresATabID(t *testing.T) {
+	state := &State{
+		DetachTab: func(context.Context, DetachedTab) error { return nil },
+		TabLinks:  newTabLinks(t),
+	}
+	api := &workspaceHandler{state: state}
+
+	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Tab: &v1.Tab{Kind: "plex"}}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("got code %v, want %v", connect.CodeOf(err), connect.CodeInvalidArgument)
 	}
 }
 
@@ -576,7 +600,7 @@ func TestDetachTabFailsWhenUnimplemented(t *testing.T) {
 	state := &State{}
 	api := &workspaceHandler{state: state}
 
-	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Kind: "plex"}))
+	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Tab: &v1.Tab{Id: "plex:1", Kind: "plex"}}))
 	if err == nil {
 		t.Fatal("expected error when DetachTab is nil, got nil")
 	}

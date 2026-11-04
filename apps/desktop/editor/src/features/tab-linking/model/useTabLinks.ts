@@ -12,6 +12,7 @@ import type {
   TabLinksSnapshot,
   TabLinksState,
   TabLinksWriter,
+  TabWindow,
 } from '../types'
 
 export interface TabLinksDeps {
@@ -30,6 +31,7 @@ function findGroupOf(groups: ReadonlyMap<string, TabLinkGroup>, tabId: TabId): T
 export function useTabLinks(deps: TabLinksDeps): TabLinksState {
   const groupsState = shallowRef<ReadonlyMap<string, TabLinkGroup>>(new Map())
   const tabsState = shallowRef<readonly LinkableTab[]>([])
+  const windowsState = shallowRef<readonly TabWindow[]>([])
   let lastWrite: Promise<void> = Promise.resolve()
 
   /** Writes a change to the core after the pending writes. */
@@ -57,6 +59,7 @@ export function useTabLinks(deps: TabLinksDeps): TabLinksState {
   const applySnapshot = (snapshot: TabLinksSnapshot): void => {
     groupsState.value = new Map(snapshot.groups.map((group) => [group.id, group]))
     tabsState.value = snapshot.tabs
+    windowsState.value = snapshot.windows
   }
 
   return {
@@ -65,6 +68,9 @@ export function useTabLinks(deps: TabLinksDeps): TabLinksState {
     },
     get tabs() {
       return tabsState.value
+    },
+    get windows() {
+      return windowsState.value
     },
     linkTabs,
     unlinkTab,

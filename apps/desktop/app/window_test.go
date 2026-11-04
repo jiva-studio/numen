@@ -91,9 +91,7 @@ func TestGetSecondaryWindowURL(t *testing.T) {
 		tab  editor.DetachedTab
 		want string
 	}{
-		{editor.DetachedTab{Kind: "reader:epub", Path: "books/a b.epub"}, "/?kind=reader%3Aepub&path=books%2Fa+b.epub&window=secondary"},
-		{editor.DetachedTab{ID: "plex:4f1c", Kind: "plex", Path: "Orbits.md"}, "/?id=plex%3A4f1c&kind=plex&path=Orbits.md&window=secondary"},
-		{editor.DetachedTab{Kind: "settings"}, "/?kind=settings&window=secondary"},
+		{editor.DetachedTab{ID: "plex:4f1c", X: 40}, "/?id=plex%3A4f1c&window=secondary"},
 		{editor.DetachedTab{}, "/?window=secondary"},
 	}
 	for _, c := range cases {

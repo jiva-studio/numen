@@ -45,6 +45,11 @@ export interface MenuEvents {
   (event: 'choose', id: string): void
   /** The menu requests to be closed. */
   (event: 'dismiss'): void
+  /**
+   * The id of the item under the pointer, in this menu or a submenu, or null
+   * when the pointer leaves the menu. Emitted once per change.
+   */
+  (event: 'highlight', id: string | null): void
 }
 
 export interface MenuSlots {

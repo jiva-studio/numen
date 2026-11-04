@@ -61,11 +61,19 @@ func (h *workspaceHandler) WatchTabLinks(
 			if !open {
 				return nil
 			}
-			if err := out.Send(convertEventToWire(event)); err != nil {
+			if err := sendTabLinksEvent(out, r.Msg.GetWindowId(), event); err != nil {
 				return err
 			}
 		}
 	}
+}
+
+// sendTabLinksEvent sends an event to a window it is for, and drops it otherwise.
+func sendTabLinksEvent(out *connect.ServerStream[v1.WatchTabLinksResponse], windowID string, event tablinks.Event) error {
+	if !event.IsFor(windowID) {
+		return nil
+	}
+	return out.Send(convertEventToWire(event))
 }
 
 // CancelWatchTabLinks cancels the WatchTabLinks streams of a window.
@@ -95,7 +103,10 @@ func (h *workspaceHandler) WriteTabLinks(
 		if r.Msg.GetWindowId() == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errNoWindowID)
 		}
-		h.state.TabLinks.WriteTabs(r.Msg.GetWindowId(), convertTabsFromWire(change.Tabs.GetTabs()))
+		h.state.TabLinks.WriteTabs(
+			convertWindowFromWire(r.Msg.GetWindowId(), change.Tabs.GetWindow()),
+			convertTabsFromWire(change.Tabs.GetTabs()),
+		)
 	}
 	return connect.NewResponse(&v1.WriteTabLinksResponse{}), nil
 }
@@ -119,19 +130,38 @@ func convertTabsFromWire(tabs []*v1.LinkableTab) []tablinks.Tab {
 	return out
 }
 
+func convertWindowFromWire(windowID string, window *v1.TabWindow) tablinks.Window {
+	return tablinks.Window{
+		ID:          windowID,
+		IsMain:      window.GetIsMain(),
+		ActiveTitle: window.GetActiveTitle(),
+		ActiveKind:  window.GetActiveKind(),
+		TabCount:    int(window.GetTabCount()),
+	}
+}
+
 func convertEventToWire(event tablinks.Event) *v1.WatchTabLinksResponse {
-	if event.Sync != nil {
+	switch {
+	case event.Sync != nil:
 		return &v1.WatchTabLinksResponse{Event: &v1.WatchTabLinksResponse_Sync{Sync: &v1.TabPathSync{
 			GroupId:     event.Sync.GroupID,
 			SourceTabId: event.Sync.SourceTabID,
 			Path:        event.Sync.Path,
 			Title:       event.Sync.Title,
 		}}}
-	}
-	if event.Snapshot != nil {
+	case event.Move != nil:
+		return &v1.WatchTabLinksResponse{Event: &v1.WatchTabLinksResponse_MovedTab{
+			MovedTab: &v1.MovedTab{Tab: convertSavedTabToWire(event.Move.Tab), MoveId: event.Move.MoveID},
+		}}
+	case event.Highlight != nil:
+		return &v1.WatchTabLinksResponse{Event: &v1.WatchTabLinksResponse_Highlight{
+			Highlight: &v1.WindowHighlight{IsOn: event.Highlight.IsOn},
+		}}
+	case event.Snapshot != nil:
 		return convertSnapshotToWire(*event.Snapshot)
+	default:
+		return &v1.WatchTabLinksResponse{}
 	}
-	return &v1.WatchTabLinksResponse{}
 }
 
 func convertSnapshotToWire(snapshot tablinks.Snapshot) *v1.WatchTabLinksResponse {
@@ -151,6 +181,15 @@ func convertSnapshotToWire(snapshot tablinks.Snapshot) *v1.WatchTabLinksResponse
 	for _, tab := range snapshot.Tabs {
 		links.Tabs = append(links.Tabs, &v1.LinkableTab{
 			Id: tab.ID, Kind: tab.Kind, Title: tab.Title, WindowId: tab.WindowID,
+		})
+	}
+	for _, window := range snapshot.Windows {
+		links.Windows = append(links.Windows, &v1.TabWindow{
+			Id:          window.ID,
+			IsMain:      window.IsMain,
+			ActiveTitle: window.ActiveTitle,
+			ActiveKind:  window.ActiveKind,
+			TabCount:    int32(window.TabCount),
 		})
 	}
 	return &v1.WatchTabLinksResponse{Event: &v1.WatchTabLinksResponse_Links{Links: links}}

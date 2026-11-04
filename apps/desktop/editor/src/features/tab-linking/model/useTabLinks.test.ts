@@ -11,6 +11,10 @@ const SNAPSHOT: TabLinksSnapshot = {
     { id: 'plex:1', kind: 'plex', title: 'Orbits', windowId: 'window-a' },
     { id: 'files:2', kind: 'files', title: 'Files', windowId: 'window-b' },
   ],
+  windows: [
+    { id: 'window-a', isMain: true, activeTitle: 'Orbits', activeKind: 'plex', tabCount: 1 },
+    { id: 'window-b', isMain: false, activeTitle: 'Files', activeKind: 'files', tabCount: 1 },
+  ],
 }
 
 const setup = () => {
@@ -36,12 +40,14 @@ describe('useTabLinks snapshot', () => {
     expect(tabLinks.getGroupOf('files:2')?.id).toBe('group-1')
     expect(tabLinks.getLinkedTargets('plex:4')).toStrictEqual(['plex:3', 'plex:5'])
     expect(tabLinks.tabs.map((tab) => tab.windowId)).toStrictEqual(['window-a', 'window-b'])
+    expect(tabLinks.windows).toStrictEqual(SNAPSHOT.windows)
 
-    tabLinks.applySnapshot({ groups: [SNAPSHOT.groups[1]!], tabs: [] })
+    tabLinks.applySnapshot({ groups: [SNAPSHOT.groups[1]!], tabs: [], windows: [] })
 
     expect(tabLinks.getGroupOf('plex:1')).toBeNull()
     expect(tabLinks.groups.size).toBe(1)
     expect(tabLinks.tabs).toStrictEqual([])
+    expect(tabLinks.windows).toStrictEqual([])
   })
 })
 

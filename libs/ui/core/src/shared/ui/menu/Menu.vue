@@ -11,6 +11,7 @@ import { useMenuLifecycle } from './interaction/useMenuLifecycle'
 import { useMenuNavigation } from './interaction/useMenuNavigation'
 import { useMenuPlacement } from './interaction/place'
 import type { MenuEvents, MenuProps, MenuSlots } from './Menu.types'
+import type { MenuItem } from './items/item'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<MenuProps>(), {
@@ -67,6 +68,8 @@ const { visibleItems, rows, here, submenu, focusInitial, onKey, onResetNavigatio
 
 const isMenuVisible = computed(() => Boolean(props.isOpen))
 
+let highlightedId: string | null = null
+
 /* --------------------------------- Hooks ---------------------------------- */
 useMenuLifecycle({
   isOpen: () => isMenuVisible.value,
@@ -81,6 +84,23 @@ useMenuLifecycle({
   getFrom: () => props.from,
   getWatchedDeps: () => [visibleItems.value, props.at],
 })
+
+/* -------------------------------- Handlers -------------------------------- */
+function onRowHover(item: MenuItem, event: MouseEvent): void {
+  submenu.onRowHover(item, event)
+  onHighlight(item.id)
+}
+
+function onMenuLeave(event: MouseEvent): void {
+  submenu.onMenuLeave(event)
+  onHighlight(null)
+}
+
+function onHighlight(id: string | null): void {
+  if (id === highlightedId) return
+  highlightedId = id
+  emit('highlight', id)
+}
 
 /* -------------------------------- Helpers --------------------------------- */
 function getSubmenuPosition(el: HTMLElement | null): Position | null {
@@ -107,7 +127,7 @@ defineExpose({ getElement: () => menu.value })
       :aria-label="name"
       :style="menuStyle"
       @keydown="onKey"
-      @mouseleave="submenu.onMenuLeave"
+      @mouseleave="onMenuLeave"
     >
       <MenuRow
         v-for="(item, index) in rows"
@@ -118,7 +138,7 @@ defineExpose({ getElement: () => menu.value })
         :has-name="hasGroups && Boolean(item.group) && (item.isRule || index === 0)"
         :has-icons="Boolean($slots.icon)"
         @focus="here = index"
-        @hover="(event) => submenu.onRowHover(item, event)"
+        @hover="(event) => onRowHover(item, event)"
         @choose="submenu.onChoose(item)"
       >
         <slot name="icon" :id="item.id" />
@@ -144,6 +164,7 @@ defineExpose({ getElement: () => menu.value })
       is-open
       @choose="submenu.onSubmenuChoose"
       @dismiss="submenu.onClose"
+      @highlight="onHighlight"
     >
       <template v-if="$slots.icon" #icon="{ id }">
         <slot name="icon" :id="id" />

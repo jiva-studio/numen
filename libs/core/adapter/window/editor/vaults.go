@@ -250,30 +250,35 @@ func (h *workspaceHandler) ReadOpenTabs(
 	return connect.NewResponse(out), nil
 }
 
-// DetachTab requests that a tab be opened in a new window.
+// DetachTab stores a tab for ReadDetachedTab, opens a new window for it, and
+// responds after that window accepts the tab or the detach ends. A canceled
+// request ends the detach.
 func (h *workspaceHandler) DetachTab(
 	ctx context.Context, r *connect.Request[v1.DetachTabRequest],
 ) (*connect.Response[v1.DetachTabResponse], error) {
-	if h.state.DetachTab == nil {
+	if h.state.DetachTab == nil || h.state.TabLinks == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errors.New("tab tear-off not supported"))
 	}
-	isLinkable := h.state.TabLinks != nil && r.Msg.GetId() != ""
-	if isLinkable {
-		h.state.TabLinks.Detach(r.Msg.GetId())
+	tab := convertSavedTabFromWire(r.Msg.GetTab())
+	if tab.ID == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("a tab id is required"))
 	}
+	result := h.state.TabLinks.Detach(tab)
 	if err := h.state.DetachTab(ctx, DetachedTab{
-		ID:   r.Msg.GetId(),
-		Kind: r.Msg.GetKind(),
-		Path: r.Msg.GetPath(),
-		X:    int(r.Msg.GetX()),
-		Y:    int(r.Msg.GetY()),
+		ID: tab.ID,
+		X:  int(r.Msg.GetX()),
+		Y:  int(r.Msg.GetY()),
 	}); err != nil {
-		if isLinkable {
-			h.state.TabLinks.CancelDetach(r.Msg.GetId())
-		}
+		h.state.TabLinks.CancelDetach(tab.ID)
 		return nil, err
 	}
-	return connect.NewResponse(&v1.DetachTabResponse{}), nil
+	select {
+	case <-ctx.Done():
+		h.state.TabLinks.CancelDetach(tab.ID)
+		return nil, connect.NewError(connect.CodeCanceled, ctx.Err())
+	case outcome := <-result:
+		return connect.NewResponse(&v1.DetachTabResponse{Error: convertMoveErrorToWire(outcome)}), nil
+	}
 }
 
 // GetOpenTabs returns the open tabs as last reported by the window, or the

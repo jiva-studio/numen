@@ -310,12 +310,6 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 // getSecondaryWindowURL is the page of a window that opens with a torn-off tab.
 func getSecondaryWindowURL(tab editor.DetachedTab) string {
 	query := url.Values{"window": {"secondary"}}
-	if tab.Kind != "" {
-		query.Set("kind", tab.Kind)
-	}
-	if tab.Path != "" {
-		query.Set("path", tab.Path)
-	}
 	if tab.ID != "" {
 		query.Set("id", tab.ID)
 	}

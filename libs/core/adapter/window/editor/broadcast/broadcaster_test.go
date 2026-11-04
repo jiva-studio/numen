@@ -2,6 +2,7 @@ package broadcast
 
 import (
 	"testing"
+	"time"
 )
 
 // A listener reading while tell runs on another goroutine receives numbers
@@ -80,15 +81,24 @@ func TestOrderedBroadcasterQueuesSupersedingMessageLast(t *testing.T) {
 	bcast.Publish(message{"a", "a2"})
 
 	isB1Received := false
-	for got := range line {
-		switch got.text {
-		case "b1":
-			isB1Received = true
-		case "a2":
-			if !isB1Received {
-				t.Fatal("a2 arrived before b1, which was published before it")
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case got, ok := <-line:
+			if !ok {
+				t.Fatal("the subscription closed before a2 arrived")
 			}
-			return
+			switch got.text {
+			case "b1":
+				isB1Received = true
+			case "a2":
+				if !isB1Received {
+					t.Fatal("a2 arrived before b1, which was published before it")
+				}
+				return
+			}
+		case <-deadline:
+			t.Fatal("a2 did not arrive within 5s")
 		}
 	}
 }

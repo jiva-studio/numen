@@ -23,6 +23,7 @@ import {
   SearchMode,
   SearchService,
   SettingsService,
+  TabMoveErrorCode,
   TextErrorCode,
   TextService,
   TextVersionService,
@@ -91,6 +92,9 @@ export type VaultsErrorCodeValue = VaultsErrorCode
 export const COMMAND_ERROR_CODE = CommandErrorCode
 
 export const TEXT_ERROR_CODE = TextErrorCode
+
+export const TAB_MOVE_ERROR_CODE = TabMoveErrorCode
+export type TabMoveErrorCodeValue = TabMoveErrorCode
 
 export const THEME_MODE = Mode
 export type ThemeModeCode = Mode

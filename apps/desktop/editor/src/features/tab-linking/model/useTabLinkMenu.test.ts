@@ -191,3 +191,100 @@ describe('useTabLinkMenu with other windows open', () => {
     expect(menu.eligibleTabs.value.map((tab) => tab.id)).toStrictEqual(['b', 'files:8'])
   })
 })
+
+describe('the Move to window menu state', () => {
+  const WINDOWS = [
+    { id: 'window-a', isMain: true, activeTitle: 'Orbits', activeKind: 'note', tabCount: 2 },
+    { id: 'window-b', isMain: false, activeTitle: 'Tides', activeKind: 'plex', tabCount: 1 },
+    { id: 'window-c', isMain: false, activeTitle: 'Index', activeKind: 'files', tabCount: 1 },
+  ]
+
+  const setupMove = (asking: readonly string[] = []) => {
+    const tabLinks = {
+      tabs: [],
+      windows: WINDOWS,
+      getGroupOf: () => null,
+      getLinkedTargets: () => [],
+      linkTabs: vi.fn(),
+      unlinkTab: vi.fn(),
+    } as unknown as TabLinksState
+    const onMove = vi.fn()
+    const onHighlight = vi.fn()
+    const menu = useTabLinkMenu({
+      tabLinks,
+      getTabs: () => [{ id: 'c', title: 'C' }],
+      getKind: (tab) => KINDS[tab],
+      isLinkable: () => false,
+      windowId: 'window-b',
+      isAsking: (tab) => asking.includes(tab),
+      onMove,
+      onHighlight,
+    })
+    return { menu, onMove, onHighlight }
+  }
+
+  it('opens for a tab that can only be moved and lists every window except this one', () => {
+    const { menu } = setupMove()
+
+    menu.open('c', { x: 1, y: 2 })
+
+    expect(menu.tabId.value).toBe('c')
+    expect(menu.windows.value.map((one) => one.id)).toStrictEqual(['window-a', 'window-c'])
+    expect(menu.isAsking.value).toBe(false)
+  })
+
+  it('reports an asking tab', () => {
+    const { menu } = setupMove(['c'])
+
+    menu.open('c', { x: 1, y: 2 })
+
+    expect(menu.isAsking.value).toBe(true)
+  })
+
+  it('closes the menu and then calls onMove with the chosen window', () => {
+    const { menu, onMove } = setupMove()
+    menu.open('c', { x: 1, y: 2 })
+
+    menu.move('window-a')
+
+    expect(menu.tabId.value).toBeNull()
+    expect(onMove).toHaveBeenCalledExactlyOnceWith('c', 'window-a')
+  })
+
+  it('highlights one window at a time and removes the highlight when the menu closes', () => {
+    const { menu, onHighlight } = setupMove()
+    menu.open('c', { x: 1, y: 2 })
+
+    menu.highlight('window-a')
+    menu.highlight('window-a')
+    menu.highlight('window-c')
+    menu.highlight(null)
+    menu.highlight('window-a')
+    menu.close()
+
+    expect(onHighlight.mock.calls).toStrictEqual([
+      ['window-a', true],
+      ['window-a', false],
+      ['window-c', true],
+      ['window-c', false],
+      ['window-a', true],
+      ['window-a', false],
+    ])
+  })
+
+  it('lists no windows without onMove', () => {
+    const tabLinks = {
+      tabs: [],
+      windows: WINDOWS,
+      getGroupOf: () => null,
+    } as unknown as TabLinksState
+    const menu = useTabLinkMenu({
+      tabLinks,
+      getTabs: () => [],
+      getKind: () => undefined,
+      isLinkable: () => true,
+    })
+
+    expect(menu.windows.value).toStrictEqual([])
+  })
+})

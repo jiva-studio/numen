@@ -62,6 +62,18 @@ const (
 	// WorkspaceServiceSyncTabPathProcedure is the fully-qualified name of the WorkspaceService's
 	// SyncTabPath RPC.
 	WorkspaceServiceSyncTabPathProcedure = "/numen.v1.WorkspaceService/SyncTabPath"
+	// WorkspaceServiceReadDetachedTabProcedure is the fully-qualified name of the WorkspaceService's
+	// ReadDetachedTab RPC.
+	WorkspaceServiceReadDetachedTabProcedure = "/numen.v1.WorkspaceService/ReadDetachedTab"
+	// WorkspaceServiceMoveTabProcedure is the fully-qualified name of the WorkspaceService's MoveTab
+	// RPC.
+	WorkspaceServiceMoveTabProcedure = "/numen.v1.WorkspaceService/MoveTab"
+	// WorkspaceServiceAcceptTabMoveProcedure is the fully-qualified name of the WorkspaceService's
+	// AcceptTabMove RPC.
+	WorkspaceServiceAcceptTabMoveProcedure = "/numen.v1.WorkspaceService/AcceptTabMove"
+	// WorkspaceServiceHighlightWindowProcedure is the fully-qualified name of the WorkspaceService's
+	// HighlightWindow RPC.
+	WorkspaceServiceHighlightWindowProcedure = "/numen.v1.WorkspaceService/HighlightWindow"
 )
 
 // WorkspaceServiceClient is a client for the numen.v1.WorkspaceService service.
@@ -97,6 +109,16 @@ type WorkspaceServiceClient interface {
 	// SyncTabPath sends the new path of a linked tab to every window that watches
 	// the tab links.
 	SyncTabPath(context.Context, *connect.Request[v1.SyncTabPathRequest]) (*connect.Response[v1.SyncTabPathResponse], error)
+	// ReadDetachedTab returns the tab and saved state of a pending DetachTab. The
+	// core stores the tab for the detach grace period.
+	ReadDetachedTab(context.Context, *connect.Request[v1.ReadDetachedTabRequest]) (*connect.Response[v1.ReadDetachedTabResponse], error)
+	// MoveTab sends a tab to another window that watches the tab links, and
+	// responds after that window accepts the tab.
+	MoveTab(context.Context, *connect.Request[v1.MoveTabRequest]) (*connect.Response[v1.MoveTabResponse], error)
+	// AcceptTabMove reports that a window opened a moved tab.
+	AcceptTabMove(context.Context, *connect.Request[v1.AcceptTabMoveRequest]) (*connect.Response[v1.AcceptTabMoveResponse], error)
+	// HighlightWindow turns the outline of a window on or off.
+	HighlightWindow(context.Context, *connect.Request[v1.HighlightWindowRequest]) (*connect.Response[v1.HighlightWindowResponse], error)
 }
 
 // NewWorkspaceServiceClient constructs a client for the numen.v1.WorkspaceService service. By
@@ -158,6 +180,30 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(workspaceServiceMethods.ByName("SyncTabPath")),
 			connect.WithClientOptions(opts...),
 		),
+		readDetachedTab: connect.NewClient[v1.ReadDetachedTabRequest, v1.ReadDetachedTabResponse](
+			httpClient,
+			baseURL+WorkspaceServiceReadDetachedTabProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("ReadDetachedTab")),
+			connect.WithClientOptions(opts...),
+		),
+		moveTab: connect.NewClient[v1.MoveTabRequest, v1.MoveTabResponse](
+			httpClient,
+			baseURL+WorkspaceServiceMoveTabProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("MoveTab")),
+			connect.WithClientOptions(opts...),
+		),
+		acceptTabMove: connect.NewClient[v1.AcceptTabMoveRequest, v1.AcceptTabMoveResponse](
+			httpClient,
+			baseURL+WorkspaceServiceAcceptTabMoveProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("AcceptTabMove")),
+			connect.WithClientOptions(opts...),
+		),
+		highlightWindow: connect.NewClient[v1.HighlightWindowRequest, v1.HighlightWindowResponse](
+			httpClient,
+			baseURL+WorkspaceServiceHighlightWindowProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("HighlightWindow")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -171,6 +217,10 @@ type workspaceServiceClient struct {
 	cancelWatchTabLinks *connect.Client[v1.CancelWatchTabLinksRequest, v1.CancelWatchTabLinksResponse]
 	writeTabLinks       *connect.Client[v1.WriteTabLinksRequest, v1.WriteTabLinksResponse]
 	syncTabPath         *connect.Client[v1.SyncTabPathRequest, v1.SyncTabPathResponse]
+	readDetachedTab     *connect.Client[v1.ReadDetachedTabRequest, v1.ReadDetachedTabResponse]
+	moveTab             *connect.Client[v1.MoveTabRequest, v1.MoveTabResponse]
+	acceptTabMove       *connect.Client[v1.AcceptTabMoveRequest, v1.AcceptTabMoveResponse]
+	highlightWindow     *connect.Client[v1.HighlightWindowRequest, v1.HighlightWindowResponse]
 }
 
 // WatchFocus calls numen.v1.WorkspaceService.WatchFocus.
@@ -213,6 +263,26 @@ func (c *workspaceServiceClient) SyncTabPath(ctx context.Context, req *connect.R
 	return c.syncTabPath.CallUnary(ctx, req)
 }
 
+// ReadDetachedTab calls numen.v1.WorkspaceService.ReadDetachedTab.
+func (c *workspaceServiceClient) ReadDetachedTab(ctx context.Context, req *connect.Request[v1.ReadDetachedTabRequest]) (*connect.Response[v1.ReadDetachedTabResponse], error) {
+	return c.readDetachedTab.CallUnary(ctx, req)
+}
+
+// MoveTab calls numen.v1.WorkspaceService.MoveTab.
+func (c *workspaceServiceClient) MoveTab(ctx context.Context, req *connect.Request[v1.MoveTabRequest]) (*connect.Response[v1.MoveTabResponse], error) {
+	return c.moveTab.CallUnary(ctx, req)
+}
+
+// AcceptTabMove calls numen.v1.WorkspaceService.AcceptTabMove.
+func (c *workspaceServiceClient) AcceptTabMove(ctx context.Context, req *connect.Request[v1.AcceptTabMoveRequest]) (*connect.Response[v1.AcceptTabMoveResponse], error) {
+	return c.acceptTabMove.CallUnary(ctx, req)
+}
+
+// HighlightWindow calls numen.v1.WorkspaceService.HighlightWindow.
+func (c *workspaceServiceClient) HighlightWindow(ctx context.Context, req *connect.Request[v1.HighlightWindowRequest]) (*connect.Response[v1.HighlightWindowResponse], error) {
+	return c.highlightWindow.CallUnary(ctx, req)
+}
+
 // WorkspaceServiceHandler is an implementation of the numen.v1.WorkspaceService service.
 type WorkspaceServiceHandler interface {
 	// WatchFocus reports the places something else asked to be put in front of
@@ -246,6 +316,16 @@ type WorkspaceServiceHandler interface {
 	// SyncTabPath sends the new path of a linked tab to every window that watches
 	// the tab links.
 	SyncTabPath(context.Context, *connect.Request[v1.SyncTabPathRequest]) (*connect.Response[v1.SyncTabPathResponse], error)
+	// ReadDetachedTab returns the tab and saved state of a pending DetachTab. The
+	// core stores the tab for the detach grace period.
+	ReadDetachedTab(context.Context, *connect.Request[v1.ReadDetachedTabRequest]) (*connect.Response[v1.ReadDetachedTabResponse], error)
+	// MoveTab sends a tab to another window that watches the tab links, and
+	// responds after that window accepts the tab.
+	MoveTab(context.Context, *connect.Request[v1.MoveTabRequest]) (*connect.Response[v1.MoveTabResponse], error)
+	// AcceptTabMove reports that a window opened a moved tab.
+	AcceptTabMove(context.Context, *connect.Request[v1.AcceptTabMoveRequest]) (*connect.Response[v1.AcceptTabMoveResponse], error)
+	// HighlightWindow turns the outline of a window on or off.
+	HighlightWindow(context.Context, *connect.Request[v1.HighlightWindowRequest]) (*connect.Response[v1.HighlightWindowResponse], error)
 }
 
 // NewWorkspaceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -303,6 +383,30 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 		connect.WithSchema(workspaceServiceMethods.ByName("SyncTabPath")),
 		connect.WithHandlerOptions(opts...),
 	)
+	workspaceServiceReadDetachedTabHandler := connect.NewUnaryHandler(
+		WorkspaceServiceReadDetachedTabProcedure,
+		svc.ReadDetachedTab,
+		connect.WithSchema(workspaceServiceMethods.ByName("ReadDetachedTab")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceMoveTabHandler := connect.NewUnaryHandler(
+		WorkspaceServiceMoveTabProcedure,
+		svc.MoveTab,
+		connect.WithSchema(workspaceServiceMethods.ByName("MoveTab")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceAcceptTabMoveHandler := connect.NewUnaryHandler(
+		WorkspaceServiceAcceptTabMoveProcedure,
+		svc.AcceptTabMove,
+		connect.WithSchema(workspaceServiceMethods.ByName("AcceptTabMove")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceHighlightWindowHandler := connect.NewUnaryHandler(
+		WorkspaceServiceHighlightWindowProcedure,
+		svc.HighlightWindow,
+		connect.WithSchema(workspaceServiceMethods.ByName("HighlightWindow")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.WorkspaceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case WorkspaceServiceWatchFocusProcedure:
@@ -321,6 +425,14 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 			workspaceServiceWriteTabLinksHandler.ServeHTTP(w, r)
 		case WorkspaceServiceSyncTabPathProcedure:
 			workspaceServiceSyncTabPathHandler.ServeHTTP(w, r)
+		case WorkspaceServiceReadDetachedTabProcedure:
+			workspaceServiceReadDetachedTabHandler.ServeHTTP(w, r)
+		case WorkspaceServiceMoveTabProcedure:
+			workspaceServiceMoveTabHandler.ServeHTTP(w, r)
+		case WorkspaceServiceAcceptTabMoveProcedure:
+			workspaceServiceAcceptTabMoveHandler.ServeHTTP(w, r)
+		case WorkspaceServiceHighlightWindowProcedure:
+			workspaceServiceHighlightWindowHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -360,4 +472,20 @@ func (UnimplementedWorkspaceServiceHandler) WriteTabLinks(context.Context, *conn
 
 func (UnimplementedWorkspaceServiceHandler) SyncTabPath(context.Context, *connect.Request[v1.SyncTabPathRequest]) (*connect.Response[v1.SyncTabPathResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.SyncTabPath is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) ReadDetachedTab(context.Context, *connect.Request[v1.ReadDetachedTabRequest]) (*connect.Response[v1.ReadDetachedTabResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.ReadDetachedTab is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) MoveTab(context.Context, *connect.Request[v1.MoveTabRequest]) (*connect.Response[v1.MoveTabResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.MoveTab is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) AcceptTabMove(context.Context, *connect.Request[v1.AcceptTabMoveRequest]) (*connect.Response[v1.AcceptTabMoveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.AcceptTabMove is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) HighlightWindow(context.Context, *connect.Request[v1.HighlightWindowRequest]) (*connect.Response[v1.HighlightWindowResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.HighlightWindow is not implemented"))
 }

@@ -4,6 +4,7 @@ import type { TabLinksEvent } from '../ports/vault'
 import {
   createTabLinkSession,
   getLinkableTabs,
+  getWindowReport,
   REPORT_RETRY_MS,
   type TabLinkSessionDeps,
 } from './tabLinkSession'
@@ -22,9 +23,21 @@ const SNAPSHOT = {
     { id: 'plex:1', kind: 'plex', title: 'Orbits', windowId: 'window-a' },
     { id: 'plex:2', kind: 'plex', title: 'Tides', windowId: 'window-b' },
   ],
+  windows: [],
 }
 const SYNC = { groupId: 'group-1', sourceTabId: 'plex:2', path: 'Tides.md', title: 'Tides' }
 const OPEN_TABS = [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }]
+const WINDOW = { isMain: true, activeTitle: 'Orbits', activeKind: 'plex', tabCount: 1 }
+const MOVED_TAB = {
+  tab: {
+    id: 'plex:2',
+    kind: 'plex',
+    path: 'notes/Tides.md',
+    title: 'Tides',
+    state: '{"focus":"Moon"}',
+  },
+  moveId: 'move-1',
+}
 
 /** Returns a stream that yields the events, then waits until the signal aborts. */
 async function* createStream(events: readonly TabLinksEvent[], signal: AbortSignal) {
@@ -41,6 +54,9 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
     }),
     cancelTabLinksWatch: vi.fn((_windowId: string) => Promise.resolve()),
     writeTabLinks: vi.fn((_windowId: string, _change: unknown) => Promise.resolve()),
+    acceptTabMove: vi.fn((_windowId: string, _tabId: string, _moveId: string) =>
+      Promise.resolve({ ok: true as const, value: undefined }),
+    ),
   }
   const deps = {
     core,
@@ -48,7 +64,9 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
     tabLinks: { applySnapshot: vi.fn() },
     applySync: vi.fn(),
     applyGroupPaths: vi.fn(),
-    getOpenTabs,
+    openMovedTab: vi.fn(),
+    setHighlighted: vi.fn(),
+    getReport: () => ({ tabs: getOpenTabs(), window: WINDOW }),
     wait: vi.fn((_ms: number) => Promise.resolve()),
     onError: vi.fn(),
   } satisfies TabLinkSessionDeps
@@ -64,7 +82,10 @@ describe('createTabLinkSession', () => {
     await vi.waitFor(() => expect(deps.applySync).toHaveBeenCalledWith(SYNC))
     expect(core.watchTabLinks).toHaveBeenCalledWith('window-a', expect.any(AbortSignal))
     expect(deps.tabLinks.applySnapshot).toHaveBeenCalledExactlyOnceWith(SNAPSHOT)
-    expect(core.writeTabLinks).toHaveBeenCalledExactlyOnceWith('window-a', { tabs: OPEN_TABS })
+    expect(core.writeTabLinks).toHaveBeenCalledExactlyOnceWith('window-a', {
+      tabs: OPEN_TABS,
+      window: WINDOW,
+    })
     session.close()
     await stream
   })
@@ -162,12 +183,13 @@ describe('reportTabs', () => {
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
     expect(core.writeTabLinks.mock.calls.map(([, change]) => change)).toStrictEqual([
-      { tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }] },
+      { tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }], window: WINDOW },
       {
         tabs: [
           { id: 'plex:1', kind: 'plex', title: 'Orbits' },
           { id: 'plex:2', kind: 'plex', title: 'Tides' },
         ],
+        window: WINDOW,
       },
     ])
     session.close()
@@ -207,7 +229,10 @@ describe('a failed tab report', () => {
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
     expect(deps.wait).toHaveBeenCalledWith(REPORT_RETRY_MS)
-    expect(core.writeTabLinks.mock.calls[1]).toStrictEqual(['window-a', { tabs: OPEN_TABS }])
+    expect(core.writeTabLinks.mock.calls[1]).toStrictEqual([
+      'window-a',
+      { tabs: OPEN_TABS, window: WINDOW },
+    ])
   })
 
   it('is replaced by a newer report made during the retry delay', async () => {
@@ -229,6 +254,7 @@ describe('a failed tab report', () => {
         { id: 'plex:1', kind: 'plex', title: 'Orbits' },
         { id: 'plex:2', kind: 'plex', title: 'Tides' },
       ],
+      window: WINDOW,
     })
   })
 
@@ -271,5 +297,124 @@ describe('reopen', () => {
     await session.reopen()
 
     expect(core.watchTabLinks).not.toHaveBeenCalled()
+  })
+})
+
+describe('stream events for this window', () => {
+  it('opens a moved tab and sets the highlight from the stream', async () => {
+    const { deps, session } = setup([
+      { movedTab: MOVED_TAB },
+      { isHighlighted: true },
+      { isHighlighted: false },
+    ])
+
+    const stream = session.start()
+
+    await vi.waitFor(() => expect(deps.setHighlighted).toHaveBeenCalledTimes(2))
+    expect(deps.openMovedTab).toHaveBeenCalledExactlyOnceWith(MOVED_TAB)
+    expect(deps.setHighlighted.mock.calls).toStrictEqual([[true], [false]])
+    session.close()
+    await stream
+  })
+
+  it('settles waitForReports after the pending tab report is written', async () => {
+    const { core, session } = setup([])
+    let finishReport: () => void = () => undefined
+    core.writeTabLinks.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishReport = resolve)),
+    )
+    let isSettled = false
+
+    session.reportTabs()
+    const reports = session.waitForReports().then(() => (isSettled = true))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(isSettled).toBe(false)
+    finishReport()
+    await reports
+
+    expect(isSettled).toBe(true)
+  })
+
+  it('sends AcceptTabMove after the pending tab reports complete', async () => {
+    const { core, session } = setup([])
+    let finishReport: () => void = () => undefined
+    core.writeTabLinks.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishReport = resolve)),
+    )
+
+    session.reportTabs()
+    const accepted = session.acceptMove('plex:2', 'move-1')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(core.acceptTabMove).not.toHaveBeenCalled()
+    finishReport()
+
+    expect(await accepted).toStrictEqual({ ok: true, value: undefined })
+    expect(core.acceptTabMove).toHaveBeenCalledExactlyOnceWith('window-a', 'plex:2', 'move-1')
+  })
+
+  it('sends AcceptTabMove after a failed report is sent again', async () => {
+    const { deps, core, session } = setup([])
+    core.writeTabLinks.mockRejectedValueOnce(new Error('the core is gone'))
+    let endDelay = (): void => undefined
+    deps.wait.mockImplementationOnce(() => new Promise<void>((resolve) => (endDelay = resolve)))
+
+    session.reportTabs()
+    const accepted = session.acceptMove('plex:2', 'move-1')
+    await vi.waitFor(() => expect(deps.wait).toHaveBeenCalledOnce())
+    expect(core.acceptTabMove).not.toHaveBeenCalled()
+    endDelay()
+
+    expect(await accepted).toStrictEqual({ ok: true, value: undefined })
+    expect(core.writeTabLinks).toHaveBeenCalledTimes(2)
+    expect(core.writeTabLinks.mock.invocationCallOrder[1]).toBeLessThan(
+      core.acceptTabMove.mock.invocationCallOrder[0] ?? 0,
+    )
+  })
+
+  it('sends later tab reports when AcceptTabMove fails', async () => {
+    const { core, session } = setup([])
+    core.acceptTabMove.mockRejectedValueOnce(new Error('the core is gone'))
+
+    await expect(session.acceptMove('plex:2', 'move-1')).rejects.toThrow('the core is gone')
+    session.reportTabs()
+
+    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledOnce())
+  })
+})
+
+describe('getWindowReport', () => {
+  it('returns the active tab title and kind and the tab count', () => {
+    const kinds: Record<string, { kind: string; navigate?: () => void }> = {
+      'plex:1': { kind: 'plex', navigate: () => undefined },
+      'agent:1': { kind: 'agent' },
+    }
+    const windowTabs = {
+      tabs: computed(() => [
+        { id: 'agent:1', title: 'Agent' },
+        { id: 'plex:1', title: 'Orbits' },
+      ]),
+      getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
+      handle: { front: () => ({ id: 'agent:1', kind: 'agent', state: null }) },
+    } as unknown as Parameters<typeof getWindowReport>[0]
+
+    expect(getWindowReport(windowTabs, false)).toStrictEqual({
+      tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }],
+      window: { isMain: false, activeTitle: 'Agent', activeKind: 'agent', tabCount: 2 },
+    })
+  })
+
+  it('returns an empty active tab when no tab is active', () => {
+    const windowTabs = {
+      tabs: computed(() => []),
+      getTab: () => null,
+      handle: { front: () => null },
+    } as unknown as Parameters<typeof getWindowReport>[0]
+
+    expect(getWindowReport(windowTabs, true).window).toStrictEqual({
+      isMain: true,
+      activeTitle: '',
+      activeKind: '',
+      tabCount: 0,
+    })
   })
 })

@@ -218,17 +218,27 @@ describe('the streams a window follows', () => {
 })
 
 describe('detaching a tab', () => {
-  it('asks the workspace to open a new window for the tab', async () => {
-    request.detachTab.mockResolvedValue({})
-    await sessionCore.detachTab(
-      { id: 'plex:3b9d', kind: 'plex', path: 'Physics.md' },
-      { x: 100.6, y: 200.4 },
-    )
-
-    expect(request.detachTab).toHaveBeenCalledWith({
+  it('sends DetachTab with the tab, its saved state and the rounded position', async () => {
+    request.detachTab.mockResolvedValueOnce({ error: 0 })
+    request.detachTab.mockResolvedValueOnce({ error: 2 })
+    const tab = {
       id: 'plex:3b9d',
       kind: 'plex',
       path: 'Physics.md',
+      title: 'Physics',
+      state: '{"focus":"Kepler"}',
+    }
+    expect(await sessionCore.detachTab(tab, { x: 100.6, y: 200.4 })).toStrictEqual({
+      ok: true,
+      value: undefined,
+    })
+    expect(await sessionCore.detachTab(tab, { x: 0, y: 0 })).toStrictEqual({
+      ok: false,
+      error: 'timeout',
+    })
+
+    expect(request.detachTab).toHaveBeenCalledWith({
+      tab,
       x: 101,
       y: 200,
     })

@@ -1,9 +1,9 @@
 /**
- * The menu that links a tab to another: the tab it was requested on, its position, and
- * the effect of choosing an item. Lists the tabs of this window and the linkable tabs of
- * other windows.
+ * The menu of a tab: the tab it was requested on, its position, and the effect of choosing an
+ * item. Detaches the tab, moves it to another window, or links it to a tab of this window or a
+ * linkable tab of another window.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { getAllTabs, getEligibleTabs, getLinkedTitle } from '../lib/eligibility'
 import type { TabId, TabLinksState } from '../types'
 
@@ -15,6 +15,35 @@ export interface TabLinkMenuDeps {
   /** Returns whether a tab of this window can be linked. */
   isLinkable(tab: TabId): boolean
   onDetach?(tab: TabId, position: { x: number; y: number }): void
+  /** The id of this window, excluded from the move targets. */
+  readonly windowId?: string
+  /** Whether a tab of this window is asking; an asking tab is not moved or detached. */
+  isAsking?(tab: TabId): boolean
+  onMove?(tab: TabId, windowId: string): void
+  /** Turns the highlight of another window on or off while the pointer is over its item. */
+  onHighlight?(windowId: string, isOn: boolean): void
+}
+
+/** Returns the move targets, the asking state of the tab, and the highlight control. */
+function createWindowMoves(deps: TabLinkMenuDeps, tabId: Ref<TabId | null>) {
+  /** The other windows, main window first; empty without onMove. */
+  const windows = computed(() =>
+    deps.onMove ? deps.tabLinks.windows.filter((one) => one.id !== deps.windowId) : [],
+  )
+
+  const isAsking = computed(() => tabId.value !== null && (deps.isAsking?.(tabId.value) ?? false))
+
+  let highlightedWindowId: string | null = null
+
+  /** Turns the highlight on for the window and off for the previously highlighted window. */
+  const highlight = (windowId: string | null): void => {
+    if (windowId === highlightedWindowId) return
+    if (highlightedWindowId !== null) deps.onHighlight?.(highlightedWindowId, false)
+    highlightedWindowId = windowId
+    if (windowId !== null) deps.onHighlight?.(windowId, true)
+  }
+
+  return { windows, isAsking, highlight }
 }
 
 export function useTabLinkMenu(deps: TabLinkMenuDeps) {
@@ -53,14 +82,17 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
 
   const canDetach = computed(() => deps.onDetach !== undefined)
 
-  /** Opens the menu on a tab; a tab that can neither be linked nor detached has none. */
+  const { windows, isAsking, highlight } = createWindowMoves(deps, tabId)
+
+  /** Opens the menu on a tab; a tab that can be neither linked, detached nor moved has none. */
   const open = (tab: TabId, where: { x: number; y: number }): void => {
-    if (!deps.isLinkable(tab) && !deps.onDetach) return
+    if (!deps.isLinkable(tab) && !deps.onDetach && !deps.onMove) return
     tabId.value = tab
     coords.value = where
   }
 
   const close = (): void => {
+    highlight(null)
     tabId.value = null
   }
 
@@ -77,11 +109,15 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
   }
 
   const detach = (): void => {
-    if (tabId.value === null) return
     const target = tabId.value
-    const where = coords.value
     close()
-    deps.onDetach?.(target, where)
+    if (target !== null) deps.onDetach?.(target, coords.value)
+  }
+
+  const move = (windowId: string): void => {
+    const target = tabId.value
+    close()
+    if (target !== null) deps.onMove?.(target, windowId)
   }
 
   const api = {
@@ -91,11 +127,15 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
     linkedTargetTitle,
     isLinked,
     canDetach,
+    windows,
+    isAsking,
     open,
     close,
     link,
     unlink,
     detach,
+    move,
+    highlight,
   }
   return api
 }

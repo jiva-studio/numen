@@ -105,6 +105,7 @@ export function useWindowTabs(unavailable: UnavailableServices = {}) {
     getTabStateIn: queries.getTabStateIn,
     createTab: openers.createTab,
     openTabOfKind: openers.openTabOfKind,
+    openSavedTab: (saved: SavedTab) => openSavedTabAsActive(open, openers, saved),
     openTabAdjacentOfKind: openers.openTabAdjacentOfKind,
     show: openers.show,
     finishClose: openers.finishClose,
@@ -334,6 +335,16 @@ const openInIsolation = (saved: SavedTab, one: AnyTabKind) => {
       openInScope(placeholderScope, () => failed.open(saved.path, saved.id, saved.saved)),
     ] as const
   }
+}
+
+/** Opens a saved tab with its id and state unless it is open, and activates it. */
+function openSavedTabAsActive(
+  open: ShallowRef<ReadonlyMap<string, WindowTab>>,
+  openers: Pick<ReturnType<typeof createTabOpeners>, 'openSavedTab' | 'show'>,
+  saved: SavedTab,
+) {
+  if (!open.value.has(saved.id)) openers.openSavedTab(saved)
+  openers.show(saved.id)
 }
 
 /** Operations for creating and opening tabs. */
