@@ -43,14 +43,14 @@ func TestTimeSelectorEncodeRejectsNaN(t *testing.T) {
 
 type hookStore struct {
 	host.Store
-	withVault  domain.VaultID
-	readErr    func(name string) error
-	writeErr   func(name string) error
-	appendErr  func(name string) error
-	deleteErr  func(name string) error
-	listErr    func(call int) error
-	renameErr  error
-	listCalls  int
+	withVault domain.VaultID
+	readErr   func(name string) error
+	writeErr  func(name string) error
+	appendErr func(name string) error
+	deleteErr func(name string) error
+	listErr   func(call int) error
+	renameErr error
+	listCalls int
 }
 
 func (s *hookStore) With(id domain.VaultID) host.Store {
@@ -376,25 +376,32 @@ func TestStoreWriterLimitsAndChunks(t *testing.T) {
 	}
 }
 
-func TestLinksCloseReadAndStoreScoping(t *testing.T) {
-	ctx := t.Context()
-	v := hosttest.New("Mills")
-	hv := &hookVault{Vault: v}
-	hs := &hookStore{Store: v.Store()}
-	ht := &hookTexts{Texts: hosttest.NewTexts(v.Vault().ID, "plug")}
+// createTestLinks returns Links over a fresh test vault with hooked host
+// services and a stub fetcher; copyMaxSize backs Settings.CopyMaxSize.
+func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStore, ht *hookTexts, hq *hookQueue, sf *stubFetcher, copyMaxSize *int64) {
+	v = hosttest.New("Mills")
+	hv = &hookVault{Vault: v}
+	hs = &hookStore{Store: v.Store()}
+	ht = &hookTexts{Texts: hosttest.NewTexts(v.Vault().ID, "plug")}
 	ht.Texts.(*hosttest.Texts).SetStore("plug", v.Store())
-	hq := &hookQueue{Queue: hosttest.NewQueue()}
-	sf := &stubFetcher{
+	hq = &hookQueue{Queue: hosttest.NewQueue()}
+	sf = &stubFetcher{
 		canCopy:   true,
 		meta:      download.Metadata{Bytes: 4},
 		text:      download.Text{Producer: "article", Title: "T", Prose: "body"},
 		copyRes:   download.Copy{MediaType: "video/mp4", Extension: ".mp4"},
 		copyBytes: []byte("data"),
 	}
-	var maxSize int64
-	l := New(Host{Vault: hv, Store: hs, Texts: ht, Queue: hq, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
+	copyMaxSize = new(int64)
+	l = New(Host{Vault: hv, Store: hs, Texts: ht, Queue: hq, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
 		func() Fetcher { return sf },
-		func() Settings { return Settings{CopyMaxSize: maxSize} })
+		func() Settings { return Settings{CopyMaxSize: *copyMaxSize} })
+	return l, v, hv, hs, ht, hq, sf, copyMaxSize
+}
+
+func TestLinksCloseReadAndStoreScoping(t *testing.T) {
+	ctx := t.Context()
+	l, v, hv, hs, ht, _, sf, _ := createTestLinks()
 
 	// Scoping with empty vs non-empty Vault.
 	hs.withVault = "dirty"
@@ -469,23 +476,7 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 
 func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	ctx := t.Context()
-	v := hosttest.New("Mills")
-	hv := &hookVault{Vault: v}
-	hs := &hookStore{Store: v.Store()}
-	ht := &hookTexts{Texts: hosttest.NewTexts(v.Vault().ID, "plug")}
-	ht.Texts.(*hosttest.Texts).SetStore("plug", v.Store())
-	hq := &hookQueue{Queue: hosttest.NewQueue()}
-	sf := &stubFetcher{
-		canCopy:   true,
-		meta:      download.Metadata{Bytes: 4},
-		text:      download.Text{Producer: "article", Title: "T", Prose: "body"},
-		copyRes:   download.Copy{MediaType: "video/mp4", Extension: ".mp4"},
-		copyBytes: []byte("data"),
-	}
-	var maxSize int64
-	l := New(Host{Vault: hv, Store: hs, Texts: ht, Queue: hq, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
-		func() Fetcher { return sf },
-		func() Settings { return Settings{CopyMaxSize: maxSize} })
+	l, v, _, hs, ht, hq, sf, maxSize := createTestLinks()
 	t.Cleanup(l.Close)
 
 	made, err := l.Create(ctx, "links", "https://example.com/a")
@@ -663,17 +654,17 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	}
 	sf.metaErr = nil
 
-	maxSize = 3
+	*maxSize = 3
 	sf.meta = download.Metadata{Bytes: 4}
 	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrTooLarge) || size != 4 {
 		t.Errorf("Copy(too large meta) = (%d, %v), want (4, ErrTooLarge)", size, err)
 	}
-	maxSize = 1
+	*maxSize = 1
 	sf.meta = download.Metadata{Bytes: 2}
 	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrTooLarge) || size != 2 {
 		t.Errorf("Copy(meta 2 > limit 1) = (%d, %v), want (2, ErrTooLarge)", size, err)
 	}
-	maxSize = 4
+	*maxSize = 4
 	sf.meta = download.Metadata{Bytes: 4}
 
 	hq.enqueueErr = boom
@@ -731,7 +722,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	_ = hs.Delete(ctx, made.Hash+".mp4")
 
 	// Copy with 1-byte file at exact maxSize=1, then 2nd Copy reuses existing 1-byte file without downloading.
-	maxSize = 1
+	*maxSize = 1
 	sf.meta = download.Metadata{Bytes: 1}
 	sf.copyBytes = []byte{0x7f}
 	sf.downloads = 0

@@ -2,6 +2,7 @@ package cardtools_test
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -1049,37 +1050,34 @@ func TestCardToolsLimitsAndEdgeCases(t *testing.T) {
 	}
 
 	// card_model_edit error branches.
-	if msg := getToolError(t, session, "card_model_edit", map[string]any{
-		"path": "Animal.md", "fields": []string{"Name"}, "fingerprint": "",
-	}); !strings.Contains(msg, "fingerprint") {
-		t.Fatalf("expected fingerprint error, got %q", msg)
-	}
-	if msg := getToolError(t, session, "card_model_edit", map[string]any{
-		"path": "Missing.md", "fields": []string{"Name"}, "fingerprint": "1-1",
-	}); !strings.Contains(msg, "no note") {
-		t.Fatalf("expected missing error, got %q", msg)
-	}
-	if msg := getToolError(t, session, "card_model_edit", map[string]any{
-		"path": "Entropy.md", "fields": []string{"Name"}, "fingerprint": "1-1",
-	}); !strings.Contains(msg, "not a card model") {
-		t.Fatalf("expected not a card model error, got %q", msg)
+	for _, tc := range []struct{ path, fingerprint, want, label string }{
+		{"Animal.md", "", "fingerprint", "fingerprint"},
+		{"Missing.md", "1-1", "no note", "missing"},
+		{"Entropy.md", "1-1", "not a card model", "not a card model"},
+	} {
+		msg := getToolError(t, session, "card_model_edit", map[string]any{
+			"path": tc.path, "fields": []string{"Name"}, "fingerprint": tc.fingerprint,
+		})
+		if !strings.Contains(msg, tc.want) {
+			t.Fatalf("expected %s error, got %q", tc.label, msg)
+		}
 	}
 
 	// Oversized card_add and card_edit, and invalid fingerprint on writeDeck.
 	huge := strings.Repeat("x", (4<<20)+1)
-	if msg := getToolError(t, session, "card_add", map[string]any{
-		"path": "Animals.md", "cardModel": "Animal",
-		"values":      []map[string]string{{"field": "Name", "text": huge}},
-		"fingerprint": "1-1",
-	}); !strings.Contains(msg, "more than this writes at once") {
-		t.Fatalf("expected size error on card_add, got %q", msg)
-	}
-	if msg := getToolError(t, session, "card_edit", map[string]any{
-		"path": "Animals.md", "cardId": llama,
-		"values":      []map[string]string{{"field": "Name", "text": huge}},
-		"fingerprint": "1-1",
-	}); !strings.Contains(msg, "more than this writes at once") {
-		t.Fatalf("expected size error on card_edit, got %q", msg)
+	for tool, target := range map[string]map[string]any{
+		"card_add":  {"cardModel": "Animal"},
+		"card_edit": {"cardId": llama},
+	} {
+		args := map[string]any{
+			"path":        "Animals.md",
+			"values":      []map[string]string{{"field": "Name", "text": huge}},
+			"fingerprint": "1-1",
+		}
+		maps.Copy(args, target)
+		if msg := getToolError(t, session, tool, args); !strings.Contains(msg, "more than this writes at once") {
+			t.Fatalf("expected size error on %s, got %q", tool, msg)
+		}
 	}
 	if msg := getToolError(t, session, "card_section_add", map[string]any{
 		"path": "Animals.md", "name": "Sec", "fingerprint": "",

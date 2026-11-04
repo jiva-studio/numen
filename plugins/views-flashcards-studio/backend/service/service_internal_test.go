@@ -390,20 +390,16 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 			t.Fatalf("expected CodeInvalidArgument for empty fields, got %v", err)
 		}
 
-		if _, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{
-			Path: "Term.md", From: "MissingField", To: "NewField",
-		}); codeOf(err) != server.CodeInvalidArgument {
-			t.Fatalf("expected CodeInvalidArgument for ErrNoSuchField, got %v", err)
-		}
-		if _, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{
-			Path: "Term.md", From: "Word", To: "Meaning",
-		}); codeOf(err) != server.CodeInvalidArgument {
-			t.Fatalf("expected CodeInvalidArgument for ErrFieldTaken, got %v", err)
-		}
-		if _, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{
-			Path: "../../outside.md", From: "Word", To: "Other",
-		}); codeOf(err) != server.CodeInvalidArgument {
-			t.Fatalf("expected CodeInvalidArgument for outside path, got %v", err)
+		for _, tc := range []struct{ path, from, to, label string }{
+			{"Term.md", "MissingField", "NewField", "ErrNoSuchField"},
+			{"Term.md", "Word", "Meaning", "ErrFieldTaken"},
+			{"../../outside.md", "Word", "Other", "outside path"},
+		} {
+			if _, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{
+				Path: tc.path, From: tc.from, To: tc.to,
+			}); codeOf(err) != server.CodeInvalidArgument {
+				t.Fatalf("expected CodeInvalidArgument for %s, got %v", tc.label, err)
+			}
 		}
 		renamedStale, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{
 			Path:     "Term.md",
