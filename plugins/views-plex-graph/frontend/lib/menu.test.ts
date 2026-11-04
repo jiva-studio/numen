@@ -6,7 +6,15 @@ import { createNodeItems, ITEMS, NEW_NOTE, NONE, OFFERED } from './menu'
 
 describe('what the menu offers', () => {
   it('offers the commands of the window over a note', () => {
-    const expected = ['read', 'copy', 'child', 'parent', 'jump', 'title', 'remove']
+    const expected = [
+      'app:note.open',
+      'app:note.copy-path',
+      'app:note.create-child',
+      'app:note.create-parent',
+      'app:note.create-jump',
+      'app:note.rename',
+      'app:note.trash',
+    ]
     expect([...ITEMS.map((item) => item.id)].sort()).toStrictEqual([...expected].sort())
   })
 
@@ -28,7 +36,7 @@ describe('what the menu offers', () => {
   it('holds every item it draws, and no command reached on another row', () => {
     for (const item of ITEMS) expect(OFFERED.has(item.id)).toBe(true)
 
-    expect(OFFERED.has('destroy')).toBe(false)
+    expect(OFFERED.has('app:note.delete')).toBe(false)
     expect(OFFERED.has('constructor')).toBe(false)
   })
 })
@@ -41,15 +49,15 @@ describe('what the menu on a node offers of the commands plugins declare', () =>
     ])
 
     expect(items.map((item) => [item.id, item.group])).toStrictEqual([
-      ['read', 'open'],
+      ['app:note.open', 'open'],
       ['plugin:share', 'declared'],
       ['plugin:print', 'declared'],
-      ['copy', 'file'],
-      ['child', 'plex'],
-      ['parent', 'plex'],
-      ['jump', 'plex'],
-      ['title', 'plex'],
-      ['remove', 'remove'],
+      ['app:note.copy-path', 'file'],
+      ['app:note.create-child', 'plex'],
+      ['app:note.create-parent', 'plex'],
+      ['app:note.create-jump', 'plex'],
+      ['app:note.rename', 'plex'],
+      ['app:note.trash', 'remove'],
     ])
   })
 

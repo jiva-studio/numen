@@ -350,7 +350,7 @@ describe('rows requested to go', () => {
 
     one.remove(['Entropy.md', 'Cover.png'])
 
-    expect(recorded).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
   })
 
   it('ask for nothing where nothing is selected', async () => {
