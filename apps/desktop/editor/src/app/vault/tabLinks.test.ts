@@ -11,7 +11,7 @@ const request = vi.hoisted(() => ({
   syncTabPath: vi.fn(),
 }))
 
-vi.mock('@/shared/clients', () => ({ workspace: request }))
+vi.mock('@/shared/clients', () => ({ workspace: request, keepaliveWorkspace: request }))
 
 beforeEach(() => {
   vi.clearAllMocks()

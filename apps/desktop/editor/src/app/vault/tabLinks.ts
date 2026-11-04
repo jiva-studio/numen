@@ -1,7 +1,7 @@
 /**
  * Tab links client: maps the tab links requests and stream to the workspace service.
  */
-import { workspace } from '@/shared/clients'
+import { keepaliveWorkspace, workspace } from '@/shared/clients'
 import type { VaultPort } from '@/app/ports/vault'
 import type { TabLinksSnapshot } from '@/features/tab-linking'
 
@@ -47,7 +47,7 @@ export const tabLinksCore: TabLinksCore = {
     }
   },
   cancelTabLinksWatch: async (windowId) => {
-    await workspace.cancelWatchTabLinks({ windowId })
+    await keepaliveWorkspace.cancelWatchTabLinks({ windowId })
   },
   writeTabLinks: async (windowId, change) => {
     if ('link' in change) {
