@@ -54,6 +54,12 @@ describe('the icon a command is drawn with', () => {
     for (const one of ways) expect(findIcon(one.id), one.id).not.toBeNull()
   })
 
+  it('is nothing for a command of the window that no icon is kept for', () => {
+    expect(findIcon(COMMAND.moveFile)).toBeNull()
+    expect(findIcon(COMMAND.createFolder)).toBeNull()
+    expect(findIcon('mode:dark')).toBeNull()
+  })
+
   it('is nothing for an identity no list carries', () => {
     expect(findIcon('constructor')).toBeNull()
     expect(findIcon('nothing of the sort')).toBeNull()

@@ -129,16 +129,16 @@ const HEADINGS: Readonly<Record<string, readonly PlexHeading[]>> = {
  * create from it in the plex, agent actions, and removal from the vault.
  */
 const MENU: readonly MenuItem[] = [
-  { id: 'read', text: 'Open note', group: 'open' },
-  { id: 'travel', text: 'Show in plex', group: 'open' },
-  { id: 'copy', text: 'Copy path', group: 'file' },
-  { id: 'reveal', text: 'Show in files', group: 'file' },
-  { id: 'child', text: 'New child note', group: 'plex' },
-  { id: 'parent', text: 'New parent note', group: 'plex' },
-  { id: 'jump', text: 'New jump note', group: 'plex' },
-  { id: 'title', text: 'Change title', group: 'plex' },
-  { id: 'ask', text: 'Ask the agent about this note', group: 'agent' },
-  { id: 'remove', text: 'Remove note', group: 'remove' },
+  { id: 'app:note.open', text: 'Open note', group: 'open' },
+  { id: 'travel', text: 'Show note in plex', group: 'open' },
+  { id: 'app:note.copy-path', text: 'Copy note path', group: 'file' },
+  { id: 'reveal', text: 'Show note in file tree', group: 'file' },
+  { id: 'app:note.create-child', text: 'Create child note', group: 'plex' },
+  { id: 'app:note.create-parent', text: 'Create parent note', group: 'plex' },
+  { id: 'app:note.create-jump', text: 'Create jump note', group: 'plex' },
+  { id: 'app:note.rename', text: 'Rename note', group: 'plex' },
+  { id: 'ask', text: 'Ask agent about note', group: 'agent' },
+  { id: 'app:note.trash', text: 'Move note to trash', group: 'remove' },
 ]
 
 const MENU_ICONS: Readonly<Record<string, typeof Waypoints>> = {

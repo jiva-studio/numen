@@ -87,6 +87,7 @@ import type { PlexRelation } from '@plugins/views-plex-graph/frontend/plex'
 import { Editor } from '@plugins/notes/frontend/editor'
 import { Reader } from '@plugins/readers-pdf/frontend/reader'
 import RecordingTab from '@plugins/views-media-player/frontend/RecordingTab.vue'
+import { DELETE_TRANSCRIPT, DEMO_COMMAND } from './demoCommands'
 import UrlTab from './url-tab/UrlTab.vue'
 import type { Cue } from '@plugins/views-media-player/frontend/lib/cues'
 import { createAudioPlayer } from '@plugins/views-media-player/frontend/model/player'
@@ -563,7 +564,7 @@ const TRANSCRIBED_MENU: readonly MediaMenuEntry[] = [
   {
     pluginId: 'md.numen.engines.transcription',
     pluginName: 'Transcription',
-    command: 'delete-transcript',
+    command: DELETE_TRANSCRIPT,
     title: 'Delete transcript',
     icon: '',
     versionId: 'md.numen.engines.transcription/lecture-4',
@@ -1116,22 +1117,26 @@ function navigateNoteTab(targetTabId: string, nextPath: string) {
 
 /* --------------------- Real `FilesTab` & `useFileTree` -------------------- */
 const COMMAND_ICONS: Readonly<Record<string, Component>> = {
-  read: FileText,
-  beside: FileText,
-  reveal: FolderOpen,
-  travel: Waypoints,
-  child: CornerDownRight,
-  parent: CornerLeftUp,
-  jump: ArrowRightLeft,
-  title: Type,
-  copy: Copy,
-  remove: Trash2,
+  [DEMO_COMMAND.openNote]: FileText,
+  [DEMO_COMMAND.openNoteBeside]: FileText,
+  [DEMO_COMMAND.revealNote]: FolderOpen,
+  [DEMO_COMMAND.showNoteInPlex]: Waypoints,
+  [DEMO_COMMAND.createChildNote]: CornerDownRight,
+  [DEMO_COMMAND.createParentNote]: CornerLeftUp,
+  [DEMO_COMMAND.createJumpNote]: ArrowRightLeft,
+  [DEMO_COMMAND.renameNote]: Type,
+  [DEMO_COMMAND.copyNotePath]: Copy,
+  [DEMO_COMMAND.trashNote]: Trash2,
+  [DEMO_COMMAND.createNote]: FilePlus,
+  [DEMO_COMMAND.openPlex]: Waypoints,
+  [DEMO_COMMAND.openFiles]: FolderTree,
+  [DEMO_COMMAND.openAgent]: Bot,
+  [DEMO_COMMAND.askAgent]: Bot,
   new: Plus,
   relation: Waypoints,
   newNote: FilePlus,
   newFolder: FolderPlus,
   rename: PenLine,
-  ask: Bot,
 }
 
 function listFolderEntries(folder: string): readonly VaultEntry[] {
@@ -1222,11 +1227,11 @@ function listFolderEntries(folder: string): readonly VaultEntry[] {
 function getPathCommandsForRow({ entry, isSeveral }: PathMenuRow): readonly MenuEntry[] {
   const canRemoveEntry = Boolean(notesByPath[entry.path])
   const removeItem: MenuEntry = {
-    id: 'remove',
-    text: entry.isNote && !isSeveral ? 'Remove note' : 'Remove',
+    id: DEMO_COMMAND.trashNote,
+    text: entry.isNote && !isSeveral ? 'Move note to trash' : 'Remove',
     group: 'remove',
   }
-  const copyItem: MenuEntry = { id: 'copy', text: 'Copy path', group: 'file' }
+  const copyItem: MenuEntry = { id: DEMO_COMMAND.copyNotePath, text: 'Copy note path', group: 'file' }
   if (isSeveral) {
     const selected = fileTree.selectedPaths.value
     const allRemovable = selected.length > 0 && selected.every((p) => Boolean(notesByPath[p]))
@@ -1234,9 +1239,9 @@ function getPathCommandsForRow({ entry, isSeveral }: PathMenuRow): readonly Menu
   }
   if (entry.isFolder) return [copyItem]
   if (entry.isNote) {
-    const items: MenuEntry[] = [{ id: 'read', text: 'Open the note', group: 'open' }]
+    const items: MenuEntry[] = [{ id: DEMO_COMMAND.openNote, text: 'Open note', group: 'open' }]
     if (notesByPath[entry.path]) {
-      items.push({ id: 'travel', text: 'Show in plex', group: 'open' })
+      items.push({ id: DEMO_COMMAND.showNoteInPlex, text: 'Show note in plex', group: 'open' })
     }
     items.push(
       copyItem,
@@ -1245,18 +1250,18 @@ function getPathCommandsForRow({ entry, isSeveral }: PathMenuRow): readonly Menu
         text: 'Relation',
         group: 'relation',
         children: [
-          { id: 'child', text: 'New child note', group: 'relation' },
-          { id: 'parent', text: 'New parent note', group: 'relation' },
-          { id: 'jump', text: 'New jump note', group: 'relation' },
+          { id: DEMO_COMMAND.createChildNote, text: 'Create child note', group: 'relation' },
+          { id: DEMO_COMMAND.createParentNote, text: 'Create parent note', group: 'relation' },
+          { id: DEMO_COMMAND.createJumpNote, text: 'Create jump note', group: 'relation' },
         ],
       },
-      { id: 'ask', text: 'Ask the agent', group: 'agent' },
+      { id: DEMO_COMMAND.askAgent, text: 'Ask agent about note', group: 'agent' },
     )
     if (canRemoveEntry) items.push(removeItem)
     return items
   }
   return [
-    { id: 'read', text: 'Open the file', group: 'open' },
+    { id: DEMO_COMMAND.openNote, text: 'Open the file', group: 'open' },
     copyItem,
   ]
 }
@@ -1327,7 +1332,7 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
     }
   },
   runCommand: (command, paths) => {
-    if (command === 'remove') {
+    if (command === DEMO_COMMAND.trashNote) {
       for (const p of paths) {
         runVaultCommand(command, p, 'files')
       }
@@ -1661,9 +1666,9 @@ const plexState = createPlexTab(plexView, {
     runVaultCommand(command, path, 'plex')
   },
   getNoteCommands: () => [
-    { id: 'reveal', text: 'Show in files', group: 'note' },
-    { id: 'travel', text: 'Show in plex', group: 'note' },
-    { id: 'ask', text: 'Ask the agent', group: 'note' },
+    { id: DEMO_COMMAND.revealNote, text: 'Show note in file tree', group: 'note' },
+    { id: DEMO_COMMAND.showNoteInPlex, text: 'Show note in plex', group: 'note' },
+    { id: DEMO_COMMAND.askAgent, text: 'Ask agent about note', group: 'note' },
   ],
   getCommandIcon: (id) => COMMAND_ICONS[id] ?? null,
   getNoteIcon: (type) => (type === 'deck' ? Layers : FileText),
@@ -1809,10 +1814,18 @@ const pendingNaming = ref<{
 } | null>(null)
 
 const NAMING_LABELS: Readonly<Record<'child' | 'parent' | 'jump' | 'title', string>> = {
-  child: 'New child note',
-  parent: 'New parent note',
-  jump: 'New jump note',
-  title: 'Change title',
+  child: 'Create child note',
+  parent: 'Create parent note',
+  jump: 'Create jump note',
+  title: 'Rename note',
+}
+
+/** The command each naming step belongs to. */
+const NAMING_COMMAND: Readonly<Record<'child' | 'parent' | 'jump' | 'title', string>> = {
+  child: DEMO_COMMAND.createChildNote,
+  parent: DEMO_COMMAND.createParentNote,
+  jump: DEMO_COMMAND.createJumpNote,
+  title: DEMO_COMMAND.renameNote,
 }
 
 function openNamingStep(command: 'child' | 'parent' | 'jump' | 'title', targetPath: string) {
@@ -1913,25 +1926,41 @@ const RAW_COMMAND_GROUPS: readonly {
     id: 'note',
     title: 'Note',
     items: [
-      { id: 'read', title: 'Open the note', also: { id: 'beside', text: 'Open beside' } },
-      { id: 'travel', title: 'Show the note', keys: keyChord('p', KEYBOARD, true) },
-      { id: 'child', title: 'New child note', keys: keyChord('c', KEYBOARD, true) },
-      { id: 'parent', title: 'New parent note' },
-      { id: 'jump', title: 'New jump note' },
-      { id: 'title', title: 'Change title' },
-      { id: 'ask', title: 'Ask the agent' },
-      { id: 'copy', title: 'Copy path' },
-      { id: 'remove', title: 'Remove note' },
+      {
+        id: DEMO_COMMAND.openNote,
+        title: 'Open note',
+        also: { id: DEMO_COMMAND.openNoteBeside, text: 'Open note beside' },
+      },
+      {
+        id: DEMO_COMMAND.showNoteInPlex,
+        title: 'Show note in plex',
+        keys: keyChord('p', KEYBOARD, true),
+      },
+      {
+        id: DEMO_COMMAND.createChildNote,
+        title: 'Create child note',
+        keys: keyChord('c', KEYBOARD, true),
+      },
+      { id: DEMO_COMMAND.createParentNote, title: 'Create parent note' },
+      { id: DEMO_COMMAND.createJumpNote, title: 'Create jump note' },
+      { id: DEMO_COMMAND.renameNote, title: 'Rename note' },
+      { id: DEMO_COMMAND.askAgent, title: 'Ask agent about note' },
+      { id: DEMO_COMMAND.copyNotePath, title: 'Copy note path' },
+      { id: DEMO_COMMAND.trashNote, title: 'Move note to trash' },
     ],
   },
   {
     id: 'window',
     title: 'General',
     items: [
-      { id: 'note', title: 'New note', keys: keyChord('n', KEYBOARD) },
-      { id: 'plex', title: 'Open plex tab' },
-      { id: 'files', title: 'Open files tab' },
-      { id: 'agent', title: 'Open agent tab', keys: keyChord('a', KEYBOARD, true) },
+      { id: DEMO_COMMAND.createNote, title: 'Create note', keys: keyChord('n', KEYBOARD) },
+      { id: DEMO_COMMAND.openPlex, title: 'Open plex graph' },
+      { id: DEMO_COMMAND.openFiles, title: 'Open file tree' },
+      {
+        id: DEMO_COMMAND.openAgent,
+        title: 'Open agent chat',
+        keys: keyChord('a', KEYBOARD, true),
+      },
     ],
   },
 ]
@@ -2009,13 +2038,9 @@ const paletteStep = computed(() => {
 
 function getPaletteRowIcon(id: string): Component | null {
   if (activePanel.value === 'naming') {
-    return pendingNaming.value ? (COMMAND_ICONS[pendingNaming.value.command] ?? FileText) : FileText
+    return pendingNaming.value ? (COMMAND_ICONS[NAMING_COMMAND[pendingNaming.value.command]] ?? FileText) : FileText
   }
   if (activePanel.value === 'commands') {
-    if (id === 'note') return FilePlus
-    if (id === 'plex') return Waypoints
-    if (id === 'files') return FolderTree
-    if (id === 'agent') return Bot
     return COMMAND_ICONS[id] ?? null
   }
   if (PDF_DOCS[id]) return BookOpen
@@ -2190,21 +2215,7 @@ function onPaletteChoose(itemId: string, actionId?: string) {
   }
   activePanel.value = null
   const activePath = plexView.here.value || 'physics/Entropy.md'
-  if (
-    itemId === 'read' ||
-    itemId === 'beside' ||
-    itemId === 'reveal' ||
-    itemId === 'travel' ||
-    itemId === 'child' ||
-    itemId === 'parent' ||
-    itemId === 'jump' ||
-    itemId === 'title' ||
-    itemId === 'ask' ||
-    itemId === 'note' ||
-    itemId === 'plex' ||
-    itemId === 'files' ||
-    itemId === 'agent'
-  ) {
+  if (DEMO_COMMAND_IDS.has(itemId)) {
     runVaultCommand(itemId, activePath, 'plex')
     return
   }
@@ -2319,33 +2330,44 @@ function ensureToolTabOpen(tabId: string, preferredPaneId: string) {
   onShowWorkspaceTab(tabId)
 }
 
+/** The ids of every command the demo window handles. */
+const DEMO_COMMAND_IDS: ReadonlySet<string> = new Set(Object.values(DEMO_COMMAND))
+
+/** The relation a command creates a note in, and nothing for any other command. */
+function getNamingRole(command: string): 'child' | 'parent' | 'jump' | 'title' | null {
+  const found = Object.entries(NAMING_COMMAND).find(([, id]) => id === command)
+  return (found?.[0] as 'child' | 'parent' | 'jump' | 'title' | undefined) ?? null
+}
+
 function runVaultCommand(
   command: string,
   targetPath: string,
   source: 'files' | 'plex' = 'plex',
 ) {
-  if (command === 'read') {
+  if (command === DEMO_COMMAND.openNote) {
     openVaultFile(targetPath, 'current')
-  } else if (command === 'beside') {
+  } else if (command === DEMO_COMMAND.openNoteBeside) {
     openVaultFile(targetPath, 'split')
-  } else if (command === 'reveal') {
+  } else if (command === DEMO_COMMAND.revealNote) {
     ensureToolTabOpen(FILES_TAB, 'main')
     void fileTree.revealPath(targetPath)
     fileTree.selectPaths([targetPath])
-  } else if (command === 'travel') {
+  } else if (command === DEMO_COMMAND.showNoteInPlex) {
     if (notesByPath[targetPath]) {
       void plexView.go(targetPath)
       ensureToolTabOpen(PLEX_TAB, 'map')
     }
-  } else if (command === 'child' || command === 'parent' || command === 'jump') {
+  } else if (getNamingRole(command) !== null && command !== DEMO_COMMAND.renameNote) {
+    const role = getNamingRole(command)
+    if (role === null || role === 'title') return
     if (source === 'files') {
-      createNoteInRelationInVault('', targetPath, command)
+      createNoteInRelationInVault('', targetPath, role)
     } else {
-      openNamingStep(command, targetPath)
+      openNamingStep(role, targetPath)
     }
-  } else if (command === 'note') {
+  } else if (command === DEMO_COMMAND.createNote) {
     void filesState.createNote('physics')
-  } else if (command === 'title') {
+  } else if (command === DEMO_COMMAND.renameNote) {
     if (source === 'files') {
       if (notesByPath[targetPath]) {
         filesState.setRenamingPath(targetPath)
@@ -2353,9 +2375,9 @@ function runVaultCommand(
     } else {
       openNamingStep('title', targetPath)
     }
-  } else if (command === 'copy') {
+  } else if (command === DEMO_COMMAND.copyNotePath) {
     void navigator.clipboard?.writeText(targetPath).catch(() => {})
-  } else if (command === 'remove') {
+  } else if (command === DEMO_COMMAND.trashNote) {
     if (notesByPath[targetPath] && Object.keys(notesByPath).length > 1) {
       delete notesByPath[targetPath]
       for (const other of Object.values(notesByPath)) {
@@ -2375,17 +2397,17 @@ function runVaultCommand(
         void plexView.go(plexView.here.value)
       }
     }
-  } else if (command === 'ask') {
+  } else if (command === DEMO_COMMAND.askAgent) {
     ensureToolTabOpen(AGENT_TAB, 'aside')
     asking.value = `${targetPath} — `
     void nextTick(() => {
       agentRef.value?.focus()
     })
-  } else if (command === 'plex') {
+  } else if (command === DEMO_COMMAND.openPlex) {
     ensureToolTabOpen(PLEX_TAB, 'map')
-  } else if (command === 'files') {
+  } else if (command === DEMO_COMMAND.openFiles) {
     ensureToolTabOpen(FILES_TAB, 'main')
-  } else if (command === 'agent') {
+  } else if (command === DEMO_COMMAND.openAgent) {
     ensureToolTabOpen(AGENT_TAB, 'aside')
   }
 }

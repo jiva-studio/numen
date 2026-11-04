@@ -215,12 +215,16 @@ beforeEach(() => {
       palette: {},
       onKeyDown: vi.fn(),
       showNote: vi.fn(() => Promise.resolve(true)),
-      getNoteCommands: vi.fn(() => [{ id: 'plugin:share', text: 'Share', group: 'note' }]),
+      getNoteCommands: vi.fn(() => [
+        { id: 'org.example.sample:share.run', text: 'Share', group: 'note' },
+      ]),
       pluginWays: ref([]),
     },
     pluginHost: {
       notifyVaultChange: vi.fn(),
-      getPaletteCommands: vi.fn(() => [{ id: 'plugin:share', title: 'Share', icon: 'icon' }]),
+      getPaletteCommands: vi.fn(() => [
+        { id: 'org.example.sample:share.run', title: 'Share', icon: 'icon' },
+      ]),
       getRegisteredSettingsViews: vi.fn(() => ['view-1']),
       getContextMenuItems: vi.fn(() => ['ctx-item']),
       runContextMenu: vi.fn(),
@@ -348,10 +352,10 @@ describe('the parts of the window', () => {
     await expect(h.args.kinds.showNote('a.md')).resolves.toBe(true)
     expect(h.f.commands.showNote).toHaveBeenCalledWith('a.md')
     expect(h.args.kinds.getNoteCommands()).toStrictEqual([
-      { id: 'plugin:share', text: 'Share', group: 'note' },
+      { id: 'org.example.sample:share.run', text: 'Share', group: 'note' },
     ])
-    expect(h.args.kinds.getPluginCommandIcon('plugin:share')).toBe('icon')
-    expect(h.args.kinds.getPluginCommandIcon('plugin:none')).toBeUndefined()
+    expect(h.args.kinds.getPluginCommandIcon('org.example.sample:share.run')).toBe('icon')
+    expect(h.args.kinds.getPluginCommandIcon('org.example.sample:none.run')).toBeUndefined()
   })
 
   it('hand the commands the kinds as they stand', () => {

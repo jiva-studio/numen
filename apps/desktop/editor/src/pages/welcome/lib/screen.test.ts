@@ -58,8 +58,8 @@ const createVaultList = (vaults: readonly Vault[], current: string): VaultList =
 
 /** The commands the plugins declare over the window, as the screen is handed them. */
 const CONTRIBUTED = [
-  { id: 'plugin:graph', text: 'new graph', keys: keyChord('x', APPLE, true) },
-  { id: 'plugin:chat', text: 'new chat' },
+  { id: 'org.example.sample:graph.run', text: 'new graph', keys: keyChord('x', APPLE, true) },
+  { id: 'org.example.sample:chat.run', text: 'new chat' },
 ]
 
 const two = createVaultList([vault('a', 'Physics'), vault('b', 'Heat')], 'a')
@@ -85,8 +85,8 @@ describe('the ways into the vault', () => {
       COMMAND.searchVault,
       COMMANDS,
       COMMAND.createNote,
-      'plugin:graph',
-      'plugin:chat',
+      'org.example.sample:graph.run',
+      'org.example.sample:chat.run',
       SETTINGS,
     ])
   })
@@ -124,8 +124,8 @@ describe('the ways into the vault', () => {
     expect(ways.map((one) => one.id)).toStrictEqual([
       COMMAND.searchVault,
       COMMANDS,
-      'plugin:graph',
-      'plugin:chat',
+      'org.example.sample:graph.run',
+      'org.example.sample:chat.run',
       SETTINGS,
     ])
   })
@@ -147,7 +147,7 @@ describe('the keystroke drawn on a way', () => {
 
   it('is the one the table binds to that command', () => {
     expect(getKeys(COMMAND.createNote)).toStrictEqual(findChordKeys(COMMAND.createNote, APPLE))
-    expect(getKeys('plugin:graph')).toStrictEqual(CONTRIBUTED[0]!.keys)
+    expect(getKeys('org.example.sample:graph.run')).toStrictEqual(CONTRIBUTED[0]!.keys)
   })
 
   it('is the key the keyboard in hand holds', () => {

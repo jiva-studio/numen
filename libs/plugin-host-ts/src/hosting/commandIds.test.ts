@@ -37,7 +37,7 @@ describe('a command a plugin registers', () => {
     expect(handler).toHaveBeenCalledOnce()
   })
 
-  it('is not found by its short id or under the old plugin prefix', async () => {
+  it('is not found by its short id alone', async () => {
     const host = createPluginHost(createDeps())
     host
       .createContext('md.example.files')

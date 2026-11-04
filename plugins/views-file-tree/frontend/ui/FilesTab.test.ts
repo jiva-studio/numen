@@ -217,14 +217,14 @@ describe('the menu on a row', () => {
 
   it('offers everything that can be done to a note it was requested for on', async () => {
     expect(await getItemIds('Entropy.md')).toStrictEqual([
-      'read',
+      'app:note.open',
       'travel',
       'new',
       'rename',
-      'copy',
+      'app:note.copy-path',
       'links',
       'ask',
-      'remove',
+      'app:note.trash',
     ])
   })
 
@@ -237,16 +237,21 @@ describe('the menu on a row', () => {
       'file',
       'links',
       'agent',
-      'remove',
+      'app:note.trash',
     ])
   })
 
   it('offers no command over a note on a file the vault holds no source for', async () => {
-    expect(await getItemIds('Cover.png')).toStrictEqual(['new', 'rename', 'copy', 'remove'])
+    expect(await getItemIds('Cover.png')).toStrictEqual([
+      'new',
+      'rename',
+      'app:note.copy-path',
+      'app:note.trash',
+    ])
   })
 
   it('offers no command over a note on a folder', async () => {
-    expect(await getItemIds('physics')).not.toContain('title')
+    expect(await getItemIds('physics')).not.toContain('app:note.rename')
   })
 
   it('offers what can be made at the root, requested off every row', async () => {
@@ -254,7 +259,9 @@ describe('the menu on a row', () => {
   })
 
   it('offers removal alone over a selection of several', async () => {
-    expect(await getItemIds('Entropy.md', ['Entropy.md', 'Cover.png'])).toStrictEqual(['remove'])
+    expect(await getItemIds('Entropy.md', ['Entropy.md', 'Cover.png'])).toStrictEqual([
+      'app:note.trash',
+    ])
   })
 })
 

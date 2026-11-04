@@ -327,3 +327,15 @@ function drawPluginTypes(): void {
     for (const one of unregister) one()
   })
 }
+
+describe('the request to open the settings', () => {
+  it('opens the settings tab when the request names no plugin and no filter', async () => {
+    const window = await mountWindow()
+    expect(window.text()).not.toContain(WORDS.settings)
+
+    globalThis.dispatchEvent(new CustomEvent('numen:open-settings'))
+    await settle()
+
+    expect(window.text()).toContain(WORDS.settings)
+  })
+})

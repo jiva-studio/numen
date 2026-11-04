@@ -44,14 +44,14 @@ describe('what the menu offers', () => {
 describe('what the menu on a node offers of the commands plugins declare', () => {
   it('draws them after what opens the note, in a band of their own', () => {
     const items = createNodeItems([
-      { id: 'plugin:share', text: 'Share the note' },
-      { id: 'plugin:print', text: 'Print the note' },
+      { id: 'org.example.sample:share.run', text: 'Share the note' },
+      { id: 'org.example.sample:print.run', text: 'Print the note' },
     ])
 
     expect(items.map((item) => [item.id, item.group])).toStrictEqual([
       ['app:note.open', 'open'],
-      ['plugin:share', 'declared'],
-      ['plugin:print', 'declared'],
+      ['org.example.sample:share.run', 'declared'],
+      ['org.example.sample:print.run', 'declared'],
       ['app:note.copy-path', 'file'],
       ['app:note.create-child', 'plex'],
       ['app:note.create-parent', 'plex'],

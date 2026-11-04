@@ -96,7 +96,7 @@ const declaring = (source, name, what) => {
 const readCommandIds = async () => {
   const source = await read(EDITOR, 'shared/commandIds.ts')
   const ids = new Map(
-    [...source.matchAll(/^\s*([A-Za-z]+):\s*own\('([^']+)'\)/gm)].map(([, name, id]) => [
+    [...source.matchAll(/^\s*([A-Za-z]+):\s*formatAppCommandId\('([^']+)'\)/gm)].map(([, name, id]) => [
       name,
       `app:${id}`,
     ]),
@@ -106,7 +106,7 @@ const readCommandIds = async () => {
 }
 
 /** The full id a name of COMMAND stands for. */
-const idOf = (ids, name) => {
+const getCommandId = (ids, name) => {
   const id = ids.get(name)
   if (!id) die(`COMMAND has no command '${name}'`)
   return id
@@ -120,7 +120,7 @@ const chords = (source, ids) => {
       /\{\s*command:\s*COMMAND\.([A-Za-z]+),\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
     ),
   ].map(([, name, letter, shift]) => ({
-    command: idOf(ids, name),
+    command: getCommandId(ids, name),
     letter,
     shift: shift === 'true',
   }))
@@ -185,7 +185,7 @@ const rowsOf = ({ text, entries }, ids, path = 'table.ts') => {
     die(`${path} lists ${entries} commands and this reads ${found.length}`)
   }
   return found.map((one, i) => ({
-    id: idOf(ids, one[1]),
+    id: getCommandId(ids, one[1]),
     said: text.slice(one.index, found[i + 1]?.index ?? text.length),
   }))
 }
@@ -248,7 +248,7 @@ const commands = async () => {
     if (!word) die(`no words draw the command '${id}'`)
     if (!group) die(`the command '${id}' is in no group`)
     const chord = table.find((one) => one.command === id)
-    const key = chord ? chordOf(chord) : id === idOf(ids, 'searchVault') ? chordOf({ letter: 'k' }) : ''
+    const key = chord ? chordOf(chord) : id === getCommandId(ids, 'searchVault') ? chordOf({ letter: 'k' }) : ''
     own.push({ text: await said(words, word[1]), group: group[1], key })
   }
 
@@ -682,31 +682,31 @@ const pictured = async () => {
 const REFUSES = [
   {
     what: 'a list every entry of which the pattern reads',
-    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', hasShift: false },\n]\n",
-    pattern: /\{\s*command:\s*'([A-Za-z]+)',\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
+    source: "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.createNote, letter: 'n', hasShift: false },\n]\n",
+    pattern: /\{\s*command:\s*COMMAND\.([A-Za-z]+),\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
     refused: false,
   },
   {
     what: 'a chord spelled in a way the pattern does not match',
-    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', shift: false },\n  { command: 'newVault', letter: 'n', shift: true },\n]\n",
-    pattern: /\{\s*command:\s*'([a-z]+)',\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
+    source: "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.close, letter: 'n', shift: false },\n  { command: COMMAND.createVault, letter: 'n', shift: true },\n]\n",
+    pattern: /\{\s*command:\s*COMMAND\.([a-z]+),\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
     refused: true,
   },
   {
     what: 'a row of the commands carrying no id',
-    source: "export const commandsOf = (): readonly Command[] => [\n  { id: 'read', group: 'note' },\n  { name: 'beside', group: 'note' },\n]\n",
-    pattern: /\bid:\s*'([A-Za-z]+)'/g,
+    source: "export const commandsOf = (): readonly Command[] => [\n  { id: COMMAND.openNote, group: 'note' },\n  { name: 'beside', group: 'note' },\n]\n",
+    pattern: /\bid:\s*COMMAND\.([A-Za-z]+)/g,
     refused: true,
   },
   {
     what: 'an apostrophe in a comment, which is prose and no quote',
-    source: "export const commandsOf = (): readonly Command[] => [\n  // The vault's own folder.\n  { id: 'read', group: 'note' },\n]\n",
-    pattern: /\bid:\s*'([A-Za-z]+)'/g,
+    source: "export const commandsOf = (): readonly Command[] => [\n  // The vault's own folder.\n  { id: COMMAND.openNote, group: 'note' },\n]\n",
+    pattern: /\bid:\s*COMMAND\.([A-Za-z]+)/g,
     refused: false,
   },
   {
     what: 'a list that never closes',
-    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', shift: false },\n",
+    source: "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.createNote, letter: 'n', shift: false },\n",
     pattern: /\bcommand:/g,
     refused: true,
   },

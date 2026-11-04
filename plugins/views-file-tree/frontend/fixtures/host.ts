@@ -17,26 +17,26 @@ import type { FileTreeHost } from '../model/tabDeps'
 /** One command of the window, in the group it is drawn in. */
 const command = (id: string, group: string, text = id): MenuEntry => ({ id, text, group })
 
-const COPY = command('copy', 'file')
-const REMOVE = command('remove', 'remove')
+const COPY = command('app:note.copy-path', 'file')
+const REMOVE = command('app:note.trash', 'app:note.trash')
 const LINKS: MenuEntry = {
   id: 'links',
   text: 'Links',
   group: 'links',
   children: [
-    command('child', 'links'),
-    command('parent', 'links'),
-    command('jump', 'links'),
-    command('title', 'links'),
+    command('app:note.create-child', 'links'),
+    command('app:note.create-parent', 'links'),
+    command('app:note.create-jump', 'links'),
+    command('app:note.rename', 'links'),
   ],
 }
 const NOTE = [
-  command('read', 'open'),
+  command('app:note.open', 'open'),
   command('travel', 'open'),
   COPY,
   LINKS,
   command('ask', 'agent'),
-  command('remove', 'remove', 'Remove note'),
+  command('app:note.trash', 'app:note.trash', 'Move note to trash'),
 ]
 /** The commands the plugins add over a file, by the extension of its name. */
 const RUNS: Readonly<Record<string, readonly MenuEntry[]>> = {

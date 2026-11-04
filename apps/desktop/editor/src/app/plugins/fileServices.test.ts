@@ -166,12 +166,12 @@ describe('the window’s commands over a row', () => {
       path === 'Lecture.mp3'
         ? [
             {
-              id: 'file-menu:create-text:whisper:',
+              id: 'md.example.whisper:text.create@',
               text: 'Transcribe with Whisper',
               group: 'file',
             },
             {
-              id: 'file-menu:create-text:proofread:v1',
+              id: 'md.example.proofread:text.create@v1',
               text: 'Proofread with Claude',
               group: 'file',
             },
@@ -191,8 +191,8 @@ describe('the window’s commands over a row', () => {
     expect(getFileMenuItems).toHaveBeenCalledWith('Lecture.mp3')
     expect(ids.map((one) => one.id)).toStrictEqual([
       'ctx:Lecture.mp3:Lecture.mp3:false:false:false',
-      'file-menu:create-text:whisper:',
-      'file-menu:create-text:proofread:v1',
+      'md.example.whisper:text.create@',
+      'md.example.proofread:text.create@v1',
       'app:note.copy-path',
       'app:note.trash',
     ])
@@ -305,6 +305,19 @@ describe('the window’s commands over a row', () => {
       })
       expect(reportError).toHaveBeenCalledOnce()
     })
+  })
+
+  it('are drawn with the icon the plugin that offers a command gives it', () => {
+    const icon = { name: 'PluginIcon' }
+    const host = createPathCommandHost({
+      getTarget: () => target as never,
+      runCommand: vi.fn(),
+      reportError: vi.fn(),
+      getPluginCommandIcon: (id) => (id === 'md.numen.x:a.b' ? icon : undefined),
+    })
+
+    expect(host.getCommandIcon('md.numen.x:a.b')).toBe(icon)
+    expect(host.getCommandIcon('md.numen.y:a.b')).not.toBe(icon)
   })
 
   it('are drawn with the window’s icons, and an entry by what it is', () => {

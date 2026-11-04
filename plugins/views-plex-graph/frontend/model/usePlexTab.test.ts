@@ -91,8 +91,9 @@ const tab = (
       requestedHeadings.push(paths)
       return new Map([...divides.value].filter(([path]) => paths.includes(path)))
     },
-    getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note' }],
-    getCommandIcon: (id) => (id === 'plugin:share' || id === 'app:note.open' ? SHARE_ICON : null),
+    getNoteCommands: () => [{ id: 'org.example.sample:share.run', text: 'Share the note' }],
+    getCommandIcon: (id) =>
+      id === 'org.example.sample:share.run' || id === 'app:note.open' ? SHARE_ICON : null,
     getNoteIcon: (type) => (type === 'sample' ? SAMPLE_ICON : null),
     runCommand: (id, path, title) => ran.push([id, path, title]),
     openingPath: ref('Opening.md'),
@@ -216,20 +217,20 @@ describe('the menu on a node', () => {
 
     expect(one.state.menuItems.value.map((item) => item.id).slice(0, 3)).toStrictEqual([
       'app:note.open',
-      'plugin:share',
+      'org.example.sample:share.run',
       'app:note.copy-path',
     ])
-    one.state.chooseMenuItem('plugin:share')
+    one.state.chooseMenuItem('org.example.sample:share.run')
 
-    expect(one.ran).toEqual([['plugin:share', 'Child.md', 'Child']])
+    expect(one.ran).toEqual([['org.example.sample:share.run', 'Child.md', 'Child']])
   })
 
   it('uses the window icon of a command, and none without one', () => {
     const one = tab('Root.md')
 
-    expect(one.state.getMenuIcon('plugin:share')).toBe(SHARE_ICON)
+    expect(one.state.getMenuIcon('org.example.sample:share.run')).toBe(SHARE_ICON)
     expect(one.state.getMenuIcon('app:note.open')).toBe(SHARE_ICON)
-    expect(one.state.getMenuIcon('plugin:unknown')).toBeNull()
+    expect(one.state.getMenuIcon('org.example.sample:unknown.run')).toBeNull()
   })
 
   it('does nothing when it relies on nothing', () => {

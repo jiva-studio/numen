@@ -1552,11 +1552,17 @@ describe('the icon of a command', () => {
       runSupport(),
       vi.fn(() => Promise.resolve()),
       () => [
-        { id: 'plugin:graph', text: 'New graph', icon, group: 'window', isAvailable: () => true },
+        {
+          id: 'org.example.sample:graph.run',
+          text: 'New graph',
+          icon,
+          group: 'window',
+          isAvailable: () => true,
+        },
       ],
     )
 
-    expect(commands.findCommandIcon('plugin:graph')).toBe(icon)
+    expect(commands.findCommandIcon('org.example.sample:graph.run')).toBe(icon)
     expect(commands.findCommandIcon('app:note.open')).toBeNull()
   })
 })
@@ -1583,7 +1589,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
       runs: runSupport(),
       getExtraCommands: () => [
         {
-          id: 'plugin:args',
+          id: 'org.example.sample:args.run',
           text: 'With args',
           group: 'window',
           needs: 'arguments',
@@ -1594,7 +1600,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
           isAvailable: () => true,
         },
         {
-          id: 'plugin:no-prompts',
+          id: 'org.example.sample:no-prompts.run',
           text: 'No prompts',
           group: 'window',
           needs: 'arguments',
@@ -1603,12 +1609,12 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
       ],
     })
 
-    commands.startCommand('plugin:no-prompts', front())
+    commands.startCommand('org.example.sample:no-prompts.run', front())
     expect(commands.placeholder.value).toBe(words.typeCommand)
     expect(commands.chooseItem('name', 'name')).toBeNull()
     commands.leaveStep()
 
-    commands.startCommand('plugin:args', front())
+    commands.startCommand('org.example.sample:args.run', front())
     expect(commands.placeholder.value).toBe('Topic title')
     expect(commands.chooseItem('name', 'name')).toBeNull()
 
@@ -1617,7 +1623,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
     expect(commands.placeholder.value).toBe('Detail title')
 
     const result = commands.chooseItem('name', 'name')
-    expect(result?.id).toBe('plugin:args')
+    expect(result?.id).toBe('org.example.sample:args.run')
     expect(result?.values).toStrictEqual({ topic: 'Quantum' })
   })
 

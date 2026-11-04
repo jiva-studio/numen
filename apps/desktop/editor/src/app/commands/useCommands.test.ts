@@ -194,19 +194,19 @@ describe('a key press', () => {
 
 describe('a plugin command over a note', () => {
   const SUMMARY = {
-    id: 'plugin:summary',
+    id: 'org.example.sample:summary.run',
     title: 'Open summary',
     scope: 'note' as const,
     shortcut: 'mod+k',
   }
   const GRAPH = {
-    id: 'plugin:graph',
+    id: 'org.example.sample:graph.run',
     title: 'New graph',
     shortcut: 'mod+shift+x',
     icon: 'graph icon',
   }
   const SHOW = {
-    id: 'plugin:show',
+    id: 'org.example.sample:show.run',
     title: 'Show in the graph',
     scope: 'note' as const,
     isNoteDestination: true,
@@ -301,7 +301,11 @@ describe('a plugin command over a note', () => {
   })
 
   it('offers the keyed commands over the window as ways in, and those over a note to the menus', () => {
-    const one = setupPlugin([SUMMARY, GRAPH, { id: 'plugin:tree', title: 'Show the tree' }])
+    const one = setupPlugin([
+      SUMMARY,
+      GRAPH,
+      { id: 'org.example.sample:tree.run', title: 'Show the tree' },
+    ])
 
     expect(one.pluginWays.value).toStrictEqual([
       { id: GRAPH.id, text: GRAPH.title, keys: { letter: 'mod+shift+x' }, icon: 'graph icon' },
