@@ -817,11 +817,11 @@ describe('tab links wiring', () => {
     )
     useWindow()
 
-    const written = h.args.tabLinks.write({ link: { source: 'plex:1', target: 'plex:2' } })
+    const request = h.args.tabLinks.write({ link: { source: 'plex:1', target: 'plex:2' } })
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(h.core.writeTabLinks).not.toHaveBeenCalled()
     finishReports()
-    await written
+    await request
 
     expect(h.core.writeTabLinks).toHaveBeenCalledExactlyOnceWith(h.args.tabLinkSession.windowId, {
       link: { source: 'plex:1', target: 'plex:2' },

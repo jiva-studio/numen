@@ -326,11 +326,11 @@ describe('stream events for this window', () => {
     let isSettled = false
 
     session.reportTabs()
-    const waiting = session.waitForReports().then(() => (isSettled = true))
+    const reports = session.waitForReports().then(() => (isSettled = true))
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(isSettled).toBe(false)
     finishReport()
-    await waiting
+    await reports
 
     expect(isSettled).toBe(true)
   })

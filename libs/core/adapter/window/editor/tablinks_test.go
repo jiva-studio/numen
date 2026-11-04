@@ -147,7 +147,7 @@ func detachInBackground(
 	t *testing.T, client numenv1connect.WorkspaceServiceClient, windowRequests <-chan struct{}, tab *v1.Tab,
 ) <-chan *connect.Response[v1.DetachTabResponse] {
 	t.Helper()
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
 	answer := make(chan *connect.Response[v1.DetachTabResponse], 1)
 	go func() {
