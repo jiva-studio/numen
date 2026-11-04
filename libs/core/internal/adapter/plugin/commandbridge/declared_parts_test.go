@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-func TestGetParts_AsksTheManifestOfThePlugin(t *testing.T) {
+func TestGetParts_ReadsTheManifestOfThePlugin(t *testing.T) {
 	command := []manifest.Command{{ID: "tree.open", Title: "Open file tree"}}
 	host := &commandHost{plugins: []pluginport.DiscoveredPlugin{
 		{Manifest: manifest.Manifest{ID: "md.numen.tree", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Commands: command}}},
@@ -41,7 +41,7 @@ func (h suspendedHost) GetPluginInfos() []pluginport.PluginInfo {
 	return infos
 }
 
-func TestGetParts_SaysWhetherTheHostHoldsThePluginSuspended(t *testing.T) {
+func TestGetParts_ReportsASuspendedPlugin(t *testing.T) {
 	host := suspendedHost{&commandHost{plugins: []pluginport.DiscoveredPlugin{
 		{Manifest: manifest.Manifest{ID: "md.numen.cards", Backend: manifest.Backend{Entrypoint: "bin/cards"}, Frontend: &manifest.Frontend{}}},
 	}}}
