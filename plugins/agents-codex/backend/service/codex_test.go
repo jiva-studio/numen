@@ -395,8 +395,9 @@ func TestIsStoppedAndCacheAsyncAndServerEdgeCases(t *testing.T) {
 	if len(initial) != 1 || initial[0].Name != "disk-m" {
 		t.Fatalf("async initial get = %v, want disk-m", initial)
 	}
-	deadline := time.Now().Add(25 * time.Second)
-	for time.Now().Before(deadline) {
+	wall := clock.System{}
+	deadline := wall.Now().Add(25 * time.Second)
+	for wall.Now().Before(deadline) {
 		asyncCache.mu.Lock()
 		cached := asyncCache.isCached
 		asyncCache.mu.Unlock()
