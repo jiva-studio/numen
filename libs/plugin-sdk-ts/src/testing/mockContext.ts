@@ -306,15 +306,12 @@ export function createMockPluginContext(
       return [...mounted]
     },
 
-    async triggerCommand(
-      commandId: string,
-      note: CommandNote = EMPTY_NOTE,
-    ): Promise<void> {
+    async triggerCommand(commandId: string, note?: CommandNote): Promise<void> {
       const cmd = commands.find((c) => c.id === commandId)
       if (!cmd) {
         throw new Error(`Command not registered: ${commandId}`)
       }
-      await cmd.handler(note)
+      await cmd.handler(note ?? { ...EMPTY_NOTE })
     },
 
     dispose(): void {

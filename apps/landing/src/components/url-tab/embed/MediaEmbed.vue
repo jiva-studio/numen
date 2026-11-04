@@ -50,16 +50,20 @@ const frameStyle = computed(() =>
   tall.value === null ? undefined : { blockSize: `${tall.value}px` },
 )
 /** The rendered height of the player and the tallest it can be drawn, for the resize handle. */
-const shown = ref<number | null>(null)
+const renderedHeight = ref<number | null>(null)
 const tallest = ref(LEAST)
+const handleValue = computed(() =>
+  Math.min(tallest.value, Math.max(LEAST, renderedHeight.value ?? tall.value ?? LEAST)),
+)
 
 watch(
   () => player.value ?? frame.value,
   (element, _, onCleanup) => {
-    if (!element || typeof ResizeObserver === 'undefined') return
+    if (!element) return
     const sizes = new ResizeObserver(() => {
-      shown.value = Math.round(element.clientHeight)
+      renderedHeight.value = Math.round(element.clientHeight)
       tallest.value = getTallest(getPaneHeight())
+      if (tall.value !== null) tall.value = Math.min(tallest.value, tall.value)
     })
     sizes.observe(element)
     const pane = root.value?.parentElement
@@ -227,7 +231,7 @@ defineExpose({ seek })
       :aria-label="props.words.taller"
       :aria-valuemin="LEAST"
       :aria-valuemax="tallest"
-      :aria-valuenow="shown ?? tall ?? LEAST"
+      :aria-valuenow="handleValue"
       :data-state="drawn ? 'drag' : undefined"
       :title="props.words.taller"
       @pointerdown="onPointerDown"
