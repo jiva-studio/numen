@@ -8,7 +8,8 @@
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { WelcomePage } from '@numen/shell'
-import { WorkspaceLayout } from '@numen/shell'
+import { WorkspaceLayout, getPanes, type Workspace } from '@numen/shell'
+import { TabLinkMenu } from '@/features/tab-linking'
 import { requests, cards, listed, mountWindow, vaultState, settle, getTabs } from '@/testing/window'
 
 describe('the window holding no tab', () => {
@@ -136,7 +137,7 @@ describe('the vault offered below the list', () => {
 })
 
 describe('tab linking context menu', () => {
-  it('detaches and releases tab when tear-off is emitted', async () => {
+  it('detaches and releases tab from both open tabs and workspace layout when tear-off is emitted', async () => {
     const window = await mountWindow()
     const layout = window.findComponent(WorkspaceLayout)
 
@@ -146,5 +147,30 @@ describe('tab linking context menu', () => {
 
     const remaining = getTabs(window).map((t) => t.id)
     expect(remaining).not.toContain(plexTabId)
+
+    const workspace = layout.props('modelValue') as Workspace
+    const layoutTabIds = getPanes(workspace.root).flatMap((pane) => pane.tabs)
+    expect(layoutTabIds).not.toContain(plexTabId)
+  })
+
+  it('detaches and closes tab when detach is chosen from tab context menu', async () => {
+    const window = await mountWindow()
+    const layout = window.findComponent(WorkspaceLayout)
+
+    const plexTabId = getTabs(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
+    layout.vm.$emit('tab-context-menu', plexTabId, { x: 120, y: 80 })
+    await settle()
+
+    const menu = window.findComponent(TabLinkMenu)
+    expect(menu.exists()).toBe(true)
+    menu.vm.$emit('detach')
+    await settle()
+
+    expect(window.findComponent(TabLinkMenu).exists()).toBe(false)
+    expect(getTabs(window).map((t) => t.id)).not.toContain(plexTabId)
+
+    const workspace = layout.props('modelValue') as Workspace
+    const layoutTabIds = getPanes(workspace.root).flatMap((pane) => pane.tabs)
+    expect(layoutTabIds).not.toContain(plexTabId)
   })
 })

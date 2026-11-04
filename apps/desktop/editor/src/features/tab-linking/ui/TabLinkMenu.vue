@@ -3,39 +3,42 @@
  * Popover menu for linking a tab with another eligible open tab or unlinking it.
  */
 import { computed, type Component } from 'vue'
-import { Menu, type Position } from '@numen/ui'
-import { Link2Off } from '@lucide/vue'
-import type { EligibleLinkTab, TabId } from '../types'
-import { createLinkMenuItems, UNLINK_ID } from '../lib/menu'
+import { Menu } from '@numen/ui'
+import { ExternalLink, Link2Off } from '@lucide/vue'
+import type { TabId } from '../types'
+import { createLinkMenuItems, DETACH_ID, UNLINK_ID } from '../lib/menu'
+import type { TabLinkMenuProps } from './tabLinkMenu.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = withDefaults(
-  defineProps<{
-    tabId: TabId
-    eligibleTabs: readonly EligibleLinkTab[]
-    at: Position
-    getTabIcon: (tab: TabId) => Component | null
-    isLinked?: boolean
-    linkedTargetTitle?: string
-  }>(),
-  { isLinked: false, linkedTargetTitle: '' },
-)
+const props = withDefaults(defineProps<TabLinkMenuProps>(), {
+  isLinked: false,
+  linkedTargetTitle: '',
+  canDetach: false,
+})
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'link', targetId: TabId): void
   (event: 'unlink'): void
+  (event: 'detach'): void
   (event: 'close'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const items = computed(() =>
-  createLinkMenuItems(props.eligibleTabs, props.isLinked, props.linkedTargetTitle),
+  createLinkMenuItems(
+    props.eligibleTabs,
+    props.isLinked,
+    props.linkedTargetTitle,
+    props.canDetach,
+  ),
 )
 
 /* -------------------------------- Handlers -------------------------------- */
 function onChoose(id: string) {
-  if (id === UNLINK_ID) {
+  if (id === DETACH_ID) {
+    emit('detach')
+  } else if (id === UNLINK_ID) {
     emit('unlink')
   } else {
     emit('link', id)
@@ -48,6 +51,7 @@ function onDismiss() {
 
 /* -------------------------------- Helpers --------------------------------- */
 function getIconFor(id: string): Component | null {
+  if (id === DETACH_ID) return ExternalLink
   if (id === UNLINK_ID) return Link2Off
   return props.eligibleTabs.some((t) => t.id === id) ? props.getTabIcon(id) : null
 }

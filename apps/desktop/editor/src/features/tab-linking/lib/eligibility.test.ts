@@ -36,6 +36,10 @@ describe('the tabs a link may end at', () => {
       { id: 'd', title: 'D', kind: 'plex', isLinked: true },
     ])
   })
+
+  it('are none when the origin tab itself cannot be linked', () => {
+    expect(getEligibleTabs({ ...input(), from: 'c' })).toStrictEqual([])
+  })
 })
 
 describe('the title of what a tab is linked to', () => {

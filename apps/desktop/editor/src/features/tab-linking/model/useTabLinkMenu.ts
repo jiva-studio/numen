@@ -11,6 +11,7 @@ export interface TabLinkMenuDeps {
   getTabs(): readonly { readonly id: TabId; readonly title: string }[]
   getKind(tab: TabId): string | undefined
   isLinkable(tab: TabId): boolean
+  onDetach?(tab: TabId, position: { x: number; y: number }): void
 }
 
 export function useTabLinkMenu(deps: TabLinkMenuDeps) {
@@ -39,9 +40,11 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
     () => tabId.value !== null && deps.tabLinks.getGroupOf(tabId.value) !== null,
   )
 
-  /** Opens the menu on a tab; a tab of a kind that cannot be linked has none. */
+  const canDetach = computed(() => deps.onDetach !== undefined)
+
+  /** Opens the menu on a tab; a tab that can neither be linked nor detached has none. */
   const open = (tab: TabId, where: { x: number; y: number }): void => {
-    if (!deps.isLinkable(tab)) return
+    if (!deps.isLinkable(tab) && !deps.onDetach) return
     tabId.value = tab
     coords.value = where
   }
@@ -62,16 +65,26 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
     close()
   }
 
+  const detach = (): void => {
+    if (tabId.value === null) return
+    const target = tabId.value
+    const where = coords.value
+    close()
+    deps.onDetach?.(target, where)
+  }
+
   const api = {
     tabId,
     at: coords,
     eligibleTabs,
     linkedTargetTitle,
     isLinked,
+    canDetach,
     open,
     close,
     link,
     unlink,
+    detach,
   }
   return api
 }

@@ -16,6 +16,7 @@ export interface EligibilityInput {
 
 /** The tabs a link from one tab may end at: linkable, not itself, not in its group already. */
 export function getEligibleTabs(input: EligibilityInput): readonly EligibleLinkTab[] {
+  if (!input.isLinkable(input.from)) return []
   const group = input.getGroupOf(input.from)
   return input.tabs
     .filter((tab) => {

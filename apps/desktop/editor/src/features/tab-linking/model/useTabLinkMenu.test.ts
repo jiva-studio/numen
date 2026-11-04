@@ -53,9 +53,36 @@ describe('the menu on a tab', () => {
     expect(menu.eligibleTabs.value.map((tab) => tab.id)).toStrictEqual(['b'])
   })
 
-  it('stays closed on a tab of a kind that cannot be linked', () => {
+  it('stays closed on a tab of a kind that cannot be linked when detach is not provided', () => {
     const { menu } = setup()
     menu.open('c', { x: 5, y: 6 })
+    expect(menu.tabId.value).toBeNull()
+    expect(menu.canDetach.value).toBe(false)
+  })
+
+  it('opens on an unlinkable tab when detach is provided, and detaches it on request', () => {
+    const onDetach = vi.fn()
+    const tabLinks = {
+      getGroupOf: () => null,
+      getLinkedTargets: () => [],
+      linkTabs: vi.fn(),
+      unlinkTab: vi.fn(),
+    } as unknown as TabLinksState
+    const menu = useTabLinkMenu({
+      tabLinks,
+      getTabs: () => [{ id: 'c', title: 'C' }],
+      getKind: (tab) => KINDS[tab],
+      isLinkable: () => false,
+      onDetach,
+    })
+
+    menu.open('c', { x: 12, y: 34 })
+    expect(menu.tabId.value).toBe('c')
+    expect(menu.canDetach.value).toBe(true)
+    expect(menu.eligibleTabs.value).toStrictEqual([])
+
+    menu.detach()
+    expect(onDetach).toHaveBeenCalledWith('c', { x: 12, y: 34 })
     expect(menu.tabId.value).toBeNull()
   })
 
@@ -81,6 +108,7 @@ describe('the menu on a tab', () => {
     const { menu, tabLinks } = setup()
     menu.link('b')
     menu.unlink()
+    menu.detach()
     expect(tabLinks.linkTabs).not.toHaveBeenCalled()
     expect(tabLinks.unlinkTab).not.toHaveBeenCalled()
   })

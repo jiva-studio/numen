@@ -76,6 +76,7 @@ describe('useCrossWindowTabs', () => {
         mockWindowTabs.tabs.value = []
         return true
       }),
+      finishClose: vi.fn(),
       tabs: ref([{ id: 'tab-1', title: 'Plex' }]),
     }
 
@@ -145,6 +146,7 @@ describe('useCrossWindowTabs', () => {
 
     expect(mockWindowTabs.releaseTab).toHaveBeenCalledTimes(1)
     expect(mockWindowTabs.releaseTab).toHaveBeenCalledWith('tab-1')
+    expect(mockWindowTabs.finishClose).toHaveBeenCalledWith('tab-1')
     expect(closeWindow).toHaveBeenCalledTimes(1)
 
     // Duplicate acknowledgement after pending dock is cleared does not release again

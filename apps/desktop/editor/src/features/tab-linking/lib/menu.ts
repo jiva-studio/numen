@@ -5,13 +5,22 @@ import type { MenuItem } from '@numen/ui'
 import type { EligibleLinkTab } from '../types'
 
 export const UNLINK_ID = '__unlink__'
+export const DETACH_ID = '__detach__'
 
 export function createLinkMenuItems(
   eligibleTabs: readonly EligibleLinkTab[],
   isLinked: boolean = false,
   linkedTargetTitle: string = '',
+  canDetach: boolean = false,
 ): MenuItem[] {
   const result: MenuItem[] = []
+
+  if (canDetach) {
+    result.push({
+      id: DETACH_ID,
+      text: 'Detach tab',
+    })
+  }
 
   if (isLinked) {
     result.push({

@@ -117,6 +117,10 @@ export const sessionCore: SessionCore = {
     })
   },
   detachTab: async (tabId, position) => {
-    await workspace.detachTab({ tabId, x: position.x, y: position.y })
+    await workspace.detachTab({
+      tabId,
+      x: Math.round(position.x),
+      y: Math.round(position.y),
+    })
   },
 }
