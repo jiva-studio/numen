@@ -587,7 +587,7 @@ func TestDetachEndsWithCancelledOnAReportOfAnotherWindow(t *testing.T) {
 	}
 }
 
-func TestMoveEndsWithCancelledWhenAnotherWindowTakesTheTab(t *testing.T) {
+func TestMoveEndsWithCancelledWhenTheTabOwnerChanges(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	source := r.Watch("window-a")
 	r.WriteTabs(Window{ID: "window-a"}, []Tab{plex("plex:2", "Orbits")})
