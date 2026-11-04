@@ -82,8 +82,8 @@ type WorkspaceServiceClient interface {
 	DetachTab(context.Context, *connect.Request[v1.DetachTabRequest]) (*connect.Response[v1.DetachTabResponse], error)
 	// WatchTabLinks streams the link groups of the vault and the linkable tabs of
 	// all windows: a snapshot first, a snapshot after each change, and each path
-	// sync. When the stream of a window ends, the tabs of that window are
-	// unlinked.
+	// sync. When the last stream of a window ends, the tabs of that window are
+	// unlinked unless the window watches again within a grace period.
 	WatchTabLinks(context.Context, *connect.Request[v1.WatchTabLinksRequest]) (*connect.ServerStreamForClient[v1.WatchTabLinksResponse], error)
 	// CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
 	CancelWatchTabLinks(context.Context, *connect.Request[v1.CancelWatchTabLinksRequest]) (*connect.Response[v1.CancelWatchTabLinksResponse], error)
@@ -227,8 +227,8 @@ type WorkspaceServiceHandler interface {
 	DetachTab(context.Context, *connect.Request[v1.DetachTabRequest]) (*connect.Response[v1.DetachTabResponse], error)
 	// WatchTabLinks streams the link groups of the vault and the linkable tabs of
 	// all windows: a snapshot first, a snapshot after each change, and each path
-	// sync. When the stream of a window ends, the tabs of that window are
-	// unlinked.
+	// sync. When the last stream of a window ends, the tabs of that window are
+	// unlinked unless the window watches again within a grace period.
 	WatchTabLinks(context.Context, *connect.Request[v1.WatchTabLinksRequest], *connect.ServerStream[v1.WatchTabLinksResponse]) error
 	// CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
 	CancelWatchTabLinks(context.Context, *connect.Request[v1.CancelWatchTabLinksRequest]) (*connect.Response[v1.CancelWatchTabLinksResponse], error)
