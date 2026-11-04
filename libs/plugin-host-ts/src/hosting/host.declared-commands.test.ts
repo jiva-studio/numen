@@ -12,8 +12,6 @@ function declare(changes: Partial<CommandDeclaration> = {}): CommandDeclaration 
     title: 'Open file tree',
     icon: 'folder-tree',
     shortcut: 'mod+shift+e',
-    hasBackend: false,
-    hasFrontend: true,
     ...changes,
   }
 }
@@ -111,9 +109,9 @@ describe('the commands a plugin declares in its manifest', () => {
   })
 
   it('are left to the backend, and not offered by the host, when the plugin has a backend and no handler is registered', () => {
-    const { host } = createHost([
-      declare({ id: 'deck.create', hasBackend: true, hasFrontend: false }),
-    ])
+    const { host } = createHost([declare({ id: 'deck.create' })], {
+      hasPluginFrontend: () => false,
+    })
 
     expect(host.getPaletteCommands()).toStrictEqual([])
   })

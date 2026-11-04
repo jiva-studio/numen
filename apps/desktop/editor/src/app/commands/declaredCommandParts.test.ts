@@ -6,8 +6,7 @@ import { describe, expect, it } from 'vitest'
 import type { DeclaredCommand } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
 
-const base: Omit<DeclaredCommand, 'pluginId' | 'id' | 'title' | 'hasBackend' | 'hasFrontend'> = {
-  isListedByMenu: false,
+const base: Omit<DeclaredCommand, 'pluginId' | 'id' | 'title'> = {
   isSuspended: false,
   contentTypes: [],
   extensions: [],
@@ -19,8 +18,6 @@ const createDeck: DeclaredCommand = {
   pluginId: 'md.cards',
   id: 'deck.create',
   title: 'Create deck',
-  hasBackend: true,
-  hasFrontend: true,
 }
 const openPreset: DeclaredCommand = {
   ...base,
@@ -30,8 +27,6 @@ const openPreset: DeclaredCommand = {
   scope: 'note',
   shortcut: 'mod+shift+o',
   isNoteDestination: false,
-  hasBackend: true,
-  hasFrontend: true,
 }
 const openTree: DeclaredCommand = {
   ...base,
@@ -39,37 +34,35 @@ const openTree: DeclaredCommand = {
   id: 'tree.open',
   title: 'Open file tree',
   icon: 'folder-tree',
-  hasBackend: false,
-  hasFrontend: true,
 }
 
-async function load(hasHandler: (id: string) => boolean) {
+async function load(isOffered: (id: string) => boolean) {
   const declared = useDeclaredCommands({
     list: async () => [createDeck, openPreset, openTree],
-    hasHandler,
+    isOffered,
   })
   await declared.load()
   return declared
 }
 
 describe('the declared commands the palette runs in a backend', () => {
-  it('are those of plugins that have a backend and that no frontend handler claims', async () => {
-    const declared = await load((id) => id === 'md.cards:preset.open')
+  it('are those of plugins that are not suspended and that the plugin host does not offer', async () => {
+    const declared = await load((id) => id === 'md.cards:preset.open' || id === 'md.tree:tree.open')
 
     expect(declared.paletteCommands.value.map((one) => one.id)).toStrictEqual([
       'md.cards:deck.create',
     ])
   })
 
-  it('leave out the commands of a plugin without a backend', async () => {
-    const declared = await load(() => false)
+  it('leave out the commands the plugin host offers', async () => {
+    const declared = await load((id) => id === 'md.tree:tree.open')
 
     expect(declared.paletteCommands.value.map((one) => one.id)).not.toContain('md.tree:tree.open')
   })
 })
 
 describe('the declarations for the plugin host', () => {
-  it('carry every declared command with its title, icon, scope, shortcut and the parts of its plugin', async () => {
+  it('carry every declared command with its title, icon, scope and shortcut', async () => {
     const declared = await load(() => false)
 
     expect(declared.declarations.value).toStrictEqual([
@@ -77,8 +70,6 @@ describe('the declarations for the plugin host', () => {
         pluginId: 'md.cards',
         id: 'deck.create',
         title: 'Create deck',
-        hasBackend: true,
-        hasFrontend: true,
       },
       {
         pluginId: 'md.cards',
@@ -86,16 +77,12 @@ describe('the declarations for the plugin host', () => {
         title: 'Open preset',
         scope: 'note',
         shortcut: 'mod+shift+o',
-        hasBackend: true,
-        hasFrontend: true,
       },
       {
         pluginId: 'md.tree',
         id: 'tree.open',
         title: 'Open file tree',
         icon: 'folder-tree',
-        hasBackend: false,
-        hasFrontend: true,
       },
     ])
   })

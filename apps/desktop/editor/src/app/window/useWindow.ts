@@ -243,7 +243,8 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const pluginNotes = createPluginNotes(core)
   const hostHolder: { current?: import('@numen/plugin-host').PluginHost } = {}
   const declaredCommands = useDeclaredCommands({
-    hasHandler: (id) => hostHolder.current?.hasCommand(id) ?? false,
+    isOffered: (id) =>
+      hostHolder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
   })
   const { pluginHost, pluginLoader } = createPluginSupport({
     getCommandDeclarations: () => declaredCommands.declarations.value,

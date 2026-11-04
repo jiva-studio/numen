@@ -87,8 +87,6 @@ describe('a command run by its id', () => {
             pluginId: 'sample.plugin',
             id: 'count',
             title: 'Count',
-            hasBackend: false,
-            hasFrontend: true,
           },
         ],
       }),

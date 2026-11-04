@@ -6,8 +6,6 @@ const declaration: CommandDeclaration = {
   pluginId: 'md.tree',
   id: 'tree.open',
   title: 'Open file tree',
-  hasBackend: false,
-  hasFrontend: true,
 }
 
 function createHost(extra: Partial<PluginHostDeps> = {}) {
@@ -61,11 +59,9 @@ describe('a declared command whose handler is missing', () => {
   })
 })
 
-describe('the commands of a plugin that has a backend', () => {
-  it('are left to the window while the frontend of the plugin is still loading', () => {
-    const host = createHost({
-      getCommandDeclarations: () => [{ ...declaration, hasBackend: true }],
-    })
+describe('the commands of a plugin that has no frontend', () => {
+  it('are left to the window, which runs them in the backend of the plugin', () => {
+    const host = createHost({ hasPluginFrontend: () => false })
 
     expect(host.getPaletteCommands()).toStrictEqual([])
   })
@@ -95,11 +91,9 @@ describe('a handler registered for a command no manifest declares', () => {
   })
 })
 
-describe('a command declared by a plugin with neither a frontend nor a backend', () => {
-  it('is never offered', () => {
-    const host = createHost({
-      getCommandDeclarations: () => [{ ...declaration, hasFrontend: false, hasBackend: false }],
-    })
+describe('a command declared by a plugin with no frontend to load', () => {
+  it('is not offered by the host, before or after the plugin has a context', () => {
+    const host = createHost({ hasPluginFrontend: () => false })
 
     expect(host.getPaletteCommands()).toStrictEqual([])
     host.createContext('md.tree')

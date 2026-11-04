@@ -95,8 +95,6 @@ describe('command handlers', () => {
             pluginId: 'cmd.plugin',
             id: 'run',
             title: 'run',
-            hasBackend: false,
-            hasFrontend: true,
             shortcut: 'ctrl+k',
           },
         ],
@@ -125,9 +123,7 @@ describe('command handlers', () => {
     const host = createPluginHost(
       createDeps({
         onError,
-        getCommandDeclarations: () => [
-          { pluginId: 'cmd.plugin', id: 'run', title: 'run', hasBackend: false, hasFrontend: true },
-        ],
+        getCommandDeclarations: () => [{ pluginId: 'cmd.plugin', id: 'run', title: 'run' }],
       }),
     )
     const fault = new Error('sync boom')
@@ -157,8 +153,6 @@ describe('a command over a note', () => {
             id: 'summary',
             title: 'Open summary',
             scope: 'note',
-            hasBackend: false,
-            hasFrontend: true,
           },
         ],
       }),
@@ -184,8 +178,6 @@ describe('a command over a note', () => {
             title: 'Open summary',
             shortcut: 'ctrl+p',
             scope: 'note',
-            hasBackend: false,
-            hasFrontend: true,
           },
         ],
       }),
@@ -257,8 +249,6 @@ describe('a tab kind component', () => {
           scope: 'note',
           icon: 'star',
           isNoteDestination: true,
-          hasBackend: false,
-          hasFrontend: true,
         },
       ],
       getRelations: () => relations as never,
@@ -341,8 +331,6 @@ describe('a tab kind component', () => {
             pluginId: 'bare',
             id: 'fail-quietly',
             title: 'Fail',
-            hasBackend: false,
-            hasFrontend: true,
           },
         ],
       }),

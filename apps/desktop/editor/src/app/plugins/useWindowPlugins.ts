@@ -101,6 +101,9 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.reportCommandIssue !== undefined
       ? { reportCommandIssue: deps.reportCommandIssue }
       : {}),
+    hasPluginFrontend: (pluginId) =>
+      settingsHolder.current?.rest?.plugins?.value.find((plugin) => plugin.id === pluginId)
+        ?.hasFrontend ?? true,
     isPluginFailed: (pluginId) => loaderHolder.current?.getPluginFailure(pluginId) !== undefined,
     waitForPlugin: (pluginId) => loaderHolder.current?.settlePlugin(pluginId) ?? Promise.resolve(),
     app: createAppInfo({

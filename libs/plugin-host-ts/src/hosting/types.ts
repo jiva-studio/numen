@@ -61,8 +61,6 @@ export interface CommandDeclaration {
   /** 'note' where it is offered only while a note is in front. */
   readonly scope?: 'note'
   readonly isNoteDestination?: boolean
-  readonly hasBackend: boolean
-  readonly hasFrontend: boolean
 }
 
 export interface PluginPaletteCommand {
@@ -82,6 +80,8 @@ export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unkno
 export interface PluginHostDeps {
   /** The commands the enabled plugins declare in their manifests; undefined until the first list has loaded. */
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
+  /** Whether the plugin declares a frontend the window loads; where absent, every plugin does. */
+  readonly hasPluginFrontend?: (pluginId: string) => boolean
   /** Whether the plugin failed to load or to activate. */
   readonly isPluginFailed?: (pluginId: string) => boolean
   /** Settles once the plugin has been activated, or has failed to. */

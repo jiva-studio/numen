@@ -32,5 +32,8 @@ test('a call with options this cannot follow is listed as unreadable', () => {
 })
 
 test('a mention in a comment or a string is not a call', () => {
-  assert.deepEqual(readRegistrations("// registerCommand({ id: 'x' })\nconst s = 'registerCommand({})'"), [])
+  assert.deepEqual(
+    readRegistrations("// registerCommand({ id: 'x' })\nconst s = 'registerCommand({})'"),
+    [],
+  )
 })

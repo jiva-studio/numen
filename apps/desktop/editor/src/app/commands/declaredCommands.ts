@@ -53,8 +53,8 @@ export function createDeclaredPaletteCommands(
 export interface DeclaredCommandsDeps {
   readonly list?: typeof listDeclaredCommands
   readonly run?: typeof runDeclaredCommand
-  /** Whether a plugin frontend has registered a handler for the command of the full id. */
-  readonly hasHandler?: (id: string) => boolean
+  /** Whether the plugin host offers the command of the full id: its frontend registered a handler, or is still loading. */
+  readonly isOffered?: (id: string) => boolean
 }
 
 /** The declaration the plugin host receives for a declared command. */
@@ -66,8 +66,6 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
   ...(command.scope ? { scope: command.scope } : {}),
   ...(command.shortcut ? { shortcut: command.shortcut } : {}),
   ...(command.isNoteDestination ? { isNoteDestination: true } : {}),
-  hasBackend: command.hasBackend,
-  hasFrontend: command.hasFrontend,
 })
 
 /**
@@ -77,21 +75,19 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
 export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const list = deps.list ?? listDeclaredCommands
   const run = deps.run ?? runDeclaredCommand
-  const hasHandler = deps.hasHandler ?? (() => false)
+  const isOffered = deps.isOffered ?? (() => false)
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
   let newest = 0
   let unregisterAll: readonly (() => void)[] = []
 
   /**
    * The declared commands a backend runs and the palette lists: those of a plugin that is not
-   * suspended, that no frontend handler has taken. A command of a plugin with both parts may be
-   * one its frontend is yet to register; the backend answers an unknown command until it does.
+   * suspended, that the plugin host does not offer, because no frontend handler is registered for
+   * them and their frontend is not loading. The backend of a plugin that has none answers an unknown
+   * command.
    */
   const backendCommands = computed(() =>
-    (declared.value ?? []).filter(
-      (one) =>
-        one.hasBackend && !one.isSuspended && !one.isListedByMenu && !hasHandler(getPaletteId(one)),
-    ),
+    (declared.value ?? []).filter((one) => !one.isSuspended && !isOffered(getPaletteId(one))),
   )
 
   watch(

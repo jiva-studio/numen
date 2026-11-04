@@ -12,7 +12,8 @@ import ts from 'typescript'
 export const UNREADABLE_FIELD = '<unreadable>'
 
 const unwrap = (node) =>
-  node && (ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isParenthesizedExpression(node))
+  node &&
+  (ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isParenthesizedExpression(node))
     ? unwrap(node.expression)
     : node
 
@@ -33,10 +34,14 @@ const findConstant = (sourceFile, name) => {
 
 const getText = (sourceFile, node) => {
   const value = unwrap(node)
-  if (value && (ts.isStringLiteral(value) || ts.isNoSubstitutionTemplateLiteral(value))) return value.text
+  if (value && (ts.isStringLiteral(value) || ts.isNoSubstitutionTemplateLiteral(value)))
+    return value.text
   if (value && ts.isIdentifier(value)) {
     const constant = findConstant(sourceFile, value.text)
-    if (constant && (ts.isStringLiteral(constant) || ts.isNoSubstitutionTemplateLiteral(constant))) {
+    if (
+      constant &&
+      (ts.isStringLiteral(constant) || ts.isNoSubstitutionTemplateLiteral(constant))
+    ) {
       return constant.text
     }
   }

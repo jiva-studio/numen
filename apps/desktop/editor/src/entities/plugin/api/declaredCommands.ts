@@ -14,9 +14,6 @@ interface WireCommand {
   readonly scope?: string
   readonly shortcut?: string
   readonly isNoteDestination?: boolean
-  readonly hasBackend: boolean
-  readonly hasFrontend: boolean
-  readonly isListedByMenu: boolean
   readonly isSuspended: boolean
   readonly contentTypes: readonly string[]
   readonly extensions: readonly string[]
@@ -46,11 +43,6 @@ export interface DeclaredCommand {
   readonly scope?: 'note'
   readonly shortcut?: string
   readonly isNoteDestination?: boolean
-  /** The parts of the plugin that declares the command. */
-  readonly hasBackend: boolean
-  readonly hasFrontend: boolean
-  /** Set for a command the menu of a file or the view of a note type lists, and the palette does not. */
-  readonly isListedByMenu: boolean
   /** Set while the plugin is held suspended; its backend runs nothing then. */
   readonly isSuspended: boolean
   readonly contentTypes: readonly string[]
@@ -81,9 +73,6 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   ...(wire.scope === 'note' ? { scope: 'note' as const } : {}),
   ...(wire.shortcut ? { shortcut: wire.shortcut } : {}),
   ...(wire.isNoteDestination ? { isNoteDestination: true } : {}),
-  hasBackend: wire.hasBackend,
-  hasFrontend: wire.hasFrontend,
-  isListedByMenu: wire.isListedByMenu,
   isSuspended: wire.isSuspended,
   contentTypes: wire.contentTypes,
   extensions: wire.extensions,

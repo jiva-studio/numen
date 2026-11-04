@@ -25,8 +25,6 @@ describe('createPluginHost', () => {
           id: 'test.run',
           title: 'Run Test',
           shortcut: 'ctrl+shift+k',
-          hasBackend: false,
-          hasFrontend: true,
         },
       ],
       registerKind: vi.fn((kind) => {
@@ -132,8 +130,6 @@ describe('createPluginHost', () => {
           pluginId: 'disposable.plugin',
           id: 'cmd1',
           title: 'Cmd 1',
-          hasBackend: false,
-          hasFrontend: true,
         },
       ],
     })

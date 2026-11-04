@@ -30,17 +30,18 @@ function reportIssue(deps: PluginHostDeps, registry: HostRegistry, issue: Comman
 }
 
 /**
- * Whether a declared command with no handler is offered anyway: its plugin has a frontend and no
- * backend, and the frontend has not started to register yet. A plugin that failed to load is not
- * offered. Once the frontend has started, the command is not offered and the missing handler is
- * reported. A plugin with a backend runs the command there.
+ * Whether a declared command with no handler is offered anyway: its plugin has a frontend that has
+ * not started to register yet. A plugin that failed to load is not offered. Once the frontend has
+ * started, the command is not offered by the host and the missing handler is reported; the window
+ * runs the command in the backend of the plugin where it has one. A plugin with no frontend has
+ * nothing to wait for, and its commands are left to the window.
  */
 function isOfferedBeforeItsHandler(
   deps: PluginHostDeps,
   registry: HostRegistry,
   declaration: CommandDeclaration,
 ): boolean {
-  if (!declaration.hasFrontend || declaration.hasBackend) return false
+  if (deps.hasPluginFrontend?.(declaration.pluginId) === false) return false
   if (deps.isPluginFailed?.(declaration.pluginId)) return false
   if (!registry.activated.value.has(declaration.pluginId)) return true
   reportIssue(deps, registry, {
@@ -53,9 +54,9 @@ function isOfferedBeforeItsHandler(
 
 /**
  * The commands of the plugin frontends the window offers: those the manifests declare that have a
- * handler, and those of a frontend that has not started yet. A command of a plugin that has a backend
- * is left to the window, which runs it there where no handler is registered. Nothing is offered, and
- * nothing is reported, until the first list of declarations has loaded.
+ * handler, and those of a frontend that has not started yet. A command with no handler of a plugin
+ * that is not loading is left to the window, which runs it in the backend of the plugin. Nothing is
+ * offered, and nothing is reported, until the first list of declarations has loaded.
  */
 export function listOfferedCommands(
   deps: PluginHostDeps,

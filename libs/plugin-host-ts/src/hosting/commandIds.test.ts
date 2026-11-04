@@ -10,8 +10,6 @@ const declare = (pluginId: string, id: string): CommandDeclaration => ({
   pluginId,
   id,
   title: id,
-  hasBackend: false,
-  hasFrontend: true,
 })
 
 const createDeps = (...declarations: CommandDeclaration[]): PluginHostDeps => ({

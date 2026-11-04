@@ -17,9 +17,6 @@ const createSample: DeclaredCommand = {
   id: 'sample.create',
   title: 'Create a sample',
   icon: 'layers',
-  hasBackend: true,
-  hasFrontend: false,
-  isListedByMenu: false,
   isSuspended: false,
   contentTypes: [],
   extensions: [],
@@ -33,9 +30,6 @@ const convert: DeclaredCommand = {
   pluginId: 'md.numen.pages',
   id: 'convert',
   title: 'Convert',
-  hasBackend: true,
-  hasFrontend: false,
-  isListedByMenu: false,
   isSuspended: false,
   contentTypes: ['application/pdf'],
   extensions: ['pdf'],
@@ -252,11 +246,11 @@ describe('the declared commands read more than once', () => {
 })
 
 describe('a declared command the palette leaves out', () => {
-  it('is one of a suspended plugin, and one a menu lists', async () => {
+  it('is one of a suspended plugin', async () => {
     const declared = useDeclaredCommands({
       list: async () => [
         { ...createSample, isSuspended: true },
-        { ...convert, isListedByMenu: true },
+        { ...convert, isSuspended: true },
       ],
     })
     await declared.load()
