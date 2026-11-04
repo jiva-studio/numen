@@ -21,6 +21,7 @@ import {
 import { dropOnEdge, dropTab, moveTabWithin, type NodeIdFactory } from '../lib/edit'
 import type { NodeId, Tab, TabId, Workspace } from '../lib/node'
 import type { Rect } from '../lib/rect'
+import { getViewportSize, getWindowOrigin } from '@/shared/lib/dom'
 
 /** A tab under the pointer, and the pane its strip belongs to. */
 interface Drag {
@@ -64,8 +65,7 @@ export interface TabDragState {
 }
 
 export function useTabDrag(options: TabDragOptions): TabDragState {
-  const getViewport =
-    options.getViewport ?? ((): Size => ({ width: window.innerWidth, height: window.innerHeight }))
+  const getViewport = options.getViewport ?? getViewportSize
 
   const {
     dragging,
@@ -83,7 +83,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
       if (target) {
         land(item, target)
       } else if (options.onTearOff) {
-        options.onTearOff(item.tab, { x: window.screenX + point.x, y: window.screenY + point.y })
+        options.onTearOff(item.tab, getScreenPoint(point))
       }
     },
   })
@@ -136,7 +136,7 @@ const isInside = (point: Position, box: Rect): boolean =>
   point.y <= box.y + box.height
 
 const isInsideViewport = (point: Position, viewport: Size): boolean =>
-  point.x >= 0 && point.y >= 0 && point.x <= viewport.width && point.y <= viewport.height
+  point.x >= 0 && point.y >= 0 && point.x < viewport.width && point.y < viewport.height
 
 const getClosest = (targetElement: Element | null, selector: string): Element | null =>
   targetElement?.closest(selector) ?? null
@@ -222,4 +222,10 @@ function resolveDropTarget(
   if (!pane || !id) return null
 
   return getPaneDropTarget(point, { element: pane, id }, local)
+}
+
+/** A point in the window, put on the screen. */
+const getScreenPoint = (point: Position): Position => {
+  const origin = getWindowOrigin()
+  return { x: origin.x + point.x, y: origin.y + point.y }
 }

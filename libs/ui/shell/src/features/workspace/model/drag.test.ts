@@ -100,12 +100,12 @@ function createDrag(
   return { drag, workspace, scope, frame, state, main, dragTo, release, cancel }
 }
 
-/** A side of the window: the last move, inside the edge band, and the release past that side. */
+/** A side of the window: the last move, inside the edge band, and the release on the first point past that side. */
 const OUTSIDE_SIDES: readonly [string, [number, number], [number, number]][] = [
   ['left', [105, 300], [-1, 300]],
-  ['right', [1095, 300], [1101, 300]],
+  ['right', [1095, 300], [1100, 300]],
   ['top', [350, 55], [350, -1]],
-  ['bottom', [350, 645], [350, 651]],
+  ['bottom', [350, 645], [350, 650]],
 ]
 
 const getTabs = (workspace: Workspace) => getPanes(workspace.root).map((each) => each.tabs)
@@ -199,13 +199,13 @@ describe('a tab being dragged', () => {
     expect(drag.overlay.value).toStrictEqual({ x: 700, y: 0, width: 0, height: 30 })
   })
 
-  it('lands anywhere in the frame, its edges included', () => {
+  it('lands anywhere in the frame, up to its last pixels inside the window', () => {
     const { drag, dragTo } = start()
 
     for (const [x, y] of [
       [100, 300],
-      [1100, 300],
-      [350, 650],
+      [1099, 300],
+      [350, 649],
     ] as const) {
       dragTo('plex', [350, 300], [x, y])
       expect(drag.dropTarget.value?.kind).toBe('edge')
