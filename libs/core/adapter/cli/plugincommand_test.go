@@ -227,7 +227,7 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{{
 		PluginID: "md.numen.links",
-		Command:  plugincommand.Command{ID: "link.delete-video", Title: "Delete the copy", NoteTypes: []string{"link"}},
+		Command:  plugincommand.Command{ID: "link.deleteVideo", Title: "Delete the copy", NoteTypes: []string{"link"}},
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{}, nil)
 	deps := cli.Deps{
@@ -238,7 +238,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 	}
 
 	help, err := runWithDeps(deps, "help")
-	if err != nil || !strings.Contains(help, "numen-cli link.delete-video <vault> <file>\n") {
+	if err != nil || !strings.Contains(help, "numen-cli link.deleteVideo <vault> <file>\n") {
 		t.Fatalf("the help reads %q (%v)", help, err)
 	}
 }

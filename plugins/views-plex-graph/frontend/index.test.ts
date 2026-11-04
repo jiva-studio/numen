@@ -51,7 +51,7 @@ describe('view-plex-graph plugin', () => {
     const commands = ctx.getRegisteredCommands()
     expect(commands.map((one) => [one.id, one.scope, one.shortcut])).toStrictEqual([
       ['graph.open', undefined, 'mod+shift+x'],
-      ['graph.show-note', 'note', 'mod+shift+p'],
+      ['graph.showNote', 'note', 'mod+shift+p'],
     ])
     expect(commands.map((one) => one.isNoteDestination === true)).toStrictEqual([false, true])
   })
@@ -77,7 +77,7 @@ describe('view-plex-graph plugin', () => {
     activate(ctx)
 
     await ctx.triggerCommand('graph.open')
-    await ctx.triggerCommand('graph.show-note', { path: 'One.md', title: 'One', type: 'note' })
+    await ctx.triggerCommand('graph.showNote', { path: 'One.md', title: 'One', type: 'note' })
     await ctx.getRegisteredContextMenus()[0]!.handler({
       path: 'Two.md',
       name: 'Two',

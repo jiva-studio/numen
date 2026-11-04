@@ -8,10 +8,10 @@ describe('what the menu offers', () => {
   it('offers the commands of the window over a note', () => {
     const expected = [
       'app:note.open',
-      'app:note.copy-path',
-      'app:note.create-child',
-      'app:note.create-parent',
-      'app:note.create-jump',
+      'app:note.copyPath',
+      'app:note.createChild',
+      'app:note.createParent',
+      'app:note.createJump',
       'app:note.rename',
       'app:note.trash',
     ]
@@ -52,10 +52,10 @@ describe('what the menu on a node offers of the commands plugins declare', () =>
       ['app:note.open', 'open'],
       ['org.example.sample:share.run', 'declared'],
       ['org.example.sample:print.run', 'declared'],
-      ['app:note.copy-path', 'file'],
-      ['app:note.create-child', 'plex'],
-      ['app:note.create-parent', 'plex'],
-      ['app:note.create-jump', 'plex'],
+      ['app:note.copyPath', 'file'],
+      ['app:note.createChild', 'plex'],
+      ['app:note.createParent', 'plex'],
+      ['app:note.createJump', 'plex'],
       ['app:note.rename', 'plex'],
       ['app:note.trash', 'remove'],
     ])

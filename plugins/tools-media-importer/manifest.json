@@ -39,25 +39,25 @@
       ]
     },
     {
-      "id": "link.download-text",
+      "id": "link.downloadText",
       "title": "Download text again",
       "icon": "refresh-cw",
       "noteTypes": ["link"]
     },
     {
-      "id": "link.download-video",
+      "id": "link.downloadVideo",
       "title": "Download video",
       "icon": "download",
       "noteTypes": ["link"]
     },
     {
-      "id": "link.delete-text",
+      "id": "link.deleteText",
       "title": "Delete text",
       "icon": "trash-2",
       "when": [{ "key": "version.plugin", "is": ["md.numen.tools.media.importer"] }]
     },
     {
-      "id": "link.delete-video",
+      "id": "link.deleteVideo",
       "title": "Delete downloaded video",
       "icon": "trash-2",
       "noteTypes": ["link"]

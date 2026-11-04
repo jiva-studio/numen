@@ -17,16 +17,16 @@ import type { FileTreeHost } from '../model/tabDeps'
 /** One command of the window, in the group it is drawn in. */
 const command = (id: string, group: string, text = id): MenuEntry => ({ id, text, group })
 
-const COPY = command('app:note.copy-path', 'file')
+const COPY = command('app:note.copyPath', 'file')
 const REMOVE = command('app:note.trash', 'app:note.trash')
 const LINKS: MenuEntry = {
   id: 'links',
   text: 'Links',
   group: 'links',
   children: [
-    command('app:note.create-child', 'links'),
-    command('app:note.create-parent', 'links'),
-    command('app:note.create-jump', 'links'),
+    command('app:note.createChild', 'links'),
+    command('app:note.createParent', 'links'),
+    command('app:note.createJump', 'links'),
     command('app:note.rename', 'links'),
   ],
 }

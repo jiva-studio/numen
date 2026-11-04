@@ -282,7 +282,7 @@ describe('a command a plugin runs over the vault', () => {
 
   it.each([
     'app:note.trash',
-    'app:note.create-child',
+    'app:note.createChild',
     'app:note.rename',
     'md.numen.engines.transcription:transcript.create',
   ])('fails for %s without vault:write', (id) => {
@@ -300,7 +300,7 @@ describe('a command a plugin runs over the vault', () => {
 
   it.each([
     'app:note.trash',
-    'app:note.create-child',
+    'app:note.createChild',
     'app:note.rename',
     'md.numen.engines.transcription:transcript.create',
   ])('runs %s with vault:write', (id) => {
@@ -315,8 +315,8 @@ describe('a command a plugin runs over the vault', () => {
 
   it.each([
     'app:note.open',
-    'md.numen.views.plex.graph:graph.show-note',
-    'app:note.copy-path',
+    'md.numen.views.plex.graph:graph.showNote',
+    'app:note.copyPath',
     'md.numen.views.agent.chat:note.ask',
   ])('runs %s without vault:write', (id) => {
     const { context, workspace } = createContext([])

@@ -34,7 +34,7 @@ export function activate(context: PluginContext): void {
     },
   })
   context.registerCommand({
-    id: 'tree.reveal-note',
+    id: 'tree.revealNote',
     title: WORDS.reveal,
     scope: NOTE_SCOPE,
     icon: FolderOpen,

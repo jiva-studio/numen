@@ -59,7 +59,7 @@ export function activate(context: PluginContext): void {
     },
   })
   context.registerCommand({
-    id: 'graph.show-note',
+    id: 'graph.showNote',
     title: WORDS.travel,
     scope: NOTE_SCOPE,
     shortcut: 'mod+shift+p',

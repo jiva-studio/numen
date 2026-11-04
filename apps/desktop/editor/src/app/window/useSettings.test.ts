@@ -129,19 +129,17 @@ describe('the lists the palette offers for a setting', () => {
   it('offers the three performance profiles, each with what it does', () => {
     const { settings } = createSettings()
 
-    expect(settings.paletteLists.getStepGroups('app:performance.choose-profile', '')).toStrictEqual(
-      [
-        {
-          id: 'performance',
-          title: WORDS.performance,
-          items: [
-            { id: 'eco', title: WORDS.eco, detail: WORDS.ecoDetail },
-            { id: 'balanced', title: WORDS.balanced, detail: WORDS.balancedDetail },
-            { id: 'maximum', title: WORDS.maximum, detail: WORDS.maximumDetail },
-          ],
-        },
-      ],
-    )
+    expect(settings.paletteLists.getStepGroups('app:performance.chooseProfile', '')).toStrictEqual([
+      {
+        id: 'performance',
+        title: WORDS.performance,
+        items: [
+          { id: 'eco', title: WORDS.eco, detail: WORDS.ecoDetail },
+          { id: 'balanced', title: WORDS.balanced, detail: WORDS.balancedDetail },
+          { id: 'maximum', title: WORDS.maximum, detail: WORDS.maximumDetail },
+        ],
+      },
+    ])
   })
 
   it('offers nothing for a command that is over no setting', () => {
@@ -149,17 +147,17 @@ describe('the lists the palette offers for a setting', () => {
     vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
     vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
 
-    expect(settings.paletteLists.getStepGroups('app:note.create-child', '')).toStrictEqual([])
+    expect(settings.paletteLists.getStepGroups('app:note.createChild', '')).toStrictEqual([])
   })
 
   it('offers the syncing switch the list its own setting holds', () => {
     const { settings } = createSettings()
 
-    expect(settings.paletteLists.getStepGroups('app:note.choose-title-sync', '')).toStrictEqual(
+    expect(settings.paletteLists.getStepGroups('app:note.chooseTitleSync', '')).toStrictEqual(
       settings.sync.getSyncingGroups(),
     )
     expect(
-      settings.paletteLists.getStepGroups('app:note.choose-title-sync', '')[0]?.items,
+      settings.paletteLists.getStepGroups('app:note.chooseTitleSync', '')[0]?.items,
     ).toHaveLength(2)
   })
 
@@ -167,8 +165,8 @@ describe('the lists the palette offers for a setting', () => {
     const { settings } = createSettings()
     const preview = vi.spyOn(settings.appearance, 'previewItem').mockImplementation(vi.fn())
 
-    settings.paletteLists.previewItem('app:note.choose-title-sync', 'off')
-    settings.paletteLists.previewItem('app:appearance.choose-theme', 'preset:dracula')
+    settings.paletteLists.previewItem('app:note.chooseTitleSync', 'off')
+    settings.paletteLists.previewItem('app:appearance.chooseTheme', 'preset:dracula')
 
     expect(preview.mock.calls).toStrictEqual([['preset:dracula']])
   })
@@ -399,16 +397,16 @@ describe('the settings tab', () => {
     ])
 
     expect(
-      settings.paletteLists.getStepGroups('app:appearance.choose-theme', '').length,
+      settings.paletteLists.getStepGroups('app:appearance.chooseTheme', '').length,
     ).toBeGreaterThan(0)
     expect(
-      settings.paletteLists.getStepGroups('app:appearance.choose-mode', '').length,
+      settings.paletteLists.getStepGroups('app:appearance.chooseMode', '').length,
     ).toBeGreaterThan(0)
     expect(
-      settings.paletteLists.getStepGroups('app:appearance.choose-interface-size', '').length,
+      settings.paletteLists.getStepGroups('app:appearance.chooseInterfaceSize', '').length,
     ).toBeGreaterThan(0)
     expect(
-      settings.paletteLists.getStepGroups('app:appearance.choose-text-size', '').length,
+      settings.paletteLists.getStepGroups('app:appearance.chooseTextSize', '').length,
     ).toBeGreaterThan(0)
   })
 

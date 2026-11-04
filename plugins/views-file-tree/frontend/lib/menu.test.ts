@@ -33,7 +33,7 @@ describe('the menu on a row standing for a note', () => {
       'travel',
       '— new',
       'rename',
-      'app:note.copy-path',
+      'app:note.copyPath',
       '— links',
       '— ask',
       '— app:note.trash',
@@ -45,9 +45,9 @@ describe('the menu on a row standing for a note', () => {
 
     const linksSubmenu = menu.find((one) => one.id === 'links')
     expect(linksSubmenu?.children?.map((c) => c.id)).toStrictEqual([
-      'app:note.create-child',
-      'app:note.create-parent',
-      'app:note.create-jump',
+      'app:note.createChild',
+      'app:note.createParent',
+      'app:note.createJump',
       'app:note.rename',
     ])
   })
@@ -58,7 +58,7 @@ describe('the menu on a row standing for any other file', () => {
     expect(getGroupedIds({ isNote: false, path: 'Lecture.mp3' })).toStrictEqual([
       'new',
       'rename',
-      'app:note.copy-path',
+      'app:note.copyPath',
       '— extract',
       'refine',
       '— app:note.trash',
@@ -69,13 +69,13 @@ describe('the menu on a row standing for any other file', () => {
     expect(getGroupedIds({ isNote: false, path: 'Cover.png' })).toStrictEqual([
       'new',
       'rename',
-      'app:note.copy-path',
+      'app:note.copyPath',
       '— app:note.trash',
     ])
     expect(getGroupedIds({ isFolder: true, isNote: false, path: 'physics' })).toStrictEqual([
       'new',
       'rename',
-      'app:note.copy-path',
+      'app:note.copyPath',
       '— app:note.trash',
     ])
   })

@@ -218,7 +218,7 @@ describe('the menu on a node', () => {
     expect(one.state.menuItems.value.map((item) => item.id).slice(0, 3)).toStrictEqual([
       'app:note.open',
       'org.example.sample:share.run',
-      'app:note.copy-path',
+      'app:note.copyPath',
     ])
     one.state.chooseMenuItem('org.example.sample:share.run')
 

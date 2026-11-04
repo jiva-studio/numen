@@ -23,10 +23,10 @@ const BAND = {
  */
 export const ITEMS: readonly MenuItem[] = [
   { id: 'app:note.open', text: words.read, group: BAND.open },
-  { id: 'app:note.copy-path', text: words.copy, group: BAND.file },
-  { id: 'app:note.create-child', text: words.child, group: BAND.plex },
-  { id: 'app:note.create-parent', text: words.parent, group: BAND.plex },
-  { id: 'app:note.create-jump', text: words.jump, group: BAND.plex },
+  { id: 'app:note.copyPath', text: words.copy, group: BAND.file },
+  { id: 'app:note.createChild', text: words.child, group: BAND.plex },
+  { id: 'app:note.createParent', text: words.parent, group: BAND.plex },
+  { id: 'app:note.createJump', text: words.jump, group: BAND.plex },
   { id: 'app:note.rename', text: words.title, group: BAND.plex },
   { id: 'app:note.trash', text: words.remove, group: BAND.remove },
 ]

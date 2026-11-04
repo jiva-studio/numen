@@ -10,7 +10,7 @@ import (
 )
 
 func TestACommandIdIsAnObjectAndAnActionJoinedByADot(t *testing.T) {
-	for _, id := range []string{"deck.create", "card-model.create", "link.download-text", "recognition.delete", "tree.reveal-note"} {
+	for _, id := range []string{"deck.create", "cardModel.create", "link.downloadText", "recognition.delete", "tree.revealNote", "note.goTo", "appearance.chooseInterfaceSize", "deck2.create", "a.b"} {
 		text := commandManifestHead + `[{"id":"` + id + `","title":"C"}]}`
 
 		if _, err := manifestjson.Read(strings.NewReader(text)); err != nil {
@@ -22,6 +22,11 @@ func TestACommandIdIsAnObjectAndAnActionJoinedByADot(t *testing.T) {
 func TestACommandIdOutsideTheObjectAndActionFormIsInvalid(t *testing.T) {
 	for _, id := range []string{
 		"create-deck",
+		"card-model.create",
+		"link.download-text",
+		"note.open-beside",
+		"deck.create_now",
+		"deck_set.create",
 		"convert",
 		"Deck.create",
 		"deck.Create",

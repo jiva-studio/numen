@@ -43,7 +43,7 @@ describe('a keystroke the window answers', () => {
 describe('the command a letter asks for', () => {
   it('is the one the chord alongside it names', () => {
     expect(findChordCommand('n', false)).toBe('app:note.create')
-    expect(findChordCommand('g', false)).toBe('app:note.go-to')
+    expect(findChordCommand('g', false)).toBe('app:note.goTo')
   })
 
   it('is the same command in either case', () => {
@@ -51,7 +51,7 @@ describe('the command a letter asks for', () => {
   })
 
   it('is another command entirely when Shift is retained with the letter', () => {
-    expect(findChordCommand('c', true)).toBe('app:note.create-child')
+    expect(findChordCommand('c', true)).toBe('app:note.createChild')
     expect(findChordCommand('w', true)).toBe('app:tab.close')
     expect(findChordCommand('n', true)).toBe('app:vault.create')
   })
@@ -83,14 +83,14 @@ describe('how a keystroke is drawn on the row that names it', () => {
       icons: ['control'],
       letter: 'N',
     })
-    expect(findChordKeys('app:note.go-to', 'Linux x86_64')).toEqual({
+    expect(findChordKeys('app:note.goTo', 'Linux x86_64')).toEqual({
       icons: ['control'],
       letter: 'G',
     })
   })
 
   it('carries Shift where the chord holds it', () => {
-    expect(findChordKeys('app:note.create-child', 'MacIntel')).toEqual({
+    expect(findChordKeys('app:note.createChild', 'MacIntel')).toEqual({
       icons: ['command', 'shift'],
       letter: 'C',
     })

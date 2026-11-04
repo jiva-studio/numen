@@ -14,7 +14,7 @@ import (
 // The commands the manifest declares, and the argument each takes.
 const (
 	commandCreateDeck      = "deck.create"
-	commandCreateCardModel = "card-model.create"
+	commandCreateCardModel = "cardModel.create"
 	commandCreatePreset    = "preset.create"
 	argumentTitle          = "title"
 )

@@ -149,7 +149,7 @@ describe('the window’s commands over a row', () => {
     const ids = host.getPathCommands({ entry: entry('Lecture.mp3', false), isSeveral: false })
 
     expect(ids.map((one) => [one.id, one.isDisabled])).toStrictEqual([
-      ['app:note.copy-path', undefined],
+      ['app:note.copyPath', undefined],
       ['app:note.trash', undefined],
     ])
   })
@@ -193,7 +193,7 @@ describe('the window’s commands over a row', () => {
       'ctx:Lecture.mp3:Lecture.mp3:false:false:false',
       'md.example.whisper:text.create@',
       'md.example.proofread:text.create@v1',
-      'app:note.copy-path',
+      'app:note.copyPath',
       'app:note.trash',
     ])
 
@@ -221,7 +221,7 @@ describe('the window’s commands over a row', () => {
       host.getPathCommands({ entry: entry('a.md'), isSeveral: true }).map((one) => one.id),
     ).toStrictEqual(['app:note.trash'])
     const pdf = host.getPathCommands({ entry: entry('Heat.pdf', false), isSeveral: false })
-    expect(pdf.map((one) => one.id)).toStrictEqual(['app:note.copy-path', 'app:note.trash'])
+    expect(pdf.map((one) => one.id)).toStrictEqual(['app:note.copyPath', 'app:note.trash'])
   })
 
   it('run over the first path, with the rest as the others', () => {

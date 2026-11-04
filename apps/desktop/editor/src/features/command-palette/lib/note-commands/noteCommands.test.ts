@@ -18,14 +18,14 @@ describe('the commands over a note', () => {
 
     expect(needs).toStrictEqual({
       'app:note.open': undefined,
-      'app:note.open-beside': undefined,
-      'app:note.create-child': 'naming',
-      'app:note.create-parent': 'naming',
-      'app:note.create-jump': 'naming',
+      'app:note.openBeside': undefined,
+      'app:note.createChild': 'naming',
+      'app:note.createParent': 'naming',
+      'app:note.createJump': 'naming',
       'app:note.rename': 'naming',
       'app:note.trash': undefined,
       'app:note.delete': 'exactly',
-      'app:note.copy-path': undefined,
+      'app:note.copyPath': undefined,
     })
   })
 })

@@ -37,7 +37,7 @@ const target: Record<string, readonly Entry[]> = {
 /** The window's commands over a row: every one the menu can offer, on any row, and no icons. */
 const windowCommands = {
   getPathCommands: () =>
-    ['app:note.trash', 'transcribe', 'recognise', 'proofread', 'app:note.copy-path'].map((id) => ({
+    ['app:note.trash', 'transcribe', 'recognise', 'proofread', 'app:note.copyPath'].map((id) => ({
       id,
       text: id,
       group: 'run',
@@ -507,7 +507,9 @@ describe('an item chosen in the menu on a row', () => {
 
     pendingState.one.chooseMenuItem('app:note.trash')
 
-    expect(pendingState.recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
+    expect(pendingState.recorded).toStrictEqual([
+      'runs app:note.trash Entropy.md Cover.png Entropy.md',
+    ])
   })
 
   it('passes the one row to the window, on a row standing outside the selection', async () => {
@@ -620,9 +622,9 @@ describe('whether a command is run over a note', () => {
     await list.openFolder(ROOT)
 
     one.openMenu({ path: 'physics', at: { x: 0, y: 0 } })
-    one.chooseMenuItem('app:note.copy-path')
+    one.chooseMenuItem('app:note.copyPath')
     one.openMenu({ path: 'Heat.pdf', at: { x: 0, y: 0 } })
-    one.chooseMenuItem('app:note.copy-path')
+    one.chooseMenuItem('app:note.copyPath')
 
     expect(folders).toStrictEqual([true, false])
   })

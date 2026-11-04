@@ -77,7 +77,7 @@ func TestImportCommands_DeleteAndDownloadCopyAndText(t *testing.T) {
 	for _, step := range []struct {
 		id      string
 		hasCopy bool
-	}{{"link.delete-video", false}, {"link.download-video", true}, {"link.download-text", true}} {
+	}{{"link.deleteVideo", false}, {"link.downloadVideo", true}, {"link.downloadText", true}} {
 		answer, err := commands.RunCommand(t.Context(), command.Request{Command: step.id, Path: made.OpenedPath})
 		if err != nil || answer.Message == "" {
 			t.Fatalf("%s answered %+v (%v)", step.id, answer, err)
@@ -106,7 +106,7 @@ func hasCopy(t *testing.T, store *hosttest.Store) bool {
 func TestDeleteTextNeedsTheVersionTheHostNames(t *testing.T) {
 	commands, _ := newMockCommands(t)
 
-	_, err := commands.RunCommand(t.Context(), command.Request{Command: "link.delete-text", Path: "Mills.md"})
+	_, err := commands.RunCommand(t.Context(), command.Request{Command: "link.deleteText", Path: "Mills.md"})
 
 	if !errors.Is(err, command.ErrBadArguments) {
 		t.Fatalf("a deletion with no version: got %v, want ErrBadArguments", err)
@@ -246,7 +246,7 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 	cf.copyErr = nil
 
 	// download-text, download-copy, delete-copy on missing note.
-	for _, cmd := range []string{"link.download-text", "link.download-video", "link.delete-video"} {
+	for _, cmd := range []string{"link.downloadText", "link.downloadVideo", "link.deleteVideo"} {
 		if _, err := commands.RunCommand(t.Context(), command.Request{Command: cmd, Path: "missing.md"}); err == nil {
 			t.Errorf("%s(missing.md) succeeded", cmd)
 		}
@@ -254,14 +254,14 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 
 	// download-text when FetchText fails.
 	cf.textErr = errors.New("fetch text failed")
-	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.download-text", Path: res.OpenedPath}); err == nil {
+	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.downloadText", Path: res.OpenedPath}); err == nil {
 		t.Error("download-text(err) succeeded")
 	}
 	cf.textErr = nil
 
 	// download-copy when Copy fails with non-ErrBeingFetched error.
 	cf.canCopy = false
-	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.download-video", Path: res.OpenedPath}); err == nil {
+	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.downloadVideo", Path: res.OpenedPath}); err == nil {
 		t.Error("download-copy(not copyable) succeeded")
 	}
 	cf.canCopy = true
@@ -275,7 +275,7 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 	}
 	links.StartCopy(t.Context(), foundLink)
 	<-cf.startedCh
-	ans, callErr := commands.RunCommand(t.Context(), command.Request{Command: "link.download-video", Path: res.OpenedPath})
+	ans, callErr := commands.RunCommand(t.Context(), command.Request{Command: "link.downloadVideo", Path: res.OpenedPath})
 	close(cf.blockCh)
 	links.Wait()
 	cf.startedCh = nil
@@ -286,7 +286,7 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 
 	// delete-copy when DeleteCopy fails.
 	es.listErr = errors.New("list error")
-	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.delete-video", Path: res.OpenedPath}); err == nil {
+	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.deleteVideo", Path: res.OpenedPath}); err == nil {
 		t.Error("delete-copy(listErr) succeeded")
 	}
 	es.listErr = nil

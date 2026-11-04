@@ -275,7 +275,7 @@ describe('useSettings step groups', () => {
       onSizeChanged: vi.fn(),
     })
 
-    const perfGroups = settings.paletteLists.getStepGroups('app:performance.choose-profile', '')
+    const perfGroups = settings.paletteLists.getStepGroups('app:performance.chooseProfile', '')
     expect(perfGroups.length).toBe(1)
     expect(perfGroups[0]?.id).toBe('performance')
 

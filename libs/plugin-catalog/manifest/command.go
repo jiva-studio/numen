@@ -26,10 +26,10 @@ var (
 // command line spells a flag.
 var manifestArgumentPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 
-// manifestCommandPattern is the shape of a command id: an object and an action, each lowercase words
-// joined by hyphens, with a dot between them (`deck.create`). The host files the command under the id
-// of the plugin and this id.
-var manifestCommandPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
+// manifestCommandPattern is the shape of a command id: an object and an action, each in camelCase
+// (a lowercase first letter, then letters and digits), with a dot between them (`cardModel.create`).
+// The host files the command under the id of the plugin and this id.
+var manifestCommandPattern = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*\.[a-z][a-zA-Z0-9]*$`)
 
 // listCommandArgumentTypes returns the types a command argument may have.
 func listCommandArgumentTypes() []string {
@@ -128,7 +128,7 @@ func (m Manifest) listCommandIssues() []error {
 	for _, command := range m.Commands {
 		switch {
 		case !manifestCommandPattern.MatchString(command.ID):
-			issues = append(issues, fmt.Errorf("%w: id %q is not an object and an action, each lowercase words joined by hyphens, with a dot between them", ErrInvalidCommand, command.ID))
+			issues = append(issues, fmt.Errorf("%w: id %q is not an object and an action, each in camelCase, with a dot between them", ErrInvalidCommand, command.ID))
 		case observed[command.ID]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidCommand, command.ID))
 		}

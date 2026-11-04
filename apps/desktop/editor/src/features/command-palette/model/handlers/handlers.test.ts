@@ -279,7 +279,7 @@ describe('a note put in front of the person', () => {
     const one = window()
 
     await carry(createInvocation('app:note.open', front()), one.on)
-    await carry(createInvocation('app:note.open-beside', front()), one.on)
+    await carry(createInvocation('app:note.openBeside', front()), one.on)
 
     expect(one.actions).toStrictEqual([
       'openFile physics/Ontology.md Ontology current',
@@ -292,7 +292,7 @@ describe('a note made', () => {
   it('writes the note it was made from into it, in the relation that was requested for', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.create-child', front(), 'Entropy'), one.on)
+    await carry(createInvocation('app:note.createChild', front(), 'Entropy'), one.on)
 
     expect(one.actions[0]).toBe('createNote Entropy physics/Ontology.md child')
   })
@@ -308,7 +308,7 @@ describe('a note made', () => {
   it('is put in front of the person', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.create-child', front(), 'Entropy'), one.on)
+    await carry(createInvocation('app:note.createChild', front(), 'Entropy'), one.on)
 
     expect(one.actions.at(-1)).toBe('travel Entropy.md')
   })
@@ -317,7 +317,7 @@ describe('a note made', () => {
     const one = window()
 
     await carry(
-      createInvocation('app:note.create-child', front({ kind: 'note' }), 'Entropy'),
+      createInvocation('app:note.createChild', front({ kind: 'note' }), 'Entropy'),
       one.on,
     )
 
@@ -327,7 +327,7 @@ describe('a note made', () => {
   it('takes the person nowhere where the vault would not make it', async () => {
     const one = window({ wasMade: false })
 
-    await carry(createInvocation('app:note.create-child', front(), 'Entropy'), one.on)
+    await carry(createInvocation('app:note.createChild', front(), 'Entropy'), one.on)
 
     expect(one.actions).toStrictEqual(['createNote Entropy physics/Ontology.md child'])
   })
@@ -335,7 +335,7 @@ describe('a note made', () => {
   it('is nothing at all where nothing was typed', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.create-child', front(), ''), one.on)
+    await carry(createInvocation('app:note.createChild', front(), ''), one.on)
 
     expect(one.actions).toStrictEqual([])
   })
@@ -725,8 +725,8 @@ describe('a command over the window', () => {
   it('passes over the row that was chosen, and nothing about the note in front', async () => {
     const one = window()
 
-    await carry(createInvocation('app:appearance.choose-theme', front(), 'mine:sea'), one.on)
-    await carry(createInvocation('app:appearance.choose-theme', front(), 'mode:dark'), one.on)
+    await carry(createInvocation('app:appearance.chooseTheme', front(), 'mine:sea'), one.on)
+    await carry(createInvocation('app:appearance.chooseTheme', front(), 'mode:dark'), one.on)
 
     expect(one.actions).toStrictEqual(['appearance mine:sea', 'appearance mode:dark'])
   })
@@ -736,7 +736,7 @@ describe('a command over the vault', () => {
   it('travels to the note the vault opens with', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.go-to-start', front()), one.on)
+    await carry(createInvocation('app:note.goToStart', front()), one.on)
 
     expect(one.actions).toStrictEqual(['travel Root.md'])
   })
@@ -748,7 +748,7 @@ describe('a command over the vault', () => {
       navigator: { ...one.on.navigator, getOpeningNote: () => '' },
     }
 
-    await runInvocation(createInvocation('app:note.go-to-start', front()), empty, words)
+    await runInvocation(createInvocation('app:note.goToStart', front()), empty, words)
 
     expect(one.notices).toStrictEqual([words.nowhere])
   })
@@ -758,7 +758,7 @@ describe('what the window is requested about a note', () => {
   it('has its path put on the clipboard', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.copy-path', front()), one.on)
+    await carry(createInvocation('app:note.copyPath', front()), one.on)
 
     expect(one.actions).toStrictEqual(['copies physics/Ontology.md'])
   })
@@ -985,8 +985,8 @@ describe('a note made in a relation of another', () => {
   it('is made as a parent or as a jump where that was requested', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.create-parent', front(), 'Entropy'), one.on)
-    await carry(createInvocation('app:note.create-jump', front(), 'Heat'), one.on)
+    await carry(createInvocation('app:note.createParent', front(), 'Entropy'), one.on)
+    await carry(createInvocation('app:note.createJump', front(), 'Heat'), one.on)
 
     expect(one.actions.filter((step) => step.startsWith('createNote'))).toStrictEqual([
       'createNote Entropy physics/Ontology.md parent',
@@ -997,7 +997,7 @@ describe('a note made in a relation of another', () => {
   it('says nothing where the vault would not make it', async () => {
     const one = window({ wasMade: false })
 
-    await carry(createInvocation('app:note.create-child', front(), 'Entropy'), one.on)
+    await carry(createInvocation('app:note.createChild', front(), 'Entropy'), one.on)
 
     expect(one.calls).toStrictEqual([['', undefined]])
   })
@@ -1022,7 +1022,7 @@ describe('what the voice says in which severity', () => {
       navigator: { ...one.on.navigator, getOpeningNote: () => '' },
     }
 
-    await runInvocation(createInvocation('app:note.go-to-start', front()), empty, words)
+    await runInvocation(createInvocation('app:note.goToStart', front()), empty, words)
 
     expect(one.severities).toStrictEqual(['warning'])
   })

@@ -37,7 +37,7 @@
       "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     },
     {
-      "id": "card-model.create",
+      "id": "cardModel.create",
       "title": "Create card model",
       "icon": "layout-template",
       "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]

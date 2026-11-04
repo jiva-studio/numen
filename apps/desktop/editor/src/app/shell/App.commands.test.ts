@@ -183,7 +183,7 @@ describe('a command reached by its own keystroke', () => {
     await settle()
 
     expect(getRow(window, 'app:note.create')?.keys).toEqual({ icons: ['control'], letter: 'N' })
-    expect(getRow(window, 'app:note.go-to')?.keys).toEqual({ icons: ['control'], letter: 'G' })
+    expect(getRow(window, 'app:note.goTo')?.keys).toEqual({ icons: ['control'], letter: 'G' })
   })
 
   it('draws no keystroke on the rows no keystroke reaches', async () => {

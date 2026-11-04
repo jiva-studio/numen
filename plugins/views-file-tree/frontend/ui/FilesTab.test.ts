@@ -221,7 +221,7 @@ describe('the menu on a row', () => {
       'travel',
       'new',
       'rename',
-      'app:note.copy-path',
+      'app:note.copyPath',
       'links',
       'ask',
       'app:note.trash',
@@ -245,7 +245,7 @@ describe('the menu on a row', () => {
     expect(await getItemIds('Cover.png')).toStrictEqual([
       'new',
       'rename',
-      'app:note.copy-path',
+      'app:note.copyPath',
       'app:note.trash',
     ])
   })
