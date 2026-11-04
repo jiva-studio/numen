@@ -245,28 +245,28 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 	}
 	cf.copyErr = nil
 
-	// download-text, download-copy, delete-copy on missing note.
+	// link.downloadText, link.downloadVideo, link.deleteVideo on missing note.
 	for _, cmd := range []string{"link.downloadText", "link.downloadVideo", "link.deleteVideo"} {
 		if _, err := commands.RunCommand(t.Context(), command.Request{Command: cmd, Path: "missing.md"}); err == nil {
 			t.Errorf("%s(missing.md) succeeded", cmd)
 		}
 	}
 
-	// download-text when FetchText fails.
+	// link.downloadText when FetchText fails.
 	cf.textErr = errors.New("fetch text failed")
 	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.downloadText", Path: res.OpenedPath}); err == nil {
-		t.Error("download-text(err) succeeded")
+		t.Error("link.downloadText(err) succeeded")
 	}
 	cf.textErr = nil
 
-	// download-copy when Copy fails with non-ErrBeingFetched error.
+	// link.downloadVideo when Copy fails with non-ErrBeingFetched error.
 	cf.canCopy = false
 	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.downloadVideo", Path: res.OpenedPath}); err == nil {
-		t.Error("download-copy(not copyable) succeeded")
+		t.Error("link.downloadVideo(not copyable) succeeded")
 	}
 	cf.canCopy = true
 
-	// download-copy when Copy is already in progress (ErrBeingFetched).
+	// link.downloadVideo when Copy is already in progress (ErrBeingFetched).
 	cf.startedCh = make(chan struct{})
 	cf.blockCh = make(chan struct{})
 	foundLink, err := links.Read(t.Context(), res.OpenedPath)
@@ -281,13 +281,13 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 	cf.startedCh = nil
 	cf.blockCh = nil
 	if callErr != nil || !strings.Contains(ans.Message, "already being made") {
-		t.Fatalf("download-copy(in progress) = (%+v, %v)", ans, callErr)
+		t.Fatalf("link.downloadVideo(in progress) = (%+v, %v)", ans, callErr)
 	}
 
-	// delete-copy when DeleteCopy fails.
+	// link.deleteVideo when DeleteCopy fails.
 	es.listErr = errors.New("list error")
 	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.deleteVideo", Path: res.OpenedPath}); err == nil {
-		t.Error("delete-copy(listErr) succeeded")
+		t.Error("link.deleteVideo(listErr) succeeded")
 	}
 	es.listErr = nil
 }
