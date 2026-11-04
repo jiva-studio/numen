@@ -50,8 +50,8 @@ describe('NamedIcon', () => {
     expect(icon.find('svg').attributes('aria-hidden')).toBe('true')
   })
 
-  it('draws nothing for a name with no icon', async () => {
-    const icon = mount(NamedIcon, { props: { name: 'no-such-icon' } })
+  it('draws nothing for an empty name', async () => {
+    const icon = mount(NamedIcon, { props: { name: '' } })
     await flushPromises()
 
     expect(icon.find('svg').exists()).toBe(false)

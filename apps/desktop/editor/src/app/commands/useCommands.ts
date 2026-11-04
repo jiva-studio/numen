@@ -96,7 +96,7 @@ export function useCommands(options: CommandsDepsOptions) {
     ...getPaletteEntries(),
   ])
 
-  watchCommandLists(options, commands.open, getTarget)
+  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open, getTarget)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,

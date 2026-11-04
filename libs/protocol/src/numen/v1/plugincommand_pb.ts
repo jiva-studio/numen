@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugincommand.proto.
  */
 export const file_numen_v1_plugincommand: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiQQoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kIqQBCg1QbHVnaW5Db21tYW5kEhEKCXBsdWdpbl9pZBgBIAEoCRIKCgJpZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIVCg1jb250ZW50X3R5cGVzGAQgAygJEhIKCmV4dGVuc2lvbnMYBiADKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50EgwKBGljb24YByABKAkiQwoPQ29tbWFuZEFyZ3VtZW50EgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLaXNfcmVxdWlyZWQYAyABKAgiwgEKF1J1blBsdWdpbkNvbW1hbmRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIPCgdjb21tYW5kGAIgASgJEgwKBHBhdGgYAyABKAkSQwoJYXJndW1lbnRzGAQgAygLMjAubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QuQXJndW1lbnRzRW50cnkaMAoOQXJndW1lbnRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJrChhSdW5QbHVnaW5Db21tYW5kUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5Db21tYW5kRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkSEwoLb3BlbmVkX3BhdGgYAyABKAkqxwEKEENvbW1hbmRFcnJvckNvZGUSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJgoiQ09NTUFORF9FUlJPUl9DT0RFX1VOS05PV05fQ09NTUFORBABEiQKIENPTU1BTkRfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAISHQoZQ09NTUFORF9FUlJPUl9DT0RFX0ZBSUxFRBADEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTkFWQUlMQUJMRRAEMl8KFFBsdWdpbkNvbW1hbmRTZXJ2aWNlEkcKClJ1bkNvbW1hbmQSGy5udW1lbi52MS5SdW5Db21tYW5kUmVxdWVzdBocLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXNwb25zZTK6AQoOQ29tbWFuZFNlcnZpY2USTQoMTGlzdENvbW1hbmRzEh0ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVxdWVzdBoeLm51bWVuLnYxLkxpc3RDb21tYW5kc1Jlc3BvbnNlElkKEFJ1blBsdWdpbkNvbW1hbmQSIS5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVxdWVzdBoiLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiQQoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kIr4CCg1QbHVnaW5Db21tYW5kEhEKCXBsdWdpbl9pZBgBIAEoCRIKCgJpZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIVCg1jb250ZW50X3R5cGVzGAQgAygJEhIKCmV4dGVuc2lvbnMYBiADKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50EgwKBGljb24YByABKAkSDQoFc2NvcGUYCCABKAkSEAoIc2hvcnRjdXQYCSABKAkSGwoTaXNfbm90ZV9kZXN0aW5hdGlvbhgKIAEoCBITCgtoYXNfYmFja2VuZBgLIAEoCBIUCgxoYXNfZnJvbnRlbmQYDCABKAgSGQoRaXNfbGlzdGVkX2J5X21lbnUYDSABKAgSFAoMaXNfc3VzcGVuZGVkGA4gASgIIkMKD0NvbW1hbmRBcmd1bWVudBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhMKC2lzX3JlcXVpcmVkGAMgASgIIsIBChdSdW5QbHVnaW5Db21tYW5kUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgRwYXRoGAMgASgJEkMKCWFyZ3VtZW50cxgEIAMoCzIwLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiawoYUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJKscBChBDb21tYW5kRXJyb3JDb2RlEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiYKIkNPTU1BTkRfRVJST1JfQ09ERV9VTktOT1dOX0NPTU1BTkQQARIkCiBDT01NQU5EX0VSUk9SX0NPREVfQkFEX0FSR1VNRU5UUxACEh0KGUNPTU1BTkRfRVJST1JfQ09ERV9GQUlMRUQQAxIiCh5DT01NQU5EX0VSUk9SX0NPREVfVU5BVkFJTEFCTEUQBDJfChRQbHVnaW5Db21tYW5kU2VydmljZRJHCgpSdW5Db21tYW5kEhsubnVtZW4udjEuUnVuQ29tbWFuZFJlcXVlc3QaHC5udW1lbi52MS5SdW5Db21tYW5kUmVzcG9uc2UyugEKDkNvbW1hbmRTZXJ2aWNlEk0KDExpc3RDb21tYW5kcxIdLm51bWVuLnYxLkxpc3RDb21tYW5kc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXNwb25zZRJZChBSdW5QbHVnaW5Db21tYW5kEiEubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QaIi5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.RunCommandRequest
@@ -169,6 +169,56 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
    * @generated from field: string icon = 7;
    */
   icon: string;
+
+  /**
+   * scope is "note" for a command offered only while a note is in front.
+   *
+   * @generated from field: string scope = 8;
+   */
+  scope: string;
+
+  /**
+   * shortcut is the keystroke the plugin suggests for the command.
+   *
+   * @generated from field: string shortcut = 9;
+   */
+  shortcut: string;
+
+  /**
+   * is_note_destination marks the command that puts a note in front.
+   *
+   * @generated from field: bool is_note_destination = 10;
+   */
+  isNoteDestination: boolean;
+
+  /**
+   * has_backend and has_frontend say which parts the plugin that declares the command has.
+   *
+   * @generated from field: bool has_backend = 11;
+   */
+  hasBackend: boolean;
+
+  /**
+   * @generated from field: bool has_frontend = 12;
+   */
+  hasFrontend: boolean;
+
+  /**
+   * is_listed_by_menu is set for a command the menu of a file or the view of a note type lists and
+   * the palette does not: one with conditions under when, and one over notes of a type. The command
+   * is still declared, and a shortcut of it works.
+   *
+   * @generated from field: bool is_listed_by_menu = 13;
+   */
+  isListedByMenu: boolean;
+
+  /**
+   * is_suspended is set while the host holds the plugin suspended after it failed to start; its
+   * backend runs nothing then.
+   *
+   * @generated from field: bool is_suspended = 14;
+   */
+  isSuspended: boolean;
 };
 
 /**

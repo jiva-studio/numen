@@ -1,15 +1,35 @@
 {
   "id": "md.numen.views.agent.chat",
   "name": "Agent Chat",
-  "version": "2026.11.2",
+  "version": "2026.11.3",
   "protocol": 1,
   "description": "Interactive chat tab for working with AI assistants",
   "capabilities": [],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": {
-    "tabKinds": [{ "kind": "agent", "title": "Agent", "icon": "bot" }],
+    "tabKinds": [
+      {
+        "kind": "agent",
+        "title": "Agent",
+        "icon": "bot"
+      }
+    ],
     "feature": "agent chat",
-    "category": "views"
+    "category": "views",
+    "commands": [
+      {
+        "id": "chat.open",
+        "title": "Open agent chat",
+        "icon": "bot",
+        "shortcut": "mod+shift+a"
+      },
+      {
+        "id": "note.ask",
+        "title": "Ask agent about note",
+        "icon": "bot",
+        "scope": "note"
+      }
+    ]
   },
   "permissions": ["vault:read"],
   "frontend": {}

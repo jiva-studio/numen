@@ -72,8 +72,13 @@ type List struct {
 	types    contenttypeport.ContentTypeTable
 }
 
-// Execute lists them. Where there is no plugin host it lists none.
+// Execute lists the commands that a plugin backend runs. Where there is no plugin host it lists none.
 func (u List) Execute() []Entry {
+	return slices.DeleteFunc(u.ExecuteAll(), func(one Entry) bool { return !one.HasBackend })
+}
+
+// ExecuteAll lists every command the enabled plugins declare, whichever part of the plugin runs it.
+func (u List) ExecuteAll() []Entry {
 	if u.commands == nil {
 		return nil
 	}
@@ -106,7 +111,7 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, er
 	}
 	entries := u.commands.ListCommands()
 	index := slices.IndexFunc(entries, func(one Entry) bool {
-		return one.PluginID == call.PluginID && one.Command.ID == call.Command
+		return one.HasBackend && one.PluginID == call.PluginID && one.Command.ID == call.Command
 	})
 	if index < 0 {
 		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)

@@ -49,7 +49,6 @@ type Manifest struct {
 	Settings      []*ManifestSetting      `protobuf:"bytes,15,rep,name=settings,proto3" json:"settings,omitempty"`
 	Secrets       []*ManifestSecret       `protobuf:"bytes,16,rep,name=secrets,proto3" json:"secrets,omitempty"`
 	Services      []string                `protobuf:"bytes,17,rep,name=services,proto3" json:"services,omitempty"`
-	Commands      []*ManifestCommand      `protobuf:"bytes,19,rep,name=commands,proto3" json:"commands,omitempty"`
 	SettingsViews []*ManifestSettingsView `protobuf:"bytes,24,rep,name=settings_views,json=settingsViews,proto3" json:"settings_views,omitempty"`
 	// contributes is what the plugin adds to the application, known before its
 	// frontend is loaded.
@@ -193,13 +192,6 @@ func (x *Manifest) GetServices() []string {
 	return nil
 }
 
-func (x *Manifest) GetCommands() []*ManifestCommand {
-	if x != nil {
-		return x.Commands
-	}
-	return nil
-}
-
 func (x *Manifest) GetSettingsViews() []*ManifestSettingsView {
 	if x != nil {
 		return x.SettingsViews
@@ -237,7 +229,10 @@ type ManifestContributes struct {
 	// of each.
 	NoteTypes []*ManifestNoteType `protobuf:"bytes,10,rep,name=note_types,json=noteTypes,proto3" json:"note_types,omitempty"`
 	// frame_origins are the https origins the plugin's pages frame.
-	FrameOrigins  []string `protobuf:"bytes,11,rep,name=frame_origins,json=frameOrigins,proto3" json:"frame_origins,omitempty"`
+	FrameOrigins []string `protobuf:"bytes,11,rep,name=frame_origins,json=frameOrigins,proto3" json:"frame_origins,omitempty"`
+	// commands are the commands the plugin offers, whichever part of the plugin runs them. The
+	// application learns which part from where the handler is registered.
+	Commands      []*ManifestCommand `protobuf:"bytes,12,rep,name=commands,proto3" json:"commands,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -331,6 +326,13 @@ func (x *ManifestContributes) GetNoteTypes() []*ManifestNoteType {
 func (x *ManifestContributes) GetFrameOrigins() []string {
 	if x != nil {
 		return x.FrameOrigins
+	}
+	return nil
+}
+
+func (x *ManifestContributes) GetCommands() []*ManifestCommand {
+	if x != nil {
+		return x.Commands
 	}
 	return nil
 }
@@ -1379,9 +1381,15 @@ type ManifestCommand struct {
 	NoteTypes    []string               `protobuf:"bytes,5,rep,name=note_types,json=noteTypes,proto3" json:"note_types,omitempty"`
 	// when are the conditions, all of which hold in the context the command is offered over. A
 	// command with conditions is offered over each context that meets them.
-	When              []*ManifestContextCondition `protobuf:"bytes,6,rep,name=when,proto3" json:"when,omitempty"`
-	Arguments         []*ManifestCommandArgument  `protobuf:"bytes,7,rep,name=arguments,proto3" json:"arguments,omitempty"`
-	IsHiddenInPalette bool                        `protobuf:"varint,8,opt,name=is_hidden_in_palette,json=hiddenInPalette,proto3" json:"is_hidden_in_palette,omitempty"`
+	When      []*ManifestContextCondition `protobuf:"bytes,6,rep,name=when,proto3" json:"when,omitempty"`
+	Arguments []*ManifestCommandArgument  `protobuf:"bytes,7,rep,name=arguments,proto3" json:"arguments,omitempty"`
+	// scope is "note" for a command offered only while a note is in front. Empty is a command over the
+	// window.
+	Scope string `protobuf:"bytes,9,opt,name=scope,proto3" json:"scope,omitempty"`
+	// shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
+	Shortcut string `protobuf:"bytes,10,opt,name=shortcut,proto3" json:"shortcut,omitempty"`
+	// is_note_destination marks the command that puts a note in front.
+	IsNoteDestination bool `protobuf:"varint,11,opt,name=is_note_destination,json=noteDestination,proto3" json:"is_note_destination,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1465,9 +1473,23 @@ func (x *ManifestCommand) GetArguments() []*ManifestCommandArgument {
 	return nil
 }
 
-func (x *ManifestCommand) GetIsHiddenInPalette() bool {
+func (x *ManifestCommand) GetScope() string {
 	if x != nil {
-		return x.IsHiddenInPalette
+		return x.Scope
+	}
+	return ""
+}
+
+func (x *ManifestCommand) GetShortcut() string {
+	if x != nil {
+		return x.Shortcut
+	}
+	return ""
+}
+
+func (x *ManifestCommand) GetIsNoteDestination() bool {
+	if x != nil {
+		return x.IsNoteDestination
 	}
 	return false
 }
@@ -1588,7 +1610,7 @@ var File_numen_v1_manifest_proto protoreflect.FileDescriptor
 
 const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/manifest.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\"\x8c\a\n" +
+	"\x17numen/v1/manifest.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\"\xe5\x06\n" +
 	"\bManifest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -1604,12 +1626,11 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\bfrontend\x18\x0e \x01(\v2\x1a.numen.v1.ManifestFrontendR\bfrontend\x125\n" +
 	"\bsettings\x18\x0f \x03(\v2\x19.numen.v1.ManifestSettingR\bsettings\x122\n" +
 	"\asecrets\x18\x10 \x03(\v2\x18.numen.v1.ManifestSecretR\asecrets\x12\x1a\n" +
-	"\bservices\x18\x11 \x03(\tR\bservices\x125\n" +
-	"\bcommands\x18\x13 \x03(\v2\x19.numen.v1.ManifestCommandR\bcommands\x12E\n" +
+	"\bservices\x18\x11 \x03(\tR\bservices\x12E\n" +
 	"\x0esettings_views\x18\x18 \x03(\v2\x1e.numen.v1.ManifestSettingsViewR\rsettingsViews\x12?\n" +
 	"\vcontributes\x18\x1a \x01(\v2\x1d.numen.v1.ManifestContributesR\vcontributesJ\x04\b\n" +
-	"\x10\vJ\x04\b\x12\x10\x13J\x04\b\x14\x10\x15J\x04\b\x15\x10\x16J\x04\b\x16\x10\x17J\x04\b\x17\x10\x18J\x04\b\x19\x10\x1aJ\x04\b\x1b\x10\x1cR\bruntimesR\n" +
-	"note_typesR\x05textsR\bplaybackR\rcontent_typesR\areadersR\x06framesR\vapp_version\"\xe4\x03\n" +
+	"\x10\vJ\x04\b\x12\x10\x13J\x04\b\x13\x10\x14J\x04\b\x14\x10\x15J\x04\b\x15\x10\x16J\x04\b\x16\x10\x17J\x04\b\x17\x10\x18J\x04\b\x19\x10\x1aJ\x04\b\x1b\x10\x1cR\bruntimesR\bcommandsR\n" +
+	"note_typesR\x05textsR\bplaybackR\rcontent_typesR\areadersR\x06framesR\vapp_version\"\x9b\x04\n" +
 	"\x13ManifestContributes\x126\n" +
 	"\ttab_kinds\x18\x01 \x03(\v2\x19.numen.v1.ManifestTabKindR\btabKinds\x12\x18\n" +
 	"\afeature\x18\x02 \x01(\tR\afeature\x12\x1a\n" +
@@ -1621,7 +1642,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"note_types\x18\n" +
 	" \x03(\v2\x1a.numen.v1.ManifestNoteTypeR\tnoteTypes\x12#\n" +
-	"\rframe_origins\x18\v \x03(\tR\fframeOriginsJ\x04\b\x06\x10\aJ\x04\b\b\x10\tR\n" +
+	"\rframe_origins\x18\v \x03(\tR\fframeOrigins\x125\n" +
+	"\bcommands\x18\f \x03(\v2\x19.numen.v1.ManifestCommandR\bcommandsJ\x04\b\x06\x10\aJ\x04\b\b\x10\tR\n" +
 	"file_typesR\rcontent_types\"n\n" +
 	"\x0eManifestHandle\x12\x18\n" +
 	"\apurpose\x18\x01 \x01(\tR\apurpose\x12#\n" +
@@ -1714,7 +1736,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x14is_hidden_in_palette\x18\x05 \x01(\bR\x0fhiddenInPalette\"<\n" +
 	"\x18ManifestContextCondition\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xb7\x02\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\x84\x03\n" +
 	"\x0fManifestCommand\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
@@ -1723,8 +1745,11 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"note_types\x18\x05 \x03(\tR\tnoteTypes\x126\n" +
 	"\x04when\x18\x06 \x03(\v2\".numen.v1.ManifestContextConditionR\x04when\x12?\n" +
-	"\targuments\x18\a \x03(\v2!.numen.v1.ManifestCommandArgumentR\targuments\x12-\n" +
-	"\x14is_hidden_in_palette\x18\b \x01(\bR\x0fhiddenInPalette\"Y\n" +
+	"\targuments\x18\a \x03(\v2!.numen.v1.ManifestCommandArgumentR\targuments\x12\x14\n" +
+	"\x05scope\x18\t \x01(\tR\x05scope\x12\x1a\n" +
+	"\bshortcut\x18\n" +
+	" \x01(\tR\bshortcut\x12,\n" +
+	"\x13is_note_destination\x18\v \x01(\bR\x0fnoteDestinationJ\x04\b\b\x10\tR\x14is_hidden_in_palette\"Y\n" +
 	"\x0eManifestReader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
 	"\rcontent_types\x18\x02 \x03(\tR\fcontentTypes\x12\x12\n" +
@@ -1778,15 +1803,15 @@ var file_numen_v1_manifest_proto_depIdxs = []int32{
 	8,  // 2: numen.v1.Manifest.frontend:type_name -> numen.v1.ManifestFrontend
 	12, // 3: numen.v1.Manifest.settings:type_name -> numen.v1.ManifestSetting
 	13, // 4: numen.v1.Manifest.secrets:type_name -> numen.v1.ManifestSecret
-	17, // 5: numen.v1.Manifest.commands:type_name -> numen.v1.ManifestCommand
-	19, // 6: numen.v1.Manifest.settings_views:type_name -> numen.v1.ManifestSettingsView
-	1,  // 7: numen.v1.Manifest.contributes:type_name -> numen.v1.ManifestContributes
-	5,  // 8: numen.v1.ManifestContributes.tab_kinds:type_name -> numen.v1.ManifestTabKind
-	3,  // 9: numen.v1.ManifestContributes.themes:type_name -> numen.v1.ManifestTheme
-	4,  // 10: numen.v1.ManifestContributes.status_views:type_name -> numen.v1.ManifestStatusView
-	2,  // 11: numen.v1.ManifestContributes.handles:type_name -> numen.v1.ManifestHandle
-	18, // 12: numen.v1.ManifestContributes.readers:type_name -> numen.v1.ManifestReader
-	14, // 13: numen.v1.ManifestContributes.note_types:type_name -> numen.v1.ManifestNoteType
+	19, // 5: numen.v1.Manifest.settings_views:type_name -> numen.v1.ManifestSettingsView
+	1,  // 6: numen.v1.Manifest.contributes:type_name -> numen.v1.ManifestContributes
+	5,  // 7: numen.v1.ManifestContributes.tab_kinds:type_name -> numen.v1.ManifestTabKind
+	3,  // 8: numen.v1.ManifestContributes.themes:type_name -> numen.v1.ManifestTheme
+	4,  // 9: numen.v1.ManifestContributes.status_views:type_name -> numen.v1.ManifestStatusView
+	2,  // 10: numen.v1.ManifestContributes.handles:type_name -> numen.v1.ManifestHandle
+	18, // 11: numen.v1.ManifestContributes.readers:type_name -> numen.v1.ManifestReader
+	14, // 12: numen.v1.ManifestContributes.note_types:type_name -> numen.v1.ManifestNoteType
+	17, // 13: numen.v1.ManifestContributes.commands:type_name -> numen.v1.ManifestCommand
 	20, // 14: numen.v1.ManifestDependency.metadata:type_name -> numen.v1.ManifestDependency.MetadataEntry
 	21, // 15: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
 	22, // 16: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value

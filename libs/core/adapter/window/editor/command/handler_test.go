@@ -31,17 +31,17 @@ type pluginCommands struct {
 
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
-		{PluginID: "org.example.sample", Command: plugincommand.Command{
+		{PluginID: "org.example.sample", HasBackend: true, Command: plugincommand.Command{
 			ID: "sample.create", Title: "Create a sample", Icon: "layers", ContentTypes: []domain.ContentType{"text/markdown"},
 			Arguments: []plugincommand.Argument{
 				{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true},
 				{Name: "wait", Title: "Wait", Type: plugincommand.ArgumentBoolean, IsHiddenInPalette: true},
 			},
 		}},
-		{PluginID: "org.example.sample", Command: plugincommand.Command{
-			ID: "print-sample", Title: "Print a sample", ContentTypes: []domain.ContentType{"text/markdown"}, IsHiddenInPalette: true,
+		{PluginID: "org.example.sample", HasBackend: true, Command: plugincommand.Command{
+			ID: "print-sample", Title: "Print a sample", ContentTypes: []domain.ContentType{"text/markdown"},
 		}},
-		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "shuffle-deck", Title: "Shuffle a deck", NoteTypes: []string{"deck"}}},
+		{PluginID: "md.numen.cards", HasBackend: true, Command: plugincommand.Command{ID: "shuffle-deck", Title: "Shuffle a deck", NoteTypes: []string{"deck"}}},
 	}
 }
 
@@ -58,7 +58,7 @@ func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequ
 	return res.Msg
 }
 
-func TestListCommands_OmitsPaletteHiddenAndNoteTypeCommands(t *testing.T) {
+func TestListCommands_MarksTheCommandsOverNotesOfATypeAsListedByMenu(t *testing.T) {
 	res, err := command.NewHandler(shownVault{}, plugincommand.NewCommands(pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -66,14 +66,17 @@ func TestListCommands_OmitsPaletteHiddenAndNoteTypeCommands(t *testing.T) {
 	}
 
 	commands := res.Msg.GetCommands()
-	if len(commands) != 1 {
+	if len(commands) != 3 {
 		t.Fatalf("got %v", commands)
 	}
 	one := commands[0]
 	argument := one.GetArguments()[0]
 	if one.GetPluginId() != "org.example.sample" || one.GetId() != "sample.create" || one.GetIcon() != "layers" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
-		!argument.GetIsRequired() || len(one.GetArguments()) != 1 {
+		!argument.GetIsRequired() || len(one.GetArguments()) != 1 || one.GetIsListedByMenu() {
 		t.Errorf("got %v", one)
+	}
+	if commands[1].GetIsListedByMenu() || !commands[2].GetIsListedByMenu() {
+		t.Errorf("only the command over notes of a type is marked: %v %v", commands[1], commands[2])
 	}
 }
 

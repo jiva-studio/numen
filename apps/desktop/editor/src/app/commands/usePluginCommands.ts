@@ -2,10 +2,11 @@
  * The commands the enabled plugins declare: how the palette and the welcome screen
  * list them, and the registration that runs them.
  */
-import { computed, watch, type Component } from 'vue'
+import { computed, watch } from 'vue'
 import type { CommandNote, MenuEntry, PluginHost, PluginPaletteCommand } from '@numen/plugin-host'
 import type { WelcomeAction } from '@numen/shell'
 import { findShortcutKeys, registerCommand, type CommandTarget } from '@/features/command-palette'
+import { getNamedIcon } from '@/shared/icons'
 import type { VaultCore } from '../vault'
 
 export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | undefined) {
@@ -15,7 +16,7 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
     const keys = cmd.shortcut ? findShortcutKeys(cmd.shortcut, navigator.userAgent) : undefined
     return {
       ...(keys ? { keys } : {}),
-      ...(cmd.icon ? { icon: cmd.icon as Component } : {}),
+      ...(cmd.icon ? { icon: getNamedIcon(cmd.icon) } : {}),
     }
   }
   /** The command a plugin declares to put a note in front, and nothing where none does. */

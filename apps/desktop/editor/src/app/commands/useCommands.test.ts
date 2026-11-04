@@ -1,6 +1,7 @@
 /** How a command runs, and what a key chord triggers. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CommandTarget } from '@/features/command-palette'
+import { getNamedIcon } from '@/shared/icons'
 import { useCommands, type CommandsDepsOptions } from './useCommands'
 
 const h = vi.hoisted(() => ({
@@ -203,7 +204,7 @@ describe('a plugin command over a note', () => {
     id: 'org.example.sample:graph.run',
     title: 'New graph',
     shortcut: 'mod+shift+x',
-    icon: 'graph icon',
+    icon: 'waypoints',
   }
   const SHOW = {
     id: 'org.example.sample:show.run',
@@ -297,7 +298,7 @@ describe('a plugin command over a note', () => {
     expect(offer?.group).toBe('window')
     expect(offer?.isAvailable({ isReady: false, path: '' } as unknown as CommandTarget)).toBe(true)
     expect(offer?.keys).toStrictEqual({ letter: 'mod+shift+x' })
-    expect(offer?.icon).toBe('graph icon')
+    expect(offer?.icon).toBe(getNamedIcon('waypoints'))
   })
 
   it('offers the keyed commands over the window as ways in, and those over a note to the menus', () => {
@@ -308,7 +309,12 @@ describe('a plugin command over a note', () => {
     ])
 
     expect(one.pluginWays.value).toStrictEqual([
-      { id: GRAPH.id, text: GRAPH.title, keys: { letter: 'mod+shift+x' }, icon: 'graph icon' },
+      {
+        id: GRAPH.id,
+        text: GRAPH.title,
+        keys: { letter: 'mod+shift+x' },
+        icon: getNamedIcon('waypoints'),
+      },
     ])
     expect(one.getNoteCommands()).toStrictEqual([
       { id: SUMMARY.id, text: SUMMARY.title, group: 'note' },

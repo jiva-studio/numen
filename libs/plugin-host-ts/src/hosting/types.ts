@@ -50,14 +50,29 @@ export type {
   VaultChangeEvent,
 }
 
+/** One command as a plugin manifest declares it under `contributes.commands`, with the parts its plugin has. */
+export interface CommandDeclaration {
+  readonly pluginId: string
+  readonly id: string
+  readonly title: string
+  /** The Lucide name of the icon it is drawn with. */
+  readonly icon?: string
+  readonly shortcut?: string
+  /** 'note' where it is offered only while a note is in front. */
+  readonly scope?: 'note'
+  readonly isNoteDestination?: boolean
+  readonly hasBackend: boolean
+  readonly hasFrontend: boolean
+}
+
 export interface PluginPaletteCommand {
   readonly id: string
   readonly title: string
   readonly shortcut?: string
   /** 'note' where it is offered only while a note is in front. */
   readonly scope?: 'note'
-  /** The icon it is drawn with. */
-  readonly icon?: unknown
+  /** The Lucide name of the icon it is drawn with. */
+  readonly icon?: string
   /** Whether it presents a note. */
   readonly isNoteDestination?: boolean
 }
@@ -65,6 +80,14 @@ export interface PluginPaletteCommand {
 export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unknown
 
 export interface PluginHostDeps {
+  /** The commands the enabled plugins declare in their manifests; undefined until the first list has loaded. */
+  readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
+  /** Whether the plugin failed to load or to activate. */
+  readonly isPluginFailed?: (pluginId: string) => boolean
+  /** Settles once the plugin has been activated, or has failed to. */
+  readonly waitForPlugin?: (pluginId: string) => Promise<void>
+  /** Reports a command whose declaration and handler do not match. */
+  readonly reportCommandIssue?: (pluginId: string, message: string) => void
   readonly registerKind: (kind: AnyTabKind) => () => void
   readonly registerExtensionReader: (
     extension: string,

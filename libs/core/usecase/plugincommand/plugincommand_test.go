@@ -59,15 +59,15 @@ func (d *declaredCommands) RunCommand(_ context.Context, call plugincommand.Call
 
 func newDeclared() *declaredCommands {
 	return &declaredCommands{entries: []plugincommand.Entry{
-		{PluginID: "md.numen.a", Command: plugincommand.Command{
+		{PluginID: "md.numen.a", HasBackend: true, Command: plugincommand.Command{
 			ID: "convert", Title: "Convert", ContentTypes: []domain.ContentType{"application/pdf"},
 			Arguments: []plugincommand.Argument{
 				{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true},
 				{Name: "again", Title: "Again", Type: plugincommand.ArgumentBoolean},
 			},
 		}},
-		{PluginID: "md.numen.a", Command: plugincommand.Command{ID: "tidy", Title: "Tidy"}},
-		{PluginID: "md.numen.b", Command: plugincommand.Command{ID: "tidy", Title: "Tidy as well"}},
+		{PluginID: "md.numen.a", HasBackend: true, Command: plugincommand.Command{ID: "tidy", Title: "Tidy"}},
+		{PluginID: "md.numen.b", HasBackend: true, Command: plugincommand.Command{ID: "tidy", Title: "Tidy as well"}},
 	}}
 }
 
@@ -182,7 +182,7 @@ func TestListExtensionsListsTheExtensionsOfTheCommandTypes(t *testing.T) {
 }
 
 func TestRunCommandRejectsAFolderForACommandOverAnyFile(t *testing.T) {
-	declared := &declaredCommands{entries: []plugincommand.Entry{{PluginID: "md.numen.a", Command: plugincommand.Command{
+	declared := &declaredCommands{entries: []plugincommand.Entry{{PluginID: "md.numen.a", HasBackend: true, Command: plugincommand.Command{
 		ID: "proofreading.create", Title: "Proofread", ContentTypes: []domain.ContentType{domain.AnyContentType},
 	}}}}
 	commands := plugincommand.NewCommands(declared, getTypes(), nil)
@@ -217,7 +217,7 @@ func (r noteReader) Read(_ context.Context, path string) ([]byte, error) {
 
 func TestACommandOverNotesOfATypeRunsOverThoseNotesAlone(t *testing.T) {
 	declared := &declaredCommands{entries: []plugincommand.Entry{
-		{PluginID: "md.numen.links", Command: plugincommand.Command{ID: "fetch", Title: "Fetch", NoteTypes: []string{"link"}}},
+		{PluginID: "md.numen.links", HasBackend: true, Command: plugincommand.Command{ID: "fetch", Title: "Fetch", NoteTypes: []string{"link"}}},
 	}}
 	files := noteFiles{
 		"links/talk.md":  "---\ntype: link\nurl: https://video.example/talk\n---\n",

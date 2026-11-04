@@ -62,6 +62,12 @@ export interface HostRegistry {
   readonly agentProviders: Map<string, RegisteredAgentProvider>
   readonly contexts: Map<string, PluginContext>
   readonly manifests: Map<string, Manifest>
+  /** The plugins that have had a context made, which is when their frontend starts to register. */
+  readonly activated: { value: ReadonlySet<string> }
+  /** The plugins that were disposed and have had no context made since: their declared commands are not offered. */
+  readonly disposed: Set<string>
+  /** The mismatches between a declaration and a handler already reported. */
+  readonly reportedIssues: Set<string>
 }
 
 export interface PluginItemRegistration<T> {
@@ -124,7 +130,9 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   deps?.clearNotices?.(pluginId)
   clearSubscriptions(registry.contexts.get(pluginId))
   registry.contexts.delete(pluginId)
+  registry.activated.value = new Set([...registry.activated.value].filter((id) => id !== pluginId))
   registry.manifests.delete(pluginId)
+  registry.disposed.add(pluginId)
   cleanupMapItems(registry.readers, pluginId)
   cleanupMapItems(registry.tabKinds, pluginId)
   cleanupProviderItems(registry.agentProviders, pluginId)
@@ -132,13 +140,6 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   removePluginItems(registry.contextMenus, pluginId)
   removePluginItems(registry.settingsViews, pluginId)
   statusViews.disposePlugin(pluginId)
-}
-
-export function resolveCommand(
-  commands: ReadonlyMap<string, RegisteredCommand>,
-  id: string,
-): RegisteredCommand | undefined {
-  return commands.get(id)
 }
 
 function matchesSingleTarget(pattern: string, actual: ContextMenuTarget): boolean {

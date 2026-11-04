@@ -23,6 +23,10 @@ const convert = {
   pluginId: 'md.numen.pages',
   id: 'convert',
   title: 'Convert',
+  hasBackend: true,
+  hasFrontend: false,
+  isListedByMenu: false,
+  isSuspended: false,
   contentTypes: ['application/pdf'],
   extensions: ['pdf'],
   arguments: [],
@@ -36,6 +40,10 @@ describe('the commands the plugins declare', () => {
           pluginId: 'org.example.sample',
           id: 'create-sample',
           title: 'Create a sample',
+          hasBackend: true,
+          hasFrontend: false,
+          isListedByMenu: false,
+          isSuspended: false,
           contentTypes: [],
           extensions: [],
           arguments: [
@@ -53,6 +61,48 @@ describe('the commands the plugins declare', () => {
       { name: 'title', title: 'Title', isRequired: true },
       { name: 'folder', title: 'Folder', isRequired: false },
     ])
+  })
+
+  it('are read with their scope, shortcut, destination flag and the parts of their plugin', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [
+        {
+          pluginId: 'md.numen.tree',
+          id: 'tree.revealNote',
+          title: 'Show note in file tree',
+          icon: 'folder-open',
+          scope: 'note',
+          shortcut: 'mod+shift+e',
+          isNoteDestination: true,
+          hasBackend: false,
+          hasFrontend: true,
+          isListedByMenu: true,
+          isSuspended: false,
+          contentTypes: [],
+          extensions: [],
+          arguments: [],
+        },
+      ],
+    })
+
+    const [one] = await listDeclaredCommands()
+
+    expect(one).toStrictEqual({
+      pluginId: 'md.numen.tree',
+      id: 'tree.revealNote',
+      title: 'Show note in file tree',
+      icon: 'folder-open',
+      scope: 'note',
+      shortcut: 'mod+shift+e',
+      isNoteDestination: true,
+      hasBackend: false,
+      hasFrontend: true,
+      isListedByMenu: true,
+      isSuspended: false,
+      contentTypes: [],
+      extensions: [],
+      arguments: [],
+    })
   })
 
   it('run over a file of one of their extensions, by the name of the file alone', () => {

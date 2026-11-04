@@ -17,6 +17,10 @@ const createSample: DeclaredCommand = {
   id: 'sample.create',
   title: 'Create a sample',
   icon: 'layers',
+  hasBackend: true,
+  hasFrontend: false,
+  isListedByMenu: false,
+  isSuspended: false,
   contentTypes: [],
   extensions: [],
   arguments: [
@@ -29,6 +33,10 @@ const convert: DeclaredCommand = {
   pluginId: 'md.numen.pages',
   id: 'convert',
   title: 'Convert',
+  hasBackend: true,
+  hasFrontend: false,
+  isListedByMenu: false,
+  isSuspended: false,
   contentTypes: ['application/pdf'],
   extensions: ['pdf'],
   arguments: [],
@@ -211,5 +219,49 @@ describe('a run that opens a file and says nothing', () => {
 
     expect(writeMessage).toHaveBeenCalledWith('Done', 'info')
     expect(openFile).not.toHaveBeenCalled()
+  })
+})
+
+describe('the declared commands read more than once', () => {
+  it('keep the newest list when an earlier read answers last', async () => {
+    let answerFirst: (list: readonly DeclaredCommand[]) => void = () => undefined
+    const first = new Promise<readonly DeclaredCommand[]>((resolve) => {
+      answerFirst = resolve
+    })
+    const lists = [first, Promise.resolve([convert])]
+    const declared = useDeclaredCommands({
+      list: () => lists.shift() as Promise<readonly DeclaredCommand[]>,
+    })
+
+    const slow = declared.load()
+    await declared.load()
+    answerFirst([createSample])
+    await slow
+
+    expect(declared.declarations.value?.map((one) => one.id)).toStrictEqual(['convert'])
+  })
+
+  it('are none until the first read has answered', async () => {
+    const declared = useDeclaredCommands({ list: async () => [convert] })
+
+    expect(declared.declarations.value).toBeUndefined()
+    await declared.load()
+
+    expect(declared.declarations.value).toHaveLength(1)
+  })
+})
+
+describe('a declared command the palette leaves out', () => {
+  it('is one of a suspended plugin, and one a menu lists', async () => {
+    const declared = useDeclaredCommands({
+      list: async () => [
+        { ...createSample, isSuspended: true },
+        { ...convert, isListedByMenu: true },
+      ],
+    })
+    await declared.load()
+
+    expect(declared.paletteCommands.value).toStrictEqual([])
+    expect(declared.declarations.value).toHaveLength(2)
   })
 })

@@ -8,6 +8,13 @@ type PluginCommandEntry struct {
 	PluginID   string
 	PluginName string
 	Command    PluginCommand
+	// HasBackend and HasFrontend say which parts the plugin has. A command is run in the backend only
+	// where the plugin has one.
+	HasBackend  bool
+	HasFrontend bool
+	// IsSuspended is set while the host holds the plugin suspended after it failed to start; its
+	// backend runs nothing then.
+	IsSuspended bool
 }
 
 // PluginCommandCall is one run of a command, checked against its declaration.

@@ -47,8 +47,12 @@ func (c Commands) ListCommands() []pluginport.PluginCommandEntry {
 		if !isEnabled {
 			continue
 		}
-		for _, command := range plugin.Manifest.Commands {
-			found = append(found, pluginport.PluginCommandEntry{PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name, Command: command})
+		for _, command := range plugin.Manifest.Contributes.Commands {
+			found = append(found, pluginport.PluginCommandEntry{
+				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name, Command: command,
+				HasBackend: plugin.Manifest.Backend != (pluginport.PluginBackend{}), HasFrontend: plugin.Manifest.HasFrontend(),
+				IsSuspended: info.Failure != nil,
+			})
 		}
 	}
 	return found

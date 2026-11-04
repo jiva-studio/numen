@@ -69,11 +69,9 @@ describe('view-file-tree plugin', () => {
     })
     activate(ctx)
 
-    expect(
-      ctx.getRegisteredCommands().map((one) => [one.id, one.scope, one.shortcut]),
-    ).toStrictEqual([
-      ['tree.open', undefined, 'mod+shift+e'],
-      ['tree.revealNote', 'note', undefined],
+    expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
+      'tree.open',
+      'tree.revealNote',
     ])
     await ctx.triggerCommand('tree.open')
     await ctx.triggerCommand('tree.revealNote', { path: 'notes/A.md', title: 'A', type: 'note' })

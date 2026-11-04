@@ -406,10 +406,9 @@ func TestPluginValidate_ReportsCoreRules(t *testing.T) {
 		{"capability no host resolves", `{"id":"md.numen.x","name":"X","version":"1.0.0","capabilities":["agent"]}`, "invalid capability"},
 		{"activation event other than the wildcard", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"activationEvents":["onCommand:run"]}`, "invalid activation event"},
 		{"setting without title", `{"id":"md.numen.x","name":"X","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, "title"},
-		{"command without backend", `{"id":"md.numen.x","name":"X","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, "no backend to run them"},
-		{"command id in capitals", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"commands":[{"id":"Run","title":"Run"}]}`, "each in camelCase"},
-		{"command content type that is an extension", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"commands":[{"id":"run","title":"Run","contentTypes":[".pdf"]}]}`, "invalid content type"},
-		{"command argument of no type", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"commands":[{"id":"run","title":"Run","arguments":[{"name":"n","title":"N","type":"int"}]}]}`, "invalid command argument"},
+		{"command id in capitals", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"Run","title":"Run"}]}}`, "each in camelCase"},
+		{"command content type that is an extension", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"run","title":"Run","contentTypes":[".pdf"]}]}}`, "invalid content type"},
+		{"command argument of no type", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"run","title":"Run","arguments":[{"name":"n","title":"N","type":"int"}]}]}}`, "invalid command argument"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -105,7 +105,6 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Settings:         settings,
 		Secrets:          newSecrets(wire.GetSecrets()),
 		Services:         wire.GetServices(),
-		Commands:         newCommands(wire.GetCommands()),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
 		Contributes:      contributes,
 	}, nil
@@ -149,6 +148,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Readers:      newReaders(wire.GetReaders()),
 		NoteTypes:    noteTypes,
 		FrameOrigins: wire.GetFrameOrigins(),
+		Commands:     newCommands(wire.GetCommands()),
 	}, nil
 }
 
@@ -326,7 +326,9 @@ func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
 			NoteTypes:         one.GetNoteTypes(),
 			When:              newCommandWhen(one.GetWhen()),
 			Arguments:         newCommandArguments(one.GetArguments()),
-			IsHiddenInPalette: one.GetIsHiddenInPalette(),
+			Scope:             one.GetScope(),
+			Shortcut:          one.GetShortcut(),
+			IsNoteDestination: one.GetIsNoteDestination(),
 		})
 	}
 	return out

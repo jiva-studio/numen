@@ -11,8 +11,8 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 // A key the schema does not name is reported as a warning by the reader. A message here only describes the
 // shape; the invariants between fields are checked by the manifest reader.
 message Manifest {
-  reserved 10, 18, 20, 21, 22, 23, 25, 27;
-  reserved "runtimes", "note_types", "texts", "playback", "content_types", "readers", "frames", "app_version";
+  reserved 10, 18, 19, 20, 21, 22, 23, 25, 27;
+  reserved "runtimes", "commands", "note_types", "texts", "playback", "content_types", "readers", "frames", "app_version";
   string id = 1;
   string name = 2;
   string version = 3;
@@ -34,7 +34,6 @@ message Manifest {
   repeated ManifestSetting settings = 15;
   repeated ManifestSecret secrets = 16;
   repeated string services = 17;
-  repeated ManifestCommand commands = 19;
   repeated ManifestSettingsView settings_views = 24;
   // contributes is what the plugin adds to the application, known before its
   // frontend is loaded.
@@ -66,6 +65,9 @@ message ManifestContributes {
   repeated ManifestNoteType note_types = 10;
   // frame_origins are the https origins the plugin's pages frame.
   repeated string frame_origins = 11;
+  // commands are the commands the plugin offers, whichever part of the plugin runs them. The
+  // application learns which part from where the handler is registered.
+  repeated ManifestCommand commands = 12;
 }
 
 // ManifestHandle declares that the plugin takes part in a capability for files of some content
@@ -206,6 +208,8 @@ message ManifestContextCondition {
 }
 
 message ManifestCommand {
+  reserved 8;
+  reserved "is_hidden_in_palette";
   string id = 1;
   string title = 2;
   string icon = 3;
@@ -215,7 +219,13 @@ message ManifestCommand {
   // command with conditions is offered over each context that meets them.
   repeated ManifestContextCondition when = 6;
   repeated ManifestCommandArgument arguments = 7;
-  bool is_hidden_in_palette = 8 [json_name = "hiddenInPalette"];
+  // scope is "note" for a command offered only while a note is in front. Empty is a command over the
+  // window.
+  string scope = 9;
+  // shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
+  string shortcut = 10;
+  // is_note_destination marks the command that puts a note in front.
+  bool is_note_destination = 11 [json_name = "noteDestination"];
 }
 
 message ManifestReader {

@@ -44,16 +44,14 @@ describe('view-plex-graph plugin', () => {
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
 
-  it('declares a new plex over the window and the plex as where a note is put in front', () => {
+  it('registers the handlers that open the plex and show a note in it', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    const commands = ctx.getRegisteredCommands()
-    expect(commands.map((one) => [one.id, one.scope, one.shortcut])).toStrictEqual([
-      ['graph.open', undefined, 'mod+shift+x'],
-      ['graph.showNote', 'note', 'mod+shift+p'],
+    expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
+      'graph.open',
+      'graph.showNote',
     ])
-    expect(commands.map((one) => one.isNoteDestination === true)).toStrictEqual([false, true])
   })
 
   it('opens a plex, and moves the plex last in front to a note', async () => {

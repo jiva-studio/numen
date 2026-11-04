@@ -11,6 +11,7 @@ import {
   createPluginTasks,
   createPluginTexts,
   openExternalUrl,
+  type CommandDeclaration,
   type PluginLoader,
 } from '@numen/plugin-host'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
@@ -36,6 +37,10 @@ export interface PluginSupportDeps {
   readonly services?: PluginServices
   /** The window's one list of notices, which each plugin shows its own in. */
   readonly notices?: NoticeQueue
+  /** The commands the enabled plugins declare in their manifests. */
+  readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
+  /** Reports a command whose declaration and handler do not match. */
+  readonly reportCommandIssue?: (pluginId: string, message: string) => void
 }
 
 function createPluginSettingsAccessor(
@@ -88,7 +93,16 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   }
 
   /* Stryker disable OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction: host and loader wiring forwards optional capabilities */
+  const loaderHolder: { current?: PluginLoader } = {}
   const pluginHost = createPluginHost({
+    ...(deps.getCommandDeclarations !== undefined
+      ? { getCommandDeclarations: deps.getCommandDeclarations }
+      : {}),
+    ...(deps.reportCommandIssue !== undefined
+      ? { reportCommandIssue: deps.reportCommandIssue }
+      : {}),
+    isPluginFailed: (pluginId) => loaderHolder.current?.getPluginFailure(pluginId) !== undefined,
+    waitForPlugin: (pluginId) => loaderHolder.current?.settlePlugin(pluginId) ?? Promise.resolve(),
     app: createAppInfo({
       version: import.meta.env.VITE_NUMEN_VERSION,
       build: import.meta.env.VITE_NUMEN_BUILD,
@@ -140,6 +154,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     host: pluginHost,
     ...(reportLoadError !== undefined ? { onError: reportLoadError } : {}),
   })
+  loaderHolder.current = pluginLoader
   /* Stryker restore OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction */
 
   return { pluginHost, pluginLoader }

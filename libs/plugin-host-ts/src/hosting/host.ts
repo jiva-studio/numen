@@ -20,7 +20,7 @@ import { createStatusViewRegistry, type StatusViewRegistry } from '../statusView
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
 import { addListener, notifyListeners, reportError, runCommand } from './events'
-import { extractPaletteCommands } from './palette'
+import { createPaletteCommand, listOfferedCommands } from './offered'
 import { matchesShortcut } from './shortcuts'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
@@ -28,7 +28,6 @@ import {
   disposeAllEntries,
   disposePluginEntry,
   matchesContextMenuTarget,
-  resolveCommand,
   type HostRegistry,
 } from './registry'
 import type { PluginContextHost, PluginHostDeps } from './types'
@@ -244,6 +243,9 @@ function createHostRegistry(): HostRegistry {
     agentProviders: new Map(),
     contexts: new Map(),
     manifests: new Map(),
+    activated: shallowRef(new Set()),
+    disposed: new Set(),
+    reportedIssues: new Set(),
     vaultListeners: new Set(),
     fileListeners: new Set(),
   }
@@ -251,21 +253,29 @@ function createHostRegistry(): HostRegistry {
 
 /** The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts. */
 function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
+  const findOffered = (id: string) =>
+    listOfferedCommands(deps, registry).find((one) => one.id === id)
   return {
-    getPaletteCommands: () => extractPaletteCommands(registry.commands.value),
-    hasCommand: (id: string): boolean => resolveCommand(registry.commands.value, id) !== undefined,
+    getPaletteCommands: () => listOfferedCommands(deps, registry).map(createPaletteCommand),
+    hasCommand: (id: string): boolean => findOffered(id)?.entry !== undefined,
     executeCommand: async (id: string, note: CommandNote): Promise<boolean> => {
-      const entry = resolveCommand(registry.commands.value, id)
+      const command = findOffered(id)
+      if (!command) return false
+      let entry = command.entry
+      if (!entry) {
+        await deps.waitForPlugin?.(command.declaration.pluginId)
+        entry = registry.commands.value.get(id)
+      }
       if (!entry) return false
       await runCommand(deps, entry, note)
       return true
     },
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
-      for (const entry of registry.commands.value.values()) {
-        if (matchesShortcut(event, entry.reg.shortcut)) {
+      for (const { entry, declaration } of listOfferedCommands(deps, registry)) {
+        if (entry && matchesShortcut(event, declaration.shortcut)) {
           getNote()
             .then((note) => {
-              if (entry.reg.scope === 'note' && note.path === '') return
+              if (declaration.scope === 'note' && note.path === '') return
               return runCommand(deps, entry, note)
             })
             .catch((error: unknown) => reportError(deps, entry.pluginId, error))
@@ -329,6 +339,8 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
         const effectiveManifest = manifest ?? registry.manifests.get(pluginId)
         ctx = createPluginContext(pluginId, contextHost, effectiveManifest)
         registry.contexts.set(pluginId, ctx)
+        registry.disposed.delete(pluginId)
+        registry.activated.value = new Set(registry.activated.value).add(pluginId)
       }
       return ctx
     },
