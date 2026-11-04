@@ -37,11 +37,13 @@ type heardModel struct {
 	transcribeErr error
 }
 
+var errNoDecoder = errors.New("no decoder reads this")
+
 func (m *heardModel) Open(context.Context, []byte) (engine.Recording, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.isBroken {
-		return nil, errors.New("no decoder reads this")
+		return nil, errNoDecoder
 	}
 	m.opened++
 	return heardRecording{model: m}, nil
@@ -227,8 +229,8 @@ func TestTranscribeReportsUnopenableRecording(t *testing.T) {
 	s.model.isBroken = true
 
 	err := s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture)
-	if err == nil || errors.Unwrap(err) == nil {
-		t.Fatalf("a recording that cannot be opened returned %v (unwrap=%v)", err, errors.Unwrap(err))
+	if !errors.Is(err, errNoDecoder) {
+		t.Fatalf("a recording that cannot be opened returned %v, want it to wrap the decoder error", err)
 	}
 
 	tasks := s.queue.ListTasks()
