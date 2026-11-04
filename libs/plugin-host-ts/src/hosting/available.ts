@@ -35,10 +35,10 @@ export interface AvailableList {
 
 /**
  * What becomes of a declared command with no handler. It is 'available' while the frontend of its
- * plugin has not started to register. It is 'unbound' once the frontend has started: the host does
- * not list it, and the window runs it in the backend of the plugin where it has one. A plugin with
- * no backend leaves the missing handler as an issue. It is 'left' to the window for a plugin with no frontend and for one that
- * failed to load.
+ * plugin has not started to register. It is 'unbound' once the frontend has started and the plugin
+ * has no backend: nothing runs it, the host does not list it, and the missing handler is an issue.
+ * It is 'left' to the window for a plugin with a backend, which runs it, for a plugin with no
+ * frontend, and for one that failed to load.
  */
 function getBeforeHandlerState(
   deps: PluginHostDeps,
@@ -47,7 +47,8 @@ function getBeforeHandlerState(
 ): 'available' | 'unbound' | 'left' {
   if (deps.hasPluginFrontend?.(declaration.pluginId) === false) return 'left'
   if (deps.isPluginFailed?.(declaration.pluginId)) return 'left'
-  return registry.activated.value.has(declaration.pluginId) ? 'unbound' : 'available'
+  if (!registry.activated.value.has(declaration.pluginId)) return 'available'
+  return deps.hasPluginBackend?.(declaration.pluginId) === true ? 'left' : 'unbound'
 }
 
 /**
@@ -75,7 +76,7 @@ export function listAvailableCommands(deps: PluginHostDeps, registry: HostRegist
     }
     const state = getBeforeHandlerState(deps, registry, declaration)
     if (state === 'available') commands.push({ id, declaration })
-    if (state === 'unbound' && deps.hasPluginBackend?.(declaration.pluginId) !== true) {
+    if (state === 'unbound') {
       addIssue({ pluginId: declaration.pluginId, id: declaration.id, kind: 'unbound' })
     }
   }
