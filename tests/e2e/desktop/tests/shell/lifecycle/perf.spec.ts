@@ -51,7 +51,7 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
 
   test('inspects ocr engine language options in settings tab', async ({ page }) => {
     await openWorkspace(page)
-    await runCommand(page, 'Settings', /^Settings$/)
+    await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
 
     await settings

@@ -9,7 +9,7 @@ const readRootFontSize = (page: Page): Promise<number> =>
 
 /** Opens the system section of the settings tab, and gives back the tab. */
 const openSystemSettings = async (page: Page) => {
-  await runCommand(page, 'Settings', /^Settings$/)
+  await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })
   await settings.getByRole('button', { name: /^System/ }).click()
   return settings

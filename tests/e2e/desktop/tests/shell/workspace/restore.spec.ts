@@ -28,7 +28,7 @@ const PDF_READER_ID = 'md.numen.readers.pdf'
 
 /** Turns the PDF reader plugin on or off in the settings. */
 const setPdfReaderEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
-  await runCommand(page, 'Settings', /^Settings$/)
+  await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })
   const toggle = settings.getByRole('switch', { name: /Enabled PDF Reader/ })
   if (!(await toggle.isVisible())) {

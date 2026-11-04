@@ -16,7 +16,7 @@ const PATH = 'assets/flywheel.pdf'
 const PROOFREAD_MARK = 'proofread'
 
 const setOcrEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
-  await runCommand(page, 'Settings', /^Settings$/)
+  await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })
   await settings.getByRole('button', { name: /Document OCR/ }).click()
   const toggle = settings.getByRole('switch', { name: /Enabled Document OCR/ })

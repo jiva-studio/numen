@@ -72,7 +72,7 @@ test.describe('The page of a plugin', () => {
     const firstPath = await createExecutable()
     await writeSetting(page, ['plugins', FIRST.id, 'executable_path'], firstPath)
     await openWorkspace(page)
-    await runCommand(page, 'Settings', /^Settings$/)
+    await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
 
     await settings.getByRole('button', { name: new RegExp(FIRST.name) }).click()

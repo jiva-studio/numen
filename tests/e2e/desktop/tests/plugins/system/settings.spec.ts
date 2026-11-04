@@ -3,7 +3,7 @@ import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 
 /** The settings page of the transcription plugin, opened from the palette. The tab opens again on the plugin it last showed. */
 async function openTranscriptionSettings(page: Page): Promise<void> {
-  await runPaletteCommand(page, 'Settings', 'Settings')
+  await runPaletteCommand(page, 'Open settings', 'Open settings')
   await page
     .getByRole('button', { name: /Audio\/Video Transcription/i })
     .first()
@@ -13,7 +13,7 @@ async function openTranscriptionSettings(page: Page): Promise<void> {
 
 /** Opens the Settings tab again, which shows the plugin it last showed. */
 async function reopenSettings(page: Page): Promise<void> {
-  await runPaletteCommand(page, 'Settings', 'Settings')
+  await runPaletteCommand(page, 'Open settings', 'Open settings')
   await expect(page.getByTestId('setting-model')).toBeVisible({ timeout: 5_000 })
 }
 
@@ -21,7 +21,7 @@ test.describe('Plugin Settings and Configuration', () => {
   test('opens command palette and navigates to Settings tab', async ({ page }) => {
     await openWorkspace(page)
 
-    await runPaletteCommand(page, 'Settings', 'Settings')
+    await runPaletteCommand(page, 'Open settings', 'Open settings')
 
     // Verify Settings tab opened
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
@@ -83,7 +83,7 @@ test.describe('Plugin Settings and Configuration', () => {
     page,
   }) => {
     await openWorkspace(page)
-    await runPaletteCommand(page, 'Settings', 'Settings')
+    await runPaletteCommand(page, 'Open settings', 'Open settings')
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
 
     const searchInput = page.getByRole('searchbox', { name: 'Search plugins' }).first()
@@ -111,7 +111,7 @@ test.describe('OCR settings', () => {
     page,
   }) => {
     await openWorkspace(page)
-    await runPaletteCommand(page, 'Settings', 'Settings')
+    await runPaletteCommand(page, 'Open settings', 'Open settings')
     await page
       .getByRole('button', { name: /Document OCR/i })
       .first()
@@ -155,7 +155,7 @@ test.describe('Embeddings settings', () => {
     page,
   }) => {
     await openWorkspace(page)
-    await runPaletteCommand(page, 'Settings', 'Settings')
+    await runPaletteCommand(page, 'Open settings', 'Open settings')
     await page
       .getByRole('button', { name: /Vector Embeddings/i })
       .first()

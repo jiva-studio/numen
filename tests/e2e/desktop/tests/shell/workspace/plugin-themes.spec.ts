@@ -33,7 +33,7 @@ const chooseTheme = async (page: Page, title: string): Promise<void> => {
 
 /** Turns the preset themes plugin on or off in the settings. */
 const setPresetThemesEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
-  await runCommand(page, 'Settings', /^Settings$/)
+  await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })
   await expect(settings).toBeVisible()
   const toggle = settings.getByRole('switch', { name: /Enabled Preset Themes/ })
