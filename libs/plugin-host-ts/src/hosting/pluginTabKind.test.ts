@@ -130,7 +130,10 @@ describe('the pane of a declared kind', () => {
 
   it('adopts a constructed stylesheet on mount and releases it on unmount without rendering a link', async () => {
     class FakeSheet {
-      replaceSync = vi.fn()
+      cssText = ''
+      replaceSync(text: string) {
+        this.cssText = text
+      }
     }
     vi.stubGlobal('CSSStyleSheet', FakeSheet)
     Object.defineProperty(document, 'adoptedStyleSheets', {

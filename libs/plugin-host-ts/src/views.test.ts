@@ -152,7 +152,10 @@ describe('createViewRegistry', () => {
 
   it('adopts a constructed stylesheet into the root and releases it on dispose', async () => {
     class FakeSheet {
-      replaceSync = vi.fn()
+      cssText = ''
+      replaceSync(text: string) {
+        this.cssText = text
+      }
     }
     vi.stubGlobal('CSSStyleSheet', FakeSheet)
     Object.defineProperty(document, 'adoptedStyleSheets', {

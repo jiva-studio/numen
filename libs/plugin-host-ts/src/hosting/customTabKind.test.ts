@@ -1208,7 +1208,10 @@ describe('pluginView helpers and stylesheet adoption', () => {
 
     // Adopted style in createPluginPaneWrapper
     class FakeSheet {
-      replaceSync = vi.fn()
+      cssText = ''
+      replaceSync(text: string) {
+        this.cssText = text
+      }
     }
     vi.stubGlobal('CSSStyleSheet', FakeSheet)
     Object.defineProperty(document, 'adoptedStyleSheets', {
