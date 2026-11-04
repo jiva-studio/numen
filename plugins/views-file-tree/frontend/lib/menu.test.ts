@@ -36,7 +36,7 @@ describe('the menu on a row standing for a note', () => {
       'app:note.copy-path',
       '— links',
       '— ask',
-      '— remove',
+      '— app:note.trash',
     ])
 
     const menu = getMenu()
@@ -61,7 +61,7 @@ describe('the menu on a row standing for any other file', () => {
       'app:note.copy-path',
       '— extract',
       'refine',
-      '— remove',
+      '— app:note.trash',
     ])
   })
 
@@ -70,13 +70,13 @@ describe('the menu on a row standing for any other file', () => {
       'new',
       'rename',
       'app:note.copy-path',
-      '— remove',
+      '— app:note.trash',
     ])
     expect(getGroupedIds({ isFolder: true, isNote: false, path: 'physics' })).toStrictEqual([
       'new',
       'rename',
       'app:note.copy-path',
-      '— remove',
+      '— app:note.trash',
     ])
   })
 })

@@ -498,7 +498,7 @@ describe('an item chosen in the menu on a row', () => {
 
     one.chooseMenuItem('app:note.trash')
 
-    expect(recorded).toStrictEqual(['runs remove Entropy.md Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Entropy.md'])
   })
 
   it('passes the whole selection to the window, on a row standing in it', async () => {
@@ -507,7 +507,7 @@ describe('an item chosen in the menu on a row', () => {
 
     pendingState.one.chooseMenuItem('app:note.trash')
 
-    expect(pendingState.recorded).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
+    expect(pendingState.recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
   })
 
   it('passes the one row to the window, on a row standing outside the selection', async () => {
@@ -516,7 +516,7 @@ describe('an item chosen in the menu on a row', () => {
 
     pendingState.one.chooseMenuItem('app:note.trash')
 
-    expect(pendingState.recorded).toStrictEqual(['runs remove Entropy.md Entropy.md'])
+    expect(pendingState.recorded).toStrictEqual(['runs app:note.trash Entropy.md Entropy.md'])
   })
 
   it('does nothing at all for a choice the menu does not offer', async () => {

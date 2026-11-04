@@ -8,7 +8,7 @@ import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 const VIEWS = [
   {
     command: 'Open file tree',
-    query: 'files',
+    query: 'file tree',
     tab: /^Files/,
     keys: 'Control+Shift+e',
   },
