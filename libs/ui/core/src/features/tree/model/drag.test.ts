@@ -207,6 +207,24 @@ describe('letting go', () => {
     ])
   })
 
+  it('drops at the pointerup position, not the last pointermove position', () => {
+    const { drag, notified } = setup()
+    lift(drag, ['loose'])
+    pointer('pointermove', 10, 112)
+    pointer('pointerup', 10, 400)
+
+    expect(notified).toStrictEqual([['drag', ['loose']], ['drop']])
+  })
+
+  it('ends the drag without a drop on pointercancel', () => {
+    const { drag, notified } = setup()
+    lift(drag, ['loose'])
+    pointer('pointermove', 10, 112)
+    pointer('pointercancel', 10, 112)
+
+    expect(notified).toStrictEqual([['drag', ['loose']], ['drop']])
+  })
+
   it('notifies only that they were let go where they landed nowhere', () => {
     const { drag, notified } = setup()
     lift(drag, ['loose'])

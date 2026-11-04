@@ -8,7 +8,7 @@
 import { computed, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import type { Clock } from '@numen/ui'
 import { usePressDrag } from '@numen/ui'
-import type { Position } from '@numen/ui'
+import type { Position, Size } from '@numen/ui'
 import {
   getCaretRect,
   findEdgeSide,
@@ -21,6 +21,7 @@ import {
 import { dropOnEdge, dropTab, moveTabWithin, type NodeIdFactory } from '../lib/edit'
 import type { NodeId, Tab, TabId, Workspace } from '../lib/node'
 import type { Rect } from '../lib/rect'
+import { getViewportSize, getWindowOrigin } from '@/shared/lib/dom'
 
 /** A tab under the pointer, and the pane its strip belongs to. */
 interface Drag {
@@ -42,7 +43,9 @@ export interface TabDragOptions {
   /** The distance the pointer moves before a press becomes a drag. */
   readonly getThreshold: () => number
   readonly getClock: () => Clock
-  /** Called when a tab is dragged and released outside of any workspace drop target. */
+  /** Returns the viewport size. A pointerup outside the viewport tears off the tab. */
+  readonly getViewport?: () => Size
+  /** Called on pointerup outside the viewport after a tab drag. */
   readonly onTearOff?: ((tab: TabId, pos: Position) => void) | undefined
 }
 
@@ -62,8 +65,7 @@ export interface TabDragState {
 }
 
 export function useTabDrag(options: TabDragOptions): TabDragState {
-  // Stryker disable next-line ObjectLiteral: lastPosition is overwritten on the first pointer move before a drag can commit.
-  let lastPosition: Position = { x: 0, y: 0 }
+  const getViewport = options.getViewport ?? getViewportSize
 
   const {
     dragging,
@@ -73,18 +75,15 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   } = usePressDrag<Drag, TabDropTarget>({
     getThreshold: options.getThreshold,
     getClock: options.getClock,
-    getDropTargetAt: (_item, point) => {
-      lastPosition = point
-      return resolveDropTarget(point, options.frame.value, options.getEdge)
-    },
-    commit: (item, point) => {
-      if (point) {
-        land(item, point)
-      } else if (options.onTearOff) {
-        options.onTearOff(item.tab, {
-          x: window.screenX + lastPosition.x,
-          y: window.screenY + lastPosition.y,
-        })
+    getDropTargetAt: (_item, point) =>
+      isInsideViewport(point, getViewport())
+        ? resolveDropTarget(point, options.frame.value, options.getEdge)
+        : null,
+    commit: (item, target, point) => {
+      if (target) {
+        land(item, target)
+      } else if (options.onTearOff && !isInsideViewport(point, getViewport())) {
+        options.onTearOff(item.tab, getScreenPosition(point))
       }
     },
   })
@@ -135,6 +134,9 @@ const isInside = (point: Position, box: Rect): boolean =>
   point.x <= box.x + box.width &&
   point.y >= box.y &&
   point.y <= box.y + box.height
+
+const isInsideViewport = (point: Position, viewport: Size): boolean =>
+  point.x >= 0 && point.y >= 0 && point.x < viewport.width && point.y < viewport.height
 
 const getClosest = (targetElement: Element | null, selector: string): Element | null =>
   targetElement?.closest(selector) ?? null
@@ -220,4 +222,10 @@ function resolveDropTarget(
   if (!pane || !id) return null
 
   return getPaneDropTarget(point, { element: pane, id }, local)
+}
+
+/** Converts a viewport point to screen coordinates. */
+const getScreenPosition = (point: Position): Position => {
+  const origin = getWindowOrigin()
+  return { x: origin.x + point.x, y: origin.y + point.y }
 }

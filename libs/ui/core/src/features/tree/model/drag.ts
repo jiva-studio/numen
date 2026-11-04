@@ -81,6 +81,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
       options.tell('drop')
     },
     begin: (rows) => options.tell('drag', rows),
+    cancel: () => options.tell('drop'),
   })
 
   const into = computed(() =>
