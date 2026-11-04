@@ -337,8 +337,11 @@ func TestSegmenterBoundaries(t *testing.T) {
 	if got := widenSpans([]span{{0, 1}}, 0, 5); !slices.Equal(got, []span{{0, 1}}) {
 		t.Errorf("widenSpans zero pad = %v", got)
 	}
-	if got := widenSpans([]span{{0, 2}, {4, 6}, {8, 9}}, 1, 10); !slices.Equal(got, []span{{0, 7}, {7, 10}}) {
+	if got := widenSpans([]span{{0, 2}, {4, 6}, {8, 9}}, 1, 10); !slices.Equal(got, []span{{0, 10}}) {
 		t.Errorf("widenSpans touching and continuing = %v", got)
+	}
+	if got := widenSpans([]span{{0, 2}, {5, 6}}, 1, 10); !slices.Equal(got, []span{{0, 3}, {4, 7}}) {
+		t.Errorf("widenSpans apart = %v", got)
 	}
 
 	// splitLongSpan and findQuietest boundaries.

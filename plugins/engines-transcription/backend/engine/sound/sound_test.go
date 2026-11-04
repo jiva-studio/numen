@@ -40,10 +40,13 @@ func encodeCustomWav(format, channels, rate, bits int, fmtExtra, data []byte) []
 	copy(fmtBody[16:], fmtExtra)
 
 	out := []byte("RIFF")
-	out = binary.LittleEndian.AppendUint32(out, uint32(20+len(fmtBody)+len(data)))
+	out = binary.LittleEndian.AppendUint32(out, uint32(20+len(fmtBody)+len(fmtBody)%2+len(data)))
 	out = append(out, "WAVEfmt "...)
 	out = binary.LittleEndian.AppendUint32(out, uint32(len(fmtBody)))
 	out = append(out, fmtBody...)
+	if len(fmtBody)%2 == 1 {
+		out = append(out, 0)
+	}
 	out = append(out, "data"...)
 	out = binary.LittleEndian.AppendUint32(out, uint32(len(data)))
 	return append(out, data...)
