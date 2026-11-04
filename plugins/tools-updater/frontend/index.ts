@@ -60,10 +60,7 @@ function showMissingAddress(context: PluginContext): void {
   context.notices?.show(words.missingAddress, 'error')
 }
 
-export const activate = (
-  context: PluginContext,
-  parts: UpdateParts = browserParts,
-): void => {
+export const activate = (context: PluginContext, parts: UpdateParts = browserParts): void => {
   const updates = createUpdates({
     api: parts.api,
     app: context.app,
