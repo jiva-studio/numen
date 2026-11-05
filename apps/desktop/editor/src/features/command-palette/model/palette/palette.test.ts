@@ -119,8 +119,8 @@ const SETTING_COMMANDS: readonly Command[] = [
 ]
 
 /** The step lists of the window and every row previewed by a step. */
-const createLists = (offers: Record<string, readonly StepGroup[]>) => {
-  const lists = ref(offers)
+const createLists = (commandLists: Record<string, readonly StepGroup[]>) => {
+  const lists = ref(commandLists)
   const displayedItems: string[] = []
   const paletteLists: PaletteLists = {
     getStepGroups: (command) => lists.value[command] ?? [],
@@ -1036,7 +1036,7 @@ describe('a vault taken off the list', () => {
  * The commands over a vault that responds when the test resolves it, and a
  * pending action that ends when the test resolves it. Nothing is opened.
  */
-const createSlowPalette = (offers: Record<string, readonly StepGroup[]> = {}) => {
+const createSlowPalette = (commandLists: Record<string, readonly StepGroup[]> = {}) => {
   const names: Deferred<readonly NameMatch[]>[] = []
   const lists: Deferred<VaultList>[] = []
   const holds: Deferred<void>[] = []
@@ -1066,7 +1066,7 @@ const createSlowPalette = (offers: Record<string, readonly StepGroup[]> = {}) =>
     words,
     () => front(),
     createLookup().knows,
-    createLists(offers).paletteLists,
+    createLists(commandLists).paletteLists,
     runSupport(),
     wait,
   )

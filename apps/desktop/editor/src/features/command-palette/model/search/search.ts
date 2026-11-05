@@ -20,7 +20,7 @@ import {
   type SearchRow,
 } from './lookup'
 import type { TextRange } from '@/shared/textRange'
-import { createNoteRow, CREATE_NOTE_ROW } from '../../lib/offers/offers'
+import { createNoteRow, CREATE_NOTE_ROW } from '../../lib/entries/entries'
 import type { CommandTarget } from '../../types'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
@@ -169,7 +169,7 @@ function appendCreateNoteRow(
     line: -1,
     start: 0,
     length: 0,
-    offers: actions,
+    actionIds: actions,
     type: null,
     selector: null,
     isCreation: true,

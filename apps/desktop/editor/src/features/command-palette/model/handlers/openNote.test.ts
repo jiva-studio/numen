@@ -1,7 +1,7 @@
 /** The command that opens a note, over the line a heading or a passage stands for. */
 import { describe, expect, it, vi } from 'vitest'
 import { COMMAND } from '@/shared/commandIds'
-import { createInvocation } from '../../lib/offers/invocation'
+import { createInvocation } from '../../lib/entries/invocation'
 import { ANSWER_WORDS } from '../../words'
 import type { CommandTarget } from '../../types'
 import type { CommandDeps } from './deps'

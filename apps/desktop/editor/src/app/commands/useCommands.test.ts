@@ -237,25 +237,25 @@ describe('a plugin command over a note', () => {
   }
 
   const findCommand = () => {
-    const offers = (h.getExtraCommands?.() ?? []) as {
+    const entries = (h.getExtraCommands?.() ?? []) as {
       id: string
       group: string
       isAvailable: (target: CommandTarget) => boolean
     }[]
-    const offer = offers.find((one) => one.id === SUMMARY.id)
-    if (!offer) throw new Error('the palette has no plugin command')
-    return offer
+    const entry = entries.find((one) => one.id === SUMMARY.id)
+    if (!entry) throw new Error('the palette has no plugin command')
+    return entry
   }
 
   it('is offered among the note commands only while a note is in front', () => {
     setupPlugin()
-    const offer = findCommand()
+    const entry = findCommand()
 
-    expect(offer.group).toBe('note')
-    expect(offer.isAvailable({ isReady: true, path: 'a.md' } as unknown as CommandTarget)).toBe(
+    expect(entry.group).toBe('note')
+    expect(entry.isAvailable({ isReady: true, path: 'a.md' } as unknown as CommandTarget)).toBe(
       true,
     )
-    expect(offer.isAvailable({ isReady: true, path: '' } as unknown as CommandTarget)).toBe(false)
+    expect(entry.isAvailable({ isReady: true, path: '' } as unknown as CommandTarget)).toBe(false)
   })
 
   it('runs from the palette with the note and the type the vault files it as', async () => {
@@ -277,19 +277,19 @@ describe('a plugin command over a note', () => {
 
   it('draws a plugin command with the keystroke and the icon it declares', () => {
     setupPlugin([GRAPH])
-    const offers = (h.getExtraCommands?.() ?? []) as {
+    const entries = (h.getExtraCommands?.() ?? []) as {
       id: string
       group: string
       keys?: unknown
       icon?: unknown
       isAvailable: (target: CommandTarget) => boolean
     }[]
-    const offer = offers.find((one) => one.id === GRAPH.id)
+    const entry = entries.find((one) => one.id === GRAPH.id)
 
-    expect(offer?.group).toBe('window')
-    expect(offer?.isAvailable({ isReady: false, path: '' } as unknown as CommandTarget)).toBe(true)
-    expect(offer?.keys).toStrictEqual({ letter: 'mod+shift+x' })
-    expect(offer?.icon).toBe(getNamedIcon('waypoints'))
+    expect(entry?.group).toBe('window')
+    expect(entry?.isAvailable({ isReady: false, path: '' } as unknown as CommandTarget)).toBe(true)
+    expect(entry?.keys).toStrictEqual({ letter: 'mod+shift+x' })
+    expect(entry?.icon).toBe(getNamedIcon('waypoints'))
   })
 
   it('offers the keyed commands over the window as ways in, and those over a note to the menus', () => {

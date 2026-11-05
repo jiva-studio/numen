@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createCommands } from '../../lib/commands/commands'
 import { runSupport } from '../palette/runSupport'
-import { createInvocation } from '../../lib/offers/invocation'
+import { createInvocation } from '../../lib/entries/invocation'
 import { createNotes } from '../../lib/notes/notes'
 import type { VaultRef } from '../../types'
 import type { CommandDeps } from './deps'

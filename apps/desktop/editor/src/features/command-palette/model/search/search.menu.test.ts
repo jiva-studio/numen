@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import type { PlacedCommand } from '@numen/plugin-host'
 import { COMMAND } from '@/shared/commandIds'
-import { CREATE_NOTE_ROW } from '../../lib/offers/offers'
+import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
 import type { CommandTarget } from '../../types'
 import { useSearch, type NameMatch, type Passage, type SearchDeps, type Words } from './search'
 

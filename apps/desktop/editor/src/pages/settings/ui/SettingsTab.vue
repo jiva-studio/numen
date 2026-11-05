@@ -8,7 +8,7 @@ import type { SettingsTabState } from '../types'
 import type { PluginInfo } from '@/entities/settings'
 import SystemDetail from './SystemDetail.vue'
 import { createManagedFromEntries } from '@/shared/pluginListing'
-import { OfferedPluginDetail, PluginsList, PluginDetail } from './plugins'
+import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: SettingsTabState }>()
@@ -71,7 +71,7 @@ function onBack(): void {
           :plugin="selectedPlugin"
           @back="onBack"
         />
-        <OfferedPluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="onBack" />
+        <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="onBack" />
         <PluginsList
           v-else
           :state="props.state"
