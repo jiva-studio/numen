@@ -45,12 +45,16 @@ export function createHost({
     finished: [] as string[],
     resolved: [] as string[],
     questions: [] as string[],
+    commands: [] as [string, NoteRef][],
   }
 
   const request: Pick<
     WorkspaceHost,
-    'openFile' | 'openFileAt' | 'getNoteInFocus' | 'isReady' | 'ask'
+    'openFile' | 'openFileAt' | 'getNoteInFocus' | 'isReady' | 'ask' | 'runCommand'
   > = {
+    runCommand: (id, target) => {
+      recorded.commands.push([id, target])
+    },
     openFile: (path, options) => {
       recorded.opened.push([path, options])
     },

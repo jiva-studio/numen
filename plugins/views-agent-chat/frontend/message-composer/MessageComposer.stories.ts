@@ -39,6 +39,7 @@ const meta = {
     isDisabled: false,
     onSubmit: fn(),
     onStop: fn(),
+    onOpenSettings: fn(),
   },
 } satisfies Meta<typeof MessageComposer>
 
@@ -130,5 +131,27 @@ export const Narrow: Story = {
     const placeholder = canvasElement.querySelector('.composer__placeholder') as HTMLElement
     await expect(placeholder.scrollWidth).toBeGreaterThan(placeholder.clientWidth)
     await expect(getComputedStyle(placeholder).textOverflow).toBe('ellipsis')
+  },
+}
+
+/**
+ * Where no agent can answer: the model control turned off and reading "No agent", and the message
+ * with the link to the settings in place of the field.
+ */
+export const NoAgent: Story = {
+  args: {
+    isAgentMissing: true,
+    noAgentLabel: 'No agent',
+    noAgentMessage: 'No agent is set up.',
+    openSettingsLabel: 'Open settings',
+  },
+  render: renderComposers(''),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'No agent' })).toBeDisabled()
+    await expect(canvas.getByText('No agent is set up.')).toBeVisible()
+    await expect(canvasElement.querySelector('textarea')).toBeNull()
+    await canvas.getByRole('button', { name: 'Open settings' }).click()
+    await expect(args.onOpenSettings).toHaveBeenCalledTimes(1)
   },
 }
