@@ -110,7 +110,11 @@ const ISSUE_TEXT: Record<MenuIssue['kind'], string> = {
 export function createMenus(deps: MenusDeps): Menus {
   const report = createIssueReporter(deps.reportIssue)
 
-  const reportAbout = (placement: MenuPlacement, command: string, kind: MenuIssue['kind']) =>
+  const reportAbout = (
+    placement: MenuPlacement,
+    command: string,
+    kind: MenuIssue['kind'],
+  ): undefined => {
     report({
       pluginId: placement.pluginId,
       location: placement.location,
@@ -118,6 +122,8 @@ export function createMenus(deps: MenusDeps): Menus {
       kind,
       message: `menus: "${command}" in "${placement.location}" ${ISSUE_TEXT[kind]}`,
     })
+    return undefined
+  }
 
   const place = (placement: MenuPlacement): PlacedCommand | undefined => {
     const { pluginId, location } = placement

@@ -13,6 +13,7 @@ import { createNoteLookup } from '../tabs/editorTabs'
 import {
   createCommands,
   runSupport,
+  type Command,
   type CommandTarget,
   type NoteLookup,
 } from '@/features/command-palette'
