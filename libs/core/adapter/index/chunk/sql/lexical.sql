@@ -4,12 +4,18 @@
 -- The row that comes back is the large chunk enclosing the hit, which is what
 -- a result shows, and where the hit itself is inside it. A chunk with
 -- nothing enclosing it is its own, and is at its own beginning.
+--
+-- A path prefix limits the sources before the list is cut at the limit, so the
+-- limit counts the passages under it. The prefix is compared as text, and an empty
+-- prefix limits none.
 WITH hits AS (
     SELECT chunks_fts.rowid, bm25(chunks_fts) AS rank
     FROM chunks_fts
     JOIN chunks c ON c.id = chunks_fts.rowid
+    JOIN sources s ON s.id = c.source_id
     WHERE chunks_fts MATCH ?1
       AND c.vault_id = ?2
+      AND substr(s.path, 1, length(?4)) = ?4
     ORDER BY rank
     LIMIT ?3
 )
@@ -23,4 +29,3 @@ JOIN chunks c ON c.id = h.rowid
 JOIN sources s ON s.id = c.source_id
 LEFT JOIN chunks p ON p.id = c.parent_id
 ORDER BY h.rank;
-

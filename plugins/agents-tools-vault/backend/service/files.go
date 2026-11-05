@@ -30,12 +30,13 @@ type FileReadOutput struct {
 
 func (t *Tools) addFileRead(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:        tools.ByEffect,
-		Name:        "file_read",
-		Title:       "Read File",
-		Description: "Read raw content or a byte range of any file in the vault.",
-		Effect:      tools.ReadOnly,
-		Servers:     []tools.Server{tools.Full, tools.Reading},
+		Step:  tools.ByEffect,
+		Name:  "file_read",
+		Title: "Read File",
+		Description: "Read the content or a byte range of a text file of the vault, as text. A file that is " +
+			"not text — a PDF, a book, a recording — is refused: library_read reads its text.",
+		Effect:  tools.ReadOnly,
+		Servers: []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).readFile))
 }
 
@@ -47,6 +48,9 @@ func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput,
 	data, fp, err := t.vault.Read(ctx, in.Path)
 	if err != nil {
 		return FileReadOutput{}, fmt.Errorf("read file %s: %w", in.Path, err)
+	}
+	if !isText(data) {
+		return FileReadOutput{}, fmt.Errorf("%s is not a text file: file_read reads text only, and library_read reads the text of a PDF, a book or a recording", in.Path)
 	}
 
 	start := in.Start

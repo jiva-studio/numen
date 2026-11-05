@@ -90,8 +90,8 @@ func putText(t *testing.T, texts *hosttest.Texts, pluginID, path, kind string, f
 	}
 }
 
-// call runs a tool on the vault and returns the structured answer, or the refusal text.
-func (l library) call(t *testing.T, name, arguments string, out any) (refusal string) {
+// call runs a tool on the vault and returns the structured answer, or the failure text.
+func (l library) call(t *testing.T, name, arguments string, out any) (failure string) {
 	t.Helper()
 	res, err := l.calls.InvokeTool(context.Background(), tools.Call{VaultID: testVault, Name: name, Arguments: []byte(arguments)})
 	if err != nil {
@@ -111,11 +111,11 @@ func (l library) call(t *testing.T, name, arguments string, out any) (refusal st
 	return ""
 }
 
-func TestLibrarySearchFindsAPassageThatIsOnlyInAPDFWithItsPageAndAddress(t *testing.T) {
+func TestLibrarySearchFindsPDFPassageWithPageAndAddress(t *testing.T) {
 	l := newLibrary(t)
 	var out service.LibrarySearchOutput
-	if refusal := l.call(t, "library_search", `{"query":"heron"}`, &out); refusal != "" {
-		t.Fatal(refusal)
+	if failure := l.call(t, "library_search", `{"query":"heron"}`, &out); failure != "" {
+		t.Fatal(failure)
 	}
 	if len(out.Matches) != 3 || out.Query != "heron" {
 		t.Fatalf("matches %+v", out.Matches)
@@ -139,17 +139,17 @@ func TestLibrarySearchFindsAPassageThatIsOnlyInAPDFWithItsPageAndAddress(t *test
 
 func TestLibrarySearchLimitsItToAKindAndAPathPrefix(t *testing.T) {
 	l := newLibrary(t)
-	var files, notes, under service.LibrarySearchOutput
+	var files, notes, narrowed service.LibrarySearchOutput
 	l.call(t, "library_search", `{"query":"heron","kinds":["file"]}`, &files)
 	l.call(t, "library_search", `{"query":"heron","kinds":["note"]}`, &notes)
-	l.call(t, "library_search", `{"query":"heron","path_prefix":"recordings/","limit":1}`, &under)
+	l.call(t, "library_search", `{"query":"heron","path_prefix":"recordings/","limit":1}`, &narrowed)
 	if got := sourcesOf(files); !slices.Equal(got, []string{guidePath, talkPath}) {
 		t.Errorf("the files that answer are %v", got)
 	}
 	if got := sourcesOf(notes); !slices.Equal(got, []string{"notes/Herons.md"}) {
 		t.Errorf("the notes that answer are %v", got)
 	}
-	if got := sourcesOf(under); !slices.Equal(got, []string{talkPath}) {
+	if got := sourcesOf(narrowed); !slices.Equal(got, []string{talkPath}) {
 		t.Errorf("one passage under recordings/ is %v", got)
 	}
 }
@@ -162,15 +162,15 @@ func sourcesOf(out service.LibrarySearchOutput) []string {
 	return got
 }
 
-func TestLibrarySearchRefusesAKindTheIndexDoesNotHoldAndAnswersNothingToABlankQuery(t *testing.T) {
+func TestLibrarySearchRejectsUnknownKindAndBlankQuery(t *testing.T) {
 	l := newLibrary(t)
-	refusal := l.call(t, "library_search", `{"query":"heron","kinds":["book"]}`, nil)
-	if !strings.Contains(refusal, `"book"`) || !strings.Contains(refusal, "note") || !strings.Contains(refusal, "file") {
-		t.Errorf("refusal %q, want the kind named and the two kinds offered", refusal)
+	failure := l.call(t, "library_search", `{"query":"heron","kinds":["book"]}`, nil)
+	if !strings.Contains(failure, `"book"`) || !strings.Contains(failure, "note") || !strings.Contains(failure, "file") {
+		t.Errorf("failure %q, want the kind named and the two kinds offered", failure)
 	}
 	var blank service.LibrarySearchOutput
-	if refusal := l.call(t, "library_search", `{"query":"   "}`, &blank); refusal != "" || len(blank.Matches) != 0 {
-		t.Errorf("a blank query gave %q and %v", refusal, blank.Matches)
+	if failure := l.call(t, "library_search", `{"query":"   "}`, &blank); failure != "" || len(blank.Matches) != 0 {
+		t.Errorf("a blank query gave %q and %v", failure, blank.Matches)
 	}
 }
 
@@ -202,20 +202,20 @@ func TestLibrarySearchWorksTheVaultTheCallNames(t *testing.T) {
 	}
 }
 
-func TestLibrarySearchSaysSoWhenThePluginMayNotReadTheIndex(t *testing.T) {
+func TestLibrarySearchReportsMissingIndexPermission(t *testing.T) {
 	l := newLibrary(t)
 	l.search.Deny(host.PermissionIndexRead)
-	refusal := l.call(t, "library_search", `{"query":"heron"}`, nil)
-	if !strings.Contains(refusal, "index:read") {
-		t.Errorf("refusal %q, want the permission named", refusal)
+	failure := l.call(t, "library_search", `{"query":"heron"}`, nil)
+	if !strings.Contains(failure, "index:read") {
+		t.Errorf("failure %q, want the permission named", failure)
 	}
 }
 
-func TestLibraryReadGivesAPageOfAPDFWithItsLocationsAndWhereToContinue(t *testing.T) {
+func TestLibraryReadReturnsPageWithLocationsAndNext(t *testing.T) {
 	l := newLibrary(t)
 	var out service.LibraryReadOutput
-	if refusal := l.call(t, "library_read", `{"path":"`+guidePath+`","page":2}`, &out); refusal != "" {
-		t.Fatal(refusal)
+	if failure := l.call(t, "library_read", `{"path":"`+guidePath+`","page":2}`, &out); failure != "" {
+		t.Fatal(failure)
 	}
 	if out.Text != pageTwo || out.Start != len(pageOne) || out.Length != len(pageTwo) {
 		t.Errorf("page 2 is %q at %d for %d", out.Text, out.Start, out.Length)
@@ -242,7 +242,7 @@ func itoa(n int) string {
 	return string(b)
 }
 
-func TestLibraryReadCutsARangeAtALimitOfBytesWithoutSplittingACharacter(t *testing.T) {
+func TestLibraryReadStopsAtCharacterBoundary(t *testing.T) {
 	l := newLibrary(t)
 	var out service.LibraryReadOutput
 	l.call(t, "library_read", `{"path":"`+guidePath+`","start":3,"length":10}`, &out)
@@ -263,16 +263,16 @@ func TestLibraryReadCutsARangeAtALimitOfBytesWithoutSplittingACharacter(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	var cut service.LibraryReadOutput
-	if err := json.Unmarshal(res.GetResult().GetStructured(), &cut); err != nil {
+	var slice service.LibraryReadOutput
+	if err := json.Unmarshal(res.GetResult().GetStructured(), &slice); err != nil {
 		t.Fatal(err)
 	}
-	if cut.Text != "А" || cut.Length != 2 || cut.Next == nil || *cut.Next != 2 {
-		t.Errorf("3 bytes of a two-byte letter text gave %q for %d, want the whole letter before the cut", cut.Text, cut.Length)
+	if slice.Text != "А" || slice.Length != 2 || slice.Next == nil || *slice.Next != 2 {
+		t.Errorf("3 bytes of a two-byte letter text gave %q for %d, want the whole letter before the cut", slice.Text, slice.Length)
 	}
 }
 
-func TestLibraryReadGivesTheTimesOfATranscript(t *testing.T) {
+func TestLibraryReadReturnsTranscriptTimes(t *testing.T) {
 	l := newLibrary(t)
 	var out service.LibraryReadOutput
 	l.call(t, "library_read", `{"path":"`+talkPath+`"}`, &out)
@@ -287,12 +287,12 @@ func TestLibraryReadGivesTheTimesOfATranscript(t *testing.T) {
 	}
 }
 
-func TestLibraryReadSaysThereIsNoTextVersionAndWhatMakesOne(t *testing.T) {
+func TestLibraryReadReportsMissingTextVersion(t *testing.T) {
 	l := newLibrary(t)
-	refusal := l.call(t, "library_read", `{"path":"`+scanPath+`"}`, nil)
+	failure := l.call(t, "library_read", `{"path":"`+scanPath+`"}`, nil)
 	for _, want := range []string{scanPath, "no text version", "reader", "recognition", "transcription"} {
-		if !strings.Contains(refusal, want) {
-			t.Errorf("refusal %q does not say %q", refusal, want)
+		if !strings.Contains(failure, want) {
+			t.Errorf("failure %q does not say %q", failure, want)
 		}
 	}
 }
@@ -300,8 +300,8 @@ func TestLibraryReadSaysThereIsNoTextVersionAndWhatMakesOne(t *testing.T) {
 func TestLibraryReadReadsATextFileThatNeedsNoTextVersion(t *testing.T) {
 	l := newLibrary(t)
 	var out service.LibraryReadOutput
-	if refusal := l.call(t, "library_read", `{"path":"data.txt"}`, &out); refusal != "" {
-		t.Fatal(refusal)
+	if failure := l.call(t, "library_read", `{"path":"data.txt"}`, &out); failure != "" {
+		t.Fatal(failure)
 	}
 	if out.Text != "line 1\nline 2\nline 3\n" || out.Size != 21 || out.Kind != "" || len(out.Locations) != 0 {
 		t.Errorf("text file %+v", out)
@@ -310,35 +310,35 @@ func TestLibraryReadReadsATextFileThatNeedsNoTextVersion(t *testing.T) {
 
 func TestLibraryReadRefusesAPageThatIsNotThereAndAFileThatIsNot(t *testing.T) {
 	l := newLibrary(t)
-	if refusal := l.call(t, "library_read", `{"path":"`+guidePath+`","page":9}`, nil); !strings.Contains(refusal, "page 9") || !strings.Contains(refusal, "1 to 3") {
-		t.Errorf("refusal %q, want the page and the pages there are", refusal)
+	if failure := l.call(t, "library_read", `{"path":"`+guidePath+`","page":9}`, nil); !strings.Contains(failure, "page 9") || !strings.Contains(failure, "1 to 3") {
+		t.Errorf("failure %q, want the page and the pages there are", failure)
 	}
-	if refusal := l.call(t, "library_read", `{"path":"`+guidePath+`","start":99999}`, nil); !strings.Contains(refusal, "99999") {
-		t.Errorf("refusal %q, want the offset named", refusal)
+	if failure := l.call(t, "library_read", `{"path":"`+guidePath+`","start":99999}`, nil); !strings.Contains(failure, "99999") {
+		t.Errorf("failure %q, want the offset named", failure)
 	}
-	if refusal := l.call(t, "library_read", `{"path":"library/Missing.pdf"}`, nil); !strings.Contains(refusal, "Missing.pdf") {
-		t.Errorf("refusal %q, want the path named", refusal)
+	if failure := l.call(t, "library_read", `{"path":"library/Missing.pdf"}`, nil); !strings.Contains(failure, "Missing.pdf") {
+		t.Errorf("failure %q, want the path named", failure)
 	}
-	if refusal := l.call(t, "library_read", `{"path":" "}`, nil); !strings.Contains(refusal, "path") {
-		t.Errorf("refusal %q", refusal)
+	if failure := l.call(t, "library_read", `{"path":" "}`, nil); !strings.Contains(failure, "path") {
+		t.Errorf("failure %q", failure)
 	}
 }
 
 func TestFileReadRefusesABinaryAndNamesLibraryRead(t *testing.T) {
 	l := newLibrary(t)
 	for _, path := range []string{guidePath, talkPath} {
-		refusal := l.call(t, "file_read", `{"path":"`+path+`"}`, nil)
-		if !strings.Contains(refusal, "library_read") || !strings.Contains(refusal, path) {
-			t.Errorf("file_read of %s refused with %q, want the path and library_read named", path, refusal)
+		failure := l.call(t, "file_read", `{"path":"`+path+`"}`, nil)
+		if !strings.Contains(failure, "library_read") || !strings.Contains(failure, path) {
+			t.Errorf("file_read of %s refused with %q, want the path and library_read named", path, failure)
 		}
 	}
 	var md service.FileReadOutput
-	if refusal := l.call(t, "file_read", `{"path":"Entropy.md"}`, &md); refusal != "" || !strings.Contains(md.Content, "Disorder grows.") {
-		t.Errorf("a markdown file gave %q and %+v", refusal, md)
+	if failure := l.call(t, "file_read", `{"path":"Entropy.md"}`, &md); failure != "" || !strings.Contains(md.Content, "Disorder grows.") {
+		t.Errorf("a markdown file gave %q and %+v", failure, md)
 	}
 	var txt service.FileReadOutput
-	if refusal := l.call(t, "file_read", `{"path":"data.txt","start":7,"length":6}`, &txt); refusal != "" || txt.Content != "line 2" {
-		t.Errorf("a byte range of a text file gave %q and %q", refusal, txt.Content)
+	if failure := l.call(t, "file_read", `{"path":"data.txt","start":7,"length":6}`, &txt); failure != "" || txt.Content != "line 2" {
+		t.Errorf("a byte range of a text file gave %q and %q", failure, txt.Content)
 	}
 }
 

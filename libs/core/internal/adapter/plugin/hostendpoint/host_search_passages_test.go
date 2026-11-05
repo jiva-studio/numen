@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// passageQueries are the questions the fake search was asked, with the vault of each.
+// passageQueries are the questions the fake search was received, with the vault of each.
 var passageQueries = map[*recordingSearch][]pluginport.PluginPassageQuery{}
 
 func (s *recordingSearch) SearchPassages(_ context.Context, v domain.Vault, q pluginport.PluginPassageQuery) ([]domain.Passage, error) {
@@ -26,7 +26,7 @@ func (s *recordingSearch) SearchPassages(_ context.Context, v domain.Vault, q pl
 	}, s.err
 }
 
-func TestHostSearchAnswersPassagesWithTheirPlaceAndChecksThePermission(t *testing.T) {
+func TestHostSearchPassagesReturnPlacesAndCheckPermission(t *testing.T) {
 	search := &recordingSearch{}
 	fakeCallers := newSearchCallers(search)
 	client := newSearchClient(t, fakeCallers, "token-a")
@@ -45,17 +45,17 @@ func TestHostSearchAnswersPassagesWithTheirPlaceAndChecksThePermission(t *testin
 	if second.GetPath() != "notes/Heron.md" || second.GetLine() != 4 || second.GetRange().GetEnd() != 60 {
 		t.Errorf("the second passage is %v", second)
 	}
-	asked := passageQueries[search]
-	if len(asked) != 1 || asked[0].Query != "heron" || asked[0].Limit != 5 || asked[0].PathPrefix != "library/" ||
-		!slices.Equal(asked[0].Kinds, []domain.SourceKind{domain.KindFile}) {
-		t.Errorf("the search was asked %+v", asked)
+	received := passageQueries[search]
+	if len(received) != 1 || received[0].Query != "heron" || received[0].Limit != 5 || received[0].PathPrefix != "library/" ||
+		!slices.Equal(received[0].Kinds, []domain.SourceKind{domain.KindFile}) {
+		t.Errorf("the search was received %+v", received)
 	}
 	if !slices.Equal(fakeCallers.checked, []string{"md.numen.a index:read"}) {
-		t.Errorf("checked %v, want index:read asked once", fakeCallers.checked)
+		t.Errorf("checked %v, want index:read received once", fakeCallers.checked)
 	}
 }
 
-func TestHostSearchRefusesAPassageSearchFromAPluginWithoutThePermission(t *testing.T) {
+func TestHostSearchPassagesDenyPluginWithoutPermission(t *testing.T) {
 	fakeCallers := newSearchCallers(&recordingSearch{})
 	denied := newSearchClient(t, fakeCallers, "token-b")
 	if _, err := denied.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchPassagesRequest{Query: "heron"})); readCode(t, err) != connect.CodePermissionDenied {
@@ -63,7 +63,7 @@ func TestHostSearchRefusesAPassageSearchFromAPluginWithoutThePermission(t *testi
 	}
 }
 
-func TestHostSearchRefusesAPassageSearchOnAnUnknownVaultAndRejectsAnUnknownKind(t *testing.T) {
+func TestHostSearchPassagesRejectUnknownVaultAndKind(t *testing.T) {
 	search := &recordingSearch{}
 	fakeCallers := newSearchCallers(search)
 	client := newSearchClient(t, fakeCallers, "token-a")
@@ -81,7 +81,7 @@ func TestHostSearchRefusesAPassageSearchOnAnUnknownVaultAndRejectsAnUnknownKind(
 	}
 }
 
-func TestHostSearchWithoutASearchIndexSaysSo(t *testing.T) {
+func TestHostSearchWithoutIndexReportsNoIndex(t *testing.T) {
 	fakeCallers := newSearchCallers(nil)
 	client := newSearchClient(t, fakeCallers, "token-a")
 	got, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchPassagesRequest{Query: "heron"}))

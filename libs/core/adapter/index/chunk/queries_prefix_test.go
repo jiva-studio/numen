@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func TestASearchByWordsUnderAPathCountsTheLimitInsideThePath(t *testing.T) {
+func TestFindLexicalLimitsWithinPathPrefix(t *testing.T) {
 	db := searchFixture(t)
 	queries := db.ChunkQueries()
 
@@ -53,7 +53,7 @@ func TestAPathPrefixIsNotAPattern(t *testing.T) {
 	}
 }
 
-func TestASearchByNameUnderAPathCountsTheLimitInsideThePath(t *testing.T) {
+func TestGetNamedPassagesLimitsWithinPathPrefix(t *testing.T) {
 	db := openIndex(t)
 	source{
 		path: "lib/guide.epub", kind: "file", producer: "ocr", large: "text", opens: []string{"Gardening"}, smalls: []string{"x"},
@@ -69,7 +69,7 @@ func TestASearchByNameUnderAPathCountsTheLimitInsideThePath(t *testing.T) {
 	}
 }
 
-func TestASearchByMeaningUnderAPathFindsWhatTheCoarsePassWouldMiss(t *testing.T) {
+func TestFindNearestWithinPathPrefixWidensCoarsePass(t *testing.T) {
 	db := openIndex(t)
 	for i := range 12 {
 		path := fmt.Sprintf("lib/near-%02d.epub", i)
@@ -80,7 +80,7 @@ func TestASearchByMeaningUnderAPathFindsWhatTheCoarsePassWouldMiss(t *testing.T)
 	embed(t, db, vaultA, "notes/far.md", 0x0F)
 
 	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{
-		Recipe: recipe, Vector: seedVector(0xF0), Limit: 1, Floor: -1, Under: "notes/",
+		Recipe: recipe, Vector: seedVector(0xF0), Limit: 1, Floor: -1, PathPrefix: "notes/",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -90,14 +90,14 @@ func TestASearchByMeaningUnderAPathFindsWhatTheCoarsePassWouldMiss(t *testing.T)
 	}
 
 	kinded, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{
-		Recipe: recipe, Vector: seedVector(0xF0), Kinds: []domain.SourceKind{domain.KindNote}, Limit: 1, Floor: -1, Under: "notes/",
+		Recipe: recipe, Vector: seedVector(0xF0), Kinds: []domain.SourceKind{domain.KindNote}, Limit: 1, Floor: -1, PathPrefix: "notes/",
 	})
 	if err != nil || len(kinded) != 1 {
 		t.Errorf("a prefix with a kind found %d, %v", len(kinded), err)
 	}
 
 	none, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{
-		Recipe: recipe, Vector: seedVector(0xF0), Limit: 3, Floor: -1, Under: "elsewhere/",
+		Recipe: recipe, Vector: seedVector(0xF0), Limit: 3, Floor: -1, PathPrefix: "elsewhere/",
 	})
 	if err != nil || len(none) != 0 {
 		t.Errorf("a prefix nothing starts with found %v, %v", getSources(none), err)

@@ -44,6 +44,8 @@ Three things, appended to the model's default instructions:
 
 Where the person has a note open, its path is named, and a task saying "this note" means that one.
 
+The tools server also gives every agent that connects to it its own instructions: how to name a note and a passage as links, which tool searches and reads what (`note_search` the notes, `library_search` and `library_read` everything the vault holds), and that a passage is a window cut to a size and is read on before a source is said not to say something.
+
 ## What an answer links to
 
 A note an answer mentions is named as `[[Harmonic oscillator]]` — the same brackets a note is written with, resolved the same way, and pressing one opens the note in a tab beside the tab the person is looking at. A name that matches no note is drawn as an unresolved link, and pressing it opens nothing. `[[note://<identifier>]]` identifies one note where a title is shared. See [Links](links.md).
@@ -58,16 +60,18 @@ Three plugins register the tools an agent can call, each for its own subject, an
 
 `agents-tools-vault`, the notes and files of the vault:
 
-| Tool            | What it does                                                                                                  | Servers |
-| --------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
-| `note_read`     | the content, prose, title, frontmatter and fingerprint of one note, by its path                               | both    |
-| `note_write`    | write or create one note; with the fingerprint `note_read` gave, a write over somebody else's edit is refused | full    |
-| `note_headings` | the headings of one note: level, text, line and byte offset                                                   | both    |
-| `note_search`   | the notes whose title, path or text match a query, at most 100, 20 where the call names no limit              | both    |
-| `link_list`     | the links written in one note and the notes that link to it                                                   | both    |
-| `vault_get`     | the vault's name, root path and number of notes                                                               | both    |
-| `file_read`     | a byte range of any file in the vault, by its path from the vault root                                        | both    |
-| `file_create`   | a new file in the vault, holding the content given                                                            | full    |
+| Tool             | What it does                                                                                                                                                                                                                 | Servers |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `note_read`      | the content, prose, title, frontmatter and fingerprint of one note, by its path                                                                                                                                              | both    |
+| `note_write`     | write or create one note; with the fingerprint `note_read` gave, a write over somebody else's edit is refused                                                                                                                | full    |
+| `note_headings`  | the headings of one note: level, text, line and byte offset                                                                                                                                                                  | both    |
+| `note_search`    | the notes whose title, path or text match a query, at most 100, 20 where the call names no limit                                                                                                                             | both    |
+| `library_search` | passages of everything the index holds (notes, books, PDFs, scans, recordings) by the words and by the meaning, with the file, the title, the place, the text and the address of each; narrowed by `kinds` and `path_prefix` | both    |
+| `library_read`   | the text of one file from its text version, by page or by byte range, with the places, the size and where to read on; an error naming what makes a text version where there is none                                          | both    |
+| `link_list`      | the links written in one note and the notes that link to it                                                                                                                                                                  | both    |
+| `vault_get`      | the vault's name, root path and number of notes                                                                                                                                                                              | both    |
+| `file_read`      | a byte range of a text file in the vault, by its path from the vault root; a binary is refused with an error that names `library_read`                                                                                       | both    |
+| `file_create`    | a new file in the vault, holding the content given                                                                                                                                                                           | full    |
 
 `agents-tools-window`, the window the person is looking at:
 

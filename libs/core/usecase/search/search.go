@@ -281,7 +281,7 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	// A vector is stored under the recipe that produced it, which covers every
 	// property of the model that determines what a vector is. A lookup under any
 	// other recipe finds no vector and this mode returns nothing.
-	return u.passages.FindNearest(ctx, v.ID, sourceport.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, Under: p.PathPrefix, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
+	return u.passages.FindNearest(ctx, v.ID, sourceport.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, PathPrefix: p.PathPrefix, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
 }
 
 // getQueryVector returns the vector of the query from the cache, or embeds the query

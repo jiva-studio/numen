@@ -62,6 +62,9 @@ var staleRecipeSQL string
 //go:embed sql/unchunked.sql
 var unchunkedSQL string
 
+//go:embed sql/prefix.sql
+var prefixSQL string
+
 //go:embed sql/unembedded.sql
 var unembeddedSQL string
 

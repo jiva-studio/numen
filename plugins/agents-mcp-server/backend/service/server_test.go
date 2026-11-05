@@ -202,7 +202,7 @@ func TestServerOptionsAndRoutes(t *testing.T) {
 	t.Parallel()
 
 	srvOpts := newServerOptions()
-	if srvOpts == nil || srvOpts.Instructions != "Numén notes and plugins tools server." {
+	if srvOpts == nil || srvOpts.Instructions != instructions {
 		t.Fatalf("unexpected server options: %+v", srvOpts)
 	}
 

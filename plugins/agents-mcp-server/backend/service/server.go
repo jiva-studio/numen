@@ -87,7 +87,7 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 // newServerOptions creates the options of the MCP server.
 func newServerOptions() *sdk.ServerOptions {
 	opts := new(sdk.ServerOptions)
-	opts.Instructions = "Numén notes and plugins tools server."
+	opts.Instructions = instructions
 	return opts
 }
 

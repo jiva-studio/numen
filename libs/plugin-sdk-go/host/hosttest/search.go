@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -58,6 +59,7 @@ type searchVault struct {
 	chunkCount    int64
 	embeddedCount int64
 	stats         host.IndexStats
+	indexed       []host.Passage
 	floors        map[string]float64
 	setCount      int
 }
@@ -437,10 +439,58 @@ func cosineOf(query, passage []float32) float64 {
 	return dot / math.Sqrt(left*right)
 }
 
-func (s *Search) SearchPassages(_ context.Context, _ host.PassageQuery) ([]host.Passage, error) {
-	return nil, nil
+func (s *Search) SearchPassages(_ context.Context, query host.PassageQuery) ([]host.Passage, error) {
+	s.all.mu.Lock()
+	defer s.all.mu.Unlock()
+	one, err := s.openLocked(host.PermissionIndexRead)
+	if err != nil {
+		return nil, err
+	}
+	words := strings.Fields(strings.ToLower(query.Query))
+	if len(words) == 0 {
+		return nil, nil
+	}
+	var found []host.Passage
+	perSource := map[string]int{}
+	for _, passage := range one.indexed {
+		if !strings.HasPrefix(passage.Path, query.PathPrefix) || !hasKind(passage.Path, query.Kinds) ||
+			!hasWord(passage.Text, words) || perSource[passage.Path] >= host.MaxSearchedPassagesPerSource {
+			continue
+		}
+		perSource[passage.Path]++
+		found = append(found, passage)
+		if query.Limit > 0 && len(found) == query.Limit {
+			break
+		}
+	}
+	return found, nil
+}
+
+// hasKind reports whether the path is of one of the kinds, where a note is a markdown file and every
+// other file is a file. No kinds is every kind.
+func hasKind(path string, kinds []domain.SourceKind) bool {
+	if len(kinds) == 0 {
+		return true
+	}
+	kind := domain.KindFile
+	if strings.HasSuffix(path, domain.NoteExtension) {
+		kind = domain.KindNote
+	}
+	return slices.Contains(kinds, kind)
+}
+
+// hasWord reports whether the text holds one of the words, ignoring case.
+func hasWord(text string, words []string) bool {
+	lower := strings.ToLower(text)
+	return slices.ContainsFunc(words, func(word string) bool { return strings.Contains(lower, word) })
 }
 
 // SetIndexedPassages is the passages the index of the vault holds, in the order it lists them. A
 // SearchPassages call answers with those whose text holds a word of the query.
-func (s *Search) SetIndexedPassages(passages []host.Passage) {}
+func (s *Search) SetIndexedPassages(passages []host.Passage) {
+	s.all.mu.Lock()
+	defer s.all.mu.Unlock()
+	if one, ok := s.lookupLocked(); ok {
+		one.indexed = slices.Clone(passages)
+	}
+}

@@ -51,7 +51,6 @@ func TestTheServerTellsTheAgentHowToCiteALibraryPassage(t *testing.T) {
 		"`at`",
 		"[the Remuna episode](numen:library%2FA%20Book.pdf?start=62690&length=1246)",
 		"markdown link",
-		"source_focus",
 		"[[Harmonic oscillator]]",
 		"file://",
 		"library_read",

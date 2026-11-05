@@ -34,12 +34,13 @@ type NoteSearchOutput struct {
 
 func (t *Tools) addNoteSearch(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Name:        "note_search",
-		Title:       "Search Notes",
-		Description: "Search notes across the vault by title, path, and text content.",
-		Effect:      tools.ReadOnly,
-		Step:        tools.Search,
-		Servers:     []tools.Server{tools.Full, tools.Reading},
+		Name:  "note_search",
+		Title: "Search Notes",
+		Description: "Search the notes of the vault by title, path and text. It does not look into books, " +
+			"PDFs, scans or recordings: library_search finds the text of those.",
+		Effect:  tools.ReadOnly,
+		Step:    tools.Search,
+		Servers: []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).searchNotes))
 }
 

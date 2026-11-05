@@ -26,7 +26,7 @@ func (f *recordingFinder) Execute(_ context.Context, v domain.Vault, query strin
 	return f.found, nil
 }
 
-func TestASearchOfPassagesAsksTheSearchOfTheWindowForTheVaultAndTheQuery(t *testing.T) {
+func TestSearchPassagesRunsWindowSearchOnVaultAndQuery(t *testing.T) {
 	finder := &recordingFinder{}
 	s := Search{Finds: finder}
 
@@ -48,7 +48,7 @@ func TestASearchOfPassagesAsksTheSearchOfTheWindowForTheVaultAndTheQuery(t *test
 	}
 }
 
-func TestASearchOfPassagesRunsOnAnInstallationWithNoModelAndAnswersNothingToABlankQuery(t *testing.T) {
+func TestSearchPassagesWithoutModelUsesWordsAndSkipsBlankQuery(t *testing.T) {
 	finder := &recordingFinder{found: []domain.Passage{{Source: "a.md", Text: "heron"}}}
 	s := Search{Finds: finder, Embedder: nil}
 
@@ -62,7 +62,7 @@ func TestASearchOfPassagesRunsOnAnInstallationWithNoModelAndAnswersNothingToABla
 	}
 }
 
-func TestASearchOfPassagesAsksForNoMoreThanTheCap(t *testing.T) {
+func TestSearchPassagesCapsTheLimit(t *testing.T) {
 	finder := &recordingFinder{}
 	s := Search{Finds: finder}
 	if _, err := s.SearchPassages(t.Context(), getVault(), pluginport.PluginPassageQuery{Query: "heron", Limit: 5000}); err != nil {
@@ -79,11 +79,11 @@ func TestASearchOfPassagesAsksForNoMoreThanTheCap(t *testing.T) {
 	}
 }
 
-func TestASearchOfPassagesCutsTheTextAroundTheHitAndKeepsTheWholeRange(t *testing.T) {
+func TestSearchPassagesTrimsTextToWindowAroundMatch(t *testing.T) {
 	body := strings.Repeat("filler words ", 400) + "the grey heron stands" + strings.Repeat(" trailing words", 400)
-	hit := strings.Index(body, "heron")
+	matchAt := strings.Index(body, "heron")
 	finder := &recordingFinder{found: []domain.Passage{
-		{Source: "library/Birds.pdf", Text: body, HitAt: hit, Start: 4000, Length: len(body), Location: "page 12", Line: 0, Selector: domain.Selector(`{"page":12}`)},
+		{Source: "library/Birds.pdf", Text: body, HitAt: matchAt, Start: 4000, Length: len(body), Location: "page 12", Line: 0, Selector: domain.Selector(`{"page":12}`)},
 		{Source: "notes/Short.md", Text: "a short heron note", HitAt: 8, Start: 0, Length: 18, Line: 3},
 	}}
 	got, err := Search{Finds: finder}.SearchPassages(t.Context(), getVault(), pluginport.PluginPassageQuery{Query: "heron"})
@@ -105,8 +105,8 @@ func TestASearchOfPassagesCutsTheTextAroundTheHitAndKeepsTheWholeRange(t *testin
 
 func TestTheWindowAroundAHitNeverSplitsACharacter(t *testing.T) {
 	body := strings.Repeat("я", 3000) + "Ачарьи" + strings.Repeat("ю", 3000)
-	hit := strings.Index(body, "Ачарьи")
-	finder := &recordingFinder{found: []domain.Passage{{Source: "a.pdf", Text: body, HitAt: hit, Length: len(body)}}}
+	matchAt := strings.Index(body, "Ачарьи")
+	finder := &recordingFinder{found: []domain.Passage{{Source: "a.pdf", Text: body, HitAt: matchAt, Length: len(body)}}}
 	got, err := Search{Finds: finder}.SearchPassages(t.Context(), getVault(), pluginport.PluginPassageQuery{Query: "Ачарьи"})
 	if err != nil || len(got) != 1 {
 		t.Fatalf("answered %v, %v", got, err)

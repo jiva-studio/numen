@@ -36,9 +36,9 @@ func TestTheSearchAppliesThePathPrefixBeforeTheLimitAndTheKinds(t *testing.T) {
 	search := newSearch()
 	search.SetIndexedPassages(indexedPassages())
 
-	under, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Limit: 1, PathPrefix: "notes/"})
-	if err != nil || len(under) != 1 || under[0].Path != "notes/Heron.md" {
-		t.Errorf("one passage under notes/ is %+v, %v", under, err)
+	withinPrefix, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Limit: 1, PathPrefix: "notes/"})
+	if err != nil || len(withinPrefix) != 1 || withinPrefix[0].Path != "notes/Heron.md" {
+		t.Errorf("one passage under notes/ is %+v, %v", withinPrefix, err)
 	}
 	files, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Kinds: []domain.SourceKind{domain.KindFile}})
 	if err != nil || len(files) != 2 || files[0].Path != "library/Birds.pdf" {
@@ -50,7 +50,7 @@ func TestTheSearchAppliesThePathPrefixBeforeTheLimitAndTheKinds(t *testing.T) {
 	}
 }
 
-func TestTheSearchOfPassagesNeedsNoModelButNeedsThePermissionAndAVault(t *testing.T) {
+func TestSearchPassagesNeedsPermissionAndVaultButNoModel(t *testing.T) {
 	search := hosttest.NewSearch("physics")
 	search.SetIndexedPassages(indexedPassages())
 	if got, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron"}); err != nil || len(got) != 3 {
@@ -64,9 +64,9 @@ func TestTheSearchOfPassagesNeedsNoModelButNeedsThePermissionAndAVault(t *testin
 	if _, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron"}); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("without the permission it gave %v", err)
 	}
-	hidden := hosttest.NewSearch("physics")
-	hidden.HideVault()
-	if _, err := hidden.SearchPassages(t.Context(), host.PassageQuery{Query: "heron"}); !errors.Is(err, host.ErrNoVault) {
+	noVault := hosttest.NewSearch("physics")
+	noVault.HideVault()
+	if _, err := noVault.SearchPassages(t.Context(), host.PassageQuery{Query: "heron"}); !errors.Is(err, host.ErrNoVault) {
 		t.Errorf("with no vault shown it gave %v", err)
 	}
 	if _, err := hosttest.NewSearch("physics").With("nowhere").SearchPassages(t.Context(), host.PassageQuery{Query: "heron"}); !errors.Is(err, host.ErrUnknownVault) {

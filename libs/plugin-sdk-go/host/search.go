@@ -201,7 +201,7 @@ type Passage struct {
 	Text string
 	// Location is what the source's own numbering calls the place, empty when the format offers none.
 	Location string
-	// Start and Length are where the whole passage stands in the source's text, in bytes.
+	// Start and Length locate the whole passage in the source text, in bytes.
 	Start  int
 	Length int
 	// Line is the line of the hit counted from the first line of the source's prose, and zero for

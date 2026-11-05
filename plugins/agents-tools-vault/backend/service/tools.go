@@ -40,7 +40,14 @@ func inVault[In, Out any](t *Tools, run func(*Tools, context.Context, In) (Out, 
 			var none Out
 			return none, errNoVault
 		}
-		return run(&Tools{host: t.host, vault: t.host.With(domain.VaultID(id))}, ctx, in)
+		call := &Tools{host: t.host, vault: t.host.With(domain.VaultID(id))}
+		if t.texts != nil {
+			call.texts = t.texts.With(domain.VaultID(id))
+		}
+		if t.search != nil {
+			call.search = t.search.With(domain.VaultID(id))
+		}
+		return run(call, ctx, in)
 	}
 }
 
@@ -52,6 +59,8 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		t.addNoteWrite,
 		t.addNoteHeadings,
 		t.addNoteSearch,
+		t.addLibrarySearch,
+		t.addLibraryRead,
 		t.addLinkList,
 		t.addVaultGet,
 		t.addFileRead,

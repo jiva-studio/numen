@@ -15,22 +15,22 @@ type prefixSpy struct {
 	lexical, named, nearest []string
 }
 
-func (s *prefixSpy) FindLexical(_ context.Context, _ domain.VaultID, _ string, _ []domain.SourceKind, _ int, _ bool, under string) ([]domain.Passage, error) {
-	s.lexical = append(s.lexical, under)
+func (s *prefixSpy) FindLexical(_ context.Context, _ domain.VaultID, _ string, _ []domain.SourceKind, _ int, _ bool, pathPrefix string) ([]domain.Passage, error) {
+	s.lexical = append(s.lexical, pathPrefix)
 	return nil, nil
 }
 
-func (s *prefixSpy) GetNamedPassages(_ context.Context, _ domain.VaultID, _ string, _ []domain.SourceKind, _ int, _ bool, under string) ([]domain.Passage, error) {
-	s.named = append(s.named, under)
+func (s *prefixSpy) GetNamedPassages(_ context.Context, _ domain.VaultID, _ string, _ []domain.SourceKind, _ int, _ bool, pathPrefix string) ([]domain.Passage, error) {
+	s.named = append(s.named, pathPrefix)
 	return nil, nil
 }
 
 func (s *prefixSpy) FindNearest(_ context.Context, _ domain.VaultID, q sourceport.NearestQuery) ([]domain.Passage, error) {
-	s.nearest = append(s.nearest, q.Under)
+	s.nearest = append(s.nearest, q.PathPrefix)
 	return nil, nil
 }
 
-func TestASearchHandsThePathPrefixToEveryRanking(t *testing.T) {
+func TestSearchPassesPathPrefixToEveryRanking(t *testing.T) {
 	spy := &prefixSpy{}
 	searching := search.New(spy, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, nil)
 

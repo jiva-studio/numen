@@ -3,6 +3,7 @@ package hostendpoint
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"connectrpc.com/connect"
@@ -218,7 +219,39 @@ func (e *searchEndpoint) GetBestSimilarity(
 func (e *searchEndpoint) SearchPassages(
 	ctx context.Context, req *connect.Request[v1.HostSearchPassagesRequest],
 ) (*connect.Response[v1.HostSearchPassagesResponse], error) {
-	return connect.NewResponse(&v1.HostSearchPassagesResponse{}), nil
+	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	if err != nil {
+		return nil, err
+	}
+	if code := call.getRefusal(true); code != 0 {
+		return connect.NewResponse(&v1.HostSearchPassagesResponse{Error: code}), nil
+	}
+	kinds := make([]domain.SourceKind, len(req.Msg.GetKinds()))
+	for i, kind := range req.Msg.GetKinds() {
+		switch one := domain.SourceKind(kind); one {
+		case domain.KindNote, domain.KindFile:
+			kinds[i] = one
+		default:
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%q is not a kind of source: use %q or %q", kind, domain.KindNote, domain.KindFile))
+		}
+	}
+	found, err := call.search.SearchPassages(ctx, call.vault, pluginport.PluginPassageQuery{
+		Query: req.Msg.GetQuery(), Limit: int(req.Msg.GetLimit()), Kinds: kinds, PathPrefix: req.Msg.GetPathPrefix(),
+	})
+	code, err := answerSearch(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.HostSearchPassagesResponse{Error: code}), err
+	}
+	passages := make([]*v1.Passage, len(found))
+	for i, one := range found {
+		passages[i] = &v1.Passage{
+			Path: one.Source, Text: one.Text, Location: one.Location,
+			Range:    &v1.Range{Start: int32(one.Start), End: int32(one.Start + one.Length)},
+			Line:     int32(one.Line),
+			Selector: string(one.Selector),
+		}
+	}
+	return connect.NewResponse(&v1.HostSearchPassagesResponse{Found: passages}), nil
 }
 
 func (e *searchEndpoint) GetSearchFloor(

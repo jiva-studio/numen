@@ -74,7 +74,7 @@ func TestASearchClientReadsThePassagesTheHostFinds(t *testing.T) {
 	}
 }
 
-func TestASearchClientReadsTheRefusalsOfAPassageSearch(t *testing.T) {
+func TestSearchClientReturnsErrorsOfPassageSearch(t *testing.T) {
 	for name, tc := range map[string]struct {
 		h    *passagesHost
 		want error

@@ -141,13 +141,13 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 //
 // The result is the large chunk enclosing each hit, which is what a result
 // displays.
-func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool, under string) ([]domain.Passage, error) {
+func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool, pathPrefix string) ([]domain.Passage, error) {
 	if limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
 		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", limit)
 	}
-	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, passageSearch{all: lexicalSQL, kinds: lexicalKindsSQL})
+	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, pathPrefix, passageSearch{all: lexicalSQL, kinds: lexicalKindsSQL})
 }
 
 // GetNamedPassages returns the sections of one vault whose names match the
@@ -155,11 +155,11 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 //
 // A section is represented by the chunk it opens, so a result is the chapter
 // about the query and not the paragraph that repeats the name most often.
-func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool, under string) ([]domain.Passage, error) {
+func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool, pathPrefix string) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
 	}
-	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, passageSearch{all: sectionsSQL, kinds: sectionsKindsSQL})
+	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, pathPrefix, passageSearch{all: sectionsSQL, kinds: sectionsKindsSQL})
 }
 
 // passageSearch is a full-text statement over every source, and its variant
@@ -170,8 +170,10 @@ type passageSearch struct {
 }
 
 // findPassages runs search.all, or search.kinds when the search is limited to
-// kinds, and reads the passages it returns. An empty expression matches nothing.
-func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expression string, of []domain.SourceKind, limit int, search passageSearch) (_ []domain.Passage, err error) {
+// kinds, and reads the passages it returns. The sources are limited to those whose
+// path starts with pathPrefix before the list is cut at limit. An empty expression
+// matches nothing.
+func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expression string, of []domain.SourceKind, limit int, pathPrefix string, search passageSearch) (_ []domain.Passage, err error) {
 	if expression == "" {
 		return nil, nil
 	}
@@ -185,10 +187,10 @@ func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expr
 
 	var rows *sql.Rows
 	if len(of) == 0 {
-		rows, err = q.db.QueryContext(ctx, search.all, expression, vault, limit)
+		rows, err = q.db.QueryContext(ctx, search.all, expression, vault, limit, pathPrefix)
 	} else {
 		wanted := formatKinds(of)
-		rows, err = q.db.QueryContext(ctx, search.kinds, expression, vault, wanted, limit)
+		rows, err = q.db.QueryContext(ctx, search.kinds, expression, vault, wanted, limit, pathPrefix)
 	}
 	if err != nil {
 		return nil, err
@@ -229,7 +231,7 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, searc
 		return nil, err
 	}
 
-	item, err := q.findNearestByBits(ctx, vault, search.Vector, search.Limit*coarseCandidates)
+	item, err := q.findNearestWithPrefix(ctx, vault, search.Vector, search.Limit*coarseCandidates, search.PathPrefix)
 	if err != nil {
 		if q.hasOtherCoarseRecipe(ctx, search.Recipe) {
 			return nil, nil
@@ -283,6 +285,49 @@ func (q *Queries) hasOtherCoarseRecipe(ctx context.Context, recipe string) bool 
 	var currentRecipe string
 	err := q.db.QueryRowContext(ctx, `SELECT recipe FROM coarse_recipe WHERE id = 1`).Scan(&currentRecipe)
 	return err == nil && currentRecipe != "" && currentRecipe != recipe
+}
+
+// findNearestWithPrefix is findNearestByBits limited to the sources whose path starts with pathPrefix: it
+// keeps asking for more chunks until k of them match the prefix, or the vault has no more.
+func (q *Queries) findNearestWithPrefix(ctx context.Context, vault int64, query []float32, k int, pathPrefix string) ([]int64, error) {
+	if pathPrefix == "" {
+		return q.findNearestByBits(ctx, vault, query, k)
+	}
+	for candidates := k; ; candidates *= widenFactor {
+		found, err := q.findNearestByBits(ctx, vault, query, candidates)
+		if err != nil {
+			return nil, err
+		}
+		kept, err := q.keepWithPrefix(ctx, found, pathPrefix)
+		if err != nil {
+			return nil, err
+		}
+		if len(kept) >= k || len(found) < candidates || candidates >= maxCoarseCandidates {
+			return kept[:min(len(kept), k)], nil
+		}
+	}
+}
+
+// keepWithPrefix is the chunks that belong to a source whose path starts with pathPrefix, in the order given.
+func (q *Queries) keepWithPrefix(ctx context.Context, chunks []int64, pathPrefix string) (_ []int64, err error) {
+	if len(chunks) == 0 {
+		return nil, nil
+	}
+	rows, err := q.db.QueryContext(ctx, prefixSQL, formatInt64s(chunks), pathPrefix)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+
+	var kept []int64
+	for rows.Next() {
+		var chunk int64
+		if err := rows.Scan(&chunk); err != nil {
+			return nil, err
+		}
+		kept = append(kept, chunk)
+	}
+	return kept, rows.Err()
 }
 
 // findNearestByBits is the pass over the bit vectors: the chunks of one vault whose signs

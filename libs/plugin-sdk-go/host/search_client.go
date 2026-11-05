@@ -189,7 +189,28 @@ func (c *SearchClient) SampleSimilarities(ctx context.Context, recipe string, qu
 }
 
 func (c *SearchClient) SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error) {
-	return nil, nil
+	kinds := make([]string, len(query.Kinds))
+	for i, kind := range query.Kinds {
+		kinds[i] = string(kind)
+	}
+	res, err := c.rpc.SearchPassages(ctx, newSearchRequest(c, &v1.HostSearchPassagesRequest{
+		Query: query.Query, Limit: int32(query.Limit), Kinds: kinds, PathPrefix: query.PathPrefix,
+	}))
+	if err != nil {
+		return nil, readSearchCallError(err)
+	}
+	if err := readSearchError(res.Msg.GetError()); err != nil {
+		return nil, err
+	}
+	found := make([]Passage, len(res.Msg.GetFound()))
+	for i, one := range res.Msg.GetFound() {
+		start, end := int(one.GetRange().GetStart()), int(one.GetRange().GetEnd())
+		found[i] = Passage{
+			Path: one.GetPath(), Text: one.GetText(), Location: one.GetLocation(),
+			Start: start, Length: end - start, Line: int(one.GetLine()), Selector: one.GetSelector(),
+		}
+	}
+	return found, nil
 }
 
 func (c *SearchClient) GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error) {
