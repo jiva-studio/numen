@@ -45,7 +45,7 @@ export const GetSettingsRequestSchema: GenMessage<GetSettingsRequest> = /*@__PUR
 export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
   /**
    * Every setting currently, as JSON: what the file says, and what an
-   * installation nobody has configured does under everything it does not. The first level is the
+   * installation without a configuration does under everything it does not. The first level is the
    * version `v`, the owner `app` and one object per plugin id.
    *
    * @generated from field: string written = 1;

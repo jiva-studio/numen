@@ -129,7 +129,7 @@ func (*GetSettingsRequest) Descriptor() ([]byte, []int) {
 type GetSettingsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every setting currently, as JSON: what the file says, and what an
-	// installation nobody has configured does under everything it does not. The first level is the
+	// installation without a configuration does under everything it does not. The first level is the
 	// version `v`, the owner `app` and one object per plugin id.
 	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
 	// The file itself, absolute on this machine.

@@ -463,7 +463,7 @@ func TestASettingMayPreviewWhileFocusedAndListItsOptionsFromARegistry(t *testing
 
 // The first level of the settings file is the version v, the owner app and the ids of plugins, so a
 // plugin cannot take the first two as its id.
-func TestAManifestDoesNotTakeAnIdThatTheSettingsFileKeepsForItself(t *testing.T) {
+func TestAManifestRejectsAnIdThatTheSettingsFileReserves(t *testing.T) {
 	for _, id := range []string{"app", "v"} {
 		_, err := manifestjson.Read(strings.NewReader(`{"id":"` + id + `","name":"A","version":"1.0.0"}`))
 		if err == nil {
