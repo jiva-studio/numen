@@ -17,8 +17,8 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const NoOverscroll: Story = {
-  play: () => {
-    expect(getComputedStyle(document.documentElement).overscrollBehavior).toBe('none')
-    expect(getComputedStyle(document.body).overscrollBehavior).toBe('none')
+  play: async () => {
+    await expect(getComputedStyle(document.documentElement).overscrollBehavior).toBe('none')
+    await expect(getComputedStyle(document.body).overscrollBehavior).toBe('none')
   },
 }

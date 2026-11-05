@@ -32,12 +32,12 @@ const open = (hasAgent = ref(false), openSettings = vi.fn()) =>
     },
   })
 
-describe('an agent tab with no agent hasAgent', () => {
+describe('an agent tab with no agent', () => {
   it('reports that no agent is set up', () => {
     expect(open().isAgentMissing.value).toBe(true)
   })
 
-  it('reports an agent once one is hasAgent, and again none when it goes', async () => {
+  it('turns the missing flag off when an agent appears and on again when it disappears', async () => {
     const hasAgent = ref(false)
     const state = open(hasAgent)
 
