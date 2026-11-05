@@ -74,8 +74,8 @@ func TestSearchPassagesCapsTheLimit(t *testing.T) {
 	if _, err := s.SearchPassages(t.Context(), getVault(), pluginport.PluginPassageQuery{Query: "heron", Limit: -2}); err != nil {
 		t.Fatal(err)
 	}
-	if finder.params[1].Limit != 0 {
-		t.Errorf("a negative limit asked for %d, want the default of the search", finder.params[1].Limit)
+	if want := search.GetTypingParameters(search.Hybrid, 0).Limit; finder.params[1].Limit != want {
+		t.Errorf("a negative limit asked for %d, want the default of the search, %d", finder.params[1].Limit, want)
 	}
 }
 
