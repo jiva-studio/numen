@@ -61,6 +61,7 @@
   "tests/shell/window/layout.spec.ts": 3,
   "tests/shell/window/tab-linking.spec.ts": 5,
   "tests/shell/window/tabs.spec.ts": 1,
+  "tests/shell/window/title-bar-plugin-actions.spec.ts": 10,
   "tests/shell/window/window-controls.spec.ts": 7,
   "tests/shell/workspace/conflicts.spec.ts": 17,
   "tests/shell/workspace/hotkeys.spec.ts": 3,

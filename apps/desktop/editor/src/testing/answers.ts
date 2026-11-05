@@ -80,6 +80,55 @@ export const mockVaultList = {
 
 export { mockVaultState as vaultState, mockVaultList as listed }
 
+/** One command a plugin declares, as the list the core answers carries it. */
+interface DeclaredAnswer {
+  pluginId: string
+  id: string
+  title: string
+  icon?: string
+  scope?: 'note'
+  shortcut?: string
+  contentTypes: string[]
+  extensions: string[]
+  arguments: []
+}
+
+/** One place a plugin puts a command in, as the list the core answers carries it. */
+interface PlacementAnswer {
+  pluginId: string
+  location: string
+  command: string
+  group?: string
+  order?: number
+}
+
+/** What the plugins declare and place, and what running a declared command does. */
+export const declared = {
+  commands: [] as DeclaredAnswer[],
+  menus: [] as PlacementAnswer[],
+  /** Throws this when a declared command is run, if it is not empty. */
+  failure: '',
+  /** The full ids of the declared commands run, in order. */
+  ran: [] as string[],
+}
+
+/** A command a plugin declares, with an icon and no input. */
+export const declareCommand = (
+  pluginId: string,
+  id: string,
+  title: string,
+  extras: Partial<DeclaredAnswer> = {},
+): DeclaredAnswer => ({
+  pluginId,
+  id,
+  title,
+  icon: 'waves',
+  contentTypes: [],
+  extensions: [],
+  arguments: [],
+  ...extras,
+})
+
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders: Record<string, readonly Entry[]> = {
   '': [
@@ -213,6 +262,10 @@ export const forgetAnswers = () => {
   mockVaultState.applied = 'preset:numen'
   mockVaultState.mode = 'system'
   mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
+  declared.commands = []
+  declared.menus = []
+  declared.failure = ''
+  declared.ran = []
   maker.forget()
   outside.forget()
   mockVaultList.vaults = [
