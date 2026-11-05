@@ -12,4 +12,4 @@ Use Anthropic Claude Code (`claude`) installed on your computer to answer questi
 ## Settings
 
 - **Executable path**: Choose the location of the `claude` program on your computer if it is installed in a custom folder.
-- **Hooks & skills**: Allow Claude to use your configured Claude Code skills and shortcuts.
+- **Hooks & skills**: Allow Claude Code to read your own hooks, skills, standing instructions and plugins. Off by default. What a vault contains is never read.

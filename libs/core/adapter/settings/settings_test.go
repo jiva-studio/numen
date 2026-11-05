@@ -335,18 +335,6 @@ func TestTheCommandLineCanBeNamed(t *testing.T) {
 	}
 }
 
-// One field named leaves the rest of its section alone.
-func TestOneAgentFieldKeepsTheRest(t *testing.T) {
-	cfg, err := openAt(write(t, `{"agent":{"claude":{"reads_hooks_and_skills":true}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := cfg.Agent.GetProgram("claude")
-	if got.Options["reads_hooks_and_skills"] != "true" {
-		t.Error("what the file said was not read")
-	}
-}
-
 // A setting that defaults to on is read through a pointer: omitting the section,
 // omitting the field and writing false are three distinct inputs, and only the
 // last turns it off.

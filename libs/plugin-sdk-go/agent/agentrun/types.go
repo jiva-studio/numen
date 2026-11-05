@@ -65,8 +65,6 @@ type Request struct {
 	// Command is the command line that starts the program. Empty starts the program where the
 	// provider finds it.
 	Command []string
-	// Options are the settings only the program knows, by key, each as JSON.
-	Options map[string]string
 	// ToolsURL is where the program reaches the vault's tools. Empty gives the program no tools.
 	ToolsURL string
 	// ToolsToken is what the program presents at ToolsURL.

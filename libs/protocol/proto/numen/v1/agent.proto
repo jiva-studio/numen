@@ -81,8 +81,6 @@ message AskAgentRequest {
   // The command line that starts the program, as the installation set it. Empty starts the
   // program where the provider finds it.
   repeated string command = 13;
-  // The settings only the program knows, by key, each as JSON.
-  map<string, string> options = 14;
   // Where the program reaches the vault's tools, and what it presents there. Empty gives the
   // program no tools.
   string tools_url = 15;

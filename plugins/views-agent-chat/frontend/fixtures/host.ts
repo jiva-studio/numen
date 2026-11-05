@@ -23,6 +23,8 @@ export interface HostOptions {
   readonly models?: Readonly<Record<string, readonly AgentModel[]>>
   /** The settings kept, by their path. */
   readonly settings?: Readonly<Record<string, unknown>>
+  /** The depth of reasoning the plugin setting keeps. */
+  readonly reasoning?: string
   /** Why the agent cannot be reached. */
   readonly unreachable?: string
 }
@@ -34,6 +36,7 @@ export function createHost({
   models = {},
   settings = {},
   unreachable = '',
+  reasoning = '',
 }: HostOptions = {}) {
   const recorded = {
     opened: [] as [string, OpenFileOptions | undefined][],
@@ -81,6 +84,6 @@ export function createHost({
     getModelsAt: (path) => models[path.join('.')] ?? [],
   }
 
-  const host: AgentChatHost = { workspace, agent }
+  const host: AgentChatHost = { workspace, agent, getReasoning: () => reasoning }
   return { host, workspace, agent, recorded }
 }

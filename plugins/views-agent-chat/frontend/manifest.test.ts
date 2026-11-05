@@ -19,3 +19,14 @@ describe('the manifest', () => {
     expect(targets).toStrictEqual(['desktop.editor', 'desktop.flashcards'])
   })
 })
+
+describe('the settings', () => {
+  it('declare the depth of reasoning the plugin preselects', () => {
+    const { settings } = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
+    ) as { settings?: readonly { key: string; type: string; default: unknown }[] }
+    expect(settings).toStrictEqual([
+      expect.objectContaining({ key: 'reasoning', type: 'string', default: '' }),
+    ])
+  })
+})

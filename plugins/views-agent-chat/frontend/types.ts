@@ -11,5 +11,7 @@ export interface AgentTabDeps {
   unreachable(): string
   writeSetting?(path: readonly string[], value: unknown): Promise<void>
   getSetting?(path: readonly string[]): unknown
+  /** The depth of reasoning the plugin setting `reasoning` keeps; empty where it keeps none. */
+  getReasoning?(): string
   getModelsAt?(path: readonly string[]): readonly AgentModel[]
 }

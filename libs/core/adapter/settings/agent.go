@@ -27,16 +27,6 @@ type AgentProgram struct {
 
 	// Model is the model the program uses, by the name the program gives it.
 	Model string `json:"model"`
-
-	// Reasoning is the reasoning depth last selected for the program, by the
-	// name of one of the levels a model offers. The panel preselects it; a task
-	// can specify its own depth.
-	Reasoning string `json:"reasoning"`
-
-	// Options are program-specific settings by key, each as the JSON value
-	// stored in the file. The plugin that lists the program defines their
-	// meaning.
-	Options map[string]string `json:"-"`
 }
 
 // UseProgram is the program an installation names, as the settings hold it.
@@ -117,7 +107,7 @@ func (a Agent) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits. A key the section does
-// not know is an option of the program.
+// not know is ignored.
 func (p *AgentProgram) UnmarshalJSON(raw []byte) error {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &fields); err != nil {
@@ -141,26 +131,16 @@ func (p *AgentProgram) readField(key string, value json.RawMessage) error {
 		return json.Unmarshal(value, &p.Command)
 	case "model":
 		return json.Unmarshal(value, &p.Model)
-	case "reasoning":
-		return json.Unmarshal(value, &p.Reasoning)
 	}
-	if p.Options == nil {
-		p.Options = make(map[string]string)
-	}
-	p.Options[key] = string(value)
 	return nil
 }
 
-// MarshalJSON writes the section of a program with its options beside its own keys.
+// MarshalJSON writes the section of a program: its command and its model.
 func (p AgentProgram) MarshalJSON() ([]byte, error) {
-	content := make(map[string]any, len(p.Options)+3)
-	for key, value := range p.Options {
-		content[key] = json.RawMessage(value)
-	}
-	content["command"] = p.Command
-	content["model"] = p.Model
-	content["reasoning"] = p.Reasoning
-	return json.Marshal(content)
+	return json.Marshal(struct {
+		Command []string `json:"command"`
+		Model   string   `json:"model"`
+	}{p.Command, p.Model})
 }
 
 // AI is the section of the settings file that selects the agent that handles

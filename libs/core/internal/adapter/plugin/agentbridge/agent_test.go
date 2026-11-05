@@ -295,7 +295,6 @@ func TestTheRequestCarriesWhatTheTaskProducesTheAgent(t *testing.T) {
 	got := newAskRequest(agentport.Task{
 		Question: "q", Focus: "f", Conversation: "c", Agent: "one", Model: "m", Reasoning: "high", Instructions: "i",
 		Tools: []string{"note_edit"}, MaxSteps: 7, Root: "/vault", Command: []string{"/bin/one"},
-		Options:  map[string]string{"k": "true"},
 		Endpoint: agentport.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "t"},
 		Context:  map[string]string{"org.example.sample/item": "k7"},
 		ToolDeclarations: []agentport.ToolDeclaration{
@@ -310,7 +309,7 @@ func TestTheRequestCarriesWhatTheTaskProducesTheAgent(t *testing.T) {
 		t.Errorf("the question is %v", got)
 	}
 	if got.GetRoot() != "/vault" || !slices.Equal(got.GetCommand(), []string{"/bin/one"}) ||
-		got.GetOptions()["k"] != "true" || got.GetToolsUrl() != "http://127.0.0.1:1/mcp" || got.GetToolsToken() != "t" ||
+		got.GetToolsUrl() != "http://127.0.0.1:1/mcp" || got.GetToolsToken() != "t" ||
 		got.GetContext()["org.example.sample/item"] != "k7" {
 		t.Errorf("what the agent is given is %v", got)
 	}

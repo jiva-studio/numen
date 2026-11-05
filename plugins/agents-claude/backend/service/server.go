@@ -26,8 +26,9 @@ import (
 // programName is the name tasks use for the program, and the settings section key.
 const programName = "claude"
 
-// readsHooksOption is the option that lets the program read the hooks, skills and standing
-const readsHooksOption = "reads_hooks_and_skills"
+// readsHooksSetting is the setting of the plugin that lets the program read the hooks, skills and
+// standing instructions of the person.
+const readsHooksSetting = "reads_hooks_and_skills"
 
 // programTitle is the display name of the program.
 const programTitle = "Claude Code"
@@ -40,6 +41,9 @@ type agentServer struct {
 	registry       agentrun.Registry
 	defaultModel   string
 	executablePath string
+
+	// mayReadHooks is whether the program reads the hooks, skills and standing instructions of the person.
+	mayReadHooks bool
 
 	// environ is the variables a program of the agent is started with; nil is those of this process.
 	environ []string
@@ -62,7 +66,8 @@ func (s *agentServer) getEnvironment() []string {
 	return os.Environ()
 }
 
-// applyConfig keeps the model that answers a task naming none, and optional executable path.
+// applyConfig keeps the model that answers a task naming none, the optional executable path and
+// whether the program reads the hooks and skills of the person.
 func (s *agentServer) applyConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -71,6 +76,9 @@ func (s *agentServer) applyConfig(values map[string]string) {
 	}
 	if execPath, ok := values["executable_path"]; ok {
 		s.executablePath = strings.TrimSpace(execPath)
+	}
+	if reads, ok := values[readsHooksSetting]; ok {
+		s.mayReadHooks = reads == "true"
 	}
 }
 
@@ -94,6 +102,9 @@ func combineInstructions(instructions, systemPrompt string) string {
 func (s *agentServer) prepareClaudeArgs(
 	msg *agentrun.Request, instructions, defaultModel string,
 ) (claudeArgs []string, configFile string, err error) {
+	s.mu.RLock()
+	mayReadHooks := s.mayReadHooks
+	s.mu.RUnlock()
 	toolNames := msg.Tools
 	if len(toolNames) > 0 {
 		configFile, err = writeMcpConfig(msg.ToolsURL, msg.ToolsToken)
@@ -118,7 +129,7 @@ func (s *agentServer) prepareClaudeArgs(
 		session:       s.registry.GetSession(msg.Conversation),
 		turns:         int(msg.MaxSteps),
 		tools:         toolNames,
-		mayReadHooks:  msg.Options[readsHooksOption] == "true",
+		mayReadHooks:  mayReadHooks,
 	})
 	return args, configFile, nil
 }

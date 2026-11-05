@@ -91,7 +91,6 @@ func getFullRequest() *Request {
 		}},
 		Root:       "/vault",
 		Command:    []string{"program", "--flag"},
-		Options:    map[string]string{"key": "{}"},
 		ToolsURL:   "http://127.0.0.1:1/mcp",
 		ToolsToken: "token",
 		Reasoning:  "high",
