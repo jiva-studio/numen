@@ -81,7 +81,7 @@ describe('a fault', () => {
     expect(formatErrorMessage(undefined)).toMatch(/\S/)
   })
 
-  it('says the sentence of an error the window reported to the person', () => {
+  it('shows the text of a ReportedError', () => {
     expect(
       formatErrorMessage(
         new ReportedError('The plugin source local failed: duplicate plugin id "sample.notes"'),
@@ -89,7 +89,7 @@ describe('a fault', () => {
     ).toBe('The plugin source local failed: duplicate plugin id "sample.notes"')
   })
 
-  it('says the sentence of an error reported through the copy in the plugin SDK', () => {
+  it('shows the text of an error named ReportedError from the plugin SDK copy', () => {
     const reported = Object.assign(
       new Error('The plugin source local failed: duplicate plugin id "sample.notes"'),
       { name: 'ReportedError' },
@@ -99,22 +99,22 @@ describe('a fault', () => {
     )
   })
 
-  it('falls back on the plain words where the reported sentence is empty', () => {
+  it('shows the generic text for a ReportedError with blank text', () => {
     expect(formatErrorMessage(new ReportedError('  '))).toBe('Numen is not responding; retrying')
   })
 
-  it('carries no word of an Error that was not reported to the person', () => {
+  it('shows the generic text for an Error that is not a ReportedError', () => {
     const failure = new Error('open /Users/someone/Vault/library/Broken.epub: permission denied')
     expect(formatErrorMessage(failure)).toBe('Numen is not responding; retrying')
   })
 
-  it('says what the person can do about a fetch that failed outside connect', () => {
+  it('shows the generic text for a TypeError thrown by fetch outside connect', () => {
     expect(formatErrorMessage(new TypeError('Load failed'))).toBe(
       'Numen is not responding; retrying',
     )
   })
 
-  it('carries no word of a native call that failed with a code of its own', () => {
+  it('shows the generic text for a native error with its own code field', () => {
     const failure = Object.assign(
       new Error('mkdir /data/user/0/md.numen.sample/files/vault: permission denied'),
       { code: 'UNAVAILABLE' },
@@ -122,22 +122,22 @@ describe('a fault', () => {
     expect(formatErrorMessage(failure)).toBe('Numen is not responding; retrying')
   })
 
-  it('says what the person can do about a request the network dropped', () => {
+  it('shows the generic text for a ConnectError from a failed fetch', () => {
     const dropped = ConnectError.from(new TypeError('Failed to fetch'))
     expect(formatErrorMessage(dropped)).toBe('Numen is not responding; retrying')
   })
 
-  it('says the core is busy where it answered unavailable without a sentence', () => {
+  it('shows the busy text for Unavailable with an empty message', () => {
     expect(formatErrorMessage(new ConnectError('', Code.Unavailable))).toBe(
       'Numen is busy; try again',
     )
   })
 
-  it('says nothing about a request the window aborted', () => {
+  it('returns empty text for an AbortError', () => {
     expect(formatErrorMessage(new DOMException('aborted', 'AbortError'))).toBe('')
   })
 
-  it('falls back on the plain words where the error the window wrote is empty', () => {
+  it('shows the generic text for an Error with blank text', () => {
     expect(formatErrorMessage(new Error('  '))).toBe('Numen is not responding; retrying')
   })
 

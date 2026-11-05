@@ -605,7 +605,7 @@ describe('a book the books service fails to read', () => {
     }
   }
 
-  it('carries no word of the internal answer of the backend', async () => {
+  it('shows the generic text for an internal error from the backend', async () => {
     const message = await openWithAnswer(
       async () =>
         new Response(
@@ -621,7 +621,7 @@ describe('a book the books service fails to read', () => {
     expect(message).not.toContain('/Users/someone')
   })
 
-  it('reads a request that never reached the core as a lost connection', async () => {
+  it('shows the generic text for a fetch that fails before it reaches the core', async () => {
     const message = await openWithAnswer(async () => {
       throw new TypeError('Load failed')
     })
