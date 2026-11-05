@@ -142,8 +142,8 @@ describe('a command of the editor in a place', () => {
     )
 
     expect(menus.getEntries('titleBar')).toMatchObject([
-      { command: COMMAND.createNote, title: WORDS.newNote, icon: 'file-plus' },
       { command: COMMAND.openSettings, title: WORDS.openSettings, icon: 'settings' },
+      { command: COMMAND.createNote, title: WORDS.newNote, icon: 'file-plus' },
     ])
   })
 })

@@ -84,9 +84,7 @@ describe('the title bar of the window', () => {
 
     const bar = window.findComponent(TitleBar)
     expect(bar.props('controls')).toBe('windows')
-    expect((bar.props('actions') as { id: string }[]).map((one) => one.id)).toStrictEqual([
-      'app:settings.open',
-    ])
+    expect(getActions(window).map((one) => one.id)).toStrictEqual(['app:settings.open'])
     expect(window.findAll('[data-title-bar] button')).toHaveLength(4)
   })
 })
