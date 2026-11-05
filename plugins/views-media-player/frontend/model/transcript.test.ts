@@ -58,7 +58,7 @@ describe('a recording firstRead', () => {
   })
 })
 
-describe('what the menu offers', () => {
+describe('what the menu options', () => {
   it('starts text from the first entry over the file', () => {
     expect(findStarter([DELETE_ENTRY, TRANSCRIBE_ENTRY, PROOFREAD_ENTRY])).toBe(TRANSCRIBE_ENTRY)
     expect(findStarter([DELETE_ENTRY, PROOFREAD_ENTRY])).toBeUndefined()
@@ -73,16 +73,16 @@ describe('what the menu offers', () => {
   it('is starting where nothing was heard, and lists nothing in the menu', async () => {
     const { tab } = open(createRecordings([], [TRANSCRIBE_ENTRY]))
     await tab.content.firstRead
-    expect(tab.offers.isStartable.value).toBe(true)
-    expect(tab.offers.items.value).toStrictEqual([])
+    expect(tab.options.isStartable.value).toBe(true)
+    expect(tab.options.items.value).toStrictEqual([])
     expect(tab.content.note.value).toBe(WORDS.silence)
   })
 
   it('lists every entry in the menu where there are words, and is not starting', async () => {
     const { tab } = open(createRecordings(CUES, [TRANSCRIBE_ENTRY, DELETE_ENTRY]))
     await tab.content.firstRead
-    expect(tab.offers.isStartable.value).toBe(false)
-    expect(tab.offers.items.value.map((one) => one.text)).toStrictEqual([
+    expect(tab.options.isStartable.value).toBe(false)
+    expect(tab.options.items.value.map((one) => one.text)).toStrictEqual([
       TRANSCRIBE_ENTRY.title,
       DELETE_ENTRY.title,
     ])
@@ -94,7 +94,7 @@ describe('what the menu offers', () => {
     await tab.content.firstRead
     state.cues = []
 
-    await tab.offers.run(getEntryKey(DELETE_ENTRY))
+    await tab.options.run(getEntryKey(DELETE_ENTRY))
 
     expect(state.runs).toStrictEqual([DELETE_ENTRY])
     expect(tab.content.cues.value).toStrictEqual([])

@@ -8,7 +8,7 @@
  * draws the rows it is given and decides nothing.
  */
 import { WelcomeColumn } from './welcome-column'
-import type { Offer, VaultRow, WelcomeAction } from '../lib/welcome'
+import type { FooterEntry, VaultRow, WelcomeAction } from '../lib/welcome'
 
 withDefaults(
   defineProps<{
@@ -23,10 +23,10 @@ withDefaults(
     /** What the list is called. */
     heading: string
     /** The row below the list, where a window offers one. */
-    offer?: Offer | null
+    footer?: FooterEntry | null
     version?: string
   }>(),
-  { name: 'numen', ways: () => [], offer: null, version: '' },
+  { name: 'numen', ways: () => [], footer: null, version: '' },
 )
 
 defineEmits<{
@@ -35,7 +35,7 @@ defineEmits<{
   /** A vault on the list chosen. */
   (event: 'open', id: string): void
   /** The row below the list pressed. */
-  (event: 'take-offer'): void
+  (event: 'take-footer'): void
 }>()
 
 defineSlots<{
@@ -53,10 +53,10 @@ defineSlots<{
       :ways="ways"
       :vaults="vaults"
       :heading="heading"
-      :offer="offer"
+      :footer="footer"
       @run="$emit('run', $event)"
       @open="$emit('open', $event)"
-      @take-offer="$emit('take-offer')"
+      @take-footer="$emit('take-footer')"
     >
       <template v-if="$slots.waiting" #waiting>
         <slot name="waiting" />

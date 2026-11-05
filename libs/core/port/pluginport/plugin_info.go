@@ -13,14 +13,44 @@ type PluginSetting struct {
 	Min         *float64
 	Max         *float64
 	Step        *float64
-	// Replaces are the places in the settings file the setting was kept before the plugin took it
-	// over, as the keys that lead to each joined by dots.
-	Replaces []string
 	// OptionsBy, When, Accept and Multiple are as the manifest declares them.
 	OptionsBy *PluginSettingOptionsBy
 	When      *PluginSettingCondition
 	Accept    []string
 	Multiple  bool
+	// Preview and OptionsFrom are as the manifest declares them.
+	Preview     bool
+	OptionsFrom string
+	// ActiveOptions, IsShown and ValueJSON are the options, the visibility and the value in force
+	// under the stored values, resolved by the manifest. A window draws them and applies no rule of
+	// OptionsBy or When itself.
+	ActiveOptions PluginSettingOptions
+	IsShown       bool
+	ValueJSON     string
+}
+
+// NewPluginSetting returns the setting as a window draws it. The default, as JSON, and the options
+// are the ones the caller resolved for the declaration, and nothing is resolved under stored values.
+func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, options PluginSettingOptions) PluginSetting {
+	return PluginSetting{
+		Key:         declared.Key,
+		Type:        declared.Type,
+		Title:       declared.Title,
+		Description: declared.Description,
+		DefaultJSON: defaultJSON,
+		Palette:     declared.Palette,
+		Icon:        declared.Icon,
+		Options:     options,
+		Min:         declared.Min,
+		Max:         declared.Max,
+		Step:        declared.Step,
+		OptionsBy:   declared.OptionsBy,
+		When:        declared.When,
+		Accept:      declared.Accept,
+		Multiple:    declared.Multiple,
+		Preview:     declared.Preview,
+		OptionsFrom: declared.OptionsFrom,
+	}
 }
 
 // PluginInfo describes a discovered plugin and its declarative settings.
@@ -38,12 +68,12 @@ type PluginInfo struct {
 	// StoredSecrets those of them that have a key stored. A key never appears here.
 	Secrets       []PluginSecret
 	StoredSecrets []string
-	// Consent is whether the user allows the plugin to request model completions.
-	Consent CompletionConsent
 	// Failure is set while the host suspends the plugin after it failed to start.
 	Failure *PluginFailure
 	// HasFrontend is whether the plugin declares a bundle the windows load.
 	HasFrontend bool
+	// HasBackend is whether the plugin declares a process the host starts.
+	HasBackend bool
 	// Readers are the readers the manifest declares, with the files each opens.
 	Readers []PluginReaderInfo
 	// SettingsViews are the components the settings page draws among the settings of the plugin.
@@ -58,21 +88,3 @@ type PluginReaderInfo struct {
 	// those of its types where it is the default reader of every enabled plugin.
 	Extensions []string
 }
-
-// CompletionConsent is whether the user allows a plugin to request model
-// completions.
-type CompletionConsent int
-
-const (
-	// ConsentNone is a plugin that does not hold the ai:complete permission.
-	ConsentNone CompletionConsent = iota
-	// ConsentPending is a plugin without a user decision that has not requested a
-	// completion since the host started.
-	ConsentPending
-	// ConsentRequested is a plugin that has requested a completion since the host
-	// started and awaits the user's decision.
-	ConsentRequested
-	// ConsentAllowed is a plugin the user allows to request completions.
-	ConsentAllowed
-	ConsentDenied
-)

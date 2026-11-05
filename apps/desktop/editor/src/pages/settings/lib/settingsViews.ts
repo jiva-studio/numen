@@ -1,9 +1,5 @@
-import {
-  getValue,
-  type PluginInfo,
-  type PluginSettingsViewInfo,
-  type ReadPluginSetting,
-} from '@/entities/settings'
+import type { PluginInfo, PluginSettingsViewInfo } from '@/entities/settings'
+import { getValueInForce, type ReadPluginSetting } from './enums'
 
 /** A view the plugin declares and its frontend registered. */
 export interface MountedSettingsView {
@@ -28,8 +24,9 @@ export function getRegisteredViews(
 export function getSettingValues(
   plugin: PluginInfo,
   read: ReadPluginSetting,
+  isRequested: (key: string) => boolean = () => false,
 ): Readonly<Record<string, unknown>> {
   const values: Record<string, unknown> = {}
-  for (const one of plugin.settings) values[one.key] = getValue(plugin, one, read).value
+  for (const one of plugin.settings) values[one.key] = getValueInForce(one, read, isRequested)
   return values
 }

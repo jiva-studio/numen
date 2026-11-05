@@ -3,24 +3,16 @@ import {
   AGENT_USE_PATH,
   DEFAULT_AGENT_PATH,
   DEFAULT_MODEL_PATH,
-  getProgramHooksPath,
   getProgramModelPath,
-  getProgramStepsPath,
   readAgentChoice,
 } from './agentSettings'
 
 describe('agent settings paths', () => {
   it('names the setting paths for a program', () => {
-    expect(AGENT_USE_PATH).toStrictEqual(['agent', 'use'])
-    expect(DEFAULT_AGENT_PATH).toStrictEqual(['ai', 'default', 'agent'])
-    expect(DEFAULT_MODEL_PATH).toStrictEqual(['ai', 'default', 'model'])
-    expect(getProgramModelPath('claude')).toStrictEqual(['agent', 'claude', 'model'])
-    expect(getProgramStepsPath('claude')).toStrictEqual(['agent', 'claude', 'max_steps'])
-    expect(getProgramHooksPath('claude')).toStrictEqual([
-      'agent',
-      'claude',
-      'reads_hooks_and_skills',
-    ])
+    expect(AGENT_USE_PATH).toStrictEqual(['app', 'agent', 'use'])
+    expect(DEFAULT_AGENT_PATH).toStrictEqual(['app', 'ai', 'default', 'agent'])
+    expect(DEFAULT_MODEL_PATH).toStrictEqual(['app', 'ai', 'default', 'model'])
+    expect(getProgramModelPath('claude')).toStrictEqual(['app', 'agent', 'claude', 'model'])
   })
 })
 

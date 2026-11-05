@@ -3,7 +3,7 @@
  * hands the vault to write.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AGENT_PROVIDER_CAPABILITY, COMPLETION_CONSENT, MODEL_PRESENCE } from '@numen/core-client'
+import { AGENT_PROVIDER_CAPABILITY, MODEL_PRESENCE } from '@numen/core-client'
 import { settingsCore as core } from './settings'
 
 const request = vi.hoisted(() => ({
@@ -14,6 +14,7 @@ const request = vi.hoisted(() => ({
   retryPlugin: vi.fn(),
   getPluginData: vi.fn(),
   deletePluginData: vi.fn(),
+  watchSettings: vi.fn(),
 }))
 
 vi.mock('@/shared/clients', () => ({ settingsService: request }))
@@ -32,34 +33,6 @@ const writtenLast = () => request.writeSettings.mock.calls.at(-1)?.[0]
 beforeEach(() => {
   request.getSettings.mockReset()
   request.writeSettings.mockReset().mockResolvedValue({})
-})
-
-describe('keeping a title and its file name in line', () => {
-  it('is on where the file says nothing of it', async () => {
-    request.getSettings.mockResolvedValue(answer({}))
-
-    expect(await core.getSyncEnabled()).toBe(true)
-  })
-
-  it('is off where the file turns it off', async () => {
-    request.getSettings.mockResolvedValue(answer({ naming: { sync_title_and_filename: false } }))
-
-    expect(await core.getSyncEnabled()).toBe(false)
-  })
-
-  it('is written under naming, as the file holds a value', async () => {
-    expect(await core.setSyncEnabled(false)).toBeNull()
-
-    expect(writtenLast()).toStrictEqual({
-      settings: [{ at: ['naming', 'sync_title_and_filename'], value: 'false' }],
-    })
-  })
-
-  it('says what could not be written', async () => {
-    request.writeSettings.mockRejectedValue(new Error('the file is read-only'))
-
-    expect(await core.setSyncEnabled(true)).toEqual(expect.stringMatching(/./))
-  })
 })
 
 describe('every setting', () => {
@@ -95,6 +68,7 @@ describe('every setting', () => {
         },
       ],
       plugins: [],
+      app: [],
     })
   })
 
@@ -113,8 +87,8 @@ describe('every setting', () => {
               capabilities: [AGENT_PROVIDER_CAPABILITY],
               secrets: [{ name: 'apiKey', title: 'API key', description: '' }],
               storedSecrets: ['apiKey'],
-              completionConsent: COMPLETION_CONSENT.REQUESTED,
               hasFrontend: true,
+              hasBackend: false,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
               settingsViews: [{ id: 'floor', title: 'Floor' }],
               settings: [
@@ -164,8 +138,8 @@ describe('every setting', () => {
         capabilities: [AGENT_PROVIDER_CAPABILITY],
         secrets: [{ name: 'apiKey', title: 'API key', description: '', when: undefined }],
         storedSecrets: ['apiKey'],
-        consent: 'requested',
         hasFrontend: true,
+        hasBackend: false,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
         settingsViews: [{ id: 'floor', title: 'Floor' }],
         settings: [
@@ -185,6 +159,9 @@ describe('every setting', () => {
             min: undefined,
             max: undefined,
             step: undefined,
+            activeOptions: [],
+            isShown: false,
+            value: undefined,
           },
           {
             key: 'language',
@@ -203,6 +180,9 @@ describe('every setting', () => {
             min: undefined,
             max: undefined,
             step: undefined,
+            activeOptions: [],
+            isShown: false,
+            value: undefined,
           },
         ],
       },
@@ -210,10 +190,10 @@ describe('every setting', () => {
   })
 
   it('is written with each value as it was given', async () => {
-    await core.updateSettings([{ at: ['performance', 'profile'], value: '"eco"' }])
+    await core.updateSettings([{ at: ['app', 'performance', 'profile'], value: '"eco"' }])
 
     expect(writtenLast()).toStrictEqual({
-      settings: [{ at: ['performance', 'profile'], value: '"eco"' }],
+      settings: [{ at: ['app', 'performance', 'profile'], value: '"eco"' }],
     })
   })
 })
@@ -257,7 +237,6 @@ describe('a plugin the host suspends', () => {
               capabilities: [],
               secrets: [],
               storedSecrets: [],
-              completionConsent: COMPLETION_CONSENT.UNSPECIFIED,
               settings: [],
               failure: {
                 reason: 'Timed out while starting',
@@ -313,5 +292,132 @@ describe('the data of a plugin', () => {
     await core.deletePluginData('sample.plugin')
 
     expect(request.deletePluginData).toHaveBeenLastCalledWith({ pluginId: 'sample.plugin' })
+  })
+})
+
+describe('what the core resolved and declared', () => {
+  it('arrives as the options, the visibility and the value in force of each plugin setting', async () => {
+    request.getSettings.mockResolvedValue(
+      answer(
+        {},
+        {
+          plugins: [
+            {
+              id: 'sample.plugin',
+              name: 'Sample',
+              version: '1.0.0',
+              description: '',
+              isActive: true,
+              capabilities: [],
+              secrets: [],
+              storedSecrets: [],
+              hasFrontend: false,
+              hasBackend: false,
+              settings: [
+                {
+                  key: 'model',
+                  type: 'enum',
+                  title: 'Model',
+                  description: '',
+                  defaultJson: '',
+                  palette: false,
+                  options: [],
+                  activeOptions: [{ value: 'big', title: 'Big', detail: '' }],
+                  isShown: true,
+                  valueJson: '"big"',
+                },
+              ],
+            },
+          ],
+        },
+      ),
+    )
+
+    const got = await core.getSettings()
+    expect(got.plugins?.[0]?.settings[0]).toMatchObject({
+      activeOptions: [{ value: 'big', title: 'Big', detail: '' }],
+      isShown: true,
+      value: 'big',
+    })
+  })
+
+  it('arrives as the flag that previews a setting and the registry its options come from', async () => {
+    request.getSettings.mockResolvedValue(
+      answer(
+        {},
+        {
+          app: [
+            {
+              key: 'appearance.theme',
+              type: 'enum',
+              title: 'Theme',
+              description: '',
+              defaultJson: '"preset:numen"',
+              palette: false,
+              options: [],
+              preview: true,
+              optionsFrom: 'themes',
+              activeOptions: [{ value: 'preset:numen', title: 'Numen', detail: '' }],
+              isShown: true,
+              valueJson: '"preset:numen"',
+            },
+          ],
+        },
+      ),
+    )
+
+    const got = await core.getSettings()
+    expect(got.app?.[0]).toMatchObject({
+      key: 'appearance.theme',
+      default: 'preset:numen',
+      preview: true,
+      optionsFrom: 'themes',
+      activeOptions: [{ value: 'preset:numen', title: 'Numen', detail: '' }],
+      value: 'preset:numen',
+    })
+  })
+
+  it('arrives as nothing for the shell where the core declares none', async () => {
+    request.getSettings.mockResolvedValue(answer({}))
+
+    expect((await core.getSettings()).app).toStrictEqual([])
+  })
+})
+
+describe('the settings that change', () => {
+  it('are the settings of each response, named by their path and holding their value', async () => {
+    request.watchSettings = vi.fn(async function* () {
+      yield { changed: [] }
+      yield {
+        changed: [
+          { at: ['app', 'appearance', 'mode'], value: '"dark"' },
+          { at: ['md.numen.notes', 'softWrap'], value: 'false' },
+        ],
+      }
+    })
+    const batches: unknown[] = []
+
+    for await (const batch of core.watchSettings(new AbortController().signal)) {
+      batches.push(batch)
+    }
+
+    expect(batches).toStrictEqual([
+      [],
+      [
+        { at: ['app', 'appearance', 'mode'], value: '"dark"' },
+        { at: ['md.numen.notes', 'softWrap'], value: 'false' },
+      ],
+    ])
+  })
+
+  it('follow the core until the signal of the window aborts', async () => {
+    request.watchSettings = vi.fn(async function* () {
+      yield* []
+    })
+    const controller = new AbortController()
+
+    for await (const batch of core.watchSettings(controller.signal)) expect(batch).toBeDefined()
+
+    expect(request.watchSettings).toHaveBeenCalledWith({}, { signal: controller.signal })
   })
 })

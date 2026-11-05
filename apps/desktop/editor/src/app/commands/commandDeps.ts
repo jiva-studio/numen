@@ -12,7 +12,7 @@ import type {
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
 import type { NoteCreator } from '@/entities/note'
-import { write, type SettingEdit } from '@/entities/settings'
+import type { SettingEdit } from '@/entities/settings'
 
 export interface CommandDepsOptions {
   core: VaultCore
@@ -23,8 +23,8 @@ export interface CommandDepsOptions {
   /** Holds the open tabs back while the vault is switched; the tabs are written as they come where absent. */
   tabsHold?: TabsHold
   reached: Notes
-  appearance: { chooseItem: (item: string) => Promise<void> | void }
-  oneName: { choose: (item: string) => Promise<void> | void }
+  /** The adapter that writes the row chosen in the step of the command of a setting. */
+  settingPalette?: { choose: (command: string, item: string) => Promise<void> }
   rest: {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (targetPath: readonly string[]) => readonly import('@/entities/settings').Model[]
@@ -70,19 +70,10 @@ function createNavigationCommands(options: CommandDepsOptions): CommandDeps['nav
 }
 
 function createSettingsCommands(options: CommandDepsOptions): CommandDeps['settings'] {
-  const { appearance, oneName, rest } = options
+  const { settingPalette } = options
   return {
-    chooseAppearance: async (selected) => {
-      await appearance.chooseItem(selected)
-    },
-    chooseSync: async (selected) => {
-      await oneName.choose(selected)
-    },
-    choosePerformance: async (selected) => {
-      await rest.writeSettings([{ at: ['performance', 'profile'], value: write(selected) }])
-    },
-    choosePluginSetting: async (pluginId: string, key: string, selected: unknown) => {
-      await rest.writeSettings([{ at: ['plugins', pluginId, key], value: write(selected) }])
+    chooseSetting: async (command, selected) => {
+      await settingPalette?.choose(command, selected)
     },
   }
 }

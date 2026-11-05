@@ -49,8 +49,6 @@ message PluginSetting {
   optional double min = 8;
   optional double max = 9;
   optional double step = 10;
-  reserved 11;
-  reserved "models_of";
   // The options of an enum setting under each value of another setting. The first of a list is the
   // default under that value.
   PluginSettingOptionsBy options_by = 12;
@@ -62,6 +60,20 @@ message PluginSetting {
   string icon = 15;
   // Whether a setting of type file holds a list of paths, one per line.
   bool multiple = 16;
+  // Whether the window applies the value while its control is focused, and restores the saved value
+  // on leaving.
+  bool preview = 17;
+  // The registry the options are listed from, such as the installed themes. Empty where the setting
+  // lists its own options.
+  string options_from = 18;
+  // The options in force under the values in force, resolved by the core. A window draws these and
+  // follows no rule of options_by.
+  repeated PluginSettingOption active_options = 19;
+  // Whether the condition of the setting holds under the values in force, resolved by the core.
+  bool is_shown = 20;
+  // The value in force as JSON, resolved by the core: the stored value, else the default, else the
+  // first of the options in force.
+  string value_json = 21;
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -116,10 +128,6 @@ message PluginInfo {
   repeated PluginSecret secrets = 9;
   // The names of the secrets that have a key stored. A key never travels here.
   repeated string stored_secrets = 10;
-  reserved 11;
-  reserved "models";
-  // Whether the person lets the plugin ask for model completions.
-  CompletionConsent completion_consent = 12;
   // Set while the host suspends the plugin after it failed to start.
   PluginFailure failure = 13;
   // Whether the plugin declares a frontend bundle a window loads.
@@ -128,13 +136,12 @@ message PluginInfo {
   repeated PluginReader readers = 15;
   // The components the frontend draws inside the plugin's settings.
   repeated PluginSettingsView settings_views = 16;
+  // Whether the plugin declares a backend the host starts.
+  bool has_backend = 17;
 }
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.
 message PluginSettingsView {
-  reserved 3;
-  reserved "after";
-
   // The id the frontend registers the component under.
   string id = 1;
 
@@ -161,25 +168,6 @@ message PluginFailure {
   int64 failed_at_unix_ms = 2;
   // The underlying error, shown on request.
   string detail = 3;
-}
-
-// CompletionConsent is whether the person lets a plugin ask for model
-// completions. The zero value is a plugin that does not hold the ai:complete
-// permission.
-enum CompletionConsent {
-  COMPLETION_CONSENT_UNSPECIFIED = 0;
-
-  // The person has not answered, and the plugin has not asked since the host
-  // started.
-  COMPLETION_CONSENT_PENDING = 1;
-
-  // person has not answered.
-  COMPLETION_CONSENT_REQUESTED = 2;
-
-  // The person lets the plugin ask.
-  COMPLETION_CONSENT_ALLOWED = 3;
-
-  COMPLETION_CONSENT_DENIED = 4;
 }
 
 // PluginService allows querying discovered plugins and their settings schemas.

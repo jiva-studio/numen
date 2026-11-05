@@ -23,6 +23,10 @@ import (
 type (
 	// Entry is one command an enabled plugin declares, and the plugin that does.
 	Entry = pluginport.PluginCommandEntry
+	// MenuEntry is one menu entry an enabled plugin declares, and the plugin that does.
+	MenuEntry = pluginport.PluginMenuEntry
+	// Parts is what one plugin has and whether the host holds it suspended.
+	Parts = pluginport.PluginParts
 	// Command is a command as its manifest declares it.
 	Command = pluginport.PluginCommand
 	// Argument is one argument a command takes.
@@ -72,12 +76,34 @@ type List struct {
 	types    contenttypeport.ContentTypeTable
 }
 
-// Execute lists them. Where there is no plugin host it lists none.
+// Execute lists the commands that a plugin backend runs. Where there is no plugin host it lists none.
 func (u List) Execute() []Entry {
+	return slices.DeleteFunc(u.ExecuteAll(), func(one Entry) bool { return !u.commands.GetParts(one.PluginID).HasBackend })
+}
+
+// ExecuteAll lists every command the enabled plugins declare, whichever part of the plugin runs it.
+// A plugin with neither a frontend nor a backend has nothing that runs its commands, and a plugin the
+// host holds suspended runs none; both list none.
+func (u List) ExecuteAll() []Entry {
 	if u.commands == nil {
 		return nil
 	}
-	return u.commands.ListCommands()
+	return slices.DeleteFunc(u.commands.ListCommands(), func(one Entry) bool {
+		parts := u.commands.GetParts(one.PluginID)
+		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+	})
+}
+
+// ExecuteMenus lists the menu entries of the enabled plugins, leaving out those of a plugin the host
+// holds suspended and of a plugin with neither a frontend nor a backend.
+func (u List) ExecuteMenus() []MenuEntry {
+	if u.commands == nil {
+		return nil
+	}
+	return slices.DeleteFunc(u.commands.ListMenus(), func(one MenuEntry) bool {
+		parts := u.commands.GetParts(one.PluginID)
+		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+	})
 }
 
 // Find returns the command of the id, by the plugin of the lowest id that declares one, and false
@@ -105,6 +131,9 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, er
 		return Result{}, ErrUnavailable
 	}
 	entries := u.commands.ListCommands()
+	if !u.commands.GetParts(call.PluginID).HasBackend {
+		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
+	}
 	index := slices.IndexFunc(entries, func(one Entry) bool {
 		return one.PluginID == call.PluginID && one.Command.ID == call.Command
 	})

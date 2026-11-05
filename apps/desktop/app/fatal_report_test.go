@@ -20,7 +20,7 @@ func TestError_MessageContainsFound(t *testing.T) {
 	pos := filepath.Join(t.TempDir(), "index.db")
 	cfg := container.NewConfig(container.Config{IndexPath: pos})
 
-	page, err := fatalReport{}.page(cfg, settings.GetTextScaleBounds().Check("appearance.text_scale", 4))
+	page, err := fatalReport{}.page(cfg, settings.GetTextScaleBounds().Check("appearance.textScale", 4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +28,7 @@ func TestError_MessageContainsFound(t *testing.T) {
 
 	for _, want := range []string{
 		html.EscapeString(readingTheSettings), // what could not be read
-		"appearance.text_scale",               // which field
+		"appearance.textScale",                // which field
 		">4<",                                 // what was written there
 		"range",                               // what it may be
 		"Write a number",                      // what to do
@@ -124,7 +124,7 @@ func getStoppings(t *testing.T) []stopping {
 		{
 			name: "a size the settings file does not take",
 			cfg:  container.NewConfig(container.Config{SettingsPath: unreadable}),
-			why:  settings.GetTextScaleBounds().Check("appearance.text_scale", 4),
+			why:  settings.GetTextScaleBounds().Check("appearance.textScale", 4),
 		},
 		{
 			name: "a size the command line does not take",
@@ -273,8 +273,8 @@ func TestGetSettingsPathResolvesConfiguredAndDefaultPaths(t *testing.T) {
 // A number a size does not take is answered where it was written: the field in
 // the file, or the flag on the command line.
 func TestSizeResponse_MatchingOffset(t *testing.T) {
-	file := getFatalReport(container.NewConfig(container.Config{}), settings.GetTextScaleBounds().Check("appearance.text_scale", 4))
-	if !strings.Contains(file.Remedy, "appearance.text_scale") {
+	file := getFatalReport(container.NewConfig(container.Config{}), settings.GetTextScaleBounds().Check("appearance.textScale", 4))
+	if !strings.Contains(file.Remedy, "appearance.textScale") {
 		t.Errorf("a size in the file is answered with %q", file.Remedy)
 	}
 

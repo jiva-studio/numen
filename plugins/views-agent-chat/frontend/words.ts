@@ -11,8 +11,11 @@ export const WORDS = {
   stopped: 'Stopped',
   noTranscript: 'No messages yet',
   agent: 'Agent',
-  /** The commands the plugin declares: a conversation opened, and a note queried. */
-  newAgent: 'Open agent chat',
+  /** The command that queries a note. */
   askAbout: 'Ask agent about note',
   reasoning: 'Reasoning',
+  /** The model control where no agent can answer. */
+  noAgent: 'No agent',
+  noAgentMessage: 'No agent is set up.',
+  openSettings: 'Open settings',
 }

@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugin.proto.
  */
 export const file_numen_v1_plugin: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IjAKDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSEAoIcHJvdG9jb2wYAiABKAUiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSKcAwoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIuCgdvcHRpb25zGAcgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbhIQCgNtaW4YCCABKAFIAIgBARIQCgNtYXgYCSABKAFIAYgBARIRCgRzdGVwGAogASgBSAKIAQESNAoKb3B0aW9uc19ieRgMIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb25zQnkSLgoEd2hlbhgNIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdDb25kaXRpb24SDgoGYWNjZXB0GA4gAygJEgwKBGljb24YDyABKAkSEAoIbXVsdGlwbGUYECABKAhCBgoEX21pbkIGCgRfbWF4QgcKBV9zdGVwSgQICxAMUgltb2RlbHNfb2YiQwoTUGx1Z2luU2V0dGluZ09wdGlvbhINCgV2YWx1ZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZkZXRhaWwYAyABKAkiRgoUUGx1Z2luU2V0dGluZ09wdGlvbnMSLgoHb3B0aW9ucxgBIAMoCzIdLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb24iuQEKFlBsdWdpblNldHRpbmdPcHRpb25zQnkSDwoHc2V0dGluZxgBIAEoCRI+CgdvcHRpb25zGAIgAygLMi0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbnNCeS5PcHRpb25zRW50cnkaTgoMT3B0aW9uc0VudHJ5EgsKA2tleRgBIAEoCRItCgV2YWx1ZRgCIAEoCzIeLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb25zOgI4ASI1ChZQbHVnaW5TZXR0aW5nQ29uZGl0aW9uEg8KB3NldHRpbmcYASABKAkSCgoCaXMYAiADKAkicAoMUGx1Z2luU2VjcmV0EgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSLgoEd2hlbhgEIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdDb25kaXRpb24i3AMKClBsdWdpbkluZm8SCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIPCgd2ZXJzaW9uGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEhQKDGNhcGFiaWxpdGllcxgFIAMoCRIpCghzZXR0aW5ncxgGIAMoCzIXLm51bWVuLnYxLlBsdWdpblNldHRpbmcSEQoJaXNfYWN0aXZlGAcgASgIEhMKC3Blcm1pc3Npb25zGAggAygJEicKB3NlY3JldHMYCSADKAsyFi5udW1lbi52MS5QbHVnaW5TZWNyZXQSFgoOc3RvcmVkX3NlY3JldHMYCiADKAkSNwoSY29tcGxldGlvbl9jb25zZW50GAwgASgOMhsubnVtZW4udjEuQ29tcGxldGlvbkNvbnNlbnQSKAoHZmFpbHVyZRgNIAEoCzIXLm51bWVuLnYxLlBsdWdpbkZhaWx1cmUSFAoMaGFzX2Zyb250ZW5kGA4gASgIEicKB3JlYWRlcnMYDyADKAsyFi5udW1lbi52MS5QbHVnaW5SZWFkZXISNAoOc2V0dGluZ3Nfdmlld3MYECADKAsyHC5udW1lbi52MS5QbHVnaW5TZXR0aW5nc1ZpZXdKBAgLEAxSBm1vZGVscyI8ChJQbHVnaW5TZXR0aW5nc1ZpZXcSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAlKBAgDEARSBWFmdGVyIi4KDFBsdWdpblJlYWRlchIKCgJpZBgBIAEoCRISCgpleHRlbnNpb25zGAIgAygJIkoKDVBsdWdpbkZhaWx1cmUSDgoGcmVhc29uGAEgASgJEhkKEWZhaWxlZF9hdF91bml4X21zGAIgASgDEg4KBmRldGFpbBgDIAEoCSITChFHZXRQbHVnaW5zUmVxdWVzdCI7ChJHZXRQbHVnaW5zUmVzcG9uc2USJQoHcGx1Z2lucxgBIAMoCzIULm51bWVuLnYxLlBsdWdpbkluZm8iJAoTRGVsaXZlckV2ZW50UmVxdWVzdBINCgVldmVudBgBIAEoCSJVChREZWxpdmVyRXZlbnRSZXNwb25zZRItCgVlcnJvchgBIAEoDjIeLm51bWVuLnYxLlBsdWdpbkV2ZW50RXJyb3JDb2RlEg4KBnJlYXNvbhgCIAEoCSq4AQoRQ29tcGxldGlvbkNvbnNlbnQSIgoeQ09NUExFVElPTl9DT05TRU5UX1VOU1BFQ0lGSUVEEAASHgoaQ09NUExFVElPTl9DT05TRU5UX1BFTkRJTkcQARIgChxDT01QTEVUSU9OX0NPTlNFTlRfUkVRVUVTVEVEEAISHgoaQ09NUExFVElPTl9DT05TRU5UX0FMTE9XRUQQAxIdChlDT01QTEVUSU9OX0NPTlNFTlRfREVOSUVEEAQqZAoUUGx1Z2luRXZlbnRFcnJvckNvZGUSJwojUExVR0lOX0VWRU5UX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIjCh9QTFVHSU5fRVZFTlRfRVJST1JfQ09ERV9SRUZVU0VEEAEy2AEKFlBsdWdpbkxpZmVjeWNsZVNlcnZpY2USNQoEUGluZxIVLm51bWVuLnYxLlBpbmdSZXF1ZXN0GhYubnVtZW4udjEuUGluZ1Jlc3BvbnNlEkEKCFNodXRkb3duEhkubnVtZW4udjEuU2h1dGRvd25SZXF1ZXN0GhoubnVtZW4udjEuU2h1dGRvd25SZXNwb25zZRJECglDb25maWd1cmUSGi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0GhsubnVtZW4udjEuQ29uZmlndXJlUmVzcG9uc2UyWAoNUGx1Z2luU2VydmljZRJHCgpHZXRQbHVnaW5zEhsubnVtZW4udjEuR2V0UGx1Z2luc1JlcXVlc3QaHC5udW1lbi52MS5HZXRQbHVnaW5zUmVzcG9uc2UyYwoSUGx1Z2luRXZlbnRTZXJ2aWNlEk0KDERlbGl2ZXJFdmVudBIdLm51bWVuLnYxLkRlbGl2ZXJFdmVudFJlcXVlc3QaHi5udW1lbi52MS5EZWxpdmVyRXZlbnRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IjAKDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSEAoIcHJvdG9jb2wYAiABKAUiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSKPBAoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIuCgdvcHRpb25zGAcgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbhIQCgNtaW4YCCABKAFIAIgBARIQCgNtYXgYCSABKAFIAYgBARIRCgRzdGVwGAogASgBSAKIAQESNAoKb3B0aW9uc19ieRgMIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb25zQnkSLgoEd2hlbhgNIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdDb25kaXRpb24SDgoGYWNjZXB0GA4gAygJEgwKBGljb24YDyABKAkSEAoIbXVsdGlwbGUYECABKAgSDwoHcHJldmlldxgRIAEoCBIUCgxvcHRpb25zX2Zyb20YEiABKAkSNQoOYWN0aXZlX29wdGlvbnMYEyADKAsyHS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uEhAKCGlzX3Nob3duGBQgASgIEhIKCnZhbHVlX2pzb24YFSABKAlCBgoEX21pbkIGCgRfbWF4QgcKBV9zdGVwIkMKE1BsdWdpblNldHRpbmdPcHRpb24SDQoFdmFsdWUYASABKAkSDQoFdGl0bGUYAiABKAkSDgoGZGV0YWlsGAMgASgJIkYKFFBsdWdpblNldHRpbmdPcHRpb25zEi4KB29wdGlvbnMYASADKAsyHS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uIrkBChZQbHVnaW5TZXR0aW5nT3B0aW9uc0J5Eg8KB3NldHRpbmcYASABKAkSPgoHb3B0aW9ucxgCIAMoCzItLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb25zQnkuT3B0aW9uc0VudHJ5Gk4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSLQoFdmFsdWUYAiABKAsyHi5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uczoCOAEiNQoWUGx1Z2luU2V0dGluZ0NvbmRpdGlvbhIPCgdzZXR0aW5nGAEgASgJEgoKAmlzGAIgAygJInAKDFBsdWdpblNlY3JldBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJEi4KBHdoZW4YBCABKAsyIC5udW1lbi52MS5QbHVnaW5TZXR0aW5nQ29uZGl0aW9uIqoDCgpQbHVnaW5JbmZvEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDwoHdmVyc2lvbhgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxjYXBhYmlsaXRpZXMYBSADKAkSKQoIc2V0dGluZ3MYBiADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEhEKCWlzX2FjdGl2ZRgHIAEoCBITCgtwZXJtaXNzaW9ucxgIIAMoCRInCgdzZWNyZXRzGAkgAygLMhYubnVtZW4udjEuUGx1Z2luU2VjcmV0EhYKDnN0b3JlZF9zZWNyZXRzGAogAygJEigKB2ZhaWx1cmUYDSABKAsyFy5udW1lbi52MS5QbHVnaW5GYWlsdXJlEhQKDGhhc19mcm9udGVuZBgOIAEoCBInCgdyZWFkZXJzGA8gAygLMhYubnVtZW4udjEuUGx1Z2luUmVhZGVyEjQKDnNldHRpbmdzX3ZpZXdzGBAgAygLMhwubnVtZW4udjEuUGx1Z2luU2V0dGluZ3NWaWV3EhMKC2hhc19iYWNrZW5kGBEgASgIIi8KElBsdWdpblNldHRpbmdzVmlldxIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCSIuCgxQbHVnaW5SZWFkZXISCgoCaWQYASABKAkSEgoKZXh0ZW5zaW9ucxgCIAMoCSJKCg1QbHVnaW5GYWlsdXJlEg4KBnJlYXNvbhgBIAEoCRIZChFmYWlsZWRfYXRfdW5peF9tcxgCIAEoAxIOCgZkZXRhaWwYAyABKAkiEwoRR2V0UGx1Z2luc1JlcXVlc3QiOwoSR2V0UGx1Z2luc1Jlc3BvbnNlEiUKB3BsdWdpbnMYASADKAsyFC5udW1lbi52MS5QbHVnaW5JbmZvIiQKE0RlbGl2ZXJFdmVudFJlcXVlc3QSDQoFZXZlbnQYASABKAkiVQoURGVsaXZlckV2ZW50UmVzcG9uc2USLQoFZXJyb3IYASABKA4yHi5udW1lbi52MS5QbHVnaW5FdmVudEVycm9yQ29kZRIOCgZyZWFzb24YAiABKAkqZAoUUGx1Z2luRXZlbnRFcnJvckNvZGUSJwojUExVR0lOX0VWRU5UX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIjCh9QTFVHSU5fRVZFTlRfRVJST1JfQ09ERV9SRUZVU0VEEAEy2AEKFlBsdWdpbkxpZmVjeWNsZVNlcnZpY2USNQoEUGluZxIVLm51bWVuLnYxLlBpbmdSZXF1ZXN0GhYubnVtZW4udjEuUGluZ1Jlc3BvbnNlEkEKCFNodXRkb3duEhkubnVtZW4udjEuU2h1dGRvd25SZXF1ZXN0GhoubnVtZW4udjEuU2h1dGRvd25SZXNwb25zZRJECglDb25maWd1cmUSGi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0GhsubnVtZW4udjEuQ29uZmlndXJlUmVzcG9uc2UyWAoNUGx1Z2luU2VydmljZRJHCgpHZXRQbHVnaW5zEhsubnVtZW4udjEuR2V0UGx1Z2luc1JlcXVlc3QaHC5udW1lbi52MS5HZXRQbHVnaW5zUmVzcG9uc2UyYwoSUGx1Z2luRXZlbnRTZXJ2aWNlEk0KDERlbGl2ZXJFdmVudBIdLm51bWVuLnYxLkRlbGl2ZXJFdmVudFJlcXVlc3QaHi5udW1lbi52MS5EZWxpdmVyRXZlbnRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.PingRequest
@@ -221,6 +221,45 @@ export type PluginSetting = Message<"numen.v1.PluginSetting"> & {
    * @generated from field: bool multiple = 16;
    */
   multiple: boolean;
+
+  /**
+   * Whether the window applies the value while its control is focused, and restores the saved value
+   * on leaving.
+   *
+   * @generated from field: bool preview = 17;
+   */
+  preview: boolean;
+
+  /**
+   * The registry the options are listed from, such as the installed themes. Empty where the setting
+   * lists its own options.
+   *
+   * @generated from field: string options_from = 18;
+   */
+  optionsFrom: string;
+
+  /**
+   * The options in force under the values in force, resolved by the core. A window draws these and
+   * follows no rule of options_by.
+   *
+   * @generated from field: repeated numen.v1.PluginSettingOption active_options = 19;
+   */
+  activeOptions: PluginSettingOption[];
+
+  /**
+   * Whether the condition of the setting holds under the values in force, resolved by the core.
+   *
+   * @generated from field: bool is_shown = 20;
+   */
+  isShown: boolean;
+
+  /**
+   * The value in force as JSON, resolved by the core: the stored value, else the default, else the
+   * first of the options in force.
+   *
+   * @generated from field: string value_json = 21;
+   */
+  valueJson: string;
 };
 
 /**
@@ -433,13 +472,6 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
   storedSecrets: string[];
 
   /**
-   * Whether the person lets the plugin ask for model completions.
-   *
-   * @generated from field: numen.v1.CompletionConsent completion_consent = 12;
-   */
-  completionConsent: CompletionConsent;
-
-  /**
    * Set while the host suspends the plugin after it failed to start.
    *
    * @generated from field: numen.v1.PluginFailure failure = 13;
@@ -466,6 +498,13 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
    * @generated from field: repeated numen.v1.PluginSettingsView settings_views = 16;
    */
   settingsViews: PluginSettingsView[];
+
+  /**
+   * Whether the plugin declares a backend the host starts.
+   *
+   * @generated from field: bool has_backend = 17;
+   */
+  hasBackend: boolean;
 };
 
 /**
@@ -640,53 +679,6 @@ export const DeliverEventResponseSchema: GenMessage<DeliverEventResponse> = /*@_
   messageDesc(file_numen_v1_plugin, 19);
 
 /**
- * CompletionConsent is whether the person lets a plugin ask for model
- * completions. The zero value is a plugin that does not hold the ai:complete
- * permission.
- *
- * @generated from enum numen.v1.CompletionConsent
- */
-export enum CompletionConsent {
-  /**
-   * @generated from enum value: COMPLETION_CONSENT_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * The person has not answered, and the plugin has not asked since the host
-   * started.
-   *
-   * @generated from enum value: COMPLETION_CONSENT_PENDING = 1;
-   */
-  PENDING = 1,
-
-  /**
-   * person has not answered.
-   *
-   * @generated from enum value: COMPLETION_CONSENT_REQUESTED = 2;
-   */
-  REQUESTED = 2,
-
-  /**
-   * The person lets the plugin ask.
-   *
-   * @generated from enum value: COMPLETION_CONSENT_ALLOWED = 3;
-   */
-  ALLOWED = 3,
-
-  /**
-   * @generated from enum value: COMPLETION_CONSENT_DENIED = 4;
-   */
-  DENIED = 4,
-}
-
-/**
- * Describes the enum numen.v1.CompletionConsent.
- */
-export const CompletionConsentSchema: GenEnum<CompletionConsent> = /*@__PURE__*/
-  enumDesc(file_numen_v1_plugin, 0);
-
-/**
  * value means it did not.
  *
  * @generated from enum numen.v1.PluginEventErrorCode
@@ -709,7 +701,7 @@ export enum PluginEventErrorCode {
  * Describes the enum numen.v1.PluginEventErrorCode.
  */
 export const PluginEventErrorCodeSchema: GenEnum<PluginEventErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_plugin, 1);
+  enumDesc(file_numen_v1_plugin, 0);
 
 /**
  * PluginLifecycleService handles lifecycle, ping, and graceful shutdown for all plugins.

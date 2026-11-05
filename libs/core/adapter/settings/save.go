@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
-// Setting is one field of the file and its position in it:
-// `appearance.theme` is `Setting{At: []string{"appearance", "theme"}}`.
+// Setting is one field of the file and its position in it, the first element being the owner:
+// `app.appearance.theme` is `Setting{At: []string{"app", "appearance", "theme"}}`.
 type Setting struct {
 	At      []string
 	Written any
@@ -35,9 +35,8 @@ type Setting struct {
 // fields, and every field the file omits keeps its default.
 //
 // A result that cannot be read back into `into` is not written either: a
-// value of the wrong shape or a number outside its setting's bounds is
-// rejected. `into` defines the shape of the whole file, so a value written into
-// any section is validated by reading the result back before it is saved.
+// value of the wrong shape is rejected. `into` defines the shape of the whole file, so a value
+// written into any section is validated by reading the result back before it is saved.
 func (f *Files) Save(path string, into Document, settings ...Setting) error {
 	return f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)
@@ -62,105 +61,48 @@ func (f *Files) Save(path string, into Document, settings ...Setting) error {
 			raw = patched
 		}
 
-		if err := writeSettings(raw, settings, into); err != nil {
+		if err := readBack(raw, settings, into); err != nil {
 			return fmt.Errorf("%s: %w: %w", path, settingsport.ErrNotASetting, err)
 		}
 		return writeFileAtomically(path, raw)
 	})
 }
 
-// writeSettings returns an error for any setting written by this call whose
-// value is outside the bounds of its setting, such as a number out of range or
-// an hour outside 0-23.
-//
-// A value outside its bounds that the file already held is ignored unless this
-// call wrote that field.
-func writeSettings(raw []byte, wrote []Setting, into Document) error {
+// readBack returns an error where the file with the settings written is not one that reads back
+// into the document, such as a value of the wrong shape for the section it is in, or where a
+// setting of the shell that this call wrote holds a value its declaration does not accept. A value
+// the file already held and this call did not write is left for the person to correct.
+func readBack(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}
-	for _, outside := range into.GetAppearance().GetOutsideBounds() {
-		for _, setting := range wrote {
-			if isFieldCovered(setting.At, outside.At) {
-				return outside
-			}
+	var root map[string]any
+	if err := json.Unmarshal(raw, &root); err != nil {
+		return err
+	}
+	app, isObject := root[OwnerApp].(map[string]any)
+	if !isObject {
+		return nil
+	}
+	for _, declared := range readAppDeclaration() {
+		steps := strings.Split(declared.Key, ".")
+		label := OwnerApp + "." + declared.Key
+		value, found := lookupPath(app, steps)
+		if !found || !slices.ContainsFunc(wrote, func(one Setting) bool { return isFieldCovered(one.At, label) }) {
+			continue
+		}
+		if err := checkValue(declared, nil, value); err != nil {
+			return wrapAt(label, err)
 		}
 	}
 	return nil
 }
 
-// isFieldCovered is whether a setting handed in at one name wrote the field at
-// another: the field itself, or a field inside the section named.
+// isFieldCovered is whether a setting handed in at one name wrote the field at another: the field
+// itself, or a field inside the section named.
 func isFieldCovered(pos []string, field string) bool {
 	name := strings.Join(pos, ".")
 	return field == name || strings.HasPrefix(field, name+".")
-}
-
-// renameField gives one field of the file another name. Its value, its place among
-// the fields around it and every other byte of the file stay as they are, so a
-// file comes back from a renameField the way its person wrote it, under one word.
-//
-// A file that has not got the field is left alone. A field whose new name the
-// section already holds is left alone as well: one section holds one of a name.
-func (f *Files) renameField(path string, pos []string, to string) error {
-	return f.run(path, func(path string) error {
-		raw, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		// The whole file has to parse before any of it is written, since what is
-		// written is the file itself with one span of it replaced.
-		var whole json.RawMessage
-		if err := json.Unmarshal(raw, &whole); err != nil {
-			return fmt.Errorf("%s: %w", path, err)
-		}
-
-		renamed, isDone := renameMember(raw, pos, to)
-		if !isDone {
-			return nil
-		}
-		return writeFileAtomically(path, renamed)
-	})
-}
-
-// renameMember returns the object's bytes with one member's name changed,
-// and whether it found the member to change.
-func renameMember(object []byte, pos []string, to string) ([]byte, bool) {
-	if len(pos) == 0 {
-		return object, false
-	}
-	target, err := parseObjectShape(object)
-	if err != nil {
-		return object, false
-	}
-
-	for _, one := range target.pairs {
-		if one.key == pos[0] {
-			return renameInMember(object, target, one, pos, to)
-		}
-	}
-
-	return object, false
-}
-
-// renameInMember renames the member the path ends at and reports whether it did.
-func renameInMember(object []byte, target shape, one member, pos []string, to string) ([]byte, bool) {
-	if len(pos) > 1 {
-		section, isDone := renameMember(object[one.from:one.to], pos[1:], to)
-		if !isDone {
-			return object, false
-		}
-		return splice(object, one.from, one.to, section), true
-	}
-	if one.nameTo == 0 || target.hasKey(to) {
-		return object, false
-	}
-	name, err := json.Marshal(to)
-	if err != nil {
-		return object, false
-	}
-	return splice(object, one.nameFrom, one.nameTo, name), true
 }
 
 // errNotASection is a name on the way to a setting that the file holds as
@@ -398,7 +340,8 @@ func resolvePath(path string) string {
 }
 
 // Files reads and writes settings files one at a time: each work reads a file and writes it back
-// whole, and two at once would write over each other's change. Every writer of one file shares
+// whole, and two at once would write over each other's change. A lock file beside the settings
+// file keeps the writers of other processes apart too. Every writer of one file shares
 // one Files.
 type Files struct {
 	mu sync.Mutex
@@ -422,7 +365,7 @@ func (f *Files) run(path string, work func(path string) error) error {
 	if err := os.MkdirAll(filepath.Dir(resolved), 0o755); err != nil {
 		return err
 	}
-	return work(resolved)
+	return withLock(resolved, func() error { return work(resolved) })
 }
 
 func splice(raw []byte, from, to int, with []byte) []byte {

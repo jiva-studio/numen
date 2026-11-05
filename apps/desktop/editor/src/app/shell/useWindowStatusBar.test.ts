@@ -19,6 +19,7 @@ const base: Task = {
   pluginId: '',
   pluginName: '',
   isCancellable: true,
+  kind: 'work',
 }
 
 const first = (task: Task) => pick(useWindowStatusBar({ tasks: ref([task]) }).tasks.value, 0)
@@ -131,6 +132,13 @@ describe('useWindowStatusBar handlers', () => {
       cancelTask: () => Promise.reject(error),
     })
     await expect(barNoReporter.onCancelTask('t')).resolves.toBeUndefined()
+  })
+
+  it('shows a notice as a notice, neither running nor failed', () => {
+    const row = first({ ...base, kind: 'notice', about: 'a key is ignored' })
+
+    expect(row.state).toBe('notice')
+    expect(row.error).toBeUndefined()
   })
 
   it('offers no cancel for a task the core cannot cancel', () => {
@@ -254,6 +262,7 @@ describe('useNoticeTasks', () => {
       pluginId: '',
       pluginName: '',
       isCancellable: false,
+      kind: 'work',
     })
     expect(tasks.value[1]?.id).toBe('unread')
     expect(tasks.value[2]?.id).toBe('lost')

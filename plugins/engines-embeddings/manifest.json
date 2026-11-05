@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.embeddings",
   "name": "Vector Embeddings",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "protocol": 1,
   "description": "Meaning-based search across your notes, books, and recordings",
   "capabilities": ["embedding"],
@@ -140,13 +140,23 @@
       }
     },
     {
-      "key": "min_chunk_length",
+      "key": "minChunkLength",
       "type": "number",
       "title": "Smallest piece of text to index for meaning",
       "description": "Pieces of text shorter than this many characters get no vector for the search by meaning, so page numbers and running heads do not crowd out real answers. They stay searchable by their words. A note shorter than this is found by its words too. 0 gives every piece a vector",
       "default": 40,
       "min": 0,
       "max": 1000,
+      "step": 1
+    },
+    {
+      "key": "chunkTokens",
+      "type": "number",
+      "title": "Longest chunk of a note, in tokens",
+      "description": "A note is cut into chunks of at most this many tokens, and each chunk gets a vector. It never exceeds the input limit of the model. A smaller value gives more precise passages and more vectors. A change cuts the notes again; vectors for texts that are unchanged are kept.",
+      "default": 256,
+      "min": 16,
+      "max": 8192,
       "step": 1
     }
   ]

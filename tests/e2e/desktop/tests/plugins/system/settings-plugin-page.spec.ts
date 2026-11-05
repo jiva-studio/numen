@@ -3,6 +3,7 @@ import { dirname } from 'node:path'
 import { test, expect, type Page } from '../../support/test.js'
 import { observeFor } from '../../support/browser.js'
 import { openWorkspace, runCommand } from '../../support/workspace.js'
+import { readSettings } from '../../support/vault.js'
 
 const FIRST = { id: 'md.numen.agents.antigravity', name: 'Antigravity Agent' }
 const SECOND = { id: 'md.numen.agents.claude', name: 'Claude Code Agent' }
@@ -65,12 +66,12 @@ const recordPage = async (page: Page, pluginName: string): Promise<void> => {
 
 test.describe('The page of a plugin', () => {
   test.afterEach(async ({ page }) => {
-    await writeSetting(page, ['plugins', FIRST.id, 'executable_path'], '')
+    await writeSetting(page, [FIRST.id, 'executablePath'], '')
   })
 
   test('shows none of the values of the plugin page opened before it', async ({ page }) => {
     const firstPath = await createExecutable()
-    await writeSetting(page, ['plugins', FIRST.id, 'executable_path'], firstPath)
+    await writeSetting(page, [FIRST.id, 'executablePath'], firstPath)
     await openWorkspace(page)
     await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
@@ -94,5 +95,16 @@ test.describe('The page of a plugin', () => {
     })
     expect(shownPaths).toEqual([])
     expect(firstRenderMs).toBeLessThan(FIRST_RENDER_LIMIT_MS)
+  })
+
+  test('stores a path under the id of the plugin and keeps no plugins object', async ({ page }) => {
+    const path = await createExecutable()
+    await writeSetting(page, [FIRST.id, 'executablePath'], path)
+
+    const file = await readSettings(page.request)
+
+    expect(file[FIRST.id]).toMatchObject({ executablePath: path })
+    expect(file).not.toHaveProperty('plugins')
+    expect(file).toHaveProperty('app')
   })
 })

@@ -6,7 +6,6 @@ import type {
   CommandNote,
   ContextMenuRegistration,
   ContextMenuTarget,
-  Disposable,
   PluginContext,
   SettingsViewRegistration,
   VaultChangeEvent,
@@ -20,15 +19,17 @@ import { createStatusViewRegistry, type StatusViewRegistry } from '../statusView
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
 import { addListener, notifyListeners, reportError, runCommand } from './events'
-import { extractPaletteCommands } from './palette'
+import { createPaletteCommand } from './available'
+import { readAvailableCommands } from './availableReader'
 import { matchesShortcut } from './shortcuts'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
+  addEntry,
   disposeAllEntries,
   disposePluginEntry,
   matchesContextMenuTarget,
-  resolveCommand,
+  setStarting,
   type HostRegistry,
 } from './registry'
 import type { PluginContextHost, PluginHostDeps } from './types'
@@ -64,19 +65,6 @@ type RegistrationBridge = Pick<
   | 'registerSettingsView'
   | 'registerAgentProvider'
 >
-
-/** Puts an entry in a reactive map under a key; disposing it removes the entry if it is still there. */
-function addEntry<T>(holder: { value: ReadonlyMap<string, T> }, key: string, entry: T): Disposable {
-  holder.value = new Map(holder.value).set(key, entry)
-  return {
-    dispose: () => {
-      if (holder.value.get(key) !== entry) return
-      const updated = new Map(holder.value)
-      updated.delete(key)
-      holder.value = updated
-    },
-  }
-}
 
 function createRegistrationBridge(
   deps: PluginHostDeps,
@@ -244,6 +232,10 @@ function createHostRegistry(): HostRegistry {
     agentProviders: new Map(),
     contexts: new Map(),
     manifests: new Map(),
+    activated: shallowRef(new Set()),
+    starting: shallowRef(new Set()),
+    disposed: new Set(),
+    reportedIssues: new Set(),
     vaultListeners: new Set(),
     fileListeners: new Set(),
   }
@@ -251,21 +243,29 @@ function createHostRegistry(): HostRegistry {
 
 /** The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts. */
 function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
+  const getAvailable = () => readAvailableCommands(deps, registry)
+  const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
   return {
-    getPaletteCommands: () => extractPaletteCommands(registry.commands.value),
-    hasCommand: (id: string): boolean => resolveCommand(registry.commands.value, id) !== undefined,
+    getPaletteCommands: () => getAvailable().map(createPaletteCommand),
+    hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
     executeCommand: async (id: string, note: CommandNote): Promise<boolean> => {
-      const entry = resolveCommand(registry.commands.value, id)
+      const command = findAvailable(id)
+      if (!command) return false
+      let entry = command.entry
+      if (!entry) {
+        await deps.waitForPlugin?.(command.declaration.pluginId)
+        entry = registry.commands.value.get(id)
+      }
       if (!entry) return false
       await runCommand(deps, entry, note)
       return true
     },
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
-      for (const entry of registry.commands.value.values()) {
-        if (matchesShortcut(event, entry.reg.shortcut)) {
+      for (const { entry, declaration } of getAvailable()) {
+        if (entry && matchesShortcut(event, declaration.shortcut)) {
           getNote()
             .then((note) => {
-              if (entry.reg.scope === 'note' && note.path === '') return
+              if (declaration.scope === 'note' && note.path === '') return
               return runCommand(deps, entry, note)
             })
             .catch((error: unknown) => reportError(deps, entry.pluginId, error))
@@ -329,9 +329,13 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
         const effectiveManifest = manifest ?? registry.manifests.get(pluginId)
         ctx = createPluginContext(pluginId, contextHost, effectiveManifest)
         registry.contexts.set(pluginId, ctx)
+        registry.disposed.delete(pluginId)
+        registry.activated.value = new Set(registry.activated.value).add(pluginId)
       }
       return ctx
     },
+    markPluginStarting: (pluginId: string): void => setStarting(registry, pluginId, true),
+    markPluginStarted: (pluginId: string): void => setStarting(registry, pluginId, false),
     registerManifest: (pluginId: string, manifest: Manifest): void => {
       if (registry.contexts.has(pluginId)) {
         throw new Error(

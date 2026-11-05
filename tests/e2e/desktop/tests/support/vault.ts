@@ -241,10 +241,17 @@ export const readSettings = async (request: APIRequestContext): Promise<Record<s
     String((await callRPC(request, 'SettingsService/GetSettings', {}))['written'] ?? '{}'),
   ) as Record<string, unknown>
 
+/** The values stored under an owner of numen.json: `app` or a plugin id. */
+export const readOwner = async (
+  request: APIRequestContext,
+  owner: string,
+): Promise<Record<string, unknown>> =>
+  ((await readSettings(request))[owner] ?? {}) as Record<string, unknown>
+
 /** Whether a note's title and the name of its file are kept as one name. */
 export const isSyncingTitles = async (request: APIRequestContext): Promise<boolean> =>
-  ((await readSettings(request))['naming'] as { sync_title_and_filename?: boolean } | undefined)
-    ?.sync_title_and_filename !== false
+  ((await readOwner(request, 'app'))['naming'] as { syncTitleAndFilename?: boolean } | undefined)
+    ?.syncTitleAndFilename !== false
 
 /** A title no other test or earlier run uses, so a retry starts from a vault without it. */
 export const createUniqueTitle = (words: string): string =>

@@ -44,7 +44,7 @@ test.describe('The tabs of the window after a restart', () => {
 
   test.afterEach(async ({ page }) => {
     const answer = await page.request.post('/numen.v1.SettingsService/WriteSettings', {
-      data: { settings: [{ at: ['plugins', PDF_READER_ID, 'enabled'], value: 'true' }] },
+      data: { settings: [{ at: [PDF_READER_ID, 'enabled'], value: 'true' }] },
       headers: { 'Content-Type': 'application/json' },
     })
     expect(answer.ok()).toBe(true)

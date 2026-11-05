@@ -28,25 +28,27 @@ const everyFieldManifest = `{
 	"settings": [
 		{"key": "mode", "type": "enum", "title": "Mode", "description": "d", "default": "a", "palette": true, "icon": "gauge",
 			"options": ["a", {"value": "b", "title": "B", "detail": "d", "dependencies": ["weights"]}],
-			"min": 1, "max": 2, "step": 1, "replaces": ["a.b"], "accept": [".txt"], "multiple": true},
+			"min": 1, "max": 2, "step": 1, "accept": [".txt"], "multiple": true},
 		{"key": "sub", "type": "enum", "title": "Sub", "optionsBy": {"setting": "mode", "options": {"a": ["x"], "b": ["y"]}},
-			"when": {"setting": "mode", "is": ["a"]}}
+			"when": {"setting": "mode", "is": ["a"]}},
+		{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes", "preview": true}
 	],
 	"secrets": [{"name": "apiKey", "title": "Key", "description": "d", "when": {"setting": "mode", "is": ["a"]}}],
 	"services": ["numen.v1.Full"],
-	"commands": [{"id": "task.run", "title": "Run", "icon": "play", "contentTypes": ["audio/*"], "noteTypes": ["link"],
-		"when": [{"key": "version.kind", "is": ["k"]}],
-		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false, "hiddenInPalette": true},
-			{"name": "m", "title": "M", "type": "number", "required": true}],
-		"hiddenInPalette": true}],
 	"settingsViews": [{"id": "v", "title": "V"}],
-	"contributes": {"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views",
+	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play", "contentTypes": ["audio/*"], "noteTypes": ["link"],
+		"when": [{"key": "version.kind", "is": ["k"]}],
+		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false},
+			{"name": "m", "title": "M", "type": "number", "required": true}],
+		"scope": "note", "shortcut": "mod+shift+r"}],
+		"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views",
 		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
 		"statusViews": [{"id": "gauge"}],
 		"handles": [{"purpose": "sample-purpose", "contentTypes": ["audio/*"], "noteTypes": ["link"]}],
 		"readers": [{"id": "r", "contentTypes": ["audio/*"], "rank": "default"}],
 		"noteTypes": [{"type": "link", "chunks": false, "headings": [1, 2], "idHeadingLevels": [3], "idPattern": "[a-z]+"}],
-		"frameOrigins": ["https://player.example"]}
+		"frameOrigins": ["https://player.example"],
+		"menus": [{"location": "titleBar", "command": "task.run", "group": "run", "order": 1}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {
@@ -136,7 +138,7 @@ func TestTheSampleManifestIsReadWithEveryFieldMapped(t *testing.T) {
 			t.Errorf("%s holds its zero value in every instance of the sample: a mapping for it is untested", name)
 		}
 	}
-	if len(m.Settings) != 2 || len(m.Settings[1].OptionsBy.Options["a"]) != 1 || m.Settings[1].OptionsBy.Options["a"][0].Value != "x" {
+	if len(m.Settings) != 3 || len(m.Settings[1].OptionsBy.Options["a"]) != 1 || m.Settings[1].OptionsBy.Options["a"][0].Value != "x" {
 		t.Errorf("optionsBy = %+v", m.Settings)
 	}
 	if len(m.Contributes.NoteTypes) != 1 || m.Contributes.NoteTypes[0].Headings == nil || !slices.Equal(*m.Contributes.NoteTypes[0].Headings, []int{1, 2}) || !slices.Equal(m.Contributes.NoteTypes[0].IDHeadingLevels, []int{3}) {
@@ -265,7 +267,7 @@ func TestAKeyOfTheWrongTypeIsRefused(t *testing.T) {
 }
 
 func TestKeysTheSchemaDoesNotNameAreReportedAsWarnings(t *testing.T) {
-	m, err := manifestjson.Decode([]byte(`{"id":"a.b","texts":{},"contributes":{"tabKinds":[{"kind":"k","title":"K","shape":1}],
+	m, err := manifestjson.Decode([]byte(`{"id":"a.b","unrelated":{},"contributes":{"tabKinds":[{"kind":"k","title":"K","shape":1}],
 		"extra":true},"settings":[{"key":"s","type":"enum","title":"S","default":{"nested":1},"options":["a",{"value":"b","hint":"h"}],
 		"optionsBy":{"setting":"s","options":{"a":[{"value":"x","hint":"h"}]}}}]}`))
 	if err != nil {
@@ -276,7 +278,7 @@ func TestKeysTheSchemaDoesNotNameAreReportedAsWarnings(t *testing.T) {
 		`unknown key "contributes.tabKinds[0].shape"`,
 		`unknown key "settings[0].options[1].hint"`,
 		`unknown key "settings[0].optionsBy.options.a[0].hint"`,
-		`unknown key "texts"`,
+		`unknown key "unrelated"`,
 	}
 	if !slices.Equal(m.Warnings, want) {
 		t.Errorf("warnings = %q, want %q", m.Warnings, want)

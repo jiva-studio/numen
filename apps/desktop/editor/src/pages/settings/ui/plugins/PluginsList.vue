@@ -52,14 +52,12 @@ function onSelectPlugin(pluginId: string): void {
 }
 
 function onTogglePlugin(pluginId: string, isEnabled: boolean): void {
-  props.state.installation.write([
-    { at: ['plugins', pluginId, 'enabled'], value: write(isEnabled) },
-  ])
+  props.state.installation.write([{ at: [pluginId, 'enabled'], value: write(isEnabled) }])
 }
 
 /* -------------------------------- Helpers --------------------------------- */
 function isPluginEnabled(pluginId: string): boolean {
-  const val = props.state.installation.getSetting(['plugins', pluginId, 'enabled'])
+  const val = props.state.installation.getSetting([pluginId, 'enabled'])
   return typeof val === 'boolean' ? val : true
 }
 </script>

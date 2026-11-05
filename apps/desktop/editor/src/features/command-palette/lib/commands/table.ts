@@ -5,9 +5,8 @@ import { createNoteCommands } from '../note-commands/noteCommands'
 import { createVaultCommands } from '../vault-commands/vaultCommands'
 import {
   createWindowCreationCommands,
-  createWindowDisplayCommands,
-  createWindowFeatureCommands,
   createWindowNavigationCommands,
+  createWindowSettingsCommands,
 } from '../window-commands/windowCommands'
 import type { Command } from '../../types'
 import type { Words } from '../../words'
@@ -26,7 +25,6 @@ export const createCommands = (
   ...createNoteCommands(words, agent),
   ...createWindowCreationCommands(words, agent),
   ...createWindowNavigationCommands(words, agent),
-  ...createWindowDisplayCommands(words),
-  ...createWindowFeatureCommands(words),
+  ...createWindowSettingsCommands(words),
   ...createVaultCommands(words, agent),
 ]

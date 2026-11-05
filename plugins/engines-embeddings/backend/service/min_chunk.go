@@ -9,7 +9,7 @@ import (
 // The key and bounds of the setting that names the shortest piece of text given a vector. They
 // repeat the setting in manifest.json.
 const (
-	settingMinChunkLength = "min_chunk_length"
+	settingMinChunkLength = "minChunkLength"
 	defaultMinChunkLength = 40
 	maxMinChunkLength     = 1000
 )

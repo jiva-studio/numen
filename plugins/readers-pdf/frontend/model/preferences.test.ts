@@ -7,7 +7,7 @@ import {
 
 describe('the PDF reader settings', () => {
   it('reads the default zoom the settings name', () => {
-    const settings: Record<string, unknown> = { default_zoom: 'width' }
+    const settings: Record<string, unknown> = { defaultZoom: 'width' }
 
     expect(readPDFReaderPreferences((key) => settings[key])).toStrictEqual({ defaultZoom: 'width' })
   })
@@ -28,10 +28,10 @@ describe('the PDF reader settings', () => {
     })
     expect(readerPreferences.defaultZoom).toBe('100%')
 
-    handlers.get('default_zoom')?.('width')
+    handlers.get('defaultZoom')?.('width')
     expect(readerPreferences.defaultZoom).toBe('width')
 
-    handlers.get('default_zoom')?.(null)
+    handlers.get('defaultZoom')?.(null)
     expect(readerPreferences.defaultZoom).toBe('page')
   })
 })

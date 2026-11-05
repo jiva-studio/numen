@@ -3,24 +3,15 @@ export type PluginSettingType =
   'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file' | 'folder'
 
 /** Where the active agent program and default AI agent stand in the settings file. */
-export const AGENT_USE_PATH = ['agent', 'use'] as const
-export const DEFAULT_AGENT_PATH = ['ai', 'default', 'agent'] as const
-export const DEFAULT_MODEL_PATH = ['ai', 'default', 'model'] as const
+export const AGENT_USE_PATH = ['app', 'agent', 'use'] as const
+export const DEFAULT_AGENT_PATH = ['app', 'ai', 'default', 'agent'] as const
+export const DEFAULT_MODEL_PATH = ['app', 'ai', 'default', 'model'] as const
 
 export const getProgramModelPath = (program: string): readonly string[] => [
+  'app',
   'agent',
   program,
   'model',
-]
-export const getProgramStepsPath = (program: string): readonly string[] => [
-  'agent',
-  program,
-  'max_steps',
-]
-export const getProgramHooksPath = (program: string): readonly string[] => [
-  'agent',
-  program,
-  'reads_hooks_and_skills',
 ]
 
 /** The agent program and the model a setting of that type holds. Empty is the default. */

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { execTool } from '../shared/tools.mjs'
 
 const args = process.argv.slice(2)
@@ -614,6 +615,34 @@ const RE_GO_HUNT_OFFER = new RegExp(
   `\\b(${HUNT_OFFER_SYMBOLS.join('|')})\\s*:=|var\\s+(${HUNT_OFFER_SYMBOLS.join('|')})\\s+[A-Za-z*]`,
 )
 
+// Offer as a word part of a name: an identifier, key, file or directory name says "offer" where the
+// plain word is "available", "suggested" or the noun for the thing itself. Comments and strings keep the verb.
+const OFFER_WORDS = new Set(['offer', 'offers', 'offered', 'offering', 'offerings'])
+const RE_NAME_TOKEN = /[A-Za-z_$][A-Za-z0-9_$.-]*/g
+
+/** Returns the first name in a text that has offer as a word part, or an empty string. */
+function findOfferName(text) {
+  for (const token of text.match(RE_NAME_TOKEN) ?? []) {
+    const words = token
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+      .split(/[^A-Za-z0-9]+/)
+    if (words.some((word) => OFFER_WORDS.has(word.toLowerCase()))) return token
+  }
+  return ''
+}
+
+// A name with offer in it counts only where the change adds it: on added lines under --staged and
+// --changed-since (a new file counts whole), and on every line outside a git repository. A full scan
+// inside a repository lists the existing names as advisory 'offer-name' findings, counted under --strict.
+
+/** Returns the directory names and the file name of a path, relative to the repository when it is in one. */
+function getOfferPathParts(filePath) {
+  const inRepo = path.relative(path.dirname(fileURLToPath(import.meta.url)) + '/../..', path.resolve(filePath))
+  if (!inRepo.startsWith('..') && !path.isAbsolute(inRepo)) return inRepo.split(path.sep)
+  return [path.basename(path.dirname(filePath)), path.basename(filePath)]
+}
+
 // 21. UI copy in words files (words.ts, *Words.ts): labels and messages are noun phrases,
 // imperative actions or "<Name> stopped: <reason>", never a narrated sentence.
 const RE_WORDS_FILE = /(?:^|[A-Za-z])[Ww]ords\.ts$/
@@ -694,10 +723,14 @@ const advisory = {
   'compound-identifier': [],
   'error-prose': [],
   'long-test-name': [],
+  'offer-name': [],
 }
 
 // Findings of category 24. They count only on added lines, under --staged or --changed-since.
 let narrativePhrases = []
+
+// Findings of the offer-in-a-name check of category 20, before they are narrowed to the added lines.
+const offerNames = []
 const isPhraseDiffMode = isStagedOnly || Boolean(changedSinceRef)
 
 const stats = {
@@ -755,6 +788,11 @@ function scanFile(filePath) {
   totalScannedFiles++
 
   const baseName = path.basename(filePath)
+  if (isCode && shouldCheckCategory('hunt-offer')) {
+    const parts = getOfferPathParts(filePath)
+    const name = parts.map((part) => findOfferName(part)).find(Boolean)
+    if (name) offerNames.push({ file: relPath, line: 1, lang: isGo ? 'go' : 'ts', symbol: name, text: `Offer in a path: ${parts.join('/')}` })
+  }
   if (baseName === 'scan.mjs' || baseName === 'scan.test.mjs') return
   if (baseName.endsWith('_pb.ts') || baseName.endsWith('_pb.js') || baseName.endsWith('.pb.go')) return
   if (shouldCheckCategory('conversational') && baseName === 'questions.ts') {
@@ -1339,6 +1377,14 @@ function scanFile(filePath) {
       }
     }
 
+    // 20. Offer as a part of a name, in the code outside the template text of a Vue file
+    if (isCode && !isCommentLine && shouldCheckCategory('hunt-offer')) {
+      let nameText = removeLineComment(lineWithoutStrings)
+      if (ext === '.vue') nameText = nameText.replace(/>[^<>]*</g, '><')
+      const name = findOfferName(nameText)
+      if (name) offerNames.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', symbol: name, text: trimmed })
+    }
+
     // 20. Hunting and offering interaction metaphors (hunt, offered, lit)
     if (isCode && !isCommentLine && shouldCheckCategory('hunt-offer')) {
       const m = isGo ? RE_GO_HUNT_OFFER.exec(lineWithoutStrings) : RE_TS_HUNT_OFFER.exec(lineWithoutStrings)
@@ -1554,6 +1600,24 @@ if (isAddedOnly) {
 if (isPhraseDiffMode) {
   const addedLines = getAddedLines(changedSinceBase ? [changedSinceBase] : ['--cached'])
   narrativePhrases = narrativePhrases.filter((item) => isOnAddedLine(item, addedLines))
+}
+
+let isInGitRepo = true
+try {
+  getRepoTop()
+} catch {
+  isInGitRepo = false
+}
+if (isPhraseDiffMode || !isInGitRepo) {
+  const addedLines = isPhraseDiffMode ? getAddedLines(changedSinceBase ? [changedSinceBase] : ['--cached']) : null
+  for (const item of offerNames) {
+    if (addedLines && !isOnAddedLine(item, addedLines)) continue
+    findings.huntAndOffering.push(item)
+    if (item.lang === 'go') stats.backendTotal++
+    else stats.frontendTotal++
+  }
+} else {
+  advisory['offer-name'].push(...offerNames)
 }
 
 // Compute Aggregates

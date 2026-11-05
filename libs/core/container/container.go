@@ -60,17 +60,15 @@ type Config struct {
 	// When non-zero, they override values defined in the settings file.
 	InterfaceScale, TextScale float64
 
-	// Performance is the active workload and compute calibration profile.
-	Performance hardware.Performance
-
 	// ResolvedCompute is the concrete calculated concurrency and batch limits.
 	ResolvedCompute hardware.ResolvedCompute
 
 	// Hardware specifies hardware specifications detected for the host system.
 	Hardware hardware.Specs
 
-	// Embedding is how the index stores and queries vectors.
-	Embedding EmbeddingConfig
+	// Chunks is the chunk size the embedding plugin reports, which every cut of a note takes. NewConfig
+	// makes it.
+	Chunks *ChunkTokens
 
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost pluginport.PluginManager
@@ -96,9 +94,6 @@ type Config struct {
 	// TextReaders is where the index, the search and the highlighting read text
 	// versions. Defaults to TextVersions if nil.
 	TextReaders textport.TextReaders
-
-	// Agent configures the active assistant model.
-	Agent settings.Agent
 
 	// ShouldRebuildIndex forces re-indexing of all vault files regardless of index state.
 	ShouldRebuildIndex bool
@@ -167,7 +162,7 @@ func (c Config) ReadSettings() func() (string, string, error) {
 		if err != nil {
 			return "", "", err
 		}
-		target, err := c.getSettingsAt(path)
+		target, err := c.getCheckedSettingsAt(path)
 		if err != nil {
 			return "", path, err
 		}
@@ -176,22 +171,13 @@ func (c Config) ReadSettings() func() (string, string, error) {
 	}
 }
 
-// GetSettingsWriter patches specific settings paths in the configuration file.
+// GetSettingsWriter patches specific settings paths in the configuration file. The readers of the
+// setting-changed event receive the settings whose value changed.
 func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
-	return c.writeSettingsOnly
-}
-
-func (c Config) writeSettingsOnly(entries []settingsport.Setting) error {
-	return c.writeSettings(entries, nil)
-}
-
-// GetAppliedSettingsWriter patches specific settings paths in the configuration file, and runs the
-// function given once the plugins the settings name have their new values.
-func (c Config) GetAppliedSettingsWriter() func(entries []settingsport.Setting, applied func()) error {
 	return c.writeSettings
 }
 
-func (c Config) writeSettings(entries []settingsport.Setting, applied func()) error {
+func (c Config) writeSettings(entries []settingsport.Setting) error {
 	target := make([]settings.Setting, 0, len(entries))
 	for _, one := range entries {
 		var value json.RawMessage
@@ -200,7 +186,7 @@ func (c Config) writeSettings(entries []settingsport.Setting, applied func()) er
 		}
 		target = append(target, settings.Setting{At: one.Path, Written: value})
 	}
-	if err := checkPluginSettings(c.PluginHost, entries); err != nil {
+	if err := c.checkWrites(entries); err != nil {
 		return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
 	}
 	path, err := c.settingsFile()
@@ -211,41 +197,36 @@ func (c Config) writeSettings(entries []settingsport.Setting, applied func()) er
 	if err := c.getResources().settingsFiles.Save(path, &into, target...); err != nil {
 		return err
 	}
-	notify := func() {
-		notifyPluginSettings(c.PluginHost, entries, c.handleError)
-		if applied != nil {
-			applied()
-		}
-	}
-	if updates := c.getResources().pluginUpdates; updates != nil {
-		updates.Go(notify)
-	} else {
-		notify()
-	}
-	c.notifyPerformanceProfile(entries)
+	c.refreshSettingEvents()
 	return nil
 }
 
-const pluginSettingsPrefix = "plugins"
-
-// checkPluginSettings reports the first plugin setting among the entries that does not take its value.
-func checkPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting) error {
-	if host == nil {
-		return nil
-	}
+// checkWrites reports the first entry that its owner does not declare or whose setting does not
+// take the value. Nothing is written where one entry is refused.
+func (c Config) checkWrites(entries []settingsport.Setting) error {
+	declarations := c.getDeclarations()
+	registries := c.getRegistries()
 	for _, one := range entries {
-		if len(one.Path) != 3 || one.Path[0] != pluginSettingsPrefix {
-			continue
-		}
 		var val any
 		if err := json.Unmarshal([]byte(one.JSON), &val); err != nil {
 			return err
 		}
-		if err := host.CheckPluginSetting(one.Path[1], one.Path[2], val); err != nil {
+		if err := settings.CheckWrite(declarations, registries, one.Path, val); err != nil {
 			return err
+		}
+		if c.PluginHost != nil && isPluginSetting(one.Path) {
+			if err := c.PluginHost.CheckPluginSetting(one.Path[0], one.Path[1], val); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
+}
+
+// isPluginSetting is whether a path leads to a field of the object of a plugin: its first element
+// is the id of the plugin and the second is the key.
+func isPluginSetting(path []string) bool {
+	return len(path) == 2 && path[0] != settings.OwnerApp
 }
 
 // notifyPluginSettings tells the host each plugin setting among the entries and passes the failure to report.
@@ -254,12 +235,12 @@ func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settings
 		return
 	}
 	for _, one := range entries {
-		if len(one.Path) < 3 || one.Path[0] != pluginSettingsPrefix {
+		if !isPluginSetting(one.Path) {
 			continue
 		}
 		var val any
 		if err := json.Unmarshal([]byte(one.JSON), &val); err == nil {
-			if err := host.UpdatePluginSetting(context.Background(), one.Path[1], one.Path[2], val); err != nil {
+			if err := host.UpdatePluginSetting(context.Background(), one.Path[0], one.Path[1], val); err != nil {
 				report(fmt.Errorf("update plugin setting %s: %w", strings.Join(one.Path, "."), err))
 			}
 		}
@@ -364,29 +345,5 @@ func (c Config) GetWait() machineport.Wait {
 func (c Config) GetDelay() machineport.Delay {
 	return func(d time.Duration, f func()) func() bool {
 		return time.AfterFunc(d, f).Stop
-	}
-}
-
-// performanceSettingsKey and profileSettingKey are the path of the performance profile in the settings file.
-const (
-	performanceSettingsKey = "performance"
-	profileSettingKey      = "profile"
-)
-
-// notifyPerformanceProfile tells the plugin host the profile of an entry that writes it, so a
-// running plugin takes it without a restart.
-func (c Config) notifyPerformanceProfile(entries []settingsport.Setting) {
-	if c.PluginHost == nil {
-		return
-	}
-	for _, one := range entries {
-		if len(one.Path) != 2 || one.Path[0] != performanceSettingsKey || one.Path[1] != profileSettingKey {
-			continue
-		}
-		var profile string
-		if err := json.Unmarshal([]byte(one.JSON), &profile); err != nil {
-			continue
-		}
-		c.PluginHost.SetPerformanceProfile(context.Background(), hardware.ResolveCompute(profile, hardware.Specs{}).Profile)
 	}
 }

@@ -241,16 +241,6 @@ func TestMissingUserFolderIsNoError(t *testing.T) {
 	}
 }
 
-func TestPoolingHeadIsCLS(t *testing.T) {
-	dir := t.TempDir()
-	writeProfile(t, dir, "h.json", `{"id":"owner/h","dims":8,"maxTokens":8,"pooling":"head","onnxFile":"m.onnx"}`)
-	table := getShipped(t).WithUserProfiles(dir, func(string, error) {})
-	p, err := table.GetLocal("owner/h")
-	if err != nil || p.Pooling != PoolCLS {
-		t.Errorf("pooling = %q, %v; want cls", p.Pooling, err)
-	}
-}
-
 func TestGetTokensCapsALocalModelAtTheChunkLimit(t *testing.T) {
 	table := getShipped(t)
 	m3, err := table.GetLocal("Xenova/bge-m3")
@@ -398,14 +388,6 @@ func TestProfileNormaliseCloneAndErrorPaths(t *testing.T) {
 	embeddedProfiles = []byte(`[{"id":"x","dims":0}]`)
 	if _, err := GetShippedProfiles(); err == nil {
 		t.Error("expected GetShippedProfiles to fail on invalid profile")
-	}
-	embeddedProfiles = []byte(`[{"id":"x","dims":8,"maxTokens":8,"pooling":"head","onnxFile":"m.onnx"}]`)
-	headTable, err := GetShippedProfiles()
-	if err != nil {
-		t.Fatalf("GetShippedProfiles with head pooling: %v", err)
-	}
-	if hp, err := headTable.GetLocal("x"); err != nil || hp.Pooling != PoolCLS {
-		t.Errorf("GetLocal(x) = %+v, %v", hp, err)
 	}
 	embeddedProfiles = origEmbedded
 

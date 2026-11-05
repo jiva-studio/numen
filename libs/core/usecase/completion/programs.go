@@ -15,7 +15,6 @@ const programsLimit = 8 * time.Second
 type ProgramSettings struct {
 	Model   string
 	Command []string
-	Options map[string]string
 }
 
 // AgentSettings holds the active agent configuration read from the settings file.
@@ -82,7 +81,6 @@ func (p *Programs) StartRun(ctx context.Context, task agentport.Task) (agentport
 		task.Model = section.Model
 	}
 	task.Command = section.Command
-	task.Options = section.Options
 	return p.provider.StartRun(ctx, task)
 }
 

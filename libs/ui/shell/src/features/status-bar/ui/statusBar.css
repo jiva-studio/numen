@@ -166,6 +166,17 @@
   transition: opacity 0.15s ease;
 }
 
+.task-item__btn--visible {
+  opacity: 1;
+}
+
+.task-item__notice-icon {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-block-start: 0.125rem;
+  color: var(--numen-hushed);
+}
+
 .task-item__btn:hover {
   color: var(--numen-ink);
 }

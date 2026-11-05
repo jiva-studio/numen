@@ -16,7 +16,7 @@ The working directory is the vault.
 
 Hooks, skills, standing instructions, plugins and custom agents are blocked by default: the agent is given a list of the configuration sources it may read, and by default the list is empty.
 
-`agent.claude.reads_hooks_and_skills` enables the person's own hooks and skills, and only those. What a vault itself contains is blocked in either mode: a vault is a folder that comes from elsewhere — synced, cloned, shared, restored — and a configuration file inside one can list commands for this machine to run.
+The setting `readsHooksAndSkills` of the plugin `md.numen.agents.claude` enables the person's own hooks and skills, and only those. What a vault itself contains is blocked in either mode: a vault is a folder that comes from elsewhere — synced, cloned, shared, restored — and a configuration file inside one can list commands for this machine to run.
 
 The sources are listed one by one. This vault's own tools are passed on a command line and are treated as a customisation like any other.
 
@@ -58,16 +58,16 @@ Three plugins register the tools an agent can call, each for its own subject, an
 
 `agents-tools-vault`, the notes and files of the vault:
 
-| Tool                              | What it does                                                                                                  | Servers |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
-| `note_read`                       | the content, prose, title, frontmatter and fingerprint of one note, by its path                               | both    |
-| `note_write`                      | write or create one note; with the fingerprint `note_read` gave, a write over somebody else's edit is refused | full    |
-| `note_headings`                   | the headings of one note: level, text, line and byte offset                                                   | both    |
-| `note_search`, `search_query`     | the notes whose title, path or text match a query, at most 100, 20 where the call names no limit              | both    |
-| `note_neighbourhood`, `link_list` | the links written in one note and the notes that link to it                                                   | both    |
-| `vault_info`, `vault_get`         | the vault's name, root path and number of notes                                                               | both    |
-| `file_read`                       | a byte range of any file in the vault, by its path from the vault root                                        | both    |
-| `file_create`                     | a new file in the vault, holding the content given                                                            | full    |
+| Tool            | What it does                                                                                                  | Servers |
+| --------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
+| `note_read`     | the content, prose, title, frontmatter and fingerprint of one note, by its path                               | both    |
+| `note_write`    | write or create one note; with the fingerprint `note_read` gave, a write over somebody else's edit is refused | full    |
+| `note_headings` | the headings of one note: level, text, line and byte offset                                                   | both    |
+| `note_search`   | the notes whose title, path or text match a query, at most 100, 20 where the call names no limit              | both    |
+| `link_list`     | the links written in one note and the notes that link to it                                                   | both    |
+| `vault_get`     | the vault's name, root path and number of notes                                                               | both    |
+| `file_read`     | a byte range of any file in the vault, by its path from the vault root                                        | both    |
+| `file_create`   | a new file in the vault, holding the content given                                                            | full    |
 
 `agents-tools-window`, the window the person is looking at:
 
@@ -101,7 +101,7 @@ A card is named by its card id and never by the place it is in, so the cards sta
 
 ### How a tool is named
 
-A tool is named for the subject it acts on, then what it does: `note_read`, `card_add`, `window_focus_tab`. Three tools have a second name that accepts the same call: `search_query` is `note_search`, `link_list` is `note_neighbourhood`, and `vault_get` is `vault_info`. `edit_preview` has no subject prefix.
+A tool is named for the subject it acts on, then what it does: `note_read`, `card_add`, `window_focus_tab`. `edit_preview` has no subject prefix.
 
 ## The servers
 
@@ -111,9 +111,7 @@ The tools are registered by the plugins that own their subjects — `agents-tool
 
 ## An agent a person runs themselves
 
-The tools are served on a port, and the panel's agent is one caller of it. An agent somebody has configured in their own terminal is another, and `agent.serve_tools` serves them to it: when on, the endpoint responds whether or not the panel has an agent, and its address and the token to send are written to `agents.json` beside this installation's own state, at mode `0600`. The file is removed when the window closes, so a valid-looking token never outlives its port.
-
-It is off. An installation that names no agent and asks for no tools opens no port and writes no token file — a person who never asked for an agent runs only the window.
+The tools are served to an agent somebody has configured in their own terminal by the plugin `md.numen.agents.mcp.server`, which listens on `127.0.0.1` at the plugin's setting `port` (3333 by default). The application itself opens no port and writes no token file.
 
 ## Host agent auto-discovery
 
@@ -133,7 +131,7 @@ The chat panel provides a floating selector island above the message composer:
 
 ## Settings
 
-`agent.use` sets which program answers, and empty sets none. When unset, the program the plugins mark as the default answers. `agent.serve_tools` puts the tools on a port for an agent a person runs themselves, and is off. Each program a plugin lists has a section under its name, `agent.claude.*` for Claude Code: `command` starts it, `model` is which of its models answers, `max_steps` is how many model calls it may make before it is stopped, and `reads_hooks_and_skills` is what this machine holds for it. A section is kept whether it is the one in use or not. The programs and their models are listed by the plugins that run them, and the window shows what they list. See [Settings](settings.md).
+`app.agent.use` sets which program answers, and empty sets none. When unset, the program the plugins mark as the default answers. Each program a plugin lists has a section under its name, `app.agent.claude.*` for Claude Code: `command` starts it, and `model` is which of its models answers. What a plugin reads for itself, such as `readsHooksAndSkills` for Claude Code, is the plugin's own setting. A section is kept whether it is the one in use or not. The programs and their models are listed by the plugins that run them, and the window shows what they list. See [Settings](settings.md).
 
 Where `command` is empty, the path is searched first, then the folders the command line's installers write to.
 

@@ -6,7 +6,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { WORDS as words } from '@/shared/words'
-import { EXACT, YES, type PendingStep } from '../../lib/step/step'
+import type { PendingStep } from '../../lib/step/step'
 import type { Command, CommandTarget, PromptStep, StepGroup } from '../../types'
 import type { NameMatch } from '../search/search'
 import { createPaletteSteps } from './navigation'
@@ -82,16 +82,16 @@ describe('a step taken', () => {
   it('lets go of what was found, and is named by its depth, command and step', () => {
     const { steps, happened } = createSteps()
 
-    steps.pushStep(pending('naming'))
+    steps.pushStep(pending('name'))
 
     expect(happened).toStrictEqual(['drop'])
-    expect(steps.step.value).toBe('1:rename:naming')
+    expect(steps.step.value).toBe('1:rename:name')
   })
 
   it('asks for the list of vaults only on the step that picks one', () => {
     const { steps, happened } = createSteps()
 
-    steps.pushStep(pending('vaults'))
+    steps.pushStep(pending('vault'))
 
     expect(happened).toStrictEqual(['drop', 'lists'])
   })
@@ -99,13 +99,13 @@ describe('a step taken', () => {
   it('asks for the name back in plain words where the command gives none', () => {
     const { steps } = createSteps()
 
-    steps.pushStep(pending('exactly'))
+    steps.pushStep(pending('retypedName'))
     expect(steps.placeholder.value).toBe(words.typeBack)
   })
 
   it('is taken back with what was found and lit release', () => {
     const { steps, happened, text } = createSteps()
-    steps.pushStep(pending('naming'))
+    steps.pushStep(pending('name'))
     text.value = 'Alpaca'
 
     steps.popStep()
@@ -120,22 +120,22 @@ describe('what a step is over', () => {
   it('is returned as a count where it is over several files', () => {
     const { steps } = createSteps()
 
-    expect(steps.getStepLabel(pending('asking', { on: { ...on, others: ['a.md', 'b.md'] } }))).toBe(
-      words.several(3),
-    )
+    expect(
+      steps.getStepLabel(pending('confirmation', { on: { ...on, others: ['a.md', 'b.md'] } })),
+    ).toBe(words.several(3))
   })
 
   it('is returned by its title where it is over one', () => {
     const { steps } = createSteps()
 
-    expect(steps.getStepLabel(pending('asking'))).toBe('“Llama”')
+    expect(steps.getStepLabel(pending('confirmation'))).toBe('“Llama”')
   })
 })
 
 describe('the steps when files move', () => {
   it('are left as they are where nothing moved', () => {
     const { steps } = createSteps()
-    steps.pushStep(pending('naming'))
+    steps.pushStep(pending('name'))
     const before = steps.steps.value
 
     steps.applyRenames([])
@@ -146,7 +146,7 @@ describe('the steps when files move', () => {
 
   it('are all release on a reset', () => {
     const { steps } = createSteps()
-    steps.pushStep(pending('naming'))
+    steps.pushStep(pending('name'))
 
     steps.reset()
 
@@ -164,7 +164,7 @@ describe('choosing on a step', () => {
   }
 
   it('picks the note chosen among those found', () => {
-    const { chosen, invoked } = choose(pending('picking'), 'b.md', '', [
+    const { chosen, invoked } = choose(pending('note'), 'b.md', '', [
       match('a.md', 'A'),
       match('b.md', 'B'),
     ])
@@ -175,39 +175,19 @@ describe('choosing on a step', () => {
   })
 
   it('picks nothing for a note no longer found', () => {
-    const { chosen, invoked } = choose(pending('picking'), 'gone.md', '', [match('a.md', 'A')])
+    const { chosen, invoked } = choose(pending('note'), 'gone.md', '', [match('a.md', 'A')])
 
     expect(chosen()).toBeNull()
     expect(invoked).toStrictEqual([])
   })
 
   it('names with what was typed, the spaces around it taken off', () => {
-    const createdItem = choose(pending('naming'), '', '')
+    const createdItem = choose(pending('name'), '', '')
     createdItem.text.value = '  Alpaca  '
 
     createdItem.chosen()
 
     expect(createdItem.invoked[0]?.[2]).toBe('Alpaca')
-  })
-
-  it('is carried out on yes, and on no other answer but no', () => {
-    expect(choose(pending('asking'), '', 'maybe').chosen()).toBeNull()
-    const { chosen, invoked } = choose(pending('asking'), '', YES)
-
-    chosen()
-
-    expect(invoked).toHaveLength(1)
-  })
-
-  it('takes a name typed back only as the answer that retypes it', () => {
-    const inputValue = choose(pending('exactly'), '', 'maybe')
-    inputValue.text.value = 'Llama'
-    const exact = choose(pending('exactly'), '', EXACT)
-    exact.text.value = 'Llama'
-
-    expect(inputValue.chosen()).toBeNull()
-    exact.chosen()
-    expect(exact.invoked).toHaveLength(1)
   })
 })
 
@@ -218,7 +198,7 @@ describe('the row a list opens on', () => {
   it('is the one standing now, on the step that chooses from a list', () => {
     const { steps } = createSteps(groups)
 
-    steps.pushStep(pending('choosing'))
+    steps.pushStep(pending('choice'))
 
     expect(steps.opensOn.value).toBe('dark')
   })
@@ -226,7 +206,7 @@ describe('the row a list opens on', () => {
   it('is none where no row remains now', () => {
     const { steps } = createSteps([{ id: 'g', title: 'Themes', items: [row('light')] }])
 
-    steps.pushStep(pending('choosing'))
+    steps.pushStep(pending('choice'))
 
     expect(steps.opensOn.value).toBe('')
   })
@@ -234,7 +214,7 @@ describe('the row a list opens on', () => {
   it('is none on any other step', () => {
     const { steps } = createSteps(groups)
 
-    steps.pushStep(pending('naming'))
+    steps.pushStep(pending('name'))
 
     expect(steps.opensOn.value).toBe('')
   })

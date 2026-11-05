@@ -8,10 +8,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
 
-// The plugin declares the ONNX Runtime as a runtime dependency and no legacy runtimes list.
+// The plugin declares the ONNX Runtime as a runtime dependency.
 func TestManifestDeclaresONNXRuntimeDependency(t *testing.T) {
 	var manifest struct {
-		Runtimes     []string `json:"runtimes"`
 		Dependencies []struct {
 			ID        string `json:"id"`
 			Kind      string `json:"kind"`
@@ -20,9 +19,6 @@ func TestManifestDeclaresONNXRuntimeDependency(t *testing.T) {
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
-	}
-	if len(manifest.Runtimes) != 0 {
-		t.Errorf("runtimes = %v, want none", manifest.Runtimes)
 	}
 	if len(manifest.Dependencies) != 1 || manifest.Dependencies[0].ID != "onnxruntime" || manifest.Dependencies[0].Kind != "runtime" || manifest.Dependencies[0].SourceURL != "" {
 		t.Errorf("dependencies = %+v, want one onnxruntime runtime", manifest.Dependencies)
@@ -80,7 +76,7 @@ func TestManifestDeclaresTheSmallestPieceToIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range manifest.Settings {
-		if one.Key != "min_chunk_length" {
+		if one.Key != "minChunkLength" {
 			continue
 		}
 		if one.Type != "number" || one.Default != float64(40) || one.Min == nil || *one.Min != 0 ||
@@ -92,7 +88,7 @@ func TestManifestDeclaresTheSmallestPieceToIndex(t *testing.T) {
 		}
 		return
 	}
-	t.Error("the manifest declares no min_chunk_length setting")
+	t.Error("the manifest declares no minChunkLength setting")
 }
 
 type manifestOption struct {
@@ -137,4 +133,38 @@ func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.
 		return
 	}
 	t.Fatal("manifest has no model setting")
+}
+
+// The longest chunk of a note is a whole number from 16 to 8192 that starts at 256, and the settings
+// page draws it as it draws any number.
+func TestManifestDeclaresTheLongestChunkOfANote(t *testing.T) {
+	var manifest struct {
+		Settings []struct {
+			Key         string   `json:"key"`
+			Type        string   `json:"type"`
+			Title       string   `json:"title"`
+			Description string   `json:"description"`
+			Default     any      `json:"default"`
+			Min         *float64 `json:"min"`
+			Max         *float64 `json:"max"`
+			Step        *float64 `json:"step"`
+		} `json:"settings"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range manifest.Settings {
+		if one.Key != "chunkTokens" {
+			continue
+		}
+		if one.Type != "number" || one.Default != float64(256) || one.Min == nil || *one.Min != 16 ||
+			one.Max == nil || *one.Max != 8192 || one.Step == nil || *one.Step != 1 {
+			t.Errorf("setting = %+v, want a number from 16 to 8192 by 1 that starts at 256", one)
+		}
+		if one.Title == "" || one.Description == "" {
+			t.Errorf("setting has no title or description: %+v", one)
+		}
+		return
+	}
+	t.Error("the manifest declares no chunkTokens setting")
 }

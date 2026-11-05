@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { commands, runInvocation, ANSWER_WORDS, type CommandDeps } from '@/features/command-palette'
-import type { DeclaredCommand } from '@/entities/plugin'
+import type { DeclaredCommand, DeclaredList } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import {
   createDeclaredPaletteCommands,
@@ -47,17 +47,23 @@ const front = (file: string, isReady = true) => ({
 })
 
 describe('a declared command in the palette', () => {
-  it('asks for its arguments, one step each', () => {
+  it('asks for its required arguments, one step each, and leaves the optional ones out', () => {
     const [sample] = createDeclaredPaletteCommands([createSample])
 
     expect(sample?.id).toBe('org.example.sample:sample.create')
     expect(sample?.group).toBe('window')
     expect(sample?.icon).toBe(getNamedIcon('layers'))
-    expect(sample?.needs).toBe('arguments')
-    expect(sample?.prompts).toStrictEqual([
-      { name: 'title', title: 'Title', isRequired: true },
-      { name: 'folder', title: 'Folder', isRequired: false },
+    expect(sample?.input).toBe('arguments')
+    expect(sample?.prompts).toStrictEqual([{ name: 'title', title: 'Title', isRequired: true }])
+  })
+
+  it('asks nothing when every argument is optional', () => {
+    const [one] = createDeclaredPaletteCommands([
+      { ...createSample, arguments: [{ name: 'folder', title: 'Folder', isRequired: false }] },
     ])
+
+    expect(one?.input).toBeUndefined()
+    expect(one?.prompts).toBeUndefined()
   })
 
   it('over files is offered over a file of its extensions alone', () => {
@@ -65,7 +71,7 @@ describe('a declared command in the palette', () => {
     const runs = { canRun: () => true, cannotRun: vi.fn() }
 
     expect(one?.group).toBe('file')
-    expect(one?.needs).toBeUndefined()
+    expect(one?.input).toBeUndefined()
     expect(one?.isAvailable(front('books/Bees.pdf'), runs)).toBe(true)
     expect(one?.isAvailable(front('books/Bees.epub'), runs)).toBe(false)
     expect(one?.isAvailable(front('books/Bees.pdf', false), runs)).toBe(false)
@@ -78,7 +84,10 @@ describe('a run of a declared command', () => {
       ok: true,
       value: { message: 'Made a sample', openedPath: 'Verbs.md' },
     })
-    const declared = useDeclaredCommands({ list: async () => [createSample], run })
+    const declared = useDeclaredCommands({
+      list: async () => ({ commands: [createSample], menus: [] }),
+      run,
+    })
     expect(declared.paletteCommands.value).toStrictEqual([])
     await declared.load()
     const writeMessage = vi.fn()
@@ -112,7 +121,7 @@ describe('a run of a declared command', () => {
 
   it('that failed says why as an error', async () => {
     const declared = useDeclaredCommands({
-      list: async () => [convert],
+      list: async () => ({ commands: [convert], menus: [] }),
       run: async () => ({ ok: false, error: 'the disk is full' }),
     })
     await declared.load()
@@ -140,7 +149,10 @@ describe('a run of a declared command', () => {
 
   it('is no longer handled once the plugins no longer declare it', async () => {
     let commandList: readonly DeclaredCommand[] = [convert]
-    const declared = useDeclaredCommands({ list: async () => commandList, run: vi.fn() })
+    const declared = useDeclaredCommands({
+      list: async () => ({ commands: commandList, menus: [] }),
+      run: vi.fn(),
+    })
     await declared.load()
 
     commandList = []
@@ -154,7 +166,7 @@ describe('a run of a declared command', () => {
 describe('a run that opens a file and says nothing', () => {
   it('writes no message', async () => {
     const declared = useDeclaredCommands({
-      list: async () => [createSample],
+      list: async () => ({ commands: [createSample], menus: [] }),
       run: async () => ({ ok: true, value: { message: '', openedPath: 'Verbs.md' } }),
     })
     await declared.load()
@@ -185,7 +197,7 @@ describe('a run that opens a file and says nothing', () => {
 
   it('does not open a file when openedPath is empty', async () => {
     const declared = useDeclaredCommands({
-      list: async () => [createSample],
+      list: async () => ({ commands: [createSample], menus: [] }),
       run: async () => ({ ok: true, value: { message: 'Done', openedPath: '' } }),
     })
     await declared.load()
@@ -211,5 +223,47 @@ describe('a run that opens a file and says nothing', () => {
 
     expect(writeMessage).toHaveBeenCalledWith('Done', 'info')
     expect(openFile).not.toHaveBeenCalled()
+  })
+})
+
+describe('the declared commands read more than once', () => {
+  it('keep the newest list when an earlier read answers last', async () => {
+    let answerFirst: (list: DeclaredList) => void = () => undefined
+    const first = new Promise<DeclaredList>((resolve) => {
+      answerFirst = resolve
+    })
+    const lists = [first, Promise.resolve({ commands: [convert], menus: [] })]
+    const declared = useDeclaredCommands({
+      list: () => lists.shift() as Promise<DeclaredList>,
+    })
+
+    const slow = declared.load()
+    await declared.load()
+    answerFirst({ commands: [createSample], menus: [] })
+    await slow
+
+    expect(declared.declarations.value?.map((one) => one.id)).toStrictEqual(['convert'])
+  })
+
+  it('are none until the first read has answered', async () => {
+    const declared = useDeclaredCommands({ list: async () => ({ commands: [convert], menus: [] }) })
+
+    expect(declared.declarations.value).toBeUndefined()
+    await declared.load()
+
+    expect(declared.declarations.value).toHaveLength(1)
+  })
+})
+
+describe('a declared command the palette leaves out', () => {
+  it('is one the plugin host lists', async () => {
+    const declared = useDeclaredCommands({
+      list: async () => ({ commands: [createSample, convert], menus: [] }),
+      isListed: () => true,
+    })
+    await declared.load()
+
+    expect(declared.paletteCommands.value).toStrictEqual([])
+    expect(declared.declarations.value).toHaveLength(2)
   })
 })

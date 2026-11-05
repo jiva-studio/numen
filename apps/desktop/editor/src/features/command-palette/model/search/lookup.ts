@@ -1,9 +1,10 @@
 /**
- * Search hit lookup, item formatting, and navigation destination mapping.
+ * Search hit lookup, item formatting, and the command a chosen action of a hit runs.
  */
 import type { PaletteItem } from '@numen/shell'
-import type { Selector } from '@numen/plugin-host'
+import type { PlacedCommand, Selector } from '@numen/plugin-host'
 import type { NoteType } from '@/entities/file'
+import { COMMAND } from '@/shared/commandIds'
 import type { TextRange } from '@/shared/textRange'
 import type { Words } from './search'
 
@@ -44,29 +45,10 @@ export interface Passage {
   at: readonly TextRange[]
 }
 
-/**
- * Where a chosen item leads. A file names the file and the position inside it,
- * and nothing about which editor it opens in: a note carries a line, any other
- * file the selector its reader moves to.
- */
-export interface SearchDestination {
-  at: 'locate' | 'file'
-  path: string
-  /** What the note is called, for a tab that has not been opened before. */
-  title: string
-  /** The line the item relies on, for a place inside a note. */
-  line?: number
-  /** The place in a file that is no note, as the search hit locates it. */
-  selector?: Selector
+/** The entries plugins place in the menu of a search result, in the order they are drawn. */
+export interface SearchMenuDeps {
+  getEntries(): readonly PlacedCommand[]
 }
-
-/**
- * The things that can be done to anything the palette turns up. A note is put
- * in front where the plugin that shows notes puts it, which only a window with
- * such a plugin offers.
- */
-export const LOCATE = 'locate'
-export const NOTE = 'note'
 
 /**
  * no line at all.
@@ -78,10 +60,12 @@ export interface SearchHit {
   /** The span of the source's own text the item was found in. */
   start: number
   length: number
-  offers: readonly string[]
+  actionIds: readonly string[]
   type: NoteType | null
   /** The place in a file that is no note, and null for a note. */
   selector: Selector | null
+  /** Whether the hit is the row that creates a note under the words typed, which is no result. */
+  isCreation?: boolean
 }
 
 /** One item as it is drawn, beside at its current position and what it offers. */
@@ -90,23 +74,33 @@ export interface SearchRow {
   hit: SearchHit
 }
 
-/** The search results over a note, including the action that shows it where one exists. */
-const getNoteActions = (travel: string, first: { id: string; text: string }) => ({
-  actions: travel ? [first, { id: LOCATE, text: travel }] : [first],
-  offers: travel ? [first.id, LOCATE] : [first.id],
-})
+type PaletteAction = NonNullable<PaletteItem['actions']>[number]
+
+/** The actions of a note: opening it, and then the entries plugins place in the menu of a result. */
+function createNoteActions(
+  openText: string,
+  menu: readonly PaletteAction[],
+): { actions: readonly PaletteAction[]; actionIds: readonly string[] } {
+  const actions = [{ id: COMMAND.openNote, text: openText }, ...menu]
+  return { actions, actionIds: actions.map((one) => one.id) }
+}
+
+function createMenuActions(entries: readonly PlacedCommand[]): readonly PaletteAction[] {
+  return entries.map((one) => ({ id: one.command, text: one.title }))
+}
 
 /**
- * A name the search turned up. A note found by its name is put in front first,
- * and a heading is opened at first. The last argument is the words of the action
- * that puts a note in front, and empty where nothing does.
+ * A name the search turned up. A name offers to open the note, and a heading offers to open the note
+ * at that heading.
  */
-export function createNameItem(one: NameMatch, words: Words, travel: string): SearchRow {
-  const atHeading = getNoteActions(travel, { id: NOTE, text: words.readAt })
-  const read = { id: NOTE, text: words.read }
-  const byName = travel
-    ? { actions: [{ id: LOCATE, text: travel }, read], offers: [LOCATE, NOTE] }
-    : { actions: [read], offers: [NOTE] }
+export function createNameItem(
+  one: NameMatch,
+  words: Words,
+  entries: readonly PlacedCommand[] = [],
+): SearchRow {
+  const menu = createMenuActions(entries)
+  const atHeading = createNoteActions(words.readAt, menu)
+  const byName = createNoteActions(words.read, menu)
   return one.heading
     ? {
         item: {
@@ -122,7 +116,7 @@ export function createNameItem(one: NameMatch, words: Words, travel: string): Se
           line: one.line,
           start: 0,
           length: 0,
-          offers: atHeading.offers,
+          actionIds: atHeading.actionIds,
           type: one.type,
           selector: null,
         },
@@ -140,7 +134,7 @@ export function createNameItem(one: NameMatch, words: Words, travel: string): Se
           line: -1,
           start: 0,
           length: 0,
-          offers: byName.offers,
+          actionIds: byName.actionIds,
           type: one.type,
           selector: null,
         },
@@ -151,16 +145,17 @@ export function createPassageItem(
   group: string,
   one: Passage,
   words: Words,
-  travel: string,
+  entries: readonly PlacedCommand[] = [],
 ): SearchRow {
-  const note = getNoteActions(travel, { id: NOTE, text: words.read })
+  const note = createNoteActions(words.read, createMenuActions(entries))
+  const document = [{ id: COMMAND.openFile, text: words.readDocument }]
   return {
     item: {
       id: `${group}:${one.path}:${one.start}`,
       title: one.title || one.path,
       detail: one.text,
       detailAt: one.at,
-      actions: one.isNote ? note.actions : [{ id: NOTE, text: words.readDocument }],
+      actions: one.isNote ? note.actions : document,
     },
     hit: {
       path: one.path,
@@ -168,20 +163,59 @@ export function createPassageItem(
       line: one.isNote ? one.line : -1,
       start: one.start,
       length: one.length,
-      offers: one.isNote ? note.offers : [NOTE],
+      actionIds: one.isNote ? note.actionIds : document.map((each) => each.id),
       type: one.isNote ? one.type : null,
       selector: one.isNote ? null : one.selector,
     },
   }
 }
 
-export function resolveDestination(
+/** What a chosen action runs: the command, what it is over, and the text typed for it. */
+export interface ResultChoice {
+  readonly command: string
+  /** The chosen result as a target; null: the target the window holds. */
+  readonly over: {
+    readonly path: string
+    readonly file: string
+    readonly title: string
+    readonly line?: number
+    readonly selector?: Selector
+  } | null
+  /** The text typed for it, which answers a step that asks for a name; '' where none. */
+  readonly input: string
+}
+
+/**
+ * The command an action of a hit runs, over what, with which input; null where the hit does not
+ * carry the action. A note is the target by its path and a line, a file that is no note by its
+ * file and selector, and the row that creates a note by the window and the words typed.
+ */
+export function resolveChoice(
   hit: SearchHit | undefined,
   action: string,
-): SearchDestination | null {
-  if (!hit || !hit.offers.includes(action)) return null
-  const named = { path: hit.path, title: hit.title }
-  if (action === LOCATE) return { at: 'locate', ...named }
-  if (hit.selector) return { at: 'file', ...named, selector: hit.selector }
-  return hit.line >= 0 ? { at: 'file', ...named, line: hit.line } : { at: 'file', ...named }
+  typed = '',
+): ResultChoice | null {
+  if (!hit || !hit.actionIds.includes(action)) return null
+  if (hit.isCreation) {
+    return {
+      command: action,
+      over: null,
+      input: typed.trim(),
+    }
+  }
+  if (hit.type === null) {
+    if (action !== COMMAND.openFile) return null
+    const place = { path: '', file: hit.path, title: hit.title }
+    return {
+      command: action,
+      over: hit.selector ? { ...place, selector: hit.selector } : place,
+      input: '',
+    }
+  }
+  const place = { path: hit.path, file: hit.path, title: hit.title }
+  return {
+    command: action,
+    over: hit.line >= 0 ? { ...place, line: hit.line } : place,
+    input: '',
+  }
 }

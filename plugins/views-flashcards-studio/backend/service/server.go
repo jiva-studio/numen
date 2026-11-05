@@ -57,7 +57,7 @@ func mount(s *server.Server, vault host.Vault, store host.Store) error {
 }
 
 // settingDayStart is the setting that defines when a day of review begins.
-const settingDayStart = "day_start_time"
+const settingDayStart = "dayStartTime"
 
 // Configure applies the settings supplied by the host. A day start that is not a
 // valid hour uses the default.

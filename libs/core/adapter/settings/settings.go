@@ -18,6 +18,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 )
 
 // Document is the settings file as declared by the composition root: one object
@@ -42,7 +44,7 @@ type Titles struct {
 	// SyncTitleAndFilename is whether renaming either the title or the filename
 	// updates the other. A file that omits it keeps them identical; a file with false
 	// allows them to differ.
-	SyncTitleAndFilename *bool `json:"sync_title_and_filename"`
+	SyncTitleAndFilename *bool `json:"syncTitleAndFilename"`
 }
 
 // Sync is whether a note's title and its filename are kept as one name. A
@@ -51,26 +53,28 @@ func (n Titles) Sync() bool {
 	return n.SyncTitleAndFilename == nil || *n.SyncTitleAndFilename
 }
 
-// newTrue is a setting turned on.
-func newTrue() *bool {
-	set := true
-	return &set
-}
-
 // DefaultVersion is the shape a file this build writes is written at.
 const DefaultVersion = 1
 
-// DefaultAppearance and DefaultTitles are the values of an unconfigured installation.
+// DefaultAppearance, DefaultTitles and DefaultPerformance are the values of an unconfigured
+// installation: the defaults the declaration of the shell gives.
 func DefaultAppearance() Appearance {
 	return Appearance{
-		InterfaceScale: AsDesigned,
-		TextScale:      AsDesigned,
-		Mode:           ModeSystem,
-		Theme:          DefaultTheme,
+		InterfaceScale: getAppNumber(keyInterfaceScale),
+		TextScale:      getAppNumber(keyTextScale),
+		Mode:           getAppString(keyMode),
+		Theme:          getAppString(keyTheme),
 	}
 }
 
-func DefaultTitles() Titles { return Titles{SyncTitleAndFilename: newTrue()} }
+func DefaultTitles() Titles {
+	isOn := getAppBool(keySyncNaming)
+	return Titles{SyncTitleAndFilename: &isOn}
+}
+
+func DefaultPerformance() hardware.Performance {
+	return hardware.Performance{Profile: getAppString(keyProfile)}
+}
 
 // Path is where the settings live.
 func Path() (string, error) {
@@ -102,7 +106,7 @@ func (f *Files) OpenAt(path string, into Document) error {
 		return err
 	}
 	if err := json.Unmarshal(raw, into); err != nil {
-		return err
+		return fmt.Errorf("%s: %s: %w", path, describeErrorLocation(err), err)
 	}
 	// Unmarshal accepts a bare null and leaves the defaults in place, so the bytes
 	// are checked again to be a single object.
@@ -114,68 +118,7 @@ func (f *Files) OpenAt(path string, into Document) error {
 	if version := into.GetVersion(); *version < DefaultVersion {
 		*version = DefaultVersion
 	}
-	f.readInterfaceScale(into, path, raw)
-	if err := into.GetAppearance().Check(); err != nil {
-		return err
-	}
-	checkMode(into)
 	return nil
-}
-
-// checkMode substitutes the machine's own choice where the file names a word that
-// is not half of a colour pair, and reports it. The word remains in the file.
-func checkMode(into Document) {
-	appearance := into.GetAppearance()
-	switch appearance.Mode {
-	case ModeSystem, ModeLight, ModeDark:
-		return
-	}
-	warn(into, "appearance.mode is %s, %s or %s, and %s stands",
-		ModeSystem, ModeLight, ModeDark, ModeSystem)
-	appearance.Mode = ModeSystem
-}
-
-// readInterfaceScale reads `appearance.zoom` as the setting that replaced it and
-// renames the field in the file. Both express the window's display scale, so the
-// number and the resulting size are unchanged.
-//
-// A file that cannot be written is read this way at every launch and yields the
-// same size each time.
-func (f *Files) readInterfaceScale(into Document, path string, raw []byte) {
-	var file struct {
-		Appearance struct {
-			Zoom           *float64 `json:"zoom"`
-			InterfaceScale *float64 `json:"interface_scale"`
-		} `json:"appearance"`
-	}
-	if err := json.Unmarshal(raw, &file); err != nil {
-		return
-	}
-	// A file naming the size is drawn at it, and keeps the names it holds: one
-	// section holds one of a name.
-	if file.Appearance.InterfaceScale != nil {
-		return
-	}
-
-	// Zero named no size, and neither did a file that named neither.
-	var zoom float64
-	if file.Appearance.Zoom != nil {
-		zoom = *file.Appearance.Zoom
-	}
-	switch {
-	case zoom <= 0:
-		into.GetAppearance().InterfaceScale = getDesktopScale()
-	case GetInterfaceScaleBounds().Contains(zoom):
-		into.GetAppearance().InterfaceScale = zoom
-		if err := f.renameField(path, []string{"appearance", "zoom"}, "interface_scale"); err != nil && !isUnwritable(err) {
-			warn(into, "appearance.zoom could not be renamed to interface_scale in %s: %v", path, err)
-		}
-	default:
-		// Warns with the setting the number maps to and its bounds. The number remains
-		// in the file.
-		warn(into, "appearance.zoom is outside interface_scale, %v to %v",
-			GetInterfaceScaleBounds().Min, GetInterfaceScaleBounds().Max)
-	}
 }
 
 func warn(into Document, response string, about ...any) {

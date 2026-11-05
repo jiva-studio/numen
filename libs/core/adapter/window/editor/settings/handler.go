@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -16,8 +17,10 @@ import (
 // Handler answers every setting read and written, and the keys of the secrets
 // plugins declare, stored and removed.
 type Handler struct {
-	Get          *setting.Get
-	Write        *setting.Write
+	Get   *setting.Get
+	Write *setting.Write
+	// Watch is nil where the build reports no change of a setting.
+	Watch        *setting.Watch
 	WriteSecret  *setting.WriteSecret
 	DeleteSecret *setting.DeleteSecret
 	PluginRetry  *setting.RetryPlugin
@@ -26,8 +29,6 @@ type Handler struct {
 	Vaults     VaultProvider
 	// ChoosePath is nil where the application has no window to put a picker in.
 	ChoosePath *setting.ChoosePluginPath
-	// OnPluginChange is called when a plugin setting or secret is updated.
-	OnPluginChange func()
 }
 
 func NewHandler() *Handler { return &Handler{} }
@@ -52,6 +53,7 @@ func (h *Handler) GetSettings(
 		Path:    got.Path,
 		Models:  NewWireModels(got.Models),
 		Plugins: NewWirePluginInfos(got.Plugins),
+		App:     newWirePluginSettings(got.App),
 	}), nil
 }
 
@@ -65,20 +67,10 @@ func (h *Handler) WriteSettings(
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
 	content := make([]setting.Setting, 0, len(r.Msg.GetSettings()))
-	hasPluginEdit := false
 	for _, one := range r.Msg.GetSettings() {
-		if len(one.GetAt()) >= 2 && one.GetAt()[0] == "plugins" {
-			hasPluginEdit = true
-		}
 		content = append(content, setting.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
-	// A plugin is given its settings after the write answers, and OnPluginChange reads the model
-	// the embedding plugin reports, so it runs only once the plugin has the new values.
-	var applied func()
-	if hasPluginEdit {
-		applied = h.OnPluginChange
-	}
-	if err := h.Write.Execute(content, applied); err != nil {
+	if err := h.Write.Execute(content); err != nil {
 		if errors.Is(err, setting.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
@@ -129,57 +121,57 @@ func newWireSettings(target []setting.Setting) []*v1.Setting {
 func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 	infos := make([]*v1.PluginInfo, 0, len(target))
 	for _, one := range target {
-		pluginSettings := make([]*v1.PluginSetting, 0, len(one.Settings))
-		for _, s := range one.Settings {
-			pluginSettings = append(pluginSettings, &v1.PluginSetting{
-				Key:         s.Key,
-				Type:        s.Type,
-				Title:       s.Title,
-				Description: s.Description,
-				DefaultJson: s.DefaultJSON,
-				Palette:     s.Palette,
-				Icon:        s.Icon,
-				Options:     newWireOptions(s.Options),
-				Min:         s.Min,
-				Max:         s.Max,
-				Step:        s.Step,
-				OptionsBy:   newWireOptionsBy(s.OptionsBy),
-				When:        newWireCondition(s.When),
-				Accept:      s.Accept,
-				Multiple:    s.Multiple,
-			})
-		}
 		infos = append(infos, &v1.PluginInfo{
 			Id:           one.ID,
 			Name:         one.Name,
 			Version:      one.Version,
 			Description:  one.Description,
 			Capabilities: one.Capabilities,
-			Settings:     pluginSettings,
+			Settings:     newWirePluginSettings(one.Settings),
 			IsActive:     one.IsActive,
 			Permissions:  one.Permissions,
 			Secrets:      newWireSecrets(one.Secrets),
 			// The names of the stored secrets travel, and a key never does.
-			StoredSecrets:     one.StoredSecrets,
-			CompletionConsent: GetConsents()[one.Consent],
-			Failure:           newWirePluginFailure(one.Failure),
-			HasFrontend:       one.HasFrontend,
-			Readers:           newWireReaders(one.Readers),
-			SettingsViews:     newWireSettingsViews(one.SettingsViews),
+			StoredSecrets: one.StoredSecrets,
+			Failure:       newWirePluginFailure(one.Failure),
+			HasFrontend:   one.HasFrontend,
+			HasBackend:    one.HasBackend,
+			Readers:       newWireReaders(one.Readers),
+			SettingsViews: newWireSettingsViews(one.SettingsViews),
 		})
 	}
 	return infos
 }
 
-// Consents maps whether the user lets a plugin query a model to its wire value.
-func GetConsents() map[setting.Consent]v1.CompletionConsent {
-	return map[setting.Consent]v1.CompletionConsent{
-		setting.ConsentNone:      v1.CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED,
-		setting.ConsentPending:   v1.CompletionConsent_COMPLETION_CONSENT_PENDING,
-		setting.ConsentRequested: v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED,
-		setting.ConsentAllowed:   v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED,
-		setting.ConsentDenied:    v1.CompletionConsent_COMPLETION_CONSENT_DENIED,
+// newWirePluginSettings is the declared settings of an owner, with the options, the visibility and
+// the value the core resolved for each, as the wire carries them.
+func newWirePluginSettings(target []setting.PluginSetting) []*v1.PluginSetting {
+	settings := make([]*v1.PluginSetting, 0, len(target))
+	for _, s := range target {
+		settings = append(settings, &v1.PluginSetting{
+			Key:           s.Key,
+			Type:          s.Type,
+			Title:         s.Title,
+			Description:   s.Description,
+			DefaultJson:   s.DefaultJSON,
+			Palette:       s.Palette,
+			Icon:          s.Icon,
+			Options:       newWireOptions(s.Options),
+			Min:           s.Min,
+			Max:           s.Max,
+			Step:          s.Step,
+			OptionsBy:     newWireOptionsBy(s.OptionsBy),
+			When:          newWireCondition(s.When),
+			Accept:        s.Accept,
+			Multiple:      s.Multiple,
+			Preview:       s.Preview,
+			OptionsFrom:   s.OptionsFrom,
+			ActiveOptions: newWireOptions(s.ActiveOptions),
+			IsShown:       s.IsShown,
+			ValueJson:     s.ValueJSON,
+		})
 	}
+	return settings
 }
 
 // WritePluginSecret stores the key of a secret a plugin declares. A secret the
@@ -194,9 +186,6 @@ func (h *Handler) WritePluginSecret(
 	if err := h.WriteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName(), r.Msg.GetKey()); err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
-	if h.OnPluginChange != nil {
-		h.OnPluginChange()
-	}
 	return connect.NewResponse(&v1.WritePluginSecretResponse{}), nil
 }
 
@@ -209,9 +198,6 @@ func (h *Handler) DeletePluginSecret(
 	}
 	if err := h.DeleteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName()); err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
-	}
-	if h.OnPluginChange != nil {
-		h.OnPluginChange()
 	}
 	return connect.NewResponse(&v1.DeletePluginSecretResponse{}), nil
 }
@@ -344,3 +330,43 @@ func newWireReaders(readers []setting.PluginReaderInfo) []*v1.PluginReader {
 	}
 	return out
 }
+
+// WatchSettings reports each setting whose value changed until the client disconnects. The first
+// response holds no change, so the client knows it is listening. An empty response is a keepalive;
+// its send fails once the client disconnects.
+func (h *Handler) WatchSettings(
+	ctx context.Context, _ *connect.Request[v1.WatchSettingsRequest], out *connect.ServerStream[v1.WatchSettingsResponse],
+) error {
+	if h.Watch == nil {
+		return connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	changes, stop := h.Watch.Execute()
+	defer stop()
+	if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
+		return err
+	}
+	repeat := time.NewTicker(keepalive)
+	defer repeat.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-repeat.C:
+			if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
+				return err
+			}
+		case batch, open := <-changes:
+			if !open {
+				return nil
+			}
+			if err := out.Send(&v1.WatchSettingsResponse{Changed: newWireSettings(batch)}); err != nil {
+				return err
+			}
+		}
+	}
+}
+
+// keepalive is how often a stream with no change sends an empty response. The send fails once the
+// window is gone, and the subscription ends; a window that leaves is otherwise noticed only by
+// the next change.
+const keepalive = 30 * time.Second

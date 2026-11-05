@@ -40,7 +40,6 @@ describe('the commands over the vaults an installation holds', () => {
       .map((one) => one.id)
 
     expect(commands).toStrictEqual([
-      'app:note.goToStart',
       'app:note.goTo',
       'app:vault.open',
       'app:vault.create',
@@ -52,19 +51,12 @@ describe('the commands over the vaults an installation holds', () => {
 })
 
 describe('the commands that ask for a choice among a few', () => {
-  it('are the ones that set how the window is drawn and how it works', () => {
+  it('are none of the editor, since the settings offer theirs', () => {
     const choosing = createCommands(words)
-      .filter((one) => one.needs === 'choosing')
+      .filter((one) => one.input === 'choice')
       .map((one) => one.id)
 
-    expect(choosing).toStrictEqual([
-      'app:appearance.chooseTheme',
-      'app:appearance.chooseMode',
-      'app:appearance.chooseInterfaceSize',
-      'app:appearance.chooseTextSize',
-      'app:note.chooseTitleSync',
-      'app:performance.chooseProfile',
-    ])
+    expect(choosing).toStrictEqual([])
   })
 })
 
@@ -90,7 +82,7 @@ describe('getPrompt', () => {
         { name: 'p2', title: 'Second', isRequired: false },
       ],
     }
-    expect(getPrompt({ step: 'naming', command: commandWithPrompts, on: target })).toBeUndefined()
+    expect(getPrompt({ step: 'name', command: commandWithPrompts, on: target })).toBeUndefined()
     expect(getPrompt({ step: 'arguments', command: commandWithPrompts, on: target })?.name).toBe(
       'p1',
     )
@@ -188,5 +180,44 @@ describe('createPathCommands', () => {
       { id: 'app:note.copyPath', text: words.copy, group: 'file' },
       { id: 'app:note.trash', text: PATH_WORDS.remove, group: 'remove' },
     ])
+  })
+})
+
+describe('the command that opens a document chosen as a result', () => {
+  const open = () => createCommands(words).find((one) => one.id === 'app:file.open')
+
+  it('is filed under the file group with the words that open a document', () => {
+    expect(open()).toMatchObject({ text: words.readDocument, group: 'file' })
+  })
+
+  it('needs no input, so it runs as soon as it is chosen', () => {
+    expect(open()).toBeDefined()
+    expect(open()?.input).toBeUndefined()
+  })
+
+  it('is not one of the commands over a note, so the menu of a file row does not list it', () => {
+    expect(getNoteCommands(createCommands(words)).map((one) => one.id)).not.toContain(
+      'app:file.open',
+    )
+    expect(
+      createPathCommands({ isNote: false, isFolder: false }, false).map((one) => one.id),
+    ).not.toContain('app:file.open')
+  })
+
+  it('is available over a chosen document and over nothing else', () => {
+    const target: CommandTarget = {
+      tab: '',
+      kind: null,
+      path: '',
+      title: '',
+      file: 'library/atlas.pdf',
+      vault: { id: 'v', name: 'V' },
+      isReady: true,
+    }
+    const runs = { canRun: () => true, cannotRun: () => undefined }
+
+    expect(open()?.isAvailable(target, runs)).toBe(true)
+    expect(open()?.isAvailable({ ...target, tab: 'tab-1', kind: 'reader' }, runs)).toBe(false)
+    expect(open()?.isAvailable({ ...target, path: 'a.md', file: 'a.md' }, runs)).toBe(false)
   })
 })

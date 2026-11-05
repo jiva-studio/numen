@@ -52,6 +52,10 @@ function onSelectReasoning(id: string) {
     :reasoning-levels="props.state.reasoningLevels.value"
     :selected-reasoning-id="props.state.selectedReasoningId.value"
     :reasoning-name="words.reasoning"
+    :is-agent-missing="props.state.isAgentMissing.value"
+    :no-agent-label="words.noAgent"
+    :no-agent-message="words.noAgentMessage"
+    :open-settings-label="words.openSettings"
     @update:model-value="onUpdateQuestion"
     @submit="onSubmit"
     @stop="onStop"
@@ -59,6 +63,7 @@ function onSelectReasoning(id: string) {
     @follow="onFollowLink"
     @select-model="onSelectModel"
     @select-reasoning="onSelectReasoning"
+    @open-settings="props.state.openSettings()"
   >
     <template #silence>{{ props.state.unreachable() || words.noTranscript }}</template>
     <template #failure="{ turn }">

@@ -8,7 +8,7 @@ export interface MockListingOptions {
   readonly description?: string
   readonly category?: string
   readonly feature?: string
-  readonly isOffered?: boolean
+  readonly isAvailable?: boolean
   readonly tabKinds?: readonly string[]
 }
 
@@ -22,7 +22,7 @@ export function createMockListing(id: string, options: MockListingOptions = {}):
     category: (options.category ?? '').toLowerCase(),
     feature: options.feature ?? '',
     tabKinds: options.tabKinds ?? [],
-    isOffered: options.isOffered ?? false,
+    isAvailable: options.isAvailable ?? false,
   }
 }
 
@@ -42,8 +42,8 @@ export function createMockPluginInfo(
     capabilities: [],
     secrets: [],
     storedSecrets: [],
-    consent: 'none',
     hasFrontend: false,
+    hasBackend: false,
     ...overrides,
   }
 }

@@ -55,13 +55,21 @@ service SettingsService {
   // shows and the records of the text versions the plugin made there. The
   // files those versions were of are indexed again.
   rpc DeletePluginData(DeletePluginDataRequest) returns (DeletePluginDataResponse);
+
+  // WatchSettings reports each setting whose value changed, for as long as the caller listens: a
+  // write by a window, a plugin or the palette, and an edit of the file by hand. A change arrives
+  // once, named by its declared path, whoever made it and whichever caller listens, and a path no
+  // owner declares is not reported. The stream opens with a response that holds no change, so a
+  // caller knows it is listening before it reads GetSettings.
+  rpc WatchSettings(WatchSettingsRequest) returns (stream WatchSettingsResponse);
 }
 
 message GetSettingsRequest {}
 
 message GetSettingsResponse {
   // Every setting currently, as JSON: what the file says, and what an
-  // installation nobody has configured does under everything it does not.
+  // installation without a configuration does under everything it does not. The first level is the
+  // version `v`, the owner `app` and one object per plugin id.
   string written = 1;
 
   // The file itself, absolute on this machine.
@@ -73,7 +81,9 @@ message GetSettingsResponse {
   // Active plugins and their declarative settings schema.
   repeated PluginInfo plugins = 7;
 
-  reserved 4, 5, 6;
+  // The settings of the owner app, declared by the core in the format of a manifest setting. The
+  // window reads their defaults, bounds and options from here.
+  repeated PluginSetting app = 8;
 }
 
 // Model is one model a setting that names a model can be set to.
@@ -126,11 +136,20 @@ enum Presence {
 
 // Setting is one setting of the file and what to put there.
 message Setting {
-  // The setting, as a path through the file.
+  // The setting, as a path through the file. The first element is the owner, `app` or the id of a
+  // plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
   repeated string at = 1;
 
   // What to write there, as JSON. A value the settings cannot be read out of
   string value = 2;
+}
+
+message WatchSettingsRequest {}
+
+message WatchSettingsResponse {
+  // The settings that changed together, with the value each now holds. A write of several settings
+  // arrives as one response.
+  repeated Setting changed = 1;
 }
 
 message WriteSettingsRequest {

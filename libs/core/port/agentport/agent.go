@@ -54,8 +54,6 @@ type Task struct {
 	// Command is the command line that starts the program the task names, as the installation set it.
 	// Empty starts the program where the provider finds it.
 	Command []string
-	// Options are program-specific settings by key, each a JSON value from the installation.
-	Options map[string]string
 	// Endpoint is the address of the vault's tools. Empty gives the agent no tools endpoint.
 	Endpoint ToolEndpoint
 	// Context is what the asking view shows, which every tool the agent calls is given. Each key

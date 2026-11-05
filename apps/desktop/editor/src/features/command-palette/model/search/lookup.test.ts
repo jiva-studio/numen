@@ -2,10 +2,11 @@
  * The target of a search hit, and where choosing one navigates the user.
  */
 import { describe, expect, it } from 'vitest'
+import { COMMAND } from '@/shared/commandIds'
 import {
   createNameItem,
   createPassageItem,
-  resolveDestination,
+  resolveChoice,
   type NameMatch,
   type Passage,
   type SearchHit,
@@ -23,10 +24,15 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Words only',
   notEmbedded: 'Not read for meaning yet',
+  creating: 'No results',
+  creates: 'Create note',
+  asChild: 'Create as child',
+  asParent: 'Create as parent',
+  asJump: 'Create as jump',
 }
 
-/** The words of the command a plugin declares to put a note in front. */
-const SHOW = 'Show in the graph'
+/** The first action of a note is the id of the editor command that opens it. */
+const OPEN_NOTE = COMMAND.openNote
 
 const createName = (overrides: Partial<NameMatch> = {}): NameMatch => ({
   path: 'physics/Ontology.md',
@@ -58,71 +64,54 @@ const createHit = (overrides: Partial<SearchHit> = {}): SearchHit => ({
   line: -1,
   start: 0,
   length: 0,
-  offers: ['note', 'locate'],
+  actionIds: [OPEN_NOTE],
   type: 'note',
   selector: null,
   ...overrides,
 })
 
 describe('a note found by its title', () => {
-  it('is placed under its path, offers putting it in front first, and is a note', () => {
-    const row = createNameItem(createName(), WORDS, SHOW)
+  it('is placed under its path, offers opening it, and is a note', () => {
+    const row = createNameItem(createName(), WORDS)
 
     expect(row.item.id).toBe('physics/Ontology.md')
-    expect(row.item.actions).toStrictEqual([
-      { id: 'locate', text: SHOW },
-      { id: 'note', text: WORDS.read },
-    ])
-    expect(row.hit).toStrictEqual(createHit({ line: -1, offers: ['locate', 'note'] }))
+    expect(row.item.actions).toStrictEqual([{ id: OPEN_NOTE, text: WORDS.read }])
+    expect(row.hit).toStrictEqual(createHit({ line: -1 }))
   })
 })
 
-describe('a note found where no plugin puts a note in front', () => {
-  it('offers the note alone, by name, heading and passage', () => {
-    const read = [{ id: 'note', text: WORDS.read }]
+describe('a note found by name, heading or passage', () => {
+  it('offers the note alone', () => {
+    const read = [{ id: OPEN_NOTE, text: WORDS.read }]
 
-    expect(createNameItem(createName(), WORDS, '').item.actions).toStrictEqual(read)
-    expect(createNameItem(createName(), WORDS, '').hit.offers).toStrictEqual(['note'])
+    expect(createNameItem(createName(), WORDS).item.actions).toStrictEqual(read)
+    expect(createNameItem(createName(), WORDS).hit.actionIds).toStrictEqual([OPEN_NOTE])
     expect(
-      createNameItem(createName({ heading: 'Being', line: 7 }), WORDS, '').hit.offers,
-    ).toStrictEqual(['note'])
-    expect(createPassageItem('text', createPassage(), WORDS, '').item.actions).toStrictEqual(read)
+      createNameItem(createName({ heading: 'Being', line: 7 }), WORDS).hit.actionIds,
+    ).toStrictEqual([OPEN_NOTE])
+    expect(createPassageItem('text', createPassage(), WORDS).item.actions).toStrictEqual(read)
   })
 })
 
 describe('a heading found by its name', () => {
-  it('is placed under its path and line, offers the note first, and is a note', () => {
-    const row = createNameItem(
-      createName({ heading: 'Being', line: 7, type: 'sample' }),
-      WORDS,
-      SHOW,
-    )
+  it('is placed under its path and line, offers the note at the heading, and is a note', () => {
+    const row = createNameItem(createName({ heading: 'Being', line: 7, type: 'sample' }), WORDS)
 
     expect(row.item.id).toBe('physics/Ontology.md#7')
     expect(row.item.title).toBe('Being')
     expect(row.item.detail).toBe('Ontology')
-    expect(row.item.actions).toStrictEqual([
-      { id: 'note', text: WORDS.readAt },
-      { id: 'locate', text: SHOW },
-    ])
-    expect(row.hit).toStrictEqual(
-      createHit({ line: 7, offers: ['note', 'locate'], type: 'sample' }),
-    )
+    expect(row.item.actions).toStrictEqual([{ id: OPEN_NOTE, text: WORDS.readAt }])
+    expect(row.hit).toStrictEqual(createHit({ line: 7, type: 'sample' }))
   })
 })
 
 describe('a passage found in a note', () => {
-  it('offers the note and putting it in front, and remains at its line', () => {
-    const row = createPassageItem('text', createPassage(), WORDS, SHOW)
+  it('offers the note, and remains at its line', () => {
+    const row = createPassageItem('text', createPassage(), WORDS)
 
     expect(row.item.id).toBe('text:physics/Ontology.md:12')
-    expect(row.item.actions).toStrictEqual([
-      { id: 'note', text: WORDS.read },
-      { id: 'locate', text: SHOW },
-    ])
-    expect(row.hit).toStrictEqual(
-      createHit({ line: 3, start: 12, length: 4, offers: ['note', 'locate'] }),
-    )
+    expect(row.item.actions).toStrictEqual([{ id: OPEN_NOTE, text: WORDS.read }])
+    expect(row.hit).toStrictEqual(createHit({ line: 3, start: 12, length: 4 }))
   })
 })
 
@@ -132,18 +121,17 @@ describe('a passage found in a file that is no note', () => {
       'meaning',
       createPassage({ isNote: false, selector: { page: 3 }, title: '', type: 'sample' }),
       WORDS,
-      SHOW,
     )
 
     expect(row.item.title).toBe('physics/Ontology.md')
-    expect(row.item.actions).toStrictEqual([{ id: 'note', text: WORDS.readDocument }])
+    expect(row.item.actions).toStrictEqual([{ id: COMMAND.openFile, text: WORDS.readDocument }])
     expect(row.hit).toStrictEqual(
       createHit({
         title: '',
         line: -1,
         start: 12,
         length: 4,
-        offers: ['note'],
+        actionIds: [COMMAND.openFile],
         type: null,
         selector: { page: 3 },
       }),
@@ -151,45 +139,56 @@ describe('a passage found in a file that is no note', () => {
   })
 })
 
-describe('where choosing an item takes the person', () => {
-  it('is nowhere where nothing was found, or the item does not offer that', () => {
-    expect(resolveDestination(undefined, 'note')).toBeNull()
-    expect(resolveDestination(createHit({ offers: ['note'] }), 'locate')).toBeNull()
+describe('what choosing an action of an item runs', () => {
+  it('is nothing where nothing was found, or the item does not carry that action', () => {
+    expect(resolveChoice(undefined, COMMAND.openFile)).toBeNull()
+    expect(resolveChoice(createHit({ actionIds: [COMMAND.openFile] }), 'other')).toBeNull()
   })
 
-  it('is the note put in front, by the note it remains in', () => {
-    expect(resolveDestination(createHit(), 'locate')).toStrictEqual({
-      at: 'locate',
-      path: 'physics/Ontology.md',
-      title: 'Ontology',
-    })
-  })
-
-  it('is the file at the selector of the hit, for a file that is no note', () => {
-    const searchHit = createHit({ type: null, offers: ['note'], selector: { t: [12, 14] } })
-
-    expect(resolveDestination(searchHit, 'note')).toStrictEqual({
-      at: 'file',
-      path: 'physics/Ontology.md',
-      title: 'Ontology',
+  it('is the command that opens the file at the selector of the hit, for a file that is no note', () => {
+    const searchHit = createHit({
+      type: null,
+      actionIds: [COMMAND.openFile],
       selector: { t: [12, 14] },
     })
-  })
 
-  it('is the file at its line, the first line included', () => {
-    expect(resolveDestination(createHit({ line: 0 }), 'note')).toStrictEqual({
-      at: 'file',
-      path: 'physics/Ontology.md',
-      title: 'Ontology',
-      line: 0,
+    expect(resolveChoice(searchHit, COMMAND.openFile)).toStrictEqual({
+      command: 'app:file.open',
+      over: {
+        path: '',
+        file: 'physics/Ontology.md',
+        title: 'Ontology',
+        selector: { t: [12, 14] },
+      },
+      input: '',
     })
-    expect(resolveDestination(createHit({ line: 5 }), 'note')).toMatchObject({ line: 5 })
   })
 
-  it('is the file with no line where the item remains at none', () => {
-    expect(resolveDestination(createHit({ line: -1 }), 'note')).toStrictEqual({
-      at: 'file',
-      path: 'physics/Ontology.md',
+  it('is the command that opens the note at its line, for a note', () => {
+    expect(resolveChoice(createHit({ line: 5 }), OPEN_NOTE)).toStrictEqual({
+      command: 'app:note.open',
+      over: {
+        path: 'physics/Ontology.md',
+        file: 'physics/Ontology.md',
+        title: 'Ontology',
+        line: 5,
+      },
+      input: '',
+    })
+    expect(resolveChoice(createHit({ line: 0 }), OPEN_NOTE)?.over?.line).toBe(0)
+  })
+
+  it('is the old action id of a document for nothing, since the action is a command id now', () => {
+    expect(resolveChoice(createHit({ line: 5 }), 'note')).toBeNull()
+    expect(resolveChoice(createHit({ type: null, actionIds: ['note'] }), 'note')).toBeNull()
+  })
+
+  it('is the file with no selector where a file that is no note remains at none', () => {
+    const document = createHit({ type: null, actionIds: [COMMAND.openFile], line: -1 })
+
+    expect(resolveChoice(document, COMMAND.openFile)?.over).toStrictEqual({
+      path: '',
+      file: 'physics/Ontology.md',
       title: 'Ontology',
     })
   })

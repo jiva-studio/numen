@@ -118,17 +118,14 @@ describe('files domain', () => {
 })
 
 describe('settings domain', () => {
-  it('reads and writes the sync and settings', async () => {
-    const writtenSettings = JSON.stringify({ naming: { sync_title_and_filename: true } })
+  it('reads and writes the settings', async () => {
+    const writtenSettings = JSON.stringify({ app: { naming: { syncTitleAndFilename: true } } })
     request.getSettings.mockResolvedValue({
       written: writtenSettings,
       models: [],
       path: 'settings.json',
     })
     request.writeSettings.mockResolvedValue({})
-
-    expect(await core.getSyncEnabled()).toBe(true)
-    expect(await core.setSyncEnabled(false)).toBeNull()
 
     const config = await core.getSettings()
     expect(config.path).toBe('settings.json')

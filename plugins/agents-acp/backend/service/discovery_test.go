@@ -36,7 +36,7 @@ func TestNoACPAgentIsNamedWithoutCommands(t *testing.T) {
 
 func TestACPAgentFromConfig(t *testing.T) {
 	s := &agentServer{}
-	s.applyConfig(map[string]string{"executable_path": "/usr/bin/my-acp"})
+	s.applyConfig(map[string]string{"executablePath": "/usr/bin/my-acp"})
 	agents := s.getACPAgents()
 	if len(agents) != 1 {
 		t.Fatalf("expected 1 agent, got %d", len(agents))
@@ -77,7 +77,7 @@ func TestMultipleACPAgentsFromConfigAndAutoDiscovery(t *testing.T) {
 		},
 	}
 	s.applyConfig(map[string]string{
-		"executable_path": "/opt/bin/codex-acp\n/usr/bin/unknown-acp",
+		"executablePath": "/opt/bin/codex-acp\n/usr/bin/unknown-acp",
 	})
 	agents := s.getACPAgents()
 	var names []string
@@ -100,7 +100,7 @@ func TestMultipleACPAgentsFromConfigAndAutoDiscovery(t *testing.T) {
 
 	s2 := &agentServer{}
 	s2.applyConfig(map[string]string{
-		"executable_path": "/usr/bin/claude-code-acp\n/usr/bin/gemini",
+		"executablePath": "/usr/bin/claude-code-acp\n/usr/bin/gemini",
 	})
 	agents2 := s2.getACPAgents()
 	if len(agents2) != 2 || agents2[0].Program != "claude-code" || !slices.Equal(agents2[0].Command, []string{"/usr/bin/claude-code-acp"}) ||

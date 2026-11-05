@@ -8,13 +8,13 @@ import { DEFAULTS, NO_BOUNDS, type Cards, type Presets } from '../../cards'
 import { openNotes } from '../../buffer'
 import { useDeckScheduleSync } from './useDeckScheduleSync'
 
-const OFFER = { path: 'Animal.md', title: 'Animal', fields: ['Name'] }
+const SUMMARY = { path: 'Animal.md', title: 'Animal', fields: ['Name'] }
 
 const open = () => {
   const state = { isDown: false }
   const cardModels = vi.fn<Cards['cardModels']>(async () => {
     if (state.isDown) throw new Error('down')
-    return { cardModels: [OFFER], total: 1 }
+    return { cardModels: [SUMMARY], total: 1 }
   })
   const cards: Cards = {
     cardModels,
@@ -56,11 +56,11 @@ const open = () => {
   return { state, cardModels, store, sync: useDeckScheduleSync(cards, presets, store) }
 }
 
-describe('the card models a window offers', () => {
+describe('the card models a window summaries', () => {
   it('are none before a listing answers', () => {
     const { sync } = open()
 
-    expect(sync.offers.value).toStrictEqual([])
+    expect(sync.summaries.value).toStrictEqual([])
     expect(sync.cardModels.value).toStrictEqual([])
   })
 

@@ -41,7 +41,7 @@ func runTask(t *testing.T, agent agentport.Agent, task agentport.Task) {
 func TestSettingsAgent_UnnamedProgramUsesSettingsProgram(t *testing.T) {
 	host, one, two := twoProviders(t)
 	agent := openSettingsAgent(t, host,
-		`{"agent": {"use": "alpha", "alpha": {"command": ["/bin/alpha"], "model": "section-model"}}}`)
+		`{"app": {"agent": {"use": "alpha", "alpha": {"command": ["/bin/alpha"], "model": "section-model"}}}}`)
 
 	runTask(t, agent, agentport.Task{Question: "q", Conversation: "c-1"})
 
@@ -77,7 +77,7 @@ func TestSettingsAgent_UnsetProgramUsesDefault(t *testing.T) {
 // A task naming its program and model goes to that program with them.
 func TestASettingsAgentTaskNamingAProgramGoesToIt(t *testing.T) {
 	host, one, two := twoProviders(t)
-	agent := openSettingsAgent(t, host, `{"agent": {"use": "alpha"}}`)
+	agent := openSettingsAgent(t, host, `{"app": {"agent": {"use": "alpha"}}}`)
 
 	runTask(t, agent, agentport.Task{Question: "q", Agent: "beta", Model: "asked-model"})
 
@@ -90,7 +90,7 @@ func TestASettingsAgentTaskNamingAProgramGoesToIt(t *testing.T) {
 // Settings that turn the agent off refuse a task naming no program.
 func TestSettingsAgent_RejectsTaskWhenAgentDisabled(t *testing.T) {
 	host, one, two := twoProviders(t)
-	agent := openSettingsAgent(t, host, `{"agent": {"use": ""}}`)
+	agent := openSettingsAgent(t, host, `{"app": {"agent": {"use": ""}}}`)
 
 	if _, err := agent.StartRun(t.Context(), agentport.Task{Question: "q"}); err == nil {
 		t.Error("a task was taken with the agent turned off")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 
 	"connectrpc.com/connect"
@@ -21,6 +22,7 @@ import (
 type Host interface {
 	pluginport.PluginResolver
 	pluginport.PluginActivator
+	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
 // Embedder is the embedding provider seen as an embeddingport.Embedder.
@@ -33,6 +35,15 @@ type Embedder struct {
 	model       embeddingport.EmbeddingModel
 	concurrency int
 	floorHint   float64
+
+	// changeMu orders the reads that follow a configuration of the plugin.
+	changeMu sync.Mutex
+	// announced is the model the listeners were last notified of. A read by GetModel does not change it.
+	announced embeddingport.EmbeddingModel
+	listeners []func()
+	// onReadError receives the error of a failed read after a configuration of the plugin.
+	onReadError func(error)
+	stopWatch   func()
 }
 
 // Open activates the plugin that declares the embedding capability and reads its model.
@@ -52,7 +63,7 @@ func Open(ctx context.Context, host Host) (*Embedder, error) {
 		return nil, errors.Join(err, lease.Close())
 	}
 
-	return &Embedder{
+	b := &Embedder{
 		host:        host,
 		pluginID:    plugin.Manifest.ID,
 		service:     bridge.Service[numenv1connect.EmbeddingServiceClient]{Host: host, PluginID: plugin.Manifest.ID, NewClient: numenv1connect.NewEmbeddingServiceClient},
@@ -60,7 +71,10 @@ func Open(ctx context.Context, host Host) (*Embedder, error) {
 		model:       model,
 		concurrency: concurrency,
 		floorHint:   floorHint,
-	}, nil
+		announced:   model,
+	}
+	b.stopWatch = host.WatchPluginConfig(plugin.Manifest.ID, b.announceModelChange)
+	return b, nil
 }
 
 func readClientModel(
@@ -86,6 +100,7 @@ func readClientModel(
 		From:           resp.Msg.GetFrom(),
 		Handling:       resp.Msg.GetHandling(),
 		MinChunkLength: int(max(resp.Msg.GetMinChunkLength(), 0)),
+		ChunkTokens:    int(max(resp.Msg.GetChunkTokens(), 0)),
 	}
 	return model, concurrency, max(resp.Msg.GetFloorHint(), 0), nil
 }
@@ -169,5 +184,64 @@ func (b *Embedder) Concurrency() int {
 
 // Close releases the active reference count for the embedding plugin in the host supervisor.
 func (b *Embedder) Close() error {
+	b.stopWatch()
 	return b.lease.Close()
+}
+
+// OnModelChange registers fn to run when the plugin reports a model unlike the last one announced:
+// another identity, handling, minimum chunk length or chunk size. The plugin is read
+// after it has been given its configuration, so a setting of another plugin never runs fn.
+func (b *Embedder) OnModelChange(fn func()) {
+	b.changeMu.Lock()
+	defer b.changeMu.Unlock()
+	b.listeners = append(b.listeners, fn)
+}
+
+// OnModelReadError registers fn to receive the error of a read of the model that follows a configuration of the plugin and fails.
+// The model and the listeners stay as they were, and the next read that succeeds announces the change.
+func (b *Embedder) OnModelReadError(fn func(error)) {
+	b.changeMu.Lock()
+	defer b.changeMu.Unlock()
+	b.onReadError = fn
+}
+
+// reportReadError passes err to the callback of OnModelReadError, when there is one.
+func (b *Embedder) reportReadError(err error) {
+	if b.onReadError != nil {
+		b.onReadError(err)
+	}
+}
+
+// announceModelChange reads the model and runs the listeners when it differs from the announced one.
+// The listeners run after changeMu is released, so a listener may register another one.
+func (b *Embedder) announceModelChange() {
+	for _, fn := range b.readModelChange() {
+		fn()
+	}
+}
+
+// readModelChange reads the model under changeMu and returns the listeners to run, none when the model is the announced one.
+func (b *Embedder) readModelChange() []func() {
+	b.changeMu.Lock()
+	defer b.changeMu.Unlock()
+	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelRefreshTimeout)
+	defer cancel()
+	client, call, err := b.service.Open(ctx)
+	if err != nil {
+		b.reportReadError(fmt.Errorf("open embedding plugin %s: %w", b.pluginID, err))
+		return nil
+	}
+	model, concurrency, floorHint, readErr := readClientModel(ctx, b.pluginID, client)
+	if err := errors.Join(readErr, call.Close()); err != nil {
+		b.reportReadError(fmt.Errorf("read model of embedding plugin %s: %w", b.pluginID, err))
+		return nil
+	}
+	b.mu.Lock()
+	b.model, b.concurrency, b.floorHint = model, concurrency, floorHint
+	b.mu.Unlock()
+	if model == b.announced {
+		return nil
+	}
+	b.announced = model
+	return slices.Clone(b.listeners)
 }

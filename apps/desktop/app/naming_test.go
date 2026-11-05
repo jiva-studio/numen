@@ -42,7 +42,7 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			opened, cfg := windowOn(t)
-			response := fmt.Sprintf(`{"naming":{"sync_title_and_filename":%v}}`, bool(c.sync))
+			response := fmt.Sprintf(`{"app":{"naming":{"syncTitleAndFilename":%v}}}`, bool(c.sync))
 			if err := os.WriteFile(
 				filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json"), []byte(response), 0o644,
 			); err != nil {

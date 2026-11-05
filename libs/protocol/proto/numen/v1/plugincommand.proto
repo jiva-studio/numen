@@ -74,6 +74,18 @@ message ListCommandsRequest {}
 
 message ListCommandsResponse {
   repeated PluginCommand commands = 1;
+  // The menu entries of every enabled plugin, in the order of the plugins' ids and then of each
+  // manifest.
+  repeated PluginMenu menus = 2;
+}
+
+// PluginMenu is one entry of contributes.menus of a plugin.
+message PluginMenu {
+  string plugin_id = 1;
+  string location = 2;
+  string command = 3;
+  string group = 4;
+  optional int32 order = 5;
 }
 
 // PluginCommand is one command as a manifest declares it.
@@ -101,6 +113,12 @@ message PluginCommand {
   // The icon the command shows in the palette, by its Lucide name. Empty shows
   // the default plugin command icon.
   string icon = 7;
+
+  // scope is "note" for a command listed only while a note is in front.
+  string scope = 8;
+
+  // shortcut is the keystroke the plugin suggests for the command.
+  string shortcut = 9;
 }
 
 // CommandArgument is one argument a command takes.

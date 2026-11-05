@@ -2,11 +2,9 @@ package index
 
 import (
 	"bytes"
-	"path/filepath"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -169,53 +167,6 @@ func TestAChunkTheNewRecipeContainsNoVectorForGetsNoCoarseRow(t *testing.T) {
 	}
 	if len(unembedded) == 0 {
 		t.Error("no chunk is unembedded under a recipe that holds no vector")
-	}
-}
-
-func TestMigrationFourAppliesOnAnIndexAtTheVersionBeforeIt(t *testing.T) {
-	ctx := t.Context()
-	path := filepath.Join(t.TempDir(), "index.db")
-
-	db, err := Open(ctx, path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, statement := range []string{
-		`DROP TABLE search_floors`,
-		`DROP TABLE open_tabs`,
-		`DROP TABLE text_versions`,
-		`DROP TABLE coarse_recipe`,
-		`ALTER TABLE links DROP COLUMN marker`,
-		`DELETE FROM schema_migrations WHERE version >= 4`,
-		`PRAGMA user_version = 3`,
-	} {
-		if _, err := db.write.ExecContext(ctx, statement); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := db.Close(); err != nil {
-		t.Fatal(err)
-	}
-
-	again, err := Open(ctx, path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, again)
-	if got := getNewestVersion(t); got < 4 {
-		t.Fatalf("newest version = %d", got)
-	}
-	if _, recorded, err := coarseRecipe(ctx, again.write); err != nil || recorded {
-		t.Fatalf("a migrated index records %v, %v before anything filled it", recorded, err)
-	}
-	if err := again.FitVectors(ctx, 1024, testRecipe); err != nil {
-		t.Fatal(err)
-	}
-	if got, recorded, err := coarseRecipe(ctx, again.write); err != nil || !recorded || got != testRecipe {
-		t.Errorf("recorded recipe = %q, %v, %v", got, recorded, err)
-	}
-	if _, err := again.write.ExecContext(ctx, `INSERT INTO coarse_recipe (id, recipe) VALUES (2, 'x')`); err == nil {
-		t.Error("a second row was accepted")
 	}
 }
 

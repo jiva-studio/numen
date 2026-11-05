@@ -17,4 +17,8 @@ export interface AgentProps {
   reasoningLevels?: readonly ReasoningLevelOption[]
   selectedReasoningId?: string
   reasoningName?: string
+  isAgentMissing?: boolean
+  noAgentLabel?: string
+  noAgentMessage?: string
+  openSettingsLabel?: string
 }

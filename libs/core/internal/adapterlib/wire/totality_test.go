@@ -28,6 +28,13 @@ func TestEveryUnitIsSavedFromOne(t *testing.T) {
 	}, convertUnit)
 }
 
+func TestConvertKindMapsEveryTaskKind(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.TaskKind]run.Kind{
+		v1.TaskKind_TASK_KIND_UNSPECIFIED: run.KindWork,
+		v1.TaskKind_TASK_KIND_NOTICE:      run.KindNotice,
+	}, convertKind)
+}
+
 // A page that reported nothing is unanswered, and the round waits its bound for
 // unanswered pages. Every answer the schema defines counts as an answer.
 func TestEveryFlushResultIsAnAnswer(t *testing.T) {

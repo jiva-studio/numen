@@ -38,6 +38,13 @@ message GetEmbeddingModelResponse {
   // one name that differ in it make vectors that cannot be compared, so it is part of the
   // identity. Empty when the plugin holds no such settings.
   string handling = 9;
+
+  // The most tokens one chunk of a note or of a file text may hold, which the core cuts at. It is
+  // a setting of the plugin and never exceeds max_tokens where max_tokens is known. It is not part
+  // of the model's identity: a vector made for a text is the same whatever the chunk size, so
+  // changing it makes no vector stale, only the notes are cut again. Zero when the plugin names
+  // none, and the core cuts at its default.
+  int32 chunk_tokens = 10;
 }
 
 // EmbedRole is what a text is embedded for. A model that tells a question from the passage that

@@ -7,7 +7,6 @@ import {
   CAPABILITY_AGENT_PROVIDER,
   CommandErrorCode,
   CommandService,
-  CompletionConsent,
   ErrorCode as ProtoErrorCode,
   FileService,
   FlushResult,
@@ -23,6 +22,7 @@ import {
   SearchMode,
   SearchService,
   SettingsService,
+  TaskKind,
   TabMoveErrorCode,
   TextErrorCode,
   TextService,
@@ -71,9 +71,6 @@ export type NoteRoleCode = Role
 export const NOTE_RELATION = Relation
 export type NoteRelationCode = Relation
 
-export const COMPLETION_CONSENT = CompletionConsent
-export type CompletionConsentCode = CompletionConsent
-
 export const FLUSH_RESULT = FlushResult
 export type FlushResultCode = FlushResult
 
@@ -83,6 +80,7 @@ export type ModelPresenceCode = Presence
 export const SEARCH_MODE = SearchMode
 export type SearchModeCode = SearchMode
 
+export const TASK_KIND = TaskKind
 export const TASK_UNIT = Unit
 export type TaskUnitCode = Unit
 

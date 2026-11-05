@@ -24,14 +24,16 @@ const views = computed(() =>
   ),
 )
 const values = computed(() =>
-  getSettingValues(props.plugin, (key) =>
-    installation.value.getSetting(['plugins', props.plugin.id, key]),
+  getSettingValues(
+    props.plugin,
+    (key) => installation.value.getSetting([props.plugin.id, ...key.split('.')]),
+    (key) => installation.value.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false,
   ),
 )
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingUpdate(key: string, value: unknown): void {
-  fields.setValue(['plugins', props.plugin.id, key], value)
+  fields.setValue([props.plugin.id, ...key.split('.')], value)
 }
 </script>
 

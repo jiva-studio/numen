@@ -32,7 +32,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
-	coreSettings "github.com/jiva-studio/numen/libs/core/usecase/settings"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -703,15 +702,6 @@ func TestEveryPresenceIsSavedFromOne(t *testing.T) {
 	}, func(is settingsport.Presence) v1.Presence { return editorSettings.GetPresences()[is] })
 }
 
-func TestEveryCompletionConsentIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.CompletionConsent]coreSettings.Consent{
-		v1.CompletionConsent_COMPLETION_CONSENT_PENDING:   coreSettings.ConsentPending,
-		v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED: coreSettings.ConsentRequested,
-		v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED:   coreSettings.ConsentAllowed,
-		v1.CompletionConsent_COMPLETION_CONSENT_DENIED:    coreSettings.ConsentDenied,
-	}, func(is coreSettings.Consent) v1.CompletionConsent { return editorSettings.GetConsents()[is] })
-}
-
 func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.VaultsErrorCode]error{
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: vaults.ErrUnreadable,
@@ -862,7 +852,7 @@ func TestASizeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
-	if err := os.WriteFile(file, []byte(`{"appearance":{"theme":"preset:nord"}}`), 0o600); err != nil {
+	if err := os.WriteFile(file, []byte(`{"app":{"appearance":{"theme":"preset:nord"}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -876,7 +866,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := selected.Msg.GetError(); !strings.Contains(reason, "appearance.text_scale") {
+	if reason := selected.Msg.GetError(); !strings.Contains(reason, "appearance.textScale") {
 		t.Errorf("failed with %q", reason)
 	}
 
@@ -884,7 +874,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(target) != `{"appearance":{"theme":"preset:nord"}}` {
+	if string(target) != `{"app":{"appearance":{"theme":"preset:nord"}}}` {
 		t.Errorf("the file now reads %s", target)
 	}
 }

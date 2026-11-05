@@ -18,4 +18,11 @@ export interface MessageComposerProps {
   selectedReasoningId?: string
   /** What the reasoning selector is called. */
   reasoningName?: string
+  /** No agent can answer: the field gives way to the message and the link to the settings. */
+  isAgentMissing?: boolean
+  /** What the model control reads while no agent can answer. */
+  noAgentLabel?: string
+  noAgentMessage?: string
+  /** What the link to the settings is called. */
+  openSettingsLabel?: string
 }

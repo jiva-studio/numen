@@ -3,7 +3,7 @@ import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { LoaderHost } from './host'
 import { getPluginStyle, registerPluginStyle } from './styles'
-import { createPluginLoader, PLUGIN_WAIT_MS } from './loader'
+import { createPluginLoader, PLUGIN_SETTLE_MS, PLUGIN_WAIT_MS } from './loader'
 import { getLifecycleHooks, resolveModule } from './module'
 
 /** The loader, with a module registered under each plugin id. */
@@ -529,6 +529,67 @@ describe('createPluginLoader failures, order and toggles', () => {
     await Promise.all([loader.activatePlugin('p'), loader.activatePlugin('p')])
 
     expect(activate).toHaveBeenCalledTimes(1)
+  })
+
+  it('settles a wait for a plugin once the plugin has been activated', async () => {
+    const { host } = createHost()
+    const loader = registerModules(createPluginLoader({ host }), {
+      p: async () => ({ activate: () => undefined }),
+    })
+    const spy = vi.fn()
+
+    const wait = loader.settlePlugin('p').then(spy)
+    await Promise.resolve()
+    expect(spy).not.toHaveBeenCalled()
+    await loader.activatePlugin('p')
+    await wait
+
+    expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('settles a wait for a plugin at once when the plugin is already active', async () => {
+    const { host } = createHost()
+    const loader = registerModules(createPluginLoader({ host }), {
+      p: async () => ({ activate: () => undefined }),
+    })
+    await loader.activatePlugin('p')
+
+    await expect(loader.settlePlugin('p')).resolves.toBeUndefined()
+  })
+
+  it('settles a wait for a plugin whose activation failed', async () => {
+    const { host } = createHost()
+    const loader = registerModules(createPluginLoader({ host }), {
+      p: async () => ({
+        activate: () => {
+          throw new Error('boom')
+        },
+      }),
+    })
+    const wait = loader.settlePlugin('p')
+
+    await loader.activatePlugin('p')
+
+    await expect(wait).resolves.toBeUndefined()
+  })
+
+  it('settles a wait for a plugin that is never activated after the settle time', async () => {
+    vi.useFakeTimers()
+    try {
+      const { host } = createHost()
+      const loader = createPluginLoader({ host })
+      const spy = vi.fn()
+
+      const wait = loader.settlePlugin('never').then(spy)
+      await vi.advanceTimersByTimeAsync(PLUGIN_SETTLE_MS - 1)
+      expect(spy).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(1)
+      await wait
+
+      expect(spy).toHaveBeenCalledOnce()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('runs a deactivation requested during an activation after it', async () => {

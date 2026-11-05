@@ -247,11 +247,11 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	}
 }
 
-// A window drawn at 1.5 goes on being drawn at 1.5.
-func TestAFileNamingTheZoomOpensTheWindowGeneratedAtIt(t *testing.T) {
+// The page is drawn at the interface scale the file names.
+func TestPageUsesInterfaceScaleOfFile(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
-	if err := os.WriteFile(file, []byte(`{"appearance":{"zoom":1.5}}`), 0o600); err != nil {
+	if err := os.WriteFile(file, []byte(`{"app":{"appearance":{"interfaceScale":1.5}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	handler, _ := newPageHandler(t, cfg)

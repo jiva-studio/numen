@@ -44,16 +44,14 @@ describe('view-plex-graph plugin', () => {
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
 
-  it('declares a new plex over the window and the plex as where a note is put in front', () => {
+  it('registers the handlers that open the plex and show a note in it', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    const commands = ctx.getRegisteredCommands()
-    expect(commands.map((one) => [one.id, one.scope, one.shortcut])).toStrictEqual([
-      ['graph.open', undefined, 'mod+shift+x'],
-      ['graph.showNote', 'note', 'mod+shift+p'],
+    expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
+      'graph.open',
+      'graph.showNote',
     ])
-    expect(commands.map((one) => one.isNoteDestination === true)).toStrictEqual([false, true])
   })
 
   it('opens a plex, and moves the plex last in front to a note', async () => {
@@ -107,22 +105,22 @@ describe('view-plex-graph plugin', () => {
     expect(requested.headings.length).toBeGreaterThan(0)
   })
 
-  it('reads no headings while its nest_headings setting is off, and reads them once it is on', async () => {
+  it('reads no headings while its nestHeadings setting is off, and reads them once it is on', async () => {
     const { host, requested } = createHost({ opening: 'Root.md' })
     const ctx = createMockPluginContext({
       pluginId: 'md.numen.views.plex.graph',
       workspace: host.workspace,
       notes: host.notes,
       relations: host.relations,
-      initialSettings: { nest_headings: false },
+      initialSettings: { nestHeadings: false },
     })
     activate(ctx)
     const state = ctx.getRegisteredTabKinds()[0]!.open!('One.md', 'plex:1') as PlexTabState
     await settle()
     expect(requested.headings).toStrictEqual([])
 
-    ctx.setSetting('nest_headings', true)
-    ctx.setSetting('heading_limit', 3)
+    ctx.setSetting('nestHeadings', true)
+    ctx.setSetting('headingLimit', 3)
     await settle()
 
     expect(requested.headings.length).toBeGreaterThan(0)

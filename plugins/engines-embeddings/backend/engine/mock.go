@@ -50,6 +50,7 @@ func GetMockModel() ModelInfo {
 		Concurrency:    1,
 		FloorHint:      0,
 		MinChunkLength: 0,
+		ChunkTokens:    0,
 		Handling:       getMockHandling(),
 	}
 }

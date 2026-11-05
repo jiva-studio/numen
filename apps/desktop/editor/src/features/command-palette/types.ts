@@ -6,6 +6,7 @@
  * available while a command runs are `model/deps.ts`.
  */
 import type { Component } from 'vue'
+import type { Selector } from '@numen/plugin-host'
 import type { PaletteKeys } from '@numen/ui'
 import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
@@ -28,12 +29,13 @@ export type CommandGroup = 'note' | 'file' | 'window' | 'settings' | 'vault'
 
 /**
  * The palette's current step: a prompt for one value, or the list of commands.
- * `picking` queries the vault and `vaults` queries the installation; `choosing`
- * offers an in-memory list; `arguments` prompts for one of a command's `prompts`,
- * one step per prompt.
+ * Each kind is a noun for what the person is asked: `name` is typed, `note` queries the
+ * vault, `vault` queries the installation, `choice` offers an in-memory list,
+ * `confirmation` asks for a yes or a no, `retypedName` asks for the title typed again, and
+ * `arguments` prompts for one of a command's `prompts`, one step per prompt.
  */
 export type Step =
-  'commands' | 'naming' | 'picking' | 'vaults' | 'choosing' | 'asking' | 'exactly' | 'arguments'
+  'commands' | 'name' | 'note' | 'vault' | 'choice' | 'confirmation' | 'retypedName' | 'arguments'
 
 /**
  * One value a command requires, entered in its own step. A step that is not
@@ -54,6 +56,12 @@ export interface VaultRef {
   readonly name: string
 }
 
+/** Where in the file a command that opens it moves to: a line of a note, or the selector of a reader. */
+export interface CommandPlace {
+  readonly line?: number
+  readonly selector?: Selector
+}
+
 /**
  * The current context: the active tab and the note it resolves to. For an agent
  * tab, the note the plex is focused on.
@@ -71,6 +79,10 @@ export interface CommandTarget {
    * names the file the row represents.
    */
   readonly file: string
+  /** The line of the note a command that opens it moves to. Absent opens the note at its start. */
+  readonly line?: number
+  /** The place in a file that is no note a command that opens it moves to. */
+  readonly selector?: Selector
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   readonly vault: VaultRef
@@ -91,8 +103,10 @@ export interface Command {
   readonly keys?: PaletteKeys
   /** The icon it is drawn with, where the one who declares it gives one. */
   readonly icon?: Component
+  /** The Lucide name of its icon, for a place that draws icons by name. */
+  readonly iconName?: string
   /** The input it requires before it runs. */
-  readonly needs?: PromptStep
+  readonly input?: PromptStep
   /** The step that follows the first one. */
   readonly next?: PromptStep
   /** The values the `arguments` steps ask for, in order. */
@@ -124,6 +138,10 @@ export interface CommandInvocation {
   readonly title: string
   /** The file a run is over, which is the one `CommandTarget` named. */
   readonly file: string
+  /** The line of the note a command that opens it moves to. Absent opens the note at its start. */
+  readonly line?: number
+  /** The place in a file that is no note a command that opens it moves to. */
+  readonly selector?: Selector
   /** The other files it is over, beside the one at `path`. */
   readonly others: readonly string[]
   /**
@@ -194,7 +212,7 @@ export interface Notes {
    * Opens a file in the editor matching its type, in its own tab or beside the
    * current one.
    */
-  openFile(path: string, title: string, showing: 'current' | 'split'): void
+  openFile(path: string, title: string, showing: 'current' | 'split', at?: CommandPlace): void
   /** Opens a file created by this command, as the type it was created as. */
   openNewFile(
     path: string,

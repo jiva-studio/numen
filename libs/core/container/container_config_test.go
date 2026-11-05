@@ -69,7 +69,7 @@ func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 		t.Errorf("settings were read from %q: %v", response, err)
 	}
 	err := NewConfig(Config{}).GetSettingsWriter()([]settingsport.Setting{
-		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
+		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err == nil {
 		t.Error("a setting was written with nowhere to write it")
@@ -171,7 +171,7 @@ func TestHandleError_CallsConfiguredHandler(t *testing.T) {
 func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	err := NewConfig(Config{}).GetSettingsWriter()([]settingsport.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`}})
+	err := NewConfig(Config{}).GetSettingsWriter()([]settingsport.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`}})
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
@@ -180,7 +180,7 @@ func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `opus`}})
+	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `opus`}})
 	if !errors.Is(err, settingsport.ErrNotASetting) {
 		t.Errorf("got %v", err)
 	}

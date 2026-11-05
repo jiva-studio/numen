@@ -30,4 +30,6 @@ export interface Task {
   readonly pluginName: string
   /** Whether the core can stop this work when asked by its id. */
   readonly isCancellable: boolean
+  /** Work, or a message of the core that is neither running nor failed. */
+  readonly kind: 'work' | 'notice'
 }

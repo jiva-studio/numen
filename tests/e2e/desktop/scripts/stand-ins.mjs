@@ -8,6 +8,12 @@ export const DELAYED_PROMPT = 'Answer after a pause'
 
 const DELAYED_REPLY_MS = 10_000
 
+/**
+ * A prompt holding these words is answered once `DELETE /stand-in/hold` opens the gate that
+ * `PUT /stand-in/hold` closed, so a test sees the stop state for as long as it needs to.
+ */
+export const HELD_PROMPT = 'Answer when released'
+
 /** The model the stand-in chat API lists. */
 export const STAND_IN_MODEL = 'stand-in/model'
 
@@ -38,6 +44,22 @@ export const NEW_RELEASE = {
 
 /** The release the update manifest names now. */
 let release = OLD_RELEASE
+
+/** The held replies wait while this gate is closed; each is the function that sends one reply. */
+let isHoldClosed = false
+const heldReplies = new Set()
+
+const closeHold = (_req, res) => {
+  isHoldClosed = true
+  sendJson(res, 200, { held: heldReplies.size })
+}
+
+const openHold = (_req, res) => {
+  isHoldClosed = false
+  for (const send of heldReplies) send()
+  heldReplies.clear()
+  sendJson(res, 200, { held: 0 })
+}
 
 /** How many times each path was asked for, which `GET /stand-in/requests` answers. */
 const requests = new Map()
@@ -113,6 +135,11 @@ const answerChat = (req, res) =>
         choices: [{ message, finish_reason: calls.length > 0 ? 'tool_calls' : 'stop' }],
       })
     }
+    if (raw.includes(HELD_PROMPT) && isHoldClosed) {
+      heldReplies.add(reply)
+      res.on('close', () => heldReplies.delete(reply))
+      return
+    }
     if (!raw.includes(DELAYED_PROMPT)) {
       reply()
       return
@@ -138,6 +165,8 @@ const routes = new Map([
       sendJson(res, 200, release)
     },
   ],
+  ['PUT /stand-in/hold', closeHold],
+  ['DELETE /stand-in/hold', openHold],
   ['GET /stand-in/requests', (_req, res) => sendJson(res, 200, Object.fromEntries(requests))],
   [
     'GET /v1/models',

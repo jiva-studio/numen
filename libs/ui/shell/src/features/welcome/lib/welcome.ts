@@ -33,7 +33,7 @@ export interface VaultRow {
 }
 
 /** What the screen offers below the list, where a window offers anything. */
-export interface Offer {
+export interface FooterEntry {
   readonly text: string
   readonly detail?: string
   readonly icon?: Component

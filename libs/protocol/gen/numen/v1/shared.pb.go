@@ -365,7 +365,7 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x03max\x18\x02 \x01(\x01R\x03max\":\n" +
 	"\x0eReasoningLevel\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title*\xb2\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title*\x9a\x02\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ERROR_CODE_MISSING\x10\x01\x12\x19\n" +
@@ -376,9 +376,7 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x15ERROR_CODE_UNREADABLE\x10\x06\x12\x1d\n" +
 	"\x19ERROR_CODE_ALREADY_EXISTS\x10\a\x12\x1b\n" +
 	"\x17ERROR_CODE_INVALID_NAME\x10\b\x12\x14\n" +
-	"\x10ERROR_CODE_STALE\x10\r\"\x04\b\t\x10\t\"\x04\b\n" +
-	"\x10\n" +
-	"\"\x04\b\v\x10\v\"\x04\b\f\x10\fBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x10ERROR_CODE_STALE\x10\rBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_shared_proto_rawDescOnce sync.Once

@@ -1,13 +1,14 @@
 import { test, expect, type Page } from '../../support/test.js'
 import {
   DELAYED_PROMPT,
+  HELD_PROMPT,
   STAND_IN_REPLY,
   TOOL_NOTE_PATH,
   TOOL_NOTE_TEXT,
   TOOL_PROMPT,
 } from '../../../scripts/stand-ins.mjs'
 import { openVaultFile, openWorkspace, runCommand, waitForWindow } from '../../support/workspace.js'
-import { hasVaultFile } from '../../support/media.js'
+import { getStandInsOrigin, hasVaultFile } from '../../support/media.js'
 import { expectSearchableList } from '../../support/searchable-list.js'
 import { callRPC, readVaultFile } from '../../support/vault.js'
 
@@ -152,17 +153,26 @@ const openAgent = async (page: Page) => {
 }
 
 test.describe('the send/stop disc', () => {
-  test('shows send, then stop until the answer settles, then send', async ({ page }) => {
-    const input = await openAgent(page)
-    await input.fill('Which pear trees grow in the east orchard?')
-    const send = page.getByRole('button', { name: 'Send' }).first()
-    await expect(send).toBeEnabled()
+  test('shows send, then stop until the answer settles, then send', async ({ page, request }) => {
+    const origin = await getStandInsOrigin(request)
+    expect((await request.put(`${origin}/stand-in/hold`)).ok()).toBe(true)
+    try {
+      const input = await openAgent(page)
+      await input.fill(`${HELD_PROMPT}: which pear trees grow in the east orchard?`)
+      const send = page.getByRole('button', { name: 'Send' }).first()
+      await expect(send).toBeEnabled()
 
-    await send.click()
-    await expect(page.getByRole('button', { name: 'Stop the agent' }).first()).toBeEnabled()
-    await expect(page.getByText(STAND_IN_REPLY).first()).toBeVisible({ timeout: 20_000 })
-    await expect(page.getByRole('button', { name: 'Stop the agent' })).toHaveCount(0)
-    await expect(send).toBeDisabled()
+      await send.click()
+      await expect(page.getByRole('button', { name: 'Stop the agent' }).first()).toBeEnabled()
+      await expect(page.getByText(STAND_IN_REPLY)).toHaveCount(0)
+
+      expect((await request.delete(`${origin}/stand-in/hold`)).ok()).toBe(true)
+      await expect(page.getByText(STAND_IN_REPLY).first()).toBeVisible({ timeout: 20_000 })
+      await expect(page.getByRole('button', { name: 'Stop the agent' })).toHaveCount(0)
+      await expect(send).toBeDisabled()
+    } finally {
+      await request.delete(`${origin}/stand-in/hold`)
+    }
   })
 
   test('shows send once stop is pressed in the middle of the answer', async ({ page }) => {

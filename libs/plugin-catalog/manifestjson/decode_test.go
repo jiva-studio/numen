@@ -138,7 +138,7 @@ func TestReadManifestValidSettings(t *testing.T) {
 		"name": "Sample",
 		"version": "1.0.0",
 		"settings": [
-			{"key": "enabled", "type": "boolean", "title": "Enabled", "default": true, "palette": true},
+			{"key": "verbose", "type": "boolean", "title": "Verbose", "default": true, "palette": true},
 			{"key": "model", "type": "enum", "title": "Model", "default": "fast", "options": ["fast", "accurate"]},
 			{"key": "retries", "type": "number", "title": "Retries", "default": 3},
 			{"key": "zoom", "type": "range", "title": "Zoom", "default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1},
@@ -192,7 +192,6 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"an activation event that is not the wildcard", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onCommand:a"]}`, manifest.ErrInvalidActivationEvent},
 		{"a capability no host resolves", `{"id":"a.b","name":"A","version":"1.0.0","capabilities":["agent"]}`, manifest.ErrInvalidCapability},
 		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["*"],"frontend":{}}`, manifest.ErrNoBackend},
-		{"commands without a backend", `{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, manifest.ErrNoBackend},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, manifest.ErrNoBackend},
 		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"apiKey","title":"T"}]}`, manifest.ErrNoBackend},
 		{"runtime dependencies without a backend", `{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`, manifest.ErrNoBackend},
@@ -323,7 +322,7 @@ func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
 	}
 }
 
-// The names under which the host records the stored secrets and the consent are
+// The name under which the host records the stored secrets is
 // neither a setting nor a secret of a manifest.
 func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
 	for _, one := range []struct {
@@ -332,8 +331,6 @@ func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
 	}{
 		{"a setting", `"settings":[{"key":"storedSecrets","type":"string","title":"Stored"}]`},
 		{"a secret", `"secrets":[{"name":"storedSecrets","title":"T"}]`},
-		{"the consent as a setting", `"settings":[{"key":"aiConsent","type":"boolean","title":"Allowed","default":true}]`},
-		{"the consent as a secret", `"secrets":[{"name":"aiConsent","title":"T"}]`},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",` + one.field + `}`))
@@ -388,17 +385,6 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 	}
 }
 
-func TestReadManifest_ReportsModelsOfAsUnknownKey(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(
-		`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"model","type":"string","title":"Model","modelsOf":"prog"}]}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !slices.Equal(m.Warnings, []string{`unknown key "settings[0].modelsOf"`}) {
-		t.Errorf("warnings = %v", m.Warnings)
-	}
-}
-
 func TestAManifestDeclaresDependencies(t *testing.T) {
 	sum := strings.Repeat("a", 64)
 	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"dependencies":[{"id":"sample-runtime","kind":"runtime"},{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`))
@@ -440,5 +426,57 @@ func TestSettingBoundsAreAbsentUntilTheManifestSetsThem(t *testing.T) {
 	}
 	if none.Min != nil || none.Max != nil || none.Step != nil {
 		t.Errorf("bounds the manifest does not set are present: %+v", none)
+	}
+}
+
+// The field enabled of the object of a plugin in the settings file is the host's, so a setting of that
+// name would meet it.
+func TestAManifestDoesNotDeclareASettingNamedEnabled(t *testing.T) {
+	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"enabled","type":"boolean","title":"Enabled"}]}`))
+	if !errors.Is(err, manifest.ErrReservedSettingKey) {
+		t.Errorf("error = %v, want ErrReservedSettingKey", err)
+	}
+}
+
+func TestASettingMayPreviewWhileFocusedAndListItsOptionsFromARegistry(t *testing.T) {
+	raw := `{
+		"id": "md.numen.sample",
+		"name": "Sample",
+		"version": "1.0.0",
+		"settings": [
+			{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes", "preview": true},
+			{"key": "retries", "type": "number", "title": "Retries"}
+		]
+	}`
+
+	m, err := manifestjson.Read(strings.NewReader(raw))
+	if err != nil {
+		t.Fatalf("a registry enum without options of its own was rejected: %v", err)
+	}
+	if got := m.Settings[0]; !got.Preview || got.OptionsFrom != "themes" {
+		t.Errorf("the theme reads as preview=%v from %q", got.Preview, got.OptionsFrom)
+	}
+	if got := m.Settings[1]; got.Preview || got.OptionsFrom != "" {
+		t.Errorf("a plain setting reads as preview=%v from %q", got.Preview, got.OptionsFrom)
+	}
+}
+
+// The first level of the settings file is the version v, the owner app and the ids of plugins, so a
+// plugin cannot take the first two as its id.
+func TestAManifestRejectsAnIdThatTheSettingsFileReserves(t *testing.T) {
+	for _, id := range []string{"app", "v"} {
+		_, err := manifestjson.Read(strings.NewReader(`{"id":"` + id + `","name":"A","version":"1.0.0"}`))
+		if err == nil {
+			t.Errorf("the id %q was accepted", id)
+		}
+	}
+}
+
+// Not yet decided by the person: a key of a plugin setting is one segment, since a dot joins the levels of a
+// path. This test is dropped if the person decides otherwise.
+func TestAManifestDoesNotDeclareASettingKeyWithADot(t *testing.T) {
+	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"max.tokens","type":"number","title":"Tokens"}]}`))
+	if !errors.Is(err, manifest.ErrInvalidSettingKey) {
+		t.Errorf("error = %v, want ErrInvalidSettingKey", err)
 	}
 }

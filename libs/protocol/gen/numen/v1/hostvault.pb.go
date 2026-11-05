@@ -3295,12 +3295,12 @@ var File_numen_v1_hostvault_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\n" +
-	"\x18numen/v1/hostvault.proto\x12\bnumen.v1\x1a\x13numen/v1/note.proto\"p\n" +
+	"\x18numen/v1/hostvault.proto\x12\bnumen.v1\x1a\x13numen/v1/note.proto\"j\n" +
 	"\fHostFileStat\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x19\n" +
 	"\bmod_time\x18\x03 \x01(\x03R\amodTime\x12\x17\n" +
-	"\ais_note\x18\x05 \x01(\bR\x06isNoteJ\x04\b\x04\x10\x05\"\x17\n" +
+	"\ais_note\x18\x05 \x01(\bR\x06isNote\"\x17\n" +
 	"\x15ListHostVaultsRequest\"G\n" +
 	"\rHostVaultInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +

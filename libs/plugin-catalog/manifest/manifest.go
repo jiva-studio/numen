@@ -88,20 +88,23 @@ var (
 // never a key, and neither a setting nor a secret of a manifest takes the name.
 const SettingStoredSecrets = "storedSecrets"
 
-// SettingAIConsent is the setting under which the host records AI consent;
-// absent means the user has not been prompted yet. The window writes it, and no
-// manifest uses the name.
-const SettingAIConsent = "aiConsent"
+// IsValidID reports whether the text is the shape of a plugin id: two or more dot-separated
+// segments of letters, digits, _ or -. The ids `app` and `v`, which the first level of the
+// settings file keeps, are no plugin ids.
+func IsValidID(id string) bool { return manifestIDPattern.MatchString(id) }
 
-// listReservedSettingKeys returns the settings of a plugin the host keeps for itself.
-func listReservedSettingKeys() []string { return []string{SettingStoredSecrets, SettingAIConsent} }
+// SettingEnabled is the field of the object of a plugin in the settings file that holds whether the
+// host runs the plugin. No setting of a manifest takes the name.
+const SettingEnabled = "enabled"
+
+// listReservedSettingKeys returns the fields of the object of a plugin the host keeps for itself.
+func listReservedSettingKeys() []string { return []string{SettingStoredSecrets, SettingEnabled} }
 
 var (
-	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
-	manifestServicePattern  = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
-	manifestReplacesPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$`)
-	manifestSecretPattern   = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	manifestVersionPattern  = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
+	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
+	manifestServicePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
+	manifestSecretPattern  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	manifestVersionPattern = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
 
 // SettingTypeString is the type of a setting that holds a text string.
@@ -141,10 +144,6 @@ type Setting struct {
 	Min  *float64
 	Max  *float64
 	Step *float64
-	// Replaces are the places in the settings file where the user stored this setting before the plugin took
-	// it over, each written as the dot-joined keys leading to it, the newest first. The first of
-	// them the file contains supplies the value for a user whose file has none for the plugin yet.
-	Replaces []string
 	// OptionsBy gives an enum setting its options from the value of another setting. The first option
 	// of each list is the default under that value.
 	OptionsBy *OptionsBy
@@ -156,6 +155,12 @@ type Setting struct {
 	Accept []string
 	// Multiple is a setting of type file that holds a list of paths, one per line.
 	Multiple bool
+	// Preview makes the window apply the value while the control of the setting is focused, and
+	// restore the saved value on leaving.
+	Preview bool
+	// OptionsFrom names a registry the options are listed from, such as the installed themes.
+	// Empty where the setting lists its own options.
+	OptionsFrom string
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
@@ -183,8 +188,6 @@ type Manifest struct {
 	// receives a call for one forwards it to the plugin; a service the host serves itself is never
 	// forwarded.
 	Services []string
-	// Commands are the commands the plugin's backend runs, offered by the palette and the command line.
-	Commands []Command
 	// SettingsViews are the components of the plugin's frontend the settings page draws among the
 	// settings of the plugin, each by the id the frontend registers it under.
 	SettingsViews []SettingsView
@@ -374,7 +377,6 @@ func (m Manifest) listBackendlessIssues() []error {
 		isDeclared bool
 	}{
 		{"activationEvents", len(m.ActivationEvents) > 0},
-		{"commands", len(m.Commands) > 0},
 		{"services", len(m.Services) > 0},
 		{"secrets", len(m.Secrets) > 0},
 		{"runtime dependencies", slices.ContainsFunc(m.Dependencies, func(d DependencyRequirement) bool { return d.Kind == DependencyKindRuntime })},
@@ -473,12 +475,10 @@ func listManifestSettingIssues(settings []Setting) []error {
 			continue
 		}
 		seenKeys[key] = true
-		issues = append(issues, listManifestSettingIssue(s, key)...)
-		for _, place := range s.Replaces {
-			if !manifestReplacesPattern.MatchString(place) {
-				issues = append(issues, fmt.Errorf("%w: %s replaces %q", ErrInvalidSettingKey, key, place))
-			}
+		if strings.Contains(key, ".") {
+			issues = append(issues, fmt.Errorf("%w: %s holds a dot, and a key is one segment of a path", ErrInvalidSettingKey, key))
 		}
+		issues = append(issues, listManifestSettingIssue(s, key)...)
 	}
 	return issues
 }
@@ -491,7 +491,7 @@ func listManifestSettingIssue(s Setting, key string) []error {
 	if !slices.Contains(listSettingTypes(), s.Type) {
 		issues = append(issues, fmt.Errorf("%w: %q for %s", ErrInvalidSettingType, s.Type, key))
 	}
-	if s.Type == SettingTypeEnum && len(s.Options) == 0 && s.OptionsBy == nil {
+	if s.Type == SettingTypeEnum && len(s.Options) == 0 && s.OptionsBy == nil && s.OptionsFrom == "" {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrEnumMissingOptions, key))
 	}
 	if s.Type == "range" && s.Min != nil && s.Max != nil && *s.Min > *s.Max {

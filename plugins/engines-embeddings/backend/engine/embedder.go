@@ -30,14 +30,6 @@ func getOutputs(pooling string) []string {
 	return []string{"last_hidden_state", "sentence_embedding"}
 }
 
-// getPooling returns the name of a pooling, with the old name of cls replaced.
-func getPooling(name string) string {
-	if name == PoolHead {
-		return PoolCLS
-	}
-	return name
-}
-
 // Embedder is one model, loaded.
 type Embedder struct {
 	name         string
@@ -114,7 +106,7 @@ func Open(
 		dimensions:   identity.Dimensions,
 		maxTokens:    identity.MaxTokens,
 		window:       getWindow(provider, identity.MaxTokens),
-		pooling:      getPooling(identity.Pooling),
+		pooling:      identity.Pooling,
 		batchTexts:   max(cfg.BatchTexts, 1),
 		passes:       passes,
 		tokenizer:    tokenizer,
@@ -197,6 +189,7 @@ func (e *Embedder) GetModel() ModelInfo {
 		Concurrency:    e.passes,
 		FloorHint:      0,
 		MinChunkLength: 0,
+		ChunkTokens:    0,
 		Handling:       Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalise: e.isNormalised, ExtraInputs: nil},
 	}
 }

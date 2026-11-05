@@ -11,7 +11,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import { Bot, FolderPlus, Settings, SquarePen, Waypoints } from '@lucide/vue'
 import WelcomePage from './WelcomePage.vue'
-import type { Offer, VaultRow, WelcomeAction } from '../lib/welcome'
+import type { FooterEntry, VaultRow, WelcomeAction } from '../lib/welcome'
 
 /** The ways in the editor's window offers, in the order it offers them. */
 const WAYS: readonly WelcomeAction[] = [
@@ -23,7 +23,7 @@ const WAYS: readonly WelcomeAction[] = [
   { id: 'settings', text: 'Settings', icon: Settings, keys: { icons: ['control'], letter: ',' } },
 ]
 
-const OFFER: Offer = {
+const FOOTER: FooterEntry = {
   text: 'New vault',
   detail: 'Choose a folder',
   icon: FolderPlus,
@@ -76,7 +76,7 @@ const meta: Meta<Knobs> = {
   args: { wide: 900, high: 640, ways: WAYS, vaults: VAULTS },
   render: (args) => ({
     components: { WelcomePage },
-    setup: () => ({ args, OFFER }),
+    setup: () => ({ args, FOOTER }),
     template: `
       <div
         :style="{
@@ -92,7 +92,7 @@ const meta: Meta<Knobs> = {
           :ways="args.ways"
           :vaults="args.vaults"
           heading="Vaults"
-          :offer="OFFER"
+          :footer="FOOTER"
           version="0.4.1"
         />
       </div>

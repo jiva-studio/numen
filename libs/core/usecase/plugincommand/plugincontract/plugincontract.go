@@ -8,7 +8,6 @@ import (
 
 type (
 	CommandFailedError     = pluginport.CommandFailedError
-	CompletionConsent      = pluginport.CompletionConsent
 	DependencyCatalog      = pluginport.DependencyCatalog
 	DependencyKind         = pluginport.DependencyKind
 	DependencyProvisioner  = pluginport.DependencyProvisioner
@@ -27,10 +26,12 @@ type (
 	PluginCommandCall      = pluginport.PluginCommandCall
 	PluginCommandEntry     = pluginport.PluginCommandEntry
 	PluginCommandResult    = pluginport.PluginCommandResult
+	PluginMenuEntry        = pluginport.PluginMenuEntry
 	PluginContextCondition = pluginport.PluginContextCondition
 	PluginContext          = pluginport.PluginContext
 	PluginContributes      = pluginport.PluginContributes
 	PluginCommands         = pluginport.PluginCommands
+	PluginParts            = pluginport.PluginParts
 	PluginConfigurator     = pluginport.PluginConfigurator
 	PluginDiscoverer       = pluginport.PluginDiscoverer
 	PluginEmbeddedTexts    = pluginport.PluginEmbeddedTexts
@@ -97,11 +98,6 @@ const (
 	CommandArgumentNumber       = pluginport.CommandArgumentNumber
 	CommandArgumentVersion      = pluginport.CommandArgumentVersion
 	CommandArgumentString       = pluginport.CommandArgumentString
-	ConsentAllowed              = pluginport.ConsentAllowed
-	ConsentRequested            = pluginport.ConsentRequested
-	ConsentNone                 = pluginport.ConsentNone
-	ConsentDenied               = pluginport.ConsentDenied
-	ConsentPending              = pluginport.ConsentPending
 	DependencyKindBinary        = pluginport.DependencyKindBinary
 	DependencyKindDataset       = pluginport.DependencyKindDataset
 	DependencyKindModel         = pluginport.DependencyKindModel
@@ -136,7 +132,6 @@ const (
 	HandlePlaybackCopy          = pluginport.HandlePlaybackCopy
 	HandleTextProvider          = pluginport.HandleTextProvider
 	ContextAnyValue             = pluginport.ContextAnyValue
-	SettingAIConsent            = pluginport.SettingAIConsent
 	ConfigPerformanceProfile    = pluginport.ConfigPerformanceProfile
 	SettingStoredSecrets        = pluginport.SettingStoredSecrets
 	SettingTypeEnum             = pluginport.SettingTypeEnum
@@ -201,3 +196,7 @@ func NormalizePermission(permission string) string { return pluginport.Normalize
 func PluginCapabilities() []string { return pluginport.PluginCapabilities() }
 
 func PluginPermissions() []string { return pluginport.PluginPermissions() }
+
+func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, options PluginSettingOptions) PluginSetting {
+	return pluginport.NewPluginSetting(declared, defaultJSON, options)
+}

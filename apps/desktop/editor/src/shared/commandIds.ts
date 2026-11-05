@@ -9,7 +9,6 @@ const formatAppCommandId = (id: string): string => formatCommandId(APP_COMMAND_O
 export const COMMAND = {
   openNote: formatAppCommandId('note.open'),
   openNoteBeside: formatAppCommandId('note.openBeside'),
-  goToStartNote: formatAppCommandId('note.goToStart'),
   goToNote: formatAppCommandId('note.goTo'),
   createNote: formatAppCommandId('note.create'),
   createChildNote: formatAppCommandId('note.createChild'),
@@ -19,20 +18,18 @@ export const COMMAND = {
   trashNote: formatAppCommandId('note.trash'),
   deleteNote: formatAppCommandId('note.delete'),
   copyNotePath: formatAppCommandId('note.copyPath'),
-  chooseTitleSync: formatAppCommandId('note.chooseTitleSync'),
+  openFile: formatAppCommandId('file.open'),
   moveFile: formatAppCommandId('file.move'),
   createFolder: formatAppCommandId('folder.create'),
   closeTab: formatAppCommandId('tab.close'),
   searchVault: formatAppCommandId('vault.search'),
   openSettings: formatAppCommandId('settings.open'),
-  chooseTheme: formatAppCommandId('appearance.chooseTheme'),
-  chooseMode: formatAppCommandId('appearance.chooseMode'),
-  chooseInterfaceSize: formatAppCommandId('appearance.chooseInterfaceSize'),
-  chooseTextSize: formatAppCommandId('appearance.chooseTextSize'),
-  choosePerformanceProfile: formatAppCommandId('performance.chooseProfile'),
   openVault: formatAppCommandId('vault.open'),
   createVault: formatAppCommandId('vault.create'),
   renameVault: formatAppCommandId('vault.rename'),
   removeVault: formatAppCommandId('vault.remove'),
   eraseVault: formatAppCommandId('vault.erase'),
 } as const
+
+/** What the id of the command of a setting starts with: `setting:<owner>:<key>`. */
+export const SETTING_COMMAND_PREFIX = 'setting:'

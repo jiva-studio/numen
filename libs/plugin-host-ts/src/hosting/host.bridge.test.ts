@@ -87,12 +87,22 @@ describe('the plugin context events', () => {
 describe('command handlers', () => {
   it('reports a rejecting shortcut handler under its plugin id', async () => {
     const onError = vi.fn()
-    const host = createPluginHost(createDeps({ onError }))
+    const host = createPluginHost(
+      createDeps({
+        onError,
+        getCommandDeclarations: () => [
+          {
+            pluginId: 'cmd.plugin',
+            id: 'run',
+            title: 'run',
+            shortcut: 'ctrl+k',
+          },
+        ],
+      }),
+    )
     const fault = new Error('boom')
     host.createContext('cmd.plugin').registerCommand({
       id: 'run',
-      title: 'Run',
-      shortcut: 'ctrl+k',
       handler: async () => {
         throw fault
       },
@@ -110,11 +120,15 @@ describe('command handlers', () => {
 
   it('reports a throwing handler run by id and resolves true', async () => {
     const onError = vi.fn()
-    const host = createPluginHost(createDeps({ onError }))
+    const host = createPluginHost(
+      createDeps({
+        onError,
+        getCommandDeclarations: () => [{ pluginId: 'cmd.plugin', id: 'run', title: 'run' }],
+      }),
+    )
     const fault = new Error('sync boom')
     host.createContext('cmd.plugin').registerCommand({
       id: 'run',
-      title: 'Run',
       handler: () => {
         throw fault
       },
@@ -131,14 +145,20 @@ describe('a command over a note', () => {
   const NOTE = { path: 'Animals.md', title: 'Animals', type: 'sample' }
 
   it('is offered as one over a note, and runs with the note it is given', async () => {
-    const host = createPluginHost(createDeps())
+    const host = createPluginHost(
+      createDeps({
+        getCommandDeclarations: () => [
+          {
+            pluginId: 'cmd.plugin',
+            id: 'summary',
+            title: 'Open summary',
+            scope: 'note',
+          },
+        ],
+      }),
+    )
     const handler = vi.fn()
-    host.createContext('cmd.plugin').registerCommand({
-      id: 'summary',
-      title: 'Open summary',
-      scope: 'note',
-      handler,
-    })
+    host.createContext('cmd.plugin').registerCommand({ id: 'summary', handler })
 
     await host.executeCommand('cmd.plugin:summary', NOTE)
 
@@ -149,15 +169,21 @@ describe('a command over a note', () => {
   })
 
   it('does not run from its shortcut while no note is in front', async () => {
-    const host = createPluginHost(createDeps())
+    const host = createPluginHost(
+      createDeps({
+        getCommandDeclarations: () => [
+          {
+            pluginId: 'cmd.plugin',
+            id: 'summary',
+            title: 'Open summary',
+            shortcut: 'ctrl+p',
+            scope: 'note',
+          },
+        ],
+      }),
+    )
     const handler = vi.fn()
-    host.createContext('cmd.plugin').registerCommand({
-      id: 'summary',
-      title: 'Open summary',
-      shortcut: 'ctrl+p',
-      scope: 'note',
-      handler,
-    })
+    host.createContext('cmd.plugin').registerCommand({ id: 'summary', handler })
     const event = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true })
 
     host.handleShortcut(event, async () => ({ path: '', title: '', type: 'note' }))
@@ -214,6 +240,16 @@ describe('a tab kind component', () => {
       navigateTab: navigateTab as never,
       closeTab,
       onError,
+      getCommandDeclarations: () => [
+        {
+          pluginId: 'reader.plugin',
+          id: 'rich',
+          title: 'Rich',
+          shortcut: 'ctrl+b',
+          scope: 'note',
+          icon: 'star',
+        },
+      ],
       getRelations: () => relations as never,
       getFiles: () => files as never,
       getAgent: () => agent as never,
@@ -258,23 +294,8 @@ describe('a tab kind component', () => {
     await Promise.resolve()
     expect(received[0]).toBe(ctx)
 
-    // Palette options and hidden commands
-    ctx.registerCommand({
-      id: 'hidden',
-      title: 'Hidden',
-      canShowInPalette: false,
-      handler: vi.fn(),
-    })
-    ctx.registerCommand({
-      id: 'rich',
-      title: 'Rich',
-      canShowInPalette: true,
-      shortcut: 'ctrl+b',
-      scope: 'note',
-      icon: 'star',
-      isNoteDestination: true,
-      handler: vi.fn(),
-    })
+    // The palette lists what the manifest declares
+    ctx.registerCommand({ id: 'rich', handler: vi.fn() })
     expect(host.getPaletteCommands()).toStrictEqual([
       {
         id: 'reader.plugin:rich',
@@ -282,7 +303,6 @@ describe('a tab kind component', () => {
         shortcut: 'ctrl+b',
         scope: 'note',
         icon: 'star',
-        isNoteDestination: true,
       },
     ])
 
@@ -302,7 +322,17 @@ describe('a tab kind component', () => {
     expect(onError).toHaveBeenCalledWith('reader.plugin', noteErr)
 
     // Minimal host without optional deps
-    const bareHost = createPluginHost(createDeps())
+    const bareHost = createPluginHost(
+      createDeps({
+        getCommandDeclarations: () => [
+          {
+            pluginId: 'bare',
+            id: 'fail-quietly',
+            title: 'Fail',
+          },
+        ],
+      }),
+    )
     const bareCtx = bareHost.createContext('bare')
     expect(bareCtx.app).toEqual({ version: '0.0.0-dev', build: 0, platform: 'linux' })
     expect(await bareCtx.openExternal('https://numen.md/')).toEqual({
@@ -313,7 +343,6 @@ describe('a tab kind component', () => {
     expect(() => bareCtx.closeTab?.('tab-1')).not.toThrow()
     bareCtx.registerCommand({
       id: 'fail-quietly',
-      title: 'Fail',
       handler: () => {
         throw new Error('no reporter')
       },

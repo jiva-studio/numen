@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createCommands } from '../../lib/commands/commands'
 import { runSupport } from '../palette/runSupport'
-import { createInvocation } from '../../lib/offers/invocation'
+import { createInvocation } from '../../lib/entries/invocation'
 import { createNotes } from '../../lib/notes/notes'
 import type { VaultRef } from '../../types'
 import type { CommandDeps } from './deps'
@@ -174,17 +174,8 @@ const window = (
       },
     },
     settings: {
-      chooseAppearance: async (selected) => {
-        isDone.push(`appearance ${selected}`)
-      },
-      chooseSync: async (selected) => {
-        isDone.push(`syncing ${selected}`)
-      },
-      choosePerformance: async (selected) => {
-        isDone.push(`performance ${selected}`)
-      },
-      choosePluginSetting: async (pluginId, key, selected) => {
-        isDone.push(`plugin ${pluginId} ${key} ${selected}`)
+      chooseSetting: async (command, selected) => {
+        isDone.push(`setting ${command} ${selected}`)
       },
     },
     runSupport: runs,
@@ -721,36 +712,31 @@ describe('a command over the window', () => {
 
     expect(one.actions).toStrictEqual(['search'])
   })
-
-  it('passes over the row that was chosen, and nothing about the note in front', async () => {
-    const one = window()
-
-    await carry(createInvocation('app:appearance.chooseTheme', front(), 'mine:sea'), one.on)
-    await carry(createInvocation('app:appearance.chooseTheme', front(), 'mode:dark'), one.on)
-
-    expect(one.actions).toStrictEqual(['appearance mine:sea', 'appearance mode:dark'])
-  })
 })
 
 describe('a command over the vault', () => {
-  it('travels to the note the vault opens with', async () => {
+  it('travels to the note that was picked', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.goToStart', front()), one.on)
+    await carry(createInvocation('app:note.goTo', { ...front(), path: 'Root.md' }), one.on)
 
     expect(one.actions).toStrictEqual(['travel Root.md'])
   })
 
-  it('says a vault that opens with no note at all', async () => {
+  it('says a pick that names no note at all', async () => {
     const one = window()
-    const empty: CommandDeps = {
-      ...one.on,
-      navigator: { ...one.on.navigator, getOpeningNote: () => '' },
-    }
 
-    await runInvocation(createInvocation('app:note.goToStart', front()), empty, words)
+    await runInvocation(createInvocation('app:note.goTo', { ...front(), path: '' }), one.on, words)
 
     expect(one.notices).toStrictEqual([words.nowhere])
+  })
+
+  it('has no command to go to a start note', async () => {
+    const one = window()
+
+    await runInvocation(createInvocation('app:note.goToStart', front()), one.on, words)
+
+    expect(one.actions).toStrictEqual([])
   })
 })
 
@@ -1015,14 +1001,10 @@ describe('a command nothing carries out', () => {
 })
 
 describe('what the voice says in which severity', () => {
-  it('cautions that a vault opens with no note at all', async () => {
+  it('cautions that a pick names no note at all', async () => {
     const one = window()
-    const empty: CommandDeps = {
-      ...one.on,
-      navigator: { ...one.on.navigator, getOpeningNote: () => '' },
-    }
 
-    await runInvocation(createInvocation('app:note.goToStart', front()), empty, words)
+    await runInvocation(createInvocation('app:note.goTo', { ...front(), path: '' }), one.on, words)
 
     expect(one.severities).toStrictEqual(['warning'])
   })
@@ -1149,53 +1131,45 @@ describe('the tab holding a note flushed', () => {
   })
 })
 
-describe('plugin setting invocation', () => {
-  it('calls choosePluginSetting with boolean and enum values', async () => {
+describe('the command of a setting', () => {
+  it('passes the command and the row chosen to the adapter of the settings, whoever owns the setting', async () => {
     const one = window()
 
+    await carry(createInvocation('setting:app:appearance.theme', front(), 'mine:sea'), one.on)
     await carry(
-      createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'on'),
+      createInvocation('setting:md.numen.engines.transcription:autoRun', front(), 'on'),
       one.on,
     )
-    expect(one.actions).toStrictEqual(['plugin md.numen.engines.transcription autoRun true'])
 
-    await carry(
-      createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'off'),
-      one.on,
-    )
-    expect(one.actions[1]).toBe('plugin md.numen.engines.transcription autoRun false')
+    expect(one.actions).toStrictEqual([
+      'setting setting:app:appearance.theme mine:sea',
+      'setting setting:md.numen.engines.transcription:autoRun on',
+    ])
+  })
 
-    await carry(
-      createInvocation(
-        'plugin-setting:md.numen.engines.transcription:model',
-        front(),
-        'parakeet-tdt-0.6b-v2-int8',
-      ),
-      one.on,
-    )
-    expect(one.actions[2]).toBe(
-      'plugin md.numen.engines.transcription model parakeet-tdt-0.6b-v2-int8',
-    )
+  it('passes the row chosen whatever note is in front', async () => {
+    const one = window()
 
-    await carry(createInvocation('plugin-setting::autoRun', front(), 'on'), one.on)
-    await carry(
-      createInvocation('plugin-setting:md.numen.engines.transcription:', front(), 'on'),
-      one.on,
-    )
-    expect(one.actions).toHaveLength(3)
+    await carry(createInvocation('setting:app:performance.profile', front(), 'eco'), one.on)
 
-    const withoutChoosePlugin: CommandDeps = {
+    expect(one.actions).toStrictEqual(['setting setting:app:performance.profile eco'])
+  })
+
+  it('reports the reason a write is rejected as a message of the window', async () => {
+    const one = window()
+    const failing: CommandDeps = {
       ...one.on,
       settings: {
-        chooseAppearance: one.on.settings.chooseAppearance,
-        chooseSync: one.on.settings.chooseSync,
-        choosePerformance: one.on.settings.choosePerformance,
+        ...one.on.settings,
+        chooseSetting: async () => {
+          throw new Error('value out of range')
+        },
       },
     }
-    await carry(
-      createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'on'),
-      withoutChoosePlugin,
-    )
-    expect(one.actions).toHaveLength(3)
+
+    await carry(createInvocation('setting:app:performance.profile', front(), 'eco'), failing)
+
+    expect(one.notices).toStrictEqual(['value out of range'])
+    expect(one.severities).toStrictEqual(['error'])
   })
 })

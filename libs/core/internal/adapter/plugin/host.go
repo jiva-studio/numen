@@ -87,6 +87,8 @@ type Host struct {
 	activation       lifecycle.ActivationPolicy
 	onPluginFailed   func(pluginport.PluginFailure)
 	onFailureCleared func(pluginID string)
+	configWatchers   map[string]map[int]func()
+	nextWatcher      int
 	errorHandler     eventbus.ErrorHandler
 	onDisk           map[string]bool
 	discoverMu       sync.RWMutex
@@ -96,12 +98,9 @@ type Host struct {
 	vault            pluginport.PluginVault
 	texts            pluginport.PluginTexts
 	search           pluginport.PluginSearch
-	// consentAsks holds the plugins that requested a completion while the consent
-	// prompt was unanswered, since the host started.
-	consentAsks   map[string]bool
-	secretLocksMu sync.Mutex
-	secretLocks   map[string]*sync.Mutex
-	keyStore      pluginport.KeyStore
+	secretLocksMu    sync.Mutex
+	secretLocks      map[string]*sync.Mutex
+	keyStore         pluginport.KeyStore
 	// noKeyStoreOnce reports once that a recorded secret cannot be read on a
 	// machine without a key store.
 	noKeyStoreOnce sync.Once
@@ -147,7 +146,6 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		failedPlugins:    nil,
 		problems:         nil,
 		completer:        nil,
-		consentAsks:      make(map[string]bool),
 		keyStore:         nil,
 		hostEndpoint:     nil,
 		hostAddress:      hostendpoint.Address,
@@ -1222,7 +1220,6 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 		result = map[string]any{}
 	}
 	delete(result, pluginport.SettingStoredSecrets)
-	delete(result, pluginport.SettingAIConsent)
 	if p, ok := h.plugins[pluginID]; ok {
 		for _, name := range p.Manifest.GetSecretNames() {
 			delete(result, name)
@@ -1434,6 +1431,7 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 		}
 		return errors.Join(secretsErr, fmt.Errorf("configure plugin %s: %w", pluginID, err))
 	}
+	h.runConfigWatchers(pluginID)
 	return secretsErr
 }
 
@@ -1447,26 +1445,31 @@ func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plu
 				defJSON = string(b)
 			}
 		}
-		settings = append(settings, pluginport.PluginSetting{
-			Key:         s.Key,
-			Type:        s.Type,
-			Title:       s.Title,
-			Description: s.Description,
-			DefaultJSON: defJSON,
-			Palette:     s.Palette,
-			Icon:        s.Icon,
-			Options:     options,
-			Min:         s.Min,
-			Max:         s.Max,
-			Step:        s.Step,
-			Replaces:    s.Replaces,
-			OptionsBy:   s.OptionsBy,
-			When:        s.When,
-			Accept:      s.Accept,
-			Multiple:    s.Multiple,
-		})
+		settings = append(settings, pluginport.NewPluginSetting(s, defJSON, options))
 	}
 	return settings
+}
+
+// resolveSettings fills in the options, the visibility and the value in force of each setting under
+// the values in force, which are the stored values with the defaults, the options that follow
+// another setting and the conditions applied.
+func resolveSettings(declared manifest.Manifest, settings []pluginport.PluginSetting, values map[string]any) {
+	for index := range settings {
+		one, found := declared.GetSetting(settings[index].Key)
+		if !found {
+			continue
+		}
+		settings[index].ActiveOptions = declared.GetSettingOptions(one, values)
+		if len(settings[index].ActiveOptions) == 0 {
+			settings[index].ActiveOptions = settings[index].Options
+		}
+		settings[index].IsShown = declared.IsSettingShown(one, values)
+		if value, ok := values[one.Key]; ok {
+			if encoded, err := json.Marshal(value); err == nil {
+				settings[index].ValueJSON = string(encoded)
+			}
+		}
+	}
 }
 
 // GetPluginInfos returns specifications of all registered plugins and their settings schemas, in
@@ -1479,6 +1482,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 	for _, p := range h.getPluginsInOrderLocked() {
 		isActive := h.isPluginActiveLocked(p.Manifest.ID)
 		settings := toPluginSettings(p.Manifest.Settings)
+		resolveSettings(p.Manifest, settings, h.getPluginSettingsLocked(p.Manifest.ID))
 
 		result = append(result, pluginport.PluginInfo{
 			ID:            p.Manifest.ID,
@@ -1491,9 +1495,9 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 			Permissions:   p.Manifest.Permissions,
 			Secrets:       p.Manifest.Secrets,
 			StoredSecrets: h.getStoredSecretsLocked(p.Manifest.ID),
-			Consent:       h.getCompletionConsentLocked(p.Manifest),
 			Failure:       h.getFailureLocked(p.Manifest.ID),
 			HasFrontend:   p.Manifest.HasFrontend(),
+			HasBackend:    p.Manifest.HasBackend(),
 			Readers:       h.listReaderInfosLocked(p.Manifest),
 			SettingsViews: slices.Clone(p.Manifest.SettingsViews),
 		})
@@ -1506,7 +1510,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 // executables, and its default where the manifest gives none.
 func resolveSettingDefaultAndOptions(s pluginport.PluginManifestSetting) (any, pluginport.PluginSettingOptions) {
 	if !isACPPathsSetting(s) {
-		return resolveSettingDefault(s), s.Options
+		return s.Default, s.Options
 	}
 	discovered := resolveDiscoveredACPOptions()
 	options := s.Options
@@ -1519,22 +1523,6 @@ func resolveSettingDefaultAndOptions(s pluginport.PluginManifestSetting) (any, p
 	return s.Default, options
 }
 
-func resolveSettingDefault(s pluginport.PluginManifestSetting) any {
-	if s.Default == "" {
-		switch s.Key {
-		case "yt_dlp":
-			if path, err := exec.LookPath("yt-dlp"); err == nil {
-				return path
-			}
-		case "ffmpeg":
-			if path, err := exec.LookPath("ffmpeg"); err == nil {
-				return path
-			}
-		}
-	}
-	return s.Default
-}
-
 type acpExecutableCandidate struct {
 	title  string
 	binary string
@@ -1544,7 +1532,7 @@ type acpExecutableCandidate struct {
 const (
 	acpSubcommand     = "acp"
 	acpFlag           = "--acp"
-	keyExecutablePath = "executable_path"
+	keyExecutablePath = "executablePath"
 )
 
 func getAcpExecutableCandidates() []acpExecutableCandidate {

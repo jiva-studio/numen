@@ -1,86 +1,100 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.6",
+  "version": "2026.11.7",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "targets": ["desktop.editor"],
   "contributes": {
-    "tabKinds": [{ "kind": "link", "title": "Link", "icon": "link" }],
+    "tabKinds": [
+      {
+        "kind": "link",
+        "title": "Link",
+        "icon": "link"
+      }
+    ],
     "feature": "media links",
     "category": "tools",
     "handles": [
-      { "purpose": "text-provider" },
-      { "purpose": "playback-copy", "noteTypes": ["link"] }
+      {
+        "purpose": "text-provider"
+      },
+      {
+        "purpose": "playback-copy",
+        "noteTypes": ["link"]
+      }
     ],
-    "noteTypes": [{ "type": "link" }],
-    "frameOrigins": ["https://www.youtube-nocookie.com"]
+    "noteTypes": [
+      {
+        "type": "link"
+      }
+    ],
+    "frameOrigins": ["https://www.youtube-nocookie.com"],
+    "commands": [
+      {
+        "id": "link.import",
+        "title": "Import from URL",
+        "icon": "link",
+        "arguments": [
+          {
+            "name": "address",
+            "title": "The address",
+            "type": "string",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "link.downloadText",
+        "title": "Download text again",
+        "icon": "refresh-cw",
+        "noteTypes": ["link"]
+      },
+      {
+        "id": "link.downloadVideo",
+        "title": "Download video",
+        "icon": "download",
+        "noteTypes": ["link"]
+      },
+      {
+        "id": "link.deleteText",
+        "title": "Delete text",
+        "icon": "trash-2",
+        "when": [
+          {
+            "key": "version.plugin",
+            "is": ["md.numen.tools.media.importer"]
+          }
+        ]
+      },
+      {
+        "id": "link.deleteVideo",
+        "title": "Delete downloaded video",
+        "icon": "trash-2",
+        "noteTypes": ["link"]
+      }
+    ]
   },
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "services": ["md.numen.tools.media.importer"],
-  "commands": [
-    {
-      "id": "link.import",
-      "title": "Import from URL",
-      "icon": "link",
-      "arguments": [
-        {
-          "name": "address",
-          "title": "The address",
-          "type": "string",
-          "required": true
-        },
-        {
-          "name": "wait",
-          "title": "Wait for the copy of the video",
-          "type": "boolean",
-          "hiddenInPalette": true
-        }
-      ]
-    },
-    {
-      "id": "link.downloadText",
-      "title": "Download text again",
-      "icon": "refresh-cw",
-      "noteTypes": ["link"]
-    },
-    {
-      "id": "link.downloadVideo",
-      "title": "Download video",
-      "icon": "download",
-      "noteTypes": ["link"]
-    },
-    {
-      "id": "link.deleteText",
-      "title": "Delete text",
-      "icon": "trash-2",
-      "when": [{ "key": "version.plugin", "is": ["md.numen.tools.media.importer"] }]
-    },
-    {
-      "id": "link.deleteVideo",
-      "title": "Delete downloaded video",
-      "icon": "trash-2",
-      "noteTypes": ["link"]
-    }
-  ],
-  "backend": { "entrypoint": "bin/tools-media-importer" },
+  "backend": {
+    "entrypoint": "bin/tools-media-importer"
+  },
   "frontend": {},
   "settings": [
     {
-      "key": "yt_dlp",
+      "key": "ytDlp",
       "type": "string",
       "title": "yt-dlp",
       "description": "Path to the yt-dlp program",
-      "default": "",
-      "replaces": ["importing.yt_dlp"]
+      "default": ""
     },
     {
       "key": "ffmpeg",
       "type": "string",
       "title": "ffmpeg",
       "description": "Path to the ffmpeg program",
-      "default": "",
-      "replaces": ["importing.ffmpeg"]
+      "default": ""
     },
     {
       "key": "captions",
@@ -90,14 +104,14 @@
       "default": ""
     },
     {
-      "key": "automatic_captions",
+      "key": "automaticCaptions",
       "type": "boolean",
       "title": "Automatic captions",
       "description": "Use auto-generated captions when a site has no others",
       "default": true
     },
     {
-      "key": "copy_max_size_mb",
+      "key": "copyMaxSizeMb",
       "type": "number",
       "title": "Maximum download size",
       "description": "Maximum video download size in megabytes; 0 for no limit",

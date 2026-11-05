@@ -13,6 +13,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
+	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/container"
 )
@@ -49,12 +50,7 @@ func failWithDialog(cfg container.Config, why error) error {
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
 	})
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  appName,
-		Width:  720,
-		Height: 520,
-		URL:    "/",
-	})
+	app.Window.NewWithOptions(getFatalWindowOptions())
 	runErr := app.Run()
 	select {
 	case writeErr := <-writeErrs:
@@ -62,6 +58,16 @@ func failWithDialog(cfg container.Config, why error) error {
 	default:
 		return runErr
 	}
+}
+
+// getFatalWindowOptions is the report window: the page draws its own title bar.
+func getFatalWindowOptions() application.WebviewWindowOptions {
+	return frame.Window(application.WebviewWindowOptions{
+		Title:  appName,
+		Width:  720,
+		Height: 520,
+		URL:    "/",
+	})
 }
 
 // fatalReport is the start failure page: a heading, a one-line reason, the
@@ -255,11 +261,23 @@ func getFatalPage() *template.Template {
 <style>
   :root { color-scheme: light dark; }
   body {
-    margin: 0; padding: 3rem 3rem 2rem;
+    margin: 0; padding: 4.5rem 3rem 2rem;
     font: 14px/1.5 ui-sans-serif, system-ui, sans-serif;
     color: light-dark(#1d1f22, #dfe2e6);
     background: light-dark(#fbfbfa, #17181a);
   }
+  header {
+    position: fixed; inset: 0 0 auto 0; height: 2rem; box-sizing: border-box;
+    display: flex; align-items: center; justify-content: space-between; padding: 0 0 0 0.75rem;
+    border-bottom: 1px solid light-dark(#dcdcd8, #2a2c30); user-select: none;
+    background: light-dark(#f1f1ef, #1d1f22);
+  }
+  header.mac { padding-left: 72px; justify-content: flex-start; }
+  header.mac button { display: none; }
+  header button {
+    height: 100%; width: 2.75rem; border: 0; background: none; color: inherit; font: inherit;
+  }
+  header button:hover { background: #e81123; color: #fff; }
   h1 { margin: 0 0 1rem; font-size: 1.2rem; font-weight: 600; }
   p { margin: 0 0 1.5rem; max-width: 46ch; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1.5rem; margin: 0; }
@@ -272,6 +290,10 @@ func getFatalPage() *template.Template {
 </style>
 </head>
 <body>
+  <header style="--wails-draggable: drag">
+    <span>Numen</span>
+    <button type="button" data-close aria-label="Close">&#x2715;</button>
+  </header>
   <h1>{{ .Heading }}</h1>
   <p>{{ .Sentence }}</p>
   <dl>
@@ -285,6 +307,13 @@ func getFatalPage() *template.Template {
   {{- if .Error }}
   <details><summary>Details</summary><pre>{{ .Error }}</pre></details>
   {{- end }}
+<script type="module">
+  if (navigator.userAgent.includes('Mac')) document.querySelector('header').classList.add('mac')
+  document.querySelector('[data-close]').addEventListener('click', async () => {
+    const runtime = await import('/wails/runtime.js')
+    await runtime.Window.Close()
+  })
+</script>
 </body>
 </html>
 `))

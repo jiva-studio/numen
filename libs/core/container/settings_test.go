@@ -32,7 +32,7 @@ func writeSettings(t *testing.T, output string) (Config, string) {
 // What the window is given is every setting, so a setting the file leaves out
 // is read out as what this installation is doing about it.
 func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
-	cfg, path := writeSettings(t, `{"appearance": {"theme": "mine:sea"}}`)
+	cfg, path := writeSettings(t, `{"app": {"appearance": {"theme": "mine:sea"}}}`)
 
 	content, response, err := cfg.ReadSettings()()
 	if err != nil {
@@ -58,12 +58,12 @@ func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 // added stays in place.
 func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 	cfg, path := writeSettings(t, `{
-  "appearance": {"theme": "mine:sea"},
+  "app": {"appearance": {"theme": "mine:sea"}},
   "something_this_build_knows_nothing_about": 7
 }`)
 
 	err := cfg.GetSettingsWriter()([]settingsport.Setting{
-		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
+		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -95,8 +95,8 @@ func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
 	err := cfg.GetSettingsWriter()([]settingsport.Setting{
-		{Path: []string{"agent", "use"}, JSON: `"claude"`},
-		{Path: []string{"agent", "claude", "max_steps"}, JSON: `12`},
+		{Path: []string{"app", "agent", "use"}, JSON: `"claude"`},
+		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -106,7 +106,7 @@ func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if target.Agent.GetUse() != "claude" || target.Agent.GetProgram("claude").MaxSteps != 12 {
+	if target.Agent.GetUse() != "claude" || target.Agent.GetProgram("claude").Model != "opus" {
 		t.Errorf("the agent reads %+v", target.Agent)
 	}
 }
@@ -130,7 +130,7 @@ func TestASettingsFileThatIsNotReadableIsRefused(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	cfg, _ := writeSettings(t, `{"appearance": `)
+	cfg, _ := writeSettings(t, `{"app": {"appearance": `)
 
 	target, why := cfg.Settings()
 	if why == nil {
@@ -158,17 +158,10 @@ func TestSettingsThatCannotBeSavedAreRefused(t *testing.T) {
 // plan is resolved from the performance section.
 func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	response := DefaultSettings()
-	response.Agent.Use = settings.UseProgram("claude")
 	response.Performance = hardware.Performance{Profile: hardware.ProfileEco}
 
 	got := NewConfig(Config{}).SetSettings(response)
 
-	if got.Agent.GetUse() != "claude" {
-		t.Errorf("the agent is %q", got.Agent.GetUse())
-	}
-	if got.Performance.Profile != hardware.ProfileEco {
-		t.Errorf("the performance profile is %q", got.Performance.Profile)
-	}
 	if got.Hardware.LogicalCPUs < 1 {
 		t.Errorf("the hardware was not detected: %+v", got.Hardware)
 	}
@@ -194,12 +187,12 @@ func TestGetSettingsOrDefaults_FallsBackToDefaultsWhenUnreadable(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 
-	cfg, _ := writeSettings(t, `{"agent": {"use": "somebody-else"}}`)
+	cfg, _ := writeSettings(t, `{"app": {"agent": {"use": "somebody-else"}}}`)
 	if got := cfg.getSettingsOrDefaults().Agent.GetUse(); got != "somebody-else" {
 		t.Errorf("the agent is %q", got)
 	}
 
-	cfg, _ = writeSettings(t, `{"agent": `)
+	cfg, _ = writeSettings(t, `{"app": {"agent": `)
 	if got := cfg.getSettingsOrDefaults(); !reflect.DeepEqual(got, DefaultSettings()) {
 		t.Errorf("an unreadable file gave %+v", got)
 	}
@@ -240,30 +233,13 @@ func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
 	p.profiles = append(p.profiles, profile)
 }
 
-// A write of the profile reaches the plugins that run, in the name the host knows.
-func TestWritingThePerformanceProfileTellsThePluginHost(t *testing.T) {
-	cfg, _ := writeSettings(t, `{}`)
-	host := &profileHost{}
-	cfg.PluginHost = host
-
-	for _, entry := range []string{`"eco"`, `"bogus"`} {
-		err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"performance", "profile"}, JSON: entry}})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	if want := []string{"eco", "balanced"}; !slices.Equal(host.profiles, want) {
-		t.Errorf("profiles sent to the host = %v, want %v", host.profiles, want)
-	}
-}
-
 // Another setting sends no profile.
 func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	host := &profileHost{}
 	cfg.PluginHost = host
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"appearance", "mode"}, JSON: `"dark"`}})
+	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -118,7 +118,7 @@ describe('the vault offered below the list', () => {
 
     const window = await mountWindow()
 
-    expect(window.findComponent(WelcomePage).props('offer')).toMatchObject({
+    expect(window.findComponent(WelcomePage).props('footer')).toMatchObject({
       keys: { icons: ['control', 'shift'], letter: 'N' },
     })
   })

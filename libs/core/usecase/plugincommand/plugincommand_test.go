@@ -50,7 +50,13 @@ type declaredCommands struct {
 	calls   []plugincommand.Call
 }
 
+func (d *declaredCommands) ListMenus() []plugincommand.MenuEntry { return nil }
+
 func (d *declaredCommands) ListCommands() []plugincommand.Entry { return d.entries }
+
+func (d *declaredCommands) GetParts(string) plugincommand.Parts {
+	return plugincommand.Parts{HasBackend: true}
+}
 
 func (d *declaredCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
 	d.calls = append(d.calls, call)

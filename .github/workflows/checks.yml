@@ -191,10 +191,13 @@ jobs:
 
       - uses: ./.github/actions/install-lock-packages
         with:
-          packages: "@bufbuild/protobuf"
+          packages: "@bufbuild/protobuf typescript"
 
       - name: Verify documentation story references
         run: node apps/docs/tools/manual.mjs --check
+
+      - name: Test the settings reference
+        run: node --test apps/docs/tools/reference.test.mjs apps/docs/tools/cell.test.mjs
 
       - name: Verify landing page story references
         run: node apps/landing/tools/stories.mjs

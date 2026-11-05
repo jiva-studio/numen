@@ -6,6 +6,7 @@
  */
 import type { Entry } from '@/entities/file'
 import type { OpenTabs, Tab } from '@/entities/tab'
+import type { PluginSettingInfo } from '@/entities/settings'
 
 interface MockVaultState {
   isReady: boolean
@@ -38,6 +39,8 @@ interface MockVaultState {
   embedded: number
   listable: boolean
   writeError: string
+  /** The settings the shell declares, which the core serves with the value in force of each. */
+  app: readonly PluginSettingInfo[]
   applied: string
   mode: 'system' | 'light' | 'dark'
   sizes: { interfaceScale: number; textScale: number }
@@ -65,8 +68,9 @@ export const mockVaultState: MockVaultState = {
   embedded: 0,
   /** Whether the list of vaults answers at all. */
   listable: true,
-  /** What stopped a choice being written, which is a size outside its bounds. */
+  /** Why the settings were not written, which is a size outside its bounds. */
   writeError: '',
+  app: [],
   /** What the settings say the window is drawn as, which a test may set. */
   applied: 'preset:numen',
   mode: 'system',
@@ -79,6 +83,51 @@ export const mockVaultList = {
 }
 
 export { mockVaultState as vaultState, mockVaultList as listed }
+
+/** One command a plugin declares, as the list the core answers carries it. */
+interface DeclaredAnswer {
+  pluginId: string
+  id: string
+  title: string
+  icon?: string
+  scope?: 'note'
+  shortcut?: string
+  contentTypes: string[]
+  extensions: string[]
+  arguments: []
+}
+
+/** One place a plugin puts a command in, as the list the core answers carries it. */
+interface PlacementAnswer {
+  pluginId: string
+  location: string
+  command: string
+  group?: string
+  order?: number
+}
+
+/** What the plugins declare and place. */
+export const declared = {
+  commands: [] as DeclaredAnswer[],
+  menus: [] as PlacementAnswer[],
+}
+
+/** A command a plugin declares, with an icon and no input. */
+export const declareCommand = (
+  pluginId: string,
+  id: string,
+  title: string,
+  extras: Partial<DeclaredAnswer> = {},
+): DeclaredAnswer => ({
+  pluginId,
+  id,
+  title,
+  icon: 'waves',
+  contentTypes: [],
+  extensions: [],
+  arguments: [],
+  ...extras,
+})
 
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders: Record<string, readonly Entry[]> = {
@@ -209,14 +258,51 @@ export const forgetAnswers = () => {
   mockVaultState.embedded = 0
   mockVaultState.listable = true
   mockVaultState.writeError = ''
+  mockVaultState.app = []
   mockVaultState.detachError = ''
   mockVaultState.applied = 'preset:numen'
   mockVaultState.mode = 'system'
   mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
+  declared.commands = []
+  declared.menus = []
   maker.forget()
   outside.forget()
   mockVaultList.vaults = [
     { id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false },
   ]
   mockVaultList.showing = 'physics'
+}
+
+/** The themes the mocked application lists, as the options of the setting that names the theme. */
+const THEME_OPTIONS = [
+  { value: 'preset:numen', title: 'numen', detail: '' },
+  { value: 'mine:sea', title: 'sea', detail: '' },
+]
+
+/** A declared setting with the value in force and the options the mocked application resolves. */
+export const getSettingInForce = (setting: PluginSettingInfo): PluginSettingInfo => {
+  const values: Record<string, unknown> = {
+    'appearance.theme': mockVaultState.applied,
+    'appearance.mode': mockVaultState.mode,
+    'appearance.interfaceScale': mockVaultState.sizes.interfaceScale,
+    'appearance.textScale': mockVaultState.sizes.textScale,
+  }
+  return {
+    ...setting,
+    isShown: true,
+    value: setting.key in values ? values[setting.key] : setting.default,
+    ...(setting.optionsFrom === 'themes' ? { activeOptions: THEME_OPTIONS } : {}),
+  }
+}
+
+/** The state of the mocked application after a setting was written. */
+export const keepSetting = (path: string, value: unknown): void => {
+  if (path === 'app.appearance.theme') mockVaultState.applied = String(value)
+  if (path === 'app.appearance.mode') mockVaultState.mode = value as typeof mockVaultState.mode
+  if (path === 'app.appearance.interfaceScale') {
+    mockVaultState.sizes = { ...mockVaultState.sizes, interfaceScale: Number(value) }
+  }
+  if (path === 'app.appearance.textScale') {
+    mockVaultState.sizes = { ...mockVaultState.sizes, textScale: Number(value) }
+  }
 }

@@ -3,34 +3,20 @@
  */
 import { computed, watch } from 'vue'
 import { themes } from '@/entities/settings'
-import {
-  APPEARANCE_COMMANDS,
-  OFF,
-  ON,
-  syncSetting,
-  createWindowAppearance,
-} from '@/features/settings-commands'
-import { COMMAND } from '@/shared/commandIds'
-import {
-  formatValue,
-  getOptions,
-  getValue,
-  type PluginInfo,
-  type PluginSettingOption,
-  type SettingEdit,
-} from '@/entities/settings'
+import { INTERFACE_SCALE, TEXT_SCALE, createWindowAppearance } from '@/features/settings-commands'
+import { APP_OWNER, createSettingPalette, type SettingPreview } from './settingCommands'
+import { MODES, type Mode, type SettingEdit } from '@/entities/settings'
 import { formatErrorMessage, type PluginCatalog } from '@numen/core-client'
 import { useCatalogEntries } from '@/entities/plugin'
-import { runInBackground } from '@numen/ui'
+import { createFollower, runInBackground } from '@numen/ui'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
 import type { Installation } from '@/pages/settings'
-import type { Command, PaletteLists } from '@/features/command-palette'
 import type { SettingsPort } from '@/app/ports/settings'
-import { getNamedIcon } from '@/shared/icons'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import type { useWindowTabs } from '@/entities/tab'
+import type { WindowButtons } from './useWindowFrame'
 
 type Words = typeof WORDS
 
@@ -45,162 +31,39 @@ export interface SettingsDeps {
   catalog?: PluginCatalog
 }
 
-function getPerformanceStepGroups(words: Words) {
-  return [
-    {
-      id: 'performance',
-      title: words.performance,
-      items: [
-        { id: 'eco', title: words.eco, detail: words.ecoDetail },
-        { id: 'balanced', title: words.balanced, detail: words.balancedDetail },
-        { id: 'maximum', title: words.maximum, detail: words.maximumDetail },
-      ],
-    },
-  ]
-}
-
-interface PluginGroupContext {
-  readonly id: string
-  readonly title: string
-  readonly words: Words
-}
-
-function createPluginBooleanGroup(ctx: PluginGroupContext, isOn: boolean) {
-  return [
-    {
-      id: ctx.id,
-      title: ctx.title,
-      items: [
-        {
-          id: 'on',
-          title: ctx.words.on,
-          ...(isOn ? { detail: ctx.words.current, isCurrent: true } : {}),
-        },
-        {
-          id: 'off',
-          title: ctx.words.off,
-          ...(!isOn ? { detail: ctx.words.current, isCurrent: true } : {}),
-        },
-      ],
-    },
-  ]
-}
-
-function createPluginEnumGroup(
-  ctx: PluginGroupContext,
-  current: string,
-  options: readonly PluginSettingOption[],
-) {
-  return [
-    {
-      id: ctx.id,
-      title: ctx.title,
-      items: options.map((opt) => ({
-        id: opt.value,
-        title: opt.title || opt.value,
-        ...(opt.value === current ? { detail: ctx.words.current, isCurrent: true } : {}),
-      })),
-    },
-  ]
-}
-
-function findPluginSetting(plugins: readonly PluginInfo[], command: string) {
-  const [, pluginId, key] = command.split(':')
-  const plugin = plugins.find((p) => p.id === pluginId)
-  if (!plugin) return null
-  const setting = plugin.settings.find((s) => s.key === key)
-  if (!setting) return null
-  return { plugin, pluginId: plugin.id, key: setting.key, setting }
-}
-
-function getPluginStepGroups(
-  command: string,
-  rest: ReturnType<typeof createSettingsStore>,
-  words: Words,
-) {
-  const match = findPluginSetting(rest.plugins.value, command)
-  if (!match) return []
-  const { plugin, pluginId, key, setting } = match
-  const read = (one: string) => rest.getSetting(['plugins', pluginId, one])
-  const current = read(key)
-  const ctx: PluginGroupContext = { id: `plugin-${pluginId}-${key}`, title: setting.title, words }
-
-  if (setting.type === 'boolean') {
-    const isOn = Boolean(current)
-    return createPluginBooleanGroup(ctx, isOn)
-  }
-  if (setting.type === 'enum') {
-    const currentVal = formatValue(getValue(plugin, setting, read).value)
-    return createPluginEnumGroup(ctx, currentVal, getOptions(plugin, setting, read))
-  }
-  return []
-}
-
-export function createPluginSettingCommands(plugins: readonly PluginInfo[]): readonly Command[] {
-  const result: Command[] = []
-  for (const plugin of plugins) {
-    for (const setting of plugin.settings) {
-      if (!setting.palette) continue
-      result.push({
-        id: `plugin-setting:${plugin.id}:${setting.key}`,
-        text: `${plugin.name}: ${setting.title}`,
-        group: 'settings',
-        needs: 'choosing',
-        ...(setting.icon ? { icon: getNamedIcon(setting.icon) } : {}),
-        isAvailable: () => true,
-      })
-    }
-  }
-  return result
-}
-
 interface SettingsTabConfigDeps {
   appearance: ReturnType<typeof createWindowAppearance>
-  sync: ReturnType<typeof syncSetting>
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
   core: SettingsPort
-  scheduleRefresh: () => void
   getSettingsViews?: Installation['getSettingsViews']
   catalogEntries?: Installation['catalog']
   reportError: (error: unknown) => void
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const {
-    appearance,
-    sync,
-    rest,
-    secrets,
-    retry,
-    core,
-    scheduleRefresh,
-    getSettingsViews,
-    catalogEntries,
-    reportError,
-  } = deps
+  const { appearance, rest, secrets, retry, core, getSettingsViews, catalogEntries, reportError } =
+    deps
+  /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
+  const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
+    if (!content.some((one) => one.at[0] === 'app')) return
+    await appearance.reload()
+  }
   return {
     ...(getSettingsViews ? { getSettingsViews } : {}),
     ...(catalogEntries ? { catalog: catalogEntries } : {}),
-    themes: appearance.list,
-    applied: appearance.applied,
-    mode: appearance.mode,
-    isPinned: appearance.isPinned,
-    sizes: appearance.sized,
-    bounds: appearance.bounds,
-    choose: (item: string) => appearance.chooseItem(item),
-    isSyncing: computed({
-      get: () => sync.isEnabled.value,
-      set: (on: boolean) => runInBackground(sync.choose(on ? ON : OFF), reportError),
-    }),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
+    isRequested: (targetPath: readonly string[]) => rest.isRequested(targetPath),
     getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => {
       const promise = rest.writeSettings(content)
-      runInBackground(promise.then(scheduleRefresh), reportError)
+      runInBackground(
+        promise.then(() => followShell(content)),
+        reportError,
+      )
       return promise
     },
     writeSecret: (pluginId: string, name: string, key: string) =>
@@ -212,7 +75,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
         const answer = await core.choosePluginPath(pluginId, key)
         if (answer.isChosen) {
           await rest.start()
-          scheduleRefresh()
         }
         return answer.problem
       } catch (caughtError) {
@@ -229,77 +91,107 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
       }
     },
     plugins: rest.plugins,
+    app: rest.app,
     file: rest.path,
   }
 }
 
-interface PaletteListsDeps {
-  appearance: ReturnType<typeof createWindowAppearance>
-  sync: ReturnType<typeof syncSetting>
-  rest: ReturnType<typeof createSettingsStore>
-  words: Words
+/** The style of the window buttons on Linux; a missing or unknown value is the Windows one. */
+function createWindowButtons(rest: ReturnType<typeof createSettingsStore>) {
+  return computed<WindowButtons>(() =>
+    rest.getSetting(['app', 'window', 'buttons']) === 'mac' ? 'mac' : 'windows',
+  )
 }
 
-function getAppearanceStepGroups(
-  command: string,
-  appearance: ReturnType<typeof createWindowAppearance>,
-  typed: string,
-) {
-  if (command === COMMAND.chooseTheme) return appearance.getThemeGroups()
-  if (command === COMMAND.chooseMode) return appearance.getModeGroups()
-  if (command === COMMAND.chooseInterfaceSize || command === COMMAND.chooseTextSize)
-    return appearance.getSizeGroups(command, typed)
-  return []
-}
-
-function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
-  const { appearance, sync, rest, words } = deps
+/**
+ * Follows the settings that change, whoever changes them: this window, another window, a plugin, the
+ * palette, or a person editing the file. Each change is read again once.
+ */
+function createChangeFollower(deps: {
+  core: SettingsPort
+  refresh: () => Promise<unknown>
+  wait?: (ms: number) => Promise<unknown>
+}) {
+  const { core, refresh, wait = sleep } = deps
+  const abortController = new AbortController()
+  let isOpen = true
+  // The stream opens with an empty batch. After the stream was lost, what changed meanwhile is read
+  // with it.
+  let isResumed = false
+  const follows = createFollower({
+    isOpen: () => isOpen,
+    // The stream of the themes reports the lost connection.
+    setLost: () => undefined,
+    wait,
+    reset: () => {
+      isResumed = true
+    },
+  })
   return {
-    getStepGroups: (command, typed) => {
-      const appearanceGroups = getAppearanceStepGroups(command, appearance, typed)
-      if (appearanceGroups.length > 0) return appearanceGroups
-      if (command === COMMAND.chooseTitleSync) return sync.getSyncingGroups()
-      if (command === COMMAND.choosePerformanceProfile) return getPerformanceStepGroups(words)
-      if (command.startsWith('plugin-setting:')) return getPluginStepGroups(command, rest, words)
-      return []
-    },
-    previewItem: (command, item) => {
-      if (APPEARANCE_COMMANDS.includes(command)) appearance.previewItem(item)
+    start: () =>
+      follows(
+        () => core.watchSettings(abortController.signal),
+        async (batch) => {
+          if (batch.length === 0 && !isResumed) return
+          isResumed = false
+          await refresh()
+        },
+      ),
+    close: () => {
+      isOpen = false
+      abortController.abort()
     },
   }
 }
 
-/** The reads of the settings that follow a change, which the plugins take a while to show. */
-function createRefreshSchedule(
-  rest: { start: () => Promise<void> },
-  reportError: (error: unknown) => void,
-) {
-  // Stryker disable next-line ArrayDeclaration: clearTimeout ignores non-timer values in the initial array
-  const refreshTimers: ReturnType<typeof setTimeout>[] = []
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-  const clearRefreshTimers = () => {
-    while (refreshTimers.length > 0) {
-      clearTimeout(refreshTimers.pop())
-    }
+const SHELL_APPEARANCE = ['app', 'appearance'] as const
+
+/** Shows a value of the appearance while its row is focused, and puts it back on leaving. */
+function createWindowPreview(
+  appearance: ReturnType<typeof createWindowAppearance>,
+): SettingPreview {
+  return {
+    apply: (path, value) => {
+      if (path.length !== 3 || !SHELL_APPEARANCE.every((one, index) => path[index] === one)) return
+      const key = path[2]
+      if (key === 'theme' && typeof value === 'string') appearance.previewTheme(value)
+      if (key === 'mode' && isMode(value)) appearance.previewMode(value)
+      if (key === INTERFACE_SCALE && typeof value === 'number') {
+        appearance.previewSize(INTERFACE_SCALE, value)
+      }
+      if (key === TEXT_SCALE && typeof value === 'number') {
+        appearance.previewSize(TEXT_SCALE, value)
+      }
+    },
+    restore: () => appearance.restore(),
   }
+}
 
-  const scheduleRefresh = () => {
-    clearRefreshTimers()
-    for (const delayMs of [1500, 3500, 7000, 11000, 16000]) {
-      refreshTimers.push(
-        setTimeout(() => {
-          runInBackground(rest.start(), reportError)
-        }, delayMs),
-      )
-    }
-  }
+const isMode = (value: unknown): value is Mode => MODES.some((one) => one === value)
 
-  const refreshAndSchedule = async () => {
-    await rest.start()
-    scheduleRefresh()
-  }
-
-  return { scheduleRefresh, clearRefreshTimers, refreshAndSchedule }
+function createWindowSettingPalette(deps: {
+  rest: ReturnType<typeof createSettingsStore>
+  appearance: ReturnType<typeof createWindowAppearance>
+  words: Words
+}) {
+  const { rest, appearance, words } = deps
+  return createSettingPalette({
+    getOwners: () => [
+      { id: APP_OWNER, name: '', settings: rest.app.value },
+      ...rest.plugins.value.map((one) => ({ id: one.id, name: one.name, settings: one.settings })),
+    ],
+    words,
+    preview: createWindowPreview(appearance),
+    write: async (edits) => {
+      await rest.writeSettings(edits)
+      // The window shows what the settings now hold, also where the write was not accepted.
+      if (edits.some((one) => one.at[0] === APP_OWNER && one.at[1] === 'appearance')) {
+        await appearance.reload()
+      }
+    },
+  })
 }
 
 export function useSettings({
@@ -312,7 +204,6 @@ export function useSettings({
   catalog,
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
-  const sync = syncSetting(core, words, log.getWriter('named'))
   const writeSettingsMessage = log.getWriter('configured')
   const rest = createSettingsStore(core, words, writeSettingsMessage)
   const getPluginName = (pluginId: string): string =>
@@ -321,23 +212,17 @@ export function useSettings({
     core: themes,
     words,
     write: writeAppearanceMessage,
-    getPluginName,
   })
   const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
-  const { scheduleRefresh, clearRefreshTimers, refreshAndSchedule } = createRefreshSchedule(
-    rest,
-    reportError,
-  )
-
   const secrets = createSecretStore(core, {
     words,
     notify: log.getWriter('keys'),
-    refresh: refreshAndSchedule,
+    refresh: () => rest.start(),
   })
   const retry = createPluginRetry(core, {
     words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
     notify: log.getWriter('plugins'),
-    refresh: refreshAndSchedule,
+    refresh: () => rest.start(),
     getName: getPluginName,
   })
 
@@ -347,12 +232,10 @@ export function useSettings({
     windowTabs.handle,
     createSettingsTabConfig({
       appearance,
-      sync,
       rest,
       secrets,
       retry,
       core,
-      scheduleRefresh,
       ...(getSettingsViews ? { getSettingsViews } : {}),
       ...(catalogEntries ? { catalogEntries } : {}),
       reportError,
@@ -362,31 +245,33 @@ export function useSettings({
 
   watch(appearance.sized, () => onSizeChanged())
 
-  const retainedItem = createSettingsPaletteLists({ appearance, sync, rest, words })
+  const settingPalette = createWindowSettingPalette({ rest, appearance, words })
 
-  const kinds = [configured.kind]
+  const changes = createChangeFollower({
+    core,
+    refresh: () => Promise.all([rest.start(), appearance.reload()]),
+  })
 
   const start = async () => {
     runInBackground(appearance.start(), reportError)
-    runInBackground(sync.start(), reportError)
+    runInBackground(changes.start(), reportError)
     // The plugins the window starts are named by what this read answers.
     await rest.start()
-    scheduleRefresh()
   }
 
   const close = () => {
-    clearRefreshTimers()
+    changes.close()
     appearance.close()
   }
 
   const api = {
     appearance,
-    sync,
-    oneName: sync,
+    windowButtons: createWindowButtons(rest),
     rest,
     configured,
-    paletteLists: retainedItem,
-    kinds,
+    paletteLists: settingPalette.lists,
+    settingPalette,
+    kinds: [configured.kind],
     start,
     close,
   }

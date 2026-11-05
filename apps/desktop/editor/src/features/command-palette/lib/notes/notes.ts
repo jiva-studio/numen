@@ -3,12 +3,36 @@
  * An identity is resolved by the store holding it, and an identity no store holds
  * resolves to nothing.
  */
-import type { Notes, Store } from '../../types'
+import type { Selector } from '@numen/plugin-host'
+import type { CommandPlace, Notes, Store } from '../../types'
 
-export const createNotes = (
-  stores: readonly Store[],
-  noteOpeners: Pick<Notes, 'openFile' | 'openNewFile'>,
-): Notes => {
+/** What opens a file: in the current tab or beside it, at a line of the note where one is given. */
+export interface NoteOpeners {
+  openFile(
+    path: string,
+    title: string,
+    options:
+      'current' | 'split' | { where: 'current' | 'split'; line?: number; selector?: Selector },
+  ): unknown
+  openNewFile: Notes['openNewFile']
+}
+
+/** The placement a file opens in, with the line or selector of the place in it where one is given. */
+const createPlacement = (
+  showing: 'current' | 'split',
+  place: CommandPlace | undefined,
+): Parameters<NoteOpeners['openFile']>[2] => {
+  const line = place?.line
+  const selector = place?.selector
+  if (line === undefined && selector === undefined) return showing
+  return {
+    where: showing,
+    ...(line === undefined ? {} : { line }),
+    ...(selector === undefined ? {} : { selector }),
+  }
+}
+
+export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners): Notes => {
   const holder = (id: string): Store | undefined => stores.find((one) => one.has(id))
   return {
     getTabAt: (path) => {
@@ -24,7 +48,8 @@ export const createNotes = (
       await holder(id)?.flushPending(id)
     },
     close: (id) => holder(id)?.close(id),
-    openFile: noteOpeners.openFile,
+    openFile: (path, title, showing, place) =>
+      noteOpeners.openFile(path, title, createPlacement(showing, place)),
     openNewFile: noteOpeners.openNewFile,
   }
 }

@@ -2,10 +2,6 @@ package settings
 
 import "encoding/json"
 
-// DefaultAgentSteps is how many times a program may go to the model on one task where the settings
-// say nothing about it.
-const DefaultAgentSteps = 100
-
 // Agent selects the agent the panel uses and configures how each program
 // runs.
 //
@@ -17,11 +13,6 @@ type Agent struct {
 	// providers mark as default is used. When empty, no program is used and the
 	// panel reports it.
 	Use *string `json:"use"`
-
-	// ShouldServeTools serves the tools on a port, so that an agent the user
-	// runs externally can use this vault. It defaults to off; the agent
-	// named by Use is served on the port in either case.
-	ShouldServeTools bool `json:"serve_tools"`
 
 	// Programs is how each program is run, by the name it is listed under.
 	Programs map[string]AgentProgram `json:"-"`
@@ -36,19 +27,6 @@ type AgentProgram struct {
 
 	// Model is the model the program uses, by the name the program gives it.
 	Model string `json:"model"`
-
-	// Reasoning is the reasoning depth last selected for the program, by the
-	// name of one of the levels a model offers. The panel preselects it; a task
-	// can specify its own depth.
-	Reasoning string `json:"reasoning"`
-
-	// MaxSteps is how many times it may go to the model before it is stopped.
-	MaxSteps int `json:"max_steps"`
-
-	// Options are program-specific settings by key, each as the JSON value
-	// stored in the file. The plugin that lists the program defines their
-	// meaning.
-	Options map[string]string `json:"-"`
 }
 
 // UseProgram is the program an installation names, as the settings hold it.
@@ -67,16 +45,12 @@ func (a Agent) GetUse() string {
 	return *a.Use
 }
 
-// IsServingTools reports whether the tools go on a port: an installation naming an agent for the
-// panel is one, and so is one asking for the port itself.
-func (a Agent) IsServingTools() bool { return a.IsNamed() || a.ShouldServeTools }
-
 // GetProgram is how the program is run: its section, else the defaults.
 func (a Agent) GetProgram(name string) AgentProgram {
 	if program, found := a.Programs[name]; found {
 		return program
 	}
-	return AgentProgram{MaxSteps: DefaultAgentSteps}
+	return AgentProgram{}
 }
 
 // GetCommands are the command lines the settings give, by program.
@@ -90,8 +64,7 @@ func (a Agent) GetCommands() map[string][]string {
 	return commands
 }
 
-// UnmarshalJSON keeps whatever the defaults set for the fields the file omits. Every key but the two
-// of the section is a program.
+// UnmarshalJSON keeps whatever the defaults set for the fields the file omits. Every key but `use` is a program.
 func (a *Agent) UnmarshalJSON(raw []byte) error {
 	var sections map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &sections); err != nil {
@@ -105,13 +78,10 @@ func (a *Agent) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-// readSection reads one key of the section: one of its two, else a program.
+// readSection reads one key of the section: `use`, else a program.
 func (a *Agent) readSection(key string, section json.RawMessage) error {
-	switch key {
-	case "use":
+	if key == "use" {
 		return json.Unmarshal(section, &a.Use)
-	case "serve_tools":
-		return json.Unmarshal(section, &a.ShouldServeTools)
 	}
 
 	program := a.GetProgram(key)
@@ -125,20 +95,19 @@ func (a *Agent) readSection(key string, section json.RawMessage) error {
 	return nil
 }
 
-// MarshalJSON writes the section with the programs beside the two keys of it. A choice left to the
+// MarshalJSON writes the section with the programs beside `use`. A choice left to the
 // default is written as null, which reads back the same.
 func (a Agent) MarshalJSON() ([]byte, error) {
-	content := make(map[string]any, len(a.Programs)+2)
+	content := make(map[string]any, len(a.Programs)+1)
 	for name, program := range a.Programs {
 		content[name] = program
 	}
 	content["use"] = a.Use
-	content["serve_tools"] = a.ShouldServeTools
 	return json.Marshal(content)
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits. A key the section does
-// not know is an option of the program.
+// not know is ignored.
 func (p *AgentProgram) UnmarshalJSON(raw []byte) error {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &fields); err != nil {
@@ -162,29 +131,16 @@ func (p *AgentProgram) readField(key string, value json.RawMessage) error {
 		return json.Unmarshal(value, &p.Command)
 	case "model":
 		return json.Unmarshal(value, &p.Model)
-	case "reasoning":
-		return json.Unmarshal(value, &p.Reasoning)
-	case "max_steps":
-		return json.Unmarshal(value, &p.MaxSteps)
 	}
-	if p.Options == nil {
-		p.Options = make(map[string]string)
-	}
-	p.Options[key] = string(value)
 	return nil
 }
 
-// MarshalJSON writes the section of a program with its options beside its own keys.
+// MarshalJSON writes the section of a program: its command and its model.
 func (p AgentProgram) MarshalJSON() ([]byte, error) {
-	content := make(map[string]any, len(p.Options)+4)
-	for key, value := range p.Options {
-		content[key] = json.RawMessage(value)
-	}
-	content["command"] = p.Command
-	content["model"] = p.Model
-	content["reasoning"] = p.Reasoning
-	content["max_steps"] = p.MaxSteps
-	return json.Marshal(content)
+	return json.Marshal(struct {
+		Command []string `json:"command"`
+		Model   string   `json:"model"`
+	}{p.Command, p.Model})
 }
 
 // AI is the section of the settings file that selects the agent that handles
@@ -207,23 +163,4 @@ type AIRoute struct {
 	// Concurrency is how many questions one agent handles at once. Below one
 	// is one.
 	Concurrency int `json:"concurrency,omitempty"`
-}
-
-// UnmarshalJSON reads the section. A file of an older shape holds its default
-// under routes.default, which is read where the section names no default; the
-// routes of single purposes are not read.
-func (c *AI) UnmarshalJSON(data []byte) error {
-	var stored struct {
-		Default *AIRoute           `json:"default"`
-		Routes  map[string]AIRoute `json:"routes"`
-	}
-	if err := json.Unmarshal(data, &stored); err != nil {
-		return err
-	}
-	if stored.Default != nil {
-		c.Default = *stored.Default
-		return nil
-	}
-	c.Default = stored.Routes["default"]
-	return nil
 }

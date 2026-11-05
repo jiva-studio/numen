@@ -55,7 +55,7 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 	if got := srv.GetAggregator().GetRegisteredTools(); len(got) != 1 || got[0] != "note_get" {
 		t.Fatalf("expected initial SyncTools in NewServer, got %v", got)
 	}
-	if srv.GetURL() != "" || srv.GetSSEURL() != "" || srv.GetHTTPURL() != "" {
+	if srv.GetURL() != "" || srv.GetHTTPURL() != "" {
 		t.Fatal("expected empty URLs before Start")
 	}
 
@@ -68,17 +68,17 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 		}
 	}()
 
-	sseURL := srv.GetSSEURL()
-	if sseURL == "" {
-		t.Fatal("expected non-empty SSE URL")
+	mcpURL := srv.GetHTTPURL()
+	if mcpURL == "" {
+		t.Fatal("expected non-empty streamable HTTP URL")
 	}
 
-	assertUnauthorized(t, sseURL)
+	assertUnauthorized(t, mcpURL)
 
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 
-	session := connectSSEClient(ctx, t, sseURL, "test-token-123")
+	session := connectStreamableClient(ctx, t, mcpURL, "test-token-123")
 	callNoteGetTool(ctx, t, session)
 	assertDynamicDiscovery(ctx, t, session, hostClient)
 
@@ -157,7 +157,7 @@ func assertDynamicDiscovery(ctx context.Context, t *testing.T, session *sdk.Clie
 	}
 }
 
-func connectSSEClient(ctx context.Context, t *testing.T, sseURL, token string) *sdk.ClientSession {
+func connectStreamableClient(ctx context.Context, t *testing.T, mcpURL, token string) *sdk.ClientSession {
 	t.Helper()
 	authClient := &http.Client{
 		Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
@@ -165,8 +165,8 @@ func connectSSEClient(ctx context.Context, t *testing.T, sseURL, token string) *
 			return http.DefaultTransport.RoundTrip(req)
 		}),
 	}
-	clientTransport := &sdk.SSEClientTransport{
-		Endpoint:   sseURL,
+	clientTransport := &sdk.StreamableClientTransport{
+		Endpoint:   mcpURL,
 		HTTPClient: authClient,
 	}
 	mcpClient := sdk.NewClient(&sdk.Implementation{Name: "test-client", Version: "1.0.0"}, nil)
@@ -219,7 +219,7 @@ func TestServerOptionsAndRoutes(t *testing.T) {
 		t.Fatalf("ReadHeaderTimeout = %v, want 10s", srv.httpServer.ReadHeaderTimeout)
 	}
 
-	paths := []string{"/sse", "/sse/sub", "/messages", "/messages/sub", "/mcp", "/mcp/sub"}
+	paths := []string{"/mcp", "/mcp/sub"}
 	for _, path := range paths {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodPut, path, nil)
 		req.Header.Set("Authorization", "Bearer route-token")
@@ -257,9 +257,9 @@ func TestServerStartRebindAndClose(t *testing.T) {
 		}
 	}()
 
-	url1 := srv.GetSSEURL()
+	url1 := srv.GetHTTPURL()
 	if !strings.HasPrefix(url1, "http://127.0.0.1:") {
-		t.Fatalf("expected loopback SSE URL, got %s", url1)
+		t.Fatalf("expected loopback streamable HTTP URL, got %s", url1)
 	}
 	addr1 := srv.actualAddr
 
@@ -267,8 +267,8 @@ func TestServerStartRebindAndClose(t *testing.T) {
 	if err := srv.Rebind(t.Context(), Config{Addr: "", Token: "tok-2"}); err != nil {
 		t.Fatalf("Rebind empty addr failed: %v", err)
 	}
-	if srv.GetToken() != "tok-2" || srv.GetSSEURL() != url1 {
-		t.Fatalf("expected token tok-2 and unchanged URL %s, got token=%s url=%s", url1, srv.GetToken(), srv.GetSSEURL())
+	if srv.GetToken() != "tok-2" || srv.GetHTTPURL() != url1 {
+		t.Fatalf("expected token tok-2 and unchanged URL %s, got token=%s url=%s", url1, srv.GetToken(), srv.GetHTTPURL())
 	}
 
 	// Reserve a second port to rebind to.

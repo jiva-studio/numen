@@ -89,12 +89,12 @@ export function getPaletteView(state: ViewState) {
   /** What the palette draws at its current position, over the words typed into it. */
   const createGroups = (step: PendingStep | null, target: CommandTarget, text: string) => {
     if (!step) return getCommandGroups(target, text)
-    if (step.step === 'naming') return [steps.getNamingGroup(text)]
+    if (step.step === 'name') return [steps.getNamingGroup(step, text)]
     if (step.step === 'arguments') return [steps.getArgumentGroup(step, text)]
-    if (step.step === 'picking') return [steps.getPickingGroup(text)]
-    if (step.step === 'choosing') return steps.getChoosingGroups(step, text)
-    if (step.step === 'vaults') return [steps.getVaultsGroup(text, step)]
-    if (step.step === 'asking') return [steps.getConfirmGroup(step, text)]
+    if (step.step === 'note') return [steps.getPickingGroup(step, text)]
+    if (step.step === 'choice') return steps.getChoosingGroups(step, text)
+    if (step.step === 'vault') return [steps.getVaultsGroup(text, step)]
+    if (step.step === 'confirmation') return [steps.getConfirmGroup(step, text)]
     return [steps.getExactlyGroup(step, text)]
   }
 

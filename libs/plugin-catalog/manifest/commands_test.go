@@ -11,28 +11,28 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
-const commandManifestHead = `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"commands":`
+const commandManifestHead = `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"contributes":{"commands":`
 
 func TestAManifestDeclaresCommandsWithTheirFilesAndArguments(t *testing.T) {
 	text := commandManifestHead + `[{
-		"id": "pages.convert", "title": "Convert", "contentTypes": ["application/pdf", "image/vnd.djvu"], "hiddenInPalette": true,
+		"id": "pages.convert", "title": "Convert", "contentTypes": ["application/pdf", "image/vnd.djvu"],
 		"arguments": [
 			{"name": "pages", "title": "Pages", "type": "number", "required": true},
 			{"name": "again", "title": "Again", "type": "boolean"},
 			{"name": "label", "title": "Label", "type": "string"}
 		]
-	}]}`
+	}]}}`
 
 	parsed, err := manifestjson.Read(strings.NewReader(text))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(parsed.Commands) != 1 {
-		t.Fatalf("the commands came out as %+v", parsed.Commands)
+	if len(parsed.Contributes.Commands) != 1 {
+		t.Fatalf("the commands came out as %+v", parsed.Contributes.Commands)
 	}
-	command := parsed.Commands[0]
-	if command.ID != "pages.convert" || command.Title != "Convert" || !command.IsHiddenInPalette || !command.HasFiles() || len(command.Arguments) != 3 {
+	command := parsed.Contributes.Commands[0]
+	if command.ID != "pages.convert" || command.Title != "Convert" || !command.HasFiles() || len(command.Arguments) != 3 {
 		t.Fatalf("the command came out as %+v", command)
 	}
 	pages, _ := command.GetArgument("pages")
@@ -54,12 +54,12 @@ func TestAManifestDeclaresCommandsWithTheirFilesAndArguments(t *testing.T) {
 
 func TestACommandOverAnyFileRunsOverEveryFile(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(
-		commandManifestHead + `[{"id":"proofreading.create","title":"Proofread","contentTypes":["*/*"]}]}`,
+		commandManifestHead + `[{"id":"proofreading.create","title":"Proofread","contentTypes":["*/*"]}]}}`,
 	))
 	if err != nil {
 		t.Fatal(err)
 	}
-	command := m.Commands[0]
+	command := m.Contributes.Commands[0]
 	if !command.HasFiles() || !command.CanRunOn("audio/vnd.wave", "") || !command.CanRunOn(domain.UnknownContentType, "") {
 		t.Error("the command runs over the wrong files")
 	}
@@ -96,10 +96,6 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 			`[{"id":"page.convert","title":"C","arguments":[{"name":"pages","type":"string"}]}]`,
 			manifest.ErrInvalidCommandArgument,
 		},
-		"a required argument hidden in the palette": {
-			`[{"id":"page.convert","title":"C","arguments":[{"name":"wait","title":"W","type":"boolean","required":true,"hiddenInPalette":true}]}]`,
-			manifest.ErrInvalidCommandArgument,
-		},
 		"an undeclared note type": {
 			`[{"id":"page.convert","title":"C","noteTypes":["undeclared"]}]`,
 			manifest.ErrInvalidCommand,
@@ -107,7 +103,7 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 	}
 	for name, one := range cases {
 		t.Run(name, func(t *testing.T) {
-			_, err := manifestjson.Read(strings.NewReader(commandManifestHead + one.commands + `}`))
+			_, err := manifestjson.Read(strings.NewReader(commandManifestHead + one.commands + `}}`))
 
 			if !errors.Is(err, one.want) {
 				t.Errorf("error = %v, want %v", err, one.want)
@@ -116,38 +112,17 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 	}
 }
 
-func TestAPluginThatDeclaresCommandsHasABackendToRunThem(t *testing.T) {
-	text := `{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"page.convert","title":"C"}]}`
-
-	_, err := manifestjson.Read(strings.NewReader(text))
-
-	if !errors.Is(err, manifest.ErrInvalidCommand) || !strings.Contains(err.Error(), "no backend") {
-		t.Errorf("error = %v, want a command with no backend", err)
-	}
-}
-
-func TestReadManifestReadsAnArgumentHiddenInThePalette(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(commandManifestHead +
-		`[{"id":"link.import","title":"I","arguments":[{"name":"wait","title":"W","type":"boolean","hiddenInPalette":true}]}]}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if wait, _ := m.Commands[0].GetArgument("wait"); !wait.IsHiddenInPalette {
-		t.Errorf("the argument came out as %+v", wait)
-	}
-}
-
 func TestManifestDeclaresCommandWithContextCondition(t *testing.T) {
 	parsed, err := manifestjson.Read(strings.NewReader(commandManifestHead + `[
 		{"id": "proofreading.create", "title": "Proofread", "when": [
 			{"key": "version.live", "is": ["true"]}, {"key": "version.kind", "is": ["transcript", "recognition"]}]},
 		{"id": "proofreading.delete", "title": "Delete proofreading", "when": [{"key": "version.plugin", "is": ["a.b"]}]}
-	]}`))
+	]}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	proofread, deletion := parsed.Commands[0], parsed.Commands[1]
+	proofread, deletion := parsed.Contributes.Commands[0], parsed.Contributes.Commands[1]
 	wantProofread := []manifest.ContextCondition{
 		{Key: "version.live", Is: []string{"true"}}, {Key: "version.kind", Is: []string{"transcript", "recognition"}},
 	}
@@ -200,8 +175,8 @@ func TestACommandWithAnInvalidConditionIsRefused(t *testing.T) {
 		"a value with no name":            `{"id":"a","title":"A","when":[{"key":"k","is":[" "]}]}`,
 		"the argument the host gives":     `{"id":"a","title":"A","when":[{"key":"k","is":["x"]}],"arguments":[{"name":"version-id","title":"V","type":"string"}]}`,
 	} {
-		head := `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"contributes":{"noteTypes":[{"type":"link"}]},"commands":`
-		_, err := manifestjson.Read(strings.NewReader(head + `[` + command + `]}`))
+		head := `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"contributes":{"noteTypes":[{"type":"link"}],"commands":`
+		_, err := manifestjson.Read(strings.NewReader(head + `[` + command + `]}}`))
 		if !errors.Is(err, manifest.ErrInvalidCommand) && !errors.Is(err, manifest.ErrInvalidCommandArgument) {
 			t.Errorf("%s: got %v", name, err)
 		}

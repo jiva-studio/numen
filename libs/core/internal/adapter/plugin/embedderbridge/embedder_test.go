@@ -2,6 +2,7 @@ package embedderbridge
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -36,7 +37,10 @@ type mockEmbeddingServer struct {
 	dimensions    atomic.Int32
 	floorHint     atomic.Value
 	minChunk      atomic.Int32
+	chunkTokens   atomic.Int32
 	handling      atomic.Value
+	// failRead makes the read of the model fail, after it has been counted.
+	failRead atomic.Bool
 
 	mu    sync.Mutex
 	roles []v1.EmbedRole
@@ -47,6 +51,9 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 	_ *connect.Request[v1.GetEmbeddingModelRequest],
 ) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
 	s.getModelCalls.Add(1)
+	if s.failRead.Load() {
+		return nil, connect.NewError(connect.CodeUnavailable, errors.New("the model is not available"))
+	}
 	name := "test-model"
 	if v, ok := s.modelName.Load().(string); ok && v != "" {
 		name = v
@@ -73,6 +80,7 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 		Concurrency:    4,
 		FloorHint:      hint,
 		MinChunkLength: s.minChunk.Load(),
+		ChunkTokens:    s.chunkTokens.Load(),
 	}), nil
 }
 

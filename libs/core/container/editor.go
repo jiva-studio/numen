@@ -69,9 +69,10 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		PassageQueriesFn:   func() sourceport.PassageQueries { return db.Passages() },
 		CloseIndexFn:       func() error { return db.Close() },
 		OpenGetSettingsFn: func() *settings.Get {
-			return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins())
+			return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins(), cfg.listAppSettings)
 		},
-		OpenWriteSettingsFn:      func() *settings.Write { return settings.NewWrite(cfg.GetAppliedSettingsWriter()) },
+		OpenWriteSettingsFn:      func() *settings.Write { return settings.NewWrite(cfg.GetSettingsWriter()) },
+		OpenWatchSettingsFn:      func() *settings.Watch { return settings.NewWatch(cfg.SubscribeSettingChanges) },
 		OpenWritePluginSecretFn:  func() *settings.WriteSecret { return settings.NewWriteSecret(cfg.GetPluginSecretWriter()) },
 		OpenDeletePluginSecretFn: func() *settings.DeleteSecret { return settings.NewDeleteSecret(cfg.GetPluginSecretDeleter()) },
 		OpenRetryPluginFn:        cfg.openRetryPlugin,

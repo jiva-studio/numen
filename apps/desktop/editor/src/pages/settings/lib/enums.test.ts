@@ -1,37 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { createEnumFields, toThemeChoices } from './enums'
+import { createEnumFields } from './enums'
 import { createPluginInfo } from '@/testing/installation'
 
-const LABELS = {
-  shipped: 'Built-in',
-  owned: 'Custom',
-  getPluginName: (pluginId: string) =>
-    pluginId === 'org.example.themes' ? 'Sample Themes' : pluginId,
-}
-
-describe('the themes a select offers', () => {
-  it('are grouped as shipped, by plugin name, and owned, in that order', () => {
-    const choices = toThemeChoices(
-      [
-        { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '' },
-        {
-          name: 'plugin:org.example.themes/night',
-          title: 'Night',
-          isBuiltIn: false,
-          pluginId: 'org.example.themes',
-        },
-        { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '' },
-      ],
-      LABELS,
-    )
-
-    expect(choices).toStrictEqual([
-      { id: 'preset:numen', text: 'numen', group: 'Built-in' },
-      { id: 'plugin:org.example.themes/night', text: 'Night', group: 'Sample Themes' },
-      { id: 'mine:sea', text: 'sea', group: 'Custom' },
-    ])
-  })
-
+describe('the fields of a plugin', () => {
   it('places secrets after their when.setting, provider, baseUrl, or at the top', () => {
     const withProvider = createPluginInfo('p', 'P', {
       settings: [

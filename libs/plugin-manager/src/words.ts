@@ -5,15 +5,6 @@ const countFiles = (files: number): string => (files === 1 ? '1 file' : `${files
 // Stryker disable StringLiteral: interface copy
 export const PLUGIN_WORDS = {
   settings: 'Settings',
-  /** AI consent of a plugin. */
-  consentAllowed: 'Allow model use',
-  consentDetail: {
-    none: '',
-    pending: 'Not set. Requests fail until you choose.',
-    requested: 'Requested. Requests fail until you choose.',
-    allowed: 'Allowed. Requests go to the agent in its settings.',
-    denied: 'Denied. Requests return an error.',
-  },
   /** Controls of a plugin. */
   pluginDetails: 'Details',
   pluginRetry: 'Retry',

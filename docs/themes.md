@@ -16,7 +16,7 @@ Every token a theme leaves out keeps the value set in `tokens.css`. A file that 
 
 Every token is on the root, and a component inherits what it paints with, so a `:root` block applies to every component. A custom property declared on an element overrides the same property inherited from the root, regardless of selector specificity, so `:root` is where a theme is written.
 
-It is an ordinary stylesheet, applied whole. The application reads only whether it sets `color-scheme`. If a person's own file hides the window, `appearance.theme` in the settings selects another theme.
+It is an ordinary stylesheet, applied whole. The application reads only whether it sets `color-scheme`. If a person's own file hides the window, `app.appearance.theme` in the settings selects another theme.
 
 ## Light and dark
 
@@ -28,7 +28,7 @@ A palette published in two halves writes `light-dark()` pairs and does not set `
 }
 ```
 
-`appearance.mode` — `system`, `light`, `dark` — selects which half is used.
+`app.appearance.mode` — `system`, `light`, `dark` — selects which half is used.
 
 A palette published in one half writes flat colours and pins the half it is:
 
@@ -205,15 +205,17 @@ The files are in `plugins/themes-presets/themes/`. A first theme is one of them 
 
 ## Choosing one
 
-The editor offers the theme and the mode in the settings and in the command palette (Change theme, Choose light or dark mode). The flashcards window has the same two choices in its command palette, opened with Ctrl+P (Cmd+P): the themes grouped by origin, with a plugin's themes under the plugin's name, and the three modes, which are not offered while the applied theme is pinned.
+The editor offers the theme and the mode in the settings and in the command palette (Theme, Light or dark). The flashcards window has the same two choices in its command palette, opened with Ctrl+P (Cmd+P): the themes grouped by origin, with a plugin's themes under the plugin's name, and the three modes, which are not offered while the applied theme is pinned.
 
 ## What is stored
 
 ```json
 {
-  "appearance": {
-    "mode": "system",
-    "theme": "plugin:md.numen.themes.presets/dracula"
+  "app": {
+    "appearance": {
+      "mode": "system",
+      "theme": "plugin:md.numen.themes.presets/dracula"
+    }
   }
 }
 ```

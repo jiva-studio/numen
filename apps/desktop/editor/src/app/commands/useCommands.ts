@@ -3,6 +3,7 @@
  */
 
 import { formatErrorMessage } from '@numen/core-client'
+import { MENU_LOCATION, type Menus } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
   isChord,
@@ -11,8 +12,10 @@ import {
   useCommandPalette,
   useSearch,
   ANSWER_WORDS,
+  type Command,
   type CommandDeps,
   type CommandTarget,
+  type ResultChoice,
   type Notes,
   type NoteLookup,
   type PaletteLists,
@@ -29,7 +32,6 @@ import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
 import { WORDS } from '@/shared/words'
-import { createPluginSettingCommands } from '../window/useSettings'
 import type { NoteCreator } from '@/entities/note'
 import type { VaultCore } from '../vault'
 
@@ -52,12 +54,16 @@ export interface CommandsDepsOptions {
   reload: () => void
   tabsHold?: TabsHold
   reached: Notes
-  appearance: { chooseItem: (item: string) => Promise<void> | void }
-  oneName: { choose: (item: string) => Promise<void> | void }
+  /** The adapter that writes the row chosen in the step of the command of a setting. */
+  settingPalette?: {
+    getCommands: () => readonly Command[]
+    choose: (command: string, item: string) => Promise<void>
+  }
   rest: {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
     plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
+    getCommittedSetting?: (path: readonly string[]) => unknown
   }
   /** Shows a note in the plugin that displays notes. */
   travel: (path: string) => Promise<void> | void
@@ -66,37 +72,47 @@ export interface CommandsDepsOptions {
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@numen/plugin-host').PluginHost | undefined
+  /** The places plugins put their commands in. */
+  menus?: Menus
   /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
   /** The menu the text versions of the file in front make, read each time the palette opens. */
   fileMenuCommands?: FileMenuCommands
 }
 
+/** What a chosen result is over, replacing the tab and the note of the window. */
+const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
+  tab: '',
+  kind: null,
+  path: place.path,
+  file: place.file,
+  title: place.title,
+  ...(place.line === undefined ? {} : { line: place.line }),
+  ...(place.selector === undefined ? {} : { selector: place.selector }),
+})
+
 export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
   const { pluginHost } = options
 
-  const {
-    getPaletteEntries,
-    findNoteDestination,
-    getCommandNote,
-    showNote,
-    getNoteCommands,
-    pluginWays,
-  } = usePluginCommands(core, pluginHost)
+  const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = usePluginCommands(
+    core,
+    pluginHost,
+  )
 
   const palette = useSearch(core, words, {
     coverage,
-    getTravel: () => findNoteDestination()?.title ?? '',
+    menu: { getEntries: () => options.menus?.getEntries(MENU_LOCATION.searchResult) ?? [] },
+    getTarget,
   })
   const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
-    ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
+    ...(options.settingPalette?.getCommands() ?? []),
     ...(options.declaredCommands?.paletteCommands.value ?? []),
     ...(options.fileMenuCommands?.paletteCommands.value ?? []),
     ...getPaletteEntries(),
   ])
 
-  watchCommandLists(options, commands.open, getTarget)
+  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open, getTarget)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
@@ -108,7 +124,7 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const reportError = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
 
-  const runCommand = (id: string, target: CommandTarget) => {
+  const runCommand = (id: string, target: CommandTarget, input?: string) => {
     if (pluginHost?.hasCommand(id)) {
       commands.setOpen(false)
       runInBackground(
@@ -119,7 +135,10 @@ export function useCommands(options: CommandsDepsOptions) {
       )
       return
     }
-    const invocation = commands.startCommand(id, target)
+    const invocation =
+      input === undefined
+        ? commands.startCommand(id, target)
+        : commands.startCommand(id, target, input)
     if (invocation) {
       runInBackground(runInvocation(invocation, commandDeps, ANSWER_WORDS), reportError)
       return
@@ -130,6 +149,14 @@ export function useCommands(options: CommandsDepsOptions) {
     }
     writeMessage(commands.getObjection(id, target), 'error')
   }
+
+  /** Runs the command of a chosen action over what it was chosen on, with the text typed for it. */
+  const runChoice = (choice: ResultChoice): void =>
+    runCommand(
+      choice.command,
+      choice.over ? { ...getTarget(), ...toResultTarget(choice.over) } : getTarget(),
+      choice.input || undefined,
+    )
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
@@ -148,9 +175,9 @@ export function useCommands(options: CommandsDepsOptions) {
     commands,
     commandDeps,
     runCommand,
+    runChoice,
     onKeyDown,
     pluginWays,
     getNoteCommands,
-    showNote,
   }
 }

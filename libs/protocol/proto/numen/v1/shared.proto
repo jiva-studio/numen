@@ -52,8 +52,6 @@ enum ErrorCode {
   // something else. Nothing is written.
   ERROR_CODE_INVALID_NAME = 8;
 
-  reserved 9, 10, 11, 12;
-
   // The file is no longer the one this caller read. Nothing was written, and
   // the person chooses what happens to what they have.
   ERROR_CODE_STALE = 13;

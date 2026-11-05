@@ -2,7 +2,7 @@
  * Loads plugin frontends: each module is fetched from the window, activated with a context
  * created by the host, and deactivated according to its `enabled` setting.
  */
-import { shallowRef, type ShallowRef } from 'vue'
+import { shallowRef, watch, type ShallowRef } from 'vue'
 import type { Disposable } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import type { LoaderHost } from './host'
@@ -65,7 +65,9 @@ async function activateEntry(
     const manifest = ctx.manifests.get(pluginId)
     const { activate, deactivate } = getLifecycleHooks(resolved)
     if (activate) {
+      host.markPluginStarting?.(pluginId)
       await activate(host.createContext(pluginId, manifest))
+      host.markPluginStarted?.(pluginId)
     }
 
     const next = new Map(activePlugins.value)
@@ -127,6 +129,9 @@ function listenToPluginState(deps: ListenerDeps, pluginId: string) {
   })
   deps.subscriptions.set(pluginId, sub)
 }
+
+/** How long a command waits for its plugin to be activated before it gives up. */
+export const PLUGIN_SETTLE_MS = 10_000
 
 /** How long the start waits for one plugin to be read before it goes on to the next. */
 export const PLUGIN_WAIT_MS = 3_000
@@ -364,6 +369,22 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
       manifests.set(id, manifest)
       host.registerManifest?.(id, manifest)
     },
+    /** Settles once the plugin is active or has failed, or after PLUGIN_SETTLE_MS. */
+    settlePlugin: (id: string): Promise<void> =>
+      new Promise<void>((resolve) => {
+        const isSettled = () => activePlugins.value.has(id) || failures.value.has(id)
+        if (isSettled()) return resolve()
+        const stop = watch([activePlugins, failures], () => {
+          if (!isSettled()) return
+          stop()
+          clearTimeout(timer)
+          resolve()
+        })
+        const timer = setTimeout(() => {
+          stop()
+          resolve()
+        }, PLUGIN_SETTLE_MS)
+      }),
     isPluginActive: (id: string) => activePlugins.value.has(id),
     getActivePluginIds: () => [...activePlugins.value.keys()],
     getPluginFailure: (id: string): string | undefined => failures.value.get(id),

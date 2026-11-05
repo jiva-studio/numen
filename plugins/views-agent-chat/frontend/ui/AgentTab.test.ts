@@ -86,6 +86,10 @@ const mountTab = (createAgent: (sample: () => void) => AgentPort) => {
       openFileAdjacent: () => undefined,
       resolveLinks: async () => [],
       unreachable: () => '',
+      getModelsAt: (path) =>
+        path.join('/') === 'app/agent/use'
+          ? [{ name: 'orchard', title: 'Orchard', isDefault: true, presence: 'present' }]
+          : [{ name: 'main', title: 'Main', isDefault: true, presence: 'present' }],
     },
   )
   const wrapper = mount(AgentTab, {

@@ -22,13 +22,10 @@ export type AgentTabState = ReturnType<typeof useAgentConversation>
 
 export type ResolvedAddressMap = ReadonlyMap<string, string>
 
-const AGENT_USE_AT = ['agent', 'use'] as const
+const AGENT_USE_AT = ['app', 'agent', 'use'] as const
 
 /** The path the models of one agent are named at. */
-const getModelAt = (agent: string): readonly string[] => ['agent', agent, 'model']
-
-/** The path the depth of reasoning chosen for one agent is kept at. */
-const getReasoningAt = (agent: string): readonly string[] => ['agent', agent, 'reasoning']
+const getModelAt = (agent: string): readonly string[] => ['app', 'agent', agent, 'model']
 
 /** The setting kept at a path, as text. */
 const getKept = (deps: AgentTabDeps, path: readonly string[]): string =>
@@ -103,11 +100,14 @@ function useAgentSelection(deps: AgentTabDeps) {
     selectedModelId.value = option.modelId
   }
 
+  const isAgentMissing = computed(() => modelOptions.value.length === 0)
+  const openSettings = () => deps.openSettings?.()
+
   const selection = { selectedAgentId, selectedModelId, modelOptions, selectModel }
-  return { ...selection, ...useReasoningSelection(deps, selection) }
+  return { ...selection, isAgentMissing, openSettings, ...useReasoningSelection(deps, selection) }
 }
 
-/** The depth of reasoning chosen for the agent, as far as the selected model offers it. */
+/** The depth of reasoning chosen for the agent, as far as the selected model hasLevel it. */
 function useReasoningSelection(
   deps: AgentTabDeps,
   selection: {
@@ -128,16 +128,15 @@ function useReasoningSelection(
 
   const reasoningLevels = computed(() => selectedOption.value?.reasoningLevels ?? [])
 
-  /** The level chosen or kept, else the default of the model; empty where the model offers none. */
+  /** The level chosen or kept, else the default of the model; empty where the model hasLevel none. */
   const selectedReasoningId = computed(() => {
     const agentId = selection.selectedAgentId.value
     const configuredReasoning =
-      (selected.value.agentId === agentId ? selected.value.id : '') ||
-      getKept(deps, getReasoningAt(agentId))
-    const offers = (id: string) => reasoningLevels.value.some((level) => level.id === id)
-    if (offers(configuredReasoning)) return configuredReasoning
+      (selected.value.agentId === agentId ? selected.value.id : '') || (deps.getReasoning?.() ?? '')
+    const hasLevel = (id: string) => reasoningLevels.value.some((level) => level.id === id)
+    if (hasLevel(configuredReasoning)) return configuredReasoning
     const byDefault = selectedOption.value?.defaultReasoning ?? ''
-    return offers(byDefault) ? byDefault : ''
+    return hasLevel(byDefault) ? byDefault : ''
   })
 
   const selectReasoning = (id: string) => {

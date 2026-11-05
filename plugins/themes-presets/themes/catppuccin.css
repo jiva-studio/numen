@@ -8,6 +8,7 @@
  */
 :root {
   --numen-surface: light-dark(#e6e9ef, #181825);
+  --numen-titlebar: light-dark(#e6e9ef, #181825);
   --numen-raised: light-dark(#eff1f5, #1e1e2e);
   --numen-ink: light-dark(#4c4f69, #cdd6f4);
   --numen-rule: light-dark(#ccd0da, #313244);

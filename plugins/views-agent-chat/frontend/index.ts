@@ -1,11 +1,5 @@
 import { Bot } from '@lucide/vue'
-import {
-  CONVERSATION,
-  definePlugin,
-  NOTE_SCOPE,
-  NOTE_TARGET,
-  type PluginContext,
-} from '@numen/plugin-sdk'
+import { CONVERSATION, definePlugin, NOTE_TARGET, type PluginContext } from '@numen/plugin-sdk'
 import { useConversation } from './thread'
 import AgentTab from './ui/AgentTab.vue'
 import { ConversationView } from './conversation'
@@ -27,15 +21,17 @@ export function activate(context: PluginContext): void {
   if (!agent) {
     throw new Error('an agent chat requires a window and an agent')
   }
-  const chats = createAgentKind({ workspace, agent }, (deps) =>
-    useAgentConversation(
-      useConversation({
-        agent,
-        words: WORDS,
-        conversation: `conversation:${crypto.randomUUID()}`,
-      }),
-      deps,
-    ),
+  const chats = createAgentKind(
+    { workspace, agent, getReasoning: () => context.getSetting<string>('reasoning') ?? '' },
+    (deps) =>
+      useAgentConversation(
+        useConversation({
+          agent,
+          words: WORDS,
+          conversation: `conversation:${crypto.randomUUID()}`,
+        }),
+        deps,
+      ),
   )
   context.registerTabKind(chats.kind)
 
@@ -44,18 +40,12 @@ export function activate(context: PluginContext): void {
 
   context.registerCommand({
     id: 'chat.open',
-    title: WORDS.newAgent,
-    shortcut: 'mod+shift+a',
-    icon: Bot,
     handler: async () => {
       await context.openTab?.(AGENT)
     },
   })
   context.registerCommand({
     id: 'note.ask',
-    title: WORDS.askAbout,
-    scope: NOTE_SCOPE,
-    icon: Bot,
     handler: (note) => askAbout(note.path),
   })
   context.registerContextMenu({

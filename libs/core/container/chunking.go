@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
@@ -20,11 +21,21 @@ import (
 // CutNotes is how a source's text and a note are cut into the chunks the index
 // keeps: at this installation's sizes, keeping what reads as text.
 func (c Config) CutNotes() note.CutNotes {
-	cutter := note.NewCutNotes(c.Embedding.MaxTokens)
+	cutter := note.NewCutNotes(c.Chunks.Get())
 	if c.PluginHost != nil {
 		cutter.Profiles = c.PluginHost.ResolveNoteProfile
 	}
 	return cutter
+}
+
+// setNoteCut sets the cut of the scan and the check that finds the notes recorded with another cut.
+// The check runs where the chunk size is known; an unknown size never cuts a note again.
+func (c Config) setNoteCut(scan *vault.Scan, db *Index) {
+	scan.Cut = c.CutNotes()
+	scan.ShouldRecut = c.Chunks.Get() > 0
+	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
+		return db.SourcesKnown().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, []string{recipe}, math.MaxInt32)
+	}
 }
 
 // Scan is the walk that reads a vault's notes into the index, cut at this
@@ -37,7 +48,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 		db.Queries(),
 		db.Maintenance(),
 	)
-	scan.Cut = c.CutNotes()
+	c.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
 	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return scan

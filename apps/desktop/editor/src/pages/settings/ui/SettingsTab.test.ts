@@ -8,10 +8,11 @@
  * Every value here is invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { computed, nextTick, ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
+import { Select, Switch } from '@numen/ui'
 
-import type { Model, PluginInfo, SettingEdit } from '@/entities/settings'
+import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from '../types'
@@ -75,18 +76,45 @@ const MODELS: readonly Model[] = [
   },
 ]
 
+/** The settings of the shell as the core declares them and resolves them. */
+const SHELL: readonly PluginSettingInfo[] = [
+  {
+    key: 'appearance.theme',
+    type: 'enum',
+    title: 'Theme',
+    description: '',
+    default: 'preset:numen',
+    optionsFrom: 'themes',
+    preview: true,
+    activeOptions: [
+      { value: 'preset:numen', title: 'numen', detail: '' },
+      { value: 'plugin:md.example.themes/dusk', title: 'Dusk', detail: '' },
+      { value: 'mine:sea', title: 'sea', detail: '' },
+    ],
+    isShown: true,
+    value: 'preset:numen',
+  },
+  {
+    key: 'naming.syncTitleAndFilename',
+    type: 'boolean',
+    title: 'Sync title and filename',
+    description: '',
+    default: true,
+    isShown: true,
+    value: true,
+  },
+]
+
 /**
  * A tab for an installation with the given configuration, and every change it
  * receives.
  */
 const createTab = (
-  isPinned = false,
   file: Record<string, unknown> = {},
   plugins: readonly PluginInfo[] = [],
+  app: readonly PluginSettingInfo[] = SHELL,
 ) => {
-  const isDone: string[] = []
   const content: SettingEdit[] = []
-  const isSyncing = ref(true)
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
@@ -94,33 +122,12 @@ const createTab = (
       content.push(...response)
     },
     file: ref('/numen.json'),
-    themes: ref([
-      { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
-      { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
-    ]),
-    applied: ref('preset:numen'),
-    mode: ref('system'),
-    isPinned: ref(isPinned),
-    sizes: ref({ interfaceScale: 1, textScale: 1 }),
-    bounds: ref({
-      interfaceScale: { min: 0.8, max: 2 },
-      textScale: { min: 0.8, max: 1.75 },
-    }),
-    choose: (item) => {
-      isDone.push(`choose ${item}`)
-    },
-    isSyncing: computed({
-      get: () => isSyncing.value,
-      set: (on) => {
-        isSyncing.value = on
-        isDone.push(`syncing ${on}`)
-      },
-    }),
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
     retryPlugin: vi.fn(),
     choosePath: vi.fn(async () => ''),
     plugins: ref(plugins),
+    app: ref(app),
   }
   const initialSearchQuery = ref('')
   const tab = mount(SettingsTab, {
@@ -129,8 +136,7 @@ const createTab = (
   })
   mountedWrappers.push(tab)
   return {
-    recorded: isDone,
-    written: content,
+    writes: content,
     recordedWrites: content,
     tab,
     initialSearchQuery,
@@ -146,17 +152,14 @@ afterEach(() => {
 
 type Tab = ReturnType<typeof createTab>['tab']
 
-/** The control on a row, which the name of that row announces. */
-const control = (id: string) => `[aria-labelledby="${id}"]`
-
-/** The choices one line offers, opened. They are drawn at the end of the document. */
-const openMenu = async (tab: Tab, id: string) => {
-  await tab.get(control(id)).trigger('click')
-  await nextTick()
-  await nextTick()
+/** The select a row of that title draws. */
+const findSelect = (tab: Tab, title: string) => {
+  const found = tab.findAllComponents(Select).find((one) => one.props('name') === title)
+  if (!found) throw new Error(`no select is drawn for ${title}`)
+  return found
 }
 
-const _getMenuItems = (): readonly string[] =>
+const getMenuItems = (): readonly string[] =>
   Array.from(document.body.querySelectorAll('.menu__item .menu__text')).map(
     (one) => one.textContent?.trim() ?? '',
   )
@@ -197,49 +200,49 @@ describe('the settings tab', () => {
       capabilities: [],
       secrets: [],
       storedSecrets: [],
-      consent: 'none',
       hasFrontend: false,
+      hasBackend: false,
       settings: [],
     }
-    const { tab } = createTab(false, {}, [samplePlugin])
+    const { tab } = createTab({}, [samplePlugin])
     const rows = tab.findAll('.plugin-row')
     expect(rows.length).toBe(2)
     expect(rows[0]!.text()).toContain(words.systemSettings)
     expect(rows[1]!.text()).toContain('Transcription Plugin')
   })
 
-  it('opens on the theme the settings name, off both groups', async () => {
+  it('opens on the theme the core resolved, in one list with the themes of plugins', async () => {
     const { tab } = createTab()
     await openSystemSettings(tab)
-    expect(tab.get(control('settings-theme')).text()).toContain('numen')
+    const theme = findSelect(tab, 'Theme')
+    expect(theme.text()).toContain('numen')
 
-    await openMenu(tab, 'settings-theme')
-    expect(getMenuGroups()).toStrictEqual([words.shipped, words.owned])
+    await theme.get('[data-slot="select"]').trigger('click')
+    await nextTick()
+    await nextTick()
+    expect(getMenuItems()).toStrictEqual(['numen', 'Dusk', 'sea'])
+    expect(getMenuGroups()).toStrictEqual([])
   })
 
-  it('writes a theme the way the command of that name writes it', async () => {
-    const { tab, recorded } = createTab()
+  it('writes a theme chosen under the owner app', async () => {
+    const { tab, writes } = createTab()
     await openSystemSettings(tab)
-    await openMenu(tab, 'settings-theme')
-    await chooseItem('sea')
-    expect(recorded).toStrictEqual(['choose mine:sea'])
+    await findSelect(tab, 'Theme').get('[data-slot="select"]').trigger('click')
+    await nextTick()
+    await nextTick()
+    await chooseItem('Dusk')
+    expect(writes).toStrictEqual([
+      { at: ['app', 'appearance', 'theme'], value: '"plugin:md.example.themes/dusk"' },
+    ])
   })
 
-  it('says why the mode cannot be chosen while the applied theme pins it', async () => {
-    const tabPinned = createTab(true).tab
-    await openSystemSettings(tabPinned)
-    expect(tabPinned.text()).toContain(words.pinned)
-
-    const tabUnpinned = createTab().tab
-    await openSystemSettings(tabUnpinned)
-    expect(tabUnpinned.text()).not.toContain(words.pinned)
-  })
-
-  it('turns the switch the window keeps for syncing', async () => {
-    const { tab, recorded } = createTab()
+  it('turns the naming switch by writing it under the owner app', async () => {
+    const { tab, writes } = createTab()
     await openSystemSettings(tab)
-    await tab.get(control('settings-syncing')).trigger('click')
-    expect(recorded).toStrictEqual(['syncing false'])
+    tab.getComponent(Switch).vm.$emit('update:modelValue', false)
+    expect(writes).toStrictEqual([
+      { at: ['app', 'naming', 'syncTitleAndFilename'], value: 'false' },
+    ])
   })
 
   it('names the file the settings stand in, and offers no tab to edit it', async () => {
@@ -279,11 +282,11 @@ describe('the settings tab', () => {
       capabilities: [],
       secrets: [],
       storedSecrets: [],
-      consent: 'none',
       hasFrontend: false,
+      hasBackend: false,
       settings: [],
     }
-    const { tab } = createTab(false, {}, [samplePlugin])
+    const { tab } = createTab({}, [samplePlugin])
 
     // Click on the plugin row to select it
     const rows = tab.findAll('.plugin-row')
@@ -315,11 +318,11 @@ describe('the settings tab', () => {
       capabilities: ['agent'],
       secrets: [],
       storedSecrets: [],
-      consent: 'none',
       hasFrontend: true,
+      hasBackend: false,
       settings: [],
     }
-    const { tab, initialSearchQuery } = createTab(false, {}, [samplePlugin])
+    const { tab, initialSearchQuery } = createTab({}, [samplePlugin])
     initialSearchQuery.value = 'feature:agent'
     await nextTick()
 

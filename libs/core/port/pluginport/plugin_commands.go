@@ -1,6 +1,10 @@
 package pluginport
 
-import "context"
+import (
+	"context"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+)
 
 // PluginCommandEntry is one command an enabled plugin declares, and the plugin
 // that declares it, by its id and by its display name.
@@ -8,6 +12,24 @@ type PluginCommandEntry struct {
 	PluginID   string
 	PluginName string
 	Command    PluginCommand
+}
+
+// PluginMenuEntry is one menu entry an enabled plugin declares, and the plugin that declares it.
+type PluginMenuEntry struct {
+	PluginID string
+	Menu     manifest.Menu
+}
+
+// PluginParts is what one plugin has and whether the host runs it.
+type PluginParts struct {
+	// HasBackend is set where the plugin declares a backend. A command is run in the backend only
+	// where the plugin has one.
+	HasBackend bool
+	// HasFrontend is set where the plugin declares a frontend bundle the windows load.
+	HasFrontend bool
+	// IsSuspended is set while the host holds the plugin suspended after it failed to start; its
+	// backend runs nothing then.
+	IsSuspended bool
 }
 
 // PluginCommandCall is one run of a command, checked against its declaration.
@@ -45,6 +67,12 @@ type PluginCommands interface {
 	// ListCommands lists the commands of every enabled plugin, in the order of the plugins' ids and
 	// then of each manifest.
 	ListCommands() []PluginCommandEntry
+	// ListMenus lists the menu entries of every enabled plugin, in the order of the plugins' ids and
+	// then of each manifest.
+	ListMenus() []PluginMenuEntry
+	// GetParts says what the plugin of the id has and whether it is suspended. A plugin that is not
+	// enabled has none.
+	GetParts(pluginID string) PluginParts
 	// RunCommand runs the command in the backend of its plugin. A plugin that cannot be started or
 	// reached is an *UnavailableError, and a command that ran and failed a *CommandFailedError.
 	RunCommand(ctx context.Context, call PluginCommandCall) (PluginCommandResult, error)

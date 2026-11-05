@@ -4,7 +4,7 @@ import { createNoteWithBody } from '../../support/layout.js'
 import { openWorkspace } from '../../support/workspace.js'
 
 const EMBEDDINGS_ID = 'md.numen.engines.embeddings'
-const MIN_CHUNK_LENGTH = ['plugins', EMBEDDINGS_ID, 'min_chunk_length']
+const MIN_CHUNK_LENGTH = [EMBEDDINGS_ID, 'minChunkLength']
 const DEFAULT_MIN_CHUNK_LENGTH = 40
 
 /** A body of 10 characters, below the default of 40. */

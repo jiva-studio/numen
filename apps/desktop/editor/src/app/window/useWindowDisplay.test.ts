@@ -56,6 +56,7 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     writeOpenTabs: vi.fn(() => Promise.resolve()),
     readOpenTabs: vi.fn(() => Promise.resolve({ tabs: [], activeId: '' })),
     watchEdits: emptyStream,
+    watchSettings: emptyStream,
     watchTasks: async function* () {
       await waitForever()
     },
@@ -78,8 +79,6 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     list: async () => [],
     move: async () => ({ ok: true, value: null }),
     createFolder: async () => null,
-    getSyncEnabled: async () => true,
-    setSyncEnabled: async () => null,
     getSettings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
     updateSettings: vi.fn(() => Promise.resolve()),
     writePluginSecret: vi.fn(() => Promise.resolve()),
@@ -534,6 +533,7 @@ describe('what the application is doing', () => {
     pluginId: '',
     pluginName: '',
     isCancellable: false,
+    kind: 'work',
   })
 
   it('is what the stream last returned, whole', async () => {

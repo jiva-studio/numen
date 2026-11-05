@@ -55,14 +55,17 @@ export interface PluginSettingInfo {
   readonly min?: number | undefined
   readonly max?: number | undefined
   readonly step?: number | undefined
+  /** Whether the window applies the value while its control is focused, and restores it on leaving. */
+  readonly preview?: boolean | undefined
+  /** The registry the options are listed from, such as the installed themes. */
+  readonly optionsFrom?: string | undefined
+  /** The options in force under the values in force, resolved by the core. */
+  readonly activeOptions?: readonly PluginSettingOption[] | undefined
+  /** Whether the condition of the setting holds under the values in force, resolved by the core. */
+  readonly isShown?: boolean | undefined
+  /** The value in force, resolved by the core: the stored value, else the default, else the first option. */
+  readonly value?: unknown
 }
-
-/**
- * Whether the user permits a plugin to call a model: `none` is a plugin without
- * the ai:complete permission, `requested` is a plugin that requested it since the
- * host started and has received no answer.
- */
-export type Consent = 'none' | 'pending' | 'requested' | 'allowed' | 'denied'
 
 /** Why the host suspends a plugin after it failed to start, and when it gave the plugin up. */
 export interface PluginFailure {
@@ -82,12 +85,13 @@ export interface PluginInfo {
   readonly description: string
   readonly isActive: boolean
   readonly hasFrontend: boolean
+  /** Whether the plugin declares a backend the host starts. */
+  readonly hasBackend: boolean
   readonly settings: readonly PluginSettingInfo[]
   readonly capabilities: readonly string[]
   /** The secrets the plugin declares, and the names of those that have a key stored. */
   readonly secrets: readonly PluginSecret[]
   readonly storedSecrets: readonly string[]
-  readonly consent: Consent
   /** The readers the plugin declares, each with the extensions of the files it opens. */
   readonly readers?: readonly PluginReader[]
   /** The views the plugin declares for its settings form, each placed after the setting named by `after`. */

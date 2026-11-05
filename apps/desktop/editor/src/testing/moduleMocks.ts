@@ -6,8 +6,7 @@
  * door is mocked too, over the rest of what it gives.
  */
 import { vi } from 'vitest'
-import { requests } from './requests'
-import { mockVaultState, pendingStream } from './answers'
+import { declared, mockVaultState, pendingStream } from './answers'
 
 vi.mock('@/app/plugins/agentPort', () => ({
   agentPort: { ask: pendingStream, finish: () => Promise.resolve() },
@@ -26,14 +25,6 @@ const themesResponse = {
       bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
     }),
     readTheme: async (name: string) => `:root { --numen-surface: ${name} }`,
-    writeAppearance: async (
-      name: string,
-      mode: string,
-      sizes: { interfaceScale: number; textScale: number },
-    ) => {
-      requests.applied.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
-      return mockVaultState.writeError
-    },
     watchThemes: pendingStream,
   },
 }
@@ -45,9 +36,9 @@ vi.mock('@/entities/settings', async (original) => ({
   ...themesResponse,
 }))
 
-// The window is shown with no plugin declaring a command.
+// The window is shown with the plugins `declared` names; none declares a command to begin with.
 const declaredCommandsResponse = {
-  listDeclaredCommands: async () => [],
+  listDeclaredCommands: async () => ({ commands: declared.commands, menus: declared.menus }),
   runDeclaredCommand: async () => ({ ok: false as const, error: 'no plugin declares it' }),
 }
 

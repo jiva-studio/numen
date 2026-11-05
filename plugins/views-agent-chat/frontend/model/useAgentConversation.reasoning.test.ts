@@ -30,19 +30,19 @@ const model = (
 })
 
 const LISTED = [
-  model(['agent', 'use'], 'alpha', { isDefault: true }),
-  model(['agent', 'use'], 'beta'),
-  model(['agent', 'alpha', 'model'], 'deep', {
+  model(['app', 'agent', 'use'], 'alpha', { isDefault: true }),
+  model(['app', 'agent', 'use'], 'beta'),
+  model(['app', 'agent', 'alpha', 'model'], 'deep', {
     isDefault: true,
     reasoningLevels: LEVELS,
     defaultReasoning: 'low',
   }),
-  model(['agent', 'alpha', 'model'], 'plain'),
-  model(['agent', 'beta', 'model'], 'quiet', { reasoningLevels: LEVELS }),
+  model(['app', 'agent', 'alpha', 'model'], 'plain'),
+  model(['app', 'agent', 'beta', 'model'], 'quiet', { reasoningLevels: LEVELS }),
 ]
 
 /** An agent tab with the listed models, the stored settings, and the recorded requests. */
-function open(settings: Record<string, string> = {}) {
+function open(settings: Record<string, string> = {}, reasoning = '') {
   const request: AskOptions[] = []
   const content: [string, unknown][] = []
   const conversation: Conversation = {
@@ -61,6 +61,7 @@ function open(settings: Record<string, string> = {}) {
     resolveLinks: async () => [],
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],
+    getReasoning: () => reasoning,
     writeSetting: async (path, value) => {
       content.push([path.join('/'), value])
     },
@@ -78,7 +79,7 @@ describe('the levels offered', () => {
   })
 
   it('are none for a model that offers none', () => {
-    const { state } = open({ 'agent/use': 'alpha', 'agent/alpha/model': 'plain' })
+    const { state } = open({ 'app/agent/use': 'alpha', 'app/agent/alpha/model': 'plain' })
     expect(state.reasoningLevels.value).toEqual([])
     expect(state.selectedReasoningId.value).toBe('')
   })
@@ -90,17 +91,17 @@ describe('the level selected', () => {
   })
 
   it('is empty where the model names no default and none was chosen', () => {
-    const { state } = open({ 'agent/use': 'beta' })
+    const { state } = open({ 'app/agent/use': 'beta' })
     expect(state.reasoningLevels.value).toHaveLength(2)
     expect(state.selectedReasoningId.value).toBe('')
   })
 
-  it('is the one kept for the agent', () => {
-    expect(open({ 'agent/alpha/reasoning': 'high' }).state.selectedReasoningId.value).toBe('high')
+  it('is the one kept by the plugin setting', () => {
+    expect(open({}, 'high').state.selectedReasoningId.value).toBe('high')
   })
 
   it('is the default where the kept level is not one the model offers', () => {
-    expect(open({ 'agent/alpha/reasoning': 'max' }).state.selectedReasoningId.value).toBe('low')
+    expect(open({}, 'max').state.selectedReasoningId.value).toBe('low')
   })
 
   it('is the one chosen without mutating settings', () => {
@@ -126,17 +127,16 @@ describe('the level selected', () => {
 
 describe('the question', () => {
   it('names the level selected', () => {
-    const { state, requests } = open({ 'agent/alpha/reasoning': 'high' })
+    const { state, requests } = open({}, 'high')
     state.send('hello')
     expect(requests).toEqual([{ agentId: 'alpha', modelId: 'deep', reasoning: 'high' }])
   })
 
   it('names no level for a model that offers none', () => {
-    const { state, requests } = open({
-      'agent/use': 'alpha',
-      'agent/alpha/model': 'plain',
-      'agent/alpha/reasoning': 'high',
-    })
+    const { state, requests } = open(
+      { 'app/agent/use': 'alpha', 'app/agent/alpha/model': 'plain' },
+      'high',
+    )
     state.send('hello')
     expect(requests[0]?.reasoning).toBe('')
   })

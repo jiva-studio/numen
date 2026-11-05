@@ -383,10 +383,21 @@ describe('a row the browser scrolled back to its start', () => {
     expect(element.scrollLeft).toBe(480)
   })
 
-  it('is left alone while it travels to a page', () => {
+  it('is put at the page it was travelling to when the browser ended the travel', () => {
+    const { scroll, element } = createScroll(0)
+    scroll.send(900, 'smooth')
+    element.scrollLeft = 0
+
+    scroll.restore()
+
+    expect(element.scrollLeft).toBe(900)
+    expect(scroll.isStill()).toBe(true)
+  })
+
+  it('is left alone while it jumps to a page', () => {
     const { scroll, element } = createScroll(0)
 
-    scroll.send(900, 'smooth')
+    scroll.send(900, 'auto')
     scroll.restore()
 
     expect(element.scrollLeft).toBe(0)
@@ -401,5 +412,33 @@ describe('a row the browser scrolled back to its start', () => {
     scroll.restore()
 
     expect(element.scrollLeft).toBe(300.5)
+  })
+})
+
+describe('a row the browser moved without a scroll event', () => {
+  it('is moved when it is not where it was last reported', () => {
+    const { scroll, element } = createScroll(0)
+    element.scrollLeft = 480
+    scroll.isStill()
+    element.scrollLeft = 0
+
+    expect(scroll.isMoved()).toBe(true)
+  })
+
+  it('is moved when it is not where it was sent', () => {
+    const { scroll, element } = createScroll(0)
+    scroll.send(900, 'smooth')
+    element.scrollLeft = 0
+
+    expect(scroll.isMoved()).toBe(true)
+  })
+
+  it('is not moved where it was last reported', () => {
+    const { scroll, element } = createScroll(0)
+    element.scrollLeft = 480
+    scroll.isStill()
+    element.scrollLeft = 480.5
+
+    expect(scroll.isMoved()).toBe(false)
   })
 })

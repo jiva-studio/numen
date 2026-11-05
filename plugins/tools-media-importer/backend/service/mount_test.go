@@ -121,7 +121,7 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	if code := call(http.MethodGet, server.RoutePrefix+embedPattern+"?address=not-a-url", ""); code != http.StatusBadRequest {
 		t.Errorf("embed route status = %d, want 400", code)
 	}
-	if code := call(http.MethodPost, "/numen.v1.PluginLifecycleService/Configure", `{"config":{"copy_max_size_mb":"10"}}`); code != http.StatusOK {
+	if code := call(http.MethodPost, "/numen.v1.PluginLifecycleService/Configure", `{"config":{"copyMaxSizeMb":"10"}}`); code != http.StatusOK {
 		t.Errorf("Configure RPC status = %d, want 200", code)
 	}
 	if code := call(http.MethodPost, "/numen.v1.PluginLifecycleService/Shutdown", `{}`); code != http.StatusOK {
@@ -183,8 +183,8 @@ func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
 	}
 	before := f.getFetcher()
 	f.updateConfig(map[string]string{
-		"yt_dlp": "/custom/yt-dlp", "ffmpeg": "/custom/ffmpeg",
-		"captions": " sa, en ,", "automatic_captions": "false", "copy_max_size_mb": "20",
+		"ytDlp": "/custom/yt-dlp", "ffmpeg": "/custom/ffmpeg",
+		"captions": " sa, en ,", "automaticCaptions": "false", "copyMaxSizeMb": "20",
 	})
 	if f.getFetcher() == before || f.getFetcher() == nil || f.getFetcher().GetDownloadModel(videoAddress).Tool != "yt-dlp" {
 		t.Error("updateConfig did not reopen current fetcher")
@@ -196,20 +196,20 @@ func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
 	if !slices.Equal(settings.Captions, []string{"sa", "en"}) || settings.IsAutomatic || settings.CopyMaxSize != 20<<20 {
 		t.Errorf("the settings are %+v", settings)
 	}
-	f.updateConfig(map[string]string{"yt_dlp": "", "ffmpeg": "", "copy_max_size_mb": "many"})
+	f.updateConfig(map[string]string{"ytDlp": "", "ffmpeg": "", "copyMaxSizeMb": "many"})
 	if len(f.cfg.Video.Command) != 0 || len(f.cfg.Sound.Command) != 0 || f.getSettings().CopyMaxSize != 20<<20 {
 		t.Errorf("cleared settings leave %v, %v and %d", f.cfg.Video.Command, f.cfg.Sound.Command, f.getSettings().CopyMaxSize)
 	}
-	f.updateConfig(map[string]string{"copy_max_size_mb": "-1"})
+	f.updateConfig(map[string]string{"copyMaxSizeMb": "-1"})
 	if f.getSettings().CopyMaxSize != 20<<20 {
 		t.Errorf("negative size changed CopyMaxSize to %d", f.getSettings().CopyMaxSize)
 	}
-	f.updateConfig(map[string]string{"copy_max_size_mb": "0"})
+	f.updateConfig(map[string]string{"copyMaxSizeMb": "0"})
 	if f.getSettings().CopyMaxSize != 0 {
 		t.Errorf("zero size left CopyMaxSize = %d, want 0", f.getSettings().CopyMaxSize)
 	}
-	f.updateConfig(map[string]string{"copy_max_size_mb": "20"})
-	f.updateConfig(map[string]string{"copy_max_size_mb": "4611686018427387904"})
+	f.updateConfig(map[string]string{"copyMaxSizeMb": "20"})
+	f.updateConfig(map[string]string{"copyMaxSizeMb": "4611686018427387904"})
 	if f.getSettings().CopyMaxSize != 0 {
 		t.Errorf("64-bit size parse failed: CopyMaxSize = %d, want 0", f.getSettings().CopyMaxSize)
 	}

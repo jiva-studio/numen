@@ -5,8 +5,8 @@
  * The window's structure is defined in `window.ts`. This file holds what the user
  * sees of it, and the binding between the two.
  */
-import { onMounted, onUnmounted } from 'vue'
-import { StatusBar, WorkspaceLayout } from '@numen/shell'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { StatusBar, TitleBar, WorkspaceLayout } from '@numen/shell'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
@@ -17,6 +17,9 @@ import { StatusViewHost } from '@/features/status-views'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
+import { useWindowFrame } from '../window/useWindowFrame'
+import { useWindowTitleBar } from '../window/useTitleBarActions'
+import { useWindowVaultChoices } from '../window/useVaultChoices'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
@@ -32,10 +35,13 @@ const unsaved = {
 
 const {
   runCommand,
+  menus,
+  runChoice,
   openCurrentVault,
   isLayoutReady,
   bootstrapFailure,
   retryBootstrap,
+  windowButtons,
   openSettings,
   commands,
   pluginWays,
@@ -63,6 +69,17 @@ const {
   detachTabAt,
   moveTab,
 } = useWindow()
+
+const frame = useWindowFrame(undefined, windowButtons)
+
+/** The vault the window shows; empty where none is open. */
+const vaultName = computed(
+  () => vaultList.value.vaults.find((one) => one.id === vaultList.value.showing)?.name ?? '',
+)
+
+const titleBar = useWindowTitleBar({ menus, vaultName, runCommand, getTarget })
+
+const vaultChoices = useWindowVaultChoices({ vaultList, runCommand, getTarget, commandDeps })
 
 const linkMenu = useTabLinkMenu({
   tabLinks,
@@ -110,6 +127,21 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
 
 <template>
   <main :class="{ 'is-highlighted': isHighlighted }">
+    <TitleBar
+      :app-name="words.appName"
+      :vault-name="vaultName"
+      :controls="frame.controls.value"
+      :is-maximised="frame.isMaximised.value"
+      :actions="titleBar.actions.value"
+      :choices="vaultChoices.choices.value"
+      :words="vaultChoices.words"
+      @run="titleBar.run"
+      @choose="vaultChoices.choose"
+      @minimise="frame.minimise"
+      @toggle-maximise="frame.toggleMaximise"
+      @close="frame.close"
+    />
+
     <CoreFailureNotice :failure="failure" />
 
     <WorkspaceLayout
@@ -205,6 +237,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       :doing="commandDeps"
       :get-target="getTarget"
       :places="destinations"
+      :run-choice="runChoice"
     />
   </main>
 </template>

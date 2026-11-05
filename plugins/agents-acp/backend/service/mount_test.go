@@ -26,7 +26,7 @@ func TestTheLinkedHandlerAnswersTheAgentService(t *testing.T) {
 		t.Fatalf("call with the token: %v", err)
 	}
 
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.PluginLifecycleService/Configure", strings.NewReader(`{"values":{"executable_path":"/usr/bin/my-acp"}}`))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.PluginLifecycleService/Configure", strings.NewReader(`{"values":{"executablePath":"/usr/bin/my-acp"}}`))
 	if err != nil {
 		t.Fatal(err)
 	}

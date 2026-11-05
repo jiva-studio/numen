@@ -9,24 +9,18 @@ import type { Words } from '../../words'
 
 export const createVaultCommands = (words: Words, agent: string): readonly Command[] => [
   {
-    id: COMMAND.goToStartNote,
-    text: words.first,
-    group: 'vault',
-    isAvailable: (target) => target.isReady,
-  },
-  {
     id: COMMAND.goToNote,
     text: words.goto,
     ...createRowKeys(COMMAND.goToNote, agent),
     group: 'vault',
-    needs: 'picking',
+    input: 'note',
     isAvailable: (target) => target.isReady,
   },
   {
     id: COMMAND.openVault,
     text: words.openVault,
     group: 'vault',
-    needs: 'vaults',
+    input: 'vault',
     isAvailable: isAlwaysAvailable,
   },
   {
@@ -40,7 +34,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     id: COMMAND.renameVault,
     text: words.renameVault,
     group: 'vault',
-    needs: 'naming',
+    input: 'name',
     isAvailable: isVaultOpen,
     getFieldText: (target) => target.vault.name,
   },
@@ -48,8 +42,8 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     id: COMMAND.removeVault,
     text: words.removeVault,
     group: 'vault',
-    needs: 'vaults',
-    next: 'asking',
+    input: 'vault',
+    next: 'confirmation',
     isAvailable: isAlwaysAvailable,
     answers: {
       keeps: words.keepsVault,
@@ -62,8 +56,8 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     id: COMMAND.eraseVault,
     text: words.eraseVault,
     group: 'vault',
-    needs: 'vaults',
-    next: 'exactly',
+    input: 'vault',
+    next: 'retypedName',
     isAvailable: isAlwaysAvailable,
     warns: { action: words.erases, detail: words.binned, back: words.typeVaultBack },
   },

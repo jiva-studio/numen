@@ -8,6 +8,7 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { ManifestError, readPluginManifests } from '../shared/manifests.mjs'
+import { listRegistrations } from '../shared/registrations.mjs'
 
 const PLUGINS = new URL('../../plugins/', import.meta.url)
 
@@ -129,23 +130,41 @@ const getShortcutChord = (shortcut, where) => {
  * - `declared`, each command its manifest declares that the palette shows,
  *   over a file where it names the files' extensions and over the window where
  *   it names none;
- * - `commands`, each command its frontend registers, over the note in front or
- *   over the window, with the chord its shortcut is drawn as.
+ * - `commands`, each command its manifest declares that its frontend registers a
+ *   handler for, over the note in front or over the window, with the chord its
+ *   shortcut is drawn as.
+ *
+ * The manifest declares every command; the frontend scan only confirms that each id it
+ * registers is declared, and the commands it registers are the frontend's.
  */
 export const getPluginCommands = async (target, plugins = PLUGINS) => {
   const found = []
   for (const { name, manifest } of readManifests(plugins)) {
     if (!manifest.targets.includes(target)) continue
     const at = new URL(`${name}/`, plugins)
+    const all = manifest.contributes?.commands ?? []
+    const registered = manifest.frontend ? readRegisteredIds(at, name) : []
+    for (const id of registered) {
+      if (!all.some((one) => one.id === id)) {
+        fail(`${name} registers ${id}, which its manifest does not declare`)
+      }
+    }
     found.push({
       id: manifest.id,
       settings: manifest.settings
         .filter((one) => one.palette)
         .map((one) => ({ text: `${manifest.name}: ${one.title}`, group: 'settings' })),
-      declared: manifest.commands
-        .filter((one) => !one.isHiddenInPalette && one.when.length === 0)
+      declared: all
+        .filter((one) => !registered.includes(one.id) && one.when.length === 0)
         .map((one) => ({ text: one.title, group: one.contentTypes.length ? 'file' : 'window' })),
-      commands: manifest.frontend ? await readRegisteredCommands(at, name) : [],
+      commands: all
+        .filter((one) => registered.includes(one.id))
+        .map((one) => ({
+          id: one.id,
+          text: one.title,
+          group: one.scope === 'note' ? 'note' : 'window',
+          ...(one.shortcut ? { chord: getShortcutChord(one.shortcut, name) } : {}),
+        })),
     })
   }
   return found.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
@@ -162,28 +181,11 @@ const readManifests = (plugins) => {
 }
 
 /**
- * The commands one plugin's frontend registers. Every `registerCommand` call is
- * read; one this cannot read an id and a title out of is refused.
+ * The ids one plugin's frontend registers a handler for. Every `registerCommand` call of the
+ * frontend's sources is read; one this cannot read an id out of is refused.
  */
-const readRegisteredCommands = async (at, name) => {
-  const index = new URL('frontend/index.ts', at)
-  const source = await readFile(index, 'utf8')
-  const calls = [...source.matchAll(/\bregisterCommand\(\s*\{/g)]
-  const commands = []
-  for (const call of calls) {
-    const block = readBracketed(source, call.index + call[0].length - 1)
-    const id = block?.text.match(/\bid:\s*'([^']+)'/)
-    const title = block?.text.match(/\btitle:\s*([A-Za-z]+)\.([A-Za-z]+)\s*,/)
-    if (!id || !title) fail(`${name} registers a command this cannot read`)
-    const scope = block.text.match(/\bscope:\s*'([a-z]+)'/)?.[1]
-    const shortcut = block.text.match(/\bshortcut:\s*'([^']+)'/)?.[1]
-    const words = getWordsFile(source, title[1], index)
-    commands.push({
-      id: id[1],
-      text: await readWords(await readFile(words, 'utf8'), title[2], words),
-      group: scope === 'note' ? 'note' : 'window',
-      ...(shortcut ? { chord: getShortcutChord(shortcut, name) } : {}),
-    })
-  }
-  return commands
-}
+const readRegisteredIds = (at, name) =>
+  listRegistrations(fileURLToPath(new URL('frontend/', at))).map(({ id }) => {
+    if (id === undefined) fail(`${name} registers a command this cannot read`)
+    return id
+  })

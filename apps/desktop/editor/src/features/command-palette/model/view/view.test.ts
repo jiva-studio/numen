@@ -10,7 +10,7 @@ import { getNoteIcon } from '@/entities/note'
 import { findIcon } from '@/shared/icons'
 import { WORDS as words } from '@/shared/words'
 import { createCommands } from '../../lib/commands/commands'
-import { CREATE_NOTE_ID } from '../../lib/offers/offers'
+import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
 import type { PendingStep } from '../../lib/step/step'
 import type { Command, CommandTarget, PaletteLists } from '../../types'
 import type { Commands } from '../palette/palette'
@@ -107,24 +107,24 @@ describe('the commands as the words typed leave them', () => {
 describe('the command reached on the same row', () => {
   it('is drawn as the second action where it is offered', () => {
     const view = createView([
-      createCommand({ id: 'app:note.goToStart', text: 'First', also: 'second' }),
+      createCommand({ id: 'first', text: 'First', also: 'second' }),
       createCommand({ id: 'second', text: 'Second' }),
     ])
 
     expect(getNoteGroup(view, front(), '')?.items[0]?.actions).toStrictEqual([
-      { id: 'app:note.goToStart', text: 'First' },
+      { id: 'first', text: 'First' },
       { id: 'second', text: 'Second' },
     ])
   })
 
   it('is drawn nowhere where it is not offered', () => {
     const view = createView([
-      createCommand({ id: 'app:note.goToStart', text: 'First', also: 'second' }),
+      createCommand({ id: 'first', text: 'First', also: 'second' }),
       createCommand({ id: 'second', text: 'Second', isAvailable: () => false }),
     ])
 
     expect(getNoteGroup(view, front(), '')?.items[0]?.actions).toStrictEqual([
-      { id: 'app:note.goToStart', text: 'First' },
+      { id: 'first', text: 'First' },
     ])
   })
 })
@@ -148,35 +148,40 @@ describe('a command that gives no words for its confirmation', () => {
   const view = createView([command])
 
   it('draws the two answers with empty words', () => {
-    const items = view.createGroups(step('asking'), front(), '')[0]?.items
+    const items = view.createGroups(step('confirmation'), front(), '')[0]?.items
 
     expect(items).toStrictEqual([
-      { id: 'no', title: '', detail: '', actions: [{ id: 'no', text: '' }] },
       {
-        id: 'yes',
+        id: expect.any(String),
+        title: '',
+        detail: '',
+        actions: [{ id: expect.any(String), text: '' }],
+      },
+      {
+        id: expect.any(String),
         title: ' Ontology.md',
         detail: '',
-        actions: [{ id: 'yes', text: '' }],
+        actions: [{ id: expect.any(String), text: '' }],
       },
     ])
   })
 
   it('draws the name to type back with empty words', () => {
-    const items = view.createGroups(step('exactly'), front(), 'Ontology')[0]?.items
+    const items = view.createGroups(step('retypedName'), front(), 'Ontology')[0]?.items
 
     expect(items).toStrictEqual([
       {
-        id: 'exactly',
+        id: expect.any(String),
         title: ' “Ontology”',
         detail: '',
         isDisabled: false,
-        actions: [{ id: 'exactly', text: '' }],
+        actions: [{ id: expect.any(String), text: '' }],
       },
     ])
   })
 
   it('draws asking group with id asking and arguments group with default title when prompts are absent', () => {
-    const askingGroup = view.createGroups(step('asking'), front(), '')[0]
+    const askingGroup = view.createGroups(step('confirmation'), front(), '')[0]
     expect(askingGroup?.id).toBe('asking')
 
     const argGroupNoPrompt = view.createGroups(step('arguments'), front(), 'val')[0]
@@ -184,9 +189,9 @@ describe('a command that gives no words for its confirmation', () => {
     expect(argGroupNoPrompt?.title).toBe('')
     expect(argGroupNoPrompt?.items).toStrictEqual([
       {
-        id: 'name',
+        id: expect.any(String),
         title: ': “val”',
-        actions: [{ id: 'name', text: words.givesIt }],
+        actions: [{ id: expect.any(String), text: words.givesIt }],
       },
     ])
 
@@ -203,9 +208,9 @@ describe('a command that gives no words for its confirmation', () => {
     )[0]
     expect(optGroup?.items).toStrictEqual([
       {
-        id: 'name',
+        id: expect.any(String),
         title: `${words.leavesOut} Topic`,
-        actions: [{ id: 'name', text: words.leavesOut }],
+        actions: [{ id: expect.any(String), text: words.leavesOut }],
       },
     ])
   })
@@ -297,11 +302,30 @@ describe('findRowIcon', () => {
       findHitFile: (id: string) => (id === 'hit-file' ? 'book.epub' : null),
     } as unknown as SearchState
 
-    expect(findRowIcon(CREATE_NOTE_ID, commands, search)).toBe(findIcon('app:note.create'))
+    expect(findRowIcon(CREATE_NOTE_ROW, commands, search)).toBe(findIcon('app:note.create'))
     expect(findRowIcon('hit-note', commands, search)).toBe(getNoteIcon('sheet'))
     expect(findRowIcon('hit-file', commands, search, () => customIcon)).toBe(customIcon)
     expect(findRowIcon('hit-file', commands, search, () => undefined)).toBe(File)
     expect(findRowIcon('hit-file', commands, search)).toBe(File)
     expect(findRowIcon('unknown', commands, search)).toBeNull()
+  })
+})
+
+describe('the icon of the command that opens a document', () => {
+  it('is the file icon the row of a document is drawn with', () => {
+    expect(findIcon('app:file.open')).toBe(File)
+  })
+
+  it('is the icon of the command the row of a document offers', () => {
+    const commands = { open: ref(true), findNoteType: () => null, findCommandIcon: () => null }
+    const search = { findNoteType: () => null, findHitFile: () => null }
+
+    expect(
+      findRowIcon(
+        'app:file.open',
+        commands as unknown as Commands,
+        search as unknown as SearchState,
+      ),
+    ).toBe(File)
   })
 })

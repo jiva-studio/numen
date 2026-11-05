@@ -10,6 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
+// CommandScopeNote is the scope of a command listed only while a note is in front.
+const CommandScopeNote = "note"
+
 // The types an argument of a command holds.
 const (
 	CommandArgumentString  = "string"
@@ -75,9 +78,11 @@ type Command struct {
 	// content type and no note type. The palette has no file context and does not offer it.
 	When      []ContextCondition
 	Arguments []CommandArgument
-	// IsHiddenInPalette keeps the command out of the window's palette where the window offers the
-	// same thing another way. The command line still offers it.
-	IsHiddenInPalette bool
+	// Scope is CommandScopeNote for a command listed only while a note is in front. Empty is a
+	// command over the window.
+	Scope string
+	// Shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
+	Shortcut string
 }
 
 // CommandArgument is one argument a command takes.
@@ -86,9 +91,6 @@ type CommandArgument struct {
 	Title      string
 	Type       string
 	IsRequired bool
-	// IsHiddenInPalette keeps an optional argument out of the window's palette, which runs the
-	// command without it. The command line still takes it.
-	IsHiddenInPalette bool
 }
 
 // HasFiles reports whether the command runs over a file.
@@ -118,14 +120,11 @@ func (c Command) GetArgument(name string) (CommandArgument, bool) {
 	return CommandArgument{}, false
 }
 
-// listCommandIssues checks the commands, and that a plugin declaring any has a backend to run them.
+// listCommandIssues checks the commands the manifest declares.
 func (m Manifest) listCommandIssues() []error {
 	var issues []error
-	if len(m.Commands) > 0 && m.Backend == (Backend{}) {
-		issues = append(issues, fmt.Errorf("%w: the plugin declares commands and has no backend to run them", ErrInvalidCommand))
-	}
 	observed := map[string]bool{}
-	for _, command := range m.Commands {
+	for _, command := range m.Contributes.Commands {
 		switch {
 		case !manifestCommandPattern.MatchString(command.ID):
 			issues = append(issues, fmt.Errorf("%w: id %q is not an object and an action, each in camelCase, with a dot between them", ErrInvalidCommand, command.ID))
@@ -135,6 +134,12 @@ func (m Manifest) listCommandIssues() []error {
 		observed[command.ID] = true
 		if strings.TrimSpace(command.Title) == "" {
 			issues = append(issues, fmt.Errorf("%w: %q has no title", ErrInvalidCommand, command.ID))
+		}
+		if m.Backend != (Backend{}) && !m.HasFrontend() && (command.Scope != "" || command.Shortcut != "") {
+			issues = append(issues, fmt.Errorf("%w: %q declares a scope or a shortcut, and its plugin has no frontend to run it", ErrInvalidCommand, command.ID))
+		}
+		if command.Scope != "" && command.Scope != CommandScopeNote {
+			issues = append(issues, fmt.Errorf("%w: %q has scope %q, which is none of the scopes %q", ErrInvalidCommand, command.ID, command.Scope, CommandScopeNote))
 		}
 		issues = append(issues, listContentTypesIssues(ErrInvalidCommand, command.ContentTypes)...)
 		issues = append(issues, m.listUndeclaredNoteTypes(ErrInvalidCommand, command.NoteTypes)...)
@@ -184,9 +189,6 @@ func listCommandArgumentIssues(command Command) []error {
 		observed[argument.Name] = true
 		if strings.TrimSpace(argument.Title) == "" {
 			issues = append(issues, fmt.Errorf("%w: %q takes %q with no title", ErrInvalidCommandArgument, command.ID, argument.Name))
-		}
-		if argument.IsHiddenInPalette && argument.IsRequired {
-			issues = append(issues, fmt.Errorf("%w: %q takes %q, which is required and hidden in the palette", ErrInvalidCommandArgument, command.ID, argument.Name))
 		}
 		if types := listCommandArgumentTypes(); !slices.Contains(types, argument.Type) {
 			issues = append(issues, fmt.Errorf("%w: %q takes %q of type %q, expected one of %s", ErrInvalidCommandArgument, command.ID, argument.Name, argument.Type, strings.Join(types, ", ")))

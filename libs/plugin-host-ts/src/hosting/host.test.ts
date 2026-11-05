@@ -19,6 +19,14 @@ describe('createPluginHost', () => {
     const extensionReaders = new Map<string, unknown>()
 
     const deps: PluginHostDeps = {
+      getCommandDeclarations: () => [
+        {
+          pluginId: 'sample.plugin',
+          id: 'test.run',
+          title: 'Run Test',
+          shortcut: 'ctrl+shift+k',
+        },
+      ],
       registerKind: vi.fn((kind) => {
         registeredKinds.push(kind)
         return () => {
@@ -74,8 +82,6 @@ describe('createPluginHost', () => {
     let executed = false
     const cmdSub = ctx.registerCommand({
       id: 'test.run',
-      title: 'Run Test',
-      shortcut: 'ctrl+shift+k',
       handler: async () => {
         executed = true
       },
@@ -117,7 +123,16 @@ describe('createPluginHost', () => {
 
   it('disposes all registrations when plugin is disposed', () => {
     const { deps, extensionReaders } = createMockDeps()
-    const host = createPluginHost(deps)
+    const host = createPluginHost({
+      ...deps,
+      getCommandDeclarations: () => [
+        {
+          pluginId: 'disposable.plugin',
+          id: 'cmd1',
+          title: 'Cmd 1',
+        },
+      ],
+    })
     const ctx = host.createContext('disposable.plugin')
 
     ctx.registerReader({
@@ -126,7 +141,6 @@ describe('createPluginHost', () => {
     })
     ctx.registerCommand({
       id: 'cmd1',
-      title: 'Cmd 1',
       handler: vi.fn(() => Promise.resolve()),
     })
 
@@ -159,6 +173,9 @@ describe('createPluginHost', () => {
       ]),
       contexts: new Map(),
       manifests: new Map(),
+      activated: { value: new Set() },
+      disposed: new Set(),
+      reportedIssues: new Set(),
     }
     disposeAllEntries(reg, createStatusViewRegistry(), deps)
     expect(reg.agentProviders.size).toBe(0)

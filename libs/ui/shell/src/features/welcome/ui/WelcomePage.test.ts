@@ -10,12 +10,12 @@ import { mount } from '@vue/test-utils'
 import { KeyCap } from '@numen/ui'
 import WelcomePage from './WelcomePage.vue'
 import { VAULT_LETTERS } from '../lib/letters'
-import type { Offer, VaultRow, WelcomeAction } from '../lib/welcome'
+import type { FooterEntry, VaultRow, WelcomeAction } from '../lib/welcome'
 
 const vault = (id: string): VaultRow => ({ id, name: id, path: `/vaults/${id}` })
 
 /** An action offered below the list, with its keyboard shortcut. */
-const offer: Offer = {
+const footer: FooterEntry = {
   text: 'New vault',
   detail: 'Choose a folder',
   keys: { icons: ['control', 'shift'], letter: 'N' },
@@ -120,15 +120,15 @@ describe('the room the list will fill', () => {
 })
 
 describe('what the screen offers below the list', () => {
-  const drawWith = (one: Offer) =>
-    mount(WelcomePage, { props: { vaults: [vault('physics')], heading: 'Vaults', offer: one } })
+  const drawWith = (one: FooterEntry) =>
+    mount(WelcomePage, { props: { vaults: [vault('physics')], heading: 'Vaults', footer: one } })
 
   it('carries the keystroke that reaches it, after the letters on the list', () => {
-    expect(caps(drawWith(offer))).toStrictEqual(['A', 'N'])
+    expect(caps(drawWith(footer))).toStrictEqual(['A', 'N'])
   })
 
   it('carries none where the window binds none', () => {
-    expect(caps(drawWith({ text: offer.text }))).toStrictEqual(['A'])
+    expect(caps(drawWith({ text: footer.text }))).toStrictEqual(['A'])
   })
 })
 
@@ -138,24 +138,24 @@ describe('what the screen offers below the list', () => {
  * and that its content remains reachable elsewhere.
  */
 describe('the screen drawn narrow', () => {
-  const drawWith = (one: Offer) =>
+  const drawWith = (one: FooterEntry) =>
     mount(WelcomePage, {
       props: {
         vaults: [vault('physics')],
         heading: 'Vaults',
-        offer: one,
+        footer: one,
         ways: [{ id: 'find', text: 'Search', keys: { icons: ['control'], letter: 'K' } }],
       },
     })
 
-  it('marks every keystroke it gives up, on a way in, on a vault and on the offer', () => {
-    const screen = drawWith(offer)
+  it('marks every keystroke it gives up, on a way in, on a vault and on the footer', () => {
+    const screen = drawWith(footer)
     expect(screen.findAllComponents(KeyCap)).toHaveLength(3)
     expect(screen.findAll('.welcome-page__keys')).toHaveLength(3)
   })
 
   it('leaves the row itself pressed by hand where its keystroke is given up', async () => {
-    const screen = drawWith(offer)
+    const screen = drawWith(footer)
 
     await screen.get('.welcome-page__row').trigger('click')
 
@@ -163,7 +163,7 @@ describe('the screen drawn narrow', () => {
   })
 
   it('marks what is returned under a name, and keeps the whole path on the row', () => {
-    const screen = drawWith(offer)
+    const screen = drawWith(footer)
     const path = screen.get('.welcome-page__row--vault .welcome-page__aside')
 
     expect(path.text()).toBe('/vaults/physics')
@@ -194,7 +194,7 @@ describe('the screen drawn short', () => {
         vaults: [vault('physics'), vault('heat'), vault('optics')],
         heading: 'Vaults',
         ways: WAYS,
-        offer,
+        footer,
       },
     })
 

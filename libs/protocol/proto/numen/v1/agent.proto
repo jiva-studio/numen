@@ -64,7 +64,6 @@ message AskAgentRequest {
   // CallToolRequest.context. Each key starts with the id of the plugin that wrote it and a
   // slash, as MCP `_meta` keys do: "org.example.plugin/key".
   map<string, string> context = 4;
-  reserved 5;
 
   // Which agent answers (the id an agent plugin registers). Empty uses the installation default.
   string agent = 6;
@@ -82,8 +81,6 @@ message AskAgentRequest {
   // The command line that starts the program, as the installation set it. Empty starts the
   // program where the provider finds it.
   repeated string command = 13;
-  // The settings only the program knows, by key, each as JSON.
-  map<string, string> options = 14;
   // Where the program reaches the vault's tools, and what it presents there. Empty gives the
   // program no tools.
   string tools_url = 15;
@@ -197,7 +194,6 @@ message AskAgentResponse {
 message ToolFinished {}
 
 message ModelStarted {}
-
 
 // ToolCall is a tool in the agent's hands.
 //

@@ -23,7 +23,7 @@ import {
   writeVaultFile,
 } from '../../support/vault.js'
 
-const SYNC_SETTING = ['naming', 'sync_title_and_filename'] as const
+const SYNC_SETTING = ['app', 'naming', 'syncTitleAndFilename'] as const
 
 /** The node of the plex drawn for a note, by its title and what it is to the note in focus. */
 const getPlexNode = (page: Page, title: string, relation: string) =>
@@ -165,8 +165,8 @@ test.describe('Removing and renaming a note', () => {
 
       await runPaletteCommand(
         page,
-        'Choose title and file name sync',
-        'Choose title and file name sync',
+        'Sync title and filename',
+        'Sync title and filename',
       )
       await page.getByRole('option', { name: /^Off/ }).click()
       await expect.poll(() => isSyncingTitles(request)).toBe(false)

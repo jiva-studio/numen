@@ -54,10 +54,11 @@ function checkPermission(target: PermissionTarget, permission: string, operation
   }
 }
 
-/** The commands of the window over a file that change nothing in the vault. */
+/** The commands of the window that change nothing in the vault. */
 const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set([
   formatCommandId(APP_COMMAND_OWNER, 'note.open'),
   formatCommandId(APP_COMMAND_OWNER, 'note.copyPath'),
+  formatCommandId(APP_COMMAND_OWNER, 'settings.open'),
   formatCommandId('md.numen.views.plex.graph', 'graph.showNote'),
   formatCommandId('md.numen.views.agent.chat', 'note.ask'),
 ])
@@ -152,11 +153,11 @@ function guardTexts(
 }
 
 /** Whether a setting path is in the agent subtree of the settings. */
-const isAgentPath = (path: readonly string[]): boolean => path[0] === 'agent'
+const isAgentPath = (path: readonly string[]): boolean => path[0] === 'app' && path[1] === 'agent'
 
 /**
  * The agent of the window: asking it and naming vault files need vault:read, and
- * the settings it reads and writes are the ones under `agent`.
+ * the settings it reads and writes are the ones under `app.agent`.
  */
 function guardAgent(
   agent: AgentHost,

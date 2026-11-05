@@ -19,10 +19,8 @@ type NoteSearchInput struct {
 // SearchMatch is a note matching a search.
 type SearchMatch struct {
 	Path    string `json:"path" jsonschema:"relative path to the note"`
-	Source  string `json:"source" jsonschema:"alias for path"`
 	Title   string `json:"title,omitempty" jsonschema:"title of the note"`
 	Snippet string `json:"snippet,omitempty" jsonschema:"matching text snippet or passage"`
-	Text    string `json:"text,omitempty" jsonschema:"alias for snippet"`
 	Line    int    `json:"line,omitempty" jsonschema:"1-based line number of the match in note body"`
 	Score   int    `json:"score" jsonschema:"relevance score"`
 }
@@ -38,17 +36,6 @@ func (t *Tools) addNoteSearch(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Name:        "note_search",
 		Title:       "Search Notes",
-		Description: "Search notes across the vault by title, path, and text content.",
-		Effect:      tools.ReadOnly,
-		Step:        tools.Search,
-		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, inVault(t, (*Tools).searchNotes))
-}
-
-func (t *Tools) addSearchQuery(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
-		Name:        "search_query",
-		Title:       "Search Query",
 		Description: "Search notes across the vault by title, path, and text content.",
 		Effect:      tools.ReadOnly,
 		Step:        tools.Search,
@@ -141,15 +128,13 @@ func (t *Tools) scoreNoteMatch(
 	score += contentScore
 
 	if score <= 0 {
-		return SearchMatch{Path: "", Source: "", Title: "", Snippet: "", Text: "", Line: 0, Score: 0}, false
+		return SearchMatch{Path: "", Title: "", Snippet: "", Line: 0, Score: 0}, false
 	}
 
 	return SearchMatch{
 		Path:    path,
-		Source:  path,
 		Title:   title,
 		Snippet: snippet,
-		Text:    snippet,
 		Line:    bestLine,
 		Score:   score,
 	}, true

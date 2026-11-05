@@ -49,22 +49,13 @@ func TestABuildWithoutKeysServesNone(t *testing.T) {
 	}
 }
 
-// The consent of a plugin is sent to the window; a key never is.
-func TestAPluginTravelsWithItsConsent(t *testing.T) {
+// The names of the stored secrets of a plugin are sent to the window; a key never is.
+func TestAPluginTravelsWithItsSecretNames(t *testing.T) {
 	infos := NewWirePluginInfos([]setting.PluginInfo{{
 		ID: "md.numen.sample", Secrets: []setting.PluginSecret{{Name: "apiKey", Title: "API key"}}, StoredSecrets: []string{"apiKey"},
-		Consent: setting.ConsentRequested,
 	}})
 	one := infos[0]
-	if one.GetCompletionConsent() != v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED ||
-		len(one.GetStoredSecrets()) != 1 || one.GetSecrets()[0].GetName() != "apiKey" {
+	if len(one.GetStoredSecrets()) != 1 || one.GetSecrets()[0].GetName() != "apiKey" {
 		t.Errorf("travelled as %v", one)
-	}
-	for _, consent := range []setting.Consent{
-		setting.ConsentNone, setting.ConsentPending, setting.ConsentRequested, setting.ConsentAllowed, setting.ConsentDenied,
-	} {
-		if _, found := GetConsents()[consent]; !found {
-			t.Errorf("consent %v has no wire value", consent)
-		}
 	}
 }

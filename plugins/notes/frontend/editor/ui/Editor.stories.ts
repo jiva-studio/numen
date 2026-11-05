@@ -806,13 +806,11 @@ export const ChangedInAnotherScript: Story = {
 
 const SETTINGS = `{
   // The window
-  "appearance": { "theme": "preset:numen", "text_scale": 1 },
-  "indexing": {
-    "embedding": { "model": { "name": "held/tiny-e5-small" } },
-    "transcribe_recordings": true,
-    "transcribe_under_mb": 200
+  "app": {
+    "appearance": { "theme": "preset:numen", "textScale": 1 },
+    "agent": { "use": "claude", "serve_tools": false }
   },
-  "agent": { "use": "claude", "serve_tools": false }
+  "md.numen.engines.embeddings": { "model": "held/tiny-e5-small" }
 }
 `
 

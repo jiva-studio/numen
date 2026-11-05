@@ -4,10 +4,9 @@
  * piece of code the palette does.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { createPluginSettingCommands, useSettings } from './useSettings'
-import { getNamedIcon } from '@/shared/icons'
+import { useSettings } from './useSettings'
 import { WORDS } from '@/shared/words'
-import type { Model } from '@/entities/settings'
+import type { Model, PluginInfo, PluginSettingInfo } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
@@ -22,6 +21,9 @@ const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = 
       path: '/vault/.numen/settings.json',
       models: [],
     })),
+    watchSettings: vi.fn(async function* () {
+      yield* []
+    }),
     writePluginSecret: vi.fn(async () => undefined),
     deletePluginSecret: vi.fn(async () => undefined),
     retryPlugin: vi.fn(async () => ''),
@@ -63,11 +65,103 @@ const model = (overrides: Partial<Model> = {}): Model => ({
   ...overrides,
 })
 
+const SHELL_DECLARATION: readonly PluginSettingInfo[] = [
+  {
+    key: 'appearance.theme',
+    type: 'enum',
+    title: 'Theme',
+    description: '',
+    default: 'preset:numen',
+    palette: true,
+    icon: 'palette',
+    preview: true,
+    activeOptions: [{ value: 'preset:numen', title: 'numen', detail: '' }],
+    value: 'preset:numen',
+  },
+  {
+    key: 'appearance.mode',
+    type: 'enum',
+    title: 'Light or dark',
+    description: '',
+    default: 'system',
+    palette: true,
+    preview: true,
+    options: [{ value: 'system', title: 'System', detail: '' }],
+  },
+  {
+    key: 'appearance.interfaceScale',
+    type: 'range',
+    title: 'Interface size',
+    description: '',
+    default: 1,
+    palette: true,
+    preview: true,
+    min: 0.8,
+    max: 2,
+    step: 0.1,
+  },
+  {
+    key: 'appearance.textScale',
+    type: 'range',
+    title: 'Reading size',
+    description: '',
+    default: 1,
+    palette: true,
+    preview: true,
+    min: 0.8,
+    max: 1.75,
+    step: 0.1,
+  },
+  {
+    key: 'naming.syncTitleAndFilename',
+    type: 'boolean',
+    title: 'Sync title and filename',
+    description: '',
+    default: true,
+    palette: true,
+  },
+  {
+    key: 'performance.profile',
+    type: 'enum',
+    title: 'Performance profile',
+    description: '',
+    default: 'balanced',
+    palette: true,
+    options: [
+      { value: 'eco', title: 'Eco', detail: '' },
+      { value: 'balanced', title: 'Balanced', detail: '' },
+    ],
+  },
+]
+
+const SCANNER: PluginInfo = {
+  id: 'md.example.scanner',
+  name: 'Scanner',
+  version: '1.0.0',
+  description: '',
+  isActive: true,
+  capabilities: [],
+  secrets: [],
+  storedSecrets: [],
+  hasFrontend: false,
+  hasBackend: false,
+  settings: [
+    {
+      key: 'autoScan',
+      type: 'boolean',
+      title: 'Auto scan',
+      description: '',
+      default: false,
+      palette: true,
+    },
+  ],
+}
+
 describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect(writers).toStrictEqual(['appearance', 'named', 'configured', 'keys', 'plugins'])
+    expect(writers).toStrictEqual(['appearance', 'configured', 'keys', 'plugins'])
   })
 
   it('opens the settings tab as kind of tab', () => {
@@ -85,33 +179,21 @@ describe('the settings as they are put together', () => {
     expect(close).toHaveBeenCalledOnce()
   })
 
-  it('refreshes the settings in the background after starting and stops when closed', async () => {
+  it('reads the settings once when it starts and never again on a timer', async () => {
     vi.useFakeTimers()
     try {
       const { settings } = createSettings()
       vi.spyOn(settings.appearance, 'start').mockResolvedValue()
-      vi.spyOn(settings.sync, 'start').mockResolvedValue()
       const startRest = vi.spyOn(settings.rest, 'start').mockResolvedValue()
 
       await settings.start()
       expect(settings.appearance.start).toHaveBeenCalledTimes(1)
-      expect(settings.sync.start).toHaveBeenCalledTimes(1)
       expect(startRest).toHaveBeenCalledTimes(1)
 
-      vi.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(20000)
       expect(startRest).toHaveBeenCalledTimes(1)
-
-      // Starting again at t=1000ms clears the pending 1500ms timer so it does not fire at t=1500ms
-      await settings.start()
-      expect(startRest).toHaveBeenCalledTimes(2)
-      vi.advanceTimersByTime(600)
-      expect(startRest).toHaveBeenCalledTimes(2)
-      vi.advanceTimersByTime(900)
-      expect(startRest).toHaveBeenCalledTimes(3)
 
       settings.close()
-      vi.advanceTimersByTime(20000)
-      expect(startRest).toHaveBeenCalledTimes(3)
     } finally {
       vi.useRealTimers()
     }
@@ -126,22 +208,6 @@ describe('the settings as they are put together', () => {
 })
 
 describe('the lists the palette offers for a setting', () => {
-  it('offers the three performance profiles, each with what it does', () => {
-    const { settings } = createSettings()
-
-    expect(settings.paletteLists.getStepGroups('app:performance.chooseProfile', '')).toStrictEqual([
-      {
-        id: 'performance',
-        title: WORDS.performance,
-        items: [
-          { id: 'eco', title: WORDS.eco, detail: WORDS.ecoDetail },
-          { id: 'balanced', title: WORDS.balanced, detail: WORDS.balancedDetail },
-          { id: 'maximum', title: WORDS.maximum, detail: WORDS.maximumDetail },
-        ],
-      },
-    ])
-  })
-
   it('offers nothing for a command that is over no setting', () => {
     const { settings } = createSettings()
     vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
@@ -150,63 +216,71 @@ describe('the lists the palette offers for a setting', () => {
     expect(settings.paletteLists.getStepGroups('app:note.createChild', '')).toStrictEqual([])
   })
 
-  it('offers the syncing switch the list its own setting holds', () => {
+  it('offers the six settings of the shell from the declaration the core sends, and no command made by hand', () => {
     const { settings } = createSettings()
+    settings.rest.app.value = SHELL_DECLARATION
 
-    expect(settings.paletteLists.getStepGroups('app:note.chooseTitleSync', '')).toStrictEqual(
-      settings.sync.getSyncingGroups(),
-    )
-    expect(
-      settings.paletteLists.getStepGroups('app:note.chooseTitleSync', '')[0]?.items,
-    ).toHaveLength(2)
+    const ids = settings.settingPalette.getCommands().map((one) => one.id)
+
+    expect(ids).toStrictEqual([
+      'setting:app:appearance.theme',
+      'setting:app:appearance.mode',
+      'setting:app:appearance.interfaceScale',
+      'setting:app:appearance.textScale',
+      'setting:app:naming.syncTitleAndFilename',
+      'setting:app:performance.profile',
+    ])
+    for (const old of [
+      'app:appearance.chooseTheme',
+      'app:appearance.chooseMode',
+      'app:appearance.chooseInterfaceSize',
+      'app:appearance.chooseTextSize',
+      'app:note.chooseTitleSync',
+      'app:performance.chooseProfile',
+    ]) {
+      expect(settings.paletteLists.getStepGroups(old, ''), old).toStrictEqual([])
+    }
   })
 
-  it('previews what the keyboard relies on in an appearance list, and nowhere else', () => {
+  it('offers the settings of the installed plugins together with those of the shell', () => {
     const { settings } = createSettings()
-    const preview = vi.spyOn(settings.appearance, 'previewItem').mockImplementation(vi.fn())
+    settings.rest.app.value = SHELL_DECLARATION
+    settings.rest.plugins.value = [SCANNER]
 
-    settings.paletteLists.previewItem('app:note.chooseTitleSync', 'off')
-    settings.paletteLists.previewItem('app:appearance.chooseTheme', 'preset:dracula')
+    const ids = settings.settingPalette.getCommands().map((one) => one.id)
 
-    expect(preview.mock.calls).toStrictEqual([['preset:dracula']])
+    expect(ids).toContain('setting:app:performance.profile')
+    expect(ids).toContain('setting:md.example.scanner:autoScan')
+  })
+
+  it('draws the rows of every command from the adapter, whichever owner declares the setting', () => {
+    const { settings } = createSettings()
+    settings.rest.app.value = SHELL_DECLARATION
+    settings.rest.plugins.value = [SCANNER]
+
+    for (const command of [
+      'setting:app:performance.profile',
+      'setting:app:naming.syncTitleAndFilename',
+      'setting:md.example.scanner:autoScan',
+    ]) {
+      const groups = settings.paletteLists.getStepGroups(command, '')
+      expect(groups.length, command).toBe(1)
+      expect(groups).toStrictEqual(settings.settingPalette.lists.getStepGroups(command, ''))
+    }
+  })
+
+  it('writes the row chosen under the path of the setting through the settings the window holds', async () => {
+    const { settings } = createSettings()
+    settings.rest.app.value = SHELL_DECLARATION
+    const write = vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()
+
+    await settings.settingPalette.choose('setting:app:performance.profile', 'eco')
+
+    expect(write).toHaveBeenCalledWith([{ at: ['app', 'performance', 'profile'], value: '"eco"' }])
   })
 })
 
 describe('the settings tab', () => {
-  it('shows the appearance the window applies', () => {
-    const { settings } = createSettings()
-    const { installation } = settings.configured.state
-
-    expect(installation.themes).toBe(settings.appearance.list)
-    expect(installation.applied).toBe(settings.appearance.applied)
-    expect(installation.mode).toBe(settings.appearance.mode)
-    expect(installation.isPinned).toBe(settings.appearance.isPinned)
-    expect(installation.sizes).toBe(settings.appearance.sized)
-    expect(installation.bounds).toBe(settings.appearance.bounds)
-  })
-
-  it('chooses an appearance through the palette’s own choice', () => {
-    const { settings } = createSettings()
-    const choose = vi.spyOn(settings.appearance, 'chooseItem').mockResolvedValue()
-
-    settings.configured.state.installation.choose('preset:dracula')
-
-    expect(choose).toHaveBeenCalledWith('preset:dracula')
-  })
-
-  it('reads and writes the syncing switch as the palette rows it is', () => {
-    const { settings } = createSettings()
-    const { installation } = settings.configured.state
-    const sync = vi.spyOn(settings.sync, 'choose').mockResolvedValue()
-
-    expect(installation.isSyncing.value).toBe(settings.sync.isEnabled.value)
-
-    installation.isSyncing.value = true
-    installation.isSyncing.value = false
-
-    expect(sync.mock.calls).toStrictEqual([['on'], ['off']])
-  })
-
   it('reads and writes the rest of the file through the settings the window holds', async () => {
     vi.useFakeTimers()
     try {
@@ -216,198 +290,19 @@ describe('the settings tab', () => {
       vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
       const startRest = vi.spyOn(settings.rest, 'start').mockResolvedValue()
       const write = vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()
-      const edits = [{ at: ['performance', 'profile'], value: '"eco"' }]
+      const edits = [{ at: ['app', 'performance', 'profile'], value: '"eco"' }]
 
       await (installation.write(edits) as unknown as Promise<void>)
       vi.advanceTimersByTime(1500)
 
-      expect(installation.getSetting(['performance', 'profile'])).toBe('eco')
+      expect(installation.getSetting(['app', 'performance', 'profile'])).toBe('eco')
       expect(installation.getModels(['indexing'])).toStrictEqual([model()])
       expect(write).toHaveBeenCalledWith(edits)
-      expect(startRest).toHaveBeenCalledTimes(1)
+      expect(startRest).toHaveBeenCalledTimes(0)
       settings.close()
     } finally {
       vi.useRealTimers()
     }
-  })
-
-  it('generates palette commands for installed plugins with palette: true regardless of isActive', () => {
-    createSettings()
-    const plugin = {
-      id: 'plugin.ocr',
-      name: 'OCR Plugin',
-      version: '1.0.0',
-      description: 'OCR',
-      isActive: false,
-      capabilities: [],
-      secrets: [],
-      storedSecrets: [],
-      consent: 'none' as const,
-      hasFrontend: false,
-      settings: [
-        {
-          key: 'autoScan',
-          type: 'boolean' as const,
-          title: 'Auto Scan',
-          description: 'Scan on drop',
-          default: false,
-          palette: true,
-          icon: 'scan-text',
-        },
-        {
-          key: 'hiddenSetting',
-          type: 'boolean' as const,
-          title: 'Hidden',
-          description: 'Not in palette',
-          default: false,
-        },
-      ],
-    }
-
-    const commands = createPluginSettingCommands([plugin])
-
-    expect(commands).toStrictEqual([
-      {
-        id: 'plugin-setting:plugin.ocr:autoScan',
-        text: 'OCR Plugin: Auto Scan',
-        group: 'settings',
-        needs: 'choosing',
-        icon: getNamedIcon('scan-text'),
-        isAvailable: expect.any(Function),
-      },
-    ])
-    expect(commands[0]?.isAvailable({} as never, {} as never)).toBe(true)
-  })
-
-  it('returns step groups for plugin boolean and enum settings', () => {
-    const { settings } = createSettings()
-    settings.rest.plugins.value = [
-      {
-        id: 'plugin.other',
-        name: 'Other Plugin',
-        version: '1.0.0',
-        description: 'Other',
-        isActive: true,
-        capabilities: [],
-        secrets: [],
-        storedSecrets: [],
-        consent: 'none',
-        hasFrontend: false,
-        settings: [],
-      },
-      {
-        id: 'plugin.ocr',
-        name: 'OCR Plugin',
-        version: '1.0.0',
-        description: 'OCR',
-        isActive: true,
-        capabilities: [],
-        secrets: [],
-        storedSecrets: [],
-        consent: 'none',
-        hasFrontend: false,
-        settings: [
-          {
-            key: 'autoScan',
-            type: 'boolean',
-            title: 'Auto Scan',
-            description: 'Scan on drop',
-            default: true,
-            palette: true,
-          },
-          {
-            key: 'engine',
-            type: 'enum',
-            title: 'Engine',
-            description: 'OCR Engine',
-            default: 'tesseract',
-            options: [
-              { value: 'tesseract', title: '', detail: '' },
-              { value: 'apple', title: '', detail: '' },
-            ],
-            palette: true,
-          },
-          {
-            key: 'customText',
-            type: 'string',
-            title: 'Custom Text',
-            description: '',
-            default: '',
-            palette: true,
-          },
-        ],
-      },
-    ]
-
-    expect(settings.paletteLists.getStepGroups('plugin-setting::autoScan', '')).toStrictEqual([])
-    expect(settings.paletteLists.getStepGroups('plugin-setting:plugin.ocr:', '')).toStrictEqual([])
-    expect(settings.paletteLists.getStepGroups('other:plugin.ocr:autoScan', '')).toStrictEqual([])
-    expect(
-      settings.paletteLists.getStepGroups('plugin-setting:unknown:autoScan', ''),
-    ).toStrictEqual([])
-    expect(
-      settings.paletteLists.getStepGroups('plugin-setting:plugin.ocr:unknown', ''),
-    ).toStrictEqual([])
-    expect(
-      settings.paletteLists.getStepGroups('plugin-setting:plugin.ocr:customText', ''),
-    ).toStrictEqual([])
-
-    const boolGroups = settings.paletteLists.getStepGroups('plugin-setting:plugin.ocr:autoScan', '')
-    expect(boolGroups).toStrictEqual([
-      {
-        id: 'plugin-plugin.ocr-autoScan',
-        title: 'Auto Scan',
-        items: [
-          { id: 'on', title: 'On', detail: WORDS.current, isCurrent: true },
-          { id: 'off', title: 'Off' },
-        ],
-      },
-    ])
-
-    const getSettingSpy = vi.spyOn(settings.rest, 'getSetting').mockImplementation((path) => {
-      if (path.join('.') === 'plugins.plugin.ocr.autoScan') return false
-      return undefined
-    })
-    const boolOffGroups = settings.paletteLists.getStepGroups(
-      'plugin-setting:plugin.ocr:autoScan',
-      '',
-    )
-    expect(boolOffGroups).toStrictEqual([
-      {
-        id: 'plugin-plugin.ocr-autoScan',
-        title: 'Auto Scan',
-        items: [
-          { id: 'on', title: 'On' },
-          { id: 'off', title: 'Off', detail: WORDS.current, isCurrent: true },
-        ],
-      },
-    ])
-    getSettingSpy.mockRestore()
-
-    const enumGroups = settings.paletteLists.getStepGroups('plugin-setting:plugin.ocr:engine', '')
-    expect(enumGroups).toStrictEqual([
-      {
-        id: 'plugin-plugin.ocr-engine',
-        title: 'Engine',
-        items: [
-          { id: 'tesseract', title: 'tesseract', detail: WORDS.current, isCurrent: true },
-          { id: 'apple', title: 'apple' },
-        ],
-      },
-    ])
-
-    expect(
-      settings.paletteLists.getStepGroups('app:appearance.chooseTheme', '').length,
-    ).toBeGreaterThan(0)
-    expect(
-      settings.paletteLists.getStepGroups('app:appearance.chooseMode', '').length,
-    ).toBeGreaterThan(0)
-    expect(
-      settings.paletteLists.getStepGroups('app:appearance.chooseInterfaceSize', '').length,
-    ).toBeGreaterThan(0)
-    expect(
-      settings.paletteLists.getStepGroups('app:appearance.chooseTextSize', '').length,
-    ).toBeGreaterThan(0)
   })
 
   it('delegates settings tab installation actions, path choosing, plugin data, and error reporting', async () => {
@@ -451,8 +346,8 @@ describe('the settings tab', () => {
         capabilities: [],
         secrets: [],
         storedSecrets: [],
-        consent: 'none',
         hasFrontend: false,
+        hasBackend: false,
         settings: [],
       },
       {
@@ -464,8 +359,8 @@ describe('the settings tab', () => {
         capabilities: [],
         secrets: [],
         storedSecrets: [],
-        consent: 'none',
         hasFrontend: false,
+        hasBackend: false,
         settings: [],
       },
     ]
@@ -488,7 +383,7 @@ describe('the settings tab', () => {
       ) as unknown as Promise<void>)
       expect(startSpy).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
-      expect(startSpy).toHaveBeenCalledTimes(2)
+      expect(startSpy).toHaveBeenCalledTimes(1)
 
       startSpy.mockClear()
       vi.mocked(core.choosePluginPath).mockResolvedValueOnce({
@@ -499,7 +394,7 @@ describe('the settings tab', () => {
       expect(await installation.choosePath('plugin.ocr', 'dir')).toBe('')
       expect(startSpy).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
-      expect(startSpy).toHaveBeenCalledTimes(2)
+      expect(startSpy).toHaveBeenCalledTimes(1)
 
       vi.mocked(core.choosePluginPath).mockResolvedValueOnce({
         path: '',
@@ -507,7 +402,7 @@ describe('the settings tab', () => {
         problem: 'cancelled',
       })
       expect(await installation.choosePath('plugin.ocr', 'dir')).toBe('cancelled')
-      expect(startSpy).toHaveBeenCalledTimes(2)
+      expect(startSpy).toHaveBeenCalledTimes(1)
       settings.close()
     } finally {
       vi.useRealTimers()
@@ -529,8 +424,11 @@ describe('the settings tab', () => {
       'Numen is not responding; retrying',
     )
 
-    vi.spyOn(settings.sync, 'choose').mockRejectedValueOnce(new Error('sync write failed'))
-    installation.isSyncing.value = true
+    vi.spyOn(settings.rest, 'writeSettings').mockRejectedValueOnce(new Error('write failed'))
+    const failed = installation.write([
+      { at: ['app', 'performance', 'profile'], value: '"eco"' },
+    ]) as unknown as Promise<void>
+    await failed.catch(() => undefined)
     await vi.waitFor(() =>
       expect(writerFns.configured).toHaveBeenCalledWith(
         'Numen is not responding; retrying',

@@ -12,6 +12,7 @@
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ .",
     "manual": "node tools/manual.mjs",
     "manual:check": "node tools/manual.mjs --check",
+    "test": "node --test tools/reference.test.mjs tools/cell.test.mjs",
     "shoot": "node tools/shoot.mjs"
   },
   "dependencies": {

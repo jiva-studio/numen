@@ -11,6 +11,8 @@ interface WireCommand {
   readonly id: string
   readonly title: string
   readonly icon?: string
+  readonly scope?: string
+  readonly shortcut?: string
   readonly contentTypes: readonly string[]
   readonly extensions: readonly string[]
   readonly arguments: readonly {
@@ -20,10 +22,33 @@ interface WireCommand {
   }[]
 }
 
+interface WireMenu {
+  readonly pluginId: string
+  readonly location: string
+  readonly command: string
+  readonly group: string
+  readonly order?: number | undefined
+}
+
 interface DeclaredArgument {
   readonly name: string
   readonly title: string
   readonly isRequired: boolean
+}
+
+/** One entry of `contributes.menus` of an enabled plugin, as the core lists it. */
+export interface DeclaredMenu {
+  readonly pluginId: string
+  readonly location: string
+  readonly command: string
+  readonly group?: string
+  readonly order?: number
+}
+
+/** What the core lists of the enabled plugins: the commands they declare and where they place them. */
+export interface DeclaredList {
+  readonly commands: readonly DeclaredCommand[]
+  readonly menus: readonly DeclaredMenu[]
 }
 
 /** The extension the core lists for a command over a file of any type. */
@@ -35,6 +60,9 @@ export interface DeclaredCommand {
   readonly id: string
   readonly title: string
   readonly icon?: string
+  /** 'note' for a command listed only while a note is in front. */
+  readonly scope?: 'note'
+  readonly shortcut?: string
   readonly contentTypes: readonly string[]
   /** The extensions, without the dot, that give a file one of the types, as the core lists them. */
   readonly extensions: readonly string[]
@@ -60,6 +88,8 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   id: wire.id,
   title: wire.title,
   ...(wire.icon ? { icon: wire.icon } : {}),
+  ...(wire.scope === 'note' ? { scope: 'note' as const } : {}),
+  ...(wire.shortcut ? { shortcut: wire.shortcut } : {}),
   contentTypes: wire.contentTypes,
   extensions: wire.extensions,
   arguments: wire.arguments.map((one) => ({
@@ -69,10 +99,18 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   })),
 })
 
-/** Every command the enabled plugins declare, in the order of the plugins' ids. */
-export async function listDeclaredCommands(): Promise<readonly DeclaredCommand[]> {
+const readMenu = (wire: WireMenu): DeclaredMenu => ({
+  pluginId: wire.pluginId,
+  location: wire.location,
+  command: wire.command,
+  ...(wire.group ? { group: wire.group } : {}),
+  ...(wire.order === undefined ? {} : { order: wire.order }),
+})
+
+/** Every command the enabled plugins declare, in the order of the plugins' ids, and their menu entries. */
+export async function listDeclaredCommands(): Promise<DeclaredList> {
   const answer = await pluginCommands.listCommands({})
-  return answer.commands.map(readCommand)
+  return { commands: answer.commands.map(readCommand), menus: answer.menus.map(readMenu) }
 }
 
 /** Runs the command in the backend of the plugin that declares it. */

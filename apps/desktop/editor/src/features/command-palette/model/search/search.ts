@@ -3,6 +3,7 @@
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/shell'
+import type { PlacedCommand } from '@numen/plugin-host'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { NoteType } from '@/entities/file'
@@ -10,17 +11,29 @@ import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
   createNameItem,
   createPassageItem,
-  resolveDestination,
   type NameMatch,
   type Passage,
-  type SearchDestination,
+  resolveChoice,
+  type ResultChoice,
   type SearchHit,
+  type SearchMenuDeps,
   type SearchRow,
 } from './lookup'
 import type { TextRange } from '@/shared/textRange'
+import { createNoteRow, CREATE_NOTE_ROW } from '../../lib/entries/entries'
+import type { CommandTarget } from '../../types'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
-export type { TextRange, NameMatch, Passage, SearchDestination, SearchHit, SearchRow, SearchGroup }
+export type {
+  TextRange,
+  NameMatch,
+  Passage,
+  SearchHit,
+  SearchRow,
+  SearchGroup,
+  ResultChoice,
+  SearchMenuDeps,
+}
 
 /**
  * How a text search is run. Each mode has its own ordering, and `hybrid`
@@ -50,14 +63,21 @@ export interface Words extends EmptyWords {
   readDocument: string
   wordsOnly: string
   notEmbedded: string
+  creating: string
+  creates: string
+  asChild: string
+  asParent: string
+  asJump: string
 }
 
 /** What the window hands the palette, beside the vault and its own words. */
 export interface SearchOptions {
   wait?: Wait
   coverage?(): IndexCoverage
-  /** The words of the action that puts a note in front, and empty where no plugin offers one. */
-  getTravel?(): string
+  /** The entries plugins place in the menu of a search result. */
+  menu?: SearchMenuDeps
+  /** The target of the window, for the row that creates a note. */
+  getTarget?(): CommandTarget
 }
 
 interface FillOptions<T> {
@@ -90,7 +110,7 @@ interface BuildGroupsDeps {
   readonly texts: readonly Passage[]
   readonly meanings: readonly Passage[]
   readonly words: Words
-  readonly travel: string
+  readonly entries: readonly PlacedCommand[]
   readonly isWorking: Record<SearchGroup, boolean>
   readonly getSilence: (id: SearchGroup) => string
 }
@@ -112,21 +132,52 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
     group(
       'names',
       deps.words.names,
-      deps.names.map((one) => createNameItem(one, deps.words, deps.travel)),
+      deps.names.map((one) => createNameItem(one, deps.words, deps.entries)),
     ),
     group(
       'text',
       deps.words.text,
-      deps.texts.map((one) => createPassageItem('text', one, deps.words, deps.travel)),
+      deps.texts.map((one) => createPassageItem('text', one, deps.words, deps.entries)),
     ),
     group(
       'meaning',
       deps.words.meaning,
-      deps.meanings.map((one) => createPassageItem('meaning', one, deps.words, deps.travel)),
+      deps.meanings.map((one) => createPassageItem('meaning', one, deps.words, deps.entries)),
     ),
   ]
 
   return { groups, hitsById }
+}
+
+/**
+ * The groups of a search, and the row that offers to make a note where every group answered with
+ * nothing. A group still waiting has not answered.
+ */
+function appendCreateNoteRow(
+  base: ReturnType<typeof buildSearchGroups>,
+  text: string,
+  words: Words,
+  getTarget: SearchOptions['getTarget'],
+) {
+  const isEmpty = base.groups.every((one) => one.items.length === 0 && !one.isWorking)
+  const row = getTarget && isEmpty ? createNoteRow({ text, words, target: getTarget() }) : null
+  if (!row) return base
+  const actions = row.items.flatMap((one) => one.actions ?? []).map((one) => one.id)
+  const creation: SearchHit = {
+    path: '',
+    title: '',
+    line: -1,
+    start: 0,
+    length: 0,
+    actionIds: actions,
+    type: null,
+    selector: null,
+    isCreation: true,
+  }
+  return {
+    groups: [...base.groups, row],
+    hitsById: new Map([...base.hitsById, [CREATE_NOTE_ROW, creation]]),
+  }
 }
 
 interface SearchRefs {
@@ -190,6 +241,19 @@ async function executeSearchQuery(
   ])
 }
 
+/** What the palette reads from the hit behind a row: its type, its file, and what choosing it does. */
+function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
+  const findNoteType = (item: string): NoteType | null => getHits().get(item)?.type ?? null
+
+  /** The path of a hit in a file that is no note, and null for a note. */
+  const findHitFile = (item: string): string | null => {
+    const searchHit = getHits().get(item)
+    return searchHit && searchHit.type === null ? searchHit.path : null
+  }
+
+  return { findNoteType, findHitFile }
+}
+
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
   const coverage = how.coverage
   const open = ref(false)
@@ -235,31 +299,23 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const searchGroups = computed(() => {
     if (!inputValue.value.trim())
       return { groups: [] as readonly PaletteGroup[], hitsById: new Map<string, SearchHit>() }
-    return buildSearchGroups({
+    const base = buildSearchGroups({
       names: names.value,
       texts: texts.value,
       meanings: meanings.value,
       words,
-      travel: how.getTravel?.() ?? '',
+      entries: how.menu?.getEntries() ?? [],
       isWorking: isWorking.value,
       getSilence: getEmptyGroupMessage,
     })
+    return appendCreateNoteRow(base, inputValue.value, words, how.getTarget)
   })
 
   const groups = computed(() => searchGroups.value.groups)
 
-  const findNoteType = (item: string): NoteType | null =>
-    searchGroups.value.hitsById.get(item)?.type ?? null
-
-  /** The path of a hit in a file that is no note, and null for a note. */
-  const findHitFile = (item: string): string | null => {
-    const searchHit = searchGroups.value.hitsById.get(item)
-    return searchHit && searchHit.type === null ? searchHit.path : null
-  }
-
-  const chooseItem = (item: string, action: string): SearchDestination | null => {
-    return resolveDestination(searchGroups.value.hitsById.get(item), action)
-  }
+  /** What choosing an action of a row runs, with the words typed as the input of the row that creates a note. */
+  const chooseResult = (item: string, action: string): ResultChoice | null =>
+    resolveChoice(searchGroups.value.hitsById.get(item), action, inputValue.value)
 
   return {
     open,
@@ -267,9 +323,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     groups,
     setTyped,
     setOpen,
-    chooseItem,
-    findNoteType,
-    findHitFile,
+    chooseResult,
+    ...createHitReaders(() => searchGroups.value.hitsById),
   }
 }
 

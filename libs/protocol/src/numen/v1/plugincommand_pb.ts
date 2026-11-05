@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugincommand.proto.
  */
 export const file_numen_v1_plugincommand: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiQQoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kIqQBCg1QbHVnaW5Db21tYW5kEhEKCXBsdWdpbl9pZBgBIAEoCRIKCgJpZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIVCg1jb250ZW50X3R5cGVzGAQgAygJEhIKCmV4dGVuc2lvbnMYBiADKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50EgwKBGljb24YByABKAkiQwoPQ29tbWFuZEFyZ3VtZW50EgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLaXNfcmVxdWlyZWQYAyABKAgiwgEKF1J1blBsdWdpbkNvbW1hbmRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIPCgdjb21tYW5kGAIgASgJEgwKBHBhdGgYAyABKAkSQwoJYXJndW1lbnRzGAQgAygLMjAubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QuQXJndW1lbnRzRW50cnkaMAoOQXJndW1lbnRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJrChhSdW5QbHVnaW5Db21tYW5kUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5Db21tYW5kRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkSEwoLb3BlbmVkX3BhdGgYAyABKAkqxwEKEENvbW1hbmRFcnJvckNvZGUSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJgoiQ09NTUFORF9FUlJPUl9DT0RFX1VOS05PV05fQ09NTUFORBABEiQKIENPTU1BTkRfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAISHQoZQ09NTUFORF9FUlJPUl9DT0RFX0ZBSUxFRBADEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTkFWQUlMQUJMRRAEMl8KFFBsdWdpbkNvbW1hbmRTZXJ2aWNlEkcKClJ1bkNvbW1hbmQSGy5udW1lbi52MS5SdW5Db21tYW5kUmVxdWVzdBocLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXNwb25zZTK6AQoOQ29tbWFuZFNlcnZpY2USTQoMTGlzdENvbW1hbmRzEh0ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVxdWVzdBoeLm51bWVuLnYxLkxpc3RDb21tYW5kc1Jlc3BvbnNlElkKEFJ1blBsdWdpbkNvbW1hbmQSIS5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVxdWVzdBoiLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiZgoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kEiMKBW1lbnVzGAIgAygLMhQubnVtZW4udjEuUGx1Z2luTWVudSJvCgpQbHVnaW5NZW51EhEKCXBsdWdpbl9pZBgBIAEoCRIQCghsb2NhdGlvbhgCIAEoCRIPCgdjb21tYW5kGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKBW9yZGVyGAUgASgFSACIAQFCCAoGX29yZGVyIsUBCg1QbHVnaW5Db21tYW5kEhEKCXBsdWdpbl9pZBgBIAEoCRIKCgJpZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIVCg1jb250ZW50X3R5cGVzGAQgAygJEhIKCmV4dGVuc2lvbnMYBiADKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50EgwKBGljb24YByABKAkSDQoFc2NvcGUYCCABKAkSEAoIc2hvcnRjdXQYCSABKAkiQwoPQ29tbWFuZEFyZ3VtZW50EgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLaXNfcmVxdWlyZWQYAyABKAgiwgEKF1J1blBsdWdpbkNvbW1hbmRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIPCgdjb21tYW5kGAIgASgJEgwKBHBhdGgYAyABKAkSQwoJYXJndW1lbnRzGAQgAygLMjAubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QuQXJndW1lbnRzRW50cnkaMAoOQXJndW1lbnRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJrChhSdW5QbHVnaW5Db21tYW5kUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5Db21tYW5kRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkSEwoLb3BlbmVkX3BhdGgYAyABKAkqxwEKEENvbW1hbmRFcnJvckNvZGUSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJgoiQ09NTUFORF9FUlJPUl9DT0RFX1VOS05PV05fQ09NTUFORBABEiQKIENPTU1BTkRfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAISHQoZQ09NTUFORF9FUlJPUl9DT0RFX0ZBSUxFRBADEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTkFWQUlMQUJMRRAEMl8KFFBsdWdpbkNvbW1hbmRTZXJ2aWNlEkcKClJ1bkNvbW1hbmQSGy5udW1lbi52MS5SdW5Db21tYW5kUmVxdWVzdBocLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXNwb25zZTK6AQoOQ29tbWFuZFNlcnZpY2USTQoMTGlzdENvbW1hbmRzEh0ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVxdWVzdBoeLm51bWVuLnYxLkxpc3RDb21tYW5kc1Jlc3BvbnNlElkKEFJ1blBsdWdpbkNvbW1hbmQSIS5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVxdWVzdBoiLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.RunCommandRequest
@@ -104,6 +104,14 @@ export type ListCommandsResponse = Message<"numen.v1.ListCommandsResponse"> & {
    * @generated from field: repeated numen.v1.PluginCommand commands = 1;
    */
   commands: PluginCommand[];
+
+  /**
+   * The menu entries of every enabled plugin, in the order of the plugins' ids and then of each
+   * manifest.
+   *
+   * @generated from field: repeated numen.v1.PluginMenu menus = 2;
+   */
+  menus: PluginMenu[];
 };
 
 /**
@@ -112,6 +120,45 @@ export type ListCommandsResponse = Message<"numen.v1.ListCommandsResponse"> & {
  */
 export const ListCommandsResponseSchema: GenMessage<ListCommandsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugincommand, 3);
+
+/**
+ * PluginMenu is one entry of contributes.menus of a plugin.
+ *
+ * @generated from message numen.v1.PluginMenu
+ */
+export type PluginMenu = Message<"numen.v1.PluginMenu"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: string location = 2;
+   */
+  location: string;
+
+  /**
+   * @generated from field: string command = 3;
+   */
+  command: string;
+
+  /**
+   * @generated from field: string group = 4;
+   */
+  group: string;
+
+  /**
+   * @generated from field: optional int32 order = 5;
+   */
+  order?: number | undefined;
+};
+
+/**
+ * Describes the message numen.v1.PluginMenu.
+ * Use `create(PluginMenuSchema)` to create a new message.
+ */
+export const PluginMenuSchema: GenMessage<PluginMenu> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugincommand, 4);
 
 /**
  * PluginCommand is one command as a manifest declares it.
@@ -169,6 +216,20 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
    * @generated from field: string icon = 7;
    */
   icon: string;
+
+  /**
+   * scope is "note" for a command listed only while a note is in front.
+   *
+   * @generated from field: string scope = 8;
+   */
+  scope: string;
+
+  /**
+   * shortcut is the keystroke the plugin suggests for the command.
+   *
+   * @generated from field: string shortcut = 9;
+   */
+  shortcut: string;
 };
 
 /**
@@ -176,7 +237,7 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
  * Use `create(PluginCommandSchema)` to create a new message.
  */
 export const PluginCommandSchema: GenMessage<PluginCommand> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 4);
+  messageDesc(file_numen_v1_plugincommand, 5);
 
 /**
  * CommandArgument is one argument a command takes.
@@ -207,7 +268,7 @@ export type CommandArgument = Message<"numen.v1.CommandArgument"> & {
  * Use `create(CommandArgumentSchema)` to create a new message.
  */
 export const CommandArgumentSchema: GenMessage<CommandArgument> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 5);
+  messageDesc(file_numen_v1_plugincommand, 6);
 
 /**
  * @generated from message numen.v1.RunPluginCommandRequest
@@ -241,7 +302,7 @@ export type RunPluginCommandRequest = Message<"numen.v1.RunPluginCommandRequest"
  * Use `create(RunPluginCommandRequestSchema)` to create a new message.
  */
 export const RunPluginCommandRequestSchema: GenMessage<RunPluginCommandRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 6);
+  messageDesc(file_numen_v1_plugincommand, 7);
 
 /**
  * @generated from message numen.v1.RunPluginCommandResponse
@@ -272,7 +333,7 @@ export type RunPluginCommandResponse = Message<"numen.v1.RunPluginCommandRespons
  * Use `create(RunPluginCommandResponseSchema)` to create a new message.
  */
 export const RunPluginCommandResponseSchema: GenMessage<RunPluginCommandResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 7);
+  messageDesc(file_numen_v1_plugincommand, 8);
 
 /**
  * CommandErrorCode is why a command was served and did not succeed.

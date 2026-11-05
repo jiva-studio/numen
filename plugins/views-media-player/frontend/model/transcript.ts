@@ -209,7 +209,7 @@ export function useTranscript(
         readRecording().catch(reportFailure)
       },
     },
-    offers: {
+    options: {
       starter,
       isStartable,
       items,

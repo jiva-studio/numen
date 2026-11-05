@@ -21,68 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// CompletionConsent is whether the person lets a plugin ask for model
-// completions. The zero value is a plugin that does not hold the ai:complete
-// permission.
-type CompletionConsent int32
-
-const (
-	CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED CompletionConsent = 0
-	// The person has not answered, and the plugin has not asked since the host
-	// started.
-	CompletionConsent_COMPLETION_CONSENT_PENDING CompletionConsent = 1
-	// person has not answered.
-	CompletionConsent_COMPLETION_CONSENT_REQUESTED CompletionConsent = 2
-	// The person lets the plugin ask.
-	CompletionConsent_COMPLETION_CONSENT_ALLOWED CompletionConsent = 3
-	CompletionConsent_COMPLETION_CONSENT_DENIED  CompletionConsent = 4
-)
-
-// Enum value maps for CompletionConsent.
-var (
-	CompletionConsent_name = map[int32]string{
-		0: "COMPLETION_CONSENT_UNSPECIFIED",
-		1: "COMPLETION_CONSENT_PENDING",
-		2: "COMPLETION_CONSENT_REQUESTED",
-		3: "COMPLETION_CONSENT_ALLOWED",
-		4: "COMPLETION_CONSENT_DENIED",
-	}
-	CompletionConsent_value = map[string]int32{
-		"COMPLETION_CONSENT_UNSPECIFIED": 0,
-		"COMPLETION_CONSENT_PENDING":     1,
-		"COMPLETION_CONSENT_REQUESTED":   2,
-		"COMPLETION_CONSENT_ALLOWED":     3,
-		"COMPLETION_CONSENT_DENIED":      4,
-	}
-)
-
-func (x CompletionConsent) Enum() *CompletionConsent {
-	p := new(CompletionConsent)
-	*p = x
-	return p
-}
-
-func (x CompletionConsent) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (CompletionConsent) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_plugin_proto_enumTypes[0].Descriptor()
-}
-
-func (CompletionConsent) Type() protoreflect.EnumType {
-	return &file_numen_v1_plugin_proto_enumTypes[0]
-}
-
-func (x CompletionConsent) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use CompletionConsent.Descriptor instead.
-func (CompletionConsent) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{0}
-}
-
 // value means it did not.
 type PluginEventErrorCode int32
 
@@ -115,11 +53,11 @@ func (x PluginEventErrorCode) String() string {
 }
 
 func (PluginEventErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_plugin_proto_enumTypes[1].Descriptor()
+	return file_numen_v1_plugin_proto_enumTypes[0].Descriptor()
 }
 
 func (PluginEventErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_plugin_proto_enumTypes[1]
+	return &file_numen_v1_plugin_proto_enumTypes[0]
 }
 
 func (x PluginEventErrorCode) Number() protoreflect.EnumNumber {
@@ -128,7 +66,7 @@ func (x PluginEventErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PluginEventErrorCode.Descriptor instead.
 func (PluginEventErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{0}
 }
 
 type PingRequest struct {
@@ -442,7 +380,21 @@ type PluginSetting struct {
 	// The icon the setting shows in the palette, by its Lucide name. Empty shows the default setting icon.
 	Icon string `protobuf:"bytes,15,opt,name=icon,proto3" json:"icon,omitempty"`
 	// Whether a setting of type file holds a list of paths, one per line.
-	Multiple      bool `protobuf:"varint,16,opt,name=multiple,proto3" json:"multiple,omitempty"`
+	Multiple bool `protobuf:"varint,16,opt,name=multiple,proto3" json:"multiple,omitempty"`
+	// Whether the window applies the value while its control is focused, and restores the saved value
+	// on leaving.
+	Preview bool `protobuf:"varint,17,opt,name=preview,proto3" json:"preview,omitempty"`
+	// The registry the options are listed from, such as the installed themes. Empty where the setting
+	// lists its own options.
+	OptionsFrom string `protobuf:"bytes,18,opt,name=options_from,json=optionsFrom,proto3" json:"options_from,omitempty"`
+	// The options in force under the values in force, resolved by the core. A window draws these and
+	// follows no rule of options_by.
+	ActiveOptions []*PluginSettingOption `protobuf:"bytes,19,rep,name=active_options,json=activeOptions,proto3" json:"active_options,omitempty"`
+	// Whether the condition of the setting holds under the values in force, resolved by the core.
+	IsShown bool `protobuf:"varint,20,opt,name=is_shown,json=isShown,proto3" json:"is_shown,omitempty"`
+	// The value in force as JSON, resolved by the core: the stored value, else the default, else the
+	// first of the options in force.
+	ValueJson     string `protobuf:"bytes,21,opt,name=value_json,json=valueJson,proto3" json:"value_json,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -580,6 +532,41 @@ func (x *PluginSetting) GetMultiple() bool {
 		return x.Multiple
 	}
 	return false
+}
+
+func (x *PluginSetting) GetPreview() bool {
+	if x != nil {
+		return x.Preview
+	}
+	return false
+}
+
+func (x *PluginSetting) GetOptionsFrom() string {
+	if x != nil {
+		return x.OptionsFrom
+	}
+	return ""
+}
+
+func (x *PluginSetting) GetActiveOptions() []*PluginSettingOption {
+	if x != nil {
+		return x.ActiveOptions
+	}
+	return nil
+}
+
+func (x *PluginSetting) GetIsShown() bool {
+	if x != nil {
+		return x.IsShown
+	}
+	return false
+}
+
+func (x *PluginSetting) GetValueJson() string {
+	if x != nil {
+		return x.ValueJson
+	}
+	return ""
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -884,8 +871,6 @@ type PluginInfo struct {
 	Secrets []*PluginSecret `protobuf:"bytes,9,rep,name=secrets,proto3" json:"secrets,omitempty"`
 	// The names of the secrets that have a key stored. A key never travels here.
 	StoredSecrets []string `protobuf:"bytes,10,rep,name=stored_secrets,json=storedSecrets,proto3" json:"stored_secrets,omitempty"`
-	// Whether the person lets the plugin ask for model completions.
-	CompletionConsent CompletionConsent `protobuf:"varint,12,opt,name=completion_consent,json=completionConsent,proto3,enum=numen.v1.CompletionConsent" json:"completion_consent,omitempty"`
 	// Set while the host suspends the plugin after it failed to start.
 	Failure *PluginFailure `protobuf:"bytes,13,opt,name=failure,proto3" json:"failure,omitempty"`
 	// Whether the plugin declares a frontend bundle a window loads.
@@ -894,6 +879,8 @@ type PluginInfo struct {
 	Readers []*PluginReader `protobuf:"bytes,15,rep,name=readers,proto3" json:"readers,omitempty"`
 	// The components the frontend draws inside the plugin's settings.
 	SettingsViews []*PluginSettingsView `protobuf:"bytes,16,rep,name=settings_views,json=settingsViews,proto3" json:"settings_views,omitempty"`
+	// Whether the plugin declares a backend the host starts.
+	HasBackend    bool `protobuf:"varint,17,opt,name=has_backend,json=hasBackend,proto3" json:"has_backend,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -998,13 +985,6 @@ func (x *PluginInfo) GetStoredSecrets() []string {
 	return nil
 }
 
-func (x *PluginInfo) GetCompletionConsent() CompletionConsent {
-	if x != nil {
-		return x.CompletionConsent
-	}
-	return CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED
-}
-
 func (x *PluginInfo) GetFailure() *PluginFailure {
 	if x != nil {
 		return x.Failure
@@ -1031,6 +1011,13 @@ func (x *PluginInfo) GetSettingsViews() []*PluginSettingsView {
 		return x.SettingsViews
 	}
 	return nil
+}
+
+func (x *PluginInfo) GetHasBackend() bool {
+	if x != nil {
+		return x.HasBackend
+	}
+	return false
 }
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.
@@ -1408,7 +1395,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\x93\x04\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\xbf\x05\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1426,10 +1413,16 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x04when\x18\r \x01(\v2 .numen.v1.PluginSettingConditionR\x04when\x12\x16\n" +
 	"\x06accept\x18\x0e \x03(\tR\x06accept\x12\x12\n" +
 	"\x04icon\x18\x0f \x01(\tR\x04icon\x12\x1a\n" +
-	"\bmultiple\x18\x10 \x01(\bR\bmultipleB\x06\n" +
+	"\bmultiple\x18\x10 \x01(\bR\bmultiple\x12\x18\n" +
+	"\apreview\x18\x11 \x01(\bR\apreview\x12!\n" +
+	"\foptions_from\x18\x12 \x01(\tR\voptionsFrom\x12D\n" +
+	"\x0eactive_options\x18\x13 \x03(\v2\x1d.numen.v1.PluginSettingOptionR\ractiveOptions\x12\x19\n" +
+	"\bis_shown\x18\x14 \x01(\bR\aisShown\x12\x1d\n" +
+	"\n" +
+	"value_json\x18\x15 \x01(\tR\tvalueJsonB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_stepJ\x04\b\v\x10\fR\tmodels_of\"Y\n" +
+	"\x05_step\"Y\n" +
 	"\x13PluginSettingOption\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
@@ -1449,7 +1442,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x124\n" +
-	"\x04when\x18\x04 \x01(\v2 .numen.v1.PluginSettingConditionR\x04when\"\x84\x05\n" +
+	"\x04when\x18\x04 \x01(\v2 .numen.v1.PluginSettingConditionR\x04when\"\xcb\x04\n" +
 	"\n" +
 	"PluginInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1462,15 +1455,16 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\vpermissions\x18\b \x03(\tR\vpermissions\x120\n" +
 	"\asecrets\x18\t \x03(\v2\x16.numen.v1.PluginSecretR\asecrets\x12%\n" +
 	"\x0estored_secrets\x18\n" +
-	" \x03(\tR\rstoredSecrets\x12J\n" +
-	"\x12completion_consent\x18\f \x01(\x0e2\x1b.numen.v1.CompletionConsentR\x11completionConsent\x121\n" +
+	" \x03(\tR\rstoredSecrets\x121\n" +
 	"\afailure\x18\r \x01(\v2\x17.numen.v1.PluginFailureR\afailure\x12!\n" +
 	"\fhas_frontend\x18\x0e \x01(\bR\vhasFrontend\x120\n" +
 	"\areaders\x18\x0f \x03(\v2\x16.numen.v1.PluginReaderR\areaders\x12C\n" +
-	"\x0esettings_views\x18\x10 \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViewsJ\x04\b\v\x10\fR\x06models\"G\n" +
+	"\x0esettings_views\x18\x10 \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViews\x12\x1f\n" +
+	"\vhas_backend\x18\x11 \x01(\bR\n" +
+	"hasBackend\":\n" +
 	"\x12PluginSettingsView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05titleJ\x04\b\x03\x10\x04R\x05after\">\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\">\n" +
 	"\fPluginReader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
 	"\n" +
@@ -1487,13 +1481,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05event\x18\x01 \x01(\tR\x05event\"d\n" +
 	"\x14DeliverEventResponse\x124\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.v1.PluginEventErrorCodeR\x05error\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason*\xb8\x01\n" +
-	"\x11CompletionConsent\x12\"\n" +
-	"\x1eCOMPLETION_CONSENT_UNSPECIFIED\x10\x00\x12\x1e\n" +
-	"\x1aCOMPLETION_CONSENT_PENDING\x10\x01\x12 \n" +
-	"\x1cCOMPLETION_CONSENT_REQUESTED\x10\x02\x12\x1e\n" +
-	"\x1aCOMPLETION_CONSENT_ALLOWED\x10\x03\x12\x1d\n" +
-	"\x19COMPLETION_CONSENT_DENIED\x10\x04*d\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason*d\n" +
 	"\x14PluginEventErrorCode\x12'\n" +
 	"#PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fPLUGIN_EVENT_ERROR_CODE_REFUSED\x10\x012\xd8\x01\n" +
@@ -1519,61 +1507,60 @@ func file_numen_v1_plugin_proto_rawDescGZIP() []byte {
 	return file_numen_v1_plugin_proto_rawDescData
 }
 
-var file_numen_v1_plugin_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_plugin_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_numen_v1_plugin_proto_goTypes = []any{
-	(CompletionConsent)(0),         // 0: numen.v1.CompletionConsent
-	(PluginEventErrorCode)(0),      // 1: numen.v1.PluginEventErrorCode
-	(*PingRequest)(nil),            // 2: numen.v1.PingRequest
-	(*PingResponse)(nil),           // 3: numen.v1.PingResponse
-	(*ShutdownRequest)(nil),        // 4: numen.v1.ShutdownRequest
-	(*ShutdownResponse)(nil),       // 5: numen.v1.ShutdownResponse
-	(*ConfigureRequest)(nil),       // 6: numen.v1.ConfigureRequest
-	(*ConfigureResponse)(nil),      // 7: numen.v1.ConfigureResponse
-	(*PluginSetting)(nil),          // 8: numen.v1.PluginSetting
-	(*PluginSettingOption)(nil),    // 9: numen.v1.PluginSettingOption
-	(*PluginSettingOptions)(nil),   // 10: numen.v1.PluginSettingOptions
-	(*PluginSettingOptionsBy)(nil), // 11: numen.v1.PluginSettingOptionsBy
-	(*PluginSettingCondition)(nil), // 12: numen.v1.PluginSettingCondition
-	(*PluginSecret)(nil),           // 13: numen.v1.PluginSecret
-	(*PluginInfo)(nil),             // 14: numen.v1.PluginInfo
-	(*PluginSettingsView)(nil),     // 15: numen.v1.PluginSettingsView
-	(*PluginReader)(nil),           // 16: numen.v1.PluginReader
-	(*PluginFailure)(nil),          // 17: numen.v1.PluginFailure
-	(*GetPluginsRequest)(nil),      // 18: numen.v1.GetPluginsRequest
-	(*GetPluginsResponse)(nil),     // 19: numen.v1.GetPluginsResponse
-	(*DeliverEventRequest)(nil),    // 20: numen.v1.DeliverEventRequest
-	(*DeliverEventResponse)(nil),   // 21: numen.v1.DeliverEventResponse
-	nil,                            // 22: numen.v1.ConfigureRequest.ValuesEntry
-	nil,                            // 23: numen.v1.PluginSettingOptionsBy.OptionsEntry
+	(PluginEventErrorCode)(0),      // 0: numen.v1.PluginEventErrorCode
+	(*PingRequest)(nil),            // 1: numen.v1.PingRequest
+	(*PingResponse)(nil),           // 2: numen.v1.PingResponse
+	(*ShutdownRequest)(nil),        // 3: numen.v1.ShutdownRequest
+	(*ShutdownResponse)(nil),       // 4: numen.v1.ShutdownResponse
+	(*ConfigureRequest)(nil),       // 5: numen.v1.ConfigureRequest
+	(*ConfigureResponse)(nil),      // 6: numen.v1.ConfigureResponse
+	(*PluginSetting)(nil),          // 7: numen.v1.PluginSetting
+	(*PluginSettingOption)(nil),    // 8: numen.v1.PluginSettingOption
+	(*PluginSettingOptions)(nil),   // 9: numen.v1.PluginSettingOptions
+	(*PluginSettingOptionsBy)(nil), // 10: numen.v1.PluginSettingOptionsBy
+	(*PluginSettingCondition)(nil), // 11: numen.v1.PluginSettingCondition
+	(*PluginSecret)(nil),           // 12: numen.v1.PluginSecret
+	(*PluginInfo)(nil),             // 13: numen.v1.PluginInfo
+	(*PluginSettingsView)(nil),     // 14: numen.v1.PluginSettingsView
+	(*PluginReader)(nil),           // 15: numen.v1.PluginReader
+	(*PluginFailure)(nil),          // 16: numen.v1.PluginFailure
+	(*GetPluginsRequest)(nil),      // 17: numen.v1.GetPluginsRequest
+	(*GetPluginsResponse)(nil),     // 18: numen.v1.GetPluginsResponse
+	(*DeliverEventRequest)(nil),    // 19: numen.v1.DeliverEventRequest
+	(*DeliverEventResponse)(nil),   // 20: numen.v1.DeliverEventResponse
+	nil,                            // 21: numen.v1.ConfigureRequest.ValuesEntry
+	nil,                            // 22: numen.v1.PluginSettingOptionsBy.OptionsEntry
 }
 var file_numen_v1_plugin_proto_depIdxs = []int32{
-	22, // 0: numen.v1.ConfigureRequest.values:type_name -> numen.v1.ConfigureRequest.ValuesEntry
-	9,  // 1: numen.v1.PluginSetting.options:type_name -> numen.v1.PluginSettingOption
-	11, // 2: numen.v1.PluginSetting.options_by:type_name -> numen.v1.PluginSettingOptionsBy
-	12, // 3: numen.v1.PluginSetting.when:type_name -> numen.v1.PluginSettingCondition
-	9,  // 4: numen.v1.PluginSettingOptions.options:type_name -> numen.v1.PluginSettingOption
-	23, // 5: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
-	12, // 6: numen.v1.PluginSecret.when:type_name -> numen.v1.PluginSettingCondition
-	8,  // 7: numen.v1.PluginInfo.settings:type_name -> numen.v1.PluginSetting
-	13, // 8: numen.v1.PluginInfo.secrets:type_name -> numen.v1.PluginSecret
-	0,  // 9: numen.v1.PluginInfo.completion_consent:type_name -> numen.v1.CompletionConsent
-	17, // 10: numen.v1.PluginInfo.failure:type_name -> numen.v1.PluginFailure
-	16, // 11: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
-	15, // 12: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
-	14, // 13: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
-	1,  // 14: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
-	10, // 15: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
-	2,  // 16: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
-	4,  // 17: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
-	6,  // 18: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
-	18, // 19: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
-	20, // 20: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
-	3,  // 21: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
-	5,  // 22: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
-	7,  // 23: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
-	19, // 24: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
-	21, // 25: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
+	21, // 0: numen.v1.ConfigureRequest.values:type_name -> numen.v1.ConfigureRequest.ValuesEntry
+	8,  // 1: numen.v1.PluginSetting.options:type_name -> numen.v1.PluginSettingOption
+	10, // 2: numen.v1.PluginSetting.options_by:type_name -> numen.v1.PluginSettingOptionsBy
+	11, // 3: numen.v1.PluginSetting.when:type_name -> numen.v1.PluginSettingCondition
+	8,  // 4: numen.v1.PluginSetting.active_options:type_name -> numen.v1.PluginSettingOption
+	8,  // 5: numen.v1.PluginSettingOptions.options:type_name -> numen.v1.PluginSettingOption
+	22, // 6: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
+	11, // 7: numen.v1.PluginSecret.when:type_name -> numen.v1.PluginSettingCondition
+	7,  // 8: numen.v1.PluginInfo.settings:type_name -> numen.v1.PluginSetting
+	12, // 9: numen.v1.PluginInfo.secrets:type_name -> numen.v1.PluginSecret
+	16, // 10: numen.v1.PluginInfo.failure:type_name -> numen.v1.PluginFailure
+	15, // 11: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
+	14, // 12: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
+	13, // 13: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
+	0,  // 14: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
+	9,  // 15: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
+	1,  // 16: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
+	3,  // 17: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
+	5,  // 18: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
+	17, // 19: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
+	19, // 20: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
+	2,  // 21: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
+	4,  // 22: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
+	6,  // 23: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
+	18, // 24: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
+	20, // 25: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
 	21, // [21:26] is the sub-list for method output_type
 	16, // [16:21] is the sub-list for method input_type
 	16, // [16:16] is the sub-list for extension type_name
@@ -1592,7 +1579,7 @@ func file_numen_v1_plugin_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_plugin_proto_rawDesc), len(file_numen_v1_plugin_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   3,

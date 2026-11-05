@@ -38,9 +38,6 @@ const (
 	// The program the question is routed to cannot be reached or stopped without
 	// an answer.
 	CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE CompletionErrorCode = 2
-	// The window asks the person, and a plugin shows this as the reason nothing
-	// was answered.
-	CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT CompletionErrorCode = 3
 )
 
 // Enum value maps for CompletionErrorCode.
@@ -49,13 +46,11 @@ var (
 		0: "COMPLETION_ERROR_CODE_UNSPECIFIED",
 		1: "COMPLETION_ERROR_CODE_NO_ROUTE",
 		2: "COMPLETION_ERROR_CODE_UNAVAILABLE",
-		3: "COMPLETION_ERROR_CODE_NO_CONSENT",
 	}
 	CompletionErrorCode_value = map[string]int32{
 		"COMPLETION_ERROR_CODE_UNSPECIFIED": 0,
 		"COMPLETION_ERROR_CODE_NO_ROUTE":    1,
 		"COMPLETION_ERROR_CODE_UNAVAILABLE": 2,
-		"COMPLETION_ERROR_CODE_NO_CONSENT":  3,
 	}
 )
 
@@ -354,20 +349,19 @@ const file_numen_v1_completion_proto_rawDesc = "" +
 	"\x1bHostServiceCompleteResponse\x122\n" +
 	"\x06answer\x18\x01 \x01(\v2\x1a.numen.v1.CompletionAnswerR\x06answer\x123\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1d.numen.v1.CompletionErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"t\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"g\n" +
 	"\x12CompletionQuestion\x127\n" +
 	"\bmessages\x18\x01 \x03(\v2\x1b.numen.v1.CompletionMessageR\bmessages\x12\x18\n" +
-	"\apurpose\x18\x02 \x01(\tR\apurposeJ\x04\b\x03\x10\x04R\x05hints\";\n" +
+	"\apurpose\x18\x02 \x01(\tR\apurpose\";\n" +
 	"\x11CompletionMessage\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"&\n" +
 	"\x10CompletionAnswer\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text*\xad\x01\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text*\x87\x01\n" +
 	"\x13CompletionErrorCode\x12%\n" +
 	"!COMPLETION_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eCOMPLETION_ERROR_CODE_NO_ROUTE\x10\x01\x12%\n" +
-	"!COMPLETION_ERROR_CODE_UNAVAILABLE\x10\x02\x12$\n" +
-	" COMPLETION_ERROR_CODE_NO_CONSENT\x10\x032f\n" +
+	"!COMPLETION_ERROR_CODE_UNAVAILABLE\x10\x022f\n" +
 	"\vHostService\x12W\n" +
 	"\bComplete\x12$.numen.v1.HostServiceCompleteRequest\x1a%.numen.v1.HostServiceCompleteResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 

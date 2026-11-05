@@ -28,6 +28,12 @@ type Scan struct {
 	// Cut is how the notes found are cut into the chunks the index keeps.
 	Cut chunking.CutNotes
 
+	// GetOtherRecipePaths reads the paths of the notes whose recorded cut is not recipe. Nil skips the check.
+	GetOtherRecipePaths func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error)
+
+	// ShouldRecut is whether the check runs: the chunk size is known.
+	ShouldRecut bool
+
 	// Walks serializes the walks of the vaults being scanned. A scan without it
 	// runs without waiting for any other scan.
 	Walks *Walks
@@ -102,27 +108,13 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 	defer finished()
 
-	reader, err := u.readers.Open(v)
-	if err != nil {
-		return ScanResult{}, err
-	}
-	// The rows the walk writes point at the vault's own row. What the vault is
-	// called and where it is stay as the list has them.
-	if err := u.vaults.Register(ctx, v.ID); err != nil {
-		return ScanResult{}, fmt.Errorf("register vault: %w", err)
-	}
-
-	recognized, err := u.indexedVal.GetFileStats(ctx, v.ID)
-	if err != nil {
-		return ScanResult{}, fmt.Errorf("read index: %w", err)
-	}
-	found, err := walkVault(ctx, reader)
+	walk, err := u.readWalk(ctx, v)
 	if err != nil {
 		return ScanResult{}, err
 	}
 
 	group := u.newGroup(v, &res)
-	observed, err := u.indexChanged(ctx, reader, found, recognized, &group, &res)
+	observed, err := u.indexChanged(ctx, walk, &group, &res)
 	if err != nil {
 		return res, err
 	}
@@ -130,7 +122,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return res, err
 	}
 
-	if err := u.removeGone(ctx, v, recognized, observed, &res); err != nil {
+	if err := u.removeGone(ctx, v, walk.recognized, observed, &res); err != nil {
 		return res, err
 	}
 
@@ -143,6 +135,58 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 
 	return res, nil
+}
+
+// vaultWalk is what a scan has read of a vault before it saves a note: the reader of its files, the
+// files found, the file stats the index holds, and the paths of the notes to cut again.
+type vaultWalk struct {
+	reader     vaultport.VaultReader
+	found      []domain.FileStat
+	recognized map[string]domain.FileStat
+	recutPaths map[string]bool
+}
+
+// readWalk registers the vault and reads its files and what the index holds of them.
+func (u Scan) readWalk(ctx context.Context, v domain.Vault) (vaultWalk, error) {
+	reader, err := u.readers.Open(v)
+	if err != nil {
+		return vaultWalk{}, err
+	}
+	// The rows the walk writes point at the vault's own row. What the vault is
+	// called and where it is stay as the list has them.
+	if err := u.vaults.Register(ctx, v.ID); err != nil {
+		return vaultWalk{}, fmt.Errorf("register vault: %w", err)
+	}
+	recognized, err := u.indexedVal.GetFileStats(ctx, v.ID)
+	if err != nil {
+		return vaultWalk{}, fmt.Errorf("read index: %w", err)
+	}
+	found, err := walkVault(ctx, reader)
+	if err != nil {
+		return vaultWalk{}, err
+	}
+	recutPaths, err := u.getRecutPaths(ctx, v)
+	if err != nil {
+		return vaultWalk{}, err
+	}
+	return vaultWalk{reader: reader, found: found, recognized: recognized, recutPaths: recutPaths}, nil
+}
+
+// getRecutPaths is the set of the paths of the notes whose recorded cut is not the cut of this scan,
+// and empty where the chunk size is not known or no check is given.
+func (u Scan) getRecutPaths(ctx context.Context, v domain.Vault) (map[string]bool, error) {
+	if !u.ShouldRecut || u.GetOtherRecipePaths == nil {
+		return nil, nil
+	}
+	paths, err := u.GetOtherRecipePaths(ctx, v.ID, u.Cut.Recipe())
+	if err != nil {
+		return nil, fmt.Errorf("read the notes cut another way: %w", err)
+	}
+	recutPaths := make(map[string]bool, len(paths))
+	for _, path := range paths {
+		recutPaths[path] = true
+	}
+	return recutPaths, nil
 }
 
 // walkVault is every file of the vault, the most recently modified first. The walk
@@ -180,13 +224,9 @@ func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
 // indexChanged reads and groups every note whose file stat differs from the
 // index's, and is the paths of the notes the walk found.
 func (u Scan) indexChanged(
-	ctx context.Context,
-	reader vaultport.VaultReader,
-	found []domain.FileStat,
-	indexed map[string]domain.FileStat,
-	group *grouping,
-	res *ScanResult,
+	ctx context.Context, walk vaultWalk, group *grouping, res *ScanResult,
 ) (map[string]bool, error) {
+	reader, found, indexed, recutPaths := walk.reader, walk.found, walk.recognized, walk.recutPaths
 	observed := make(map[string]bool, len(indexed))
 	for _, ref := range found {
 		if err := ctx.Err(); err != nil {
@@ -201,7 +241,7 @@ func (u Scan) indexChanged(
 		res.Notes++
 		observed[ref.Path] = true
 
-		if previous, ok := indexed[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
+		if previous, ok := indexed[ref.Path]; ok && !u.ShouldRebuildIndex && !recutPaths[ref.Path] && previous.IsUnchanged(ref) {
 			res.Unchanged++
 			continue
 		}

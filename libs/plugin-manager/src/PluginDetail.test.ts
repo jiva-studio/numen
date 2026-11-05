@@ -6,7 +6,7 @@ import PluginDetail from './PluginDetail.vue'
 import PluginData from './PluginData.vue'
 import PluginStopped from './PluginStopped.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
-import { createManaged, createOffered } from './testing/managed'
+import { createManaged, createAvailable } from './testing/managed'
 
 const baseProps = (overrides: Partial<PluginDetailProps> = {}): PluginDetailProps => ({
   plugin: createManaged('sample.notes', 'Notes', { version: '2.1.0', description: 'Takes notes.' }),
@@ -95,22 +95,7 @@ describe('PluginDetail', () => {
     expect(wrapper.find('details').exists()).toBe(false)
   })
 
-  it('draws the consent switch of a plugin that asks for models and emits its change', () => {
-    const wrapper = mountDetail({
-      plugin: createManaged('sample.notes', 'Notes', { consent: 'allowed' }),
-    })
-    const toggles = wrapper.findAllComponents(Switch)
-    const consent = toggles[1]
-
-    expect(wrapper.text()).toContain('Allow model use')
-    expect(consent?.props('modelValue')).toBe(true)
-
-    consent?.vm.$emit('update:modelValue', false)
-
-    expect(wrapper.emitted('consent-change')).toStrictEqual([[false]])
-  })
-
-  it('draws no settings block without consent and without settings', () => {
+  it('draws no settings block without settings', () => {
     expect(mountDetail().find('.plugin-detail__settings').exists()).toBe(false)
   })
 
@@ -126,7 +111,7 @@ describe('PluginDetail', () => {
 describe('PluginDetail for a plugin that is not installed', () => {
   it('offers install where the application can install', async () => {
     const wrapper = mountDetail({
-      plugin: createOffered('sample.offer', 'Offered'),
+      plugin: createAvailable('sample.offer', 'Offered'),
       canInstall: true,
     })
 
@@ -140,7 +125,7 @@ describe('PluginDetail for a plugin that is not installed', () => {
   })
 
   it('says it is not installed where the application cannot install', () => {
-    const wrapper = mountDetail({ plugin: createOffered('sample.offer', 'Offered') })
+    const wrapper = mountDetail({ plugin: createAvailable('sample.offer', 'Offered') })
 
     expect(wrapper.findAllComponents(Button)).toHaveLength(1)
     expect(wrapper.find('.plugin-detail__absent').text()).toBe('Not installed')

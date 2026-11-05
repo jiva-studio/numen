@@ -131,8 +131,6 @@ message Passage {
   // Empty for an ordinary note. It says nothing about a source that is not a note.
   string type = 8;
 
-  reserved 9;
-
   // The selector of the text version segment the hit is in, as JSON, and empty
   // for a note. It locates the hit in the file; the SDK documents its keys.
   string selector = 10;

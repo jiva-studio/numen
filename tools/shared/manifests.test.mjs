@@ -74,7 +74,7 @@ test('the unknown keys are found at every depth, in the options of a setting too
       settings: [
         {
           key: 'mode',
-          modelsOf: 'x',
+          mood: 'x',
           options: ['a', { value: 'b', hint: 'h' }],
           optionsBy: { setting: 'mode', options: { a: [{ value: 'x', hint: 'h' }] } },
         },
@@ -86,10 +86,28 @@ test('the unknown keys are found at every depth, in the options of a setting too
   assert.deepEqual(warnings, [
     'unknown key "contributes.extra"',
     'unknown key "contributes.tabKinds[0].shape"',
-    'unknown key "settings[0].modelsOf"',
+    'unknown key "settings[0].mood"',
     'unknown key "settings[0].options[1].hint"',
     'unknown key "settings[0].optionsBy.options.a[0].hint"',
   ])
+})
+
+test('a manifest has no flag that keeps an argument of a command out of the palette', () => {
+  const command = {
+    id: 'sample.open',
+    title: 'Open',
+    icon: 'file',
+    arguments: [
+      { name: 'note', title: 'Note', type: 'note', required: true, hiddenInPalette: true },
+    ],
+  }
+  const { manifest, warnings } = parseManifest(
+    JSON.stringify({ ...valid, contributes: { ...valid.contributes, commands: [command] } }),
+  )
+
+  assert.deepEqual(warnings, ['unknown key "contributes.commands[0].arguments[0].hiddenInPalette"'])
+  assert.equal(manifest.contributes.commands[0].arguments[0].isRequired, true)
+  assert.ok(!('hiddenInPalette' in manifest.contributes.commands[0].arguments[0]))
 })
 
 test('a value of the wrong type is refused and the error names the source', () => {
@@ -123,7 +141,11 @@ test('a manifest with no id, name or version is refused', () => {
 })
 
 test('the version of a manifest of an older schema is read without the schema', () => {
-  const older = JSON.stringify({ ...valid, version: '2026.9.2', commands: [{ id: 'a', when: {} }] })
+  const older = JSON.stringify({
+    ...valid,
+    version: '2026.9.2',
+    contributes: { ...valid.contributes, commands: [{ id: 'a', when: {} }] },
+  })
 
   assert.equal(readManifestVersion(older), '2026.9.2')
   assert.throws(() => parseManifest(older), ManifestError)
@@ -167,4 +189,35 @@ test('the manifests of the tree fit the schema', () => {
 
   assert.ok(plugins.length >= 10, `${plugins.length} plugins read`)
   for (const one of plugins) assert.match(one.manifest.version, /^\d{4}\.\d+\.\d+$/, one.name)
+})
+
+test('no setting key of a plugin manifest contains an underscore', () => {
+  const underscored = readPluginManifests(PLUGINS_DIR).flatMap((one) =>
+    (one.document.settings ?? [])
+      .filter((setting) => setting.key.includes('_'))
+      .map((setting) => `${one.name}: ${setting.key}`),
+  )
+
+  assert.deepEqual(underscored, [])
+})
+
+test('no setting of a plugin manifest names an old place of the setting', () => {
+  const named = readPluginManifests(PLUGINS_DIR).flatMap((one) =>
+    (one.document.settings ?? [])
+      .filter((setting) => 'replaces' in setting)
+      .map((setting) => `${one.name}: ${setting.key}`),
+  )
+
+  assert.deepEqual(named, [])
+})
+
+test('a setting that names an old place is warned about as a key the schema does not name', () => {
+  const { warnings } = parseManifest(
+    JSON.stringify({
+      ...valid,
+      settings: [{ key: 'program', type: 'string', replaces: ['importing.program'] }],
+    }),
+  )
+
+  assert.deepEqual(warnings, ['unknown key "settings[0].replaces"'])
 })

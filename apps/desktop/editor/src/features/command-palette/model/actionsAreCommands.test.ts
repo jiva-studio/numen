@@ -1,0 +1,219 @@
+/**
+ * Every action the palette draws on a row is the id of a command, and the source holds no branch
+ * that opens a file or creates a note for a chosen result on a path of its own.
+ */
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, relative, resolve, sep } from 'node:path'
+import { describe, expect, it } from 'vitest'
+import type { PaletteGroup } from '@numen/shell'
+import type { PlacedCommand } from '@numen/plugin-host'
+import { WORDS as words } from '@/shared/words'
+import { createCommands } from '../lib/commands/table'
+import { runSupport } from './palette/runSupport'
+import { useCommandPalette } from './palette/palette'
+import { useSearch, type NameMatch, type Passage, type SearchDeps } from './search/search'
+import type { CommandTarget } from '../types'
+
+const ATLAS = 'org.example.atlas'
+const SHOW: PlacedCommand = {
+  pluginId: ATLAS,
+  command: `${ATLAS}:graph.showNote`,
+  title: 'Show note in plex',
+  group: '',
+}
+
+const inFront: CommandTarget = {
+  tab: 'tab',
+  kind: 'note',
+  path: 'physics/Being.md',
+  title: 'Being',
+  file: 'physics/Being.md',
+  vault: { id: 'physics', name: 'Physics' },
+  isReady: true,
+}
+const nothingInFront: CommandTarget = {
+  ...inFront,
+  tab: '',
+  kind: null,
+  path: '',
+  title: '',
+  file: '',
+}
+
+const heading: NameMatch = {
+  path: 'reef/Coral.md',
+  title: 'Coral',
+  heading: 'Polyps',
+  line: 7,
+  at: [],
+  type: 'note',
+}
+const byName: NameMatch = { ...heading, heading: '', line: -1 }
+const notePassage: Passage = {
+  path: 'reef/Coral.md',
+  title: 'Coral',
+  isNote: true,
+  type: 'note',
+  selector: null,
+  text: 'polyps build the reef',
+  start: 12,
+  length: 4,
+  line: 3,
+  at: [],
+}
+const bookPassage: Passage = {
+  ...notePassage,
+  path: 'books/Atlas.pdf',
+  title: '',
+  isNote: false,
+  selector: { page: 3 },
+}
+
+const now = () => Promise.resolve()
+const flushPromises = async () => {
+  for (let turn = 0; turn < 8; turn += 1) await Promise.resolve()
+}
+
+/** The id of every action of every item, and the id of the item where it has none. */
+const collectActionIds = (groups: readonly PaletteGroup[]): string[] =>
+  groups.flatMap((group) =>
+    group.items.flatMap((one) => (one.actions ?? [{ id: one.id }]).map((action) => action.id)),
+  )
+
+const searchFor = async (
+  text: string,
+  found: { names?: NameMatch[]; passages?: Passage[] },
+  target: CommandTarget,
+) => {
+  const core: SearchDeps = {
+    names: async () => found.names ?? [],
+    search: async (_query, mode) => (mode === 'words' ? (found.passages ?? []) : []),
+  }
+  const search = useSearch(core, words, {
+    wait: now,
+    getTarget: () => target,
+    menu: { getEntries: () => [SHOW] },
+  })
+  await search.setTyped(text)
+  await flushPromises()
+  return search
+}
+
+const listCommands = (target: CommandTarget) => {
+  const commands = useCommandPalette(
+    { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+    words,
+    () => target,
+    { getTitle: () => '', getTabAt: () => null },
+    { getStepGroups: () => [], previewItem: () => undefined },
+    runSupport(),
+  )
+  commands.setOpen(true)
+  return commands
+}
+
+describe('the actions of the palette', () => {
+  const commandIds = new Set([...createCommands(words).map((one) => one.id), SHOW.command])
+
+  const expectCommands = (ids: readonly string[]) => {
+    expect(ids.length).toBeGreaterThan(0)
+    for (const id of ids) expect(commandIds.has(id), id).toBe(true)
+  }
+
+  it('are commands in the list of commands over a note', () => {
+    expectCommands(collectActionIds(listCommands(inFront).groups.value))
+  })
+
+  it('are commands in the list of commands over a window with no note', () => {
+    expectCommands(collectActionIds(listCommands(nothingInFront).groups.value))
+  })
+
+  it('are commands on the rows of a note found by name, by heading and by a passage', async () => {
+    const search = await searchFor(
+      'coral',
+      { names: [byName, heading], passages: [notePassage] },
+      inFront,
+    )
+
+    expectCommands(collectActionIds(search.groups.value))
+  })
+
+  it('are commands on the row of a passage of a document', async () => {
+    const search = await searchFor('reef', { passages: [bookPassage] }, inFront)
+
+    const ids = collectActionIds(search.groups.value)
+    expect(ids).toStrictEqual(['app:file.open'])
+    expectCommands(ids)
+  })
+
+  it('are commands on the row that creates a note, with a note in front and with none', async () => {
+    for (const target of [inFront, nothingInFront]) {
+      const search = await searchFor('Entropy', {}, target)
+
+      const ids = collectActionIds(search.groups.value.filter((one) => one.items.length > 0))
+      expect(ids[0]).toBe('app:note.create')
+      expectCommands(ids)
+    }
+  })
+})
+
+/** The source of every script and component under `src`, by its path from `src`. */
+const readSources = (): Record<string, string> => {
+  const root = resolve(import.meta.dirname, '../../..')
+  const found: Record<string, string> = {}
+  for (const entry of readdirSync(root, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile() || !/\.(ts|vue)$/.test(entry.name)) continue
+    const file = join(entry.parentPath, entry.name)
+    found[`/src/${relative(root, file).split(sep).join('/')}`] = readFileSync(file, 'utf8')
+  }
+  return found
+}
+
+const sources = readSources()
+
+describe('the source of the editor', () => {
+  const thisFile = '/src/features/command-palette/model/actionsAreCommands.test.ts'
+  const files = Object.entries(sources).filter(([path]) => path !== thisFile)
+
+  const findIn = (pattern: RegExp) =>
+    files.filter(([, text]) => pattern.test(text)).map(([path]) => path)
+
+  it('holds files to look at', () => {
+    expect(files.length).toBeGreaterThan(100)
+  })
+
+  it('has no destination that a chosen result opens on a path of its own', () => {
+    const names = ['open' + 'Destination', 'resolve' + 'Destination', 'Search' + 'Destination']
+
+    expect(findIn(new RegExp(`\\b(${names.join('|')})\\b`))).toStrictEqual([])
+  })
+
+  it('has no function that creates a note for a chosen result outside the commands', () => {
+    expect(
+      findIn(new RegExp(`\\b(create${'NoteInvocation'}|CREATE_NOTE${'_ID'})\\b`)),
+    ).toStrictEqual([])
+  })
+
+  it('has no action id for a document that is no command, in the palette', () => {
+    const palette = files.filter(([path]) => path.startsWith('/src/features/command-palette/'))
+
+    expect(
+      palette.filter(([, text]) => new RegExp(`\\bNOTE = ${"'note'"}`).test(text)),
+    ).toStrictEqual([])
+  })
+
+  it('has no prefix that makes the id of an action differ from the id of its command', () => {
+    expect(
+      findIn(new RegExp(`\\b(MENU_ACTION${'_PREFIX'}|resolveMenu${'Choice'})\\b`)),
+    ).toStrictEqual([])
+  })
+
+  it('runs a chosen result in the field only through the choice it is handed', () => {
+    const field = sources['/src/features/command-palette/ui/CommandPalette.vue'] ?? ''
+
+    expect(field).not.toBe('')
+    expect(field).not.toMatch(/CREATE_NOTE/)
+    expect(field).not.toMatch(/item\s*===/)
+    expect(field.match(/runInvocation\(/g) ?? []).toHaveLength(1)
+  })
+})

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
- * Dedicated settings view for system settings: window appearance, theme, scale,
- * filename syncing, and the path of the numen.json configuration file.
+ * Dedicated settings view for system settings: every setting the core declares for the owner `app`,
+ * drawn by the renderer of the plugins, and the path of the numen.json configuration file.
  */
 import { computed } from 'vue'
 import { Button } from '@numen/ui'
-import WindowSettingsSection from './WindowSettingsSection.vue'
+import PluginFields from './plugins/PluginFields.vue'
+import type { PluginInfo } from '@/entities/settings'
 import type { SettingsTabState } from '../types'
 import { WORDS as words } from '../words'
 
@@ -21,6 +22,21 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
+
+/** The owner the core declares the settings of the shell under. */
+const owner = computed<PluginInfo>(() => ({
+  id: 'app',
+  name: 'app',
+  version: '',
+  description: '',
+  isActive: true,
+  capabilities: [],
+  secrets: [],
+  storedSecrets: [],
+  hasFrontend: false,
+  hasBackend: false,
+  settings: installation.value.app?.value ?? [],
+}))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
@@ -38,7 +54,7 @@ function onBack(): void {
       <p class="system-detail__file">{{ installation.file.value || words.file }}</p>
     </div>
 
-    <WindowSettingsSection :state="props.state" />
+    <PluginFields :state="props.state" :plugin="owner" />
   </div>
 </template>
 

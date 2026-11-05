@@ -15,6 +15,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
+	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
@@ -77,9 +78,6 @@ func run(cfg container.Config, debug debugOptions) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
-	if err := cfg.MigratePluginSettings(); err != nil {
-		return err
-	}
 	selected, err := cfg.Settings()
 	if err != nil {
 		return err
@@ -203,11 +201,11 @@ func runApplication(handler http.Handler, target *shutdown.Sequence) error {
 		// Runs on the thread the window is drawn on, once the application has stopped dispatching.
 		PostShutdown: target.Run,
 	})
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
+	app.Window.NewWithOptions(frame.Window(application.WebviewWindowOptions{
 		Title:  "numen — flashcards",
 		Width:  760,
 		Height: 720,
 		URL:    "/",
-	})
+	}))
 	return app.Run()
 }

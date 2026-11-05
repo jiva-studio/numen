@@ -14,6 +14,7 @@ const failed: Task = {
   pluginId: 'md.example.engine',
   pluginName: 'Example Engine',
   isCancellable: false,
+  kind: 'work',
 }
 
 describe('isConfigurableError', () => {

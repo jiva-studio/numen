@@ -80,10 +80,9 @@ func (t *Tools) readNote(ctx context.Context, in NoteReadInput) (NoteReadOutput,
 
 // NoteWriteInput is the input of the note_write tool.
 type NoteWriteInput struct {
-	Path        string `json:"path" jsonschema:"relative path to the note file"`
-	Content     string `json:"content,omitempty" jsonschema:"markdown content to write"`
-	Body        string `json:"body,omitempty" jsonschema:"alias for content: markdown text to write"`
-	Fingerprint string `json:"fingerprint,omitempty" jsonschema:"optional baseline fingerprint from note_read for optimistic concurrency"`
+	Path        string  `json:"path" jsonschema:"relative path to the note file"`
+	Content     *string `json:"content,omitempty" jsonschema:"markdown content to write"`
+	Fingerprint string  `json:"fingerprint,omitempty" jsonschema:"optional baseline fingerprint from note_read for optimistic concurrency"`
 }
 
 // NoteWriteOutput is the output of the note_write tool.
@@ -113,10 +112,10 @@ func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutp
 		path += ".md"
 	}
 
-	content := in.Content
-	if content == "" && in.Body != "" {
-		content = in.Body
+	if in.Content == nil {
+		return NoteWriteOutput{}, errors.New("content required")
 	}
+	content := *in.Content
 
 	newFp, err := t.saveNoteContent(ctx, path, content, in.Fingerprint)
 	if err != nil {

@@ -113,10 +113,10 @@ func (s *settings) updateConfig(values map[string]string) {
 	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
 		s.cfg.apiKey = key
 	}
-	applyIntConfig(values, "batch_size", &s.cfg.batchSize, 1)
+	applyIntConfig(values, "batchSize", &s.cfg.batchSize, 1)
 	applyIntConfig(values, "overlap", &s.cfg.overlap, 0)
-	applyIntConfig(values, "in_flight", &s.cfg.inFlight, 1)
-	if v, ok := values["max_edit_distance"]; ok {
+	applyIntConfig(values, "inFlight", &s.cfg.inFlight, 1)
+	if v, ok := values["maxEditDistance"]; ok {
 		if d, err := strconv.ParseFloat(v, 64); err == nil && d >= 0 {
 			s.cfg.maxEditDistance = d
 		}

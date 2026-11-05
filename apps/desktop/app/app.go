@@ -16,6 +16,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
+	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
@@ -27,16 +28,11 @@ import (
 
 const appName = "numen"
 
-// DefaultAgentAddr is the default MCP listening address.
-const DefaultAgentAddr = "127.0.0.1:23579"
-
 // Options holds command-line options for running the desktop application.
 type Options struct {
 	IndexPath      string
 	RegistryPath   string
 	Vault          string
-	McpAddr        string
-	NoMcp          bool
 	InterfaceScale float64
 	TextScale      float64
 	RebuildIndex   bool
@@ -47,9 +43,7 @@ type Options struct {
 
 // NewOptions creates default options for the application.
 func NewOptions() *Options {
-	return &Options{
-		McpAddr: DefaultAgentAddr,
-	}
+	return &Options{}
 }
 
 // Run executes the application. If opts is not supplied or nil, command-line flags are parsed.
@@ -106,9 +100,6 @@ func parseFlags() (*Options, error) {
 		fs.StringVar(&opts.RegistryPath, "registry", "", "path to the vault list")
 		fs.StringVar(&opts.Vault, "vault", "",
 			"the vault to open: a name, a path or an identity; the one opened last by default")
-		fs.StringVar(&opts.McpAddr, "mcp-addr", DefaultAgentAddr,
-			"address agents connect to; any address other than loopback opens the vault to the network")
-		fs.BoolVar(&opts.NoMcp, "no-mcp", false, "do not let agents connect to this vault")
 		fs.Float64Var(&opts.InterfaceScale, "interface-scale", 0,
 			"scale of the interface (controls and spacing); 1 is the default; this launch only")
 		fs.Float64Var(&opts.TextScale, "text-scale", 0,
@@ -171,9 +162,6 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
-	if err := cfg.MigratePluginSettings(); err != nil {
-		return err
-	}
 	selected, err := cfg.Settings()
 	if err != nil {
 		return err
@@ -298,7 +286,12 @@ func makeApplication(
 }
 
 func makeWindow(app *application.App, opened *editor.Installation) *application.WebviewWindow {
-	return app.Window.NewWithOptions(application.WebviewWindowOptions{
+	return app.Window.NewWithOptions(getMainWindowOptions(opened))
+}
+
+// getMainWindowOptions is the main window: its title is for the taskbar, the title bar is drawn by the page.
+func getMainWindowOptions(opened *editor.Installation) application.WebviewWindowOptions {
+	return frame.Window(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
@@ -320,19 +313,24 @@ func getSecondaryWindowURL(tab editor.DetachedTab) string {
 func makeSecondaryWindow(
 	app *application.App, opened *editor.Installation, tab editor.DetachedTab,
 ) *application.WebviewWindow {
-	opts := application.WebviewWindowOptions{
+	return app.Window.NewWithOptions(getSecondaryWindowOptions(opened, tab))
+}
+
+// getSecondaryWindowOptions is the window of a torn-off tab, placed where the tab was dropped.
+func getSecondaryWindowOptions(opened *editor.Installation, tab editor.DetachedTab) application.WebviewWindowOptions {
+	opts := frame.Window(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
 		URL:            getSecondaryWindowURL(tab),
 		EnableFileDrop: true,
-	}
+	})
 	if tab.X != 0 || tab.Y != 0 {
 		opts.InitialPosition = application.WindowXY
 		opts.X = tab.X
 		opts.Y = tab.Y
 	}
-	return app.Window.NewWithOptions(opts)
+	return opts
 }
 
 // windowHooks holds what a window needs to close and to follow the vault.

@@ -1,6 +1,6 @@
 /** The commands the plugins declare, read again as the palette opens. */
 import { describe, expect, it, vi } from 'vitest'
-import { nextTick, ref, shallowRef } from 'vue'
+import { nextTick, ref, shallowRef, type Ref } from 'vue'
 import { useCommands, type CommandsDepsOptions } from './useCommands'
 import type { DeclaredCommands } from './declaredCommands'
 
@@ -16,7 +16,11 @@ vi.mock('@/features/command-palette', () => ({
 }))
 vi.mock('./commandDeps', () => ({ createCommandDeps: () => ({}) }))
 
-const setup = (load: () => Promise<void>, loadMenu?: (file: string) => Promise<void>) => {
+const setup = (
+  load: () => Promise<void>,
+  loadMenu?: (file: string) => Promise<void>,
+  plugins?: Ref<{ id: string; isActive: boolean }[]>,
+) => {
   const messages: [string, string][] = []
   const declaredCommands = { paletteCommands: shallowRef([]), load } as unknown as DeclaredCommands
   const fileMenuCommands = loadMenu
@@ -27,7 +31,7 @@ const setup = (load: () => Promise<void>, loadMenu?: (file: string) => Promise<v
     : undefined
   useCommands({
     windowTabs: {},
-    rest: {},
+    rest: { plugins },
     getTarget: () => ({ file: 'books/Scan.pdf' }),
     writeMessage: (text: string, kind: string) => messages.push([text, kind]),
     declaredCommands,
@@ -37,6 +41,26 @@ const setup = (load: () => Promise<void>, loadMenu?: (file: string) => Promise<v
 }
 
 describe('the declared commands', () => {
+  it('are read again when a plugin starts or stops', async () => {
+    isOpen.value = false
+    const load = vi.fn(() => Promise.resolve())
+    const plugins = ref([{ id: 'md.tree', isActive: false }])
+    setup(load, undefined, plugins)
+    expect(load).toHaveBeenCalledTimes(1)
+
+    plugins.value = [{ id: 'md.tree', isActive: true }]
+    await nextTick()
+    expect(load).toHaveBeenCalledTimes(2)
+
+    plugins.value = [{ id: 'md.tree', isActive: true }]
+    await nextTick()
+    expect(load).toHaveBeenCalledTimes(2)
+
+    plugins.value = [{ id: 'md.tree', isActive: false }]
+    await nextTick()
+    expect(load).toHaveBeenCalledTimes(3)
+  })
+
   it('are read as the window starts and each time the palette opens, and not as it closes', async () => {
     isOpen.value = false
     const load = vi.fn(() => Promise.resolve())

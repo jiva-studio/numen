@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/fs"
 	"os"
+	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/settingevents"
 
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -21,9 +23,7 @@ import (
 // other section belongs to the adapter it configures, and is put beside them
 // here, where every adapter is bound.
 const (
-	indexingAt  = "indexing"
-	embeddingAt = "embedding"
-	agentAt     = "agent"
+	agentAt = "agent"
 )
 
 // Settings is the file that configures this installation: one object whose
@@ -40,7 +40,7 @@ func (c Config) Settings() (Settings, error) {
 	if err != nil {
 		return Settings{}, err
 	}
-	return c.getSettingsAt(path)
+	return c.getCheckedSettingsAt(path)
 }
 
 // getSettingsAt is that document read from an explicit file.
@@ -48,6 +48,20 @@ func (c Config) getSettingsAt(path string) (Settings, error) {
 	target := DefaultSettings()
 	if err := c.getResources().settingsFiles.OpenAt(path, &target); err != nil {
 		return Settings{}, err
+	}
+	return target, nil
+}
+
+// getCheckedSettingsAt is that document with every value left out of force that the declarations of
+// the plugin host and the registries refuse. Without a plugin host no plugin declares anything,
+// and the document is read as it is.
+func (c Config) getCheckedSettingsAt(path string) (Settings, error) {
+	target, err := c.getSettingsAt(path)
+	if err != nil {
+		return Settings{}, err
+	}
+	if c.PluginHost != nil {
+		target.DropInvalid(c.getDeclarations(), c.getRegistries())
 	}
 	return target, nil
 }
@@ -61,7 +75,7 @@ func DefaultSettings() Settings {
 // the file cannot be read.
 func (c Config) getSettingsOrDefaults() Settings {
 	if path, err := c.settingsFile(); err == nil {
-		if target, err := c.getSettingsAt(path); err == nil {
+		if target, err := c.getCheckedSettingsAt(path); err == nil {
 			return target
 		}
 	}
@@ -69,12 +83,8 @@ func (c Config) getSettingsOrDefaults() Settings {
 }
 
 // SetSettings returns the configuration with the values of a settings file
-// applied. Both entry points use it. An empty embedding model disables
-// embedding.
+// applied. Both entry points use it.
 func (c Config) SetSettings(s Settings) Config {
-	c.Embedding = s.Indexing.Embedding
-	c.Agent = s.Agent
-	c.Performance = s.Performance
 	c.Hardware = hardware.Detect()
 	c.ResolvedCompute = hardware.ResolveCompute(s.Performance.Profile, c.Hardware)
 	if c.PluginHost != nil {
@@ -90,13 +100,14 @@ func (c Config) SetSettings(s Settings) Config {
 			}
 			return writer([]settingsport.Setting{
 				{
-					Path: []string{pluginSettingsPrefix, pluginID, key},
+					Path: []string{pluginID, key},
 					JSON: string(raw),
 				},
 			})
 		})
 		c.PluginHost.SetKeyStore(c.KeyStore)
 		c.setCompleter()
+		c.subscribeHost()
 	}
 	return c
 }
@@ -125,7 +136,18 @@ func (c Config) Models() func() []settingsport.Model {
 
 func (c Config) listModels() []settingsport.Model {
 	target := c.getSettingsOrDefaults()
-	return settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(c.agentProvider, target.Agent))
+	return prefixModels(settings.OwnerApp, settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(c.agentProvider, target.Agent)))
+}
+
+// prefixModels puts the owner at the head of the path of every model and of every setting it writes.
+func prefixModels(owner string, models []settingsport.Model) []settingsport.Model {
+	for place := range models {
+		models[place].Path = append([]string{owner}, models[place].Path...)
+		for index := range models[place].Writes {
+			models[place].Writes[index].Path = append([]string{owner}, models[place].Writes[index].Path...)
+		}
+	}
+	return models
 }
 
 func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsport.Model {
@@ -134,89 +156,230 @@ func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []set
 	return c.listModels
 }
 
-// MigratePluginSettings copies settings that existed before a plugin took
-// them over into the plugin's section. A setting whose manifest names the key
-// it replaces is written to the plugin's section of the file from the first
-// location that still holds the old key, unless the section already holds the
-// setting. The old keys remain in the file.
-func (c Config) MigratePluginSettings() error {
-	if c.PluginHost == nil {
-		return nil
+// getDeclarations returns the settings each owner declares: the shell, and the plugins of the host.
+func (c Config) getDeclarations() settings.Declarations {
+	return func(owner string) ([]pluginport.PluginManifestSetting, bool) {
+		if owner == settings.OwnerApp {
+			return settings.GetAppDeclaration(), true
+		}
+		if c.PluginHost == nil {
+			return nil, false
+		}
+		var declarer pluginport.PluginSettingDeclarer = c.PluginHost
+		return declarer.GetPluginSettingDeclarations(owner)
+	}
+}
+
+// getRegistries returns the registries an option list may name: the installed themes.
+func (c Config) getRegistries() settings.Registries {
+	return func(name string) ([]string, bool) {
+		options, found := c.listRegistryOptions(name)
+		names := make([]string, 0, len(options))
+		for _, one := range options {
+			names = append(names, one.Value)
+		}
+		return names, found
+	}
+}
+
+// listRegistryOptions returns the options a registry lists, and false for a registry that has no
+// provider.
+func (c Config) listRegistryOptions(name string) (pluginport.PluginSettingOptions, bool) {
+	if name != settings.RegistryThemes {
+		return nil, false
+	}
+	catalogue, err := c.getCatalogue()
+	if err != nil {
+		c.handleError(err)
+	}
+	var options pluginport.PluginSettingOptions
+	for _, one := range catalogue.Themes() {
+		options = append(options, pluginport.PluginSettingOption{Value: one.Name, Title: one.Title})
+	}
+	return options, true
+}
+
+// listAppSettings returns the declaration of the settings of the shell with the options, the
+// visibility and the value in force of each under the settings file.
+func (c Config) listAppSettings() []pluginport.PluginSetting {
+	return c.listAppSettingsOn(runtime.GOOS)
+}
+
+// listAppSettingsOn lists the settings of the shell that apply on an operating system, named as
+// runtime.GOOS names it.
+func (c Config) listAppSettingsOn(goos string) []pluginport.PluginSetting {
+	current := c.getSettingsOrDefaults()
+	declared := settings.GetAppDeclaration()
+	entries := make([]pluginport.PluginSetting, 0, len(declared))
+	for _, one := range declared {
+		if !settings.IsAvailableOn(one.Key, goos) {
+			continue
+		}
+		options := one.Options
+		if one.OptionsFrom != "" {
+			options, _ = c.listRegistryOptions(one.OptionsFrom)
+		}
+		defaultJSON := ""
+		if encoded, err := json.Marshal(one.Default); err == nil && one.Default != nil {
+			defaultJSON = string(encoded)
+		}
+		setting := pluginport.NewPluginSetting(one, defaultJSON, options)
+		setting.ActiveOptions = options
+		setting.IsShown = true
+		if value, found := current.GetValue(append([]string{settings.OwnerApp}, strings.Split(one.Key, ".")...)...); found {
+			if encoded, err := json.Marshal(value); err == nil {
+				setting.ValueJSON = string(encoded)
+			}
+		}
+		entries = append(entries, setting)
+	}
+	return entries
+}
+
+// SubscribeSettingChanges starts listening to the settings that change, whether a window, a plugin
+// or the palette writes them or a person edits the file by hand. See settingsport.ChangeSubscriber.
+func (c Config) SubscribeSettingChanges() (<-chan []settingsport.Setting, func()) {
+	events := c.getResources().settingEvents
+	if events == nil {
+		closed := make(chan []settingsport.Setting)
+		close(closed)
+		return closed, func() {}
 	}
 	path, err := c.settingsFile()
 	if err != nil {
-		return err
+		c.handleError(err)
+		closed := make(chan []settingsport.Setting)
+		close(closed)
+		return closed, func() {}
 	}
-	raw, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
+	return events.Subscribe(settingevents.Source{
+		Read:    c.readSettingValues,
+		Initial: c.listDefaultSettingValues,
+		Report:  c.handleError,
+		Hub:     c.getResources().watches,
+		Path:    path,
+	})
+}
+
+// refreshSettingEvents delivers what a write changed.
+func (c Config) refreshSettingEvents() {
+	if events := c.getResources().settingEvents; events != nil {
+		events.Refresh(c.readSettingValues)
 	}
+}
+
+// readSettingValues reads the values in force from the settings file. A file that is not there is
+// an unconfigured installation, and reading does not write it.
+func (c Config) readSettingValues() (settingevents.Values, error) {
+	path, err := c.settingsFile()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	var file map[string]any
-	if err := json.Unmarshal(raw, &file); err != nil {
-		c.handleError(fmt.Errorf("skip plugin settings migration, parse %s: %w", path, err))
-		return nil
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return c.listSettingValues(DefaultSettings())
 	}
-
-	moved := collectPluginSettingsMigrations(c.PluginHost.GetPluginInfos(), file)
-	if len(moved) == 0 {
-		return nil
+	target, err := c.getCheckedSettingsAt(path)
+	if err != nil {
+		return nil, err
 	}
-	return c.GetSettingsWriter()(moved)
+	return c.listSettingValues(target)
 }
 
-func collectPluginSettingsMigrations(plugins []pluginport.PluginInfo, file map[string]any) []settingsport.Setting {
-	var moved []settingsport.Setting
-	for _, plugin := range plugins {
-		for _, setting := range plugin.Settings {
-			if len(setting.Replaces) == 0 || hasKeys(file, "plugins", plugin.ID, setting.Key) {
-				continue
-			}
-			if s, ok := migrateOneSetting(plugin.ID, setting, file); ok {
-				moved = append(moved, s)
-			}
-		}
+// listDefaultSettingValues is the values of an installation with no settings file.
+func (c Config) listDefaultSettingValues() settingevents.Values {
+	values, err := c.listSettingValues(DefaultSettings())
+	if err != nil {
+		c.handleError(err)
 	}
-	return moved
+	return values
 }
 
-func migrateOneSetting(pluginID string, setting pluginport.PluginSetting, file map[string]any) (settingsport.Setting, bool) {
-	for _, place := range setting.Replaces {
-		value, found := findSettingsKeys(file, strings.Split(place, ".")...)
-		if !found {
-			continue
-		}
-		content, err := json.Marshal(value)
+// hostFieldEnabled and hostFieldStoredSecrets are the fields of the object of a plugin that the
+// host keeps. A plugin that has no stored value for the first is enabled.
+const (
+	hostFieldEnabled       = "enabled"
+	hostFieldStoredSecrets = pluginport.SettingStoredSecrets
+)
+
+// listSettingValues lists the value in force of every setting the shell and the plugins declare,
+// and the fields the host keeps for each plugin.
+func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
+	values := settingevents.Values{}
+	var failures []error
+	add := func(path []string, value any) {
+		encoded, err := json.Marshal(value)
 		if err != nil {
+			failures = append(failures, err)
+			return
+		}
+		values[settingevents.JoinPath(path)] = string(encoded)
+	}
+	for _, declared := range settings.GetAppDeclaration() {
+		path := append([]string{settings.OwnerApp}, strings.Split(declared.Key, ".")...)
+		if value, found := target.GetValue(path...); found {
+			add(path, value)
+		}
+	}
+	for _, plugin := range c.Plugins()() {
+		listPluginValues(target, plugin, add, values)
+	}
+	return values, errors.Join(failures...)
+}
+
+func listPluginValues(target Settings, plugin pluginport.PluginInfo, add func([]string, any), values settingevents.Values) {
+	for _, declared := range plugin.Settings {
+		path := []string{plugin.ID, declared.Key}
+		if value, found := target.GetValue(path...); found {
+			add(path, value)
+		} else if declared.DefaultJSON != "" {
+			values[settingevents.JoinPath(path)] = declared.DefaultJSON
+		}
+	}
+	enabled := true
+	if value, found := target.GetValue(plugin.ID, hostFieldEnabled); found {
+		if stored, isBool := value.(bool); isBool {
+			enabled = stored
+		}
+	}
+	add([]string{plugin.ID, hostFieldEnabled}, enabled)
+	if value, found := target.GetValue(plugin.ID, hostFieldStoredSecrets); found {
+		add([]string{plugin.ID, hostFieldStoredSecrets}, value)
+	}
+}
+
+// subscribeHost makes the plugin host a reader of the events, once: it takes the settings of its
+// plugins and the performance profile through them.
+func (c Config) subscribeHost() {
+	resources := c.getResources()
+	if resources.settingEvents == nil || c.PluginHost == nil {
+		return
+	}
+	resources.hostSubscribed.Do(func() {
+		changes, _ := c.SubscribeSettingChanges()
+		go func() {
+			for batch := range changes {
+				c.tellHost(batch)
+			}
+		}()
+	})
+}
+
+// tellHost gives the plugin host the settings of the plugins among those that changed, and the
+// performance profile.
+func (c Config) tellHost(batch []settingsport.Setting) {
+	notifyPluginSettings(c.PluginHost, batch, c.handleError)
+	for _, one := range batch {
+		if !slices.Equal(one.Path, profilePath()) {
 			continue
 		}
-		return settingsport.Setting{
-			Path: []string{pluginSettingsPrefix, pluginID, setting.Key}, JSON: string(content),
-		}, true
+		var profile string
+		if err := json.Unmarshal([]byte(one.JSON), &profile); err != nil {
+			c.handleError(err)
+			continue
+		}
+		c.PluginHost.SetPerformanceProfile(context.Background(), hardware.ResolveCompute(profile, c.Hardware).Profile)
 	}
-	return settingsport.Setting{}, false
 }
 
-// findSettingsKeys is the value at the keys of a decoded document, and whether the document holds one.
-func findSettingsKeys(document map[string]any, keys ...string) (any, bool) {
-	var pos any = document
-	for _, key := range keys {
-		object, isObject := pos.(map[string]any)
-		if !isObject {
-			return nil, false
-		}
-		next, found := object[key]
-		if !found {
-			return nil, false
-		}
-		pos = next
-	}
-	return pos, true
-}
-
-func hasKeys(document map[string]any, keys ...string) bool {
-	_, found := findSettingsKeys(document, keys...)
-	return found
-}
+// profilePath is the path of the performance profile in the settings file.
+func profilePath() []string { return []string{settings.OwnerApp, "performance", "profile"} }

@@ -35,7 +35,7 @@ func (c Config) VaultOpenerWith(
 		db.Queries(),
 		db.Maintenance(),
 	)
-	scan.Cut = c.CutNotes()
+	c.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
 
 	buffered := &bufferedNoteRepository{NoteRepository: db.Notes()}

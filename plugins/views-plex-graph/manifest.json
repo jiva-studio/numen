@@ -1,20 +1,50 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "contributes": {
-    "tabKinds": [{ "kind": "plex", "title": "Plex", "icon": "waypoints" }],
+    "tabKinds": [
+      {
+        "kind": "plex",
+        "title": "Plex",
+        "icon": "waypoints"
+      }
+    ],
     "feature": "plex graph",
-    "category": "views"
+    "category": "views",
+    "commands": [
+      {
+        "id": "graph.open",
+        "title": "Open plex graph",
+        "icon": "waypoints",
+        "shortcut": "mod+shift+x"
+      },
+      {
+        "id": "graph.showNote",
+        "title": "Show note in plex",
+        "icon": "waypoints",
+        "scope": "note",
+        "shortcut": "mod+shift+p"
+      }
+    ],
+    "menus": [
+      {
+        "location": "searchResult",
+        "command": "graph.showNote",
+        "group": "navigate",
+        "order": 20
+      },
+      { "location": "titleBar", "command": "graph.open", "group": "navigate", "order": 20 }
+    ]
   },
   "permissions": ["vault:read", "vault:write"],
   "settings": [
     {
-      "key": "nest_headings",
+      "key": "nestHeadings",
       "type": "boolean",
       "title": "Nest headings under notes",
       "description": "Show the headings of a note under its node.",
@@ -23,7 +53,7 @@
       "icon": "waypoints"
     },
     {
-      "key": "heading_limit",
+      "key": "headingLimit",
       "type": "number",
       "title": "Headings per note",
       "description": "Maximum number of headings shown under a node. The rest scroll.",

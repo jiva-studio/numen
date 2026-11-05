@@ -24,7 +24,7 @@ const reloadWindow = async (page: Page): Promise<void> => {
 
 /** Applies the theme of that title through the palette. */
 const chooseTheme = async (page: Page, title: string): Promise<void> => {
-  await runCommand(page, 'Change theme', /^Change theme/)
+  await runCommand(page, 'Theme', /^Theme/)
   await page
     .getByRole('option', { name: new RegExp(`^${title}`) })
     .first()
@@ -67,6 +67,26 @@ test.describe('A theme of the preset themes plugin', () => {
       await expect.poll(() => getThemeStyle(page)).not.toContain(DRACULA_SURFACE)
     } finally {
       await setPresetThemesEnabled(page, true)
+      await chooseTheme(page, 'numen')
+    }
+  })
+})
+
+test.describe('The theme setting of the settings tab', () => {
+  test('lists the themes of the preset themes plugin and applies the one chosen', async ({
+    page,
+  }) => {
+    await openWorkspace(page)
+    try {
+      await runCommand(page, 'Open settings', /^Open settings$/)
+      const settings = page.getByRole('tabpanel', { name: /Settings/ })
+      await settings.getByRole('button', { name: /^System/ }).click()
+
+      await settings.getByRole('button', { name: 'Theme', exact: true }).click()
+      await page.getByRole('menuitemradio', { name: /^Dracula/ }).click()
+
+      await expect.poll(() => getThemeStyle(page)).toContain(DRACULA_SURFACE)
+    } finally {
       await chooseTheme(page, 'numen')
     }
   })

@@ -128,7 +128,13 @@ type GetEmbeddingModelResponse struct {
 	// after: the prefixes, the model file, the token limit and the normalisation. Two models of
 	// one name that differ in it make vectors that cannot be compared, so it is part of the
 	// identity. Empty when the plugin holds no such settings.
-	Handling      string `protobuf:"bytes,9,opt,name=handling,proto3" json:"handling,omitempty"`
+	Handling string `protobuf:"bytes,9,opt,name=handling,proto3" json:"handling,omitempty"`
+	// The most tokens one chunk of a note or of a file text may hold, which the core cuts at. It is
+	// a setting of the plugin and never exceeds max_tokens where max_tokens is known. It is not part
+	// of the model's identity: a vector made for a text is the same whatever the chunk size, so
+	// changing it makes no vector stale, only the notes are cut again. Zero when the plugin names
+	// none, and the core cuts at its default.
+	ChunkTokens   int32 `protobuf:"varint,10,opt,name=chunk_tokens,json=chunkTokens,proto3" json:"chunk_tokens,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -224,6 +230,13 @@ func (x *GetEmbeddingModelResponse) GetHandling() string {
 		return x.Handling
 	}
 	return ""
+}
+
+func (x *GetEmbeddingModelResponse) GetChunkTokens() int32 {
+	if x != nil {
+		return x.ChunkTokens
+	}
+	return 0
 }
 
 type FloatVector struct {
@@ -372,7 +385,7 @@ var File_numen_v1_embedding_proto protoreflect.FileDescriptor
 const file_numen_v1_embedding_proto_rawDesc = "" +
 	"\n" +
 	"\x18numen/v1/embedding.proto\x12\bnumen.v1\"\x1a\n" +
-	"\x18GetEmbeddingModelRequest\"\xa3\x02\n" +
+	"\x18GetEmbeddingModelRequest\"\xc6\x02\n" +
 	"\x19GetEmbeddingModelResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1e\n" +
 	"\n" +
@@ -386,7 +399,9 @@ const file_numen_v1_embedding_proto_rawDesc = "" +
 	"\n" +
 	"floor_hint\x18\a \x01(\x01R\tfloorHint\x12(\n" +
 	"\x10min_chunk_length\x18\b \x01(\x05R\x0eminChunkLength\x12\x1a\n" +
-	"\bhandling\x18\t \x01(\tR\bhandling\"%\n" +
+	"\bhandling\x18\t \x01(\tR\bhandling\x12!\n" +
+	"\fchunk_tokens\x18\n" +
+	" \x01(\x05R\vchunkTokens\"%\n" +
 	"\vFloatVector\x12\x16\n" +
 	"\x06values\x18\x01 \x03(\x02R\x06values\"R\n" +
 	"\x11EmbedBatchRequest\x12\x14\n" +

@@ -34,18 +34,48 @@ const createModule = (name, at, reads, book, says) => ({
  * - `book`, the Storybook its stories are drawn in, as `ci-stories` names them.
  */
 export const modules = [
-  createModule('@numen/ui', 'libs/ui/core', 'src/index.ts', 'ui',
-    'The shared components. Reaches nothing of ours.'),
-  createModule('@numen/shell', 'libs/ui/shell', 'src/index.ts', 'shell',
-    'The chrome of the desktop windows: reaches the components.'),
-  createModule('@numen/plugin-sdk', 'libs/plugin-sdk-ts', 'src/index.ts', 'ui',
-    "The plugin contract and what a window's ports are answered with."),
-  createModule('@numen/editor', 'apps/desktop/editor', 'src/app/App.vue', 'shell',
-    'The notes window: reaches the components, the shell, the wire and the schema.'),
-  createModule('@numen/flashcards', 'apps/desktop/flashcards', 'src/app/App.vue', 'shell',
-    'The review window: the same four, and never the other window.'),
-  createModule('@numen/mobile', 'apps/mobile', 'src/App.vue', 'ui',
-    'The phone: one vault, the components and the schema.'),
+  createModule(
+    '@numen/ui',
+    'libs/ui/core',
+    'src/index.ts',
+    'ui',
+    'The shared components. Reaches nothing of ours.',
+  ),
+  createModule(
+    '@numen/shell',
+    'libs/ui/shell',
+    'src/index.ts',
+    'shell',
+    'The chrome of the desktop windows: reaches the components.',
+  ),
+  createModule(
+    '@numen/plugin-sdk',
+    'libs/plugin-sdk-ts',
+    'src/index.ts',
+    'ui',
+    "The plugin contract and what a window's ports are answered with.",
+  ),
+  createModule(
+    '@numen/editor',
+    'apps/desktop/editor',
+    'src/app/App.vue',
+    'shell',
+    'The notes window: reaches the components, the shell, the wire and the schema.',
+  ),
+  createModule(
+    '@numen/flashcards',
+    'apps/desktop/flashcards',
+    'src/app/App.vue',
+    'shell',
+    'The review window: the same four, and never the other window.',
+  ),
+  createModule(
+    '@numen/mobile',
+    'apps/mobile',
+    'src/App.vue',
+    'ui',
+    'The phone: one vault, the components and the schema.',
+  ),
 ]
 
 /**

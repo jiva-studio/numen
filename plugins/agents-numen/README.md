@@ -17,3 +17,4 @@ Built-in AI assistant that connects directly to cloud services (OpenRouter, Open
 - **Model**: The default model to use for new conversations and background tasks.
 - **Temperature**: How creative or focused the replies should be (`0.0` is more focused, `1.0` is more creative).
 - **Max tokens**: The maximum length of each reply.
+- **Max steps**: How many requests to the model one task may make before it is stopped (25 by default).

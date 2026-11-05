@@ -76,6 +76,9 @@ type Installation struct {
 	stopEmbedder func() error
 
 	shutdown shutdownState
+	// sessionMu serializes the builds of the vault session: a swap of the vault and a change of the
+	// chunk size.
+	sessionMu sync.Mutex
 }
 
 // errNoVault is returned for a vault query on a window with no vault open.
@@ -263,13 +266,14 @@ func (o *Installation) SayTheme(message string) {
 	o.State.reportTask(run.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
-// Report records configuration messages as tasks.
+// Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
 		o.State.reportTask(run.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Read settings",
-			Error: one,
+			About: one,
+			Kind:  run.KindNotice,
 		})
 	}
 }
@@ -361,19 +365,11 @@ func (o *Installation) wireUseCases() {
 	}
 	services.Agent.GetAgent = made.GetAgent
 	services.Settings.Write = made.OpenWriteSettings()
+	services.Settings.Watch = made.OpenWatchSettings()
 	services.Settings.WriteSecret = made.OpenWritePluginSecret()
 	services.Settings.DeleteSecret = made.OpenDeletePluginSecret()
 	services.Settings.PluginRetry = made.OpenRetryPlugin()
-	services.Settings.OnPluginChange = func() {
-		if o.Embedder != nil {
-			name, recipe := vectors.DescribeModel(o.Embedder)
-			o.State.Indexing.Model.Store(name)
-			o.State.Indexing.Recipe.Store(recipe)
-		}
-		if o.indexer != nil {
-			o.indexer.WakeSources()
-		}
-	}
+	followModel(o.Embedder, o.State, o.indexer, o.rebuildSession)
 	if data := made.OpenPluginData(); data != nil {
 		services.Settings.PluginData, services.Settings.Vaults = data, o.State
 	}
@@ -420,6 +416,13 @@ func (s *shutdownState) tryBegin() error {
 	}
 	s.isBusy = true
 	return nil
+}
+
+// isClosed is whether the window has closed.
+func (s *shutdownState) isClosed() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.isClosing
 }
 
 // endKeepOpen ends the flush and leaves the window open.

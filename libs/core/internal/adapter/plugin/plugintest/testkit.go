@@ -237,6 +237,9 @@ func (h *LeaseHost) Acquire(string) { h.Acquired.Add(1) }
 
 func (h *LeaseHost) Release(string) { h.Released.Add(1) }
 
+// WatchPluginConfig registers nothing: the stub is never configured.
+func (h *LeaseHost) WatchPluginConfig(string, func()) func() { return func() {} }
+
 func (h *LeaseHost) CheckPluginPermission(_, _ string) error { return nil }
 
 func (h *LeaseHost) GetVaultPath() string { return "" }

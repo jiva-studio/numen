@@ -14,17 +14,17 @@ describe('the commands over a note', () => {
 
   it('ask for a name where they take one', () => {
     const commands = createNoteCommands(words, 'linux')
-    const needs = Object.fromEntries(commands.map((one) => [one.id, one.needs]))
+    const inputs = Object.fromEntries(commands.map((one) => [one.id, one.input]))
 
-    expect(needs).toStrictEqual({
+    expect(inputs).toStrictEqual({
       'app:note.open': undefined,
       'app:note.openBeside': undefined,
-      'app:note.createChild': 'naming',
-      'app:note.createParent': 'naming',
-      'app:note.createJump': 'naming',
-      'app:note.rename': 'naming',
+      'app:note.createChild': 'name',
+      'app:note.createParent': 'name',
+      'app:note.createJump': 'name',
+      'app:note.rename': 'name',
       'app:note.trash': undefined,
-      'app:note.delete': 'exactly',
+      'app:note.delete': 'retypedName',
       'app:note.copyPath': undefined,
     })
   })

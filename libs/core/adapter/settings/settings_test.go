@@ -2,7 +2,6 @@ package settings_test
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // A file without a size uses the desktop's scale; unsetting GDK_DPI_SCALE keeps
@@ -50,9 +48,6 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Indexing.Embedding.MaxTokens == 0 {
-		t.Errorf("no chunk bound: %+v", cfg.Indexing.Embedding)
-	}
 	// Both scales default to 1, so an unconfigured installation renders every
 	// length at its designed size.
 	if cfg.Appearance.InterfaceScale != 1 || cfg.Appearance.TextScale != 1 {
@@ -72,7 +67,7 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 // The appearance settings are four fields of one section; a file that sets one
 // of them leaves the others at their defaults.
 func TestOpen_PartialAppearanceKeepsDefaults(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"text_scale":1.5}}`))
+	cfg, err := openAt(write(t, `{"app":{"appearance":{"textScale":1.5}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,40 +79,31 @@ func TestOpen_PartialAppearanceKeepsDefaults(t *testing.T) {
 	}
 }
 
-// A number outside the setting's range makes reading the settings fail; no
-// scale is applied that the file does not contain.
-func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
-	for _, body := range []string{
-		`{"appearance":{"interface_scale":2.5}}`,
-		`{"appearance":{"interface_scale":0.5}}`,
-		`{"appearance":{"interface_scale":0}}`,
-		`{"appearance":{"text_scale":1.9}}`,
-		`{"appearance":{"text_scale":0}}`,
+// A number outside the setting's range is not applied, and the file is still read.
+func TestASizeOutsideWhatItGoesToIsReadAndNotApplied(t *testing.T) {
+	for body, key := range map[string]string{
+		`{"app":{"appearance":{"interfaceScale":2.5}}}`: "interfaceScale",
+		`{"app":{"appearance":{"interfaceScale":0.5}}}`: "interfaceScale",
+		`{"app":{"appearance":{"interfaceScale":0}}}`:   "interfaceScale",
+		`{"app":{"appearance":{"textScale":1.9}}}`:      "textScale",
+		`{"app":{"appearance":{"textScale":0}}}`:        "textScale",
 	} {
-		if _, err := openAt(write(t, body)); err == nil {
-			t.Errorf("%s was read", body)
+		cfg, err := openAt(write(t, body))
+		if err != nil {
+			t.Errorf("%s was refused: %v", body, err)
+			continue
 		}
-	}
-
-	_, err := openAt(write(t, `{"appearance":{"text_scale":3}}`))
-	var outside *settings.OutsideBounds
-	if !errors.As(err, &outside) {
-		t.Fatalf("failed with %v", err)
-	}
-	if outside.At != "appearance.text_scale" || outside.Number != 3 {
-		t.Errorf("failed %+v", outside)
-	}
-	if outside.Min != settings.GetTextScaleBounds().Min || outside.Max != settings.GetTextScaleBounds().Max {
-		t.Errorf("said the setting goes from %v to %v", outside.Min, outside.Max)
-	}
-	// The error message states the value and the allowed range.
-	if response := outside.Error(); !strings.Contains(response, "appearance.text_scale is 3") {
-		t.Errorf("says %q", response)
+		if got, _ := cfg.GetValue("app", "appearance", key); got != 1.0 {
+			t.Errorf("%s: %s in force is %v, want the default", body, key, got)
+		}
+		if !hasNotice(cfg.Notices, "appearance."+key) {
+			t.Errorf("%s: the notices are %q", body, cfg.Notices)
+		}
 	}
 }
 
 func TestASizeAtEitherEndIsTaken(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"interface_scale":0.8,"text_scale":1.75}}`))
+	cfg, err := openAt(write(t, `{"app":{"appearance":{"interfaceScale":0.8,"textScale":1.75}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,166 +112,11 @@ func TestASizeAtEitherEndIsTaken(t *testing.T) {
 	}
 }
 
-// A window drawn at 1.5 goes on being drawn at 1.5. The two names are one
-// setting, and the field is given the name this build reads.
-func TestAFileNamingTheZoomIsGivenTheNameThatReplacedIt(t *testing.T) {
-	path := write(t, `{"appearance":{"zoom":1.5}}`)
-	cfg, err := openAt(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Appearance.InterfaceScale != 1.5 {
-		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
-	}
-	// The text is untouched by it: the window is larger and a note is set as it
-	// was.
-	if cfg.Appearance.TextScale != 1 {
-		t.Errorf("text is set at %v", cfg.Appearance.TextScale)
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := `{"appearance":{"interface_scale":1.5}}`; string(raw) != want {
-		t.Errorf("the file is now %s, and not %s", raw, want)
-	}
-	// No notice is produced: the scale is unchanged, and the file contains what
-	// this build reads.
-	if len(cfg.Notices) != 0 {
-		t.Errorf("the person is told %q", cfg.Notices)
-	}
-}
-
-// Renaming changes one word of the file and preserves everything else, including
-// blank lines and a number written in two places.
-func TestTheRenamingPreservesEveryOtherByteOfTheFileWhereItWas(t *testing.T) {
-	path := write(t, arranged)
-	if _, err := openAt(path); err != nil {
-		t.Fatal(err)
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := strings.Replace(arranged, `"zoom": 1.5`, `"interface_scale": 1.5`, 1)
-	if string(raw) != want {
-		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
-	}
-}
-
-// The renaming happens once. Every launch after it reads a file naming the
-// setting, so there is nothing to carry and nothing to say, ever again.
-func TestASecondLaunchRenamesNothingAndReturnsNothing(t *testing.T) {
-	path := write(t, arranged)
-	if _, err := openAt(path); err != nil {
-		t.Fatal(err)
-	}
-	renamed, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(renamed), `"zoom"`) {
-		t.Fatalf("the first launch left the file as:\n%s", renamed)
-	}
-
-	for launch := range 3 {
-		cfg, err := openAt(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if cfg.Appearance.InterfaceScale != 1.5 {
-			t.Errorf("launch %d is drawn at %v", launch, cfg.Appearance.InterfaceScale)
-		}
-		if len(cfg.Notices) != 0 {
-			t.Errorf("launch %d tells the person %q", launch, cfg.Notices)
-		}
-		raw, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(raw) != string(renamed) {
-			t.Errorf("launch %d left the file as:\n%s", launch, raw)
-		}
-	}
-}
-
-// A file naming both is drawn at the one this build reads, and keeps both
-// names: one section holds one of a name.
-func TestAFileNamingBothIsGeneratedAtTheOneThisBuildReads(t *testing.T) {
-	const both = `{"appearance":{"zoom":1.5,"interface_scale":1.25}}`
-	path := write(t, both)
-	cfg, err := openAt(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Appearance.InterfaceScale != 1.25 {
-		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(raw) != both {
-		t.Errorf("the file is now %s", raw)
-	}
-	if len(cfg.Notices) != 0 {
-		t.Errorf("the person is told %q", cfg.Notices)
-	}
-}
-
-// A file nothing may be written over is a window that opens, drawn at the
-// size the file names under the name it names it by.
-func TestAFileThatCannotBeSavedIsReadAndGeneratedAtTheSizeItNames(t *testing.T) {
-	folder := t.TempDir()
-	path := filepath.Join(folder, "numen.json")
-	if err := os.WriteFile(path, []byte(arranged), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	testsupport.MakeUnwritable(t, path)
-
-	for launch := range 2 {
-		cfg, err := openAt(path)
-		if err != nil {
-			t.Fatalf("launch %d: %v", launch, err)
-		}
-		if cfg.Appearance.InterfaceScale != 1.5 {
-			t.Errorf("launch %d is drawn at %v", launch, cfg.Appearance.InterfaceScale)
-		}
-		if len(cfg.Notices) != 0 {
-			t.Errorf("launch %d tells the person %q", launch, cfg.Notices)
-		}
-	}
-
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(raw) != arranged {
-		t.Errorf("the file is now:\n%s", raw)
-	}
-}
-
-// Zero named no size, and every file this application has ever written for
-// itself holds one.
-func TestAZoomNamingNoSizeCarriesNothingAndReturnsNothing(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"zoom":0}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Appearance.InterfaceScale != 1 {
-		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
-	}
-	if len(cfg.Notices) != 0 {
-		t.Errorf("the person is told %q", cfg.Notices)
-	}
-}
-
 // A session that scaled its own text goes on being drawn by it, whether the
 // file is empty about size or names the size of the text alone.
 func TestAFileNamingNoSizeIsGeneratedAtWhatTheDesktopAsksFor(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
-	for _, body := range []string{`{}`, `{"appearance":{"zoom":0}}`, `{"appearance":{"text_scale":1.25}}`} {
+	for _, body := range []string{`{}`, `{"app":{"appearance":{"textScale":1.25}}}`} {
 		cfg, err := openAt(write(t, body))
 		if err != nil {
 			t.Fatal(err)
@@ -296,12 +127,11 @@ func TestAFileNamingNoSizeIsGeneratedAtWhatTheDesktopAsksFor(t *testing.T) {
 	}
 }
 
-// A file naming a size is drawn at it, under either name.
+// A file naming a size is drawn at it.
 func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
 	for body, scale := range map[string]float64{
-		`{"appearance":{"interface_scale":1.25}}`: 1.25,
-		`{"appearance":{"zoom":1.25}}`:            1.25,
+		`{"app":{"appearance":{"interfaceScale":1.25}}}`: 1.25,
 	} {
 		cfg, err := openAt(write(t, body))
 		if err != nil {
@@ -325,91 +155,8 @@ func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 	}
 }
 
-// A number outside the setting's range is not carried over, and a file written by
-// an older build opens. The field keeps its name, so the next launch does not
-// fail on a number the user never wrote under that name.
-func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
-	const target = `{"appearance":{"zoom":3}}`
-	path := write(t, target)
-	cfg, err := openAt(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Appearance.InterfaceScale != 1 {
-		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(raw) != target {
-		t.Errorf("the file is now %s", raw)
-	}
-
-	// something about: the field, the setting it would be read as, and how far
-	// that setting goes.
-	if len(cfg.Notices) != 1 {
-		t.Fatalf("the person is told %q", cfg.Notices)
-	}
-	for _, about := range []string{"appearance.zoom", "interface_scale", "0.8", "2"} {
-		if !strings.Contains(cfg.Notices[0], about) {
-			t.Errorf("%q says nothing about %s", cfg.Notices[0], about)
-		}
-	}
-}
-
-// The message is displayed on one line of a band with about sixty characters;
-// overflow is truncated at the end. The end carries the corrective action, so
-// the message length does not depend on the number: every rejected value yields
-// the same text.
-func TestOpen_OutOfRangeErrorMessageLength(t *testing.T) {
-	// Numbers a file can hold and this setting rejects, in human-written and
-	// machine-written formats.
-	for _, zoom := range []string{
-		"3",
-		"2.0001",
-		"3.141592653589793",
-		"0.7999999999999999",
-		"123456789.12",
-		"1e308",
-		"1e-300",
-		"0.0000000000000000000000001",
-		"12345678901234567890123456789",
-	} {
-		cfg, err := openAt(write(t, `{"appearance":{"zoom":`+zoom+`}}`))
-		if err != nil {
-			t.Fatalf("%s: %v", zoom, err)
-		}
-		if len(cfg.Notices) != 1 {
-			t.Fatalf("%s: the person is told %q", zoom, cfg.Notices)
-		}
-		if response := cfg.Notices[0]; len(response) > 62 {
-			t.Errorf("%s: %d characters, cut at 62: %q", zoom, len(response), response)
-		}
-	}
-}
-
-// What the file holds is what is written back, and the two names are not both
-// written.
-func TestWhatIsSavedBackNamesTheSettingThisBuildReads(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"zoom":1.5}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	raw, err := json.Marshal(cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(raw), `"zoom"`) || !strings.Contains(string(raw), `"interface_scale":1.5`) {
-		t.Errorf("written back as %s", raw)
-	}
-	if strings.Contains(string(raw), "appearance.zoom") {
-		t.Errorf("written back as %s", raw)
-	}
-}
-
 func TestAWindowAppliesTheThemeTheFileNames(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"mode":"dark","theme":"mine:dracula"}}`))
+	cfg, err := openAt(write(t, `{"app":{"appearance":{"mode":"dark","theme":"mine:dracula"}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -435,9 +182,8 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Read back, the file contains the settings of the run that wrote it.
-	if back.Indexing.Embedding != cfg.Indexing.Embedding {
-		t.Errorf("the embedding section is %+v, was %+v",
-			back.Indexing.Embedding, cfg.Indexing.Embedding)
+	if back.Appearance != cfg.Appearance {
+		t.Errorf("the appearance section is %+v, was %+v", back.Appearance, cfg.Appearance)
 	}
 	// An unset key is not a field of the file.
 	if strings.Contains(string(raw), `"key"`) {
@@ -446,39 +192,17 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 }
 
 func TestOneSettingIsAValidFile(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"interface_scale":1.5}}`))
+	cfg, err := openAt(write(t, `{"app":{"appearance":{"interfaceScale":1.5}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cfg.Appearance.InterfaceScale != 1.5 {
 		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
 	}
-	// A file that sets the appearance leaves the index unchanged. Both are sections
+	// A file that sets the appearance leaves the performance section unchanged. Both are sections
 	// of one file, and a section absent from the file keeps its defaults.
-	if cfg.Indexing.Embedding != container.DefaultEmbedding() {
-		t.Errorf("the embedding section is %+v", cfg.Indexing.Embedding)
-	}
-}
-
-// A section the file leaves empty keeps its defaults.
-func TestAFileNamingAnEmptySectionKeepsTheDefaultsForTheRest(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := cfg.Indexing.Embedding; got != container.DefaultEmbedding() {
-		t.Errorf("the embedding section is %+v", got)
-	}
-}
-
-// A file naming the cut of a chunk replaces the default.
-func TestAFileNamingTheTokenLimitReplacesTheDefault(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"max_tokens":128}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := cfg.Indexing.Embedding.MaxTokens; got != 128 {
-		t.Errorf("a chunk is cut at %d tokens", got)
+	if cfg.Performance != container.DefaultSettings().Performance {
+		t.Errorf("the performance section is %+v", cfg.Performance)
 	}
 }
 
@@ -531,7 +255,7 @@ func TestWritingTheSettingsBackDoesNotCarryTheKey(t *testing.T) {
 }
 
 func TestBrokenJSONIsAnError(t *testing.T) {
-	if _, err := openAt(write(t, `{"appearance":`)); err == nil {
+	if _, err := openAt(write(t, `{"app":{"appearance":`)); err == nil {
 		t.Error("want an error")
 	}
 }
@@ -551,60 +275,27 @@ func TestThereIsOneFileAndItIsNamedForWhatItIs(t *testing.T) {
 // A section is kept whether it is the one in use or not, so trying another agent
 // for an afternoon does not cost the settings of the one before.
 func TestASectionSurvivesNotBeingTheOneInUse(t *testing.T) {
-	cfg, err := openAt(write(t, `{"agent":{"use":"","claude":{"model":"opus","max_steps":12}}}`))
+	cfg, err := openAt(write(t, `{"app":{"agent":{"use":"","claude":{"model":"opus"}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cfg.Agent.IsNamed() || cfg.Agent.GetUse() != "" {
 		t.Errorf("uses %q", cfg.Agent.GetUse())
 	}
-	if got := cfg.Agent.GetProgram("claude"); got.Model != "opus" || got.MaxSteps != 12 {
+	if got := cfg.Agent.GetProgram("claude"); got.Model != "opus" {
 		t.Errorf("got %+v", got)
-	}
-}
-
-// The number in the file is the number of steps. Nothing writes a nought there
-// and calls it a ceiling.
-func TestAnUntouchedInstallationCarriesAStepCount(t *testing.T) {
-	cfg, err := openAt(filepath.Join(t.TempDir(), "numen.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !cfg.Agent.IsNamed() || cfg.Agent.GetUse() != "" {
-		t.Errorf("the choice of program is left to the default, and the settings name %q", cfg.Agent.GetUse())
-	}
-	if got := cfg.Agent.GetProgram("claude"); got.MaxSteps <= 0 {
-		t.Errorf("max steps is %d", got.MaxSteps)
-	}
-	if cfg.Agent.GetProgram("claude").Options["reads_hooks_and_skills"] == "true" {
-		t.Error("reads what this machine holds for it")
 	}
 }
 
 // An installation the folders looked in do not cover names the command line
 // itself, and it is started as written.
 func TestTheCommandLineCanBeNamed(t *testing.T) {
-	cfg, err := openAt(write(t, `{"agent":{"claude":{"command":["/opt/claude/bin/claude"]}}}`))
+	cfg, err := openAt(write(t, `{"app":{"agent":{"claude":{"command":["/opt/claude/bin/claude"]}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got := cfg.Agent.GetProgram("claude").Command; len(got) != 1 || got[0] != "/opt/claude/bin/claude" {
 		t.Errorf("got %q", got)
-	}
-}
-
-// One field named leaves the rest of its section alone.
-func TestOneAgentFieldKeepsTheRest(t *testing.T) {
-	cfg, err := openAt(write(t, `{"agent":{"claude":{"reads_hooks_and_skills":true}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := cfg.Agent.GetProgram("claude")
-	if got.Options["reads_hooks_and_skills"] != "true" {
-		t.Error("what the file said was not read")
-	}
-	if got.MaxSteps != settings.DefaultAgentSteps {
-		t.Errorf("max steps is %d", got.MaxSteps)
 	}
 }
 
@@ -618,18 +309,18 @@ func TestATitleAndAFilenameAreOneNameUntilTheFileReturnsOtherwise(t *testing.T) 
 		wasWritten bool
 	}{
 		"a file nobody wrote":     {shouldSync: true},
-		"a file naming no naming": {file: `{"appearance":{"text_scale":1.5}}`, shouldSync: true, wasWritten: true},
+		"a file naming no naming": {file: `{"app":{"appearance":{"textScale":1.5}}}`, shouldSync: true, wasWritten: true},
 		"a section naming no field": {
-			file: `{"naming":{}}`, shouldSync: true, wasWritten: true,
+			file: `{"app":{"naming":{}}}`, shouldSync: true, wasWritten: true,
 		},
 		"a field naming one name": {
-			file: `{"naming":{"sync_title_and_filename":true}}`, shouldSync: true, wasWritten: true,
+			file: `{"app":{"naming":{"syncTitleAndFilename":true}}}`, shouldSync: true, wasWritten: true,
 		},
 		"a field naming nothing": {
-			file: `{"naming":{"sync_title_and_filename":null}}`, shouldSync: true, wasWritten: true,
+			file: `{"app":{"naming":{"syncTitleAndFilename":null}}}`, shouldSync: true, wasWritten: true,
 		},
 		"a field telling the two apart": {
-			file: `{"naming":{"sync_title_and_filename":false}}`, shouldSync: false, wasWritten: true,
+			file: `{"app":{"naming":{"syncTitleAndFilename":false}}}`, shouldSync: false, wasWritten: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -659,7 +350,7 @@ func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(raw), `"sync_title_and_filename": true`) {
+	if !strings.Contains(string(raw), `"syncTitleAndFilename": true`) {
 		t.Errorf("the naming is not in the file it wrote:\n%s", raw)
 	}
 }

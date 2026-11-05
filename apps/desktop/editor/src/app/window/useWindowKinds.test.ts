@@ -38,11 +38,7 @@ interface Graph {
 /** A tab kind that accepts text. */
 const CHAT = { kind: 'chat', isTool: true, receiveText: vi.fn() }
 
-const create = ({
-  graph,
-  hasChat = true,
-  showsNotes = true,
-}: { graph?: Graph; hasChat?: boolean; showsNotes?: boolean } = {}) => {
+const create = ({ graph, hasChat = true }: { graph?: Graph; hasChat?: boolean } = {}) => {
   const writer = vi.fn()
   const graphKind = {
     kind: 'graph',
@@ -71,7 +67,6 @@ const create = ({
       tabs: ref(graph ? [{ id: 'graph:1' }, { id: 'chat:1' }] : [{ id: 'chat:1' }]),
       getTab: vi.fn((id: string) => open.get(id)),
     },
-    showNote: vi.fn(() => Promise.resolve(showsNotes)),
     getNoteCommands: () => [],
     editing: { making: {}, fileFlush: { addHandler: vi.fn(), raise: vi.fn() } },
     settings: { kinds: ['settings'] },
@@ -170,19 +165,10 @@ describe('the note the window relies on', () => {
 })
 
 describe('a note travelled to', () => {
-  it('is put in front by the command a plugin declares for it', async () => {
+  it('is opened in its editor', async () => {
     const { deps, window } = create()
 
     await window.travel('a.md')
-
-    expect(deps.showNote).toHaveBeenCalledWith('a.md')
-    expect(deps.tabOpeners.openFile).not.toHaveBeenCalled()
-  })
-
-  it('is opened in its editor where no plugin declares one', async () => {
-    const { deps, window } = create({ showsNotes: false })
-
-    await window.destinations.travel('a.md')
 
     expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', '', 'current')
   })
@@ -215,37 +201,11 @@ describe('a note travelled to', () => {
 })
 
 describe('the destinations', () => {
-  it('open the file at the selector of a search hit', () => {
+  it('give the icon of the reader that opens a file', () => {
     const { deps, window } = create()
-
-    window.destinations.openFile('a.bin', 'a', undefined, { page: 3 })
-
-    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.bin', 'a', {
-      where: 'current',
-      line: undefined,
-      selector: { page: 3 },
-    })
-  })
-
-  it('open the file in the tab in front, at the line', async () => {
-    const { deps, window, writer } = create()
-
-    window.destinations.openFile('a.md', 'A', 7)
-
-    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', 'A', {
-      where: 'current',
-      line: 7,
-      selector: undefined,
-    })
 
     expect(window.destinations.findFileIcon?.('doc.pdf')).toBe('pdf-icon')
     expect(deps.tabOpeners.findFileIcon).toHaveBeenCalledWith('doc.pdf')
-
-    vi.mocked(deps.tabOpeners.openFile).mockRejectedValueOnce(new Error('open failed'))
-    window.destinations.openFile('bad.md', 'Bad')
-    await vi.waitFor(() =>
-      expect(writer).toHaveBeenCalledWith('Numen is not responding; retrying', 'error'),
-    )
   })
 })
 

@@ -22,7 +22,7 @@ import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
 import { createCommands } from '../../lib/commands/commands'
 import { getPaletteView } from '../view/view'
-import { createInvocation } from '../../lib/offers/invocation'
+import { createInvocation } from '../../lib/entries/invocation'
 import type {
   Command,
   CommandsDeps,
@@ -136,15 +136,22 @@ interface PaletteCommandsDeps {
 }
 
 function createPaletteCommands(deps: PaletteCommandsDeps) {
-  const startCommand = (id: string, target: CommandTarget): CommandInvocation | null => {
+  /** Starts a command; the text typed for it, where given, answers a step that asks for a name. */
+  const startCommand = (
+    id: string,
+    target: CommandTarget,
+    input?: string,
+  ): CommandInvocation | null => {
     const command = deps.byId.get(id)
     if (!command || !command.isAvailable(target, deps.runs)) return null
-    if (!command.needs) return deps.invocation(command.id, target)
+    if (!command.input) return deps.invocation(command.id, target)
+    const name = input?.trim() ?? ''
+    if (command.input === 'name' && name !== '') return deps.invocation(command.id, target, name)
     if (!deps.open.value) {
       deps.steps.reset()
       deps.open.value = true
     }
-    deps.steps.pushStep({ step: command.needs, command, on: target })
+    deps.steps.pushStep({ step: command.input, command, on: target })
     return null
   }
 
@@ -239,7 +246,7 @@ function createPaletteStepsAndSearch(
   const previewItem = (item: string) => {
     // Stryker disable next-line OptionalChaining: stepsRef.current is initialized synchronously below.
     const step = stepsRef.current?.here.value
-    if (step?.step === 'choosing') deps.lists.previewItem(step.command.id, item)
+    if (step?.step === 'choice') deps.lists.previewItem(step.command.id, item)
   }
 
   const setOpen = (now: boolean) => {
@@ -281,7 +288,7 @@ function createPaletteStepsAndSearch(
   const setTyped = async (text: string) => {
     state.typed.value = text
     // Stryker disable next-line MethodExpression: debounced.ask trims the query.
-    if (steps.here.value?.step === 'picking') await searchNames(text.trim())
+    if (steps.here.value?.step === 'note') await searchNames(text.trim())
   }
 
   return { steps, previewItem, setOpen, setTyped }

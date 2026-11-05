@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -113,34 +112,17 @@ func reportSyncError(err error) {
 func (s *Server) createHTTPHandler(mcpServer *sdk.Server) http.Handler {
 	mux := http.NewServeMux()
 
-	sseHandler := sdk.NewSSEHandler(
-		func(*http.Request) *sdk.Server { return mcpServer },
-		&sdk.SSEOptions{
-			DisableLocalhostProtection: true,
-			// gomutants:disable-next-line INTEGER_DECREMENT reason="zero and negative MaxRequestBodyBytes both select the SDK default limit"
-			MaxRequestBodyBytes: 0,
-		},
-	)
-
 	streamHandler := sdk.NewStreamableHTTPHandler(
 		func(*http.Request) *sdk.Server { return mcpServer },
 		newStreamableOptions(),
 	)
 
-	mux.Handle("/sse", sseHandler)
-	mux.Handle("/sse/", sseHandler)
-	mux.Handle("/messages", sseHandler)
-	mux.Handle("/messages/", sseHandler)
 	mux.Handle("/mcp", streamHandler)
 	mux.Handle("/mcp/", streamHandler)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" && r.URL.Path != "" {
 			http.NotFound(w, r)
-			return
-		}
-		if strings.Contains(r.Header.Get("Accept"), "text/event-stream") || r.URL.Query().Get("sessionid") != "" {
-			sseHandler.ServeHTTP(w, r)
 			return
 		}
 		streamHandler.ServeHTTP(w, r)
@@ -268,17 +250,7 @@ func (s *Server) Handler() http.Handler {
 
 // GetURL returns the base server URL.
 func (s *Server) GetURL() string {
-	return s.GetSSEURL()
-}
-
-// GetSSEURL returns the SSE endpoint URL.
-func (s *Server) GetSSEURL() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.actualAddr == "" {
-		return ""
-	}
-	return (&url.URL{Scheme: "http", Host: s.actualAddr, Path: "/sse"}).String()
+	return s.GetHTTPURL()
 }
 
 // GetHTTPURL returns the streamable HTTP endpoint URL.

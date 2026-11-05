@@ -85,7 +85,7 @@ None of them checks whether a correction is right.
 - **A reply containing one of the application's marks refuses the batch.** No recogniser and no transcriber produces `⟦` or `⟧`, and either of them anywhere in a reply refuses the whole batch.
 - **A line number the batch did not name refuses the batch.**
 - **A line given in two rows refuses the batch.** A line is in one row, so the words of a line are in that row and in no other.
-- **Letters changed by more than `max_edit_distance` drop that one correction.** Spaces, punctuation, symbols, diacritics and case are removed from both sides, and the Levenshtein distance between what is left is taken as a share of the longer. The default is 0.30 where the settings file sets no value.
+- **Letters changed by more than `maxEditDistance` drop that one correction.** Spaces, punctuation, symbols, diacritics and case are removed from both sides, and the Levenshtein distance between what is left is taken as a share of the longer. The default is 0.30 where the settings file sets no value.
 
 Two more corrections are dropped without rejecting the batch: one saying what the line already says, and one that only adds non-word characters before what the line already says.
 
@@ -109,7 +109,7 @@ The proofreading plugin, `md.numen.tools.proofreading`, does all of it, and the 
 
 The plugin reads the live version through the host, numbers its parts from one, builds the batches, contains the two instructions, applies the gates to each reply, and merges the replies of overlapping batches. The corrected lines replace the parts they correct: a correction keeps its part's page and rectangles or its times, and a run of cues answered as one becomes one part spanning their times. The plugin keeps the corrected text in its folder of the vault's store, `.numen/md.numen.tools.proofreading/proofread-<hash>.json`, one file a version read, rewritten when that version is proofread again, and reports it to the host as a version whose input is the version it read.
 
-The plugin selects no model: it requests a completion from the host, and the host uses `ai.default` in [Settings](settings.md). An agent that is not installed or cannot be reached fails the proofreading, and no version is made. Before the person allows AI access, the proofreading fails the same way, with "AI access not allowed — allow it in Settings → AI". The plugin adds no text of its own and stores no key.
+The plugin has two ways to reach a model, chosen by its setting `provider`. With `agent`, the default, it requests a completion from the host through the host service `ai:complete`, and the host uses `app.ai.default` in [Settings](settings.md); an agent that is not installed or cannot be reached fails the proofreading, and no version is made. With `openrouter`, `openai` or `custom`, it calls an OpenAI-compatible chat service directly, with the `model` and, for `custom`, the `baseUrl` set on the plugin's page, and the `apiKey` secret kept in the system keychain. The plugin adds no text of its own.
 
 A proofreading waits in the core's shared queue and shows its progress as a task, in lines. A failure stays shown as the task's error until the file is proofread again.
 
@@ -121,9 +121,9 @@ The version shown, searched and passed to the next processor is the newest live 
 
 ## Settings
 
-The sizes at which a text is split into requests are settings of the plugin: `batch_size`, `overlap`, `in_flight` and `max_edit_distance`, in [Settings](settings.md).
+The sizes at which a text is split into requests are settings of the plugin: `batchSize`, `overlap`, `inFlight` and `maxEditDistance`, in [Settings](settings.md).
 
-A line that two batches of a transcript both replied to is taken from the batch in which it is further from the end. A transcript is asked about a window of `in_flight` batches at a time; a correction is kept from the window it begins in when it begins before the next window's first line, and the next window starts after the last line such a correction covers.
+A line that two batches of a transcript both replied to is taken from the batch in which it is further from the end. A transcript is asked about a window of `inFlight` batches at a time; a correction is kept from the window it begins in when it begins before the next window's first line, and the next window starts after the last line such a correction covers.
 
 ## From the command line
 
@@ -131,4 +131,4 @@ A line that two batches of a transcript both replied to is taken from the batch 
 
 ## Without a model
 
-With `NUMEN_MOCK_ML=true`, as `-debug-mock-ml` and the end-to-end tests set it, the plugin calls no model. The mock proofreader replies to every numbered line with `[proofread]` after its words, and the gates treat that reply as any other: a short line of a recognition, where the mark changes the letters by more than `max_edit_distance`, stays as it was read.
+With `NUMEN_MOCK_ML=true`, as `-debug-mock-ml` and the end-to-end tests set it, the plugin calls no model. The mock proofreader replies to every numbered line with `[proofread]` after its words, and the gates treat that reply as any other: a short line of a recognition, where the mark changes the letters by more than `maxEditDistance`, stays as it was read.

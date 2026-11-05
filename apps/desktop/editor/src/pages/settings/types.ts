@@ -7,27 +7,10 @@
  */
 import type { Ref } from 'vue'
 import type { CatalogEntry } from '@numen/core-client'
-import type { Model, PluginInfo, SettingEdit } from '@/entities/settings'
-import type { Mode, Ranges, Sizes, Theme } from '@/entities/settings'
+import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
-  /** Every theme there is, and the one the settings name. */
-  readonly themes: Readonly<Ref<readonly Theme[]>>
-  readonly applied: Readonly<Ref<string>>
-  readonly mode: Readonly<Ref<Mode>>
-  /** Whether the active theme declares light and dark itself. */
-  readonly isPinned: Readonly<Ref<boolean>>
-  readonly sizes: Readonly<Ref<Sizes>>
-  readonly bounds: Readonly<Ref<Ranges>>
-  /**
-   * Selects a value for one of the four appearance settings, by the identity the palette
-   * offers it under. The theme, the light/dark half of the pair and the two sizes are each
-   * named differently, so none of the four is typed manually.
-   */
-  choose(item: string): void
-  /** Whether a note's title and the name of its file are kept as one name. */
-  readonly isSyncing: Ref<boolean>
   /**
    * names one can be set to, and settings written where they stand.
    */
@@ -36,6 +19,11 @@ export interface Installation {
   getConfirmedSetting?(at: readonly string[]): unknown
   /** Whether the write of a setting is in flight. */
   isPending?(at: readonly string[]): boolean
+  /**
+   * Whether the value requested at a path is not yet in the declaration the window holds: from the
+   * request until the read that carries it is taken.
+   */
+  isRequested?(at: readonly string[]): boolean
   getModels(at: readonly string[]): readonly Model[]
   write(content: readonly SettingEdit[]): void
   /**
@@ -68,6 +56,11 @@ export interface Installation {
    */
   getSettingsViews?(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
+  /**
+   * The settings of the owner `app`, as the core declares them with the options, the visibility and
+   * the value in force it resolved. The settings page draws them with the renderer of the plugins.
+   */
+  readonly app?: Readonly<Ref<readonly PluginSettingInfo[]>>
   /** The plugins the catalog lists, the ones that are not installed among them. */
   readonly catalog?: Readonly<Ref<readonly CatalogEntry[]>>
   /** The file the settings stand in, absolute on this machine. */

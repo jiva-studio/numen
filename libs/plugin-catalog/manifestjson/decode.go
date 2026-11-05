@@ -70,6 +70,9 @@ func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 	if err := decoder.Decode(&value); err != nil {
 		return nil, nil, err
 	}
+	if err := checkMenuOrders(value); err != nil {
+		return nil, nil, err
+	}
 	unknown = pruneUnknown(value, (&v1.Manifest{}).ProtoReflect().Descriptor(), "", nil)
 	var rest json.RawMessage
 	if err := decoder.Decode(&rest); !errors.Is(err, io.EOF) {
@@ -78,6 +81,52 @@ func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 	canonical, err = json.Marshal(value)
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="value decoded from JSON always marshals back to JSON"
 	return canonical, unknown, err
+}
+
+var errMenuOrderShape = errors.New("the order of a menu entry must be a number, not a string")
+
+// checkMenuOrders rejects an order written as a string, which the wire reader would read as a number.
+func checkMenuOrders(root any) error {
+	object, isObject := root.(map[string]any)
+	if !isObject {
+		return nil
+	}
+	contributes, isObject := object["contributes"].(map[string]any)
+	if !isObject {
+		return nil
+	}
+	entries, isList := contributes["menus"].([]any)
+	if !isList {
+		return nil
+	}
+	for _, entry := range entries {
+		fields, isObject := entry.(map[string]any)
+		if !isObject {
+			continue
+		}
+		if text, isText := fields["order"].(string); isText {
+			return fmt.Errorf("%w: %q", errMenuOrderShape, text)
+		}
+	}
+	return nil
+}
+
+func newMenus(wire []*v1.ManifestMenuEntry) []manifest.Menu {
+	var out []manifest.Menu
+	for _, one := range wire {
+		var order *int
+		if one.Order != nil {
+			value := int(one.GetOrder())
+			order = &value
+		}
+		out = append(out, manifest.Menu{
+			Location: one.GetLocation(),
+			Command:  one.GetCommand(),
+			Group:    one.GetGroup(),
+			Order:    order,
+		})
+	}
+	return out
 }
 
 func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
@@ -105,7 +154,6 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Settings:         settings,
 		Secrets:          newSecrets(wire.GetSecrets()),
 		Services:         wire.GetServices(),
-		Commands:         newCommands(wire.GetCommands()),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
 		Contributes:      contributes,
 	}, nil
@@ -149,6 +197,8 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Readers:      newReaders(wire.GetReaders()),
 		NoteTypes:    noteTypes,
 		FrameOrigins: wire.GetFrameOrigins(),
+		Commands:     newCommands(wire.GetCommands()),
+		Menus:        newMenus(wire.GetMenus()),
 	}, nil
 }
 
@@ -211,11 +261,12 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Min:         one.Min,
 			Max:         one.Max,
 			Step:        one.Step,
-			Replaces:    one.GetReplaces(),
 			OptionsBy:   optionsBy,
 			When:        newCondition(one.GetWhen()),
 			Accept:      one.GetAccept(),
 			Multiple:    one.GetMultiple(),
+			Preview:     one.GetPreview(),
+			OptionsFrom: one.GetOptionsFrom(),
 		})
 	}
 	return out, nil
@@ -319,14 +370,15 @@ func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
 	var out []manifest.Command
 	for _, one := range wire {
 		out = append(out, manifest.Command{
-			ID:                one.GetId(),
-			Title:             one.GetTitle(),
-			Icon:              one.GetIcon(),
-			ContentTypes:      newContentTypes(one.GetContentTypes()),
-			NoteTypes:         one.GetNoteTypes(),
-			When:              newCommandWhen(one.GetWhen()),
-			Arguments:         newCommandArguments(one.GetArguments()),
-			IsHiddenInPalette: one.GetIsHiddenInPalette(),
+			ID:           one.GetId(),
+			Title:        one.GetTitle(),
+			Icon:         one.GetIcon(),
+			ContentTypes: newContentTypes(one.GetContentTypes()),
+			NoteTypes:    one.GetNoteTypes(),
+			When:         newCommandWhen(one.GetWhen()),
+			Arguments:    newCommandArguments(one.GetArguments()),
+			Scope:        one.GetScope(),
+			Shortcut:     one.GetShortcut(),
 		})
 	}
 	return out
@@ -344,11 +396,10 @@ func newCommandArguments(wire []*v1.ManifestCommandArgument) []manifest.CommandA
 	var out []manifest.CommandArgument
 	for _, one := range wire {
 		out = append(out, manifest.CommandArgument{
-			Name:              one.GetName(),
-			Title:             one.GetTitle(),
-			Type:              one.GetType(),
-			IsRequired:        one.GetIsRequired(),
-			IsHiddenInPalette: one.GetIsHiddenInPalette(),
+			Name:       one.GetName(),
+			Title:      one.GetTitle(),
+			Type:       one.GetType(),
+			IsRequired: one.GetIsRequired(),
 		})
 	}
 	return out

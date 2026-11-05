@@ -5,6 +5,7 @@ package command
 import (
 	"context"
 	"errors"
+	"math"
 
 	"connectrpc.com/connect"
 
@@ -32,21 +33,26 @@ func NewHandler(vaults VaultProvider, commands plugincommand.Commands) *Handler 
 	return &Handler{vaults: vaults, list: commands.List, run: commands.Run}
 }
 
-// ListCommands lists the commands of every enabled plugin that the palette offers. The palette
-// identifies a file by its extension, so a command over notes of a type is offered by its plugin's own
-// view and not listed.
+// ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them,
+// except a command with conditions: the menu of a file offers it over a version, and run without one
+// it fails.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
-	entries := h.list.Execute()
+	entries := h.list.ExecuteAll()
 	commands := make([]*v1.PluginCommand, 0, len(entries))
 	for _, one := range entries {
-		if one.Command.IsHiddenInPalette || len(one.Command.NoteTypes) > 0 || len(one.Command.When) > 0 {
+		if len(one.Command.When) > 0 {
 			continue
 		}
 		commands = append(commands, newWireCommand(one, h.list.ListExtensions(one.Command)))
 	}
-	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands}), nil
+	menuEntries := h.list.ExecuteMenus()
+	menus := make([]*v1.PluginMenu, 0, len(menuEntries))
+	for _, one := range menuEntries {
+		menus = append(menus, newWireMenu(one))
+	}
+	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands, Menus: menus}), nil
 }
 
 // RunPluginCommand runs one of them. A call that is not a command, matches none, fails, or is routed to
@@ -87,9 +93,6 @@ func getErrorCode(err error) v1.CommandErrorCode {
 func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCommand {
 	arguments := make([]*v1.CommandArgument, 0, len(entry.Command.Arguments))
 	for _, one := range entry.Command.Arguments {
-		if one.IsHiddenInPalette {
-			continue
-		}
 		arguments = append(arguments, &v1.CommandArgument{
 			Name:       one.Name,
 			Title:      one.Title,
@@ -104,6 +107,8 @@ func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCo
 		ContentTypes: getContentTypeTexts(entry.Command.ContentTypes),
 		Extensions:   extensions,
 		Arguments:    arguments,
+		Scope:        entry.Command.Scope,
+		Shortcut:     entry.Command.Shortcut,
 	}
 }
 
@@ -113,4 +118,30 @@ func getContentTypeTexts(types []domain.ContentType) []string {
 		out = append(out, string(one))
 	}
 	return out
+}
+
+// newWireMenu is a menu entry as the schema carries it.
+func newWireMenu(entry plugincommand.MenuEntry) *v1.PluginMenu {
+	wire := &v1.PluginMenu{
+		PluginId: entry.PluginID,
+		Location: entry.Menu.Location,
+		Command:  entry.Menu.Command,
+		Group:    entry.Menu.Group,
+	}
+	if entry.Menu.Order != nil {
+		order := clampToInt32(*entry.Menu.Order)
+		wire.Order = &order
+	}
+	return wire
+}
+
+// clampToInt32 narrows an order to the 32 bits the schema carries.
+func clampToInt32(value int) int32 {
+	if value > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if value < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(value)
 }

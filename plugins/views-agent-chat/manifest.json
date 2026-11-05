@@ -1,16 +1,46 @@
 {
   "id": "md.numen.views.agent.chat",
   "name": "Agent Chat",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "protocol": 1,
   "description": "Interactive chat tab for working with AI assistants",
   "capabilities": [],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": {
-    "tabKinds": [{ "kind": "agent", "title": "Agent", "icon": "bot" }],
+    "tabKinds": [
+      {
+        "kind": "agent",
+        "title": "Agent",
+        "icon": "bot"
+      }
+    ],
     "feature": "agent chat",
-    "category": "views"
+    "category": "views",
+    "commands": [
+      {
+        "id": "chat.open",
+        "title": "Open agent chat",
+        "icon": "message-square",
+        "shortcut": "mod+shift+a"
+      },
+      {
+        "id": "note.ask",
+        "title": "Ask agent about note",
+        "icon": "bot",
+        "scope": "note"
+      }
+    ],
+    "menus": [{ "location": "titleBar", "command": "chat.open", "group": "navigate", "order": 30 }]
   },
   "permissions": ["vault:read"],
+  "settings": [
+    {
+      "key": "reasoning",
+      "type": "string",
+      "title": "Reasoning",
+      "description": "The depth of reasoning a new question starts with, by the name of one of the levels the model lists. Empty uses the default of the model; a level the model does not list is ignored.",
+      "default": ""
+    }
+  ],
   "frontend": {}
 }
