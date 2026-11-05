@@ -56,8 +56,8 @@ func TestNoModelChangeIsAnnouncedWhenTheReadOfTheModelFails(t *testing.T) {
 	}
 }
 
-// The model the bridge holds stays as it was when the read fails.
-func TestAFailedReadOfTheModelLeavesTheModelAsItWas(t *testing.T) {
+// The model the bridge reports is the one it read before, when the next read fails.
+func TestTheModelIsTheSameAfterAFailedRead(t *testing.T) {
 	host, bridge, mock, _ := openConfigurable(t)
 	failureReports(bridge)
 	reads := mock.getModelCalls.Load()

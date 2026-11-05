@@ -195,7 +195,7 @@ func (b *Embedder) OnModelChange(fn func()) {
 }
 
 // OnModelReadError registers fn to receive the error of a read of the model that follows a configuration of the plugin and fails.
-func (b *Embedder) OnModelReadError(fn func(error)) {}
+func (b *Embedder) OnModelReadError(_ func(error)) {}
 
 // announceModelChange reads the model and runs the listeners when it differs from the announced one.
 func (b *Embedder) announceModelChange() {
