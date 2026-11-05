@@ -8,13 +8,15 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// BarHeight is the height of the title bar the page draws, in pixels: 2rem at the default text size.
-const BarHeight = 32
+// BarHeight is the height of the title bar the page draws, in pixels, and the same number as the
+// `height` of `.title-bar` in titleBar.css. MacTitleBarHidden has no toolbar, so the system buttons
+// sit in a standard title bar about this high, centred in it. Change both when the buttons are off.
+const BarHeight = 28
 
 // Apply returns the options with the frame of the platform goos.
 func Apply(opts application.WebviewWindowOptions, goos string) application.WebviewWindowOptions {
 	if goos == "darwin" {
-		opts.Mac.TitleBar = application.MacTitleBarHiddenInset
+		opts.Mac.TitleBar = application.MacTitleBarHidden
 		opts.Mac.InvisibleTitleBarHeight = BarHeight
 		return opts
 	}

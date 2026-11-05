@@ -2,17 +2,18 @@
   display: flex;
   align-items: stretch;
   box-sizing: border-box;
-  height: 2rem;
-  min-height: 2rem;
+  height: 28px;
+  min-height: 28px;
   background: var(--numen-titlebar);
   border-bottom: 1px solid var(--numen-rule);
   color: var(--numen-ink);
-  font-size: var(--numen-text-1);
+  font-size: 10px;
   user-select: none;
 }
 
 .title-bar__inset {
   flex: none;
+  margin-inline-end: 16px;
 }
 
 /* The actions and the title share the room between the controls. The room is measured here. */
@@ -37,7 +38,7 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: 2rem;
+  width: 32px;
   height: 100%;
   padding: 0;
   background: transparent;
@@ -63,7 +64,7 @@
 .title-bar__title {
   flex: 1 1 0;
   min-width: 0;
-  padding-inline: 0.75rem;
+  padding-inline: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -80,7 +81,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
+  width: 44px;
   height: 100%;
   padding: 0;
   background: transparent;
@@ -99,13 +100,13 @@
 }
 
 .window-controls--mac {
-  gap: 0.5rem;
-  padding-inline: 0.75rem;
+  gap: 8px;
+  padding-inline: 12px;
 }
 
 .window-controls--mac .window-controls__button {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 12px;
+  height: 12px;
   padding: 0;
   border: none;
   border-radius: 50%;
