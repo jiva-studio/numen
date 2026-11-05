@@ -23,6 +23,11 @@ runs:
       shell: bash
       run: npx playwright install ${{ inputs.browsers }}
 
+    # The system libraries follow from the Playwright release, the engines and the extra packages.
+    - uses: ./.github/actions/cache-apt
+      with:
+        key: playwright-${{ inputs.browsers }}-${{ inputs.packages }}-${{ hashFiles('package-lock.json') }}
+
     - name: Install browser system dependencies
       shell: bash
       run: |
