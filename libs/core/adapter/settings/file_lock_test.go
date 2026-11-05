@@ -95,7 +95,7 @@ func TestTwoProcessesWritingDifferentKeysInALoopKeepBothWrites(t *testing.T) {
 		group.Add(1)
 		go func() {
 			defer group.Done()
-			cmd := exec.Command(exe, "-test.run=^TestTheWriterProcessWritesKeysInALoop$")
+			cmd := exec.CommandContext(t.Context(), exe, "-test.run=^TestTheWriterProcessWritesKeysInALoop$")
 			cmd.Env = append(os.Environ(), writerPathEnv+"="+path, writerNameEnv+"="+name)
 			outputs[i], errs[i] = cmd.CombinedOutput()
 		}()
