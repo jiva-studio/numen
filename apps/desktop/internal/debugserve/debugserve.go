@@ -178,11 +178,19 @@ func generateSelfSignedCert(clock Clock) (tls.Certificate, error) {
 
 // writePEMFile writes der to path as one PEM block of blockType, readable by
 // its owner only. The file appears whole: it is written beside path and renamed
-// into place.
+// into place. A part file left from an earlier run is removed rather than
+// written over, so neither its mode nor a symlink in its place reaches path.
 func writePEMFile(path, blockType string, der []byte) error {
 	part := path + ".part"
-	data := pem.EncodeToMemory(&pem.Block{Type: blockType, Bytes: der})
-	if err := os.WriteFile(part, data, 0o600); err != nil {
+	if err := os.Remove(part); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	file, err := os.OpenFile(part, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+	_, err = file.Write(pem.EncodeToMemory(&pem.Block{Type: blockType, Bytes: der}))
+	if err := errors.Join(err, file.Close()); err != nil {
 		return err
 	}
 	return os.Rename(part, path)
