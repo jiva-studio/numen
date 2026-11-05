@@ -8,31 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-func listColumns(t *testing.T, db *DB, table string) map[string]bool {
-	t.Helper()
-	columns := map[string]bool{}
-	rows, err := db.read.QueryContext(t.Context(), `SELECT name FROM pragma_table_info(?)`, table)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := rows.Close(); err != nil {
-			t.Errorf("close rows: %v", err)
-		}
-	})
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			t.Fatal(err)
-		}
-		columns[name] = true
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatal(err)
-	}
-	return columns
-}
-
 func TestSearchFloorsKeepOneFloorPerVaultAndRecipeAndReplaceIt(t *testing.T) {
 	ctx := t.Context()
 	repo := openDB(t).SearchFloors()
