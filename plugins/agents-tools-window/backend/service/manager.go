@@ -1,19 +1,10 @@
 package service
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"path/filepath"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
-)
-
-var (
-	errMissingFocusTarget = errors.New("specify tabId, path, or title to focus")
-	errTabNotFound        = errors.New("no open tab matches criteria")
 )
 
 // timeSource gets the current time.
@@ -21,11 +12,9 @@ type timeSource interface {
 	Now() time.Time
 }
 
-// WindowManager coordinates open tabs and edit previews.
+// WindowManager keeps the edit previews.
 type WindowManager struct {
 	mu         sync.RWMutex
-	tabs       []TabInfo
-	activeID   string
 	previews   map[string]EditPreview
 	previewSeq atomic.Uint64
 	clock      timeSource
@@ -35,101 +24,9 @@ type WindowManager struct {
 func NewManager(clock timeSource) *WindowManager {
 	return &WindowManager{
 		mu:         sync.RWMutex{},
-		tabs:       nil,
-		activeID:   "",
 		previews:   make(map[string]EditPreview),
 		previewSeq: atomic.Uint64{},
 		clock:      clock,
-	}
-}
-
-// SetOpenTabs sets the currently open tabs.
-func (m *WindowManager) SetOpenTabs(tabs []TabInfo, activeID string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	m.tabs = make([]TabInfo, len(tabs))
-	copy(m.tabs, tabs)
-	m.activeID = activeID
-
-	for i := range m.tabs {
-		m.tabs[i].IsActive = (m.tabs[i].ID != "" && m.tabs[i].ID == activeID)
-	}
-}
-
-// GetOpenTabs returns the currently open tabs and the front tab ID.
-func (m *WindowManager) GetOpenTabs() ([]TabInfo, string) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	copied := make([]TabInfo, len(m.tabs))
-	copy(copied, m.tabs)
-	return copied, m.activeID
-}
-
-// FocusTab focuses or switches to a tab matching the input.
-func (m *WindowManager) FocusTab(_ context.Context, in WindowFocusTabInput) (TabInfo, error) {
-	if in.TabID == "" && in.Path == "" && in.Title == "" {
-		return TabInfo{}, errMissingFocusTarget
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if idx := findMatchingTabIndex(m.tabs, in); idx >= 0 {
-		return m.activateTab(idx), nil
-	}
-
-	if in.Path != "" {
-		newTab := createTabFromPath(in.Path, in.TabID, in.Title, len(m.tabs)+1)
-		for j := range m.tabs {
-			m.tabs[j].IsActive = false
-		}
-		m.tabs = append(m.tabs, newTab)
-		m.activeID = newTab.ID
-		return newTab, nil
-	}
-
-	return TabInfo{}, errTabNotFound
-}
-
-func (m *WindowManager) activateTab(idx int) TabInfo {
-	m.activeID = m.tabs[idx].ID
-	for j := range m.tabs {
-		m.tabs[j].IsActive = (j == idx)
-	}
-	return m.tabs[idx]
-}
-
-func findMatchingTabIndex(tabs []TabInfo, in WindowFocusTabInput) int {
-	for i, tab := range tabs {
-		if in.TabID != "" && tab.ID == in.TabID {
-			return i
-		}
-		if in.Path != "" && tab.Path == in.Path {
-			return i
-		}
-		if in.Title != "" && tab.Title == in.Title {
-			return i
-		}
-	}
-	return -1
-}
-
-func createTabFromPath(path, tabID, title string, nextIndex int) TabInfo {
-	if tabID == "" {
-		tabID = fmt.Sprintf("tab-%d", nextIndex)
-	}
-	if title == "" {
-		title = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-	}
-	return TabInfo{
-		ID:       tabID,
-		Kind:     "",
-		Path:     path,
-		Title:    title,
-		Where:    "",
-		IsActive: true,
 	}
 }
 

@@ -88,6 +88,16 @@ watch(
   { immediate: true },
 )
 
+// The window sets a new array each time it asks for ranges, so the same ranges are lit again.
+watch(
+  () => readerTab.value?.ranges,
+  (ranges) => {
+    if (!activeState.value || !ranges || ranges.length === 0) return
+    activeState.value.focusSpans(...ranges).catch(activeState.value.reportFailure)
+  },
+  { immediate: true },
+)
+
 watch(
   () => activeState.value?.pageNumber.value,
   (page) => {

@@ -27,3 +27,9 @@ type PluginWindow interface {
 	// ReadOpenTabs is the tabs the window last reported, and the active one.
 	ReadOpenTabs(ctx context.Context) (domain.OpenTabs, error)
 }
+
+// PluginWindowHost receives the window that plugins move.
+type PluginWindowHost interface {
+	// SetPluginWindow is the main window the plugins move. Nil is none.
+	SetPluginWindow(window PluginWindow)
+}

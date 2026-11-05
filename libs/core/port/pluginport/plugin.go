@@ -222,6 +222,7 @@ type pluginContentTypes interface {
 type pluginHostServices interface {
 	PluginTextHost
 	PluginSearchHost
+	PluginWindowHost
 }
 
 // PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.

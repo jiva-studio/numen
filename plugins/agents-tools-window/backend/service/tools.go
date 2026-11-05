@@ -21,11 +21,12 @@ type Host struct {
 
 // RegisterTools registers all window interaction and edit preview tools on the given registry.
 func RegisterTools(registry *tools.Registry, manager *WindowManager, on Host) error {
-	vault := on.Vault
 	for _, add := range []func(*tools.Registry) error{
-		func(r *tools.Registry) error { return addWindowTabsGet(r, manager) },
-		func(r *tools.Registry) error { return addWindowFocusTab(r, manager) },
-		func(r *tools.Registry) error { return addEditPreview(r, manager, vault) },
+		func(r *tools.Registry) error { return addWindowTabsGet(r, on) },
+		func(r *tools.Registry) error { return addWindowFocusTab(r, on) },
+		func(r *tools.Registry) error { return addNoteFocus(r, on) },
+		func(r *tools.Registry) error { return addSourceFocus(r, on) },
+		func(r *tools.Registry) error { return addEditPreview(r, manager, on.Vault) },
 	} {
 		if err := add(registry); err != nil {
 			return err
@@ -34,7 +35,7 @@ func RegisterTools(registry *tools.Registry, manager *WindowManager, on Host) er
 	return nil
 }
 
-func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
+func addWindowTabsGet(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "window_tabs_get",
 		Title: "Get open window tabs",
@@ -45,11 +46,12 @@ func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, _ WindowTabsGetInput) (WindowTabsGetOutput, error) {
-		tabs, activeID := manager.GetOpenTabs()
-		requestContext := tools.GetCallContext(ctx)
-
+		tabs, activeID, err := readWindowTabs(ctx, on)
+		if err != nil {
+			return WindowTabsGetOutput{}, err
+		}
 		if len(tabs) == 0 {
-			if focus := requestContext["focus"]; focus != "" {
+			if focus := tools.GetCallContext(ctx)["focus"]; focus != "" {
 				inferredTab := TabInfo{
 					ID:       "front-tab",
 					Kind:     "",
@@ -62,37 +64,40 @@ func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
 				activeID = inferredTab.ID
 			}
 		}
-
-		summary := formatTabsSummary(tabs, activeID)
 		return WindowTabsGetOutput{
 			Tabs:     tabs,
 			ActiveID: activeID,
-			Summary:  summary,
+			Summary:  formatTabsSummary(tabs, activeID),
 		}, nil
 	})
 }
 
-func addWindowFocusTab(registry *tools.Registry, manager *WindowManager) error {
-	return tools.Add(registry, tools.Spec{
-		Name:  "window_focus_tab",
-		Title: "Focus window tab",
-		Description: "Switch or focus a specific tab or note in the user window by tab ID, " +
-			"path, or title. Moves the window focus to the requested tab.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.ByEffect,
-		Servers: []tools.Server{tools.Full, tools.Reading},
-	}, func(ctx context.Context, in WindowFocusTabInput) (WindowFocusTabOutput, error) {
-		tab, err := manager.FocusTab(ctx, in)
-		if err != nil {
-			return WindowFocusTabOutput{}, err
-		}
-		msg := fmt.Sprintf("focused tab %s", formatTabName(tab))
-		return WindowFocusTabOutput{
-			Success: true,
-			Tab:     tab,
-			Message: msg,
-		}, nil
-	})
+// readWindowTabs is the tabs the window last reported, each with the place it is open at, and the
+// active one. A host with no window has none.
+func readWindowTabs(ctx context.Context, on Host) ([]TabInfo, string, error) {
+	if on.Window == nil {
+		return nil, "", nil
+	}
+	open, activeID, err := on.Window.ReadOpenTabs(ctx)
+	if errors.Is(err, host.ErrNoWindow) {
+		return nil, "", nil
+	}
+	if err != nil {
+		return nil, "", err
+	}
+	texts := getCallTexts(ctx, on.Texts)
+	tabs := make([]TabInfo, 0, len(open))
+	for _, tab := range open {
+		tabs = append(tabs, TabInfo{
+			ID:       tab.ID,
+			Kind:     tab.Kind,
+			Path:     tab.Path,
+			Title:    tab.Title,
+			Where:    readPosition(ctx, texts, tab),
+			IsActive: tab.ID != "" && tab.ID == activeID,
+		})
+	}
+	return tabs, activeID, nil
 }
 
 func addEditPreview(registry *tools.Registry, manager *WindowManager, vault host.Vault) error {

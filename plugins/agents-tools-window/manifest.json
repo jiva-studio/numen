@@ -1,12 +1,12 @@
 {
   "id": "md.numen.agents.tools.window",
   "name": "Window Interaction Tools",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "protocol": 1,
   "description": "Workspace context and interactive edit previews for AI assistants",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": { "category": "agents" },
-  "permissions": ["vault:read"],
+  "permissions": ["vault:read", "window:focus"],
   "backend": { "entrypoint": "bin/agents-tools-window" }
 }

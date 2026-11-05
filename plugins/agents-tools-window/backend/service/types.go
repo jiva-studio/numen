@@ -67,3 +67,38 @@ type EditPreview struct {
 	Deletions       int
 	CreatedAt       time.Time
 }
+
+// NoteFocusInput represents the arguments for note_focus.
+type NoteFocusInput struct {
+	Path string `json:"path" jsonschema:"the note to put in focus, by its path relative to the vault folder"`
+}
+
+// FocusedNote is the note note_focus made the current one.
+type FocusedNote struct {
+	Path  string `json:"path"`
+	Title string `json:"title"`
+	ID    string `json:"id,omitempty" jsonschema:"the note's stable identifier, empty for a note written outside the application"`
+}
+
+// NoteFocusOutput represents the result of note_focus.
+type NoteFocusOutput struct {
+	Focused FocusedNote `json:"focused"`
+}
+
+// Passage is a run of a file's text version in bytes, as library_search returns it.
+type Passage struct {
+	Start  int `json:"start" jsonschema:"where the passage begins in the file's text, in bytes, as library_search gives it"`
+	Length int `json:"length" jsonschema:"how long the passage is, in bytes, as library_search gives it"`
+}
+
+// SourceFocusInput represents the arguments for source_focus.
+type SourceFocusInput struct {
+	Path     string    `json:"path" jsonschema:"the file to open, by its path relative to the vault folder"`
+	Passages []Passage `json:"passages,omitempty" jsonschema:"the passages of the file to light; the window goes to the first, and none opens the file at its beginning"`
+}
+
+// SourceFocusOutput represents the result of source_focus.
+type SourceFocusOutput struct {
+	IsShown bool   `json:"shown"`
+	Summary string `json:"summary" jsonschema:"what the person is now looking at, in words to say back to them"`
+}

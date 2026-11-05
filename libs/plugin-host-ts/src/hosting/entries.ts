@@ -26,14 +26,17 @@ export function registerReaderEntry(
     cleanups.push(
       deps.registerExtensionReader(
         ext,
-        (path, selector) => {
+        (path, selector, ranges) => {
           deps
             .openTab(kindId, path)
             .then((tabId) => {
-              if (!selector || !deps.getTabState) return
-              const state = deps.getTabState(tabId) as { selector?: unknown } | undefined
+              if ((!selector && !ranges) || !deps.getTabState) return
+              const state = deps.getTabState(tabId) as
+                { selector?: unknown; ranges?: unknown } | undefined
+              if (!state) return
               // A new object each time, so a reader watching it moves to the same place again.
-              if (state) state.selector = { ...selector }
+              if (selector) state.selector = { ...selector }
+              if (ranges) state.ranges = [...ranges]
             })
             .catch((error: unknown) => reportError(deps, pluginId, error))
         },

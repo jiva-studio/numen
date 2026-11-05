@@ -19,6 +19,7 @@ import {
   type ReaderRegistration,
   type Selector,
   type TabKindRegistration,
+  type TextRange,
 } from '@numen/plugin-sdk'
 import { adoptPluginStyle } from '../styles'
 import type { AnyTabKind } from './tabKinds'
@@ -119,6 +120,7 @@ export function createReaderTabKind(
         pluginId,
         title: extractFilename(targetPath),
         selector: place,
+        ranges: null as readonly TextRange[] | null,
         place,
         savePlace: (next: Selector) => {
           state.place = next

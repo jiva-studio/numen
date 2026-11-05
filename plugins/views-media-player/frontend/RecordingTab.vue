@@ -49,6 +49,15 @@ watch(
   { immediate: true },
 )
 
+// The window sets a new array each time it asks for ranges, so the same ranges are reached again.
+watch(
+  () => props.state?.ranges,
+  (ranges) => {
+    if (ranges && ranges.length > 0) tab.navigation.reach(...ranges).catch(() => undefined)
+  },
+  { immediate: true },
+)
+
 /** Saves the current playback time as the place the tab opens at after a restart. */
 const savePlace = () => props.state?.savePlace?.(createTimeSelector(now.value))
 

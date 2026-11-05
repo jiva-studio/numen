@@ -15,9 +15,10 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// Client works the vault through HostVaultService.
+// Client works the vault through HostVaultService and its window through HostWindowService.
 type Client struct {
-	rpc numenv1connect.HostVaultServiceClient
+	rpc    numenv1connect.HostVaultServiceClient
+	window numenv1connect.HostWindowServiceClient
 	// vault is the identity of the vault the client works. Empty is the vault the window shows.
 	vault string
 }
@@ -67,7 +68,10 @@ func NewClient(endpoint hostcall.Endpoint) *Client {
 
 // NewClientOver connects to the host at the endpoint through the given HTTP client.
 func NewClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
-	return &Client{rpc: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
+	return &Client{
+		rpc:    numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+		window: numenv1connect.NewHostWindowServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+	}
 }
 
 // readError converts the failure of a call into its error: a vault the host does not know is ErrUnknownVault.

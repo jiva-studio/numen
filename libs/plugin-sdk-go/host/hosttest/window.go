@@ -2,8 +2,13 @@ package hosttest
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"slices"
+	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // FocusRequest is one FocusPassages call a Window received.
@@ -15,33 +20,103 @@ type FocusRequest struct {
 // Window is the window of a vault, in memory. A note FocusNote is asked for is found among the notes
 // of the vault, and a file FocusPassages is asked for among its files; a path the vault holds nothing
 // at is ErrNotExist and is not recorded. The window serves the tabs SetOpenTabs gives it.
-type Window struct{}
+type Window struct {
+	vault *Vault
+
+	mu         sync.Mutex
+	tabs       []host.OpenTab
+	activeID   string
+	isAbsent   bool
+	notes      []string
+	focusCalls []FocusRequest
+}
 
 var _ host.Window = (*Window)(nil)
 
 // NewWindow is the window of the vault, with no tab open.
-func NewWindow(_ *Vault) *Window { return &Window{} }
+func NewWindow(vault *Vault) *Window { return &Window{vault: vault} }
 
-func (w *Window) FocusNote(_ context.Context, _ string) (host.FocusedNote, error) {
-	return host.FocusedNote{}, nil
+func (w *Window) hasNoWindow() bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.isAbsent
 }
 
-func (w *Window) FocusPassages(_ context.Context, _ string, _ []host.PassageSpan) (string, error) {
-	return "", nil
+func (w *Window) FocusNote(ctx context.Context, path string) (host.FocusedNote, error) {
+	if w.hasNoWindow() {
+		return host.FocusedNote{}, host.ErrNoWindow
+	}
+	found, err := w.vault.GetNotes(ctx, []string{path})
+	if err != nil {
+		return host.FocusedNote{}, err
+	}
+	ref, isNote := found[path]
+	if !isNote {
+		return host.FocusedNote{}, fmt.Errorf("no note at %s: %w", path, host.ErrNotExist)
+	}
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.notes = append(w.notes, path)
+	return host.FocusedNote{Path: ref.Path, Title: ref.Title, ID: ref.ID}, nil
 }
 
-func (w *Window) ReadOpenTabs(_ context.Context) ([]host.OpenTab, string, error) {
-	return nil, "", nil
+func (w *Window) FocusPassages(ctx context.Context, path string, passages []host.PassageSpan) (string, error) {
+	if w.hasNoWindow() {
+		return "", host.ErrNoWindow
+	}
+	stat, err := w.vault.StatFile(ctx, path)
+	if errors.Is(err, host.ErrNotANote) {
+		return "", fmt.Errorf("this vault holds nothing at %s: %w", path, host.ErrNotExist)
+	}
+	if err != nil {
+		return "", err
+	}
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.focusCalls = append(w.focusCalls, FocusRequest{Path: path, Passages: slices.Clone(passages)})
+	switch {
+	case stat.Kind == domain.KindNote:
+		return "the note is in front of them, and a note is shown whole", nil
+	case len(passages) == 0:
+		return "the document is open at its beginning", nil
+	}
+	return "the document is open at that passage, with the words of it lit", nil
+}
+
+func (w *Window) ReadOpenTabs(context.Context) ([]host.OpenTab, string, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.isAbsent {
+		return nil, "", host.ErrNoWindow
+	}
+	return slices.Clone(w.tabs), w.activeID, nil
 }
 
 // SetOpenTabs is the tabs the window reports from now on, and the active one.
-func (w *Window) SetOpenTabs(_ []host.OpenTab, _ string) {}
+func (w *Window) SetOpenTabs(tabs []host.OpenTab, activeID string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.tabs = slices.Clone(tabs)
+	w.activeID = activeID
+}
 
 // SetNoWindow makes every later call answer ErrNoWindow, as a host with no window does.
-func (w *Window) SetNoWindow() {}
+func (w *Window) SetNoWindow() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.isAbsent = true
+}
 
 // GetFocusedNotes is the paths of the notes FocusNote made the current one, in order.
-func (w *Window) GetFocusedNotes() []string { return nil }
+func (w *Window) GetFocusedNotes() []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return slices.Clone(w.notes)
+}
 
 // GetFocusRequests is the FocusPassages calls the window served, in order.
-func (w *Window) GetFocusRequests() []FocusRequest { return nil }
+func (w *Window) GetFocusRequests() []FocusRequest {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return slices.Clone(w.focusCalls)
+}

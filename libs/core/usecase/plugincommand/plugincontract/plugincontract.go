@@ -84,6 +84,7 @@ type (
 	PluginVault            = pluginport.PluginVault
 	PluginVaultLifecycle   = pluginport.PluginVaultLifecycle
 	PluginWindow           = pluginport.PluginWindow
+	PluginWindowHost       = pluginport.PluginWindowHost
 	PluginVaultReader      = pluginport.PluginVaultReader
 	PluginVaultStore       = pluginport.PluginVaultStore
 	PluginVaultWriter      = pluginport.PluginVaultWriter

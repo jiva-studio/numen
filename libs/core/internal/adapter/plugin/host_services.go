@@ -58,9 +58,18 @@ func (h *Host) GetPluginTexts() pluginport.PluginTexts {
 	return h.texts
 }
 
+// SetPluginWindow is the main window the plugins move and read the tabs of. Nil is none.
+func (h *Host) SetPluginWindow(window pluginport.PluginWindow) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.window = window
+}
+
 // GetPluginWindow is the main window the plugins move and read the tabs of, or nil.
 func (h *Host) GetPluginWindow() pluginport.PluginWindow {
-	return nil
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.window
 }
 
 // SetCompleter sets what answers the completions plugins ask for. The host

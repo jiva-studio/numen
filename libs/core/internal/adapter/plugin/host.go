@@ -97,6 +97,7 @@ type Host struct {
 	completer        completionport.Completer
 	vault            pluginport.PluginVault
 	texts            pluginport.PluginTexts
+	window           pluginport.PluginWindow
 	search           pluginport.PluginSearch
 	secretLocksMu    sync.Mutex
 	secretLocks      map[string]*sync.Mutex
