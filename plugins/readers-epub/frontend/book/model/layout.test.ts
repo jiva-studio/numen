@@ -83,6 +83,12 @@ const flushFrames = () => {
   for (const run of fake.frames.splice(0)) run()
 }
 
+/** Runs frames until nothing asks for another one. */
+const flushAllFrames = () => {
+  for (let frame = 0; frame < 100 && fake.frames.length > 0; frame += 1) flushFrames()
+  expect(fake.frames).toHaveLength(0)
+}
+
 interface Options {
   readonly led?: BookLink | undefined
   readonly hasArea?: boolean
@@ -259,7 +265,7 @@ describe('the place a link led to', () => {
 })
 
 describe('the room or the type changing size', () => {
-  it('sets the columns again with the offset in front kept, when the width changes', async () => {
+  it('sets the columns again with the offset in front kept, once a new width has settled', async () => {
     const { layout } = room()
     layout()
     columns().measure.mockClear()
@@ -268,12 +274,13 @@ describe('the room or the type changing size', () => {
     columns().viewport.value = { ...columns().viewport.value, width: 640 }
     await nextTick()
 
+    expect(columns().measure).not.toHaveBeenCalled()
+    flushAllFrames()
     expect(columns().measure).toHaveBeenCalledTimes(1)
-    flushFrames()
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
   })
 
-  it('sets the columns again with the offset in front kept, when the height changes', async () => {
+  it('sets the columns again with the offset in front kept, once a new height has settled', async () => {
     room()
     columns().measure.mockClear()
     fake.frames.length = 0
@@ -281,8 +288,9 @@ describe('the room or the type changing size', () => {
     columns().viewport.value = { ...columns().viewport.value, height: 480 }
     await nextTick()
 
+    expect(columns().measure).not.toHaveBeenCalled()
+    flushAllFrames()
     expect(columns().measure).toHaveBeenCalledTimes(1)
-    flushFrames()
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
   })
 
@@ -307,9 +315,41 @@ describe('the room or the type changing size', () => {
 
     const TURNED = KEPT + 50
     turns().getKeptOffset.mockReturnValue(TURNED)
-    flushFrames()
+    flushAllFrames()
 
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(TURNED), 'auto')
+  })
+
+  it('reads the columns once for a size that changes on every frame, after it has settled', async () => {
+    room()
+    flushAllFrames()
+    columns().readColumns.mockClear()
+
+    for (const width of [620, 640, 660, 680, 700]) {
+      columns().viewport.value = { ...columns().viewport.value, width }
+      await nextTick()
+      flushFrames()
+    }
+    expect(columns().readColumns).not.toHaveBeenCalled()
+
+    flushAllFrames()
+    expect(columns().readColumns).toHaveBeenCalledTimes(1)
+    expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
+  })
+
+  it('reads the columns once when the size it measured itself is reported as a change', async () => {
+    const { layout } = room()
+    flushAllFrames()
+    columns().readColumns.mockClear()
+    columns().measure.mockImplementation(() => {
+      columns().viewport.value = { width: 301, height: 200 }
+    })
+
+    layout().settle(() => 40)
+    await nextTick()
+    flushAllFrames()
+
+    expect(columns().readColumns).toHaveBeenCalledTimes(1)
   })
 
   it('leaves the columns as they are while none of the three changes', async () => {

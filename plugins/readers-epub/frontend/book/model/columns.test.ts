@@ -145,3 +145,35 @@ describe('how tall a column is once the text is drawn', () => {
     expect(columns.spreadCount.value).toBe(1)
   })
 })
+
+describe('the flow the marks were read in', () => {
+  /** Text whose scroll width is twice its client width. */
+  const createLaidText = (scrollWidth: number): HTMLElement => {
+    const text = document.createElement('div')
+    Object.defineProperty(text, 'clientWidth', { value: scrollWidth / 2 })
+    Object.defineProperty(text, 'scrollWidth', { value: scrollWidth })
+    return text
+  }
+
+  it('stays the one of the last reading while the area changes size', () => {
+    const columns = setUp(1200, 600)
+    columns.readColumns(createArea(1200, 600), createLaidText(4800))
+
+    columns.viewport.value = { width: 700, height: 600 }
+
+    expect(columns.flow.value).toEqual({ contentWidth: 4800, width: 1200, gap: GAP, columns: 2 })
+    expect(columns.spreadCount.value).toBe(4)
+    expect(columns.setting.value['--book-run']).toBe('200%')
+  })
+
+  it('becomes the one of the new size once the columns are read again', () => {
+    const columns = setUp(1200, 600)
+    columns.readColumns(createArea(1200, 600), createLaidText(4800))
+    columns.viewport.value = { width: 700, height: 600 }
+
+    columns.readColumns(createArea(700, 600), createLaidText(5600))
+
+    expect(columns.flow.value).toEqual({ contentWidth: 5600, width: 700, gap: GAP, columns: 1 })
+    expect(columns.spreadCount.value).toBe(8)
+  })
+})

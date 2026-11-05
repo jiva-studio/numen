@@ -504,6 +504,62 @@ export const SetLarger: Story = {
   },
 }
 
+/** Resolves on the next frame the browser draws. */
+const waitForFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve))
+
+/**
+ * The area dragged narrower frame by frame, as a split border is dragged, to three fifths of its
+ * width. The reading position is an offset, so once the size has settled the spread in front is the
+ * one holding the offset read before the drag.
+ */
+export const Resized: Story = {
+  decorators: [WIDE],
+  render: activeReading(createChapter([...VERSES, ...PROSE, ...PROSE, ...PROSE])),
+  play: async ({ canvasElement }) => {
+    await waitForLayout(canvasElement)
+
+    for (let turn = 0; turn < 2; turn += 1) {
+      const was = getFrontOffset(canvasElement)
+      await userEvent.keyboard('{ArrowRight}')
+      await waitFor(async () => await expect(getFrontOffset(canvasElement)).toBeGreaterThan(was), {
+        timeout: ITS_OWN_PACE,
+      })
+    }
+    const before = getFrontOffset(canvasElement)
+
+    const holder = getArea(canvasElement).closest<HTMLElement>('.mx-auto')!
+    const from = holder.getBoundingClientRect().width
+    const to = Math.round(from * 0.6)
+    for (let width = from; width > to; width -= 20) {
+      holder.style.inlineSize = `${width}px`
+      await waitForFrame()
+    }
+    holder.style.inlineSize = `${to}px`
+
+    // The columns stand at a spread of the new width once they are set again; until then they
+    // stand where the wider spread put them.
+    await waitFor(
+      async () => {
+        const area = getArea(canvasElement)
+        const shift = -Number.parseFloat(getPaper(canvasElement).style.translate)
+        const width = area.getBoundingClientRect().width
+        const rest = shift % width
+        await expect(Math.min(rest, width - rest)).toBeLessThan(1)
+
+        const run = getRunsOf(canvasElement).find(
+          (one) => Number(one.dataset['offset']) === before,
+        )!
+        const rect = run.getClientRects()[0]!
+        const box = area.getBoundingClientRect()
+        await expect(rect.left).toBeGreaterThanOrEqual(box.left - 1)
+        await expect(rect.left).toBeLessThan(box.right)
+      },
+      { timeout: ITS_OWN_PACE },
+    )
+    await expect(getFrontOffset(canvasElement)).toBe(before)
+  },
+}
+
 /**
  * A run marked at its current position. The range is taken from the offsets the caller
  * gave and the offsets the runs carry, and the text is never searched.
