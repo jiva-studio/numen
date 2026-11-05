@@ -2,11 +2,13 @@ package index
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
@@ -96,98 +98,102 @@ func TestAFreshIndexHasTheWholeSchemaOfOneFile(t *testing.T) {
 	}
 }
 
-func TestAnIndexOfAnotherOrNoVersionIsEmptiedAndTheVaultIsIndexedAgain(t *testing.T) {
+// expectedVersion is the number the last of the old steps leaves, so an index of the current build matches it.
+const expectedVersion = 10
+
+func TestAnIndexOfTheCurrentBuildIsUsedAsItIsAndTheSchemaFileAppliesTwice(t *testing.T) {
 	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
 
-	current := func() int {
-		db, err := Open(ctx, filepath.Join(t.TempDir(), "current.db"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer testsupport.Close(t, db)
-		return getUserVersion(ctx, t, db.write)
-	}()
-
-	versions := []int{0, current + 1, current + 100}
-	if current > 1 {
-		versions = append(versions, current-1)
+	db, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Vaults().Register(ctx, "01KEPT"); err != nil {
+		t.Fatal(err)
+	}
+	if v := getUserVersion(ctx, t, db.write); v != expectedVersion {
+		t.Errorf("a new index is at version %d, want %d", v, expectedVersion)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
 	}
 
-	for _, version := range versions {
-		t.Run(fmt.Sprintf("version %d of the current %d", version, current), func(t *testing.T) {
-			t.Run("with the current tables", func(t *testing.T) {
-				path := filepath.Join(t.TempDir(), "index.db")
-				db, err := Open(ctx, path)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if err := db.Vaults().Register(ctx, "01OLDMARKER"); err != nil {
-					t.Fatal(err)
-				}
-				if _, err := db.write.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", version)); err != nil {
-					t.Fatal(err)
-				}
-				if err := db.Close(); err != nil {
-					t.Fatal(err)
-				}
-				checkEmptiedAndIndexedAgain(ctx, t, path, current)
-			})
+	again, err := Open(ctx, path)
+	if err != nil {
+		t.Fatalf("an index of the current build was refused: %v", err)
+	}
+	defer testsupport.Close(t, again)
+	var kept int
+	if err := again.write.QueryRowContext(ctx, `SELECT count(*) FROM vaults WHERE identifier = '01KEPT'`).Scan(&kept); err != nil {
+		t.Fatal(err)
+	}
+	if kept != 1 {
+		t.Errorf("%d rows of the vault are left, want 1: the index was not used as it is", kept)
+	}
 
-			t.Run("with tables of another shape", func(t *testing.T) {
-				path := filepath.Join(t.TempDir(), "index.db")
-				raw := openRaw(t, path)
-				for _, statement := range []string{
-					`CREATE TABLE vaults (id INTEGER PRIMARY KEY, marker TEXT)`,
-					`INSERT INTO vaults (marker) VALUES ('01OLDMARKER')`,
-					`CREATE TABLE old_marker_rows (marker TEXT)`,
-					`INSERT INTO old_marker_rows VALUES ('01OLDMARKER')`,
-					fmt.Sprintf("PRAGMA user_version = %d", version),
-				} {
-					if _, err := raw.ExecContext(ctx, statement); err != nil {
-						t.Fatal(err)
-					}
-				}
-				if err := raw.Close(); err != nil {
+	body, err := os.ReadFile(schemaFile)
+	if err != nil {
+		t.Fatalf("the schema is one file, %s: %v", schemaFile, err)
+	}
+	for range 2 {
+		if _, err := again.write.ExecContext(ctx, string(body)); err != nil {
+			t.Fatalf("the schema file does not apply over an index that has it: %v", err)
+		}
+	}
+	if err := again.write.QueryRowContext(ctx, `SELECT count(*) FROM vaults WHERE identifier = '01KEPT'`).Scan(&kept); err != nil {
+		t.Fatal(err)
+	}
+	if kept != 1 {
+		t.Errorf("%d rows of the vault are left after the schema file applied, want 1", kept)
+	}
+}
+
+func TestAnIndexOfAnotherVersionStopsTheStartAndStaysByteForByteTheSame(t *testing.T) {
+	ctx := t.Context()
+
+	for _, version := range []int{0, 1, expectedVersion - 1, expectedVersion + 1, expectedVersion + 100} {
+		t.Run(fmt.Sprintf("version %d", version), func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "index.db")
+			raw := openRaw(t, path)
+			for _, statement := range []string{
+				`CREATE TABLE vaults (id INTEGER PRIMARY KEY, marker TEXT)`,
+				`INSERT INTO vaults (marker) VALUES ('01OLDMARKER')`,
+				`CREATE TABLE old_marker_rows (marker TEXT)`,
+				`INSERT INTO old_marker_rows VALUES ('01OLDMARKER')`,
+				fmt.Sprintf("PRAGMA user_version = %d", version),
+			} {
+				if _, err := raw.ExecContext(ctx, statement); err != nil {
 					t.Fatal(err)
 				}
-				checkEmptiedAndIndexedAgain(ctx, t, path, current)
-			})
+			}
+			if err := raw.Close(); err != nil {
+				t.Fatal(err)
+			}
+			before := hashFile(t, path)
+
+			db, err := Open(ctx, path)
+			if err == nil {
+				testsupport.Close(t, db)
+				t.Fatal("an index of another version was opened")
+			}
+			for _, want := range []string{path, fmt.Sprint(version), fmt.Sprint(expectedVersion)} {
+				if !strings.Contains(err.Error(), want) {
+					t.Errorf("the error %q does not name %q", err, want)
+				}
+			}
+			if after := hashFile(t, path); after != before {
+				t.Error("the file of the index changed")
+			}
 		})
 	}
 }
 
-func checkEmptiedAndIndexedAgain(ctx context.Context, t *testing.T, path string, current int) {
+func hashFile(t *testing.T, path string) [sha256.Size]byte {
 	t.Helper()
-	db, err := Open(ctx, path)
+	body, err := os.ReadFile(path)
 	if err != nil {
-		t.Fatalf("an index of another version stopped this build: %v", err)
-	}
-	defer testsupport.Close(t, db)
-
-	if v := getUserVersion(ctx, t, db.write); v != current {
-		t.Errorf("the index is at version %d, want %d", v, current)
-	}
-	for _, e := range readCatalogue(ctx, t, db.write) {
-		if e.name == "old_marker_rows" {
-			t.Errorf("a table of the old index is still there: %s", e.name)
-		}
-	}
-	var held int
-	if err := db.write.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&held); err != nil {
-		t.Fatalf("the vaults table of the current schema is not there: %v", err)
-	}
-	if held != 0 {
-		t.Errorf("the index holds %d vaults of the old file, want none", held)
-	}
-
-	// The vault is indexed again: the registration of the next scan finds an empty index.
-	if err := db.Vaults().Register(ctx, "01AGAIN"); err != nil {
-		t.Fatalf("the vault cannot be registered again: %v", err)
-	}
-	if err := db.write.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&held); err != nil {
 		t.Fatal(err)
 	}
-	if held != 1 {
-		t.Errorf("the index holds %d vaults after one registration, want 1", held)
-	}
+	return sha256.Sum256(body)
 }

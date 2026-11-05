@@ -36,6 +36,7 @@ func TestTheIndexHasNoStepRunnerAndNoBookkeepingTable(t *testing.T) {
 	removed := map[string]bool{
 		"migration": true, "loadMigrations": true, "parseVersion": true,
 		"splitStatements": true, "createBookkeeping": true,
+		"resetIndex": true, "dropEverything": true, "getDropping": true,
 	}
 	fset := token.NewFileSet()
 	var files []string
