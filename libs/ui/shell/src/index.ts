@@ -33,4 +33,9 @@ export type { VaultRow, WelcomeAction } from './features/welcome'
 
 /** The bar every window draws at its top, with its actions and the window controls. */
 export { TitleBar } from './features/title-bar'
-export type { ControlsStyle, TitleBarAction, TitleBarWords } from './features/title-bar'
+export type {
+  ControlsStyle,
+  TitleBarAction,
+  TitleBarWords,
+  TitleChoice,
+} from './features/title-bar'

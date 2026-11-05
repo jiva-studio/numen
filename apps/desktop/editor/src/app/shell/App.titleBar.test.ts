@@ -85,7 +85,7 @@ describe('the title bar of the window', () => {
     const bar = window.findComponent(TitleBar)
     expect(bar.props('controls')).toBe('windows')
     expect(getActions(window).map((one) => one.id)).toStrictEqual(['app:settings.open'])
-    expect(window.findAll('[data-title-bar] button')).toHaveLength(4)
+    expect(window.findAll('[data-title-bar] button')).toHaveLength(5)
   })
 })
 
@@ -100,7 +100,7 @@ describe('the buttons of the plugins in the title bar', () => {
       'app:settings.open',
     ])
     expect(getActions(window)[0]?.title).toBe('Open tide chart')
-    expect(window.findAll('[data-title-bar] button')).toHaveLength(5)
+    expect(window.findAll('[data-title-bar] button')).toHaveLength(6)
     expect(getButton(window, `${TIDE}:chart.open`).exists()).toBe(true)
   })
 
@@ -255,4 +255,72 @@ afterEach(() => {
   frame.controls = 'windows'
   frame.isMaximised = false
   frame.close.mockClear()
+})
+
+describe('the vault switcher in the title', () => {
+  const addVault = (id: string, name: string) =>
+    listed.vaults.push({ id, name, path: `/vaults/${name}`, isMissing: false })
+
+  const openList = async (window: Awaited<ReturnType<typeof mountWindow>>) => {
+    await window.find('[data-title]').trigger('click')
+    await settle()
+  }
+
+  const getOptions = () => [...document.body.querySelectorAll('[role="option"]')]
+
+  it('is a button that lists the vaults of the installation and a row that adds a folder', async () => {
+    addVault('trees', 'Trees')
+
+    const window = await mountWindow()
+    await openList(window)
+
+    expect(window.find('[data-title]').element.tagName).toBe('BUTTON')
+    expect(getOptions().map((one) => one.textContent?.trim())).toStrictEqual([
+      'Physics',
+      'Trees',
+      'Create vault',
+    ])
+    expect(getOptions()[0]?.getAttribute('aria-current')).toBe('true')
+  })
+
+  it('opens the vault that is chosen through the use case that opens a vault', async () => {
+    addVault('trees', 'Trees')
+    const window = await mountWindow()
+    await openList(window)
+
+    ;(getOptions()[1] as HTMLElement).click()
+    await settle()
+
+    expect(requests.opened).toStrictEqual(['trees'])
+  })
+
+  it('opens nothing for the vault the window shows', async () => {
+    addVault('trees', 'Trees')
+    const window = await mountWindow()
+    await openList(window)
+
+    ;(getOptions()[0] as HTMLElement).click()
+    await settle()
+
+    expect(requests.opened).toStrictEqual([])
+    expect(getOptions()).toHaveLength(0)
+  })
+
+  it('asks for a folder from the last row', async () => {
+    const window = await mountWindow()
+    await openList(window)
+
+    ;(getOptions().at(-1) as HTMLElement).click()
+    await settle()
+
+    expect(requests.chose).toBe(1)
+  })
+
+  it('leaves the title plain where no vault is open', async () => {
+    listed.showing = ''
+
+    const window = await mountWindow()
+
+    expect(window.find('[data-title]').element.tagName).toBe('SPAN')
+  })
 })

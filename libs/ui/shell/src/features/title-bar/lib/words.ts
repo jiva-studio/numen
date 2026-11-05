@@ -5,6 +5,12 @@ export interface TitleBarWords {
   readonly maximise: string
   readonly restore: string
   readonly close: string
+  /** What the list the title opens is called. */
+  readonly switcher: string
+  /** What the search field of that list says while empty. */
+  readonly search: string
+  /** What that list says when the search finds nothing. */
+  readonly nothing: string
 }
 
 export const TITLE_BAR_WORDS: TitleBarWords = {
@@ -13,4 +19,7 @@ export const TITLE_BAR_WORDS: TitleBarWords = {
   maximise: 'Maximise',
   restore: 'Restore',
   close: 'Close',
+  switcher: 'Switch',
+  search: 'Search',
+  nothing: 'No results',
 }

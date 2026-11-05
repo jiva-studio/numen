@@ -3,10 +3,10 @@
  * move of actions into the menu and the stacking of the menu need a browser to fail.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { FilePlus, FolderTree, Search, Settings, Waypoints } from '@lucide/vue'
 import TitleBar from './TitleBar.vue'
-import type { ControlsStyle, TitleBarAction } from '../lib/types'
+import type { ControlsStyle, TitleBarAction, TitleChoice } from '../lib/types'
 import { DARK } from '@/shared/fixtures/theme'
 import { LONG, RUSSIAN } from '@/shared/fixtures/prose'
 
@@ -16,6 +16,8 @@ interface Knobs {
   controls: ControlsStyle
   isMaximised: boolean
   actions: readonly TitleBarAction[]
+  choices: readonly TitleChoice[]
+  onChoose: (id: string) => void
   /** The width the window is drawn at. */
   width: string
 }
@@ -57,6 +59,8 @@ const meta: Meta<Knobs> = {
     controls: 'windows',
     isMaximised: false,
     actions: [FILES, PLEX, NEW_NOTE],
+    choices: [],
+    onChoose: fn(),
     width: '60rem',
   },
   render: (args) => ({
@@ -241,5 +245,72 @@ export const PluginActionsOverflowing: Story = {
     await expect(entries.map((one) => one.textContent?.trim())).toStrictEqual(
       FROM_PLUGINS.slice(visible.length).map((one) => one.title),
     )
+  },
+}
+
+const VAULTS: readonly TitleChoice[] = [
+  { id: 'orchard', label: 'Orchard notes', isCurrent: true },
+  { id: 'greenhouse', label: 'Greenhouse log' },
+  { id: 'cellar', label: 'Cellar book' },
+]
+
+const getPage = (canvas: HTMLElement) => within(canvas.ownerDocument.body)
+
+/** The title opens a list of the vaults: it is narrowed by typing and a choice is reported. */
+export const ChoosingAVault: Story = {
+  args: { choices: VAULTS },
+  play: async ({ canvasElement, args }) => {
+    const page = getPage(canvasElement)
+    const trigger = title(canvasElement)
+    await expect(trigger.tagName).toBe('BUTTON')
+    await expect(trigger.getAttribute('aria-expanded')).toBe('false')
+
+    await userEvent.click(trigger)
+    await expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    const options = await page.findAllByRole('option')
+    await expect(options.map((one) => one.textContent?.trim())).toStrictEqual(
+      VAULTS.map((one) => one.label),
+    )
+    await expect(options[0]!.getAttribute('aria-current')).toBe('true')
+
+    const box = trigger.getBoundingClientRect()
+    const frame = canvasElement.ownerDocument.querySelector('[data-numen-searchable-list]')!
+    await expect(Math.round(frame.getBoundingClientRect().left)).toBe(Math.round(box.left))
+    await expect(frame.getBoundingClientRect().top).toBeGreaterThanOrEqual(box.bottom - 1)
+
+    await userEvent.keyboard('gre')
+    await waitFor(() => expect(page.getAllByRole('option')).toHaveLength(1))
+    await userEvent.click(page.getByRole('option', { name: /Greenhouse log/ }))
+    await expect(args.onChoose).toHaveBeenCalledWith('greenhouse')
+    await waitFor(() => expect(page.queryByRole('option')).toBeNull())
+    await expect(canvasElement.ownerDocument.activeElement).toBe(trigger)
+  },
+}
+
+/** Escape puts the list away and the title has the keyboard again. */
+export const ClosingTheList: Story = {
+  args: { choices: VAULTS },
+  play: async ({ canvasElement, args }) => {
+    const page = getPage(canvasElement)
+    const trigger = title(canvasElement)
+    await userEvent.click(trigger)
+    await page.findAllByRole('option')
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(page.queryByRole('option')).toBeNull())
+    await expect(canvasElement.ownerDocument.activeElement).toBe(trigger)
+    await expect(args.onChoose).not.toHaveBeenCalled()
+  },
+}
+
+/** Nothing in the list holds what is typed: the list says so. */
+export const NothingFound: Story = {
+  args: { choices: VAULTS },
+  play: async ({ canvasElement }) => {
+    const page = getPage(canvasElement)
+    await userEvent.click(title(canvasElement))
+    await page.findAllByRole('option')
+    await userEvent.keyboard('zzz')
+    await expect(await page.findByRole('status')).toBeTruthy()
+    await expect(page.queryAllByRole('option')).toHaveLength(0)
   },
 }
