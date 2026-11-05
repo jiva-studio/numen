@@ -6,7 +6,6 @@ import { expectWorkspaceDrawn, USABLE_WITHIN_MS } from '../../support/workspace.
 const SETTINGS = JSON.stringify({
   v: 1,
   importing: { yt_dlp: { environment: { SSL_CERT_FILE: '/etc/ssl/certs/ca-certificates.crt' } } },
-  'md.numen.tools.media.importer': { ytDlp: { environment: { SSL_CERT_FILE: '/etc/ssl/x.crt' } } },
 })
 
 test.describe('Start-up with a value of the wrong type in the settings file', () => {
