@@ -218,7 +218,7 @@ describe('the lists the palette offers for a setting', () => {
     expect(settings.paletteLists.getStepGroups('app:note.createChild', '')).toStrictEqual([])
   })
 
-  it('offers the six settings of the shell from the declaration the core sends, and no hand-written command', () => {
+  it('offers the six settings of the shell from the declaration the core sends, and no command made by hand', () => {
     const { settings } = createSettings()
     settings.rest.app.value = SHELL_DECLARATION
 
