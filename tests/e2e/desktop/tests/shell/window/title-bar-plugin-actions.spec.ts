@@ -71,6 +71,7 @@ test.describe('Plugin buttons in the title bar', () => {
     request,
   }) => {
     await openWorkspace(page)
+    await expect(getButton(page, TREE_BUTTON)).toBeVisible()
     const before = await listButtonIds(page)
     expect(before).toContain(TREE_BUTTON)
 
