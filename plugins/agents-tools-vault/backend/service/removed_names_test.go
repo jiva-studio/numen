@@ -1,9 +1,14 @@
 package service_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
@@ -135,4 +140,118 @@ func TestNoteWriteWithBodyInsteadOfContentStoresNoText(t *testing.T) {
 	if !res.GetResult().GetIsRefusal() {
 		t.Error("a call with body and no content was not refused")
 	}
+}
+
+func getGoneToolNames() []string {
+	return []string{"search_query", "note_neighbourhood", "vault_info"}
+}
+
+func TestToolsListHasOneNameForEachTool(t *testing.T) {
+	_, svc := setupTestVault()
+	registry, err := svc.Registry()
+	if err != nil {
+		t.Fatalf("registry: %v", err)
+	}
+	infos, err := registry.ListToolInfos(t.Context())
+	if err != nil {
+		t.Fatalf("list tools: %v", err)
+	}
+	names := map[string]bool{}
+	for _, info := range infos {
+		names[info.GetName()] = true
+	}
+	for _, kept := range []string{"note_search", "link_list", "vault_get"} {
+		if !names[kept] {
+			t.Errorf("the tool %s is not listed", kept)
+		}
+	}
+	for _, gone := range getGoneToolNames() {
+		if names[gone] {
+			t.Errorf("the tool %s is listed", gone)
+		}
+	}
+}
+
+func TestCallOfAGoneToolNameIsAnUnknownTool(t *testing.T) {
+	_, svc := setupTestVault()
+	registry, err := svc.Registry()
+	if err != nil {
+		t.Fatalf("registry: %v", err)
+	}
+	for _, gone := range getGoneToolNames() {
+		res, err := registry.InvokeTool(t.Context(), tools.Call{
+			VaultID:   testVault,
+			Name:      gone,
+			Arguments: []byte(`{"query":"thermodynamic","path":"Entropy.md"}`),
+		})
+		if err != nil {
+			t.Fatalf("call %s: %v", gone, err)
+		}
+		if res.GetError() != tools.ErrorCodeUnknownTool {
+			t.Errorf("%s: error code = %v, want unknown tool", gone, res.GetError())
+		}
+	}
+}
+
+func TestDocsNameEachToolOnce(t *testing.T) {
+	doc, err := os.ReadFile(filepath.Join(getRepoRoot(t), "docs", "agents.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(doc), "second name") {
+		t.Error("docs/agents.md says tools have a second name")
+	}
+}
+
+func TestNoSourceNamesAGoneTool(t *testing.T) {
+	root := getRepoRoot(t)
+	for _, top := range []string{"plugins", "docs"} {
+		err := filepath.WalkDir(filepath.Join(root, top), func(path string, entry fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if entry.IsDir() {
+				switch entry.Name() {
+				case "node_modules", ".git", "dist", "build":
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if isTestFile(entry.Name()) {
+				return nil
+			}
+			content, err := os.ReadFile(path)
+			if err != nil || !utf8.Valid(content) {
+				return nil //nolint:nilerr // an unreadable or binary file names no tool
+			}
+			for _, gone := range getGoneToolNames() {
+				if bytes.Contains(content, []byte(gone)) {
+					rel := strings.TrimPrefix(path, root)
+					t.Errorf("%s names the gone tool %s", rel, gone)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func isTestFile(name string) bool {
+	for _, mark := range []string{"_test.go", ".test.", ".spec."} {
+		if strings.Contains(name, mark) {
+			return true
+		}
+	}
+	return false
+}
+
+func getRepoRoot(t *testing.T) string {
+	t.Helper()
+	root, err := filepath.Abs("../../../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return root
 }
