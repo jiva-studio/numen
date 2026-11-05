@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -21,90 +22,12 @@ import (
 //go:embed migration/*.sql
 var files embed.FS
 
-// dropping is the order in which objects are dropped from the index. Virtual
-// tables come first because they own auxiliary tables that are listed in the
-// catalogue and dropped with them; views come before the tables they read.
-func getDropping() []struct {
-	kind      string
-	isVirtual bool
-} {
-	return []struct {
-		kind      string
-		isVirtual bool
-	}{
-		{"TRIGGER", false},
-		{"VIEW", false},
-		{"TABLE", true},
-		{"TABLE", false},
-	}
-}
-
-// findDroppableSQL names one object of a type in the catalogue, only a virtual
-// table where the second parameter is true.
-const findDroppableSQL = `SELECT name FROM sqlite_master
-WHERE type = lower(?1)
-  AND (NOT ?2 OR sql LIKE 'CREATE VIRTUAL TABLE%')
-  AND name NOT LIKE 'sqlite_%'
-LIMIT 1`
-
-// resetIndex takes everything out of the index and puts its version back to nothing,
-// so the migrations run from the first file.
-//
-// The catalogue is queried again after every drop: an auxiliary table is listed in
-// it and is removed when its virtual table is dropped.
-func resetIndex(ctx context.Context, db *sql.DB) error {
-	// A reference to a table already dropped holds nothing back while every
-	// table is going. The index writes over one connection, so the setting and
-	// the drops meet on it.
-	if _, err := sqlwrite.Exec(ctx, db, "PRAGMA foreign_keys = off"); err != nil {
-		return fmt.Errorf("emptying the index: %w", err)
-	}
-	dropped := dropEverything(ctx, db)
-	_, back := sqlwrite.Exec(ctx, db, "PRAGMA foreign_keys = on")
-	if dropped != nil {
-		return dropped
-	}
-	if back != nil {
-		return fmt.Errorf("putting the index's references back: %w", back)
-	}
-	if _, err := sqlwrite.Exec(ctx, db, "PRAGMA user_version = 0"); err != nil {
-		return fmt.Errorf("putting the index back to no schema: %w", err)
-	}
-	return nil
-}
-
-// dropEverything takes every object the catalogue names out of the index.
-func dropEverything(ctx context.Context, db *sql.DB) error {
-	for _, one := range getDropping() {
-		for {
-			var name string
-			err := db.QueryRowContext(ctx, findDroppableSQL, one.kind, one.isVirtual).Scan(&name)
-			if errors.Is(err, sql.ErrNoRows) {
-				break
-			}
-			if err != nil {
-				return fmt.Errorf("what this index holds: %w", err)
-			}
-			// An identifier is not a parameter, and this one is the catalogue's
-			// own.
-			if _, err := sqlwrite.Exec(ctx, db,
-				fmt.Sprintf("DROP %s IF EXISTS %q", one.kind, name)); err != nil {
-				return fmt.Errorf("dropping %s: %w", name, err)
-			}
-		}
-	}
-	return nil
-}
-
 // A migration is one numbered file, applied once, in order.
 //
-// The index is a cache and could in principle be thrown away and rebuilt on
-// every schema change. It is migrated instead because a rebuild is minutes of
-// work at the sizes this is built for, and an application update that silently
-// costs the user those minutes — every time — is not a good trade. A migration
-// that genuinely cannot preserve what it changes is free to empty the affected
-// tables; the next scan refills them, and the decision is written in the file
-// that made it.
+// The index holds hours of indexing, so the application never empties, drops or
+// rebuilds it. A change of the schema is a new numbered file after the last
+// one, and an index at any version no file carries is left as it is and
+// reported.
 type migration struct {
 	version int
 	name    string
@@ -116,28 +39,15 @@ type migration struct {
 // Each migration runs in its own transaction together with the version bump, so
 // a failure leaves the database at the last version that fully applied rather
 // than half-way through one.
-// An index whose version is newer than the newest migration is emptied and
-// migrated from the first file.
-func migrate(ctx context.Context, db *sql.DB) error {
+// An index at a version no migration carries is reported and not changed.
+func migrate(ctx context.Context, db *sql.DB, file string) error {
 	available, err := loadMigrations()
 	if err != nil {
 		return err
 	}
-
-	var current int
-	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&current); err != nil {
-		return fmt.Errorf("what version this index is at: %w", err)
-	}
-	newest := available[len(available)-1].version
-	// An index at a schema this build does not carry holds what it cannot read.
-	// It is a cache: what it holds is a reading of the vault, and the next scan
-	// reads the vault again. It is emptied and migrated from the first file.
-	if current > newest {
-		if err := resetIndex(ctx, db); err != nil {
-			return err
-		}
-		// gomutants:disable-next-line INTEGER_DECREMENT reason="a current below zero lets every migration run, as zero does"
-		current = 0
+	current, err := checkVersion(ctx, db, file, available)
+	if err != nil {
+		return err
 	}
 
 	for _, m := range available {
@@ -151,54 +61,70 @@ func migrate(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
+// checkVersion reads the version of the index and answers it when this build
+// can use the index: a file with no schema at all, or one at the version of a
+// migration it carries. Any other version is an error naming the file, the
+// number it holds and the number expected.
+func checkVersion(ctx context.Context, db *sql.DB, file string, available []migration) (int, error) {
+	var current int
+	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&current); err != nil {
+		return 0, fmt.Errorf("what version this index is at: %w", err)
+	}
+	newest := available[len(available)-1].version
+	if slices.ContainsFunc(available, func(m migration) bool { return m.version == current }) {
+		return current, nil
+	}
+	if current == 0 {
+		empty, err := isEmpty(ctx, db)
+		if err != nil || empty {
+			return 0, err
+		}
+	}
+	return 0, fmt.Errorf("the index %s is at version %d and this build expects version %d: it is left as it is", file, current, newest)
+}
+
+// isEmpty holds for a database with no table, index or view in it.
+func isEmpty(ctx context.Context, db *sql.DB) (bool, error) {
+	var objects int
+	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM sqlite_master").Scan(&objects); err != nil {
+		return false, fmt.Errorf("what this index holds: %w", err)
+	}
+	return objects == 0, nil
+}
+
+// checkFile reads the version of the index file over a connection of its own
+// that sets nothing, so a file this build cannot use is not changed, not even
+// in its journal mode.
+func checkFile(ctx context.Context, file string) error {
+	available, err := loadMigrations()
+	if err != nil {
+		return err
+	}
+	plain, err := sql.Open("sqlite", dsnOf(file, nil))
+	if err != nil {
+		return fmt.Errorf("open the index at %s: %w", file, err)
+	}
+	_, checked := checkVersion(ctx, plain, file, available)
+	return errors.Join(checked, plain.Close())
+}
+
 // createBookkeeping creates the table that records applied migrations. It is not
 // one of the numbered migrations because it records whether they ran.
-//
-// A table with a column this build does not write is altered to the shape this
-// build writes.
-func createBookkeeping(ctx context.Context, db *sql.DB) error {
-	if _, err := sqlwrite.Exec(ctx, db, `CREATE TABLE IF NOT EXISTS schema_migrations (
+func createBookkeeping(ctx context.Context, tx *sqlwrite.Transaction) error {
+	if _, err := tx.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version INTEGER PRIMARY KEY,
 		name    TEXT NOT NULL
 	)`); err != nil {
-		return fmt.Errorf("what this index was migrated by: %w", err)
-	}
-
-	var spare int
-	if err := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM pragma_table_info('schema_migrations') WHERE name NOT IN ('version', 'name')`,
-	).Scan(&spare); err != nil {
-		return fmt.Errorf("what this index was migrated by: %w", err)
-	}
-	if spare == 0 {
-		return nil
-	}
-	// The drop and the rename are two statements apart, so all four run as one
-	// transaction: either both happen or neither does.
-	err := sqlwrite.InTransaction(ctx, db, func(tx *sqlwrite.Transaction) error {
-		for _, statement := range []string{
-			`CREATE TABLE schema_migrations_next (version INTEGER PRIMARY KEY, name TEXT NOT NULL)`,
-			`INSERT INTO schema_migrations_next (version, name) SELECT version, name FROM schema_migrations`,
-			`DROP TABLE schema_migrations`,
-			`ALTER TABLE schema_migrations_next RENAME TO schema_migrations`,
-		} {
-			if _, err := tx.ExecContext(ctx, statement); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
 		return fmt.Errorf("what this index was migrated by: %w", err)
 	}
 	return nil
 }
 
 func apply(ctx context.Context, db *sql.DB, m migration) error {
-	if err := createBookkeeping(ctx, db); err != nil {
-		return err
-	}
 	return sqlwrite.InTransaction(ctx, db, func(tx *sqlwrite.Transaction) error {
+		if err := createBookkeeping(ctx, tx); err != nil {
+			return err
+		}
 		for _, stmt := range splitStatements(m.body) {
 			if _, err := tx.ExecContext(ctx, stmt); err != nil {
 				return fmt.Errorf("%w\nin statement:\n%s", err, strings.TrimSpace(stmt))
