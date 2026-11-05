@@ -40,7 +40,9 @@ type Embedder struct {
 	// announced is the model the listeners were last notified of. A read by GetModel does not change it.
 	announced embeddingport.EmbeddingModel
 	listeners []func()
-	stopWatch func()
+	// onReadError receives the error of a failed read after a configuration of the plugin.
+	onReadError func(error)
+	stopWatch   func()
 }
 
 // Open activates the plugin that declares the embedding capability and reads its model.
@@ -194,6 +196,21 @@ func (b *Embedder) OnModelChange(fn func()) {
 	b.listeners = append(b.listeners, fn)
 }
 
+// OnModelReadError registers fn to receive the error of a read of the model that follows a configuration of the plugin and fails.
+// The model and the listeners stay as they were, and the next read that succeeds announces the change.
+func (b *Embedder) OnModelReadError(fn func(error)) {
+	b.changeMu.Lock()
+	defer b.changeMu.Unlock()
+	b.onReadError = fn
+}
+
+// reportReadError passes err to the callback of OnModelReadError, when there is one.
+func (b *Embedder) reportReadError(err error) {
+	if b.onReadError != nil {
+		b.onReadError(err)
+	}
+}
+
 // announceModelChange reads the model and runs the listeners when it differs from the announced one.
 func (b *Embedder) announceModelChange() {
 	b.changeMu.Lock()
@@ -202,10 +219,12 @@ func (b *Embedder) announceModelChange() {
 	defer cancel()
 	client, call, err := b.service.Open(ctx)
 	if err != nil {
+		b.reportReadError(fmt.Errorf("open embedding plugin %s: %w", b.pluginID, err))
 		return
 	}
 	model, concurrency, floorHint, readErr := readClientModel(ctx, b.pluginID, client)
-	if errors.Join(readErr, call.Close()) != nil {
+	if err := errors.Join(readErr, call.Close()); err != nil {
+		b.reportReadError(fmt.Errorf("read model of embedding plugin %s: %w", b.pluginID, err))
 		return
 	}
 	b.mu.Lock()

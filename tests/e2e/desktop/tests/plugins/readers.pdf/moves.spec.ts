@@ -33,6 +33,31 @@ const isDrawnInView = (page: Page, pageIndex: number): Promise<boolean> =>
     return colours.size > 2
   }, pageIndex)
 
+/** Drags the tab of pages.pdf into the pane that does not hold it, and waits for it to arrive. */
+const dragToOtherPane = async (page: Page): Promise<void> => {
+  // Panes are taken by position: a locator that filters on the tab would follow it.
+  const holderIndex = await getPanes(page).evaluateAll((panes) =>
+    panes.findIndex((one) =>
+      [...one.querySelectorAll('[role="tab"]')].some((tab) =>
+        /pages\.pdf/.test(tab.textContent ?? ''),
+      ),
+    ),
+  )
+  expect(holderIndex).toBeGreaterThanOrEqual(0)
+  const panes = await getPanes(page).all()
+  const sourcePane = panes[holderIndex]!
+  const targetPane = panes[1 - holderIndex]!
+  const from = await readBox(getTab(page, 'pages.pdf'))
+  const to = await readBox(targetPane)
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 15 })
+  await page.mouse.up()
+
+  await expect(targetPane.getByRole('tab', { name: /pages\.pdf/ })).toHaveCount(1)
+  await expect(sourcePane.getByRole('tab', { name: /pages\.pdf/ })).toHaveCount(0)
+}
+
 test.describe('A PDF tab that is moved', () => {
   test('still draws the page it was on after it is dragged to the other pane', async ({ page }) => {
     await openWorkspace(page)
@@ -43,29 +68,26 @@ test.describe('A PDF tab that is moved', () => {
     await field.press('Enter')
     await expect.poll(() => isDrawnInView(page, 11), { timeout: 20_000 }).toBe(true)
 
-    // Panes are taken by position: a locator that filters on the tab would follow it.
-    const holderIndex = await getPanes(page).evaluateAll((panes) =>
-      panes.findIndex((one) =>
-        [...one.querySelectorAll('[role="tab"]')].some((tab) =>
-          /pages\.pdf/.test(tab.textContent ?? ''),
-        ),
-      ),
-    )
-    expect(holderIndex).toBeGreaterThanOrEqual(0)
-    const panes = await getPanes(page).all()
-    const sourcePane = panes[holderIndex]!
-    const targetPane = panes[1 - holderIndex]!
-    const from = await readBox(getTab(page, 'pages.pdf'))
-    const to = await readBox(targetPane)
-    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
-    await page.mouse.down()
-    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 15 })
-    await page.mouse.up()
-
-    await expect(targetPane.getByRole('tab', { name: /pages\.pdf/ })).toHaveCount(1)
-    await expect(sourcePane.getByRole('tab', { name: /pages\.pdf/ })).toHaveCount(0)
+    await dragToOtherPane(page)
 
     // The page is drawn without the page being turned.
+    await expect(field).toHaveValue('12')
+    await expect.poll(() => isDrawnInView(page, 11), { timeout: 20_000 }).toBe(true)
+  })
+
+  test('still draws the page it was turning to after it is dragged to the other pane in the middle of the turn', async ({
+    page,
+  }) => {
+    await openWorkspace(page)
+    await expect(getPanes(page)).toHaveCount(2)
+    await openVaultFile(page, 'assets', 'pages.pdf')
+    const field = page.getByLabel('Page', { exact: true })
+    await field.fill('12')
+    await field.press('Enter')
+
+    // The row travels to the page for about a second; the tab is dragged while it is on the way.
+    await dragToOtherPane(page)
+
     await expect(field).toHaveValue('12')
     await expect.poll(() => isDrawnInView(page, 11), { timeout: 20_000 }).toBe(true)
   })

@@ -28,8 +28,8 @@ type Scan struct {
 	// Cut is how the notes found are cut into the chunks the index keeps.
 	Cut chunking.CutNotes
 
-	// Stale reads the paths of the notes whose recorded cut is not recipe. Nil skips the check.
-	Stale func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error)
+	// GetOtherRecipePaths reads the paths of the notes whose recorded cut is not recipe. Nil skips the check.
+	GetOtherRecipePaths func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error)
 
 	// ShouldRecut is whether the check runs: the chunk size is known.
 	ShouldRecut bool
@@ -165,20 +165,20 @@ func (u Scan) readWalk(ctx context.Context, v domain.Vault) (vaultWalk, error) {
 	if err != nil {
 		return vaultWalk{}, err
 	}
-	recutPaths, err := u.getStaleNotes(ctx, v)
+	recutPaths, err := u.getRecutPaths(ctx, v)
 	if err != nil {
 		return vaultWalk{}, err
 	}
 	return vaultWalk{reader: reader, found: found, recognized: recognized, recutPaths: recutPaths}, nil
 }
 
-// getStaleNotes is the set of the paths of the notes whose recorded cut is not the cut of this scan,
+// getRecutPaths is the set of the paths of the notes whose recorded cut is not the cut of this scan,
 // and empty where the chunk size is not known or no check is given.
-func (u Scan) getStaleNotes(ctx context.Context, v domain.Vault) (map[string]bool, error) {
-	if !u.ShouldRecut || u.Stale == nil {
+func (u Scan) getRecutPaths(ctx context.Context, v domain.Vault) (map[string]bool, error) {
+	if !u.ShouldRecut || u.GetOtherRecipePaths == nil {
 		return nil, nil
 	}
-	paths, err := u.Stale(ctx, v.ID, u.Cut.Recipe())
+	paths, err := u.GetOtherRecipePaths(ctx, v.ID, u.Cut.Recipe())
 	if err != nil {
 		return nil, fmt.Errorf("read the notes cut another way: %w", err)
 	}

@@ -383,10 +383,21 @@ describe('a row the browser scrolled back to its start', () => {
     expect(element.scrollLeft).toBe(480)
   })
 
-  it('is left alone while it travels to a page', () => {
+  it('is put at the page it was travelling to when the browser ended the travel', () => {
+    const { scroll, element } = createScroll(0)
+    scroll.send(900, 'smooth')
+    element.scrollLeft = 0
+
+    scroll.restore()
+
+    expect(element.scrollLeft).toBe(900)
+    expect(scroll.isStill()).toBe(true)
+  })
+
+  it('is left alone while it jumps to a page', () => {
     const { scroll, element } = createScroll(0)
 
-    scroll.send(900, 'smooth')
+    scroll.send(900, 'auto')
     scroll.restore()
 
     expect(element.scrollLeft).toBe(0)
