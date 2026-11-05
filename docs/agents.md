@@ -131,7 +131,7 @@ The chat panel provides a floating selector island above the message composer:
 
 ## Settings
 
-`agent.use` sets which program answers, and empty sets none. When unset, the program the plugins mark as the default answers. Each program a plugin lists has a section under its name, `agent.claude.*` for Claude Code: `command` starts it, and `model` is which of its models answers. What a plugin reads for itself, such as `reads_hooks_and_skills` for Claude Code, is the plugin's own setting. A section is kept whether it is the one in use or not. The programs and their models are listed by the plugins that run them, and the window shows what they list. See [Settings](settings.md).
+`app.agent.use` sets which program answers, and empty sets none. When unset, the program the plugins mark as the default answers. Each program a plugin lists has a section under its name, `app.agent.claude.*` for Claude Code: `command` starts it, and `model` is which of its models answers. What a plugin reads for itself, such as `reads_hooks_and_skills` for Claude Code, is the plugin's own setting. A section is kept whether it is the one in use or not. The programs and their models are listed by the plugins that run them, and the window shows what they list. See [Settings](settings.md).
 
 Where `command` is empty, the path is searched first, then the folders the command line's installers write to.
 

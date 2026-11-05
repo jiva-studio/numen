@@ -244,7 +244,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     catalog: pluginCatalog,
     arePluginsStarting,
     enablePlugin: async (pluginId) => {
-      await settingsHolder.current?.rest.writeSetting(['plugins', pluginId, 'enabled'], true)
+      await settingsHolder.current?.rest.writeSetting([pluginId, 'enabled'], true)
     },
     openPlugin: (pluginId) =>
       globalThis.dispatchEvent(new CustomEvent('numen:open-settings', { detail: { pluginId } })),

@@ -59,7 +59,11 @@
       "default": "balanced",
       "options": [
         { "value": "eco", "title": "Eco", "detail": "Minimal power, 1 worker thread." },
-        { "value": "balanced", "title": "Balanced", "detail": "Standard workload, 50% CPU capacity." },
+        {
+          "value": "balanced",
+          "title": "Balanced",
+          "detail": "Standard workload, 50% CPU capacity."
+        },
         { "value": "maximum", "title": "Maximum", "detail": "All CPU cores and memory." }
       ]
     }

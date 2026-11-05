@@ -64,11 +64,24 @@ const readEditValue = (edit: SettingEdit): unknown => {
   /* Stryker restore BlockStatement */
 }
 
-/** The default a plugin declares for the setting at a path, and nothing where it declares none. */
-const getPluginDefault = (plugins: readonly PluginInfo[], path: readonly string[]): unknown => {
-  if (path.length !== 3 || path[0] !== 'plugins') return undefined
-  const plugin = plugins.find((one) => one.id === path[1])
-  return plugin?.settings.find((one) => one.key === path[2])?.default
+/** The first element of the path of a setting of the shell. */
+const OWNER_APP = 'app'
+
+/**
+ * The default the declaration gives the setting at a path, and nothing where it declares none. The
+ * first element of the path is the owner: `app` is declared by the core, and any other is the id of
+ * a plugin whose key is the one element after it.
+ */
+const getDeclaredDefault = (
+  app: readonly PluginSettingInfo[],
+  plugins: readonly PluginInfo[],
+  path: readonly string[],
+): unknown => {
+  const [owner, ...key] = path
+  if (owner === OWNER_APP) return app.find((one) => one.key === key.join('.'))?.default
+  if (key.length !== 1) return undefined
+  return plugins.find((one) => one.id === owner)?.settings.find((one) => one.key === key[0])
+    ?.default
 }
 
 export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
@@ -79,6 +92,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const path = ref('')
   const models = shallowRef<readonly Model[]>([])
   const plugins = shallowRef<readonly PluginInfo[]>([])
+  const app = shallowRef<readonly PluginSettingInfo[]>([])
 
   const requested = createRemoteValues<SettingEdit>((values) =>
     core.updateSettings([...values.values()]),
@@ -110,13 +124,14 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       path.value = answer.path
       models.value = answer.models
       plugins.value = answer.plugins ?? []
+      app.value = answer.app ?? []
     })
   }
 
   const getSetting = (path: readonly string[]): unknown => {
     const edit = requested.getRequested(getPathKey(path))?.value
     const value = (edit && readEditValue(edit)) ?? getSettingAt(target.value, path)
-    return value !== undefined ? value : getPluginDefault(plugins.value, path)
+    return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
   }
 
   /** Whether the write of a setting is in flight. */
@@ -128,7 +143,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
    */
   const getCommittedSetting = (path: readonly string[]): unknown => {
     const value = getSettingAt(target.value, path)
-    return value !== undefined ? value : getPluginDefault(plugins.value, path)
+    return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
   }
 
   /** The models one setting can be set to, in the order they are offered. */
@@ -160,6 +175,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     path,
     models,
     plugins,
+    app,
     start,
     getSetting,
     getCommittedSetting,

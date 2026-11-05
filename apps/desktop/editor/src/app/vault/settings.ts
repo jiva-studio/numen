@@ -9,7 +9,7 @@ import { formatErrorMessage } from '@numen/core-client'
 import type { Configuration, PluginSettingCondition, PluginSettingInfo } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
-const SYNCS = ['naming', 'sync_title_and_filename']
+const SYNCS = ['app', 'naming', 'syncTitleAndFilename']
 
 /** Every setting currently, with the defaults under what the file leaves out. */
 const readSettings = async (): Promise<unknown> =>
@@ -49,19 +49,22 @@ type ServedSettings = Awaited<ReturnType<typeof settingsService.getSettings>>
 type ServedPlugin = NonNullable<ServedSettings['plugins']>[number]
 type ServedSetting = NonNullable<ServedPlugin['settings']>[number]
 
-/** One setting of a plugin as the window holds it. */
-const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
-  let defaultValue: unknown = undefined
-  // Stryker disable next-line ConditionalExpression: empty defaultJson fails JSON.parse and leaves defaultValue undefined
-  if (s.defaultJson) {
-    /* Stryker disable BlockStatement: defaultValue is already undefined when JSON.parse throws */
-    try {
-      defaultValue = JSON.parse(s.defaultJson)
-    } catch {
-      defaultValue = undefined
-    }
-    /* Stryker restore BlockStatement */
+/** The value a JSON text holds, and nothing where the text is empty or is not JSON. */
+const readJson = (text: string): unknown => {
+  // Stryker disable next-line ConditionalExpression: empty text fails JSON.parse and leaves the value undefined
+  if (!text) return undefined
+  /* Stryker disable BlockStatement: the value is already undefined when JSON.parse throws */
+  try {
+    return JSON.parse(text)
+  } catch {
+    return undefined
   }
+  /* Stryker restore BlockStatement */
+}
+
+/** One setting as the window holds it, with what the core resolved for it. */
+const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
+  const defaultValue = readJson(s.defaultJson)
   return {
     key: s.key,
     type: s.type as PluginSettingInfo['type'],
@@ -85,9 +88,14 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
     when: readCondition(s.when),
     accept: s.accept,
     ...(s.multiple ? { multiple: true } : {}),
+    ...(s.preview ? { preview: true } : {}),
+    ...(s.optionsFrom ? { optionsFrom: s.optionsFrom } : {}),
     min: s.min,
     max: s.max,
     step: s.step,
+    activeOptions: (s.activeOptions ?? []).map(readOption),
+    isShown: s.isShown,
+    value: readJson(s.valueJson),
   }
 }
 
@@ -139,6 +147,7 @@ export const settingsCore: SettingsPort = {
           : {}),
         settings: (p.settings ?? []).map(readPluginSetting),
       })),
+      app: (answer.app ?? []).map(readPluginSetting),
     } satisfies Configuration
   },
   updateSettings: async (edits) => {

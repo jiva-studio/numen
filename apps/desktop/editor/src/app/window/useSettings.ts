@@ -11,14 +11,7 @@ import {
   createWindowAppearance,
 } from '@/features/settings-commands'
 import { COMMAND } from '@/shared/commandIds'
-import {
-  formatValue,
-  getOptions,
-  getValue,
-  type PluginInfo,
-  type PluginSettingOption,
-  type SettingEdit,
-} from '@/entities/settings'
+import { type PluginInfo, type PluginSettingOption, type SettingEdit } from '@/entities/settings'
 import { formatErrorMessage, type PluginCatalog } from '@numen/core-client'
 import { useCatalogEntries } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
@@ -120,9 +113,8 @@ function getPluginStepGroups(
 ) {
   const match = findPluginSetting(rest.plugins.value, command)
   if (!match) return []
-  const { plugin, pluginId, key, setting } = match
-  const read = (one: string) => rest.getSetting(['plugins', pluginId, one])
-  const current = read(key)
+  const { pluginId, key, setting } = match
+  const current = rest.getSetting([pluginId, key])
   const ctx: PluginGroupContext = { id: `plugin-${pluginId}-${key}`, title: setting.title, words }
 
   if (setting.type === 'boolean') {
@@ -130,8 +122,9 @@ function getPluginStepGroups(
     return createPluginBooleanGroup(ctx, isOn)
   }
   if (setting.type === 'enum') {
-    const currentVal = formatValue(getValue(plugin, setting, read).value)
-    return createPluginEnumGroup(ctx, currentVal, getOptions(plugin, setting, read))
+    const resolved = setting.value ?? current ?? setting.default
+    const currentVal = typeof resolved === 'string' ? resolved : JSON.stringify(resolved ?? '')
+    return createPluginEnumGroup(ctx, currentVal, setting.activeOptions ?? setting.options ?? [])
   }
   return []
 }

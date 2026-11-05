@@ -216,7 +216,7 @@ export default definePlugin({
 
 ### Settings Views
 
-`context.registerSettingsView({ id, component })` registers the Vue component the settings page mounts for the `settingsViews` entry with the same id. The component takes the props of `SettingsViewProps`: `pluginId` and `values`, the current value of every declared setting by key. It emits `update:setting` with a key and a value, and the host writes that value to the setting `plugins.<pluginId>.<key>`. `createMockPluginContext` records registrations for `getRegisteredSettingsViews()`.
+`context.registerSettingsView({ id, component })` registers the Vue component the settings page mounts for the `settingsViews` entry with the same id. The component takes the props of `SettingsViewProps`: `pluginId` and `values`, the current value of every declared setting by key. It emits `update:setting` with a key and a value, and the host writes that value to the setting `<key>` in the object named by `<pluginId>`. `createMockPluginContext` records registrations for `getRegisteredSettingsViews()`.
 
 ### Status Bar Views
 
@@ -397,7 +397,7 @@ The place receives the entries sorted: groups first, in alphabetical order of th
 
 ## Asking the host
 
-The host serves a loopback endpoint and sets `NUMEN_HOST_PORT` in the environment of every plugin process it launches. A plugin that declares `ai:complete` calls `HostService.Complete` there with `NUMEN_PLUGIN_TOKEN` as its bearer token, which identifies the calling plugin to the host; a call without a token the host gave a running plugin is rejected as unauthenticated, and a call from a plugin without the permission is rejected as permission denied. The host uses the program set in `ai.default` (see [Settings](../settings.md)) and sends the question to it as an `AgentService.AskAgent` task that names no tool, no tool declaration and no conversation, which the agent handles with no tools available to it; the answer is the text the agent returned. A program that is not installed or that no plugin lists returns `NO_ROUTE`, and no other program is used in its place. A program that cannot be reached, stops without an answer or returns nothing returns `UNAVAILABLE`. a model the program does not offer is the program's error. The helper is the `ai` package of `plugin-sdk-go`.
+The host serves a loopback endpoint and sets `NUMEN_HOST_PORT` in the environment of every plugin process it launches. A plugin that declares `ai:complete` calls `HostService.Complete` there with `NUMEN_PLUGIN_TOKEN` as its bearer token, which identifies the calling plugin to the host; a call without a token the host gave a running plugin is rejected as unauthenticated, and a call from a plugin without the permission is rejected as permission denied. The host uses the program set in `app.ai.default` (see [Settings](../settings.md)) and sends the question to it as an `AgentService.AskAgent` task that names no tool, no tool declaration and no conversation, which the agent handles with no tools available to it; the answer is the text the agent returned. A program that is not installed or that no plugin lists returns `NO_ROUTE`, and no other program is used in its place. A program that cannot be reached, stops without an answer or returns nothing returns `UNAVAILABLE`. a model the program does not offer is the program's error. The helper is the `ai` package of `plugin-sdk-go`.
 
 ## Models
 

@@ -2,11 +2,15 @@
 
 Settings are stored in one JSON file named `numen.json` in the folder where this desktop keeps a person's configuration — `~/.config/numen/` on Linux, `~/Library/Application Support/numen/` on macOS, `%AppData%\numen\` on Windows. A run that finds no file writes one containing the settings that run is using, so the settings a person edits are the ones in effect.
 
-Every field left out keeps its default. A file that sets one setting is valid.
+The first level of the file is the version `v` and the owners of settings. The owner `app` holds the settings of the application, and every other key is the id of a plugin with the settings of that plugin below it, next to the field `enabled` that says whether the plugin runs. Every field left out keeps its default. A file that sets one setting is valid.
+
+A value that the declaration of its setting does not take is read and ignored: a key that is not declared, a value of the wrong type, a number outside its range, a word that is none of the options, a theme that is not installed, or an object of a plugin that is not installed. The application starts with the default in force, shows a notice, and does not rewrite the file because of it. A write that would store such a value is refused.
+
+A file in the layout of an earlier build, with the sections `appearance`, `naming` or `plugins` at the first level, is not read: delete it and the application writes a new one with the defaults.
 
 A setting the window shows a control for is changed by that control, which patches the file as an object and leaves every other byte unchanged.
 
-This document covers every section of the file, and states for each section which keys are worth changing and why. The complete list is the manual's [settings reference](../apps/docs/src/content/docs/reference.md), which is generated from the code and checked against it on every build. A plugin's settings belong to the plugin: its manifest declares them, the settings page shows them on the plugin's page, and the file stores them under `plugins`, keyed by the plugin's id. Where what a key does is specified elsewhere, the page that specifies it is linked from the section.
+This document covers every section of the file, and states for each section which keys are worth changing and why. The complete list is the manual's [settings reference](../apps/docs/src/content/docs/reference.md), which is generated from the code and checked against it on every build. A plugin's settings belong to the plugin: its manifest declares them, the settings page shows them on the plugin's page, and the file stores them in the object named by the plugin's id. Where what a key does is specified elsewhere, the page that specifies it is linked from the section.
 
 ## Appearance
 
@@ -14,27 +18,29 @@ How the window is rendered: its size, which variant of a colour pair, and which 
 
 ```json
 {
-  "appearance": {
-    "interface_scale": 1,
-    "text_scale": 1,
-    "mode": "system",
-    "theme": "preset:numen"
+  "app": {
+    "appearance": {
+      "interfaceScale": 1,
+      "textScale": 1,
+      "mode": "system",
+      "theme": "preset:numen"
+    }
   }
 }
 ```
 
-|                   |                                                                                                                                                                                                                                            |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `interface_scale` | how large the interface is — its chrome, its controls, the spacing between them and the type in them. 1 is the designed size, and the range is 0.8 to 2.                                                                                   |
-| `text_scale`      | how large the text a person reads is: a note, a book, an answer, the editor. 1 is the designed size, and the range is 0.8 to 1.75.                                                                                                         |
-| `mode`            | which variant of a colour pair is used: `system`, `light` or `dark`. Any other value is treated as `system`.                                                                                                                               |
-| `theme`           | the stylesheet the window applies, named by its origin and its identifier: `preset:numen` ships inside the application, `mine:dracula` is the person's file, and `plugin:md.numen.themes.presets/dracula` is a theme of an enabled plugin. |
+|                  |                                                                                                                                                                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `interfaceScale` | how large the interface is — its chrome, its controls, the spacing between them and the type in them. 1 is the designed size, and the range is 0.8 to 2.                                                                                   |
+| `textScale`      | how large the text a person reads is: a note, a book, an answer, the editor. 1 is the designed size, and the range is 0.8 to 1.75.                                                                                                         |
+| `mode`           | which variant of a colour pair is used: `system`, `light` or `dark`. Any other value is ignored, with a notice, and `system` stands.                                                                                                       |
+| `theme`          | the stylesheet the window applies, named by its origin and its identifier: `preset:numen` ships inside the application, `mine:dracula` is the person's file, and `plugin:md.numen.themes.presets/dracula` is a theme of an enabled plugin. |
 
-Each size is a multiplier. `interface_scale` is the root's font size, and every length in the window is a multiple of it: the height of a field and a button, the padding inside a node, the radii, the spacing, and the type throughout. `text_scale` is a second multiplier applied on top of it to the text a person reads — the editor and rendered markup, including headings, code, lists and quotations. A hairline, a border, a focus ring and the stroke of a handle have the same physical width under either.
+Each size is a multiplier. `interfaceScale` is the root's font size, and every length in the window is a multiple of it: the height of a field and a button, the padding inside a node, the radii, the spacing, and the type throughout. `textScale` is a second multiplier applied on top of it to the text a person reads — the editor and rendered markup, including headings, code, lists and quotations. A hairline, a border, a focus ring and the stroke of a handle have the same physical width under either.
 
-A number outside the valid range is rejected. What the window uses instead is described in [Starting](starting.md). The number in the file is left as it was written.
+A number outside the valid range is ignored, with a notice, and the default stands. The number in the file is left as it was written. A write of such a number is refused.
 
-A file with no size at all uses the desktop value: a session that set `GDK_DPI_SCALE` renders its interface at that scale, and a session without it uses 1. A scale outside the `interface_scale` range is not used as the initial value.
+A file with no size at all uses the desktop value: a session that set `GDK_DPI_SCALE` renders its interface at that scale, and a session without it uses 1. A scale outside the `interfaceScale` range is not used as the initial value.
 
 `-interface-scale` and `-text-scale` set a size for a single launch, overriding whatever is here. Each stays in effect until that size is chosen in the window, and choosing it writes it to the file.
 
@@ -42,22 +48,20 @@ A file with no size at all uses the desktop value: a session that set `GDK_DPI_S
 
 The tokens a theme sets, where the person's themes are stored, and how a file declares itself light-and-dark or one variant only are in [Themes](themes.md).
 
-A theme that sets `color-scheme` provides one variant, and `mode` has no effect while it is applied. A name matching nothing falls back to `preset:numen`, and the name that was not found is reported; this file is left as it is.
+A theme that sets `color-scheme` provides one variant, and `mode` has no effect while it is applied. A name matching nothing falls back to `preset:numen`, and the name that was not found is reported; this file is left as it is. A write of a theme that is not installed is refused.
 
 Choosing a theme, light or dark, or either size writes the matching field to this file — each is a separate command in the command palette. The file is read as an object, the named fields are set, and it is written back, so a key this build does not know is preserved. A file that does not parse is not written.
 
-Whether a node in the plex nests the headings of its note, and how many, are settings of the Plex Graph plugin: `plugins.md.numen.views.plex.graph.nest_headings` and `heading_limit`.
+Whether a node in the plex nests the headings of its note, and how many, are settings of the Plex Graph plugin: `md.numen.views.plex.graph.nest_headings` and `heading_limit`, stored in the object of that plugin.
 
 ## A day of review
 
-The hour a day of review starts is the setting `day_start_time` of the Flashcards plugin, `md.numen.views.flashcards.studio`, stored under `plugins.md.numen.views.flashcards.studio`. How a deck is scheduled is not set here: it is set in the vault, in the preset the deck refers to — [Cards](cards.md).
+The hour a day of review starts is the setting `day_start_time` of the Flashcards plugin, `md.numen.views.flashcards.studio`, stored in the object `md.numen.views.flashcards.studio`. How a deck is scheduled is not set here: it is set in the vault, in the preset the deck refers to — [Cards](cards.md).
 
 ```json
 {
-  "plugins": {
-    "md.numen.views.flashcards.studio": {
-      "day_start_time": "04:00"
-    }
+  "md.numen.views.flashcards.studio": {
+    "day_start_time": "04:00"
   }
 }
 ```
@@ -72,19 +76,21 @@ Anything that is not an hour of the day is reported, and `04:00` is used. The fi
 
 ## What a note is called
 
-`naming` controls whether a note's title and the name of its file are kept in sync.
+`app.naming` controls whether a note's title and the name of its file are kept in sync.
 
 ```json
 {
-  "naming": {
-    "sync_title_and_filename": true
+  "app": {
+    "naming": {
+      "syncTitleAndFilename": true
+    }
   }
 }
 ```
 
-|                           |                                                           |
-| ------------------------- | --------------------------------------------------------- |
-| `sync_title_and_filename` | whether renaming either of the two updates the other. On. |
+|                        |                                                           |
+| ---------------------- | --------------------------------------------------------- |
+| `syncTitleAndFilename` | whether renaming either of the two updates the other. On. |
 
 A note is shown by its `title`, else by its filename — [Note format](note-format.md). On, giving a note a different name renames its file after that name, and renaming its file writes the new name into the key where the note has one. Off, the two are independent in both directions: a new name is written into the note and the file is not moved, and a renamed file leaves the note as it was written.
 
@@ -98,19 +104,21 @@ Typing a new `# Heading` into a note does not rename its file. A save writes the
 
 ## Performance profiles
 
-`performance` sets how much of the machine the core's CPU-bound work and the Go runtime use. Settings of a plugin's own work, such as OCR or embedding, are that plugin's settings.
+`app.performance` sets how much of the machine the core's CPU-bound work and the Go runtime use. Settings of a plugin's own work, such as OCR or embedding, are that plugin's settings.
 
 ```json
 {
-  "performance": {
-    "profile": "balanced"
+  "app": {
+    "performance": {
+      "profile": "balanced"
+    }
   }
 }
 ```
 
-|           |                                                                                                           |
-| --------- | --------------------------------------------------------------------------------------------------------- |
-| `profile` | the workload profile: `eco`, `balanced` (default) or `maximum`. Any other value is treated as `balanced`. |
+|           |                                                                                                                                   |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `profile` | the workload profile: `eco`, `balanced` (default) or `maximum`. Any other value is ignored, with a notice, and `balanced` stands. |
 
 ### Hardware adaptation
 
@@ -136,7 +144,7 @@ The memory limit is a soft limit on the memory the Go runtime manages, set once 
 
 ### Plugin background work
 
-The core passes the profile to every running plugin, in each Configure call, as the value `host.performanceProfile` (`performance.Read` of `plugin-sdk-go` reads it, and `performance.Resolve` gives the threads and the niceness the table below lists). A change of the profile in the palette is pushed to the running plugins at once, so a plugin needs no restart; the core itself takes it at the next start. A profile that is not one of the three counts as `balanced`.
+The core passes the profile to every running plugin, in each Configure call, as the value `host.performanceProfile` (`performance.Read` of `plugin-sdk-go` reads it, and `performance.Resolve` gives the threads and the niceness the table below lists). A change of the profile in the palette is pushed to the running plugins at once, so a plugin needs no restart; the core itself takes it at the next start. A profile that is not one of the three is refused when it is written, and ignored with a notice when the file holds it.
 
 The Vector Embeddings plugin sizes the local model by it while it indexes the vault. The threads are the intra-op threads of the model and the workers that tokenize; the texts are the most texts in one pass. An `NUMEN_ONNX_THREADS` in the environment of the plugin wins over the threads of the profile.
 
@@ -164,21 +172,21 @@ A local model the Vector Embeddings plugin does not list is added with a profile
 
 The proofreading plugin, `md.numen.tools.proofreading`, corrects a transcript or a recognition when a person requests it from the file's menu, and its settings belong to the plugin. What a correction may change, and what rejects one, is in [Proofreading](proofreading.md).
 
-The plugin has two ways to reach a model, chosen by its setting `provider`. With `agent`, the default, it requests a completion from the host through the host service `ai:complete`, and the host uses [`ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which sets the agent program, the model and the number of questions answered at once. With `openrouter`, `openai` or `custom`, it calls an OpenAI-compatible chat service directly, with the `model` and, for `custom`, the `baseUrl` of its own settings and the `apiKey` secret kept in the system keychain. With no agent available, a proofreading through the agent fails with "unavailable", and no version is made.
+The plugin has two ways to reach a model, chosen by its setting `provider`. With `agent`, the default, it requests a completion from the host through the host service `ai:complete`, and the host uses [`app.ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which sets the agent program, the model and the number of questions answered at once. With `openrouter`, `openai` or `custom`, it calls an OpenAI-compatible chat service directly, with the `model` and, for `custom`, the `baseUrl` of its own settings and the `apiKey` secret kept in the system keychain. With no agent available, a proofreading through the agent fails with "unavailable", and no version is made.
 
 ```json
 {
-  "ai": {
-    "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
-  },
-  "plugins": {
-    "md.numen.tools.proofreading": {
-      "provider": "agent",
-      "batch_size": 40,
-      "overlap": 4,
-      "in_flight": 4,
-      "max_edit_distance": 0.3
+  "app": {
+    "ai": {
+      "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
     }
+  },
+  "md.numen.tools.proofreading": {
+    "provider": "agent",
+    "batch_size": 40,
+    "overlap": 4,
+    "in_flight": 4,
+    "max_edit_distance": 0.3
   }
 }
 ```
@@ -194,72 +202,72 @@ The plugin has two ways to reach a model, chosen by its setting `provider`. With
 
 ## Importing from an address
 
-How a link's address is fetched is set by the Media Importer plugin's settings, under `plugins.md.numen.tools.media.importer`: `yt_dlp` and `ffmpeg`, the paths of the programs (empty is the one on `PATH`); `captions`, the languages captions are taken in, best first, separated by commas; `automatic_captions`, whether captions a machine wrote are used where a site publishes none (on); and `copy_max_size_mb`, the maximum size in megabytes of a copy of a video (500, and 0 is no limit). What is stored, and where, is [Importing an address](importing.md).
+How a link's address is fetched is set by the Media Importer plugin's settings, in the object `md.numen.tools.media.importer`: `yt_dlp` and `ffmpeg`, the paths of the programs (empty is the one on `PATH`); `captions`, the languages captions are taken in, best first, separated by commas; `automatic_captions`, whether captions a machine wrote are used where a site publishes none (on); and `copy_max_size_mb`, the maximum size in megabytes of a copy of a video (500, and 0 is no limit). What is stored, and where, is [Importing an address](importing.md).
 
 ## Which agent answers
 
-`agent` sets which agent answers in the panel and how each program is run. What an agent may request from a vault is in [Agents](agents.md).
+`app.agent` sets which agent answers in the panel and how each program is run. What an agent may request from a vault is in [Agents](agents.md).
 
 ```json
 {
-  "agent": {
-    "use": "claude",
-    "claude": {
-      "command": [],
-      "model": ""
+  "app": {
+    "agent": {
+      "use": "claude",
+      "claude": {
+        "command": [],
+        "model": ""
+      }
     }
   },
-  "plugins": {
-    "md.numen.agents.claude": {
-      "reads_hooks_and_skills": false
-    }
+  "md.numen.agents.claude": {
+    "reads_hooks_and_skills": false
   }
 }
 ```
 
-|                                                         |                                                                                                                                                                                                                                                                                                                                                                            |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `use`                                                   | which agent answers. `claude` is Claude Code, used by starting it and reading its output. `numen` is Numen Agent, numen's own: the `md.numen.agents.numen` plugin sends requests to an OpenAI-compatible chat API and calls this vault's tools on behalf of the model. Empty means no agent, and the panel says so.                                                        |
-| `claude.command`                                        | the command that starts it: the path of the command line program, and any wrapper it is started through. Empty searches the path, then the folders its installers write to. Worth setting for an installation those folders do not cover, and for a machine with several.                                                                                                  |
-| `claude.model`                                          | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty uses that installation's default model. Worth setting because the panel is read while somebody waits.                                                                                                                                                                                       |
-| `plugins.md.numen.agents.claude.reads_hooks_and_skills` | whether it reads the configuration of this machine: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not a request to run one. On, what is configured for this person is read; what a vault contains is rejected either way, since a vault comes from elsewhere. |
-| `numen.model`                                           | which model of the chat API answers. Empty takes the plugin's own `model` setting.                                                                                                                                                                                                                                                                                         |
+|                                                    |                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `use`                                              | which agent answers. `claude` is Claude Code, used by starting it and reading its output. `numen` is Numen Agent, numen's own: the `md.numen.agents.numen` plugin sends requests to an OpenAI-compatible chat API and calls this vault's tools on behalf of the model. Empty means no agent, and the panel says so.                                                        |
+| `claude.command`                                   | the command that starts it: the path of the command line program, and any wrapper it is started through. Empty searches the path, then the folders its installers write to. Worth setting for an installation those folders do not cover, and for a machine with several.                                                                                                  |
+| `claude.model`                                     | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty uses that installation's default model. Worth setting because the panel is read while somebody waits.                                                                                                                                                                                       |
+| `md.numen.agents.claude`, `reads_hooks_and_skills` | whether it reads the configuration of this machine: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not a request to run one. On, what is configured for this person is read; what a vault contains is rejected either way, since a vault comes from elsewhere. |
+| `numen.model`                                      | which model of the chat API answers. Empty takes the plugin's own `model` setting.                                                                                                                                                                                                                                                                                         |
 
-How many requests Numen Agent may make to the model for one task before it is stopped is the plugin's own setting, `plugins.md.numen.agents.numen.maxSteps`, 25 unless it names another. Which chat API it uses is the plugin's own setting, `plugins.md.numen.agents.numen.baseUrl`: OpenRouter, `https://openrouter.ai/api/v1`, unless it names another, such as `http://localhost:11434/v1` for Ollama. Its key is the plugin's `apiKey` secret, kept in the system keychain; an endpoint on this machine may take none. A key is sent only over https, or over http to this machine. The agent counts as installed while the chat API lists its models, and the models it lists are the ones offered.
+How many requests Numen Agent may make to the model for one task before it is stopped is the plugin's own setting, `maxSteps` in the object `md.numen.agents.numen`, 25 unless it names another. Which chat API it uses is the plugin's own setting, `baseUrl` in the same object: OpenRouter, `https://openrouter.ai/api/v1`, unless it names another, such as `http://localhost:11434/v1` for Ollama. Its key is the plugin's `apiKey` secret, kept in the system keychain; an endpoint on this machine may take none. A key is sent only over https, or over http to this machine. The agent counts as installed while the chat API lists its models, and the models it lists are the ones offered.
 
 A section is kept whether or not it is in use, so trying another agent temporarily loses no settings.
 
 ## Where a plugin's questions to a model are answered
 
-A plugin that holds the `ai:complete` permission requests a completion from the host and specifies no model, agent or key. The host identifies the plugin by the token it gave that plugin at launch, and uses `ai.default`. Nothing in a question selects where it is sent. The question is sent to the agent as a task that names no tool and no conversation, so the agent has none of the vault's tools, and the answer is the agent's output.
+A plugin that holds the `ai:complete` permission requests a completion from the host and specifies no model, agent or key. The host identifies the plugin by the token it gave that plugin at launch, and uses `app.ai.default`. Nothing in a question selects where it is sent. The question is sent to the agent as a task that names no tool and no conversation, so the agent has none of the vault's tools, and the answer is the agent's output.
 
 ```json
 {
-  "ai": {
-    "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
-  },
-  "plugins": {
-    "md.numen.tools.proofreading": {
-      "provider": "agent"
+  "app": {
+    "ai": {
+      "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
     }
+  },
+  "md.numen.tools.proofreading": {
+    "provider": "agent"
   }
 }
 ```
 
-|                          |                                                                                                                                                                                                                                               |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ai.default.agent`       | the name of the agent program that answers the questions plugins ask (`claude`, `codex`, `antigravity`, `acp:<name>`, the names of the programs the plugins list). Empty uses the program `agent.use` names, else the default of the plugins. |
-| `ai.default.model`       | the model that program answers with. Empty uses the model `agent.<program>.model` names, else the program's own. It applies to the default agent alone.                                                                                       |
-| `ai.default.concurrency` | how many questions one agent answers at once; the others wait in a queue, and a question whose plugin gave up is removed from the queue. Below one is one.                                                                                    |
+|                              |                                                                                                                                                                                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app.ai.default.agent`       | the name of the agent program that answers the questions plugins ask (`claude`, `codex`, `antigravity`, `acp:<name>`, the names of the programs the plugins list). Empty uses the program `app.agent.use` names, else the default of the plugins. |
+| `app.ai.default.model`       | the model that program answers with. Empty uses the model `app.agent.<program>.model` names, else the program's own. It applies to the default agent alone.                                                                                       |
+| `app.ai.default.concurrency` | how many questions one agent answers at once; the others wait in a queue, and a question whose plugin gave up is removed from the queue. Below one is one.                                                                                        |
 
-A program that is not installed or that no plugin lists returns `NO_ROUTE`, and so does a question when `agent.use` is empty or no program is installed; no other program is used instead. A program whose plugin cannot be reached, that stops without an answer or that produces no output returns `UNAVAILABLE`, with the reason it stopped in the log. The command line and the model of the program's section under `agent` apply to the task as they do to the panel's. A model the program does not offer is reported as the program's own error.
+A program that is not installed or that no plugin lists returns `NO_ROUTE`, and so does a question when `app.agent.use` is empty or no program is installed; no other program is used instead. A program whose plugin cannot be reached, that stops without an answer or that produces no output returns `UNAVAILABLE`, with the reason it stopped in the log. The command line and the model of the program's section under `app.agent` apply to the task as they do to the panel's. A model the program does not offer is reported as the program's own error.
 
-Every agent that runs a task answers a question, and a task that names no tool is given none. `md.numen.agents.claude` starts `claude` with no tool, no MCP server and one turn. `md.numen.agents.codex` starts `codex exec` read-only and ephemeral, without the user's configuration, the MCP servers in it and the tools of its own that can be turned off, in an empty folder. `md.numen.agents.antigravity` starts `agy` without the permission skip, with a home that holds no MCP server, in an empty folder. `md.numen.agents.numen` asks the chat API with no tool and connects to no tool server. `md.numen.agents.acp` is the generic ACP client: it lists a program `acp:<name>` for each section of that name under `agent` with a `command`, with the models the agent reports for a session, and answers a task that names no tool in one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission denied. It rejects a task that names a tool.
+Every agent that runs a task answers a question, and a task that names no tool is given none. `md.numen.agents.claude` starts `claude` with no tool, no MCP server and one turn. `md.numen.agents.codex` starts `codex exec` read-only and ephemeral, without the user's configuration, the MCP servers in it and the tools of its own that can be turned off, in an empty folder. `md.numen.agents.antigravity` starts `agy` without the permission skip, with a home that holds no MCP server, in an empty folder. `md.numen.agents.numen` asks the chat API with no tool and connects to no tool server. `md.numen.agents.acp` is the generic ACP client: it lists a program `acp:<name>` for each section of that name under `app.agent` with a `command`, with the models the agent reports for a session, and answers a task that names no tool in one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission denied. It rejects a task that names a tool.
 
 The file is read at every question, so a choice written while the application runs applies to the next one.
 
-The settings page writes `agent.use` through the agent chat plugin, which chooses the agent of a conversation in a dropdown with its model and reasoning. The reasoning a new question starts with is the setting `reasoning` of the agent chat plugin, `plugins.md.numen.views.agent.chat.reasoning`: the name of one of the levels a model lists, empty for the default of the model. The agents in its lists are the programs the plugins list, and the models are the ones each program lists for `GetAgentPrograms`.
+The settings page writes `app.agent.use` through the agent chat plugin, which chooses the agent of a conversation in a dropdown with its model and reasoning. The reasoning a new question starts with is the setting `reasoning` of the agent chat plugin, `reasoning` in the object `md.numen.views.agent.chat`: the name of one of the levels a model lists, empty for the default of the model. The agents in its lists are the programs the plugins list, and the models are the ones each program lists for `GetAgentPrograms`.
 
-No key is written in this file. An agent plugin that needs one declares it under `secrets` in its manifest; the person enters, replaces and deletes it on the plugin's page in the settings, and the host stores it in the system keychain and passes it to the plugin in `Configure`, so it is in neither the plugin's environment nor its command line. The page shows whether a key is set and never shows the key. Under `plugins.<id>.storedSecrets` the host records only the names of the secrets that have a key, and reads the keychain for those alone. Storing a key on a machine without a keychain fails with an error saying so and keeps the key nowhere else; the plugin is then configured without it.
+No key is written in this file. An agent plugin that needs one declares it under `secrets` in its manifest; the person enters, replaces and deletes it on the plugin's page in the settings, and the host stores it in the system keychain and passes it to the plugin in `Configure`, so it is in neither the plugin's environment nor its command line. The page shows whether a key is set and never shows the key. Under `<id>.storedSecrets` the host records only the names of the secrets that have a key, and reads the keychain for those alone. Storing a key on a machine without a keychain fails with an error saying so and keeps the key nowhere else; the plugin is then configured without it.
 
 A setting of type `string` that declares `options` in its manifest is chosen from them in a list that can be searched, and its value can also be typed.

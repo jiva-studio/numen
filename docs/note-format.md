@@ -51,7 +51,7 @@ The frontmatter is shared, not owned:
 
 A note with no `title` is named by its filename. A heading in the prose does not set the note's name: typing one does not rename the note.
 
-What a rename changes — whether a new title renames the file, and whether a renamed file writes the new name into the note — is `naming.sync_title_and_filename` in [Settings](settings.md).
+What a rename changes — whether a new title renames the file, and whether a renamed file writes the new name into the note — is `app.naming.syncTitleAndFilename` in [Settings](settings.md).
 
 A note with no `id` is indexed in full and simply cannot be a _target_: nothing points at it with `note://`, and nothing is attached to it.
 

@@ -67,12 +67,12 @@ type Story = StoryObj
 
 /** The program an unconfigured installation uses. */
 const AGENT_USE: Model = {
-  namedAt: ['agent', 'use'],
+  namedAt: ['app', 'agent', 'use'],
   name: 'claude',
   title: 'Claude Code',
   group: '',
   isDefault: true,
-  writes: [{ at: ['agent', 'use'], value: '"claude"' }],
+  writes: [{ at: ['app', 'agent', 'use'], value: '"claude"' }],
   presence: 'present',
 }
 

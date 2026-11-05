@@ -17,7 +17,7 @@ export type { PluginSettingType } from '@numen/core-client'
 
 /** One setting of the configuration file, and the JSON value to set. */
 export interface SettingEdit {
-  /** The setting key path through the JSON file (e.g. ['indexing', 'provider']). */
+  /** The setting path through the JSON file: the owner, `app` or a plugin id, then its key path. */
   readonly at: readonly string[]
   /** The value at that path, as serialized JSON. */
   readonly value: string

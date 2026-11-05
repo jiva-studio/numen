@@ -96,10 +96,9 @@ const declaring = (source, name, what) => {
 const readCommandIds = async () => {
   const source = await read(EDITOR, 'shared/commandIds.ts')
   const ids = new Map(
-    [...source.matchAll(/^\s*([A-Za-z]+):\s*formatAppCommandId\('([^']+)'\)/gm)].map(([, name, id]) => [
-      name,
-      `app:${id}`,
-    ]),
+    [...source.matchAll(/^\s*([A-Za-z]+):\s*formatAppCommandId\('([^']+)'\)/gm)].map(
+      ([, name, id]) => [name, `app:${id}`],
+    ),
   )
   if (ids.size === 0) die('commandIds.ts no longer names its commands')
   return ids
@@ -198,8 +197,8 @@ const readCommands = async (ids) => {
   const calls = [...list.text.matchAll(/\.\.\.([A-Za-z0-9_]+)\(/g)].map((m) => m[1])
   if (calls.length === 0) die('table.ts composes no commands')
   const imports = new Map(
-    [...source.matchAll(/import\s*\{([^}]+)\}\s*from\s*'([^']+)'/g)].flatMap(([, names, specifier]) =>
-      names.split(',').map((n) => [n.trim(), specifier]),
+    [...source.matchAll(/import\s*\{([^}]+)\}\s*from\s*'([^']+)'/g)].flatMap(
+      ([, names, specifier]) => names.split(',').map((n) => [n.trim(), specifier]),
     ),
   )
   const rows = []
@@ -248,7 +247,11 @@ const commands = async () => {
     if (!word) die(`no words draw the command '${id}'`)
     if (!group) die(`the command '${id}' is in no group`)
     const chord = table.find((one) => one.command === id)
-    const key = chord ? chordOf(chord) : id === getCommandId(ids, 'searchVault') ? chordOf({ letter: 'k' }) : ''
+    const key = chord
+      ? chordOf(chord)
+      : id === getCommandId(ids, 'searchVault')
+        ? chordOf({ letter: 'k' })
+        : ''
     own.push({ text: await said(words, word[1]), group: group[1], key })
   }
 
@@ -261,7 +264,11 @@ const commands = async () => {
     ...plugins.flatMap((one) => one.settings),
     ...plugins.flatMap((one) => one.declared),
     ...plugins.flatMap((one) =>
-      one.commands.map(({ text, group, chord }) => ({ text, group, key: chord ? chordOf(chord) : '' })),
+      one.commands.map(({ text, group, chord }) => ({
+        text,
+        group,
+        key: chord ? chordOf(chord) : '',
+      })),
     ),
   ].map((row) => ({ key: '', ...row }))
 
@@ -401,7 +408,10 @@ const meaning = (doc, name, keys) => {
 
   const written = out
     .trim()
-    .replace(/\b[A-Z][A-Za-z]+\b/g, (word) => VALUES[word] ?? (keys.get(word) ? `\`${keys.get(word)}\`` : word))
+    .replace(
+      /\b[A-Z][A-Za-z]+\b/g,
+      (word) => VALUES[word] ?? (keys.get(word) ? `\`${keys.get(word)}\`` : word),
+    )
   return written.replace(/^([A-Z])(?![A-Z])/, (letter) => letter.toLowerCase())
 }
 
@@ -526,31 +536,91 @@ const sectioned = (keys) => {
   return out
 }
 
+/** What a declared setting holds, in the words of a person writing it. */
+const kindOfDeclared = (one) => {
+  if (one.type === 'boolean') return 'yes or no'
+  if (one.type === 'number' || one.type === 'range') return 'a number'
+  return 'text'
+}
+
+/** The sentence a declared setting is described by, with the values it takes. */
+const meaningOfDeclared = (one) => {
+  const parts = [one.description.replace(/\.$/, '')]
+  if (one.optionsFrom === 'themes') parts.push('The name of an installed theme')
+  else if (one.type === 'enum') {
+    const values = one.options.map((option) => (typeof option === 'string' ? option : option.value))
+    parts.push(`One of ${values.map((value) => `\`${value}\``).join(', ')}`)
+  }
+  if (one.min !== undefined && one.max !== undefined) parts.push(`From ${one.min} to ${one.max}`)
+  return `${parts.join('. ')}.`.replace(/^([A-Z])(?![A-Z])/, (letter) => letter.toLowerCase())
+}
+
+/**
+ * The settings of the owner app. The shell declares most of them in a JSON of the format of a
+ * manifest, and the reference is read from that declaration. The sections of the agent and the AI
+ * route stay Go types.
+ */
 const settings = async () => {
-  // The document, walked from the top: a section nobody thought to list is
-  // still walked into, and a key added to one turns up here. It is declared
-  // where every adapter is bound, because the file is the union of their
-  // sections and the sections about the window.
-  const keys = await keysOf(PACKAGES.settings, 'File', '')
+  const declared = JSON.parse(await read(new URL('adapter/settings/', GO), 'app.json')).settings
+  const source = await sourceOf(PACKAGES.settings)
 
-  const row = (key, section) =>
-    `| \`${section ? key.path.slice(section.length + 1) : key.path}\` | ${key.kind} | ${key.meaning} |`
-
-  const out = []
-  const loose = keys.filter((key) => key.depth === 0 && !key.group)
-  if (loose.length > 0) {
-    out.push('| | | |', '| --- | --- | --- |', ...loose.map((key) => row(key)), '')
+  const sections = new Map()
+  for (const one of declared) {
+    const [section, ...rest] = one.key.split('.')
+    const rows = sections.get(section) ?? []
+    rows.push({ key: rest.join('.'), kind: kindOfDeclared(one), meaning: meaningOfDeclared(one) })
+    sections.set(section, rows)
   }
 
-  // A section is a heading, and its keys are written under it the way they are
-  // written inside it rather than as the whole path down to them.
-  for (const section of sectioned(keys)) {
-    const under = keys.filter((one) => one.path.startsWith(`${section.path}.`))
-    if (under.length === 0) die(`${section.path} is a heading with no settings under it`)
-    out.push(`### \`${section.path}\``, '')
-    if (section.meaning) out.push(section.meaning.replace(/^./, (c) => c.toUpperCase()), '')
+  const agent = await keysOf(PACKAGES.settings, 'Agent', 'agent')
+  sections.set(
+    'agent',
+    agent.map((key) => ({
+      key: key.path.slice('agent.'.length),
+      kind: key.kind,
+      meaning: key.meaning,
+    })),
+  )
+  const doc = { agent: docOf(source, 'Agent') }
+  const ai = sectioned(await keysOf(PACKAGES.settings, 'AI', 'ai'))
+  const aiKeys = await keysOf(PACKAGES.settings, 'AI', 'ai')
+  for (const section of ai) {
+    sections.set(
+      section.path,
+      aiKeys
+        .filter((one) => one.path.startsWith(`${section.path}.`))
+        .map((key) => ({
+          key: key.path.slice(section.path.length + 1),
+          kind: key.kind,
+          meaning: key.meaning,
+        })),
+    )
+    doc[section.path] = section.meaning
+  }
+
+  const out = [
+    '| | | |',
+    '| --- | --- | --- |',
+    '| `v` | a number | the format version of the file. Nothing reads it yet. |',
+    '| `app` |  | holds the settings of the application. |',
+    '| `<plugin id>` |  | holds the settings of one plugin, next to its `enabled`. |',
+    '',
+  ]
+  const order = ['appearance', 'agent', 'naming', 'performance', 'ai.default']
+  for (const section of [
+    ...order,
+    ...[...sections.keys()].filter((name) => !order.includes(name)),
+  ]) {
+    const rows = sections.get(section)
+    if (!rows || rows.length === 0) continue
+    out.push(`### \`app.${section}\``, '')
+    if (doc[section])
+      out.push(
+        doc[section].replace(/^./, (c) => c.toUpperCase()),
+        '',
+      )
     out.push('| | | |', '| --- | --- | --- |')
-    for (const key of under) out.push(row(key, section.path))
+    for (const row of rows) out.push(`| \`${row.key}\` | ${row.kind} | ${row.meaning} |`)
     out.push('')
   }
   return out.join('\n').trimEnd()
@@ -565,7 +635,9 @@ const settings = async () => {
  */
 const flags = async () => {
   const main = await read(CMD, 'main.go')
-  const declared = [...main.matchAll(/\bflag\.(?:String|Bool|Float64|Int|Int64|Duration|Uint)(?:Var)?\(/g)]
+  const declared = [
+    ...main.matchAll(/\bflag\.(?:String|Bool|Float64|Int|Int64|Duration|Uint)(?:Var)?\(/g),
+  ]
   const found = [
     ...main.matchAll(
       /flag\.(?:String|Bool|Float64|Int)Var\(\s*&[^,\s]+,\s*"([^"]+)",\s*([^,\s][^,]*),\s*"([^"]*)"\s*\)/g,
@@ -634,15 +706,15 @@ const cli = async () => {
   if (blocks.usage.length === 0) die('cli.go lists no commands')
   if (blocks.options.length === 0) die('cli.go lists no options')
 
-  const rows = (of) => ['| | |', '| --- | --- |', ...of.map(([what, does]) => `| \`${what}\` | ${does} |`)]
+  const rows = (of) => [
+    '| | |',
+    '| --- | --- |',
+    ...of.map(([what, does]) => `| \`${what}\` | ${does} |`),
+  ]
 
-  return [
-    ...rows(blocks.usage),
-    '',
-    '### Over every command',
-    '',
-    ...rows(blocks.options),
-  ].join('\n')
+  return [...rows(blocks.usage), '', '### Over every command', '', ...rows(blocks.options)].join(
+    '\n',
+  )
 }
 
 /* --------------------------------------------------------------- pictures */
@@ -683,31 +755,38 @@ const pictured = async () => {
 const REFUSES = [
   {
     what: 'a list every entry of which the pattern reads',
-    source: "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.createNote, letter: 'n', hasShift: false },\n]\n",
-    pattern: /\{\s*command:\s*COMMAND\.([A-Za-z]+),\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
+    source:
+      "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.createNote, letter: 'n', hasShift: false },\n]\n",
+    pattern:
+      /\{\s*command:\s*COMMAND\.([A-Za-z]+),\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
     refused: false,
   },
   {
     what: 'a chord spelled in a way the pattern does not match',
-    source: "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.close, letter: 'n', shift: false },\n  { command: COMMAND.createVault, letter: 'n', shift: true },\n]\n",
-    pattern: /\{\s*command:\s*COMMAND\.([a-z]+),\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
+    source:
+      "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.close, letter: 'n', shift: false },\n  { command: COMMAND.createVault, letter: 'n', shift: true },\n]\n",
+    pattern:
+      /\{\s*command:\s*COMMAND\.([a-z]+),\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
     refused: true,
   },
   {
     what: 'a row of the commands carrying no id',
-    source: "export const commandsOf = (): readonly Command[] => [\n  { id: COMMAND.openNote, group: 'note' },\n  { name: 'beside', group: 'note' },\n]\n",
+    source:
+      "export const commandsOf = (): readonly Command[] => [\n  { id: COMMAND.openNote, group: 'note' },\n  { name: 'beside', group: 'note' },\n]\n",
     pattern: /\bid:\s*COMMAND\.([A-Za-z]+)/g,
     refused: true,
   },
   {
     what: 'an apostrophe in a comment, which is prose and no quote',
-    source: "export const commandsOf = (): readonly Command[] => [\n  // The vault's own folder.\n  { id: COMMAND.openNote, group: 'note' },\n]\n",
+    source:
+      "export const commandsOf = (): readonly Command[] => [\n  // The vault's own folder.\n  { id: COMMAND.openNote, group: 'note' },\n]\n",
     pattern: /\bid:\s*COMMAND\.([A-Za-z]+)/g,
     refused: false,
   },
   {
     what: 'a list that never closes',
-    source: "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.createNote, letter: 'n', shift: false },\n",
+    source:
+      "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.createNote, letter: 'n', shift: false },\n",
     pattern: /\bcommand:/g,
     refused: true,
   },

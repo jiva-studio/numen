@@ -60,7 +60,7 @@ const createModel = (at: readonly string[], overrides: Partial<Model>): Model =>
 export const createProgramModels =
   (programs: readonly ProgramFixture[]) =>
   (settingPath: readonly string[]): readonly Model[] => {
-    if (settingPath.join('.') === 'agent.use') {
+    if (settingPath.join('.') === 'app.agent.use') {
       return [
         ...programs.map((one) =>
           createModel(settingPath, {
@@ -77,7 +77,7 @@ export const createProgramModels =
     }
     const program = programs.find(
       (one) =>
-        settingPath.length === 3 && one.name === settingPath[1] && settingPath[2] === 'model',
+        settingPath.length === 4 && one.name === settingPath[2] && settingPath[3] === 'model',
     )
     if (!program) return []
     return [
