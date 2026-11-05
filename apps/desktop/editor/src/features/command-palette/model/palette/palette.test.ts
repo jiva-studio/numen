@@ -151,7 +151,7 @@ const createPalette = (
     retainedItem.paletteLists,
     runs,
     vi.fn(() => Promise.resolve()),
-    () => SETTING_COMMANDS,
+    () => (Object.keys(offers).length > 0 ? SETTING_COMMANDS : []),
   )
   commands.setOpen(true)
   return {
@@ -613,8 +613,8 @@ describe('a command that offers a list the window holds', () => {
   ]
 
   const target = {
-    THEME_ID: THEMES,
-    MODE_ID: HALVES,
+    [THEME_ID]: THEMES,
+    [MODE_ID]: HALVES,
   }
 
   it('offers the groups the window holds, each under its own name', () => {
@@ -1510,7 +1510,7 @@ describe('a row of a list the window holds', () => {
   ]
 
   it('is lit nowhere while nothing is typed', () => {
-    const { commands } = createPalette({}, [], { THEME_ID: THEMES })
+    const { commands } = createPalette({}, [], { [THEME_ID]: THEMES })
     commands.startCommand(THEME_ID, front())
 
     expect(commands.groups.value[0]?.items).toStrictEqual([
@@ -1529,7 +1529,7 @@ describe('a row of a list the window holds', () => {
   })
 
   it('is lit from its first letter where the words typed begin it', async () => {
-    const { commands } = createPalette({}, [], { THEME_ID: THEMES })
+    const { commands } = createPalette({}, [], { [THEME_ID]: THEMES })
     commands.startCommand(THEME_ID, front())
 
     await commands.setTyped('num')
@@ -1540,7 +1540,7 @@ describe('a row of a list the window holds', () => {
   })
 
   it('is kept by the words typed around spaces', async () => {
-    const { commands } = createPalette({}, [], { THEME_ID: THEMES })
+    const { commands } = createPalette({}, [], { [THEME_ID]: THEMES })
     commands.startCommand(THEME_ID, front())
 
     await commands.setTyped('  rac  ')
@@ -1761,7 +1761,7 @@ describe('a command started with the text typed for it', () => {
   })
 
   it('still opens the step of a command that asks for a choice', () => {
-    const { commands } = createPalette()
+    const { commands } = createPalette({}, [], { [THEME_ID]: THEMES })
 
     expect(commands.startCommand(THEME_ID, front(), 'dark')).toBeNull()
     expect(commands.step.value).not.toBe('')
