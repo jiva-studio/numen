@@ -41,11 +41,6 @@
             "title": "The address",
             "type": "string",
             "required": true
-          },
-          {
-            "name": "wait",
-            "title": "Wait for the copy of the video",
-            "type": "boolean"
           }
         ]
       },
