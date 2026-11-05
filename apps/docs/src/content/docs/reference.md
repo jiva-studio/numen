@@ -96,7 +96,7 @@ The settings of the plugin Model Context Protocol Server.
 
 | | | |
 | --- | --- | --- |
-| `port` | a number | local TCP port on 127.0.0.1 for external MCP clients (Streamable HTTP at /mcp and SSE at /sse). From 1024 to 65535. |
+| `port` | a number | local TCP port on 127.0.0.1 for external MCP clients (Streamable HTTP at /mcp). From 1024 to 65535. |
 
 ### `md.numen.agents.numen`
 

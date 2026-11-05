@@ -136,7 +136,7 @@ const createTab = (
   })
   mountedWrappers.push(tab)
   return {
-    written: content,
+    writes: content,
     recordedWrites: content,
     tab,
     initialSearchQuery,
@@ -225,22 +225,22 @@ describe('the settings tab', () => {
   })
 
   it('writes a theme chosen under the owner app', async () => {
-    const { tab, written } = createTab()
+    const { tab, writes } = createTab()
     await openSystemSettings(tab)
     await findSelect(tab, 'Theme').get('[data-slot="select"]').trigger('click')
     await nextTick()
     await nextTick()
     await chooseItem('Dusk')
-    expect(written).toStrictEqual([
+    expect(writes).toStrictEqual([
       { at: ['app', 'appearance', 'theme'], value: '"plugin:md.example.themes/dusk"' },
     ])
   })
 
   it('turns the naming switch by writing it under the owner app', async () => {
-    const { tab, written } = createTab()
+    const { tab, writes } = createTab()
     await openSystemSettings(tab)
     tab.getComponent(Switch).vm.$emit('update:modelValue', false)
-    expect(written).toStrictEqual([
+    expect(writes).toStrictEqual([
       { at: ['app', 'naming', 'syncTitleAndFilename'], value: 'false' },
     ])
   })

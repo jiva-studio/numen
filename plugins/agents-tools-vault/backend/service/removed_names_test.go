@@ -217,12 +217,15 @@ func TestNoSourceFileNamesARemovedTool(t *testing.T) {
 				}
 				return nil
 			}
-			if isTestFile(entry.Name()) {
+			if isTestFile(entry.Name()) || !entry.Type().IsRegular() {
 				return nil
 			}
 			content, err := os.ReadFile(path)
-			if err != nil || !utf8.Valid(content) {
-				return nil //nolint:nilerr // an unreadable or binary file names no tool
+			if err != nil {
+				return err
+			}
+			if !utf8.Valid(content) {
+				return nil
 			}
 			for _, removed := range getRemovedToolNames() {
 				if bytes.Contains(content, []byte(removed)) {
