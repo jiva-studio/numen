@@ -9,7 +9,7 @@ import type { TitleBarAction } from '@numen/shell'
 import { getNamedIcon } from '@/shared/icons'
 import { findShortcutKeys, type CommandTarget } from '@/features/command-palette'
 
-/** The text of each held key in a hover text. */
+/** The text of each modifier key in a shortcut hover text. */
 const KEY_TEXT: Readonly<Record<PaletteIcon, string>> = {
   control: 'Ctrl',
   shift: 'Shift',
