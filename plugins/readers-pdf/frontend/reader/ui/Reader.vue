@@ -105,6 +105,23 @@ const rowStyle = computed(() => ({
 }))
 
 /**
+ * How many puts of the row back wait for a frame. The browser queues a scroll event when the row scrolls and
+ * delivers it with the next frame. An event queued before the row was hidden or moved reaches the
+ * handler after the browser has scrolled the row to its start, and reports the start as a place the
+ * person scrolled to.
+ */
+let waiting = 0
+
+/** Puts the row back with the next frame, and takes no scroll event as the person's until then. */
+function putRowBack(): void {
+  waiting += 1
+  props.paint(() => {
+    restore()
+    waiting -= 1
+  })
+}
+
+/**
  * Re-measures the viewport and puts the row back where it was. A reader
  * rendered while hidden has no viewport, and a row that was hidden or moved
  * in the document is scrolled to its start by the browser, so the caller
@@ -112,7 +129,7 @@ const rowStyle = computed(() => ({
  */
 const measure = (): void => {
   measureViewport()
-  props.paint(restore)
+  putRowBack()
 }
 
 defineExpose({
@@ -163,9 +180,7 @@ watch(pageLayout, (now, was) => {
 
 // A viewport that is reported again was hidden or moved, and the browser
 // scrolled its row to the start without a scroll event.
-watch(viewport, () => {
-  props.paint(restore)
-})
+watch(viewport, putRowBack)
 
 /* -------------------------------- Handlers -------------------------------- */
 /**
@@ -174,7 +189,7 @@ watch(viewport, () => {
  * are not navigation targets.
  */
 const onScroll = () => {
-  if (!isStill()) return
+  if (waiting > 0 || !isStill()) return
   if (middle.value !== props.at) emit('go', middle.value)
 }
 
