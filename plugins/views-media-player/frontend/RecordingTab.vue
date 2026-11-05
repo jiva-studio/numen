@@ -29,7 +29,7 @@ const targetPath = props.path || props.file || props.state?.path || props.state?
 
 const tab = useTranscript(props.recordings, targetPath, props.how)
 const { now, runs, isPlaying, isUnplayable } = tab.playback
-const menuItems = tab.offers.items
+const menuItems = tab.options.items
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
@@ -70,7 +70,7 @@ onUnmounted(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onChoose(id: string) {
-  tab.offers.run(id).catch(tab.reportFailure)
+  tab.options.run(id).catch(tab.reportFailure)
 }
 
 function onPlay() {

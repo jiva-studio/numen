@@ -66,7 +66,7 @@ func gatherAnswers(answers []answer) (map[int]Line, []int) {
 		}
 		after := countRemainingLines(one.batch.Lines)
 		for _, line := range one.lines {
-			collector.offer(line, after)
+			collector.keep(line, after)
 		}
 	}
 	return collector.lines, past
@@ -84,9 +84,9 @@ type gathering struct {
 	best map[int]int
 }
 
-// offer keeps the correction when it wins on every line it covers, where after
+// keep stores the correction when it wins on every line it covers, where after
 // is how many lines follow each line in the batch it came from.
-func (g *gathering) offer(line Line, after map[int]int) {
+func (g *gathering) keep(line Line, after map[int]int) {
 	first, last := line.Number, max(line.Last, line.Number)
 	for pos := first; pos <= last; pos++ {
 		if status, observed := g.best[pos]; observed && after[pos] < status {

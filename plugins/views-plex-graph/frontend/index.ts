@@ -17,7 +17,7 @@ export { PlexGraphView, PlexGraphView as PlexTab }
 export { createPlexKind, PLEX } from './kind'
 export { createPlexTab } from './model/usePlexTab'
 export { usePlexView } from './model/usePlexView'
-export { ITEMS, NONE, OFFERED, NEW_NOTE } from './lib/menu'
+export { ITEMS, NONE, AVAILABLE, NEW_NOTE } from './lib/menu'
 export * from './types'
 export * from './words'
 

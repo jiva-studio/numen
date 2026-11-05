@@ -641,7 +641,7 @@ func getBacklogged() map[string]string {
 // The deck screen calls CardsDue for what its decks offer today, and the preset
 // tab calls Curve for the curve over a preset's range. Both are called here as the
 // application calls them: the settings the curve is computed for are the ones the
-// vault holds. The curve at the preset's setting is the day the deck screen offers
+// vault holds. The curve at the preset's setting is the day the deck screen available
 // whenever the control is at today, and the reason a day is closed names the budget
 // its own goal steers and no other.
 func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
@@ -657,7 +657,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 		// there.
 		learned review.LearnedRule
 		// isSameDay is whether the control is at today, so the curve at its current
-		// position equals the day the deck screen offers.
+		// position equals the day the deck screen available.
 		isSameDay bool
 	}{
 		{
@@ -691,14 +691,14 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 			}
 			writePreset(t, handler, v, "Steady.md", p)
 
-			offers := 0
+			available := 0
 			for _, deck := range getVaultCount(t, handler, v).Decks {
 				if deck.Deck == "decks/Steady.md" {
-					offers = int(deck.Due + deck.New)
+					available = int(deck.Due + deck.New)
 				}
 			}
-			if offers == 0 {
-				t.Fatal("the deck screen offers nothing to compare")
+			if available == 0 {
+				t.Fatal("the deck screen available nothing to compare")
 			}
 
 			curveResp := getCurve(t, handler, v, "Steady.md", p)
@@ -706,8 +706,8 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 			if pos < 0 {
 				t.Fatalf("the preset stands nowhere on its own curve: %+v", curveResp.Now)
 			}
-			if got := int(curveResp.At[pos].Reviews); one.isSameDay && got != offers {
-				t.Errorf("the deck screen offers %d cards and the tab draws %d", offers, got)
+			if got := int(curveResp.At[pos].Reviews); one.isSameDay && got != available {
+				t.Errorf("the deck screen available %d cards and the tab draws %d", available, got)
 			}
 			if got := curveResp.At[pos].Closed; !slices.Contains(got, presetwire.ConvertBudgetToWire(one.closed)) {
 				t.Errorf("the day closed on %v, want %q among them", got, one.closed)
@@ -900,7 +900,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 		scopes++
 		want := int(one.PendingReviews + one.PendingNew)
 		if want == 0 {
-			t.Errorf("the tile over %q offers nothing to compare", one.Preset)
+			t.Errorf("the tile over %q available nothing to compare", one.Preset)
 		}
 
 		sessionResp, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
