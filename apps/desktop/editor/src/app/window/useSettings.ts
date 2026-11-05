@@ -369,8 +369,6 @@ export function useSettings({
 
   const retainedItem = createSettingsPaletteLists({ appearance, sync, rest, words })
 
-  const settingPalette = createWindowSettingPalette(rest, words)
-
   const kinds = [configured.kind]
 
   const changes = createChangeFollower({
@@ -398,7 +396,7 @@ export function useSettings({
     rest,
     configured,
     paletteLists: retainedItem,
-    settingPalette,
+    settingPalette: createWindowSettingPalette(rest, words),
     kinds,
     start,
     close,
