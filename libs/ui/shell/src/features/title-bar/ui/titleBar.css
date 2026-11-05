@@ -13,7 +13,7 @@
 
 .title-bar__inset {
   flex: none;
-  margin-inline-end: 16px;
+  margin-inline-end: 8px;
 }
 
 /* The actions and the title share the room between the controls. The room is measured here. */
