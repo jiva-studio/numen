@@ -9,7 +9,7 @@ import {
   getRelationErrorWords,
   NOTE_TYPE,
 } from '@numen/plugin-sdk'
-import { createNodeItems, NEW_NOTE, NONE, OFFERED } from '../lib/menu'
+import { createNodeItems, NEW_NOTE, NONE, AVAILABLE } from '../lib/menu'
 import { convertNeighbourhood, getNoteTypes } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
@@ -197,7 +197,7 @@ function usePlexMenu(options: {
       }
       return
     }
-    if (!OFFERED.has(id) && !declared.value.some((one) => one.id === id)) return
+    if (!AVAILABLE.has(id) && !declared.value.some((one) => one.id === id)) return
     const path = map.getNodePath(on.node)
     if (path) deps.runCommand(id, path, getName(path))
   }

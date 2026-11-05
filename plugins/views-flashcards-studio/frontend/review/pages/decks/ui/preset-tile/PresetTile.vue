@@ -19,7 +19,7 @@ defineEmits<{
 
 <template>
   <!-- Starting a session on a preset is the same act as starting a session on a deck,
-       one level up, so it is the same button. One with nothing to offer
+       one level up, so it is the same button. One with no cards to study
        is not pressed, and has said above why. -->
   <Button
     variant="outline"
