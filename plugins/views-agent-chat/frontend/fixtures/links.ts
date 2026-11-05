@@ -9,7 +9,7 @@ export const createLinkResolver =
   (notes: Readonly<Record<string, string>>) =>
   async (text: string): Promise<readonly TextLink[]> => {
     const found = new Map<string, TextLink>()
-    for (const match of text.matchAll(/\[\[([^[\]|#]+)([^[\]|]*)(?:\|([^[\]]*))?\]\]/g)) {
+    for (const match of text.matchAll(/\[\[([^[\]|#]+)((?:#[^[\]|]*)?)(?:\|([^[\]]*))?\]\]/g)) {
       const address = `name://${match[1]!.trim()}`
       found.set(match[0], {
         raw: match[0],

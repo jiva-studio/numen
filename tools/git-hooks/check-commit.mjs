@@ -156,7 +156,7 @@ export function validateCommitMessage(content, repoRoot) {
   }
 
   const allowedScopes = getDynamicScopes(repoRoot)
-  const match = header.match(/^([a-z]+)(?:\(([^)]+)\))?(!)?:\s+(.+)$/)
+  const match = header.match(/^([a-z]+)(?:\(([^)]+)\))?(!)?:\s(.+)$/)
 
   if (!match) {
     return {

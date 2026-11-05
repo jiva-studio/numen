@@ -353,9 +353,9 @@ const RE_TS_FAKE_CASTS = [
   { name: 'case "said"', re: /\bcase\s+['"]said['"]/g },
   { name: 'data-palette="said"', re: /\bdata-palette=["']said["']/g },
   { name: 'data-day-summary', re: /\bdata-day-summary\b/g },
-  { name: 'key held:', re: /(?:^|[{,]\s*|\s{2,})held:\s*[A-Za-z_$([{'"`0-9]/g },
-  { name: 'key refuses:', re: /(?:^|[{,]\s*|\s{2,})refuses:\s*[A-Za-z_$([{'"`0-9]/g },
-  { name: 'key asked:', re: /(?:^|[{,]\s*|\s{2,})asked:\s*[A-Za-z_$([{'"`0-9]/g },
+  { name: 'key held:', re: /(?:^|[{,]\s*|(?<!\s)\s{2,})held:\s*[A-Za-z_$([{'"`0-9]/g },
+  { name: 'key refuses:', re: /(?:^|[{,]\s*|(?<!\s)\s{2,})refuses:\s*[A-Za-z_$([{'"`0-9]/g },
+  { name: 'key asked:', re: /(?:^|[{,]\s*|(?<!\s)\s{2,})asked:\s*[A-Za-z_$([{'"`0-9]/g },
   { name: 'as unknown as Turn', re: /\bas\s+unknown\s+as\s+Turn\b/g },
   { name: 'as any as Turn', re: /\bas\s+any\s+as\s+Turn\b/g },
 ]
@@ -712,6 +712,32 @@ function shouldCheckCategory(cat) {
 
 let totalScannedFiles = 0
 
+/** Returns the part of a line before its first `//`. */
+function removeLineComment(line) {
+  const start = line.indexOf('//')
+  return start === -1 ? line : line.slice(0, start)
+}
+
+/**
+ * Removes each `//` comment whose text from its first `//` matches one of the patterns, with
+ * the spaces and tabs before it and the line break after it.
+ */
+function removeMatchingLineComments(text, patterns) {
+  const lines = text.split('\n')
+  let result = ''
+  for (const [index, line] of lines.entries()) {
+    const start = line.indexOf('//')
+    if (start !== -1 && patterns.some((re) => re.test(line.slice(start)))) {
+      let end = start
+      while (end > 0 && (line[end - 1] === ' ' || line[end - 1] === '\t')) end--
+      result += line.slice(0, end)
+    } else {
+      result += index === lines.length - 1 ? line : `${line}\n`
+    }
+  }
+  return result
+}
+
 function scanFile(filePath) {
   const relBase = fs.existsSync(rootDir) && fs.statSync(rootDir).isFile() ? path.dirname(rootDir) : rootDir
   const relPath = path.relative(relBase, filePath) || path.basename(filePath)
@@ -815,23 +841,21 @@ function scanFile(filePath) {
 
     // Remove useless poetic single-line comments
     const POETIC_PATTERNS = [
-      /\/\/\s*A\s+mark\s+shown\s+under\s+the\s+caret\s+is\s+quieter[^\n]*/i,
-      /\/\/[^\n]*is\s+quieter\s+than\s+the\s+words\s+it\s+marks[^\n]*/i,
-      /\/\/[^\n]*which\s+is\s+why\s+this\s+exists[^\n]*/i,
-      /\/\/[^\n]*owes\s+the\s+person\s+an\s+answer[^\n]*/i,
-      /\/\/[^\n]*stylesheet\s+the\s+window\s+wears[^\n]*/i,
-      /\/\/[^\n]*brackets\s+answer\s+one\s+question[^\n]*/i,
-      /\/\/[^\n]*stencil\s+a\s+card\s+is\s+cut\s+by[^\n]*/i,
-      /\/\/[^\n]*making\s+a\s+file\s+from\s+nothing[^\n]*/i,
-      /\/\/[^\n]*stands\s+taller\s+than[^\n]*/i,
-      /\/\/[^\n]*larger\s+than\s+the\s+room[^\n]*/i,
-      /\/\/[^\n]*larger\s+than\s+the\s+material[^\n]*/i,
-      /\/\/[^\n]*reached\s+further\s+than[^\n]*/i,
-      /\/\/[^\n]*follows\s+the\s+hand[^\n]*/i,
+      /\/\/\s*A\s+mark\s+shown\s+under\s+the\s+caret\s+is\s+quieter/i,
+      /is\s+quieter\s+than\s+the\s+words\s+it\s+marks/i,
+      /which\s+is\s+why\s+this\s+exists/i,
+      /owes\s+the\s+person\s+an\s+answer/i,
+      /stylesheet\s+the\s+window\s+wears/i,
+      /brackets\s+answer\s+one\s+question/i,
+      /stencil\s+a\s+card\s+is\s+cut\s+by/i,
+      /making\s+a\s+file\s+from\s+nothing/i,
+      /stands\s+taller\s+than/i,
+      /larger\s+than\s+the\s+room/i,
+      /larger\s+than\s+the\s+material/i,
+      /reached\s+further\s+than/i,
+      /follows\s+the\s+hand/i,
     ]
-    for (const pat of POETIC_PATTERNS) {
-      modified = modified.replace(new RegExp(`[ \\t]*${pat.source}\\n?`, 'gi'), '')
-    }
+    modified = removeMatchingLineComments(modified, POETIC_PATTERNS)
 
     if (modified !== content) {
       fs.writeFileSync(filePath, modified, 'utf8')
@@ -929,7 +953,7 @@ function scanFile(filePath) {
     }
 
     const lineWithoutStrings = line.replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/`[^`]*`/g, '``').replace(/'(?:[^'\\]|\\.)*'/g, "''")
-    const lineWithoutComments = lineWithoutStrings.replace(/\/\/.*$/, '').replace(/\/\*.*?\*\//g, '')
+    const lineWithoutComments = removeLineComment(lineWithoutStrings).replace(/\/\*.*?\*\//g, '')
 
     // 2. Participle Identifiers (variables, params, struct fields & member accesses)
     if (isCode && !isCommentLine && shouldCheckCategory('participles')) {
@@ -1265,7 +1289,7 @@ function scanFile(filePath) {
 
     // 21. UI copy in words files
     if (isTs && !isCommentLine && shouldCheckCategory('ui-words') && RE_WORDS_FILE.test(baseName) && !baseName.includes('.test.')) {
-      const code = line.replace(/\/\/.*$/, '')
+      const code = removeLineComment(line)
       if (!/(?:^\s*import\b)|(?:\bfrom\s+['"])/.test(code)) {
         for (const m of code.matchAll(RE_UI_STRING)) {
           const text = m[1] ?? m[2] ?? m[3] ?? ''
@@ -1290,7 +1314,7 @@ function scanFile(filePath) {
     }
 
     if (isCode && !isCommentLine && shouldCheckCategory('advisory')) {
-      for (const idMatch of lineWithoutStrings.replace(/\/\/.*$/, '').matchAll(RE_IDENTIFIER)) {
+      for (const idMatch of removeLineComment(lineWithoutStrings).matchAll(RE_IDENTIFIER)) {
         const parts = idMatch[0].split(/(?<=[a-z0-9])(?=[A-Z])|_/).map((w) => w.toLowerCase())
         if (parts.length < 2) continue
         const bad = /^(?:shadowRoot|ShadowRoot|attachShadow|boxShadow)$/.test(idMatch[0]) ? null : parts.find((w) => ADVISORY_IDENTIFIER_WORDS.has(w))

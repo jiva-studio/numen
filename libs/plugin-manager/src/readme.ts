@@ -7,7 +7,7 @@ export interface PluginReadmeParts {
   readonly more: string
 }
 
-const LEADING_H1 = /^\s*#\s+[^\n]+(?:\n+|$)/
+const LEADING_H1 = /^\s*#\s+\S[^\n]*\n*/
 const MORE_MARKER = /<!--\s*more\s*-->/i
 const RELATIVE_ASSET_LINK = /\]\((?:\.\/)?assets\//g
 
