@@ -97,7 +97,9 @@ test('a manifest has no flag that keeps an argument of a command out of the pale
     id: 'sample.open',
     title: 'Open',
     icon: 'file',
-    arguments: [{ name: 'note', title: 'Note', type: 'note', required: true, hiddenInPalette: true }],
+    arguments: [
+      { name: 'note', title: 'Note', type: 'note', required: true, hiddenInPalette: true },
+    ],
   }
   const { manifest, warnings } = parseManifest(
     JSON.stringify({ ...valid, contributes: { ...valid.contributes, commands: [command] } }),
