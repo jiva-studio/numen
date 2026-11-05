@@ -186,7 +186,7 @@ describe('the window buttons of a window that follows the settings of the shell'
     settings.close()
   })
 
-  it('stand at the right on Linux when the file holds a style nobody knows', async () => {
+  it('stand at the right on Linux when the file holds an unknown style', async () => {
     const { settings } = create({ window: { buttons: 'floating' } })
     const frame = useWindowFrame(async () => createRuntime('linux'), settings.windowButtons)
     await settings.start()
