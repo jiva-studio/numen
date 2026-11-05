@@ -5,7 +5,10 @@ import { expectWorkspaceDrawn, USABLE_WITHIN_MS } from '../../support/workspace.
 /** A copy of a settings file whose old entry of the importer holds an object where a text is declared. */
 const SETTINGS = JSON.stringify({
   v: 1,
-  importing: { yt_dlp: { environment: { SSL_CERT_FILE: '/etc/ssl/certs/ca-certificates.crt' } } },
+  importing: {
+    yt_dlp: { environment: { SSL_CERT_FILE: '/etc/ssl/certs/ca-certificates.crt' } },
+    ffmpeg: { command: ['ffmpeg', '-y'] },
+  },
 })
 
 test.describe('Start-up with a value of the wrong type in the settings file', () => {

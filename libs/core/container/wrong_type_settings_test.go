@@ -21,6 +21,7 @@ const importerManifest = `{
 	"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/x"},
 	"settings": [
 		{"key": "ytDlp", "type": "string", "title": "yt-dlp", "default": "", "replaces": ["importing.yt_dlp"]},
+		{"key": "ffmpeg", "type": "string", "title": "ffmpeg", "default": "", "replaces": ["importing.ffmpeg"]},
 		{"key": "retries", "type": "number", "title": "Retries", "default": 3},
 		{"key": "verbose", "type": "boolean", "title": "Verbose", "default": false}
 	]
@@ -229,6 +230,57 @@ func TestAnObjectUnderTheKeyPluginsDoesNotStopTheStart(t *testing.T) {
 	got, err := cfg.Settings()
 	if err != nil {
 		t.Fatalf("the file was refused: %v", err)
+	}
+	if value, found := got.GetValue(importerID, "ytDlp"); found {
+		t.Errorf("the object is in force as the yt-dlp program: %v", value)
+	}
+}
+
+func TestSeveralOldKeysHoldingTheWrongTypeDoNotStopTheStartOneAfterAnother(t *testing.T) {
+	const old = `{"importing":{"yt_dlp":{"environment":{"A":"b"}},"ffmpeg":{"command":["ffmpeg","-y"]}}}`
+	cfg, path := installationWith(t, old)
+	if err := cfg.MigratePluginSettings(); err != nil {
+		t.Fatalf("the start stops: %v", err)
+	}
+	got, err := cfg.Settings()
+	if err != nil {
+		t.Fatalf("the file was refused: %v", err)
+	}
+	for _, key := range []string{"ytDlp", "ffmpeg"} {
+		if value, found := got.GetValue(importerID, key); found {
+			t.Errorf("%s is in force as %v", key, value)
+		}
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != old {
+		t.Errorf("the file is now:\n%s", raw)
+	}
+}
+
+func TestAListMovedFromAnOldKeyToATextSettingDoesNotStopTheStart(t *testing.T) {
+	cfg, _ := installationWith(t, `{"importing":{"ffmpeg":{"command":["ffmpeg"]}}}`)
+	if err := cfg.MigratePluginSettings(); err != nil {
+		t.Fatalf("the start stops: %v", err)
+	}
+	if _, err := cfg.Settings(); err != nil {
+		t.Fatalf("the file was refused: %v", err)
+	}
+}
+
+func TestAnOldKeyOfTheWrongTypeDoesNotKeepAnotherOldKeyFromMoving(t *testing.T) {
+	cfg, _ := installationWith(t, `{"importing":{"yt_dlp":{"environment":{"A":"b"}},"ffmpeg":"/usr/bin/ffmpeg"}}`)
+	if err := cfg.MigratePluginSettings(); err != nil {
+		t.Fatalf("the start stops: %v", err)
+	}
+	got, err := cfg.Settings()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value, _ := got.GetValue(importerID, "ffmpeg"); value != "/usr/bin/ffmpeg" {
+		t.Errorf("the program in force is %v", value)
 	}
 	if value, found := got.GetValue(importerID, "ytDlp"); found {
 		t.Errorf("the object is in force as the yt-dlp program: %v", value)
