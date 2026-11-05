@@ -7,7 +7,7 @@
   background: var(--numen-titlebar);
   border-bottom: 1px solid var(--numen-rule);
   color: var(--numen-ink);
-  font-size: 10px;
+  font-size: 13px;
   user-select: none;
 }
 
