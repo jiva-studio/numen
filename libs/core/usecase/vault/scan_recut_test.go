@@ -127,7 +127,7 @@ func TestANoteChangedWithoutAKnownSizeUsesTheDefaultAndALaterSizeRechunksOnlyThe
 	if err := os.WriteFile(changed, []byte("# Gate\n\nThe gate of the orchard was mended in spring.\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	later := time.Now().Add(time.Hour)
+	later := time.Date(2040, time.January, 2, 3, 4, 5, 0, time.UTC)
 	if err := os.Chtimes(changed, later, later); err != nil {
 		t.Fatal(err)
 	}
