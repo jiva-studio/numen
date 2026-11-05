@@ -78,15 +78,15 @@ describe('the settings entry among the entries of the plugins', () => {
     expect(getCommands(menus)).toHaveLength(4)
   })
 
-  it('stays after a group that sorts before settings whatever the order of the orders in it', () => {
+  it('sorts the groups by name before the order inside them and keeps settings last', () => {
     const menus = setup([
       { ...tidePlacement, order: 99 },
       { pluginId: REEF, location: 'titleBar', command: 'reef.open', group: 'new', order: 1 },
     ])
 
     expect(getCommands(menus)).toEqual([
-      `${REEF}:reef.open`,
       `${TIDE}:tide.open`,
+      `${REEF}:reef.open`,
       'app:settings.open',
     ])
   })

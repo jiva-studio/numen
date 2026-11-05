@@ -94,11 +94,12 @@ describe('a command that only the backend of a plugin runs, in a place', () => {
   })
 
   it('is left out and reported where no list has the command', () => {
-    const { menus, reportIssue } = setup([
-      { pluginId: ATLAS, location: 'titleBar', command: 'atlas.ghost' },
-    ])
+    const { menus, reportIssue } = setup(
+      [{ pluginId: ATLAS, location: 'titleBar', command: 'atlas.ghost' }],
+      { editor: [editorCommand(COMMAND.openSettings, 'Open settings', 'settings')] },
+    )
 
-    expect(menus.getEntries('titleBar')).toEqual([])
+    expect(menus.getEntries('titleBar').map((one) => one.command)).toEqual([COMMAND.openSettings])
     expect(reportIssue).toHaveBeenCalledTimes(1)
   })
 })
@@ -142,6 +143,7 @@ describe('a command of the editor in a place', () => {
 
     expect(menus.getEntries('titleBar')).toMatchObject([
       { command: COMMAND.createNote, title: WORDS.newNote, icon: 'file-plus' },
+      { command: COMMAND.openSettings, title: WORDS.openSettings, icon: 'settings' },
     ])
   })
 })
