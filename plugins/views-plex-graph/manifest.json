@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
@@ -37,7 +37,8 @@
         "command": "graph.showNote",
         "group": "navigate",
         "order": 20
-      }
+      },
+      { "location": "titleBar", "command": "graph.open", "group": "navigate", "order": 20 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

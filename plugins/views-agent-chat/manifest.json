@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.agent.chat",
   "name": "Agent Chat",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Interactive chat tab for working with AI assistants",
   "capabilities": [],
@@ -29,7 +29,8 @@
         "icon": "bot",
         "scope": "note"
       }
-    ]
+    ],
+    "menus": [{ "location": "titleBar", "command": "chat.open", "group": "navigate", "order": 30 }]
   },
   "permissions": ["vault:read"],
   "settings": [
