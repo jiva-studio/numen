@@ -6,7 +6,6 @@ import type {
   CommandNote,
   ContextMenuRegistration,
   ContextMenuTarget,
-  Disposable,
   PluginContext,
   SettingsViewRegistration,
   VaultChangeEvent,
@@ -26,9 +25,11 @@ import { matchesShortcut } from './shortcuts'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
+  addEntry,
   disposeAllEntries,
   disposePluginEntry,
   matchesContextMenuTarget,
+  setStarting,
   type HostRegistry,
 } from './registry'
 import type { PluginContextHost, PluginHostDeps } from './types'
@@ -64,19 +65,6 @@ type RegistrationBridge = Pick<
   | 'registerSettingsView'
   | 'registerAgentProvider'
 >
-
-/** Puts an entry in a reactive map under a key; disposing it removes the entry if it is still there. */
-function addEntry<T>(holder: { value: ReadonlyMap<string, T> }, key: string, entry: T): Disposable {
-  holder.value = new Map(holder.value).set(key, entry)
-  return {
-    dispose: () => {
-      if (holder.value.get(key) !== entry) return
-      const updated = new Map(holder.value)
-      updated.delete(key)
-      holder.value = updated
-    },
-  }
-}
 
 function createRegistrationBridge(
   deps: PluginHostDeps,
@@ -245,6 +233,7 @@ function createHostRegistry(): HostRegistry {
     contexts: new Map(),
     manifests: new Map(),
     activated: shallowRef(new Set()),
+    starting: shallowRef(new Set()),
     disposed: new Set(),
     reportedIssues: new Set(),
     vaultListeners: new Set(),
@@ -345,6 +334,8 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
       }
       return ctx
     },
+    markPluginStarting: (pluginId: string): void => setStarting(registry, pluginId, true),
+    markPluginStarted: (pluginId: string): void => setStarting(registry, pluginId, false),
     registerManifest: (pluginId: string, manifest: Manifest): void => {
       if (registry.contexts.has(pluginId)) {
         throw new Error(
