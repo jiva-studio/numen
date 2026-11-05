@@ -70,15 +70,7 @@ export interface SettingsWriter {
    * The row chosen in the step of the command of a setting, `setting:<owner>:<key>`; the adapter
    * of the settings writes it.
    */
-  chooseSetting?(command: string, selected: string): Promise<void>
-  /** Left for the test doubles of the editor that still hand it over; no command calls it. */
-  chooseAppearance?(selected: string): Promise<void>
-  /** Left for the test doubles of the editor that still hand it over; no command calls it. */
-  chooseSync?(selected: string): Promise<void>
-  /** Left for the test doubles of the editor that still hand it over; no command calls it. */
-  choosePerformance?(selected: string): Promise<void>
-  /** Left for the test doubles of the editor that still hand it over; no command calls it. */
-  choosePluginSetting?(pluginId: string, key: string, selected: unknown): Promise<void>
+  chooseSetting(command: string, selected: string): Promise<void>
 }
 
 /** Reports a command's result as one line of text. */

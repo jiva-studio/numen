@@ -2,16 +2,6 @@
 import type { Configuration, SettingEdit } from '@/entities/settings'
 
 export interface SettingsPort {
-  /**
-   * Whether renaming either a note's title or the name of its file brings the
-   * other into line, as the settings hold it.
-   */
-  getSyncEnabled(): Promise<boolean>
-  /**
-   * That setting written into the settings file. What could not be written, and
-   * nothing where it was: the rename after this reads what was written.
-   */
-  setSyncEnabled(isEnabled: boolean): Promise<string | null>
   /** Every setting currently, and the models the settings offer. */
   getSettings(): Promise<Configuration>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>

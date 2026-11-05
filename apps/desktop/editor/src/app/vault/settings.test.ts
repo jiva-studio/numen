@@ -35,36 +35,6 @@ beforeEach(() => {
   request.writeSettings.mockReset().mockResolvedValue({})
 })
 
-describe('keeping a title and its file name in line', () => {
-  it('is on where the file says nothing of it', async () => {
-    request.getSettings.mockResolvedValue(answer({}))
-
-    expect(await core.getSyncEnabled()).toBe(true)
-  })
-
-  it('is off where the file turns it off', async () => {
-    request.getSettings.mockResolvedValue(
-      answer({ app: { naming: { syncTitleAndFilename: false } } }),
-    )
-
-    expect(await core.getSyncEnabled()).toBe(false)
-  })
-
-  it('is written under naming, as the file holds a value', async () => {
-    expect(await core.setSyncEnabled(false)).toBeNull()
-
-    expect(writtenLast()).toStrictEqual({
-      settings: [{ at: ['app', 'naming', 'syncTitleAndFilename'], value: 'false' }],
-    })
-  })
-
-  it('says what could not be written', async () => {
-    request.writeSettings.mockRejectedValue(new Error('the file is read-only'))
-
-    expect(await core.setSyncEnabled(true)).toEqual(expect.stringMatching(/./))
-  })
-})
-
 describe('every setting', () => {
   it('arrives with each model the settings offer, and whether its files are here', async () => {
     const model = {

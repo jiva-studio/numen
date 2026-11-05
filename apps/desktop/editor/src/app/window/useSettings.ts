@@ -6,7 +6,6 @@ import { themes } from '@/entities/settings'
 import {
   INTERFACE_SCALE,
   TEXT_SCALE,
-  syncSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
 import { APP_OWNER, createSettingPalette, type SettingPreview } from './settingCommands'
@@ -37,7 +36,6 @@ export interface SettingsDeps {
 
 interface SettingsTabConfigDeps {
   appearance: ReturnType<typeof createWindowAppearance>
-  sync: ReturnType<typeof syncSetting>
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
@@ -50,7 +48,6 @@ interface SettingsTabConfigDeps {
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
   const {
     appearance,
-    sync,
     rest,
     secrets,
     retry,
@@ -62,7 +59,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
     if (!content.some((one) => one.at[0] === 'app')) return
-    await Promise.all([appearance.reload(), sync.start()])
+    await appearance.reload()
   }
   return {
     ...(getSettingsViews ? { getSettingsViews } : {}),
@@ -210,7 +207,6 @@ export function useSettings({
   catalog,
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
-  const sync = syncSetting(core, words, log.getWriter('named'))
   const writeSettingsMessage = log.getWriter('configured')
   const rest = createSettingsStore(core, words, writeSettingsMessage)
   const getPluginName = (pluginId: string): string =>
@@ -239,7 +235,6 @@ export function useSettings({
     windowTabs.handle,
     createSettingsTabConfig({
       appearance,
-      sync,
       rest,
       secrets,
       retry,
@@ -259,12 +254,11 @@ export function useSettings({
 
   const changes = createChangeFollower({
     core,
-    refresh: () => Promise.all([rest.start(), appearance.reload(), sync.start()]),
+    refresh: () => Promise.all([rest.start(), appearance.reload()]),
   })
 
   const start = async () => {
     runInBackground(appearance.start(), reportError)
-    runInBackground(sync.start(), reportError)
     runInBackground(changes.start(), reportError)
     // The plugins the window starts are named by what this read answers.
     await rest.start()
@@ -277,7 +271,6 @@ export function useSettings({
 
   const api = {
     appearance,
-    sync,
     rest,
     configured,
     paletteLists: settingPalette.lists,

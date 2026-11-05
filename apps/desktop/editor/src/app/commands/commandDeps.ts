@@ -23,10 +23,6 @@ export interface CommandDepsOptions {
   /** Holds the open tabs back while the vault is switched; the tabs are written as they come where absent. */
   tabsHold?: TabsHold
   reached: Notes
-  /** Left for the test doubles of the editor that still hand it over; nothing reads it. */
-  appearance?: { chooseItem: (item: string) => Promise<void> | void }
-  /** Left for the test doubles of the editor that still hand it over; nothing reads it. */
-  oneName?: { choose: (item: string) => Promise<void> | void }
   /** The adapter that writes the row chosen in the step of the command of a setting. */
   settingPalette?: { choose: (command: string, item: string) => Promise<void> }
   rest: {

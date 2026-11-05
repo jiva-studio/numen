@@ -54,10 +54,6 @@ export interface CommandsDepsOptions {
   reload: () => void
   tabsHold?: TabsHold
   reached: Notes
-  /** Left for the test doubles of the editor that still hand it over; nothing reads it. */
-  appearance?: { chooseItem: (item: string) => Promise<void> | void }
-  /** Left for the test doubles of the editor that still hand it over; nothing reads it. */
-  oneName?: { choose: (item: string) => Promise<void> | void }
   /** The adapter that writes the row chosen in the step of the command of a setting. */
   settingPalette?: {
     getCommands: () => readonly Command[]
