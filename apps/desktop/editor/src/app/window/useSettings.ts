@@ -183,7 +183,10 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => {
       const promise = rest.writeSettings(content)
-      runInBackground(promise.then(() => followShell(content)), reportError)
+      runInBackground(
+        promise.then(() => followShell(content)),
+        reportError,
+      )
       return promise
     },
     writeSecret: (pluginId: string, name: string, key: string) =>
