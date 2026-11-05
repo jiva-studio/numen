@@ -31,8 +31,8 @@ describe('a core that cannot be reached', () => {
     page.unmount()
   })
 
-  it('says what went wrong in words, whatever was thrown', async () => {
-    const caughtError = new Error('ECONNREFUSED 127.0.0.1:45123')
+  it('says a lost connection in words, without the address it failed on', async () => {
+    const caughtError = new ConnectError('ECONNREFUSED 127.0.0.1:45123', Code.Unknown)
     const { page, open, message } = await toastAfter(caughtError)
 
     expect(open).toBe(true)
