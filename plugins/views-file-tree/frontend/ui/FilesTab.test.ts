@@ -2,6 +2,7 @@
  * A files tab drawn, in a document.
  */
 import { afterEach, describe, expect, it } from 'vitest'
+import { createLostConnection } from '@numen/plugin-sdk/testing'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { Menu, Tree } from '@numen/ui'
 import type { Entry } from '../types'
@@ -286,7 +287,7 @@ describe('a folder that could not be read', () => {
   it('is returned in the tab', async () => {
     const list = createFileTree({
       list: async () => {
-        throw new Error('the vault is not there')
+        throw createLostConnection('the vault is not there')
       },
     })
     const tab: FilesTabState = useFilesTab(list, {

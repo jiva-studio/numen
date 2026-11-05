@@ -363,7 +363,7 @@ describe('a tab kind component', () => {
     })
     expect(await bareCtx.openExternal('https://numen.md/')).toEqual({
       ok: false,
-      error: 'Numen is not responding; retrying',
+      error: 'the window opens no addresses',
     })
     expect(bareCtx.navigateTab?.('note', 'a.md')).toBeUndefined()
     expect(() => bareCtx.closeTab?.('tab-1')).not.toThrow()
