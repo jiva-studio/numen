@@ -193,8 +193,8 @@ func (c *SearchClient) SearchPassages(ctx context.Context, query PassageQuery) (
 	for i, kind := range query.Kinds {
 		kinds[i] = string(kind)
 	}
-	res, err := c.rpc.SearchPassages(ctx, newSearchRequest(c, &v1.HostSearchPassagesRequest{
-		Query: query.Query, Limit: int32(query.Limit), Kinds: kinds, PathPrefix: query.PathPrefix,
+	res, err := c.rpc.SearchPassages(ctx, newSearchRequest(c, &v1.HostSearchServiceSearchPassagesRequest{
+		Query: query.Query, Limit: int32(min(max(query.Limit, 0), MaxSearchedPassages)), Kinds: kinds, PathPrefix: query.PathPrefix,
 	}))
 	if err != nil {
 		return nil, readSearchCallError(err)

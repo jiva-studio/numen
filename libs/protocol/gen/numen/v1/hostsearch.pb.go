@@ -1172,7 +1172,7 @@ func (x *SetSearchFloorResponse) GetError() HostSearchErrorCode {
 	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
 }
 
-type HostSearchPassagesRequest struct {
+type HostSearchServiceSearchPassagesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// How many passages to answer with. Zero takes the number the host chooses.
@@ -1187,20 +1187,20 @@ type HostSearchPassagesRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostSearchPassagesRequest) Reset() {
-	*x = HostSearchPassagesRequest{}
+func (x *HostSearchServiceSearchPassagesRequest) Reset() {
+	*x = HostSearchServiceSearchPassagesRequest{}
 	mi := &file_numen_v1_hostsearch_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostSearchPassagesRequest) String() string {
+func (x *HostSearchServiceSearchPassagesRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostSearchPassagesRequest) ProtoMessage() {}
+func (*HostSearchServiceSearchPassagesRequest) ProtoMessage() {}
 
-func (x *HostSearchPassagesRequest) ProtoReflect() protoreflect.Message {
+func (x *HostSearchServiceSearchPassagesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostsearch_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1212,40 +1212,40 @@ func (x *HostSearchPassagesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostSearchPassagesRequest.ProtoReflect.Descriptor instead.
-func (*HostSearchPassagesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostSearchServiceSearchPassagesRequest.ProtoReflect.Descriptor instead.
+func (*HostSearchServiceSearchPassagesRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *HostSearchPassagesRequest) GetQuery() string {
+func (x *HostSearchServiceSearchPassagesRequest) GetQuery() string {
 	if x != nil {
 		return x.Query
 	}
 	return ""
 }
 
-func (x *HostSearchPassagesRequest) GetLimit() int32 {
+func (x *HostSearchServiceSearchPassagesRequest) GetLimit() int32 {
 	if x != nil {
 		return x.Limit
 	}
 	return 0
 }
 
-func (x *HostSearchPassagesRequest) GetKinds() []string {
+func (x *HostSearchServiceSearchPassagesRequest) GetKinds() []string {
 	if x != nil {
 		return x.Kinds
 	}
 	return nil
 }
 
-func (x *HostSearchPassagesRequest) GetPathPrefix() string {
+func (x *HostSearchServiceSearchPassagesRequest) GetPathPrefix() string {
 	if x != nil {
 		return x.PathPrefix
 	}
 	return ""
 }
 
-type HostSearchPassagesResponse struct {
+type HostSearchServiceSearchPassagesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
 	// The passages that answer, best first, at most three of one source.
@@ -1254,20 +1254,20 @@ type HostSearchPassagesResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostSearchPassagesResponse) Reset() {
-	*x = HostSearchPassagesResponse{}
+func (x *HostSearchServiceSearchPassagesResponse) Reset() {
+	*x = HostSearchServiceSearchPassagesResponse{}
 	mi := &file_numen_v1_hostsearch_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostSearchPassagesResponse) String() string {
+func (x *HostSearchServiceSearchPassagesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostSearchPassagesResponse) ProtoMessage() {}
+func (*HostSearchServiceSearchPassagesResponse) ProtoMessage() {}
 
-func (x *HostSearchPassagesResponse) ProtoReflect() protoreflect.Message {
+func (x *HostSearchServiceSearchPassagesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostsearch_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1279,19 +1279,19 @@ func (x *HostSearchPassagesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostSearchPassagesResponse.ProtoReflect.Descriptor instead.
-func (*HostSearchPassagesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostSearchServiceSearchPassagesResponse.ProtoReflect.Descriptor instead.
+func (*HostSearchServiceSearchPassagesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *HostSearchPassagesResponse) GetError() HostSearchErrorCode {
+func (x *HostSearchServiceSearchPassagesResponse) GetError() HostSearchErrorCode {
 	if x != nil {
 		return x.Error
 	}
 	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *HostSearchPassagesResponse) GetFound() []*Passage {
+func (x *HostSearchServiceSearchPassagesResponse) GetFound() []*Passage {
 	if x != nil {
 		return x.Found
 	}
@@ -1378,14 +1378,14 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x06recipe\x18\x01 \x01(\tR\x06recipe\x12\x14\n" +
 	"\x05floor\x18\x02 \x01(\x01R\x05floor\"M\n" +
 	"\x16SetSearchFloorResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\"~\n" +
-	"\x19HostSearchPassagesRequest\x12\x14\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\"\x8b\x01\n" +
+	"&HostSearchServiceSearchPassagesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x14\n" +
 	"\x05kinds\x18\x03 \x03(\tR\x05kinds\x12\x1f\n" +
 	"\vpath_prefix\x18\x04 \x01(\tR\n" +
-	"pathPrefix\"z\n" +
-	"\x1aHostSearchPassagesResponse\x123\n" +
+	"pathPrefix\"\x87\x01\n" +
+	"'HostSearchServiceSearchPassagesResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12'\n" +
 	"\x05found\x18\x02 \x03(\v2\x11.numen.v1.PassageR\x05found*\xdf\x02\n" +
 	"\x13HostSearchErrorCode\x12&\n" +
@@ -1401,15 +1401,15 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x1fSEARCH_FLOOR_SOURCE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aSEARCH_FLOOR_SOURCE_STORED\x10\x01\x12\"\n" +
 	"\x1eSEARCH_FLOOR_SOURCE_MODEL_HINT\x10\x02\x12\x1f\n" +
-	"\x1bSEARCH_FLOOR_SOURCE_DEFAULT\x10\x032\xd2\x05\n" +
+	"\x1bSEARCH_FLOOR_SOURCE_DEFAULT\x10\x032\xec\x05\n" +
 	"\x11HostSearchService\x12\\\n" +
 	"\x11GetEmbeddingState\x12\".numen.v1.GetEmbeddingStateRequest\x1a#.numen.v1.GetEmbeddingStateResponse\x12P\n" +
 	"\rGetIndexStats\x12\x1e.numen.v1.GetIndexStatsRequest\x1a\x1f.numen.v1.GetIndexStatsResponse\x12G\n" +
 	"\n" +
 	"EmbedTexts\x12\x1b.numen.v1.EmbedTextsRequest\x1a\x1c.numen.v1.EmbedTextsResponse\x12_\n" +
 	"\x12SampleSimilarities\x12#.numen.v1.SampleSimilaritiesRequest\x1a$.numen.v1.SampleSimilaritiesResponse\x12\\\n" +
-	"\x11GetBestSimilarity\x12\".numen.v1.GetBestSimilarityRequest\x1a#.numen.v1.GetBestSimilarityResponse\x12[\n" +
-	"\x0eSearchPassages\x12#.numen.v1.HostSearchPassagesRequest\x1a$.numen.v1.HostSearchPassagesResponse\x12S\n" +
+	"\x11GetBestSimilarity\x12\".numen.v1.GetBestSimilarityRequest\x1a#.numen.v1.GetBestSimilarityResponse\x12u\n" +
+	"\x0eSearchPassages\x120.numen.v1.HostSearchServiceSearchPassagesRequest\x1a1.numen.v1.HostSearchServiceSearchPassagesResponse\x12S\n" +
 	"\x0eGetSearchFloor\x12\x1f.numen.v1.GetSearchFloorRequest\x1a .numen.v1.GetSearchFloorResponse\x12S\n" +
 	"\x0eSetSearchFloor\x12\x1f.numen.v1.SetSearchFloorRequest\x1a .numen.v1.SetSearchFloorResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -1428,29 +1428,29 @@ func file_numen_v1_hostsearch_proto_rawDescGZIP() []byte {
 var file_numen_v1_hostsearch_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_hostsearch_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_numen_v1_hostsearch_proto_goTypes = []any{
-	(HostSearchErrorCode)(0),           // 0: numen.v1.HostSearchErrorCode
-	(SearchFloorSource)(0),             // 1: numen.v1.SearchFloorSource
-	(*GetEmbeddingStateRequest)(nil),   // 2: numen.v1.GetEmbeddingStateRequest
-	(*GetEmbeddingStateResponse)(nil),  // 3: numen.v1.GetEmbeddingStateResponse
-	(*GetIndexStatsRequest)(nil),       // 4: numen.v1.GetIndexStatsRequest
-	(*ExtensionStats)(nil),             // 5: numen.v1.ExtensionStats
-	(*GetIndexStatsResponse)(nil),      // 6: numen.v1.GetIndexStatsResponse
-	(*EmbedTextsRequest)(nil),          // 7: numen.v1.EmbedTextsRequest
-	(*EmbedTextsResponse)(nil),         // 8: numen.v1.EmbedTextsResponse
-	(*SimilarityQuery)(nil),            // 9: numen.v1.SimilarityQuery
-	(*SampleSimilaritiesRequest)(nil),  // 10: numen.v1.SampleSimilaritiesRequest
-	(*SimilarityRow)(nil),              // 11: numen.v1.SimilarityRow
-	(*SampleSimilaritiesResponse)(nil), // 12: numen.v1.SampleSimilaritiesResponse
-	(*GetBestSimilarityRequest)(nil),   // 13: numen.v1.GetBestSimilarityRequest
-	(*GetBestSimilarityResponse)(nil),  // 14: numen.v1.GetBestSimilarityResponse
-	(*GetSearchFloorRequest)(nil),      // 15: numen.v1.GetSearchFloorRequest
-	(*GetSearchFloorResponse)(nil),     // 16: numen.v1.GetSearchFloorResponse
-	(*SetSearchFloorRequest)(nil),      // 17: numen.v1.SetSearchFloorRequest
-	(*SetSearchFloorResponse)(nil),     // 18: numen.v1.SetSearchFloorResponse
-	(*HostSearchPassagesRequest)(nil),  // 19: numen.v1.HostSearchPassagesRequest
-	(*HostSearchPassagesResponse)(nil), // 20: numen.v1.HostSearchPassagesResponse
-	(*FloatVector)(nil),                // 21: numen.v1.FloatVector
-	(*Passage)(nil),                    // 22: numen.v1.Passage
+	(HostSearchErrorCode)(0),                        // 0: numen.v1.HostSearchErrorCode
+	(SearchFloorSource)(0),                          // 1: numen.v1.SearchFloorSource
+	(*GetEmbeddingStateRequest)(nil),                // 2: numen.v1.GetEmbeddingStateRequest
+	(*GetEmbeddingStateResponse)(nil),               // 3: numen.v1.GetEmbeddingStateResponse
+	(*GetIndexStatsRequest)(nil),                    // 4: numen.v1.GetIndexStatsRequest
+	(*ExtensionStats)(nil),                          // 5: numen.v1.ExtensionStats
+	(*GetIndexStatsResponse)(nil),                   // 6: numen.v1.GetIndexStatsResponse
+	(*EmbedTextsRequest)(nil),                       // 7: numen.v1.EmbedTextsRequest
+	(*EmbedTextsResponse)(nil),                      // 8: numen.v1.EmbedTextsResponse
+	(*SimilarityQuery)(nil),                         // 9: numen.v1.SimilarityQuery
+	(*SampleSimilaritiesRequest)(nil),               // 10: numen.v1.SampleSimilaritiesRequest
+	(*SimilarityRow)(nil),                           // 11: numen.v1.SimilarityRow
+	(*SampleSimilaritiesResponse)(nil),              // 12: numen.v1.SampleSimilaritiesResponse
+	(*GetBestSimilarityRequest)(nil),                // 13: numen.v1.GetBestSimilarityRequest
+	(*GetBestSimilarityResponse)(nil),               // 14: numen.v1.GetBestSimilarityResponse
+	(*GetSearchFloorRequest)(nil),                   // 15: numen.v1.GetSearchFloorRequest
+	(*GetSearchFloorResponse)(nil),                  // 16: numen.v1.GetSearchFloorResponse
+	(*SetSearchFloorRequest)(nil),                   // 17: numen.v1.SetSearchFloorRequest
+	(*SetSearchFloorResponse)(nil),                  // 18: numen.v1.SetSearchFloorResponse
+	(*HostSearchServiceSearchPassagesRequest)(nil),  // 19: numen.v1.HostSearchServiceSearchPassagesRequest
+	(*HostSearchServiceSearchPassagesResponse)(nil), // 20: numen.v1.HostSearchServiceSearchPassagesResponse
+	(*FloatVector)(nil),                             // 21: numen.v1.FloatVector
+	(*Passage)(nil),                                 // 22: numen.v1.Passage
 }
 var file_numen_v1_hostsearch_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.GetEmbeddingStateResponse.error:type_name -> numen.v1.HostSearchErrorCode
@@ -1466,14 +1466,14 @@ var file_numen_v1_hostsearch_proto_depIdxs = []int32{
 	0,  // 10: numen.v1.GetSearchFloorResponse.error:type_name -> numen.v1.HostSearchErrorCode
 	1,  // 11: numen.v1.GetSearchFloorResponse.source:type_name -> numen.v1.SearchFloorSource
 	0,  // 12: numen.v1.SetSearchFloorResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	0,  // 13: numen.v1.HostSearchPassagesResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	22, // 14: numen.v1.HostSearchPassagesResponse.found:type_name -> numen.v1.Passage
+	0,  // 13: numen.v1.HostSearchServiceSearchPassagesResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	22, // 14: numen.v1.HostSearchServiceSearchPassagesResponse.found:type_name -> numen.v1.Passage
 	2,  // 15: numen.v1.HostSearchService.GetEmbeddingState:input_type -> numen.v1.GetEmbeddingStateRequest
 	4,  // 16: numen.v1.HostSearchService.GetIndexStats:input_type -> numen.v1.GetIndexStatsRequest
 	7,  // 17: numen.v1.HostSearchService.EmbedTexts:input_type -> numen.v1.EmbedTextsRequest
 	10, // 18: numen.v1.HostSearchService.SampleSimilarities:input_type -> numen.v1.SampleSimilaritiesRequest
 	13, // 19: numen.v1.HostSearchService.GetBestSimilarity:input_type -> numen.v1.GetBestSimilarityRequest
-	19, // 20: numen.v1.HostSearchService.SearchPassages:input_type -> numen.v1.HostSearchPassagesRequest
+	19, // 20: numen.v1.HostSearchService.SearchPassages:input_type -> numen.v1.HostSearchServiceSearchPassagesRequest
 	15, // 21: numen.v1.HostSearchService.GetSearchFloor:input_type -> numen.v1.GetSearchFloorRequest
 	17, // 22: numen.v1.HostSearchService.SetSearchFloor:input_type -> numen.v1.SetSearchFloorRequest
 	3,  // 23: numen.v1.HostSearchService.GetEmbeddingState:output_type -> numen.v1.GetEmbeddingStateResponse
@@ -1481,7 +1481,7 @@ var file_numen_v1_hostsearch_proto_depIdxs = []int32{
 	8,  // 25: numen.v1.HostSearchService.EmbedTexts:output_type -> numen.v1.EmbedTextsResponse
 	12, // 26: numen.v1.HostSearchService.SampleSimilarities:output_type -> numen.v1.SampleSimilaritiesResponse
 	14, // 27: numen.v1.HostSearchService.GetBestSimilarity:output_type -> numen.v1.GetBestSimilarityResponse
-	20, // 28: numen.v1.HostSearchService.SearchPassages:output_type -> numen.v1.HostSearchPassagesResponse
+	20, // 28: numen.v1.HostSearchService.SearchPassages:output_type -> numen.v1.HostSearchServiceSearchPassagesResponse
 	16, // 29: numen.v1.HostSearchService.GetSearchFloor:output_type -> numen.v1.GetSearchFloorResponse
 	18, // 30: numen.v1.HostSearchService.SetSearchFloor:output_type -> numen.v1.SetSearchFloorResponse
 	23, // [23:31] is the sub-list for method output_type

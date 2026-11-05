@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 )
 
 func TestAFreshNoteIsSearchableByItsWordsBeforeItsVector(t *testing.T) {
@@ -19,7 +20,7 @@ func TestAFreshNoteIsSearchableByItsWordsBeforeItsVector(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := db.ChunkQueries().FindLexical(ctx, vault.ID, "water", nil, 10, true, "")
+	found, err := db.ChunkQueries().FindLexical(ctx, vault.ID, sourceport.LexicalQuery{Text: "water", Kinds: nil, Limit: 10, IsGrowing: true})
 	if err != nil {
 		t.Fatal(err)
 	}

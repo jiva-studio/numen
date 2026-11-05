@@ -117,6 +117,10 @@ type PluginSearchIndex interface {
 	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector,
 	// zero where there is none.
 	GetBestSimilarity(ctx context.Context, v domain.Vault, recipe string, query []float32) (float64, error)
+}
+
+// PluginPassageSearch is the search of the text of the vaults, as the plugins that call the host run it.
+type PluginPassageSearch interface {
 	// SearchPassages is the text of the vault that answers the query, best first, from every source and
 	// every text version: by the words, and by the meaning where the installation has a model. An
 	// installation with no model answers by the words alone.
@@ -144,9 +148,10 @@ type PluginSearchPolicy interface {
 	SetSearchFloor(ctx context.Context, v domain.Vault, recipe string, floor float64) error
 }
 
-// PluginSearch is the search index and the search floor of the vaults.
+// PluginSearch is the search index, the search of the text and the search floor of the vaults.
 type PluginSearch interface {
 	PluginSearchIndex
+	PluginPassageSearch
 	PluginSearchPolicy
 }
 

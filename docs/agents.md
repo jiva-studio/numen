@@ -101,7 +101,7 @@ Three plugins register the tools an agent can call, each for its own subject, an
 
 A card is named by its card id and never by the place it is in, so the cards stay addressable when a deck is reordered during a run. Every write to a deck takes the fingerprint `card_read` returned, and is applied only to the deck that fingerprint identifies.
 
-`file_read` is how a file that is not a note is read — a transcript somebody typed, an export, whatever they put in the folder — and how a file too long to return whole is read one range at a time.
+`file_read` is how a text file that is not a note is read — a transcript somebody typed, an export, whatever text they put in the folder — and how a file too long to return whole is read one range at a time. A binary file, such as a PDF, is read with `library_read`.
 
 ### How a tool is named
 

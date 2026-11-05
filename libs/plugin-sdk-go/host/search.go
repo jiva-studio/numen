@@ -145,6 +145,7 @@ type Search interface {
 	// installation has no such vault.
 	With(id domain.VaultID) Search
 	SearchIndex
+	PassageSearch
 	SearchPolicy
 }
 
@@ -171,20 +172,30 @@ type SearchIndex interface {
 	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector
 	// under the recipe, and zero where the vault has none.
 	GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error)
+}
+
+// PassageSearch searches the text of a vault. It needs the index:read permission.
+type PassageSearch interface {
 	// SearchPassages is the text of the vault that answers the query, best first, from the index of
 	// every source and every text version: by the words, and by the meaning where the installation has
 	// an embedding model. An installation with no model answers by the words alone, so the call
-	// does not return ErrNoModel. At most MaxSearchedPassagesPerSource passages of one source come back.
+	// does not return ErrNoModel. It returns at most MaxSearchedPassagesPerSource passages of one source.
 	SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error)
 }
 
-// MaxSearchedPassagesPerSource is how many passages of one source a SearchPassages call returns at most.
-const MaxSearchedPassagesPerSource = 3
+const (
+	// MaxSearchedPassagesPerSource is how many passages of one source a SearchPassages call returns at most.
+	MaxSearchedPassagesPerSource = 3
+	// DefaultSearchedPassages is how many passages a SearchPassages call returns at most when its limit
+	// is zero, and MaxSearchedPassages how many it returns at most for any limit.
+	DefaultSearchedPassages = 20
+	MaxSearchedPassages     = 100
+)
 
 // PassageQuery is a question to the passages of a vault.
 type PassageQuery struct {
 	Query string
-	// Limit is how many passages to return. Zero takes the number the host chooses.
+	// Limit is how many passages to return: DefaultSearchedPassages when zero, at most MaxSearchedPassages.
 	Limit int
 	// Kinds are the kinds of source to look in, KindNote or KindFile. Empty looks in every one.
 	Kinds []domain.SourceKind

@@ -237,7 +237,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 
 	// A full-text match runs across the whole table, and "shared" is in both
 	// vaults, so this is where a lost filter shows for a search by words.
-	words, err := dense.FindLexical(ctx, c.second.ID, "shared", nil, 20, false, "")
+	words, err := dense.FindLexical(ctx, c.second.ID, sourceport.LexicalQuery{Text: "shared", Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -348,7 +348,7 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 		"disorder once more", "disorder at last")
 
 	// Every small chunk of the note matches.
-	hits, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, "disorder", nil, 20, false, "")
+	hits, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, sourceport.LexicalQuery{Text: "disorder", Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -413,7 +413,7 @@ func TestSearch_ReturnsRequestedSection(t *testing.T) {
 	c := newCorpus(t)
 	c.writeSections(t, c.first, "notes/Entropy.md")
 
-	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, "Madhavendra Puri", nil, 20, false, "")
+	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -505,7 +505,7 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 
 	// A word that appears in no note in the vault, so no lexical match is possible.
 	const unsaid = "zzqqxx"
-	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, unsaid, nil, 20, false, "")
+	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, sourceport.LexicalQuery{Text: unsaid, Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -597,7 +597,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 	queries := c.db.ChunkQueries()
 	books := []domain.SourceKind{domain.KindFile}
 
-	words, err := queries.FindLexical(ctx, c.first.ID, "Madhavendra Puri", books, 20, false, "")
+	words, err := queries.FindLexical(ctx, c.first.ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: books, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -605,7 +605,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by words answered %d passages about books in a vault of notes", len(words))
 	}
 
-	named, err := queries.GetNamedPassages(ctx, c.first.ID, "Madhavendra Puri", books, 20, false, "")
+	named, err := queries.GetNamedPassages(ctx, c.first.ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: books, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}

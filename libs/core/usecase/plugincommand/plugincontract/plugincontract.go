@@ -59,6 +59,7 @@ type (
 	PluginSearch           = pluginport.PluginSearch
 	PluginSearchIndex      = pluginport.PluginSearchIndex
 	PluginPassageQuery     = pluginport.PluginPassageQuery
+	PluginPassageSearch    = pluginport.PluginPassageSearch
 	PluginSearchPolicy     = pluginport.PluginSearchPolicy
 	PluginSearchFloor      = pluginport.PluginSearchFloor
 	PluginSimilarityQuery  = pluginport.PluginSimilarityQuery

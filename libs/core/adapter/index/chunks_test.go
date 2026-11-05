@@ -234,7 +234,7 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	// "opening" is in both vaults, so what separates them is the filter.
-	shared, err := queries.FindLexical(ctx, getFirst().ID, "opening", nil, 10, false, "")
+	shared, err := queries.FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,7 +248,7 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	}
 
 	// A word only the other vault holds is not in this one.
-	leaked, err := queries.FindLexical(ctx, getFirst().ID, "second", nil, 10, false, "")
+	leaked, err := queries.FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "second", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +274,7 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 	}
 	// The words half finds the small chunks, which is one row per small chunk
 	// of the book.
-	lexical, err := queries.FindLexical(ctx, getFirst().ID, "first", nil, 10, false, "")
+	lexical, err := queries.FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "first", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -314,11 +314,11 @@ func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 		"Entropy.md":        domain.KindNote,
 	}
 
-	lexical, err := queries.FindLexical(ctx, getFirst().ID, "opening", nil, 10, false, "")
+	lexical, err := queries.FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
-	named, err := queries.GetNamedPassages(ctx, getFirst().ID, "opening", nil, 10, false, "")
+	named, err := queries.GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -443,14 +443,14 @@ func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 		t.Errorf("%d rows in the vector index describe a note that has been rewritten", got)
 	}
 	// The words of the note currently now are what the full-text index holds.
-	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, "longer", nil, 10, false, "")
+	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "longer", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(found) == 0 || found[0].Source != note.FileStat.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
-	if stale, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, "first", nil, 10, false, ""); err != nil {
+	if stale, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "first", Kinds: nil, Limit: 10}); err != nil {
 		t.Fatal(err)
 	} else if len(stale) != 0 {
 		t.Errorf("the words of the note before it was rewritten still answer: %+v", stale)
@@ -511,7 +511,7 @@ func TestRemovingASourcePreservesNothingSearchable(t *testing.T) {
 	if len(matches) != 0 {
 		t.Errorf("a removed book still answers a search: %+v", matches)
 	}
-	words, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, "first", nil, 10, false, "")
+	words, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "first", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1256,7 +1256,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 	saveSectionedBook(t, db, getFirst(), "library/chaitanya.pdf")
 	queries := db.ChunkQueries()
 
-	lexical, err := queries.FindLexical(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false, "")
+	lexical, err := queries.FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1267,7 +1267,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 		t.Fatal("the words half already answers with the section, and this proves nothing")
 	}
 
-	named, err := queries.GetNamedPassages(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false, "")
+	named, err := queries.GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1293,7 +1293,7 @@ func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
 	db := openDB(t)
 	saveSectionedBook(t, db, getFirst(), "library/chaitanya.pdf")
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false, "")
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1308,7 +1308,7 @@ func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 	saveSectionedBook(t, db, getFirst(), "library/chaitanya.pdf")
 	saveSectionedBook(t, db, getSecond(), "library/chaitanya.pdf")
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false, "")
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1355,7 +1355,7 @@ func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, "Thermodynamics", nil, 10, false, "")
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Thermodynamics", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1382,7 +1382,7 @@ func TestASectionSplitAwayIsNotFoundByItsName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false, "")
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1416,7 +1416,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false, "")
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
