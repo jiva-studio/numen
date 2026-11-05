@@ -261,7 +261,6 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Min:         one.Min,
 			Max:         one.Max,
 			Step:        one.Step,
-			Replaces:    one.GetReplaces(),
 			OptionsBy:   optionsBy,
 			When:        newCondition(one.GetWhen()),
 			Accept:      one.GetAccept(),

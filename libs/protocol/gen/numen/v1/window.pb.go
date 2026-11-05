@@ -28,6 +28,56 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// TaskKind is what an entry of the list of tasks is.
+type TaskKind int32
+
+const (
+	// Work that runs, stops, or fails.
+	TaskKind_TASK_KIND_UNSPECIFIED TaskKind = 0
+	// A message of the core, such as a notice of the read of the settings. It is
+	// neither running nor failed, and About holds the message.
+	TaskKind_TASK_KIND_NOTICE TaskKind = 1
+)
+
+// Enum value maps for TaskKind.
+var (
+	TaskKind_name = map[int32]string{
+		0: "TASK_KIND_UNSPECIFIED",
+		1: "TASK_KIND_NOTICE",
+	}
+	TaskKind_value = map[string]int32{
+		"TASK_KIND_UNSPECIFIED": 0,
+		"TASK_KIND_NOTICE":      1,
+	}
+)
+
+func (x TaskKind) Enum() *TaskKind {
+	p := new(TaskKind)
+	*p = x
+	return p
+}
+
+func (x TaskKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TaskKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_window_proto_enumTypes[0].Descriptor()
+}
+
+func (TaskKind) Type() protoreflect.EnumType {
+	return &file_numen_v1_window_proto_enumTypes[0]
+}
+
+func (x TaskKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TaskKind.Descriptor instead.
+func (TaskKind) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_window_proto_rawDescGZIP(), []int{0}
+}
+
 // Unit is what a piece of work counts. Bytes are read out in the sizes a
 // person reads them in, seconds as a length of time, and everything else is
 // counted one by one.
@@ -68,11 +118,11 @@ func (x Unit) String() string {
 }
 
 func (Unit) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_window_proto_enumTypes[0].Descriptor()
+	return file_numen_v1_window_proto_enumTypes[1].Descriptor()
 }
 
 func (Unit) Type() protoreflect.EnumType {
-	return &file_numen_v1_window_proto_enumTypes[0]
+	return &file_numen_v1_window_proto_enumTypes[1]
 }
 
 func (x Unit) Number() protoreflect.EnumNumber {
@@ -81,7 +131,7 @@ func (x Unit) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Unit.Descriptor instead.
 func (Unit) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_window_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_window_proto_rawDescGZIP(), []int{1}
 }
 
 // FlushResult is what a caller has left when it answers.
@@ -125,11 +175,11 @@ func (x FlushResult) String() string {
 }
 
 func (FlushResult) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_window_proto_enumTypes[1].Descriptor()
+	return file_numen_v1_window_proto_enumTypes[2].Descriptor()
 }
 
 func (FlushResult) Type() protoreflect.EnumType {
-	return &file_numen_v1_window_proto_enumTypes[1]
+	return &file_numen_v1_window_proto_enumTypes[2]
 }
 
 func (x FlushResult) Number() protoreflect.EnumNumber {
@@ -138,7 +188,7 @@ func (x FlushResult) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FlushResult.Descriptor instead.
 func (FlushResult) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_window_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_window_proto_rawDescGZIP(), []int{2}
 }
 
 type WatchTasksRequest struct {
@@ -265,6 +315,8 @@ type Task struct {
 	PluginName string `protobuf:"bytes,10,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
 	// Set for work that CancelTask can stop.
 	IsCancellable bool `protobuf:"varint,11,opt,name=is_cancellable,json=isCancellable,proto3" json:"is_cancellable,omitempty"`
+	// Kind says what the entry is: work, or a message of the core.
+	Kind          TaskKind `protobuf:"varint,12,opt,name=kind,proto3,enum=numen.v1.TaskKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -374,6 +426,13 @@ func (x *Task) GetIsCancellable() bool {
 		return x.IsCancellable
 	}
 	return false
+}
+
+func (x *Task) GetKind() TaskKind {
+	if x != nil {
+		return x.Kind
+	}
+	return TaskKind_TASK_KIND_UNSPECIFIED
 }
 
 type WatchQuitRequest struct {
@@ -770,7 +829,7 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x11WatchTasksRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
 	"\x12WatchTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xb3\x02\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xdb\x02\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
@@ -784,7 +843,8 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\vplugin_name\x18\n" +
 	" \x01(\tR\n" +
 	"pluginName\x12%\n" +
-	"\x0eis_cancellable\x18\v \x01(\bR\risCancellable\"*\n" +
+	"\x0eis_cancellable\x18\v \x01(\bR\risCancellable\x12&\n" +
+	"\x04kind\x18\f \x01(\x0e2\x12.numen.v1.TaskKindR\x04kind\"*\n" +
 	"\x10WatchQuitRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +
 	"\x11WatchQuitResponse\x12\x14\n" +
@@ -802,7 +862,10 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x11CancelTaskRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\"\x14\n" +
-	"\x12CancelTaskResponse*O\n" +
+	"\x12CancelTaskResponse*;\n" +
+	"\bTaskKind\x12\x19\n" +
+	"\x15TASK_KIND_UNSPECIFIED\x10\x00\x12\x14\n" +
+	"\x10TASK_KIND_NOTICE\x10\x01*O\n" +
 	"\x04Unit\x12\x14\n" +
 	"\x10UNIT_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vUNIT_THINGS\x10\x01\x12\x0e\n" +
@@ -835,42 +898,44 @@ func file_numen_v1_window_proto_rawDescGZIP() []byte {
 	return file_numen_v1_window_proto_rawDescData
 }
 
-var file_numen_v1_window_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_window_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_numen_v1_window_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_window_proto_goTypes = []any{
-	(Unit)(0),                       // 0: numen.v1.Unit
-	(FlushResult)(0),                // 1: numen.v1.FlushResult
-	(*WatchTasksRequest)(nil),       // 2: numen.v1.WatchTasksRequest
-	(*WatchTasksResponse)(nil),      // 3: numen.v1.WatchTasksResponse
-	(*Task)(nil),                    // 4: numen.v1.Task
-	(*WatchQuitRequest)(nil),        // 5: numen.v1.WatchQuitRequest
-	(*WatchQuitResponse)(nil),       // 6: numen.v1.WatchQuitResponse
-	(*ReportFlushRequest)(nil),      // 7: numen.v1.ReportFlushRequest
-	(*ReportFlushResponse)(nil),     // 8: numen.v1.ReportFlushResponse
-	(*GetCurrentVaultRequest)(nil),  // 9: numen.v1.GetCurrentVaultRequest
-	(*GetCurrentVaultResponse)(nil), // 10: numen.v1.GetCurrentVaultResponse
-	(*CancelTaskRequest)(nil),       // 11: numen.v1.CancelTaskRequest
-	(*CancelTaskResponse)(nil),      // 12: numen.v1.CancelTaskResponse
+	(TaskKind)(0),                   // 0: numen.v1.TaskKind
+	(Unit)(0),                       // 1: numen.v1.Unit
+	(FlushResult)(0),                // 2: numen.v1.FlushResult
+	(*WatchTasksRequest)(nil),       // 3: numen.v1.WatchTasksRequest
+	(*WatchTasksResponse)(nil),      // 4: numen.v1.WatchTasksResponse
+	(*Task)(nil),                    // 5: numen.v1.Task
+	(*WatchQuitRequest)(nil),        // 6: numen.v1.WatchQuitRequest
+	(*WatchQuitResponse)(nil),       // 7: numen.v1.WatchQuitResponse
+	(*ReportFlushRequest)(nil),      // 8: numen.v1.ReportFlushRequest
+	(*ReportFlushResponse)(nil),     // 9: numen.v1.ReportFlushResponse
+	(*GetCurrentVaultRequest)(nil),  // 10: numen.v1.GetCurrentVaultRequest
+	(*GetCurrentVaultResponse)(nil), // 11: numen.v1.GetCurrentVaultResponse
+	(*CancelTaskRequest)(nil),       // 12: numen.v1.CancelTaskRequest
+	(*CancelTaskResponse)(nil),      // 13: numen.v1.CancelTaskResponse
 }
 var file_numen_v1_window_proto_depIdxs = []int32{
-	4,  // 0: numen.v1.WatchTasksResponse.tasks:type_name -> numen.v1.Task
-	0,  // 1: numen.v1.Task.unit:type_name -> numen.v1.Unit
-	1,  // 2: numen.v1.ReportFlushRequest.result:type_name -> numen.v1.FlushResult
-	2,  // 3: numen.v1.WindowService.WatchTasks:input_type -> numen.v1.WatchTasksRequest
-	5,  // 4: numen.v1.WindowService.WatchQuit:input_type -> numen.v1.WatchQuitRequest
-	7,  // 5: numen.v1.WindowService.ReportFlush:input_type -> numen.v1.ReportFlushRequest
-	9,  // 6: numen.v1.WindowService.GetCurrentVault:input_type -> numen.v1.GetCurrentVaultRequest
-	11, // 7: numen.v1.WindowService.CancelTask:input_type -> numen.v1.CancelTaskRequest
-	3,  // 8: numen.v1.WindowService.WatchTasks:output_type -> numen.v1.WatchTasksResponse
-	6,  // 9: numen.v1.WindowService.WatchQuit:output_type -> numen.v1.WatchQuitResponse
-	8,  // 10: numen.v1.WindowService.ReportFlush:output_type -> numen.v1.ReportFlushResponse
-	10, // 11: numen.v1.WindowService.GetCurrentVault:output_type -> numen.v1.GetCurrentVaultResponse
-	12, // 12: numen.v1.WindowService.CancelTask:output_type -> numen.v1.CancelTaskResponse
-	8,  // [8:13] is the sub-list for method output_type
-	3,  // [3:8] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	5,  // 0: numen.v1.WatchTasksResponse.tasks:type_name -> numen.v1.Task
+	1,  // 1: numen.v1.Task.unit:type_name -> numen.v1.Unit
+	0,  // 2: numen.v1.Task.kind:type_name -> numen.v1.TaskKind
+	2,  // 3: numen.v1.ReportFlushRequest.result:type_name -> numen.v1.FlushResult
+	3,  // 4: numen.v1.WindowService.WatchTasks:input_type -> numen.v1.WatchTasksRequest
+	6,  // 5: numen.v1.WindowService.WatchQuit:input_type -> numen.v1.WatchQuitRequest
+	8,  // 6: numen.v1.WindowService.ReportFlush:input_type -> numen.v1.ReportFlushRequest
+	10, // 7: numen.v1.WindowService.GetCurrentVault:input_type -> numen.v1.GetCurrentVaultRequest
+	12, // 8: numen.v1.WindowService.CancelTask:input_type -> numen.v1.CancelTaskRequest
+	4,  // 9: numen.v1.WindowService.WatchTasks:output_type -> numen.v1.WatchTasksResponse
+	7,  // 10: numen.v1.WindowService.WatchQuit:output_type -> numen.v1.WatchQuitResponse
+	9,  // 11: numen.v1.WindowService.ReportFlush:output_type -> numen.v1.ReportFlushResponse
+	11, // 12: numen.v1.WindowService.GetCurrentVault:output_type -> numen.v1.GetCurrentVaultResponse
+	13, // 13: numen.v1.WindowService.CancelTask:output_type -> numen.v1.CancelTaskResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_window_proto_init() }
@@ -883,7 +948,7 @@ func file_numen_v1_window_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_window_proto_rawDesc), len(file_numen_v1_window_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,

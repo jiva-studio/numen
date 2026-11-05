@@ -51,6 +51,7 @@ const task = (id: string): Task => ({
   pluginId: '',
   pluginName: '',
   isCancellable: false,
+  kind: 'work',
 })
 
 describe('following the vault', () => {

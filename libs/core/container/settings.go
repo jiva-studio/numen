@@ -3,10 +3,6 @@ package container
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"io/fs"
-	"os"
 	"runtime"
 	"strings"
 
@@ -233,91 +229,4 @@ func (c Config) listAppSettingsOn(goos string) []pluginport.PluginSetting {
 		entries = append(entries, setting)
 	}
 	return entries
-}
-
-// MigratePluginSettings copies settings that existed before a plugin took
-// them over into the plugin's section. A setting whose manifest names the key
-// it replaces is written to the plugin's section of the file from the first
-// location that still holds the old key, unless the section already holds the
-// setting. The old keys remain in the file.
-func (c Config) MigratePluginSettings() error {
-	if c.PluginHost == nil {
-		return nil
-	}
-	path, err := c.settingsFile()
-	if err != nil {
-		return err
-	}
-	raw, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	var file map[string]any
-	if err := json.Unmarshal(raw, &file); err != nil {
-		c.handleError(fmt.Errorf("skip plugin settings migration, parse %s: %w", path, err))
-		return nil
-	}
-
-	moved := collectPluginSettingsMigrations(c.PluginHost.GetPluginInfos(), file)
-	if len(moved) == 0 {
-		return nil
-	}
-	return c.GetSettingsWriter()(moved)
-}
-
-func collectPluginSettingsMigrations(plugins []pluginport.PluginInfo, file map[string]any) []settingsport.Setting {
-	var moved []settingsport.Setting
-	for _, plugin := range plugins {
-		for _, setting := range plugin.Settings {
-			if len(setting.Replaces) == 0 || hasKeys(file, plugin.ID, setting.Key) {
-				continue
-			}
-			if s, ok := migrateOneSetting(plugin.ID, setting, file); ok {
-				moved = append(moved, s)
-			}
-		}
-	}
-	return moved
-}
-
-func migrateOneSetting(pluginID string, setting pluginport.PluginSetting, file map[string]any) (settingsport.Setting, bool) {
-	for _, place := range setting.Replaces {
-		value, found := findSettingsKeys(file, strings.Split(place, ".")...)
-		if !found {
-			continue
-		}
-		content, err := json.Marshal(value)
-		if err != nil {
-			continue
-		}
-		return settingsport.Setting{
-			Path: []string{pluginID, setting.Key}, JSON: string(content),
-		}, true
-	}
-	return settingsport.Setting{}, false
-}
-
-// findSettingsKeys is the value at the keys of a decoded document, and whether the document holds one.
-func findSettingsKeys(document map[string]any, keys ...string) (any, bool) {
-	var pos any = document
-	for _, key := range keys {
-		object, isObject := pos.(map[string]any)
-		if !isObject {
-			return nil, false
-		}
-		next, found := object[key]
-		if !found {
-			return nil, false
-		}
-		pos = next
-	}
-	return pos, true
-}
-
-func hasKeys(document map[string]any, keys ...string) bool {
-	_, found := findSettingsKeys(document, keys...)
-	return found
 }

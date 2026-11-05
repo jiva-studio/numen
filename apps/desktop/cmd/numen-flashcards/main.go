@@ -78,9 +78,6 @@ func run(cfg container.Config, debug debugOptions) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
-	if err := cfg.MigratePluginSettings(); err != nil {
-		return err
-	}
 	selected, err := cfg.Settings()
 	if err != nil {
 		return err

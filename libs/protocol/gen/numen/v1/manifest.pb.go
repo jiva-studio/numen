@@ -1026,7 +1026,6 @@ type ManifestSetting struct {
 	Min       *float64            `protobuf:"fixed64,9,opt,name=min,proto3,oneof" json:"min,omitempty"`
 	Max       *float64            `protobuf:"fixed64,10,opt,name=max,proto3,oneof" json:"max,omitempty"`
 	Step      *float64            `protobuf:"fixed64,11,opt,name=step,proto3,oneof" json:"step,omitempty"`
-	Replaces  []string            `protobuf:"bytes,13,rep,name=replaces,proto3" json:"replaces,omitempty"`
 	OptionsBy *ManifestOptionsBy  `protobuf:"bytes,14,opt,name=options_by,json=optionsBy,proto3" json:"options_by,omitempty"`
 	When      *ManifestCondition  `protobuf:"bytes,15,opt,name=when,proto3" json:"when,omitempty"`
 	Accept    []string            `protobuf:"bytes,16,rep,name=accept,proto3" json:"accept,omitempty"`
@@ -1146,13 +1145,6 @@ func (x *ManifestSetting) GetStep() float64 {
 		return *x.Step
 	}
 	return 0
-}
-
-func (x *ManifestSetting) GetReplaces() []string {
-	if x != nil {
-		return x.Replaces
-	}
-	return nil
 }
 
 func (x *ManifestSetting) GetOptionsBy() *ManifestOptionsBy {
@@ -1780,7 +1772,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xdf\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xc9\x04\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1793,8 +1785,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x03min\x18\t \x01(\x01H\x00R\x03min\x88\x01\x01\x12\x15\n" +
 	"\x03max\x18\n" +
 	" \x01(\x01H\x01R\x03max\x88\x01\x01\x12\x17\n" +
-	"\x04step\x18\v \x01(\x01H\x02R\x04step\x88\x01\x01\x12\x1a\n" +
-	"\breplaces\x18\r \x03(\tR\breplaces\x12:\n" +
+	"\x04step\x18\v \x01(\x01H\x02R\x04step\x88\x01\x01\x12:\n" +
 	"\n" +
 	"options_by\x18\x0e \x01(\v2\x1b.numen.v1.ManifestOptionsByR\toptionsBy\x12/\n" +
 	"\x04when\x18\x0f \x01(\v2\x1b.numen.v1.ManifestConditionR\x04when\x12\x16\n" +
@@ -1804,7 +1795,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\foptions_from\x18\x13 \x01(\tR\voptionsFromB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"\x8d\x01\n" +
+	"\x05_stepJ\x04\b\r\x10\x0e\"\x8d\x01\n" +
 	"\x0eManifestSecret\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +

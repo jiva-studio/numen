@@ -87,16 +87,14 @@
       "type": "string",
       "title": "yt-dlp",
       "description": "Path to the yt-dlp program",
-      "default": "",
-      "replaces": ["importing.yt_dlp"]
+      "default": ""
     },
     {
       "key": "ffmpeg",
       "type": "string",
       "title": "ffmpeg",
       "description": "Path to the ffmpeg program",
-      "default": "",
-      "replaces": ["importing.ffmpeg"]
+      "default": ""
     },
     {
       "key": "captions",

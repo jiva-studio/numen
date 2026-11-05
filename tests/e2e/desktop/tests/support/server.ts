@@ -48,6 +48,8 @@ const isListening = (port: number): Promise<boolean> =>
 export interface OwnServerOptions {
   /** Variables the server and its plugins start with. */
   readonly env?: Readonly<Record<string, string>>
+  /** The content of numen.json the server finds when it starts. */
+  readonly settings?: string
 }
 
 export const startOwnServer = async (
@@ -76,12 +78,16 @@ export const startOwnServer = async (
       fs.writeFileSync(target, content, { mode: file.startsWith('bin/') ? 0o755 : 0o644 })
     }
   }
+  if (options.settings !== undefined) {
+    fs.mkdirSync(settings, { recursive: true })
+    fs.writeFileSync(path.join(settings, 'numen.json'), options.settings)
+  }
   const port = await getFreePort()
   const child: ChildProcess = spawn(
     path.join(repoRoot, 'apps/desktop/numen-debug'),
     [`-debug-http-addr=${host}:${port}`, '-debug-mock-ml', `-vault=${vault}`],
     {
-      stdio: 'inherit',
+      stdio: ['inherit', 'inherit', 'pipe'],
       env: {
         ...process.env,
         XDG_CONFIG_HOME: config,
@@ -95,6 +101,11 @@ export const startOwnServer = async (
       },
     },
   )
+  let stderr = ''
+  child.stderr?.on('data', (chunk: Buffer) => {
+    stderr += chunk.toString()
+    process.stderr.write(chunk)
+  })
   const stop = async (): Promise<void> => {
     if (child.exitCode === null) {
       const ended = new Promise<void>((resolve) => child.once('exit', () => resolve()))
@@ -107,7 +118,7 @@ export const startOwnServer = async (
   while (!(await isListening(port))) {
     if (child.exitCode !== null || Date.now() - startedAt > 60_000) {
       await stop()
-      throw new Error(`the debug server did not start on port ${port}`)
+      throw new Error(`the debug server did not start on port ${port}: ${stderr.trim()}`)
     }
     await new Promise((resolve) => setTimeout(resolve, 100))
   }

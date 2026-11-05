@@ -22,6 +22,7 @@ import {
   SearchMode,
   SearchService,
   SettingsService,
+  TaskKind,
   TabMoveErrorCode,
   TextErrorCode,
   TextService,
@@ -79,6 +80,7 @@ export type ModelPresenceCode = Presence
 export const SEARCH_MODE = SearchMode
 export type SearchModeCode = SearchMode
 
+export const TASK_KIND = TaskKind
 export const TASK_UNIT = Unit
 export type TaskUnitCode = Unit
 

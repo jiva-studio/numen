@@ -266,13 +266,14 @@ func (o *Installation) SayTheme(message string) {
 	o.State.reportTask(run.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
-// Report records configuration messages as tasks.
+// Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
 		o.State.reportTask(run.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Read settings",
-			Error: one,
+			About: one,
+			Kind:  run.KindNotice,
 		})
 	}
 }

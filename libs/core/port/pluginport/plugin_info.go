@@ -13,9 +13,6 @@ type PluginSetting struct {
 	Min         *float64
 	Max         *float64
 	Step        *float64
-	// Replaces are the places in the settings file the setting was kept before the plugin took it
-	// over, as the keys that lead to each joined by dots.
-	Replaces []string
 	// OptionsBy, When, Accept and Multiple are as the manifest declares them.
 	OptionsBy *PluginSettingOptionsBy
 	When      *PluginSettingCondition
@@ -47,7 +44,6 @@ func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, option
 		Min:         declared.Min,
 		Max:         declared.Max,
 		Step:        declared.Step,
-		Replaces:    declared.Replaces,
 		OptionsBy:   declared.OptionsBy,
 		When:        declared.When,
 		Accept:      declared.Accept,

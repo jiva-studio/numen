@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrItMBCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0EhEKCXBsdWdpbl9pZBgJIAEoCRITCgtwbHVnaW5fbmFtZRgKIAEoCRIWCg5pc19jYW5jZWxsYWJsZRgLIAEoCCIiChBXYXRjaFF1aXRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIxChFXYXRjaFF1aXRSZXNwb25zZRINCgV0b2tlbhgBIAEoCRINCgVmbHVzaBgCIAEoCCJaChJSZXBvcnRGbHVzaFJlcXVlc3QSDgoGd2luZG93GAEgASgJEg0KBXRva2VuGAIgASgJEiUKBnJlc3VsdBgDIAEoDjIVLm51bWVuLnYxLkZsdXNoUmVzdWx0IhUKE1JlcG9ydEZsdXNoUmVzcG9uc2UiKAoWR2V0Q3VycmVudFZhdWx0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiKAoXR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkiLwoRQ2FuY2VsVGFza1JlcXVlc3QSDgoGd2luZG93GAEgASgJEgoKAmlkGAIgASgJIhQKEkNhbmNlbFRhc2tSZXNwb25zZSpPCgRVbml0EhQKEFVOSVRfVU5TUEVDSUZJRUQQABIPCgtVTklUX1RISU5HUxABEg4KClVOSVRfQllURVMQAhIQCgxVTklUX1NFQ09ORFMQAyp4CgtGbHVzaFJlc3VsdBIcChhGTFVTSF9SRVNVTFRfVU5TUEVDSUZJRUQQABIYChRGTFVTSF9SRVNVTFRfTk9USElORxABEhgKFEZMVVNIX1JFU1VMVF9XUklUVEVOEAISFwoTRkxVU0hfUkVTVUxUX0FTS0lORxADMo8DCg1XaW5kb3dTZXJ2aWNlEkkKCldhdGNoVGFza3MSGy5udW1lbi52MS5XYXRjaFRhc2tzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoVGFza3NSZXNwb25zZTABEkYKCVdhdGNoUXVpdBIaLm51bWVuLnYxLldhdGNoUXVpdFJlcXVlc3QaGy5udW1lbi52MS5XYXRjaFF1aXRSZXNwb25zZTABEkoKC1JlcG9ydEZsdXNoEhwubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXF1ZXN0Gh0ubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXNwb25zZRJWCg9HZXRDdXJyZW50VmF1bHQSIC5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXF1ZXN0GiEubnVtZW4udjEuR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USRwoKQ2FuY2VsVGFzaxIbLm51bWVuLnYxLkNhbmNlbFRhc2tSZXF1ZXN0GhwubnVtZW4udjEuQ2FuY2VsVGFza1Jlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIvUBCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0EhEKCXBsdWdpbl9pZBgJIAEoCRITCgtwbHVnaW5fbmFtZRgKIAEoCRIWCg5pc19jYW5jZWxsYWJsZRgLIAEoCBIgCgRraW5kGAwgASgOMhIubnVtZW4udjEuVGFza0tpbmQiIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiWgoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIlCgZyZXN1bHQYAyABKA4yFS5udW1lbi52MS5GbHVzaFJlc3VsdCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIigKFkdldEN1cnJlbnRWYXVsdFJlcXVlc3QSDgoGd2luZG93GAEgASgJIigKF0dldEN1cnJlbnRWYXVsdFJlc3BvbnNlEg0KBXZhdWx0GAEgASgJIi8KEUNhbmNlbFRhc2tSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRIKCgJpZBgCIAEoCSIUChJDYW5jZWxUYXNrUmVzcG9uc2UqOwoIVGFza0tpbmQSGQoVVEFTS19LSU5EX1VOU1BFQ0lGSUVEEAASFAoQVEFTS19LSU5EX05PVElDRRABKk8KBFVuaXQSFAoQVU5JVF9VTlNQRUNJRklFRBAAEg8KC1VOSVRfVEhJTkdTEAESDgoKVU5JVF9CWVRFUxACEhAKDFVOSVRfU0VDT05EUxADKngKC0ZsdXNoUmVzdWx0EhwKGEZMVVNIX1JFU1VMVF9VTlNQRUNJRklFRBAAEhgKFEZMVVNIX1JFU1VMVF9OT1RISU5HEAESGAoURkxVU0hfUkVTVUxUX1dSSVRURU4QAhIXChNGTFVTSF9SRVNVTFRfQVNLSU5HEAMyjwMKDVdpbmRvd1NlcnZpY2USSQoKV2F0Y2hUYXNrcxIbLm51bWVuLnYxLldhdGNoVGFza3NSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hUYXNrc1Jlc3BvbnNlMAESRgoJV2F0Y2hRdWl0EhoubnVtZW4udjEuV2F0Y2hRdWl0UmVxdWVzdBobLm51bWVuLnYxLldhdGNoUXVpdFJlc3BvbnNlMAESSgoLUmVwb3J0Rmx1c2gSHC5udW1lbi52MS5SZXBvcnRGbHVzaFJlcXVlc3QaHS5udW1lbi52MS5SZXBvcnRGbHVzaFJlc3BvbnNlElYKD0dldEN1cnJlbnRWYXVsdBIgLm51bWVuLnYxLkdldEN1cnJlbnRWYXVsdFJlcXVlc3QaIS5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXNwb25zZRJHCgpDYW5jZWxUYXNrEhsubnVtZW4udjEuQ2FuY2VsVGFza1JlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxUYXNrUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.WatchTasksRequest
@@ -145,6 +145,13 @@ export type Task = Message<"numen.v1.Task"> & {
    * @generated from field: bool is_cancellable = 11;
    */
   isCancellable: boolean;
+
+  /**
+   * Kind says what the entry is: work, or a message of the core.
+   *
+   * @generated from field: numen.v1.TaskKind kind = 12;
+   */
+  kind: TaskKind;
 };
 
 /**
@@ -331,6 +338,34 @@ export const CancelTaskResponseSchema: GenMessage<CancelTaskResponse> = /*@__PUR
   messageDesc(file_numen_v1_window, 10);
 
 /**
+ * TaskKind is what an entry of the list of tasks is.
+ *
+ * @generated from enum numen.v1.TaskKind
+ */
+export enum TaskKind {
+  /**
+   * Work that runs, stops, or fails.
+   *
+   * @generated from enum value: TASK_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * A message of the core, such as a notice of the read of the settings. It is
+   * neither running nor failed, and About holds the message.
+   *
+   * @generated from enum value: TASK_KIND_NOTICE = 1;
+   */
+  NOTICE = 1,
+}
+
+/**
+ * Describes the enum numen.v1.TaskKind.
+ */
+export const TaskKindSchema: GenEnum<TaskKind> = /*@__PURE__*/
+  enumDesc(file_numen_v1_window, 0);
+
+/**
  * Unit is what a piece of work counts. Bytes are read out in the sizes a
  * person reads them in, seconds as a length of time, and everything else is
  * counted one by one.
@@ -365,7 +400,7 @@ export enum Unit {
  * Describes the enum numen.v1.Unit.
  */
 export const UnitSchema: GenEnum<Unit> = /*@__PURE__*/
-  enumDesc(file_numen_v1_window, 0);
+  enumDesc(file_numen_v1_window, 1);
 
 /**
  * FlushResult is what a caller has left when it answers.
@@ -405,7 +440,7 @@ export enum FlushResult {
  * Describes the enum numen.v1.FlushResult.
  */
 export const FlushResultSchema: GenEnum<FlushResult> = /*@__PURE__*/
-  enumDesc(file_numen_v1_window, 1);
+  enumDesc(file_numen_v1_window, 2);
 
 /**
  * WindowService answers about one window: what it has in front of the person,

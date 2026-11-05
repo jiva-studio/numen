@@ -3,7 +3,7 @@
  * response maps to an empty or zero value.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { FLUSH_RESULT, TASK_UNIT } from '@numen/core-client'
+import { FLUSH_RESULT, TASK_KIND, TASK_UNIT } from '@numen/core-client'
 import { sessionCore } from './session'
 
 const request = vi.hoisted(() => ({
@@ -151,6 +151,7 @@ describe('the streams a window follows', () => {
             pluginId: 'md.example.scans',
             pluginName: 'Scan reader',
             isCancellable: true,
+            kind: TASK_KIND.NOTICE,
           },
           {
             id: 'later',
@@ -164,6 +165,7 @@ describe('the streams a window follows', () => {
             pluginId: '',
             pluginName: '',
             isCancellable: false,
+            kind: TASK_KIND.UNSPECIFIED,
           },
         ],
       }
@@ -183,6 +185,7 @@ describe('the streams a window follows', () => {
           pluginId: 'md.example.scans',
           pluginName: 'Scan reader',
           isCancellable: true,
+          kind: 'notice',
         },
         {
           id: 'later',
@@ -196,6 +199,7 @@ describe('the streams a window follows', () => {
           pluginId: '',
           pluginName: '',
           isCancellable: false,
+          kind: 'work',
         },
       ],
     ])

@@ -106,7 +106,7 @@ func (f *Files) OpenAt(path string, into Document) error {
 		return err
 	}
 	if err := json.Unmarshal(raw, into); err != nil {
-		return err
+		return fmt.Errorf("%s: %s: %w", path, describeErrorLocation(err), err)
 	}
 	// Unmarshal accepts a bare null and leaves the defaults in place, so the bytes
 	// are checked again to be a single object.
