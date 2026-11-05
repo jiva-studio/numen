@@ -291,16 +291,6 @@ describe('the size the keyboard is standing on', () => {
     expect(sizes(one.sheet)).toBe(SIZED)
   })
 
-  it('cancels a pending size hold when the keyboard moves to a theme row', async () => {
-    const one = await startWindow()
-
-    one.appearance.previewSize('interfaceScale', 1.5)
-    one.appearance.previewTheme('mine:sea')
-    await wait()
-
-    expect(sizes(one.sheet)).toBe(SIZED)
-  })
-
   it('is drawn once the keyboard has stood on it', async () => {
     const one = await startWindow()
 

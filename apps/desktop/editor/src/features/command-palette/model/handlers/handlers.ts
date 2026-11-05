@@ -94,6 +94,17 @@ export const commands = {
 
 export const registerCommand = commands.registerCommand
 
+/** Writes the row chosen for a setting, and reports a rejected write by the reason the write gives. */
+async function runSetting(invocation: CommandInvocation, on: CommandDeps): Promise<void> {
+  try {
+    await on.settings.chooseSetting?.(invocation.id, invocation.name)
+  } catch (error) {
+    const hasCode = error instanceof Error && 'code' in error
+    const reason = error instanceof Error && !hasCode ? error.message : formatErrorMessage(error)
+    on.writeMessage(reason, 'error')
+  }
+}
+
 export async function runInvocation(
   invocation: CommandInvocation | null,
   on: CommandDeps,
@@ -107,7 +118,7 @@ export async function runInvocation(
   on.emitEvent?.(`onCommand:${invocation.id}`)
   try {
     if (isSetting) {
-      await on.settings.chooseSetting?.(invocation.id, invocation.name)
+      await runSetting(invocation, on)
     } else if (handler) {
       await handler(withCurrentNotePath(invocation, on), on, words)
     }
