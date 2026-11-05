@@ -51,9 +51,9 @@ export function createPluginMenus(deps: PluginMenusDeps): Menus {
 
   return createMenus({
     getPlacements: () => {
-      const placed = deps.getPlacements()
-      if (!placed) return undefined
-      return [...placed, ...(deps.getAppPlacements?.() ?? APP_PLACEMENTS)]
+      const fromPlugins = deps.getPlacements()
+      if (!fromPlugins) return undefined
+      return [...fromPlugins, ...(deps.getAppPlacements?.() ?? APP_PLACEMENTS)]
     },
     findCommand: (fullId) =>
       getCommandOwner(fullId) === APP_COMMAND_OWNER

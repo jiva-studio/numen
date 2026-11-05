@@ -8,5 +8,10 @@ import type { MenuPlacement } from '@numen/plugin-host'
 export const APP_PLACEMENT_OWNER = 'app'
 
 export const APP_PLACEMENTS: MenuPlacement[] = [
-  { pluginId: APP_PLACEMENT_OWNER, location: 'titleBar', command: 'app:settings.open', group: 'settings' },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    location: 'titleBar',
+    command: 'app:settings.open',
+    group: 'settings',
+  },
 ]
