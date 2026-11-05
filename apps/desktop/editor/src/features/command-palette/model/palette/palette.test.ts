@@ -9,7 +9,7 @@ import { defineComponent, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { runSupport } from './runSupport'
 import type { CommandTarget, NoteLookup, PaletteLists, RunSupport, StepGroup } from '../../types'
-import { useCommandPalette } from './palette'
+import { useCommandPalette, type Commands } from './palette'
 import { usePaletteShortcuts } from './shortcuts'
 import type { VaultList, Vault } from '@/entities/vault'
 import type { NameMatch, SearchState } from '../search/search'
@@ -19,6 +19,17 @@ import { createDeferred, type Deferred } from '@/testing/deferred'
 /** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
 function rethrow(error: unknown): never {
   throw error
+}
+
+/**
+ * Chooses a drawn row of the step by the id and the action the row itself carries: the
+ * row at `which` among the drawn rows, or the row with that id. A row that is not drawn
+ * is chosen by its id alone.
+ */
+function chooseRow(commands: Commands, which: number | string = 0) {
+  const items = commands.groups.value.flatMap((group) => group.items)
+  const row = typeof which === 'number' ? items[which] : items.find((one) => one.id === which)
+  return commands.chooseItem(row?.id ?? String(which), row?.actions?.[0]?.id ?? '')
 }
 
 /** What is in front, which a test moves under the commands. */
@@ -348,7 +359,7 @@ describe('a command that asks for a name', () => {
     commands.startCommand('app:note.createChild', front())
     commands.setTyped('Entropy').catch(rethrow)
 
-    expect(commands.chooseItem('name', 'name')).toStrictEqual({
+    expect(chooseRow(commands)).toStrictEqual({
       id: 'app:note.createChild',
       path: 'physics/Ontology.md',
       vault: { id: 'physics', name: 'Physics' },
@@ -366,7 +377,7 @@ describe('a command that asks for a name', () => {
     const { commands } = createPalette()
     commands.startCommand('app:note.createChild', front())
 
-    expect(commands.chooseItem('name', 'name')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
   })
 
   it('puts the title the note has now in the field, for a change of title', () => {
@@ -423,11 +434,11 @@ describe('destroying a note', () => {
     commands.startCommand('app:note.delete', front())
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
-    expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
 
     commands.setTyped('Ontolog').catch(rethrow)
 
-    expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
   })
 
   it('submits once the name of the note is what was typed', () => {
@@ -436,7 +447,7 @@ describe('destroying a note', () => {
     commands.setTyped('Ontology').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
-    expect(commands.chooseItem('exactly', 'exactly')?.id).toBe('app:note.delete')
+    expect(chooseRow(commands)?.id).toBe('app:note.delete')
   })
 })
 
@@ -453,7 +464,7 @@ describe('a note that moves under an open step', () => {
 
     commands.setTyped('Substance').catch(rethrow)
 
-    expect(commands.chooseItem('name', 'name')?.path).toBe('physics/Being.md')
+    expect(chooseRow(commands)?.path).toBe('physics/Being.md')
   })
 
   it('is not destroyed by the name it had, and is by the name it has', () => {
@@ -465,12 +476,12 @@ describe('a note that moves under an open step', () => {
     commands.setTyped('Ontology').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
-    expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
 
     commands.setTyped('Being').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.title).toBe('Destroy “Being”')
-    expect(commands.chooseItem('exactly', 'exactly')?.path).toBe('physics/Being.md')
+    expect(chooseRow(commands)?.path).toBe('physics/Being.md')
   })
 
   it('carries the tab holding it, so the invocation reaches it wherever it went', () => {
@@ -480,7 +491,7 @@ describe('a note that moves under an open step', () => {
 
     commands.setTyped('Substance').catch(rethrow)
 
-    expect(commands.chooseItem('name', 'name')?.note).toBe('active')
+    expect(chooseRow(commands)?.note).toBe('active')
   })
 
   it('leaves a step over another note at its current position', () => {
@@ -491,7 +502,7 @@ describe('a note that moves under an open step', () => {
 
     commands.setTyped('Substance').catch(rethrow)
 
-    expect(commands.chooseItem('name', 'name')?.path).toBe('physics/Ontology.md')
+    expect(chooseRow(commands)?.path).toBe('physics/Ontology.md')
   })
 })
 
@@ -541,7 +552,7 @@ describe('a command that asks for a note', () => {
     commands.startCommand('app:note.goTo', front())
     await commands.setTyped('en')
 
-    expect(commands.chooseItem('physics/Entropy.md', 'pick')).toStrictEqual({
+    expect(chooseRow(commands, 'physics/Entropy.md')).toStrictEqual({
       id: 'app:note.goTo',
       path: 'physics/Entropy.md',
       vault: { id: 'physics', name: 'Physics' },
@@ -652,15 +663,15 @@ describe('a command that offers a list the window holds', () => {
     commands.startCommand('app:appearance.chooseMode', front())
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
-    expect(commands.chooseItem('mode:system', 'chosen')).toBeNull()
-    expect(commands.chooseItem('mode:none', 'chosen')).toBeNull()
+    expect(chooseRow(commands, 'mode:system')).toBeNull()
+    expect(chooseRow(commands, 'mode:none')).toBeNull()
   })
 
   it('returns the row that was chosen, from whichever group it stood in', () => {
     const { commands } = createPalette({}, [], target)
     commands.startCommand('app:appearance.chooseTheme', front())
 
-    expect(commands.chooseItem('preset:dracula', 'chosen')).toStrictEqual({
+    expect(chooseRow(commands, 'preset:dracula')).toStrictEqual({
       id: 'app:appearance.chooseTheme',
       path: 'physics/Ontology.md',
       note: null,
@@ -832,7 +843,7 @@ describe('a command that asks for a vault', () => {
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.groups.value[0]?.items[0]?.detail).toBe(`${words.gone} · /vaults/Gone`)
-    expect(commands.chooseItem('gone', 'open')).toBeNull()
+    expect(chooseRow(commands, 'gone')).toBeNull()
   })
 
   /**
@@ -847,7 +858,7 @@ describe('a command that asks for a vault', () => {
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.groups.value[0]?.items[0]?.detail).toBe(`${words.current} · /vaults/Physics`)
-    expect(commands.chooseItem('physics', 'open')).toBeNull()
+    expect(chooseRow(commands, 'physics')).toBeNull()
   })
 
   it('says on every row what choosing it asks for', async () => {
@@ -863,7 +874,7 @@ describe('a command that asks for a vault', () => {
     commands.startCommand('app:vault.open', front())
     await settle()
 
-    expect(commands.chooseItem('heat', 'open')).toMatchObject({
+    expect(chooseRow(commands, 'heat')).toMatchObject({
       id: 'app:vault.open',
       vault: { id: 'heat', name: 'Heat' },
     })
@@ -918,7 +929,7 @@ describe('renaming the vault in front', () => {
     commands.startCommand('app:vault.rename', front())
     commands.setTyped('Heat').catch(rethrow)
 
-    expect(commands.chooseItem('name', 'name')).toMatchObject({
+    expect(chooseRow(commands)).toMatchObject({
       id: 'app:vault.rename',
       name: 'Heat',
       vault: { id: 'physics', name: 'Physics' },
@@ -942,14 +953,17 @@ describe('a vault taken off the list', () => {
     )
     commands.startCommand(id, front())
     await settle()
-    commands.chooseItem('heat', 'open')
+    chooseRow(commands, 'heat')
     return commands
   }
 
   it('is confirmed over the vault that was chosen, saying the folder stays', async () => {
     const commands = await chooseVault('app:vault.remove')
 
-    expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['no', 'yes'])
+    expect(commands.groups.value[0]?.items.map((item) => item.title)).toStrictEqual([
+      words.keepsVault,
+      'Remove “Heat”',
+    ])
     expect(commands.groups.value[0]?.items[0]?.title).toBe(words.keepsVault)
     expect(commands.groups.value[0]?.items[1]?.title).toBe('Remove “Heat”')
     expect(commands.groups.value[0]?.items[1]?.detail).toBe(words.stays)
@@ -958,7 +972,7 @@ describe('a vault taken off the list', () => {
   it('is carried out over that vault once the question is answered', async () => {
     const commands = await chooseVault('app:vault.remove')
 
-    expect(commands.chooseItem('yes', 'yes')).toMatchObject({
+    expect(chooseRow(commands, 1)).toMatchObject({
       id: 'app:vault.remove',
       vault: { id: 'heat', name: 'Heat' },
     })
@@ -967,7 +981,7 @@ describe('a vault taken off the list', () => {
   it('pops the confirmation step and returns null when answered with no', async () => {
     const commands = await chooseVault('app:vault.remove')
 
-    expect(commands.chooseItem('no', 'no')).toBeNull()
+    expect(chooseRow(commands, 0)).toBeNull()
     expect(commands.groups.value[0]?.id).toBe('vaults')
   })
 
@@ -991,7 +1005,7 @@ describe('a vault taken off the list', () => {
     expect(commands.groups.value[0]?.items[0]?.detail).toBe(words.binned)
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(commands.placeholder.value).toBe(words.typeVaultBack)
-    expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
   })
 
   it('submits once the name of that vault is what was typed', async () => {
@@ -1000,7 +1014,7 @@ describe('a vault taken off the list', () => {
     commands.setTyped('Heat').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
-    expect(commands.chooseItem('exactly', 'exactly')).toMatchObject({
+    expect(chooseRow(commands)).toMatchObject({
       id: 'app:vault.erase',
       vault: { id: 'heat', name: 'Heat' },
     })
@@ -1011,7 +1025,7 @@ describe('a vault taken off the list', () => {
 
     commands.setTyped('Physics').catch(rethrow)
 
-    expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
   })
 })
 
@@ -1409,18 +1423,18 @@ describe('what a step draws', () => {
         id: 'physics/Entropy.md',
         title: 'Entropy',
         at: [{ start: 0, end: 1 }],
-        actions: [{ id: 'pick', text: words.travel }],
+        actions: [{ id: expect.any(String), text: words.travel }],
       },
       {
         id: 'physics/Heat.md',
         title: 'Heat',
-        actions: [{ id: 'pick', text: words.travel }],
+        actions: [{ id: expect.any(String), text: words.travel }],
       },
       {
         id: 'Untitled.md',
         title: 'Untitled.md',
         at: [{ start: 0, end: 1 }],
-        actions: [{ id: 'pick', text: words.travel }],
+        actions: [{ id: expect.any(String), text: words.travel }],
       },
     ])
   })
@@ -1457,16 +1471,19 @@ describe('what a step draws', () => {
     )
     commands.startCommand('app:vault.remove', front())
     await settle()
-    commands.chooseItem('heat', 'open')
+    chooseRow(commands, 'heat')
 
-    expect(commands.groups.value[0]?.items.map((item) => item.actions)).toStrictEqual([
-      [{ id: 'no', text: words.keepsVault }],
-      [{ id: 'yes', text: words.removeVaultAction }],
-    ])
+    expect(
+      commands.groups.value[0]?.items.map((item) =>
+        (item.actions ?? []).map((action) => action.text),
+      ),
+    ).toStrictEqual([[words.keepsVault], [words.removeVaultAction]])
 
     commands.setTyped('  remo  ').catch(rethrow)
 
-    expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['yes'])
+    expect(commands.groups.value[0]?.items.map((item) => item.title)).toStrictEqual([
+      'Remove “Heat”',
+    ])
   })
 
   it('takes the name typed back around spaces, under the one action that destroys', () => {
@@ -1477,10 +1494,10 @@ describe('what a step draws', () => {
 
     expect(commands.groups.value[0]?.id).toBe('exactly')
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
-    expect(commands.groups.value[0]?.items[0]?.actions).toStrictEqual([
-      { id: 'exactly', text: words.destroys },
-    ])
-    expect(commands.chooseItem('exactly', 'exactly')?.name).toBe('Ontology')
+    expect(commands.groups.value[0]?.items[0]?.actions?.map((action) => action.text)).toStrictEqual(
+      [words.destroys],
+    )
+    expect(chooseRow(commands)?.name).toBe('Ontology')
   })
 })
 
@@ -1505,12 +1522,12 @@ describe('a row of a list the window holds', () => {
         id: 'preset:numen',
         title: 'numen',
         detail: 'Current',
-        actions: [{ id: 'chosen', text: words.chooses }],
+        actions: [{ id: expect.any(String), text: words.chooses }],
       },
       {
         id: 'preset:dracula',
         title: 'dracula',
-        actions: [{ id: 'chosen', text: words.chooses }],
+        actions: [{ id: expect.any(String), text: words.chooses }],
       },
     ])
   })
@@ -1590,7 +1607,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
           id: 'org.example.sample:args.run',
           text: 'With args',
           group: 'window',
-          needs: 'arguments',
+          input: 'arguments',
           prompts: [
             { name: 'topic', title: 'Topic title', isRequired: true },
             { name: 'detail', title: 'Detail title', isRequired: false },
@@ -1601,7 +1618,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
           id: 'org.example.sample:noPrompts.run',
           text: 'No prompts',
           group: 'window',
-          needs: 'arguments',
+          input: 'arguments',
           isAvailable: () => true,
         },
       ],
@@ -1609,18 +1626,18 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
 
     commands.startCommand('org.example.sample:noPrompts.run', front())
     expect(commands.placeholder.value).toBe(words.typeCommand)
-    expect(commands.chooseItem('name', 'name')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
     commands.leaveStep()
 
     commands.startCommand('org.example.sample:args.run', front())
     expect(commands.placeholder.value).toBe('Topic title')
-    expect(commands.chooseItem('name', 'name')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
 
     commands.setTyped('  Quantum  ').catch(rethrow)
-    expect(commands.chooseItem('name', 'name')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
     expect(commands.placeholder.value).toBe('Detail title')
 
-    const result = commands.chooseItem('name', 'name')
+    const result = chooseRow(commands)
     expect(result?.id).toBe('org.example.sample:args.run')
     expect(result?.values).toStrictEqual({ topic: 'Quantum' })
   })

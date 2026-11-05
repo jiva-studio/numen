@@ -53,7 +53,7 @@ describe('the commands over the vaults an installation holds', () => {
 describe('the commands that ask for a choice among a few', () => {
   it('are the ones that set how the window is drawn and how it works', () => {
     const choosing = createCommands(words)
-      .filter((one) => one.needs === 'choosing')
+      .filter((one) => one.input === 'choice')
       .map((one) => one.id)
 
     expect(choosing).toStrictEqual([
@@ -89,7 +89,7 @@ describe('getPrompt', () => {
         { name: 'p2', title: 'Second', isRequired: false },
       ],
     }
-    expect(getPrompt({ step: 'naming', command: commandWithPrompts, on: target })).toBeUndefined()
+    expect(getPrompt({ step: 'name', command: commandWithPrompts, on: target })).toBeUndefined()
     expect(getPrompt({ step: 'arguments', command: commandWithPrompts, on: target })?.name).toBe(
       'p1',
     )
@@ -199,7 +199,7 @@ describe('the command that opens a document chosen as a result', () => {
 
   it('needs no input, so it runs as soon as it is chosen', () => {
     expect(open()).toBeDefined()
-    expect(open()?.needs).toBeUndefined()
+    expect(open()?.input).toBeUndefined()
   })
 
   it('is not one of the commands over a note, so the menu of a file row does not list it', () => {

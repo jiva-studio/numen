@@ -4,7 +4,7 @@
 import { computed, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/entities/vault'
-import { EXACT, NO, YES, getPrompt, type PendingStep } from '../../lib/step/step'
+import { getPrompt, type PendingStep } from '../../lib/step/step'
 import type {
   CommandInvocation,
   CommandTarget,
@@ -17,11 +17,11 @@ import type { NameMatch } from '../search/search'
 
 /** The field placeholder for each step that requires a single input. */
 const getPrompts = (words: Words): Partial<Record<PromptStep, string>> => ({
-  naming: words.typeName,
-  picking: words.typeNote,
-  choosing: words.typeChoice,
-  vaults: words.typeVault,
-  asking: words.answer,
+  name: words.typeName,
+  note: words.typeNote,
+  choice: words.typeChoice,
+  vault: words.typeVault,
+  confirmation: words.answer,
 })
 
 export interface PaletteStepsOptions {
@@ -55,7 +55,7 @@ function resolveSelectionAction(
   },
   deps: StepActionDeps,
 ): CommandInvocation | null {
-  if (step.step === 'picking') {
+  if (step.step === 'note') {
     const one = choice.found.find((match) => match.path === choice.item)
     return one
       ? deps.invocation(step.command.id, {
@@ -66,7 +66,7 @@ function resolveSelectionAction(
       : null
   }
   // Stryker disable next-line ConditionalExpression: Caller guarantees step is picking or vaults.
-  if (step.step === 'vaults') {
+  if (step.step === 'vault') {
     const one = choice.vaults.find((vault) => vault.id === choice.item)
     if (!one || choice.isAside(one)) return null
     const on = { ...step.on, vault: { id: one.id, name: one.name } }
@@ -82,9 +82,9 @@ function resolveInputOrChoiceAction(
   deps: StepActionDeps,
 ): CommandInvocation | null {
   const name = deps.text.value.trim()
-  if (step.step === 'naming') return name ? deps.invocation(step.command.id, step.on, name) : null
+  if (step.step === 'name') return name ? deps.invocation(step.command.id, step.on, name) : null
   // Stryker disable next-line ConditionalExpression: Caller guarantees step is naming or choosing.
-  if (step.step === 'choosing') {
+  if (step.step === 'choice') {
     const rows = deps.lists.getStepGroups(step.command.id, deps.text.value).flatMap((g) => g.items)
     const one = rows.find((r) => r.id === item)
     return !one || one.isDisabled ? null : deps.invocation(step.command.id, step.on, one.id)
@@ -94,18 +94,18 @@ function resolveInputOrChoiceAction(
 
 function resolveConfirmationAction(
   step: PendingStep,
-  action: string,
+  item: string,
   deps: StepActionDeps,
 ): CommandInvocation | null {
-  const name = deps.text.value.trim()
-  if (step.step === 'asking') {
-    if (action === NO) {
+  if (step.step === 'confirmation') {
+    if (item !== step.command.id) {
       deps.popStep()
       return null
     }
-    return action === YES ? deps.invocation(step.command.id, step.on) : null
+    return deps.invocation(step.command.id, step.on)
   }
-  return action === EXACT && name === deps.getStepTitle(step)
+  const name = deps.text.value.trim()
+  return item === step.command.id && name === deps.getStepTitle(step)
     ? deps.invocation(step.command.id, step.on, name)
     : null
 }
@@ -140,14 +140,14 @@ function resolveStepAction(
   },
   deps: StepActionDeps,
 ): CommandInvocation | null {
-  if (step.step === 'picking' || step.step === 'vaults') {
+  if (step.step === 'note' || step.step === 'vault') {
     return resolveSelectionAction(step, choice, deps)
   }
-  if (step.step === 'naming' || step.step === 'choosing') {
+  if (step.step === 'name' || step.step === 'choice') {
     return resolveInputOrChoiceAction(step, choice.item, deps)
   }
   if (step.step === 'arguments') return resolveArgumentAction(step, deps)
-  return resolveConfirmationAction(step, choice.action, deps)
+  return resolveConfirmationAction(step, choice.item, deps)
 }
 
 function useStepComputed(deps: {
@@ -164,7 +164,7 @@ function useStepComputed(deps: {
   const placeholder = computed(() => {
     const s = here.value
     if (!s) return words.typeCommand
-    if (s.step === 'exactly') return s.command.warns?.back ?? words.typeBack
+    if (s.step === 'retypedName') return s.command.warns?.back ?? words.typeBack
     if (s.step === 'arguments') return getPrompt(s)?.title ?? words.typeCommand
     return prompts[s.step as PromptStep] ?? words.typeCommand
   })
@@ -175,7 +175,7 @@ function useStepComputed(deps: {
 
   const opensOn = computed(() => {
     const s = here.value
-    if (s?.step !== 'choosing') return ''
+    if (s?.step !== 'choice') return ''
     const rows = lists.getStepGroups(s.command.id, text.value).flatMap((g) => g.items)
     return rows.find((one) => one.isCurrent)?.id ?? ''
   })
@@ -209,7 +209,7 @@ function createStepStack(options: {
     options.onDrop()
     options.text.value = step.command.getFieldText?.(step.on) ?? ''
     options.steps.value = [...options.steps.value, step]
-    if (step.step === 'vaults') options.onLists()
+    if (step.step === 'vault') options.onLists()
   }
 
   const popStep = () => {
@@ -217,7 +217,7 @@ function createStepStack(options: {
     options.onDrop()
     options.text.value = ''
     options.steps.value = options.steps.value.slice(0, -1)
-    if (options.here.value?.step === 'vaults') options.onLists()
+    if (options.here.value?.step === 'vault') options.onLists()
   }
 
   return { pushStep, popStep }

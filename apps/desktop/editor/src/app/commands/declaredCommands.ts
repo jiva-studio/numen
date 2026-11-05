@@ -40,7 +40,7 @@ export function createDeclaredPaletteCommands(
       ...(one.icon ? { icon: getNamedIcon(one.icon) } : {}),
       ...(required.length > 0
         ? {
-            needs: 'arguments' as const,
+            input: 'arguments' as const,
             prompts: required.map(({ name, title, isRequired }) => ({
               name,
               title,

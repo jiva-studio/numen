@@ -29,12 +29,13 @@ export type CommandGroup = 'note' | 'file' | 'window' | 'settings' | 'vault'
 
 /**
  * The palette's current step: a prompt for one value, or the list of commands.
- * `picking` queries the vault and `vaults` queries the installation; `choosing`
- * offers an in-memory list; `arguments` prompts for one of a command's `prompts`,
- * one step per prompt.
+ * Each kind is a noun for what the person is asked: `name` is typed, `note` queries the
+ * vault, `vault` queries the installation, `choice` offers an in-memory list,
+ * `confirmation` asks for a yes or a no, `retypedName` asks for the title typed again, and
+ * `arguments` prompts for one of a command's `prompts`, one step per prompt.
  */
 export type Step =
-  'commands' | 'naming' | 'picking' | 'vaults' | 'choosing' | 'asking' | 'exactly' | 'arguments'
+  'commands' | 'name' | 'note' | 'vault' | 'choice' | 'confirmation' | 'retypedName' | 'arguments'
 
 /**
  * One value a command requires, entered in its own step. A step that is not
@@ -105,7 +106,7 @@ export interface Command {
   /** The Lucide name of its icon, for a place that draws icons by name. */
   readonly iconName?: string
   /** The input it requires before it runs. */
-  readonly needs?: PromptStep
+  readonly input?: PromptStep
   /** The step that follows the first one. */
   readonly next?: PromptStep
   /** The values the `arguments` steps ask for, in order. */

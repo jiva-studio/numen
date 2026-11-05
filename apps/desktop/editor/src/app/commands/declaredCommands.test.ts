@@ -53,7 +53,7 @@ describe('a declared command in the palette', () => {
     expect(sample?.id).toBe('org.example.sample:sample.create')
     expect(sample?.group).toBe('window')
     expect(sample?.icon).toBe(getNamedIcon('layers'))
-    expect(sample?.needs).toBe('arguments')
+    expect(sample?.input).toBe('arguments')
     expect(sample?.prompts).toStrictEqual([{ name: 'title', title: 'Title', isRequired: true }])
   })
 
@@ -62,7 +62,7 @@ describe('a declared command in the palette', () => {
       { ...createSample, arguments: [{ name: 'folder', title: 'Folder', isRequired: false }] },
     ])
 
-    expect(one?.needs).toBeUndefined()
+    expect(one?.input).toBeUndefined()
     expect(one?.prompts).toBeUndefined()
   })
 
@@ -71,7 +71,7 @@ describe('a declared command in the palette', () => {
     const runs = { canRun: () => true, cannotRun: vi.fn() }
 
     expect(one?.group).toBe('file')
-    expect(one?.needs).toBeUndefined()
+    expect(one?.input).toBeUndefined()
     expect(one?.isAvailable(front('books/Bees.pdf'), runs)).toBe(true)
     expect(one?.isAvailable(front('books/Bees.epub'), runs)).toBe(false)
     expect(one?.isAvailable(front('books/Bees.pdf', false), runs)).toBe(false)

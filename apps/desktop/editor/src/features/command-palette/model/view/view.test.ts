@@ -148,35 +148,40 @@ describe('a command that gives no words for its confirmation', () => {
   const view = createView([command])
 
   it('draws the two answers with empty words', () => {
-    const items = view.createGroups(step('asking'), front(), '')[0]?.items
+    const items = view.createGroups(step('confirmation'), front(), '')[0]?.items
 
     expect(items).toStrictEqual([
-      { id: 'no', title: '', detail: '', actions: [{ id: 'no', text: '' }] },
       {
-        id: 'yes',
+        id: expect.any(String),
+        title: '',
+        detail: '',
+        actions: [{ id: expect.any(String), text: '' }],
+      },
+      {
+        id: expect.any(String),
         title: ' Ontology.md',
         detail: '',
-        actions: [{ id: 'yes', text: '' }],
+        actions: [{ id: expect.any(String), text: '' }],
       },
     ])
   })
 
   it('draws the name to type back with empty words', () => {
-    const items = view.createGroups(step('exactly'), front(), 'Ontology')[0]?.items
+    const items = view.createGroups(step('retypedName'), front(), 'Ontology')[0]?.items
 
     expect(items).toStrictEqual([
       {
-        id: 'exactly',
+        id: expect.any(String),
         title: ' “Ontology”',
         detail: '',
         isDisabled: false,
-        actions: [{ id: 'exactly', text: '' }],
+        actions: [{ id: expect.any(String), text: '' }],
       },
     ])
   })
 
   it('draws asking group with id asking and arguments group with default title when prompts are absent', () => {
-    const askingGroup = view.createGroups(step('asking'), front(), '')[0]
+    const askingGroup = view.createGroups(step('confirmation'), front(), '')[0]
     expect(askingGroup?.id).toBe('asking')
 
     const argGroupNoPrompt = view.createGroups(step('arguments'), front(), 'val')[0]
@@ -184,9 +189,9 @@ describe('a command that gives no words for its confirmation', () => {
     expect(argGroupNoPrompt?.title).toBe('')
     expect(argGroupNoPrompt?.items).toStrictEqual([
       {
-        id: 'name',
+        id: expect.any(String),
         title: ': “val”',
-        actions: [{ id: 'name', text: words.givesIt }],
+        actions: [{ id: expect.any(String), text: words.givesIt }],
       },
     ])
 
@@ -203,9 +208,9 @@ describe('a command that gives no words for its confirmation', () => {
     )[0]
     expect(optGroup?.items).toStrictEqual([
       {
-        id: 'name',
+        id: expect.any(String),
         title: `${words.leavesOut} Topic`,
-        actions: [{ id: 'name', text: words.leavesOut }],
+        actions: [{ id: expect.any(String), text: words.leavesOut }],
       },
     ])
   })
