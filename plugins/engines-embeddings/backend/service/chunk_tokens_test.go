@@ -64,7 +64,7 @@ func TestChunkTokensBoundsAreTheBoundsOfTheManifestSetting(t *testing.T) {
 	t.Errorf("the manifest declares no %s setting", settingChunkTokens)
 }
 
-func TestClampChunkTokensHoldsTheSizeToTheLimitOfTheModel(t *testing.T) {
+func TestClampChunkTokensLimitsTheSizeToTheModelLimit(t *testing.T) {
 	cases := []struct {
 		name             string
 		requested, limit int
@@ -130,7 +130,7 @@ func TestGetModelInfoReportsTheRequestedChunkTokensWithinTheBounds(t *testing.T)
 	}
 }
 
-func TestAModelOfALowerLimitLowersTheChunkTokensAndTheOldModelGivesThemBack(t *testing.T) {
+func TestAModelOfALowerLimitLowersChunkTokensAndTheOldModelRestoresThem(t *testing.T) {
 	srv := newEmbeddingServer()
 	dir := t.TempDir()
 	srv.profilesDir = dir
@@ -173,7 +173,7 @@ func TestAChangeOfChunkTokensDoesNotChangeTheModelNorItsHandling(t *testing.T) {
 	}
 }
 
-func TestTheMockModelReportsChunkTokensAndHoldsThemToItsLimit(t *testing.T) {
+func TestTheMockModelReportsChunkTokensLimitedByItsMaxTokens(t *testing.T) {
 	t.Setenv(envMockML, "true")
 	srv := newEmbeddingServer()
 	srv.updateConfig(map[string]string{"chunkTokens": "300"})

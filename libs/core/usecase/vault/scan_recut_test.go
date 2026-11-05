@@ -43,7 +43,7 @@ func scanAt(db *container.Index, tokens int) vaults.Scan {
 	return scan
 }
 
-func getNotesCutOtherwise(t *testing.T, db *container.Index, v domain.Vault, tokens int) []string {
+func getNotesWithOtherChunking(t *testing.T, db *container.Index, v domain.Vault, tokens int) []string {
 	t.Helper()
 	paths, err := db.SourcesKnown().GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{notecase.NewCutNotes(tokens).Recipe()}, 100)
 	if err != nil {
@@ -61,7 +61,7 @@ func runScan(t *testing.T, scan vaults.Scan, v domain.Vault) vaults.ScanResult {
 	return res
 }
 
-func TestAScanCutsAgainEveryNoteCutAtAnotherSizeAndNoOtherOnTheNextScan(t *testing.T) {
+func TestAScanChunksEveryNoteOfAnotherChunkSizeAndNoNoteOnTheNextScan(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
 
@@ -72,7 +72,7 @@ func TestAScanCutsAgainEveryNoteCutAtAnotherSizeAndNoOtherOnTheNextScan(t *testi
 	if res.Indexed != 3 || res.Unchanged != 0 {
 		t.Errorf("scan at another size: indexed %d, unchanged %d; want 3 and 0", res.Indexed, res.Unchanged)
 	}
-	if got := getNotesCutOtherwise(t, db, v, 512); len(got) != 0 {
+	if got := getNotesWithOtherChunking(t, db, v, 512); len(got) != 0 {
 		t.Errorf("%v were not cut at 512 tokens after the scan", got)
 	}
 	res = runScan(t, scanAt(db, 512), v)
@@ -81,7 +81,7 @@ func TestAScanCutsAgainEveryNoteCutAtAnotherSizeAndNoOtherOnTheNextScan(t *testi
 	}
 }
 
-func TestAScanAtTheSizeOfTheRecordedCutReadsNoNote(t *testing.T) {
+func TestAScanAtTheRecordedChunkSizeReadsNoNote(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
 	runScan(t, scanAt(db, 512), v)
@@ -103,7 +103,7 @@ func TestAScanWithNoCheckGivenReadsNoUnchangedNoteWhateverItsSize(t *testing.T) 
 	}
 }
 
-func TestAScanThatDoesNotKnowTheSizeNeitherAsksForStaleNotesNorCutsAgain(t *testing.T) {
+func TestAScanWithoutAChunkSizeNeitherAsksForStaleNotesNorReadsAnyNote(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
 	runScan(t, scanAt(db, 512), v)
@@ -118,7 +118,7 @@ func TestAScanThatDoesNotKnowTheSizeNeitherAsksForStaleNotesNorCutsAgain(t *test
 	}
 }
 
-func TestANoteChangedWhileTheSizeIsUnknownIsCutAtTheDefaultAndTheSizeWhenKnownCutsExactlyTheNotesNotCutAtIt(t *testing.T) {
+func TestANoteChangedWithoutAKnownSizeUsesTheDefaultAndALaterSizeRechunksOnlyTheOthers(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
 	runScan(t, scanAt(db, 512), v)
@@ -135,7 +135,7 @@ func TestANoteChangedWhileTheSizeIsUnknownIsCutAtTheDefaultAndTheSizeWhenKnownCu
 	if res := runScan(t, scanAt(db, 0), v); res.Indexed != 1 || res.Unchanged != 2 {
 		t.Errorf("scan with an unknown size: indexed %d, unchanged %d; want 1 and 2", res.Indexed, res.Unchanged)
 	}
-	if got := getNotesCutOtherwise(t, db, v, 0); !slices.Equal(got, []string{"Compost.md", "Hedge.md"}) {
+	if got := getNotesWithOtherChunking(t, db, v, 0); !slices.Equal(got, []string{"Compost.md", "Hedge.md"}) {
 		t.Errorf("notes not cut at the default = %v, want the two left alone", got)
 	}
 
@@ -157,14 +157,14 @@ func (r recipeless) Save(ctx context.Context, v domain.VaultID, notes []domain.N
 	return r.NoteRepository.Save(ctx, v, notes)
 }
 
-func TestNotesWithNoRecordedCutAreCutAgainOnceWhenTheSizeIsKnown(t *testing.T) {
+func TestNotesWithoutARecordedChunkingAreChunkedOnceWhenTheSizeIsKnown(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
 	old := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.Queries(), db.Maintenance())
 	old.Walks = db.Walks()
 	old.Cut = notecase.NewCutNotes(512)
 	runScan(t, old, v)
-	if got := getNotesCutOtherwise(t, db, v, 512); len(got) != 3 {
+	if got := getNotesWithOtherChunking(t, db, v, 512); len(got) != 3 {
 		t.Fatalf("%d notes have a recorded cut, want none", 3-len(got))
 	}
 
@@ -174,12 +174,12 @@ func TestNotesWithNoRecordedCutAreCutAgainOnceWhenTheSizeIsKnown(t *testing.T) {
 	if res := runScan(t, scanAt(db, 512), v); res.Indexed != 0 {
 		t.Errorf("next scan indexed %d notes, want none", res.Indexed)
 	}
-	if got := getNotesCutOtherwise(t, db, v, 512); len(got) != 0 {
+	if got := getNotesWithOtherChunking(t, db, v, 512); len(got) != 0 {
 		t.Errorf("%v still have no recorded cut", got)
 	}
 }
 
-func TestACutAgainNoteIsCountedAndSavedLikeAChangedFileInTheGroupsOfTheScan(t *testing.T) {
+func TestRechunkedNotesAreCountedAndSavedInGroupsLikeChangedFiles(t *testing.T) {
 	t.Parallel()
 	const notes = 600
 	v, db := testsupport.GenerateVault(t, notes), openIndex(t)

@@ -67,7 +67,7 @@ test.describe('The longest chunk of a note, in tokens', () => {
     const lowered = await readSettledVectors(item)
     expect(lowered).toBeGreaterThan(initial)
 
-    // The default again cuts the note as it was, and the vectors of the longer chunks come back.
+    // The default again cuts the note as it was, and the vectors of the longer chunks are restored.
     await writeSetting(request, CHUNK_TOKENS, DEFAULT_CHUNK_TOKENS)
     await expect.poll(() => readVectors(item), { timeout: 90_000 }).toBe(initial)
     expect(await readSettledVectors(item)).toBe(initial)

@@ -15,7 +15,7 @@ func ReadChunkTokens(_ map[string]string) int {
 	return 0
 }
 
-// ClampChunkTokens is the requested size held to the model's own limit. A limit of zero or less
+// ClampChunkTokens is the requested size limited to the model's own limit. A limit of zero or less
 // is a model that named none, and holds nothing.
 func ClampChunkTokens(_, _ int) int {
 	return 0

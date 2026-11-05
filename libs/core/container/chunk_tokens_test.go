@@ -107,7 +107,7 @@ type closerOf func() error
 
 func (c closerOf) Close() error { return c() }
 
-func TestTheCutIsMadeAtTheCharacterBoundOfTheChunkSizeTheCellHolds(t *testing.T) {
+func TestChunkLimitIsTheCharacterBoundOfTheChunkSizeInTheCell(t *testing.T) {
 	cfg := container.NewConfig(container.Config{})
 
 	cfg.Chunks.Set(512)
@@ -120,7 +120,7 @@ func TestTheCutIsMadeAtTheCharacterBoundOfTheChunkSizeTheCellHolds(t *testing.T)
 	}
 }
 
-func TestEveryCopyOfAConfigCutsAtTheSizeOneCopyWasGiven(t *testing.T) {
+func TestEveryCopyOfAConfigChunksAtTheSizeSetThroughOneCopy(t *testing.T) {
 	cfg := container.NewConfig(container.Config{})
 	copied := cfg
 
@@ -131,7 +131,7 @@ func TestEveryCopyOfAConfigCutsAtTheSizeOneCopyWasGiven(t *testing.T) {
 	}
 }
 
-func TestTheChunkSizeOfTheEmbeddingPluginIsTheSizeTheNotesAreCutAt(t *testing.T) {
+func TestNotesAreChunkedAtTheSizeTheEmbeddingPluginReports(t *testing.T) {
 	cfg, _, _ := openChunkingConfig(t, 300)
 
 	openEmbedder(t, cfg)
@@ -156,7 +156,7 @@ func TestAChangeOfTheChunkSizeOfThePluginReachesTheCell(t *testing.T) {
 	plugintest.WaitUntil(t, "the cell to hold the new chunk size", func() bool { return cfg.Chunks.Get() == 128 })
 }
 
-func TestWithNoEmbeddingPluginTheNotesAreCutAtTheDefaultLimit(t *testing.T) {
+func TestWithNoEmbeddingPluginNotesAreChunkedAtTheDefaultLimit(t *testing.T) {
 	cfg := container.NewConfig(container.Config{})
 
 	embedder, closeEmbedder, err := cfg.Embedder(t.Context())
@@ -174,7 +174,7 @@ func TestWithNoEmbeddingPluginTheNotesAreCutAtTheDefaultLimit(t *testing.T) {
 	}
 }
 
-func TestAPluginThatNamesNoChunkSizeLeavesTheCellAtZero(t *testing.T) {
+func TestNoChunkSizeFromThePluginKeepsTheCellAtZero(t *testing.T) {
 	cfg, _, _ := openChunkingConfig(t, 0)
 
 	openEmbedder(t, cfg)
@@ -188,7 +188,7 @@ func TestAPluginThatNamesNoChunkSizeLeavesTheCellAtZero(t *testing.T) {
 }
 
 // The file texts follow the number through the recipe they keep, which names the sizes.
-func TestFileTextsAreCutAtTheLimitOfTheCell(t *testing.T) {
+func TestFileTextsAreChunkedAtTheLimitOfTheCell(t *testing.T) {
 	db := makeIndex(t)
 	cfg := container.NewConfig(container.Config{ServiceDir: ".numen"})
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
@@ -209,7 +209,7 @@ func TestFileTextsAreCutAtTheLimitOfTheCell(t *testing.T) {
 	}
 }
 
-func TestEverySiteThatCutsNotesCutsAtTheSizeThePluginReports(t *testing.T) {
+func TestEverySiteThatChunksNotesUsesTheSizeThePluginReports(t *testing.T) {
 	cfg, _, _ := openChunkingConfig(t, 300)
 	openEmbedder(t, cfg)
 	db := makeIndex(t)
@@ -272,7 +272,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 	}
 }
 
-func TestAScanRunsTheCheckOfTheRecordedCutOnlyWhereTheChunkSizeIsKnown(t *testing.T) {
+func TestAScanChecksTheRecordedChunkingOnlyWhereTheSizeIsKnown(t *testing.T) {
 	db := makeIndex(t)
 	cfg := container.NewConfig(container.Config{})
 
@@ -286,7 +286,7 @@ func TestAScanRunsTheCheckOfTheRecordedCutOnlyWhereTheChunkSizeIsKnown(t *testin
 	}
 }
 
-func TestACutAtANewChunkSizeMakesTheNextScanReadTheNotesAgain(t *testing.T) {
+func TestANewChunkSizeMakesTheNextScanReadTheNotesAgain(t *testing.T) {
 	db := makeIndex(t)
 	cfg := container.NewConfig(container.Config{})
 	v := testsupport.NewVault(t, map[string]string{

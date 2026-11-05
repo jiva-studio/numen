@@ -123,7 +123,7 @@ func TestClient_RoundTripsTheChunkTokensOfTheModelAndZeroWhenNoneIsNamed(t *test
 	}
 }
 
-func TestWriteModelInfoPutsTheChunkTokensOnTheWire(t *testing.T) {
+func TestWriteModelInfoWritesChunkTokensToTheWire(t *testing.T) {
 	if got := writeModelInfo(ModelInfo{ChunkTokens: 200}).GetChunkTokens(); got != 200 {
 		t.Errorf("wire chunk_tokens = %d, want 200", got)
 	}

@@ -27,7 +27,7 @@ func TestTheSettingsFileHasNoIndexingSection(t *testing.T) {
 	}
 }
 
-func TestAnInstallationNobodyConfiguredWritesNoIndexingSectionDown(t *testing.T) {
+func TestAFirstRunWritesNoIndexingSection(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen", "numen.json")
 	if _, err := openAt(path); err != nil {
 		t.Fatal(err)
@@ -41,20 +41,20 @@ func TestAnInstallationNobodyConfiguredWritesNoIndexingSectionDown(t *testing.T)
 	}
 }
 
-func TestAFileStillNamingTheIndexingSectionLoadsWithoutErrorAndChangesNoCut(t *testing.T) {
+func TestAFileWithTheOldIndexingKeyLoadsAndSetsNoChunkSize(t *testing.T) {
 	path := write(t, `{"indexing":{"embedding":{"max_tokens":128}}}`)
 	cfg, err := openAt(path)
 	if err != nil {
 		t.Fatalf("a file with the old key was refused: %v", err)
 	}
 
-	cut := container.NewConfig(container.Config{SettingsPath: path}).SetSettings(cfg).CutNotes()
-	if cut.Sizes.Limit != chunking.DefaultLimit {
-		t.Errorf("notes are cut at %d characters, want the default %d: the old key must name no cut", cut.Sizes.Limit, chunking.DefaultLimit)
+	chunker := container.NewConfig(container.Config{SettingsPath: path}).SetSettings(cfg).CutNotes()
+	if chunker.Sizes.Limit != chunking.DefaultLimit {
+		t.Errorf("notes are cut at %d characters, want the default %d: the old key must name no cut", chunker.Sizes.Limit, chunking.DefaultLimit)
 	}
 }
 
-func TestAnInstallationWithDefaultSettingsCutsNotesAtTheDefaultLimit(t *testing.T) {
+func TestDefaultSettingsChunkNotesAtTheDefaultLimit(t *testing.T) {
 	cfg := container.NewConfig(container.Config{}).SetSettings(container.DefaultSettings())
 
 	if got := cfg.CutNotes().Sizes.Limit; got != chunking.DefaultLimit {
