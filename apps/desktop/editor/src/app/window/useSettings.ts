@@ -3,11 +3,7 @@
  */
 import { watch } from 'vue'
 import { themes } from '@/entities/settings'
-import {
-  INTERFACE_SCALE,
-  TEXT_SCALE,
-  createWindowAppearance,
-} from '@/features/settings-commands'
+import { INTERFACE_SCALE, TEXT_SCALE, createWindowAppearance } from '@/features/settings-commands'
 import { APP_OWNER, createSettingPalette, type SettingPreview } from './settingCommands'
 import { MODES, type Mode, type SettingEdit } from '@/entities/settings'
 import { formatErrorMessage, type PluginCatalog } from '@numen/core-client'
@@ -46,16 +42,8 @@ interface SettingsTabConfigDeps {
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const {
-    appearance,
-    rest,
-    secrets,
-    retry,
-    core,
-    getSettingsViews,
-    catalogEntries,
-    reportError,
-  } = deps
+  const { appearance, rest, secrets, retry, core, getSettingsViews, catalogEntries, reportError } =
+    deps
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
     if (!content.some((one) => one.at[0] === 'app')) return
