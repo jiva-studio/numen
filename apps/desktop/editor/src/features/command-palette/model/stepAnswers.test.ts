@@ -45,6 +45,15 @@ const createPalette = () => {
     knows: { getTitle: () => '', getTabAt: () => null },
     lists: { getStepGroups: () => THEMES, previewItem: vi.fn() },
     runs: runSupport(),
+    getExtraCommands: () => [
+      {
+        id: 'setting:app:appearance.theme',
+        text: 'Theme',
+        group: 'settings',
+        input: 'choice',
+        isAvailable: () => true,
+      },
+    ],
   })
   commands.setOpen(true)
   return commands
@@ -62,7 +71,7 @@ describe('the answers of a step', () => {
   it.each([
     ['a name to type', 'app:note.rename'],
     ['the name to type again', 'app:note.delete'],
-    ['a choice from a list', 'app:appearance.chooseTheme'],
+    ['a choice from a list', 'setting:app:appearance.theme'],
   ])('are not named in a row of %s', (_what, id) => {
     const commands = createPalette()
     commands.startCommand(id, front)
