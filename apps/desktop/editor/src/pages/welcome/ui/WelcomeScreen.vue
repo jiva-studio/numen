@@ -103,10 +103,10 @@ function onKeyDown(event: KeyboardEvent) {
     :ways="ways"
     :vaults="onList"
     :heading="words.vaults"
-    :offer="adding"
+    :footer="adding"
     :version="VERSION"
     @run="onRun"
     @open="onOpen"
-    @take-offer="runCommand(COMMAND.createVault, getTarget())"
+    @take-footer="runCommand(COMMAND.createVault, getTarget())"
   />
 </template>

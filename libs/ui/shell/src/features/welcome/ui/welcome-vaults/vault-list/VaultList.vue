@@ -76,7 +76,7 @@ const getVaultKeys = (pos: number, vault: VaultRow): PaletteKeys | undefined => 
 }
 
 /* In the two-column layout, the rows between the heading and the
-   offer are the one thing that scrolls. */
+   footer are the one thing that scrolls. */
 @container (max-height: 27.55rem) and (min-width: 45.4rem) {
   .welcome-page__list {
     min-block-size: 0;

@@ -24,7 +24,7 @@ const BOTH = [
   { id: 'open', text: 'Open note' },
 ]
 
-const OFFERING: PaletteGroup[] = [
+const AVAILABLE_GROUPS: PaletteGroup[] = [
   {
     id: 'names',
     title: 'Names',
@@ -596,7 +596,7 @@ describe('what the palette says about itself', () => {
 
 describe('item with multiple actions', () => {
   it('says at the foot only what a key reaches, and where the rest are', async () => {
-    mountPalette({ groups: OFFERING })
+    mountPalette({ groups: AVAILABLE_GROUPS })
     await settle()
 
     expect(keys().map(getText)).toEqual(['Return Show in plex', 'Shift Return Open note'])
@@ -604,7 +604,7 @@ describe('item with multiple actions', () => {
   })
 
   it('reaches the first two by key, and nothing past them', async () => {
-    const palette = mountPalette({ groups: OFFERING })
+    const palette = mountPalette({ groups: AVAILABLE_GROUPS })
     await settle()
 
     await press('Enter')
@@ -616,7 +616,7 @@ describe('item with multiple actions', () => {
   })
 
   it('writes the keystroke that reaches an item away from the palette', async () => {
-    mountPalette({ groups: OFFERING })
+    mountPalette({ groups: AVAILABLE_GROUPS })
     await settle()
 
     const hint = options()[0]?.querySelector('[data-palette="hint"]')
@@ -628,7 +628,7 @@ describe('item with multiple actions', () => {
 
 describe('the action panel', () => {
   const open = async () => {
-    const palette = mountPalette({ groups: OFFERING })
+    const palette = mountPalette({ groups: AVAILABLE_GROUPS })
     await settle()
     await press('k', { ctrlKey: true })
     await settle()
@@ -651,7 +651,7 @@ describe('the action panel', () => {
   })
 
   it('opens on the same chord retained with the other key', async () => {
-    mountPalette({ groups: OFFERING })
+    mountPalette({ groups: AVAILABLE_GROUPS })
     await settle()
 
     await press('k', { metaKey: true })
@@ -890,7 +890,7 @@ describe('the chord that opens the action panel', () => {
   })
 
   it('is taken when there is something lit to act on', async () => {
-    mountPalette({ groups: OFFERING })
+    mountPalette({ groups: AVAILABLE_GROUPS })
     await settle()
 
     const event = await press('k', { ctrlKey: true })
@@ -902,7 +902,7 @@ describe('the chord that opens the action panel', () => {
 
 describe('the keyboard while the palette remains', () => {
   it('stays in the field on Tab', async () => {
-    mountPalette({ groups: OFFERING })
+    mountPalette({ groups: AVAILABLE_GROUPS })
     await settle()
 
     const event = await press('Tab')
@@ -914,7 +914,7 @@ describe('the keyboard while the palette remains', () => {
 describe('what the action panel is called', () => {
   it('is returned by whoever offers it', async () => {
     mountPalette({
-      groups: OFFERING,
+      groups: AVAILABLE_GROUPS,
       actionWords: {
         name: 'What you can do',
         placeholder: 'Look for something',
@@ -941,7 +941,7 @@ describe('what the action panel is called', () => {
 
 describe('one step of several', () => {
   it('says which step the field is on, and says it describes the field', async () => {
-    mountPalette({ groups: OFFERING, crumb: 'New name for «Entropy»' })
+    mountPalette({ groups: AVAILABLE_GROUPS, crumb: 'New name for «Entropy»' })
     await settle()
 
     const crumb = document.body.querySelector('[data-palette="crumb"]')
@@ -950,7 +950,7 @@ describe('one step of several', () => {
   })
 
   it('draws no chip and describes the field with nothing without one', async () => {
-    mountPalette({ groups: OFFERING })
+    mountPalette({ groups: AVAILABLE_GROUPS })
     await settle()
 
     expect(document.body.querySelector('[data-palette="crumb"]')).toBeNull()
@@ -958,7 +958,7 @@ describe('one step of several', () => {
   })
 
   it('takes the keyboard back and selects what remains there when the step changes', async () => {
-    const palette = mountPalette({ groups: OFFERING, step: 'find' })
+    const palette = mountPalette({ groups: AVAILABLE_GROUPS, step: 'find' })
     await settle()
 
     await palette.setProps({ step: 'rename', modelValue: 'Entropy' })
@@ -971,7 +971,7 @@ describe('one step of several', () => {
   })
 
   it('puts the action panel away when the step changes', async () => {
-    const palette = mountPalette({ groups: OFFERING, step: 'find' })
+    const palette = mountPalette({ groups: AVAILABLE_GROUPS, step: 'find' })
     await settle()
     await press('k', { ctrlKey: true })
     await settle()
@@ -983,7 +983,7 @@ describe('one step of several', () => {
   })
 
   it('asks for the step before on Backspace in an empty field', async () => {
-    const palette = mountPalette({ groups: OFFERING })
+    const palette = mountPalette({ groups: AVAILABLE_GROUPS })
     await settle()
 
     await press('Backspace')
@@ -991,7 +991,7 @@ describe('one step of several', () => {
   })
 
   it('asks for nothing on Backspace while something is typed', async () => {
-    const palette = mountPalette({ groups: OFFERING, modelValue: 'ent' })
+    const palette = mountPalette({ groups: AVAILABLE_GROUPS, modelValue: 'ent' })
     await settle()
 
     await press('Backspace')
@@ -999,7 +999,7 @@ describe('one step of several', () => {
   })
 
   it('asks for nothing on Backspace in the action panel', async () => {
-    const palette = mountPalette({ groups: OFFERING })
+    const palette = mountPalette({ groups: AVAILABLE_GROUPS })
     await settle()
     await press('k', { ctrlKey: true })
     await settle()

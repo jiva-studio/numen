@@ -45,7 +45,7 @@ const items = computed<readonly MenuItem[]>(() =>
 const query = ref('')
 
 /** Whether what is typed is offered as the value: it names no choice and is not empty. */
-const isCustomOffered = computed(
+const isCustomAvailable = computed(
   () =>
     props.canEnterCustom &&
     query.value.trim() !== '' &&
@@ -144,7 +144,7 @@ const onKey = (event: KeyboardEvent) => {
     :label="name"
     :placeholder="searchName"
     empty-text="Nothing to choose"
-    :has-action="isCustomOffered"
+    :has-action="isCustomAvailable"
     :at="menuAnchor.at"
     :asking="menuAnchor.wide"
     :from="element"
