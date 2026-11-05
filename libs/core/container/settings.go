@@ -236,9 +236,6 @@ func (c Config) listAppSettingsOn(goos string) []pluginport.PluginSetting {
 	return entries
 }
 
-	"github.com/jiva-studio/numen/libs/core/port/settingsport"
-)
-
 // SubscribeSettingChanges starts listening to the settings that change, whether a window, a plugin
 // or the palette writes them or a person edits the file by hand. See settingsport.ChangeSubscriber.
 func (c Config) SubscribeSettingChanges() (<-chan []settingsport.Setting, func()) {
