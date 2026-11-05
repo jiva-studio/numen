@@ -222,9 +222,9 @@ const spoken = (declared, command) => {
 
 /** That the window still draws a plugin's palette setting as its name and the setting's title. */
 const checkSettingCommands = async () => {
-  const source = await read(APP, 'window/useSettings.ts')
-  if (!source.includes('text: `${plugin.name}: ${setting.title}`')) {
-    die('useSettings.ts no longer names a plugin setting in the palette as its plugin and title')
+  const source = await read(APP, 'window/settingCommands.ts')
+  if (!source.includes('`${owner.name}: ${setting.title}`')) {
+    die('settingCommands.ts no longer names a plugin setting in the palette as its plugin and title')
   }
 }
 
