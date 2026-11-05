@@ -460,3 +460,23 @@ func TestASettingMayPreviewWhileFocusedAndListItsOptionsFromARegistry(t *testing
 		t.Errorf("a plain setting reads as preview=%v from %q", got.Preview, got.OptionsFrom)
 	}
 }
+
+// The first level of the settings file is the version v, the owner app and the ids of plugins, so a
+// plugin cannot take the first two as its id.
+func TestAManifestDoesNotTakeAnIdThatTheSettingsFileKeepsForItself(t *testing.T) {
+	for _, id := range []string{"app", "v"} {
+		_, err := manifestjson.Read(strings.NewReader(`{"id":"` + id + `","name":"A","version":"1.0.0"}`))
+		if err == nil {
+			t.Errorf("the id %q was accepted", id)
+		}
+	}
+}
+
+// Not yet decided by the person: a key of a plugin setting is one segment, since a dot joins the levels of a
+// path. This test is dropped if the person decides otherwise.
+func TestAManifestDoesNotDeclareASettingKeyWithADot(t *testing.T) {
+	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"max.tokens","type":"number","title":"Tokens"}]}`))
+	if !errors.Is(err, manifest.ErrInvalidSettingKey) {
+		t.Errorf("error = %v, want ErrInvalidSettingKey", err)
+	}
+}

@@ -42,7 +42,13 @@ func TestTheDeclarationOfTheShellBreaksNoRuleOfAManifest(t *testing.T) {
 	if len(declared) == 0 {
 		t.Fatal("the shell declares nothing")
 	}
-	holder := manifest.Manifest{ID: "md.numen.app", Name: "App", Version: "1.0.0", Settings: declared}
+	// The key of a shell setting is a path joined by dots; a manifest key of a plugin is one segment.
+	flat := make([]pluginport.PluginManifestSetting, 0, len(declared))
+	for _, one := range declared {
+		one.Key = strings.ReplaceAll(one.Key, ".", "")
+		flat = append(flat, one)
+	}
+	holder := manifest.Manifest{ID: "md.numen.app", Name: "App", Version: "1.0.0", Settings: flat}
 	if issues := holder.ListIssues(); len(issues) != 0 {
 		t.Errorf("the declaration breaks %v", issues)
 	}

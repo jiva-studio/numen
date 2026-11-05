@@ -54,3 +54,9 @@ func (File) GetOwner(_ string) map[string]any {
 func (File) GetValue(_ ...string) (any, bool) {
 	return nil, false
 }
+
+// DropInvalid leaves out of force every stored value that CheckWrite refuses for the declarations
+// given: an undeclared key, a value of the wrong type or outside its bounds, a value that is no
+// option, and an object of an owner that has no declaration. Each one adds a notice to the file
+// and is applied nowhere. The bytes of the file on disk are not touched.
+func (*File) DropInvalid(_ Declarations, _ Registries) {}

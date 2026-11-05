@@ -2,7 +2,6 @@ package settings_test
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -80,35 +79,26 @@ func TestOpen_PartialAppearanceKeepsDefaults(t *testing.T) {
 	}
 }
 
-// A number outside the setting's range makes reading the settings fail; no
-// scale is applied that the file does not contain.
-func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
-	for _, body := range []string{
-		`{"app":{"appearance":{"interfaceScale":2.5}}}`,
-		`{"app":{"appearance":{"interfaceScale":0.5}}}`,
-		`{"app":{"appearance":{"interfaceScale":0}}}`,
-		`{"app":{"appearance":{"textScale":1.9}}}`,
-		`{"app":{"appearance":{"textScale":0}}}`,
+// A number outside the setting's range is not applied, and the file is still read.
+func TestASizeOutsideWhatItGoesToIsReadAndNotApplied(t *testing.T) {
+	for body, key := range map[string]string{
+		`{"app":{"appearance":{"interfaceScale":2.5}}}`: "interfaceScale",
+		`{"app":{"appearance":{"interfaceScale":0.5}}}`: "interfaceScale",
+		`{"app":{"appearance":{"interfaceScale":0}}}`:   "interfaceScale",
+		`{"app":{"appearance":{"textScale":1.9}}}`:      "textScale",
+		`{"app":{"appearance":{"textScale":0}}}`:        "textScale",
 	} {
-		if _, err := openAt(write(t, body)); err == nil {
-			t.Errorf("%s was read", body)
+		cfg, err := openAt(write(t, body))
+		if err != nil {
+			t.Errorf("%s was refused: %v", body, err)
+			continue
 		}
-	}
-
-	_, err := openAt(write(t, `{"app":{"appearance":{"textScale":3}}}`))
-	var outside *settings.OutsideBounds
-	if !errors.As(err, &outside) {
-		t.Fatalf("failed with %v", err)
-	}
-	if outside.At != "appearance.textScale" || outside.Number != 3 {
-		t.Errorf("failed %+v", outside)
-	}
-	if outside.Min != settings.GetTextScaleBounds().Min || outside.Max != settings.GetTextScaleBounds().Max {
-		t.Errorf("said the setting goes from %v to %v", outside.Min, outside.Max)
-	}
-	// The error message states the value and the allowed range.
-	if response := outside.Error(); !strings.Contains(response, "appearance.textScale is 3") {
-		t.Errorf("says %q", response)
+		if got, _ := cfg.GetValue("app", "appearance", key); got != 1.0 {
+			t.Errorf("%s: %s in force is %v, want the default", body, key, got)
+		}
+		if !hasNotice(cfg.Notices, "appearance."+key) {
+			t.Errorf("%s: the notices are %q", body, cfg.Notices)
+		}
 	}
 }
 
