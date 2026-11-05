@@ -37,7 +37,7 @@ func readDrawnBarHeight(t *testing.T) string {
 	return string(height[1])
 }
 
-func TestDrawnBarHeightIsInPixelsSoTheScalesDoNotMoveIt(t *testing.T) {
+func TestDrawnBarHeightIsALengthInPixels(t *testing.T) {
 	height := readDrawnBarHeight(t)
 
 	if !pixelValue.MatchString(height) {

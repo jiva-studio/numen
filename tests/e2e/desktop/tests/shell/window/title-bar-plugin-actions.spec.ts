@@ -109,6 +109,7 @@ test.describe('Plugin buttons in the title bar', () => {
 
   test('draws the same buttons in the window torn off from a tab', async ({ page }) => {
     await openWorkspace(page)
+    await expect(getButton(page, GRAPH_BUTTON)).toBeVisible()
     const inMain = await listButtonIds(page)
     expect(inMain).toContain(GRAPH_BUTTON)
 

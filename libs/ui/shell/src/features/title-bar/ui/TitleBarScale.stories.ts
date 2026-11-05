@@ -37,7 +37,7 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { TitleBar },
     setup: () => ({ args }),
-    template: `<div style="inline-size: 60rem"><TitleBar v-bind="args" /></div>`,
+    template: `<div style="inline-size: 960px"><TitleBar v-bind="args" /></div>`,
   }),
 }
 
@@ -135,7 +135,7 @@ export const KeepsTheRoomForTheSystemButtonsWhateverTheScale: Story = {
   },
 }
 
-/** The bar is no taller than the system buttons need: it is not the 32 pixels of 2rem times a scale. */
+/** The height of the bar is a length in pixels: it is less than two root font sizes at a large scale. */
 export const KeepsTheHeightInPixelsNotInTheRootFontSize: Story = {
   play: async ({ canvasElement }) => {
     await waitForActions(canvasElement)
