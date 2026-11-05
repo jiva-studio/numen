@@ -15,10 +15,10 @@ The three models are the plugin's own dependencies, which numen fetches for it.
 
 The settings are the Document OCR plugin's, on its page in the [settings](/settings/), and in the settings file under `plugins` → `md.numen.engines.ocr`.
 
-|                     |                                                                                                                                             |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dpi`               | the resolution a page is rendered at before it is read. The default is 300, from 150 to 600. Raising it reads finer print but takes longer. |
-| `language`          | which recognition model reads the lines: `auto`, `cyrillic`, `latin` or `ch`. `auto` is the default.                                        |
+|                   |                                                                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dpi`             | the resolution a page is rendered at before it is read. The default is 300, from 150 to 600. Raising it reads finer print but takes longer. |
+| `language`        | which recognition model reads the lines: `auto`, `cyrillic`, `latin` or `ch`. `auto` is the default.                                        |
 | `customModelPath` | a recognition model of your own, as an ONNX file, read in place of the one the plugin ships with.                                           |
 | `customDictPath`  | the character dictionary that model uses.                                                                                                   |
 
