@@ -113,7 +113,7 @@ func readServedCertificate(t *testing.T, addr string, trusted []byte) []byte {
 	return tlsConn.ConnectionState().PeerCertificates[0].Raw
 }
 
-func TestServeServesTheCertificateAndKeyItIsGiven(t *testing.T) {
+func TestServeServesGivenCertificateAndKey(t *testing.T) {
 	certFile, keyFile, der := writeKeyPair(t, t.TempDir())
 	t.Setenv("NUMEN_DEBUG_TLS_USE_CERT", certFile)
 	t.Setenv("NUMEN_DEBUG_TLS_USE_KEY", keyFile)
@@ -125,17 +125,17 @@ func TestServeServesTheCertificateAndKeyItIsGiven(t *testing.T) {
 	}
 }
 
-func TestServeWritesTheGivenCertificateToItsCertificateFile(t *testing.T) {
+func TestServeWritesGivenCertificateToCertificateFile(t *testing.T) {
 	dir := t.TempDir()
 	certFile, keyFile, der := writeKeyPair(t, dir)
-	written := filepath.Join(dir, "own-certificate.pem")
+	outputCertFile := filepath.Join(dir, "own-certificate.pem")
 	t.Setenv("NUMEN_DEBUG_TLS_USE_CERT", certFile)
 	t.Setenv("NUMEN_DEBUG_TLS_USE_KEY", keyFile)
-	t.Setenv("NUMEN_DEBUG_TLS_CERT", written)
+	t.Setenv("NUMEN_DEBUG_TLS_CERT", outputCertFile)
 
 	startServe(t)
 
-	data, err := os.ReadFile(written)
+	data, err := os.ReadFile(outputCertFile)
 	if err != nil {
 		t.Fatalf("read the written certificate: %v", err)
 	}
@@ -145,7 +145,7 @@ func TestServeWritesTheGivenCertificateToItsCertificateFile(t *testing.T) {
 	}
 }
 
-func TestServeWritesItsKeyBesideItsCertificate(t *testing.T) {
+func TestServeWritesKeyNextToCertificate(t *testing.T) {
 	dir := t.TempDir()
 	certFile := filepath.Join(dir, "certificate.pem")
 	keyFile := filepath.Join(dir, "key.pem")
