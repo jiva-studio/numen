@@ -8,7 +8,7 @@
  */
 import { WelcomeRow } from '../welcome-row'
 import { VaultList } from './vault-list'
-import type { Offer, VaultRow } from '../../lib/welcome'
+import type { FooterEntry, VaultRow } from '../../lib/welcome'
 
 withDefaults(
   defineProps<{
@@ -16,16 +16,16 @@ withDefaults(
     /** What the list is called. */
     heading: string
     /** The row below the list, where a window offers one. */
-    offer?: Offer | null
+    footer?: FooterEntry | null
   }>(),
-  { offer: null },
+  { footer: null },
 )
 
 defineEmits<{
   /** A vault on the list chosen. */
   (event: 'open', id: string): void
   /** The row below the list pressed. */
-  (event: 'take-offer'): void
+  (event: 'take-footer'): void
 }>()
 
 defineSlots<{
@@ -50,12 +50,12 @@ defineSlots<{
       </template>
     </VaultList>
     <WelcomeRow
-      v-if="offer"
-      :icon="offer.icon"
-      :text="offer.text"
-      :aside="offer.detail"
-      :keys="offer.keys"
-      @click="$emit('take-offer')"
+      v-if="footer"
+      :icon="footer.icon"
+      :text="footer.text"
+      :aside="footer.detail"
+      :keys="footer.keys"
+      @click="$emit('take-footer')"
     />
   </section>
 </template>
@@ -81,7 +81,7 @@ defineSlots<{
 }
 
 /* In the two-column layout, the heading stays at the top of this column and
-   the offer at the bottom; the rows between them scroll. */
+   the footer at the bottom; the rows between them scroll. */
 @container (max-height: 27.55rem) and (min-width: 45.4rem) {
   .welcome-page__vaults {
     display: flex;
