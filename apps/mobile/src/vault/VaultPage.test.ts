@@ -43,7 +43,7 @@ describe('a core that cannot be reached', () => {
     page.unmount()
   })
 
-  it('carries no word of the Go error a failed native start rejects with', async () => {
+  it('shows the generic text for a rejected native start', async () => {
     const caughtError = new CapacitorException(
       'mkdir /data/user/0/md.numen.sample/files/vault: permission denied',
     )

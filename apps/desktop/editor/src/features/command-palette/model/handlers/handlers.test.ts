@@ -1156,7 +1156,7 @@ describe('the command of a setting', () => {
     expect(one.actions).toStrictEqual(['setting setting:app:performance.profile eco'])
   })
 
-  it('reports the reason a write gives the person as a message of the window', async () => {
+  it('shows the text of a ReportedError from a setting write as an error notice', async () => {
     const one = window()
     const failing: CommandDeps = {
       ...one.on,
@@ -1174,7 +1174,7 @@ describe('the command of a setting', () => {
     expect(one.severities).toStrictEqual(['error'])
   })
 
-  it('carries no word of a rejected write that was not reported to the person', async () => {
+  it('shows the generic text for a setting write that rejects with a plain Error', async () => {
     const one = window()
     const failing: CommandDeps = {
       ...one.on,
