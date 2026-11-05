@@ -1,6 +1,7 @@
 package container
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
@@ -235,6 +236,31 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 	}
 	if !hasIssue(pluginport.PluginManifest{ActivationEvents: []string{"onCommand:run"}}, pluginport.ErrInvalidActivationEvent) {
 		t.Error("the validator accepts an event no host emits to a subscriber")
+	}
+}
+
+func TestNoBundledPluginDeclaresWildcardActivation(t *testing.T) {
+	paths, err := filepath.Glob(filepath.Join(modulesRoot, "plugins", "*", "manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(paths) == 0 {
+		t.Fatal("no manifest found under the plugins: a rule checked against nothing")
+	}
+	for _, path := range paths {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var declared struct {
+			ActivationEvents []string `json:"activationEvents"`
+		}
+		if err := json.Unmarshal(raw, &declared); err != nil {
+			t.Fatalf("%s: %v", path, err)
+		}
+		if slices.Contains(declared.ActivationEvents, "*") {
+			t.Errorf("%s declares the activation event *", path)
+		}
 	}
 }
 

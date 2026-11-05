@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1170,5 +1171,58 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 		t.Fatal(err)
 	case !found || string(last.ID) != added.Msg.GetVault().GetId():
 		t.Errorf("the list says the vault opened last is %+v", last)
+	}
+}
+
+// eventAssembly is the window's assembly with the plugin events it emits recorded.
+type eventAssembly struct {
+	editor.Assembly
+
+	mu     sync.Mutex
+	events []string
+}
+
+func (a *eventAssembly) EmitEvent(event string) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.events = append(a.events, event)
+}
+
+func (a *eventAssembly) getEvents() []string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return slices.Clone(a.events)
+}
+
+func TestOpeningTheWindowEmitsTheStartupEventOnce(t *testing.T) {
+	cfg := container.NewConfig(container.Config{
+		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+	})
+	registry, err := cfg.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	newListedVault(t, cfg, registry, "one", map[string]string{entropy: noteNamed("Entropy")})
+	second := newListedVault(t, cfg, registry, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
+	made := &eventAssembly{Assembly: editor.NewAssembly(t, cfg)}
+
+	installation, err := editor.Open(t.Context(), made, "one", io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testsupport.CloseAfter(t, installation)
+	if err := installation.Show(t.Context(), second); err != nil {
+		t.Fatal(err)
+	}
+
+	var startups int
+	for _, event := range made.getEvents() {
+		if event == "onStartup" {
+			startups++
+		}
+	}
+	if startups != 1 {
+		t.Errorf("the window emitted onStartup %d times in %v, want once", startups, made.getEvents())
 	}
 }
