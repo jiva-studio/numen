@@ -340,7 +340,8 @@ func resolvePath(path string) string {
 }
 
 // Files reads and writes settings files one at a time: each work reads a file and writes it back
-// whole, and two at once would write over each other's change. Every writer of one file shares
+// whole, and two at once would write over each other's change. A lock file beside the settings
+// file keeps the writers of other processes apart too. Every writer of one file shares
 // one Files.
 type Files struct {
 	mu sync.Mutex
@@ -364,7 +365,7 @@ func (f *Files) run(path string, work func(path string) error) error {
 	if err := os.MkdirAll(filepath.Dir(resolved), 0o755); err != nil {
 		return err
 	}
-	return work(resolved)
+	return withLock(resolved, func() error { return work(resolved) })
 }
 
 func splice(raw []byte, from, to int, with []byte) []byte {
