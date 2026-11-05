@@ -130,30 +130,37 @@ const PLUGINS: readonly PluginInfo[] = [
 const DONE: string[] = []
 
 const INSTALLATION: Installation = {
-  themes: ref([
-    { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
-    { name: 'preset:dracula', title: 'dracula', isBuiltIn: true, pluginId: '', isPinned: true },
+  app: ref([
     {
-      name: 'preset:solarized',
-      title: 'solarized',
-      isBuiltIn: true,
-      pluginId: '',
-      isPinned: false,
+      key: 'appearance.theme',
+      type: 'enum',
+      title: 'Theme',
+      description: 'The stylesheet the window is drawn with.',
+      default: 'preset:numen',
+      optionsFrom: 'themes',
+      preview: true,
+      activeOptions: [
+        { value: 'preset:numen', title: 'numen', detail: '' },
+        { value: 'preset:dracula', title: 'dracula', detail: '' },
+        { value: 'mine:sea', title: 'sea', detail: '' },
+      ],
+      isShown: true,
+      value: 'preset:numen',
     },
-    { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
+    {
+      key: 'appearance.textScale',
+      type: 'range',
+      title: 'Reading size',
+      description: 'Scale of note and book text. 1 is the default.',
+      default: 1,
+      min: 0.8,
+      max: 1.75,
+      step: 0.1,
+      preview: true,
+      isShown: true,
+      value: 1.25,
+    },
   ]),
-  applied: ref('preset:numen'),
-  mode: ref('system'),
-  isPinned: ref(false),
-  sizes: ref({ interfaceScale: 1, textScale: 1.25 }),
-  bounds: ref({
-    interfaceScale: { min: 0.8, max: 2 },
-    textScale: { min: 0.8, max: 1.75 },
-  }),
-  choose: () => {
-    DONE.push('choose')
-  },
-  isSyncing: ref(true),
   writeSecret: () => {
     DONE.push('key')
   },

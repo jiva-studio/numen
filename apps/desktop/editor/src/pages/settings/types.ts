@@ -8,26 +8,9 @@
 import type { Ref } from 'vue'
 import type { CatalogEntry } from '@numen/core-client'
 import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
-import type { Mode, Ranges, Sizes, Theme } from '@/entities/settings'
 
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
-  /** Every theme there is, and the one the settings name. */
-  readonly themes: Readonly<Ref<readonly Theme[]>>
-  readonly applied: Readonly<Ref<string>>
-  readonly mode: Readonly<Ref<Mode>>
-  /** Whether the active theme declares light and dark itself. */
-  readonly isPinned: Readonly<Ref<boolean>>
-  readonly sizes: Readonly<Ref<Sizes>>
-  readonly bounds: Readonly<Ref<Ranges>>
-  /**
-   * Selects a value for one of the four appearance settings, by the identity the palette
-   * offers it under. The theme, the light/dark half of the pair and the two sizes are each
-   * named differently, so none of the four is typed manually.
-   */
-  choose(item: string): void
-  /** Whether a note's title and the name of its file are kept as one name. */
-  readonly isSyncing: Ref<boolean>
   /**
    * names one can be set to, and settings written where they stand.
    */

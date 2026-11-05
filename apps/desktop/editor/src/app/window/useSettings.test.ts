@@ -173,40 +173,6 @@ describe('the lists the palette offers for a setting', () => {
 })
 
 describe('the settings tab', () => {
-  it('shows the appearance the window applies', () => {
-    const { settings } = createSettings()
-    const { installation } = settings.configured.state
-
-    expect(installation.themes).toBe(settings.appearance.list)
-    expect(installation.applied).toBe(settings.appearance.applied)
-    expect(installation.mode).toBe(settings.appearance.mode)
-    expect(installation.isPinned).toBe(settings.appearance.isPinned)
-    expect(installation.sizes).toBe(settings.appearance.sized)
-    expect(installation.bounds).toBe(settings.appearance.bounds)
-  })
-
-  it('chooses an appearance through the palette’s own choice', () => {
-    const { settings } = createSettings()
-    const choose = vi.spyOn(settings.appearance, 'chooseItem').mockResolvedValue()
-
-    settings.configured.state.installation.choose('preset:dracula')
-
-    expect(choose).toHaveBeenCalledWith('preset:dracula')
-  })
-
-  it('reads and writes the syncing switch as the palette rows it is', () => {
-    const { settings } = createSettings()
-    const { installation } = settings.configured.state
-    const sync = vi.spyOn(settings.sync, 'choose').mockResolvedValue()
-
-    expect(installation.isSyncing.value).toBe(settings.sync.isEnabled.value)
-
-    installation.isSyncing.value = true
-    installation.isSyncing.value = false
-
-    expect(sync.mock.calls).toStrictEqual([['on'], ['off']])
-  })
-
   it('reads and writes the rest of the file through the settings the window holds', async () => {
     vi.useFakeTimers()
     try {
@@ -529,8 +495,11 @@ describe('the settings tab', () => {
       'Numen is not responding; retrying',
     )
 
-    vi.spyOn(settings.sync, 'choose').mockRejectedValueOnce(new Error('sync write failed'))
-    installation.isSyncing.value = true
+    vi.spyOn(settings.rest, 'writeSettings').mockRejectedValueOnce(new Error('write failed'))
+    const failed = installation.write([
+      { at: ['app', 'performance', 'profile'], value: '"eco"' },
+    ]) as unknown as Promise<void>
+    await failed.catch(() => undefined)
     await vi.waitFor(() =>
       expect(writerFns.configured).toHaveBeenCalledWith(
         'Numen is not responding; retrying',
