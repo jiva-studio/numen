@@ -70,6 +70,34 @@
   white-space: nowrap;
 }
 
+/* The title as a button is as wide as its text, so the room beside it still drags the window. */
+.title-bar__title--trigger {
+  flex: 0 1 auto;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.title-bar__title--trigger:hover,
+.title-bar__title--trigger:focus-visible,
+.title-bar__title--trigger[aria-expanded='true'] {
+  background: var(--numen-surface);
+}
+
+.title-bar__title--trigger:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--numen-accent);
+}
+
+.title-bar__fill {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+}
+
 .window-controls {
   display: flex;
   flex: none;

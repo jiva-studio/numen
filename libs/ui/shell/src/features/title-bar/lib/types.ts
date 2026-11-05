@@ -13,6 +13,18 @@ export interface TitleBarAction {
 }
 
 /**
+ * One entry of the list the title opens. The window decides what the entries are and what choosing
+ * one does; the bar only draws them.
+ */
+export interface TitleChoice {
+  readonly id: string
+  /** What the entry is called in the list. */
+  readonly label: string
+  /** Whether the entry stands for what the title names now. Choosing it only closes the list. */
+  readonly isCurrent?: boolean
+}
+
+/**
  * Who draws the window controls: the bar at the right (`windows`), the bar as three circles at the
  * left (`mac`), or the system at the left (`native-mac`), where the bar keeps room for it.
  */

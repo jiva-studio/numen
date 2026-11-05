@@ -19,12 +19,17 @@ const CHOICES: readonly TitleChoice[] = [
 const mounted: VueWrapper[] = []
 
 const mountBar = (
-  choices: readonly TitleChoice[] | undefined = CHOICES,
+  choices: readonly TitleChoice[] | null = CHOICES,
   words: Partial<TitleBarWords> = {},
 ): VueWrapper => {
   const wrapper = mount(TitleBar, {
     attachTo: document.body,
-    props: { appName: 'numen', vaultName: 'Orchard notes', choices, words },
+    props: {
+      appName: 'numen',
+      vaultName: 'Orchard notes',
+      words,
+      ...(choices === null ? {} : { choices }),
+    },
   })
   mounted.push(wrapper)
   return wrapper
@@ -84,8 +89,8 @@ describe('the title with choices', () => {
   })
 
   it('is the plain title when the bar has no choices', () => {
-    for (const choices of [undefined, []] as const) {
-      const wrapper = mountBar(choices as readonly TitleChoice[])
+    for (const choices of [null, []] as const) {
+      const wrapper = mountBar(choices)
       expect(getTrigger(wrapper).element.tagName).toBe('SPAN')
       expect(wrapper.find('[data-title-fill]').exists()).toBe(false)
     }

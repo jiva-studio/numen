@@ -19,6 +19,7 @@ import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
 import { useWindowFrame } from '../window/useWindowFrame'
 import { useWindowTitleBar } from '../window/useTitleBarActions'
+import { useWindowVaultChoices } from '../window/useVaultChoices'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
@@ -78,6 +79,8 @@ const vaultName = computed(
 
 const titleBar = useWindowTitleBar({ menus, vaultName, runCommand, getTarget })
 
+const vaultChoices = useWindowVaultChoices({ vaultList, runCommand, getTarget, commandDeps })
+
 const linkMenu = useTabLinkMenu({
   tabLinks,
   getTabs: () => windowTabs.tabs.value,
@@ -130,7 +133,10 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       :controls="frame.controls.value"
       :is-maximised="frame.isMaximised.value"
       :actions="titleBar.actions.value"
+      :choices="vaultChoices.choices.value"
+      :words="vaultChoices.words"
       @run="titleBar.run"
+      @choose="vaultChoices.choose"
       @minimise="frame.minimise"
       @toggle-maximise="frame.toggleMaximise"
       @close="frame.close"
