@@ -28,12 +28,12 @@ func (c Config) CutNotes() note.CutNotes {
 	return cutter
 }
 
-// setStaleNotes sets the cut of the scan and the check that finds the notes recorded with another cut.
+// setNoteCut sets the cut of the scan and the check that finds the notes recorded with another cut.
 // The check runs where the chunk size is known; an unknown size never cuts a note again.
-func (c Config) setStaleNotes(scan *vault.Scan, db *Index) {
+func (c Config) setNoteCut(scan *vault.Scan, db *Index) {
 	scan.Cut = c.CutNotes()
 	scan.ShouldRecut = c.Chunks.Get() > 0
-	scan.Stale = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
+	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
 		return db.SourcesKnown().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, []string{recipe}, math.MaxInt32)
 	}
 }
@@ -48,7 +48,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 		db.Queries(),
 		db.Maintenance(),
 	)
-	c.setStaleNotes(&scan, db)
+	c.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
 	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return scan

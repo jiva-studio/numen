@@ -29,7 +29,8 @@
         "icon": "bot",
         "scope": "note"
       }
-    ]
+    ],
+    "menus": [{ "location": "titleBar", "command": "chat.open", "group": "navigate", "order": 30 }]
   },
   "permissions": ["vault:read"],
   "settings": [

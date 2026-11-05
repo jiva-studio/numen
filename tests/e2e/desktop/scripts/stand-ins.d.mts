@@ -2,6 +2,8 @@
 export const STAND_IN_REPLY: string
 /** The prompt the stand-in answers only after a pause. */
 export const DELAYED_PROMPT: string
+/** The prompt the stand-in answers only after `DELETE /stand-in/hold` opens the gate `PUT` closed. */
+export const HELD_PROMPT: string
 /** The model the stand-in lists. */
 export const STAND_IN_MODEL: string
 /** The prompt the stand-in answers with a note_write tool call. */

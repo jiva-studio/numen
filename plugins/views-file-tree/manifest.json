@@ -29,7 +29,8 @@
         "icon": "folder-open",
         "scope": "note"
       }
-    ]
+    ],
+    "menus": [{ "location": "titleBar", "command": "tree.open", "group": "navigate", "order": 10 }]
   },
   "permissions": ["vault:read", "vault:write"],
   "frontend": {}

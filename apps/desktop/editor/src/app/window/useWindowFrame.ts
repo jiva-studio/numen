@@ -73,7 +73,7 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
 
   async function toggleMaximise(): Promise<void> {
     await (await load())?.Window?.ToggleMaximise?.()
-    await readMaximised()
+    await readMaximised().catch(ignoreFailure)
   }
 
   async function close(): Promise<void> {
