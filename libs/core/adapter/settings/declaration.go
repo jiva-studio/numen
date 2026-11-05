@@ -23,6 +23,16 @@ const (
 	keyProfile        = "performance.profile"
 )
 
+// keyWindowButtons is the setting that places the window buttons. Only the window of Linux reads it.
+const keyWindowButtons = "window.buttons"
+
+// IsAvailableOn reports whether the setting of the owner app at a key applies on an operating
+// system, named as runtime.GOOS names it. Windows draws its buttons at the right and macOS uses
+// its own, so the setting of the window buttons is for Linux only.
+func IsAvailableOn(key, goos string) bool {
+	return key != keyWindowButtons || goos == "linux"
+}
+
 // RegistryThemes names the registry that lists the installed themes.
 const RegistryThemes = "themes"
 

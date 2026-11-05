@@ -1,7 +1,7 @@
 /**
  * Settings configuration, theme application, and palette lists for the window.
  */
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { themes } from '@/entities/settings'
 import {
   APPEARANCE_COMMANDS,
@@ -22,6 +22,7 @@ import { getNamedIcon } from '@/shared/icons'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import type { useWindowTabs } from '@/entities/tab'
+import type { WindowButtons } from './useWindowFrame'
 
 type Words = typeof WORDS
 
@@ -255,6 +256,13 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
   }
 }
 
+/** The style of the window buttons on Linux; a missing or unknown value is the Windows one. */
+function createWindowButtons(rest: ReturnType<typeof createSettingsStore>) {
+  return computed<WindowButtons>(() =>
+    rest.getSetting(['app', 'window', 'buttons']) === 'mac' ? 'mac' : 'windows',
+  )
+}
+
 /**
  * Follows the settings that change, whoever changes them: this window, another window, a plugin, the
  * palette, or a person editing the file. Each change is read again once.
@@ -354,8 +362,6 @@ export function useSettings({
 
   const retainedItem = createSettingsPaletteLists({ appearance, sync, rest, words })
 
-  const kinds = [configured.kind]
-
   const changes = createChangeFollower({
     core,
     refresh: () => Promise.all([rest.start(), appearance.reload(), sync.start()]),
@@ -376,12 +382,13 @@ export function useSettings({
 
   const api = {
     appearance,
+    windowButtons: createWindowButtons(rest),
     sync,
     oneName: sync,
     rest,
     configured,
     paletteLists: retainedItem,
-    kinds,
+    kinds: [configured.kind],
     start,
     close,
   }
