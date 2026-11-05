@@ -3,7 +3,7 @@
  * host must not report a command as missing from a read taken while its plugin starts.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { createPluginHost, type PluginHost } from '@numen/plugin-host'
+import { createPluginHost, createPluginLoader, type PluginHost } from '@numen/plugin-host'
 import type { DeclaredCommand } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
 
@@ -47,16 +47,20 @@ async function createWindow() {
   })
   holder.current = host
   await declared.load()
-  return { host, reportCommandIssue }
+  return { host, loader: createPluginLoader({ host }), reportCommandIssue }
 }
 
 describe('the commands of a view plugin that starts in a window with a backend plugin', () => {
   it('are not reported as missing while the plugin registers them one after the other', async () => {
-    const { host, reportCommandIssue } = await createWindow()
+    const { loader, reportCommandIssue } = await createWindow()
+    loader.registerPluginModule(VIEW, async () => ({
+      activate: (context: ReturnType<PluginHost['createContext']>) => {
+        context.registerCommand({ id: 'tree.open', handler: () => undefined })
+        context.registerCommand({ id: 'tree.revealNote', handler: () => undefined })
+      },
+    }))
 
-    const context = host.createContext(VIEW)
-    context.registerCommand({ id: 'tree.open', handler: () => undefined })
-    context.registerCommand({ id: 'tree.revealNote', handler: () => undefined })
+    await loader.start()
 
     expect(reportCommandIssue).not.toHaveBeenCalled()
   })

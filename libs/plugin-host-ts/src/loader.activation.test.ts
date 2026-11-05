@@ -36,13 +36,13 @@ function createWindow(activate: (context: PluginContext) => void | Promise<void>
 
 /** Reads the commands the window lists at once on every change, as a window part that follows them does. */
 function followCommands(host: ReturnType<typeof createPluginHost>): string[][] {
-  const seen: string[][] = []
+  const reports: string[][] = []
   watch(
     () => host.getPaletteCommands().map((one) => one.id),
-    (ids) => seen.push(ids),
+    (ids) => reports.push(ids),
     { flush: 'sync' },
   )
-  return seen
+  return reports
 }
 
 describe('a command a plugin registers while it starts', () => {
@@ -84,16 +84,16 @@ describe('a command a plugin registers while it starts', () => {
   })
 
   it('is listed while the plugin starts, as the other commands it declares', async () => {
-    let listed: string[] = []
+    let commands: string[] = []
     const { host, loader } = createWindow((context) => {
       context.registerCommand({ id: 'graph.open', handler: () => undefined })
-      listed = host.getPaletteCommands().map((one) => one.id)
+      commands = host.getPaletteCommands().map((one) => one.id)
       context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
     })
 
     await loader.start()
 
-    expect(listed).toStrictEqual([`${PLUGIN}:graph.open`, `${PLUGIN}:graph.showNote`])
+    expect(commands).toStrictEqual([`${PLUGIN}:graph.open`, `${PLUGIN}:graph.showNote`])
   })
 })
 
