@@ -48,6 +48,8 @@ const isListening = (port: number): Promise<boolean> =>
 export interface OwnServerOptions {
   /** Variables the server and its plugins start with. */
   readonly env?: Readonly<Record<string, string>>
+  /** The content of numen.json the server finds when it starts. */
+  readonly settings?: string
 }
 
 export const startOwnServer = async (
@@ -75,6 +77,10 @@ export const startOwnServer = async (
       fs.mkdirSync(path.dirname(target), { recursive: true })
       fs.writeFileSync(target, content, { mode: file.startsWith('bin/') ? 0o755 : 0o644 })
     }
+  }
+  if (options.settings !== undefined) {
+    fs.mkdirSync(settings, { recursive: true })
+    fs.writeFileSync(path.join(settings, 'numen.json'), options.settings)
   }
   const port = await getFreePort()
   const child: ChildProcess = spawn(
