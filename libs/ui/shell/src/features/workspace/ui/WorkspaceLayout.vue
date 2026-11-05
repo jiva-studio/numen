@@ -7,35 +7,27 @@
  * hands identities back.
  */
 import { computed, provide, useTemplateRef } from 'vue'
-import { browserClock, type Clock } from '@numen/ui'
+import { browserClock } from '@numen/ui'
 import { DragPreview } from '@numen/ui'
 import { WorkspaceBranch } from './branch'
 import { WorkspacePane } from './pane'
 import WorkspaceOverlay from './WorkspaceOverlay.vue'
+import type { WorkspaceLayoutProps } from './WorkspaceLayout.types'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../model/context'
+import { findTopPanes, getStripEdge } from '../lib/edges'
 import { useTabDrag } from '../model/drag'
 import { TAB_HOSTS, createTabHosts } from '../model/hosts'
 import { createNodeIdFactory } from '../lib/identity'
-import { activateTab, closeTab, focusPane, resizeBranch, type NodeIdFactory } from '../lib/edit'
+import { activateTab, closeTab, focusPane, resizeBranch } from '../lib/edit'
 import { type NodeId, type Tab, type TabId, type Workspace } from '../lib/node'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = withDefaults(
-  defineProps<{
-    tabs: readonly Tab[]
-    /** Where identities for what a gesture makes come from. */
-    createId?: NodeIdFactory | undefined
-    /** How close to the outer edge divides the whole workspace. */
-    edge?: number
-    /** Distance the pointer moves before a press becomes a drag. */
-    threshold?: number
-    /** The minimum size at which a pane is rendered. */
-    minimum?: number
-    /** The clock. Browser by default; a test hands in its own. */
-    clock?: Clock
-  }>(),
-  { edge: 22, threshold: 4, minimum: 220, clock: () => browserClock },
-)
+const props = withDefaults(defineProps<WorkspaceLayoutProps>(), {
+  edge: 22,
+  threshold: 4,
+  minimum: 220,
+  clock: () => browserClock,
+})
 
 const workspace = defineModel<Workspace>({ required: true })
 
@@ -77,6 +69,9 @@ const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
 const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
 const findTab = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)
+
+/** The panes at the top of the workspace, found again on every change of the layout. */
+const topPanes = computed(() => findTopPanes(workspace.value))
 
 /** Where each tab is drawn: the host element of the pane that holds it. */
 const hosts = createTabHosts()
@@ -131,6 +126,7 @@ provide(
   WORKSPACE_CONTEXT,
   computed<WorkspaceContext>(() => ({
     findTab,
+    getStripEdge: (pane: NodeId) => getStripEdge(topPanes.value, props.windowEdge, pane),
     focus: workspace.value.focus,
     minimum: props.minimum,
     choose: onChooseTab,

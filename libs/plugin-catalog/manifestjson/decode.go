@@ -129,6 +129,14 @@ func newMenus(wire []*v1.ManifestMenuEntry) []manifest.Menu {
 	return out
 }
 
+func newViews(wire []*v1.ManifestView) []manifest.View {
+	var out []manifest.View
+	for _, one := range wire {
+		out = append(out, manifest.View{ID: one.GetId(), Slot: one.GetSlot()})
+	}
+	return out
+}
+
 func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 	settings, err := newSettings(wire.GetSettings())
 	if err != nil {
@@ -199,6 +207,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		FrameOrigins: wire.GetFrameOrigins(),
 		Commands:     newCommands(wire.GetCommands()),
 		Menus:        newMenus(wire.GetMenus()),
+		Views:        newViews(wire.GetViews()),
 	}, nil
 }
 

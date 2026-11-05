@@ -164,8 +164,8 @@ test('the plugin documentation describes menus', () => {
   )
 })
 
-test('the title bar of the shell names no plugin', () => {
-  const folder = join(ROOT, 'libs/ui/shell/src/features/title-bar')
+test('the window frame of the shell names no plugin', () => {
+  const folder = join(ROOT, 'libs/ui/shell/src/features/window-frame')
   for (const file of listSources(folder, ['.ts', '.vue'])) {
     assert.doesNotMatch(
       readFileSync(file, 'utf8'),

@@ -34,7 +34,7 @@ export function verifyPluginsStatic() {
 }
 
 /** The packages a plugin depends on; their `package.json` `exports` declare the entries a plugin may name. */
-const PLUGIN_PACKAGES = ["@numen/plugin-sdk", "@numen/ui"];
+const PLUGIN_PACKAGES = ["@numen/plugin-sdk", "@numen/ui", "@numen/shell"];
 
 /** A build configuration file, which may name the build entries a package declares. */
 const BUILD_CONFIGURATION = /\.config\.[cm]?[jt]s$/;
@@ -78,7 +78,7 @@ export function readPluginPackageExports() {
   return result;
 }
 
-/** A plugin imports `@numen/plugin-sdk` and `@numen/ui` through their main entry, and from the test entry, stylesheets and build entries a package declares. */
+/** A plugin imports `@numen/plugin-sdk`, `@numen/ui` and `@numen/shell` through their main entry, and from the test entry, stylesheets and build entries a package declares. */
 export function verifyPluginsUseMainEntry() {
   const exportsByPackage = readPluginPackageExports();
   for (const name of PLUGIN_PACKAGES) requireMatches(`exports of ${name}`, Object.keys(exportsByPackage[name] ?? {}).length, 1);
@@ -93,7 +93,7 @@ export function verifyPluginsUseMainEntry() {
     files.push({ file, literals });
   }
   requireMatches("plugin references to the plugin packages", named, 100);
-  failOnFindings("A plugin reaches past the main entry of @numen/plugin-sdk or @numen/ui", findPluginEntryViolations(files, exportsByPackage));
+  failOnFindings("A plugin reaches past the main entry of @numen/plugin-sdk, @numen/ui or @numen/shell", findPluginEntryViolations(files, exportsByPackage));
 }
 
 /** Plugin backend internal layers (inner packages under backend/<pkg> must not import backend/service or backend/engine). */

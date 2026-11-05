@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor } from 'storybook/test'
 import { computed, provide, ref } from 'vue'
 import WorkspaceBranch from './WorkspaceBranch.vue'
-import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
+import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import TabStub from '../../fixtures/TabStub.vue'
 import { split, stack } from '../../fixtures/build'
 import { type Branch, type NodeId, type Tab, type TabId } from '../../lib/node'
@@ -88,6 +88,7 @@ const meta: Meta<Knobs> = {
             TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
           focus: 'left',
           minimum: args.minimum,
+          getStripEdge: () => NO_STRIP_EDGE,
           choose: fn(),
           close: fn(),
           lift: fn(),

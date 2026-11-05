@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { useWindowFrame, type FrameRuntime } from './useWindowFrame'
+import { MAC_BUTTONS_INSET } from '@numen/shell'
+import { getWindowEdge, useWindowFrame, type FrameRuntime } from './useWindowFrame'
 
 /** The Wails runtime of a window on a platform, with the calls it receives recorded. */
 function createRuntime(platform: 'windows' | 'mac' | 'linux', maximised = false) {
@@ -141,5 +142,38 @@ describe('useWindowFrame when the read of the maximised state fails', () => {
     await flushPromises()
 
     expect(frame.isMaximised.value).toBe(true)
+  })
+})
+
+describe('the room of the system buttons', () => {
+  it('keeps the width of the macOS buttons at the left on macOS', async () => {
+    const frame = useWindowFrame(async () => createRuntime('mac').runtime)
+    await flushPromises()
+
+    expect(frame.windowEdge.value).toStrictEqual({ leftInset: MAC_BUTTONS_INSET, rightInset: 0 })
+  })
+
+  it('keeps no room on macOS in full screen, and keeps it again when the window leaves it', async () => {
+    const { runtime } = createRuntime('mac')
+    const state = { isFullscreen: true }
+    const frame = useWindowFrame(async () => ({
+      ...runtime,
+      Window: { ...runtime.Window, IsFullscreen: async () => state.isFullscreen },
+    }))
+    await flushPromises()
+    expect(frame.isFullscreen.value).toBe(true)
+    expect(frame.windowEdge.value.leftInset).toBe(0)
+
+    state.isFullscreen = false
+    globalThis.dispatchEvent(new Event('resize'))
+    await flushPromises()
+
+    expect(frame.windowEdge.value.leftInset).toBe(MAC_BUTTONS_INSET)
+  })
+
+  it('keeps no room on Windows and Linux, where the window has no buttons of its own', () => {
+    for (const controls of ['windows', 'mac'] as const) {
+      expect(getWindowEdge(controls, false)).toStrictEqual({ leftInset: 0, rightInset: 0 })
+    }
   })
 })

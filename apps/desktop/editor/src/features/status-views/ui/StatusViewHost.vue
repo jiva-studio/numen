@@ -4,7 +4,7 @@
  * with the stylesheet of each plugin that registered one.
  */
 import type { DeclaredStatusView } from '@numen/plugin-host'
-import { usePluginStyles } from '../model/usePluginStyles'
+import { usePluginStyles } from '@/shared/model/usePluginStyles'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

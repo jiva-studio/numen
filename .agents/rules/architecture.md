@@ -185,7 +185,7 @@ graph LR
 - A plugin's own service is named after its plugin id. A shared service, such as `numen.v1.AgentService`, is declared by the core, and a plugin implements it.
 - Plugins are trusted code. The core runs no plugin in an iframe or a sandbox and gives a frontend no capability token. The token the core gives a backend process identifies to the core which plugin makes the call; it is not a sandbox.
 
-**(b) A plugin depends on the SDK only.** A plugin depends on the plugin SDK (Go: `libs/plugin-sdk-go`; TypeScript: `@numen/plugin-sdk`) and on third-party code. Its frontend also depends on `@numen/ui`. A plugin never imports or requires `libs/notes`, `libs/protocol`, `@numen/core-client`, `@connectrpc` or another library of this repository. The rule is about direct requires and imports: an `// indirect` line for `libs/notes` or `libs/protocol` in a plugin's `go.mod` comes from Go, because the SDK depends on them.
+**(b) A plugin depends on the SDK only.** A plugin depends on the plugin SDK (Go: `libs/plugin-sdk-go`; TypeScript: `@numen/plugin-sdk`) and on third-party code. Its frontend also depends on `@numen/ui`, and on `@numen/shell` for the parts of a window frame a title bar is drawn with. A plugin never imports or requires `libs/notes`, `libs/protocol`, `@numen/core-client`, `@connectrpc` or another library of this repository. The rule is about direct requires and imports: an `// indirect` line for `libs/notes` or `libs/protocol` in a plugin's `go.mod` comes from Go, because the SDK depends on them.
 
 **(c) The SDK contains what plugins use.** The SDK holds only code that at least one plugin imports, plus the contracts of capabilities (agent provider, embedding). It holds no concrete agent, engine or runtime (for example ONNX), and no application-side API: the catalog client, the manifest parser, the transport and the raw core clients that only windows use are in `@numen/core-client`. A type of the SDK may be an alias of a `libs/notes` type. Each type has one name in the SDK; there is no second set of names for the same types.
 
@@ -193,7 +193,7 @@ graph LR
 
 **(e) Code may be duplicated between plugins.** Code that several plugins use may be copied into each of them. No check pushes code into the SDK or `@numen/ui`; a check that does so is wrong and is corrected.
 
-**(f) Who may use `@numen/protocol` and `@numen/core-client`.** Plugins rely on the SDK and `@numen/ui`. `@numen/core-client` and the protocol are for the windows and the SDK:
+**(f) Who may use `@numen/protocol` and `@numen/core-client`.** Plugins rely on the SDK, `@numen/ui` and `@numen/shell`. `@numen/core-client` and the protocol are for the windows and the SDK:
 
 - Only `@numen/plugin-sdk` and `@numen/core-client` import or declare `@numen/protocol`. The package matrix gives `@numen/core-client` the row `[@numen/protocol]` and `@numen/plugin-host` the row `[@numen/plugin-sdk, @numen/core-client]`.
 - `@numen/core-client` is private. Applications (`apps/*`) and the plugin host (`libs/plugin-host-ts`) use it; no plugin does.

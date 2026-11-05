@@ -73,6 +73,7 @@ defineExpose({ focus: () => root.value?.focus() })
     :data-workspace-tab="tab"
     :data-showing="isShowing || undefined"
     :data-focused="isFocused || undefined"
+    style="--wails-draggable: no-drag"
     @pointerdown="onPointerDown"
     @contextmenu.prevent="onContextMenu"
   >

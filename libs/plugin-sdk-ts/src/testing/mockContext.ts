@@ -9,6 +9,7 @@ import type {
   PluginContext,
   ReaderRegistration,
   SettingsViewRegistration,
+  SlotViewRegistration,
   StatusViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
@@ -31,6 +32,7 @@ export interface MockPluginContext extends PluginContext {
   getRegisteredReaders(): ReaderRegistration[]
   getRegisteredSettingsViews(): SettingsViewRegistration[]
   getRegisteredStatusViews(): StatusViewRegistration[]
+  getRegisteredSlotViews(): SlotViewRegistration[]
   getOpenedAddresses(): string[]
   getRegisteredTabKinds(): TabKindRegistration[]
   getRegisteredCommands(): CommandRegistration[]
@@ -127,6 +129,7 @@ export function createMockPluginContext(
   const readers: ReaderRegistration[] = []
   const settingsViews: SettingsViewRegistration[] = []
   const statusViews: StatusViewRegistration[] = []
+  const slotViews: SlotViewRegistration[] = []
   const openedAddresses: string[] = []
   const tabKinds: TabKindRegistration[] = []
   const commands: CommandRegistration[] = []
@@ -164,6 +167,10 @@ export function createMockPluginContext(
 
     registerStatusView(registration: StatusViewRegistration): Disposable {
       return registerInList(statusViews, registration, subscriptions)
+    },
+
+    registerSlotView(registration: SlotViewRegistration): Disposable {
+      return registerInList(slotViews, registration, subscriptions)
     },
 
     registerTabKind<State>(registration: TabKindRegistration<State>): Disposable {
@@ -272,6 +279,10 @@ export function createMockPluginContext(
 
     getRegisteredStatusViews(): StatusViewRegistration[] {
       return [...statusViews]
+    },
+
+    getRegisteredSlotViews(): SlotViewRegistration[] {
+      return [...slotViews]
     },
 
     getOpenedAddresses(): string[] {

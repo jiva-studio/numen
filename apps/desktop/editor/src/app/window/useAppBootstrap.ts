@@ -54,6 +54,11 @@ async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): 
 }
 
 export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_LIMIT_MS) {
+  /**
+   * True once the plugins of the interface have started or the wait for them has passed, or the start
+   * failed: the window is drawn from then on.
+   */
+  const isStarted = ref(false)
   /** Why the workspace did not load, shown with a retry; empty while it loads and once it has. */
   const failure = ref('')
   let attempt = 0
@@ -66,8 +71,10 @@ export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_
       await withinLimit('The vault list', deps.loadVaults(), stepLimitMs)
       await withinLimit('The settings request', deps.startSettings(), stepLimitMs)
       await startPluginsWithinLimit(deps)
+      isStarted.value = true
       await withinLimit('The tab restore', deps.startLayout(), stepLimitMs)
     } catch (error) {
+      isStarted.value = true
       if (mine === attempt) failure.value = error instanceof Error ? error.message : String(error)
       return
     }
@@ -88,5 +95,5 @@ export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_
     deps.closeSettings()
   })
 
-  return { failure, retry: run }
+  return { failure, isStarted, retry: run }
 }

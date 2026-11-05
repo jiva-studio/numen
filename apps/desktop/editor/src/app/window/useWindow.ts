@@ -5,7 +5,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { waitFor } from './waitFor'
 import { formatErrorMessage } from '@numen/core-client'
-import type { Menus } from '@numen/plugin-host'
+import { TITLE_BAR_SLOT, type Menus } from '@numen/plugin-host'
 import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
@@ -232,6 +232,36 @@ const getDeclaredCommandsDeps = (
     true,
 })
 
+/** What the window writes to the message log about a plugin, under the plugin's own writer. */
+function createPluginReports(
+  log: ReturnType<typeof createMessageLog>,
+  getPluginName: (pluginId: string) => string,
+) {
+  const write = (pluginId: string, text: string, severity: 'warning' | 'error') =>
+    log.getWriter(`plugin:${pluginId}`)(text, severity)
+  return {
+    reportViewIssue: (pluginId: string, message: string) =>
+      write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'error'),
+    reportCommandIssue: (pluginId: string, message: string) =>
+      write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'warning'),
+    reportError: (pluginId: string, error: unknown) =>
+      write(
+        pluginId,
+        words.pluginError(getPluginName(pluginId), formatErrorMessage(error)),
+        'error',
+      ),
+    reportLoadError: (pluginId: string, error: unknown) =>
+      write(
+        pluginId,
+        words.pluginStopped(
+          getPluginName(pluginId),
+          `${words.pluginLoadFailed}: ${formatErrorMessage(error)}`,
+        ),
+        'error',
+      ),
+  }
+}
+
 function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
   const getPluginName = (pluginId: string): string =>
@@ -268,28 +298,13 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   })
   const { pluginHost, pluginLoader } = createPluginSupport({
     getCommandDeclarations: () => declaredCommands.declarations.value,
-    reportCommandIssue: (pluginId, message) =>
-      log.getWriter(`plugin:${pluginId}`)(`${getPluginName(pluginId)}: ${message}`, 'warning'),
     windowTabs,
     tabLinks,
     tabOpeners,
     settingsHolder,
     services: pluginServices,
     notices: pluginNotices,
-    reportError: (pluginId, error) =>
-      log.getWriter(`plugin:${pluginId}`)(
-        words.pluginError(getPluginName(pluginId), formatErrorMessage(error)),
-        'error',
-      ),
-    reportLoadError: (pluginId, error) => {
-      log.getWriter(`plugin:${pluginId}`)(
-        words.pluginStopped(
-          getPluginName(pluginId),
-          `${words.pluginLoadFailed}: ${formatErrorMessage(error)}`,
-        ),
-        'error',
-      )
-    },
+    ...createPluginReports(log, getPluginName),
     ...pluginNotes,
     resolveLink: async (from, address) => {
       const rawName = address.replace(/^name:\/\//, '')
@@ -638,6 +653,19 @@ function createWindowTabMoves(
   }
 }
 
+/** Whether the window is drawn yet, why its workspace did not load, and the retry of the start. */
+const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
+  bootstrapFailure: bootstrap.failure,
+  isStarted: bootstrap.isStarted,
+  retryBootstrap: bootstrap.retry,
+})
+
+/** The views plugins draw in the window itself: in the status bar and in the title bar. */
+const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
+  statusViews: pluginHost.statusViews,
+  titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
+})
+
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
   const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
@@ -694,8 +722,7 @@ export const useWindow = () => {
     ...menuApi,
     openCurrentVault: () => openPlacedTabs(base),
     isLayoutReady,
-    bootstrapFailure: bootstrap.failure,
-    retryBootstrap: bootstrap.retry,
+    ...getBootstrapApi(bootstrap),
     openSettings: (pluginId?: string, filter?: string) =>
       settings.configured.openSettings(pluginId, filter),
     commands: getCommands(ctx).commands,
@@ -708,7 +735,7 @@ export const useWindow = () => {
     vaultList: getVaults(ctx).vaultList,
     log: base.log,
     statusBar: createStatusBar(base, window, settings),
-    statusViews: base.pluginHost.statusViews,
+    ...getPluginViews(base.pluginHost),
     palette: getCommands(ctx).palette,
     destinations: getKinds(ctx).destinations,
     closeTab,

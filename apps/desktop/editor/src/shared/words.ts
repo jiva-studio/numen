@@ -70,9 +70,6 @@ export const WORDS = {
   openVault: 'Open vault',
   newVault: 'Create vault',
   /** The list the title opens to switch the vault: its name, its search field and its empty result. */
-  switchVault: 'Switch vault',
-  searchVaults: 'Search vaults',
-  noVaults: 'No vault found',
   newVaultDetail: 'Choose a folder',
   renameVault: 'Rename vault',
   removeVault: 'Remove vault from list',

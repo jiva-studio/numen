@@ -16,6 +16,7 @@ import { createAppInfo } from '../appInfo'
 import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
 import { createStatusViewRegistry, type StatusViewRegistry } from '../statusViews'
+import { createSlotViewRegistry, type SlotViewRegistry } from '../slotViews'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
 import { addListener, notifyListeners, reportError, runCommand } from './events'
@@ -138,17 +139,16 @@ function createSettingBridge(
   }
 }
 
+type SharedBridge = 'registerStatusView' | 'registerSlotView' | 'registerView' | 'mountView'
+
 /** The views, status views and drops a plugin registers, which the shared registries hold. */
-function createSharedBridge({
-  views,
-  drops,
-  statusViews,
-}: SharedRegistries): Pick<
-  PluginContextHost,
-  'registerStatusView' | 'registerView' | 'mountView' | 'registerDropHandler' | 'drops'
-> {
+function createSharedBridge(
+  shared: SharedRegistries,
+): Pick<PluginContextHost, SharedBridge | 'registerDropHandler' | 'drops'> {
+  const { views, drops, statusViews, slotViews } = shared
   return {
     registerStatusView: statusViews.registerStatusView,
+    registerSlotView: slotViews.registerSlotView,
     registerView: views.registerView,
     mountView: views.mountView,
     registerDropHandler: drops.registerDropHandler,
@@ -172,6 +172,7 @@ interface SharedRegistries {
   readonly views: ViewRegistry
   readonly drops: DropRegistry
   readonly statusViews: StatusViewRegistry
+  readonly slotViews: SlotViewRegistry
 }
 
 function createHostContextBridge(
@@ -350,10 +351,14 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
 export function createPluginHost(deps: PluginHostDeps) {
   const registry = createHostRegistry()
   const statusViews = createStatusViewRegistry()
+  const slotViews = createSlotViewRegistry(
+    deps.reportViewIssue ? { reportIssue: deps.reportViewIssue } : {},
+  )
   const contextHost = createHostContextBridge(deps, registry, {
     views: createViewRegistry(),
     drops: createDropRegistry(),
     statusViews,
+    slotViews,
   })
   const parts = { registry, statusViews, deps }
 
@@ -371,6 +376,8 @@ export function createPluginHost(deps: PluginHostDeps) {
     disposeAll: () => disposeAllEntries(registry, statusViews, deps),
     /** The status bar views the plugins registered, in order of registration; reactive. */
     statusViews: statusViews.views,
+    /** The view a slot of the window draws, or null while no plugin registered one; reactive. */
+    getSlotView: slotViews.getSlotView,
   }
 }
 

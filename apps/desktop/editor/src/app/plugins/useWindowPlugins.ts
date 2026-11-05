@@ -41,6 +41,8 @@ export interface PluginSupportDeps {
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
   /** Reports a command whose declaration and handler do not match. */
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
+  /** Reports a view of a slot that another plugin, first by plugin id, draws. */
+  readonly reportViewIssue?: (pluginId: string, message: string) => void
 }
 
 function createPluginSettingsAccessor(
@@ -98,6 +100,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.getCommandDeclarations !== undefined
       ? { getCommandDeclarations: deps.getCommandDeclarations }
       : {}),
+    ...(deps.reportViewIssue !== undefined ? { reportViewIssue: deps.reportViewIssue } : {}),
     ...(deps.reportCommandIssue !== undefined
       ? { reportCommandIssue: deps.reportCommandIssue }
       : {}),

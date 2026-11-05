@@ -149,7 +149,7 @@ vi.mock('../plugins/useWindowPlugins', () => ({
 vi.mock('./useAppBootstrap', () => ({
   useAppBootstrap: (args: unknown) => {
     h.args.bootstrap = args
-    return { failure: { value: '' }, retry: vi.fn() }
+    return { failure: { value: '' }, isStarted: { value: true }, retry: vi.fn() }
   },
 }))
 
@@ -272,6 +272,7 @@ beforeEach(() => {
       runContextMenu: vi.fn(),
       getContextMenuIcon: vi.fn(() => 'ctx-icon'),
       statusViews: ref([]),
+      getSlotView: vi.fn(() => ref(null)),
     },
     pluginLoader: {
       trackPlugins: vi.fn(async () => undefined),

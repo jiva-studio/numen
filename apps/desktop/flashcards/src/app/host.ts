@@ -2,8 +2,8 @@
  * The host the shell's plugins are activated in: a context for each plugin, the tab kinds they
  * register, the views they declare for each other and the notices they show. The shell draws one
  * tab, of the main-pane kind with the lowest order, opened on the vault the user chose; one list of
- * notices; and the views declared for the list of vaults. Every other registration has no slot in
- * this window.
+ * notices; the views declared for the list of vaults; and the view of the slot titleBar. Every other
+ * registration has no slot in this window.
  */
 import { computed, effectScope, shallowRef, type EffectScope, type ShallowRef } from 'vue'
 import type { Manifest } from '@numen/core-client'
@@ -11,7 +11,10 @@ import {
   createAppInfo,
   createExternalOpener,
   createPluginNotices,
+  createSlotViewRegistry,
+  getDeclaredSlot,
   createViewRegistry,
+  TITLE_BAR_SLOT,
   openExternalUrl,
   type LoaderHost,
   type AgentHost,
@@ -111,6 +114,9 @@ export function createShellHost(agent?: AgentHost) {
   const contexts = new Map<string, PluginContext>()
   const declaredViews = createViewRegistry()
   const notices = createNoticeQueue()
+  const slotViews = createSlotViewRegistry({
+    reportIssue: (pluginId, message) => notices.show(pluginId, `${pluginId}: ${message}`, 'error'),
+  })
 
   const front = createFrontView(views)
   const { tab, openTab, closeTab } = createWindowTab(() => front.value)
@@ -140,6 +146,14 @@ export function createShellHost(agent?: AgentHost) {
         add(addView({ pluginId, registration: registration as TabKindRegistration })),
       ...UNUSED_CAPABILITIES,
       registerView: (registration) => add(declaredViews.registerView(pluginId, registration)),
+      registerSlotView: (registration) =>
+        add(
+          slotViews.registerSlotView(
+            pluginId,
+            getDeclaredSlot(pluginId, manifest, registration.id),
+            registration,
+          ),
+        ),
       mountView: (capability, element, viewContext) => {
         const view = declaredViews.mountView(capability, element, viewContext)
         add(view)
@@ -177,6 +191,8 @@ export function createShellHost(agent?: AgentHost) {
     openTab,
     closeTab,
     notices,
+    /** The view a plugin draws in the title bar, or null while none does. */
+    titleBarView: slotViews.getSlotView(TITLE_BAR_SLOT),
     /** A view a plugin declares, drawn into an element of the window itself. */
     mountView: declaredViews.mountView,
   }

@@ -633,14 +633,105 @@ describe('the appearance palette', () => {
   })
 })
 
+/** A plugin that draws the title bar: its manifest declares the view, and its frontend registers it. */
+const createBarPlugin = (pluginId: string) => ({
+  manifest: {
+    id: pluginId,
+    name: 'Bar',
+    version: '1.0.0',
+    frontend: {},
+    contributes: { views: [{ id: 'bar', slot: 'titleBar' }] },
+  },
+  activate: (context: { registerSlotView: (one: unknown) => void }) => {
+    context.registerSlotView({
+      id: 'bar',
+      component: defineComponent({
+        props: { appName: String, vaultName: String },
+        setup: (props) => () =>
+          h('header', { 'data-title-bar': pluginId }, [
+            h('span', { 'data-title': '' }, `${props.appName} — ${props.vaultName}`),
+          ]),
+      }),
+    })
+  },
+})
+
+/** The deps of a window whose plugins are the cards and the bar plugins given. */
+const createBarDeps = (plugins: readonly ReturnType<typeof createBarPlugin>[]) => {
+  const findPlugin = (url: string) => plugins.find((one) => url.includes(`/${one.manifest.id}/`))
+  return {
+    listPlugins: async () => ['md.numen.cards', ...plugins.map((one) => one.manifest.id)],
+    listVaults: async () => VAULTS,
+    fetch: (async (url: string) =>
+      new Response(
+        JSON.stringify(findPlugin(String(url))?.manifest ?? MANIFEST),
+      )) as unknown as typeof fetch,
+    dynamicImport: async (url: string) => {
+      const plugin = findPlugin(url)
+      return plugin ? { activate: plugin.activate } : { activate: activateCards }
+    },
+  }
+}
+
 describe('the title bar of the flashcards window', () => {
-  it('is drawn above the window, with the window controls', async () => {
+  it('is not drawn while no plugin draws it, and the window draws no buttons of its own', async () => {
     const window = mount(App, { props: { deps: createDeps() }, attachTo: document.body })
     mounted.push(window)
     await flushPromises()
 
-    expect(window.find('[data-title-bar]').exists()).toBe(true)
+    expect(window.find('[data-title-bar]').exists()).toBe(false)
+    expect(window.find('[data-control]').exists()).toBe(false)
+  })
+
+  it('is drawn by the plugin that registers the view of the slot titleBar', async () => {
+    const window = mount(App, {
+      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+
+    expect(window.find('[data-title-bar="org.example.ledger"]').exists()).toBe(true)
     expect(window.find('[data-title]').text()).toBe('numen — flashcards')
-    expect(window.findAll('[data-title-bar] button')).toHaveLength(3)
+  })
+
+  it('is drawn by the plugin first by id, and the other plugin is reported', async () => {
+    let shell: ReturnType<typeof useShell> | undefined
+    const deps = createBarDeps([
+      createBarPlugin('org.example.ledger'),
+      createBarPlugin('org.example.harbor'),
+    ])
+    mounted.push(
+      mount(
+        defineComponent({
+          setup: () => {
+            shell = useShell(deps)
+            return () => h('div')
+          },
+        }),
+      ),
+    )
+    await flushPromises()
+
+    expect(shell?.plugins.titleBarView.value?.pluginId).toBe('org.example.harbor')
+    expect(
+      shell?.notices.notices.value.some(
+        (one) => one.severity === 'error' && one.text.includes('org.example.ledger'),
+      ),
+    ).toBe(true)
+  })
+
+  it('waits for the plugins before the window is drawn', async () => {
+    const window = mount(App, {
+      props: {
+        deps: { ...createDeps(), listPlugins: () => new Promise<string[]>(() => undefined) },
+      },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+
+    expect(window.find('[role="status"]').exists()).toBe(true)
+    expect(window.find('main').exists()).toBe(false)
   })
 })

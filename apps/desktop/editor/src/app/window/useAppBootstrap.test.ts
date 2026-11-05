@@ -96,6 +96,37 @@ describe('a window mounting while a plugin does not start', () => {
     }
   })
 
+  it('is drawn only once the plugins started or the wait for them passed', async () => {
+    vi.useFakeTimers()
+    try {
+      const { bootstrap } = setup({ startPlugins: () => new Promise<void>(() => undefined) })
+
+      await vi.advanceTimersByTimeAsync(PLUGINS_WAIT_MS - 1)
+      expect(bootstrap().isStarted.value).toBe(false)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(bootstrap().isStarted.value).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('is drawn as soon as the plugins started', async () => {
+    const { bootstrap } = setup()
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(bootstrap().isStarted.value).toBe(true)
+  })
+
+  it('is drawn when a step before the plugins fails, to show what did not load', async () => {
+    const { bootstrap } = setup({ loadVaults: () => Promise.reject(new Error('vaults gone')) })
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(bootstrap().isStarted.value).toBe(true)
+    expect(bootstrap().failure.value).toBe('vaults gone')
+  })
+
   it('reports a plugin start that fails and opens the layout', async () => {
     const failure = new Error('plugins stopped')
     const reportError = vi.fn()

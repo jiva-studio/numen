@@ -61,6 +61,8 @@ type Contributes struct {
 	Commands []Command
 	// Menus place commands in the named places the window draws.
 	Menus []Menu
+	// Views are the components the window draws in its slots.
+	Views []View
 }
 
 // ListStatusViews returns the ids of the components the plugin registers for the status bar.
@@ -105,6 +107,7 @@ func (m Manifest) listContributionIssues() []error {
 	c := m.Contributes
 	issues = append(issues, m.listFrontendIssues()...)
 	issues = append(issues, listStatusViewIssues(c.StatusViews)...)
+	issues = append(issues, listViewIssues(c.Views)...)
 	issues = append(issues, listTabKindIssues(c.TabKinds)...)
 	if c.Category != "" && !categoryNamePattern.MatchString(c.Category) {
 		issues = append(issues, fmt.Errorf("%w: category %q is not lowercase words joined by hyphens", ErrInvalidContribution, c.Category))
@@ -127,6 +130,9 @@ func (m Manifest) listFrontendIssues() []error {
 	}
 	if len(m.Contributes.StatusViews) > 0 && !m.HasFrontend() {
 		issues = append(issues, fmt.Errorf("%w: the plugin declares status views and has no frontend to register them", ErrInvalidContribution))
+	}
+	if len(m.Contributes.Views) > 0 && !m.HasFrontend() {
+		issues = append(issues, fmt.Errorf("%w: the plugin declares views and has no frontend to register them", ErrInvalidContribution))
 	}
 	return issues
 }

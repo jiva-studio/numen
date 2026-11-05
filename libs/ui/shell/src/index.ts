@@ -10,7 +10,7 @@ export { closeTab, openTab, openTabAdjacent } from './features/workspace'
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { branch, pane } from './features/workspace'
 export { paneById, getPanes } from './features/workspace'
-export type { Tab, Workspace } from './features/workspace'
+export type { Tab, WindowEdge, Workspace } from './features/workspace'
 
 export { Palette } from './features/palette'
 export { commandKeyChord } from './features/palette'
@@ -31,11 +31,17 @@ export type { StatusBarTask } from './features/status-bar'
 export { WelcomePage, getVaultForKey } from './features/welcome'
 export type { VaultRow, WelcomeAction } from './features/welcome'
 
-/** The bar every window draws at its top, with its actions and the window controls. */
-export { TitleBar } from './features/title-bar'
-export type {
-  ControlsStyle,
-  TitleBarAction,
-  TitleBarWords,
-  TitleChoice,
-} from './features/title-bar'
+/**
+ * The parts of a window frame a title bar is drawn with: the window buttons, the area that moves
+ * the window and the room the macOS buttons take. The shell draws no bar and no window buttons of
+ * its own.
+ */
+export {
+  MAC_BUTTONS_INSET,
+  MacButtonsInset,
+  TITLE_BAR_HEIGHT,
+  WINDOW_CONTROLS_WORDS,
+  WindowControls,
+  WindowDragArea,
+} from './features/window-frame'
+export type { ControlsStyle, WindowControlsWords } from './features/window-frame'

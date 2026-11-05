@@ -62,6 +62,7 @@ describe('createPluginLoader', () => {
           app: { version: '0.0.0-test', build: 1, platform: 'linux' },
           openExternal: vi.fn(async () => ({ ok: true as const, value: null })),
           registerStatusView: vi.fn(() => ({ dispose: vi.fn() })),
+          registerSlotView: vi.fn(() => ({ dispose: vi.fn() })),
           registerReader: vi.fn(() => ({ dispose: vi.fn() })),
           registerTabKind: vi.fn(() => ({ dispose: vi.fn() })),
           registerCommand: vi.fn(() => ({ dispose: vi.fn() })),

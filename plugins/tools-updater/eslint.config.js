@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint'
 import pluginVue from 'eslint-plugin-vue'
 import prettier from 'eslint-config-prettier'
 
-const contract = ['plugin-sdk', 'ui']
+const contract = ['plugin-sdk', 'ui', 'shell']
 
 export default [
   {
@@ -73,7 +73,8 @@ export default [
                 '@numen/*',
                 ...contract.flatMap((name) => [`!@numen/${name}`, `!@numen/${name}/**`]),
               ],
-              message: 'a plugin names only @numen/plugin-sdk, @numen/ui and its own directory',
+              message:
+                'a plugin names only @numen/plugin-sdk, @numen/ui, @numen/shell and its own directory',
             },
           ],
         },

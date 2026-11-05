@@ -66,6 +66,17 @@ message ManifestContributes {
   repeated ManifestCommand commands = 12;
   // menus place commands in the named places the window draws.
   repeated ManifestMenuEntry menus = 13;
+  // views are the components of the plugin's frontend the window draws in its slots, such as the
+  // title bar.
+  repeated ManifestView views = 14;
+}
+
+// ManifestView is a component of the plugin's frontend that the window draws in one of its slots.
+message ManifestView {
+  // id is the id the frontend registers the component under.
+  string id = 1;
+  // slot is the name of the place in the window, such as titleBar.
+  string slot = 2;
 }
 
 // ManifestMenuEntry places one command in a named place of the window. The command is the id

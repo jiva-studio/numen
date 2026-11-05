@@ -5,6 +5,7 @@
  */
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import {
+  PLUGIN_WAIT_MS,
   createPluginLoader,
   getPluginStyle,
   type PluginLoaderDeps,
@@ -65,7 +66,9 @@ export function useShell(deps: ShellDeps = {}) {
     deps.agentClient ?? agentService,
     deps.linkClient ?? noteService,
   )
-  const { host, front, tab, openTab, notices, mountView } = createShellHost(windowAgent.agent)
+  const { host, front, tab, openTab, notices, mountView, titleBarView } = createShellHost(
+    windowAgent.agent,
+  )
   const loader = createPluginLoader({
     host,
     ...(deps.fetch ? { fetch: deps.fetch } : {}),
@@ -85,8 +88,13 @@ export function useShell(deps: ShellDeps = {}) {
   useExternalLinks(notices)
   const appearance = useAppearance(notices, deps.appearance)
 
+  /** True once the plugins have started or PLUGIN_WAIT_MS has passed: the window is drawn then. */
+  const isStarted = ref(false)
+  let startTimer: ReturnType<typeof setTimeout> | undefined
+
   onMounted(async () => {
     window.addEventListener('keydown', onKeyDown)
+    startTimer = setTimeout(() => (isStarted.value = true), PLUGIN_WAIT_MS)
     try {
       await loader.trackPlugins(await (deps.listPlugins ?? listPlugins)())
       await loader.start()
@@ -94,9 +102,12 @@ export function useShell(deps: ShellDeps = {}) {
       listError.value = formatErrorMessage(error)
     } finally {
       isLoading.value = false
+      isStarted.value = true
+      clearTimeout(startTimer)
     }
   })
   onUnmounted(() => {
+    clearTimeout(startTimer)
     window.removeEventListener('keydown', onKeyDown)
     loader.close().catch((error: unknown) => {
       listError.value = formatErrorMessage(error)
@@ -117,7 +128,7 @@ export function useShell(deps: ShellDeps = {}) {
     tab,
     openTab,
     vaults: { list: vaults, isListing },
-    plugins: { style, failures, isLoading },
+    plugins: { style, failures, isLoading, isStarted, titleBarView },
     notices,
     mountView,
     appearance,

@@ -5,7 +5,7 @@
  */
 import { computed, getCurrentScope, onScopeDispose, ref, shallowRef, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
-import type { ControlsStyle } from '@numen/shell'
+import { MAC_BUTTONS_INSET, type ControlsStyle, type WindowEdge } from '@numen/shell'
 
 /** The values of the setting "Window buttons". */
 export type WindowButtons = Extract<ControlsStyle, 'windows' | 'mac'>
@@ -20,6 +20,7 @@ export interface FrameRuntime {
     readonly ToggleMaximise?: () => Promise<void>
     readonly Close?: () => Promise<void>
     readonly IsMaximised?: () => Promise<boolean>
+    readonly IsFullscreen?: () => Promise<boolean>
   }
   readonly System?: {
     readonly IsMac?: () => boolean
@@ -35,6 +36,10 @@ export interface WindowFrame {
   /** How the title bar draws the window buttons on this platform. */
   readonly controls: Readonly<Ref<ControlsStyle>>
   readonly isMaximised: Readonly<Ref<boolean>>
+  /** True while the window fills the screen; macOS then shows no system buttons. */
+  readonly isFullscreen: Readonly<Ref<boolean>>
+  /** The room the system buttons take in the top corners while no title bar is drawn. */
+  readonly windowEdge: Readonly<Ref<WindowEdge>>
   minimise(): Promise<void>
   toggleMaximise(): Promise<void>
   close(): Promise<void>
@@ -60,6 +65,15 @@ function getControls(system: FrameRuntime['System'], buttons: WindowButtons): Co
   return system?.IsLinux?.() ? buttons : 'windows'
 }
 
+/**
+ * The room the system buttons take in the top corners: the macOS buttons at the left, except in full
+ * screen, where macOS shows none. Windows and Linux have no buttons without a title bar.
+ */
+export function getWindowEdge(controls: ControlsStyle, isFullscreen: boolean): WindowEdge {
+  const hasMacButtons = controls === 'native-mac' && !isFullscreen
+  return { leftInset: hasMacButtons ? MAC_BUTTONS_INSET : 0, rightInset: 0 }
+}
+
 /** A read of the window state that fails leaves the state as it was. */
 const ignoreFailure = (): undefined => undefined
 
@@ -69,9 +83,13 @@ export function useWindowFrame(
 ): WindowFrame {
   const system = shallowRef<FrameRuntime['System']>()
   const isMaximised = ref(false)
+  const isFullscreen = ref(false)
 
-  async function readMaximised(): Promise<void> {
-    isMaximised.value = (await (await load())?.Window?.IsMaximised?.()) ?? false
+  /** Reads the maximised and the full screen state, which a resize changes. */
+  async function readWindowState(): Promise<void> {
+    const wailsWindow = (await load())?.Window
+    isMaximised.value = (await wailsWindow?.IsMaximised?.()) ?? false
+    isFullscreen.value = (await wailsWindow?.IsFullscreen?.()) ?? false
   }
 
   async function minimise(): Promise<void> {
@@ -80,7 +98,7 @@ export function useWindowFrame(
 
   async function toggleMaximise(): Promise<void> {
     await (await load())?.Window?.ToggleMaximise?.()
-    await readMaximised().catch(ignoreFailure)
+    await readWindowState().catch(ignoreFailure)
   }
 
   async function close(): Promise<void> {
@@ -90,19 +108,23 @@ export function useWindowFrame(
   runInBackground(
     load().then(async (loaded) => {
       system.value = loaded?.System
-      await readMaximised()
+      await readWindowState()
     }),
     ignoreFailure,
   )
 
   // A resize is how a window gets maximised or restored by the system, not only by the button.
-  const onResize = () => runInBackground(readMaximised(), ignoreFailure)
+  const onResize = () => runInBackground(readWindowState(), ignoreFailure)
   globalThis.addEventListener('resize', onResize)
   if (getCurrentScope()) onScopeDispose(() => globalThis.removeEventListener('resize', onResize))
 
   return {
     controls: computed(() => getControls(system.value, windowButtons.value)),
     isMaximised,
+    isFullscreen,
+    windowEdge: computed(() =>
+      getWindowEdge(getControls(system.value, windowButtons.value), isFullscreen.value),
+    ),
     minimise,
     toggleMaximise,
     close,

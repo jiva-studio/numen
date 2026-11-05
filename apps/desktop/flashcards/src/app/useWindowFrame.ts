@@ -17,6 +17,7 @@ export interface FrameRuntime {
     readonly ToggleMaximise?: () => Promise<void>
     readonly Close?: () => Promise<void>
     readonly IsMaximised?: () => Promise<boolean>
+    readonly IsFullscreen?: () => Promise<boolean>
   }
   readonly System?: {
     readonly IsMac?: () => boolean
@@ -32,6 +33,8 @@ export interface WindowFrame {
   /** How the title bar draws the window buttons on this platform. */
   readonly controls: Readonly<Ref<ControlsStyle>>
   readonly isMaximised: Readonly<Ref<boolean>>
+  /** True while the window fills the screen; macOS then shows no system buttons. */
+  readonly isFullscreen: Readonly<Ref<boolean>>
   minimise(): Promise<void>
   toggleMaximise(): Promise<void>
   close(): Promise<void>
@@ -62,9 +65,12 @@ const ignoreFailure = (): undefined => undefined
 export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFrame {
   const platform = ref<ControlsStyle>('windows')
   const isMaximised = ref(false)
+  const isFullscreen = ref(false)
 
-  async function readMaximised(): Promise<void> {
-    isMaximised.value = (await (await load())?.Window?.IsMaximised?.()) ?? false
+  async function readWindowState(): Promise<void> {
+    const wailsWindow = (await load())?.Window
+    isMaximised.value = (await wailsWindow?.IsMaximised?.()) ?? false
+    isFullscreen.value = (await wailsWindow?.IsFullscreen?.()) ?? false
   }
 
   async function minimise(): Promise<void> {
@@ -73,7 +79,7 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
 
   async function toggleMaximise(): Promise<void> {
     await (await load())?.Window?.ToggleMaximise?.()
-    await readMaximised()
+    await readWindowState()
   }
 
   async function close(): Promise<void> {
@@ -83,19 +89,20 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
   runInBackground(
     load().then(async (loaded) => {
       platform.value = getControls(loaded?.System)
-      await readMaximised()
+      await readWindowState()
     }),
     ignoreFailure,
   )
 
   // A resize is how a window gets maximised or restored by the system, not only by the button.
-  const onResize = () => runInBackground(readMaximised(), ignoreFailure)
+  const onResize = () => runInBackground(readWindowState(), ignoreFailure)
   globalThis.addEventListener('resize', onResize)
   if (getCurrentScope()) onScopeDispose(() => globalThis.removeEventListener('resize', onResize))
 
   return {
     controls: computed(() => platform.value),
     isMaximised,
+    isFullscreen,
     minimise,
     toggleMaximise,
     close,

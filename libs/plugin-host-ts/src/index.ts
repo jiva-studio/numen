@@ -1,5 +1,6 @@
 export {
   DEFAULT_PLUGIN_ENABLED,
+  PLUGIN_WAIT_MS,
   createPluginLoader,
   isPluginEnabledValue,
   type PluginLoader,
@@ -25,6 +26,14 @@ export {
   type DeclaredStatusView,
   type StatusViewRegistry,
 } from './statusViews'
+export {
+  createSlotViewRegistry,
+  findSlotView,
+  getDeclaredSlot,
+  type DeclaredSlotView,
+  type SlotViewManifest,
+  type SlotViewRegistry,
+} from './slotViews'
 export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
 export {
   createExternalOpener,

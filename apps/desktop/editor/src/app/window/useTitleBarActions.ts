@@ -5,7 +5,7 @@
 import { computed, type Component, type ComputedRef, type Ref } from 'vue'
 import { MENU_LOCATION, type Menus, type PlacedCommand } from '@numen/plugin-host'
 import type { PaletteIcon } from '@numen/ui'
-import type { TitleBarAction } from '@numen/shell'
+import type { TitleBarAction } from '@numen/plugin-host'
 import { getNamedIcon } from '@/shared/icons'
 import { findShortcutKeys, type CommandTarget } from '@/features/command-palette'
 

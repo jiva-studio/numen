@@ -62,6 +62,72 @@ export interface StatusViewProps {
   readonly pluginId: string
 }
 
+// SlotViewRegistration registers a component the window draws in one of its slots. The manifest
+// declares, under `contributes.views` with the same id, the slot it is drawn in.
+export interface SlotViewRegistration {
+  readonly id: string
+  readonly component: unknown
+}
+
+// TITLE_BAR_SLOT is the slot at the top of a window. Its view draws the whole bar: the actions, the
+// title, the window buttons and the area that drags the window. The component gets TitleBarViewProps
+// as props and emits TitleBarViewEvents.
+export const TITLE_BAR_SLOT = 'titleBar'
+
+// WindowControlsStyle is who draws the window buttons and where: the view at the right (`windows`),
+// the view as three circles at the left (`mac`), or the system at the left (`native-mac`), where the
+// view keeps room for them.
+export type WindowControlsStyle = 'windows' | 'mac' | 'native-mac'
+
+// TitleBarAction is one command placed in `titleBar` of `contributes.menus`, as the window passes it
+// to the title bar view.
+export interface TitleBarAction {
+  // The full id of the command; the view emits it with `run`.
+  readonly id: string
+  readonly title: string
+  // The icon component of the command.
+  readonly icon: unknown
+  // Actions that share a group are drawn together.
+  readonly group?: string
+  // The shortcut as the person reads it, such as `Ctrl+Shift+E`.
+  readonly shortcut?: string
+}
+
+// TitleBarChoice is one entry of the list the title opens, such as a vault to switch to.
+export interface TitleBarChoice {
+  // The id the view emits with `choose`.
+  readonly id: string
+  readonly label: string
+  // Whether the entry is what the title names now.
+  readonly isCurrent?: boolean
+}
+
+// TitleBarViewProps are the props the window passes the component of the title bar view.
+export interface TitleBarViewProps {
+  readonly pluginId: string
+  readonly appName: string
+  // The vault the window shows; empty where none is open.
+  readonly vaultName: string
+  readonly controls: WindowControlsStyle
+  readonly isMaximised: boolean
+  // True while the window fills the screen; macOS then shows no system buttons.
+  readonly isFullscreen: boolean
+  // In the order the menus sort them.
+  readonly actions: readonly TitleBarAction[]
+  readonly choices: readonly TitleBarChoice[]
+}
+
+// TitleBarViewEvents are the events the window answers from the component of the title bar view.
+export interface TitleBarViewEvents {
+  // Runs the action of the id.
+  run: [id: string]
+  // Chooses the entry of the id from the list the title opens.
+  choose: [id: string]
+  minimise: []
+  'toggle-maximise': []
+  close: []
+}
+
 // AppInfo describes the application build a plugin runs in.
 export interface AppInfo {
   // The version the build calls itself, such as `2026.10.3` or `0.0.0-dev` for a manual build.
@@ -238,6 +304,10 @@ export interface PluginContext {
   registerSettingsView(registration: SettingsViewRegistration): Disposable
   // Registers the component of the status bar view the manifest declares under the same id.
   registerStatusView(registration: StatusViewRegistration): Disposable
+  // Registers the component of the view the manifest declares under the same id in
+  // `contributes.views`, drawn in the slot the manifest names. An id the manifest does not declare
+  // throws.
+  registerSlotView(registration: SlotViewRegistration): Disposable
   registerTabKind<State>(registration: TabKindRegistration<State>): Disposable
   registerCommand(registration: CommandRegistration): Disposable
   registerContextMenu(registration: ContextMenuRegistration): Disposable

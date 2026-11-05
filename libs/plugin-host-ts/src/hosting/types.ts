@@ -19,6 +19,7 @@ import type {
   PluginLifecycle,
   ReaderRegistration,
   SettingsViewRegistration,
+  SlotViewRegistration,
   StatusViewRegistration,
   TabKindRegistration,
   TaskHost,
@@ -87,6 +88,8 @@ export interface PluginHostDeps {
   readonly waitForPlugin?: (pluginId: string) => Promise<void>
   /** Reports a command whose declaration and handler do not match. */
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
+  /** Reports a view of a slot that another plugin, first by plugin id, holds. */
+  readonly reportViewIssue?: (pluginId: string, message: string) => void
   readonly registerKind: (kind: AnyTabKind) => () => void
   readonly registerExtensionReader: (
     extension: string,
@@ -175,6 +178,7 @@ export interface PluginContextHost {
   registerReader(pluginId: string, registration: ReaderRegistration): Disposable
   registerSettingsView(pluginId: string, registration: SettingsViewRegistration): Disposable
   registerStatusView(pluginId: string, registration: StatusViewRegistration): Disposable
+  registerSlotView(pluginId: string, slot: string, registration: SlotViewRegistration): Disposable
   readonly app: AppInfo
   openExternal(url: string): Promise<void>
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable

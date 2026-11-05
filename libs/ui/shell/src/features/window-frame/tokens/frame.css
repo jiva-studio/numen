@@ -1,0 +1,8 @@
+/*
+ * The sizes a window frame reserves, the numbers of `lib/sizes.ts`. The height is `BarHeight` of
+ * `apps/desktop/internal/frame`.
+ */
+:root {
+  --numen-title-bar-height: 32px;
+  --numen-mac-buttons-inset: 80px;
+}

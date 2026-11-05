@@ -5,8 +5,9 @@
  * The window's structure is defined in `window.ts`. This file holds what the user
  * sees of it, and the binding between the two.
  */
-import { computed, onMounted, onUnmounted } from 'vue'
-import { StatusBar, TitleBar, WorkspaceLayout } from '@numen/shell'
+import { onMounted, onUnmounted } from 'vue'
+import { StatusBar, WorkspaceLayout } from '@numen/shell'
+import { LoadingIndicator } from '@numen/ui'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
@@ -14,12 +15,12 @@ import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
 import { StatusViewHost } from '@/features/status-views'
+import { TitleBarHost } from '@/features/title-bar-view'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
 import { useWindowFrame } from '../window/useWindowFrame'
-import { useWindowTitleBar } from '../window/useTitleBarActions'
-import { useWindowVaultChoices } from '../window/useVaultChoices'
+import { useWindowBar } from '../window/useWindowBar'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
@@ -40,6 +41,8 @@ const {
   openCurrentVault,
   isLayoutReady,
   bootstrapFailure,
+  isStarted,
+  titleBarView,
   retryBootstrap,
   windowButtons,
   openSettings,
@@ -72,14 +75,7 @@ const {
 
 const frame = useWindowFrame(undefined, windowButtons)
 
-/** The vault the window shows; empty where none is open. */
-const vaultName = computed(
-  () => vaultList.value.vaults.find((one) => one.id === vaultList.value.showing)?.name ?? '',
-)
-
-const titleBar = useWindowTitleBar({ menus, vaultName, runCommand, getTarget })
-
-const vaultChoices = useWindowVaultChoices({ vaultList, runCommand, getTarget, commandDeps })
+const bar = useWindowBar({ menus, vaultList, runCommand, getTarget, commandDeps })
 
 const linkMenu = useTabLinkMenu({
   tabLinks,
@@ -126,17 +122,22 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
 </script>
 
 <template>
-  <main :class="{ 'is-highlighted': isHighlighted }">
-    <TitleBar
+  <!-- The window is drawn once the plugins of the interface have started or the wait for them has
+       passed, so the layout does not move when the bar is drawn. -->
+  <LoadingIndicator v-if="!isStarted" class="starting" :label="words.appName" />
+
+  <main v-else :class="{ 'is-highlighted': isHighlighted }">
+    <TitleBarHost
+      :view="titleBarView"
       :app-name="words.appName"
-      :vault-name="vaultName"
+      :vault-name="bar.vaultName.value"
       :controls="frame.controls.value"
       :is-maximised="frame.isMaximised.value"
-      :actions="titleBar.actions.value"
-      :choices="vaultChoices.choices.value"
-      :words="vaultChoices.words"
-      @run="titleBar.run"
-      @choose="vaultChoices.choose"
+      :is-fullscreen="frame.isFullscreen.value"
+      :actions="bar.actions.value"
+      :choices="bar.choices.value"
+      @run="bar.run"
+      @choose="bar.choose"
       @minimise="frame.minimise"
       @toggle-maximise="frame.toggleMaximise"
       @close="frame.close"
@@ -148,6 +149,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       v-model="layout"
       class="below"
       :tabs="windowTabs.tabs.value"
+      :window-edge="titleBarView ? undefined : frame.windowEdge.value"
       @close="onCloseTab"
       @show="onShowTab"
       @tab-context-menu="onTabContextMenu"
@@ -257,6 +259,10 @@ main.is-highlighted::after {
   z-index: var(--numen-lift-menu);
   border: 3px solid var(--numen-accent);
   pointer-events: none;
+}
+
+.starting {
+  height: 100vh;
 }
 
 .below {

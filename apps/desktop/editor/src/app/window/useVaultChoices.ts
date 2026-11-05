@@ -4,7 +4,7 @@
  */
 import { computed, type ComputedRef, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import type { TitleChoice } from '@numen/shell'
+import type { TitleBarChoice } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
   ANSWER_WORDS,
@@ -30,13 +30,13 @@ export interface VaultChoicesDeps {
 
 export interface VaultChoices {
   /** Empty while the window shows no vault. */
-  readonly choices: ComputedRef<readonly TitleChoice[]>
+  readonly choices: ComputedRef<readonly TitleBarChoice[]>
   /** The choice by its id. */
   choose(id: string): void
 }
 
 export function useVaultChoices(deps: VaultChoicesDeps): VaultChoices {
-  const choices = computed<readonly TitleChoice[]>(() => {
+  const choices = computed<readonly TitleBarChoice[]>(() => {
     const { vaults, showing } = deps.vaultList.value
     if (showing === '') return []
     return [
@@ -54,19 +54,14 @@ export function useVaultChoices(deps: VaultChoicesDeps): VaultChoices {
   return { choices, choose }
 }
 
-export interface WindowVaultChoices extends VaultChoices {
-  /** The words of the title for the list. */
-  readonly words: { readonly switcher: string; readonly search: string; readonly nothing: string }
-}
-
 /** The choices of a window over its vault list, opening a vault through the use case of the palette. */
 export function useWindowVaultChoices(
   window: Pick<VaultChoicesDeps, 'vaultList' | 'runCommand' | 'getTarget'> & {
     readonly commandDeps: CommandDeps
   },
-): WindowVaultChoices {
+): VaultChoices {
   const { commandDeps } = window
-  const choices = useVaultChoices({
+  return useVaultChoices({
     vaultList: window.vaultList,
     words: { add: WORDS.newVault },
     runCommand: window.runCommand,
@@ -81,8 +76,4 @@ export function useWindowVaultChoices(
         (error) => commandDeps.writeMessage(formatErrorMessage(error), 'error'),
       ),
   })
-  return {
-    ...choices,
-    words: { switcher: WORDS.switchVault, search: WORDS.searchVaults, nothing: WORDS.noVaults },
-  }
 }
