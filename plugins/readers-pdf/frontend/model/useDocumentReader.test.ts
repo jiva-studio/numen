@@ -1,8 +1,9 @@
 /**
  * One document as its tab reads it.
  */
-import { describe, expect, it } from 'vitest'
-import { createLostConnection } from '@numen/plugin-sdk/testing'
+import { describe, expect, it, vi } from 'vitest'
+import { createApi } from '@numen/plugin-sdk'
+import { createDocuments } from '../api/wire'
 import { useDocumentReader } from './useDocumentReader'
 import type { Documents, PageHighlight, DocumentLayout } from '../types'
 
@@ -232,7 +233,7 @@ describe('a document opened at a place in its text', () => {
   it('says what it could not ask, and reads on', async () => {
     const { documents } = book()
     documents.getHighlights = async () => {
-      throw createLostConnection('the layer is being written')
+      throw new Error('the layer is being written')
     }
     const readItem = useDocumentReader(documents, 'Book.pdf')
     readItem.widen(800)
@@ -262,7 +263,7 @@ describe('a document tab that closes', () => {
 
 describe('a document that will not open', () => {
   it('says why, and remains with nothing in it', async () => {
-    const { documents } = book(createLostConnection('no such document'))
+    const { documents } = book(new Error('no such document'))
     const readItem = useDocumentReader(documents, 'Gone.pdf')
 
     readItem.widen(800)
@@ -332,5 +333,51 @@ describe('a document tab closed after the layout landed', () => {
     await readItem.focusSpans({ start: 40_512, end: 40_543 })
 
     expect(spans).toStrictEqual([])
+  })
+})
+
+describe('a document the documents service fails to open', () => {
+  /** What the tab of Gone.pdf says once the service has answered with `answer`. */
+  const openWithAnswer = async (answer: typeof fetch): Promise<string> => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+    try {
+      const api = createApi('md.numen.readers.pdf', {
+        origin: 'http://core.invalid',
+        fetch: answer,
+      })
+      const readItem = useDocumentReader(createDocuments(api), 'Gone.pdf')
+      readItem.widen(800)
+      const going = readItem.goToPage(1)
+      await vi.runAllTimersAsync()
+      await going
+      return readItem.error.value
+    } finally {
+      vi.useRealTimers()
+    }
+  }
+
+  it('carries no word of the internal answer of the backend', async () => {
+    const message = await openWithAnswer(
+      async () =>
+        new Response(
+          JSON.stringify({
+            code: 'internal',
+            message: 'pdfium: FPDF_LoadDocument /Users/someone/Vault/Gone.pdf: error 3',
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } },
+        ),
+    )
+
+    expect(message).toContain('Numen is not responding')
+    expect(message).not.toContain('/Users/someone')
+  })
+
+  it('reads a request that never reached the core as a lost connection', async () => {
+    const message = await openWithAnswer(async () => {
+      throw new TypeError('Load failed')
+    })
+
+    expect(message).toContain('Numen is not responding')
+    expect(message).not.toContain('Load failed')
   })
 })

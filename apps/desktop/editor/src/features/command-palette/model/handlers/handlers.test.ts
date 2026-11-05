@@ -9,7 +9,7 @@ import type { VaultRef } from '../../types'
 import type { CommandDeps } from './deps'
 import type { CommandInvocation, CommandTarget, Store } from '../../types'
 import { commands, flushTab, registerCommand, runInvocation } from './handlers'
-import { asFailure, asValue } from '@numen/core-client'
+import { ReportedError, asFailure, asValue } from '@numen/core-client'
 import type { Movement } from '@/entities/file'
 import type { RemovedNote, RemoveResult, RenamedNote, RenameResult } from '@/entities/note'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
@@ -1156,14 +1156,14 @@ describe('the command of a setting', () => {
     expect(one.actions).toStrictEqual(['setting setting:app:performance.profile eco'])
   })
 
-  it('reports the reason a write is rejected as a message of the window', async () => {
+  it('reports the reason a write gives the person as a message of the window', async () => {
     const one = window()
     const failing: CommandDeps = {
       ...one.on,
       settings: {
         ...one.on.settings,
         chooseSetting: async () => {
-          throw new Error('value out of range')
+          throw new ReportedError('value out of range')
         },
       },
     }
@@ -1171,6 +1171,24 @@ describe('the command of a setting', () => {
     await carry(createInvocation('setting:app:performance.profile', front(), 'eco'), failing)
 
     expect(one.notices).toStrictEqual(['value out of range'])
+    expect(one.severities).toStrictEqual(['error'])
+  })
+
+  it('carries no word of a rejected write that was not reported to the person', async () => {
+    const one = window()
+    const failing: CommandDeps = {
+      ...one.on,
+      settings: {
+        ...one.on.settings,
+        chooseSetting: async () => {
+          throw new Error('settings.json: EACCES')
+        },
+      },
+    }
+
+    await carry(createInvocation('setting:app:performance.profile', front(), 'eco'), failing)
+
+    expect(one.notices).toStrictEqual(['Numen is not responding; retrying'])
     expect(one.severities).toStrictEqual(['error'])
   })
 })
