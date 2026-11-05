@@ -190,7 +190,7 @@ describe('calculateAggregate with a notice', () => {
     expect(aggregate.isIdle).toBe(true)
   })
 
-  it('keeps the counts of the other tasks beside a notice', () => {
+  it('counts the other tasks as usual when a notice is among them', () => {
     const aggregate = calculateAggregate([
       { id: 'n', label: 'Read settings', state: 'notice' },
       { id: 'r', label: 'Indexing', progress: 30, state: 'running' },
