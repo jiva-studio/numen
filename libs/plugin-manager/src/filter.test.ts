@@ -44,7 +44,7 @@ const entries = [
     category: 'readers',
     feature: 'EPUB books',
     tabKinds: ['reader:offer'],
-    isOffered: true,
+    isAvailable: true,
   }),
 ]
 
@@ -83,18 +83,18 @@ describe('createManagedPlugins', () => {
   })
 
   it('appends the entries the catalog offers that are not installed', () => {
-    const [, mergedOffered] = createManagedPlugins([notesInfo], entries)
+    const [, mergedAvailable] = createManagedPlugins([notesInfo], entries)
 
-    expect(mergedOffered).toBeDefined()
-    if (!mergedOffered) return
-    expect(isInstalled(mergedOffered)).toBe(false)
+    expect(mergedAvailable).toBeDefined()
+    if (!mergedAvailable) return
+    expect(isInstalled(mergedAvailable)).toBe(false)
     expect([
-      mergedOffered.id,
-      mergedOffered.info,
-      mergedOffered.name,
-      mergedOffered.category,
-      mergedOffered.feature,
-      mergedOffered.tabKinds,
+      mergedAvailable.id,
+      mergedAvailable.info,
+      mergedAvailable.name,
+      mergedAvailable.category,
+      mergedAvailable.feature,
+      mergedAvailable.tabKinds,
     ]).toStrictEqual([
       'sample.offer',
       undefined,
@@ -108,7 +108,7 @@ describe('createManagedPlugins', () => {
   it('does not list an uninstalled entry of a plugin that is installed', () => {
     const merged = createManagedPlugins(
       [notesInfo],
-      [createMockListing('sample.alpha', { isOffered: true })],
+      [createMockListing('sample.alpha', { isAvailable: true })],
     )
 
     expect(merged.map((one) => one.id)).toStrictEqual(['sample.alpha'])
