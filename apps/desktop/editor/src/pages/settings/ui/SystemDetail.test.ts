@@ -158,16 +158,12 @@ describe('the page of the shell settings', () => {
   it('shows the value the core resolved for each setting', () => {
     const { wrapper } = createPage()
 
-    expect(findRow(wrapper, 'Theme').findComponent(Select).props('modelValue')).toBe(
-      'preset:numen',
-    )
-    expect(findRow(wrapper, 'Light or dark').findComponent(Select).props('modelValue')).toBe(
-      'dark',
-    )
+    expect(findRow(wrapper, 'Theme').findComponent(Select).props('modelValue')).toBe('preset:numen')
+    expect(findRow(wrapper, 'Light or dark').findComponent(Select).props('modelValue')).toBe('dark')
     expect(findRow(wrapper, 'Interface size').findComponent(Slider).props('modelValue')).toBe(1.4)
-    expect(findRow(wrapper, 'Sync title and filename').findComponent(Switch).props('modelValue')).toBe(
-      false,
-    )
+    expect(
+      findRow(wrapper, 'Sync title and filename').findComponent(Switch).props('modelValue'),
+    ).toBe(false)
   })
 
   it('bounds the scale by the bounds of its declaration', () => {
@@ -195,7 +191,9 @@ describe('the page of the shell settings', () => {
   it('writes the profile chosen under the owner app', () => {
     const { wrapper, writes } = createPage()
 
-    findRow(wrapper, 'Performance profile').findComponent(Select).vm.$emit('update:modelValue', 'eco')
+    findRow(wrapper, 'Performance profile')
+      .findComponent(Select)
+      .vm.$emit('update:modelValue', 'eco')
 
     expect(writes).toStrictEqual([{ at: ['app', 'performance', 'profile'], value: '"eco"' }])
   })
@@ -215,8 +213,6 @@ describe('the page of the shell settings', () => {
       .findComponent(Switch)
       .vm.$emit('update:modelValue', true)
 
-    expect(writes).toStrictEqual([
-      { at: ['app', 'naming', 'syncTitleAndFilename'], value: 'true' },
-    ])
+    expect(writes).toStrictEqual([{ at: ['app', 'naming', 'syncTitleAndFilename'], value: 'true' }])
   })
 })
