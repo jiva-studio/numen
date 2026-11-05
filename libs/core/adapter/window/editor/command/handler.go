@@ -33,13 +33,18 @@ func NewHandler(vaults VaultProvider, commands plugincommand.Commands) *Handler 
 	return &Handler{vaults: vaults, list: commands.List, run: commands.Run}
 }
 
-// ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them.
+// ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them,
+// except a command with conditions: the menu of a file offers it over a version, and run without one
+// it fails.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
 	entries := h.list.ExecuteAll()
 	commands := make([]*v1.PluginCommand, 0, len(entries))
 	for _, one := range entries {
+		if len(one.Command.When) > 0 {
+			continue
+		}
 		commands = append(commands, newWireCommand(one, h.list.ListExtensions(one.Command)))
 	}
 	menuEntries := h.list.ExecuteMenus()
