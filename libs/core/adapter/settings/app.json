@@ -52,6 +52,21 @@
       "default": true
     },
     {
+      "key": "window.buttons",
+      "type": "enum",
+      "title": "Window buttons",
+      "description": "Where the window draws its minimise, maximise and close buttons on Linux: at the right like Windows, or at the left like macOS.",
+      "default": "windows",
+      "options": [
+        {
+          "value": "windows",
+          "title": "Right",
+          "detail": "Square buttons at the right, as on Windows."
+        },
+        { "value": "mac", "title": "Left", "detail": "Round buttons at the left, as on macOS." }
+      ]
+    },
+    {
       "key": "performance.profile",
       "type": "enum",
       "title": "Performance profile",

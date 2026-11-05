@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
@@ -204,6 +205,9 @@ func (c Config) listAppSettings() []pluginport.PluginSetting {
 	declared := settings.GetAppDeclaration()
 	entries := make([]pluginport.PluginSetting, 0, len(declared))
 	for _, one := range declared {
+		if !settings.IsAvailableOn(one.Key, runtime.GOOS) {
+			continue
+		}
 		options := one.Options
 		if one.OptionsFrom != "" {
 			options, _ = c.listRegistryOptions(one.OptionsFrom)

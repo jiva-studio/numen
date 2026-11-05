@@ -56,4 +56,10 @@ The agent and the model that handle the questions of a plugin whose own setting 
 | `agent` | text | the id of the agent plugin to use. Empty selects the provider with the lowest id. |
 | `model` | text | the model the agent uses. Empty leaves the choice to the agent. |
 | `concurrency` | a number | how many questions one agent handles at once. |
+
+### `app.window`
+
+| | | |
+| --- | --- | --- |
+| `buttons` | text | where the window draws its minimise, maximise and close buttons on Linux: at the right like Windows, or at the left like macOS. One of `windows`, `mac`. |
 <!-- END AUTOGEN -->
