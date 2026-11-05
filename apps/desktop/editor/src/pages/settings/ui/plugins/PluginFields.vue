@@ -32,10 +32,10 @@ const {
   getShownSettings,
   getTopSecrets,
   getSecretsAfter,
-} = createEnumFields(() => props.plugin, readSetting, isKeyPending)
+} = createEnumFields(() => props.plugin, readSetting, isKeyRequested)
 
-function isKeyPending(key: string): boolean {
-  return installation.value.isPending?.([props.plugin.id, ...key.split('.')]) ?? false
+function isKeyRequested(key: string): boolean {
+  return installation.value.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
 }
 
 /** Why a path setting did not take the path last chosen, by key. */
@@ -85,7 +85,7 @@ function readSetting(key: string): unknown {
 function getValue(key: string): unknown {
   const setting = props.plugin.settings.find((one) => one.key === key)
   if (!setting) return readSetting(key)
-  return getValueInForce(setting, readSetting, isKeyPending)
+  return getValueInForce(setting, readSetting, isKeyRequested)
 }
 
 function getBooleanSetting(key: string, fallback: unknown): boolean {

@@ -134,6 +134,10 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
   }
 
+  /** Whether a value requested at a path has not been read back yet, its write in flight or done. */
+  const isRequested = (path: readonly string[]): boolean =>
+    requested.getRequested(getPathKey(path)) !== undefined
+
   /** Whether the write of a setting is in flight. */
   const isPending = (path: readonly string[]): boolean => requested.isPending(getPathKey(path))
 
@@ -180,6 +184,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     getSetting,
     getCommittedSetting,
     isPending,
+    isRequested,
     getModelsAt,
     writeSettings,
     writeSetting,

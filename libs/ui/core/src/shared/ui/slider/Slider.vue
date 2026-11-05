@@ -7,7 +7,7 @@
  * releasing it are separate events, and a key sequence ends when the key is
  * released.
  */
-import { computed, watch, type HTMLAttributes } from 'vue'
+import { computed, onBeforeUnmount, ref, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { cn } from '@/shared/lib/dom/classes'
 import { clamp, type Bounds } from '@/shared/lib/math/bounds'
@@ -38,32 +38,45 @@ const emit = defineEmits<{
 }>()
 
 /* ---------------------------------- State --------------------------------- */
+const bounds = computed<Bounds>(() => ({ min: props.min, max: props.max, step: props.step }))
+
 /**
  * The last value handed on, so a value that arrives twice — once as the handle
  * moving and once as it coming to rest — is handed on once.
  */
 let handed = model.value
 
-watch(model, (now) => {
-  handed = now
-})
+/** The handle position: the person's while the handle is being moved, else the caller's, clamped. */
+const shown = ref(clamp(model.value, bounds.value))
+
+/** Whether a key is pressed, and the handle position when it was pressed. */
+let walking = false
+let began = 0
+
+/** Whether the pointer is down on the handle or the track. */
+let dragging = false
+
+/** Whether the person is moving the handle: a value from outside does not move it then. */
+const isMoving = () => walking || dragging
 
 const setValue = (value: number) => {
+  shown.value = value
   if (value === handed) return
   handed = value
   model.value = value
 }
 
-const bounds = computed<Bounds>(() => ({ min: props.min, max: props.max, step: props.step }))
+watch(model, (now) => {
+  if (!isMoving()) handed = now
+})
 
-/** The handle position, clamped to the bounds. */
-const inForce = computed(() => clamp(model.value, bounds.value))
-
-watch(inForce, setValue, { immediate: true })
-
-/** Whether a key is pressed, and the handle position when it was pressed. */
-let walking = false
-let began = 0
+watch(
+  () => clamp(model.value, bounds.value),
+  (now) => {
+    if (!isMoving()) setValue(now)
+  },
+  { immediate: true },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 const onMove = (value: number[] | undefined) => {
@@ -85,7 +98,7 @@ const onKeyDown = (event: KeyboardEvent) => {
     walking = true
     began = handed
   }
-  const next = stepForKey(event.key, inForce.value, {
+  const next = stepForKey(event.key, shown.value, {
     bounds: bounds.value,
     isBigStep: event.shiftKey,
   })
@@ -110,13 +123,29 @@ const onCommit = (value: number[]) => {
   setValue(next)
   emit('commit', next)
 }
+
+const endDrag = () => {
+  dragging = false
+  window.removeEventListener('pointerup', endDrag)
+  window.removeEventListener('pointercancel', endDrag)
+}
+
+/** The pointer goes down: the handle is the person's until the pointer is up. */
+const onPointerDown = () => {
+  if (props.isDisabled) return
+  dragging = true
+  window.addEventListener('pointerup', endDrag)
+  window.addEventListener('pointercancel', endDrag)
+}
+
+onBeforeUnmount(endDrag)
 </script>
 
 <template>
   <SliderRoot
     data-slot="slider"
     orientation="horizontal"
-    :model-value="[inForce]"
+    :model-value="[shown]"
     :min="min"
     :max="max"
     :step="step"
@@ -128,6 +157,7 @@ const onCommit = (value: number[]) => {
         props.class,
       )
     "
+    @pointerdown="onPointerDown"
     @update:model-value="onMove"
     @value-commit="onCommit"
   >

@@ -19,6 +19,11 @@ export interface Installation {
   getConfirmedSetting?(at: readonly string[]): unknown
   /** Whether the write of a setting is in flight. */
   isPending?(at: readonly string[]): boolean
+  /**
+   * Whether the value requested at a path is not yet in the declaration the window holds: from the
+   * request until the read that carries it is taken.
+   */
+  isRequested?(at: readonly string[]): boolean
   getModels(at: readonly string[]): readonly Model[]
   write(content: readonly SettingEdit[]): void
   /**
