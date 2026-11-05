@@ -30,7 +30,7 @@ test.describe('Proofreading', () => {
   test('puts the recognised text of a scan right', async ({ page }) => {
     await openWorkspace(page)
     await openVaultFile(page, 'assets', 'pumped-storage.pdf')
-    await runCommand(page, 'Recognise', /^Recognise/)
+    await runCommand(page, 'Recognise', /^Recognise text$/)
     await waitForPassage(page, MOCK_RECOGNISED_WORDS, 'assets/pumped-storage.pdf')
     await page.keyboard.press('Escape')
 

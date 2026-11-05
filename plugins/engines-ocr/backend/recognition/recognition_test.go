@@ -210,16 +210,45 @@ func TestRecognisePDFWritesPositionedText(t *testing.T) {
 	}
 }
 
-func TestRecogniseSkipsTextLayerUnlessUserStarted(t *testing.T) {
+func TestARecognitionTheHostStartsSkipsATextLayer(t *testing.T) {
 	s := newScene(t)
 
 	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/layer.pdf"})
 	if err != nil || !res.IsSkipped || s.recogniser.getPageCount() != 0 {
 		t.Fatalf("a PDF with a layer, unasked: %+v (%v), %d pages read", res, err, s.recogniser.getPageCount())
 	}
-	res, err = s.run.Recognise(t.Context(), recognition.Request{Path: "books/layer.pdf", IsUserStarted: true})
-	if err != nil || res.IsSkipped || res.Pages == 0 || s.recogniser.getPageCount() != res.Pages {
+}
+
+func TestRecogniseAskedForATextLayerReportsTheLayerAndKeepsIt(t *testing.T) {
+	s := newScene(t)
+
+	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/layer.pdf", IsUserStarted: true})
+	if err != nil || !res.HasTextLayer || res.Pages == 0 || s.recogniser.getPageCount() != 0 {
 		t.Fatalf("a PDF with a layer, asked: %+v (%v), %d pages read", res, err, s.recogniser.getPageCount())
+	}
+	listing, err := s.texts.ListVersions(t.Context(), "books/layer.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, version := range listing.Versions {
+		if version.Key == recognition.VersionKey {
+			t.Errorf("a recognition was kept over the text layer: %+v", version)
+		}
+	}
+	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("a file with a text layer shows %+v", tasks)
+	}
+}
+
+func TestRecogniseReplacesATextLayerWhenTheReplacementIsAskedFor(t *testing.T) {
+	s := newScene(t)
+
+	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/layer.pdf", IsUserStarted: true, ShouldReplaceTextLayer: true})
+	if err != nil || res.HasTextLayer || res.Pages == 0 || s.recogniser.getPageCount() != res.Pages {
+		t.Fatalf("a PDF with a layer, replacement asked: %+v (%v), %d pages read", res, err, s.recogniser.getPageCount())
+	}
+	if text := s.readLive(t, "books/layer.pdf"); text.Version().Key != recognition.VersionKey {
+		t.Errorf("the live version is %+v, want the recognition", text.Version())
 	}
 }
 

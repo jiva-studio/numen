@@ -93,6 +93,8 @@ type Request struct {
 	Vault         domain.VaultID
 	Path          string
 	IsUserStarted bool
+	// ShouldReplaceTextLayer is set when the person asked for a recognition over embedded text.
+	ShouldReplaceTextLayer bool
 }
 
 // Result is the outcome of one recognition. IsSkipped is set for a file that
@@ -101,7 +103,10 @@ type Request struct {
 type Result struct {
 	Pages     int
 	IsSkipped bool
-	IsEmpty   bool
+	// HasTextLayer is set for a user-started run without ShouldReplaceTextLayer over pages with
+	// embedded text, which are kept.
+	HasTextLayer bool
+	IsEmpty      bool
 }
 
 // Recognise reads the file and stores its text version. A run that the user

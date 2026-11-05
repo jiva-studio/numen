@@ -123,7 +123,7 @@ test.describe('the text versions of a file', () => {
     for (const name of [control, deleted]) {
       await openWorkspace(page)
       await openVaultFile(page, 'assets', name)
-      await runCommand(page, 'Recognise', /^Recognise/)
+      await runCommand(page, 'Recognise', /^Recognise text$/)
       await waitForPassage(page, MOCK_RECOGNISED_WORDS, `assets/${name}`)
       await page.keyboard.press('Escape')
       await expectNoRecognitionRunning(page, name)

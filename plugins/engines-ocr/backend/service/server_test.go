@@ -1,16 +1,21 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"image"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm"
 	ocr "github.com/jiva-studio/numen/plugins/engines-ocr"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
@@ -239,5 +244,157 @@ func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 	}
 	if count == 0 {
 		t.Fatal("the manifest offers no model")
+	}
+}
+
+// getManifestCommandTitle is the title the manifest gives the command id, and false for a command
+// the manifest does not declare.
+func getManifestCommandTitle(t *testing.T, id string) (string, bool) {
+	t.Helper()
+	var manifest struct {
+		Contributes struct {
+			Commands []struct {
+				ID           string   `json:"id"`
+				Title        string   `json:"title"`
+				ContentTypes []string `json:"contentTypes"`
+			} `json:"commands"`
+		} `json:"contributes"`
+	}
+	if err := json.Unmarshal(ocr.Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range manifest.Contributes.Commands {
+		if one.ID == id {
+			if !slices.Equal(one.ContentTypes, []string{"application/pdf"}) {
+				t.Errorf("the manifest offers %s for %v, want PDFs only", id, one.ContentTypes)
+			}
+			return one.Title, true
+		}
+	}
+	return "", false
+}
+
+// commandAnswer is the answer of the plugin's command service in the JSON of Connect.
+type commandAnswer struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
+// commandService is the plugin mounted over a vault as the host links it. opens counts the
+// recognisers the plugin opened.
+type commandService struct {
+	url   string
+	opens int
+}
+
+func newCommandService(t *testing.T, v *hosttest.Vault, texts *hosttest.Texts) *commandService {
+	t.Helper()
+	plugin := &commandService{url: "", opens: 0}
+	models := newEngines(engine.Defaults(), func(context.Context, engine.Config) (recogniser, error) {
+		plugin.opens++
+		return closing{MockRecogniser: engine.MockRecogniser{}, o: &opened{opened: 0, closed: 0}}, nil
+	})
+	h, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"}, func(s *server.Server) error {
+		return mount(s, recognition.Host{Vault: v, Store: v.Store(), Texts: texts, Queue: hosttest.NewQueue()}, models)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h)
+	t.Cleanup(srv.Close)
+	plugin.url = srv.URL
+	return plugin
+}
+
+// runCommand runs the command over the file as the host does, and returns the plugin's answer.
+func (c *commandService) runCommand(t *testing.T, id, path string) commandAnswer {
+	t.Helper()
+	body, err := json.Marshal(map[string]string{"command": id, "path": path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, c.url+"/numen.v1.PluginCommandService/RunCommand", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer tok")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("%s answered %s", id, res.Status)
+	}
+	var answer commandAnswer
+	if err := json.NewDecoder(res.Body).Decode(&answer); err != nil {
+		t.Fatal(err)
+	}
+	return answer
+}
+
+// newTextLayerVault is a vault holding books/layer.pdf, a PDF of two pages with a text layer.
+func newTextLayerVault(t *testing.T) (*hosttest.Vault, *hosttest.Texts) {
+	t.Helper()
+	v := hosttest.New("Physics")
+	raw, err := os.ReadFile("../document/testdata/tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	v.File("books/layer.pdf", string(raw))
+	texts := hosttest.NewTexts("Physics", PluginID)
+	texts.SetStore(PluginID, v.Store())
+	texts.File("books/layer.pdf", raw)
+	return v, texts
+}
+
+func TestRecogniseOverATextLayerKeepsItAndNamesTheReplacingCommand(t *testing.T) {
+	v, texts := newTextLayerVault(t)
+	plugin := newCommandService(t, v, texts)
+	const title = "Recognise text over the text layer"
+
+	answer := plugin.runCommand(t, "recognition.create", "books/layer.pdf")
+	want := `books/layer.pdf has a text layer, which stays the text of its 2 pages. Run "` + title + `" to replace it with a recognition`
+	if answer.Error != "" || answer.Message != want || plugin.opens != 0 {
+		t.Errorf("Recognise answered %+v, opened the recogniser %d times; want %q", answer, plugin.opens, want)
+	}
+	if declared, isDeclared := getManifestCommandTitle(t, "recognition.replace"); !isDeclared || declared != title {
+		t.Errorf("the manifest declares recognition.replace %v, titled %q; the answer names %q", isDeclared, declared, title)
+	}
+	listing, err := texts.ListVersions(t.Context(), "books/layer.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, version := range listing.Versions {
+		if version.Key == recognition.VersionKey {
+			t.Errorf("a recognition was kept over the text layer: %+v", version)
+		}
+	}
+}
+
+func TestTheReplacingCommandRecognisesOverATextLayer(t *testing.T) {
+	v, texts := newTextLayerVault(t)
+	plugin := newCommandService(t, v, texts)
+
+	answer := plugin.runCommand(t, "recognition.replace", "books/layer.pdf")
+	if answer.Error != "" || answer.Message != "recognised 2 pages of books/layer.pdf" || plugin.opens != 1 {
+		t.Fatalf("the replacing command answered %+v, opened the recogniser %d times", answer, plugin.opens)
+	}
+	listing, err := texts.ListVersions(t.Context(), "books/layer.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listing.Live == "" {
+		t.Fatal("the file has no live version")
+	}
+	for _, version := range listing.Versions {
+		if version.GetID() == listing.Live && version.Key != recognition.VersionKey {
+			t.Errorf("the live version is %+v, want the recognition", version)
+		}
 	}
 }

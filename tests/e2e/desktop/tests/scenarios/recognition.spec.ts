@@ -20,7 +20,7 @@ test.describe('A scanned document', () => {
     const tab = await openVaultFile(page, 'assets', 'regenerative-braking.pdf')
     await expect(tab.getByRole('img', { name: 'Page 1' })).toBeVisible()
 
-    await runCommand(page, 'Recognise', /^Recognise/)
+    await runCommand(page, 'Recognise', /^Recognise text$/)
 
     const passage = await waitForPassage(
       page,
