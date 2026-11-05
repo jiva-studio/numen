@@ -46,7 +46,7 @@ func TestChoosePluginPathWritesTheSetting(t *testing.T) {
 	if !slices.Equal(dialog.accept, []string{".txt"}) {
 		t.Errorf("the picker showed %v", dialog.accept)
 	}
-	if len(written) != 1 || !slices.Equal(written[0].Path, []string{"plugins", "a.b", "dictionary"}) || written[0].JSON != `"/home/a/letters.txt"` {
+	if len(written) != 1 || !slices.Equal(written[0].Path, []string{"a.b", "dictionary"}) || written[0].JSON != `"/home/a/letters.txt"` {
 		t.Errorf("written = %+v", written)
 	}
 }

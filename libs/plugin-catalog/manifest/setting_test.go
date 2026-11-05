@@ -306,6 +306,7 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"service duplicate":        {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["a.b.S","a.b.S"]}`, ErrInvalidService},
 		"setting empty key":        {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"","type":"string","title":"T"}]}`, ErrEmptySettingKey},
 		"setting reserved key":     {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"storedSecrets","type":"string","title":"T"}]}`, ErrReservedSettingKey},
+		"setting named enabled":    {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"enabled","type":"boolean","title":"T"}]}`, ErrReservedSettingKey},
 		"setting duplicate key":    {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":"T"},{"key":"k","type":"string","title":"T"}]}`, ErrDuplicateSettingKey},
 		"setting bad replaces":     {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":"T","replaces":["Bad"]}]}`, ErrInvalidSettingKey},
 		"setting empty title":      {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":" "}]}`, ErrEmptySettingTitle},

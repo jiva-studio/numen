@@ -152,11 +152,11 @@ function guardTexts(
 }
 
 /** Whether a setting path is in the agent subtree of the settings. */
-const isAgentPath = (path: readonly string[]): boolean => path[0] === 'agent'
+const isAgentPath = (path: readonly string[]): boolean => path[0] === 'app' && path[1] === 'agent'
 
 /**
  * The agent of the window: asking it and naming vault files need vault:read, and
- * the settings it reads and writes are the ones under `agent`.
+ * the settings it reads and writes are the ones under `app.agent`.
  */
 function guardAgent(
   agent: AgentHost,

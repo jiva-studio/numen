@@ -20,7 +20,7 @@ export const SYNCING = 'syncing'
 export const ON = 'on'
 export const OFF = 'off'
 
-const KEY = 'naming.sync_title_and_filename'
+const KEY = 'app.naming.syncTitleAndFilename'
 
 /** The vault answered why it did not write the setting. */
 class SettingRefused extends Error {

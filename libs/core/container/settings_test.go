@@ -32,7 +32,7 @@ func writeSettings(t *testing.T, output string) (Config, string) {
 // What the window is given is every setting, so a setting the file leaves out
 // is read out as what this installation is doing about it.
 func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
-	cfg, path := writeSettings(t, `{"appearance": {"theme": "mine:sea"}}`)
+	cfg, path := writeSettings(t, `{"app": {"appearance": {"theme": "mine:sea"}}}`)
 
 	content, response, err := cfg.ReadSettings()()
 	if err != nil {
@@ -58,12 +58,12 @@ func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 // added stays in place.
 func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 	cfg, path := writeSettings(t, `{
-  "appearance": {"theme": "mine:sea"},
+  "app": {"appearance": {"theme": "mine:sea"}},
   "something_this_build_knows_nothing_about": 7
 }`)
 
 	err := cfg.GetSettingsWriter()([]settingsport.Setting{
-		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
+		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -95,8 +95,8 @@ func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
 	err := cfg.GetSettingsWriter()([]settingsport.Setting{
-		{Path: []string{"agent", "use"}, JSON: `"claude"`},
-		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
+		{Path: []string{"app", "agent", "use"}, JSON: `"claude"`},
+		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -130,7 +130,7 @@ func TestASettingsFileThatIsNotReadableIsRefused(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	cfg, _ := writeSettings(t, `{"appearance": `)
+	cfg, _ := writeSettings(t, `{"app": {"appearance": `)
 
 	target, why := cfg.Settings()
 	if why == nil {
@@ -187,12 +187,12 @@ func TestGetSettingsOrDefaults_FallsBackToDefaultsWhenUnreadable(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 
-	cfg, _ := writeSettings(t, `{"agent": {"use": "somebody-else"}}`)
+	cfg, _ := writeSettings(t, `{"app": {"agent": {"use": "somebody-else"}}}`)
 	if got := cfg.getSettingsOrDefaults().Agent.GetUse(); got != "somebody-else" {
 		t.Errorf("the agent is %q", got)
 	}
 
-	cfg, _ = writeSettings(t, `{"agent": `)
+	cfg, _ = writeSettings(t, `{"app": {"agent": `)
 	if got := cfg.getSettingsOrDefaults(); !reflect.DeepEqual(got, DefaultSettings()) {
 		t.Errorf("an unreadable file gave %+v", got)
 	}
@@ -239,13 +239,11 @@ func TestWritingThePerformanceProfileTellsThePluginHost(t *testing.T) {
 	host := &profileHost{}
 	cfg.PluginHost = host
 
-	for _, entry := range []string{`"eco"`, `"bogus"`} {
-		err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"performance", "profile"}, JSON: entry}})
-		if err != nil {
-			t.Fatal(err)
-		}
+	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"app", "performance", "profile"}, JSON: `"eco"`}})
+	if err != nil {
+		t.Fatal(err)
 	}
-	if want := []string{"eco", "balanced"}; !slices.Equal(host.profiles, want) {
+	if want := []string{"eco"}; !slices.Equal(host.profiles, want) {
 		t.Errorf("profiles sent to the host = %v, want %v", host.profiles, want)
 	}
 }
@@ -256,7 +254,7 @@ func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	host := &profileHost{}
 	cfg.PluginHost = host
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"appearance", "mode"}, JSON: `"dark"`}})
+	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
 	if err != nil {
 		t.Fatal(err)
 	}

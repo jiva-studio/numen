@@ -2,7 +2,7 @@
  * What the settings hold: one setting written at its current position, and the models a
  * setting that names one can be set to.
  */
-import type { PluginInfo } from '@numen/plugin-manager'
+import type { PluginInfo, PluginSettingInfo } from '@numen/plugin-manager'
 export type {
   PluginInfo,
   PluginReader,
@@ -17,7 +17,7 @@ export type { PluginSettingType } from '@numen/core-client'
 
 /** One setting of the configuration file, and the JSON value to set. */
 export interface SettingEdit {
-  /** The setting key path through the JSON file (e.g. ['indexing', 'provider']). */
+  /** The setting path through the JSON file: the owner, `app` or a plugin id, then its key path. */
   readonly at: readonly string[]
   /** The value at that path, as serialized JSON. */
   readonly value: string
@@ -61,4 +61,6 @@ export interface Configuration {
   readonly path: string
   readonly models: readonly Model[]
   readonly plugins?: readonly PluginInfo[] | undefined
+  /** The settings of the owner app, as the core declares them. */
+  readonly app?: readonly PluginSettingInfo[] | undefined
 }

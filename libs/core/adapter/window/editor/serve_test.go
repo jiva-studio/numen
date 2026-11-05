@@ -852,7 +852,7 @@ func TestASizeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 	cfg := newConfig(t)
 	file := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
-	if err := os.WriteFile(file, []byte(`{"appearance":{"theme":"preset:nord"}}`), 0o600); err != nil {
+	if err := os.WriteFile(file, []byte(`{"app":{"appearance":{"theme":"preset:nord"}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -866,7 +866,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reason := selected.Msg.GetError(); !strings.Contains(reason, "appearance.text_scale") {
+	if reason := selected.Msg.GetError(); !strings.Contains(reason, "appearance.textScale") {
 		t.Errorf("failed with %q", reason)
 	}
 
@@ -874,7 +874,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(target) != `{"appearance":{"theme":"preset:nord"}}` {
+	if string(target) != `{"app":{"appearance":{"theme":"preset:nord"}}}` {
 		t.Errorf("the file now reads %s", target)
 	}
 }

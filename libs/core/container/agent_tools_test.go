@@ -367,7 +367,7 @@ func getDeclaredKinds(request *v1.AskAgentRequest) map[string]string {
 func TestASettingsAgentRunCallsTheToolsOfThePlugins(t *testing.T) {
 	agent := &toolAgent{calls: []toolCall{{name: "card_current", arguments: `{}`}}}
 	host, _, cards := vaultAndCards(t, agent)
-	settingsAgent := openSettingsAgent(t, host, `{"agent": {"use": "alpha"}}`)
+	settingsAgent := openSettingsAgent(t, host, `{"app": {"agent": {"use": "alpha"}}}`)
 
 	runToEnd(t, settingsAgent, agentport.Task{Question: "q", Context: map[string]string{cardKey: "c-9"}})
 

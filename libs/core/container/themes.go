@@ -1,9 +1,14 @@
 package container
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/themebridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/theme"
+	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
 // Themes provides the themes the window can use: the catalogue of themes, and
@@ -76,34 +81,36 @@ func (c Config) readAppearance(scales *theme.Scales) (theme.Appearance, error) {
 	return current, nil
 }
 
-const appearancePrefix = "appearance"
-
 func (c Config) writeAppearance(selectedVal theme.Appearance, scales *theme.Scales) error {
-	path, err := c.settingsFile()
-	if err != nil {
-		return err
-	}
-	writing := []settings.Setting{
-		{At: []string{appearancePrefix, "theme"}, Written: selectedVal.ThemeName},
-		{At: []string{appearancePrefix, "mode"}, Written: settings.GetModeName(selectedVal.Mode)},
+	appearance := func(key string) []string { return []string{settings.OwnerApp, "appearance", key} }
+	values := []struct {
+		path  []string
+		value any
+	}{
+		{appearance("theme"), selectedVal.ThemeName},
+		{appearance("mode"), settings.GetModeName(selectedVal.Mode)},
 	}
 	if selectedVal.InterfaceScale > 0 {
-		err := settings.GetInterfaceScaleBounds().Check("appearance.interface_scale", selectedVal.InterfaceScale)
-		if err != nil {
-			return err
-		}
-		writing = append(writing,
-			settings.Setting{At: []string{appearancePrefix, "interface_scale"}, Written: selectedVal.InterfaceScale})
+		values = append(values, struct {
+			path  []string
+			value any
+		}{appearance("interfaceScale"), selectedVal.InterfaceScale})
 	}
 	if selectedVal.TextScale > 0 {
-		if err := settings.GetTextScaleBounds().Check("appearance.text_scale", selectedVal.TextScale); err != nil {
-			return err
-		}
-		writing = append(writing,
-			settings.Setting{At: []string{appearancePrefix, "text_scale"}, Written: selectedVal.TextScale})
+		values = append(values, struct {
+			path  []string
+			value any
+		}{appearance("textScale"), selectedVal.TextScale})
 	}
-	into := DefaultSettings()
-	if err := c.getResources().settingsFiles.Save(path, &into, writing...); err != nil {
+	writing := make([]settingsport.Setting, 0, len(values))
+	for _, one := range values {
+		encoded, err := json.Marshal(one.value)
+		if err != nil {
+			return fmt.Errorf("%s: %w", strings.Join(one.path, "."), err)
+		}
+		writing = append(writing, settingsport.Setting{Path: one.path, JSON: string(encoded)})
+	}
+	if err := c.writeSettings(writing); err != nil {
 		return err
 	}
 	scales.ClearSizes(selectedVal)

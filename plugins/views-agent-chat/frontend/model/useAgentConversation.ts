@@ -22,10 +22,10 @@ export type AgentTabState = ReturnType<typeof useAgentConversation>
 
 export type ResolvedAddressMap = ReadonlyMap<string, string>
 
-const AGENT_USE_AT = ['agent', 'use'] as const
+const AGENT_USE_AT = ['app', 'agent', 'use'] as const
 
 /** The path the models of one agent are named at. */
-const getModelAt = (agent: string): readonly string[] => ['agent', agent, 'model']
+const getModelAt = (agent: string): readonly string[] => ['app', 'agent', agent, 'model']
 
 /** The setting kept at a path, as text. */
 const getKept = (deps: AgentTabDeps, path: readonly string[]): string =>

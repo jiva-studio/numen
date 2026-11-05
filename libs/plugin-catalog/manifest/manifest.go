@@ -88,8 +88,17 @@ var (
 // never a key, and neither a setting nor a secret of a manifest takes the name.
 const SettingStoredSecrets = "storedSecrets"
 
-// listReservedSettingKeys returns the settings of a plugin the host keeps for itself.
-func listReservedSettingKeys() []string { return []string{SettingStoredSecrets} }
+// IsValidID reports whether the text is the shape of a plugin id: two or more dot-separated
+// segments of letters, digits, _ or -. The ids `app` and `v`, which the first level of the
+// settings file keeps, are no plugin ids.
+func IsValidID(id string) bool { return manifestIDPattern.MatchString(id) }
+
+// SettingEnabled is the field of the object of a plugin in the settings file that holds whether the
+// host runs the plugin. No setting of a manifest takes the name.
+const SettingEnabled = "enabled"
+
+// listReservedSettingKeys returns the fields of the object of a plugin the host keeps for itself.
+func listReservedSettingKeys() []string { return []string{SettingStoredSecrets, SettingEnabled} }
 
 var (
 	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
@@ -151,6 +160,12 @@ type Setting struct {
 	Accept []string
 	// Multiple is a setting of type file that holds a list of paths, one per line.
 	Multiple bool
+	// Preview makes the window apply the value while the control of the setting is focused, and
+	// restore the saved value on leaving.
+	Preview bool
+	// OptionsFrom names a registry the options are listed from, such as the installed themes.
+	// Empty where the setting lists its own options.
+	OptionsFrom string
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
@@ -465,6 +480,9 @@ func listManifestSettingIssues(settings []Setting) []error {
 			continue
 		}
 		seenKeys[key] = true
+		if strings.Contains(key, ".") {
+			issues = append(issues, fmt.Errorf("%w: %s holds a dot, and a key is one segment of a path", ErrInvalidSettingKey, key))
+		}
 		issues = append(issues, listManifestSettingIssue(s, key)...)
 		for _, place := range s.Replaces {
 			if !manifestReplacesPattern.MatchString(place) {
@@ -483,7 +501,7 @@ func listManifestSettingIssue(s Setting, key string) []error {
 	if !slices.Contains(listSettingTypes(), s.Type) {
 		issues = append(issues, fmt.Errorf("%w: %q for %s", ErrInvalidSettingType, s.Type, key))
 	}
-	if s.Type == SettingTypeEnum && len(s.Options) == 0 && s.OptionsBy == nil {
+	if s.Type == SettingTypeEnum && len(s.Options) == 0 && s.OptionsBy == nil && s.OptionsFrom == "" {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrEnumMissingOptions, key))
 	}
 	if s.Type == "range" && s.Min != nil && s.Max != nil && *s.Min > *s.Max {

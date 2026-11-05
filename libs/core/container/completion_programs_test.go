@@ -42,10 +42,10 @@ func ask(text string) completionport.Question {
 // the program's section of the settings, and the response is what the program returned.
 func TestAQuestionIsATaskOfTheProgramTheDefaultNames(t *testing.T) {
 	host, one, _ := twoProviders(t)
-	completer, _ := serveCompletions(t, host, `{
+	completer, _ := serveCompletions(t, host, `{"app": {
 		"agent": {"alpha": {"command": ["/bin/alpha", "--x"], "model": "section-model"}},
 		"ai": {"default": {"agent": "alpha"}}
-	}`)
+	}}`)
 
 	got, err := completer.Complete(t.Context(), "md.test.asking", ask("why?"))
 	if err != nil || got != "answer: why?" {
@@ -70,10 +70,10 @@ func TestAQuestionIsATaskOfTheProgramTheDefaultNames(t *testing.T) {
 // is the program the plugins mark as the default.
 func TestCompleter_EmptyRouteModelUsesProgramDefault(t *testing.T) {
 	host, one, _ := twoProviders(t)
-	completer, _ := serveCompletions(t, host, `{
+	completer, _ := serveCompletions(t, host, `{"app": {
 		"agent": {"alpha": {"model": "section-model"}},
 		"ai": {"default": {"model": "big"}}
-	}`)
+	}}`)
 
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
 		t.Fatal(err)
@@ -88,7 +88,7 @@ func TestCompleter_EmptyRouteModelUsesProgramDefault(t *testing.T) {
 // An empty default is the program agent.use names, and none when the settings name none.
 func TestAnEmptyDefaultFollowsTheAgentTheSettingsUse(t *testing.T) {
 	host, one, _ := twoProviders(t)
-	named, _ := serveCompletions(t, host, `{"agent": {"use": "alpha"}}`)
+	named, _ := serveCompletions(t, host, `{"app": {"agent": {"use": "alpha"}}}`)
 	if _, err := named.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestAnEmptyDefaultFollowsTheAgentTheSettingsUse(t *testing.T) {
 		t.Errorf("the tasks are %v", request)
 	}
 
-	none, _ := serveCompletions(t, host, `{"agent": {"use": ""}}`)
+	none, _ := serveCompletions(t, host, `{"app": {"agent": {"use": ""}}}`)
 	if _, err := none.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
 		t.Errorf("with no agent named, error = %v, want port.ErrNoRoute", err)
 	}
@@ -107,8 +107,8 @@ func TestAnEmptyDefaultFollowsTheAgentTheSettingsUse(t *testing.T) {
 func TestAProgramThatIsNotThereIsNoRoute(t *testing.T) {
 	host, one, two := twoProviders(t)
 	for _, content := range []string{
-		`{"ai": {"default": {"agent": "ghost"}}}`,
-		`{"ai": {"default": {"agent": "beta"}}}`,
+		`{"app": {"ai": {"default": {"agent": "ghost"}}}}`,
+		`{"app": {"ai": {"default": {"agent": "beta"}}}}`,
 	} {
 		completer, _ := serveCompletions(t, host, content)
 		if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
@@ -130,7 +130,7 @@ func TestAProgramThatIsNotThereIsNoRoute(t *testing.T) {
 // started, is unavailable.
 func TestAProviderThatCannotBeStartedIsUnavailable(t *testing.T) {
 	host := hostWith(t, map[string][]string{providerOne: {"ai.agent.provider"}}, nil)
-	completer, _ := serveCompletions(t, host, `{"ai": {"default": {"agent": "alpha"}}}`)
+	completer, _ := serveCompletions(t, host, `{"app": {"ai": {"default": {"agent": "alpha"}}}}`)
 
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrUnavailable) {
 		t.Errorf("error = %v, want port.ErrUnavailable", err)
@@ -141,12 +141,12 @@ func TestAProviderThatCannotBeStartedIsUnavailable(t *testing.T) {
 // application runs applies to the next one.
 func TestADefaultSavedToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	host, one, _ := twoProviders(t)
-	completer, path := serveCompletions(t, host, `{"ai": {"default": {"agent": "ghost"}}}`)
+	completer, path := serveCompletions(t, host, `{"app": {"ai": {"default": {"agent": "ghost"}}}}`)
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
 		t.Fatalf("with a default that is not there: error = %v, want port.ErrNoRoute", err)
 	}
 
-	if err := os.WriteFile(path, []byte(`{"ai": {"default": {"agent": "alpha", "model": "big"}}}`), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(`{"app": {"ai": {"default": {"agent": "alpha", "model": "big"}}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
@@ -160,7 +160,7 @@ func TestADefaultSavedToTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 // A model the program does not list is replaced by the model the program responds with, without being requested.
 func TestAModelTheProgramNoLongerListsIsReplacedByItsDefault(t *testing.T) {
 	host, one, _ := twoProviders(t)
-	completer, _ := serveCompletions(t, host, `{"ai": {"default": {"agent": "alpha", "model": "retired"}}}`)
+	completer, _ := serveCompletions(t, host, `{"app": {"ai": {"default": {"agent": "alpha", "model": "retired"}}}}`)
 
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); err != nil {
 		t.Fatal(err)

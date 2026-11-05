@@ -216,12 +216,12 @@ describe('the settings tab', () => {
       vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
       const startRest = vi.spyOn(settings.rest, 'start').mockResolvedValue()
       const write = vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()
-      const edits = [{ at: ['performance', 'profile'], value: '"eco"' }]
+      const edits = [{ at: ['app', 'performance', 'profile'], value: '"eco"' }]
 
       await (installation.write(edits) as unknown as Promise<void>)
       vi.advanceTimersByTime(1500)
 
-      expect(installation.getSetting(['performance', 'profile'])).toBe('eco')
+      expect(installation.getSetting(['app', 'performance', 'profile'])).toBe('eco')
       expect(installation.getModels(['indexing'])).toStrictEqual([model()])
       expect(write).toHaveBeenCalledWith(edits)
       expect(startRest).toHaveBeenCalledTimes(1)
@@ -365,7 +365,7 @@ describe('the settings tab', () => {
     ])
 
     const getSettingSpy = vi.spyOn(settings.rest, 'getSetting').mockImplementation((path) => {
-      if (path.join('.') === 'plugins.plugin.ocr.autoScan') return false
+      if (path.join('.') === 'plugin.ocr.autoScan') return false
       return undefined
     })
     const boolOffGroups = settings.paletteLists.getStepGroups(

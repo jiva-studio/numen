@@ -51,8 +51,8 @@ function createPluginSettingsAccessor(
     const rest = settingsHolder.current?.rest
     if (!rest) return undefined
     const read = rest.getCommittedSetting ?? rest.getSetting
-    // Stryker disable next-line OptionalChaining,StringLiteral: rest always defines getSetting and reads under the plugins namespace.
-    const value = read?.(['plugins', pluginId, key])
+    // Stryker disable next-line OptionalChaining,StringLiteral: rest always defines getSetting and reads under the plugin id.
+    const value = read?.([pluginId, key])
     if (value !== undefined) return value
     return key === 'enabled' ? DEFAULT_PLUGIN_ENABLED : undefined
   }

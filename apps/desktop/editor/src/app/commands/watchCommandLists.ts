@@ -66,4 +66,4 @@ export function watchCommandLists(
 const isSwitchedOn = (
   pluginId: string,
   getCommittedSetting: ((path: readonly string[]) => unknown) | undefined,
-): boolean => getCommittedSetting?.(['plugins', pluginId, 'enabled']) !== false
+): boolean => getCommittedSetting?.([pluginId, 'enabled']) !== false

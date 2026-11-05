@@ -38,7 +38,7 @@ func (c Config) Settings() (Settings, error) {
 	if err != nil {
 		return Settings{}, err
 	}
-	return c.getSettingsAt(path)
+	return c.getCheckedSettingsAt(path)
 }
 
 // getSettingsAt is that document read from an explicit file.
@@ -46,6 +46,20 @@ func (c Config) getSettingsAt(path string) (Settings, error) {
 	target := DefaultSettings()
 	if err := c.getResources().settingsFiles.OpenAt(path, &target); err != nil {
 		return Settings{}, err
+	}
+	return target, nil
+}
+
+// getCheckedSettingsAt is that document with every value left out of force that the declarations of
+// the plugin host and the registries refuse. Without a plugin host no plugin declares anything,
+// and the document is read as it is.
+func (c Config) getCheckedSettingsAt(path string) (Settings, error) {
+	target, err := c.getSettingsAt(path)
+	if err != nil {
+		return Settings{}, err
+	}
+	if c.PluginHost != nil {
+		target.DropInvalid(c.getDeclarations(), c.getRegistries())
 	}
 	return target, nil
 }
@@ -59,7 +73,7 @@ func DefaultSettings() Settings {
 // the file cannot be read.
 func (c Config) getSettingsOrDefaults() Settings {
 	if path, err := c.settingsFile(); err == nil {
-		if target, err := c.getSettingsAt(path); err == nil {
+		if target, err := c.getCheckedSettingsAt(path); err == nil {
 			return target
 		}
 	}
@@ -84,7 +98,7 @@ func (c Config) SetSettings(s Settings) Config {
 			}
 			return writer([]settingsport.Setting{
 				{
-					Path: []string{pluginSettingsPrefix, pluginID, key},
+					Path: []string{pluginID, key},
 					JSON: string(raw),
 				},
 			})
@@ -119,13 +133,95 @@ func (c Config) Models() func() []settingsport.Model {
 
 func (c Config) listModels() []settingsport.Model {
 	target := c.getSettingsOrDefaults()
-	return settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(c.agentProvider, target.Agent))
+	return prefixModels(settings.OwnerApp, settings.AgentModels(agentAt, target.Agent, c.getAgentPrograms(c.agentProvider, target.Agent)))
+}
+
+// prefixModels puts the owner at the head of the path of every model and of every setting it writes.
+func prefixModels(owner string, models []settingsport.Model) []settingsport.Model {
+	for place := range models {
+		models[place].Path = append([]string{owner}, models[place].Path...)
+		for index := range models[place].Writes {
+			models[place].Writes[index].Path = append([]string{owner}, models[place].Writes[index].Path...)
+		}
+	}
+	return models
 }
 
 func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsport.Model {
 	c.agentProvider = provider
 	c.programs = &settings.ProgramList{}
 	return c.listModels
+}
+
+// getDeclarations returns the settings each owner declares: the shell, and the plugins of the host.
+func (c Config) getDeclarations() settings.Declarations {
+	return func(owner string) ([]pluginport.PluginManifestSetting, bool) {
+		if owner == settings.OwnerApp {
+			return settings.GetAppDeclaration(), true
+		}
+		if c.PluginHost == nil {
+			return nil, false
+		}
+		var declarer pluginport.PluginSettingDeclarer = c.PluginHost
+		return declarer.GetPluginSettingDeclarations(owner)
+	}
+}
+
+// getRegistries returns the registries an option list may name: the installed themes.
+func (c Config) getRegistries() settings.Registries {
+	return func(name string) ([]string, bool) {
+		options, found := c.listRegistryOptions(name)
+		names := make([]string, 0, len(options))
+		for _, one := range options {
+			names = append(names, one.Value)
+		}
+		return names, found
+	}
+}
+
+// listRegistryOptions returns the options a registry lists, and false for a registry that has no
+// provider.
+func (c Config) listRegistryOptions(name string) (pluginport.PluginSettingOptions, bool) {
+	if name != settings.RegistryThemes {
+		return nil, false
+	}
+	catalogue, err := c.getCatalogue()
+	if err != nil {
+		c.handleError(err)
+	}
+	var options pluginport.PluginSettingOptions
+	for _, one := range catalogue.Themes() {
+		options = append(options, pluginport.PluginSettingOption{Value: one.Name, Title: one.Title})
+	}
+	return options, true
+}
+
+// listAppSettings returns the declaration of the settings of the shell with the options, the
+// visibility and the value in force of each under the settings file.
+func (c Config) listAppSettings() []pluginport.PluginSetting {
+	current := c.getSettingsOrDefaults()
+	declared := settings.GetAppDeclaration()
+	entries := make([]pluginport.PluginSetting, 0, len(declared))
+	for _, one := range declared {
+		options := one.Options
+		if one.OptionsFrom != "" {
+			options, _ = c.listRegistryOptions(one.OptionsFrom)
+		}
+		defaultJSON := ""
+		if encoded, err := json.Marshal(one.Default); err == nil && one.Default != nil {
+			defaultJSON = string(encoded)
+		}
+		setting := pluginport.NewPluginSetting(one, defaultJSON, options)
+		setting.ActiveOptions = options
+		setting.IsShown = true
+		if value, found := current.GetValue(append([]string{settings.OwnerApp}, strings.Split(one.Key, ".")...)...); found {
+			if encoded, err := json.Marshal(value); err == nil {
+				setting.ValueJSON = string(encoded)
+			}
+		}
+		entries = append(entries, setting)
+	}
+	return entries
 }
 
 // MigratePluginSettings copies settings that existed before a plugin took
@@ -165,7 +261,7 @@ func collectPluginSettingsMigrations(plugins []pluginport.PluginInfo, file map[s
 	var moved []settingsport.Setting
 	for _, plugin := range plugins {
 		for _, setting := range plugin.Settings {
-			if len(setting.Replaces) == 0 || hasKeys(file, "plugins", plugin.ID, setting.Key) {
+			if len(setting.Replaces) == 0 || hasKeys(file, plugin.ID, setting.Key) {
 				continue
 			}
 			if s, ok := migrateOneSetting(plugin.ID, setting, file); ok {
@@ -187,7 +283,7 @@ func migrateOneSetting(pluginID string, setting pluginport.PluginSetting, file m
 			continue
 		}
 		return settingsport.Setting{
-			Path: []string{pluginSettingsPrefix, pluginID, setting.Key}, JSON: string(content),
+			Path: []string{pluginID, setting.Key}, JSON: string(content),
 		}, true
 	}
 	return settingsport.Setting{}, false

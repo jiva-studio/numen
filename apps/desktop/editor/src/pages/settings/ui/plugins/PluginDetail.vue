@@ -31,7 +31,7 @@ const emit = defineEmits<{
 const installation = computed(() => props.state.installation)
 const fields = createSettingFields(() => props.state.installation)
 
-const read = (key: string) => installation.value.getSetting(['plugins', props.plugin.id, key])
+const read = (key: string) => installation.value.getSetting([props.plugin.id, key])
 
 const managed = computed(
   () => createManagedFromEntries([props.plugin], installation.value.catalog?.value ?? [])[0],
@@ -40,7 +40,6 @@ const managed = computed(
 /** The switch shows what the vault answered; it moves when the answer to its write arrives. */
 const readEnabled = (): unknown =>
   (installation.value.getConfirmedSetting ?? installation.value.getSetting)([
-    'plugins',
     props.plugin.id,
     'enabled',
   ])
@@ -50,7 +49,7 @@ const isEnabled = computed<boolean>(() => {
 })
 
 const isPending = computed<boolean>(
-  () => installation.value.isPending?.(['plugins', props.plugin.id, 'enabled']) ?? false,
+  () => installation.value.isPending?.([props.plugin.id, 'enabled']) ?? false,
 )
 
 const hasSettings = computed(() => hasPluginSettings(props.plugin, read))
@@ -67,7 +66,7 @@ function onBack(): void {
 }
 
 function onToggleEnabled(isOn: boolean): void {
-  fields.setValue(['plugins', props.plugin.id, 'enabled'], isOn)
+  fields.setValue([props.plugin.id, 'enabled'], isOn)
 }
 
 function onRetry(): void {

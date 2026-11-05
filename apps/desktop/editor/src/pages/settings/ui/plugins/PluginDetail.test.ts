@@ -7,7 +7,12 @@ import SettingRow from '../setting-row/SettingRow.vue'
 import { SecretField } from '../secret-field'
 import { createInstallation, createPluginInfo } from '@/testing/installation'
 import type { Installation, SettingsTabState } from '../../types'
-import { getSettingAt as at, type PluginInfo, type SettingEdit } from '@/entities/settings'
+import {
+  getSettingAt as at,
+  type PluginInfo,
+  type PluginSettingInfo,
+  type SettingEdit,
+} from '@/entities/settings'
 import { WORDS as words } from '../../words'
 
 beforeEach(() => {
@@ -88,15 +93,13 @@ describe('PluginDetail', () => {
 
     masterSwitch.vm.$emit('update:modelValue', false)
 
-    expect(recordedWrites).toStrictEqual([
-      { at: ['plugins', 'test.plugin', 'enabled'], value: 'false' },
-    ])
+    expect(recordedWrites).toStrictEqual([{ at: ['test.plugin', 'enabled'], value: 'false' }])
   })
 
   it('reads master enabled switch state when disabled in settings', () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine')
     const { wrapper } = createDetail(plugin, {
-      plugins: { 'test.plugin': { enabled: false } },
+      'test.plugin': { enabled: false },
     })
 
     const masterSwitch = wrapper.find('.plugin-detail__master-switch').findComponent(Switch)
@@ -130,9 +133,7 @@ describe('PluginDetail', () => {
     expect(retryPlugin).toHaveBeenCalledExactlyOnceWith('test.plugin')
 
     await disableButton!.trigger('click')
-    expect(recordedWrites).toStrictEqual([
-      { at: ['plugins', 'test.plugin', 'enabled'], value: 'false' },
-    ])
+    expect(recordedWrites).toStrictEqual([{ at: ['test.plugin', 'enabled'], value: 'false' }])
   })
 
   it('saves and deletes secret fields', () => {
@@ -218,7 +219,7 @@ describe('PluginDetail', () => {
     expect(switchComp.props('modelValue')).toBe(false)
     switchComp.vm.$emit('update:modelValue', true)
     expect(recordedWrites).toContainEqual({
-      at: ['plugins', 'test.plugin', 'autoStart'],
+      at: ['test.plugin', 'autoStart'],
       value: 'true',
     })
 
@@ -229,7 +230,7 @@ describe('PluginDetail', () => {
     expect(numberComp.props('modelValue')).toBe(3)
     numberComp.vm.$emit('commit', 5)
     expect(recordedWrites).toContainEqual({
-      at: ['plugins', 'test.plugin', 'retryCount'],
+      at: ['test.plugin', 'retryCount'],
       value: '5',
     })
 
@@ -241,7 +242,7 @@ describe('PluginDetail', () => {
     expect(rangeRow!.find('.settings__slider-value').text()).toBe('80')
     sliderComp.vm.$emit('commit', 90)
     expect(recordedWrites).toContainEqual({
-      at: ['plugins', 'test.plugin', 'confidence'],
+      at: ['test.plugin', 'confidence'],
       value: '90',
     })
 
@@ -252,7 +253,7 @@ describe('PluginDetail', () => {
     expect(selectComp.props('modelValue')).toBe('info')
     selectComp.vm.$emit('update:modelValue', 'debug')
     expect(recordedWrites).toContainEqual({
-      at: ['plugins', 'test.plugin', 'logLevel'],
+      at: ['test.plugin', 'logLevel'],
       value: '"debug"',
     })
 
@@ -264,7 +265,7 @@ describe('PluginDetail', () => {
     await textInput.setValue('https://custom.example.com')
     await textInput.trigger('change')
     expect(recordedWrites).toContainEqual({
-      at: ['plugins', 'test.plugin', 'endpoint'],
+      at: ['test.plugin', 'endpoint'],
       value: '"https://custom.example.com"',
     })
   })
@@ -287,7 +288,7 @@ describe('PluginDetail', () => {
 
     await wrapper.find('.settings__text-input').trigger('change')
     expect(recordedWrites).toStrictEqual([
-      { at: ['plugins', 'test.plugin', 'endpoint'], value: '"http://127.0.0.1:9/v1"' },
+      { at: ['test.plugin', 'endpoint'], value: '"http://127.0.0.1:9/v1"' },
     ])
   })
 
@@ -404,11 +405,31 @@ describe('PluginDetail with settings that follow one another', () => {
       },
     ],
   })
+  /** The plugin as the core answers it: the options, visibility and value it resolved, by key. */
+  const resolveBy = (
+    plugin: PluginInfo,
+    resolved: Record<string, Partial<PluginSettingInfo>>,
+  ): PluginInfo => ({
+    ...plugin,
+    settings: plugin.settings.map((one) => ({ ...one, ...resolved[one.key] })),
+  })
   const findRow = (wrapper: ReturnType<typeof mount>, key: string) =>
     wrapper.findAllComponents(SettingRow).find((r) => r.props('at') === `test.linked-${key}`)
 
   it('lists the languages of the current model with detail subtitles and no origin text', () => {
-    const { wrapper } = createDetail(LINKED)
+    const { wrapper } = createDetail(
+      resolveBy(LINKED, {
+        language: {
+          activeOptions: [
+            option('auto', 'Detected by the model', 'Among 3 languages'),
+            option('en', 'English'),
+          ],
+          isShown: true,
+          value: 'auto',
+        },
+        url: { isShown: false },
+      }),
+    )
     const row = findRow(wrapper, 'language')!
     expect(row.findComponent(Select).props('choices')).toEqual([
       { id: 'auto', text: 'Detected by the model', detail: 'Among 3 languages' },
@@ -419,7 +440,13 @@ describe('PluginDetail with settings that follow one another', () => {
   })
 
   it('shows the one language of a model as fixed', () => {
-    const small = createDetail(LINKED, { plugins: { 'test.linked': { model: 'small' } } })
+    const small = createDetail(
+      resolveBy(LINKED, {
+        language: { activeOptions: [option('en', 'English')], isShown: true, value: 'en' },
+        url: { isShown: false },
+      }),
+      { 'test.linked': { model: 'small' } },
+    )
     const row = findRow(small.wrapper, 'language')!
     expect(row.findComponent(Select).exists()).toBe(false)
     expect(row.find('.settings__fixed').text()).toBe('English')
@@ -455,14 +482,24 @@ describe('PluginDetail with settings that follow one another', () => {
         },
       ],
     })
-    const { wrapper } = createDetail(embeddingsPlugin, {
-      plugins: {
+    const { wrapper } = createDetail(
+      resolveBy(embeddingsPlugin, {
+        model: {
+          activeOptions: [
+            option('Xenova/bge-m3', 'BGE-M3'),
+            option('Xenova/multilingual-e5-small', 'E5 Small'),
+          ],
+          isShown: true,
+          value: 'Xenova/bge-m3',
+        },
+      }),
+      {
         'md.numen.engines.embeddings': {
           provider: 'local',
           model: 'openai/text-embedding-3-small',
         },
       },
-    })
+    )
     const row = wrapper
       .findAllComponents(SettingRow)
       .find((r) => r.props('at') === 'md.numen.engines.embeddings-model')!
@@ -470,11 +507,14 @@ describe('PluginDetail with settings that follow one another', () => {
   })
 
   it('shows provider settings and key only while the provider is selected, key after provider', () => {
-    const local = createDetail(LINKED)
+    const local = createDetail(resolveBy(LINKED, { url: { isShown: false } }))
     expect(findRow(local.wrapper, 'url')).toBeUndefined()
     expect(local.wrapper.findComponent(SecretField).exists()).toBe(false)
 
-    const remote = createDetail(LINKED, { plugins: { 'test.linked': { provider: 'remote' } } })
+    const remote = createDetail(
+      resolveBy(LINKED, { provider: { value: 'remote' }, url: { isShown: true } }),
+      { 'test.linked': { provider: 'remote' } },
+    )
     expect(findRow(remote.wrapper, 'url')).toBeDefined()
     expect(remote.wrapper.findComponent(SecretField).props('name')).toBe('API key')
     const rowIds = remote.wrapper.findAllComponents(SettingRow).map((r) => r.props('at'))
@@ -488,7 +528,7 @@ describe('PluginDetail with settings that follow one another', () => {
 
   it('chooses a path with the picker, says why it was not taken, and clears it', async () => {
     const { wrapper, installation, recordedWrites } = createDetail(LINKED, {
-      plugins: { 'test.linked': { dictionary: '/home/a/dicts/ru/letters.txt' } },
+      'test.linked': { dictionary: '/home/a/dicts/ru/letters.txt' },
     })
     const choosePath = vi.fn(async () => 'letters.onnx: wrong type of file, expected .txt')
     installation.choosePath = choosePath
@@ -505,7 +545,7 @@ describe('PluginDetail with settings that follow one another', () => {
 
     await clear!.trigger('click')
     expect(recordedWrites).toContainEqual({
-      at: ['plugins', 'test.linked', 'dictionary'],
+      at: ['test.linked', 'dictionary'],
       value: '""',
     })
   })
@@ -540,7 +580,7 @@ describe('PluginDetail with settings that follow one another', () => {
     expect(acpClearButtons).toHaveLength(2)
     await acpClearButtons[0]!.trigger('click')
     expect(acpDetail.recordedWrites).toContainEqual({
-      at: ['plugins', 'test.acp', 'programs'],
+      at: ['test.acp', 'programs'],
       value: '"/usr/local/bin/opencode"',
     })
     const addButton = acpRow.findAll('button').find((btn) => btn.text() === words.pathAdd)
@@ -563,7 +603,7 @@ describe('PluginDetail with settings that follow one another', () => {
 
   it('draws a file setting that is not multiple as one path, whatever its title and key', () => {
     const { wrapper } = createDetail(createPathPlugin(false), {
-      plugins: { 'test.paths': { executablePath: '/opt/one\n/opt/two' } },
+      'test.paths': { executablePath: '/opt/one\n/opt/two' },
     })
     const row = wrapper.findAllComponents(SettingRow)[0]!
 
@@ -574,7 +614,7 @@ describe('PluginDetail with settings that follow one another', () => {
   /** Chooses /opt/two in the picker, which the host stores in place of the setting's value. */
   const chooseSecondPath = async (multiple: boolean) => {
     const stored = { executablePath: '/opt/one' }
-    const detail = createDetail(createPathPlugin(multiple), { plugins: { 'test.paths': stored } })
+    const detail = createDetail(createPathPlugin(multiple), { 'test.paths': stored })
     detail.installation.choosePath = vi.fn(async () => {
       stored.executablePath = '/opt/two'
       return ''
@@ -591,7 +631,7 @@ describe('PluginDetail with settings that follow one another', () => {
 
   it('adds the chosen path to the paths a multiple setting holds', async () => {
     expect(await chooseSecondPath(true)).toContainEqual({
-      at: ['plugins', 'test.paths', 'executablePath'],
+      at: ['test.paths', 'executablePath'],
       value: '"/opt/one\\n/opt/two"',
     })
   })
@@ -622,7 +662,7 @@ describe('the settings views of a plugin', () => {
     const plugin = createPluginInfo('views.plugin', 'Views', { settings, settingsViews: views })
     const recordedWrites: SettingEdit[] = []
     const installation = createInstallation({
-      getSetting: (path) => at({ plugins: { 'views.plugin': { floor: 3 } } }, path),
+      getSetting: (path) => at({ 'views.plugin': { floor: 3 } }, path),
       write: (edits) => {
         recordedWrites.push(...edits)
       },
@@ -660,7 +700,7 @@ describe('the settings views of a plugin', () => {
   it('writes the setting a view updates', async () => {
     const { wrapper, recordedWrites } = mountWith({ floor: View })
     await wrapper.get('.view').trigger('click')
-    expect(recordedWrites).toStrictEqual([{ at: ['plugins', 'views.plugin', 'floor'], value: '7' }])
+    expect(recordedWrites).toStrictEqual([{ at: ['views.plugin', 'floor'], value: '7' }])
   })
 
   it('shows the settings block for a plugin with only views', () => {

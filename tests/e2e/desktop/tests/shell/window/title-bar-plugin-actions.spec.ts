@@ -22,7 +22,7 @@ const listButtonIds = (page: Page): Promise<string[]> =>
 
 test.describe('Plugin buttons in the title bar', () => {
   test.afterEach(async ({ request }) => {
-    await writeSetting(request, ['plugins', TREE_ID, 'enabled'], true)
+    await writeSetting(request, [TREE_ID, 'enabled'], true)
   })
 
   test('runs the command of a button as the palette runs it', async ({ page }) => {
@@ -74,12 +74,12 @@ test.describe('Plugin buttons in the title bar', () => {
     const before = await listButtonIds(page)
     expect(before).toContain(TREE_BUTTON)
 
-    await writeSetting(request, ['plugins', TREE_ID, 'enabled'], false)
+    await writeSetting(request, [TREE_ID, 'enabled'], false)
 
     await expect(getButton(page, TREE_BUTTON)).toHaveCount(0)
     expect(await listButtonIds(page)).toStrictEqual(before.filter((one) => one !== TREE_BUTTON))
 
-    await writeSetting(request, ['plugins', TREE_ID, 'enabled'], true)
+    await writeSetting(request, [TREE_ID, 'enabled'], true)
 
     await expect(getButton(page, TREE_BUTTON)).toHaveCount(1)
     expect(await listButtonIds(page)).toStrictEqual(before)

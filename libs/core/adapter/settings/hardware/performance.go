@@ -16,18 +16,10 @@ const (
 	ProfileMaximum PerformanceProfile = "maximum"
 )
 
-// DefaultPerformanceProfile is the default workload preset for untouched installations.
-const DefaultPerformanceProfile = ProfileBalanced
-
 // Performance is the settings section for workload and resource profile.
 type Performance struct {
 	// Profile is the active preset.
 	Profile string `json:"profile"`
-}
-
-// DefaultPerformance returns the default performance settings.
-func DefaultPerformance() Performance {
-	return Performance{Profile: string(DefaultPerformanceProfile)}
 }
 
 // AcceleratorCoreML names the Apple Core ML runtime, present on Apple Silicon.

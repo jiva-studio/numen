@@ -8,7 +8,7 @@ import (
 
 // model and the limit.
 func TestTheDefaultIsReadFromTheAISection(t *testing.T) {
-	cfg, _ := writeSettings(t, `{"ai": {"default": {"agent": "a", "model": "m", "concurrency": 3}}}`)
+	cfg, _ := writeSettings(t, `{"app": {"ai": {"default": {"agent": "a", "model": "m", "concurrency": 3}}}}`)
 	loaded, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)

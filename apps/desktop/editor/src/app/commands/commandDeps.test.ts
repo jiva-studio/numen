@@ -59,7 +59,7 @@ describe('createCommandDeps', () => {
     })
 
     await deps.settings.choosePluginSetting?.('transcription', 'autoRun', true)
-    expect(content).toStrictEqual([{ at: ['plugins', 'transcription', 'autoRun'], value: 'true' }])
+    expect(content).toStrictEqual([{ at: ['transcription', 'autoRun'], value: 'true' }])
   })
 
   it('handles choosing performance profile', async () => {
@@ -73,7 +73,7 @@ describe('createCommandDeps', () => {
     })
 
     await deps.settings.choosePerformance('maximum')
-    expect(content).toStrictEqual([{ at: ['performance', 'profile'], value: '"maximum"' }])
+    expect(content).toStrictEqual([{ at: ['app', 'performance', 'profile'], value: '"maximum"' }])
   })
 })
 

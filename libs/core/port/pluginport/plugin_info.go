@@ -21,6 +21,40 @@ type PluginSetting struct {
 	When      *PluginSettingCondition
 	Accept    []string
 	Multiple  bool
+	// Preview and OptionsFrom are as the manifest declares them.
+	Preview     bool
+	OptionsFrom string
+	// ActiveOptions, IsShown and ValueJSON are the options, the visibility and the value in force
+	// under the stored values, resolved by the manifest. A window draws them and applies no rule of
+	// OptionsBy or When itself.
+	ActiveOptions PluginSettingOptions
+	IsShown       bool
+	ValueJSON     string
+}
+
+// NewPluginSetting returns the setting as a window draws it. The default, as JSON, and the options
+// are the ones the caller resolved for the declaration, and nothing is resolved under stored values.
+func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, options PluginSettingOptions) PluginSetting {
+	return PluginSetting{
+		Key:         declared.Key,
+		Type:        declared.Type,
+		Title:       declared.Title,
+		Description: declared.Description,
+		DefaultJSON: defaultJSON,
+		Palette:     declared.Palette,
+		Icon:        declared.Icon,
+		Options:     options,
+		Min:         declared.Min,
+		Max:         declared.Max,
+		Step:        declared.Step,
+		Replaces:    declared.Replaces,
+		OptionsBy:   declared.OptionsBy,
+		When:        declared.When,
+		Accept:      declared.Accept,
+		Multiple:    declared.Multiple,
+		Preview:     declared.Preview,
+		OptionsFrom: declared.OptionsFrom,
+	}
 }
 
 // PluginInfo describes a discovered plugin and its declarative settings.

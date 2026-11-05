@@ -60,6 +60,20 @@ message PluginSetting {
   string icon = 15;
   // Whether a setting of type file holds a list of paths, one per line.
   bool multiple = 16;
+  // Whether the window applies the value while its control is focused, and restores the saved value
+  // on leaving.
+  bool preview = 17;
+  // The registry the options are listed from, such as the installed themes. Empty where the setting
+  // lists its own options.
+  string options_from = 18;
+  // The options in force under the values in force, resolved by the core. A window draws these and
+  // follows no rule of options_by.
+  repeated PluginSettingOption active_options = 19;
+  // Whether the condition of the setting holds under the values in force, resolved by the core.
+  bool is_shown = 20;
+  // The value in force as JSON, resolved by the core: the stored value, else the default, else the
+  // first of the options in force.
+  string value_json = 21;
 }
 
 // PluginSettingOption is one value an enum setting can hold.

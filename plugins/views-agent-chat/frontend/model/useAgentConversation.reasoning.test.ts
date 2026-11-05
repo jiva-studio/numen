@@ -30,15 +30,15 @@ const model = (
 })
 
 const LISTED = [
-  model(['agent', 'use'], 'alpha', { isDefault: true }),
-  model(['agent', 'use'], 'beta'),
-  model(['agent', 'alpha', 'model'], 'deep', {
+  model(['app', 'agent', 'use'], 'alpha', { isDefault: true }),
+  model(['app', 'agent', 'use'], 'beta'),
+  model(['app', 'agent', 'alpha', 'model'], 'deep', {
     isDefault: true,
     reasoningLevels: LEVELS,
     defaultReasoning: 'low',
   }),
-  model(['agent', 'alpha', 'model'], 'plain'),
-  model(['agent', 'beta', 'model'], 'quiet', { reasoningLevels: LEVELS }),
+  model(['app', 'agent', 'alpha', 'model'], 'plain'),
+  model(['app', 'agent', 'beta', 'model'], 'quiet', { reasoningLevels: LEVELS }),
 ]
 
 /** An agent tab with the listed models, the stored settings, and the recorded requests. */
@@ -79,7 +79,7 @@ describe('the levels offered', () => {
   })
 
   it('are none for a model that offers none', () => {
-    const { state } = open({ 'agent/use': 'alpha', 'agent/alpha/model': 'plain' })
+    const { state } = open({ 'app/agent/use': 'alpha', 'app/agent/alpha/model': 'plain' })
     expect(state.reasoningLevels.value).toEqual([])
     expect(state.selectedReasoningId.value).toBe('')
   })
@@ -91,7 +91,7 @@ describe('the level selected', () => {
   })
 
   it('is empty where the model names no default and none was chosen', () => {
-    const { state } = open({ 'agent/use': 'beta' })
+    const { state } = open({ 'app/agent/use': 'beta' })
     expect(state.reasoningLevels.value).toHaveLength(2)
     expect(state.selectedReasoningId.value).toBe('')
   })
@@ -133,7 +133,10 @@ describe('the question', () => {
   })
 
   it('names no level for a model that offers none', () => {
-    const { state, requests } = open({ 'agent/use': 'alpha', 'agent/alpha/model': 'plain' }, 'high')
+    const { state, requests } = open(
+      { 'app/agent/use': 'alpha', 'app/agent/alpha/model': 'plain' },
+      'high',
+    )
     state.send('hello')
     expect(requests[0]?.reasoning).toBe('')
   })

@@ -1445,26 +1445,31 @@ func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plu
 				defJSON = string(b)
 			}
 		}
-		settings = append(settings, pluginport.PluginSetting{
-			Key:         s.Key,
-			Type:        s.Type,
-			Title:       s.Title,
-			Description: s.Description,
-			DefaultJSON: defJSON,
-			Palette:     s.Palette,
-			Icon:        s.Icon,
-			Options:     options,
-			Min:         s.Min,
-			Max:         s.Max,
-			Step:        s.Step,
-			Replaces:    s.Replaces,
-			OptionsBy:   s.OptionsBy,
-			When:        s.When,
-			Accept:      s.Accept,
-			Multiple:    s.Multiple,
-		})
+		settings = append(settings, pluginport.NewPluginSetting(s, defJSON, options))
 	}
 	return settings
+}
+
+// resolveSettings fills in the options, the visibility and the value in force of each setting under
+// the values in force, which are the stored values with the defaults, the options that follow
+// another setting and the conditions applied.
+func resolveSettings(declared manifest.Manifest, settings []pluginport.PluginSetting, values map[string]any) {
+	for index := range settings {
+		one, found := declared.GetSetting(settings[index].Key)
+		if !found {
+			continue
+		}
+		settings[index].ActiveOptions = declared.GetSettingOptions(one, values)
+		if len(settings[index].ActiveOptions) == 0 {
+			settings[index].ActiveOptions = settings[index].Options
+		}
+		settings[index].IsShown = declared.IsSettingShown(one, values)
+		if value, ok := values[one.Key]; ok {
+			if encoded, err := json.Marshal(value); err == nil {
+				settings[index].ValueJSON = string(encoded)
+			}
+		}
+	}
 }
 
 // GetPluginInfos returns specifications of all registered plugins and their settings schemas, in
@@ -1477,6 +1482,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 	for _, p := range h.getPluginsInOrderLocked() {
 		isActive := h.isPluginActiveLocked(p.Manifest.ID)
 		settings := toPluginSettings(p.Manifest.Settings)
+		resolveSettings(p.Manifest, settings, h.getPluginSettingsLocked(p.Manifest.ID))
 
 		result = append(result, pluginport.PluginInfo{
 			ID:            p.Manifest.ID,

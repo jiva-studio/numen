@@ -51,6 +51,18 @@ func (h *Host) CheckPluginSetting(pluginID, key string, value any) error {
 	return nil
 }
 
+// GetPluginSettingDeclarations returns the settings the manifest of the plugin declares, and false
+// for a plugin the host does not know.
+func (h *Host) GetPluginSettingDeclarations(pluginID string) ([]pluginport.PluginManifestSetting, bool) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	p, ok := h.plugins[pluginID]
+	if !ok {
+		return nil, false
+	}
+	return slices.Clone(p.Manifest.Settings), true
+}
+
 func checkPath(declared pluginport.PluginManifestSetting, path string) error {
 	info, err := os.Stat(path)
 	if err != nil {

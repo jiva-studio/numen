@@ -13,7 +13,7 @@ The three models are the plugin's own dependencies, which numen fetches for it.
 
 ## Settings you may want to change
 
-The settings are the Document OCR plugin's, on its page in the [settings](/settings/), and in the settings file under `plugins` → `md.numen.engines.ocr`.
+The settings are the Document OCR plugin's, on its page in the [settings](/settings/), and in the settings file in the object `md.numen.engines.ocr`.
 
 |                   |                                                                                                                                             |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,21 +30,21 @@ The text OCR read from the pages can be corrected afterwards by a model, through
 
 ```json
 {
-  "ai": {
-    "default": { "agent": "claude", "model": "haiku" }
-  },
-  "plugins": {
-    "md.numen.tools.proofreading": {
-      "batchSize": 40,
-      "maxEditDistance": 0.3
+  "app": {
+    "ai": {
+      "default": { "agent": "claude", "model": "haiku" }
     }
+  },
+  "md.numen.tools.proofreading": {
+    "batchSize": 40,
+    "maxEditDistance": 0.3
   }
 }
 ```
 
 Each request to the model covers one page. The corrected text is a new version next to the one it was made from, and deleting it (**Delete the text LLM Proofreading made**) restores that one.
 
-The model that is used is chosen by the proofreading plugin's own **Provider** setting, on its page of the settings. With "Agent", it is the one under `ai.default`: the agent, the model, and how many questions it handles at once. The `claude` command line you already have installed is one agent. A key is stored with the agent that uses it, and you enter it in the settings of that agent's plugin. With "OpenRouter", "OpenAI" or "Custom service", the plugin calls that service directly with its own model and key. With no agent available, proofreading shows that nothing is available, and the text stays as it was read.
+The model that is used is chosen by the proofreading plugin's own **Provider** setting, on its page of the settings. With "Agent", it is the one under `app.ai.default`: the agent, the model, and how many questions it handles at once. The `claude` command line you already have installed is one agent. A key is stored with the agent that uses it, and you enter it in the settings of that agent's plugin. With "OpenRouter", "OpenAI" or "Custom service", the plugin calls that service directly with its own model and key. With no agent available, proofreading shows that nothing is available, and the text stays as it was read.
 
 `maxEditDistance` is the safety limit: how far a correction may change a line's letters and still count as a correction, taken as the Levenshtein distance between them as a share of the longer of the two. Over 931 corrections of one book, every correction with a distance above 0.3 was an error (text taken from the next line, or one corrected word replacing a whole line), and every correction below it was a genuine fix. A correction with a larger distance is dropped, and that line is left as it was read. The default is 0.3.
 

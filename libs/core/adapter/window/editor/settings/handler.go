@@ -50,6 +50,7 @@ func (h *Handler) GetSettings(
 		Path:    got.Path,
 		Models:  NewWireModels(got.Models),
 		Plugins: NewWirePluginInfos(got.Plugins),
+		App:     newWirePluginSettings(got.App),
 	}), nil
 }
 
@@ -117,33 +118,13 @@ func newWireSettings(target []setting.Setting) []*v1.Setting {
 func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 	infos := make([]*v1.PluginInfo, 0, len(target))
 	for _, one := range target {
-		pluginSettings := make([]*v1.PluginSetting, 0, len(one.Settings))
-		for _, s := range one.Settings {
-			pluginSettings = append(pluginSettings, &v1.PluginSetting{
-				Key:         s.Key,
-				Type:        s.Type,
-				Title:       s.Title,
-				Description: s.Description,
-				DefaultJson: s.DefaultJSON,
-				Palette:     s.Palette,
-				Icon:        s.Icon,
-				Options:     newWireOptions(s.Options),
-				Min:         s.Min,
-				Max:         s.Max,
-				Step:        s.Step,
-				OptionsBy:   newWireOptionsBy(s.OptionsBy),
-				When:        newWireCondition(s.When),
-				Accept:      s.Accept,
-				Multiple:    s.Multiple,
-			})
-		}
 		infos = append(infos, &v1.PluginInfo{
 			Id:           one.ID,
 			Name:         one.Name,
 			Version:      one.Version,
 			Description:  one.Description,
 			Capabilities: one.Capabilities,
-			Settings:     pluginSettings,
+			Settings:     newWirePluginSettings(one.Settings),
 			IsActive:     one.IsActive,
 			Permissions:  one.Permissions,
 			Secrets:      newWireSecrets(one.Secrets),
@@ -157,6 +138,37 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 		})
 	}
 	return infos
+}
+
+// newWirePluginSettings is the declared settings of an owner, with the options, the visibility and
+// the value the core resolved for each, as the wire carries them.
+func newWirePluginSettings(target []setting.PluginSetting) []*v1.PluginSetting {
+	settings := make([]*v1.PluginSetting, 0, len(target))
+	for _, s := range target {
+		settings = append(settings, &v1.PluginSetting{
+			Key:           s.Key,
+			Type:          s.Type,
+			Title:         s.Title,
+			Description:   s.Description,
+			DefaultJson:   s.DefaultJSON,
+			Palette:       s.Palette,
+			Icon:          s.Icon,
+			Options:       newWireOptions(s.Options),
+			Min:           s.Min,
+			Max:           s.Max,
+			Step:          s.Step,
+			OptionsBy:     newWireOptionsBy(s.OptionsBy),
+			When:          newWireCondition(s.When),
+			Accept:        s.Accept,
+			Multiple:      s.Multiple,
+			Preview:       s.Preview,
+			OptionsFrom:   s.OptionsFrom,
+			ActiveOptions: newWireOptions(s.ActiveOptions),
+			IsShown:       s.IsShown,
+			ValueJson:     s.ValueJSON,
+		})
+	}
+	return settings
 }
 
 // WritePluginSecret stores the key of a secret a plugin declares. A secret the

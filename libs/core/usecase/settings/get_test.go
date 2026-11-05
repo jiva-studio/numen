@@ -27,7 +27,7 @@ func TestGetAnswersTheSettingsAndTheirModels(t *testing.T) {
 		},
 	}
 	get := settings.NewGet(
-		read, func() []settingsport.Model { return models }, func() []pluginport.PluginInfo { return pluginList },
+		read, func() []settingsport.Model { return models }, func() []pluginport.PluginInfo { return pluginList }, nil,
 	)
 
 	got, err := get.Execute()
@@ -48,7 +48,7 @@ func TestGetAnswersTheSettingsAndTheirModels(t *testing.T) {
 
 func TestGetAnswersNoModelsWhereNoneAreBound(t *testing.T) {
 	t.Parallel()
-	get := settings.NewGet(read, nil, nil)
+	get := settings.NewGet(read, nil, nil, nil)
 
 	got, err := get.Execute()
 	if err != nil {
@@ -66,10 +66,28 @@ func TestGet_ErrorWhenFileUnreadable(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
 		func() (string, string, error) { return "", "", errRead },
-		nil, nil,
+		nil, nil, nil,
 	)
 
 	if _, err := get.Execute(); !errors.Is(err, errRead) {
 		t.Fatalf("error is %v, want the read error", err)
+	}
+}
+
+func TestGetAnswersTheDeclarationOfTheShell(t *testing.T) {
+	t.Parallel()
+	get := settings.NewGet(
+		read, nil, nil,
+		func() []pluginport.PluginSetting {
+			return []pluginport.PluginSetting{{Key: "appearance.mode", Type: "enum", Title: "Mode"}}
+		},
+	)
+
+	got, err := get.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.App) != 1 || got.App[0].Key != "appearance.mode" {
+		t.Errorf("the declaration of the shell is %v", got.App)
 	}
 }

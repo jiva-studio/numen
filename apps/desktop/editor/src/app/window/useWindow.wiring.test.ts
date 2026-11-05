@@ -626,7 +626,7 @@ describe('the services a plugin is given', () => {
     // useWindowTabs options
     expect(h.args.windowTabs.arePluginsStarting.value).toBe(true)
     await h.args.windowTabs.enablePlugin('p1')
-    expect(h.f.settings.rest.writeSetting).toHaveBeenCalledWith(['plugins', 'p1', 'enabled'], true)
+    expect(h.f.settings.rest.writeSetting).toHaveBeenCalledWith(['p1', 'enabled'], true)
 
     const dispatched: CustomEvent[] = []
     const listener = (e: Event) => dispatched.push(e as CustomEvent)

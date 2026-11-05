@@ -79,10 +79,10 @@ function createSettingsCommands(options: CommandDepsOptions): CommandDeps['setti
       await oneName.choose(selected)
     },
     choosePerformance: async (selected) => {
-      await rest.writeSettings([{ at: ['performance', 'profile'], value: write(selected) }])
+      await rest.writeSettings([{ at: ['app', 'performance', 'profile'], value: write(selected) }])
     },
     choosePluginSetting: async (pluginId: string, key: string, selected: unknown) => {
-      await rest.writeSettings([{ at: ['plugins', pluginId, key], value: write(selected) }])
+      await rest.writeSettings([{ at: [pluginId, key], value: write(selected) }])
     },
   }
 }

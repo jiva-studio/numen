@@ -380,7 +380,21 @@ type PluginSetting struct {
 	// The icon the setting shows in the palette, by its Lucide name. Empty shows the default setting icon.
 	Icon string `protobuf:"bytes,15,opt,name=icon,proto3" json:"icon,omitempty"`
 	// Whether a setting of type file holds a list of paths, one per line.
-	Multiple      bool `protobuf:"varint,16,opt,name=multiple,proto3" json:"multiple,omitempty"`
+	Multiple bool `protobuf:"varint,16,opt,name=multiple,proto3" json:"multiple,omitempty"`
+	// Whether the window applies the value while its control is focused, and restores the saved value
+	// on leaving.
+	Preview bool `protobuf:"varint,17,opt,name=preview,proto3" json:"preview,omitempty"`
+	// The registry the options are listed from, such as the installed themes. Empty where the setting
+	// lists its own options.
+	OptionsFrom string `protobuf:"bytes,18,opt,name=options_from,json=optionsFrom,proto3" json:"options_from,omitempty"`
+	// The options in force under the values in force, resolved by the core. A window draws these and
+	// follows no rule of options_by.
+	ActiveOptions []*PluginSettingOption `protobuf:"bytes,19,rep,name=active_options,json=activeOptions,proto3" json:"active_options,omitempty"`
+	// Whether the condition of the setting holds under the values in force, resolved by the core.
+	IsShown bool `protobuf:"varint,20,opt,name=is_shown,json=isShown,proto3" json:"is_shown,omitempty"`
+	// The value in force as JSON, resolved by the core: the stored value, else the default, else the
+	// first of the options in force.
+	ValueJson     string `protobuf:"bytes,21,opt,name=value_json,json=valueJson,proto3" json:"value_json,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -518,6 +532,41 @@ func (x *PluginSetting) GetMultiple() bool {
 		return x.Multiple
 	}
 	return false
+}
+
+func (x *PluginSetting) GetPreview() bool {
+	if x != nil {
+		return x.Preview
+	}
+	return false
+}
+
+func (x *PluginSetting) GetOptionsFrom() string {
+	if x != nil {
+		return x.OptionsFrom
+	}
+	return ""
+}
+
+func (x *PluginSetting) GetActiveOptions() []*PluginSettingOption {
+	if x != nil {
+		return x.ActiveOptions
+	}
+	return nil
+}
+
+func (x *PluginSetting) GetIsShown() bool {
+	if x != nil {
+		return x.IsShown
+	}
+	return false
+}
+
+func (x *PluginSetting) GetValueJson() string {
+	if x != nil {
+		return x.ValueJson
+	}
+	return ""
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -1346,7 +1395,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\x82\x04\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\xbf\x05\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1364,7 +1413,13 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x04when\x18\r \x01(\v2 .numen.v1.PluginSettingConditionR\x04when\x12\x16\n" +
 	"\x06accept\x18\x0e \x03(\tR\x06accept\x12\x12\n" +
 	"\x04icon\x18\x0f \x01(\tR\x04icon\x12\x1a\n" +
-	"\bmultiple\x18\x10 \x01(\bR\bmultipleB\x06\n" +
+	"\bmultiple\x18\x10 \x01(\bR\bmultiple\x12\x18\n" +
+	"\apreview\x18\x11 \x01(\bR\apreview\x12!\n" +
+	"\foptions_from\x18\x12 \x01(\tR\voptionsFrom\x12D\n" +
+	"\x0eactive_options\x18\x13 \x03(\v2\x1d.numen.v1.PluginSettingOptionR\ractiveOptions\x12\x19\n" +
+	"\bis_shown\x18\x14 \x01(\bR\aisShown\x12\x1d\n" +
+	"\n" +
+	"value_json\x18\x15 \x01(\tR\tvalueJsonB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_step\"Y\n" +
@@ -1484,32 +1539,33 @@ var file_numen_v1_plugin_proto_depIdxs = []int32{
 	8,  // 1: numen.v1.PluginSetting.options:type_name -> numen.v1.PluginSettingOption
 	10, // 2: numen.v1.PluginSetting.options_by:type_name -> numen.v1.PluginSettingOptionsBy
 	11, // 3: numen.v1.PluginSetting.when:type_name -> numen.v1.PluginSettingCondition
-	8,  // 4: numen.v1.PluginSettingOptions.options:type_name -> numen.v1.PluginSettingOption
-	22, // 5: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
-	11, // 6: numen.v1.PluginSecret.when:type_name -> numen.v1.PluginSettingCondition
-	7,  // 7: numen.v1.PluginInfo.settings:type_name -> numen.v1.PluginSetting
-	12, // 8: numen.v1.PluginInfo.secrets:type_name -> numen.v1.PluginSecret
-	16, // 9: numen.v1.PluginInfo.failure:type_name -> numen.v1.PluginFailure
-	15, // 10: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
-	14, // 11: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
-	13, // 12: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
-	0,  // 13: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
-	9,  // 14: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
-	1,  // 15: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
-	3,  // 16: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
-	5,  // 17: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
-	17, // 18: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
-	19, // 19: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
-	2,  // 20: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
-	4,  // 21: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
-	6,  // 22: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
-	18, // 23: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
-	20, // 24: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
-	20, // [20:25] is the sub-list for method output_type
-	15, // [15:20] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	8,  // 4: numen.v1.PluginSetting.active_options:type_name -> numen.v1.PluginSettingOption
+	8,  // 5: numen.v1.PluginSettingOptions.options:type_name -> numen.v1.PluginSettingOption
+	22, // 6: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
+	11, // 7: numen.v1.PluginSecret.when:type_name -> numen.v1.PluginSettingCondition
+	7,  // 8: numen.v1.PluginInfo.settings:type_name -> numen.v1.PluginSetting
+	12, // 9: numen.v1.PluginInfo.secrets:type_name -> numen.v1.PluginSecret
+	16, // 10: numen.v1.PluginInfo.failure:type_name -> numen.v1.PluginFailure
+	15, // 11: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
+	14, // 12: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
+	13, // 13: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
+	0,  // 14: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
+	9,  // 15: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
+	1,  // 16: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
+	3,  // 17: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
+	5,  // 18: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
+	17, // 19: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
+	19, // 20: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
+	2,  // 21: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
+	4,  // 22: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
+	6,  // 23: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
+	18, // 24: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
+	20, // 25: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
+	21, // [21:26] is the sub-list for method output_type
+	16, // [16:21] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_plugin_proto_init() }

@@ -145,6 +145,13 @@ type PluginDiscoverer interface {
 	IsPluginEnabled(pluginID string) bool
 }
 
+// PluginSettingDeclarer returns the settings a plugin declares.
+type PluginSettingDeclarer interface {
+	// GetPluginSettingDeclarations returns the settings the manifest of the plugin declares, and
+	// false for a plugin the host does not know.
+	GetPluginSettingDeclarations(pluginID string) ([]PluginManifestSetting, bool)
+}
+
 type pluginSecretConfigurator interface {
 	SetKeyStore(store KeyStore)
 	SetPluginSecret(ctx context.Context, pluginID, name, key string) error
@@ -202,6 +209,7 @@ type PluginRegistryManager interface {
 	PluginDiscoverer
 	PluginResolver
 	PluginConfigurator
+	PluginSettingDeclarer
 	PluginEventEmitter
 }
 

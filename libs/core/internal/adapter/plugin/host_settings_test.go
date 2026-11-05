@@ -23,7 +23,7 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
 		"settings": [
-			{"key": "enabled", "type": "boolean", "title": "Enabled", "default": true, "palette": true},
+			{"key": "verbose", "type": "boolean", "title": "Verbose", "default": true, "palette": true},
 			{"key": "count", "type": "number", "title": "Count", "default": 5},
 			{"key": "mode", "type": "enum", "title": "Mode", "default": "fast", "options": ["fast", "accurate"]}
 		]
@@ -39,8 +39,8 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 
 	// 1. Initial settings should match defaults
 	initial := host.GetPluginSettings("md.numen.sample")
-	if initial["enabled"] != true {
-		t.Errorf("expected default enabled=true, got %v", initial["enabled"])
+	if initial["verbose"] != true {
+		t.Errorf("expected default verbose=true, got %v", initial["verbose"])
 	}
 	if initial["count"] != float64(5) {
 		t.Errorf("expected default count=5, got %v", initial["count"])
@@ -56,8 +56,8 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 		},
 	})
 	overlaid := host.GetPluginSettings("md.numen.sample")
-	if overlaid["enabled"] != true {
-		t.Errorf("expected enabled=true from default, got %v", overlaid["enabled"])
+	if overlaid["verbose"] != true {
+		t.Errorf("expected verbose=true from default, got %v", overlaid["verbose"])
 	}
 	if overlaid["count"] != 10 {
 		t.Errorf("expected overlaid count=10, got %v", overlaid["count"])
@@ -108,8 +108,8 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 	if len(pInfo.Settings) != 3 {
 		t.Fatalf("expected 3 settings in info, got %d", len(pInfo.Settings))
 	}
-	if pInfo.Settings[0].Key != "enabled" || !pInfo.Settings[0].Palette {
-		t.Errorf("setting 0: expected key=enabled and palette=true")
+	if pInfo.Settings[0].Key != "verbose" || !pInfo.Settings[0].Palette {
+		t.Errorf("setting 0: expected key=verbose and palette=true")
 	}
 
 	// 6. Host.GetPaletteCommands
@@ -117,12 +117,12 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 	if len(palCmds) != 1 {
 		t.Fatalf("expected 1 palette command, got %d", len(palCmds))
 	}
-	if palCmds[0].ID != "plugin-setting:md.numen.sample:enabled" {
-		t.Errorf("got palette command ID %s, want plugin-setting:md.numen.sample:enabled", palCmds[0].ID)
+	if palCmds[0].ID != "plugin-setting:md.numen.sample:verbose" {
+		t.Errorf("got palette command ID %s, want plugin-setting:md.numen.sample:verbose", palCmds[0].ID)
 	}
 
 	// 7. Host.TogglePluginSetting
-	newVal, err := host.TogglePluginSetting(ctx, "md.numen.sample", "enabled")
+	newVal, err := host.TogglePluginSetting(ctx, "md.numen.sample", "verbose")
 	if err != nil {
 		t.Fatalf("TogglePluginSetting failed: %v", err)
 	}
@@ -130,8 +130,8 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 		t.Errorf("expected toggled value false, got %v", newVal)
 	}
 	toggledSettings := host.GetPluginSettings("md.numen.sample")
-	if toggledSettings["enabled"] != false {
-		t.Errorf("expected updated setting enabled=false, got %v", toggledSettings["enabled"])
+	if toggledSettings["verbose"] != false {
+		t.Errorf("expected updated setting verbose=false, got %v", toggledSettings["verbose"])
 	}
 }
 

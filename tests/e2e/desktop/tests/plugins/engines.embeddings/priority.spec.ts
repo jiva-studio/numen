@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { test, expect } from '../../support/test.js'
-import { readSettings, writeSetting } from '../../support/vault.js'
+import { readOwner, writeSetting } from '../../support/vault.js'
 
 interface Row {
   pid: number
@@ -51,16 +51,16 @@ test.describe('Performance profile of the embeddings plugin', () => {
 
   test.beforeEach(async ({ request }) => {
     profile = (
-      (await readSettings(request))['performance'] as Record<string, unknown> | undefined
+      (await readOwner(request, 'app'))['performance'] as Record<string, unknown> | undefined
     )?.['profile']
   })
 
   test.afterEach(async ({ request }) => {
-    await writeSetting(request, ['performance', 'profile'], profile)
+    await writeSetting(request, ['app', 'performance', 'profile'], profile)
   })
 
   test('lowers the priority of the running plugin when the profile is eco', async ({ request }) => {
-    await writeSetting(request, ['performance', 'profile'], 'eco')
+    await writeSetting(request, ['app', 'performance', 'profile'], 'eco')
 
     await expect.poll(readPluginNice, { timeout: 15_000 }).toBe(19)
   })

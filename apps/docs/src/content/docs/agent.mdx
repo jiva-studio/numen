@@ -59,7 +59,7 @@ commands for your machine to run. Those are always rejected, whatever the settin
 
 By default it also ignores what is configured for the assistant on this machine — standing
 instructions, hooks, skills, plugins. If you want your own configuration used, turn on
-`readsHooksAndSkills` in the settings of the Claude Code Agent plugin (`plugins.md.numen.agents.claude`, see [the settings](/settings/)); a vault's own files are
+`readsHooksAndSkills` in the settings of the Claude Code Agent plugin (the object `md.numen.agents.claude`, see [the settings](/settings/)); a vault's own files are
 rejected either way.
 
 ## Setting it up
@@ -70,17 +70,17 @@ Where an agent is installed in the usual place, numen finds it automatically and
 
 ```json
 {
-  "agent": {
-    "use": "claude",
-    "claude": {
-      "command": [],
-      "model": ""
+  "app": {
+    "agent": {
+      "use": "claude",
+      "claude": {
+        "command": [],
+        "model": ""
+      }
     }
   },
-  "plugins": {
-    "md.numen.agents.claude": {
-      "readsHooksAndSkills": false
-    }
+  "md.numen.agents.claude": {
+    "readsHooksAndSkills": false
   }
 }
 ```

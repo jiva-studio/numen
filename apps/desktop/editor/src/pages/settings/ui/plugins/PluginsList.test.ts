@@ -88,7 +88,7 @@ describe('PluginsList', () => {
       }),
       createPluginInfo('md.numen.views.file.tree', 'File Tree Explorer'),
     ]
-    const { wrapper } = createList({ plugins: { 'md.numen.notes': { enabled: false } } }, plugins, [
+    const { wrapper } = createList({ 'md.numen.notes': { enabled: false } }, plugins, [
       createMockCatalogEntry('md.numen.notes', { category: 'editors', feature: 'Markdown notes' }),
       createMockCatalogEntry('md.numen.views.file.tree', {
         category: 'views',
@@ -117,7 +117,7 @@ describe('PluginsList', () => {
 
   it('passes enabled state from installation settings to plugin row', () => {
     const plugins = [createPluginInfo('plugin.disabled', 'Disabled Plugin')]
-    const { wrapper } = createList({ plugins: { 'plugin.disabled': { enabled: false } } }, plugins)
+    const { wrapper } = createList({ 'plugin.disabled': { enabled: false } }, plugins)
 
     expect(findRows(wrapper)[0]?.props('isEnabled')).toBe(false)
   })
@@ -140,6 +140,6 @@ describe('PluginsList', () => {
 
     pick(findRows(wrapper), 0).vm.$emit('toggle-enabled', false)
 
-    expect(recordedWrites).toEqual([{ at: ['plugins', 'plugin.one', 'enabled'], value: 'false' }])
+    expect(recordedWrites).toEqual([{ at: ['plugin.one', 'enabled'], value: 'false' }])
   })
 })
