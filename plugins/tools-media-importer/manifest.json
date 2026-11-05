@@ -45,8 +45,7 @@
           {
             "name": "wait",
             "title": "Wait for the copy of the video",
-            "type": "boolean",
-            "hiddenInPalette": true
+            "type": "boolean"
           }
         ]
       },

@@ -39,16 +39,42 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 // mock downloader.
 func newMockCommands(t *testing.T) (*command.Registry, *hosttest.Store) {
 	t.Helper()
+	commands, store, _ := newMockCommandsWithLinks(t)
+	return commands, store
+}
+
+// newMockCommandsWithLinks is newMockCommands with the links, to wait for the work they do in the background.
+func newMockCommandsWithLinks(t *testing.T) (*command.Registry, *hosttest.Store, *link.Links) {
+	t.Helper()
 	links, store, hosted := newMockLinks(t)
 	commands, err := newCommands(links, hosted)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return commands, store
+	return commands, store, links
 }
 
-func TestImportWithWaitKeepsTheCopyBeforeItAnswers(t *testing.T) {
-	commands, store := newMockCommands(t)
+func TestImportAnswersAtOnceAndCopiesTheVideoInTheBackground(t *testing.T) {
+	commands, store, links := newMockCommandsWithLinks(t)
+
+	made, err := commands.RunCommand(t.Context(), command.Request{
+		Command: "link.import", Arguments: command.Arguments{"address": videoAddress},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantMsg := made.OpenedPath + " is made and its text fetched; the video is being copied"
+	if made.Message != wantMsg || made.OpenedPath == "" {
+		t.Fatalf("import answered %+v, want %q", made, wantMsg)
+	}
+	links.Wait()
+	if !hasCopy(t, store) {
+		t.Error("the copy is not in the plugin's folder once the background copy ended")
+	}
+}
+
+func TestImportIgnoresAnArgumentWaitAndStillCopiesInTheBackground(t *testing.T) {
+	commands, _ := newMockCommands(t)
 
 	made, err := commands.RunCommand(t.Context(), command.Request{
 		Command: "link.import", Arguments: command.Arguments{"address": videoAddress, "wait": "true"},
@@ -56,23 +82,21 @@ func TestImportWithWaitKeepsTheCopyBeforeItAnswers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantMsg := made.OpenedPath + " is made and its text fetched, and a copy of 24044 bytes kept"
-	if made.Message != wantMsg || made.OpenedPath == "" {
-		t.Fatalf("import answered %+v, want %q", made, wantMsg)
-	}
-	if !hasCopy(t, store) {
-		t.Error("the copy is not in the plugin's folder once import answered")
+	wantMsg := made.OpenedPath + " is made and its text fetched; the video is being copied"
+	if made.Message != wantMsg {
+		t.Errorf("import answered %q, want %q", made.Message, wantMsg)
 	}
 }
 
 func TestImportCommands_DeleteAndDownloadCopyAndText(t *testing.T) {
-	commands, store := newMockCommands(t)
+	commands, store, links := newMockCommandsWithLinks(t)
 	made, err := commands.RunCommand(t.Context(), command.Request{
-		Command: "link.import", Arguments: command.Arguments{"address": videoAddress, "wait": "true"},
+		Command: "link.import", Arguments: command.Arguments{"address": videoAddress},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+	links.Wait()
 
 	for _, step := range []struct {
 		id      string
@@ -235,14 +259,15 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 	}
 	links.Wait()
 
-	// import when copyable with wait="true" and Copy fails.
+	// import when copyable and Copy fails: the copy runs in the background, so the command still answers.
 	cf.copyErr = errors.New("copy failed")
 	res, err = commands.RunCommand(t.Context(), command.Request{
-		Command: "link.import", Arguments: command.Arguments{"address": "https://a4.example/video-fail", "wait": "true"},
+		Command: "link.import", Arguments: command.Arguments{"address": "https://a4.example/video-fail"},
 	})
-	if err == nil || res.OpenedPath == "" {
+	if err != nil || res.OpenedPath == "" {
 		t.Errorf("import(copy fail) = (%+v, %v)", res, err)
 	}
+	links.Wait()
 	cf.copyErr = nil
 
 	// link.downloadText, link.downloadVideo, link.deleteVideo on missing note.

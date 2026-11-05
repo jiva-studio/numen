@@ -96,10 +96,6 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 			`[{"id":"page.convert","title":"C","arguments":[{"name":"pages","type":"string"}]}]`,
 			manifest.ErrInvalidCommandArgument,
 		},
-		"a required argument hidden in the palette": {
-			`[{"id":"page.convert","title":"C","arguments":[{"name":"wait","title":"W","type":"boolean","required":true,"hiddenInPalette":true}]}]`,
-			manifest.ErrInvalidCommandArgument,
-		},
 		"an undeclared note type": {
 			`[{"id":"page.convert","title":"C","noteTypes":["undeclared"]}]`,
 			manifest.ErrInvalidCommand,
@@ -113,17 +109,6 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 				t.Errorf("error = %v, want %v", err, one.want)
 			}
 		})
-	}
-}
-
-func TestReadManifestReadsAnArgumentHiddenInThePalette(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(commandManifestHead +
-		`[{"id":"link.import","title":"I","arguments":[{"name":"wait","title":"W","type":"boolean","hiddenInPalette":true}]}]}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if wait, _ := m.Contributes.Commands[0].GetArgument("wait"); !wait.IsHiddenInPalette {
-		t.Errorf("the argument came out as %+v", wait)
 	}
 }
 

@@ -37,7 +37,7 @@ func (p pluginCommands) ListCommands() []plugincommand.Entry {
 			ID: "sample.create", Title: "Create a sample", Icon: "layers", ContentTypes: []domain.ContentType{"text/markdown"},
 			Arguments: []plugincommand.Argument{
 				{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true},
-				{Name: "wait", Title: "Wait", Type: plugincommand.ArgumentBoolean, IsHiddenInPalette: true},
+				{Name: "preview", Title: "Preview", Type: plugincommand.ArgumentBoolean},
 			},
 		}},
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
@@ -78,7 +78,7 @@ func TestListCommands_ListsTheCommandsWithConditionsAndNoteTypesLikeTheOthers(t 
 	one := commands[0]
 	argument := one.GetArguments()[0]
 	if one.GetPluginId() != "org.example.sample" || one.GetId() != "sample.create" || one.GetIcon() != "layers" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
-		!argument.GetIsRequired() || len(one.GetArguments()) != 1 {
+		!argument.GetIsRequired() || len(one.GetArguments()) != 2 {
 		t.Errorf("got %v", one)
 	}
 }
@@ -151,4 +151,25 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 		}
 	}
 	return out
+}
+
+func TestListCommands_CarriesEveryArgumentWithItsRequirement(t *testing.T) {
+	res, err := command.NewHandler(shownVault{}, plugincommand.NewCommands(pluginCommands{}, fileTypes{".md": "text/markdown"}, nil)).ListCommands(
+		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type carried struct {
+		name       string
+		isRequired bool
+	}
+	var got []carried
+	for _, one := range res.Msg.GetCommands()[0].GetArguments() {
+		got = append(got, carried{one.GetName(), one.GetIsRequired()})
+	}
+	want := []carried{{"pages", true}, {"preview", false}}
+	if !slices.Equal(got, want) {
+		t.Errorf("the wire carries %v, want %v", got, want)
+	}
 }
