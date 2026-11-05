@@ -28,7 +28,7 @@ func TestEveryUnitIsSavedFromOne(t *testing.T) {
 	}, convertUnit)
 }
 
-func TestEveryTaskKindIsWrittenFromOne(t *testing.T) {
+func TestConvertKindMapsEveryTaskKind(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.TaskKind]run.Kind{
 		v1.TaskKind_TASK_KIND_UNSPECIFIED: run.KindWork,
 		v1.TaskKind_TASK_KIND_NOTICE:      run.KindNotice,
