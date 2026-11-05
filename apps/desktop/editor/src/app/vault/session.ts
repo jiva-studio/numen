@@ -1,6 +1,7 @@
 /**
  * Session, lifecycle, and workspace domain methods for the window core.
  */
+import { TASK_KIND } from '@numen/core-client'
 import { WINDOW } from './clients'
 import { agentService, vault, windowService, workspace } from '@/shared/clients'
 import { counted, flushResults } from './words'
@@ -103,7 +104,7 @@ export const sessionCore: SessionCore = {
         pluginId: task.pluginId,
         pluginName: task.pluginName,
         isCancellable: task.isCancellable,
-        isNotice: task.isNotice,
+        kind: task.kind === TASK_KIND.NOTICE ? 'notice' : 'work',
       }))
     }
   },

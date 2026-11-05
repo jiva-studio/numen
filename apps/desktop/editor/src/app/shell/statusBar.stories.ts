@@ -21,7 +21,7 @@ const task = (id: string, pluginId: string, pluginName: string): Task => ({
   pluginId,
   pluginName,
   isCancellable: true,
-  isNotice: false,
+  kind: 'work',
 })
 
 const TASKS: readonly Task[] = [

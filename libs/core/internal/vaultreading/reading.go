@@ -36,9 +36,9 @@ type Task struct {
 	// IsUserStarted is set for work the user started and expects a report on.
 	IsUserStarted bool
 
-	// IsNotice is set for a message the core reports and no work: the task is neither running nor
+	// Kind says whether the entry is work or a message of the core. A notice is neither running nor
 	// failed, and About is the message.
-	IsNotice bool
+	Kind Kind
 
 	// Unit is what Count and Total are counted in.
 	Unit Unit
@@ -51,6 +51,16 @@ type Task struct {
 	// has stopped. Nil is work that cannot be cancelled.
 	Cancel context.CancelFunc
 }
+
+// Kind is what an entry of the list of tasks is.
+type Kind int
+
+const (
+	// KindWork is a piece of work that runs, stops, or fails.
+	KindWork Kind = iota
+	// KindNotice is a message of the core. It is neither running nor failed.
+	KindNotice
+)
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a
 // person reads them in, and everything else is counted one by one.

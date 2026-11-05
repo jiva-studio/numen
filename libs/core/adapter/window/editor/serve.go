@@ -270,10 +270,10 @@ func (o *Installation) SayTheme(message string) {
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
 		o.State.reportTask(run.Task{
-			ID:       fmt.Sprintf("%s %d", readingTheSettings, item),
-			Title:    "Read settings",
-			About:    one,
-			IsNotice: true,
+			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
+			Title: "Read settings",
+			About: one,
+			Kind:  run.KindNotice,
 		})
 	}
 }

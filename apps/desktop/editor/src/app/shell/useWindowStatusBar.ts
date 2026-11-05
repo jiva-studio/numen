@@ -24,7 +24,7 @@ function getTaskCounting(counting: string): string | undefined {
 
 function getTaskState(task: Task, isCancelling: boolean): StatusBarTask['state'] {
   if (task.error) return 'failed'
-  if (task.isNotice) return 'completed'
+  if (task.kind === 'notice') return 'completed'
   return isCancelling ? 'cancelling' : 'running'
 }
 

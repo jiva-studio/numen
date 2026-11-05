@@ -11,6 +11,14 @@ import (
 // A Task is one unit of work, as displayed to the user.
 type Task = vaultreading.Task
 
+// Kind is what an entry of the list of tasks is.
+type Kind = vaultreading.Kind
+
+const (
+	KindWork   = vaultreading.KindWork
+	KindNotice = vaultreading.KindNotice
+)
+
 // Unit is what a piece of work counts. Bytes are read out in the sizes a
 // person reads them in, and everything else is counted one by one.
 type Unit = vaultreading.Unit

@@ -96,8 +96,18 @@ message Task {
   // Set for work that CancelTask can stop.
   bool is_cancellable = 11;
 
-  // Set for a message the core reports and no work: it is neither running nor failed.
-  bool is_notice = 12;
+  // Kind says what the entry is: work, or a message of the core.
+  TaskKind kind = 12;
+}
+
+// TaskKind is what an entry of the list of tasks is.
+enum TaskKind {
+  // Work that runs, stops, or fails.
+  TASK_KIND_UNSPECIFIED = 0;
+
+  // A message of the core, such as a notice of the read of the settings. It is
+  // neither running nor failed, and About holds the message.
+  TASK_KIND_NOTICE = 1;
 }
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a

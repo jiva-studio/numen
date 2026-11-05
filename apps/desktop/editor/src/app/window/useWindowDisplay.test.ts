@@ -535,7 +535,7 @@ describe('what the application is doing', () => {
     pluginId: '',
     pluginName: '',
     isCancellable: false,
-    isNotice: false,
+    kind: 'work',
   })
 
   it('is what the stream last returned, whole', async () => {

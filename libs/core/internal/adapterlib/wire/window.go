@@ -276,7 +276,7 @@ func describeTasks(list []run.Task) []*v1.Task {
 			PluginId:      item.PluginID,
 			PluginName:    item.PluginName,
 			IsCancellable: item.Cancel != nil,
-			IsNotice:      item.IsNotice,
+			Kind:          convertKind(item.Kind),
 		})
 	}
 	return out
@@ -509,4 +509,12 @@ func (l *flushCoordinator) updateProgress() {
 	}
 	r.isAllWrittenSignaled = true
 	close(r.allWritten)
+}
+
+// convertKind converts the kind of a task to its schema form.
+func convertKind(in run.Kind) v1.TaskKind {
+	if in == run.KindNotice {
+		return v1.TaskKind_TASK_KIND_NOTICE
+	}
+	return v1.TaskKind_TASK_KIND_UNSPECIFIED
 }
