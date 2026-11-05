@@ -28,8 +28,11 @@ type Server struct {
 	// serveErr holds the errors of the HTTP servers other than their shutdown. Close returns it.
 	serveErr error
 	// newConns holds the accepted connections that have not sent a request yet. http.Server.Shutdown
-	// waits five seconds for such a connection, so Close closes them itself.
+	// waits five seconds for such a connection, so its shutdown hook closes them.
 	newConns map[net.Conn]struct{}
+	// isShuttingDown is set by the shutdown hook of the HTTP server, after which trackConn closes a
+	// new connection at once.
+	isShuttingDown bool
 }
 
 // NewServer creates an MCP server with the provided configuration and host tool client.
@@ -69,17 +72,18 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 	reportSyncError(aggregator.SyncTools(context.Background()))
 
 	srv := &Server{
-		config:     cfg,
-		mcpServer:  mcpServer,
-		httpServer: nil,
-		handler:    nil,
-		aggregator: aggregator,
-		listener:   nil,
-		actualAddr: "",
-		isClosed:   false,
-		mu:         sync.Mutex{},
-		serveErr:   nil,
-		newConns:   make(map[net.Conn]struct{}),
+		config:         cfg,
+		mcpServer:      mcpServer,
+		httpServer:     nil,
+		handler:        nil,
+		aggregator:     aggregator,
+		listener:       nil,
+		actualAddr:     "",
+		isClosed:       false,
+		mu:             sync.Mutex{},
+		serveErr:       nil,
+		newConns:       make(map[net.Conn]struct{}),
+		isShuttingDown: false,
 	}
 	srv.handler = srv.createHTTPHandler(mcpServer)
 	srv.httpServer = srv.newHTTPServer()
@@ -94,17 +98,19 @@ func newServerOptions() *sdk.ServerOptions {
 	return opts
 }
 
-// newHTTPServer creates an HTTP server that serves the handler of s and reports its connection states
-// to trackConn.
+// newHTTPServer creates an HTTP server that serves the handler of s and closes the connections
+// without a request on shutdown.
 func (s *Server) newHTTPServer() *http.Server {
 	httpSrv := new(http.Server)
 	httpSrv.Handler = s.handler
 	httpSrv.ReadHeaderTimeout = 10 * time.Second
 	httpSrv.ConnState = s.trackConn
+	httpSrv.RegisterOnShutdown(s.closeNewConns)
 	return httpSrv
 }
 
-// trackConn records whether conn has sent a request yet and closes a connection accepted after Close.
+// trackConn records whether conn has sent a request yet and closes a connection accepted after the
+// HTTP server has started its shutdown.
 func (s *Server) trackConn(conn net.Conn, state http.ConnState) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -112,15 +118,20 @@ func (s *Server) trackConn(conn net.Conn, state http.ConnState) {
 		delete(s.newConns, conn)
 		return
 	}
-	if s.isClosed {
+	if s.isShuttingDown {
 		closeConn(conn)
 		return
 	}
 	s.newConns[conn] = struct{}{}
 }
 
-// closeNewConnsLocked closes the connections that have not sent a request. The caller holds s.mu.
-func (s *Server) closeNewConnsLocked() {
+// closeNewConns closes the connections that have not sent a request. http.Server.Shutdown runs it
+// after it has marked itself as shutting down, and from then on net/http drops a request it reads
+// on such a connection.
+func (s *Server) closeNewConns() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.isShuttingDown = true
 	for conn := range s.newConns {
 		closeConn(conn)
 		delete(s.newConns, conn)
@@ -264,7 +275,6 @@ func (s *Server) Close(ctx context.Context) error {
 		return nil
 	}
 	s.isClosed = true
-	s.closeNewConnsLocked()
 	s.mu.Unlock()
 
 	// gomutants:disable-next-line REMOVE_LOGICAL_NOT,BRANCH_IF reason="fallback timeout applies only when active connections stall during shutdown"
