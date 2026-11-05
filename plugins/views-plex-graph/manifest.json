@@ -37,7 +37,8 @@
         "command": "graph.showNote",
         "group": "navigate",
         "order": 20
-      }
+      },
+      { "location": "titleBar", "command": "graph.open", "group": "navigate", "order": 20 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

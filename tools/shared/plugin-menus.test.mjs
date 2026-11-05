@@ -158,3 +158,27 @@ test('the plugin documentation describes menus', () => {
     'the table of contributions has no row for contributes.menus',
   )
 })
+
+test('the title bar of the shell names no plugin', () => {
+  const folder = join(ROOT, 'libs/ui/shell/src/features/title-bar')
+  for (const file of listSources(folder, ['.ts', '.vue'])) {
+    assert.doesNotMatch(
+      readFileSync(file, 'utf8'),
+      /md\.numen\./,
+      `${relative(ROOT, file)} names a plugin`,
+    )
+  }
+})
+
+test('the docs say how the title bar draws an entry', () => {
+  const readme = readFileSync(join(ROOT, 'docs/plugins/README.md'), 'utf8')
+  const menus = readme.slice(readme.indexOf('\n## Menus'))
+  const section = menus.slice(0, menus.indexOf('\n## ', 4))
+  const titleBar = section
+    .split('\n')
+    .filter((line) => line.includes('titleBar'))
+    .join('\n')
+  assert.match(titleBar, /button/i, 'the section does not say an entry is a button')
+  assert.match(titleBar, /vault is open/i, 'the section does not say when the buttons are shown')
+  assert.match(titleBar, /shortcut/i, 'the section does not say the shortcut is in the hover text')
+})

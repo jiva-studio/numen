@@ -18,6 +18,7 @@ import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
 import { useWindowFrame } from '../window/useWindowFrame'
+import { useWindowTitleBar } from '../window/useTitleBarActions'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
@@ -34,6 +35,7 @@ const unsaved = {
 const {
   runCommand,
   runEntry,
+  menus,
   openCurrentVault,
   isLayoutReady,
   bootstrapFailure,
@@ -72,6 +74,8 @@ const frame = useWindowFrame()
 const vaultName = computed(
   () => vaultList.value.vaults.find((one) => one.id === vaultList.value.showing)?.name ?? '',
 )
+
+const titleBar = useWindowTitleBar({ menus, vaultName, runCommand, getTarget })
 
 const linkMenu = useTabLinkMenu({
   tabLinks,
@@ -124,6 +128,8 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       :vault-name="vaultName"
       :controls="frame.controls.value"
       :is-maximised="frame.isMaximised.value"
+      :actions="titleBar.actions.value"
+      @run="titleBar.run"
       @minimise="frame.minimise"
       @toggle-maximise="frame.toggleMaximise"
       @close="frame.close"
