@@ -101,7 +101,10 @@ function onAction() {
       <span
         v-if="subtext"
         class="task-item__detail"
-        :class="{ 'text-alarm': task.state === 'failed', 'task-item__detail--wrapped': task.state === 'failed' || isNotice }"
+        :class="{
+          'text-alarm': task.state === 'failed',
+          'task-item__detail--wrapped': task.state === 'failed' || isNotice,
+        }"
         :title="subtext"
       >
         {{ subtext }}
