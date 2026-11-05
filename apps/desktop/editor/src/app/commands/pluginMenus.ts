@@ -28,8 +28,8 @@ export interface PluginMenusDeps {
 
 export function createPluginMenus(deps: PluginMenusDeps): Menus {
   const findPluginLook = (fullId: string): CommandLook | undefined => {
-    const listed = deps.getPluginCommands().find((one) => one.id === fullId)
-    if (listed) return listed
+    const hostCommand = deps.getPluginCommands().find((one) => one.id === fullId)
+    if (hostCommand) return hostCommand
     const declared = deps.getDeclaredCommands()?.find((one) => getPaletteId(one) === fullId)
     if (!declared) return undefined
     return {

@@ -43,11 +43,11 @@ func (m Manifest) listMenuIssues() []error {
 		if entry.Group != strings.TrimSpace(entry.Group) {
 			issues = append(issues, fmt.Errorf("%w: group %q has surrounding space", ErrInvalidMenu, entry.Group))
 		}
-		placed := placement{entry.Location, entry.Command}
-		if observed[placed] {
-			issues = append(issues, fmt.Errorf("%w: command %q is placed twice in %q", ErrInvalidMenu, entry.Command, entry.Location))
+		key := placement{entry.Location, entry.Command}
+		if observed[key] {
+			issues = append(issues, fmt.Errorf("%w: command %q is declared twice in %q", ErrInvalidMenu, entry.Command, entry.Location))
 		}
-		observed[placed] = true
+		observed[key] = true
 	}
 	return issues
 }

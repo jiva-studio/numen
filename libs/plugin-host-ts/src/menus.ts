@@ -128,15 +128,15 @@ export function createMenus(deps: MenusDeps): Menus {
   const getEntries = (location: string): readonly PlacedCommand[] => {
     const placements = deps.getPlacements()
     if (placements === undefined) return []
-    const placed = placements
+    const candidates = placements
       .filter((one) => one.location === location || !isKnownLocation(one.location))
       .map(place)
       .filter((one): one is PlacedCommand => one !== undefined)
       .sort(compareEntries)
-    const seen = new Set<string>()
+    const commandIds = new Set<string>()
     const entries: PlacedCommand[] = []
-    for (const one of placed) {
-      if (seen.has(one.command)) {
+    for (const one of candidates) {
+      if (commandIds.has(one.command)) {
         if (
           !entries.some((kept) => kept.command === one.command && kept.pluginId === one.pluginId)
         ) {
@@ -145,12 +145,12 @@ export function createMenus(deps: MenusDeps): Menus {
             location,
             one.command,
             'duplicate',
-            `menus: "${one.command}" is placed in "${location}" by another plugin`,
+            `menus: "${one.command}" is shown in "${location}" by another plugin`,
           )
         }
         continue
       }
-      seen.add(one.command)
+      commandIds.add(one.command)
       entries.push(one)
     }
     return entries
