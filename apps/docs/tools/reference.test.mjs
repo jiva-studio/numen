@@ -82,7 +82,10 @@ for (const { document } of withSettings) {
     const body = getSection(readFileSync(REFERENCE, 'utf8'), document.id)
     assert.notEqual(body, null, `no section for ${document.id}`)
     for (const one of document.settings) {
-      assert.ok(body.includes(`\`${one.key}\``), `${document.id}: \`${one.key}\` is not in its section`)
+      assert.ok(
+        body.includes(`\`${one.key}\``),
+        `${document.id}: \`${one.key}\` is not in its section`,
+      )
     }
   })
 }
