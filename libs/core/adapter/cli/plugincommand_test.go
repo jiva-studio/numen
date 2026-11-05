@@ -18,6 +18,8 @@ type pluginCommands struct {
 	calls   []plugincommand.Call
 }
 
+func (p *pluginCommands) ListMenus() []plugincommand.MenuEntry { return nil }
+
 func (p *pluginCommands) ListCommands() []plugincommand.Entry { return p.entries }
 
 func (p *pluginCommands) GetParts(string) plugincommand.Parts {

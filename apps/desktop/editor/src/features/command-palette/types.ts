@@ -91,6 +91,8 @@ export interface Command {
   readonly keys?: PaletteKeys
   /** The icon it is drawn with, where the one who declares it gives one. */
   readonly icon?: Component
+  /** The Lucide name of its icon, for a place that draws icons by name. */
+  readonly iconName?: string
   /** The input it requires before it runs. */
   readonly needs?: PromptStep
   /** The step that follows the first one. */

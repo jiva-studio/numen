@@ -56,6 +56,11 @@ func (c Commands) ListCommands() []pluginport.PluginCommandEntry {
 	return found
 }
 
+// ListMenus lists the menu entries the manifests of the enabled plugins declare. No plugin is started.
+func (c Commands) ListMenus() []pluginport.PluginMenuEntry {
+	return nil
+}
+
 // GetParts says what the enabled plugin of the id has, and whether the host holds it suspended.
 func (c Commands) GetParts(pluginID string) pluginport.PluginParts {
 	plugin, isEnabled := c.host.GetPlugin(pluginID)
@@ -121,6 +126,8 @@ func readCommandError(ctx context.Context, pluginID string, err error) error {
 type NoCommands struct{}
 
 func (NoCommands) ListCommands() []pluginport.PluginCommandEntry { return nil }
+
+func (NoCommands) ListMenus() []pluginport.PluginMenuEntry { return nil }
 
 func (NoCommands) GetParts(string) pluginport.PluginParts { return pluginport.PluginParts{} }
 

@@ -2,7 +2,7 @@
  * Search hit lookup, item formatting, and navigation destination mapping.
  */
 import type { PaletteItem } from '@numen/shell'
-import type { Selector } from '@numen/plugin-host'
+import type { PlacedCommand, Selector } from '@numen/plugin-host'
 import type { NoteType } from '@/entities/file'
 import type { TextRange } from '@/shared/textRange'
 import type { Words } from './search'
@@ -63,6 +63,22 @@ export interface SearchDestination {
 /** The action that opens a note or a file the palette turns up. */
 export const NOTE = 'note'
 
+/** The prefix of the id of an action that runs an entry of the menu of a search result. */
+export const MENU_ACTION_PREFIX = 'menu:'
+
+/** The entries plugins place in the menu of a search result, in the order they are drawn. */
+export interface SearchMenuDeps {
+  getEntries(): readonly PlacedCommand[]
+}
+
+/** The command an action of a search result runs, and the note it runs over. */
+export interface MenuChoice {
+  readonly command: string
+  readonly path: string
+  readonly title: string
+  readonly type: NoteType
+}
+
 /**
  * no line at all.
  */
@@ -89,7 +105,11 @@ export interface SearchRow {
  * A name the search turned up. A name offers to open the note, and a heading offers to open the note
  * at that heading.
  */
-export function createNameItem(one: NameMatch, words: Words): SearchRow {
+export function createNameItem(
+  one: NameMatch,
+  words: Words,
+  _entries: readonly PlacedCommand[] = [],
+): SearchRow {
   const atHeading = { actions: [{ id: NOTE, text: words.readAt }], offers: [NOTE] }
   const byName = { actions: [{ id: NOTE, text: words.read }], offers: [NOTE] }
   return one.heading
@@ -132,7 +152,12 @@ export function createNameItem(one: NameMatch, words: Words): SearchRow {
       }
 }
 
-export function createPassageItem(group: string, one: Passage, words: Words): SearchRow {
+export function createPassageItem(
+  group: string,
+  one: Passage,
+  words: Words,
+  _entries: readonly PlacedCommand[] = [],
+): SearchRow {
   const note = { actions: [{ id: NOTE, text: words.read }], offers: [NOTE] }
   return {
     item: {
@@ -153,6 +178,14 @@ export function createPassageItem(group: string, one: Passage, words: Words): Se
       selector: one.isNote ? null : one.selector,
     },
   }
+}
+
+/** The command the action runs over the note of the hit, and null where the action is none of the menu. */
+export function resolveMenuChoice(
+  _searchHit: SearchHit | undefined,
+  _action: string,
+): MenuChoice | null {
+  return null
 }
 
 export function resolveDestination(

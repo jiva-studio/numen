@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { commands, runInvocation, ANSWER_WORDS, type CommandDeps } from '@/features/command-palette'
-import type { DeclaredCommand } from '@/entities/plugin'
+import type { DeclaredCommand, DeclaredList } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import {
   createDeclaredPaletteCommands,
@@ -78,7 +78,10 @@ describe('a run of a declared command', () => {
       ok: true,
       value: { message: 'Made a sample', openedPath: 'Verbs.md' },
     })
-    const declared = useDeclaredCommands({ list: async () => [createSample], run })
+    const declared = useDeclaredCommands({
+      list: async () => ({ commands: [createSample], menus: [] }),
+      run,
+    })
     expect(declared.paletteCommands.value).toStrictEqual([])
     await declared.load()
     const writeMessage = vi.fn()
@@ -112,7 +115,7 @@ describe('a run of a declared command', () => {
 
   it('that failed says why as an error', async () => {
     const declared = useDeclaredCommands({
-      list: async () => [convert],
+      list: async () => ({ commands: [convert], menus: [] }),
       run: async () => ({ ok: false, error: 'the disk is full' }),
     })
     await declared.load()
@@ -140,7 +143,10 @@ describe('a run of a declared command', () => {
 
   it('is no longer handled once the plugins no longer declare it', async () => {
     let commandList: readonly DeclaredCommand[] = [convert]
-    const declared = useDeclaredCommands({ list: async () => commandList, run: vi.fn() })
+    const declared = useDeclaredCommands({
+      list: async () => ({ commands: commandList, menus: [] }),
+      run: vi.fn(),
+    })
     await declared.load()
 
     commandList = []
@@ -154,7 +160,7 @@ describe('a run of a declared command', () => {
 describe('a run that opens a file and says nothing', () => {
   it('writes no message', async () => {
     const declared = useDeclaredCommands({
-      list: async () => [createSample],
+      list: async () => ({ commands: [createSample], menus: [] }),
       run: async () => ({ ok: true, value: { message: '', openedPath: 'Verbs.md' } }),
     })
     await declared.load()
@@ -185,7 +191,7 @@ describe('a run that opens a file and says nothing', () => {
 
   it('does not open a file when openedPath is empty', async () => {
     const declared = useDeclaredCommands({
-      list: async () => [createSample],
+      list: async () => ({ commands: [createSample], menus: [] }),
       run: async () => ({ ok: true, value: { message: 'Done', openedPath: '' } }),
     })
     await declared.load()
@@ -216,25 +222,25 @@ describe('a run that opens a file and says nothing', () => {
 
 describe('the declared commands read more than once', () => {
   it('keep the newest list when an earlier read answers last', async () => {
-    let answerFirst: (list: readonly DeclaredCommand[]) => void = () => undefined
-    const first = new Promise<readonly DeclaredCommand[]>((resolve) => {
+    let answerFirst: (list: DeclaredList) => void = () => undefined
+    const first = new Promise<DeclaredList>((resolve) => {
       answerFirst = resolve
     })
-    const lists = [first, Promise.resolve([convert])]
+    const lists = [first, Promise.resolve({ commands: [convert], menus: [] })]
     const declared = useDeclaredCommands({
-      list: () => lists.shift() as Promise<readonly DeclaredCommand[]>,
+      list: () => lists.shift() as Promise<DeclaredList>,
     })
 
     const slow = declared.load()
     await declared.load()
-    answerFirst([createSample])
+    answerFirst({ commands: [createSample], menus: [] })
     await slow
 
     expect(declared.declarations.value?.map((one) => one.id)).toStrictEqual(['convert'])
   })
 
   it('are none until the first read has answered', async () => {
-    const declared = useDeclaredCommands({ list: async () => [convert] })
+    const declared = useDeclaredCommands({ list: async () => ({ commands: [convert], menus: [] }) })
 
     expect(declared.declarations.value).toBeUndefined()
     await declared.load()
@@ -246,7 +252,7 @@ describe('the declared commands read more than once', () => {
 describe('a declared command the palette leaves out', () => {
   it('is one the plugin host lists', async () => {
     const declared = useDeclaredCommands({
-      list: async () => [createSample, convert],
+      list: async () => ({ commands: [createSample, convert], menus: [] }),
       isListed: () => true,
     })
     await declared.load()

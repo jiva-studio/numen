@@ -64,6 +64,20 @@ message ManifestContributes {
   // commands are the commands the plugin declares, whichever part of the plugin runs them. The
   // application learns which part from where the handler is registered.
   repeated ManifestCommand commands = 12;
+  // menus place commands in the named places the window draws.
+  repeated ManifestMenuEntry menus = 13;
+}
+
+// ManifestMenuEntry places one command in a named place of the window. The command is the id
+// the manifest declares it under, or the full id of a command of the application.
+message ManifestMenuEntry {
+  // location is the name of the place, such as titleBar.
+  string location = 1;
+  string command = 2;
+  // group names the entries a place draws together. Empty for none.
+  string group = 3;
+  // order sorts the entries of a group, lowest first. Absent sorts after every order.
+  optional int32 order = 4;
 }
 
 // ManifestHandle declares that the plugin takes part in a capability for files of some content

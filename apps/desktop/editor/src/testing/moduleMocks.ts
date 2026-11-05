@@ -47,7 +47,7 @@ vi.mock('@/entities/settings', async (original) => ({
 
 // The window is shown with no plugin declaring a command.
 const declaredCommandsResponse = {
-  listDeclaredCommands: async () => [],
+  listDeclaredCommands: async () => ({ commands: [], menus: [] }),
   runDeclaredCommand: async () => ({ ok: false as const, error: 'no plugin declares it' }),
 }
 

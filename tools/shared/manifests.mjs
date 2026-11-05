@@ -30,7 +30,8 @@ const isObject = (value) => value !== null && typeof value === 'object' && !Arra
 
 /** The schema message a value of the field is read as, or null for a scalar and a well-known type. */
 const getFieldMessage = (field) => {
-  const message = field.fieldKind === 'map' ? field.mapKind === 'message' && field.message : field.message
+  const message =
+    field.fieldKind === 'map' ? field.mapKind === 'message' && field.message : field.message
   if (!message) return null
   if (message.typeName === LIST_VALUE) return ManifestSettingOptionSchema
   return message.typeName.startsWith('numen.v1.') ? message : null
@@ -72,7 +73,9 @@ export const listUnknownKeys = (value, message, path = '') => {
       }
     } else if (field.fieldKind === 'list' || field.message.typeName === LIST_VALUE) {
       if (Array.isArray(item)) {
-        item.forEach((one, index) => found.push(...listUnknownKeys(one, child, `${here}[${index}]`)))
+        item.forEach((one, index) =>
+          found.push(...listUnknownKeys(one, child, `${here}[${index}]`)),
+        )
       }
     } else {
       found.push(...listUnknownKeys(item, child, here))
@@ -112,9 +115,7 @@ export const parseManifest = (text, source = MANIFEST_FILE) => {
   if (missing.length > 0) {
     throw new ManifestError(`${source} has no ${missing.join(', ')}`)
   }
-  const warnings = listUnknownKeys(document, ManifestSchema).map(
-    (path) => `unknown key "${path}"`,
-  )
+  const warnings = listUnknownKeys(document, ManifestSchema).map((path) => `unknown key "${path}"`)
   return { manifest, document, warnings }
 }
 

@@ -3,6 +3,7 @@
  */
 
 import { formatErrorMessage } from '@numen/core-client'
+import type { Menus } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
   isChord,
@@ -13,6 +14,7 @@ import {
   ANSWER_WORDS,
   type CommandDeps,
   type CommandTarget,
+  type MenuChoice,
   type Notes,
   type NoteLookup,
   type PaletteLists,
@@ -66,6 +68,8 @@ export interface CommandsDepsOptions {
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@numen/plugin-host').PluginHost | undefined
+  /** The places plugins put their commands in. */
+  menus?: Menus
   /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
   /** The menu the text versions of the file in front make, read each time the palette opens. */
@@ -124,6 +128,9 @@ export function useCommands(options: CommandsDepsOptions) {
     writeMessage(commands.getObjection(id, target), 'error')
   }
 
+  /** Runs the command of an entry of the menu of a search result over the note it was chosen on. */
+  const runEntry = (_choice: MenuChoice): void => undefined
+
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
@@ -141,6 +148,7 @@ export function useCommands(options: CommandsDepsOptions) {
     commands,
     commandDeps,
     runCommand,
+    runEntry,
     onKeyDown,
     pluginWays,
     getNoteCommands,

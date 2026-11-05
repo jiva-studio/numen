@@ -13,14 +13,27 @@ import {
   resolveDestination,
   type NameMatch,
   type Passage,
+  resolveMenuChoice,
+  type MenuChoice,
   type SearchDestination,
   type SearchHit,
+  type SearchMenuDeps,
   type SearchRow,
 } from './lookup'
 import type { TextRange } from '@/shared/textRange'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
-export type { TextRange, NameMatch, Passage, SearchDestination, SearchHit, SearchRow, SearchGroup }
+export type {
+  TextRange,
+  NameMatch,
+  Passage,
+  SearchDestination,
+  SearchHit,
+  SearchRow,
+  SearchGroup,
+  MenuChoice,
+  SearchMenuDeps,
+}
 
 /**
  * How a text search is run. Each mode has its own ordering, and `hybrid`
@@ -56,6 +69,8 @@ export interface Words extends EmptyWords {
 export interface SearchOptions {
   wait?: Wait
   coverage?(): IndexCoverage
+  /** The entries plugins place in the menu of a search result. */
+  menu?: SearchMenuDeps
 }
 
 interface FillOptions<T> {
@@ -257,6 +272,9 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     return resolveDestination(searchGroups.value.hitsById.get(item), action)
   }
 
+  const chooseEntry = (item: string, action: string): MenuChoice | null =>
+    resolveMenuChoice(searchGroups.value.hitsById.get(item), action)
+
   return {
     open,
     typed: inputValue,
@@ -264,6 +282,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     setTyped,
     setOpen,
     chooseItem,
+    chooseEntry,
     findNoteType,
     findHitFile,
   }

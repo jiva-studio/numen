@@ -3,7 +3,7 @@
  * for each argument, and the run handed to the plugin's backend.
  */
 import { computed, shallowRef, watch } from 'vue'
-import { formatCommandId, type CommandDeclaration } from '@numen/plugin-host'
+import { formatCommandId, type CommandDeclaration, type MenuPlacement } from '@numen/plugin-host'
 import { registerCommand, type Command } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
@@ -114,11 +114,12 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     newest += 1
     const mine = newest
     const commands = await list()
-    if (mine === newest) declared.value = commands
+    if (mine === newest) declared.value = commands.commands
   }
 
   return {
     paletteCommands: computed(() => createDeclaredPaletteCommands(backendCommands.value)),
+    placements: computed((): readonly MenuPlacement[] | undefined => undefined),
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load,
   }
