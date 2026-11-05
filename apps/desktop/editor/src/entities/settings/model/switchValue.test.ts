@@ -17,8 +17,7 @@ describe('settings store', () => {
         plugins: [],
       }),
       updateSettings: async (edits: readonly { at: readonly string[]; value: string }[]) => {
-        for (const e of edits)
-          (file as { p: { enabled: boolean } }).p.enabled = JSON.parse(e.value)
+        for (const e of edits) (file as { p: { enabled: boolean } }).p.enabled = JSON.parse(e.value)
         await sleep(100) // the plugin host applies the change
       },
     }

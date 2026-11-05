@@ -139,9 +139,7 @@ describe('what remains at a setting', () => {
   })
 
   it('prefers explicit configuration over declarative plugin default', async () => {
-    const store = createPluginStore(
-      JSON.stringify({ 'my.plugin': { autoRun: false } }),
-    )
+    const store = createPluginStore(JSON.stringify({ 'my.plugin': { autoRun: false } }))
     await store.start()
 
     expect(store.getSetting(['my.plugin', 'autoRun'])).toBe(false)

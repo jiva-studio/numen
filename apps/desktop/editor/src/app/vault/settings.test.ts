@@ -42,7 +42,9 @@ describe('keeping a title and its file name in line', () => {
   })
 
   it('is off where the file turns it off', async () => {
-    request.getSettings.mockResolvedValue(answer({ app: { naming: { syncTitleAndFilename: false } } }))
+    request.getSettings.mockResolvedValue(
+      answer({ app: { naming: { syncTitleAndFilename: false } } }),
+    )
 
     expect(await core.getSyncEnabled()).toBe(false)
   })

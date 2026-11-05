@@ -88,9 +88,7 @@ describe('PluginDetail', () => {
 
     masterSwitch.vm.$emit('update:modelValue', false)
 
-    expect(recordedWrites).toStrictEqual([
-      { at: ['test.plugin', 'enabled'], value: 'false' },
-    ])
+    expect(recordedWrites).toStrictEqual([{ at: ['test.plugin', 'enabled'], value: 'false' }])
   })
 
   it('reads master enabled switch state when disabled in settings', () => {
@@ -130,9 +128,7 @@ describe('PluginDetail', () => {
     expect(retryPlugin).toHaveBeenCalledExactlyOnceWith('test.plugin')
 
     await disableButton!.trigger('click')
-    expect(recordedWrites).toStrictEqual([
-      { at: ['test.plugin', 'enabled'], value: 'false' },
-    ])
+    expect(recordedWrites).toStrictEqual([{ at: ['test.plugin', 'enabled'], value: 'false' }])
   })
 
   it('saves and deletes secret fields', () => {
