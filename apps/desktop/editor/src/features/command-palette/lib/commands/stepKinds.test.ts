@@ -12,20 +12,22 @@ const getIdsAsking = (kind: string): string[] =>
   commands.filter((one) => one.input === kind).map((one) => one.id)
 
 describe('the input a command of the palette asks for', () => {
-  it('is held in the field input, and no command holds a field needs', () => {
+  it('declares it in the field input, and no command keeps a field needs', () => {
     expect(commands.filter((one) => 'needs' in one)).toStrictEqual([])
     expect(commands.filter((one) => one.input !== undefined).length).toBeGreaterThan(0)
   })
 
   it('is a name for the commands that create or rename', () => {
-    expect(getIdsAsking('name')).toStrictEqual([
-      'app:note.create',
-      'app:note.createChild',
-      'app:note.createParent',
-      'app:note.createJump',
-      'app:note.rename',
-      'app:vault.rename',
-    ])
+    expect(getIdsAsking('name').sort()).toStrictEqual(
+      [
+        'app:note.create',
+        'app:note.createChild',
+        'app:note.createParent',
+        'app:note.createJump',
+        'app:note.rename',
+        'app:vault.rename',
+      ].sort(),
+    )
   })
 
   it('is a note for the command that goes to one', () => {

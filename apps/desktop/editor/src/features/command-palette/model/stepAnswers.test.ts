@@ -113,6 +113,7 @@ describe('the answers of a step', () => {
     const [keep, confirm] = commands.groups.value[0]?.items ?? []
 
     expect(commands.chooseItem(keep?.id ?? '', keep?.actions?.[0]?.id ?? '')).toBeNull()
+    await settle()
     expect(commands.groups.value[0]?.items.map((row) => row.id)).toStrictEqual(['physics', 'heat'])
     commands.chooseItem('heat', heat?.actions?.[0]?.id ?? '')
     expect(commands.chooseItem(confirm?.id ?? '', confirm?.actions?.[0]?.id ?? '')).toMatchObject({
