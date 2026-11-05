@@ -27,6 +27,9 @@ func (h *stubModelHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, 
 	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, nil
 }
 
+// WatchPluginConfig registers nothing: the stub is never configured.
+func (h *stubModelHost) WatchPluginConfig(string, func()) func() { return func() {} }
+
 func (h *stubModelHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
 	return pluginport.DiscoveredPlugin{}, false
 }

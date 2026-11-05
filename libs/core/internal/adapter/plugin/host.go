@@ -87,6 +87,8 @@ type Host struct {
 	activation       lifecycle.ActivationPolicy
 	onPluginFailed   func(pluginport.PluginFailure)
 	onFailureCleared func(pluginID string)
+	configWatchers   map[string]map[int]func()
+	nextWatcher      int
 	errorHandler     eventbus.ErrorHandler
 	onDisk           map[string]bool
 	discoverMu       sync.RWMutex
@@ -1429,6 +1431,7 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 		}
 		return errors.Join(secretsErr, fmt.Errorf("configure plugin %s: %w", pluginID, err))
 	}
+	h.runConfigWatchers(pluginID)
 	return secretsErr
 }
 

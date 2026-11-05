@@ -71,7 +71,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		OpenGetSettingsFn: func() *settings.Get {
 			return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins())
 		},
-		OpenWriteSettingsFn:      func() *settings.Write { return settings.NewWrite(cfg.GetAppliedSettingsWriter()) },
+		OpenWriteSettingsFn:      func() *settings.Write { return settings.NewWrite(cfg.GetSettingsWriter()) },
 		OpenWritePluginSecretFn:  func() *settings.WriteSecret { return settings.NewWriteSecret(cfg.GetPluginSecretWriter()) },
 		OpenDeletePluginSecretFn: func() *settings.DeleteSecret { return settings.NewDeleteSecret(cfg.GetPluginSecretDeleter()) },
 		OpenRetryPluginFn:        cfg.openRetryPlugin,

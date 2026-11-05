@@ -156,6 +156,10 @@ type pluginSettingsPush interface {
 	// SetPerformanceProfile tells every running plugin the profile of the performance setting, and
 	// gives each plugin started later the same one.
 	SetPerformanceProfile(ctx context.Context, profile string)
+	// WatchPluginConfig registers fn to run each time the plugin has been given its configuration, its
+	// settings and its secrets. fn runs on its own goroutine, after the plugin holds the values. The
+	// returned function removes the registration.
+	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
 // PluginConfigurator manages configuration and settings for plugins.
