@@ -150,7 +150,7 @@ const getSettingPath = (owner: string, key: string): readonly string[] =>
   owner === APP_OWNER ? [APP_OWNER, ...key.split('.')] : [owner, key]
 
 export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
-  /** The commands whose setting was shown on a row the keyboard stood on, and not yet restored. */
+  /** The commands whose setting is previewed while its row has focus and is not yet restored. */
   const previewed = new Set<string>()
 
   const findSetting = (command: string): FoundSetting | null => {
