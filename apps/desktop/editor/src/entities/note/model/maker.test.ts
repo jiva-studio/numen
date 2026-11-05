@@ -6,6 +6,7 @@
  * the answer.
  */
 import { describe, expect, it } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import { asFailure, asValue } from '@numen/core-client'
 import type { RelatedNoteRequest, RelationError } from '@numen/plugin-host'
 
@@ -61,7 +62,7 @@ describe('making an untitled note', () => {
   it('says a core that could not be reached', async () => {
     const core: NoteMaker = {
       create: async () => {
-        throw new Error('the vault is out of reach')
+        throw createLostConnection('the vault is out of reach')
       },
       relations: { createRelated: async () => asFailure('unreachable') },
     }
@@ -122,7 +123,7 @@ describe('making a note under a name a person gave it', () => {
       create: async () => ({ ok: true, value: { path: '' } }),
       relations: {
         createRelated: async () => {
-          throw new Error('the vault is out of reach')
+          throw createLostConnection('the vault is out of reach')
         },
       },
     }

@@ -3,6 +3,7 @@
  * the palette carries it out.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import { commands, runInvocation, ANSWER_WORDS, type CommandDeps } from '@/features/command-palette'
 import type { FileMenuEntry } from '@/entities/text-version'
 import { WORDS } from '@/shared/words'
@@ -187,7 +188,7 @@ describe('useFileMenuCommands', () => {
     const menu = useFileMenuCommands({
       get: async () => [proofread],
       run: async () => {
-        throw new Error('the plugin did not answer')
+        throw createLostConnection('the plugin did not answer')
       },
     })
     await menu.load('books/Scan.pdf')

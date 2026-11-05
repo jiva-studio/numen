@@ -3,6 +3,7 @@
  * when the vault rejects the request or cannot be reached.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import type { ErrorCode } from '@/shared/errors'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import { writer } from '@/testing/writer'
@@ -18,7 +19,7 @@ const maker = (
 ): VaultCreator & { requests: string[] } => {
   const request: string[] = []
   const answer = async (path: string): Promise<CreateResult> => {
-    if (throws) throw new Error('the vault is not there')
+    if (throws) throw createLostConnection('the vault is not there')
     return error ? { ok: false, error } : { ok: true, value: { path } }
   }
   return {
