@@ -32,42 +32,6 @@ export function toSelectChoices(options: readonly PluginSettingOption[]): readon
   }))
 }
 
-/** The labels the themes are grouped under, and the name of each plugin that contributes themes. */
-export interface ThemeLabels {
-  readonly shipped: string
-  readonly owned: string
-  /** The name a plugin is listed under, given its id. */
-  readonly getPluginName: (pluginId: string) => string
-}
-
-/**
- * Maps themes into grouped select choices: the ones that ship first, then the
- * themes of each plugin under the plugin's name, then the person's own.
- */
-export function toThemeChoices(
-  themes: readonly {
-    readonly name: string
-    readonly title: string
-    readonly isBuiltIn: boolean
-    readonly pluginId: string
-  }[],
-  labels: ThemeLabels,
-): readonly SelectChoice[] {
-  const rank = (one: { readonly isBuiltIn: boolean; readonly pluginId: string }) =>
-    one.isBuiltIn ? 0 : one.pluginId === '' ? 2 : 1
-  return [...themes]
-    .sort((one, other) => rank(one) - rank(other))
-    .map((one) => ({
-      id: one.name,
-      text: one.title,
-      group: one.isBuiltIn
-        ? labels.shipped
-        : one.pluginId === ''
-          ? labels.owned
-          : labels.getPluginName(one.pluginId),
-    }))
-}
-
 /** The value as a condition compares it. */
 const toText = (value: unknown): string => {
   if (value === undefined || value === null) return ''

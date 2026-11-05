@@ -35,7 +35,7 @@ const {
 } = createEnumFields(
   () => props.plugin,
   readSetting,
-  (key) => installation.value.isPending?.([props.plugin.id, key]) ?? false,
+  (key) => installation.value.isPending?.([props.plugin.id, ...key.split('.')]) ?? false,
 )
 /** Why a path setting did not take the path last chosen, by key. */
 const pathProblems = ref<Record<string, string>>({})
@@ -43,7 +43,7 @@ const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingChange(key: string, value: unknown): void {
-  fields.setValue([props.plugin.id, key], value)
+  fields.setValue([props.plugin.id, ...key.split('.')], value)
 }
 
 async function onPathChoose(setting: PluginSettingInfo): Promise<void> {
@@ -77,7 +77,7 @@ function hasManyPaths(setting: PluginSettingInfo): boolean {
 }
 
 function readSetting(key: string): unknown {
-  return installation.value.getSetting([props.plugin.id, key])
+  return installation.value.getSetting([props.plugin.id, ...key.split('.')])
 }
 
 function getBooleanSetting(key: string, fallback: unknown): boolean {

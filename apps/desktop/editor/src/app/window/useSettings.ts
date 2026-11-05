@@ -1,12 +1,10 @@
 /**
  * Settings configuration, theme application, and palette lists for the window.
  */
-import { computed, watch } from 'vue'
+import { watch } from 'vue'
 import { themes } from '@/entities/settings'
 import {
   APPEARANCE_COMMANDS,
-  OFF,
-  ON,
   syncSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
@@ -173,27 +171,27 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     catalogEntries,
     reportError,
   } = deps
+  /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
+  const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
+    if (!content.some((one) => one.at[0] === 'app')) return
+    await Promise.all([appearance.reload(), sync.start()])
+  }
   return {
     ...(getSettingsViews ? { getSettingsViews } : {}),
     ...(catalogEntries ? { catalog: catalogEntries } : {}),
-    themes: appearance.list,
-    applied: appearance.applied,
-    mode: appearance.mode,
-    isPinned: appearance.isPinned,
-    sizes: appearance.sized,
-    bounds: appearance.bounds,
-    choose: (item: string) => appearance.chooseItem(item),
-    isSyncing: computed({
-      get: () => sync.isEnabled.value,
-      set: (on: boolean) => runInBackground(sync.choose(on ? ON : OFF), reportError),
-    }),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
     getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => {
       const promise = rest.writeSettings(content)
-      runInBackground(promise.then(scheduleRefresh), reportError)
+      runInBackground(
+        promise.then(() => {
+          scheduleRefresh()
+          return followShell(content)
+        }),
+        reportError,
+      )
       return promise
     },
     writeSecret: (pluginId: string, name: string, key: string) =>
@@ -222,6 +220,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
       }
     },
     plugins: rest.plugins,
+    app: rest.app,
     file: rest.path,
   }
 }

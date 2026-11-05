@@ -26,14 +26,14 @@ const views = computed(() =>
 const values = computed(() =>
   getSettingValues(
     props.plugin,
-    (key) => installation.value.getSetting([props.plugin.id, key]),
-    (key) => installation.value.isPending?.([props.plugin.id, key]) ?? false,
+    (key) => installation.value.getSetting([props.plugin.id, ...key.split('.')]),
+    (key) => installation.value.isPending?.([props.plugin.id, ...key.split('.')]) ?? false,
   ),
 )
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingUpdate(key: string, value: unknown): void {
-  fields.setValue([props.plugin.id, key], value)
+  fields.setValue([props.plugin.id, ...key.split('.')], value)
 }
 </script>
 
