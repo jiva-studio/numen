@@ -107,24 +107,24 @@ describe('the commands as the words typed leave them', () => {
 describe('the command reached on the same row', () => {
   it('is drawn as the second action where it is offered', () => {
     const view = createView([
-      createCommand({ id: 'app:note.goToStart', text: 'First', also: 'second' }),
+      createCommand({ id: 'first', text: 'First', also: 'second' }),
       createCommand({ id: 'second', text: 'Second' }),
     ])
 
     expect(getNoteGroup(view, front(), '')?.items[0]?.actions).toStrictEqual([
-      { id: 'app:note.goToStart', text: 'First' },
+      { id: 'first', text: 'First' },
       { id: 'second', text: 'Second' },
     ])
   })
 
   it('is drawn nowhere where it is not offered', () => {
     const view = createView([
-      createCommand({ id: 'app:note.goToStart', text: 'First', also: 'second' }),
+      createCommand({ id: 'first', text: 'First', also: 'second' }),
       createCommand({ id: 'second', text: 'Second', isAvailable: () => false }),
     ])
 
     expect(getNoteGroup(view, front(), '')?.items[0]?.actions).toStrictEqual([
-      { id: 'app:note.goToStart', text: 'First' },
+      { id: 'first', text: 'First' },
     ])
   })
 })

@@ -178,7 +178,6 @@ describe('the commands as they open', () => {
         'app:settings.open',
       ],
       vault: [
-        'app:note.goToStart',
         'app:note.goTo',
         'app:vault.open',
         'app:vault.create',
@@ -800,7 +799,6 @@ describe('the commands over the vaults an installation holds', () => {
     const { commands } = createPalette({ vault: { id: '', name: '' } })
 
     expect(getItemIds(commands.groups).vault).toStrictEqual([
-      'app:note.goToStart',
       'app:note.goTo',
       'app:vault.open',
       'app:vault.create',

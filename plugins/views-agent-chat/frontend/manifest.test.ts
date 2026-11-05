@@ -30,3 +30,26 @@ describe('the settings', () => {
     ])
   })
 })
+
+describe('the icons', () => {
+  const { contributes } = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
+  ) as {
+    contributes: {
+      commands: readonly { id: string; icon: string }[]
+      tabKinds: readonly { kind: string; icon: string }[]
+    }
+  }
+
+  it('draw the command that opens the chat as a speech bubble', () => {
+    expect(contributes.commands.find((one) => one.id === 'chat.open')?.icon).toBe('message-square')
+  })
+
+  it('keep the robot on the command that asks about a note', () => {
+    expect(contributes.commands.find((one) => one.id === 'note.ask')?.icon).toBe('bot')
+  })
+
+  it('keep the robot on the agent tab', () => {
+    expect(contributes.tabKinds.find((one) => one.kind === 'agent')?.icon).toBe('bot')
+  })
+})
