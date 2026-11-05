@@ -182,3 +182,63 @@ func TestServeRefusesACertificateWithoutItsKey(t *testing.T) {
 		t.Fatal("Serve with a certificate and no key returned no error")
 	}
 }
+
+func TestServeWritesKeyReadableByItsOwnerOverALeftoverPartFile(t *testing.T) {
+	dir := t.TempDir()
+	certFile := filepath.Join(dir, "certificate.pem")
+	keyFile := filepath.Join(dir, "key.pem")
+	if err := os.WriteFile(keyFile+".part", []byte("left from an earlier run\n"), 0o644); err != nil {
+		t.Fatalf("write the leftover part file: %v", err)
+	}
+	t.Setenv("NUMEN_DEBUG_TLS_CERT", certFile)
+	t.Setenv("NUMEN_DEBUG_TLS_KEY", keyFile)
+
+	startServe(t)
+
+	info, err := os.Lstat(keyFile)
+	if err != nil {
+		t.Fatalf("stat key: %v", err)
+	}
+	if mode := info.Mode().Perm(); mode != 0o600 {
+		t.Fatalf("key file mode = %o, want 600", mode)
+	}
+	if _, err := tls.LoadX509KeyPair(certFile, keyFile); err != nil {
+		t.Fatalf("load the written certificate and key as a pair: %v", err)
+	}
+}
+
+func TestServeDoesNotWriteTheKeyThroughASymlinkedPartFile(t *testing.T) {
+	dir := t.TempDir()
+	certFile := filepath.Join(dir, "certificate.pem")
+	keyFile := filepath.Join(dir, "key.pem")
+	target := filepath.Join(dir, "unrelated.txt")
+	const unrelated = "a file the server does not own\n"
+	if err := os.WriteFile(target, []byte(unrelated), 0o644); err != nil {
+		t.Fatalf("write the unrelated file: %v", err)
+	}
+	if err := os.Symlink(target, keyFile+".part"); err != nil {
+		t.Fatalf("link the part file: %v", err)
+	}
+	t.Setenv("NUMEN_DEBUG_TLS_CERT", certFile)
+	t.Setenv("NUMEN_DEBUG_TLS_KEY", keyFile)
+
+	startServe(t)
+
+	data, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatalf("read the unrelated file: %v", err)
+	}
+	if string(data) != unrelated {
+		t.Fatal("the server wrote the key through the symlink into the unrelated file")
+	}
+	info, err := os.Lstat(keyFile)
+	if err != nil {
+		t.Fatalf("stat key: %v", err)
+	}
+	if !info.Mode().IsRegular() || info.Mode().Perm() != 0o600 {
+		t.Fatalf("key file mode = %v, want a regular file with mode 600", info.Mode())
+	}
+	if _, err := tls.LoadX509KeyPair(certFile, keyFile); err != nil {
+		t.Fatalf("load the written certificate and key as a pair: %v", err)
+	}
+}

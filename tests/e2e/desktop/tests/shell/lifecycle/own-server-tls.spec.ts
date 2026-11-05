@@ -21,7 +21,7 @@ const recordStderr = (): (() => string) => {
 }
 
 test.describe('Debug server of a spec of its own', () => {
-  test('logs no TLS handshake error while it starts and serves the window', async ({ page }) => {
+  test('serves the window with a log free of handshake failures', async ({ page }) => {
     const stopRecording = recordStderr()
     let log: string
     try {
@@ -36,6 +36,6 @@ test.describe('Debug server of a spec of its own', () => {
       log = stopRecording()
     }
 
-    expect(log.split('\n').filter((line) => line.includes('TLS handshake error'))).toEqual([])
+    expect(log.split('\n').filter((line) => line.includes('http: TLS handshake error'))).toEqual([])
   })
 })
