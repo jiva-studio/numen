@@ -66,6 +66,8 @@ export interface HostRegistry {
   readonly activated: { value: ReadonlySet<string> }
   /** The plugins whose `activate` has not returned yet: their declared commands are not missing yet. */
   readonly starting?: { value: ReadonlySet<string> }
+  /** The registrations in progress: a read they trigger reports nothing, as the plugin is not done registering. */
+  readonly registering?: { count: number }
   /** The plugins that were disposed and have had no context made since: their declared commands are not listed. */
   readonly disposed: Set<string>
   /** The mismatches between a declaration and a handler already reported. */
@@ -134,6 +136,18 @@ export function setStarting(registry: HostRegistry, pluginId: string, isStarting
   if (isStarting) next.add(pluginId)
   else next.delete(pluginId)
   starting.value = next
+}
+
+/** Runs a registration; a listing read that it triggers reports no issue. */
+export function runRegistration<T>(registry: HostRegistry, register: () => T): T {
+  const { registering } = registry
+  if (!registering) return register()
+  registering.count += 1
+  try {
+    return register()
+  } finally {
+    registering.count -= 1
+  }
 }
 
 export function disposePluginEntry(pluginId: string, parts: DisposalParts): void {

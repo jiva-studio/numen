@@ -29,6 +29,7 @@ import {
   disposeAllEntries,
   disposePluginEntry,
   matchesContextMenuTarget,
+  runRegistration,
   setStarting,
   type HostRegistry,
 } from './registry'
@@ -101,7 +102,9 @@ function createRegistrationBridge(
       if (registry.commands.value.has(fullId)) {
         throw new Error(`Command "${fullId}" is already registered`)
       }
-      return addEntry(registry.commands, fullId, { pluginId, reg: registration })
+      return runRegistration(registry, () =>
+        addEntry(registry.commands, fullId, { pluginId, reg: registration }),
+      )
     },
     registerContextMenu: (pluginId, registration) =>
       addEntry(registry.contextMenus, registration.id, { pluginId, reg: registration }),
@@ -247,6 +250,7 @@ function createHostRegistry(): HostRegistry {
     manifests: new Map(),
     activated: shallowRef(new Set()),
     starting: shallowRef(new Set()),
+    registering: { count: 0 },
     disposed: new Set(),
     reportedIssues: new Set(),
     vaultListeners: new Set(),
@@ -343,7 +347,9 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
         ctx = createPluginContext(pluginId, contextHost, effectiveManifest)
         registry.contexts.set(pluginId, ctx)
         registry.disposed.delete(pluginId)
-        registry.activated.value = new Set(registry.activated.value).add(pluginId)
+        runRegistration(registry, () => {
+          registry.activated.value = new Set(registry.activated.value).add(pluginId)
+        })
       }
       return ctx
     },
