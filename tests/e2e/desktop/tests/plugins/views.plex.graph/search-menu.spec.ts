@@ -1,25 +1,47 @@
-import { test, expect, readActivePath, type Page } from '../../support/test.js'
-import { getGraph, getPaletteField, openWorkspace, runCommand } from '../../support/workspace.js'
-import { createNote, createUniqueTitle, destroyNote } from '../../support/vault.js'
+import { test, expect, forgetOpenTabs, readActivePath, type Page } from '../../support/test.js'
+import {
+  getGraph,
+  getPaletteField,
+  openWorkspace,
+  runCommand,
+  waitForWindow,
+} from '../../support/workspace.js'
 
 const OPEN_NOTE = 'Open note'
 const SHOW_IN_PLEX = 'Show note in plex'
+/** A note of the vault the scenarios share, which the plex does not have in focus when the window opens. */
+const NOTE = 'Entropy'
 
-/** The row of the note in the result of the search, which the arrow keys and Enter act on. */
-const searchForNote = async (page: Page, title: string) => {
+/** Opens the window without waiting for the plex, which a disabled plugin does not draw. */
+const openWindow = async (page: Page): Promise<void> => {
+  await forgetOpenTabs(page.request)
+  await page.goto('/')
+  await waitForWindow(page)
+}
+
+/** Searches for the note by its name and puts the highlight on its row. */
+const searchForNote = async (page: Page) => {
   await page.keyboard.press('Control+k')
   const field = getPaletteField(page)
   await expect(field).toBeVisible()
-  await field.fill(title)
-  await expect(page.getByRole('option', { selected: true })).toContainText(title)
+  await field.fill(NOTE)
+  const row = page
+    .getByRole('option')
+    .filter({ has: page.locator('[data-palette="name"]', { hasText: new RegExp(`^${NOTE}$`) }) })
+    .first()
+  await expect(row).toBeVisible()
+  for (let step = 0; step < 10 && (await row.getAttribute('aria-selected')) !== 'true'; step += 1) {
+    await page.keyboard.press('ArrowDown')
+  }
+  await expect(row).toHaveAttribute('aria-selected', 'true')
 }
 
-/** The names of the actions the panel over the row in front lists, in the order it lists them. */
-const readActionNames = async (page: Page): Promise<string[]> => {
+/** Opens the panel of actions over the row in front and gives the rows of it. */
+const openActions = async (page: Page) => {
   await page.keyboard.press('Control+k')
   const rows = page.locator('[data-actions="list"] [role="option"]')
   await expect(rows.first()).toBeVisible()
-  return rows.locator('[data-actions="name"]').allTextContents()
+  return rows
 }
 
 /** Turns the plugin on or off on its page of the settings. */
@@ -33,70 +55,52 @@ const setPlexEnabled = async (page: Page, isEnabled: boolean): Promise<void> => 
 }
 
 test.describe('The actions of a note found by its name, with the plex plugin enabled', () => {
-  const madeNotes: string[] = []
-
-  test.afterEach(async ({ request }) => {
-    for (const one of madeNotes.splice(0)) await destroyNote(request, one)
-  })
-
   test('lists opening the note and then showing it in the plex', async ({ page }) => {
-    const title = createUniqueTitle('Coral reef')
-    madeNotes.push(await createNote(page.request, title))
     await openWorkspace(page)
 
-    await searchForNote(page, title)
+    await searchForNote(page)
+    const rows = await openActions(page)
 
-    expect(await readActionNames(page)).toStrictEqual([OPEN_NOTE, SHOW_IN_PLEX])
+    await expect(rows.locator('[data-actions="name"]')).toHaveText([OPEN_NOTE, SHOW_IN_PLEX])
   })
 
   test('opens the note in a tab on Enter', async ({ page }) => {
-    const title = createUniqueTitle('Coral reef')
-    const made = await createNote(page.request, title)
-    madeNotes.push(made)
     await openWorkspace(page)
 
-    await searchForNote(page, title)
+    await searchForNote(page)
     await page.keyboard.press('Enter')
 
-    await expect.poll(() => readActivePath(page.request)).toBe(made)
+    await expect.poll(() => readActivePath(page.request)).toMatch(new RegExp(`${NOTE}\\.md$`))
   })
 
   test('shows the note in the plex when the second action is chosen', async ({ page }) => {
-    const title = createUniqueTitle('Coral reef')
-    madeNotes.push(await createNote(page.request, title))
     await openWorkspace(page)
+    await expect(getGraph(page).getByRole('img', { name: `${NOTE}, focus` })).toBeHidden()
 
-    await searchForNote(page, title)
-    await readActionNames(page)
-    await page.locator('[data-actions="list"] [role="option"]', { hasText: SHOW_IN_PLEX }).click()
+    await searchForNote(page)
+    const rows = await openActions(page)
+    await rows.filter({ hasText: SHOW_IN_PLEX }).click()
 
-    await expect(
-      getGraph(page).getByRole('img', { name: `${title}, focus`, exact: true }),
-    ).toBeAttached()
+    await expect(getGraph(page).getByRole('img', { name: `${NOTE}, focus` })).toBeAttached()
   })
 })
 
 test.describe('The actions of a note found by its name, with the plex plugin disabled', () => {
-  const madeNotes: string[] = []
-
-  test.afterEach(async ({ page, request }) => {
-    for (const one of madeNotes.splice(0)) await destroyNote(request, one)
-    await openWorkspace(page)
+  test.afterEach(async ({ page }) => {
+    await openWindow(page)
     await setPlexEnabled(page, true)
   })
 
   test('lists opening the note alone, and Enter still opens it in a tab', async ({ page }) => {
-    const title = createUniqueTitle('Coral reef')
-    const made = await createNote(page.request, title)
-    madeNotes.push(made)
-    await openWorkspace(page)
+    await openWindow(page)
     await setPlexEnabled(page, false)
 
-    await searchForNote(page, title)
-    expect(await readActionNames(page)).toStrictEqual([OPEN_NOTE])
+    await searchForNote(page)
+    const rows = await openActions(page)
+    await expect(rows.locator('[data-actions="name"]')).toHaveText([OPEN_NOTE])
     await page.keyboard.press('Escape')
     await page.keyboard.press('Enter')
 
-    await expect.poll(() => readActivePath(page.request)).toBe(made)
+    await expect.poll(() => readActivePath(page.request)).toMatch(new RegExp(`${NOTE}\\.md$`))
   })
 })
