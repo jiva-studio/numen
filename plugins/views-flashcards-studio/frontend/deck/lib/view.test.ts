@@ -226,7 +226,9 @@ describe('whether two card model listings are the same', () => {
     ['with a field more', { fields: ['Name', 'Height', 'Weight'] }],
     ['with a field renamed', { fields: ['Name', 'Weight'] }],
   ])('is not so where the second card model is %s', (_what, override) => {
-    expect(areCardModelChoicesEqual([summary(), summary()], [summary(), summary(override)])).toBe(false)
+    expect(areCardModelChoicesEqual([summary(), summary()], [summary(), summary(override)])).toBe(
+      false,
+    )
   })
 
   it('is not so where one listing has a card model more', () => {
