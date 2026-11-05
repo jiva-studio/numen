@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -330,9 +331,42 @@ func newWireReaders(readers []setting.PluginReaderInfo) []*v1.PluginReader {
 	return out
 }
 
-// WatchSettings reports each setting whose value changed until the client leaves.
+// WatchSettings reports each setting whose value changed until the client leaves. The first
+// response holds no change, so the client knows it is listening. An empty response is a keepalive;
+// its send fails once the client disconnects.
 func (h *Handler) WatchSettings(
-	_ context.Context, _ *connect.Request[v1.WatchSettingsRequest], _ *connect.ServerStream[v1.WatchSettingsResponse],
+	ctx context.Context, _ *connect.Request[v1.WatchSettingsRequest], out *connect.ServerStream[v1.WatchSettingsResponse],
 ) error {
-	return connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	if h.Watch == nil {
+		return connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	changes, stop := h.Watch.Execute()
+	defer stop()
+	if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
+		return err
+	}
+	repeat := time.NewTicker(keepalive)
+	defer repeat.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-repeat.C:
+			if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
+				return err
+			}
+		case batch, open := <-changes:
+			if !open {
+				return nil
+			}
+			if err := out.Send(&v1.WatchSettingsResponse{Changed: newWireSettings(batch)}); err != nil {
+				return err
+			}
+		}
+	}
 }
+
+// keepalive is how often a stream with no change sends an empty response. The send fails once the
+// window is gone, and the subscription ends; a window that leaves is otherwise noticed only by
+// the next change.
+const keepalive = 30 * time.Second

@@ -238,6 +238,11 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     ...createAppearanceGroups(state, choice, words, getPluginName),
     previewItem: choice.previewItem,
     chooseItem: choice.chooseItem,
+    /** Reads the appearance again and draws it, after a setting changed. */
+    refresh: async () => {
+      await loadAppearance()
+      await applyAppearance()
+    },
     start: async () => {
       await loadAppearance()
       // Stryker disable next-line ArrowFunction: createFollower handles stream errors internally.

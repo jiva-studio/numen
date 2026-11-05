@@ -105,6 +105,7 @@ func (c Config) SetSettings(s Settings) Config {
 		})
 		c.PluginHost.SetKeyStore(c.KeyStore)
 		c.setCompleter()
+		c.subscribeHost()
 	}
 	return c
 }
@@ -309,11 +310,4 @@ func findSettingsKeys(document map[string]any, keys ...string) (any, bool) {
 func hasKeys(document map[string]any, keys ...string) bool {
 	_, found := findSettingsKeys(document, keys...)
 	return found
-}
-
-// SubscribeSettingChanges starts listening to the settings that change, whether a window, a plugin
-// or the palette writes them or a person edits the file by hand. See settingsport.ChangeSubscriber.
-func (c Config) SubscribeSettingChanges() (<-chan []settingsport.Setting, func()) {
-	changes := make(chan []settingsport.Setting)
-	return changes, func() {}
 }
