@@ -7,7 +7,7 @@
  * releasing it are separate events, and a key sequence ends when the key is
  * released.
  */
-import { computed, onBeforeUnmount, ref, watch, type HTMLAttributes } from 'vue'
+import { computed, ref, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { cn } from '@/shared/lib/dom/classes'
 import { clamp, type Bounds } from '@/shared/lib/math/bounds'
@@ -47,7 +47,7 @@ const bounds = computed<Bounds>(() => ({ min: props.min, max: props.max, step: p
 let handed = model.value
 
 /** The handle position: the person's while the handle is being moved, else the caller's, clamped. */
-const shown = ref(clamp(model.value, bounds.value))
+const position = ref(clamp(model.value, bounds.value))
 
 /** Whether a key is pressed, and the handle position when it was pressed. */
 let walking = false
@@ -60,7 +60,7 @@ let dragging = false
 const isMoving = () => walking || dragging
 
 const setValue = (value: number) => {
-  shown.value = value
+  position.value = value
   if (value === handed) return
   handed = value
   model.value = value
@@ -98,7 +98,7 @@ const onKeyDown = (event: KeyboardEvent) => {
     walking = true
     began = handed
   }
-  const next = stepForKey(event.key, shown.value, {
+  const next = stepForKey(event.key, position.value, {
     bounds: bounds.value,
     isBigStep: event.shiftKey,
   })
@@ -124,28 +124,22 @@ const onCommit = (value: number[]) => {
   emit('commit', next)
 }
 
-const endDrag = () => {
-  dragging = false
-  window.removeEventListener('pointerup', endDrag)
-  window.removeEventListener('pointercancel', endDrag)
-}
-
 /** The pointer goes down: the handle is the person's until the pointer is up. */
 const onPointerDown = () => {
-  if (props.isDisabled) return
-  dragging = true
-  window.addEventListener('pointerup', endDrag)
-  window.addEventListener('pointercancel', endDrag)
+  if (!props.isDisabled) dragging = true
 }
 
-onBeforeUnmount(endDrag)
+/** The pointer is up or cancelled, or the track lost it. */
+const onPointerEnd = () => {
+  dragging = false
+}
 </script>
 
 <template>
   <SliderRoot
     data-slot="slider"
     orientation="horizontal"
-    :model-value="[shown]"
+    :model-value="[position]"
     :min="min"
     :max="max"
     :step="step"
@@ -158,6 +152,9 @@ onBeforeUnmount(endDrag)
       )
     "
     @pointerdown="onPointerDown"
+    @pointerup="onPointerEnd"
+    @pointercancel="onPointerEnd"
+    @lostpointercapture="onPointerEnd"
     @update:model-value="onMove"
     @value-commit="onCommit"
   >
