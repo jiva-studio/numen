@@ -26,6 +26,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
+	"github.com/jiva-studio/numen/libs/protocol"
 
 	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
 	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
@@ -154,6 +155,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	if err := pool.startVault(ctx, first, made.IsRebuildingIndex()); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), made.CloseIndex())
 	}
+	made.EmitEvent(protocol.StartupEvent)
 
 	// Recordings are served over a dedicated socket, opened after every
 	// dependency it answers through is in place. When the socket cannot be opened,

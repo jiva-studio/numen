@@ -404,7 +404,7 @@ func TestPluginValidate_ReportsCoreRules(t *testing.T) {
 		{"single segment id", `{"id":"foo","name":"X","version":"1.0.0"}`, "reverse-DNS"},
 		{"newer protocol", `{"id":"md.numen.x","name":"X","version":"1.0.0","protocol":99}`, "protocol"},
 		{"capability no host resolves", `{"id":"md.numen.x","name":"X","version":"1.0.0","capabilities":["agent"]}`, "invalid capability"},
-		{"activation event other than the wildcard", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"activationEvents":["onCommand:run"]}`, "invalid activation event"},
+		{"activation event the host does not emit", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"activationEvents":["onCommand:run"]}`, "invalid activation event"},
 		{"setting without title", `{"id":"md.numen.x","name":"X","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, "title"},
 		{"command id in capitals", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"Run","title":"Run"}]}}`, "each in camelCase"},
 		{"command content type that is an extension", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"run","title":"Run","contentTypes":[".pdf"]}]}}`, "invalid content type"},

@@ -44,7 +44,7 @@ func TestDiscover(t *testing.T) {
 		"description": "Sample plugin",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.samples"],
-		"activationEvents": ["*"],
+		"activationEvents": ["onStartup"],
 		"permissions": [],
 		"backend": {"entrypoint": "bin/sample"},
 		"settings": []

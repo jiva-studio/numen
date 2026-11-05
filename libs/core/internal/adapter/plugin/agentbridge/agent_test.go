@@ -43,7 +43,7 @@ func createTestAgentPluginTree(t *testing.T, dir string) {
 		"description": "Agent and chat provider",
 		"capabilities": ["ai.agent.provider"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["*"],
+		"activationEvents": ["onStartup"],
 		"permissions": [],
 		"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/agent"}
 	}`

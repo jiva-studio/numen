@@ -44,9 +44,6 @@ func PluginPermissions() []string {
 	}
 }
 
-// ActivationEventAll is the activation event that matches every event the host emits.
-const ActivationEventAll = "*"
-
 // PluginCapabilities is every capability a manifest may declare: the capabilities the host resolves
 // a plugin by.
 func PluginCapabilities() []string {
@@ -425,11 +422,11 @@ func (m Manifest) listCapabilityIssues() []error {
 	return issues
 }
 
-// listActivationEventIssues checks that every activation event is ActivationEventAll.
+// listActivationEventIssues checks that every activation event is one the host emits.
 func (m Manifest) listActivationEventIssues() []error {
 	var issues []error
 	for _, e := range m.ActivationEvents {
-		if e != ActivationEventAll {
+		if !isActivationEvent(e) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidActivationEvent, e))
 		}
 	}
@@ -548,10 +545,4 @@ func (m Manifest) HasService(service string) bool {
 		return false
 	}
 	return slices.Contains(m.Services, service)
-}
-
-// IsActivatedByAnyEvent reports whether the plugin declares the activation event `*`: the host
-// starts it for every event it emits and delivers the event to it.
-func (m Manifest) IsActivatedByAnyEvent() bool {
-	return slices.Contains(m.ActivationEvents, ActivationEventAll)
 }

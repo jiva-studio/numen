@@ -93,7 +93,6 @@ type (
 )
 
 const (
-	ActivationEventAll          = pluginport.ActivationEventAll
 	CommandArgumentBoolean      = pluginport.CommandArgumentBoolean
 	CommandArgumentNumber       = pluginport.CommandArgumentNumber
 	CommandArgumentVersion      = pluginport.CommandArgumentVersion

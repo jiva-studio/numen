@@ -18,7 +18,7 @@ func TestReadManifest(t *testing.T) {
 		"description": "Optical character recognition",
 		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["*"],
+		"activationEvents": ["onStartup"],
 		"permissions": ["vault:read"],
 		"backend": {
 			"entrypoint": "bin/engines.ocr"
@@ -58,8 +58,8 @@ func TestReadManifest(t *testing.T) {
 	if !m.HasCapability("tools") {
 		t.Errorf("expected capability tools")
 	}
-	if !m.IsActivatedByAnyEvent() {
-		t.Errorf("expected activation on every event")
+	if !m.IsActivatedBy("onStartup") || m.IsActivatedBy("onFile:md") {
+		t.Errorf("expected activation on onStartup only")
 	}
 	if !m.HasService("numen.v1.TextProviderService") || !m.HasFrontend() {
 		t.Errorf("expected the service and the frontend")
@@ -189,9 +189,9 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"protocol newer than the host", `{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, manifest.ErrUnsupportedProtocol},
 		{"negative protocol", `{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, manifest.ErrUnsupportedProtocol},
 		{"backend with a blank entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":" "}}`, manifest.ErrInvalidBackend},
-		{"an activation event that is not the wildcard", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onCommand:a"]}`, manifest.ErrInvalidActivationEvent},
+		{"an activation event the host does not emit", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onCommand:a"]}`, manifest.ErrInvalidActivationEvent},
 		{"a capability no host resolves", `{"id":"a.b","name":"A","version":"1.0.0","capabilities":["agent"]}`, manifest.ErrInvalidCapability},
-		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["*"],"frontend":{}}`, manifest.ErrNoBackend},
+		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onStartup"],"frontend":{}}`, manifest.ErrNoBackend},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, manifest.ErrNoBackend},
 		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"apiKey","title":"T"}]}`, manifest.ErrNoBackend},
 		{"runtime dependencies without a backend", `{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`, manifest.ErrNoBackend},

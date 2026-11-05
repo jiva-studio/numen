@@ -30,6 +30,13 @@ type (
 // ConfigPerformanceProfile is the entry of the Configure values that holds the performance profile; plugin-sdk-go names it performance.ConfigKey.
 const ConfigPerformanceProfile = "host.performanceProfile"
 
+// The activation events a manifest may declare.
+const (
+	ActivationEventStartup      = manifest.ActivationEventStartup
+	ActivationEventVectorsReady = manifest.ActivationEventVectorsReady
+	ActivationEventFilePrefix   = manifest.ActivationEventFilePrefix
+)
+
 const (
 	PermissionVaultRead       = manifest.PermissionVaultRead
 	PermissionVaultWrite      = manifest.PermissionVaultWrite
@@ -41,7 +48,6 @@ const (
 	RuntimeONNX               = "onnxruntime"
 	HandlePlaybackCopy        = "playback-copy"
 	HandleTextProvider        = "text-provider"
-	ActivationEventAll        = manifest.ActivationEventAll
 	ContextAnyValue           = manifest.ContextAnyValue
 	PluginProtocolVersion     = manifest.ProtocolVersion
 	SettingStoredSecrets      = manifest.SettingStoredSecrets

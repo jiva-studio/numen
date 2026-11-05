@@ -286,7 +286,7 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"invalid capability":       {`{"id":"a.b","name":"A","version":"1.0.0","capabilities":["none"]}`, ErrInvalidCapability},
 		"invalid activation":       {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["bad"]}`, ErrInvalidActivationEvent},
 		"blank entrypoint":         {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":" "}}`, ErrInvalidBackend},
-		"activation no backend":    {`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["*"]}`, ErrNoBackend},
+		"activation no backend":    {`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onStartup"]}`, ErrNoBackend},
 		"services no backend":      {`{"id":"a.b","name":"A","version":"1.0.0","services":["a.b.S"]}`, ErrNoBackend},
 		"secrets no backend":       {`{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"s","title":"S"}]}`, ErrNoBackend},
 		"runtime no backend":       {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"r","kind":"runtime"}]}`, ErrNoBackend},

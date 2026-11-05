@@ -435,7 +435,7 @@ func (h *Host) FindPluginByCapability(capability string) (manifest.Discovered, b
 	return p, err == nil
 }
 
-// TriggerEvent activates every enabled plugin that declares the activation event `*`, and every one with a backend that opens the file an `onFile:` event names, and delivers the event to it.
+// TriggerEvent activates every enabled plugin that declares the event among its activation events, and every one with a backend that opens the file an `onFile:` event names, and delivers the event to it.
 func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error) {
 	h.mu.RLock()
 	if h.safeMode {
@@ -448,7 +448,7 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 		if !h.isPluginEnabledLocked(id) {
 			continue
 		}
-		if p.Manifest.IsActivatedByAnyEvent() || h.isOpeningFileLocked(p, event) {
+		if p.Manifest.IsActivatedBy(event) || h.isOpeningFileLocked(p, event) {
 			candidates = append(candidates, id)
 		}
 	}

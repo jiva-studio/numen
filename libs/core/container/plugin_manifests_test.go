@@ -225,12 +225,13 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no activation events: a rule checked against nothing")
 	}
-	valid := []string{pluginport.ActivationEventAll}
+	valid := []string{pluginport.ActivationEventStartup, pluginport.ActivationEventVectorsReady, pluginport.ActivationEventFilePrefix + "<extension>"}
 	for _, difference := range listDifferences(documented, valid, "activation event") {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if hasIssue(pluginport.PluginManifest{ActivationEvents: []string{name}}, pluginport.ErrInvalidActivationEvent) {
+		declared := strings.ReplaceAll(name, "<extension>", "md")
+		if hasIssue(pluginport.PluginManifest{ActivationEvents: []string{declared}}, pluginport.ErrInvalidActivationEvent) {
 			t.Errorf("the validator refuses %s", name)
 		}
 	}

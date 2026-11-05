@@ -161,11 +161,11 @@ func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 
 func TestAPluginThatConsumesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.silent": {ActivationEvents: []string{pluginport.ActivationEventAll}}},
+		map[string]pluginport.PluginManifest{"md.test.silent": declaringEvents("onStartup")},
 		map[string]int{"md.test.silent": servePlugin(t, nil)},
 	)
 
-	activated, err := host.TriggerEvent(t.Context(), "onOpen")
+	activated, err := host.TriggerEvent(t.Context(), "onStartup")
 	if err != nil {
 		t.Fatalf("TriggerEvent() = %v, want no error for a plugin that takes no events", err)
 	}
@@ -178,28 +178,28 @@ func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 	refusing := &eventRecorder{reason: "the index is closed"}
 	working := &eventRecorder{}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"a.refusing": {ActivationEvents: []string{pluginport.ActivationEventAll}}, "b.working": {ActivationEvents: []string{pluginport.ActivationEventAll}}},
+		map[string]pluginport.PluginManifest{"a.refusing": declaringEvents("onStartup"), "b.working": declaringEvents("onStartup")},
 		map[string]int{"a.refusing": servePlugin(t, refusing), "b.working": servePlugin(t, working)},
 	)
 
-	_, err := host.TriggerEvent(t.Context(), "onOpen")
+	_, err := host.TriggerEvent(t.Context(), "onStartup")
 
-	if !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "deliver onOpen to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
+	if !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "deliver onStartup to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
 		t.Fatalf("TriggerEvent() = %v, want the rejection naming the event and the plugin", err)
 	}
-	if got := working.getEvents(); !slices.Equal(got, []string{"onOpen"}) {
-		t.Fatalf("the working plugin received %v, want [onOpen]", got)
+	if got := working.getEvents(); !slices.Equal(got, []string{"onStartup"}) {
+		t.Fatalf("the working plugin received %v, want [onStartup]", got)
 	}
 }
 
 func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 	failing := &eventRecorder{failure: connect.NewError(connect.CodeInternal, errors.New("the handler panicked"))}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.failing": {ActivationEvents: []string{pluginport.ActivationEventAll}}},
+		map[string]pluginport.PluginManifest{"md.test.failing": declaringEvents("onStartup")},
 		map[string]int{"md.test.failing": servePlugin(t, failing)},
 	)
 
-	_, err := host.TriggerEvent(t.Context(), "onOpen")
+	_, err := host.TriggerEvent(t.Context(), "onStartup")
 
 	if err == nil || errors.Is(err, transport.ErrEventRefused) || connect.CodeOf(err) != connect.CodeInternal {
 		t.Fatalf("TriggerEvent() = %v, want the failed call reported as %v and not as an error", err, connect.CodeInternal)
