@@ -10,7 +10,7 @@ import {
 const ATLAS = 'org.example.atlas'
 const BOOKS = 'org.example.books'
 
-const look = (title: string, icon: string | undefined = 'star'): CommandLook => ({ title, icon })
+const look = (title: string, icon = 'star'): CommandLook => ({ title, icon })
 
 /** Placements and the commands the window lists, both replaceable between reads. */
 function setup(
@@ -224,7 +224,7 @@ describe('the entries of a place', () => {
     expect(ids(first)).toEqual([`${ATLAS}:atlas.open`])
     expect(ids(second)).toEqual([`${ATLAS}:atlas.open`])
     expect(reportIssue).toHaveBeenCalledTimes(1)
-    expect(reportIssue.mock.calls[0][0]).toBe(ATLAS)
+    expect(reportIssue.mock.calls[0]?.[0]).toBe(ATLAS)
   })
 
   it('leaves out an unknown place and reports it once', () => {
@@ -237,7 +237,7 @@ describe('the entries of a place', () => {
     expect(menus.getEntries('searchResult')).toEqual([])
     expect(menus.getEntries('titleBar')).toEqual([])
     expect(reportIssue).toHaveBeenCalledTimes(1)
-    expect(reportIssue.mock.calls[0][0]).toBe(ATLAS)
+    expect(reportIssue.mock.calls[0]?.[0]).toBe(ATLAS)
   })
 
   it('has none for a place no window draws', () => {
@@ -272,8 +272,8 @@ describe('the entries of a place', () => {
     const [inBar] = menus.getEntries('titleBar')
     const [inResult] = menus.getEntries('searchResult')
 
-    expect([inBar.group, inBar.order]).toEqual(['navigate', 10])
-    expect([inResult.group, inResult.order]).toEqual(['show', 5])
+    expect([inBar?.group, inBar?.order]).toEqual(['navigate', 10])
+    expect([inResult?.group, inResult?.order]).toEqual(['show', 5])
   })
 
   it('carries the title, icon and shortcut of the command and files a short id under its plugin', () => {
@@ -314,7 +314,7 @@ describe('the entries of a place', () => {
         { pluginId: ATLAS, location: 'titleBar', command: 'atlas.open' },
         { pluginId: ATLAS, location: 'searchResult', command: 'atlas.open' },
       ],
-      { [`${ATLAS}:atlas.open`]: look('Open atlas', undefined) },
+      { [`${ATLAS}:atlas.open`]: { title: 'Open atlas' } },
     )
 
     expect(menus.getEntries('titleBar')).toEqual([])
@@ -374,9 +374,9 @@ describe('the entries of a place', () => {
     menus.getEntries('titleBar')
 
     expect(entries).toHaveLength(1)
-    expect(entries[0].pluginId).toBe(ATLAS)
+    expect(entries[0]?.pluginId).toBe(ATLAS)
     expect(reportIssue).toHaveBeenCalledTimes(1)
-    expect(reportIssue.mock.calls[0][0]).toBe(BOOKS)
+    expect(reportIssue.mock.calls[0]?.[0]).toBe(BOOKS)
   })
 
   it('returns an entry listed twice for one place once', () => {
