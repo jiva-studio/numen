@@ -58,17 +58,17 @@ func readFileWith(t *testing.T, body string) settings.File {
 	return file
 }
 
-func TestTheWindowButtonsTheFileHoldsAreInForce(t *testing.T) {
+func TestTheWindowButtonsOfTheFileAreInForce(t *testing.T) {
 	file := readFileWith(t, `{"app":{"window":{"buttons":"mac"}}}`)
 
 	got, found := file.GetValue("app", "window", "buttons")
 
 	if !found || got != "mac" {
-		t.Errorf("the window buttons in force are %v (found %v), the file holds mac", got, found)
+		t.Errorf("the window buttons in force are %v (found %v), the file has mac", got, found)
 	}
 }
 
-func TestTheWindowButtonsStandAtTheRightInAFileThatLeavesThemOut(t *testing.T) {
+func TestTheWindowButtonsDefaultToTheRightInAFileWithoutThem(t *testing.T) {
 	file := readFileWith(t, `{"app":{"appearance":{"mode":"dark"}}}`)
 
 	got, found := file.GetValue("app", "window", "buttons")
@@ -78,7 +78,7 @@ func TestTheWindowButtonsStandAtTheRightInAFileThatLeavesThemOut(t *testing.T) {
 	}
 }
 
-func TestTheWindowButtonsAreWrittenBackWithTheSettings(t *testing.T) {
+func TestTheWindowButtonsAreSavedWithTheSettings(t *testing.T) {
 	file := readFileWith(t, `{"app":{"window":{"buttons":"mac"}}}`)
 
 	written, err := file.WriteJSON()
@@ -93,7 +93,7 @@ func TestTheWindowButtonsAreWrittenBackWithTheSettings(t *testing.T) {
 
 // Every setting the shell declares is read from the file into force, not only the ones whose
 // section the document has a field for.
-func TestEverySettingOfTheShellTheFileHoldsIsInForce(t *testing.T) {
+func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 	file := readFileWith(t, `{"app":{
 		"appearance":{"theme":"mine:sea","mode":"dark","interfaceScale":1.25,"textScale":1.5},
 		"naming":{"syncTitleAndFilename":false},
@@ -111,7 +111,7 @@ func TestEverySettingOfTheShellTheFileHoldsIsInForce(t *testing.T) {
 	for _, declared := range settings.GetAppDeclaration() {
 		path := append([]string{settings.OwnerApp}, strings.Split(declared.Key, ".")...)
 		if got, _ := file.GetValue(path...); got != want[declared.Key] {
-			t.Errorf("%s in force is %v, the file holds %v", declared.Key, got, want[declared.Key])
+			t.Errorf("%s in force is %v, the file has %v", declared.Key, got, want[declared.Key])
 		}
 	}
 }
