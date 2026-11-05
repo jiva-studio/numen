@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestTheLockFileBesideTheSettingsFileIsNoEvent(t *testing.T) {
+func TestTheLockFileNextToTheSettingsFileIsNoEvent(t *testing.T) {
 	cfg, path, _ := openInstallation(t, `{}`)
 	reader := listen(t, cfg)
 

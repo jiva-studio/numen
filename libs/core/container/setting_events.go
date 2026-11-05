@@ -77,7 +77,7 @@ func (c Config) listDefaultSettingValues() settingevents.Values {
 func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
 	values := settingevents.Values{}
 	var failures []error
-	put := func(path []string, encoded string, err error) {
+	record := func(path []string, encoded string, err error) {
 		if err != nil {
 			failures = append(failures, err)
 			return
@@ -88,7 +88,7 @@ func (c Config) listSettingValues(target Settings) (settingevents.Values, error)
 		path := append([]string{settings.OwnerApp}, strings.Split(declared.Key, ".")...)
 		if value, found := target.GetValue(path...); found {
 			encoded, err := json.Marshal(value)
-			put(path, string(encoded), err)
+			record(path, string(encoded), err)
 		}
 	}
 	for _, plugin := range c.Plugins()() {
@@ -96,9 +96,9 @@ func (c Config) listSettingValues(target Settings) (settingevents.Values, error)
 			path := []string{plugin.ID, declared.Key}
 			if value, found := target.GetValue(path...); found {
 				encoded, err := json.Marshal(value)
-				put(path, string(encoded), err)
+				record(path, string(encoded), err)
 			} else if declared.DefaultJSON != "" {
-				put(path, declared.DefaultJSON, nil)
+				record(path, declared.DefaultJSON, nil)
 			}
 		}
 	}
