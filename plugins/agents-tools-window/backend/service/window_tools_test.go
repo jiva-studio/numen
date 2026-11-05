@@ -38,7 +38,7 @@ type windowTools struct {
 func newWindowTools(t *testing.T) windowTools {
 	t.Helper()
 	vault := hosttest.New(testVault)
-	vault.File(notePath, "---\nid: 01H7X1234567890ABCDEFGHJK\ntitle: Grey Heron\n---\nHerons fish at dusk.")
+	vault.File(notePath, "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Grey Heron\n---\nHerons fish at dusk.")
 	vault.File(guidePath, pdfBytes)
 	vault.File(scanPath, pdfBytes+"scan")
 	vault.File(bookPath, epubBytes)
@@ -188,7 +188,7 @@ func TestNoteFocusAnswersTheFocusedNoteAndMovesTheWindowToIt(t *testing.T) {
 	if failure := w.call(t, "note_focus", `{"path":"notes/Heron.md"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if out.Focused.Path != notePath || out.Focused.Title != "Grey Heron" || out.Focused.ID != "01H7X1234567890ABCDEFGHJK" {
+	if out.Focused.Path != notePath || out.Focused.Title != "Grey Heron" || out.Focused.ID != "01H7X1234567890ABCDEFGHJKM" {
 		t.Errorf("focused %+v", out.Focused)
 	}
 	if focused := w.window.GetFocusedNotes(); !slices.Equal(focused, []string{notePath}) {

@@ -13,7 +13,7 @@ import (
 // newWindowVault is a vault of one note and one PDF, and its window.
 func newWindowVault() *hosttest.Window {
 	vault := hosttest.New("marsh")
-	vault.File("notes/Heron.md", "---\nid: 01H7X1234567890ABCDEFGHJK\ntitle: Grey Heron\n---\nHerons fish at dusk.")
+	vault.File("notes/Heron.md", "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Grey Heron\n---\nHerons fish at dusk.")
 	vault.File("library/Birds.pdf", "%PDF-1.7\n\x00\x01binary body")
 	return hosttest.NewWindow(vault)
 }
@@ -25,7 +25,7 @@ func TestTheWindowFocusesANoteOfTheVaultAndRecordsIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := host.FocusedNote{Path: "notes/Heron.md", Title: "Grey Heron", ID: "01H7X1234567890ABCDEFGHJK"}
+	want := host.FocusedNote{Path: "notes/Heron.md", Title: "Grey Heron", ID: "01H7X1234567890ABCDEFGHJKM"}
 	if got != want {
 		t.Errorf("focused %+v, want %+v", got, want)
 	}
