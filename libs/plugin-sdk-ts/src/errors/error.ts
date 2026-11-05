@@ -48,19 +48,29 @@ const CARRIES = new Set<Code>([
   Code.Unimplemented,
 ])
 
+/** The name of a ReportedError; both copies of this module match it by name. */
+const REPORTED = 'ReportedError'
+
 /**
- * Whether the error was raised by the client with a text of its own; a failed
- * call arrives as a ConnectError and a cancelled one as an AbortError.
+ * An error whose message is a sentence written for the person, shown as it is.
+ * Other errors carry backend or platform text and are shown by their code.
  */
-const isClientError = (error: unknown): error is Error =>
-  error instanceof Error && !(error instanceof ConnectError) && error.name !== 'AbortError'
+export class ReportedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = REPORTED
+  }
+}
+
+const isReportedError = (error: unknown): error is Error =>
+  error instanceof Error && error.name === REPORTED
 
 /**
  * The message for a caught error, shown to the user who awaited the result.
  */
 export const formatErrorMessage = (error: unknown): string => {
-  const clientMessage = isClientError(error) ? error.message.trim() : ''
-  if (clientMessage) return clientMessage
+  const reported = isReportedError(error) ? error.message.trim() : ''
+  if (reported) return reported
   const fault = ConnectError.from(error)
   const carried = CARRIES.has(fault.code) ? fault.rawMessage.trim() : ''
   return carried || (TROUBLE[fault.code] ?? UNEXPECTED)
