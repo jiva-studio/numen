@@ -119,8 +119,11 @@ func TestTheProgramsListedAreThoseOfTheEnabledProvidersThatAnswer(t *testing.T) 
 		answeringProvider: answeringServer{},
 	}, disabledProvider)
 
-	programs, _ := NewRouter(host).GetPrograms(t.Context(), nil)
+	programs, err := NewRouter(host).GetPrograms(t.Context(), nil)
 
+	if err == nil {
+		t.Error("the failing provider was not reported")
+	}
 	if len(programs) != 1 || programs[0].Provider != answeringProvider || programs[0].Name != "lark" {
 		t.Errorf("listed %+v, want only lark of %s", programs, answeringProvider)
 	}
