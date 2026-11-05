@@ -632,45 +632,15 @@ function findOfferName(text) {
   return ''
 }
 
-// Path prefixes (relative to the repository root) of the areas that still have offer in a name.
-// Each rename PR removes the prefix of the area it renames. This list shrinks to nothing.
-const OFFER_NAME_PENDING_PATHS = [
-  'apps/desktop/editor/src/app', // 1 file
-  'apps/desktop/editor/src/entities', // 1 file
-  'apps/desktop/editor/src/features/command-palette', // 7 files
-  'apps/desktop/editor/src/features/settings-commands', // 2 files
-  'apps/desktop/editor/src/pages/settings/ui', // 3 files
-  'apps/desktop/editor/src/pages/welcome/ui', // 1 file
-  'apps/desktop/editor/src/shared', // 2 files
-  'apps/desktop/internal', // 1 file
-  'libs/core/adapter', // 1 file
-  'libs/core/container', // 2 files
-  'libs/plugin-catalog/catalog', // 2 files
-  'libs/plugin-catalog/catalogtest', // 1 file
-  'libs/plugin-catalog/indexsource', // 1 file
-  'libs/plugin-catalog/snapshotcache', // 1 file
-  'libs/plugin-manager/src', // 7 files
-  'libs/plugin-sdk-go/agent', // 1 file
-  'libs/ui/core', // 1 file
-  'libs/ui/shell', // 8 files
-  'plugins/tools-proofreading', // 1 file
-  'plugins/tools-updater', // 1 file
-  'plugins/views-agent-chat', // 1 file
-  'plugins/views-flashcards-studio', // 8 files
-  'plugins/views-media-player', // 4 files
-  'plugins/views-plex-graph', // 4 files
-]
+// A name with offer in it counts only where the change adds it: on added lines under --staged and
+// --changed-since (a new file counts whole), and on every line outside a git repository. A full scan
+// inside a repository lists the existing names as advisory 'offer-name' findings, counted under --strict.
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
-
-/** Returns the directory names and the file name of a path, with the path inside the repository when it is in it. */
-function getOfferPathInfo(filePath) {
-  const inRepo = path.relative(REPO_ROOT, path.resolve(filePath))
-  if (!inRepo.startsWith('..') && !path.isAbsolute(inRepo)) {
-    const pending = OFFER_NAME_PENDING_PATHS.some((prefix) => inRepo === prefix || inRepo.startsWith(prefix.replace(/\/$/, '') + path.sep))
-    return { pending, parts: inRepo.split(path.sep) }
-  }
-  return { pending: false, parts: [path.basename(path.dirname(filePath)), path.basename(filePath)] }
+/** Returns the directory names and the file name of a path, relative to the repository when it is in one. */
+function getOfferPathParts(filePath) {
+  const inRepo = path.relative(path.dirname(fileURLToPath(import.meta.url)) + '/../..', path.resolve(filePath))
+  if (!inRepo.startsWith('..') && !path.isAbsolute(inRepo)) return inRepo.split(path.sep)
+  return [path.basename(path.dirname(filePath)), path.basename(filePath)]
 }
 
 // 21. UI copy in words files (words.ts, *Words.ts): labels and messages are noun phrases,
@@ -753,10 +723,14 @@ const advisory = {
   'compound-identifier': [],
   'error-prose': [],
   'long-test-name': [],
+  'offer-name': [],
 }
 
 // Findings of category 24. They count only on added lines, under --staged or --changed-since.
 let narrativePhrases = []
+
+// Findings of the offer-in-a-name check of category 20, before they are narrowed to the added lines.
+const offerNames = []
 const isPhraseDiffMode = isStagedOnly || Boolean(changedSinceRef)
 
 const stats = {
@@ -814,14 +788,10 @@ function scanFile(filePath) {
   totalScannedFiles++
 
   const baseName = path.basename(filePath)
-  const offerPath = getOfferPathInfo(filePath)
-  if (isCode && !offerPath.pending && shouldCheckCategory('hunt-offer')) {
-    const name = offerPath.parts.map((part) => findOfferName(part)).find(Boolean)
-    if (name) {
-      findings.huntAndOffering.push({ file: relPath, line: 1, lang: isGo ? 'go' : 'ts', symbol: name, text: `Offer in a path: ${offerPath.parts.join('/')}` })
-      if (isGo) stats.backendTotal++
-      else stats.frontendTotal++
-    }
+  if (isCode && shouldCheckCategory('hunt-offer')) {
+    const parts = getOfferPathParts(filePath)
+    const name = parts.map((part) => findOfferName(part)).find(Boolean)
+    if (name) offerNames.push({ file: relPath, line: 1, lang: isGo ? 'go' : 'ts', symbol: name, text: `Offer in a path: ${parts.join('/')}` })
   }
   if (baseName === 'scan.mjs' || baseName === 'scan.test.mjs') return
   if (baseName.endsWith('_pb.ts') || baseName.endsWith('_pb.js') || baseName.endsWith('.pb.go')) return
@@ -1408,15 +1378,11 @@ function scanFile(filePath) {
     }
 
     // 20. Offer as a part of a name, in the code outside the template text of a Vue file
-    if (isCode && !isCommentLine && !offerPath.pending && shouldCheckCategory('hunt-offer')) {
+    if (isCode && !isCommentLine && shouldCheckCategory('hunt-offer')) {
       let nameText = removeLineComment(lineWithoutStrings)
       if (ext === '.vue') nameText = nameText.replace(/>[^<>]*</g, '><')
       const name = findOfferName(nameText)
-      if (name) {
-        findings.huntAndOffering.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', symbol: name, text: trimmed })
-        if (isGo) stats.backendTotal++
-        else stats.frontendTotal++
-      }
+      if (name) offerNames.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', symbol: name, text: trimmed })
     }
 
     // 20. Hunting and offering interaction metaphors (hunt, offered, lit)
@@ -1634,6 +1600,24 @@ if (isAddedOnly) {
 if (isPhraseDiffMode) {
   const addedLines = getAddedLines(changedSinceBase ? [changedSinceBase] : ['--cached'])
   narrativePhrases = narrativePhrases.filter((item) => isOnAddedLine(item, addedLines))
+}
+
+let isInGitRepo = true
+try {
+  getRepoTop()
+} catch {
+  isInGitRepo = false
+}
+if (isPhraseDiffMode || !isInGitRepo) {
+  const addedLines = isPhraseDiffMode ? getAddedLines(changedSinceBase ? [changedSinceBase] : ['--cached']) : null
+  for (const item of offerNames) {
+    if (addedLines && !isOnAddedLine(item, addedLines)) continue
+    findings.huntAndOffering.push(item)
+    if (item.lang === 'go') stats.backendTotal++
+    else stats.frontendTotal++
+  }
+} else {
+  advisory['offer-name'].push(...offerNames)
 }
 
 // Compute Aggregates
