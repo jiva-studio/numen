@@ -20,6 +20,12 @@ type Tree = Record<string, Record<string, unknown>>
 
 const file = vi.hoisted(() => ({ current: {} as Record<string, unknown> }))
 
+// The reason of a rejected write is the text of the error, as the core sends it for a bad request.
+vi.mock('@numen/core-client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@numen/core-client')>()),
+  formatErrorMessage: (error: unknown) => (error as Error).message,
+}))
+
 vi.mock('@/entities/settings', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/entities/settings')>()),
   themes: {
@@ -60,14 +66,34 @@ const PROFILE_CHOICES = [
 ]
 
 const DECLARED = [
-  { key: 'appearance.theme', title: 'Theme', type: 'enum', default: 'preset:numen', c: THEME_CHOICES },
-  { key: 'appearance.mode', title: 'Light or dark', type: 'enum', default: 'system', c: MODE_CHOICES },
+  {
+    key: 'appearance.theme',
+    title: 'Theme',
+    type: 'enum',
+    default: 'preset:numen',
+    c: THEME_CHOICES,
+  },
+  {
+    key: 'appearance.mode',
+    title: 'Light or dark',
+    type: 'enum',
+    default: 'system',
+    c: MODE_CHOICES,
+  },
   { key: 'appearance.interfaceScale', title: 'Interface size', type: 'range', default: 1 },
-  { key: 'performance.profile', title: 'Performance profile', type: 'enum', default: 'balanced', c: PROFILE_CHOICES },
+  {
+    key: 'performance.profile',
+    title: 'Performance profile',
+    type: 'enum',
+    default: 'balanced',
+    c: PROFILE_CHOICES,
+  },
 ] as const
 
 const getValueAt = (tree: unknown, key: string): unknown =>
-  key.split('.').reduce<unknown>((one, step) => (one as Record<string, unknown> | undefined)?.[step], tree)
+  key
+    .split('.')
+    .reduce<unknown>((one, step) => (one as Record<string, unknown> | undefined)?.[step], tree)
 
 /** The declaration of the shell as the core answers it: each setting with the value in force. */
 const declare = (): readonly PluginSettingInfo[] =>
@@ -119,7 +145,13 @@ interface Timing {
   readonly rejectedWith?: string
 }
 
-const NORMAL: Timing = { saveAfter: 40, answerAfter: 0, eventAfter: 100, oldReads: 0, readTakes: 30 }
+const NORMAL: Timing = {
+  saveAfter: 40,
+  answerAfter: 0,
+  eventAfter: 100,
+  oldReads: 0,
+  readTakes: 30,
+}
 
 const say = vi.fn()
 
@@ -156,10 +188,13 @@ const create = (timing: Timing) => {
             for (const edit of edits) {
               const [owner, ...steps] = edit.at
               const last = steps.pop() as string
-              const target = steps.reduce<Record<string, unknown>>((one, step) => {
-                one[step] = { ...((one[step] as object | undefined) ?? {}) }
-                return one[step] as Record<string, unknown>
-              }, ((file.current[owner as string] ??= {}) as Record<string, unknown>))
+              const target = steps.reduce<Record<string, unknown>>(
+                (one, step) => {
+                  one[step] = { ...((one[step] as object | undefined) ?? {}) }
+                  return one[step] as Record<string, unknown>
+                },
+                (file.current[owner as string] ??= {}) as Record<string, unknown>,
+              )
               target[last] = JSON.parse(edit.value)
             }
             setTimeout(() => feed.push(edits), timing.eventAfter)
@@ -210,8 +245,9 @@ const getDistinct = (shown: readonly unknown[]): unknown[] =>
 
 const start = async (timing: Timing) => {
   const made = create(timing)
-  await made.settings.start()
+  const started = made.settings.start()
   await vi.advanceTimersByTimeAsync(200)
+  await started
   await nextTick()
   return made
 }
@@ -219,9 +255,15 @@ const start = async (timing: Timing) => {
 const ORDERS: readonly [string, Timing][] = [
   ['the answer comes with the save and the event after it', NORMAL],
   ['the event comes before the answer', { ...NORMAL, eventAfter: 5, answerAfter: 60 }],
-  ['the answer comes long after the event and the first read', { ...NORMAL, eventAfter: 0, answerAfter: 150 }],
+  [
+    'the answer comes long after the event and the first read',
+    { ...NORMAL, eventAfter: 0, answerAfter: 150 },
+  ],
   ['the first read after the answer gives the old value', { ...NORMAL, oldReads: 1 }],
-  ['the reads are slow and the first gives the old value', { ...NORMAL, oldReads: 1, readTakes: 90 }],
+  [
+    'the reads are slow and the first gives the old value',
+    { ...NORMAL, oldReads: 1, readTakes: 90 },
+  ],
 ]
 
 beforeEach(() => {
@@ -307,21 +349,24 @@ describe('a slider of the page System after the person moves it', () => {
     page.unmount()
   })
 
-  it.each(ORDERS)('follows the last of two quick changes and never goes back when %s', async (_, timing) => {
-    const { settings, page } = await start(timing)
+  it.each(ORDERS)(
+    'follows the last of two quick changes and never goes back when %s',
+    async (_, timing) => {
+      const { settings, page } = await start(timing)
 
-    const slider = getRow(page, 'Interface size').findComponent(Slider)
-    slider.vm.$emit('update:modelValue', 1.2)
-    slider.vm.$emit('commit', 1.2)
-    const first = await watchShown(() => getShown(page, 'Interface size', Slider), 20)
-    slider.vm.$emit('update:modelValue', 1.4)
-    slider.vm.$emit('commit', 1.4)
-    const second = await watchShown(() => getShown(page, 'Interface size', Slider), 600)
+      const slider = getRow(page, 'Interface size').findComponent(Slider)
+      slider.vm.$emit('update:modelValue', 1.2)
+      slider.vm.$emit('commit', 1.2)
+      const first = await watchShown(() => getShown(page, 'Interface size', Slider), 20)
+      slider.vm.$emit('update:modelValue', 1.4)
+      slider.vm.$emit('commit', 1.4)
+      const second = await watchShown(() => getShown(page, 'Interface size', Slider), 600)
 
-    expect(getDistinct([...first, ...second])).toStrictEqual([1.2, 1.4])
-    settings.close()
-    page.unmount()
-  })
+      expect(getDistinct([...first, ...second])).toStrictEqual([1.2, 1.4])
+      settings.close()
+      page.unmount()
+    },
+  )
 })
 
 describe('the window after the person chooses a theme or a size on the page System', () => {
