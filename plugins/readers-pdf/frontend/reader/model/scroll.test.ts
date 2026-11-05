@@ -414,3 +414,31 @@ describe('a row the browser scrolled back to its start', () => {
     expect(element.scrollLeft).toBe(300.5)
   })
 })
+
+describe('a row the browser moved without a scroll event', () => {
+  it('is moved when it is not where it was last reported', () => {
+    const { scroll, element } = createScroll(0)
+    element.scrollLeft = 480
+    scroll.isStill()
+    element.scrollLeft = 0
+
+    expect(scroll.isMoved()).toBe(true)
+  })
+
+  it('is moved when it is not where it was sent', () => {
+    const { scroll, element } = createScroll(0)
+    scroll.send(900, 'smooth')
+    element.scrollLeft = 0
+
+    expect(scroll.isMoved()).toBe(true)
+  })
+
+  it('is not moved where it was last reported', () => {
+    const { scroll, element } = createScroll(0)
+    element.scrollLeft = 480
+    scroll.isStill()
+    element.scrollLeft = 480.5
+
+    expect(scroll.isMoved()).toBe(false)
+  })
+})

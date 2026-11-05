@@ -68,6 +68,7 @@ const {
   getScrollOffset,
   send,
   restore,
+  isMoved,
   isStill,
   onPointerDown,
   onPointerMove,
@@ -112,8 +113,15 @@ const rowStyle = computed(() => ({
  */
 let pendingPuts = 0
 
-/** Puts the row back with the next frame, and takes no scroll event as the person's until then. */
+/**
+ * Puts the row back with the next frame. A row the browser moved takes no scroll event as the
+ * person's until then.
+ */
 function putRowBack(): void {
+  if (!isMoved()) {
+    props.paint(restore)
+    return
+  }
   pendingPuts += 1
   props.paint(() => {
     restore()

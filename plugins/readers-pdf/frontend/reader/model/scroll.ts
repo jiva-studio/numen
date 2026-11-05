@@ -34,6 +34,11 @@ export interface PanScroll {
    */
   readonly restore: () => void
   /**
+   * Whether the browser has moved the row away from the place the row was last sent or reported
+   * at, with no scroll event reporting it yet.
+   */
+  readonly isMoved: () => boolean
+  /**
    * Whether the strip is stationary. A strip scrolling towards a target passes
    * pages the user did not navigate to.
    */
@@ -138,6 +143,11 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
     area.value.scrollLeft = goal
   }
 
+  const isMoved = (): boolean => {
+    if (!area.value) return false
+    return Math.abs(area.value.scrollLeft - (heading ?? axisOffset.value)) > THERE
+  }
+
   const isStill = (): boolean => {
     if (!area.value) return false
     axisOffset.value = area.value.scrollLeft
@@ -161,6 +171,7 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
     getScrollOffset,
     send,
     restore,
+    isMoved,
     isStill,
     onPointerDown,
     onPointerMove,
