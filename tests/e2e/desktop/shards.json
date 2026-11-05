@@ -54,6 +54,7 @@
   "tests/scenarios/recognition.spec.ts": 3,
   "tests/scenarios/recording.spec.ts": 8,
   "tests/shell/lifecycle/app.spec.ts": 1,
+  "tests/shell/lifecycle/certificate.chromium.spec.ts": 1,
   "tests/shell/lifecycle/chaos.spec.ts": 3,
   "tests/shell/lifecycle/perf.spec.ts": 3,
   "tests/shell/lifecycle/lost-settings.spec.ts": 20,
