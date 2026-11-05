@@ -5,7 +5,7 @@ description: Every key numen.json can hold, section by section, generated from t
 
 Every key `numen.json` can hold. The pages under Settings say which of these are worth touching and why; this one lists every key.
 
-The first level of the file is the version `v`, the owner `app` for the settings of the application, and one object for each plugin, named by the plugin's id. Each heading below is a section of `app`, and the keys under it are written the way they are written inside that section — `textScale` under `app.appearance` is `app.appearance.textScale` if you write it out in full.
+The first level of the file is the version `v`, the owner `app` for the settings of the application, and one object for each plugin, named by the plugin's id. Each heading below is either a section of `app` or the id of a plugin. The keys under a section of `app` are written the way they are written inside that section — `textScale` under `app.appearance` is `app.appearance.textScale` if you write it out in full. The keys under a plugin id are the keys of that plugin's object.
 
 A key you leave out keeps its default, so a file naming one setting is a complete file. A key numen does not know, a value of the wrong type or a number outside its range is ignored with a notice, and the file is not rewritten because of it. Under `app.agent`, each program an agent plugin lists has a section named after it, `app.agent.<program>`, holding `command` and `model`; what a program's plugin reads for itself, such as `readsHooksAndSkills` for Claude Code (see [the agent page](/agent/)), is a setting of that plugin in its own object, named by its id. A row with no kind beside it is a group holding the keys under it.
 
