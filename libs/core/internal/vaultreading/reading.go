@@ -36,7 +36,7 @@ type Task struct {
 	// IsUserStarted is set for work the user started and expects a report on.
 	IsUserStarted bool
 
-	// Kind says whether the entry is work or a message of the core. A notice is neither running nor
+	// Kind is the sort of entry: work, or a message of the core. A notice is neither running nor
 	// failed, and About is the message.
 	Kind Kind
 
