@@ -61,15 +61,13 @@ describe('notes plugin lifecycle', () => {
     expect(readMarkdownEditorPreferences()).toStrictEqual({
       softWrap: true,
       lineNumbers: false,
-      tabSize: 2,
     })
   })
 
   it('wires plugin settings into open note editors and updates them when settings change', async () => {
     const settings: Record<string, unknown> = {
-      soft_wrap: false,
-      line_numbers: true,
-      tab_size: 4,
+      softWrap: false,
+      lineNumbers: true,
     }
     const listeners = new Map<string, (value: unknown) => void>()
     const context = {
@@ -85,7 +83,6 @@ describe('notes plugin lifecycle', () => {
     expect(readMarkdownEditorPreferences(context.getSetting)).toStrictEqual({
       softWrap: false,
       lineNumbers: true,
-      tabSize: 4,
     })
 
     activate(context)
@@ -100,14 +97,12 @@ describe('notes plugin lifecycle', () => {
     expect(view).not.toBeNull()
     expect(view!.contentDOM.classList.contains('cm-lineWrapping')).toBe(false)
     expect(view!.dom.querySelector('.cm-lineNumbers')).not.toBeNull()
-    expect(view!.state.tabSize).toBe(4)
+    expect(view!.state.tabSize).toBe(2)
 
-    settings.soft_wrap = true
-    settings.line_numbers = false
-    settings.tab_size = 2
-    listeners.get('soft_wrap')?.(true)
-    listeners.get('line_numbers')?.(false)
-    listeners.get('tab_size')?.(2)
+    settings.softWrap = true
+    settings.lineNumbers = false
+    listeners.get('softWrap')?.(true)
+    listeners.get('lineNumbers')?.(false)
     await flushPromises()
 
     expect(view!.contentDOM.classList.contains('cm-lineWrapping')).toBe(true)
@@ -115,6 +110,14 @@ describe('notes plugin lifecycle', () => {
     expect(view!.state.tabSize).toBe(2)
 
     wrapper.unmount()
+  })
+
+  it('does not read a tab size from the settings', () => {
+    const lookup = (key: string) => (key === 'tab_size' || key === 'tabSize' ? 8 : undefined)
+    expect(readMarkdownEditorPreferences(lookup)).toStrictEqual({
+      softWrap: true,
+      lineNumbers: false,
+    })
   })
 
   it('runs deactivation hook cleanly', () => {

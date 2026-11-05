@@ -6,8 +6,8 @@ import { ref, type Ref } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
 
 /** The keys the manifest declares the two settings under. */
-export const NEST_HEADINGS = 'nest_headings'
-export const HEADING_LIMIT = 'heading_limit'
+export const NEST_HEADINGS = 'nestHeadings'
+export const HEADING_LIMIT = 'headingLimit'
 
 /** The heading limit the manifest declares as its default, and the range it takes. */
 export const DEFAULT_HEADING_LIMIT = 6

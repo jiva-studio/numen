@@ -551,7 +551,7 @@ describe('PluginDetail with settings that follow one another', () => {
     ...createPluginInfo('test.paths', 'Paths'),
     settings: [
       {
-        key: 'executable_path',
+        key: 'executablePath',
         type: 'file',
         ...(multiple ? { multiple: true } : {}),
         title: 'Executable Paths',
@@ -563,7 +563,7 @@ describe('PluginDetail with settings that follow one another', () => {
 
   it('draws a file setting that is not multiple as one path, whatever its title and key', () => {
     const { wrapper } = createDetail(createPathPlugin(false), {
-      plugins: { 'test.paths': { executable_path: '/opt/one\n/opt/two' } },
+      plugins: { 'test.paths': { executablePath: '/opt/one\n/opt/two' } },
     })
     const row = wrapper.findAllComponents(SettingRow)[0]!
 
@@ -573,10 +573,10 @@ describe('PluginDetail with settings that follow one another', () => {
 
   /** Chooses /opt/two in the picker, which the host stores in place of the setting's value. */
   const chooseSecondPath = async (multiple: boolean) => {
-    const stored = { executable_path: '/opt/one' }
+    const stored = { executablePath: '/opt/one' }
     const detail = createDetail(createPathPlugin(multiple), { plugins: { 'test.paths': stored } })
     detail.installation.choosePath = vi.fn(async () => {
-      stored.executable_path = '/opt/two'
+      stored.executablePath = '/opt/two'
       return ''
     })
     const row = detail.wrapper.findAllComponents(SettingRow)[0]!
@@ -591,7 +591,7 @@ describe('PluginDetail with settings that follow one another', () => {
 
   it('adds the chosen path to the paths a multiple setting holds', async () => {
     expect(await chooseSecondPath(true)).toContainEqual({
-      at: ['plugins', 'test.paths', 'executable_path'],
+      at: ['plugins', 'test.paths', 'executablePath'],
       value: '"/opt/one\\n/opt/two"',
     })
   })

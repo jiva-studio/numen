@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.11.6",
+  "version": "2026.11.7",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
@@ -194,7 +194,7 @@
       ]
     },
     {
-      "key": "custom_model_path",
+      "key": "customModelPath",
       "type": "file",
       "title": "Model file",
       "description": "PaddleOCR text recognition model in ONNX format",
@@ -206,7 +206,7 @@
       }
     },
     {
-      "key": "custom_dict_path",
+      "key": "customDictPath",
       "type": "file",
       "title": "Character dictionary",
       "description": "UTF-8 text, one character per line. Empty for a model that includes its own",

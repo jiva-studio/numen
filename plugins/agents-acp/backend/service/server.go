@@ -25,7 +25,7 @@ type agentServer struct {
 func (s *agentServer) applyConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if execPath, ok := values["executable_path"]; ok {
+	if execPath, ok := values["executablePath"]; ok {
 		var paths []string
 		for one := range strings.SplitSeq(execPath, "\n") {
 			entry := strings.TrimSpace(one)

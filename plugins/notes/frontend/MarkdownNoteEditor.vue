@@ -82,9 +82,10 @@ const editorExtensions = computed(() => {
 const editorLanguage = computed(() => getEditorLanguage(props))
 const fileConflict = computed(() => readFileConflict(props.state?.['fileConflict']))
 
+const DEFAULT_TAB_SIZE = 2
 const softWrap = computed(() => props.softWrap ?? editorPreferences.softWrap)
 const lineNumbers = computed(() => props.lineNumbers ?? editorPreferences.lineNumbers)
-const tabSize = computed(() => props.tabSize ?? editorPreferences.tabSize)
+const tabSize = computed(() => props.tabSize ?? DEFAULT_TAB_SIZE)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onKeep() {

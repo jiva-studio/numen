@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.7",
+  "version": "2026.11.8",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "targets": ["desktop.editor"],
@@ -89,7 +89,7 @@
   "frontend": {},
   "settings": [
     {
-      "key": "yt_dlp",
+      "key": "ytDlp",
       "type": "string",
       "title": "yt-dlp",
       "description": "Path to the yt-dlp program",
@@ -112,14 +112,14 @@
       "default": ""
     },
     {
-      "key": "automatic_captions",
+      "key": "automaticCaptions",
       "type": "boolean",
       "title": "Automatic captions",
       "description": "Use auto-generated captions when a site has no others",
       "default": true
     },
     {
-      "key": "copy_max_size_mb",
+      "key": "copyMaxSizeMb",
       "type": "number",
       "title": "Maximum download size",
       "description": "Maximum video download size in megabytes; 0 for no limit",

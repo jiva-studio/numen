@@ -272,7 +272,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 			"while [ $# -gt 0 ]; do if [ \"$1\" = --mcp-config ]; then cp \"$2\" "+out+".config; fi; shift; done\n"+
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
 	agent := &agentServer{}
-	agent.applyConfig(map[string]string{"reads_hooks_and_skills": "true"})
+	agent.applyConfig(map[string]string{"readsHooksAndSkills": "true"})
 	client := startAgent(t, agent)
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
@@ -727,7 +727,7 @@ func TestServerEdgeCasesAndDirectCalls(t *testing.T) {
 	}
 }
 
-// The person's own hooks and skills are read only where the plugin's setting `reads_hooks_and_skills`
+// The person's own hooks and skills are read only where the plugin's setting `readsHooksAndSkills`
 // is on and the task names a tool; a task carries no such option.
 func TestAskReadsHooksAndSkillsOnlyWhereTheSettingIsOn(t *testing.T) {
 	for _, c := range []struct {
@@ -735,8 +735,8 @@ func TestAskReadsHooksAndSkillsOnlyWhereTheSettingIsOn(t *testing.T) {
 		values map[string]string
 		want   string
 	}{
-		{name: "the setting is on", values: map[string]string{"reads_hooks_and_skills": "true"}, want: "user"},
-		{name: "the setting is off", values: map[string]string{"reads_hooks_and_skills": "false"}, want: ""},
+		{name: "the setting is on", values: map[string]string{"readsHooksAndSkills": "true"}, want: "user"},
+		{name: "the setting is off", values: map[string]string{"readsHooksAndSkills": "false"}, want: ""},
 		{name: "the setting is never configured", values: map[string]string{}, want: ""},
 	} {
 		t.Run(c.name, func(t *testing.T) {

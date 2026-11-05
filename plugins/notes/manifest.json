@@ -1,7 +1,7 @@
 {
   "id": "md.numen.notes",
   "name": "Notes",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "protocol": 1,
   "description": "Markdown note editor with live formatting and wikilinks",
   "capabilities": [],
@@ -22,14 +22,14 @@
   "frontend": {},
   "settings": [
     {
-      "key": "soft_wrap",
+      "key": "softWrap",
       "type": "boolean",
       "title": "Soft Wrap",
       "description": "Wrap long lines to fit the editor viewport",
       "default": true
     },
     {
-      "key": "line_numbers",
+      "key": "lineNumbers",
       "type": "boolean",
       "title": "Line Numbers",
       "description": "Show line numbers in the editor margin",

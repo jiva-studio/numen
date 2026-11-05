@@ -16,7 +16,7 @@ const executablePathManifest = `{
 	"name": %q,
 	"version": "1.0.0",
 	"targets": ["desktop.editor"],
-	"settings": [{"key": "executable_path", "type": "file", "multiple": %t, "title": "Executable Path", "default": ""}]
+	"settings": [{"key": "executablePath", "type": "file", "multiple": %t, "title": "Executable Path", "default": ""}]
 }`
 
 const (
@@ -90,9 +90,9 @@ func TestACPAgentsFoundOnMachineAreSentToTheACPPluginOnly(t *testing.T) {
 	host, gemini := newHostWithGemini(t)
 
 	if got := host.GetPluginSettings(acpPluginID)[keyExecutablePath]; got != gemini {
-		t.Errorf("ACP executable_path = %v, want %s", got, gemini)
+		t.Errorf("ACP executablePath = %v, want %s", got, gemini)
 	}
 	if got := host.GetPluginSettings(otherPluginID)[keyExecutablePath]; got != "" {
-		t.Errorf("other agent executable_path = %v, want the empty path of its manifest", got)
+		t.Errorf("other agent executablePath = %v, want the empty path of its manifest", got)
 	}
 }

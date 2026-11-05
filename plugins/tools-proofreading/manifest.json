@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.proofreading",
   "name": "LLM Proofreading",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
@@ -157,7 +157,7 @@
       }
     },
     {
-      "key": "batch_size",
+      "key": "batchSize",
       "type": "number",
       "title": "Batch size",
       "description": "Lines per model request",
@@ -177,7 +177,7 @@
       "step": 1
     },
     {
-      "key": "in_flight",
+      "key": "inFlight",
       "type": "number",
       "title": "In-flight requests",
       "description": "Parallel model requests per call",
@@ -187,7 +187,7 @@
       "step": 1
     },
     {
-      "key": "max_edit_distance",
+      "key": "maxEditDistance",
       "type": "number",
       "title": "Max edit distance",
       "description": "Maximum edit distance of a correction from the original line",

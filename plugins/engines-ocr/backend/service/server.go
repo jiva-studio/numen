@@ -71,7 +71,7 @@ func (e *engines) updateConfig(values map[string]string) {
 			recognise.Name = engine.RecogniserCustom
 		}
 	}
-	recognise.Path, recognise.Dict = values["custom_model_path"], values["custom_dict_path"]
+	recognise.Path, recognise.Dict = values["customModelPath"], values["customDictPath"]
 	if recognise != e.cfg.Recognise {
 		e.cfg.Recognise = recognise
 		e.dropLocked()

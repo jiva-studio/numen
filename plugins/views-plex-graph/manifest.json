@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
@@ -44,7 +44,7 @@
   "permissions": ["vault:read", "vault:write"],
   "settings": [
     {
-      "key": "nest_headings",
+      "key": "nestHeadings",
       "type": "boolean",
       "title": "Nest headings under notes",
       "description": "Show the headings of a note under its node.",
@@ -53,7 +53,7 @@
       "icon": "waypoints"
     },
     {
-      "key": "heading_limit",
+      "key": "headingLimit",
       "type": "number",
       "title": "Headings per note",
       "description": "Maximum number of headings shown under a node. The rest scroll.",
