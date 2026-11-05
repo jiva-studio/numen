@@ -186,6 +186,9 @@ const window = (
       choosePluginSetting: async (pluginId, key, selected) => {
         isDone.push(`plugin ${pluginId} ${key} ${selected}`)
       },
+      chooseSetting: async (command, selected) => {
+        isDone.push(`setting ${command} ${selected}`)
+      },
     },
     runSupport: runs,
     copyPath: (path) => {
@@ -721,15 +724,6 @@ describe('a command over the window', () => {
 
     expect(one.actions).toStrictEqual(['search'])
   })
-
-  it('passes over the row that was chosen, and nothing about the note in front', async () => {
-    const one = window()
-
-    await carry(createInvocation('app:appearance.chooseTheme', front(), 'mine:sea'), one.on)
-    await carry(createInvocation('app:appearance.chooseTheme', front(), 'mode:dark'), one.on)
-
-    expect(one.actions).toStrictEqual(['appearance mine:sea', 'appearance mode:dark'])
-  })
 })
 
 describe('a command over the vault', () => {
@@ -1149,53 +1143,45 @@ describe('the tab holding a note flushed', () => {
   })
 })
 
-describe('plugin setting invocation', () => {
-  it('calls choosePluginSetting with boolean and enum values', async () => {
+describe('the command of a setting', () => {
+  it('passes the command and the row chosen to the adapter of the settings, whoever owns the setting', async () => {
     const one = window()
 
+    await carry(createInvocation('setting:app:appearance.theme', front(), 'mine:sea'), one.on)
     await carry(
-      createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'on'),
+      createInvocation('setting:md.numen.engines.transcription:autoRun', front(), 'on'),
       one.on,
     )
-    expect(one.actions).toStrictEqual(['plugin md.numen.engines.transcription autoRun true'])
 
-    await carry(
-      createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'off'),
-      one.on,
-    )
-    expect(one.actions[1]).toBe('plugin md.numen.engines.transcription autoRun false')
+    expect(one.actions).toStrictEqual([
+      'setting setting:app:appearance.theme mine:sea',
+      'setting setting:md.numen.engines.transcription:autoRun on',
+    ])
+  })
 
-    await carry(
-      createInvocation(
-        'plugin-setting:md.numen.engines.transcription:model',
-        front(),
-        'parakeet-tdt-0.6b-v2-int8',
-      ),
-      one.on,
-    )
-    expect(one.actions[2]).toBe(
-      'plugin md.numen.engines.transcription model parakeet-tdt-0.6b-v2-int8',
-    )
+  it('passes the row chosen whatever note is in front', async () => {
+    const one = window()
 
-    await carry(createInvocation('plugin-setting::autoRun', front(), 'on'), one.on)
-    await carry(
-      createInvocation('plugin-setting:md.numen.engines.transcription:', front(), 'on'),
-      one.on,
-    )
-    expect(one.actions).toHaveLength(3)
+    await carry(createInvocation('setting:app:performance.profile', front(), 'eco'), one.on)
 
-    const withoutChoosePlugin: CommandDeps = {
+    expect(one.actions).toStrictEqual(['setting setting:app:performance.profile eco'])
+  })
+
+  it('reports the reason a write is refused as a message of the window', async () => {
+    const one = window()
+    const failing: CommandDeps = {
       ...one.on,
       settings: {
-        chooseAppearance: one.on.settings.chooseAppearance,
-        chooseSync: one.on.settings.chooseSync,
-        choosePerformance: one.on.settings.choosePerformance,
+        ...one.on.settings,
+        chooseSetting: async () => {
+          throw new Error('value out of range')
+        },
       },
     }
-    await carry(
-      createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'on'),
-      withoutChoosePlugin,
-    )
-    expect(one.actions).toHaveLength(3)
+
+    await carry(createInvocation('setting:app:performance.profile', front(), 'eco'), failing)
+
+    expect(one.notices).toStrictEqual(['value out of range'])
+    expect(one.severities).toStrictEqual(['error'])
   })
 })

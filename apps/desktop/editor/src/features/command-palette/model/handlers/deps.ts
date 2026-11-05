@@ -77,6 +77,11 @@ export interface SettingsWriter {
   choosePerformance(selected: string): Promise<void>
   /** A declarative plugin setting chosen. */
   choosePluginSetting?(pluginId: string, key: string, selected: unknown): Promise<void>
+  /**
+   * The row chosen in the step of the command of a setting, `setting:<owner>:<key>`; the adapter
+   * of the settings writes it.
+   */
+  chooseSetting?(command: string, selected: string): Promise<void>
 }
 
 /** Reports a command's result as one line of text. */

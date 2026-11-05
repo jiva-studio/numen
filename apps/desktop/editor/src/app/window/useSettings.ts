@@ -8,6 +8,7 @@ import {
   syncSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
+import { createSettingPalette } from './settingCommands'
 import { COMMAND } from '@/shared/commandIds'
 import { type PluginInfo, type PluginSettingOption, type SettingEdit } from '@/entities/settings'
 import { formatErrorMessage, type PluginCatalog } from '@numen/core-client'
@@ -354,6 +355,18 @@ export function useSettings({
 
   const retainedItem = createSettingsPaletteLists({ appearance, sync, rest, words })
 
+  const settingPalette = createSettingPalette({
+    getOwners: () => [
+      { id: 'app', name: '', settings: rest.app.value },
+      ...rest.plugins.value.map((one) => ({ id: one.id, name: one.name, settings: one.settings })),
+    ],
+    words,
+    preview: { apply: () => undefined, restore: () => undefined },
+    write: async (edits) => {
+      await rest.writeSettings(edits)
+    },
+  })
+
   const kinds = [configured.kind]
 
   const changes = createChangeFollower({
@@ -381,6 +394,7 @@ export function useSettings({
     rest,
     configured,
     paletteLists: retainedItem,
+    settingPalette,
     kinds,
     start,
     close,

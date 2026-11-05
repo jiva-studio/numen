@@ -138,3 +138,35 @@ func TestEveryDefaultOfTheShellIsReadFromTheDeclaration(t *testing.T) {
 		}
 	}
 }
+
+func TestTheSixSettingsOfTheShellAreDeclaredForThePaletteWithTheirIcon(t *testing.T) {
+	for _, key := range []string{
+		"appearance.theme",
+		"appearance.mode",
+		"appearance.interfaceScale",
+		"appearance.textScale",
+		"naming.syncTitleAndFilename",
+		"performance.profile",
+	} {
+		declared := findDeclared(t, key)
+		if !declared.Palette {
+			t.Errorf("%s is not flagged for the palette", key)
+		}
+		if declared.Icon == "" {
+			t.Errorf("%s declares no icon", key)
+		}
+	}
+}
+
+func TestEverySettingFlaggedForThePaletteIsABooleanAnEnumOrARange(t *testing.T) {
+	for _, declared := range settings.GetAppDeclaration() {
+		if !declared.Palette {
+			continue
+		}
+		switch declared.Type {
+		case "boolean", "enum", "range":
+		default:
+			t.Errorf("%s is offered in the palette as a %s, which has no choice step", declared.Key, declared.Type)
+		}
+	}
+}

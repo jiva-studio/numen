@@ -25,6 +25,8 @@ export interface CommandDepsOptions {
   reached: Notes
   appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
+  /** The adapter that writes the row chosen in the step of the command of a setting. */
+  settingPalette?: { choose: (command: string, item: string) => Promise<void> }
   rest: {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (targetPath: readonly string[]) => readonly import('@/entities/settings').Model[]

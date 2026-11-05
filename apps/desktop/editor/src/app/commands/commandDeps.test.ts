@@ -48,32 +48,22 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
 }
 
 describe('createCommandDeps', () => {
-  it('writes a plugin setting when chosen', async () => {
-    const content: unknown[] = []
-    const { deps } = createOptions({
-      rest: {
-        writeSettings: (w: unknown[]) => {
-          content.push(...w)
-        },
-      } as unknown as CommandDepsOptions['rest'],
-    })
+  it('passes the row chosen for a setting to the adapter of the settings', async () => {
+    const choose = vi.fn(async () => undefined)
+    const { deps } = createOptions({ settingPalette: { choose } })
 
-    await deps.settings.choosePluginSetting?.('transcription', 'autoRun', true)
-    expect(content).toStrictEqual([{ at: ['transcription', 'autoRun'], value: 'true' }])
+    await deps.settings.chooseSetting?.('setting:app:performance.profile', 'maximum')
+
+    expect(choose).toHaveBeenCalledExactlyOnceWith('setting:app:performance.profile', 'maximum')
   })
 
-  it('handles choosing performance profile', async () => {
-    const content: unknown[] = []
-    const { deps } = createOptions({
-      rest: {
-        writeSettings: (w: unknown[]) => {
-          content.push(...w)
-        },
-      } as unknown as CommandDepsOptions['rest'],
-    })
+  it('passes the choice of a setting of a plugin to the same adapter', async () => {
+    const choose = vi.fn(async () => undefined)
+    const { deps } = createOptions({ settingPalette: { choose } })
 
-    await deps.settings.choosePerformance('maximum')
-    expect(content).toStrictEqual([{ at: ['app', 'performance', 'profile'], value: '"maximum"' }])
+    await deps.settings.chooseSetting?.('setting:md.example.scanner:autoScan', 'on')
+
+    expect(choose).toHaveBeenCalledExactlyOnceWith('setting:md.example.scanner:autoScan', 'on')
   })
 })
 
@@ -147,21 +137,6 @@ describe('the commands reach the window', () => {
     await deps.navigator.travel('Llama.md')
     await deps.navigator.leave('Llama.md', 'Alpaca.md')
     expect(went).toStrictEqual(['travel Llama.md', 'leave Llama.md Alpaca.md'])
-  })
-
-  it('passes each choice of a setting to the setting it is for', async () => {
-    const selected: string[] = []
-    const { deps } = createOptions({
-      oneName: {
-        choose: (item) => {
-          selected.push(`sync ${item}`)
-          return Promise.resolve()
-        },
-      },
-    })
-
-    await deps.settings.chooseSync('on')
-    expect(selected).toStrictEqual(['sync on'])
   })
 
   it('copies nothing where there is no clipboard', () => {
@@ -247,7 +222,7 @@ describe('the commands reach the window', () => {
 })
 
 describe('useSettings step groups', () => {
-  it('returns step groups for performanceProfile', () => {
+  it('returns no step groups for a command that is no setting', () => {
     const core = {
       fileKinds: async () => new Map(),
       fileChanges: () => vi.fn(),
@@ -275,9 +250,6 @@ describe('useSettings step groups', () => {
       onSizeChanged: vi.fn(),
     })
 
-    const perfGroups = settings.paletteLists.getStepGroups('app:performance.chooseProfile', '')
-    expect(perfGroups.length).toBe(1)
-    expect(perfGroups[0]?.id).toBe('performance')
 
     const unknownGroups = settings.paletteLists.getStepGroups('unknown', '')
     expect(unknownGroups).toStrictEqual([])

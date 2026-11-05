@@ -180,12 +180,6 @@ describe('the commands as they open', () => {
       ],
       window: ['app:note.create', 'app:tab.close', 'app:vault.search'],
       settings: [
-        'app:appearance.chooseTheme',
-        'app:appearance.chooseMode',
-        'app:appearance.chooseInterfaceSize',
-        'app:appearance.chooseTextSize',
-        'app:note.chooseTitleSync',
-        'app:performance.chooseProfile',
         'app:settings.open',
       ],
       vault: [
@@ -260,12 +254,6 @@ describe('what is in front', () => {
     expect(getItemIds(commands.groups)).toStrictEqual({
       window: ['app:tab.close', 'app:vault.search'],
       settings: [
-        'app:appearance.chooseTheme',
-        'app:appearance.chooseMode',
-        'app:appearance.chooseInterfaceSize',
-        'app:appearance.chooseTextSize',
-        'app:note.chooseTitleSync',
-        'app:performance.chooseProfile',
         'app:settings.open',
       ],
       vault: [
