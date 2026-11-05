@@ -16,7 +16,7 @@ export interface PluginListing {
   /** The ids of the kinds of tab the plugin registers. */
   readonly tabKinds: readonly string[]
   /** Whether a source offers the plugin and the host does not have it on disk. */
-  readonly isOffered: boolean
+  readonly isAvailable: boolean
 }
 
 /**
@@ -52,7 +52,7 @@ const createInstalled = (info: PluginInfo, listing: PluginListing | undefined): 
   info,
 })
 
-const createOffered = (listing: PluginListing): ManagedPlugin => ({
+const createAvailable = (listing: PluginListing): ManagedPlugin => ({
   id: listing.id,
   name: listing.name,
   version: listing.version,
@@ -73,9 +73,9 @@ export function createManagedPlugins(
 ): readonly ManagedPlugin[] {
   const byId = new Map(listings.map((one) => [one.id, one]))
   const installedIds = new Set(plugins.map((one) => one.id))
-  const uninstalled = listings.filter((one) => one.isOffered && !installedIds.has(one.id))
+  const uninstalled = listings.filter((one) => one.isAvailable && !installedIds.has(one.id))
   return [
     ...plugins.map((one) => createInstalled(one, byId.get(one.id))),
-    ...uninstalled.map(createOffered),
+    ...uninstalled.map(createAvailable),
   ]
 }
