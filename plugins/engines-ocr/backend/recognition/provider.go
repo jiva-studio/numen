@@ -63,7 +63,7 @@ func (p *Provider) CreateText(ctx context.Context, req host.TextCreation) error 
 		defer p.finish(key)
 		defer cancel()
 		// Recognise reports a failure as a task error. A recognition ended by Close is not a failure.
-		_, err := p.recognition.Recognise(runCtx, Request{Vault: req.Vault, Path: req.Path, IsUserStarted: false})
+		_, err := p.recognition.Recognise(runCtx, Request{Vault: req.Vault, Path: req.Path, IsUserStarted: false, ShouldReplaceTextLayer: false})
 		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL reason="Stderr logging of background recognition failure does not affect provider state."
 		if err != nil && runCtx.Err() == nil {
 			fmt.Fprintf(os.Stderr, "engines-ocr: recognise %s: %v\n", req.Path, err)

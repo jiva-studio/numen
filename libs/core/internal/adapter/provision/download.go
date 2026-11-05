@@ -9,6 +9,7 @@ import (
 	"hash"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -112,7 +113,11 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	}
 	answer, err := t.client.Do(request)
 	if err != nil {
-		return fmt.Errorf("fetching %s: %w", t.address, err)
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			return urlErr.Err
+		}
+		return err
 	}
 	defer closeAndJoin(&err, answer.Body)
 
@@ -124,7 +129,7 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 		offset = 0
 		hasher.Reset()
 	default:
-		return &statusError{address: t.address, status: answer.Status, code: answer.StatusCode}
+		return &statusError{status: answer.Status, code: answer.StatusCode}
 	}
 	total := answer.ContentLength
 	if total >= 0 {
@@ -132,7 +137,7 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	}
 	byteCount, err := t.store(part, answer.Body, hasher, offset, total)
 	if err != nil {
-		return fmt.Errorf("fetching %s: %w", t.address, err)
+		return err
 	}
 	return t.finish(hasher, offset+byteCount)
 }
@@ -173,7 +178,7 @@ func (t transfer) store(part string, body io.Reader, hasher hash.Hash, offset, t
 // an error that ends the run.
 func (t transfer) finish(hasher hash.Hash, size int64) error {
 	if found := hex.EncodeToString(hasher.Sum(nil)); found != t.sum {
-		return fmt.Errorf("%w: %s holds %s, and %s is pinned", ErrChecksum, t.address, found, t.sum)
+		return fmt.Errorf("%w: the file holds %s, and %s is pinned", ErrChecksum, found, t.sum)
 	}
 	if t.onProgress != nil {
 		t.onProgress(size, size)
@@ -223,12 +228,11 @@ func copyProgress(clock machineport.Clock, dst io.Writer, src io.Reader, offset,
 
 // statusError is an HTTP answer that is not the file.
 type statusError struct {
-	address string
-	status  string
-	code    int
+	status string
+	code   int
 }
 
-func (e *statusError) Error() string { return fmt.Sprintf("fetching %s: %s", e.address, e.status) }
+func (e *statusError) Error() string { return "the server answered " + e.status }
 
 // isTransient reports whether another attempt may succeed: a broken
 // connection or a server that is busy, and never a checksum that failed.

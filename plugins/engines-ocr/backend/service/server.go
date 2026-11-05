@@ -1,5 +1,5 @@
 // Package service is the backend of the OCR plugin: the text provider that
-// recognises the text of a file on host request, and the recognise command.
+// recognises the text of a file on host request, and the commands that recognise a file.
 package service
 
 import (
@@ -165,6 +165,9 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	if err := commands.Add("recognition.create", newRecogniseCommand(recognitions)); err != nil {
 		return err
 	}
+	if err := commands.Add("recognition.replace", newReplaceTextLayerCommand(recognitions)); err != nil {
+		return err
+	}
 	if err := commands.Add("recognition.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
 		return err
 	}
@@ -178,22 +181,46 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	return nil
 }
 
-// newRecogniseCommand recognises the file named by the user and waits for completion.
+// replaceTextLayerTitle is the title the manifest gives recognition.replace.
+const replaceTextLayerTitle = "Recognise text over the text layer"
+
+// newRecogniseCommand recognises the file named by the user and waits for completion. A file with a
+// text layer keeps it.
 func newRecogniseCommand(recognitions *recognition.Recognition) command.Run {
+	return newRecognitionCommand(recognitions, false)
+}
+
+// newReplaceTextLayerCommand recognises the file named by the user over its text layer and waits
+// for completion.
+func newReplaceTextLayerCommand(recognitions *recognition.Recognition) command.Run {
+	return newRecognitionCommand(recognitions, true)
+}
+
+func newRecognitionCommand(recognitions *recognition.Recognition, shouldReplaceTextLayer bool) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		res, err := recognitions.Recognise(ctx, recognition.Request{Vault: "", Path: req.Path, IsUserStarted: true})
+		res, err := recognitions.Recognise(ctx, recognition.Request{
+			Vault: "", Path: req.Path, IsUserStarted: true, ShouldReplaceTextLayer: shouldReplaceTextLayer,
+		})
 		if err != nil {
 			return command.Result{}, err
 		}
-		if res.IsEmpty {
+		switch {
+		case res.HasTextLayer:
+			return command.Result{
+				Message: fmt.Sprintf("%s has a text layer, which stays the text of its %d pages. Run %q to replace it with a recognition",
+					req.Path, res.Pages, replaceTextLayerTitle),
+				OpenedPath: "",
+			}, nil
+		case res.IsEmpty:
 			return command.Result{
 				Message:    fmt.Sprintf("%s says nothing that could be read, and nothing was kept", req.Path),
 				OpenedPath: "",
 			}, nil
+		default:
+			return command.Result{
+				Message:    fmt.Sprintf("recognised %d pages of %s", res.Pages, req.Path),
+				OpenedPath: "",
+			}, nil
 		}
-		return command.Result{
-			Message:    fmt.Sprintf("recognised %d pages of %s", res.Pages, req.Path),
-			OpenedPath: "",
-		}, nil
 	}
 }

@@ -109,8 +109,9 @@ type Result struct {
 	IsEmpty      bool
 }
 
-// Recognise reads the file and stores its text version. A run that the user
-// did not request skips a file whose pages have embedded text, and a file
+// Recognise reads the file and stores its text version. A file whose pages have
+// embedded text is left as it is unless ShouldReplaceTextLayer is set, before a
+// recogniser is opened. A run that the user did not request also skips a file
 // already recognised in its current state. A failure is shown as a task until
 // the file is recognised again. A failure of a file that is no longer in the
 // vault ends the task instead, because nothing can recognise that file again.
@@ -159,7 +160,7 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	if !req.IsUserStarted {
 		isRecognised, err := hasRecognition(ctx, on.texts, req.Path, inputHash)
 		if err != nil || isRecognised {
-			return Result{Pages: 0, IsSkipped: isRecognised, IsEmpty: false}, err
+			return Result{Pages: 0, IsSkipped: isRecognised, HasTextLayer: false, IsEmpty: false}, err
 		}
 	}
 	rec, err := readRecord(ctx, on.store, req.Path)
@@ -172,8 +173,8 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Document implementations opened by Reader return nil on Close."
 	defer func() { err = errors.Join(err, doc.Close()) }()
-	if !req.IsUserStarted && doc.HasTextLayer() {
-		return Result{Pages: doc.GetPageCount(), IsSkipped: true, IsEmpty: false}, nil
+	if !req.ShouldReplaceTextLayer && doc.HasTextLayer() {
+		return Result{Pages: doc.GetPageCount(), IsSkipped: !req.IsUserStarted, HasTextLayer: req.IsUserStarted, IsEmpty: false}, nil
 	}
 
 	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted, OnWaiting: nil})
@@ -255,7 +256,7 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 		if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
 			return Result{}, err
 		}
-		return Result{Pages: rec.PageCount, IsSkipped: false, IsEmpty: true}, nil
+		return Result{Pages: rec.PageCount, IsSkipped: false, HasTextLayer: false, IsEmpty: true}, nil
 	}
 	file := getVersionName(rec.Path)
 	if err := host.WriteText(ctx, store, file, text.GetSegments()); err != nil {
@@ -270,7 +271,7 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 	if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
 		return Result{}, err
 	}
-	return Result{Pages: rec.PageCount, IsSkipped: false, IsEmpty: false}, nil
+	return Result{Pages: rec.PageCount, IsSkipped: false, HasTextLayer: false, IsEmpty: false}, nil
 }
 
 // hasRecognition reports whether the file has a version of the plugin made from the content hash.

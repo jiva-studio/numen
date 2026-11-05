@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.11.6",
+  "version": "2026.11.7",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
@@ -20,6 +20,12 @@
         "title": "Recognise text",
         "icon": "scan-text",
         "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
+      },
+      {
+        "id": "recognition.replace",
+        "title": "Recognise text over the text layer",
+        "icon": "scan-text",
+        "contentTypes": ["application/pdf"]
       },
       {
         "id": "recognition.delete",

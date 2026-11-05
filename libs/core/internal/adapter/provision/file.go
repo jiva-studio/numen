@@ -119,7 +119,7 @@ func (p *FileProvisioner) Provision(
 		return resolved, nil
 	}
 	if p.cfg.Offline {
-		return pluginport.ResolvedDependency{}, fmt.Errorf("%s %s: %w", req.Kind, req.ID, ErrOffline)
+		return pluginport.ResolvedDependency{}, newDownloadError(req, ErrOffline)
 	}
 	name, err := getFileName(req)
 	if err != nil {
@@ -137,12 +137,17 @@ func (p *FileProvisioner) Provision(
 		},
 	}.fetch(ctx)
 	if err != nil {
-		return pluginport.ResolvedDependency{}, err
+		return pluginport.ResolvedDependency{}, newDownloadError(req, err)
 	}
 	if err := writeReady(ctx, dir, name, req.ChecksumSHA256); err != nil {
 		return pluginport.ResolvedDependency{}, err
 	}
 	return newResolved(req, dir, primary), nil
+}
+
+// newDownloadError is a failed fetch of the dependency. The cause does not name the address.
+func newDownloadError(req pluginport.DependencyRequirement, cause error) error {
+	return fmt.Errorf("download %s %s from %s: %w", req.Kind, req.ID, req.SourceURL, cause)
 }
 
 func getPercent(done, total int64) float64 {
