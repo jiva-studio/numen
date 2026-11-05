@@ -39,7 +39,10 @@ func (c Config) listRegistryOptions(name string) (pluginport.PluginSettingOption
 	if name != settings.RegistryThemes {
 		return nil, false
 	}
-	catalogue, _ := c.getCatalogue()
+	catalogue, err := c.getCatalogue()
+	if err != nil {
+		c.handleError(err)
+	}
 	var options pluginport.PluginSettingOptions
 	for _, one := range catalogue.Themes() {
 		options = append(options, pluginport.PluginSettingOption{Value: one.Name, Title: one.Title})

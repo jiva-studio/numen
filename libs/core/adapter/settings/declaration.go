@@ -42,36 +42,47 @@ func GetAppDeclaration() []pluginport.PluginManifestSetting {
 }
 
 // findAppSetting returns the declaration of the setting of the owner app at a key.
-func findAppSetting(key string) (pluginport.PluginManifestSetting, bool) {
+func findAppSetting(key string) pluginport.PluginManifestSetting {
 	for _, one := range readAppDeclaration() {
 		if one.Key == key {
-			return one, true
+			return one
 		}
 	}
-	return pluginport.PluginManifestSetting{}, false
+	return pluginport.PluginManifestSetting{}
 }
 
 // getAppDefault returns the default the declaration gives a key.
 func getAppDefault(key string) any {
-	declared, _ := findAppSetting(key)
-	return declared.Default
+	return findAppSetting(key).Default
 }
 
 // getAppString returns the default of a string setting.
 func getAppString(key string) string {
-	text, _ := getAppDefault(key).(string)
-	return text
+	if text, isText := getAppDefault(key).(string); isText {
+		return text
+	}
+	return ""
 }
 
 // getAppNumber returns the default of a number setting.
 func getAppNumber(key string) float64 {
-	number, _ := getAppDefault(key).(float64)
-	return number
+	if number, isNumber := getAppDefault(key).(float64); isNumber {
+		return number
+	}
+	return 0
+}
+
+// getAppBool returns the default of a boolean setting.
+func getAppBool(key string) bool {
+	if isOn, isBool := getAppDefault(key).(bool); isBool {
+		return isOn
+	}
+	return false
 }
 
 // getAppBounds returns the bounds the declaration gives a range setting.
 func getAppBounds(key string) Bounds {
-	declared, _ := findAppSetting(key)
+	declared := findAppSetting(key)
 	var bounds Bounds
 	if declared.Min != nil {
 		bounds.Min = *declared.Min

@@ -80,7 +80,10 @@ func readBack(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, &root); err != nil {
 		return err
 	}
-	app, _ := root[OwnerApp].(map[string]any)
+	app, isObject := root[OwnerApp].(map[string]any)
+	if !isObject {
+		return nil
+	}
 	for _, declared := range readAppDeclaration() {
 		steps := strings.Split(declared.Key, ".")
 		label := OwnerApp + "." + declared.Key

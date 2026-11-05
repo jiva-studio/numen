@@ -68,7 +68,7 @@ func DefaultAppearance() Appearance {
 }
 
 func DefaultTitles() Titles {
-	isOn, _ := getAppDefault(keySyncNaming).(bool)
+	isOn := getAppBool(keySyncNaming)
 	return Titles{SyncTitleAndFilename: &isOn}
 }
 

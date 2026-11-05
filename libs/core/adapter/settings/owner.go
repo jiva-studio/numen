@@ -58,15 +58,8 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 	if !found {
 		return fmt.Errorf("%w: %q has no owner that declares settings", ErrUndeclared, label)
 	}
-	name := key[0]
-	if owner == OwnerApp {
-		if isOutsideDeclaration(name) {
-			return nil
-		}
-		name = strings.Join(key, ".")
-	} else if len(key) != 1 {
-		return fmt.Errorf("%w: %q is no key of a plugin, which are one segment", ErrUndeclared, label)
-	} else if reserved, err := checkHostField(name, value); reserved {
+	name, err := getSettingName(owner, key, value)
+	if err != nil || name == "" {
 		return wrapAt(label, err)
 	}
 	index := slices.IndexFunc(settings, func(one pluginport.PluginManifestSetting) bool { return one.Key == name })
@@ -74,6 +67,25 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 		return fmt.Errorf("%w: %q", ErrUndeclared, label)
 	}
 	return wrapAt(label, checkValue(settings[index], registries, value))
+}
+
+// getSettingName returns the key a declaration lists the setting under: the dotted path for the owner
+// app, and the one segment for a plugin. It returns no name, and no error, for a path that is outside
+// the check or that leads to a field the host keeps.
+func getSettingName(owner string, key []string, value any) (string, error) {
+	if owner == OwnerApp {
+		if isOutsideDeclaration(key[0]) {
+			return "", nil
+		}
+		return strings.Join(key, "."), nil
+	}
+	if len(key) != 1 {
+		return "", fmt.Errorf("%w: a key of a plugin is one segment", ErrUndeclared)
+	}
+	if reserved, err := checkHostField(key[0], value); reserved {
+		return "", err
+	}
+	return key[0], nil
 }
 
 // wrapAt names the setting an error is about.
@@ -194,8 +206,10 @@ func (f File) GetOwner(owner string) map[string]any {
 	if err := json.Unmarshal(content, &root); err != nil {
 		return nil
 	}
-	app, _ := root[OwnerApp].(map[string]any)
-	return app
+	if app, isObject := root[OwnerApp].(map[string]any); isObject {
+		return app
+	}
+	return nil
 }
 
 // GetValue returns the value in force at a path: the stored value, else the default its owner

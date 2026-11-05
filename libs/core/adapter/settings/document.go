@@ -148,8 +148,8 @@ func (f *File) UnmarshalJSON(raw []byte) error {
 
 // readApp reads the object of the owner app, and returns whether it names a valid interface scale.
 func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) {
-	var app map[string]any
-	if err := json.Unmarshal(raw, &app); err != nil {
+	app, isObject := decodeObject(raw)
+	if !isObject {
 		f.AddNotice(fmt.Sprintf("%s is not an object of settings, and is ignored", OwnerApp))
 		return false, nil
 	}
@@ -183,14 +183,23 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	return hasInterfaceScale, json.Unmarshal(content, &sections)
 }
 
+// decodeObject decodes a JSON object, and reports whether the bytes are one.
+func decodeObject(raw json.RawMessage) (map[string]any, bool) {
+	var object map[string]any
+	if err := json.Unmarshal(raw, &object); err != nil {
+		return nil, false
+	}
+	return object, true
+}
+
 // readPlugin reads the object of a plugin over the one the file holds.
 func (f *File) readPlugin(id string, raw json.RawMessage) {
 	if !manifest.IsValidID(id) {
 		f.AddNotice(fmt.Sprintf("%s is the id of no plugin, and is ignored", id))
 		return
 	}
-	var values map[string]any
-	if err := json.Unmarshal(raw, &values); err != nil || values == nil {
+	values, isObject := decodeObject(raw)
+	if !isObject || values == nil {
 		f.AddNotice(fmt.Sprintf("%s is not an object of settings, and is ignored", id))
 		return
 	}
