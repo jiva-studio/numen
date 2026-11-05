@@ -958,7 +958,7 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 	if err := json.Unmarshal([]byte(response.Msg.GetWritten()), &target); err != nil {
 		t.Fatalf("the settings read out as %q: %v", response.Msg.GetWritten(), err)
 	}
-	if _, exists := target["appearance"]; !exists {
+	if _, exists := target["app"]; !exists {
 		t.Errorf("the settings read out as %v", target)
 	}
 
@@ -982,7 +982,7 @@ func TestWriteSettings_NextGetSettingsReturnsSaved(t *testing.T) {
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"agent", "claude", "model"}, Value: `"opus"`},
+			{At: []string{"app", "agent", "claude", "model"}, Value: `"opus"`},
 		},
 	}))
 	if err != nil {
@@ -1006,9 +1006,9 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 		posVal []string
 		value  string
 	}{
-		{"is not JSON at all", []string{"agent", "claude", "model"}, `opus`},
-		{"is of the wrong shape", []string{"agent", "claude", "model"}, `7`},
-		{"is past what the setting goes to", []string{"appearance", "textScale"}, `5`},
+		{"is not JSON at all", []string{"app", "agent", "claude", "model"}, `opus`},
+		{"is of the wrong shape", []string{"app", "agent", "claude", "model"}, `7`},
+		{"is past what the setting goes to", []string{"app", "appearance", "textScale"}, `5`},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			f := opening(t, nil, nil, true)
@@ -1046,8 +1046,8 @@ func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"agent", "claude", "model"}, Value: `"opus"`},
-			{At: []string{"appearance", "textScale"}, Value: `5`},
+			{At: []string{"app", "agent", "claude", "model"}, Value: `"opus"`},
+			{At: []string{"app", "appearance", "textScale"}, Value: `5`},
 		},
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -1080,7 +1080,7 @@ func TestTheLevelsOfAModelReachTheWindow(t *testing.T) {
 
 func isSyncing(t *testing.T, f *going) bool {
 	t.Helper()
-	target, is := getSetting(t, f, "naming", "syncTitleAndFilename").(bool)
+	target, is := getSetting(t, f, "app", "naming", "syncTitleAndFilename").(bool)
 	if !is {
 		t.Fatal("the setting is not written as a switch")
 	}
@@ -1102,7 +1102,7 @@ func TestGetSettingsReturnsTheNewValueAfterWriteSettings(t *testing.T) {
 	if !isSyncing(t, f) {
 		t.Fatal("an installation nobody has configured keeps the names apart")
 	}
-	if err := writeSetting(t, f, "false", "naming", "syncTitleAndFilename"); err != nil {
+	if err := writeSetting(t, f, "false", "app", "naming", "syncTitleAndFilename"); err != nil {
 		t.Fatal(err)
 	}
 	if isSyncing(t, f) {
@@ -1115,10 +1115,10 @@ func TestGetSettingsReturnsTheNewValueAfterWriteSettings(t *testing.T) {
 func TestWriteSettingsRejectsANumberOutOfBounds(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	if err := writeSetting(t, f, "20", "appearance", "textScale"); err == nil {
+	if err := writeSetting(t, f, "20", "app", "appearance", "textScale"); err == nil {
 		t.Fatal("a text scale of twenty was written")
 	}
-	if got := getSetting(t, f, "appearance", "textScale"); got != float64(1) {
+	if got := getSetting(t, f, "app", "appearance", "textScale"); got != float64(1) {
 		t.Errorf("the text scale is %v", got)
 	}
 }
@@ -1128,11 +1128,11 @@ func TestWriteSettingsRejectsANumberOutOfBounds(t *testing.T) {
 func TestWriteSettingsKeepsTheRestOfTheFile(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	path := filepath.Join(filepath.Dir(f.settings), "numen.json")
-	if err := os.WriteFile(path, []byte("{\n  \"appearance\": {\"textScale\": 1.5}\n}\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("{\n  \"app\": {\"appearance\": {\"textScale\": 1.5}}\n}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := writeSetting(t, f, "false", "naming", "syncTitleAndFilename"); err != nil {
+	if err := writeSetting(t, f, "false", "app", "naming", "syncTitleAndFilename"); err != nil {
 		t.Fatal(err)
 	}
 

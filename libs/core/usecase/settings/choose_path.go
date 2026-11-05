@@ -47,7 +47,7 @@ func (u *ChoosePluginPath) Execute(ctx context.Context, pluginID, key string) (C
 		return ChosenPath{}, err
 	}
 	result := ChosenPath{Path: path, IsChosen: true}
-	return result, u.write([]Setting{{Path: []string{"plugins", pluginID, key}, JSON: strconv.Quote(path)}})
+	return result, u.write([]Setting{{Path: []string{pluginID, key}, JSON: strconv.Quote(path)}})
 }
 
 func (u *ChoosePluginPath) findSetting(pluginID, key string) (PluginSetting, error) {

@@ -1,0 +1,67 @@
+{
+  "settings": [
+    {
+      "key": "appearance.theme",
+      "type": "enum",
+      "title": "Theme",
+      "description": "The stylesheet the window is drawn with.",
+      "default": "preset:numen",
+      "optionsFrom": "themes",
+      "preview": true
+    },
+    {
+      "key": "appearance.mode",
+      "type": "enum",
+      "title": "Light or dark",
+      "description": "Which half of a color pair the theme is read as. A theme that declares light and dark itself leaves this nothing to choose.",
+      "default": "system",
+      "options": [
+        { "value": "system", "title": "System" },
+        { "value": "light", "title": "Light" },
+        { "value": "dark", "title": "Dark" }
+      ],
+      "preview": true
+    },
+    {
+      "key": "appearance.interfaceScale",
+      "type": "range",
+      "title": "Interface size",
+      "description": "Scale of controls and interface text. 1 is the default.",
+      "default": 1,
+      "min": 0.8,
+      "max": 2,
+      "step": 0.1,
+      "preview": true
+    },
+    {
+      "key": "appearance.textScale",
+      "type": "range",
+      "title": "Reading size",
+      "description": "Scale of note and book text. 1 is the default.",
+      "default": 1,
+      "min": 0.8,
+      "max": 1.75,
+      "step": 0.1,
+      "preview": true
+    },
+    {
+      "key": "naming.syncTitleAndFilename",
+      "type": "boolean",
+      "title": "Sync title and filename",
+      "description": "Renaming one also renames the other.",
+      "default": true
+    },
+    {
+      "key": "performance.profile",
+      "type": "enum",
+      "title": "Performance profile",
+      "description": "How much of the hardware indexing and models may use.",
+      "default": "balanced",
+      "options": [
+        { "value": "eco", "title": "Eco", "detail": "Minimal power, 1 worker thread." },
+        { "value": "balanced", "title": "Balanced", "detail": "Standard workload, 50% CPU capacity." },
+        { "value": "maximum", "title": "Maximum", "detail": "All CPU cores and memory." }
+      ]
+    }
+  ]
+}

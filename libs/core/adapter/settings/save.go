@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
-// Setting is one field of the file and its position in it:
-// `appearance.theme` is `Setting{At: []string{"appearance", "theme"}}`.
+// Setting is one field of the file and its position in it, the first element being the owner:
+// `app.appearance.theme` is `Setting{At: []string{"app", "appearance", "theme"}}`.
 type Setting struct {
 	At      []string
 	Written any
@@ -35,9 +35,8 @@ type Setting struct {
 // fields, and every field the file omits keeps its default.
 //
 // A result that cannot be read back into `into` is not written either: a
-// value of the wrong shape or a number outside its setting's bounds is
-// rejected. `into` defines the shape of the whole file, so a value written into
-// any section is validated by reading the result back before it is saved.
+// value of the wrong shape is rejected. `into` defines the shape of the whole file, so a value
+// written into any section is validated by reading the result back before it is saved.
 func (f *Files) Save(path string, into Document, settings ...Setting) error {
 	return f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)
@@ -62,35 +61,42 @@ func (f *Files) Save(path string, into Document, settings ...Setting) error {
 			raw = patched
 		}
 
-		if err := writeSettings(raw, settings, into); err != nil {
+		if err := readBack(raw, settings, into); err != nil {
 			return fmt.Errorf("%s: %w: %w", path, settingsport.ErrNotASetting, err)
 		}
 		return writeFileAtomically(path, raw)
 	})
 }
 
-// writeSettings returns an error for any setting written by this call whose
-// value is outside the bounds of its setting, such as a number out of range or
-// an hour outside 0-23.
-//
-// A value outside its bounds that the file already held is ignored unless this
-// call wrote that field.
-func writeSettings(raw []byte, wrote []Setting, into Document) error {
+// readBack returns an error where the file with the settings written is not one that reads back
+// into the document, such as a value of the wrong shape for the section it is in, or where a
+// setting of the shell that this call wrote holds a value its declaration does not take. A value
+// the file already held and this call did not write is left for the person to correct.
+func readBack(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}
-	for _, outside := range into.GetAppearance().GetOutsideBounds() {
-		for _, setting := range wrote {
-			if isFieldCovered(setting.At, outside.At) {
-				return outside
-			}
+	var root map[string]any
+	if err := json.Unmarshal(raw, &root); err != nil {
+		return err
+	}
+	app, _ := root[OwnerApp].(map[string]any)
+	for _, declared := range readAppDeclaration() {
+		steps := strings.Split(declared.Key, ".")
+		label := OwnerApp + "." + declared.Key
+		value, found := lookupPath(app, steps)
+		if !found || !slices.ContainsFunc(wrote, func(one Setting) bool { return isFieldCovered(one.At, label) }) {
+			continue
+		}
+		if err := checkValue(declared, nil, value); err != nil {
+			return wrapAt(label, err)
 		}
 	}
 	return nil
 }
 
-// isFieldCovered is whether a setting handed in at one name wrote the field at
-// another: the field itself, or a field inside the section named.
+// isFieldCovered is whether a setting handed in at one name wrote the field at another: the field
+// itself, or a field inside the section named.
 func isFieldCovered(pos []string, field string) bool {
 	name := strings.Join(pos, ".")
 	return field == name || strings.HasPrefix(field, name+".")

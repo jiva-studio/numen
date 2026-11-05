@@ -1,24 +1,22 @@
 package settings
 
 import (
-	"errors"
 	"os"
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/core/internal/appearance"
 )
 
-// Appearance holds the theme, the mode and the sizes of the window.
+// Appearance holds the theme, the mode and the sizes of the window. The declaration of the shell
+// gives each its type, its bounds and its default.
 type Appearance struct {
 	// InterfaceScale is the scale of the window: its chrome, its controls, the
-	// spacing between them and the type in them. A number outside
-	// InterfaceScaleBounds is rejected, and a file without a scale uses the
-	// desktop's scale.
-	InterfaceScale float64 `json:"interface_scale"`
+	// spacing between them and the type in them.
+	InterfaceScale float64 `json:"interfaceScale"`
 
 	// TextScale is the scale of reading text: a note, a book, an answer, the
-	// editor. A number outside TextScaleBounds is rejected.
-	TextScale float64 `json:"text_scale"`
+	// editor.
+	TextScale float64 `json:"textScale"`
 
 	// Mode is which half of a colour pair the window takes: ModeSystem,
 	// ModeLight or ModeDark. A theme that pins the two halves itself leaves
@@ -62,57 +60,39 @@ func GetModeName(mode appearance.ColorScheme) string {
 	}
 }
 
-// AsDesigned is the multiplier that draws everything the size it was drawn at.
+// AsDesigned is the multiplier that draws everything the size it was drawn at. It is the default
+// the declaration of the shell gives both scales.
 const AsDesigned = 1
 
-// The allowed range of each of the two scales.
-//
-// The interface range keeps the smallest control a usable pointer target and a
-// 1280-pixel-wide window able to lay out its panes side by side. The text range
-// keeps the smallest text legible and a line of typing within its input row.
-func GetInterfaceScaleBounds() Bounds { return Bounds{Min: 0.8, Max: 2} }
+// GetInterfaceScaleBounds and GetTextScaleBounds are the allowed range of each of the two scales,
+// as the declaration of the shell gives it.
+func GetInterfaceScaleBounds() Bounds { return getAppBounds(keyInterfaceScale) }
 
-func GetTextScaleBounds() Bounds { return Bounds{Min: 0.8, Max: 1.75} }
-
-// GetOutsideBounds is every number the section holds that its setting does not take,
-// in the order the section names them.
-func (a Appearance) GetOutsideBounds() []*OutsideBounds {
-	var found []*OutsideBounds
-	for _, err := range []error{
-		GetInterfaceScaleBounds().Check("appearance.interface_scale", a.InterfaceScale),
-		GetTextScaleBounds().Check("appearance.text_scale", a.TextScale),
-	} {
-		var outside *OutsideBounds
-		if errors.As(err, &outside) {
-			found = append(found, outside)
-		}
-	}
-	return found
-}
-
-// Check is what is wrong with the two sizes and the count, and nothing where
-// each is a number its setting takes.
-func (a Appearance) Check() error {
-	if found := a.GetOutsideBounds(); len(found) > 0 {
-		return found[0]
-	}
-	return nil
-}
+func GetTextScaleBounds() Bounds { return getAppBounds(keyTextScale) }
 
 // DefaultTheme is this product's own palette, used by an installation with no
-// theme chosen.
+// theme chosen. It is the default the declaration of the shell gives the theme.
 const DefaultTheme = "preset:numen"
 
 // getDesktopScale returns the interface scale used when the file names no size.
 //
 // A screen reports its pixel count, not its physical size, so the desktop is
 // queried: GDK_DPI_SCALE is the text scale configured for the session, and the
-// interface scale is set to match. A number outside InterfaceScaleBounds is not
+// interface scale is set to match. A number outside the bounds of the interface scale is not
 // used as the default.
 func getDesktopScale() float64 {
 	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
 	if err != nil || !GetInterfaceScaleBounds().Contains(scale) {
-		return AsDesigned
+		return getAppNumber(keyInterfaceScale)
 	}
 	return scale
+}
+
+// Check returns the first of the two scales that is outside the bounds the declaration gives it,
+// and nothing where both are within.
+func (a Appearance) Check() error {
+	if err := GetInterfaceScaleBounds().Check(OwnerApp+"."+keyInterfaceScale, a.InterfaceScale); err != nil {
+		return err
+	}
+	return GetTextScaleBounds().Check(OwnerApp+"."+keyTextScale, a.TextScale)
 }

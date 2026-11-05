@@ -196,3 +196,7 @@ func NormalizePermission(permission string) string { return pluginport.Normalize
 func PluginCapabilities() []string { return pluginport.PluginCapabilities() }
 
 func PluginPermissions() []string { return pluginport.PluginPermissions() }
+
+func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, options PluginSettingOptions) PluginSetting {
+	return pluginport.NewPluginSetting(declared, defaultJSON, options)
+}

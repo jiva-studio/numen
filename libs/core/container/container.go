@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -162,7 +163,7 @@ func (c Config) ReadSettings() func() (string, string, error) {
 		if err != nil {
 			return "", "", err
 		}
-		target, err := c.getSettingsAt(path)
+		target, err := c.getCheckedSettingsAt(path)
 		if err != nil {
 			return "", path, err
 		}
@@ -186,7 +187,7 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 		}
 		target = append(target, settings.Setting{At: one.Path, Written: value})
 	}
-	if err := checkPluginSettings(c.PluginHost, entries); err != nil {
+	if err := c.checkWrites(entries); err != nil {
 		return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
 	}
 	path, err := c.settingsFile()
@@ -209,26 +210,32 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 	return nil
 }
 
-const pluginSettingsPrefix = "plugins"
-
-// checkPluginSettings reports the first plugin setting among the entries that does not take its value.
-func checkPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting) error {
-	if host == nil {
-		return nil
-	}
+// checkWrites reports the first entry that its owner does not declare or whose setting does not
+// take the value. Nothing is written where one entry is refused.
+func (c Config) checkWrites(entries []settingsport.Setting) error {
+	declarations := c.getDeclarations()
+	registries := c.getRegistries()
 	for _, one := range entries {
-		if len(one.Path) != 3 || one.Path[0] != pluginSettingsPrefix {
-			continue
-		}
 		var val any
 		if err := json.Unmarshal([]byte(one.JSON), &val); err != nil {
 			return err
 		}
-		if err := host.CheckPluginSetting(one.Path[1], one.Path[2], val); err != nil {
+		if err := settings.CheckWrite(declarations, registries, one.Path, val); err != nil {
 			return err
+		}
+		if c.PluginHost != nil && isPluginSetting(one.Path) {
+			if err := c.PluginHost.CheckPluginSetting(one.Path[0], one.Path[1], val); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
+}
+
+// isPluginSetting is whether a path leads to a field of the object of a plugin: its first element
+// is the id of the plugin and the second is the key.
+func isPluginSetting(path []string) bool {
+	return len(path) == 2 && path[0] != settings.OwnerApp
 }
 
 // notifyPluginSettings tells the host each plugin setting among the entries and passes the failure to report.
@@ -237,12 +244,12 @@ func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settings
 		return
 	}
 	for _, one := range entries {
-		if len(one.Path) < 3 || one.Path[0] != pluginSettingsPrefix {
+		if !isPluginSetting(one.Path) {
 			continue
 		}
 		var val any
 		if err := json.Unmarshal([]byte(one.JSON), &val); err == nil {
-			if err := host.UpdatePluginSetting(context.Background(), one.Path[1], one.Path[2], val); err != nil {
+			if err := host.UpdatePluginSetting(context.Background(), one.Path[0], one.Path[1], val); err != nil {
 				report(fmt.Errorf("update plugin setting %s: %w", strings.Join(one.Path, "."), err))
 			}
 		}
@@ -350,11 +357,8 @@ func (c Config) GetDelay() machineport.Delay {
 	}
 }
 
-// performanceSettingsKey and profileSettingKey are the path of the performance profile in the settings file.
-const (
-	performanceSettingsKey = "performance"
-	profileSettingKey      = "profile"
-)
+// profilePath is the path of the performance profile in the settings file.
+func profilePath() []string { return []string{settings.OwnerApp, "performance", "profile"} }
 
 // notifyPerformanceProfile tells the plugin host the profile of an entry that writes it, so a
 // running plugin takes it without a restart.
@@ -363,7 +367,7 @@ func (c Config) notifyPerformanceProfile(entries []settingsport.Setting) {
 		return
 	}
 	for _, one := range entries {
-		if len(one.Path) != 2 || one.Path[0] != performanceSettingsKey || one.Path[1] != profileSettingKey {
+		if !slices.Equal(one.Path, profilePath()) {
 			continue
 		}
 		var profile string

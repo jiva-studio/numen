@@ -11,6 +11,7 @@ func (b Bounds) Contains(value float64) bool {
 }
 
 // Check returns what is wrong with a number the setting does not take, and
+// nothing where it takes it.
 func (b Bounds) Check(targetPath string, value float64) error {
 	if b.Contains(value) {
 		return nil

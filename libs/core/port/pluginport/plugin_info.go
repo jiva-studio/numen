@@ -32,6 +32,31 @@ type PluginSetting struct {
 	ValueJSON     string
 }
 
+// NewPluginSetting returns the setting as a window draws it. The default, as JSON, and the options
+// are the ones the caller resolved for the declaration, and nothing is resolved under stored values.
+func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, options PluginSettingOptions) PluginSetting {
+	return PluginSetting{
+		Key:         declared.Key,
+		Type:        declared.Type,
+		Title:       declared.Title,
+		Description: declared.Description,
+		DefaultJSON: defaultJSON,
+		Palette:     declared.Palette,
+		Icon:        declared.Icon,
+		Options:     options,
+		Min:         declared.Min,
+		Max:         declared.Max,
+		Step:        declared.Step,
+		Replaces:    declared.Replaces,
+		OptionsBy:   declared.OptionsBy,
+		When:        declared.When,
+		Accept:      declared.Accept,
+		Multiple:    declared.Multiple,
+		Preview:     declared.Preview,
+		OptionsFrom: declared.OptionsFrom,
+	}
+}
+
 // PluginInfo describes a discovered plugin and its declarative settings.
 type PluginInfo struct {
 	ID           string

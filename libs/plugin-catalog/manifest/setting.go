@@ -181,6 +181,13 @@ func (s Setting) hasOptionInAnyGroup(value string) bool {
 	return false
 }
 
+// IsSettingShown reports whether the condition of the setting holds under the values in force that
+// ResolveSettings returned, and the conditions of the settings it reads.
+func (m Manifest) IsSettingShown(s Setting, resolved map[string]any) bool {
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
+	return m.isActive(s.When, resolved, 0)
+}
+
 // IsSecretActive reports whether the secret is handed to the plugin under the values in force.
 func (m Manifest) IsSecretActive(secret Secret, values map[string]any) bool {
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"

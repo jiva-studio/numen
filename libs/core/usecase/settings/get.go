@@ -46,10 +46,15 @@ func (u *Get) Execute() (Current, error) {
 	if u.plugins != nil {
 		pluginInfos = u.plugins()
 	}
+	var app []PluginSetting
+	if u.app != nil {
+		app = u.app()
+	}
 	return Current{
 		Written: content,
 		Path:    path,
 		Models:  models,
 		Plugins: pluginInfos,
+		App:     app,
 	}, nil
 }
