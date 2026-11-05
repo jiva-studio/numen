@@ -21,6 +21,12 @@ import type { SettledBookProps } from '../lib/props'
 /** How many turns wait for a document that is being drawn; a key held down asks for more. */
 const MAX_WAITING_TURNS = 8
 
+/**
+ * Frames without a change of size after which a resize is over. A pointer dragging a border
+ * reports at its own rate, so a drag can leave a frame or two without a change.
+ */
+const SETTLED_FRAMES = 4
+
 /** The document the columns stand for: its markup and where it begins in the book. */
 interface StoodFor {
   readonly markup: string
@@ -44,6 +50,7 @@ export interface BookLayoutOptions {
 interface BookWatchContext {
   readonly settle: (getKeep: () => number, led?: BookLink) => void
   readonly settleKept: () => void
+  readonly settleResized: () => void
   readonly getKeptOffset: () => number
   readonly takeLed: () => BookLink | undefined
   readonly standing: { value: number }
@@ -58,11 +65,11 @@ function watchBookLayout(
   context: BookWatchContext,
 ): void {
   watch(
-    [
-      () => signals.viewport.value.width,
-      () => signals.viewport.value.height,
-      () => signals.textSize.value,
-    ],
+    [() => signals.viewport.value.width, () => signals.viewport.value.height],
+    context.settleResized,
+  )
+  watch(
+    () => signals.textSize.value,
     () => {
       context.settle(context.getKeptOffset)
     },
@@ -165,9 +172,11 @@ export function createBookSettling(options: BookSettlingOptions) {
     options.column.isStood.value = true
   }
 
+  let measuredSize = options.signals.viewport.value
   /** Reads the columns on the next frame, or once the pictures in them have arrived. */
   const settle = (getKeep: () => number, led?: BookLink) => {
     options.column.measure()
+    measuredSize = options.signals.viewport.value
     if (!options.column.isMeasured.value) return
     onNextFrame(() => {
       const text = options.paper.value
@@ -192,9 +201,38 @@ export function createBookSettling(options: BookSettlingOptions) {
     })
   }
 
+  /**
+   * Sets the columns again with the offset in front kept, once the area has kept one size for
+   * `SETTLED_FRAMES` frames. Reading the columns measures every run of the text, and a border being
+   * dragged changes the size on almost every frame. The size `settle` has just measured is the one
+   * the columns are read at, and no resize.
+   */
+  let framesSinceResize = 0
+  let isResizeQueued = false
+  const waitForSettledSize = () => {
+    onNextFrame(() => {
+      framesSinceResize += 1
+      if (framesSinceResize < SETTLED_FRAMES) {
+        waitForSettledSize()
+        return
+      }
+      isResizeQueued = false
+      settle(options.turns.getKeptOffset)
+    })
+  }
+  const settleResized = () => {
+    const { width, height } = options.signals.viewport.value
+    if (!isResizeQueued && width === measuredSize.width && height === measuredSize.height) return
+    framesSinceResize = 0
+    if (isResizeQueued) return
+    isResizeQueued = true
+    waitForSettledSize()
+  }
+
   watchBookLayout(options.props, options.signals, {
     settle,
     settleKept,
+    settleResized,
     getKeptOffset: options.turns.getKeptOffset,
     takeLed: options.takeLed,
     standing: options.turns.standing,

@@ -5,7 +5,7 @@
  * Separate from the component, like `lib/spread.ts`: it receives the two
  * elements and the one browser measurement it may not make itself.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import type { ShallowRef } from 'vue'
 
 import { clamp } from '@numen/ui'
@@ -58,7 +58,6 @@ export interface BookFlowState {
   readonly viewport: ShallowRef<{ width: number; height: number }>
   readonly isMeasured: import('vue').ComputedRef<boolean>
   readonly flow: import('vue').ComputedRef<Flow>
-  readonly spreadCount: import('vue').ComputedRef<number>
   readonly setting: import('vue').ComputedRef<Record<string, string>>
   readonly measure: () => void
 }
@@ -79,7 +78,6 @@ export function useBookFlow(
     gap: GAP,
     columns: columns.value,
   }))
-  const spreadCount = computed(() => countSpreads(flow.value))
   const setting = computed(() =>
     createBookSetting(flow.value, viewport.value.height, textSize.value),
   )
@@ -89,7 +87,6 @@ export function useBookFlow(
     viewport,
     isMeasured,
     flow,
-    spreadCount,
     setting,
     measure,
   }
@@ -98,11 +95,18 @@ export function useBookFlow(
 /** `getEdge` is handed on to the marks, which is what reads it. */
 export function useBookColumns(options: BookColumnsOptions) {
   const contentWidth = ref(0)
-  const { textSize, viewport, isMeasured, flow, spreadCount, setting, measure } = useBookFlow(
+  const { textSize, viewport, isMeasured, flow, setting, measure } = useBookFlow(
     options.area,
     options.props,
     contentWidth,
   )
+
+  /**
+   * The flow the marks were read in. The area takes its new size before the columns are read
+   * again, and until then the marks and the spread in front are positions in this flow.
+   */
+  const laidFlow = shallowRef<Flow>(flow.value)
+  const spreadCount = computed(() => countSpreads(laidFlow.value))
 
   const { marks, gather, findFragmentOffset, markRuns } = useBookMarks(
     options.paper,
@@ -129,6 +133,7 @@ export function useBookColumns(options: BookColumnsOptions) {
       text.scrollWidth <= text.clientWidth &&
       countFilledColumns(marks.value, flow.value) === 1
     contentWidth.value = isSingleColumn ? box.clientWidth : text.scrollWidth
+    laidFlow.value = flow.value
   }
 
   const state = {
@@ -136,7 +141,7 @@ export function useBookColumns(options: BookColumnsOptions) {
     viewport,
     isMeasured,
     isStood,
-    flow,
+    flow: laidFlow,
     spreadCount,
     setting,
     marks,

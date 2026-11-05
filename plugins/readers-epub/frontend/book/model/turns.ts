@@ -5,7 +5,7 @@
  * and the marks measured from them and changes nothing else.
  */
 import { computed, ref } from 'vue'
-import type { ComputedRef, ShallowRef } from 'vue'
+import type { ComputedRef, Ref, ShallowRef } from 'vue'
 
 import {
   findSpreadAt,
@@ -106,7 +106,7 @@ function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): 
 export interface BookTurnsOptions {
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
   readonly props: SettledBookProps
-  readonly flow: ComputedRef<Flow>
+  readonly flow: Readonly<Ref<Flow>>
   readonly spreadCount: ComputedRef<number>
   readonly marks: Readonly<ShallowRef<readonly Mark[]>>
   readonly onMove: (pos: number) => void
