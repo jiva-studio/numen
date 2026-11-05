@@ -65,6 +65,6 @@ func TestAWriteThatDisablesAPluginReachesThePluginHost(t *testing.T) {
 	expectChange(t, reader.await(t), []string{eventPlugin, "enabled"}, `false`)
 	waitFor(t, func() bool { return len(host.listUpdates()) > 0 })
 	if got := host.listUpdates(); !slices.Equal(got, []string{eventPlugin + ".enabled"}) {
-		t.Errorf("the plugin host was told %v", got)
+		t.Errorf("the plugin host received %v", got)
 	}
 }

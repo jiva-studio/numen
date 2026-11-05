@@ -81,44 +81,38 @@ const (
 	hostFieldStoredSecrets = pluginport.SettingStoredSecrets
 )
 
-// valueList collects the values in force.
-type valueList struct {
-	values   settingevents.Values
-	failures []error
-}
-
-func (l *valueList) add(path []string, value any) {
-	encoded, err := json.Marshal(value)
-	if err != nil {
-		l.failures = append(l.failures, err)
-		return
-	}
-	l.values[settingevents.JoinPath(path)] = string(encoded)
-}
-
 // listSettingValues lists the value in force of every setting the shell and the plugins declare,
 // and the fields the host keeps for each plugin.
 func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
-	list := &valueList{values: settingevents.Values{}}
+	values := settingevents.Values{}
+	var failures []error
+	add := func(path []string, value any) {
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			failures = append(failures, err)
+			return
+		}
+		values[settingevents.JoinPath(path)] = string(encoded)
+	}
 	for _, declared := range settings.GetAppDeclaration() {
 		path := append([]string{settings.OwnerApp}, strings.Split(declared.Key, ".")...)
 		if value, found := target.GetValue(path...); found {
-			list.add(path, value)
+			add(path, value)
 		}
 	}
 	for _, plugin := range c.Plugins()() {
-		listPluginValues(target, plugin, list)
+		listPluginValues(target, plugin, add, values)
 	}
-	return list.values, errors.Join(list.failures...)
+	return values, errors.Join(failures...)
 }
 
-func listPluginValues(target Settings, plugin pluginport.PluginInfo, list *valueList) {
+func listPluginValues(target Settings, plugin pluginport.PluginInfo, add func([]string, any), values settingevents.Values) {
 	for _, declared := range plugin.Settings {
 		path := []string{plugin.ID, declared.Key}
 		if value, found := target.GetValue(path...); found {
-			list.add(path, value)
+			add(path, value)
 		} else if declared.DefaultJSON != "" {
-			list.values[settingevents.JoinPath(path)] = declared.DefaultJSON
+			values[settingevents.JoinPath(path)] = declared.DefaultJSON
 		}
 	}
 	enabled := true
@@ -127,9 +121,9 @@ func listPluginValues(target Settings, plugin pluginport.PluginInfo, list *value
 			enabled = stored
 		}
 	}
-	list.add([]string{plugin.ID, hostFieldEnabled}, enabled)
+	add([]string{plugin.ID, hostFieldEnabled}, enabled)
 	if value, found := target.GetValue(plugin.ID, hostFieldStoredSecrets); found {
-		list.add([]string{plugin.ID, hostFieldStoredSecrets}, value)
+		add([]string{plugin.ID, hostFieldStoredSecrets}, value)
 	}
 }
 

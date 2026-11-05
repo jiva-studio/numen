@@ -84,7 +84,7 @@ func TestAReaderThatLeftHasItsChannelClosed(t *testing.T) {
 	}
 }
 
-func TestASettingThatNoLongerHoldsAValueIsDeliveredAsNull(t *testing.T) {
+func TestASettingWithNoValueIsReportedAsNull(t *testing.T) {
 	events := settingevents.New()
 	changes, stop := events.Subscribe(newSource(t, func() (settingevents.Values, error) {
 		return settingevents.Values{"a\x00x": "1"}, nil
