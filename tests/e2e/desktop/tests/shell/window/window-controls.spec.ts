@@ -25,7 +25,7 @@ const chooseValue = async (page: Page, value: string): Promise<void> => {
 test.describe('Window Controls and Display Preferences', () => {
   test.afterEach(async ({ request }) => {
     await writeSetting(request, ['app', 'appearance', 'textScale'], 1)
-    await writeSetting(request, [PLEX_ID, 'nest_headings'], true)
+    await writeSetting(request, [PLEX_ID, 'nestHeadings'], true)
   })
 
   test('closes the active tab with Close tab', async ({ page, request }) => {
@@ -85,7 +85,7 @@ test.describe('Window Controls and Display Preferences', () => {
     await chooseValue(page, 'Off')
     await expect
       .poll(async () => await readOwner(request, PLEX_ID))
-      .toMatchObject({ nest_headings: false })
+      .toMatchObject({ nestHeadings: false })
 
     await page.mouse.move(0, 0)
     await focusNode.hover()

@@ -14,7 +14,7 @@ import {
   ANSWER_WORDS,
   type CommandDeps,
   type CommandTarget,
-  type MenuChoice,
+  type ResultChoice,
   type Notes,
   type NoteLookup,
   type PaletteLists,
@@ -77,6 +77,17 @@ export interface CommandsDepsOptions {
   fileMenuCommands?: FileMenuCommands
 }
 
+/** What a chosen result is over, replacing the tab and the note of the window. */
+const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
+  tab: '',
+  kind: null,
+  path: place.path,
+  file: place.file,
+  title: place.title,
+  ...(place.line === undefined ? {} : { line: place.line }),
+  ...(place.selector === undefined ? {} : { selector: place.selector }),
+})
+
 export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
   const { pluginHost } = options
@@ -89,6 +100,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const palette = useSearch(core, words, {
     coverage,
     menu: { getEntries: () => options.menus?.getEntries(MENU_LOCATION.searchResult) ?? [] },
+    getTarget,
   })
   const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
     ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
@@ -109,7 +121,7 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const reportError = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
 
-  const runCommand = (id: string, target: CommandTarget) => {
+  const runCommand = (id: string, target: CommandTarget, input?: string) => {
     if (pluginHost?.hasCommand(id)) {
       commands.setOpen(false)
       runInBackground(
@@ -120,7 +132,10 @@ export function useCommands(options: CommandsDepsOptions) {
       )
       return
     }
-    const invocation = commands.startCommand(id, target)
+    const invocation =
+      input === undefined
+        ? commands.startCommand(id, target)
+        : commands.startCommand(id, target, input)
     if (invocation) {
       runInBackground(runInvocation(invocation, commandDeps, ANSWER_WORDS), reportError)
       return
@@ -132,17 +147,13 @@ export function useCommands(options: CommandsDepsOptions) {
     writeMessage(commands.getObjection(id, target), 'error')
   }
 
-  /** Runs the command of an entry of the menu of a search result over the note it was chosen on. */
-  const runEntry = (choice: MenuChoice): void =>
-    runCommand(choice.command, {
-      ...getTarget(),
-      tab: '',
-      kind: null,
-      path: choice.path,
-      file: choice.path,
-      title: choice.title,
-      ...(choice.line >= 0 ? { line: choice.line } : {}),
-    })
+  /** Runs the command of a chosen action over what it was chosen on, with the text typed for it. */
+  const runChoice = (choice: ResultChoice): void =>
+    runCommand(
+      choice.command,
+      choice.over ? { ...getTarget(), ...toResultTarget(choice.over) } : getTarget(),
+      choice.input || undefined,
+    )
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
@@ -161,7 +172,7 @@ export function useCommands(options: CommandsDepsOptions) {
     commands,
     commandDeps,
     runCommand,
-    runEntry,
+    runChoice,
     onKeyDown,
     pluginWays,
     getNoteCommands,

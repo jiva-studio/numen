@@ -5,9 +5,7 @@ import type { PlacedCommand } from '@numen/plugin-host'
 import {
   createNameItem,
   createPassageItem,
-  MENU_ACTION_PREFIX,
-  resolveDestination,
-  resolveMenuChoice,
+  resolveChoice,
   type NameMatch,
   type Passage,
   type SearchHit,
@@ -25,6 +23,11 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Words only',
   notEmbedded: 'Not read for meaning yet',
+  creating: 'No results',
+  creates: 'Create note',
+  asChild: 'Create as child',
+  asParent: 'Create as parent',
+  asJump: 'Create as jump',
 }
 
 const ATLAS = 'org.example.atlas'
@@ -41,10 +44,10 @@ const SHOW = entry(`${ATLAS}:graph.showNote`, 'Show note in plex', { group: 'nav
 const OTHER = entry(`${ATLAS}:other.run`, 'Another')
 const ENTRIES = [SHOW, OTHER]
 
-/** The first action of a note: the editor command that opens it, run like any command of the menu. */
-const openId = `${MENU_ACTION_PREFIX}${COMMAND.openNote}`
-const showId = `${MENU_ACTION_PREFIX}${SHOW.command}`
-const otherId = `${MENU_ACTION_PREFIX}${OTHER.command}`
+/** The first action of a note is the id of the editor command that opens it, and an entry is the id of its command. */
+const openId = COMMAND.openNote
+const showId = SHOW.command
+const otherId = OTHER.command
 
 const createName = (overrides: Partial<NameMatch> = {}): NameMatch => ({
   path: 'reef/Coral.md',
@@ -94,7 +97,7 @@ describe('a note found by its title', () => {
 
     expect(row.item.actions?.[0]).toStrictEqual({ id: openId, text: 'Open note' })
     expect(row.item.actions?.[1]).toStrictEqual({
-      id: `${MENU_ACTION_PREFIX}${first.command}`,
+      id: first.command,
       text: 'First',
     })
   })
@@ -156,8 +159,8 @@ describe('a passage found in a file that is no note', () => {
       ENTRIES,
     )
 
-    expect(row.item.actions).toStrictEqual([{ id: 'note', text: 'Open the document' }])
-    expect(row.hit.offers).toStrictEqual(['note'])
+    expect(row.item.actions).toStrictEqual([{ id: COMMAND.openFile, text: 'Open the document' }])
+    expect(row.hit.offers).toStrictEqual([COMMAND.openFile])
   })
 })
 
@@ -174,62 +177,64 @@ describe('the command an action of a result runs', () => {
     ...overrides,
   })
 
-  it('is the command of the entry over the note of the hit, with the type of the note', () => {
-    expect(resolveMenuChoice(createHit(), showId)).toStrictEqual({
+  const createDocument = (overrides: Partial<SearchHit> = {}): SearchHit =>
+    createHit({
+      path: 'library/a.bin',
+      title: '',
+      line: -1,
+      type: null,
+      offers: [COMMAND.openFile],
+      selector: { page: 3 },
+      ...overrides,
+    })
+
+  it('is the command of the entry over the note of the hit', () => {
+    expect(resolveChoice(createHit(), showId)).toStrictEqual({
       command: SHOW.command,
-      path: 'reef/Coral.md',
-      title: 'Coral',
-      type: 'sample',
-      line: 3,
+      over: { path: 'reef/Coral.md', file: 'reef/Coral.md', title: 'Coral', line: 3 },
+      input: '',
     })
   })
 
   it('is the command that opens the note, over the note of the hit', () => {
-    expect(resolveMenuChoice(createHit(), openId)).toStrictEqual({
+    expect(resolveChoice(createHit(), openId)).toStrictEqual({
       command: COMMAND.openNote,
-      path: 'reef/Coral.md',
-      title: 'Coral',
-      type: 'sample',
-      line: 3,
+      over: { path: 'reef/Coral.md', file: 'reef/Coral.md', title: 'Coral', line: 3 },
+      input: '',
     })
   })
 
-  it('is the line of a heading or a passage for the note to open at, and -1 for a name', () => {
-    expect(resolveMenuChoice(createHit({ line: 7 }), openId)?.line).toBe(7)
-    expect(resolveMenuChoice(createHit({ line: 0 }), openId)?.line).toBe(0)
-    expect(resolveMenuChoice(createHit({ line: -1 }), openId)?.line).toBe(-1)
+  it('is the line of a heading or a passage for the note to open at, and no line for a name', () => {
+    expect(resolveChoice(createHit({ line: 7 }), openId)?.over?.line).toBe(7)
+    expect(resolveChoice(createHit({ line: 0 }), openId)?.over?.line).toBe(0)
+    expect(resolveChoice(createHit({ line: -1 }), openId)?.over).not.toHaveProperty('line')
   })
 
-  it('is none for the special action of a file that is no note', () => {
-    expect(resolveMenuChoice(createHit({ type: null, offers: ['note'] }), 'note')).toBeNull()
-  })
-
-  it('is none where nothing was found or the hit does not accept the action', () => {
-    expect(resolveMenuChoice(undefined, showId)).toBeNull()
-    expect(resolveMenuChoice(createHit({ offers: [openId] }), showId)).toBeNull()
-  })
-
-  it('is none for a hit in a file that is no note', () => {
-    expect(
-      resolveMenuChoice(createHit({ type: null, offers: [openId, showId] }), showId),
-    ).toBeNull()
-  })
-
-  it('leaves the note closed: an entry has no destination', () => {
-    expect(resolveDestination(createHit(), showId)).toBeNull()
-  })
-
-  it('has no destination for the command that opens the note, which runs as a command', () => {
-    expect(resolveDestination(createHit(), openId)).toBeNull()
-    expect(resolveDestination(createHit(), 'note')).toBeNull()
-  })
-
-  it('keeps the destination of a file that is no note under the action note', () => {
-    const document = createHit({ type: null, offers: ['note'], selector: { page: 3 } })
-
-    expect(resolveDestination(document, 'note')).toMatchObject({
-      at: 'file',
-      path: 'reef/Coral.md',
+  it('is the command that opens a document, over its file and the selector of the hit', () => {
+    expect(resolveChoice(createDocument(), COMMAND.openFile)).toStrictEqual({
+      command: 'app:file.open',
+      over: { path: '', file: 'library/a.bin', title: '', selector: { page: 3 } },
+      input: '',
     })
+  })
+
+  it('is the command that opens a document, over the file alone where the hit has no selector', () => {
+    const place = resolveChoice(createDocument({ selector: null }), COMMAND.openFile)?.over
+
+    expect(place).toStrictEqual({ path: '', file: 'library/a.bin', title: '' })
+  })
+
+  it('is none where nothing was found or the hit does not carry the action', () => {
+    expect(resolveChoice(undefined, showId)).toBeNull()
+    expect(resolveChoice(createHit({ offers: [openId] }), showId)).toBeNull()
+    expect(resolveChoice(createDocument(), 'other')).toBeNull()
+  })
+
+  it('is none for an entry of the menu over a hit in a file that is no note', () => {
+    expect(resolveChoice(createDocument({ offers: [COMMAND.openFile, showId] }), showId)).toBeNull()
+  })
+
+  it('is none for the action id the document had before it was a command', () => {
+    expect(resolveChoice(createDocument({ offers: ['note'] }), 'note')).toBeNull()
   })
 })

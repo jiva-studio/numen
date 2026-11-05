@@ -66,12 +66,12 @@ const recordPage = async (page: Page, pluginName: string): Promise<void> => {
 
 test.describe('The page of a plugin', () => {
   test.afterEach(async ({ page }) => {
-    await writeSetting(page, [FIRST.id, 'executable_path'], '')
+    await writeSetting(page, [FIRST.id, 'executablePath'], '')
   })
 
   test('shows none of the values of the plugin page opened before it', async ({ page }) => {
     const firstPath = await createExecutable()
-    await writeSetting(page, [FIRST.id, 'executable_path'], firstPath)
+    await writeSetting(page, [FIRST.id, 'executablePath'], firstPath)
     await openWorkspace(page)
     await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
@@ -99,11 +99,11 @@ test.describe('The page of a plugin', () => {
 
   test('stores a path under the id of the plugin and keeps no plugins object', async ({ page }) => {
     const path = await createExecutable()
-    await writeSetting(page, [FIRST.id, 'executable_path'], path)
+    await writeSetting(page, [FIRST.id, 'executablePath'], path)
 
     const file = await readSettings(page.request)
 
-    expect(file[FIRST.id]).toMatchObject({ executable_path: path })
+    expect(file[FIRST.id]).toMatchObject({ executablePath: path })
     expect(file).not.toHaveProperty('plugins')
     expect(file).toHaveProperty('app')
   })

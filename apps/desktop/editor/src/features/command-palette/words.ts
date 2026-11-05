@@ -59,6 +59,8 @@ export interface ConfirmWords {
 export interface Words extends EmptyWords {
   /** The commands, each in the words it is offered by. */
   readonly read: string
+  /** The action of a file that is no note, which opens in its reader. */
+  readonly readDocument: string
   readonly beside: string
   readonly travel: string
   readonly child: string

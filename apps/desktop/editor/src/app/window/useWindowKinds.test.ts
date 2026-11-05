@@ -201,37 +201,11 @@ describe('a note travelled to', () => {
 })
 
 describe('the destinations', () => {
-  it('open the file at the selector of a search hit', () => {
+  it('give the icon of the reader that opens a file', () => {
     const { deps, window } = create()
-
-    window.destinations.openFile('a.bin', 'a', undefined, { page: 3 })
-
-    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.bin', 'a', {
-      where: 'current',
-      line: undefined,
-      selector: { page: 3 },
-    })
-  })
-
-  it('open the file in the tab in front, at the line', async () => {
-    const { deps, window, writer } = create()
-
-    window.destinations.openFile('a.md', 'A', 7)
-
-    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', 'A', {
-      where: 'current',
-      line: 7,
-      selector: undefined,
-    })
 
     expect(window.destinations.findFileIcon?.('doc.pdf')).toBe('pdf-icon')
     expect(deps.tabOpeners.findFileIcon).toHaveBeenCalledWith('doc.pdf')
-
-    vi.mocked(deps.tabOpeners.openFile).mockRejectedValueOnce(new Error('open failed'))
-    window.destinations.openFile('bad.md', 'Bad')
-    await vi.waitFor(() =>
-      expect(writer).toHaveBeenCalledWith('Numen is not responding; retrying', 'error'),
-    )
   })
 })
 

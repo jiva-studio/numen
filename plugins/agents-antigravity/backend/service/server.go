@@ -41,7 +41,7 @@ func (s *agentServer) getModelCache() *cache.Cache[[]antigravityModel] {
 func (s *agentServer) applyConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if execPath, ok := values["executable_path"]; ok {
+	if execPath, ok := values["executablePath"]; ok {
 		s.executablePath = strings.TrimSpace(execPath)
 	}
 }

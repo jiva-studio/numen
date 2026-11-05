@@ -10,7 +10,7 @@ export interface PDFReaderPreferences {
   defaultZoom: Fit
 }
 
-const DEFAULT_ZOOM = 'default_zoom'
+const DEFAULT_ZOOM = 'defaultZoom'
 
 const FITS: ReadonlySet<unknown> = new Set<Fit>(['page', 'width', '100%'])
 

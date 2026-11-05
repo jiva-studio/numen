@@ -19,6 +19,7 @@ export const COMMAND = {
   deleteNote: formatAppCommandId('note.delete'),
   copyNotePath: formatAppCommandId('note.copyPath'),
   chooseTitleSync: formatAppCommandId('note.chooseTitleSync'),
+  openFile: formatAppCommandId('file.open'),
   moveFile: formatAppCommandId('file.move'),
   createFolder: formatAppCommandId('folder.create'),
   closeTab: formatAppCommandId('tab.close'),

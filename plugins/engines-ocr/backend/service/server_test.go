@@ -67,12 +67,12 @@ func TestUpdateConfigReopensEngine(t *testing.T) {
 		t.Fatalf("reopened after DPI change: %v, %v, opened %d", eng, err, o.opened)
 	}
 
-	models.updateConfig(map[string]string{"dpi": "450", "model": "custom", "custom_model_path": "/opt/models/rec.onnx"})
+	models.updateConfig(map[string]string{"dpi": "450", "model": "custom", "customModelPath": "/opt/models/rec.onnx"})
 	if models.cfg.Recognise.DPI != 450 || models.cfg.Recognise.Path != "/opt/models/rec.onnx" || o.closed != 2 {
 		t.Fatalf("config %+v, %d closed; want the new settings and the recogniser closed", models.cfg.Recognise, o.closed)
 	}
 	for _, invalid := range []string{"-100", "0", "not-a-number"} {
-		models.updateConfig(map[string]string{"dpi": invalid, "model": "custom", "custom_model_path": "/opt/models/rec.onnx"})
+		models.updateConfig(map[string]string{"dpi": invalid, "model": "custom", "customModelPath": "/opt/models/rec.onnx"})
 		if models.cfg.Recognise.DPI != 450 {
 			t.Errorf("a resolution of %q set it to %d", invalid, models.cfg.Recognise.DPI)
 		}
@@ -80,7 +80,7 @@ func TestUpdateConfigReopensEngine(t *testing.T) {
 	if eng, err := models.getEngine(t.Context()); err != nil || eng == nil || o.opened != 3 {
 		t.Fatalf("%d opened (%v), want the recogniser opened again", o.opened, err)
 	}
-	models.updateConfig(map[string]string{"dpi": "450", "model": "custom", "custom_model_path": "/opt/models/rec.onnx"})
+	models.updateConfig(map[string]string{"dpi": "450", "model": "custom", "customModelPath": "/opt/models/rec.onnx"})
 	if o.closed != 2 {
 		t.Fatalf("%d closed: an unchanged setting closed the recogniser", o.closed)
 	}
@@ -180,7 +180,7 @@ func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
 		path, dict string
 	}{
 		{map[string]string{"model": "pp-ocrv5-eslav"}, "eslav_PP-OCRv5_rec_mobile.onnx", "", ""},
-		{map[string]string{"model": "custom", "custom_model_path": "/m/rec.onnx", "custom_dict_path": "/m/dict.txt"}, engine.RecogniserCustom, "/m/rec.onnx", "/m/dict.txt"},
+		{map[string]string{"model": "custom", "customModelPath": "/m/rec.onnx", "customDictPath": "/m/dict.txt"}, engine.RecogniserCustom, "/m/rec.onnx", "/m/dict.txt"},
 		{map[string]string{"model": "pp-ocrv6-tiny"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
 		{map[string]string{"model": "tesseract"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
 	} {

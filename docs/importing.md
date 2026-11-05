@@ -16,7 +16,7 @@ url: https://www.youtube.com/watch?v=A4OZ4L9TCpM
 
 The plugin does not manage what a person writes below the frontmatter; the tab shows the address, the copy and the text.
 
-At the command line the same run is `numen-cli link.import <vault> --address <url>`. It waits for the text; `--wait` also waits for the copy of a video, which is otherwise made in the background and needs the window. Over a link note, `numen-cli link.downloadText <vault> <note>` fetches the text again, `link.downloadVideo` copies the video and `link.deleteVideo` removes the copy; these three run over notes of type `link` and are offered in the tab, not the palette.
+At the command line the same run is `numen-cli link.import <vault> --address <url>`. It waits for the text; the copy of a video is made in the background and needs the window. Over a link note, `numen-cli link.downloadText <vault> <note>` fetches the text again, `link.downloadVideo` copies the video and `link.deleteVideo` removes the copy; these three run over notes of type `link` and are offered in the tab, not the palette.
 
 An address dragged out of a browser onto the files tree is the same gesture: the plugin registers a drop handler for `text/uri-list`, and the tree passes it the drop and the selected folder, without knowing the plugin.
 
@@ -46,7 +46,7 @@ The text version is the link's text, split into passages as any source's text is
 
 ## A copy
 
-Importing the address of a video copies it, up to the size `copy_max_size_mb` sets, through the core's queue and shown as a task. The plugin declares a `playback-copy` handle under `contributes.handles` for notes of type `link`, so `MediaService.GetMediaSource` of a link note returns the address the copy is played from on the window's loopback socket, and the link's tab plays it offline. The tab offers **Download video** and **Delete downloaded video**.
+Importing the address of a video copies it, up to the size `copyMaxSizeMb` sets, through the core's queue and shown as a task. The plugin declares a `playback-copy` handle under `contributes.handles` for notes of type `link`, so `MediaService.GetMediaSource` of a link note returns the address the copy is played from on the window's loopback socket, and the link's tab plays it offline. The tab offers **Download video** and **Delete downloaded video**.
 
 While no copy is kept, the tab frames the site's player. The plugin declares `contributes.frameOrigins: ["https://www.youtube-nocookie.com"]` and serves `embed?address=<url>` on its route, a page that frames the player. The tab loads that page from the window's loopback socket (`MediaService.GetPageSource`), not from the window's own scheme: a page of a scheme that is not http sends no Referer, and the site refuses to play for a page that sends none. The loopback page is served with `Referrer-Policy: strict-origin-when-cross-origin`.
 

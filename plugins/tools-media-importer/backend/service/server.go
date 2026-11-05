@@ -77,7 +77,7 @@ func (f *fetchers) getSettings() link.Settings {
 func (f *fetchers) updateConfig(values map[string]string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if v, ok := values["yt_dlp"]; ok {
+	if v, ok := values["ytDlp"]; ok {
 		f.cfg.Video = getTool(v)
 	}
 	if v, ok := values["ffmpeg"]; ok {
@@ -86,10 +86,10 @@ func (f *fetchers) updateConfig(values map[string]string) {
 	if v, ok := values["captions"]; ok {
 		f.settings.Captions = getLanguages(v)
 	}
-	if v, ok := values["automatic_captions"]; ok {
+	if v, ok := values["automaticCaptions"]; ok {
 		f.settings.IsAutomatic = v != "false"
 	}
-	if mb, err := strconv.ParseInt(values["copy_max_size_mb"], 10, 64); err == nil && mb >= 0 {
+	if mb, err := strconv.ParseInt(values["copyMaxSizeMb"], 10, 64); err == nil && mb >= 0 {
 		f.settings.CopyMaxSize = mb << 20
 	}
 	f.current = f.open()

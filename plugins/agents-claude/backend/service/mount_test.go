@@ -36,7 +36,7 @@ func TestTheLinkedHandlerListsClaudeCode(t *testing.T) {
 	}
 
 	lifecycle := server.NewLifecycleClient(http.DefaultClient, web.URL, hostcall.WithBearer("linked-token"))
-	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executable_path": script}); err != nil {
+	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executablePath": script}); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
 	state, err := client.GetState(t.Context())

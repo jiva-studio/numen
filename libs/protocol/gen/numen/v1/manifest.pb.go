@@ -1344,14 +1344,13 @@ func (x *ManifestNoteType) GetIdPattern() string {
 }
 
 type ManifestCommandArgument struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Title             string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Type              string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	IsRequired        bool                   `protobuf:"varint,4,opt,name=is_required,json=required,proto3" json:"is_required,omitempty"`
-	IsHiddenInPalette bool                   `protobuf:"varint,5,opt,name=is_hidden_in_palette,json=hiddenInPalette,proto3" json:"is_hidden_in_palette,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	IsRequired    bool                   `protobuf:"varint,4,opt,name=is_required,json=required,proto3" json:"is_required,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ManifestCommandArgument) Reset() {
@@ -1408,13 +1407,6 @@ func (x *ManifestCommandArgument) GetType() string {
 func (x *ManifestCommandArgument) GetIsRequired() bool {
 	if x != nil {
 		return x.IsRequired
-	}
-	return false
-}
-
-func (x *ManifestCommandArgument) GetIsHiddenInPalette() bool {
-	if x != nil {
-		return x.IsHiddenInPalette
 	}
 	return false
 }
@@ -1825,13 +1817,12 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x11id_heading_levels\x18\x04 \x03(\x05R\x0fidHeadingLevels\x12\x1d\n" +
 	"\n" +
 	"id_pattern\x18\x05 \x01(\tR\tidPatternB\t\n" +
-	"\a_chunks\"\xa5\x01\n" +
+	"\a_chunks\"v\n" +
 	"\x17ManifestCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1d\n" +
-	"\vis_required\x18\x04 \x01(\bR\brequired\x12-\n" +
-	"\x14is_hidden_in_palette\x18\x05 \x01(\bR\x0fhiddenInPalette\"<\n" +
+	"\vis_required\x18\x04 \x01(\bR\brequired\"<\n" +
 	"\x18ManifestContextCondition\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x0e\n" +
 	"\x02is\x18\x02 \x03(\tR\x02is\"\xba\x02\n" +

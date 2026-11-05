@@ -31,8 +31,7 @@ func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error)
 }
 
 // newImportCommand makes the link note of an address in the root of the vault and fetches its text.
-// A video published there is copied in the background, or before the command answers where the
-// argument wait is true: a run from the command line ends with the command.
+// A video published there is copied in the background.
 func newImportCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		made, err := links.Create(ctx, "", req.Arguments.GetString("address"))
@@ -46,16 +45,8 @@ func newImportCommand(links *link.Links) command.Run {
 		if !links.IsCopyable(made.Address) {
 			return command.Result{Message: message, OpenedPath: made.Path}, nil
 		}
-		if req.Arguments.GetString("wait") != trueValue {
-			links.StartCopy(ctx, made)
-			return command.Result{Message: message + "; the video is being copied", OpenedPath: made.Path}, nil
-		}
-		size, err := links.Copy(ctx, made)
-		if err != nil {
-			return command.Result{Message: "", OpenedPath: made.Path}, fmt.Errorf("%s: %w", message, err)
-		}
-		message += fmt.Sprintf(", and a copy of %s kept", describeSize(size))
-		return command.Result{Message: message, OpenedPath: made.Path}, nil
+		links.StartCopy(ctx, made)
+		return command.Result{Message: message + "; the video is being copied", OpenedPath: made.Path}, nil
 	}
 }
 

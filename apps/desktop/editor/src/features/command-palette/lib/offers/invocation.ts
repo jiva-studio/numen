@@ -13,6 +13,7 @@ export const createInvocation = (
   title: target.title,
   file: target.file,
   ...(target.line === undefined ? {} : { line: target.line }),
+  ...(target.selector === undefined ? {} : { selector: target.selector }),
   others: target.others ?? [],
   name,
   kind: target.kind,

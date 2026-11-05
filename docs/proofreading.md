@@ -85,7 +85,7 @@ None of them checks whether a correction is right.
 - **A reply containing one of the application's marks refuses the batch.** No recogniser and no transcriber produces `⟦` or `⟧`, and either of them anywhere in a reply refuses the whole batch.
 - **A line number the batch did not name refuses the batch.**
 - **A line given in two rows refuses the batch.** A line is in one row, so the words of a line are in that row and in no other.
-- **Letters changed by more than `max_edit_distance` drop that one correction.** Spaces, punctuation, symbols, diacritics and case are removed from both sides, and the Levenshtein distance between what is left is taken as a share of the longer. The default is 0.30 where the settings file sets no value.
+- **Letters changed by more than `maxEditDistance` drop that one correction.** Spaces, punctuation, symbols, diacritics and case are removed from both sides, and the Levenshtein distance between what is left is taken as a share of the longer. The default is 0.30 where the settings file sets no value.
 
 Two more corrections are dropped without rejecting the batch: one saying what the line already says, and one that only adds non-word characters before what the line already says.
 
@@ -121,9 +121,9 @@ The version shown, searched and passed to the next processor is the newest live 
 
 ## Settings
 
-The sizes at which a text is split into requests are settings of the plugin: `batch_size`, `overlap`, `in_flight` and `max_edit_distance`, in [Settings](settings.md).
+The sizes at which a text is split into requests are settings of the plugin: `batchSize`, `overlap`, `inFlight` and `maxEditDistance`, in [Settings](settings.md).
 
-A line that two batches of a transcript both replied to is taken from the batch in which it is further from the end. A transcript is asked about a window of `in_flight` batches at a time; a correction is kept from the window it begins in when it begins before the next window's first line, and the next window starts after the last line such a correction covers.
+A line that two batches of a transcript both replied to is taken from the batch in which it is further from the end. A transcript is asked about a window of `inFlight` batches at a time; a correction is kept from the window it begins in when it begins before the next window's first line, and the next window starts after the last line such a correction covers.
 
 ## From the command line
 
@@ -131,4 +131,4 @@ A line that two batches of a transcript both replied to is taken from the batch 
 
 ## Without a model
 
-With `NUMEN_MOCK_ML=true`, as `-debug-mock-ml` and the end-to-end tests set it, the plugin calls no model. The mock proofreader replies to every numbered line with `[proofread]` after its words, and the gates treat that reply as any other: a short line of a recognition, where the mark changes the letters by more than `max_edit_distance`, stays as it was read.
+With `NUMEN_MOCK_ML=true`, as `-debug-mock-ml` and the end-to-end tests set it, the plugin calls no model. The mock proofreader replies to every numbered line with `[proofread]` after its words, and the gates treat that reply as any other: a short line of a recognition, where the mark changes the letters by more than `maxEditDistance`, stays as it was read.

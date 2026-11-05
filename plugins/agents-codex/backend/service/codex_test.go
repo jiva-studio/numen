@@ -418,7 +418,7 @@ func TestIsStoppedAndCacheAsyncAndServerEdgeCases(t *testing.T) {
 		models:   []AgentModel{{Name: "m-custom", Title: "Custom", IsDefault: true}},
 		isCached: true,
 	}}
-	s.applyConfig(map[string]string{"executable_path": " /custom/codex "})
+	s.applyConfig(map[string]string{"executablePath": " /custom/codex "})
 	s.applyConfig(map[string]string{"unrelated": "val"})
 	if got := s.getExecutablePath(); got != "/custom/codex" {
 		t.Fatalf("getExecutablePath = %q, want /custom/codex", got)

@@ -6,8 +6,7 @@ import { COMMAND } from '@/shared/commandIds'
 import {
   createNameItem,
   createPassageItem,
-  MENU_ACTION_PREFIX,
-  resolveDestination,
+  resolveChoice,
   type NameMatch,
   type Passage,
   type SearchHit,
@@ -25,10 +24,15 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Words only',
   notEmbedded: 'Not read for meaning yet',
+  creating: 'No results',
+  creates: 'Create note',
+  asChild: 'Create as child',
+  asParent: 'Create as parent',
+  asJump: 'Create as jump',
 }
 
-/** The first action of a note: the editor command that opens it. */
-const OPEN_NOTE = `${MENU_ACTION_PREFIX}${COMMAND.openNote}`
+/** The first action of a note is the id of the editor command that opens it. */
+const OPEN_NOTE = COMMAND.openNote
 
 const createName = (overrides: Partial<NameMatch> = {}): NameMatch => ({
   path: 'physics/Ontology.md',
@@ -120,14 +124,14 @@ describe('a passage found in a file that is no note', () => {
     )
 
     expect(row.item.title).toBe('physics/Ontology.md')
-    expect(row.item.actions).toStrictEqual([{ id: 'note', text: WORDS.readDocument }])
+    expect(row.item.actions).toStrictEqual([{ id: COMMAND.openFile, text: WORDS.readDocument }])
     expect(row.hit).toStrictEqual(
       createHit({
         title: '',
         line: -1,
         start: 12,
         length: 4,
-        offers: ['note'],
+        offers: [COMMAND.openFile],
         type: null,
         selector: { page: 3 },
       }),
@@ -135,35 +139,56 @@ describe('a passage found in a file that is no note', () => {
   })
 })
 
-describe('where choosing an item takes the person', () => {
-  it('is nowhere where nothing was found, or the item does not offer that', () => {
-    expect(resolveDestination(undefined, 'note')).toBeNull()
-    expect(resolveDestination(createHit({ offers: ['note'] }), 'other')).toBeNull()
+describe('what choosing an action of an item runs', () => {
+  it('is nothing where nothing was found, or the item does not carry that action', () => {
+    expect(resolveChoice(undefined, COMMAND.openFile)).toBeNull()
+    expect(resolveChoice(createHit({ offers: [COMMAND.openFile] }), 'other')).toBeNull()
   })
 
-  it('is the file at the selector of the hit, for a file that is no note', () => {
-    const searchHit = createHit({ type: null, offers: ['note'], selector: { t: [12, 14] } })
-
-    expect(resolveDestination(searchHit, 'note')).toStrictEqual({
-      at: 'file',
-      path: 'physics/Ontology.md',
-      title: 'Ontology',
+  it('is the command that opens the file at the selector of the hit, for a file that is no note', () => {
+    const searchHit = createHit({
+      type: null,
+      offers: [COMMAND.openFile],
       selector: { t: [12, 14] },
+    })
+
+    expect(resolveChoice(searchHit, COMMAND.openFile)).toStrictEqual({
+      command: 'app:file.open',
+      over: {
+        path: '',
+        file: 'physics/Ontology.md',
+        title: 'Ontology',
+        selector: { t: [12, 14] },
+      },
+      input: '',
     })
   })
 
-  it('is nowhere for a note, which the command that opens it takes to its line', () => {
-    expect(resolveDestination(createHit({ line: 0 }), 'note')).toBeNull()
-    expect(resolveDestination(createHit({ line: 5 }), 'note')).toBeNull()
-    expect(resolveDestination(createHit({ line: 5 }), OPEN_NOTE)).toBeNull()
+  it('is the command that opens the note at its line, for a note', () => {
+    expect(resolveChoice(createHit({ line: 5 }), OPEN_NOTE)).toStrictEqual({
+      command: 'app:note.open',
+      over: {
+        path: 'physics/Ontology.md',
+        file: 'physics/Ontology.md',
+        title: 'Ontology',
+        line: 5,
+      },
+      input: '',
+    })
+    expect(resolveChoice(createHit({ line: 0 }), OPEN_NOTE)?.over?.line).toBe(0)
   })
 
-  it('is the file with no line where a file that is no note remains at none', () => {
-    const document = createHit({ type: null, offers: ['note'], line: -1 })
+  it('is the old action id of a document for nothing, since the action is a command id now', () => {
+    expect(resolveChoice(createHit({ line: 5 }), 'note')).toBeNull()
+    expect(resolveChoice(createHit({ type: null, offers: ['note'] }), 'note')).toBeNull()
+  })
 
-    expect(resolveDestination(document, 'note')).toStrictEqual({
-      at: 'file',
-      path: 'physics/Ontology.md',
+  it('is the file with no selector where a file that is no note remains at none', () => {
+    const document = createHit({ type: null, offers: [COMMAND.openFile], line: -1 })
+
+    expect(resolveChoice(document, COMMAND.openFile)?.over).toStrictEqual({
+      path: '',
+      file: 'physics/Ontology.md',
       title: 'Ontology',
     })
   })

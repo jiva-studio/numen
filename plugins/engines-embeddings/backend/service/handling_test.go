@@ -148,8 +148,8 @@ func TestTheRecipeHandlingChangesWithTheProfileAndNotWithMinChunkLength(t *testi
 	if len(base) != 8 {
 		t.Fatalf("handling %q is not a short hash", base)
 	}
-	if got := handling(map[string]string{"min_chunk_length": "500"}); got != base {
-		t.Errorf("min_chunk_length changed the handling: %s", got)
+	if got := handling(map[string]string{"minChunkLength": "500"}); got != base {
+		t.Errorf("minChunkLength changed the handling: %s", got)
 	}
 	writeFile(t, filepath.Join(dir, "e5.json"), `{"id":"Xenova/multilingual-e5-small","queryPrefix":"q: "}`)
 	if got := handling(map[string]string{}); got == base {

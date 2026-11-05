@@ -19,6 +19,7 @@ const TITLES: Readonly<Record<string, string>> = {
   'app:note.delete': 'Delete note permanently',
   'app:note.copyPath': 'Copy note path',
   'app:note.goTo': 'Go to note',
+  'app:file.open': 'Open the document here',
   'app:note.chooseTitleSync': 'Choose title and file name sync',
   'app:tab.close': 'Close tab',
   'app:vault.search': 'Search vault',

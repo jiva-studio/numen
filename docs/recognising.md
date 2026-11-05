@@ -61,4 +61,4 @@ A file being recognised is not started again while its run is in progress.
 
 ## Settings
 
-The plugin's settings are specific to it: `dpi`, the resolution a page is drawn at before it is read (300), `language`, the recognition model (`auto`, `cyrillic`, `latin`, `ch`), and `custom_model_path` and `custom_dict_path`, a recognition model and its character dictionary supplied by the person. A change to any of them reopens the recogniser for the next page. The settings of proofreading are in [Proofreading](proofreading.md).
+The plugin's settings are specific to it: `dpi`, the resolution a page is drawn at before it is read (300), `language`, the recognition model (`auto`, `cyrillic`, `latin`, `ch`), and `customModelPath` and `customDictPath`, a recognition model and its character dictionary supplied by the person. A change to any of them reopens the recogniser for the next page. The settings of proofreading are in [Proofreading](proofreading.md).

@@ -783,7 +783,7 @@ Recorded 2026-08-21 over the same 546-page scan, through a hosted model.
 
 The cheap model lists lines it did not change, which is where its output tokens go. A chain that runs it first pays $0.14 for a reply that is discarded and then $0.29 for the better model. The good model alone is $0.29, about 1 165 000 tokens in and 194 000 out. A rejected page that is queried again gives the same result.
 
-**Where `max_edit_distance` comes from.** Over 931 corrections the distribution has a gap: 36 differ by more than 0.50, 47 by more than 0.30, 49 by more than 0.20, 70 by more than 0.10. Above 0.30 every correction read was damage — text taken from the next line, or one corrected word in place of a whole line — and below it every one was a correction. The threshold is set at the gap and not at a round number, and it is in the settings file because it was measured on one book.
+**Where `maxEditDistance` comes from.** Over 931 corrections the distribution has a gap: 36 differ by more than 0.50, 47 by more than 0.30, 49 by more than 0.20, 70 by more than 0.10. Above 0.30 every correction read was damage — text taken from the next line, or one corrected word in place of a whole line — and below it every one was a correction. The threshold is set at the gap and not at a round number, and it is in the settings file because it was measured on one book.
 
 **A reply row is written two ways.** Over one batch of 40 pages the model replied to 15 pages with `2544|the line` and 25 with `2544 the line`, each page in one style throughout.
 

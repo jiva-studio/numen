@@ -114,7 +114,7 @@ func TestAChangeOfTheMinimumChunkLengthIsAnnounced(t *testing.T) {
 	reads := mock.getModelCalls.Load()
 
 	mock.minChunk.Store(7)
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "min_chunk_length", 7); err != nil {
+	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "minChunkLength", 7); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)

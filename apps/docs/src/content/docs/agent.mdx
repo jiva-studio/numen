@@ -59,7 +59,7 @@ commands for your machine to run. Those are always rejected, whatever the settin
 
 By default it also ignores what is configured for the assistant on this machine — standing
 instructions, hooks, skills, plugins. If you want your own configuration used, turn on
-`reads_hooks_and_skills` in the settings of the Claude Code Agent plugin (the object `md.numen.agents.claude`, see [the settings](/settings/)); a vault's own files are
+`readsHooksAndSkills` in the settings of the Claude Code Agent plugin (the object `md.numen.agents.claude`, see [the settings](/settings/)); a vault's own files are
 rejected either way.
 
 ## Setting it up
@@ -80,7 +80,7 @@ Where an agent is installed in the usual place, numen finds it automatically and
     }
   },
   "md.numen.agents.claude": {
-    "reads_hooks_and_skills": false
+    "readsHooksAndSkills": false
   }
 }
 ```
@@ -91,7 +91,7 @@ Where an agent is installed in the usual place, numen finds it automatically and
 | `command` | how to start it. Empty looks on the path, then where its installers put it. Set it on a machine with several installations. |
 | `model`   | `opus`, `sonnet`, or a full model name. Empty uses that installation's default model.                                       |
 
-`reads_hooks_and_skills` is a setting of the Claude Code Agent plugin, off by default, as described above.
+`readsHooksAndSkills` is a setting of the Claude Code Agent plugin, off by default, as described above.
 
 ## Another agent, in another window
 

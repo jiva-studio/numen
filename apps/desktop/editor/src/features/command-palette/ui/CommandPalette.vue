@@ -11,13 +11,11 @@ import { Palette, type ActionWords } from '@numen/shell'
 import { isCommandPrefixTyped } from '../lib/commands/commands'
 import type { CommandDeps } from '../model/handlers/deps'
 import type { CommandTarget } from '../types'
-import { appendCreateNoteItem, createNoteInvocation, CREATE_NOTE_ID } from '../lib/offers/offers'
 import type { Commands } from '../model/palette/palette'
 import { runInvocation } from '../model/handlers/handlers'
-import type { MenuChoice, SearchState } from '../model/search/search'
+import type { ResultChoice, SearchState } from '../model/search/search'
 import { usePaletteShortcuts } from '../model/palette/shortcuts'
-import { findRowIcon } from '../model/rowIcons'
-import { chooseResult, type DestinationDeps } from '../model/search/destination'
+import { findRowIcon, type FileIcons } from '../model/rowIcons'
 import { ANSWER_WORDS } from '../words'
 import { WORDS as words } from '@/shared/words'
 
@@ -28,10 +26,10 @@ const props = defineProps<{
   doing: CommandDeps
   /** The target the commands apply to, as the window is now. */
   getTarget: () => CommandTarget
-  /** Where the window is taken by what the search turns up. */
-  places: DestinationDeps
-  /** Runs the command of an entry of the menu of a search result over the note it was chosen on. */
-  runEntry: (choice: MenuChoice) => void
+  /** What the window knows of the files a search turns up, for their icons. */
+  places: FileIcons
+  /** Runs the command of a chosen action of a search result, over what it was chosen on. */
+  runChoice: (choice: ResultChoice) => void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -58,11 +56,7 @@ const field = computed(() =>
     : {
         open: props.search.open.value,
         typed: props.search.typed.value,
-        groups: appendCreateNoteItem(props.search.groups.value, {
-          text: props.search.typed.value,
-          words,
-          target: props.getTarget(),
-        }),
+        groups: props.search.groups.value,
         crumb: '',
         step: '',
         opensOn: '',
@@ -91,17 +85,9 @@ async function onChoose(item: string, action: string) {
     await runInvocation(invocation, props.doing, ANSWER_WORDS)
     return
   }
-  if (item === CREATE_NOTE_ID) {
-    const name = props.search.typed.value.trim()
-    setSearchOpen(false)
-    await runInvocation(
-      createNoteInvocation(action, name, props.getTarget()),
-      props.doing,
-      ANSWER_WORDS,
-    )
-    return
-  }
-  await chooseResult(props, item, action)
+  const choice = props.search.chooseResult(item, action)
+  setSearchOpen(false)
+  if (choice) props.runChoice(choice)
 }
 
 function onDismiss() {
