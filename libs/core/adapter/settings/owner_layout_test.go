@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -41,6 +42,15 @@ func readRoot(t *testing.T, path string) map[string]json.RawMessage {
 		t.Fatalf("%s: %v", raw, err)
 	}
 	return root
+}
+
+func listKeys(root map[string]json.RawMessage) string {
+	keys := make([]string, 0, len(root))
+	for key := range root {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+	return strings.Join(keys, ", ")
 }
 
 func TestAHandWrittenFileInTheLayoutByOwnerIsRead(t *testing.T) {
@@ -84,7 +94,7 @@ func TestTheVersionStandsAtTheRootOfTheFile(t *testing.T) {
 	}
 	var app map[string]json.RawMessage
 	if err := json.Unmarshal(root["app"], &app); err != nil {
-		t.Fatalf("app is %s", root["app"])
+		t.Fatalf("app is %q", root["app"])
 	}
 	if _, nested := app["v"]; nested {
 		t.Error("the version stands under app")
@@ -98,7 +108,7 @@ func TestAnUnconfiguredInstallationWritesAnAppObjectAndNoSectionAtTheRoot(t *tes
 	}
 	root := readRoot(t, path)
 	if _, ok := root["app"]; !ok {
-		t.Errorf("the file has no app object: %v", root)
+		t.Errorf("the file has no app object: %s", listKeys(root))
 	}
 	for _, section := range []string{"appearance", "naming", "performance", "agent", "ai", "plugins"} {
 		if _, ok := root[section]; ok {
@@ -155,13 +165,13 @@ func TestAPathIsNotJoinedWhereAPluginIdHasDots(t *testing.T) {
 	root := readRoot(t, path)
 	var plugin map[string]any
 	if err := json.Unmarshal(root["md.numen.sample.speech"], &plugin); err != nil {
-		t.Fatalf("the object of the plugin id is missing: %v", root)
+		t.Fatalf("the object of the plugin id is missing: %s", listKeys(root))
 	}
 	if plugin["model"] != "small" || plugin["enabled"] != true {
 		t.Errorf("the object of the plugin is %v", plugin)
 	}
 	if _, split := root["md"]; split {
-		t.Errorf("the id was split at its dots: %v", root)
+		t.Errorf("the id was split at its dots: %s", listKeys(root))
 	}
 }
 
