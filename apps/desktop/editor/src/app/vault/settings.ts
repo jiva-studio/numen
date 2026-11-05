@@ -94,7 +94,7 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
     max: s.max,
     step: s.step,
     activeOptions: (s.activeOptions ?? []).map(readOption),
-    isShown: s.isShown,
+    isShown: Boolean(s.isShown),
     value: readJson(s.valueJson),
   }
 }

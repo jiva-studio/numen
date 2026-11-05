@@ -99,7 +99,7 @@ func checkHostField(name string, value any) (reserved bool, err error) {
 	return false, nil
 }
 
-// checkValue returns why a declared setting does not take the value. A null value resets the
+// checkValue returns why a declared setting does not accept the value. A null value resets the
 // setting and is always taken.
 func checkValue(declared pluginport.PluginManifestSetting, registries Registries, value any) error {
 	if value == nil {
@@ -129,16 +129,16 @@ func checkNumber(declared pluginport.PluginManifestSetting, value any) error {
 		return fmt.Errorf("%w: expected a number", ErrWrongType)
 	}
 	if (declared.Min != nil && number < *declared.Min) || (declared.Max != nil && number > *declared.Max) {
-		return fmt.Errorf("%w: %v goes from %s to %s", ErrOutOfRange, number, formatBound(declared.Min), formatBound(declared.Max))
+		return fmt.Errorf("%w: %v goes from %s to %s", ErrOutOfRange, number, formatLimit(declared.Min), formatLimit(declared.Max))
 	}
 	return nil
 }
 
-func formatBound(bound *float64) string {
-	if bound == nil {
+func formatLimit(limit *float64) string {
+	if limit == nil {
 		return "no bound"
 	}
-	return fmt.Sprint(*bound)
+	return fmt.Sprint(*limit)
 }
 
 // toNumber returns the value as a float where it is a number of any Go type.
@@ -168,8 +168,8 @@ func checkOption(declared pluginport.PluginManifestSetting, registries Registrie
 		if registries == nil {
 			return nil
 		}
-		listed, found := registries(declared.OptionsFrom)
-		if found && !slices.Contains(listed, text) {
+		names, found := registries(declared.OptionsFrom)
+		if found && !slices.Contains(names, text) {
 			return fmt.Errorf("%w: %q is not in %s", ErrNotAnOption, text, declared.OptionsFrom)
 		}
 	case declared.OptionsBy != nil:

@@ -58,7 +58,7 @@ const LISTED = [
 
 describe('the model an agent tab starts on', () => {
   it('is the one kept for the agent that was kept', () => {
-    const state = open(LISTED, { 'agent/use': 'omega', 'agent/omega/model': 'omega-one' })
+    const state = open(LISTED, { 'app/agent/use': 'omega', 'app/agent/omega/model': 'omega-one' })
 
     expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual([
       'omega',
@@ -67,7 +67,7 @@ describe('the model an agent tab starts on', () => {
   })
 
   it('is the default of the agent kept where the model kept is not listed', () => {
-    const state = open(LISTED, { 'agent/use': 'zeta', 'agent/zeta/model': 'no-such-model' })
+    const state = open(LISTED, { 'app/agent/use': 'zeta', 'app/agent/zeta/model': 'no-such-model' })
 
     expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual([
       'zeta',
@@ -85,7 +85,7 @@ describe('the model an agent tab starts on', () => {
   })
 
   it('is empty where nothing is listed', () => {
-    const state = open([], { 'agent/use': 'zeta' })
+    const state = open([], { 'app/agent/use': 'zeta' })
 
     expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual(['', ''])
   })

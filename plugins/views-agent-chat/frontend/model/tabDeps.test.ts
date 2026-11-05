@@ -52,8 +52,8 @@ describe('what an agent tab asks of the window', () => {
   it('reads and writes the settings, and lists the models, through the agent', async () => {
     const model = { name: 'small', title: 'Small', isDefault: true, presence: 'present' } as const
     const { host, recorded } = createHost({
-      settings: { 'agent.use': 'zeta' },
-      models: { 'agent.zeta.model': [model] },
+      settings: { 'app.agent.use': 'zeta' },
+      models: { 'app.agent.zeta.model': [model] },
     })
     const deps = createAgentTabDeps(host)
 

@@ -231,7 +231,7 @@ describe('agent model selection and settings', () => {
       openFileAdjacent: () => undefined,
       resolveLinks: async () => [],
       unreachable: () => '',
-      getSetting: (path) => (path[1] === 'use' ? 'zeta' : undefined),
+      getSetting: (path) => (path[2] === 'use' ? 'zeta' : undefined),
       getModelsAt: (categoryPath) =>
         models.value.filter((one) => one.nameAt.join('.') === categoryPath.join('.')),
     })

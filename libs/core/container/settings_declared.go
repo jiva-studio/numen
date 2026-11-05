@@ -52,7 +52,7 @@ func (c Config) listRegistryOptions(name string) (pluginport.PluginSettingOption
 func (c Config) listAppSettings() []pluginport.PluginSetting {
 	current := c.getSettingsOrDefaults()
 	declared := settings.GetAppDeclaration()
-	listed := make([]pluginport.PluginSetting, 0, len(declared))
+	entries := make([]pluginport.PluginSetting, 0, len(declared))
 	for _, one := range declared {
 		options := one.Options
 		if one.OptionsFrom != "" {
@@ -70,7 +70,7 @@ func (c Config) listAppSettings() []pluginport.PluginSetting {
 				setting.ValueJSON = string(encoded)
 			}
 		}
-		listed = append(listed, setting)
+		entries = append(entries, setting)
 	}
-	return listed
+	return entries
 }

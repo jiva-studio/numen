@@ -70,7 +70,7 @@ func (f *Files) Save(path string, into Document, settings ...Setting) error {
 
 // readBack returns an error where the file with the settings written is not one that reads back
 // into the document, such as a value of the wrong shape for the section it is in, or where a
-// setting of the shell that this call wrote holds a value its declaration does not take. A value
+// setting of the shell that this call wrote holds a value its declaration does not accept. A value
 // the file already held and this call did not write is left for the person to correct.
 func readBack(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
