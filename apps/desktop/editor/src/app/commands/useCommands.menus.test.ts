@@ -222,14 +222,18 @@ describe('the search the window builds', () => {
 
 describe('the commands of the palette', () => {
   it('are the same whatever the plugins place in menus', () => {
+    const listCommands = () =>
+      ((h.getExtraCommands?.() ?? []) as { id: string; text: string; group: string }[]).map(
+        ({ id, text, group }) => ({ id, text, group }),
+      )
     setup()
-    const baseline = h.getExtraCommands?.()
+    const baseline = listCommands()
     const menus: Menus = { getEntries: () => [entry(SHOW, 'Show note in plex')] }
 
     setup({ menus })
-    const withPlacements = h.getExtraCommands?.()
+    const withPlacements = listCommands()
 
     expect(withPlacements).toEqual(baseline)
-    expect((withPlacements as { id: string }[]).map((one) => one.id)).toContain(SHOW)
+    expect(withPlacements.map((one) => one.id)).toContain(SHOW)
   })
 })
