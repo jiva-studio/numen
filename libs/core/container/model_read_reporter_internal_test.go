@@ -13,12 +13,12 @@ func TestAFailedReadOfTheEmbeddingModelIsListedAsATaskWithItsReason(t *testing.T
 
 	newModelReadReporter(tasks)(errors.New("read model of embedding plugin md.numen.embeddings: unavailable"))
 
-	listed := tasks.List()
-	if len(listed) != 1 {
-		t.Fatalf("%d tasks, want 1", len(listed))
+	entries := tasks.List()
+	if len(entries) != 1 {
+		t.Fatalf("%d tasks, want 1", len(entries))
 	}
-	if listed[0].Error != "read model of embedding plugin md.numen.embeddings: unavailable" {
-		t.Errorf("the task reason is %q", listed[0].Error)
+	if entries[0].Error != "read model of embedding plugin md.numen.embeddings: unavailable" {
+		t.Errorf("the task reason is %q", entries[0].Error)
 	}
 }
 
