@@ -3,7 +3,7 @@
  * the editor provides, in a place the window draws, and the window and the host name no plugin.
  */
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
