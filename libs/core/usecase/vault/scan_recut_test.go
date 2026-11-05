@@ -31,13 +31,13 @@ func newOrchardVault(t *testing.T) domain.Vault {
 	})
 }
 
-// scanAt is a scan cut at a chunk size, wired the way the container wires it: the stale notes are read
+// scanAt is a scan cut at a chunk size, wired the way the container wires it: the paths of the notes recorded with another cut are read
 // from the index, and the check runs where the size is known.
 func scanAt(db *container.Index, tokens int) vaults.Scan {
 	scan := scanner(vaultreader.Readers{}, db)
 	scan.Cut = notecase.NewCutNotes(tokens)
 	scan.ShouldRecut = tokens > 0
-	scan.Stale = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
+	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
 		return db.SourcesKnown().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, []string{recipe}, math.MaxInt32)
 	}
 	return scan
@@ -97,20 +97,20 @@ func TestAScanWithNoCheckGivenReadsNoUnchangedNoteWhateverItsSize(t *testing.T) 
 	runScan(t, scanAt(db, 256), v)
 
 	scan := scanAt(db, 512)
-	scan.Stale = nil
+	scan.GetOtherRecipePaths = nil
 	if res := runScan(t, scan, v); res.Indexed != 0 || res.Unchanged != 3 {
 		t.Errorf("indexed %d, unchanged %d; want 0 and 3", res.Indexed, res.Unchanged)
 	}
 }
 
-func TestAScanWithoutAChunkSizeNeitherAsksForStaleNotesNorReadsAnyNote(t *testing.T) {
+func TestAScanWithoutAChunkSizeNeitherAsksForRecutPathsNorReadsAnyNote(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
 	runScan(t, scanAt(db, 512), v)
 
 	scan := scanAt(db, 0)
-	scan.Stale = func(context.Context, domain.VaultID, string) ([]string, error) {
-		t.Error("a scan that does not know the chunk size asked for the stale notes")
+	scan.GetOtherRecipePaths = func(context.Context, domain.VaultID, string) ([]string, error) {
+		t.Error("a scan that does not know the chunk size asked for the paths to cut again")
 		return nil, nil
 	}
 	if res := runScan(t, scan, v); res.Indexed != 0 || res.Unchanged != 3 {
@@ -190,7 +190,7 @@ func TestRechunkedNotesAreCountedAndSavedInGroupsLikeChangedFiles(t *testing.T) 
 	scan.Walks = db.Walks()
 	scan.Cut = notecase.NewCutNotes(512)
 	scan.ShouldRecut = true
-	scan.Stale = scanAt(db, 512).Stale
+	scan.GetOtherRecipePaths = scanAt(db, 512).GetOtherRecipePaths
 	res := runScan(t, scan, v)
 
 	if res.Indexed != notes || len(content.groups) != 2 {

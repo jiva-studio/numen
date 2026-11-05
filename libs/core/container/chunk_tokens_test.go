@@ -281,8 +281,8 @@ func TestAScanChecksTheRecordedChunkingOnlyWhereTheSizeIsKnown(t *testing.T) {
 	}
 	cfg.Chunks.Set(256)
 	scan := cfg.Scan(db)
-	if !scan.ShouldRecut || scan.Stale == nil {
-		t.Errorf("a scan with a chunk size known has ShouldRecut %v and Stale %v, want the check to run", scan.ShouldRecut, scan.Stale != nil)
+	if !scan.ShouldRecut || scan.GetOtherRecipePaths == nil {
+		t.Errorf("a scan with a chunk size known has ShouldRecut %v and GetOtherRecipePaths %v, want the check to run", scan.ShouldRecut, scan.GetOtherRecipePaths != nil)
 	}
 }
 
