@@ -10,7 +10,7 @@ import (
 // vector, and a vector whose model differs from the one now configured is
 // stale: its numbers describe directions another model chose.
 //
-// Every field but MinChunkLength is part of the identity. Two models of the same name at different
+// Every field but MinChunkLength and ChunkTokens is part of the identity. Two models of the same name at different
 // widths produce vectors that cannot be compared, and the width is what a
 // reader needs to know before it decodes stored bytes.
 type EmbeddingModel struct {
@@ -48,6 +48,10 @@ type EmbeddingModel struct {
 	// text is the same vector whatever the minimum is, so changing it makes no
 	// vector stale. It decides which chunks are given one.
 	MinChunkLength int
+
+	// ChunkTokens is the most tokens one chunk may hold, as the plugin sets it; zero when it names
+	// none. It is not part of the identity and is absent from Recipe, like MinChunkLength.
+	ChunkTokens int
 }
 
 // String is the identity as one value, for a column that holds it.

@@ -35,6 +35,9 @@ type ModelInfo struct {
 	// MinChunkLength is the fewest bytes a piece of text holds to be given a vector; 0 embeds every piece.
 	MinChunkLength int32
 
+	// ChunkTokens is the most tokens one chunk may hold; 0 names none.
+	ChunkTokens int32
+
 	// Handling is a short hash of what the plugin does to a text before the model reads it and to the output
 	// after. It is part of the identity of the vectors: a change in it makes the vectors of the model stale.
 	Handling string
@@ -48,6 +51,7 @@ func (m ModelInfo) GetFrom() string          { return m.From }
 func (m ModelInfo) GetConcurrency() int32    { return m.Concurrency }
 func (m ModelInfo) GetFloorHint() float64    { return m.FloorHint }
 func (m ModelInfo) GetMinChunkLength() int32 { return m.MinChunkLength }
+func (m ModelInfo) GetChunkTokens() int32    { return m.ChunkTokens }
 func (m ModelInfo) GetHandling() string      { return m.Handling }
 
 // Handler serves embedding model metadata and batches of vectors.
@@ -103,6 +107,7 @@ func readModelInfo(res *v1.GetEmbeddingModelResponse) ModelInfo {
 		Concurrency:    res.GetConcurrency(),
 		FloorHint:      res.GetFloorHint(),
 		MinChunkLength: res.GetMinChunkLength(),
+		ChunkTokens:    res.GetChunkTokens(),
 		Handling:       res.GetHandling(),
 	}
 }
@@ -117,6 +122,7 @@ func writeModelInfo(info ModelInfo) *v1.GetEmbeddingModelResponse {
 		Concurrency:    info.Concurrency,
 		FloorHint:      info.FloorHint,
 		MinChunkLength: info.MinChunkLength,
+		ChunkTokens:    info.ChunkTokens,
 		Handling:       info.Handling,
 	}
 }

@@ -164,8 +164,14 @@ func TestACancelledRunStopsReadingTheStream(t *testing.T) {
 }
 
 func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
-	model := &fakeChat{replies: []message{newTextReply("Water the garden.")}}
-	s := newServer(model.serve(t).URL)
+	hungUp := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		writeEvents(t, w, []string{`{"choices":[{"delta":{"content":"Water the garden."}}]}`})
+		<-r.Context().Done()
+		close(hungUp)
+	}))
+	defer srv.Close()
+	s := newServer(srv.URL)
 	removed := errors.New("the window is gone")
 
 	pieces := 0
@@ -180,6 +186,7 @@ func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
 	if !errors.Is(err, removed) || pieces != 1 {
 		t.Errorf("Ask returned %v after %d pieces", err, pieces)
 	}
+	<-hungUp
 }
 
 func TestStream_FallsBackToUnstreamedOnRejection(t *testing.T) {

@@ -5,7 +5,7 @@ description: Every key numen.json can hold, section by section, generated from t
 
 Every key `numen.json` can hold. The pages under Settings say which of these are worth touching and why; this one lists every key.
 
-Each heading below is a section of the file, and the keys under it are written the way they are written inside that section — `max_tokens` under `indexing.embedding` is `indexing.embedding.max_tokens` if you write it out in full.
+Each heading below is a section of the file, and the keys under it are written the way they are written inside that section — `text_scale` under `appearance` is `appearance.text_scale` if you write it out in full.
 
 A key you leave out keeps its default, so a file naming one setting is a complete file. A key numen does not know is kept unchanged. Under `agent`, each program an agent plugin lists has a section named after it, `agent.<program>`, holding `command` and `model`; what a program's plugin reads for itself, such as `reads_hooks_and_skills` for Claude Code (see [the agent page](/agent/)), is a setting of that plugin under `plugins.<id>`. A row with no kind beside it is a group holding the keys under it.
 
@@ -27,14 +27,6 @@ Holds the theme, the mode and the sizes of the window.
 | `text_scale` | a number | the scale of reading text: a note, a book, an answer, the editor. |
 | `mode` | text | which half of a colour pair the window takes: `system`, `light` or `dark`. |
 | `theme` | text | the stylesheet applied to the window, named by its origin and its identifier: `preset:numen` ships here, `mine:dracula` is the person's file, and `plugin:org.example.themes/dark` is a theme of an enabled plugin. |
-
-### `indexing.embedding`
-
-How notes are split into chunks and how the vectors of the chunks are stored.
-
-| | | |
-| --- | --- | --- |
-| `max_tokens` | a number | the input limit, in tokens, of one chunk that gets a vector. |
 
 ### `agent`
 

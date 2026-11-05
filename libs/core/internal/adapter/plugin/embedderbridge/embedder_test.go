@@ -36,6 +36,7 @@ type mockEmbeddingServer struct {
 	dimensions    atomic.Int32
 	floorHint     atomic.Value
 	minChunk      atomic.Int32
+	chunkTokens   atomic.Int32
 	handling      atomic.Value
 
 	mu    sync.Mutex
@@ -73,6 +74,7 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 		Concurrency:    4,
 		FloorHint:      hint,
 		MinChunkLength: s.minChunk.Load(),
+		ChunkTokens:    s.chunkTokens.Load(),
 	}), nil
 }
 

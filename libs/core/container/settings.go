@@ -21,9 +21,7 @@ import (
 // other section belongs to the adapter it configures, and is put beside them
 // here, where every adapter is bound.
 const (
-	indexingAt  = "indexing"
-	embeddingAt = "embedding"
-	agentAt     = "agent"
+	agentAt = "agent"
 )
 
 // Settings is the file that configures this installation: one object whose
@@ -69,10 +67,8 @@ func (c Config) getSettingsOrDefaults() Settings {
 }
 
 // SetSettings returns the configuration with the values of a settings file
-// applied. Both entry points use it. An empty embedding model disables
-// embedding.
+// applied. Both entry points use it.
 func (c Config) SetSettings(s Settings) Config {
-	c.Embedding = s.Indexing.Embedding
 	c.Hardware = hardware.Detect()
 	c.ResolvedCompute = hardware.ResolveCompute(s.Performance.Profile, c.Hardware)
 	if c.PluginHost != nil {

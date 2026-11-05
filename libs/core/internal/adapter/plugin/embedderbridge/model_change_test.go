@@ -42,6 +42,7 @@ func (configurable) Configure(
 func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServer, *atomic.Int32) {
 	t.Helper()
 	mock := &mockEmbeddingServer{}
+	mock.chunkTokens.Store(256)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(configurable{}))
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mock))
@@ -178,5 +179,62 @@ func TestAChangeReadByGetModelFirstIsStillAnnounced(t *testing.T) {
 
 	if got := announced.Load(); got != 1 {
 		t.Errorf("the model change was announced %d times, want once", got)
+	}
+}
+
+// The chunk size the plugin reports is read with the model.
+func TestTheModelCarriesTheChunkTokensThePluginReports(t *testing.T) {
+	_, bridge, _, _ := openConfigurable(t)
+
+	if got := bridge.GetModel().ChunkTokens; got != 256 {
+		t.Errorf("ChunkTokens = %d, want 256", got)
+	}
+}
+
+// A chunk size below zero is a plugin that names none.
+func TestANegativeChunkTokensIsReadAsNone(t *testing.T) {
+	_, bridge, mock, _ := openConfigurable(t)
+
+	if got := bridge.GetModel().ChunkTokens; got != 256 {
+		t.Fatalf("ChunkTokens = %d, want 256", got)
+	}
+	mock.chunkTokens.Store(-5)
+	if got := bridge.GetModel().ChunkTokens; got != 0 {
+		t.Errorf("ChunkTokens = %d, want 0", got)
+	}
+}
+
+// A new chunk size cuts the notes again, so a change of it alone is announced, once, and the model
+// the listeners read holds the new size.
+func TestAChangeOfTheChunkTokensAloneIsAnnounced(t *testing.T) {
+	host, bridge, mock, announced := openConfigurable(t)
+	reads := mock.getModelCalls.Load()
+
+	mock.chunkTokens.Store(128)
+	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "chunkTokens", 128); err != nil {
+		t.Fatal(err)
+	}
+	settle(t, bridge, mock, reads)
+
+	if got := announced.Load(); got != 1 {
+		t.Errorf("the change of the chunk size was announced %d times, want once", got)
+	}
+	if got := bridge.GetModel().ChunkTokens; got != 128 {
+		t.Errorf("ChunkTokens = %d, want 128", got)
+	}
+}
+
+// A chunk size that stays as it was announces nothing.
+func TestAnUnchangedChunkTokensAnnouncesNothing(t *testing.T) {
+	host, bridge, mock, announced := openConfigurable(t)
+	reads := mock.getModelCalls.Load()
+
+	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "chunkTokens", 256); err != nil {
+		t.Fatal(err)
+	}
+	settle(t, bridge, mock, reads)
+
+	if got := announced.Load(); got != 0 {
+		t.Errorf("an unchanged chunk size was announced %d times", got)
 	}
 }

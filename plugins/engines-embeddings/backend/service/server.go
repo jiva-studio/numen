@@ -52,6 +52,9 @@ type embeddingServer struct {
 	// mockLog is the file the mock model records the texts it is given in.
 	mockLog string
 
+	// chunkTokens is the chunk size the settings request, before the limit of the model holds it.
+	chunkTokens int
+
 	mu       sync.Mutex
 	embedder textEmbedder
 	apiKey   string
@@ -142,6 +145,9 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 		s.remoteModel = getDefaultRemoteModel(s.provider)
 	}
 	s.modelInfo.MinChunkLength = readMinChunkLength(values)
+	if _, ok := values[settingChunkTokens]; ok {
+		s.chunkTokens = ReadChunkTokens(values)
+	}
 	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
 		s.apiKey = key
 	}
@@ -164,8 +170,15 @@ func (s *embeddingServer) loadProfilesLocked() {
 	})
 }
 
-// refreshModelInfoLocked names the model info after the selected model and loads its profile.
+// refreshModelInfoLocked names the model info after the selected model and loads its profile, and
+// holds the requested chunk size to the limit of that model.
 func (s *embeddingServer) refreshModelInfoLocked() {
+	s.refreshModelIdentityLocked()
+	s.modelInfo.ChunkTokens = ClampChunkTokens(s.chunkTokens, s.modelInfo.MaxTokens)
+}
+
+// refreshModelIdentityLocked names the model info after the selected model.
+func (s *embeddingServer) refreshModelIdentityLocked() {
 	if s.isMock {
 		return
 	}
@@ -175,7 +188,8 @@ func (s *embeddingServer) refreshModelInfoLocked() {
 		s.modelInfo = engine.ModelInfo{
 			Name: s.remoteModel, Dimensions: profile.Dimensions, MaxTokens: profile.GetTokens(), Pooling: profile.Pooling,
 			From: keep.From, Concurrency: keep.Concurrency, FloorHint: profile.FloorHint, MinChunkLength: keep.MinChunkLength,
-			Handling: profile.GetHandling(),
+			ChunkTokens: ClampChunkTokens(s.chunkTokens, profile.GetTokens()),
+			Handling:    profile.GetHandling(),
 		}
 		applyDimensionEnv(&s.modelInfo)
 		return
@@ -258,6 +272,7 @@ func newEmbeddingServer() *embeddingServer {
 	if os.Getenv(envMockML) == "true" {
 		info := engine.GetMockModel()
 		info.MinChunkLength = defaultMinChunkLength
+		info.ChunkTokens = ClampChunkTokens(defaultChunkTokens, info.MaxTokens)
 		s := &embeddingServer{
 			modelInfo: info,
 			localModel: engine.LocalModel{
@@ -270,6 +285,7 @@ func newEmbeddingServer() *embeddingServer {
 			profilesDir: profilesDir,
 			isMock:      true,
 			mockLog:     os.Getenv(envMockLog),
+			chunkTokens: defaultChunkTokens,
 			mu:          sync.Mutex{},
 			embedder:    nil,
 			apiKey:      "",
@@ -289,6 +305,7 @@ func newEmbeddingServer() *embeddingServer {
 		profilesDir: profilesDir,
 		open:        newLocalModelOpener(onnx.NewLibrary()),
 		isMock:      false,
+		chunkTokens: defaultChunkTokens,
 		mu:          sync.Mutex{},
 		embedder:    nil,
 		apiKey:      "",
@@ -301,6 +318,7 @@ func newEmbeddingServer() *embeddingServer {
 	s.updateLocalModelLocked("")
 	s.modelInfo = s.localInfo
 	s.modelInfo.MinChunkLength = defaultMinChunkLength
+	s.modelInfo.ChunkTokens = ClampChunkTokens(defaultChunkTokens, s.modelInfo.MaxTokens)
 	return s
 }
 
@@ -387,6 +405,7 @@ func (s *embeddingServer) GetModelInfo(_ context.Context) (embedding.ModelInfo, 
 		Concurrency:    int32(getIndexShare(passes)),
 		FloorHint:      info.FloorHint,
 		MinChunkLength: int32(info.MinChunkLength),
+		ChunkTokens:    int32(info.ChunkTokens),
 		Handling:       getHandlingHash(info),
 	}, nil
 }
