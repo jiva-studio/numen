@@ -27,6 +27,7 @@ STORIES  := tools/ci-stories
 COMMANDS := tools/ci-commands
 PLUGIN_VERSIONS := tools/plugin-versions
 PLUGIN_INDEX := tools/build-plugin-index
+PLUGIN_BUNDLE := tools/bundle-plugins
 LAYERS   := tools/lint-layers
 QUALITY  := tools/lint-quality
 NARRATIVE := tools/lint-narrative
@@ -112,7 +113,7 @@ plugins_index: ## write plugins/plugins-index.json from the manifest of every pl
 
 .PHONY: plugins_index_test
 plugins_index_test: ## test the plugin index build
-	node --test $(PLUGIN_INDEX)/build.test.mjs
+	node --test $(PLUGIN_INDEX)/build.test.mjs $(PLUGIN_BUNDLE)/select.test.mjs
 
 .PHONY: plugins_build
 plugins_build: lib_ui_build plugins_index ## build every plugin
