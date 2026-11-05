@@ -42,15 +42,8 @@ describe('the input a command of the palette asks for', () => {
     ])
   })
 
-  it('is a choice for the commands that set how the window is drawn and works', () => {
-    expect(getIdsAsking('choice')).toStrictEqual([
-      'app:appearance.chooseTheme',
-      'app:appearance.chooseMode',
-      'app:appearance.chooseInterfaceSize',
-      'app:appearance.chooseTextSize',
-      'app:note.chooseTitleSync',
-      'app:performance.chooseProfile',
-    ])
+  it('is no choice for a command of the editor, whose settings offer theirs', () => {
+    expect(getIdsAsking('choice')).toStrictEqual([])
   })
 
   it('is the name typed again for the command that deletes a note', () => {
@@ -74,7 +67,7 @@ describe('the input a command of the palette asks for', () => {
     kinds.delete(undefined)
 
     expect([...kinds].sort()).toStrictEqual(
-      ['choice', 'confirmation', 'name', 'note', 'retypedName', 'vault'].sort(),
+      ['confirmation', 'name', 'note', 'retypedName', 'vault'].sort(),
     )
   })
 })

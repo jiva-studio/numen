@@ -6,7 +6,6 @@
  * door is mocked too, over the rest of what it gives.
  */
 import { vi } from 'vitest'
-import { requests } from './requests'
 import { declared, mockVaultState, pendingStream } from './answers'
 
 vi.mock('@/app/plugins/agentPort', () => ({
@@ -26,14 +25,6 @@ const themesResponse = {
       bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
     }),
     readTheme: async (name: string) => `:root { --numen-surface: ${name} }`,
-    writeAppearance: async (
-      name: string,
-      mode: string,
-      sizes: { interfaceScale: number; textScale: number },
-    ) => {
-      requests.applied.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
-      return mockVaultState.writeError
-    },
     watchThemes: pendingStream,
   },
 }

@@ -51,19 +51,12 @@ describe('the commands over the vaults an installation holds', () => {
 })
 
 describe('the commands that ask for a choice among a few', () => {
-  it('are the ones that set how the window is drawn and how it works', () => {
+  it('are none of the editor, since the settings offer theirs', () => {
     const choosing = createCommands(words)
       .filter((one) => one.input === 'choice')
       .map((one) => one.id)
 
-    expect(choosing).toStrictEqual([
-      'app:appearance.chooseTheme',
-      'app:appearance.chooseMode',
-      'app:appearance.chooseInterfaceSize',
-      'app:appearance.chooseTextSize',
-      'app:note.chooseTitleSync',
-      'app:performance.chooseProfile',
-    ])
+    expect(choosing).toStrictEqual([])
   })
 })
 

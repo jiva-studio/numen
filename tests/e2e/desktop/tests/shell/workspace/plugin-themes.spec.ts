@@ -24,7 +24,7 @@ const reloadWindow = async (page: Page): Promise<void> => {
 
 /** Applies the theme of that title through the palette. */
 const chooseTheme = async (page: Page, title: string): Promise<void> => {
-  await runCommand(page, 'Change theme', /^Change theme/)
+  await runCommand(page, 'Theme', /^Theme/)
   await page
     .getByRole('option', { name: new RegExp(`^${title}`) })
     .first()

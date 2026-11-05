@@ -56,8 +56,8 @@ test.describe('Window Controls and Display Preferences', () => {
     await expect(editor).toBeVisible()
     const before = await readComputedFontSize(editor)
 
-    await runPaletteCommand(page, 'Set reading font size', 'Set reading font size')
-    await chooseValue(page, '150%')
+    await runPaletteCommand(page, 'Reading size', 'Reading size')
+    await chooseValue(page, '1.5')
 
     await expect.poll(async () => readComputedFontSize(editor)).toBeCloseTo(before * 1.5, 0)
     await expect

@@ -7,11 +7,9 @@
  * after the keyboard focus has stayed on its row.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { StepGroup } from '@/shared/steps'
-import { DESIGNED, EMPTY_RANGE } from '@/entities/settings'
+import { DESIGNED } from '@/entities/settings'
 import type { Appearance, Themes } from '@/entities/settings'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '../lib/head'
-import { COMMAND } from '@/shared/commandIds'
 import { createWindowAppearance } from './appearance'
 import { WORDS as words } from '@/shared/words'
 
@@ -71,26 +69,6 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 /** A delay longer than the interval after which the window applies a size. */
 const wait = () => new Promise((isDone) => setTimeout(isDone, 200))
 
-/** A range narrower than the one the application answers with. */
-const NARROW = { min: 1, max: 1.5 }
-
-/** Every tenth the interface scales between, as displayed to the user. */
-const TENTHS = [
-  '80%',
-  '90%',
-  '100%',
-  '110%',
-  '120%',
-  '130%',
-  '140%',
-  '150%',
-  '160%',
-  '170%',
-  '180%',
-  '190%',
-  '200%',
-]
-
 /** The user's folder, which a test writes to. */
 const folder = () => {
   let wake: ((names: readonly string[]) => void) | null = null
@@ -111,10 +89,8 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
   const sheet = page(css)
   const response = folder()
   const request: string[] = []
-  const selected: string[] = []
   let appearance: Appearance = { ...APPEARANCE, ...overrides }
   let items = 0
-  let failed = ''
   let textError = ''
   const texts: Record<string, string> = {}
   const core: Themes = {
@@ -126,10 +102,6 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
       request.push(name)
       if (textError) throw new Error(textError)
       return texts[name] ?? `:root { --numen-surface: ${name} }`
-    },
-    writeAppearance: async (name, mode, sizes) => {
-      selected.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
-      return failed
     },
     watchThemes: response.watchThemes,
   }
@@ -146,12 +118,10 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
     }),
     sheet,
     requests: request,
-    chosen: selected,
     messages: notifiedCalls,
     changeThemes: response.changeThemes,
     getAppearanceCount: () => items,
     writeTheme: (name: string, css: string) => (texts[name] = css),
-    fails: (error: string) => (failed = error),
     failsText: (error: string) => (textError = error),
     setAppearance: (next: Partial<Appearance>) => (appearance = { ...appearance, ...next }),
   }
@@ -177,7 +147,7 @@ describe('the page as it was served', () => {
     const one = await startWindow()
     const before = [...one.sheet.head.querySelectorAll('style')]
 
-    one.appearance.previewItem('mine:sea')
+    one.appearance.previewTheme('mine:sea')
     await settle()
 
     expect([...one.sheet.head.querySelectorAll('style')]).toStrictEqual(before)
@@ -194,7 +164,7 @@ describe('the page as it was served', () => {
     // mode's element and a multiplier on the sizes' element.
     const one = await startWindow({}, ':root { color-scheme: dark; --numen-text-scale: 1.3 }')
 
-    one.appearance.previewItem('mine:sea')
+    one.appearance.previewTheme('mine:sea')
     await settle()
 
     expect(getHeadStyles(one.sheet)).toStrictEqual([
@@ -210,7 +180,6 @@ describe('the page as it was served', () => {
       core: {
         getAppearance: async () => APPEARANCE,
         readTheme: async (name) => `:root { --numen-surface: ${name} }`,
-        writeAppearance: async () => '',
         watchThemes: async function* (): AsyncIterable<readonly string[]> {
           await new Promise<never>(vi.fn())
         },
@@ -221,7 +190,7 @@ describe('the page as it was served', () => {
     })
     await bareAppearance.start()
 
-    bareAppearance.previewItem('mine:sea')
+    bareAppearance.previewTheme('mine:sea')
     await settle()
 
     expect(getHeadStyles(sheet)).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
@@ -232,7 +201,7 @@ describe('the theme the keyboard is standing on', () => {
   it('is applied while active there', async () => {
     const one = await startWindow()
 
-    one.appearance.previewItem('mine:sea')
+    one.appearance.previewTheme('mine:sea')
     await settle()
 
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
@@ -242,9 +211,9 @@ describe('the theme the keyboard is standing on', () => {
   it('gives way to the one the settings name once the keyboard remains nowhere', async () => {
     const one = await startWindow()
 
-    one.appearance.previewItem('mine:sea')
+    one.appearance.previewTheme('mine:sea')
     await settle()
-    one.appearance.previewItem('')
+    one.appearance.restore()
     await settle()
 
     expect(getHeadStyles(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
@@ -255,11 +224,11 @@ describe('the theme the keyboard is standing on', () => {
   it('is read once, however often the keyboard walks back over it', async () => {
     const one = await startWindow()
 
-    one.appearance.previewItem('mine:sea')
+    one.appearance.previewTheme('mine:sea')
     await settle()
-    one.appearance.previewItem('preset:dracula')
+    one.appearance.previewTheme('preset:dracula')
     await settle()
-    one.appearance.previewItem('mine:sea')
+    one.appearance.previewTheme('mine:sea')
     await settle()
 
     expect(one.requests).toStrictEqual(['mine:sea', 'preset:dracula'])
@@ -270,7 +239,7 @@ describe('the theme the keyboard is standing on', () => {
     const one = await startWindow()
     one.failsText('the file is gone')
 
-    one.appearance.previewItem('mine:sea')
+    one.appearance.previewTheme('mine:sea')
     await settle()
 
     expect(one.messages.at(-1)).toStrictEqual({ text: words.themeUnreadable, kind: 'error' })
@@ -280,8 +249,8 @@ describe('the theme the keyboard is standing on', () => {
   it('is the last row the keyboard landed on, whatever order the files come back in', async () => {
     const one = await startWindow()
 
-    one.appearance.previewItem('preset:dracula')
-    one.appearance.previewItem('mine:sea')
+    one.appearance.previewTheme('preset:dracula')
+    one.appearance.previewTheme('mine:sea')
     await settle()
 
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
@@ -292,7 +261,7 @@ describe('which half of a pair the tokens are read as', () => {
   it('is written into the mode’s element, and leaves the theme where it was', async () => {
     const one = await startWindow()
 
-    one.appearance.previewItem('mode:dark')
+    one.appearance.previewMode('dark')
     await settle()
 
     expect(getHeadStyles(one.sheet)).toStrictEqual([':root { color-scheme: dark; }', SERVED, SIZED])
@@ -301,234 +270,12 @@ describe('which half of a pair the tokens are read as', () => {
   it('goes back to what the settings say once the keyboard remains nowhere', async () => {
     const one = await startWindow({ mode: 'light' })
 
-    one.appearance.previewItem('mode:dark')
+    one.appearance.previewMode('dark')
     await settle()
-    one.appearance.previewItem('')
+    one.appearance.restore()
     await settle()
 
     expect(getHeadStyles(one.sheet).at(0)).toBe(':root { color-scheme: light; }')
-  })
-})
-
-describe('the themes the step offers', () => {
-  /** Every group, by its identity, and the rows standing in each. */
-  const getGroupIds = (rows: readonly StepGroup[]) =>
-    Object.fromEntries(rows.map((group) => [group.id, group.items.map((row) => row.id)]))
-
-  it('draws the themes in the two groups they come off, and nothing else', async () => {
-    const one = await startWindow()
-
-    expect(getGroupIds(one.appearance.getThemeGroups())).toStrictEqual({
-      shipping: ['preset:numen', 'preset:dracula'],
-      owned: ['mine:sea'],
-    })
-  })
-
-  it('remains the group the applied theme came from first, and it first inside it', async () => {
-    const one = await startWindow({ applied: 'preset:dracula' })
-    const other = await startWindow({ applied: 'mine:sea' })
-
-    expect(getGroupIds(one.appearance.getThemeGroups())).toStrictEqual({
-      shipping: ['preset:dracula', 'preset:numen'],
-      owned: ['mine:sea'],
-    })
-    expect(other.appearance.getThemeGroups().map((group) => group.id)).toStrictEqual([
-      'owned',
-      'shipping',
-    ])
-  })
-
-  it('says on a row only what is true of that row: that it is the applied one', async () => {
-    const one = await startWindow()
-
-    const rows = one.appearance.getThemeGroups().flatMap((group) => group.items)
-    expect(rows.map((row) => row.detail)).toStrictEqual([words.current, undefined, undefined])
-  })
-
-  it('says where a person’s own themes go while they have none', async () => {
-    const one = await startWindow({ themes: APPEARANCE.themes.slice(0, 2) })
-
-    const own = one.appearance.getThemeGroups().find((group) => group.id === 'owned')
-    expect(own?.items).toStrictEqual([])
-    expect(own?.silence).toBe(words.noneOwned)
-  })
-})
-
-describe('the three halves the step offers', () => {
-  const rows = (one: Awaited<ReturnType<typeof startWindow>>) =>
-    one.appearance.getModeGroups().flatMap((group) => group.items)
-
-  it('draws the three in one group of their own, and says which is read', async () => {
-    const one = await startWindow({ mode: 'light' })
-
-    expect(one.appearance.getModeGroups().map((group) => group.id)).toStrictEqual(['half'])
-    expect(rows(one).map((row) => row.id)).toStrictEqual(['mode:system', 'mode:light', 'mode:dark'])
-    expect(rows(one).map((row) => row.detail)).toStrictEqual([undefined, words.current, undefined])
-  })
-
-  it('draws each as not to be chosen while the applied theme pins light and dark', async () => {
-    const one = await startWindow()
-
-    one.appearance.previewItem('preset:dracula')
-    await settle()
-
-    expect(rows(one).map((row) => row.isDisabled)).toStrictEqual([true, true, true])
-    expect(rows(one).map((row) => row.detail)).toStrictEqual([
-      words.pinned,
-      words.pinned,
-      words.pinned,
-    ])
-  })
-
-  it('draws each as one to choose again once such a theme is left', async () => {
-    const one = await startWindow()
-
-    one.appearance.previewItem('preset:dracula')
-    await settle()
-    one.appearance.previewItem('')
-    await settle()
-
-    expect(rows(one).map((row) => row.isDisabled)).toStrictEqual([undefined, undefined, undefined])
-  })
-})
-
-describe('the sizes the two steps offer', () => {
-  const rows = (one: Awaited<ReturnType<typeof startWindow>>, command: string) =>
-    one.appearance.getSizeGroups(command).flatMap((group) => group.items)
-
-  it('walks each range from end to end, in quarters, with both ends on it', async () => {
-    const one = await startWindow()
-
-    expect(rows(one, COMMAND.chooseInterfaceSize).map((row) => row.title)).toStrictEqual(TENTHS)
-    // The far end of this one falls between two steps, and is offered there.
-    expect(rows(one, COMMAND.chooseTextSize).map((row) => row.title)).toStrictEqual([
-      ...TENTHS.slice(0, 10),
-      '175%',
-    ])
-  })
-
-  it('draws each in a group of its own, named for what that size moves', async () => {
-    const one = await startWindow()
-
-    expect(
-      one.appearance.getSizeGroups(COMMAND.chooseInterfaceSize).map((group) => group.title),
-    ).toStrictEqual([words.drawing])
-    expect(
-      one.appearance.getSizeGroups(COMMAND.chooseTextSize).map((group) => group.title),
-    ).toStrictEqual([words.setting])
-  })
-
-  it('offers nothing at all until the application has returned how far a size goes', async () => {
-    const one = await startWindow({
-      bounds: { interfaceScale: { min: 0, max: 0 }, textScale: NARROW },
-    })
-
-    expect(rows(one, COMMAND.chooseInterfaceSize)).toStrictEqual([])
-    expect(rows(one, COMMAND.chooseTextSize).map((row) => row.title)).toStrictEqual([
-      '100%',
-      '110%',
-      '120%',
-      '130%',
-      '140%',
-      '150%',
-    ])
-  })
-
-  it('says on one row that it is the size now, and says nothing on any other', async () => {
-    const one = await startWindow({ sizes: { interfaceScale: 1.5, textScale: 1 } })
-
-    expect(rows(one, COMMAND.chooseInterfaceSize).map((row) => row.detail)).toStrictEqual(
-      TENTHS.map((title) => (title === '150%' ? words.current : undefined)),
-    )
-  })
-
-  it('holds the size the window is drawn at, wherever between the steps it falls', async () => {
-    const one = await startWindow({ sizes: { interfaceScale: 1.17, textScale: 1 } })
-
-    const rung = rows(one, COMMAND.chooseInterfaceSize).find((row) => row.detail === words.current)
-    expect(rung?.title).toBe('117%')
-    expect(rows(one, COMMAND.chooseInterfaceSize).map((row) => row.title)).toStrictEqual([
-      ...TENTHS.slice(0, 4),
-      '117%',
-      ...TENTHS.slice(4),
-    ])
-  })
-
-  it('says nothing alongside 100%, which a person reading percentages knows', async () => {
-    const one = await startWindow({ sizes: { interfaceScale: 1.5, textScale: 1 } })
-
-    const getHundredDetail = (command: string) =>
-      rows(one, command).find((row) => row.title === '100%')?.detail
-
-    expect(getHundredDetail(COMMAND.chooseInterfaceSize)).toBeUndefined()
-    // The reading text is set at 100%, so on its list that row is the one.
-    expect(getHundredDetail(COMMAND.chooseTextSize)).toBe(words.current)
-  })
-})
-
-describe('the number a person types at a size', () => {
-  const rows = (one: Awaited<ReturnType<typeof startWindow>>, command: string, text: string) =>
-    one.appearance.getSizeGroups(command, text).flatMap((group) => group.items)
-
-  it('remains as a row of its own, in its place between the steps', async () => {
-    const one = await startWindow()
-
-    expect(rows(one, COMMAND.chooseInterfaceSize, '137').map((row) => row.title)).toStrictEqual([
-      ...TENTHS.slice(0, 6),
-      '137%',
-      ...TENTHS.slice(6),
-    ])
-    expect(
-      rows(one, COMMAND.chooseInterfaceSize, '137').find((row) => row.title === '137%')?.id,
-    ).toBe('interfaceScale:1.37')
-  })
-
-  it('is taken with the sign a person reads on the rows, and with none', async () => {
-    const one = await startWindow()
-
-    const getTitles = (text: string) =>
-      rows(one, COMMAND.chooseInterfaceSize, text).map((row) => row.title)
-    expect(getTitles('137%')).toStrictEqual(getTitles('137'))
-    expect(getTitles(' 137 ')).toStrictEqual(getTitles('137'))
-  })
-
-  it('is not offered at all where the range does not reach it', async () => {
-    const one = await startWindow()
-
-    expect(rows(one, COMMAND.chooseInterfaceSize, '250').map((row) => row.title)).toStrictEqual(
-      TENTHS,
-    )
-    expect(rows(one, COMMAND.chooseTextSize, '190').map((row) => row.title)).not.toContain('190%')
-  })
-
-  it('is not offered twice where the list already holds that size', async () => {
-    const one = await startWindow()
-
-    expect(rows(one, COMMAND.chooseInterfaceSize, '150').map((row) => row.title)).toStrictEqual(
-      TENTHS,
-    )
-  })
-
-  it('is nothing at all where what was typed is not a whole number', async () => {
-    const one = await startWindow()
-
-    expect(rows(one, COMMAND.chooseInterfaceSize, 'large').map((row) => row.title)).toStrictEqual(
-      TENTHS,
-    )
-    expect(rows(one, COMMAND.chooseInterfaceSize, '1.37').map((row) => row.title)).toStrictEqual(
-      TENTHS,
-    )
-  })
-
-  it('is drawn and written like any other row', async () => {
-    const one = await startWindow()
-
-    one.appearance.previewItem('interfaceScale:1.37')
-    await wait()
-    await one.appearance.chooseItem('interfaceScale:1.37')
-
-    expect(one.chosen).toStrictEqual(['preset:numen system 1.37/1'])
-    expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }')
   })
 })
 
@@ -536,20 +283,10 @@ describe('the size the keyboard is standing on', () => {
   it('is not drawn while the keyboard is still walking over rows', async () => {
     const one = await startWindow()
 
-    one.appearance.previewItem('interfaceScale:1.5')
+    one.appearance.previewSize('interfaceScale', 1.5)
     await settle()
-    one.appearance.previewItem('interfaceScale:1.75')
+    one.appearance.previewSize('interfaceScale', 1.75)
     await settle()
-
-    expect(sizes(one.sheet)).toBe(SIZED)
-  })
-
-  it('cancels a pending size hold when the keyboard moves to a theme row', async () => {
-    const one = await startWindow()
-
-    one.appearance.previewItem('interfaceScale:1.5')
-    one.appearance.previewItem('mine:sea')
-    await wait()
 
     expect(sizes(one.sheet)).toBe(SIZED)
   })
@@ -557,7 +294,7 @@ describe('the size the keyboard is standing on', () => {
   it('is drawn once the keyboard has stood on it', async () => {
     const one = await startWindow()
 
-    one.appearance.previewItem('interfaceScale:1.5')
+    one.appearance.previewSize('interfaceScale', 1.5)
     await wait()
 
     expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
@@ -566,9 +303,9 @@ describe('the size the keyboard is standing on', () => {
   it('is drawn once, at the row the keyboard came to rest on', async () => {
     const one = await startWindow()
 
-    one.appearance.previewItem('interfaceScale:1.25')
-    one.appearance.previewItem('interfaceScale:1.5')
-    one.appearance.previewItem('textScale:1.25')
+    one.appearance.previewSize('interfaceScale', 1.25)
+    one.appearance.previewSize('interfaceScale', 1.5)
+    one.appearance.previewSize('textScale', 1.25)
     await wait()
 
     expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1; --numen-text-scale: 1.25; }')
@@ -576,123 +313,29 @@ describe('the size the keyboard is standing on', () => {
 
   it('gives way to the size the settings name once the keyboard remains nowhere', async () => {
     const one = await startWindow()
-    one.appearance.previewItem('textScale:1.5')
+    one.appearance.previewSize('textScale', 1.5)
     await wait()
 
-    one.appearance.previewItem('')
+    one.appearance.restore()
     await settle()
 
     expect(sizes(one.sheet)).toBe(SIZED)
-    expect(one.chosen).toStrictEqual([])
   })
 
   it('leaves the theme and the mode where they stand', async () => {
     const one = await startWindow()
 
-    one.appearance.previewItem('interfaceScale:2')
+    one.appearance.previewSize('interfaceScale', 2)
     await wait()
 
     expect(getHeadStyles(one.sheet).slice(0, 2)).toStrictEqual([PAIR, SERVED])
   })
 })
 
-describe('the size that was chosen', () => {
-  it('is drawn at once, whatever the hold was waiting for, and written down', async () => {
-    const one = await startWindow()
-    one.appearance.previewItem('interfaceScale:1.25')
-
-    await one.appearance.chooseItem('interfaceScale:1.5')
-
-    expect(one.chosen).toStrictEqual(['preset:numen system 1.5/1'])
-    expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
-  })
-
-  it('is written alongside the other size, which remains where it was', async () => {
-    const one = await startWindow({ sizes: { interfaceScale: 1.25, textScale: 1 } })
-
-    await one.appearance.chooseItem('textScale:1.75')
-
-    expect(one.chosen).toStrictEqual(['preset:numen system 1.25/1.75'])
-    expect(sizes(one.sheet)).toBe(
-      ':root { --numen-interface-scale: 1.25; --numen-text-scale: 1.75; }',
-    )
-  })
-
-  it('says what the settings rejected, and goes back to the size they hold', async () => {
-    const one = await startWindow()
-    one.fails('appearance.interface_scale is 3, which is outside 0.8 to 2')
-
-    await one.appearance.chooseItem('interfaceScale:2')
-    await settle()
-
-    expect(one.messages.at(-1)).toStrictEqual({
-      text: 'appearance.interface_scale is 3, which is outside 0.8 to 2',
-      kind: 'error',
-    })
-    expect(sizes(one.sheet)).toBe(SIZED)
-  })
-
-  it('is nothing at all where the range the window holds does not reach it', async () => {
-    const one = await startWindow()
-
-    await one.appearance.chooseItem('interfaceScale:3')
-    one.appearance.previewItem('textScale:3')
-    await wait()
-
-    expect(one.chosen).toStrictEqual([])
-    expect(sizes(one.sheet)).toBe(SIZED)
-  })
-})
-
-describe('the row that was chosen', () => {
-  it('is written into the settings, and is what the window applies from then on', async () => {
-    const one = await startWindow()
-
-    await one.appearance.chooseItem('mine:sea')
-
-    expect(one.chosen).toStrictEqual(['mine:sea system 1/1'])
-    expect(one.appearance.applied.value).toBe('mine:sea')
-    expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
-  })
-
-  it('is the mode, written alongside the theme the settings already name', async () => {
-    const one = await startWindow()
-
-    await one.appearance.chooseItem('mode:dark')
-
-    expect(one.chosen).toStrictEqual(['preset:numen dark 1/1'])
-    expect(one.appearance.mode.value).toBe('dark')
-    expect(getHeadStyles(one.sheet)).toStrictEqual([':root { color-scheme: dark; }', SERVED, SIZED])
-  })
-
-  it('says what the settings could not be written, and puts back what they hold', async () => {
-    const one = await startWindow()
-    one.fails('the settings could not be written')
-
-    await one.appearance.chooseItem('mine:sea')
-
-    expect(one.messages.at(-1)).toStrictEqual({
-      text: 'the settings could not be written',
-      kind: 'error',
-    })
-    expect(one.appearance.applied.value).toBe('preset:numen')
-    expect(getHeadStyles(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
-  })
-
-  it('is nothing at all where the window holds no such row', async () => {
-    const one = await startWindow()
-
-    await one.appearance.chooseItem('mine:tide')
-
-    expect(one.chosen).toStrictEqual([])
-    expect(getHeadStyles(one.sheet)).toStrictEqual([PAIR, SERVED, SIZED])
-  })
-})
-
 describe('the person editing their own theme file', () => {
   it('is followed: the file is read again, and the window applies what the file now says', async () => {
     const one = await startWindow()
-    one.appearance.previewItem('mine:sea')
+    one.appearance.previewTheme('mine:sea')
     await settle()
 
     one.writeTheme('mine:sea', ':root { --numen-surface: #001 }')
@@ -713,7 +356,7 @@ describe('the person editing their own theme file', () => {
 
   it('leaves a theme the folder returned nothing about where it was', async () => {
     const one = await startWindow()
-    one.appearance.previewItem('mine:sea')
+    one.appearance.previewTheme('mine:sea')
     await settle()
 
     await one.changeThemes('mine:tide')
@@ -722,85 +365,55 @@ describe('the person editing their own theme file', () => {
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: mine:sea }')
   })
 
-  it('lists what the folder holds again, so a file made or taken out is offered', async () => {
+  it('reads the settings again, so a file made or taken out is counted', async () => {
     const one = await startWindow()
-    one.setAppearance({ themes: [...APPEARANCE.themes.slice(0, 2)] })
 
     await one.changeThemes('mine:sea')
 
     expect(one.getAppearanceCount()).toBe(2)
-    expect(
-      one.appearance.getThemeGroups().flatMap((group) => group.items.map((row) => row.id)),
-    ).toStrictEqual(['preset:numen', 'preset:dracula'])
   })
 })
 
-describe('whether the applied theme pins light and dark', () => {
-  it('is not so for a theme the list does not hold', async () => {
-    const one = await startWindow({ applied: 'preset:gone' })
-
-    expect(one.appearance.isPinned.value).toBe(false)
-  })
-
-  it('goes back to the theme applied once a size is chosen', async () => {
-    const one = await startWindow({ applied: 'preset:dracula' })
-    one.appearance.previewItem('preset:numen')
-    expect(one.appearance.isPinned.value).toBe(false)
-
-    await one.appearance.chooseItem('interfaceScale:1.5')
-
-    expect(one.appearance.isPinned.value).toBe(true)
-  })
-
-  it('refuses a mode while the keyboard relies on a pinned theme', async () => {
+describe('the settings read again while a row is previewed', () => {
+  it('shows what the settings now name, and forgets what the keyboard stood on', async () => {
     const one = await startWindow()
-    one.appearance.previewItem('preset:dracula')
-    await settle()
-
-    await one.appearance.chooseItem('mode:dark')
-
-    expect(one.chosen).toStrictEqual([])
-    expect(one.appearance.mode.value).toBe('system')
-  })
-})
-
-describe('the message line when a row is chosen', () => {
-  it('is cleared before a size is written', async () => {
-    const one = await startWindow()
-
-    await one.appearance.chooseItem('interfaceScale:1.5')
-
-    expect(one.messages).toStrictEqual([{ text: '', kind: 'info' }])
-  })
-
-  it('is cleared before a theme is written', async () => {
-    const one = await startWindow()
-
-    await one.appearance.chooseItem('mine:sea')
-
-    expect(one.messages).toStrictEqual([{ text: '', kind: 'info' }])
-  })
-})
-
-describe('a size retained while a row is chosen or the list is left', () => {
-  it('is not drawn after another size was chosen over it', async () => {
-    const one = await startWindow()
-    one.appearance.previewItem('interfaceScale:1.25')
-
-    await one.appearance.chooseItem('interfaceScale:1.5')
+    one.appearance.previewTheme('mine:sea')
+    one.appearance.previewSize('textScale', 1.5)
     await wait()
+    one.setAppearance({ applied: 'preset:dracula' })
 
-    expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
-  })
+    await one.appearance.reload()
 
-  it('is not drawn once the window is closed', async () => {
-    const one = await startWindow()
-    one.appearance.previewItem('interfaceScale:1.25')
-
-    one.appearance.close()
-    await wait()
-
+    expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: preset:dracula }')
     expect(one.appearance.sized.value).toStrictEqual({ interfaceScale: 1, textScale: 1 })
+  })
+})
+
+describe('two reads of the settings in flight', () => {
+  it('apply the answer to the later read, whichever answers last', async () => {
+    const sheet = page()
+    const answers: ((answer: Appearance) => void)[] = []
+    const target = createWindowAppearance({
+      core: {
+        getAppearance: () => new Promise<Appearance>((answer) => answers.push(answer)),
+        readTheme: async (name) => `:root { --numen-surface: ${name} }`,
+        watchThemes: async function* (): AsyncIterable<readonly string[]> {
+          await new Promise<never>(vi.fn())
+        },
+      },
+      words,
+      write: vi.fn(),
+      sheet,
+    })
+
+    const first = target.reload()
+    const second = target.reload()
+    answers[1]?.({ ...APPEARANCE, sizes: { interfaceScale: 1.2, textScale: 1 } })
+    await second
+    answers[0]?.(APPEARANCE)
+    await first
+
+    expect(target.sized.value).toStrictEqual({ interfaceScale: 1.2, textScale: 1 })
   })
 })
 
@@ -818,7 +431,6 @@ const createManual = (waits = Infinity) => {
       new Promise<string>((give, fail) =>
         reads.push({ name, give, fail: () => fail(new Error('gone')) }),
       ),
-    writeAppearance: async () => '',
     watchThemes: async function* (signal) {
       signals.push(signal)
       if (fault) throw new Error('down')
@@ -861,20 +473,15 @@ describe('the window before it has been told anything', () => {
   it('has no themes, applies no theme, reads as a system pair, and draws at the designed size', () => {
     const { appearance } = createManual()
 
-    expect(appearance.list.value).toStrictEqual([])
     expect(appearance.applied.value).toBe('')
     expect(appearance.mode.value).toBe('system')
     expect(appearance.sized.value).toStrictEqual({ interfaceScale: DESIGNED, textScale: DESIGNED })
-    expect(appearance.bounds.value).toStrictEqual({
-      interfaceScale: EMPTY_RANGE,
-      textScale: EMPTY_RANGE,
-    })
   })
 
   it('writes nothing over the page it was served, whatever the keyboard relies on', async () => {
     const { appearance, sheet, reads } = createManual()
 
-    appearance.previewItem('mine:sea')
+    appearance.previewTheme('mine:sea')
     await settle()
 
     expect(reads).toStrictEqual([])
@@ -886,8 +493,8 @@ describe('files that come back out of order', () => {
   it('leave the theme of the row the keyboard came to rest on', async () => {
     const { appearance, sheet, reads } = createManual()
     await appearance.start()
-    appearance.previewItem('preset:dracula')
-    appearance.previewItem('mine:sea')
+    appearance.previewTheme('preset:dracula')
+    appearance.previewTheme('mine:sea')
 
     reads[1]?.give('SEA')
     await settle()
@@ -900,8 +507,8 @@ describe('files that come back out of order', () => {
   it('say nothing of a file the keyboard has already left', async () => {
     const { appearance, messages, reads } = createManual()
     await appearance.start()
-    appearance.previewItem('preset:dracula')
-    appearance.previewItem('mine:sea')
+    appearance.previewTheme('preset:dracula')
+    appearance.previewTheme('mine:sea')
 
     reads[1]?.give('SEA')
     await settle()
@@ -917,7 +524,7 @@ describe('the folder when it names a theme that is not applied', () => {
     const { appearance, reads, changeThemes } = createManual()
     await appearance.start()
     await settle()
-    appearance.previewItem('mine:sea')
+    appearance.previewTheme('mine:sea')
 
     await changeThemes('mine:tide')
 
@@ -972,22 +579,11 @@ describe('a window that is closed', () => {
   it('draws no size the keyboard was still standing on', async () => {
     const one = await startWindow()
 
-    one.appearance.previewItem('interfaceScale:1.5')
+    one.appearance.previewSize('interfaceScale', 1.5)
     one.appearance.close()
     await wait()
 
     expect(one.appearance.sized.value).toStrictEqual({ interfaceScale: 1, textScale: 1 })
-  })
-
-  it('writes no size into the head', async () => {
-    const one = await startWindow()
-    one.appearance.close()
-
-    await one.appearance.chooseItem('textScale:1.5')
-    await settle()
-
-    expect(one.appearance.sized.value.textScale).toBe(1.5)
-    expect(sizes(one.sheet)).toBe(SIZED)
   })
 })
 
@@ -1001,7 +597,6 @@ describe('the application that cannot list the themes', () => {
           throw new Error('down')
         },
         readTheme: async () => '',
-        writeAppearance: async () => '',
         watchThemes: async function* (signal) {
           await new Promise<void>((isDone) => signal.addEventListener('abort', () => isDone()))
           yield* []
@@ -1017,7 +612,6 @@ describe('the application that cannot list the themes', () => {
     await windowAppearance.start()
 
     expect(notifiedCalls).toStrictEqual([{ text: words.unlisted, kind: 'error' }])
-    expect(windowAppearance.list.value).toStrictEqual([])
     expect(getHeadStyles(sheet)).toStrictEqual([PAIR, SERVED, SIZED])
     windowAppearance.close()
   })
@@ -1033,7 +627,6 @@ describe('a folder stream that ended', () => {
       core: {
         getAppearance: async () => APPEARANCE,
         readTheme: async () => '',
-        writeAppearance: async () => '',
         watchThemes: async function* () {
           watches += 1
           yield* []

@@ -8,7 +8,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { runSupport } from './runSupport'
-import type { CommandTarget, NoteLookup, PaletteLists, RunSupport, StepGroup } from '../../types'
+import type {
+  Command,
+  CommandTarget,
+  NoteLookup,
+  PaletteLists,
+  RunSupport,
+  StepGroup,
+} from '../../types'
 import { useCommandPalette, type Commands } from './palette'
 import { usePaletteShortcuts } from './shortcuts'
 import type { VaultList, Vault } from '@/entities/vault'
@@ -100,6 +107,17 @@ const createLookup = () => {
   }
 }
 
+const THEME_ID = 'setting:app:appearance.theme'
+const MODE_ID = 'setting:app:appearance.mode'
+const THEME_TEXT = 'Theme'
+const MODE_TEXT = 'Light or dark'
+
+/** The commands of two settings, as the adapter of the settings offers them beside the table. */
+const SETTING_COMMANDS: readonly Command[] = [
+  { id: THEME_ID, text: THEME_TEXT, group: 'settings', input: 'choice', isAvailable: () => true },
+  { id: MODE_ID, text: MODE_TEXT, group: 'settings', input: 'choice', isAvailable: () => true },
+]
+
 /** The step lists of the window and every row previewed by a step. */
 const createLists = (offers: Record<string, readonly StepGroup[]>) => {
   const lists = ref(offers)
@@ -117,7 +135,7 @@ const createLists = (offers: Record<string, readonly StepGroup[]>) => {
 const createPalette = (
   override: Partial<CommandTarget> = {},
   found: readonly NameMatch[] = [],
-  offers: Record<string, readonly StepGroup[]> = {},
+  entries: Record<string, readonly StepGroup[]> = {},
   items: VaultList = installation(vault('physics', 'Physics')),
   runs: RunSupport = runSupport(),
 ) => {
@@ -131,7 +149,7 @@ const createPalette = (
     vaults: async () => items,
   }
   const window = createLookup()
-  const retainedItem = createLists(offers)
+  const retainedItem = createLists(entries)
   const commands = useCommandPalette(
     core,
     words,
@@ -140,6 +158,7 @@ const createPalette = (
     retainedItem.paletteLists,
     runs,
     vi.fn(() => Promise.resolve()),
+    () => (Object.keys(entries).length > 0 ? SETTING_COMMANDS : []),
   )
   commands.setOpen(true)
   return {
@@ -179,15 +198,7 @@ describe('the commands as they open', () => {
         'app:note.copyPath',
       ],
       window: ['app:note.create', 'app:tab.close', 'app:vault.search'],
-      settings: [
-        'app:appearance.chooseTheme',
-        'app:appearance.chooseMode',
-        'app:appearance.chooseInterfaceSize',
-        'app:appearance.chooseTextSize',
-        'app:note.chooseTitleSync',
-        'app:performance.chooseProfile',
-        'app:settings.open',
-      ],
+      settings: ['app:settings.open'],
       vault: [
         'app:note.goTo',
         'app:vault.open',
@@ -259,15 +270,7 @@ describe('what is in front', () => {
 
     expect(getItemIds(commands.groups)).toStrictEqual({
       window: ['app:tab.close', 'app:vault.search'],
-      settings: [
-        'app:appearance.chooseTheme',
-        'app:appearance.chooseMode',
-        'app:appearance.chooseInterfaceSize',
-        'app:appearance.chooseTextSize',
-        'app:note.chooseTitleSync',
-        'app:performance.chooseProfile',
-        'app:settings.open',
-      ],
+      settings: ['app:settings.open'],
       vault: [
         'app:vault.open',
         'app:vault.create',
@@ -617,15 +620,15 @@ describe('a command that offers a list the window holds', () => {
   ]
 
   const target = {
-    'app:appearance.chooseTheme': THEMES,
-    'app:appearance.chooseMode': HALVES,
+    [THEME_ID]: THEMES,
+    [MODE_ID]: HALVES,
   }
 
   it('offers the groups the window holds, each under its own name', () => {
     const { commands } = createPalette({}, [], target)
-    commands.startCommand('app:appearance.chooseTheme', front())
+    commands.startCommand(THEME_ID, front())
 
-    expect(commands.crumb.value).toBe(words.appearance)
+    expect(commands.crumb.value).toBe(THEME_TEXT)
     expect(commands.placeholder.value).toBe(words.typeChoice)
     expect(commands.groups.value.map((group) => group.title)).toStrictEqual([
       'Built-in',
@@ -640,9 +643,9 @@ describe('a command that offers a list the window holds', () => {
 
   it('offers each command the list it holds for that command', () => {
     const { commands } = createPalette({}, [], target)
-    commands.startCommand('app:appearance.chooseMode', front())
+    commands.startCommand(MODE_ID, front())
 
-    expect(commands.crumb.value).toBe(words.chooseMode)
+    expect(commands.crumb.value).toBe(MODE_TEXT)
     expect(getItemIds(commands.groups)).toStrictEqual({
       half: ['mode:system', 'mode:light'],
     })
@@ -650,7 +653,7 @@ describe('a command that offers a list the window holds', () => {
 
   it('keeps to the rows the words typed name, and marks where they stand', async () => {
     const { commands } = createPalette({}, [], target)
-    commands.startCommand('app:appearance.chooseTheme', front())
+    commands.startCommand(THEME_ID, front())
 
     await commands.setTyped('rac')
 
@@ -660,7 +663,7 @@ describe('a command that offers a list the window holds', () => {
 
   it('draws a row the window says cannot be chosen, and chooses nothing by it', () => {
     const { commands } = createPalette({}, [], target)
-    commands.startCommand('app:appearance.chooseMode', front())
+    commands.startCommand(MODE_ID, front())
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(chooseRow(commands, 'mode:system')).toBeNull()
@@ -669,10 +672,10 @@ describe('a command that offers a list the window holds', () => {
 
   it('returns the row that was chosen, from whichever group it stood in', () => {
     const { commands } = createPalette({}, [], target)
-    commands.startCommand('app:appearance.chooseTheme', front())
+    commands.startCommand(THEME_ID, front())
 
     expect(chooseRow(commands, 'preset:dracula')).toStrictEqual({
-      id: 'app:appearance.chooseTheme',
+      id: THEME_ID,
       path: 'physics/Ontology.md',
       note: null,
       title: 'Ontology',
@@ -687,19 +690,19 @@ describe('a command that offers a list the window holds', () => {
 
   it('says which command the keyboard is standing in, and that it remains nowhere after', () => {
     const { commands, displayedLists } = createPalette({}, [], target)
-    commands.startCommand('app:appearance.chooseMode', front())
+    commands.startCommand(MODE_ID, front())
 
     commands.previewItem('mode:light')
     commands.leaveStep()
-    commands.startCommand('app:appearance.chooseTheme', front())
+    commands.startCommand(THEME_ID, front())
     commands.previewItem('preset:dracula')
     commands.leaveStep()
 
     expect(displayedLists).toStrictEqual([
-      'app:appearance.chooseMode mode:light',
-      'app:appearance.chooseMode ',
-      'app:appearance.chooseTheme preset:dracula',
-      'app:appearance.chooseTheme ',
+      `${MODE_ID} mode:light`,
+      `${MODE_ID} `,
+      `${THEME_ID} preset:dracula`,
+      `${THEME_ID} `,
     ])
   })
 
@@ -1514,8 +1517,8 @@ describe('a row of a list the window holds', () => {
   ]
 
   it('is lit nowhere while nothing is typed', () => {
-    const { commands } = createPalette({}, [], { 'app:appearance.chooseTheme': THEMES })
-    commands.startCommand('app:appearance.chooseTheme', front())
+    const { commands } = createPalette({}, [], { [THEME_ID]: THEMES })
+    commands.startCommand(THEME_ID, front())
 
     expect(commands.groups.value[0]?.items).toStrictEqual([
       {
@@ -1533,8 +1536,8 @@ describe('a row of a list the window holds', () => {
   })
 
   it('is lit from its first letter where the words typed begin it', async () => {
-    const { commands } = createPalette({}, [], { 'app:appearance.chooseTheme': THEMES })
-    commands.startCommand('app:appearance.chooseTheme', front())
+    const { commands } = createPalette({}, [], { [THEME_ID]: THEMES })
+    commands.startCommand(THEME_ID, front())
 
     await commands.setTyped('num')
 
@@ -1544,8 +1547,8 @@ describe('a row of a list the window holds', () => {
   })
 
   it('is kept by the words typed around spaces', async () => {
-    const { commands } = createPalette({}, [], { 'app:appearance.chooseTheme': THEMES })
-    commands.startCommand('app:appearance.chooseTheme', front())
+    const { commands } = createPalette({}, [], { [THEME_ID]: THEMES })
+    commands.startCommand(THEME_ID, front())
 
     await commands.setTyped('  rac  ')
 
@@ -1765,9 +1768,13 @@ describe('a command started with the text typed for it', () => {
   })
 
   it('still opens the step of a command that asks for a choice', () => {
-    const { commands } = createPalette()
+    const { commands } = createPalette({}, [], {
+      [THEME_ID]: [
+        { id: 'themes', title: 'Themes', items: [{ id: 'preset:numen', title: 'numen' }] },
+      ],
+    })
 
-    expect(commands.startCommand('app:appearance.chooseTheme', front(), 'dark')).toBeNull()
+    expect(commands.startCommand(THEME_ID, front(), 'dark')).toBeNull()
     expect(commands.step.value).not.toBe('')
   })
 })

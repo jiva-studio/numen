@@ -3,34 +3,8 @@
  */
 import { settingsService } from '@/shared/clients'
 import { fetched } from './words'
-import { getSettingAt } from '@/entities/settings'
-import { write } from '@/entities/settings'
-import { formatErrorMessage } from '@numen/core-client'
 import type { Configuration, PluginSettingCondition, PluginSettingInfo } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
-
-const SYNCS = ['app', 'naming', 'syncTitleAndFilename']
-
-/** Every setting currently, with the defaults under what the file leaves out. */
-const readSettings = async (): Promise<unknown> =>
-  JSON.parse((await settingsService.getSettings({})).written)
-
-/**
- * Settings written into the file, together or not at all. What could not be
- * written, and nothing where it was.
- */
-const writeSettings = async (
-  edits: readonly { at: readonly string[]; value: unknown }[],
-): Promise<string | null> => {
-  try {
-    await settingsService.writeSettings({
-      settings: edits.map((one) => ({ at: [...one.at], value: write(one.value) })),
-    })
-  } catch (caughtError) {
-    return formatErrorMessage(caughtError)
-  }
-  return null
-}
 
 /** One option of an enum setting as the window holds it. */
 const readOption = (one: { value: string; title: string; detail: string }) => ({
@@ -100,8 +74,6 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
 }
 
 export const settingsCore: SettingsPort = {
-  getSyncEnabled: async () => getSettingAt(await readSettings(), SYNCS) !== false,
-  setSyncEnabled: (retained) => writeSettings([{ at: SYNCS, value: retained }]),
   getSettings: async () => {
     const answer = await settingsService.getSettings({})
     return {

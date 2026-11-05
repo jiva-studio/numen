@@ -8,12 +8,10 @@
 import type { Component } from 'vue'
 import { createNamedIcon } from '@numen/ui'
 import { getCommandOwner } from '@numen/plugin-host'
-import { COMMAND } from './commandIds'
+import { COMMAND, SETTING_COMMAND_PREFIX } from './commandIds'
 import {
-  ALargeSmall,
   ArrowRightLeft,
   Command,
-  Contrast,
   Copy,
   CornerDownRight,
   CornerLeftUp,
@@ -22,14 +20,10 @@ import {
   FileText,
   FolderPlus,
   FolderRoot,
-  Gauge,
   Navigation,
-  Palette,
   PenLine,
   Plus,
   Puzzle,
-  RefreshCw,
-  Ruler,
   Search,
   Settings,
   SlidersHorizontal,
@@ -62,12 +56,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [COMMAND.searchVault, Search],
   ['commands', Command],
   [COMMAND.closeTab, SquareX],
-  [COMMAND.chooseTheme, Palette],
-  [COMMAND.chooseMode, Contrast],
-  [COMMAND.chooseInterfaceSize, Ruler],
-  [COMMAND.chooseTextSize, ALargeSmall],
-  [COMMAND.chooseTitleSync, RefreshCw],
-  [COMMAND.choosePerformanceProfile, Gauge],
   [COMMAND.openSettings, Settings],
   [COMMAND.goToNote, Navigation],
   [COMMAND.openVault, FolderRoot],
@@ -88,7 +76,7 @@ const isPluginCommandId = (id: string): boolean => getCommandOwner(id).includes(
 
 /** The icon for a command, and nothing where it has none. */
 export const findIcon = (id: string): LucideIcon | null => {
-  if (id.startsWith('plugin-setting:')) return SlidersHorizontal
+  if (id.startsWith(SETTING_COMMAND_PREFIX)) return SlidersHorizontal
   if (isPluginCommandId(id)) return Puzzle
   return ICONS.get(id) ?? null
 }

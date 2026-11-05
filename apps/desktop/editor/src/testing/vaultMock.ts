@@ -7,7 +7,9 @@ import { asValue } from '@numen/core-client'
 import { requests } from './requests'
 import {
   folders,
+  getSettingInForce,
   getFileKind,
+  keepSetting,
   mockVaultList,
   mockVaultState,
   outside,
@@ -84,6 +86,21 @@ vi.mock('@/app/vault', () => ({
       requests.folders.push(path)
       return null
     },
+    getSettings: async () => ({
+      written: '{}',
+      path: '/vaults/Physics/.numen/settings.json',
+      models: [],
+      plugins: [],
+      app: mockVaultState.app.map(getSettingInForce),
+    }),
+    updateSettings: async (edits: readonly { at: readonly string[]; value: string }[]) => {
+      if (mockVaultState.writeError) throw new Error(mockVaultState.writeError)
+      for (const one of edits) {
+        requests.settingsWritten.push(`${one.at.join('.')} ${one.value}`)
+        keepSetting(one.at.join('.'), JSON.parse(one.value))
+      }
+    },
+    watchSettings: pendingStream,
     watchVaultChanges: pendingStream,
     watchEdits: pendingStream,
     watchTasks: pendingStream,

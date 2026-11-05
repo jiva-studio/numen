@@ -28,7 +28,6 @@ vi.mock('@/entities/settings', async (importOriginal) => ({
       }
     },
     readTheme: async () => '',
-    writeAppearance: async () => '',
     watchThemes: async function* () {
       yield* []
     },
@@ -81,11 +80,6 @@ const create = () => {
       plugins: [],
       app: [],
     })),
-    getSyncEnabled: vi.fn(async () => {
-      const app = file.current['app'] as { naming?: { syncTitleAndFilename?: boolean } }
-      return app.naming?.syncTitleAndFilename !== false
-    }),
-    setSyncEnabled: vi.fn(async () => null),
     updateSettings: vi.fn(async () => undefined),
     watchSettings: vi.fn((signal: AbortSignal) => feed.open(signal)),
   } as unknown as SettingsPort
@@ -164,13 +158,13 @@ describe('a setting that changes', () => {
     const { settings, feed } = create()
     await settings.start()
     await settle()
-    expect(settings.sync.isEnabled.value).toBe(true)
+    expect(settings.rest.getSetting(['app', 'naming', 'syncTitleAndFilename'])).toBe(true)
 
     change(feed, ['app', 'naming', 'syncTitleAndFilename'], false)
     await vi.advanceTimersByTimeAsync(0)
     await settle()
 
-    expect(settings.sync.isEnabled.value).toBe(false)
+    expect(settings.rest.getSetting(['app', 'naming', 'syncTitleAndFilename'])).toBe(false)
     settings.close()
   })
 
