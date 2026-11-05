@@ -523,11 +523,16 @@ func TestServerClosesConnectionAcceptedAfterClose(t *testing.T) {
 	if err := srv.Close(t.Context()); err != nil {
 		t.Fatal(err)
 	}
+	// Shutdown runs the hook in its own goroutine; the second run makes sure it has run before the
+	// connection arrives, so only trackConn can close it.
+	srv.closeNewConns()
 	lateConn, latePeer := net.Pipe()
 	cleanup.CloseAfter(t, lateConn)
 	cleanup.CloseAfter(t, latePeer)
 
 	srv.trackConn(lateConn, http.StateNew)
 
-	waitPeerClosed(t, latePeer, "a connection accepted after Close stays open")
+	if !isPeerClosed(t, latePeer) {
+		t.Fatal("a connection accepted after Close stays open")
+	}
 }
