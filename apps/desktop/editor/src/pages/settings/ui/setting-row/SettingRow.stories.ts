@@ -98,7 +98,7 @@ export const WideTextControlsShareOneWidth: Story = {
         '.settings__choice, .settings__text-input, .settings__secret-input',
       ),
     ].map((one) => Math.round(one.getBoundingClientRect().width))
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+    const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
     await expect(widths).toStrictEqual([16 * rem, 16 * rem, 16 * rem, 16 * rem])
   },
 }

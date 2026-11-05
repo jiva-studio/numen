@@ -62,7 +62,7 @@ export function getDefinedClasses(css: string): Set<string> {
       classes.add(
         escaped!
           .replace(/\\([0-9a-fA-F]{1,6})\s?/g, (_, hex: string) =>
-            String.fromCodePoint(parseInt(hex, 16)),
+            String.fromCodePoint(Number.parseInt(hex, 16)),
           )
           .replace(/\\(.)/g, '$1'),
       )

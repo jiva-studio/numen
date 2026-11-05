@@ -9,17 +9,17 @@ plugins=$1
 destination=$2
 
 for p in "$plugins"/*; do
-  if [ -f "$p/manifest.json" ] && { [ -d "$p/bin" ] || [ -d "$p/dist" ] || [ -d "$p/themes" ]; }; then
+  if [[ -f $p/manifest.json && ( -d $p/bin || -d $p/dist || -d $p/themes ) ]]; then
     name=$(basename "$p")
     mkdir -p "$destination/$name"
     cp "$p/manifest.json" "$destination/$name/"
     for folder in bin dist themes; do
-      if [ -d "$p/$folder" ]; then cp -r "$p/$folder" "$destination/$name/"; fi
+      if [[ -d $p/$folder ]]; then cp -r "$p/$folder" "$destination/$name/"; fi
     done
   fi
 done
 
-if [ ! -f "$plugins/plugins-index.json" ]; then
+if [[ ! -f $plugins/plugins-index.json ]]; then
   echo "::error::$plugins has no plugins-index.json: run make plugins_index"
   exit 1
 fi

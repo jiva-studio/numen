@@ -15,7 +15,7 @@ expect() {
   local want=$1 name=$2
   shift 2
   if "$check" "$@" >/dev/null 2>&1; then got=0; else got=1; fi
-  if [ "$got" != "$want" ]; then
+  if [[ $got != "$want" ]]; then
     echo "FAIL: $name (exit $got, want $want)"
     exit 1
   fi

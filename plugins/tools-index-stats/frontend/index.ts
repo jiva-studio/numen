@@ -42,6 +42,8 @@ const browserActivity: Activity = {
   },
 }
 
+const browserParts: StatsParts = { api: statsApi, timer: browserTimer, activity: browserActivity }
+
 /** The component of the status bar view: the indicator over the stats of the model. */
 export function createStatusView(model: IndexStats) {
   return defineComponent({
@@ -51,10 +53,7 @@ export function createStatusView(model: IndexStats) {
   })
 }
 
-export const activate = (
-  context: PluginContext,
-  parts: StatsParts = { api: statsApi, timer: browserTimer, activity: browserActivity },
-): void => {
+export const activate = (context: PluginContext, parts: StatsParts = browserParts): void => {
   const model = createIndexStats(parts)
   context.registerStatusView({ id: STATS_VIEW, component: createStatusView(model) })
   context.subscriptions.push({ dispose: () => model.stop() })

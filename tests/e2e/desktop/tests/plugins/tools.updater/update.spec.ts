@@ -150,7 +150,7 @@ test.describe('the update indicator', () => {
       const button = popover.getByRole('button', { name, exact: true })
       await expect(button).toBeVisible()
       expect(await button.evaluate((node) => node.tagName)).toBe('BUTTON')
-      expect(parseFloat(await getStyle(button, 'padding-left'))).toBeGreaterThan(0)
+      expect(Number.parseFloat(await getStyle(button, 'padding-left'))).toBeGreaterThan(0)
       const one = await getBox(button)
       expect(one.x).toBeGreaterThanOrEqual(box.x)
       expect(one.x + one.width).toBeLessThanOrEqual(box.x + box.width)

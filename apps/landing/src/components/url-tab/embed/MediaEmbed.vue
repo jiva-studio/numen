@@ -8,7 +8,7 @@
  * messages a player takes from the page holding it, so nothing that host serves
  * runs in this window.
  */
-import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { getDraggedHeight, getTallest, LEAST } from '../lib/height'
 import { getFrameOrigin, seekFrame } from '../lib/player'
 import { createHeightStore, type HeightStore } from '../lib/storage'
@@ -48,6 +48,29 @@ const tall = ref(props.store.read())
 const drawn = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
 const frameStyle = computed(() =>
   tall.value === null ? undefined : { blockSize: `${tall.value}px` },
+)
+/** The rendered height of the player and the tallest it can be drawn, for the resize handle. */
+const renderedHeight = ref<number | null>(null)
+const tallest = ref(LEAST)
+const handleValue = computed(() =>
+  Math.min(tallest.value, Math.max(LEAST, renderedHeight.value ?? tall.value ?? LEAST)),
+)
+
+watch(
+  () => player.value ?? frame.value,
+  (element, _, onCleanup) => {
+    if (!element) return
+    const sizes = new ResizeObserver(() => {
+      renderedHeight.value = Math.round(element.clientHeight)
+      tallest.value = getTallest(getPaneHeight())
+      if (tall.value !== null) tall.value = Math.min(tallest.value, tall.value)
+    })
+    sizes.observe(element)
+    const pane = findPane()
+    if (pane) sizes.observe(pane)
+    onCleanup(() => sizes.disconnect())
+  },
+  { flush: 'post' },
 )
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -152,8 +175,19 @@ function onWindowMessage(event: MessageEvent): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+/**
+ * The nearest ancestor that is a size container: its height does not follow the player's, and it
+ * is the box the player's `cqh` units resolve against. The window where there is none.
+ */
+function findPane(): HTMLElement | null {
+  for (let at = root.value?.parentElement ?? null; at; at = at.parentElement) {
+    if (getComputedStyle(at).containerType.split(' ').includes('size')) return at
+  }
+  return null
+}
+
 function getPaneHeight(): number {
-  return root.value?.parentElement?.clientHeight || window.innerHeight
+  return findPane()?.clientHeight || window.innerHeight
 }
 /** Played from a moment, in milliseconds: the copy where there is one. */
 function seek(ms: number): void {
@@ -205,8 +239,10 @@ defineExpose({ seek })
       role="separator"
       tabindex="0"
       aria-orientation="horizontal"
+      :aria-label="props.words.taller"
       :aria-valuemin="LEAST"
-      :aria-valuenow="tall ?? undefined"
+      :aria-valuemax="tallest"
+      :aria-valuenow="handleValue"
       :data-state="drawn ? 'drag' : undefined"
       :title="props.words.taller"
       @pointerdown="onPointerDown"
