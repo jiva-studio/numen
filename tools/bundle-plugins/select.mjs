@@ -51,7 +51,9 @@ const main = () => {
   const args = process.argv.slice(2)
   const target = readOption(args, '--target')
   if (target === undefined) {
-    console.error('usage: select.mjs --target <target> [--plugins <dir>] [--verify <appPluginsDir>]')
+    console.error(
+      'usage: select.mjs --target <target> [--plugins <dir>] [--verify <appPluginsDir>]',
+    )
     process.exit(2)
   }
   const selected = listSelectedPlugins(target, readOption(args, '--plugins') ?? PLUGINS_DIR)
@@ -62,7 +64,8 @@ const main = () => {
   }
   const missing = listMissingPlugins(selected, appPluginsDir)
   if (missing.length > 0) {
-    for (const name of missing) console.error(`${name}: listed in the index for ${target}, not in ${appPluginsDir}`)
+    for (const name of missing)
+      console.error(`${name}: listed in the index for ${target}, not in ${appPluginsDir}`)
     process.exit(1)
   }
 }
