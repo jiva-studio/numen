@@ -52,6 +52,7 @@ test.describe('The longest chunk of a note, in tokens', () => {
     test.setTimeout(240_000)
     await openWorkspace(page)
     const item = getItem(page)
+    const before = await readSettledVectors(item)
     const path = await createNoteWithBody(
       request,
       createUniqueTitle('Barge log'),
@@ -59,6 +60,7 @@ test.describe('The longest chunk of a note, in tokens', () => {
       LONG_BODY,
     )
     notes.push(path)
+    await expect.poll(() => readVectors(item), { timeout: 45_000 }).toBeGreaterThan(before)
     const initial = await readSettledVectors(item)
 
     // Shorter chunks give the note more of them, each with a vector.
