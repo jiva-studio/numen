@@ -393,7 +393,7 @@ describe('two reads of the settings in flight', () => {
   it('apply the answer to the later read, whichever answers last', async () => {
     const sheet = page()
     const answers: ((answer: Appearance) => void)[] = []
-    const reading = createWindowAppearance({
+    const target = createWindowAppearance({
       core: {
         getAppearance: () => new Promise<Appearance>((answer) => answers.push(answer)),
         readTheme: async (name) => `:root { --numen-surface: ${name} }`,
@@ -406,14 +406,14 @@ describe('two reads of the settings in flight', () => {
       sheet,
     })
 
-    const first = reading.reload()
-    const second = reading.reload()
+    const first = target.reload()
+    const second = target.reload()
     answers[1]?.({ ...APPEARANCE, sizes: { interfaceScale: 1.2, textScale: 1 } })
     await second
     answers[0]?.(APPEARANCE)
     await first
 
-    expect(reading.sized.value).toStrictEqual({ interfaceScale: 1.2, textScale: 1 })
+    expect(target.sized.value).toStrictEqual({ interfaceScale: 1.2, textScale: 1 })
   })
 })
 
