@@ -9,6 +9,11 @@ body,
   margin: 0;
 }
 
+html,
+body {
+  overscroll-behavior: none;
+}
+
 body {
   background: var(--numen-surface);
   color: var(--numen-ink);
