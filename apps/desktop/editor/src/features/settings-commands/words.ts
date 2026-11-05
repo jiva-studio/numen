@@ -1,5 +1,5 @@
 /**
- * The words the window appearance report in.
+ * The words the window appearance reports in.
  */
 // Stryker disable StringLiteral: interface copy
 
