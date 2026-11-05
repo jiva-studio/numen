@@ -22,7 +22,7 @@ test.describe('Theming and Display Scaling', () => {
     await writeSetting(request, ['app', 'appearance', 'textScale'], 1)
   })
 
-  test('draws the interface and the note text at the sizes typed in the settings tab, also after a reload', async ({
+  test('draws the interface and the note text at the sizes set in the settings tab, also after a reload', async ({
     page,
     request,
   }) => {
@@ -35,14 +35,15 @@ test.describe('Theming and Display Scaling', () => {
     const editorBefore = await readComputedFontSize(editor)
 
     const settings = await openSystemSettings(page)
-    const interfaceSize = settings.getByRole('spinbutton', { name: 'Interface size' })
-    await interfaceSize.fill('1.2')
-    await interfaceSize.press('Enter')
+    const interfaceSize = settings.getByRole('slider', { name: 'Interface size' })
+    await interfaceSize.focus()
+    await interfaceSize.press('ArrowRight')
+    await interfaceSize.press('ArrowRight')
     await expect.poll(() => readRootFontSize(page)).toBeCloseTo(rootBefore * 1.2, 0)
 
-    const readingSize = settings.getByRole('spinbutton', { name: 'Reading size' })
-    await readingSize.fill('1.5')
-    await readingSize.press('Enter')
+    const readingSize = settings.getByRole('slider', { name: 'Reading size' })
+    await readingSize.focus()
+    for (let step = 0; step < 5; step++) await readingSize.press('ArrowRight')
     await expect
       .poll(async () => (await readOwner(request, 'app'))['appearance'])
       .toMatchObject({ interfaceScale: 1.2, textScale: 1.5 })
