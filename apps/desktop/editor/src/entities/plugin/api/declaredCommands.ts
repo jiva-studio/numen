@@ -110,7 +110,7 @@ const readMenu = (wire: WireMenu): DeclaredMenu => ({
 /** Every command the enabled plugins declare, in the order of the plugins' ids, and their menu entries. */
 export async function listDeclaredCommands(): Promise<DeclaredList> {
   const answer = await pluginCommands.listCommands({})
-  return { commands: answer.commands.map(readCommand), menus: (answer.menus ?? []).map(readMenu) }
+  return { commands: answer.commands.map(readCommand), menus: answer.menus.map(readMenu) }
 }
 
 /** Runs the command in the backend of the plugin that declares it. */

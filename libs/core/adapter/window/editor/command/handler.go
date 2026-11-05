@@ -5,6 +5,7 @@ package command
 import (
 	"context"
 	"errors"
+	"math"
 
 	"connectrpc.com/connect"
 
@@ -126,8 +127,19 @@ func newWireMenu(entry plugincommand.MenuEntry) *v1.PluginMenu {
 		Group:    entry.Menu.Group,
 	}
 	if entry.Menu.Order != nil {
-		order := int32(*entry.Menu.Order) //nolint:gosec // the wire reader limits the order to 32 bits
+		order := clampToInt32(*entry.Menu.Order)
 		wire.Order = &order
 	}
 	return wire
+}
+
+// clampToInt32 narrows an order to the 32 bits the schema carries.
+func clampToInt32(value int) int32 {
+	if value > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if value < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(value)
 }
