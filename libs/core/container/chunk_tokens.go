@@ -1,6 +1,6 @@
 package container
 
-import "github.com/jiva-studio/numen/libs/core/internal/chunking"
+import "github.com/jiva-studio/numen/libs/core/usecase/note"
 
 // ChunkTokens is the chunk size the embedding plugin reports, shared by every copy of Config.
-type ChunkTokens = chunking.Tokens
+type ChunkTokens = note.ChunkTokens
