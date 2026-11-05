@@ -17,9 +17,9 @@ export const createDeckSections = (deck: BufferDeck): readonly DeckSection[] =>
  */
 export const createDeckCards = (
   deck: BufferDeck,
-  offers: readonly CardModelSummary[],
+  summaries: readonly CardModelSummary[],
 ): readonly DeckCard[] => {
-  const titles = new Map(offers.map((offer) => [offer.path, offer.title]))
+  const titles = new Map(summaries.map((summary) => [summary.path, summary.title]))
   return deck.cards.map((card) => ({
     id: card.id,
     section: card.section,
@@ -32,14 +32,14 @@ export const createDeckCards = (
  * The card models a card may be cut by, under the word a card names one by.
  */
 export const createCardModelChoices = (
-  offers: readonly CardModelSummary[],
+  summaries: readonly CardModelSummary[],
 ): readonly CardModel[] => {
   const seenTitles = new Set<string>()
   const cardModels: CardModel[] = []
-  for (const offer of offers) {
-    if (!offer.title || seenTitles.has(offer.title)) continue
-    seenTitles.add(offer.title)
-    cardModels.push({ name: offer.title, fields: offer.fields })
+  for (const summary of summaries) {
+    if (!summary.title || seenTitles.has(summary.title)) continue
+    seenTitles.add(summary.title)
+    cardModels.push({ name: summary.title, fields: summary.fields })
   }
   return cardModels
 }
@@ -118,18 +118,18 @@ export const areCardModelChoicesEqual = (
   other: readonly CardModelSummary[],
 ): boolean =>
   one.length === other.length &&
-  one.every((offer, index) => {
+  one.every((summary, index) => {
     const otherVal = other[index]
     return (
       // Stryker disable next-line ConditionalExpression: array lengths are equal so element at index is never undefined.
       otherVal !== undefined &&
-      offer.path === otherVal.path &&
-      offer.title === otherVal.title &&
-      offer.fields.length === otherVal.fields.length &&
-      offer.fields.every((field, seat) => field === otherVal.fields[seat])
+      summary.path === otherVal.path &&
+      summary.title === otherVal.title &&
+      summary.fields.length === otherVal.fields.length &&
+      summary.fields.every((field, seat) => field === otherVal.fields[seat])
     )
   })
 
 /** Where the card model of that title is filed, and nowhere where none is. */
-export const findCardModelPath = (offers: readonly CardModelSummary[], name: string): string =>
-  offers.find((offer) => offer.title === name)?.path ?? ''
+export const findCardModelPath = (summaries: readonly CardModelSummary[], name: string): string =>
+  summaries.find((summary) => summary.title === name)?.path ?? ''

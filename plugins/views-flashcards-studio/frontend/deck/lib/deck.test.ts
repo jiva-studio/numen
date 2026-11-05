@@ -206,7 +206,7 @@ describe('a deck as the window holds it', () => {
 })
 
 describe('the cards as the grid draws them', () => {
-  const OFFERS = [
+  const SUMMARIES = [
     { path: 'card-models/Animal.md', title: 'Animal', fields: ['Height', 'Life span'] },
   ]
 
@@ -227,7 +227,7 @@ describe('the cards as the grid draws them', () => {
     })
 
   it('carries the identity, the section, what cuts it, and the values under it', () => {
-    expect(createDeckCards(deck(), OFFERS)[0]).toStrictEqual({
+    expect(createDeckCards(deck(), SUMMARIES)[0]).toStrictEqual({
       id: LLAMA,
       section: null,
       cardModel: 'Animal',
@@ -240,24 +240,24 @@ describe('the cards as the grid draws them', () => {
   })
 
   it('says nothing of the preamble, which nothing lays out', () => {
-    expect(JSON.stringify(createDeckCards(deck(), OFFERS))).not.toContain('a note in the middle')
+    expect(JSON.stringify(createDeckCards(deck(), SUMMARIES))).not.toContain('a note in the middle')
   })
 
   it('draws a card the card model its link reached, whatever stood in the brackets', () => {
     const content = ['cards/Animal', 'Animal|животное', 'Animal#Recognise', 'card-models/Animal.md']
     for (const one of content) {
       expect(
-        createDeckCards(createCutDeck(one, 'card-models/Animal.md'), OFFERS)[0]?.cardModel,
+        createDeckCards(createCutDeck(one, 'card-models/Animal.md'), SUMMARIES)[0]?.cardModel,
       ).toBe('Animal')
     }
   })
 
   it('draws a card whose link reached nothing under what the file wrote', () => {
-    expect(createDeckCards(createCutDeck('Gone', ''), OFFERS)[0]?.cardModel).toBe('Gone')
+    expect(createDeckCards(createCutDeck('Gone', ''), SUMMARIES)[0]?.cardModel).toBe('Gone')
   })
 
   it('draws a card that wrote no brackets at all as cut by nothing', () => {
-    expect(createDeckCards(createCutDeck('', ''), OFFERS)[0]?.cardModel).toBeNull()
+    expect(createDeckCards(createCutDeck('', ''), SUMMARIES)[0]?.cardModel).toBeNull()
   })
 })
 
@@ -288,9 +288,9 @@ describe('the card models a card may be cut by', () => {
   })
 
   it('are filed where the list returned, and nowhere for a name no card model carries', () => {
-    const offers = [{ path: 'card-models/Animal.md', title: 'Animal', fields: [] }]
-    expect(findCardModelPath(offers, 'Animal')).toBe('card-models/Animal.md')
-    expect(findCardModelPath(offers, 'Term')).toBe('')
+    const summaries = [{ path: 'card-models/Animal.md', title: 'Animal', fields: [] }]
+    expect(findCardModelPath(summaries, 'Animal')).toBe('card-models/Animal.md')
+    expect(findCardModelPath(summaries, 'Term')).toBe('')
   })
 })
 

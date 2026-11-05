@@ -104,7 +104,7 @@ function useAgentSelection(deps: AgentTabDeps) {
   return { ...selection, ...useReasoningSelection(deps, selection) }
 }
 
-/** The depth of reasoning chosen for the agent, as far as the selected model offers it. */
+/** The depth of reasoning chosen for the agent, as far as the selected model hasLevel it. */
 function useReasoningSelection(
   deps: AgentTabDeps,
   selection: {
@@ -125,15 +125,15 @@ function useReasoningSelection(
 
   const reasoningLevels = computed(() => selectedOption.value?.reasoningLevels ?? [])
 
-  /** The level chosen or kept, else the default of the model; empty where the model offers none. */
+  /** The level chosen or kept, else the default of the model; empty where the model hasLevel none. */
   const selectedReasoningId = computed(() => {
     const agentId = selection.selectedAgentId.value
     const configuredReasoning =
       (selected.value.agentId === agentId ? selected.value.id : '') || (deps.getReasoning?.() ?? '')
-    const offers = (id: string) => reasoningLevels.value.some((level) => level.id === id)
-    if (offers(configuredReasoning)) return configuredReasoning
+    const hasLevel = (id: string) => reasoningLevels.value.some((level) => level.id === id)
+    if (hasLevel(configuredReasoning)) return configuredReasoning
     const byDefault = selectedOption.value?.defaultReasoning ?? ''
-    return offers(byDefault) ? byDefault : ''
+    return hasLevel(byDefault) ? byDefault : ''
   })
 
   const selectReasoning = (id: string) => {
