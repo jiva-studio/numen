@@ -2,6 +2,7 @@
  * One document as its tab reads it.
  */
 import { describe, expect, it } from 'vitest'
+import { createLostConnection } from '@numen/plugin-sdk/testing'
 import { useDocumentReader } from './useDocumentReader'
 import type { Documents, PageHighlight, DocumentLayout } from '../types'
 
@@ -231,7 +232,7 @@ describe('a document opened at a place in its text', () => {
   it('says what it could not ask, and reads on', async () => {
     const { documents } = book()
     documents.getHighlights = async () => {
-      throw new Error('the layer is being written')
+      throw createLostConnection('the layer is being written')
     }
     const readItem = useDocumentReader(documents, 'Book.pdf')
     readItem.widen(800)
@@ -261,7 +262,7 @@ describe('a document tab that closes', () => {
 
 describe('a document that will not open', () => {
   it('says why, and remains with nothing in it', async () => {
-    const { documents } = book(new Error('no such document'))
+    const { documents } = book(createLostConnection('no such document'))
     const readItem = useDocumentReader(documents, 'Gone.pdf')
 
     readItem.widen(800)

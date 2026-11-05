@@ -2,6 +2,7 @@
  * One book as its tab reads it.
  */
 import { beforeEach, describe, expect, it } from 'vitest'
+import { createLostConnection } from '@numen/plugin-sdk/testing'
 import {
   getContents,
   getDocumentAtOffset,
@@ -422,7 +423,7 @@ describe('a passage reached', () => {
 
 describe('a book that will not open', () => {
   it('says what went wrong and remains with nothing in it', async () => {
-    const { books } = shelf(new Error('this file is not a book'))
+    const { books } = shelf(createLostConnection('this file is not a book'))
     const readItem = useBookReader(books, 'library/Broken.epub', WORDS, writeMessage)
 
     await readItem.goToOffset(400)
@@ -434,7 +435,7 @@ describe('a book that will not open', () => {
   })
 
   it('says what went wrong where a document of it will not be drawn', async () => {
-    const { books } = shelf(BOOK, new Error('this document is not in the book'))
+    const { books } = shelf(BOOK, createLostConnection('this document is not in the book'))
     useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
     await settle()
