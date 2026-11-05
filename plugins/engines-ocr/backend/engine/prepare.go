@@ -20,25 +20,34 @@ func NewLibrary() *onnx.Library {
 }
 
 // bindRuntime binds the go-ocr runtime to the library at libPath. paddle.NewEngine binds the
-// runtime before it reads the dictionary, so a dictionary that does not exist shows the binding
-// succeeded; any other error is a failed binding. The missing dictionary lies in a private
-// directory made for the probe, so no other user can plant a file there.
+// runtime, rejects an empty model or dictionary path, and only then reads the dictionary, so a
+// dictionary that does not exist shows the binding succeeded; any other error is a failed binding.
+// The missing files lie in a private directory made for the probe, so no other user can plant a
+// file there.
 func bindRuntime(libPath string) (err error) {
 	probe, err := os.MkdirTemp("", "numen-ocr-bind-probe-")
 	if err != nil {
 		return fmt.Errorf("create the probe directory: %w", err)
 	}
 	defer func() { err = errors.Join(err, os.RemoveAll(probe)) }()
-	_, bindErr := paddle.NewEngine(paddle.Config{
-		OnnxRuntimeLibPath: libPath,
-		DetModelPath:       "", RecModelPath: "", DictPath: filepath.Join(probe, "missing-dictionary.txt"),
-		UseCuda: false, NumThreads: 0, ThreadCount: 0, DetMaxSideLen: 0, DetOutsideExpandPix: 0,
-		RecHeight: 0, RecModelNumClasses: 0, HeatmapThreshold: 0,
-	})
+	_, bindErr := paddle.NewEngine(newProbeConfig(libPath, probe))
 	if bindErr == nil || errors.Is(bindErr, fs.ErrNotExist) {
 		return nil
 	}
 	return fmt.Errorf("bind the runtime at %s: %w", libPath, bindErr)
+}
+
+// newProbeConfig returns the configuration bindRuntime opens an engine with: every model and
+// dictionary path is set and names a file that does not exist in probeDir.
+func newProbeConfig(libPath, probeDir string) paddle.Config {
+	return paddle.Config{
+		OnnxRuntimeLibPath: libPath,
+		DetModelPath:       filepath.Join(probeDir, "missing-detection.onnx"),
+		RecModelPath:       filepath.Join(probeDir, "missing-recognition.onnx"),
+		DictPath:           filepath.Join(probeDir, "missing-dictionary.txt"),
+		UseCuda:            false, NumThreads: 0, ThreadCount: 0, DetMaxSideLen: 0, DetOutsideExpandPix: 0,
+		RecHeight: 0, RecModelNumClasses: 0, HeatmapThreshold: 0,
+	}
 }
 
 // IsPrepared reports whether the library is open.
