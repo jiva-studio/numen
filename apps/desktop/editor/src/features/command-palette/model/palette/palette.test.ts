@@ -692,10 +692,10 @@ describe('a command that offers a list the window holds', () => {
     commands.leaveStep()
 
     expect(displayedLists).toStrictEqual([
-      'app:appearance.chooseMode mode:light',
-      'app:appearance.chooseMode ',
-      'app:appearance.chooseTheme preset:dracula',
-      'app:appearance.chooseTheme ',
+      `${MODE_ID} mode:light`,
+      `${MODE_ID} `,
+      `${THEME_ID} preset:dracula`,
+      `${THEME_ID} `,
     ])
   })
 
@@ -1761,7 +1761,9 @@ describe('a command started with the text typed for it', () => {
   })
 
   it('still opens the step of a command that asks for a choice', () => {
-    const { commands } = createPalette({}, [], { [THEME_ID]: THEMES })
+    const { commands } = createPalette({}, [], {
+      [THEME_ID]: [{ id: 'themes', title: 'Themes', items: [{ id: 'preset:numen', title: 'numen' }] }],
+    })
 
     expect(commands.startCommand(THEME_ID, front(), 'dark')).toBeNull()
     expect(commands.step.value).not.toBe('')
