@@ -65,7 +65,9 @@ async function activateEntry(
     const manifest = ctx.manifests.get(pluginId)
     const { activate, deactivate } = getLifecycleHooks(resolved)
     if (activate) {
+      host.markPluginStarting?.(pluginId)
       await activate(host.createContext(pluginId, manifest))
+      host.markPluginStarted?.(pluginId)
     }
 
     const next = new Map(activePlugins.value)

@@ -245,6 +245,7 @@ function createHostRegistry(): HostRegistry {
     contexts: new Map(),
     manifests: new Map(),
     activated: shallowRef(new Set()),
+    starting: shallowRef(new Set()),
     disposed: new Set(),
     reportedIssues: new Set(),
     vaultListeners: new Set(),
@@ -344,6 +345,14 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
         registry.activated.value = new Set(registry.activated.value).add(pluginId)
       }
       return ctx
+    },
+    markPluginStarting: (pluginId: string): void => {
+      const { starting } = registry
+      if (starting) starting.value = new Set(starting.value).add(pluginId)
+    },
+    markPluginStarted: (pluginId: string): void => {
+      const { starting } = registry
+      if (starting) starting.value = new Set([...starting.value].filter((id) => id !== pluginId))
     },
     registerManifest: (pluginId: string, manifest: Manifest): void => {
       if (registry.contexts.has(pluginId)) {
