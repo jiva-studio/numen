@@ -11,6 +11,7 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { buildIndex } from '../build-plugin-index/build.mjs'
 import { PLUGINS_DIR, readPluginManifests } from '../shared/manifests.mjs'
+import { listFolders } from './select.mjs'
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'select.mjs')
 const EDITOR = 'desktop.editor'
@@ -140,4 +141,29 @@ test('the check fails and names a plugin the application does not hold', () => {
       rmSync(app, { recursive: true, force: true })
     }
   })
+})
+
+test('a plugin of the index that has no folder is named in the error', () => {
+  const index = [
+    { id: 'org.example.known', targets: [EDITOR] },
+    { id: 'org.example.orphan', targets: [EDITOR] },
+  ]
+  const folderById = new Map([['org.example.known', 'known']])
+
+  assert.throws(() => listFolders(index, folderById, EDITOR), /org\.example\.orphan/)
+})
+
+test('the folders of the plugins listed for the target are ordered by name', () => {
+  const index = [
+    { id: 'b', targets: [EDITOR] },
+    { id: 'a', targets: [EDITOR] },
+    { id: 'c', targets: ['desktop.flashcards'] },
+  ]
+  const folderById = new Map([
+    ['a', 'zeta'],
+    ['b', 'alpha'],
+    ['c', 'other'],
+  ])
+
+  assert.deepEqual(listFolders(index, folderById, EDITOR), ['alpha', 'zeta'])
 })
