@@ -102,14 +102,10 @@ interface PlacementAnswer {
   order?: number
 }
 
-/** What the plugins declare and place, and what running a declared command does. */
+/** What the plugins declare and place. */
 export const declared = {
   commands: [] as DeclaredAnswer[],
   menus: [] as PlacementAnswer[],
-  /** Throws this when a declared command is run, if it is not empty. */
-  failure: '',
-  /** The full ids of the declared commands run, in order. */
-  ran: [] as string[],
 }
 
 /** A command a plugin declares, with an icon and no input. */
@@ -264,8 +260,6 @@ export const forgetAnswers = () => {
   mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
   declared.commands = []
   declared.menus = []
-  declared.failure = ''
-  declared.ran = []
   maker.forget()
   outside.forget()
   mockVaultList.vaults = [

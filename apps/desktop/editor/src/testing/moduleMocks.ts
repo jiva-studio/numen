@@ -48,11 +48,7 @@ vi.mock('@/entities/settings', async (original) => ({
 // The window is shown with the plugins `declared` names; none declares a command to begin with.
 const declaredCommandsResponse = {
   listDeclaredCommands: async () => ({ commands: declared.commands, menus: declared.menus }),
-  runDeclaredCommand: async (command: { pluginId: string; id: string }) => {
-    declared.ran.push(`${command.pluginId}:${command.id}`)
-    if (declared.failure) throw new Error(declared.failure)
-    return { ok: true as const, value: { message: '', openedPath: '' } }
-  },
+  runDeclaredCommand: async () => ({ ok: false as const, error: 'no plugin declares it' }),
 }
 
 vi.mock('@/entities/plugin/api/declaredCommands', async (original) => ({

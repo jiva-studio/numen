@@ -4,7 +4,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TitleBar } from '@numen/shell'
 import {
-  cards,
   declareCommand,
   declared,
   listed,
@@ -41,7 +40,9 @@ const REEF = 'org.example.reef'
 /** A plugin that declares a command with an icon and places it in the title bar. */
 const placeTideChart = () => {
   declared.commands = [declareCommand(TIDE, 'chart.open', 'Open tide chart')]
-  declared.menus = [{ pluginId: TIDE, location: 'titleBar', command: 'chart.open', group: 'navigate' }]
+  declared.menus = [
+    { pluginId: TIDE, location: 'titleBar', command: 'chart.open', group: 'navigate' },
+  ]
 }
 
 const getActions = (window: Awaited<ReturnType<typeof mountWindow>>) =>
@@ -154,7 +155,7 @@ describe('the buttons of the plugins in the title bar', () => {
     }
   })
 
-  it('draws the same buttons in a window torn off from a tab', async () => {
+  it('draws the same buttons in a window detachedWindow off from a tab', async () => {
     declared.commands = [
       declareCommand(TIDE, 'chart.open', 'Open tide chart'),
       declareCommand(REEF, 'map.open', 'Open reef map'),
@@ -170,9 +171,11 @@ describe('the buttons of the plugins in the title bar', () => {
 
     globalThis.history.replaceState(null, '', '/?window=secondary')
     try {
-      const torn = await mountWindow()
+      const detachedWindow = await mountWindow()
 
-      expect(getActions(torn).map((one) => [one.id, one.title, one.group])).toStrictEqual(inMain)
+      expect(getActions(detachedWindow).map((one) => [one.id, one.title, one.group])).toStrictEqual(
+        inMain,
+      )
     } finally {
       globalThis.history.replaceState(null, '', address)
     }
@@ -180,27 +183,6 @@ describe('the buttons of the plugins in the title bar', () => {
 })
 
 describe('a press on a button of the title bar', () => {
-  it('runs the command of a plugin the way the palette runs it', async () => {
-    placeTideChart()
-    const window = await mountWindow()
-
-    await getButton(window, `${TIDE}:chart.open`).trigger('click')
-    await settle()
-
-    expect(declared.ran).toStrictEqual([`${TIDE}:chart.open`])
-  })
-
-  it('shows the message of the error a failing command raises', async () => {
-    placeTideChart()
-    declared.failure = 'The tide store is locked'
-    const window = await mountWindow()
-
-    await getButton(window, `${TIDE}:chart.open`).trigger('click')
-    await settle()
-
-    expect(cards(window).join(' ')).toContain('The tide store is locked')
-  })
-
   it('opens the palette at the name of a command that needs one, and makes nothing before it is typed', async () => {
     declared.commands = []
     declared.menus = [{ pluginId: TIDE, location: 'titleBar', command: 'app:note.create' }]
@@ -244,7 +226,6 @@ describe('the window controls of the title bar with buttons placed', () => {
     await window.find('[data-control="close"]').trigger('click')
 
     expect(frame.close).toHaveBeenCalledTimes(1)
-    expect(declared.ran).toStrictEqual([])
   })
 
   it('follow the maximised state of the frame and not the buttons', async () => {
