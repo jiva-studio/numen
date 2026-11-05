@@ -27,6 +27,7 @@ STORIES  := tools/ci-stories
 COMMANDS := tools/ci-commands
 PLUGIN_VERSIONS := tools/plugin-versions
 PLUGIN_INDEX := tools/build-plugin-index
+PLUGIN_BUNDLE := tools/bundle-plugins
 LAYERS   := tools/lint-layers
 QUALITY  := tools/lint-quality
 NARRATIVE := tools/lint-narrative
@@ -112,7 +113,7 @@ plugins_index: ## write plugins/plugins-index.json from the manifest of every pl
 
 .PHONY: plugins_index_test
 plugins_index_test: ## test the plugin index build
-	node --test $(PLUGIN_INDEX)/build.test.mjs
+	node --test $(PLUGIN_INDEX)/build.test.mjs $(PLUGIN_BUNDLE)/select.test.mjs
 
 .PHONY: plugins_build
 plugins_build: lib_ui_build plugins_index ## build every plugin
@@ -398,27 +399,27 @@ TAGS_FLAG := -tags $(BUILD_TAGS)
 endif
 
 ifeq ($(shell uname -s),Darwin)
+# A plugin folder goes into the application whole. These are what it holds only for development: the
+# sources of the backend and the frontend, their tests and configuration, and the archive that
+# plugins_package writes into dist.
+PLUGIN_BUNDLE_EXCLUDES := $(foreach pattern,node_modules backend frontend testdata coverage '*.go' go.mod go.sum Makefile package.json package-lock.json tsconfig.json 'vite.config.*' 'vitest.config.*' 'eslint.config.*' '.golangci*.yml' README.md 'dist/*.zip',--exclude $(pattern))
 define bundle
 	rm -rf "$(1).app"
 	mkdir -p "$(1).app/Contents/MacOS" "$(1).app/Contents/Resources/plugins"
 	mv $(2) "$(1).app/Contents/MacOS/$(2)"
 	cp $(DESKTOP)/build/darwin/$(3) "$(1).app/Contents/Info.plist"
 	cp $(DESKTOP)/build/darwin/$(4) "$(1).app/Contents/Resources/$(4)"
-	for p in $$(find $(PLUGINS) -mindepth 1 -maxdepth 1 -type d); do \
-		if [ -f "$$p/manifest.json" ] && { [ -d "$$p/bin" ] || [ -d "$$p/dist" ]; } && grep -q '"$(5)"' "$$p/manifest.json"; then \
-			name=$$(basename "$$p"); \
-			mkdir -p "$(1).app/Contents/Resources/plugins/$$name"; \
-			cp "$$p/manifest.json" "$(1).app/Contents/Resources/plugins/$$name/"; \
-			if [ -d "$$p/bin" ]; then cp -r "$$p/bin" "$(1).app/Contents/Resources/plugins/$$name/"; fi; \
-			if [ -d "$$p/dist" ]; then cp -r "$$p/dist" "$(1).app/Contents/Resources/plugins/$$name/"; fi; \
-			for bin in "$(1).app/Contents/Resources/plugins/$$name/bin/"*; do \
-				if [ -f "$$bin" ] && [ -x "$$bin" ]; then \
-					codesign --force -s - "$$bin"; \
-				fi; \
-			done; \
-		fi; \
+	for name in $$(node $(PLUGIN_BUNDLE)/select.mjs --target $(5)); do \
+		mkdir -p "$(1).app/Contents/Resources/plugins/$$name"; \
+		tar -C "$(PLUGINS)/$$name" -cf - $(PLUGIN_BUNDLE_EXCLUDES) . | tar -C "$(1).app/Contents/Resources/plugins/$$name" -xf -; \
+		for bin in "$(1).app/Contents/Resources/plugins/$$name/bin/"*; do \
+			if [ -f "$$bin" ] && [ -x "$$bin" ]; then \
+				codesign --force -s - "$$bin"; \
+			fi; \
+		done; \
 	done
 	cp $(PLUGINS)/plugins-index.json "$(1).app/Contents/Resources/plugins/"
+	node $(PLUGIN_BUNDLE)/select.mjs --target $(5) --verify "$(1).app/Contents/Resources/plugins"
 	printf 'APPL????' > "$(1).app/Contents/PkgInfo"
 	plutil -lint "$(1).app/Contents/Info.plist"
 	codesign --force -s - "$(1).app"
