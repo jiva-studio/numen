@@ -71,18 +71,25 @@ func checkVersion(ctx context.Context, db *sql.DB, file string, available []migr
 		return 0, fmt.Errorf("what version this index is at: %w", err)
 	}
 	newest := available[len(available)-1].version
-	if current == 0 {
-		var objects int
-		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM sqlite_master").Scan(&objects); err != nil {
-			return 0, fmt.Errorf("what this index holds: %w", err)
-		}
-		if objects == 0 {
-			return 0, nil
-		}
-	} else if slices.ContainsFunc(available, func(m migration) bool { return m.version == current }) {
+	if slices.ContainsFunc(available, func(m migration) bool { return m.version == current }) {
 		return current, nil
 	}
+	if current == 0 {
+		empty, err := isEmpty(ctx, db)
+		if err != nil || empty {
+			return 0, err
+		}
+	}
 	return 0, fmt.Errorf("the index %s is at version %d and this build expects version %d: it is left as it is", file, current, newest)
+}
+
+// isEmpty holds for a database with no table, index or view in it.
+func isEmpty(ctx context.Context, db *sql.DB) (bool, error) {
+	var objects int
+	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM sqlite_master").Scan(&objects); err != nil {
+		return false, fmt.Errorf("what this index holds: %w", err)
+	}
+	return objects == 0, nil
 }
 
 // checkFile reads the version of the index file over a connection of its own
