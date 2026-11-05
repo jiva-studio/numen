@@ -22,7 +22,7 @@ import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
 import { createCommands } from '../../lib/commands/commands'
 import { getPaletteView } from '../view/view'
-import { createInvocation } from '../../lib/offers/invocation'
+import { createInvocation } from '../../lib/entries/invocation'
 import type {
   Command,
   CommandsDeps,

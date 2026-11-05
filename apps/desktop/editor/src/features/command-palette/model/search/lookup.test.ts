@@ -64,7 +64,7 @@ const createHit = (overrides: Partial<SearchHit> = {}): SearchHit => ({
   line: -1,
   start: 0,
   length: 0,
-  offers: [OPEN_NOTE],
+  actionIds: [OPEN_NOTE],
   type: 'note',
   selector: null,
   ...overrides,
@@ -85,9 +85,9 @@ describe('a note found by name, heading or passage', () => {
     const read = [{ id: OPEN_NOTE, text: WORDS.read }]
 
     expect(createNameItem(createName(), WORDS).item.actions).toStrictEqual(read)
-    expect(createNameItem(createName(), WORDS).hit.offers).toStrictEqual([OPEN_NOTE])
+    expect(createNameItem(createName(), WORDS).hit.actionIds).toStrictEqual([OPEN_NOTE])
     expect(
-      createNameItem(createName({ heading: 'Being', line: 7 }), WORDS).hit.offers,
+      createNameItem(createName({ heading: 'Being', line: 7 }), WORDS).hit.actionIds,
     ).toStrictEqual([OPEN_NOTE])
     expect(createPassageItem('text', createPassage(), WORDS).item.actions).toStrictEqual(read)
   })
@@ -131,7 +131,7 @@ describe('a passage found in a file that is no note', () => {
         line: -1,
         start: 12,
         length: 4,
-        offers: [COMMAND.openFile],
+        actionIds: [COMMAND.openFile],
         type: null,
         selector: { page: 3 },
       }),
@@ -142,13 +142,13 @@ describe('a passage found in a file that is no note', () => {
 describe('what choosing an action of an item runs', () => {
   it('is nothing where nothing was found, or the item does not carry that action', () => {
     expect(resolveChoice(undefined, COMMAND.openFile)).toBeNull()
-    expect(resolveChoice(createHit({ offers: [COMMAND.openFile] }), 'other')).toBeNull()
+    expect(resolveChoice(createHit({ actionIds: [COMMAND.openFile] }), 'other')).toBeNull()
   })
 
   it('is the command that opens the file at the selector of the hit, for a file that is no note', () => {
     const searchHit = createHit({
       type: null,
-      offers: [COMMAND.openFile],
+      actionIds: [COMMAND.openFile],
       selector: { t: [12, 14] },
     })
 
@@ -180,11 +180,11 @@ describe('what choosing an action of an item runs', () => {
 
   it('is the old action id of a document for nothing, since the action is a command id now', () => {
     expect(resolveChoice(createHit({ line: 5 }), 'note')).toBeNull()
-    expect(resolveChoice(createHit({ type: null, offers: ['note'] }), 'note')).toBeNull()
+    expect(resolveChoice(createHit({ type: null, actionIds: ['note'] }), 'note')).toBeNull()
   })
 
   it('is the file with no selector where a file that is no note remains at none', () => {
-    const document = createHit({ type: null, offers: [COMMAND.openFile], line: -1 })
+    const document = createHit({ type: null, actionIds: [COMMAND.openFile], line: -1 })
 
     expect(resolveChoice(document, COMMAND.openFile)?.over).toStrictEqual({
       path: '',

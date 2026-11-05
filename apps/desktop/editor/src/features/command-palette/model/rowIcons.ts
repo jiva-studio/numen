@@ -3,7 +3,7 @@ import { File } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
 import { findIcon } from '@/shared/icons'
 import { COMMAND } from '@/shared/commandIds'
-import { CREATE_NOTE_ROW } from '../lib/offers/offers'
+import { CREATE_NOTE_ROW } from '../lib/entries/entries'
 import type { Commands } from './palette/palette'
 import type { SearchState } from './search/search'
 

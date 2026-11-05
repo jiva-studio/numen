@@ -674,8 +674,8 @@ describe('a key struck on the window, offered in turn', () => {
   })
 
   it('is taken by the first tab that reads it, and by no later one', async () => {
-    const offer = createKeyRecorderTab('C')
-    const window = notifiedCalls([offer.one.declared])
+    const recorder = createKeyRecorderTab('C')
+    const window = notifiedCalls([recorder.one.declared])
     const first = await window.openTabOfKind('thing', 'A')
     await window.handle.openTabAdjacent('thing', 'B')
     await window.handle.openTabAdjacent('thing', 'C')
@@ -683,18 +683,18 @@ describe('a key struck on the window, offered in turn', () => {
 
     expect(window.onKeyPress(strike)).toBe(true)
 
-    expect(offer.actions).toEqual(['A', 'C'])
+    expect(recorder.actions).toEqual(['A', 'C'])
   })
 
   it('is not offered to a tab hidden behind another in its pane', async () => {
-    const offer = createKeyRecorderTab('none')
-    const window = notifiedCalls([offer.one.declared])
+    const recorder = createKeyRecorderTab('none')
+    const window = notifiedCalls([recorder.one.declared])
     await window.openTabOfKind('thing', 'Hidden')
     await window.openTabOfKind('thing', 'Shown')
 
     window.onKeyPress(strike)
 
-    expect(offer.actions).toEqual(['Shown'])
+    expect(recorder.actions).toEqual(['Shown'])
   })
 
   it('is no trouble for a layout drawing a tab the window does not hold', () => {
@@ -705,13 +705,13 @@ describe('a key struck on the window, offered in turn', () => {
   })
 
   it('is offered to the tabs on screen while the pane in front is unknown to the layout', async () => {
-    const offer = createKeyRecorderTab('A')
-    const window = notifiedCalls([offer.one.declared])
+    const recorder = createKeyRecorderTab('A')
+    const window = notifiedCalls([recorder.one.declared])
     await window.openTabOfKind('thing', 'A')
     window.layout.value = { ...window.layout.value, focus: 'ghost' }
 
     expect(window.onKeyPress(strike)).toBe(true)
-    expect(offer.actions).toEqual(['A'])
+    expect(recorder.actions).toEqual(['A'])
   })
 })
 

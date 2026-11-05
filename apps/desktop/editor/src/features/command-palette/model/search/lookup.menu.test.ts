@@ -1,4 +1,4 @@
-/** The actions a search result offers: opening the note, then the entries plugins place in its menu. */
+/** The actions a search result actionIds: opening the note, then the entries plugins place in its menu. */
 import { describe, expect, it } from 'vitest'
 import { COMMAND } from '@/shared/commandIds'
 import type { PlacedCommand } from '@numen/plugin-host'
@@ -87,7 +87,7 @@ describe('a note found by its title', () => {
   it('lets the hit accept the entries and opening the note', () => {
     const row = createNameItem(createName(), WORDS, ENTRIES)
 
-    expect(row.hit.offers).toStrictEqual([openId, showId, otherId])
+    expect(row.hit.actionIds).toStrictEqual([openId, showId, otherId])
   })
 
   it('offers opening the note first whatever group the first entry is in', () => {
@@ -133,7 +133,7 @@ describe('a heading found by its name', () => {
       { id: showId, text: 'Show note in plex' },
       { id: otherId, text: 'Another' },
     ])
-    expect(row.hit.offers).toStrictEqual([openId, showId, otherId])
+    expect(row.hit.actionIds).toStrictEqual([openId, showId, otherId])
   })
 })
 
@@ -146,7 +146,7 @@ describe('a passage found in a note', () => {
       { id: showId, text: 'Show note in plex' },
       { id: otherId, text: 'Another' },
     ])
-    expect(row.hit.offers).toStrictEqual([openId, showId, otherId])
+    expect(row.hit.actionIds).toStrictEqual([openId, showId, otherId])
   })
 })
 
@@ -160,7 +160,7 @@ describe('a passage found in a file that is no note', () => {
     )
 
     expect(row.item.actions).toStrictEqual([{ id: COMMAND.openFile, text: 'Open the document' }])
-    expect(row.hit.offers).toStrictEqual([COMMAND.openFile])
+    expect(row.hit.actionIds).toStrictEqual([COMMAND.openFile])
   })
 })
 
@@ -171,7 +171,7 @@ describe('the command an action of a result runs', () => {
     line: 3,
     start: 12,
     length: 4,
-    offers: [openId, showId, otherId],
+    actionIds: [openId, showId, otherId],
     type: 'sample',
     selector: null,
     ...overrides,
@@ -183,7 +183,7 @@ describe('the command an action of a result runs', () => {
       title: '',
       line: -1,
       type: null,
-      offers: [COMMAND.openFile],
+      actionIds: [COMMAND.openFile],
       selector: { page: 3 },
       ...overrides,
     })
@@ -226,15 +226,17 @@ describe('the command an action of a result runs', () => {
 
   it('is none where nothing was found or the hit does not carry the action', () => {
     expect(resolveChoice(undefined, showId)).toBeNull()
-    expect(resolveChoice(createHit({ offers: [openId] }), showId)).toBeNull()
+    expect(resolveChoice(createHit({ actionIds: [openId] }), showId)).toBeNull()
     expect(resolveChoice(createDocument(), 'other')).toBeNull()
   })
 
   it('is none for an entry of the menu over a hit in a file that is no note', () => {
-    expect(resolveChoice(createDocument({ offers: [COMMAND.openFile, showId] }), showId)).toBeNull()
+    expect(
+      resolveChoice(createDocument({ actionIds: [COMMAND.openFile, showId] }), showId),
+    ).toBeNull()
   })
 
   it('is none for the action id the document had before it was a command', () => {
-    expect(resolveChoice(createDocument({ offers: ['note'] }), 'note')).toBeNull()
+    expect(resolveChoice(createDocument({ actionIds: ['note'] }), 'note')).toBeNull()
   })
 })

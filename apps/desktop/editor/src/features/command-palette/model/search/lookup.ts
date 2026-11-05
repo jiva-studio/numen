@@ -60,7 +60,7 @@ export interface SearchHit {
   /** The span of the source's own text the item was found in. */
   start: number
   length: number
-  offers: readonly string[]
+  actionIds: readonly string[]
   type: NoteType | null
   /** The place in a file that is no note, and null for a note. */
   selector: Selector | null
@@ -80,9 +80,9 @@ type PaletteAction = NonNullable<PaletteItem['actions']>[number]
 function createNoteActions(
   openText: string,
   menu: readonly PaletteAction[],
-): { actions: readonly PaletteAction[]; offers: readonly string[] } {
+): { actions: readonly PaletteAction[]; actionIds: readonly string[] } {
   const actions = [{ id: COMMAND.openNote, text: openText }, ...menu]
-  return { actions, offers: actions.map((one) => one.id) }
+  return { actions, actionIds: actions.map((one) => one.id) }
 }
 
 function createMenuActions(entries: readonly PlacedCommand[]): readonly PaletteAction[] {
@@ -116,7 +116,7 @@ export function createNameItem(
           line: one.line,
           start: 0,
           length: 0,
-          offers: atHeading.offers,
+          actionIds: atHeading.actionIds,
           type: one.type,
           selector: null,
         },
@@ -134,7 +134,7 @@ export function createNameItem(
           line: -1,
           start: 0,
           length: 0,
-          offers: byName.offers,
+          actionIds: byName.actionIds,
           type: one.type,
           selector: null,
         },
@@ -163,7 +163,7 @@ export function createPassageItem(
       line: one.isNote ? one.line : -1,
       start: one.start,
       length: one.length,
-      offers: one.isNote ? note.offers : document.map((each) => each.id),
+      actionIds: one.isNote ? note.actionIds : document.map((each) => each.id),
       type: one.isNote ? one.type : null,
       selector: one.isNote ? null : one.selector,
     },
@@ -195,7 +195,7 @@ export function resolveChoice(
   action: string,
   typed = '',
 ): ResultChoice | null {
-  if (!hit || !hit.offers.includes(action)) return null
+  if (!hit || !hit.actionIds.includes(action)) return null
   if (hit.isCreation) {
     return {
       command: action,

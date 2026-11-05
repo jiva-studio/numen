@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/core-client'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
-import { createInvocation } from '../../lib/offers/invocation'
+import { createInvocation } from '../../lib/entries/invocation'
 import type { CommandInvocation, CommandTarget } from '../../types'
 import { ANSWER_WORDS as words } from '../../words'
 import type { VaultContext, Voice } from './deps'
