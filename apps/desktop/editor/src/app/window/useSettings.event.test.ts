@@ -102,11 +102,7 @@ const create = () => {
 }
 
 /** The settings as the core changes them, and the event that tells every window. */
-const change = (
-  feed: ReturnType<typeof createFeed>,
-  at: readonly string[],
-  value: unknown,
-) => {
+const change = (feed: ReturnType<typeof createFeed>, at: readonly string[], value: unknown) => {
   let target = file.current
   for (const step of at.slice(0, -1)) {
     target[step] = { ...((target[step] as Record<string, unknown> | undefined) ?? {}) }
