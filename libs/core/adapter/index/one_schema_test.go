@@ -105,7 +105,7 @@ func TestAFreshIndexHasExactlyTheSchemaTheTenOldStepsProduced(t *testing.T) {
 	}
 }
 
-func TestTheFolderOfTheMigrationsHoldsOneFileNumberedLikeTheIndexVersion(t *testing.T) {
+func TestTheMigrationFolderHasOneFileNamedForTheIndexVersion(t *testing.T) {
 	entries, err := os.ReadDir("migration")
 	if err != nil {
 		t.Fatal(err)
@@ -142,12 +142,12 @@ func TestAnIndexOfTheCurrentBuildIsOpenedAndUsedAsItIs(t *testing.T) {
 		t.Fatalf("an index of the current build was refused: %v", err)
 	}
 	defer testsupport.Close(t, again)
-	var kept int
-	if err := again.write.QueryRowContext(ctx, `SELECT count(*) FROM vaults WHERE identifier = '01KEPT'`).Scan(&kept); err != nil {
+	var remaining int
+	if err := again.write.QueryRowContext(ctx, `SELECT count(*) FROM vaults WHERE identifier = '01KEPT'`).Scan(&remaining); err != nil {
 		t.Fatal(err)
 	}
-	if kept != 1 {
-		t.Errorf("%d rows of the vault are left, want 1: the index was not used as it is", kept)
+	if remaining != 1 {
+		t.Errorf("%d rows of the vault are left, want 1: the index was not used as it is", remaining)
 	}
 	if v := getUserVersion(ctx, t, again.write); v != expectedVersion {
 		t.Errorf("the index is at version %d, want %d", v, expectedVersion)
