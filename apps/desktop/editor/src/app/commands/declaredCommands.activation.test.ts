@@ -25,7 +25,11 @@ async function createWindow() {
   const holder: { current?: PluginHost } = {}
   const declared = useDeclaredCommands({
     list: async () => ({
-      commands: [declare(VIEW, 'tree.open'), declare(VIEW, 'tree.revealNote'), declare(BACKEND, 'import')],
+      commands: [
+        declare(VIEW, 'tree.open'),
+        declare(VIEW, 'tree.revealNote'),
+        declare(BACKEND, 'import'),
+      ],
       menus: [],
     }),
     isListed: (id) => holder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
