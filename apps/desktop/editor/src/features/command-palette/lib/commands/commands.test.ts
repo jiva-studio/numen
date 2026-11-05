@@ -189,3 +189,42 @@ describe('createPathCommands', () => {
     ])
   })
 })
+
+describe('the command that opens a document chosen as a result', () => {
+  const open = () => createCommands(words).find((one) => one.id === 'app:file.open')
+
+  it('is filed under the file group with the words that open a document', () => {
+    expect(open()).toMatchObject({ text: words.readDocument, group: 'file' })
+  })
+
+  it('needs no input, so it runs as soon as it is chosen', () => {
+    expect(open()).toBeDefined()
+    expect(open()?.needs).toBeUndefined()
+  })
+
+  it('is not one of the commands over a note, so the menu of a file row does not list it', () => {
+    expect(getNoteCommands(createCommands(words)).map((one) => one.id)).not.toContain(
+      'app:file.open',
+    )
+    expect(
+      createPathCommands({ isNote: false, isFolder: false }, false).map((one) => one.id),
+    ).not.toContain('app:file.open')
+  })
+
+  it('is available over a chosen document and over nothing else', () => {
+    const target: CommandTarget = {
+      tab: '',
+      kind: null,
+      path: '',
+      title: '',
+      file: 'library/atlas.pdf',
+      vault: { id: 'v', name: 'V' },
+      isReady: true,
+    }
+    const runs = { canRun: () => true, cannotRun: () => undefined }
+
+    expect(open()?.isAvailable(target, runs)).toBe(true)
+    expect(open()?.isAvailable({ ...target, tab: 'tab-1', kind: 'reader' }, runs)).toBe(false)
+    expect(open()?.isAvailable({ ...target, path: 'a.md', file: 'a.md' }, runs)).toBe(false)
+  })
+})

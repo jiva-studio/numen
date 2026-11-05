@@ -3,6 +3,7 @@
  * An identity is resolved by the store holding it, and an identity no store holds
  * resolves to nothing.
  */
+import type { Selector } from '@numen/plugin-host'
 import type { Notes, Store } from '../../types'
 
 /** What opens a file: in the current tab or beside it, at a line of the note where one is given. */
@@ -10,7 +11,8 @@ export interface NoteOpeners {
   openFile(
     path: string,
     title: string,
-    options: 'current' | 'split' | { where: 'current' | 'split'; line: number },
+    options:
+      'current' | 'split' | { where: 'current' | 'split'; line?: number; selector?: Selector },
   ): unknown
   openNewFile: Notes['openNewFile']
 }
@@ -31,8 +33,12 @@ export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners):
       await holder(id)?.flushPending(id)
     },
     close: (id) => holder(id)?.close(id),
-    openFile: (path, title, showing, line) =>
-      noteOpeners.openFile(path, title, line === undefined ? showing : { where: showing, line }),
+    openFile: (path, title, showing, place) =>
+      noteOpeners.openFile(
+        path,
+        title,
+        place?.line === undefined ? showing : { where: showing, line: place.line },
+      ),
     openNewFile: noteOpeners.openNewFile,
   }
 }

@@ -223,3 +223,23 @@ export function resolveDestination(
   const named = { path: hit.path, title: hit.title }
   return hit.selector ? { at: 'file', ...named, selector: hit.selector } : { at: 'file', ...named }
 }
+
+/** What a chosen action runs: the command, what it is over, and the text typed for it. */
+export interface ResultChoice {
+  readonly command: string
+  /** The chosen result as a target; null: the target the window holds. */
+  readonly over: {
+    readonly path: string
+    readonly file: string
+    readonly title: string
+    readonly line?: number
+    readonly selector?: Selector
+  } | null
+  /** The text typed for it, which answers a step that asks for a name; '' where none. */
+  readonly input: string
+}
+
+/** The command an action of a hit runs, over what, with which input; null where the hit does not carry the action. */
+export function resolveChoice(_hit: SearchHit | undefined, _action: string): ResultChoice | null {
+  return null
+}

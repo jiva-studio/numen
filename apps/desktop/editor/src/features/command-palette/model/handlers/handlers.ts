@@ -29,7 +29,12 @@ import { COMMAND } from '@/shared/commandIds'
 /** What each command evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
   [COMMAND.openNote]: (invocation, on) =>
-    on.notes.openFile(invocation.path, invocation.title, 'current', invocation.line),
+    on.notes.openFile(
+      invocation.path,
+      invocation.title,
+      'current',
+      invocation.line === undefined ? undefined : { line: invocation.line },
+    ),
   [COMMAND.openNoteBeside]: (invocation, on) =>
     on.notes.openFile(invocation.path, invocation.title, 'split'),
   [COMMAND.createChildNote]: (invocation, on, words) =>

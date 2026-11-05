@@ -43,13 +43,15 @@ describe('the command that opens a note', () => {
   it('opens the note in the current tab at the line of the target', async () => {
     const openFile = await open(target({ line: 7 }))
 
-    expect(openFile).toHaveBeenCalledExactlyOnceWith('reef/Coral.md', 'Coral', 'current', 7)
+    expect(openFile).toHaveBeenCalledExactlyOnceWith('reef/Coral.md', 'Coral', 'current', {
+      line: 7,
+    })
   })
 
   it('opens the note at its first line where the line is zero', async () => {
     const openFile = await open(target({ line: 0 }))
 
-    expect(openFile.mock.calls[0]?.[3]).toBe(0)
+    expect(openFile.mock.calls[0]?.[3]).toStrictEqual({ line: 0 })
   })
 
   it('opens the note from the start where the target has no line', async () => {

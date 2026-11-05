@@ -14,6 +14,9 @@ import type { Words } from '../../words'
 /** The group and the item that offer to make the note a search did not find. */
 export const CREATE_NOTE_ID = 'creating'
 
+/** The id of the group and of the item of the row that creates a note; never an action id. */
+export const CREATE_NOTE_ROW = 'creating'
+
 /**
  * The note a search did not find, created under the words that were searched for.
  * A relation attaches it to the focused note; anything else creates it standalone.

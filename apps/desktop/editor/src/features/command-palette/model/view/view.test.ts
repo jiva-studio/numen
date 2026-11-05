@@ -10,7 +10,7 @@ import { getNoteIcon } from '@/entities/note'
 import { findIcon } from '@/shared/icons'
 import { WORDS as words } from '@/shared/words'
 import { createCommands } from '../../lib/commands/commands'
-import { CREATE_NOTE_ID } from '../../lib/offers/offers'
+import { CREATE_NOTE_ROW } from '../../lib/offers/offers'
 import type { PendingStep } from '../../lib/step/step'
 import type { Command, CommandTarget, PaletteLists } from '../../types'
 import type { Commands } from '../palette/palette'
@@ -297,11 +297,30 @@ describe('findRowIcon', () => {
       findHitFile: (id: string) => (id === 'hit-file' ? 'book.epub' : null),
     } as unknown as SearchState
 
-    expect(findRowIcon(CREATE_NOTE_ID, commands, search)).toBe(findIcon('app:note.create'))
+    expect(findRowIcon(CREATE_NOTE_ROW, commands, search)).toBe(findIcon('app:note.create'))
     expect(findRowIcon('hit-note', commands, search)).toBe(getNoteIcon('sheet'))
     expect(findRowIcon('hit-file', commands, search, () => customIcon)).toBe(customIcon)
     expect(findRowIcon('hit-file', commands, search, () => undefined)).toBe(File)
     expect(findRowIcon('hit-file', commands, search)).toBe(File)
     expect(findRowIcon('unknown', commands, search)).toBeNull()
+  })
+})
+
+describe('the icon of the command that opens a document', () => {
+  it('is the file icon the row of a document is drawn with', () => {
+    expect(findIcon('app:file.open')).toBe(File)
+  })
+
+  it('is the icon of the command the row of a document offers', () => {
+    const commands = { open: ref(true), findNoteType: () => null, findCommandIcon: () => null }
+    const search = { findNoteType: () => null, findHitFile: () => null }
+
+    expect(
+      findRowIcon(
+        'app:file.open',
+        commands as unknown as Commands,
+        search as unknown as SearchState,
+      ),
+    ).toBe(File)
   })
 })

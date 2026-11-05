@@ -14,7 +14,7 @@ import {
   ANSWER_WORDS,
   type CommandDeps,
   type CommandTarget,
-  type MenuChoice,
+  type ResultChoice,
   type Notes,
   type NoteLookup,
   type PaletteLists,
@@ -109,7 +109,7 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const reportError = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
 
-  const runCommand = (id: string, target: CommandTarget) => {
+  const runCommand = (id: string, target: CommandTarget, _input?: string) => {
     if (pluginHost?.hasCommand(id)) {
       commands.setOpen(false)
       runInBackground(
@@ -132,17 +132,8 @@ export function useCommands(options: CommandsDepsOptions) {
     writeMessage(commands.getObjection(id, target), 'error')
   }
 
-  /** Runs the command of an entry of the menu of a search result over the note it was chosen on. */
-  const runEntry = (choice: MenuChoice): void =>
-    runCommand(choice.command, {
-      ...getTarget(),
-      tab: '',
-      kind: null,
-      path: choice.path,
-      file: choice.path,
-      title: choice.title,
-      ...(choice.line >= 0 ? { line: choice.line } : {}),
-    })
+  /** Runs the command of a chosen action over what it was chosen on, with the text typed for it. */
+  const runChoice = (_choice: ResultChoice): void => undefined
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
@@ -161,7 +152,7 @@ export function useCommands(options: CommandsDepsOptions) {
     commands,
     commandDeps,
     runCommand,
-    runEntry,
+    runChoice,
     onKeyDown,
     pluginWays,
     getNoteCommands,

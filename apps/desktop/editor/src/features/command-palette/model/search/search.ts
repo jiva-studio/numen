@@ -15,13 +15,16 @@ import {
   type NameMatch,
   type Passage,
   resolveMenuChoice,
+  resolveChoice,
   type MenuChoice,
+  type ResultChoice,
   type SearchDestination,
   type SearchHit,
   type SearchMenuDeps,
   type SearchRow,
 } from './lookup'
 import type { TextRange } from '@/shared/textRange'
+import type { CommandTarget } from '../../types'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
 export type {
@@ -33,6 +36,7 @@ export type {
   SearchRow,
   SearchGroup,
   MenuChoice,
+  ResultChoice,
   SearchMenuDeps,
 }
 
@@ -64,6 +68,11 @@ export interface Words extends EmptyWords {
   readDocument: string
   wordsOnly: string
   notEmbedded: string
+  creating: string
+  creates: string
+  asChild: string
+  asParent: string
+  asJump: string
 }
 
 /** What the window hands the palette, beside the vault and its own words. */
@@ -72,6 +81,8 @@ export interface SearchOptions {
   coverage?(): IndexCoverage
   /** The entries plugins place in the menu of a search result. */
   menu?: SearchMenuDeps
+  /** The target of the window, for the row that creates a note. */
+  getTarget?(): CommandTarget
 }
 
 interface FillOptions<T> {
@@ -220,7 +231,10 @@ function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
   const chooseEntry = (item: string, action: string): MenuChoice | null =>
     resolveMenuChoice(getHits().get(item), action)
 
-  return { chooseItem, chooseEntry, findNoteType, findHitFile }
+  const chooseResult = (item: string, action: string): ResultChoice | null =>
+    resolveChoice(getHits().get(item), action)
+
+  return { chooseItem, chooseEntry, chooseResult, findNoteType, findHitFile }
 }
 
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {

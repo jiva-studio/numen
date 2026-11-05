@@ -136,7 +136,11 @@ interface PaletteCommandsDeps {
 }
 
 function createPaletteCommands(deps: PaletteCommandsDeps) {
-  const startCommand = (id: string, target: CommandTarget): CommandInvocation | null => {
+  const startCommand = (
+    id: string,
+    target: CommandTarget,
+    _input?: string,
+  ): CommandInvocation | null => {
     const command = deps.byId.get(id)
     if (!command || !command.isAvailable(target, deps.runs)) return null
     if (!command.needs) return deps.invocation(command.id, target)

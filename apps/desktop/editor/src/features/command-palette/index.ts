@@ -23,12 +23,18 @@ export type { Commands } from './model/palette/palette'
 export { runSupport } from './model/palette/runSupport'
 export { useSearch } from './model/search/search'
 export type { SearchDeps, SearchMode, SearchState } from './model/search/search'
-export type { MenuChoice, SearchDestination, SearchMenuDeps } from './model/search/lookup'
+export type {
+  MenuChoice,
+  ResultChoice,
+  SearchDestination,
+  SearchMenuDeps,
+} from './model/search/lookup'
 export type { CommandDeps, VaultWriter } from './model/handlers/deps'
 export { ANSWER_WORDS } from './words'
 export type { AnswerWords } from './words'
 export type {
   Command,
+  CommandPlace,
   CommandsDeps,
   CommandTarget,
   NoteLookup,

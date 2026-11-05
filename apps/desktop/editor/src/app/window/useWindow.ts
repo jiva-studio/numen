@@ -479,7 +479,7 @@ function initWindowKindsAndCommands(
     fileMenuCommands,
   })
 
-  return { getTarget, runCommand, menuApi: { menus, runEntry: getCommands(ctx).runEntry } }
+  return { getTarget, runCommand, menuApi: { menus, runChoice: getCommands(ctx).runChoice } }
 }
 
 function isSecondaryWindow(): boolean {
