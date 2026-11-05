@@ -1,12 +1,14 @@
 package settings
 
+import "github.com/jiva-studio/numen/libs/core/port/settingsport"
+
 // Watch follows the settings that change, whoever changes them: a write by a window, a plugin or
 // the palette, and an edit of the file by hand.
 type Watch struct {
-	subscribe func() (<-chan []Setting, func())
+	subscribe settingsport.ChangeSubscriber
 }
 
-func NewWatch(subscribe func() (<-chan []Setting, func())) *Watch {
+func NewWatch(subscribe settingsport.ChangeSubscriber) *Watch {
 	return &Watch{subscribe: subscribe}
 }
 
