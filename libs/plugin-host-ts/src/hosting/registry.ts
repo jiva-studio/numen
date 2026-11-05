@@ -7,6 +7,7 @@ import type {
   CommandRegistration,
   ContextMenuRegistration,
   ContextMenuTarget,
+  Disposable,
   FileSelectEvent,
   PluginContext,
   ReaderRegistration,
@@ -136,6 +137,23 @@ export function setStarting(registry: HostRegistry, pluginId: string, isStarting
   if (isStarting) next.add(pluginId)
   else next.delete(pluginId)
   starting.value = next
+}
+
+/** Puts an entry in a reactive map under a key; disposing it removes the entry if it is still there. */
+export function addEntry<T>(
+  holder: { value: ReadonlyMap<string, T> },
+  key: string,
+  entry: T,
+): Disposable {
+  holder.value = new Map(holder.value).set(key, entry)
+  return {
+    dispose: () => {
+      if (holder.value.get(key) !== entry) return
+      const updated = new Map(holder.value)
+      updated.delete(key)
+      holder.value = updated
+    },
+  }
 }
 
 /** Runs a registration; a listing read that it triggers reports no issue. */

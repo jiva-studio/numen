@@ -6,7 +6,6 @@ import type {
   CommandNote,
   ContextMenuRegistration,
   ContextMenuTarget,
-  Disposable,
   PluginContext,
   SettingsViewRegistration,
   VaultChangeEvent,
@@ -26,6 +25,7 @@ import { matchesShortcut } from './shortcuts'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
+  addEntry,
   disposeAllEntries,
   disposePluginEntry,
   markActivated,
@@ -67,19 +67,6 @@ type RegistrationBridge = Pick<
   | 'registerSettingsView'
   | 'registerAgentProvider'
 >
-
-/** Puts an entry in a reactive map under a key; disposing it removes the entry if it is still there. */
-function addEntry<T>(holder: { value: ReadonlyMap<string, T> }, key: string, entry: T): Disposable {
-  holder.value = new Map(holder.value).set(key, entry)
-  return {
-    dispose: () => {
-      if (holder.value.get(key) !== entry) return
-      const updated = new Map(holder.value)
-      updated.delete(key)
-      holder.value = updated
-    },
-  }
-}
 
 function createRegistrationBridge(
   deps: PluginHostDeps,
