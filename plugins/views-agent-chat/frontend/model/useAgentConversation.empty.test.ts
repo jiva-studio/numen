@@ -1,5 +1,5 @@
 /**
- * What an agent tab does where no agent is listed, and when one appears.
+ * What an agent tab does where no agent is hasAgent, and when one appears.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
@@ -19,7 +19,7 @@ const createConversation = (): Conversation => ({
 const AGENT: AgentModel = { name: 'zeta', title: 'Zeta', isDefault: true, presence: 'present' }
 const MODEL: AgentModel = { name: 'one', title: 'One', isDefault: true, presence: 'present' }
 
-const open = (listed = ref(false), openSettings = vi.fn()) =>
+const open = (hasAgent = ref(false), openSettings = vi.fn()) =>
   useAgentConversation(createConversation(), {
     openFileAt: () => undefined,
     openFileAdjacent: () => undefined,
@@ -27,25 +27,25 @@ const open = (listed = ref(false), openSettings = vi.fn()) =>
     unreachable: () => '',
     openSettings,
     getModelsAt: (path) => {
-      if (!listed.value) return []
+      if (!hasAgent.value) return []
       return path.join('/') === 'app/agent/use' ? [AGENT] : [MODEL]
     },
   })
 
-describe('an agent tab with no agent listed', () => {
+describe('an agent tab with no agent hasAgent', () => {
   it('reports that no agent is set up', () => {
     expect(open().isAgentMissing.value).toBe(true)
   })
 
-  it('reports an agent once one is listed, and again none when it goes', async () => {
-    const listed = ref(false)
-    const state = open(listed)
+  it('reports an agent once one is hasAgent, and again none when it goes', async () => {
+    const hasAgent = ref(false)
+    const state = open(hasAgent)
 
-    listed.value = true
+    hasAgent.value = true
     await nextTick()
     expect(state.isAgentMissing.value).toBe(false)
 
-    listed.value = false
+    hasAgent.value = false
     await nextTick()
     expect(state.isAgentMissing.value).toBe(true)
   })

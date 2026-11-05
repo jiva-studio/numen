@@ -15,7 +15,7 @@ const AGENT: AgentModel = { name: 'zeta', title: 'Zeta', isDefault: true, presen
 const MODEL: AgentModel = { name: 'one', title: 'One', isDefault: true, presence: 'present' }
 
 const mountTab = () => {
-  const listed = ref(false)
+  const hasAgent = ref(false)
   const openSettings = vi.fn()
   const { agent } = createHost()
   const state = useAgentConversation(
@@ -27,12 +27,12 @@ const mountTab = () => {
       unreachable: () => '',
       openSettings,
       getModelsAt: (path) => {
-        if (!listed.value) return []
+        if (!hasAgent.value) return []
         return path.join('/') === 'app/agent/use' ? [AGENT] : [MODEL]
       },
     },
   )
-  return { wrapper: mount(AgentTab, { props: { state } }), listed, openSettings }
+  return { wrapper: mount(AgentTab, { props: { state } }), hasAgent, openSettings }
 }
 
 describe('the agent tab with no agent set up', () => {
@@ -50,8 +50,8 @@ describe('the agent tab with no agent set up', () => {
   })
 
   it('returns to the input and the dropdown when an agent is turned on', async () => {
-    const { wrapper, listed } = mountTab()
-    listed.value = true
+    const { wrapper, hasAgent } = mountTab()
+    hasAgent.value = true
     await nextTick()
     await nextTick()
     expect(wrapper.find('textarea').exists()).toBe(true)
