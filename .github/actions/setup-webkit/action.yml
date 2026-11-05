@@ -3,14 +3,20 @@ description: "Installs GTK4 and WebKitGTK dev packages for webview compilation"
 runs:
   using: "composite"
   steps:
+    # ImageOS and ImageVersion are variables of the runner process, not of the `env` context.
+    - name: Read the runner image
+      id: image
+      shell: bash
+      run: echo "image=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
+
     # The Azure apt mirror can serve at tens of KB/s, which spends a job's whole time limit on
     # downloads. Packages already fetched by an earlier run come from the cache instead.
     - name: Restore downloaded apt packages
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/apt-archives
-        key: apt-webkit-${{ runner.os }}-${{ runner.arch }}-${{ env.ImageOS }}-${{ env.ImageVersion }}
-        restore-keys: apt-webkit-${{ runner.os }}-${{ runner.arch }}-${{ env.ImageOS }}-
+        key: apt-webkit-${{ runner.os }}-${{ runner.arch }}-${{ steps.image.outputs.image }}
+        restore-keys: apt-webkit-${{ runner.os }}-${{ runner.arch }}-
 
     - name: Install WebKit & GTK dependencies
       shell: bash
