@@ -6,7 +6,6 @@
  * door is mocked too, over the rest of what it gives.
  */
 import { vi } from 'vitest'
-import { requests } from './requests'
 import { declared, mockVaultState, pendingStream } from './answers'
 
 vi.mock('@/app/plugins/agentPort', () => ({
