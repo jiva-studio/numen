@@ -80,3 +80,66 @@ describe('useWindowFrame', () => {
     expect(frame.controls.value).toBe('windows')
   })
 })
+
+describe('useWindowFrame when the read of the maximised state fails', () => {
+  /** A runtime whose state read resolves once, then rejects, as a Wails window that went away mid-call. */
+  function createFailingRuntime(maximised: boolean) {
+    const failing = { value: false }
+    const runtime: FrameRuntime = {
+      Window: {
+        ToggleMaximise: async () => {
+          failing.value = true
+        },
+        IsMaximised: async () => {
+          if (failing.value) throw new Error('the window state is not available')
+          return maximised
+        },
+      },
+    }
+    return { runtime, failing }
+  }
+
+  it('resolves the toggle although the read of the state after it rejects', async () => {
+    const { runtime } = createFailingRuntime(true)
+    const frame = useWindowFrame(async () => runtime)
+    await flushPromises()
+
+    await expect(frame.toggleMaximise()).resolves.toBeUndefined()
+  })
+
+  it('keeps the state it had when the read after the toggle rejects', async () => {
+    const { runtime } = createFailingRuntime(true)
+    const frame = useWindowFrame(async () => runtime)
+    await flushPromises()
+
+    await frame.toggleMaximise().catch(() => undefined)
+
+    expect(frame.isMaximised.value).toBe(true)
+  })
+
+  it('stays unmaximised when the first read of the state rejects', async () => {
+    const runtime: FrameRuntime = {
+      Window: {
+        IsMaximised: async () => {
+          throw new Error('the window state is not available')
+        },
+      },
+    }
+    const frame = useWindowFrame(async () => runtime)
+    await flushPromises()
+
+    expect(frame.isMaximised.value).toBe(false)
+  })
+
+  it('keeps the state it had when the read after a resize rejects', async () => {
+    const { runtime, failing } = createFailingRuntime(true)
+    const frame = useWindowFrame(async () => runtime)
+    await flushPromises()
+
+    failing.value = true
+    globalThis.dispatchEvent(new Event('resize'))
+    await flushPromises()
+
+    expect(frame.isMaximised.value).toBe(true)
+  })
+})
