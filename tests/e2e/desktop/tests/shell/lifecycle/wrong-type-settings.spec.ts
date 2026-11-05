@@ -40,6 +40,8 @@ test.describe('Start-up with old keys and values of the wrong type in the settin
         timeout: USABLE_WITHIN_MS,
       })
     }
-    await expect(popover.locator('.task-item--failed').filter({ hasText: 'Read settings' })).toHaveCount(0)
+    await expect(
+      popover.locator('.task-item--failed').filter({ hasText: 'Read settings' }),
+    ).toHaveCount(0)
   })
 })

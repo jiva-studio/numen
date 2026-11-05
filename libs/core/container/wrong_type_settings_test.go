@@ -150,7 +150,7 @@ func TestStoredSecretsThatAreNoListOfNamesAreDroppedAndTheFileReads(t *testing.T
 	}
 }
 
-func TestAListOfNamesInStoredSecretsIsKept(t *testing.T) {
+func TestAListOfNamesInStoredSecretsStaysInForce(t *testing.T) {
 	cfg, _ := installationWith(t, `{"`+importerID+`":{"storedSecrets":["openai"]}}`)
 	got, err := cfg.Settings()
 	if err != nil {
@@ -212,7 +212,7 @@ func TestOldKeysOfTheFileAreIgnoredWithNoticesThatNameThemAndNothingIsCarriedInt
 	}
 }
 
-func TestAnObjectUnderTheKeyPluginsIsIgnoredWithANotice(t *testing.T) {
+func TestAnObjectInsideTheKeyPluginsIsIgnoredWithANotice(t *testing.T) {
 	cfg, _ := installationWith(t, `{"plugins":{"`+importerID+`":{"ytDlp":{"environment":{"A":"b"}}}}}`)
 	got, err := cfg.Settings()
 	if err != nil {
