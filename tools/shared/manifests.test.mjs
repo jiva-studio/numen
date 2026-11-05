@@ -182,3 +182,24 @@ test('no setting key of a plugin manifest contains an underscore', () => {
 
   assert.deepEqual(underscored, [])
 })
+
+test('no setting of a plugin manifest names an old place of the setting', () => {
+  const named = readPluginManifests(PLUGINS_DIR).flatMap((one) =>
+    (one.document.settings ?? [])
+      .filter((setting) => 'replaces' in setting)
+      .map((setting) => `${one.name}: ${setting.key}`),
+  )
+
+  assert.deepEqual(named, [])
+})
+
+test('a setting that names an old place is warned about as a key the schema does not name', () => {
+  const { warnings } = parseManifest(
+    JSON.stringify({
+      ...valid,
+      settings: [{ key: 'program', type: 'string', replaces: ['importing.program'] }],
+    }),
+  )
+
+  assert.deepEqual(warnings, ['unknown key "settings[0].replaces"'])
+})

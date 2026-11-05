@@ -87,7 +87,7 @@ export const startOwnServer = async (
     path.join(repoRoot, 'apps/desktop/numen-debug'),
     [`-debug-http-addr=${host}:${port}`, '-debug-mock-ml', `-vault=${vault}`],
     {
-      stdio: 'inherit',
+      stdio: ['inherit', 'inherit', 'pipe'],
       env: {
         ...process.env,
         XDG_CONFIG_HOME: config,
@@ -101,6 +101,11 @@ export const startOwnServer = async (
       },
     },
   )
+  let stderr = ''
+  child.stderr?.on('data', (chunk: Buffer) => {
+    stderr += chunk.toString()
+    process.stderr.write(chunk)
+  })
   const stop = async (): Promise<void> => {
     if (child.exitCode === null) {
       const ended = new Promise<void>((resolve) => child.once('exit', () => resolve()))
@@ -113,7 +118,7 @@ export const startOwnServer = async (
   while (!(await isListening(port))) {
     if (child.exitCode !== null || Date.now() - startedAt > 60_000) {
       await stop()
-      throw new Error(`the debug server did not start on port ${port}`)
+      throw new Error(`the debug server did not start on port ${port}: ${stderr.trim()}`)
     }
     await new Promise((resolve) => setTimeout(resolve, 100))
   }

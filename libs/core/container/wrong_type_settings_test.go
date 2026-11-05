@@ -1,8 +1,12 @@
 package container_test
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -13,22 +17,19 @@ import (
 
 const importerID = "md.numen.tools.media.importer"
 
-// importerManifest declares a text setting that replaces a key of the old layout, a number, and a
+// importerManifest declares two text settings, a number, and a
 // switch, the way the importer plugin declares its settings.
 const importerManifest = `{
 	"id": "md.numen.tools.media.importer", "name": "Importer", "version": "1.0.0",
 	"capabilities": [], "targets": ["desktop.editor"],
 	"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/x"},
 	"settings": [
-		{"key": "ytDlp", "type": "string", "title": "yt-dlp", "default": "", "replaces": ["importing.yt_dlp"]},
-		{"key": "ffmpeg", "type": "string", "title": "ffmpeg", "default": "", "replaces": ["importing.ffmpeg"]},
+		{"key": "ytDlp", "type": "string", "title": "yt-dlp", "default": ""},
+		{"key": "ffmpeg", "type": "string", "title": "ffmpeg", "default": ""},
 		{"key": "retries", "type": "number", "title": "Retries", "default": 3},
 		{"key": "verbose", "type": "boolean", "title": "Verbose", "default": false}
 	]
 }`
-
-// A fixture file in which the entry of the old layout holds an object where the plugin declares text.
-const objectWhereTextIsDeclared = `{"importing":{"yt_dlp":{"environment":{"SSL_CERT_FILE":"/etc/ssl/certs/ca-certificates.crt"}}}}`
 
 // installationWith is a configuration over a settings file with the content given, and a plugin host
 // that discovered the importer.
@@ -71,7 +72,7 @@ func TestAValueOfTheWrongTypeInTheShellIsDroppedAndTheFileReads(t *testing.T) {
 	cfg, _ := installationWith(t, `{"app":{"appearance":{"textScale":"big"}}}`)
 	got, err := cfg.Settings()
 	if err != nil {
-		t.Fatalf("the file was refused: %v", err)
+		t.Fatalf("the read stops: %v", err)
 	}
 	if value, _ := got.GetValue("app", "appearance", "textScale"); value != 1.0 {
 		t.Errorf("the text scale in force is %v, want the default", value)
@@ -85,7 +86,7 @@ func TestAnObjectWhereAPluginDeclaresTextIsDroppedAndTheFileReads(t *testing.T) 
 	cfg, _ := installationWith(t, `{"`+importerID+`":{"ytDlp":{"environment":{"A":"b"}},"retries":5}}`)
 	got, err := cfg.Settings()
 	if err != nil {
-		t.Fatalf("the file was refused: %v", err)
+		t.Fatalf("the read stops: %v", err)
 	}
 	owner := got.GetOwner(importerID)
 	if _, found := owner["ytDlp"]; found || owner["retries"] != 5.0 {
@@ -100,7 +101,7 @@ func TestATextWhereAPluginDeclaresANumberIsDroppedAndTheFileReads(t *testing.T) 
 	cfg, _ := installationWith(t, `{"`+importerID+`":{"retries":"many","verbose":true}}`)
 	got, err := cfg.Settings()
 	if err != nil {
-		t.Fatalf("the file was refused: %v", err)
+		t.Fatalf("the read stops: %v", err)
 	}
 	owner := got.GetOwner(importerID)
 	if _, found := owner["retries"]; found || owner["verbose"] != true {
@@ -115,7 +116,7 @@ func TestATextWhereThePluginIsSwitchedOnOrOffIsDroppedAndTheFileReads(t *testing
 	cfg, _ := installationWith(t, `{"`+importerID+`":{"enabled":"yes","retries":2}}`)
 	got, err := cfg.Settings()
 	if err != nil {
-		t.Fatalf("the file was refused: %v", err)
+		t.Fatalf("the read stops: %v", err)
 	}
 	owner := got.GetOwner(importerID)
 	if _, found := owner["enabled"]; found || owner["retries"] != 2.0 {
@@ -136,7 +137,7 @@ func TestStoredSecretsThatAreNoListOfNamesAreDroppedAndTheFileReads(t *testing.T
 			cfg, _ := installationWith(t, `{"`+importerID+`":{"storedSecrets":`+stored+`,"retries":2}}`)
 			got, err := cfg.Settings()
 			if err != nil {
-				t.Fatalf("the file was refused: %v", err)
+				t.Fatalf("the read stops: %v", err)
 			}
 			owner := got.GetOwner(importerID)
 			if _, found := owner["storedSecrets"]; found || owner["retries"] != 2.0 {
@@ -187,68 +188,19 @@ func TestAFileThatIsNoJSONStillStopsTheReadAndNamesTheFile(t *testing.T) {
 	}
 }
 
-func TestAnObjectMovedFromAnOldKeyToATextSettingDoesNotStopTheStart(t *testing.T) {
-	cfg, path := installationWith(t, objectWhereTextIsDeclared)
-	if err := cfg.MigratePluginSettings(); err != nil {
-		t.Fatalf("the start stops: %v", err)
-	}
-	got, err := cfg.Settings()
-	if err != nil {
-		t.Fatalf("the file was refused: %v", err)
-	}
-	if value, found := got.GetValue(importerID, "ytDlp"); found {
-		t.Errorf("the object is in force as the yt-dlp program: %v", value)
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(raw) != objectWhereTextIsDeclared {
-		t.Errorf("the file is now:\n%s", raw)
-	}
-}
-
-func TestATextMovedFromAnOldKeyToATextSettingIsStillMoved(t *testing.T) {
-	cfg, _ := installationWith(t, `{"importing":{"yt_dlp":"/usr/bin/yt-dlp"}}`)
-	if err := cfg.MigratePluginSettings(); err != nil {
-		t.Fatal(err)
-	}
-	got, err := cfg.Settings()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if value, _ := got.GetValue(importerID, "ytDlp"); value != "/usr/bin/yt-dlp" {
-		t.Errorf("the program in force is %v", value)
-	}
-}
-
-func TestAnObjectUnderTheKeyPluginsDoesNotStopTheStart(t *testing.T) {
-	cfg, _ := installationWith(t, `{"plugins":{"`+importerID+`":{"ytDlp":{"environment":{"A":"b"}}}}}`)
-	if err := cfg.MigratePluginSettings(); err != nil {
-		t.Fatalf("the start stops: %v", err)
-	}
-	got, err := cfg.Settings()
-	if err != nil {
-		t.Fatalf("the file was refused: %v", err)
-	}
-	if value, found := got.GetValue(importerID, "ytDlp"); found {
-		t.Errorf("the object is in force as the yt-dlp program: %v", value)
-	}
-}
-
-func TestSeveralOldKeysHoldingTheWrongTypeDoNotStopTheStartOneAfterAnother(t *testing.T) {
-	const old = `{"importing":{"yt_dlp":{"environment":{"A":"b"}},"ffmpeg":{"command":["ffmpeg","-y"]}}}`
+func TestOldKeysOfTheFileAreIgnoredWithNoticesThatNameThemAndNothingIsCarriedIntoAPlugin(t *testing.T) {
+	const old = `{"importing":{"yt_dlp":{"environment":{"A":"b"}},"ffmpeg":{"command":["ffmpeg","-y"]}},"review":{"day_start_time":"05:00"}}`
 	cfg, path := installationWith(t, old)
-	if err := cfg.MigratePluginSettings(); err != nil {
-		t.Fatalf("the start stops: %v", err)
-	}
 	got, err := cfg.Settings()
 	if err != nil {
-		t.Fatalf("the file was refused: %v", err)
+		t.Fatalf("the read stops: %v", err)
 	}
-	for _, key := range []string{"ytDlp", "ffmpeg"} {
-		if value, found := got.GetValue(importerID, key); found {
-			t.Errorf("%s is in force as %v", key, value)
+	if owner := got.GetOwner(importerID); len(owner) != 0 {
+		t.Errorf("the object of the plugin holds %v", owner)
+	}
+	for _, key := range []string{"importing", "review"} {
+		if countNotices(got.Notices, key, "ignored") != 1 {
+			t.Errorf("no notice names %s: %q", key, got.Notices)
 		}
 	}
 	raw, err := os.ReadFile(path)
@@ -260,29 +212,39 @@ func TestSeveralOldKeysHoldingTheWrongTypeDoNotStopTheStartOneAfterAnother(t *te
 	}
 }
 
-func TestAListMovedFromAnOldKeyToATextSettingDoesNotStopTheStart(t *testing.T) {
-	cfg, _ := installationWith(t, `{"importing":{"ffmpeg":{"command":["ffmpeg"]}}}`)
-	if err := cfg.MigratePluginSettings(); err != nil {
-		t.Fatalf("the start stops: %v", err)
-	}
-	if _, err := cfg.Settings(); err != nil {
-		t.Fatalf("the file was refused: %v", err)
-	}
-}
-
-func TestAnOldKeyOfTheWrongTypeDoesNotKeepAnotherOldKeyFromMoving(t *testing.T) {
-	cfg, _ := installationWith(t, `{"importing":{"yt_dlp":{"environment":{"A":"b"}},"ffmpeg":"/usr/bin/ffmpeg"}}`)
-	if err := cfg.MigratePluginSettings(); err != nil {
-		t.Fatalf("the start stops: %v", err)
-	}
+func TestAnObjectUnderTheKeyPluginsIsIgnoredWithANotice(t *testing.T) {
+	cfg, _ := installationWith(t, `{"plugins":{"`+importerID+`":{"ytDlp":{"environment":{"A":"b"}}}}}`)
 	got, err := cfg.Settings()
 	if err != nil {
-		t.Fatal(err)
-	}
-	if value, _ := got.GetValue(importerID, "ffmpeg"); value != "/usr/bin/ffmpeg" {
-		t.Errorf("the program in force is %v", value)
+		t.Fatalf("the read stops: %v", err)
 	}
 	if value, found := got.GetValue(importerID, "ytDlp"); found {
 		t.Errorf("the object is in force as the yt-dlp program: %v", value)
+	}
+	if countNotices(got.Notices, "plugins", "ignored") != 1 {
+		t.Errorf("the notices are %q", got.Notices)
+	}
+}
+
+func TestNoPathCarriesAnOldKeyIntoASettingOfAPlugin(t *testing.T) {
+	removed := []string{"MigratePluginSettings", "collectPluginSettingsMigrations", "migrateOneSetting"}
+	files, err := filepath.Glob("*.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range files {
+		if strings.HasSuffix(file, "_test.go") {
+			continue
+		}
+		parsed, err := parser.ParseFile(token.NewFileSet(), file, nil, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ast.Inspect(parsed, func(node ast.Node) bool {
+			if declared, ok := node.(*ast.FuncDecl); ok && slices.Contains(removed, declared.Name.Name) {
+				t.Errorf("%s still has %s", file, declared.Name.Name)
+			}
+			return true
+		})
 	}
 }
