@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 
 	"connectrpc.com/connect"
@@ -212,7 +213,15 @@ func (b *Embedder) reportReadError(err error) {
 }
 
 // announceModelChange reads the model and runs the listeners when it differs from the announced one.
+// The listeners run after changeMu is released, so a listener may register another one.
 func (b *Embedder) announceModelChange() {
+	for _, fn := range b.readModelChange() {
+		fn()
+	}
+}
+
+// readModelChange reads the model under changeMu and returns the listeners to run, none when the model is the announced one.
+func (b *Embedder) readModelChange() []func() {
 	b.changeMu.Lock()
 	defer b.changeMu.Unlock()
 	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelRefreshTimeout)
@@ -220,21 +229,19 @@ func (b *Embedder) announceModelChange() {
 	client, call, err := b.service.Open(ctx)
 	if err != nil {
 		b.reportReadError(fmt.Errorf("open embedding plugin %s: %w", b.pluginID, err))
-		return
+		return nil
 	}
 	model, concurrency, floorHint, readErr := readClientModel(ctx, b.pluginID, client)
 	if err := errors.Join(readErr, call.Close()); err != nil {
 		b.reportReadError(fmt.Errorf("read model of embedding plugin %s: %w", b.pluginID, err))
-		return
+		return nil
 	}
 	b.mu.Lock()
 	b.model, b.concurrency, b.floorHint = model, concurrency, floorHint
 	b.mu.Unlock()
 	if model == b.announced {
-		return
+		return nil
 	}
 	b.announced = model
-	for _, fn := range b.listeners {
-		fn()
-	}
+	return slices.Clone(b.listeners)
 }
