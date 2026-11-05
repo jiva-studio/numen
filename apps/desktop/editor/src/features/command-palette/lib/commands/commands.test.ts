@@ -51,7 +51,7 @@ describe('the commands over the vaults an installation holds', () => {
 })
 
 describe('the commands that ask for a choice among a few', () => {
-  it('are none of the editor, which leaves the settings to offer theirs', () => {
+  it('are none of the editor, since the settings offer theirs', () => {
     const choosing = createCommands(words)
       .filter((one) => one.input === 'choice')
       .map((one) => one.id)

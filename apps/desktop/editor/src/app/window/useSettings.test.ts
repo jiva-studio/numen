@@ -271,7 +271,7 @@ describe('the lists the palette offers for a setting', () => {
     }
   })
 
-  it('writes the row chosen at the path of the setting through the settings the window holds', async () => {
+  it('writes the row chosen under the path of the setting through the settings the window holds', async () => {
     const { settings } = createSettings()
     settings.rest.app.value = SHELL_DECLARATION
     const write = vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()

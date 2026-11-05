@@ -1167,7 +1167,7 @@ describe('the command of a setting', () => {
     expect(one.actions).toStrictEqual(['setting setting:app:performance.profile eco'])
   })
 
-  it('reports the reason a write is refused as a message of the window', async () => {
+  it('reports the reason a write is rejected as a message of the window', async () => {
     const one = window()
     const failing: CommandDeps = {
       ...one.on,

@@ -362,7 +362,7 @@ describe('the choice step of a setting', () => {
 })
 
 describe('choosing a row', () => {
-  it('writes a boolean at the path of its owner as true or false', async () => {
+  it('writes a boolean under the path of its owner as true or false', async () => {
     const { palette, write } = createPalette()
 
     await palette.choose('setting:md.example.scanner:autoScan', 'on')
@@ -408,7 +408,7 @@ describe('choosing a row', () => {
     expect(write).not.toHaveBeenCalled()
   })
 
-  it('passes on the reason a write is refused', async () => {
+  it('passes on the reason a write is rejected', async () => {
     const { palette, write } = createPalette()
     write.mockRejectedValueOnce(new Error('value out of range'))
 
@@ -419,7 +419,7 @@ describe('choosing a row', () => {
 })
 
 describe('a setting that is previewed while focused', () => {
-  it('is applied at its path as the keyboard stands on each of its rows', () => {
+  it('is applied under its path as the keyboard stands on each of its rows', () => {
     const { palette, applied } = createPalette()
 
     palette.lists.previewItem('setting:app:appearance.theme', 'preset:dracula')
@@ -433,7 +433,7 @@ describe('a setting that is previewed while focused', () => {
     ])
   })
 
-  it('is restored once when the keyboard leaves the step without a choice', () => {
+  it('is restored once when the keyboard exits the step without a choice', () => {
     const { palette, applied } = createPalette()
 
     palette.lists.previewItem('setting:app:appearance.theme', 'preset:dracula')
