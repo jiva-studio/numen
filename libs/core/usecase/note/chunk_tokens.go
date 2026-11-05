@@ -1,11 +1,22 @@
 package note
 
+import "sync/atomic"
+
 // ChunkTokens is the chunk size in tokens that the embedding plugin reports, shared by every copy of the
-// configuration that holds it.
-type ChunkTokens struct{}
+// configuration that holds it. A nil ChunkTokens is a size that is not known.
+type ChunkTokens struct{ tokens atomic.Int64 }
 
 // Set holds the chunk size in tokens; zero is a size that is not known.
-func (*ChunkTokens) Set(int) {}
+func (c *ChunkTokens) Set(tokens int) {
+	if c != nil {
+		c.tokens.Store(int64(tokens))
+	}
+}
 
 // Get is the chunk size in tokens, and zero where it is not known.
-func (*ChunkTokens) Get() int { return 0 }
+func (c *ChunkTokens) Get() int {
+	if c == nil {
+		return 0
+	}
+	return int(c.tokens.Load())
+}

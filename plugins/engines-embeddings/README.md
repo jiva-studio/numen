@@ -16,6 +16,7 @@ Provides meaning-based search across your vault so you can find related notes, b
   - **OpenRouter / OpenAI / Custom service**: Uses an online service to index your library using your **API key**.
 - **Model**: Pick one of the suggested models from the list. For **Local** the list is E5 small (the default, 118 MB, runs well on a CPU), Harrier 270M (better results, 344 MB) and BGE-M3 (large, 569 MB). Any other local model needs a profile of your own, described below. For a remote provider, type the model name the service lists.
 - **Smallest piece of text to index for meaning**: Pieces of text shorter than this many characters, such as page numbers and running heads, get no vector, so they do not crowd out real answers. They stay searchable by their words. A note shorter than this is found by its words too. The default is 40, and 0 gives every piece a vector. Changing it does not make the other vectors stale: no text is embedded again, and the vectors of the pieces below the new value are removed.
+- **Longest chunk of a note, in tokens**: A note is cut into chunks of at most this many tokens, and each chunk gets a vector. The chunk never exceeds the input limit of the model. A smaller value gives more precise passages and more vectors. The default is 256, and the value is held between 16 and 8192. A change cuts the notes again in every open vault; the vectors of texts that did not move are kept.
 
 ## Model profiles
 

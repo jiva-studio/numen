@@ -21,7 +21,7 @@ The model a vector came from is stored with it, so a vault read by another model
 
 ## The rest
 
-The key `indexing.embedding.max_tokens` in [the settings file](/settings/) applies to the index, not the model. It is the input limit, in tokens, for a chunk that has a vector; chunks are cut to stay below it. It is 256 by default; a model that accepts more input can use longer chunks.
+The setting "Longest chunk of a note, in tokens" (`chunkTokens`) of the Vector Embeddings plugin sets how long a chunk of a note may be. Each chunk has a vector, and a note is cut into chunks of at most that many tokens. It is 256 by default, it is held between 16 and 8192, and it never exceeds the input limit of the model. A smaller value gives more precise passages and more vectors. Changing it cuts the notes of every open vault again; the vectors of the texts that did not move are kept. Without the plugin, notes are cut at a built-in length.
 
 The relevance threshold is how close a passage has to be to a question to count as a result. The Search Relevance plugin measures it on your vault for the model in use and lets you set it by hand. How a model places two pieces of text relative to each other depends on that model, so each model has its own threshold.
 

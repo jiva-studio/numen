@@ -128,7 +128,11 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 
 	group := u.newGroup(v, &res)
-	observed, err := u.indexChanged(ctx, reader, found, recognized, &group, &res)
+	recutPaths, err := u.getStaleNotes(ctx, v)
+	if err != nil {
+		return res, err
+	}
+	observed, err := u.indexChanged(ctx, reader, found, recognized, recutPaths, &group, &res)
 	if err != nil {
 		return res, err
 	}
@@ -149,6 +153,23 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 
 	return res, nil
+}
+
+// getStaleNotes is the set of the paths of the notes whose recorded cut is not the cut of this scan,
+// and empty where the chunk size is not known or no check is given.
+func (u Scan) getStaleNotes(ctx context.Context, v domain.Vault) (map[string]bool, error) {
+	if !u.ShouldRecut || u.Stale == nil {
+		return nil, nil
+	}
+	paths, err := u.Stale(ctx, v.ID, u.Cut.Recipe())
+	if err != nil {
+		return nil, fmt.Errorf("read the notes cut another way: %w", err)
+	}
+	recutPaths := make(map[string]bool, len(paths))
+	for _, path := range paths {
+		recutPaths[path] = true
+	}
+	return recutPaths, nil
 }
 
 // walkVault is every file of the vault, the most recently modified first. The walk
@@ -190,6 +211,7 @@ func (u Scan) indexChanged(
 	reader vaultport.VaultReader,
 	found []domain.FileStat,
 	indexed map[string]domain.FileStat,
+	recutPaths map[string]bool,
 	group *grouping,
 	res *ScanResult,
 ) (map[string]bool, error) {
@@ -207,7 +229,7 @@ func (u Scan) indexChanged(
 		res.Notes++
 		observed[ref.Path] = true
 
-		if previous, ok := indexed[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
+		if previous, ok := indexed[ref.Path]; ok && !u.ShouldRebuildIndex && !recutPaths[ref.Path] && previous.IsUnchanged(ref) {
 			res.Unchanged++
 			continue
 		}

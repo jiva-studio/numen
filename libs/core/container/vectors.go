@@ -45,5 +45,7 @@ func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() er
 	if err != nil {
 		return nil, nil, err
 	}
+	c.Chunks.Set(bridge.GetModel().ChunkTokens)
+	bridge.OnModelChange(func() { c.Chunks.Set(bridge.GetModel().ChunkTokens) })
 	return bridge, bridge.Close, nil
 }

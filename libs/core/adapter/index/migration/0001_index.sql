@@ -21,7 +21,7 @@ CREATE TABLE vaults (
 -- something computes it. A source is saved and removed by its path, and a hash
 -- is what lets a moved file keep what was derived from it.
 --
--- `recipe` is what extracted the text, and is null while nothing has.
+-- `recipe` is what extracted the text, or what cut it for a note, and is null while nothing has.
 --
 -- `producer` is which producer made the text this source's chunks are places
 -- in. A scanned document holds no text a machine can take out of it: what

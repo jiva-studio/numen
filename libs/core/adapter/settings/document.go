@@ -6,36 +6,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 )
 
-// Indexing is how a vault is made searchable.
-type Indexing struct {
-	// Embedding is how notes are split into chunks and how the vectors of the chunks are stored.
-	Embedding EmbeddingConfig `json:"embedding"`
-}
-
-// DefaultIndexing is the indexing configuration of an unconfigured installation.
-func DefaultIndexing() Indexing {
-	return Indexing{
-		Embedding: DefaultEmbedding(),
-	}
-}
-
-// EmbeddingConfig is the embedding section of this installation's settings.
-type EmbeddingConfig struct {
-	// MaxTokens is the input limit, in tokens, of one chunk that gets a vector.
-	MaxTokens int `json:"max_tokens"`
-}
-
-// DefaultEmbedding cuts chunks a model reading 256 tokens takes whole.
-func DefaultEmbedding() EmbeddingConfig {
-	return EmbeddingConfig{MaxTokens: 256}
-}
-
 // File is the file in which the user configures this installation.
 type File struct {
 	// Version is the format version of the file. Nothing reads it yet.
 	Version     int                  `json:"v"`
 	Appearance  Appearance           `json:"appearance"`
-	Indexing    Indexing             `json:"indexing"`
 	Agent       Agent                `json:"agent"`
 	Titles      Titles               `json:"naming"`
 	Performance hardware.Performance `json:"performance"`
@@ -73,7 +48,6 @@ func DefaultFile() File {
 	return File{
 		Version:     DefaultVersion,
 		Appearance:  DefaultAppearance(),
-		Indexing:    DefaultIndexing(),
 		Titles:      DefaultTitles(),
 		Performance: hardware.DefaultPerformance(),
 	}

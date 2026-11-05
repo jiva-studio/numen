@@ -351,7 +351,7 @@ func (s *mockEmbeddingServer) EmbedBatch(
 
 // vaultConfig gives a folder an identity and registers it, and answers with the
 // configuration that opens it.
-func vaultConfig(t *testing.T, embedding container.EmbeddingConfig) container.Config {
+func vaultConfig(t *testing.T) container.Config {
 	t.Helper()
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
@@ -360,7 +360,6 @@ func vaultConfig(t *testing.T, embedding container.EmbeddingConfig) container.Co
 	cfg := container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
-		Embedding:    embedding,
 	})
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -425,7 +424,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
-	cfg := vaultConfig(t, container.EmbeddingConfig{})
+	cfg := vaultConfig(t)
 	cfg.PluginHost = host
 
 	installation, err := Open(
@@ -446,7 +445,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 // An installation with no model opens, and reports that by having none.
 func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	installation, err := Open(
-		t.Context(), NewAssembly(t, vaultConfig(t, container.EmbeddingConfig{})), "", os.Stderr)
+		t.Context(), NewAssembly(t, vaultConfig(t)), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -491,7 +490,7 @@ func (g gatedWalk) StartVault(
 // pass that reports itself elsewhere creates a second entry for the same work,
 // with a separate count.
 func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
-	cfg := vaultConfig(t, container.EmbeddingConfig{})
+	cfg := vaultConfig(t)
 	release := make(chan struct{})
 	var releaseOnce sync.Once
 	releaseWalk := func() { releaseOnce.Do(func() { close(release) }) }

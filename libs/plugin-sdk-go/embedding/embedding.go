@@ -107,6 +107,7 @@ func readModelInfo(res *v1.GetEmbeddingModelResponse) ModelInfo {
 		Concurrency:    res.GetConcurrency(),
 		FloorHint:      res.GetFloorHint(),
 		MinChunkLength: res.GetMinChunkLength(),
+		ChunkTokens:    res.GetChunkTokens(),
 		Handling:       res.GetHandling(),
 	}
 }
@@ -121,6 +122,7 @@ func writeModelInfo(info ModelInfo) *v1.GetEmbeddingModelResponse {
 		Concurrency:    info.Concurrency,
 		FloorHint:      info.FloorHint,
 		MinChunkLength: info.MinChunkLength,
+		ChunkTokens:    info.ChunkTokens,
 		Handling:       info.Handling,
 	}
 }

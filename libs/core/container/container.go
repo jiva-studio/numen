@@ -66,9 +66,6 @@ type Config struct {
 	// Hardware specifies hardware specifications detected for the host system.
 	Hardware hardware.Specs
 
-	// Embedding is how the index stores and queries vectors.
-	Embedding EmbeddingConfig
-
 	// Chunks is the chunk size the embedding plugin reports, which every cut of a note takes. NewConfig
 	// makes it.
 	Chunks *ChunkTokens

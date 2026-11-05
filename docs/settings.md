@@ -150,21 +150,9 @@ A model open when the profile changes closes when its running batches end, and t
 
 ## How the index keeps vectors
 
-The Vector Embeddings plugin creates the vectors: which model, where it runs, and the key of a service are its own settings. The index stores the vectors the plugin creates and searches them, and this section is about the index alone.
+The Vector Embeddings plugin creates the vectors: which model, where it runs, the key of a service and the longest chunk of a note are its own settings. The index stores the vectors the plugin creates and searches them, and this section is about the index alone.
 
-```json
-{
-  "indexing": {
-    "embedding": {
-      "max_tokens": 256
-    }
-  }
-}
-```
-
-|              |                                                                                                                                                                                       |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `max_tokens` | the input limit, in tokens, for a chunk that has a vector. A chunk longer than the model reads has a vector that describes text it does not contain. Zero uses the chunking defaults. |
+The core settings file holds no setting of the chunk size. The plugin setting `chunkTokens` (default 256, from 16 to 8192, held to the input limit of the model) is reported to the core with the model, and the core cuts notes at it. With no embedding plugin, or one that names no size, notes are cut at the chunking default of 1000 characters. The index records the cut of each note, and a note recorded with another cut is read and cut again on the next scan; a change of the setting in an open window builds the session of the vault again. A scan that does not know the size cuts new and changed notes at the default and does not cut the others again.
 
 The floor, how similar a passage has to be to a question to count as an answer, is not a setting in the file. The index stores one floor for each vault under each model and applies it to every search by meaning. A floor given in a query takes precedence over the one the index stores, which takes precedence over the initial floor the model's plugin reports, which takes precedence over 0.30. The Search Relevance plugin, `md.numen.tools.search.relevance`, measures the floor on the vault, lets a person set one, and stores the result in the index; with the plugin disabled the index keeps applying the last floor it stored. How similar a model scores two texts about different things is a property of that model, so a changed model has a floor of its own.
 

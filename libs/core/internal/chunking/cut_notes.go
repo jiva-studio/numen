@@ -1,6 +1,7 @@
 package chunking
 
 import (
+	"fmt"
 	"regexp"
 	"slices"
 	"strings"
@@ -34,18 +35,32 @@ func NewCutNotes(maxTokens int) CutNotes {
 	return CutNotes{Sizes: Sizes{Limit: GetCharacterBound(maxTokens)}}
 }
 
+// noteCutReader names the algorithm that cuts a note. It changes with the algorithm, so that notes cut
+// by the old one are cut again.
+const noteCutReader = "note-cut-1"
+
 // Recipe names how this cut turns a note into chunks: the sizes it cuts at.
 func (u CutNotes) Recipe() string {
-	return ""
+	sizes := u.getSizes().Resolve()
+	return fmt.Sprintf("%s/large=%d+%d/small=%d+%d/limit=%d",
+		noteCutReader, sizes.Large, sizes.LargeOverlap, sizes.Small, sizes.SmallOverlap, sizes.Limit)
+}
+
+// getSizes is the sizes a note is cut to: one large chunk over the whole note.
+func (u CutNotes) getSizes() Sizes {
+	sizes := u.Sizes
+	sizes.Large = Whole
+	return sizes
 }
 
 // Execute gives each note with its indexed headings and the chunks of its body.
 func (u CutNotes) Execute(notes []domain.Note) []domain.NoteChunks {
 	out := make([]domain.NoteChunks, 0, len(notes))
+	recipe := u.Recipe()
 	for _, n := range notes {
 		profile := u.getProfile(n.Type)
 		headings := getIndexedHeadings(n, profile)
-		out = append(out, domain.NoteChunks{Note: n, Headings: headings, Chunks: u.cut(n, headings, profile)})
+		out = append(out, domain.NoteChunks{Note: n, Headings: headings, Chunks: u.cut(n, headings, profile), Recipe: recipe})
 	}
 	return out
 }
@@ -61,8 +76,7 @@ func (u CutNotes) cut(n domain.Note, headings []domain.Heading, profile domain.N
 	}
 
 	pos := max(int(n.FileStat.Size)-len(n.Body), 0)
-	sizes := u.Sizes
-	sizes.Large = Whole
+	sizes := u.getSizes()
 	body := n.Body
 
 	out := Chunks(body, getPartStarts(headings), sizes, u.Legibility,
