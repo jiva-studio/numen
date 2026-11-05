@@ -411,12 +411,12 @@ function initWindowKindsAndCommands(
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
-  const editorCommands = createCommands(words)
+  let editorCommands: readonly Command[] | undefined
   const menus = createPluginMenus({
     getPlacements: () => base.declaredCommands.placements.value,
     getPluginCommands: () => base.pluginHost.getPaletteCommands(),
     getDeclaredCommands: () => base.declaredCommands.commands.value,
-    getEditorCommands: () => editorCommands,
+    getEditorCommands: () => (editorCommands ??= createCommands(words)),
     reportIssue: (pluginId, message) => {
       const name = settings.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
       base.log.getWriter(`plugin:${pluginId}`)(`${name}: ${message}`, 'warning')

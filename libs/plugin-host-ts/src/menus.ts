@@ -11,7 +11,7 @@ export interface MenuPlacement {
   /** Short id of the plugin's command, or the full id of an editor command. */
   readonly command: string
   readonly group?: string
-  readonly order?: number
+  readonly order?: number | undefined
 }
 
 /** What the window knows of a command shown in a place. */
@@ -31,7 +31,7 @@ export interface PlacedCommand extends CommandLook {
   readonly command: string
   /** Empty for none. */
   readonly group: string
-  readonly order?: number
+  readonly order?: number | undefined
 }
 
 export interface MenusDeps {
@@ -52,111 +52,9 @@ const KNOWN_LOCATIONS: readonly string[] = Object.values(MENU_LOCATION)
 const isKnownLocation = (location: string): boolean => KNOWN_LOCATIONS.includes(location)
 
 /** Compares two strings by code unit, which does not depend on the language of the person. */
-const compareText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
-
-export function createMenus(deps: MenusDeps): Menus {
-  const reported = new Set<string>()
-
-  const report = (
-    pluginId: string,
-    location: string,
-    command: string,
-    kind: string,
-    text: string,
-  ) => {
-    const key = JSON.stringify([pluginId, location, command, kind])
-    if (reported.has(key)) return
-    reported.add(key)
-    deps.reportIssue?.(pluginId, text)
-  }
-
-  const place = (placement: MenuPlacement): PlacedCommand | undefined => {
-    const { pluginId, location } = placement
-    if (!isKnownLocation(location)) {
-      report(
-        pluginId,
-        location,
-        placement.command,
-        'location',
-        `menus: unknown place "${location}"`,
-      )
-      return undefined
-    }
-    const command = placement.command.includes(':')
-      ? placement.command
-      : formatCommandId(pluginId, placement.command)
-    const look = deps.findCommand(command)
-    if (look === undefined) {
-      report(
-        pluginId,
-        location,
-        command,
-        'command',
-        `menus: no command "${command}" in "${location}"`,
-      )
-      return undefined
-    }
-    if (location === MENU_LOCATION.titleBar && look.icon === undefined) {
-      report(
-        pluginId,
-        location,
-        command,
-        'icon',
-        `menus: "${command}" has no icon for "${location}"`,
-      )
-      return undefined
-    }
-    if (location === MENU_LOCATION.titleBar && look.scope === 'note') {
-      report(
-        pluginId,
-        location,
-        command,
-        'scope',
-        `menus: "${command}" needs a note, "${location}" has none`,
-      )
-      return undefined
-    }
-    return {
-      ...look,
-      pluginId,
-      command,
-      group: placement.group ?? '',
-      ...(placement.order === undefined ? {} : { order: placement.order }),
-    }
-  }
-
-  const getEntries = (location: string): readonly PlacedCommand[] => {
-    const placements = deps.getPlacements()
-    if (placements === undefined) return []
-    const candidates = placements
-      .filter((one) => one.location === location || !isKnownLocation(one.location))
-      .map(place)
-      .filter((one): one is PlacedCommand => one !== undefined)
-      .sort(compareEntries)
-    const commandIds = new Set<string>()
-    const entries: PlacedCommand[] = []
-    for (const one of candidates) {
-      if (commandIds.has(one.command)) {
-        if (
-          !entries.some((kept) => kept.command === one.command && kept.pluginId === one.pluginId)
-        ) {
-          report(
-            one.pluginId,
-            location,
-            one.command,
-            'duplicate',
-            `menus: "${one.command}" is shown in "${location}" by another plugin`,
-          )
-        }
-        continue
-      }
-      commandIds.add(one.command)
-      entries.push(one)
-    }
-    return entries
-  }
-
-  return { getEntries }
+function compareText(a: string, b: string): number {
+  if (a < b) return -1
+  return a > b ? 1 : 0
 }
 
 /** Orders two entries of one place by group, order and full command id, in plain code-unit order. */
@@ -172,4 +70,98 @@ export function compareEntries(a: PlacedCommand, b: PlacedCommand): number {
     return a.order - b.order
   }
   return compareText(a.command, b.command)
+}
+
+/** What is wrong with an entry that a place leaves out. */
+interface MenuIssue {
+  readonly pluginId: string
+  readonly location: string
+  readonly command: string
+  readonly kind: 'location' | 'command' | 'icon' | 'scope' | 'duplicate'
+  readonly message: string
+}
+
+/** Reports each issue once, whatever the number of reads. */
+function createIssueReporter(reportIssue: MenusDeps['reportIssue']): (issue: MenuIssue) => void {
+  const reported = new Set<string>()
+  return (issue) => {
+    const key = JSON.stringify([issue.pluginId, issue.location, issue.command, issue.kind])
+    if (reported.has(key)) return
+    reported.add(key)
+    reportIssue?.(issue.pluginId, issue.message)
+  }
+}
+
+/** The reason the look of a command does not fit the place, and undefined where it does. */
+function findLookIssue(location: string, look: CommandLook): MenuIssue['kind'] | undefined {
+  if (location !== MENU_LOCATION.titleBar) return undefined
+  if (look.icon === undefined) return 'icon'
+  return look.scope === 'note' ? 'scope' : undefined
+}
+
+const ISSUE_TEXT: Record<MenuIssue['kind'], string> = {
+  location: 'is placed in a place the window does not draw',
+  command: 'is a command the window does not list',
+  icon: 'has no icon, which the title bar needs',
+  scope: 'needs a note, and the title bar has none',
+  duplicate: 'is placed in this place by another plugin as well',
+}
+
+export function createMenus(deps: MenusDeps): Menus {
+  const report = createIssueReporter(deps.reportIssue)
+
+  const reportAbout = (placement: MenuPlacement, command: string, kind: MenuIssue['kind']) =>
+    report({
+      pluginId: placement.pluginId,
+      location: placement.location,
+      command,
+      kind,
+      message: `menus: "${command}" in "${placement.location}" ${ISSUE_TEXT[kind]}`,
+    })
+
+  const place = (placement: MenuPlacement): PlacedCommand | undefined => {
+    const { pluginId, location } = placement
+    if (!isKnownLocation(location)) return reportAbout(placement, placement.command, 'location')
+    const command = placement.command.includes(':')
+      ? placement.command
+      : formatCommandId(pluginId, placement.command)
+    const look = deps.findCommand(command)
+    if (look === undefined) return reportAbout(placement, command, 'command')
+    const issue = findLookIssue(location, look)
+    if (issue) return reportAbout(placement, command, issue)
+    return {
+      title: look.title,
+      ...(look.icon === undefined ? {} : { icon: look.icon }),
+      ...(look.shortcut === undefined ? {} : { shortcut: look.shortcut }),
+      ...(look.scope === undefined ? {} : { scope: look.scope }),
+      pluginId,
+      command,
+      group: placement.group ?? '',
+      ...(placement.order === undefined ? {} : { order: placement.order }),
+    }
+  }
+
+  const keepFirstOfEachCommand = (sorted: readonly PlacedCommand[], location: string) => {
+    const kept = new Map<string, PlacedCommand>()
+    for (const one of sorted) {
+      const first = kept.get(one.command)
+      if (first === undefined) kept.set(one.command, one)
+      else if (first.pluginId !== one.pluginId)
+        reportAbout({ ...one, location }, one.command, 'duplicate')
+    }
+    return [...kept.values()]
+  }
+
+  const getEntries = (location: string): readonly PlacedCommand[] => {
+    const placements = deps.getPlacements()
+    if (placements === undefined) return []
+    const sorted = placements
+      .filter((one) => one.location === location || !isKnownLocation(one.location))
+      .map(place)
+      .filter((one): one is PlacedCommand => one !== undefined)
+      .sort(compareEntries)
+    return keepFirstOfEachCommand(sorted, location)
+  }
+
+  return { getEntries }
 }
