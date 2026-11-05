@@ -51,7 +51,7 @@ func getNotesOnly() []domain.SourceKind { return []domain.SourceKind{domain.Kind
 // of its own is named once.
 func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	found, err := db.Passages().FindLexical(t.Context(), v.ID, query, getNotesOnly(), 20, false)
+	found, err := db.Passages().FindLexical(t.Context(), v.ID, query, getNotesOnly(), 20, false, "")
 	if err != nil {
 		t.Fatal(err)
 	}

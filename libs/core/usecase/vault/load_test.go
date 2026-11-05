@@ -131,7 +131,7 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 			deadline := testsupport.GetMachine().Now().Add(duration)
 			for testsupport.GetMachine().Now().Before(deadline) && ctx.Err() == nil {
 				started := testsupport.GetMachine().Now()
-				if _, err := queries.FindLexical(ctx, v.ID, query, getNotesOnly(), 20, false); err != nil {
+				if _, err := queries.FindLexical(ctx, v.ID, query, getNotesOnly(), 20, false, ""); err != nil {
 					return
 				}
 				latencies[i] = append(latencies[i], testsupport.GetMachine().Now().Sub(started))

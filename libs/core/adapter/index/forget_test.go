@@ -252,7 +252,7 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 	}
 
 	queries := db.ChunkQueries()
-	lexical, err := queries.FindLexical(ctx, getSecond().ID, "second", nil, 10, false)
+	lexical, err := queries.FindLexical(ctx, getSecond().ID, "second", nil, 10, false, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +265,7 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 		}
 	}
 
-	sections, err := queries.GetNamedPassages(ctx, getSecond().ID, "second section", nil, 10, false)
+	sections, err := queries.GetNamedPassages(ctx, getSecond().ID, "second section", nil, 10, false, "")
 	if err != nil {
 		t.Fatal(err)
 	}

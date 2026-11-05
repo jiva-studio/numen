@@ -215,6 +215,12 @@ func (e *searchEndpoint) GetBestSimilarity(
 	return connect.NewResponse(&v1.GetBestSimilarityResponse{Similarity: best}), nil
 }
 
+func (e *searchEndpoint) SearchPassages(
+	ctx context.Context, req *connect.Request[v1.HostSearchPassagesRequest],
+) (*connect.Response[v1.HostSearchPassagesResponse], error) {
+	return connect.NewResponse(&v1.HostSearchPassagesResponse{}), nil
+}
+
 func (e *searchEndpoint) GetSearchFloor(
 	ctx context.Context, req *connect.Request[v1.GetSearchFloorRequest],
 ) (*connect.Response[v1.GetSearchFloorResponse], error) {

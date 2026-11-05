@@ -48,6 +48,9 @@ const (
 	// HostSearchServiceGetBestSimilarityProcedure is the fully-qualified name of the
 	// HostSearchService's GetBestSimilarity RPC.
 	HostSearchServiceGetBestSimilarityProcedure = "/numen.v1.HostSearchService/GetBestSimilarity"
+	// HostSearchServiceSearchPassagesProcedure is the fully-qualified name of the HostSearchService's
+	// SearchPassages RPC.
+	HostSearchServiceSearchPassagesProcedure = "/numen.v1.HostSearchService/SearchPassages"
 	// HostSearchServiceGetSearchFloorProcedure is the fully-qualified name of the HostSearchService's
 	// GetSearchFloor RPC.
 	HostSearchServiceGetSearchFloorProcedure = "/numen.v1.HostSearchService/GetSearchFloor"
@@ -80,6 +83,11 @@ type HostSearchServiceClient interface {
 	// GetBestSimilarity is the cosine similarity of the passage of the vault
 	// nearest a vector under the recipe, and zero when the vault has none.
 	GetBestSimilarity(context.Context, *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error)
+	// SearchPassages is the text of the vault that answers a query, from the index
+	// of every source and every text version: by the words in it and by what it
+	// means where the installation has an embedding model, by the words alone
+	// where it has none. It is the search the window runs, with the same floor.
+	SearchPassages(context.Context, *connect.Request[v1.HostSearchPassagesRequest]) (*connect.Response[v1.HostSearchPassagesResponse], error)
 	// GetSearchFloor is the floor a search by meaning applies to the vault under
 	// the recipe, and where it comes from.
 	GetSearchFloor(context.Context, *connect.Request[v1.GetSearchFloorRequest]) (*connect.Response[v1.GetSearchFloorResponse], error)
@@ -130,6 +138,12 @@ func NewHostSearchServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(hostSearchServiceMethods.ByName("GetBestSimilarity")),
 			connect.WithClientOptions(opts...),
 		),
+		searchPassages: connect.NewClient[v1.HostSearchPassagesRequest, v1.HostSearchPassagesResponse](
+			httpClient,
+			baseURL+HostSearchServiceSearchPassagesProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("SearchPassages")),
+			connect.WithClientOptions(opts...),
+		),
 		getSearchFloor: connect.NewClient[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse](
 			httpClient,
 			baseURL+HostSearchServiceGetSearchFloorProcedure,
@@ -152,6 +166,7 @@ type hostSearchServiceClient struct {
 	embedTexts         *connect.Client[v1.EmbedTextsRequest, v1.EmbedTextsResponse]
 	sampleSimilarities *connect.Client[v1.SampleSimilaritiesRequest, v1.SampleSimilaritiesResponse]
 	getBestSimilarity  *connect.Client[v1.GetBestSimilarityRequest, v1.GetBestSimilarityResponse]
+	searchPassages     *connect.Client[v1.HostSearchPassagesRequest, v1.HostSearchPassagesResponse]
 	getSearchFloor     *connect.Client[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse]
 	setSearchFloor     *connect.Client[v1.SetSearchFloorRequest, v1.SetSearchFloorResponse]
 }
@@ -179,6 +194,11 @@ func (c *hostSearchServiceClient) SampleSimilarities(ctx context.Context, req *c
 // GetBestSimilarity calls numen.v1.HostSearchService.GetBestSimilarity.
 func (c *hostSearchServiceClient) GetBestSimilarity(ctx context.Context, req *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error) {
 	return c.getBestSimilarity.CallUnary(ctx, req)
+}
+
+// SearchPassages calls numen.v1.HostSearchService.SearchPassages.
+func (c *hostSearchServiceClient) SearchPassages(ctx context.Context, req *connect.Request[v1.HostSearchPassagesRequest]) (*connect.Response[v1.HostSearchPassagesResponse], error) {
+	return c.searchPassages.CallUnary(ctx, req)
 }
 
 // GetSearchFloor calls numen.v1.HostSearchService.GetSearchFloor.
@@ -215,6 +235,11 @@ type HostSearchServiceHandler interface {
 	// GetBestSimilarity is the cosine similarity of the passage of the vault
 	// nearest a vector under the recipe, and zero when the vault has none.
 	GetBestSimilarity(context.Context, *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error)
+	// SearchPassages is the text of the vault that answers a query, from the index
+	// of every source and every text version: by the words in it and by what it
+	// means where the installation has an embedding model, by the words alone
+	// where it has none. It is the search the window runs, with the same floor.
+	SearchPassages(context.Context, *connect.Request[v1.HostSearchPassagesRequest]) (*connect.Response[v1.HostSearchPassagesResponse], error)
 	// GetSearchFloor is the floor a search by meaning applies to the vault under
 	// the recipe, and where it comes from.
 	GetSearchFloor(context.Context, *connect.Request[v1.GetSearchFloorRequest]) (*connect.Response[v1.GetSearchFloorResponse], error)
@@ -261,6 +286,12 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 		connect.WithSchema(hostSearchServiceMethods.ByName("GetBestSimilarity")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostSearchServiceSearchPassagesHandler := connect.NewUnaryHandler(
+		HostSearchServiceSearchPassagesProcedure,
+		svc.SearchPassages,
+		connect.WithSchema(hostSearchServiceMethods.ByName("SearchPassages")),
+		connect.WithHandlerOptions(opts...),
+	)
 	hostSearchServiceGetSearchFloorHandler := connect.NewUnaryHandler(
 		HostSearchServiceGetSearchFloorProcedure,
 		svc.GetSearchFloor,
@@ -285,6 +316,8 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 			hostSearchServiceSampleSimilaritiesHandler.ServeHTTP(w, r)
 		case HostSearchServiceGetBestSimilarityProcedure:
 			hostSearchServiceGetBestSimilarityHandler.ServeHTTP(w, r)
+		case HostSearchServiceSearchPassagesProcedure:
+			hostSearchServiceSearchPassagesHandler.ServeHTTP(w, r)
 		case HostSearchServiceGetSearchFloorProcedure:
 			hostSearchServiceGetSearchFloorHandler.ServeHTTP(w, r)
 		case HostSearchServiceSetSearchFloorProcedure:
@@ -316,6 +349,10 @@ func (UnimplementedHostSearchServiceHandler) SampleSimilarities(context.Context,
 
 func (UnimplementedHostSearchServiceHandler) GetBestSimilarity(context.Context, *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.GetBestSimilarity is not implemented"))
+}
+
+func (UnimplementedHostSearchServiceHandler) SearchPassages(context.Context, *connect.Request[v1.HostSearchPassagesRequest]) (*connect.Response[v1.HostSearchPassagesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.SearchPassages is not implemented"))
 }
 
 func (UnimplementedHostSearchServiceHandler) GetSearchFloor(context.Context, *connect.Request[v1.GetSearchFloorRequest]) (*connect.Response[v1.GetSearchFloorResponse], error) {

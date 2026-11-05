@@ -436,3 +436,11 @@ func cosineOf(query, passage []float32) float64 {
 	}
 	return dot / math.Sqrt(left*right)
 }
+
+func (s *Search) SearchPassages(_ context.Context, _ host.PassageQuery) ([]host.Passage, error) {
+	return nil, nil
+}
+
+// SetIndexedPassages is the passages the index of the vault holds, in the order it lists them. A
+// SearchPassages call answers with those whose text holds a word of the query.
+func (s *Search) SetIndexedPassages(passages []host.Passage) {}

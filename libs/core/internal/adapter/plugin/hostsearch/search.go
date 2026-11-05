@@ -28,6 +28,18 @@ type Search struct {
 	// Stats reads what the index holds for GetIndexStats.
 	Stats  *Stats
 	Policy search.FloorPolicy
+	// Finds is the search the window runs, over the same index and the model in Embedder.
+	Finds PassageFinder
+}
+
+// PassageFinder is the search of the passages of a vault, which search.Search is.
+type PassageFinder interface {
+	Execute(ctx context.Context, v domain.Vault, query string, p search.Parameters) ([]domain.Passage, error)
+}
+
+// SearchPassages is the text of the vault that answers the query.
+func (s Search) SearchPassages(ctx context.Context, v domain.Vault, q pluginport.PluginPassageQuery) ([]domain.Passage, error) {
+	return nil, nil
 }
 
 // getRecipe is the recipe of the model in use, or ErrNoModel.

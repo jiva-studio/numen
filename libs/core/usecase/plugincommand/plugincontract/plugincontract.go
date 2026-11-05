@@ -58,6 +58,7 @@ type (
 	PluginResolver         = pluginport.PluginResolver
 	PluginSearch           = pluginport.PluginSearch
 	PluginSearchIndex      = pluginport.PluginSearchIndex
+	PluginPassageQuery     = pluginport.PluginPassageQuery
 	PluginSearchPolicy     = pluginport.PluginSearchPolicy
 	PluginSearchFloor      = pluginport.PluginSearchFloor
 	PluginSimilarityQuery  = pluginport.PluginSimilarityQuery
@@ -117,6 +118,8 @@ const (
 	MaxEmbeddedTexts            = pluginport.MaxEmbeddedTexts
 	MaxSampledQueries           = pluginport.MaxSampledQueries
 	MaxSampledPassages          = pluginport.MaxSampledPassages
+	MaxSearchedPassages         = pluginport.MaxSearchedPassages
+	MaxPassageBytes             = pluginport.MaxPassageBytes
 	PluginFloorDefault          = pluginport.PluginFloorDefault
 	PluginFloorModelHint        = pluginport.PluginFloorModelHint
 	PluginFloorStored           = pluginport.PluginFloorStored

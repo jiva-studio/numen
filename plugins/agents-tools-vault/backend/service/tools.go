@@ -21,6 +21,10 @@ type Tools struct {
 	host host.Vault
 	// vault is the vault of the call being served.
 	vault host.Vault
+	// texts and search are the text versions and the search index. On the tools they are those of
+	// every vault, and nil until WithLibrary; on the tools of a call they are those of its vault.
+	texts  host.Texts
+	search host.Search
 }
 
 // New creates a Tools instance.

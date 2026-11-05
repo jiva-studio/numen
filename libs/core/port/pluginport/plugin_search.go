@@ -30,6 +30,10 @@ const (
 	// many small chunks it compares each of them with.
 	MaxSampledQueries  = 256
 	MaxSampledPassages = 500
+	// MaxSearchedPassages is how many passages one SearchPassages call returns at most, and
+	// MaxPassageBytes how many bytes of text each of them carries: a window around the hit.
+	MaxSearchedPassages = 100
+	MaxPassageBytes     = 1200
 )
 
 // PluginEmbeddingState is the model in use and how far a vault is embedded under it.
@@ -113,6 +117,21 @@ type PluginSearchIndex interface {
 	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector,
 	// zero where there is none.
 	GetBestSimilarity(ctx context.Context, v domain.Vault, recipe string, query []float32) (float64, error)
+	// SearchPassages is the text of the vault that answers the query, best first, from every source and
+	// every text version: by the words, and by the meaning where the installation has a model. An
+	// installation with no model answers by the words alone.
+	SearchPassages(ctx context.Context, v domain.Vault, q PluginPassageQuery) ([]domain.Passage, error)
+}
+
+// PluginPassageQuery is a question to the passages of a vault.
+type PluginPassageQuery struct {
+	Query string
+	// Limit is how many passages to return. Zero takes the default of the search.
+	Limit int
+	// Kinds are the kinds of source to look in. Empty looks in every one.
+	Kinds []domain.SourceKind
+	// PathPrefix limits the sources to those whose path starts with it. Empty limits none.
+	PathPrefix string
 }
 
 // PluginSearchPolicy is the floor a search by meaning applies to the vaults, as the plugins that call

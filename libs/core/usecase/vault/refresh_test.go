@@ -45,6 +45,7 @@ func passages(t *testing.T, db *container.Index, v domain.Vault, query string) [
 	t.Helper()
 	found, err := db.Passages().FindLexical(
 		t.Context(), v.ID, query, []domain.SourceKind{domain.KindFile}, 10, false,
+		"",
 	)
 	if err != nil {
 		t.Fatal(err)

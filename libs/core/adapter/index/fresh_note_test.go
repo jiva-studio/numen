@@ -19,7 +19,7 @@ func TestAFreshNoteIsSearchableByItsWordsBeforeItsVector(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := db.ChunkQueries().FindLexical(ctx, vault.ID, "water", nil, 10, true)
+	found, err := db.ChunkQueries().FindLexical(ctx, vault.ID, "water", nil, 10, true, "")
 	if err != nil {
 		t.Fatal(err)
 	}

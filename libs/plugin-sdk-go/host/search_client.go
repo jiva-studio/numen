@@ -188,6 +188,10 @@ func (c *SearchClient) SampleSimilarities(ctx context.Context, recipe string, qu
 	}, nil
 }
 
+func (c *SearchClient) SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error) {
+	return nil, nil
+}
+
 func (c *SearchClient) GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error) {
 	res, err := c.rpc.GetBestSimilarity(ctx, newSearchRequest(c, &v1.GetBestSimilarityRequest{Recipe: recipe, Query: query}))
 	if err != nil {

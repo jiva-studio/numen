@@ -19,13 +19,15 @@ import (
 type PassageQueries interface {
 	// FindLexical is the chunks of one vault whose text matches the words typed,
 	// best first, at most `limit` of them. `growing` marks the last word as possibly
-	// still being typed, and it is then matched by prefix.
-	FindLexical(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
+	// still being typed, and it is then matched by prefix. `under` limits the sources to
+	// those whose path starts with it, and the index applies it before it cuts the list
+	// at `limit`. Empty limits none.
+	FindLexical(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool, under string) ([]domain.Passage, error)
 
 	// GetNamedPassages is the sections of one vault whose names match the words
 	// typed, best first. A section is returned as the chunk it opens, so each
 	// result is located where the section begins.
-	GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
+	GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool, under string) ([]domain.Passage, error)
 
 	// FindNearest is the chunks of one vault nearest a query vector, nearest first,
 	// at most `q.Limit` of them. `q.Vector` is the full precision the model answered
@@ -45,6 +47,8 @@ type NearestQuery struct {
 	Recipe string
 	Vector []float32
 	Kinds  []domain.SourceKind
-	Limit  int
-	Floor  float64
+	// Under limits the sources to those whose path starts with it. Empty limits none.
+	Under string
+	Limit int
+	Floor float64
 }

@@ -20,11 +20,11 @@ type floorSpy struct {
 	recipes []string
 }
 
-func (s *floorSpy) FindLexical(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool) ([]domain.Passage, error) {
+func (s *floorSpy) FindLexical(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool, string) ([]domain.Passage, error) {
 	return nil, nil
 }
 
-func (s *floorSpy) GetNamedPassages(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool) ([]domain.Passage, error) {
+func (s *floorSpy) GetNamedPassages(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool, string) ([]domain.Passage, error) {
 	return nil, nil
 }
 
