@@ -28,6 +28,7 @@ import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
   disposeAllEntries,
   disposePluginEntry,
+  markActivated,
   matchesContextMenuTarget,
   runRegistration,
   setStarting,
@@ -347,9 +348,7 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
         ctx = createPluginContext(pluginId, contextHost, effectiveManifest)
         registry.contexts.set(pluginId, ctx)
         registry.disposed.delete(pluginId)
-        runRegistration(registry, () => {
-          registry.activated.value = new Set(registry.activated.value).add(pluginId)
-        })
+        markActivated(registry, pluginId)
       }
       return ctx
     },

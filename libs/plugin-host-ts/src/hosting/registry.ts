@@ -150,6 +150,13 @@ export function runRegistration<T>(registry: HostRegistry, register: () => T): T
   }
 }
 
+/** Adds a plugin to the activated ones, as a registration. */
+export function markActivated(registry: HostRegistry, pluginId: string): void {
+  runRegistration(registry, () => {
+    registry.activated.value = new Set(registry.activated.value).add(pluginId)
+  })
+}
+
 export function disposePluginEntry(pluginId: string, parts: DisposalParts): void {
   const { registry, statusViews, deps } = parts
   deps?.closeTabsForPlugin?.(pluginId)
