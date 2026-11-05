@@ -50,15 +50,15 @@ func (h *windowHost) FocusPassages(_ context.Context, req *connect.Request[v1.Fo
 	return connect.NewResponse(&v1.FocusPassagesResponse{Summary: "the document is open at that passage, with the words of it lit"}), nil
 }
 
-func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.HostReadOpenTabsRequest]) (*connect.Response[v1.HostReadOpenTabsResponse], error) {
+func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error) {
 	h.authHeader = req.Header().Get("Authorization")
 	if h.status != nil {
 		return nil, h.status
 	}
 	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
-		return connect.NewResponse(&v1.HostReadOpenTabsResponse{Error: h.code}), nil
+		return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Error: h.code}), nil
 	}
-	return connect.NewResponse(&v1.HostReadOpenTabsResponse{
+	return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{
 		ActiveId: "tab-2",
 		Tabs: []*v1.Tab{
 			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},

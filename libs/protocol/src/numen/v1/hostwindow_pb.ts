@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostwindow.proto.
  */
 export const file_numen_v1_hostwindow: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiLAoLUGFzc2FnZVNwYW4SDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIk0KFEZvY3VzUGFzc2FnZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkSJwoIcGFzc2FnZXMYAiADKAsyFS5udW1lbi52MS5QYXNzYWdlU3BhbiJWChVGb2N1c1Bhc3NhZ2VzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEg8KB3N1bW1hcnkYAiABKAkiGQoXSG9zdFJlYWRPcGVuVGFic1JlcXVlc3QieAoYSG9zdFJlYWRPcGVuVGFic1Jlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFdpbmRvd0Vycm9yQ29kZRIbCgR0YWJzGAIgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgDIAEoCSqJAQoTSG9zdFdpbmRvd0Vycm9yQ29kZRImCiJIT1NUX1dJTkRPV19FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJAogSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9OT19XSU5ET1cQARIkCiBIT1NUX1dJTkRPV19FUlJPUl9DT0RFX05PVF9GT1VORBACMoICChFIb3N0V2luZG93U2VydmljZRJECglGb2N1c05vdGUSGi5udW1lbi52MS5Gb2N1c05vdGVSZXF1ZXN0GhsubnVtZW4udjEuRm9jdXNOb3RlUmVzcG9uc2USUAoNRm9jdXNQYXNzYWdlcxIeLm51bWVuLnYxLkZvY3VzUGFzc2FnZXNSZXF1ZXN0Gh8ubnVtZW4udjEuRm9jdXNQYXNzYWdlc1Jlc3BvbnNlElUKDFJlYWRPcGVuVGFicxIhLm51bWVuLnYxLkhvc3RSZWFkT3BlblRhYnNSZXF1ZXN0GiIubnVtZW4udjEuSG9zdFJlYWRPcGVuVGFic1Jlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_workspace]);
+  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiLAoLUGFzc2FnZVNwYW4SDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIk0KFEZvY3VzUGFzc2FnZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkSJwoIcGFzc2FnZXMYAiADKAsyFS5udW1lbi52MS5QYXNzYWdlU3BhbiJWChVGb2N1c1Bhc3NhZ2VzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEg8KB3N1bW1hcnkYAiABKAkiJgokSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXF1ZXN0IoUBCiVIb3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1Jlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFdpbmRvd0Vycm9yQ29kZRIbCgR0YWJzGAIgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgDIAEoCSqJAQoTSG9zdFdpbmRvd0Vycm9yQ29kZRImCiJIT1NUX1dJTkRPV19FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJAogSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9OT19XSU5ET1cQARIkCiBIT1NUX1dJTkRPV19FUlJPUl9DT0RFX05PVF9GT1VORBACMpwCChFIb3N0V2luZG93U2VydmljZRJECglGb2N1c05vdGUSGi5udW1lbi52MS5Gb2N1c05vdGVSZXF1ZXN0GhsubnVtZW4udjEuRm9jdXNOb3RlUmVzcG9uc2USUAoNRm9jdXNQYXNzYWdlcxIeLm51bWVuLnYxLkZvY3VzUGFzc2FnZXNSZXF1ZXN0Gh8ubnVtZW4udjEuRm9jdXNQYXNzYWdlc1Jlc3BvbnNlEm8KDFJlYWRPcGVuVGFicxIuLm51bWVuLnYxLkhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVxdWVzdBovLm51bWVuLnYxLkhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_workspace]);
 
 /**
  * @generated from message numen.v1.FocusNoteRequest
@@ -136,22 +136,22 @@ export const FocusPassagesResponseSchema: GenMessage<FocusPassagesResponse> = /*
   messageDesc(file_numen_v1_hostwindow, 4);
 
 /**
- * @generated from message numen.v1.HostReadOpenTabsRequest
+ * @generated from message numen.v1.HostWindowServiceReadOpenTabsRequest
  */
-export type HostReadOpenTabsRequest = Message<"numen.v1.HostReadOpenTabsRequest"> & {
+export type HostWindowServiceReadOpenTabsRequest = Message<"numen.v1.HostWindowServiceReadOpenTabsRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.HostReadOpenTabsRequest.
- * Use `create(HostReadOpenTabsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.HostWindowServiceReadOpenTabsRequest.
+ * Use `create(HostWindowServiceReadOpenTabsRequestSchema)` to create a new message.
  */
-export const HostReadOpenTabsRequestSchema: GenMessage<HostReadOpenTabsRequest> = /*@__PURE__*/
+export const HostWindowServiceReadOpenTabsRequestSchema: GenMessage<HostWindowServiceReadOpenTabsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostwindow, 5);
 
 /**
- * @generated from message numen.v1.HostReadOpenTabsResponse
+ * @generated from message numen.v1.HostWindowServiceReadOpenTabsResponse
  */
-export type HostReadOpenTabsResponse = Message<"numen.v1.HostReadOpenTabsResponse"> & {
+export type HostWindowServiceReadOpenTabsResponse = Message<"numen.v1.HostWindowServiceReadOpenTabsResponse"> & {
   /**
    * @generated from field: numen.v1.HostWindowErrorCode error = 1;
    */
@@ -169,10 +169,10 @@ export type HostReadOpenTabsResponse = Message<"numen.v1.HostReadOpenTabsRespons
 };
 
 /**
- * Describes the message numen.v1.HostReadOpenTabsResponse.
- * Use `create(HostReadOpenTabsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.HostWindowServiceReadOpenTabsResponse.
+ * Use `create(HostWindowServiceReadOpenTabsResponseSchema)` to create a new message.
  */
-export const HostReadOpenTabsResponseSchema: GenMessage<HostReadOpenTabsResponse> = /*@__PURE__*/
+export const HostWindowServiceReadOpenTabsResponseSchema: GenMessage<HostWindowServiceReadOpenTabsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostwindow, 6);
 
 /**
@@ -243,8 +243,8 @@ export const HostWindowService: GenService<{
    */
   readOpenTabs: {
     methodKind: "unary";
-    input: typeof HostReadOpenTabsRequestSchema;
-    output: typeof HostReadOpenTabsResponseSchema;
+    input: typeof HostWindowServiceReadOpenTabsRequestSchema;
+    output: typeof HostWindowServiceReadOpenTabsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostwindow, 0);

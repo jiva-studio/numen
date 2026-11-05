@@ -59,7 +59,7 @@ func (c *Client) FocusPassages(ctx context.Context, path string, passages []Pass
 }
 
 func (c *Client) ReadOpenTabs(ctx context.Context) ([]OpenTab, string, error) {
-	res, err := c.window.ReadOpenTabs(ctx, request(c, &v1.HostReadOpenTabsRequest{}))
+	res, err := c.window.ReadOpenTabs(ctx, request(c, &v1.HostWindowServiceReadOpenTabsRequest{}))
 	if err != nil {
 		return nil, "", readWindowCallError(err)
 	}

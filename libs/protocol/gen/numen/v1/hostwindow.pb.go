@@ -344,26 +344,26 @@ func (x *FocusPassagesResponse) GetSummary() string {
 	return ""
 }
 
-type HostReadOpenTabsRequest struct {
+type HostWindowServiceReadOpenTabsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostReadOpenTabsRequest) Reset() {
-	*x = HostReadOpenTabsRequest{}
+func (x *HostWindowServiceReadOpenTabsRequest) Reset() {
+	*x = HostWindowServiceReadOpenTabsRequest{}
 	mi := &file_numen_v1_hostwindow_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostReadOpenTabsRequest) String() string {
+func (x *HostWindowServiceReadOpenTabsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostReadOpenTabsRequest) ProtoMessage() {}
+func (*HostWindowServiceReadOpenTabsRequest) ProtoMessage() {}
 
-func (x *HostReadOpenTabsRequest) ProtoReflect() protoreflect.Message {
+func (x *HostWindowServiceReadOpenTabsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostwindow_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -375,12 +375,12 @@ func (x *HostReadOpenTabsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostReadOpenTabsRequest.ProtoReflect.Descriptor instead.
-func (*HostReadOpenTabsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostWindowServiceReadOpenTabsRequest.ProtoReflect.Descriptor instead.
+func (*HostWindowServiceReadOpenTabsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{5}
 }
 
-type HostReadOpenTabsResponse struct {
+type HostWindowServiceReadOpenTabsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         HostWindowErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostWindowErrorCode" json:"error,omitempty"`
 	Tabs          []*Tab                 `protobuf:"bytes,2,rep,name=tabs,proto3" json:"tabs,omitempty"`
@@ -389,20 +389,20 @@ type HostReadOpenTabsResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostReadOpenTabsResponse) Reset() {
-	*x = HostReadOpenTabsResponse{}
+func (x *HostWindowServiceReadOpenTabsResponse) Reset() {
+	*x = HostWindowServiceReadOpenTabsResponse{}
 	mi := &file_numen_v1_hostwindow_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostReadOpenTabsResponse) String() string {
+func (x *HostWindowServiceReadOpenTabsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostReadOpenTabsResponse) ProtoMessage() {}
+func (*HostWindowServiceReadOpenTabsResponse) ProtoMessage() {}
 
-func (x *HostReadOpenTabsResponse) ProtoReflect() protoreflect.Message {
+func (x *HostWindowServiceReadOpenTabsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostwindow_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -414,26 +414,26 @@ func (x *HostReadOpenTabsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostReadOpenTabsResponse.ProtoReflect.Descriptor instead.
-func (*HostReadOpenTabsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostWindowServiceReadOpenTabsResponse.ProtoReflect.Descriptor instead.
+func (*HostWindowServiceReadOpenTabsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *HostReadOpenTabsResponse) GetError() HostWindowErrorCode {
+func (x *HostWindowServiceReadOpenTabsResponse) GetError() HostWindowErrorCode {
 	if x != nil {
 		return x.Error
 	}
 	return HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *HostReadOpenTabsResponse) GetTabs() []*Tab {
+func (x *HostWindowServiceReadOpenTabsResponse) GetTabs() []*Tab {
 	if x != nil {
 		return x.Tabs
 	}
 	return nil
 }
 
-func (x *HostReadOpenTabsResponse) GetActiveId() string {
+func (x *HostWindowServiceReadOpenTabsResponse) GetActiveId() string {
 	if x != nil {
 		return x.ActiveId
 	}
@@ -460,20 +460,20 @@ const file_numen_v1_hostwindow_proto_rawDesc = "" +
 	"\bpassages\x18\x02 \x03(\v2\x15.numen.v1.PassageSpanR\bpassages\"f\n" +
 	"\x15FocusPassagesResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12\x18\n" +
-	"\asummary\x18\x02 \x01(\tR\asummary\"\x19\n" +
-	"\x17HostReadOpenTabsRequest\"\x8f\x01\n" +
-	"\x18HostReadOpenTabsResponse\x123\n" +
+	"\asummary\x18\x02 \x01(\tR\asummary\"&\n" +
+	"$HostWindowServiceReadOpenTabsRequest\"\x9c\x01\n" +
+	"%HostWindowServiceReadOpenTabsResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12!\n" +
 	"\x04tabs\x18\x02 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x1b\n" +
 	"\tactive_id\x18\x03 \x01(\tR\bactiveId*\x89\x01\n" +
 	"\x13HostWindowErrorCode\x12&\n" +
 	"\"HOST_WINDOW_ERROR_CODE_UNSPECIFIED\x10\x00\x12$\n" +
 	" HOST_WINDOW_ERROR_CODE_NO_WINDOW\x10\x01\x12$\n" +
-	" HOST_WINDOW_ERROR_CODE_NOT_FOUND\x10\x022\x82\x02\n" +
+	" HOST_WINDOW_ERROR_CODE_NOT_FOUND\x10\x022\x9c\x02\n" +
 	"\x11HostWindowService\x12D\n" +
 	"\tFocusNote\x12\x1a.numen.v1.FocusNoteRequest\x1a\x1b.numen.v1.FocusNoteResponse\x12P\n" +
-	"\rFocusPassages\x12\x1e.numen.v1.FocusPassagesRequest\x1a\x1f.numen.v1.FocusPassagesResponse\x12U\n" +
-	"\fReadOpenTabs\x12!.numen.v1.HostReadOpenTabsRequest\x1a\".numen.v1.HostReadOpenTabsResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\rFocusPassages\x12\x1e.numen.v1.FocusPassagesRequest\x1a\x1f.numen.v1.FocusPassagesResponse\x12o\n" +
+	"\fReadOpenTabs\x12..numen.v1.HostWindowServiceReadOpenTabsRequest\x1a/.numen.v1.HostWindowServiceReadOpenTabsResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_hostwindow_proto_rawDescOnce sync.Once
@@ -490,28 +490,28 @@ func file_numen_v1_hostwindow_proto_rawDescGZIP() []byte {
 var file_numen_v1_hostwindow_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_hostwindow_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_hostwindow_proto_goTypes = []any{
-	(HostWindowErrorCode)(0),         // 0: numen.v1.HostWindowErrorCode
-	(*FocusNoteRequest)(nil),         // 1: numen.v1.FocusNoteRequest
-	(*FocusNoteResponse)(nil),        // 2: numen.v1.FocusNoteResponse
-	(*PassageSpan)(nil),              // 3: numen.v1.PassageSpan
-	(*FocusPassagesRequest)(nil),     // 4: numen.v1.FocusPassagesRequest
-	(*FocusPassagesResponse)(nil),    // 5: numen.v1.FocusPassagesResponse
-	(*HostReadOpenTabsRequest)(nil),  // 6: numen.v1.HostReadOpenTabsRequest
-	(*HostReadOpenTabsResponse)(nil), // 7: numen.v1.HostReadOpenTabsResponse
-	(*Tab)(nil),                      // 8: numen.v1.Tab
+	(HostWindowErrorCode)(0),                      // 0: numen.v1.HostWindowErrorCode
+	(*FocusNoteRequest)(nil),                      // 1: numen.v1.FocusNoteRequest
+	(*FocusNoteResponse)(nil),                     // 2: numen.v1.FocusNoteResponse
+	(*PassageSpan)(nil),                           // 3: numen.v1.PassageSpan
+	(*FocusPassagesRequest)(nil),                  // 4: numen.v1.FocusPassagesRequest
+	(*FocusPassagesResponse)(nil),                 // 5: numen.v1.FocusPassagesResponse
+	(*HostWindowServiceReadOpenTabsRequest)(nil),  // 6: numen.v1.HostWindowServiceReadOpenTabsRequest
+	(*HostWindowServiceReadOpenTabsResponse)(nil), // 7: numen.v1.HostWindowServiceReadOpenTabsResponse
+	(*Tab)(nil), // 8: numen.v1.Tab
 }
 var file_numen_v1_hostwindow_proto_depIdxs = []int32{
 	0, // 0: numen.v1.FocusNoteResponse.error:type_name -> numen.v1.HostWindowErrorCode
 	3, // 1: numen.v1.FocusPassagesRequest.passages:type_name -> numen.v1.PassageSpan
 	0, // 2: numen.v1.FocusPassagesResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	0, // 3: numen.v1.HostReadOpenTabsResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	8, // 4: numen.v1.HostReadOpenTabsResponse.tabs:type_name -> numen.v1.Tab
+	0, // 3: numen.v1.HostWindowServiceReadOpenTabsResponse.error:type_name -> numen.v1.HostWindowErrorCode
+	8, // 4: numen.v1.HostWindowServiceReadOpenTabsResponse.tabs:type_name -> numen.v1.Tab
 	1, // 5: numen.v1.HostWindowService.FocusNote:input_type -> numen.v1.FocusNoteRequest
 	4, // 6: numen.v1.HostWindowService.FocusPassages:input_type -> numen.v1.FocusPassagesRequest
-	6, // 7: numen.v1.HostWindowService.ReadOpenTabs:input_type -> numen.v1.HostReadOpenTabsRequest
+	6, // 7: numen.v1.HostWindowService.ReadOpenTabs:input_type -> numen.v1.HostWindowServiceReadOpenTabsRequest
 	2, // 8: numen.v1.HostWindowService.FocusNote:output_type -> numen.v1.FocusNoteResponse
 	5, // 9: numen.v1.HostWindowService.FocusPassages:output_type -> numen.v1.FocusPassagesResponse
-	7, // 10: numen.v1.HostWindowService.ReadOpenTabs:output_type -> numen.v1.HostReadOpenTabsResponse
+	7, // 10: numen.v1.HostWindowService.ReadOpenTabs:output_type -> numen.v1.HostWindowServiceReadOpenTabsResponse
 	8, // [8:11] is the sub-list for method output_type
 	5, // [5:8] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name

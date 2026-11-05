@@ -94,23 +94,23 @@ func (e *windowEndpoint) FocusPassages(
 }
 
 func (e *windowEndpoint) ReadOpenTabs(
-	ctx context.Context, req *connect.Request[v1.HostReadOpenTabsRequest],
-) (*connect.Response[v1.HostReadOpenTabsResponse], error) {
+	ctx context.Context, req *connect.Request[v1.HostWindowServiceReadOpenTabsRequest],
+) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error) {
 	window, err := e.begin(req.Header())
 	if err != nil {
 		return nil, err
 	}
 	if window == nil {
-		return connect.NewResponse(&v1.HostReadOpenTabsResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
+		return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
 	}
 	open, err := window.ReadOpenTabs(ctx)
 	code, err := answerWindow(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.HostReadOpenTabsResponse{Error: code}), err
+		return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Error: code}), err
 	}
 	tabs := make([]*v1.Tab, 0, len(open.Tabs))
 	for _, tab := range open.Tabs {
 		tabs = append(tabs, &v1.Tab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, State: tab.State})
 	}
-	return connect.NewResponse(&v1.HostReadOpenTabsResponse{Tabs: tabs, ActiveId: open.ActiveID}), nil
+	return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Tabs: tabs, ActiveId: open.ActiveID}), nil
 }

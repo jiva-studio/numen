@@ -16,7 +16,7 @@ service HostWindowService {
   // lights all of them. No passages opens the file at its beginning.
   rpc FocusPassages(FocusPassagesRequest) returns (FocusPassagesResponse);
   // ReadOpenTabs is the tabs the window last reported, and the active one.
-  rpc ReadOpenTabs(HostReadOpenTabsRequest) returns (HostReadOpenTabsResponse);
+  rpc ReadOpenTabs(HostWindowServiceReadOpenTabsRequest) returns (HostWindowServiceReadOpenTabsResponse);
 }
 
 // HostWindowErrorCode is why a window call was not served. UNSPECIFIED is a call that was served.
@@ -57,9 +57,9 @@ message FocusPassagesResponse {
   string summary = 2;
 }
 
-message HostReadOpenTabsRequest {}
+message HostWindowServiceReadOpenTabsRequest {}
 
-message HostReadOpenTabsResponse {
+message HostWindowServiceReadOpenTabsResponse {
   HostWindowErrorCode error = 1;
   repeated Tab tabs = 2;
   string active_id = 3;

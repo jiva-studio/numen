@@ -52,7 +52,7 @@ type HostWindowServiceClient interface {
 	// lights all of them. No passages opens the file at its beginning.
 	FocusPassages(context.Context, *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error)
 	// ReadOpenTabs is the tabs the window last reported, and the active one.
-	ReadOpenTabs(context.Context, *connect.Request[v1.HostReadOpenTabsRequest]) (*connect.Response[v1.HostReadOpenTabsResponse], error)
+	ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error)
 }
 
 // NewHostWindowServiceClient constructs a client for the numen.v1.HostWindowService service. By
@@ -78,7 +78,7 @@ func NewHostWindowServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(hostWindowServiceMethods.ByName("FocusPassages")),
 			connect.WithClientOptions(opts...),
 		),
-		readOpenTabs: connect.NewClient[v1.HostReadOpenTabsRequest, v1.HostReadOpenTabsResponse](
+		readOpenTabs: connect.NewClient[v1.HostWindowServiceReadOpenTabsRequest, v1.HostWindowServiceReadOpenTabsResponse](
 			httpClient,
 			baseURL+HostWindowServiceReadOpenTabsProcedure,
 			connect.WithSchema(hostWindowServiceMethods.ByName("ReadOpenTabs")),
@@ -91,7 +91,7 @@ func NewHostWindowServiceClient(httpClient connect.HTTPClient, baseURL string, o
 type hostWindowServiceClient struct {
 	focusNote     *connect.Client[v1.FocusNoteRequest, v1.FocusNoteResponse]
 	focusPassages *connect.Client[v1.FocusPassagesRequest, v1.FocusPassagesResponse]
-	readOpenTabs  *connect.Client[v1.HostReadOpenTabsRequest, v1.HostReadOpenTabsResponse]
+	readOpenTabs  *connect.Client[v1.HostWindowServiceReadOpenTabsRequest, v1.HostWindowServiceReadOpenTabsResponse]
 }
 
 // FocusNote calls numen.v1.HostWindowService.FocusNote.
@@ -105,7 +105,7 @@ func (c *hostWindowServiceClient) FocusPassages(ctx context.Context, req *connec
 }
 
 // ReadOpenTabs calls numen.v1.HostWindowService.ReadOpenTabs.
-func (c *hostWindowServiceClient) ReadOpenTabs(ctx context.Context, req *connect.Request[v1.HostReadOpenTabsRequest]) (*connect.Response[v1.HostReadOpenTabsResponse], error) {
+func (c *hostWindowServiceClient) ReadOpenTabs(ctx context.Context, req *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error) {
 	return c.readOpenTabs.CallUnary(ctx, req)
 }
 
@@ -117,7 +117,7 @@ type HostWindowServiceHandler interface {
 	// lights all of them. No passages opens the file at its beginning.
 	FocusPassages(context.Context, *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error)
 	// ReadOpenTabs is the tabs the window last reported, and the active one.
-	ReadOpenTabs(context.Context, *connect.Request[v1.HostReadOpenTabsRequest]) (*connect.Response[v1.HostReadOpenTabsResponse], error)
+	ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error)
 }
 
 // NewHostWindowServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -170,6 +170,6 @@ func (UnimplementedHostWindowServiceHandler) FocusPassages(context.Context, *con
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostWindowService.FocusPassages is not implemented"))
 }
 
-func (UnimplementedHostWindowServiceHandler) ReadOpenTabs(context.Context, *connect.Request[v1.HostReadOpenTabsRequest]) (*connect.Response[v1.HostReadOpenTabsResponse], error) {
+func (UnimplementedHostWindowServiceHandler) ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostWindowService.ReadOpenTabs is not implemented"))
 }

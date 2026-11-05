@@ -164,7 +164,7 @@ func TestHostWindowAnswersTheOpenTabsAndTheActiveTab(t *testing.T) {
 	window := &recordingWindow{}
 	client, fakeCallers := newWindowClient(t, window, "token-a")
 
-	got, err := client.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.HostReadOpenTabsRequest{}))
+	got, err := client.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.HostWindowServiceReadOpenTabsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +194,7 @@ func TestHostWindowRefusesEveryCallFromAPluginWithoutThePermission(t *testing.T)
 
 	_, noteErr := client.FocusNote(ctx, connect.NewRequest(&v1.FocusNoteRequest{Path: "notes/Heron.md"}))
 	_, passagesErr := client.FocusPassages(ctx, connect.NewRequest(&v1.FocusPassagesRequest{Path: "library/Birds.pdf"}))
-	_, tabsErr := client.ReadOpenTabs(ctx, connect.NewRequest(&v1.HostReadOpenTabsRequest{}))
+	_, tabsErr := client.ReadOpenTabs(ctx, connect.NewRequest(&v1.HostWindowServiceReadOpenTabsRequest{}))
 	for name, err := range map[string]error{"FocusNote": noteErr, "FocusPassages": passagesErr, "ReadOpenTabs": tabsErr} {
 		if connect.CodeOf(err) != connect.CodePermissionDenied {
 			t.Errorf("%s from a plugin without window:focus got %v, want permission denied", name, err)
@@ -221,7 +221,7 @@ func TestHostWindowWithoutAWindowAnswersNoWindow(t *testing.T) {
 			if got := readWindowCode(client.FocusPassages(ctx, connect.NewRequest(&v1.FocusPassagesRequest{Path: "library/Birds.pdf"}))); got != noWindow.String() {
 				t.Errorf("FocusPassages answered %s, want no window", got)
 			}
-			if got := readWindowCode(client.ReadOpenTabs(ctx, connect.NewRequest(&v1.HostReadOpenTabsRequest{}))); got != noWindow.String() {
+			if got := readWindowCode(client.ReadOpenTabs(ctx, connect.NewRequest(&v1.HostWindowServiceReadOpenTabsRequest{}))); got != noWindow.String() {
 				t.Errorf("ReadOpenTabs answered %s, want no window", got)
 			}
 		})
