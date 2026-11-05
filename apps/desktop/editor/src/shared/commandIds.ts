@@ -9,7 +9,6 @@ const formatAppCommandId = (id: string): string => formatCommandId(APP_COMMAND_O
 export const COMMAND = {
   openNote: formatAppCommandId('note.open'),
   openNoteBeside: formatAppCommandId('note.openBeside'),
-  goToStartNote: formatAppCommandId('note.goToStart'),
   goToNote: formatAppCommandId('note.goTo'),
   createNote: formatAppCommandId('note.create'),
   createChildNote: formatAppCommandId('note.createChild'),

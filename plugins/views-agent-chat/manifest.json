@@ -20,7 +20,7 @@
       {
         "id": "chat.open",
         "title": "Open agent chat",
-        "icon": "bot",
+        "icon": "message-square",
         "shortcut": "mod+shift+a"
       },
       {
