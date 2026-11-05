@@ -77,6 +77,8 @@ export interface MenuChoice {
   readonly path: string
   readonly title: string
   readonly type: NoteType
+  /** The line of the heading or passage the result stands for, and -1 for a note found by its name. */
+  readonly line: number
 }
 
 /**

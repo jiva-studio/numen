@@ -180,6 +180,7 @@ describe('the command an action of a result runs', () => {
       path: 'reef/Coral.md',
       title: 'Coral',
       type: 'sample',
+      line: 3,
     })
   })
 
@@ -189,7 +190,14 @@ describe('the command an action of a result runs', () => {
       path: 'reef/Coral.md',
       title: 'Coral',
       type: 'sample',
+      line: 3,
     })
+  })
+
+  it('is the line of a heading or a passage for the note to open at, and -1 for a name', () => {
+    expect(resolveMenuChoice(createHit({ line: 7 }), openId)?.line).toBe(7)
+    expect(resolveMenuChoice(createHit({ line: 0 }), openId)?.line).toBe(0)
+    expect(resolveMenuChoice(createHit({ line: -1 }), openId)?.line).toBe(-1)
   })
 
   it('is none for the special action of a file that is no note', () => {

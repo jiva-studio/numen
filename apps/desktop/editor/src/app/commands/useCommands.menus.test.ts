@@ -52,11 +52,12 @@ const front = {
   isReady: true,
 } as unknown as CommandTarget
 
-const choice = (command: string): MenuChoice => ({
+const choice = (command: string, line = -1): MenuChoice => ({
   command,
   path: 'Reef.md',
   title: 'Reef',
   type: 'sample',
+  line,
 })
 
 const entry = (command: string, title: string): PlacedCommand => ({
@@ -226,6 +227,53 @@ describe('opening the note of a search result as a command', () => {
       { name: 'answer words' },
     )
     expect(one.writeMessage).not.toHaveBeenCalled()
+  })
+
+  it('opens the chosen note at the line of the heading or passage', () => {
+    h.startCommand.mockReturnValue({ id: 'inv' })
+    const one = setup()
+
+    one.runEntry(choice('app:note.open', 7))
+
+    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith(
+      'app:note.open',
+      expect.objectContaining({ path: 'Reef.md', line: 7 }),
+    )
+  })
+
+  it('opens the chosen note at its first line where the line is zero', () => {
+    h.startCommand.mockReturnValue({ id: 'inv' })
+    const one = setup()
+
+    one.runEntry(choice('app:note.open', 0))
+
+    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith(
+      'app:note.open',
+      expect.objectContaining({ path: 'Reef.md', line: 0 }),
+    )
+  })
+
+  it('opens a note found by its name from the start, with no line', () => {
+    h.startCommand.mockReturnValue({ id: 'inv' })
+    const one = setup()
+
+    one.runEntry(choice('app:note.open', -1))
+
+    const target = h.startCommand.mock.calls[0]?.[1] as { line?: number }
+    expect(target.line).toBeUndefined()
+  })
+
+  it('gives a plugin command the path, title and type of the note and no line', async () => {
+    const one = setup()
+
+    one.runEntry(choice(SHOW, 7))
+    await vi.waitFor(() => expect(one.executeCommand).toHaveBeenCalled())
+
+    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith(SHOW, {
+      path: 'Reef.md',
+      title: 'Reef',
+      type: 'sample',
+    })
   })
 
   it('opens the chosen note and not the note in front', () => {

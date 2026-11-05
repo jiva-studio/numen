@@ -132,6 +132,7 @@ describe('a note found by name in the search', () => {
       path: 'reef/Coral.md',
       title: 'Coral',
       type: 'sample',
+      line: -1,
     })
   })
 
@@ -148,6 +149,7 @@ describe('a note found by name in the search', () => {
       path: 'reef/Coral.md',
       title: 'Coral',
       type: 'sample',
+      line: -1,
     })
     expect(palette.chooseItem(item, openId)).toBeNull()
     expect(palette.chooseItem(item, 'note')).toBeNull()
