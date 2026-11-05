@@ -271,7 +271,7 @@ describe('the settings tab', () => {
         id: 'plugin-setting:plugin.ocr:autoScan',
         text: 'OCR Plugin: Auto Scan',
         group: 'settings',
-        needs: 'choosing',
+        input: 'choice',
         icon: getNamedIcon('scan-text'),
         isAvailable: expect.any(Function),
       },

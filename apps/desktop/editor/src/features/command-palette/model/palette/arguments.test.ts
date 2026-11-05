@@ -5,13 +5,19 @@
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 import { runSupport } from './runSupport'
-import { useCommandPalette } from './palette'
+import { useCommandPalette, type Commands } from './palette'
 import type { Command, CommandTarget } from '../../types'
 import { WORDS as words } from '@/shared/words'
 
 /** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
 function rethrow(error: unknown): never {
   throw error
+}
+
+/** Chooses the first row the step draws, by the id and action the row carries. */
+function chooseRow(commands: Commands) {
+  const row = commands.groups.value.flatMap((group) => group.items)[0]
+  return commands.chooseItem(row?.id ?? '', row?.actions?.[0]?.id ?? '')
 }
 
 const front: CommandTarget = {
@@ -28,7 +34,7 @@ const createSample: Command = {
   id: 'create-sample',
   text: 'Create a sample',
   group: 'window',
-  needs: 'arguments',
+  input: 'arguments',
   prompts: [
     { name: 'title', title: 'Title', isRequired: true },
     { name: 'folder', title: 'Folder', isRequired: false },
@@ -67,7 +73,7 @@ describe('a command that asks for its arguments', () => {
     const commands = createPalette()
     commands.startCommand('create-sample', front)
 
-    expect(commands.chooseItem('name', 'name')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
     expect(commands.placeholder.value).toBe('Title')
   })
 
@@ -77,7 +83,7 @@ describe('a command that asks for its arguments', () => {
     commands.setTyped('  Verbs ').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.title).toBe('Title: “Verbs”')
-    expect(commands.chooseItem('name', 'name')).toBeNull()
+    expect(chooseRow(commands)).toBeNull()
 
     expect(commands.placeholder.value).toBe('Folder')
     expect(commands.typed.value).toBe('')
@@ -88,11 +94,11 @@ describe('a command that asks for its arguments', () => {
     const commands = createPalette()
     commands.startCommand('create-sample', front)
     commands.setTyped('Verbs').catch(rethrow)
-    commands.chooseItem('name', 'name')
-    commands.chooseItem('name', 'name')
+    chooseRow(commands)
+    chooseRow(commands)
     commands.setTyped('Spanish').catch(rethrow)
 
-    const invocation = commands.chooseItem('name', 'name')
+    const invocation = chooseRow(commands)
 
     expect(invocation?.id).toBe('create-sample')
     expect(invocation?.file).toBe('physics/Ontology.md')
@@ -103,7 +109,7 @@ describe('a command that asks for its arguments', () => {
     const commands = createPalette()
     commands.startCommand('create-sample', front)
     commands.setTyped('Verbs').catch(rethrow)
-    commands.chooseItem('name', 'name')
+    chooseRow(commands)
 
     expect(commands.goBack()).toBe(false)
 
