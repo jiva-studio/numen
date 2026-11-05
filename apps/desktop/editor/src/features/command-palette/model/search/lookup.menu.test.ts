@@ -231,7 +231,9 @@ describe('the command an action of a result runs', () => {
   })
 
   it('is none for an entry of the menu over a hit in a file that is no note', () => {
-    expect(resolveChoice(createDocument({ actionIds: [COMMAND.openFile, showId] }), showId)).toBeNull()
+    expect(
+      resolveChoice(createDocument({ actionIds: [COMMAND.openFile, showId] }), showId),
+    ).toBeNull()
   })
 
   it('is none for the action id the document had before it was a command', () => {
