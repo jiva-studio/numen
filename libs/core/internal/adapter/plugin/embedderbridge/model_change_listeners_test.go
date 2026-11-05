@@ -1,6 +1,7 @@
 package embedderbridge
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -13,9 +14,13 @@ func TestAListenerThatRegistersAnotherListenerDoesNotBlockTheAnnouncement(t *tes
 	host, bridge, mock, _ := openConfigurable(t)
 	registered := make(chan struct{})
 	second := make(chan struct{}, 4)
+	var once sync.Once
 	bridge.OnModelChange(func() {
-		bridge.OnModelChange(func() { second <- struct{}{} })
-		close(registered)
+		// The listener stays registered, so it runs again on the next change.
+		once.Do(func() {
+			bridge.OnModelChange(func() { second <- struct{}{} })
+			close(registered)
+		})
 	})
 
 	mock.modelName.Store("another-model")
