@@ -16,10 +16,10 @@ const readStoredSecrets = async (page: Page, pluginId: string): Promise<string[]
 
 test.describe('Plugin settings take effect', () => {
   test.afterEach(async ({ request }) => {
-    await writeSetting(request, ['plugins', NOTES_ID, 'line_numbers'], false)
-    await writeSetting(request, ['plugins', NOTES_ID, 'soft_wrap'], true)
-    await writeSetting(request, ['plugins', PDF_ID, 'default_zoom'], 'page')
-    await writeSetting(request, ['plugins', EMBEDDINGS_ID, 'provider'], 'local')
+    await writeSetting(request, [NOTES_ID, 'line_numbers'], false)
+    await writeSetting(request, [NOTES_ID, 'soft_wrap'], true)
+    await writeSetting(request, [PDF_ID, 'default_zoom'], 'page')
+    await writeSetting(request, [EMBEDDINGS_ID, 'provider'], 'local')
     await callRPC(request, 'SettingsService/DeletePluginSecret', {
       pluginId: EMBEDDINGS_ID,
       name: 'apiKey',
@@ -38,8 +38,8 @@ test.describe('Plugin settings take effect', () => {
     await expect(editor.locator('.cm-lineNumbers')).toHaveCount(0)
     await expect(editor.locator('.cm-lineWrapping')).toHaveCount(1)
 
-    await writeSetting(request, ['plugins', NOTES_ID, 'line_numbers'], true)
-    await writeSetting(request, ['plugins', NOTES_ID, 'soft_wrap'], false)
+    await writeSetting(request, [NOTES_ID, 'line_numbers'], true)
+    await writeSetting(request, [NOTES_ID, 'soft_wrap'], false)
 
     await expect(editor.locator('.cm-lineNumbers')).toHaveCount(1)
     await expect(editor.locator('.cm-lineWrapping')).toHaveCount(0)
@@ -50,7 +50,7 @@ test.describe('Plugin settings take effect', () => {
     ['100%', () => (612 * 96) / 72],
   ] as const) {
     test(`draws a new PDF at the ${fit} default zoom`, async ({ page, request }) => {
-      await writeSetting(request, ['plugins', PDF_ID, 'default_zoom'], fit)
+      await writeSetting(request, [PDF_ID, 'default_zoom'], fit)
       await openWorkspace(page)
       await openVaultFile(page, 'assets', 'pages.pdf')
       const first = page.locator('.reader__page[data-page="0"]')
@@ -69,7 +69,7 @@ test.describe('Plugin settings take effect', () => {
     page,
     request,
   }) => {
-    await writeSetting(request, ['plugins', EMBEDDINGS_ID, 'provider'], 'custom')
+    await writeSetting(request, [EMBEDDINGS_ID, 'provider'], 'custom')
     await openWorkspace(page)
     await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })

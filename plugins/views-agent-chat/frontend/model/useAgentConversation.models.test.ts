@@ -49,11 +49,11 @@ const proposed = (state: ReturnType<typeof open>) => [
 ]
 
 const LISTED = [
-  model(['agent', 'use'], 'zeta'),
-  model(['agent', 'use'], 'omega'),
-  model(['agent', 'zeta', 'model'], 'zeta-small'),
-  model(['agent', 'zeta', 'model'], 'zeta-large', 'nothing to fetch', true),
-  model(['agent', 'omega', 'model'], 'omega-one'),
+  model(['app', 'agent', 'use'], 'zeta'),
+  model(['app', 'agent', 'use'], 'omega'),
+  model(['app', 'agent', 'zeta', 'model'], 'zeta-small'),
+  model(['app', 'agent', 'zeta', 'model'], 'zeta-large', 'nothing to fetch', true),
+  model(['app', 'agent', 'omega', 'model'], 'omega-one'),
 ]
 
 describe('the model an agent tab starts on', () => {
@@ -103,8 +103,8 @@ describe('the models an agent tab offers', () => {
 
   it('include the model the settings name where the core lists that one alone', () => {
     const state = open([
-      model(['agent', 'use'], 'zeta'),
-      model(['agent', 'zeta', 'model'], 'my-zeta'),
+      model(['app', 'agent', 'use'], 'zeta'),
+      model(['app', 'agent', 'zeta', 'model'], 'my-zeta'),
     ])
 
     expect(state.modelOptions.value.map((one) => one.modelId)).toEqual(['my-zeta'])
@@ -114,26 +114,26 @@ describe('the models an agent tab offers', () => {
 describe('the agents an agent tab offers', () => {
   it('are those listed under agent/use that are present', () => {
     const state = open([
-      model(['agent', 'use'], 'zeta'),
-      model(['agent', 'use'], 'omega', 'not fetched'),
-      model(['agent', 'zeta', 'model'], 'zeta-small'),
-      model(['agent', 'omega', 'model'], 'omega-one'),
+      model(['app', 'agent', 'use'], 'zeta'),
+      model(['app', 'agent', 'use'], 'omega', 'not fetched'),
+      model(['app', 'agent', 'zeta', 'model'], 'zeta-small'),
+      model(['app', 'agent', 'omega', 'model'], 'omega-one'),
     ])
 
     expect(proposed(state)).toEqual(['zeta'])
   })
 
   it('are none where nothing is listed under agent/use', () => {
-    const state = open([model(['agent', 'zeta', 'model'], 'zeta-small')])
+    const state = open([model(['app', 'agent', 'zeta', 'model'], 'zeta-small')])
 
     expect(proposed(state)).toEqual([])
   })
 
   it('leave out a setting listed under another name', () => {
     const state = open([
-      model(['agent', 'use'], 'zeta'),
-      model(['agent', 'zeta', 'model'], 'zeta-small'),
-      model(['agent', 'other', 'model'], 'stray'),
+      model(['app', 'agent', 'use'], 'zeta'),
+      model(['app', 'agent', 'zeta', 'model'], 'zeta-small'),
+      model(['app', 'agent', 'other', 'model'], 'stray'),
       model(['editor', 'font'], 'zeta'),
     ])
 
@@ -144,10 +144,10 @@ describe('the agents an agent tab offers', () => {
 describe('an agent that reports no models', () => {
   it('is offered with the default the core lists for it, named nothing', () => {
     const state = open([
-      model(['agent', 'use'], 'zeta'),
-      model(['agent', 'use'], 'omega'),
-      model(['agent', 'zeta', 'model'], 'zeta-small'),
-      model(['agent', 'omega', 'model'], '', 'present', true),
+      model(['app', 'agent', 'use'], 'zeta'),
+      model(['app', 'agent', 'use'], 'omega'),
+      model(['app', 'agent', 'zeta', 'model'], 'zeta-small'),
+      model(['app', 'agent', 'omega', 'model'], '', 'present', true),
     ])
 
     expect(state.modelOptions.value.map((one) => [one.agentId, one.modelId])).toEqual([
@@ -158,10 +158,10 @@ describe('an agent that reports no models', () => {
 
   it('is switched to with its default, which sets no model of its own', () => {
     const state = open([
-      model(['agent', 'use'], 'zeta'),
-      model(['agent', 'use'], 'omega'),
-      model(['agent', 'zeta', 'model'], 'zeta-small'),
-      model(['agent', 'omega', 'model'], '', 'present', true),
+      model(['app', 'agent', 'use'], 'zeta'),
+      model(['app', 'agent', 'use'], 'omega'),
+      model(['app', 'agent', 'zeta', 'model'], 'zeta-small'),
+      model(['app', 'agent', 'omega', 'model'], '', 'present', true),
     ])
 
     state.selectModel(state.modelOptions.value[1]!)

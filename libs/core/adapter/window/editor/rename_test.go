@@ -136,7 +136,7 @@ func oneName(t *testing.T, f *going, preserved bool) error {
 	t.Helper()
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"naming", "sync_title_and_filename"}, Value: fmt.Sprint(preserved)},
+			{At: []string{"naming", "syncTitleAndFilename"}, Value: fmt.Sprint(preserved)},
 		},
 	}))
 	return err
@@ -152,7 +152,7 @@ func TestRenameNote_UsesSettingChangedSinceLaunch(t *testing.T) {
 	}, true)
 	waitForScan(t, f)
 
-	if getSetting(t, f, "naming", "sync_title_and_filename") != true {
+	if getSetting(t, f, "naming", "syncTitleAndFilename") != true {
 		t.Fatal("an installation nobody has configured tells the two apart")
 	}
 
@@ -161,7 +161,7 @@ func TestRenameNote_UsesSettingChangedSinceLaunch(t *testing.T) {
 	}
 
 	// Read back through the same window, and then acted on by a rename.
-	if getSetting(t, f, "naming", "sync_title_and_filename") != false {
+	if getSetting(t, f, "naming", "syncTitleAndFilename") != false {
 		t.Error("the setting was turned and the window still says one name")
 	}
 
@@ -188,7 +188,7 @@ func TestRenameNote_UsesSettingChangedSinceLaunch(t *testing.T) {
 func TestTurningTheSettingPreservesTheRestOfTheFileAlone(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	path := filepath.Join(filepath.Dir(f.settings), "numen.json")
-	if err := os.WriteFile(path, []byte("{\n  \"appearance\": {\"text_scale\": 1.5}\n}\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("{\n  \"appearance\": {\"textScale\": 1.5}\n}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -200,10 +200,10 @@ func TestTurningTheSettingPreservesTheRestOfTheFileAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(raw), `"text_scale": 1.5`) {
+	if !strings.Contains(string(raw), `"textScale": 1.5`) {
 		t.Errorf("what the person typed was rewritten:\n%s", raw)
 	}
-	if !strings.Contains(string(raw), `"sync_title_and_filename": false`) {
+	if !strings.Contains(string(raw), `"syncTitleAndFilename": false`) {
 		t.Errorf("the setting is not in the file:\n%s", raw)
 	}
 }

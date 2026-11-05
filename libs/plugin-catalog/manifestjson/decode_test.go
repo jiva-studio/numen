@@ -138,7 +138,7 @@ func TestReadManifestValidSettings(t *testing.T) {
 		"name": "Sample",
 		"version": "1.0.0",
 		"settings": [
-			{"key": "enabled", "type": "boolean", "title": "Enabled", "default": true, "palette": true},
+			{"key": "verbose", "type": "boolean", "title": "Verbose", "default": true, "palette": true},
 			{"key": "model", "type": "enum", "title": "Model", "default": "fast", "options": ["fast", "accurate"]},
 			{"key": "retries", "type": "number", "title": "Retries", "default": 3},
 			{"key": "zoom", "type": "range", "title": "Zoom", "default": 1.0, "min": 0.5, "max": 2.0, "step": 0.1},
@@ -426,5 +426,37 @@ func TestSettingBoundsAreAbsentUntilTheManifestSetsThem(t *testing.T) {
 	}
 	if none.Min != nil || none.Max != nil || none.Step != nil {
 		t.Errorf("bounds the manifest does not set are present: %+v", none)
+	}
+}
+
+// The field enabled of the object of a plugin in the settings file is the host's, so a setting of that
+// name would meet it.
+func TestAManifestDoesNotDeclareASettingNamedEnabled(t *testing.T) {
+	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"enabled","type":"boolean","title":"Enabled"}]}`))
+	if !errors.Is(err, manifest.ErrReservedSettingKey) {
+		t.Errorf("error = %v, want ErrReservedSettingKey", err)
+	}
+}
+
+func TestASettingMayPreviewWhileFocusedAndListItsOptionsFromARegistry(t *testing.T) {
+	raw := `{
+		"id": "md.numen.sample",
+		"name": "Sample",
+		"version": "1.0.0",
+		"settings": [
+			{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes", "preview": true},
+			{"key": "retries", "type": "number", "title": "Retries"}
+		]
+	}`
+
+	m, err := manifestjson.Read(strings.NewReader(raw))
+	if err != nil {
+		t.Fatalf("a registry enum without options of its own was rejected: %v", err)
+	}
+	if got := m.Settings[0]; !got.Preview || got.OptionsFrom != "themes" {
+		t.Errorf("the theme reads as preview=%v from %q", got.Preview, got.OptionsFrom)
+	}
+	if got := m.Settings[1]; got.Preview || got.OptionsFrom != "" {
+		t.Errorf("a plain setting reads as preview=%v from %q", got.Preview, got.OptionsFrom)
 	}
 }

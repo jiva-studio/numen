@@ -393,19 +393,19 @@ describe('the agent a plugin asks', () => {
     const { context, agent } = createContext([])
     const request = getAgent(context)
 
-    await request.writeSetting(['agent', 'use'], 'zeta')
-    request.getSetting(['agent', 'use'])
-    request.getModelsAt(['agent', 'zeta', 'model'])
+    await request.writeSetting(['app', 'agent', 'use'], 'zeta')
+    request.getSetting(['app', 'agent', 'use'])
+    request.getModelsAt(['app', 'agent', 'zeta', 'model'])
 
-    expect(agent.writeSetting).toHaveBeenCalledWith(['agent', 'use'], 'zeta')
-    expect(agent.getSetting).toHaveBeenCalledWith(['agent', 'use'])
-    expect(agent.getModelsAt).toHaveBeenCalledWith(['agent', 'zeta', 'model'])
+    expect(agent.writeSetting).toHaveBeenCalledWith(['app', 'agent', 'use'], 'zeta')
+    expect(agent.getSetting).toHaveBeenCalledWith(['app', 'agent', 'use'])
+    expect(agent.getModelsAt).toHaveBeenCalledWith(['app', 'agent', 'zeta', 'model'])
 
-    const elsewhere = ['plugins', 'md.numen.other', 'enabled']
+    const elsewhere = ['md.numen.other', 'enabled']
     expect(request.getSetting(elsewhere)).toBeUndefined()
     expect(request.getModelsAt(elsewhere)).toStrictEqual([])
     await expect(request.writeSetting(elsewhere, false)).rejects.toThrowError(
-      'agent.writeSetting is limited to the agent settings, not "plugins.md.numen.other.enabled"',
+      'agent.writeSetting is limited to the agent settings, not "md.numen.other.enabled"',
     )
     expect(agent.getSetting).toHaveBeenCalledTimes(1)
     expect(agent.writeSetting).toHaveBeenCalledTimes(1)

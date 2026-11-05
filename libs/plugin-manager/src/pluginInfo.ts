@@ -55,6 +55,16 @@ export interface PluginSettingInfo {
   readonly min?: number | undefined
   readonly max?: number | undefined
   readonly step?: number | undefined
+  /** Whether the window applies the value while its control is focused, and restores it on leaving. */
+  readonly preview?: boolean | undefined
+  /** The registry the options are listed from, such as the installed themes. */
+  readonly optionsFrom?: string | undefined
+  /** The options in force under the values in force, resolved by the core. */
+  readonly activeOptions?: readonly PluginSettingOption[] | undefined
+  /** Whether the condition of the setting holds under the values in force, resolved by the core. */
+  readonly isShown?: boolean | undefined
+  /** The value in force, resolved by the core: the stored value, else the default, else the first option. */
+  readonly value?: unknown
 }
 
 /** Why the host suspends a plugin after it failed to start, and when it gave the plugin up. */

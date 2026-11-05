@@ -238,14 +238,14 @@ describe('agent model selection and settings', () => {
     expect(state.selectedAgentId.value).toBe('')
 
     models.value = [
-      { ...items(['agent', 'use'], 'zeta', 'present'), title: 'Zeta Agent' },
-      items(['agent', 'use'], 'omega', 'not fetched'),
+      { ...items(['app', 'agent', 'use'], 'zeta', 'present'), title: 'Zeta Agent' },
+      items(['app', 'agent', 'use'], 'omega', 'not fetched'),
       {
-        ...items(['agent', 'zeta', 'model'], 'zeta-small', 'nothing to fetch'),
+        ...items(['app', 'agent', 'zeta', 'model'], 'zeta-small', 'nothing to fetch'),
         title: 'Zeta Small',
       },
       {
-        ...items(['agent', 'zeta', 'model'], 'zeta-large', 'nothing to fetch'),
+        ...items(['app', 'agent', 'zeta', 'model'], 'zeta-large', 'nothing to fetch'),
         title: 'Zeta Large',
         isDefault: true,
       },

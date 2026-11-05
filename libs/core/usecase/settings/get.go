@@ -7,6 +7,8 @@ type Current struct {
 	Path    string
 	Models  []Model
 	Plugins []PluginInfo
+	// App is the declaration of the settings of the owner app.
+	App []PluginSetting
 }
 
 // Get reads every setting, the models a setting can name, and the limits the
@@ -14,17 +16,20 @@ type Get struct {
 	read    func() (content, path string, err error)
 	models  func() []Model
 	plugins func() []PluginInfo
+	app     func() []PluginSetting
 }
 
 func NewGet(
 	read func() (content, path string, err error),
 	models func() []Model,
 	plugins func() []PluginInfo,
+	app func() []PluginSetting,
 ) *Get {
 	return &Get{
 		read:    read,
 		models:  models,
 		plugins: plugins,
+		app:     app,
 	}
 }
 

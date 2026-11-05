@@ -179,6 +179,11 @@ message ManifestSetting {
   repeated string accept = 16;
   // multiple makes a file setting hold a list of paths, one per line.
   bool multiple = 17;
+  // preview makes the window apply the value while its control is focused, and restore the saved
+  // value on leaving.
+  bool preview = 18;
+  // options_from names a registry the options are listed from, such as the installed themes.
+  string options_from = 19;
 }
 
 message ManifestSecret {

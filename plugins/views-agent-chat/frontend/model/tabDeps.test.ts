@@ -57,11 +57,11 @@ describe('what an agent tab asks of the window', () => {
     })
     const deps = createAgentTabDeps(host)
 
-    await deps.writeSetting?.(['agent', 'use'], 'omega')
+    await deps.writeSetting?.(['app', 'agent', 'use'], 'omega')
 
-    expect(deps.getSetting?.(['agent', 'use'])).toBe('zeta')
-    expect(deps.getModelsAt?.(['agent', 'zeta', 'model'])).toStrictEqual([model])
-    expect(deps.getModelsAt?.(['agent', 'nobody', 'model'])).toStrictEqual([])
-    expect(recorded.settings).toStrictEqual([[['agent', 'use'], 'omega']])
+    expect(deps.getSetting?.(['app', 'agent', 'use'])).toBe('zeta')
+    expect(deps.getModelsAt?.(['app', 'agent', 'zeta', 'model'])).toStrictEqual([model])
+    expect(deps.getModelsAt?.(['app', 'agent', 'nobody', 'model'])).toStrictEqual([])
+    expect(recorded.settings).toStrictEqual([[['app', 'agent', 'use'], 'omega']])
   })
 })

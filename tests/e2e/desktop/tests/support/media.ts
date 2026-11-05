@@ -7,7 +7,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import { expect, type APIRequestContext } from 'playwright/test'
-import { getVaultPath, listFilePaths, readSettings, writeSetting } from './vault.js'
+import { getVaultPath, listFilePaths, readOwner, writeSetting } from './vault.js'
 
 /** Whether a file of the vault is on disk. */
 export const hasVaultFile = (file: string): boolean =>
@@ -76,7 +76,7 @@ export const writePluginSetting = (
   plugin: string,
   key: string,
   value: unknown,
-): Promise<void> => writeSetting(request, ['plugins', plugin, key], value)
+): Promise<void> => writeSetting(request, [plugin, key], value)
 
 /**
  * Stops a plugin and starts it again, which takes the tasks it reported out of the list: the core
@@ -92,9 +92,7 @@ export const restartPlugin = async (request: APIRequestContext, plugin: string):
  * the run's settings give the updater plugin.
  */
 export const getStandInsOrigin = async (request: APIRequestContext): Promise<string> => {
-  const plugins = (await readSettings(request))['plugins'] as
-    Record<string, Record<string, unknown>> | undefined
-  const endpoint = String(plugins?.['md.numen.tools.updater']?.['endpoint'] ?? '')
+  const endpoint = String((await readOwner(request, 'md.numen.tools.updater'))['endpoint'] ?? '')
   if (!endpoint) throw new Error('the settings give the updater no release feed address')
   return new URL(endpoint).origin
 }

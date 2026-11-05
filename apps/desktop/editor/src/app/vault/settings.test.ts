@@ -42,7 +42,7 @@ describe('keeping a title and its file name in line', () => {
   })
 
   it('is off where the file turns it off', async () => {
-    request.getSettings.mockResolvedValue(answer({ naming: { sync_title_and_filename: false } }))
+    request.getSettings.mockResolvedValue(answer({ app: { naming: { syncTitleAndFilename: false } } }))
 
     expect(await core.getSyncEnabled()).toBe(false)
   })
@@ -51,7 +51,7 @@ describe('keeping a title and its file name in line', () => {
     expect(await core.setSyncEnabled(false)).toBeNull()
 
     expect(writtenLast()).toStrictEqual({
-      settings: [{ at: ['naming', 'sync_title_and_filename'], value: 'false' }],
+      settings: [{ at: ['app', 'naming', 'syncTitleAndFilename'], value: 'false' }],
     })
   })
 
@@ -95,6 +95,7 @@ describe('every setting', () => {
         },
       ],
       plugins: [],
+      app: [],
     })
   })
 
@@ -185,6 +186,9 @@ describe('every setting', () => {
             min: undefined,
             max: undefined,
             step: undefined,
+            activeOptions: [],
+            isShown: false,
+            value: undefined,
           },
           {
             key: 'language',
@@ -203,6 +207,9 @@ describe('every setting', () => {
             min: undefined,
             max: undefined,
             step: undefined,
+            activeOptions: [],
+            isShown: false,
+            value: undefined,
           },
         ],
       },
@@ -210,10 +217,10 @@ describe('every setting', () => {
   })
 
   it('is written with each value as it was given', async () => {
-    await core.updateSettings([{ at: ['performance', 'profile'], value: '"eco"' }])
+    await core.updateSettings([{ at: ['app', 'performance', 'profile'], value: '"eco"' }])
 
     expect(writtenLast()).toStrictEqual({
-      settings: [{ at: ['performance', 'profile'], value: '"eco"' }],
+      settings: [{ at: ['app', 'performance', 'profile'], value: '"eco"' }],
     })
   })
 })
@@ -312,5 +319,94 @@ describe('the data of a plugin', () => {
     await core.deletePluginData('sample.plugin')
 
     expect(request.deletePluginData).toHaveBeenLastCalledWith({ pluginId: 'sample.plugin' })
+  })
+})
+
+describe('what the core resolved and declared', () => {
+  it('arrives as the options, the visibility and the value in force of each plugin setting', async () => {
+    request.getSettings.mockResolvedValue(
+      answer(
+        {},
+        {
+          plugins: [
+            {
+              id: 'sample.plugin',
+              name: 'Sample',
+              version: '1.0.0',
+              description: '',
+              isActive: true,
+              capabilities: [],
+              secrets: [],
+              storedSecrets: [],
+              hasFrontend: false,
+              hasBackend: false,
+              settings: [
+                {
+                  key: 'model',
+                  type: 'enum',
+                  title: 'Model',
+                  description: '',
+                  defaultJson: '',
+                  palette: false,
+                  options: [],
+                  activeOptions: [{ value: 'big', title: 'Big', detail: '' }],
+                  isShown: true,
+                  valueJson: '"big"',
+                },
+              ],
+            },
+          ],
+        },
+      ),
+    )
+
+    const got = await core.getSettings()
+    expect(got.plugins?.[0]?.settings[0]).toMatchObject({
+      activeOptions: [{ value: 'big', title: 'Big', detail: '' }],
+      isShown: true,
+      value: 'big',
+    })
+  })
+
+  it('arrives as the flag that previews a setting and the registry its options come from', async () => {
+    request.getSettings.mockResolvedValue(
+      answer(
+        {},
+        {
+          app: [
+            {
+              key: 'appearance.theme',
+              type: 'enum',
+              title: 'Theme',
+              description: '',
+              defaultJson: '"preset:numen"',
+              palette: false,
+              options: [],
+              preview: true,
+              optionsFrom: 'themes',
+              activeOptions: [{ value: 'preset:numen', title: 'Numen', detail: '' }],
+              isShown: true,
+              valueJson: '"preset:numen"',
+            },
+          ],
+        },
+      ),
+    )
+
+    const got = await core.getSettings()
+    expect(got.app?.[0]).toMatchObject({
+      key: 'appearance.theme',
+      default: 'preset:numen',
+      preview: true,
+      optionsFrom: 'themes',
+      activeOptions: [{ value: 'preset:numen', title: 'Numen', detail: '' }],
+      value: 'preset:numen',
+    })
+  })
+
+  it('arrives as nothing for the shell where the core declares none', async () => {
+    request.getSettings.mockResolvedValue(answer({}))
+
+    expect((await core.getSettings()).app).toStrictEqual([])
   })
 })

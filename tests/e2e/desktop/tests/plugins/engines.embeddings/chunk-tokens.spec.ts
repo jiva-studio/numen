@@ -4,7 +4,7 @@ import { createNoteWithBody } from '../../support/layout.js'
 import { openWorkspace } from '../../support/workspace.js'
 
 const EMBEDDINGS_ID = 'md.numen.engines.embeddings'
-const CHUNK_TOKENS = ['plugins', EMBEDDINGS_ID, 'chunkTokens']
+const CHUNK_TOKENS = [EMBEDDINGS_ID, 'chunkTokens']
 const DEFAULT_CHUNK_TOKENS = 256
 /** A chunk of 64 tokens holds at most 128 characters, a quarter of the characters of the default. */
 const LOW_CHUNK_TOKENS = 64

@@ -68,7 +68,7 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 // The appearance settings are four fields of one section; a file that sets one
 // of them leaves the others at their defaults.
 func TestOpen_PartialAppearanceKeepsDefaults(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"text_scale":1.5}}`))
+	cfg, err := openAt(write(t, `{"app":{"appearance":{"textScale":1.5}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,36 +84,36 @@ func TestOpen_PartialAppearanceKeepsDefaults(t *testing.T) {
 // scale is applied that the file does not contain.
 func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	for _, body := range []string{
-		`{"appearance":{"interface_scale":2.5}}`,
-		`{"appearance":{"interface_scale":0.5}}`,
-		`{"appearance":{"interface_scale":0}}`,
-		`{"appearance":{"text_scale":1.9}}`,
-		`{"appearance":{"text_scale":0}}`,
+		`{"app":{"appearance":{"interfaceScale":2.5}}}`,
+		`{"app":{"appearance":{"interfaceScale":0.5}}}`,
+		`{"app":{"appearance":{"interfaceScale":0}}}`,
+		`{"app":{"appearance":{"textScale":1.9}}}`,
+		`{"app":{"appearance":{"textScale":0}}}`,
 	} {
 		if _, err := openAt(write(t, body)); err == nil {
 			t.Errorf("%s was read", body)
 		}
 	}
 
-	_, err := openAt(write(t, `{"appearance":{"text_scale":3}}`))
+	_, err := openAt(write(t, `{"app":{"appearance":{"textScale":3}}}`))
 	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
 		t.Fatalf("failed with %v", err)
 	}
-	if outside.At != "appearance.text_scale" || outside.Number != 3 {
+	if outside.At != "appearance.textScale" || outside.Number != 3 {
 		t.Errorf("failed %+v", outside)
 	}
 	if outside.Min != settings.GetTextScaleBounds().Min || outside.Max != settings.GetTextScaleBounds().Max {
 		t.Errorf("said the setting goes from %v to %v", outside.Min, outside.Max)
 	}
 	// The error message states the value and the allowed range.
-	if response := outside.Error(); !strings.Contains(response, "appearance.text_scale is 3") {
+	if response := outside.Error(); !strings.Contains(response, "appearance.textScale is 3") {
 		t.Errorf("says %q", response)
 	}
 }
 
 func TestASizeAtEitherEndIsTaken(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"interface_scale":0.8,"text_scale":1.75}}`))
+	cfg, err := openAt(write(t, `{"app":{"appearance":{"interfaceScale":0.8,"textScale":1.75}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestASizeAtEitherEndIsTaken(t *testing.T) {
 // file is empty about size or names the size of the text alone.
 func TestAFileNamingNoSizeIsGeneratedAtWhatTheDesktopAsksFor(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
-	for _, body := range []string{`{}`, `{"appearance":{"text_scale":1.25}}`} {
+	for _, body := range []string{`{}`, `{"app":{"appearance":{"textScale":1.25}}}`} {
 		cfg, err := openAt(write(t, body))
 		if err != nil {
 			t.Fatal(err)
@@ -141,7 +141,7 @@ func TestAFileNamingNoSizeIsGeneratedAtWhatTheDesktopAsksFor(t *testing.T) {
 func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
 	for body, scale := range map[string]float64{
-		`{"appearance":{"interface_scale":1.25}}`: 1.25,
+		`{"app":{"appearance":{"interfaceScale":1.25}}}`: 1.25,
 	} {
 		cfg, err := openAt(write(t, body))
 		if err != nil {
@@ -166,7 +166,7 @@ func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 }
 
 func TestAWindowAppliesTheThemeTheFileNames(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"mode":"dark","theme":"mine:dracula"}}`))
+	cfg, err := openAt(write(t, `{"app":{"appearance":{"mode":"dark","theme":"mine:dracula"}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,7 +202,7 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 }
 
 func TestOneSettingIsAValidFile(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"interface_scale":1.5}}`))
+	cfg, err := openAt(write(t, `{"app":{"appearance":{"interfaceScale":1.5}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +265,7 @@ func TestWritingTheSettingsBackDoesNotCarryTheKey(t *testing.T) {
 }
 
 func TestBrokenJSONIsAnError(t *testing.T) {
-	if _, err := openAt(write(t, `{"appearance":`)); err == nil {
+	if _, err := openAt(write(t, `{"app":{"appearance":`)); err == nil {
 		t.Error("want an error")
 	}
 }
@@ -285,7 +285,7 @@ func TestThereIsOneFileAndItIsNamedForWhatItIs(t *testing.T) {
 // A section is kept whether it is the one in use or not, so trying another agent
 // for an afternoon does not cost the settings of the one before.
 func TestASectionSurvivesNotBeingTheOneInUse(t *testing.T) {
-	cfg, err := openAt(write(t, `{"agent":{"use":"","claude":{"model":"opus"}}}`))
+	cfg, err := openAt(write(t, `{"app":{"agent":{"use":"","claude":{"model":"opus"}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -300,7 +300,7 @@ func TestASectionSurvivesNotBeingTheOneInUse(t *testing.T) {
 // An installation the folders looked in do not cover names the command line
 // itself, and it is started as written.
 func TestTheCommandLineCanBeNamed(t *testing.T) {
-	cfg, err := openAt(write(t, `{"agent":{"claude":{"command":["/opt/claude/bin/claude"]}}}`))
+	cfg, err := openAt(write(t, `{"app":{"agent":{"claude":{"command":["/opt/claude/bin/claude"]}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -319,18 +319,18 @@ func TestATitleAndAFilenameAreOneNameUntilTheFileReturnsOtherwise(t *testing.T) 
 		wasWritten bool
 	}{
 		"a file nobody wrote":     {shouldSync: true},
-		"a file naming no naming": {file: `{"appearance":{"text_scale":1.5}}`, shouldSync: true, wasWritten: true},
+		"a file naming no naming": {file: `{"app":{"appearance":{"textScale":1.5}}}`, shouldSync: true, wasWritten: true},
 		"a section naming no field": {
-			file: `{"naming":{}}`, shouldSync: true, wasWritten: true,
+			file: `{"app":{"naming":{}}}`, shouldSync: true, wasWritten: true,
 		},
 		"a field naming one name": {
-			file: `{"naming":{"sync_title_and_filename":true}}`, shouldSync: true, wasWritten: true,
+			file: `{"app":{"naming":{"syncTitleAndFilename":true}}}`, shouldSync: true, wasWritten: true,
 		},
 		"a field naming nothing": {
-			file: `{"naming":{"sync_title_and_filename":null}}`, shouldSync: true, wasWritten: true,
+			file: `{"app":{"naming":{"syncTitleAndFilename":null}}}`, shouldSync: true, wasWritten: true,
 		},
 		"a field telling the two apart": {
-			file: `{"naming":{"sync_title_and_filename":false}}`, shouldSync: false, wasWritten: true,
+			file: `{"app":{"naming":{"syncTitleAndFilename":false}}}`, shouldSync: false, wasWritten: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -360,7 +360,7 @@ func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(raw), `"sync_title_and_filename": true`) {
+	if !strings.Contains(string(raw), `"syncTitleAndFilename": true`) {
 		t.Errorf("the naming is not in the file it wrote:\n%s", raw)
 	}
 }

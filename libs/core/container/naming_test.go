@@ -25,14 +25,14 @@ func writeSettings(t *testing.T, body string) container.Config {
 // The setting is read at each rename, so changing it in the palette applies
 // to the next rename and not only after a restart.
 func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
-	cfg := writeSettings(t, `{"naming":{"sync_title_and_filename":true}}`)
+	cfg := writeSettings(t, `{"app":{"naming":{"syncTitleAndFilename":true}}}`)
 	setting := cfg.SyncSetting()
 	if !setting.GetSetting() {
 		t.Fatal("a title and a filename are distinguished")
 	}
 
 	path := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
-	if err := os.WriteFile(path, []byte(`{"naming":{"sync_title_and_filename":false}}`), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(`{"app":{"naming":{"syncTitleAndFilename":false}}}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if setting.GetSetting() {
@@ -45,9 +45,9 @@ func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
 func TestWhatIsReadWhereTheFileReturnsNothing(t *testing.T) {
 	for name, body := range map[string]string{
 		"a file nobody wrote":        "",
-		"a file naming no section":   `{"appearance":{"text_scale":1.5}}`,
-		"a section naming no field":  `{"naming":{}}`,
-		"a file that does not parse": `{"naming":`,
+		"a file naming no section":   `{"app":{"appearance":{"textScale":1.5}}}`,
+		"a section naming no field":  `{"app":{"naming":{}}}`,
+		"a file that does not parse": `{"app":{"naming":`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			if !writeSettings(t, body).SyncSetting().GetSetting() {

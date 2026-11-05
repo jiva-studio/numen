@@ -88,7 +88,7 @@ describe('what remains at a setting', () => {
     expect(kept.plugins.value).toStrictEqual([])
   })
 
-  /** A store over a vault with one plugin whose `enabled` setting defaults to true. */
+  /** A store over a vault with one plugin whose `autoRun` setting defaults to true. */
   const createPluginStore = (written: string) => {
     const core: SettingsStoreDeps = {
       getSettings: () =>
@@ -110,9 +110,9 @@ describe('what remains at a setting', () => {
               hasBackend: false,
               settings: [
                 {
-                  key: 'enabled',
+                  key: 'autoRun',
                   type: 'boolean',
-                  title: 'Enabled',
+                  title: 'Auto run',
                   description: 'Enable feature',
                   default: true,
                 },
@@ -129,23 +129,23 @@ describe('what remains at a setting', () => {
     const store = createPluginStore('{}')
     await store.start()
 
-    expect(store.getSetting(['plugins', 'my.plugin', 'enabled'])).toBe(true)
-    expect(store.getCommittedSetting(['plugins', 'my.plugin', 'enabled'])).toBe(true)
-    expect(store.getSetting(['plugins', 'my.plugin', 'nonexistent'])).toBeUndefined()
-    expect(store.getSetting(['plugins', 'other.plugin', 'enabled'])).toBeUndefined()
-    expect(store.getSetting(['other', 'my.plugin', 'enabled'])).toBeUndefined()
-    expect(store.getSetting(['plugins', 'my.plugin'])).toBeUndefined()
-    expect(store.getSetting(['plugins', 'my.plugin', 'enabled', 'extra'])).toBeUndefined()
+    expect(store.getSetting(['my.plugin', 'autoRun'])).toBe(true)
+    expect(store.getCommittedSetting(['my.plugin', 'autoRun'])).toBe(true)
+    expect(store.getSetting(['my.plugin', 'nonexistent'])).toBeUndefined()
+    expect(store.getSetting(['other.plugin', 'autoRun'])).toBeUndefined()
+    expect(store.getSetting(['app', 'autoRun'])).toBeUndefined()
+    expect(store.getSetting(['my.plugin'])).toBeUndefined()
+    expect(store.getSetting(['my.plugin', 'autoRun', 'extra'])).toBeUndefined()
   })
 
   it('prefers explicit configuration over declarative plugin default', async () => {
     const store = createPluginStore(
-      JSON.stringify({ plugins: { 'my.plugin': { enabled: false } } }),
+      JSON.stringify({ 'my.plugin': { autoRun: false } }),
     )
     await store.start()
 
-    expect(store.getSetting(['plugins', 'my.plugin', 'enabled'])).toBe(false)
-    expect(store.getCommittedSetting(['plugins', 'my.plugin', 'enabled'])).toBe(false)
+    expect(store.getSetting(['my.plugin', 'autoRun'])).toBe(false)
+    expect(store.getCommittedSetting(['my.plugin', 'autoRun'])).toBe(false)
   })
 })
 
@@ -230,11 +230,11 @@ const defer = <T>() => {
 }
 
 describe('a setting written twice in quick succession', () => {
-  const settingPath = ['naming', 'sync_title_and_filename']
+  const settingPath = ['app', 'naming', 'syncTitleAndFilename']
 
   /** A file whose text a test sets, with every write and every read held until it is let through. */
   const createBlockedVault = () => {
-    let file = '{"naming":{"sync_title_and_filename":true}}'
+    let file = '{"app":{"naming":{"syncTitleAndFilename":true}}}'
     const writes: ReturnType<typeof defer<void>>[] = []
     const reads: ReturnType<typeof defer<string>>[] = []
     const core: SettingsStoreDeps = {
@@ -247,7 +247,7 @@ describe('a setting written twice in quick succession', () => {
         const isDone = defer<void>()
         writes.push(isDone)
         await isDone.promise
-        file = `{"naming":{"sync_title_and_filename":${edits[0]?.value}}}`
+        file = `{"app":{"naming":{"syncTitleAndFilename":${edits[0]?.value}}}}`
       },
     }
     return { core, writes, reads, getFile: () => file }
@@ -264,7 +264,7 @@ describe('a setting written twice in quick succession', () => {
 
     vault.writes[0]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
-    vault.reads[0]?.resolve('{"naming":{"sync_title_and_filename":false}}')
+    vault.reads[0]?.resolve('{"app":{"naming":{"syncTitleAndFilename":false}}}')
     await first
     expect(retainedState.getSetting(settingPath)).toBe(true)
     expect(retainedState.getCommittedSetting(settingPath)).toBe(false)
@@ -316,5 +316,51 @@ describe('what remains at a path through a tree', () => {
   it('is nothing where the path runs off the tree', () => {
     expect(getSettingAt({ a: 1 }, ['a', 'b'])).toBeUndefined()
     expect(getSettingAt(null, ['a'])).toBeUndefined()
+  })
+})
+
+describe('the settings of the shell', () => {
+  const TEXT_SCALE = {
+    key: 'appearance.textScale',
+    type: 'range',
+    title: 'Text size',
+    description: '',
+    default: 1,
+    min: 0.8,
+    max: 1.75,
+  } as const
+
+  /** A store over a vault that declares the shell setting and holds `written`. */
+  const createShellStore = (written: string) =>
+    createSettingsStore(
+      {
+        getSettings: () =>
+          Promise.resolve({ written, path: '/numen.json', models: [], app: [TEXT_SCALE] }),
+        updateSettings: () => Promise.resolve(),
+      },
+      words,
+      vi.fn(),
+    )
+
+  it('are in force at the default the core declares where the file names none', async () => {
+    const store = createShellStore('{}')
+    await store.start()
+
+    expect(store.getSetting(['app', 'appearance', 'textScale'])).toBe(1)
+    expect(store.getCommittedSetting(['app', 'appearance', 'textScale'])).toBe(1)
+  })
+
+  it('are what the file holds where it names them', async () => {
+    const store = createShellStore('{"app":{"appearance":{"textScale":1.5}}}')
+    await store.start()
+
+    expect(store.getSetting(['app', 'appearance', 'textScale'])).toBe(1.5)
+  })
+
+  it('have no default for a key the core does not declare', async () => {
+    const store = createShellStore('{}')
+    await store.start()
+
+    expect(store.getSetting(['app', 'appearance', 'unknown'])).toBeUndefined()
   })
 })

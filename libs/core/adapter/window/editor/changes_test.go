@@ -296,7 +296,7 @@ func openWindow(t *testing.T, hold *held, notes map[string]string) *going {
 // is where an installation pointed somewhere of its own keeps one.
 func writeNamingSettings(t *testing.T, registry string, sync note.SyncTitleAndFilename) {
 	t.Helper()
-	body := fmt.Sprintf(`{"naming":{"sync_title_and_filename":%v}}`, bool(sync))
+	body := fmt.Sprintf(`{"app":{"naming":{"syncTitleAndFilename":%v}}}`, bool(sync))
 	if err := os.WriteFile(
 		filepath.Join(filepath.Dir(registry), "numen.json"), []byte(body), 0o644,
 	); err != nil {
@@ -1008,7 +1008,7 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 	}{
 		{"is not JSON at all", []string{"agent", "claude", "model"}, `opus`},
 		{"is of the wrong shape", []string{"agent", "claude", "model"}, `7`},
-		{"is past what the setting goes to", []string{"appearance", "text_scale"}, `5`},
+		{"is past what the setting goes to", []string{"appearance", "textScale"}, `5`},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			f := opening(t, nil, nil, true)
@@ -1047,7 +1047,7 @@ func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
 			{At: []string{"agent", "claude", "model"}, Value: `"opus"`},
-			{At: []string{"appearance", "text_scale"}, Value: `5`},
+			{At: []string{"appearance", "textScale"}, Value: `5`},
 		},
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -1080,7 +1080,7 @@ func TestTheLevelsOfAModelReachTheWindow(t *testing.T) {
 
 func isSyncing(t *testing.T, f *going) bool {
 	t.Helper()
-	target, is := getSetting(t, f, "naming", "sync_title_and_filename").(bool)
+	target, is := getSetting(t, f, "naming", "syncTitleAndFilename").(bool)
 	if !is {
 		t.Fatal("the setting is not written as a switch")
 	}
@@ -1102,7 +1102,7 @@ func TestGetSettingsReturnsTheNewValueAfterWriteSettings(t *testing.T) {
 	if !isSyncing(t, f) {
 		t.Fatal("an installation nobody has configured keeps the names apart")
 	}
-	if err := writeSetting(t, f, "false", "naming", "sync_title_and_filename"); err != nil {
+	if err := writeSetting(t, f, "false", "naming", "syncTitleAndFilename"); err != nil {
 		t.Fatal(err)
 	}
 	if isSyncing(t, f) {
@@ -1115,10 +1115,10 @@ func TestGetSettingsReturnsTheNewValueAfterWriteSettings(t *testing.T) {
 func TestWriteSettingsRejectsANumberOutOfBounds(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	if err := writeSetting(t, f, "20", "appearance", "text_scale"); err == nil {
+	if err := writeSetting(t, f, "20", "appearance", "textScale"); err == nil {
 		t.Fatal("a text scale of twenty was written")
 	}
-	if got := getSetting(t, f, "appearance", "text_scale"); got != float64(1) {
+	if got := getSetting(t, f, "appearance", "textScale"); got != float64(1) {
 		t.Errorf("the text scale is %v", got)
 	}
 }
@@ -1128,11 +1128,11 @@ func TestWriteSettingsRejectsANumberOutOfBounds(t *testing.T) {
 func TestWriteSettingsKeepsTheRestOfTheFile(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	path := filepath.Join(filepath.Dir(f.settings), "numen.json")
-	if err := os.WriteFile(path, []byte("{\n  \"appearance\": {\"text_scale\": 1.5}\n}\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("{\n  \"appearance\": {\"textScale\": 1.5}\n}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := writeSetting(t, f, "false", "naming", "sync_title_and_filename"); err != nil {
+	if err := writeSetting(t, f, "false", "naming", "syncTitleAndFilename"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1140,10 +1140,10 @@ func TestWriteSettingsKeepsTheRestOfTheFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(raw), `"text_scale": 1.5`) {
+	if !strings.Contains(string(raw), `"textScale": 1.5`) {
 		t.Errorf("what the person typed was rewritten:\n%s", raw)
 	}
-	if !strings.Contains(string(raw), `"sync_title_and_filename": false`) {
+	if !strings.Contains(string(raw), `"syncTitleAndFilename": false`) {
 		t.Errorf("the setting is not in the file:\n%s", raw)
 	}
 }

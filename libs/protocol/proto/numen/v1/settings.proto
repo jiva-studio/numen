@@ -72,6 +72,10 @@ message GetSettingsResponse {
 
   // Active plugins and their declarative settings schema.
   repeated PluginInfo plugins = 7;
+
+  // The settings of the owner app, declared by the core in the format of a manifest setting. The
+  // window reads their defaults, bounds and options from here.
+  repeated PluginSetting app = 8;
 }
 
 // Model is one model a setting that names a model can be set to.

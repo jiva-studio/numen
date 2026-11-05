@@ -302,7 +302,7 @@ describe('the plugins the window loads', () => {
     const pluginsRef = ref([{ id: 'md.numen.a', hasFrontend: true }])
     const rest = {
       getSetting: (path: readonly string[]) =>
-        path[0] === 'plugins' ? settings.value[path[2] ?? ''] : undefined,
+        path.length === 2 ? settings.value[path[1] ?? ''] : undefined,
       plugins: pluginsRef,
     }
     const { pluginHost } = createPluginSupport({

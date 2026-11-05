@@ -30,15 +30,15 @@ const model = (
 })
 
 const LISTED = [
-  model(['agent', 'use'], 'alpha', { isDefault: true }),
-  model(['agent', 'use'], 'beta'),
-  model(['agent', 'alpha', 'model'], 'deep', {
+  model(['app', 'agent', 'use'], 'alpha', { isDefault: true }),
+  model(['app', 'agent', 'use'], 'beta'),
+  model(['app', 'agent', 'alpha', 'model'], 'deep', {
     isDefault: true,
     reasoningLevels: LEVELS,
     defaultReasoning: 'low',
   }),
-  model(['agent', 'alpha', 'model'], 'plain'),
-  model(['agent', 'beta', 'model'], 'quiet', { reasoningLevels: LEVELS }),
+  model(['app', 'agent', 'alpha', 'model'], 'plain'),
+  model(['app', 'agent', 'beta', 'model'], 'quiet', { reasoningLevels: LEVELS }),
 ]
 
 /** An agent tab with the listed models, the stored settings, and the recorded requests. */

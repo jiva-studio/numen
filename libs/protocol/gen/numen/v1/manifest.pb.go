@@ -1031,7 +1031,12 @@ type ManifestSetting struct {
 	When      *ManifestCondition  `protobuf:"bytes,15,opt,name=when,proto3" json:"when,omitempty"`
 	Accept    []string            `protobuf:"bytes,16,rep,name=accept,proto3" json:"accept,omitempty"`
 	// multiple makes a file setting hold a list of paths, one per line.
-	Multiple      bool `protobuf:"varint,17,opt,name=multiple,proto3" json:"multiple,omitempty"`
+	Multiple bool `protobuf:"varint,17,opt,name=multiple,proto3" json:"multiple,omitempty"`
+	// preview makes the window apply the value while its control is focused, and restore the saved
+	// value on leaving.
+	Preview bool `protobuf:"varint,18,opt,name=preview,proto3" json:"preview,omitempty"`
+	// options_from names a registry the options are listed from, such as the installed themes.
+	OptionsFrom   string `protobuf:"bytes,19,opt,name=options_from,json=optionsFrom,proto3" json:"options_from,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1176,6 +1181,20 @@ func (x *ManifestSetting) GetMultiple() bool {
 		return x.Multiple
 	}
 	return false
+}
+
+func (x *ManifestSetting) GetPreview() bool {
+	if x != nil {
+		return x.Preview
+	}
+	return false
+}
+
+func (x *ManifestSetting) GetOptionsFrom() string {
+	if x != nil {
+		return x.OptionsFrom
+	}
+	return ""
 }
 
 type ManifestSecret struct {
@@ -1769,7 +1788,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xa2\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xdf\x04\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1788,7 +1807,9 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"options_by\x18\x0e \x01(\v2\x1b.numen.v1.ManifestOptionsByR\toptionsBy\x12/\n" +
 	"\x04when\x18\x0f \x01(\v2\x1b.numen.v1.ManifestConditionR\x04when\x12\x16\n" +
 	"\x06accept\x18\x10 \x03(\tR\x06accept\x12\x1a\n" +
-	"\bmultiple\x18\x11 \x01(\bR\bmultipleB\x06\n" +
+	"\bmultiple\x18\x11 \x01(\bR\bmultiple\x12\x18\n" +
+	"\apreview\x18\x12 \x01(\bR\apreview\x12!\n" +
+	"\foptions_from\x18\x13 \x01(\tR\voptionsFromB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_step\"\x8d\x01\n" +

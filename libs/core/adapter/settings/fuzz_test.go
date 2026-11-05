@@ -37,12 +37,12 @@ func FuzzAt(f *testing.F) {
 		interfaceScale, textScale float64) {
 		raw, err := json.Marshal(file{
 			Version: version,
-			Appearance: appearance{
+			App: app{Appearance: appearance{
 				InterfaceScale: interfaceScale,
 				TextScale:      textScale,
 				Mode:           mode,
 				Theme:          theme,
-			},
+			}},
 		})
 		if err != nil {
 			// A size that is not a number is not something a file can hold.
@@ -79,13 +79,17 @@ func FuzzAt(f *testing.F) {
 // file mirrors the layout of the settings file, so a fuzzed value is stored
 // under the key the reader looks up.
 type file struct {
-	Version    int        `json:"v"`
+	Version int `json:"v"`
+	App     app `json:"app"`
+}
+
+type app struct {
 	Appearance appearance `json:"appearance"`
 }
 
 type appearance struct {
-	InterfaceScale float64 `json:"interface_scale"`
-	TextScale      float64 `json:"text_scale"`
+	InterfaceScale float64 `json:"interfaceScale"`
+	TextScale      float64 `json:"textScale"`
 	Mode           string  `json:"mode"`
 	Theme          string  `json:"theme"`
 }

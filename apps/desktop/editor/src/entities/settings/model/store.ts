@@ -6,7 +6,7 @@
 import { ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
 import { createRemoteValues } from '@numen/ui'
-import type { Model, PluginInfo, SettingEdit } from '../lib/configuration'
+import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'
 
@@ -26,6 +26,7 @@ export interface SettingsStoreDeps {
     readonly path: string
     readonly models: readonly Model[]
     readonly plugins?: readonly PluginInfo[] | undefined
+    readonly app?: readonly PluginSettingInfo[] | undefined
   }>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }

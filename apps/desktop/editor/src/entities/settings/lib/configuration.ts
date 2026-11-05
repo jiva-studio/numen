@@ -2,7 +2,7 @@
  * What the settings hold: one setting written at its current position, and the models a
  * setting that names one can be set to.
  */
-import type { PluginInfo } from '@numen/plugin-manager'
+import type { PluginInfo, PluginSettingInfo } from '@numen/plugin-manager'
 export type {
   PluginInfo,
   PluginReader,
@@ -61,4 +61,6 @@ export interface Configuration {
   readonly path: string
   readonly models: readonly Model[]
   readonly plugins?: readonly PluginInfo[] | undefined
+  /** The settings of the owner app, as the core declares them. */
+  readonly app?: readonly PluginSettingInfo[] | undefined
 }

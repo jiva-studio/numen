@@ -336,7 +336,7 @@ func TestEndConversation_RoutesToStartingPlugin(t *testing.T) {
 func TestAgentContainer_ExposesProgramsAndModels(t *testing.T) {
 	host, _, _ := twoProviders(t)
 	settings := filepath.Join(t.TempDir(), "numen.json")
-	if err := os.WriteFile(settings, []byte(`{"agent":{"alpha":{"model":"mine"}}}`), 0o600); err != nil {
+	if err := os.WriteFile(settings, []byte(`{"app":{"agent":{"alpha":{"model":"mine"}}}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 

@@ -8,7 +8,7 @@ import {
   readOpenTabs,
   showInFiles,
 } from '../../support/layout.js'
-import { readSettings, writeSetting } from '../../support/vault.js'
+import { readOwner, writeSetting } from '../../support/vault.js'
 
 const PLEX_ID = 'md.numen.views.plex.graph'
 
@@ -24,8 +24,8 @@ const chooseValue = async (page: Page, value: string): Promise<void> => {
 
 test.describe('Window Controls and Display Preferences', () => {
   test.afterEach(async ({ request }) => {
-    await writeSetting(request, ['appearance', 'text_scale'], 1)
-    await writeSetting(request, ['plugins', PLEX_ID, 'nest_headings'], true)
+    await writeSetting(request, ['app', 'appearance', 'textScale'], 1)
+    await writeSetting(request, [PLEX_ID, 'nest_headings'], true)
   })
 
   test('closes the active tab with Close tab', async ({ page, request }) => {
@@ -61,8 +61,8 @@ test.describe('Window Controls and Display Preferences', () => {
 
     await expect.poll(async () => readComputedFontSize(editor)).toBeCloseTo(before * 1.5, 0)
     await expect
-      .poll(async () => (await readSettings(request))['appearance'])
-      .toMatchObject({ text_scale: 1.5 })
+      .poll(async () => (await readOwner(request, 'app'))['appearance'])
+      .toMatchObject({ textScale: 1.5 })
 
     await page.reload()
 
@@ -84,8 +84,8 @@ test.describe('Window Controls and Display Preferences', () => {
     await runPaletteCommand(page, 'Nest headings', 'Plex Graph: Nest headings under notes')
     await chooseValue(page, 'Off')
     await expect
-      .poll(async () => (await readSettings(request))['plugins'])
-      .toMatchObject({ [PLEX_ID]: { nest_headings: false } })
+      .poll(async () => await readOwner(request, PLEX_ID))
+      .toMatchObject({ nest_headings: false })
 
     await page.mouse.move(0, 0)
     await focusNode.hover()

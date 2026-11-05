@@ -172,15 +172,13 @@ fs.writeFileSync(
   JSON.stringify(
     {
       v: 1,
-      agent: { use: 'numen' },
-      plugins: {
-        'md.numen.agents.numen': { baseUrl: standIns.chatUrl, model: STAND_IN_MODEL },
-        'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
-        'md.numen.agents.claude': { enabled: false },
-        'md.numen.agents.codex': { enabled: false },
-        'md.numen.agents.antigravity': { enabled: false },
-        'md.numen.agents.acp': { enabled: false },
-      },
+      app: { agent: { use: 'numen' } },
+      'md.numen.agents.numen': { baseUrl: standIns.chatUrl, model: STAND_IN_MODEL },
+      'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
+      'md.numen.agents.claude': { enabled: false },
+      'md.numen.agents.codex': { enabled: false },
+      'md.numen.agents.antigravity': { enabled: false },
+      'md.numen.agents.acp': { enabled: false },
     },
     null,
     2,

@@ -4,11 +4,11 @@ import { runInBackground } from '@numen/ui'
 import { createSettingsStore } from './store'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-const AT = ['plugins', 'p', 'enabled'] as const
+const AT = ['p', 'enabled'] as const
 
 describe('settings store', () => {
   it('shows a written value without reverting while the vault applies it', async () => {
-    const file: Record<string, unknown> = { plugins: { p: { enabled: true } } }
+    const file: Record<string, unknown> = { p: { enabled: true } }
     const core = {
       getSettings: async () => ({
         written: JSON.stringify(file),
@@ -18,7 +18,7 @@ describe('settings store', () => {
       }),
       updateSettings: async (edits: readonly { at: readonly string[]; value: string }[]) => {
         for (const e of edits)
-          (file.plugins as { p: { enabled: boolean } }).p.enabled = JSON.parse(e.value)
+          (file as { p: { enabled: boolean } }).p.enabled = JSON.parse(e.value)
         await sleep(100) // the plugin host applies the change
       },
     }
@@ -54,7 +54,7 @@ interface HeldCall {
  * every read and write waits until the test answers it.
  */
 const createHeldVault = (isEnabled: boolean) => {
-  const file = { plugins: { p: { enabled: isEnabled } } }
+  const file = { p: { enabled: isEnabled } }
   let isActive = isEnabled
   const reads: HeldCall[] = []
   const writes: HeldCall[] = []
@@ -69,15 +69,15 @@ const createHeldVault = (isEnabled: boolean) => {
       }),
     updateSettings: (edits: readonly { at: readonly string[]; value: string }[]) =>
       new Promise<void>((resolve, reject) => {
-        const previous = file.plugins.p.enabled
-        for (const e of edits) file.plugins.p.enabled = JSON.parse(e.value) as boolean
+        const previous = file.p.enabled
+        for (const e of edits) file.p.enabled = JSON.parse(e.value) as boolean
         writes.push({
           resolve: () => {
-            isActive = file.plugins.p.enabled
+            isActive = file.p.enabled
             resolve()
           },
           reject: (error) => {
-            file.plugins.p.enabled = previous
+            file.p.enabled = previous
             reject(error)
           },
         })

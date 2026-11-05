@@ -23,7 +23,7 @@ import {
   writeVaultFile,
 } from '../../support/vault.js'
 
-const SYNC_SETTING = ['naming', 'sync_title_and_filename'] as const
+const SYNC_SETTING = ['app', 'naming', 'syncTitleAndFilename'] as const
 
 /** The node of the plex drawn for a note, by its title and what it is to the note in focus. */
 const getPlexNode = (page: Page, title: string, relation: string) =>

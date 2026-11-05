@@ -21,6 +21,15 @@ type PluginSetting struct {
 	When      *PluginSettingCondition
 	Accept    []string
 	Multiple  bool
+	// Preview and OptionsFrom are as the manifest declares them.
+	Preview     bool
+	OptionsFrom string
+	// ActiveOptions, IsShown and ValueJSON are the options, the visibility and the value in force
+	// under the stored values, resolved by the manifest. A window draws them and applies no rule of
+	// OptionsBy or When itself.
+	ActiveOptions PluginSettingOptions
+	IsShown       bool
+	ValueJSON     string
 }
 
 // PluginInfo describes a discovered plugin and its declarative settings.

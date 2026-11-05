@@ -151,6 +151,12 @@ type Setting struct {
 	Accept []string
 	// Multiple is a setting of type file that holds a list of paths, one per line.
 	Multiple bool
+	// Preview makes the window apply the value while the control of the setting is focused, and
+	// restore the saved value on leaving.
+	Preview bool
+	// OptionsFrom names a registry the options are listed from, such as the installed themes.
+	// Empty where the setting lists its own options.
+	OptionsFrom string
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.

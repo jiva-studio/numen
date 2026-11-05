@@ -119,7 +119,7 @@ describe('files domain', () => {
 
 describe('settings domain', () => {
   it('reads and writes the sync and settings', async () => {
-    const writtenSettings = JSON.stringify({ naming: { sync_title_and_filename: true } })
+    const writtenSettings = JSON.stringify({ app: { naming: { syncTitleAndFilename: true } } })
     request.getSettings.mockResolvedValue({
       written: writtenSettings,
       models: [],

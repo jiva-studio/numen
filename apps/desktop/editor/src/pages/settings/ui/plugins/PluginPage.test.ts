@@ -22,10 +22,8 @@ const FIRST = createPluginInfo('md.example.first', 'First Agent', { settings: [P
 const SECOND = createPluginInfo('md.example.second', 'Second Agent', { settings: [PATH_SETTING] })
 
 const FILE = {
-  plugins: {
-    [FIRST.id]: { executable_path: '/opt/first/bin/first-cli' },
-    [SECOND.id]: { executable_path: '/opt/second/bin/second-cli' },
-  },
+  [FIRST.id]: { executable_path: '/opt/first/bin/first-cli' },
+  [SECOND.id]: { executable_path: '/opt/second/bin/second-cli' },
 }
 
 /** Answers the test lets through by plugin id, in the order it chooses. */
