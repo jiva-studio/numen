@@ -29,11 +29,12 @@ type Declarations func(owner string) ([]pluginport.PluginManifestSetting, bool)
 // registry that has no provider.
 type Registries func(name string) ([]string, bool)
 
-// CheckWrite returns why the value is not one the setting at the path takes. The first element of
+// CheckWrite takes the declarations of the owners, the registries, the path of the setting and the
+// value. It returns why the value is not one the setting at the path takes. The first element of
 // the path is the owner and the rest is the key path under it, as the file lays them out. One
 // function checks a write for every owner: the declared key, the type of the value, the
 // membership of an enum and the bounds of a range.
-func CheckWrite(declared Declarations, registries Registries, path []string, value any) error {
+func CheckWrite(_ Declarations, _ Registries, _ []string, _ any) error {
 	return nil
 }
 
@@ -44,12 +45,12 @@ func GetAppDeclaration() []pluginport.PluginManifestSetting {
 }
 
 // GetOwner returns the values stored under an owner, the plugin id or OwnerApp.
-func (s File) GetOwner(owner string) map[string]any {
+func (File) GetOwner(_ string) map[string]any {
 	return nil
 }
 
 // GetValue returns the value in force at a path: the stored value, else the default its owner
 // declares. The first element of the path is the owner.
-func (s File) GetValue(path ...string) (any, bool) {
+func (File) GetValue(_ ...string) (any, bool) {
 	return nil, false
 }
