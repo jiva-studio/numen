@@ -15,7 +15,10 @@ const rules = [
 ]
 
 test('the forward-only script of the index migrations is gone', () => {
-  assert.equal(existsSync(resolve(root, 'libs/core/adapter/index/migration-forward-only.sh')), false)
+  assert.equal(
+    existsSync(resolve(root, 'libs/core/adapter/index/migration-forward-only.sh')),
+    false,
+  )
 })
 
 test('no workflow runs a migrations job or the forward-only script', () => {
@@ -35,7 +38,11 @@ test('the pre-commit hook does not run the forward-only script', () => {
 
 test('the agent rules do not ask for a numbered migration when the schema changes', () => {
   for (const file of rules) {
-    assert.equal(mentions(file, /numbered migration|migrations are frozen|and migrations/i), false, file)
+    assert.equal(
+      mentions(file, /numbered migration|migrations are frozen|and migrations/i),
+      false,
+      file,
+    )
   }
 })
 

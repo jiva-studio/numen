@@ -17,15 +17,19 @@ const schemaFile = "schema.sql"
 
 type catalogueEntry struct{ kind, name, body string }
 
-func readCatalogue(t *testing.T, db *sql.DB) []catalogueEntry {
+func readCatalogue(ctx context.Context, t *testing.T, db *sql.DB) []catalogueEntry {
 	t.Helper()
-	rows, err := db.QueryContext(t.Context(),
+	rows, err := db.QueryContext(ctx,
 		`SELECT type, name, coalesce(sql, '') FROM sqlite_master
 		 WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testsupport.Close(t, rows)
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	var out []catalogueEntry
 	for rows.Next() {
 		var e catalogueEntry
@@ -40,10 +44,10 @@ func readCatalogue(t *testing.T, db *sql.DB) []catalogueEntry {
 	return out
 }
 
-func getUserVersion(t *testing.T, db *sql.DB) int {
+func getUserVersion(ctx context.Context, t *testing.T, db *sql.DB) int {
 	t.Helper()
 	var v int
-	if err := db.QueryRowContext(t.Context(), "PRAGMA user_version").Scan(&v); err != nil {
+	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&v); err != nil {
 		t.Fatal(err)
 	}
 	return v
@@ -80,14 +84,14 @@ func TestAFreshIndexHasTheWholeSchemaOfOneFile(t *testing.T) {
 	}
 	defer testsupport.Close(t, db)
 
-	got, want := readCatalogue(t, db.write), readCatalogue(t, reference)
+	got, want := readCatalogue(ctx, t, db.write), readCatalogue(ctx, t, reference)
 	if len(want) == 0 {
 		t.Fatal("the schema file creates nothing")
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("a fresh index holds\n%v\nthe schema file makes\n%v", got, want)
 	}
-	if v := getUserVersion(t, db.write); v <= 0 {
+	if v := getUserVersion(ctx, t, db.write); v <= 0 {
 		t.Errorf("a fresh index is at version %d, want the current one, above zero", v)
 	}
 }
@@ -101,7 +105,7 @@ func TestAnIndexOfAnotherOrNoVersionIsEmptiedAndTheVaultIsIndexedAgain(t *testin
 			t.Fatal(err)
 		}
 		defer testsupport.Close(t, db)
-		return getUserVersion(t, db.write)
+		return getUserVersion(ctx, t, db.write)
 	}()
 
 	versions := []int{0, current + 1, current + 100}
@@ -126,7 +130,7 @@ func TestAnIndexOfAnotherOrNoVersionIsEmptiedAndTheVaultIsIndexedAgain(t *testin
 				if err := db.Close(); err != nil {
 					t.Fatal(err)
 				}
-				checkEmptiedAndIndexedAgain(t, ctx, path, current)
+				checkEmptiedAndIndexedAgain(ctx, t, path, current)
 			})
 
 			t.Run("with tables of another shape", func(t *testing.T) {
@@ -146,13 +150,13 @@ func TestAnIndexOfAnotherOrNoVersionIsEmptiedAndTheVaultIsIndexedAgain(t *testin
 				if err := raw.Close(); err != nil {
 					t.Fatal(err)
 				}
-				checkEmptiedAndIndexedAgain(t, ctx, path, current)
+				checkEmptiedAndIndexedAgain(ctx, t, path, current)
 			})
 		})
 	}
 }
 
-func checkEmptiedAndIndexedAgain(t *testing.T, ctx context.Context, path string, current int) {
+func checkEmptiedAndIndexedAgain(ctx context.Context, t *testing.T, path string, current int) {
 	t.Helper()
 	db, err := Open(ctx, path)
 	if err != nil {
@@ -160,10 +164,10 @@ func checkEmptiedAndIndexedAgain(t *testing.T, ctx context.Context, path string,
 	}
 	defer testsupport.Close(t, db)
 
-	if v := getUserVersion(t, db.write); v != current {
+	if v := getUserVersion(ctx, t, db.write); v != current {
 		t.Errorf("the index is at version %d, want %d", v, current)
 	}
-	for _, e := range readCatalogue(t, db.write) {
+	for _, e := range readCatalogue(ctx, t, db.write) {
 		if e.name == "old_marker_rows" {
 			t.Errorf("a table of the old index is still there: %s", e.name)
 		}
