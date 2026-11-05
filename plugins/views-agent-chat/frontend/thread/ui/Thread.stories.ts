@@ -104,7 +104,7 @@ export const Working: Story = {
   render: renderThread([
     createRequested('1', 'Add ten children to this note.'),
     createResponded('2', "I'll look at **Harmonic oscillator** first."),
-    { id: '3', voice: 'doing', text: 'note_neighbourhood' },
+    { id: '3', voice: 'doing', text: 'link_list' },
     { id: '4', voice: 'doing', text: 'note_read' },
     createResponded(
       '5',

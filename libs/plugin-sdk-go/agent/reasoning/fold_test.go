@@ -95,7 +95,7 @@ func TestAChosenLevelResolvesToTheListedModel(t *testing.T) {
 	}
 }
 
-func TestTheFamilyIsOfferedWithItsLevelsAndDefault(t *testing.T) {
+func TestTheFamilyIsAvailableWithItsLevelsAndDefault(t *testing.T) {
 	got := Fold(listing())[0].GetModel()
 	if len(got.ReasoningLevels) != 3 || got.DefaultReasoning != "medium" || got.Name != "flash" {
 		t.Errorf("got %v", got)

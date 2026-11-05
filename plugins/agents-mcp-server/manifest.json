@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.mcp.server",
   "name": "Model Context Protocol Server",
-  "version": "2026.11.5",
+  "version": "2026.11.6",
   "protocol": 1,
   "description": "Connects external AI apps to your open vault",
   "capabilities": [],
@@ -16,7 +16,7 @@
       "key": "port",
       "type": "number",
       "title": "Port",
-      "description": "Local TCP port on 127.0.0.1 for external MCP clients (Streamable HTTP at /mcp and SSE at /sse)",
+      "description": "Local TCP port on 127.0.0.1 for external MCP clients (Streamable HTTP at /mcp)",
       "default": 3333,
       "min": 1024,
       "max": 65535,

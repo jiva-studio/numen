@@ -71,6 +71,7 @@ test.describe('Plugin buttons in the title bar', () => {
     request,
   }) => {
     await openWorkspace(page)
+    await expect(getButton(page, TREE_BUTTON)).toBeVisible()
     const before = await listButtonIds(page)
     expect(before).toContain(TREE_BUTTON)
 
@@ -109,6 +110,7 @@ test.describe('Plugin buttons in the title bar', () => {
 
   test('draws the same buttons in the window torn off from a tab', async ({ page }) => {
     await openWorkspace(page)
+    await expect(getButton(page, GRAPH_BUTTON)).toBeVisible()
     const inMain = await listButtonIds(page)
     expect(inMain).toContain(GRAPH_BUTTON)
 

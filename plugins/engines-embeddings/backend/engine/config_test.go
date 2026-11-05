@@ -57,7 +57,7 @@ func TestCheckIdentity(t *testing.T) {
 	for _, tc := range []ModelInfo{
 		{Dimensions: 1, MaxTokens: 1, Pooling: ""},
 		{Dimensions: 1024, MaxTokens: 512, Pooling: PoolMean},
-		{Dimensions: 1024, MaxTokens: 512, Pooling: PoolHead},
+		{Dimensions: 1024, MaxTokens: 512, Pooling: PoolCLS},
 	} {
 		if err := CheckIdentity(tc, "repo"); err != nil {
 			t.Errorf("expected valid identity for %+v, got %v", tc, err)

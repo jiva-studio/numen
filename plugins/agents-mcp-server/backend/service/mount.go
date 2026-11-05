@@ -43,12 +43,8 @@ func Mount(s *server.Server) error {
 		return err
 	})
 
-	s.Register("/sse", srv.Handler())
-	s.Register("/sse/", srv.Handler())
 	s.Register("/mcp", srv.Handler())
 	s.Register("/mcp/", srv.Handler())
-	s.Register("/messages", srv.Handler())
-	s.Register("/messages/", srv.Handler())
 	s.Register("/md.numen.agents.mcp.server/", srv.Handler())
 
 	return srv.Start()
