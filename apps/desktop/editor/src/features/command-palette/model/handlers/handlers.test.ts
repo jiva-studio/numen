@@ -1,5 +1,6 @@
 /** Command execution against a window double. */
 import { describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import { createCommands } from '../../lib/commands/commands'
 import { runSupport } from '../palette/runSupport'
 import { createInvocation } from '../../lib/entries/invocation'
@@ -902,7 +903,7 @@ describe('nothing to carry out', () => {
     const one = window()
     const broken: CommandDeps = {
       ...one.on,
-      files: { ...one.on.files, remove: async () => Promise.reject(new Error('gone')) },
+      files: { ...one.on.files, remove: async () => Promise.reject(createLostConnection('gone')) },
     }
 
     await runInvocation(createInvocation('app:note.trash', front()), broken, words)

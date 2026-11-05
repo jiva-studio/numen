@@ -81,6 +81,32 @@ describe('a fault', () => {
     expect(formatErrorMessage(undefined)).toMatch(/\S/)
   })
 
+  it('says the sentence of an error the window wrote itself', () => {
+    const failure = new Error('The plugin source local failed: duplicate plugin id "sample.notes"')
+    expect(formatErrorMessage(failure)).toBe(
+      'The plugin source local failed: duplicate plugin id "sample.notes"',
+    )
+  })
+
+  it('says what the person can do about a request the network dropped', () => {
+    const dropped = ConnectError.from(new TypeError('Failed to fetch'))
+    expect(formatErrorMessage(dropped)).toBe('Numen is not responding; retrying')
+  })
+
+  it('says the core is busy where it answered unavailable without a sentence', () => {
+    expect(formatErrorMessage(new ConnectError('', Code.Unavailable))).toBe(
+      'Numen is busy; try again',
+    )
+  })
+
+  it('says nothing about a request the window aborted', () => {
+    expect(formatErrorMessage(new DOMException('aborted', 'AbortError'))).toBe('')
+  })
+
+  it('falls back on the plain words where the error the window wrote is empty', () => {
+    expect(formatErrorMessage(new Error('  '))).toBe('Numen is not responding; retrying')
+  })
+
   it('says something plain where the code is empty here yet', () => {
     const message = formatErrorMessage(new ConnectError('', UNNAMED_CONNECT_CODE))
     expect(message).toMatch(/\S/)
