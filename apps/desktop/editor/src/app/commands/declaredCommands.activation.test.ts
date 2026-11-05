@@ -1,0 +1,59 @@
+/**
+ * The declared commands read the commands the plugin host lists as the window changes them. The
+ * host must not report a command as missing from a read taken while its plugin starts.
+ */
+import { describe, expect, it, vi } from 'vitest'
+import { createPluginHost, type PluginHost } from '@numen/plugin-host'
+import type { DeclaredCommand } from '@/entities/plugin'
+import { useDeclaredCommands } from './declaredCommands'
+
+const declare = (pluginId: string, id: string): DeclaredCommand => ({
+  pluginId,
+  id,
+  title: id,
+  contentTypes: [],
+  extensions: [],
+  arguments: [],
+})
+
+const VIEW = 'md.numen.views.file.tree'
+const BACKEND = 'md.numen.importing'
+
+/** A window with a view plugin, which has a frontend only, and a plugin that runs its commands in a backend. */
+async function createWindow() {
+  const hasBackend = (pluginId: string): boolean => pluginId === BACKEND
+  const holder: { current?: PluginHost } = {}
+  const declared = useDeclaredCommands({
+    list: async () => ({
+      commands: [declare(VIEW, 'tree.open'), declare(VIEW, 'tree.revealNote'), declare(BACKEND, 'import')],
+      menus: [],
+    }),
+    isListed: (id) => holder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
+    hasBackend,
+  })
+  const reportCommandIssue = vi.fn()
+  const host = createPluginHost({
+    registerKind: vi.fn(() => vi.fn()),
+    registerExtensionReader: vi.fn(() => vi.fn()),
+    openTab: vi.fn(async () => 'tab-1'),
+    getCommandDeclarations: () => declared.declarations.value,
+    hasPluginFrontend: (pluginId) => pluginId === VIEW,
+    hasPluginBackend: hasBackend,
+    reportCommandIssue,
+  })
+  holder.current = host
+  await declared.load()
+  return { host, reportCommandIssue }
+}
+
+describe('the commands of a view plugin that starts in a window with a backend plugin', () => {
+  it('are not reported as missing while the plugin registers them one after the other', async () => {
+    const { host, reportCommandIssue } = await createWindow()
+
+    const context = host.createContext(VIEW)
+    context.registerCommand({ id: 'tree.open', handler: () => undefined })
+    context.registerCommand({ id: 'tree.revealNote', handler: () => undefined })
+
+    expect(reportCommandIssue).not.toHaveBeenCalled()
+  })
+})
