@@ -148,14 +148,14 @@ export function createMenus(deps: MenusDeps): Menus {
   }
 
   const keepFirstOfEachCommand = (sorted: readonly PlacedCommand[], location: string) => {
-    const kept = new Map<string, PlacedCommand>()
+    const entryByCommand = new Map<string, PlacedCommand>()
     for (const one of sorted) {
-      const first = kept.get(one.command)
-      if (first === undefined) kept.set(one.command, one)
+      const first = entryByCommand.get(one.command)
+      if (first === undefined) entryByCommand.set(one.command, one)
       else if (first.pluginId !== one.pluginId)
         reportAbout({ ...one, location }, one.command, 'duplicate')
     }
-    return [...kept.values()]
+    return [...entryByCommand.values()]
   }
 
   const getEntries = (location: string): readonly PlacedCommand[] => {
