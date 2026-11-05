@@ -15,6 +15,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
@@ -465,7 +466,7 @@ func isPeerClosed(t *testing.T, peer net.Conn) bool {
 // within five seconds.
 func waitPeerClosed(t *testing.T, peer net.Conn, msg string) {
 	t.Helper()
-	err := peer.SetReadDeadline(time.Now().Add(5 * time.Second))
+	err := peer.SetReadDeadline(clock.System{}.Now().Add(5 * time.Second))
 	if errors.Is(err, io.ErrClosedPipe) {
 		return
 	}

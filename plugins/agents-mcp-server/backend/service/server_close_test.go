@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
 // gatedDeadlineContext holds the first Deadline call until release is closed. Close calls Deadline
@@ -85,7 +86,7 @@ func TestServerCloseAnswersRequestReadBeforeClose(t *testing.T) {
 	waitSignal(t, handlerStarted, "the handler did not start")
 	close(ctx.release)
 
-	if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+	if err := conn.SetReadDeadline(clock.System{}.Now().Add(5 * time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	resp, err := http.ReadResponse(bufio.NewReader(conn), nil)
