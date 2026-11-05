@@ -347,16 +347,16 @@ func TestAgentContainer_ExposesProgramsAndModels(t *testing.T) {
 		key := strings.Join(one.Path, ".")
 		byPath[key] = append(byPath[key], one)
 	}
-	uses := byPath["agent.use"]
+	uses := byPath["app.agent.use"]
 	if len(uses) != 3 || uses[0].Name != "alpha" || uses[1].Name != "beta" || uses[2].Name != "" {
 		t.Fatalf("the programs are %+v", uses)
 	}
-	alpha := byPath["agent.alpha.model"]
+	alpha := byPath["app.agent.alpha.model"]
 	if len(alpha) != 2 || alpha[0].Name != "big" || alpha[1].Name != "mine" {
 		t.Errorf("the models of alpha are %+v", alpha)
 	}
-	if len(byPath["agent.beta.model"]) != 0 {
-		t.Errorf("a program that is not installed offers %+v", byPath["agent.beta.model"])
+	if len(byPath["app.agent.beta.model"]) != 0 {
+		t.Errorf("a program that is not installed offers %+v", byPath["app.agent.beta.model"])
 	}
 }
 
@@ -406,7 +406,7 @@ func TestModels_ReportsProviderListFailureToErrorHandler(t *testing.T) {
 	}
 	var names []string
 	for _, one := range models {
-		if strings.Join(one.Path, ".") == "agent.use" {
+		if strings.Join(one.Path, ".") == "app.agent.use" {
 			names = append(names, one.Name)
 		}
 	}

@@ -7,7 +7,12 @@ import SettingRow from '../setting-row/SettingRow.vue'
 import { SecretField } from '../secret-field'
 import { createInstallation, createPluginInfo } from '@/testing/installation'
 import type { Installation, SettingsTabState } from '../../types'
-import { getSettingAt as at, type PluginInfo, type SettingEdit } from '@/entities/settings'
+import {
+  getSettingAt as at,
+  type PluginInfo,
+  type PluginSettingInfo,
+  type SettingEdit,
+} from '@/entities/settings'
 import { WORDS as words } from '../../words'
 
 beforeEach(() => {
@@ -400,11 +405,31 @@ describe('PluginDetail with settings that follow one another', () => {
       },
     ],
   })
+  /** The plugin as the core answers it: the options, visibility and value it resolved, by key. */
+  const resolveBy = (
+    plugin: PluginInfo,
+    resolved: Record<string, Partial<PluginSettingInfo>>,
+  ): PluginInfo => ({
+    ...plugin,
+    settings: plugin.settings.map((one) => ({ ...one, ...resolved[one.key] })),
+  })
   const findRow = (wrapper: ReturnType<typeof mount>, key: string) =>
     wrapper.findAllComponents(SettingRow).find((r) => r.props('at') === `test.linked-${key}`)
 
   it('lists the languages of the current model with detail subtitles and no origin text', () => {
-    const { wrapper } = createDetail(LINKED)
+    const { wrapper } = createDetail(
+      resolveBy(LINKED, {
+        language: {
+          activeOptions: [
+            option('auto', 'Detected by the model', 'Among 3 languages'),
+            option('en', 'English'),
+          ],
+          isShown: true,
+          value: 'auto',
+        },
+        url: { isShown: false },
+      }),
+    )
     const row = findRow(wrapper, 'language')!
     expect(row.findComponent(Select).props('choices')).toEqual([
       { id: 'auto', text: 'Detected by the model', detail: 'Among 3 languages' },
@@ -415,7 +440,13 @@ describe('PluginDetail with settings that follow one another', () => {
   })
 
   it('shows the one language of a model as fixed', () => {
-    const small = createDetail(LINKED, { 'test.linked': { model: 'small' } })
+    const small = createDetail(
+      resolveBy(LINKED, {
+        language: { activeOptions: [option('en', 'English')], isShown: true, value: 'en' },
+        url: { isShown: false },
+      }),
+      { 'test.linked': { model: 'small' } },
+    )
     const row = findRow(small.wrapper, 'language')!
     expect(row.findComponent(Select).exists()).toBe(false)
     expect(row.find('.settings__fixed').text()).toBe('English')
@@ -451,12 +482,24 @@ describe('PluginDetail with settings that follow one another', () => {
         },
       ],
     })
-    const { wrapper } = createDetail(embeddingsPlugin, {
-      'md.numen.engines.embeddings': {
-        provider: 'local',
-        model: 'openai/text-embedding-3-small',
+    const { wrapper } = createDetail(
+      resolveBy(embeddingsPlugin, {
+        model: {
+          activeOptions: [
+            option('Xenova/bge-m3', 'BGE-M3'),
+            option('Xenova/multilingual-e5-small', 'E5 Small'),
+          ],
+          isShown: true,
+          value: 'Xenova/bge-m3',
+        },
+      }),
+      {
+        'md.numen.engines.embeddings': {
+          provider: 'local',
+          model: 'openai/text-embedding-3-small',
+        },
       },
-    })
+    )
     const row = wrapper
       .findAllComponents(SettingRow)
       .find((r) => r.props('at') === 'md.numen.engines.embeddings-model')!
@@ -464,11 +507,14 @@ describe('PluginDetail with settings that follow one another', () => {
   })
 
   it('shows provider settings and key only while the provider is selected, key after provider', () => {
-    const local = createDetail(LINKED)
+    const local = createDetail(resolveBy(LINKED, { url: { isShown: false } }))
     expect(findRow(local.wrapper, 'url')).toBeUndefined()
     expect(local.wrapper.findComponent(SecretField).exists()).toBe(false)
 
-    const remote = createDetail(LINKED, { 'test.linked': { provider: 'remote' } })
+    const remote = createDetail(
+      resolveBy(LINKED, { provider: { value: 'remote' }, url: { isShown: true } }),
+      { 'test.linked': { provider: 'remote' } },
+    )
     expect(findRow(remote.wrapper, 'url')).toBeDefined()
     expect(remote.wrapper.findComponent(SecretField).props('name')).toBe('API key')
     const rowIds = remote.wrapper.findAllComponents(SettingRow).map((r) => r.props('at'))

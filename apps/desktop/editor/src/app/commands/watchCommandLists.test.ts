@@ -23,7 +23,7 @@ function setup() {
     () => ({}) as CommandTarget,
   )
   const switchOff = async () => {
-    settings.value = { ...settings.value, [`plugins.${PLEX}.enabled`]: false }
+    settings.value = { ...settings.value, [`${PLEX}.enabled`]: false }
     await nextTick()
   }
   return { load, switchOff, plugins }
