@@ -55,10 +55,10 @@ func newSettingEvents() *settingEvents {
 // settingSubscriber is one reader. Its batches wait in a queue, so a reader that is slow to take
 // them never holds up the write that made them.
 type settingSubscriber struct {
-	out  chan []settingsport.Setting
-	done chan struct{}
-	wake chan struct{}
-	once sync.Once
+	out   chan []settingsport.Setting
+	leave chan struct{}
+	wake  chan struct{}
+	once  sync.Once
 
 	mu    sync.Mutex
 	queue [][]settingsport.Setting
@@ -94,13 +94,13 @@ func (s *settingSubscriber) deliver() {
 			select {
 			case <-s.wake:
 				continue
-			case <-s.done:
+			case <-s.leave:
 				return
 			}
 		}
 		select {
 		case s.out <- batch:
-		case <-s.done:
+		case <-s.leave:
 			return
 		}
 	}
@@ -109,9 +109,9 @@ func (s *settingSubscriber) deliver() {
 // subscribe starts delivering to a new reader. The first reader starts the watch of the file.
 func (e *settingEvents) subscribe(c Config) (<-chan []settingsport.Setting, func()) {
 	one := &settingSubscriber{
-		out:  make(chan []settingsport.Setting),
-		done: make(chan struct{}),
-		wake: make(chan struct{}, 1),
+		out:   make(chan []settingsport.Setting),
+		leave: make(chan struct{}),
+		wake:  make(chan struct{}, 1),
 	}
 	e.mu.Lock()
 	if len(e.subscribers) == 0 {
@@ -123,7 +123,7 @@ func (e *settingEvents) subscribe(c Config) (<-chan []settingsport.Setting, func
 
 	return one.out, func() {
 		one.once.Do(func() {
-			close(one.done)
+			close(one.leave)
 			e.mu.Lock()
 			defer e.mu.Unlock()
 			delete(e.subscribers, one)

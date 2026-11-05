@@ -320,12 +320,12 @@ export function useSettings({
   const secrets = createSecretStore(core, {
     words,
     notify: log.getWriter('keys'),
-    refresh: rest.start,
+    refresh: () => rest.start(),
   })
   const retry = createPluginRetry(core, {
     words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
     notify: log.getWriter('plugins'),
-    refresh: rest.start,
+    refresh: () => rest.start(),
     getName: getPluginName,
   })
 
