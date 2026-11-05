@@ -51,7 +51,9 @@ const fixture = {
   'only-contributions/themes/a.css': 'a {}',
   'with-bin/manifest.json': manifestOf(sample('org.example.backend', [EDITOR])),
   'with-bin/bin/tool': 'x',
-  'with-dist/manifest.json': manifestOf(sample('org.example.frontend', [EDITOR, 'desktop.flashcards'])),
+  'with-dist/manifest.json': manifestOf(
+    sample('org.example.frontend', [EDITOR, 'desktop.flashcards']),
+  ),
   'with-dist/dist/index.js': 'x',
   'flashcards-only/manifest.json': manifestOf(sample('org.example.cards', ['desktop.flashcards'])),
   'flashcards-only/dist/index.js': 'x',
