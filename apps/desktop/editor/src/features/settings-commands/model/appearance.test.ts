@@ -389,6 +389,34 @@ describe('the settings read again while a row is previewed', () => {
   })
 })
 
+describe('two reads of the settings in flight', () => {
+  it('apply the answer to the later read, whichever answers last', async () => {
+    const sheet = page()
+    const answers: ((answer: Appearance) => void)[] = []
+    const reading = createWindowAppearance({
+      core: {
+        getAppearance: () => new Promise<Appearance>((answer) => answers.push(answer)),
+        readTheme: async (name) => `:root { --numen-surface: ${name} }`,
+        watchThemes: async function* (): AsyncIterable<readonly string[]> {
+          await new Promise<never>(vi.fn())
+        },
+      },
+      words,
+      write: vi.fn(),
+      sheet,
+    })
+
+    const first = reading.reload()
+    const second = reading.reload()
+    answers[1]?.({ ...APPEARANCE, sizes: { interfaceScale: 1.2, textScale: 1 } })
+    await second
+    answers[0]?.(APPEARANCE)
+    await first
+
+    expect(reading.sized.value).toStrictEqual({ interfaceScale: 1.2, textScale: 1 })
+  })
+})
+
 /** The first moments of a window and the stream it follows, with every answer in a test's hands. */
 const createManual = (waits = Infinity) => {
   const sheet = page()

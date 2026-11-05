@@ -86,8 +86,10 @@ interface LoaderDeps {
 }
 
 function createAppearanceLoader(deps: LoaderDeps) {
+  const guard = createRequestGuard()
   /** The first read caches the stylesheet the page was served with under the theme applied. */
   return async (isFirstRead = false) => {
+    const mine = guard.acquireRequest()
     let answer: Appearance
     try {
       answer = await deps.core.getAppearance()
@@ -95,6 +97,8 @@ function createAppearanceLoader(deps: LoaderDeps) {
       deps.write(deps.words.unlisted, 'error')
       return
     }
+    // An answer to an earlier read is not applied over the answer to a later one.
+    if (!mine.isCurrent) return
     deps.applied.value = answer.applied
     deps.mode.value = answer.mode
     deps.settings.value = answer.sizes
