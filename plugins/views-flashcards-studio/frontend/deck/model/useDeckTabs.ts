@@ -154,7 +154,7 @@ interface DeckTabStateFactoryDeps {
 function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
   const { store, read, vaultAnswers, wiring, closeTab, reportFailure } = deps
   const { getDeck, getMarks } = read
-  const { offers, cardModels, scheduled } = wiring
+  const { summaries, cardModels, scheduled } = wiring
   const { listing, scheduleDeck, getDeckPreset } = scheduled
   const { choices } = listing
 
@@ -175,14 +175,14 @@ function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
     const actions = createDeckTabActions(id, {
       getDeck,
       updateDeck: updateDeckState,
-      getCardModelChoices: () => offers.value,
+      getCardModelChoices: () => summaries.value,
     })
 
     return {
       id,
       note: computed(() => store.getOpenNote(id)),
       deck,
-      deckCards: computed(() => createDeckCards(deck.value, offers.value)),
+      deckCards: computed(() => createDeckCards(deck.value, summaries.value)),
       sections: computed(() => createDeckSections(deck.value)),
       cardModels,
       marks: computed(() => getMarks(id)),

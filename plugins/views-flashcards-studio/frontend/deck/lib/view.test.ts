@@ -204,7 +204,7 @@ describe('a reading under the identities the window drew it by', () => {
 })
 
 describe('whether two card model listings are the same', () => {
-  const offer = (overrides: Partial<CardModelSummary> = {}): CardModelSummary => ({
+  const summary = (overrides: Partial<CardModelSummary> = {}): CardModelSummary => ({
     path: 'card-models/Animal.md',
     title: 'Animal',
     fields: ['Name', 'Height'],
@@ -214,8 +214,8 @@ describe('whether two card model listings are the same', () => {
   it('is so for the same card models in the same order', () => {
     expect(
       areCardModelChoicesEqual(
-        [offer(), offer({ path: 'b.md' })],
-        [offer(), offer({ path: 'b.md' })],
+        [summary(), summary({ path: 'b.md' })],
+        [summary(), summary({ path: 'b.md' })],
       ),
     ).toBe(true)
   })
@@ -226,10 +226,10 @@ describe('whether two card model listings are the same', () => {
     ['with a field more', { fields: ['Name', 'Height', 'Weight'] }],
     ['with a field renamed', { fields: ['Name', 'Weight'] }],
   ])('is not so where the second card model is %s', (_what, override) => {
-    expect(areCardModelChoicesEqual([offer(), offer()], [offer(), offer(override)])).toBe(false)
+    expect(areCardModelChoicesEqual([summary(), summary()], [summary(), summary(override)])).toBe(false)
   })
 
   it('is not so where one listing has a card model more', () => {
-    expect(areCardModelChoicesEqual([offer()], [offer(), offer()])).toBe(false)
+    expect(areCardModelChoicesEqual([summary()], [summary(), summary()])).toBe(false)
   })
 })
