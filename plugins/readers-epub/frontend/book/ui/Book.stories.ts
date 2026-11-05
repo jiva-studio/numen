@@ -25,6 +25,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
+type Play = NonNullable<Story['play']>
 
 /**
  * How long a wait goes on where the browser sets the pace: a turn it animates
@@ -558,6 +559,160 @@ export const Resized: Story = {
     )
     await expect(getFrontOffset(canvasElement)).toBe(before)
   },
+}
+
+const LONG_CHAPTER = createChapter([...VERSES, ...PROSE, ...PROSE, ...PROSE])
+
+/** The element whose width the stories set, as a split border sets the width of a pane. */
+const getHolder = (canvasElement: HTMLElement) =>
+  getArea(canvasElement).closest<HTMLElement>('.mx-auto')!
+
+/** Turns two spreads on, each turn waited for. */
+const turnTwice = async (canvasElement: HTMLElement) => {
+  for (let turn = 0; turn < 2; turn += 1) {
+    const was = getFrontOffset(canvasElement)
+    await userEvent.keyboard('{ArrowRight}')
+    await waitFor(async () => await expect(getFrontOffset(canvasElement)).toBeGreaterThan(was), {
+      timeout: ITS_OWN_PACE,
+    })
+  }
+}
+
+/** Whether the run at `offset` starts inside the area. */
+const expectRunInArea = async (canvasElement: HTMLElement, offset: number) => {
+  const run = getRunsOf(canvasElement).find((one) => Number(one.dataset['offset']) === offset)!
+  const rect = run.getClientRects()[0]!
+  const box = getArea(canvasElement).getBoundingClientRect()
+  await expect(rect.left).toBeGreaterThanOrEqual(box.left - 1)
+  await expect(rect.left).toBeLessThan(box.right)
+}
+
+/**
+ * The columns stand at a spread of the area's width with the run at `offset` inside the area, and
+ * still do twenty frames later, with `offset` reported in front.
+ */
+const expectPassageInFront = async (canvasElement: HTMLElement, offset: number) => {
+  await waitFor(
+    async () => {
+      const shift = -Number.parseFloat(getPaper(canvasElement).style.translate)
+      const width = getArea(canvasElement).getBoundingClientRect().width
+      const rest = shift % width
+      await expect(Math.min(rest, width - rest)).toBeLessThan(1)
+      await expectRunInArea(canvasElement, offset)
+    },
+    { timeout: ITS_OWN_PACE },
+  )
+  for (let frame = 0; frame < 20; frame += 1) await waitForFrame()
+  await expectRunInArea(canvasElement, offset)
+  await expect(getFrontOffset(canvasElement)).toBe(offset)
+}
+
+/**
+ * A drag from the width the area was laid out at to 560 px narrower, in steps of 40 px, which stops
+ * for `pause` frames after every third step and goes on. A pause of four frames or more is long
+ * enough for the columns to be read again, so the drag goes on while they are read.
+ */
+const draggedWithPauses =
+  (pause: number): Play =>
+  async ({ canvasElement }) => {
+    await waitForLayout(canvasElement)
+    await turnTwice(canvasElement)
+    for (let frame = 0; frame < 60; frame += 1) await waitForFrame()
+    const before = getFrontOffset(canvasElement)
+
+    const holder = getHolder(canvasElement)
+    const from = holder.getBoundingClientRect().width
+    let step = 0
+    for (let width = from; width > from - 560; width -= 40) {
+      holder.style.inlineSize = `${width}px`
+      step += 1
+      const frames = step % 3 === 0 ? pause : 1
+      for (let frame = 0; frame < frames; frame += 1) await waitForFrame()
+    }
+    holder.style.inlineSize = `${from - 560}px`
+
+    await expectPassageInFront(canvasElement, before)
+  }
+
+/** A drag that pauses for four frames now and then keeps the passage in front. */
+export const DraggedWithPausesOfFourFrames: Story = {
+  decorators: [WIDE],
+  render: activeReading(LONG_CHAPTER),
+  play: draggedWithPauses(4),
+}
+
+/** A drag that pauses for five frames now and then keeps the passage in front. */
+export const DraggedWithPausesOfFiveFrames: Story = {
+  decorators: [WIDE],
+  render: activeReading(LONG_CHAPTER),
+  play: draggedWithPauses(5),
+}
+
+/** A drag that pauses for six frames now and then keeps the passage in front. */
+export const DraggedWithPausesOfSixFrames: Story = {
+  decorators: [WIDE],
+  render: activeReading(LONG_CHAPTER),
+  play: draggedWithPauses(6),
+}
+
+/** Resolves in a task of its own, after the frame being drawn. */
+const waitForTask = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
+
+/**
+ * The area set to each of `widths`, the first right after a page turn, in the frames between which
+ * the columns are set again. A face that arrives after a turn sets the columns again: the area is
+ * measured on one frame and the columns are read on the next. The first width arrives between the
+ * two, from a task, as a pointer event or a window resize does; the next ones on frames of their
+ * own. The face is announced by the story, so the width arrives in that gap on every run.
+ */
+const resizedRightAfterATurn =
+  (widths: readonly number[]): Play =>
+  async ({ canvasElement }) => {
+    await waitForLayout(canvasElement)
+    await turnTwice(canvasElement)
+    const before = getFrontOffset(canvasElement)
+
+    const holder = getHolder(canvasElement)
+    document.fonts.dispatchEvent(new Event('loadingdone'))
+    await waitForFrame()
+    await waitForTask()
+    for (const [index, width] of widths.entries()) {
+      if (index > 0) await waitForFrame()
+      holder.style.inlineSize = `${width}px`
+    }
+
+    await expectPassageInFront(canvasElement, before)
+  }
+
+/** An area set to 592 px right after a turn keeps the passage in front. */
+export const NarrowedTo592RightAfterATurn: Story = {
+  decorators: [WIDE],
+  render: activeReading(LONG_CHAPTER),
+  play: resizedRightAfterATurn([592]),
+}
+
+/** An area set to 691 px right after a turn keeps the passage in front. */
+export const NarrowedTo691RightAfterATurn: Story = {
+  decorators: [WIDE],
+  render: activeReading(LONG_CHAPTER),
+  play: resizedRightAfterATurn([691]),
+}
+
+/** An area set to 852 px right after a turn keeps the passage in front. */
+export const NarrowedTo852RightAfterATurn: Story = {
+  decorators: [WIDE],
+  render: activeReading(LONG_CHAPTER),
+  play: resizedRightAfterATurn([852]),
+}
+
+/**
+ * An area set to 852 px right after a turn, and to 691 px on the next frame, keeps the passage in
+ * front.
+ */
+export const NarrowedTo852Then691RightAfterATurn: Story = {
+  decorators: [WIDE],
+  render: activeReading(LONG_CHAPTER),
+  play: resizedRightAfterATurn([852, 691]),
 }
 
 /**
