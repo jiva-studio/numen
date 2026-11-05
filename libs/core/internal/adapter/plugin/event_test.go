@@ -161,7 +161,7 @@ func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 
 func TestAPluginThatConsumesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.silent": declaringEvents("onStartup")},
+		map[string]pluginport.PluginManifest{"md.test.silent": newEventManifest("onStartup")},
 		map[string]int{"md.test.silent": servePlugin(t, nil)},
 	)
 
@@ -178,7 +178,7 @@ func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 	refusing := &eventRecorder{reason: "the index is closed"}
 	working := &eventRecorder{}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"a.refusing": declaringEvents("onStartup"), "b.working": declaringEvents("onStartup")},
+		map[string]pluginport.PluginManifest{"a.refusing": newEventManifest("onStartup"), "b.working": newEventManifest("onStartup")},
 		map[string]int{"a.refusing": servePlugin(t, refusing), "b.working": servePlugin(t, working)},
 	)
 
@@ -195,7 +195,7 @@ func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 	failing := &eventRecorder{failure: connect.NewError(connect.CodeInternal, errors.New("the handler panicked"))}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.failing": declaringEvents("onStartup")},
+		map[string]pluginport.PluginManifest{"md.test.failing": newEventManifest("onStartup")},
 		map[string]int{"md.test.failing": servePlugin(t, failing)},
 	)
 

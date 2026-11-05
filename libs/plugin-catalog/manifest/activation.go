@@ -14,7 +14,7 @@ const (
 	ActivationEventVectorsReady = "onVectorsReady"
 
 	// ActivationEventFilePrefix followed by a file extension is the activation event the host emits
-	// when a window lists a file with that extension.
+	// in lowercase when a window lists a file with that extension.
 	ActivationEventFilePrefix = "onFile:"
 )
 
@@ -27,12 +27,12 @@ func isActivationEvent(event string) bool {
 	return ok && isFileExtension(extension)
 }
 
-// isFileExtension reports whether the text is a file extension without its dot: letters and digits.
+// isFileExtension reports whether the text is a file extension without its dot, in lowercase letters and digits.
 func isFileExtension(extension string) bool {
 	if extension == "" {
 		return false
 	}
-	return !strings.ContainsFunc(extension, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
+	return !strings.ContainsFunc(extension, func(r rune) bool { return !unicode.IsLower(r) && !unicode.IsDigit(r) })
 }
 
 // IsActivatedBy reports whether the plugin declares the event the host emits. ActivationEventVectorsReady

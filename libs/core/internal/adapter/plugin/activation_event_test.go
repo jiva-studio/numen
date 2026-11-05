@@ -24,8 +24,8 @@ const bundledPluginsDir = "../../../../../plugins"
 // searchRelevanceID is the id of the bundled search relevance plugin.
 const searchRelevanceID = "md.numen.tools.search.relevance"
 
-// declaringEvents is a plugin with a backend that declares the activation events.
-func declaringEvents(events ...string) pluginport.PluginManifest {
+// newEventManifest is a plugin with a backend that declares the activation events.
+func newEventManifest(events ...string) pluginport.PluginManifest {
 	return pluginport.PluginManifest{ActivationEvents: events}
 }
 
@@ -33,9 +33,9 @@ func TestTriggerEventStartsOnlyPluginsThatDeclareTheEvent(t *testing.T) {
 	startup, vectors, files := &eventRecorder{}, &eventRecorder{}, &eventRecorder{}
 	host := newEventHost(t,
 		map[string]pluginport.PluginManifest{
-			"md.test.startup": declaringEvents("onStartup"),
-			"md.test.vectors": declaringEvents("onVectorsReady"),
-			"md.test.files":   declaringEvents("onFile:md"),
+			"md.test.startup": newEventManifest("onStartup"),
+			"md.test.vectors": newEventManifest("onVectorsReady"),
+			"md.test.files":   newEventManifest("onFile:md"),
 		},
 		map[string]int{
 			"md.test.startup": servePlugin(t, startup),
@@ -76,8 +76,8 @@ func TestTriggerEventStartsNoPluginOnAnEventNoneDeclares(t *testing.T) {
 	declaring, silent := &eventRecorder{}, &eventRecorder{}
 	host := newEventHost(t,
 		map[string]pluginport.PluginManifest{
-			"md.test.declaring": declaringEvents("onStartup", "onVectorsReady", "onFile:md"),
-			"md.test.silent":    declaringEvents(),
+			"md.test.declaring": newEventManifest("onStartup", "onVectorsReady", "onFile:md"),
+			"md.test.silent":    newEventManifest(),
 		},
 		map[string]int{"md.test.declaring": servePlugin(t, declaring), "md.test.silent": servePlugin(t, silent)},
 	)

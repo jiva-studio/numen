@@ -30,7 +30,7 @@ func TestManifestWithWildcardActivationIsRejected(t *testing.T) {
 }
 
 func TestManifestAcceptsTheEventsTheHostRaises(t *testing.T) {
-	for _, event := range []string{"onStartup", "onVectorsReady", "onFile:md", "onFile:pdf", "onFile:M4A"} {
+	for _, event := range []string{"onStartup", "onVectorsReady", "onFile:md", "onFile:pdf", "onFile:m4a"} {
 		if hasActivationIssue(newActivatedManifest(event)) {
 			t.Errorf("a manifest declaring %s is rejected", event)
 		}
@@ -38,7 +38,7 @@ func TestManifestAcceptsTheEventsTheHostRaises(t *testing.T) {
 }
 
 func TestManifestRejectsAnEventTheHostDoesNotRaise(t *testing.T) {
-	for _, event := range []string{"", "onCommand:run", "onstartup", "onFile:", "onFile:*", "onFile:notes/a.md", "onFile:.md", "onVectorsReady:01VAULT"} {
+	for _, event := range []string{"", "onCommand:run", "onstartup", "onFile:", "onFile:*", "onFile:M4A", "onFile:notes/a.md", "onFile:.md", "onVectorsReady:01VAULT"} {
 		if !hasActivationIssue(newActivatedManifest(event)) {
 			t.Errorf("a manifest declaring %q is accepted", event)
 		}
