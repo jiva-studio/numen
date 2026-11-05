@@ -40,14 +40,15 @@ const toText = (value: unknown): string => {
 
 /**
  * The value in force of a setting: the one the core resolved, else what the file holds, else the
- * default. A value written and not yet read back is shown as requested.
+ * default. A value requested and not yet in the declaration is shown as requested, so a control
+ * shows the value the person set from the request until the declaration carries it.
  */
 export function getValueInForce(
   setting: PluginSettingInfo,
   read: ReadPluginSetting,
-  isPending: (key: string) => boolean,
+  isRequested: (key: string) => boolean,
 ): unknown {
-  if (setting.value !== undefined && !isPending(setting.key)) return setting.value
+  if (setting.value !== undefined && !isRequested(setting.key)) return setting.value
   return read(setting.key) ?? setting.default
 }
 
@@ -59,12 +60,12 @@ export function isSecretShown(
   plugin: PluginInfo,
   secret: PluginSecret,
   read: ReadPluginSetting,
-  isPending: (key: string) => boolean = () => false,
+  isRequested: (key: string) => boolean = () => false,
 ): boolean {
   if (!secret.when) return true
   const parent = plugin.settings.find((one) => one.key === secret.when?.setting)
   if (!parent || !isSettingShown(parent)) return false
-  return secret.when.is.includes(toText(getValueInForce(parent, read, isPending)))
+  return secret.when.is.includes(toText(getValueInForce(parent, read, isRequested)))
 }
 
 /** Finds the setting key after which a secret should be placed, or null for the top. */
@@ -81,18 +82,18 @@ function findSecretAnchor(secret: PluginSecret, shownKeys: ReadonlySet<string>):
 export function createEnumFields(
   getPlugin: () => PluginInfo,
   read: ReadPluginSetting,
-  isPending: (key: string) => boolean = () => false,
+  isRequested: (key: string) => boolean = () => false,
 ): EnumFields {
   const getEnumOptions = (setting: PluginSettingInfo) =>
     setting.activeOptions ?? setting.options ?? []
   const getEnumChoices = (setting: PluginSettingInfo) => toSelectChoices(getEnumOptions(setting))
   const getEnumValue = (setting: PluginSettingInfo) =>
-    toText(getValueInForce(setting, read, isPending))
+    toText(getValueInForce(setting, read, isRequested))
 
   const getShownSettings = () => getPlugin().settings.filter(isSettingShown)
 
   const getShownSecrets = () =>
-    getPlugin().secrets.filter((one) => isSecretShown(getPlugin(), one, read, isPending))
+    getPlugin().secrets.filter((one) => isSecretShown(getPlugin(), one, read, isRequested))
 
   const getShownKeys = () => new Set(getShownSettings().map((one) => one.key))
 

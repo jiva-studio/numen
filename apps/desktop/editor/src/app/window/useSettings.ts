@@ -181,6 +181,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
+    isRequested: (targetPath: readonly string[]) => rest.isRequested(targetPath),
     getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => {
       const promise = rest.writeSettings(content)
