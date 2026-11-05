@@ -44,9 +44,14 @@ const readEditorCommands = () => {
     .join('\n')
   const commands = new Map()
   for (const [key, fullId] of byKey) {
-    const start = table.indexOf(`id: COMMAND.${key},`)
-    const block = start < 0 ? '' : table.slice(start, table.indexOf('isAvailable', start))
-    commands.set(fullId, { hasIconName: /\biconName:\s*'[a-z][a-z0-9-]*'/.test(block) })
+    const starts = [...table.matchAll(new RegExp(`id: COMMAND\\.${key},`, 'g'))].map(
+      (one) => one.index,
+    )
+    const hasIconName = starts.some((start) => {
+      const block = table.slice(start, table.indexOf('isAvailable', start))
+      return /\biconName:\s*'[a-z][a-z0-9-]*'/.test(block)
+    })
+    commands.set(fullId, { hasIconName })
   }
   return commands
 }
