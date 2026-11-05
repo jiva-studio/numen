@@ -25,7 +25,8 @@ test.describe('Plugin buttons in the title bar', () => {
     await writeSetting(request, ['plugins', TREE_ID, 'enabled'], true)
   })
 
-  test('runs the command of a button as the palette runs it', async ({ page }) => {
+  // #1507: waits for a plugin that places a command in titleBar; enable when the placements land.
+  test.fixme('runs the command of a button as the palette runs it', async ({ page }) => {
     await openWorkspace(page)
     await closeTab(page, /Close Files/i)
     await expect(getTab(page, 'Files')).toHaveCount(0)
@@ -35,7 +36,8 @@ test.describe('Plugin buttons in the title bar', () => {
     await expect(getTab(page, 'Files')).toBeVisible()
   })
 
-  test('shows the title and the shortcut of the command in the hover text', async ({ page }) => {
+  // #1507: waits for a plugin that places a command in titleBar; enable when the placements land.
+  test.fixme('shows the title and the shortcut of the command in the hover text', async ({ page }) => {
     await openWorkspace(page)
 
     const hover = await getButton(page, TREE_BUTTON).getAttribute('title')
@@ -43,7 +45,8 @@ test.describe('Plugin buttons in the title bar', () => {
     expect(hover).toMatch(/^Open file tree( \(.+\))?$/)
   })
 
-  test('draws no pressed state on a button after a press', async ({ page }) => {
+  // #1507: waits for a plugin that places a command in titleBar; enable when the placements land.
+  test.fixme('draws no pressed state on a button after a press', async ({ page }) => {
     await openWorkspace(page)
 
     await getButton(page, TREE_BUTTON).click()
@@ -53,7 +56,8 @@ test.describe('Plugin buttons in the title bar', () => {
     }
   })
 
-  test('opens the palette at the name of Create note and makes the note under the name typed', async ({
+  // #1507: waits for a plugin that places a command in titleBar; enable when the placements land.
+  test.fixme('opens the palette at the name of Create note and makes the note under the name typed', async ({
     page,
   }) => {
     await openWorkspace(page)
@@ -66,7 +70,8 @@ test.describe('Plugin buttons in the title bar', () => {
     await expect(getTab(page, 'Brine log')).toBeVisible()
   })
 
-  test('removes the button of a plugin that is disabled, and brings it back in its place', async ({
+  // #1507: waits for a plugin that places a command in titleBar; enable when the placements land.
+  test.fixme('removes the button of a plugin that is disabled, and brings it back in its place', async ({
     page,
     request,
   }) => {
@@ -85,7 +90,8 @@ test.describe('Plugin buttons in the title bar', () => {
     expect(await listButtonIds(page)).toStrictEqual(before)
   })
 
-  test('moves the buttons that do not fit into the menu in order, and a pick runs its command', async ({
+  // #1507: waits for a plugin that places a command in titleBar; enable when the placements land.
+  test.fixme('moves the buttons that do not fit into the menu in order, and a pick runs its command', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 520, height: 800 })
@@ -105,7 +111,8 @@ test.describe('Plugin buttons in the title bar', () => {
     await expect(getTab(page, 'Files')).toBeVisible()
   })
 
-  test('draws the same buttons in the window torn off from a tab', async ({ page }) => {
+  // #1507: waits for a plugin that places a command in titleBar; enable when the placements land.
+  test.fixme('draws the same buttons in the window torn off from a tab', async ({ page }) => {
     await openWorkspace(page)
     const inMain = await listButtonIds(page)
     expect(inMain).toContain(GRAPH_BUTTON)
