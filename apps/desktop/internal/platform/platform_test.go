@@ -142,7 +142,7 @@ func TestGetConfigNamesTheSystemKeychain(t *testing.T) {
 	}
 }
 
-func TestGetConfigOffersThePluginsOfTheIndex(t *testing.T) {
+func TestGetConfigListsThePluginsOfTheIndex(t *testing.T) {
 	t.Setenv("NUMEN_DEV", "")
 	dir := t.TempDir()
 	t.Setenv("NUMEN_PLUGINS_PATH", dir)

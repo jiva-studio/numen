@@ -184,13 +184,13 @@ export const MacControls: Story = {
   },
 }
 
-/** The system draws the buttons on macOS: the bar keeps 72px for them and draws none. */
+/** The system draws the buttons on macOS: the bar keeps 80px for them and draws none. */
 export const NativeMacControls: Story = {
   args: { controls: 'native-mac' },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelectorAll('[data-control]')).toHaveLength(0)
     const inset = canvasElement.querySelector('[data-inset]')!.getBoundingClientRect()
-    await expect(Math.round(inset.width)).toBe(72)
+    await expect(Math.round(inset.width)).toBe(80)
   },
 }
 

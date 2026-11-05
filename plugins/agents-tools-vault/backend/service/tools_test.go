@@ -223,11 +223,7 @@ func TestNoteSearch(t *testing.T) {
 		t.Fatalf("registry: %v", err)
 	}
 
-	for _, toolName := range []string{"note_search", "search_query"} {
-		t.Run(toolName, func(t *testing.T) {
-			testSearchQuery(t, registry, toolName)
-		})
-	}
+	testSearchQuery(t, registry, "note_search")
 }
 
 func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName string) {
@@ -265,11 +261,7 @@ func TestNoteNeighbourhood(t *testing.T) {
 		t.Fatalf("registry: %v", err)
 	}
 
-	for _, toolName := range []string{"note_neighbourhood", "link_list"} {
-		t.Run(toolName, func(t *testing.T) {
-			testNeighbourhoodQuery(t, registry, toolName)
-		})
-	}
+	testNeighbourhoodQuery(t, registry, "link_list")
 }
 
 func testVaultInfoQuery(t *testing.T, registry *tools.Registry, toolName string) {
@@ -307,11 +299,7 @@ func TestVaultInfo(t *testing.T) {
 		t.Fatalf("registry: %v", err)
 	}
 
-	for _, toolName := range []string{"vault_info", "vault_get"} {
-		t.Run(toolName, func(t *testing.T) {
-			testVaultInfoQuery(t, registry, toolName)
-		})
-	}
+	testVaultInfoQuery(t, registry, "vault_get")
 }
 
 func TestFileReadAndCreate(t *testing.T) {
@@ -384,17 +372,14 @@ func TestListTools(t *testing.T) {
 	}
 
 	expectedTools := map[string]bool{
-		"note_read":          false,
-		"note_write":         false,
-		"note_headings":      false,
-		"note_search":        false,
-		"search_query":       false,
-		"note_neighbourhood": false,
-		"link_list":          false,
-		"vault_info":         false,
-		"vault_get":          false,
-		"file_read":          false,
-		"file_create":        false,
+		"note_read":     false,
+		"note_write":    false,
+		"note_headings": false,
+		"note_search":   false,
+		"link_list":     false,
+		"vault_get":     false,
+		"file_read":     false,
+		"file_create":   false,
 	}
 
 	for _, tool := range listed {

@@ -90,7 +90,7 @@ func TestTheSameIdFromTwoSourcesIsOneEntry(t *testing.T) {
 	}
 }
 
-func TestOfferedEntriesOfOneIdTakeTheNewerVersionAndATieGoesToTheFirstSource(t *testing.T) {
+func TestAvailableEntriesOfOneIdTakeTheNewerVersionAndATieGoesToTheFirstSource(t *testing.T) {
 	first := catalogtest.NewFakeSource("first",
 		entry("org.example.a", "1.0.0", catalog.StateAvailable),
 		entry("org.example.b", "1.0.0", catalog.StateAvailable))
@@ -108,7 +108,7 @@ func TestOfferedEntriesOfOneIdTakeTheNewerVersionAndATieGoesToTheFirstSource(t *
 	}
 }
 
-func TestADisabledPluginIsListedAndOutranksTheOneOnOffer(t *testing.T) {
+func TestADisabledPluginIsListedAndOutranksTheAvailableOne(t *testing.T) {
 	local := catalogtest.NewFakeSource("local", entry("org.example.a", "1.0.0", catalog.StateDisabled))
 	remote := catalogtest.NewFakeSource("remote", entry("org.example.a", "9.0.0", catalog.StateAvailable))
 
@@ -200,12 +200,12 @@ func TestAKindOfTabIsFoundInThePluginThatProvidesIt(t *testing.T) {
 	}
 
 	// Offered only: first offered plugin wins
-	offeredOnly := newService(t, catalogtest.NewFakeSource("remote",
+	availableOnly := newService(t, catalogtest.NewFakeSource("remote",
 		entry("org.example.b_offered", "1.0.0", catalog.StateAvailable, "plex"),
 		entry("org.example.d_offered2", "1.0.0", catalog.StateAvailable, "plex")))
-	gotOffered, errOffered := offeredOnly.FindByTabKind(t.Context(), "plex")
-	if errOffered != nil || gotOffered.ID != "org.example.b_offered" {
-		t.Errorf("FindByTabKind offeredOnly = %+v, %v; want org.example.b_offered", gotOffered, errOffered)
+	gotAvailable, errAvailable := availableOnly.FindByTabKind(t.Context(), "plex")
+	if errAvailable != nil || gotAvailable.ID != "org.example.b_offered" {
+		t.Errorf("FindByTabKind availableOnly = %+v, %v; want org.example.b_offered", gotAvailable, errAvailable)
 	}
 }
 
@@ -261,7 +261,7 @@ func TestAPluginOnDiskIsNotInstalledAgain(t *testing.T) {
 func TestTheFakeSourceSatisfiesTheSourceContract(t *testing.T) {
 	catalogtest.RunSourceContract(t, func(_ *testing.T, entries []catalog.Entry) catalog.Source {
 		return catalogtest.NewFakeSource("fake", entries...)
-	}, append(catalogtest.OnDiskEntries(), catalogtest.OfferedEntries()...))
+	}, append(catalogtest.OnDiskEntries(), catalogtest.AvailableEntries()...))
 }
 
 func TestAnEntryCarriesTheWarningsOfItsManifest(t *testing.T) {

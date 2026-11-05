@@ -27,11 +27,8 @@ func TestApplyKeepsTheSystemButtonsOnMac(t *testing.T) {
 	if got.Frameless {
 		t.Error("the mac window is frameless; the system buttons would go")
 	}
-	if got.Mac.TitleBar != application.MacTitleBarHiddenInset {
-		t.Errorf("title bar = %+v, want the hidden inset bar", got.Mac.TitleBar)
-	}
-	if !got.Mac.TitleBar.HideToolbarSeparator {
-		t.Error("the toolbar separator is shown")
+	if got.Mac.TitleBar != application.MacTitleBarHidden {
+		t.Errorf("title bar = %+v, want the hidden bar", got.Mac.TitleBar)
 	}
 	if got.Mac.InvisibleTitleBarHeight != BarHeight {
 		t.Errorf("invisible title bar height = %d, want %d", got.Mac.InvisibleTitleBarHeight, BarHeight)

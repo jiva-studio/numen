@@ -19,7 +19,7 @@ export const createPluginListing = (entry: CatalogEntry): PluginListing => ({
   category: (entry.contributes?.category || entry.category || '').toLowerCase(),
   feature: entry.contributes?.feature ?? '',
   tabKinds: entry.contributes?.tabKinds.map((one) => one.kind) ?? [],
-  isOffered: entry.state === CATALOG_STATE.AVAILABLE,
+  isAvailable: entry.state === CATALOG_STATE.AVAILABLE,
 })
 
 /** The plugins the host knows, each with its catalog entry, followed by the entries on offer. */

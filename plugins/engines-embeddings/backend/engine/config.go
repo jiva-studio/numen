@@ -9,13 +9,12 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
-// Pooling strategies supported by sentence encoders. PoolHead is the old name of PoolCLS.
+// Pooling strategies supported by sentence encoders.
 const (
 	PoolMean   = "mean"
 	PoolCLS    = "cls"
 	PoolLast   = "last"
 	PoolOutput = "output"
-	PoolHead   = "head"
 )
 
 // File conventions in Hugging Face model repositories.

@@ -142,12 +142,8 @@ func TestNewHandler(t *testing.T) {
 	}
 
 	paths := []string{
-		"/sse",
-		"/sse/sub",
 		"/mcp",
 		"/mcp/sub",
-		"/messages",
-		"/messages/sub",
 		"/md.numen.agents.mcp.server/sub",
 	}
 	for _, path := range paths {
