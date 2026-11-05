@@ -5,7 +5,7 @@
  * `working` and `disabled` are controls, not stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import MessageComposer from './MessageComposer.vue'
 import { STORY_BOXES } from '../fixtures/frame'
@@ -39,7 +39,7 @@ const meta = {
     isDisabled: false,
     onSubmit: fn(),
     onStop: fn(),
-    onOpenSettings: fn(),
+    'onOpen-settings': fn(),
   },
 } satisfies Meta<typeof MessageComposer>
 
@@ -151,7 +151,7 @@ export const NoAgent: Story = {
     await expect(canvas.getByRole('button', { name: 'No agent' })).toBeDisabled()
     await expect(canvas.getByText('No agent is set up.')).toBeVisible()
     await expect(canvasElement.querySelector('textarea')).toBeNull()
-    await canvas.getByRole('button', { name: 'Open settings' }).click()
-    await expect(args.onOpenSettings).toHaveBeenCalledTimes(1)
+    await userEvent.click(canvas.getByRole('button', { name: 'Open settings' }))
+    await expect(args['onOpen-settings']).toHaveBeenCalledTimes(1)
   },
 }
