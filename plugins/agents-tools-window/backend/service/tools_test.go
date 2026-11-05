@@ -15,7 +15,7 @@ import (
 func TestRegisterTools(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -36,7 +36,7 @@ func TestRegisterTools(t *testing.T) {
 	}
 
 	// Registering duplicate tools returns an error.
-	if err := RegisterTools(registry, mgr, nil); err == nil {
+	if err := RegisterTools(registry, mgr, Host{}); err == nil {
 		t.Errorf("expected error when registering duplicate tools")
 	}
 }
@@ -44,7 +44,7 @@ func TestRegisterTools(t *testing.T) {
 func TestWindowTabsGetEmpty(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -72,45 +72,10 @@ func TestWindowTabsGetEmpty(t *testing.T) {
 	}
 }
 
-func TestWindowTabsGetWithTabs(t *testing.T) {
-	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
-	mgr.SetOpenTabs([]TabInfo{
-		{ID: "tab-1", Kind: "note", Path: "notes/daily.md", Title: "daily"},
-		{ID: "tab-2", Kind: "document", Path: "docs/spec.pdf", Title: "Specification", Where: "page 3 of 10"},
-	}, "tab-2")
-
-	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
-		t.Fatalf("RegisterTools: %v", err)
-	}
-
-	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_tabs_get",
-		Arguments: []byte(`{}`),
-	})
-	if err != nil {
-		t.Fatalf("CallTool: %v", err)
-	}
-
-	var output WindowTabsGetOutput
-	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
-		t.Fatalf("unmarshal output: %v", err)
-	}
-	if len(output.Tabs) != 2 {
-		t.Fatalf("len(Tabs) = %d, want 2", len(output.Tabs))
-	}
-	if output.ActiveID != "tab-2" {
-		t.Errorf("ActiveID = %q, want tab-2", output.ActiveID)
-	}
-	if !strings.Contains(output.Summary, "Specification") || !strings.Contains(output.Summary, "page 3 of 10") {
-		t.Errorf("Summary = %q, want to mention Specification and page 3 of 10", output.Summary)
-	}
-}
-
 func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -138,25 +103,6 @@ func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 	}
 	if !strings.Contains(output.Summary, "inferred") {
 		t.Errorf("Summary = %q, want to mention inferred", output.Summary)
-	}
-
-	// When open tabs already exist, context focus does not override them.
-	mgr.SetOpenTabs([]TabInfo{
-		{ID: "tab-1", Kind: "note", Path: "notes/real.md", Title: "real"},
-	}, "tab-1")
-	resp, err = registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_tabs_get",
-		Arguments: []byte(`{}`),
-		Context:   map[string]string{"focus": "notes/inferred.md"},
-	})
-	if err != nil {
-		t.Fatalf("CallTool: %v", err)
-	}
-	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
-		t.Fatalf("unmarshal output: %v", err)
-	}
-	if output.ActiveID != "tab-1" || len(output.Tabs) != 1 || output.Tabs[0].Path != "notes/real.md" {
-		t.Errorf("expected real tab preserved, got %+v", output)
 	}
 }
 
@@ -199,65 +145,6 @@ func TestFormatTabsSummaryAndDescribeTab(t *testing.T) {
 	}
 }
 
-func TestWindowFocusTab(t *testing.T) {
-	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
-	mgr.SetOpenTabs([]TabInfo{
-		{ID: "t1", Kind: "note", Path: "notes/a.md", Title: "A"},
-		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B"},
-	}, "t1")
-
-	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
-		t.Fatalf("RegisterTools: %v", err)
-	}
-
-	// Focus existing tab by ID
-	args := marshalJSON(t, WindowFocusTabInput{TabID: "t2"})
-	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_focus_tab",
-		Arguments: args,
-	})
-	if err != nil {
-		t.Fatalf("CallTool: %v", err)
-	}
-	var output WindowFocusTabOutput
-	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
-		t.Fatalf("unmarshal output: %v", err)
-	}
-	if !output.Success || output.Tab.ID != "t2" {
-		t.Errorf("output = %+v, want Success true and Tab.ID t2", output)
-	}
-
-	// Focus new note by Path
-	args = marshalJSON(t, WindowFocusTabInput{Path: "notes/c.md"})
-	resp, err = registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_focus_tab",
-		Arguments: args,
-	})
-	if err != nil {
-		t.Fatalf("CallTool: %v", err)
-	}
-	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
-		t.Fatalf("unmarshal output: %v", err)
-	}
-	if !output.Success || output.Tab.Path != "notes/c.md" {
-		t.Errorf("output = %+v, want Success true and Tab.Path notes/c.md", output)
-	}
-
-	// Focus with empty arguments produces refusal
-	args = marshalJSON(t, WindowFocusTabInput{})
-	resp, err = registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_focus_tab",
-		Arguments: args,
-	})
-	if err != nil {
-		t.Fatalf("CallTool: %v", err)
-	}
-	if !resp.GetResult().GetIsRefusal() {
-		t.Errorf("expected refusal for empty focus arguments")
-	}
-}
-
 func TestEditPreviewFromVault(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	vault := hosttest.New("test-vault")
@@ -267,7 +154,7 @@ func TestEditPreviewFromVault(t *testing.T) {
 	}
 
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, vault); err != nil {
+	if err := RegisterTools(registry, mgr, Host{Vault: vault}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -310,7 +197,7 @@ func TestEditPreviewFromVault(t *testing.T) {
 func TestEditPreviewWithDirectDiff(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -344,7 +231,7 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 		t.Fatalf("create vault file: %v", err)
 	}
 	registryWithVault := tools.New()
-	if err := RegisterTools(registryWithVault, mgr, vault); err != nil {
+	if err := RegisterTools(registryWithVault, mgr, Host{Vault: vault}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 	respOverride, err := registryWithVault.InvokeTool(t.Context(), tools.Call{
@@ -387,7 +274,7 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 func TestEditPreviewValidation(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 

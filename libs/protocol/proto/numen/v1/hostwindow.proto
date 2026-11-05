@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/workspace.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// HostWindowService is the window of the vault a plugin works, as an agent tool reaches it.
+// Every call needs window:focus. A host with no window answers HOST_WINDOW_ERROR_CODE_NO_WINDOW.
+// With several windows the main window of the vault is the one meant.
+service HostWindowService {
+  // FocusNote makes a note the current one, and the neighbourhood view is drawn around it.
+  rpc FocusNote(FocusNoteRequest) returns (FocusNoteResponse);
+  // FocusPassages opens a file in front of the person: the window goes to the first passage and
+  // lights all of them. No passages opens the file at its beginning.
+  rpc FocusPassages(FocusPassagesRequest) returns (FocusPassagesResponse);
+  // ReadOpenTabs is the tabs the window last reported, and the active one.
+  rpc ReadOpenTabs(HostWindowServiceReadOpenTabsRequest) returns (HostWindowServiceReadOpenTabsResponse);
+}
+
+// HostWindowErrorCode is why a window call was not served. UNSPECIFIED is a call that was served.
+enum HostWindowErrorCode {
+  HOST_WINDOW_ERROR_CODE_UNSPECIFIED = 0;
+  // NO_WINDOW is a host with no window.
+  HOST_WINDOW_ERROR_CODE_NO_WINDOW = 1;
+  // NOT_FOUND is a path the vault holds no note or file at.
+  HOST_WINDOW_ERROR_CODE_NOT_FOUND = 2;
+}
+
+message FocusNoteRequest {
+  string path = 1;
+}
+
+message FocusNoteResponse {
+  HostWindowErrorCode error = 1;
+  string path = 2;
+  string title = 3;
+  // Id is the note's stable identifier, empty for a note written outside the application.
+  string id = 4;
+}
+
+// A PassageSpan is a run of the text version of a file, in bytes, as library_search returns it.
+message PassageSpan {
+  int32 start = 1;
+  int32 length = 2;
+}
+
+message FocusPassagesRequest {
+  string path = 1;
+  repeated PassageSpan passages = 2;
+}
+
+message FocusPassagesResponse {
+  HostWindowErrorCode error = 1;
+  // Summary is what the person now looks at, in words to say back to them.
+  string summary = 2;
+}
+
+message HostWindowServiceReadOpenTabsRequest {}
+
+message HostWindowServiceReadOpenTabsResponse {
+  HostWindowErrorCode error = 1;
+  repeated Tab tabs = 2;
+  string active_id = 3;
+}

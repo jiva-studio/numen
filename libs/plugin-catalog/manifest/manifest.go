@@ -30,6 +30,10 @@ const (
 	// PermissionSearchPolicy allows reading and setting the floor that a search by meaning applies.
 	PermissionSearchPolicy = "search:policy"
 
+	// PermissionWindowFocus allows moving the window of the vault to a note or a file, and reading the
+	// tabs it has open.
+	PermissionWindowFocus = "window:focus"
+
 	// PermissionNetworkAlias is the accepted short spelling of PermissionNetworkOutbound.
 	PermissionNetworkAlias = "network"
 
@@ -40,7 +44,7 @@ const (
 func PluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound, PermissionAIComplete,
-		PermissionIndexRead, PermissionSearchPolicy,
+		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus,
 	}
 }
 

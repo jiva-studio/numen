@@ -338,3 +338,12 @@ func (c Config) GetFrontendPluginIDs() []string {
 	}
 	return ids
 }
+
+// SetPluginWindow is the main window the plugins move and read the tabs of. A host with no window
+// sets none, and the plugins are answered that there is no window.
+func (c Config) SetPluginWindow(window pluginport.PluginWindow) {
+	if c.PluginHost != nil {
+		var host pluginport.PluginWindowHost = c.PluginHost
+		host.SetPluginWindow(window)
+	}
+}

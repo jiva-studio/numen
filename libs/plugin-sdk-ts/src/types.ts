@@ -78,6 +78,9 @@ export interface ReaderTabState {
   // The location to show: the selector of a search hit, or the location saved before a restart. The
   // window sets a new object each time it requests a location; null shows the file from its start.
   readonly selector: Selector | null
+  // The runs of the text version to light, in bytes; the first is the one to go to. The window sets a
+  // new array each time it requests them; null where none is requested.
+  readonly ranges: readonly TextRange[] | null
   // Saves the place the reader shows. The window keeps it with the tab and passes it back as
   // `selector` when the tab opens after a restart.
   savePlace(place: Selector): void

@@ -11,6 +11,7 @@ import { WORDS as words } from './words'
 import { useBookReader } from './model/useBookReader'
 import { useBookTab, type BookTabState } from './model/useBookTab'
 import { useBookPlace } from './model/useBookPlace'
+import { useBookRanges } from './model/useBookRanges'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -44,6 +45,7 @@ watchEffect(() => tabState.setBookHandle(bookContent.value ?? null))
 const readerTab = props.state as Partial<ReaderTabState> | undefined
 
 useBookPlace(tabState, () => readerTab)
+useBookRanges(tabState, () => readerTab)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onDismissListing() {

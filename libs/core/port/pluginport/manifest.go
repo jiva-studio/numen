@@ -37,6 +37,7 @@ const (
 	PermissionAIComplete      = manifest.PermissionAIComplete
 	PermissionIndexRead       = manifest.PermissionIndexRead
 	PermissionSearchPolicy    = manifest.PermissionSearchPolicy
+	PermissionWindowFocus     = manifest.PermissionWindowFocus
 	PermissionNetworkAlias    = manifest.PermissionNetworkAlias
 	RuntimeONNX               = "onnxruntime"
 	HandlePlaybackCopy        = "playback-copy"

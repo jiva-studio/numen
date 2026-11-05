@@ -11,12 +11,23 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
+// Host is what the window tools work through: the vault, its window, and the text versions of its
+// files. A nil field is a host that offers none.
+type Host struct {
+	Vault  host.Vault
+	Window host.Window
+	Texts  host.Texts
+}
+
 // RegisterTools registers all window interaction and edit preview tools on the given registry.
-func RegisterTools(registry *tools.Registry, manager *WindowManager, vault host.Vault) error {
+func RegisterTools(registry *tools.Registry, manager *WindowManager, on Host) error {
+	summaries := newTextSummaries()
 	for _, add := range []func(*tools.Registry) error{
-		func(r *tools.Registry) error { return addWindowTabsGet(r, manager) },
-		func(r *tools.Registry) error { return addWindowFocusTab(r, manager) },
-		func(r *tools.Registry) error { return addEditPreview(r, manager, vault) },
+		func(r *tools.Registry) error { return addWindowTabsGet(r, on, summaries) },
+		func(r *tools.Registry) error { return addWindowFocusTab(r, on) },
+		func(r *tools.Registry) error { return addNoteFocus(r, on) },
+		func(r *tools.Registry) error { return addSourceFocus(r, on) },
+		func(r *tools.Registry) error { return addEditPreview(r, manager, on.Vault) },
 	} {
 		if err := add(registry); err != nil {
 			return err
@@ -25,7 +36,7 @@ func RegisterTools(registry *tools.Registry, manager *WindowManager, vault host.
 	return nil
 }
 
-func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
+func addWindowTabsGet(registry *tools.Registry, on Host, summaries *textSummaries) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "window_tabs_get",
 		Title: "Get open window tabs",
@@ -36,11 +47,12 @@ func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, _ WindowTabsGetInput) (WindowTabsGetOutput, error) {
-		tabs, activeID := manager.GetOpenTabs()
-		requestContext := tools.GetCallContext(ctx)
-
+		tabs, activeID, err := readWindowTabs(ctx, on, summaries)
+		if err != nil {
+			return WindowTabsGetOutput{}, err
+		}
 		if len(tabs) == 0 {
-			if focus := requestContext["focus"]; focus != "" {
+			if focus := tools.GetCallContext(ctx)["focus"]; focus != "" {
 				inferredTab := TabInfo{
 					ID:       "front-tab",
 					Kind:     "",
@@ -53,37 +65,40 @@ func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
 				activeID = inferredTab.ID
 			}
 		}
-
-		summary := formatTabsSummary(tabs, activeID)
 		return WindowTabsGetOutput{
 			Tabs:     tabs,
 			ActiveID: activeID,
-			Summary:  summary,
+			Summary:  formatTabsSummary(tabs, activeID),
 		}, nil
 	})
 }
 
-func addWindowFocusTab(registry *tools.Registry, manager *WindowManager) error {
-	return tools.Add(registry, tools.Spec{
-		Name:  "window_focus_tab",
-		Title: "Focus window tab",
-		Description: "Switch or focus a specific tab or note in the user window by tab ID, " +
-			"path, or title. Moves the window focus to the requested tab.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.ByEffect,
-		Servers: []tools.Server{tools.Full, tools.Reading},
-	}, func(ctx context.Context, in WindowFocusTabInput) (WindowFocusTabOutput, error) {
-		tab, err := manager.FocusTab(ctx, in)
-		if err != nil {
-			return WindowFocusTabOutput{}, err
-		}
-		msg := fmt.Sprintf("focused tab %s", formatTabName(tab))
-		return WindowFocusTabOutput{
-			Success: true,
-			Tab:     tab,
-			Message: msg,
-		}, nil
-	})
+// readWindowTabs is the tabs the window last reported, each with the place it is open at, and the
+// active one. A host with no window has none.
+func readWindowTabs(ctx context.Context, on Host, summaries *textSummaries) ([]TabInfo, string, error) {
+	if on.Window == nil {
+		return nil, "", nil
+	}
+	open, activeID, err := on.Window.ReadOpenTabs(ctx)
+	if errors.Is(err, host.ErrNoWindow) {
+		return nil, "", nil
+	}
+	if err != nil {
+		return nil, "", err
+	}
+	positions := newPositionReader(ctx, on.Texts, summaries)
+	tabs := make([]TabInfo, 0, len(open))
+	for _, tab := range open {
+		tabs = append(tabs, TabInfo{
+			ID:       tab.ID,
+			Kind:     tab.Kind,
+			Path:     tab.Path,
+			Title:    tab.Title,
+			Where:    positions.readPosition(ctx, tab),
+			IsActive: tab.ID != "" && tab.ID == activeID,
+		})
+	}
+	return tabs, activeID, nil
 }
 
 func addEditPreview(registry *tools.Registry, manager *WindowManager, vault host.Vault) error {
