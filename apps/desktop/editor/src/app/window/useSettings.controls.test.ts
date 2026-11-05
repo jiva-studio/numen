@@ -4,11 +4,10 @@
  * the control shows the value the person set from the first moment on. Every value here is invented.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
+import { nextTick, ref } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { Select, Slider } from '@numen/ui'
-import SystemDetail from '@/pages/settings/ui/SystemDetail.vue'
-import SettingRow from '@/pages/settings/ui/setting-row/SettingRow.vue'
+import { SettingsTab } from '@/pages/settings'
 import { useWindowTabs } from '@/entities/tab'
 import type { PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
@@ -169,10 +168,10 @@ const create = (timing: Timing) => {
     getSettings: vi.fn(async () => {
       const answer = oldReads > 0 ? before : file.current
       if (oldReads > 0) oldReads -= 1
-      const written = JSON.stringify(answer)
+      const body = JSON.stringify(answer)
       const app = declare()
       await new Promise((resolve) => setTimeout(resolve, timing.readTakes))
-      return { written, path: '/config/numen.json', models: [], plugins: [], app }
+      return { written: body, path: '/config/numen.json', models: [], plugins: [], app }
     }),
     getSyncEnabled: vi.fn(async () => true),
     setSyncEnabled: vi.fn(async () => null),
@@ -212,36 +211,38 @@ const create = (timing: Timing) => {
     windowTabs: useWindowTabs(),
     onSizeChanged: vi.fn(),
   })
-  const page = mount(SystemDetail, {
-    props: { state: settings.configured.state },
+  const page = mount(SettingsTab, {
+    props: { state: { ...settings.configured.state, initialPluginId: ref('system') } },
     attachTo: document.body,
   })
   return { settings, page }
 }
 
 const getRow = (page: VueWrapper, title: string) => {
-  const row = page.findAllComponents(SettingRow).find((one) => one.props('name') === title)
+  const row = page
+    .findAllComponents({ name: 'SettingRow' })
+    .find((one) => one.props('name') === title)
   if (!row) throw new Error(`no row is drawn for ${title}`)
   return row
 }
 
-const getShown = (page: VueWrapper, title: string, control: typeof Select | typeof Slider) =>
+const getControlValue = (page: VueWrapper, title: string, control: typeof Select | typeof Slider) =>
   getRow(page, title).findComponent(control).props('modelValue') as unknown
 
-/** The values shown at every step of 10 ms for the time given, with the one shown right away first. */
-const watchShown = async (read: () => unknown, ms: number): Promise<unknown[]> => {
+/** The values the control has at every step of 10 ms for the time given, with the one it has right away first. */
+const sampleControl = async (read: () => unknown, ms: number): Promise<unknown[]> => {
   await nextTick()
-  const shown = [read()]
+  const samples = [read()]
   for (let step = 0; step < ms / 10; step++) {
     await vi.advanceTimersByTimeAsync(10)
     await nextTick()
-    shown.push(read())
+    samples.push(read())
   }
-  return shown
+  return samples
 }
 
-const getDistinct = (shown: readonly unknown[]): unknown[] =>
-  shown.filter((one, index) => index === 0 || one !== shown[index - 1])
+const getDistinct = (samples: readonly unknown[]): unknown[] =>
+  samples.filter((one, index) => index === 0 || one !== samples[index - 1])
 
 const start = async (timing: Timing) => {
   const made = create(timing)
@@ -287,12 +288,12 @@ afterEach(() => {
 describe('a list of the page System after the person chooses a value', () => {
   it.each(ORDERS)('shows only the new mode when %s', async (_, timing) => {
     const { settings, page } = await start(timing)
-    expect(getShown(page, 'Light or dark', Select)).toBe('system')
+    expect(getControlValue(page, 'Light or dark', Select)).toBe('system')
 
     getRow(page, 'Light or dark').findComponent(Select).vm.$emit('update:modelValue', 'dark')
-    const shown = await watchShown(() => getShown(page, 'Light or dark', Select), 600)
+    const samples = await sampleControl(() => getControlValue(page, 'Light or dark', Select), 600)
 
-    expect(getDistinct(shown)).toStrictEqual(['dark'])
+    expect(getDistinct(samples)).toStrictEqual(['dark'])
     settings.close()
     page.unmount()
   })
@@ -301,9 +302,12 @@ describe('a list of the page System after the person chooses a value', () => {
     const { settings, page } = await start(timing)
 
     getRow(page, 'Performance profile').findComponent(Select).vm.$emit('update:modelValue', 'eco')
-    const shown = await watchShown(() => getShown(page, 'Performance profile', Select), 600)
+    const samples = await sampleControl(
+      () => getControlValue(page, 'Performance profile', Select),
+      600,
+    )
 
-    expect(getDistinct(shown)).toStrictEqual(['eco'])
+    expect(getDistinct(samples)).toStrictEqual(['eco'])
     settings.close()
     page.unmount()
   })
@@ -314,9 +318,9 @@ describe('a list of the page System after the person chooses a value', () => {
     getRow(page, 'Theme')
       .findComponent(Select)
       .vm.$emit('update:modelValue', 'plugin:md.example.themes/dusk')
-    const shown = await watchShown(() => getShown(page, 'Theme', Select), 600)
+    const samples = await sampleControl(() => getControlValue(page, 'Theme', Select), 600)
 
-    expect(getDistinct(shown)).toStrictEqual(['plugin:md.example.themes/dusk'])
+    expect(getDistinct(samples)).toStrictEqual(['plugin:md.example.themes/dusk'])
     settings.close()
     page.unmount()
   })
@@ -326,9 +330,9 @@ describe('a list of the page System after the person chooses a value', () => {
     const { settings, page } = await start({ ...NORMAL, rejectedWith: 'the disk is full' })
 
     getRow(page, 'Light or dark').findComponent(Select).vm.$emit('update:modelValue', 'dark')
-    const shown = await watchShown(() => getShown(page, 'Light or dark', Select), 600)
+    const samples = await sampleControl(() => getControlValue(page, 'Light or dark', Select), 600)
 
-    expect(getDistinct(shown)).toStrictEqual(['dark', 'system'])
+    expect(getDistinct(samples)).toStrictEqual(['dark', 'system'])
     expect(say).toHaveBeenCalledWith(expect.stringContaining('the disk is full'), 'error')
     settings.close()
     page.unmount()
@@ -342,9 +346,9 @@ describe('a slider of the page System after the person moves it', () => {
     const slider = getRow(page, 'Interface size').findComponent(Slider)
     slider.vm.$emit('update:modelValue', 1.2)
     slider.vm.$emit('commit', 1.2)
-    const shown = await watchShown(() => getShown(page, 'Interface size', Slider), 600)
+    const samples = await sampleControl(() => getControlValue(page, 'Interface size', Slider), 600)
 
-    expect(getDistinct(shown)).toStrictEqual([1.2])
+    expect(getDistinct(samples)).toStrictEqual([1.2])
     settings.close()
     page.unmount()
   })
@@ -357,10 +361,10 @@ describe('a slider of the page System after the person moves it', () => {
       const slider = getRow(page, 'Interface size').findComponent(Slider)
       slider.vm.$emit('update:modelValue', 1.2)
       slider.vm.$emit('commit', 1.2)
-      const first = await watchShown(() => getShown(page, 'Interface size', Slider), 20)
+      const first = await sampleControl(() => getControlValue(page, 'Interface size', Slider), 20)
       slider.vm.$emit('update:modelValue', 1.4)
       slider.vm.$emit('commit', 1.4)
-      const second = await watchShown(() => getShown(page, 'Interface size', Slider), 600)
+      const second = await sampleControl(() => getControlValue(page, 'Interface size', Slider), 600)
 
       expect(getDistinct([...first, ...second])).toStrictEqual([1.2, 1.4])
       settings.close()
@@ -379,7 +383,7 @@ describe('the window after the person chooses a theme or a size on the page Syst
     getRow(page, 'Theme')
       .findComponent(Select)
       .vm.$emit('update:modelValue', 'plugin:md.example.themes/dusk')
-    const applied = await watchShown(() => getStyle('theme'), 600)
+    const applied = await sampleControl(() => getStyle('theme'), 600)
 
     expect(getDistinct(applied).pop()).toContain('plugin:md.example.themes/dusk')
     expect(applied.slice(-20).every((one) => String(one).includes('dusk'))).toBe(true)
@@ -391,7 +395,7 @@ describe('the window after the person chooses a theme or a size on the page Syst
     const { settings, page } = await start(NORMAL)
 
     getRow(page, 'Light or dark').findComponent(Select).vm.$emit('update:modelValue', 'dark')
-    const applied = await watchShown(() => getStyle('mode'), 600)
+    const applied = await sampleControl(() => getStyle('mode'), 600)
 
     expect(getDistinct(applied).pop()).toContain('color-scheme: dark')
     expect(applied.slice(-20).every((one) => String(one).includes('dark'))).toBe(true)
@@ -405,7 +409,7 @@ describe('the window after the person chooses a theme or a size on the page Syst
     const slider = getRow(page, 'Interface size').findComponent(Slider)
     slider.vm.$emit('update:modelValue', 1.4)
     slider.vm.$emit('commit', 1.4)
-    const applied = await watchShown(() => getStyle('sizes'), 600)
+    const applied = await sampleControl(() => getStyle('sizes'), 600)
 
     expect(getDistinct(applied).pop()).toContain('1.4')
     settings.close()

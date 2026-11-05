@@ -35,7 +35,7 @@ const watchControl = async (
   page: Page,
   control: Control,
   change: () => Promise<void>,
-): Promise<{ readonly before: string; readonly shown: readonly string[] }> => {
+): Promise<{ readonly before: string; readonly samples: readonly string[] }> => {
   const sampler = await page.evaluateHandle(
     ({ target, step }) => {
       const read = (): string => {
@@ -51,12 +51,12 @@ const watchControl = async (
         })
         return handle?.getAttribute('aria-valuenow') ?? ''
       }
-      const shown = [read()]
-      const timer = window.setInterval(() => shown.push(read()), step)
+      const samples = [read()]
+      const timer = window.setInterval(() => samples.push(read()), step)
       return {
         stop: () => {
           window.clearInterval(timer)
-          return shown
+          return samples
         },
       }
     },
@@ -64,13 +64,13 @@ const watchControl = async (
   )
   await change()
   await page.evaluate((ms) => new Promise((resolve) => setTimeout(resolve, ms)), WATCH_MS)
-  const shown = await sampler.evaluate((one) => one.stop())
-  return { before: shown[0] ?? '', shown }
+  const samples = await sampler.evaluate((one) => one.stop())
+  return { before: samples[0] ?? '', samples }
 }
 
-/** The values in the order they were first shown, a value that comes back counted again. */
-const getRuns = (shown: readonly string[]): string[] =>
-  shown.filter((one, index) => index === 0 || one !== shown[index - 1])
+/** The values in the order they were first samples, a value that returns is counted again. */
+const getRuns = (samples: readonly string[]): string[] =>
+  samples.filter((one, index) => index === 0 || one !== samples[index - 1])
 
 test.describe('A control of the page System after a change', () => {
   test.afterEach(async ({ request }) => {
@@ -86,13 +86,13 @@ test.describe('A control of the page System after a change', () => {
     await openWorkspace(page)
     const settings = await openSystemSettings(page)
 
-    const { before, shown } = await watchControl(page, { list: 'appearance.theme' }, async () => {
+    const { before, samples } = await watchControl(page, { list: 'appearance.theme' }, async () => {
       await settings.getByRole('button', { name: 'Theme', exact: true }).click()
       await page.getByRole('menuitemradio', { name: /^Dracula/ }).click()
     })
 
     expect(before).not.toContain('Dracula')
-    const runs = getRuns(shown)
+    const runs = getRuns(samples)
     expect(runs[runs.length - 1]).toContain('Dracula')
     expect(runs.filter((one) => one === before)).toHaveLength(1)
     await expect.poll(() => getThemeStyle(page)).toContain(DRACULA_SURFACE)
@@ -102,12 +102,12 @@ test.describe('A control of the page System after a change', () => {
     await openWorkspace(page)
     const settings = await openSystemSettings(page)
 
-    const { before, shown } = await watchControl(page, { list: 'appearance.mode' }, async () => {
+    const { before, samples } = await watchControl(page, { list: 'appearance.mode' }, async () => {
       await settings.getByRole('button', { name: 'Light or dark', exact: true }).click()
       await page.getByRole('menuitemradio', { name: /^Dark/ }).click()
     })
 
-    const runs = getRuns(shown)
+    const runs = getRuns(samples)
     expect(runs).toHaveLength(2)
     expect(runs[0]).toBe(before)
     expect(runs[1]).toContain('Dark')
@@ -117,7 +117,7 @@ test.describe('A control of the page System after a change', () => {
     await openWorkspace(page)
     const settings = await openSystemSettings(page)
 
-    const { before, shown } = await watchControl(
+    const { before, samples } = await watchControl(
       page,
       { list: 'performance.profile' },
       async () => {
@@ -126,7 +126,7 @@ test.describe('A control of the page System after a change', () => {
       },
     )
 
-    const runs = getRuns(shown)
+    const runs = getRuns(samples)
     expect(runs).toHaveLength(2)
     expect(runs[0]).toBe(before)
     expect(runs[1]).toContain('Eco')
@@ -140,20 +140,20 @@ test.describe('A control of the page System after a change', () => {
     const settings = await openSystemSettings(page)
     const slider = settings.getByRole('slider', { name: 'Interface size' })
 
-    const { shown } = await watchControl(page, { slider: 'Interface size' }, async () => {
+    const { samples } = await watchControl(page, { slider: 'Interface size' }, async () => {
       await slider.focus()
       await slider.press('ArrowRight')
       await slider.press('ArrowRight')
       await slider.press('ArrowRight')
     })
 
-    expect(getRuns(shown).map(Number)).toStrictEqual([1, 1.1, 1.2, 1.3])
+    expect(getRuns(samples).map(Number)).toStrictEqual([1, 1.1, 1.2, 1.3])
     await expect
       .poll(async () => (await readOwner(request, 'app'))['appearance'])
       .toMatchObject({ interfaceScale: 1.3 })
   })
 
-  test('follows the handle of the interface size to the place it is dropped and stays there', async ({
+  test('keeps the interface size at the place the handle is dropped on', async ({
     page,
     request,
   }) => {
@@ -165,7 +165,7 @@ test.describe('A control of the page System after a change', () => {
     const startX = (box?.x ?? 0) + (box?.width ?? 0) / 2
     const y = (box?.y ?? 0) + (box?.height ?? 0) / 2
 
-    const { shown } = await watchControl(page, { slider: 'Interface size' }, async () => {
+    const { samples } = await watchControl(page, { slider: 'Interface size' }, async () => {
       await page.mouse.move(startX, y)
       await page.mouse.down()
       await page.mouse.move(startX + 60, y, { steps: 12 })
@@ -173,7 +173,7 @@ test.describe('A control of the page System after a change', () => {
       await page.mouse.up()
     })
 
-    const values = getRuns(shown).map(Number)
+    const values = getRuns(samples).map(Number)
     expect(values.length).toBeGreaterThan(1)
     expect(values).toStrictEqual([...values].sort((one, other) => one - other))
     const last = values[values.length - 1]

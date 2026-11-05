@@ -1,6 +1,6 @@
 /**
  * What the handle does when the value a caller gives it changes while the person is moving it: the
- * person's position stands, and the value from outside is taken once the person lets go.
+ * person's position stands, and the value from outside is taken once the person releases the handle.
  */
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
@@ -74,7 +74,7 @@ describe('a handle the person is moving', () => {
     control.unmount()
   })
 
-  it('takes the value of the caller after the person lets go', async () => {
+  it('takes the value of the caller after the person releases the handle', async () => {
     const control = mountSlider()
     await nextTick()
     await press(control, 'ArrowRight')
