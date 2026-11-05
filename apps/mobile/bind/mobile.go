@@ -199,7 +199,7 @@ func (c *Core) Port() int {
 // is under the folder the platform provides, and errors the core continues past
 // are written to the stream the platform collects.
 func makeConfig(dir string, out io.Writer) container.Config {
-	return container.Config{
+	return container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(dir, "index.db"),
 		RegistryPath: filepath.Join(dir, "vaults.json"),
 		ThemesPath:   filepath.Join(dir, "themes"),
@@ -209,7 +209,7 @@ func makeConfig(dir string, out io.Writer) container.Config {
 				return
 			}
 		},
-	}
+	})
 }
 
 // registerVault puts the vault on this installation's list, and answers with

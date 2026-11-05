@@ -97,6 +97,7 @@ func readClientModel(
 		From:           resp.Msg.GetFrom(),
 		Handling:       resp.Msg.GetHandling(),
 		MinChunkLength: int(max(resp.Msg.GetMinChunkLength(), 0)),
+		ChunkTokens:    int(max(resp.Msg.GetChunkTokens(), 0)),
 	}
 	return model, concurrency, max(resp.Msg.GetFloorHint(), 0), nil
 }
@@ -185,7 +186,7 @@ func (b *Embedder) Close() error {
 }
 
 // OnModelChange registers fn to run when the plugin reports a model unlike the last one announced:
-// another identity, handling or minimum chunk length. The plugin is read
+// another identity, handling, minimum chunk length or chunk size. The plugin is read
 // after it has been given its configuration, so a setting of another plugin never runs fn.
 func (b *Embedder) OnModelChange(fn func()) {
 	b.changeMu.Lock()

@@ -103,6 +103,9 @@ func NewConfig(c Config) Config {
 	if c.Resources == nil {
 		c.Resources = NewResources()
 	}
+	if c.Chunks == nil {
+		c.Chunks = &ChunkTokens{}
+	}
 	return c
 }
 

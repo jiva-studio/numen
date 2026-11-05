@@ -59,7 +59,6 @@ func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) 
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
 	target := container.NewConfig(container.Config{
-		Embedding:          container.DefaultEmbedding(),
 		ServiceDir:         ".numen",
 		PluginHost:         host,
 		ShouldRebuildIndex: true,

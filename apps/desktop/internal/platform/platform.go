@@ -38,13 +38,13 @@ func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
 // that target.
 func GetConfigFor(target string) container.Config {
 	dirs := getPluginsDirs()
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		PluginHost:    newPluginHost(target, dirs...),
 		PluginDirs:    dirs,
 		PluginCatalog: getCatalogConfig(target, dirs),
 		KeyStore:      keychain.Store{},
 		Resources:     container.NewResources(),
-	}
+	})
 	// A machine with no data folder leaves the path empty, and the core fails to start.
 	if path, err := GetIndexPath(); err == nil {
 		cfg.IndexPath = path

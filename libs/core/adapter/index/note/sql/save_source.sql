@@ -1,10 +1,8 @@
 -- Returns the source's identity, which the note, its headings, its links, its
 -- problems and its chunks are stored against and its full-text row is keyed by.
 --
--- `hash`, `recipe` and `producer` are what a link note's text was made from:
--- the address it points at, what cut the two texts into one, and what fetched
--- the half nobody typed here. All three are set by every write, so a note that
--- points nowhere clears what an earlier fetch believed.
+-- `recipe` is how the note was cut into chunks, and is set by every write. `hash` and
+-- `producer` are set by every write too, and a note has neither.
 INSERT INTO sources (vault_id, path, kind, size, modified_at, hash, recipe, producer)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (vault_id, path) DO UPDATE SET

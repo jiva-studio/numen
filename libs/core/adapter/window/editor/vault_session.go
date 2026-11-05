@@ -47,6 +47,8 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 		return err
 	}
 	defer o.shutdown.endKeepOpen()
+	o.sessionMu.Lock()
+	defer o.sessionMu.Unlock()
 
 	// A page that reports nothing is waited for at most FlushTimeout.
 	target, elapsed := context.WithTimeout(ctx, FlushTimeout)
@@ -77,6 +79,23 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	// Every page's held content was read from the previous vault.
 	o.State.ChangeEvents.publish(change{shouldReload: true})
 	return err
+}
+
+// rebuildSession builds the session of the vault in the window again, so the scan, the watch and the
+// refresh cut the notes at the chunk size the embedder reports now, and the first scan of the new
+// session cuts the notes recorded with another size.
+func (o *Installation) rebuildSession() {
+	o.sessionMu.Lock()
+	defer o.sessionMu.Unlock()
+	current := o.State.GetCurrentVault()
+	if current.ID == "" || o.shutdown.isClosed() {
+		return
+	}
+	o.stopVault()
+	o.resetStatus()
+	if err := o.startVault(context.Background(), current, false); err != nil {
+		o.State.Error.Store(err.Error())
+	}
 }
 
 // startVault puts a vault in the window and builds everything that belongs to it.

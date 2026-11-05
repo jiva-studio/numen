@@ -75,7 +75,7 @@ func saveNote(
 	ctx context.Context, tx *sqlwrite.Transaction, vault int64, indexed domain.NoteChunks,
 ) error {
 	n := indexed.Note
-	row, err := saveSourceAndNote(ctx, tx, vault, n)
+	row, err := saveSourceAndNote(ctx, tx, vault, indexed)
 	if err != nil {
 		return err
 	}
@@ -111,10 +111,12 @@ func saveNote(
 }
 
 // saveSourceAndNote stores the source and note rows and gives the source row,
-// clearing the derived rows of a source that already existed.
+// clearing the derived rows of a source that already existed. The source keeps the
+// recipe of the cut that made the chunks.
 func saveSourceAndNote(
-	ctx context.Context, tx *sqlwrite.Transaction, vault int64, n domain.Note,
+	ctx context.Context, tx *sqlwrite.Transaction, vault int64, indexed domain.NoteChunks,
 ) (int64, error) {
+	n := indexed.Note
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {
@@ -127,7 +129,7 @@ func saveSourceAndNote(
 	var updated bool
 	if err := tx.QueryRowContext(ctx, getStatement("save_source"),
 		vault, n.FileStat.Path, kind, n.FileStat.Size, chunk.ConvertTimeToNanos(n.FileStat.ModTime),
-		nil, nil, nil,
+		nil, newNullable(indexed.Recipe), nil,
 	).Scan(&row, &updated); err != nil {
 		return 0, fmt.Errorf("record the source this note is: %w", err)
 	}

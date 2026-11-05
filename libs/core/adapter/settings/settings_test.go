@@ -49,9 +49,6 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Indexing.Embedding.MaxTokens == 0 {
-		t.Errorf("no chunk bound: %+v", cfg.Indexing.Embedding)
-	}
 	// Both scales default to 1, so an unconfigured installation renders every
 	// length at its designed size.
 	if cfg.Appearance.InterfaceScale != 1 || cfg.Appearance.TextScale != 1 {
@@ -195,9 +192,8 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Read back, the file contains the settings of the run that wrote it.
-	if back.Indexing.Embedding != cfg.Indexing.Embedding {
-		t.Errorf("the embedding section is %+v, was %+v",
-			back.Indexing.Embedding, cfg.Indexing.Embedding)
+	if back.Appearance != cfg.Appearance {
+		t.Errorf("the appearance section is %+v, was %+v", back.Appearance, cfg.Appearance)
 	}
 	// An unset key is not a field of the file.
 	if strings.Contains(string(raw), `"key"`) {
@@ -213,32 +209,10 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	if cfg.Appearance.InterfaceScale != 1.5 {
 		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
 	}
-	// A file that sets the appearance leaves the index unchanged. Both are sections
+	// A file that sets the appearance leaves the performance section unchanged. Both are sections
 	// of one file, and a section absent from the file keeps its defaults.
-	if cfg.Indexing.Embedding != container.DefaultEmbedding() {
-		t.Errorf("the embedding section is %+v", cfg.Indexing.Embedding)
-	}
-}
-
-// A section the file leaves empty keeps its defaults.
-func TestAFileNamingAnEmptySectionKeepsTheDefaultsForTheRest(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := cfg.Indexing.Embedding; got != container.DefaultEmbedding() {
-		t.Errorf("the embedding section is %+v", got)
-	}
-}
-
-// A file naming the cut of a chunk replaces the default.
-func TestAFileNamingTheTokenLimitReplacesTheDefault(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"max_tokens":128}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := cfg.Indexing.Embedding.MaxTokens; got != 128 {
-		t.Errorf("a chunk is cut at %d tokens", got)
+	if cfg.Performance != container.DefaultSettings().Performance {
+		t.Errorf("the performance section is %+v", cfg.Performance)
 	}
 }
 

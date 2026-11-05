@@ -28,9 +28,8 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 
-	cfg := container.DefaultEmbedding()
-	cfg.MaxTokens = 512
-	target := container.NewConfig(container.Config{Embedding: cfg, ServiceDir: ".numen"})
+	target := container.NewConfig(container.Config{ServiceDir: ".numen"})
+	target.Chunks.Set(512)
 
 	trimmed, err := target.IndexTexts(db.Sources(), db.SourcesKnown(), domain.Vault{ID: "v", Path: t.TempDir()})
 	if err != nil {
@@ -47,10 +46,10 @@ func TestNoBoundSplitsAtTheDefaultBound(t *testing.T) {
 	}
 }
 
-func TestSplitNotes_LimitFollowsEmbeddingMaxTokens(t *testing.T) {
-	cfg := container.DefaultEmbedding()
-	cfg.MaxTokens = 512
-	if got := (container.NewConfig(container.Config{Embedding: cfg})).CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {
+func TestSplitNotes_LimitFollowsTheChunkTokens(t *testing.T) {
+	target := container.NewConfig(container.Config{})
+	target.Chunks.Set(512)
+	if got := target.CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {
 		t.Errorf("cut at %d, under %d", got, chunking.GetCharacterBound(512))
 	}
 }
@@ -65,9 +64,9 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 
-	cfg := container.DefaultEmbedding()
-	cfg.MaxTokens = 8
-	target := container.NewConfig(container.Config{Embedding: cfg, ServiceDir: ".numen"})
+	const maxTokens = 8
+	target := container.NewConfig(container.Config{ServiceDir: ".numen"})
+	target.Chunks.Set(maxTokens)
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	_, err = target.ReadWholeVault(t.Context(), db, wide{384}, v)
@@ -95,7 +94,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	if len(unembedded) == 0 {
 		t.Fatal("a note of a hundred lines needs no vector")
 	}
-	limit := chunking.GetCharacterBound(cfg.MaxTokens)
+	limit := chunking.GetCharacterBound(maxTokens)
 	for _, p := range unembedded {
 		if p.Length > limit {
 			t.Errorf("a chunk of %d characters is embedded by a model that reads %d", p.Length, limit)
@@ -112,7 +111,7 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 
-	target := container.NewConfig(container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"})
+	target := container.NewConfig(container.Config{ServiceDir: ".numen"})
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	if _, err := target.ReadWholeVault(t.Context(), db, wide{384}, v); err != nil {

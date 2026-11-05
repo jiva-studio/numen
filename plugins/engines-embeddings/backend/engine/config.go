@@ -58,6 +58,8 @@ type ModelInfo struct {
 	Handling Handling `json:"handling"`
 	// MinChunkLength is the fewest bytes a piece of text holds to be given a vector, and 0 embeds every piece.
 	MinChunkLength int `json:"min_chunk_length"`
+	// ChunkTokens is the most tokens one chunk of a note may hold, and 0 names none.
+	ChunkTokens int `json:"chunk_tokens"`
 }
 
 // CheckIdentity verifies the model dimension, tokens, and pooling.
@@ -147,6 +149,7 @@ func NewConfig(profile Profile) (ModelInfo, LocalModel) {
 		Concurrency:    defaultPasses,
 		FloorHint:      profile.FloorHint,
 		MinChunkLength: 0,
+		ChunkTokens:    0,
 		Handling:       profile.GetHandling(),
 	}
 	local := LocalModel{

@@ -45,6 +45,8 @@ type NoteChunks struct {
 	Note     Note
 	Headings []Heading
 	Chunks   []Chunk
+	// Recipe is how the chunks were cut; the index keeps it on the note's source.
+	Recipe string
 }
 
 // SourceChunks is one source as reading it left it: the file, the recipe that

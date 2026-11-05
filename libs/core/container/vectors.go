@@ -45,5 +45,13 @@ func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() er
 	if err != nil {
 		return nil, nil, err
 	}
+	followChunkTokens(c.Chunks, bridge, bridge.OnModelChange)
 	return bridge, bridge.Close, nil
+}
+
+// followChunkTokens holds the chunk size the embedder reports in the cell, and again each time the
+// embedder announces a change of its model.
+func followChunkTokens(cell *ChunkTokens, embedder embeddingport.Embedder, onChange func(func())) {
+	cell.Set(embedder.GetModel().ChunkTokens)
+	onChange(func() { cell.Set(embedder.GetModel().ChunkTokens) })
 }

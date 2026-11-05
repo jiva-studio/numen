@@ -14,9 +14,7 @@ func TestEverySectionKeyIsTheOneTheDocumentSpells(t *testing.T) {
 		field      string
 		targetPath string
 	}{
-		{Settings{}, "Indexing", indexingAt},
 		{Settings{}, "Agent", agentAt},
-		{Indexing{}, "Embedding", embeddingAt},
 	} {
 		field, there := reflect.TypeOf(one.in).FieldByName(one.field)
 		if !there {
