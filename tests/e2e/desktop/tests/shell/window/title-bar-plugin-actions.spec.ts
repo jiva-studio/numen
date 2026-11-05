@@ -16,7 +16,9 @@ const NOTE_BUTTON = 'app:note.create'
 const getButton = (page: Page, id: string) => page.locator(`[data-title-bar-action="${id}"]`)
 const getButtons = (page: Page) => page.locator('[data-title-bar] [data-title-bar-action]')
 const listButtonIds = (page: Page): Promise<string[]> =>
-  getButtons(page).evaluateAll((all) => all.map((one) => one.getAttribute('data-title-bar-action')!))
+  getButtons(page).evaluateAll((all) =>
+    all.map((one) => one.getAttribute('data-title-bar-action')!),
+  )
 
 test.describe('Plugin buttons in the title bar', () => {
   test.afterEach(async ({ request }) => {
@@ -91,14 +93,14 @@ test.describe('Plugin buttons in the title bar', () => {
     await closeTab(page, /Close Files/i)
     const more = page.locator('[data-title-bar-more]')
     await expect(more).toBeVisible()
-    const shown = await listButtonIds(page)
+    const inBar = await listButtonIds(page)
 
     await more.click()
     const entries = page.getByRole('menuitem')
     const names = await entries.allTextContents()
 
     expect(names.length).toBeGreaterThan(0)
-    expect(shown).not.toContain(names[0])
+    expect(inBar).not.toContain(names[0])
     await entries.filter({ hasText: 'Open file tree' }).click()
     await expect(getTab(page, 'Files')).toBeVisible()
   })

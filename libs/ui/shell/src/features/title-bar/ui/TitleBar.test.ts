@@ -126,17 +126,16 @@ describe('the buttons of plugins', () => {
   const PRESSED_MARKS = ['aria-pressed', 'aria-checked', 'data-pressed', 'data-active']
 
   it('draw no pressed state before or after a press', async () => {
-    const wrapper = mountBar({
-      actions: [
-        action('org.example.tide:chart.open', 'navigate', 'Ctrl+Shift+E'),
-        action('org.example.reef:map.open', 'navigate'),
-        action('app:note.create', 'new'),
-      ],
-    })
+    const actions = [
+      action('org.example.tide:chart.open', 'navigate', 'Ctrl+Shift+E'),
+      action('org.example.reef:map.open', 'navigate'),
+      action('app:note.create', 'new'),
+    ]
+    const wrapper = mountBar({ actions })
     const before = wrapper.find('[data-title-bar]').html()
 
     await button(wrapper, 'org.example.reef:map.open').trigger('click')
-    await wrapper.setProps({ actions: wrapper.props('actions') })
+    await wrapper.setProps({ actions: [...actions] })
 
     for (const id of shownIds(wrapper)) {
       for (const mark of PRESSED_MARKS) expect(button(wrapper, id).attributes(mark)).toBeUndefined()

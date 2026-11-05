@@ -104,7 +104,7 @@ describe('the actions of the title bar', () => {
     expect(second?.icon).toBe(getIcon('map'))
   })
 
-  it('carry the group of the entry and none for an entry without one', () => {
+  it('carry the group of the entry and none for an entry noShortcut one', () => {
     const { bar } = setup({ entries: [tree, graph, note] })
 
     const [first, second, third] = bar.actions.value
@@ -115,7 +115,9 @@ describe('the actions of the title bar', () => {
   })
 
   it('sort, filter and merge nothing of what the place gives', () => {
-    const { bar } = setup({ entries: [note, graph, tree, entry('app:vault.create', { group: 'z' })] })
+    const { bar } = setup({
+      entries: [note, graph, tree, entry('app:vault.create', { group: 'z' })],
+    })
 
     expect(bar.actions.value.map((one) => one.id)).toStrictEqual([
       'app:note.create',
@@ -138,7 +140,10 @@ describe('the actions of the title bar', () => {
 
     isVaultOpen.value = true
 
-    expect(bar.actions.value.map((one) => one.id)).toStrictEqual([`${TIDE}:tree.open`, 'app:note.create'])
+    expect(bar.actions.value.map((one) => one.id)).toStrictEqual([
+      `${TIDE}:tree.open`,
+      'app:note.create',
+    ])
 
     isVaultOpen.value = false
 
@@ -160,7 +165,7 @@ describe('the actions of the title bar', () => {
 
 describe('the hover text shortcut of an action', () => {
   const withShortcut = entry(`${TIDE}:tree.open`, { shortcut: 'mod+shift+e' })
-  const without = entry(`${TIDE}:chart.open`)
+  const noShortcut = entry(`${TIDE}:chart.open`)
   const undrawable = entry(`${TIDE}:chart.sync`, { shortcut: 'mod+alt+x' })
 
   it('is the keys the palette draws for the command on this platform, joined with a plus', () => {
@@ -176,7 +181,7 @@ describe('the hover text shortcut of an action', () => {
   })
 
   it('is absent for a command with no shortcut', () => {
-    const { bar } = setup({ entries: [without] })
+    const { bar } = setup({ entries: [noShortcut] })
 
     expect(bar.actions.value[0]).toBeDefined()
     expect(bar.actions.value[0] && 'shortcut' in bar.actions.value[0]).toBe(false)
