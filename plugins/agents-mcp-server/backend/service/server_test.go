@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 	"errors"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -439,5 +441,71 @@ func TestServerCloseClosesConnectionWithoutRequest(t *testing.T) {
 
 	if err := srv.Close(t.Context()); err != nil {
 		t.Fatalf("Close with a connection that sent no request: %v", err)
+	}
+}
+
+// isPeerClosed reports whether the end of a net.Pipe opposite to peer has been closed.
+func isPeerClosed(t *testing.T, peer net.Conn) bool {
+	t.Helper()
+	err := peer.SetReadDeadline(time.Unix(1, 0))
+	if errors.Is(err, io.ErrClosedPipe) {
+		return true
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = peer.Read(make([]byte, 1))
+	if !errors.Is(err, os.ErrDeadlineExceeded) {
+		t.Fatalf("read from an open pipe: got %v, want a deadline error", err)
+	}
+	return false
+}
+
+func TestServerCloseKeepsConnectionsThatSentRequest(t *testing.T) {
+	t.Parallel()
+
+	srv, err := NewServer(Config{Token: "tok"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	silentConn, silentPeer := net.Pipe()
+	activeConn, activePeer := net.Pipe()
+	for _, c := range []net.Conn{silentConn, silentPeer, activeConn, activePeer} {
+		cleanup.CloseAfter(t, c)
+	}
+
+	srv.trackConn(silentConn, http.StateNew)
+	srv.trackConn(activeConn, http.StateNew)
+	srv.trackConn(activeConn, http.StateActive)
+	if err := srv.Close(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	if !isPeerClosed(t, silentPeer) {
+		t.Fatal("Close left open a connection that sent no request")
+	}
+	if isPeerClosed(t, activePeer) {
+		t.Fatal("Close closed a connection that sent a request")
+	}
+}
+
+func TestServerClosesConnectionAcceptedAfterClose(t *testing.T) {
+	t.Parallel()
+
+	srv, err := NewServer(Config{Token: "tok"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.Close(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	lateConn, latePeer := net.Pipe()
+	cleanup.CloseAfter(t, lateConn)
+	cleanup.CloseAfter(t, latePeer)
+
+	srv.trackConn(lateConn, http.StateNew)
+
+	if !isPeerClosed(t, latePeer) {
+		t.Fatal("a connection accepted after Close stays open")
 	}
 }

@@ -94,18 +94,17 @@ func newServerOptions() *sdk.ServerOptions {
 	return opts
 }
 
-// newHTTPServer creates an HTTP server that serves the handler of s and closes the connections
-// without a request on shutdown.
+// newHTTPServer creates an HTTP server that serves the handler of s and reports its connection states
+// to trackConn.
 func (s *Server) newHTTPServer() *http.Server {
 	httpSrv := new(http.Server)
 	httpSrv.Handler = s.handler
 	httpSrv.ReadHeaderTimeout = 10 * time.Second
 	httpSrv.ConnState = s.trackConn
-	httpSrv.RegisterOnShutdown(s.closeNewConns)
 	return httpSrv
 }
 
-// trackConn records whether conn has sent a request yet.
+// trackConn records whether conn has sent a request yet and closes a connection accepted after Close.
 func (s *Server) trackConn(conn net.Conn, state http.ConnState) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -120,11 +119,8 @@ func (s *Server) trackConn(conn net.Conn, state http.ConnState) {
 	s.newConns[conn] = struct{}{}
 }
 
-// closeNewConns closes the connections that have not sent a request. trackConn closes the ones
-// accepted after Close has started.
-func (s *Server) closeNewConns() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+// closeNewConnsLocked closes the connections that have not sent a request. The caller holds s.mu.
+func (s *Server) closeNewConnsLocked() {
 	for conn := range s.newConns {
 		closeConn(conn)
 		delete(s.newConns, conn)
@@ -268,6 +264,7 @@ func (s *Server) Close(ctx context.Context) error {
 		return nil
 	}
 	s.isClosed = true
+	s.closeNewConnsLocked()
 	s.mu.Unlock()
 
 	// gomutants:disable-next-line REMOVE_LOGICAL_NOT,BRANCH_IF reason="fallback timeout applies only when active connections stall during shutdown"
