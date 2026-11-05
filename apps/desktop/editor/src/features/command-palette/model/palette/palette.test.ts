@@ -8,7 +8,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { runSupport } from './runSupport'
-import type { Command, CommandTarget, NoteLookup, PaletteLists, RunSupport, StepGroup } from '../../types'
+import type {
+  Command,
+  CommandTarget,
+  NoteLookup,
+  PaletteLists,
+  RunSupport,
+  StepGroup,
+} from '../../types'
 import { useCommandPalette, type Commands } from './palette'
 import { usePaletteShortcuts } from './shortcuts'
 import type { VaultList, Vault } from '@/entities/vault'
@@ -1762,7 +1769,9 @@ describe('a command started with the text typed for it', () => {
 
   it('still opens the step of a command that asks for a choice', () => {
     const { commands } = createPalette({}, [], {
-      [THEME_ID]: [{ id: 'themes', title: 'Themes', items: [{ id: 'preset:numen', title: 'numen' }] }],
+      [THEME_ID]: [
+        { id: 'themes', title: 'Themes', items: [{ id: 'preset:numen', title: 'numen' }] },
+      ],
     })
 
     expect(commands.startCommand(THEME_ID, front(), 'dark')).toBeNull()
