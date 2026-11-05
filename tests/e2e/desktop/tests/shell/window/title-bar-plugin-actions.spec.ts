@@ -37,7 +37,9 @@ test.describe('Plugin buttons in the title bar', () => {
   })
 
   // #1507: waits for a plugin that places a command in titleBar; enable when the placements land.
-  test.fixme('shows the title and the shortcut of the command in the hover text', async ({ page }) => {
+  test.fixme('shows the title and the shortcut of the command in the hover text', async ({
+    page,
+  }) => {
     await openWorkspace(page)
 
     const hover = await getButton(page, TREE_BUTTON).getAttribute('title')
