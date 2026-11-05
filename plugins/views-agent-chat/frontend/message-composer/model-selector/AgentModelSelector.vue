@@ -24,12 +24,15 @@ const props = withDefaults(
     selectedAgentId?: string
     selectedModelId?: string
     isDisabled?: boolean
+    /** What the control reads where there are no options. */
+    emptyLabel?: string
   }>(),
   {
     options: () => [],
     selectedAgentId: '',
     selectedModelId: '',
     isDisabled: false,
+    emptyLabel: 'No agent installed',
   },
 )
 
@@ -55,7 +58,7 @@ const currentOption = computed(() => {
 
 const label = computed(() => {
   const active = currentOption.value
-  if (!active) return 'No agent installed'
+  if (!active) return props.emptyLabel
   return `${active.agentTitle} · ${active.modelTitle}`
 })
 

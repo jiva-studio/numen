@@ -100,8 +100,11 @@ function useAgentSelection(deps: AgentTabDeps) {
     selectedModelId.value = option.modelId
   }
 
+  const isAgentMissing = computed(() => modelOptions.value.length === 0)
+  const openSettings = () => deps.openSettings?.()
+
   const selection = { selectedAgentId, selectedModelId, modelOptions, selectModel }
-  return { ...selection, ...useReasoningSelection(deps, selection) }
+  return { ...selection, isAgentMissing, openSettings, ...useReasoningSelection(deps, selection) }
 }
 
 /** The depth of reasoning chosen for the agent, as far as the selected model hasLevel it. */

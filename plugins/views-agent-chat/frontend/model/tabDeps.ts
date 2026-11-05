@@ -4,6 +4,9 @@
 import type { AgentHost, WorkspaceHost } from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
 
+/** The command of the window that opens the settings tab. */
+const OPEN_SETTINGS = 'app:settings.open'
+
 /** The host services an agent tab is made from. */
 export interface AgentChatHost {
   readonly workspace: WorkspaceHost
@@ -27,5 +30,6 @@ export function createAgentTabDeps({
     getSetting: (path) => agent.getSetting(path),
     getReasoning,
     getModelsAt: (path) => agent.getModelsAt(path),
+    openSettings: () => workspace.runCommand(OPEN_SETTINGS, workspace.getNoteInFocus()),
   }
 }

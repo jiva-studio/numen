@@ -14,4 +14,6 @@ export interface AgentTabDeps {
   /** The depth of reasoning the plugin setting `reasoning` keeps; empty where it keeps none. */
   getReasoning?(): string
   getModelsAt?(path: readonly string[]): readonly AgentModel[]
+  /** Opens the settings page where the agents are configured. */
+  openSettings?(): void
 }
