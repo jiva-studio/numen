@@ -12,7 +12,7 @@ const OwnerApp = "app"
 
 // The reasons CheckWrite rejects a write.
 var (
-	// ErrUndeclared is a key that its owner does not declare, or an owner nobody declares.
+	// ErrUndeclared is a key that its owner does not declare, or an owner that has no declaration.
 	ErrUndeclared = errors.New("the setting is not declared")
 	// ErrWrongType is a value of another type than the declaration states.
 	ErrWrongType = errors.New("the value is of the wrong type")
@@ -22,18 +22,18 @@ var (
 	ErrOutOfRange = errors.New("the number is outside the bounds")
 )
 
-// Declarations returns the settings an owner declares, and false for an owner nobody declares.
+// Declarations returns the settings an owner declares, and false for an owner that has no declaration.
 type Declarations func(owner string) ([]pluginport.PluginManifestSetting, bool)
 
 // Registries returns the values a registry lists, such as the installed themes, and false for a
-// registry nobody provides.
+// registry that has no provider.
 type Registries func(name string) ([]string, bool)
 
 // CheckWrite returns why the value is not one the setting at the path takes. The first element of
 // the path is the owner and the rest is the key path under it, as the file lays them out. One
 // function checks a write for every owner: the declared key, the type of the value, the
 // membership of an enum and the bounds of a range.
-func CheckWrite(declared Declarations, registries Registries, at []string, value any) error {
+func CheckWrite(declared Declarations, registries Registries, path []string, value any) error {
 	return nil
 }
 
@@ -50,6 +50,6 @@ func (s File) GetOwner(owner string) map[string]any {
 
 // GetValue returns the value in force at a path: the stored value, else the default its owner
 // declares. The first element of the path is the owner.
-func (s File) GetValue(at ...string) (any, bool) {
+func (s File) GetValue(path ...string) (any, bool) {
 	return nil, false
 }

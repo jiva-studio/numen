@@ -36,8 +36,8 @@ func installedThemes(name string) ([]string, bool) {
 	return nil, false
 }
 
-func check(at []string, value any) error {
-	return settings.CheckWrite(declaredSettings, installedThemes, at, value)
+func check(path []string, value any) error {
+	return settings.CheckWrite(declaredSettings, installedThemes, path, value)
 }
 
 func TestAKeyItsOwnerDoesNotDeclareIsRejected(t *testing.T) {
@@ -47,7 +47,7 @@ func TestAKeyItsOwnerDoesNotDeclareIsRejected(t *testing.T) {
 	}
 }
 
-func TestAKeyOfAnOwnerNobodyDeclaresIsRejected(t *testing.T) {
+func TestAKeyOfAnUnknownOwnerIsRejected(t *testing.T) {
 	err := check([]string{"md.numen.nobody", "model"}, "small")
 	if !errors.Is(err, settings.ErrUndeclared) {
 		t.Errorf("a key of an unknown owner gave %v", err)
@@ -167,7 +167,7 @@ func TestAThemeOfAPluginIsAcceptedWhileItIsInstalled(t *testing.T) {
 	}
 }
 
-func TestTheNamingOfTheShellTakesABooleanOnly(t *testing.T) {
+func TestTheNamingOfTheShellAcceptsABooleanOnly(t *testing.T) {
 	err := check([]string{settings.OwnerApp, "naming", "syncTitleAndFilename"}, "yes")
 	if !errors.Is(err, settings.ErrWrongType) {
 		t.Errorf("a string for the naming gave %v", err)

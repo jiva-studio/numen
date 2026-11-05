@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
-func writeAt(cfg Config, json string, at ...string) error {
-	return cfg.GetSettingsWriter()([]settingsport.Setting{{Path: at, JSON: json}})
+func writeAt(cfg Config, json string, path ...string) error {
+	return cfg.GetSettingsWriter()([]settingsport.Setting{{Path: path, JSON: json}})
 }
 
 func TestAProfileThatIsNoOptionIsRefusedAndNotSent(t *testing.T) {
@@ -51,7 +51,7 @@ func TestAScaleOutsideItsBoundsIsRefusedWhoeverWritesIt(t *testing.T) {
 	}
 }
 
-func TestAStringWhereTheNamingTakesABooleanIsRefused(t *testing.T) {
+func TestAStringWhereTheNamingAcceptsABooleanIsRefused(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	err := writeAt(cfg, `"yes"`, "app", "naming", "syncTitleAndFilename")
 	if !errors.Is(err, settingsport.ErrNotASetting) {
@@ -59,7 +59,7 @@ func TestAStringWhereTheNamingTakesABooleanIsRefused(t *testing.T) {
 	}
 }
 
-func TestAThemeNobodyInstalledIsRefused(t *testing.T) {
+func TestAThemeThatIsNotInstalledIsRefused(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	err := writeAt(cfg, `"mine:not-installed"`, "app", "appearance", "theme")
 	if !errors.Is(err, settingsport.ErrNotASetting) {

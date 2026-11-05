@@ -53,12 +53,12 @@ func listKeys(root map[string]json.RawMessage) string {
 	return strings.Join(keys, ", ")
 }
 
-func TestAHandWrittenFileInTheLayoutByOwnerIsRead(t *testing.T) {
+func TestAFileInTheLayoutByOwnerIsRead(t *testing.T) {
 	cfg, err := openAt(write(t, handWritten))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for at, want := range map[string]any{
+	for name, want := range map[string]any{
 		"app.appearance.theme":             "mine:dracula",
 		"app.appearance.mode":              "dark",
 		"app.appearance.interfaceScale":    1.25,
@@ -71,10 +71,10 @@ func TestAHandWrittenFileInTheLayoutByOwnerIsRead(t *testing.T) {
 		"md.numen.sample.notes/enabled":    false,
 	} {
 		var path []string
-		if owner, key, isPlugin := strings.Cut(at, "/"); isPlugin {
+		if owner, key, isPlugin := strings.Cut(name, "/"); isPlugin {
 			path = []string{owner, key}
 		} else {
-			path = strings.Split(at, ".")
+			path = strings.Split(name, ".")
 		}
 		got, ok := cfg.GetValue(path...)
 		if !ok || got != want {
@@ -83,7 +83,7 @@ func TestAHandWrittenFileInTheLayoutByOwnerIsRead(t *testing.T) {
 	}
 }
 
-func TestTheVersionStandsAtTheRootOfTheFile(t *testing.T) {
+func TestTheVersionIsAtTheRootOfTheFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen", "numen.json")
 	if _, err := openAt(path); err != nil {
 		t.Fatal(err)
@@ -97,7 +97,7 @@ func TestTheVersionStandsAtTheRootOfTheFile(t *testing.T) {
 		t.Fatalf("app is %q", root["app"])
 	}
 	if _, nested := app["v"]; nested {
-		t.Error("the version stands under app")
+		t.Error("the version is under app")
 	}
 }
 
@@ -112,7 +112,7 @@ func TestAnUnconfiguredInstallationWritesAnAppObjectAndNoSectionAtTheRoot(t *tes
 	}
 	for _, section := range []string{"appearance", "naming", "performance", "agent", "ai", "plugins"} {
 		if _, ok := root[section]; ok {
-			t.Errorf("the section %s stands at the root of the file", section)
+			t.Errorf("the section %s is at the root of the file", section)
 		}
 	}
 }
@@ -143,7 +143,7 @@ func TestTheFileHasNoPluginsObjectWhenPluginsHaveSettings(t *testing.T) {
 	}
 }
 
-func TestAPluginObjectKeepsEnabledBesideItsSettings(t *testing.T) {
+func TestAPluginObjectHasEnabledAmongItsSettings(t *testing.T) {
 	cfg, err := openAt(write(t, handWritten))
 	if err != nil {
 		t.Fatal(err)
@@ -170,12 +170,12 @@ func TestAPathIsNotJoinedWhereAPluginIdHasDots(t *testing.T) {
 	if plugin["model"] != "small" || plugin["enabled"] != true {
 		t.Errorf("the object of the plugin is %v", plugin)
 	}
-	if _, split := root["md"]; split {
+	if _, found := root["md"]; found {
 		t.Errorf("the id was split at its dots: %s", listKeys(root))
 	}
 }
 
-func TestAPluginSettingIsWrittenInsideTheObjectOfThePlugin(t *testing.T) {
+func TestAPluginSettingIsStoredInTheObjectOfThePlugin(t *testing.T) {
 	path := write(t, handWritten)
 	err := settings.NewFiles().Save(path, newDocument(),
 		settings.Setting{At: []string{"md.numen.sample.speech", "model"}, Written: "large"})

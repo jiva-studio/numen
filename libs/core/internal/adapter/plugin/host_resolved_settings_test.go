@@ -63,7 +63,7 @@ func listValues(options pluginport.PluginSettingOptions) []string {
 	return values
 }
 
-func TestThePluginInfoCarriesTheOptionsInForceUnderTheStoredValues(t *testing.T) {
+func TestThePluginInfoCarriesTheOptionsInForceForTheStoredValues(t *testing.T) {
 	host := newResolvedHost(t)
 	if got := listValues(findInfoSetting(t, host, "model").ActiveOptions); !slices.Equal(got, []string{"big", "huge"}) {
 		t.Errorf("the options under the remote provider are %v", got)
@@ -93,7 +93,7 @@ func TestThePluginInfoCarriesTheValueInForceOfASettingThatFollowsAnother(t *test
 	}
 }
 
-func TestThePluginInfoSaysWhichSettingsTheirConditionsShow(t *testing.T) {
+func TestThePluginInfoMarksTheSettingsTheirConditionsShow(t *testing.T) {
 	host := newResolvedHost(t)
 	if !findInfoSetting(t, host, "url").IsShown {
 		t.Error("the url is hidden under the remote provider")

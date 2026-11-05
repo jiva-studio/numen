@@ -63,12 +63,12 @@ test.describe('Theming and Display Scaling', () => {
   }) => {
     await writeSetting(request, ['app', 'appearance', 'textScale'], 1.25)
 
-    const refused = await request.post('/numen.v1.SettingsService/WriteSettings', {
+    const answer = await request.post('/numen.v1.SettingsService/WriteSettings', {
       data: { settings: [{ at: ['app', 'appearance', 'textScale'], value: '9' }] },
       headers: { 'Content-Type': 'application/json' },
     })
 
-    expect(refused.ok()).toBe(false)
+    expect(answer.ok()).toBe(false)
     expect((await readOwner(request, 'app'))['appearance']).toMatchObject({ textScale: 1.25 })
   })
 })

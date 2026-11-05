@@ -119,7 +119,7 @@ func TestTheSettingsThatApplyWhileFocusedCarryThePreviewFlag(t *testing.T) {
 	}
 }
 
-func TestEveryDefaultOfTheShellComesFromTheDeclaration(t *testing.T) {
+func TestEveryDefaultOfTheShellIsReadFromTheDeclaration(t *testing.T) {
 	file := settings.DefaultFile()
 	for _, declared := range settings.GetAppDeclaration() {
 		if declared.Default == nil {
