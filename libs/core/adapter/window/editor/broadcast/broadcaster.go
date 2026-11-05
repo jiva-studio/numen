@@ -154,7 +154,7 @@ func (a *Broadcaster[T]) deliver(l *subscriber[T]) {
 
 	for {
 		head, ok := a.waitForFront(l)
-		if !ok || !a.offer(l, head) {
+		if !ok || !a.sendHead(l, head) {
 			return
 		}
 	}
@@ -192,9 +192,9 @@ func (a *Broadcaster[T]) waitForFront(l *subscriber[T]) (front[T], bool) {
 	}
 }
 
-// offer hands the head to out until it is taken, and takes it off the line when
+// sendHead hands the head to out until it is taken, and takes it off the line when
 // nothing has overtaken it.
-func (a *Broadcaster[T]) offer(l *subscriber[T], head front[T]) bool {
+func (a *Broadcaster[T]) sendHead(l *subscriber[T], head front[T]) bool {
 	for {
 		select {
 		case l.out <- head.message:

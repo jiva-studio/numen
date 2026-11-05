@@ -22,7 +22,7 @@ describe('createPluginListing', () => {
       category: 'editors',
       feature: 'Markdown notes',
       tabKinds: ['note', 'reader:markdown'],
-      isOffered: false,
+      isAvailable: false,
     })
   })
 
@@ -30,8 +30,8 @@ describe('createPluginListing', () => {
     const available = createMockCatalogEntry('a', { state: CATALOG_STATE.AVAILABLE })
     const disabled = createMockCatalogEntry('b', { state: CATALOG_STATE.DISABLED })
 
-    expect(createPluginListing(available).isOffered).toBe(true)
-    expect(createPluginListing(disabled).isOffered).toBe(false)
+    expect(createPluginListing(available).isAvailable).toBe(true)
+    expect(createPluginListing(disabled).isAvailable).toBe(false)
   })
 
   it('falls back to top-level category and empty defaults when contributes is absent', () => {
@@ -49,7 +49,7 @@ describe('createPluginListing', () => {
       category: 'tools',
       feature: '',
       tabKinds: [],
-      isOffered: false,
+      isAvailable: false,
     })
   })
 })

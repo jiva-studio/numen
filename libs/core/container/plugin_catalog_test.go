@@ -95,19 +95,19 @@ func writeCatalogPlugin(t *testing.T, dir, id, targets string) {
 	}
 }
 
-func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheOfferedOnes(t *testing.T) {
+func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheAvailableOnes(t *testing.T) {
 	dir := t.TempDir()
 	writeCatalogPlugin(t, dir, "org.example.on", `"desktop.editor"`)
 	writeCatalogPlugin(t, dir, "org.example.off", `"desktop.editor"`)
 	writeCatalogPlugin(t, dir, "org.example.cards", `"desktop.flashcards"`)
-	offeredDir := t.TempDir()
-	writeCatalogPlugin(t, offeredDir, "org.example.offered", `"desktop.editor"`)
+	availableDir := t.TempDir()
+	writeCatalogPlugin(t, availableDir, "org.example.offered", `"desktop.editor"`)
 	host := NewPluginHost("desktop.editor", dir)
 	host.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
 	cfg := NewConfig(Config{
 		PluginHost:    host,
 		PluginDirs:    []string{dir},
-		PluginCatalog: catalog.Config{Target: "desktop.editor", Sources: []catalog.Source{indexsource.New(nil, []string{offeredDir})}, InstallDir: "", CacheDir: ""},
+		PluginCatalog: catalog.Config{Target: "desktop.editor", Sources: []catalog.Source{indexsource.New(nil, []string{availableDir})}, InstallDir: "", CacheDir: ""},
 	})
 
 	service := cfg.GetPluginCatalog()
