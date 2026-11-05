@@ -49,9 +49,18 @@ const CARRIES = new Set<Code>([
 ])
 
 /**
+ * Whether the error was raised by the client with a text of its own; a failed
+ * call arrives as a ConnectError and a cancelled one as an AbortError.
+ */
+const isClientError = (error: unknown): error is Error =>
+  error instanceof Error && !(error instanceof ConnectError) && error.name !== 'AbortError'
+
+/**
  * The message for a caught error, shown to the user who awaited the result.
  */
 export const formatErrorMessage = (error: unknown): string => {
+  const clientMessage = isClientError(error) ? error.message.trim() : ''
+  if (clientMessage) return clientMessage
   const fault = ConnectError.from(error)
   const carried = CARRIES.has(fault.code) ? fault.rawMessage.trim() : ''
   return carried || (TROUBLE[fault.code] ?? UNEXPECTED)
