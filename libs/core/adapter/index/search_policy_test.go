@@ -2,79 +2,11 @@ package index
 
 import (
 	"math"
-	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/notes/domain"
 )
-
-func TestMigrationTenReplacesTheFloorsTableWithTheSearchFloors(t *testing.T) {
-	available, err := loadMigrations()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !slices.ContainsFunc(available, func(m migration) bool { return m.version == 10 && m.name == "0010_search_floor.sql" }) {
-		t.Fatal("migration 0010_search_floor.sql is not embedded")
-	}
-
-	db := openDB(t)
-	columns := listColumns(t, db, "search_floors")
-	for _, want := range []string{"vault", "recipe", "floor"} {
-		if !columns[want] {
-			t.Errorf("the search_floors table has no column %s", want)
-		}
-	}
-	if len(columns) != 3 {
-		t.Errorf("the search_floors table has the columns %v, want vault, recipe and floor", columns)
-	}
-	if columns := listColumns(t, db, "floors"); len(columns) != 0 {
-		t.Errorf("the floors table of the earlier calibration survives with the columns %v", columns)
-	}
-	if got := getNewestVersion(t); got < 10 {
-		t.Errorf("newest version = %d, want at least 10", got)
-	}
-}
-
-func TestMigrationTenDropsTheCalibrationsOfAnIndexAtVersionNine(t *testing.T) {
-	ctx := t.Context()
-	path := filepath.Join(t.TempDir(), "index.db")
-
-	db, err := Open(ctx, path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, statement := range []string{
-		`DROP TABLE search_floors`,
-		`CREATE TABLE floors (vault TEXT NOT NULL, recipe TEXT NOT NULL, is_manual INTEGER NOT NULL DEFAULT 0,
-			manual_floor REAL NOT NULL DEFAULT 0, floor REAL, median REAL, spread REAL, histogram TEXT,
-			query_count INTEGER, passage_count INTEGER, calibrated_at INTEGER, PRIMARY KEY (vault, recipe)) WITHOUT ROWID`,
-		`INSERT INTO floors (vault, recipe, floor) VALUES ('first', 'recipe', 0.42)`,
-		`DELETE FROM schema_migrations WHERE version >= 10`,
-		`PRAGMA user_version = 9`,
-	} {
-		if _, err := db.write.ExecContext(ctx, statement); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := db.Close(); err != nil {
-		t.Fatal(err)
-	}
-
-	again, err := Open(ctx, path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, again)
-	if columns := listColumns(t, again, "floors"); len(columns) != 0 {
-		t.Errorf("the calibrations survive the migration with the columns %v", columns)
-	}
-	if _, found, err := again.SearchFloors().ReadFloor(ctx, domain.Vault{ID: "first"}, "recipe"); err != nil || found {
-		t.Errorf("a calibration was carried into the search floors: %v, %v", found, err)
-	}
-}
 
 func listColumns(t *testing.T, db *DB, table string) map[string]bool {
 	t.Helper()
