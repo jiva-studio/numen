@@ -92,6 +92,24 @@ test('the unknown keys are found at every depth, in the options of a setting too
   ])
 })
 
+test('a manifest has no flag that keeps an argument of a command out of the palette', () => {
+  const command = {
+    id: 'sample.open',
+    title: 'Open',
+    icon: 'file',
+    arguments: [
+      { name: 'note', title: 'Note', type: 'note', required: true, hiddenInPalette: true },
+    ],
+  }
+  const { manifest, warnings } = parseManifest(
+    JSON.stringify({ ...valid, contributes: { ...valid.contributes, commands: [command] } }),
+  )
+
+  assert.deepEqual(warnings, ['unknown key "contributes.commands[0].arguments[0].hiddenInPalette"'])
+  assert.equal(manifest.contributes.commands[0].arguments[0].isRequired, true)
+  assert.ok(!('hiddenInPalette' in manifest.contributes.commands[0].arguments[0]))
+})
+
 test('a value of the wrong type is refused and the error names the source', () => {
   assert.throws(
     () =>

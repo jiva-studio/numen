@@ -172,11 +172,7 @@ function hold(action: string, row: unknown): void {
       />
     </div>
 
-    <p
-      v-if="!actions.length"
-      class="actions__silence text-hushed px-2 py-1.5"
-      data-actions="silence"
-    >
+    <p v-if="!actions.length" class="actions__silence text-hushed" data-actions="silence">
       {{ words.silence }}
     </p>
 
@@ -219,8 +215,17 @@ function hold(action: string, row: unknown): void {
   overscroll-behavior: contain;
 }
 
+/* With no action to list, the empty list would add its padding above the message. */
+.actions:has(.actions__silence) .actions__list {
+  display: none;
+}
+
 .actions__silence {
+  display: flex;
+  align-items: center;
+  min-block-size: var(--numen-field-min);
   margin: 0;
+  padding-inline: var(--numen-field-text-inset);
 }
 
 .actions__search {

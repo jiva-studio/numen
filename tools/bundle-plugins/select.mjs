@@ -19,6 +19,27 @@ import { buildIndex } from '../build-plugin-index/build.mjs'
 import { PLUGINS_DIR, readPluginManifests } from '../shared/manifests.mjs'
 
 /**
+ * The folder names of the index plugins listed for the target.
+ *
+ * @param {{ id: string, targets?: string[] }[]} plugins - the plugins of the index
+ * @param {Map<string, string>} folderById - the folder name of each plugin id
+ * @param {string} target - the application target, as the manifests name it
+ * @returns {string[]} the folder names, ordered by name
+ * @throws {Error} naming the plugin when a listed plugin has no folder
+ */
+export const listFolders = (plugins, folderById, target) =>
+  plugins
+    .filter((plugin) => (plugin.targets ?? []).includes(target))
+    .map((plugin) => {
+      const folder = folderById.get(plugin.id)
+      if (folder === undefined) {
+        throw new Error(`plugin ${plugin.id} is in the index and has no folder under the plugins`)
+      }
+      return folder
+    })
+    .sort((a, b) => a.localeCompare(b))
+
+/**
  * The folder names of the plugins the index lists for the target.
  *
  * @param {string} target - the application target, as the manifests name it
@@ -29,10 +50,7 @@ export const listSelectedPlugins = (target, pluginsDir = PLUGINS_DIR) => {
   const folderById = new Map(
     readPluginManifests(pluginsDir).map(({ name, manifest }) => [manifest.id, name]),
   )
-  return buildIndex(pluginsDir)
-    .plugins.filter((plugin) => (plugin.targets ?? []).includes(target))
-    .map((plugin) => folderById.get(plugin.id))
-    .sort((a, b) => a.localeCompare(b))
+  return listFolders(buildIndex(pluginsDir).plugins, folderById, target)
 }
 
 /**
