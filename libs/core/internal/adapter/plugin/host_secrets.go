@@ -198,3 +198,38 @@ func (h *Host) getSecretsError(failures []error) error {
 	}
 	return errors.Join(notified...)
 }
+
+// WatchPluginConfig registers fn to run each time the plugin has been given its configuration.
+// fn runs on its own goroutine, so it may call the plugin, which a caller holding the lock of the
+// plugin's secrets could not do. The returned function removes the registration.
+func (h *Host) WatchPluginConfig(pluginID string, fn func()) (stop func()) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.configWatchers == nil {
+		h.configWatchers = make(map[string]map[int]func())
+	}
+	if h.configWatchers[pluginID] == nil {
+		h.configWatchers[pluginID] = make(map[int]func())
+	}
+	id := h.nextWatcher
+	h.nextWatcher++
+	h.configWatchers[pluginID][id] = fn
+	return func() {
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		delete(h.configWatchers[pluginID], id)
+	}
+}
+
+// runConfigWatchers runs the functions registered for the plugin, each on its own goroutine.
+func (h *Host) runConfigWatchers(pluginID string) {
+	h.mu.RLock()
+	watchers := make([]func(), 0, len(h.configWatchers[pluginID]))
+	for _, fn := range h.configWatchers[pluginID] {
+		watchers = append(watchers, fn)
+	}
+	h.mu.RUnlock()
+	for _, fn := range watchers {
+		go fn()
+	}
+}

@@ -3,19 +3,14 @@ package plugin
 import (
 	"sync/atomic"
 	"testing"
-	"time"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 )
 
 // waitForCount waits until the counter reaches want.
 func waitForCount(t *testing.T, got *atomic.Int32, want int32) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
-	for got.Load() < want {
-		if time.Now().After(deadline) {
-			t.Fatalf("%d runs, want %d", got.Load(), want)
-		}
-		time.Sleep(time.Millisecond)
-	}
+	plugintest.WaitUntil(t, "the watcher to run", func() bool { return got.Load() >= want })
 }
 
 // A function registered for a plugin runs each time the plugin has been given its configuration.

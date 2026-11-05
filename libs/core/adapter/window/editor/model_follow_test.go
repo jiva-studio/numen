@@ -19,6 +19,8 @@ func (*announcing) Embed(context.Context, []string) ([][]float32, error) { retur
 
 func (*announcing) Close() error { return nil }
 
+func (*announcing) Concurrency() int { return 1 }
+
 func (a *announcing) OnModelChange(fn func()) { a.listeners = append(a.listeners, fn) }
 
 func (a *announcing) change(model embeddingport.EmbeddingModel) {
@@ -61,3 +63,5 @@ func (silent) GetModel() embeddingport.EmbeddingModel { return embeddingport.Emb
 func (silent) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }
 
 func (silent) Close() error { return nil }
+
+func (silent) Concurrency() int { return 1 }

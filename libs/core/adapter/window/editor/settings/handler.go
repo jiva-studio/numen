@@ -26,8 +26,6 @@ type Handler struct {
 	Vaults     VaultProvider
 	// ChoosePath is nil where the application has no window to put a picker in.
 	ChoosePath *setting.ChoosePluginPath
-	// OnPluginChange is called when a plugin setting or secret is updated.
-	OnPluginChange func()
 }
 
 func NewHandler() *Handler { return &Handler{} }
@@ -65,20 +63,10 @@ func (h *Handler) WriteSettings(
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
 	content := make([]setting.Setting, 0, len(r.Msg.GetSettings()))
-	hasPluginEdit := false
 	for _, one := range r.Msg.GetSettings() {
-		if len(one.GetAt()) >= 2 && one.GetAt()[0] == "plugins" {
-			hasPluginEdit = true
-		}
 		content = append(content, setting.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
-	// A plugin is given its settings after the write answers, and OnPluginChange reads the model
-	// the embedding plugin reports, so it runs only once the plugin has the new values.
-	var applied func()
-	if hasPluginEdit {
-		applied = h.OnPluginChange
-	}
-	if err := h.Write.Execute(content, applied); err != nil {
+	if err := h.Write.Execute(content); err != nil {
 		if errors.Is(err, setting.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
@@ -183,9 +171,6 @@ func (h *Handler) WritePluginSecret(
 	if err := h.WriteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName(), r.Msg.GetKey()); err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
-	if h.OnPluginChange != nil {
-		h.OnPluginChange()
-	}
 	return connect.NewResponse(&v1.WritePluginSecretResponse{}), nil
 }
 
@@ -198,9 +183,6 @@ func (h *Handler) DeletePluginSecret(
 	}
 	if err := h.DeleteSecret.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetName()); err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
-	}
-	if h.OnPluginChange != nil {
-		h.OnPluginChange()
 	}
 	return connect.NewResponse(&v1.DeletePluginSecretResponse{}), nil
 }

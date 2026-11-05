@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -85,13 +84,9 @@ func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServ
 // settle waits until the read that follows a configuration has ended.
 func settle(t *testing.T, bridge *Embedder, mock *mockEmbeddingServer, readsBefore int32) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
-	for mock.getModelCalls.Load() == readsBefore {
-		if time.Now().After(deadline) {
-			t.Fatal("the model was not read after the plugin was configured")
-		}
-		time.Sleep(time.Millisecond)
-	}
+	plugintest.WaitUntil(t, "a read of the model after the plugin was configured", func() bool {
+		return mock.getModelCalls.Load() != readsBefore
+	})
 	bridge.changeMu.Lock()
 	defer bridge.changeMu.Unlock()
 }

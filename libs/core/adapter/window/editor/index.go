@@ -173,3 +173,26 @@ func watchVault(ctx context.Context, state *State, run func(context.Context), un
 		state.WatchError.Store("the watch stopped")
 	}
 }
+
+// modelWatcher is an embedder that reports a change of its model.
+type modelWatcher interface {
+	OnModelChange(fn func())
+}
+
+// followModel records the model of the embedder again and wakes the passes over the file
+// texts each time the embedder reports that its model changed. A write of any other
+// setting does neither.
+func followModel(embedder embeddingport.Embedder, state *State, worker *indexing.Worker) {
+	watcher, ok := embedder.(modelWatcher)
+	if !ok {
+		return
+	}
+	watcher.OnModelChange(func() {
+		name, recipe := vectors.DescribeModel(embedder)
+		state.Indexing.Model.Store(name)
+		state.Indexing.Recipe.Store(recipe)
+		if worker != nil {
+			worker.WakeSources()
+		}
+	})
+}

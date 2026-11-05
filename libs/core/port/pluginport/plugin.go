@@ -165,6 +165,10 @@ type PluginConfigurator interface {
 	SetPersistHandler(handler PluginPersistHandler)
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
 	CheckPluginSetting(pluginID, key string, value any) error
+	// WatchPluginConfig registers fn to run each time the plugin has been given its configuration, its
+	// settings and its secrets. fn runs on its own goroutine, after the plugin holds the values. The
+	// returned function removes the registration.
+	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
 // PluginEventEmitter broadcasts events to plugins.

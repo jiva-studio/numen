@@ -21,6 +21,7 @@ import (
 type Host interface {
 	pluginport.PluginResolver
 	pluginport.PluginActivator
+	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
 // Embedder is the embedding provider seen as an embeddingport.Embedder.
@@ -33,6 +34,13 @@ type Embedder struct {
 	model       embeddingport.EmbeddingModel
 	concurrency int
 	floorHint   float64
+
+	// changeMu orders the reads that follow a configuration of the plugin.
+	changeMu sync.Mutex
+	// announced is the model the listeners were last told of, which a read by GetModel does not move.
+	announced embeddingport.EmbeddingModel
+	listeners []func()
+	stopWatch func()
 }
 
 // Open activates the plugin that declares the embedding capability and reads its model.
@@ -52,7 +60,7 @@ func Open(ctx context.Context, host Host) (*Embedder, error) {
 		return nil, errors.Join(err, lease.Close())
 	}
 
-	return &Embedder{
+	b := &Embedder{
 		host:        host,
 		pluginID:    plugin.Manifest.ID,
 		service:     bridge.Service[numenv1connect.EmbeddingServiceClient]{Host: host, PluginID: plugin.Manifest.ID, NewClient: numenv1connect.NewEmbeddingServiceClient},
@@ -60,7 +68,10 @@ func Open(ctx context.Context, host Host) (*Embedder, error) {
 		model:       model,
 		concurrency: concurrency,
 		floorHint:   floorHint,
-	}, nil
+		announced:   model,
+	}
+	b.stopWatch = host.WatchPluginConfig(plugin.Manifest.ID, b.announceModelChange)
+	return b, nil
 }
 
 func readClientModel(
@@ -169,5 +180,41 @@ func (b *Embedder) Concurrency() int {
 
 // Close releases the active reference count for the embedding plugin in the host supervisor.
 func (b *Embedder) Close() error {
+	b.stopWatch()
 	return b.lease.Close()
+}
+
+// OnModelChange registers fn to run when the plugin reports a model unlike the one the listeners
+// were last told of: another identity, handling or minimum chunk length. The plugin is read
+// after it has been given its configuration, so a setting of another plugin never runs fn.
+func (b *Embedder) OnModelChange(fn func()) {
+	b.changeMu.Lock()
+	defer b.changeMu.Unlock()
+	b.listeners = append(b.listeners, fn)
+}
+
+// announceModelChange reads the model and runs the listeners when it differs from the announced one.
+func (b *Embedder) announceModelChange() {
+	b.changeMu.Lock()
+	defer b.changeMu.Unlock()
+	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelRefreshTimeout)
+	defer cancel()
+	client, call, err := b.service.Open(ctx)
+	if err != nil {
+		return
+	}
+	model, concurrency, floorHint, readErr := readClientModel(ctx, b.pluginID, client)
+	if errors.Join(readErr, call.Close()) != nil {
+		return
+	}
+	b.mu.Lock()
+	b.model, b.concurrency, b.floorHint = model, concurrency, floorHint
+	b.mu.Unlock()
+	if model == b.announced {
+		return
+	}
+	b.announced = model
+	for _, fn := range b.listeners {
+		fn()
+	}
 }
