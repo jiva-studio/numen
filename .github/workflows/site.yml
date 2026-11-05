@@ -30,8 +30,9 @@ permissions:
 
 jobs:
   # The page is static and carries no framework, so what there is to check is
-  # that its markup typechecks and that the site builds — pictures included,
-  # which is where a missing asset turns up.
+  # that its markup typechecks, that the component tests pass in Chromium and
+  # WebKit, and that the site builds — pictures included, which is where a
+  # missing asset turns up.
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -55,6 +56,11 @@ jobs:
 
       - name: Lint landing page
         run: npm run lint --prefix apps/landing
+
+      - uses: ./.github/actions/setup-playwright
+
+      - name: Test landing page components
+        run: npm run test:browser --prefix apps/landing
 
       - name: Build landing page
         env:

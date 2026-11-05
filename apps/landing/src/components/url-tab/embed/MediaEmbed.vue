@@ -66,7 +66,7 @@ watch(
       if (tall.value !== null) tall.value = Math.min(tallest.value, tall.value)
     })
     sizes.observe(element)
-    const pane = root.value?.parentElement
+    const pane = findPane()
     if (pane) sizes.observe(pane)
     onCleanup(() => sizes.disconnect())
   },
@@ -175,8 +175,19 @@ function onWindowMessage(event: MessageEvent): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+/**
+ * The nearest ancestor that is a size container: its height does not follow the player's, and it
+ * is the box the player's `cqh` units resolve against. The window where there is none.
+ */
+function findPane(): HTMLElement | null {
+  for (let at = root.value?.parentElement ?? null; at; at = at.parentElement) {
+    if (getComputedStyle(at).containerType.split(' ').includes('size')) return at
+  }
+  return null
+}
+
 function getPaneHeight(): number {
-  return root.value?.parentElement?.clientHeight || window.innerHeight
+  return findPane()?.clientHeight || window.innerHeight
 }
 /** Played from a moment, in milliseconds: the copy where there is one. */
 function seek(ms: number): void {

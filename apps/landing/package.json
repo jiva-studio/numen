@@ -6,13 +6,14 @@
   "description": "The page the product is read about on. Knows nothing about a vault.",
   "scripts": {
     "test": "node --test tools/demo-commands.test.mjs",
+    "test:browser": "vitest run --project 'browser (chromium)' && vitest run --project 'browser (webkit)'",
     "predev": "npm run prebuild",
     "dev": "astro dev",
     "prebuild": "npm run build --prefix ../../libs/ui/core && npm run build --prefix ../../libs/ui/shell",
     "build": "astro build",
     "preview": "astro preview",
     "pretypecheck": "npm run build --prefix ../../libs/ui/core && npm run build --prefix ../../libs/ui/shell",
-    "typecheck": "astro check",
+    "typecheck": "astro check && vue-tsc --noEmit -p tsconfig.test.json",
     "lint": "eslint .",
     "stories:check": "node tools/stories.mjs",
     "shoot": "node tools/shoot.mjs"
