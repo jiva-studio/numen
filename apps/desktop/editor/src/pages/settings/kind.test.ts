@@ -24,8 +24,6 @@ const window_ = () => {
 
 const installation = (): Installation =>
   createInstallation({
-    applied: ref('preset/Numen.css'),
-    isSyncing: ref(false),
     write: vi.fn(),
     file: ref('/vaults/Physics/.numen/settings.json'),
   })
