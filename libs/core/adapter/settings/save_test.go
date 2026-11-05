@@ -306,7 +306,7 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The file beside it that writers lock is meant to stay; anything else is a temporary file left behind.
+	// The lock file beside the settings is expected; any other file is a temporary file that was not removed.
 	for _, entry := range entries {
 		if name := entry.Name(); name != filepath.Base(path) && name != filepath.Base(path)+".lock" {
 			t.Errorf("the folder holds %q beside the settings", name)
