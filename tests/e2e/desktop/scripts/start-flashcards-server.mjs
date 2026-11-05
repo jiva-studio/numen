@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { STAND_IN_MODEL, startStandIns } from './stand-ins.mjs'
@@ -28,6 +29,11 @@ const dataDir = path.join(homeDir, '.local', 'share')
 const stateDir = path.join(homeDir, '.local', 'state')
 for (const dir of [cacheDir, dataDir, stateDir]) fs.mkdirSync(dir, { recursive: true })
 
+// The server writes its certificate here, and Chromium of the run trusts its public key.
+// tests/support/certificate.ts names the same file.
+const certificateFile = path.join(os.tmpdir(), `numen-e2e-certificate-${port}.pem`)
+fs.rmSync(certificateFile, { force: true })
+
 const standIns = await startStandIns()
 
 // The review's agent panel answers from numen's own agent over the stand-in chat API. The agents
@@ -55,6 +61,7 @@ fs.writeFileSync(
 )
 
 function cleanup() {
+  fs.rmSync(certificateFile, { force: true })
   standIns.close()
   for (const dir of [vault, configDir, homeDir]) {
     try {
@@ -75,6 +82,7 @@ const child = spawn(binaryPath, [`-debug-http-addr=127.0.0.1:${port}`, `-debug-v
     XDG_DATA_HOME: dataDir,
     XDG_STATE_HOME: stateDir,
     NUMEN_PLUGINS_PATH: pluginsPath,
+    NUMEN_DEBUG_TLS_CERT: certificateFile,
   },
 })
 

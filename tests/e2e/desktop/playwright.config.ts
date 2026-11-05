@@ -63,6 +63,9 @@ export default defineConfig({
     stderr: 'pipe',
     // The first pass over the vault, of many servers started together.
     timeout: 200_000,
+    // Without a signal Playwright kills the script at once, and the certificate, its key and the
+    // vault of the run stay in the temporary folder. SIGTERM reaches the script and the server.
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
   },
   // The window is WebKitGTK on Linux and WKWebView on macOS. `scripts/run-offline.mjs` runs each
   // project against a server of its own, since a run changes the vault.

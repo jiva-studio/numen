@@ -220,7 +220,7 @@ const vaultPathFile = path.join(os.tmpdir(), `numen-e2e-vault-path-${port}`)
 fs.writeFileSync(vaultPathFile, tmpVault)
 
 // The server writes its certificate here; every https call to it trusts that certificate alone.
-// tests/support/test.ts names the same file.
+// tests/support/certificate.ts names the same file.
 const certificateFile = path.join(os.tmpdir(), `numen-e2e-certificate-${port}.pem`)
 fs.rmSync(certificateFile, { force: true })
 // Its key goes beside it, for the servers a spec starts itself to serve the same pair.
