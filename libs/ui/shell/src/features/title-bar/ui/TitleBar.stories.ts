@@ -201,3 +201,45 @@ export const TooltipOfAnAction: Story = {
     await expect(files.getAttribute('title')).toBe('Open file tree (Ctrl+Shift+E)')
   },
 }
+
+const FROM_PLUGINS: readonly TitleBarAction[] = [
+  {
+    id: 'org.example.tide:chart.open',
+    title: 'Open tide chart',
+    icon: FolderTree,
+    group: 'navigate',
+    shortcut: 'Ctrl+Shift+E',
+  },
+  { id: 'org.example.reef:map.open', title: 'Open reef map', icon: Waypoints, group: 'navigate' },
+  { id: 'app:note.create', title: 'Create note', icon: FilePlus, group: 'new' },
+  { id: 'org.example.tide:log.open', title: 'Open tide log', icon: Search },
+]
+
+/** The buttons plugins place: the groups are separated and the hover text reads title and shortcut. */
+export const PluginActions: Story = {
+  args: { actions: FROM_PLUGINS },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(getShownIds(canvasElement)).toHaveLength(4))
+    await expect(getShownIds(canvasElement)).toStrictEqual(FROM_PLUGINS.map((one) => one.id))
+    await expect(canvasElement.querySelectorAll('[data-group-start]')).toHaveLength(2)
+    const tooltip = (id: string) =>
+      canvasElement.querySelector(`[data-title-bar-action="${id}"]`)!.getAttribute('title')
+    await expect(tooltip('org.example.tide:chart.open')).toBe('Open tide chart (Ctrl+Shift+E)')
+    await expect(tooltip('org.example.reef:map.open')).toBe('Open reef map')
+  },
+}
+
+/** More buttons than the width holds: the last ones are in the menu, in order, and a pick runs. */
+export const PluginActionsOverflowing: Story = {
+  args: { actions: FROM_PLUGINS, width: '20rem' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(canvasElement.querySelector('[data-title-bar-more]')).not.toBeNull())
+    const visible = getShownIds(canvasElement)
+    await expect(visible).toStrictEqual(FROM_PLUGINS.slice(0, visible.length).map((one) => one.id))
+    await userEvent.click(canvasElement.querySelector('[data-title-bar-more]')!)
+    const entries = await within(canvasElement.ownerDocument.body).findAllByRole('menuitem')
+    await expect(entries.map((one) => one.textContent?.trim())).toStrictEqual(
+      FROM_PLUGINS.slice(visible.length).map((one) => one.title),
+    )
+  },
+}

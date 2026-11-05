@@ -64,3 +64,19 @@ var errFatalSample = errString("sample")
 type errString string
 
 func (e errString) Error() string { return string(e) }
+
+func TestFatalReportPage_DrawsNoPluginAction(t *testing.T) {
+	page, err := fatalReport{}.page(container.NewConfig(container.Config{}), errFatalSample)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, unwanted := range []string{"data-title-bar-action", "data-title-bar-more", "/plugin/"} {
+		if strings.Contains(string(page), unwanted) {
+			t.Errorf("the report page contains %q", unwanted)
+		}
+	}
+	if !strings.Contains(string(page), "data-close") {
+		t.Error("the report page lacks the close button of the bar")
+	}
+}
