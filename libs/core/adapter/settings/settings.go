@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
-	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
 // Document is the settings file as declared by the composition root: one object
@@ -107,7 +106,7 @@ func (f *Files) OpenAt(path string, into Document) error {
 		return err
 	}
 	if err := json.Unmarshal(raw, into); err != nil {
-		return fmt.Errorf("%s: %w: %s", path, settingsport.ErrNotASetting, describeErrorLocation(err))
+		return fmt.Errorf("%s: %s: %w", path, describeErrorLocation(err), err)
 	}
 	// Unmarshal accepts a bare null and leaves the defaults in place, so the bytes
 	// are checked again to be a single object.
