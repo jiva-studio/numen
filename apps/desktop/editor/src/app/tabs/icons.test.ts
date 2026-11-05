@@ -42,9 +42,7 @@ describe('the icon a command is drawn with', () => {
   it('is there for declared plugin commands and plugin settings, with distinct icons', () => {
     expect(findIcon('org.example.custom:task.run')).not.toBeNull()
     expect(findIcon('setting:org.example.custom:toggle')).not.toBeNull()
-    expect(findIcon(COMMAND.openSettings)).not.toBe(
-      findIcon('setting:org.example.custom:toggle'),
-    )
+    expect(findIcon(COMMAND.openSettings)).not.toBe(findIcon('setting:org.example.custom:toggle'))
     expect(getNamedIcon('layers')).not.toBe(getNamedIcon('layout-template'))
     expect(getNamedIcon('audio-lines')).not.toBe(getNamedIcon('waypoints'))
   })

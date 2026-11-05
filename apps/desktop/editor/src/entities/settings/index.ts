@@ -1,9 +1,5 @@
 /** What the settings file holds, and how the window is drawn from it. */
-export {
-  DESIGNED,
-  MODES,
-  SCHEMES,
-} from './lib/appearance'
+export { DESIGNED, MODES, SCHEMES } from './lib/appearance'
 export type {
   Configuration,
   Model,

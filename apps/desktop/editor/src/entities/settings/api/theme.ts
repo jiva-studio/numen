@@ -99,4 +99,3 @@ const WORDED: Record<ThemeModeCode, Mode | null> = {
   [THEME_MODE.LIGHT]: 'light',
   [THEME_MODE.DARK]: 'dark',
 }
-

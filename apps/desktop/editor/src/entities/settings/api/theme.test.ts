@@ -95,7 +95,6 @@ describe('which half of a colour pair is read', () => {
     request.listThemes.mockResolvedValue(createAnswer({ mode: 99 }))
     expect((await themes.getAppearance()).mode).toBe('system')
   })
-
 })
 
 describe('how far a size goes', () => {

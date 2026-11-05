@@ -44,4 +44,3 @@ export const SCHEMES: Record<Mode, string> = {
   light: 'light',
   dark: 'dark',
 }
-

@@ -60,7 +60,6 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
     }
   }
 
-
   /**
    * Writes the chosen row to the settings. If the setting cannot be written,
    * the error is reported and the window shows the stored value.

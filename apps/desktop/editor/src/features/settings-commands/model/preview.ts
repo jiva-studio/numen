@@ -81,5 +81,15 @@ export function createAppearancePreview(on: PreviewDeps) {
 
   const close = () => clearTimeout(hold)
 
-  return { current, half: shownHalf, sized, previewTheme, previewMode, previewSize, clear, restore, close }
+  return {
+    current,
+    half: shownHalf,
+    sized,
+    previewTheme,
+    previewMode,
+    previewSize,
+    clear,
+    restore,
+    close,
+  }
 }

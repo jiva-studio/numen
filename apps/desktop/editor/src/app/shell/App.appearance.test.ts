@@ -141,7 +141,21 @@ describe('the commands of the settings over how the window is drawn and works', 
   const wait = () => new Promise((isDone) => setTimeout(isDone, 200))
 
   /** Every tenth of the interface scale. */
-  const TENTHS = ['0.8', '0.9', '1', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '1.9', '2']
+  const TENTHS = [
+    '0.8',
+    '0.9',
+    '1',
+    '1.1',
+    '1.2',
+    '1.3',
+    '1.4',
+    '1.5',
+    '1.6',
+    '1.7',
+    '1.8',
+    '1.9',
+    '2',
+  ]
 
   /** The window drawn with the commands open. */
   const openPalette = async () => {
