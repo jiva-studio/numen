@@ -7,7 +7,6 @@ import type { PluginContext } from '@numen/plugin-sdk'
 export interface MarkdownEditorPreferences {
   softWrap?: boolean
   lineNumbers?: boolean
-  tabSize?: number
 }
 
 export type SettingLookup = ((key: string) => unknown) | ((path: readonly string[]) => unknown)
@@ -24,21 +23,15 @@ export function readMarkdownEditorPreferences(
 ): Required<MarkdownEditorPreferences> {
   const softWrap = readSetting(getSetting, 'softWrap')
   const lineNumbers = readSetting(getSetting, 'lineNumbers')
-  const tabSize = readSetting(getSetting, 'tab_size')
   return {
     softWrap: typeof softWrap === 'boolean' ? softWrap : true,
     lineNumbers: typeof lineNumbers === 'boolean' ? lineNumbers : false,
-    tabSize:
-      typeof tabSize === 'number' && Number.isFinite(tabSize)
-        ? Math.max(1, Math.trunc(tabSize))
-        : 2,
   }
 }
 
 export const editorPreferences = reactive<Required<MarkdownEditorPreferences>>({
   softWrap: true,
   lineNumbers: false,
-  tabSize: 2,
 })
 
 export function bindMarkdownEditorPreferences(
@@ -48,7 +41,6 @@ export function bindMarkdownEditorPreferences(
     const next = readMarkdownEditorPreferences(context.getSetting)
     editorPreferences.softWrap = next.softWrap
     editorPreferences.lineNumbers = next.lineNumbers
-    editorPreferences.tabSize = next.tabSize
   }
   applyAll()
 
@@ -64,12 +56,5 @@ export function bindMarkdownEditorPreferences(
         ? value
         : readMarkdownEditorPreferences(context.getSetting).lineNumbers
   })
-  context.onSettingChange?.('tab_size', (value) => {
-    editorPreferences.tabSize =
-      typeof value === 'number' && Number.isFinite(value)
-        ? Math.max(1, Math.trunc(value))
-        : readMarkdownEditorPreferences(context.getSetting).tabSize
-  })
-
   return editorPreferences
 }

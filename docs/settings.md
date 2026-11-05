@@ -4,6 +4,8 @@ Settings are stored in one JSON file named `numen.json` in the folder where this
 
 Every field left out keeps its default. A file that sets one setting is valid.
 
+A setting of a plugin is written in camelCase (`executablePath`, `softWrap`). A value saved under an earlier snake_case name (`executable_path`, `soft_wrap`) is ignored and the default applies; nothing migrates it, because no release has been published.
+
 A setting the window shows a control for is changed by that control, which patches the file as an object and leaves every other byte unchanged.
 
 This document covers every section of the file, and states for each section which keys are worth changing and why. The complete list is the manual's [settings reference](../apps/docs/src/content/docs/reference.md), which is generated from the code and checked against it on every build. A plugin's settings belong to the plugin: its manifest declares them, the settings page shows them on the plugin's page, and the file stores them under `plugins`, keyed by the plugin's id. Where what a key does is specified elsewhere, the page that specifies it is linked from the section.
