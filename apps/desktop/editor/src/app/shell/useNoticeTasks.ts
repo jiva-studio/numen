@@ -33,6 +33,7 @@ const createFailedTask = (id: string, text: string, about = ''): Task => ({
   pluginId: '',
   pluginName: '',
   isCancellable: false,
+  isNotice: false,
 })
 
 const isFailure = (notice: { severity?: string }): boolean =>

@@ -95,6 +95,9 @@ message Task {
 
   // Set for work that CancelTask can stop.
   bool is_cancellable = 11;
+
+  // Set for a message the core reports and no work: it is neither running nor failed.
+  bool is_notice = 12;
 }
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a

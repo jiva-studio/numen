@@ -28,7 +28,7 @@ const everyFieldManifest = `{
 	"settings": [
 		{"key": "mode", "type": "enum", "title": "Mode", "description": "d", "default": "a", "palette": true, "icon": "gauge",
 			"options": ["a", {"value": "b", "title": "B", "detail": "d", "dependencies": ["weights"]}],
-			"min": 1, "max": 2, "step": 1, "replaces": ["a.b"], "accept": [".txt"], "multiple": true},
+			"min": 1, "max": 2, "step": 1, "accept": [".txt"], "multiple": true},
 		{"key": "sub", "type": "enum", "title": "Sub", "optionsBy": {"setting": "mode", "options": {"a": ["x"], "b": ["y"]}},
 			"when": {"setting": "mode", "is": ["a"]}},
 		{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes", "preview": true}

@@ -265,6 +265,8 @@ type Task struct {
 	PluginName string `protobuf:"bytes,10,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
 	// Set for work that CancelTask can stop.
 	IsCancellable bool `protobuf:"varint,11,opt,name=is_cancellable,json=isCancellable,proto3" json:"is_cancellable,omitempty"`
+	// Set for a message the core reports and no work: it is neither running nor failed.
+	IsNotice      bool `protobuf:"varint,12,opt,name=is_notice,json=isNotice,proto3" json:"is_notice,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -372,6 +374,13 @@ func (x *Task) GetPluginName() string {
 func (x *Task) GetIsCancellable() bool {
 	if x != nil {
 		return x.IsCancellable
+	}
+	return false
+}
+
+func (x *Task) GetIsNotice() bool {
+	if x != nil {
+		return x.IsNotice
 	}
 	return false
 }
@@ -770,7 +779,7 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x11WatchTasksRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
 	"\x12WatchTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xb3\x02\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xd0\x02\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
@@ -784,7 +793,8 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\vplugin_name\x18\n" +
 	" \x01(\tR\n" +
 	"pluginName\x12%\n" +
-	"\x0eis_cancellable\x18\v \x01(\bR\risCancellable\"*\n" +
+	"\x0eis_cancellable\x18\v \x01(\bR\risCancellable\x12\x1b\n" +
+	"\tis_notice\x18\f \x01(\bR\bisNotice\"*\n" +
 	"\x10WatchQuitRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +
 	"\x11WatchQuitResponse\x12\x14\n" +

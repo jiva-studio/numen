@@ -36,6 +36,10 @@ type Task struct {
 	// IsUserStarted is set for work the user started and expects a report on.
 	IsUserStarted bool
 
+	// IsNotice is set for a message the core reports and no work: the task is neither running nor
+	// failed, and About is the message.
+	IsNotice bool
+
 	// Unit is what Count and Total are counted in.
 	Unit Unit
 

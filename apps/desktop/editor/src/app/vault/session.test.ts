@@ -151,6 +151,7 @@ describe('the streams a window follows', () => {
             pluginId: 'md.example.scans',
             pluginName: 'Scan reader',
             isCancellable: true,
+            isNotice: false,
           },
           {
             id: 'later',
@@ -164,6 +165,7 @@ describe('the streams a window follows', () => {
             pluginId: '',
             pluginName: '',
             isCancellable: false,
+            isNotice: false,
           },
         ],
       }
@@ -183,6 +185,7 @@ describe('the streams a window follows', () => {
           pluginId: 'md.example.scans',
           pluginName: 'Scan reader',
           isCancellable: true,
+          isNotice: false,
         },
         {
           id: 'later',
@@ -196,6 +199,7 @@ describe('the streams a window follows', () => {
           pluginId: '',
           pluginName: '',
           isCancellable: false,
+          isNotice: false,
         },
       ],
     ])

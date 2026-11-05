@@ -103,6 +103,7 @@ export const sessionCore: SessionCore = {
         pluginId: task.pluginId,
         pluginName: task.pluginName,
         isCancellable: task.isCancellable,
+        isNotice: task.isNotice,
       }))
     }
   },

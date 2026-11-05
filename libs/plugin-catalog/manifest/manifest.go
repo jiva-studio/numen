@@ -101,11 +101,10 @@ const SettingEnabled = "enabled"
 func listReservedSettingKeys() []string { return []string{SettingStoredSecrets, SettingEnabled} }
 
 var (
-	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
-	manifestServicePattern  = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
-	manifestReplacesPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$`)
-	manifestSecretPattern   = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	manifestVersionPattern  = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
+	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
+	manifestServicePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
+	manifestSecretPattern  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	manifestVersionPattern = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
 
 // SettingTypeString is the type of a setting that holds a text string.
@@ -145,10 +144,6 @@ type Setting struct {
 	Min  *float64
 	Max  *float64
 	Step *float64
-	// Replaces are the places in the settings file where the user stored this setting before the plugin took
-	// it over, each written as the dot-joined keys leading to it, the newest first. The first of
-	// them the file contains supplies the value for a user whose file has none for the plugin yet.
-	Replaces []string
 	// OptionsBy gives an enum setting its options from the value of another setting. The first option
 	// of each list is the default under that value.
 	OptionsBy *OptionsBy
@@ -484,11 +479,6 @@ func listManifestSettingIssues(settings []Setting) []error {
 			issues = append(issues, fmt.Errorf("%w: %s holds a dot, and a key is one segment of a path", ErrInvalidSettingKey, key))
 		}
 		issues = append(issues, listManifestSettingIssue(s, key)...)
-		for _, place := range s.Replaces {
-			if !manifestReplacesPattern.MatchString(place) {
-				issues = append(issues, fmt.Errorf("%w: %s replaces %q", ErrInvalidSettingKey, key, place))
-			}
-		}
 	}
 	return issues
 }

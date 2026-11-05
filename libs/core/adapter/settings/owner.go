@@ -242,6 +242,11 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 			continue
 		}
 		for _, key := range slices.Sorted(maps.Keys(f.Plugins[id])) {
+			if key == fieldStoredSecrets && !isListOfTexts(f.Plugins[id][key]) {
+				delete(f.Plugins[id], key)
+				f.AddNotice(fmt.Sprintf("%s.%s: wrong type, expected a list of the names of the secrets, and is ignored", id, key))
+				continue
+			}
 			if err := CheckWrite(declared, registries, []string{id, key}, f.Plugins[id][key]); err != nil {
 				delete(f.Plugins[id], key)
 				f.AddNotice(fmt.Sprintf("%v, and is ignored", err))
@@ -282,4 +287,18 @@ func (f *File) resetApp(declared pluginport.PluginManifestSetting) {
 	case keyProfile:
 		f.Performance = DefaultPerformance()
 	}
+}
+
+// isListOfTexts reports whether a decoded value is a list whose items are all text.
+func isListOfTexts(value any) bool {
+	items, isList := value.([]any)
+	if !isList {
+		return false
+	}
+	for _, item := range items {
+		if _, isText := item.(string); !isText {
+			return false
+		}
+	}
+	return true
 }

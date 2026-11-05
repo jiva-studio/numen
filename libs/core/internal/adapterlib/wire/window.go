@@ -276,6 +276,7 @@ func describeTasks(list []run.Task) []*v1.Task {
 			PluginId:      item.PluginID,
 			PluginName:    item.PluginName,
 			IsCancellable: item.Cancel != nil,
+			IsNotice:      item.IsNotice,
 		})
 	}
 	return out
