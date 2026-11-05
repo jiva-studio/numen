@@ -65,3 +65,15 @@ describe('what an agent tab asks of the window', () => {
     expect(recorded.settings).toStrictEqual([[['app', 'agent', 'use'], 'omega']])
   })
 })
+
+describe('opening the settings from an agent tab', () => {
+  it('runs the command of the window that opens the settings', () => {
+    const { host, recorded } = createHost({ focus: { path: 'Orchard.md', title: 'Orchard' } })
+
+    createAgentTabDeps(host).openSettings?.()
+
+    expect(recorded.commands).toStrictEqual([
+      ['app:settings.open', { path: 'Orchard.md', title: 'Orchard' }],
+    ])
+  })
+})

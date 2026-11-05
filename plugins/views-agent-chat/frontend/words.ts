@@ -14,4 +14,8 @@ export const WORDS = {
   /** The command that queries a note. */
   askAbout: 'Ask agent about note',
   reasoning: 'Reasoning',
+  /** The model control where no agent can answer. */
+  noAgent: 'No agent',
+  noAgentMessage: 'No agent is set up.',
+  openSettings: 'Open settings',
 }

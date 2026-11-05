@@ -317,6 +317,7 @@ describe('a command a plugin runs over the vault', () => {
     'app:note.open',
     'md.numen.views.plex.graph:graph.showNote',
     'app:note.copyPath',
+    'app:settings.open',
     'md.numen.views.agent.chat:note.ask',
   ])('runs %s without vault:write', (id) => {
     const { context, workspace } = createContext([])

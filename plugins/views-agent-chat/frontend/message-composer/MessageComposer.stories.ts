@@ -5,7 +5,7 @@
  * `working` and `disabled` are controls, not stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import MessageComposer from './MessageComposer.vue'
 import { STORY_BOXES } from '../fixtures/frame'
@@ -39,6 +39,7 @@ const meta = {
     isDisabled: false,
     onSubmit: fn(),
     onStop: fn(),
+    'onOpen-settings': fn(),
   },
 } satisfies Meta<typeof MessageComposer>
 
@@ -130,5 +131,27 @@ export const Narrow: Story = {
     const placeholder = canvasElement.querySelector('.composer__placeholder') as HTMLElement
     await expect(placeholder.scrollWidth).toBeGreaterThan(placeholder.clientWidth)
     await expect(getComputedStyle(placeholder).textOverflow).toBe('ellipsis')
+  },
+}
+
+/**
+ * Where no agent can answer: the model control turned off and reading "No agent", and the message
+ * with the link to the settings in place of the field.
+ */
+export const NoAgent: Story = {
+  args: {
+    isAgentMissing: true,
+    noAgentLabel: 'No agent',
+    noAgentMessage: 'No agent is set up.',
+    openSettingsLabel: 'Open settings',
+  },
+  render: renderComposers(''),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'No agent' })).toBeDisabled()
+    await expect(canvas.getByText('No agent is set up.')).toBeVisible()
+    await expect(canvasElement.querySelector('textarea')).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Open settings' }))
+    await expect(args['onOpen-settings']).toHaveBeenCalledTimes(1)
   },
 }

@@ -54,10 +54,11 @@ function checkPermission(target: PermissionTarget, permission: string, operation
   }
 }
 
-/** The commands of the window over a file that change nothing in the vault. */
+/** The commands of the window that change nothing in the vault. */
 const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set([
   formatCommandId(APP_COMMAND_OWNER, 'note.open'),
   formatCommandId(APP_COMMAND_OWNER, 'note.copyPath'),
+  formatCommandId(APP_COMMAND_OWNER, 'settings.open'),
   formatCommandId('md.numen.views.plex.graph', 'graph.showNote'),
   formatCommandId('md.numen.views.agent.chat', 'note.ask'),
 ])

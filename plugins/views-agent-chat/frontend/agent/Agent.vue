@@ -19,6 +19,10 @@ withDefaults(defineProps<AgentProps>(), {
   reasoningLevels: () => [],
   selectedReasoningId: '',
   reasoningName: 'Reasoning',
+  isAgentMissing: false,
+  noAgentLabel: 'No agent',
+  noAgentMessage: 'No agent is set up.',
+  openSettingsLabel: 'Open settings',
 })
 
 const text = defineModel<string>({ default: '' })
@@ -35,6 +39,7 @@ const emit = defineEmits<{
   (event: 'select-model', option: AgentModelOption): void
   /** A depth of reasoning was chosen from the dropdown, by the name of the level. */
   (event: 'select-reasoning', id: string): void
+  (event: 'open-settings'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -103,10 +108,15 @@ const agentStyle = computed(() => ({ '--agent-room': room.value }))
       :reasoning-levels="reasoningLevels"
       :selected-reasoning-id="selectedReasoningId"
       :reasoning-name="reasoningName"
+      :is-agent-missing="isAgentMissing"
+      :no-agent-label="noAgentLabel"
+      :no-agent-message="noAgentMessage"
+      :open-settings-label="openSettingsLabel"
       @submit="onSubmit"
       @stop="emit('stop')"
       @select-model="onSelectModel"
       @select-reasoning="onSelectReasoning"
+      @open-settings="emit('open-settings')"
     >
       <template v-if="$slots.selector" #selector><slot name="selector" /></template>
       <template v-if="$slots.glyph" #glyph><slot name="glyph" /></template>
