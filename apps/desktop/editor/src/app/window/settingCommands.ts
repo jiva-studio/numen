@@ -79,7 +79,7 @@ interface FoundSetting {
 }
 
 /** A row of a list, and the value it writes. */
-interface Offer {
+interface Choice {
   readonly row: StepRow
   readonly value: boolean | string | number
 }
@@ -107,11 +107,11 @@ const getMark = (
   detail: string,
   words: SettingWords,
 ): Pick<StepRow, 'detail' | 'isCurrent'> => {
-  const shown = detail || (isCurrent ? words.current : '')
-  return { ...(shown ? { detail: shown } : {}), ...(isCurrent ? { isCurrent } : {}) }
+  const text = detail || (isCurrent ? words.current : '')
+  return { ...(text ? { detail: text } : {}), ...(isCurrent ? { isCurrent } : {}) }
 }
 
-const getOffers = (setting: PluginSettingInfo, words: SettingWords): readonly Offer[] => {
+const getChoices = (setting: PluginSettingInfo, words: SettingWords): readonly Choice[] => {
   const current = setting.value ?? setting.default
   if (setting.type === 'boolean') {
     const isOn = Boolean(current)
@@ -184,32 +184,32 @@ export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
   const getStepGroups = (command: string): readonly StepGroup[] => {
     const found = findSetting(command)
     if (!found) return []
-    const items = getOffers(found.setting, deps.words).map((one) => one.row)
+    const items = getChoices(found.setting, deps.words).map((one) => one.row)
     return [{ id: command, title: found.setting.title, items }]
   }
 
   const previewItem = (command: string, item: string): void => {
     const found = findSetting(command)
     if (!found?.setting.preview) return
-    const at = getSettingPath(found.owner.id, found.setting.key)
+    const path = getSettingPath(found.owner.id, found.setting.key)
     if (item === '') {
-      if (previewed.delete(command)) deps.preview.restore(at)
+      if (previewed.delete(command)) deps.preview.restore(path)
       return
     }
-    const offer = getOffers(found.setting, deps.words).find((one) => one.row.id === item)
-    if (!offer) return
+    const choice = getChoices(found.setting, deps.words).find((one) => one.row.id === item)
+    if (!choice) return
     previewed.add(command)
-    deps.preview.apply(at, offer.value)
+    deps.preview.apply(path, choice.value)
   }
 
   const choose = async (command: string, item: string): Promise<void> => {
     const found = findSetting(command)
     if (!found) return
-    const offer = getOffers(found.setting, deps.words).find((one) => one.row.id === item)
-    if (!offer) return
+    const choice = getChoices(found.setting, deps.words).find((one) => one.row.id === item)
+    if (!choice) return
     previewed.delete(command)
-    const at = getSettingPath(found.owner.id, found.setting.key)
-    await deps.write([{ at, value: JSON.stringify(offer.value) }])
+    const path = getSettingPath(found.owner.id, found.setting.key)
+    await deps.write([{ at: path, value: JSON.stringify(choice.value) }])
   }
 
   return { getCommands, lists: { getStepGroups, previewItem }, choose }

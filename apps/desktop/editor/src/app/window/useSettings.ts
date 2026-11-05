@@ -159,9 +159,9 @@ function createWindowPreview(
   appearance: ReturnType<typeof createWindowAppearance>,
 ): SettingPreview {
   return {
-    apply: (at, value) => {
-      if (at.length !== 3 || !SHELL_APPEARANCE.every((one, index) => at[index] === one)) return
-      const key = at[2]
+    apply: (path, value) => {
+      if (path.length !== 3 || !SHELL_APPEARANCE.every((one, index) => path[index] === one)) return
+      const key = path[2]
       if (key === 'theme' && typeof value === 'string') appearance.previewTheme(value)
       if (key === 'mode' && isMode(value)) appearance.previewMode(value)
       if (key === INTERFACE_SCALE && typeof value === 'number') {

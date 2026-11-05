@@ -1,6 +1,7 @@
 /**
  * The theme, the half of a color pair and the size the keyboard is standing on in the list of a
- * setting that is previewed, applied while it stands there and put back when it leaves.
+ * setting that is previewed. They are applied while the keyboard is on the row and put back when the
+ * keyboard exits the list.
  *
  * A theme and a half are applied as soon as the keyboard is on their row. A size is applied once the
  * keyboard has rested on its row for HELD.
