@@ -22,7 +22,9 @@ const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = 
       path: '/vault/.numen/settings.json',
       models: [],
     })),
-    watchSettings: vi.fn(async function* () {}),
+    watchSettings: vi.fn(async function* () {
+      yield* []
+    }),
     writePluginSecret: vi.fn(async () => undefined),
     deletePluginSecret: vi.fn(async () => undefined),
     retryPlugin: vi.fn(async () => ''),

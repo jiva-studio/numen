@@ -441,10 +441,12 @@ describe('the settings that change', () => {
   })
 
   it('are asked of the core with the signal of the window', async () => {
-    request.watchSettings = vi.fn(async function* () {})
+    request.watchSettings = vi.fn(async function* () {
+      yield* []
+    })
     const controller = new AbortController()
 
-    for await (const batch of core.watchSettings(controller.signal)) void batch
+    for await (const batch of core.watchSettings(controller.signal)) expect(batch).toBeDefined()
 
     expect(request.watchSettings).toHaveBeenCalledWith({}, { signal: controller.signal })
   })

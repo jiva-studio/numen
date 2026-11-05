@@ -29,7 +29,9 @@ vi.mock('@/entities/settings', async (importOriginal) => ({
     },
     readTheme: async () => '',
     writeAppearance: async () => '',
-    watchThemes: async function* () {},
+    watchThemes: async function* () {
+      yield* []
+    },
   },
 }))
 
