@@ -404,3 +404,40 @@ func TestServerServeErrorAndIdempotentClose(t *testing.T) {
 		t.Fatalf("GetToken() = %q, want tok", got)
 	}
 }
+
+func TestServerCloseClosesConnectionWithoutRequest(t *testing.T) {
+	t.Parallel()
+
+	srv, err := NewServer(Config{Addr: "127.0.0.1:0", Token: "tok"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.Start(); err != nil {
+		t.Fatal(err)
+	}
+	addr := srv.actualAddr
+
+	silentConn, err := new(net.Dialer).DialContext(t.Context(), "tcp", addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup.Close(t, silentConn)
+
+	// The server accepts connections in order, so an answer on a later connection means it holds silentConn.
+	client := &http.Client{Transport: &http.Transport{DisableKeepAlives: true}}
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+addr+"/mcp", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := srv.Close(t.Context()); err != nil {
+		t.Fatalf("Close with a connection that sent no request: %v", err)
+	}
+}
