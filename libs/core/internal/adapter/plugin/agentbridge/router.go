@@ -37,11 +37,14 @@ type Router struct {
 	conversations map[string][]string
 }
 
-// getProviders are the identifiers of the plugins that run agent programs, in order.
+// getProviders are the identifiers of the enabled plugins that run agent programs, in order.
 func (r *Router) getProviders() []string {
 	var ids []string
 	for _, info := range r.host.GetPluginInfos() {
-		if slices.Contains(info.Capabilities, bridge.CapabilityAgentProvider) {
+		if !slices.Contains(info.Capabilities, bridge.CapabilityAgentProvider) {
+			continue
+		}
+		if _, ok := r.host.GetPlugin(info.ID); ok {
 			ids = append(ids, info.ID)
 		}
 	}
