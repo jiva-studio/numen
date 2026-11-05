@@ -22,7 +22,7 @@ const open = async (chosen: CommandTarget) => {
   const openFile = vi.fn()
   await runInvocation(
     createInvocation(COMMAND.openNote, chosen),
-    { notes: { openFile } } as unknown as CommandDeps,
+    { notes: { openFile }, writeMessage: vi.fn() } as unknown as CommandDeps,
     ANSWER_WORDS,
   )
   return openFile
