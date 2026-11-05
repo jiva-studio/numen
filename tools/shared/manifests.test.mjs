@@ -172,3 +172,13 @@ test('the manifests of the tree fit the schema', () => {
   assert.ok(plugins.length >= 10, `${plugins.length} plugins read`)
   for (const one of plugins) assert.match(one.manifest.version, /^\d{4}\.\d+\.\d+$/, one.name)
 })
+
+test('no setting key of a plugin manifest contains an underscore', () => {
+  const underscored = readPluginManifests(PLUGINS_DIR).flatMap((one) =>
+    (one.document.settings ?? [])
+      .filter((setting) => setting.key.includes('_'))
+      .map((setting) => `${one.name}: ${setting.key}`),
+  )
+
+  assert.deepEqual(underscored, [])
+})
