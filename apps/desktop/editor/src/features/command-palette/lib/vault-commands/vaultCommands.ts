@@ -9,12 +9,6 @@ import type { Words } from '../../words'
 
 export const createVaultCommands = (words: Words, agent: string): readonly Command[] => [
   {
-    id: COMMAND.goToStartNote,
-    text: words.first,
-    group: 'vault',
-    isAvailable: (target) => target.isReady,
-  },
-  {
     id: COMMAND.goToNote,
     text: words.goto,
     ...createRowKeys(COMMAND.goToNote, agent),

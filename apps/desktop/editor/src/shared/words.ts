@@ -83,7 +83,6 @@ export const WORDS = {
   /** The commands, under the second of the two keystrokes the window keeps for itself. */
   commands: 'Show commands',
   commandsKeys: keyChord('p', navigator.userAgent),
-  first: 'Go to start note',
   goto: 'Go to note',
   openVault: 'Open vault',
   newVault: 'Create vault',

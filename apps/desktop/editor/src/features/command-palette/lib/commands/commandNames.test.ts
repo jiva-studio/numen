@@ -18,7 +18,6 @@ const TITLES: Readonly<Record<string, string>> = {
   'app:note.trash': 'Move note to trash',
   'app:note.delete': 'Delete note permanently',
   'app:note.copyPath': 'Copy note path',
-  'app:note.goToStart': 'Go to start note',
   'app:note.goTo': 'Go to note',
   'app:note.chooseTitleSync': 'Choose title and file name sync',
   'app:tab.close': 'Close tab',
@@ -41,6 +40,11 @@ describe('the commands of the editor', () => {
 
   it('are filed under the owner app and an object and an action', () => {
     for (const one of commands) expect(one.id, one.id).toMatch(OWNED)
+  })
+
+  it('offer no way to go to a start note', () => {
+    expect(commands.map((one) => one.id)).not.toContain('app:note.goToStart')
+    expect(commands.map((one) => one.text)).not.toContain('Go to start note')
   })
 
   it('are offered under the titles that say what each does', () => {

@@ -94,7 +94,6 @@ export interface Words extends EmptyWords {
   readonly chooseTitleSync: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: PaletteKeys
-  readonly first: string
   readonly goto: string
   /** The commands over the vaults this installation holds. */
   readonly openVault: string

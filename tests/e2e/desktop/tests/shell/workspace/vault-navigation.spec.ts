@@ -9,21 +9,6 @@ import { openNote } from '../../support/vault.js'
 
 test.describe('Vault Navigation and Quick Open Palette', () => {
   // #1504: shows the note in the plex again once the search-result menu exists.
-  test.fixme('puts the start note back in the focus of the plex with Go to start note', async ({
-    page,
-  }) => {
-    await openWorkspace(page)
-    await openNote(page, 'notes/Entropy.md')
-    await runPaletteCommand(page, 'Show note in plex', 'Show note in plex')
-    await expect(getGraph(page).getByRole('img', { name: 'Entropy, focus' })).toBeAttached()
-
-    await runPaletteCommand(page, 'Go to start note', 'Go to start note')
-
-    await expect(getGraph(page).getByRole('img', { name: 'Thermodynamics, focus' })).toBeAttached()
-    await expect(getGraph(page).getByRole('button', { name: 'Entropy, child' })).toBeAttached()
-  })
-
-  // #1504: shows the note in the plex again once the search-result menu exists.
   test.fixme('puts the note picked in Go to note in the focus of the plex', async ({ page }) => {
     await openWorkspace(page)
 

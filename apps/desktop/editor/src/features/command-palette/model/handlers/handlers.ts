@@ -58,8 +58,6 @@ const HANDLERS: Record<string, CommandHandler> = {
   [COMMAND.chooseTitleSync]: (invocation, on) => on.settings.chooseSync(invocation.name),
   [COMMAND.choosePerformanceProfile]: (invocation, on) =>
     on.settings.choosePerformance(invocation.name),
-  [COMMAND.goToStartNote]: (_, on, words) =>
-    navigateToPath(on.navigator.getOpeningNote(), on, words),
   [COMMAND.goToNote]: (invocation, on, words) => navigateToPath(invocation.path, on, words),
   [COMMAND.openVault]: (invocation, on, words) => showVault(invocation.vault.id, on, words),
   [COMMAND.createVault]: (_, on, words) => addVault(on, words),

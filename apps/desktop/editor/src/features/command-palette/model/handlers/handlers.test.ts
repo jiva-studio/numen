@@ -733,24 +733,28 @@ describe('a command over the window', () => {
 })
 
 describe('a command over the vault', () => {
-  it('travels to the note the vault opens with', async () => {
+  it('travels to the note that was picked', async () => {
     const one = window()
 
-    await carry(createInvocation('app:note.goToStart', front()), one.on)
+    await carry(createInvocation('app:note.goTo', { ...front(), path: 'Root.md' }), one.on)
 
     expect(one.actions).toStrictEqual(['travel Root.md'])
   })
 
-  it('says a vault that opens with no note at all', async () => {
+  it('says a pick that names no note at all', async () => {
     const one = window()
-    const empty: CommandDeps = {
-      ...one.on,
-      navigator: { ...one.on.navigator, getOpeningNote: () => '' },
-    }
 
-    await runInvocation(createInvocation('app:note.goToStart', front()), empty, words)
+    await runInvocation(createInvocation('app:note.goTo', { ...front(), path: '' }), one.on, words)
 
     expect(one.notices).toStrictEqual([words.nowhere])
+  })
+
+  it('has no command to go to a start note', async () => {
+    const one = window()
+
+    await runInvocation(createInvocation('app:note.goToStart', front()), one.on, words)
+
+    expect(one.actions).toStrictEqual([])
   })
 })
 
@@ -1015,14 +1019,10 @@ describe('a command nothing carries out', () => {
 })
 
 describe('what the voice says in which severity', () => {
-  it('cautions that a vault opens with no note at all', async () => {
+  it('cautions that a pick names no note at all', async () => {
     const one = window()
-    const empty: CommandDeps = {
-      ...one.on,
-      navigator: { ...one.on.navigator, getOpeningNote: () => '' },
-    }
 
-    await runInvocation(createInvocation('app:note.goToStart', front()), empty, words)
+    await runInvocation(createInvocation('app:note.goTo', { ...front(), path: '' }), one.on, words)
 
     expect(one.severities).toStrictEqual(['warning'])
   })

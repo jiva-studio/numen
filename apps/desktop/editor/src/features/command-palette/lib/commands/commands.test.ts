@@ -40,7 +40,6 @@ describe('the commands over the vaults an installation holds', () => {
       .map((one) => one.id)
 
     expect(commands).toStrictEqual([
-      'app:note.goToStart',
       'app:note.goTo',
       'app:vault.open',
       'app:vault.create',
