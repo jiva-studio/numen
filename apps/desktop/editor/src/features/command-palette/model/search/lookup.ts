@@ -4,6 +4,7 @@
 import type { PaletteItem } from '@numen/shell'
 import type { PlacedCommand, Selector } from '@numen/plugin-host'
 import type { NoteType } from '@/entities/file'
+import { COMMAND } from '@/shared/commandIds'
 import type { TextRange } from '@/shared/textRange'
 import type { Words } from './search'
 
@@ -60,7 +61,7 @@ export interface SearchDestination {
   selector?: Selector
 }
 
-/** The action that opens a note or a file the palette turns up. */
+/** The action that opens a file that is no note, which the palette turns up. */
 export const NOTE = 'note'
 
 /** The prefix of the id of an action that runs an entry of the menu of a search result. */
@@ -110,7 +111,7 @@ function createNoteActions(
   openText: string,
   menu: readonly PaletteAction[],
 ): { actions: readonly PaletteAction[]; offers: readonly string[] } {
-  const actions = [{ id: NOTE, text: openText }, ...menu]
+  const actions = [{ id: `${MENU_ACTION_PREFIX}${COMMAND.openNote}`, text: openText }, ...menu]
   return { actions, offers: actions.map((one) => one.id) }
 }
 
@@ -210,6 +211,7 @@ export function resolveMenuChoice(
     path: searchHit.path,
     title: searchHit.title,
     type: searchHit.type,
+    line: searchHit.line,
   }
 }
 
@@ -217,8 +219,7 @@ export function resolveDestination(
   hit: SearchHit | undefined,
   action: string,
 ): SearchDestination | null {
-  if (!hit || action.startsWith(MENU_ACTION_PREFIX) || !hit.offers.includes(action)) return null
+  if (!hit || hit.type !== null || !hit.offers.includes(action)) return null
   const named = { path: hit.path, title: hit.title }
-  if (hit.selector) return { at: 'file', ...named, selector: hit.selector }
-  return hit.line >= 0 ? { at: 'file', ...named, line: hit.line } : { at: 'file', ...named }
+  return hit.selector ? { at: 'file', ...named, selector: hit.selector } : { at: 'file', ...named }
 }

@@ -141,6 +141,7 @@ export function useCommands(options: CommandsDepsOptions) {
       path: choice.path,
       file: choice.path,
       title: choice.title,
+      ...(choice.line >= 0 ? { line: choice.line } : {}),
     })
 
   const onKeyDown = (event: KeyboardEvent) => {

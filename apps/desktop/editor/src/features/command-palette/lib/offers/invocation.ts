@@ -12,6 +12,7 @@ export const createInvocation = (
   note,
   title: target.title,
   file: target.file,
+  ...(target.line === undefined ? {} : { line: target.line }),
   others: target.others ?? [],
   name,
   kind: target.kind,

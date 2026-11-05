@@ -5,10 +5,17 @@
  */
 import type { Notes, Store } from '../../types'
 
-export const createNotes = (
-  stores: readonly Store[],
-  noteOpeners: Pick<Notes, 'openFile' | 'openNewFile'>,
-): Notes => {
+/** What opens a file: in the current tab or beside it, at a line of the note where one is given. */
+export interface NoteOpeners {
+  openFile(
+    path: string,
+    title: string,
+    options: 'current' | 'split' | { where: 'current' | 'split'; line: number },
+  ): unknown
+  openNewFile: Notes['openNewFile']
+}
+
+export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners): Notes => {
   const holder = (id: string): Store | undefined => stores.find((one) => one.has(id))
   return {
     getTabAt: (path) => {
@@ -24,7 +31,8 @@ export const createNotes = (
       await holder(id)?.flushPending(id)
     },
     close: (id) => holder(id)?.close(id),
-    openFile: noteOpeners.openFile,
+    openFile: (path, title, showing, line) =>
+      noteOpeners.openFile(path, title, line === undefined ? showing : { where: showing, line }),
     openNewFile: noteOpeners.openNewFile,
   }
 }
