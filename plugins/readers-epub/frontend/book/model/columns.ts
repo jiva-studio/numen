@@ -57,7 +57,8 @@ export interface BookFlowState {
   readonly textSize: import('vue').ComputedRef<number>
   readonly viewport: ShallowRef<{ width: number; height: number }>
   readonly isMeasured: import('vue').ComputedRef<boolean>
-  readonly flow: import('vue').ComputedRef<Flow>
+  /** The flow the column CSS is set at, which follows the viewport. */
+  readonly viewportFlow: import('vue').ComputedRef<Flow>
   readonly setting: import('vue').ComputedRef<Record<string, string>>
   readonly measure: () => void
 }
@@ -72,21 +73,21 @@ export function useBookFlow(
   const { viewport, measure } = useViewport(area)
   const isMeasured = computed(() => viewport.value.width > 0 && viewport.value.height > 0)
   const columns = computed(() => countColumns(viewport.value.width, textSize.value))
-  const flow = computed<Flow>(() => ({
+  const viewportFlow = computed<Flow>(() => ({
     contentWidth: contentWidth.value,
     width: viewport.value.width,
     gap: GAP,
     columns: columns.value,
   }))
   const setting = computed(() =>
-    createBookSetting(flow.value, viewport.value.height, textSize.value),
+    createBookSetting(viewportFlow.value, viewport.value.height, textSize.value),
   )
 
   return {
     textSize,
     viewport,
     isMeasured,
-    flow,
+    viewportFlow,
     setting,
     measure,
   }
@@ -95,7 +96,7 @@ export function useBookFlow(
 /** `getEdge` is handed on to the marks, which is what reads it. */
 export function useBookColumns(options: BookColumnsOptions) {
   const contentWidth = ref(0)
-  const { textSize, viewport, isMeasured, flow, setting, measure } = useBookFlow(
+  const { textSize, viewport, isMeasured, viewportFlow, setting, measure } = useBookFlow(
     options.area,
     options.props,
     contentWidth,
@@ -105,7 +106,7 @@ export function useBookColumns(options: BookColumnsOptions) {
    * The flow the marks were read in. The area takes its new size before the columns are read
    * again, and until then the marks and the spread in front are positions in this flow.
    */
-  const laidFlow = shallowRef<Flow>(flow.value)
+  const laidFlow = shallowRef<Flow>(viewportFlow.value)
   const spreadCount = computed(() => countSpreads(laidFlow.value))
 
   const { marks, gather, findFragmentOffset, markRuns } = useBookMarks(
@@ -123,17 +124,22 @@ export function useBookColumns(options: BookColumnsOptions) {
    *
    * An area that clips its own overflow cannot report the extent of the clipped
    * content, so the length is read from the box the columns are set in.
+   *
+   * The columns are as wide as the box is at this moment, and the viewport learns that width only
+   * after the frame, so the width the marks are read against is taken off the box. The column
+   * count is the one the CSS was last set at.
    */
   const readColumns = (box: HTMLElement, text: HTMLElement): void => {
     text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, getLine(text))}px`)
     gather()
+    const readFlow: Flow = { ...viewportFlow.value, width: box.clientWidth }
     const isSingleColumn =
-      flow.value.columns === 1 &&
+      readFlow.columns === 1 &&
       text.clientWidth > 0 &&
       text.scrollWidth <= text.clientWidth &&
-      countFilledColumns(marks.value, flow.value) === 1
+      countFilledColumns(marks.value, readFlow) === 1
     contentWidth.value = isSingleColumn ? box.clientWidth : text.scrollWidth
-    laidFlow.value = flow.value
+    laidFlow.value = { ...readFlow, contentWidth: contentWidth.value }
   }
 
   const state = {
