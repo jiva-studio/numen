@@ -331,7 +331,7 @@ func newWireReaders(readers []setting.PluginReaderInfo) []*v1.PluginReader {
 	return out
 }
 
-// WatchSettings reports each setting whose value changed until the client leaves. The first
+// WatchSettings reports each setting whose value changed until the client disconnects. The first
 // response holds no change, so the client knows it is listening. An empty response is a keepalive;
 // its send fails once the client disconnects.
 func (h *Handler) WatchSettings(

@@ -38,7 +38,7 @@ type Source struct {
 type Events struct {
 	mu          sync.Mutex
 	subscribers map[*subscriber]struct{}
-	// values is what the readers were last told. It is nil while nobody is subscribed.
+	// values is what the readers were last told. It is nil while no reader is subscribed.
 	values Values
 	source Source
 	stop   func()

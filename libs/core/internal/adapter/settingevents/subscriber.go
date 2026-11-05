@@ -47,7 +47,7 @@ func (s *subscriber) next() ([]settingsport.Setting, bool) {
 	return batch, true
 }
 
-// deliver hands the queued batches over, in order, until the reader leaves.
+// deliver hands the queued batches over, in order, until the reader stops listening.
 func (s *subscriber) deliver() {
 	defer close(s.out)
 	for {

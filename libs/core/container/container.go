@@ -172,7 +172,7 @@ func (c Config) ReadSettings() func() (string, string, error) {
 }
 
 // GetSettingsWriter patches specific settings paths in the configuration file. The readers of the
-// setting-changed event are told of the settings whose value changed.
+// setting-changed event receive the settings whose value changed.
 func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
 	return c.writeSettings
 }
