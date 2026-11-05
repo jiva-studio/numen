@@ -11,9 +11,12 @@
  * row, set by the pointer entering and leaving, so no update decides it. The detail line keeps the
  * last source a running task named, so a report without one does not take a line out of the row
  * and move it from under the pointer.
+ *
+ * A notice is not a task: it has an information icon on the left, all of its text on as many lines
+ * as it needs, and a dismiss button with a cross that is always visible. It has no ring.
  */
 import { computed, ref, watch } from 'vue'
-import { RotateCw, X } from '@lucide/vue'
+import { Info, RotateCw, X } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { StatusBarTask } from '../model/types'
 import CircularProgress from './CircularProgress.vue'
@@ -40,6 +43,7 @@ watch(
     if (about) lastAbout.value = about
   },
 )
+const isNotice = computed(() => props.task.state === 'notice')
 const subtext = computed(() => {
   if (props.task.state === 'failed') {
     return props.task.error || props.task.about || ''
@@ -90,12 +94,14 @@ function onAction() {
     @pointerenter="onPointerEnter"
     @pointerleave="onPointerLeave"
   >
+    <Info v-if="isNotice" class="task-item__notice-icon" :size="14" aria-hidden="true" />
+
     <div class="task-item__content">
       <span class="task-item__label" :title="task.label">{{ task.label }}</span>
       <span
         v-if="subtext"
         class="task-item__detail"
-        :class="{ 'text-alarm task-item__detail--wrapped': task.state === 'failed' }"
+        :class="{ 'text-alarm': task.state === 'failed', 'task-item__detail--wrapped': task.state === 'failed' || isNotice }"
         :title="subtext"
       >
         {{ subtext }}
@@ -107,8 +113,9 @@ function onAction() {
       </div>
     </div>
 
-    <div class="task-item__slot" :class="{ 'task-item__slot--swaps': hasAction }">
+    <div class="task-item__slot" :class="{ 'task-item__slot--swaps': hasAction && !isNotice }">
       <CircularProgress
+        v-if="!isNotice"
         class="task-item__indicator"
         :progress="task.progress"
         :state="task.state"
@@ -142,10 +149,11 @@ function onAction() {
       </Button>
 
       <Button
-        v-else-if="task.state === 'completed'"
+        v-else-if="task.state === 'completed' || isNotice"
         variant="ghost"
         size="icon-small"
         class="task-item__btn"
+        :class="{ 'task-item__btn--visible': isNotice }"
         title="Dismiss"
         aria-label="Dismiss"
         @click.stop="onDismiss"
