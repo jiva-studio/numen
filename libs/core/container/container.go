@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
@@ -172,8 +171,8 @@ func (c Config) ReadSettings() func() (string, string, error) {
 	}
 }
 
-// GetSettingsWriter patches specific settings paths in the configuration file. A plugin is given
-// its new values after the call returns.
+// GetSettingsWriter patches specific settings paths in the configuration file. The readers of the
+// setting-changed event receive the settings whose value changed.
 func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
 	return c.writeSettings
 }
@@ -198,15 +197,7 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 	if err := c.getResources().settingsFiles.Save(path, &into, target...); err != nil {
 		return err
 	}
-	notify := func() {
-		notifyPluginSettings(c.PluginHost, entries, c.handleError)
-	}
-	if updates := c.getResources().pluginUpdates; updates != nil {
-		updates.Go(notify)
-	} else {
-		notify()
-	}
-	c.notifyPerformanceProfile(entries)
+	c.refreshSettingEvents()
 	return nil
 }
 
@@ -354,26 +345,5 @@ func (c Config) GetWait() machineport.Wait {
 func (c Config) GetDelay() machineport.Delay {
 	return func(d time.Duration, f func()) func() bool {
 		return time.AfterFunc(d, f).Stop
-	}
-}
-
-// profilePath is the path of the performance profile in the settings file.
-func profilePath() []string { return []string{settings.OwnerApp, "performance", "profile"} }
-
-// notifyPerformanceProfile tells the plugin host the profile of an entry that writes it, so a
-// running plugin takes it without a restart.
-func (c Config) notifyPerformanceProfile(entries []settingsport.Setting) {
-	if c.PluginHost == nil {
-		return
-	}
-	for _, one := range entries {
-		if !slices.Equal(one.Path, profilePath()) {
-			continue
-		}
-		var profile string
-		if err := json.Unmarshal([]byte(one.JSON), &profile); err != nil {
-			continue
-		}
-		c.PluginHost.SetPerformanceProfile(context.Background(), hardware.ResolveCompute(profile, hardware.Specs{}).Profile)
 	}
 }

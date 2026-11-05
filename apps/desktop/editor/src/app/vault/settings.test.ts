@@ -14,6 +14,7 @@ const request = vi.hoisted(() => ({
   retryPlugin: vi.fn(),
   getPluginData: vi.fn(),
   deletePluginData: vi.fn(),
+  watchSettings: vi.fn(),
 }))
 
 vi.mock('@/shared/clients', () => ({ settingsService: request }))
@@ -410,5 +411,43 @@ describe('what the core resolved and declared', () => {
     request.getSettings.mockResolvedValue(answer({}))
 
     expect((await core.getSettings()).app).toStrictEqual([])
+  })
+})
+
+describe('the settings that change', () => {
+  it('are the settings of each response, named by their path and holding their value', async () => {
+    request.watchSettings = vi.fn(async function* () {
+      yield { changed: [] }
+      yield {
+        changed: [
+          { at: ['app', 'appearance', 'mode'], value: '"dark"' },
+          { at: ['md.numen.notes', 'softWrap'], value: 'false' },
+        ],
+      }
+    })
+    const batches: unknown[] = []
+
+    for await (const batch of core.watchSettings(new AbortController().signal)) {
+      batches.push(batch)
+    }
+
+    expect(batches).toStrictEqual([
+      [],
+      [
+        { at: ['app', 'appearance', 'mode'], value: '"dark"' },
+        { at: ['md.numen.notes', 'softWrap'], value: 'false' },
+      ],
+    ])
+  })
+
+  it('follow the core until the signal of the window aborts', async () => {
+    request.watchSettings = vi.fn(async function* () {
+      yield* []
+    })
+    const controller = new AbortController()
+
+    for await (const batch of core.watchSettings(controller.signal)) expect(batch).toBeDefined()
+
+    expect(request.watchSettings).toHaveBeenCalledWith({}, { signal: controller.signal })
   })
 })

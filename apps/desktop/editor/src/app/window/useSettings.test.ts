@@ -22,6 +22,9 @@ const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = 
       path: '/vault/.numen/settings.json',
       models: [],
     })),
+    watchSettings: vi.fn(async function* () {
+      yield* []
+    }),
     writePluginSecret: vi.fn(async () => undefined),
     deletePluginSecret: vi.fn(async () => undefined),
     retryPlugin: vi.fn(async () => ''),
@@ -85,7 +88,7 @@ describe('the settings as they are put together', () => {
     expect(close).toHaveBeenCalledOnce()
   })
 
-  it('refreshes the settings in the background after starting and stops when closed', async () => {
+  it('reads the settings once when it starts and never again on a timer', async () => {
     vi.useFakeTimers()
     try {
       const { settings } = createSettings()
@@ -98,20 +101,10 @@ describe('the settings as they are put together', () => {
       expect(settings.sync.start).toHaveBeenCalledTimes(1)
       expect(startRest).toHaveBeenCalledTimes(1)
 
-      vi.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(20000)
       expect(startRest).toHaveBeenCalledTimes(1)
 
-      // Starting again at t=1000ms clears the pending 1500ms timer so it does not fire at t=1500ms
-      await settings.start()
-      expect(startRest).toHaveBeenCalledTimes(2)
-      vi.advanceTimersByTime(600)
-      expect(startRest).toHaveBeenCalledTimes(2)
-      vi.advanceTimersByTime(900)
-      expect(startRest).toHaveBeenCalledTimes(3)
-
       settings.close()
-      vi.advanceTimersByTime(20000)
-      expect(startRest).toHaveBeenCalledTimes(3)
     } finally {
       vi.useRealTimers()
     }
@@ -190,7 +183,7 @@ describe('the settings tab', () => {
       expect(installation.getSetting(['app', 'performance', 'profile'])).toBe('eco')
       expect(installation.getModels(['indexing'])).toStrictEqual([model()])
       expect(write).toHaveBeenCalledWith(edits)
-      expect(startRest).toHaveBeenCalledTimes(1)
+      expect(startRest).toHaveBeenCalledTimes(0)
       settings.close()
     } finally {
       vi.useRealTimers()
@@ -454,7 +447,7 @@ describe('the settings tab', () => {
       ) as unknown as Promise<void>)
       expect(startSpy).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
-      expect(startSpy).toHaveBeenCalledTimes(2)
+      expect(startSpy).toHaveBeenCalledTimes(1)
 
       startSpy.mockClear()
       vi.mocked(core.choosePluginPath).mockResolvedValueOnce({
@@ -465,7 +458,7 @@ describe('the settings tab', () => {
       expect(await installation.choosePath('plugin.ocr', 'dir')).toBe('')
       expect(startSpy).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
-      expect(startSpy).toHaveBeenCalledTimes(2)
+      expect(startSpy).toHaveBeenCalledTimes(1)
 
       vi.mocked(core.choosePluginPath).mockResolvedValueOnce({
         path: '',
@@ -473,7 +466,7 @@ describe('the settings tab', () => {
         problem: 'cancelled',
       })
       expect(await installation.choosePath('plugin.ocr', 'dir')).toBe('cancelled')
-      expect(startSpy).toHaveBeenCalledTimes(2)
+      expect(startSpy).toHaveBeenCalledTimes(1)
       settings.close()
     } finally {
       vi.useRealTimers()

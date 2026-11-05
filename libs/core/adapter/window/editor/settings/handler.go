@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -16,8 +17,10 @@ import (
 // Handler answers every setting read and written, and the keys of the secrets
 // plugins declare, stored and removed.
 type Handler struct {
-	Get          *setting.Get
-	Write        *setting.Write
+	Get   *setting.Get
+	Write *setting.Write
+	// Watch is nil where the build reports no change of a setting.
+	Watch        *setting.Watch
 	WriteSecret  *setting.WriteSecret
 	DeleteSecret *setting.DeleteSecret
 	PluginRetry  *setting.RetryPlugin
@@ -327,3 +330,43 @@ func newWireReaders(readers []setting.PluginReaderInfo) []*v1.PluginReader {
 	}
 	return out
 }
+
+// WatchSettings reports each setting whose value changed until the client disconnects. The first
+// response holds no change, so the client knows it is listening. An empty response is a keepalive;
+// its send fails once the client disconnects.
+func (h *Handler) WatchSettings(
+	ctx context.Context, _ *connect.Request[v1.WatchSettingsRequest], out *connect.ServerStream[v1.WatchSettingsResponse],
+) error {
+	if h.Watch == nil {
+		return connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	changes, stop := h.Watch.Execute()
+	defer stop()
+	if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
+		return err
+	}
+	repeat := time.NewTicker(keepalive)
+	defer repeat.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-repeat.C:
+			if err := out.Send(&v1.WatchSettingsResponse{}); err != nil {
+				return err
+			}
+		case batch, open := <-changes:
+			if !open {
+				return nil
+			}
+			if err := out.Send(&v1.WatchSettingsResponse{Changed: newWireSettings(batch)}); err != nil {
+				return err
+			}
+		}
+	}
+}
+
+// keepalive is how often a stream with no change sends an empty response. The send fails once the
+// window is gone, and the subscription ends; a window that leaves is otherwise noticed only by
+// the next change.
+const keepalive = 30 * time.Second

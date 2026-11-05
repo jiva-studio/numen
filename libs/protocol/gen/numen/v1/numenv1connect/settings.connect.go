@@ -66,6 +66,9 @@ const (
 	// SettingsServiceDeletePluginDataProcedure is the fully-qualified name of the SettingsService's
 	// DeletePluginData RPC.
 	SettingsServiceDeletePluginDataProcedure = "/numen.v1.SettingsService/DeletePluginData"
+	// SettingsServiceWatchSettingsProcedure is the fully-qualified name of the SettingsService's
+	// WatchSettings RPC.
+	SettingsServiceWatchSettingsProcedure = "/numen.v1.SettingsService/WatchSettings"
 )
 
 // SettingsServiceClient is a client for the numen.v1.SettingsService service.
@@ -100,6 +103,12 @@ type SettingsServiceClient interface {
 	// shows and the records of the text versions the plugin made there. The
 	// files those versions were of are indexed again.
 	DeletePluginData(context.Context, *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error)
+	// WatchSettings reports each setting whose value changed, for as long as the caller listens: a
+	// write by a window, a plugin or the palette, and an edit of the file by hand. A change arrives
+	// once, named by its declared path, whoever made it and whichever caller listens, and a path no
+	// owner declares is not reported. The stream opens with a response that holds no change, so a
+	// caller knows it is listening before it reads GetSettings.
+	WatchSettings(context.Context, *connect.Request[v1.WatchSettingsRequest]) (*connect.ServerStreamForClient[v1.WatchSettingsResponse], error)
 }
 
 // NewSettingsServiceClient constructs a client for the numen.v1.SettingsService service. By
@@ -161,6 +170,12 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(settingsServiceMethods.ByName("DeletePluginData")),
 			connect.WithClientOptions(opts...),
 		),
+		watchSettings: connect.NewClient[v1.WatchSettingsRequest, v1.WatchSettingsResponse](
+			httpClient,
+			baseURL+SettingsServiceWatchSettingsProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("WatchSettings")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -174,6 +189,7 @@ type settingsServiceClient struct {
 	choosePluginPath   *connect.Client[v1.ChoosePluginPathRequest, v1.ChoosePluginPathResponse]
 	getPluginData      *connect.Client[v1.GetPluginDataRequest, v1.GetPluginDataResponse]
 	deletePluginData   *connect.Client[v1.DeletePluginDataRequest, v1.DeletePluginDataResponse]
+	watchSettings      *connect.Client[v1.WatchSettingsRequest, v1.WatchSettingsResponse]
 }
 
 // GetSettings calls numen.v1.SettingsService.GetSettings.
@@ -216,6 +232,11 @@ func (c *settingsServiceClient) DeletePluginData(ctx context.Context, req *conne
 	return c.deletePluginData.CallUnary(ctx, req)
 }
 
+// WatchSettings calls numen.v1.SettingsService.WatchSettings.
+func (c *settingsServiceClient) WatchSettings(ctx context.Context, req *connect.Request[v1.WatchSettingsRequest]) (*connect.ServerStreamForClient[v1.WatchSettingsResponse], error) {
+	return c.watchSettings.CallServerStream(ctx, req)
+}
+
 // SettingsServiceHandler is an implementation of the numen.v1.SettingsService service.
 type SettingsServiceHandler interface {
 	// GetSettings is every setting of the file, and the models the settings that
@@ -248,6 +269,12 @@ type SettingsServiceHandler interface {
 	// shows and the records of the text versions the plugin made there. The
 	// files those versions were of are indexed again.
 	DeletePluginData(context.Context, *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error)
+	// WatchSettings reports each setting whose value changed, for as long as the caller listens: a
+	// write by a window, a plugin or the palette, and an edit of the file by hand. A change arrives
+	// once, named by its declared path, whoever made it and whichever caller listens, and a path no
+	// owner declares is not reported. The stream opens with a response that holds no change, so a
+	// caller knows it is listening before it reads GetSettings.
+	WatchSettings(context.Context, *connect.Request[v1.WatchSettingsRequest], *connect.ServerStream[v1.WatchSettingsResponse]) error
 }
 
 // NewSettingsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -305,6 +332,12 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 		connect.WithSchema(settingsServiceMethods.ByName("DeletePluginData")),
 		connect.WithHandlerOptions(opts...),
 	)
+	settingsServiceWatchSettingsHandler := connect.NewServerStreamHandler(
+		SettingsServiceWatchSettingsProcedure,
+		svc.WatchSettings,
+		connect.WithSchema(settingsServiceMethods.ByName("WatchSettings")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.SettingsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SettingsServiceGetSettingsProcedure:
@@ -323,6 +356,8 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 			settingsServiceGetPluginDataHandler.ServeHTTP(w, r)
 		case SettingsServiceDeletePluginDataProcedure:
 			settingsServiceDeletePluginDataHandler.ServeHTTP(w, r)
+		case SettingsServiceWatchSettingsProcedure:
+			settingsServiceWatchSettingsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -362,4 +397,8 @@ func (UnimplementedSettingsServiceHandler) GetPluginData(context.Context, *conne
 
 func (UnimplementedSettingsServiceHandler) DeletePluginData(context.Context, *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.DeletePluginData is not implemented"))
+}
+
+func (UnimplementedSettingsServiceHandler) WatchSettings(context.Context, *connect.Request[v1.WatchSettingsRequest], *connect.ServerStream[v1.WatchSettingsResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.WatchSettings is not implemented"))
 }

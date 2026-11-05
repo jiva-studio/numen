@@ -56,6 +56,7 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     writeOpenTabs: vi.fn(() => Promise.resolve()),
     readOpenTabs: vi.fn(() => Promise.resolve({ tabs: [], activeId: '' })),
     watchEdits: emptyStream,
+    watchSettings: emptyStream,
     watchTasks: async function* () {
       await waitForever()
     },

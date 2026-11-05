@@ -12,7 +12,7 @@ import { COMMAND } from '@/shared/commandIds'
 import { type PluginInfo, type PluginSettingOption, type SettingEdit } from '@/entities/settings'
 import { formatErrorMessage, type PluginCatalog } from '@numen/core-client'
 import { useCatalogEntries } from '@/entities/plugin'
-import { runInBackground } from '@numen/ui'
+import { createFollower, runInBackground } from '@numen/ui'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
 import type { Installation } from '@/pages/settings'
@@ -152,7 +152,6 @@ interface SettingsTabConfigDeps {
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
   core: SettingsPort
-  scheduleRefresh: () => void
   getSettingsViews?: Installation['getSettingsViews']
   catalogEntries?: Installation['catalog']
   reportError: (error: unknown) => void
@@ -166,7 +165,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     secrets,
     retry,
     core,
-    scheduleRefresh,
     getSettingsViews,
     catalogEntries,
     reportError,
@@ -186,10 +184,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     write: (content: readonly SettingEdit[]) => {
       const promise = rest.writeSettings(content)
       runInBackground(
-        promise.then(() => {
-          scheduleRefresh()
-          return followShell(content)
-        }),
+        promise.then(() => followShell(content)),
         reportError,
       )
       return promise
@@ -203,7 +198,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
         const answer = await core.choosePluginPath(pluginId, key)
         if (answer.isChosen) {
           await rest.start()
-          scheduleRefresh()
         }
         return answer.problem
       } catch (caughtError) {
@@ -261,38 +255,48 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
   }
 }
 
-/** The reads of the settings that follow a change, which the plugins take a while to show. */
-function createRefreshSchedule(
-  rest: { start: () => Promise<void> },
-  reportError: (error: unknown) => void,
-) {
-  // Stryker disable next-line ArrayDeclaration: clearTimeout ignores non-timer values in the initial array
-  const refreshTimers: ReturnType<typeof setTimeout>[] = []
-
-  const clearRefreshTimers = () => {
-    while (refreshTimers.length > 0) {
-      clearTimeout(refreshTimers.pop())
-    }
+/**
+ * Follows the settings that change, whoever changes them: this window, another window, a plugin, the
+ * palette, or a person editing the file. Each change is read again once.
+ */
+function createChangeFollower(deps: {
+  core: SettingsPort
+  refresh: () => Promise<unknown>
+  wait?: (ms: number) => Promise<unknown>
+}) {
+  const { core, refresh, wait = sleep } = deps
+  const abortController = new AbortController()
+  let isOpen = true
+  // The stream opens with an empty batch. After the stream was lost, what changed meanwhile is read
+  // with it.
+  let isResumed = false
+  const follows = createFollower({
+    isOpen: () => isOpen,
+    // The stream of the themes reports the lost connection.
+    setLost: () => undefined,
+    wait,
+    reset: () => {
+      isResumed = true
+    },
+  })
+  return {
+    start: () =>
+      follows(
+        () => core.watchSettings(abortController.signal),
+        async (batch) => {
+          if (batch.length === 0 && !isResumed) return
+          isResumed = false
+          await refresh()
+        },
+      ),
+    close: () => {
+      isOpen = false
+      abortController.abort()
+    },
   }
-
-  const scheduleRefresh = () => {
-    clearRefreshTimers()
-    for (const delayMs of [1500, 3500, 7000, 11000, 16000]) {
-      refreshTimers.push(
-        setTimeout(() => {
-          runInBackground(rest.start(), reportError)
-        }, delayMs),
-      )
-    }
-  }
-
-  const refreshAndSchedule = async () => {
-    await rest.start()
-    scheduleRefresh()
-  }
-
-  return { scheduleRefresh, clearRefreshTimers, refreshAndSchedule }
 }
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function useSettings({
   core,
@@ -316,20 +320,15 @@ export function useSettings({
     getPluginName,
   })
   const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
-  const { scheduleRefresh, clearRefreshTimers, refreshAndSchedule } = createRefreshSchedule(
-    rest,
-    reportError,
-  )
-
   const secrets = createSecretStore(core, {
     words,
     notify: log.getWriter('keys'),
-    refresh: refreshAndSchedule,
+    refresh: () => rest.start(),
   })
   const retry = createPluginRetry(core, {
     words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
     notify: log.getWriter('plugins'),
-    refresh: refreshAndSchedule,
+    refresh: () => rest.start(),
     getName: getPluginName,
   })
 
@@ -344,7 +343,6 @@ export function useSettings({
       secrets,
       retry,
       core,
-      scheduleRefresh,
       ...(getSettingsViews ? { getSettingsViews } : {}),
       ...(catalogEntries ? { catalogEntries } : {}),
       reportError,
@@ -358,16 +356,21 @@ export function useSettings({
 
   const kinds = [configured.kind]
 
+  const changes = createChangeFollower({
+    core,
+    refresh: () => Promise.all([rest.start(), appearance.reload(), sync.start()]),
+  })
+
   const start = async () => {
     runInBackground(appearance.start(), reportError)
     runInBackground(sync.start(), reportError)
+    runInBackground(changes.start(), reportError)
     // The plugins the window starts are named by what this read answers.
     await rest.start()
-    scheduleRefresh()
   }
 
   const close = () => {
-    clearRefreshTimers()
+    changes.close()
     appearance.close()
   }
 

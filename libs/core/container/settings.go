@@ -105,6 +105,7 @@ func (c Config) SetSettings(s Settings) Config {
 		})
 		c.PluginHost.SetKeyStore(c.KeyStore)
 		c.setCompleter()
+		c.subscribeHost()
 	}
 	return c
 }
