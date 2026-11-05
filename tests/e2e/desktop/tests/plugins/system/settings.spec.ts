@@ -94,7 +94,10 @@ test.describe('Plugin Settings and Configuration', () => {
     await searchInput.fill('')
     await expect(searchInput).toHaveValue('')
 
-    const pluginRow = page.getByRole('button', { name: /Agent Chat/i }).first()
+    const pluginRow = page
+      .locator('.settings__plugins')
+      .getByRole('button', { name: /Agent Chat/i })
+      .first()
     await expect(pluginRow).toBeVisible({ timeout: 5_000 })
     await pluginRow.click()
 

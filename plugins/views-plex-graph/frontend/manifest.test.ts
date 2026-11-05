@@ -11,7 +11,7 @@ const manifest = JSON.parse(
 ) as {
   permissions: readonly string[]
   contributes: {
-    commands: readonly { id: string; title: string; scope?: string }[]
+    commands: readonly { id: string; title: string; icon?: string; scope?: string }[]
     menus?: readonly { location: string; command: string; group?: string; order?: number }[]
   }
 }
@@ -21,10 +21,24 @@ describe('the manifest', () => {
     expect(manifest.permissions).toStrictEqual(['vault:read', 'vault:write'])
   })
 
-  it('places showing a note in the plex in the menu of a search result, among the navigation entries', () => {
+  it('places showing a note in the menu of a search result and opening the plex in the title bar, both among the navigation entries', () => {
     expect(manifest.contributes.menus).toStrictEqual([
       { location: 'searchResult', command: 'graph.showNote', group: 'navigate', order: 20 },
+      { location: 'titleBar', command: 'graph.open', group: 'navigate', order: 20 },
     ])
+  })
+
+  it('declares the command the title bar shows with the title and the icon of a graph', () => {
+    expect(manifest.contributes.commands.find((one) => one.id === 'graph.open')).toMatchObject({
+      title: 'Open plex graph',
+      icon: 'waypoints',
+    })
+  })
+
+  it('keeps the command that shows a note out of the title bar, which has no note', () => {
+    const entries = (manifest.contributes.menus ?? []).filter((one) => one.location === 'titleBar')
+
+    expect(entries.map((one) => one.command)).not.toContain('graph.showNote')
   })
 
   it('keeps the declaration of the command that shows a note, with no field about its place', () => {
@@ -33,5 +47,13 @@ describe('the manifest', () => {
     expect(command).toMatchObject({ title: 'Show note in plex', scope: 'note' })
     expect(Object.keys(command ?? {})).not.toContain('location')
     expect(Object.keys(command ?? {})).not.toContain('menus')
+  })
+})
+
+describe('the readme', () => {
+  it('names the title bar button that opens the plex', () => {
+    const readme = readFileSync(resolve(import.meta.dirname, '../README.md'), 'utf8')
+
+    expect(readme).toMatch(/title bar/i)
   })
 })
