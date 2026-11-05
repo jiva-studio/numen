@@ -50,10 +50,11 @@ export function createPluginMenus(deps: PluginMenusDeps): Menus {
   }
 
   return createMenus({
-    getPlacements: () => [
-      ...(deps.getPlacements() ?? []),
-      ...(deps.getAppPlacements?.() ?? APP_PLACEMENTS),
-    ],
+    getPlacements: () => {
+      const placed = deps.getPlacements()
+      if (!placed) return undefined
+      return [...placed, ...(deps.getAppPlacements?.() ?? APP_PLACEMENTS)]
+    },
     findCommand: (fullId) =>
       getCommandOwner(fullId) === APP_COMMAND_OWNER
         ? findEditorLook(fullId)

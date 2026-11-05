@@ -7,4 +7,6 @@ import type { MenuPlacement } from '@numen/plugin-host'
 /** The owner of the placements of the application, as the owner of its commands. */
 export const APP_PLACEMENT_OWNER = 'app'
 
-export const APP_PLACEMENTS: MenuPlacement[] = []
+export const APP_PLACEMENTS: MenuPlacement[] = [
+  { pluginId: APP_PLACEMENT_OWNER, location: 'titleBar', command: 'app:settings.open', group: 'settings' },
+]
