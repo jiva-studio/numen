@@ -209,7 +209,9 @@ export function createStepGroups(state: ViewState) {
     return lists.getStepGroups(step.command.id, text).map((group) => ({
       id: group.id,
       title: group.title,
-      items: group.items.map((one) => getRowItem(one, word, { command: step.command.id, words })).filter((item) => item !== null),
+      items: group.items
+        .map((one) => getRowItem(one, word, { command: step.command.id, words }))
+        .filter((item) => item !== null),
       silence: group.silence ?? words.noneFound,
     }))
   }
