@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 var errComingUp = errors.New("the vault is still coming up")
@@ -108,7 +109,7 @@ func (h *fileHandler) ListFileKinds(
 		for _, p := range paths {
 			ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(p), "."))
 			if ext != "" {
-				h.state.EmitEvent("onFile:" + ext)
+				h.state.EmitEvent(manifest.ActivationEventFilePrefix + ext)
 			}
 		}
 	}

@@ -6,9 +6,6 @@ import "strings"
 // CapabilityAgentProvider is the capability of a plugin that runs agent programs.
 const CapabilityAgentProvider = "ai.agent.provider"
 
-// StartupEvent is the event the host emits to plugins once, when the editor window opens.
-const StartupEvent = "onStartup"
-
 // vectorsReadyPrefix starts the event the host emits when every chunk of a vault carries a vector.
 const vectorsReadyPrefix = "onVectorsReady:"
 

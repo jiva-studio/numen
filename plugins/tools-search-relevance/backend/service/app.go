@@ -39,22 +39,21 @@ type App struct {
 	open  func() (Hosts, error)
 	clock relevance.Clock
 
-	mu        sync.Mutex
-	floors    *relevance.Floors
-	queue     host.Queue
-	isChecked bool
+	mu     sync.Mutex
+	floors *relevance.Floors
+	queue  host.Queue
 }
 
 // NewApp returns the backend that connects to the host the process was launched for when it is mounted.
 func NewApp() *App {
-	return &App{open: openFromEnv, clock: clock.System{}, mu: sync.Mutex{}, floors: nil, queue: nil, isChecked: false}
+	return &App{open: openFromEnv, clock: clock.System{}, mu: sync.Mutex{}, floors: nil, queue: nil}
 }
 
 // NewAppOver returns the backend over the hosts given, with measurements stamped by the clock.
 func NewAppOver(hosts Hosts, clk relevance.Clock) *App {
 	return &App{
 		open:  func() (Hosts, error) { return hosts, nil },
-		clock: clk, mu: sync.Mutex{}, floors: nil, queue: nil, isChecked: false,
+		clock: clk, mu: sync.Mutex{}, floors: nil, queue: nil,
 	}
 }
 
@@ -100,9 +99,8 @@ func (a *App) getFloors() (*relevance.Floors, host.Queue) {
 	return a.floors, a.queue
 }
 
-// HandleEvent measures the vault when the host reports that all of its vectors exist. The first event
-// of any kind after the plugin starts checks the vault the host shows as well, so a plugin that starts
-// after the vectors were made still measures.
+// HandleEvent measures the vault when the host reports that all of its vectors exist. Any other event
+// changes nothing.
 //
 // A vault that is measured, or whose floor a person set, is not measured again: an event the host
 // repeats changes nothing.
@@ -112,31 +110,16 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 		return nil
 	}
 	vault, isVectorsReady := host.ReadVectorsReadyEvent(event)
-	if !isVectorsReady && a.wasChecked() {
+	if !isVectorsReady {
 		return nil
 	}
 	if err := floors.Ensure(ctx, vault); err != nil {
 		return a.reportFailure(ctx, queue, err)
 	}
-	a.markChecked()
 	if err := queue.FinishTask(ctx, calibratingTask); err != nil {
 		return fmt.Errorf("finish the task of the calibration: %w", err)
 	}
 	return nil
-}
-
-// wasChecked is whether a check of a vault succeeded since the plugin started.
-func (a *App) wasChecked() bool {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	return a.isChecked
-}
-
-// markChecked records that a check of a vault succeeded.
-func (a *App) markChecked() {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.isChecked = true
 }
 
 // reportFailure lists the failure of a measurement as a task and returns it, joined with the failure
