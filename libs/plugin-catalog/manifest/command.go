@@ -91,9 +91,6 @@ type CommandArgument struct {
 	Title      string
 	Type       string
 	IsRequired bool
-	// IsHiddenInPalette keeps an optional argument out of the window's palette, which runs the
-	// command without it. The command line still takes it.
-	IsHiddenInPalette bool
 }
 
 // HasFiles reports whether the command runs over a file.
@@ -192,9 +189,6 @@ func listCommandArgumentIssues(command Command) []error {
 		observed[argument.Name] = true
 		if strings.TrimSpace(argument.Title) == "" {
 			issues = append(issues, fmt.Errorf("%w: %q takes %q with no title", ErrInvalidCommandArgument, command.ID, argument.Name))
-		}
-		if argument.IsHiddenInPalette && argument.IsRequired {
-			issues = append(issues, fmt.Errorf("%w: %q takes %q, which is required and hidden in the palette", ErrInvalidCommandArgument, command.ID, argument.Name))
 		}
 		if types := listCommandArgumentTypes(); !slices.Contains(types, argument.Type) {
 			issues = append(issues, fmt.Errorf("%w: %q takes %q of type %q, expected one of %s", ErrInvalidCommandArgument, command.ID, argument.Name, argument.Type, strings.Join(types, ", ")))

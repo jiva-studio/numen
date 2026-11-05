@@ -203,7 +203,6 @@ message ManifestCommandArgument {
   string title = 2;
   string type = 3;
   bool is_required = 4 [json_name = "required"];
-  bool is_hidden_in_palette = 5 [json_name = "hiddenInPalette"];
 }
 
 // ManifestContextCondition holds while the context the window supplies has the key with one of the

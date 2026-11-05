@@ -47,17 +47,23 @@ const front = (file: string, isReady = true) => ({
 })
 
 describe('a declared command in the palette', () => {
-  it('asks for its arguments, one step each', () => {
+  it('asks for its required arguments, one step each, and leaves the optional ones out', () => {
     const [sample] = createDeclaredPaletteCommands([createSample])
 
     expect(sample?.id).toBe('org.example.sample:sample.create')
     expect(sample?.group).toBe('window')
     expect(sample?.icon).toBe(getNamedIcon('layers'))
     expect(sample?.needs).toBe('arguments')
-    expect(sample?.prompts).toStrictEqual([
-      { name: 'title', title: 'Title', isRequired: true },
-      { name: 'folder', title: 'Folder', isRequired: false },
+    expect(sample?.prompts).toStrictEqual([{ name: 'title', title: 'Title', isRequired: true }])
+  })
+
+  it('asks nothing when every argument is optional', () => {
+    const [one] = createDeclaredPaletteCommands([
+      { ...createSample, arguments: [{ name: 'folder', title: 'Folder', isRequired: false }] },
     ])
+
+    expect(one?.needs).toBeUndefined()
+    expect(one?.prompts).toBeUndefined()
   })
 
   it('over files is offered over a file of its extensions alone', () => {

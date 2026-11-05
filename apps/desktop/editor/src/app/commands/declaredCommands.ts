@@ -1,6 +1,7 @@
 /**
  * The commands the enabled plugins declare, offered in the palette: one step
- * for each argument, and the run handed to the plugin's backend.
+ * for each required argument (an optional one is for a caller that is not a person),
+ * and the run handed to the plugin's backend.
  */
 import { computed, shallowRef, watch } from 'vue'
 import { formatCommandId, type CommandDeclaration, type MenuPlacement } from '@numen/plugin-host'
@@ -31,15 +32,16 @@ export function createDeclaredPaletteCommands(
 ): readonly Command[] {
   return declared.map((one): Command => {
     const hasFiles = one.contentTypes.length > 0
+    const required = one.arguments.filter(({ isRequired }) => isRequired)
     return {
       id: getPaletteId(one),
       text: one.title,
       group: hasFiles ? 'file' : 'window',
       ...(one.icon ? { icon: getNamedIcon(one.icon) } : {}),
-      ...(one.arguments.length > 0
+      ...(required.length > 0
         ? {
             needs: 'arguments' as const,
-            prompts: one.arguments.map(({ name, title, isRequired }) => ({
+            prompts: required.map(({ name, title, isRequired }) => ({
               name,
               title,
               isRequired,

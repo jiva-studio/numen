@@ -395,11 +395,10 @@ func newCommandArguments(wire []*v1.ManifestCommandArgument) []manifest.CommandA
 	var out []manifest.CommandArgument
 	for _, one := range wire {
 		out = append(out, manifest.CommandArgument{
-			Name:              one.GetName(),
-			Title:             one.GetTitle(),
-			Type:              one.GetType(),
-			IsRequired:        one.GetIsRequired(),
-			IsHiddenInPalette: one.GetIsHiddenInPalette(),
+			Name:       one.GetName(),
+			Title:      one.GetTitle(),
+			Type:       one.GetType(),
+			IsRequired: one.GetIsRequired(),
 		})
 	}
 	return out
