@@ -299,6 +299,18 @@ describe('the pages requested', () => {
 })
 
 describe('a reader hidden or moved in the document', () => {
+  it('scrolls its row to the page it was travelling to when the move ended the travel', async () => {
+    const target = await reader(1000, 800)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    await target.setProps({ at: 5 })
+    area.scrollLeft = 0
+
+    await room(target, 1000, 800)
+    await new Promise((done) => requestAnimationFrame(() => done(undefined)))
+
+    expect(area.scrollLeft).toBeGreaterThan(0)
+  })
+
   it('scrolls its row back to the page it was on when it is measured again', async () => {
     // A tab moved to another pane is detached and attached again. The browser
     // scrolls its row to the start and sends no scroll event, so the pages

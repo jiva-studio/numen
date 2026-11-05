@@ -28,8 +28,9 @@ export interface PanScroll {
    */
   readonly send: (to: number, how: ScrollBehavior) => void
   /**
-   * The row put back at the last offset it was scrolled to, when the browser
-   * has moved it since without a scroll event.
+   * The row put back at the place it was travelling to, or at the last offset it was scrolled to,
+   * when the browser has moved it since without a scroll event. A row that is hidden or moved in
+   * the document loses a travel it was on, and no scroll event reports the end of it.
    */
   readonly restore: () => void
   /**
@@ -107,6 +108,9 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
   /** The programmatic scroll target while a scroll towards it is in progress. */
   let heading: number | undefined
 
+  /** Whether `heading` was sent as a travel, which the browser ends when the row is moved. */
+  let isTravel = false
+
   const getScrollOffset = (): number => heading ?? area.value?.scrollLeft ?? axisOffset.value
 
   const send = (to: number, how: ScrollBehavior): void => {
@@ -119,15 +123,19 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
       return
     }
     heading = to
+    isTravel = how === 'smooth'
     // An instant scroll completes immediately.
     if (how === 'auto') axisOffset.value = to
     area.value.scrollTo({ left: to, behavior: how })
   }
 
   const restore = (): void => {
-    if (!area.value || heading !== undefined) return
-    if (Math.abs(area.value.scrollLeft - axisOffset.value) <= THERE) return
-    area.value.scrollLeft = axisOffset.value
+    if (!area.value || (heading !== undefined && !isTravel)) return
+    const goal = heading ?? axisOffset.value
+    heading = undefined
+    if (Math.abs(area.value.scrollLeft - goal) <= THERE) return
+    axisOffset.value = goal
+    area.value.scrollLeft = goal
   }
 
   const isStill = (): boolean => {
