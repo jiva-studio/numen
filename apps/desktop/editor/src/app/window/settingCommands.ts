@@ -4,8 +4,8 @@
  * One adapter reads the settings the core declares for the owner `app` and the settings each
  * plugin declares, and offers every one flagged `palette` as a command with one choice step: a
  * boolean as On and Off, an enum as its options in force, a range as the values from its minimum
-X `preview` is applied while its row is focused and
- * restored when the step is left without a choice.
+ * to its maximum, one step apart. A setting flagged `preview` is applied while its row is focused
+ * and restored when the step is left without a choice.
  */
 import type { Command, PaletteLists } from '@/features/command-palette'
 import type { StepGroup, StepRow } from '@/shared/steps'
@@ -150,7 +150,7 @@ const getSettingPath = (owner: string, key: string): readonly string[] =>
   owner === APP_OWNER ? [APP_OWNER, ...key.split('.')] : [owner, key]
 
 export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
-  /** The commands whose setting was shown on a row the keyboard stood on, and not yet restored. */
+  /** The commands whose setting is previewed while its row has focus and is not yet restored. */
   const previewed = new Set<string>()
 
   const findSetting = (command: string): FoundSetting | null => {
