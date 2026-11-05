@@ -21,8 +21,9 @@ type Host struct {
 
 // RegisterTools registers all window interaction and edit preview tools on the given registry.
 func RegisterTools(registry *tools.Registry, manager *WindowManager, on Host) error {
+	summaries := newTextSummaries()
 	for _, add := range []func(*tools.Registry) error{
-		func(r *tools.Registry) error { return addWindowTabsGet(r, on) },
+		func(r *tools.Registry) error { return addWindowTabsGet(r, on, summaries) },
 		func(r *tools.Registry) error { return addWindowFocusTab(r, on) },
 		func(r *tools.Registry) error { return addNoteFocus(r, on) },
 		func(r *tools.Registry) error { return addSourceFocus(r, on) },
@@ -35,7 +36,7 @@ func RegisterTools(registry *tools.Registry, manager *WindowManager, on Host) er
 	return nil
 }
 
-func addWindowTabsGet(registry *tools.Registry, on Host) error {
+func addWindowTabsGet(registry *tools.Registry, on Host, summaries *textSummaries) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "window_tabs_get",
 		Title: "Get open window tabs",
@@ -46,7 +47,7 @@ func addWindowTabsGet(registry *tools.Registry, on Host) error {
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, _ WindowTabsGetInput) (WindowTabsGetOutput, error) {
-		tabs, activeID, err := readWindowTabs(ctx, on)
+		tabs, activeID, err := readWindowTabs(ctx, on, summaries)
 		if err != nil {
 			return WindowTabsGetOutput{}, err
 		}
@@ -74,7 +75,7 @@ func addWindowTabsGet(registry *tools.Registry, on Host) error {
 
 // readWindowTabs is the tabs the window last reported, each with the place it is open at, and the
 // active one. A host with no window has none.
-func readWindowTabs(ctx context.Context, on Host) ([]TabInfo, string, error) {
+func readWindowTabs(ctx context.Context, on Host, summaries *textSummaries) ([]TabInfo, string, error) {
 	if on.Window == nil {
 		return nil, "", nil
 	}
@@ -85,7 +86,7 @@ func readWindowTabs(ctx context.Context, on Host) ([]TabInfo, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	texts := getCallTexts(ctx, on.Texts)
+	positions := newPositionReader(ctx, on.Texts, summaries)
 	tabs := make([]TabInfo, 0, len(open))
 	for _, tab := range open {
 		tabs = append(tabs, TabInfo{
@@ -93,7 +94,7 @@ func readWindowTabs(ctx context.Context, on Host) ([]TabInfo, string, error) {
 			Kind:     tab.Kind,
 			Path:     tab.Path,
 			Title:    tab.Title,
-			Where:    readPosition(ctx, texts, tab),
+			Where:    positions.readPosition(ctx, tab),
 			IsActive: tab.ID != "" && tab.ID == activeID,
 		})
 	}

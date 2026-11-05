@@ -2,7 +2,9 @@ package host
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"math"
 
 	"connectrpc.com/connect"
 
@@ -43,10 +45,28 @@ func (c *Client) FocusNote(ctx context.Context, path string) (FocusedNote, error
 	return FocusedNote{Path: res.Msg.GetPath(), Title: res.Msg.GetTitle(), ID: res.Msg.GetId()}, nil
 }
 
-func (c *Client) FocusPassages(ctx context.Context, path string, passages []PassageSpan) (string, error) {
+// errPassageOutOfRange is a passage whose start or length the wire cannot carry in 32 bits.
+var errPassageOutOfRange = errors.New("host: a passage start and length are within the 32-bit range")
+
+// writePassageSpans is the passages as the wire carries them, and an error for one outside the
+// 32-bit range.
+func writePassageSpans(passages []PassageSpan) ([]*v1.PassageSpan, error) {
 	spans := make([]*v1.PassageSpan, 0, len(passages))
 	for _, passage := range passages {
+		if !isInt32(passage.Start) || !isInt32(passage.Length) {
+			return nil, fmt.Errorf("passage at %d of length %d: %w", passage.Start, passage.Length, errPassageOutOfRange)
+		}
 		spans = append(spans, &v1.PassageSpan{Start: int32(passage.Start), Length: int32(passage.Length)})
+	}
+	return spans, nil
+}
+
+func isInt32(n int) bool { return n >= math.MinInt32 && n <= math.MaxInt32 }
+
+func (c *Client) FocusPassages(ctx context.Context, path string, passages []PassageSpan) (string, error) {
+	spans, err := writePassageSpans(passages)
+	if err != nil {
+		return "", err
 	}
 	res, err := c.window.FocusPassages(ctx, request(c, &v1.FocusPassagesRequest{Path: path, Passages: spans}))
 	if err != nil {

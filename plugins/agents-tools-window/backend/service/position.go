@@ -13,57 +13,66 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// getCallTexts is the text versions of the vault the call names, nil where the host offers none.
-func getCallTexts(ctx context.Context, texts host.Texts) host.Texts {
-	if texts == nil {
-		return nil
+// positionReader reads where the tabs of one call are open, reading the text version of each file
+// at most once.
+type positionReader struct {
+	texts     host.Texts
+	vault     string
+	summaries *textSummaries
+	read      map[string]textSummary
+}
+
+// newPositionReader is the reader of the positions of the call's tabs, over the text versions of
+// the vault the call names. Nil texts read no text version.
+func newPositionReader(ctx context.Context, texts host.Texts, summaries *textSummaries) *positionReader {
+	vault := tools.GetVault(ctx)
+	if texts != nil && vault != "" {
+		texts = texts.With(domain.VaultID(vault))
 	}
-	if id := tools.GetVault(ctx); id != "" {
-		return texts.With(domain.VaultID(id))
+	return &positionReader{texts: texts, vault: vault, summaries: summaries, read: map[string]textSummary{}}
+}
+
+// getSummary is what the positions of the file are read from, read once per call.
+func (r *positionReader) getSummary(ctx context.Context, path string) textSummary {
+	if summary, isRead := r.read[path]; isRead {
+		return summary
 	}
-	return texts
+	summary := r.summaries.get(ctx, r.texts, r.vault, path)
+	r.read[path] = summary
+	return summary
 }
 
 // readPosition is where in its file a tab is open, read from the keys of the state its kind saved:
 // {"page":N} a page, {"t":[start,end]} seconds of a recording, {"cfi":"..."} a place of an EPUB. A
 // state of other keys, or one that is not JSON, has no position.
-func readPosition(ctx context.Context, texts host.Texts, tab host.OpenTab) string {
+func (r *positionReader) readPosition(ctx context.Context, tab host.OpenTab) string {
 	var state map[string]json.RawMessage
 	if err := json.Unmarshal([]byte(tab.State), &state); err != nil {
 		return ""
 	}
 	if raw, isPage := state["page"]; isPage {
-		return readPagePosition(ctx, texts, tab.Path, raw)
+		return r.readPagePosition(ctx, tab.Path, raw)
 	}
 	if raw, isTime := state["t"]; isTime {
 		return readTimePosition(raw)
 	}
 	if raw, isCFI := state["cfi"]; isCFI {
-		return readChapterPosition(ctx, texts, tab.Path, raw)
+		return r.readChapterPosition(ctx, tab.Path, raw)
 	}
 	return ""
 }
 
 // readPagePosition is "page N of M", M the highest page of the file's live text version, or "page N"
 // where the file has no text version.
-func readPagePosition(ctx context.Context, texts host.Texts, path string, raw json.RawMessage) string {
+func (r *positionReader) readPagePosition(ctx context.Context, path string, raw json.RawMessage) string {
 	var page int
 	if err := json.Unmarshal(raw, &page); err != nil || page < 1 {
 		return ""
 	}
-	last := 0
-	for _, segment := range readLiveSegments(ctx, texts, path) {
-		var selector struct {
-			Page int `json:"page"`
-		}
-		if json.Unmarshal([]byte(segment.Selector), &selector) == nil {
-			last = max(last, selector.Page)
-		}
+	if last := r.getSummary(ctx, path).lastPage; last > 0 {
+		return fmt.Sprintf("page %d of %d", page, last)
 	}
-	if last < 1 {
-		return fmt.Sprintf("page %d", page)
-	}
-	return fmt.Sprintf("page %d of %d", page, last)
+	return fmt.Sprintf("page %d", page)
 }
 
 // readTimePosition is "at M:SS", or "at H:MM:SS" from one hour, of the start of the selection.
@@ -80,28 +89,19 @@ func readTimePosition(raw json.RawMessage) string {
 	return fmt.Sprintf("at %d:%02d", minutes, rest)
 }
 
-// readChapterPosition is the chapter of the live text version the CFI falls in: the heading of the
-// segment at the CFI, or of the closest one before it. A CFI before every segment, and a file with
-// no text version, have none.
-func readChapterPosition(ctx context.Context, texts host.Texts, path string, raw json.RawMessage) string {
+// readChapterPosition is the chapter of the live text version the CFI falls in: the heading in force
+// at the last segment whose CFI is at or before it. A CFI before every segment, and a file with no
+// text version, have none.
+func (r *positionReader) readChapterPosition(ctx context.Context, path string, raw json.RawMessage) string {
 	var cfi string
 	if err := json.Unmarshal(raw, &cfi); err != nil || cfi == "" {
 		return ""
 	}
 	target := parseCFI(cfi)
-	heading, chapter := "", ""
-	for _, segment := range readLiveSegments(ctx, texts, path) {
-		if segment.Heading != "" {
-			heading = segment.Heading
-		}
-		var selector struct {
-			CFI string `json:"cfi"`
-		}
-		if json.Unmarshal([]byte(segment.Selector), &selector) != nil || selector.CFI == "" {
-			continue
-		}
-		if slices.Compare(parseCFI(selector.CFI), target) <= 0 {
-			chapter = heading
+	chapter := ""
+	for _, start := range r.getSummary(ctx, path).places {
+		if slices.Compare(start.cfi, target) <= 0 {
+			chapter = start.heading
 		}
 	}
 	if chapter == "" {
@@ -137,27 +137,4 @@ func parseCFI(cfi string) []int {
 		numbers = append(numbers, current)
 	}
 	return numbers
-}
-
-// readLiveSegments is the segments of the file's live text version, and none where the file has no
-// text version or it cannot be read.
-func readLiveSegments(ctx context.Context, texts host.Texts, path string) []domain.TextSegment {
-	if texts == nil || path == "" {
-		return nil
-	}
-	listing, err := texts.ListVersions(ctx, path)
-	if err != nil || listing.Live == "" {
-		return nil
-	}
-	for _, version := range listing.Versions {
-		if version.GetID() != listing.Live {
-			continue
-		}
-		text, err := host.ReadWholeText(ctx, texts, version)
-		if err != nil {
-			return nil
-		}
-		return text.GetSegments()
-	}
-	return nil
 }

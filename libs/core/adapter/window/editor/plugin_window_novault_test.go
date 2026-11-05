@@ -1,0 +1,27 @@
+package editor
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+)
+
+func TestPluginWindowOfAStateShowingNoVaultAnswersErrNoWindow(t *testing.T) {
+	state := &State{Places: newPlaceBroadcaster()}
+	window := NewPluginWindow(state, nil, vaultreader.Readers{})
+	ctx := t.Context()
+
+	if _, err := window.FocusNote(ctx, "notes/Heron.md"); !errors.Is(err, pluginport.ErrNoWindow) {
+		t.Errorf("FocusNote answered %v, want ErrNoWindow", err)
+	}
+	if _, err := window.FocusPassages(ctx, "library/Birds.pdf", []domain.ByteRange{{Start: 0, End: 4}}); !errors.Is(err, pluginport.ErrNoWindow) {
+		t.Errorf("FocusPassages answered %v, want ErrNoWindow", err)
+	}
+	if _, err := window.ReadOpenTabs(ctx); !errors.Is(err, pluginport.ErrNoWindow) {
+		t.Errorf("ReadOpenTabs answered %v, want ErrNoWindow", err)
+	}
+}
