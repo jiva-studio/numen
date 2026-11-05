@@ -11,7 +11,7 @@ require (
 require (
 	connectrpc.com/connect v1.21.1 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
-	github.com/ebitengine/purego v0.11.2 // indirect
+	github.com/ebitengine/purego v0.11.3 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jiva-studio/numen/libs/notes v0.0.0 // indirect
