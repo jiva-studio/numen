@@ -24,7 +24,7 @@ import {
 } from './noteHandlers'
 import { addVault, renameVault, removeVault, showVault } from './vaults'
 import { SETTINGS } from '@/entities/tab'
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND, SETTING_COMMAND_PREFIX } from '@/shared/commandIds'
 
 /** What each command evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
@@ -63,13 +63,6 @@ const HANDLERS: Record<string, CommandHandler> = {
   [COMMAND.createFolder]: (invocation, on, words) => createFolderCommand(invocation, on, words),
   [COMMAND.closeTab]: (invocation, on) => on.navigator.closeTab(invocation.tab),
   [COMMAND.searchVault]: (_, on) => on.navigator.search(),
-  [COMMAND.chooseTheme]: (invocation, on) => on.settings.chooseAppearance(invocation.name),
-  [COMMAND.chooseMode]: (invocation, on) => on.settings.chooseAppearance(invocation.name),
-  [COMMAND.chooseInterfaceSize]: (invocation, on) => on.settings.chooseAppearance(invocation.name),
-  [COMMAND.chooseTextSize]: (invocation, on) => on.settings.chooseAppearance(invocation.name),
-  [COMMAND.chooseTitleSync]: (invocation, on) => on.settings.chooseSync(invocation.name),
-  [COMMAND.choosePerformanceProfile]: (invocation, on) =>
-    on.settings.choosePerformance(invocation.name),
   [COMMAND.goToNote]: (invocation, on, words) => navigateToPath(invocation.path, on, words),
   [COMMAND.openVault]: (invocation, on, words) => showVault(invocation.vault.id, on, words),
   [COMMAND.createVault]: (_, on, words) => addVault(on, words),
@@ -101,38 +94,22 @@ export const commands = {
 
 export const registerCommand = commands.registerCommand
 
-async function handlePluginInvocation(
-  invocation: CommandInvocation,
-  on: CommandDeps,
-): Promise<void> {
-  const [, pluginId, key] = invocation.id.split(':')
-  if (!pluginId || !key || !on.settings.choosePluginSetting) return
-  let value: unknown = invocation.name
-  if (invocation.name === 'on') {
-    value = true
-  } else if (invocation.name === 'off') {
-    value = false
-  }
-  await on.settings.choosePluginSetting(pluginId, key, value)
-}
-
 export async function runInvocation(
   invocation: CommandInvocation | null,
   on: CommandDeps,
   words: AnswerWords,
 ): Promise<void> {
   if (!invocation) return
-  const isPlugin = invocation.id.startsWith('plugin-setting:')
+  const isSetting = invocation.id.startsWith(SETTING_COMMAND_PREFIX)
   const handler = commandRegistry.get(invocation.id) ?? HANDLERS[invocation.id]
-  if (!isPlugin && !handler) return
+  if (!isSetting && !handler) return
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)
   try {
-    // Stryker disable next-line LogicalOperator: Line 106 guarantees handler is defined when isPlugin is false.
-    if (handler && !isPlugin) {
+    if (isSetting) {
+      await on.settings.chooseSetting?.(invocation.id, invocation.name)
+    } else if (handler) {
       await handler(withCurrentNotePath(invocation, on), on, words)
-    } else {
-      await handlePluginInvocation(invocation, on)
     }
   } catch (error) {
     on.writeMessage(formatErrorMessage(error), 'error')

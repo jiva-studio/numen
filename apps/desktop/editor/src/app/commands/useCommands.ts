@@ -12,6 +12,7 @@ import {
   useCommandPalette,
   useSearch,
   ANSWER_WORDS,
+  type Command,
   type CommandDeps,
   type CommandTarget,
   type ResultChoice,
@@ -31,7 +32,6 @@ import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
 import { WORDS } from '@/shared/words'
-import { createPluginSettingCommands } from '../window/useSettings'
 import type { NoteCreator } from '@/entities/note'
 import type { VaultCore } from '../vault'
 
@@ -54,10 +54,15 @@ export interface CommandsDepsOptions {
   reload: () => void
   tabsHold?: TabsHold
   reached: Notes
-  appearance: { chooseItem: (item: string) => Promise<void> | void }
-  oneName: { choose: (item: string) => Promise<void> | void }
+  /** Left for the test doubles of the editor that still hand it over; nothing reads it. */
+  appearance?: { chooseItem: (item: string) => Promise<void> | void }
+  /** Left for the test doubles of the editor that still hand it over; nothing reads it. */
+  oneName?: { choose: (item: string) => Promise<void> | void }
   /** The adapter that writes the row chosen in the step of the command of a setting. */
-  settingPalette?: { choose: (command: string, item: string) => Promise<void> }
+  settingPalette?: {
+    getCommands: () => readonly Command[]
+    choose: (command: string, item: string) => Promise<void>
+  }
   rest: {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
@@ -105,7 +110,7 @@ export function useCommands(options: CommandsDepsOptions) {
     getTarget,
   })
   const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
-    ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
+    ...(options.settingPalette?.getCommands() ?? []),
     ...(options.declaredCommands?.paletteCommands.value ?? []),
     ...(options.fileMenuCommands?.paletteCommands.value ?? []),
     ...getPaletteEntries(),

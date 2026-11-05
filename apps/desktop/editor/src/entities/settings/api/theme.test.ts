@@ -15,7 +15,6 @@ vi.mock('@/shared/clients', () => ({ theme: request }))
 const request = {
   listThemes: vi.fn(),
   readTheme: vi.fn(),
-  writeAppearance: vi.fn(),
   watchThemes: vi.fn(),
 }
 
@@ -97,17 +96,6 @@ describe('which half of a colour pair is read', () => {
     expect((await themes.getAppearance()).mode).toBe('system')
   })
 
-  it('is carried back to the application as the schema names it', async () => {
-    request.writeAppearance.mockResolvedValue({ error: '' })
-    await themes.writeAppearance('own/Dusk.css', 'dark', { interfaceScale: 1.25, textScale: 1.5 })
-
-    expect(request.writeAppearance.mock.calls[0]?.[0]).toEqual({
-      name: 'own/Dusk.css',
-      mode: THEME_MODE.DARK,
-      interfaceScale: 1.25,
-      textScale: 1.5,
-    })
-  })
 })
 
 describe('how far a size goes', () => {
@@ -141,24 +129,6 @@ describe('the rest of what is requested', () => {
     request.readTheme.mockResolvedValue({ css: ':root { --numen-surface: black }' })
     expect(await themes.readTheme('own/Dusk.css')).toBe(':root { --numen-surface: black }')
     expect(request.readTheme.mock.calls[0]?.[0]).toEqual({ name: 'own/Dusk.css' })
-  })
-
-  it('says why a choice failed, and says nothing where it was not', async () => {
-    request.writeAppearance.mockResolvedValue({ error: 'that size is outside its bounds' })
-    expect(
-      await themes.writeAppearance('preset/Numen.css', 'light', {
-        interfaceScale: 9,
-        textScale: 1,
-      }),
-    ).toBe('that size is outside its bounds')
-
-    request.writeAppearance.mockResolvedValue({ error: '' })
-    expect(
-      await themes.writeAppearance('preset/Numen.css', 'light', {
-        interfaceScale: 1,
-        textScale: 1,
-      }),
-    ).toBe('')
   })
 
   it('names the themes the person’s folder changed, as they land', async () => {

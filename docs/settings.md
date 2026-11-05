@@ -102,7 +102,7 @@ Renaming a file into another folder is not renaming a note, and neither is renam
 
 Typing a new `# Heading` into a note does not rename its file. A save writes the text a person typed and adds nothing to it.
 
-`Choose title and file name sync` is a separate command in the palette. Choosing `On` or `Off` writes this field, and the next rename uses the value written.
+`Sync title and filename` is a command in the palette, made from this declaration. Choosing `On` or `Off` writes this field, and the next rename uses the value written.
 
 ## Performance profiles
 
@@ -142,7 +142,7 @@ The memory limit is a soft limit on the memory the Go runtime manages, set once 
 - **Balanced**: Optimized for everyday responsive use; half the performance threads, so the interface keeps the rest.
 - **Maximum**: Full use of the performance cores for fast initial indexing and bulk processing.
 
-`Set performance profile` is a separate command in the palette. Choosing a profile writes the configuration and applies it to the plugins that are running at once. The core sizes its own pools and the memory limit once, at start-up, so they take the profile after the next start of the application.
+`Performance profile` is a command in the palette, made from this declaration. Choosing a profile writes the configuration and applies it to the plugins that are running at once. The core sizes its own pools and the memory limit once, at start-up, so they take the profile after the next start of the application.
 
 ### Plugin background work
 

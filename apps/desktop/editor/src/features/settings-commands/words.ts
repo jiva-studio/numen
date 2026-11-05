@@ -1,28 +1,10 @@
 /**
- * The words the three settings are offered in: the window as it is drawn, the
- * two names a note keeps, and the headings a node nests.
+ * The words the window appearance and the sync of the title and the filename report in.
  */
 // Stryker disable StringLiteral: interface copy
 
 /** Interface text of the appearance settings. */
 export interface AppearanceWords {
-  /** The two origins of themes: built-in, and the user's own. */
-  readonly shipping: string
-  readonly owned: string
-  readonly noneOwned: string
-  /** The group the three modes are drawn in. */
-  readonly half: string
-  /** The row a list of values opens on, which is the value in force. */
-  readonly current: string
-  /** The three modes, by the name each is offered under. */
-  readonly system: string
-  readonly light: string
-  readonly dark: string
-  /** Why a mode cannot be chosen: the active theme declares light and dark itself. */
-  readonly pinned: string
-  /** The group each of the two sizes is drawn in. */
-  readonly drawing: string
-  readonly setting: string
   /** The themes could not be listed, and one theme's file could not be read. */
   readonly unlisted: string
   readonly themeUnreadable: string
@@ -30,12 +12,6 @@ export interface AppearanceWords {
 
 /** Interface text of the sync settings. */
 export interface SyncWords {
-  /** The group the setting is drawn in, and the two it is. */
-  readonly syncingGroup: string
-  readonly on: string
-  readonly off: string
-  /** The row a list of values opens on, which is the value in force. */
-  readonly current: string
   /** The setting could not be written. */
   readonly unturned: string
 }

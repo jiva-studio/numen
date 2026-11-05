@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { OFF, ON, SYNCING, syncSetting } from './sync'
+import { OFF, ON, syncSetting } from './sync'
 import { writer } from '@/testing/writer'
 import { WORDS as words } from '@/shared/words'
 
@@ -18,16 +18,11 @@ const vault = (isOn: boolean, error: string | null = null) => {
 }
 
 describe('whether a title and a filename are one name', () => {
-  it('opens on what the settings hold, so the list relies on what is in force', async () => {
-    const core = vault(false)
-    const target = syncSetting(core, words, writer().write)
+  it('reads what the settings hold, so the window relies on what is in force', async () => {
+    const target = syncSetting(vault(false), words, writer().write)
     await target.start()
 
-    const groups = target.getSyncingGroups()
-    expect(groups.map((group) => group.id)).toStrictEqual([SYNCING])
-    const items = groups.flatMap((group) => group.items)
-    expect(items.map((one) => one.id)).toStrictEqual([ON, OFF])
-    expect(items.find((one) => one.isCurrent)?.id).toBe(OFF)
+    expect(target.isEnabled.value).toBe(false)
   })
 
   it('keeps the two one name where the vault cannot be requested', async () => {
@@ -42,15 +37,6 @@ describe('whether a title and a filename are one name', () => {
     await target.start()
 
     expect(target.isEnabled.value).toBe(true)
-  })
-
-  it('says which of the two is the one in force, and nothing alongside the other', async () => {
-    const target = syncSetting(vault(true), words, writer().write)
-    await target.start()
-
-    const items = target.getSyncingGroups().flatMap((group) => group.items)
-    expect(items.find((row) => row.id === ON)?.detail).toBe(words.current)
-    expect(items.find((row) => row.id === OFF)?.detail).toBeUndefined()
   })
 
   it('writes the row chosen and relies on it', async () => {

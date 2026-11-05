@@ -72,28 +72,12 @@ export interface Words extends EmptyWords {
   readonly copy: string
   readonly newNote: string
   readonly close: string
-  /**
-   * The four commands over how the window is drawn: the theme, the halves, and
-   * the two sizes.
-   */
-  readonly appearance: string
-  readonly mode: string
-  readonly interfaceScale: string
-  readonly textScale: string
-  /** The command over whether a note's title and its filename are one name. */
-  readonly syncing: string
-  /** The command over the performance workload profile. */
-  readonly performanceProfile: string
   /** Everything this installation is configured as, in a tab of its own. */
   readonly settings: string
   readonly find: string
-  /** The titles the commands over the settings, the search and the appearance are offered under. */
+  /** The titles the commands over the settings tab and the search are offered under. */
   readonly openSettings: string
   readonly searchVault: string
-  readonly chooseMode: string
-  readonly chooseInterfaceSize: string
-  readonly chooseTextSize: string
-  readonly chooseTitleSync: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: PaletteKeys
   readonly goto: string

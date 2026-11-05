@@ -4,11 +4,13 @@
  * One adapter reads the settings the core declares for the owner `app` and the settings each
  * plugin declares, and offers every one flagged `palette` as a command with one choice step: a
  * boolean as On and Off, an enum as its options in force, a range as the values from its minimum
- * to its maximum by its step. A setting flagged `preview` is applied while its row is focused and
+X `preview` is applied while its row is focused and
  * restored when the step is left without a choice.
  */
 import type { Command, PaletteLists } from '@/features/command-palette'
-import type { PluginSettingInfo, SettingEdit } from '@/entities/settings'
+import type { StepGroup, StepRow } from '@/shared/steps'
+import type { PluginSettingInfo, PluginSettingOption, SettingEdit } from '@/entities/settings'
+import { getNamedIcon } from '@/shared/icons'
 
 /** The owner whose settings the core declares. */
 export const APP_OWNER = 'app'
@@ -66,10 +68,149 @@ export const parseSettingCommandId = (
   return match?.[1] && match[2] ? { owner: match[1], key: match[2] } : null
 }
 
-export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
-  return {
-    getCommands: () => deps.getOwners().flatMap(() => []),
-    lists: { getStepGroups: () => [], previewItem: () => undefined },
-    choose: () => Promise.resolve(),
+/** A setting is offered when it has a list of values to choose from. */
+const isChoiceKind = (setting: PluginSettingInfo): boolean =>
+  setting.type === 'boolean' || setting.type === 'enum' || setting.type === 'range'
+
+/** A setting and the owner that declares it. */
+interface FoundSetting {
+  readonly owner: SettingOwner
+  readonly setting: PluginSettingInfo
+}
+
+/** A row of a list, and the value it writes. */
+interface Offer {
+  readonly row: StepRow
+  readonly value: boolean | string | number
+}
+
+/** Rounds away the error of adding steps one by one. */
+const round = (value: number): number => Math.round(value * 1e6) / 1e6
+
+const getRangeValues = (setting: PluginSettingInfo): readonly number[] => {
+  const { min, max, step } = setting
+  if (min === undefined || max === undefined || !step || step <= 0) return []
+  const count = Math.floor((max - min) / step + 1e-9)
+  const values = Array.from({ length: count + 1 }, (_, index) => round(min + index * step))
+  // The maximum is offered even where the steps do not reach it.
+  return values.at(-1) === max ? values : [...values, max]
+}
+
+const getOptions = (setting: PluginSettingInfo): readonly PluginSettingOption[] =>
+  setting.activeOptions && setting.activeOptions.length > 0
+    ? setting.activeOptions
+    : (setting.options ?? [])
+
+/** The detail and the mark of a row: what the option says, else that it is the one in force. */
+const getMark = (
+  isCurrent: boolean,
+  detail: string,
+  words: SettingWords,
+): Pick<StepRow, 'detail' | 'isCurrent'> => {
+  const shown = detail || (isCurrent ? words.current : '')
+  return { ...(shown ? { detail: shown } : {}), ...(isCurrent ? { isCurrent } : {}) }
+}
+
+const getOffers = (setting: PluginSettingInfo, words: SettingWords): readonly Offer[] => {
+  const current = setting.value ?? setting.default
+  if (setting.type === 'boolean') {
+    const isOn = Boolean(current)
+    return [
+      { row: { id: 'on', title: words.on, ...getMark(isOn, '', words) }, value: true },
+      { row: { id: 'off', title: words.off, ...getMark(!isOn, '', words) }, value: false },
+    ]
   }
+  if (setting.type === 'enum') {
+    const now = typeof current === 'string' ? current : JSON.stringify(current ?? '')
+    return getOptions(setting).map((one) => ({
+      row: {
+        id: one.value,
+        title: one.title || one.value,
+        ...getMark(one.value === now, one.detail, words),
+      },
+      value: one.value,
+    }))
+  }
+  if (setting.type === 'range') {
+    const now = Number(current)
+    return getRangeValues(setting).map((one) => ({
+      row: {
+        id: String(one),
+        title: String(one),
+        ...getMark(Math.abs(one - now) < 1e-6, '', words),
+      },
+      value: one,
+    }))
+  }
+  return []
+}
+
+/** The path a setting is written at: the nested path of the shell, or the plugin and its key. */
+const getSettingPath = (owner: string, key: string): readonly string[] =>
+  owner === APP_OWNER ? [APP_OWNER, ...key.split('.')] : [owner, key]
+
+export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
+  /** The commands whose setting was shown on a row the keyboard stood on, and not yet restored. */
+  const previewed = new Set<string>()
+
+  const findSetting = (command: string): FoundSetting | null => {
+    const parsed = parseSettingCommandId(command)
+    if (!parsed) return null
+    const owner = deps.getOwners().find((one) => one.id === parsed.owner)
+    const setting = owner?.settings.find((one) => one.key === parsed.key)
+    return owner && setting?.palette && isChoiceKind(setting) ? { owner, setting } : null
+  }
+
+  const getCommands = (): readonly Command[] => {
+    const owners = deps.getOwners()
+    const ordered = [
+      ...owners.filter((one) => one.id === APP_OWNER),
+      ...owners.filter((one) => one.id !== APP_OWNER),
+    ]
+    return ordered.flatMap((owner) =>
+      owner.settings
+        .filter((setting) => setting.palette && isChoiceKind(setting))
+        .map((setting) => ({
+          id: getSettingCommandId(owner.id, setting.key),
+          text: owner.name ? `${owner.name}: ${setting.title}` : setting.title,
+          group: 'settings' as const,
+          input: 'choice' as const,
+          ...(setting.icon ? { icon: getNamedIcon(setting.icon) } : {}),
+          isAvailable: () => setting.isShown !== false,
+        })),
+    )
+  }
+
+  const getStepGroups = (command: string): readonly StepGroup[] => {
+    const found = findSetting(command)
+    if (!found) return []
+    const items = getOffers(found.setting, deps.words).map((one) => one.row)
+    return [{ id: command, title: found.setting.title, items }]
+  }
+
+  const previewItem = (command: string, item: string): void => {
+    const found = findSetting(command)
+    if (!found?.setting.preview) return
+    const at = getSettingPath(found.owner.id, found.setting.key)
+    if (item === '') {
+      if (previewed.delete(command)) deps.preview.restore(at)
+      return
+    }
+    const offer = getOffers(found.setting, deps.words).find((one) => one.row.id === item)
+    if (!offer) return
+    previewed.add(command)
+    deps.preview.apply(at, offer.value)
+  }
+
+  const choose = async (command: string, item: string): Promise<void> => {
+    const found = findSetting(command)
+    if (!found) return
+    const offer = getOffers(found.setting, deps.words).find((one) => one.row.id === item)
+    if (!offer) return
+    previewed.delete(command)
+    const at = getSettingPath(found.owner.id, found.setting.key)
+    await deps.write([{ at, value: JSON.stringify(offer.value) }])
+  }
+
+  return { getCommands, lists: { getStepGroups, previewItem }, choose }
 }

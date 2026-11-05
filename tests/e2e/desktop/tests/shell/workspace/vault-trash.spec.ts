@@ -165,8 +165,8 @@ test.describe('Removing and renaming a note', () => {
 
       await runPaletteCommand(
         page,
-        'Choose title and file name sync',
-        'Choose title and file name sync',
+        'Sync title and filename',
+        'Sync title and filename',
       )
       await page.getByRole('option', { name: /^Off/ }).click()
       await expect.poll(() => isSyncingTitles(request)).toBe(false)

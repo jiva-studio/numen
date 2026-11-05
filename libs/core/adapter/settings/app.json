@@ -7,7 +7,9 @@
       "description": "The stylesheet the window is drawn with.",
       "default": "preset:numen",
       "optionsFrom": "themes",
-      "preview": true
+      "preview": true,
+      "palette": true,
+      "icon": "palette"
     },
     {
       "key": "appearance.mode",
@@ -20,7 +22,9 @@
         { "value": "light", "title": "Light" },
         { "value": "dark", "title": "Dark" }
       ],
-      "preview": true
+      "preview": true,
+      "palette": true,
+      "icon": "contrast"
     },
     {
       "key": "appearance.interfaceScale",
@@ -31,7 +35,9 @@
       "min": 0.8,
       "max": 2,
       "step": 0.1,
-      "preview": true
+      "preview": true,
+      "palette": true,
+      "icon": "ruler"
     },
     {
       "key": "appearance.textScale",
@@ -42,14 +48,18 @@
       "min": 0.8,
       "max": 1.75,
       "step": 0.1,
-      "preview": true
+      "preview": true,
+      "palette": true,
+      "icon": "a-large-small"
     },
     {
       "key": "naming.syncTitleAndFilename",
       "type": "boolean",
       "title": "Sync title and filename",
       "description": "Renaming one also renames the other.",
-      "default": true
+      "default": true,
+      "palette": true,
+      "icon": "refresh-cw"
     },
     {
       "key": "performance.profile",
@@ -57,6 +67,8 @@
       "title": "Performance profile",
       "description": "How much of the hardware indexing and models may use.",
       "default": "balanced",
+      "palette": true,
+      "icon": "gauge",
       "options": [
         { "value": "eco", "title": "Eco", "detail": "Minimal power, 1 worker thread." },
         {

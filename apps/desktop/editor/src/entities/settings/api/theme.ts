@@ -1,13 +1,12 @@
 /**
- * Queries the application for the window's appearance and sends it the user's
- * choices: the theme, the mode of a colour pair, and the sizes.
+ * Queries the application for the window's appearance: the theme, the mode of a colour
+ * pair, and the sizes.
  *
  * A theme is one stylesheet, and nothing here reads inside one: the transferred
  * data is its name, the text of its file, and which theme is selected. A size is
  * one multiplier, and its permitted range is defined by the application.
  */
 import {
-  getNames,
   THEME_MODE,
   THEME_ORIGIN,
   type ThemeModeCode,
@@ -37,7 +36,6 @@ export interface Appearance {
 export interface Themes {
   getAppearance(): Promise<Appearance>
   readTheme(name: string): Promise<string>
-  writeAppearance(name: string, mode: Mode, sizes: Sizes): Promise<string>
   /**
    * The names of themes changed in the user's folder, and of plugin themes that
    * appeared or vanished with the enabled plugins, until the signal aborts. A
@@ -68,15 +66,6 @@ export const themes: Themes = {
     }
   },
   readTheme: async (name) => (await theme.readTheme({ name })).css,
-  writeAppearance: async (name, mode, sizes) =>
-    (
-      await theme.writeAppearance({
-        name,
-        mode: ASKED[mode],
-        interfaceScale: sizes.interfaceScale,
-        textScale: sizes.textScale,
-      })
-    ).error,
   watchThemes: async function* (signal) {
     for await (const update of theme.watchThemes({}, { signal })) yield update.names
   },
@@ -111,5 +100,3 @@ const WORDED: Record<ThemeModeCode, Mode | null> = {
   [THEME_MODE.DARK]: 'dark',
 }
 
-/** The mode as the schema carries it, read off the words above. */
-const ASKED = getNames<Mode, ThemeModeCode>(WORDED)

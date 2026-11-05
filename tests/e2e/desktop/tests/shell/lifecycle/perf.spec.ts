@@ -4,7 +4,7 @@ import { readOwner, writeSetting } from '../../support/vault.js'
 
 /** The profile the palette opens its list on, which is the one in force, by the name of its row. */
 const readCurrentProfile = async (page: Page): Promise<string> => {
-  await runPaletteCommand(page, 'Set performance profile', 'Set performance profile')
+  await runPaletteCommand(page, 'Performance profile', 'Performance profile')
   const current = page.getByRole('option', { selected: true })
   await expect(current).toHaveCount(1)
   const name = (await current.locator('[data-palette="name"]').textContent()) ?? ''
@@ -38,7 +38,7 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
   }) => {
     await openWorkspace(page)
 
-    await runPaletteCommand(page, 'Set performance profile', 'Set performance profile')
+    await runPaletteCommand(page, 'Performance profile', 'Performance profile')
     await page.getByRole('option', { name: new RegExp(`^${other}`) }).click()
 
     await expect
@@ -64,7 +64,7 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
 
   test('persists the dark mode across a full application reload', async ({ page, request }) => {
     await openWorkspace(page)
-    await runPaletteCommand(page, 'Choose light or dark mode', 'Choose light or dark mode')
+    await runPaletteCommand(page, 'Light or dark', 'Light or dark')
     await page.getByRole('option', { name: /^Dark/ }).click()
 
     await expect

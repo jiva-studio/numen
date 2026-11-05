@@ -27,10 +27,6 @@ export const WORDS = {
   find: 'Search the vault',
   searchVault: 'Search vault',
   openSettings: 'Open settings',
-  chooseMode: 'Choose light or dark mode',
-  chooseInterfaceSize: 'Set interface size',
-  chooseTextSize: 'Set reading font size',
-  chooseTitleSync: 'Choose title and file name sync',
   names: 'Names',
   text: 'Text',
   meaning: 'Meaning',
@@ -62,19 +58,6 @@ export const WORDS = {
   newNote: 'Create note',
   /** The note that points at a web address. */
   close: 'Close tab',
-  appearance: 'Change theme',
-  mode: 'Light or dark',
-  interfaceScale: 'Interface size',
-  textScale: 'Reading font size',
-  syncing: 'Sync title and filename',
-  performanceProfile: 'Set performance profile',
-  performance: 'Performance profile',
-  eco: 'Eco',
-  ecoDetail: 'Minimal resources, runs in the background',
-  balanced: 'Balanced',
-  balancedDetail: 'Recommended for everyday use',
-  maximum: 'Maximum',
-  maximumDetail: 'All hardware for indexing and models',
   byDefault: 'default',
   present: 'downloaded',
   notFetched: 'not downloaded',
@@ -114,25 +97,9 @@ export const WORDS = {
   unlistedVaults: 'Vault list unavailable',
   /** The row a list of values opens on, which is the value in force. */
   current: 'Current',
-  /** The two origins of themes: built-in, and the user's own. */
-  shipping: 'Built-in',
-  owned: 'Custom themes',
-  noneOwned: 'Add .css files to numen/themes/ next to numen.json',
-  /** The group the three halves are drawn in. */
-  half: 'Light and dark',
-  /** The three appearance modes; the active theme may fix the mode, leaving nothing to choose. */
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
-  pinned: 'Set by the theme',
-  /** The group each of the two sizes is drawn in. */
-  drawing: 'Interface size',
-  setting: 'Reading size',
   /** The themes could not be listed, and a theme's file could not be read. */
   unlisted: 'Themes unavailable',
   themeUnreadable: 'Theme unreadable',
-  /** The group the setting is drawn in, and the two it is. */
-  syncingGroup: 'Sync title and filename',
   on: 'On',
   off: 'Off',
   unturned: 'Setting not saved:',

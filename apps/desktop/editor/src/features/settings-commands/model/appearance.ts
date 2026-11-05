@@ -4,25 +4,23 @@
  *
  * A theme and a mode are applied as soon as the keyboard focuses them. A size
  * is applied after the keyboard has rested on the row for HELD, and the
- * settings values are restored as soon as the keyboard leaves the list.
+ * settings values are restored as soon as the keyboard leaves the list. What a
+ * list offers and what choosing a row writes belong to the adapter of the settings.
  */
 import { formatErrorMessage } from '@numen/core-client'
-import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 import { createFollower, createRequestGuard } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { DESIGNED, EMPTY_RANGE, SCHEMES } from '@/entities/settings'
-import type { Appearance, Mode, Ranges, Sizes, Theme, Themes } from '@/entities/settings'
+import { DESIGNED, SCHEMES } from '@/entities/settings'
+import type { Appearance, Mode, Sizes, Themes } from '@/entities/settings'
 import type { AppearanceWords } from '../words'
 import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../lib/head'
-import { getModeGroups, getSizeGroups, getThemeGroups, type PluginNamer } from '../lib/offers'
-import { useAppearanceChoice } from './choice'
+import { createAppearancePreview } from './preview'
 
 export interface WindowAppearanceDeps {
   core: Themes
   words: AppearanceWords
   write: MessageWriter
-  /** The name a plugin is listed under, given its id. */
-  getPluginName?: PluginNamer
   sheet?: Document
   wait?: (ms: number) => Promise<unknown>
 }
@@ -80,11 +78,9 @@ interface LoaderDeps {
   core: Themes
   write: MessageWriter
   words: AppearanceWords
-  list: ShallowRef<readonly Theme[]>
   applied: Ref<string>
   mode: Ref<Mode>
   settings: Ref<Sizes>
-  bounds: Ref<Ranges>
   files: Map<string, string>
   served: string
 }
@@ -99,11 +95,9 @@ function createAppearanceLoader(deps: LoaderDeps) {
       deps.write(deps.words.unlisted, 'error')
       return
     }
-    deps.list.value = answer.themes
     deps.applied.value = answer.applied
     deps.mode.value = answer.mode
     deps.settings.value = answer.sizes
-    deps.bounds.value = answer.bounds
     if (isFirstRead) {
       deps.files.set(answer.applied, deps.served)
     }
@@ -113,7 +107,7 @@ function createAppearanceLoader(deps: LoaderDeps) {
 function createThemeWatcher(deps: {
   core: WindowAppearanceDeps['core']
   files: Map<string, string>
-  choice: ReturnType<typeof useAppearanceChoice>
+  preview: ReturnType<typeof createAppearancePreview>
   applyAppearance: () => Promise<void>
   loadAppearance: () => Promise<void>
   lost: Ref<string>
@@ -136,7 +130,7 @@ function createThemeWatcher(deps: {
         if (!names.length) return
         for (const name of names) deps.files.delete(name)
         await deps.loadAppearance()
-        if (names.includes(deps.choice.current.value)) await deps.applyAppearance()
+        if (names.includes(deps.preview.current.value)) await deps.applyAppearance()
       },
     )
 
@@ -149,37 +143,15 @@ function createThemeWatcher(deps: {
 }
 
 function initAppearanceState() {
-  const list = shallowRef<readonly Theme[]>([])
   const applied = ref('')
   const mode = ref<Mode>('system')
   const settings = ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED })
-  const bounds = ref<Ranges>({ interfaceScale: EMPTY_RANGE, textScale: EMPTY_RANGE })
   const missing = ref('')
-  return { list, applied, mode, settings, bounds, lost: missing }
-}
-
-function createAppearanceGroups(
-  state: ReturnType<typeof initAppearanceState>,
-  choice: ReturnType<typeof useAppearanceChoice>,
-  words: WindowAppearanceDeps['words'],
-  getPluginName: PluginNamer | undefined,
-) {
-  return {
-    getThemeGroups: () =>
-      getThemeGroups(state.list.value, state.applied.value, words, getPluginName),
-    getModeGroups: () => getModeGroups(state.mode.value, choice.isPinned.value, words),
-    // Stryker disable next-line StringLiteral: Default empty text evaluates to null in parseSize.
-    getSizeGroups: (command: string, text = '') =>
-      getSizeGroups(command, text, {
-        sizes: state.settings.value,
-        bounds: state.bounds.value,
-        words,
-      }),
-  }
+  return { applied, mode, settings, lost: missing }
 }
 
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
-  const { core, words, write, getPluginName, sheet = document, wait = sleep } = deps
+  const { core, words, write, sheet = document, wait = sleep } = deps
   const styleElements = getStyleElements(sheet)
   const served = styleElements.theme.textContent ?? ''
   const state = initAppearanceState()
@@ -191,20 +163,17 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     applied: state.applied,
   })
 
-  const choice = useAppearanceChoice({
-    core,
+  const preview = createAppearancePreview({
     write,
     applyTheme,
-    list: state.list,
     applied: state.applied,
     mode: state.mode,
     settings: state.settings,
-    bounds: state.bounds,
   })
 
-  const applyAppearance = () => applyTheme(choice.current.value, choice.half.value)
+  const applyAppearance = () => applyTheme(preview.current.value, preview.half.value)
   const writeSizes = createSizesWriter(styleElements, sheet)
-  const targetDrawing = watch(choice.sized, writeSizes)
+  const targetDrawing = watch(preview.sized, writeSizes)
 
   const loadAppearance = createAppearanceLoader({
     core,
@@ -212,17 +181,15 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     words,
     files,
     served,
-    list: state.list,
     applied: state.applied,
     mode: state.mode,
     settings: state.settings,
-    bounds: state.bounds,
   })
 
   const watcher = createThemeWatcher({
     core,
     files,
-    choice,
+    preview,
     applyAppearance,
     loadAppearance,
     lost: state.lost,
@@ -231,15 +198,19 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
 
   return {
     ...state,
-    sized: choice.sized,
-    isPinned: choice.isPinned,
-    pinned: choice.isPinned,
-    ...createAppearanceGroups(state, choice, words, getPluginName),
-    previewItem: choice.previewItem,
-    chooseItem: choice.chooseItem,
+    sized: preview.sized,
+    /** Applies the theme of a row while the keyboard is on it. */
+    previewTheme: preview.previewTheme,
+    /** Reads the tokens as the half of a row while the keyboard is on it. */
+    previewMode: preview.previewMode,
+    /** Draws the window at the size of a row once the keyboard has rested on it. */
+    previewSize: preview.previewSize,
+    /** Shows what the settings name again. */
+    restore: preview.restore,
     /** Reads the theme, the mode and the sizes the settings now name, and applies them. */
     reload: async () => {
       await loadAppearance()
+      preview.clear()
       await applyAppearance()
     },
     start: async () => {
@@ -249,7 +220,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     },
     close: () => {
       watcher.stop()
-      choice.close()
+      preview.close()
       targetDrawing()
     },
   }

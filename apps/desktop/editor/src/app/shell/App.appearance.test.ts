@@ -1,17 +1,96 @@
 /**
- * The four commands for how the window is rendered: its theme, which half of a
- * color pair its tokens are read as, and its interface and text sizes.
+ * The commands of the settings that decide how the window is drawn and how it works, made from the
+ * declarations the core serves: the theme, light or dark, the two sizes, the sync of title and
+ * filename, and the performance profile.
  *
- * A theme and a size are applied as the keyboard moves over the list, so the
- * tests check what the window shows while the list is navigated and what it
- * shows after the list is left.
+ * A theme, a half and a size are applied as the keyboard moves over the list, so the tests check
+ * what the window shows while the list is navigated and what it shows after the list is left.
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { requests, cards, mountWindowWithPalette, mockVaultState, settle } from '@/testing/window'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '@/features/settings-commands'
-import { WORDS } from '@/shared/words'
+import type { PluginSettingInfo } from '@/entities/settings'
 
-describe('the four commands over how the window is drawn', () => {
+/** What the core declares for the settings of the shell that the palette offers. */
+const SHELL: readonly PluginSettingInfo[] = [
+  {
+    key: 'appearance.theme',
+    type: 'enum',
+    title: 'Theme',
+    description: '',
+    default: 'preset:numen',
+    palette: true,
+    icon: 'palette',
+    preview: true,
+    optionsFrom: 'themes',
+  },
+  {
+    key: 'appearance.mode',
+    type: 'enum',
+    title: 'Light or dark',
+    description: '',
+    default: 'system',
+    palette: true,
+    icon: 'contrast',
+    preview: true,
+    options: [
+      { value: 'system', title: 'System', detail: '' },
+      { value: 'light', title: 'Light', detail: '' },
+      { value: 'dark', title: 'Dark', detail: '' },
+    ],
+  },
+  {
+    key: 'appearance.interfaceScale',
+    type: 'range',
+    title: 'Interface size',
+    description: '',
+    default: 1,
+    palette: true,
+    icon: 'ruler',
+    preview: true,
+    min: 0.8,
+    max: 2,
+    step: 0.1,
+  },
+  {
+    key: 'appearance.textScale',
+    type: 'range',
+    title: 'Reading size',
+    description: '',
+    default: 1,
+    palette: true,
+    icon: 'a-large-small',
+    preview: true,
+    min: 0.8,
+    max: 1.75,
+    step: 0.1,
+  },
+  {
+    key: 'naming.syncTitleAndFilename',
+    type: 'boolean',
+    title: 'Sync title and filename',
+    description: '',
+    default: true,
+    palette: true,
+    icon: 'refresh-cw',
+  },
+  {
+    key: 'performance.profile',
+    type: 'enum',
+    title: 'Performance profile',
+    description: '',
+    default: 'balanced',
+    palette: true,
+    icon: 'gauge',
+    options: [
+      { value: 'eco', title: 'Eco', detail: 'Minimal power.' },
+      { value: 'balanced', title: 'Balanced', detail: 'Standard workload.' },
+      { value: 'maximum', title: 'Maximum', detail: 'All cores.' },
+    ],
+  },
+]
+
+describe('the commands of the settings over how the window is drawn and works', () => {
   /** What the mode's element holds while the tokens are read as a pair. */
   const PAIR = ':root { color-scheme: light dark; }'
   /** The file of the applied theme, as the page was served. */
@@ -47,6 +126,7 @@ describe('the four commands over how the window is drawn', () => {
 
   /** The page as the window's handler serves it, before the window is drawn. */
   beforeEach(() => {
+    mockVaultState.app = SHELL
     for (const one of document.head.querySelectorAll('style')) one.remove()
     document.head.append(
       createStyle(IS_MODE, PAIR),
@@ -59,22 +139,8 @@ describe('the four commands over how the window is drawn', () => {
   const waitUnderHold = () => new Promise((isDone) => setTimeout(isDone, 60))
   const wait = () => new Promise((isDone) => setTimeout(isDone, 200))
 
-  /** Every tenth of the interface scale, as displayed to the user. */
-  const TENTHS = [
-    '80%',
-    '90%',
-    '100%',
-    '110%',
-    '120%',
-    '130%',
-    '140%',
-    '150%',
-    '160%',
-    '170%',
-    '180%',
-    '190%',
-    '200%',
-  ]
+  /** Every tenth of the interface scale. */
+  const TENTHS = ['0.8', '0.9', '1', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '1.9', '2']
 
   /** The window drawn with the commands open. */
   const openPalette = async () => {
@@ -104,48 +170,34 @@ describe('the four commands over how the window is drawn', () => {
       one.textContent?.trim(),
     )
 
-  /** The second line of every row drawn, and nothing for a row carrying none. */
-  const getDetails = () =>
-    [...document.body.querySelectorAll('[data-palette="list"] [role="option"]')].map((one) =>
-      one.querySelector('[data-palette="detail"]')?.textContent?.trim(),
-    )
+  /** The row the keyboard is standing on, read off the document. */
+  const getStandingRow = () =>
+    document.body.querySelector('[data-here] [data-palette="name"]')?.textContent?.trim()
 
   describe('the words a person types for them', () => {
     it.each([
-      [
-        'find the theme by “theme”, and light and dark by either word',
-        ['theme', 'light', 'dark'],
-        ['Change theme', 'Choose light or dark mode', 'Choose light or dark mode'],
-      ],
-      [
-        'find the two sizes by “interface”, by “font” and by “reading”',
-        ['interface', 'font', 'reading'],
-        ['Set interface size', 'Set reading font size', 'Set reading font size'],
-      ],
-    ])('%s', async (_, words, rows) => {
+      ['theme', 'Theme'],
+      ['light', 'Light or dark'],
+      ['interface', 'Interface size'],
+      ['reading', 'Reading size'],
+      ['profile', 'Performance profile'],
+      ['sync', 'Sync title and filename'],
+    ])('find the command of “%s”', async (word, title) => {
       await openPalette()
 
-      for (const [index, word] of words.entries()) {
-        await type(word)
-        expect(getRemainingRows()).toStrictEqual([rows[index]])
-      }
-    })
+      await type(word)
 
-    it('turn up both of them, and nothing else, for the word they share', async () => {
-      await openPalette()
-
-      await type('size')
-
-      expect(getRemainingRows()).toStrictEqual(['Set interface size', 'Set reading font size'])
+      expect(getRemainingRows()).toStrictEqual([title])
     })
   })
 
   describe('the step that offers the themes', () => {
-    it('draws the themes as groups, and opens on the applied theme', async () => {
+    it('draws the themes in a group named for the setting, and opens on the applied theme', async () => {
       await runCommand('theme')
 
-      expect(groups()).toStrictEqual(['Built-in', 'Custom themes'])
-      expect(document.body.querySelector('[data-here]')?.textContent).toContain('numen')
+      expect(groups()).toStrictEqual(['Theme'])
+      expect(getRemainingRows()).toStrictEqual(['numen', 'sea'])
+      expect(getStandingRow()).toBe('numen')
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
 
@@ -155,7 +207,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('ArrowDown')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
-      expect(requests.applied).toStrictEqual([])
+      expect(requests.settingsWritten).toStrictEqual([])
     })
 
     it('puts back the theme the settings name when the step is left', async () => {
@@ -165,7 +217,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Escape')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-      expect(requests.applied).toStrictEqual([])
+      expect(requests.settingsWritten).toStrictEqual([])
     })
 
     it('keeps the chosen theme applied, and writes it down', async () => {
@@ -173,19 +225,28 @@ describe('the four commands over how the window is drawn', () => {
       await press('ArrowDown')
 
       await press('Enter')
+      await wait()
 
-      expect(requests.applied).toStrictEqual(['mine:sea system 1/1'])
+      expect(requests.settingsWritten).toStrictEqual(['app.appearance.theme "mine:sea"'])
       expect(getHeadStyles()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
+    })
+
+    it('opens on the theme the settings name', async () => {
+      mockVaultState.applied = 'mine:sea'
+
+      await runCommand('theme')
+
+      expect(getStandingRow()).toBe('sea')
     })
   })
 
   describe('the step that offers light and dark', () => {
-    it('opens on the half the tokens are read as, in a group of its own', async () => {
+    it('opens on the half the tokens are read as', async () => {
       await runCommand('light')
 
-      expect(groups()).toStrictEqual(['Light and dark'])
+      expect(groups()).toStrictEqual(['Light or dark'])
       expect(getRemainingRows()).toStrictEqual(['System', 'Light', 'Dark'])
-      expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
+      expect(getStandingRow()).toBe('System')
     })
 
     it('reads the tokens as the half the keyboard walks onto', async () => {
@@ -194,7 +255,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('ArrowDown')
 
       expect(getHeadStyles()).toStrictEqual([':root { color-scheme: light; }', SERVED, SIZED])
-      expect(requests.applied).toStrictEqual([])
+      expect(requests.settingsWritten).toStrictEqual([])
     })
 
     it('puts back the half the settings name when the step is left', async () => {
@@ -204,96 +265,17 @@ describe('the four commands over how the window is drawn', () => {
       await press('Escape')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-      expect(requests.applied).toStrictEqual([])
     })
 
     it('writes the half that was chosen, leaving the theme where it was', async () => {
-      await runCommand('dark')
+      await runCommand('light')
       await press('End')
 
       await press('Enter')
+      await wait()
 
-      expect(requests.applied).toStrictEqual(['preset:numen dark 1/1'])
+      expect(requests.settingsWritten).toStrictEqual(['app.appearance.mode "dark"'])
       expect(getHeadStyles()).toStrictEqual([':root { color-scheme: dark; }', SERVED, SIZED])
-    })
-  })
-
-  /**
-   * The row the keyboard is standing on, read off the document and not out
-   * of the list the window handed the palette.
-   */
-  const getStandingRow = () =>
-    document.body.querySelector('[data-here] [data-palette="name"]')?.textContent?.trim()
-
-  describe('a step opened over a setting', () => {
-    /** The page as the handler serves it, with the theme the settings name. */
-    const applyServedStyles = (mode = PAIR, sizes = SIZED) => {
-      for (const one of document.head.querySelectorAll('style')) one.remove()
-      document.head.append(
-        createStyle(IS_MODE, mode),
-        createStyle(IS_THEME, SERVED),
-        createStyle(IS_SIZES, sizes),
-      )
-      return [mode, SERVED, sizes]
-    }
-
-    it('uses the theme the settings name, and keeps applying it', async () => {
-      mockVaultState.applied = 'mine:sea'
-      const was = applyServedStyles()
-
-      await runCommand('theme')
-
-      expect(getStandingRow()).toBe('sea')
-      expect(getHeadStyles()).toStrictEqual(was)
-      expect(requests.applied).toStrictEqual([])
-    })
-
-    it('relies on the half the tokens are read as, and goes on reading them so', async () => {
-      mockVaultState.mode = 'dark'
-      const was = applyServedStyles(':root { color-scheme: dark; }')
-
-      await runCommand('light')
-
-      expect(getStandingRow()).toBe('Dark')
-      expect(getHeadStyles()).toStrictEqual(was)
-    })
-
-    it('relies on the size the interface is drawn at, and leaves it there', async () => {
-      mockVaultState.sizes = { interfaceScale: 1.5, textScale: 1 }
-      const was = applyServedStyles(
-        PAIR,
-        ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }',
-      )
-
-      await runCommand('interface')
-      await wait()
-
-      expect(getStandingRow()).toBe('150%')
-      expect(getHeadStyles()).toStrictEqual(was)
-    })
-
-    it('relies on a size between two steps, which is the row put in for it', async () => {
-      mockVaultState.sizes = { interfaceScale: 1, textScale: 1.17 }
-      const was = applyServedStyles(
-        PAIR,
-        ':root { --numen-interface-scale: 1; --numen-text-scale: 1.17; }',
-      )
-
-      await runCommand('reading')
-      await wait()
-
-      expect(getStandingRow()).toBe('117%')
-      expect(getHeadStyles()).toStrictEqual(was)
-    })
-
-    it('leaves the keyboard where typing puts it, and does not walk it back', async () => {
-      mockVaultState.sizes = { interfaceScale: 1.5, textScale: 1 }
-      applyServedStyles(PAIR, ':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
-      await runCommand('interface')
-
-      await type('137')
-
-      expect(getStandingRow()).toBe('137%')
     })
   })
 
@@ -303,54 +285,7 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(groups()).toStrictEqual(['Interface size'])
       expect(getRemainingRows()).toStrictEqual(TENTHS)
-      expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-    })
-
-    it('draws a second line on the one row the window is drawn at, and no other', async () => {
-      await runCommand('interface')
-
-      expect(getDetails()).toStrictEqual(
-        TENTHS.map((title) => (title === '100%' ? 'Current' : undefined)),
-      )
-    })
-
-    it('offers a number typed into the field, and narrows to it alone', async () => {
-      await runCommand('interface')
-
-      await type('137')
-
-      expect(getRemainingRows()).toStrictEqual(['137%'])
-    })
-
-    it('draws and writes a number typed, the way it does a step', async () => {
-      await runCommand('interface')
-      await type('137')
-
-      await press('Enter')
-
-      expect(requests.applied).toStrictEqual(['preset:numen system 1.37/1'])
-      expect(getHeadStyles().at(-1)).toBe(
-        ':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }',
-      )
-    })
-
-    it('offers no row for a number the range does not reach, and says nothing', async () => {
-      await runCommand('interface')
-
-      await type('250')
-
-      expect(getRemainingRows()).toStrictEqual([])
-      expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
-        WORDS.noneFound,
-      )
-    })
-
-    it('narrows the steps, and offers nothing of its own, for digits inside one', async () => {
-      await runCommand('interface')
-
-      await type('15')
-
-      expect(getRemainingRows()).toStrictEqual(['150%'])
+      expect(getStandingRow()).toBe('1')
     })
 
     it('holds the size until the keyboard has stood on the row it walked to', async () => {
@@ -364,7 +299,7 @@ describe('the four commands over how the window is drawn', () => {
       expect(getHeadStyles().at(-1)).toBe(
         ':root { --numen-interface-scale: 2; --numen-text-scale: 1; }',
       )
-      expect(requests.applied).toStrictEqual([])
+      expect(requests.settingsWritten).toStrictEqual([])
     })
 
     it('puts back the size the settings name when the step is left', async () => {
@@ -375,7 +310,6 @@ describe('the four commands over how the window is drawn', () => {
       await press('Escape')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-      expect(requests.applied).toStrictEqual([])
     })
 
     it('keeps drawing at the size that was chosen, and writes it down', async () => {
@@ -383,20 +317,21 @@ describe('the four commands over how the window is drawn', () => {
       await press('End')
 
       await press('Enter')
+      await wait()
 
-      expect(requests.applied).toStrictEqual(['preset:numen system 2/1'])
+      expect(requests.settingsWritten).toStrictEqual(['app.appearance.interfaceScale 2'])
       expect(getHeadStyles().at(-1)).toBe(
         ':root { --numen-interface-scale: 2; --numen-text-scale: 1; }',
       )
     })
 
     it('says what the settings rejected, where the window says what it could not do', async () => {
-      mockVaultState.writeError = 'appearance.interface_scale is 2, which is outside 0.8 to 1.5'
+      mockVaultState.writeError = 'appearance.interfaceScale is 2, which is outside 0.8 to 1.5'
       const window = await runCommand('interface')
       await press('End')
 
       await press('Enter')
-      await settle()
+      await wait()
 
       expect(cards(window).join(' ')).toContain('outside 0.8 to 1.5')
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
@@ -404,12 +339,11 @@ describe('the four commands over how the window is drawn', () => {
   })
 
   describe('the step that offers how large the text is set', () => {
-    it('opens on the sizes the reading text goes between', async () => {
+    it('ends on the largest size the reading text can have, which falls between two steps', async () => {
       await runCommand('reading')
 
       expect(groups()).toStrictEqual(['Reading size'])
-      // The far end of this one falls between two steps, and is offered there.
-      expect(getRemainingRows()).toStrictEqual([...TENTHS.slice(0, 10), '175%'])
+      expect(getRemainingRows().at(-1)).toBe('1.75')
     })
 
     it('writes the size that was chosen alongside the interface’s, which remains', async () => {
@@ -417,11 +351,34 @@ describe('the four commands over how the window is drawn', () => {
       await press('End')
 
       await press('Enter')
+      await wait()
 
-      expect(requests.applied).toStrictEqual(['preset:numen system 1/1.75'])
+      expect(requests.settingsWritten).toStrictEqual(['app.appearance.textScale 1.75'])
       expect(getHeadStyles().at(-1)).toBe(
         ':root { --numen-interface-scale: 1; --numen-text-scale: 1.75; }',
       )
+    })
+  })
+
+  describe('the steps of the settings that are not previewed', () => {
+    it('offers the two rows of the sync of title and filename, and writes the one chosen', async () => {
+      await runCommand('sync')
+
+      expect(getRemainingRows()).toStrictEqual(['On', 'Off'])
+      await press('ArrowDown')
+      await press('Enter')
+
+      expect(requests.settingsWritten).toStrictEqual(['app.naming.syncTitleAndFilename false'])
+    })
+
+    it('offers the profiles with what each says, and writes the one chosen', async () => {
+      await runCommand('profile')
+
+      expect(getRemainingRows()).toStrictEqual(['Eco', 'Balanced', 'Maximum'])
+      await press('End')
+      await press('Enter')
+
+      expect(requests.settingsWritten).toStrictEqual(['app.performance.profile "maximum"'])
     })
   })
 })

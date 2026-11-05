@@ -1,11 +1,7 @@
 /** What the settings file holds, and how the window is drawn from it. */
 export {
   DESIGNED,
-  isInBounds,
-  ladder,
   MODES,
-  EMPTY_RANGE,
-  parseSize,
   SCHEMES,
 } from './lib/appearance'
 export type {

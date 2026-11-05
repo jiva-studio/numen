@@ -4,22 +4,20 @@
 import { watch } from 'vue'
 import { themes } from '@/entities/settings'
 import {
-  APPEARANCE_COMMANDS,
+  INTERFACE_SCALE,
+  TEXT_SCALE,
   syncSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
-import { createSettingPalette } from './settingCommands'
-import { COMMAND } from '@/shared/commandIds'
-import { type PluginInfo, type PluginSettingOption, type SettingEdit } from '@/entities/settings'
+import { APP_OWNER, createSettingPalette, type SettingPreview } from './settingCommands'
+import { MODES, type Mode, type SettingEdit } from '@/entities/settings'
 import { formatErrorMessage, type PluginCatalog } from '@numen/core-client'
 import { useCatalogEntries } from '@/entities/plugin'
 import { createFollower, runInBackground } from '@numen/ui'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
 import type { Installation } from '@/pages/settings'
-import type { Command, PaletteLists } from '@/features/command-palette'
 import type { SettingsPort } from '@/app/ports/settings'
-import { getNamedIcon } from '@/shared/icons'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import type { useWindowTabs } from '@/entities/tab'
@@ -35,115 +33,6 @@ export interface SettingsDeps {
   getSettingsViews?: Installation['getSettingsViews']
   /** The catalog the plugin list reads; without it the list shows the installed plugins only. */
   catalog?: PluginCatalog
-}
-
-function getPerformanceStepGroups(words: Words) {
-  return [
-    {
-      id: 'performance',
-      title: words.performance,
-      items: [
-        { id: 'eco', title: words.eco, detail: words.ecoDetail },
-        { id: 'balanced', title: words.balanced, detail: words.balancedDetail },
-        { id: 'maximum', title: words.maximum, detail: words.maximumDetail },
-      ],
-    },
-  ]
-}
-
-interface PluginGroupContext {
-  readonly id: string
-  readonly title: string
-  readonly words: Words
-}
-
-function createPluginBooleanGroup(ctx: PluginGroupContext, isOn: boolean) {
-  return [
-    {
-      id: ctx.id,
-      title: ctx.title,
-      items: [
-        {
-          id: 'on',
-          title: ctx.words.on,
-          ...(isOn ? { detail: ctx.words.current, isCurrent: true } : {}),
-        },
-        {
-          id: 'off',
-          title: ctx.words.off,
-          ...(!isOn ? { detail: ctx.words.current, isCurrent: true } : {}),
-        },
-      ],
-    },
-  ]
-}
-
-function createPluginEnumGroup(
-  ctx: PluginGroupContext,
-  current: string,
-  options: readonly PluginSettingOption[],
-) {
-  return [
-    {
-      id: ctx.id,
-      title: ctx.title,
-      items: options.map((opt) => ({
-        id: opt.value,
-        title: opt.title || opt.value,
-        ...(opt.value === current ? { detail: ctx.words.current, isCurrent: true } : {}),
-      })),
-    },
-  ]
-}
-
-function findPluginSetting(plugins: readonly PluginInfo[], command: string) {
-  const [, pluginId, key] = command.split(':')
-  const plugin = plugins.find((p) => p.id === pluginId)
-  if (!plugin) return null
-  const setting = plugin.settings.find((s) => s.key === key)
-  if (!setting) return null
-  return { plugin, pluginId: plugin.id, key: setting.key, setting }
-}
-
-function getPluginStepGroups(
-  command: string,
-  rest: ReturnType<typeof createSettingsStore>,
-  words: Words,
-) {
-  const match = findPluginSetting(rest.plugins.value, command)
-  if (!match) return []
-  const { pluginId, key, setting } = match
-  const current = rest.getSetting([pluginId, key])
-  const ctx: PluginGroupContext = { id: `plugin-${pluginId}-${key}`, title: setting.title, words }
-
-  if (setting.type === 'boolean') {
-    const isOn = Boolean(current)
-    return createPluginBooleanGroup(ctx, isOn)
-  }
-  if (setting.type === 'enum') {
-    const resolved = setting.value ?? current ?? setting.default
-    const currentVal = typeof resolved === 'string' ? resolved : JSON.stringify(resolved ?? '')
-    return createPluginEnumGroup(ctx, currentVal, setting.activeOptions ?? setting.options ?? [])
-  }
-  return []
-}
-
-export function createPluginSettingCommands(plugins: readonly PluginInfo[]): readonly Command[] {
-  const result: Command[] = []
-  for (const plugin of plugins) {
-    for (const setting of plugin.settings) {
-      if (!setting.palette) continue
-      result.push({
-        id: `plugin-setting:${plugin.id}:${setting.key}`,
-        text: `${plugin.name}: ${setting.title}`,
-        group: 'settings',
-        input: 'choice',
-        ...(setting.icon ? { icon: getNamedIcon(setting.icon) } : {}),
-        isAvailable: () => true,
-      })
-    }
-  }
-  return result
 }
 
 interface SettingsTabConfigDeps {
@@ -220,42 +109,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
   }
 }
 
-interface PaletteListsDeps {
-  appearance: ReturnType<typeof createWindowAppearance>
-  sync: ReturnType<typeof syncSetting>
-  rest: ReturnType<typeof createSettingsStore>
-  words: Words
-}
-
-function getAppearanceStepGroups(
-  command: string,
-  appearance: ReturnType<typeof createWindowAppearance>,
-  typed: string,
-) {
-  if (command === COMMAND.chooseTheme) return appearance.getThemeGroups()
-  if (command === COMMAND.chooseMode) return appearance.getModeGroups()
-  if (command === COMMAND.chooseInterfaceSize || command === COMMAND.chooseTextSize)
-    return appearance.getSizeGroups(command, typed)
-  return []
-}
-
-function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
-  const { appearance, sync, rest, words } = deps
-  return {
-    getStepGroups: (command, typed) => {
-      const appearanceGroups = getAppearanceStepGroups(command, appearance, typed)
-      if (appearanceGroups.length > 0) return appearanceGroups
-      if (command === COMMAND.chooseTitleSync) return sync.getSyncingGroups()
-      if (command === COMMAND.choosePerformanceProfile) return getPerformanceStepGroups(words)
-      if (command.startsWith('plugin-setting:')) return getPluginStepGroups(command, rest, words)
-      return []
-    },
-    previewItem: (command, item) => {
-      if (APPEARANCE_COMMANDS.includes(command)) appearance.previewItem(item)
-    },
-  }
-}
-
 /**
  * Follows the settings that change, whoever changes them: this window, another window, a plugin, the
  * palette, or a person editing the file. Each change is read again once.
@@ -299,16 +152,50 @@ function createChangeFollower(deps: {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-function createWindowSettingPalette(rest: ReturnType<typeof createSettingsStore>, words: Words) {
+const SHELL_APPEARANCE = ['app', 'appearance'] as const
+
+/** Shows a value of the appearance while its row is focused, and puts it back on leaving. */
+function createWindowPreview(
+  appearance: ReturnType<typeof createWindowAppearance>,
+): SettingPreview {
+  return {
+    apply: (at, value) => {
+      if (at.length !== 3 || !SHELL_APPEARANCE.every((one, index) => at[index] === one)) return
+      const key = at[2]
+      if (key === 'theme' && typeof value === 'string') appearance.previewTheme(value)
+      if (key === 'mode' && isMode(value)) appearance.previewMode(value)
+      if (key === INTERFACE_SCALE && typeof value === 'number') {
+        appearance.previewSize(INTERFACE_SCALE, value)
+      }
+      if (key === TEXT_SCALE && typeof value === 'number') {
+        appearance.previewSize(TEXT_SCALE, value)
+      }
+    },
+    restore: () => appearance.restore(),
+  }
+}
+
+const isMode = (value: unknown): value is Mode => MODES.some((one) => one === value)
+
+function createWindowSettingPalette(deps: {
+  rest: ReturnType<typeof createSettingsStore>
+  appearance: ReturnType<typeof createWindowAppearance>
+  words: Words
+}) {
+  const { rest, appearance, words } = deps
   return createSettingPalette({
     getOwners: () => [
-      { id: 'app', name: '', settings: rest.app.value },
+      { id: APP_OWNER, name: '', settings: rest.app.value },
       ...rest.plugins.value.map((one) => ({ id: one.id, name: one.name, settings: one.settings })),
     ],
     words,
-    preview: { apply: () => undefined, restore: () => undefined },
+    preview: createWindowPreview(appearance),
     write: async (edits) => {
       await rest.writeSettings(edits)
+      // The window shows what the settings now hold, also where the write was not accepted.
+      if (edits.some((one) => one.at[0] === APP_OWNER && one.at[1] === 'appearance')) {
+        await appearance.reload()
+      }
     },
   })
 }
@@ -332,7 +219,6 @@ export function useSettings({
     core: themes,
     words,
     write: writeAppearanceMessage,
-    getPluginName,
   })
   const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
   const secrets = createSecretStore(core, {
@@ -367,7 +253,7 @@ export function useSettings({
 
   watch(appearance.sized, () => onSizeChanged())
 
-  const retainedItem = createSettingsPaletteLists({ appearance, sync, rest, words })
+  const settingPalette = createWindowSettingPalette({ rest, appearance, words })
 
   const kinds = [configured.kind]
 
@@ -392,11 +278,10 @@ export function useSettings({
   const api = {
     appearance,
     sync,
-    oneName: sync,
     rest,
     configured,
-    paletteLists: retainedItem,
-    settingPalette: createWindowSettingPalette(rest, words),
+    paletteLists: settingPalette.lists,
+    settingPalette,
     kinds,
     start,
     close,

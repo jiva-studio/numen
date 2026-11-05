@@ -11,7 +11,8 @@ export const requests = {
   removed: [] as string[],
   moved: [] as string[],
   folders: [] as string[],
-  applied: [] as string[],
+  /** The settings written, each as the path and the value of one edit. */
+  settingsWritten: [] as string[],
   /** How often an open editor was requested to remeasure. */
   measured: 0,
   /** Every key the window handed down to the book it is showing. */
@@ -31,7 +32,7 @@ export const forgetRequests = () => {
   requests.removed = []
   requests.moved = []
   requests.folders = []
-  requests.applied = []
+  requests.settingsWritten = []
   requests.measured = 0
   requests.pressed = []
   requests.opened = []

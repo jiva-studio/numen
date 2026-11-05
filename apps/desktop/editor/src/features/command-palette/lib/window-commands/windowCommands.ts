@@ -42,63 +42,14 @@ export const createWindowNavigationCommands = (words: Words, agent: string): rea
   },
 ]
 
-export const createWindowDisplayCommands = (words: Words): readonly Command[] => [
-  {
-    id: COMMAND.chooseTheme,
-    text: words.appearance,
-    group: 'settings',
-    input: 'choice',
-    isAvailable: isAlwaysAvailable,
-  },
-  {
-    id: COMMAND.chooseMode,
-    text: words.chooseMode,
-    group: 'settings',
-    input: 'choice',
-    isAvailable: isAlwaysAvailable,
-  },
-  {
-    id: COMMAND.chooseInterfaceSize,
-    text: words.chooseInterfaceSize,
-    group: 'settings',
-    input: 'choice',
-    isAvailable: isAlwaysAvailable,
-  },
-  {
-    id: COMMAND.chooseTextSize,
-    text: words.chooseTextSize,
-    group: 'settings',
-    input: 'choice',
-    isAvailable: isAlwaysAvailable,
-  },
-]
-
-export const createWindowFeatureCommands = (words: Words): readonly Command[] => [
-  {
-    id: COMMAND.chooseTitleSync,
-    text: words.chooseTitleSync,
-    group: 'settings',
-    input: 'choice',
-    isAvailable: isAlwaysAvailable,
-  },
-  {
-    id: COMMAND.choosePerformanceProfile,
-    text: words.performanceProfile,
-    group: 'settings',
-    input: 'choice',
-    isAvailable: isAlwaysAvailable,
-  },
+/** The settings the editor offers are made from their declarations; only the tab is a command here. */
+export const createWindowSettingsCommands = (words: Words): readonly Command[] => [
   {
     id: COMMAND.openSettings,
     text: words.openSettings,
     group: 'settings',
     isAvailable: isAlwaysAvailable,
   },
-]
-
-export const createWindowSettingsCommands = (words: Words): readonly Command[] => [
-  ...createWindowDisplayCommands(words),
-  ...createWindowFeatureCommands(words),
 ]
 
 export const createWindowCommands = (words: Words, agent: string): readonly Command[] => [

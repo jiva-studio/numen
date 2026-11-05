@@ -64,24 +64,21 @@ export interface WindowNavigator {
   search(): void
 }
 
-/** The settings a command writes, each under the identity the window gives it. */
+/** The settings a command writes. */
 export interface SettingsWriter {
-  /**
-   * Applies an appearance setting: the theme, the color scheme the tokens are
-   * read as, or the scale of the interface or the text.
-   */
-  chooseAppearance(selected: string): Promise<void>
-  /** Whether a note's title and the name of its file are kept as one name. */
-  chooseSync(selected: string): Promise<void>
-  /** The performance workload profile chosen. */
-  choosePerformance(selected: string): Promise<void>
-  /** A declarative plugin setting chosen. */
-  choosePluginSetting?(pluginId: string, key: string, selected: unknown): Promise<void>
   /**
    * The row chosen in the step of the command of a setting, `setting:<owner>:<key>`; the adapter
    * of the settings writes it.
    */
   chooseSetting?(command: string, selected: string): Promise<void>
+  /** Left for the test doubles of the editor that still hand it over; no command calls it. */
+  chooseAppearance?(selected: string): Promise<void>
+  /** Left for the test doubles of the editor that still hand it over; no command calls it. */
+  chooseSync?(selected: string): Promise<void>
+  /** Left for the test doubles of the editor that still hand it over; no command calls it. */
+  choosePerformance?(selected: string): Promise<void>
+  /** Left for the test doubles of the editor that still hand it over; no command calls it. */
+  choosePluginSetting?(pluginId: string, key: string, selected: unknown): Promise<void>
 }
 
 /** Reports a command's result as one line of text. */
