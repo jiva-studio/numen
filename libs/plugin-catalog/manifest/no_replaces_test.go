@@ -6,14 +6,12 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 func TestNoTypeOfASettingCarriesAnOldPlaceOfIt(t *testing.T) {
 	for _, one := range []reflect.Type{
 		reflect.TypeFor[manifest.Setting](),
-		reflect.TypeFor[pluginport.PluginSetting](),
 		reflect.TypeFor[v1.ManifestSetting](),
 	} {
 		if _, found := one.FieldByName("Replaces"); found {
