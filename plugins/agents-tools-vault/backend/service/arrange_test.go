@@ -375,8 +375,10 @@ func TestVaultProblemsRefusesACheckOtherThanParse(t *testing.T) {
 	requireRefusal(t, registry, skyVault, "vault_problems", `{"checks":["parse","dangling"]}`)
 }
 
-// arrangeTools is the note_list group: the tools that list, title and resolve notes, list vaults and check problems.
-var arrangeTools = []string{"note_list", "note_titles", "note_resolve", "vault_list", "vault_problems"}
+// getArrangeToolNames returns the note_list group: the tools that list, title and resolve notes, list vaults and check problems.
+func getArrangeToolNames() []string {
+	return []string{"note_list", "note_titles", "note_resolve", "vault_list", "vault_problems"}
+}
 
 func TestNoteListGroupIsOnReadingAndFullServers(t *testing.T) {
 	_, registry := newSkyVault(t)
@@ -388,7 +390,7 @@ func TestNoteListGroupIsOnReadingAndFullServers(t *testing.T) {
 	for _, info := range infos {
 		servers[info.GetName()] = info.GetServers()
 	}
-	for _, name := range arrangeTools {
+	for _, name := range getArrangeToolNames() {
 		got, ok := servers[name]
 		if !ok {
 			t.Errorf("the tool %s is not listed", name)
@@ -412,7 +414,7 @@ func TestNoteListGroupRefusesCallWithoutVault(t *testing.T) {
 		"vault_list":     `{}`,
 		"vault_problems": `{}`,
 	}
-	for _, name := range arrangeTools {
+	for _, name := range getArrangeToolNames() {
 		res, err := registry.InvokeTool(t.Context(), tools.Call{Name: name, Arguments: []byte(arguments[name])})
 		if err != nil {
 			t.Fatalf("call %s: %v", name, err)
