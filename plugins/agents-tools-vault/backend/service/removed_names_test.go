@@ -78,9 +78,9 @@ func TestNoteSearchAnswersWithPathAndSnippetOnly(t *testing.T) {
 		t.Fatal("no matches")
 	}
 	for _, match := range out.Matches {
-		for _, kept := range []string{"path", "snippet"} {
-			if _, ok := match[kept]; !ok {
-				t.Errorf("match has no %q: %v", kept, match)
+		for _, present := range []string{"path", "snippet"} {
+			if _, ok := match[present]; !ok {
+				t.Errorf("match has no %q: %v", present, match)
 			}
 		}
 		for _, removed := range []string{"source", "text"} {
@@ -91,7 +91,7 @@ func TestNoteSearchAnswersWithPathAndSnippetOnly(t *testing.T) {
 	}
 }
 
-func TestNoteWriteTakesNoBodyArgument(t *testing.T) {
+func TestNoteWriteInputHasNoBodyField(t *testing.T) {
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
@@ -142,7 +142,7 @@ func TestNoteWriteWithBodyInsteadOfContentStoresNoText(t *testing.T) {
 	}
 }
 
-func getGoneToolNames() []string {
+func getRemovedToolNames() []string {
 	return []string{"search_query", "note_neighbourhood", "vault_info"}
 }
 
@@ -160,35 +160,35 @@ func TestToolsListHasOneNameForEachTool(t *testing.T) {
 	for _, info := range infos {
 		names[info.GetName()] = true
 	}
-	for _, kept := range []string{"note_search", "link_list", "vault_get"} {
-		if !names[kept] {
-			t.Errorf("the tool %s is not listed", kept)
+	for _, present := range []string{"note_search", "link_list", "vault_get"} {
+		if !names[present] {
+			t.Errorf("the tool %s is not listed", present)
 		}
 	}
-	for _, gone := range getGoneToolNames() {
-		if names[gone] {
-			t.Errorf("the tool %s is listed", gone)
+	for _, removed := range getRemovedToolNames() {
+		if names[removed] {
+			t.Errorf("the tool %s is listed", removed)
 		}
 	}
 }
 
-func TestCallOfAGoneToolNameIsAnUnknownTool(t *testing.T) {
+func TestCallOfARemovedToolNameIsAnUnknownTool(t *testing.T) {
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
-	for _, gone := range getGoneToolNames() {
+	for _, removed := range getRemovedToolNames() {
 		res, err := registry.InvokeTool(t.Context(), tools.Call{
 			VaultID:   testVault,
-			Name:      gone,
+			Name:      removed,
 			Arguments: []byte(`{"query":"thermodynamic","path":"Entropy.md"}`),
 		})
 		if err != nil {
-			t.Fatalf("call %s: %v", gone, err)
+			t.Fatalf("call %s: %v", removed, err)
 		}
 		if res.GetError() != tools.ErrorCodeUnknownTool {
-			t.Errorf("%s: error code = %v, want unknown tool", gone, res.GetError())
+			t.Errorf("%s: error code = %v, want unknown tool", removed, res.GetError())
 		}
 	}
 }
@@ -203,7 +203,7 @@ func TestDocsNameEachToolOnce(t *testing.T) {
 	}
 }
 
-func TestNoSourceNamesAGoneTool(t *testing.T) {
+func TestNoSourceFileNamesARemovedTool(t *testing.T) {
 	root := getRepoRoot(t)
 	for _, top := range []string{"plugins", "docs"} {
 		err := filepath.WalkDir(filepath.Join(root, top), func(path string, entry fs.DirEntry, err error) error {
@@ -224,10 +224,10 @@ func TestNoSourceNamesAGoneTool(t *testing.T) {
 			if err != nil || !utf8.Valid(content) {
 				return nil //nolint:nilerr // an unreadable or binary file names no tool
 			}
-			for _, gone := range getGoneToolNames() {
-				if bytes.Contains(content, []byte(gone)) {
+			for _, removed := range getRemovedToolNames() {
+				if bytes.Contains(content, []byte(removed)) {
 					rel := strings.TrimPrefix(path, root)
-					t.Errorf("%s names the gone tool %s", rel, gone)
+					t.Errorf("%s names the removed tool %s", rel, removed)
 				}
 			}
 			return nil
