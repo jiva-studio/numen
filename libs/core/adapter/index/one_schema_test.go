@@ -15,8 +15,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// expectedVersion is the number the ten old steps leave, so an index of the current build matches it.
-const expectedVersion = 10
+// expectedVersion is the schema version of this build. 10 is what the build before the collapse left,
+// and an index of that build is not readable by this one.
+const expectedVersion = 1
 
 type catalogueEntry struct{ kind, name, body string }
 
@@ -157,7 +158,7 @@ func TestAnIndexOfTheCurrentBuildIsOpenedAndUsedAsItIs(t *testing.T) {
 func TestAnIndexOfAnotherVersionStopsTheStartAndStaysByteForByteTheSame(t *testing.T) {
 	ctx := t.Context()
 
-	for _, version := range []int{0, expectedVersion - 1, expectedVersion + 1, expectedVersion + 100} {
+	for _, version := range []int{0, 2, 10, 110} {
 		t.Run(fmt.Sprintf("version %d", version), func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "index.db")
 			raw := openRaw(t, path)
