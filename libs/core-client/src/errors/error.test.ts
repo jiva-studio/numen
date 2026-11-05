@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { ErrorCode as ProtoErrorCode, ErrorCodeSchema } from '@numen/protocol'
 
-import { formatErrorCodeMessage, formatErrorMessage } from './error'
+import { ReportedError, formatErrorCodeMessage, formatErrorMessage } from './error'
 
 /** Past every error code the schema names today. */
 const UNNAMED_CODE = 999 as ProtoErrorCode
@@ -81,11 +81,45 @@ describe('a fault', () => {
     expect(formatErrorMessage(undefined)).toMatch(/\S/)
   })
 
-  it('says the sentence of an error the window wrote itself', () => {
-    const failure = new Error('The plugin source local failed: duplicate plugin id "sample.notes"')
-    expect(formatErrorMessage(failure)).toBe(
+  it('says the sentence of an error the window reported to the person', () => {
+    expect(
+      formatErrorMessage(
+        new ReportedError('The plugin source local failed: duplicate plugin id "sample.notes"'),
+      ),
+    ).toBe('The plugin source local failed: duplicate plugin id "sample.notes"')
+  })
+
+  it('says the sentence of an error reported through the copy in the plugin SDK', () => {
+    const reported = Object.assign(
+      new Error('The plugin source local failed: duplicate plugin id "sample.notes"'),
+      { name: 'ReportedError' },
+    )
+    expect(formatErrorMessage(reported)).toBe(
       'The plugin source local failed: duplicate plugin id "sample.notes"',
     )
+  })
+
+  it('falls back on the plain words where the reported sentence is empty', () => {
+    expect(formatErrorMessage(new ReportedError('  '))).toBe('Numen is not responding; retrying')
+  })
+
+  it('carries no word of an Error that was not reported to the person', () => {
+    const failure = new Error('open /Users/someone/Vault/library/Broken.epub: permission denied')
+    expect(formatErrorMessage(failure)).toBe('Numen is not responding; retrying')
+  })
+
+  it('says what the person can do about a fetch that failed outside connect', () => {
+    expect(formatErrorMessage(new TypeError('Load failed'))).toBe(
+      'Numen is not responding; retrying',
+    )
+  })
+
+  it('carries no word of a native call that failed with a code of its own', () => {
+    const failure = Object.assign(
+      new Error('mkdir /data/user/0/md.numen.sample/files/vault: permission denied'),
+      { code: 'UNAVAILABLE' },
+    )
+    expect(formatErrorMessage(failure)).toBe('Numen is not responding; retrying')
   })
 
   it('says what the person can do about a request the network dropped', () => {

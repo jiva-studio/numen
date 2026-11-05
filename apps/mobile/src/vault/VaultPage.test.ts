@@ -4,6 +4,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { Code, ConnectError } from '@connectrpc/connect'
+import { CapacitorException } from '@capacitor/core'
 import { IonToast } from '@ionic/vue'
 import { formatErrorMessage } from '@numen/core-client'
 import VaultPage from './VaultPage.vue'
@@ -31,13 +32,25 @@ describe('a core that cannot be reached', () => {
     page.unmount()
   })
 
-  it('says a lost connection in words, without the address it failed on', async () => {
-    const caughtError = new ConnectError('ECONNREFUSED 127.0.0.1:45123', Code.Unknown)
+  it('says what went wrong in words, whatever was thrown', async () => {
+    const caughtError = new Error('ECONNREFUSED 127.0.0.1:45123')
     const { page, open, message } = await toastAfter(caughtError)
 
     expect(open).toBe(true)
     expect(message).toBe(formatErrorMessage(caughtError))
     expect(message).not.toContain('ECONNREFUSED')
+
+    page.unmount()
+  })
+
+  it('carries no word of the Go error a failed native start rejects with', async () => {
+    const caughtError = new CapacitorException(
+      'mkdir /data/user/0/md.numen.sample/files/vault: permission denied',
+    )
+    const { page, open, message } = await toastAfter(caughtError)
+
+    expect(open).toBe(true)
+    expect(message).toBe('Numen is not responding; retrying')
 
     page.unmount()
   })
