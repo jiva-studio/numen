@@ -117,9 +117,13 @@ func (e *Events) Refresh(read func() (Values, error)) {
 		return
 	}
 	var batch []settingsport.Setting
-	for _, key := range slices.Sorted(maps.Keys(now)) {
-		if e.values[key] != now[key] {
-			batch = append(batch, settingsport.Setting{Path: strings.Split(key, pathSeparator), JSON: now[key]})
+	for _, key := range slices.Sorted(maps.Keys(merge(e.values, now))) {
+		after, isSet := now[key]
+		if !isSet {
+			after = removed
+		}
+		if before, wasSet := e.values[key]; before != after || wasSet != isSet {
+			batch = append(batch, settingsport.Setting{Path: strings.Split(key, pathSeparator), JSON: after})
 		}
 	}
 	e.values = now
@@ -128,4 +132,19 @@ func (e *Events) Refresh(read func() (Values, error)) {
 			one.push(slices.Clone(batch))
 		}
 	}
+}
+
+// removed is the value of a setting that no longer holds one: the null that resets a setting.
+const removed = "null"
+
+// merge is the keys of both sets of values.
+func merge(first, second Values) map[string]struct{} {
+	keys := make(map[string]struct{}, len(first)+len(second))
+	for key := range first {
+		keys[key] = struct{}{}
+	}
+	for key := range second {
+		keys[key] = struct{}{}
+	}
+	return keys
 }

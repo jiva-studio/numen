@@ -83,3 +83,18 @@ func TestAReaderThatLeftHasItsChannelClosed(t *testing.T) {
 		t.Error("the channel stayed open")
 	}
 }
+
+func TestASettingThatNoLongerHoldsAValueIsDeliveredAsNull(t *testing.T) {
+	events := settingevents.New()
+	changes, stop := events.Subscribe(newSource(t, func() (settingevents.Values, error) {
+		return settingevents.Values{"a\x00x": "1"}, nil
+	}))
+	defer stop()
+
+	events.Refresh(func() (settingevents.Values, error) { return settingevents.Values{}, nil })
+
+	batch := receive(t, changes)
+	if len(batch) != 1 || !slices.Equal(batch[0].Path, []string{"a", "x"}) || batch[0].JSON != "null" {
+		t.Errorf("the batch is %v", batch)
+	}
+}

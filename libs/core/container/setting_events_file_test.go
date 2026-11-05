@@ -2,8 +2,11 @@ package container_test
 
 import (
 	"os"
+	"slices"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
 func TestTheLockFileNextToTheSettingsFileIsNoEvent(t *testing.T) {
@@ -47,4 +50,21 @@ func TestTheFileIsWatchedAgainWhenAReaderSubscribesAfterTheLastOneLeft(t *testin
 	}
 
 	expectChange(t, reader.await(t), []string{"app", "appearance", "mode"}, `"dark"`)
+}
+
+func TestAWriteThatDisablesAPluginReachesThePluginHost(t *testing.T) {
+	cfg, _, host := openInstallation(t, `{}`)
+	reader := listen(t, cfg)
+
+	if err := cfg.GetSettingsWriter()([]settingsport.Setting{
+		{Path: []string{eventPlugin, "enabled"}, JSON: `false`},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	expectChange(t, reader.await(t), []string{eventPlugin, "enabled"}, `false`)
+	waitFor(t, func() bool { return len(host.listUpdates()) > 0 })
+	if got := host.listUpdates(); !slices.Equal(got, []string{eventPlugin + ".enabled"}) {
+		t.Errorf("the plugin host was told %v", got)
+	}
 }

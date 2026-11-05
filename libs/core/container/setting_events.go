@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/settingevents"
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
@@ -73,36 +74,63 @@ func (c Config) listDefaultSettingValues() settingevents.Values {
 	return values
 }
 
-// listSettingValues lists the value in force of every setting the shell and the plugins declare.
-func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
-	values := settingevents.Values{}
-	var failures []error
-	record := func(path []string, encoded string, err error) {
-		if err != nil {
-			failures = append(failures, err)
-			return
-		}
-		values[settingevents.JoinPath(path)] = encoded
+// hostFieldEnabled and hostFieldStoredSecrets are the fields of the object of a plugin that the
+// host keeps. A plugin that has no stored value for the first is enabled.
+const (
+	hostFieldEnabled       = "enabled"
+	hostFieldStoredSecrets = pluginport.SettingStoredSecrets
+)
+
+// valueList collects the values in force.
+type valueList struct {
+	values   settingevents.Values
+	failures []error
+}
+
+func (l *valueList) add(path []string, value any) {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		l.failures = append(l.failures, err)
+		return
 	}
+	l.values[settingevents.JoinPath(path)] = string(encoded)
+}
+
+// listSettingValues lists the value in force of every setting the shell and the plugins declare,
+// and the fields the host keeps for each plugin.
+func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
+	list := &valueList{values: settingevents.Values{}}
 	for _, declared := range settings.GetAppDeclaration() {
 		path := append([]string{settings.OwnerApp}, strings.Split(declared.Key, ".")...)
 		if value, found := target.GetValue(path...); found {
-			encoded, err := json.Marshal(value)
-			record(path, string(encoded), err)
+			list.add(path, value)
 		}
 	}
 	for _, plugin := range c.Plugins()() {
-		for _, declared := range plugin.Settings {
-			path := []string{plugin.ID, declared.Key}
-			if value, found := target.GetValue(path...); found {
-				encoded, err := json.Marshal(value)
-				record(path, string(encoded), err)
-			} else if declared.DefaultJSON != "" {
-				record(path, declared.DefaultJSON, nil)
-			}
+		listPluginValues(target, plugin, list)
+	}
+	return list.values, errors.Join(list.failures...)
+}
+
+func listPluginValues(target Settings, plugin pluginport.PluginInfo, list *valueList) {
+	for _, declared := range plugin.Settings {
+		path := []string{plugin.ID, declared.Key}
+		if value, found := target.GetValue(path...); found {
+			list.add(path, value)
+		} else if declared.DefaultJSON != "" {
+			list.values[settingevents.JoinPath(path)] = declared.DefaultJSON
 		}
 	}
-	return values, errors.Join(failures...)
+	enabled := true
+	if value, found := target.GetValue(plugin.ID, hostFieldEnabled); found {
+		if stored, isBool := value.(bool); isBool {
+			enabled = stored
+		}
+	}
+	list.add([]string{plugin.ID, hostFieldEnabled}, enabled)
+	if value, found := target.GetValue(plugin.ID, hostFieldStoredSecrets); found {
+		list.add([]string{plugin.ID, hostFieldStoredSecrets}, value)
+	}
 }
 
 // subscribeHost makes the plugin host a reader of the events, once: it takes the settings of its
