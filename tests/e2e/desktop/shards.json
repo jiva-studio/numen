@@ -74,6 +74,7 @@
   "tests/shell/workspace/roads.spec.ts": 8,
   "tests/shell/workspace/search-passages.spec.ts": 2,
   "tests/shell/workspace/search.spec.ts": 1,
+  "tests/shell/workspace/settings-controls.spec.ts": 20,
   "tests/shell/workspace/shift-commands.spec.ts": 2,
   "tests/shell/workspace/status-bar.spec.ts": 2,
   "tests/shell/workspace/task-cancel.spec.ts": 14,

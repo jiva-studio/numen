@@ -22,6 +22,7 @@ import {
 } from '../../../tools/ci-commands/commands.mjs'
 import { hasPreset } from '../../../tools/ci-stories/presets.mjs'
 import { faults, proves, stories } from '../../../tools/ci-stories/stories.mjs'
+import { cell } from './cell.mjs'
 
 const EDITOR = new URL('../../desktop/editor/src/', import.meta.url)
 // The window's shared layer, which is where the words stand.
@@ -573,9 +574,6 @@ const readSettingPlugins = async () => {
   }
   return found.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
 }
-
-/** A cell of a table row: a bar or a line break in the text would split the row. */
-const cell = (text) => text.replace(/\s*\n\s*/g, ' ').replace(/\|/g, '\\|')
 
 /**
  * The settings of the owner app. The shell declares most of them in a JSON of the format of a

@@ -24,9 +24,9 @@ export function getRegisteredViews(
 export function getSettingValues(
   plugin: PluginInfo,
   read: ReadPluginSetting,
-  isPending: (key: string) => boolean = () => false,
+  isRequested: (key: string) => boolean = () => false,
 ): Readonly<Record<string, unknown>> {
   const values: Record<string, unknown> = {}
-  for (const one of plugin.settings) values[one.key] = getValueInForce(one, read, isPending)
+  for (const one of plugin.settings) values[one.key] = getValueInForce(one, read, isRequested)
   return values
 }

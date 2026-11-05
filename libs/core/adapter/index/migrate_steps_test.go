@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"embed"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -36,22 +35,6 @@ func openAtVersionOne(t *testing.T) (*sql.DB, *faults) {
 	return db, faults
 }
 
-// openLegacyBookkeeping is a new index file, through the breaking driver, whose
-// schema_migrations carries a column this build does not write.
-func openLegacyBookkeeping(t *testing.T) (*sql.DB, *faults) {
-	t.Helper()
-	db, faults := openBreaking(t, filepath.Join(t.TempDir(), "index.db"))
-	for _, statement := range []string{
-		`CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT)`,
-		`INSERT INTO schema_migrations (version, name, applied_at) VALUES (1, '0001_index.sql', '2024-01-01')`,
-	} {
-		if _, err := db.ExecContext(t.Context(), statement); err != nil {
-			t.Fatal(err)
-		}
-	}
-	return db, faults
-}
-
 func readUserVersion(t *testing.T, db *sql.DB) int {
 	t.Helper()
 	var version int
@@ -71,17 +54,6 @@ func hasTable(t *testing.T, db *sql.DB, name string) bool {
 	return n == 1
 }
 
-// readColumns is the columns of a table, in the order they were declared.
-func readColumns(t *testing.T, db *sql.DB, table string) string {
-	t.Helper()
-	var columns string
-	if err := db.QueryRowContext(t.Context(),
-		`SELECT group_concat(name, ',') FROM (SELECT name FROM pragma_table_info(?) ORDER BY cid)`, table).Scan(&columns); err != nil {
-		t.Fatal(err)
-	}
-	return columns
-}
-
 // A migration whose any step fails is reported with what failed, and the index
 // stays at the version it was at, holding nothing of the migration.
 func TestAMigrationStepThatFailsPreservesTheIndexAtItsVersion(t *testing.T) {
@@ -90,7 +62,6 @@ func TestAMigrationStepThatFailsPreservesTheIndexAtItsVersion(t *testing.T) {
 		breaks func(string) bool
 	}{
 		{"making the bookkeeping", containing("CREATE TABLE IF NOT EXISTS schema_migrations")},
-		{"reading the bookkeeping's shape", containing("pragma_table_info('schema_migrations')")},
 		{"beginning the transaction", func(query string) bool { return query == "BEGIN" }},
 		{"a statement of the migration", containing("CREATE TABLE probe")},
 		{"writing the version", containing("PRAGMA user_version = 2")},
@@ -115,93 +86,12 @@ func TestAMigrationStepThatFailsPreservesTheIndexAtItsVersion(t *testing.T) {
 	}
 }
 
-// Bookkeeping already in the shape this build writes is used currently.
-func TestBookkeepingInShapeIsNotRebuilt(t *testing.T) {
-	db, faults := openAtVersionOne(t)
-	faults.breakOn(t, "schema_migrations_next")
-
-	if err := apply(t.Context(), db, getProbe()); err != nil {
-		t.Fatalf("a migration over bookkeeping in shape rebuilt it: %v", err)
-	}
-	faults.stop()
-	if pos := readUserVersion(t, db); pos != 2 {
-		t.Errorf("the index is at version %d, want 2", pos)
-	}
-}
-
-// Bookkeeping carrying a column this build does not write is brought to the
-// shape this build writes, keeping every record.
-func TestBookkeepingWithAColumnThisBuildDoesNotWriteIsReshaped(t *testing.T) {
-	db, _ := openLegacyBookkeeping(t)
-
-	if err := createBookkeeping(t.Context(), db); err != nil {
-		t.Fatal(err)
-	}
-	if got := readColumns(t, db, "schema_migrations"); got != "version,name" {
-		t.Errorf("schema_migrations holds columns %s, want version,name", got)
-	}
-	var name string
-	if err := db.QueryRowContext(t.Context(),
-		`SELECT name FROM schema_migrations WHERE version = 1`).Scan(&name); err != nil {
-		t.Fatalf("the record of what ran did not survive: %v", err)
-	}
-	if name != "0001_index.sql" {
-		t.Errorf("schema_migrations holds %q, want the original record", name)
-	}
-}
-
-// A reshape that cannot begin is reported, and the bookkeeping stays as it was.
-func TestBookkeepingWhoseReshapeCannotBeginIsLeftAsItWas(t *testing.T) {
-	db, faults := openLegacyBookkeeping(t)
-	faults.breakWhere(t, func(query string) bool { return query == "BEGIN" })
-
-	err := createBookkeeping(t.Context(), db)
-	faults.stop()
-	if !errors.Is(err, errBroken) {
-		t.Fatalf("remember answered %v", err)
-	}
-	if got := readColumns(t, db, "schema_migrations"); got != "version,name,applied_at" {
-		t.Errorf("schema_migrations holds columns %s, want the ones it had", got)
-	}
-}
-
-// Emptying an index reports the step that failed, and the version goes back to
-// nothing only once everything is out.
-func TestEmptyingAnIndexReportsTheStepThatFailed(t *testing.T) {
-	for _, step := range []struct {
-		name   string
-		breaks string
-	}{
-		{"turning references off", "PRAGMA foreign_keys = off"},
-		{"reading what the index holds", "SELECT name FROM sqlite_master"},
-		{"dropping an object", "DROP "},
-		{"turning references back on", "PRAGMA foreign_keys = on"},
-		{"putting the version back", "PRAGMA user_version = 0"},
-	} {
-		t.Run(step.name, func(t *testing.T) {
-			path := filepath.Join(t.TempDir(), "index.db")
-			newMigrated().CopyTo(t, path)
-			db, faults := openBreaking(t, path)
-			faults.breakOn(t, step.breaks)
-
-			err := resetIndex(t.Context(), db)
-			faults.stop()
-			if !errors.Is(err, errBroken) {
-				t.Fatalf("emptying answered %v", err)
-			}
-			if pos := readUserVersion(t, db); pos == 0 {
-				t.Error("an index that was not emptied says it holds no schema")
-			}
-		})
-	}
-}
-
 // An index whose version cannot be read is reported, and nothing is built in it.
 func TestAnIndexWhoseVersionCannotBeReadIsNotMigrated(t *testing.T) {
 	db, faults := openBreaking(t, filepath.Join(t.TempDir(), "index.db"))
 	faults.breakWhere(t, func(query string) bool { return query == "PRAGMA user_version" })
 
-	err := migrate(t.Context(), db)
+	err := migrate(t.Context(), db, "index.db")
 	faults.stop()
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("migrating answered %v", err)
@@ -211,34 +101,12 @@ func TestAnIndexWhoseVersionCannotBeReadIsNotMigrated(t *testing.T) {
 	}
 }
 
-// An index from a later build that cannot be emptied is reported, and stays at
-// the version that build left.
-func TestAnIndexFromALaterBuildThatCannotBeEmptiedIsReported(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "index.db")
-	newMigrated().CopyTo(t, path)
-	db, faults := openBreaking(t, path)
-	later := getNewestVersion(t) + 3
-	if _, err := db.ExecContext(t.Context(), fmt.Sprintf("PRAGMA user_version = %d", later)); err != nil {
-		t.Fatal(err)
-	}
-	faults.breakOn(t, "PRAGMA user_version = 0")
-
-	err := migrate(t.Context(), db)
-	faults.stop()
-	if !errors.Is(err, errBroken) {
-		t.Fatalf("migrating answered %v", err)
-	}
-	if pos := readUserVersion(t, db); pos != later {
-		t.Errorf("the index is at version %d, want %d", pos, later)
-	}
-}
-
 // A migration that fails is named in the report, which carries the cause.
 func TestAFailedMigrationIsNamedAndCarriesItsCause(t *testing.T) {
 	db, faults := openBreaking(t, filepath.Join(t.TempDir(), "index.db"))
 	faults.breakOn(t, "PRAGMA user_version = 1")
 
-	err := migrate(t.Context(), db)
+	err := migrate(t.Context(), db, "index.db")
 	faults.stop()
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("migrating answered %v", err)
@@ -248,21 +116,6 @@ func TestAFailedMigrationIsNamedAndCarriesItsCause(t *testing.T) {
 	}
 	if pos := readUserVersion(t, db); pos != 0 {
 		t.Errorf("the index is at version %d, want 0", pos)
-	}
-}
-
-// Bookkeeping that cannot be committed is reported and left as it was.
-func TestBookkeepingWhoseReshapeCannotBeCommittedIsLeftAsItWas(t *testing.T) {
-	db, faults := openLegacyBookkeeping(t)
-	faults.breakOn(t, "COMMIT")
-
-	err := createBookkeeping(t.Context(), db)
-	faults.stop()
-	if !errors.Is(err, errBroken) {
-		t.Fatalf("remembering answered %v", err)
-	}
-	if !strings.Contains(readColumns(t, db, "schema_migrations"), "applied_at") {
-		t.Error("bookkeeping that was not reshaped lost its column")
 	}
 }
 
@@ -293,7 +146,7 @@ func TestMigrationsThatCannotBeReadMigrateNothing(t *testing.T) {
 	if _, err := loadMigrations(); err == nil {
 		t.Fatal("migrations were loaded from nothing")
 	}
-	if err := migrate(t.Context(), db); err == nil {
+	if err := migrate(t.Context(), db, "index.db"); err == nil {
 		t.Fatal("an index was migrated by nothing")
 	}
 	if pos := readUserVersion(t, db); pos != 0 {

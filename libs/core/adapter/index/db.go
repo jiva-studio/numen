@@ -102,6 +102,11 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 		one(&pos)
 	}
 
+	// A file this build cannot use is read before the pool below sets WAL on it.
+	if err := checkFile(ctx, path); err != nil {
+		return nil, err
+	}
+
 	// The first connection reports an unusable path.
 	write, err := sql.Open("sqlite", writeDSN(path, pos))
 	if err != nil {
@@ -111,7 +116,7 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	// busy lock.
 	write.SetMaxOpenConns(1)
 
-	if err := migrate(ctx, write); err != nil {
+	if err := migrate(ctx, write, path); err != nil {
 		return nil, errors.Join(err, write.Close())
 	}
 
