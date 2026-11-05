@@ -46,16 +46,16 @@ func TestAWatcherDoesNotRunForAnotherPlugin(t *testing.T) {
 // A stopped watcher runs no more.
 func TestAStoppedWatcherRunsNoMore(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
-	var stopped, kept atomic.Int32
+	var stopped, remaining atomic.Int32
 	stop := host.WatchPluginConfig(secretPluginID, func() { stopped.Add(1) })
-	host.WatchPluginConfig(secretPluginID, func() { kept.Add(1) })
+	host.WatchPluginConfig(secretPluginID, func() { remaining.Add(1) })
 	stop()
 
 	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
 		t.Fatal(err)
 	}
 
-	waitForCount(t, &kept, 1)
+	waitForCount(t, &remaining, 1)
 	if got := stopped.Load(); got != 0 {
 		t.Errorf("a stopped watcher ran %d times", got)
 	}

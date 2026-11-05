@@ -37,7 +37,7 @@ type Embedder struct {
 
 	// changeMu orders the reads that follow a configuration of the plugin.
 	changeMu sync.Mutex
-	// announced is the model the listeners were last told of, which a read by GetModel does not move.
+	// announced is the model the listeners were last notified of. A read by GetModel does not change it.
 	announced embeddingport.EmbeddingModel
 	listeners []func()
 	stopWatch func()
@@ -184,8 +184,8 @@ func (b *Embedder) Close() error {
 	return b.lease.Close()
 }
 
-// OnModelChange registers fn to run when the plugin reports a model unlike the one the listeners
-// were last told of: another identity, handling or minimum chunk length. The plugin is read
+// OnModelChange registers fn to run when the plugin reports a model unlike the last one announced:
+// another identity, handling or minimum chunk length. The plugin is read
 // after it has been given its configuration, so a setting of another plugin never runs fn.
 func (b *Embedder) OnModelChange(fn func()) {
 	b.changeMu.Lock()

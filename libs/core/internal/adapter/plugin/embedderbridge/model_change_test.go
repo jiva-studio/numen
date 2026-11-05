@@ -124,7 +124,7 @@ func TestAChangeOfTheMinimumChunkLengthIsAnnounced(t *testing.T) {
 }
 
 // A setting of the plugin that leaves its model as it was announces nothing.
-func TestASettingThatLeavesTheModelAsItWasAnnouncesNothing(t *testing.T) {
+func TestNoModelChangeIsAnnouncedWhenASettingKeepsTheModel(t *testing.T) {
 	host, bridge, mock, announced := openConfigurable(t)
 	reads := mock.getModelCalls.Load()
 
@@ -161,8 +161,8 @@ func TestASettingOfAnotherPluginAnnouncesNothing(t *testing.T) {
 	}
 }
 
-// A change read by GetModel before the plugin is configured again is still announced, because the
-// listeners were told of the model they hold, not of the one the last read returned.
+// A change read by GetModel before the plugin is configured again is still announced: the listeners
+// are notified against the model they hold, not against the one the last read returned.
 func TestAChangeReadByGetModelFirstIsStillAnnounced(t *testing.T) {
 	host, bridge, mock, announced := openConfigurable(t)
 
