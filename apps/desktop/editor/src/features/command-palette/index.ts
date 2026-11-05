@@ -15,20 +15,14 @@ export type { MenuRow, PathContribution, PathItem } from './lib/commands/pathMen
 export { getNoteCommands } from './lib/commands/commands'
 export { createInvocation } from './lib/offers/invocation'
 export { createNotes } from './lib/notes/notes'
-export { openDestination } from './model/search/destination'
-export type { DestinationDeps } from './model/search/destination'
+export type { FileIcons } from './model/rowIcons'
 export { commands, registerCommand, runInvocation } from './model/handlers/handlers'
 export { useCommandPalette } from './model/palette/palette'
 export type { Commands } from './model/palette/palette'
 export { runSupport } from './model/palette/runSupport'
 export { useSearch } from './model/search/search'
 export type { SearchDeps, SearchMode, SearchState } from './model/search/search'
-export type {
-  MenuChoice,
-  ResultChoice,
-  SearchDestination,
-  SearchMenuDeps,
-} from './model/search/lookup'
+export type { ResultChoice, SearchMenuDeps } from './model/search/lookup'
 export type { CommandDeps, VaultWriter } from './model/handlers/deps'
 export { ANSWER_WORDS } from './words'
 export type { AnswerWords } from './words'

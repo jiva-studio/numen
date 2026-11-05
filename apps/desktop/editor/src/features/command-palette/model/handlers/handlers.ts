@@ -35,6 +35,13 @@ const HANDLERS: Record<string, CommandHandler> = {
       'current',
       invocation.line === undefined ? undefined : { line: invocation.line },
     ),
+  [COMMAND.openFile]: (invocation, on) =>
+    on.notes.openFile(
+      invocation.file,
+      invocation.title || invocation.file,
+      'current',
+      invocation.selector === undefined ? undefined : { selector: invocation.selector },
+    ),
   [COMMAND.openNoteBeside]: (invocation, on) =>
     on.notes.openFile(invocation.path, invocation.title, 'split'),
   [COMMAND.createChildNote]: (invocation, on, words) =>

@@ -4,7 +4,7 @@
  * resolves to nothing.
  */
 import type { Selector } from '@numen/plugin-host'
-import type { Notes, Store } from '../../types'
+import type { CommandPlace, Notes, Store } from '../../types'
 
 /** What opens a file: in the current tab or beside it, at a line of the note where one is given. */
 export interface NoteOpeners {
@@ -15,6 +15,21 @@ export interface NoteOpeners {
       'current' | 'split' | { where: 'current' | 'split'; line?: number; selector?: Selector },
   ): unknown
   openNewFile: Notes['openNewFile']
+}
+
+/** The placement a file opens in, with the line or selector of the place in it where one is given. */
+const createPlacement = (
+  showing: 'current' | 'split',
+  place: CommandPlace | undefined,
+): Parameters<NoteOpeners['openFile']>[2] => {
+  const line = place?.line
+  const selector = place?.selector
+  if (line === undefined && selector === undefined) return showing
+  return {
+    where: showing,
+    ...(line === undefined ? {} : { line }),
+    ...(selector === undefined ? {} : { selector }),
+  }
 }
 
 export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners): Notes => {
@@ -34,11 +49,7 @@ export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners):
     },
     close: (id) => holder(id)?.close(id),
     openFile: (path, title, showing, place) =>
-      noteOpeners.openFile(
-        path,
-        title,
-        place?.line === undefined ? showing : { where: showing, line: place.line },
-      ),
+      noteOpeners.openFile(path, title, createPlacement(showing, place)),
     openNewFile: noteOpeners.openNewFile,
   }
 }

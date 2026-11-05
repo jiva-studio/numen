@@ -1,5 +1,5 @@
 /**
- * Search hit lookup, item formatting, and navigation destination mapping.
+ * Search hit lookup, item formatting, and the command a chosen action of a hit runs.
  */
 import type { PaletteItem } from '@numen/shell'
 import type { PlacedCommand, Selector } from '@numen/plugin-host'
@@ -45,41 +45,9 @@ export interface Passage {
   at: readonly TextRange[]
 }
 
-/**
- * Where a chosen item leads. A file names the file and the position inside it,
- * and nothing about which editor it opens in: a note carries a line, any other
- * file the selector its reader moves to.
- */
-export interface SearchDestination {
-  at: 'file'
-  path: string
-  /** What the note is called, for a tab that has not been opened before. */
-  title: string
-  /** The line the item relies on, for a place inside a note. */
-  line?: number
-  /** The place in a file that is no note, as the search hit locates it. */
-  selector?: Selector
-}
-
-/** The action that opens a file that is no note, which the palette turns up. */
-export const NOTE = 'note'
-
-/** The prefix of the id of an action that runs an entry of the menu of a search result. */
-export const MENU_ACTION_PREFIX = 'menu:'
-
 /** The entries plugins place in the menu of a search result, in the order they are drawn. */
 export interface SearchMenuDeps {
   getEntries(): readonly PlacedCommand[]
-}
-
-/** The command an action of a search result runs, and the note it runs over. */
-export interface MenuChoice {
-  readonly command: string
-  readonly path: string
-  readonly title: string
-  readonly type: NoteType
-  /** The line of the heading or passage the result stands for, and -1 for a note found by its name. */
-  readonly line: number
 }
 
 /**
@@ -96,6 +64,8 @@ export interface SearchHit {
   type: NoteType | null
   /** The place in a file that is no note, and null for a note. */
   selector: Selector | null
+  /** Whether the hit is the row that creates a note under the words typed, which is no result. */
+  isCreation?: boolean
 }
 
 /** One item as it is drawn, beside at its current position and what it offers. */
@@ -111,12 +81,12 @@ function createNoteActions(
   openText: string,
   menu: readonly PaletteAction[],
 ): { actions: readonly PaletteAction[]; offers: readonly string[] } {
-  const actions = [{ id: `${MENU_ACTION_PREFIX}${COMMAND.openNote}`, text: openText }, ...menu]
+  const actions = [{ id: COMMAND.openNote, text: openText }, ...menu]
   return { actions, offers: actions.map((one) => one.id) }
 }
 
 function createMenuActions(entries: readonly PlacedCommand[]): readonly PaletteAction[] {
-  return entries.map((one) => ({ id: `${MENU_ACTION_PREFIX}${one.command}`, text: one.title }))
+  return entries.map((one) => ({ id: one.command, text: one.title }))
 }
 
 /**
@@ -178,13 +148,14 @@ export function createPassageItem(
   entries: readonly PlacedCommand[] = [],
 ): SearchRow {
   const note = createNoteActions(words.read, createMenuActions(entries))
+  const document = [{ id: COMMAND.openFile, text: words.readDocument }]
   return {
     item: {
       id: `${group}:${one.path}:${one.start}`,
       title: one.title || one.path,
       detail: one.text,
       detailAt: one.at,
-      actions: one.isNote ? note.actions : [{ id: NOTE, text: words.readDocument }],
+      actions: one.isNote ? note.actions : document,
     },
     hit: {
       path: one.path,
@@ -192,36 +163,11 @@ export function createPassageItem(
       line: one.isNote ? one.line : -1,
       start: one.start,
       length: one.length,
-      offers: one.isNote ? note.offers : [NOTE],
+      offers: one.isNote ? note.offers : document.map((each) => each.id),
       type: one.isNote ? one.type : null,
       selector: one.isNote ? null : one.selector,
     },
   }
-}
-
-/** The command the action runs over the note of the hit, and null where the action is none of the menu. */
-export function resolveMenuChoice(
-  searchHit: SearchHit | undefined,
-  action: string,
-): MenuChoice | null {
-  if (!searchHit || searchHit.type === null || !action.startsWith(MENU_ACTION_PREFIX)) return null
-  if (!searchHit.offers.includes(action)) return null
-  return {
-    command: action.slice(MENU_ACTION_PREFIX.length),
-    path: searchHit.path,
-    title: searchHit.title,
-    type: searchHit.type,
-    line: searchHit.line,
-  }
-}
-
-export function resolveDestination(
-  hit: SearchHit | undefined,
-  action: string,
-): SearchDestination | null {
-  if (!hit || hit.type !== null || !hit.offers.includes(action)) return null
-  const named = { path: hit.path, title: hit.title }
-  return hit.selector ? { at: 'file', ...named, selector: hit.selector } : { at: 'file', ...named }
 }
 
 /** What a chosen action runs: the command, what it is over, and the text typed for it. */
@@ -239,7 +185,37 @@ export interface ResultChoice {
   readonly input: string
 }
 
-/** The command an action of a hit runs, over what, with which input; null where the hit does not carry the action. */
-export function resolveChoice(_hit: SearchHit | undefined, _action: string): ResultChoice | null {
-  return null
+/**
+ * The command an action of a hit runs, over what, with which input; null where the hit does not
+ * carry the action. A note is the target by its path and a line, a file that is no note by its
+ * file and selector, and the row that creates a note by the window and the words typed.
+ */
+export function resolveChoice(
+  hit: SearchHit | undefined,
+  action: string,
+  typed = '',
+): ResultChoice | null {
+  if (!hit || !hit.offers.includes(action)) return null
+  if (hit.isCreation) {
+    return {
+      command: action,
+      over: null,
+      input: typed.trim(),
+    }
+  }
+  if (hit.type === null) {
+    if (action !== COMMAND.openFile) return null
+    const place = { path: '', file: hit.path, title: hit.title }
+    return {
+      command: action,
+      over: hit.selector ? { ...place, selector: hit.selector } : place,
+      input: '',
+    }
+  }
+  const place = { path: hit.path, file: hit.path, title: hit.title }
+  return {
+    command: action,
+    over: hit.line >= 0 ? { ...place, line: hit.line } : place,
+    input: '',
+  }
 }

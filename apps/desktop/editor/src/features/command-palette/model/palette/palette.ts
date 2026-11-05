@@ -136,14 +136,17 @@ interface PaletteCommandsDeps {
 }
 
 function createPaletteCommands(deps: PaletteCommandsDeps) {
+  /** Starts a command; the text typed for it, where given, answers a step that asks for a name. */
   const startCommand = (
     id: string,
     target: CommandTarget,
-    _input?: string,
+    input?: string,
   ): CommandInvocation | null => {
     const command = deps.byId.get(id)
     if (!command || !command.isAvailable(target, deps.runs)) return null
     if (!command.needs) return deps.invocation(command.id, target)
+    const name = input?.trim() ?? ''
+    if (command.needs === 'naming' && name !== '') return deps.invocation(command.id, target, name)
     if (!deps.open.value) {
       deps.steps.reset()
       deps.open.value = true

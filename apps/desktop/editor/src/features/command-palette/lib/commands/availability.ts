@@ -16,4 +16,5 @@ export const isVaultOpen = (target: CommandTarget): boolean => target.vault.id !
 export const isAlwaysAvailable = (): boolean => true
 
 /** A command over a file that is no note and was chosen as a result, not the tab in front. */
-export const isFileChosen = (_target: CommandTarget): boolean => false
+export const isFileChosen = (target: CommandTarget): boolean =>
+  target.isReady && target.path === '' && target.file !== '' && target.tab === ''

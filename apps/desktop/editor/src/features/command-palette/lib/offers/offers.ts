@@ -3,58 +3,38 @@
  *
  * A search that found nothing has the words that were searched for and no
  * note to hold them, so the palette offers a note under them. What is in
- * front is what the note can be nested under as it is made.
+ * front is what the note can be nested under as it is made. Each action of the
+ * row is the id of the command that makes the note.
  */
 import type { PaletteGroup } from '@numen/shell'
 import { COMMAND } from '@/shared/commandIds'
-import { createInvocation } from './invocation'
-import type { CommandInvocation, CommandTarget } from '../../types'
+import type { CommandTarget } from '../../types'
 import type { Words } from '../../words'
 
-/** The group and the item that offer to make the note a search did not find. */
-export const CREATE_NOTE_ID = 'creating'
+/** The words of the row that creates a note. */
+export type CreateNoteWords = Pick<
+  Words,
+  'creating' | 'creates' | 'asChild' | 'asParent' | 'asJump'
+>
 
 /** The id of the group and of the item of the row that creates a note; never an action id. */
 export const CREATE_NOTE_ROW = 'creating'
 
-/**
- * The note a search did not find, created under the words that were searched for.
- * A relation attaches it to the focused note; anything else creates it standalone.
- */
-export const createNoteInvocation = (
-  relation: string,
-  name: string,
-  target: CommandTarget,
-): CommandInvocation =>
-  NOTE_PLACEMENTS.includes(relation) && target.path
-    ? createInvocation(relation, target, name)
-    : createInvocation(COMMAND.createNote, { ...target, path: '', title: '' }, name)
-
-/** The relations a note the search did not find can be made in. */
-const NOTE_PLACEMENTS: readonly string[] = [
-  COMMAND.createChildNote,
-  COMMAND.createParentNote,
-  COMMAND.createJumpNote,
-]
-
-/**
- * The groups of a search, and the offer to make a note where every one of them
- * answered with nothing. A group still waiting has not answered.
- */
-export interface AppendCreateNoteItemOptions {
+/** What the row that creates a note is made from. */
+export interface CreateNoteRowOptions {
   readonly text: string
-  readonly words: Words
+  readonly words: CreateNoteWords
   readonly target: CommandTarget
 }
 
-export const appendCreateNoteItem = (
-  groups: readonly PaletteGroup[],
-  options: AppendCreateNoteItemOptions,
-): readonly PaletteGroup[] => {
+/**
+ * The group that offers to make a note under the words typed, and null where nothing was typed.
+ * The relations to the note in front are offered only when a note is in front.
+ */
+export const createNoteRow = (options: CreateNoteRowOptions): PaletteGroup | null => {
   const { text, words, target } = options
   const name = text.trim()
-  const empty = groups.length > 0 && groups.every((one) => one.items.length === 0 && !one.isWorking)
-  if (!name || !empty) return groups
+  if (!name) return null
   const relations = target.path
     ? [
         { id: COMMAND.createChildNote, text: words.asChild },
@@ -62,19 +42,16 @@ export const appendCreateNoteItem = (
         { id: COMMAND.createJumpNote, text: words.asJump },
       ]
     : []
-  return [
-    ...groups,
-    {
-      id: CREATE_NOTE_ID,
-      title: words.creating,
-      items: [
-        {
-          id: CREATE_NOTE_ID,
-          title: `${words.creates} “${name}”`,
-          ...(target.path ? { detail: target.title || target.path } : {}),
-          actions: [{ id: CREATE_NOTE_ID, text: words.creates }, ...relations],
-        },
-      ],
-    },
-  ]
+  return {
+    id: CREATE_NOTE_ROW,
+    title: words.creating,
+    items: [
+      {
+        id: CREATE_NOTE_ROW,
+        title: `${words.creates} “${name}”`,
+        ...(target.path ? { detail: target.title || target.path } : {}),
+        actions: [{ id: COMMAND.createNote, text: words.creates }, ...relations],
+      },
+    ],
+  }
 }
