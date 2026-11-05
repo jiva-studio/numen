@@ -145,7 +145,7 @@ export function createPluginSettingCommands(plugins: readonly PluginInfo[]): rea
         id: `plugin-setting:${plugin.id}:${setting.key}`,
         text: `${plugin.name}: ${setting.title}`,
         group: 'settings',
-        needs: 'choosing',
+        input: 'choice',
         ...(setting.icon ? { icon: getNamedIcon(setting.icon) } : {}),
         isAvailable: () => true,
       })

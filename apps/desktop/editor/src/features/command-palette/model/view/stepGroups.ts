@@ -9,23 +9,13 @@
 import type { PaletteGroup, PaletteItem } from '@numen/shell'
 import type { NoteType } from '@/entities/file'
 import type { Vault } from '@/entities/vault'
-import {
-  CHOSEN,
-  EXACT,
-  NAME,
-  NO,
-  OPEN,
-  PICK,
-  YES,
-  getPrompt,
-  type PendingStep,
-} from '../../lib/step/step'
+import { getPrompt, type PendingStep } from '../../lib/step/step'
 import type { StepRow } from '../../types'
 import type { ConfirmWords, RetypeWords, Words } from '../../words'
 import type { NameMatch } from '../search/search'
 import type { ViewState } from './viewState'
 
-function getNamingGroup(text: string, words: Words): PaletteGroup {
+function getNamingGroup(step: PendingStep, text: string, words: Words): PaletteGroup {
   const name = text.trim()
   return {
     id: 'naming',
@@ -33,9 +23,9 @@ function getNamingGroup(text: string, words: Words): PaletteGroup {
     items: name
       ? [
           {
-            id: NAME,
+            id: step.command.id,
             title: `${words.callIt} “${name}”`,
-            actions: [{ id: NAME, text: words.callIt }],
+            actions: [{ id: step.command.id, text: words.callIt }],
           },
         ]
       : [],
@@ -48,9 +38,9 @@ function getArgumentGroup(step: PendingStep, text: string, words: Words): Palett
   const value = text.trim()
   const title = prompt?.title ?? ''
   const item = (itemTitle: string, action: string): PaletteItem => ({
-    id: NAME,
+    id: step.command.id,
     title: itemTitle,
-    actions: [{ id: NAME, text: action }],
+    actions: [{ id: step.command.id, text: action }],
   })
   let items: PaletteItem[] = []
   if (value) items = [item(`${title}: “${value}”`, words.givesIt)]
@@ -59,7 +49,11 @@ function getArgumentGroup(step: PendingStep, text: string, words: Words): Palett
   return { id: 'arguments', title, items, silence: title }
 }
 
-function getRowItem(one: StepRow, word: string, words: Words): PaletteItem | null {
+function getRowItem(
+  one: StepRow,
+  word: string,
+  ctx: { command: string; words: Words },
+): PaletteItem | null {
   const found = word === '' ? -1 : one.title.toLowerCase().indexOf(word)
   if (word !== '' && found < 0) return null
   return {
@@ -68,7 +62,7 @@ function getRowItem(one: StepRow, word: string, words: Words): PaletteItem | nul
     ...(found < 0 ? {} : { at: [{ start: found, end: found + word.length }] }),
     ...(one.detail ? { detail: one.detail } : {}),
     ...(one.isDisabled ? { isDisabled: true } : {}),
-    actions: [{ id: CHOSEN, text: words.chooses }],
+    actions: [{ id: ctx.command, text: ctx.words.chooses }],
   }
 }
 
@@ -94,19 +88,19 @@ function getConfirmGroup(
     [
       keeps,
       {
-        id: NO,
+        id: `${step.command.id}:keep`,
         title: keeps,
         detail: retainedNotice,
-        actions: [{ id: NO, text: keeps }],
+        actions: [{ id: `${step.command.id}:keep`, text: keeps }],
       },
     ],
     [
       action,
       {
-        id: YES,
+        id: step.command.id,
         title: `${action} ${label}`,
         detail,
-        actions: [{ id: YES, text: action }],
+        actions: [{ id: step.command.id, text: action }],
       },
     ],
   ]
@@ -131,17 +125,18 @@ function getExactlyGroup(
     title: words.exactly,
     items: [
       {
-        id: EXACT,
+        id: step.command.id,
         title: `${action} “${title}”`,
         detail,
         isDisabled: text.trim() !== title,
-        actions: [{ id: EXACT, text: action }],
+        actions: [{ id: step.command.id, text: action }],
       },
     ],
   }
 }
 
 function createPickingGroup(
+  step: PendingStep,
   found: readonly NameMatch[],
   text: string,
   meta: { words: Words; isWorking: boolean; failureMessage: string },
@@ -155,7 +150,7 @@ function createPickingGroup(
       id: one.path,
       title: one.title || one.path,
       ...(one.heading ? {} : { at: one.at }),
-      actions: [{ id: PICK, text: meta.words.travel }],
+      actions: [{ id: step.command.id, text: meta.words.travel }],
     })
   }
   return {
@@ -182,7 +177,7 @@ function createVaultsGroup(
         title: one.name,
         detail: why ? `${why} · ${one.path}` : one.path,
         ...(why ? { isDisabled: true } : {}),
-        actions: [{ id: OPEN, text: step.command.text }],
+        actions: [{ id: step.command.id, text: step.command.text }],
       }
     })
   return {
@@ -202,8 +197,8 @@ export function createStepGroups(state: ViewState) {
   const findNoteType = (id: string): NoteType | null =>
     found.value.find((one) => one.path === id)?.type ?? null
 
-  const getPickingGroup = (text: string): PaletteGroup =>
-    createPickingGroup(found.value, text, {
+  const getPickingGroup = (step: PendingStep, text: string): PaletteGroup =>
+    createPickingGroup(step, found.value, text, {
       words,
       isWorking: isWorking.value,
       failureMessage: failureMessage.value,
@@ -214,7 +209,7 @@ export function createStepGroups(state: ViewState) {
     return lists.getStepGroups(step.command.id, text).map((group) => ({
       id: group.id,
       title: group.title,
-      items: group.items.map((one) => getRowItem(one, word, words)).filter((item) => item !== null),
+      items: group.items.map((one) => getRowItem(one, word, { command: step.command.id, words })).filter((item) => item !== null),
       silence: group.silence ?? words.noneFound,
     }))
   }
@@ -229,7 +224,7 @@ export function createStepGroups(state: ViewState) {
     })
 
   return {
-    getNamingGroup: (text: string) => getNamingGroup(text, words),
+    getNamingGroup: (step: PendingStep, text: string) => getNamingGroup(step, text, words),
     getArgumentGroup: (step: PendingStep, text: string) => getArgumentGroup(step, text, words),
     getPickingGroup,
     getChoosingGroups,
