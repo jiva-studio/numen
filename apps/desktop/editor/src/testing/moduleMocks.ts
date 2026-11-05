@@ -7,7 +7,7 @@
  */
 import { vi } from 'vitest'
 import { requests } from './requests'
-import { mockVaultState, pendingStream } from './answers'
+import { declared, mockVaultState, pendingStream } from './answers'
 
 vi.mock('@/app/plugins/agentPort', () => ({
   agentPort: { ask: pendingStream, finish: () => Promise.resolve() },
@@ -45,9 +45,9 @@ vi.mock('@/entities/settings', async (original) => ({
   ...themesResponse,
 }))
 
-// The window is shown with no plugin declaring a command.
+// The window is shown with the plugins `declared` names; none declares a command to begin with.
 const declaredCommandsResponse = {
-  listDeclaredCommands: async () => ({ commands: [], menus: [] }),
+  listDeclaredCommands: async () => ({ commands: declared.commands, menus: declared.menus }),
   runDeclaredCommand: async () => ({ ok: false as const, error: 'no plugin declares it' }),
 }
 
