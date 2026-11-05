@@ -1,5 +1,6 @@
 /** The actions a search result offers: opening the note, then the entries plugins place in its menu. */
 import { describe, expect, it } from 'vitest'
+import { COMMAND } from '@/shared/commandIds'
 import type { PlacedCommand } from '@numen/plugin-host'
 import {
   createNameItem,
@@ -40,6 +41,8 @@ const SHOW = entry(`${ATLAS}:graph.showNote`, 'Show note in plex', { group: 'nav
 const OTHER = entry(`${ATLAS}:other.run`, 'Another')
 const ENTRIES = [SHOW, OTHER]
 
+/** The first action of a note: the editor command that opens it, run like any command of the menu. */
+const openId = `${MENU_ACTION_PREFIX}${COMMAND.openNote}`
 const showId = `${MENU_ACTION_PREFIX}${SHOW.command}`
 const otherId = `${MENU_ACTION_PREFIX}${OTHER.command}`
 
@@ -72,7 +75,7 @@ describe('a note found by its title', () => {
     const row = createNameItem(createName(), WORDS, ENTRIES)
 
     expect(row.item.actions).toStrictEqual([
-      { id: 'note', text: 'Open note' },
+      { id: openId, text: 'Open note' },
       { id: showId, text: 'Show note in plex' },
       { id: otherId, text: 'Another' },
     ])
@@ -81,7 +84,7 @@ describe('a note found by its title', () => {
   it('lets the hit accept the entries and opening the note', () => {
     const row = createNameItem(createName(), WORDS, ENTRIES)
 
-    expect(row.hit.offers).toStrictEqual(['note', showId, otherId])
+    expect(row.hit.offers).toStrictEqual([openId, showId, otherId])
   })
 
   it('offers opening the note first whatever group the first entry is in', () => {
@@ -89,7 +92,7 @@ describe('a note found by its title', () => {
 
     const row = createNameItem(createName(), WORDS, [first, SHOW])
 
-    expect(row.item.actions?.[0]).toStrictEqual({ id: 'note', text: 'Open note' })
+    expect(row.item.actions?.[0]).toStrictEqual({ id: openId, text: 'Open note' })
     expect(row.item.actions?.[1]).toStrictEqual({
       id: `${MENU_ACTION_PREFIX}${first.command}`,
       text: 'First',
@@ -113,7 +116,7 @@ describe('a note found by its title', () => {
 
   it('offers opening the note alone where no plugin places an entry', () => {
     expect(createNameItem(createName(), WORDS, []).item.actions).toStrictEqual([
-      { id: 'note', text: 'Open note' },
+      { id: openId, text: 'Open note' },
     ])
   })
 })
@@ -123,11 +126,11 @@ describe('a heading found by its name', () => {
     const row = createNameItem(createName({ heading: 'Polyps', line: 7 }), WORDS, ENTRIES)
 
     expect(row.item.actions).toStrictEqual([
-      { id: 'note', text: 'Open at this heading' },
+      { id: openId, text: 'Open at this heading' },
       { id: showId, text: 'Show note in plex' },
       { id: otherId, text: 'Another' },
     ])
-    expect(row.hit.offers).toStrictEqual(['note', showId, otherId])
+    expect(row.hit.offers).toStrictEqual([openId, showId, otherId])
   })
 })
 
@@ -136,11 +139,11 @@ describe('a passage found in a note', () => {
     const row = createPassageItem('text', createPassage(), WORDS, ENTRIES)
 
     expect(row.item.actions).toStrictEqual([
-      { id: 'note', text: 'Open note' },
+      { id: openId, text: 'Open note' },
       { id: showId, text: 'Show note in plex' },
       { id: otherId, text: 'Another' },
     ])
-    expect(row.hit.offers).toStrictEqual(['note', showId, otherId])
+    expect(row.hit.offers).toStrictEqual([openId, showId, otherId])
   })
 })
 
@@ -165,7 +168,7 @@ describe('the command an action of a result runs', () => {
     line: 3,
     start: 12,
     length: 4,
-    offers: ['note', showId, otherId],
+    offers: [openId, showId, otherId],
     type: 'sample',
     selector: null,
     ...overrides,
@@ -180,22 +183,45 @@ describe('the command an action of a result runs', () => {
     })
   })
 
-  it('is none for the action that opens the note', () => {
-    expect(resolveMenuChoice(createHit(), 'note')).toBeNull()
+  it('is the command that opens the note, over the note of the hit', () => {
+    expect(resolveMenuChoice(createHit(), openId)).toStrictEqual({
+      command: COMMAND.openNote,
+      path: 'reef/Coral.md',
+      title: 'Coral',
+      type: 'sample',
+    })
+  })
+
+  it('is none for the special action of a file that is no note', () => {
+    expect(resolveMenuChoice(createHit({ type: null, offers: ['note'] }), 'note')).toBeNull()
   })
 
   it('is none where nothing was found or the hit does not accept the action', () => {
     expect(resolveMenuChoice(undefined, showId)).toBeNull()
-    expect(resolveMenuChoice(createHit({ offers: ['note'] }), showId)).toBeNull()
+    expect(resolveMenuChoice(createHit({ offers: [openId] }), showId)).toBeNull()
   })
 
   it('is none for a hit in a file that is no note', () => {
     expect(
-      resolveMenuChoice(createHit({ type: null, offers: ['note', showId] }), showId),
+      resolveMenuChoice(createHit({ type: null, offers: [openId, showId] }), showId),
     ).toBeNull()
   })
 
   it('leaves the note closed: an entry has no destination', () => {
     expect(resolveDestination(createHit(), showId)).toBeNull()
+  })
+
+  it('has no destination for the command that opens the note, which runs as a command', () => {
+    expect(resolveDestination(createHit(), openId)).toBeNull()
+    expect(resolveDestination(createHit(), 'note')).toBeNull()
+  })
+
+  it('keeps the destination of a file that is no note under the action note', () => {
+    const document = createHit({ type: null, offers: ['note'], selector: { page: 3 } })
+
+    expect(resolveDestination(document, 'note')).toMatchObject({
+      at: 'file',
+      path: 'reef/Coral.md',
+    })
   })
 })

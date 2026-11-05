@@ -66,7 +66,9 @@ const entry = (command: string, title: string): PlacedCommand => ({
   group: '',
 })
 
-function setup(options: { menus?: Menus; hasCommand?: (id: string) => boolean } = {}) {
+function setup(
+  options: { menus?: Menus; hasCommand?: (id: string) => boolean; target?: CommandTarget } = {},
+) {
   const executeCommand = vi.fn(async () => true)
   const writeMessage = vi.fn()
   const pluginHost = {
@@ -82,7 +84,7 @@ function setup(options: { menus?: Menus; hasCommand?: (id: string) => boolean } 
     core: { fileKinds },
     words: {},
     windowTabs: { onKeyPress: () => false },
-    getTarget: () => front,
+    getTarget: () => options.target ?? front,
     knows: {},
     kept: {},
     runs: {},
@@ -198,6 +200,54 @@ describe('running an entry of the menu of a search result', () => {
     finish()
     await Promise.resolve()
     expect(one.writeMessage).not.toHaveBeenCalled()
+  })
+})
+
+describe('opening the note of a search result as a command', () => {
+  const resultTarget = expect.objectContaining({
+    path: 'Reef.md',
+    file: 'Reef.md',
+    title: 'Reef',
+    tab: '',
+    kind: null,
+  })
+
+  it('opens the chosen note when no note is in front', () => {
+    h.startCommand.mockReturnValue({ id: 'inv' })
+    const nothingInFront = { ...front, tab: '', kind: null, path: '', title: '', file: '' }
+    const one = setup({ target: nothingInFront as CommandTarget })
+
+    one.runEntry(choice('app:note.open'))
+
+    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:note.open', resultTarget)
+    expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith(
+      { id: 'inv' },
+      { name: 'command deps' },
+      { name: 'answer words' },
+    )
+    expect(one.writeMessage).not.toHaveBeenCalled()
+  })
+
+  it('opens the chosen note and not the note in front', () => {
+    h.startCommand.mockReturnValue({ id: 'inv' })
+    const one = setup()
+
+    one.runEntry(choice('app:note.open'))
+
+    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:note.open', resultTarget)
+    expect(h.startCommand).not.toHaveBeenCalledWith(
+      'app:note.open',
+      expect.objectContaining({ path: 'Animals.md' }),
+    )
+  })
+
+  it('reaches the editor, not the plugin host, for the command of the editor', () => {
+    h.startCommand.mockReturnValue({ id: 'inv' })
+    const one = setup({ hasCommand: () => false })
+
+    one.runEntry(choice('app:note.open'))
+
+    expect(one.executeCommand).not.toHaveBeenCalled()
   })
 })
 

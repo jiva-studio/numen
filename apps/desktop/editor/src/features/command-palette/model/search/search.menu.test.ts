@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import type { PlacedCommand } from '@numen/plugin-host'
+import { COMMAND } from '@/shared/commandIds'
 import { MENU_ACTION_PREFIX } from './lookup'
 import { useSearch, type NameMatch, type Passage, type SearchDeps, type Words } from './search'
 
@@ -32,6 +33,7 @@ const OTHER: PlacedCommand = {
   title: 'Another',
   group: '',
 }
+const openId = `${MENU_ACTION_PREFIX}${COMMAND.openNote}`
 const showId = `${MENU_ACTION_PREFIX}${SHOW.command}`
 
 const nameMatch: NameMatch = {
@@ -85,7 +87,7 @@ describe('a note found by name in the search', () => {
     await typeQuery(palette)
 
     expect(getNamesGroup(palette)?.items[0]?.actions).toStrictEqual([
-      { id: 'note', text: 'Open note' },
+      { id: openId, text: 'Open note' },
       { id: showId, text: 'Show note in plex' },
       { id: `${MENU_ACTION_PREFIX}${OTHER.command}`, text: 'Another' },
     ])
@@ -97,7 +99,7 @@ describe('a note found by name in the search', () => {
     await typeQuery(palette)
 
     expect(getNamesGroup(palette)?.items[0]?.actions).toStrictEqual([
-      { id: 'note', text: 'Open note' },
+      { id: openId, text: 'Open note' },
     ])
   })
 
@@ -113,7 +115,7 @@ describe('a note found by name in the search', () => {
     entries.value = []
 
     expect(getNamesGroup(palette)?.items[0]?.actions).toStrictEqual([
-      { id: 'note', text: 'Open note' },
+      { id: openId, text: 'Open note' },
     ])
   })
 
@@ -133,7 +135,7 @@ describe('a note found by name in the search', () => {
     })
   })
 
-  it('opens the note, and not an entry, on the choice of the first action', async () => {
+  it('runs the command that opens the note over the result on the choice of the first action', async () => {
     const palette = useSearch(createCore([nameMatch]), WORDS, {
       wait: now,
       menu: { getEntries: () => [SHOW] },
@@ -141,8 +143,14 @@ describe('a note found by name in the search', () => {
     await typeQuery(palette)
     const item = getNamesGroup(palette)?.items[0]?.id ?? ''
 
-    expect(palette.chooseEntry(item, 'note')).toBeNull()
-    expect(palette.chooseItem(item, 'note')).toMatchObject({ at: 'file', path: 'reef/Coral.md' })
+    expect(palette.chooseEntry(item, openId)).toStrictEqual({
+      command: COMMAND.openNote,
+      path: 'reef/Coral.md',
+      title: 'Coral',
+      type: 'sample',
+    })
+    expect(palette.chooseItem(item, openId)).toBeNull()
+    expect(palette.chooseItem(item, 'note')).toBeNull()
   })
 
   it('opens nothing on the choice of an entry', async () => {
