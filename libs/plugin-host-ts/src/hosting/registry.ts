@@ -126,6 +126,16 @@ function removePluginItems<T extends { pluginId: string }>(
   holder.value = next
 }
 
+/** Adds a plugin to the plugins whose `activate` has not returned, or removes it. */
+export function setStarting(registry: HostRegistry, pluginId: string, isStarting: boolean): void {
+  const { starting } = registry
+  if (!starting) return
+  const next = new Set(starting.value)
+  if (isStarting) next.add(pluginId)
+  else next.delete(pluginId)
+  starting.value = next
+}
+
 export function disposePluginEntry(pluginId: string, parts: DisposalParts): void {
   const { registry, statusViews, deps } = parts
   deps?.closeTabsForPlugin?.(pluginId)
@@ -133,9 +143,7 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   clearSubscriptions(registry.contexts.get(pluginId))
   registry.contexts.delete(pluginId)
   registry.activated.value = new Set([...registry.activated.value].filter((id) => id !== pluginId))
-  if (registry.starting) {
-    registry.starting.value = new Set([...registry.starting.value].filter((id) => id !== pluginId))
-  }
+  setStarting(registry, pluginId, false)
   registry.manifests.delete(pluginId)
   registry.disposed.add(pluginId)
   cleanupMapItems(registry.readers, pluginId)

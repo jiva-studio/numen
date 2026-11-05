@@ -29,6 +29,7 @@ import {
   disposeAllEntries,
   disposePluginEntry,
   matchesContextMenuTarget,
+  setStarting,
   type HostRegistry,
 } from './registry'
 import type { PluginContextHost, PluginHostDeps } from './types'
@@ -346,14 +347,8 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
       }
       return ctx
     },
-    markPluginStarting: (pluginId: string): void => {
-      const { starting } = registry
-      if (starting) starting.value = new Set(starting.value).add(pluginId)
-    },
-    markPluginStarted: (pluginId: string): void => {
-      const { starting } = registry
-      if (starting) starting.value = new Set([...starting.value].filter((id) => id !== pluginId))
-    },
+    markPluginStarting: (pluginId: string): void => setStarting(registry, pluginId, true),
+    markPluginStarted: (pluginId: string): void => setStarting(registry, pluginId, false),
     registerManifest: (pluginId: string, manifest: Manifest): void => {
       if (registry.contexts.has(pluginId)) {
         throw new Error(
