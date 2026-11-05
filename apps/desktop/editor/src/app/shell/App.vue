@@ -40,6 +40,7 @@ const {
   isLayoutReady,
   bootstrapFailure,
   retryBootstrap,
+  windowButtons,
   openSettings,
   commands,
   pluginWays,
@@ -68,7 +69,7 @@ const {
   moveTab,
 } = useWindow()
 
-const frame = useWindowFrame()
+const frame = useWindowFrame(undefined, windowButtons)
 
 /** The vault the window shows; empty where none is open. */
 const vaultName = computed(

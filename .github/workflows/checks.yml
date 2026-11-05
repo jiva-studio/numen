@@ -197,7 +197,7 @@ jobs:
         run: node apps/docs/tools/manual.mjs --check
 
       - name: Test the settings reference
-        run: node --test apps/docs/tools/reference.test.mjs
+        run: node --test apps/docs/tools/reference.test.mjs apps/docs/tools/cell.test.mjs
 
       - name: Verify landing page story references
         run: node apps/landing/tools/stories.mjs

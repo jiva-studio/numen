@@ -650,8 +650,6 @@ export const useWindow = () => {
   watchPluginSettings(settings, base.pluginLoader, (error) =>
     base.writeMessage(`Plugins were not tracked: ${formatErrorMessage(error)}`, 'error'),
   )
-
-  const statusBar = createStatusBar(base, window, settings)
   const isWritingTabs = ref(false)
   const isLayoutReady = ref(false)
   const openTabs = useOpenTabs({
@@ -661,12 +659,10 @@ export const useWindow = () => {
     reportError: (error) =>
       base.writeMessage(`The open tabs were not saved: ${formatErrorMessage(error)}`, 'error'),
   })
-
   ctx.tabsHold = openTabs
 
   const closeTab = createTabCloser(base)
   const isHighlighted = ref(false)
-
   useAppHotkeys(getCommands(ctx).onKeyDown)
   const tabLinkSession = createWindowTabLinks(base, {
     tabSync: services.tabSync,
@@ -694,6 +690,7 @@ export const useWindow = () => {
   if (isSecondaryWindow()) closeWhenEmpty(base, isLayoutReady)
 
   const api = {
+    windowButtons: settings.windowButtons,
     runCommand,
     ...menuApi,
     openCurrentVault: () => openPlacedTabs(base),
@@ -711,7 +708,7 @@ export const useWindow = () => {
     layout: base.windowTabs.layout,
     vaultList: getVaults(ctx).vaultList,
     log: base.log,
-    statusBar,
+    statusBar: createStatusBar(base, window, settings),
     statusViews: base.pluginHost.statusViews,
     palette: getCommands(ctx).palette,
     destinations: getKinds(ctx).destinations,

@@ -3,9 +3,12 @@
  * the buttons follow. The calls go through the Wails runtime served beside the page; a page served
  * without it (stories, tests) gets a frame that does nothing.
  */
-import { computed, getCurrentScope, onScopeDispose, ref, type Ref } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, ref, shallowRef, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { ControlsStyle } from '@numen/shell'
+
+/** The values of the setting "Window buttons". */
+export type WindowButtons = Extract<ControlsStyle, 'windows' | 'mac'>
 
 /** The path the window serves its Wails runtime module at. */
 const RUNTIME_PATH = '/wails/runtime.js'
@@ -50,17 +53,21 @@ const loadRuntime: FrameRuntimeLoader = () => {
 
 /**
  * Windows draws the buttons at the right to keep Snap Layouts, and macOS keeps the system buttons.
- * Linux draws the Windows buttons: the setting that moves them to the left does not exist yet.
+ * Linux draws them where the setting "Window buttons" says.
  */
-function getControls(system: FrameRuntime['System']): ControlsStyle {
-  return system?.IsMac?.() ? 'native-mac' : 'windows'
+function getControls(system: FrameRuntime['System'], buttons: WindowButtons): ControlsStyle {
+  if (system?.IsMac?.()) return 'native-mac'
+  return system?.IsLinux?.() ? buttons : 'windows'
 }
 
 /** A read of the window state that fails leaves the state as it was. */
 const ignoreFailure = (): undefined => undefined
 
-export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFrame {
-  const platform = ref<ControlsStyle>('windows')
+export function useWindowFrame(
+  load: FrameRuntimeLoader = loadRuntime,
+  windowButtons: Readonly<Ref<WindowButtons>> = ref<WindowButtons>('windows'),
+): WindowFrame {
+  const system = shallowRef<FrameRuntime['System']>()
   const isMaximised = ref(false)
 
   async function readMaximised(): Promise<void> {
@@ -82,7 +89,7 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
 
   runInBackground(
     load().then(async (loaded) => {
-      platform.value = getControls(loaded?.System)
+      system.value = loaded?.System
       await readMaximised()
     }),
     ignoreFailure,
@@ -94,7 +101,7 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
   if (getCurrentScope()) onScopeDispose(() => globalThis.removeEventListener('resize', onResize))
 
   return {
-    controls: computed(() => platform.value),
+    controls: computed(() => getControls(system.value, windowButtons.value)),
     isMaximised,
     minimise,
     toggleMaximise,

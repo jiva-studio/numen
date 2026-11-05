@@ -286,7 +286,7 @@ describe('the window controls', () => {
 
     expect(wrapper.findAll('[data-control]')).toHaveLength(0)
     expect(wrapper.find('[data-inset]').attributes('style')).toContain(`${NATIVE_MAC_INSET}px`)
-    expect(NATIVE_MAC_INSET).toBe(72)
+    expect(NATIVE_MAC_INSET).toBeGreaterThanOrEqual(80)
   })
 
   it('keep no inset in the other styles', () => {

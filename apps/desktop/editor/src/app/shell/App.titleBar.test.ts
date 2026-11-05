@@ -79,25 +79,28 @@ describe('the title bar of the window', () => {
     expect(window.find('[data-title]').text()).toBe('numen')
   })
 
-  it('draws the window controls alone where no plugin places a command', async () => {
+  it('draws the window controls and the settings button where no plugin places a command', async () => {
     const window = await mountWindow()
 
     const bar = window.findComponent(TitleBar)
     expect(bar.props('controls')).toBe('windows')
-    expect(bar.props('actions')).toStrictEqual([])
-    expect(window.findAll('[data-title-bar] button')).toHaveLength(3)
+    expect(getActions(window).map((one) => one.id)).toStrictEqual(['app:settings.open'])
+    expect(window.findAll('[data-title-bar] button')).toHaveLength(4)
   })
 })
 
 describe('the buttons of the plugins in the title bar', () => {
-  it('draws one button for the command a plugin places, next to the three window controls', async () => {
+  it('draws one button for the command a plugin places, then the settings button, next to the three window controls', async () => {
     placeTideChart()
 
     const window = await mountWindow()
 
-    expect(getActions(window).map((one) => one.id)).toStrictEqual([`${TIDE}:chart.open`])
+    expect(getActions(window).map((one) => one.id)).toStrictEqual([
+      `${TIDE}:chart.open`,
+      'app:settings.open',
+    ])
     expect(getActions(window)[0]?.title).toBe('Open tide chart')
-    expect(window.findAll('[data-title-bar] button')).toHaveLength(4)
+    expect(window.findAll('[data-title-bar] button')).toHaveLength(5)
     expect(getButton(window, `${TIDE}:chart.open`).exists()).toBe(true)
   })
 
@@ -119,16 +122,17 @@ describe('the buttons of the plugins in the title bar', () => {
       [`${TIDE}:chart.open`, 'navigate'],
       [`${REEF}:map.open`, 'navigate'],
       [`${REEF}:log.open`, 'new'],
+      ['app:settings.open', 'settings'],
     ])
   })
 
-  it('draws no button for a command placed in the search results', async () => {
+  it('draws no button for a command placed in the search results, and the settings button alone', async () => {
     declared.commands = [declareCommand(TIDE, 'chart.open', 'Open tide chart')]
     declared.menus = [{ pluginId: TIDE, location: 'searchResult', command: 'chart.open' }]
 
     const window = await mountWindow()
 
-    expect(getActions(window)).toStrictEqual([])
+    expect(getActions(window).map((one) => one.id)).toStrictEqual(['app:settings.open'])
   })
 
   it('draws no button while no vault is shown, even with commands placed', async () => {
@@ -166,7 +170,11 @@ describe('the buttons of the plugins in the title bar', () => {
     ]
     const main = await mountWindow()
     const inMain = getActions(main).map((one) => [one.id, one.title, one.group])
-    expect(inMain).toHaveLength(2)
+    expect(inMain.map((one) => one[0])).toStrictEqual([
+      `${TIDE}:chart.open`,
+      `${REEF}:map.open`,
+      'app:settings.open',
+    ])
     const address = globalThis.location.href
 
     globalThis.history.replaceState(null, '', '/?window=secondary')
@@ -214,7 +222,10 @@ describe('the window controls of the title bar with buttons placed', () => {
 
     expect(window.findComponent(TitleBar).props('controls')).toBe('native-mac')
     expect(window.findAll('[data-control]')).toHaveLength(0)
-    expect(getActions(window)).toHaveLength(1)
+    expect(getActions(window).map((one) => one.id)).toStrictEqual([
+      `${TIDE}:chart.open`,
+      'app:settings.open',
+    ])
   })
 
   it('close the window through the frame, whatever the buttons placed', async () => {
