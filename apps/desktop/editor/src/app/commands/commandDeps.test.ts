@@ -250,7 +250,6 @@ describe('useSettings step groups', () => {
       onSizeChanged: vi.fn(),
     })
 
-
     const unknownGroups = settings.paletteLists.getStepGroups('unknown', '')
     expect(unknownGroups).toStrictEqual([])
   })

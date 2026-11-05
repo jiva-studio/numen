@@ -102,7 +102,13 @@ const PLUGIN: SettingOwner = {
   id: 'md.example.scanner',
   name: 'Scanner',
   settings: [
-    declare({ key: 'autoScan', title: 'Auto scan', palette: true, icon: 'scan-text', value: false }),
+    declare({
+      key: 'autoScan',
+      title: 'Auto scan',
+      palette: true,
+      icon: 'scan-text',
+      value: false,
+    }),
     declare({
       key: 'engine',
       type: 'enum',
@@ -274,9 +280,9 @@ describe('the choice step of a setting', () => {
       settings: [{ ...SYNC, value: undefined, default: false }],
     }
 
-    expect(rowsOf('setting:app:naming.syncTitleAndFilename', [owner]).map((one) => one.id)).toStrictEqual(
-      ['on', 'off'],
-    )
+    expect(
+      rowsOf('setting:app:naming.syncTitleAndFilename', [owner]).map((one) => one.id),
+    ).toStrictEqual(['on', 'off'])
     expect(
       rowsOf('setting:app:naming.syncTitleAndFilename', [owner]).find((one) => one.isCurrent)?.id,
     ).toBe('off')
@@ -332,7 +338,10 @@ describe('the choice step of a setting', () => {
   })
 
   it('names the group after the setting', () => {
-    const groups = createPalette().palette.lists.getStepGroups('setting:app:performance.profile', '')
+    const groups = createPalette().palette.lists.getStepGroups(
+      'setting:app:performance.profile',
+      '',
+    )
 
     expect(groups.map((one) => one.title)).toStrictEqual(['Performance profile'])
   })

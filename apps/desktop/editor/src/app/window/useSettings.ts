@@ -299,6 +299,20 @@ function createChangeFollower(deps: {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+function createWindowSettingPalette(rest: ReturnType<typeof createSettingsStore>, words: Words) {
+  return createSettingPalette({
+    getOwners: () => [
+      { id: 'app', name: '', settings: rest.app.value },
+      ...rest.plugins.value.map((one) => ({ id: one.id, name: one.name, settings: one.settings })),
+    ],
+    words,
+    preview: { apply: () => undefined, restore: () => undefined },
+    write: async (edits) => {
+      await rest.writeSettings(edits)
+    },
+  })
+}
+
 export function useSettings({
   core,
   words,
@@ -355,17 +369,7 @@ export function useSettings({
 
   const retainedItem = createSettingsPaletteLists({ appearance, sync, rest, words })
 
-  const settingPalette = createSettingPalette({
-    getOwners: () => [
-      { id: 'app', name: '', settings: rest.app.value },
-      ...rest.plugins.value.map((one) => ({ id: one.id, name: one.name, settings: one.settings })),
-    ],
-    words,
-    preview: { apply: () => undefined, restore: () => undefined },
-    write: async (edits) => {
-      await rest.writeSettings(edits)
-    },
-  })
+  const settingPalette = createWindowSettingPalette(rest, words)
 
   const kinds = [configured.kind]
 

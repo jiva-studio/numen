@@ -179,9 +179,7 @@ describe('the commands as they open', () => {
         'app:note.copyPath',
       ],
       window: ['app:note.create', 'app:tab.close', 'app:vault.search'],
-      settings: [
-        'app:settings.open',
-      ],
+      settings: ['app:settings.open'],
       vault: [
         'app:note.goTo',
         'app:vault.open',
@@ -253,9 +251,7 @@ describe('what is in front', () => {
 
     expect(getItemIds(commands.groups)).toStrictEqual({
       window: ['app:tab.close', 'app:vault.search'],
-      settings: [
-        'app:settings.open',
-      ],
+      settings: ['app:settings.open'],
       vault: [
         'app:vault.open',
         'app:vault.create',

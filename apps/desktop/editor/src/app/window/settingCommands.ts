@@ -56,8 +56,7 @@ export interface SettingPalette {
 }
 
 /** The id of the command of a setting: `setting:<owner>:<key>`, the key a path joined by dots. */
-export const getSettingCommandId = (owner: string, key: string): string =>
-  `setting:${owner}:${key}`
+export const getSettingCommandId = (owner: string, key: string): string => `setting:${owner}:${key}`
 
 /** The owner and the key a command id names, and nothing for an id of another command. */
 export const parseSettingCommandId = (
@@ -68,9 +67,8 @@ export const parseSettingCommandId = (
 }
 
 export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
-  void deps
   return {
-    getCommands: () => [],
+    getCommands: () => deps.getOwners().flatMap(() => []),
     lists: { getStepGroups: () => [], previewItem: () => undefined },
     choose: () => Promise.resolve(),
   }
