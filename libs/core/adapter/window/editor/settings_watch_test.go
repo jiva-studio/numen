@@ -25,7 +25,11 @@ func (f *going) watchSettings(t *testing.T) *watcher {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = stream.Close() })
+	t.Cleanup(func() {
+		if err := stream.Close(); err != nil {
+			t.Errorf("closing the stream: %v", err)
+		}
+	})
 	one := &watcher{stream: stream, next: make(chan []*v1.Setting, 16)}
 	go func() {
 		for stream.Receive() {
@@ -33,8 +37,8 @@ func (f *going) watchSettings(t *testing.T) *watcher {
 		}
 		close(one.next)
 	}()
-	if opened := one.await(t); len(opened) != 0 {
-		t.Fatalf("the stream opened with the changes %v", opened)
+	if first := one.await(t); len(first) != 0 {
+		t.Fatalf("the stream opened with the changes %v", first)
 	}
 	return one
 }
@@ -62,10 +66,10 @@ func (w *watcher) expectNothing(t *testing.T) {
 	}
 }
 
-func expectWire(t *testing.T, changed []*v1.Setting, at []string, value string) {
+func expectWire(t *testing.T, changed []*v1.Setting, path []string, value string) {
 	t.Helper()
-	if len(changed) != 1 || !slices.Equal(changed[0].GetAt(), at) || changed[0].GetValue() != value {
-		t.Errorf("the change is %v, want %v set to %s", changed, at, value)
+	if len(changed) != 1 || !slices.Equal(changed[0].GetAt(), path) || changed[0].GetValue() != value {
+		t.Errorf("the change is %v, want %v set to %s", changed, path, value)
 	}
 }
 

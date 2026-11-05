@@ -233,21 +233,6 @@ func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
 	p.profiles = append(p.profiles, profile)
 }
 
-// A write of the profile reaches the plugins that run, in the name the host knows.
-func TestWritingThePerformanceProfileTellsThePluginHost(t *testing.T) {
-	cfg, _ := writeSettings(t, `{}`)
-	host := &profileHost{}
-	cfg.PluginHost = host
-
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"app", "performance", "profile"}, JSON: `"eco"`}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := []string{"eco"}; !slices.Equal(host.profiles, want) {
-		t.Errorf("profiles sent to the host = %v, want %v", host.profiles, want)
-	}
-}
-
 // Another setting sends no profile.
 func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)

@@ -284,7 +284,7 @@ func TestAHandEditToAValueOutOfBoundsReachesNoReader(t *testing.T) {
 	reader.expectNothing(t)
 }
 
-func TestAHandEditThatLeavesTheFileUnreadableReachesNoReaderAndTheNextEditDoes(t *testing.T) {
+func TestAHandEditWithBrokenJSONReachesNoReaderAndTheNextEditDoes(t *testing.T) {
 	cfg, path, _ := openInstallation(t, `{"app":{"appearance":{"mode":"light"}}}`)
 	reader := listen(t, cfg)
 
@@ -310,7 +310,7 @@ func TestAHandEditReachesTheRunningPluginThroughTheSameEvent(t *testing.T) {
 
 	waitFor(t, func() bool { return len(host.listUpdates()) > 0 })
 	if got := host.listUpdates(); !slices.Equal(got, []string{eventPlugin + ".mode"}) {
-		t.Errorf("the plugin host was told %v", got)
+		t.Errorf("the plugin host received %v", got)
 	}
 }
 
@@ -345,7 +345,7 @@ func TestAWriteByAPluginReachesThePluginHostOnce(t *testing.T) {
 	waitFor(t, func() bool { return len(host.listUpdates()) > 0 })
 	time.Sleep(quiet)
 	if got := host.listUpdates(); !slices.Equal(got, []string{eventPlugin + ".mode"}) {
-		t.Errorf("the plugin host was told %v", got)
+		t.Errorf("the plugin host received %v", got)
 	}
 }
 
@@ -371,16 +371,18 @@ func TestAReaderThatStoppedListeningReceivesNothingMore(t *testing.T) {
 	}
 }
 
-func waitFor(t *testing.T, done func() bool) {
+func waitFor(t *testing.T, condition func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(wait)
-	for time.Now().Before(deadline) {
-		if done() {
-			return
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+	timeout := time.After(wait)
+	for !condition() {
+		select {
+		case <-ticker.C:
+		case <-timeout:
+			t.Fatal("the condition was never met")
 		}
-		time.Sleep(10 * time.Millisecond)
 	}
-	t.Fatal("the condition was never met")
 }
 
 func TestNoSettingHasAPathOfItsOwnInTheContainer(t *testing.T) {
@@ -402,5 +404,24 @@ func TestNoSettingHasAPathOfItsOwnInTheContainer(t *testing.T) {
 			}
 			return true
 		})
+	}
+}
+
+func TestAWriteOfThePerformanceProfileReachesThePluginHostOnce(t *testing.T) {
+	cfg, _, host := openInstallation(t, `{}`)
+	reader := listen(t, cfg)
+	before := len(host.listProfiles())
+
+	if err := cfg.GetSettingsWriter()([]settingsport.Setting{
+		{Path: []string{"app", "performance", "profile"}, JSON: `"eco"`},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	reader.await(t)
+
+	waitFor(t, func() bool { return len(host.listProfiles()) > before })
+	time.Sleep(quiet)
+	if got := host.listProfiles()[before:]; !slices.Equal(got, []string{"eco"}) {
+		t.Errorf("the plugin host was given the profiles %v", got)
 	}
 }

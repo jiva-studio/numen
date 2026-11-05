@@ -37,7 +37,7 @@ vi.mock('@/entities/settings', async (importOriginal) => ({
 
 /** A feed the test pushes the changes of settings into, as the core would. */
 const createFeed = () => {
-  const waiting: ((batch: readonly SettingEdit[]) => void)[] = []
+  const pending: ((batch: readonly SettingEdit[]) => void)[] = []
   const queued: (readonly SettingEdit[])[] = []
   let signal: AbortSignal | undefined
   return {
@@ -48,14 +48,14 @@ const createFeed = () => {
           next: async () => {
             const batch =
               queued.shift() ??
-              (await new Promise<readonly SettingEdit[]>((resolve) => waiting.push(resolve)))
+              (await new Promise<readonly SettingEdit[]>((resolve) => pending.push(resolve)))
             return { done: false, value: batch }
           },
         }),
       }
     },
     push: (batch: readonly SettingEdit[]) => {
-      const resolve = waiting.shift()
+      const resolve = pending.shift()
       if (resolve) resolve(batch)
       else queued.push(batch)
     },
@@ -102,14 +102,14 @@ const create = () => {
 }
 
 /** The settings as the core changes them, and the event that tells every window. */
-const change = (feed: ReturnType<typeof createFeed>, at: readonly string[], value: unknown) => {
+const change = (feed: ReturnType<typeof createFeed>, path: readonly string[], value: unknown) => {
   let target = file.current
-  for (const step of at.slice(0, -1)) {
+  for (const step of path.slice(0, -1)) {
     target[step] = { ...((target[step] as Record<string, unknown> | undefined) ?? {}) }
     target = target[step] as Record<string, unknown>
   }
-  target[at[at.length - 1] as string] = value
-  feed.push([{ at, value: JSON.stringify(value) }])
+  target[path[path.length - 1] as string] = value
+  feed.push([{ at: path, value: JSON.stringify(value) }])
 }
 
 describe('a setting that changes', () => {

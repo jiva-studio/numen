@@ -440,7 +440,7 @@ describe('the settings that change', () => {
     ])
   })
 
-  it('are asked of the core with the signal of the window', async () => {
+  it('follow the core until the signal of the window aborts', async () => {
     request.watchSettings = vi.fn(async function* () {
       yield* []
     })
