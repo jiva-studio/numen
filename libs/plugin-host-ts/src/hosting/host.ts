@@ -11,7 +11,7 @@ import type {
   VaultChangeEvent,
   DropRegistry,
 } from '@numen/plugin-sdk'
-import type { Manifest } from '@numen/core-client'
+import { ReportedError, type Manifest } from '@numen/core-client'
 import { createAppInfo } from '../appInfo'
 import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
@@ -184,7 +184,7 @@ function createHostContextBridge(
     openExternal: (url) =>
       deps.openExternal
         ? deps.openExternal(url)
-        : Promise.reject(new Error('the window opens no addresses')),
+        : Promise.reject(new ReportedError('the window opens no addresses')),
     ...createRegistrationBridge(deps, registry),
     ...createSharedBridge(shared),
     ...createSettingBridge(deps),

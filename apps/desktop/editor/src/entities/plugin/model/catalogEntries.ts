@@ -1,7 +1,7 @@
 import { shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { PluginInfo } from '@numen/plugin-manager'
-import type { CatalogEntry, PluginCatalog } from '@numen/core-client'
+import { ReportedError, type CatalogEntry, type PluginCatalog } from '@numen/core-client'
 
 /**
  * The entries of the plugin catalog, read again each time the plugins the host lists change: a
@@ -18,12 +18,14 @@ export function useCatalogEntries(
     const answer = await catalog.list()
     if (!answer.ok) {
       const reason = answer.error.kind === 'unavailable' ? answer.error.message : 'it lists nothing'
-      reportError(new Error(`The plugin catalog is unavailable: ${reason}`))
+      reportError(new ReportedError(`The plugin catalog is unavailable: ${reason}`))
       return
     }
     entries.value = answer.value.entries
     for (const failure of answer.value.sourceErrors) {
-      reportError(new Error(`The plugin source ${failure.source} failed: ${failure.message}`))
+      reportError(
+        new ReportedError(`The plugin source ${failure.source} failed: ${failure.message}`),
+      )
     }
   }
 
