@@ -30,6 +30,19 @@ describe('notes plugin lifecycle', () => {
     )
   })
 
+  it('registers no command, since creating a note is a command of the editor', () => {
+    const registerCommand = vi.fn()
+    const context = {
+      registerReader: vi.fn(),
+      registerTabKind: vi.fn(),
+      registerCommand,
+    } as unknown as PluginContext
+
+    activate(context)
+
+    expect(registerCommand).not.toHaveBeenCalled()
+  })
+
   it('registers the note-editor view where the host offers the notes of the vault', () => {
     const registerView = vi.fn()
     const context = {
