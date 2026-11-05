@@ -27,9 +27,10 @@ const openSystemSettings = async (page: Page): Promise<Locator> => {
 type Control = { readonly list: string } | { readonly slider: string }
 
 /**
- * Reads the control every STEP_MS in the page itself while `change` runs and for WATCH_MS after it,
- * so no value that is drawn between two steps of the test is missed. Gives every value read, in
- * order, with the first read after `change` started marked.
+ * Reads the control every STEP_MS in the page itself while `change` runs and for WATCH_MS after it.
+ * A slider is also read at every change of its value, because keys pressed one after the other
+ * draw their values milliseconds apart, closer than STEP_MS. Gives every value read, in order; the
+ * first is the value before `change` started.
  */
 const watchControl = async (
   page: Page,
@@ -53,9 +54,18 @@ const watchControl = async (
       }
       const samples = [read()]
       const timer = window.setInterval(() => samples.push(read()), step)
+      const observer = new MutationObserver(() => samples.push(read()))
+      if ('slider' in target) {
+        observer.observe(document.body, {
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['aria-valuenow'],
+        })
+      }
       return {
         stop: () => {
           window.clearInterval(timer)
+          observer.disconnect()
           return samples
         },
       }
