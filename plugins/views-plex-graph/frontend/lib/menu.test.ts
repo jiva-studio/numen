@@ -2,7 +2,7 @@
  * The menu on a node, and what it offers.
  */
 import { describe, expect, it } from 'vitest'
-import { createNodeItems, ITEMS, NEW_NOTE, NONE, OFFERED } from './menu'
+import { createNodeItems, ITEMS, NEW_NOTE, NONE, AVAILABLE } from './menu'
 
 describe('what the menu offers', () => {
   it('offers the commands of the window over a note', () => {
@@ -34,10 +34,10 @@ describe('what the menu offers', () => {
   })
 
   it('holds every item it draws, and no command reached on another row', () => {
-    for (const item of ITEMS) expect(OFFERED.has(item.id)).toBe(true)
+    for (const item of ITEMS) expect(AVAILABLE.has(item.id)).toBe(true)
 
-    expect(OFFERED.has('app:note.delete')).toBe(false)
-    expect(OFFERED.has('constructor')).toBe(false)
+    expect(AVAILABLE.has('app:note.delete')).toBe(false)
+    expect(AVAILABLE.has('constructor')).toBe(false)
   })
 })
 
@@ -73,6 +73,6 @@ describe('what the menu off every node offers', () => {
   })
 
   it('offers no command over a note, there being no note it would be over', () => {
-    for (const item of NONE) expect(OFFERED.has(item.id)).toBe(false)
+    for (const item of NONE) expect(AVAILABLE.has(item.id)).toBe(false)
   })
 })

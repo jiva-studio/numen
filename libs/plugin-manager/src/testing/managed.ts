@@ -16,8 +16,8 @@ export function createManaged(
 }
 
 /** A plugin the catalog offers and the host does not have. */
-export function createOffered(id: string, name: string): ManagedPlugin {
-  const [plugin] = createManagedPlugins([], [createMockListing(id, { name, isOffered: true })])
+export function createAvailable(id: string, name: string): ManagedPlugin {
+  const [plugin] = createManagedPlugins([], [createMockListing(id, { name, isAvailable: true })])
   if (!plugin) throw new Error('the plugin did not merge')
   return plugin
 }

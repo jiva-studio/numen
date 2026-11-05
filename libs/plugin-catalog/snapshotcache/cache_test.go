@@ -36,7 +36,7 @@ func TestAFileThatDoesNotExistIsAnEmptyCache(t *testing.T) {
 func TestASnapshotIsReadBackWithItsTimeAndEntries(t *testing.T) {
 	cache := newCache(t)
 	takenAt := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
-	entries := catalogtest.OfferedEntries()
+	entries := catalogtest.AvailableEntries()
 	for i := range entries {
 		entries[i].Source = "remote"
 	}
@@ -68,7 +68,7 @@ func TestASnapshotReplacesThePreviousAndRemovesItsTemporaryFile(t *testing.T) {
 	takenAt := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
 
 	for i := range 2 {
-		if err := cache.Write(t.Context(), catalog.Snapshot{Entries: catalogtest.OfferedEntries()[:i+1], At: takenAt}); err != nil {
+		if err := cache.Write(t.Context(), catalog.Snapshot{Entries: catalogtest.AvailableEntries()[:i+1], At: takenAt}); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -13,16 +13,16 @@ export function useDeckScheduleSync(
   presets: Presets,
   store: ReturnType<typeof openNotes>,
 ) {
-  const offers = shallowRef<readonly CardModelSummary[]>([])
+  const summaries = shallowRef<readonly CardModelSummary[]>([])
   let listedOk = true
 
-  const cardModels = computed(() => createCardModelChoices(offers.value))
+  const cardModels = computed(() => createCardModelChoices(summaries.value))
 
   const listCardModels = async (): Promise<void> => {
     try {
       const items = (await cards.cardModels()).cardModels
       listedOk = true
-      if (!areCardModelChoicesEqual(offers.value, items)) offers.value = items
+      if (!areCardModelChoicesEqual(summaries.value, items)) summaries.value = items
     } catch {
       // Listing card models failed.
       listedOk = false
@@ -61,7 +61,7 @@ export function useDeckScheduleSync(
   }
 
   return {
-    offers,
+    summaries,
     cardModels,
     listCardModels,
     listCardModelsAgain,

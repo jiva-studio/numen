@@ -31,17 +31,6 @@ type LinkListOutput struct {
 	Backlinks []ResolvedLinkItem `json:"backlinks" jsonschema:"incoming backlinks pointing to this note"`
 }
 
-func (t *Tools) addNoteNeighbourhood(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
-		Step:        tools.ByEffect,
-		Name:        "note_neighbourhood",
-		Title:       "Note Neighbourhood",
-		Description: "List outgoing wikilinks and incoming backlinks connected to a note.",
-		Effect:      tools.ReadOnly,
-		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, inVault(t, (*Tools).listLinks))
-}
-
 func (t *Tools) addLinkList(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Step:        tools.ByEffect,

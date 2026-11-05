@@ -181,5 +181,5 @@ func TestACachedSourceSatisfiesTheSourceContract(t *testing.T) {
 	catalogtest.RunSourceContract(t, func(_ *testing.T, entries []catalog.Entry) catalog.Source {
 		now := &clock{now: getEpoch()}
 		return catalog.NewCachedSource(catalogtest.NewFakeSource("remote", entries...), &catalogtest.FakeCache{}, time.Hour, now.Now)
-	}, catalogtest.OfferedEntries())
+	}, catalogtest.AvailableEntries())
 }

@@ -89,8 +89,8 @@ function onToggleFollow() {
     >
       <template #icon="{ id }">
         <NamedIcon
-          v-if="props.state.offers.getIcon(id)"
-          :name="props.state.offers.getIcon(id)"
+          v-if="props.state.options.getIcon(id)"
+          :name="props.state.options.getIcon(id)"
           class="media__menu-icon"
         />
       </template>

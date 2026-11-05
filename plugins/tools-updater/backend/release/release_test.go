@@ -249,7 +249,7 @@ func TestFindPlatformFileFindsNothingInNoFiles(t *testing.T) {
 	}
 }
 
-func TestEvaluateOffersTheFileOfThePlatformAndTheReleasePage(t *testing.T) {
+func TestEvaluateReturnsTheFileOfThePlatformAndTheReleasePage(t *testing.T) {
 	latest := release.Manifest{
 		Version: "2026.10.1", Build: 950, Commit: "abc1234", Stamp: "", Channel: "stable",
 		Notes: "", Released: "2026-10-15T12:00:00Z", Files: files(),
@@ -292,7 +292,7 @@ func TestEvaluateSendsLinuxToTheDownloadPage(t *testing.T) {
 	}
 }
 
-func TestEvaluateOffersNothingToACurrentBuild(t *testing.T) {
+func TestEvaluateReturnsNothingToACurrentBuild(t *testing.T) {
 	latest := release.Manifest{Version: "2026.10.1", Build: 950, Files: files()}
 
 	if _, ok := release.Evaluate(latest, release.Current{Version: "2026.10.1", Build: 950, Platform: release.PlatformLinux}); ok {

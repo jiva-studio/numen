@@ -219,14 +219,6 @@ func TestCheckInputs(t *testing.T) {
 	}
 }
 
-func TestGetPoolingMapsHeadToCLS(t *testing.T) {
-	for in, want := range map[string]string{PoolHead: PoolCLS, PoolMean: PoolMean, PoolLast: PoolLast, PoolOutput: PoolOutput} {
-		if got := getPooling(in); got != want {
-			t.Errorf("getPooling(%q) = %q, want %q", in, got, want)
-		}
-	}
-}
-
 func isNear(got, want []float32) bool {
 	if len(got) != len(want) {
 		return false

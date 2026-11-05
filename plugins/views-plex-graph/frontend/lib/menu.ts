@@ -47,4 +47,4 @@ export const createNodeItems = (
 export const NONE: readonly MenuItem[] = [{ id: NEW_NOTE, text: words.newNote }]
 
 /** What the menu offers, by identity. A choice outside this is not the menu's. */
-export const OFFERED: ReadonlySet<string> = new Set(ITEMS.map((item) => item.id))
+export const AVAILABLE: ReadonlySet<string> = new Set(ITEMS.map((item) => item.id))

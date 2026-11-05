@@ -188,7 +188,7 @@ func (p Profile) Validate() error {
 
 func isPooling(name string) bool {
 	switch name {
-	case PoolMean, PoolCLS, PoolLast, PoolOutput, PoolHead:
+	case PoolMean, PoolCLS, PoolLast, PoolOutput:
 		return true
 	}
 	return false
@@ -246,20 +246,12 @@ func GetShippedProfiles() (*Profiles, error) {
 		return table, fmt.Errorf("profiles.json: %w", err)
 	}
 	for _, p := range list {
-		p = withCanonicalPooling(p)
 		if err := p.Validate(); err != nil {
 			return table, fmt.Errorf("profiles.json: %w", err)
 		}
 		table.put(p)
 	}
 	return table, nil
-}
-
-func withCanonicalPooling(p Profile) Profile {
-	if p.Pooling == PoolHead {
-		p.Pooling = PoolCLS
-	}
-	return p
 }
 
 func (t *Profiles) put(p Profile) {
@@ -363,7 +355,6 @@ func (t *Profiles) layer(entry json.RawMessage) (Profile, error) {
 		p.ID = base.ID
 		dropStalePins(&p, base, entry)
 	}
-	p = withCanonicalPooling(p)
 	return p, p.Validate()
 }
 

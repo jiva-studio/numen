@@ -158,7 +158,7 @@ jobs:
           packages: "@bufbuild/protobuf"
 
       - name: Test the check and the plugin index build
-        run: node --test tools/plugin-versions/check.test.mjs tools/build-plugin-index/build.test.mjs
+        run: node --test tools/plugin-versions/check.test.mjs tools/build-plugin-index/build.test.mjs tools/bundle-plugins/select.test.mjs
 
       - name: Check the versions of changed plugins
         run: node tools/plugin-versions/check.mjs --base HEAD^1

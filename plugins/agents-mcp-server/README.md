@@ -14,7 +14,6 @@ Let external AI apps—such as Claude Desktop, Cursor, or Windsurf—read, searc
 When enabled, the MCP server listens locally on `127.0.0.1` using the configured **Port** (default `3333`):
 
 - **Streamable HTTP endpoint**: `http://127.0.0.1:3333/mcp`
-- **SSE endpoint**: `http://127.0.0.1:3333/sse`
 
 ### Example JSON Configuration (`mcpServers`)
 
@@ -29,5 +28,3 @@ Add the following entry to your client's MCP configuration file (such as `claude
   }
 }
 ```
-
-For clients that require the legacy SSE transport, use `"http://127.0.0.1:3333/sse"` as the URL.
