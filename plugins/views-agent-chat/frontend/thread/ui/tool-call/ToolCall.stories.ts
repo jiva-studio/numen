@@ -32,7 +32,7 @@ export const Playground: Story = {}
 
 /** Running: the dots indicate the result has not returned yet. */
 export const Working: Story = {
-  args: { tool: 'note_neighbourhood', subject: 'Harmonic oscillator', isWorking: true },
+  args: { tool: 'link_list', subject: 'Harmonic oscillator', isWorking: true },
 }
 
 /** Put down, with what it was about. */
@@ -59,7 +59,7 @@ export const InAThread: Story = {
 /** A name with nowhere to break, and one that runs long. */
 export const AwkwardText: Story = {
   args: {
-    tool: 'note_neighbourhood',
+    tool: 'link_list',
     subject: 'a note whose title runs on well past the width of the panel it is drawn in',
   },
 }

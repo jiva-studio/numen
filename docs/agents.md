@@ -63,9 +63,9 @@ Three plugins register the tools an agent can call, each for its own subject, an
 | `note_read`                       | the content, prose, title, frontmatter and fingerprint of one note, by its path                               | both    |
 | `note_write`                      | write or create one note; with the fingerprint `note_read` gave, a write over somebody else's edit is refused | full    |
 | `note_headings`                   | the headings of one note: level, text, line and byte offset                                                   | both    |
-| `note_search`, `search_query`     | the notes whose title, path or text match a query, at most 100, 20 where the call names no limit              | both    |
-| `note_neighbourhood`, `link_list` | the links written in one note and the notes that link to it                                                   | both    |
-| `vault_info`, `vault_get`         | the vault's name, root path and number of notes                                                               | both    |
+| `note_search`                     | the notes whose title, path or text match a query, at most 100, 20 where the call names no limit              | both    |
+| `link_list`                       | the links written in one note and the notes that link to it                                                   | both    |
+| `vault_get`                       | the vault's name, root path and number of notes                                                               | both    |
 | `file_read`                       | a byte range of any file in the vault, by its path from the vault root                                        | both    |
 | `file_create`                     | a new file in the vault, holding the content given                                                            | full    |
 
@@ -101,7 +101,7 @@ A card is named by its card id and never by the place it is in, so the cards sta
 
 ### How a tool is named
 
-A tool is named for the subject it acts on, then what it does: `note_read`, `card_add`, `window_focus_tab`. Three tools have a second name that accepts the same call: `search_query` is `note_search`, `link_list` is `note_neighbourhood`, and `vault_get` is `vault_info`. `edit_preview` has no subject prefix.
+A tool is named for the subject it acts on, then what it does: `note_read`, `card_add`, `window_focus_tab`. `edit_preview` has no subject prefix.
 
 ## The servers
 
