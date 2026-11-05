@@ -97,14 +97,13 @@ async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, 
   await search.setTyped(text)
   await flushPromises()
   const runChoice = vi.fn()
-  const openFile = vi.fn()
   const field = mount(CommandPalette, {
     props: {
       commands,
       search,
       doing: {} as CommandDeps,
       getTarget: () => inFront,
-      places: { openFile },
+      places: {},
       runChoice,
     },
     global: { stubs: { Palette: true } },
@@ -116,7 +115,7 @@ async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, 
   const rows = search.groups.value.flatMap((group) =>
     group.items.map((one) => ({ item: one.id, actions: one.actions?.map((a) => a.id) ?? [] })),
   )
-  return { search, commands, runChoice, openFile, choose, rows, field }
+  return { search, commands, runChoice, choose, rows, field }
 }
 
 beforeEach(() => {
@@ -139,7 +138,6 @@ describe('choosing an action of a row of the search', () => {
       await one.choose(item, action)
 
       expect(one.runChoice, `${item} ${action}`).toHaveBeenCalledExactlyOnceWith(expected)
-      expect(one.openFile).not.toHaveBeenCalled()
     }
     expect(h.runInvocation).not.toHaveBeenCalled()
   })
@@ -156,7 +154,6 @@ describe('choosing an action of a row of the search', () => {
       over: { path: '', file: 'books/Atlas.pdf', title: '', selector: { page: 3 } },
       input: '',
     })
-    expect(one.openFile).not.toHaveBeenCalled()
   })
 
   it('closes the search once and runs the choice once', async () => {
@@ -179,7 +176,6 @@ describe('choosing an action of a row of the search', () => {
     await one.choose(row!.item, 'note')
 
     expect(one.runChoice).not.toHaveBeenCalled()
-    expect(one.openFile).not.toHaveBeenCalled()
     expect(h.runInvocation).not.toHaveBeenCalled()
   })
 })

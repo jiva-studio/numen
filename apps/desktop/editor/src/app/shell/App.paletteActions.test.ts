@@ -39,40 +39,27 @@ const choose = async (window: Window, item: string, action: string) => {
 }
 
 describe('the row that creates a note, chosen on the window', () => {
-  it('draws the command that makes the note and the three relations of the note in front', async () => {
+  it('draws the command that makes the note alone where no note is in front', async () => {
     vaultState.names = []
     const window = await mountWindowWithPalette()
 
     await search(window, 'Entropy')
 
     const row = getGroups(window).find((one) => one.id === CREATE_NOTE_ROW)?.items[0]
-    expect(row?.actions?.map((one) => one.id)).toStrictEqual([
-      'app:note.create',
-      'app:note.createChild',
-      'app:note.createParent',
-      'app:note.createJump',
-    ])
+    expect(row?.actions?.map((one) => one.id)).toStrictEqual(['app:note.create'])
   })
 
-  it.each([
-    'app:note.create',
-    'app:note.createChild',
-    'app:note.createParent',
-    'app:note.createJump',
-  ])(
-    'makes one note under the words typed on the choice of %s, and closes the search',
-    async (action) => {
-      vaultState.names = []
-      const window = await mountWindowWithPalette()
-      await search(window, '  Entropy  ')
+  it('makes one note under the words typed on the choice of app:note.create, and closes the search', async () => {
+    vaultState.names = []
+    const window = await mountWindowWithPalette()
+    await search(window, '  Entropy  ')
 
-      await choose(window, CREATE_NOTE_ROW, action)
+    await choose(window, CREATE_NOTE_ROW, 'app:note.create')
 
-      expect(requests.made).toStrictEqual(['Entropy'])
-      expect(window.findComponent(Palette).props('isOpen')).toBe(false)
-      expect(window.findComponent(Palette).props('crumb')).toBe('')
-    },
-  )
+    expect(requests.made).toStrictEqual(['Entropy'])
+    expect(window.findComponent(Palette).props('isOpen')).toBe(false)
+    expect(window.findComponent(Palette).props('crumb')).toBe('')
+  })
 
   it('makes no note on the choice of an action that is no command of the row', async () => {
     vaultState.names = []
