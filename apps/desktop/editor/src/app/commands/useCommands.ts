@@ -60,6 +60,7 @@ export interface CommandsDepsOptions {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
     plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
+    getCommittedSetting?: (path: readonly string[]) => unknown
   }
   /** Shows a note in the plugin that displays notes. */
   travel: (path: string) => Promise<void> | void

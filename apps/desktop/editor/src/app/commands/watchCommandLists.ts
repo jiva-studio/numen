@@ -15,6 +15,12 @@ interface CommandListSources {
   readonly fileMenuCommands?: FileMenuCommands | undefined
   readonly writeMessage: MessageWriter
   readonly plugins?: Ref<readonly { readonly id: string; readonly isActive: boolean }[]> | undefined
+  readonly rest?:
+    | {
+        /** A setting as the core last confirmed it. A plugin with no backend is never active, so its switch is read here. */
+        readonly getCommittedSetting?: ((path: readonly string[]) => unknown) | undefined
+      }
+    | undefined
 }
 
 export function watchCommandLists(
@@ -23,6 +29,7 @@ export function watchCommandLists(
   getTarget: () => CommandTarget,
 ): void {
   const { declaredCommands, fileMenuCommands, writeMessage, plugins } = sources
+  const getCommittedSetting = sources.rest?.getCommittedSetting
   if (declaredCommands) {
     const loadDeclared = () => {
       declaredCommands
@@ -34,7 +41,13 @@ export function watchCommandLists(
       if (open) loadDeclared()
     })
     if (plugins) {
-      watch(() => plugins.value.map((one) => `${one.id}:${one.isActive}`).join(), loadDeclared)
+      watch(
+        () =>
+          plugins.value
+            .map((one) => `${one.id}:${one.isActive}:${isSwitchedOn(one.id, getCommittedSetting)}`)
+            .join(),
+        loadDeclared,
+      )
     }
   }
 
@@ -48,3 +61,9 @@ export function watchCommandLists(
     })
   }
 }
+
+/** Whether the setting of the plugin that switches it on reads true; absent counts as on. */
+const isSwitchedOn = (
+  pluginId: string,
+  getCommittedSetting: ((path: readonly string[]) => unknown) | undefined,
+): boolean => getCommittedSetting?.(['plugins', pluginId, 'enabled']) !== false
