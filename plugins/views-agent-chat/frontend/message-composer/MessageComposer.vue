@@ -81,11 +81,7 @@ function onSelectReasoning(id: string) {
     <!-- Multi-line expanding text input -->
     <p v-if="isAgentMissing" class="composer__empty text-hushed">
       {{ noAgentMessage }}
-      <button
-        type="button"
-        class="composer__link text-ink cursor-pointer underline"
-        @click="emit('open-settings')"
-      >
+      <button type="button" class="composer__link cursor-pointer" @click="emit('open-settings')">
         {{ openSettingsLabel }}
       </button>
     </p>
@@ -166,7 +162,10 @@ function onSelectReasoning(id: string) {
   padding: 0;
   background: none;
   border: 0;
+  color: inherit;
   font: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
 }
 
 .composer__grow {
