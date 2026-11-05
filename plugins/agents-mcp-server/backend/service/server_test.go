@@ -461,6 +461,24 @@ func isPeerClosed(t *testing.T, peer net.Conn) bool {
 	return false
 }
 
+// waitPeerClosed fails the test with msg unless the end of a net.Pipe opposite to peer is closed
+// within five seconds.
+func waitPeerClosed(t *testing.T, peer net.Conn, msg string) {
+	t.Helper()
+	err := peer.SetReadDeadline(time.Now().Add(5 * time.Second))
+	if errors.Is(err, io.ErrClosedPipe) {
+		return
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = peer.Read(make([]byte, 1))
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrClosedPipe) {
+		return
+	}
+	t.Fatalf("%s: read from the peer returned %v", msg, err)
+}
+
 func TestServerCloseKeepsConnectionsThatSentRequest(t *testing.T) {
 	t.Parallel()
 
@@ -481,8 +499,13 @@ func TestServerCloseKeepsConnectionsThatSentRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !isPeerClosed(t, silentPeer) {
-		t.Fatal("Close left open a connection that sent no request")
+	waitPeerClosed(t, silentPeer, "Close left open a connection that sent no request")
+	// The connections are closed in one pass under s.mu, so the pass has ended once the lock is free.
+	srv.mu.Lock()
+	tracked := len(srv.newConns)
+	srv.mu.Unlock()
+	if tracked != 0 {
+		t.Fatalf("Close left %d connections tracked as without a request", tracked)
 	}
 	if isPeerClosed(t, activePeer) {
 		t.Fatal("Close closed a connection that sent a request")
@@ -505,7 +528,5 @@ func TestServerClosesConnectionAcceptedAfterClose(t *testing.T) {
 
 	srv.trackConn(lateConn, http.StateNew)
 
-	if !isPeerClosed(t, latePeer) {
-		t.Fatal("a connection accepted after Close stays open")
-	}
+	waitPeerClosed(t, latePeer, "a connection accepted after Close stays open")
 }
