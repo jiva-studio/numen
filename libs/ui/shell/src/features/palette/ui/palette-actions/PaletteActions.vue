@@ -172,11 +172,7 @@ function hold(action: string, row: unknown): void {
       />
     </div>
 
-    <p
-      v-if="!actions.length"
-      class="actions__silence text-hushed"
-      data-actions="silence"
-    >
+    <p v-if="!actions.length" class="actions__silence text-hushed" data-actions="silence">
       {{ words.silence }}
     </p>
 
