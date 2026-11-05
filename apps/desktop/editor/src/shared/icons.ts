@@ -17,6 +17,7 @@ import {
   Copy,
   CornerDownRight,
   CornerLeftUp,
+  File,
   FilePlus,
   FileText,
   FolderPlus,
@@ -43,6 +44,7 @@ import {
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [COMMAND.openNote, FileText],
+  [COMMAND.openFile, File],
   [COMMAND.openNoteBeside, FileText],
   [COMMAND.createChildNote, CornerDownRight],
   [COMMAND.createParentNote, CornerLeftUp],

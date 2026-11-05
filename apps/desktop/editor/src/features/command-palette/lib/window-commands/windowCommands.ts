@@ -3,7 +3,7 @@
  */
 import { COMMAND } from '@/shared/commandIds'
 import { createRowKeys } from '../chords/chords'
-import { isAlwaysAvailable } from '../commands/availability'
+import { isAlwaysAvailable, isFileChosen } from '../commands/availability'
 import type { Command } from '../../types'
 import type { Words } from '../../words'
 
@@ -26,6 +26,12 @@ export const createWindowNavigationCommands = (words: Words, agent: string): rea
     ...createRowKeys(COMMAND.closeTab, agent),
     group: 'window',
     isAvailable: (target) => target.tab !== '',
+  },
+  {
+    id: COMMAND.openFile,
+    text: words.readDocument,
+    group: 'file',
+    isAvailable: isFileChosen,
   },
   {
     id: COMMAND.searchVault,

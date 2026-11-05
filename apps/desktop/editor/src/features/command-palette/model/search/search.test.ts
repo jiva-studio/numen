@@ -34,10 +34,15 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Text search only: no embedding model set',
   notEmbedded: 'Semantic index not built yet',
+  creating: 'No results',
+  creates: 'Create note',
+  asChild: 'Create as child',
+  asParent: 'Create as parent',
+  asJump: 'Create as jump',
 }
 
-/** The first action of a note: the editor command that opens it, run like any command of the menu. */
-const OPEN_NOTE = `menu:${COMMAND.openNote}`
+/** The first action of a note is the id of the editor command that opens it. */
+const OPEN_NOTE = COMMAND.openNote
 
 /** A vault that responds when the test resolves it, and records its requests. */
 function createVault() {
@@ -356,12 +361,10 @@ describe('where a thing found takes the person', () => {
     const palette = await createFilledPalette()
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
 
-    expect(palette.chooseEntry(item.id, OPEN_NOTE)).toEqual({
+    expect(palette.chooseResult(item.id, OPEN_NOTE)).toEqual({
       command: COMMAND.openNote,
-      path: 'notes/entropy.md',
-      title: 'Entropy',
-      type: 'note',
-      line: -1,
+      over: { path: 'notes/entropy.md', file: 'notes/entropy.md', title: 'Entropy' },
+      input: '',
     })
   })
 
@@ -369,12 +372,15 @@ describe('where a thing found takes the person', () => {
     const palette = await createFilledPalette()
     const item = getGroup(palette.groups.value, 'names')!.items[1]!
 
-    expect(palette.chooseEntry(item.id, OPEN_NOTE)).toEqual({
+    expect(palette.chooseResult(item.id, OPEN_NOTE)).toEqual({
       command: COMMAND.openNote,
-      path: 'notes/carnot.md',
-      title: 'The Carnot cycle',
-      type: 'note',
-      line: 12,
+      over: {
+        path: 'notes/carnot.md',
+        file: 'notes/carnot.md',
+        title: 'The Carnot cycle',
+        line: 12,
+      },
+      input: '',
     })
   })
 
@@ -391,18 +397,16 @@ describe('where a thing found takes the person', () => {
     await flushPromises()
     const item = getGroup(palette.groups.value, 'text')!.items[0]!
 
-    expect(palette.chooseEntry(item.id, OPEN_NOTE)).toEqual({
+    expect(palette.chooseResult(item.id, OPEN_NOTE)).toEqual({
       command: COMMAND.openNote,
-      path: 'notes/heat.md',
-      title: 'Heat engines',
-      type: 'note',
-      line: 12,
+      over: { path: 'notes/heat.md', file: 'notes/heat.md', title: 'Heat engines', line: 12 },
+      input: '',
     })
   })
 
   it('takes nobody anywhere for an item it is not drawing', async () => {
     const palette = await createFilledPalette()
-    expect(palette.chooseItem('notes/nowhere.md', 'note')).toBeNull()
+    expect(palette.chooseResult('notes/nowhere.md', OPEN_NOTE)).toBeNull()
   })
 })
 
@@ -464,11 +468,15 @@ describe('a passage from something that is not a note', () => {
     expect(item.actions?.map((one) => one.text)).toEqual([WORDS.readDocument])
 
     // The document opens where the words stand in its own text.
-    expect(palette.chooseItem(item.id, 'note')).toEqual({
-      at: 'file',
-      path: 'library/mahabharata.epub',
-      title: '',
-      selector: { cfi: 'epubcfi(/6/4!/4/2)' },
+    expect(palette.chooseResult(item.id, COMMAND.openFile)).toEqual({
+      command: 'app:file.open',
+      over: {
+        path: '',
+        file: 'library/mahabharata.epub',
+        title: '',
+        selector: { cfi: 'epubcfi(/6/4!/4/2)' },
+      },
+      input: '',
     })
   })
 })

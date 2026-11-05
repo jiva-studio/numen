@@ -1672,3 +1672,135 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
     wrapper.unmount()
   })
 })
+
+describe('a command started with the text typed for it', () => {
+  const NAMING = [
+    'app:note.create',
+    'app:note.createChild',
+    'app:note.createParent',
+    'app:note.createJump',
+  ] as const
+
+  it.each(NAMING)('runs %s at once under the trimmed text and opens no step', (id) => {
+    const { commands } = createPalette()
+    const stepBefore = commands.step.value
+    const crumbBefore = commands.crumb.value
+
+    const invocation = commands.startCommand(id, front(), '  Entropy  ')
+
+    expect(invocation).toMatchObject({ id, name: 'Entropy', kind: 'note', tab: 'tab' })
+    expect(commands.step.value).toBe(stepBefore)
+    expect(commands.crumb.value).toBe(crumbBefore)
+  })
+
+  it('attaches a relation to the note it is started over', () => {
+    const { commands } = createPalette()
+
+    for (const id of NAMING.slice(1)) {
+      expect(commands.startCommand(id, front(), 'Entropy')?.path).toBe('physics/Ontology.md')
+    }
+  })
+
+  it('follows the tab that holds the note it is started over', () => {
+    const { commands, openNote } = createPalette()
+    openNote('physics/Ontology.md', 'active')
+
+    expect(commands.startCommand('app:note.createChild', front(), 'Entropy')?.note).toBe('active')
+  })
+
+  it('asks for the name as it did where the text typed is empty', () => {
+    const { commands } = createPalette()
+
+    expect(commands.startCommand('app:note.createChild', front(), '')).toBeNull()
+    expect(commands.crumb.value).toBe(words.child)
+  })
+
+  it('asks for the name as it did where the text typed is only blank', () => {
+    const { commands } = createPalette()
+
+    expect(commands.startCommand('app:note.createChild', front(), '   ')).toBeNull()
+    expect(commands.crumb.value).toBe(words.child)
+  })
+
+  it('runs nothing and opens no step where the command is unavailable', () => {
+    const { commands } = createPalette()
+    const crumbBefore = commands.crumb.value
+
+    expect(
+      commands.startCommand('app:note.createChild', front({ path: '', title: '' }), 'Entropy'),
+    ).toBeNull()
+    expect(commands.crumb.value).toBe(crumbBefore)
+  })
+
+  it('runs nothing over a window with no vault ready, and says so', () => {
+    const { commands } = createPalette()
+
+    expect(
+      commands.startCommand('app:note.create', front({ isReady: false }), 'Entropy'),
+    ).toBeNull()
+    expect(commands.getObjection('app:note.create', front({ isReady: false }))).toBe(words.noVault)
+  })
+
+  it('leaves a command that needs no name as it was, with no name', () => {
+    const { commands } = createPalette()
+
+    expect(commands.startCommand('app:note.copyPath', front(), 'Entropy')?.name).toBe('')
+  })
+
+  it('still opens the step of a command that asks for a choice', () => {
+    const { commands } = createPalette()
+
+    expect(commands.startCommand('app:appearance.chooseTheme', front(), 'dark')).toBeNull()
+    expect(commands.step.value).not.toBe('')
+  })
+})
+
+describe('the command that opens a document chosen as a result', () => {
+  const createDocument = (override: Partial<CommandTarget> = {}): CommandTarget =>
+    front({ tab: '', kind: null, path: '', title: 'Atlas', file: 'library/a.bin', ...override })
+
+  it('starts over a chosen document and carries its file, its title and its selector', () => {
+    const { commands } = createPalette()
+
+    expect(
+      commands.startCommand('app:file.open', createDocument({ selector: { page: 3 } })),
+    ).toMatchObject({
+      id: 'app:file.open',
+      path: '',
+      file: 'library/a.bin',
+      title: 'Atlas',
+      selector: { page: 3 },
+    })
+  })
+
+  it('starts over nothing that is in front, a note, or a window without a vault', () => {
+    const { commands } = createPalette()
+
+    expect(
+      commands.startCommand('app:file.open', createDocument({ tab: 'tab', kind: 'reader' })),
+    ).toBeNull()
+    expect(
+      commands.startCommand('app:file.open', createDocument({ path: 'a.md', file: 'a.md' })),
+    ).toBeNull()
+    expect(commands.startCommand('app:file.open', createDocument({ isReady: false }))).toBeNull()
+    expect(commands.startCommand('app:file.open', createDocument({ file: '' }))).toBeNull()
+  })
+
+  it('says why it did not start, as any command does', () => {
+    const { commands } = createPalette()
+
+    expect(
+      commands.getObjection('app:file.open', createDocument({ tab: 'tab', kind: 'reader' })),
+    ).toBe(words.noNote)
+    expect(commands.getObjection('app:file.open', createDocument({ isReady: false }))).toBe(
+      words.noVault,
+    )
+    expect(commands.getObjection('app:file.open', createDocument())).toBe('')
+  })
+
+  it('is not in the list of commands over a window holding a document in a tab', () => {
+    const { commands } = createPalette({ kind: 'reader', path: '', title: '', file: 'a.pdf' })
+
+    expect(Object.values(getItemIds(commands.groups)).flat()).not.toContain('app:file.open')
+  })
+})

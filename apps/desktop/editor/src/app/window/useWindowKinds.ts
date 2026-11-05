@@ -3,9 +3,9 @@
  */
 import { shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import { getCurrentDate, runInBackground } from '@numen/ui'
+import { getCurrentDate } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { DestinationDeps } from '@/features/command-palette'
+import type { FileIcons } from '@/features/command-palette'
 import { agentPort } from '../plugins/agentPort'
 import type { WindowKindsDeps } from '../kinds/deps'
 import {
@@ -76,12 +76,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
 
   const agents = createAgentAsker(windowTabs, writeMessage)
 
-  const destinations: DestinationDeps = {
-    openFile: (path, title, line, selector) =>
-      runInBackground(
-        tabOpeners.openFile(path, title, { where: 'current', line, selector }),
-        (error) => writeMessage(formatErrorMessage(error), 'error'),
-      ),
+  const destinations: FileIcons = {
     findFileIcon: (path) => tabOpeners.findFileIcon(path),
   }
 
