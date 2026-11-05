@@ -12,7 +12,7 @@ import { SecretField } from '../secret-field'
 import SettingsViews from './SettingsViews.vue'
 import type { SettingsTabState } from '../../types'
 import { createSettingFields, type PluginInfo, type PluginSettingInfo } from '@/entities/settings'
-import { createEnumFields } from '../../lib/enums'
+import { createEnumFields, getValueInForce } from '../../lib/enums'
 import { appendPathEntry, createTextDrafts, removePathEntry } from '../../model/drafts'
 import { WORDS as words } from '../../words'
 
@@ -32,18 +32,19 @@ const {
   getShownSettings,
   getTopSecrets,
   getSecretsAfter,
-} = createEnumFields(
-  () => props.plugin,
-  readSetting,
-  (key) => installation.value.isPending?.([props.plugin.id, key]) ?? false,
-)
+} = createEnumFields(() => props.plugin, readSetting, isKeyPending)
+
+function isKeyPending(key: string): boolean {
+  return installation.value.isPending?.([props.plugin.id, ...key.split('.')]) ?? false
+}
+
 /** Why a path setting did not take the path last chosen, by key. */
 const pathProblems = ref<Record<string, string>>({})
 const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingChange(key: string, value: unknown): void {
-  fields.setValue([props.plugin.id, key], value)
+  fields.setValue([props.plugin.id, ...key.split('.')], value)
 }
 
 async function onPathChoose(setting: PluginSettingInfo): Promise<void> {
@@ -77,21 +78,28 @@ function hasManyPaths(setting: PluginSettingInfo): boolean {
 }
 
 function readSetting(key: string): unknown {
-  return installation.value.getSetting([props.plugin.id, key])
+  return installation.value.getSetting([props.plugin.id, ...key.split('.')])
+}
+
+/** The value in force of a setting: the one the core resolved, else the file, else nothing. */
+function getValue(key: string): unknown {
+  const setting = props.plugin.settings.find((one) => one.key === key)
+  if (!setting) return readSetting(key)
+  return getValueInForce(setting, readSetting, isKeyPending)
 }
 
 function getBooleanSetting(key: string, fallback: unknown): boolean {
-  const val = readSetting(key) ?? fallback
+  const val = getValue(key) ?? fallback
   return typeof val === 'boolean' ? val : Boolean(fallback)
 }
 
 function getNumberSetting(key: string, fallback: unknown): number {
-  const val = readSetting(key) ?? fallback
+  const val = getValue(key) ?? fallback
   return typeof val === 'number' ? val : Number(fallback ?? 0)
 }
 
 function getStringSetting(key: string, fallback: unknown): string {
-  const val = readSetting(key) ?? fallback
+  const val = getValue(key) ?? fallback
   return typeof val === 'string' ? val : String(fallback ?? '')
 }
 </script>

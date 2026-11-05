@@ -90,8 +90,8 @@ interface LoaderDeps {
 }
 
 function createAppearanceLoader(deps: LoaderDeps) {
-  let isInitialLoad = true
-  return async () => {
+  /** The first read caches the stylesheet the page was served with under the theme applied. */
+  return async (isFirstRead = false) => {
     let answer: Appearance
     try {
       answer = await deps.core.getAppearance()
@@ -104,10 +104,9 @@ function createAppearanceLoader(deps: LoaderDeps) {
     deps.mode.value = answer.mode
     deps.settings.value = answer.sizes
     deps.bounds.value = answer.bounds
-    if (isInitialLoad) {
+    if (isFirstRead) {
       deps.files.set(answer.applied, deps.served)
     }
-    isInitialLoad = false
   }
 }
 
@@ -238,13 +237,13 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     ...createAppearanceGroups(state, choice, words, getPluginName),
     previewItem: choice.previewItem,
     chooseItem: choice.chooseItem,
-    /** Reads the appearance again and draws it, after a setting changed. */
-    refresh: async () => {
+    /** Reads the theme, the mode and the sizes the settings now name, and applies them. */
+    reload: async () => {
       await loadAppearance()
       await applyAppearance()
     },
     start: async () => {
-      await loadAppearance()
+      await loadAppearance(true)
       // Stryker disable next-line ArrowFunction: createFollower handles stream errors internally.
       watcher.follow().catch((error: unknown) => write(formatErrorMessage(error), 'error'))
     },

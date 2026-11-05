@@ -15,17 +15,6 @@ export const createInstallation = (overrides: Partial<Installation> = {}): Insta
   choosePath: fn(async () => ''),
   plugins: ref([]),
   file: ref('/numen.json'),
-  themes: ref([]),
-  applied: ref('preset:numen'),
-  mode: ref('system'),
-  isPinned: ref(false),
-  sizes: ref({ interfaceScale: 1, textScale: 1 }),
-  bounds: ref({
-    interfaceScale: { min: 0.8, max: 2 },
-    textScale: { min: 0.8, max: 1.75 },
-  }),
-  choose: fn(),
-  isSyncing: ref(true),
   ...overrides,
 })
 
