@@ -134,10 +134,10 @@ describe('useWindowStatusBar handlers', () => {
     await expect(barNoReporter.onCancelTask('t')).resolves.toBeUndefined()
   })
 
-  it('shows a notice as neither running nor failed', () => {
+  it('shows a notice as a notice, neither running nor failed', () => {
     const row = first({ ...base, kind: 'notice', about: 'a key is ignored' })
 
-    expect(row.state).toBe('completed')
+    expect(row.state).toBe('notice')
     expect(row.error).toBeUndefined()
   })
 

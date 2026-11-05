@@ -179,3 +179,25 @@ describe('orderTasks across reports', () => {
     expect(after[2]?.about).toBe('file 2')
   })
 })
+
+describe('calculateAggregate with a notice', () => {
+  it('counts a notice as neither active nor failed', () => {
+    const aggregate = calculateAggregate([
+      { id: 'n', label: 'Read settings', about: 'a key is ignored', state: 'notice' },
+    ])
+    expect(aggregate.activeCount).toBe(0)
+    expect(aggregate.failedCount).toBe(0)
+    expect(aggregate.isIdle).toBe(true)
+  })
+
+  it('counts the other tasks as usual when a notice is among them', () => {
+    const aggregate = calculateAggregate([
+      { id: 'n', label: 'Read settings', state: 'notice' },
+      { id: 'r', label: 'Indexing', progress: 30, state: 'running' },
+      { id: 'f', label: 'Reading', state: 'failed', error: 'x' },
+    ])
+    expect(aggregate.activeCount).toBe(1)
+    expect(aggregate.failedCount).toBe(1)
+    expect(aggregate.overallProgress).toBe(30)
+  })
+})

@@ -318,3 +318,35 @@ export const FlatNewestFirst: Story = {
     await expect(canvasElement.querySelectorAll('.task-group, .task-group__header')).toHaveLength(0)
   },
 }
+
+const SETTINGS_NOTICE: StatusBarTask = {
+  id: 'settings-notice',
+  label: 'Read settings',
+  about:
+    'md.numen.proofreading is the object of no plugin that is installed, and is ignored, so the settings file keeps what it says until the person removes it from the file by hand',
+  state: 'notice',
+}
+
+/** A notice is counted in neither number of the bar, and its row shows all its text and a cross. */
+export const NoticeRow: Story = {
+  args: { tasks: [INDEXING, SETTINGS_NOTICE] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: /active/ }))
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-task-id="settings-notice"]')).not.toBeNull(),
+    )
+    await expect(canvasElement.textContent).toContain('1 active')
+    await expect(canvasElement.textContent).not.toContain('failed')
+    const row = canvasElement.querySelector('[data-task-id="settings-notice"]') as HTMLElement
+    await expect(row.querySelector('.task-item__notice-icon')).not.toBeNull()
+    await expect(row.querySelector('.circular-progress')).toBeNull()
+    const detail = row.querySelector('.task-item__detail') as HTMLElement
+    await expect(detail.textContent).toBe(SETTINGS_NOTICE.about)
+    await expect(detail.scrollWidth).toBeLessThanOrEqual(detail.clientWidth)
+    await expect(getComputedStyle(detail).whiteSpace).toBe('normal')
+    const dismiss = row.querySelector('button[aria-label="Dismiss"]') as HTMLElement
+    await expect(getComputedStyle(dismiss).opacity).toBe('1')
+    await expect(dismiss.querySelector('svg')).not.toBeNull()
+  },
+}

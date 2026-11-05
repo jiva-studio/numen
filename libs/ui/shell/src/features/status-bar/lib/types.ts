@@ -2,7 +2,7 @@
  * Types representing background tasks rendered in the status bar and details popover.
  */
 
-export type TaskState = 'running' | 'failed' | 'cancelling' | 'completed'
+export type TaskState = 'running' | 'failed' | 'cancelling' | 'completed' | 'notice'
 
 export interface StatusBarTask {
   readonly id: string

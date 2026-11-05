@@ -172,3 +172,39 @@ describe('TaskItem row layout', () => {
     expect(wrapper.find('.task-item__detail').exists()).toBe(false)
   })
 })
+
+describe('TaskItem row of a notice', () => {
+  const text =
+    'md.numen.proofreading is the object of no plugin that is installed, and is ignored, so the settings file keeps what it says until the person removes it'
+  const notice: StatusBarTask = { id: 'n1', label: 'Read settings', about: text, state: 'notice' }
+
+  it('draws an information icon and the whole text', () => {
+    const wrapper = mount(TaskItem, { props: { task: notice } })
+
+    expect(wrapper.find('.task-item__notice-icon').exists()).toBe(true)
+    expect(wrapper.find('.task-item__label').text()).toBe('Read settings')
+    expect(wrapper.find('.task-item__detail').text()).toBe(text)
+    expect(wrapper.find('.task-item__detail').classes()).toContain('task-item__detail--wrapped')
+  })
+
+  it('draws no ring and no spinner', () => {
+    const wrapper = mount(TaskItem, { props: { task: notice } })
+
+    expect(wrapper.find('.circular-progress').exists()).toBe(false)
+    expect(wrapper.find('.task-item__indicator').exists()).toBe(false)
+    expect(wrapper.find('.text-alarm').exists()).toBe(false)
+  })
+
+  it('draws a dismiss button with a cross that shows without the pointer on the row', async () => {
+    const wrapper = mount(TaskItem, { props: { task: notice } })
+
+    const dismiss = wrapper.find('button[aria-label="Dismiss"]')
+    expect(dismiss.exists()).toBe(true)
+    expect(dismiss.find('svg').exists()).toBe(true)
+    expect(dismiss.classes()).toContain('task-item__btn--visible')
+    expect(wrapper.findAll('button')).toHaveLength(1)
+
+    await dismiss.trigger('click')
+    expect(wrapper.emitted('dismiss')).toEqual([['n1']])
+  })
+})
