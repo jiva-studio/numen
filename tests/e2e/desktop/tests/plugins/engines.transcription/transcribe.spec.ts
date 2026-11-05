@@ -38,6 +38,19 @@ const expectPassageGone = async (
   await page.keyboard.press('Escape')
 }
 
+/**
+ * Waits until no task recognises the file. The plugin recognises a scan on its own when it opens,
+ * and the Recognise command starts a second run: the words of the first run are found while the
+ * second still runs. Deleting the recognition then takes away the file the second run is about to
+ * report, and that run ends as a failed task that stays in the status bar.
+ */
+const expectNoRecognitionRunning = async (page: Page, name: string): Promise<void> => {
+  await expect(page.locator('.status-bar__summary')).not.toHaveText(/^[1-9]\d* active$/)
+  await page.locator('.status-bar__trigger').click()
+  await expect(page.locator('.task-item').filter({ hasText: name })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+}
+
 /** Opens a recording of the vault and has it transcribed through the palette. */
 const transcribe = async (page: Page, name: string): Promise<Locator> => {
   await openWorkspace(page)
@@ -113,6 +126,7 @@ test.describe('the text versions of a file', () => {
       await runCommand(page, 'Recognise', /^Recognise/)
       await waitForPassage(page, MOCK_RECOGNISED_WORDS, `assets/${name}`)
       await page.keyboard.press('Escape')
+      await expectNoRecognitionRunning(page, name)
     }
 
     await runCommand(page, 'Delete recognition', /^Delete recognition$/)
