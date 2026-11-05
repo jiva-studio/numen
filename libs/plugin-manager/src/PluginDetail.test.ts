@@ -6,7 +6,7 @@ import PluginDetail from './PluginDetail.vue'
 import PluginData from './PluginData.vue'
 import PluginStopped from './PluginStopped.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
-import { createManaged, createOffered } from './testing/managed'
+import { createManaged, createAvailable } from './testing/managed'
 
 const baseProps = (overrides: Partial<PluginDetailProps> = {}): PluginDetailProps => ({
   plugin: createManaged('sample.notes', 'Notes', { version: '2.1.0', description: 'Takes notes.' }),
@@ -111,7 +111,7 @@ describe('PluginDetail', () => {
 describe('PluginDetail for a plugin that is not installed', () => {
   it('offers install where the application can install', async () => {
     const wrapper = mountDetail({
-      plugin: createOffered('sample.offer', 'Offered'),
+      plugin: createAvailable('sample.offer', 'Offered'),
       canInstall: true,
     })
 
@@ -125,7 +125,7 @@ describe('PluginDetail for a plugin that is not installed', () => {
   })
 
   it('says it is not installed where the application cannot install', () => {
-    const wrapper = mountDetail({ plugin: createOffered('sample.offer', 'Offered') })
+    const wrapper = mountDetail({ plugin: createAvailable('sample.offer', 'Offered') })
 
     expect(wrapper.findAllComponents(Button)).toHaveLength(1)
     expect(wrapper.find('.plugin-detail__absent').text()).toBe('Not installed')

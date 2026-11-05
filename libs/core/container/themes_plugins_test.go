@@ -70,7 +70,7 @@ func listThemeNames(t *testing.T, cfg Config) []string {
 
 // The theme list is read from the discovered manifests: a plugin without a process contributes its
 // themes, and no plugin is started to answer.
-func TestListThemesOffersPluginThemesBeforeAnyPluginIsActive(t *testing.T) {
+func TestListThemesListsPluginThemesBeforeAnyPluginIsActive(t *testing.T) {
 	root := t.TempDir()
 	writeThemesPlugin(t, root, themesPluginID, `"desktop.editor"`)
 	cfg := openThemesConfig(t, "desktop.editor", root)
@@ -106,7 +106,7 @@ func TestAPluginThemeIsReadFromThePluginFolder(t *testing.T) {
 	}
 }
 
-func TestListThemesOffersNoThemeOfAPluginForAnotherTarget(t *testing.T) {
+func TestListThemesListsNoThemeOfAPluginForAnotherTarget(t *testing.T) {
 	root := t.TempDir()
 	writeThemesPlugin(t, root, themesPluginID, `"desktop.flashcards"`)
 	cfg := openThemesConfig(t, "desktop.editor", root)
@@ -118,7 +118,7 @@ func TestListThemesOffersNoThemeOfAPluginForAnotherTarget(t *testing.T) {
 	}
 }
 
-func TestListThemesOffersNoThemeOfADisabledPlugin(t *testing.T) {
+func TestListThemesListsNoThemeOfADisabledPlugin(t *testing.T) {
 	root := t.TempDir()
 	writeThemesPlugin(t, root, themesPluginID, `"desktop.editor"`)
 	cfg := openThemesConfig(t, "desktop.editor", root)
@@ -199,7 +199,7 @@ func TestAPluginThemeLinkedOutOfThePluginFolderIsNotRead(t *testing.T) {
 }
 
 // A config with no plugin host offers the default theme alone.
-func TestListThemesOfAConfigWithoutAPluginHostOffersTheDefaultAlone(t *testing.T) {
+func TestListThemesOfAConfigWithoutAPluginHostListsTheDefaultAlone(t *testing.T) {
 	dir := t.TempDir()
 	cfg := NewConfig(Config{ThemesPath: filepath.Join(dir, "themes"), SettingsPath: filepath.Join(dir, "settings.json")})
 

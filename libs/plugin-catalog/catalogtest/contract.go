@@ -22,8 +22,8 @@ func OnDiskEntries() []catalog.Entry {
 	}
 }
 
-// OfferedEntries are entries of plugins a source offers and that are not on disk.
-func OfferedEntries() []catalog.Entry {
+// AvailableEntries are entries of plugins a source offers and that are not on disk.
+func AvailableEntries() []catalog.Entry {
 	return []catalog.Entry{
 		sampleEntry("org.example.gamma", "0.3.0", catalog.StateAvailable, "tools", "gamma"),
 		sampleEntry("org.example.delta", "4.0.0", catalog.StateAvailable, "views", "delta"),

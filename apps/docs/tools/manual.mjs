@@ -555,6 +555,28 @@ const meaningOfDeclared = (one) => {
   return `${parts.join('. ')}.`.replace(/^([A-Z])(?![A-Z])/, (letter) => letter.toLowerCase())
 }
 
+const PLUGINS = new URL('../../../plugins/', import.meta.url)
+
+/** The manifests of the plugins that declare settings, in the order of their ids. */
+const readSettingPlugins = async () => {
+  const found = []
+  for (const entry of await readdir(PLUGINS, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    let manifest
+    try {
+      manifest = JSON.parse(await read(PLUGINS, `${entry.name}/manifest.json`))
+    } catch (error) {
+      if (error.code === 'ENOENT') continue
+      die(`plugins/${entry.name}/manifest.json cannot be read: ${error.message}`)
+    }
+    if ((manifest.settings ?? []).length > 0) found.push(manifest)
+  }
+  return found.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+}
+
+/** A cell of a table row: a bar or a line break in the text would split the row. */
+const cell = (text) => text.replace(/\s*\n\s*/g, ' ').replace(/\|/g, '\\|')
+
 /**
  * The settings of the owner app. The shell declares most of them in a JSON of the format of a
  * manifest, and the reference is read from that declaration. The sections of the agent and the AI
@@ -621,6 +643,14 @@ const settings = async () => {
       )
     out.push('| | | |', '| --- | --- | --- |')
     for (const row of rows) out.push(`| \`${row.key}\` | ${row.kind} | ${row.meaning} |`)
+    out.push('')
+  }
+  for (const manifest of await readSettingPlugins()) {
+    out.push(`### \`${manifest.id}\``, '', `The settings of the plugin ${manifest.name}.`, '')
+    out.push('| | | |', '| --- | --- | --- |')
+    for (const one of manifest.settings) {
+      out.push(`| \`${one.key}\` | ${kindOfDeclared(one)} | ${cell(meaningOfDeclared(one))} |`)
+    }
     out.push('')
   }
   return out.join('\n').trimEnd()

@@ -24,7 +24,7 @@ const { failure, isPlaying: playbackIsPlaying } = props.state.playback
 const { current, following, note, isLoading, error, isEditable } = props.state.content
 const { prose, typing } = props.state.draft
 const { timed, times: cueTimes, hasText } = props.state.lines
-const { isStartable, starter } = props.state.offers
+const { isStartable, starter } = props.state.options
 const isPlaying = computed(() => props.isPlaying ?? playbackIsPlaying.value)
 
 /** The times in the editor's gutter, and the line being played. */
@@ -55,7 +55,7 @@ watch(
 
 /* -------------------------------- Handlers -------------------------------- */
 function onTranscribe() {
-  props.state.offers.start().catch(props.state.reportFailure)
+  props.state.options.start().catch(props.state.reportFailure)
 }
 
 function onUpdateModelValue(text: string) {
