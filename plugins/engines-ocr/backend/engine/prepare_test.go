@@ -17,7 +17,11 @@ func findRuntime(t *testing.T) string {
 	}
 	if base, err := os.UserConfigDir(); err == nil {
 		pattern := filepath.Join(base, "numen", "plugin-storage", "shared", "models", "onnxruntime", "*", onnx.GetLibraryName())
-		if found, _ := filepath.Glob(pattern); len(found) > 0 {
+		found, globErr := filepath.Glob(pattern)
+		if globErr != nil {
+			t.Fatalf("glob %q: %v", pattern, globErr)
+		}
+		if len(found) > 0 {
 			return found[0]
 		}
 	}
