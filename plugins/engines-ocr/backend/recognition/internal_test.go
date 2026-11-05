@@ -514,7 +514,10 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	texts.SetStore("md.numen.engines.ocr", v.Store())
 	texts.File("scan.png", []byte(pngRaw))
 
-	// 1. Missing file reports task with 0/0 counts; joined error when ReportTask also fails.
+	// 1. A file that cannot be read reports a task with 0/0 counts; joined error when ReportTask also fails.
+	readSentinel := errors.New("permission denied")
+	v.File("refused.png", pngRaw)
+	v.Refuse("refused.png", readSentinel)
 	reportSentinel := errors.New("report task failed")
 	qReportFail := &stubQueue{reportErr: reportSentinel}
 	rReportFail, err := New(Host{Vault: v, Store: v.Store(), Texts: texts, Queue: qReportFail}, func(context.Context) (Recogniser, error) {
@@ -523,8 +526,8 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = rReportFail.Recognise(t.Context(), Request{Path: "missing.png"})
-	if !errors.Is(err, host.ErrNotExist) || !errors.Is(err, reportSentinel) {
+	_, err = rReportFail.Recognise(t.Context(), Request{Path: "refused.png"})
+	if !errors.Is(err, readSentinel) || !errors.Is(err, reportSentinel) {
 		t.Fatalf("expected joined read and report error, got %v", err)
 	}
 	if len(qReportFail.reported) != 1 || qReportFail.reported[0].CompletedCount != 0 || qReportFail.reported[0].TotalCount != 0 {

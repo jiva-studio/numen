@@ -74,6 +74,11 @@ describe('what a cell holds', () => {
     expect(writeCell('a\nb')).toBe('a b')
   })
 
+  it('drops the spaces and tabs around a line break and keeps the others', () => {
+    expect(writeCell('a  \t\r\n\t b  c')).toBe('a b  c')
+    expect(writeCell('a \n \n b')).toBe('a  b')
+  })
+
   it('shows an escaped pipe as a pipe', () => {
     expect(readCell('a \\| b')).toBe('a | b')
   })

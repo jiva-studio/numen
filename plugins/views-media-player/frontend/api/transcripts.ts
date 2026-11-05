@@ -12,8 +12,14 @@ export const getCues = (segments: readonly TextSegment[]): readonly Cue[] =>
   segments.flatMap((segment) => {
     const t = getSelectorSpan(segment.selector)
     if (t === undefined) return []
-    return [{ text: segment.text.replace(/\n+$/, ''), from: toMS(t[0]), to: toMS(t[1]) }]
+    return [{ text: removeTrailingLineBreaks(segment.text), from: toMS(t[0]), to: toMS(t[1]) }]
   })
+
+const removeTrailingLineBreaks = (text: string): string => {
+  let end = text.length
+  while (end > 0 && text[end - 1] === '\n') end--
+  return text.slice(0, end)
+}
 
 /** The cues as segments of a text version, one line to a cue. */
 export const getSegments = (cues: readonly Cue[]): readonly TextSegment[] =>

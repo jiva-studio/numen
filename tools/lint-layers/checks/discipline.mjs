@@ -2,7 +2,7 @@ import { runTool } from "../../shared/tools.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { REPO_ROOT, failOnFindings, readGo, requireMatches } from "./helpers.mjs";
+import { REPO_ROOT, failOnFindings, readGo, removeLineComment, requireMatches } from "./helpers.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -17,7 +17,7 @@ function readTrackedSources(pathspecs, accept = () => true) {
 
 /** True when the first lines of a source mark it as generated. */
 export function isGenerated(text) {
-  return /^\s*(\/\/|#|\/\*)\s*(Code generated .* DO NOT EDIT|@generated)/m.test(text.split("\n").slice(0, 20).join("\n"));
+  return /^[ \t]*(\/\/|#|\/\*)\s*(Code generated .* DO NOT EDIT|@generated)/m.test(text.split("\n").slice(0, 20).join("\n"));
 }
 
 const CODE_FILE = /\.(go|ts|tsx|mts|cts|js|mjs|cjs|vue)$/;
@@ -193,8 +193,8 @@ export function findSuppressions(sources) {
       text.split("\n").forEach((one, index) => {
         const key = GOLANGCI_EXCLUSION_KEY.exec(one);
         if (key) found.push({ file, line: index + 1, symbol: key[1] });
-        const comment = /#.*\b(nolint)\b/.exec(one);
-        if (comment) found.push({ file, line: index + 1, symbol: comment[1] });
+        const hash = one.indexOf("#");
+        if (hash !== -1 && /\bnolint\b/.test(one.slice(hash))) found.push({ file, line: index + 1, symbol: "nolint" });
       });
     }
     if (ESLINT_CONFIG.test(file)) found.push(...findFileEntriesInConfig(file, text));
@@ -254,7 +254,7 @@ export function parseWorkspaceUses(text) {
   const dirs = [];
   let isBlock = false;
   for (const raw of text.split("\n")) {
-    const line = raw.replace(/\/\/.*$/, "").trim();
+    const line = removeLineComment(raw).trim();
     if (/^use\s*\($/.test(line)) isBlock = true;
     else if (isBlock && line === ")") isBlock = false;
     else if (isBlock && line) dirs.push(line.replace(/^\.\//, ""));

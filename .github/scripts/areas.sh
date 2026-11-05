@@ -11,7 +11,7 @@
 set -euo pipefail
 
 everything=true
-if [ "$EVENT" = pull_request ]; then everything=false; fi
+if [[ $EVENT == pull_request ]]; then everything=false; fi
 
 grep -oE '^[a-z_]+:' .github/filters.yml | tr -d : | jq -R . | jq -cs \
   --argjson filters "$FILTERS" --argjson everything "$everything" '
@@ -26,16 +26,16 @@ list_plugin_files() {
   list_files | grep -E '^plugins/[^/]+/' | grep -vE '^plugins/\.example/' || true
 }
 
-if [ "$everything" = true ] || [ "$(jq -r '.plugins_all' <<< "$FILTERS")" = true ]; then
+if [[ $everything == true || $(jq -r '.plugins_all' <<< "$FILTERS") == true ]]; then
   dirs=$(for manifest in plugins/*/manifest.json; do dirname "$manifest"; done)
 else
   dirs=$(list_plugin_files | cut -d/ -f1-2 | sort -u | while read -r dir; do
-    if [ -f "$dir/manifest.json" ]; then echo "$dir"; fi
+    if [[ -f $dir/manifest.json ]]; then echo "$dir"; fi
   done)
 fi
 echo "plugin_dirs=$(echo "$dirs" | xargs)"
 
-if [ "$everything" = true ]; then
+if [[ $everything == true ]]; then
   echo "e2e=all"
 else
   list_files | node tests/e2e/desktop/scripts/select-tests.mjs scope | sed 's/^scope=/e2e=/'

@@ -27,10 +27,10 @@ case ",$asked," in *,macos,*) macos=true ;; esac
 # race is the detector: Linux runs it, and Windows runs the same tests without it on the slowest
 # runner. minutes is what the suite is given.
 entries='{"name":"Linux","runner":"ubuntu-latest","optional":false,"race":true,"minutes":45}'
-if [ "$windows" = true ]; then
+if [[ $windows == true ]]; then
   entries="$entries,"'{"name":"Windows","runner":"windows-latest","optional":true,"race":false,"minutes":15}'
 fi
-if [ "$macos" = true ]; then
+if [[ $macos == true ]]; then
   entries="$entries,"'{"name":"macOS","runner":"macos-latest","optional":true,"race":true,"minutes":45}'
 fi
 echo "matrix=[$entries]"

@@ -18,12 +18,12 @@ list_plugins() {
 declared=$(list_plugins "$plugins")
 shipped=$(list_plugins "$staged")
 
-if [ -z "$declared" ]; then
+if [[ -z $declared ]]; then
   echo "::error::no plugin with a manifest.json in $plugins"
   exit 1
 fi
 
-if [ "$declared" != "$shipped" ]; then
+if [[ $declared != "$shipped" ]]; then
   echo "::error::the staged plugins differ from the plugins with a manifest"
   diff <(echo "$declared") <(echo "$shipped") || true
   exit 1
