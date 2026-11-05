@@ -26,11 +26,11 @@ type fakeSearchIndex struct {
 	err      error
 }
 
-func (a fakeSearchIndex) FindLexical(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool, string) ([]domain.Passage, error) {
+func (a fakeSearchIndex) FindLexical(context.Context, domain.VaultID, sourceport.LexicalQuery) ([]domain.Passage, error) {
 	return a.passages, a.err
 }
 
-func (a fakeSearchIndex) GetNamedPassages(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool, string) ([]domain.Passage, error) {
+func (a fakeSearchIndex) GetNamedPassages(context.Context, domain.VaultID, sourceport.LexicalQuery) ([]domain.Passage, error) {
 	return nil, a.err
 }
 

@@ -2,6 +2,7 @@ package hostendpoint
 
 import (
 	"context"
+	"math"
 	"slices"
 	"testing"
 
@@ -14,12 +15,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// passageQueries are the questions the fake search was received, with the vault of each.
-var passageQueries = map[*recordingSearch][]pluginport.PluginPassageQuery{}
-
 func (s *recordingSearch) SearchPassages(_ context.Context, v domain.Vault, q pluginport.PluginPassageQuery) ([]domain.Passage, error) {
 	s.vaults = append(s.vaults, v.ID)
-	passageQueries[s] = append(passageQueries[s], q)
+	s.passageQueries = append(s.passageQueries, q)
 	return []domain.Passage{
 		{Source: "library/Birds.pdf", Text: "the grey heron", Location: "page 12", Start: 400, Length: 700, Selector: domain.Selector(`{"page":12}`)},
 		{Source: "notes/Heron.md", Text: "herons fish", Start: 20, Length: 40, Line: 4},
@@ -31,7 +29,7 @@ func TestHostSearchPassagesReturnPlacesAndCheckPermission(t *testing.T) {
 	fakeCallers := newSearchCallers(search)
 	client := newSearchClient(t, fakeCallers, "token-a")
 
-	got, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchPassagesRequest{
+	got, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{
 		Query: "heron", Limit: 5, Kinds: []string{"file"}, PathPrefix: "library/",
 	}))
 	if err != nil || got.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED || len(got.Msg.GetFound()) != 2 {
@@ -45,7 +43,7 @@ func TestHostSearchPassagesReturnPlacesAndCheckPermission(t *testing.T) {
 	if second.GetPath() != "notes/Heron.md" || second.GetLine() != 4 || second.GetRange().GetEnd() != 60 {
 		t.Errorf("the second passage is %v", second)
 	}
-	received := passageQueries[search]
+	received := search.passageQueries
 	if len(received) != 1 || received[0].Query != "heron" || received[0].Limit != 5 || received[0].PathPrefix != "library/" ||
 		!slices.Equal(received[0].Kinds, []domain.SourceKind{domain.KindFile}) {
 		t.Errorf("the search was received %+v", received)
@@ -58,7 +56,7 @@ func TestHostSearchPassagesReturnPlacesAndCheckPermission(t *testing.T) {
 func TestHostSearchPassagesDenyPluginWithoutPermission(t *testing.T) {
 	fakeCallers := newSearchCallers(&recordingSearch{})
 	denied := newSearchClient(t, fakeCallers, "token-b")
-	if _, err := denied.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchPassagesRequest{Query: "heron"})); readCode(t, err) != connect.CodePermissionDenied {
+	if _, err := denied.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron"})); readCode(t, err) != connect.CodePermissionDenied {
 		t.Errorf("a plugin without the permission got %v", err)
 	}
 }
@@ -68,24 +66,41 @@ func TestHostSearchPassagesRejectUnknownVaultAndKind(t *testing.T) {
 	fakeCallers := newSearchCallers(search)
 	client := newSearchClient(t, fakeCallers, "token-a")
 
-	unknown := connect.NewRequest(&v1.HostSearchPassagesRequest{Query: "heron"})
+	unknown := connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron"})
 	unknown.Header().Set("Numen-Vault", "v9")
 	if _, err := client.SearchPassages(t.Context(), unknown); readCode(t, err) != connect.CodeNotFound {
 		t.Errorf("an unknown vault got %v, want not found", err)
 	}
-	if _, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchPassagesRequest{Query: "heron", Kinds: []string{"book"}})); readCode(t, err) != connect.CodeInvalidArgument {
+	if _, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron", Kinds: []string{"book"}})); readCode(t, err) != connect.CodeInvalidArgument {
 		t.Errorf("a kind the index does not hold got %v, want invalid argument", err)
 	}
-	if len(passageQueries[search]) != 0 {
-		t.Errorf("the search ran for a call that was refused: %+v", passageQueries[search])
+	if len(search.passageQueries) != 0 {
+		t.Errorf("the search ran for a call that was refused: %+v", search.passageQueries)
 	}
 }
 
 func TestHostSearchWithoutIndexReportsNoIndex(t *testing.T) {
 	fakeCallers := newSearchCallers(nil)
 	client := newSearchClient(t, fakeCallers, "token-a")
-	got, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchPassagesRequest{Query: "heron"}))
+	got, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron"}))
 	if err != nil || got.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL {
 		t.Errorf("answered %v (%v), want the no-index refusal", got.Msg, err)
+	}
+}
+
+// farSearch answers with a passage of a text longer than a range on the wire can address.
+type farSearch struct {
+	recordingSearch
+}
+
+func (s *farSearch) SearchPassages(context.Context, domain.Vault, pluginport.PluginPassageQuery) ([]domain.Passage, error) {
+	return []domain.Passage{{Source: "library/Atlas.pdf", Text: "heron", Start: math.MaxInt32 - 5, Length: 10}}, nil
+}
+
+func TestHostSearchPassagesRefusePassageBeyondTheRangeOfTheWire(t *testing.T) {
+	client := newSearchClient(t, newSearchCallers(&farSearch{}), "token-a")
+	got, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron"}))
+	if readCode(t, err) != connect.CodeOutOfRange {
+		t.Errorf("a passage ending past the largest range answered %v (%v), want out of range", got, err)
 	}
 }

@@ -218,7 +218,7 @@ func (u Search) searchLexical(ctx context.Context, v domain.Vault, query string,
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	found, err := u.passages.FindLexical(ctx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing, p.PathPrefix)
+	found, err := u.passages.FindLexical(ctx, v.ID, sourceport.LexicalQuery{Text: query, Kinds: p.Kinds, Limit: p.Lexical, IsGrowing: p.IsGrowing, PathPrefix: p.PathPrefix})
 	if err != nil {
 		return err
 	}
@@ -231,7 +231,7 @@ func (u Search) searchNamed(ctx context.Context, v domain.Vault, query string, p
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	found, err := u.passages.GetNamedPassages(ctx, v.ID, query, p.Kinds, p.Named, p.IsGrowing, p.PathPrefix)
+	found, err := u.passages.GetNamedPassages(ctx, v.ID, sourceport.LexicalQuery{Text: query, Kinds: p.Kinds, Limit: p.Named, IsGrowing: p.IsGrowing, PathPrefix: p.PathPrefix})
 	if err != nil {
 		return err
 	}

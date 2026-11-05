@@ -1,10 +1,10 @@
 package service_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -65,7 +65,7 @@ func newLibrary(t *testing.T) library {
 	search := hosttest.NewSearch(testVault)
 	search.SetIndexedPassages([]host.Passage{
 		{Path: guidePath, Text: "The grey heron stands in the reeds", Location: "page 2", Start: 41, Length: 56, Selector: `{"page":2}`},
-		{Path: "notes/Herons.md", Text: "Herons fish at dusk.", Start: 0, Length: 20, Line: 1},
+		{Path: "notes/Herons.md", Text: "A heron fishes at dusk.", Start: 0, Length: 23, Line: 1},
 		{Path: talkPath, Text: "Today we speak about the heron.", Location: "00:04", Start: 27, Length: 32, Selector: `{"t":[4.5,9]}`},
 	})
 
@@ -93,7 +93,7 @@ func putText(t *testing.T, texts *hosttest.Texts, pluginID, path, kind string, f
 // call runs a tool on the vault and returns the structured answer, or the failure text.
 func (l library) call(t *testing.T, name, arguments string, out any) (failure string) {
 	t.Helper()
-	res, err := l.calls.InvokeTool(context.Background(), tools.Call{VaultID: testVault, Name: name, Arguments: []byte(arguments)})
+	res, err := l.calls.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: name, Arguments: []byte(arguments)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,8 +238,7 @@ func TestLibraryReadReturnsPageWithLocationsAndNext(t *testing.T) {
 }
 
 func itoa(n int) string {
-	b, _ := json.Marshal(n)
-	return string(b)
+	return strconv.Itoa(n)
 }
 
 func TestLibraryReadStopsAtCharacterBoundary(t *testing.T) {
@@ -373,5 +372,29 @@ func TestTheDescriptionsSayWhichToolReadsWhat(t *testing.T) {
 		if !slices.Contains(servers, tools.Full) || !slices.Contains(servers, tools.Reading) || len(servers) != 2 {
 			t.Errorf("%s is offered on %v, want the full and the reading server", name, servers)
 		}
+	}
+}
+
+func TestLibraryReadRefusesAPageWithAStartAndANegativeNumber(t *testing.T) {
+	l := newLibrary(t)
+	if failure := l.call(t, "library_read", `{"path":"`+guidePath+`","page":2,"start":5}`, nil); !strings.Contains(failure, "page") || !strings.Contains(failure, "start") {
+		t.Errorf("a page with a start gave %q, want both named", failure)
+	}
+	for _, field := range []string{"page", "start", "length"} {
+		failure := l.call(t, "library_read", `{"path":"`+guidePath+`","`+field+`":-1}`, nil)
+		if !strings.Contains(failure, field) || !strings.Contains(failure, "-1") {
+			t.Errorf("a negative %s gave %q, want the field and the number named", field, failure)
+		}
+	}
+}
+
+func TestATextFileWithABinaryTailIsNotText(t *testing.T) {
+	l := newLibrary(t)
+	l.vault.File("export.dat", strings.Repeat("plain text line\n", 1000)+"\x00\x01binary tail")
+	if failure := l.call(t, "file_read", `{"path":"export.dat"}`, nil); !strings.Contains(failure, "library_read") {
+		t.Errorf("file_read of a file whose binary part starts after its first bytes gave %q, want a refusal", failure)
+	}
+	if failure := l.call(t, "library_read", `{"path":"export.dat"}`, nil); !strings.Contains(failure, "no text version") {
+		t.Errorf("library_read of it gave %q, want no text version", failure)
 	}
 }

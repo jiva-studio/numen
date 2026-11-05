@@ -23,15 +23,15 @@ type passagesHost struct {
 	code    v1.HostSearchErrorCode
 	status  *connect.Error
 	vault   string
-	request *v1.HostSearchPassagesRequest
+	request *v1.HostSearchServiceSearchPassagesRequest
 }
 
-func (h *passagesHost) SearchPassages(_ context.Context, req *connect.Request[v1.HostSearchPassagesRequest]) (*connect.Response[v1.HostSearchPassagesResponse], error) {
+func (h *passagesHost) SearchPassages(_ context.Context, req *connect.Request[v1.HostSearchServiceSearchPassagesRequest]) (*connect.Response[v1.HostSearchServiceSearchPassagesResponse], error) {
 	h.vault, h.request = req.Header().Get("Numen-Vault"), req.Msg
 	if h.status != nil {
 		return nil, h.status
 	}
-	return connect.NewResponse(&v1.HostSearchPassagesResponse{
+	return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{
 		Error: h.code,
 		Found: []*v1.Passage{{
 			Path: "library/Birds.pdf", Text: "the heron stands in the reeds", Location: "page 12",
@@ -88,5 +88,18 @@ func TestSearchClientReturnsErrorsOfPassageSearch(t *testing.T) {
 				t.Errorf("got %v, want %v", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestASearchClientSendsALimitWithinTheMostTheHostReturns(t *testing.T) {
+	h := &passagesHost{}
+	c := dialPassages(t, h)
+	for limit, want := range map[int]int32{1 << 40: host.MaxSearchedPassages, -(1 << 40): 0, 7: 7} {
+		if _, err := c.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Limit: limit}); err != nil {
+			t.Fatal(err)
+		}
+		if got := h.request.GetLimit(); got != want {
+			t.Errorf("a limit of %d was sent as %d, want %d", limit, got, want)
+		}
 	}
 }

@@ -14,7 +14,7 @@ func TestFindLexicalLimitsWithinPathPrefix(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindNote, domain.KindFile}} {
-		got, err := queries.FindLexical(t.Context(), vaultA, "zebra", kinds, 1, false, "notes/")
+		got, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: kinds, Limit: 1, IsGrowing: false, PathPrefix: "notes/"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -23,7 +23,7 @@ func TestFindLexicalLimitsWithinPathPrefix(t *testing.T) {
 		}
 	}
 
-	books, err := queries.FindLexical(t.Context(), vaultA, "zebra", nil, 10, false, "lib/zebra")
+	books, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10, IsGrowing: false, PathPrefix: "lib/zebra"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func TestFindLexicalLimitsWithinPathPrefix(t *testing.T) {
 		t.Errorf("a prefix that ends inside a file name found %v, want the two chunks of the book", getSources(books))
 	}
 
-	none, err := queries.FindLexical(t.Context(), vaultA, "zebra", nil, 10, false, "elsewhere/")
+	none, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10, IsGrowing: false, PathPrefix: "elsewhere/"})
 	if err != nil || len(none) != 0 {
 		t.Errorf("a prefix nothing starts with found %v, %v", getSources(none), err)
 	}
@@ -46,7 +46,7 @@ func TestAPathPrefixIsNotAPattern(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	for prefix, want := range map[string]string{"a_b/": "a_b/one.md", "100%": "100%/three.md"} {
-		got, err := queries.FindLexical(t.Context(), vaultA, "zebra", nil, 10, false, prefix)
+		got, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10, IsGrowing: false, PathPrefix: prefix})
 		if err != nil || !slices.Equal(getSources(got), []string{want}) {
 			t.Errorf("prefix %q found %v, %v, want only %s", prefix, getSources(got), err, want)
 		}
@@ -62,14 +62,14 @@ func TestGetNamedPassagesLimitsWithinPathPrefix(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindNote, domain.KindFile}} {
-		got, err := queries.GetNamedPassages(t.Context(), vaultA, "gardening", kinds, 1, false, "notes/")
+		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "gardening", Kinds: kinds, Limit: 1, IsGrowing: false, PathPrefix: "notes/"})
 		if err != nil || !slices.Equal(getSources(got), []string{"notes/Gardening.md"}) {
 			t.Errorf("kinds %v: the section under notes/ is %v, %v", kinds, getSources(got), err)
 		}
 	}
 }
 
-func TestFindNearestWithinPathPrefixWidensCoarsePass(t *testing.T) {
+func TestFindNearestWithinPathPrefixReturnsOnlyPrefixChunks(t *testing.T) {
 	db := openIndex(t)
 	for i := range 12 {
 		path := fmt.Sprintf("lib/near-%02d.epub", i)

@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -44,9 +45,7 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
 	t.Helper()
 	found, err := db.Passages().FindLexical(
-		t.Context(), v.ID, query, []domain.SourceKind{domain.KindFile}, 10, false,
-		"",
-	)
+		t.Context(), v.ID, sourceport.LexicalQuery{Text: query, Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}

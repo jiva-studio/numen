@@ -133,7 +133,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	searchMock := cfg.NewSearch(db, mock, nil)
 
 	passages := db.Passages()
-	candidates, err := passages.FindLexical(ctx, v.ID, "entropy thermodynamics", nil, 20, false, "")
+	candidates, err := passages.FindLexical(ctx, v.ID, sourceport.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					res, err := c.passages.FindLexical(ctx, c.vault.ID, queryLexical, nil, 100, false, "")
+					res, err := c.passages.FindLexical(ctx, c.vault.ID, sourceport.LexicalQuery{Text: queryLexical, Kinds: nil, Limit: 100})
 					if err != nil {
 						b.Fatal(err)
 					}
@@ -286,7 +286,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					if _, err := c.passages.GetNamedPassages(ctx, c.vault.ID, "Section", nil, 20, false, ""); err != nil {
+					if _, err := c.passages.GetNamedPassages(ctx, c.vault.ID, sourceport.LexicalQuery{Text: "Section", Kinds: nil, Limit: 20}); err != nil {
 						b.Fatal(err)
 					}
 				}

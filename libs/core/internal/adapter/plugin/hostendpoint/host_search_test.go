@@ -27,6 +27,8 @@ type recordingSearch struct {
 	recipes []string
 	queries []pluginport.PluginSimilarityQuery
 	floors  []float64
+
+	passageQueries []pluginport.PluginPassageQuery
 }
 
 func (s *recordingSearch) GetEmbeddingState(_ context.Context, v domain.Vault) (pluginport.PluginEmbeddingState, error) {

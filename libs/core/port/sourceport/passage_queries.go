@@ -17,30 +17,27 @@ import (
 // Neither half returns the text: a passage is a location in a file, and the
 // file holds the words.
 type PassageQueries interface {
-	// FindLexical is the chunks of one vault whose text matches the words typed,
-	// best first, at most `limit` of them. `growing` marks the last word as possibly
-	// still being typed, and it is then matched by prefix. `pathPrefix` limits the sources to
-	// those whose path starts with it, and the index applies it before it cuts the list
-	// at `limit`. Empty limits none.
-	FindLexical(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool, pathPrefix string) ([]domain.Passage, error)
+	// FindLexical is the chunks of one vault whose text matches the words of `q.Text`,
+	// best first, at most `q.Limit` of them.
+	FindLexical(ctx context.Context, vaultID domain.VaultID, q LexicalQuery) ([]domain.Passage, error)
 
 	// GetNamedPassages is the sections of one vault whose names match the words
 	// typed, best first. A section is returned as the chunk it opens, so each
 	// result is located where the section begins.
-	GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool, pathPrefix string) ([]domain.Passage, error)
+	GetNamedPassages(ctx context.Context, vaultID domain.VaultID, q LexicalQuery) ([]domain.Passage, error)
 
 	// FindNearest is the chunks of one vault nearest a query vector, nearest first,
 	// at most `q.Limit` of them. `q.Vector` is the full precision the model answered
 	// with, and a chunk whose similarity to it is under `q.Floor` is not an answer
 	// and does not come back.
 	//
-	// `q.Recipe` is what a vector is kept pathPrefix, which is everything about the
+	// `q.Recipe` is what a vector is kept under, which is everything about the
 	// model that decides what a vector is. A name alone finds none of them.
 	FindNearest(ctx context.Context, vaultID domain.VaultID, q NearestQuery) ([]domain.Passage, error)
 }
 
 // NearestQuery is a search by meaning: the vector the model answered with, the
-// recipe it was made pathPrefix, the kinds of source to look in (all where empty),
+// recipe it was made under, the kinds of source to look in (all where empty),
 // how many chunks to return at most and the similarity under which a chunk is
 // not an answer.
 type NearestQuery struct {
@@ -51,4 +48,18 @@ type NearestQuery struct {
 	PathPrefix string
 	Limit      int
 	Floor      float64
+}
+
+// LexicalQuery is a search by words: the words typed, the kinds of source to
+// look in (all where empty) and how many chunks to return at most.
+type LexicalQuery struct {
+	Text  string
+	Kinds []domain.SourceKind
+	// PathPrefix limits the sources to those whose path starts with it, and the
+	// index applies it before it cuts the list at Limit. Empty limits none.
+	PathPrefix string
+	Limit      int
+	// IsGrowing marks the last word as possibly still being typed, and it is then
+	// matched by prefix.
+	IsGrowing bool
 }

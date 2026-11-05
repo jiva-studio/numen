@@ -2,6 +2,7 @@ package hosttest_test
 
 import (
 	"errors"
+	"fmt"
 	"slices"
 	"testing"
 
@@ -14,7 +15,7 @@ func indexedPassages() []host.Passage {
 	return []host.Passage{
 		{Path: "library/Birds.pdf", Text: "The grey heron stands in the reeds", Location: "page 12", Start: 400, Length: 700},
 		{Path: "library/Birds.pdf", Text: "A heron fishes at dusk", Location: "page 40", Start: 9000, Length: 500},
-		{Path: "notes/Heron.md", Text: "Herons are patient", Start: 20, Length: 40, Line: 4},
+		{Path: "notes/Heron.md", Text: "A heron is patient", Start: 20, Length: 40, Line: 4},
 		{Path: "notes/Frogs.md", Text: "Frogs sing", Start: 0, Length: 10, Line: 1},
 	}
 }
@@ -87,5 +88,41 @@ func TestTheSearchKeepsAtMostThreePassagesOfOneSource(t *testing.T) {
 	}
 	if !slices.IsSortedFunc(got, func(a, b host.Passage) int { return a.Start - b.Start }) {
 		t.Errorf("the passages are not in the order of the index: %+v", got)
+	}
+}
+
+func TestTheSearchMatchesEveryWordOfTheQueryAsAWholeWord(t *testing.T) {
+	search := newSearch()
+	search.SetIndexedPassages(indexedPassages())
+
+	both, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "Grey HERON"})
+	if err != nil || len(both) != 1 || both[0].Location != "page 12" {
+		t.Errorf("grey heron found %+v, %v, want only the passage that holds both words", both, err)
+	}
+	part, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "her"})
+	if err != nil || len(part) != 0 {
+		t.Errorf("a part of a word found %+v, %v, want nothing", part, err)
+	}
+	punctuated, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "reeds"})
+	if err != nil || len(punctuated) != 1 {
+		t.Errorf("a word at the end of the text found %+v, %v", punctuated, err)
+	}
+}
+
+func TestSearchPassagesAppliesDefaultAndMaximumLimit(t *testing.T) {
+	search := newSearch()
+	var many []host.Passage
+	for i := range host.MaxSearchedPassages + 10 {
+		many = append(many, host.Passage{Path: fmt.Sprintf("notes/Heron %03d.md", i), Text: "heron", Line: 1})
+	}
+	search.SetIndexedPassages(many)
+
+	byDefault, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron"})
+	if err != nil || len(byDefault) != host.DefaultSearchedPassages {
+		t.Errorf("a zero limit found %d, %v, want %d", len(byDefault), err, host.DefaultSearchedPassages)
+	}
+	capped, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Limit: host.MaxSearchedPassages * 2})
+	if err != nil || len(capped) != host.MaxSearchedPassages {
+		t.Errorf("a limit above the most found %d, %v, want %d", len(capped), err, host.MaxSearchedPassages)
 	}
 }

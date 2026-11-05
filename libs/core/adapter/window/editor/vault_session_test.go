@@ -26,6 +26,7 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -771,10 +772,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	}
 
 	found, err := installation.Passages().FindLexical(
-		t.Context(), installation.GetCurrentVault().ID, "tetragrammaton",
-		[]domain.SourceKind{domain.KindNote}, 10, false,
-		"",
-	)
+		t.Context(), installation.GetCurrentVault().ID, sourceport.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}

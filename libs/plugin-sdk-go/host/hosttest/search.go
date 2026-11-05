@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -446,20 +447,24 @@ func (s *Search) SearchPassages(_ context.Context, query host.PassageQuery) ([]h
 	if err != nil {
 		return nil, err
 	}
-	words := strings.Fields(strings.ToLower(query.Query))
+	words := getWords(query.Query)
 	if len(words) == 0 {
 		return nil, nil
+	}
+	limit := host.DefaultSearchedPassages
+	if query.Limit > 0 {
+		limit = min(query.Limit, host.MaxSearchedPassages)
 	}
 	var found []host.Passage
 	perSource := map[string]int{}
 	for _, passage := range one.indexed {
 		if !strings.HasPrefix(passage.Path, query.PathPrefix) || !hasKind(passage.Path, query.Kinds) ||
-			!hasWord(passage.Text, words) || perSource[passage.Path] >= host.MaxSearchedPassagesPerSource {
+			!hasEveryWord(passage.Text, words) || perSource[passage.Path] >= host.MaxSearchedPassagesPerSource {
 			continue
 		}
 		perSource[passage.Path]++
 		found = append(found, passage)
-		if query.Limit > 0 && len(found) == query.Limit {
+		if len(found) == limit {
 			break
 		}
 	}
@@ -479,14 +484,20 @@ func hasKind(path string, kinds []domain.SourceKind) bool {
 	return slices.Contains(kinds, kind)
 }
 
-// hasWord reports whether the text holds one of the words, ignoring case.
-func hasWord(text string, words []string) bool {
-	lower := strings.ToLower(text)
-	return slices.ContainsFunc(words, func(word string) bool { return strings.Contains(lower, word) })
+// hasEveryWord reports whether the text holds every one of the words as a whole word, ignoring case, as the
+// index of the host matches the words of a query.
+func hasEveryWord(text string, words []string) bool {
+	in := getWords(text)
+	return !slices.ContainsFunc(words, func(word string) bool { return !slices.Contains(in, word) })
+}
+
+// getWords is the words of the text in lower case: the runs of letters and digits.
+func getWords(text string) []string {
+	return strings.FieldsFunc(strings.ToLower(text), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
 }
 
 // SetIndexedPassages is the passages the index of the vault holds, in the order it lists them. A
-// SearchPassages call answers with those whose text holds a word of the query.
+// SearchPassages call answers with those whose text holds every word of the query.
 func (s *Search) SetIndexedPassages(passages []host.Passage) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()

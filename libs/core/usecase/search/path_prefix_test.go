@@ -15,13 +15,13 @@ type prefixSpy struct {
 	lexical, named, nearest []string
 }
 
-func (s *prefixSpy) FindLexical(_ context.Context, _ domain.VaultID, _ string, _ []domain.SourceKind, _ int, _ bool, pathPrefix string) ([]domain.Passage, error) {
-	s.lexical = append(s.lexical, pathPrefix)
+func (s *prefixSpy) FindLexical(_ context.Context, _ domain.VaultID, q sourceport.LexicalQuery) ([]domain.Passage, error) {
+	s.lexical = append(s.lexical, q.PathPrefix)
 	return nil, nil
 }
 
-func (s *prefixSpy) GetNamedPassages(_ context.Context, _ domain.VaultID, _ string, _ []domain.SourceKind, _ int, _ bool, pathPrefix string) ([]domain.Passage, error) {
-	s.named = append(s.named, pathPrefix)
+func (s *prefixSpy) GetNamedPassages(_ context.Context, _ domain.VaultID, q sourceport.LexicalQuery) ([]domain.Passage, error) {
+	s.named = append(s.named, q.PathPrefix)
 	return nil, nil
 }
 

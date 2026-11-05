@@ -20,13 +20,6 @@ import (
 // a fact about this index and not about the search, so the number is here.
 const coarseCandidates = 8
 
-// widenFactor is how many times more chunks the coarse pass asks for when a path prefix left too few of
-// them, and maxCoarseCandidates the most it asks for.
-const (
-	widenFactor         = 4
-	maxCoarseCandidates = 20000
-)
-
 // candidate is one candidate and how near the query it turned out to be.
 type candidate struct {
 	chunk      int64

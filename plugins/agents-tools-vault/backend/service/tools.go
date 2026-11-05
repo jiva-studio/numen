@@ -29,7 +29,7 @@ type Tools struct {
 
 // New creates a Tools instance.
 func New(vault host.Vault) *Tools {
-	return &Tools{host: vault, vault: nil}
+	return &Tools{host: vault, vault: nil, texts: nil, search: nil}
 }
 
 // inVault runs the tool on the vault the call names. A call that names none is refused.
@@ -40,7 +40,7 @@ func inVault[In, Out any](t *Tools, run func(*Tools, context.Context, In) (Out, 
 			var none Out
 			return none, errNoVault
 		}
-		call := &Tools{host: t.host, vault: t.host.With(domain.VaultID(id))}
+		call := &Tools{host: t.host, vault: t.host.With(domain.VaultID(id)), texts: nil, search: nil}
 		if t.texts != nil {
 			call.texts = t.texts.With(domain.VaultID(id))
 		}

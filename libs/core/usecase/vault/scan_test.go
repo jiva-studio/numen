@@ -18,6 +18,7 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -51,7 +52,7 @@ func getNotesOnly() []domain.SourceKind { return []domain.SourceKind{domain.Kind
 // of its own is named once.
 func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	found, err := db.Passages().FindLexical(t.Context(), v.ID, query, getNotesOnly(), 20, false, "")
+	found, err := db.Passages().FindLexical(t.Context(), v.ID, sourceport.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}

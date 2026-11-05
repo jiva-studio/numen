@@ -81,20 +81,14 @@ func (t *Tools) WithLibrary(texts host.Texts, search host.Search) *Tools {
 }
 
 const (
-	searchedLimitDefault = 20
-	searchedLimitMax     = 100
-	readLengthDefault    = 20000
-	readLengthMax        = 50000
-	// sampleBytes is how many bytes of a file decide whether it is text.
-	sampleBytes = 8192
-)
-
-var (
-	errNoLibrary = errors.New("the plugin was given neither text versions nor a search index")
+	readLengthDefault = 20000
+	readLengthMax     = 50000
 	// noTextVersionHelp names what makes the text version of a file.
 	noTextVersionHelp = "The reader plugin of the format makes one for a PDF or a book, " +
 		"the recognition makes one for a scan, and the transcription makes one for a recording."
 )
+
+var errNoLibrary = errors.New("the plugin was given neither text versions nor a search index")
 
 func (t *Tools) addLibrarySearch(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
@@ -129,9 +123,9 @@ func (t *Tools) searchLibrary(ctx context.Context, in LibrarySearchInput) (Libra
 	if t.search == nil {
 		return out, errNoLibrary
 	}
-	limit := searchedLimitDefault
+	limit := host.DefaultSearchedPassages
 	if in.Limit > 0 {
-		limit = min(in.Limit, searchedLimitMax)
+		limit = min(in.Limit, host.MaxSearchedPassages)
 	}
 	found, err := t.search.SearchPassages(ctx, host.PassageQuery{
 		Query: in.Query, Limit: limit, Kinds: kinds, PathPrefix: in.PathPrefix,
@@ -217,6 +211,9 @@ func (t *Tools) readLibrary(ctx context.Context, in LibraryReadInput) (LibraryRe
 	if strings.TrimSpace(in.Path) == "" {
 		return LibraryReadOutput{}, errors.New("path required")
 	}
+	if err := checkReadRange(in); err != nil {
+		return LibraryReadOutput{}, err
+	}
 	if t.texts == nil {
 		return LibraryReadOutput{}, errNoLibrary
 	}
@@ -245,10 +242,7 @@ func (t *Tools) readLibrary(ctx context.Context, in LibraryReadInput) (LibraryRe
 	out := LibraryReadOutput{
 		Path: in.Path, Kind: string(live.Kind), Version: string(live.GetID()),
 		Text: text.Text[from:to], Start: from, Length: to - from, Size: len(text.Text),
-		Locations: getLocations(segments, from, to),
-	}
-	if to < len(text.Text) {
-		out.Next = &to
+		Next: getNext(to, len(text.Text)), Locations: getLocations(segments, from, to),
 	}
 	return out, nil
 }
@@ -271,11 +265,10 @@ func (t *Tools) readPlainText(ctx context.Context, in LibraryReadInput) (Library
 	if err != nil {
 		return LibraryReadOutput{}, fmt.Errorf("read the text of %s: %w", in.Path, err)
 	}
-	out := LibraryReadOutput{Path: in.Path, Text: text[from:to], Start: from, Length: to - from, Size: len(text)}
-	if to < len(text) {
-		out.Next = &to
-	}
-	return out, nil
+	return LibraryReadOutput{
+		Path: in.Path, Kind: "", Version: "", Text: text[from:to], Start: from, Length: to - from, Size: len(text),
+		Next: getNext(to, len(text)), Locations: nil,
+	}, nil
 }
 
 // place is a segment of a text, its byte range, and the position the source numbers it by.
@@ -300,7 +293,7 @@ func getPlaces(segments []domain.TextSegment) []place {
 		var s selector
 		if segment.Selector != "" {
 			if err := json.Unmarshal([]byte(segment.Selector), &s); err != nil {
-				s = selector{}
+				s = selector{Page: 0, CFI: "", T: nil}
 			}
 		}
 		places = append(places, place{start: offset, end: offset + len(segment.Text), selector: s})
@@ -326,10 +319,17 @@ func pickRange(in LibraryReadInput, text string, places []place) (from, to int, 
 	if from > len(text) || (from == len(text) && len(text) > 0) {
 		return 0, 0, fmt.Errorf("start %d is past the end of the text, which is %d bytes long", from, len(text))
 	}
+	from, to = alignRange(text, from, end, length)
+	return from, to, nil
+}
+
+// alignRange is the range of at most length bytes from from, up to end, on character boundaries: from
+// moves forward and the end back, or past one whole character where the range would hold none.
+func alignRange(text string, from, end, length int) (int, int) {
 	for from < len(text) && !utf8.RuneStart(text[from]) {
 		from++
 	}
-	to = min(end, from+length)
+	to := min(end, from+length)
 	for to < len(text) && to > from && !utf8.RuneStart(text[to]) {
 		to--
 	}
@@ -337,7 +337,15 @@ func pickRange(in LibraryReadInput, text string, places []place) (from, to int, 
 		_, width := utf8.DecodeRuneInString(text[from:])
 		to = from + width
 	}
-	return from, to, nil
+	return from, to
+}
+
+// getNext is where to read on after a range that ends at to, nil at the end of the text.
+func getNext(to, size int) *int {
+	if to >= size {
+		return nil
+	}
+	return &to
 }
 
 // findPage is the byte range of the segments of a page.
@@ -378,7 +386,7 @@ func getLocations(places []place, from, to int) []LibraryLocation {
 			continue
 		}
 		s := p.selector
-		location := LibraryLocation{Start: start, Length: end - start, Page: s.Page, CFI: s.CFI}
+		location := LibraryLocation{Start: start, Length: end - start, Page: s.Page, CFI: s.CFI, FromSeconds: 0, ToSeconds: 0}
 		if len(s.T) == 2 {
 			location.FromSeconds, location.ToSeconds = s.T[0], s.T[1]
 		}
@@ -394,16 +402,23 @@ func getLocations(places []place, from, to int) []LibraryLocation {
 	return out
 }
 
-// isText reports whether the start of a file reads as text: valid UTF-8 without a zero byte.
+// isText reports whether a file reads as text: valid UTF-8 without a zero byte.
 func isText(data []byte) bool {
-	sample := data[:min(len(data), sampleBytes)]
-	if bytes.IndexByte(sample, 0) >= 0 {
-		return false
-	}
-	if len(data) > len(sample) {
-		for i := 0; i < utf8.UTFMax && len(sample) > 0 && !utf8.Valid(sample); i++ {
-			sample = sample[:len(sample)-1]
+	return bytes.IndexByte(data, 0) < 0 && utf8.Valid(data)
+}
+
+// checkReadRange refuses a range a call cannot mean: a negative number, or a page given with a start.
+func checkReadRange(in LibraryReadInput) error {
+	for _, field := range []struct {
+		name  string
+		value int
+	}{{"page", in.Page}, {"start", in.Start}, {"length", in.Length}} {
+		if field.value < 0 {
+			return fmt.Errorf("%s is %d: give a number of zero or more", field.name, field.value)
 		}
 	}
-	return utf8.Valid(sample)
+	if in.Page > 0 && in.Start > 0 {
+		return errors.New("give a page, or a start and a length, not a page and a start")
+	}
+	return nil
 }
