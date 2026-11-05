@@ -23,36 +23,18 @@ runs:
       shell: bash
       run: npx playwright install ${{ inputs.browsers }}
 
-    # ImageOS and ImageVersion are variables of the runner process, not of the `env` context.
-    - name: Read the runner image
-      id: image
-      shell: bash
-      run: echo "image=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
-
-    # The Azure apt mirror can serve at tens of KB/s, which spends a job's whole time limit on
-    # downloads. Packages already fetched by an earlier run come from the cache instead.
-    - name: Restore downloaded apt packages
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+    # The system libraries follow from the Playwright release, the engines and the extra packages.
+    - uses: ./.github/actions/cache-apt
       with:
-        path: ~/apt-archives
-        key: apt-playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.image.outputs.image }}-${{ inputs.browsers }}-${{ inputs.packages }}-${{ hashFiles('package-lock.json') }}
-        restore-keys: |
-          apt-playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.image.outputs.image }}-${{ inputs.browsers }}-${{ inputs.packages }}-
-          apt-playwright-${{ runner.os }}-${{ runner.arch }}-
+        key: playwright-${{ inputs.browsers }}-${{ inputs.packages }}-${{ hashFiles('package-lock.json') }}
 
-    # `playwright install-deps` runs apt-get itself, so the archive directory is set in apt's
-    # configuration rather than on the command line.
     - name: Install browser system dependencies
       shell: bash
       run: |
         sudo rm -f /var/lib/man-db/auto-update
-        mkdir -p ~/apt-archives/partial
-        printf 'Dir::Cache::Archives "%s";\nAPT::Keep-Downloaded-Packages "true";\n' "$HOME/apt-archives" | sudo tee /etc/apt/apt.conf.d/90-archives >/dev/null
         npx playwright install-deps ${{ inputs.browsers }}
-        if [[ -n "${{ inputs.packages }}" ]]; then
+        if [ -n "${{ inputs.packages }}" ]; then
           sudo apt-get install -y --no-install-recommends \
             -o Dpkg::Options::=--force-unsafe-io \
             ${{ inputs.packages }}
         fi
-        sudo rm -f ~/apt-archives/lock
-        sudo chown -R "$USER" ~/apt-archives

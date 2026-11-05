@@ -133,6 +133,12 @@ function getVueScript(source) {
   );
 }
 
+/** Returns the part of a line before its first `//`. */
+export function removeLineComment(text) {
+  const start = text.indexOf("//");
+  return start === -1 ? text : text.slice(0, start);
+}
+
 /** Lists the import paths of a Go file with their lines, and its other string literals. */
 export function getGoReferences(source) {
   const imports = [];
@@ -141,7 +147,7 @@ export function getGoReferences(source) {
   const lines = stripped.split("\n");
   let inImportBlock = false;
   lines.forEach((text, index) => {
-    const code = text.replace(/\/\/.*$/, "");
+    const code = removeLineComment(text);
     const line = index + 1;
     if (/^import\s*\($/.test(code.trim())) {
       inImportBlock = true;
@@ -174,7 +180,7 @@ export function getGoModReferences(source) {
   const literals = [];
   source.split("\n").forEach((text, index) => {
     const line = index + 1;
-    const code = text.replace(/\/\/.*$/, "");
+    const code = removeLineComment(text);
     if (/^\s*module\s/.test(code)) return;
     for (const match of code.matchAll(/github\.com\/jiva-studio\/numen\/[\w./-]+/g)) {
       imports.push({ line, value: match[0] });

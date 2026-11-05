@@ -109,6 +109,9 @@ test('validateCommitMessage rejects invalid types and unknown scopes', () => {
   const emptySubject = validateCommitMessage('feat(core):', repoRoot)
   assert.equal(emptySubject.ok, false)
 
+  assert.equal(validateCommitMessage('feat(core):   wide gap', repoRoot).ok, true)
+  assert.equal(validateCommitMessage('feat(core):subject', repoRoot).ok, false)
+
   const emptyHeader = validateCommitMessage('', repoRoot)
   assert.equal(emptyHeader.ok, false)
 

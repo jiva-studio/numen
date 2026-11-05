@@ -28,6 +28,19 @@ describe('parsePluginReadme', () => {
     })
   })
 
+  it('strips an H1 whose title follows several spaces or a line break', () => {
+    expect(parsePluginReadme('#   Title  \n\n\nBody', 'md.numen.notes', 'Fallback').summary).toBe(
+      'Body',
+    )
+    expect(parsePluginReadme('#\nBody\nMore', 'md.numen.notes', 'Fallback').summary).toBe('More')
+  })
+
+  it('keeps a leading # with no space after it', () => {
+    expect(parsePluginReadme('#Tag\n\nBody', 'md.numen.notes', 'Fallback').summary).toBe(
+      '#Tag\n\nBody',
+    )
+  })
+
   it('keeps a leading subheading that is not an H1', () => {
     expect(parsePluginReadme('## Subheading\n\nText', 'md.numen.notes', 'Fallback')).toStrictEqual({
       summary: '## Subheading\n\nText',

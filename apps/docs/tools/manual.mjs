@@ -439,7 +439,7 @@ const sourceOf = async (pkg) => {
 const named = (source) => {
   const keys = new Map()
   for (const [, go, key] of source.matchAll(
-    /^\s*([A-Z][A-Za-z0-9]*)\s+[^\s]+\s+`json:"([^",]+)/gm,
+    /^[ \t]*([A-Z][A-Za-z0-9]*)\s+[^\s]+\s+`json:"([^",]+)/gm,
   )) {
     if (key !== '-') keys.set(go, key)
   }
@@ -618,8 +618,9 @@ const cli = async () => {
     // none of them that is in under what is said carries the line above
     // on; anywhere else it is a line this cannot read, and dropping it is
     // dropping a command off the page.
-    const said = line.trim().match(/^(\S.*?)\s{2,}(.*)$/)
-    if (!said) {
+    const text = line.trim()
+    const gap = text.search(/\s\s/)
+    if (gap === -1) {
       const above = blocks[holding].at(-1)
       const indent = line.length - line.trimStart().length
       if (!above || indent <= LEFT) {
@@ -628,7 +629,7 @@ const cli = async () => {
       above[1] += ` ${line.trim()}`
       continue
     }
-    blocks[holding].push([said[1], said[2]])
+    blocks[holding].push([text.slice(0, gap), text.slice(gap).trimStart()])
   }
   if (blocks.usage.length === 0) die('cli.go lists no commands')
   if (blocks.options.length === 0) die('cli.go lists no options')
