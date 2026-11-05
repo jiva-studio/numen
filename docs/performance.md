@@ -1039,7 +1039,7 @@ Recorded 2026-09-06 on the same AMD Ryzen 7 6800U, over the flashcards window's 
 | The first page served                        | 0.73 ms (0.73–1.13)     | 24 kB · 138    |
 | **All of it, first launch on a new machine** | **31.9 ms (31.9–41.0)** | 236 kB · 2 553 |
 
-**The Go side takes thirty milliseconds and creating the schema is most of it.** Opening an index that is not there yet runs the migration file 0010_index.sql (measured as the ten files it replaced), and that was 14 ms of the 32; on every launch after the first it is one millisecond. Assembling every use case the window serves is a quarter of a millisecond, and building the handler that serves the pages is half a microsecond. Nothing changed by that night's work can be measured here.
+**The Go side takes thirty milliseconds and creating the schema is most of it.** Opening an index that is not there yet runs the migration file 0001_index.sql (measured as the ten files it replaced), and that was 14 ms of the 32; on every launch after the first it is one millisecond. Assembling every use case the window serves is a quarter of a millisecond, and building the handler that serves the pages is half a microsecond. Nothing changed by that night's work can be measured here.
 
 **So this is not what a person waits for.** A launch on an existing installation spends under 20 ms in Go before the first byte of the page. The rest of the wait is the webview and the bundle the section below measures, and neither is affected by anything in `container`.
 

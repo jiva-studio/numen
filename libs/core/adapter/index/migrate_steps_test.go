@@ -104,14 +104,14 @@ func TestAnIndexWhoseVersionCannotBeReadIsNotMigrated(t *testing.T) {
 // A migration that fails is named in the report, which carries the cause.
 func TestAFailedMigrationIsNamedAndCarriesItsCause(t *testing.T) {
 	db, faults := openBreaking(t, filepath.Join(t.TempDir(), "index.db"))
-	faults.breakOn(t, "PRAGMA user_version = 10")
+	faults.breakOn(t, "PRAGMA user_version = 1")
 
 	err := migrate(t.Context(), db, "index.db")
 	faults.stop()
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("migrating answered %v", err)
 	}
-	if !strings.Contains(err.Error(), "0010_index.sql") {
+	if !strings.Contains(err.Error(), "0001_index.sql") {
 		t.Errorf("the report %q does not name the migration", err)
 	}
 	if pos := readUserVersion(t, db); pos != 0 {
