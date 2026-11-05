@@ -149,6 +149,7 @@ func NewConfig(profile Profile) (ModelInfo, LocalModel) {
 		Concurrency:    defaultPasses,
 		FloorHint:      profile.FloorHint,
 		MinChunkLength: 0,
+		ChunkTokens:    0,
 		Handling:       profile.GetHandling(),
 	}
 	local := LocalModel{

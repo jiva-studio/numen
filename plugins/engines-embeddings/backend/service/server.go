@@ -188,7 +188,8 @@ func (s *embeddingServer) refreshModelIdentityLocked() {
 		s.modelInfo = engine.ModelInfo{
 			Name: s.remoteModel, Dimensions: profile.Dimensions, MaxTokens: profile.GetTokens(), Pooling: profile.Pooling,
 			From: keep.From, Concurrency: keep.Concurrency, FloorHint: profile.FloorHint, MinChunkLength: keep.MinChunkLength,
-			Handling: profile.GetHandling(),
+			ChunkTokens: ClampChunkTokens(s.chunkTokens, profile.GetTokens()),
+			Handling:    profile.GetHandling(),
 		}
 		applyDimensionEnv(&s.modelInfo)
 		return

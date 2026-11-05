@@ -197,6 +197,7 @@ func (e *Embedder) GetModel() ModelInfo {
 		Concurrency:    e.passes,
 		FloorHint:      0,
 		MinChunkLength: 0,
+		ChunkTokens:    0,
 		Handling:       Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalise: e.isNormalised, ExtraInputs: nil},
 	}
 }
