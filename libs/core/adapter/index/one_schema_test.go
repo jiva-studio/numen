@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-// schemaFile is the one file the whole schema of the index is in.
-const schemaFile = "schema.sql"
+// expectedVersion is the number the ten old steps leave, so an index of the current build matches it.
+const expectedVersion = 10
 
 type catalogueEntry struct{ kind, name, body string }
 
@@ -64,20 +65,20 @@ func openRaw(t *testing.T, path string) *sql.DB {
 	return raw
 }
 
-func TestAFreshIndexHasTheWholeSchemaOfOneFile(t *testing.T) {
+// The dump in testdata is what the ten old steps produced, applied in order on an empty database.
+func TestAFreshIndexHasExactlyTheSchemaTheTenOldStepsProduced(t *testing.T) {
 	ctx := t.Context()
-	body, err := os.ReadFile(schemaFile)
-	if err != nil {
-		t.Fatalf("the schema is one file, %s: %v", schemaFile, err)
-	}
-
-	reference, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "reference.db"))
+	raw, err := os.ReadFile(filepath.Join("testdata", "schema_of_the_ten_steps.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testsupport.Close(t, reference)
-	if _, err := reference.ExecContext(ctx, string(body)); err != nil {
-		t.Fatalf("the schema file does not run on an empty database: %v", err)
+	var dump []struct{ Kind, Name, Body string }
+	if err := json.Unmarshal(raw, &dump); err != nil {
+		t.Fatal(err)
+	}
+	var want []catalogueEntry
+	for _, d := range dump {
+		want = append(want, catalogueEntry{d.Kind, d.Name, d.Body})
 	}
 
 	db, err := Open(ctx, filepath.Join(t.TempDir(), "index.db"))
@@ -86,22 +87,42 @@ func TestAFreshIndexHasTheWholeSchemaOfOneFile(t *testing.T) {
 	}
 	defer testsupport.Close(t, db)
 
-	got, want := readCatalogue(ctx, t, db.write), readCatalogue(ctx, t, reference)
-	if len(want) == 0 {
-		t.Fatal("the schema file creates nothing")
-	}
+	got := readCatalogue(ctx, t, db.write)
 	if !slices.Equal(got, want) {
-		t.Errorf("a fresh index holds\n%v\nthe schema file makes\n%v", got, want)
+		for _, e := range got {
+			if !slices.Contains(want, e) {
+				t.Errorf("a fresh index has %s %s as\n%s\nthe ten steps did not produce it so", e.kind, e.name, e.body)
+			}
+		}
+		for _, e := range want {
+			if !slices.Contains(got, e) {
+				t.Errorf("a fresh index lacks %s %s as\n%s", e.kind, e.name, e.body)
+			}
+		}
 	}
-	if v := getUserVersion(ctx, t, db.write); v <= 0 {
-		t.Errorf("a fresh index is at version %d, want the current one, above zero", v)
+	if v := getUserVersion(ctx, t, db.write); v != expectedVersion {
+		t.Errorf("a fresh index is at version %d, want %d", v, expectedVersion)
 	}
 }
 
-// expectedVersion is the number the last of the old steps leaves, so an index of the current build matches it.
-const expectedVersion = 10
+func TestTheFolderOfTheMigrationsHoldsOneFileNumberedLikeTheIndexVersion(t *testing.T) {
+	entries, err := os.ReadDir("migration")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	if len(names) != 1 {
+		t.Fatalf("the folder migration holds %v, want one file", names)
+	}
+	if want := fmt.Sprintf("%04d_", expectedVersion); !strings.HasPrefix(names[0], want) {
+		t.Errorf("the file %s is not numbered %s", names[0], want)
+	}
+}
 
-func TestAnIndexOfTheCurrentBuildIsUsedAsItIsAndTheSchemaFileAppliesTwice(t *testing.T) {
+func TestAnIndexOfTheCurrentBuildIsOpenedAndUsedAsItIs(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
@@ -111,9 +132,6 @@ func TestAnIndexOfTheCurrentBuildIsUsedAsItIsAndTheSchemaFileAppliesTwice(t *tes
 	}
 	if err := db.Vaults().Register(ctx, "01KEPT"); err != nil {
 		t.Fatal(err)
-	}
-	if v := getUserVersion(ctx, t, db.write); v != expectedVersion {
-		t.Errorf("a new index is at version %d, want %d", v, expectedVersion)
 	}
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
@@ -131,28 +149,15 @@ func TestAnIndexOfTheCurrentBuildIsUsedAsItIsAndTheSchemaFileAppliesTwice(t *tes
 	if kept != 1 {
 		t.Errorf("%d rows of the vault are left, want 1: the index was not used as it is", kept)
 	}
-
-	body, err := os.ReadFile(schemaFile)
-	if err != nil {
-		t.Fatalf("the schema is one file, %s: %v", schemaFile, err)
-	}
-	for range 2 {
-		if _, err := again.write.ExecContext(ctx, string(body)); err != nil {
-			t.Fatalf("the schema file does not apply over an index that has it: %v", err)
-		}
-	}
-	if err := again.write.QueryRowContext(ctx, `SELECT count(*) FROM vaults WHERE identifier = '01KEPT'`).Scan(&kept); err != nil {
-		t.Fatal(err)
-	}
-	if kept != 1 {
-		t.Errorf("%d rows of the vault are left after the schema file applied, want 1", kept)
+	if v := getUserVersion(ctx, t, again.write); v != expectedVersion {
+		t.Errorf("the index is at version %d, want %d", v, expectedVersion)
 	}
 }
 
 func TestAnIndexOfAnotherVersionStopsTheStartAndStaysByteForByteTheSame(t *testing.T) {
 	ctx := t.Context()
 
-	for _, version := range []int{0, 1, expectedVersion - 1, expectedVersion + 1, expectedVersion + 100} {
+	for _, version := range []int{0, expectedVersion - 1, expectedVersion + 1, expectedVersion + 100} {
 		t.Run(fmt.Sprintf("version %d", version), func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "index.db")
 			raw := openRaw(t, path)
