@@ -32,7 +32,7 @@ There is no store framework and no module-level mutable state.
 ## Calling the core
 
 A window talks to the core through the generated Connect clients, and the response
-is mapped field by field into the window's own type. A fault is converted to text by `formatErrorMessage` and an error code by `formatErrorCodeMessage`, both from `@numen/plugin-sdk`; nothing prints an error by stringifying it.
+is mapped field by field into the window's own type. A fault is converted to text by `formatErrorMessage` and an error code by `formatErrorCodeMessage`, both from `@numen/core-client`; nothing prints an error by stringifying it. A sentence written for the person is thrown as a `ReportedError`; any other error shows the generic text.
 
 ## Build the UI library before the window suites
 
