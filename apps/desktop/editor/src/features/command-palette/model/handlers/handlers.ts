@@ -98,9 +98,7 @@ async function runSetting(invocation: CommandInvocation, on: CommandDeps): Promi
   try {
     await on.settings.chooseSetting(invocation.id, invocation.name)
   } catch (error) {
-    const hasCode = error instanceof Error && 'code' in error
-    const reason = error instanceof Error && !hasCode ? error.message : formatErrorMessage(error)
-    on.writeMessage(reason, 'error')
+    on.writeMessage(formatErrorMessage(error), 'error')
   }
 }
 
