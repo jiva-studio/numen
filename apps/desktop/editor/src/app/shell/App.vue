@@ -33,6 +33,7 @@ const unsaved = {
 
 const {
   runCommand,
+  runEntry,
   openCurrentVault,
   isLayoutReady,
   bootstrapFailure,
@@ -223,6 +224,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       :doing="commandDeps"
       :get-target="getTarget"
       :places="destinations"
+      :run-entry="runEntry"
     />
   </main>
 </template>

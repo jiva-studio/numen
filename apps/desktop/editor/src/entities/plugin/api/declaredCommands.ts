@@ -22,6 +22,14 @@ interface WireCommand {
   }[]
 }
 
+interface WireMenu {
+  readonly pluginId: string
+  readonly location: string
+  readonly command: string
+  readonly group: string
+  readonly order?: number
+}
+
 interface DeclaredArgument {
   readonly name: string
   readonly title: string
@@ -91,10 +99,18 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   })),
 })
 
+const readMenu = (wire: WireMenu): DeclaredMenu => ({
+  pluginId: wire.pluginId,
+  location: wire.location,
+  command: wire.command,
+  ...(wire.group ? { group: wire.group } : {}),
+  ...(wire.order === undefined ? {} : { order: wire.order }),
+})
+
 /** Every command the enabled plugins declare, in the order of the plugins' ids, and their menu entries. */
 export async function listDeclaredCommands(): Promise<DeclaredList> {
   const answer = await pluginCommands.listCommands({})
-  return { commands: answer.commands.map(readCommand), menus: [] }
+  return { commands: answer.commands.map(readCommand), menus: answer.menus.map(readMenu) }
 }
 
 /** Runs the command in the backend of the plugin that declares it. */

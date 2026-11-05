@@ -14,10 +14,10 @@ import type { CommandTarget } from '../types'
 import { appendCreateNoteItem, createNoteInvocation, CREATE_NOTE_ID } from '../lib/offers/offers'
 import type { Commands } from '../model/palette/palette'
 import { runInvocation } from '../model/handlers/handlers'
-import type { SearchState } from '../model/search/search'
+import type { MenuChoice, SearchState } from '../model/search/search'
 import { usePaletteShortcuts } from '../model/palette/shortcuts'
 import { findRowIcon } from '../model/rowIcons'
-import { openDestination, type DestinationDeps } from '../model/search/destination'
+import { chooseResult, type DestinationDeps } from '../model/search/destination'
 import { ANSWER_WORDS } from '../words'
 import { WORDS as words } from '@/shared/words'
 
@@ -30,6 +30,8 @@ const props = defineProps<{
   getTarget: () => CommandTarget
   /** Where the window is taken by what the search turns up. */
   places: DestinationDeps
+  /** Runs the command of an entry of the menu of a search result over the note it was chosen on. */
+  runEntry: (choice: MenuChoice) => void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -99,9 +101,7 @@ async function onChoose(item: string, action: string) {
     )
     return
   }
-  const landing = props.search.chooseItem(item, action)
-  setSearchOpen(false)
-  await openDestination(landing, props.places)
+  await chooseResult(props, item, action)
 }
 
 function onDismiss() {

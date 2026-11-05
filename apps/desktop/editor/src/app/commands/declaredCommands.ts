@@ -11,6 +11,7 @@ import {
   listDeclaredCommands,
   runDeclaredCommand,
   type DeclaredCommand,
+  type DeclaredMenu,
 } from '@/entities/plugin'
 
 /** What the palette files a command a plugin declares under: the plugin and the command's own id. */
@@ -79,6 +80,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const isListed = deps.isListed ?? (() => false)
   const hasBackend = deps.hasBackend ?? (() => true)
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
+  const declaredMenus = shallowRef<readonly DeclaredMenu[] | undefined>(undefined)
   let newest = 0
   let unregisterAll: readonly (() => void)[] = []
 
@@ -114,12 +116,15 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     newest += 1
     const mine = newest
     const commands = await list()
-    if (mine === newest) declared.value = commands.commands
+    if (mine !== newest) return
+    declared.value = commands.commands
+    declaredMenus.value = commands.menus
   }
 
   return {
     paletteCommands: computed(() => createDeclaredPaletteCommands(backendCommands.value)),
-    placements: computed((): readonly MenuPlacement[] | undefined => undefined),
+    commands: computed(() => declared.value),
+    placements: computed((): readonly MenuPlacement[] | undefined => declaredMenus.value),
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load,
   }

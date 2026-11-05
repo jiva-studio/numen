@@ -3,7 +3,7 @@
  */
 
 import { formatErrorMessage } from '@numen/core-client'
-import type { Menus } from '@numen/plugin-host'
+import { MENU_LOCATION, type Menus } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
   isChord,
@@ -85,7 +85,10 @@ export function useCommands(options: CommandsDepsOptions) {
     pluginHost,
   )
 
-  const palette = useSearch(core, words, { coverage })
+  const palette = useSearch(core, words, {
+    coverage,
+    menu: { getEntries: () => options.menus?.getEntries(MENU_LOCATION.searchResult) ?? [] },
+  })
   const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
     ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
     ...(options.declaredCommands?.paletteCommands.value ?? []),
@@ -129,7 +132,15 @@ export function useCommands(options: CommandsDepsOptions) {
   }
 
   /** Runs the command of an entry of the menu of a search result over the note it was chosen on. */
-  const runEntry = (_choice: MenuChoice): void => undefined
+  const runEntry = (choice: MenuChoice): void =>
+    runCommand(choice.command, {
+      ...getTarget(),
+      tab: '',
+      kind: null,
+      path: choice.path,
+      file: choice.path,
+      title: choice.title,
+    })
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return

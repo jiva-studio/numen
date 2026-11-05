@@ -41,7 +41,12 @@ func (h *Handler) ListCommands(
 	for _, one := range entries {
 		commands = append(commands, newWireCommand(one, h.list.ListExtensions(one.Command)))
 	}
-	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands}), nil
+	menuEntries := h.list.ExecuteMenus()
+	menus := make([]*v1.PluginMenu, 0, len(menuEntries))
+	for _, one := range menuEntries {
+		menus = append(menus, newWireMenu(one))
+	}
+	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands, Menus: menus}), nil
 }
 
 // RunPluginCommand runs one of them. A call that is not a command, matches none, fails, or is routed to
@@ -110,4 +115,19 @@ func getContentTypeTexts(types []domain.ContentType) []string {
 		out = append(out, string(one))
 	}
 	return out
+}
+
+// newWireMenu is a menu entry as the schema carries it.
+func newWireMenu(entry plugincommand.MenuEntry) *v1.PluginMenu {
+	wire := &v1.PluginMenu{
+		PluginId: entry.PluginID,
+		Location: entry.Menu.Location,
+		Command:  entry.Menu.Command,
+		Group:    entry.Menu.Group,
+	}
+	if entry.Menu.Order != nil {
+		order := int32(*entry.Menu.Order) //nolint:gosec // the wire reader limits the order to 32 bits
+		wire.Order = &order
+	}
+	return wire
 }

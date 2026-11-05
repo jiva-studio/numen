@@ -101,6 +101,21 @@ export interface SearchRow {
   hit: SearchHit
 }
 
+type PaletteAction = NonNullable<PaletteItem['actions']>[number]
+
+/** The actions of a note: opening it, and then the entries plugins place in the menu of a result. */
+function createNoteActions(
+  openText: string,
+  menu: readonly PaletteAction[],
+): { actions: readonly PaletteAction[]; offers: readonly string[] } {
+  const actions = [{ id: NOTE, text: openText }, ...menu]
+  return { actions, offers: actions.map((one) => one.id) }
+}
+
+function createMenuActions(entries: readonly PlacedCommand[]): readonly PaletteAction[] {
+  return entries.map((one) => ({ id: `${MENU_ACTION_PREFIX}${one.command}`, text: one.title }))
+}
+
 /**
  * A name the search turned up. A name offers to open the note, and a heading offers to open the note
  * at that heading.
@@ -108,10 +123,11 @@ export interface SearchRow {
 export function createNameItem(
   one: NameMatch,
   words: Words,
-  _entries: readonly PlacedCommand[] = [],
+  entries: readonly PlacedCommand[] = [],
 ): SearchRow {
-  const atHeading = { actions: [{ id: NOTE, text: words.readAt }], offers: [NOTE] }
-  const byName = { actions: [{ id: NOTE, text: words.read }], offers: [NOTE] }
+  const menu = createMenuActions(entries)
+  const atHeading = createNoteActions(words.readAt, menu)
+  const byName = createNoteActions(words.read, menu)
   return one.heading
     ? {
         item: {
@@ -156,9 +172,9 @@ export function createPassageItem(
   group: string,
   one: Passage,
   words: Words,
-  _entries: readonly PlacedCommand[] = [],
+  entries: readonly PlacedCommand[] = [],
 ): SearchRow {
-  const note = { actions: [{ id: NOTE, text: words.read }], offers: [NOTE] }
+  const note = createNoteActions(words.read, createMenuActions(entries))
   return {
     item: {
       id: `${group}:${one.path}:${one.start}`,
@@ -182,17 +198,24 @@ export function createPassageItem(
 
 /** The command the action runs over the note of the hit, and null where the action is none of the menu. */
 export function resolveMenuChoice(
-  _searchHit: SearchHit | undefined,
-  _action: string,
+  searchHit: SearchHit | undefined,
+  action: string,
 ): MenuChoice | null {
-  return null
+  if (!searchHit || searchHit.type === null || !action.startsWith(MENU_ACTION_PREFIX)) return null
+  if (!searchHit.offers.includes(action)) return null
+  return {
+    command: action.slice(MENU_ACTION_PREFIX.length),
+    path: searchHit.path,
+    title: searchHit.title,
+    type: searchHit.type,
+  }
 }
 
 export function resolveDestination(
   hit: SearchHit | undefined,
   action: string,
 ): SearchDestination | null {
-  if (!hit || !hit.offers.includes(action)) return null
+  if (!hit || action.startsWith(MENU_ACTION_PREFIX) || !hit.offers.includes(action)) return null
   const named = { path: hit.path, title: hit.title }
   if (hit.selector) return { at: 'file', ...named, selector: hit.selector }
   return hit.line >= 0 ? { at: 'file', ...named, line: hit.line } : { at: 'file', ...named }

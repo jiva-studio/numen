@@ -4,7 +4,7 @@
  */
 import type { Component } from 'vue'
 import type { Selector } from '@numen/plugin-host'
-import type { SearchDestination } from './search'
+import type { MenuChoice, SearchDestination, SearchState } from './search'
 
 /** The window operations that open a chosen destination. */
 export interface DestinationDeps {
@@ -29,4 +29,25 @@ export async function openDestination(
     destination.line,
     destination.selector,
   )
+}
+
+/** What answers the choice of an action over a search result. */
+export interface ResultChoiceDeps {
+  readonly search: Pick<SearchState, 'chooseEntry' | 'chooseItem' | 'setOpen'>
+  readonly places: DestinationDeps
+  /** Runs the command of an entry of the menu of a search result over the note it was chosen on. */
+  readonly runEntry: (choice: MenuChoice) => void
+}
+
+/** Closes the search, then runs the entry of the menu the action names, or opens the destination of the action. */
+export async function chooseResult(
+  deps: ResultChoiceDeps,
+  item: string,
+  action: string,
+): Promise<void> {
+  const choice = deps.search.chooseEntry(item, action)
+  const landing = choice ? null : deps.search.chooseItem(item, action)
+  deps.search.setOpen(false)
+  if (choice) deps.runEntry(choice)
+  else await openDestination(landing, deps.places)
 }
