@@ -44,9 +44,12 @@ describe('the commands the plugins declare', () => {
           ],
         },
       ],
+      menus: [],
     })
 
-    const [one] = await listDeclaredCommands()
+    const {
+      commands: [one],
+    } = await listDeclaredCommands()
 
     expect(one?.pluginId).toBe('org.example.sample')
     expect(one?.arguments).toStrictEqual([
@@ -70,9 +73,12 @@ describe('the commands the plugins declare', () => {
           arguments: [],
         },
       ],
+      menus: [],
     })
 
-    const [one] = await listDeclaredCommands()
+    const {
+      commands: [one],
+    } = await listDeclaredCommands()
 
     expect(one).toStrictEqual({
       pluginId: 'md.numen.tree',

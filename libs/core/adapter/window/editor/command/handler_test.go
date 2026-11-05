@@ -29,6 +29,8 @@ type pluginCommands struct {
 	err    error
 }
 
+func (p pluginCommands) ListMenus() []plugincommand.MenuEntry { return nil }
+
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "org.example.sample", Command: plugincommand.Command{

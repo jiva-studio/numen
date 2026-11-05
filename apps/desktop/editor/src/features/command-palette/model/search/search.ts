@@ -3,6 +3,7 @@
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/shell'
+import type { PlacedCommand } from '@numen/plugin-host'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { NoteType } from '@/entities/file'
@@ -13,14 +14,27 @@ import {
   resolveDestination,
   type NameMatch,
   type Passage,
+  resolveMenuChoice,
+  type MenuChoice,
   type SearchDestination,
   type SearchHit,
+  type SearchMenuDeps,
   type SearchRow,
 } from './lookup'
 import type { TextRange } from '@/shared/textRange'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
-export type { TextRange, NameMatch, Passage, SearchDestination, SearchHit, SearchRow, SearchGroup }
+export type {
+  TextRange,
+  NameMatch,
+  Passage,
+  SearchDestination,
+  SearchHit,
+  SearchRow,
+  SearchGroup,
+  MenuChoice,
+  SearchMenuDeps,
+}
 
 /**
  * How a text search is run. Each mode has its own ordering, and `hybrid`
@@ -56,6 +70,8 @@ export interface Words extends EmptyWords {
 export interface SearchOptions {
   wait?: Wait
   coverage?(): IndexCoverage
+  /** The entries plugins place in the menu of a search result. */
+  menu?: SearchMenuDeps
 }
 
 interface FillOptions<T> {
@@ -88,6 +104,7 @@ interface BuildGroupsDeps {
   readonly texts: readonly Passage[]
   readonly meanings: readonly Passage[]
   readonly words: Words
+  readonly entries: readonly PlacedCommand[]
   readonly isWorking: Record<SearchGroup, boolean>
   readonly getSilence: (id: SearchGroup) => string
 }
@@ -109,17 +126,17 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
     group(
       'names',
       deps.words.names,
-      deps.names.map((one) => createNameItem(one, deps.words)),
+      deps.names.map((one) => createNameItem(one, deps.words, deps.entries)),
     ),
     group(
       'text',
       deps.words.text,
-      deps.texts.map((one) => createPassageItem('text', one, deps.words)),
+      deps.texts.map((one) => createPassageItem('text', one, deps.words, deps.entries)),
     ),
     group(
       'meaning',
       deps.words.meaning,
-      deps.meanings.map((one) => createPassageItem('meaning', one, deps.words)),
+      deps.meanings.map((one) => createPassageItem('meaning', one, deps.words, deps.entries)),
     ),
   ]
 
@@ -187,6 +204,25 @@ async function executeSearchQuery(
   ])
 }
 
+/** What the palette reads from the hit behind a row: its type, its file, and what choosing it does. */
+function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
+  const findNoteType = (item: string): NoteType | null => getHits().get(item)?.type ?? null
+
+  /** The path of a hit in a file that is no note, and null for a note. */
+  const findHitFile = (item: string): string | null => {
+    const searchHit = getHits().get(item)
+    return searchHit && searchHit.type === null ? searchHit.path : null
+  }
+
+  const chooseItem = (item: string, action: string): SearchDestination | null =>
+    resolveDestination(getHits().get(item), action)
+
+  const chooseEntry = (item: string, action: string): MenuChoice | null =>
+    resolveMenuChoice(getHits().get(item), action)
+
+  return { chooseItem, chooseEntry, findNoteType, findHitFile }
+}
+
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
   const coverage = how.coverage
   const open = ref(false)
@@ -237,6 +273,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       texts: texts.value,
       meanings: meanings.value,
       words,
+      entries: how.menu?.getEntries() ?? [],
       isWorking: isWorking.value,
       getSilence: getEmptyGroupMessage,
     })
@@ -244,28 +281,13 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const groups = computed(() => searchGroups.value.groups)
 
-  const findNoteType = (item: string): NoteType | null =>
-    searchGroups.value.hitsById.get(item)?.type ?? null
-
-  /** The path of a hit in a file that is no note, and null for a note. */
-  const findHitFile = (item: string): string | null => {
-    const searchHit = searchGroups.value.hitsById.get(item)
-    return searchHit && searchHit.type === null ? searchHit.path : null
-  }
-
-  const chooseItem = (item: string, action: string): SearchDestination | null => {
-    return resolveDestination(searchGroups.value.hitsById.get(item), action)
-  }
-
   return {
     open,
     typed: inputValue,
     groups,
     setTyped,
     setOpen,
-    chooseItem,
-    findNoteType,
-    findHitFile,
+    ...createHitReaders(() => searchGroups.value.hitsById),
   }
 }
 

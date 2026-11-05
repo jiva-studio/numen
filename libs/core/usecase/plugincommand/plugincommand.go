@@ -23,6 +23,8 @@ import (
 type (
 	// Entry is one command an enabled plugin declares, and the plugin that does.
 	Entry = pluginport.PluginCommandEntry
+	// MenuEntry is one menu entry an enabled plugin declares, and the plugin that does.
+	MenuEntry = pluginport.PluginMenuEntry
 	// Parts is what one plugin has and whether the host holds it suspended.
 	Parts = pluginport.PluginParts
 	// Command is a command as its manifest declares it.
@@ -87,6 +89,18 @@ func (u List) ExecuteAll() []Entry {
 		return nil
 	}
 	return slices.DeleteFunc(u.commands.ListCommands(), func(one Entry) bool {
+		parts := u.commands.GetParts(one.PluginID)
+		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+	})
+}
+
+// ExecuteMenus lists the menu entries of the enabled plugins, leaving out those of a plugin the host
+// holds suspended and of a plugin with neither a frontend nor a backend.
+func (u List) ExecuteMenus() []MenuEntry {
+	if u.commands == nil {
+		return nil
+	}
+	return slices.DeleteFunc(u.commands.ListMenus(), func(one MenuEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})

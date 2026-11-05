@@ -71,6 +71,8 @@ export interface CommandTarget {
    * names the file the row represents.
    */
   readonly file: string
+  /** The line of the note a command that opens it moves to. Absent opens the note at its start. */
+  readonly line?: number
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   readonly vault: VaultRef
@@ -91,6 +93,8 @@ export interface Command {
   readonly keys?: PaletteKeys
   /** The icon it is drawn with, where the one who declares it gives one. */
   readonly icon?: Component
+  /** The Lucide name of its icon, for a place that draws icons by name. */
+  readonly iconName?: string
   /** The input it requires before it runs. */
   readonly needs?: PromptStep
   /** The step that follows the first one. */
@@ -124,6 +128,8 @@ export interface CommandInvocation {
   readonly title: string
   /** The file a run is over, which is the one `CommandTarget` named. */
   readonly file: string
+  /** The line of the note a command that opens it moves to. Absent opens the note at its start. */
+  readonly line?: number
   /** The other files it is over, beside the one at `path`. */
   readonly others: readonly string[]
   /**
@@ -194,7 +200,7 @@ export interface Notes {
    * Opens a file in the editor matching its type, in its own tab or beside the
    * current one.
    */
-  openFile(path: string, title: string, showing: 'current' | 'split'): void
+  openFile(path: string, title: string, showing: 'current' | 'split', line?: number): void
   /** Opens a file created by this command, as the type it was created as. */
   openNewFile(
     path: string,

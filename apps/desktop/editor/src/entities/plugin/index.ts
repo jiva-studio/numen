@@ -4,4 +4,6 @@ export {
   listDeclaredCommands,
   runDeclaredCommand,
   type DeclaredCommand,
+  type DeclaredList,
+  type DeclaredMenu,
 } from './api/declaredCommands'

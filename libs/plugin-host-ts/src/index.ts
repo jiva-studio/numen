@@ -51,3 +51,14 @@ export type {
   TabActionHandler,
 } from './hosting/types'
 export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './hosting/tabKinds'
+export {
+  MENU_LOCATION,
+  compareEntries,
+  createMenus,
+  type CommandLook,
+  type MenuLocation,
+  type MenuPlacement,
+  type Menus,
+  type MenusDeps,
+  type PlacedCommand,
+} from './menus'

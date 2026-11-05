@@ -59,6 +59,8 @@ type Contributes struct {
 	// palette and the command line list them; a command is run by the frontend when the frontend
 	// registers a handler for it and by the backend otherwise.
 	Commands []Command
+	// Menus place commands in the named places the window draws.
+	Menus []Menu
 }
 
 // ListStatusViews returns the ids of the components the plugin registers for the status bar.
@@ -113,6 +115,7 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, c.listThemeIssues()...)
 	issues = append(issues, m.listHandleIssues()...)
 	issues = append(issues, m.listReaderIssues()...)
+	issues = append(issues, m.listMenuIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
 

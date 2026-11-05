@@ -46,7 +46,8 @@ const everyFieldManifest = `{
 		"handles": [{"purpose": "sample-purpose", "contentTypes": ["audio/*"], "noteTypes": ["link"]}],
 		"readers": [{"id": "r", "contentTypes": ["audio/*"], "rank": "default"}],
 		"noteTypes": [{"type": "link", "chunks": false, "headings": [1, 2], "idHeadingLevels": [3], "idPattern": "[a-z]+"}],
-		"frameOrigins": ["https://player.example"]}
+		"frameOrigins": ["https://player.example"],
+		"menus": [{"location": "titleBar", "command": "task.run", "group": "run", "order": 1}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

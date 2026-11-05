@@ -7,6 +7,7 @@
  * two.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { COMMAND } from '@/shared/commandIds'
 import {
   useSearch,
   type SearchDeps,
@@ -34,6 +35,9 @@ const WORDS: Words = {
   wordsOnly: 'Text search only: no embedding model set',
   notEmbedded: 'Semantic index not built yet',
 }
+
+/** The first action of a note: the editor command that opens it, run like any command of the menu. */
+const OPEN_NOTE = `menu:${COMMAND.openNote}`
 
 /** A vault that responds when the test resolves it, and records its requests. */
 function createVault() {
@@ -302,7 +306,7 @@ describe('answers arriving', () => {
     expect(textGroup?.items[0]?.id).toBe('text:notes/heat.md:0')
     const namesItem = getGroup(palette.groups.value, 'names')?.items[0] as
       { id: string; actions?: readonly { id: string; text: string }[] } | undefined
-    expect(namesItem?.actions).toStrictEqual([{ id: 'note', text: WORDS.read }])
+    expect(namesItem?.actions).toStrictEqual([{ id: OPEN_NOTE, text: WORDS.read }])
   })
 
   it('lets go of everything when the palette is put away', async () => {
@@ -348,14 +352,16 @@ describe('where a thing found takes the person', () => {
     return palette
   }
 
-  it('opens a note found by its own name', async () => {
+  it('opens a note found by its own name from the start', async () => {
     const palette = await createFilledPalette()
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
 
-    expect(palette.chooseItem(item.id, 'note')).toEqual({
-      at: 'file',
+    expect(palette.chooseEntry(item.id, OPEN_NOTE)).toEqual({
+      command: COMMAND.openNote,
       path: 'notes/entropy.md',
       title: 'Entropy',
+      type: 'note',
+      line: -1,
     })
   })
 
@@ -363,10 +369,11 @@ describe('where a thing found takes the person', () => {
     const palette = await createFilledPalette()
     const item = getGroup(palette.groups.value, 'names')!.items[1]!
 
-    expect(palette.chooseItem(item.id, 'note')).toEqual({
-      at: 'file',
+    expect(palette.chooseEntry(item.id, OPEN_NOTE)).toEqual({
+      command: COMMAND.openNote,
       path: 'notes/carnot.md',
       title: 'The Carnot cycle',
+      type: 'note',
       line: 12,
     })
   })
@@ -384,10 +391,11 @@ describe('where a thing found takes the person', () => {
     await flushPromises()
     const item = getGroup(palette.groups.value, 'text')!.items[0]!
 
-    expect(palette.chooseItem(item.id, 'note')).toEqual({
-      at: 'file',
+    expect(palette.chooseEntry(item.id, OPEN_NOTE)).toEqual({
+      command: COMMAND.openNote,
       path: 'notes/heat.md',
       title: 'Heat engines',
+      type: 'note',
       line: 12,
     })
   })
@@ -419,9 +427,9 @@ describe('what a key reaches, per kind of thing found', () => {
         (one) => one.id,
       )
 
-    expect(getActions('names', 0)).toEqual(['note'])
-    expect(getActions('names', 1)).toEqual(['note'])
-    expect(getActions('text', 0)).toEqual(['note'])
+    expect(getActions('names', 0)).toEqual([OPEN_NOTE])
+    expect(getActions('names', 1)).toEqual([OPEN_NOTE])
+    expect(getActions('text', 0)).toEqual([OPEN_NOTE])
   })
 })
 

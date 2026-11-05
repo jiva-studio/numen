@@ -2,8 +2,9 @@
  * Search hit lookup, item formatting, and navigation destination mapping.
  */
 import type { PaletteItem } from '@numen/shell'
-import type { Selector } from '@numen/plugin-host'
+import type { PlacedCommand, Selector } from '@numen/plugin-host'
 import type { NoteType } from '@/entities/file'
+import { COMMAND } from '@/shared/commandIds'
 import type { TextRange } from '@/shared/textRange'
 import type { Words } from './search'
 
@@ -60,8 +61,26 @@ export interface SearchDestination {
   selector?: Selector
 }
 
-/** The action that opens a note or a file the palette turns up. */
+/** The action that opens a file that is no note, which the palette turns up. */
 export const NOTE = 'note'
+
+/** The prefix of the id of an action that runs an entry of the menu of a search result. */
+export const MENU_ACTION_PREFIX = 'menu:'
+
+/** The entries plugins place in the menu of a search result, in the order they are drawn. */
+export interface SearchMenuDeps {
+  getEntries(): readonly PlacedCommand[]
+}
+
+/** The command an action of a search result runs, and the note it runs over. */
+export interface MenuChoice {
+  readonly command: string
+  readonly path: string
+  readonly title: string
+  readonly type: NoteType
+  /** The line of the heading or passage the result stands for, and -1 for a note found by its name. */
+  readonly line: number
+}
 
 /**
  * no line at all.
@@ -85,13 +104,33 @@ export interface SearchRow {
   hit: SearchHit
 }
 
+type PaletteAction = NonNullable<PaletteItem['actions']>[number]
+
+/** The actions of a note: opening it, and then the entries plugins place in the menu of a result. */
+function createNoteActions(
+  openText: string,
+  menu: readonly PaletteAction[],
+): { actions: readonly PaletteAction[]; offers: readonly string[] } {
+  const actions = [{ id: `${MENU_ACTION_PREFIX}${COMMAND.openNote}`, text: openText }, ...menu]
+  return { actions, offers: actions.map((one) => one.id) }
+}
+
+function createMenuActions(entries: readonly PlacedCommand[]): readonly PaletteAction[] {
+  return entries.map((one) => ({ id: `${MENU_ACTION_PREFIX}${one.command}`, text: one.title }))
+}
+
 /**
  * A name the search turned up. A name offers to open the note, and a heading offers to open the note
  * at that heading.
  */
-export function createNameItem(one: NameMatch, words: Words): SearchRow {
-  const atHeading = { actions: [{ id: NOTE, text: words.readAt }], offers: [NOTE] }
-  const byName = { actions: [{ id: NOTE, text: words.read }], offers: [NOTE] }
+export function createNameItem(
+  one: NameMatch,
+  words: Words,
+  entries: readonly PlacedCommand[] = [],
+): SearchRow {
+  const menu = createMenuActions(entries)
+  const atHeading = createNoteActions(words.readAt, menu)
+  const byName = createNoteActions(words.read, menu)
   return one.heading
     ? {
         item: {
@@ -132,8 +171,13 @@ export function createNameItem(one: NameMatch, words: Words): SearchRow {
       }
 }
 
-export function createPassageItem(group: string, one: Passage, words: Words): SearchRow {
-  const note = { actions: [{ id: NOTE, text: words.read }], offers: [NOTE] }
+export function createPassageItem(
+  group: string,
+  one: Passage,
+  words: Words,
+  entries: readonly PlacedCommand[] = [],
+): SearchRow {
+  const note = createNoteActions(words.read, createMenuActions(entries))
   return {
     item: {
       id: `${group}:${one.path}:${one.start}`,
@@ -155,12 +199,27 @@ export function createPassageItem(group: string, one: Passage, words: Words): Se
   }
 }
 
+/** The command the action runs over the note of the hit, and null where the action is none of the menu. */
+export function resolveMenuChoice(
+  searchHit: SearchHit | undefined,
+  action: string,
+): MenuChoice | null {
+  if (!searchHit || searchHit.type === null || !action.startsWith(MENU_ACTION_PREFIX)) return null
+  if (!searchHit.offers.includes(action)) return null
+  return {
+    command: action.slice(MENU_ACTION_PREFIX.length),
+    path: searchHit.path,
+    title: searchHit.title,
+    type: searchHit.type,
+    line: searchHit.line,
+  }
+}
+
 export function resolveDestination(
   hit: SearchHit | undefined,
   action: string,
 ): SearchDestination | null {
-  if (!hit || !hit.offers.includes(action)) return null
+  if (!hit || hit.type !== null || !hit.offers.includes(action)) return null
   const named = { path: hit.path, title: hit.title }
-  if (hit.selector) return { at: 'file', ...named, selector: hit.selector }
-  return hit.line >= 0 ? { at: 'file', ...named, line: hit.line } : { at: 'file', ...named }
+  return hit.selector ? { at: 'file', ...named, selector: hit.selector } : { at: 'file', ...named }
 }

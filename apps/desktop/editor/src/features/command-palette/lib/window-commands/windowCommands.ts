@@ -13,6 +13,7 @@ export const createWindowCreationCommands = (words: Words, agent: string): reado
     text: words.newNote,
     ...createRowKeys(COMMAND.createNote, agent),
     group: 'window',
+    iconName: 'file-plus',
     needs: 'naming',
     isAvailable: (target) => target.isReady,
   },

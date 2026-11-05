@@ -63,6 +63,8 @@ type commands struct {
 	ran []pluginport.PluginCommandCall
 }
 
+func (c *commands) ListMenus() []pluginport.PluginMenuEntry { return nil }
+
 func (c *commands) ListCommands() []pluginport.PluginCommandEntry { return c.all }
 
 func (c *commands) GetParts(string) pluginport.PluginParts {

@@ -5,11 +5,18 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { waitFor } from './waitFor'
 import { formatErrorMessage } from '@numen/core-client'
+import type { Menus } from '@numen/plugin-host'
 import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
 import { createNoteLookup } from '../tabs/editorTabs'
-import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
+import {
+  createCommands,
+  runSupport,
+  type Command,
+  type CommandTarget,
+  type NoteLookup,
+} from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
 import { createNoticeQueue } from '@numen/shell'
@@ -29,6 +36,7 @@ import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
 import { useCommands } from '../commands/useCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
+import { createPluginMenus } from '../commands/pluginMenus'
 import { getNamedIcon } from '@/shared/icons'
 import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
@@ -65,6 +73,7 @@ interface WindowCommandsOptions {
   pluginHost: import('@numen/plugin-host').PluginHost
   fileMenuCommands: ReturnType<typeof useFileMenuCommands>
   declaredCommands: ReturnType<typeof useDeclaredCommands>
+  menus: Menus
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
@@ -72,6 +81,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
   return useCommands({
     declaredCommands: deps.declaredCommands,
     fileMenuCommands: deps.fileMenuCommands,
+    menus: deps.menus,
     core,
     words,
     log: deps.log,
@@ -402,6 +412,17 @@ function initWindowKindsAndCommands(
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
+  let editorCommands: readonly Command[] | undefined
+  const menus = createPluginMenus({
+    getPlacements: () => base.declaredCommands.placements.value,
+    getPluginCommands: () => base.pluginHost.getPaletteCommands(),
+    getDeclaredCommands: () => base.declaredCommands.commands.value,
+    getEditorCommands: () => (editorCommands ??= createCommands(words)),
+    reportIssue: (pluginId, message) => {
+      const name = settings.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
+      base.log.getWriter(`plugin:${pluginId}`)(`${name}: ${message}`, 'warning')
+    },
+  })
   const fileMenuCommands = useFileMenuCommands({
     onRun: (file) => base.pluginHost.notifyVaultChange({ paths: [file] }),
     onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
@@ -454,10 +475,11 @@ function initWindowKindsAndCommands(
     log: base.log,
     pluginHost: base.pluginHost,
     declaredCommands: base.declaredCommands,
+    menus,
     fileMenuCommands,
   })
 
-  return { getTarget, runCommand }
+  return { getTarget, runCommand, menuApi: { menus, runEntry: getCommands(ctx).runEntry } }
 }
 
 function isSecondaryWindow(): boolean {
@@ -623,7 +645,7 @@ export const useWindow = () => {
   const base = initWindowCore(settingsHolder)
   const ctx: WindowContext = {}
   const services = initWindowServices(base, ctx, settingsHolder)
-  const { getTarget, runCommand } = initWindowKindsAndCommands(base, ctx, services)
+  const { getTarget, runCommand, menuApi } = initWindowKindsAndCommands(base, ctx, services)
   const { editing, window, settings } = services
   watchPluginSettings(settings, base.pluginLoader, (error) =>
     base.writeMessage(`Plugins were not tracked: ${formatErrorMessage(error)}`, 'error'),
@@ -673,6 +695,7 @@ export const useWindow = () => {
 
   const api = {
     runCommand,
+    ...menuApi,
     openCurrentVault: () => openPlacedTabs(base),
     isLayoutReady,
     bootstrapFailure: bootstrap.failure,
