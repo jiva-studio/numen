@@ -83,7 +83,7 @@ function onSelectReasoning(id: string) {
       {{ noAgentMessage }}
       <button
         type="button"
-        class="composer__link text-ink cursor-pointer underline"
+        class="composer__link cursor-pointer"
         @click="emit('open-settings')"
       >
         {{ openSettingsLabel }}
@@ -166,7 +166,10 @@ function onSelectReasoning(id: string) {
   padding: 0;
   background: none;
   border: 0;
+  color: inherit;
   font: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
 }
 
 .composer__grow {
