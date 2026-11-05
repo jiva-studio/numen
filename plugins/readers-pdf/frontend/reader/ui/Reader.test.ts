@@ -327,3 +327,26 @@ describe('a reader hidden or moved in the document', () => {
     expect(area.scrollLeft).toBe(1200)
   })
 })
+
+describe('a scroll event that reaches a reader after its tab was moved', () => {
+  it('turns to no page and leaves the row on the page it was on', async () => {
+    // The browser queues a scroll event when the row scrolls and delivers it with the next frame.
+    // A tab moved to another pane in between has its row scrolled to the start by the browser, so
+    // the event reports the start, and the page the tab was on would be turned away from.
+    const target = await reader(1000, 800)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    area.scrollLeft = 1200
+    await target.find('.reader__viewport').trigger('scroll')
+    const turns = () => (target.emitted('go') ?? []).map((one) => (one as [number])[0])
+    await target.setProps({ at: turns().at(-1) as number })
+    const turnsBefore = turns().length
+
+    area.scrollLeft = 0
+    await room(target, 1000, 800)
+    await target.find('.reader__viewport').trigger('scroll')
+    await new Promise((done) => requestAnimationFrame(() => done(undefined)))
+
+    expect(turns().slice(turnsBefore)).toStrictEqual([])
+    expect(area.scrollLeft).toBe(1200)
+  })
+})
