@@ -156,10 +156,10 @@ export function useBookTurns(options: BookTurnsOptions) {
   }
 
   /**
-   * The offset currently being read, preserved while the text is laid out again. A layout stands at
-   * the spread of this offset, and the first run of that spread is often an earlier one, so the
-   * offset is kept for as long as its run stays in the spread in front. Taking the first run every
-   * time moves the passage back by a part of a spread on each layout of a resize.
+   * The offset currently being read, preserved while the text is laid out again. A layout moves to
+   * the spread that contains this offset, and the first run of that spread is often an earlier one,
+   * so the offset is kept while its run is in the active spread. Taking the first run every time
+   * moves the passage back by a part of a spread on each layout of a resize.
    */
   let keptOffset: number | undefined
   const isInFront = (pos: number) =>
