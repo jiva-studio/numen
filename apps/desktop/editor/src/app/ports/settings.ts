@@ -16,6 +16,13 @@ export interface SettingsPort {
   getSettings(): Promise<Configuration>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
   /**
+   * The settings that changed, until the signal aborts: a write by this window, another window, a
+   * plugin or the palette, and an edit of the file by hand. Each batch holds the settings that
+   * changed together, named by their declared path, with the value each now holds as JSON. The
+   * stream opens with an empty batch, which the window ignores.
+   */
+  watchSettings(signal: AbortSignal): AsyncIterable<readonly SettingEdit[]>
+  /**
    * The key of a secret declared by a plugin, stored in the system keychain and
    * never in the settings file. A machine without a keychain rejects it.
    */

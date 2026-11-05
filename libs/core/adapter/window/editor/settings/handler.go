@@ -16,8 +16,10 @@ import (
 // Handler answers every setting read and written, and the keys of the secrets
 // plugins declare, stored and removed.
 type Handler struct {
-	Get          *setting.Get
-	Write        *setting.Write
+	Get   *setting.Get
+	Write *setting.Write
+	// Watch is nil where the build reports no change of a setting.
+	Watch        *setting.Watch
 	WriteSecret  *setting.WriteSecret
 	DeleteSecret *setting.DeleteSecret
 	PluginRetry  *setting.RetryPlugin
@@ -326,4 +328,11 @@ func newWireReaders(readers []setting.PluginReaderInfo) []*v1.PluginReader {
 		out = append(out, &v1.PluginReader{Id: one.ID, Extensions: one.Extensions})
 	}
 	return out
+}
+
+// WatchSettings reports each setting whose value changed until the client leaves.
+func (h *Handler) WatchSettings(
+	_ context.Context, _ *connect.Request[v1.WatchSettingsRequest], _ *connect.ServerStream[v1.WatchSettingsResponse],
+) error {
+	return connect.NewError(connect.CodeUnimplemented, errNoSettings)
 }

@@ -155,6 +155,9 @@ export const settingsCore: SettingsPort = {
       settings: edits.map((one) => ({ at: [...one.at], value: one.value })),
     })
   },
+  watchSettings: async function* () {
+    // Not yet read from the core.
+  },
   writePluginSecret: async (pluginId, name, key) => {
     await settingsService.writePluginSecret({ pluginId, name, key })
   },

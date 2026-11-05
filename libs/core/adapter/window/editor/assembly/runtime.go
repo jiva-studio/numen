@@ -56,6 +56,7 @@ type Runtime[H, V any] struct {
 	CloseIndexFn             func() error
 	OpenGetSettingsFn        func() *settings.Get
 	OpenWriteSettingsFn      func() *settings.Write
+	OpenWatchSettingsFn      func() *settings.Watch
 	OpenWritePluginSecretFn  func() *settings.WriteSecret
 	OpenDeletePluginSecretFn func() *settings.DeleteSecret
 	OpenRetryPluginFn        func() *settings.RetryPlugin
@@ -104,6 +105,7 @@ func (e Runtime[H, V]) GetPassageQueries() sourceport.PassageQueries { return e.
 func (e Runtime[H, V]) CloseIndex() error                            { return e.CloseIndexFn() }
 func (e Runtime[H, V]) OpenGetSettings() *settings.Get               { return e.OpenGetSettingsFn() }
 func (e Runtime[H, V]) OpenWriteSettings() *settings.Write           { return e.OpenWriteSettingsFn() }
+func (e Runtime[H, V]) OpenWatchSettings() *settings.Watch           { return e.OpenWatchSettingsFn() }
 func (e Runtime[H, V]) OpenWritePluginSecret() *settings.WriteSecret {
 	return e.OpenWritePluginSecretFn()
 }
