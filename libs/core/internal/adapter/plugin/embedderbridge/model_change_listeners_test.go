@@ -47,13 +47,13 @@ func TestListenersRunAfterTheEmbedderReleasesItsLock(t *testing.T) {
 		unlocked bool
 		model    string
 	}
-	seen := make(chan outcome, 1)
+	outcomes := make(chan outcome, 1)
 	bridge.OnModelChange(func() {
 		unlocked := bridge.changeMu.TryLock()
 		if unlocked {
 			bridge.changeMu.Unlock()
 		}
-		seen <- outcome{unlocked: unlocked, model: bridge.GetModel().Name}
+		outcomes <- outcome{unlocked: unlocked, model: bridge.GetModel().Name}
 	})
 
 	mock.modelName.Store("another-model")
@@ -61,7 +61,7 @@ func TestListenersRunAfterTheEmbedderReleasesItsLock(t *testing.T) {
 		t.Fatal(err)
 	}
 	select {
-	case got := <-seen:
+	case got := <-outcomes:
 		if !got.unlocked {
 			t.Error("the embedder held its lock while the listener ran")
 		}
