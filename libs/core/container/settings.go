@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
@@ -200,10 +201,19 @@ func (c Config) listRegistryOptions(name string) (pluginport.PluginSettingOption
 // listAppSettings returns the declaration of the settings of the shell with the options, the
 // visibility and the value in force of each under the settings file.
 func (c Config) listAppSettings() []pluginport.PluginSetting {
+	return c.listAppSettingsOn(runtime.GOOS)
+}
+
+// listAppSettingsOn lists the settings of the shell that apply on an operating system, named as
+// runtime.GOOS names it.
+func (c Config) listAppSettingsOn(goos string) []pluginport.PluginSetting {
 	current := c.getSettingsOrDefaults()
 	declared := settings.GetAppDeclaration()
 	entries := make([]pluginport.PluginSetting, 0, len(declared))
 	for _, one := range declared {
+		if !settings.IsAvailableOn(one.Key, goos) {
+			continue
+		}
 		options := one.Options
 		if one.OptionsFrom != "" {
 			options, _ = c.listRegistryOptions(one.OptionsFrom)

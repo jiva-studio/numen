@@ -48,6 +48,7 @@ export const createWindowSettingsCommands = (words: Words): readonly Command[] =
     id: COMMAND.openSettings,
     text: words.openSettings,
     group: 'settings',
+    iconName: 'settings',
     isAvailable: isAlwaysAvailable,
   },
 ]

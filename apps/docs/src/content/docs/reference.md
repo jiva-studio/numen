@@ -57,6 +57,12 @@ The agent and the model that handle the questions of a plugin whose own setting 
 | `model` | text | the model the agent uses. Empty leaves the choice to the agent. |
 | `concurrency` | a number | how many questions one agent handles at once. |
 
+### `app.window`
+
+| | | |
+| --- | --- | --- |
+| `buttons` | text | where the window draws its minimise, maximise and close buttons on Linux: at the right like Windows, or at the left like macOS. One of `windows`, `mac`. |
+
 ### `md.numen.agents.acp`
 
 The settings of the plugin ACP Agents.

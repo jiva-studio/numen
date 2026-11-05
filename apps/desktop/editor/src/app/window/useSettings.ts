@@ -1,7 +1,7 @@
 /**
  * Settings configuration, theme application, and palette lists for the window.
  */
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { themes } from '@/entities/settings'
 import { INTERFACE_SCALE, TEXT_SCALE, createWindowAppearance } from '@/features/settings-commands'
 import { APP_OWNER, createSettingPalette, type SettingPreview } from './settingCommands'
@@ -16,6 +16,7 @@ import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import type { useWindowTabs } from '@/entities/tab'
+import type { WindowButtons } from './useWindowFrame'
 
 type Words = typeof WORDS
 
@@ -92,6 +93,13 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     app: rest.app,
     file: rest.path,
   }
+}
+
+/** The style of the window buttons on Linux; a missing or unknown value is the Windows one. */
+function createWindowButtons(rest: ReturnType<typeof createSettingsStore>) {
+  return computed<WindowButtons>(() =>
+    rest.getSetting(['app', 'window', 'buttons']) === 'mac' ? 'mac' : 'windows',
+  )
 }
 
 /**
@@ -238,8 +246,6 @@ export function useSettings({
 
   const settingPalette = createWindowSettingPalette({ rest, appearance, words })
 
-  const kinds = [configured.kind]
-
   const changes = createChangeFollower({
     core,
     refresh: () => Promise.all([rest.start(), appearance.reload()]),
@@ -259,11 +265,12 @@ export function useSettings({
 
   const api = {
     appearance,
+    windowButtons: createWindowButtons(rest),
     rest,
     configured,
     paletteLists: settingPalette.lists,
     settingPalette,
-    kinds,
+    kinds: [configured.kind],
     start,
     close,
   }
