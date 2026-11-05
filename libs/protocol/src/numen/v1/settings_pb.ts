@@ -45,7 +45,8 @@ export const GetSettingsRequestSchema: GenMessage<GetSettingsRequest> = /*@__PUR
 export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
   /**
    * Every setting currently, as JSON: what the file says, and what an
-   * installation nobody has configured does under everything it does not.
+   * installation nobody has configured does under everything it does not. The first level is the
+   * version `v`, the owner `app` and one object per plugin id.
    *
    * @generated from field: string written = 1;
    */
@@ -173,7 +174,8 @@ export const ModelSchema: GenMessage<Model> = /*@__PURE__*/
  */
 export type Setting = Message<"numen.v1.Setting"> & {
   /**
-   * The setting, as a path through the file.
+   * The setting, as a path through the file. The first element is the owner, `app` or the id of a
+   * plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
    *
    * @generated from field: repeated string at = 1;
    */

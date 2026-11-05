@@ -61,7 +61,8 @@ message GetSettingsRequest {}
 
 message GetSettingsResponse {
   // Every setting currently, as JSON: what the file says, and what an
-  // installation nobody has configured does under everything it does not.
+  // installation nobody has configured does under everything it does not. The first level is the
+  // version `v`, the owner `app` and one object per plugin id.
   string written = 1;
 
   // The file itself, absolute on this machine.
@@ -128,7 +129,8 @@ enum Presence {
 
 // Setting is one setting of the file and what to put there.
 message Setting {
-  // The setting, as a path through the file.
+  // The setting, as a path through the file. The first element is the owner, `app` or the id of a
+  // plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
   repeated string at = 1;
 
   // What to write there, as JSON. A value the settings cannot be read out of

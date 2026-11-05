@@ -129,7 +129,8 @@ func (*GetSettingsRequest) Descriptor() ([]byte, []int) {
 type GetSettingsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every setting currently, as JSON: what the file says, and what an
-	// installation nobody has configured does under everything it does not.
+	// installation nobody has configured does under everything it does not. The first level is the
+	// version `v`, the owner `app` and one object per plugin id.
 	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
 	// The file itself, absolute on this machine.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
@@ -332,7 +333,8 @@ func (x *Model) GetDefaultReasoning() string {
 // Setting is one setting of the file and what to put there.
 type Setting struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The setting, as a path through the file.
+	// The setting, as a path through the file. The first element is the owner, `app` or the id of a
+	// plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
 	At []string `protobuf:"bytes,1,rep,name=at,proto3" json:"at,omitempty"`
 	// What to write there, as JSON. A value the settings cannot be read out of
 	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
