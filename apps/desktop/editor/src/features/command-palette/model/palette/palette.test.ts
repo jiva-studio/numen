@@ -135,7 +135,7 @@ const createLists = (offers: Record<string, readonly StepGroup[]>) => {
 const createPalette = (
   override: Partial<CommandTarget> = {},
   found: readonly NameMatch[] = [],
-  offers: Record<string, readonly StepGroup[]> = {},
+  entries: Record<string, readonly StepGroup[]> = {},
   items: VaultList = installation(vault('physics', 'Physics')),
   runs: RunSupport = runSupport(),
 ) => {
@@ -149,7 +149,7 @@ const createPalette = (
     vaults: async () => items,
   }
   const window = createLookup()
-  const retainedItem = createLists(offers)
+  const retainedItem = createLists(entries)
   const commands = useCommandPalette(
     core,
     words,
@@ -158,7 +158,7 @@ const createPalette = (
     retainedItem.paletteLists,
     runs,
     vi.fn(() => Promise.resolve()),
-    () => (Object.keys(offers).length > 0 ? SETTING_COMMANDS : []),
+    () => (Object.keys(entries).length > 0 ? SETTING_COMMANDS : []),
   )
   commands.setOpen(true)
   return {

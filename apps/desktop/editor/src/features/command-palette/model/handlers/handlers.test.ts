@@ -174,18 +174,6 @@ const window = (
       },
     },
     settings: {
-      chooseAppearance: async (selected) => {
-        isDone.push(`appearance ${selected}`)
-      },
-      chooseSync: async (selected) => {
-        isDone.push(`syncing ${selected}`)
-      },
-      choosePerformance: async (selected) => {
-        isDone.push(`performance ${selected}`)
-      },
-      choosePluginSetting: async (pluginId, key, selected) => {
-        isDone.push(`plugin ${pluginId} ${key} ${selected}`)
-      },
       chooseSetting: async (command, selected) => {
         isDone.push(`setting ${command} ${selected}`)
       },

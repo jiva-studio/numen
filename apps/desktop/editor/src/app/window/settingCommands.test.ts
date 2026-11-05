@@ -132,8 +132,8 @@ const createPalette = (owners: readonly SettingOwner[] = [APP, PLUGIN]) => {
     getOwners: () => owners,
     words: { current: 'Current', on: 'On', off: 'Off' },
     preview: {
-      apply: (at, value) => applied.push(`apply ${at.join('/')} ${JSON.stringify(value)}`),
-      restore: (at) => applied.push(`restore ${at.join('/')}`),
+      apply: (path, value) => applied.push(`apply ${path.join('/')} ${JSON.stringify(value)}`),
+      restore: (path) => applied.push(`restore ${path.join('/')}`),
     },
     write,
   })
@@ -162,7 +162,7 @@ describe('the address of the command of a setting', () => {
     })
   })
 
-  it('names nothing for the id of another command', () => {
+  it('gives no owner for the id of another command', () => {
     expect(parseSettingCommandId('app:note.create')).toBeNull()
     expect(parseSettingCommandId('setting::key')).toBeNull()
     expect(parseSettingCommandId('setting:app:')).toBeNull()
@@ -228,12 +228,12 @@ describe('the commands made from the declarations', () => {
   })
 
   it('offers a command only while its setting is shown under the values in force', () => {
-    const hidden: SettingOwner = {
+    const concealed: SettingOwner = {
       ...APP,
       settings: [{ ...MODE, isShown: false }, { ...SYNC, isShown: true }, PROFILE],
     }
     const available = Object.fromEntries(
-      createPalette([hidden])
+      createPalette([concealed])
         .palette.getCommands()
         .map((one) => [one.id, one.isAvailable({} as never, {} as never)]),
     )
@@ -245,7 +245,7 @@ describe('the commands made from the declarations', () => {
     })
   })
 
-  it('follows the owners as they stand when the commands are asked for', () => {
+  it('reads the owners again for each request of the commands', () => {
     let owners: readonly SettingOwner[] = [APP]
     const palette = createSettingPalette({
       getOwners: () => owners,
@@ -419,7 +419,7 @@ describe('choosing a row', () => {
 })
 
 describe('a setting that is previewed while focused', () => {
-  it('is applied under its path as the keyboard stands on each of its rows', () => {
+  it('is applied under its path for each row the keyboard moves to', () => {
     const { palette, applied } = createPalette()
 
     palette.lists.previewItem('setting:app:appearance.theme', 'preset:dracula')

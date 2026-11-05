@@ -227,8 +227,6 @@ beforeEach(() => {
     },
     settings: {
       kept: {},
-      appearance: {},
-      oneName: {},
       nesting: {},
       rest: {
         plugins: ref([{ id: 'p1', name: 'Plugin One' }]),

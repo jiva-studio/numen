@@ -67,7 +67,7 @@ describe('the input a command of the palette asks for', () => {
     kinds.delete(undefined)
 
     expect([...kinds].sort()).toStrictEqual(
-      ['choice', 'confirmation', 'name', 'note', 'retypedName', 'vault'].sort(),
+      ['confirmation', 'name', 'note', 'retypedName', 'vault'].sort(),
     )
   })
 })

@@ -30,8 +30,6 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
     setVaultName: record('setVaultName'),
     reload: record('reload'),
     reached: {} as never,
-    appearance: { chooseItem: vi.fn() },
-    oneName: { choose: vi.fn() },
     rest: {
       writeSettings: (content) => {
         record('writeSettings')(content)

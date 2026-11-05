@@ -161,7 +161,7 @@ describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect(writers).toStrictEqual(['appearance', 'named', 'configured', 'keys', 'plugins'])
+    expect(writers).toStrictEqual(['appearance', 'configured', 'keys', 'plugins'])
   })
 
   it('opens the settings tab as kind of tab', () => {
@@ -184,12 +184,10 @@ describe('the settings as they are put together', () => {
     try {
       const { settings } = createSettings()
       vi.spyOn(settings.appearance, 'start').mockResolvedValue()
-      vi.spyOn(settings.sync, 'start').mockResolvedValue()
       const startRest = vi.spyOn(settings.rest, 'start').mockResolvedValue()
 
       await settings.start()
       expect(settings.appearance.start).toHaveBeenCalledTimes(1)
-      expect(settings.sync.start).toHaveBeenCalledTimes(1)
       expect(startRest).toHaveBeenCalledTimes(1)
 
       vi.advanceTimersByTime(20000)
@@ -244,7 +242,7 @@ describe('the lists the palette offers for a setting', () => {
     }
   })
 
-  it('offers the settings of the installed plugins beside those of the shell', () => {
+  it('offers the settings of the installed plugins together with those of the shell', () => {
     const { settings } = createSettings()
     settings.rest.app.value = SHELL_DECLARATION
     settings.rest.plugins.value = [SCANNER]
