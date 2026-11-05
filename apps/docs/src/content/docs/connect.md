@@ -13,8 +13,6 @@ http://127.0.0.1:3333/mcp
 
 That address is the loopback interface: nothing outside your computer can reach it. The port is the plugin's **Port** setting, on its page in the settings, and it takes a number from 1024 to 65535. The server follows the vault the window is showing.
 
-For a client that needs the older SSE transport, the address is `http://127.0.0.1:3333/sse`.
-
 ## What to point your agent at
 
 Add the address to your agent's MCP configuration. The transport is streamable HTTP:

@@ -7,28 +7,17 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// VaultInfoInput is the input of the vault_info tool.
+// VaultInfoInput is the input of the vault_get tool.
 type VaultInfoInput struct {
 	ID string `json:"id,omitempty" jsonschema:"optional vault ID to query; defaults to the vault the call works"`
 }
 
-// VaultInfoOutput is the output of the vault_info tool.
+// VaultInfoOutput is the output of the vault_get tool.
 type VaultInfoOutput struct {
 	ID        string `json:"id" jsonschema:"vault unique identifier"`
 	Name      string `json:"name" jsonschema:"vault display name"`
 	Path      string `json:"path" jsonschema:"vault root directory path on disk"`
 	NoteCount int    `json:"note_count" jsonschema:"total number of indexed notes in the vault"`
-}
-
-func (t *Tools) addVaultInfo(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
-		Step:        tools.ByEffect,
-		Name:        "vault_info",
-		Title:       "Vault Info",
-		Description: "Get metadata, name, root path, and note count for the vault.",
-		Effect:      tools.ReadOnly,
-		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, inVault(t, (*Tools).getVaultInfo))
 }
 
 func (t *Tools) addVaultGet(registry *tools.Registry) error {
