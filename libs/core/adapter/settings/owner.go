@@ -284,6 +284,8 @@ func (f *File) resetApp(declared pluginport.PluginManifestSetting) {
 		f.Appearance.TextScale = getAppNumber(keyTextScale)
 	case keySyncNaming:
 		f.Titles = DefaultTitles()
+	case keyWindowButtons:
+		f.Window = DefaultWindow()
 	case keyProfile:
 		f.Performance = DefaultPerformance()
 	}
