@@ -105,19 +105,19 @@ const rowStyle = computed(() => ({
 }))
 
 /**
- * How many puts of the row back wait for a frame. The browser queues a scroll event when the row scrolls and
- * delivers it with the next frame. An event queued before the row was hidden or moved reaches the
- * handler after the browser has scrolled the row to its start, and reports the start as a place the
- * person scrolled to.
+ * How many puts of the row back wait for a frame. The browser queues a scroll event when the row
+ * scrolls and delivers it with the next frame. An event queued before the row was hidden or moved
+ * reaches the handler after the browser has scrolled the row to its start, and reports the start as
+ * a place the person scrolled to.
  */
-let waiting = 0
+let pendingPuts = 0
 
 /** Puts the row back with the next frame, and takes no scroll event as the person's until then. */
 function putRowBack(): void {
-  waiting += 1
+  pendingPuts += 1
   props.paint(() => {
     restore()
-    waiting -= 1
+    pendingPuts -= 1
   })
 }
 
@@ -189,7 +189,7 @@ watch(viewport, putRowBack)
  * are not navigation targets.
  */
 const onScroll = () => {
-  if (waiting > 0 || !isStill()) return
+  if (pendingPuts > 0 || !isStill()) return
   if (middle.value !== props.at) emit('go', middle.value)
 }
 

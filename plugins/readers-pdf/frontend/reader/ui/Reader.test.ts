@@ -339,14 +339,14 @@ describe('a scroll event that reaches a reader after its tab was moved', () => {
     await target.find('.reader__viewport').trigger('scroll')
     const turns = () => (target.emitted('go') ?? []).map((one) => (one as [number])[0])
     await target.setProps({ at: turns().at(-1) as number })
-    const asked = turns().length
+    const turnsBefore = turns().length
 
     area.scrollLeft = 0
     await room(target, 1000, 800)
     await target.find('.reader__viewport').trigger('scroll')
     await new Promise((done) => requestAnimationFrame(() => done(undefined)))
 
-    expect(turns().slice(asked)).toStrictEqual([])
+    expect(turns().slice(turnsBefore)).toStrictEqual([])
     expect(area.scrollLeft).toBe(1200)
   })
 })
