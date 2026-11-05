@@ -188,6 +188,7 @@ fs.writeFileSync(
 function cleanup() {
   fs.rmSync(vaultPathFile, { force: true })
   fs.rmSync(certificateFile, { force: true })
+  fs.rmSync(keyFile, { force: true })
   standIns.close()
   try {
     fs.rmSync(tmpVault, { recursive: true, force: true })
@@ -222,6 +223,9 @@ fs.writeFileSync(vaultPathFile, tmpVault)
 // tests/support/test.ts names the same file.
 const certificateFile = path.join(os.tmpdir(), `numen-e2e-certificate-${port}.pem`)
 fs.rmSync(certificateFile, { force: true })
+// Its key goes beside it, for the servers a spec starts itself to serve the same pair.
+const keyFile = path.join(os.tmpdir(), `numen-e2e-key-${port}.pem`)
+fs.rmSync(keyFile, { force: true })
 
 /** How long the first pass over the vault may take before the server counts as failed. */
 const INDEX_LIMIT_MS = 180_000
@@ -299,6 +303,7 @@ const child = spawn(
       NUMEN_MOCK_ML: 'true',
       NUMEN_PLUGINS_PATH: pluginsPath,
       NUMEN_DEBUG_TLS_CERT: certificateFile,
+      NUMEN_DEBUG_TLS_KEY: keyFile,
       HTTP_PROXY: `http://${host}:${pagesPort}`,
       NO_PROXY: host,
     },

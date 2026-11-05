@@ -7,6 +7,7 @@ import fs from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { getCertificateFile, getKeyFile, test } from './test.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const e2eRoot = path.resolve(here, '../..')
@@ -36,14 +37,15 @@ const getFreePort = (): Promise<number> =>
     })
   })
 
-const isListening = (port: number): Promise<boolean> =>
-  new Promise((resolve) => {
-    const probe = net.connect({ host, port })
-    probe.once('connect', () => (probe.destroy(), resolve(true)))
-    probe.once('error', () => resolve(false))
-  })
+/** The variables that make a server serve the certificate and key of the project's shared server. */
+const getSharedPairEnv = (): Record<string, string> => {
+  const port = new URL(test.info().project.use.baseURL ?? '').port
+  return {
+    NUMEN_DEBUG_TLS_USE_CERT: getCertificateFile(port),
+    NUMEN_DEBUG_TLS_USE_KEY: getKeyFile(port),
+  }
+}
 
-/** Starts the debug server on a copy of the test vault with the plugins installed, and waits until it listens. */
 /** What a scenario sets on the server beyond the plugins it installs. */
 export interface OwnServerOptions {
   /** Variables the server and its plugins start with. */
@@ -52,6 +54,11 @@ export interface OwnServerOptions {
   readonly settings?: string
 }
 
+/**
+ * Starts the debug server on a copy of the test vault with the plugins installed, and waits until it
+ * listens. It serves the certificate and key of the shared server of the project, which the browser
+ * trusts.
+ */
 export const startOwnServer = async (
   installed: readonly InstalledPlugin[],
   options: OwnServerOptions = {},
@@ -82,6 +89,8 @@ export const startOwnServer = async (
     fs.mkdirSync(settings, { recursive: true })
     fs.writeFileSync(path.join(settings, 'numen.json'), options.settings)
   }
+  // The server writes it once it is bound: a new connection waits for the handshake from then on.
+  const certificate = path.join(root, 'certificate.pem')
   const port = await getFreePort()
   const child: ChildProcess = spawn(
     path.join(repoRoot, 'apps/desktop/numen-debug'),
@@ -97,6 +106,8 @@ export const startOwnServer = async (
         HOME: home,
         NUMEN_MOCK_ML: 'true',
         NUMEN_PLUGINS_PATH: path.join(repoRoot, 'plugins'),
+        ...getSharedPairEnv(),
+        NUMEN_DEBUG_TLS_CERT: certificate,
         ...options.env,
       },
     },
@@ -115,7 +126,7 @@ export const startOwnServer = async (
     fs.rmSync(root, { recursive: true, force: true })
   }
   const startedAt = Date.now()
-  while (!(await isListening(port))) {
+  while (!fs.existsSync(certificate)) {
     if (child.exitCode !== null || Date.now() - startedAt > 60_000) {
       await stop()
       throw new Error(`the debug server did not start on port ${port}: ${stderr.trim()}`)

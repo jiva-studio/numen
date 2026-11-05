@@ -47,8 +47,12 @@ export const readActivePath = async (request: APIRequestContext): Promise<string
 }
 
 /** The TLS certificate the debug server listening on port wrote, which scripts/start-server.mjs names. */
-const getCertificateFile = (port: string): string =>
+export const getCertificateFile = (port: string): string =>
   path.join(os.tmpdir(), `numen-e2e-certificate-${port}.pem`)
+
+/** The key of that certificate, in PEM, which scripts/start-server.mjs names. */
+export const getKeyFile = (port: string): string =>
+  path.join(os.tmpdir(), `numen-e2e-key-${port}.pem`)
 
 /** The base64 SHA-256 of the public key of the certificate in file, the form of Chromium's SPKI list. */
 const getPublicKeyHash = (file: string): string => {
