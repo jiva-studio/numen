@@ -133,7 +133,10 @@ describe('the question', () => {
   })
 
   it('names no level for a model that offers none', () => {
-    const { state, requests } = open({ 'app/agent/use': 'alpha', 'app/agent/alpha/model': 'plain' }, 'high')
+    const { state, requests } = open(
+      { 'app/agent/use': 'alpha', 'app/agent/alpha/model': 'plain' },
+      'high',
+    )
     state.send('hello')
     expect(requests[0]?.reasoning).toBe('')
   })
