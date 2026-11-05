@@ -16,7 +16,6 @@ export function readAvailableCommands(
   registry: HostRegistry,
 ): AvailableCommand[] {
   const { commands, issues } = listAvailableCommands(deps, registry)
-  if (registry.registering && registry.registering.count > 0) return commands
   for (const issue of issues) {
     const key = getIssueKey(issue)
     if (registry.reportedIssues.has(key)) continue
