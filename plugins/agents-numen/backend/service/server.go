@@ -27,7 +27,7 @@ const (
 	SettingModel       = "model"
 	SettingAPIKey      = "apiKey"
 	SettingTemperature = "temperature"
-	SettingMaxTokens   = "max_tokens"
+	SettingMaxTokens   = "maxTokens"
 	SettingMaxSteps    = "maxSteps"
 )
 

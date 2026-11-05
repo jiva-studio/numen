@@ -28,7 +28,7 @@ const programName = "claude"
 
 // readsHooksSetting is the setting of the plugin that lets the program read the hooks, skills and
 // standing instructions of the person.
-const readsHooksSetting = "reads_hooks_and_skills"
+const readsHooksSetting = "readsHooksAndSkills"
 
 // programTitle is the display name of the program.
 const programTitle = "Claude Code"
@@ -74,7 +74,7 @@ func (s *agentServer) applyConfig(values map[string]string) {
 	if model, ok := values["model"]; ok && model != "" {
 		s.defaultModel = model
 	}
-	if execPath, ok := values["executable_path"]; ok {
+	if execPath, ok := values["executablePath"]; ok {
 		s.executablePath = strings.TrimSpace(execPath)
 	}
 	if reads, ok := values[readsHooksSetting]; ok {

@@ -54,8 +54,8 @@ describe('notes plugin lifecycle', () => {
 
   it('wires plugin settings into open note editors and updates them when settings change', async () => {
     const settings: Record<string, unknown> = {
-      soft_wrap: false,
-      line_numbers: true,
+      softWrap: false,
+      lineNumbers: true,
       tab_size: 4,
     }
     const listeners = new Map<string, (value: unknown) => void>()
@@ -89,11 +89,11 @@ describe('notes plugin lifecycle', () => {
     expect(view!.dom.querySelector('.cm-lineNumbers')).not.toBeNull()
     expect(view!.state.tabSize).toBe(4)
 
-    settings.soft_wrap = true
-    settings.line_numbers = false
+    settings.softWrap = true
+    settings.lineNumbers = false
     settings.tab_size = 2
-    listeners.get('soft_wrap')?.(true)
-    listeners.get('line_numbers')?.(false)
+    listeners.get('softWrap')?.(true)
+    listeners.get('lineNumbers')?.(false)
     listeners.get('tab_size')?.(2)
     await flushPromises()
 

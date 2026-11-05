@@ -19,7 +19,7 @@
   "frontend": {},
   "settings": [
     {
-      "key": "default_zoom",
+      "key": "defaultZoom",
       "type": "enum",
       "title": "Default Zoom",
       "description": "Initial zoom level when opening a PDF document",

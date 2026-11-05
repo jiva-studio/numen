@@ -22,8 +22,8 @@ function readSetting(getSetting: SettingLookup | undefined, key: string): unknow
 export function readMarkdownEditorPreferences(
   getSetting?: SettingLookup,
 ): Required<MarkdownEditorPreferences> {
-  const softWrap = readSetting(getSetting, 'soft_wrap')
-  const lineNumbers = readSetting(getSetting, 'line_numbers')
+  const softWrap = readSetting(getSetting, 'softWrap')
+  const lineNumbers = readSetting(getSetting, 'lineNumbers')
   const tabSize = readSetting(getSetting, 'tab_size')
   return {
     softWrap: typeof softWrap === 'boolean' ? softWrap : true,
@@ -52,13 +52,13 @@ export function bindMarkdownEditorPreferences(
   }
   applyAll()
 
-  context.onSettingChange?.('soft_wrap', (value) => {
+  context.onSettingChange?.('softWrap', (value) => {
     editorPreferences.softWrap =
       typeof value === 'boolean'
         ? value
         : readMarkdownEditorPreferences(context.getSetting).softWrap
   })
-  context.onSettingChange?.('line_numbers', (value) => {
+  context.onSettingChange?.('lineNumbers', (value) => {
     editorPreferences.lineNumbers =
       typeof value === 'boolean'
         ? value

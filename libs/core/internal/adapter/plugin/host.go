@@ -1526,7 +1526,7 @@ type acpExecutableCandidate struct {
 const (
 	acpSubcommand     = "acp"
 	acpFlag           = "--acp"
-	keyExecutablePath = "executable_path"
+	keyExecutablePath = "executablePath"
 )
 
 func getAcpExecutableCandidates() []acpExecutableCandidate {

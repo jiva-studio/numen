@@ -19,7 +19,7 @@ func TestManifestDeclaresTheHooksAndSkillsSetting(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range manifest.Settings {
-		if one.Key != "reads_hooks_and_skills" {
+		if one.Key != "readsHooksAndSkills" {
 			continue
 		}
 		if one.Type != "boolean" || one.Default != false {
@@ -27,5 +27,5 @@ func TestManifestDeclaresTheHooksAndSkillsSetting(t *testing.T) {
 		}
 		return
 	}
-	t.Error("the plugin declares no reads_hooks_and_skills setting")
+	t.Error("the plugin declares no readsHooksAndSkills setting")
 }

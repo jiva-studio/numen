@@ -12,7 +12,7 @@
   "services": ["numen.v1.AgentService"],
   "settings": [
     {
-      "key": "executable_path",
+      "key": "executablePath",
       "type": "file",
       "title": "Executable Path",
       "description": "Path to the OpenAI Codex CLI executable. Empty finds it automatically.",

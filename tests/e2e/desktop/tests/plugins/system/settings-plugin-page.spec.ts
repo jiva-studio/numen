@@ -65,12 +65,12 @@ const recordPage = async (page: Page, pluginName: string): Promise<void> => {
 
 test.describe('The page of a plugin', () => {
   test.afterEach(async ({ page }) => {
-    await writeSetting(page, ['plugins', FIRST.id, 'executable_path'], '')
+    await writeSetting(page, ['plugins', FIRST.id, 'executablePath'], '')
   })
 
   test('shows none of the values of the plugin page opened before it', async ({ page }) => {
     const firstPath = await createExecutable()
-    await writeSetting(page, ['plugins', FIRST.id, 'executable_path'], firstPath)
+    await writeSetting(page, ['plugins', FIRST.id, 'executablePath'], firstPath)
     await openWorkspace(page)
     await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })

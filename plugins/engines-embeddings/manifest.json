@@ -140,7 +140,7 @@
       }
     },
     {
-      "key": "min_chunk_length",
+      "key": "minChunkLength",
       "type": "number",
       "title": "Smallest piece of text to index for meaning",
       "description": "Pieces of text shorter than this many characters get no vector for the search by meaning, so page numbers and running heads do not crowd out real answers. They stay searchable by their words. A note shorter than this is found by its words too. 0 gives every piece a vector",

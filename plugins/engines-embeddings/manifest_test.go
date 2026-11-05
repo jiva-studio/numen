@@ -76,7 +76,7 @@ func TestManifestDeclaresTheSmallestPieceToIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range manifest.Settings {
-		if one.Key != "min_chunk_length" {
+		if one.Key != "minChunkLength" {
 			continue
 		}
 		if one.Type != "number" || one.Default != float64(40) || one.Min == nil || *one.Min != 0 ||
@@ -88,7 +88,7 @@ func TestManifestDeclaresTheSmallestPieceToIndex(t *testing.T) {
 		}
 		return
 	}
-	t.Error("the manifest declares no min_chunk_length setting")
+	t.Error("the manifest declares no minChunkLength setting")
 }
 
 type manifestOption struct {

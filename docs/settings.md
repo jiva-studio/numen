@@ -46,17 +46,17 @@ A theme that sets `color-scheme` provides one variant, and `mode` has no effect 
 
 Choosing a theme, light or dark, or either size writes the matching field to this file — each is a separate command in the command palette. The file is read as an object, the named fields are set, and it is written back, so a key this build does not know is preserved. A file that does not parse is not written.
 
-Whether a node in the plex nests the headings of its note, and how many, are settings of the Plex Graph plugin: `plugins.md.numen.views.plex.graph.nest_headings` and `heading_limit`.
+Whether a node in the plex nests the headings of its note, and how many, are settings of the Plex Graph plugin: `plugins.md.numen.views.plex.graph.nestHeadings` and `headingLimit`.
 
 ## A day of review
 
-The hour a day of review starts is the setting `day_start_time` of the Flashcards plugin, `md.numen.views.flashcards.studio`, stored under `plugins.md.numen.views.flashcards.studio`. How a deck is scheduled is not set here: it is set in the vault, in the preset the deck refers to — [Cards](cards.md).
+The hour a day of review starts is the setting `dayStartTime` of the Flashcards plugin, `md.numen.views.flashcards.studio`, stored under `plugins.md.numen.views.flashcards.studio`. How a deck is scheduled is not set here: it is set in the vault, in the preset the deck refers to — [Cards](cards.md).
 
 ```json
 {
   "plugins": {
     "md.numen.views.flashcards.studio": {
-      "day_start_time": "04:00"
+      "dayStartTime": "04:00"
     }
   }
 }
@@ -64,7 +64,7 @@ The hour a day of review starts is the setting `day_start_time` of the Flashcard
 
 |                  |                                                                                        |
 | ---------------- | -------------------------------------------------------------------------------------- |
-| `day_start_time` | the hour a day of review begins, in local time (`04:00`, between `00:00` and `12:00`). |
+| `dayStartTime` | the hour a day of review begins, in local time (`04:00`, between `00:00` and `12:00`). |
 
 An answer given before that hour is recorded in the previous day: a user reviewing cards at one in the morning is finishing the previous evening's session, and a boundary at midnight would split one session in two. The hour uses local time — [Flashcards](flashcards.md).
 
@@ -174,10 +174,10 @@ The plugin has two ways to reach a model, chosen by its setting `provider`. With
   "plugins": {
     "md.numen.tools.proofreading": {
       "provider": "agent",
-      "batch_size": 40,
+      "batchSize": 40,
       "overlap": 4,
-      "in_flight": 4,
-      "max_edit_distance": 0.3
+      "inFlight": 4,
+      "maxEditDistance": 0.3
     }
   }
 }
@@ -185,16 +185,16 @@ The plugin has two ways to reach a model, chosen by its setting `provider`. With
 
 |                     |                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `batch_size`        | how many lines of a transcript one request contains. 40. A recognition is sent one page per request.                                                                                                                                                                                                                                                      |
+| `batchSize`        | how many lines of a transcript one request contains. 40. A recognition is sent one page per request.                                                                                                                                                                                                                                                      |
 | `overlap`           | how many lines neighbouring batches of a transcript share, so a phrase split at a batch boundary still appears whole in one of them. 4.                                                                                                                                                                                                                   |
-| `in_flight`         | how many batches of a transcript one window contains; the task shows the lines done after each window. 4.                                                                                                                                                                                                                                                 |
-| `max_edit_distance` | how far a correction of a recognised line may change the line's letters and still be accepted as a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. 0.30. A correction with a larger distance is dropped and that line is left as it was. |
+| `inFlight`         | how many batches of a transcript one window contains; the task shows the lines done after each window. 4.                                                                                                                                                                                                                                                 |
+| `maxEditDistance` | how far a correction of a recognised line may change the line's letters and still be accepted as a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. 0.30. A correction with a larger distance is dropped and that line is left as it was. |
 
-`max_edit_distance` is 0.30 because the measured distribution has a gap there. Over 931 corrections of one book, every correction with a distance above 0.30 was damage — text taken from the next line, or one corrected word in place of a whole line — and every one below it was a correct correction. It is a setting because other books may differ; the figures are in [Performance](performance.md).
+`maxEditDistance` is 0.30 because the measured distribution has a gap there. Over 931 corrections of one book, every correction with a distance above 0.30 was damage — text taken from the next line, or one corrected word in place of a whole line — and every one below it was a correct correction. It is a setting because other books may differ; the figures are in [Performance](performance.md).
 
 ## Importing from an address
 
-How a link's address is fetched is set by the Media Importer plugin's settings, under `plugins.md.numen.tools.media.importer`: `yt_dlp` and `ffmpeg`, the paths of the programs (empty is the one on `PATH`); `captions`, the languages captions are taken in, best first, separated by commas; `automatic_captions`, whether captions a machine wrote are used where a site publishes none (on); and `copy_max_size_mb`, the maximum size in megabytes of a copy of a video (500, and 0 is no limit). What is stored, and where, is [Importing an address](importing.md).
+How a link's address is fetched is set by the Media Importer plugin's settings, under `plugins.md.numen.tools.media.importer`: `ytDlp` and `ffmpeg`, the paths of the programs (empty is the one on `PATH`); `captions`, the languages captions are taken in, best first, separated by commas; `automatic_captions`, whether captions a machine wrote are used where a site publishes none (on); and `copyMaxSizeMb`, the maximum size in megabytes of a copy of a video (500, and 0 is no limit). What is stored, and where, is [Importing an address](importing.md).
 
 ## Which agent answers
 
@@ -211,7 +211,7 @@ How a link's address is fetched is set by the Media Importer plugin's settings, 
   },
   "plugins": {
     "md.numen.agents.claude": {
-      "reads_hooks_and_skills": false
+      "readsHooksAndSkills": false
     }
   }
 }
@@ -222,7 +222,7 @@ How a link's address is fetched is set by the Media Importer plugin's settings, 
 | `use`                                                   | which agent answers. `claude` is Claude Code, used by starting it and reading its output. `numen` is Numen Agent, numen's own: the `md.numen.agents.numen` plugin sends requests to an OpenAI-compatible chat API and calls this vault's tools on behalf of the model. Empty means no agent, and the panel says so.                                                        |
 | `claude.command`                                        | the command that starts it: the path of the command line program, and any wrapper it is started through. Empty searches the path, then the folders its installers write to. Worth setting for an installation those folders do not cover, and for a machine with several.                                                                                                  |
 | `claude.model`                                          | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty uses that installation's default model. Worth setting because the panel is read while somebody waits.                                                                                                                                                                                       |
-| `plugins.md.numen.agents.claude.reads_hooks_and_skills` | whether it reads the configuration of this machine: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not a request to run one. On, what is configured for this person is read; what a vault contains is rejected either way, since a vault comes from elsewhere. |
+| `plugins.md.numen.agents.claude.readsHooksAndSkills` | whether it reads the configuration of this machine: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not a request to run one. On, what is configured for this person is read; what a vault contains is rejected either way, since a vault comes from elsewhere. |
 | `numen.model`                                           | which model of the chat API answers. Empty takes the plugin's own `model` setting.                                                                                                                                                                                                                                                                                         |
 
 How many requests Numen Agent may make to the model for one task before it is stopped is the plugin's own setting, `plugins.md.numen.agents.numen.maxSteps`, 25 unless it names another. Which chat API it uses is the plugin's own setting, `plugins.md.numen.agents.numen.baseUrl`: OpenRouter, `https://openrouter.ai/api/v1`, unless it names another, such as `http://localhost:11434/v1` for Ollama. Its key is the plugin's `apiKey` secret, kept in the system keychain; an endpoint on this machine may take none. A key is sent only over https, or over http to this machine. The agent counts as installed while the chat API lists its models, and the models it lists are the ones offered.

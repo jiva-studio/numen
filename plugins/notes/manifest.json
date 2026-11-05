@@ -21,14 +21,14 @@
   "frontend": {},
   "settings": [
     {
-      "key": "soft_wrap",
+      "key": "softWrap",
       "type": "boolean",
       "title": "Soft Wrap",
       "description": "Wrap long lines to fit the editor viewport",
       "default": true
     },
     {
-      "key": "line_numbers",
+      "key": "lineNumbers",
       "type": "boolean",
       "title": "Line Numbers",
       "description": "Show line numbers in the editor margin",

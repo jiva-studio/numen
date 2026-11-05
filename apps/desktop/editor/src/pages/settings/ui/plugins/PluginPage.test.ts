@@ -11,7 +11,7 @@ import { createInstallation, createPluginInfo } from '@/testing/installation'
 import SettingsTab from '../SettingsTab.vue'
 
 const PATH_SETTING = {
-  key: 'executable_path',
+  key: 'executablePath',
   type: 'file' as const,
   title: 'Executable Path',
   description: '',
@@ -23,8 +23,8 @@ const SECOND = createPluginInfo('md.example.second', 'Second Agent', { settings:
 
 const FILE = {
   plugins: {
-    [FIRST.id]: { executable_path: '/opt/first/bin/first-cli' },
-    [SECOND.id]: { executable_path: '/opt/second/bin/second-cli' },
+    [FIRST.id]: { executablePath: '/opt/first/bin/first-cli' },
+    [SECOND.id]: { executablePath: '/opt/second/bin/second-cli' },
   },
 }
 

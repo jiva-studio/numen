@@ -12,7 +12,7 @@
   "services": ["numen.v1.AgentService"],
   "settings": [
     {
-      "key": "executable_path",
+      "key": "executablePath",
       "type": "file",
       "multiple": true,
       "title": "Executable Paths",

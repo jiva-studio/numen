@@ -205,7 +205,7 @@ func TestProofreadJoinsARunOfCues(t *testing.T) {
 
 func TestProofread_PromptsLongTranscriptByWindow(t *testing.T) {
 	s := newScene(t)
-	s.settings.updateConfig(map[string]string{"batch_size": "2", "overlap": "1", "in_flight": "1"})
+	s.settings.updateConfig(map[string]string{"batchSize": "2", "overlap": "1", "inFlight": "1"})
 	talk := s.holdTalk(t, "one", "two", "three", "four", "five")
 	s.model.script = func(prompt string) string {
 		return getRows(prompt, func(_, text string) string { return text + "!" })

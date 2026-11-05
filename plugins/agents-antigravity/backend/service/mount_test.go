@@ -43,7 +43,7 @@ func TestTheLinkedHandlerAnswersTheAgentService(t *testing.T) {
 		t.Skip("sh not found")
 	}
 	lifecycle := server.NewLifecycleClient(http.DefaultClient, web.URL, hostcall.WithBearer("tok"))
-	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executable_path": "  " + shPath + "  "}); err != nil {
+	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executablePath": "  " + shPath + "  "}); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
 	state, err = client.GetState(t.Context())
@@ -56,7 +56,7 @@ func TestTheLinkedHandlerAnswersTheAgentService(t *testing.T) {
 
 	// Direct server config, customPath GetPrograms, and Ask first-send error.
 	s := &agentServer{}
-	s.applyConfig(map[string]string{"executable_path": " " + shPath + " "})
+	s.applyConfig(map[string]string{"executablePath": " " + shPath + " "})
 	s.applyConfig(map[string]string{"other": "ignored"})
 	if got := s.getExecutablePath(); got != shPath {
 		t.Fatalf("getExecutablePath = %q, want %q", got, shPath)

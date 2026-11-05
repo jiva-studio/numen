@@ -9,17 +9,17 @@ func TestReadMinChunkLength(t *testing.T) {
 		want   int
 	}{
 		{name: "absent gives the default", values: map[string]string{}, want: 40},
-		{name: "empty gives the default", values: map[string]string{"min_chunk_length": ""}, want: 40},
-		{name: "text gives the default", values: map[string]string{"min_chunk_length": "many"}, want: 40},
-		{name: "NaN gives the default", values: map[string]string{"min_chunk_length": "NaN"}, want: 40},
-		{name: "zero embeds everything", values: map[string]string{"min_chunk_length": "0"}, want: 0},
-		{name: "a whole number", values: map[string]string{"min_chunk_length": "120"}, want: 120},
-		{name: "spaces around", values: map[string]string{"min_chunk_length": " 7 "}, want: 7},
-		{name: "a fraction is cut", values: map[string]string{"min_chunk_length": "12.9"}, want: 12},
-		{name: "below zero is zero", values: map[string]string{"min_chunk_length": "-5"}, want: 0},
-		{name: "the maximum", values: map[string]string{"min_chunk_length": "1000"}, want: 1000},
-		{name: "above the maximum is the maximum", values: map[string]string{"min_chunk_length": "5000"}, want: 1000},
-		{name: "infinity is the maximum", values: map[string]string{"min_chunk_length": "+Inf"}, want: 1000},
+		{name: "empty gives the default", values: map[string]string{"minChunkLength": ""}, want: 40},
+		{name: "text gives the default", values: map[string]string{"minChunkLength": "many"}, want: 40},
+		{name: "NaN gives the default", values: map[string]string{"minChunkLength": "NaN"}, want: 40},
+		{name: "zero embeds everything", values: map[string]string{"minChunkLength": "0"}, want: 0},
+		{name: "a whole number", values: map[string]string{"minChunkLength": "120"}, want: 120},
+		{name: "spaces around", values: map[string]string{"minChunkLength": " 7 "}, want: 7},
+		{name: "a fraction is cut", values: map[string]string{"minChunkLength": "12.9"}, want: 12},
+		{name: "below zero is zero", values: map[string]string{"minChunkLength": "-5"}, want: 0},
+		{name: "the maximum", values: map[string]string{"minChunkLength": "1000"}, want: 1000},
+		{name: "above the maximum is the maximum", values: map[string]string{"minChunkLength": "5000"}, want: 1000},
+		{name: "infinity is the maximum", values: map[string]string{"minChunkLength": "+Inf"}, want: 1000},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestGetModelInfoReportsMinChunkLength(t *testing.T) {
 		t.Errorf("before configure = %d, want 40", info.GetMinChunkLength())
 	}
 	for value, want := range map[string]int32{"0": 0, "250": 250, "9999": 1000} {
-		srv.updateConfig(map[string]string{"provider": "local", "min_chunk_length": value})
+		srv.updateConfig(map[string]string{"provider": "local", "minChunkLength": value})
 		info, err = srv.GetModelInfo(t.Context())
 		if err != nil {
 			t.Fatal(err)
@@ -56,12 +56,12 @@ func TestGetModelInfoReportsMinChunkLength(t *testing.T) {
 // Changing the setting does not change the model that makes the vectors.
 func TestMinChunkLengthIsNotPartOfTheModel(t *testing.T) {
 	srv := newEmbeddingServer()
-	srv.updateConfig(map[string]string{"provider": "local", "min_chunk_length": "40"})
+	srv.updateConfig(map[string]string{"provider": "local", "minChunkLength": "40"})
 	before, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv.updateConfig(map[string]string{"provider": "local", "min_chunk_length": "0"})
+	srv.updateConfig(map[string]string{"provider": "local", "minChunkLength": "0"})
 	after, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)

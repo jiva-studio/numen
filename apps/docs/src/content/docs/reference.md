@@ -7,7 +7,7 @@ Every key `numen.json` can hold. The pages under Settings say which of these are
 
 Each heading below is a section of the file, and the keys under it are written the way they are written inside that section — `text_scale` under `appearance` is `appearance.text_scale` if you write it out in full.
 
-A key you leave out keeps its default, so a file naming one setting is a complete file. A key numen does not know is kept unchanged. Under `agent`, each program an agent plugin lists has a section named after it, `agent.<program>`, holding `command` and `model`; what a program's plugin reads for itself, such as `reads_hooks_and_skills` for Claude Code (see [the agent page](/agent/)), is a setting of that plugin under `plugins.<id>`. A row with no kind beside it is a group holding the keys under it.
+A key you leave out keeps its default, so a file naming one setting is a complete file. A key numen does not know is kept unchanged. Under `agent`, each program an agent plugin lists has a section named after it, `agent.<program>`, holding `command` and `model`; what a program's plugin reads for itself, such as `readsHooksAndSkills` for Claude Code (see [the agent page](/agent/)), is a setting of that plugin under `plugins.<id>`. A row with no kind beside it is a group holding the keys under it.
 
 Two things are not settings and are not in here: which files count as notes, and what a vault's own folder is called. Both are set on the command line, by [`numen-cli`](/cli/#where-it-puts-things).
 
