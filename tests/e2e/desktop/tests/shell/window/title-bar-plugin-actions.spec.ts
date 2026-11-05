@@ -12,6 +12,7 @@ const TREE_ID = 'md.numen.views.file.tree'
 const TREE_BUTTON = `${TREE_ID}:tree.open`
 const GRAPH_BUTTON = 'md.numen.views.plex.graph:graph.open'
 const NOTE_BUTTON = 'app:note.create'
+const SETTINGS_BUTTON = 'app:settings.open'
 
 const getButton = (page: Page, id: string) => page.locator(`[data-title-bar-action="${id}"]`)
 const getButtons = (page: Page) => page.locator('[data-title-bar] [data-title-bar-action]')
@@ -101,8 +102,12 @@ test.describe('Plugin buttons in the title bar', () => {
     expect(await listButtonIds(page)).toStrictEqual([TREE_BUTTON, GRAPH_BUTTON])
     await more.click()
     const entries = page.getByRole('menuitem')
-    await expect(entries).toHaveCount(2)
-    expect(await entries.allTextContents()).toStrictEqual(['Open agent chat', 'Create note'])
+    await expect(entries).toHaveCount(3)
+    expect(await entries.allTextContents()).toStrictEqual([
+      'Open agent chat',
+      'Create note',
+      'Open settings',
+    ])
     await entries.filter({ hasText: 'Open agent chat' }).click()
     await expect(getTab(page, 'Agent')).toBeVisible()
   })
@@ -115,5 +120,19 @@ test.describe('Plugin buttons in the title bar', () => {
     await page.goto('/?window=secondary')
 
     await expect.poll(() => listButtonIds(page)).toStrictEqual(inMain)
+  })
+
+  test('draws the settings button last in the bar and a press opens the settings tab', async ({
+    page,
+  }) => {
+    await openWorkspace(page)
+
+    const ids = await listButtonIds(page)
+    expect(ids.at(-1)).toBe(SETTINGS_BUTTON)
+    await expect(getTab(page, 'Settings')).toHaveCount(0)
+
+    await getButton(page, SETTINGS_BUTTON).click()
+
+    await expect(getTab(page, 'Settings')).toBeVisible()
   })
 })
