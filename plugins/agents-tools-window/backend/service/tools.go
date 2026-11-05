@@ -11,8 +11,17 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
+// Host is what the window tools work through: the vault, its window, and the text versions of its
+// files. A nil field is a host that offers none.
+type Host struct {
+	Vault  host.Vault
+	Window host.Window
+	Texts  host.Texts
+}
+
 // RegisterTools registers all window interaction and edit preview tools on the given registry.
-func RegisterTools(registry *tools.Registry, manager *WindowManager, vault host.Vault) error {
+func RegisterTools(registry *tools.Registry, manager *WindowManager, on Host) error {
+	vault := on.Vault
 	for _, add := range []func(*tools.Registry) error{
 		func(r *tools.Registry) error { return addWindowTabsGet(r, manager) },
 		func(r *tools.Registry) error { return addWindowFocusTab(r, manager) },

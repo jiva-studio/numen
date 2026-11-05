@@ -1,0 +1,172 @@
+package host_test
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"slices"
+	"testing"
+
+	"connectrpc.com/connect"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+)
+
+// windowHost answers HostWindowService with fixed values and records what it was asked.
+type windowHost struct {
+	numenv1connect.UnimplementedHostWindowServiceHandler
+	code       v1.HostWindowErrorCode
+	status     *connect.Error
+	authHeader string
+	notes      []*v1.FocusNoteRequest
+	passages   []*v1.FocusPassagesRequest
+}
+
+func (h *windowHost) FocusNote(_ context.Context, req *connect.Request[v1.FocusNoteRequest]) (*connect.Response[v1.FocusNoteResponse], error) {
+	h.authHeader = req.Header().Get("Authorization")
+	h.notes = append(h.notes, req.Msg)
+	if h.status != nil {
+		return nil, h.status
+	}
+	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
+		return connect.NewResponse(&v1.FocusNoteResponse{Error: h.code}), nil
+	}
+	return connect.NewResponse(&v1.FocusNoteResponse{Path: req.Msg.GetPath(), Title: "Grey Heron", Id: "01J8HERON0000000000000000"}), nil
+}
+
+func (h *windowHost) FocusPassages(_ context.Context, req *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error) {
+	h.authHeader = req.Header().Get("Authorization")
+	h.passages = append(h.passages, req.Msg)
+	if h.status != nil {
+		return nil, h.status
+	}
+	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
+		return connect.NewResponse(&v1.FocusPassagesResponse{Error: h.code}), nil
+	}
+	return connect.NewResponse(&v1.FocusPassagesResponse{Summary: "the document is open at that passage, with the words of it lit"}), nil
+}
+
+func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.HostReadOpenTabsRequest]) (*connect.Response[v1.HostReadOpenTabsResponse], error) {
+	h.authHeader = req.Header().Get("Authorization")
+	if h.status != nil {
+		return nil, h.status
+	}
+	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
+		return connect.NewResponse(&v1.HostReadOpenTabsResponse{Error: h.code}), nil
+	}
+	return connect.NewResponse(&v1.HostReadOpenTabsResponse{
+		ActiveId: "tab-2",
+		Tabs: []*v1.Tab{
+			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
+			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`},
+		},
+	}), nil
+}
+
+func dialWindow(t *testing.T, h *windowHost) *host.Client {
+	t.Helper()
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewHostWindowServiceHandler(h))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	return host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
+}
+
+func TestClientFocusesANoteAndReadsWhatTheHostFocused(t *testing.T) {
+	h := &windowHost{}
+	c := dialWindow(t, h)
+
+	got, err := c.FocusNote(t.Context(), "notes/Heron.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := host.FocusedNote{Path: "notes/Heron.md", Title: "Grey Heron", ID: "01J8HERON0000000000000000"}
+	if got != want {
+		t.Errorf("focused %+v, want %+v", got, want)
+	}
+	if len(h.notes) != 1 || h.notes[0].GetPath() != "notes/Heron.md" || h.authHeader != "Bearer tok" {
+		t.Errorf("the host received %v with %q", h.notes, h.authHeader)
+	}
+}
+
+func TestClientSendsThePassagesInTheirOrderAndReadsTheSummary(t *testing.T) {
+	h := &windowHost{}
+	c := dialWindow(t, h)
+
+	summary, err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary != "the document is open at that passage, with the words of it lit" {
+		t.Errorf("the summary is %q", summary)
+	}
+	if len(h.passages) != 1 {
+		t.Fatalf("the host was asked %d times, want once", len(h.passages))
+	}
+	r := h.passages[0]
+	spans := r.GetPassages()
+	if r.GetPath() != "library/Birds.pdf" || len(spans) != 2 ||
+		spans[0].GetStart() != 1500 || spans[0].GetLength() != 80 || spans[1].GetStart() != 400 || spans[1].GetLength() != 700 {
+		t.Errorf("the host received %v", r)
+	}
+}
+
+func TestClientReadsTheOpenTabsAndTheActiveTab(t *testing.T) {
+	h := &windowHost{}
+	c := dialWindow(t, h)
+
+	tabs, activeID, err := c.ReadOpenTabs(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []host.OpenTab{
+		{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`},
+	}
+	if !slices.Equal(tabs, want) || activeID != "tab-2" {
+		t.Errorf("read %+v with %q active, want %+v with tab-2", tabs, activeID, want)
+	}
+}
+
+func TestClientReturnsTheErrorsOfTheWindowCalls(t *testing.T) {
+	for name, tc := range map[string]struct {
+		h    *windowHost
+		want error
+	}{
+		"no window":         {&windowHost{code: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}, host.ErrNoWindow},
+		"not found":         {&windowHost{code: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND}, host.ErrNotExist},
+		"permission denied": {&windowHost{status: connect.NewError(connect.CodePermissionDenied, errors.New("plugin lacks window:focus"))}, host.ErrPermissionDenied},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := dialWindow(t, tc.h)
+			ctx := t.Context()
+
+			if _, err := c.FocusNote(ctx, "notes/Heron.md"); !errors.Is(err, tc.want) {
+				t.Errorf("FocusNote got %v, want %v", err, tc.want)
+			}
+			if _, err := c.FocusPassages(ctx, "library/Birds.pdf", nil); !errors.Is(err, tc.want) {
+				t.Errorf("FocusPassages got %v, want %v", err, tc.want)
+			}
+			if tc.want == host.ErrNotExist {
+				return
+			}
+			if _, _, err := c.ReadOpenTabs(ctx); !errors.Is(err, tc.want) {
+				t.Errorf("ReadOpenTabs got %v, want %v", err, tc.want)
+			}
+		})
+	}
+}
+
+func TestClientReturnsAnInvalidPassageAsTheHostRejectedIt(t *testing.T) {
+	h := &windowHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New("light at most 8 places of one document"))}
+	c := dialWindow(t, h)
+
+	_, err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: -1, Length: 4}})
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("got %v, want the invalid argument the host answered", err)
+	}
+}

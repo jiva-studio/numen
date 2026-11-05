@@ -33,7 +33,7 @@ func connectVault(client *host.Client, err error) host.Vault {
 func mount(s *server.Server, vault host.Vault) error {
 	manager := NewManager(clock.System{})
 	registry := tools.New()
-	if err := RegisterTools(registry, manager, vault); err != nil {
+	if err := RegisterTools(registry, manager, Host{Vault: vault, Window: nil, Texts: nil}); err != nil {
 		return err
 	}
 	registry.Mount(s)

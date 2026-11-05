@@ -1,10 +1,17 @@
 /** A tab kind: the state its tabs hold, and the operations a kind may request from the window. */
 import type { Component } from 'vue'
 import type { Result } from '@numen/core-client'
-import type { Selector, TabPlacement } from '@numen/plugin-sdk'
+import type { Selector, TabPlacement, TextRange } from '@numen/plugin-sdk'
 
-/** Opens a file in its reader, at the location the selector names. */
-export type SourceReader = (path: string, selector: Selector | null) => void
+/**
+ * Opens a file in its reader, at the location the selector names, with the ranges of its text
+ * version lit; the first range is the one the reader goes to.
+ */
+export type SourceReader = (
+  path: string,
+  selector: Selector | null,
+  ranges?: readonly TextRange[] | null,
+) => void
 
 /**
  * The target of a command issued against one tab: the note the tab represents,

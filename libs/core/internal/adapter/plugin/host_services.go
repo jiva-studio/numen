@@ -58,6 +58,11 @@ func (h *Host) GetPluginTexts() pluginport.PluginTexts {
 	return h.texts
 }
 
+// GetPluginWindow is the main window the plugins move and read the tabs of, or nil.
+func (h *Host) GetPluginWindow() pluginport.PluginWindow {
+	return nil
+}
+
 // SetCompleter sets what answers the completions plugins ask for. The host
 // endpoint starts serving when the first plugin launches after it is set.
 func (h *Host) SetCompleter(completer completionport.Completer) {

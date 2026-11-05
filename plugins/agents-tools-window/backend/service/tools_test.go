@@ -15,7 +15,7 @@ import (
 func TestRegisterTools(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -36,7 +36,7 @@ func TestRegisterTools(t *testing.T) {
 	}
 
 	// Registering duplicate tools returns an error.
-	if err := RegisterTools(registry, mgr, nil); err == nil {
+	if err := RegisterTools(registry, mgr, Host{}); err == nil {
 		t.Errorf("expected error when registering duplicate tools")
 	}
 }
@@ -44,7 +44,7 @@ func TestRegisterTools(t *testing.T) {
 func TestWindowTabsGetEmpty(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -80,7 +80,7 @@ func TestWindowTabsGetWithTabs(t *testing.T) {
 	}, "tab-2")
 
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -110,7 +110,7 @@ func TestWindowTabsGetWithTabs(t *testing.T) {
 func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -207,7 +207,7 @@ func TestWindowFocusTab(t *testing.T) {
 	}, "t1")
 
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -267,7 +267,7 @@ func TestEditPreviewFromVault(t *testing.T) {
 	}
 
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, vault); err != nil {
+	if err := RegisterTools(registry, mgr, Host{Vault: vault}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -310,7 +310,7 @@ func TestEditPreviewFromVault(t *testing.T) {
 func TestEditPreviewWithDirectDiff(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -344,7 +344,7 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 		t.Fatalf("create vault file: %v", err)
 	}
 	registryWithVault := tools.New()
-	if err := RegisterTools(registryWithVault, mgr, vault); err != nil {
+	if err := RegisterTools(registryWithVault, mgr, Host{Vault: vault}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 	respOverride, err := registryWithVault.InvokeTool(t.Context(), tools.Call{
@@ -387,7 +387,7 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 func TestEditPreviewValidation(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 

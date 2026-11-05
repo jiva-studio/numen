@@ -48,6 +48,7 @@ type Callers interface {
 }
 
 type workServices interface {
+	windowServices
 	GetPluginWork() pluginport.PluginWork
 	GetPluginSearch() pluginport.PluginSearch
 	GetPluginTools() PluginTools
@@ -60,6 +61,11 @@ type Services interface {
 	GetPluginTexts() pluginport.PluginTexts
 	GetDependencies() pluginport.DependencyCatalog
 	workServices
+}
+
+type windowServices interface {
+	// GetPluginWindow is the main window of the vault, or nil where the host has no window.
+	GetPluginWindow() pluginport.PluginWindow
 }
 
 // Endpoint serves the calls plugins make to the host. It binds the loopback
@@ -99,6 +105,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostSearchServiceHandler(&searchEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewHostWindowServiceHandler(&windowEndpoint{endpoint: endpoint}))
 	endpoint.server = &http.Server{Handler: mux, ReadHeaderTimeout: hostEndpointHeaderTimeout}
 	go func() {
 		defer close(endpoint.serveResult)
