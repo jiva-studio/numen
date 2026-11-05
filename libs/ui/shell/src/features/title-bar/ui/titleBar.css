@@ -2,8 +2,8 @@
   display: flex;
   align-items: stretch;
   box-sizing: border-box;
-  height: 28px;
-  min-height: 28px;
+  height: 32px;
+  min-height: 32px;
   background: var(--numen-titlebar);
   border-bottom: 1px solid var(--numen-rule);
   color: var(--numen-ink);
@@ -13,7 +13,7 @@
 
 .title-bar__inset {
   flex: none;
-  margin-inline-end: 8px;
+  margin-inline-end: 4px;
 }
 
 /* The actions and the title share the room between the controls. The room is measured here. */

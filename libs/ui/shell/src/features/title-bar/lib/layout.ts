@@ -1,7 +1,7 @@
 /**
- * The width the system buttons of macOS take at the left of the bar, in pixels. The last of the three
- * 13.5 pixel circles ends 78.5 pixels from the edge of the window, and the 8 pixel space after this
- * width (titleBar.css) keeps the actions clear of it. Fixed: no scale changes it.
+ * The width the system buttons of macOS take at the left of the bar, in pixels. The three 14 pixel
+ * circles of MacTitleBarHidden span 9 to 69 pixels, and the 4 pixel space after this width
+ * (titleBar.css) keeps the actions clear of them. Fixed: no scale changes it.
  */
 export const NATIVE_MAC_INSET = 80
 
