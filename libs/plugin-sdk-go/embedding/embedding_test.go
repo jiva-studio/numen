@@ -107,3 +107,24 @@ func TestClient_PropagatesHandlerErrors(t *testing.T) {
 		t.Fatal("expected error from EmbedTexts")
 	}
 }
+
+func TestClient_RoundTripsTheChunkTokensOfTheModelAndZeroWhenNoneIsNamed(t *testing.T) {
+	for _, want := range []int32{200, 0} {
+		mux := http.NewServeMux()
+		mux.Handle(NewHandler(fakeHandler{info: ModelInfo{Name: "small", Dimensions: 2, MaxTokens: 512, ChunkTokens: want}}))
+		web := httptest.NewServer(mux)
+		client := NewClient(web.Client(), web.URL)
+
+		info, err := client.GetModelInfo(t.Context())
+		web.Close()
+		if err != nil || info.ChunkTokens != want {
+			t.Errorf("GetModelInfo().ChunkTokens = %d, %v; want %d", info.ChunkTokens, err, want)
+		}
+	}
+}
+
+func TestWriteModelInfoPutsTheChunkTokensOnTheWire(t *testing.T) {
+	if got := writeModelInfo(ModelInfo{ChunkTokens: 200}).GetChunkTokens(); got != 200 {
+		t.Errorf("wire chunk_tokens = %d, want 200", got)
+	}
+}

@@ -69,6 +69,10 @@ type Config struct {
 	// Embedding is how the index stores and queries vectors.
 	Embedding EmbeddingConfig
 
+	// Chunks is the chunk size the embedding plugin reports, which every cut of a note takes. NewConfig
+	// makes it.
+	Chunks *ChunkTokens
+
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost pluginport.PluginManager
 

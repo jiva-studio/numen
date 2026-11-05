@@ -364,7 +364,7 @@ func (o *Installation) wireUseCases() {
 	services.Settings.WriteSecret = made.OpenWritePluginSecret()
 	services.Settings.DeleteSecret = made.OpenDeletePluginSecret()
 	services.Settings.PluginRetry = made.OpenRetryPlugin()
-	followModel(o.Embedder, o.State, o.indexer)
+	followModel(o.Embedder, o.State, o.indexer, nil)
 	if data := made.OpenPluginData(); data != nil {
 		services.Settings.PluginData, services.Settings.Vaults = data, o.State
 	}

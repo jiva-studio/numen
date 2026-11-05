@@ -182,7 +182,10 @@ type modelWatcher interface {
 // followModel records the model of the embedder again and wakes the passes over the file
 // texts each time the embedder reports that its model changed. A write of any other
 // setting does neither.
-func followModel(embedder embeddingport.Embedder, state *State, worker *indexing.Worker) {
+//
+// recut runs each time the chunk size the model reports differs from the last one seen, so the vault
+// session is built again and the notes are cut at the new size.
+func followModel(embedder embeddingport.Embedder, state *State, worker *indexing.Worker, _ func()) {
 	watcher, ok := embedder.(modelWatcher)
 	if !ok {
 		return

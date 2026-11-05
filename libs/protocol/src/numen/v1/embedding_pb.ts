@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/embedding.proto.
  */
 export const file_numen_v1_embedding: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9lbWJlZGRpbmcucHJvdG8SCG51bWVuLnYxIhoKGEdldEVtYmVkZGluZ01vZGVsUmVxdWVzdCLFAQoZR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRIMCgRuYW1lGAEgASgJEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEgwKBGZyb20YBSABKAkSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoARIYChBtaW5fY2h1bmtfbGVuZ3RoGAggASgFEhAKCGhhbmRsaW5nGAkgASgJIh0KC0Zsb2F0VmVjdG9yEg4KBnZhbHVlcxgBIAMoAiJFChFFbWJlZEJhdGNoUmVxdWVzdBINCgV0ZXh0cxgBIAMoCRIhCgRyb2xlGAIgASgOMhMubnVtZW4udjEuRW1iZWRSb2xlIjwKEkVtYmVkQmF0Y2hSZXNwb25zZRImCgd2ZWN0b3JzGAEgAygLMhUubnVtZW4udjEuRmxvYXRWZWN0b3IqVgoJRW1iZWRSb2xlEhoKFkVNQkVEX1JPTEVfVU5TUEVDSUZJRUQQABIXChNFTUJFRF9ST0xFX0RPQ1VNRU5UEAESFAoQRU1CRURfUk9MRV9RVUVSWRACMrkBChBFbWJlZGRpbmdTZXJ2aWNlElwKEUdldEVtYmVkZGluZ01vZGVsEiIubnVtZW4udjEuR2V0RW1iZWRkaW5nTW9kZWxSZXF1ZXN0GiMubnVtZW4udjEuR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRJHCgpFbWJlZEJhdGNoEhsubnVtZW4udjEuRW1iZWRCYXRjaFJlcXVlc3QaHC5udW1lbi52MS5FbWJlZEJhdGNoUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChhudW1lbi92MS9lbWJlZGRpbmcucHJvdG8SCG51bWVuLnYxIhoKGEdldEVtYmVkZGluZ01vZGVsUmVxdWVzdCLbAQoZR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRIMCgRuYW1lGAEgASgJEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEgwKBGZyb20YBSABKAkSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoARIYChBtaW5fY2h1bmtfbGVuZ3RoGAggASgFEhAKCGhhbmRsaW5nGAkgASgJEhQKDGNodW5rX3Rva2VucxgKIAEoBSIdCgtGbG9hdFZlY3RvchIOCgZ2YWx1ZXMYASADKAIiRQoRRW1iZWRCYXRjaFJlcXVlc3QSDQoFdGV4dHMYASADKAkSIQoEcm9sZRgCIAEoDjITLm51bWVuLnYxLkVtYmVkUm9sZSI8ChJFbWJlZEJhdGNoUmVzcG9uc2USJgoHdmVjdG9ycxgBIAMoCzIVLm51bWVuLnYxLkZsb2F0VmVjdG9yKlYKCUVtYmVkUm9sZRIaChZFTUJFRF9ST0xFX1VOU1BFQ0lGSUVEEAASFwoTRU1CRURfUk9MRV9ET0NVTUVOVBABEhQKEEVNQkVEX1JPTEVfUVVFUlkQAjK5AQoQRW1iZWRkaW5nU2VydmljZRJcChFHZXRFbWJlZGRpbmdNb2RlbBIiLm51bWVuLnYxLkdldEVtYmVkZGluZ01vZGVsUmVxdWVzdBojLm51bWVuLnYxLkdldEVtYmVkZGluZ01vZGVsUmVzcG9uc2USRwoKRW1iZWRCYXRjaBIbLm51bWVuLnYxLkVtYmVkQmF0Y2hSZXF1ZXN0GhwubnVtZW4udjEuRW1iZWRCYXRjaFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.GetEmbeddingModelRequest
@@ -85,6 +85,17 @@ export type GetEmbeddingModelResponse = Message<"numen.v1.GetEmbeddingModelRespo
    * @generated from field: string handling = 9;
    */
   handling: string;
+
+  /**
+   * The most tokens one chunk of a note or of a file text may hold, which the core cuts at. It is
+   * a setting of the plugin and never exceeds max_tokens where max_tokens is known. It is not part
+   * of the model's identity: a vector made for a text is the same whatever the chunk size, so
+   * changing it makes no vector stale, only the notes are cut again. Zero when the plugin names
+   * none, and the core cuts at its default.
+   *
+   * @generated from field: int32 chunk_tokens = 10;
+   */
+  chunkTokens: number;
 };
 
 /**

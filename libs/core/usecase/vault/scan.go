@@ -28,6 +28,12 @@ type Scan struct {
 	// Cut is how the notes found are cut into the chunks the index keeps.
 	Cut chunking.CutNotes
 
+	// Stale reads the paths of the notes whose recorded cut is not recipe. Nil skips the check.
+	Stale func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error)
+
+	// ShouldRecut is whether the check runs: the chunk size is known.
+	ShouldRecut bool
+
 	// Walks serializes the walks of the vaults being scanned. A scan without it
 	// runs without waiting for any other scan.
 	Walks *Walks

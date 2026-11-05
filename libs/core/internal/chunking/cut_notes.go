@@ -34,6 +34,11 @@ func NewCutNotes(maxTokens int) CutNotes {
 	return CutNotes{Sizes: Sizes{Limit: GetCharacterBound(maxTokens)}}
 }
 
+// Recipe names how this cut turns a note into chunks: the sizes it cuts at.
+func (u CutNotes) Recipe() string {
+	return ""
+}
+
 // Execute gives each note with its indexed headings and the chunks of its body.
 func (u CutNotes) Execute(notes []domain.Note) []domain.NoteChunks {
 	out := make([]domain.NoteChunks, 0, len(notes))

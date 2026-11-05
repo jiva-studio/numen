@@ -134,3 +134,37 @@ func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.
 	}
 	t.Fatal("manifest has no model setting")
 }
+
+// The longest chunk of a note is a whole number from 16 to 8192 that starts at 256, and the settings
+// page draws it as it draws any number.
+func TestManifestDeclaresTheLongestChunkOfANote(t *testing.T) {
+	var manifest struct {
+		Settings []struct {
+			Key         string   `json:"key"`
+			Type        string   `json:"type"`
+			Title       string   `json:"title"`
+			Description string   `json:"description"`
+			Default     any      `json:"default"`
+			Min         *float64 `json:"min"`
+			Max         *float64 `json:"max"`
+			Step        *float64 `json:"step"`
+		} `json:"settings"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range manifest.Settings {
+		if one.Key != "chunkTokens" {
+			continue
+		}
+		if one.Type != "number" || one.Default != float64(256) || one.Min == nil || *one.Min != 16 ||
+			one.Max == nil || *one.Max != 8192 || one.Step == nil || *one.Step != 1 {
+			t.Errorf("setting = %+v, want a number from 16 to 8192 by 1 that starts at 256", one)
+		}
+		if one.Title == "" || one.Description == "" {
+			t.Errorf("setting has no title or description: %+v", one)
+		}
+		return
+	}
+	t.Error("the manifest declares no chunkTokens setting")
+}
