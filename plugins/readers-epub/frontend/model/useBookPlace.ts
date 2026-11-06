@@ -24,6 +24,10 @@ export interface PlacedTab {
   savePlace?(selector: Selector): void
 }
 
+/** The place saved for a CFI: the CFI and the chapter title, the title left out where it is empty. */
+const createPlace = (cfi: string, chapter: string): Selector =>
+  chapter === '' ? createCfiSelector(cfi) : { ...createCfiSelector(cfi), chapter }
+
 export function useBookPlace(reader: PlacedReader, getTab: () => PlacedTab | undefined) {
   // The window sets a selector for a search hit and for the place saved before a restart.
   watch(
@@ -44,7 +48,7 @@ export function useBookPlace(reader: PlacedReader, getTab: () => PlacedTab | und
       turn += 1
       const request = turn
       const cfi = await reader.getCfi(offset).catch(() => null)
-      if (request === turn && cfi !== null) getTab()?.savePlace?.(createCfiSelector(cfi))
+      if (request === turn && cfi !== null) getTab()?.savePlace?.(createPlace(cfi, reader.chapter.value))
     },
   )
 }

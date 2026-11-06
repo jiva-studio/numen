@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path"
 	"strings"
 
@@ -64,18 +65,37 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 	})
 }
 
+var errMissingTabID = errors.New("tabId is required")
+
 func addWindowFocusTab(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "window_focus_tab",
 		Title: "Focus window tab",
-		Description: "Make a tab of the window the active tab, found by its tab ID, else its path, " +
-			"else its title. A path no tab holds opens that note or file. Call it only when the " +
-			"user asked to open the tab: the call changes what the window shows.",
+		Description: "Make the open tab with the id the active tab of the window. Take the id from " +
+			"`window_tabs_get`. Call it only when the user asked for that tab: the call changes what " +
+			"the window shows.",
 		Effect:  tools.ReadOnly,
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full},
-	}, func(context.Context, WindowFocusTabInput) (WindowFocusTabOutput, error) {
-		return WindowFocusTabOutput{}, errors.New("window_focus_tab is not implemented")
+	}, func(ctx context.Context, in WindowFocusTabInput) (WindowFocusTabOutput, error) {
+		if in.TabID == "" {
+			return WindowFocusTabOutput{}, errMissingTabID
+		}
+		if on.Window == nil {
+			return WindowFocusTabOutput{}, host.ErrNoWindow
+		}
+		tab, activeID, err := on.Window.ActivateTab(ctx, in.TabID)
+		if errors.Is(err, host.ErrNotExist) {
+			return WindowFocusTabOutput{}, fmt.Errorf("no open tab has id %q", in.TabID)
+		}
+		if err != nil {
+			return WindowFocusTabOutput{}, err
+		}
+		info, err := newTabInfo(tab, activeID)
+		if err != nil {
+			return WindowFocusTabOutput{}, err
+		}
+		return WindowFocusTabOutput{Tab: info}, nil
 	})
 }
 
