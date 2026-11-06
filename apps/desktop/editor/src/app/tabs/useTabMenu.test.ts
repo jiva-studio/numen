@@ -196,6 +196,75 @@ describe('the menu of a tab', () => {
   })
 })
 
+describe('the note type of the file of a tab', () => {
+  const setupTyped = (readNoteType: (path: string) => Promise<string>) => {
+    const slots = createSlots(ENTRIES)
+    const getEntries = vi.spyOn(slots, 'getEntries')
+    const commands = createCommands()
+    const menu = useTabMenu({
+      slots,
+      runCommand: commands.run,
+      listItems: commands.listItems,
+      getTabTarget: (tab) => TARGETS[tab]!,
+      readNoteType,
+    })
+    return { menu, getEntries, commands }
+  }
+
+  it('is read first, and the slot gives the entries over the typed target', async () => {
+    const { menu, getEntries } = setupTyped(async () => 'link')
+
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+
+    expect(getEntries).toHaveBeenCalledWith(SLOT.tabStripContext, {
+      ...TARGETS.reef,
+      noteType: 'link',
+    })
+    expect(menu.menu.value?.tab).toBe('reef')
+  })
+
+  it('goes with the target of a command run from the menu', async () => {
+    const { menu, commands } = setupTyped(async () => 'link')
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+
+    menu.choose('reef', DETACH.key)
+
+    expect(commands.getRuns()).toStrictEqual([
+      { command: DETACH.command, target: { ...TARGETS.reef, noteType: 'link' } },
+    ])
+  })
+
+  it('is left out where it cannot be read', async () => {
+    const { menu, getEntries } = setupTyped(async () => {
+      throw new Error('the vault is gone')
+    })
+
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+
+    expect(getEntries).toHaveBeenCalledWith(SLOT.tabStripContext, TARGETS.reef)
+  })
+
+  it('opens nothing where another menu was requested while it was read', async () => {
+    let finish: (type: string) => void = () => undefined
+    const { menu } = setupTyped(
+      () =>
+        new Promise<string>((done) => {
+          finish = done
+        }),
+    )
+
+    menu.open('reef', { x: 4, y: 8 })
+    menu.dismiss()
+    finish('link')
+    await settle()
+
+    expect(menu.menu.value).toBeNull()
+  })
+})
+
 describe('an entry of the menu of a tab that offers items', () => {
   const getItemRows = (menu: ReturnType<typeof setup>['menu']) =>
     menu.menu.value?.items

@@ -173,8 +173,27 @@ describe('what the menu offers', () => {
 
     expect(items.map((item) => item.id)).toContain(TRASH.key)
     expect(targets).toStrictEqual([
-      { path: 'Entropy.md', title: 'Entropy.md', isFolder: false, others: [], tab: '' },
+      {
+        path: 'Entropy.md',
+        title: 'Entropy.md',
+        isFolder: false,
+        others: [],
+        tab: '',
+        noteType: 'note',
+      },
     ])
+  })
+
+  it('asks for the entries over a note with the type the listing gives it', async () => {
+    const { list, one, targets } = tab(false, {
+      [ROOT]: [file('Pier.md', { type: 'link' }), file('Cover.png', { isNote: false })],
+    })
+    await list.openFolder(ROOT)
+
+    one.getMenuItems('Pier.md')
+    one.getMenuItems('Cover.png')
+
+    expect(targets.map((one) => one.noteType)).toStrictEqual(['link', undefined])
   })
 
   it('asks for the entries over a folder as a folder', async () => {
@@ -204,7 +223,14 @@ describe('what the menu offers', () => {
     one.getMenuItems('Entropy.md')
 
     expect(targets).toStrictEqual([
-      { path: 'Entropy.md', title: 'Entropy.md', isFolder: false, others: ['Cover.png'], tab: '' },
+      {
+        path: 'Entropy.md',
+        title: 'Entropy.md',
+        isFolder: false,
+        others: ['Cover.png'],
+        tab: '',
+        noteType: 'note',
+      },
     ])
   })
 

@@ -95,7 +95,8 @@ const getMenuEntry = (list: FileTree, path: string): Entry =>
 /** The target of a command over the path and the others selected with it. */
 const getPathTarget = (list: FileTree, path: string, others: readonly string[]): CommandTarget => {
   const entry = getMenuEntry(list, path)
-  return { path, title: entry.name, isFolder: entry.isFolder, others, tab: '' }
+  const target = { path, title: entry.name, isFolder: entry.isFolder, others, tab: '' }
+  return entry.isNote ? { ...target, noteType: entry.type } : target
 }
 
 /** The target of the menu opened on a row, or on the root where it was opened off every row. */

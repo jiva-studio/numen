@@ -125,7 +125,14 @@ describe('view-file-tree plugin', () => {
     expect(ctx.commands.getRuns()).toStrictEqual([
       {
         command: 'app:note.trash',
-        target: { path: 'A.md', title: 'A.md', isFolder: false, others: [], tab: '' },
+        target: {
+          path: 'A.md',
+          title: 'A.md',
+          isFolder: false,
+          others: [],
+          tab: '',
+          noteType: 'note',
+        },
         argument: undefined,
       },
     ])

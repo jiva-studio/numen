@@ -36,7 +36,12 @@ export interface TabMenuDeps {
   onHighlight?(windowId: string, isOn: boolean): void
   /** Receives the failure of a command that runs after the menu closed. */
   reportError?(error: unknown): void
+  /** The type the vault files the note of the path as, which the entries are asked for over. */
+  readNoteType?(path: string): Promise<string>
 }
+
+/** The extension that makes a file a note. */
+const NOTE_EXTENSION = '.md'
 
 /** The items of the commands of the open menu that offer them, read as the menu opens. */
 function useEntryItems(deps: Pick<TabMenuDeps, 'listItems' | 'reportError'>) {
@@ -71,14 +76,30 @@ const getMoveWindow = (entries: readonly SlotItem[], id: string | null): string 
   return entry?.kind === 'command' && entry.command === COMMAND.moveTabToWindow ? picked.item : null
 }
 
+/** The target of a tab with the type of its note, where the type is read; without it otherwise. */
+const readTypedTarget = async (
+  target: RunTarget,
+  readNoteType: (path: string) => Promise<string>,
+): Promise<RunTarget> => {
+  try {
+    const noteType = await readNoteType(target.path)
+    return noteType === '' ? target : { ...target, noteType }
+  } catch {
+    return target
+  }
+}
+
 export function useTabMenu(deps: TabMenuDeps) {
   const tabId = ref<string | null>(null)
   const position = ref({ x: 0, y: 0 })
-  const getEntries = (tab: string): readonly SlotItem[] =>
-    deps.slots?.getEntries(SLOT.tabStripContext, deps.getTabTarget(tab)) ?? []
-  const entries = computed(() => (tabId.value === null ? [] : getEntries(tabId.value)))
+  const openTarget = shallowRef<RunTarget | null>(null)
+  const getEntries = (target: RunTarget): readonly SlotItem[] =>
+    deps.slots?.getEntries(SLOT.tabStripContext, target) ?? []
+  const entries = computed(() => (openTarget.value === null ? [] : getEntries(openTarget.value)))
   const entryItems = useEntryItems(deps)
   let highlighted: string | null = null
+  /** How many menus were requested or closed, which tells a read of a note type it is too late. */
+  let requests = 0
 
   const menu = computed<TabMenu | null>(() => {
     if (tabId.value === null) return null
@@ -99,33 +120,54 @@ export function useTabMenu(deps: TabMenuDeps) {
   }
 
   const dismiss = (): void => {
+    requests += 1
     highlight(null)
     tabId.value = null
+    openTarget.value = null
   }
 
-  /** Opens the menu on a tab; a tab the slot holds no entry for has none. */
-  const open = (tab: string, where: { x: number; y: number }): void => {
-    const found = getEntries(tab)
+  const show = (tab: string, where: { x: number; y: number }, target: RunTarget): void => {
+    const found = getEntries(target)
     if (found.length === 0) return
     tabId.value = tab
     position.value = where
-    entryItems.read(found, deps.getTabTarget(tab))
+    openTarget.value = target
+    entryItems.read(found, target)
+  }
+
+  /**
+   * Opens the menu on a tab, over the type of its note where the menu reads one first; a tab the
+   * slot holds no entry for has none.
+   */
+  const open = (tab: string, where: { x: number; y: number }): void => {
+    const target = deps.getTabTarget(tab)
+    const request = ++requests
+    if (!deps.readNoteType || !target.path.endsWith(NOTE_EXTENSION)) {
+      show(tab, where, target)
+      return
+    }
+    readTypedTarget(target, deps.readNoteType)
+      .then((typed) => {
+        if (request === requests) show(tab, where, typed)
+      })
+      .catch((error: unknown) => deps.reportError?.(error))
   }
 
   /** Runs the command of the entry, with the item picked as its argument, over the tab. */
-  const runEntry = async (tab: string, entry: SlotRowEntry, argument?: string): Promise<void> => {
+  const runEntry = async (entry: SlotRowEntry, target: RunTarget, argument?: string) => {
     if (entry.kind !== 'command' || (entry.hasItems && argument === undefined)) return
     dismiss()
-    await deps.runCommand?.(entry.command, deps.getTabTarget(tab), argument)
+    await deps.runCommand?.(entry.command, target, argument)
   }
 
   /** Chooses the row `id` of the menu requested on `tab`; a menu since closed runs nothing. */
   const choose = (tab: string, id: string): void => {
-    if (tabId.value !== tab) return
+    const target = openTarget.value
+    if (tabId.value !== tab || !target) return
     const picked = parseItemRowId(id)
     const entry = findSlotEntry(entries.value, picked ? picked.key : id)
     if (!entry) return
-    runEntry(tab, entry, picked?.item).catch((error: unknown) => deps.reportError?.(error))
+    runEntry(entry, target, picked?.item).catch((error: unknown) => deps.reportError?.(error))
   }
 
   /** The icon of the command or submenu of the entry a row stands for. */
@@ -144,6 +186,8 @@ export interface WindowTabMenuDeps {
   readonly slots?: SlotHost | undefined
   readonly commands?: CommandsHost | undefined
   onHighlight?(windowId: string, isOn: boolean): void
+  /** The type the vault files the note of the path as. */
+  readNoteType?(path: string): Promise<string>
 }
 
 /** The tab of the window and the file it shows, as the commands of its menu run over them. */
@@ -172,5 +216,6 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
     listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
     getTabTarget: (id) => getTabFileTarget(windowTabs, id),
     ...(deps.onHighlight ? { onHighlight: deps.onHighlight } : {}),
+    ...(deps.readNoteType ? { readNoteType: deps.readNoteType } : {}),
   })
 }

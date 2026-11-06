@@ -799,6 +799,7 @@ export const useWindow = () => {
     runCommand,
     ...menuApi,
     openCurrentVault: () => openPlacedTabs(base),
+    readNoteType: async (path: string) => (await core.fileKinds([path])).get(path)?.type ?? '',
     isLayoutReady,
     ...getBootstrapApi(bootstrap),
     openSettings: (pluginId?: string, filter?: string) =>
