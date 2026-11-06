@@ -35,10 +35,9 @@ import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
 import { createPaletteItems, useCommands } from '../commands/useCommands'
 import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
-import { useDeclaredCommands } from '../commands/declaredCommands'
+import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
 import { createWindowSlots } from './windowSlots'
 import { getNamedIcon } from '@/shared/icons'
-import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
 import { createWindowCommands } from './windowCommands'
 import { createCommandNoteReader } from '../commands/usePluginCommands'
@@ -74,7 +73,6 @@ interface WindowCommandsOptions {
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
   pluginHost: import('@numen/plugin-host').PluginHost
-  fileMenuCommands: ReturnType<typeof useFileMenuCommands>
   declaredCommands: ReturnType<typeof useDeclaredCommands>
   /** The slots of the window, read by the palette and the menu of a tab. */
   slots?: SlotHost | undefined
@@ -86,7 +84,6 @@ function initWindowCommands(deps: WindowCommandsOptions) {
   const { windowTabs, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
   return useCommands({
     declaredCommands: deps.declaredCommands,
-    fileMenuCommands: deps.fileMenuCommands,
     ...(deps.slots ? { slots: deps.slots } : {}),
     getAppCommands: deps.getAppCommands,
     core,
@@ -465,11 +462,6 @@ function initWindowKindsAndCommands(
   }
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
-  const fileMenuCommands = useFileMenuCommands({
-    onRun: (file) => base.pluginHost.notifyVaultChange({ paths: [file] }),
-    onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
-  })
-
   ctx.kinds = useWindowKinds({
     core,
     log: base.log,
@@ -485,8 +477,10 @@ function initWindowKindsAndCommands(
     tabLinks: base.tabLinks,
     tabSync,
     getPluginCommandIcon: (id) => {
-      const name = base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon
-      return name ? getNamedIcon(name) : fileMenuCommands.getIcon(id)
+      const name =
+        base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon ??
+        base.declaredCommands.commands.value?.find((one) => getPaletteId(one) === id)?.icon
+      return name ? getNamedIcon(name) : undefined
     },
     getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
@@ -513,7 +507,6 @@ function initWindowKindsAndCommands(
     log: base.log,
     pluginHost: base.pluginHost,
     declaredCommands: base.declaredCommands,
-    fileMenuCommands,
     slots: base.pluginHost.slots,
     getAppCommands: () => ctx.tabCommands?.commands ?? [],
   })
@@ -715,7 +708,12 @@ function createSlotServices(
   let tableIds: readonly string[] | undefined
   const getAppCommands = () => ctx.tabCommands?.commands ?? []
   const choices = createPaletteItems(
-    { getAppCommands, pluginHost: base.pluginHost, getTarget: commands.getTarget },
+    {
+      getAppCommands,
+      declaredCommands: base.declaredCommands,
+      pluginHost: base.pluginHost,
+      getTarget: commands.getTarget,
+    },
     createCommandNoteReader(core),
     () => getCommands(ctx).commandDeps,
   )

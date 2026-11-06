@@ -31,7 +31,6 @@ import { createCommandItems } from './commandItems'
 import { watchCommandLists } from './watchCommandLists'
 import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
-import type { FileMenuCommands } from './fileMenuCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
@@ -82,8 +81,6 @@ export interface CommandsDepsOptions {
   getAppCommands?: () => readonly Command[]
   /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
-  /** The menu the text versions of the file in front make, read each time the palette opens. */
-  fileMenuCommands?: FileMenuCommands
 }
 
 /** The menu of a search result: the entries of its slot over the note of the result. */
@@ -110,19 +107,24 @@ const listExtraCommands = (
   ...(options.getAppCommands?.() ?? []),
   ...(options.settingPalette?.getCommands() ?? []),
   ...(options.declaredCommands?.paletteCommands.value ?? []),
-  ...(options.fileMenuCommands?.paletteCommands.value ?? []),
   ...pluginEntries,
 ]
 
 /** The choices of the commands of the palette, of the window and of the plugins, and their runs. */
 export function createPaletteItems(
-  options: Pick<CommandsDepsOptions, 'getAppCommands' | 'pluginHost' | 'getTarget'>,
+  options: Pick<
+    CommandsDepsOptions,
+    'getAppCommands' | 'declaredCommands' | 'pluginHost' | 'getTarget'
+  >,
   getCommandNote: ReturnType<typeof createCommandNoteReader>,
   getCommandDeps: () => CommandDeps,
 ) {
   const { pluginHost } = options
   return createCommandItems({
-    getAppCommands: () => options.getAppCommands?.() ?? [],
+    getAppCommands: () => [
+      ...(options.getAppCommands?.() ?? []),
+      ...(options.declaredCommands?.paletteCommands.value ?? []),
+    ],
     pluginHost,
     getTarget: options.getTarget,
     runApp: async (id, target, choice) => {
@@ -150,7 +152,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const extra = () => listExtraCommands(options, getPaletteEntries())
   const commands = useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, extra)
 
-  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open, getTarget)
+  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
   resetWhenClosed(commands.open)
 
   const commandDeps: CommandDeps = createCommandDeps({

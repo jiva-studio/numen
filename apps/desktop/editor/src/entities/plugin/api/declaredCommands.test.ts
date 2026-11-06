@@ -15,10 +15,20 @@ vi.mock('@/shared/clients', () => ({ pluginCommands: request }))
 const request = {
   listCommands: vi.fn(),
   runPluginCommand: vi.fn(),
+  listCommandItems: vi.fn(),
 }
 
-const { isOverTarget, listDeclaredCommands, runDeclaredCommand } =
+const { isOverTarget, listDeclaredCommandItems, listDeclaredCommands, runDeclaredCommand } =
   await import('./declaredCommands')
+
+const proofread = {
+  pluginId: 'org.example.ink',
+  id: 'ink.proofread',
+  title: 'Proofread text',
+  when: 'version.isLive',
+  hasItems: true as const,
+  arguments: [],
+}
 
 const convert = {
   pluginId: 'md.numen.pages',
@@ -136,6 +146,19 @@ describe('the commands the plugins declare', () => {
     })
   })
 
+  it('are read as offering items where the core marks them', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [{ ...proofread, hasItems: true }],
+      slots: [],
+    })
+
+    const {
+      commands: [one],
+    } = await listDeclaredCommands()
+
+    expect(one).toStrictEqual(proofread)
+  })
+
   it('run over a target where their condition reads one', () => {
     expect(isOverTarget(convert)).toBe(true)
     expect(isOverTarget({ when: 'window.isVaultReady' })).toBe(false)
@@ -189,6 +212,59 @@ describe('a run', () => {
     const outcome = await runDeclaredCommand(convert, { path: 'a.pdf', values: {} })
 
     expect(outcome).toStrictEqual({ ok: false, error: 'the disk is full' })
+  })
+})
+
+describe('the items of a command', () => {
+  it('are the items the core lists over the file', async () => {
+    request.listCommandItems.mockResolvedValue({
+      items: [{ id: 'org.example.ears/ears', title: 'transcript (live)' }],
+      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      message: '',
+    })
+
+    expect(await listDeclaredCommandItems(proofread, 'talks/a.mp3')).toStrictEqual([
+      { id: 'org.example.ears/ears', title: 'transcript (live)' },
+    ])
+    expect(request.listCommandItems).toHaveBeenLastCalledWith({
+      pluginId: 'org.example.ink',
+      command: 'ink.proofread',
+      path: 'talks/a.mp3',
+    })
+  })
+
+  it('that cannot be listed fail with why', async () => {
+    request.listCommandItems.mockResolvedValue({
+      items: [],
+      error: COMMAND_ERROR_CODE.FAILED,
+      message: 'talks/a.mp3 is not in the vault',
+    })
+
+    await expect(listDeclaredCommandItems(proofread, 'talks/a.mp3')).rejects.toThrow(
+      'talks/a.mp3 is not in the vault',
+    )
+  })
+
+  it('run the command over the file with the item picked as its argument', async () => {
+    request.runPluginCommand.mockResolvedValue({
+      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      message: '',
+      openedPath: '',
+    })
+
+    await runDeclaredCommand(proofread, {
+      path: 'talks/a.mp3',
+      values: {},
+      argument: 'org.example.ears/ears',
+    })
+
+    expect(request.runPluginCommand).toHaveBeenLastCalledWith({
+      pluginId: 'org.example.ink',
+      command: 'ink.proofread',
+      path: 'talks/a.mp3',
+      arguments: {},
+      argument: 'org.example.ears/ears',
+    })
   })
 })
 

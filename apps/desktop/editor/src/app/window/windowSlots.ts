@@ -14,6 +14,7 @@ import { createCommands, type Command } from '@/features/command-palette'
 import { WORDS as words } from '@/shared/words'
 import type { DeclaredCommands } from '../commands/declaredCommands'
 import { createSlotCommandFinder, readSlotEntries } from '../commands/pluginSlots'
+import { getPaletteId } from '../commands/declaredCommands'
 
 export interface WindowSlotsDeps {
   readonly declaredCommands: Pick<DeclaredCommands, 'slots' | 'commands' | 'whenContext'>
@@ -57,7 +58,12 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
       ...(editorCommands ??= createCommands(words)),
       ...(deps.getAppCommands?.() ?? []),
     ],
-    hasPluginItems: (command) => deps.hostHolder.current?.hasCommandItems(command) ?? false,
+    hasPluginItems: (command) =>
+      (deps.hostHolder.current?.hasCommandItems(command) ?? false) ||
+      (deps.declaredCommands.commands.value?.some(
+        (one) => one.hasItems && getPaletteId(one) === command,
+      ) ??
+        false),
   })
   const hostDeps: WindowHostDeps = {
     getSlotEntries: () => readSlotEntries(deps.declaredCommands.slots.value),

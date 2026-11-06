@@ -46,6 +46,10 @@ export interface SlotCommandFinderDeps {
   readonly getWhenValues: (target: CommandTarget | undefined) => WhenValues
 }
 
+/** Whether the target is one file, which the items of a command are listed over. */
+const isOverFile = (target: CommandTarget | undefined): boolean =>
+  target !== undefined && !target.isFolder && target.path !== ''
+
 /** How the command of the full id is drawn over the target, and undefined while it is not available there. */
 export function createSlotCommandFinder(
   deps: SlotCommandFinderDeps,
@@ -68,12 +72,15 @@ export function createSlotCommandFinder(
     const hostCommand = deps.getPluginCommands().find((one) => one.id === command)
     const declared = deps.getDeclaredCommands()?.find((one) => getPaletteId(one) === command)
     const look = hostCommand ?? declared
-    if (!look || !isAvailableOver(look.when, target)) return undefined
+    const hasItems = deps.hasPluginItems?.(command) ?? false
+    // The versions a command with items runs over are the core's to list, over any file.
+    const isAvailable = hasItems ? isOverFile(target) : isAvailableOver(look?.when, target)
+    if (!look || !isAvailable) return undefined
     return {
       title: look.title,
       ...(look.icon ? { icon: getNamedIcon(look.icon) } : {}),
       shortcut: look.shortcut ?? '',
-      hasItems: deps.hasPluginItems?.(command) ?? false,
+      hasItems,
     }
   }
 

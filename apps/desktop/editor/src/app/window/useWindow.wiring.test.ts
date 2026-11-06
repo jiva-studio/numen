@@ -90,12 +90,6 @@ vi.mock('../commands/useCommands', () => ({
     runWithArgument: async () => undefined,
   }),
 }))
-vi.mock('../commands/fileMenuCommands', () => ({
-  useFileMenuCommands: (args: unknown) => {
-    h.args.fileMenu = args
-    return h.f.fileMenu
-  },
-}))
 vi.mock('./useWindowDisplay', () => ({
   useWindowDisplay: (_core: unknown, args: unknown) => {
     h.args.display = args
@@ -256,9 +250,6 @@ beforeEach(() => {
       listed: {},
     },
     openTabs: { getTabIcon: vi.fn(), pause: vi.fn(async () => undefined), resume: vi.fn() },
-    fileMenu: {
-      getIcon: vi.fn((id: string) => (id === 'file:cmd' ? 'file-icon' : undefined)),
-    },
     commands: {
       commands: { applyRenames: vi.fn() },
       runCommand: vi.fn(),
@@ -705,20 +696,12 @@ describe('the services a plugin is given', () => {
     expect(h.f.editing.noted.measureAll).toHaveBeenCalledOnce()
     expect(h.args.settings.getSettingsViews('p1')).toEqual(['view-1'])
 
-    // useFileMenuCommands callbacks
-    h.args.fileMenu.onRun('notes/a.md')
-    expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths: ['notes/a.md'] })
-    h.f.writer.mockClear()
-    h.args.fileMenu.onError(new Error('file menu err'))
-    expect(h.f.writer).toHaveBeenCalledWith('Numen is not responding; retrying', 'error')
-
     // useWindowKinds callbacks
     const target = window.getTarget()
     h.args.kinds.runCommand('cmd-1', target)
     expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-1', target)
     expect(h.args.kinds).not.toHaveProperty('getContextMenuItems')
     expect(h.args.kinds).not.toHaveProperty('getFileMenuItems')
-    expect(h.args.kinds.getPluginCommandIcon('file:cmd')).toBe('file-icon')
 
     // tabsHold callbacks
     await h.args.commands.tabsHold.pause()

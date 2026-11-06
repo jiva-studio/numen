@@ -27,6 +27,7 @@ export function createCommandItems(deps: CommandItemsDeps) {
     return {
       ...front,
       path: target.path,
+      file: target.path === '' ? front.file : target.path,
       title: target.title,
       isFolder: target.isFolder,
       others: target.others,
@@ -39,7 +40,7 @@ export function createCommandItems(deps: CommandItemsDeps) {
       findAppCommand(id) !== undefined || (deps.pluginHost?.hasCommandItems(id) ?? false),
     listCommandItems: async (id: string, target: RunTarget): Promise<readonly CommandItem[]> => {
       const command = findAppCommand(id)
-      if (command) return command.listItems?.(toAppTarget(target)) ?? []
+      if (command) return (await command.listItems?.(toAppTarget(target))) ?? []
       return deps.pluginHost?.hasCommandItems(id)
         ? deps.pluginHost.listCommandItems(id, target)
         : []

@@ -25,6 +25,11 @@ const COMMANDS = [
   command(HARBOR, 'harbor.open', 'Open harbor'),
   { ...command(HARBOR, 'harbor.moor', 'Moor link'), when: "target.noteType == 'link'" },
   command(HARBOR, 'harbor.dock', 'Dock'),
+  {
+    ...command(HARBOR, 'harbor.read', 'Read aloud'),
+    when: 'version.isLive',
+    hasItems: true as const,
+  },
 ]
 
 const MOVE: Command = {
@@ -123,6 +128,7 @@ describe('the entries of a menu over a target', () => {
   const menu: DeclaredSlot[] = [
     { pluginId: HARBOR, slot: SLOT.fileTreeContext, command: 'harbor.moor' },
     { pluginId: HARBOR, slot: SLOT.fileTreeContext, command: 'harbor.dock' },
+    { pluginId: HARBOR, slot: SLOT.fileTreeContext, command: 'harbor.read' },
   ]
 
   it('read the note type of the target, which the place gives with it', () => {
@@ -141,6 +147,14 @@ describe('the entries of a menu over a target', () => {
 
     expect(registry.getEntries(SLOT.fileTreeContext, LINK)).toContainEqual(
       expect.objectContaining({ command: `${HARBOR}:harbor.dock`, hasItems: true }),
+    )
+  })
+
+  it('mark a command a backend runs that the core lists with items', () => {
+    const { registry } = setup(menu)
+
+    expect(registry.getEntries(SLOT.fileTreeContext, LINK)).toContainEqual(
+      expect.objectContaining({ command: `${HARBOR}:harbor.read`, hasItems: true }),
     )
   })
 

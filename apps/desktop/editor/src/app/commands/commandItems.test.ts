@@ -67,6 +67,30 @@ describe('the items of a command', () => {
     ])
   })
 
+  it('of a command of the window are read over the file the target names, or the file in front', async () => {
+    const files: string[] = []
+    const items = createCommandItems({
+      getAppCommands: () => [
+        {
+          ...MOVE,
+          listItems: async (target) => {
+            files.push(target.file)
+            return []
+          },
+        },
+      ],
+      pluginHost: undefined,
+      getTarget: () => FRONT,
+      runApp: vi.fn(),
+      runPlugin: vi.fn(),
+    })
+
+    await items.listCommandItems(MOVE.id, { ...OVER_TAB, path: 'talks/a.mp3' })
+    await items.listCommandItems(MOVE.id, OVER_TAB)
+
+    expect(files).toStrictEqual(['talks/a.mp3', 'Front.md'])
+  })
+
   it('of a command of the window are read over the tab in front where the target names none', async () => {
     expect(await setup().items.listCommandItems(MOVE.id, { ...OVER_TAB, tab: '' })).toStrictEqual([
       { id: 'window-of-plex:1', title: 'Atlas' },

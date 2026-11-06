@@ -129,7 +129,7 @@ export interface Command {
    * The items it offers over the target, for a command whose step is a argument; the argument picked
    * is the name of its invocation.
    */
-  listItems?(target: CommandTarget): readonly CommandItem[]
+  listItems?(target: CommandTarget): readonly CommandItem[] | Promise<readonly CommandItem[]>
 }
 
 /** One command as it is carried out: what it is over, and what was typed for it. */

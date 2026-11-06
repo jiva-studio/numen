@@ -78,6 +78,65 @@ describe('a declared command in the palette', () => {
   })
 })
 
+describe('a declared command with items', () => {
+  const proofread: DeclaredCommand = {
+    pluginId: 'org.example.ink',
+    id: 'ink.proofread',
+    title: 'Proofread text',
+    when: 'version.isLive',
+    hasItems: true,
+    arguments: [],
+  }
+  const invocation = (name: string) => ({
+    id: getPaletteId(proofread),
+    path: 'talks/a.mp3',
+    vault: { id: 'v', name: 'V' },
+    note: null,
+    title: '',
+    file: 'talks/a.mp3',
+    others: [],
+    name,
+    kind: null,
+    tab: 'tab',
+  })
+
+  it('asks for one of its items, which it lists over the file of the target', async () => {
+    const listItems = vi.fn(async () => [{ id: 'org.example.ears/ears', title: 'transcript' }])
+    const [one] = createDeclaredPaletteCommands([proofread], undefined, listItems)
+
+    expect(one?.input).toBe('items')
+    expect(one?.isAvailable(front('talks/a.mp3'), { canRun: () => true, cannotRun: vi.fn() })).toBe(
+      true,
+    )
+    expect(one?.isAvailable(front(''), { canRun: () => true, cannotRun: vi.fn() })).toBe(false)
+    expect(await one?.listItems?.(front('talks/a.mp3'))).toStrictEqual([
+      { id: 'org.example.ears/ears', title: 'transcript' },
+    ])
+    expect(listItems).toHaveBeenCalledWith(proofread, 'talks/a.mp3')
+  })
+
+  it('runs over the file with the item picked as its argument', async () => {
+    const run = vi.fn().mockResolvedValue({ ok: true, value: { message: '', openedPath: '' } })
+    const declared = useDeclaredCommands({
+      list: async () => ({ commands: [proofread], slots: [] }),
+      run,
+    })
+    await declared.load()
+
+    await runInvocation(
+      invocation('org.example.ears/ears'),
+      { writeMessage: vi.fn(), notes: { openFile: vi.fn() } } as unknown as CommandDeps,
+      ANSWER_WORDS,
+    )
+
+    expect(run).toHaveBeenCalledWith(proofread, {
+      path: 'talks/a.mp3',
+      values: {},
+      argument: 'org.example.ears/ears',
+    })
+  })
+})
+
 describe('a run of a declared command', () => {
   it('sends the file and values, writes the message and opens the returned path', async () => {
     const run = vi.fn().mockResolvedValue({

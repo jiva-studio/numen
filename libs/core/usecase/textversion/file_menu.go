@@ -159,6 +159,26 @@ func (u *FileMenu) ListVersionItems(ctx context.Context, v domain.Vault, path st
 	return listVersionItems(condition, values, versions, live, hasLive), nil
 }
 
+// RunVersionItem runs the command of the entry over the version of the file at the path, which it gets
+// as its argument version-id. A version the command does not offer over the file now, or a command
+// without items, is ErrInvalidVersion.
+func (u *FileMenu) RunVersionItem(
+	ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry, version domain.TextVersionID,
+) (pluginport.PluginCommandResult, error) {
+	items, err := u.ListVersionItems(ctx, v, path, entry.Command)
+	if err != nil {
+		return pluginport.PluginCommandResult{}, err
+	}
+	if !slices.ContainsFunc(items, func(item VersionItem) bool { return item.Version == version }) {
+		return pluginport.PluginCommandResult{}, fmt.Errorf("%w: %s of %s offers no version %q over %s",
+			ErrInvalidVersion, entry.Command.ID, entry.PluginID, version, path)
+	}
+	return u.commands.RunCommand(ctx, pluginport.PluginCommandCall{
+		PluginID: entry.PluginID, Command: entry.Command.ID, Path: path,
+		Arguments: map[string]string{pluginport.CommandArgumentVersion: string(version)},
+	})
+}
+
 // RunMenuEntry runs the command of an entry the file's menu offers now, over
 // the entry's version. An entry the menu does not offer is ErrInvalidVersion.
 func (u *FileMenu) RunMenuEntry(ctx context.Context, v domain.Vault, path string, entry MenuEntry) error {

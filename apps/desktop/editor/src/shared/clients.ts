@@ -9,7 +9,6 @@ export {
   search,
   settingsService,
   texts,
-  textVersions,
   theme,
   vault,
   vaultsService,
