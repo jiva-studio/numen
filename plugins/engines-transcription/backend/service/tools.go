@@ -3,7 +3,11 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"path"
+	"strings"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
@@ -21,7 +25,10 @@ const (
 	stateRunning = "running"
 )
 
-var errNoVault = errors.New("the call names no vault")
+var (
+	errNoVault     = errors.New("the call names no vault")
+	errNoRecording = errors.New("the file is not an audio or video recording")
+)
 
 // TranscriptCreateInput is the input of the transcript_create tool.
 type TranscriptCreateInput struct {
@@ -38,11 +45,12 @@ type TranscriptCreateOutput struct {
 // Tools serves transcript_create. The transcriptions it starts end with Transcriber.Close.
 type Tools struct {
 	transcriber *Transcriber
+	vault       host.Vault
 }
 
-// NewTools is the tools over the transcriber.
-func NewTools(transcriber *Transcriber) *Tools {
-	return &Tools{transcriber: transcriber}
+// NewTools is the tools over the transcriber, checking the recordings named through the vault.
+func NewTools(transcriber *Transcriber, vault host.Vault) *Tools {
+	return &Tools{transcriber: transcriber, vault: vault}
 }
 
 // Registry registers and returns the transcription tool.
@@ -55,7 +63,9 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Description: "Start the transcription of one audio or video recording of the vault, with the model the " +
 			"plugin's setting selects, and return its task id without waiting. The transcript is stored as a " +
 			"text version of the recording; library_search and library_read read it as it is written. A " +
-			"transcription takes about as long as the recording. A recording that is not in the vault is refused.",
+			"transcription takes about as long as the recording. A file that is not in the vault, or is not an " +
+			"audio or video recording, is refused. A recording that cannot be read shows as the failure of its " +
+			"task in the list of tasks.",
 		Effect:  tools.ReadWrite,
 		Servers: []tools.Server{tools.Full},
 	}, t.createTranscript)
@@ -73,6 +83,12 @@ func (t *Tools) createTranscript(ctx context.Context, in TranscriptCreateInput) 
 	if in.Path == "" {
 		return TranscriptCreateOutput{}, errors.New("path required")
 	}
+	if !isRecording(in.Path) {
+		return TranscriptCreateOutput{}, fmt.Errorf("%s: %w", in.Path, errNoRecording)
+	}
+	if _, err := t.vault.With(vault).StatFile(ctx, in.Path); err != nil {
+		return TranscriptCreateOutput{}, fmt.Errorf("stat %s: %w", in.Path, err)
+	}
 	isStarted, err := t.transcriber.Start(ctx, vault, in.Path)
 	if err != nil {
 		return TranscriptCreateOutput{}, err
@@ -82,4 +98,20 @@ func (t *Tools) createTranscript(ctx context.Context, in TranscriptCreateInput) 
 		state = stateStarted
 	}
 	return TranscriptCreateOutput{TaskID: getTaskID(in.Path), Path: in.Path, State: state}, nil
+}
+
+// isRecording reports whether the extension of the file gives it an audio/* or video/* type, the
+// types the manifest declares transcript.create for. The extensions are those shared-mime-info maps
+// to the two types; the plugin cannot reach the host's table.
+func isRecording(file string) bool {
+	switch strings.ToLower(path.Ext(file)) {
+	case ".aac", ".ac3", ".aif", ".aifc", ".aiff", ".amr", ".ape", ".au", ".flac", ".m4a", ".m4b",
+		".mka", ".mp2", ".mp3", ".mpc", ".oga", ".ogg", ".opus", ".ra", ".snd", ".spx", ".wav", ".weba",
+		".wma", ".wv":
+		return true
+	case ".3g2", ".3gp", ".avi", ".flv", ".m4v", ".mkv", ".mov", ".mp4", ".mpeg", ".mpg", ".ogv", ".qt",
+		".webm", ".wmv":
+		return true
+	}
+	return false
 }

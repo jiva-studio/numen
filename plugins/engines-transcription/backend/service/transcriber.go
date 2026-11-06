@@ -109,8 +109,8 @@ func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path
 }
 
 // Start claims the recording and transcribes it in the background, and is false where a run already
-// has it. The error is a recording that cannot be read, checked before Start returns. Close cancels
-// the transcription and waits for it.
+// has it. The recording is read in the background as well, and a read that fails is the failure of
+// the task. Close cancels the transcription and waits for it.
 func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path string) (bool, error) {
 	key, isClaimed := t.claim(vault, path)
 	if !isClaimed {
@@ -119,16 +119,11 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 		}
 		return false, nil
 	}
-	raw, err := t.files.ReadFile(ctx, vault, path)
-	if err != nil {
-		t.clearRunning(key)
-		return false, fmt.Errorf("read %s: %w", path, err)
-	}
 	go func() {
 		// Run reports a failure as the task's error.
 		// gomutants:disable-next-line BRANCH_IF,CONDITIONALS_NEGATION reason="best-effort stderr diagnostic log does not affect transcription control flow"
-		if err := t.runClaimed(context.WithoutCancel(ctx), key, vault, path, func(context.Context) ([]byte, error) {
-			return raw, nil
+		if err := t.runClaimed(context.WithoutCancel(ctx), key, vault, path, func(ctx context.Context) ([]byte, error) {
+			return t.files.ReadFile(ctx, vault, path)
 		}); err != nil && !errors.Is(err, context.Canceled) {
 			fmt.Fprintf(os.Stderr, "engines-transcription: transcribe %s: %v\n", path, err)
 		}

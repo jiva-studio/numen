@@ -145,7 +145,7 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error 
 	if err := commands.Add("transcript.delete", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID)); err != nil {
 		return err
 	}
-	registry, err := NewTools(transcriber).Registry()
+	registry, err := NewTools(transcriber, hosted.Vault).Registry()
 	if err != nil {
 		return err
 	}
