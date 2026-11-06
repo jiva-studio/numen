@@ -21,7 +21,7 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, client, texts, search)
+	return mount(s, client, client, texts, search)
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in.
@@ -39,12 +39,12 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 		if err != nil {
 			return err
 		}
-		return mount(s, client, texts, search)
+		return mount(s, client, client, texts, search)
 	})
 }
 
-func mount(s *server.Server, vault host.Vault, texts host.Texts, search host.Search) error {
-	registry, err := New(vault).WithLibrary(texts, search).Registry()
+func mount(s *server.Server, vault host.Vault, list host.VaultList, texts host.Texts, search host.Search) error {
+	registry, err := New(vault).WithLibrary(texts, search).WithVaultList(list).Registry()
 	if err != nil {
 		return err
 	}

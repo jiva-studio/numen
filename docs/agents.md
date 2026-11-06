@@ -67,16 +67,26 @@ Six plugins register the tools an agent can call, each for its own subject, and 
 | `note_headings`  | the headings of one note: level, text, line and byte offset                                                                                                                                                                  | both    |
 | `note_search`    | the notes whose title, path or text match a query, at most 100, 20 where the call names no limit                                                                                                                             | both    |
 | `note_list`      | the paths and titles of the notes of the vault or of one folder, ordered by path; at most 500, 100 where the call names no limit, paged with `offset` and `next_offset`, with the total count                                | both    |
-| `note_titles`    | the titles of up to 50 notes by their paths, and the paths that name no note                                                                                                                                                 | both    |
+| `note_titles` | the titles of up to 50 notes by their paths, with the identifier of each note that has one, and the paths that name no note | both |
 | `note_resolve`   | the paths of every note with one file name, as a wikilink names it; more than one path means the name is ambiguous                                                                                                           | both    |
 | `library_search` | passages of everything the index holds (notes, books, PDFs, scans, recordings) by the words and by the meaning, with the file, the title, the place, the text and the address of each; narrowed by `kinds` and `path_prefix` | both    |
 | `library_read`   | the text of one file from its text version, by page or by byte range, with the places, the size and where to read on; an error naming what makes a text version where there is none                                          | both    |
 | `link_list`      | the links written in one note and the notes that link to it                                                                                                                                                                  | both    |
+| `link_add` | write up to 50 links into the frontmatter `links:` of notes, with the fingerprint `note_read` gave; the links into one note are one write, and a stale fingerprint refuses that note | full |
+| `link_update` | change the role, type, label and note of the link one note has to a target; fields left out are cleared, a role left out is kept; a stale fingerprint is refused | full |
+| `link_remove` | remove the links one note has to a target, or only the one of a role; a stale fingerprint is refused | full |
 | `vault_get`      | the vault's name, root path and number of notes                                                                                                                                                                              | both    |
-| `vault_list`     | every vault of the installation: identifier, name and folder, with the vault the call works on marked `showing`                                                                                                              | both    |
-| `vault_problems` | the files of the vault that could not be parsed, with the path and a description of each problem; only the `parse` check is served                                                                                           | both    |
+| `vault_list` | every vault of the installation: identifier, name and folder, with the vault the call works on marked `showing` and a vault whose folder is gone marked `missing` | both |
+| `vault_problems` | the problems the checks find in the vault: `parse`, `frontmatter` and `ambiguous` by default, `dangling` when named; each with the path, a description, and the link target and its candidates where the check is about a link | both |
 | `file_read`      | a byte range of a text file in the vault, by its path from the vault root; a binary is refused with an error that names `library_read`                                                                                       | both    |
 | `file_create`    | a new file in the vault, holding the content given                                                                                                                                                                           | full    |
+| `note_rename` | give a note another title, written in its title key or its file name, and move its file to the title; the host writes again the links that named the old name | full |
+| `note_move` | move up to 50 notes to a folder, one result per path, a path that fails not stopping the others | full |
+| `note_remove` | move up to 50 notes to the vault's trash, from where they can be put back; a folder is refused | full |
+| `vault_add` | add a folder of this machine to the list of vaults by its absolute path | full |
+| `vault_rename` | change the name of a vault, named by its name, folder or identifier | full |
+| `vault_remove` | take a vault off the list and leave its folder on the disk; the vault of the call and the last vault are refused | full |
+| `vault_open` | make the person's window show another vault, which ends the session's view of the vault it works on; the vault of the call is refused | full |
 
 `agents-tools-window`, the window the person is looking at:
 
