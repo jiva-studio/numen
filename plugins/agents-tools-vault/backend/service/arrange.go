@@ -183,11 +183,11 @@ func (t *Tools) resolveNoteName(ctx context.Context, in NoteResolveInput) (NoteR
 // "library/a.pdf" and not "library2/a.pdf". The vault root is empty.
 func getFolderPrefix(folder string) string {
 	for {
-		trimmed := strings.TrimPrefix(strings.TrimLeft(folder, "/"), "./")
-		if trimmed == folder {
+		next := strings.TrimPrefix(strings.TrimLeft(folder, "/"), "./")
+		if next == folder {
 			break
 		}
-		folder = trimmed
+		folder = next
 	}
 	folder = strings.TrimRight(folder, "/")
 	if folder == "" || folder == "." {

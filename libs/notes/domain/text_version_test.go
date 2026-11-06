@@ -144,7 +144,7 @@ func TestVersionTextLocatesHeadingsAndSelectors(t *testing.T) {
 	}
 }
 
-func TestGetSegmentsInCutsEachSegmentToTheRangeAndKeepsItsHeadingAndSelector(t *testing.T) {
+func TestGetSegmentsInTrimsEachSegmentToTheRangeWithItsHeadingAndSelector(t *testing.T) {
 	text := domain.NewVersionText(domain.TextVersion{Kind: "recognition"}, []domain.TextSegment{
 		{Text: "abc", Heading: "One", Selector: "s1"},
 		{Text: "", Heading: "Empty"},
