@@ -65,7 +65,9 @@ export interface VaultPort {
    * The window quitting, until the client aborts the signal. The stream opens with the token this
    * client replies under.
    */
-  watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
+  watchQuit(
+    signal: AbortSignal,
+  ): AsyncIterable<{ token: string; flush: boolean; isSilent?: boolean }>
   /** Reports that this client has written all pending data. */
   reportFlush(token: string, outcome?: 'written' | 'asking'): Promise<void>
   /**
