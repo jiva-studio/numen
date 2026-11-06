@@ -198,3 +198,113 @@ func TestTheWindowIsNotShownAPluginRenameThatLandsAfterItChangedVault(t *testing
 		}
 	}
 }
+
+// The window changes vault between the check of the drawing wrapper and the draw it guards. The
+// move is not shown.
+func TestTheWindowIsNotShownAPluginMoveWhenItChangesVaultRightAfterTheCheck(t *testing.T) {
+	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
+	registry, err := cfg.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	db, err := cfg.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	testsupport.CloseAfter(t, db)
+	rivers := testsupport.NewVault(t, map[string]string{
+		"Danube.md": "---\ntitle: Danube\n---\nA river.\n",
+		"Rhine.md":  "---\ntitle: Rhine\n---\nA river.\n",
+	})
+	lakes := testsupport.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA lake of the same name.\n"})
+	for _, v := range []domain.Vault{rivers, lakes} {
+		if err := registry.Save(v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var calls, flipAt, shownAt atomic.Int64
+	var isSwitched atomic.Bool
+	current := func() (domain.Vault, bool) {
+		n := calls.Add(1)
+		if isSwitched.Load() {
+			return lakes, true
+		}
+		if n == flipAt.Load() {
+			// The window changes vault as soon as this read returns.
+			isSwitched.Store(true)
+		}
+		return rivers, true
+	}
+	assembly := container.NewEditorAssembly(cfg, registry, db)
+	refresh := assembly.GetRefresh()
+	window := &shownMovesWindow{current: func() (domain.Vault, bool) {
+		shownAt.Store(calls.Load())
+		return current()
+	}}
+	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
+		_, err := refresh.Execute(ctx, v, paths)
+		return err
+	}).FollowMoves(window)
+	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: scenarios})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := shared.Scan(t.Context(), []string{"Danube.md", "Rhine.md"}); err != nil {
+		t.Fatal(err)
+	}
+	// A first move finds which read of the shown vault is the wrapper's: the last one before the draw.
+	before := calls.Load()
+	if _, err := shared.MoveNote(t.Context(), "Rhine.md", "Rhein.md"); err != nil {
+		t.Fatal(err)
+	}
+	offset := shownAt.Load() - before
+	window.mu.Lock()
+	window.shownIDs = nil
+	window.mu.Unlock()
+
+	flipAt.Store(calls.Load() + offset)
+	moved, err := shared.MoveNote(t.Context(), "Danube.md", "Donau.md")
+	if err != nil || !moved.IsMoved {
+		t.Fatalf("the move in %s returned %+v, %v", rivers.Name, moved, err)
+	}
+	if !isSwitched.Load() {
+		t.Fatal("the window never changed vault")
+	}
+	window.mu.Lock()
+	defer window.mu.Unlock()
+	if len(window.shownIDs) == 0 {
+		t.Fatal("the switch landed before the wrapper's check: nothing was drawn")
+	}
+	for _, shownID := range window.shownIDs {
+		if shownID != rivers.ID {
+			t.Errorf("a move of %s was shown to the window while it showed %s", rivers.Name, lakes.Name)
+		}
+	}
+}
+
+func TestWindowMoveAfterPluginMoveIsShownToTheWindow(t *testing.T) {
+	v, current, assembly := openPluginVault(t, getRivers())
+	refresh := assembly.GetRefresh()
+	window := &movesWindow{}
+	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
+		_, err := refresh.Execute(ctx, v, paths)
+		return err
+	}).FollowMoves(window)
+	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: scenarios})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := shared.Scan(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := shared.MoveNote(t.Context(), "Danube.md", "Donau.md"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := scenarios.Move.Execute(t.Context(), v, "Deltas.md", "Delta.md"); err != nil {
+		t.Fatal(err)
+	}
+	moves := window.getMoves()
+	if len(moves) != 2 || moves[1].To != "Delta.md" {
+		t.Errorf("the window was shown %+v, want the plugin's move and then its own", moves)
+	}
+}

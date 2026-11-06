@@ -2,6 +2,7 @@ package hostendpoint
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -104,5 +105,26 @@ func TestTwoOpenVaultCallsAtOnceBothReturnAndBothSwapsRun(t *testing.T) {
 
 	if got := list.getCalls(); len(got) != 2 {
 		t.Errorf("the swaps that ran were %v, want 2", got)
+	}
+}
+
+func TestOpenVaultWhileTheWindowFlushesIsUnavailable(t *testing.T) {
+	list := newRecordingList()
+	list.err = fmt.Errorf("open vault v2: %w: %w", pluginport.ErrUnavailable, errors.New("the window is flushing pending writes"))
+	endpoint, client := openListEndpoint(t, list)
+	defer func() {
+		if err := endpoint.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	_, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+
+	var failure *connect.Error
+	if !errors.As(err, &failure) || failure.Code() != connect.CodeUnavailable {
+		t.Errorf("OpenVault while the window flushes returned %v, want unavailable", err)
+	}
+	if got := list.getCalls(); len(got) != 0 {
+		t.Errorf("the swaps that ran were %v, want none", got)
 	}
 }
