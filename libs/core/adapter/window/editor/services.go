@@ -102,14 +102,14 @@ func (s *Services) openPlaying(playing *Loopback) {
 	s.Media.playing = playing
 }
 
-// readFiles binds the use cases that read the files of the vaults the readers open, the copies
-// played in place of files, and the content types files are served as.
-func (s *Services) readFiles(readers vaultport.VaultReaders, openCopy *file.OpenProxy, mediaTypes *file.GetMediaType) {
+// readFiles binds the use cases that read the files of the vaults the readers open, the files of the
+// plugins' stores, and the content types files are served as.
+func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *file.OpenPluginFile, mediaTypes *file.GetMediaType) {
 	s.server.openFile = file.NewOpenFile(readers)
-	s.server.openCopy = openCopy
+	s.server.openPluginFile = openPluginFile
 	s.server.mediaTypes = mediaTypes
 	s.Media.statFile = file.NewStatFile(readers)
-	s.Media.openCopy = openCopy
+	s.Media.openPluginFile = openPluginFile
 	s.Media.mediaTypes = mediaTypes
 }
 

@@ -19,7 +19,7 @@ type textScenarioAssembly interface {
 }
 
 type fileScenarioAssembly interface {
-	OpenProxy() *file.OpenProxy
+	OpenPluginFile() *file.OpenPluginFile
 	GetMediaType() *file.GetMediaType
 	GetRefresh() vaults.Refresh
 }

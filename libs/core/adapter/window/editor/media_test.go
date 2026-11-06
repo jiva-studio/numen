@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -13,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/port/playbackport"
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
@@ -36,10 +38,10 @@ func newMediaClient(t *testing.T) numenv1connect.MediaServiceClient {
 	return numenv1connect.NewMediaServiceClient(server.Client(), server.URL)
 }
 
-func TestGetMediaSourceReturnsLoopbackAddress(t *testing.T) {
+func TestResolveAddress_ReturnsTheLoopbackAddressOfAVaultFile(t *testing.T) {
 	client := newMediaClient(t)
 
-	answer, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: talk}))
+	answer, err := client.ResolveAddress(t.Context(), connect.NewRequest(&v1.ResolveAddressRequest{Address: talk}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,28 +54,36 @@ func TestGetMediaSourceReturnsLoopbackAddress(t *testing.T) {
 	}
 }
 
-func TestGetMediaSourceRejectsMissingFile(t *testing.T) {
+func TestResolveAddress_RejectsAMissingVaultFile(t *testing.T) {
 	client := newMediaClient(t)
 
-	_, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: "talks/none.mp3"}))
+	_, err := client.ResolveAddress(t.Context(), connect.NewRequest(&v1.ResolveAddressRequest{Address: "talks/none.mp3"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("a missing file was answered %v, want not found", err)
 	}
 }
 
-// keptCopies keeps a copy of each link note, under the hash of the note's content.
-type keptCopies map[string][]byte
+// storedFiles are the files of the plugins' stores of every vault, by plugin id and then by name.
+type storedFiles map[string]map[string][]byte
 
-func (keptCopies) IsCopyingNotes() bool { return true }
+func (s storedFiles) Open(_ domain.Vault, pluginID string) (pluginport.PluginStore, error) {
+	return storedFolder{files: s[pluginID]}, nil
+}
 
-func (keptCopies) IsCopied(_ string, noteType domain.NoteType) bool { return noteType == "link" }
+func (storedFiles) DeleteFolder(context.Context, domain.Vault, string) error { return nil }
 
-func (k keptCopies) OpenProxy(_ context.Context, _ domain.Vault, _ string, _ domain.NoteType, hash string) (playbackport.Copy, error) {
-	content, ok := k[hash]
+// storedFolder is one plugin's folder, of which a file is opened and nothing else.
+type storedFolder struct {
+	pluginport.PluginStore
+	files map[string][]byte
+}
+
+func (f storedFolder) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
+	content, ok := f.files[name]
 	if !ok {
-		return playbackport.Copy{}, playbackport.ErrNoProxy
+		return nil, 0, fs.ErrNotExist
 	}
-	return playbackport.Copy{Body: nopSeekCloser{bytes.NewReader(content)}, Size: int64(len(content)), MediaType: "video/mp4"}, nil
+	return nopSeekCloser{bytes.NewReader(content)}, int64(len(content)), nil
 }
 
 type nopSeekCloser struct{ io.ReadSeeker }
@@ -81,42 +91,42 @@ type nopSeekCloser struct{ io.ReadSeeker }
 func (nopSeekCloser) Close() error { return nil }
 
 const (
-	clip      = "videos/clip.md"
-	clipLink  = "---\ntype: link\nurl: https://videos.example/clip\n---\n"
-	clipBytes = "the bytes of a copy of a video, long enough to ask for a piece of"
-	plain     = "notes/plain.md"
-	plainNote = "# A plain note\n"
+	importer  = "org.example.links"
+	clipName  = "clip-1.mp4"
+	clipBytes = "the bytes of a downloaded video, long enough to ask for a piece of"
+	pageName  = "clip-1.html"
+	pageBytes = "<!doctype html><iframe src=\"https://player.example/embed/1\"></iframe>"
 )
 
-// newCopyClient is the media of a window whose vault holds a note a plugin keeps a copy of.
-func newCopyClient(t *testing.T, copies keptCopies) numenv1connect.MediaServiceClient {
+// newStoreClient is the media of a window whose plugins keep the files in their stores.
+func newStoreClient(t *testing.T, files storedFiles) numenv1connect.MediaServiceClient {
 	t.Helper()
-	vault := testsupport.NewVault(t, map[string]string{clip: clipLink, talk: sound, plain: plainNote})
+	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	api := newBareServices()
 	readers := vaultreader.Readers{}
-	api.readFiles(readers, file.NewOpenProxy(readers, copies), file.NewGetMediaType(sharedmimeinfo.Open()))
+	api.readFiles(readers, file.NewOpenPluginFile(files), file.NewGetMediaType(sharedmimeinfo.Open()))
 	api.state.setVault(vault)
 	back, err := Listen(t.Context(), api.server, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, back)
+	back.setPluginServices(&routedPlugins{frames: map[string][]string{importer: {"https://player.example"}}})
 	api.openPlaying(back)
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	return numenv1connect.NewMediaServiceClient(server.Client(), server.URL)
 }
 
-func TestGetMediaSourcePlaysTheCopyAPluginKeepsOfTheFile(t *testing.T) {
-	copies := keptCopies{domain.HashContent([]byte(clipLink)): []byte(clipBytes)}
-	client := newCopyClient(t, copies)
+func TestResolveAddress_ServesAFileOfAPluginStoreInPieces(t *testing.T) {
+	client := newStoreClient(t, storedFiles{importer: {clipName: []byte(clipBytes)}})
 
-	answer, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: clip}))
+	answer, err := client.ResolveAddress(t.Context(), connect.NewRequest(&v1.ResolveAddressRequest{Address: "plugin://" + importer + "/" + clipName}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetMediaType() != "video/mp4" {
-		t.Errorf("the copy is played as %q, want video/mp4", answer.Msg.GetMediaType())
+		t.Errorf("the file is played as %q, want video/mp4", answer.Msg.GetMediaType())
 	}
 	asked, err := http.NewRequestWithContext(t.Context(), http.MethodGet, answer.Msg.GetSrc(), nil)
 	if err != nil {
@@ -125,46 +135,54 @@ func TestGetMediaSourcePlaysTheCopyAPluginKeepsOfTheFile(t *testing.T) {
 	asked.Header.Set("Range", "bytes=4-12")
 	played := send(t, http.DefaultClient, asked)
 	if played.StatusCode != http.StatusPartialContent || string(played.Body) != clipBytes[4:13] {
-		t.Errorf("the address answered %d with %q, want a piece of the copy", played.StatusCode, played.Body)
+		t.Errorf("the address answered %d with %q, want a piece of the file", played.StatusCode, played.Body)
 	}
 }
 
-func TestAnAddressOfACopyMadeAgainIsRefused(t *testing.T) {
-	hash := domain.HashContent([]byte(clipLink))
-	copies := keptCopies{hash: []byte(clipBytes)}
-	client := newCopyClient(t, copies)
-	answer, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: clip}))
+func TestResolveAddress_ServesAPageOfAPluginStoreWithItsFramesAndReferrer(t *testing.T) {
+	client := newStoreClient(t, storedFiles{importer: {pageName: []byte(pageBytes)}})
+
+	answer, err := client.ResolveAddress(t.Context(), connect.NewRequest(&v1.ResolveAddressRequest{Address: "plugin://" + importer + "/" + pageName}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := fetch(t, http.DefaultClient, answer.Msg.GetSrc())
+	if resp.StatusCode != http.StatusOK || string(resp.Body) != pageBytes {
+		t.Fatalf("answered %d %q", resp.StatusCode, resp.Body)
+	}
+	if policy := resp.Header.Get("Content-Security-Policy"); !strings.Contains(policy, "frame-src 'self' https://player.example;") {
+		t.Errorf("the page is served under %q", policy)
+	}
+	if referrer := resp.Header.Get("Referrer-Policy"); referrer != "strict-origin-when-cross-origin" {
+		t.Errorf("the page sends Referrer-Policy %q", referrer)
+	}
+}
+
+func TestResolveAddress_RefusesTheAddressOfAPluginFileWrittenAgain(t *testing.T) {
+	files := storedFiles{importer: {clipName: []byte(clipBytes)}}
+	client := newStoreClient(t, files)
+	answer, err := client.ResolveAddress(t.Context(), connect.NewRequest(&v1.ResolveAddressRequest{Address: "plugin://" + importer + "/" + clipName}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	copies[hash] = []byte("a shorter copy")
+	files[importer][clipName] = []byte("a shorter video")
 	played := fetch(t, http.DefaultClient, answer.Msg.GetSrc())
 	if played.StatusCode != http.StatusNotFound {
-		t.Errorf("an address of the copy before was answered %d", played.StatusCode)
+		t.Errorf("an address of the file before was answered %d", played.StatusCode)
 	}
 }
 
-func TestAFileWithNoCopyIsPlayedAsItself(t *testing.T) {
-	client := newCopyClient(t, keptCopies{})
-
-	answer, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: talk}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if answer.Msg.GetMediaType() != "audio/mpeg" {
-		t.Errorf("a recording is played as %q, want audio/mpeg", answer.Msg.GetMediaType())
-	}
-}
-
-func TestGetMediaSourcePlaysAPlainNoteAsItself(t *testing.T) {
-	client := newCopyClient(t, keptCopies{domain.HashContent([]byte(plainNote)): []byte(clipBytes)})
-
-	answer, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: plain}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if answer.Msg.GetMediaType() == "video/mp4" {
-		t.Error("a plain note is played from a copy, and no plugin keeps copies of plain notes")
+func TestResolveAddress_AnswersAMissingPluginFileAndAMalformedAddress(t *testing.T) {
+	client := newStoreClient(t, storedFiles{importer: {}})
+	for address, want := range map[string]connect.Code{
+		"plugin://" + importer + "/gone.mp4": connect.CodeNotFound,
+		"plugin://" + importer:               connect.CodeInvalidArgument,
+		"plugin:///" + clipName:              connect.CodeInvalidArgument,
+	} {
+		_, err := client.ResolveAddress(t.Context(), connect.NewRequest(&v1.ResolveAddressRequest{Address: address}))
+		if connect.CodeOf(err) != want {
+			t.Errorf("%s was answered %v, want %v", address, err, want)
+		}
 	}
 }

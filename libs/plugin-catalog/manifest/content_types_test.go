@@ -35,17 +35,6 @@ func TestReadManifestReadsReaders(t *testing.T) {
 	}
 }
 
-func TestIsHandlingMatchesTheTypesOfTheHandlesOfThePlugin(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},
-		"contributes": {"handles": [{"purpose": "sample-purpose", "contentTypes": ["audio/*", "video/*"]}]}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !m.IsHandling("video/mp4") || m.IsHandling("application/pdf") {
-		t.Error("IsHandling answers for the wrong types")
-	}
-}
-
 func TestReadManifestRejectsAnInvalidReader(t *testing.T) {
 	cases := map[string]struct {
 		fields string

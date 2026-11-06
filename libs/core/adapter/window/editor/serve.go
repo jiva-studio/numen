@@ -299,7 +299,7 @@ func createWindow(
 	state.EmitEvent = made.EmitEvent
 	state.OpenTabsStore = made.GetOpenTabsStore()
 	readers := made.GetVaultReaders()
-	services.readFiles(readers, made.OpenProxy(), made.GetMediaType())
+	services.readFiles(readers, made.OpenPluginFile(), made.GetMediaType())
 	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
 	services.Note.getTypes = note.NewGetTypes(made.GetNoteQueries())
 	services.Note.getHeadings = note.NewGetHeadings(made.GetNoteQueries())

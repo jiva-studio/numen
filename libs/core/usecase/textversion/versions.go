@@ -18,44 +18,33 @@ import (
 // Versions is the text versions of vault files: what plugins report and what is
 // live.
 type Versions struct {
-	repos     textport.VersionRepositories
-	files     textport.TextFileStores
-	plugins   textport.TextPlugins
-	providers textport.TextProviders
-	readers   vaultport.VaultReaders
-	clock     machineport.Clock
+	repos   textport.VersionRepositories
+	files   textport.TextFileStores
+	plugins textport.TextPlugins
+	readers vaultport.VaultReaders
+	clock   machineport.Clock
 
-	mu        sync.Mutex
-	listener  textport.VersionListener
-	requested map[request]bool
-}
-
-// request identifies one automatic request to a plugin for text of one file content.
-type request struct {
-	vault    domain.VaultID
-	path     string
-	fileHash string
-	pluginID string
+	mu       sync.Mutex
+	listener textport.VersionListener
 }
 
 // NewVersions returns the versions use case. It takes the version repositories,
-// the file stores, the plugins that create text and their providers, the vault
+// the file stores, the enabled plugins that may record versions, the vault
 // readers that read a note's type, and the clock that dates new versions. No
 // listener is notified of changes until SetListener is called.
 func NewVersions(
 	repos textport.VersionRepositories,
 	files textport.TextFileStores,
 	plugins textport.TextPlugins,
-	providers textport.TextProviders,
 	readers vaultport.VaultReaders,
 	clock machineport.Clock,
 ) (*Versions, error) {
-	if repos == nil || files == nil || plugins == nil || providers == nil || readers == nil || clock == nil {
-		return nil, errors.New("text versions need a repository, files, plugins, providers, vault readers and a clock")
+	if repos == nil || files == nil || plugins == nil || readers == nil || clock == nil {
+		return nil, errors.New("text versions need a repository, files, plugins, vault readers and a clock")
 	}
 	return &Versions{
-		repos: repos, files: files, plugins: plugins, providers: providers, readers: readers, clock: clock,
-		listener: noListener{}, requested: map[request]bool{},
+		repos: repos, files: files, plugins: plugins, readers: readers, clock: clock,
+		listener: noListener{},
 	}, nil
 }
 
@@ -97,7 +86,7 @@ type VersionPut struct {
 // one it has under the key. The core reads the version's file and records the
 // hash of its bytes. A replaced version keeps the time it was first made.
 func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID string, params VersionPut) (domain.TextVersion, error) {
-	if !u.hasPlugin(pluginID) {
+	if !u.plugins.IsEnabled(pluginID) {
 		return domain.TextVersion{}, fmt.Errorf("%w: %s", textport.ErrNotTextPlugin, pluginID)
 	}
 	return u.saveVersion(ctx, v, domain.TextVersion{
@@ -279,57 +268,8 @@ func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit
 // fileExtension ends the name of a version file the core writes.
 const fileExtension = ".jsonl"
 
-func (u *Versions) createText(ctx context.Context, req textport.TextCreation, pluginID string) error {
-	path := req.Path
-	if !u.hasPlugin(pluginID) {
-		return fmt.Errorf("%w: %s", textport.ErrNotTextPlugin, pluginID)
-	}
-	provider, err := u.providers.OpenProvider(ctx, pluginID)
-	if err != nil {
-		return err
-	}
-	if err := provider.CreateText(ctx, req); err != nil {
-		return fmt.Errorf("create text of %s with %s: %w", path, pluginID, err)
-	}
-	return nil
-}
-
-// RequestText requests text of the file from each enabled plugin that runs
-// automatically and reads the file, once for each content of the file. A file
-// with a live version is not requested.
-func (u *Versions) RequestText(ctx context.Context, v domain.Vault, path, fileHash string) error {
-	versions, err := u.getVersions(ctx, v, path)
-	if err != nil {
-		return err
-	}
-	if _, ok, err := u.findLive(ctx, v, versions, fileHash); err != nil || ok {
-		return err
-	}
-	var failures []error
-	for _, plugin := range u.plugins.GetTextPlugins() {
-		if !plugin.Files.IsFileAccepted(path) {
-			continue
-		}
-		key := request{vault: v.ID, path: path, fileHash: fileHash, pluginID: plugin.ID}
-		if !u.markRequested(key) {
-			continue
-		}
-		if err := u.createText(ctx, textport.TextCreation{Vault: v.ID, Path: path}, plugin.ID); err != nil {
-			u.clearRequested(key)
-			failures = append(failures, err)
-		}
-	}
-	return errors.Join(failures...)
-}
-
-// IsTextSource reports whether the index keeps the text of the file: it has text
-// versions, or an enabled plugin that runs on its own takes it.
+// IsTextSource reports whether the index keeps the text of the file: it has text versions.
 func (u *Versions) IsTextSource(ctx context.Context, v domain.Vault, path string) (bool, error) {
-	for _, plugin := range u.plugins.GetTextPlugins() {
-		if plugin.Files.IsFileAccepted(path) {
-			return true, nil
-		}
-	}
 	versions, err := u.getVersions(ctx, v, path)
 	return len(versions) > 0, err
 }
@@ -340,27 +280,6 @@ func (u *Versions) getVersions(ctx context.Context, v domain.Vault, path string)
 		return nil, err
 	}
 	return repo.GetVersions(ctx, path)
-}
-
-func (u *Versions) hasPlugin(pluginID string) bool {
-	return slices.ContainsFunc(u.plugins.GetTextPlugins(), func(plugin textport.TextPlugin) bool { return plugin.ID == pluginID })
-}
-
-// markRequested records a request, and reports whether it was not recorded before.
-func (u *Versions) markRequested(key request) bool {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	if u.requested[key] {
-		return false
-	}
-	u.requested[key] = true
-	return true
-}
-
-func (u *Versions) clearRequested(key request) {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	delete(u.requested, key)
 }
 
 func indexOf(versions []domain.TextVersion, id domain.TextVersionID) int {

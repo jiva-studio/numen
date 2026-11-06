@@ -1,0 +1,7 @@
+{
+  "about": "The events a trigger of contributes.triggers runs on. Each event is about one file of the vault, which is the target of the trigger's condition and of the handler it runs. tools/events.mjs writes the Go list from this file.",
+  "events": [
+    { "name": "file.added", "about": "a file is added to the vault, or the core finds it for the first time" },
+    { "name": "file.changed", "about": "the content of a file of the vault changes" }
+  ]
+}

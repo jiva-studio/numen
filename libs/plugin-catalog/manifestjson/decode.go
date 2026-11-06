@@ -170,12 +170,13 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Feature:      wire.GetFeature(),
 		Category:     wire.GetCategory(),
 		Themes:       themes,
-		Handles:      newHandles(wire.GetHandles()),
 		Readers:      newReaders(wire.GetReaders()),
 		NoteTypes:    noteTypes,
 		FrameOrigins: wire.GetFrameOrigins(),
 		Commands:     newCommands(wire.GetCommands()),
 		Slots:        newSlots(wire.GetSlots()),
+		Handlers:     newHandlers(wire.GetHandlers()),
+		Triggers:     newTriggers(wire.GetTriggers()),
 	}, nil
 }
 
@@ -394,10 +395,18 @@ func newCommandArguments(wire []*v1.ManifestCommandArgument) []manifest.CommandA
 	return out
 }
 
-func newHandles(wire []*v1.ManifestHandle) []manifest.Handle {
-	var out []manifest.Handle
+func newHandlers(wire []*v1.ManifestHandler) []manifest.Handler {
+	var out []manifest.Handler
 	for _, one := range wire {
-		out = append(out, manifest.Handle{Purpose: one.GetPurpose(), ContentTypes: newContentTypes(one.GetContentTypes()), NoteTypes: one.GetNoteTypes()})
+		out = append(out, manifest.Handler{Command: one.GetCommand(), Title: one.GetTitle(), When: one.GetWhen()})
+	}
+	return out
+}
+
+func newTriggers(wire []*v1.ManifestTrigger) []manifest.Trigger {
+	var out []manifest.Trigger
+	for _, one := range wire {
+		out = append(out, manifest.Trigger{On: one.GetOn(), Command: one.GetCommand(), When: one.GetWhen()})
 	}
 	return out
 }

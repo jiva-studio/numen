@@ -77,7 +77,7 @@ type Runtime[H, V any] struct {
 	AgentVal                 agentport.Agent
 	SetTextVersionListenerFn func(listener textport.VersionListener)
 	OpenFileMenuFn           func() *textversion.FileMenu
-	OpenProxyFn              func() *file.OpenProxy
+	OpenPluginFileFn         func() *file.OpenPluginFile
 	GetMediaTypeFn           func() *file.GetMediaType
 	OpenChoosePluginPathFn   func(dialog machineport.PathDialog) *settings.ChoosePluginPath
 	OpenFileTextFn           func() *textversion.FileText
@@ -165,9 +165,9 @@ func (e Runtime[H, V]) GetAgent() agentport.Agent                 { return e.Age
 func (e Runtime[H, V]) SetTextVersionListener(listener textport.VersionListener) {
 	e.SetTextVersionListenerFn(listener)
 }
-func (e Runtime[H, V]) OpenFileMenu() *textversion.FileMenu { return e.OpenFileMenuFn() }
-func (e Runtime[H, V]) OpenProxy() *file.OpenProxy          { return e.OpenProxyFn() }
-func (e Runtime[H, V]) GetMediaType() *file.GetMediaType    { return e.GetMediaTypeFn() }
+func (e Runtime[H, V]) OpenFileMenu() *textversion.FileMenu  { return e.OpenFileMenuFn() }
+func (e Runtime[H, V]) OpenPluginFile() *file.OpenPluginFile { return e.OpenPluginFileFn() }
+func (e Runtime[H, V]) GetMediaType() *file.GetMediaType     { return e.GetMediaTypeFn() }
 func (e Runtime[H, V]) OpenChoosePluginPath(dialog machineport.PathDialog) *settings.ChoosePluginPath {
 	return e.OpenChoosePluginPathFn(dialog)
 }

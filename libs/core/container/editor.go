@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
@@ -111,8 +112,8 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 			}
 		},
 		OpenFileMenuFn: cfg.openFileMenu,
-		OpenProxyFn: func() *file.OpenProxy {
-			return file.NewOpenProxy(cfg.VaultReaders(), cfg.Copies())
+		OpenPluginFileFn: func() *file.OpenPluginFile {
+			return file.NewOpenPluginFile(derivedfile.PluginStores{Options: cfg.vaultOptions()})
 		},
 		GetMediaTypeFn: func() *file.GetMediaType {
 			return file.NewGetMediaType(sharedmimeinfo.Open())

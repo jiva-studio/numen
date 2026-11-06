@@ -7,6 +7,7 @@ syntax = "proto3";
 // and the bytes a file of the person's own holds are asset.proto.
 package numen.v1;
 
+import "google/protobuf/struct.proto";
 import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
@@ -89,6 +90,10 @@ message FileKind {
   // The `type` key of the note's frontmatter, which says what the note is. Empty for an
   // ordinary note. It says nothing about a path holding no note.
   string type = 3;
+
+  // The frontmatter of the note by its keys, which when conditions read as
+  // target.properties. Empty for a path holding no note.
+  google.protobuf.Struct properties = 6;
 }
 
 message MoveFileRequest {

@@ -37,7 +37,6 @@ type scene struct {
 	files    map[string][]byte
 	folders  *memoryFiles
 	repo     *memoryVersions
-	made     providers
 	byID     map[string]*fakeProvider
 }
 
@@ -49,11 +48,7 @@ func newScene(t *testing.T) *scene {
 		files:    map[string][]byte{scanPath: []byte("%PDF scan, first printing")},
 		folders:  &memoryFiles{},
 		repo:     &memoryVersions{},
-		plugins: &plugins{all: []textport.TextPlugin{
-			{ID: ocr, Name: "OCR"},
-			{ID: pdfReader, Name: "PDF", Files: domain.FileInput{".pdf"}},
-			{ID: proofreader, Name: "Proofreading"},
-		}},
+		plugins:  &plugins{all: []string{ocr, pdfReader, proofreader}},
 	}
 	page := func(word string, n int) domain.TextSegment {
 		return domain.TextSegment{Text: word + " ", Selector: domain.Selector(`{"page":` + string(rune('1'+n)) + `}`)}
@@ -70,9 +65,8 @@ func newScene(t *testing.T) *scene {
 		make: func(_ string, source domain.VersionText, _ bool) []domain.TextSegment {
 			return []domain.TextSegment{{Text: strings.ReplaceAll(source.Text, "teh", "the")}}
 		}}
-	s.made = providers{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
 	s.byID = map[string]*fakeProvider{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
-	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, s.made, fileReaders(s.files), steppingClock())
+	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, fileReaders(s.files), steppingClock())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,12 +119,10 @@ func (s *scene) runEntry(t *testing.T, pluginID string) {
 	}
 }
 
-// requestText requests text for the scan from the standalone plugins.
+// requestText runs the PDF reader over the scan.
 func (s *scene) requestText(t *testing.T) {
 	t.Helper()
-	if err := s.versions.RequestText(t.Context(), s.vault, scanPath, s.fileHash()); err != nil {
-		t.Fatal(err)
-	}
+	s.runEntry(t, pdfReader)
 }
 
 func (s *scene) getReaderVersion() domain.TextVersionID {
@@ -178,13 +170,6 @@ func TestADisabledPluginsVersionStaysLiveAndReadable(t *testing.T) {
 	text, err := s.versions.GetVersionText(t.Context(), s.vault, scanPath, c)
 	if err != nil || text.Text != "scanned teh " {
 		t.Fatalf("the version of a disabled plugin reads %q (%v)", text.Text, err)
-	}
-	if got := s.reader.getCreated(); got != 0 {
-		t.Fatalf("a file with a disabled plugin's live version asked the reader %d times", got)
-	}
-	s.requestText(t)
-	if got := s.reader.getCreated(); got != 0 {
-		t.Fatalf("RequestText asked the reader %d times for a file that has a live version", got)
 	}
 }
 
@@ -268,19 +253,6 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	}
 	if !strings.HasPrefix(string(listing.Live), proofreader+"/") {
 		t.Fatalf("for the first bytes the live version is %q, want the proofreading", listing.Live)
-	}
-}
-
-func TestRequestTextAsksOncePerContentAndNotForALiveFile(t *testing.T) {
-	s := newScene(t)
-	for range 3 {
-		s.requestText(t)
-	}
-	if got := s.reader.getCreated(); got != 1 {
-		t.Fatalf("the reader was asked %d times, want 1", got)
-	}
-	if got := s.ocr.getCreated(); got != 0 {
-		t.Fatalf("the recogniser, which does not run on its own, was asked %d times", got)
 	}
 }
 

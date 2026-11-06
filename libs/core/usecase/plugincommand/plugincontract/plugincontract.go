@@ -49,7 +49,6 @@ type (
 	PluginManifestSetting  = pluginport.PluginManifestSetting
 	PluginNoteType         = pluginport.PluginNoteType
 	PluginPersistHandler   = pluginport.PluginPersistHandler
-	PluginHandle           = pluginport.PluginHandle
 	PluginReader           = pluginport.PluginReader
 	PluginReaderInfo       = pluginport.PluginReaderInfo
 	PluginRegistryManager  = pluginport.PluginRegistryManager
@@ -127,8 +126,6 @@ const (
 	PluginProtocolVersion       = pluginport.PluginProtocolVersion
 	PluginWithoutBackend        = pluginport.PluginWithoutBackend
 	RuntimeONNX                 = pluginport.RuntimeONNX
-	HandlePlaybackCopy          = pluginport.HandlePlaybackCopy
-	HandleTextProvider          = pluginport.HandleTextProvider
 	ConfigPerformanceProfile    = pluginport.ConfigPerformanceProfile
 	SettingStoredSecrets        = pluginport.SettingStoredSecrets
 	SettingTypeEnum             = pluginport.SettingTypeEnum
@@ -160,7 +157,6 @@ var (
 	ErrInvalidID              = pluginport.ErrInvalidID
 	ErrInvalidNoteType        = pluginport.ErrInvalidNoteType
 	ErrInvalidPermission      = pluginport.ErrInvalidPermission
-	ErrInvalidHandle          = pluginport.ErrInvalidHandle
 	ErrInvalidReader          = pluginport.ErrInvalidReader
 	ErrInvalidSettingsView    = pluginport.ErrInvalidSettingsView
 	ErrInvalidSecret          = pluginport.ErrInvalidSecret

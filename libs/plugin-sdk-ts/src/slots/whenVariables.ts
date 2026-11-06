@@ -9,6 +9,7 @@ export const WHEN_VARIABLES = [
   { name: 'target.isFile', type: 'bool' },
   { name: 'target.contentType', type: 'string' },
   { name: 'target.noteType', type: 'string' },
+  { name: 'target.properties', type: 'map' },
   { name: 'version.kind', type: 'string' },
   { name: 'version.isLive', type: 'bool' },
   { name: 'window.isVaultOpen', type: 'bool' },
