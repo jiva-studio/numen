@@ -259,9 +259,9 @@ func (c Config) OpenPluginVault(
 		return err
 	}
 	scenarios := c.Notes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
-	arranged := scenarios
+	arranger := scenarios
 	if hooks.isNotesSet() {
-		arranged = hooks.Notes
+		arranger = hooks.Notes
 	}
 	vaults := hostvault.Vault{
 		Current:     current,
@@ -272,9 +272,9 @@ func (c Config) OpenPluginVault(
 		Connections: note.NewConnections(scenarios),
 		Problems:    db.Problems(),
 		Arranger: hostvault.Arranger{
-			Rename: arranged.Rename,
-			Move:   arranged.Move,
-			Remove: arranged.RemoveNote,
+			Rename: arranger.Rename,
+			Move:   arranger.Move,
+			Remove: arranger.RemoveNote,
 			Checks: vault.NewStandardGetProblems(db.Problems()),
 		},
 		Stores:  derivedfile.PluginStores{Options: c.vaultOptions()},

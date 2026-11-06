@@ -90,7 +90,7 @@ func (c *Client) RenameNote(ctx context.Context, path, title string) (RenamedNot
 	if err := failNote(res.Msg.Failure); err != nil {
 		return RenamedNote{}, fmt.Errorf("rename %s: %w", path, err)
 	}
-	renamed := RenamedNote{
+	out := RenamedNote{
 		Path:        res.Msg.GetPath(),
 		Title:       res.Msg.GetTitle(),
 		IsFilenamed: res.Msg.GetNameSource() == v1.NameSource_NAME_SOURCE_FILENAME,
@@ -98,9 +98,9 @@ func (c *Client) RenameNote(ctx context.Context, path, title string) (RenamedNot
 	}
 	if res.Msg.Moved != nil {
 		moved := readMove(res.Msg.GetMoved())
-		renamed.Moved = &moved
+		out.Moved = &moved
 	}
-	return renamed, nil
+	return out, nil
 }
 
 func (c *Client) MoveNotes(ctx context.Context, paths []string, folder string) ([]NoteMove, error) {

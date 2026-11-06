@@ -143,7 +143,7 @@ func (e *vaultEndpoint) RemoveVault(
 		return nil, err
 	}
 	id := domain.VaultID(req.Msg.GetId())
-	// The folder is read before the removal: afterwards the vault is no longer on the list.
+	// The folder is read from the list before the vault leaves it.
 	removed, err := e.findVault(id)
 	if err == nil {
 		err = list.RemoveVault(ctx, id)
@@ -155,8 +155,8 @@ func (e *vaultEndpoint) RemoveVault(
 	return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Path: removed.Path}), nil
 }
 
-// OpenVault answers before the window changes vault: the change closes the session of the plugin
-// that asked, so it runs under a context the end of the call does not cancel.
+// OpenVault answers before the window changes vault: the change closes the session of the calling
+// plugin, so it runs under a context the end of the call does not cancel.
 func (e *vaultEndpoint) OpenVault(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceOpenVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
