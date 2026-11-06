@@ -254,7 +254,7 @@ func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domai
 	}
 	out := make(map[string]domain.NoteRef, len(res.Msg.GetNotes()))
 	for _, one := range res.Msg.GetNotes() {
-		out[one.GetPath()] = domain.NoteRef{Path: one.GetPath(), Title: one.GetTitle()}
+		out[one.GetPath()] = domain.NoteRef{Path: one.GetPath(), Title: one.GetTitle(), ID: one.GetId()}
 	}
 	return out, nil
 }
