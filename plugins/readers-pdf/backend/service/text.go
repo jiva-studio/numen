@@ -43,7 +43,12 @@ type TextServer struct {
 	workers *pdf.Workers
 }
 
-var _ host.TextProvider = (*TextServer)(nil)
+// TextRequest names the file whose text layer is written, in the vault Vault names; empty is the
+// vault the host shows.
+type TextRequest struct {
+	Vault domain.VaultID
+	Path  string
+}
 
 // NewTextServer is the text layers of the files read through files, written into store and reported
 // to texts, each written in a turn of queue.
@@ -110,7 +115,7 @@ func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path strin
 
 // CreateText starts writing the text layer of a file as a version made from the file, and returns.
 // A file whose layer is being written already is not started again.
-func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) error {
+func (s *TextServer) CreateText(ctx context.Context, req TextRequest) error {
 	key := string(req.Vault) + "\x00" + req.Path
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -135,7 +140,7 @@ func (s *TextServer) finish(key string) {
 
 // writeLayer writes the text layer of a file in a turn of the queue. A failure stays shown as a task
 // until the layer is written again.
-func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
+func (s *TextServer) writeLayer(ctx context.Context, req TextRequest) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="task counters start at zero"
@@ -156,7 +161,7 @@ func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 
 // putLayer reports the text layer of a file as a version made from the file. A file that is no PDF,
 // a locked one and a scan have no text layer, and get no version.
-func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task host.Task) (err error) {
+func (s *TextServer) putLayer(ctx context.Context, req TextRequest, task host.Task) (err error) {
 	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, OnWaiting: nil})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)

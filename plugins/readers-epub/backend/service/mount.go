@@ -3,6 +3,7 @@ package service
 import (
 	"net/http"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
@@ -45,8 +46,12 @@ func mount(s *server.Server, books *BookServer, texts *TextServer) error {
 		return err
 	}
 	s.RegisterRoute(entriesPattern, NewEntryServer(books))
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="mount registers the TextProvider handler on the server"
-	s.Register(host.NewTextProviderHandler(texts, s.HandlerOptions()...))
+	commands, err := newCommands(texts)
+	// gomutants:disable-next-line BRANCH_IF reason="registering one static command id on a new registry cannot fail"
+	if err != nil {
+		return err
+	}
+	command.Mount(s, commands)
 	return nil
 }
 

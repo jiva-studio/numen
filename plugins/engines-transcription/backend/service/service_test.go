@@ -284,11 +284,21 @@ func TestTranscribeWaitsForQueueTurn(t *testing.T) {
 	}
 }
 
-func TestTranscribeCommandWaitsForTranscript(t *testing.T) {
-	s := newScene(t)
-	run := newTranscribeCommand(s.transcriber)
+// runHandler runs the handler of the shared command the plugin registers under the id.
+func (s *scene) runHandler(t *testing.T, req command.Request) (command.Result, error) {
+	t.Helper()
+	commands, err := newCommands(s.transcriber, Host{Vault: s.vault, Store: s.store, Texts: s.texts, Queue: s.queue})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return commands.RunCommand(t.Context(), req)
+}
 
-	res, err := run(t.Context(), command.Request{Command: "transcript.create", Path: lecture})
+func TestTheHandlerOfCreateTextWaitsForTheTranscript(t *testing.T) {
+	s := newScene(t)
+	run := func(_ context.Context, req command.Request) (command.Result, error) { return s.runHandler(t, req) }
+
+	res, err := run(t.Context(), command.Request{Command: "app:file.createText", Path: lecture})
 	if err != nil || res.Message != "transcribed "+lecture {
 		t.Fatalf("answered %+v (%v)", res, err)
 	}
@@ -300,14 +310,25 @@ func TestTranscribeCommandWaitsForTranscript(t *testing.T) {
 	}
 }
 
-func TestTranscribeCommandReportsUnopenableRecording(t *testing.T) {
+func TestTheHandlerOfCreateTextReportsAnUnopenableRecording(t *testing.T) {
 	s := newScene(t)
 	s.model.isBroken = true
 
-	_, err := newTranscribeCommand(s.transcriber)(t.Context(), command.Request{Command: "transcript.create", Path: lecture})
+	_, err := s.runHandler(t, command.Request{Command: "app:file.createText", Path: lecture})
 
 	if err == nil || !strings.Contains(err.Error(), "cannot be opened") {
 		t.Errorf("a recording that cannot be opened was answered %v", err)
+	}
+}
+
+func TestTheHandlerOfDeleteTextNeedsAVersion(t *testing.T) {
+	s := newScene(t)
+
+	if _, err := s.runHandler(t, command.Request{Command: "app:version.delete", Path: lecture}); !errors.Is(err, command.ErrBadArguments) {
+		t.Errorf("a deletion naming no version answered %v, want ErrBadArguments", err)
+	}
+	if _, err := s.runHandler(t, command.Request{Command: "transcript.create", Path: lecture}); !errors.Is(err, command.ErrUnknownCommand) {
+		t.Errorf("the command of before answered %v, want ErrUnknownCommand", err)
 	}
 }
 
