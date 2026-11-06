@@ -56,6 +56,7 @@ func addWindowTabsGet(registry *tools.Registry, on Host, summaries *textSummarie
 					Kind:     "",
 					Path:     focus,
 					Title:    formatTitleFromPath(focus),
+					Location: "",
 					IsActive: true,
 				}
 				tabs = []TabInfo{inferredTab}
