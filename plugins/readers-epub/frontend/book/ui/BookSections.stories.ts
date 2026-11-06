@@ -1,10 +1,11 @@
 /**
- * A book of two sections, held the way the reader holds one: a turn past the
- * end of a section reports the offset it names, and the section holding that
- * offset is drawn after an asynchronous read.
+ * A book of two sections, loaded the way the reader loads them: a page turn past
+ * the end of a section emits the new offset, and the section that contains the
+ * offset is rendered after an asynchronous read.
  *
- * A turn across the border is a turn, so its page slides like a turn inside a
- * section. A move to another section that is not a turn lands at once.
+ * A page turn across a section boundary animates the page like a turn inside one
+ * section. A move to another section without a page turn shows the page without
+ * animation.
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
@@ -21,14 +22,14 @@ export default meta
 type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
-/** How long a wait goes on where the browser sets the pace. */
-const ITS_OWN_PACE = 10_000
+/** Timeout of a wait for a browser layout or animation. */
+const BROWSER_TIMEOUT = 10_000
 
-/** How long the owner takes to read the markup of a section. */
+/** Delay of the asynchronous read of the markup of a section. */
 const READ_DELAY = 30
 
-/** Frames without a change after which the layout counts as settled. */
-const STILL_FRAMES = 10
+/** Number of frames without a change after which the layout is settled. */
+const SETTLED_FRAME_COUNT = 10
 
 const WIDE: Decorator = (story) => ({
   components: { story },
@@ -41,62 +42,63 @@ const WIDE: Decorator = (story) => ({
   `,
 })
 
-/** A short section and a long one after it, and a long one and a short one after it. */
+/** Two books: a short section then a long one, and a long section then a short one. */
 const SHORT_FIRST = createChapter(VERSES)
 const LONG_SECOND = createChapter(PROSE, SHORT_FIRST.span.end)
 const LONG_FIRST = createChapter(PROSE)
 const SHORT_SECOND = createChapter(VERSES, LONG_FIRST.span.end)
 
-/** The offsets of the runs of a section, in the order they are set. */
+/** Returns the offsets of the runs of a section in document order. */
 const getRunOffsets = (chapter: Chapter): number[] =>
   [...chapter.markup.matchAll(/data-offset="(\d+)"/g)].map((match) => Number(match[1]))
 
 /**
- * The sections drawn by an owner that reads each one after a delay, as the
- * reader's owner does. `startIn` is the section read first; the button
- * "Jump to the second" moves the offset there without a turn.
+ * Renders two sections and loads each one after `READ_DELAY`, as the reader
+ * does. `startIn` is the index of the section loaded first; the button
+ * "Jump to the second" sets the offset to the second section without a page
+ * turn.
  */
-const twoSections =
+const renderTwoSections =
   (sections: readonly [Chapter, Chapter], startIn: 0 | 1): Render =>
   () => ({
     components: { Book },
     setup() {
       const book = { start: sections[0].span.start, end: sections[1].span.end }
-      const drawn = shallowRef<Chapter>(sections[startIn])
+      const current = shallowRef<Chapter>(sections[startIn])
       const offset = ref(sections[startIn].span.start)
       const view = ref<{ handleKey(event: KeyboardEvent): boolean } | null>(null)
 
       let timer: ReturnType<typeof setTimeout> | undefined
-      const drawAt = (pos: number) => {
+      const loadSectionAt = (pos: number) => {
         const section = sections.find((one) => pos >= one.span.start && pos < one.span.end)
-        if (!section || section === drawn.value) return
+        if (!section || section === current.value) return
         clearTimeout(timer)
         timer = setTimeout(() => {
-          drawn.value = section
+          current.value = section
         }, READ_DELAY)
       }
 
-      const turns = (event: KeyboardEvent) => {
+      const handleKeydown = (event: KeyboardEvent) => {
         if (view.value?.handleKey(event)) event.preventDefault()
       }
-      onMounted(() => window.addEventListener('keydown', turns))
+      onMounted(() => window.addEventListener('keydown', handleKeydown))
       onBeforeUnmount(() => {
-        window.removeEventListener('keydown', turns)
+        window.removeEventListener('keydown', handleKeydown)
         clearTimeout(timer)
       })
 
       return {
         view,
         book,
-        drawn,
+        current,
         offset,
         onMove: (to: number) => {
           offset.value = to
-          drawAt(to)
+          loadSectionAt(to)
         },
         jump: () => {
           offset.value = sections[1].span.start
-          drawAt(sections[1].span.start)
+          loadSectionAt(sections[1].span.start)
         },
       }
     },
@@ -106,8 +108,8 @@ const twoSections =
         <Book
           ref="view"
           class="h-full"
-          :markup="drawn.markup"
-          :span="drawn.span"
+          :markup="current.markup"
+          :span="current.span"
           :book="book"
           :at="offset"
           @move="onMove"
@@ -128,9 +130,10 @@ const getFrontOffset = (canvasElement: HTMLElement) =>
 const waitForFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve))
 
 /**
- * The columns laid out, the faces loaded, and the place of the columns and the
- * size of the paper unchanged for `STILL_FRAMES` frames, so a layout after the
- * faces arrive does not fall into the turn that follows.
+ * Waits until the columns are laid out, the fonts are loaded, and the position
+ * of the columns and the size of the paper are unchanged for
+ * `SETTLED_FRAME_COUNT` frames, so a relayout after font loading does not
+ * overlap the next page turn.
  */
 const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   await waitFor(
@@ -141,7 +144,7 @@ const waitForSettledLayout = async (canvasElement: HTMLElement) => {
       await expect(canvasElement.querySelector('.book__count')).toBeInTheDocument()
       await expect(getPaper(canvasElement).classList.contains('book__paper--unset')).toBe(false)
     },
-    { timeout: ITS_OWN_PACE },
+    { timeout: BROWSER_TIMEOUT },
   )
   await document.fonts.ready
   const readState = () => {
@@ -149,150 +152,155 @@ const waitForSettledLayout = async (canvasElement: HTMLElement) => {
     return `${paper.style.translate}|${paper.scrollWidth}|${paper.className}`
   }
   let last = readState()
-  let still = 0
-  for (let frame = 0; frame < 600 && still < STILL_FRAMES; frame += 1) {
+  let stableFrameCount = 0
+  for (let frame = 0; frame < 600 && stableFrameCount < SETTLED_FRAME_COUNT; frame += 1) {
     await waitForFrame()
     const now = readState()
-    still = now === last ? still + 1 : 0
+    stableFrameCount = now === last ? stableFrameCount + 1 : 0
     last = now
   }
-  await expect(still).toBe(STILL_FRAMES)
+  await expect(stableFrameCount).toBe(SETTLED_FRAME_COUNT)
 }
 
 /**
- * The left edge of the run at `offset` on every frame it is visible: its first
- * fragment, or its last with `fragment: 'last'`.
+ * Records the left edge of the run at `offset` on every frame where the run is
+ * visible: of its first fragment, or of its last with `fragment: 'last'`.
  */
 const watchRun = (canvasElement: HTMLElement, offset: number, fragment: 'first' | 'last') => {
-  const seen: number[] = []
+  const edges: number[] = []
   const read = () => {
     for (const run of canvasElement.querySelectorAll<HTMLElement>(`[data-offset="${offset}"]`)) {
       const rects = run.getClientRects()
       const rect = fragment === 'first' ? rects[0] : rects[rects.length - 1]
-      if (rect && getComputedStyle(run).visibility === 'visible') seen.push(rect.left)
+      if (rect && getComputedStyle(run).visibility === 'visible') edges.push(rect.left)
     }
     frame = requestAnimationFrame(read)
   }
   let frame = requestAnimationFrame(read)
-  return { seen, stop: () => cancelAnimationFrame(frame) }
+  return { edges, stop: () => cancelAnimationFrame(frame) }
 }
 
-/** The left edge of a run, taken once. */
+/** Returns the current left edge of a run. */
 const readRunLeft = (canvasElement: HTMLElement, offset: number, fragment: 'first' | 'last') => {
   const run = canvasElement.querySelector<HTMLElement>(`[data-offset="${offset}"]`)!
   const rects = run.getClientRects()
   return (fragment === 'first' ? rects[0] : rects[rects.length - 1])!.left
 }
 
-/** Whether a left edge lies inside the area. */
-const expectInArea = async (canvasElement: HTMLElement, left: number) => {
+/** Asserts that a left edge lies inside the area. */
+const expectInArea = async (canvasElement: HTMLElement, edge: number) => {
   const box = getArea(canvasElement).getBoundingClientRect()
-  await expect(left).toBeGreaterThanOrEqual(box.left - 1)
-  await expect(left).toBeLessThan(box.right)
+  await expect(edge).toBeGreaterThanOrEqual(box.left - 1)
+  await expect(edge).toBeLessThan(box.right)
 }
 
-/** Presses a key until the offset in front reaches `until`, each turn waited for. */
+/**
+ * Presses a key until `isTarget` accepts the front offset, and waits for the
+ * offset to change after each key press.
+ */
 const turnUntil = async (
   canvasElement: HTMLElement,
   key: '{ArrowRight}' | '{ArrowLeft}',
-  isThere: (front: number) => boolean,
+  isTarget: (front: number) => boolean,
 ) => {
-  for (let turn = 0; turn < 20 && !isThere(getFrontOffset(canvasElement)); turn += 1) {
-    const was = getFrontOffset(canvasElement)
+  for (let turn = 0; turn < 20 && !isTarget(getFrontOffset(canvasElement)); turn += 1) {
+    const previous = getFrontOffset(canvasElement)
     await userEvent.keyboard(key)
-    await waitFor(async () => await expect(getFrontOffset(canvasElement)).not.toBe(was), {
-      timeout: ITS_OWN_PACE,
+    await waitFor(async () => await expect(getFrontOffset(canvasElement)).not.toBe(previous), {
+      timeout: BROWSER_TIMEOUT,
     })
   }
-  await expect(isThere(getFrontOffset(canvasElement))).toBe(true)
+  await expect(isTarget(getFrontOffset(canvasElement))).toBe(true)
 }
 
 /**
- * The places strictly between the resting place and one spread from it on the
- * side `from`: the frames on which the page is seen being carried in.
+ * Returns the edges strictly between the final edge and one spread away from it
+ * on the side `from`: the frames of the slide animation.
  */
-const getCarriedPlaces = (
-  seen: readonly number[],
-  rest: number,
+const getSlideEdges = (
+  edges: readonly number[],
+  finalEdge: number,
   spread: number,
   from: 'far' | 'near',
 ) =>
-  seen.filter((left) => {
-    const away = from === 'far' ? left - rest : rest - left
-    return away > 1 && away < spread - 1
+  edges.filter((edge) => {
+    const distance = from === 'far' ? edge - finalEdge : finalEdge - edge
+    return distance > 1 && distance < spread - 1
   })
 
 /**
- * A forward turn from the last page of a section to the first page of the next
- * one slides the new page in from the far edge, over frames of its own.
+ * A forward page turn from the last page of a section to the first page of the
+ * next one slides the new page in from the far edge over several frames.
  */
-export const TheTurnIntoTheNextSectionIsCarried: Story = {
+export const ForwardTurnIntoNextSectionSlidesPage: Story = {
   decorators: [WIDE],
-  render: twoSections([SHORT_FIRST, LONG_SECOND], 0),
+  render: renderTwoSections([SHORT_FIRST, LONG_SECOND], 0),
   play: async ({ canvasElement }) => {
     await waitForSettledLayout(canvasElement)
     const first = getRunOffsets(LONG_SECOND)[0]!
-    const watched = watchRun(canvasElement, first, 'first')
+    const recording = watchRun(canvasElement, first, 'first')
 
     await turnUntil(canvasElement, '{ArrowRight}', (front) => front >= LONG_SECOND.span.start)
     await waitForSettledLayout(canvasElement)
-    watched.stop()
+    recording.stop()
 
-    const rest = readRunLeft(canvasElement, first, 'first')
-    await expectInArea(canvasElement, rest)
+    const finalEdge = readRunLeft(canvasElement, first, 'first')
+    await expectInArea(canvasElement, finalEdge)
     await expect(getFrontOffset(canvasElement)).toBe(LONG_SECOND.span.start)
-    await expect(watched.seen.length).toBeGreaterThan(0)
+    await expect(recording.edges.length).toBeGreaterThan(0)
     const spread = getArea(canvasElement).clientWidth
-    await expect(getCarriedPlaces(watched.seen, rest, spread, 'far').length).toBeGreaterThan(1)
+    await expect(getSlideEdges(recording.edges, finalEdge, spread, 'far').length).toBeGreaterThan(1)
   },
 }
 
 /**
- * A backward turn from the first page of a section to the last page of the one
- * before it slides that page in from the near edge, over frames of its own.
+ * A backward page turn from the first page of a section to the last page of the
+ * previous one slides that page in from the near edge over several frames.
  */
-export const TheTurnIntoThePreviousSectionIsCarried: Story = {
+export const BackwardTurnIntoPreviousSectionSlidesPage: Story = {
   decorators: [WIDE],
-  render: twoSections([LONG_FIRST, SHORT_SECOND], 1),
+  render: renderTwoSections([LONG_FIRST, SHORT_SECOND], 1),
   play: async ({ canvasElement }) => {
     await waitForSettledLayout(canvasElement)
     const last = getRunOffsets(LONG_FIRST).at(-1)!
-    const watched = watchRun(canvasElement, last, 'last')
+    const recording = watchRun(canvasElement, last, 'last')
 
     await turnUntil(canvasElement, '{ArrowLeft}', (front) => front < LONG_FIRST.span.end)
     await waitForSettledLayout(canvasElement)
-    watched.stop()
+    recording.stop()
 
-    const rest = readRunLeft(canvasElement, last, 'last')
-    await expectInArea(canvasElement, rest)
+    const finalEdge = readRunLeft(canvasElement, last, 'last')
+    await expectInArea(canvasElement, finalEdge)
     await expect(getFrontOffset(canvasElement)).toBeGreaterThanOrEqual(LONG_FIRST.span.start)
-    await expect(watched.seen.length).toBeGreaterThan(0)
+    await expect(recording.edges.length).toBeGreaterThan(0)
     const spread = getArea(canvasElement).clientWidth
-    await expect(getCarriedPlaces(watched.seen, rest, spread, 'near').length).toBeGreaterThan(1)
+    await expect(getSlideEdges(recording.edges, finalEdge, spread, 'near').length).toBeGreaterThan(
+      1,
+    )
   },
 }
 
-/** A move to another section that is not a turn puts its page in place at once. */
-export const AJumpIntoTheNextSectionLandsAtOnce: Story = {
+/** A move to another section without a page turn shows its page without animation. */
+export const JumpIntoNextSectionSkipsAnimation: Story = {
   decorators: [WIDE],
-  render: twoSections([LONG_FIRST, SHORT_SECOND], 0),
+  render: renderTwoSections([LONG_FIRST, SHORT_SECOND], 0),
   play: async ({ canvasElement }) => {
     await waitForSettledLayout(canvasElement)
     const first = getRunOffsets(SHORT_SECOND)[0]!
-    const watched = watchRun(canvasElement, first, 'first')
+    const recording = watchRun(canvasElement, first, 'first')
 
     await userEvent.click(within(canvasElement).getByLabelText('Jump to the second'))
     await waitFor(
       async () =>
         await expect(canvasElement.querySelector(`[data-offset="${first}"]`)).not.toBeNull(),
-      { timeout: ITS_OWN_PACE },
+      { timeout: BROWSER_TIMEOUT },
     )
     await waitForSettledLayout(canvasElement)
-    watched.stop()
+    recording.stop()
 
-    const rest = readRunLeft(canvasElement, first, 'first')
-    await expectInArea(canvasElement, rest)
-    await expect(watched.seen.length).toBeGreaterThan(0)
-    await expect(watched.seen.filter((left) => Math.abs(left - rest) > 1)).toEqual([])
+    const finalEdge = readRunLeft(canvasElement, first, 'first')
+    await expectInArea(canvasElement, finalEdge)
+    await expect(recording.edges.length).toBeGreaterThan(0)
+    await expect(recording.edges.filter((edge) => Math.abs(edge - finalEdge) > 1)).toEqual([])
   },
 }
