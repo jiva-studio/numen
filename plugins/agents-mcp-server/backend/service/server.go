@@ -27,6 +27,12 @@ type Server struct {
 	mu         sync.Mutex
 	// serveErr holds the errors of the HTTP servers other than their shutdown. Close returns it.
 	serveErr error
+	// newConns holds the accepted connections that have not sent a request yet. http.Server.Shutdown
+	// waits five seconds for such a connection, so its shutdown hook closes them.
+	newConns map[net.Conn]struct{}
+	// isShuttingDown is set by the shutdown hook of the HTTP server, after which trackConn closes a
+	// new connection at once.
+	isShuttingDown bool
 }
 
 // NewServer creates an MCP server with the provided configuration and host tool client.
@@ -66,20 +72,21 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 	reportSyncError(aggregator.SyncTools(context.Background()))
 
 	srv := &Server{
-		config:     cfg,
-		mcpServer:  mcpServer,
-		httpServer: nil,
-		handler:    nil,
-		aggregator: aggregator,
-		listener:   nil,
-		actualAddr: "",
-		isClosed:   false,
-		mu:         sync.Mutex{},
-		serveErr:   nil,
+		config:         cfg,
+		mcpServer:      mcpServer,
+		httpServer:     nil,
+		handler:        nil,
+		aggregator:     aggregator,
+		listener:       nil,
+		actualAddr:     "",
+		isClosed:       false,
+		mu:             sync.Mutex{},
+		serveErr:       nil,
+		newConns:       make(map[net.Conn]struct{}),
+		isShuttingDown: false,
 	}
-	authHandler := srv.createHTTPHandler(mcpServer)
-	srv.handler = authHandler
-	srv.httpServer = newHTTPServer(authHandler)
+	srv.handler = srv.createHTTPHandler(mcpServer)
+	srv.httpServer = srv.newHTTPServer()
 
 	return srv, nil
 }
@@ -91,12 +98,53 @@ func newServerOptions() *sdk.ServerOptions {
 	return opts
 }
 
-// newHTTPServer creates an HTTP server that serves handler.
-func newHTTPServer(handler http.Handler) *http.Server {
+// newHTTPServer creates an HTTP server that serves the handler of s and closes the connections
+// without a request on shutdown.
+func (s *Server) newHTTPServer() *http.Server {
 	httpSrv := new(http.Server)
-	httpSrv.Handler = handler
+	httpSrv.Handler = s.handler
 	httpSrv.ReadHeaderTimeout = 10 * time.Second
+	httpSrv.ConnState = s.trackConn
+	httpSrv.RegisterOnShutdown(s.closeNewConns)
 	return httpSrv
+}
+
+// trackConn records whether conn has sent a request yet and closes a connection accepted after the
+// HTTP server has started its shutdown.
+func (s *Server) trackConn(conn net.Conn, state http.ConnState) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if state != http.StateNew {
+		delete(s.newConns, conn)
+		return
+	}
+	if s.isShuttingDown {
+		closeConn(conn)
+		return
+	}
+	s.newConns[conn] = struct{}{}
+}
+
+// closeNewConns closes the connections that have not sent a request. http.Server.Shutdown runs it
+// after it has marked itself as shutting down, and from then on net/http drops a request it reads
+// on such a connection.
+func (s *Server) closeNewConns() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.isShuttingDown = true
+	for conn := range s.newConns {
+		closeConn(conn)
+		delete(s.newConns, conn)
+	}
+}
+
+// closeConn closes a connection that carries no request and writes a failure to the standard error
+// stream of the plugin process.
+func closeConn(conn net.Conn) {
+	// gomutants:disable-next-line CONDITIONALS_NEGATION reason="stderr diagnostic output does not affect program state"
+	if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+		fmt.Fprintf(os.Stderr, "close a connection without a request: %v\n", err)
+	}
 }
 
 // reportSyncError writes a failure to sync the host tools to the standard error stream of the
@@ -168,7 +216,7 @@ func (s *Server) Rebind(ctx context.Context, cfg Config) error {
 	}
 	s.listener = ln
 	s.actualAddr = ln.Addr().String()
-	s.httpServer = newHTTPServer(s.handler)
+	s.httpServer = s.newHTTPServer()
 	httpSrv := s.httpServer
 	s.mu.Unlock()
 
