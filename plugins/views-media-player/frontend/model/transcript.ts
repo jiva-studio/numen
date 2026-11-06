@@ -157,15 +157,21 @@ export function useTranscript(
     return isWorking.value ? WORDS.transcribing : WORDS.silence
   })
 
-  /** Moves playback to the start time of the first of the spans. */
-  const reach = async (...spans: readonly TextRange[]) => {
+  /**
+   * Moves playback to the start time of the first of the spans, and returns that time in
+   * milliseconds, or null where playback did not move.
+   */
+  const reach = async (...spans: readonly TextRange[]): Promise<number | null> => {
     await firstRead
-    if (!isOpen || spans.length === 0) return
+    if (!isOpen || spans.length === 0) return null
     try {
       const ms = await recordings.findCueTime(path, spans[0]!)
-      if (isOpen && ms !== null) playback.controls.go(ms)
+      if (!isOpen || ms === null) return null
+      playback.controls.go(ms)
+      return ms
     } catch (err) {
       if (isOpen) error.value = formatErrorMessage(err)
+      return null
     }
   }
 

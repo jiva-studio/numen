@@ -108,14 +108,31 @@ const getPlaceInRun = (
   return undefined
 }
 
+/**
+ * `span` clipped to the text of the drawn runs, so a stretch reaching into the document before or
+ * after this one keeps the part drawn here. Undefined where it falls wholly outside them. A span
+ * whose start and end name one offset names the run at it and is not clipped.
+ */
+const clipSpan = (runs: readonly Run[], span: TextRange): TextRange | undefined => {
+  const first = runs[0]
+  const last = runs.at(-1)
+  if (!first || !last) return undefined
+  if (span.end <= span.start) return span
+  const textEnd = last.at + countBytes(last.element.textContent ?? '')
+  if (span.end <= first.at || span.start >= textEnd) return undefined
+  return { start: Math.max(span.start, first.at), end: Math.min(span.end, textEnd) }
+}
+
 /** One stretch of the book's text as a range over the nodes the markup carries. */
 const rangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => {
-  const opens = findRun(runs, span.start)
-  const closes = findRun(runs, span.end)
+  const clipped = clipSpan(runs, span)
+  if (!clipped) return undefined
+  const { start, end } = clipped
+  const opens = findRun(runs, start)
+  const closes = findRun(runs, end)
   if (!opens || !closes) return undefined
-  const endBytes =
-    span.end > span.start ? span.end - closes.at : countBytes(closes.element.textContent ?? '')
-  const from = getPlaceInRun(opens.element, span.start - opens.at)
+  const endBytes = end > start ? end - closes.at : countBytes(closes.element.textContent ?? '')
+  const from = getPlaceInRun(opens.element, start - opens.at)
   const to = getPlaceInRun(closes.element, endBytes)
   if (!from || !to) return undefined
   const range = doc.createRange()
