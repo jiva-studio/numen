@@ -30,12 +30,15 @@ func (v *Vault) RenameNote(ctx context.Context, notePath, title string) (host.Re
 	if err != nil {
 		return host.RenamedNote{}, err
 	}
+	target := path.Join(path.Dir(notePath), name+path.Ext(notePath))
+	if !strings.EqualFold(notePath, target) && v.isPresent(target) {
+		return host.RenamedNote{}, host.ErrAlreadyExists
+	}
 	isFilenamed, err := v.writeTitle(notePath, title, exact)
 	if err != nil {
 		return host.RenamedNote{}, err
 	}
 	out := host.RenamedNote{Path: notePath, Title: title, IsFilenamed: isFilenamed}
-	target := path.Join(path.Dir(notePath), name+path.Ext(notePath))
 	if target == notePath {
 		return out, nil
 	}
