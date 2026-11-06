@@ -69,11 +69,10 @@ func (l *linkingVault) checkNote(from string, baseline domain.FileStat) error {
 }
 
 // write marks the note at from as written and returns its new file stat.
-func (l *linkingVault) write(from string) domain.FileStat {
+func (l *linkingVault) write(from string) (domain.FileStat, error) {
 	l.files[from] += "\n"
 	l.stamp++
-	now, _ := l.stat(from)
-	return now
+	return l.stat(from)
 }
 
 func (l *linkingVault) hasLink(from string, to domain.Address) bool {
@@ -103,7 +102,12 @@ func (l *linkingVault) AddLinks(_ context.Context, additions []pluginport.Plugin
 			continue
 		}
 		if _, isSaved := savedStats[one.From]; !isSaved {
-			savedStats[one.From] = l.write(one.From)
+			stat, err := l.write(one.From)
+			if err != nil {
+				out[i] = pluginport.PluginLinkAdded{Err: err}
+				continue
+			}
+			savedStats[one.From] = stat
 		}
 		l.links[one.From] = append(l.links[one.From], one.Link.Target)
 		out[i] = pluginport.PluginLinkAdded{Stat: savedStats[one.From]}
@@ -121,7 +125,7 @@ func (l *linkingVault) UpdateLinks(_ context.Context, from string, to domain.Add
 	if !l.hasLink(from, to) {
 		return domain.FileStat{}, fmt.Errorf("no link to %s is written here", to)
 	}
-	return l.write(from), nil
+	return l.write(from)
 }
 
 func (l *linkingVault) RemoveLinks(_ context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat) (domain.FileStat, error) {
@@ -134,7 +138,7 @@ func (l *linkingVault) RemoveLinks(_ context.Context, from string, to domain.Add
 	if !l.hasLink(from, to) {
 		return domain.FileStat{}, fmt.Errorf("no link to %s is written here", to)
 	}
-	return l.write(from), nil
+	return l.write(from)
 }
 
 // readBaseline is the file stat of the note as a plugin that read it sends it.

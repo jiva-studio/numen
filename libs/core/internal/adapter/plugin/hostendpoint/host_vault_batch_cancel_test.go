@@ -96,7 +96,8 @@ func authorizeAsA[T any](req *connect.Request[T]) *connect.Request[T] {
 	return req
 }
 
-var cancelledBatch = []string{"Danube.md", "Rivers/Rhine.md", "Deltas.md"}
+// getCancelledBatch is the paths of the batch the cancel tests change.
+func getCancelledBatch() []string { return []string{"Danube.md", "Rivers/Rhine.md", "Deltas.md"} }
 
 func requireNotAttemptedMove(t *testing.T, entry *v1.HostNoteMove, from string) {
 	t.Helper()
@@ -134,7 +135,7 @@ func TestAMoveCancelledAfterTwoNotesAnswersTheTwoMovesAndTheRestAsNotAttempted(t
 	endpoint, vault, ctx := newCancellingEndpoint(t, 2, changeThenCancel)
 
 	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
-		Paths: cancelledBatch, Folder: "Archive",
+		Paths: getCancelledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
 		t.Fatalf("the cancelled move failed as a whole: %v", err)
@@ -159,7 +160,7 @@ func TestAMoveWhoseNoteFailsOnTheCancelAnswersThatNoteAndTheRestAsNotAttempted(t
 	endpoint, vault, ctx := newCancellingEndpoint(t, 2, cancelAndFail)
 
 	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
-		Paths: cancelledBatch, Folder: "Archive",
+		Paths: getCancelledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
 		t.Fatalf("the cancelled move failed as a whole: %v", err)
@@ -183,7 +184,7 @@ func TestAMoveWhoseNoteMovedBeforeTheCancelAnswersThatNoteAsMoved(t *testing.T) 
 	endpoint, _, ctx := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
 
 	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
-		Paths: cancelledBatch, Folder: "Archive",
+		Paths: getCancelledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
 		t.Fatalf("the cancelled move failed as a whole: %v", err)
@@ -203,7 +204,7 @@ func TestAMoveCancelledBeforeTheFirstNoteAnswersEveryPathAsNotAttempted(t *testi
 	vault.cancel()
 
 	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
-		Paths: cancelledBatch, Folder: "Archive",
+		Paths: getCancelledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
 		t.Fatalf("the cancelled move failed as a whole: %v", err)
@@ -213,7 +214,7 @@ func TestAMoveCancelledBeforeTheFirstNoteAnswersEveryPathAsNotAttempted(t *testi
 	if res.Msg.GetError() != 0 || len(moves) != 3 {
 		t.Fatalf("the move answered error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
 	}
-	for i, from := range cancelledBatch {
+	for i, from := range getCancelledBatch() {
 		requireNotAttemptedMove(t, moves[i], from)
 	}
 	if len(vault.moved) != 0 {
@@ -225,7 +226,7 @@ func TestARemovalCancelledAfterOneNoteAnswersTheRemovalAndTheRestAsNotAttempted(
 	endpoint, vault, ctx := newCancellingEndpoint(t, 1, changeThenCancel)
 
 	res, err := endpoint.RemoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
-		Paths: cancelledBatch,
+		Paths: getCancelledBatch(),
 	})))
 	if err != nil {
 		t.Fatalf("the cancelled removal failed as a whole: %v", err)
@@ -247,7 +248,7 @@ func TestARemovalWhoseNoteFailsOnTheCancelAnswersThatNoteAndTheRestAsNotAttempte
 	endpoint, vault, ctx := newCancellingEndpoint(t, 2, cancelAndFail)
 
 	res, err := endpoint.RemoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
-		Paths: cancelledBatch,
+		Paths: getCancelledBatch(),
 	})))
 	if err != nil {
 		t.Fatalf("the cancelled removal failed as a whole: %v", err)
@@ -271,7 +272,7 @@ func TestARemovalWhoseNoteWentToTheTrashBeforeTheCancelAnswersThatNoteAsRemoved(
 	endpoint, _, ctx := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
 
 	res, err := endpoint.RemoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
-		Paths: cancelledBatch,
+		Paths: getCancelledBatch(),
 	})))
 	if err != nil {
 		t.Fatalf("the cancelled removal failed as a whole: %v", err)

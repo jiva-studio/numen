@@ -21,7 +21,9 @@ const heatWithEntropyLinks = "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\nlinks:\n" +
 	"  - to: Entropy\n    role: parent\n    type: topic\n" +
 	"---\n# Heat\n"
 
-var entropyAddress = domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}
+func getEntropyAddress() domain.Address {
+	return domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}
+}
 
 // countingWriters opens writers that count the files they write.
 type countingWriters struct {
@@ -53,7 +55,7 @@ func TestRemoveTargetLinksRemovesEveryRecordToTheTargetInOneWrite(t *testing.T) 
 	writes := 0
 	linking := c.newEditLinks().WithWriters(countingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, writes: &writes})
 
-	stat, err := linking.RemoveTargetLinks(t.Context(), c.vault, "Heat.md", entropyAddress, "", domain.FileStat{})
+	stat, err := linking.RemoveTargetLinks(t.Context(), c.vault, "Heat.md", getEntropyAddress(), "", domain.FileStat{})
 	if err != nil {
 		t.Fatalf("the removal failed: %v", err)
 	}
@@ -77,7 +79,7 @@ func TestRemoveTargetLinksWithARoleRemovesOnlyTheRecordsOfThatRole(t *testing.T)
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": heatWithEntropyLinks})
 
-	if _, err := c.newEditLinks().RemoveTargetLinks(t.Context(), c.vault, "Heat.md", entropyAddress, domain.RoleParent, domain.FileStat{}); err != nil {
+	if _, err := c.newEditLinks().RemoveTargetLinks(t.Context(), c.vault, "Heat.md", getEntropyAddress(), domain.RoleParent, domain.FileStat{}); err != nil {
 		t.Fatalf("the removal failed: %v", err)
 	}
 
@@ -101,7 +103,7 @@ func TestRemoveTargetLinksOfATargetTheNoteDoesNotLinkIsRefused(t *testing.T) {
 			c := openChanging(t, map[string]string{"Heat.md": heatWithEntropyLinks})
 			to := domain.Address{Scheme: domain.SchemeName, Value: "Chaos"}
 			if role != "" {
-				to = entropyAddress
+				to = getEntropyAddress()
 			}
 
 			_, err := c.newEditLinks().RemoveTargetLinks(t.Context(), c.vault, "Heat.md", to, role, domain.FileStat{})
@@ -124,7 +126,7 @@ func TestRemoveTargetLinksOfANoteThatChangedSinceItWasReadIsStale(t *testing.T) 
 	theirs := heatWithEntropyLinks + "\nSaved in the meantime.\n"
 	c.overwrite(t, "Heat.md", theirs)
 
-	_, err := c.newEditLinks().RemoveTargetLinks(t.Context(), c.vault, "Heat.md", entropyAddress, "", read)
+	_, err := c.newEditLinks().RemoveTargetLinks(t.Context(), c.vault, "Heat.md", getEntropyAddress(), "", read)
 
 	if !errors.Is(err, vaultport.ErrStale) {
 		t.Errorf("want ErrStale, got %v", err)

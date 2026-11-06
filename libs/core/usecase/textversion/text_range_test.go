@@ -7,21 +7,23 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// riverPages are three segments of invented Russian text. Their whole text is 53 bytes: the second
+// getRiverPages is three segments of invented Russian text. Their whole text is 53 bytes: the second
 // segment begins at byte 20 and the third at byte 33; every letter is two bytes.
-var riverPages = []domain.TextSegment{
-	{Text: "Река течёт ", Heading: "Река", Selector: `{"page":1}`},
-	{Text: "к морю. ", Selector: `{"page":2}`},
-	{Text: "Ветер дует.", Heading: "Ветер", Selector: `{"page":3}`},
+func getRiverPages() []domain.TextSegment {
+	return []domain.TextSegment{
+		{Text: "Река течёт ", Heading: "Река", Selector: `{"page":1}`},
+		{Text: "к морю. ", Selector: `{"page":2}`},
+		{Text: "Ветер дует.", Heading: "Ветер", Selector: `{"page":3}`},
+	}
 }
 
 const riverSize = 53
 
-// newRiverScene is the scene whose reader gives the scan the text of riverPages.
+// newRiverScene is the scene whose reader gives the scan the text of getRiverPages.
 func newRiverScene(t *testing.T) *scene {
 	t.Helper()
 	s := newScene(t)
-	s.reader.make = func(string, domain.VersionText, bool) []domain.TextSegment { return slices.Clone(riverPages) }
+	s.reader.make = func(string, domain.VersionText, bool) []domain.TextSegment { return slices.Clone(getRiverPages()) }
 	s.requestText(t)
 	return s
 }
@@ -32,13 +34,13 @@ func TestGetTextRangeReturnsTheSegmentsLimitedToTheRange(t *testing.T) {
 		wantStart     int
 		want          []domain.TextSegment
 	}{
-		"one whole segment": {start: 20, length: 13, wantStart: 20, want: []domain.TextSegment{riverPages[1]}},
+		"one whole segment": {start: 20, length: 13, wantStart: 20, want: []domain.TextSegment{getRiverPages()[1]}},
 		"across two segments": {start: 25, length: 10, wantStart: 25, want: []domain.TextSegment{
 			{Text: "орю. ", Selector: `{"page":2}`},
 			{Text: "В", Heading: "Ветер", Selector: `{"page":3}`},
 		}},
-		"to the end with length zero": {start: 33, length: 0, wantStart: 33, want: []domain.TextSegment{riverPages[2]}},
-		"the whole text":              {start: 0, length: 0, wantStart: 0, want: riverPages},
+		"to the end with length zero": {start: 33, length: 0, wantStart: 33, want: []domain.TextSegment{getRiverPages()[2]}},
+		"the whole text":              {start: 0, length: 0, wantStart: 0, want: getRiverPages()},
 	} {
 		t.Run(name, func(t *testing.T) {
 			s := newRiverScene(t)
@@ -65,7 +67,7 @@ func TestGetTextRangeMovesAStartInsideACharacterToTheNextCharacter(t *testing.T)
 		t.Fatal(err)
 	}
 
-	want := []domain.TextSegment{{Text: "рю. ", Selector: `{"page":2}`}, riverPages[2]}
+	want := []domain.TextSegment{{Text: "рю. ", Selector: `{"page":2}`}, getRiverPages()[2]}
 	if got.Start != 27 || got.Size != riverSize || !slices.Equal(got.Segments, want) {
 		t.Errorf("the range from byte 26 is %+v, want start 27, size %d and %+v", got, riverSize, want)
 	}

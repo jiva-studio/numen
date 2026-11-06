@@ -114,14 +114,16 @@ func newRangeTexts(t *testing.T, segments []domain.TextSegment) (*hosttest.Texts
 	return texts, version.GetID()
 }
 
-var strataSegments = []domain.TextSegment{
-	{Text: "teh ", Selector: `{"page":1}`},
-	{Text: "end of ", Selector: `{"page":2}`},
-	{Text: "ice", Selector: `{"page":3}`},
+func getStrataSegments() []domain.TextSegment {
+	return []domain.TextSegment{
+		{Text: "teh ", Selector: `{"page":1}`},
+		{Text: "end of ", Selector: `{"page":2}`},
+		{Text: "ice", Selector: `{"page":3}`},
+	}
 }
 
 func TestReadTextRangeReturnsTheSegmentsLimitedToTheRange(t *testing.T) {
-	texts, id := newRangeTexts(t, strataSegments)
+	texts, id := newRangeTexts(t, getStrataSegments())
 
 	got, err := texts.ReadTextRange(t.Context(), "Strata.pdf", id, 2, 6)
 	if err != nil {
@@ -135,7 +137,7 @@ func TestReadTextRangeReturnsTheSegmentsLimitedToTheRange(t *testing.T) {
 }
 
 func TestReadTextRangeOfLengthZeroReadsToTheEnd(t *testing.T) {
-	texts, id := newRangeTexts(t, strataSegments)
+	texts, id := newRangeTexts(t, getStrataSegments())
 
 	got, err := texts.ReadTextRange(t.Context(), "Strata.pdf", id, 5, 0)
 	if err != nil {
@@ -163,7 +165,7 @@ func TestReadTextRangeMovesTheStartForwardToAWholeCharacter(t *testing.T) {
 }
 
 func TestReadTextRangeOfAnUnknownVersionIsNotExist(t *testing.T) {
-	texts, _ := newRangeTexts(t, strataSegments)
+	texts, _ := newRangeTexts(t, getStrataSegments())
 
 	if _, err := texts.ReadTextRange(t.Context(), "Strata.pdf", "org.example.ocr/none", 0, 0); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("a range of an unknown version returned %v, want ErrNotExist", err)

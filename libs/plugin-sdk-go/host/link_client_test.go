@@ -82,18 +82,20 @@ func linkingClient(t *testing.T, l *linking) *host.Client {
 	return host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 }
 
-// readBaseline is the stat of Deltas.md as the caller read it.
-var readBaseline = domain.FileStat{Path: "Deltas.md", Kind: domain.KindNote, Size: 48, ModTime: time.Unix(0, 1700)}
+// getReadBaseline is the stat of Deltas.md as the caller read it.
+func getReadBaseline() domain.FileStat {
+	return domain.FileStat{Path: "Deltas.md", Kind: domain.KindNote, Size: 48, ModTime: time.Unix(0, 1700)}
+}
 
 func TestTheClientSendsEachLinkAdditionWithItsBaselineAndRole(t *testing.T) {
 	l := &linking{}
 
 	_, err := linkingClient(t, l).AddLinks(t.Context(), []host.LinkAddition{
-		{From: "Deltas.md", Baseline: readBaseline, Link: domain.Link{
+		{From: "Deltas.md", Baseline: getReadBaseline(), Link: domain.Link{
 			Target: domain.Address{Scheme: domain.SchemeName, Value: "Danube"},
 			Role:   domain.RoleParent, Type: "tributary", Label: "the Danube", Why: "it ends in the Danube delta",
 		}},
-		{From: "Deltas.md", Baseline: readBaseline, Link: domain.Link{
+		{From: "Deltas.md", Baseline: getReadBaseline(), Link: domain.Link{
 			Target: domain.Address{Scheme: domain.SchemeNote, Value: "01JRIVERRHINE"}, Role: domain.RoleJump,
 		}},
 		{From: "Estuaries.md", Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Danube"}, Role: domain.RoleRef}},
@@ -125,7 +127,7 @@ func TestTheClientSendsEachLinkAdditionWithItsBaselineAndRole(t *testing.T) {
 func TestTheClientReturnsOneResultPerLinkAdditionInOrder(t *testing.T) {
 	additions := []host.LinkAddition{
 		{From: "Danube.md", Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Rhine"}, Role: domain.RoleJump}},
-		{From: "Deltas.md", Baseline: readBaseline, Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Danube"}, Role: domain.RoleParent}},
+		{From: "Deltas.md", Baseline: getReadBaseline(), Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Danube"}, Role: domain.RoleParent}},
 		{From: "Broken.md", Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Danube"}, Role: domain.RoleRef}},
 	}
 
@@ -153,7 +155,7 @@ func TestTheClientSendsTheChangeOfTheLinksToATarget(t *testing.T) {
 	l := &linking{}
 
 	stat, err := linkingClient(t, l).UpdateLinks(t.Context(), "Deltas.md", domain.Address{Scheme: domain.SchemeName, Value: "Danube"},
-		domain.Link{Role: domain.RoleChild, Type: "distributary", Label: "Danube arm", Why: "the delta splits the river"}, readBaseline)
+		domain.Link{Role: domain.RoleChild, Type: "distributary", Label: "Danube arm", Why: "the delta splits the river"}, getReadBaseline())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +177,7 @@ func TestTheClientSendsTheRemovalOfTheLinksToATargetWithItsRole(t *testing.T) {
 	for role, want := range map[domain.LinkRole]v1.Role{"": v1.Role_ROLE_UNSPECIFIED, domain.RoleParent: v1.Role_ROLE_PARENT} {
 		l := &linking{}
 
-		stat, err := linkingClient(t, l).RemoveLinks(t.Context(), "Deltas.md", domain.Address{Scheme: domain.SchemeNote, Value: "01JRIVERDANUBE"}, role, readBaseline)
+		stat, err := linkingClient(t, l).RemoveLinks(t.Context(), "Deltas.md", domain.Address{Scheme: domain.SchemeNote, Value: "01JRIVERDANUBE"}, role, getReadBaseline())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -194,8 +196,8 @@ func TestTheClientReturnsAStaleLinkEditAsErrStaleWithTheDetail(t *testing.T) {
 	client := linkingClient(t, &linking{editError: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT, editDetail: staleDetail})
 	target := domain.Address{Scheme: domain.SchemeName, Value: "Danube"}
 
-	_, updateErr := client.UpdateLinks(t.Context(), "Deltas.md", target, domain.Link{Role: domain.RoleChild}, readBaseline)
-	_, removeErr := client.RemoveLinks(t.Context(), "Deltas.md", target, "", readBaseline)
+	_, updateErr := client.UpdateLinks(t.Context(), "Deltas.md", target, domain.Link{Role: domain.RoleChild}, getReadBaseline())
+	_, removeErr := client.RemoveLinks(t.Context(), "Deltas.md", target, "", getReadBaseline())
 
 	for call, err := range map[string]error{"UpdateLinks": updateErr, "RemoveLinks": removeErr} {
 		if !errors.Is(err, host.ErrStale) || !strings.Contains(err.Error(), staleDetail) {
@@ -209,8 +211,8 @@ func TestTheClientKeepsTheDetailOfALinkEditThatFailed(t *testing.T) {
 	client := linkingClient(t, &linking{editError: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, editDetail: detail})
 	target := domain.Address{Scheme: domain.SchemeName, Value: "Danube"}
 
-	_, updateErr := client.UpdateLinks(t.Context(), "Deltas.md", target, domain.Link{Role: domain.RoleChild}, readBaseline)
-	_, removeErr := client.RemoveLinks(t.Context(), "Deltas.md", target, "", readBaseline)
+	_, updateErr := client.UpdateLinks(t.Context(), "Deltas.md", target, domain.Link{Role: domain.RoleChild}, getReadBaseline())
+	_, removeErr := client.RemoveLinks(t.Context(), "Deltas.md", target, "", getReadBaseline())
 
 	for call, err := range map[string]error{"UpdateLinks": updateErr, "RemoveLinks": removeErr} {
 		if err == nil || !strings.Contains(err.Error(), detail) {
@@ -224,8 +226,8 @@ func TestTheClientReturnsNoVaultForEveryLinkEdit(t *testing.T) {
 	target := domain.Address{Scheme: domain.SchemeName, Value: "Danube"}
 
 	_, addErr := client.AddLinks(t.Context(), []host.LinkAddition{{From: "Deltas.md", Link: domain.Link{Target: target, Role: domain.RoleRef}}})
-	_, updateErr := client.UpdateLinks(t.Context(), "Deltas.md", target, domain.Link{Role: domain.RoleChild}, readBaseline)
-	_, removeErr := client.RemoveLinks(t.Context(), "Deltas.md", target, "", readBaseline)
+	_, updateErr := client.UpdateLinks(t.Context(), "Deltas.md", target, domain.Link{Role: domain.RoleChild}, getReadBaseline())
+	_, removeErr := client.RemoveLinks(t.Context(), "Deltas.md", target, "", getReadBaseline())
 
 	for call, err := range map[string]error{"AddLinks": addErr, "UpdateLinks": updateErr, "RemoveLinks": removeErr} {
 		if !errors.Is(err, host.ErrNoVault) {
