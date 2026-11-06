@@ -291,8 +291,8 @@ func TestWindowTabsGetReadsThePositionOfEachReaderTab(t *testing.T) {
 	}{
 		"a page of a PDF with a text version":     {host.OpenTab{Path: guidePath, State: `{"page":4}`}, "page 4 of 120"},
 		"a page of a PDF with no text version":    {host.OpenTab{Path: scanPath, State: `{"page":4}`}, "page 4"},
-		"a time of a recording past an hour":      {host.OpenTab{Path: talkPath, State: `{"t":[3723.9,3730]}`}, "at 1:02:03"},
-		"a time of a recording under an hour":     {host.OpenTab{Path: talkPath, State: `{"t":[125.5,130]}`}, "at 2:05"},
+		"a time of a recording past an hour":      {host.OpenTab{Path: talkPath, State: `{"t":[3723.9,3730]}`}, "1:02:03"},
+		"a time of a recording under an hour":     {host.OpenTab{Path: talkPath, State: `{"t":[125.5,130]}`}, "2:05"},
 		"a CFI a segment starts at":               {host.OpenTab{Path: bookPath, State: `{"cfi":"epubcfi(/6/6!/4/2/1:0)"}`}, `chapter "Herons in Winter"`},
 		"a CFI between two segments":              {host.OpenTab{Path: bookPath, State: `{"cfi":"epubcfi(/6/4!/4/10/1:17)"}`}, `chapter "The Marsh at Dawn"`},
 		"a CFI after the last segment":            {host.OpenTab{Path: bookPath, State: `{"cfi":"epubcfi(/6/6!/4/20/1:3)"}`}, `chapter "Herons in Winter"`},
@@ -325,6 +325,19 @@ func TestWindowTabsGetSummaryOfTheActiveTabIncludesItsPosition(t *testing.T) {
 	}, "tab-2")
 
 	want := `the reader:reader-pdf "Bird Guide" at library/Bird Guide.pdf is in front of them, open at page 4 of 120`
+	if out.Summary != want {
+		t.Errorf("the summary is %q, want %q", out.Summary, want)
+	}
+}
+
+func TestWindowTabsGetSummaryOfARecordingNamesTheTimeAfterASinglePreposition(t *testing.T) {
+	w := newWindowTools(t)
+	out := w.readTabs(t, []host.OpenTab{
+		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
+		{ID: "tab-2", Kind: "recording", Path: talkPath, Title: "Marsh Talk", State: `{"t":[66,66]}`},
+	}, "tab-2")
+
+	want := `the recording "Marsh Talk" at recordings/Marsh Talk.mp3 is in front of them, open at 1:06`
 	if out.Summary != want {
 		t.Errorf("the summary is %q, want %q", out.Summary, want)
 	}

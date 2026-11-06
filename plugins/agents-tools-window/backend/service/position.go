@@ -75,7 +75,7 @@ func (r *positionReader) readPagePosition(ctx context.Context, path string, raw 
 	return fmt.Sprintf("page %d", page)
 }
 
-// readTimePosition is "at M:SS", or "at H:MM:SS" from one hour, of the start of the selection.
+// readTimePosition is "M:SS", or "H:MM:SS" from one hour, of the start of the selection.
 func readTimePosition(raw json.RawMessage) string {
 	var span []float64
 	if err := json.Unmarshal(raw, &span); err != nil || len(span) == 0 || span[0] < 0 {
@@ -84,9 +84,9 @@ func readTimePosition(raw json.RawMessage) string {
 	seconds := int(math.Floor(span[0]))
 	hours, minutes, rest := seconds/3600, seconds/60%60, seconds%60
 	if hours > 0 {
-		return fmt.Sprintf("at %d:%02d:%02d", hours, minutes, rest)
+		return fmt.Sprintf("%d:%02d:%02d", hours, minutes, rest)
 	}
-	return fmt.Sprintf("at %d:%02d", minutes, rest)
+	return fmt.Sprintf("%d:%02d", minutes, rest)
 }
 
 // readChapterPosition is the chapter of the live text version the CFI falls in: the heading in force

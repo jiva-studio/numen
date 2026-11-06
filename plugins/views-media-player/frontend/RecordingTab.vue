@@ -32,34 +32,56 @@ const { now, runs, isPlaying, isUnplayable } = tab.playback
 const menuItems = tab.options.items
 
 /* --------------------------------- Hooks ---------------------------------- */
+/** Saves `ms` as the place the tab opens at after a restart. */
+const saveTime = (ms: number) => props.state?.savePlace?.(createTimeSelector(ms))
+
+/** Moves playback to the first of the spans and saves that time before anything plays. */
+const reachSpans = async (...spans: readonly TextRange[]) => {
+  const ms = await tab.navigation.reach(...spans)
+  if (ms !== null) saveTime(ms)
+}
+
 onMounted(() => {
   if (props.state) {
     const shared = props.state as Record<string, unknown>
-    shared.focusSpans = (...spans: readonly TextRange[]) => tab.navigation.reach(...spans)
+    shared.focusSpans = reachSpans
   }
 })
 
-// The window sets a selector for a search hit and for the place saved before a restart.
+/** Moves playback to the start a selector names, and returns it, or null where it names none. */
+const goToSelector = (selector: Selector | null | undefined): number | null => {
+  const start = getSelectorStart(selector)
+  if (start !== null) tab.playback.controls.go(start)
+  return start
+}
+
+// The window sets a selector for a search hit and for the place saved before a restart. The one the
+// tab opens with is the place the window already holds for it, so only a later one is saved.
+goToSelector(props.state?.selector)
 watch(
   () => props.state?.selector,
   (selector: Selector | null | undefined) => {
-    const start = getSelectorStart(selector)
-    if (start !== null) tab.playback.controls.go(start)
+    const start = goToSelector(selector)
+    if (start !== null) saveTime(start)
   },
-  { immediate: true },
 )
 
 // The window sets a new array each time it asks for ranges, so the same ranges are reached again.
 watch(
   () => props.state?.ranges,
   (ranges) => {
-    if (ranges && ranges.length > 0) tab.navigation.reach(...ranges).catch(() => undefined)
+    if (ranges && ranges.length > 0) reachSpans(...ranges).catch(() => undefined)
   },
   { immediate: true },
 )
 
-/** Saves the current playback time as the place the tab opens at after a restart. */
-const savePlace = () => props.state?.savePlace?.(createTimeSelector(now.value))
+/**
+ * Saves the current playback time as the place the tab opens at after a restart. While another
+ * recording holds the shared player this tab has no time of its own, so nothing is saved.
+ */
+const savePlace = () => {
+  if (tab.playback.isLoaded.value) saveTime(now.value)
+}
 
 // Saved when playback stops and every ten seconds of it, so a restart loses at most that much.
 watch(isPlaying, (playing) => {
@@ -92,7 +114,7 @@ function onPause() {
 
 function onSeek(ms: number) {
   tab.playback.controls.go(ms)
-  props.state?.savePlace?.(createTimeSelector(ms))
+  saveTime(ms)
 }
 </script>
 
