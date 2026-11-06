@@ -617,7 +617,8 @@ func TestRename_RejectsTargetThatDiffersOnlyInCase(t *testing.T) {
 	const old = "---\ntitle: rust\n---\nOxidised iron.\n"
 	const other = "# Rust\n\nA programming language.\n"
 	c := openChanging(t, map[string]string{"rust.md": old, "Rust.md": other})
-	if c.read(t, "rust.md") != old {
+	// Where the filesystem ignores case, the two names are one file, holding whichever was written last.
+	if c.read(t, "rust.md") != old || c.read(t, "Rust.md") != other {
 		t.Skip("the filesystem ignores case, so rust.md and Rust.md are one file")
 	}
 
