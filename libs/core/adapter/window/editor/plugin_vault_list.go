@@ -58,7 +58,11 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 	if l.state.OpenVault == nil {
 		return errNoVaultSwap
 	}
-	return l.state.OpenVault(ctx, v)
+	err = l.state.OpenVault(ctx, v)
+	if errors.Is(err, errAnswerPending) {
+		return fmt.Errorf("open vault %s: %w", id, pluginport.ErrVaultAsking)
+	}
+	return err
 }
 
 func (l pluginVaultList) IsMissing(v domain.Vault) bool {

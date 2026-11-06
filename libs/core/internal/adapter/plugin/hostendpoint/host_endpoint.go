@@ -80,7 +80,7 @@ type Endpoint struct {
 	port    int
 	// serveResult receives the error that ended the server other than a close, and is closed once the server no longer serves.
 	serveResult chan error
-	troubles    errorHandler
+	background  background
 }
 
 // Open starts serving the host service on the address, which is a
@@ -128,6 +128,7 @@ func (e *Endpoint) GetPort() int {
 // Close stops the endpoint and waits for the calls being served to end, up to
 // the context.
 func (e *Endpoint) Close(ctx context.Context) error {
+	e.background.stop()
 	ctx, cancel := context.WithTimeout(ctx, hostEndpointShutdownTolerance)
 	defer cancel()
 	if err := e.server.Shutdown(ctx); err != nil {

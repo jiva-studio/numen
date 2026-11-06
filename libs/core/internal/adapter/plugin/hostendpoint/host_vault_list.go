@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sync/atomic"
 
 	"connectrpc.com/connect"
 
@@ -18,23 +17,6 @@ import (
 )
 
 var errNoVaultList = errors.New("this host has no list of vaults to change")
-
-// errorHandler receives a failure of work the endpoint finishes after it has answered the call.
-type errorHandler struct {
-	handle atomic.Pointer[func(error)]
-}
-
-func (h *errorHandler) report(err error) {
-	if handle := h.handle.Load(); handle != nil {
-		(*handle)(err)
-	}
-}
-
-// SetErrorHandler is where a failure of work the endpoint finishes after its answer is reported,
-// such as a change of the vault the window shows.
-func (e *Endpoint) SetErrorHandler(handle func(error)) {
-	e.troubles.handle.Store(&handle)
-}
 
 // getVaultsFailure is the error code of a change of the list of vaults that was refused, and false
 // for any other failure.
@@ -54,6 +36,8 @@ func getVaultsFailure(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING, true
 	case errors.Is(err, vaults.ErrUnknown), errors.Is(err, vaults.ErrNoName):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN, true
+	case errors.Is(err, pluginport.ErrVaultAsking):
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING, true
 	default:
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED, false
 	}
@@ -169,11 +153,13 @@ func (e *vaultEndpoint) OpenVault(
 		failure, err := answerVaults(err)
 		return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Failure: failure}), err
 	}
-	detached := context.WithoutCancel(ctx)
-	go func() {
-		if err := list.OpenVault(detached, id); err != nil {
-			e.endpoint.troubles.report(fmt.Errorf("open vault %s for a plugin: %w", id, err))
+	isStarted := e.endpoint.background.start(ctx, func(ctx context.Context) {
+		if err := list.OpenVault(ctx, id); err != nil {
+			e.endpoint.background.report(fmt.Errorf("open vault %s for a plugin: %w", id, err))
 		}
-	}()
+	})
+	if !isStarted {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
 	return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{}), nil
 }
