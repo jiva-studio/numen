@@ -297,8 +297,8 @@ func (h *workspaceHandler) WatchFocus(
 	_ *connect.Request[v1.WatchFocusRequest],
 	out *connect.ServerStream[v1.WatchFocusResponse],
 ) error {
-	line, isDone := h.state.Places.subscribe()
-	defer isDone()
+	places, isPlacesDone := h.state.Places.subscribe()
+	defer isPlacesDone()
 	tabIDs, isTabIDsDone := h.state.TabIDs.subscribe()
 	defer isTabIDsDone()
 
@@ -306,32 +306,31 @@ func (h *workspaceHandler) WatchFocus(
 	defer repeat.Stop()
 
 	for {
-		select {
-		case <-ctx.Done():
+		msg, isOpen := receiveFocus(ctx, repeat.C, places, tabIDs)
+		if !isOpen {
 			return nil
-		case <-repeat.C:
-			// An empty response is a keepalive that fails when the client has disconnected.
-			if err := out.Send(&v1.WatchFocusResponse{}); err != nil {
-				return err
-			}
-		case id, open := <-tabIDs:
-			if !open {
-				return nil
-			}
-			if err := out.Send(&v1.WatchFocusResponse{TabId: id}); err != nil {
-				return err
-			}
-		case pos, open := <-line:
-			if !open {
-				return nil
-			}
-			if err := out.Send(&v1.WatchFocusResponse{
-				Path:   pos.Path,
-				Ranges: convertByteRangesToWire(pos.Ranges),
-			}); err != nil {
-				return err
-			}
 		}
+		if err := out.Send(msg); err != nil {
+			return err
+		}
+	}
+}
+
+// receiveFocus waits for the next message of the focus stream: a keepalive at each tick, a tab id
+// to make active, or a place. It reports false once the context ends or a subscription closes.
+func receiveFocus(
+	ctx context.Context, tick <-chan time.Time, places <-chan domain.Place, tabIDs <-chan string,
+) (*v1.WatchFocusResponse, bool) {
+	select {
+	case <-ctx.Done():
+		return nil, false
+	case <-tick:
+		// An empty response is a keepalive that fails when the client has disconnected.
+		return &v1.WatchFocusResponse{}, true
+	case id, isOpen := <-tabIDs:
+		return &v1.WatchFocusResponse{TabId: id}, isOpen
+	case pos, isOpen := <-places:
+		return &v1.WatchFocusResponse{Path: pos.Path, Ranges: convertByteRangesToWire(pos.Ranges)}, isOpen
 	}
 }
 
