@@ -10,6 +10,10 @@ export const WORDS = {
   new: 'New',
   newNote: 'New note',
   newFolder: 'New folder',
+  /** The row of a submenu of choices while they are read. */
+  loadingChoices: 'Loading…',
+  /** The row of a submenu of a command that offers no choice. */
+  noChoices: 'No choices',
   /** The name a folder is made under, which renaming it is what changes. */
   folder: 'New folder',
   /** How many rows are being dragged, shown at the pointer while they are. */

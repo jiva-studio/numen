@@ -669,6 +669,12 @@ const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
 })
 
 /** The views plugins draw in the window itself: in the status bar and in the title bar. */
+/** The slots of the window and its commands, which the menu of a tab reads and runs. */
+const getSlotServices = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
+  slots: pluginHost.slots,
+  windowCommands: pluginHost.commands,
+})
+
 const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
   statusViews: pluginHost.statusViews,
   titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
@@ -752,8 +758,7 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
-    slots: base.pluginHost.slots,
-    windowCommands: base.pluginHost.commands,
+    ...getSlotServices(base.pluginHost),
     isHighlighted,
     ...createWindowTabMoves(base, editing, closeTab),
   }

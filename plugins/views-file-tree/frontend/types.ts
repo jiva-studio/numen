@@ -4,6 +4,7 @@
 import type { Component, Ref } from 'vue'
 import type { MenuItem } from '@numen/ui'
 import type {
+  CommandChoice,
   DroppedData,
   PathRename,
   SlotItem,
@@ -47,8 +48,10 @@ export interface FilesTabDeps {
   onSelectPath?(path: string, state: FilesTabState): void
   /** The entries of the menu of a row, over the row it was opened on. */
   getMenuEntries(target: CommandTarget): readonly SlotItem[]
-  /** Runs a command of the window or of a plugin over the row. */
-  runCommand(command: string, target: CommandTarget): Promise<void>
+  /** The choices a command of the menu offers over the row. */
+  getChoices(command: string, target: CommandTarget): Promise<readonly CommandChoice[]>
+  /** Runs a command of the window or of a plugin over the row; with `choice`, the one picked. */
+  runCommand(command: string, target: CommandTarget, choice?: string): Promise<void>
   movePath(from: string, to: string): Promise<void>
   setDraggedPaths(paths: readonly string[]): void
   createFolder(path: string): Promise<void>

@@ -60,13 +60,27 @@ const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
 
 /** The commands of a window, recording each command run and its target. */
 const createCommands = () => {
-  const runs: { command: string; target: RunTarget | undefined }[] = []
+  const runs: { command: string; target: RunTarget | undefined; choice?: string }[] = []
   return {
-    run: async (command: string, target?: RunTarget) => {
-      runs.push({ command, target })
+    run: async (command: string, target?: RunTarget, choice?: string) => {
+      runs.push(choice === undefined ? { command, target } : { command, target, choice })
     },
+    getChoices: vi.fn(async (_command: string, _target?: RunTarget) => [
+      { id: 'window-a', title: 'Atlas' },
+      { id: 'window-b', title: 'Tide log' },
+    ]),
     getRuns: () => [...runs],
   }
+}
+
+const MOVE: SlotCommand = {
+  kind: 'command',
+  key: 'app/command/tab.move',
+  pluginId: 'app',
+  command: 'app:tab.move',
+  title: 'Move to window',
+  shortcut: '',
+  hasChoices: true,
 }
 
 const setup = (options: { entries?: readonly SlotItem[]; canDetach?: boolean } = {}) => {
@@ -87,6 +101,7 @@ const setup = (options: { entries?: readonly SlotItem[]; canDetach?: boolean } =
     },
     slots,
     runCommand: commands.run,
+    getChoices: commands.getChoices,
     getTabTarget: (tab) => TARGETS[tab]!,
     getTabIcon: () => null,
     getKindIcon: () => null,
@@ -130,6 +145,58 @@ describe('the target the entries of the menu of a tab run over', () => {
       others: [],
       tab: 'none',
     })
+  })
+})
+
+describe('an entry of the menu of a tab that offers choices', () => {
+  const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
+  const getChoiceRows = (menu: ReturnType<typeof setup>['menu']) =>
+    menu.menu.value?.items
+      .find((one) => one.id === MOVE.key)
+      ?.children?.map((one) => ({
+        id: one.id,
+        text: one.text,
+        isDisabled: one.isDisabled ?? false,
+      }))
+
+  it('asks for its choices over the tab when the menu opens, and shows a loading row until then', () => {
+    const { menu, commands } = setup({ entries: [MOVE] })
+
+    menu.open('reef', { x: 4, y: 8 })
+
+    expect(commands.getChoices).toHaveBeenCalledWith(MOVE.command, TARGETS.reef)
+    expect(getChoiceRows(menu)?.map((one) => one.isDisabled)).toStrictEqual([true])
+  })
+
+  it('is a submenu of its choices once they are read', async () => {
+    const { menu } = setup({ entries: [MOVE] })
+    menu.open('reef', { x: 4, y: 8 })
+
+    await settle()
+
+    expect(getChoiceRows(menu)?.map((one) => one.text)).toStrictEqual(['Atlas', 'Tide log'])
+  })
+
+  it('runs the command over the tab with the id of the choice picked', async () => {
+    const { menu, commands } = setup({ entries: [MOVE] })
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+
+    menu.choose('reef', getChoiceRows(menu)![1]!.id)
+
+    expect(commands.getRuns()).toStrictEqual([
+      { command: MOVE.command, target: TARGETS.reef, choice: 'window-b' },
+    ])
+  })
+
+  it('runs nothing for the entry itself', async () => {
+    const { menu, commands } = setup({ entries: [MOVE] })
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+
+    menu.choose('reef', MOVE.key)
+
+    expect(commands.getRuns()).toStrictEqual([])
   })
 })
 

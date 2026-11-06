@@ -2,11 +2,11 @@
  * The menu of a tab, which the tab strip draws: the rows that link, detach and move the tab, then
  * the entries of the slot `tabStrip.context` over the file of the tab.
  */
-import { computed, type Component } from 'vue'
-import type { MenuItem } from '@numen/ui'
+import { computed, ref, shallowRef, type Component } from 'vue'
 import type { TabMenu } from '@numen/shell'
 import {
   SLOT,
+  type CommandChoice,
   type CommandsHost,
   type CommandTarget as RunTarget,
   type SlotHost,
@@ -23,61 +23,29 @@ import {
   useTabLinkMenu,
   type TabLinkMenuDeps,
 } from '@/features/tab-linking'
-
-/** The prefix of the group of the entries of the slot, kept apart from the groups of the rows. */
-const SLOT_GROUP = 'slot:'
+import { WORDS } from '@/shared/words'
+import {
+  createSlotItems,
+  findSlotEntry,
+  listChoiceCommands,
+  parseChoiceRowId,
+  type SlotRowEntry,
+} from './tabMenuItems'
 
 export interface TabMenuDeps {
   readonly link: TabLinkMenuDeps
   /** The slots of the window; without them the menu holds the rows of linking alone. */
   readonly slots?: SlotHost | undefined
-  /** Runs a command of an entry over the file of the tab. */
-  runCommand?(command: string, target: RunTarget): Promise<void>
+  /** Runs a command of an entry over the tab; with `choice`, the one picked. */
+  runCommand?(command: string, target: RunTarget, choice?: string): Promise<void>
+  /** The choices a command of an entry offers over the tab. */
+  getChoices?(command: string, target: RunTarget): Promise<readonly CommandChoice[]>
   /** The file a tab shows, which the commands of the entries run over. */
   getTabTarget(tab: string): RunTarget
   getTabIcon(tab: string): Component | null
   getKindIcon(kind: string): Component | null
   /** Receives the failure of a command that runs after the menu closed. */
   reportError?(error: unknown): void
-}
-
-type SlotRowEntry = Exclude<SlotItem, { kind: 'separator' }>
-
-/** The rows of the entries of the slot; the rows between two separators share a group. */
-const createSlotItems = (entries: readonly SlotItem[], group = 0): readonly MenuItem[] => {
-  const items: MenuItem[] = []
-  for (const entry of entries) {
-    if (entry.kind === 'separator') {
-      group += 1
-      continue
-    }
-    const groupName = `${SLOT_GROUP}${group}`
-    if (entry.kind === 'view') {
-      const component = entry.component as Component
-      items.push({ id: entry.key, text: entry.view, group: groupName, component })
-      continue
-    }
-    items.push({
-      id: entry.key,
-      text: entry.title,
-      group: groupName,
-      ...(entry.kind === 'submenu' ? { children: createSlotItems(entry.entries, group) } : {}),
-    })
-  }
-  return items
-}
-
-/** The entry drawn as the row `id`, inside a submenu too. */
-const findSlotEntry = (entries: readonly SlotItem[], id: string): SlotRowEntry | undefined => {
-  for (const entry of entries) {
-    if (entry.kind === 'separator') continue
-    if (entry.key === id) return entry
-    if (entry.kind === 'submenu') {
-      const found = findSlotEntry(entry.entries, id)
-      if (found) return found
-    }
-  }
-  return undefined
 }
 
 export function useTabMenu(deps: TabMenuDeps) {
@@ -90,6 +58,7 @@ export function useTabMenu(deps: TabMenuDeps) {
   })
 
   const entries = computed(() => (link.tabId.value === null ? [] : getEntries(link.tabId.value)))
+  const choices = useEntryChoices(deps)
 
   const menu = computed<TabMenu | null>(() => {
     const tab = link.tabId.value
@@ -102,18 +71,27 @@ export function useTabMenu(deps: TabMenuDeps) {
       windows: link.windows.value,
       isAsking: link.isAsking.value,
     })
-    return { tab, at: link.at.value, items: [...rows, ...createSlotItems(entries.value)] }
+    const slotItems = createSlotItems(entries.value, {
+      byKey: choices.byKey.value,
+      loadingText: WORDS.loadingChoices,
+      noneText: WORDS.noChoices,
+    })
+    return { tab, at: link.at.value, items: [...rows, ...slotItems] }
   })
 
-  /** Runs the command of an entry over the file of the tab, or the row of linking chosen. */
+  /** Runs the command of the entry, or of its choice, the row `id` stands for over the tab. */
+  const runEntryRow = async (tab: string, entry: SlotRowEntry, choice?: string): Promise<void> => {
+    if (entry.kind !== 'command' || (entry.hasChoices && choice === undefined)) return
+    link.close()
+    await deps.runCommand?.(entry.command, deps.getTabTarget(tab), choice)
+  }
+
+  /** Runs the command of an entry over the tab, or the row of linking chosen. */
   const chooseRow = async (tab: string, id: string): Promise<void> => {
     if (link.tabId.value !== tab) return
-    const entry = findSlotEntry(entries.value, id)
-    if (entry) {
-      link.close()
-      if (entry.kind === 'command') await deps.runCommand?.(entry.command, deps.getTabTarget(tab))
-      return
-    }
+    const picked = parseChoiceRowId(id)
+    const entry = findSlotEntry(entries.value, picked ? picked.key : id)
+    if (entry) return runEntryRow(tab, entry, picked?.choice)
     const windowId = getMoveTarget(id)
     if (windowId !== null) link.move(windowId)
     else if (id === DETACH_ID) link.detach()
@@ -139,7 +117,10 @@ export function useTabMenu(deps: TabMenuDeps) {
 
   return {
     menu,
-    open: link.open,
+    open: (tab: string, where: { x: number; y: number }) => {
+      link.open(tab, where)
+      if (link.tabId.value === tab) choices.read(getEntries(tab), deps.getTabTarget(tab))
+    },
     /** Chooses the row `id` of the menu requested on `tab`; a menu since closed runs nothing. */
     choose: (tab: string, id: string): void => {
       chooseRow(tab, id).catch((error: unknown) => deps.reportError?.(error))
@@ -148,6 +129,31 @@ export function useTabMenu(deps: TabMenuDeps) {
     highlight: (id: string | null) => link.highlight(getMoveTarget(id)),
     getIcon,
   }
+}
+
+/** The choices of the commands of the open menu that offer them, read as the menu opens. */
+function useEntryChoices(deps: Pick<TabMenuDeps, 'getChoices' | 'reportError'>) {
+  const byKey = shallowRef<ReadonlyMap<string, readonly CommandChoice[] | null>>(new Map())
+  const opening = ref(0)
+  const set = (key: string, read: readonly CommandChoice[] | null) => {
+    byKey.value = new Map([...byKey.value, [key, read]])
+  }
+  const read = (entries: readonly SlotItem[], target: RunTarget) => {
+    const current = ++opening.value
+    byKey.value = new Map()
+    for (const entry of listChoiceCommands(entries)) {
+      set(entry.key, null)
+      ;(deps.getChoices?.(entry.command, target) ?? Promise.resolve([]))
+        .then((found) => {
+          if (current === opening.value) set(entry.key, found)
+        })
+        .catch((error: unknown) => {
+          deps.reportError?.(error)
+          if (current === opening.value) set(entry.key, [])
+        })
+    }
+  }
+  return { byKey, read }
 }
 
 /** The tabs of a window, and what is done to them from the menu of a tab. */
@@ -189,7 +195,9 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
       isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
     },
     slots,
-    runCommand: (command, target) => commands?.run(command, target) ?? Promise.resolve(),
+    runCommand: (command, target, choice) =>
+      commands?.run(command, target, choice) ?? Promise.resolve(),
+    getChoices: (command, target) => commands?.getChoices(command, target) ?? Promise.resolve([]),
     getTabTarget: (id) => getTabFileTarget(windowTabs, id),
     getTabIcon: (id) => getTabIcon(id) ?? null,
     getKindIcon: (kind) => getKindIcon(kind) ?? null,

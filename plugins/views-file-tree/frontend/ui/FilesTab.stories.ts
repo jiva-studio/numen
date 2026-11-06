@@ -40,6 +40,7 @@ const createFilesTab = (open: readonly string[]): FilesTabState => {
   const state: FilesTabState = useFilesTab(list, {
     ...renderDeps,
     openEntry: () => undefined,
+    getChoices: async () => [],
     getMenuEntries: () => ROW_MENU,
     runCommand: async () => undefined,
     movePath: async () => undefined,
