@@ -142,6 +142,20 @@ The tools are registered by the plugins that own their subjects — `agents-tool
 
 The tools are served to an agent somebody has configured in their own terminal by the plugin `md.numen.agents.mcp.server`. Its manifest declares the listener `mcp` on the plugin's setting `port` (3333 by default): while the plugin is enabled, the host listens on `127.0.0.1` at that port, binds the new port when the setting changes, starts the plugin when a connection arrives and forwards the connection to the port the plugin reports for `mcp` in its ready line. The plugin stops when it is idle and no connection is open; the port stays bound. The application writes no token file.
 
+A client authenticates with the header `Authorization: Bearer <token>`, compared in constant time with the plugin's setting `token` (a string with no default, set by the person on the plugin's page in the settings and passed to the plugin on Configure). A token in the query parameter `token` is not read. While the setting is empty the server answers every request with 401 and `WWW-Authenticate: Bearer realm="numen"`; a changed token takes effect at the next request. A request whose `Origin` header is present and is not an `http` or `https` URL on `localhost` or a loopback IP address is answered with 403 before the token is checked. The server sends no CORS headers, and an `OPTIONS` request is checked like any other. A client is configured with the header:
+
+```json
+{
+  "mcpServers": {
+    "numen": {
+      "type": "http",
+      "url": "http://127.0.0.1:3333/mcp",
+      "headers": { "Authorization": "Bearer <token>" }
+    }
+  }
+}
+```
+
 ## Host agent auto-discovery
 
 At startup and on demand, the application inspects the host environment for installed CLI agents:

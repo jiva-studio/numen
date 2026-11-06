@@ -2,65 +2,50 @@ package service
 
 import (
 	"crypto/subtle"
-	"encoding/hex"
+	"net"
 	"net/http"
+	"net/url"
 	"strings"
-
-	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/internal/adapter/entropy"
 )
 
-// createRandomToken generates a 32-byte hex-encoded random authentication token.
-func createRandomToken() (string, error) {
-	bytes := make([]byte, 32)
-	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Read never returns a non-nil error"
-	if _, err := entropy.Read(bytes); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
-}
-
-// hasValidToken reports whether the request presents the expected authentication token.
+// hasValidToken reports whether the request carries the header Authorization: Bearer <token>. An
+// empty token matches no request.
 func hasValidToken(token string, r *http.Request) bool {
 	if token == "" {
-		return true
+		return false
 	}
-	expected := []byte(token)
-
-	auth := r.Header.Get("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") {
-		bearer := strings.TrimPrefix(auth, "Bearer ")
-		if subtle.ConstantTimeCompare([]byte(bearer), expected) == 1 {
-			return true
-		}
-	}
-
-	if queryToken := r.URL.Query().Get("token"); queryToken != "" {
-		if subtle.ConstantTimeCompare([]byte(queryToken), expected) == 1 {
-			return true
-		}
-	}
-
-	return false
+	bearer, isBearer := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	return isBearer && subtle.ConstantTimeCompare([]byte(bearer), []byte(token)) == 1
 }
 
-// requireToken validates authentication on incoming requests.
+// isLoopbackOrigin reports whether origin is an http or https URL whose host is localhost or a
+// loopback IP address.
+func isLoopbackOrigin(origin string) bool {
+	parsed, err := url.Parse(origin)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return false
+	}
+	host := parsed.Hostname()
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
+
+// requireToken refuses a request from a browser page outside the machine with 403, then a request
+// without the token with 401.
 func requireToken(token string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodOptions {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-			w.WriteHeader(http.StatusOK)
+		if origins, hasOrigin := r.Header["Origin"]; hasOrigin && (len(origins) != 1 || !isLoopbackOrigin(origins[0])) {
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
-
 		if !hasValidToken(token, r) {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="numen"`)
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-
-		w.Header().Set("Access-Control-Allow-Origin", "*")
 		next.ServeHTTP(w, r)
 	})
 }

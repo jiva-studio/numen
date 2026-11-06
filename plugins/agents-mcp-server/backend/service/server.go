@@ -36,15 +36,6 @@ type Server struct {
 
 // NewServer creates an MCP server with the provided configuration and host tool client.
 func NewServer(cfg Config, client ToolClient) (*Server, error) {
-	if cfg.Token == "" {
-		token, err := createRandomToken()
-		// gomutants:disable-next-line BRANCH_IF reason="createRandomToken fails only when crypto/rand.Read fails"
-		if err != nil {
-			return nil, fmt.Errorf("create auth token: %w", err)
-		}
-		cfg.Token = token
-	}
-
 	mcpServer := sdk.NewServer(
 		&sdk.Implementation{
 			Name:        "numen",
