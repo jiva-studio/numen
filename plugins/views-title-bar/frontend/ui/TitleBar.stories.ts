@@ -171,7 +171,7 @@ export const TwoOrMoreGroups: Story = {
 
 /** The window is too narrow: the commands that do not fit are in the menu, in their groups. */
 export const Overflowing: Story = {
-  args: { commands: ALL, width: '30rem' },
+  args: { commands: ALL, width: '26rem' },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('[data-title-bar-more]')).not.toBeNull())
     const visible = getShownIds(canvasElement)
