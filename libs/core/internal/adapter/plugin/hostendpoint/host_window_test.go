@@ -336,17 +336,17 @@ func TestHostWindowAnswersEveryFieldOfThePlaceEachReaderReported(t *testing.T) {
 	if len(tabs) != 4 {
 		t.Fatalf("answered %d tabs, want 4: %v", len(tabs), tabs)
 	}
-	if place := tabs[0].GetPlace(); !place.HasPositionSeconds() || place.GetPositionSeconds() != 0 {
+	if place := tabs[0].GetPlace(); place == nil || place.PositionSeconds == nil || place.GetPositionSeconds() != 0 {
 		t.Errorf("the recording at its start is at %v, want 0 seconds", place)
 	}
-	if place := tabs[1].GetPlace(); !place.HasPositionSeconds() || place.GetPositionSeconds() != 3723.9 {
+	if place := tabs[1].GetPlace(); place == nil || place.PositionSeconds == nil || place.GetPositionSeconds() != 3723.9 {
 		t.Errorf("the recording past an hour is at %v, want 3723.9 seconds", place)
 	}
-	if place := tabs[2].GetPlace(); place.GetCfi() != "epubcfi(/6/4!/4/2/1:0)" || place.GetChapter() != "The Reed Beds" || place.GetPage() != 0 {
+	if place := tabs[2].GetPlace(); place == nil || place.GetCfi() != "epubcfi(/6/4!/4/2/1:0)" || place.GetChapter() != "The Reed Beds" || place.GetPage() != 0 {
 		t.Errorf("the book is at %v, want its CFI and chapter", place)
 	}
-	if place := tabs[3].GetPlace(); place.HasPositionSeconds() {
-		t.Errorf("a recording that reported no time is at %v, want no time", place)
+	if place := tabs[3].GetPlace(); place == nil || place.PositionSeconds != nil {
+		t.Errorf("a recording that reported no time is at %v, want a place with no time", place)
 	}
 }
 
