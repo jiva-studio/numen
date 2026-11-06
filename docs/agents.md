@@ -60,23 +60,23 @@ Six plugins register the tools an agent can call, each for its own subject, and 
 
 `agents-tools-vault`, the notes and files of the vault:
 
-| Tool             | What it does                                                                                                                                                                                                               | Servers |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `note_read`      | the content, prose, title, frontmatter and fingerprint of one note, by its path                                                                                                                                            | both    |
-| `note_write`     | write or create one note; with the fingerprint `note_read` gave, a write over somebody else's edit is refused                                                                                                              | full    |
-| `note_headings`  | the headings of one note: level, text, line and byte offset                                                                                                                                                                | both    |
-| `note_search`    | the notes whose title, path or text match a query, at most 100, 20 where the call names no limit                                                                                                                           | both    |
-| `note_list`      | the paths and titles of the notes of the vault or of one folder, ordered by path; at most 500, 100 where the call names no limit, paged with `offset` and `next_offset`, with the total count                              | both    |
-| `note_titles`    | the titles of up to 50 notes by their paths, and the paths that name no note                                                                                                                                               | both    |
-| `note_resolve`   | the paths of every note with one file name, as a wikilink names it; more than one path means the name is ambiguous                                                                                                         | both    |
-| `library_search` | passages of everything the index holds (notes, books, PDFs, scans, recordings) by the words and by the meaning, with the file, the title, the place, the text and the `uri` of each; narrowed by `kinds` and `path_prefix` | both    |
-| `library_read`   | the text of one file from its text version, by page or by byte range, with the places, the size and where to read on; an error naming what makes a text version where there is none                                        | both    |
-| `link_list`      | the links written in one note and the notes that link to it                                                                                                                                                                | both    |
-| `vault_get`      | the vault's name, root path and number of notes                                                                                                                                                                            | both    |
-| `vault_list`     | every vault of the installation: identifier, name and folder, with the vault the call works on marked `showing`                                                                                                            | both    |
-| `vault_problems` | the files of the vault that could not be parsed, with the path and a description of each problem; only the `parse` check is served                                                                                         | both    |
-| `file_read`      | a byte range of a text file in the vault, by its path from the vault root; a binary is refused with an error that names `library_read`                                                                                     | both    |
-| `file_create`    | a new file in the vault, holding the content given                                                                                                                                                                         | full    |
+| Tool             | What it does                                                                                                                                                                                                                 | Servers |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `note_read`      | the content, prose, title, frontmatter and fingerprint of one note, by its path                                                                                                                                              | both    |
+| `note_write`     | write or create one note; with the fingerprint `note_read` gave, a write over somebody else's edit is refused                                                                                                                | full    |
+| `note_headings`  | the headings of one note: level, text, line and byte offset                                                                                                                                                                  | both    |
+| `note_search`    | the notes whose title, path or text match a query, at most 100, 20 where the call names no limit                                                                                                                             | both    |
+| `note_list`      | the paths and titles of the notes of the vault or of one folder, ordered by path; at most 500, 100 where the call names no limit, paged with `offset` and `nextOffset`, with the total count                                 | both    |
+| `note_titles`    | the titles of up to 50 notes by their paths, and the paths that name no note                                                                                                                                                 | both    |
+| `note_resolve`   | the paths of every note with one file name, as a wikilink names it; more than one path means the name is ambiguous                                                                                                           | both    |
+| `library_search` | passages of everything the index holds (notes, books, PDFs, scans, recordings) by the words and by the meaning, with the path, the title, the location, the text and the `uri` of each; narrowed by `kinds` and `pathPrefix` | both    |
+| `library_read`   | the text of one file from its text version, by page or by byte range, with the locations, the size and the `nextStart` to read on; an error naming what makes a text version where there is none                             | both    |
+| `link_list`      | the links written in one note and the notes that link to it                                                                                                                                                                  | both    |
+| `vault_get`      | the vault's name, root path and number of notes                                                                                                                                                                              | both    |
+| `vault_list`     | every vault of the installation: identifier, name and path, with `isCurrent` set on the vault the call works on                                                                                                              | both    |
+| `vault_problems` | the files of the vault that could not be parsed, with the path and a description of each problem; only the `parse` check is served                                                                                           | both    |
+| `file_read`      | a byte range of a text file in the vault, by its path from the vault root; a binary is refused with an error that names `library_read`                                                                                       | both    |
+| `file_create`    | a new file in the vault, holding the content given                                                                                                                                                                           | full    |
 
 `agents-tools-window`, the window the person is looking at:
 
@@ -108,11 +108,11 @@ Six plugins register the tools an agent can call, each for its own subject, and 
 
 `engines-ocr`, `engines-transcription` and `tools-media-importer`, the text versions of scans, recordings and web addresses:
 
-| Tool                 | What it does                                                                                                                                  | Servers |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `recognition_create` | start the recognition of a scanned PDF or image in the background and return its task id; a second call while it runs reports `running`       | full    |
-| `transcript_create`  | start the transcription of a recording in the background and return its task id; a second call while it runs reports `running`                | full    |
-| `url_import`         | create a link note for an http or https address, fetch its text before returning, and with `copy` start a copy of the video in the background | full    |
+| Tool                 | What it does                                                                                                                                               | Servers |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `recognition_create` | start the recognition of a scanned PDF or image in the background and return its task id; a second call while it runs reports `running`                    | full    |
+| `transcript_create`  | start the transcription of a recording in the background and return its task id; a second call while it runs reports `running`                             | full    |
+| `url_import`         | create a link note for an http or https address, fetch its text before returning, and with `downloadVideo` start a download of the video in the background | full    |
 
 A card is named by its card id and never by the place it is in, so the cards stay addressable when a deck is reordered during a run. Every write to a deck takes the fingerprint `card_read` returned, and is applied only to the deck that fingerprint identifies.
 
