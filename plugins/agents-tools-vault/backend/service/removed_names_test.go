@@ -19,12 +19,12 @@ func TestSearchToolsListHasOnlyNoteSearch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
-	infos, err := registry.ListToolInfos(t.Context())
+	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
 	names := map[string]bool{}
-	for _, info := range infos {
+	for _, info := range infos.Tools {
 		names[info.GetName()] = true
 	}
 	if names["search_query"] {
@@ -97,11 +97,11 @@ func TestNoteWriteInputHasNoBodyField(t *testing.T) {
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
-	infos, err := registry.ListToolInfos(t.Context())
+	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
-	for _, info := range infos {
+	for _, info := range infos.Tools {
 		if info.GetName() != "note_write" {
 			continue
 		}
@@ -152,12 +152,12 @@ func TestToolsListHasOneNameForEachTool(t *testing.T) {
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
-	infos, err := registry.ListToolInfos(t.Context())
+	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
 	names := map[string]bool{}
-	for _, info := range infos {
+	for _, info := range infos.Tools {
 		names[info.GetName()] = true
 	}
 	for _, present := range []string{"note_search", "link_list", "vault_get"} {

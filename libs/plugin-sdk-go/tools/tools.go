@@ -78,8 +78,9 @@ var ErrDuplicate = errors.New("a tool of that name is already added")
 
 // Registry is the tools one plugin offers. It serves PluginToolService.
 type Registry struct {
-	mu    sync.RWMutex
-	tools []registered
+	mu           sync.RWMutex
+	tools        []registered
+	instructions string
 }
 
 type registered struct {
@@ -142,6 +143,14 @@ func (r *Registry) add(one registered) error {
 	return nil
 }
 
+// SetInstructions sets the paragraph the registry lists with its tools: how an agent uses them
+// together, as plain text.
+func (r *Registry) SetInstructions(text string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.instructions = text
+}
+
 // Mount registers the registry as PluginToolService on s.
 func (r *Registry) Mount(s *server.Server) {
 	s.Register(numenv1connect.NewPluginToolServiceHandler(registryHandler{registry: r}, s.HandlerOptions()...))
@@ -154,7 +163,7 @@ type registryHandler struct {
 	registry *Registry
 }
 
-// ListTools lists the tools in the order they were added.
+// ListTools lists the tools in the order they were added, and the instructions set.
 func (h registryHandler) ListTools(
 	context.Context, *connect.Request[v1.ListToolsRequest],
 ) (*connect.Response[v1.ListToolsResponse], error) {
@@ -165,7 +174,7 @@ func (h registryHandler) ListTools(
 	for _, one := range r.tools {
 		items = append(items, one.tool)
 	}
-	return connect.NewResponse(&v1.ListToolsResponse{Tools: items}), nil
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: items, Instructions: r.instructions}), nil
 }
 
 // CallTool runs the tool named. A name nothing was added under, and arguments that are no JSON
@@ -408,18 +417,28 @@ func (t *ToolInfo) GetServers() []Server {
 	return t.Servers
 }
 
-// ListToolInfos returns the tools in the registry.
-func (r *Registry) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
+// Listing is the tools a PluginToolService lists and the instructions that go with them.
+type Listing struct {
+	Tools        []*ToolInfo
+	Instructions string
+}
+
+func readListing(res *v1.ListToolsResponse) Listing {
+	out := make([]*ToolInfo, len(res.GetTools()))
+	for i, t := range res.GetTools() {
+		out[i] = readToolInfo(t)
+	}
+	return Listing{Tools: out, Instructions: res.GetInstructions()}
+}
+
+// ListTools returns the tools in the registry and its instructions.
+func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
 	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	// gomutants:disable-next-line
 	if err != nil {
-		return nil, err
+		return Listing{}, err
 	}
-	out := make([]*ToolInfo, len(res.Msg.GetTools()))
-	for i, t := range res.Msg.GetTools() {
-		out[i] = readToolInfo(t)
-	}
-	return out, nil
+	return readListing(res.Msg), nil
 }
 
 // InvokeTool invokes a tool in the registry.
@@ -438,7 +457,7 @@ func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, er
 
 // Client calls a PluginToolService endpoint.
 type Client interface {
-	ListToolInfos(ctx context.Context) ([]*ToolInfo, error)
+	ListTools(ctx context.Context) (Listing, error)
 	InvokeTool(ctx context.Context, call Call) (*CallResponse, error)
 }
 
@@ -453,16 +472,12 @@ func NewClient(endpoint hostcall.Endpoint) Client {
 	}
 }
 
-func (c *rpcClient) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
+func (c *rpcClient) ListTools(ctx context.Context) (Listing, error) {
 	res, err := c.rpc.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
-		return nil, err
+		return Listing{}, err
 	}
-	out := make([]*ToolInfo, len(res.Msg.GetTools()))
-	for i, t := range res.Msg.GetTools() {
-		out[i] = readToolInfo(t)
-	}
-	return out, nil
+	return readListing(res.Msg), nil
 }
 
 func (c *rpcClient) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
@@ -480,7 +495,7 @@ func (c *rpcClient) InvokeTool(ctx context.Context, call Call) (*CallResponse, e
 
 // ServiceHandler handles tool listing and invocation with request headers.
 type ServiceHandler interface {
-	ListToolInfos(ctx context.Context, header http.Header) ([]*ToolInfo, error)
+	ListTools(ctx context.Context, header http.Header) (Listing, error)
 	InvokeTool(ctx context.Context, header http.Header, call Call) (*CallResponse, error)
 }
 
@@ -493,15 +508,15 @@ func (a *serviceAdapter) ListTools(
 	ctx context.Context,
 	req *connect.Request[v1.ListToolsRequest],
 ) (*connect.Response[v1.ListToolsResponse], error) {
-	infos, err := a.h.ListToolInfos(ctx, req.Header())
+	listing, err := a.h.ListTools(ctx, req.Header())
 	if err != nil {
 		return nil, err
 	}
-	wire := make([]*v1.PluginTool, len(infos))
-	for i, t := range infos {
+	wire := make([]*v1.PluginTool, len(listing.Tools))
+	for i, t := range listing.Tools {
 		wire[i] = writeToolInfo(t)
 	}
-	return connect.NewResponse(&v1.ListToolsResponse{Tools: wire}), nil
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: wire, Instructions: listing.Instructions}), nil
 }
 
 func (a *serviceAdapter) CallTool(

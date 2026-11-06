@@ -16,7 +16,7 @@ import (
 
 // ToolClient calls the host or plugin tool service.
 type ToolClient interface {
-	ListToolInfos(ctx context.Context) ([]*tools.ToolInfo, error)
+	ListTools(ctx context.Context) (tools.Listing, error)
 	InvokeTool(ctx context.Context, call tools.Call) (*tools.CallResponse, error)
 }
 
@@ -26,15 +26,18 @@ type ToolAggregator struct {
 	mcpServer  *sdk.Server
 	mu         sync.RWMutex
 	registered map[string]bool
+	// instructions are what the host listed with its tools at the latest sync.
+	instructions string
 }
 
 // NewToolAggregator creates a tool aggregator for the given host client and MCP server.
 func NewToolAggregator(client ToolClient, mcpServer *sdk.Server) *ToolAggregator {
 	return &ToolAggregator{
-		client:     client,
-		mcpServer:  mcpServer,
-		mu:         sync.RWMutex{},
-		registered: make(map[string]bool),
+		client:       client,
+		mcpServer:    mcpServer,
+		mu:           sync.RWMutex{},
+		registered:   make(map[string]bool),
+		instructions: "",
 	}
 }
 
@@ -50,13 +53,20 @@ func (a *ToolAggregator) GetRegisteredTools() []string {
 	return names
 }
 
+// GetInstructions returns the instructions the host listed with its tools at the latest sync.
+func (a *ToolAggregator) GetInstructions() string {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.instructions
+}
+
 // SyncTools queries the host for available tools and updates the MCP server registry.
 func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	if a.client == nil || a.mcpServer == nil {
 		return nil
 	}
 
-	wireTools, err := a.client.ListToolInfos(ctx)
+	listing, err := a.client.ListTools(ctx)
 	if err != nil {
 		return fmt.Errorf("list host tools: %w", err)
 	}
@@ -65,7 +75,8 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	defer a.mu.Unlock()
 
 	current := make(map[string]bool)
-	for _, wireTool := range wireTools {
+	a.instructions = listing.Instructions
+	for _, wireTool := range listing.Tools {
 		name := wireTool.GetName()
 		if name == "" {
 			continue

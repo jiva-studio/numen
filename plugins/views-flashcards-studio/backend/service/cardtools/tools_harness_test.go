@@ -55,11 +55,11 @@ func (s *session) invoke(t *testing.T, name string, args any) *tools.CallRespons
 // list is the tools the plugin offers.
 func (s *session) list(t *testing.T) []*tools.ToolInfo {
 	t.Helper()
-	listed, err := s.registry.ListToolInfos(t.Context())
+	listed, err := s.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	return listed
+	return listed.Tools
 }
 
 // call is a tool called and its answer read as T.

@@ -22,13 +22,13 @@ type fakeToolClient struct {
 	listErr  error
 }
 
-func (f *fakeToolClient) ListToolInfos(_ context.Context) ([]*tools.ToolInfo, error) {
+func (f *fakeToolClient) ListTools(_ context.Context) (tools.Listing, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.listErr != nil {
-		return nil, f.listErr
+		return tools.Listing{}, f.listErr
 	}
-	return f.tools, nil
+	return tools.Listing{Tools: f.tools}, nil
 }
 
 func (f *fakeToolClient) InvokeTool(_ context.Context, call tools.Call) (*tools.CallResponse, error) {

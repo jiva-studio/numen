@@ -382,12 +382,12 @@ func getArrangeToolNames() []string {
 
 func TestNoteListGroupIsOnReadingAndFullServers(t *testing.T) {
 	_, registry := newSkyVault(t)
-	infos, err := registry.ListToolInfos(t.Context())
+	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
 	servers := map[string][]tools.Server{}
-	for _, info := range infos {
+	for _, info := range infos.Tools {
 		servers[info.GetName()] = info.GetServers()
 	}
 	for _, name := range getArrangeToolNames() {

@@ -19,8 +19,9 @@ var errNoTools = errors.New("the host offers plugins no tools")
 
 // PluginTools is the tools of the plugins, as a plugin serves them to programs outside Numen.
 type PluginTools interface {
-	// ListTools lists the tools the caller is offered.
-	ListTools(ctx context.Context, callerID string) []*v1.PluginTool
+	// ListTools lists the tools the caller is offered and the instructions of the plugins that list
+	// them.
+	ListTools(ctx context.Context, callerID string) (tools []*v1.PluginTool, instructions string)
 	// CallTool runs a tool the caller is offered, in the vault given. Any other is answered as unknown.
 	CallTool(ctx context.Context, callerID, name string, arguments []byte, vault domain.VaultID) (*v1.CallToolResponse, error)
 }
@@ -53,7 +54,8 @@ func (e *toolEndpoint) ListTools(
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.ListToolsResponse{Tools: tools.ListTools(ctx, pluginID)}), nil
+	listed, instructions := tools.ListTools(ctx, pluginID)
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: listed, Instructions: instructions}), nil
 }
 
 // CallTool runs the tool in the vault named by the Numen-Vault header, else the

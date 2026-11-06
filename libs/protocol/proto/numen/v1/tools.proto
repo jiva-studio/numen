@@ -23,6 +23,14 @@ message ListToolsRequest {}
 
 message ListToolsResponse {
   repeated PluginTool tools = 1;
+
+  // What an agent reads once before it calls the tools listed here: how they
+  // are used together, as plain text. A plugin answers with one paragraph for
+  // all its tools, empty where it has none. The host answers with the
+  // paragraphs of the plugins whose tools it lists, in the order of their ids,
+  // separated by an empty line; a plugin none of whose tools is listed adds
+  // nothing.
+  string instructions = 2;
 }
 
 // PluginTool is one tool as an agent is told of it.

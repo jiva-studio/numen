@@ -343,12 +343,12 @@ func TestFileReadRefusesABinaryAndNamesLibraryRead(t *testing.T) {
 
 func TestTheDescriptionsSayWhichToolReadsWhat(t *testing.T) {
 	l := newLibrary(t)
-	infos, err := l.calls.ListToolInfos(t.Context())
+	infos, err := l.calls.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	byName := map[string]*tools.ToolInfo{}
-	for _, info := range infos {
+	for _, info := range infos.Tools {
 		byName[info.GetName()] = info
 	}
 	for name, mentions := range map[string][]string{

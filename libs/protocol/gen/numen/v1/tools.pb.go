@@ -274,8 +274,15 @@ func (*ListToolsRequest) Descriptor() ([]byte, []int) {
 }
 
 type ListToolsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tools         []*PluginTool          `protobuf:"bytes,1,rep,name=tools,proto3" json:"tools,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Tools []*PluginTool          `protobuf:"bytes,1,rep,name=tools,proto3" json:"tools,omitempty"`
+	// What an agent reads once before it calls the tools listed here: how they
+	// are used together, as plain text. A plugin answers with one paragraph for
+	// all its tools, empty where it has none. The host answers with the
+	// paragraphs of the plugins whose tools it lists, in the order of their ids,
+	// separated by an empty line; a plugin none of whose tools is listed adds
+	// nothing.
+	Instructions  string `protobuf:"bytes,2,opt,name=instructions,proto3" json:"instructions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -315,6 +322,13 @@ func (x *ListToolsResponse) GetTools() []*PluginTool {
 		return x.Tools
 	}
 	return nil
+}
+
+func (x *ListToolsResponse) GetInstructions() string {
+	if x != nil {
+		return x.Instructions
+	}
+	return ""
 }
 
 // PluginTool is one tool as an agent is told of it.
@@ -629,9 +643,10 @@ var File_numen_v1_tools_proto protoreflect.FileDescriptor
 const file_numen_v1_tools_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/tools.proto\x12\bnumen.v1\"\x12\n" +
-	"\x10ListToolsRequest\"?\n" +
+	"\x10ListToolsRequest\"c\n" +
 	"\x11ListToolsResponse\x12*\n" +
-	"\x05tools\x18\x01 \x03(\v2\x14.numen.v1.PluginToolR\x05tools\"\xa6\x02\n" +
+	"\x05tools\x18\x01 \x03(\v2\x14.numen.v1.PluginToolR\x05tools\x12\"\n" +
+	"\finstructions\x18\x02 \x01(\tR\finstructions\"\xa6\x02\n" +
 	"\n" +
 	"PluginTool\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +

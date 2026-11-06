@@ -36,6 +36,7 @@ func connectHost(endpoint hostcall.Endpoint, err error) Host {
 func mount(s *server.Server, on Host) error {
 	manager := NewManager(clock.System{})
 	registry := tools.New()
+	registry.SetInstructions(instructions)
 	if err := RegisterTools(registry, manager, on); err != nil {
 		return err
 	}

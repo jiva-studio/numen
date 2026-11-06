@@ -19,13 +19,13 @@ func TestRegisterTools(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	listed, err := registry.ListToolInfos(t.Context())
+	listed, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("ListTools: %v", err)
 	}
 
-	names := make([]string, 0, len(listed))
-	for _, tool := range listed {
+	names := make([]string, 0, len(listed.Tools))
+	for _, tool := range listed.Tools {
 		names = append(names, tool.GetName())
 	}
 

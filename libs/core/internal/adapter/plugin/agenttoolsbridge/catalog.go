@@ -3,6 +3,7 @@ package agenttoolsbridge
 import (
 	"context"
 	"slices"
+	"strings"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
@@ -22,14 +23,22 @@ func NewCatalog(host Host, server Server) *Catalog {
 }
 
 // ListTools lists the tools the caller is allowed: those the other plugins offer on the server,
-// whose effect the caller holds the permission of as well.
-func (c *Catalog) ListTools(ctx context.Context, callerID string) []*v1.PluginTool {
+// whose effect the caller holds the permission of as well. The instructions are the paragraphs of
+// the plugins with at least one tool allowed, in the order of their ids, separated by an empty line.
+func (c *Catalog) ListTools(ctx context.Context, callerID string) (specs []*v1.PluginTool, instructions string) {
 	allowed := c.listAllowed(ctx, callerID)
-	specs := make([]*v1.PluginTool, 0, len(allowed))
+	specs = make([]*v1.PluginTool, 0, len(allowed))
+	var paragraphs []string
+	previous := ""
 	for _, one := range allowed {
 		specs = append(specs, one.spec)
+		// The tools of one plugin are listed together, so a paragraph is taken at its first tool.
+		if one.pluginID != previous && one.instructions != "" {
+			paragraphs = append(paragraphs, one.instructions)
+		}
+		previous = one.pluginID
 	}
-	return specs
+	return specs, strings.Join(paragraphs, "\n\n")
 }
 
 // CallTool runs the tool of the name on the plugin that lists it, in the vault given. A tool the

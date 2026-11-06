@@ -366,7 +366,7 @@ func TestListTools(t *testing.T) {
 		t.Fatalf("registry: %v", err)
 	}
 
-	listed, err := registry.ListToolInfos(ctx)
+	listed, err := registry.ListTools(ctx)
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
@@ -382,7 +382,7 @@ func TestListTools(t *testing.T) {
 		"file_create":   false,
 	}
 
-	for _, tool := range listed {
+	for _, tool := range listed.Tools {
 		if _, ok := expectedTools[tool.GetName()]; ok {
 			expectedTools[tool.GetName()] = true
 		}

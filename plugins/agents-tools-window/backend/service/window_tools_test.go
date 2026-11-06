@@ -111,11 +111,11 @@ func (w windowTools) call(t *testing.T, name, arguments string, callContext map[
 
 func (w windowTools) getToolInfo(t *testing.T, name string) *tools.ToolInfo {
 	t.Helper()
-	listed, err := w.calls.ListToolInfos(t.Context())
+	listed, err := w.calls.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, info := range listed {
+	for _, info := range listed.Tools {
 		if info.GetName() == name {
 			return info
 		}

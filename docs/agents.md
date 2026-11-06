@@ -44,7 +44,7 @@ Three things, appended to the model's default instructions:
 
 Where the person has a note open, its path is named, and a task saying "this note" means that one.
 
-The tools server also gives every agent that connects to it its own instructions: how to name a note and a passage as links, which tool searches and reads what (`note_search` the notes, `library_search` and `library_read` everything the vault holds), and that a passage is a window cut to a size and is read on before a source is said not to say something.
+The tools server also gives every agent that connects to it instructions: one line of its own on what a vault is, then the paragraph each plugin lists with its tools, in the order of the plugin ids. A plugin that is disabled, or none of whose tools is offered, adds nothing. The vault tools tell how to name a note and a passage as links, which tool searches and reads what (`note_search` the notes, `library_search` and `library_read` everything the vault holds), and that a passage is a window cut to a size and is read on before a source is said not to say something. The window tools tell when to read the tabs and when to show a place.
 
 ## What an answer links to
 

@@ -54,14 +54,7 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 
 	aggregator := NewToolAggregator(client, mcpServer)
 
-	mcpServer.AddReceivingMiddleware(func(next sdk.MethodHandler) sdk.MethodHandler {
-		return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
-			if method == "tools/list" {
-				reportSyncError(aggregator.SyncTools(ctx))
-			}
-			return next(ctx, method, req)
-		}
-	})
+	mcpServer.AddReceivingMiddleware(newSyncMiddleware(aggregator))
 
 	reportSyncError(aggregator.SyncTools(context.Background()))
 
@@ -82,6 +75,37 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 	srv.httpServer = newHTTPServer(authHandler)
 
 	return srv, nil
+}
+
+// newSyncMiddleware syncs the host tools before a listing of the tools and before the result that
+// carries the instructions, and writes the instructions of the latest sync into that result. The
+// SDK answers initialize, and server/discover of the stateless protocol, with the fixed
+// instructions of the server options.
+func newSyncMiddleware(aggregator *ToolAggregator) sdk.Middleware {
+	return func(next sdk.MethodHandler) sdk.MethodHandler {
+		return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
+			switch method {
+			case "tools/list":
+				reportSyncError(aggregator.SyncTools(ctx))
+			case "initialize", "server/discover":
+				reportSyncError(aggregator.SyncTools(ctx))
+				result, err := next(ctx, method, req)
+				writeInstructions(result, joinInstructions(aggregator.GetInstructions()))
+				return result, err
+			}
+			return next(ctx, method, req)
+		}
+	}
+}
+
+// writeInstructions sets the instructions of an initialize or a discover result.
+func writeInstructions(result sdk.Result, text string) {
+	switch res := result.(type) {
+	case *sdk.InitializeResult:
+		res.Instructions = text
+	case *sdk.DiscoverResult:
+		res.Instructions = text
+	}
 }
 
 // newServerOptions creates the options of the MCP server.

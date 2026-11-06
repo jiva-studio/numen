@@ -121,12 +121,13 @@ func TestCall_TextResultReturnsText(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	listed, err := registry.ListToolInfos(t.Context())
-	if err != nil || len(listed) != 1 {
-		t.Fatalf("ListToolInfos = %v, %v", listed, err)
+	listing, err := registry.ListTools(t.Context())
+	infos := listing.Tools
+	if err != nil || len(infos) != 1 {
+		t.Fatalf("ListTools = %v, %v", infos, err)
 	}
-	if string(listed[0].GetInputSchema()) != `{"type":"object"}` || len(listed[0].GetOutputSchema()) != 0 {
-		t.Errorf("non-struct schemas: in=%s out=%s", listed[0].GetInputSchema(), listed[0].GetOutputSchema())
+	if string(infos[0].GetInputSchema()) != `{"type":"object"}` || len(infos[0].GetOutputSchema()) != 0 {
+		t.Errorf("non-struct schemas: in=%s out=%s", infos[0].GetInputSchema(), infos[0].GetOutputSchema())
 	}
 
 	answer := call(t, registry, "count", "")
@@ -244,12 +245,12 @@ func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("Add pointer struct failed: %v", err)
 	}
-	infos, err := registry.ListToolInfos(t.Context())
+	listing, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	var ptrInfo *ToolInfo
-	for _, info := range infos {
+	for _, info := range listing.Tools {
 		if info.GetName() == "ptr-struct" {
 			ptrInfo = info
 		}
