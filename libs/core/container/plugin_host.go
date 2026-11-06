@@ -237,10 +237,10 @@ type PluginVaultHooks struct {
 	Notes note.Scenarios
 }
 
-// isNotesSet reports whether the window gave its own use cases on notes. A zero Scenarios has a
-// Move with no readers.
-func (h PluginVaultHooks) isNotesSet() bool {
-	return h.Notes.Move.Readers() != nil
+// isBuilt reports whether the use cases on notes were built. A zero Scenarios has a Move with no
+// readers.
+func isBuilt(notes note.Scenarios) bool {
+	return notes.Move.Readers() != nil
 }
 
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
@@ -260,7 +260,7 @@ func (c Config) OpenPluginVault(
 	}
 	scenarios := c.Notes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
 	arranger := scenarios
-	if hooks.isNotesSet() {
+	if isBuilt(hooks.Notes) {
 		arranger = hooks.Notes
 	}
 	vaults := hostvault.Vault{
