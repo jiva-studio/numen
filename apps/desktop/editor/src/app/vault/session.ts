@@ -119,11 +119,13 @@ export const sessionCore: SessionCore = {
       result: flushResults[outcome ?? 'nothing'],
     })
   },
-  detachTab: async (tab, position) => {
+  detachTab: async (tab, place) => {
     const { error } = await workspace.detachTab({
       tab: { ...tab },
-      x: Math.round(position.x),
-      y: Math.round(position.y),
+      x: Math.round(place.x),
+      y: Math.round(place.y),
+      width: Math.round(place.width),
+      height: Math.round(place.height),
     })
     return parseMoveError(error)
   },

@@ -19,7 +19,7 @@ import {
 } from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
-import { createNoticeQueue } from '@numen/shell'
+import { createNoticeQueue, getTabPaneRect } from '@numen/shell'
 import { WORDS as words } from '@/shared/words'
 import { useTabLinks } from '@/features/tab-linking'
 import { createTabSync } from '../tabs/useTabSync'
@@ -649,6 +649,7 @@ function createWindowTabMoves(
     notes,
     closeTab,
     writeMessage: base.writeMessage,
+    getPaneRect: (id) => getTabPaneRect(base.windowTabs.layout.value, id),
   })
   /** The mover writes its own errors; a failed highlight request is ignored. */
   const ignoreError = () => undefined
@@ -666,8 +667,7 @@ function createWindowTabMoves(
     },
     detachTab: (id: string, point: Point) =>
       runInBackground(mover.detachTab(id, point), ignoreError),
-    detachTabAt: (id: string, point: Point) =>
-      runInBackground(mover.detachTabAt(id, point), ignoreError),
+    detachTabInPlace: (id: string) => runInBackground(mover.detachTabInPlace(id), ignoreError),
     moveTab: (id: string, windowId: string) =>
       runInBackground(mover.moveTab(id, windowId), ignoreError),
   }
@@ -683,8 +683,7 @@ function createWindowTabCommands(base: WindowCore, moves: ReturnType<typeof crea
     isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
     windowId: moves.windowId,
     isAsking: moves.isTabAsking,
-    // The window opens at the top left corner of this one; a menu has no point to give.
-    detach: (id) => moves.detachTabAt(id, { x: 0, y: 0 }),
+    detach: moves.detachTabInPlace,
     move: moves.moveTab,
   })
   tabCommands.register()

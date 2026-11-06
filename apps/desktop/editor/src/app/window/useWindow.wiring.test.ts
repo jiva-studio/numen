@@ -193,7 +193,7 @@ beforeEach(() => {
     windowReport: ref<unknown>({ tabs: [], window: {} }),
     tabMover: {
       detachTab: vi.fn(async () => undefined),
-      detachTabAt: vi.fn(async () => undefined),
+      detachTabInPlace: vi.fn(async () => undefined),
       moveTab: vi.fn(async () => undefined),
     },
     openMovedTab: vi.fn(async () => undefined),
@@ -520,11 +520,11 @@ describe('tab detach and move wiring', () => {
     const window = useWindow()
 
     window.detachTab('t1', { x: 1, y: 2 })
-    window.detachTabAt('t1', { x: 3, y: 4 })
+    window.detachTabInPlace('t1')
     window.moveTab('t1', 'window-b')
 
     expect(h.f.tabMover.detachTab).toHaveBeenCalledWith('t1', { x: 1, y: 2 })
-    expect(h.f.tabMover.detachTabAt).toHaveBeenCalledWith('t1', { x: 3, y: 4 })
+    expect(h.f.tabMover.detachTabInPlace).toHaveBeenCalledWith('t1')
     expect(h.f.tabMover.moveTab).toHaveBeenCalledWith('t1', 'window-b')
     expect(h.args.tabMover.windowId).toBe(window.windowId)
     expect(h.args.tabMover.core).toBe(h.core)
