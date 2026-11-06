@@ -101,8 +101,9 @@ watch(
 watch(
   () => activeState.value?.pageNumber.value,
   (page) => {
-    if (typeof page === 'number' && !activeState.value?.isLoading.value) {
-      readerTab.value?.savePlace?.({ page: page + 1 })
+    const pageCount = activeState.value?.pages.value.length ?? 0
+    if (typeof page === 'number' && pageCount > 0 && !activeState.value?.isLoading.value) {
+      readerTab.value?.savePlace?.({ page: page + 1, pageCount })
     }
   },
 )

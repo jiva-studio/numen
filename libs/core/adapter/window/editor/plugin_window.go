@@ -1,8 +1,13 @@
 package editor
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"fmt"
+	"io/fs"
+	"slices"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -76,4 +81,40 @@ func (w pluginWindow) ReadOpenTabs(context.Context) (domain.OpenTabs, error) {
 		return domain.OpenTabs{}, err
 	}
 	return w.state.GetOpenTabs(), nil
+}
+
+// defaultTabActivationBound is the wait of ActivateTab when State.TabActivationBound is zero.
+const defaultTabActivationBound = 2 * time.Second
+
+func (w pluginWindow) ActivateTab(ctx context.Context, id string) (domain.OpenTabs, error) {
+	if _, err := w.getVault(); err != nil {
+		return domain.OpenTabs{}, err
+	}
+	report := w.state.openTabsReports.wait()
+	open := w.state.GetOpenTabs()
+	if !slices.ContainsFunc(open.Tabs, func(tab domain.Tab) bool { return tab.ID == id }) {
+		return domain.OpenTabs{}, fmt.Errorf("editor: no open tab has id %q: %w", id, fs.ErrNotExist)
+	}
+	if err := w.state.GetWindow().ActivateTab(ctx, id); err != nil {
+		return domain.OpenTabs{}, err
+	}
+	if open.ActiveID == id {
+		return open, nil
+	}
+	bound, stop := context.WithTimeout(ctx, cmp.Or(w.state.TabActivationBound, defaultTabActivationBound))
+	defer stop()
+	for {
+		select {
+		case <-report:
+			report = w.state.openTabsReports.wait()
+			if open := w.state.GetOpenTabs(); open.ActiveID == id {
+				return open, nil
+			}
+		case <-bound.Done():
+			if err := ctx.Err(); err != nil {
+				return domain.OpenTabs{}, err
+			}
+			return w.state.GetOpenTabs(), nil
+		}
+	}
 }

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostwindow.proto.
  */
 export const file_numen_v1_hostwindow: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiLAoLUGFzc2FnZVNwYW4SDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIk0KFEZvY3VzUGFzc2FnZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkSJwoIcGFzc2FnZXMYAiADKAsyFS5udW1lbi52MS5QYXNzYWdlU3BhbiJFChVGb2N1c1Bhc3NhZ2VzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlIiYKJEhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVxdWVzdCKFAQolSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RXaW5kb3dFcnJvckNvZGUSGwoEdGFicxgCIAMoCzINLm51bWVuLnYxLlRhYhIRCglhY3RpdmVfaWQYAyABKAkqiQEKE0hvc3RXaW5kb3dFcnJvckNvZGUSJgoiSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiQKIEhPU1RfV0lORE9XX0VSUk9SX0NPREVfTk9fV0lORE9XEAESJAogSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9OT1RfRk9VTkQQAjKcAgoRSG9zdFdpbmRvd1NlcnZpY2USRAoJRm9jdXNOb3RlEhoubnVtZW4udjEuRm9jdXNOb3RlUmVxdWVzdBobLm51bWVuLnYxLkZvY3VzTm90ZVJlc3BvbnNlElAKDUZvY3VzUGFzc2FnZXMSHi5udW1lbi52MS5Gb2N1c1Bhc3NhZ2VzUmVxdWVzdBofLm51bWVuLnYxLkZvY3VzUGFzc2FnZXNSZXNwb25zZRJvCgxSZWFkT3BlblRhYnMSLi5udW1lbi52MS5Ib3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1JlcXVlc3QaLy5udW1lbi52MS5Ib3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1Jlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_workspace]);
+  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiLAoLUGFzc2FnZVNwYW4SDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIk0KFEZvY3VzUGFzc2FnZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkSJwoIcGFzc2FnZXMYAiADKAsyFS5udW1lbi52MS5QYXNzYWdlU3BhbiJUChVGb2N1c1Bhc3NhZ2VzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlSgQIAhADUgdzdW1tYXJ5IiYKJEhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVxdWVzdCKFAQolSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RXaW5kb3dFcnJvckNvZGUSGwoEdGFicxgCIAMoCzINLm51bWVuLnYxLlRhYhIRCglhY3RpdmVfaWQYAyABKAkiJAoSQWN0aXZhdGVUYWJSZXF1ZXN0Eg4KBnRhYl9pZBgBIAEoCSJyChNBY3RpdmF0ZVRhYlJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFdpbmRvd0Vycm9yQ29kZRIaCgN0YWIYAiABKAsyDS5udW1lbi52MS5UYWISEQoJYWN0aXZlX2lkGAMgASgJKokBChNIb3N0V2luZG93RXJyb3JDb2RlEiYKIkhPU1RfV0lORE9XX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIkCiBIT1NUX1dJTkRPV19FUlJPUl9DT0RFX05PX1dJTkRPVxABEiQKIEhPU1RfV0lORE9XX0VSUk9SX0NPREVfTk9UX0ZPVU5EEAIy6AIKEUhvc3RXaW5kb3dTZXJ2aWNlEkQKCUZvY3VzTm90ZRIaLm51bWVuLnYxLkZvY3VzTm90ZVJlcXVlc3QaGy5udW1lbi52MS5Gb2N1c05vdGVSZXNwb25zZRJQCg1Gb2N1c1Bhc3NhZ2VzEh4ubnVtZW4udjEuRm9jdXNQYXNzYWdlc1JlcXVlc3QaHy5udW1lbi52MS5Gb2N1c1Bhc3NhZ2VzUmVzcG9uc2USbwoMUmVhZE9wZW5UYWJzEi4ubnVtZW4udjEuSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXF1ZXN0Gi8ubnVtZW4udjEuSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXNwb25zZRJKCgtBY3RpdmF0ZVRhYhIcLm51bWVuLnYxLkFjdGl2YXRlVGFiUmVxdWVzdBodLm51bWVuLnYxLkFjdGl2YXRlVGFiUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_workspace]);
 
 /**
  * @generated from message numen.v1.FocusNoteRequest
@@ -169,6 +169,50 @@ export const HostWindowServiceReadOpenTabsResponseSchema: GenMessage<HostWindowS
   messageDesc(file_numen_v1_hostwindow, 6);
 
 /**
+ * @generated from message numen.v1.ActivateTabRequest
+ */
+export type ActivateTabRequest = Message<"numen.v1.ActivateTabRequest"> & {
+  /**
+   * @generated from field: string tab_id = 1;
+   */
+  tabId: string;
+};
+
+/**
+ * Describes the message numen.v1.ActivateTabRequest.
+ * Use `create(ActivateTabRequestSchema)` to create a new message.
+ */
+export const ActivateTabRequestSchema: GenMessage<ActivateTabRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostwindow, 7);
+
+/**
+ * @generated from message numen.v1.ActivateTabResponse
+ */
+export type ActivateTabResponse = Message<"numen.v1.ActivateTabResponse"> & {
+  /**
+   * @generated from field: numen.v1.HostWindowErrorCode error = 1;
+   */
+  error: HostWindowErrorCode;
+
+  /**
+   * @generated from field: numen.v1.Tab tab = 2;
+   */
+  tab?: Tab | undefined;
+
+  /**
+   * @generated from field: string active_id = 3;
+   */
+  activeId: string;
+};
+
+/**
+ * Describes the message numen.v1.ActivateTabResponse.
+ * Use `create(ActivateTabResponseSchema)` to create a new message.
+ */
+export const ActivateTabResponseSchema: GenMessage<ActivateTabResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostwindow, 8);
+
+/**
  * HostWindowErrorCode is why a window call was not served. UNSPECIFIED is a call that was served.
  *
  * @generated from enum numen.v1.HostWindowErrorCode
@@ -187,7 +231,7 @@ export enum HostWindowErrorCode {
   NO_WINDOW = 1,
 
   /**
-   * NOT_FOUND is a path the vault holds no note or file at.
+   * NOT_FOUND is a path the vault holds no note or file at, or a tab id the window has no tab with.
    *
    * @generated from enum value: HOST_WINDOW_ERROR_CODE_NOT_FOUND = 2;
    */
@@ -238,6 +282,17 @@ export const HostWindowService: GenService<{
     methodKind: "unary";
     input: typeof HostWindowServiceReadOpenTabsRequestSchema;
     output: typeof HostWindowServiceReadOpenTabsResponseSchema;
+  },
+  /**
+   * ActivateTab makes the open tab with the id the active tab of the window, and answers the tab and
+   * the active id as the window reports them after the activation.
+   *
+   * @generated from rpc numen.v1.HostWindowService.ActivateTab
+   */
+  activateTab: {
+    methodKind: "unary";
+    input: typeof ActivateTabRequestSchema;
+    output: typeof ActivateTabResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostwindow, 0);

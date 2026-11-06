@@ -8,6 +8,7 @@ package editor
 import (
 	"context"
 	"errors"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -70,9 +71,19 @@ type State struct {
 	// Places broadcasts place focus requests to the subscribers of this vault.
 	Places broadcaster[domain.Place]
 
+	// TabIDs broadcasts the ids of open tabs to make active to the subscribers of this vault.
+	TabIDs broadcaster[string]
+
 	// openTabs is the open-tab report most recently received from the window.
 	// It is replaced while requests are served, so readers use GetOpenTabs.
 	openTabs atomic.Pointer[domain.OpenTabs]
+
+	// openTabsReports is notified after each open-tab report is stored.
+	openTabsReports reportSignal
+
+	// TabActivationBound is how long ActivateTab waits for the window to report the tab active.
+	// Zero is 2 seconds.
+	TabActivationBound time.Duration
 
 	// NotifyOpenTabs is called with each accepted open-tab report. Nil when
 	// nothing consumes the report.
@@ -351,6 +362,14 @@ func newPlaceBroadcaster() broadcaster[domain.Place] {
 	}
 }
 
+// newTabIDBroadcaster delivers the id of a tab to make active to every subscriber. A newer id
+// replaces a pending one.
+func newTabIDBroadcaster() broadcaster[string] {
+	return broadcaster[string]{
+		Broadcaster: broadcast.Broadcaster[string]{IsLatest: true, Capacity: 1},
+	}
+}
+
 // newEditBroadcaster delivers to every subscriber, for a change to a note being made
 // while they are showing it.
 func newEditBroadcaster() broadcaster[domain.Edit] {
@@ -370,4 +389,35 @@ type DetachedTab struct {
 	ID string
 	// X and Y are the screen position of the new window.
 	X, Y int
+}
+
+func (v view) ActivateTab(_ context.Context, id string) error {
+	v.TabIDs.publish(id)
+	return nil
+}
+
+// reportSignal closes a channel when a report arrives. The zero value is ready to use.
+type reportSignal struct {
+	mu   sync.Mutex
+	next chan struct{}
+}
+
+// wait returns a channel that the next notify closes.
+func (r *reportSignal) wait() <-chan struct{} {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.next == nil {
+		r.next = make(chan struct{})
+	}
+	return r.next
+}
+
+// notify closes the channel that wait returned.
+func (r *reportSignal) notify() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.next != nil {
+		close(r.next)
+		r.next = nil
+	}
 }

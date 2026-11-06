@@ -1,6 +1,7 @@
 /**
- * The place a PDF tab saves when the window moves it to a passage: the page the passage is on,
- * saved as soon as the tab is there. The tab's own reader runs over a made-up port.
+ * The place a PDF tab saves: the page shown and the number of pages of the document, saved when the
+ * reader goes to another page and when the window moves the tab to a passage. The tab's own reader
+ * runs over a made-up port.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -66,7 +67,7 @@ const mountTab = (documents: Documents) => {
     { get: () => ranges.value, enumerable: true },
   )
   const tab = mount(DocumentTab, { props: { state } })
-  return { tab, ranges, savePlace }
+  return { tab, ranges, savePlace, reader }
 }
 
 describe('the place a PDF tab saves when the window moves it', () => {
@@ -80,7 +81,7 @@ describe('the place a PDF tab saves when the window moves it', () => {
     ranges.value = [...RANGES]
     await flush()
 
-    expect(savePlace).toHaveBeenLastCalledWith({ page: 7 })
+    expect(savePlace).toHaveBeenLastCalledWith({ page: 7, pageCount: 12 })
     tab.unmount()
   })
 
@@ -93,7 +94,23 @@ describe('the place a PDF tab saves when the window moves it', () => {
     release()
     await flush()
 
-    expect(savePlace).toHaveBeenLastCalledWith({ page: 7 })
+    expect(savePlace).toHaveBeenLastCalledWith({ page: 7, pageCount: 12 })
+    tab.unmount()
+  })
+})
+
+describe('the place a PDF tab saves when the reader goes to another page', () => {
+  it('is the page shown, from 1, and the number of pages of the document', async () => {
+    const { documents, release } = createDocuments()
+    release()
+    const { tab, savePlace, reader } = mountTab(documents)
+    await flush()
+    savePlace.mockClear()
+
+    await reader.goToPage(3)
+    await flush()
+
+    expect(savePlace).toHaveBeenLastCalledWith({ page: 4, pageCount: 12 })
     tab.unmount()
   })
 })

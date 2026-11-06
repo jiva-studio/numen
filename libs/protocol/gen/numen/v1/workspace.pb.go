@@ -245,7 +245,9 @@ type WatchFocusResponse struct {
 	// The runs of that source's text to open on, counted in bytes. The person is
 	// taken to the first and the rest are shown where they fall. None at all
 	// names the source and no place inside it, which is what a note arrives with.
-	Ranges        []*Range `protobuf:"bytes,2,rep,name=ranges,proto3" json:"ranges,omitempty"`
+	Ranges []*Range `protobuf:"bytes,2,rep,name=ranges,proto3" json:"ranges,omitempty"`
+	// The id of an open tab to make active; when set, path and ranges are empty.
+	TabId         string `protobuf:"bytes,3,opt,name=tab_id,json=tabId,proto3" json:"tab_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -292,6 +294,13 @@ func (x *WatchFocusResponse) GetRanges() []*Range {
 		return x.Ranges
 	}
 	return nil
+}
+
+func (x *WatchFocusResponse) GetTabId() string {
+	if x != nil {
+		return x.TabId
+	}
+	return ""
 }
 
 type WriteOpenTabsRequest struct {
@@ -2040,10 +2049,11 @@ const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\x01y\x18\x03 \x01(\x05R\x01y\"E\n" +
 	"\x11DetachTabResponse\x120\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.TabMoveErrorCodeR\x05error\"\x13\n" +
-	"\x11WatchFocusRequest\"Q\n" +
+	"\x11WatchFocusRequest\"h\n" +
 	"\x12WatchFocusResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
-	"\x06ranges\x18\x02 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\"V\n" +
+	"\x06ranges\x18\x02 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\x12\x15\n" +
+	"\x06tab_id\x18\x03 \x01(\tR\x05tabId\"V\n" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x1b\n" +
 	"\tactive_id\x18\x02 \x01(\tR\bactiveId\"\x17\n" +

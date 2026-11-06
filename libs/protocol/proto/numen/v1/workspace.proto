@@ -95,6 +95,9 @@ message WatchFocusResponse {
   // taken to the first and the rest are shown where they fall. None at all
   // names the source and no place inside it, which is what a note arrives with.
   repeated Range ranges = 2;
+
+  // The id of an open tab to make active; when set, path and ranges are empty.
+  string tab_id = 3;
 }
 
 message WriteOpenTabsRequest {

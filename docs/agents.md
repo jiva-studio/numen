@@ -92,8 +92,8 @@ Six plugins register the tools an agent can call, each for its own subject, and 
 
 | Tool               | What it does                                                                                                                                                  | Servers |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `window_tabs_get`  | the tabs open in the window — title, path, kind, the page, time or chapter a reader is open at — and which one is active                                      | both    |
-| `window_focus_tab` | bring a tab to the front, named by its id, its path or its title; a path no tab holds opens that note or file                                                 | full    |
+| `window_tabs_get`  | the tabs open in the window with id, title, path, kind and the location the reader saved (page, page count, seconds, CFI, chapter), and the active one        | both    |
+| `window_focus_tab` | make the tab with an id from `window_tabs_get` the active tab, and answer it as the window reports it; an id no tab has is an error                           | full    |
 | `note_focus`       | make a note the current one of the window, so the neighbourhood is drawn around it                                                                            | full    |
 | `source_focus`     | open a file in the window at the passages `library_search` gave, going to the first and highlighting all of them; a note opens whole with nothing highlighted | full    |
 | `edit_preview`     | propose a change to a note as a diff in the editor, leaving the file as it is                                                                                 | both    |

@@ -218,13 +218,17 @@ export const PassageAcrossTwoChaptersInTheNext: Story = {
   },
 }
 
-/** The place the tab saves after the window moves it is the passage it went to. */
+/** The place the tab saves after the window moves it is the passage it went to, with its chapter. */
 export const PlaceSavedAfterTheFocusMoves: Story = {
   render: openAt([ACROSS]),
   play: async () => {
     const { places } = getStoryTab()
     await waitFor(
-      async () => await expect(places).toContainEqual({ cfi: `epubcfi(/6/2!/${ACROSS.start})` }),
+      async () =>
+        await expect(places).toContainEqual({
+          cfi: `epubcfi(/6/2!/${ACROSS.start})`,
+          chapter: 'Dvitīya: the crossing',
+        }),
       { timeout: ITS_OWN_PACE },
     )
   },

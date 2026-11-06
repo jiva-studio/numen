@@ -25,6 +25,7 @@ func (w *placeRecorder) FocusPlace(_ context.Context, pos domain.Place) error {
 }
 func (w *placeRecorder) ShowMove(context.Context, domain.Move) error { return nil }
 func (w *placeRecorder) ShowEdit(context.Context, domain.Edit) error { return nil }
+func (w *placeRecorder) ActivateTab(context.Context, string) error   { return nil }
 
 func newFocusPassages(t *testing.T) (*file.FocusPassages, *placeRecorder, domain.Vault) {
 	t.Helper()

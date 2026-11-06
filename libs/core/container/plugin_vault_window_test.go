@@ -35,6 +35,8 @@ func (w *movesWindow) ShowMove(_ context.Context, move domain.Move) error {
 
 func (w *movesWindow) ShowEdit(context.Context, domain.Edit) error { return nil }
 
+func (w *movesWindow) ActivateTab(context.Context, string) error { return nil }
+
 func (w *movesWindow) getMoves() []domain.Move {
 	w.mu.Lock()
 	defer w.mu.Unlock()

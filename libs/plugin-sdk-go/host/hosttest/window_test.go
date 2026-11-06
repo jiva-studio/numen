@@ -123,3 +123,65 @@ func TestTheWindowSetToNoWindowAnswersErrNoWindow(t *testing.T) {
 		t.Errorf("a host with no window recorded %v and %+v", window.GetFocusedNotes(), window.GetFocusRequests())
 	}
 }
+
+// getBirdTabs is one PDF open in two tabs, the first of them active.
+func getBirdTabs() []host.OpenTab {
+	return []host.OpenTab{
+		{ID: "tab-1", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4,"pageCount":80}`},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":61,"pageCount":80}`},
+	}
+}
+
+func TestTheWindowActivatesATabItHasAndRecordsTheID(t *testing.T) {
+	window := newWindowVault()
+	window.SetOpenTabs(getBirdTabs(), "tab-1")
+
+	tab, activeID, err := window.ActivateTab(t.Context(), "tab-2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tab != getBirdTabs()[1] || activeID != "tab-2" {
+		t.Errorf("activated %+v with %q active, want %+v with tab-2", tab, activeID, getBirdTabs()[1])
+	}
+	if _, readID, err := window.ReadOpenTabs(t.Context()); err != nil || readID != "tab-2" {
+		t.Errorf("the window reads %q as active (%v), want tab-2", readID, err)
+	}
+	if _, _, err := window.ActivateTab(t.Context(), "tab-1"); err != nil {
+		t.Fatal(err)
+	}
+	if activated := window.GetActivatedTabs(); !slices.Equal(activated, []string{"tab-2", "tab-1"}) {
+		t.Errorf("the window recorded %v, want [tab-2 tab-1]", activated)
+	}
+}
+
+func TestTheWindowReturnsErrNotExistForATabIDItHasNoTabWith(t *testing.T) {
+	window := newWindowVault()
+	window.SetOpenTabs(getBirdTabs(), "tab-1")
+
+	if _, _, err := window.ActivateTab(t.Context(), "tab-9"); !errors.Is(err, host.ErrNotExist) {
+		t.Errorf("ActivateTab got %v, want ErrNotExist", err)
+	}
+	if activated := window.GetActivatedTabs(); len(activated) != 0 {
+		t.Errorf("the window recorded %v for a tab it does not have", activated)
+	}
+	_, activeID, err := window.ReadOpenTabs(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if activeID != "tab-1" {
+		t.Errorf("the window reads %q as active, want tab-1", activeID)
+	}
+}
+
+func TestTheWindowSetToNoWindowActivatesNoTab(t *testing.T) {
+	window := newWindowVault()
+	window.SetOpenTabs(getBirdTabs(), "tab-1")
+	window.SetNoWindow()
+
+	if _, _, err := window.ActivateTab(t.Context(), "tab-2"); !errors.Is(err, host.ErrNoWindow) {
+		t.Errorf("ActivateTab got %v, want ErrNoWindow", err)
+	}
+	if activated := window.GetActivatedTabs(); len(activated) != 0 {
+		t.Errorf("a host with no window recorded %v", activated)
+	}
+}

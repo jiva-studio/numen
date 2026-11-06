@@ -9,11 +9,13 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 const createReader = (isLoading = false) => {
   const offset = ref(0)
   const loading = ref(isLoading)
+  const chapter = ref('')
   const visited: string[] = []
   const pending = new Map<number, (cfi: string | null) => void>()
   const reader = {
     offset,
     isLoading: loading,
+    chapter,
     getCfi: (position: number) =>
       new Promise<string | null>((resolve) => pending.set(position, resolve)),
     goToCfi: async (cfi: string) => {
@@ -60,7 +62,7 @@ describe('the place of a book tab', () => {
     expect(visited).toStrictEqual(['epubcfi(/8/2!/4/4/1:65539)'])
   })
 
-  it('saves the CFI of the current offset', async () => {
+  it('saves the CFI alone where the reader names no chapter', async () => {
     const { reader, pending } = createReader()
     const { tab, saved } = createTab()
     useBookPlace(reader, () => tab)
@@ -71,6 +73,38 @@ describe('the place of a book tab', () => {
     await settle()
 
     expect(saved).toStrictEqual([{ cfi: 'epubcfi(/8/2!/4/4/1:40)' }])
+  })
+
+  it('saves the CFI and the chapter the reader is in at the offset', async () => {
+    const { reader, pending } = createReader()
+    const { tab, saved } = createTab()
+    useBookPlace(reader, () => tab)
+
+    reader.chapter.value = 'The Reed Beds'
+    reader.offset.value = 120
+    await nextTick()
+    pending.get(120)?.('epubcfi(/8/2!/4/4/1:40)')
+    await settle()
+
+    expect(saved).toStrictEqual([{ cfi: 'epubcfi(/8/2!/4/4/1:40)', chapter: 'The Reed Beds' }])
+  })
+
+  it('saves the chapter of the later offset when the reader moves to another chapter', async () => {
+    const { reader, pending } = createReader()
+    const { tab, saved } = createTab()
+    useBookPlace(reader, () => tab)
+
+    reader.chapter.value = 'The Reed Beds'
+    reader.offset.value = 120
+    await nextTick()
+    reader.chapter.value = 'Herons in Winter'
+    reader.offset.value = 900
+    await nextTick()
+    pending.get(120)?.('epubcfi(/8/2!/4/4/1:40)')
+    pending.get(900)?.('epubcfi(/8/4!/4/2/1:0)')
+    await settle()
+
+    expect(saved).toStrictEqual([{ cfi: 'epubcfi(/8/4!/4/2/1:0)', chapter: 'Herons in Winter' }])
   })
 
   it('ignores the CFI of an earlier offset', async () => {

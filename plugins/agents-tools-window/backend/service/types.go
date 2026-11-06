@@ -3,14 +3,23 @@ package service
 
 import "time"
 
+// TabLocation is the place a tab is open at, read from the state its reader saved.
+type TabLocation struct {
+	Page            int      `json:"page,omitempty" jsonschema:"PDF: the page shown, from 1"`
+	PageCount       int      `json:"pageCount,omitempty" jsonschema:"PDF: the number of pages"`
+	PositionSeconds *float64 `json:"positionSeconds,omitempty" jsonschema:"recording: seconds from the start of the selection"`
+	CFI             string   `json:"cfi,omitempty" jsonschema:"EPUB: the CFI of the place shown"`
+	Chapter         string   `json:"chapter,omitempty" jsonschema:"EPUB: the table-of-contents title at the place"`
+}
+
 // TabInfo describes an open tab in the user window.
 type TabInfo struct {
-	ID       string `json:"id" jsonschema:"the identifier of the tab"`
-	Kind     string `json:"kind" jsonschema:"the kind of the tab (e.g. note, document, book, recording, plex)"`
-	Path     string `json:"path,omitempty" jsonschema:"the path of the file in the tab, relative to the vault folder"`
-	Title    string `json:"title,omitempty" jsonschema:"the tab title"`
-	Location string `json:"location,omitempty" jsonschema:"the location in the file, as the window reports it (e.g. page 4 of 120)"`
-	IsActive bool   `json:"isActive,omitempty" jsonschema:"true for the active tab"`
+	ID       string       `json:"id" jsonschema:"the identifier of the tab"`
+	Kind     string       `json:"kind" jsonschema:"the kind of the tab (e.g. note, document, book, recording, plex)"`
+	Path     string       `json:"path,omitempty" jsonschema:"the path of the file in the tab, relative to the vault folder"`
+	Title    string       `json:"title,omitempty" jsonschema:"the tab title"`
+	Location *TabLocation `json:"location,omitempty" jsonschema:"the place the tab is open at, omitted for a tab with none"`
+	IsActive bool         `json:"isActive,omitempty" jsonschema:"true for the active tab"`
 }
 
 // WindowTabsGetInput represents the arguments for window_tabs_get.
@@ -24,9 +33,7 @@ type WindowTabsGetOutput struct {
 
 // WindowFocusTabInput represents the arguments for window_focus_tab.
 type WindowFocusTabInput struct {
-	TabID string `json:"tabId,omitempty" jsonschema:"the identifier of the tab to focus"`
-	Path  string `json:"path,omitempty" jsonschema:"the path of the note or file to focus"`
-	Title string `json:"title,omitempty" jsonschema:"the title of the tab to focus"`
+	TabID string `json:"tabId" jsonschema:"the identifier of the tab to make active, as window_tabs_get returns it"`
 }
 
 // WindowFocusTabOutput represents the result of focusing a tab.

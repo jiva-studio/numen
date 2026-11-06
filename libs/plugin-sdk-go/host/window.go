@@ -27,4 +27,7 @@ type Window interface {
 	FocusPassages(ctx context.Context, path string, passages []PassageSpan) error
 	// ReadOpenTabs is the tabs the window last reported, and the active one.
 	ReadOpenTabs(ctx context.Context) (tabs []OpenTab, activeID string, err error)
+	// ActivateTab makes the open tab with the id the active tab, and answers the tab and the active id
+	// as the window reports them afterwards. An id the window has no tab with is ErrNotExist.
+	ActivateTab(ctx context.Context, id string) (tab OpenTab, activeID string, err error)
 }

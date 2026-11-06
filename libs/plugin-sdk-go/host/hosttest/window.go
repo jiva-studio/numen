@@ -28,6 +28,7 @@ type Window struct {
 	isAbsent   bool
 	notes      []string
 	focusCalls []FocusRequest
+	activated  []string
 }
 
 var _ host.Window = (*Window)(nil)
@@ -112,4 +113,26 @@ func (w *Window) GetFocusRequests() []FocusRequest {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return slices.Clone(w.focusCalls)
+}
+
+func (w *Window) ActivateTab(_ context.Context, id string) (host.OpenTab, string, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.isAbsent {
+		return host.OpenTab{}, "", host.ErrNoWindow
+	}
+	index := slices.IndexFunc(w.tabs, func(tab host.OpenTab) bool { return tab.ID == id })
+	if index < 0 {
+		return host.OpenTab{}, "", fmt.Errorf("no open tab has id %q: %w", id, host.ErrNotExist)
+	}
+	w.activeID = id
+	w.activated = append(w.activated, id)
+	return w.tabs[index], id, nil
+}
+
+// GetActivatedTabs is the ids of the tabs ActivateTab made the active one, in order.
+func (w *Window) GetActivatedTabs() []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return slices.Clone(w.activated)
 }

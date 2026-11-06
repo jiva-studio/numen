@@ -56,6 +56,8 @@ export interface VaultPort {
   watchFocus(signal: AbortSignal): AsyncIterable<{
     path: string
     ranges: readonly { start: number; end: number }[]
+    /** The id of an open tab to make active; when set, path and ranges are empty. */
+    tabId: string
   }>
   /** Reports the currently open tabs; called again whenever they change. */
   writeOpenTabs(open: OpenTabs): Promise<void>

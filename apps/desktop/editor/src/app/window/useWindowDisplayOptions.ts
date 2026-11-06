@@ -17,14 +17,15 @@ export interface DisplayWiring {
   getCommands: () => ReturnType<typeof useCommands>
   getKinds: () => ReturnType<typeof useWindowKinds>
   tabOpeners: ReturnType<typeof fileOpeners>
+  windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'handle'>
   getVaults: () => ReturnType<typeof useVaults>
   notifyPlugins: (event: VaultChangeEvent) => void
   writeMessage: MessageWriter
 }
 
 export function createDisplayOptions(deps: DisplayWiring) {
-  const { editing, getCommands, getKinds, tabOpeners, getVaults, notifyPlugins, writeMessage } =
-    deps
+  const { editing, getCommands, getKinds, tabOpeners, windowTabs, getVaults, notifyPlugins } = deps
+  const { writeMessage } = deps
   return {
     onVaultChanged: (paths: readonly string[], renamed: readonly PathRename[]) => {
       editing.notes.applyPathChanges(paths, renamed)
@@ -43,6 +44,7 @@ export function createDisplayOptions(deps: DisplayWiring) {
       runInBackground(tabOpeners.openFileAt(path, spans), (error) =>
         writeMessage(formatErrorMessage(error), 'error'),
       ),
+    activateTab: (id: string) => windowTabs.handle.show(id),
     reload: () => getVaults().reload(),
   }
 }

@@ -535,13 +535,16 @@ interface WindowHandleDeps {
   each: <T>(kind: string) => readonly KindTab<T>[]
   front: () => ActiveTab | null
   getTabStateIn: <T>(id: string, kind: string) => T | null
+  getTab: (id: string) => WindowTab | null
 }
 
 function createWindowHandle(deps: WindowHandleDeps): WindowHandle {
   return {
     openTab: (kind, target) => deps.openTabOfKind(kind, target),
     openTabAdjacent: (kind, target) => deps.openTabAdjacentOfKind(kind, target),
-    show: (id) => deps.show(id),
+    show: (id) => {
+      if (deps.getTab(id)) deps.show(id)
+    },
     closeTab: (id) => deps.finishClose(id),
     each: <T>(kind: string) => deps.each<T>(kind),
     last: <T>(kind: string) => deps.each<T>(kind).at(-1) ?? null,
