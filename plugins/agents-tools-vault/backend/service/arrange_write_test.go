@@ -147,6 +147,38 @@ func TestNoteRenameOntoAnExistingNoteIsRefused(t *testing.T) {
 	requireContent(t, v, "Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
 }
 
+// getRefusalText calls the tool, fails the test unless the tool is known and refuses the call, and
+// returns the text of the refusal.
+func getRefusalText(t *testing.T, registry *tools.Registry, vaultID, name, arguments string) string {
+	t.Helper()
+	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: vaultID, Name: name, Arguments: []byte(arguments)})
+	if err != nil {
+		t.Fatalf("call %s: %v", name, err)
+	}
+	if res.GetError() == tools.ErrorCodeUnknownTool {
+		t.Fatalf("call %s: the tool is unknown", name)
+	}
+	if !res.GetResult().GetIsRefusal() {
+		t.Fatalf("call %s %s was not refused: %s", name, arguments, res.GetResult().GetStructured())
+	}
+	return res.GetResult().GetText()
+}
+
+func TestNoteRenameOntoATakenFilenameNamesTheUnchangedNote(t *testing.T) {
+	_, registry := newGeologyVault(t)
+
+	text := getRefusalText(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":"Granite"}`)
+	for _, part := range []string{"Rocks/Basalt.md", "Rocks/Granite.md"} {
+		if !strings.Contains(text, part) {
+			t.Errorf("the refusal %q does not name %s", text, part)
+		}
+	}
+	lower := strings.ToLower(text)
+	if !strings.Contains(lower, "not changed") && !strings.Contains(lower, "unchanged") {
+		t.Errorf("the refusal %q does not say the note was left unchanged", text)
+	}
+}
+
 func TestNoteRenameOfAMissingNoteIsRefused(t *testing.T) {
 	_, registry := newGeologyVault(t)
 	requireRefusal(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Obsidian.md","title":"Glass"}`)

@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
@@ -104,6 +105,15 @@ func TestVaultAddWithoutAPathIsRefused(t *testing.T) {
 func TestVaultAddOfAFolderInsideAVaultIsRefused(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
 	requireRefusal(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
+}
+
+func TestVaultAddOfAnOverlappingFolderReportsTheHostReason(t *testing.T) {
+	_, _, registry := newTwoVaults(t)
+
+	text := getRefusalText(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
+	if reason := "the folder lies inside a vault on the list or holds one"; !strings.Contains(text, reason) {
+		t.Errorf("the refusal %q does not carry the reason %q", text, reason)
+	}
 }
 
 func TestVaultRenameNamesTheVaultByItsNameFolderOrID(t *testing.T) {
