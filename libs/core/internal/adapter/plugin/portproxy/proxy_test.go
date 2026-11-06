@@ -202,30 +202,22 @@ func TestOpenFailsOnAPortThatIsTaken(t *testing.T) {
 	}
 }
 
-// errorLog collects the errors a proxy reports and when each was reported.
+// errorLog collects the errors a proxy reports.
 type errorLog struct {
-	mu    sync.Mutex
-	errs  []error
-	times []time.Time
+	mu   sync.Mutex
+	errs []error
 }
 
 func (l *errorLog) add(err error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.errs = append(l.errs, err)
-	l.times = append(l.times, time.Now())
 }
 
 func (l *errorLog) get() []error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return slices.Clone(l.errs)
-}
-
-func (l *errorLog) getTimes() []time.Time {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return slices.Clone(l.times)
 }
 
 // failingListener returns an EMFILE accept error from the first failures calls of Accept, or from
@@ -303,27 +295,62 @@ func TestAnAcceptErrorIsReportedAndTheProxyKeepsAccepting(t *testing.T) {
 func TestTheProxyWaitsLongerAfterEachAcceptErrorAndCloseEndsTheWait(t *testing.T) {
 	ln := newFailingListener(t, -1)
 	var reports errorLog
+	// The buffer holds more reports than the proxy makes before Close.
+	reported := make(chan struct{}, 64)
 	p := newProxy(t.Context(), ln, func(context.Context) (string, func(), error) {
 		return "", nil, errors.New("unused")
-	}, reports.add)
+	}, func(err error) {
+		reports.add(err)
+		select {
+		case reported <- struct{}{}:
+		default:
+		}
+	})
 	testsupport.CloseAfter(t, p)
 
+	patience := time.NewTimer(testsupport.Patience)
+	defer patience.Stop()
+	select {
+	case <-reported:
+	case <-patience.C:
+		t.Fatal("no accept error was reported")
+	}
 	// The waits after the first 8 errors are 5, 10, ... 640 ms, 1275 ms in all; the 9th error is
 	// followed by a wait of 1 s.
-	testsupport.WaitFor(t, func() bool { return len(reports.get()) >= 9 })
-	times := reports.getTimes()
-	if elapsed := times[8].Sub(times[0]); elapsed < time.Second {
-		t.Errorf("9 accept errors were reported within %v, want the waits between them to add up to over 1s", elapsed)
+	oneSecond := time.NewTimer(time.Second)
+	defer oneSecond.Stop()
+	isSecondOver := false
+	for count := 1; count < 9; {
+		select {
+		case <-reported:
+			count++
+			if count == 9 && !isSecondOver {
+				select {
+				case <-oneSecond.C:
+					isSecondOver = true
+				default:
+				}
+			}
+			if count == 9 && !isSecondOver {
+				t.Error("9 accept errors were reported within 1s, want the waits between them to add up to over 1s")
+			}
+		case <-oneSecond.C:
+			isSecondOver = true
+		case <-patience.C:
+			t.Fatalf("%d accept errors were reported, want 9", count)
+		}
 	}
 
 	closed := make(chan error, 1)
 	go func() { closed <- p.Close() }()
+	closeLimit := time.NewTimer(300 * time.Millisecond)
+	defer closeLimit.Stop()
 	select {
 	case err := <-closed:
 		if err != nil {
 			t.Errorf("Close: %v", err)
 		}
-	case <-time.After(300 * time.Millisecond):
+	case <-closeLimit.C:
 		t.Fatal("Close did not return within 300ms while the proxy waited after an accept error")
 	}
 	for _, err := range reports.get() {
