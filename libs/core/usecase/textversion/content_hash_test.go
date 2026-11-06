@@ -32,6 +32,8 @@ type statFile struct {
 	raw     []byte
 	modTime time.Time
 	id      domain.FileID
+	// isIgnored is a file the vault ignores: a stat of it answers ErrNotANote, and it still opens.
+	isIgnored bool
 }
 
 // statVault is a vault whose files carry a modification time and a file id,
@@ -78,6 +80,9 @@ func (r statReader) StatFile(_ context.Context, path string) (domain.FileStat, e
 	file, err := r.find(path)
 	if err != nil {
 		return domain.FileStat{}, err
+	}
+	if file.isIgnored {
+		return domain.FileStat{}, vaultport.ErrNotANote
 	}
 	return domain.FileStat{Path: path, Kind: domain.KindFile, Size: int64(len(file.raw)), ModTime: file.modTime, FileID: file.id}, nil
 }
@@ -448,5 +453,39 @@ func TestAOneGigabyteFileIsHashedFromAStreamWithBoundedMemory(t *testing.T) {
 	}
 	if allocated := after.TotalAlloc - before.TotalAlloc; allocated > 64<<20 {
 		t.Errorf("hashing a gigabyte allocated %d MiB, want under 64 MiB", allocated>>20)
+	}
+}
+
+// A file system with a coarse tick keeps the stamp of a file changed half a
+// second after it was hashed, a second after the stamp; the content tells.
+func TestAChangeHalfASecondAfterAHashTakenASecondAfterTheStampIsFoundByContent(t *testing.T) {
+	l := newLookup(t)
+	l.clock.set(getAtlasTime().Add(time.Second))
+	l.getHash(t)
+	sameSize := []byte("%PDF atlas of rivers, sixth edition")
+	if len(sameSize) != len(getAtlasContent()) {
+		t.Fatal("the changed content must keep the size")
+	}
+	l.files.change(atlasPath, func(f *statFile) { f.raw = sameSize })
+	l.clock.set(getAtlasTime().Add(time.Second + 500*time.Millisecond))
+
+	if got, want := l.getHash(t), domain.HashContent(sameSize); got != want {
+		t.Fatalf("a file changed half a second after its hash gives %s, want %s", got, want)
+	}
+	l.checkAccesses(t, 2)
+}
+
+// A file the vault ignores is hashed from a stream, as it was read before, and no record is kept.
+func TestAFileTheVaultIgnoresIsHashedFromAStreamAndNotRecorded(t *testing.T) {
+	l := newLookup(t)
+	l.files.change(atlasPath, func(f *statFile) { f.isIgnored = true })
+	before, _ := l.repo.getSource(l.vault.ID, atlasPath)
+
+	if got, want := l.getHash(t), domain.HashContent(getAtlasContent()); got != want {
+		t.Fatalf("an ignored file gives %s, want %s", got, want)
+	}
+	l.checkAccesses(t, 1)
+	if after, _ := l.repo.getSource(l.vault.ID, atlasPath); after != before {
+		t.Fatalf("the row of an ignored file became %+v, want it kept as %+v", after, before)
 	}
 }

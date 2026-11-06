@@ -6,12 +6,18 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
@@ -82,6 +88,9 @@ func (memoryFile) Close() error { return nil }
 type mapsVersions struct {
 	source textport.ContentHash
 	hasRow bool
+	// findFailure and saveFailure, where set, are what the index answers instead.
+	findFailure error
+	saveFailure error
 }
 
 func (m *mapsVersions) Open(domain.Vault) (textport.VersionRepository, error) { return m, nil }
@@ -105,6 +114,9 @@ func (m *mapsVersions) RemovePluginVersions(context.Context, string) ([]domain.T
 }
 
 func (m *mapsVersions) FindContentHash(_ context.Context, path string) (textport.ContentHash, bool, error) {
+	if m.findFailure != nil {
+		return textport.ContentHash{}, false, m.findFailure
+	}
 	if path != mapsPath || !m.hasRow {
 		return textport.ContentHash{}, false, nil
 	}
@@ -112,6 +124,9 @@ func (m *mapsVersions) FindContentHash(_ context.Context, path string) (textport
 }
 
 func (m *mapsVersions) SaveContentHash(_ context.Context, record textport.ContentHash) error {
+	if m.saveFailure != nil {
+		return m.saveFailure
+	}
 	if record.Path != mapsPath || !m.hasRow {
 		return nil
 	}
@@ -196,4 +211,62 @@ func TestListingTheVersionsOfAnUnchangedPDFTwiceOpensItOnce(t *testing.T) {
 	if files.opens != 1 {
 		t.Fatalf("the PDF was opened or read %d times over two listings, want once", files.opens)
 	}
+}
+
+func getScannedMaps() textport.ContentHash {
+	return textport.ContentHash{Path: mapsPath, Size: int64(len(getMapsContent())), ModTime: getMapsTime()}
+}
+
+// checkLive fails the test unless the listing holds the one version of the maps, live.
+func checkLive(t *testing.T, listing pluginport.PluginTextListing, err error) {
+	t.Helper()
+	if err != nil || len(listing.Versions) != 1 || listing.Live != listing.Versions[0].GetID() {
+		t.Fatalf("the listing is %+v (%v), want the one version live", listing, err)
+	}
+}
+
+// The recorded hash is a cache: a hash that cannot be recorded still decides the live version.
+func TestListVersionsListsTheLiveVersionWhenTheHashCannotBeRecorded(t *testing.T) {
+	repo := &mapsVersions{hasRow: true, source: getScannedMaps(), saveFailure: errors.New("database is locked")}
+	texts := newTexts(t, &mapsVault{}, repo)
+
+	listing, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v1", Name: "v1"}, mapsPath)
+	checkLive(t, listing, err)
+}
+
+func TestListVersionsReturnsAFailureOfTheIndexAsItIs(t *testing.T) {
+	failure := errors.New("database is locked")
+	repo := &mapsVersions{hasRow: true, source: getScannedMaps(), findFailure: failure}
+	texts := newTexts(t, &mapsVault{}, repo)
+
+	_, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v1", Name: "v1"}, mapsPath)
+	if !errors.Is(err, failure) || errors.Is(err, textport.ErrNoText) {
+		t.Fatalf("got %v, want the index's failure, not ErrNoText", err)
+	}
+}
+
+// dirReaders opens every vault on the folder, read by the filesystem reader with the options.
+type dirReaders struct {
+	root string
+	opts vaultconfig.Options
+}
+
+func (d dirReaders) Open(domain.Vault) (vaultport.VaultReader, error) {
+	return vaultreader.Open(d.root, d.opts)
+}
+
+// A file of a folder the vault ignores has no index row; its versions still have a live one.
+func TestListVersionsOfAPDFInAnIgnoredFolderListsItsLiveVersion(t *testing.T) {
+	root := testsupport.CopyVault(t)
+	target := filepath.Join(root, filepath.FromSlash(mapsPath))
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(target, getMapsContent(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	texts := newTexts(t, dirReaders{root: root, opts: vaultconfig.Options{Ignore: []string{"library/"}}}, &mapsVersions{})
+
+	listing, err := texts.ListVersions(t.Context(), domain.Vault{ID: "v1", Name: "v1"}, mapsPath)
+	checkLive(t, listing, err)
 }

@@ -212,3 +212,69 @@ func TestASaveOfTheNoteClearsItsFileIDAndHashTime(t *testing.T) {
 		t.Fatalf("after the note is saved again its row has file id %v and hash time %v, want both NULL", fileID, hashTime)
 	}
 }
+
+func TestSaveContentHashLeavesTheRowOfAnotherVaultAsItIs(t *testing.T) {
+	db := openHashIndex(t)
+	const otherVault domain.VaultID = "01OTHERVAULT"
+	if err := db.Vaults().Register(t.Context(), otherVault); err != nil {
+		t.Fatal(err)
+	}
+	scan(t, db, riversPath, 2048, getRiversTime())
+	if err := db.Sources().SaveSource(t.Context(), otherVault, domain.Source{
+		FileStat: domain.FileStat{Path: riversPath, Kind: domain.KindFile, Size: 2048, ModTime: getRiversTime()},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	saveContentHash(t, db, getRiversRecord())
+
+	got, ok, err := db.TextVersions().FindContentHash(t.Context(), otherVault, riversPath)
+	want := textport.ContentHash{Path: riversPath, Size: 2048, ModTime: getRiversTime()}
+	if err != nil || !ok || !isSameContentHash(got, want) {
+		t.Fatalf("the other vault's row is %+v (%v, %v), want it kept as %+v", got, ok, err, want)
+	}
+}
+
+// writeSource writes the row of the file the way the indexer does after reading it.
+func writeSource(t *testing.T, db *DB, size int64, modTime time.Time, contentHash string) {
+	t.Helper()
+	if err := db.Sources().SaveSource(t.Context(), hashVault, domain.Source{
+		FileStat:    domain.FileStat{Path: riversPath, Kind: domain.KindFile, Size: size, ModTime: modTime},
+		ContentHash: contentHash,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The indexer's write of a file it read keeps the record the lookup wrote when
+// it carries the row's own hash and stat, and clears it otherwise.
+func TestASourceWriteKeepsTheFileIDAndHashTimeOnlyForTheRowsOwnHashAndStat(t *testing.T) {
+	for name, c := range map[string]struct {
+		size        int64
+		modTime     time.Time
+		contentHash string
+		isKept      bool
+	}{
+		"the row's own hash and stat": {2048, getRiversTime(), riversHash, true},
+		"another hash":                {2048, getRiversTime(), otherHash, false},
+		"another size":                {4096, getRiversTime(), riversHash, false},
+		"another modification time":   {2048, getRiversTime().Add(time.Nanosecond), riversHash, false},
+		"no hash, as a walk writes":   {2048, getRiversTime(), "", false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			db := openHashIndex(t)
+			scan(t, db, riversPath, 2048, getRiversTime())
+			saveContentHash(t, db, getRiversRecord())
+
+			writeSource(t, db, c.size, c.modTime, c.contentHash)
+
+			fileID, hashTime := readHashColumns(t, db, riversPath)
+			if c.isKept && (fileID.Int64 != 4242 || !fileID.Valid || hashTime.Int64 != getRiversRecord().HashTime.UnixNano() || !hashTime.Valid) {
+				t.Fatalf("the row has file id %v and hash time %v, want them kept", fileID, hashTime)
+			}
+			if !c.isKept && (fileID.Valid || hashTime.Valid) {
+				t.Fatalf("the row has file id %v and hash time %v, want both NULL", fileID, hashTime)
+			}
+		})
+	}
+}
