@@ -53,7 +53,9 @@ func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 	go func() { serveErrCh <- s.Serve() }()
 	t.Cleanup(func() {
 		s.Lifecycle().TriggerShutdown()
-		<-serveErrCh
+		if err := <-serveErrCh; err != nil {
+			t.Errorf("Serve: %v", err)
+		}
 	})
 	return s, stdout
 }
@@ -97,7 +99,11 @@ func TestAConfiguredPortOpensNoListener(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	port := strconv.Itoa(probe.Addr().(*net.TCPAddr).Port)
+	addr, ok := probe.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("probe address %v is not TCP", probe.Addr())
+	}
+	port := strconv.Itoa(addr.Port)
 	if err := probe.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +113,8 @@ func TestAConfiguredPortOpensNoListener(t *testing.T) {
 		t.Fatalf("configure failed: %v", err)
 	}
 
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", port), time.Second)
+	dialer := net.Dialer{Timeout: time.Second}
+	conn, err := dialer.DialContext(t.Context(), "tcp", net.JoinHostPort("127.0.0.1", port))
 	if err == nil {
 		cleanup.Close(t, conn)
 		t.Errorf("a connection to the configured port %s was accepted", port)

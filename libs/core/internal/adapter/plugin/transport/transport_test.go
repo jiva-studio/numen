@@ -39,10 +39,10 @@ func TestParsePasseshake(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got, gotOk := ParseHandshake(tt.line)
-		if gotOk != tt.wantOk || got.Port != tt.wantPort {
-			t.Errorf("ParseHandshake(%q) = (%d, %v), want (%d, %v)",
-				tt.line, got.Port, gotOk, tt.wantPort, tt.wantOk)
+		got, gotOk, err := ParseHandshake(tt.line)
+		if err != nil || gotOk != tt.wantOk || got.Port != tt.wantPort {
+			t.Errorf("ParseHandshake(%q) = (%d, %v, %v), want (%d, %v, nil)",
+				tt.line, got.Port, gotOk, err, tt.wantPort, tt.wantOk)
 		}
 	}
 }

@@ -11,21 +11,25 @@ import (
 )
 
 const listenersManifestHead = `{"id":"org.example.listeners","name":"A","version":"1.0.0",` +
-	`"backend": {"entrypoint": "bin/listeners"}`
+	`"backend": {"entrypoint": "bin/listeners"},` +
+	`"settings": [` +
+	`{"key": "port", "type": "number", "title": "Port", "default": 4100, "min": 1024, "max": 65535, "step": 1},` +
+	`{"key": "console-port", "type": "number", "title": "Console port", "default": 4101},` +
+	`{"key": "host", "type": "string", "title": "Host", "default": "relay.example"}]`
 
 func TestReadManifestReadsTheListenersOfThePlugin(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(listenersManifestHead + `,
 		"contributes": {"listeners": [
-			{"name": "mcp", "port": 3333, "protocol": "tcp"},
-			{"name": "debug-console", "port": 65535, "protocol": "tcp"}
+			{"name": "mcp", "portSetting": "port", "protocol": "tcp"},
+			{"name": "debug-console", "portSetting": "console-port", "protocol": "tcp"}
 		]}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := []manifest.Listener{
-		{Name: "mcp", Port: 3333, Protocol: "tcp"},
-		{Name: "debug-console", Port: 65535, Protocol: "tcp"},
+		{Name: "mcp", PortSetting: "port", Protocol: "tcp"},
+		{Name: "debug-console", PortSetting: "console-port", Protocol: "tcp"},
 	}
 	if !slices.Equal(m.Contributes.Listeners, want) {
 		t.Errorf("listeners = %+v, want %+v", m.Contributes.Listeners, want)
@@ -43,31 +47,21 @@ func TestReadManifestReadsNoListenersWhenNoneAreDeclared(t *testing.T) {
 	}
 }
 
-func TestReadManifestAcceptsTheLowestAndHighestListenerPort(t *testing.T) {
-	for _, port := range []string{"1024", "65535"} {
-		_, err := manifestjson.Read(strings.NewReader(listenersManifestHead +
-			`, "contributes": {"listeners": [{"name": "mcp", "port": ` + port + `, "protocol": "tcp"}]}}`))
-		if err != nil {
-			t.Errorf("port %s: error = %v, want none", port, err)
-		}
-	}
-}
-
 func TestReadManifestRejectsAListenerTheHostCannotBind(t *testing.T) {
 	cases := map[string]string{
-		"a name declared twice":      `[{"name":"mcp","port":3333,"protocol":"tcp"},{"name":"mcp","port":3334,"protocol":"tcp"}]`,
-		"a port below 1024":          `[{"name":"mcp","port":1023,"protocol":"tcp"}]`,
-		"port 0":                     `[{"name":"mcp","port":0,"protocol":"tcp"}]`,
-		"a port above 65535":         `[{"name":"mcp","port":65536,"protocol":"tcp"}]`,
-		"protocol udp":               `[{"name":"mcp","port":3333,"protocol":"udp"}]`,
-		"no protocol":                `[{"name":"mcp","port":3333}]`,
-		"protocol in capitals":       `[{"name":"mcp","port":3333,"protocol":"TCP"}]`,
-		"an empty name":              `[{"name":"","port":3333,"protocol":"tcp"}]`,
-		"a name in capitals":         `[{"name":"Mcp","port":3333,"protocol":"tcp"}]`,
-		"a name with a space":        `[{"name":"mcp server","port":3333,"protocol":"tcp"}]`,
-		"a name with a dot":          `[{"name":"mcp.http","port":3333,"protocol":"tcp"}]`,
-		"a name starting with digit": `[{"name":"3mcp","port":3333,"protocol":"tcp"}]`,
-		"a name ending in a hyphen":  `[{"name":"mcp-","port":3333,"protocol":"tcp"}]`,
+		"a name declared twice":         `[{"name":"mcp","portSetting":"port","protocol":"tcp"},{"name":"mcp","portSetting":"console-port","protocol":"tcp"}]`,
+		"protocol udp":                  `[{"name":"mcp","portSetting":"port","protocol":"udp"}]`,
+		"no protocol":                   `[{"name":"mcp","portSetting":"port"}]`,
+		"protocol in capitals":          `[{"name":"mcp","portSetting":"port","protocol":"TCP"}]`,
+		"an empty name":                 `[{"name":"","portSetting":"port","protocol":"tcp"}]`,
+		"a name in capitals":            `[{"name":"Mcp","portSetting":"port","protocol":"tcp"}]`,
+		"a name with a space":           `[{"name":"mcp server","portSetting":"port","protocol":"tcp"}]`,
+		"a name with a dot":             `[{"name":"mcp.http","portSetting":"port","protocol":"tcp"}]`,
+		"a name starting with digit":    `[{"name":"3mcp","portSetting":"port","protocol":"tcp"}]`,
+		"a name ending in a hyphen":     `[{"name":"mcp-","portSetting":"port","protocol":"tcp"}]`,
+		"no port setting":               `[{"name":"mcp","protocol":"tcp"}]`,
+		"a port setting not declared":   `[{"name":"mcp","portSetting":"listen-port","protocol":"tcp"}]`,
+		"a port setting of type string": `[{"name":"mcp","portSetting":"host","protocol":"tcp"}]`,
 	}
 	for name, listeners := range cases {
 		_, err := manifestjson.Read(strings.NewReader(listenersManifestHead +
@@ -81,7 +75,9 @@ func TestReadManifestRejectsAListenerTheHostCannotBind(t *testing.T) {
 
 func TestReadManifestRejectsAListenerOnAPluginWithoutABackend(t *testing.T) {
 	_, err := manifestjson.Read(strings.NewReader(`{"id":"org.example.listeners","name":"A","version":"1.0.0",
-		"frontend": {}, "contributes": {"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}]}}`))
+		"frontend": {},
+		"settings": [{"key": "port", "type": "number", "title": "Port", "default": 4100}],
+		"contributes": {"listeners": [{"name": "mcp", "portSetting": "port", "protocol": "tcp"}]}}`))
 
 	if !errors.Is(err, manifest.ErrInvalidContribution) {
 		t.Errorf("error = %v, want an invalid contribution", err)

@@ -37,22 +37,25 @@ func TestManifestValid(t *testing.T) {
 	}
 }
 
-func TestManifestDeclaresTheMCPListenerAndNoPortSetting(t *testing.T) {
+func TestManifestDeclaresTheMCPListenerOnThePortSetting(t *testing.T) {
 	t.Parallel()
 
 	type listener struct {
-		Name     string `json:"name"`
-		Port     int    `json:"port"`
-		Protocol string `json:"protocol"`
+		Name        string `json:"name"`
+		PortSetting string `json:"portSetting"`
+		Protocol    string `json:"protocol"`
+	}
+	type setting struct {
+		Key     string          `json:"key"`
+		Type    string          `json:"type"`
+		Default json.RawMessage `json:"default"`
 	}
 	var manifest struct {
 		ActivationEvents []string `json:"activationEvents"`
 		Contributes      struct {
 			Listeners []listener `json:"listeners"`
 		} `json:"contributes"`
-		Settings []struct {
-			Key string `json:"key"`
-		} `json:"settings"`
+		Settings []setting `json:"settings"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatalf("failed to unmarshal manifest: %v", err)
@@ -61,13 +64,15 @@ func TestManifestDeclaresTheMCPListenerAndNoPortSetting(t *testing.T) {
 	if slices.Contains(manifest.ActivationEvents, "*") {
 		t.Errorf("activation events %v start the plugin with the application", manifest.ActivationEvents)
 	}
-	for _, setting := range manifest.Settings {
-		if setting.Key == "port" {
-			t.Error("manifest declares the setting port")
-		}
-	}
-	want := []listener{{Name: "mcp", Port: 3333, Protocol: "tcp"}}
+	want := []listener{{Name: "mcp", PortSetting: "port", Protocol: "tcp"}}
 	if !slices.Equal(manifest.Contributes.Listeners, want) {
 		t.Errorf("listeners = %+v, want %+v", manifest.Contributes.Listeners, want)
+	}
+	index := slices.IndexFunc(manifest.Settings, func(s setting) bool { return s.Key == "port" })
+	if index < 0 {
+		t.Fatal("manifest declares no setting port")
+	}
+	if port := manifest.Settings[index]; port.Type != "number" || string(port.Default) != "3333" {
+		t.Errorf("setting port = %+v, want a number with default 3333", port)
 	}
 }

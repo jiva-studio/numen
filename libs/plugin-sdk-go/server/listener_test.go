@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+	"errors"
 	"net"
 	"regexp"
 	"strconv"
@@ -30,6 +32,48 @@ func waitForListenerPort(t *testing.T, stdout *safeBuffer) int {
 	}
 }
 
+// serveInBackground runs Serve and returns a channel with its result.
+func serveInBackground(s *Server) <-chan error {
+	serveErrCh := make(chan error, 1)
+	go func() { serveErrCh <- s.Serve() }()
+	return serveErrCh
+}
+
+// stopServing triggers shutdown and fails the test when Serve returns an error or does not return.
+func stopServing(t *testing.T, s *Server, serveErrCh <-chan error) {
+	t.Helper()
+	s.Lifecycle().TriggerShutdown()
+	select {
+	case err := <-serveErrCh:
+		if err != nil {
+			t.Errorf("Serve: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Error("Serve did not return after shutdown")
+	}
+}
+
+func dialLoopback(ctx context.Context, port int) (net.Conn, error) {
+	dialer := net.Dialer{Timeout: time.Second}
+	return dialer.DialContext(ctx, "tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
+}
+
+func closeConn(t *testing.T, conn net.Conn) {
+	t.Helper()
+	if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+		t.Errorf("close: %v", err)
+	}
+}
+
+func getListenerPort(t *testing.T, ln net.Listener) int {
+	t.Helper()
+	addr, ok := ln.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("listener address %v is not TCP", ln.Addr())
+	}
+	return addr.Port
+}
+
 func TestServeReportsTheListenerPortInTheReadyLine(t *testing.T) {
 	var stdout safeBuffer
 	s := New(WithPort(0), WithToken("listener-token"), WithStdout(&stdout), WithStdin(nil), WithSignals())
@@ -45,23 +89,19 @@ func TestServeReportsTheListenerPortInTheReadyLine(t *testing.T) {
 		}
 		accepted <- err
 	}()
-	serveErrCh := make(chan error, 1)
-	go func() { serveErrCh <- s.Serve() }()
-	t.Cleanup(func() {
-		s.Lifecycle().TriggerShutdown()
-		<-serveErrCh
-	})
+	serveErrCh := serveInBackground(s)
+	t.Cleanup(func() { stopServing(t, s, serveErrCh) })
 
 	port := waitForListenerPort(t, &stdout)
 
-	if want := listener.Addr().(*net.TCPAddr).Port; port != want {
+	if want := getListenerPort(t, listener); port != want {
 		t.Errorf("ready line reports listener.mcp=%d, the listener is bound on %d", port, want)
 	}
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)), time.Second)
+	conn, err := dialLoopback(t.Context(), port)
 	if err != nil {
 		t.Fatalf("dial the listener port: %v", err)
 	}
-	defer func() { _ = conn.Close() }()
+	defer closeConn(t, conn)
 	select {
 	case err := <-accepted:
 		if err != nil {
@@ -74,13 +114,21 @@ func TestServeReportsTheListenerPortInTheReadyLine(t *testing.T) {
 
 func TestOpenListenerBindsLoopback(t *testing.T) {
 	s := New(WithPort(0), WithToken("listener-token"), WithStdout(&safeBuffer{}), WithStdin(nil), WithSignals())
-	t.Cleanup(func() { _ = s.Close() })
+	t.Cleanup(func() {
+		if err := s.Close(); err != nil {
+			t.Errorf("close the server: %v", err)
+		}
+	})
 
 	listener, err := s.OpenListener("mcp")
 	if err != nil {
 		t.Fatalf("OpenListener: %v", err)
 	}
-	t.Cleanup(func() { _ = listener.Close() })
+	t.Cleanup(func() {
+		if err := listener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			t.Errorf("close the listener: %v", err)
+		}
+	})
 
 	addr, ok := listener.Addr().(*net.TCPAddr)
 	if !ok || !addr.IP.IsLoopback() || addr.Port == 0 {
@@ -94,20 +142,14 @@ func TestServeClosesTheListenersItOpenedWhenItReturns(t *testing.T) {
 	if _, err := s.OpenListener("mcp"); err != nil {
 		t.Fatalf("OpenListener: %v", err)
 	}
-	serveErrCh := make(chan error, 1)
-	go func() { serveErrCh <- s.Serve() }()
+	serveErrCh := serveInBackground(s)
 	port := waitForListenerPort(t, &stdout)
 
-	s.Lifecycle().TriggerShutdown()
-	select {
-	case <-serveErrCh:
-	case <-time.After(5 * time.Second):
-		t.Fatal("Serve did not return after shutdown")
-	}
+	stopServing(t, s, serveErrCh)
 
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)), time.Second)
+	conn, err := dialLoopback(t.Context(), port)
 	if err == nil {
-		_ = conn.Close()
+		closeConn(t, conn)
 		t.Errorf("the listener port %d accepts connections after Serve returned", port)
 	}
 }
