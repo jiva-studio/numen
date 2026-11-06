@@ -462,10 +462,10 @@ func (s *toolScene) putProofread(t *testing.T, source domain.TextVersion) domain
 	}
 	params := host.TextPut{
 		Path: lecture, Key: "proofread-1", Source: "", Kind: textKind,
-		SourceHash: domain.HashContent([]byte(lectureSound)), File: file,
+		InputHash: domain.HashContent([]byte(lectureSound)), File: file,
 	}
 	if source != (domain.TextVersion{}) {
-		params.Source, params.SourceHash = source.GetID(), source.Hash
+		params.Source, params.InputHash = source.GetID(), source.TextHash
 	}
 	version, err := s.texts.As(proofreadingID).PutVersion(t.Context(), params)
 	if err != nil {
@@ -664,5 +664,125 @@ func TestRegistryListsTheTranscriptionInstructions(t *testing.T) {
 	}
 	if strings.Contains(strings.TrimSpace(listing.Instructions), "\n\n") {
 		t.Errorf("the listed instructions are more than one paragraph: %q", listing.Instructions)
+	}
+}
+
+// readCounts counts the reads the plugin makes of the recording, through its files or the vault, and
+// of version files, through its own folder or the host's texts.
+type readCounts struct {
+	mu        sync.Mutex
+	recording int
+	versions  int
+}
+
+func (c *readCounts) addRecording() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.recording++
+}
+
+func (c *readCounts) addVersion() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.versions++
+}
+
+func (c *readCounts) getCounts() (recording, versions int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.recording, c.versions
+}
+
+// countingFiles reads recordings through files and counts each read.
+type countingFiles struct {
+	files  Files
+	counts *readCounts
+}
+
+func (f countingFiles) ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error) {
+	f.counts.addRecording()
+	return f.files.ReadFile(ctx, vault, path)
+}
+
+// countingVault is the vault whose file reads are counted as reads of the recording.
+type countingVault struct {
+	host.Vault
+	counts *readCounts
+}
+
+func (v countingVault) With(id domain.VaultID) host.Vault {
+	return countingVault{Vault: v.Vault.With(id), counts: v.counts}
+}
+
+func (v countingVault) Read(ctx context.Context, path string) ([]byte, domain.FileStat, error) {
+	v.counts.addRecording()
+	return v.Vault.Read(ctx, path)
+}
+
+// countingStore is the plugin's folder, which holds its version files, with each read counted.
+type countingStore struct {
+	host.Store
+	counts *readCounts
+}
+
+func (s countingStore) With(id domain.VaultID) host.Store {
+	return countingStore{Store: s.Store.With(id), counts: s.counts}
+}
+
+func (s countingStore) Read(ctx context.Context, name string) ([]byte, error) {
+	s.counts.addVersion()
+	return s.Store.Read(ctx, name)
+}
+
+// countingTexts is the host's texts with each read of a version's contents counted.
+type countingTexts struct {
+	host.Texts
+	counts *readCounts
+}
+
+func (t countingTexts) With(id domain.VaultID) host.Texts {
+	return countingTexts{Texts: t.Texts.With(id), counts: t.counts}
+}
+
+func (t countingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
+	t.counts.addVersion()
+	return t.Texts.ReadText(ctx, path, id, cursor)
+}
+
+// countReads gives the scene a transcriber and a tool whose every read of the recording and of
+// version files is counted. The host's texts keep reading version files to pick the live version;
+// those reads are the host's and are not counted.
+func (s *toolScene) countReads(t *testing.T) *readCounts {
+	t.Helper()
+	counts := &readCounts{}
+	s.transcriber = NewTranscriber(countingFiles{files: vaultFiles{vault: s.vault}, counts: counts},
+		countingStore{Store: s.store, counts: counts}, countingTexts{Texts: s.texts, counts: counts}, s.finishing,
+		func(context.Context) (engine.TranscriberPort, error) { return s.blocking, nil })
+	t.Cleanup(s.transcriber.Close)
+	registry, err := NewTools(s.transcriber, countingVault{Vault: s.vault, counts: counts}).Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.registry = registry
+	return counts
+}
+
+func TestTranscriptCreateOfATranscribedRecordingReadsNoFile(t *testing.T) {
+	s := newToolScene(t)
+	version := s.putTranscript(t, true)
+	counts := s.countReads(t)
+
+	out := s.createTranscript(t, "Lectures", lecture)
+
+	want := TranscriptCreateOutput{
+		TaskID: "transcription:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
+	}
+	if out != want {
+		t.Errorf("transcript_create returned %+v, want %+v", out, want)
+	}
+	s.checkNoRun(t)
+	if recording, versions := counts.getCounts(); recording != 0 || versions != 0 {
+		t.Errorf("transcript_create read the recording %d times and version files %d times, want no read",
+			recording, versions)
 	}
 }

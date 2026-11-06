@@ -440,10 +440,10 @@ func (s *toolScene) putProofread(t *testing.T, source domain.TextVersion) domain
 	}
 	params := host.TextPut{
 		Path: scanPath, Key: "proofread-1", Source: "", Kind: "recognition",
-		SourceHash: domain.HashContent(raw), File: file,
+		InputHash: domain.HashContent(raw), File: file,
 	}
 	if source != (domain.TextVersion{}) {
-		params.Source, params.SourceHash = source.GetID(), source.Hash
+		params.Source, params.InputHash = source.GetID(), source.TextHash
 	}
 	version, err := s.texts.As(proofreadingID).PutVersion(t.Context(), params)
 	if err != nil {
@@ -546,5 +546,125 @@ func TestRegistryListsTheRecognitionInstructions(t *testing.T) {
 	}
 	if strings.Contains(strings.TrimSpace(listing.Instructions), "\n\n") {
 		t.Errorf("the listed instructions are more than one paragraph: %q", listing.Instructions)
+	}
+}
+
+// readCounts counts the reads the plugin makes of the scan, through the vault, and of version files,
+// through its own folder or the host's texts.
+type readCounts struct {
+	mu       sync.Mutex
+	scan     int
+	versions int
+}
+
+func (c *readCounts) addScan() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.scan++
+}
+
+func (c *readCounts) addVersion() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.versions++
+}
+
+func (c *readCounts) getCounts() (scan, versions int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.scan, c.versions
+}
+
+// countingVault is the vault whose file reads are counted as reads of the scan.
+type countingVault struct {
+	host.Vault
+	counts *readCounts
+}
+
+func (v countingVault) With(id domain.VaultID) host.Vault {
+	return countingVault{Vault: v.Vault.With(id), counts: v.counts}
+}
+
+func (v countingVault) Read(ctx context.Context, path string) ([]byte, domain.FileStat, error) {
+	v.counts.addScan()
+	return v.Vault.Read(ctx, path)
+}
+
+// countingStore is the plugin's folder, which holds its version files, with each read counted.
+type countingStore struct {
+	host.Store
+	counts *readCounts
+}
+
+func (s countingStore) With(id domain.VaultID) host.Store {
+	return countingStore{Store: s.Store.With(id), counts: s.counts}
+}
+
+func (s countingStore) Read(ctx context.Context, name string) ([]byte, error) {
+	s.counts.addVersion()
+	return s.Store.Read(ctx, name)
+}
+
+// countingTexts is the host's texts with each read of a version's contents counted.
+type countingTexts struct {
+	host.Texts
+	counts *readCounts
+}
+
+func (t countingTexts) With(id domain.VaultID) host.Texts {
+	return countingTexts{Texts: t.Texts.With(id), counts: t.counts}
+}
+
+func (t countingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
+	t.counts.addVersion()
+	return t.Texts.ReadText(ctx, path, id, cursor)
+}
+
+// countReads gives the scene a recognition and a tool whose every read of the scan and of version
+// files is counted. The host's texts keep reading version files to pick the live version; those reads
+// are the host's and are not counted.
+func (s *toolScene) countReads(t *testing.T) *readCounts {
+	t.Helper()
+	counts := &readCounts{}
+	recognitions, err := recognition.New(
+		recognition.Host{
+			Vault: countingVault{Vault: s.vault, counts: counts}, Store: countingStore{Store: s.vault.Store(), counts: counts},
+			Texts: countingTexts{Texts: s.texts, counts: counts}, Queue: s.queue,
+		},
+		func(context.Context) (recognition.Recogniser, error) {
+			s.openCount.Add(1)
+			return s.recogniser, nil
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.recognitions = recognitions
+	s.tools = NewTools(recognitions)
+	t.Cleanup(s.tools.Close)
+	s.registry, err = s.tools.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return counts
+}
+
+func TestRecognitionCreateOfARecognisedScanReadsNoFile(t *testing.T) {
+	s := newToolScene(t)
+	version := s.putRecognition(t)
+	counts := s.countReads(t)
+
+	out := s.recognise(t, "Physics", scanPath)
+
+	want := RecognitionCreateOutput{
+		TaskID: "recognise:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
+	}
+	if out != want {
+		t.Errorf("recognition_create returned %+v, want %+v", out, want)
+	}
+	s.checkNoRun(t)
+	if scan, versions := counts.getCounts(); scan != 0 || versions != 0 {
+		t.Errorf("recognition_create read the scan %d times and version files %d times, want no read",
+			scan, versions)
 	}
 }
