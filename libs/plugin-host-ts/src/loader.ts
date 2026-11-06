@@ -14,10 +14,10 @@ import {
   resolveModule,
   type ResolveModuleContext,
 } from './module'
-import { INTERFACE_WAIT_MS } from './interfaceStart'
-import { startLoader } from './startLoader'
+import { INTERFACE_WAIT_MS } from './loading/interfaceStart'
+import { startLoader } from './loading/startLoader'
 
-export { PLUGIN_WAIT_MS } from './startLoader'
+export { PLUGIN_WAIT_MS } from './loading/startLoader'
 
 export interface PluginLoaderDeps {
   readonly host: LoaderHost

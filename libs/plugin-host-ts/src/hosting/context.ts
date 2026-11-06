@@ -27,7 +27,7 @@ import type {
 import type { Manifest } from '@numen/core-client'
 import { APP_COMMAND_OWNER, formatCommandId } from '../commandId'
 import { createExternalOpener } from '../externalOpener'
-import { getDeclaredSlot, type SlotViewManifest } from '../slotViews'
+import { getDeclaredSlot, type SlotViewManifest } from '../slot-views/slotViews'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: Disposable[], disposable: Disposable): Disposable {

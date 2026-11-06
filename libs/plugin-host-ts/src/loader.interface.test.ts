@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
 import type { LoaderHost } from './host'
 import { createPluginLoader } from './loader'
-import { INTERFACE_WAIT_MS } from './interfaceStart'
+import { INTERFACE_WAIT_MS } from './loading/interfaceStart'
 
 const BAR = 'org.example.ledger'
 const TABS = 'org.example.orchard'

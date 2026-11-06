@@ -5,7 +5,7 @@ export {
   type PluginLoader,
   type PluginLoaderDeps,
 } from './loader'
-export { INTERFACE_WAIT_MS } from './interfaceStart'
+export { INTERFACE_WAIT_MS } from './loading/interfaceStart'
 export type { LoaderHost } from './host'
 export {
   adoptPluginStyle,
@@ -33,7 +33,7 @@ export {
   type DeclaredSlotView,
   type SlotViewManifest,
   type SlotViewRegistry,
-} from './slotViews'
+} from './slot-views/slotViews'
 export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
 export {
   createExternalOpener,

@@ -57,12 +57,6 @@ The agent and the model that handle the questions of a plugin whose own setting 
 | `model` | text | the model the agent uses. Empty leaves the choice to the agent. |
 | `concurrency` | a number | how many questions one agent handles at once. |
 
-### `app.window`
-
-| | | |
-| --- | --- | --- |
-| `buttons` | text | where the window draws its minimise, maximise and close buttons on Linux: at the right like Windows, or at the left like macOS. One of `windows`, `mac`. |
-
 ### `md.numen.agents.acp`
 
 The settings of the plugin ACP Agents.
@@ -224,4 +218,12 @@ The settings of the plugin Plex Graph.
 | --- | --- | --- |
 | `nestHeadings` | yes or no | show the headings of a note under its node. |
 | `headingLimit` | a number | maximum number of headings shown under a node. The rest scroll. From 1 to 12. |
+
+### `md.numen.views.titleBar`
+
+The settings of the plugin Title bar.
+
+| | | |
+| --- | --- | --- |
+| `buttons` | text | where the bar draws the minimize, maximize and close buttons on Linux: at the right like Windows, or at the left like macOS. Windows and macOS keep their own place. One of `windows`, `mac`. |
 <!-- END AUTOGEN -->
