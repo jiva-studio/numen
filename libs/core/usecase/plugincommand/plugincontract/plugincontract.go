@@ -27,6 +27,7 @@ type (
 	PluginCommandEntry     = pluginport.PluginCommandEntry
 	PluginCommandResult    = pluginport.PluginCommandResult
 	PluginSlotEntry        = pluginport.PluginSlotEntry
+	PluginTriggerEntry     = pluginport.PluginTriggerEntry
 	PluginContributes      = pluginport.PluginContributes
 	PluginCommands         = pluginport.PluginCommands
 	PluginParts            = pluginport.PluginParts

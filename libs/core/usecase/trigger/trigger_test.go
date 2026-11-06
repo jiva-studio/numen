@@ -1,0 +1,308 @@
+package trigger_test
+
+import (
+	"context"
+	"errors"
+	"io"
+	"maps"
+	"slices"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+)
+
+const (
+	scanner = "org.example.scans"
+	linker  = "org.example.links"
+)
+
+// shelf is a vault in memory: its files by path, each with a modification time.
+type shelf struct {
+	mu    sync.Mutex
+	files map[string]string
+	times map[string]time.Time
+	reads int
+}
+
+func newShelf(files map[string]string) *shelf {
+	s := &shelf{files: map[string]string{}, times: map[string]time.Time{}}
+	for _, path := range slices.Sorted(maps.Keys(files)) {
+		s.put(path, files[path])
+	}
+	return s
+}
+
+func (s *shelf) put(path, content string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.files[path] = content
+	s.times[path] = time.Unix(int64(1_700_000_000+len(s.times)*100+len(content)), 0)
+}
+
+func (s *shelf) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
+	s.mu.Lock()
+	paths := slices.Sorted(maps.Keys(s.files))
+	s.mu.Unlock()
+	for _, path := range paths {
+		stat, err := s.StatFile(ctx, path)
+		if err != nil {
+			return err
+		}
+		if err := fn(stat); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *shelf) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
+
+func (s *shelf) Read(_ context.Context, path string) ([]byte, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	content, ok := s.files[path]
+	if !ok {
+		return nil, vaultport.ErrNotExist
+	}
+	s.reads++
+	return []byte(content), nil
+}
+
+func (s *shelf) Open(context.Context, string) (io.ReadSeekCloser, error) {
+	return nil, errors.ErrUnsupported
+}
+
+func (s *shelf) StatFile(_ context.Context, path string) (domain.FileStat, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	content, ok := s.files[path]
+	if !ok {
+		return domain.FileStat{}, vaultport.ErrNotExist
+	}
+	kind := domain.KindFile
+	if strings.HasSuffix(path, ".md") {
+		kind = domain.KindNote
+	}
+	return domain.FileStat{Path: path, Kind: kind, Size: int64(len(content)), ModTime: s.times[path]}, nil
+}
+
+// readers opens the one shelf for every vault.
+type readers struct{ shelf *shelf }
+
+func (r readers) Open(domain.Vault) (vaultport.VaultReader, error) { return r.shelf, nil }
+
+// types gives a PDF and a PNG their type by extension.
+type types struct{}
+
+func (types) GetContentType(path string) domain.ContentType {
+	switch {
+	case strings.HasSuffix(path, ".pdf"):
+		return "application/pdf"
+	case strings.HasSuffix(path, ".png"):
+		return "image/png"
+	case strings.HasSuffix(path, ".md"):
+		return "text/markdown"
+	}
+	return domain.UnknownContentType
+}
+
+func (types) ListExtensions(domain.ContentType) []string { return nil }
+
+// plugins declares the triggers it is given and records each run.
+type plugins struct {
+	mu       sync.Mutex
+	triggers []pluginport.PluginTriggerEntry
+	ran      []string
+	failing  map[string]bool
+}
+
+func (p *plugins) ListTriggers() []pluginport.PluginTriggerEntry {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return slices.Clone(p.triggers)
+}
+
+func (p *plugins) RunCommand(_ context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.failing[call.Path] {
+		return pluginport.PluginCommandResult{}, errors.New("the scanner is out of paper")
+	}
+	p.ran = append(p.ran, call.PluginID+" "+call.Command+" "+call.Path)
+	return pluginport.PluginCommandResult{Message: "done"}, nil
+}
+
+func (p *plugins) take() []string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	out := p.ran
+	p.ran = nil
+	return out
+}
+
+// memoryRecord keeps the state of the triggers in memory.
+type memoryRecord struct {
+	mu    sync.Mutex
+	state pluginport.TriggerState
+}
+
+func (m *memoryRecord) Open(domain.Vault) (pluginport.TriggerRecord, error) { return m, nil }
+
+func (m *memoryRecord) Read(context.Context) (pluginport.TriggerState, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return pluginport.TriggerState{Files: maps.Clone(m.state.Files), Runs: maps.Clone(m.state.Runs)}, nil
+}
+
+func (m *memoryRecord) Write(_ context.Context, state pluginport.TriggerState) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.state = state
+	return nil
+}
+
+type scene struct {
+	shelf    *shelf
+	plugins  *plugins
+	config   map[string]any
+	triggers *trigger.Triggers
+}
+
+func newScene(t *testing.T, files map[string]string, entries ...pluginport.PluginTriggerEntry) *scene {
+	t.Helper()
+	s := &scene{shelf: newShelf(files), plugins: &plugins{triggers: entries, failing: map[string]bool{}}, config: map[string]any{}}
+	s.triggers = trigger.NewTriggers(s.plugins, readers{s.shelf}, types{}, &memoryRecord{},
+		func() (map[string]any, error) { return s.config, nil })
+	return s
+}
+
+func (s *scene) scan(t *testing.T) []string {
+	t.Helper()
+	if err := s.triggers.Execute(t.Context(), domain.Vault{ID: "v1"}); err != nil {
+		t.Fatal(err)
+	}
+	return s.plugins.take()
+}
+
+var (
+	extractOnAdd = pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
+		On: manifest.EventFileAdded, Command: "app:file.createText", When: "target.contentType == 'application/pdf'",
+	}}
+	recognizeWhenOn = pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
+		On: manifest.EventFileAdded, Command: "app:version.delete", When: "config.org.example.scans.isAutomatic == true",
+	}}
+	recheckOnChange = pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
+		On: manifest.EventFileChanged, Command: "app:file.createText", When: "target.contentType == 'image/png'",
+	}}
+	captionsOnLink = pluginport.PluginTriggerEntry{PluginID: linker, Trigger: manifest.Trigger{
+		On: manifest.EventFileAdded, Command: "app:file.createText", When: "target.noteType == 'link' && has(target.properties.url)",
+	}}
+)
+
+func TestATriggerOnFileAddedRunsOnceOverEachMatchingFile(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "notes/n.md": "# A note\n"}, extractOnAdd)
+
+	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
+		t.Fatalf("the first scan ran %v, want %v", got, want)
+	}
+	if got := s.scan(t); len(got) != 0 {
+		t.Errorf("a second scan over the same content ran %v", got)
+	}
+	s.shelf.put("scans/b.pdf", "%PDF b")
+	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/b.pdf"}; !slices.Equal(got, want) {
+		t.Errorf("a file added ran %v, want %v", got, want)
+	}
+}
+
+func TestATriggerOnFileAddedDoesNotRunWhenAFileChanges(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, extractOnAdd)
+	s.scan(t)
+
+	s.shelf.put("scans/a.pdf", "%PDF a, second printing")
+	if got := s.scan(t); len(got) != 0 {
+		t.Errorf("a changed file ran %v", got)
+	}
+}
+
+func TestATriggerOnFileChangedRunsWhenTheContentChanges(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.png": "pixels"}, recheckOnChange)
+	if got := s.scan(t); len(got) != 0 {
+		t.Fatalf("a file found for the first time ran %v on file.changed", got)
+	}
+
+	s.shelf.put("scans/a.png", "other pixels")
+	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.png"}; !slices.Equal(got, want) {
+		t.Errorf("a changed file ran %v, want %v", got, want)
+	}
+	if got := s.scan(t); len(got) != 0 {
+		t.Errorf("a second scan ran %v", got)
+	}
+}
+
+func TestATriggerRunsOverTheFilesAlreadyThereOnceASettingMakesItsConditionTrue(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.png": "pixels", "scans/b.pdf": "%PDF b"}, recognizeWhenOn)
+	if got := s.scan(t); len(got) != 0 {
+		t.Fatalf("a trigger whose setting is off ran %v", got)
+	}
+
+	s.config = map[string]any{"org": map[string]any{"example": map[string]any{"scans": map[string]any{"isAutomatic": true}}}}
+	got := s.scan(t)
+	want := []string{scanner + " app:version.delete scans/a.png", scanner + " app:version.delete scans/b.pdf"}
+	if !slices.Equal(got, want) {
+		t.Errorf("once the setting is on the scan ran %v, want %v", got, want)
+	}
+}
+
+func TestATriggerOfAPluginEnabledLaterRunsOverTheFilesAlreadyThere(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"})
+	s.scan(t)
+
+	s.plugins.triggers = []pluginport.PluginTriggerEntry{extractOnAdd}
+	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
+		t.Errorf("the trigger of the plugin enabled ran %v, want %v", got, want)
+	}
+}
+
+func TestATriggerReadsTheTypeAndPropertiesOfANote(t *testing.T) {
+	s := newScene(t, map[string]string{
+		"links/tide.md":  "---\ntype: link\nurl: https://tides.example/mill\n---\n",
+		"links/plain.md": "---\ntype: link\n---\n",
+		"notes/n.md":     "# A note\n",
+	}, captionsOnLink)
+
+	if got, want := s.scan(t), []string{linker + " app:file.createText links/tide.md"}; !slices.Equal(got, want) {
+		t.Errorf("the scan ran %v, want %v", got, want)
+	}
+}
+
+func TestAFailedRunIsTriedAgainOnTheNextScan(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, extractOnAdd)
+	s.plugins.failing["scans/a.pdf"] = true
+	if err := s.triggers.Execute(t.Context(), domain.Vault{ID: "v1"}); err == nil {
+		t.Fatal("a failing run reported no error")
+	}
+
+	s.plugins.failing["scans/a.pdf"] = false
+	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
+		t.Errorf("the next scan ran %v, want %v", got, want)
+	}
+}
+
+func TestAScanReadsNoFileWhenNothingChanged(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.png": "pixels"}, extractOnAdd)
+	s.scan(t)
+	before := s.shelf.reads
+
+	s.scan(t)
+	if s.shelf.reads != before {
+		t.Errorf("a scan over unchanged files read %d files", s.shelf.reads-before)
+	}
+}

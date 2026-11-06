@@ -71,6 +71,22 @@ func (c Commands) ListSlots() []pluginport.PluginSlotEntry {
 	return found
 }
 
+// ListTriggers lists the triggers the manifests of the enabled plugins declare, leaving out those of a
+// plugin the host holds suspended. No plugin is started.
+func (c Commands) ListTriggers() []pluginport.PluginTriggerEntry {
+	var found []pluginport.PluginTriggerEntry
+	for _, info := range c.host.GetPluginInfos() {
+		plugin, isEnabled := c.host.GetPlugin(info.ID)
+		if !isEnabled || info.Failure != nil {
+			continue
+		}
+		for _, trigger := range plugin.Manifest.Contributes.Triggers {
+			found = append(found, pluginport.PluginTriggerEntry{PluginID: plugin.Manifest.ID, Trigger: trigger})
+		}
+	}
+	return found
+}
+
 // GetParts says what the enabled plugin of the id has, and whether the host holds it suspended.
 func (c Commands) GetParts(pluginID string) pluginport.PluginParts {
 	plugin, isEnabled := c.host.GetPlugin(pluginID)
