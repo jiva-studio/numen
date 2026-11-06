@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"maps"
+	"slices"
+	"strings"
 	"time"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
@@ -32,7 +34,8 @@ func NewAgent(agent agentport.Agent, host Host, server Server, callerID string) 
 }
 
 // StartRun serves the tools the window allows and starts the run with their endpoint, their names
-// and their declarations. A run with no tool to call is started with no endpoint.
+// and their declarations, and appends the sentences of those tools to its instructions. A run with
+// no tool to call is started with no endpoint.
 func (a *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
 	listing, cancel := context.WithTimeout(ctx, listLimit)
 	available := a.plugins.listToolsFor(listing, a.server, a.callerID)
@@ -47,6 +50,7 @@ func (a *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Ru
 		return nil, err
 	}
 	task.Endpoint = agentport.ToolEndpoint{URL: served.url, Token: served.token}
+	task.Instructions = appendToolSentences(task.Instructions, available)
 	task.Tools = make([]string, 0, len(available))
 	task.ToolDeclarations = make([]agentport.ToolDeclaration, 0, len(available))
 	for _, one := range available {
@@ -77,6 +81,27 @@ type endpointRun struct {
 // Stop stops the run, then the endpoint.
 func (r *endpointRun) Stop() error {
 	return errors.Join(r.Run.Stop(), r.endpoint.close(context.Background()))
+}
+
+// appendToolSentences returns the instructions followed, after an empty line, by the distinct
+// instruction sentences of the tools in listing order, joined with one space.
+func appendToolSentences(instructions string, available []tool) string {
+	var sentences []string
+	for _, one := range available {
+		for _, sentence := range one.spec.GetInstructions() {
+			if !slices.Contains(sentences, sentence) {
+				sentences = append(sentences, sentence)
+			}
+		}
+	}
+	switch {
+	case len(sentences) == 0:
+		return instructions
+	case instructions == "":
+		return strings.Join(sentences, " ")
+	default:
+		return instructions + "\n\n" + strings.Join(sentences, " ")
+	}
 }
 
 // getStepKind returns the step kind under which a tool call is displayed.
