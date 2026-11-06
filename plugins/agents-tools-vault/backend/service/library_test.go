@@ -529,8 +529,14 @@ func TestLibraryReadFailsOnASegmentWithInvalidSelector(t *testing.T) {
 
 func TestLibraryReadLengthStatesThePlainTextFileLimit(t *testing.T) {
 	l := newLibrary(t)
-	length, _ := getSchemaProperties(t, getToolSchema(t, l.registry, "library_read", false))["length"].(map[string]any)
-	description, _ := length["description"].(string)
+	length, ok := getSchemaProperties(t, getToolSchema(t, l.registry, "library_read", false))["length"].(map[string]any)
+	if !ok {
+		t.Fatal("library_read has no length property")
+	}
+	description, ok := length["description"].(string)
+	if !ok {
+		t.Fatalf("the length of library_read has no description: %v", length)
+	}
 	for _, want := range []string{"20000", "50000", "16000"} {
 		if !strings.Contains(description, want) {
 			t.Errorf("the length of library_read does not state %s: %q", want, description)

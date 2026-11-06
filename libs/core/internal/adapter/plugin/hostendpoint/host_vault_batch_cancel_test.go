@@ -180,7 +180,7 @@ func TestMoveFailingOnCancelReturnsNoteErrorAndRestNotAttempted(t *testing.T) {
 	}
 }
 
-func TestMoveDoneBeforeCancelReturnsThatNoteAsMoved(t *testing.T) {
+func TestMoveBeforeCancelReturnsThatNoteAsMoved(t *testing.T) {
 	endpoint, _, ctx := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
 
 	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{

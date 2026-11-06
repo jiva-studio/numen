@@ -193,7 +193,7 @@ func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 func describeCode(reason api.ErrorCode) string {
 	descriptions := map[api.ErrorCode]string{
 		api.ErrorCodeNotFound:       "the vault has no note at this path",
-		api.ErrorCodeNotANote:       "this is not a note the vault holds",
+		api.ErrorCodeNotANote:       "this file is not a note",
 		api.ErrorCodeNotText:        "this file is not text: some of it is not valid UTF-8, so open it as a file",
 		api.ErrorCodeTooLarge:       fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead", edit.MaxBytes),
 		api.ErrorCodeBodyUnwritable: "this text opens with a frontmatter delimiter, so it cannot be written into a note",

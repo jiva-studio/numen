@@ -35,7 +35,7 @@
       "key": "token",
       "type": "string",
       "title": "Token",
-      "description": "Token an MCP client sends in the header Authorization: Bearer <token>; while it is empty the server refuses every request"
+      "description": "Token an MCP client sends in the header Authorization: Bearer <token>; while it is empty the server rejects every request"
     }
   ]
 }

@@ -69,8 +69,8 @@ type LinkAdded struct {
 	Err  error
 }
 
-// LinkEditor edits the frontmatter links of the notes of a vault. A baseline older than the note returns
-// ErrStale. The edits need vault:write.
+// LinkEditor edits the frontmatter links of the notes of a vault. An edit whose baseline is not the
+// note's current version returns ErrStale. The edits need vault:write.
 type LinkEditor interface {
 	// AddLinks writes the links, grouped by note: the links of one note are one write against one
 	// baseline, and succeed or fail together. The result has one entry per addition, in order.
