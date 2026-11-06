@@ -2,7 +2,6 @@ package host
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -148,5 +147,13 @@ func readTextSegments(segments []*v1.TextSegment) []domain.TextSegment {
 }
 
 func (c *TextClient) ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (TextRange, error) {
-	return TextRange{}, errors.New("not implemented")
+	size := int64(length)
+	res, err := c.rpc.ReadText(ctx, newTextRequest(c, &v1.ReadTextRequest{Path: path, VersionId: string(id), Start: int64(start), Length: &size}))
+	if err != nil {
+		return TextRange{}, readError(err)
+	}
+	if err := failText(res.Msg.GetError()); err != nil {
+		return TextRange{}, err
+	}
+	return TextRange{Segments: readTextSegments(res.Msg.GetSegments()), Start: int(res.Msg.GetStart()), Size: int(res.Msg.GetSize())}, nil
 }

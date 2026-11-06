@@ -447,6 +447,11 @@ func (s *Search) SearchPassages(_ context.Context, query host.PassageQuery) ([]h
 	if err != nil {
 		return nil, err
 	}
+	for _, kind := range query.Kinds {
+		if kind != domain.KindNote && kind != domain.KindFile {
+			return nil, fmt.Errorf("%q is not a kind of source a search reaches: use %q or %q", kind, domain.KindNote, domain.KindFile)
+		}
+	}
 	words := getWords(query.Query)
 	if len(words) == 0 {
 		return nil, nil

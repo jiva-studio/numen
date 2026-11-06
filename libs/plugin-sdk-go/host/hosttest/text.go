@@ -206,6 +206,14 @@ func (w *textWorld) indexOf(path string, id domain.TextVersionID) int {
 	return slices.IndexFunc(w.versions, func(v domain.TextVersion) bool { return v.Path == path && v.GetID() == id })
 }
 
+// ReadTextRange returns the segments of the version that cover the range of its whole text, cut at
+// whole characters.
 func (t *Texts) ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (host.TextRange, error) {
-	return host.TextRange{}, errors.New("not implemented")
+	page, err := t.ReadText(ctx, path, id, "")
+	if err != nil {
+		return host.TextRange{}, err
+	}
+	text := notesdomain.NewVersionText(domain.TextVersion{}, page.Segments)
+	from, to := cutRange([]byte(text.Text), start, length)
+	return host.TextRange{Segments: text.GetSegmentsIn(from, to), Start: from, Size: len(text.Text)}, nil
 }

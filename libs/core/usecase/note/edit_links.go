@@ -160,7 +160,18 @@ func (u EditLinks) Remove(
 func (u EditLinks) RemoveTargetLinks(
 	ctx context.Context, v domain.Vault, from string, to domain.Address, role domain.LinkRole, stat domain.FileStat,
 ) (domain.FileStat, error) {
-	return domain.FileStat{}, errors.New("not implemented")
+	e := u.newEdit()
+	e.FileStat = stat
+	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
+		removed, err := doc.RemoveLinksTo(to, role)
+		if err != nil {
+			return err
+		}
+		if removed == 0 {
+			return fmt.Errorf("no link to %s is written here", to)
+		}
+		return nil
+	})
 }
 
 // CheckWritable is what a link must carry before anything will write it.

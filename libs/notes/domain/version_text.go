@@ -91,3 +91,18 @@ func (t VersionText) GetSelector(offset int) Selector {
 func (t VersionText) findSegment(offset int) int {
 	return sort.Search(len(t.offsets), func(i int) bool { return t.offsets[i] > offset }) - 1
 }
+
+// GetSegmentsIn is the segments that cover the bytes [from, to) of the text, each cut to that range
+// and keeping its heading and selector. A segment that holds none of those bytes is left out.
+func (t VersionText) GetSegmentsIn(from, to int) []TextSegment {
+	var out []TextSegment
+	for i, s := range t.segments {
+		start, end := max(t.offsets[i], from), min(t.offsets[i]+len(s.Text), to)
+		if start >= end {
+			continue
+		}
+		s.Text = s.Text[start-t.offsets[i] : end-t.offsets[i]]
+		out = append(out, s)
+	}
+	return out
+}

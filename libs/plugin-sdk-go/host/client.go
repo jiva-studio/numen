@@ -200,7 +200,15 @@ func (c *Client) Read(ctx context.Context, path string) ([]byte, domain.FileStat
 }
 
 func (c *Client) ReadRange(ctx context.Context, path string, start, length int) (FileRange, error) {
-	return FileRange{}, errors.New("not implemented")
+	size := int64(length)
+	res, err := c.rpc.ReadFile(ctx, request(c, &v1.ReadFileRequest{Path: path, Start: int64(start), Length: &size}))
+	if err != nil {
+		return FileRange{}, readError(err)
+	}
+	if err := fail(res.Msg.GetError()); err != nil {
+		return FileRange{}, err
+	}
+	return FileRange{Text: string(res.Msg.GetContent()), Start: int(res.Msg.GetStart()), Stat: readFileStat(res.Msg.GetStat())}, nil
 }
 
 func (c *Client) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {

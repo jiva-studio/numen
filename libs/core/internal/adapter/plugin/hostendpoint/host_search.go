@@ -233,7 +233,7 @@ func (e *searchEndpoint) SearchPassages(
 		case domain.KindNote, domain.KindFile:
 			kinds[i] = one
 		default:
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%q is not a kind of source: use %q or %q", kind, domain.KindNote, domain.KindFile))
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%q is not a kind of source a search reaches: use %q or %q", kind, domain.KindNote, domain.KindFile))
 		}
 	}
 	found, err := call.search.SearchPassages(ctx, call.vault, pluginport.PluginPassageQuery{

@@ -2,7 +2,6 @@ package host
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
@@ -214,17 +213,72 @@ func (c *Client) OpenVault(ctx context.Context, id domain.VaultID) error {
 }
 
 func (c *Client) AddLinks(ctx context.Context, additions []LinkAddition) ([]LinkAdded, error) {
-	return nil, errors.New("not implemented")
+	links := make([]*v1.HostLinkAddition, len(additions))
+	for i, one := range additions {
+		links[i] = &v1.HostLinkAddition{
+			From: one.From, Baseline: writeFileStat(one.Baseline), To: one.Link.Target.GetWritten(),
+			Role: writeRole(one.Link.Role), Type: one.Link.Type, Label: one.Link.Label, Note: one.Link.Why,
+		}
+	}
+	res, err := c.rpc.AddLinks(ctx, request(c, &v1.HostVaultServiceAddLinksRequest{Links: links}))
+	if err != nil {
+		return nil, readError(err)
+	}
+	if err := fail(res.Msg.GetError()); err != nil {
+		return nil, err
+	}
+	out := make([]LinkAdded, 0, len(res.Msg.GetResults()))
+	for _, one := range res.Msg.GetResults() {
+		added := LinkAdded{Err: failNote(one.GetError(), one.GetDetail())}
+		if added.Err == nil {
+			added.Stat = readFileStat(one.GetStat())
+		}
+		out = append(out, added)
+	}
+	return out, nil
 }
 
 func (c *Client) UpdateLinks(
 	ctx context.Context, from string, to domain.Address, change domain.Link, baseline domain.FileStat,
 ) (domain.FileStat, error) {
-	return domain.FileStat{}, errors.New("not implemented")
+	if err := checkRole(change.Role); err != nil {
+		return domain.FileStat{}, err
+	}
+	res, err := c.rpc.UpdateLinks(ctx, request(c, &v1.HostVaultServiceUpdateLinksRequest{
+		From: from, To: to.GetWritten(), Baseline: writeFileStat(baseline),
+		Role: writeRole(change.Role), Type: change.Type, Label: change.Label, Note: change.Why,
+	}))
+	if err != nil {
+		return domain.FileStat{}, readError(err)
+	}
+	if err := failNote(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
+		return domain.FileStat{}, err
+	}
+	return readFileStat(res.Msg.GetStat()), nil
 }
 
 func (c *Client) RemoveLinks(
 	ctx context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat,
 ) (domain.FileStat, error) {
-	return domain.FileStat{}, errors.New("not implemented")
+	if err := checkRole(role); err != nil {
+		return domain.FileStat{}, err
+	}
+	res, err := c.rpc.RemoveLinks(ctx, request(c, &v1.HostVaultServiceRemoveLinksRequest{
+		From: from, To: to.GetWritten(), Baseline: writeFileStat(baseline), Role: writeRole(role),
+	}))
+	if err != nil {
+		return domain.FileStat{}, readError(err)
+	}
+	if err := failNote(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
+		return domain.FileStat{}, err
+	}
+	return readFileStat(res.Msg.GetStat()), nil
+}
+
+// checkRole refuses a role the wire cannot carry, which it would send as no role.
+func checkRole(role domain.LinkRole) error {
+	if role != "" && writeRole(role) == v1.Role_ROLE_UNSPECIFIED {
+		return fmt.Errorf("%q is not a role a link can have", role)
+	}
+	return nil
 }

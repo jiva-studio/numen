@@ -65,5 +65,9 @@ func (p Texts) ReadText(ctx context.Context, v domain.Vault, path string, id dom
 // ReadTextRange reads the segments of a version of a file of the vault that cover a range of its
 // whole text.
 func (p Texts) ReadTextRange(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (pluginport.PluginTextRange, error) {
-	return pluginport.PluginTextRange{}, errors.New("not implemented")
+	textRange, err := p.versions.GetTextRange(ctx, v, path, id, start, length)
+	if err != nil {
+		return pluginport.PluginTextRange{}, err
+	}
+	return pluginport.PluginTextRange{Segments: textRange.Segments, Start: textRange.Start, Size: textRange.Size}, nil
 }

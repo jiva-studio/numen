@@ -177,21 +177,37 @@ func (e *vaultEndpoint) MoveNotes(
 	}
 	out := &v1.HostVaultServiceMoveNotesResponse{Moves: make([]*v1.HostNoteMove, 0, len(req.Msg.GetPaths()))}
 	for _, from := range req.Msg.GetPaths() {
-		if err := ctx.Err(); err != nil {
-			return nil, connect.NewError(connect.CodeCanceled, err)
-		}
-		move, err := vault.MoveNote(ctx, from, path.Join(req.Msg.GetFolder(), path.Base(from)))
-		entry := &v1.HostNoteMove{Move: writeMove(move)}
-		if err != nil && !move.IsMoved {
-			noteCode, code, callErr := answerNote(ctx, err)
-			if callErr != nil || code != 0 {
-				return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: code}), callErr
-			}
-			entry = &v1.HostNoteMove{Move: &v1.MoveResult{From: from}, Error: noteCode, Detail: err.Error()}
+		entry, code, err := moveNote(ctx, vault, from, req.Msg.GetFolder())
+		if err != nil || code != 0 {
+			return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: code}), err
 		}
 		out.Moves = append(out.Moves, entry)
 	}
 	return connect.NewResponse(out), nil
+}
+
+// moveNote moves one note of a batch into the folder and returns its entry, or the error of the
+// call. A note the call was cancelled before is answered NOT_ATTEMPTED.
+func moveNote(ctx context.Context, vault pluginport.PluginVault, from, folder string) (*v1.HostNoteMove, v1.HostVaultErrorCode, error) {
+	notAttempted := &v1.HostNoteMove{
+		Move: &v1.MoveResult{From: from}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
+		Detail: fmt.Sprintf("the call was cancelled before %s was moved", from),
+	}
+	if ctx.Err() != nil {
+		return notAttempted, 0, nil
+	}
+	move, err := vault.MoveNote(ctx, from, path.Join(folder, path.Base(from)))
+	if err == nil || move.IsMoved {
+		return &v1.HostNoteMove{Move: writeMove(move)}, 0, nil
+	}
+	if ctx.Err() != nil {
+		return notAttempted, 0, nil
+	}
+	noteCode, code, callErr := answerNote(ctx, err)
+	if callErr != nil || code != 0 {
+		return nil, code, callErr
+	}
+	return &v1.HostNoteMove{Move: &v1.MoveResult{From: from}, Error: noteCode, Detail: err.Error()}, 0, nil
 }
 
 func (e *vaultEndpoint) RemoveNotes(
@@ -209,19 +225,35 @@ func (e *vaultEndpoint) RemoveNotes(
 	}
 	out := &v1.HostVaultServiceRemoveNotesResponse{Removals: make([]*v1.HostNoteRemoval, 0, len(req.Msg.GetPaths()))}
 	for _, target := range req.Msg.GetPaths() {
-		if err := ctx.Err(); err != nil {
-			return nil, connect.NewError(connect.CodeCanceled, err)
-		}
-		trashPath, brokenLinks, err := vault.RemoveNote(ctx, target)
-		entry := &v1.HostNoteRemoval{Path: target, TrashPath: trashPath, BrokenLinks: brokenLinks}
-		if err != nil && trashPath == "" {
-			noteCode, code, callErr := answerNote(ctx, err)
-			if callErr != nil || code != 0 {
-				return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: code}), callErr
-			}
-			entry = &v1.HostNoteRemoval{Path: target, Error: noteCode, Detail: err.Error()}
+		entry, code, err := removeNote(ctx, vault, target)
+		if err != nil || code != 0 {
+			return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: code}), err
 		}
 		out.Removals = append(out.Removals, entry)
 	}
 	return connect.NewResponse(out), nil
+}
+
+// removeNote moves one note of a batch to the trash and returns its entry, or the error of the
+// call. A note the call was cancelled before is answered NOT_ATTEMPTED.
+func removeNote(ctx context.Context, vault pluginport.PluginVault, target string) (*v1.HostNoteRemoval, v1.HostVaultErrorCode, error) {
+	notAttempted := &v1.HostNoteRemoval{
+		Path: target, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
+		Detail: fmt.Sprintf("the call was cancelled before %s was removed", target),
+	}
+	if ctx.Err() != nil {
+		return notAttempted, 0, nil
+	}
+	trashPath, brokenLinks, err := vault.RemoveNote(ctx, target)
+	if err == nil || trashPath != "" {
+		return &v1.HostNoteRemoval{Path: target, TrashPath: trashPath, BrokenLinks: brokenLinks}, 0, nil
+	}
+	if ctx.Err() != nil {
+		return notAttempted, 0, nil
+	}
+	noteCode, code, callErr := answerNote(ctx, err)
+	if callErr != nil || code != 0 {
+		return nil, code, callErr
+	}
+	return &v1.HostNoteRemoval{Path: target, Error: noteCode, Detail: err.Error()}, 0, nil
 }

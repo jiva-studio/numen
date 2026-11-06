@@ -3,6 +3,7 @@ package hostendpoint
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"connectrpc.com/connect"
@@ -153,6 +154,9 @@ func (e *textEndpoint) ReadText(
 	if call.texts == nil {
 		return connect.NewResponse(&v1.ReadTextResponse{Error: noTexts}), nil
 	}
+	if req.Msg.Length != nil {
+		return answerTextRange(ctx, call, req.Msg)
+	}
 	page, err := call.texts.ReadText(ctx, call.vault, req.Msg.GetPath(), domain.TextVersionID(req.Msg.GetVersionId()), req.Msg.GetCursor())
 	code, err := answerText(ctx, err)
 	if err != nil {
@@ -160,5 +164,23 @@ func (e *textEndpoint) ReadText(
 	}
 	return connect.NewResponse(&v1.ReadTextResponse{
 		Error: code, Segments: writeSegments(page.Segments), NextCursor: page.NextCursor,
+	}), nil
+}
+
+// answerTextRange answers a ReadText that sets a length: the segments of the range, where the first
+// begins and the size of the whole text.
+func answerTextRange(ctx context.Context, call textCall, req *v1.ReadTextRequest) (*connect.Response[v1.ReadTextResponse], error) {
+	if req.GetStart() < 0 || req.GetLength() < 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("a range of the text of %s begins at %d and holds %d bytes: give numbers of zero or more", req.GetPath(), req.GetStart(), req.GetLength()))
+	}
+	read, err := call.texts.ReadTextRange(ctx, call.vault, req.GetPath(), domain.TextVersionID(req.GetVersionId()),
+		int(req.GetStart()), int(req.GetLength()))
+	code, err := answerText(ctx, err)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&v1.ReadTextResponse{
+		Error: code, Segments: writeSegments(read.Segments), Start: int64(read.Start), Size: int64(read.Size),
 	}), nil
 }

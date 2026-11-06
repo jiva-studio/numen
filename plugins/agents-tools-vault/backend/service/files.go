@@ -8,14 +8,18 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
+
+// fileReadMost is how many bytes one file_read returns at most, the most the host reads at once.
+const fileReadMost = 16000
 
 // FileReadInput is the input of the file_read tool.
 type FileReadInput struct {
 	Path   string `json:"path" jsonschema:"the file's path relative to the vault root"`
 	Start  int    `json:"start,omitempty" jsonschema:"byte offset to start reading from"`
-	Length int    `json:"length,omitempty" jsonschema:"how many bytes to read; 0 or omitted reads to end of file"`
+	Length int    `json:"length,omitempty" jsonschema:"how many bytes to read, at most 16000; 16000 when left out"`
 }
 
 // FileReadOutput is the output of the file_read tool.
@@ -45,38 +49,24 @@ func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput,
 	if strings.TrimSpace(in.Path) == "" {
 		return FileReadOutput{}, errors.New("path is required")
 	}
-
-	data, fp, err := t.vault.Read(ctx, in.Path)
+	length := in.Length
+	if length <= 0 || length > fileReadMost {
+		length = fileReadMost
+	}
+	read, err := t.vault.ReadRange(ctx, in.Path, max(in.Start, 0), length)
+	if errors.Is(err, host.ErrNotText) {
+		return FileReadOutput{}, fmt.Errorf("%s is not a text file; library_read reads the text of a PDF, a book or a recording", in.Path)
+	}
 	if err != nil {
 		return FileReadOutput{}, fmt.Errorf("%s cannot be read: %w", in.Path, err)
 	}
-	if !isText(data) {
-		return FileReadOutput{}, fmt.Errorf("%s is not a text file; library_read reads the text of a PDF, a book or a recording", in.Path)
-	}
-
-	start := in.Start
-	if start < 0 {
-		start = 0
-	}
-
-	var slice []byte
-	if start >= len(data) {
-		slice = []byte{}
-	} else {
-		end := len(data)
-		if in.Length > 0 && start+in.Length < end {
-			end = start + in.Length
-		}
-		slice = data[start:end]
-	}
-
 	return FileReadOutput{
 		Path:        in.Path,
-		Content:     string(slice),
-		Start:       start,
-		Length:      len(slice),
-		Size:        len(data),
-		Fingerprint: formatFingerprint(fp),
+		Content:     read.Text,
+		Start:       read.Start,
+		Length:      len(read.Text),
+		Size:        int(read.Stat.Size),
+		Fingerprint: formatFingerprint(read.Stat),
 	}, nil
 }
 

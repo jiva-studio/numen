@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/notes/edit"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
@@ -118,19 +119,49 @@ func (a Vault) GetProblems(ctx context.Context, checks []domain.Check) ([]domain
 	}
 	return report.Ran, report.Found, nil
 }
-
 func (a Vault) AddLinks(ctx context.Context, additions []pluginport.PluginLinkAddition) ([]pluginport.PluginLinkAdded, error) {
-	return nil, errors.New("not implemented")
+	v, err := a.open()
+	if err != nil {
+		return nil, err
+	}
+	in := make([]note.LinkAddition, len(additions))
+	for i, one := range additions {
+		in[i] = note.LinkAddition{From: one.From, FileStat: one.Baseline, Link: one.Link}
+	}
+	added, err := a.Arranger.getChanges(v).AddLinks.Execute(ctx, v, in)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]pluginport.PluginLinkAdded, len(added))
+	isWritten := false
+	for i, one := range added {
+		out[i] = pluginport.PluginLinkAdded{Stat: one.FileStat, Err: one.Error}
+		isWritten = isWritten || one.Error == nil || errors.Is(one.Error, edit.ErrIndexOutdated)
+	}
+	if isWritten {
+		a.notifyFileWritten()
+	}
+	return out, nil
 }
 
 func (a Vault) UpdateLinks(
 	ctx context.Context, from string, to domain.Address, change domain.Link, baseline domain.FileStat,
 ) (domain.FileStat, error) {
-	return domain.FileStat{}, errors.New("not implemented")
+	v, err := a.open()
+	if err != nil {
+		return domain.FileStat{}, err
+	}
+	stat, err := a.Arranger.getChanges(v).Links.Update(ctx, v, from, to, change, baseline)
+	return stat, a.notifyAfterWrite(err)
 }
 
 func (a Vault) RemoveLinks(
 	ctx context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat,
 ) (domain.FileStat, error) {
-	return domain.FileStat{}, errors.New("not implemented")
+	v, err := a.open()
+	if err != nil {
+		return domain.FileStat{}, err
+	}
+	stat, err := a.Arranger.getChanges(v).Links.RemoveTargetLinks(ctx, v, from, to, role, baseline)
+	return stat, a.notifyAfterWrite(err)
 }

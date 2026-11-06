@@ -9,6 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/edit"
 
+	"github.com/jiva-studio/numen/libs/core/usecase/file"
+
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/usecase/note/problemcontract"
@@ -158,8 +160,39 @@ func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.FileStat, 
 	return content, pos, nil
 }
 
+// ReadRange reads the range through the read of usecase/file, with the file stat taken before the
+// bytes are read.
 func (a Vault) ReadRange(ctx context.Context, path string, start, length int) (pluginport.PluginFileRange, error) {
-	return pluginport.PluginFileRange{}, errors.New("not implemented")
+	v, err := a.open()
+	if err != nil {
+		return pluginport.PluginFileRange{}, err
+	}
+	reader, err := a.Readers.Open(v)
+	if err != nil {
+		return pluginport.PluginFileRange{}, err
+	}
+	pos, err := reader.StatFile(ctx, path)
+	if errors.Is(err, vaultport.ErrNotANote) {
+		return pluginport.PluginFileRange{}, fmt.Errorf("%s is not a file the vault lists: %w", path, fs.ErrNotExist)
+	}
+	if err != nil {
+		return pluginport.PluginFileRange{}, err
+	}
+	if length <= 0 || length > file.MostRead {
+		length = file.MostRead
+	}
+	result, err := file.Read{Readers: a.Readers}.Execute(ctx, v, path, start, length)
+	if err != nil {
+		return pluginport.PluginFileRange{}, err
+	}
+	switch result.Outcome {
+	case file.Ok:
+		return pluginport.PluginFileRange{Text: result.Text, Start: result.Start, Stat: pos}, nil
+	case file.NotText:
+		return pluginport.PluginFileRange{}, fmt.Errorf("read %s from %d: %w", path, result.Start, pluginport.ErrNotText)
+	case file.Missing, file.AFolder, file.LeftAlone:
+	}
+	return pluginport.PluginFileRange{}, fmt.Errorf("%s is %s: %w", path, result.Outcome, fs.ErrNotExist)
 }
 
 func (a Vault) Write(

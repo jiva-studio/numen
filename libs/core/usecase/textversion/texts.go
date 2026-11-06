@@ -2,10 +2,10 @@ package textversion
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 
+	"github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/textport"
@@ -62,11 +62,11 @@ func (u *Versions) GetTextPage(ctx context.Context, v domain.Vault, path string,
 		}
 		start = n
 	}
-	text, err := u.GetVersionText(ctx, v, path, id)
+	version, err := u.GetVersionText(ctx, v, path, id)
 	if err != nil {
 		return TextPage{}, err
 	}
-	segments := text.GetSegments()
+	segments := version.GetSegments()
 	if start > len(segments) {
 		return TextPage{}, fmt.Errorf("%w: cursor %q", textport.ErrNoText, cursor)
 	}
@@ -89,7 +89,20 @@ type TextRange struct {
 // GetTextRange is the segments of a version that cover length bytes of its whole text from start,
 // cut at whole characters. A length of zero reads to the end.
 func (u *Versions) GetTextRange(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (TextRange, error) {
-	return TextRange{}, errors.New("not implemented")
+	if start < 0 || length < 0 {
+		return TextRange{}, fmt.Errorf("a range of the text of %s begins at %d and holds %d bytes", path, start, length)
+	}
+	version, err := u.GetVersionText(ctx, v, path, id)
+	if err != nil {
+		return TextRange{}, err
+	}
+	size := len(version.Text)
+	from, to := min(start, size), size
+	if length > 0 && length < size-from {
+		to = from + length
+	}
+	from, raw := text.WholeCharacters(from, []byte(version.Text[from:to]), size)
+	return TextRange{Segments: version.GetSegmentsIn(from, from+len(raw)), Start: from, Size: size}, nil
 }
 
 // readText reads a version's file. It returns textport.ErrNoText when the file

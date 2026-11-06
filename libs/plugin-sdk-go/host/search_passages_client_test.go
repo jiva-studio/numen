@@ -3,6 +3,7 @@ package host_test
 import (
 	"context"
 	"errors"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -91,10 +92,10 @@ func TestSearchClientReturnsErrorsOfPassageSearch(t *testing.T) {
 	}
 }
 
-func TestASearchClientSendsALimitWithinTheMostTheHostReturns(t *testing.T) {
+func TestASearchClientSendsALimitBeyondInt32AsTheNearestInt32(t *testing.T) {
 	h := &passagesHost{}
 	c := dialPassages(t, h)
-	for limit, want := range map[int]int32{1 << 40: host.MaxSearchedPassages, -(1 << 40): 0, 7: 7} {
+	for limit, want := range map[int]int32{1 << 40: math.MaxInt32, -(1 << 40): math.MinInt32, 7: 7} {
 		if _, err := c.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Limit: limit}); err != nil {
 			t.Fatal(err)
 		}

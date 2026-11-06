@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"unicode/utf8"
 
 	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -270,7 +271,18 @@ func (v *Vault) StatFile(ctx context.Context, filePath string) (domain.FileStat,
 }
 
 func (v *Vault) ReadRange(ctx context.Context, filePath string, start, length int) (host.FileRange, error) {
-	return host.FileRange{}, errors.New("not implemented")
+	content, stat, err := v.Read(ctx, filePath)
+	if err != nil {
+		return host.FileRange{}, err
+	}
+	if length <= 0 || length > mostRead {
+		length = mostRead
+	}
+	from, to := cutRange(content, start, length)
+	if !utf8.Valid(content[from:to]) {
+		return host.FileRange{}, fmt.Errorf("read %s from %d: %w", filePath, from, host.ErrNotText)
+	}
+	return host.FileRange{Text: string(content[from:to]), Start: from, Stat: stat}, nil
 }
 
 func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileStat, error) {

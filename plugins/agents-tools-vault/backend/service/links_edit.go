@@ -2,17 +2,12 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/edit"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
@@ -112,18 +107,8 @@ func (t *Tools) addLinkRemove(registry *tools.Registry) error {
 	}, inVault(t, (*Tools).removeLinks))
 }
 
-// linkGroups is the links of one call by the note they are written in, in order of first appearance.
-type linkGroups struct {
-	order        []string
-	links        map[string][]domain.Link
-	fingerprints map[string]string
-	positions    map[string][]int
-	// conflicts is why a note is not written: its links carry two different fingerprints.
-	conflicts map[string]error
-}
-
-// add groups the link at position i under its note, or returns why it cannot be written.
-func (g *linkGroups) add(i int, in LinkAddition) error {
+// readAddition is the link to write and the baseline of its note, or why it cannot be written.
+func readAddition(in LinkAddition) (host.LinkAddition, error) {
 	link := domain.Link{
 		Target: domain.ParseAddress(in.To),
 		Role:   domain.LinkRole(in.Role),
@@ -133,25 +118,26 @@ func (g *linkGroups) add(i int, in LinkAddition) error {
 		Marker: domain.MarkerNone,
 	}
 	if err := checkWritable(link); err != nil {
-		return err
+		return host.LinkAddition{}, err
 	}
-	if strings.TrimSpace(in.From) == "" {
-		return errors.New("from is required")
+	baseline, err := readBaseline(in.From, in.Fingerprint)
+	if err != nil {
+		return host.LinkAddition{}, err
 	}
-	if _, err := parseFingerprint(in.Fingerprint); err != nil {
-		return err
+	return host.LinkAddition{From: in.From, Baseline: baseline, Link: link}, nil
+}
+
+// readBaseline is the file stat of the note at notePath that the fingerprint note_read gave names.
+func readBaseline(notePath, fingerprint string) (domain.FileStat, error) {
+	if strings.TrimSpace(notePath) == "" {
+		return domain.FileStat{}, errors.New("from is required")
 	}
-	if first, isGrouped := g.fingerprints[in.From]; isGrouped && first != in.Fingerprint {
-		g.conflicts[in.From] = fmt.Errorf("the links into %s carry two different fingerprints, and they are one write", in.From)
-		return g.conflicts[in.From]
+	baseline, err := parseFingerprint(fingerprint)
+	if err != nil {
+		return domain.FileStat{}, err
 	}
-	if _, isGrouped := g.links[in.From]; !isGrouped {
-		g.order = append(g.order, in.From)
-	}
-	g.fingerprints[in.From] = in.Fingerprint
-	g.links[in.From] = append(g.links[in.From], link)
-	g.positions[in.From] = append(g.positions[in.From], i)
-	return nil
+	baseline.Path = notePath
+	return baseline, nil
 }
 
 // checkWritable returns why the link cannot be written, as the notes library requires of a link.
@@ -168,6 +154,14 @@ func checkWritable(link domain.Link) error {
 	return nil
 }
 
+// checkRole refuses a role no link can have. An empty role is none.
+func checkRole(role domain.LinkRole) error {
+	if role != "" && !domain.IsKnownRole(role) {
+		return fmt.Errorf("%q is not a role a link can have: parent, child, jump, ref or attachment", role)
+	}
+	return nil
+}
+
 func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, error) {
 	switch {
 	case len(in.Links) == 0:
@@ -176,51 +170,65 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 		return LinkAddOutput{}, fmt.Errorf("%d links given, at most %d are allowed", len(in.Links), maxBatch)
 	}
 	out := LinkAddOutput{Results: make([]LinkAddItem, len(in.Links))}
-	groups := &linkGroups{
-		order:        nil,
-		links:        map[string][]domain.Link{},
-		fingerprints: map[string]string{},
-		positions:    map[string][]int{},
-		conflicts:    map[string]error{},
-	}
+	additions := make([]host.LinkAddition, 0, len(in.Links))
+	positions := make([]int, 0, len(in.Links))
+	conflicts := findFingerprintConflicts(in.Links)
 	for i, l := range in.Links {
 		out.Results[i] = LinkAddItem{From: l.From, To: l.To, Fingerprint: "", Error: ""}
-		if err := groups.add(i, l); err != nil {
+		addition, err := readAddition(l)
+		if err == nil {
+			err = conflicts[l.From]
+		}
+		if err != nil {
 			out.Results[i].Error = err.Error()
+			continue
 		}
+		additions = append(additions, addition)
+		positions = append(positions, i)
 	}
-	for _, from := range groups.order {
-		fingerprint, err := t.writeLinkGroup(ctx, groups, from)
-		for _, i := range groups.positions[from] {
-			if err != nil {
-				out.Results[i].Error = err.Error()
-				continue
-			}
-			out.Results[i].Fingerprint = fingerprint
+	if len(additions) == 0 {
+		return out, nil
+	}
+	added, err := t.vault.AddLinks(ctx, additions)
+	if err != nil {
+		return LinkAddOutput{}, fmt.Errorf("write the links: %w", err)
+	}
+	if len(added) != len(additions) {
+		return LinkAddOutput{}, fmt.Errorf("the host answered %d of %d links", len(added), len(additions))
+	}
+	for j, one := range added {
+		i := positions[j]
+		if one.Err != nil {
+			out.Results[i].Error = describeLinkError(in.Links[i].From, one.Err).Error()
+			continue
 		}
+		out.Results[i].Fingerprint = formatFingerprint(one.Stat)
 	}
 	return out, nil
 }
 
-// writeLinkGroup writes the links of the call into the note, unless they carry two different
-// fingerprints, and returns the fingerprint of the note written.
-func (t *Tools) writeLinkGroup(ctx context.Context, groups *linkGroups, from string) (string, error) {
-	if err := groups.conflicts[from]; err != nil {
-		return "", err
+// findFingerprintConflicts is why the links into a note are not written, by the note: its links carry
+// two different fingerprints, and they are one write.
+func findFingerprintConflicts(links []LinkAddition) map[string]error {
+	first := map[string]string{}
+	conflicts := map[string]error{}
+	for _, l := range links {
+		if fingerprint, isSeen := first[l.From]; isSeen && fingerprint != l.Fingerprint {
+			conflicts[l.From] = fmt.Errorf("the links into %s carry two different fingerprints, and they are one write", l.From)
+			continue
+		}
+		first[l.From] = l.Fingerprint
 	}
-	return t.editNote(ctx, from, groups.fingerprints[from], addLinksTo(groups.links[from]))
+	return conflicts
 }
 
-// addLinksTo returns the change that writes the links into a document.
-func addLinksTo(links []domain.Link) func(*markdown.Document) error {
-	return func(doc *markdown.Document) error {
-		for _, link := range links {
-			if err := doc.AddLink(link); err != nil {
-				return err
-			}
-		}
-		return nil
+// describeLinkError is the error of an edit of the links of a note, naming the note when the
+// fingerprint is stale.
+func describeLinkError(notePath string, err error) error {
+	if errors.Is(err, host.ErrStale) {
+		return fmt.Errorf("%s changed since note_read gave the fingerprint; read it again: %w", notePath, err)
 	}
+	return err
 }
 
 func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOutput, error) {
@@ -229,24 +237,19 @@ func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOut
 		return LinkEditOutput{}, errors.New("to is required")
 	}
 	role := domain.LinkRole(in.Role)
-	if role != "" && !domain.IsKnownRole(role) {
-		return LinkEditOutput{}, fmt.Errorf("%q is not a role a link can have: parent, child, jump, ref or attachment", role)
+	if err := checkRole(role); err != nil {
+		return LinkEditOutput{}, err
 	}
-	change := domain.Link{Target: to, Role: role, Type: in.Type, Why: in.Note, Label: in.Label, Marker: domain.MarkerNone}
-	fingerprint, err := t.editNote(ctx, in.From, in.Fingerprint, func(doc *markdown.Document) error {
-		count, err := doc.UpdateLink(to, change)
-		if err != nil {
-			return err
-		}
-		if count == 0 {
-			return fmt.Errorf("no link to %s is written here", in.To)
-		}
-		return nil
-	})
+	baseline, err := readBaseline(in.From, in.Fingerprint)
 	if err != nil {
 		return LinkEditOutput{}, err
 	}
-	return LinkEditOutput{Path: in.From, Fingerprint: fingerprint}, nil
+	change := domain.Link{Role: role, Type: in.Type, Why: in.Note, Label: in.Label, Marker: domain.MarkerNone}
+	stat, err := t.vault.UpdateLinks(ctx, in.From, to, change, baseline)
+	if err != nil {
+		return LinkEditOutput{}, describeLinkError(in.From, err)
+	}
+	return LinkEditOutput{Path: in.From, Fingerprint: formatFingerprint(stat)}, nil
 }
 
 func (t *Tools) removeLinks(ctx context.Context, in LinkRemoveInput) (LinkEditOutput, error) {
@@ -255,123 +258,16 @@ func (t *Tools) removeLinks(ctx context.Context, in LinkRemoveInput) (LinkEditOu
 		return LinkEditOutput{}, errors.New("to is required")
 	}
 	role := domain.LinkRole(in.Role)
-	fingerprint, err := t.editNote(ctx, in.From, in.Fingerprint, func(doc *markdown.Document) error {
-		return removeLinksFrom(doc, in.From, to, role)
-	})
+	if err := checkRole(role); err != nil {
+		return LinkEditOutput{}, err
+	}
+	baseline, err := readBaseline(in.From, in.Fingerprint)
 	if err != nil {
 		return LinkEditOutput{}, err
 	}
-	return LinkEditOutput{Path: in.From, Fingerprint: fingerprint}, nil
-}
-
-// removeLinksFrom removes the frontmatter links of the document to the target, of every type, and only
-// those of the role when one is given.
-func removeLinksFrom(doc *markdown.Document, notePath string, to domain.Address, role domain.LinkRole) error {
-	current, err := getFrontmatterLinks(doc, notePath, to, role)
+	stat, err := t.vault.RemoveLinks(ctx, in.From, to, role, baseline)
 	if err != nil {
-		return err
+		return LinkEditOutput{}, describeLinkError(in.From, err)
 	}
-	if len(current) == 0 {
-		return fmt.Errorf("no link to %s is written here", to.GetWritten())
-	}
-	var types []string
-	for _, l := range current {
-		if !slices.Contains(types, l.Type) {
-			types = append(types, l.Type)
-		}
-	}
-	for _, linkType := range types {
-		if _, err := doc.RemoveLink(domain.LinkKey{Target: to, Role: role, Type: linkType}); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// getFrontmatterLinks returns the links of the document's frontmatter to the target, only those of the
-// role when one is given. Links in the prose are left out.
-func getFrontmatterLinks(
-	doc *markdown.Document, notePath string, to domain.Address, role domain.LinkRole,
-) ([]domain.Link, error) {
-	front, err := markdown.Open(doc.Bytes())
-	if err != nil {
-		return nil, err
-	}
-	if err := front.SetBody(""); err != nil {
-		return nil, err
-	}
-	var stat domain.FileStat
-	stat.Path = notePath
-	var out []domain.Link
-	for _, l := range markdown.Parse(stat, front.Bytes()).Links {
-		if l.Target == to && (role == "" || l.Role == role) {
-			out = append(out, l)
-		}
-	}
-	return out, nil
-}
-
-// editNote makes one change to the note at path through the notes library, against the fingerprint
-// note_read gave, and returns the fingerprint of the note written.
-func (t *Tools) editNote(
-	ctx context.Context, notePath, fingerprint string, change func(*markdown.Document) error,
-) (string, error) {
-	if strings.TrimSpace(notePath) == "" {
-		return "", errors.New("from is required")
-	}
-	baseline, err := parseFingerprint(fingerprint)
-	if err != nil {
-		return "", err
-	}
-	files := &vaultFiles{vault: t.vault, releaseErr: nil}
-	e := edit.Edit{
-		Open: func(domain.Vault) (edit.Files, error) { return files, nil },
-		Index: func(ctx context.Context, _ domain.Vault, paths []string) error {
-			return t.vault.Scan(ctx, paths)
-		},
-		Clock:           clock.System{},
-		Entropy:         rand.Reader,
-		FileStat:        baseline,
-		ShouldOverwrite: false,
-		Bound:           0,
-		Baseline:        nil,
-	}
-	v := domain.Vault{ID: domain.VaultID(tools.GetVault(ctx)), Name: "", Path: ""}
-	stat, err := e.Apply(ctx, v, notePath, change)
-	if err = errors.Join(err, files.releaseErr); err != nil {
-		if errors.Is(err, host.ErrStale) || errors.Is(err, edit.ErrStale) {
-			return "", fmt.Errorf("%s changed since note_read gave the fingerprint; read it again: %w", notePath, err)
-		}
-		return "", err
-	}
-	return formatFingerprint(stat), nil
-}
-
-// vaultFiles is the vault of a call as the notes library edits it.
-type vaultFiles struct {
-	vault host.Vault
-	// releaseErr is the failure to release the vault's write lock, which edit.Files releases without
-	// an error.
-	releaseErr error
-}
-
-func (f *vaultFiles) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
-	return f.vault.StatFile(ctx, path)
-}
-
-func (f *vaultFiles) Read(ctx context.Context, path string) ([]byte, error) {
-	data, _, err := f.vault.Read(ctx, path)
-	return data, err
-}
-
-func (f *vaultFiles) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error) {
-	return f.vault.Write(ctx, path, content, stat)
-}
-
-func (f *vaultFiles) Lock(ctx context.Context) (func(), error) {
-	release, err := f.vault.Lock(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return func() { f.releaseErr = errors.Join(f.releaseErr, release()) }, nil
+	return LinkEditOutput{Path: in.From, Fingerprint: formatFingerprint(stat)}, nil
 }

@@ -21,7 +21,8 @@ const (
 	guidePath  = "library/Bird Guide.pdf"
 	scanPath   = "library/Old Scan.pdf"
 	talkPath   = "recordings/Marsh Talk.mp3"
-	pdfBytes   = "%PDF-1.7\n\x00\x01binary body"
+	pdfBytes   = "%PDF-1.7\n%\xe2\xe3\xcf\xd3binary body"
+	talkBytes  = "ID3\x04\x00\xff\xfbaudio"
 	readerID   = "org.example.reader"
 	scribeID   = "org.example.scribe"
 	pageOne    = "Chapter one. The marsh at dawn is quiet. "
@@ -80,19 +81,19 @@ func newLibrary(t *testing.T) library {
 	vault.File("notes/Herons.md", "---\ntitle: Herons of the Marsh\n---\nHerons fish at dusk.")
 	vault.File(guidePath, pdfBytes)
 	vault.File(scanPath, pdfBytes+"scan")
-	vault.File(talkPath, "ID3\x00\x03audio")
+	vault.File(talkPath, talkBytes)
 	vault.File("data.txt", "line 1\nline 2\nline 3\n")
 
 	texts := hosttest.NewTexts(testVault, readerID)
 	texts.File(guidePath, []byte(pdfBytes))
-	texts.File(talkPath, []byte("ID3\x00\x03audio"))
+	texts.File(talkPath, []byte(talkBytes))
 	putText(t, texts, readerID, guidePath, "page-text", []byte(pdfBytes), []domain.TextSegment{
 		{Text: pageOne, Selector: `{"page":1,"boxes":[[0,0,1,1]]}`},
 		{Text: pageTwo[:20], Selector: `{"page":2}`},
 		{Text: pageTwo[20:], Selector: `{"page":2}`},
 		{Text: pageThree, Selector: `{"page":3}`},
 	})
-	putText(t, texts.As(scribeID), scribeID, talkPath, "transcript", []byte("ID3\x00\x03audio"), []domain.TextSegment{
+	putText(t, texts.As(scribeID), scribeID, talkPath, "transcript", []byte(talkBytes), []domain.TextSegment{
 		{Text: talkSecond, Selector: `{"t":[0,4.5]}`},
 		{Text: talkThird, Selector: `{"t":[4.5,9]}`},
 	})
@@ -386,7 +387,7 @@ func TestLibraryReadReturnsTranscriptTimes(t *testing.T) {
 func TestLibraryReadReportsMissingTextVersion(t *testing.T) {
 	l := newLibrary(t)
 	failure := l.call(t, "library_read", `{"path":"`+scanPath+`"}`, nil)
-	for _, want := range []string{scanPath, "no text version", "reader", "recognition", "transcription"} {
+	for _, want := range []string{scanPath, "has no text version", "recognition_create", "transcript_create"} {
 		if !strings.Contains(failure, want) {
 			t.Errorf("failure %q does not say %q", failure, want)
 		}
@@ -485,14 +486,19 @@ func TestLibraryReadRefusesAPageWithAStartAndANegativeNumber(t *testing.T) {
 	}
 }
 
-func TestATextFileWithABinaryTailIsNotText(t *testing.T) {
+func TestARangeOverTheBinaryTailOfATextFileIsNotText(t *testing.T) {
 	l := newLibrary(t)
-	l.vault.File("export.dat", strings.Repeat("plain text line\n", 1000)+"\x00\x01binary tail")
-	if failure := l.call(t, "file_read", `{"path":"export.dat"}`, nil); !strings.Contains(failure, "library_read") {
-		t.Errorf("file_read of a file whose binary part starts after its first bytes gave %q, want a refusal", failure)
+	text := strings.Repeat("plain text line\n", 1000)
+	l.vault.File("export.dat", text+"\xff\xfe binary tail")
+	var head service.FileReadOutput
+	if failure := l.call(t, "file_read", `{"path":"export.dat"}`, &head); failure != "" || head.Content != text {
+		t.Errorf("file_read of the text before the binary tail gave %q and %d bytes, want the 16000 bytes of text", failure, len(head.Content))
 	}
-	if failure := l.call(t, "library_read", `{"path":"export.dat"}`, nil); !strings.Contains(failure, "no text version") {
-		t.Errorf("library_read of it gave %q, want no text version", failure)
+	if failure := l.call(t, "file_read", `{"path":"export.dat","start":16000}`, nil); !strings.Contains(failure, "library_read") {
+		t.Errorf("file_read of the binary tail gave %q, want a refusal", failure)
+	}
+	if failure := l.call(t, "library_read", `{"path":"export.dat","start":16000}`, nil); !strings.Contains(failure, "no text version") {
+		t.Errorf("library_read of the binary tail gave %q, want no text version", failure)
 	}
 }
 

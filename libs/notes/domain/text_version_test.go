@@ -143,3 +143,33 @@ func TestVersionTextLocatesHeadingsAndSelectors(t *testing.T) {
 		t.Fatalf("%d segments", got)
 	}
 }
+
+func TestGetSegmentsInCutsEachSegmentToTheRangeAndKeepsItsHeadingAndSelector(t *testing.T) {
+	text := domain.NewVersionText(domain.TextVersion{Kind: "recognition"}, []domain.TextSegment{
+		{Text: "abc", Heading: "One", Selector: "s1"},
+		{Text: "", Heading: "Empty"},
+		{Text: "defg", Selector: "s2"},
+		{Text: "hi", Heading: "Three", Selector: "s3"},
+	})
+	for name, tc := range map[string]struct {
+		from, to int
+		want     []domain.TextSegment
+	}{
+		"inside one":  {1, 2, []domain.TextSegment{{Text: "b", Heading: "One", Selector: "s1"}}},
+		"across two":  {2, 5, []domain.TextSegment{{Text: "c", Heading: "One", Selector: "s1"}, {Text: "de", Selector: "s2"}}},
+		"one whole":   {3, 7, []domain.TextSegment{{Text: "defg", Selector: "s2"}}},
+		"to the end":  {7, 9, []domain.TextSegment{{Text: "hi", Heading: "Three", Selector: "s3"}}},
+		"empty range": {4, 4, nil},
+	} {
+		got := text.GetSegmentsIn(tc.from, tc.to)
+		if len(got) != len(tc.want) {
+			t.Errorf("%s: got %+v, want %+v", name, got, tc.want)
+			continue
+		}
+		for i := range got {
+			if got[i] != tc.want[i] {
+				t.Errorf("%s: got %+v, want %+v", name, got, tc.want)
+			}
+		}
+	}
+}

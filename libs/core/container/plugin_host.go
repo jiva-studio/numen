@@ -245,7 +245,9 @@ func hasReaders(notes note.Scenarios) bool {
 }
 
 func getNoteChanges(notes note.Scenarios) hostvault.NoteChanges {
-	return hostvault.NoteChanges{Rename: notes.Rename, Move: notes.Move, Remove: notes.RemoveNote}
+	return hostvault.NoteChanges{
+		Rename: notes.Rename, Move: notes.Move, Remove: notes.RemoveNote, Links: notes.Linking, AddLinks: notes.AddLinks,
+	}
 }
 
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the

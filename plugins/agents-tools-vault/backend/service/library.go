@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,7 +8,6 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -83,9 +81,6 @@ func (t *Tools) WithLibrary(texts host.Texts, search host.Search) *Tools {
 const (
 	readLengthDefault = 20000
 	readLengthMax     = 50000
-	// noTextVersionHelp names what makes the text version of a file.
-	noTextVersionHelp = "The reader plugin of the format makes one for a PDF or a book, " +
-		"the recognition makes one for a scan, and the transcription makes one for a recording."
 )
 
 var errNoLibrary = errors.New("the plugin was given neither text versions nor a search index")
@@ -117,19 +112,15 @@ func (t *Tools) searchLibrary(ctx context.Context, in LibrarySearchInput) (Libra
 	if strings.TrimSpace(in.Query) == "" {
 		return out, nil
 	}
-	kinds, err := parseKinds(in.Kinds)
-	if err != nil {
-		return out, err
+	kinds := make([]domain.SourceKind, len(in.Kinds))
+	for i, kind := range in.Kinds {
+		kinds[i] = domain.SourceKind(kind)
 	}
 	if t.search == nil {
 		return out, errNoLibrary
 	}
-	limit := host.DefaultSearchedPassages
-	if in.Limit > 0 {
-		limit = min(in.Limit, host.MaxSearchedPassages)
-	}
 	found, err := t.search.SearchPassages(ctx, host.PassageQuery{
-		Query: in.Query, Limit: limit, Kinds: kinds, PathPrefix: in.PathPrefix,
+		Query: in.Query, Limit: in.Limit, Kinds: kinds, PathPrefix: getFolderPrefix(in.PathPrefix),
 	})
 	if err != nil {
 		return out, fmt.Errorf("search the library: %w", err)
@@ -151,19 +142,6 @@ func (t *Tools) searchLibrary(ctx context.Context, in LibrarySearchInput) (Libra
 		})
 	}
 	return out, nil
-}
-
-// parseKinds is the kinds of source a question names: note for a markdown note, file for any other.
-func parseKinds(named []string) ([]domain.SourceKind, error) {
-	kinds := make([]domain.SourceKind, 0, len(named))
-	for _, one := range named {
-		kind := domain.SourceKind(one)
-		if kind != domain.KindNote && kind != domain.KindFile {
-			return nil, fmt.Errorf("%q is not a sort of file a search reaches: try %q or %q", one, domain.KindNote, domain.KindFile)
-		}
-		kinds = append(kinds, kind)
-	}
-	return kinds, nil
 }
 
 // getTitles is the title of each source: a note's own, else the name of the file without its extension.
@@ -236,48 +214,128 @@ func (t *Tools) readLibrary(ctx context.Context, in LibraryReadInput) (LibraryRe
 			live = version
 		}
 	}
-	text, err := host.ReadWholeText(ctx, t.texts, live)
+	out, err := t.readVersion(ctx, in, live)
 	if err != nil {
 		return LibraryReadOutput{}, fmt.Errorf("read the text of %s: %w", in.Path, err)
-	}
-	segments, err := getPlaces(text.GetSegments())
-	if err != nil {
-		return LibraryReadOutput{}, fmt.Errorf("read the text of %s: %w", in.Path, err)
-	}
-	from, to, err := pickRange(in, text.Text, segments)
-	if err != nil {
-		return LibraryReadOutput{}, fmt.Errorf("read the text of %s: %w", in.Path, err)
-	}
-	out := LibraryReadOutput{
-		Path: in.Path, Kind: string(live.Kind), Version: string(live.GetID()),
-		Text: text.Text[from:to], Start: from, Length: to - from, Size: len(text.Text),
-		NextStart: getNextStart(to, len(text.Text)), Locations: getLocations(segments, from, to),
 	}
 	return out, nil
 }
 
-// readPlainText reads a file that has no text version: a text file is its own text, and any other
-// file has no text to read.
+// getReadLength is how many bytes a call asks for: the default when it names none, and at most the
+// most one call reads.
+func getReadLength(in LibraryReadInput) int {
+	if in.Length > 0 {
+		return min(in.Length, readLengthMax)
+	}
+	return readLengthDefault
+}
+
+// readPlainText reads a file that has no text version through a ranged read of the host: a text file
+// is its own text, and any other file has no text to read.
 func (t *Tools) readPlainText(ctx context.Context, in LibraryReadInput) (LibraryReadOutput, error) {
-	data, _, err := t.vault.Read(ctx, in.Path)
+	read, err := t.vault.ReadRange(ctx, in.Path, in.Start, getReadLength(in))
+	if errors.Is(err, host.ErrNotText) {
+		return LibraryReadOutput{}, fmt.Errorf("%s has no text version; recognition_create or transcript_create makes one", in.Path)
+	}
 	if err != nil {
 		return LibraryReadOutput{}, fmt.Errorf("read %s: %w", in.Path, err)
-	}
-	if !isText(data) {
-		return LibraryReadOutput{}, fmt.Errorf("%s has no text version yet. %s", in.Path, noTextVersionHelp)
 	}
 	if in.Page > 0 {
 		return LibraryReadOutput{}, fmt.Errorf("read the text of %s: a text file has no pages; read it by start and length", in.Path)
 	}
-	text := string(data)
-	from, to, err := pickRange(in, text, nil)
-	if err != nil {
+	size := int(read.Stat.Size)
+	if err := checkStart(in.Start, size); err != nil {
 		return LibraryReadOutput{}, fmt.Errorf("read the text of %s: %w", in.Path, err)
 	}
+	to := read.Start + len(read.Text)
 	return LibraryReadOutput{
-		Path: in.Path, Kind: "", Version: "", Text: text[from:to], Start: from, Length: to - from, Size: len(text),
-		NextStart: getNextStart(to, len(text)), Locations: nil,
+		Path: in.Path, Kind: "", Version: "", Text: read.Text, Start: read.Start, Length: len(read.Text), Size: size,
+		NextStart: getNextStart(to, size), Locations: nil,
 	}, nil
+}
+
+// checkStart refuses a start at or past the end of a text that is not empty.
+func checkStart(start, size int) error {
+	if start > size || (start == size && size > 0) {
+		return fmt.Errorf("start %d is past the end of the text, which is %d bytes long", start, size)
+	}
+	return nil
+}
+
+// readVersion reads the range of a text version a call asks for: a page, or a start and a length.
+func (t *Tools) readVersion(ctx context.Context, in LibraryReadInput, live domain.TextVersion) (LibraryReadOutput, error) {
+	start, length := in.Start, getReadLength(in)
+	if in.Page > 0 {
+		from, end, err := t.findVersionPage(ctx, in.Path, live.GetID(), in.Page)
+		if err != nil {
+			return LibraryReadOutput{}, err
+		}
+		if end == from {
+			return LibraryReadOutput{Path: in.Path, Kind: string(live.Kind), Version: string(live.GetID()), Start: from}, nil
+		}
+		start, length = from, min(end-from, length)
+	}
+	read, err := t.texts.ReadTextRange(ctx, in.Path, live.GetID(), start, length)
+	if err != nil {
+		return LibraryReadOutput{}, err
+	}
+	if err := checkStart(start, read.Size); err != nil {
+		return LibraryReadOutput{}, err
+	}
+	places, err := getPlaces(read.Segments, read.Start)
+	if err != nil {
+		return LibraryReadOutput{}, err
+	}
+	var text strings.Builder
+	for _, segment := range read.Segments {
+		text.WriteString(segment.Text)
+	}
+	to := read.Start + text.Len()
+	return LibraryReadOutput{
+		Path: in.Path, Kind: string(live.Kind), Version: string(live.GetID()),
+		Text: text.String(), Start: read.Start, Length: text.Len(), Size: read.Size,
+		NextStart: getNextStart(to, read.Size), Locations: getLocations(places, read.Start, to),
+	}, nil
+}
+
+// findVersionPage is the byte range of a page of a text version. It reads the pages of segments by
+// cursor up to the first page past the one asked for, and to the end where the page is not there.
+func (t *Tools) findVersionPage(ctx context.Context, path string, id domain.TextVersionID, page int) (from, to int, err error) {
+	var places []place
+	cursor, offset := "", 0
+	for {
+		read, err := t.texts.ReadText(ctx, path, id, cursor)
+		if err != nil {
+			return 0, 0, err
+		}
+		more, err := getPlaces(read.Segments, offset)
+		if err != nil {
+			return 0, 0, err
+		}
+		places = append(places, more...)
+		if len(places) > 0 {
+			offset = places[len(places)-1].end
+		}
+		if read.NextCursor == "" || isPastPage(places, page) {
+			return findPage(page, places)
+		}
+		if read.NextCursor == cursor {
+			return 0, 0, fmt.Errorf("the host returned the page at %q twice", cursor)
+		}
+		cursor = read.NextCursor
+	}
+}
+
+// isPastPage reports whether the places hold the page and a numbered page after it.
+func isPastPage(places []place, page int) bool {
+	isSeen := false
+	for _, p := range places {
+		isSeen = isSeen || p.selector.Page == page
+		if isSeen && p.selector.Page > page {
+			return true
+		}
+	}
+	return false
 }
 
 // place is a segment of a text, its byte range, and the position the source numbers it by.
@@ -294,10 +352,9 @@ type selector struct {
 	T    []float64 `json:"t"`
 }
 
-// getPlaces is the segments with the byte range each holds.
-func getPlaces(segments []domain.TextSegment) ([]place, error) {
+// getPlaces is the segments with the byte range each holds, the first beginning at offset.
+func getPlaces(segments []domain.TextSegment, offset int) ([]place, error) {
 	places := make([]place, 0, len(segments))
-	offset := 0
 	for _, segment := range segments {
 		var s selector
 		if segment.Selector != "" {
@@ -309,44 +366,6 @@ func getPlaces(segments []domain.TextSegment) ([]place, error) {
 		offset += len(segment.Text)
 	}
 	return places, nil
-}
-
-// pickRange is the byte range of the text a call asks for, on character boundaries.
-func pickRange(in LibraryReadInput, text string, places []place) (from, to int, err error) {
-	length := readLengthDefault
-	if in.Length > 0 {
-		length = min(in.Length, readLengthMax)
-	}
-	from = max(in.Start, 0)
-	end := len(text)
-	if in.Page > 0 {
-		from, end, err = findPage(in.Page, places)
-		if err != nil {
-			return 0, 0, err
-		}
-	}
-	if from > len(text) || (from == len(text) && len(text) > 0) {
-		return 0, 0, fmt.Errorf("start %d is past the end of the text, which is %d bytes long", from, len(text))
-	}
-	from, to = alignRange(text, from, end, length)
-	return from, to, nil
-}
-
-// alignRange is the range of at most length bytes from from, up to end, on character boundaries: from
-// moves forward and the end back, or past one whole character where the range would hold none.
-func alignRange(text string, from, end, length int) (int, int) {
-	for from < len(text) && !utf8.RuneStart(text[from]) {
-		from++
-	}
-	to := min(end, from+length)
-	for to < len(text) && to > from && !utf8.RuneStart(text[to]) {
-		to--
-	}
-	if to == from && from < len(text) {
-		_, width := utf8.DecodeRuneInString(text[from:])
-		to = from + width
-	}
-	return from, to
 }
 
 // getNextStart is where to read on after a range that ends at to, nil at the end of the text.
@@ -409,11 +428,6 @@ func getLocations(places []place, from, to int) []LibraryLocation {
 		out = append(out, location)
 	}
 	return out
-}
-
-// isText reports whether a file reads as text: valid UTF-8 without a zero byte.
-func isText(data []byte) bool {
-	return bytes.IndexByte(data, 0) < 0 && utf8.Valid(data)
 }
 
 // checkReadRange refuses a range a call cannot mean: a negative number, or a page given with a start.

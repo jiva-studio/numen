@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"golang.org/x/text/unicode/norm"
 )
 
 const (
@@ -119,8 +120,7 @@ func (t *Tools) listNotes(ctx context.Context, in NoteListInput) (NoteListOutput
 	if err != nil {
 		return NoteListOutput{}, err
 	}
-	if folder := strings.Trim(in.Folder, "/"); folder != "" {
-		prefix := folder + "/"
+	if prefix := getFolderPrefix(in.Folder); prefix != "" {
 		paths = slices.DeleteFunc(paths, func(p string) bool { return !strings.HasPrefix(p, prefix) })
 	}
 	slices.Sort(paths)
@@ -176,4 +176,22 @@ func (t *Tools) resolveNoteName(ctx context.Context, in NoteResolveInput) (NoteR
 		paths = []string{}
 	}
 	return NoteResolveOutput{Paths: paths}, nil
+}
+
+// getFolderPrefix is the folder as the paths of the vault begin with it: without a leading "./" or
+// "/" and a trailing "/", composed (NFC), and followed by a slash, so "library" matches
+// "library/a.pdf" and not "library2/a.pdf". The vault root is empty.
+func getFolderPrefix(folder string) string {
+	for {
+		trimmed := strings.TrimPrefix(strings.TrimLeft(folder, "/"), "./")
+		if trimmed == folder {
+			break
+		}
+		folder = trimmed
+	}
+	folder = strings.TrimRight(folder, "/")
+	if folder == "" || folder == "." {
+		return ""
+	}
+	return norm.NFC.String(folder) + "/"
 }

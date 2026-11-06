@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"connectrpc.com/connect"
 
@@ -194,7 +195,7 @@ func (c *SearchClient) SearchPassages(ctx context.Context, query PassageQuery) (
 		kinds[i] = string(kind)
 	}
 	res, err := c.rpc.SearchPassages(ctx, newSearchRequest(c, &v1.HostSearchServiceSearchPassagesRequest{
-		Query: query.Query, Limit: int32(min(max(query.Limit, 0), MaxSearchedPassages)), Kinds: kinds, PathPrefix: query.PathPrefix,
+		Query: query.Query, Limit: int32(min(max(query.Limit, math.MinInt32), math.MaxInt32)), Kinds: kinds, PathPrefix: query.PathPrefix,
 	}))
 	if err != nil {
 		return nil, readSearchCallError(err)

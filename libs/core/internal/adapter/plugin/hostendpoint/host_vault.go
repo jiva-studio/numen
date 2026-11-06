@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -108,6 +109,8 @@ func getVaultErrorCode(err error) (v1.HostVaultErrorCode, bool) {
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT, true
 	case errors.Is(err, fs.ErrNotExist):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND, true
+	case errors.Is(err, pluginport.ErrNotText):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT, true
 	}
 	return 0, false
 }
@@ -302,6 +305,9 @@ func (e *vaultEndpoint) ReadFile(
 	}
 	if vault == nil {
 		return connect.NewResponse(&v1.ReadFileResponse{Error: noVault}), nil
+	}
+	if req.Msg.Length != nil {
+		return answerFileRange(ctx, vault, req.Msg)
 	}
 	content, pos, err := vault.Read(ctx, req.Msg.GetPath())
 	code, err := answer(ctx, err)
@@ -652,4 +658,21 @@ func followVault(
 			}
 		}
 	}
+}
+
+// answerFileRange answers a ReadFile that sets a length: the text of the range, where it begins and
+// the file stat.
+func answerFileRange(ctx context.Context, vault pluginport.PluginVault, req *v1.ReadFileRequest) (*connect.Response[v1.ReadFileResponse], error) {
+	if req.GetStart() < 0 || req.GetLength() < 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("a range of %s begins at %d and holds %d bytes: give numbers of zero or more", req.GetPath(), req.GetStart(), req.GetLength()))
+	}
+	read, err := vault.ReadRange(ctx, req.GetPath(), int(req.GetStart()), int(min(req.GetLength(), math.MaxInt32)))
+	code, err := answer(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.ReadFileResponse{Error: code}), err
+	}
+	return connect.NewResponse(&v1.ReadFileResponse{
+		Content: []byte(read.Text), Stat: writeFileStat(read.Stat), Start: int64(read.Start),
+	}), nil
 }
