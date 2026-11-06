@@ -90,7 +90,7 @@ func describeArguments(path, names []string, single, plural string) string {
 }
 
 // readPropertyPath returns the property names along a JSON pointer into a schema, such as
-// ["shelf", "title"] for /properties/shelf/properties/title.
+// ["location", "title"] for /properties/location/properties/title.
 func readPropertyPath(pointer string) []string {
 	var names []string
 	segments := strings.Split(pointer, "/")
