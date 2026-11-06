@@ -158,6 +158,10 @@ func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.FileStat, 
 	return content, pos, nil
 }
 
+func (a Vault) ReadRange(ctx context.Context, path string, start, length int) (pluginport.PluginFileRange, error) {
+	return pluginport.PluginFileRange{}, errors.New("not implemented")
+}
+
 func (a Vault) Write(
 	ctx context.Context, path string, content []byte, baseline domain.FileStat,
 ) (domain.FileStat, error) {

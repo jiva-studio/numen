@@ -125,6 +125,21 @@ service HostVaultService {
   // NOT_A_NOTE. It needs vault:write.
   rpc RemoveNotes(HostVaultServiceRemoveNotesRequest) returns (HostVaultServiceRemoveNotesResponse);
 
+  // AddLinks writes links into the frontmatter links of notes. The links of one
+  // note are one write against one file stat, and succeed or fail together. At
+  // most 50 links. It needs vault:write.
+  rpc AddLinks(HostVaultServiceAddLinksRequest) returns (HostVaultServiceAddLinksResponse);
+
+  // UpdateLinks changes the role, type, label and note of the links a note has
+  // to a target, keeping the target. An empty field is kept. It needs
+  // vault:write.
+  rpc UpdateLinks(HostVaultServiceUpdateLinksRequest) returns (HostVaultServiceUpdateLinksResponse);
+
+  // RemoveLinks removes the frontmatter links a note has to a target, of every
+  // type, or only those of one role. The note at the other end is unchanged. It
+  // needs vault:write.
+  rpc RemoveLinks(HostVaultServiceRemoveLinksRequest) returns (HostVaultServiceRemoveLinksResponse);
+
   // AddVault adds a folder to the installation's list of vaults. It needs
   // vault:manage.
   rpc AddVault(HostVaultServiceAddVaultRequest) returns (HostVaultServiceAddVaultResponse);
@@ -215,6 +230,9 @@ enum HostVaultErrorCode {
   // The change of a note failed for a reason with no code of its own; the
   // detail of that note holds the core's error text.
   HOST_VAULT_ERROR_CODE_INTERNAL = 17;
+
+  // The call was cancelled before this note was changed: the note is as it was.
+  HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED = 18;
 }
 
 // HostFileStat is what a file was at a moment: at its current position, how large it
@@ -286,12 +304,22 @@ message StatFileResponse {
 
 message ReadFileRequest {
   string path = 1;
+  // Where a ranged read begins, in bytes.
+  int64 start = 2;
+  // Set: read at most this many bytes from start as text, cut at whole
+  // characters; zero or more than 16000 reads 16000. A range that is not UTF-8
+  // is answered NOT_TEXT, a folder or a path the vault does not list NOT_FOUND.
+  // Unset: read the whole file as bytes.
+  optional int64 length = 3;
 }
 
 message ReadFileResponse {
   HostVaultErrorCode error = 1;
   bytes content = 2;
   HostFileStat stat = 3;
+  // Where content begins in the file: start moved forward to a whole
+  // character. Zero for a whole read.
+  int64 start = 4;
 }
 
 message WriteFileRequest {
@@ -622,6 +650,84 @@ message HostVaultServiceRemoveNotesResponse {
   HostVaultErrorCode error = 1;
   // One per path, in the order of the request.
   repeated HostNoteRemoval removals = 2;
+}
+
+// HostLinkAddition is one link to write into a note.
+message HostLinkAddition {
+  // The note the link is written in.
+  string from = 1;
+  // The note as the caller read it.
+  HostFileStat baseline = 2;
+  // The target as written, e.g. "Rivers" or "note://01H...".
+  string to = 3;
+  Role role = 4;
+  string type = 5;
+  string label = 6;
+  // Why the link exists.
+  string note = 7;
+}
+
+message HostVaultServiceAddLinksRequest {
+  // At most 50 links.
+  repeated HostLinkAddition links = 1;
+}
+
+// HostLinkAdded is the outcome of writing one link.
+message HostLinkAdded {
+  // The note after the write; unset when nothing was written.
+  HostFileStat stat = 1;
+  // Why the link was not written: CONFLICT for a stale baseline, NOT_FOUND,
+  // NOT_A_NOTE, UNREADABLE, INTERNAL and the other per-note codes.
+  HostVaultErrorCode error = 2;
+  // The core's error text where the link was not written, empty on success.
+  string detail = 3;
+}
+
+message HostVaultServiceAddLinksResponse {
+  HostVaultErrorCode error = 1;
+  // One per link, in the order of the request.
+  repeated HostLinkAdded results = 2;
+}
+
+message HostVaultServiceUpdateLinksRequest {
+  // The note the links are written in.
+  string from = 1;
+  // The target as written.
+  string to = 2;
+  // The note as the caller read it.
+  HostFileStat baseline = 3;
+  Role role = 4;
+  string type = 5;
+  string label = 6;
+  string note = 7;
+}
+
+message HostVaultServiceUpdateLinksResponse {
+  HostVaultErrorCode error = 1;
+  // The note after the write.
+  HostFileStat stat = 2;
+  // The core's error text where nothing was written, empty on success.
+  string detail = 3;
+}
+
+message HostVaultServiceRemoveLinksRequest {
+  // The note the links are written in.
+  string from = 1;
+  // The target as written.
+  string to = 2;
+  // The note as the caller read it.
+  HostFileStat baseline = 3;
+  // Only the links of this role. ROLE_UNSPECIFIED removes the links of every
+  // role.
+  Role role = 4;
+}
+
+message HostVaultServiceRemoveLinksResponse {
+  HostVaultErrorCode error = 1;
+  // The note after the write.
+  HostFileStat stat = 2;
+  // The core's error text where nothing was written, empty on success.
+  string detail = 3;
 }
 
 message HostVaultServiceAddVaultRequest {

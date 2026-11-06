@@ -61,3 +61,9 @@ func (p Texts) ReadText(ctx context.Context, v domain.Vault, path string, id dom
 	}
 	return pluginport.PluginTextPage{Segments: page.Segments, NextCursor: page.NextCursor}, nil
 }
+
+// ReadTextRange reads the segments of a version of a file of the vault that cover a range of its
+// whole text.
+func (p Texts) ReadTextRange(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (pluginport.PluginTextRange, error) {
+	return pluginport.PluginTextRange{}, errors.New("not implemented")
+}

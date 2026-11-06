@@ -54,3 +54,31 @@ type NoteArranger interface {
 	// is not opt-in when none is named. dangling is opt-in.
 	GetProblems(ctx context.Context, checks []string) (VaultProblems, error)
 }
+
+// LinkAddition is one link to write into the note at From, which the caller read as Baseline.
+type LinkAddition struct {
+	From     string
+	Baseline domain.FileStat
+	Link     domain.Link
+}
+
+// LinkAdded is the outcome of one addition: the note after the write, or why the link was not
+// written. A stale baseline is ErrStale.
+type LinkAdded struct {
+	Stat domain.FileStat
+	Err  error
+}
+
+// LinkEditor edits the frontmatter links of the notes of a vault. A baseline the note moved past is
+// ErrStale. The edits need vault:write.
+type LinkEditor interface {
+	// AddLinks writes the links, grouped by note: the links of one note are one write against one
+	// baseline, and succeed or fail together. The answer has one entry per addition, in order.
+	AddLinks(ctx context.Context, additions []LinkAddition) ([]LinkAdded, error)
+	// UpdateLinks changes the role, type, label and note of the links the note at from has to the
+	// target, keeping the target. An empty field is kept.
+	UpdateLinks(ctx context.Context, from string, to domain.Address, change domain.Link, baseline domain.FileStat) (domain.FileStat, error)
+	// RemoveLinks removes the frontmatter links the note at from has to the target, of every role, or
+	// only those of the role when one is given. The note at the other end is unchanged.
+	RemoveLinks(ctx context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat) (domain.FileStat, error)
+}

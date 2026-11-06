@@ -36,6 +36,7 @@ type (
 	PluginDiscoverer       = pluginport.PluginDiscoverer
 	PluginEmbeddedTexts    = pluginport.PluginEmbeddedTexts
 	PluginEmbeddingState   = pluginport.PluginEmbeddingState
+	PluginFileRange        = pluginport.PluginFileRange
 	PluginExtensionStats   = pluginport.PluginExtensionStats
 	PluginIndexStats       = pluginport.PluginIndexStats
 	PluginEventEmitter     = pluginport.PluginEventEmitter
@@ -45,6 +46,8 @@ type (
 	PluginIndexState       = pluginport.PluginIndexState
 	PluginIndexStatus      = pluginport.PluginIndexStatus
 	PluginInfo             = pluginport.PluginInfo
+	PluginLinkAdded        = pluginport.PluginLinkAdded
+	PluginLinkAddition     = pluginport.PluginLinkAddition
 	PluginLifecycleManager = pluginport.PluginLifecycleManager
 	PluginManager          = pluginport.PluginManager
 	PluginManifest         = pluginport.PluginManifest
@@ -80,6 +83,7 @@ type (
 	PluginTexts            = pluginport.PluginTexts
 	PluginTextListing      = pluginport.PluginTextListing
 	PluginTextPage         = pluginport.PluginTextPage
+	PluginTextRange        = pluginport.PluginTextRange
 	PluginTextPut          = pluginport.PluginTextPut
 	PluginTransport        = pluginport.PluginTransport
 	PluginVault            = pluginport.PluginVault
@@ -187,6 +191,7 @@ var (
 	ErrNoKeyStore             = pluginport.ErrNoKeyStore
 	ErrNoProvisioner          = pluginport.ErrNoProvisioner
 	ErrNoWindow               = pluginport.ErrNoWindow
+	ErrNotText                = pluginport.ErrNotText
 	ErrUnsavedChanges         = pluginport.ErrUnsavedChanges
 	ErrInvalidFocus           = pluginport.ErrInvalidFocus
 	ErrTabNotShown            = pluginport.ErrTabNotShown

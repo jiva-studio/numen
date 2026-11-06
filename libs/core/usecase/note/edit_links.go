@@ -155,6 +155,14 @@ func (u EditLinks) Remove(
 	})
 }
 
+// RemoveTargetLinks removes every frontmatter record the note has to the target, of every type, in
+// one read and one write; only those of the role when one is given.
+func (u EditLinks) RemoveTargetLinks(
+	ctx context.Context, v domain.Vault, from string, to domain.Address, role domain.LinkRole, stat domain.FileStat,
+) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("not implemented")
+}
+
 // CheckWritable is what a link must carry before anything will write it.
 func CheckWritable(link domain.Link) error {
 	if !domain.IsKnownRole(link.Role) {

@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
@@ -210,4 +211,20 @@ func (c *Client) OpenVault(ctx context.Context, id domain.VaultID) error {
 		return readError(err)
 	}
 	return failVaults(res.Msg.GetError(), res.Msg.GetDetail())
+}
+
+func (c *Client) AddLinks(ctx context.Context, additions []LinkAddition) ([]LinkAdded, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (c *Client) UpdateLinks(
+	ctx context.Context, from string, to domain.Address, change domain.Link, baseline domain.FileStat,
+) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("not implemented")
+}
+
+func (c *Client) RemoveLinks(
+	ctx context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat,
+) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("not implemented")
 }

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hosttext.proto.
  */
 export const file_numen_v1_hosttext: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEiwgEKC1RleHRWZXJzaW9uEgoKAmlkGAEgASgJEgwKBHBhdGgYAiABKAkSEQoJcGx1Z2luX2lkGAMgASgJEgsKA2tleRgEIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgFIAEoCRIMCgRraW5kGAYgASgJEhIKCmlucHV0X2hhc2gYByABKAkSEQoJdGV4dF9oYXNoGAggASgJEhsKE2NyZWF0ZV90aW1lX3VuaXhfbXMYCSABKAMSDAoEZmlsZRgKIAEoCSJ9ChVQdXRUZXh0VmVyc2lvblJlcXVlc3QSDAoEcGF0aBgBIAEoCRILCgNrZXkYAiABKAkSGQoRc291cmNlX3ZlcnNpb25faWQYAyABKAkSDAoEa2luZBgEIAEoCRISCgppbnB1dF9oYXNoGAUgASgJEgwKBGZpbGUYBiABKAkiaAoWUHV0VGV4dFZlcnNpb25SZXNwb25zZRImCgd2ZXJzaW9uGAEgASgLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SJgoFZXJyb3IYAiABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIjUKGFJlbW92ZVRleHRWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2tleRgCIAEoCSJDChlSZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSInChdMaXN0VGV4dFZlcnNpb25zUmVxdWVzdBIMCgRwYXRoGAEgASgJIoQBChhMaXN0VGV4dFZlcnNpb25zUmVzcG9uc2USJwoIdmVyc2lvbnMYASADKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhIXCg9saXZlX3ZlcnNpb25faWQYAiABKAkSJgoFZXJyb3IYAyABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIkMKD1JlYWRUZXh0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhIKCnZlcnNpb25faWQYAiABKAkSDgoGY3Vyc29yGAMgASgJIngKEFJlYWRUZXh0UmVzcG9uc2USJwoIc2VnbWVudHMYASADKAsyFS5udW1lbi52MS5UZXh0U2VnbWVudBITCgtuZXh0X2N1cnNvchgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUy4gIKD0hvc3RUZXh0U2VydmljZRJTCg5QdXRUZXh0VmVyc2lvbhIfLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVxdWVzdBogLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVzcG9uc2USXAoRUmVtb3ZlVGV4dFZlcnNpb24SIi5udW1lbi52MS5SZW1vdmVUZXh0VmVyc2lvblJlcXVlc3QaIy5udW1lbi52MS5SZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlElkKEExpc3RUZXh0VmVyc2lvbnMSIS5udW1lbi52MS5MaXN0VGV4dFZlcnNpb25zUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RUZXh0VmVyc2lvbnNSZXNwb25zZRJBCghSZWFkVGV4dBIZLm51bWVuLnYxLlJlYWRUZXh0UmVxdWVzdBoaLm51bWVuLnYxLlJlYWRUZXh0UmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_textprovider]);
+  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEiwgEKC1RleHRWZXJzaW9uEgoKAmlkGAEgASgJEgwKBHBhdGgYAiABKAkSEQoJcGx1Z2luX2lkGAMgASgJEgsKA2tleRgEIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgFIAEoCRIMCgRraW5kGAYgASgJEhIKCmlucHV0X2hhc2gYByABKAkSEQoJdGV4dF9oYXNoGAggASgJEhsKE2NyZWF0ZV90aW1lX3VuaXhfbXMYCSABKAMSDAoEZmlsZRgKIAEoCSJ9ChVQdXRUZXh0VmVyc2lvblJlcXVlc3QSDAoEcGF0aBgBIAEoCRILCgNrZXkYAiABKAkSGQoRc291cmNlX3ZlcnNpb25faWQYAyABKAkSDAoEa2luZBgEIAEoCRISCgppbnB1dF9oYXNoGAUgASgJEgwKBGZpbGUYBiABKAkiaAoWUHV0VGV4dFZlcnNpb25SZXNwb25zZRImCgd2ZXJzaW9uGAEgASgLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SJgoFZXJyb3IYAiABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIjUKGFJlbW92ZVRleHRWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2tleRgCIAEoCSJDChlSZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSInChdMaXN0VGV4dFZlcnNpb25zUmVxdWVzdBIMCgRwYXRoGAEgASgJIoQBChhMaXN0VGV4dFZlcnNpb25zUmVzcG9uc2USJwoIdmVyc2lvbnMYASADKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhIXCg9saXZlX3ZlcnNpb25faWQYAiABKAkSJgoFZXJyb3IYAyABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlInIKD1JlYWRUZXh0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhIKCnZlcnNpb25faWQYAiABKAkSDgoGY3Vyc29yGAMgASgJEg0KBXN0YXJ0GAQgASgDEhMKBmxlbmd0aBgFIAEoA0gAiAEBQgkKB19sZW5ndGgilQEKEFJlYWRUZXh0UmVzcG9uc2USJwoIc2VnbWVudHMYASADKAsyFS5udW1lbi52MS5UZXh0U2VnbWVudBITCgtuZXh0X2N1cnNvchgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUSDQoFc3RhcnQYBCABKAMSDAoEc2l6ZRgFIAEoAzLiAgoPSG9zdFRleHRTZXJ2aWNlElMKDlB1dFRleHRWZXJzaW9uEh8ubnVtZW4udjEuUHV0VGV4dFZlcnNpb25SZXF1ZXN0GiAubnVtZW4udjEuUHV0VGV4dFZlcnNpb25SZXNwb25zZRJcChFSZW1vdmVUZXh0VmVyc2lvbhIiLm51bWVuLnYxLlJlbW92ZVRleHRWZXJzaW9uUmVxdWVzdBojLm51bWVuLnYxLlJlbW92ZVRleHRWZXJzaW9uUmVzcG9uc2USWQoQTGlzdFRleHRWZXJzaW9ucxIhLm51bWVuLnYxLkxpc3RUZXh0VmVyc2lvbnNSZXF1ZXN0GiIubnVtZW4udjEuTGlzdFRleHRWZXJzaW9uc1Jlc3BvbnNlEkEKCFJlYWRUZXh0EhkubnVtZW4udjEuUmVhZFRleHRSZXF1ZXN0GhoubnVtZW4udjEuUmVhZFRleHRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_textprovider]);
 
 /**
  * TextVersion is the host's record of one text of a file.
@@ -251,11 +251,28 @@ export type ReadTextRequest = Message<"numen.v1.ReadTextRequest"> & {
   versionId: string;
 
   /**
-   * cursor is the next_cursor of the page before, and empty for the first.
+   * cursor is the next_cursor of the page before, and empty for the first. Not
+   * used with a length.
    *
    * @generated from field: string cursor = 3;
    */
   cursor: string;
+
+  /**
+   * Where a ranged read begins in the whole text, in bytes.
+   *
+   * @generated from field: int64 start = 4;
+   */
+  start: bigint;
+
+  /**
+   * Set: read the range from start of this many bytes, zero to the end, cut at
+   * whole characters, as the segments it covers, each cut to the range. Unset:
+   * read one page by cursor.
+   *
+   * @generated from field: optional int64 length = 5;
+   */
+  length?: bigint | undefined;
 };
 
 /**
@@ -285,6 +302,19 @@ export type ReadTextResponse = Message<"numen.v1.ReadTextResponse"> & {
    * @generated from field: numen.v1.TextErrorCode error = 3;
    */
   error: TextErrorCode;
+
+  /**
+   * For a ranged read: where the first segment returned begins in the whole
+   * text, and the bytes of the whole text.
+   *
+   * @generated from field: int64 start = 4;
+   */
+  start: bigint;
+
+  /**
+   * @generated from field: int64 size = 5;
+   */
+  size: bigint;
 };
 
 /**

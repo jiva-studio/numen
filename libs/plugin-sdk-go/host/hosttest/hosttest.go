@@ -269,6 +269,10 @@ func (v *Vault) StatFile(ctx context.Context, filePath string) (domain.FileStat,
 	return at, err
 }
 
+func (v *Vault) ReadRange(ctx context.Context, filePath string, start, length int) (host.FileRange, error) {
+	return host.FileRange{}, errors.New("not implemented")
+}
+
 func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileStat, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()

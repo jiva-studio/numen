@@ -11,15 +11,18 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
 // NoteChanges is the use cases that rename, move and remove the notes of a vault, repairing the
 // links that stop resolving.
 type NoteChanges struct {
-	Rename note.Rename
-	Move   note.Move
-	Remove note.RemoveNote
+	Rename   note.Rename
+	Move     note.Move
+	Remove   note.RemoveNote
+	Links    note.EditLinks
+	AddLinks note.AddLinks
 }
 
 // Arranger is the use cases that change the notes of a vault and that run the checks of a vault.
@@ -114,4 +117,20 @@ func (a Vault) GetProblems(ctx context.Context, checks []domain.Check) ([]domain
 		return nil, nil, err
 	}
 	return report.Ran, report.Found, nil
+}
+
+func (a Vault) AddLinks(ctx context.Context, additions []pluginport.PluginLinkAddition) ([]pluginport.PluginLinkAdded, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (a Vault) UpdateLinks(
+	ctx context.Context, from string, to domain.Address, change domain.Link, baseline domain.FileStat,
+) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("not implemented")
+}
+
+func (a Vault) RemoveLinks(
+	ctx context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat,
+) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("not implemented")
 }

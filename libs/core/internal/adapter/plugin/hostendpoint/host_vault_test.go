@@ -133,6 +133,22 @@ func (m *memoryVault) Read(_ context.Context, path string) ([]byte, domain.FileS
 	return []byte(m.files[path]), pos, nil
 }
 
+func (m *memoryVault) ReadRange(context.Context, string, int, int) (pluginport.PluginFileRange, error) {
+	return pluginport.PluginFileRange{}, errors.New("not implemented")
+}
+
+func (m *memoryVault) AddLinks(context.Context, []pluginport.PluginLinkAddition) ([]pluginport.PluginLinkAdded, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *memoryVault) UpdateLinks(context.Context, string, domain.Address, domain.Link, domain.FileStat) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("not implemented")
+}
+
+func (m *memoryVault) RemoveLinks(context.Context, string, domain.Address, domain.LinkRole, domain.FileStat) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("not implemented")
+}
+
 func (m *memoryVault) Write(_ context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

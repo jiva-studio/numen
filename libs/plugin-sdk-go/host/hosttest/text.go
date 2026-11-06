@@ -205,3 +205,7 @@ func (w *textWorld) readFile(ctx context.Context, v domain.TextVersion) ([]domai
 func (w *textWorld) indexOf(path string, id domain.TextVersionID) int {
 	return slices.IndexFunc(w.versions, func(v domain.TextVersion) bool { return v.Path == path && v.GetID() == id })
 }
+
+func (t *Texts) ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (host.TextRange, error) {
+	return host.TextRange{}, errors.New("not implemented")
+}

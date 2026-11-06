@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -144,4 +145,8 @@ func readTextSegments(segments []*v1.TextSegment) []domain.TextSegment {
 		out = append(out, domain.TextSegment{Text: s.GetText(), Heading: s.GetHeading(), Selector: domain.Selector(s.GetSelector())})
 	}
 	return out
+}
+
+func (c *TextClient) ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (TextRange, error) {
+	return TextRange{}, errors.New("not implemented")
 }

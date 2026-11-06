@@ -2,6 +2,7 @@ package hostendpoint
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -225,4 +226,8 @@ func TestTextCallsUseVaultFromHeader(t *testing.T) {
 	if connect.CodeOf(rejected) != connect.CodeNotFound {
 		t.Fatalf("an unknown vault was answered %v", rejected)
 	}
+}
+
+func (m *memoryTexts) ReadTextRange(context.Context, domain.Vault, string, domain.TextVersionID, int, int) (pluginport.PluginTextRange, error) {
+	return pluginport.PluginTextRange{}, errors.New("not implemented")
 }

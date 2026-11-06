@@ -43,6 +43,10 @@ var (
 	ErrUnknownVault = errors.New("the vault is not on the list")
 	// ErrNotExist is fs.ErrNotExist: a file, a note or a name that is not there.
 	ErrNotExist = fs.ErrNotExist
+	// ErrNotAttempted is what a note of a batch gets when the call was cancelled before it was changed.
+	ErrNotAttempted = errors.New("the call was cancelled before this note was changed")
+	// ErrNotText is what a ranged read gets for bytes that are not UTF-8.
+	ErrNotText = errors.New("the file is not text")
 )
 
 type IndexStatus int
@@ -113,6 +117,14 @@ type VaultIndex interface {
 	Watch(ctx context.Context) (<-chan Change, error)
 }
 
+// FileRange is a ranged read of a file: the text, where it begins in the file, and the file stat of
+// the file it was read from.
+type FileRange struct {
+	Text  string
+	Start int
+	Stat  domain.FileStat
+}
+
 // FileAccess reads and writes the files of a vault.
 type FileAccess interface {
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
@@ -122,17 +134,22 @@ type FileAccess interface {
 	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	// Create makes a file that is not there, else it returns ErrAlreadyExists.
 	Create(ctx context.Context, path string, content []byte) error
+	// ReadRange reads at most length bytes of the file from start as text, cut at whole characters.
+	// Zero or more than 16000 reads 16000. A range that is not UTF-8 is ErrNotText; a folder is
+	// ErrNotExist.
+	ReadRange(ctx context.Context, path string, start, length int) (FileRange, error)
 	// Lock holds the vault's writers to this plugin until the release is called. The release returns
 	// the failure to release; the host frees a lock whose release failed after its timeout.
 	Lock(ctx context.Context) (release func() error, err error)
 }
 
-// VaultNotes reads the notes of a vault and the links between them, and renames, moves and removes
-// the notes.
+// VaultNotes reads the notes of a vault and the links between them, renames, moves and removes the
+// notes, and edits their frontmatter links.
 type VaultNotes interface {
 	NoteLookup
 	LinkLookup
 	NoteArranger
+	LinkEditor
 }
 
 // NoteLookup finds notes by path, name and type.

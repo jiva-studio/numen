@@ -2,6 +2,7 @@ package textversion
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -75,6 +76,20 @@ func (u *Versions) GetTextPage(ctx context.Context, v domain.Vault, path string,
 		page.NextCursor = strconv.Itoa(end)
 	}
 	return page, nil
+}
+
+// TextRange is the segments of a version that cover a range of its whole text, each cut to the
+// range: where the first begins in the whole text, and the bytes of the whole text.
+type TextRange struct {
+	Segments []domain.TextSegment
+	Start    int
+	Size     int
+}
+
+// GetTextRange is the segments of a version that cover length bytes of its whole text from start,
+// cut at whole characters. A length of zero reads to the end.
+func (u *Versions) GetTextRange(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (TextRange, error) {
+	return TextRange{}, errors.New("not implemented")
 }
 
 // readText reads a version's file. It returns textport.ErrNoText when the file

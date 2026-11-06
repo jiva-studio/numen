@@ -487,8 +487,15 @@ type ReadTextRequest struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Path      string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	VersionId string                 `protobuf:"bytes,2,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
-	// cursor is the next_cursor of the page before, and empty for the first.
-	Cursor        string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	// cursor is the next_cursor of the page before, and empty for the first. Not
+	// used with a length.
+	Cursor string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	// Where a ranged read begins in the whole text, in bytes.
+	Start int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
+	// Set: read the range from start of this many bytes, zero to the end, cut at
+	// whole characters, as the segments it covers, each cut to the range. Unset:
+	// read one page by cursor.
+	Length        *int64 `protobuf:"varint,5,opt,name=length,proto3,oneof" json:"length,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -544,12 +551,30 @@ func (x *ReadTextRequest) GetCursor() string {
 	return ""
 }
 
+func (x *ReadTextRequest) GetStart() int64 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *ReadTextRequest) GetLength() int64 {
+	if x != nil && x.Length != nil {
+		return *x.Length
+	}
+	return 0
+}
+
 type ReadTextResponse struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Segments []*TextSegment         `protobuf:"bytes,1,rep,name=segments,proto3" json:"segments,omitempty"`
 	// next_cursor is empty on the last page.
-	NextCursor    string        `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
-	Error         TextErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
+	NextCursor string        `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
+	Error      TextErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
+	// For a ranged read: where the first segment returned begins in the whole
+	// text, and the bytes of the whole text.
+	Start         int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
+	Size          int64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -605,6 +630,20 @@ func (x *ReadTextResponse) GetError() TextErrorCode {
 	return TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED
 }
 
+func (x *ReadTextResponse) GetStart() int64 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *ReadTextResponse) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
 var File_numen_v1_hosttext_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hosttext_proto_rawDesc = "" +
@@ -644,17 +683,22 @@ const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\x18ListTextVersionsResponse\x121\n" +
 	"\bversions\x18\x01 \x03(\v2\x15.numen.v1.TextVersionR\bversions\x12&\n" +
 	"\x0flive_version_id\x18\x02 \x01(\tR\rliveVersionId\x12-\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"\\\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"\x9a\x01\n" +
 	"\x0fReadTextRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x02 \x01(\tR\tversionId\x12\x16\n" +
-	"\x06cursor\x18\x03 \x01(\tR\x06cursor\"\x95\x01\n" +
+	"\x06cursor\x18\x03 \x01(\tR\x06cursor\x12\x14\n" +
+	"\x05start\x18\x04 \x01(\x03R\x05start\x12\x1b\n" +
+	"\x06length\x18\x05 \x01(\x03H\x00R\x06length\x88\x01\x01B\t\n" +
+	"\a_length\"\xbf\x01\n" +
 	"\x10ReadTextResponse\x121\n" +
 	"\bsegments\x18\x01 \x03(\v2\x15.numen.v1.TextSegmentR\bsegments\x12\x1f\n" +
 	"\vnext_cursor\x18\x02 \x01(\tR\n" +
 	"nextCursor\x12-\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error2\xe2\x02\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\x12\x14\n" +
+	"\x05start\x18\x04 \x01(\x03R\x05start\x12\x12\n" +
+	"\x04size\x18\x05 \x01(\x03R\x04size2\xe2\x02\n" +
 	"\x0fHostTextService\x12S\n" +
 	"\x0ePutTextVersion\x12\x1f.numen.v1.PutTextVersionRequest\x1a .numen.v1.PutTextVersionResponse\x12\\\n" +
 	"\x11RemoveTextVersion\x12\".numen.v1.RemoveTextVersionRequest\x1a#.numen.v1.RemoveTextVersionResponse\x12Y\n" +
@@ -716,6 +760,7 @@ func file_numen_v1_hosttext_proto_init() {
 		return
 	}
 	file_numen_v1_textprovider_proto_init()
+	file_numen_v1_hosttext_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

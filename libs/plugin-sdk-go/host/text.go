@@ -38,6 +38,14 @@ type TextListing struct {
 	Live     domain.TextVersionID
 }
 
+// TextRange is a ranged read of a version: the segments that cover the range, each cut to it, where
+// the first begins in the whole text, and the bytes of the whole text.
+type TextRange struct {
+	Segments []domain.TextSegment
+	Start    int
+	Size     int
+}
+
 // TextPage is one page of a version's segments. An empty NextCursor is the last page.
 type TextPage struct {
 	Segments   []domain.TextSegment
@@ -61,6 +69,9 @@ type Texts interface {
 	// ReadText is one page of any version's segments, read by the host from the version's file, or
 	// ErrNotExist.
 	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (TextPage, error)
+	// ReadTextRange is the segments of a version that cover length bytes of its whole text from start,
+	// cut at whole characters. A length of zero reads to the end.
+	ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (TextRange, error)
 }
 
 // errRepeatedCursor is a text that returned a page with the cursor it was requested with.

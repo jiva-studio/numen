@@ -2,6 +2,7 @@ package pluginport
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -102,6 +103,10 @@ type PluginVaultReader interface {
 	pluginVaultLinkReader
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
+	// ReadRange reads at most length bytes of a file from start as text, cut at whole characters. A
+	// range that is not UTF-8 is ErrNotText; a folder or a path the vault does not list is
+	// fs.ErrNotExist.
+	ReadRange(ctx context.Context, path string, start, length int) (PluginFileRange, error)
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 }
 
@@ -152,6 +157,15 @@ type pluginVaultArranger interface {
 	// GetProblems runs the checks named, or every check that is not opt-in when none is named, and
 	// returns the names of the checks the answer covers and what they found.
 	GetProblems(ctx context.Context, checks []domain.Check) (checkNames []domain.Check, problems []domain.VaultProblem, err error)
+	// AddLinks writes links into the frontmatter links of notes, grouped by note: the links of one
+	// note are one write against one file stat. The answer has one entry per addition, in order.
+	AddLinks(ctx context.Context, additions []PluginLinkAddition) ([]PluginLinkAdded, error)
+	// UpdateLinks changes the role, type, label and note of the links the note at from has to the
+	// target, keeping the target. An empty field is kept.
+	UpdateLinks(ctx context.Context, from string, to domain.Address, change domain.Link, baseline domain.FileStat) (domain.FileStat, error)
+	// RemoveLinks removes the frontmatter links the note at from has to the target, of every role, or
+	// only those of the role when one is given.
+	RemoveLinks(ctx context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat) (domain.FileStat, error)
 }
 
 // PluginVault is the open vault as the host exposes it to a plugin: its files,
@@ -163,4 +177,29 @@ type PluginVault interface {
 	pluginVaultRelations
 	PluginVaultStore
 	PluginVaultLifecycle
+}
+
+// ErrNotText is a ranged read of bytes that are not UTF-8.
+var ErrNotText = errors.New("the file is not text")
+
+// PluginFileRange is a ranged read of a file: the text, where it begins in the file, and the file
+// stat of the file it was read from.
+type PluginFileRange struct {
+	Text  string
+	Start int
+	Stat  domain.FileStat
+}
+
+// PluginLinkAddition is one link to write into the note at From, which the caller read as Baseline.
+type PluginLinkAddition struct {
+	From     string
+	Baseline domain.FileStat
+	Link     domain.Link
+}
+
+// PluginLinkAdded is the outcome of one addition: the note after the write, or why it was not
+// written.
+type PluginLinkAdded struct {
+	Stat domain.FileStat
+	Err  error
 }

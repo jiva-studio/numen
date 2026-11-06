@@ -96,6 +96,8 @@ func getHostVaultErrors() map[v1.HostVaultErrorCode]error {
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE:    ErrHierarchyCycle,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED:     ErrNoFreeName,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:       domain.ErrInvalidName,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT:           ErrNotText,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED:      ErrNotAttempted,
 	}
 }
 
@@ -195,6 +197,10 @@ func (c *Client) Read(ctx context.Context, path string) ([]byte, domain.FileStat
 		return nil, domain.FileStat{}, err
 	}
 	return res.Msg.GetContent(), readFileStat(res.Msg.GetStat()), nil
+}
+
+func (c *Client) ReadRange(ctx context.Context, path string, start, length int) (FileRange, error) {
+	return FileRange{}, errors.New("not implemented")
 }
 
 func (c *Client) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
