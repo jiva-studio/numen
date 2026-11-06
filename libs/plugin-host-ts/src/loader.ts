@@ -16,6 +16,7 @@ import {
 } from './module'
 import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 import { startLoader } from './loading/startLoader'
+import { createStartContext } from './loading/startContext'
 
 export interface PluginLoaderDeps {
   readonly host: LoaderHost
@@ -64,8 +65,9 @@ function discardEntry(ctx: ActivateContext, pluginId: string): void {
 }
 
 /**
- * Reads and activates the plugin. A start that ends after the limit has passed is taken back, unless the
- * plugin has been started again since.
+ * Reads and activates the plugin with a context of its own. Once the start is cancelled the context
+ * registers nothing, and a start that ends after the limit has passed takes back what it registered and
+ * marks nothing, unless the plugin has been started again since.
  */
 async function startEntry(
   ctx: ActivateContext,
@@ -73,8 +75,9 @@ async function startEntry(
   start: { readonly module: unknown; readonly isExpired: () => boolean; readonly number: number },
 ): Promise<boolean> {
   const { module: pluginModule, isExpired } = start
+  const isLatest = (): boolean => ctx.starts.get(pluginId) === start.number
   const discardExpired = (): void => {
-    if (ctx.starts.get(pluginId) === start.number) discardEntry(ctx, pluginId)
+    if (isLatest()) discardEntry(ctx, pluginId)
   }
   const { host, activePlugins } = ctx
   try {
@@ -84,9 +87,9 @@ async function startEntry(
     const manifest = ctx.manifests.get(pluginId)
     const { activate, deactivate } = getLifecycleHooks(resolved)
     if (activate) {
-      host.markPluginStarting?.(pluginId)
-      await activate(host.createContext(pluginId, manifest))
-      host.markPluginStarted?.(pluginId)
+      if (isLatest()) host.markPluginStarting?.(pluginId)
+      await activate(createStartContext(host.createContext(pluginId, manifest), isExpired))
+      if (isLatest()) host.markPluginStarted?.(pluginId)
     }
     if (isExpired()) {
       discardExpired()

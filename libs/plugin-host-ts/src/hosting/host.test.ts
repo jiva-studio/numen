@@ -177,7 +177,7 @@ describe('createPluginHost', () => {
       disposed: new Set(),
       reportedIssues: new Set(),
     }
-    disposeAllEntries(reg, createStatusViewRegistry(), deps)
+    disposeAllEntries({ registry: reg, statusViews: createStatusViewRegistry(), deps })
     expect(reg.agentProviders.size).toBe(0)
   })
 

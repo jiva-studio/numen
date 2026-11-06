@@ -173,6 +173,7 @@ export function createShellHost(agent?: AgentHost) {
     for (const one of contexts.get(pluginId)?.subscriptions.splice(0) ?? []) one.dispose()
     contexts.delete(pluginId)
     views.value = views.value.filter((one) => one.pluginId !== pluginId)
+    slotViews.disposePlugin(pluginId)
     notices.clear(pluginId)
   }
 

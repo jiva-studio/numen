@@ -360,7 +360,7 @@ export function createPluginHost(deps: PluginHostDeps) {
     statusViews,
     slotViews,
   })
-  const parts = { registry, statusViews, deps }
+  const parts = { registry, statusViews, slotViews, deps }
 
   return {
     ...createContextApi(registry, contextHost),
@@ -373,7 +373,7 @@ export function createPluginHost(deps: PluginHostDeps) {
     notifyVaultChange: (event: VaultChangeEvent): void =>
       notifyListeners(registry.vaultListeners, event, deps),
     disposePlugin: (pluginId: string) => disposePluginEntry(pluginId, parts),
-    disposeAll: () => disposeAllEntries(registry, statusViews, deps),
+    disposeAll: () => disposeAllEntries(parts),
     /** The status bar views the plugins registered, in order of registration; reactive. */
     statusViews: statusViews.views,
     /** The view a slot of the window draws, or null while no plugin registered one; reactive. */

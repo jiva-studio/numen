@@ -56,6 +56,24 @@ describe('createShellHost', () => {
     expect(front.value?.registration.kind).toBe('fallback')
   })
 
+  it('takes the bar of a plugin away once it is disposed, even if its subscriptions were cleared', () => {
+    const { host, titleBarView } = createShellHost()
+    const manifest = {
+      id: 'org.example.ledger',
+      name: 'Ledger bar',
+      version: '1.0.0',
+      contributes: { views: [{ id: 'bar', slot: 'titleBar' }] },
+    } as unknown as Parameters<typeof host.createContext>[1]
+    const context = host.createContext('org.example.ledger', manifest)
+    context.registerSlotView({ id: 'bar', component: {} })
+    context.subscriptions.length = 0
+    expect(titleBarView.value?.pluginId).toBe('org.example.ledger')
+
+    host.disposePlugin('org.example.ledger')
+
+    expect(titleBarView.value).toBeNull()
+  })
+
   it('disposes all plugins and does not re-run disposed subscriptions on disposeAll', () => {
     const { host, front } = createShellHost()
     const calls: string[] = []
