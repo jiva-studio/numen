@@ -34,7 +34,9 @@ describe('errors', () => {
     expect(formatErrorCodeMessage(undefined)).toBe('')
     expect(formatErrorCodeMessage(ProtoErrorCode.NOT_FOUND)).toBe(ERRORS.notFound)
     expect(formatErrorCodeMessage(ProtoErrorCode.NOT_A_DECK)).toBe(ERRORS.notADeck)
-    expect(formatErrorCodeMessage(ProtoErrorCode.CONFLICT)).toBe('not saved: the note changed on disk')
+    expect(formatErrorCodeMessage(ProtoErrorCode.CONFLICT)).toBe(
+      'not saved: the note changed on disk',
+    )
     expect(formatErrorCodeMessage('future_code' as ProtoErrorCode)).toBe('internal error')
   })
 
