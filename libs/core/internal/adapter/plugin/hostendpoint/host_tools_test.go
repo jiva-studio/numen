@@ -29,9 +29,9 @@ type recordedTools struct {
 	calls     []toolCall
 }
 
-func (r *recordedTools) ListTools(_ context.Context, callerID string) (tools []*v1.PluginTool, instructions string) {
+func (r *recordedTools) ListTools(_ context.Context, callerID string) []*v1.PluginTool {
 	r.listedFor = append(r.listedFor, callerID)
-	return []*v1.PluginTool{{Name: "note_read", Effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY}}, ""
+	return []*v1.PluginTool{{Name: "note_read", Effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY}}
 }
 
 func (r *recordedTools) CallTool(

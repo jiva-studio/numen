@@ -69,7 +69,7 @@ export interface VaultPort {
    */
   watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
   /** Reports that this client has written all pending data. */
-  reportFlush(token: string, outcome?: 'written' | 'asking'): Promise<void>
+  reportFlush(token: string, outcome?: 'written' | 'unsaved'): Promise<void>
   /**
    * Opens a tab in a new window at a screen point. The new window reads the tab and its saved
    * state by id and reuses the id, so the tab keeps its links. Resolves after the new window

@@ -38,12 +38,10 @@ type callScope struct {
 	vault   domain.VaultID
 }
 
-// tool is one tool a plugin lists, with the plugin that runs it and the instructions that plugin
-// lists with its tools.
+// tool is one tool a plugin lists, with the plugin that runs it.
 type tool struct {
-	pluginID     string
-	spec         *v1.PluginTool
-	instructions string
+	pluginID string
+	spec     *v1.PluginTool
 }
 
 // plugins calls the PluginToolService of every plugin that declares the tools
@@ -73,13 +71,13 @@ func (p plugins) listTools(ctx context.Context, server Server, except string) []
 				continue
 			}
 			names[spec.GetName()] = true
-			found = append(found, tool{pluginID: info.ID, spec: spec, instructions: listed.GetInstructions()})
+			found = append(found, tool{pluginID: info.ID, spec: spec})
 		}
 	}
 	return found
 }
 
-// listPluginTools lists the tools and the instructions of one plugin, holding its reference for the
+// listPluginTools lists the tools of one plugin, holding its reference for the
 // length of the call.
 func (p plugins) listPluginTools(ctx context.Context, pluginID string) (listing *v1.ListToolsResponse, err error) {
 	client, lease, err := bridge.Open(ctx, p.host, pluginID, numenv1connect.NewPluginToolServiceClient)

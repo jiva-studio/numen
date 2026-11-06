@@ -108,6 +108,7 @@ func (t *Tools) addLibrarySearch(registry *tools.Registry) error {
 		Step:         tools.Search,
 		Servers:      []tools.Server{tools.Full, tools.Reading},
 		Instructions: []string{noteLinkSentence, passageLinkSentence, noFileLinkSentence, searchScopeSentence, userWordsSentence, truncatedSentence, bookKindSentence},
+		Requires:     []string{host.PermissionIndexRead},
 	}, inVault(t, (*Tools).searchLibrary))
 }
 
@@ -208,6 +209,7 @@ func (t *Tools) addLibraryRead(registry *tools.Registry) error {
 		Step:         tools.ByEffect,
 		Servers:      []tools.Server{tools.Full, tools.Reading},
 		Instructions: []string{passageLinkSentence, truncatedSentence, libraryReadSentence},
+		Requires:     []string{host.PermissionIndexRead},
 	}, inVault(t, (*Tools).readLibrary))
 }
 

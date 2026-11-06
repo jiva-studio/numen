@@ -19,6 +19,7 @@ type TabInfo struct {
 	Path     string       `json:"path,omitempty" jsonschema:"the path of the file in the tab, relative to the vault folder"`
 	Title    string       `json:"title,omitempty" jsonschema:"the tab title"`
 	Location *TabLocation `json:"location,omitempty" jsonschema:"the place the tab is open at, omitted for a tab with none"`
+	Error    string       `json:"error,omitempty" jsonschema:"what is wrong with the saved state of the tab, in place of its location; omitted where the state was read"`
 	IsActive bool         `json:"isActive,omitempty" jsonschema:"true for the active tab"`
 }
 

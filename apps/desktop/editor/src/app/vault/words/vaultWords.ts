@@ -81,11 +81,11 @@ export const getVaultError = (from: {
 /**
  * What a client has left, in the words the window uses.
  */
-const flushResultNames: Record<FlushResultCode, 'nothing' | 'written' | 'asking' | null> = {
+const flushResultNames: Record<FlushResultCode, 'nothing' | 'written' | 'unsaved' | null> = {
   [FLUSH_RESULT.UNSPECIFIED]: null,
   [FLUSH_RESULT.NOTHING]: 'nothing',
   [FLUSH_RESULT.WRITTEN]: 'written',
-  [FLUSH_RESULT.ASKING]: 'asking',
+  [FLUSH_RESULT.UNSAVED]: 'unsaved',
 }
 
 export const flushResults = getNames<

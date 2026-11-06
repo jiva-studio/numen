@@ -314,9 +314,9 @@ const (
 	flushUnanswered flushState = iota
 	// flushWritten is a client with no unsaved work left.
 	flushWritten
-	// flushAsking is a client holding unwritten work while the user decides what to
+	// flushUnsaved is a client holding unwritten work while the user decides what to
 	// do with it.
-	flushAsking
+	flushUnsaved
 )
 
 // parseFlushResult converts a client's flush result to the internal flush state.
@@ -324,8 +324,8 @@ func parseFlushResult(result v1.FlushResult) flushState {
 	switch result {
 	case v1.FlushResult_FLUSH_RESULT_NOTHING, v1.FlushResult_FLUSH_RESULT_WRITTEN:
 		return flushWritten
-	case v1.FlushResult_FLUSH_RESULT_ASKING:
-		return flushAsking
+	case v1.FlushResult_FLUSH_RESULT_UNSAVED:
+		return flushUnsaved
 	default:
 		return flushUnanswered
 	}
@@ -335,7 +335,7 @@ func parseFlushResult(result v1.FlushResult) flushState {
 //
 // A client holds unwritten work in a buffer this process cannot read, so it
 // receives a write request and responds when done. A disconnected client is not
-// awaited, except when its stream ended in the flushAsking state: its work is
+// awaited, except when its stream ended in the flushUnsaved state: its work is
 // still unwritten, so it counts as unanswered until a client reconnects.
 type flushCoordinator struct {
 	mu      sync.Mutex
@@ -348,7 +348,7 @@ type flushCoordinator struct {
 type client struct {
 	flushTokens chan string
 	state       flushState
-	// isDisconnected marks a client whose stream ended in the flushAsking state.
+	// isDisconnected marks a client whose stream ended in the flushUnsaved state.
 	// It receives no tokens and records no state; a newly connected client replaces it.
 	isDisconnected bool
 }
@@ -421,7 +421,7 @@ func (l *flushCoordinator) isRunning() bool {
 	return l.current != nil && !l.current.isSuperseded
 }
 
-// disconnectClient unregisters a client, or marks it disconnected if it is flushAsking.
+// disconnectClient unregisters a client, or marks it disconnected if it is flushUnsaved.
 func (l *flushCoordinator) disconnectClient(token string, p *client) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -433,7 +433,7 @@ func (l *flushCoordinator) disconnectClient(token string, p *client) {
 	// A page that went with a question standing is the only place that work
 	// exists. It is remembered, and it is remembered as silence, which is what
 	// a request waits its bound for.
-	if p.state == flushAsking {
+	if p.state == flushUnsaved {
 		p.state = flushUnanswered
 		p.isDisconnected = true
 	} else {
@@ -515,7 +515,7 @@ func (l *flushCoordinator) updateProgress() {
 		return
 	}
 	for _, p := range l.clients {
-		if p.state == flushAsking && !r.isQuestionSignaled {
+		if p.state == flushUnsaved && !r.isQuestionSignaled {
 			r.isQuestionSignaled = true
 			close(r.questionRaised)
 		}

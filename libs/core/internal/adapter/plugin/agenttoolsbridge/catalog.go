@@ -3,7 +3,6 @@ package agenttoolsbridge
 import (
 	"context"
 	"slices"
-	"strings"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
@@ -23,46 +22,15 @@ func NewCatalog(host Host, server Server) *Catalog {
 }
 
 // ListTools lists the tools the caller is allowed: those the other plugins offer on the server,
-// whose effect the caller holds the permission of as well. The instructions hold one paragraph per
-// plugin with at least one tool allowed, in the order of plugin ids, separated by an empty line: the
-// paragraph the plugin set, else the distinct sentences of its allowed tools in listing order, joined
-// with one space.
-func (c *Catalog) ListTools(ctx context.Context, callerID string) (specs []*v1.PluginTool, instructions string) {
+// whose effect the caller holds the permission of, and every permission they require as well. The
+// tools of one plugin are listed together, in the order of plugin ids.
+func (c *Catalog) ListTools(ctx context.Context, callerID string) []*v1.PluginTool {
 	allowed := c.listAllowed(ctx, callerID)
-	specs = make([]*v1.PluginTool, 0, len(allowed))
-	var paragraphs []string
-	// The tools of one plugin are listed together.
-	for start := 0; start < len(allowed); {
-		end := start + 1
-		for end < len(allowed) && allowed[end].pluginID == allowed[start].pluginID {
-			end++
-		}
-		for _, one := range allowed[start:end] {
-			specs = append(specs, one.spec)
-		}
-		if paragraph := getParagraph(allowed[start:end]); paragraph != "" {
-			paragraphs = append(paragraphs, paragraph)
-		}
-		start = end
+	specs := make([]*v1.PluginTool, 0, len(allowed))
+	for _, one := range allowed {
+		specs = append(specs, one.spec)
 	}
-	return specs, strings.Join(paragraphs, "\n\n")
-}
-
-// getParagraph is the instructions of the tools of one plugin: the paragraph the plugin set, else
-// the distinct sentences of the tools in their order.
-func getParagraph(pluginTools []tool) string {
-	if paragraph := pluginTools[0].instructions; paragraph != "" {
-		return paragraph
-	}
-	var sentences []string
-	for _, one := range pluginTools {
-		for _, sentence := range one.spec.GetInstructions() {
-			if !slices.Contains(sentences, sentence) {
-				sentences = append(sentences, sentence)
-			}
-		}
-	}
-	return strings.Join(sentences, " ")
+	return specs
 }
 
 // CallTool runs the tool of the name on the plugin that lists it, in the vault given. A tool the
@@ -78,7 +46,8 @@ func (c *Catalog) CallTool(
 	return c.plugins.callTool(ctx, allowed[index], arguments, callScope{vault: vault})
 }
 
-// listAllowed is the tools of the other plugins whose effect the caller holds the permission of.
+// listAllowed is the tools of the other plugins whose effect the caller holds the permission of,
+// and whose required permissions the caller holds all of.
 func (c *Catalog) listAllowed(ctx context.Context, callerID string) []tool {
 	var permissions []string
 	for _, info := range c.plugins.host.GetPluginInfos() {
@@ -89,9 +58,19 @@ func (c *Catalog) listAllowed(ctx context.Context, callerID string) []tool {
 	all := c.plugins.listTools(ctx, c.server, callerID)
 	allowed := make([]tool, 0, len(all))
 	for _, one := range all {
-		if hasPermission(permissions, one.spec.GetEffect()) {
+		if hasPermission(permissions, one.spec.GetEffect()) && hasAll(permissions, one.spec.GetRequires()) {
 			allowed = append(allowed, one)
 		}
 	}
 	return allowed
+}
+
+// hasAll reports whether the permissions hold every one required.
+func hasAll(permissions, required []string) bool {
+	for _, one := range required {
+		if !slices.Contains(permissions, one) {
+			return false
+		}
+	}
+	return true
 }

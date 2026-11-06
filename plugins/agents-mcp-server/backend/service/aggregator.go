@@ -29,19 +29,20 @@ type ToolAggregator struct {
 	// syncing is held for a whole sync, host call included, so the sync that finishes last is the
 	// one that listed last.
 	syncing sync.Mutex
-	// instructions are what the host listed with its tools at the latest sync.
-	instructions string
+	// sentences are the distinct instructions of the tools registered at the latest sync, in listing
+	// order.
+	sentences []string
 }
 
 // NewToolAggregator creates a tool aggregator for the given host client and MCP server.
 func NewToolAggregator(client ToolClient, mcpServer *sdk.Server) *ToolAggregator {
 	return &ToolAggregator{
-		client:       client,
-		mcpServer:    mcpServer,
-		mu:           sync.RWMutex{},
-		syncing:      sync.Mutex{},
-		registered:   make(map[string]bool),
-		instructions: "",
+		client:     client,
+		mcpServer:  mcpServer,
+		mu:         sync.RWMutex{},
+		syncing:    sync.Mutex{},
+		registered: make(map[string]bool),
+		sentences:  nil,
 	}
 }
 
@@ -57,11 +58,12 @@ func (a *ToolAggregator) GetRegisteredTools() []string {
 	return names
 }
 
-// GetInstructions returns the instructions the host listed with its tools at the latest sync.
+// GetInstructions returns the distinct instructions of the tools registered at the latest sync, in
+// listing order, joined with one space.
 func (a *ToolAggregator) GetInstructions() string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	return a.instructions
+	return strings.Join(a.sentences, " ")
 }
 
 // SyncTools queries the host for available tools and updates the MCP server registry.
@@ -81,13 +83,18 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	defer a.mu.Unlock()
 
 	current := make(map[string]bool)
-	a.instructions = listing.Instructions
+	var sentences []string
 	for _, wireTool := range listing.Tools {
 		name := wireTool.GetName()
 		if name == "" {
 			continue
 		}
 		current[name] = true
+		for _, sentence := range wireTool.GetInstructions() {
+			if !slices.Contains(sentences, sentence) {
+				sentences = append(sentences, sentence)
+			}
+		}
 
 		declared := &sdk.Tool{
 			Meta:         nil,
@@ -132,6 +139,7 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	}
 
 	a.registered = current
+	a.sentences = sentences
 	return nil
 }
 

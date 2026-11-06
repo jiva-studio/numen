@@ -75,6 +75,9 @@ type Spec struct {
 	// sentence. A sentence about several tools goes on each of them with identical text; the host
 	// lists it once.
 	Instructions []string
+	// Requires are the permissions the caller must hold besides the one of the effect, such as
+	// vault:manage. The host lists and runs the tool only for a caller holding all of them.
+	Requires []string
 }
 
 // ErrDuplicate is a second tool added under a name.
@@ -82,9 +85,8 @@ var ErrDuplicate = errors.New("a tool of that name is already added")
 
 // Registry is the tools one plugin offers. It serves PluginToolService.
 type Registry struct {
-	mu           sync.RWMutex
-	tools        []registered
-	instructions string
+	mu    sync.RWMutex
+	tools []registered
 }
 
 type registered struct {
@@ -121,6 +123,7 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 			Servers:      writeServers(spec.Servers),
 			Step:         writeStep(spec.Step),
 			Instructions: slices.Clone(spec.Instructions),
+			Requires:     slices.Clone(spec.Requires),
 		},
 		run: func(ctx context.Context, arguments []byte) *v1.ToolResult {
 			var in In
@@ -148,14 +151,6 @@ func (r *Registry) add(one registered) error {
 	return nil
 }
 
-// SetInstructions sets the paragraph the registry lists with its tools: how an agent uses them
-// together, as plain text. The host takes it in place of the instructions of the tools.
-func (r *Registry) SetInstructions(text string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.instructions = text
-}
-
 // Mount registers the registry as PluginToolService on s.
 func (r *Registry) Mount(s *server.Server) {
 	s.Register(numenv1connect.NewPluginToolServiceHandler(registryHandler{registry: r}, s.HandlerOptions()...))
@@ -168,7 +163,7 @@ type registryHandler struct {
 	registry *Registry
 }
 
-// ListTools lists the tools in the order they were added, and the instructions set.
+// ListTools lists the tools in the order they were added.
 func (h registryHandler) ListTools(
 	context.Context, *connect.Request[v1.ListToolsRequest],
 ) (*connect.Response[v1.ListToolsResponse], error) {
@@ -179,7 +174,7 @@ func (h registryHandler) ListTools(
 	for _, one := range r.tools {
 		items = append(items, one.tool)
 	}
-	return connect.NewResponse(&v1.ListToolsResponse{Tools: items, Instructions: r.instructions}), nil
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: items}), nil
 }
 
 // CallTool runs the tool named. A name nothing was added under, and arguments that are no JSON
@@ -365,6 +360,7 @@ type ToolInfo struct {
 	Step         Step
 	Servers      []Server
 	Instructions []string
+	Requires     []string
 }
 
 func (t *ToolInfo) GetName() string {
@@ -430,10 +426,16 @@ func (t *ToolInfo) GetInstructions() []string {
 	return t.Instructions
 }
 
-// Listing is the tools a PluginToolService lists and the instructions that go with them.
+func (t *ToolInfo) GetRequires() []string {
+	if t == nil {
+		return nil
+	}
+	return t.Requires
+}
+
+// Listing is the tools a PluginToolService lists.
 type Listing struct {
-	Tools        []*ToolInfo
-	Instructions string
+	Tools []*ToolInfo
 }
 
 func readListing(res *v1.ListToolsResponse) Listing {
@@ -441,10 +443,10 @@ func readListing(res *v1.ListToolsResponse) Listing {
 	for i, t := range res.GetTools() {
 		out[i] = readToolInfo(t)
 	}
-	return Listing{Tools: out, Instructions: res.GetInstructions()}
+	return Listing{Tools: out}
 }
 
-// ListTools returns the tools in the registry and its instructions.
+// ListTools returns the tools in the registry.
 func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
 	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	// gomutants:disable-next-line
@@ -529,7 +531,7 @@ func (a *serviceAdapter) ListTools(
 	for i, t := range listing.Tools {
 		wire[i] = writeToolInfo(t)
 	}
-	return connect.NewResponse(&v1.ListToolsResponse{Tools: wire, Instructions: listing.Instructions}), nil
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: wire}), nil
 }
 
 func (a *serviceAdapter) CallTool(

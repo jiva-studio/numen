@@ -20,7 +20,7 @@ import (
 func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 	switch o {
 	case edit.Missing:
-		return api.ErrorCodeMissing, true
+		return api.ErrorCodeNotFound, true
 	case edit.NotANote:
 		return api.ErrorCodeNotANote, true
 	case edit.NotText:
@@ -42,9 +42,9 @@ func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 func getErrorCode(err error) (api.ErrorCode, bool) {
 	switch {
 	case errors.Is(err, ports.ErrStale):
-		return api.ErrorCodeStale, true
+		return api.ErrorCodeConflict, true
 	case errors.Is(err, edit.ErrNoNote):
-		return api.ErrorCodeMissing, true
+		return api.ErrorCodeNotFound, true
 	case errors.Is(err, edit.ErrTooLarge):
 		return api.ErrorCodeTooLarge, true
 	case errors.Is(err, domain.ErrInvalidName):

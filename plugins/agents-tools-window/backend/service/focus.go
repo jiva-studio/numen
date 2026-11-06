@@ -21,9 +21,11 @@ func addNoteFocus(registry *tools.Registry, on Host) error {
 			"around it. Call it only when the user asked to be taken to a note. Talking about one is " +
 			"not asking, and neither is editing one: the call changes what the window shows. It " +
 			"returns no note content: `note_read` does that.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.ByEffect,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadOnly,
+		Step:         tools.ByEffect,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{showSentence},
+		Requires:     []string{permissionWindowFocus},
 	}, func(ctx context.Context, in NoteFocusInput) (NoteFocusOutput, error) {
 		if on.Window == nil {
 			return NoteFocusOutput{}, host.ErrNoWindow
@@ -47,9 +49,11 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 			"scrolls to the first. An empty list opens the file at its beginning. Call it only when " +
 			"the user asked to see a passage. Talking about a passage is not asking: the call " +
 			"changes what the window shows.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.ByEffect,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadOnly,
+		Step:         tools.ByEffect,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{showSentence, passagesSentence},
+		Requires:     []string{permissionWindowFocus},
 	}, func(ctx context.Context, in SourceFocusInput) (SourceFocusOutput, error) {
 		passages := make([]host.PassageSpan, 0, len(in.Passages))
 		for _, passage := range in.Passages {
@@ -75,9 +79,11 @@ func addWindowFocusTab(registry *tools.Registry, on Host) error {
 		Description: "Make the open tab with the id the active tab of the window. Take the id from " +
 			"`window_tabs_get`. Call it only when the user asked for that tab: the call changes what " +
 			"the window shows.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.ByEffect,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadOnly,
+		Step:         tools.ByEffect,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{showSentence, tabIDSentence},
+		Requires:     []string{permissionWindowFocus},
 	}, func(ctx context.Context, in WindowFocusTabInput) (WindowFocusTabOutput, error) {
 		if in.TabID == "" {
 			return WindowFocusTabOutput{}, errMissingTabID
@@ -115,7 +121,7 @@ func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error)
 	if err != nil {
 		return TabInfo{}, err
 	}
-	return newTabInfo(tab, activeID)
+	return newTabInfo(tab, activeID), nil
 }
 
 // focusFile opens the file in the window at the passages and highlights them.

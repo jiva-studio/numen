@@ -12,6 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
+// permissionVaultManage is the permission a caller holds to change the list of vaults and the vault
+// the window shows.
+const permissionVaultManage = "vault:manage"
+
 // VaultAddInput is the input of the vault_add tool.
 type VaultAddInput struct {
 	Path string `json:"path" jsonschema:"absolute path of the folder on this machine"`
@@ -70,6 +74,7 @@ func (t *Tools) addVaultAdd(registry *tools.Registry) error {
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{vaultAddSentence},
+		Requires:     []string{permissionVaultManage},
 	}, inVault(t, (*Tools).addVault))
 }
 
@@ -83,6 +88,7 @@ func (t *Tools) addVaultRename(registry *tools.Registry) error {
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{vaultRenameSentence},
+		Requires:     []string{permissionVaultManage},
 	}, inVault(t, (*Tools).renameVault))
 }
 
@@ -96,6 +102,7 @@ func (t *Tools) addVaultRemove(registry *tools.Registry) error {
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{vaultRemoveSentence},
+		Requires:     []string{permissionVaultManage},
 	}, inVault(t, (*Tools).removeVault))
 }
 
@@ -112,6 +119,7 @@ func (t *Tools) addVaultOpen(registry *tools.Registry) error {
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{vaultOpenSentence, vaultOpenAskSentence},
+		Requires:     []string{permissionVaultManage},
 	}, inVault(t, (*Tools).openVault))
 }
 

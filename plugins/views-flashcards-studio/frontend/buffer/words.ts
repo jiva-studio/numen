@@ -35,7 +35,7 @@ const TAB_CODE_OF: Readonly<Record<string, NoteErrorCode>> = {
   notACardModel: 'notANote',
   notADeck: 'notANote',
   notAPreset: 'notANote',
-  missing: 'unreadable',
+  notFound: 'unreadable',
   alreadyExists: 'unreadable',
   invalidName: 'unreadable',
 }

@@ -7,7 +7,7 @@
   "capabilities": ["ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": { "category": "agents" },
-  "permissions": ["network:outbound", "vault:read", "vault:write"],
+  "permissions": ["network:outbound", "vault:read", "vault:write", "vault:manage", "window:focus", "index:read"],
   "backend": { "entrypoint": "bin/agents-antigravity" },
   "services": ["numen.v1.AgentService"],
   "settings": [

@@ -64,7 +64,8 @@ func convertNoteErrorCode(code v1.ErrorCode) v1.HostVaultErrorCode {
 
 // answerNote splits the error of a change of one note into the error code of that note and the
 // error code of the call: a vault the host does not show answers NO_VAULT for the call, a cancelled
-// call and an error with no code fail the call, and every other error is the note's.
+// call fails the call, an error with no code is the note's INTERNAL, and every other error is the
+// note's own code.
 func answerNote(ctx context.Context, err error) (noteCode, callCode v1.HostVaultErrorCode, callErr error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, 0, connect.NewError(connect.CodeCanceled, ctxErr)
@@ -74,7 +75,7 @@ func answerNote(ctx context.Context, err error) (noteCode, callCode v1.HostVault
 	}
 	code, ok := getNoteErrorCode(err)
 	if !ok {
-		return 0, 0, connect.NewError(connect.CodeInternal, err)
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, 0, nil
 	}
 	return code, 0, nil
 }
@@ -141,11 +142,13 @@ func (e *vaultEndpoint) RenameNote(
 	newPath, isFilenamed, move, err := vault.RenameNote(ctx, req.Msg.GetPath(), req.Msg.GetTitle())
 	// A note whose file landed under the new name is renamed, whatever came apart after it.
 	if err != nil && move == nil {
-		noteCode, code, err := answerNote(ctx, err)
-		if err != nil || code != 0 {
-			return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: code}), err
+		noteCode, code, callErr := answerNote(ctx, err)
+		if callErr != nil || code != 0 {
+			return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: code}), callErr
 		}
-		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Path: req.Msg.GetPath(), Error: noteCode}), nil
+		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{
+			Path: req.Msg.GetPath(), Error: noteCode, Detail: err.Error(),
+		}), nil
 	}
 	out := &v1.HostVaultServiceRenameNoteResponse{
 		Path: newPath, Title: strings.TrimSpace(req.Msg.GetTitle()), NameSource: v1.NameSource_NAME_SOURCE_FRONTMATTER,
@@ -180,11 +183,11 @@ func (e *vaultEndpoint) MoveNotes(
 		move, err := vault.MoveNote(ctx, from, path.Join(req.Msg.GetFolder(), path.Base(from)))
 		entry := &v1.HostNoteMove{Move: writeMove(move)}
 		if err != nil && !move.IsMoved {
-			noteCode, code, err := answerNote(ctx, err)
-			if err != nil || code != 0 {
-				return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: code}), err
+			noteCode, code, callErr := answerNote(ctx, err)
+			if callErr != nil || code != 0 {
+				return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: code}), callErr
 			}
-			entry = &v1.HostNoteMove{Move: &v1.MoveResult{From: from}, Error: noteCode}
+			entry = &v1.HostNoteMove{Move: &v1.MoveResult{From: from}, Error: noteCode, Detail: err.Error()}
 		}
 		out.Moves = append(out.Moves, entry)
 	}
@@ -212,11 +215,11 @@ func (e *vaultEndpoint) RemoveNotes(
 		trashPath, brokenLinks, err := vault.RemoveNote(ctx, target)
 		entry := &v1.HostNoteRemoval{Path: target, TrashPath: trashPath, BrokenLinks: brokenLinks}
 		if err != nil && trashPath == "" {
-			noteCode, code, err := answerNote(ctx, err)
-			if err != nil || code != 0 {
-				return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: code}), err
+			noteCode, code, callErr := answerNote(ctx, err)
+			if callErr != nil || code != 0 {
+				return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: code}), callErr
 			}
-			entry = &v1.HostNoteRemoval{Path: target, Error: noteCode}
+			entry = &v1.HostNoteRemoval{Path: target, Error: noteCode, Detail: err.Error()}
 		}
 		out.Removals = append(out.Removals, entry)
 	}

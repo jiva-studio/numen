@@ -119,6 +119,7 @@ func readToolInfo(t *v1.PluginTool) *ToolInfo {
 		Step:         readStep(t.GetStep()),
 		Servers:      readServers(t.GetServers()),
 		Instructions: t.GetInstructions(),
+		Requires:     t.GetRequires(),
 	}
 }
 
@@ -136,6 +137,7 @@ func writeToolInfo(t *ToolInfo) *v1.PluginTool {
 		Step:         writeStep(t.Step),
 		Servers:      writeServers(t.Servers),
 		Instructions: t.Instructions,
+		Requires:     t.Requires,
 	}
 }
 

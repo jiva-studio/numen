@@ -49,6 +49,16 @@ func readVaultsError(code v1.VaultsErrorCode) error {
 	}
 }
 
+// failNote converts the error code of one note into its error, nil when there is none. A refused
+// note carries the core's text in detail.
+func failNote(code v1.HostVaultErrorCode, detail string) error {
+	err := fail(code)
+	if err == nil || detail == "" {
+		return err
+	}
+	return fmt.Errorf("%w: %s", err, detail)
+}
+
 // readMove converts a move of the wire; the file is at To exactly when To is set.
 func readMove(m *v1.MoveResult) domain.MoveResult {
 	return domain.MoveResult{
@@ -69,7 +79,7 @@ func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename
 	if err != nil {
 		return NoteRename{}, readError(err)
 	}
-	if err := fail(res.Msg.GetError()); err != nil {
+	if err := failNote(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return NoteRename{}, fmt.Errorf("rename %s: %w", path, err)
 	}
 	out := NoteRename{
@@ -95,7 +105,7 @@ func (c *Client) MoveNotes(ctx context.Context, paths []string, folder string) (
 	}
 	out := make([]NoteMove, 0, len(res.Msg.GetMoves()))
 	for _, one := range res.Msg.GetMoves() {
-		move := NoteMove{Move: readMove(one.GetMove()), Err: fail(one.GetError())}
+		move := NoteMove{Move: readMove(one.GetMove()), Err: failNote(one.GetError(), one.GetDetail())}
 		if move.Err != nil {
 			move.Move.To, move.Move.IsMoved = "", false
 		}
@@ -118,7 +128,7 @@ func (c *Client) RemoveNotes(ctx context.Context, paths []string) ([]NoteRemoval
 			Path:        one.GetPath(),
 			TrashPath:   one.GetTrashPath(),
 			BrokenLinks: one.GetBrokenLinks(),
-			Err:         fail(one.GetError()),
+			Err:         failNote(one.GetError(), one.GetDetail()),
 		})
 	}
 	return out, nil

@@ -2,7 +2,7 @@ package api
 
 // GetErrorCodeValues returns every ErrorCode except the unspecified value.
 func GetErrorCodeValues() []ErrorCode {
-	return []ErrorCode{ErrorCodeMissing, ErrorCodeNotANote, ErrorCodeNotText, ErrorCodeTooLarge, ErrorCodeBodyUnwritable, ErrorCodeUnreadable, ErrorCodeAlreadyExists, ErrorCodeInvalidName, ErrorCodeNotACardModel, ErrorCodeNotADeck, ErrorCodeDeckTooLarge, ErrorCodeNotAPreset, ErrorCodeStale}
+	return []ErrorCode{ErrorCodeNotFound, ErrorCodeNotANote, ErrorCodeNotText, ErrorCodeTooLarge, ErrorCodeBodyUnwritable, ErrorCodeUnreadable, ErrorCodeAlreadyExists, ErrorCodeInvalidName, ErrorCodeNotACardModel, ErrorCodeNotADeck, ErrorCodeDeckTooLarge, ErrorCodeNotAPreset, ErrorCodeConflict}
 }
 
 // GetProblemKindValues returns every ProblemKind except the unspecified value.
