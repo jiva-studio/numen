@@ -737,9 +737,9 @@ func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
 		message string
 	}{
 		"home folder": {
-			err:     fmt.Errorf("%w: %w", vaults.ErrUnreadable, errors.New("/Users/river is the person's home directory, and a vault is a folder inside it")),
+			err:     fmt.Errorf("%w: %w", vaults.ErrUnreadable, errors.New("/Users/river is the user's home directory, and a vault is a folder inside it")),
 			want:    v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE,
-			message: "/Users/river is the person's home directory, and a vault is a folder inside it",
+			message: "/Users/river is the user's home directory, and a vault is a folder inside it",
 		},
 		"filesystem root": {
 			err:     fmt.Errorf("%w: %w", vaults.ErrUnreadable, errors.New("/ is the root of this filesystem, and a vault is a folder somebody keeps notes in")),

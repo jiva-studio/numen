@@ -21,13 +21,13 @@ func TestInstructionsNameANoteByItsTitle(t *testing.T) {
 // instructions.
 func TestInstructionsPointAtTheTabListWhenTheWindowShowsANote(t *testing.T) {
 	with := agent.GetInstructions(agentport.Task{Focus: "notes/secret path.md"})
-	if !strings.Contains(with, "window_tab_list") {
+	if !strings.Contains(with, "window_tabs_get") {
 		t.Errorf("instructions %q do not point at the tab list", with)
 	}
 	if strings.Contains(with, "secret path") {
 		t.Errorf("instructions %q carry the focus", with)
 	}
-	if instructions := agent.GetInstructions(agentport.Task{}); strings.Contains(instructions, "window_tab_list") {
+	if instructions := agent.GetInstructions(agentport.Task{}); strings.Contains(instructions, "window_tabs_get") {
 		t.Errorf("instructions %q point at a tab list with no focus", instructions)
 	}
 }

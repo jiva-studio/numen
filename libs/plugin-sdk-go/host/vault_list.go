@@ -21,9 +21,9 @@ var (
 	ErrLastVault = errors.New("host: the vault is the only one of the installation")
 	// ErrVaultShowing is what a removal gets for the vault the window shows.
 	ErrVaultShowing = errors.New("host: the window shows the vault")
-	// ErrVaultAsking is what an open gets when a tab holds changes the person has to decide on, so the
+	// ErrVaultAsking is what an open gets when a tab holds changes the user has to decide on, so the
 	// window kept its vault.
-	ErrVaultAsking = errors.New("host: a tab holds changes the person has to decide on")
+	ErrVaultAsking = errors.New("host: a tab holds changes the user has to decide on")
 )
 
 // VaultEntry is a vault on the installation's list, and whether nothing is at its folder.

@@ -42,7 +42,7 @@ Three things, appended to the model's default instructions:
 - A note is called by its title. A path, a file name and an extension are how the tools address a note, and are never shown.
 - The answer is read in a narrow panel.
 
-Where the user has a note open, its path is named, and a task saying "this note" means that one.
+Where the user has a note open, a task saying "this note" means that note, and `window_tabs_get` names it. Its path is not written into the instructions: a note name in a synced vault is set by the sync source, and a tool result is read as data.
 
 The tools server also gives every agent that connects to it instructions: one line of its own on what a vault is, then the paragraph each plugin lists with its tools, in the order of the plugin ids. A plugin that is disabled, or none of whose tools is offered, adds nothing. The vault tools tell how to name a note and a passage as links, which tool searches and reads what (`note_search` the notes, `library_search` and `library_read` everything the vault holds), and that a passage is a window cut to a size and is read on before a source is said not to say something. The window tools tell when to read the tabs and when to show a place.
 
@@ -86,9 +86,9 @@ Six plugins register the tools an agent can call, each for its own subject, and 
 | `vault_add`      | add a folder of this machine to the list of vaults by its absolute path, answering its identifier, name and `path`                                                                                                             | full    |
 | `vault_rename`   | change the name of a vault, named by its name, path or identifier                                                                                                                                                              | full    |
 | `vault_remove`   | take a vault off the list and leave its folder on the disk; the vault of the call and the last vault are refused                                                                                                               | full    |
-| `vault_open`     | make the person's window show another vault, which ends the session's view of the vault it works on; the vault of the call is refused                                                                                          | full    |
+| `vault_open`     | make the user's window show another vault, which ends the session's view of the vault it works on; the vault of the call is refused                                                                                            | full    |
 
-`agents-tools-window`, the window the person is looking at:
+`agents-tools-window`, the window the user has open:
 
 | Tool               | What it does                                                                                                                                                  | Servers |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
@@ -102,7 +102,7 @@ Six plugins register the tools an agent can call, each for its own subject, and 
 
 | Tool                                                             | What it does                                                                    | Servers |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------- |
-| `card_current`                                                   | the card shown to the person in the window they run their cards in              | both    |
+| `card_current`                                                   | the card shown to the user in the window the user reviews cards in              | both    |
 | `card_model_list`                                                | the card models of the vault, at most 50, and the fields each declares          | both    |
 | `card_model_read`                                                | the fields and templates of one card model                                      | both    |
 | `card_read`                                                      | the cards of one deck in deck order, at most 50 a call, or one card by its id   | both    |
@@ -134,7 +134,7 @@ A tool is named for the subject it acts on, then what it does: `note_read`, `car
 
 ## The servers
 
-A tool declares the servers it is offered on: the full server, which gives an agent access to the whole vault, and the reading server, whose tools all read. A tool that writes is on the full server alone; a tool that reads is on both. `card_current` returns the card shown to the person in the window they run their cards in, and an empty `path` between cards.
+A tool declares the servers it is offered on: the full server, which gives an agent access to the whole vault, and the reading server, whose tools all read. A tool that writes is on the full server alone; a tool that reads is on both. `card_current` returns the card shown to the user in the window the user reviews cards in, and an empty `path` between cards.
 
 The tools are registered by the plugins that own their subjects — `agents-tools-vault`, `agents-tools-window`, `views-flashcards-studio`, `engines-ocr`, `engines-transcription`, `tools-media-importer` — and `agents-mcp-server` gathers the tools of every plugin and of the host and serves them to an agent.
 

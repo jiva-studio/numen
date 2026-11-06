@@ -350,7 +350,7 @@ func (a *detailedAdding) AddVault(
 }
 
 func TestTheClientReturnsTheCoreMessageOfARejectedFolder(t *testing.T) {
-	const detail = "/Users/river is the person's home directory, and a vault is a folder inside it"
+	const detail = "/Users/river is the user's home directory, and a vault is a folder inside it"
 	server := httptest.NewServer(handler(&detailedAdding{detail: detail}))
 	t.Cleanup(server.Close)
 	client := host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})

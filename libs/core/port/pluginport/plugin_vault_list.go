@@ -7,9 +7,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ErrVaultAsking is what OpenVault returns when a tab holds changes the person has to decide on, so
+// ErrVaultAsking is what OpenVault returns when a tab holds changes the user has to decide on, so
 // the window keeps its vault.
-var ErrVaultAsking = errors.New("a tab holds changes the person has to decide on")
+var ErrVaultAsking = errors.New("a tab holds changes the user has to decide on")
 
 // PluginVaultList is the installation's list of vaults and the vault the window shows, as the
 // plugins that hold vault:manage change them. The window provides it; a host with no window has

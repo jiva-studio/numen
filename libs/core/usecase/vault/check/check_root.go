@@ -36,7 +36,7 @@ func (u *CheckRoot) Execute(root string) error {
 	}
 	if home, err := u.home.GetHomeFolder(); err == nil && u.getName(home) == pos {
 		return fmt.Errorf(
-			"%s is the person's home directory, and a vault is a folder inside it", pos)
+			"%s is the user's home directory, and a vault is a folder inside it", pos)
 	}
 	return nil
 }
