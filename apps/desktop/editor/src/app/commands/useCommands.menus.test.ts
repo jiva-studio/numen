@@ -68,6 +68,7 @@ const entry = (command: string, title: string): SlotItem => ({
   command,
   title,
   shortcut: '',
+  hasItems: false,
 })
 
 function setup(
@@ -81,6 +82,7 @@ function setup(
   const writeMessage = vi.fn()
   const pluginHost = {
     getPaletteCommands: () => [{ id: SHOW, title: 'Show note in plex' }],
+    hasCommandItems: () => false,
     hasCommand: options.hasCommand ?? ((id: string) => id === SHOW),
     executeCommand,
     handleShortcut: () => false,
@@ -94,7 +96,7 @@ function setup(
     windowTabs: { onKeyPress: () => false },
     getTarget: () => options.target ?? front,
     knows: {},
-    kept: {},
+    paletteLists: {},
     runs: {},
     coverage: () => ({}),
     rest: {},
@@ -122,6 +124,9 @@ describe('running the action of a search result that is an entry of its menu', (
       path: 'Reef.md',
       title: 'Reef',
       type: 'sample',
+      isFolder: false,
+      others: [],
+      tab: '',
     })
     expect(h.startCommand).not.toHaveBeenCalled()
   })
@@ -281,6 +286,9 @@ describe('opening the note of a search result as a command', () => {
       path: 'Reef.md',
       title: 'Reef',
       type: 'sample',
+      isFolder: false,
+      others: [],
+      tab: '',
     })
   })
 
@@ -419,6 +427,9 @@ describe('running a command with a text typed for it', () => {
       path: 'Animals.md',
       title: 'Animals',
       type: 'sample',
+      isFolder: false,
+      others: [],
+      tab: 'tab-1',
     })
     expect(h.startCommand).not.toHaveBeenCalled()
   })

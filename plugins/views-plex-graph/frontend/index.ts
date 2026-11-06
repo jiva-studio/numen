@@ -29,7 +29,13 @@ export function activate(context: PluginContext): void {
     )
   }
   const plexes = createPlexKind(
-    { workspace, notes, relations, nesting: readNesting(context) },
+    {
+      workspace,
+      ...(context.commands ? { commands: context.commands } : {}),
+      notes,
+      relations,
+      nesting: readNesting(context),
+    },
     () => usePlexView({ neighbourhood: (path) => notes.getNeighbourhood(path) }),
   )
   context.registerTabKind(plexes.kind)

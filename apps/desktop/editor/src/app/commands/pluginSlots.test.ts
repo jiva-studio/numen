@@ -15,8 +15,14 @@ const declared = (one: Partial<DeclaredCommand> & { id: string }): DeclaredComma
   ...one,
 })
 
-const NOTE: CommandTarget = { path: 'notes/Bees.md', title: 'Bees', isFolder: false, others: [] }
-const FOLDER: CommandTarget = { path: 'notes', title: 'notes', isFolder: true, others: [] }
+const NOTE: CommandTarget = {
+  path: 'notes/Bees.md',
+  title: 'Bees',
+  isFolder: false,
+  others: [],
+  tab: '',
+}
+const FOLDER: CommandTarget = { path: 'notes', title: 'notes', isFolder: true, others: [], tab: '' }
 
 describe('the slot entries of the window', () => {
   it('are none until the plugins have been listed, then theirs and those of the application', () => {

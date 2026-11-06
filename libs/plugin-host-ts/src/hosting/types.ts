@@ -7,6 +7,7 @@ import type {
   AppInfo,
   BufferHost,
   CommandRegistration,
+  CommandsHost,
   ContextMenuRegistration,
   ContextMenuTarget,
   Disposable,
@@ -30,6 +31,8 @@ import type {
   VaultNotes,
   VaultRelations,
   VaultTexts,
+  VaultsHost,
+  WindowHost,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from './tabKinds'
@@ -137,6 +140,12 @@ export interface PluginHostDeps {
   readonly getFiles?: () => VaultFiles | undefined
   /** The agent the window queries, once the window has created it. */
   readonly getAgent?: () => AgentHost | undefined
+  /** The vaults the window can show, once the window has made them. */
+  /** The commands of the window, once the window has made them. */
+  readonly getCommands?: () => CommandsHost | undefined
+  readonly getVaults?: () => VaultsHost | undefined
+  /** The window the plugins run in, once the window has made it. */
+  readonly getWindow?: () => WindowHost | undefined
   /** The open files of the window, once the window has made them. */
   readonly getBuffers?: () => BufferHost | undefined
   /** The window's store of open notes, which the tabs of the note kind read and write through. */
@@ -233,6 +242,9 @@ export interface PluginContextHost {
   getRelations?(): VaultRelations | undefined
   getFiles?(): VaultFiles | undefined
   getAgent?(): AgentHost | undefined
+  getCommands?(): CommandsHost | undefined
+  getVaults?(): VaultsHost | undefined
+  getWindow?(): WindowHost | undefined
   getBuffers?(): BufferHost | undefined
   getNotices?(pluginId: string): NoticeHost | undefined
   getTasks?(pluginId: string): TaskHost | undefined

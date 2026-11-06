@@ -6,8 +6,10 @@ Draws the bar at the top of each window: the buttons of the commands the plugins
 
 ## What You Can Do
 
-- **Run a command from the bar**: Each command a plugin places in the title bar is a button. Hover over one for its name and shortcut. The buttons that do not fit go into the menu at the end of the row.
-- **Switch vaults**: Click the name of the vault to choose another one, or to add a folder as a vault.
+- **Run a command from the bar**: Each command a plugin places in the title bar is a button, and a submenu is a button that opens its commands. Hover over one for its name and shortcut. When the bar is too narrow, the buttons go into the menu at the end of the commands, and then the indicators at the right are hidden from the end.
+- **See what the plugins report**: The indicators the plugins place in the title bar, such as the tasks, stand at the right of the title.
+- **Use the keyboard**: Tab reaches the buttons of the bar as one stop. The arrow keys move between them, Home and End reach the first and the last.
+- **Switch vaults**: Click the name of the vault to choose another one. Below a line, the last row creates a vault, in a window that can create one.
 - **Move the window**: Drag the free space of the bar. A double click on it maximizes the window or restores it.
 - **Minimize, maximize and close the window**: On Windows the buttons are at the right, and the maximize button opens Snap Layouts. On macOS the system buttons are at the left.
 
@@ -23,4 +25,4 @@ Disable the plugin and the bar is gone: the tabs start at the top of the window.
 
 ## How It Works
 
-The manifest places the view `bar` in the slot `titleBar` with `contributes.slots`, and the frontend registers it with `registerSlotView`. The window passes it the commands the plugins place in `titleBar.commands`, the vault, the vaults to switch to, the platform and the state of the window, and answers the events the bar emits. The bar draws its own window buttons, drag area and room for the macOS buttons.
+The manifest places the view `bar` in the slot `titleBar` with `contributes.slots`, and the frontend registers it with `registerSlotView`. The bar reads everything from its plugin context: the entries of the slots `titleBar.commands` and `titleBar.status` from `context.slots`, the commands it runs from `context.commands`, the vaults from `context.vaults`, the state and the buttons of the window from `context.window`, and the name of the application and the platform from `context.app`. It draws a command as a button with the icon of the command, a submenu as a button that opens a menu, a view of another plugin in its place, and a separator as a gap. Every entry is out of the area that drags the window. The bar draws its own window buttons, drag area and room for the macOS buttons.

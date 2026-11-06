@@ -4,6 +4,7 @@ import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
 import type { BackgroundTaskHost } from './backgroundTasks'
+import type { CommandItem, CommandsHost, CommandTarget } from './commands'
 import type { SlotHost } from './slots/slots'
 import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
@@ -66,60 +67,9 @@ export interface SlotViewRegistration {
 }
 
 // TITLE_BAR_SLOT is the slot at the top of a window. Its view draws the whole bar: the commands, the
-// title, the window buttons and the area that drags the window. The component gets TitleBarViewProps
-// as props and emits TitleBarViewEvents.
+// title, the window buttons and the area that drags the window. The window passes it no props; it
+// reads its slots, the vaults and the window through `slots`, `vaults` and `window` of its context.
 export const TITLE_BAR_SLOT = 'titleBar'
-
-// TitleBarCommand is one command placed in `titleBar.commands` with `contributes.slots`, as the window passes it
-// to the title bar view.
-export interface TitleBarCommand {
-  // The full id of the command; the view emits it with `run-command`.
-  readonly id: string
-  readonly title: string
-  // The icon component of the command.
-  readonly icon: unknown
-  // Commands that share a group are drawn together.
-  readonly group?: string
-  // The shortcut as the person reads it, such as `Ctrl+Shift+E`.
-  readonly shortcut?: string
-}
-
-// TitleBarVault is one entry of the list of vaults the title opens.
-export interface TitleBarVault {
-  // The id the view emits with `switch-vault`.
-  readonly id: string
-  readonly name: string
-  // Whether the entry is the vault the window shows.
-  readonly isCurrent?: boolean
-}
-
-// TitleBarViewProps are the props the window passes the component of the title bar view.
-export interface TitleBarViewProps {
-  readonly pluginId: string
-  readonly appName: string
-  // The vault the window shows; empty where none is open.
-  readonly vaultName: string
-  // The operating system the window runs on.
-  readonly platform: AppInfo['platform']
-  readonly isMaximized: boolean
-  // True while the window fills the screen; macOS then shows no system buttons.
-  readonly isFullscreen: boolean
-  // In the order the menus sort them.
-  readonly commands: readonly TitleBarCommand[]
-  // The vaults the title offers to switch to; empty while no vault is open.
-  readonly vaults: readonly TitleBarVault[]
-}
-
-// TitleBarViewEvents are the events the window answers from the component of the title bar view.
-export interface TitleBarViewEvents {
-  // Runs the command of the id.
-  'run-command': [id: string]
-  // Shows the vault of the id in the window.
-  'switch-vault': [id: string]
-  'minimize-window': []
-  'toggle-maximize-window': []
-  'close-window': []
-}
 
 // AppInfo describes the application build a plugin runs in.
 export interface AppInfo {
@@ -211,11 +161,10 @@ export interface TabKindRegistration<State = unknown> {
   placement?: TabPlacement
 }
 
-// CommandNote is the note a command runs over: the note in front, or the one a menu was opened on.
-// Its path is empty where there is none.
-export interface CommandNote {
-  readonly path: string
-  readonly title: string
+// CommandNote is what a command runs over, as its handler gets it: the target of the run, the note
+// in front where the run names none, and the type the vault files it as. Its path is empty where
+// there is none.
+export interface CommandNote extends CommandTarget {
   readonly type: NoteType
 }
 
@@ -229,7 +178,11 @@ export interface CommandRegistration {
   // The id as `<object>.<action>`, such as `tree.open`, as the manifest declares it. The host files
   // the command under `<plugin id>:<id>`; registering the same full id twice throws.
   id: string
-  handler: (note: CommandNote) => void | Promise<void>
+  // Runs the command over the note; with `argument`, the id of the item picked.
+  handler: (note: CommandNote, argument?: string) => void | Promise<void>
+  // The items the command offers over the target, computed each time a place asks; now or later.
+  // A command without it offers none.
+  listItems?: (target: CommandTarget) => readonly CommandItem[] | Promise<readonly CommandItem[]>
 }
 
 // AgentProviderRegistration registers an AI agent provider.
@@ -339,7 +292,9 @@ export interface PluginContext {
   readonly notices?: NoticeHost
   // The tasks the plugins report, where the host offers them.
   readonly tasks?: TaskHost
-  // The slots of the window: the entries of a slot, read by its owner, and their commands.
+  // The commands of the window: which ones it runs now, and the one way to run a command.
+  readonly commands?: CommandsHost
+  // The slots of the window: the entries of a slot, read by its owner.
   readonly slots?: SlotHost
   // The vaults the window can show, where the host offers them.
   readonly vaults?: VaultsHost

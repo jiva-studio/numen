@@ -1154,7 +1154,14 @@ describe('the knob, as a field is typed', () => {
 describe('the preset of a note', () => {
   const deck = (preset: Preset | null, error?: ErrorCode) => async () =>
     error ? asFailure(error) : asValue({ preset, at: '', bounds: NO_BOUNDS })
-  const note = (path: string, type: string) => ({ path, title: '', type })
+  const note = (path: string, type: string) => ({
+    path,
+    title: '',
+    type,
+    isFolder: false,
+    others: [],
+    tab: '',
+  })
   const SLOW: Preset = {
     path: 'presets/Slow.md',
     title: 'Slow',

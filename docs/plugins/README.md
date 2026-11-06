@@ -241,20 +241,17 @@ export default definePlugin({
 })
 ```
 
-The view draws the whole bar: the strip, the buttons of the commands, the title, the window buttons, the area that moves the window and the room the macOS buttons take. The window draws nothing of its own in it and adds nothing beside it, and the shell offers no components for it: a bar plugin draws its own. The component takes the props of `TitleBarViewProps`:
+The view draws the whole bar: the strip, the entries of its slots, the title, the window buttons, the area that moves the window and the room the macOS buttons take. The window draws nothing of its own in it and adds nothing beside it, and the shell offers no components for it: a bar plugin draws its own. The window passes the view no props and answers no events of it. The view reads what it draws from the context of its plugin:
 
-| Prop           | What it holds                                                                                                                                                       |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pluginId`     | The id of the plugin.                                                                                                                                               |
-| `appName`      | The name of the application.                                                                                                                                        |
-| `vaultName`    | The vault the window shows; empty where none is open. In the flashcards window, the name of the window.                                                             |
-| `platform`     | The operating system: `darwin`, `windows` or `linux`. On macOS the system draws the window buttons at the left, and the bar keeps room for them.                    |
-| `isMaximized`  | Whether the window is maximized.                                                                                                                                    |
-| `isFullscreen` | Whether the window fills the screen; macOS then shows no system buttons.                                                                                            |
-| `commands`     | The commands placed in `titleBar.commands`, sorted as [Slots](#slots) says: `id`, `title`, `icon` (a component), `group`, `shortcut`. Empty while no vault is open. |
-| `vaults`       | The vaults the title offers to switch to, and a last row that adds one: `id`, `name`, `isCurrent`. Empty while no vault is open.                                    |
+| Context            | What the bar reads and does                                                                                                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `context.slots`    | The entries of `titleBar.commands` and `titleBar.status` through `watchEntries`, in the order they are drawn. An entry the window cannot run is left out.                                                                |
+| `context.commands` | `run` runs the command of an entry, with no target in a bar; `getIds` and `watch` tell which commands the window runs now, and the list of vaults ends in a row that creates a vault while they hold `app:vault.create`. |
+| `context.vaults`   | The vaults the window can show and the one it shows (`null` while it shows none) through `watch`; `switchTo` shows another one.                                                                                          |
+| `context.window`   | Whether the window is maximized or fills the screen through `watch`; `minimize`, `toggleMaximize` and `close` are the window buttons.                                                                                    |
+| `context.app`      | `name`, the name of the application, and `platform`: `darwin`, `windows` or `linux`. On macOS the system draws the window buttons at the left, and the bar keeps room for them.                                          |
 
-It emits `TitleBarViewEvents`: `run-command` with the id of a command, `switch-vault` with the id of a vault, `minimize-window`, `toggle-maximize-window` and `close-window`. The window runs a command as the palette runs it, shows the vault (or adds one for the last row), and minimizes, maximizes or closes itself.
+A window that does not offer `slots`, `commands`, `vaults` or `window` leaves that field out of the context. `context.commands.run` runs any command of the window and needs no permission.
 
 When two enabled plugins place a view in `titleBar`, the window draws the one of the plugin first by plugin id, compared as plain text, and writes an error for the other plugin to the message log. The view is drawn in the window, not in a pane, and the window adds the stylesheet of the plugin while its view is drawn.
 
@@ -382,6 +379,8 @@ packaged plugin: plugins/sample/dist/md.numen.sample-0.1.0.zip
 Every command is filed in the window under `<owner>:<object>.<action>`. The owner is the id of the plugin that provides the command, or `app` for a command of the editor itself (`app:note.open`, `app:tab.close`). A plugin writes only the part after the colon, as `<object>.<action>` with each part in camelCase (`tree.revealNote`), in `contributes.commands` of its manifest and in `registerCommand` of its frontend, and the host adds the owner. A command registered twice under one full id makes the activation of its plugin fail with the full id in the message. The title is a separate imperative phrase that says what the command does (`Create deck`).
 
 A plugin declares every command once, in `contributes.commands` of the manifest, whichever part of the plugin runs it. The declaration has no field that names the part: the application learns that from where the handler is registered. A command the frontend runs has its handler bound in the plugin's frontend with `registerCommand({ id, handler })`, and a command the backend runs is served by the plugin's backend. The title, icon, condition and shortcut are read from the declaration, never from the code.
+
+A handler gets a `CommandNote`: the `CommandTarget` of the run (`path`, `title`, `isFolder`, `others` the paths selected with it, and `tab` where a tab menu runs it) and the `type` of the note. A command may offer items over a target, as "Move to window" offers one per open window: `registerCommand({ id, handler, listItems })`, where `listItems(target)` returns `{ id, title }` rows now or as a promise. A place draws such a command as a submenu of its items and the palette as a pick list; the handler gets the id of the item picked as its second argument. A plugin runs any command, its own or another's, with `context.commands.run(command, target?, argument?)`, and reads the items with `context.commands.listItems(command, target)`.
 
 ```json
 "contributes": {

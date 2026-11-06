@@ -9,8 +9,9 @@ const declaration = (when?: string) => ({
   ...(when === undefined ? {} : { when }),
 })
 
-const NOTE = { path: 'notes/Bees.md', title: 'Bees', type: 'link' }
-const NONE = { path: '', title: '', type: 'note' }
+const TARGET = { isFolder: false, others: [], tab: '' }
+const NOTE = { ...TARGET, path: 'notes/Bees.md', title: 'Bees', type: 'link' }
+const NONE = { ...TARGET, path: '', title: '', type: 'note' }
 const deps = {
   getContentTypes: () => ({ md: 'text/markdown' }),
   getWindowValues: () => ({ 'window.isVaultReady': true, config: { ledger: { isOn: true } } }),

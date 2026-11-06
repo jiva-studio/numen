@@ -75,7 +75,14 @@ describe('view-plex-graph plugin', () => {
     activate(ctx)
 
     await ctx.triggerCommand('graph.open')
-    await ctx.triggerCommand('graph.showNote', { path: 'One.md', title: 'One', type: 'note' })
+    await ctx.triggerCommand('graph.showNote', {
+      path: 'One.md',
+      title: 'One',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
     await ctx.getRegisteredContextMenus()[0]!.handler({
       path: 'Two.md',
       name: 'Two',

@@ -24,6 +24,9 @@ import {
   type PluginContext,
   type SlotViewRegistry,
   type TabKindRegistration,
+  type CommandsHost,
+  type VaultsHost,
+  type WindowHost,
 } from '@numen/plugin-host'
 import { createNoticeQueue } from '@numen/shell'
 import { createNamedIcon } from '@numen/ui'
@@ -142,8 +145,25 @@ const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginVie
   return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
 }
 
-/** The host of the window, whose plugins are given the agent where the window has one. */
-export function createShellHost(agent?: AgentHost) {
+/** The commands, the vaults and the window the plugins read, filled once the window has made them. */
+export interface ShellServices {
+  commands?: CommandsHost
+  vaults?: VaultsHost
+  window?: WindowHost
+}
+
+/** The services the window has filled, as a context holds them. */
+const getFilledServices = ({ commands, vaults, window }: ShellServices) => ({
+  ...(commands ? { commands } : {}),
+  ...(vaults ? { vaults } : {}),
+  ...(window ? { window } : {}),
+})
+
+/**
+ * The host of the window, whose plugins are given the agent where the window has one, and the
+ * vaults and the window the services hold when the plugin starts.
+ */
+export function createShellHost(agent?: AgentHost, services: ShellServices = {}) {
   const views = shallowRef<readonly PluginView[]>([])
   const contexts = new Map<string, PluginContext>()
   const declaredViews = createViewRegistry()
@@ -194,6 +214,7 @@ export function createShellHost(agent?: AgentHost) {
       hasPermission: (permission) => manifest?.permissions?.includes(permission) ?? false,
       notices: createPluginNotices(notices, pluginId),
       ...(agent ? { agent } : {}),
+      ...getFilledServices(services),
     }
     contexts.set(pluginId, context)
     windowSlots.track(pluginId, manifest)

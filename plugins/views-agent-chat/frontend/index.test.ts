@@ -90,7 +90,14 @@ describe('view-agent-chat plugin', () => {
       'note.ask',
     ])
     await ctx.triggerCommand('chat.open')
-    await ctx.triggerCommand('note.ask', { path: 'One.md', title: 'One', type: 'note' })
+    await ctx.triggerCommand('note.ask', {
+      path: 'One.md',
+      title: 'One',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
     await ctx.getRegisteredContextMenus()[0]!.handler({
       path: 'Two.md',
       name: 'Two',

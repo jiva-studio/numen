@@ -15,6 +15,26 @@ import {
   type WindowWhenContext,
 } from './whenContext'
 
+/** What a run names: the note, the others selected with it, and the tab it is over. */
+type NoteTarget = Pick<CommandTarget, 'path' | 'title' | 'isFolder' | 'others'> & {
+  readonly tab?: string
+}
+
+/** What a plugin command runs over: the target, the others selected with it, and its type. */
+export const createCommandNoteReader =
+  (core: Pick<VaultCore, 'fileKinds'>) =>
+  async (target: NoteTarget): Promise<CommandNote> => {
+    const { path } = target
+    return {
+      path,
+      title: target.title,
+      type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
+      isFolder: target.isFolder ?? false,
+      others: target.others ?? [],
+      tab: target.tab ?? '',
+    }
+  }
+
 export function usePluginCommands(
   core: VaultCore,
   pluginHost: PluginHost | undefined,
@@ -41,6 +61,7 @@ export function usePluginCommands(
       ...getPluginLooks(cmd),
       group: namesNote(cmd.when) ? ('note' as const) : ('window' as const),
       ...(cmd.when ? { when: cmd.when } : {}),
+      ...(pluginHost?.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
       isAvailable: (target: CommandTarget) => isWhenAvailable(cmd.when, target),
     }))
 
@@ -60,11 +81,7 @@ export function usePluginCommands(
       .filter((cmd) => namesNote(cmd.when))
       .map((cmd) => ({ id: cmd.id, text: cmd.title, group: 'note' }))
 
-  const getCommandNote = async (path: string, title: string): Promise<CommandNote> => ({
-    path,
-    title,
-    type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
-  })
+  const getCommandNote = createCommandNoteReader(core)
 
   if (pluginHost) {
     let unregisterAll: readonly (() => void)[] = []
@@ -74,10 +91,10 @@ export function usePluginCommands(
         for (const unregister of unregisterAll) unregister()
         unregisterAll = list.map((cmd) =>
           registerCommand(cmd.id, async (invocation) => {
-            await pluginHost.executeCommand(
-              cmd.id,
-              await getCommandNote(invocation.path, invocation.title),
-            )
+            const note = await getCommandNote(invocation)
+            if (pluginHost.hasCommandItems(cmd.id) && invocation.name !== '') {
+              await pluginHost.executeCommand(cmd.id, note, invocation.name)
+            } else await pluginHost.executeCommand(cmd.id, note)
           }),
         )
       },

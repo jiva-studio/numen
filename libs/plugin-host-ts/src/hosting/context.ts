@@ -26,6 +26,7 @@ import type { Manifest } from '@numen/core-client'
 import { APP_COMMAND_OWNER, formatCommandId } from '../commandId'
 import { createExternalOpener } from '../externalOpener'
 import { createSlotContext } from './slotContext'
+import { createFrameServices } from './frameServices'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: Disposable[], disposable: Disposable): Disposable {
@@ -213,10 +214,6 @@ function guardWorkspace(
 ): WorkspaceHost {
   return {
     ...workspace,
-    runCommand: (id, target) => {
-      if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runCommand ${id}`)
-      workspace.runCommand(id, target)
-    },
     runPathCommand: (id, target) => {
       if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runPathCommand ${id}`)
       workspace.runPathCommand(id, target)
@@ -330,6 +327,7 @@ function createWindowServices(
     ...(notices ? { notices } : {}),
     ...(tasks ? { tasks } : {}),
     ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
+    ...createFrameServices(host),
   }
 }
 

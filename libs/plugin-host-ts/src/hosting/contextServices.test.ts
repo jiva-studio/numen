@@ -13,12 +13,12 @@ import {
   type VaultRelations,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
+import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
 import { createPluginContext } from './context'
 import type { PluginContextHost } from './types'
 
 const createServices = () => {
   const workspace = {
-    runCommand: vi.fn(),
     runPathCommand: vi.fn(),
     openFile: vi.fn(),
     showError: vi.fn(),
@@ -57,6 +57,7 @@ const createServices = () => {
     track: vi.fn(() => ({ dispose: vi.fn() })),
     addFlushHandler: vi.fn(() => ({ dispose: vi.fn() })),
   } as unknown as BufferHost
+  const commands = createMockCommandsHost()
   const host = {
     getAgent: () => agent,
     getBuffers: () => buffers,
@@ -64,8 +65,9 @@ const createServices = () => {
     getNotes: () => notes,
     getRelations: () => relations,
     getFiles: () => files,
+    getCommands: () => commands,
   } as unknown as PluginContextHost
-  return { host, workspace, notes, relations, files, agent, buffers }
+  return { host, workspace, notes, relations, files, agent, buffers, commands }
 }
 
 const createContext = (permissions: readonly string[]) => {
@@ -277,39 +279,37 @@ describe('a file a plugin writes', () => {
 })
 
 describe('a command a plugin runs over the vault', () => {
-  const target = { path: 'a.md', title: 'A' }
+  const target = { path: 'a.md', title: 'A', isFolder: false, others: [], tab: '' }
   const row = { paths: ['a.md'], name: 'a', isNote: true, isFolder: false }
-
-  it.each([
+  const WRITES = [
     'app:note.trash',
     'app:note.createChild',
     'app:note.rename',
     'md.numen.engines.transcription:transcript.create',
-  ])('fails for %s without vault:write', (id) => {
+  ]
+
+  it.each(WRITES)('runs %s through the commands of the window with no permission', async (id) => {
+    const { context, commands } = createContext([])
+
+    await context.commands!.run(id, target)
+
+    expect(commands.getRuns()).toStrictEqual([{ command: id, target, argument: undefined }])
+  })
+
+  it.each(WRITES)('fails for %s over a row without vault:write', (id) => {
     const { context, workspace } = createContext(['vault:read'])
 
-    expect(() => context.workspace!.runCommand(id, target)).toThrowError(
-      `Plugin "md.numen.sample" lacks required permission "vault:write" for workspace.runCommand ${id}`,
-    )
     expect(() => context.workspace!.runPathCommand(id, row)).toThrowError(
       `Plugin "md.numen.sample" lacks required permission "vault:write" for workspace.runPathCommand ${id}`,
     )
-    expect(workspace.runCommand).not.toHaveBeenCalled()
     expect(workspace.runPathCommand).not.toHaveBeenCalled()
   })
 
-  it.each([
-    'app:note.trash',
-    'app:note.createChild',
-    'app:note.rename',
-    'md.numen.engines.transcription:transcript.create',
-  ])('runs %s with vault:write', (id) => {
+  it.each(WRITES)('runs %s over a row with vault:write', (id) => {
     const { context, workspace } = createContext(['vault:write'])
 
-    context.workspace!.runCommand(id, target)
     context.workspace!.runPathCommand(id, row)
 
-    expect(workspace.runCommand).toHaveBeenCalledWith(id, target)
     expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
   })
 
@@ -319,14 +319,23 @@ describe('a command a plugin runs over the vault', () => {
     'app:note.copyPath',
     'app:settings.open',
     'md.numen.views.agent.chat:note.ask',
-  ])('runs %s without vault:write', (id) => {
+  ])('runs %s over a row without vault:write', (id) => {
     const { context, workspace } = createContext([])
 
-    context.workspace!.runCommand(id, target)
     context.workspace!.runPathCommand(id, row)
 
-    expect(workspace.runCommand).toHaveBeenCalledWith(id, target)
     expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
+  })
+
+  it('reads the commands of the window and their items with no permission', () => {
+    const { context, commands } = createContext([])
+    const handler = vi.fn()
+    context.commands!.watch(handler)
+
+    commands.setIds(['app:vault.create'])
+
+    expect(context.commands!.getIds()).toStrictEqual(['app:vault.create'])
+    expect(handler).toHaveBeenLastCalledWith(['app:vault.create'])
   })
 
   it('opens a file and shows an error without vault:write', () => {

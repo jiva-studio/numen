@@ -15,6 +15,8 @@ defineProps<{
   id: string
   /** The name of the group the row begins, where it does. */
   heading?: string | undefined
+  /** Whether a line divides the row from the one before it. */
+  hasSeparator?: boolean
   /** Whether the keyboard is on the row. */
   isActive: boolean
   /** Whether the row is the item in force. */
@@ -32,6 +34,7 @@ const context = inject(LIST_CONTEXT)
 </script>
 
 <template>
+  <hr v-if="hasSeparator" class="searchable-list__separator" role="separator" />
   <p v-if="heading !== undefined" class="searchable-list__heading" role="presentation">
     {{ heading }}
   </p>
@@ -63,6 +66,17 @@ const context = inject(LIST_CONTEXT)
 </template>
 
 <style scoped>
+/* The line above an item that is set apart from the rows before it. */
+.searchable-list__separator {
+  /* The space the line keeps on each side, as a rule of a menu keeps. */
+  --parting: 0.25rem;
+
+  block-size: 0;
+  margin-block: var(--parting);
+  border: 0;
+  border-block-start: 1px solid var(--numen-panel-border);
+}
+
 /* The name of a group, set as this product sets a label over what it names. */
 .searchable-list__heading {
   margin: 0;

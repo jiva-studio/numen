@@ -1,28 +1,17 @@
 /**
  * The slots of a window as a plugin reads and fills them. The manifest places entries with
- * `contributes.slots`; the owner of a slot reads them here, draws them, and runs their commands over
- * its target.
+ * `contributes.slots`; the owner of a slot reads them here, draws them, and runs their commands
+ * over its target through `CommandsHost.run`.
  */
 import type { Disposable } from '../types'
 import type { SlotName } from './slotNames'
+import type { CommandTarget } from '../commands'
 
 export { SLOT, WINDOW_SLOTS, type SlotName } from './slotNames'
 export { WHEN_VARIABLES } from './whenVariables'
 
 // SlotPlace is a slot of the window or a submenu a plugin declares; a submenu is named by its id.
 export type SlotPlace = SlotName | (string & {})
-
-// CommandTarget is what a command runs over: the file or folder a row of the file tree was opened
-// on, the file of a tab, the note of a search result. A bar has none.
-export interface CommandTarget {
-  // The path of the file or folder; empty where there is none.
-  readonly path: string
-  // What the target is called, such as the title of a note; empty where there is none.
-  readonly title: string
-  readonly isFolder: boolean
-  // The other paths selected together with the target, as in the file tree.
-  readonly others: readonly string[]
-}
 
 // SlotEntryKey names one entry for as long as its plugin declares it: the plugin and its command,
 // view or submenu, as `<plugin id>/<kind>/<id>`.
@@ -34,13 +23,16 @@ export interface SlotCommand {
   readonly key: SlotEntryKey
   // The plugin that placed the entry.
   readonly pluginId: string
-  // The full id of the command, which `SlotHost.runCommand` takes.
+  // The full id of the command, which `CommandsHost.run` takes.
   readonly command: string
   readonly title: string
   // The icon component of the command; undefined for a command without one.
   readonly icon?: unknown
   // The suggested shortcut of the command, such as `mod+shift+e`; empty for none.
   readonly shortcut: string
+  // Whether the command offers items, which the owner draws as a submenu read from
+  // `CommandsHost.listItems` when it opens.
+  readonly hasItems: boolean
 }
 
 // SlotView is a component a plugin registered with `registerSlotView` and draws itself.

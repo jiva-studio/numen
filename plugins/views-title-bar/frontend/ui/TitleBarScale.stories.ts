@@ -7,20 +7,25 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor } from 'storybook/test'
 import { FilePlus, FolderTree, Search } from '@lucide/vue'
 import TitleBar from './TitleBar.vue'
-import type { TitleBarViewProps, TitleBarCommand } from '@numen/plugin-sdk'
+import type { AppInfo, SlotItem, VaultsState } from '@numen/plugin-sdk'
+import { command, separator } from '../testing/entries'
 
 interface Knobs {
   appName: string
-  vaultName: string
-  platform: TitleBarViewProps['platform']
+  vaults: VaultsState
+  platform: AppInfo['platform']
   buttons: 'windows' | 'mac'
-  commands: readonly TitleBarCommand[]
+  commands: readonly SlotItem[]
 }
 
-const ACTIONS: readonly TitleBarCommand[] = [
-  { id: 'files', title: 'Open file tree', icon: FolderTree, group: 'navigate' },
-  { id: 'note', title: 'Create note', icon: FilePlus, group: 'new' },
-  { id: 'search', title: 'Search vault', icon: Search, group: 'tools' },
+const ORCHARD = { id: 'orchard', name: 'Orchard notes' }
+
+const ACTIONS: readonly SlotItem[] = [
+  command('files', { title: 'Open file tree', icon: FolderTree }),
+  separator(1),
+  command('note', { title: 'Create note', icon: FilePlus }),
+  separator(2),
+  command('search', { title: 'Search vault', icon: Search }),
 ]
 
 /** The scales, as [interface, text]: the designed size, each one larger, and both larger. */
@@ -34,7 +39,12 @@ const SCALES: readonly (readonly [string, string])[] = [
 const meta: Meta<Knobs> = {
   title: 'Application/TitleBar/Scale',
   component: TitleBar,
-  args: { appName: 'numen', vaultName: 'Orchard notes', platform: 'windows', commands: ACTIONS },
+  args: {
+    appName: 'numen',
+    vaults: { vaults: [ORCHARD], current: ORCHARD },
+    platform: 'windows',
+    commands: ACTIONS,
+  },
   render: (args) => ({
     components: { TitleBar },
     setup: () => ({ args }),

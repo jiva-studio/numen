@@ -17,7 +17,13 @@ const TITLES: Record<string, string> = {
   'app:settings.open': 'Open settings',
 }
 
-const NOTE: CommandTarget = { path: 'notes/Bees.md', title: 'Bees', isFolder: false, others: [] }
+const NOTE: CommandTarget = {
+  path: 'notes/Bees.md',
+  title: 'Bees',
+  isFolder: false,
+  others: [],
+  tab: '',
+}
 
 function setup(entries: readonly DeclaredSlotEntry[], overrides: Partial<SlotRegistryDeps> = {}) {
   const list = shallowRef<readonly DeclaredSlotEntry[] | undefined>(entries)
@@ -200,8 +206,14 @@ describe('a submenu', () => {
 })
 
 describe('the condition of an entry', () => {
-  const FOLDER: CommandTarget = { path: 'notes', title: 'notes', isFolder: true, others: [] }
-  const ROOT: CommandTarget = { path: '', title: '', isFolder: true, others: [] }
+  const FOLDER: CommandTarget = {
+    path: 'notes',
+    title: 'notes',
+    isFolder: true,
+    others: [],
+    tab: '',
+  }
+  const ROOT: CommandTarget = { path: '', title: '', isFolder: true, others: [], tab: '' }
 
   it('leaves the entry out over a target where it is false', () => {
     const { registry } = setup([

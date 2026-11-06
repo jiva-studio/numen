@@ -7,11 +7,14 @@ import type {
   AgentHost,
   AgentPort,
   BufferHost,
+  CommandsHost,
   MenuEntry,
   NoteRef,
   VaultFiles,
   VaultNotes,
   VaultRelations,
+  VaultsHost,
+  WindowHost,
   WorkspaceHost,
 } from '@numen/plugin-host'
 import type { SearchDeps } from '@/features/command-palette'
@@ -35,6 +38,12 @@ export interface PluginServices {
   buffers?: BufferHost
   /** The window's store of open notes, which the tabs of the note kind read and write through. */
   noteBuffer?: NoteBuffer
+  /** The commands of the window, which every plugin runs its commands through. */
+  commands?: CommandsHost
+  /** The vaults the window can show, which every plugin reads. */
+  vaults?: VaultsHost
+  /** The window the plugins run in. */
+  window?: WindowHost
   /** The window's task list, which each plugin's task host reads. */
   taskList?: Readonly<Ref<readonly Task[]>>
 }
@@ -87,7 +96,6 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     },
     getNoteInFocus: () => deps.getNoteInFocus(),
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,
-    runCommand: (id, { path, title }) => deps.runCommand(id, { ...deps.getTarget(), path, title }),
     getNoteCommands: () => deps.getNoteCommands(),
     ask: (text) => deps.ask(text),
     showError: (text) => writeMessage(text, 'error'),

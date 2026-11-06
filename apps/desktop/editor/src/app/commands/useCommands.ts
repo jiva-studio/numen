@@ -24,6 +24,7 @@ import {
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
 import { usePluginCommands } from './usePluginCommands'
+import { createItemLists } from './pluginItems'
 import { watchCommandLists } from './watchCommandLists'
 import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
@@ -46,7 +47,7 @@ export interface CommandsDepsOptions {
   windowTabs: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
   knows: NoteLookup
-  kept: PaletteLists
+  paletteLists: PaletteLists
   runs: RunSupport
   coverage: () => IndexCoverage
   making: NoteCreator
@@ -81,7 +82,13 @@ export interface CommandsDepsOptions {
 }
 
 /** A note a search found, which the entries of `palette.searchResult` are offered over. */
-const SEARCH_RESULT_NOTE: PluginCommandTarget = { path: '', title: '', isFolder: false, others: [] }
+const SEARCH_RESULT_NOTE: PluginCommandTarget = {
+  path: '',
+  title: '',
+  isFolder: false,
+  others: [],
+  tab: '',
+}
 
 /** The commands placed in `palette.searchResult`, offered over every note a search finds. */
 const getSearchResultEntries = (slots: Pick<SlotHost, 'getEntries'> | undefined) =>
@@ -101,7 +108,7 @@ const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
 })
 
 export function useCommands(options: CommandsDepsOptions) {
-  const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
+  const { core, words, windowTabs, getTarget, knows, runs, coverage, writeMessage } = options
   const { pluginHost, declaredCommands } = options
   const plugins = usePluginCommands(core, pluginHost, declaredCommands?.whenContext)
   const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = plugins
@@ -111,7 +118,8 @@ export function useCommands(options: CommandsDepsOptions) {
     menu: { getEntries: () => getSearchResultEntries(options.slots) },
     getTarget,
   })
-  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
+  const { lists, resetWhenClosed } = createItemLists(options.paletteLists, pluginHost, getTarget)
+  const commands = useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, () => [
     ...(options.settingPalette?.getCommands() ?? []),
     ...(options.declaredCommands?.paletteCommands.value ?? []),
     ...(options.fileMenuCommands?.paletteCommands.value ?? []),
@@ -119,6 +127,7 @@ export function useCommands(options: CommandsDepsOptions) {
   ])
 
   watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open, getTarget)
+  resetWhenClosed(commands.open)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
@@ -134,9 +143,7 @@ export function useCommands(options: CommandsDepsOptions) {
     if (pluginHost?.hasCommand(id)) {
       commands.setOpen(false)
       runInBackground(
-        getCommandNote(target.path, target.title).then((note) =>
-          pluginHost.executeCommand(id, note),
-        ),
+        getCommandNote(target).then((note) => pluginHost.executeCommand(id, note)),
         reportError,
       )
       return
@@ -167,7 +174,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
-    const getNote = () => getCommandNote(getTarget().path, getTarget().title)
+    const getNote = () => getCommandNote(getTarget())
     if (pluginHost?.handleShortcut(event, getNote)) return event.preventDefault()
     if (!isChord(event)) return
     const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)

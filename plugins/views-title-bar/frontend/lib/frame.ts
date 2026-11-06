@@ -1,4 +1,4 @@
-import type { TitleBarViewProps } from '@numen/plugin-sdk'
+import type { AppInfo } from '@numen/plugin-sdk'
 
 /**
  * Who draws the window buttons and where: the bar at the right (`windows`), the bar as three
@@ -22,10 +22,7 @@ export function readButtonsSetting(value: unknown): ButtonsSetting {
  * Windows draws the buttons at the right to keep Snap Layouts, and macOS keeps the system buttons.
  * Linux draws them where the setting `buttons` says.
  */
-export function getControls(
-  platform: TitleBarViewProps['platform'],
-  buttons: ButtonsSetting,
-): ControlsStyle {
+export function getControls(platform: AppInfo['platform'], buttons: ButtonsSetting): ControlsStyle {
   if (platform === 'darwin') return 'native-mac'
   return platform === 'linux' ? buttons : 'windows'
 }

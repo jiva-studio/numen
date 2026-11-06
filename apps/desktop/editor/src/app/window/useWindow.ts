@@ -9,7 +9,12 @@ import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
 import { createNoteLookup } from '../tabs/editorTabs'
-import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
+import {
+  createCommands,
+  runSupport,
+  type CommandTarget,
+  type NoteLookup,
+} from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
 import { createNoticeQueue } from '@numen/shell'
@@ -33,6 +38,11 @@ import { createWindowSlots } from './windowSlots'
 import { getNamedIcon } from '@/shared/icons'
 import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
+import { useWindowFrame } from './useWindowFrame'
+import { createWindowHost } from './windowHost'
+import { createEditorVaults } from './windowVaults'
+import { createWindowCommands } from './windowCommands'
+import { createCommandNoteReader } from '../commands/usePluginCommands'
 import { useNoticeTasks } from '../shell/useNoticeTasks'
 import { useWindowKinds } from './useWindowKinds'
 import { useWindowStatusBar } from '../shell/useWindowStatusBar'
@@ -82,7 +92,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     windowTabs,
     getTarget: deps.getTarget,
     knows: deps.knows,
-    kept: settings.paletteLists,
+    paletteLists: settings.paletteLists,
     runs: deps.runs,
     coverage: vaultsModule.coverage,
     making: editing.making,
@@ -673,6 +683,39 @@ const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
   retryBootstrap: bootstrap.retry,
 })
 
+/** The frame of the window, and the commands, the vaults and the window its plugins read. */
+function createWindowFrameServices(
+  base: WindowCore,
+  ctx: WindowContext,
+  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget' | 'runCommand'>,
+) {
+  const frame = useWindowFrame()
+  let appIds: readonly string[] | undefined
+  Object.assign(base.pluginServices, {
+    commands: createWindowCommands({
+      getAppIds: () => (appIds ??= createCommands(words).map((one) => one.id)),
+      getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
+      runCommand: commands.runCommand,
+      listItems: async (id, target) =>
+        base.pluginHost.hasCommand(id) ? base.pluginHost.listCommandItems(id, target) : [],
+      runWithArgument: async (id, target, argument) => {
+        const note = await createCommandNoteReader(core)(target)
+        await base.pluginHost.executeCommand(id, note, argument)
+      },
+      getTarget: commands.getTarget,
+    }),
+    vaults: createEditorVaults({
+      vaultList: getVaults(ctx).vaultList,
+      getTarget: commands.getTarget,
+      commandDeps: getCommands(ctx).commandDeps,
+    }),
+    window: createWindowHost(frame, (error) =>
+      base.writeMessage(formatErrorMessage(error), 'error'),
+    ),
+  })
+  return frame
+}
+
 /** The view a plugin draws in the window itself: the title bar. */
 const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
   titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
@@ -755,6 +798,7 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
+    frame: createWindowFrameServices(base, ctx, { getTarget, runCommand }),
     isHighlighted,
     ...createWindowTabMoves(base, editing, closeTab),
   }

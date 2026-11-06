@@ -42,6 +42,8 @@ export interface SlotCommandLook {
   readonly title: string
   readonly icon?: unknown
   readonly shortcut?: string | undefined
+  /** Whether the command lists items over the target; false where absent. */
+  readonly hasItems?: boolean | undefined
 }
 
 export interface SlotRegistryDeps {
@@ -208,6 +210,7 @@ function toCommandItem(
     title: look.title,
     ...(look.icon === undefined ? {} : { icon: look.icon }),
     shortcut: look.shortcut ?? '',
+    hasItems: look.hasItems ?? false,
   }
 }
 
