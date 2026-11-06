@@ -163,11 +163,7 @@ test.describe('Removing and renaming a note', () => {
       await openWorkspace(page)
       await openNote(page, target)
 
-      await runPaletteCommand(
-        page,
-        'Sync title and filename',
-        'Sync title and filename',
-      )
+      await runPaletteCommand(page, 'Sync title and filename', 'Sync title and filename')
       await page.getByRole('option', { name: /^Off/ }).click()
       await expect.poll(() => isSyncingTitles(request)).toBe(false)
       await changeTitle(page, oldTitle, newTitle)
