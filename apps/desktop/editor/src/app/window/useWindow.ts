@@ -335,7 +335,6 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     pluginServices,
     pluginNotices,
     pluginNotes,
-    slotVaultOpen: slots.vaultOpen,
   }
 }
 
@@ -433,7 +432,6 @@ function initWindowKindsAndCommands(
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
-  base.slotVaultOpen.current = () => getVaults(ctx).vaultList.value.showing !== ''
   const fileMenuCommands = useFileMenuCommands({
     onRun: (file) => base.pluginHost.notifyVaultChange({ paths: [file] }),
     onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),

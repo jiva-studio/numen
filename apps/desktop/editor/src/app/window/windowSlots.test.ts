@@ -1,10 +1,9 @@
 /**
  * The slots of the editor window as the plugin host serves them: the buttons of the title bar in the
- * order of the slot, the settings button of the application last, and nothing while no vault is open.
- * Every plugin here is invented.
+ * order of the slot and the settings button of the application last. Every plugin here is invented.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { SLOT, createSlotRegistry, type PluginHost, type SlotItem } from '@numen/plugin-host'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
 import { createWindowSlots } from './windowSlots'
@@ -45,20 +44,18 @@ const SLOTS: DeclaredSlot[] = [
   },
 ]
 
-function setup(isOpen = true) {
-  const open = ref(isOpen)
+function setup() {
   const slots = createWindowSlots({
     declaredCommands: { slots: computed(() => SLOTS), commands: computed(() => COMMANDS) },
     hostHolder: { current: { getPaletteCommands: () => [] } as unknown as PluginHost },
     writeIssue: vi.fn(),
   })
-  slots.vaultOpen.current = () => open.value
   const registry = createSlotRegistry({
     getEntries: slots.hostDeps.getSlotEntries,
     findCommand: slots.hostDeps.findSlotCommand,
     findView: () => undefined,
   })
-  return { registry, open }
+  return { registry }
 }
 
 const describeItems = (items: readonly SlotItem[]) =>
@@ -86,15 +83,5 @@ describe('the buttons of the title bar', () => {
     const [first] = registry.getEntries(SLOT.titleBarCommands)
 
     expect(first).toMatchObject({ kind: 'command', title: 'Open tide' })
-  })
-
-  it('are none, the settings button included, while no vault is open, and come back once one is', () => {
-    const { registry, open } = setup(false)
-
-    expect(registry.getEntries(SLOT.titleBarCommands)).toStrictEqual([])
-    open.value = true
-    expect(registry.getEntries(SLOT.titleBarCommands).at(-1)).toMatchObject({
-      command: 'app:settings.open',
-    })
   })
 })

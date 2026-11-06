@@ -1,7 +1,6 @@
 /**
  * The slots of the window as the plugin host serves them: the entries the plugins and the application
  * place, how their commands are drawn, and the runner of the window that runs them over their target.
- * While no vault is open no command of a slot is drawn: every command of the window runs in a vault.
  */
 import type { PluginHost, PluginHostDeps } from '@numen/plugin-host'
 import { createCommands, type Command } from '@/features/command-palette'
@@ -18,8 +17,6 @@ export interface WindowSlotsDeps {
 
 export function createWindowSlots(deps: WindowSlotsDeps) {
   let editorCommands: readonly Command[] | undefined
-  /** Whether a vault is open in the window; set once the vaults of the window exist. */
-  const vaultOpen: { current?: () => boolean } = {}
   const findCommand = createSlotCommandFinder({
     getPluginCommands: () => deps.hostHolder.current?.getPaletteCommands() ?? [],
     getDeclaredCommands: () => deps.declaredCommands.commands.value,
@@ -29,9 +26,8 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
     Pick<PluginHostDeps, 'getSlotEntries' | 'findSlotCommand' | 'reportSlotIssue'>
   > = {
     getSlotEntries: () => readSlotEntries(deps.declaredCommands.slots.value),
-    findSlotCommand: (command, target) =>
-      vaultOpen.current?.() === false ? undefined : findCommand(command, target),
+    findSlotCommand: findCommand,
     reportSlotIssue: deps.writeIssue,
   }
-  return { hostDeps, vaultOpen }
+  return { hostDeps }
 }
