@@ -398,3 +398,49 @@ func TestTheReplacingCommandRecognisesOverATextLayer(t *testing.T) {
 		}
 	}
 }
+
+// getRecogniserIDs is the ids of the recognition models a configuration opens.
+func getRecogniserIDs(cfg engine.Config) []string {
+	ids := make([]string, 0, len(cfg.Recognise.Files))
+	for _, file := range cfg.Recognise.Files {
+		ids = append(ids, file.ID)
+	}
+	return ids
+}
+
+func TestAChangedModelClosesTheOpenedRecogniserAndOpensTheNewOne(t *testing.T) {
+	o := &opened{}
+	var got engine.Config
+	models := newEngines(engine.Defaults(), func(ctx context.Context, cfg engine.Config) (recogniser, error) {
+		got = cfg
+		return o.open(ctx, cfg)
+	})
+	if _, err := models.getEngine(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	multilingual := []string{"rec-pp-ocrv5-latin", "rec-pp-ocrv5-cyrillic", "rec-pp-ocrv5-greek", "rec-pp-ocrv6-tiny"}
+	if ids := getRecogniserIDs(got); !slices.Equal(ids, multilingual) {
+		t.Fatalf("a fresh profile opens %v, want %v", ids, multilingual)
+	}
+
+	models.updateConfig(map[string]string{"model": "pp-ocrv5-cyrillic"})
+	if o.closed != 1 {
+		t.Fatalf("%d recognisers closed after the model changed, want 1", o.closed)
+	}
+	if _, err := models.getEngine(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if ids := getRecogniserIDs(got); o.opened != 2 || !slices.Equal(ids, []string{"rec-pp-ocrv5-cyrillic"}) {
+		t.Fatalf("the next page opened %v (%d opened), want rec-pp-ocrv5-cyrillic alone", ids, o.opened)
+	}
+
+	for _, value := range []string{"pp-ocrv5-cyrillic", "bogus"} {
+		models.updateConfig(map[string]string{"model": value})
+		if _, err := models.getEngine(t.Context()); err != nil {
+			t.Fatal(err)
+		}
+		if ids := getRecogniserIDs(got); o.closed != 1 || o.opened != 2 || !slices.Equal(ids, []string{"rec-pp-ocrv5-cyrillic"}) {
+			t.Errorf("model %q: %d closed, %d opened, reading with %v; want nothing changed", value, o.closed, o.opened, ids)
+		}
+	}
+}
