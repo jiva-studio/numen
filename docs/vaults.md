@@ -72,7 +72,7 @@ The `vaults` table in the index is what every other row's foreign key points at.
 
 **Vault roots do not overlap.** A root that lies inside a registered vault, or that contains one, is rejected. A file belongs to exactly one identity.
 
-**A filesystem root is not a vault, and neither is the person's home directory itself.** A non-absolute path is rejected, and so is a folder that cannot be read as a vault.
+**A filesystem root is not a vault, and neither is the user's home directory itself.** A non-absolute path is rejected, and so is a folder that cannot be read as a vault.
 
 ### An identity already on the list
 

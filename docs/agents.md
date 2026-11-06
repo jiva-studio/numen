@@ -1,6 +1,6 @@
 # What the panel's agent can reach
 
-A person types a question into the panel beside their notes, and the application starts an agent to answer it. It chooses the program, the model, the tools, the working directory and the environment. This page is what that agent is given and what is restricted.
+The user types a question into the panel beside their notes, and the application starts an agent to answer it. It chooses the program, the model, the tools, the working directory and the environment. This page is what that agent is given and what is restricted.
 
 ## What the agent is given
 
@@ -16,7 +16,7 @@ The working directory is the vault.
 
 Hooks, skills, standing instructions, plugins and custom agents are blocked by default: the agent is given a list of the configuration sources it may read, and by default the list is empty.
 
-The setting `readsHooksAndSkills` of the plugin `md.numen.agents.claude` enables the person's own hooks and skills, and only those. What a vault itself contains is blocked in either mode: a vault is a folder that comes from elsewhere — synced, cloned, shared, restored — and a configuration file inside one can list commands for this machine to run.
+The setting `readsHooksAndSkills` of the plugin `md.numen.agents.claude` enables the user's own hooks and skills, and only those. What a vault itself contains is blocked in either mode: a vault is a folder that comes from elsewhere — synced, cloned, shared, restored — and a configuration file inside one can list commands for this machine to run.
 
 The sources are listed one by one. This vault's own tools are passed on a command line and are treated as a customisation like any other.
 
@@ -48,11 +48,11 @@ The tools server also gives every agent that connects to it instructions: one li
 
 ## What an answer links to
 
-A note an answer mentions is named as `[[Harmonic oscillator]]` — the same brackets a note is written with, resolved the same way, and pressing one opens the note in a tab beside the tab the person is looking at. A name that matches no note is drawn as an unresolved link, and pressing it opens nothing. `[[note://<identifier>]]` identifies one note where a title is shared. See [Links](links.md).
+A note an answer mentions is named as `[[Harmonic oscillator]]` — the same brackets a note is written with, resolved the same way, and pressing one opens the note in a tab beside the tab the user is looking at. A name that matches no note is drawn as an unresolved link, and pressing it opens nothing. `[[note://<identifier>]]` identifies one note where a title is shared. See [Links](links.md).
 
 A passage of a book is named as `[the Remuna episode](numen:library%2FA%20Book.pdf?start=62690&length=1246)`: a document's path, percent-encoded, and the text range the search returned. Pressing one opens the document there, with the other passages of that answer highlighted.
 
-The window a person runs their cards in opens neither: an answer there states in words where each part came from, because a link cannot be opened there.
+The window the user runs their cards in opens neither: an answer there states in words where each part came from, because a link cannot be opened there.
 
 ## The tools
 
@@ -138,7 +138,7 @@ A tool declares the servers it is offered on: the full server, which gives an ag
 
 The tools are registered by the plugins that own their subjects — `agents-tools-vault`, `agents-tools-window`, `views-flashcards-studio`, `engines-ocr`, `engines-transcription`, `tools-media-importer` — and `agents-mcp-server` gathers the tools of every plugin and of the host and serves them to an agent.
 
-## An agent a person runs themselves
+## An agent the user runs themselves
 
 The tools are served to an agent somebody has configured in their own terminal by the plugin `md.numen.agents.mcp.server`, which listens on `127.0.0.1` at the plugin's setting `port` (3333 by default). The application itself opens no port and writes no token file.
 
@@ -170,6 +170,6 @@ Where `command` is empty, the path is searched first, then the folders the comma
 
 **An agent whose tools did not load answers anyway.** The stream reports that the server was unreachable, the run continues, and the reason is reported after the answer. The posture intended is fail-closed and what is implemented is answer-then-explain.
 
-**A file the agent writes in the vault is read by the person's own agent.** The panel's agent reads the vault's instructions in neither mode. A note it writes stays in the folder, though, and the person's own agent, started in that folder, reads what is there. Where a note may be written is limited to places a note may live and this application's own folders, so another tool's dot-folder is blocked; the vault's root is not, and a file named for what another tool reads can be written there.
+**A file the agent writes in the vault is read by the user's own agent.** The panel's agent reads the vault's instructions in neither mode. A note it writes stays in the folder, though, and the user's own agent, started in that folder, reads what is there. Where a note may be written is limited to places a note may live and this application's own folders, so another tool's dot-folder is blocked; the vault's root is not, and a file named for what another tool reads can be written there.
 
 **Two hand-maintained lists track somebody else's program.** The nine filtered environment variables and the named built-in tools are both lists, and the program they filter can change in any release without notice. Each release must be checked, and nothing checks it automatically.
