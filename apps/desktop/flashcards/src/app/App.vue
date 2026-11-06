@@ -13,7 +13,6 @@ import TitleBarHost from './TitleBarHost.vue'
 import { WORDS } from '@/shared/words'
 import VaultChooser from './VaultChooser.vue'
 import { useShell, type ShellDeps } from './useShell'
-import { useWindowFrame } from './useWindowFrame'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -23,7 +22,6 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell(props.deps)
-const frame = useWindowFrame()
 </script>
 
 <template>
@@ -31,20 +29,7 @@ const frame = useWindowFrame()
   <!-- The window is drawn once the plugins have started or the wait for them has passed, so the
        layout does not move when the bar is drawn. -->
   <LoadingIndicator v-if="!plugins.isStarted.value" class="starting" :label="WORDS.appName" />
-  <TitleBarHost
-    v-else
-    :view="plugins.titleBarView.value"
-    :app-name="WORDS.appName"
-    :vault-name="WORDS.windowName"
-    :platform="frame.platform.value"
-    :is-maximized="frame.isMaximized.value"
-    :is-fullscreen="frame.isFullscreen.value"
-    :commands="[]"
-    :vaults="[]"
-    @minimize-window="frame.minimizeWindow"
-    @toggle-maximize-window="frame.toggleMaximizeWindow"
-    @close-window="frame.closeWindow"
-  />
+  <TitleBarHost v-else :view="plugins.titleBarView.value" />
   <main
     v-if="plugins.isStarted.value"
     class="window"

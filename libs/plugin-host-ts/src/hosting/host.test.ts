@@ -5,6 +5,7 @@ import { createPluginHost, createPluginPaneWrapper } from './host'
 import { disposeAllEntries, type HostRegistry } from './registry'
 import { registerPluginStyle } from '../styles'
 import { CONVERSATION } from '@numen/plugin-sdk'
+import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { PluginHostDeps } from './types'
 
@@ -94,7 +95,14 @@ describe('createPluginHost', () => {
     expect(palette[0]?.id).toBe('sample.plugin:test.run')
 
     // Execute command
-    await host.executeCommand('sample.plugin:test.run', { path: '', title: '', type: 'note' })
+    await host.executeCommand('sample.plugin:test.run', {
+      path: '',
+      title: '',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
     expect(executed).toBe(true)
 
     // Shortcut matching
@@ -104,7 +112,14 @@ describe('createPluginHost', () => {
       ctrlKey: true,
       shiftKey: true,
     })
-    const handled = host.handleShortcut(event, async () => ({ path: '', title: '', type: 'note' }))
+    const handled = host.handleShortcut(event, async () => ({
+      path: '',
+      title: '',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    }))
     expect(handled).toBe(true)
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(executed).toBe(true)
@@ -159,7 +174,6 @@ describe('createPluginHost', () => {
       readers: new Map(),
       tabKinds: new Map(),
       commands: { value: new Map() },
-      contextMenus: { value: new Map() },
       settingsViews: { value: new Map() },
       agentProviders: new Map([
         [
@@ -277,39 +291,21 @@ describe('createPluginHost', () => {
     expect(host.createContext('test.plugin').tasks).toBeUndefined()
   })
 
-  it('registers context menu, removes it on dispose, and restores on reactivate', () => {
+  it('gives every plugin the background tasks of the window', () => {
     const { deps } = createMockDeps()
-    const host = createPluginHost(deps)
-    const ctx1 = host.createContext('sample.plugin')
+    const backgroundTasks = createMockBackgroundTaskHost()
+    const host = createPluginHost({ ...deps, getBackgroundTasks: () => backgroundTasks })
 
-    ctx1.registerContextMenu({
-      id: 'menu-1',
-      text: 'Action 1',
-      target: 'note',
-      handler: vi.fn(() => Promise.resolve()),
-    })
+    expect(host.createContext('test.plugin').backgroundTasks).toBe(backgroundTasks)
+    expect(host.createContext('other.plugin').backgroundTasks).toBe(backgroundTasks)
+  })
 
-    expect(
-      host.getContextMenuItems({ path: 'test.md', isFolder: false, isNote: true }),
-    ).toHaveLength(1)
+  it('gives a plugin no background tasks where the window offers none', () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost({ ...deps, getBackgroundTasks: () => undefined })
 
-    // Plugin is deactivated / disposed
-    host.disposePlugin('sample.plugin')
-    expect(
-      host.getContextMenuItems({ path: 'test.md', isFolder: false, isNote: true }),
-    ).toHaveLength(0)
-
-    // Plugin is reactivated (new context created and registered)
-    const ctx2 = host.createContext('sample.plugin')
-    ctx2.registerContextMenu({
-      id: 'menu-1',
-      text: 'Action 1',
-      target: 'note',
-      handler: vi.fn(() => Promise.resolve()),
-    })
-    expect(
-      host.getContextMenuItems({ path: 'test.md', isFolder: false, isNote: true }),
-    ).toHaveLength(1)
+    expect(host.createContext('test.plugin').backgroundTasks).toBeUndefined()
+    expect(createPluginHost(deps).createContext('test.plugin').backgroundTasks).toBeUndefined()
   })
 
   it('delegates getSetting and onSettingChange through host', () => {

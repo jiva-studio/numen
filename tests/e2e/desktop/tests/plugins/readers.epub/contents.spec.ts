@@ -1,10 +1,5 @@
 import { test, expect, type APIRequestContext, type Page } from '../../support/test.js'
-import {
-  openAsset,
-  openVaultFile,
-  openWorkspace,
-  waitForPassage,
-} from '../../support/workspace.js'
+import { openAsset, openVaultFile, openWorkspace, waitForPassage } from '../../support/workspace.js'
 import {
   createEpub,
   deleteVaultFiles,
@@ -82,12 +77,12 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     await expect(pages.getByRole('heading', { name: 'Dusk tide' })).toBeVisible()
 
     // The plugin reads the text of the book in a task of its own. The file is deleted when the
-    // test ends, and a task that reads a deleted file stays in the status bar as a failure and
-    // fails the tests after it. The book is found by its words once the task has written them.
+    // test ends, and a task that reads a deleted file stays in the list of background tasks as a
+    // failure and fails the tests after it. The book is found by its words once the task has written them.
     await waitForPassage(page, 'The water is low at dawn', `assets/${name}`)
     await page.keyboard.press('Escape')
-    await expect(page.locator('.status-bar__summary')).not.toHaveText(/^[1-9]\d* active$/)
-    await page.locator('.status-bar__trigger').click()
+    await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^[1-9]\d* active$/)
+    await page.locator('.tasks-status__trigger').click()
     await expect(page.locator('.task-item').filter({ hasText: name })).toHaveCount(0)
     await page.keyboard.press('Escape')
   })

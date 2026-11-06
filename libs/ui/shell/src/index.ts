@@ -13,8 +13,8 @@ export { closeTab, openTab, openTabAdjacent } from './features/workspace'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { branch, pane } from './features/workspace'
-export { paneById, getPanes } from './features/workspace'
-export type { Tab, WindowEdge, Workspace } from './features/workspace'
+export { paneById, getPanes, getTabPaneRect } from './features/workspace'
+export type { Tab, TabMenu, WindowEdge, Workspace } from './features/workspace'
 
 export { Palette } from './features/palette'
 export { commandKeyChord } from './features/palette'
@@ -27,9 +27,6 @@ export { createNotice } from './features/notices'
 /** One list of notices for a window, given by the parts it hosts. */
 export { createNoticeQueue, type NoticeQueue } from './features/notices'
 export type { Notice, Stay, Task } from './features/notices'
-
-export { StatusBar } from './features/status-bar'
-export type { StatusBarTask } from './features/status-bar'
 
 /** The screen a window opens on, and the letter a vault on it is opened by. */
 export { WelcomePage, getVaultForKey } from './features/welcome'

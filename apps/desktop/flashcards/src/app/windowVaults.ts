@@ -1,0 +1,29 @@
+/**
+ * The vaults the flashcards window gives its plugins: the vaults it lists to choose from, the vault
+ * of the tab it shows, and the switch that opens the tab on another vault.
+ */
+import { computed, watch, type Ref } from 'vue'
+import type { VaultsHost, VaultsState } from '@numen/plugin-host'
+import type { VaultRow } from '@numen/shell'
+
+interface WindowVaultsDeps {
+  readonly list: Readonly<Ref<readonly VaultRow[]>>
+  /** The vault of the tab the window shows; null while it shows the list. */
+  readonly getTabVault: () => string | null
+  readonly openTab: (vault: string) => void
+}
+
+export function createWindowVaults(deps: WindowVaultsDeps): VaultsHost {
+  const state = computed<VaultsState>(() => {
+    const vaults = deps.list.value.map(({ id, name }) => ({ id, name }))
+    const tabVault = deps.getTabVault()
+    return { vaults, current: vaults.find((one) => one.id === tabVault) ?? null }
+  })
+  return {
+    getState: () => state.value,
+    watch: (handler) => ({ dispose: watch(state, handler, { immediate: true }) }),
+    switchTo: async (id) => {
+      if (deps.list.value.some((one) => one.id === id)) deps.openTab(id)
+    },
+  }
+}

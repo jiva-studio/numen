@@ -16,7 +16,11 @@ import { formatErrorMessage } from '@numen/core-client'
 import { runInBackground } from '@numen/ui'
 import { agentService, noteService, pluginService, vaultsService } from '@/shared/clients'
 import { createWindowAgent, type WindowAgentClient } from './agent'
-import { createShellHost } from './host'
+import { createShellHost, type ShellServices } from './host'
+import { useWindowFrame } from './useWindowFrame'
+import { createWindowHost } from './windowHost'
+import { createWindowVaults } from './windowVaults'
+import { createWindowCommands } from './windowCommands'
 import { createWindowKeys } from './windowKeys'
 import { useExternalLinks } from './useExternalLinks'
 import { useWindowTasks, WINDOW_SOURCE } from './useWindowTasks'
@@ -62,13 +66,36 @@ function useVaults(list: () => Promise<readonly VaultRow[]>, onError: (text: str
   return { vaults, isListing }
 }
 
+/** The commands, the vaults and the window the plugins of the window read. */
+function fillServices(
+  services: ShellServices,
+  window: Pick<ReturnType<typeof createShellHost>, 'tab' | 'openTab' | 'notices'> & {
+    readonly vaults: ReturnType<typeof useVaults>['vaults']
+  },
+): void {
+  const { tab, notices } = window
+  Object.assign(services, {
+    commands: createWindowCommands(),
+    vaults: createWindowVaults({
+      list: window.vaults,
+      getTabVault: () => tab.value?.vault ?? null,
+      openTab: window.openTab,
+    }),
+    window: createWindowHost(useWindowFrame(), (error) =>
+      notices.show(WINDOW_SOURCE, formatErrorMessage(error), 'error'),
+    ),
+  })
+}
+
 export function useShell(deps: ShellDeps = {}) {
   const windowAgent = createWindowAgent(
     deps.agentClient ?? agentService,
     deps.linkClient ?? noteService,
   )
+  const services: ShellServices = {}
   const { host, front, tab, openTab, notices, mountView, titleBarView } = createShellHost(
     windowAgent.agent,
+    services,
   )
   const loader = createPluginLoader({
     host,
@@ -80,6 +107,7 @@ export function useShell(deps: ShellDeps = {}) {
   const { vaults, isListing } = useVaults(deps.listVaults ?? listVaults, (text) =>
     notices.show(WINDOW_SOURCE, text, 'error'),
   )
+  fillServices(services, { vaults, tab, openTab, notices })
   const onKeyDown = createWindowKeys({
     getTab: () => tab.value,
     getVaults: () => (front.value ? vaults.value : []),

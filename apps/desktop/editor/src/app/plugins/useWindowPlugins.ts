@@ -85,6 +85,29 @@ function createPluginSettingsAccessor(
   return { getSetting, onSettingChange }
 }
 
+/** The services of the window a plugin context reads, as the window has made them. */
+function createServiceAccess(services: PluginServices | undefined) {
+  /* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
+  return {
+    getWorkspace: () => services?.workspace,
+    getNotes: () => services?.notes,
+    getRelations: () => services?.relations,
+    getFiles: () => services?.files,
+    getAgent: () => services?.agent,
+    getCommands: () => services?.commands,
+    getVaults: () => services?.vaults,
+    getWindow: () => services?.window,
+    getBuffers: () => services?.buffers,
+    getNoteBuffer: () => services?.noteBuffer,
+    getTasks: (pluginId: string) => {
+      const list = services?.taskList
+      return list ? createPluginTasks(list, pluginId) : undefined
+    },
+    getBackgroundTasks: () => services?.backgroundTasks,
+  }
+  /* Stryker restore OptionalChaining,ArrowFunction,ObjectLiteral */
+}
+
 function createNoticeAccess(queue: NoticeQueue) {
   return {
     getNotices: (pluginId: string) => createPluginNotices(queue, pluginId),
@@ -162,18 +185,8 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     closeTabsForPlugin,
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
-    getWorkspace: () => deps.services?.workspace,
-    getNotes: () => deps.services?.notes,
-    getRelations: () => deps.services?.relations,
-    getFiles: () => deps.services?.files,
-    getAgent: () => deps.services?.agent,
-    getBuffers: () => deps.services?.buffers,
-    getNoteBuffer: () => deps.services?.noteBuffer,
+    ...createServiceAccess(deps.services),
     ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),
-    getTasks: (pluginId) => {
-      const list = deps.services?.taskList
-      return list ? createPluginTasks(list, pluginId) : undefined
-    },
     getTexts: (pluginId: string) => createPluginTexts(texts, pluginId),
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })

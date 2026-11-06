@@ -3,7 +3,8 @@
  * and the vault's files.
  */
 import { describe, expect, it } from 'vitest'
-import { createHost } from '../fixtures/host'
+import { SLOT } from '@numen/plugin-sdk'
+import { createHost, ROW_MENU } from '../fixtures/host'
 import { createFilesTabDeps } from './tabDeps'
 import type { Entry, FilesTabState } from '../types'
 
@@ -81,23 +82,53 @@ describe('a path a files tab selects', () => {
   })
 })
 
+describe('the menu of a row', () => {
+  const rowTarget = { path: 'a.md', title: 'a.md', isFolder: false, others: ['b.md'], tab: '' }
+
+  it('is the entries of the slot of the file tree', () => {
+    const { host } = createHost()
+
+    expect(createFilesTabDeps(host, 'files').getMenuEntries(rowTarget)).toStrictEqual(ROW_MENU)
+  })
+
+  it('runs the command of an entry through the commands of the window', async () => {
+    const { host, commands } = createHost()
+
+    await createFilesTabDeps(host, 'files').runCommand('app:note.trash', rowTarget)
+
+    expect(commands.getRuns()).toStrictEqual([
+      { command: 'app:note.trash', target: rowTarget, argument: undefined },
+    ])
+  })
+
+  it('is empty, and runs nothing, in a window that offers no slots and no commands', async () => {
+    const { host } = createHost()
+    const { slots: _slots, commands: _commands, ...withoutSlots } = host
+    const deps = createFilesTabDeps(withoutSlots, 'files')
+
+    expect(deps.getMenuEntries(rowTarget)).toStrictEqual([])
+    await expect(deps.runCommand('app:note.trash', rowTarget)).resolves.toBeUndefined()
+  })
+
+  it('reads the entries of no slot but the menu of the file tree', () => {
+    const { host, slots } = createHost()
+    slots.setEntries(SLOT.tabStripContext, [])
+
+    expect(createFilesTabDeps(host, 'files').getMenuEntries(rowTarget)).toHaveLength(
+      ROW_MENU.length,
+    )
+  })
+})
+
 describe('what else a files tab asks of the window', () => {
-  it('runs a command over the paths and makes and moves through the files of the vault', async () => {
+  it('makes and moves through the files of the vault', async () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.runCommand('app:note.trash', ['a.md', 'b.md'], {
-      name: 'a',
-      isNote: true,
-      isFolder: false,
-    })
     await deps.movePath('a.md', 'dir/a.md')
     await deps.createFolder('dir')
     expect(await deps.createNote('dir/')).toBe('dir/note')
 
-    expect(recorded.commands).toStrictEqual([
-      ['app:note.trash', { paths: ['a.md', 'b.md'], name: 'a', isNote: true, isFolder: false }],
-    ])
     expect(recorded.made).toStrictEqual(['move a.md dir/a.md', 'folder dir', 'note dir/'])
   })
 
@@ -110,10 +141,6 @@ describe('what else a files tab asks of the window', () => {
 
     expect(recorded.dragged).toStrictEqual([['a.md']])
     expect(recorded.errors).toStrictEqual(['taken'])
-    expect(
-      deps.getPathCommands({ entry: entry(), isSeveral: true }).map((one) => one.id),
-    ).toStrictEqual(['app:note.trash'])
-    expect(deps.getCommandIcon('unknown')).toBeNull()
     expect(deps.getEntryIcon(null, false)).toBeDefined()
   })
 })

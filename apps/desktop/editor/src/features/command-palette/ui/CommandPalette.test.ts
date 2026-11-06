@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Palette } from '@numen/shell'
-import type { SearchMenuEntry } from '../model/search/lookup'
+import type { SlotCommand } from '@numen/plugin-host'
 import { WORDS as words } from '@/shared/words'
 import { CREATE_NOTE_ROW } from '../lib/entries/entries'
 import { runSupport } from '../model/palette/runSupport'
@@ -20,9 +20,14 @@ vi.mock('../model/handlers/handlers', async (importOriginal) => ({
 }))
 
 const ATLAS = 'org.example.atlas'
-const SHOW: SearchMenuEntry = {
+const SHOW: SlotCommand = {
+  kind: 'command',
+  key: `${ATLAS}/command/graph.showNote`,
+  pluginId: ATLAS,
   command: `${ATLAS}:graph.showNote`,
   title: 'Show note in plex',
+  shortcut: '',
+  hasItems: false,
 }
 
 const inFront: CommandTarget = {

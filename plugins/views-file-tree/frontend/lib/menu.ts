@@ -1,80 +1,101 @@
 /**
- * The menu on a row: what the tab does itself, among the window's commands over
- * the row.
- *
- * The tab makes files and names a row; everything else the menu offers is the
- * window's, in the groups the window draws it in. The files the tab makes stand
- * in the file group, after what opens the row.
+ * The menu on a row, drawn from the entries of the slot `fileTree.context`: a row per command,
+ * view and submenu, and a new group after each separator.
  */
-import type { MenuEntry } from '@numen/plugin-sdk'
-import { WORDS as own } from '../words'
+import type { MenuItem } from '@numen/ui'
+import type { CommandItem, SlotCommand, SlotItem, SlotSubmenu, SlotView } from '@numen/plugin-sdk'
 
-/** What the tab does itself: the files it makes, and a name put in a field. */
-export const NEW_NOTE = 'newNote'
-export const NEW_FOLDER = 'newFolder'
-export const RENAME = 'rename'
-
-/** The command of the window that moves files to the trash. */
+/** The command of the window that moves files to the trash, run by the Delete key of the tree. */
 export const TRASH_NOTE = 'app:note.trash'
 
-/** The group the window opens a row in, which precedes what the tab does. */
-const OPEN_GROUP = 'open'
+/** An entry the menu draws as a row. */
+export type MenuRowEntry = SlotCommand | SlotView | SlotSubmenu
 
-/** The group the files the tab makes stand in. */
-const FILE_GROUP = 'file'
+/** The items read for the commands of the open menu, by the key of their entry. */
+export interface MenuItemLists {
+  /** The items of a command; null while they are read. */
+  readonly byKey: ReadonlyMap<string, readonly CommandItem[] | null>
+  /** The row of a submenu whose items are being read. */
+  readonly loadingText: string
+  /** The row of a submenu of a command that lists no item. */
+  readonly noneText: string
+}
 
-/** What the tab creates, offered wherever the menu was requested. */
-export const MADE: readonly MenuEntry[] = [
-  { id: NEW_NOTE, text: own.newNote, group: FILE_GROUP },
-  { id: NEW_FOLDER, text: own.newFolder, group: FILE_GROUP },
-]
+const ITEM_MARK = '#item:'
 
-/** What the tab does itself, offered on one row. */
-const OWN: readonly MenuEntry[] = [...MADE, { id: RENAME, text: own.rename, group: FILE_GROUP }]
+/** The id of the row of an item of the command of an entry. */
+const getItemRowId = (key: string, item: string): string => `${key}${ITEM_MARK}${item}`
 
-/** What the tab does itself anywhere. A choice outside this is the window's. */
-export const OWN_IDS: ReadonlySet<string> = new Set(OWN.map((one) => one.id))
+/** The key of the entry and the id of the item a row of an item stands for; null for any other row. */
+export const parseItemRowId = (id: string): { key: string; item: string } | null => {
+  const markIndex = id.indexOf(ITEM_MARK)
+  return markIndex < 0
+    ? null
+    : { key: id.slice(0, markIndex), item: id.slice(markIndex + ITEM_MARK.length) }
+}
 
-export const createNewSubmenu = (contributed: readonly MenuEntry[] = []): MenuEntry => ({
-  id: 'new',
-  text: own.new,
-  group: FILE_GROUP,
-  children: [
-    { id: NEW_NOTE, text: own.newNote, group: FILE_GROUP },
-    { id: NEW_FOLDER, text: own.newFolder, group: FILE_GROUP },
-    ...contributed,
-  ],
-})
+/** The rows of the submenu of a command that offers items. */
+const createItemRows = (entry: SlotCommand, lists: MenuItemLists | undefined): MenuItem[] => {
+  const read = lists?.byKey.get(entry.key)
+  if (!read) {
+    return [{ id: `${entry.key}#loading`, text: lists?.loadingText ?? '', isDisabled: true }]
+  }
+  if (read.length === 0) {
+    return [{ id: `${entry.key}#none`, text: lists?.noneText ?? '', isDisabled: true }]
+  }
+  return read.map((item) => ({ id: getItemRowId(entry.key, item.id), text: item.title }))
+}
 
-/**
- * What the menu offers, in render order: what the tab creates where it was
- * requested outside any row, the window's commands alone over a selection of
- * several, and on one row what opens it, what the tab does, and the rest.
- */
+/** The commands of the entries that offer items, inside submenus too. */
+export const listItemCommands = (entries: readonly SlotItem[]): readonly SlotCommand[] =>
+  entries.flatMap((entry) => {
+    if (entry.kind === 'command') return entry.hasItems ? [entry] : []
+    return entry.kind === 'submenu' ? listItemCommands(entry.entries) : []
+  })
+
+/** The rows of the entries, in their order; the rows between two separators share a group. */
 export const createMenuItems = (
-  hosted: readonly MenuEntry[] | null,
-  hasSeveral: boolean,
-): readonly MenuEntry[] => {
-  if (!hosted) return [createNewSubmenu()]
-  if (hasSeveral) return hosted
+  entries: readonly SlotItem[],
+  lists?: MenuItemLists,
+): readonly MenuItem[] => {
+  let group = 0
+  const items: MenuItem[] = []
+  for (const entry of entries) {
+    if (entry.kind === 'separator') {
+      group += 1
+      continue
+    }
+    const groupName = String(group)
+    if (entry.kind === 'view') {
+      const component = entry.component as NonNullable<MenuItem['component']>
+      items.push({ id: entry.key, text: entry.view, group: groupName, component })
+      continue
+    }
+    items.push({
+      id: entry.key,
+      text: entry.title,
+      group: groupName,
+      ...(entry.kind === 'submenu' ? { children: createMenuItems(entry.entries, lists) } : {}),
+      ...(entry.kind === 'command' && entry.hasItems
+        ? { children: createItemRows(entry, lists) }
+        : {}),
+    })
+  }
+  return items
+}
 
-  const newContributed = hosted.filter((one) => one.parentId === 'new')
-  const newSubmenu = createNewSubmenu(newContributed)
-  const ownItems: readonly MenuEntry[] = [
-    newSubmenu,
-    { id: RENAME, text: own.rename, group: FILE_GROUP },
-  ]
-
-  const nonNewHosted = hosted.filter((one) => one.parentId !== 'new')
-  const fileHosted = nonNewHosted.filter((one) => one.group === FILE_GROUP)
-  const otherHosted = nonNewHosted.filter(
-    (one) => one.group !== OPEN_GROUP && one.group !== FILE_GROUP,
-  )
-
-  return [
-    ...nonNewHosted.filter((one) => one.group === OPEN_GROUP),
-    ...ownItems,
-    ...fileHosted,
-    ...otherHosted,
-  ]
+/** The entry drawn as the row `id`, inside a submenu too; undefined for an id no row carries. */
+export const findMenuEntry = (
+  entries: readonly SlotItem[],
+  id: string,
+): MenuRowEntry | undefined => {
+  for (const entry of entries) {
+    if (entry.kind === 'separator') continue
+    if (entry.key === id) return entry
+    if (entry.kind === 'submenu') {
+      const found = findMenuEntry(entry.entries, id)
+      if (found) return found
+    }
+  }
+  return undefined
 }

@@ -99,7 +99,7 @@ test.describe('a link to an address that answers 404', () => {
 
     await importAddress(page, MISSING_PAGE_ADDRESS)
 
-    await page.locator('.status-bar__trigger').click()
+    await page.locator('.tasks-status__trigger').click()
     await expect(page.locator('.task-popover')).toContainText('its text was not fetched')
     const added = (await listFilePaths(request)).filter((one) => !before.includes(one))
     made.push(...added)

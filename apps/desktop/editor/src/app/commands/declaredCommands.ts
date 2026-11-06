@@ -5,9 +5,10 @@
  */
 import { computed, shallowRef, watch } from 'vue'
 import { formatCommandId, type CommandDeclaration, type WhenSettings } from '@numen/plugin-host'
-import { registerCommand, type Command } from '@/features/command-palette'
+import { registerCommand, type Command, type CommandTarget } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
+  listDeclaredCommandItems,
   listDeclaredCommands,
   runDeclaredCommand,
   type DeclaredCommand,
@@ -35,6 +36,7 @@ export const getPaletteId = (command: DeclaredCommand): string =>
 export function createDeclaredPaletteCommands(
   declared: readonly DeclaredCommand[],
   context: WindowWhenContext = EMPTY_WHEN_CONTEXT,
+  listItems: typeof listDeclaredCommandItems = listDeclaredCommandItems,
 ): readonly Command[] {
   const isWhenAvailable = createWhenAvailability(context)
   return declared.map((one): Command => {
@@ -44,6 +46,12 @@ export function createDeclaredPaletteCommands(
       text: one.title,
       group: getWhenGroup(one.when),
       ...(one.icon ? { icon: getNamedIcon(one.icon) } : {}),
+      ...(one.hasItems
+        ? {
+            input: 'items' as const,
+            listItems: (target: CommandTarget) => listItems(one, target.file || target.path),
+          }
+        : {}),
       ...(required.length > 0
         ? {
             input: 'arguments' as const,
@@ -55,7 +63,10 @@ export function createDeclaredPaletteCommands(
           }
         : {}),
       ...(one.when ? { when: one.when } : {}),
-      isAvailable: (target) => target.isReady && isWhenAvailable(one.when, target),
+      // The versions a command with items runs over are the core's to list, over any file.
+      isAvailable: (target) =>
+        target.isReady &&
+        (one.hasItems ? (target.file || target.path) !== '' : isWhenAvailable(one.when, target)),
     }
   })
 }
@@ -123,7 +134,11 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
       for (const unregister of unregisterAll) unregister()
       unregisterAll = commands.map((one) =>
         registerCommand(getPaletteId(one), async (invocation, on) => {
-          const outcome = await run(one, { path: invocation.file, values: invocation.values ?? {} })
+          const outcome = await run(one, {
+            path: invocation.file,
+            values: invocation.values ?? {},
+            ...(one.hasItems ? { argument: invocation.name } : {}),
+          })
           if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
           const { message, openedPath } = outcome.value
           if (message) on.writeMessage(message, 'info')

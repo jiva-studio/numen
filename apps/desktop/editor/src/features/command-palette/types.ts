@@ -6,7 +6,7 @@
  * available while a command runs are `model/deps.ts`.
  */
 import type { Component } from 'vue'
-import type { Selector } from '@numen/plugin-host'
+import type { CommandItem, Selector } from '@numen/plugin-host'
 import type { PaletteKeys } from '@numen/ui'
 import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
@@ -30,12 +30,12 @@ export type CommandGroup = 'note' | 'file' | 'window' | 'settings' | 'vault'
 /**
  * The palette's current step: a prompt for one value, or the list of commands.
  * Each kind is a noun for what the person is asked: `name` is typed, `note` queries the
- * vault, `vault` queries the installation, `choice` offers an in-memory list,
+ * vault, `vault` queries the installation, `items` offers an in-memory list,
  * `confirmation` asks for a yes or a no, `retypedName` asks for the title typed again, and
  * `arguments` prompts for one of a command's `prompts`, one step per prompt.
  */
 export type Step =
-  'commands' | 'name' | 'note' | 'vault' | 'choice' | 'confirmation' | 'retypedName' | 'arguments'
+  'commands' | 'name' | 'note' | 'vault' | 'items' | 'confirmation' | 'retypedName' | 'arguments'
 
 /**
  * One value a command requires, entered in its own step. A step that is not
@@ -83,6 +83,8 @@ export interface CommandTarget {
   readonly line?: number
   /** The place in a file that is no note a command that opens it moves to. */
   readonly selector?: Selector
+  /** Whether the target at `path` is a folder; a note where absent. */
+  readonly isFolder?: boolean
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   readonly vault: VaultRef
@@ -123,6 +125,11 @@ export interface Command {
   readonly warns?: RetypeWords
   /** The command Shift and Enter reach on the same row. */
   readonly also?: string
+  /**
+   * The items it offers over the target, for a command whose step is a argument; the argument picked
+   * is the name of its invocation.
+   */
+  listItems?(target: CommandTarget): readonly CommandItem[] | Promise<readonly CommandItem[]>
 }
 
 /** One command as it is carried out: what it is over, and what was typed for it. */
@@ -144,6 +151,8 @@ export interface CommandInvocation {
   readonly line?: number
   /** The place in a file that is no note a command that opens it moves to. */
   readonly selector?: Selector
+  /** Whether the target at `path` is a folder; a note where absent. */
+  readonly isFolder?: boolean
   /** The other files it is over, beside the one at `path`. */
   readonly others: readonly string[]
   /**

@@ -23,28 +23,27 @@ type VaultProvider interface {
 
 // Handler answers CommandService over the scenarios of the plugin commands, run over the shown vault.
 type Handler struct {
-	vaults VaultProvider
-	list   plugincommand.List
-	run    plugincommand.Run
+	vaults   VaultProvider
+	list     plugincommand.List
+	run      plugincommand.Run
+	versions VersionItems
 }
 
-// NewHandler makes the handler over both scenarios.
-func NewHandler(vaults VaultProvider, commands plugincommand.Commands) *Handler {
-	return &Handler{vaults: vaults, list: commands.List, run: commands.Run}
+// NewHandler makes the handler over both scenarios, and the text versions a command with items runs
+// over; without them such a command lists and runs nothing.
+func NewHandler(vaults VaultProvider, commands plugincommand.Commands, versions VersionItems) *Handler {
+	return &Handler{vaults: vaults, list: commands.List, run: commands.Run, versions: versions}
 }
 
-// ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them,
-// except a command with items: its condition names version.*, the menu of a file offers it over a
-// version, and run without one it fails. It carries the content type of a file by its extension.
+// ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them; a
+// command with items, whose condition names version.*, is marked. It carries the content type of a
+// file by its extension.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
 	entries := h.list.ExecuteAll()
 	commands := make([]*v1.PluginCommand, 0, len(entries))
 	for _, one := range entries {
-		if plugincommand.HasItems(one.Command) {
-			continue
-		}
 		commands = append(commands, newWireCommand(one))
 	}
 	slotEntries := h.list.ExecuteSlots()
@@ -57,17 +56,21 @@ func (h *Handler) ListCommands(
 	}), nil
 }
 
-// RunPluginCommand runs one of them. A call that is not a command, matches none, fails, or is routed to
-// no plugin is answered with an error code and a user-readable message.
+// RunPluginCommand runs one of them, a command with items over the item its argument names. A call
+// that is not a command, matches none, fails, or is routed to no plugin is answered with an error
+// code and a user-readable message.
 func (h *Handler) RunPluginCommand(
 	ctx context.Context, r *connect.Request[v1.RunPluginCommandRequest],
 ) (*connect.Response[v1.RunPluginCommandResponse], error) {
-	result, err := h.run.Execute(ctx, h.vaults.GetCurrentVault(), plugincommand.Call{
-		PluginID:  r.Msg.GetPluginId(),
-		Command:   r.Msg.GetCommand(),
-		Path:      r.Msg.GetPath(),
-		Arguments: r.Msg.GetArguments(),
-	})
+	result, isItemRun, err := h.runWithArgument(ctx, r.Msg)
+	if !isItemRun {
+		result, err = h.run.Execute(ctx, h.vaults.GetCurrentVault(), plugincommand.Call{
+			PluginID:  r.Msg.GetPluginId(),
+			Command:   r.Msg.GetCommand(),
+			Path:      r.Msg.GetPath(),
+			Arguments: r.Msg.GetArguments(),
+		})
+	}
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, connect.NewError(connect.CodeCanceled, ctxErr)
@@ -109,6 +112,7 @@ func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
 		Arguments: arguments,
 		When:      entry.Command.When,
 		Shortcut:  entry.Command.Shortcut,
+		HasItems:  plugincommand.HasItems(entry.Command),
 	}
 }
 

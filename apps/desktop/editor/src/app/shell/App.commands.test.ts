@@ -307,14 +307,14 @@ describe('a command requested for while the vault is being read', () => {
   it('carries the command out, and shows no corner card while the vault is being read', async () => {
     vaultState.isReady = false
     vaultState.opening = null
-    const window = await mountWindowWithPalette()
+    await mountWindowWithPalette()
 
     await pressNewNote()
     await type('Entropy')
     await press('Enter')
 
     expect(requests.made).toStrictEqual(['Entropy'])
-    expect(cards(window)).toStrictEqual([])
+    expect(cards()).toStrictEqual([])
   })
 })
 

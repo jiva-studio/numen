@@ -1,5 +1,5 @@
 /**
- * Every item in either menu is drawn with an icon.
+ * Every command the palette and the welcome screen draw has an icon.
  *
  * A menu reserves the icon column on every row, so an item without an icon
  * leaves a gap where its neighbours have one.
@@ -9,30 +9,15 @@ import { describe, expect, it } from 'vitest'
 import { COMMAND } from '@/shared/commandIds'
 import { findIcon, getNamedIcon } from '@/shared/icons'
 import { getNoteIcon, registerNoteIcon } from '@/entities/note'
-import { createCommands, createPathCommands } from '@/features/command-palette'
+import { createCommands } from '@/features/command-palette'
 import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
 
-/** An item of a menu, and the items it opens. */
-type Item = { readonly id: string; readonly children?: readonly Item[] | undefined }
-
-const flatten = (items: readonly Item[]): readonly Item[] =>
-  items.flatMap((item) => [item, ...flatten(item.children ?? [])])
-
-/** The window's commands over a row: on a row of each kind, and over several rows. */
-const onARow = flatten(
-  [
-    ...[true, false].flatMap((isNote) => [
-      createPathCommands({ isNote, isFolder: false }, false),
-      createPathCommands({ isNote, isFolder: true }, false),
-    ]),
-    createPathCommands({ isNote: true, isFolder: false }, true),
-  ].flat(),
-)
-
 describe('the icon a command is drawn with', () => {
-  it('is there for every command the window offers over a row', () => {
-    for (const item of onARow) expect(findIcon(item.id), item.id).not.toBeNull()
+  it('is there for every command the window places in the menu of a row of the file tree', () => {
+    for (const id of [COMMAND.openNote, COMMAND.copyNotePath, COMMAND.trashNote]) {
+      expect(findIcon(id), id).not.toBeNull()
+    }
   })
 
   it('is there for every command the palette draws', () => {

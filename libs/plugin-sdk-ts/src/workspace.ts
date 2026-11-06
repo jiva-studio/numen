@@ -196,8 +196,6 @@ export interface WorkspaceHost {
   getNoteInFocus(): NoteRef
   // The tabs linked to tab `tabId` move to the path. False where none is linked to it.
   syncPath(tabId: string, path: string, title?: string): boolean
-  // A command of the window, run over one note.
-  runCommand(id: string, target: NoteRef): void
   // The commands the plugins declare over one note, in the words the palette offers them by.
   getNoteCommands(): readonly MenuEntry[]
   // Sends a question to the agent and shows it to the user.
@@ -207,10 +205,6 @@ export interface WorkspaceHost {
   getMessageWriter(name: string): MessageWriter
   // The current day, with the day boundary set to the configured start hour.
   getToday(): string
-  // The window's commands over one row of the vault, in the order a menu draws them.
-  getPathCommands(row: PathMenuRow): readonly MenuEntry[]
-  // A command of the window, run over a file and the others selected with it.
-  runPathCommand(id: string, target: PathCommandTarget): void
   // The icon the window draws a command with, and nothing for a command it draws none for.
   getCommandIcon(id: string): Component | null
   // The icon the window draws an entry of the vault with: a folder open or shut, a note by its type.
@@ -234,21 +228,6 @@ export interface MenuEntry {
   readonly isDisabled?: boolean
   readonly parentId?: string
   readonly children?: readonly MenuEntry[]
-}
-
-// PathMenuRow is the vault row a menu is requested for.
-export interface PathMenuRow {
-  readonly entry: VaultEntry
-  // Whether the row is one of several selected, which the menu is over together.
-  readonly isSeveral: boolean
-}
-
-// PathCommandTarget is the file or folder a command runs over, and the others selected with it.
-export interface PathCommandTarget {
-  readonly paths: readonly string[]
-  readonly name: string
-  readonly isNote: boolean
-  readonly isFolder: boolean
 }
 
 // VaultFiles is what a plugin lists of the folders of the vault, and makes and moves in them.

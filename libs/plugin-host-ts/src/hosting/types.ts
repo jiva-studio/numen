@@ -5,10 +5,10 @@ import type {
   AgentHost,
   AgentProviderRegistration,
   AppInfo,
+  BackgroundTaskHost,
   BufferHost,
   CommandRegistration,
-  ContextMenuRegistration,
-  ContextMenuTarget,
+  CommandsHost,
   Disposable,
   DropHost,
   DropRegistration,
@@ -30,6 +30,8 @@ import type {
   VaultNotes,
   VaultRelations,
   VaultTexts,
+  VaultsHost,
+  WindowHost,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from './tabKinds'
@@ -40,8 +42,6 @@ import type { Component } from 'vue'
 export type {
   AgentProviderRegistration,
   CommandRegistration,
-  ContextMenuRegistration,
-  ContextMenuTarget,
   Disposable,
   FileSelectEvent,
   PluginContext,
@@ -137,6 +137,12 @@ export interface PluginHostDeps {
   readonly getFiles?: () => VaultFiles | undefined
   /** The agent the window queries, once the window has created it. */
   readonly getAgent?: () => AgentHost | undefined
+  /** The commands of the window, once the window has made them. */
+  readonly getCommands?: () => CommandsHost | undefined
+  /** The vaults the window can show, once the window has made them. */
+  readonly getVaults?: () => VaultsHost | undefined
+  /** The window the plugins run in, once the window has made it. */
+  readonly getWindow?: () => WindowHost | undefined
   /** The open files of the window, once the window has made them. */
   readonly getBuffers?: () => BufferHost | undefined
   /** The window's store of open notes, which the tabs of the note kind read and write through. */
@@ -164,6 +170,8 @@ export interface PluginHostDeps {
     message: string,
     severity: 'warning' | 'error',
   ) => void
+  /** The background work of the window, as every plugin reads and acts on it. */
+  readonly getBackgroundTasks?: () => BackgroundTaskHost | undefined
   /** Everything a plugin showed, taken away with the plugin. */
   readonly clearNotices?: (pluginId: string) => void
   /** The build the window is, as plugins read it from their context. */
@@ -203,7 +211,6 @@ export interface PluginContextHost {
   openExternal(url: string): Promise<void>
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable
-  registerContextMenu(pluginId: string, registration: ContextMenuRegistration): Disposable
   registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
   registerView(pluginId: string, registration: ViewRegistration): Disposable
   mountView(capability: string, element: HTMLElement, context: unknown): MountedView
@@ -233,9 +240,13 @@ export interface PluginContextHost {
   getRelations?(): VaultRelations | undefined
   getFiles?(): VaultFiles | undefined
   getAgent?(): AgentHost | undefined
+  getCommands?(): CommandsHost | undefined
+  getVaults?(): VaultsHost | undefined
+  getWindow?(): WindowHost | undefined
   getBuffers?(): BufferHost | undefined
   getNotices?(pluginId: string): NoticeHost | undefined
   getTasks?(pluginId: string): TaskHost | undefined
+  getBackgroundTasks?(): BackgroundTaskHost | undefined
   getTexts?(pluginId: string): VaultTexts | undefined
   getSlots?(): SlotHost | undefined
 }

@@ -12,9 +12,15 @@ const manifest = JSON.parse(
   permissions: readonly string[]
   contributes: {
     commands: readonly { id: string; title: string; icon?: string; scope?: string }[]
-    slots?: readonly { slot: string; command?: string; view?: string; group?: string; order?: number }[]
+    slots?: readonly Record<string, unknown>[]
   }
 }
+
+/** The entries the plugin places in the menu of a row of the file tree and in its submenu there. */
+const getMenuEntries = () =>
+  (manifest.contributes.slots ?? []).filter(
+    (one) => one.slot === 'fileTree.context' || one.slot === 'plex.relation',
+  )
 
 describe('the manifest', () => {
   it('declares vault:write, which the notes the graph joins and makes need', () => {
@@ -22,7 +28,11 @@ describe('the manifest', () => {
   })
 
   it('places showing a note in the menu of a search result and opening the plex in the title bar, both among the navigation entries', () => {
-    expect(manifest.contributes.slots).toStrictEqual([
+    expect(
+      (manifest.contributes.slots ?? []).filter(
+        (one) => one.slot === 'palette.searchResult' || one.slot === 'titleBar.commands',
+      ),
+    ).toStrictEqual([
       { slot: 'palette.searchResult', command: 'graph.showNote', group: 'navigate', order: 20 },
       { slot: 'titleBar.commands', command: 'graph.open', group: 'navigate', order: 20 },
     ])
@@ -49,6 +59,29 @@ describe('the manifest', () => {
     expect(command).toMatchObject({ title: 'Show note in plex', when: 'target.isNote' })
     expect(Object.keys(command ?? {})).not.toContain('location')
     expect(Object.keys(command ?? {})).not.toContain('slots')
+  })
+})
+
+describe('the menu of a row of the file tree', () => {
+  it('places showing the note, and the submenu of relations with the window’s commands', () => {
+    expect(getMenuEntries()).toStrictEqual([
+      { slot: 'fileTree.context', command: 'graph.showNote', group: '0-open', order: 20 },
+      {
+        slot: 'fileTree.context',
+        submenu: 'plex.relation',
+        title: 'Relation',
+        group: '4-relation',
+      },
+      { slot: 'plex.relation', command: 'app:note.createChild', order: 10 },
+      { slot: 'plex.relation', command: 'app:note.createParent', order: 20 },
+      { slot: 'plex.relation', command: 'app:note.createJump', order: 30 },
+    ])
+  })
+
+  it('declares no command of its own for the relations', () => {
+    expect(
+      manifest.contributes.commands.map((one) => one.id).filter((id) => id.startsWith('relation.')),
+    ).toStrictEqual([])
   })
 })
 

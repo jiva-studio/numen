@@ -64,8 +64,10 @@ import {
   NOTE_TYPE,
   isNotePath,
   type Connection,
-  type MenuEntry,
-  type PathMenuRow,
+  type SlotCommand,
+  type SlotItem,
+  type SlotSeparator,
+  type CommandTarget as RowTarget,
   type VaultEntry,
 } from '@numen/plugin-host'
 import {
@@ -1200,11 +1202,55 @@ const COMMAND_ICONS: Readonly<Record<string, Component>> = {
   [DEMO_COMMAND.openFiles]: FolderTree,
   [DEMO_COMMAND.openAgent]: Bot,
   [DEMO_COMMAND.askAgent]: Bot,
-  new: Plus,
-  relation: Waypoints,
-  newNote: FilePlus,
-  newFolder: FolderPlus,
-  rename: PenLine,
+  [DEMO_COMMAND.newTreeNote]: FilePlus,
+  [DEMO_COMMAND.newTreeFolder]: FolderPlus,
+  [DEMO_COMMAND.renameTreeEntry]: PenLine,
+}
+
+/** A command of the menu of a row, drawn by its title and the icon the demo keeps for it. */
+const createMenuCommand = (command: string, title: string): SlotCommand => ({
+  kind: 'command',
+  key: `demo/command/${command}`,
+  pluginId: 'demo',
+  command,
+  title,
+  ...(COMMAND_ICONS[command] ? { icon: COMMAND_ICONS[command] } : {}),
+  shortcut: '',
+  hasItems: false,
+})
+
+const createMenuSeparator = (index: number): SlotSeparator => ({
+  kind: 'separator',
+  key: `demo/separator/${index}`,
+})
+
+/** The New submenu the file tree declares, with what the tree makes. */
+const NEW_SUBMENU: SlotItem = {
+  kind: 'submenu',
+  key: 'demo/submenu/fileTree.new',
+  pluginId: 'demo',
+  submenu: 'fileTree.new',
+  title: 'New',
+  icon: Plus,
+  entries: [
+    createMenuCommand(DEMO_COMMAND.newTreeNote, 'New note'),
+    createMenuCommand(DEMO_COMMAND.newTreeFolder, 'New folder'),
+  ],
+}
+
+/** The submenu of the relations the plex declares. */
+const RELATION_SUBMENU: SlotItem = {
+  kind: 'submenu',
+  key: 'demo/submenu/plex.relation',
+  pluginId: 'demo',
+  submenu: 'plex.relation',
+  title: 'Relation',
+  icon: Waypoints,
+  entries: [
+    createMenuCommand(DEMO_COMMAND.createChildNote, 'Create child note'),
+    createMenuCommand(DEMO_COMMAND.createParentNote, 'Create parent note'),
+    createMenuCommand(DEMO_COMMAND.createJumpNote, 'Create jump note'),
+  ],
 }
 
 function listFolderEntries(folder: string): readonly VaultEntry[] {
@@ -1292,47 +1338,51 @@ function listFolderEntries(folder: string): readonly VaultEntry[] {
   return result
 }
 
-function getPathCommandsForRow({ entry, isSeveral }: PathMenuRow): readonly MenuEntry[] {
-  const canRemoveEntry = Boolean(notesByPath[entry.path])
-  const removeItem: MenuEntry = {
-    id: DEMO_COMMAND.trashNote,
-    text: entry.isNote && !isSeveral ? 'Move note to trash' : 'Remove',
-    group: 'remove',
+/** The entries of the menu of a row of the tree, as the slot registry of a window resolves them. */
+function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
+  const entry = fileTree.getEntryAt(target.path)
+  const removeItem = createMenuCommand(
+    DEMO_COMMAND.trashNote,
+    entry?.isNote && target.others.length === 0 ? 'Move note to trash' : 'Remove',
+  )
+  const copyItem = createMenuCommand(DEMO_COMMAND.copyNotePath, 'Copy note path')
+  const renameItem = createMenuCommand(DEMO_COMMAND.renameTreeEntry, 'Rename')
+  if (target.path === ROOT) return [NEW_SUBMENU]
+  if (target.others.length > 0) {
+    const selected = [target.path, ...target.others]
+    return selected.every((p) => Boolean(notesByPath[p])) ? [removeItem] : []
   }
-  const copyItem: MenuEntry = {
-    id: DEMO_COMMAND.copyNotePath,
-    text: 'Copy note path',
-    group: 'file',
-  }
-  if (isSeveral) {
-    const selected = fileTree.selectedPaths.value
-    const allRemovable = selected.length > 0 && selected.every((p) => Boolean(notesByPath[p]))
-    return allRemovable ? [removeItem] : []
-  }
-  if (entry.isFolder) return [copyItem]
-  if (entry.isNote) {
-    const items: MenuEntry[] = [{ id: DEMO_COMMAND.openNote, text: 'Open note', group: 'open' }]
-    if (notesByPath[entry.path]) {
-      items.push({ id: DEMO_COMMAND.showNoteInPlex, text: 'Show note in plex', group: 'open' })
-    }
-    items.push(
+  if (!entry || entry.isFolder) return [NEW_SUBMENU, renameItem, copyItem]
+  if (!entry.isNote) {
+    return [
+      createMenuCommand(DEMO_COMMAND.openNote, 'Open the file'),
+      createMenuSeparator(1),
+      NEW_SUBMENU,
+      renameItem,
       copyItem,
-      {
-        id: 'relation',
-        text: 'Relation',
-        group: 'relation',
-        children: [
-          { id: DEMO_COMMAND.createChildNote, text: 'Create child note', group: 'relation' },
-          { id: DEMO_COMMAND.createParentNote, text: 'Create parent note', group: 'relation' },
-          { id: DEMO_COMMAND.createJumpNote, text: 'Create jump note', group: 'relation' },
-        ],
-      },
-      { id: DEMO_COMMAND.askAgent, text: 'Ask agent about note', group: 'agent' },
-    )
-    if (canRemoveEntry) items.push(removeItem)
-    return items
+    ]
   }
-  return [{ id: DEMO_COMMAND.openNote, text: 'Open the file', group: 'open' }, copyItem]
+  return [
+    createMenuCommand(DEMO_COMMAND.openNote, 'Open note'),
+    ...(notesByPath[target.path]
+      ? [createMenuCommand(DEMO_COMMAND.showNoteInPlex, 'Show note in plex')]
+      : []),
+    createMenuSeparator(1),
+    NEW_SUBMENU,
+    renameItem,
+    copyItem,
+    createMenuSeparator(2),
+    RELATION_SUBMENU,
+    createMenuSeparator(3),
+    createMenuCommand(DEMO_COMMAND.askAgent, 'Ask agent about note'),
+    ...(notesByPath[target.path] ? [createMenuSeparator(4), removeItem] : []),
+  ]
+}
+
+/** Runs a command of the menu of a row over the row and the others selected with it. */
+async function runMenuCommand(command: string, target: RowTarget): Promise<void> {
+  const paths = command === DEMO_COMMAND.trashNote ? [target.path, ...target.others] : [target.path]
+  for (const p of paths) runVaultCommand(command, p, 'files')
 }
 
 const fileTree = createFileTree({
@@ -1405,17 +1455,8 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
       syncPathFromTab(FILES_TAB, path, entry.name)
     }
   },
-  runCommand: (command, paths) => {
-    if (command === DEMO_COMMAND.trashNote) {
-      for (const p of paths) {
-        runVaultCommand(command, p, 'files')
-      }
-      return
-    }
-    const first = paths[0]
-    if (!first) return
-    runVaultCommand(command, first, 'files')
-  },
+  getMenuEntries: (target) => getMenuEntriesForRow(target),
+  runCommand: (command, target) => runMenuCommand(command, target),
   movePath: async (from, to) => {
     if (notesByPath[from]) {
       rekeySingleNotePath(from, to)
@@ -1459,8 +1500,6 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
   canDropData: () => false,
   dropData: async () => [],
   showError: () => {},
-  getPathCommands: getPathCommandsForRow,
-  getCommandIcon: (id) => COMMAND_ICONS[id] ?? null,
   getEntryIcon: (entry, isOpen) => {
     if (entry.isFolder) return isOpen ? FolderOpen : Folder
     if (entry.type === 'deck') return Layers
@@ -2408,7 +2447,14 @@ function getNamingRole(command: string): 'child' | 'parent' | 'jump' | 'title' |
 }
 
 function runVaultCommand(command: string, targetPath: string, source: 'files' | 'plex' = 'plex') {
-  if (command === DEMO_COMMAND.openNote) {
+  const folder = targetPath === ROOT ? null : targetPath
+  if (command === DEMO_COMMAND.newTreeNote) {
+    void filesState.createNote(folder)
+  } else if (command === DEMO_COMMAND.newTreeFolder) {
+    void filesState.createFolder(folder)
+  } else if (command === DEMO_COMMAND.renameTreeEntry) {
+    if (folder !== null) filesState.setRenamingPath(targetPath)
+  } else if (command === DEMO_COMMAND.openNote) {
     openVaultFile(targetPath, 'current')
   } else if (command === DEMO_COMMAND.openNoteBeside) {
     openVaultFile(targetPath, 'split')

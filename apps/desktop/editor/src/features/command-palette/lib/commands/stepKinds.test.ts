@@ -43,7 +43,7 @@ describe('the input a command of the palette asks for', () => {
   })
 
   it('is no choice for a command of the editor, whose settings offer theirs', () => {
-    expect(getIdsAsking('choice')).toStrictEqual([])
+    expect(getIdsAsking('items')).toStrictEqual([])
   })
 
   it('is the name typed again for the command that deletes a note', () => {

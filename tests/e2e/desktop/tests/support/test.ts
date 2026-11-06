@@ -102,7 +102,7 @@ export const test = base.extend<{ isFreshTabs: void; hasNoFailedTask: void }>({
       await use()
       await expect
         .poll(() => readFailedTasks(baseURL ?? ''), {
-          message: 'the test leaves a failed task in the status bar',
+          message: 'the test leaves a failed task in the list of background tasks',
         })
         .toEqual([])
     },

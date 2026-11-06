@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugincommand.proto.
  */
 export const file_numen_v1_plugincommand: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiiQIKFExpc3RDb21tYW5kc1Jlc3BvbnNlEikKCGNvbW1hbmRzGAEgAygLMhcubnVtZW4udjEuUGx1Z2luQ29tbWFuZBIoCgVzbG90cxgCIAMoCzIZLm51bWVuLnYxLlBsdWdpblNsb3RFbnRyeRJdChljb250ZW50X3R5cGVfYnlfZXh0ZW5zaW9uGAMgAygLMjoubnVtZW4udjEuTGlzdENvbW1hbmRzUmVzcG9uc2UuQ29udGVudFR5cGVCeUV4dGVuc2lvbkVudHJ5Gj0KG0NvbnRlbnRUeXBlQnlFeHRlbnNpb25FbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlAKD1BsdWdpblNsb3RFbnRyeRIRCglwbHVnaW5faWQYASABKAkSKgoFZW50cnkYAiABKAsyGy5udW1lbi52MS5NYW5pZmVzdFNsb3RFbnRyeSKZAQoNUGx1Z2luQ29tbWFuZBIRCglwbHVnaW5faWQYASABKAkSCgoCaWQYAiABKAkSDQoFdGl0bGUYAyABKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50EgwKBGljb24YByABKAkSDAoEd2hlbhgKIAEoCRIQCghzaG9ydGN1dBgJIAEoCSJDCg9Db21tYW5kQXJndW1lbnQSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtpc19yZXF1aXJlZBgDIAEoCCLCAQoXUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEg8KB2NvbW1hbmQYAiABKAkSDAoEcGF0aBgDIAEoCRJDCglhcmd1bWVudHMYBCADKAsyMC5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVxdWVzdC5Bcmd1bWVudHNFbnRyeRowCg5Bcmd1bWVudHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBImsKGFJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLkNvbW1hbmRFcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCRITCgtvcGVuZWRfcGF0aBgDIAEoCSrHAQoQQ29tbWFuZEVycm9yQ29kZRIiCh5DT01NQU5EX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABImCiJDT01NQU5EX0VSUk9SX0NPREVfVU5LTk9XTl9DT01NQU5EEAESJAogQ09NTUFORF9FUlJPUl9DT0RFX0JBRF9BUkdVTUVOVFMQAhIdChlDT01NQU5EX0VSUk9SX0NPREVfRkFJTEVEEAMSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOQVZBSUxBQkxFEAQyXwoUUGx1Z2luQ29tbWFuZFNlcnZpY2USRwoKUnVuQ29tbWFuZBIbLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0GhwubnVtZW4udjEuUnVuQ29tbWFuZFJlc3BvbnNlMroBCg5Db21tYW5kU2VydmljZRJNCgxMaXN0Q29tbWFuZHMSHS5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXF1ZXN0Gh4ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVzcG9uc2USWQoQUnVuUGx1Z2luQ29tbWFuZBIhLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0GiIubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_manifest]);
+  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiiQIKFExpc3RDb21tYW5kc1Jlc3BvbnNlEikKCGNvbW1hbmRzGAEgAygLMhcubnVtZW4udjEuUGx1Z2luQ29tbWFuZBIoCgVzbG90cxgCIAMoCzIZLm51bWVuLnYxLlBsdWdpblNsb3RFbnRyeRJdChljb250ZW50X3R5cGVfYnlfZXh0ZW5zaW9uGAMgAygLMjoubnVtZW4udjEuTGlzdENvbW1hbmRzUmVzcG9uc2UuQ29udGVudFR5cGVCeUV4dGVuc2lvbkVudHJ5Gj0KG0NvbnRlbnRUeXBlQnlFeHRlbnNpb25FbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlAKD1BsdWdpblNsb3RFbnRyeRIRCglwbHVnaW5faWQYASABKAkSKgoFZW50cnkYAiABKAsyGy5udW1lbi52MS5NYW5pZmVzdFNsb3RFbnRyeSKsAQoNUGx1Z2luQ29tbWFuZBIRCglwbHVnaW5faWQYASABKAkSCgoCaWQYAiABKAkSDQoFdGl0bGUYAyABKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50EgwKBGljb24YByABKAkSDAoEd2hlbhgKIAEoCRIQCghzaG9ydGN1dBgJIAEoCRIRCgloYXNfaXRlbXMYCyABKAgiQwoPQ29tbWFuZEFyZ3VtZW50EgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLaXNfcmVxdWlyZWQYAyABKAgi1AEKF1J1blBsdWdpbkNvbW1hbmRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIPCgdjb21tYW5kGAIgASgJEgwKBHBhdGgYAyABKAkSQwoJYXJndW1lbnRzGAQgAygLMjAubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QuQXJndW1lbnRzRW50cnkSEAoIYXJndW1lbnQYBSABKAkaMAoOQXJndW1lbnRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJLChdMaXN0Q29tbWFuZEl0ZW1zUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgRwYXRoGAMgASgJInwKGExpc3RDb21tYW5kSXRlbXNSZXNwb25zZRIkCgVpdGVtcxgBIAMoCzIVLm51bWVuLnYxLkNvbW1hbmRJdGVtEikKBWVycm9yGAIgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAMgASgJIigKC0NvbW1hbmRJdGVtEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJImsKGFJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLkNvbW1hbmRFcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCRITCgtvcGVuZWRfcGF0aBgDIAEoCSrHAQoQQ29tbWFuZEVycm9yQ29kZRIiCh5DT01NQU5EX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABImCiJDT01NQU5EX0VSUk9SX0NPREVfVU5LTk9XTl9DT01NQU5EEAESJAogQ09NTUFORF9FUlJPUl9DT0RFX0JBRF9BUkdVTUVOVFMQAhIdChlDT01NQU5EX0VSUk9SX0NPREVfRkFJTEVEEAMSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOQVZBSUxBQkxFEAQyXwoUUGx1Z2luQ29tbWFuZFNlcnZpY2USRwoKUnVuQ29tbWFuZBIbLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0GhwubnVtZW4udjEuUnVuQ29tbWFuZFJlc3BvbnNlMpUCCg5Db21tYW5kU2VydmljZRJNCgxMaXN0Q29tbWFuZHMSHS5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXF1ZXN0Gh4ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVzcG9uc2USWQoQUnVuUGx1Z2luQ29tbWFuZBIhLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0GiIubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlElkKEExpc3RDb21tYW5kSXRlbXMSIS5udW1lbi52MS5MaXN0Q29tbWFuZEl0ZW1zUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RDb21tYW5kSXRlbXNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_manifest]);
 
 /**
  * @generated from message numen.v1.RunCommandRequest
@@ -208,6 +208,15 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
    * @generated from field: string shortcut = 9;
    */
   shortcut: string;
+
+  /**
+   * has_items is set for a command that offers items, which a place reads
+   * with ListCommandItems and runs with the id of the one picked as the
+   * argument of RunPluginCommand.
+   *
+   * @generated from field: bool has_items = 11;
+   */
+  hasItems: boolean;
 };
 
 /**
@@ -273,6 +282,14 @@ export type RunPluginCommandRequest = Message<"numen.v1.RunPluginCommandRequest"
    * @generated from field: map<string, string> arguments = 4;
    */
   arguments: { [key: string]: string };
+
+  /**
+   * The id of the item picked, for a command that offers items; empty for
+   * any other command.
+   *
+   * @generated from field: string argument = 5;
+   */
+  argument: string;
 };
 
 /**
@@ -281,6 +298,90 @@ export type RunPluginCommandRequest = Message<"numen.v1.RunPluginCommandRequest"
  */
 export const RunPluginCommandRequestSchema: GenMessage<RunPluginCommandRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugincommand, 7);
+
+/**
+ * @generated from message numen.v1.ListCommandItemsRequest
+ */
+export type ListCommandItemsRequest = Message<"numen.v1.ListCommandItemsRequest"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: string command = 2;
+   */
+  command: string;
+
+  /**
+   * The file the items are listed over, relative to the vault the window
+   * shows.
+   *
+   * @generated from field: string path = 3;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.ListCommandItemsRequest.
+ * Use `create(ListCommandItemsRequestSchema)` to create a new message.
+ */
+export const ListCommandItemsRequestSchema: GenMessage<ListCommandItemsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugincommand, 8);
+
+/**
+ * @generated from message numen.v1.ListCommandItemsResponse
+ */
+export type ListCommandItemsResponse = Message<"numen.v1.ListCommandItemsResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.CommandItem items = 1;
+   */
+  items: CommandItem[];
+
+  /**
+   * Set when the items could not be listed; the message then says why.
+   *
+   * @generated from field: numen.v1.CommandErrorCode error = 2;
+   */
+  error: CommandErrorCode;
+
+  /**
+   * @generated from field: string message = 3;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message numen.v1.ListCommandItemsResponse.
+ * Use `create(ListCommandItemsResponseSchema)` to create a new message.
+ */
+export const ListCommandItemsResponseSchema: GenMessage<ListCommandItemsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugincommand, 9);
+
+/**
+ * CommandItem is one item a command offers: the id the run takes as its
+ * argument, and what a person reads.
+ *
+ * @generated from message numen.v1.CommandItem
+ */
+export type CommandItem = Message<"numen.v1.CommandItem"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string title = 2;
+   */
+  title: string;
+};
+
+/**
+ * Describes the message numen.v1.CommandItem.
+ * Use `create(CommandItemSchema)` to create a new message.
+ */
+export const CommandItemSchema: GenMessage<CommandItem> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugincommand, 10);
 
 /**
  * @generated from message numen.v1.RunPluginCommandResponse
@@ -311,7 +412,7 @@ export type RunPluginCommandResponse = Message<"numen.v1.RunPluginCommandRespons
  * Use `create(RunPluginCommandResponseSchema)` to create a new message.
  */
 export const RunPluginCommandResponseSchema: GenMessage<RunPluginCommandResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 8);
+  messageDesc(file_numen_v1_plugincommand, 11);
 
 /**
  * CommandErrorCode is why a command was served and did not succeed.
@@ -410,6 +511,18 @@ export const CommandService: GenService<{
     methodKind: "unary";
     input: typeof RunPluginCommandRequestSchema;
     output: typeof RunPluginCommandResponseSchema;
+  },
+  /**
+   * ListCommandItems lists the items a command offers over a path: for a
+   * command whose when names version.*, the text versions of the file over
+   * which it holds. A command without items offers none.
+   *
+   * @generated from rpc numen.v1.CommandService.ListCommandItems
+   */
+  listCommandItems: {
+    methodKind: "unary";
+    input: typeof ListCommandItemsRequestSchema;
+    output: typeof ListCommandItemsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_plugincommand, 1);

@@ -6,23 +6,25 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import TitleBar from './TitleBar.vue'
-import type { TitleBarVault } from '@numen/plugin-sdk'
+import type { VaultsState, VaultSummary } from '@numen/plugin-sdk'
 
-const VAULTS: readonly TitleBarVault[] = [
-  { id: 'orchard', name: 'Orchard notes', isCurrent: true },
-  { id: 'greenhouse', name: 'Greenhouse log' },
-  { id: 'cellar', name: 'Cellar book' },
-  { id: 'add', name: 'Add a folder' },
-]
+const ORCHARD: VaultSummary = { id: 'orchard', name: 'Orchard notes' }
+const VAULTS: VaultsState = {
+  vaults: [
+    ORCHARD,
+    { id: 'greenhouse', name: 'Greenhouse log' },
+    { id: 'cellar', name: 'Cellar book' },
+  ],
+  current: ORCHARD,
+}
 
 const mounted: VueWrapper[] = []
 
-const mountBar = (vaults: readonly TitleBarVault[] | null = VAULTS): VueWrapper => {
+const mountBar = (vaults: VaultsState | null = VAULTS): VueWrapper => {
   const wrapper = mount(TitleBar, {
     attachTo: document.body,
     props: {
       appName: 'numen',
-      vaultName: 'Orchard notes',
       ...(vaults === null ? {} : { vaults }),
     },
   })
@@ -84,7 +86,7 @@ describe('the title with vaults', () => {
   })
 
   it('is the plain title when the bar has no vaults', () => {
-    for (const vaults of [null, []] as const) {
+    for (const vaults of [null, { vaults: [], current: ORCHARD }, { ...VAULTS, current: null }]) {
       const wrapper = mountBar(vaults)
       expect(getTrigger(wrapper).element.tagName).toBe('SPAN')
       expect(wrapper.find('[data-title-fill]').exists()).toBe(false)
@@ -118,15 +120,9 @@ describe('opening the list', () => {
   it('lists the vaults in the order given, the current one marked', async () => {
     await open(mountBar())
 
-    expect(getLabels()).toStrictEqual([
-      'Orchard notes',
-      'Greenhouse log',
-      'Cellar book',
-      'Add a folder',
-    ])
+    expect(getLabels()).toStrictEqual(['Orchard notes', 'Greenhouse log', 'Cellar book'])
     expect(getOptions().map((one) => one.getAttribute('aria-current'))).toStrictEqual([
       'true',
-      null,
       null,
       null,
     ])
@@ -159,9 +155,54 @@ describe('searching the list', () => {
   })
 
   it('lists only the current vault and nothing else when it is the only one', async () => {
-    await open(mountBar([VAULTS[0]!]))
+    await open(mountBar({ vaults: [ORCHARD], current: ORCHARD }))
 
     expect(getLabels()).toStrictEqual(['Orchard notes'])
+  })
+})
+
+describe('the row that creates a vault', () => {
+  const mountWithCreate = (canCreateVault: boolean) => {
+    const wrapper = mount(TitleBar, {
+      attachTo: document.body,
+      props: { appName: 'numen', vaults: VAULTS, canCreateVault },
+    })
+    mounted.push(wrapper)
+    return wrapper
+  }
+
+  it('is the last row, below a line, while the window can create a vault', async () => {
+    await open(mountWithCreate(true))
+
+    expect(getLabels()).toStrictEqual([
+      'Orchard notes',
+      'Greenhouse log',
+      'Cellar book',
+      'Create vault',
+    ])
+    const separators = document.body.querySelectorAll('[role="separator"]')
+    expect(separators).toHaveLength(1)
+    expect(separators[0]?.nextElementSibling?.textContent?.trim()).toBe('Create vault')
+  })
+
+  it('is not drawn while the window cannot create a vault', async () => {
+    await open(mountWithCreate(false))
+
+    expect(getLabels()).toStrictEqual(['Orchard notes', 'Greenhouse log', 'Cellar book'])
+    expect(document.body.querySelector('[role="separator"]')).toBeNull()
+  })
+
+  it('reports create-vault and no switch when it is chosen, and closes', async () => {
+    const wrapper = mountWithCreate(true)
+    await open(wrapper)
+
+    getOptions().at(-1)!.click()
+    await nextTick()
+    await nextTick()
+
+    expect(wrapper.emitted('create-vault')).toHaveLength(1)
+    expect(wrapper.emitted('switch-vault')).toBeUndefined()
+    expect(getFrame()).toBeNull()
   })
 })
 
@@ -245,7 +286,7 @@ describe('closing the list', () => {
     const wrapper = mountBar()
     await open(wrapper)
 
-    await wrapper.setProps({ vaults: [] })
+    await wrapper.setProps({ vaults: { vaults: [], current: null } })
     await nextTick()
 
     expect(getFrame()).toBeNull()

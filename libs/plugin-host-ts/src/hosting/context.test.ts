@@ -34,9 +34,6 @@ describe('PluginContext', () => {
         calls.registerCommand++
         return { dispose: vi.fn() }
       }),
-      registerContextMenu: vi.fn((_id, _reg) => {
-        return { dispose: vi.fn() }
-      }),
       registerAgentProvider: vi.fn((_id, _reg) => {
         calls.registerAgentProvider++
         return { dispose: vi.fn() }

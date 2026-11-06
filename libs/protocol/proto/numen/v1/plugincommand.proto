@@ -70,6 +70,11 @@ service CommandService {
   // RunPluginCommand runs one of them in the backend of the plugin that
   // declares it.
   rpc RunPluginCommand(RunPluginCommandRequest) returns (RunPluginCommandResponse);
+
+  // ListCommandItems lists the items a command offers over a path: for a
+  // command whose when names version.*, the text versions of the file over
+  // which it holds. A command without items offers none.
+  rpc ListCommandItems(ListCommandItemsRequest) returns (ListCommandItemsResponse);
 }
 
 message ListCommandsRequest {}
@@ -112,6 +117,11 @@ message PluginCommand {
 
   // shortcut is the keystroke the plugin suggests for the command.
   string shortcut = 9;
+
+  // has_items is set for a command that offers items, which a place reads
+  // with ListCommandItems and runs with the id of the one picked as the
+  // argument of RunPluginCommand.
+  bool has_items = 11;
 }
 
 // CommandArgument is one argument a command takes.
@@ -133,6 +143,37 @@ message RunPluginCommandRequest {
   string path = 3;
 
   map<string, string> arguments = 4;
+
+  // The id of the item picked, for a command that offers items; empty for
+  // any other command.
+  string argument = 5;
+}
+
+message ListCommandItemsRequest {
+  string plugin_id = 1;
+
+  string command = 2;
+
+  // The file the items are listed over, relative to the vault the window
+  // shows.
+  string path = 3;
+}
+
+message ListCommandItemsResponse {
+  repeated CommandItem items = 1;
+
+  // Set when the items could not be listed; the message then says why.
+  CommandErrorCode error = 2;
+
+  string message = 3;
+}
+
+// CommandItem is one item a command offers: the id the run takes as its
+// argument, and what a person reads.
+message CommandItem {
+  string id = 1;
+
+  string title = 2;
 }
 
 message RunPluginCommandResponse {

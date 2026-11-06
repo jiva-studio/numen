@@ -18,6 +18,10 @@ const toLowerFirst = (text: string): string => text.charAt(0).toLowerCase() + te
 export const WORDS = {
   /** The name the title bar of every window starts with. */
   appName: 'numen',
+  /** The row of a submenu or a pick list of items while they are read. */
+  loadingItems: 'Loading…',
+  /** The row of a submenu of a command that lists no item. */
+  noItems: 'No items',
   /** Status corner text shown while something about the vault is wrong. */
   unwatched: 'Vault changes not watched',
   unread: 'Vault unreadable',
@@ -87,7 +91,7 @@ export const WORDS = {
   leavesOut: 'Clear',
   typeNote: 'Search notes',
   /** One of a list the window holds: the field, and what Enter does. */
-  typeChoice: 'Search',
+  typeItems: 'Search',
   chooses: 'Select',
   /** The vaults the installation holds, and why one of them cannot be chosen. */
   vaults: 'Vaults',

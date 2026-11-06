@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getAllTabs, getEligibleTabs, getLinkedTitle } from './eligibility'
+import { getAllTabs, getEligibleTabs } from './eligibility'
 import type { TabLinkGroup } from '../types'
 
 const TABS = [
@@ -39,13 +39,6 @@ describe('the tabs a link may end at', () => {
 
   it('are none when the origin tab itself cannot be linked', () => {
     expect(getEligibleTabs({ ...input(), from: 'c' })).toStrictEqual([])
-  })
-})
-
-describe('the title of what a tab is linked to', () => {
-  it('names each by its title, or by its identity where it has none', () => {
-    expect(getLinkedTitle(['a', 'z'], TABS)).toBe('A, z')
-    expect(getLinkedTitle([], TABS)).toBe('')
   })
 })
 

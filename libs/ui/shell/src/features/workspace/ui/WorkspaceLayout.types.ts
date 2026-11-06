@@ -1,7 +1,15 @@
-import type { Clock } from '@numen/ui'
+import type { Clock, MenuItem, Position } from '@numen/ui'
 import type { NodeIdFactory } from '../lib/edit'
 import type { WindowEdge } from '../lib/edges'
-import type { Tab } from '../lib/node'
+import type { Tab, TabId } from '../lib/node'
+
+/** The menu of a tab: the tab it was requested on, where, and the rows the caller gives it. */
+export interface TabMenu {
+  readonly tab: TabId
+  readonly at: Position
+  /** The rows, in the order they are drawn; their ids are the caller's. */
+  readonly items: readonly MenuItem[]
+}
 
 export interface WorkspaceLayoutProps {
   tabs: readonly Tab[]
@@ -21,4 +29,6 @@ export interface WorkspaceLayoutProps {
    * corners keep the room given free for the window buttons.
    */
   windowEdge?: WindowEdge | undefined
+  /** The menu of a tab, drawn while it is given. */
+  tabMenu?: TabMenu | null | undefined
 }

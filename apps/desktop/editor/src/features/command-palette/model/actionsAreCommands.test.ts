@@ -6,7 +6,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { PaletteGroup } from '@numen/shell'
-import type { SearchMenuEntry } from './search/lookup'
+import type { SlotCommand } from '@numen/plugin-host'
 import { WORDS as words } from '@/shared/words'
 import { createCommands } from '../lib/commands/table'
 import { runSupport } from './palette/runSupport'
@@ -15,9 +15,14 @@ import { useSearch, type NameMatch, type Passage, type SearchDeps } from './sear
 import type { CommandTarget } from '../types'
 
 const ATLAS = 'org.example.atlas'
-const SHOW: SearchMenuEntry = {
+const SHOW: SlotCommand = {
+  kind: 'command',
+  key: `${ATLAS}/command/graph.showNote`,
+  pluginId: ATLAS,
   command: `${ATLAS}:graph.showNote`,
   title: 'Show note in plex',
+  shortcut: '',
+  hasItems: false,
 }
 
 const inFront: CommandTarget = {

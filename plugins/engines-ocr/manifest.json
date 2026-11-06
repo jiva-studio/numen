@@ -27,6 +27,14 @@
         "icon": "trash-2",
         "when": "version.kind == 'recognition'"
       }
+    ],
+    "slots": [
+      {
+        "slot": "fileTree.context",
+        "command": "recognition.create",
+        "group": "3-text",
+        "order": 10
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write", "network:outbound"],

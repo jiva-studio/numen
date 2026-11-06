@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '../../support/test.js'
 import { openTaskList, openWorkspace } from '../../support/workspace.js'
+import { createFolder, trashFiles, getRow, listPaths, showInFiles } from '../../support/layout.js'
 
 /** A deck or a card model made through the palette, under the name typed on its step. */
 const make = async (page: Page, command: string, name: string): Promise<void> => {
@@ -48,6 +49,31 @@ test.describe('a deck or a card model made through the palette', () => {
   })
 })
 
+test.describe('a deck made from the New submenu of a row of the file tree', () => {
+  test('is filed in the folder of the row under the name typed', async ({ page, request }) => {
+    await createFolder(request, 'Glaciers')
+    try {
+      await openWorkspace(page)
+      await showInFiles(page, [])
+      await getRow(page, 'Glaciers').click({ button: 'right' })
+      const newItem = page.getByRole('menuitem', { name: 'New', exact: true })
+      await newItem.focus()
+      await newItem.press('ArrowRight')
+      await page.getByRole('menuitem', { name: 'Create deck', exact: true }).click()
+      const field = page.locator('input[data-palette="field"]').first()
+      await expect(field).toBeVisible()
+      await field.fill('Moraines')
+      await page.keyboard.press('Enter')
+
+      await expect
+        .poll(async () => listPaths(request, 'Glaciers'))
+        .toEqual(['Glaciers/Moraines.md'])
+    } finally {
+      await trashFiles(request, ['Glaciers'])
+    }
+  })
+})
+
 test.describe('a file open in an editor of cards, removed from the tree', () => {
   for (const [what, path, editor] of [
     ['deck', 'cards/empty-deck.md', '.deck'],
@@ -64,10 +90,7 @@ test.describe('a file open in an editor of cards, removed from the tree', () => 
 
       await page.getByRole('tab', { name: /^Files/ }).click()
       await row.click({ button: 'right' })
-      await page
-        .getByRole('menuitem', { name: /Move to trash|Remove/ })
-        .first()
-        .click()
+      await page.getByRole('menuitem', { name: 'Move note to trash', exact: true }).first().click()
 
       await expect(page.locator(editor)).toHaveCount(0)
     })

@@ -4,6 +4,7 @@ import {
   openVaultFile,
   openWorkspace,
   runCommand,
+  runCommandOverItem,
   waitForPassage,
 } from '../../support/workspace.js'
 import { copyVaultFile, deleteVaultFiles } from '../../support/media.js'
@@ -42,11 +43,11 @@ const expectPassageGone = async (
  * Waits until no task recognises the file. The plugin recognises a scan on its own when it opens,
  * and the Recognise command starts a second run: the words of the first run are found while the
  * second still runs. Deleting the recognition then takes away the file the second run is about to
- * report, and that run ends as a failed task that stays in the status bar.
+ * report, and that run ends as a failed task that stays in the list of background tasks.
  */
 const expectNoRecognitionRunning = async (page: Page, name: string): Promise<void> => {
-  await expect(page.locator('.status-bar__summary')).not.toHaveText(/^[1-9]\d* active$/)
-  await page.locator('.status-bar__trigger').click()
+  await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^[1-9]\d* active$/)
+  await page.locator('.tasks-status__trigger').click()
   await expect(page.locator('.task-item').filter({ hasText: name })).toHaveCount(0)
   await page.keyboard.press('Escape')
 }
@@ -103,7 +104,7 @@ test.describe('the text versions of a file', () => {
     await waitForPassage(page, 'Mock transcribed', `assets/${deleted}`)
     await page.keyboard.press('Escape')
 
-    await runCommand(page, 'Delete transcript', /^Delete transcript$/)
+    await runCommandOverItem(page, 'Delete transcript', /^Delete transcript$/, /^transcript/)
 
     await expect(tab.getByRole('button', { name: 'Transcribe' })).toBeVisible()
     await expect(tab.getByText(MOCK_TRANSCRIPT)).toHaveCount(0)
@@ -129,7 +130,7 @@ test.describe('the text versions of a file', () => {
       await expectNoRecognitionRunning(page, name)
     }
 
-    await runCommand(page, 'Delete recognition', /^Delete recognition$/)
+    await runCommandOverItem(page, 'Delete recognition', /^Delete recognition$/, /^recognition/)
 
     await expectPassageGone(page, MOCK_RECOGNISED_WORDS, `assets/${control}`, `assets/${deleted}`)
   })
@@ -139,12 +140,13 @@ test.describe('the text versions of a file', () => {
   }) => {
     const name = copyAsset('lecture.wav', 'harbour-proofread')
     let tab = await transcribe(page, name)
-    await runCommand(page, 'Proofread', /^Proofread/)
+    await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(live\)$/)
     await expect(tab.getByText(/Mock transcribed text.*\[proofread\]/)).toBeVisible({
       timeout: 90_000,
     })
 
-    await runCommand(page, 'Delete proofreading', /^Delete proofreading$/)
+    // The proofread version is the live one once it is made.
+    await runCommandOverItem(page, 'Delete proofreading', /^Delete proofreading$/, /\(live\)$/)
 
     await expect(tab.getByText(MOCK_TRANSCRIPT)).toBeVisible()
     await expect(tab.getByText(PROOFREAD_MARK)).toHaveCount(0)

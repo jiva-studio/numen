@@ -1,65 +1,90 @@
 /**
- * A fake window hosting a files tab, and the files of a vault behind it, for
- * tests. Every request the tab makes to either is recorded in call order.
+ * A fake window hosting a files tab, the files of a vault behind it, and the entries of the slot
+ * the tab draws its menu from, for tests. Every request the tab makes is recorded in call order.
  */
 import { defineComponent, h, ref } from 'vue'
 import {
   NOTE_TYPE,
-  type MenuEntry,
+  SLOT,
   type OpenFileOptions,
-  type PathCommandTarget,
-  type PathMenuRow,
+  type SlotCommand,
+  type SlotItem,
+  type SlotSeparator,
+  type SlotSubmenu,
+  type SlotView,
   type VaultEntry,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
+import { createMockCommandsHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
 import type { FileTreeHost } from '../model/tabDeps'
 
-/** One command of the window, in the group it is drawn in. */
-const command = (id: string, group: string, text = id): MenuEntry => ({ id, text, group })
-
-const COPY = command('app:note.copyPath', 'file')
-const REMOVE = command('app:note.trash', 'app:note.trash')
-const LINKS: MenuEntry = {
-  id: 'links',
-  text: 'Links',
-  group: 'links',
-  children: [
-    command('app:note.createChild', 'links'),
-    command('app:note.createParent', 'links'),
-    command('app:note.createJump', 'links'),
-    command('app:note.rename', 'links'),
-  ],
-}
-const NOTE = [
-  command('app:note.open', 'open'),
-  command('travel', 'open'),
-  COPY,
-  LINKS,
-  command('ask', 'agent'),
-  command('app:note.trash', 'app:note.trash', 'Move note to trash'),
-]
-/** The commands the plugins add over a file, by the extension of its name. */
-const RUNS: Readonly<Record<string, readonly MenuEntry[]>> = {
-  mp3: [command('extract', 'run'), command('refine', 'run')],
-  pdf: [command('scan', 'run'), command('refine', 'run')],
-  url: [command('downloadText', 'run'), command('downloadCopy', 'run')],
-}
-
-/** The window's commands over a row, shaped as the window offers them. */
-export const getPathCommands = ({ entry, isSeveral }: PathMenuRow): readonly MenuEntry[] => {
-  if (isSeveral) return [REMOVE]
-  if (entry.isFolder) return [COPY, REMOVE]
-  if (entry.isNote) return NOTE
-  return [COPY, ...(RUNS[entry.path.split('.').pop() ?? ''] ?? []), REMOVE]
-}
+const TREE = 'md.numen.views.file.tree'
+const CHAT = 'org.example.chat'
 
 /** The icon a command or an entry is drawn with, one made-up component for each. */
-const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
+export const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
 
-/** What a files tab requests from the window to render its menu and rows. */
+/** A component a plugin draws itself in a row of the menu. */
+export const Sketch = () => h('em', 'sketch')
+
+const command = (pluginId: string, id: string, title: string, icon?: unknown): SlotCommand => ({
+  kind: 'command',
+  key: `${pluginId}/command/${id}`,
+  pluginId,
+  command: pluginId === 'app' ? `app:${id}` : `${pluginId}:${id}`,
+  title,
+  ...(icon ? { icon } : {}),
+  shortcut: '',
+  hasItems: false,
+})
+
+export const separator = (index: number): SlotSeparator => ({
+  kind: 'separator',
+  key: `separator/${index}`,
+})
+
+export const OPEN = command('app', 'note.open', 'Open note', Icon)
+export const RENAME_ENTRY = command(TREE, 'tree.rename', 'Rename')
+export const COPY_PATH = command('app', 'note.copyPath', 'Copy path')
+export const TRASH = command('app', 'note.trash', 'Move to trash')
+export const NEW_NOTE_ENTRY = command(TREE, 'tree.newNote', 'New note')
+export const NEW_FOLDER_ENTRY = command(TREE, 'tree.newFolder', 'New folder')
+export const ASK = command(CHAT, 'note.ask', 'Ask about the note')
+
+export const NEW_MENU: SlotSubmenu = {
+  kind: 'submenu',
+  key: `${TREE}/submenu/fileTree.new`,
+  pluginId: TREE,
+  submenu: 'fileTree.new',
+  title: 'New',
+  entries: [NEW_NOTE_ENTRY, NEW_FOLDER_ENTRY],
+}
+
+export const SKETCH: SlotView = {
+  kind: 'view',
+  key: `${CHAT}/view/sketch`,
+  pluginId: CHAT,
+  view: 'sketch',
+  component: Sketch,
+}
+
+/** The entries of the menu on a row, as the slot registry resolves them. */
+export const ROW_MENU: readonly SlotItem[] = [
+  OPEN,
+  separator(1),
+  NEW_MENU,
+  separator(2),
+  RENAME_ENTRY,
+  COPY_PATH,
+  separator(3),
+  ASK,
+  SKETCH,
+  separator(4),
+  TRASH,
+]
+
+/** What a files tab requests from the window to render its rows. */
 export const renderDeps = {
-  getPathCommands,
-  getCommandIcon: (id: string) => (id === 'unknown' ? null : Icon),
   getEntryIcon: () => Icon,
 }
 
@@ -75,7 +100,6 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
   const recorded = {
     synced: [] as [string, string, string | undefined][],
     opened: [] as [string, OpenFileOptions | undefined][],
-    commands: [] as [string, PathCommandTarget][],
     dragged: [] as (readonly string[])[],
     errors: [] as string[],
     made: [] as string[],
@@ -98,7 +122,6 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
       recorded.synced.push([tabId, path, title])
       return linked[tabId] ?? false
     },
-    runCommand: () => undefined,
     getNoteCommands: () => [],
     ask: () => undefined,
     showError: (text) => {
@@ -106,9 +129,7 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     },
     getMessageWriter: () => () => undefined,
     getToday: () => '2026-01-01',
-    runPathCommand: (id, target) => {
-      recorded.commands.push([id, target])
-    },
+    getCommandIcon: () => null,
     ...renderDeps,
   }
 
@@ -128,6 +149,11 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     createNote: record(NOTE_TYPE),
   }
 
-  const host: FileTreeHost = { workspace, files }
-  return { host, recorded }
+  const slots = createMockSlotHost()
+  slots.setEntries(SLOT.fileTreeContext, ROW_MENU)
+
+  const commands = createMockCommandsHost()
+
+  const host: FileTreeHost = { workspace, files, slots, commands }
+  return { host, recorded, slots, commands }
 }

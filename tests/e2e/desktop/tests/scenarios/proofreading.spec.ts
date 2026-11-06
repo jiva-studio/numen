@@ -1,5 +1,11 @@
 import { test, expect, type Page } from '../support/test.js'
-import { openVaultFile, openWorkspace, runCommand, waitForPassage } from '../support/workspace.js'
+import {
+  openVaultFile,
+  openWorkspace,
+  runCommand,
+  runCommandOverItem,
+  waitForPassage,
+} from '../support/workspace.js'
 
 /** Words of the text the mock recogniser of `-debug-mock-ml` reads on every page. */
 const MOCK_RECOGNISED_WORDS = 'upper reservoir'
@@ -11,17 +17,22 @@ const MOCK_TRANSCRIPT = /Mock transcribed text/
 /** What the mock proofreader of `-debug-mock-ml` adds to the end of every line it puts right. */
 const PROOFREAD_MARK = 'proofread'
 
-/** Waits until the palette offers deleting the version a proofreading made of the open file. */
+/**
+ * Waits until the pick list of deleting a proofreading offers the version a proofreading made of
+ * the open file beside the one it was made from.
+ */
 const expectProofreadVersion = async (page: Page): Promise<void> => {
   await expect(async () => {
     await page.keyboard.press('Escape')
-    await page.keyboard.press('Control+p')
-    await page.getByRole('combobox', { name: 'Search the vault' }).fill('Delete')
-    await expect(
-      page.getByRole('option', { name: /^(Delete|Remove)\b.*\b(proofread|corrected)/i }).first(),
-    ).toBeVisible({ timeout: 2_000 })
+    await runCommand(page, 'Delete proofreading', /^Delete proofreading/)
+    await expect(page.getByRole('option')).toHaveCount(2, { timeout: 2_000 })
   }).toPass({ timeout: 90_000 })
   await page.keyboard.press('Escape')
+}
+
+/** Proofreads the live text version of the open file, picked from the versions the command lists. */
+const proofreadLiveVersion = async (page: Page): Promise<void> => {
+  await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(live\)$/)
 }
 
 test.describe('Proofreading', () => {
@@ -34,7 +45,7 @@ test.describe('Proofreading', () => {
     await waitForPassage(page, MOCK_RECOGNISED_WORDS, 'assets/pumped-storage.pdf')
     await page.keyboard.press('Escape')
 
-    await runCommand(page, 'Proofread', /^Proofread/)
+    await proofreadLiveVersion(page)
 
     await expectProofreadVersion(page)
     await waitForPassage(page, PROOFREAD_MARK, 'assets/pumped-storage.pdf')
@@ -47,7 +58,7 @@ test.describe('Proofreading', () => {
     await runCommand(page, 'Transcribe', /^Transcribe/)
     await expect(tab.getByText(MOCK_TRANSCRIPT)).toBeVisible({ timeout: 30_000 })
 
-    await runCommand(page, 'Proofread', /^Proofread/)
+    await proofreadLiveVersion(page)
 
     await expectProofreadVersion(page)
     await expect(tab.getByText(/Mock transcribed text.*\[proofread\]/)).toBeVisible()

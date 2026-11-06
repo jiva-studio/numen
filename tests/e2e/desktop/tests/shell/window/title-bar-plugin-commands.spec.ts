@@ -90,27 +90,58 @@ test.describe('Plugin buttons in the title bar', () => {
   test('moves the buttons that do not fit into the menu in order, and a pick runs its command', async ({
     page,
   }) => {
-    // The bar keeps 128px for the title and a button is 32px wide. The start area is the window
-    // minus the three window controls (138px), so 380px leaves room for three slots: two buttons
-    // and the menu button.
-    await page.setViewportSize({ width: 380, height: 800 })
     await openWorkspace(page)
+    const titles = await getButtons(page).evaluateAll((all) =>
+      all.map((one) => one.getAttribute('aria-label') ?? ''),
+    )
+    expect(titles).toContain('Open agent chat')
+    // The bar keeps 128px for the title, and the three window controls take 138px: at 300px no
+    // button fits and every one is in the menu.
+    await page.setViewportSize({ width: 300, height: 800 })
     await closeTab(page, /Close Agent/i)
     await expect(getTab(page, 'Agent')).toHaveCount(0)
     const more = page.locator('[data-title-bar-more]')
     await expect(more).toBeVisible()
 
-    expect(await listButtonIds(page)).toStrictEqual([TREE_BUTTON, GRAPH_BUTTON])
+    await expect(getButtons(page)).toHaveCount(0)
+    await expect(page.locator('[data-title-bar] [data-title-bar-view]')).toHaveCount(0)
     await more.click()
     const entries = page.getByRole('menuitem')
-    await expect(entries).toHaveCount(3)
-    expect(await entries.allTextContents()).toStrictEqual([
-      'Open agent chat',
-      'Create note',
-      'Open settings',
-    ])
+    await expect(entries).toHaveCount(titles.length)
+    expect(await entries.allTextContents()).toStrictEqual(titles)
     await entries.filter({ hasText: 'Open agent chat' }).click()
     await expect(getTab(page, 'Agent')).toBeVisible()
+  })
+
+  test('moves the buttons back from the menu when the window grows', async ({ page }) => {
+    await openWorkspace(page)
+    const before = await listButtonIds(page)
+    await page.setViewportSize({ width: 300, height: 800 })
+    await expect(page.locator('[data-title-bar-more]')).toBeVisible()
+
+    await page.setViewportSize({ width: 1280, height: 800 })
+
+    await expect(page.locator('[data-title-bar-more]')).toHaveCount(0)
+    await expect.poll(() => listButtonIds(page)).toStrictEqual(before)
+  })
+
+  test('reaches the buttons of the bar with the arrow keys', async ({ page }) => {
+    await openWorkspace(page)
+    const first = getButtons(page).first()
+    await expect(page.locator('[data-title-bar] [role="toolbar"]')).toHaveAttribute(
+      'aria-label',
+      'Title bar',
+    )
+
+    const [, second] = await listButtonIds(page)
+    await first.focus()
+    await page.keyboard.press('ArrowRight')
+
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.activeElement?.getAttribute('data-title-bar-command')),
+      )
+      .toBe(second)
   })
 
   test('draws the same buttons in the window torn off from a tab', async ({ page }) => {

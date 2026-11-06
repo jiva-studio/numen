@@ -14,7 +14,7 @@ const SHORT_BODY = 'Tide table'
 const LONG_BODY =
   'The ferry crosses the estuary at dawn with barley, salted fish and the post for the northern shores.'
 
-/** The status bar item that counts the vectors of the index. */
+/** The title bar item that counts the vectors of the index. */
 const getItem = (page: Parameters<typeof openWorkspace>[0]): Locator =>
   page.locator('.index-stats__label')
 
@@ -35,7 +35,7 @@ const readSettledVectors = async (item: Locator): Promise<number> => {
   return readVectors(item)
 }
 
-/** The notes the index has read, from the nested Notes row of the popover of the status bar item. */
+/** The notes the index has read, from the nested Notes row of the popover of the title bar item. */
 const readNoteCount = async (popover: Locator): Promise<number> => {
   const row = popover.locator('.index-popover__row--nested', { hasText: 'Notes' })
   const text = (await row.textContent()) ?? ''

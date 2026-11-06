@@ -92,7 +92,7 @@ export function getPaletteView(state: ViewState) {
     if (step.step === 'name') return [steps.getNamingGroup(step, text)]
     if (step.step === 'arguments') return [steps.getArgumentGroup(step, text)]
     if (step.step === 'note') return [steps.getPickingGroup(step, text)]
-    if (step.step === 'choice') return steps.getChoosingGroups(step, text)
+    if (step.step === 'items') return steps.getItemGroups(step, text)
     if (step.step === 'vault') return [steps.getVaultsGroup(text, step)]
     if (step.step === 'confirmation') return [steps.getConfirmGroup(step, text)]
     return [steps.getExactlyGroup(step, text)]

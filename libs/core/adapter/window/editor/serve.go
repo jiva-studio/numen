@@ -353,12 +353,14 @@ func (o *Installation) wireUseCases() {
 	services.Settings.Get = made.OpenGetSettings()
 	services.PluginServices = made.GetPluginServices()
 	services.Playing.setPluginServices(services.PluginServices)
-	services.Command = command.NewHandler(o.State, made.GetPluginCommands())
-	if plugins := made.GetPluginCatalog(); plugins != nil {
-		services.Catalog = plugincatalog.NewHandler(plugins)
-	}
+	var versions command.VersionItems
 	if menu := made.OpenFileMenu(); menu != nil {
 		services.TextVersion = textmenu.NewHandler(o.State, menu)
+		versions = menu
+	}
+	services.Command = command.NewHandler(o.State, made.GetPluginCommands(), versions)
+	if plugins := made.GetPluginCatalog(); plugins != nil {
+		services.Catalog = plugincatalog.NewHandler(plugins)
 	}
 	if text := made.OpenFileText(); text != nil {
 		services.Text = texts.NewHandler(o.State, text)

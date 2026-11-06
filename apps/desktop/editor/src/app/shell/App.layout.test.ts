@@ -8,8 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { WelcomePage } from '@numen/shell'
-import { WorkspaceLayout, getPanes, type Workspace } from '@numen/shell'
-import { TabLinkMenu } from '@/features/tab-linking'
+import { WorkspaceLayout, getPanes, type TabMenu, type Workspace } from '@numen/shell'
 import { requests, cards, listed, mountWindow, vaultState, settle, getTabs } from '@/testing/window'
 
 describe('the window holding no tab', () => {
@@ -56,7 +55,7 @@ describe('the window holding no tab', () => {
 
     const window = await mountWindow()
 
-    expect(cards(window).join(' ')).toContain('Vault list unavailable')
+    expect(cards().join(' ')).toContain('Vault list unavailable')
     expect(window.findComponent(WelcomePage).props('vaults')).toStrictEqual([])
   })
 })
@@ -153,7 +152,7 @@ describe('tab linking context menu', () => {
     expect(layoutTabIds).not.toContain(plexTabId)
   })
 
-  it('detaches and closes tab when detach is chosen from tab context menu', async () => {
+  it('draws the commands of the window over a tab in the menu of the tab', async () => {
     const window = await mountWindow()
     const layout = window.findComponent(WorkspaceLayout)
 
@@ -161,16 +160,8 @@ describe('tab linking context menu', () => {
     layout.vm.$emit('tab-context-menu', plexTabId, { x: 120, y: 80 })
     await settle()
 
-    const menu = window.findComponent(TabLinkMenu)
-    expect(menu.exists()).toBe(true)
-    menu.vm.$emit('detach')
-    await settle()
-
-    expect(window.findComponent(TabLinkMenu).exists()).toBe(false)
-    expect(getTabs(window).map((t) => t.id)).not.toContain(plexTabId)
-
-    const workspace = layout.props('modelValue') as Workspace
-    const layoutTabIds = getPanes(workspace.root).flatMap((pane) => pane.tabs)
-    expect(layoutTabIds).not.toContain(plexTabId)
+    const menu = layout.props('tabMenu') as TabMenu | null
+    expect(menu?.tab).toBe(plexTabId)
+    expect(menu?.items.map((one) => one.text)).toContain('Detach tab')
   })
 })

@@ -29,6 +29,8 @@ type variable struct {
 
 func (k kind) getType() *cel.Type {
 	switch k {
+	case kindBool:
+		return cel.BoolType
 	case kindString:
 		return cel.StringType
 	case kindMap:

@@ -198,7 +198,7 @@ describe('the row a list opens on', () => {
   it('is the one standing now, on the step that chooses from a list', () => {
     const { steps } = createSteps(groups)
 
-    steps.pushStep(pending('choice'))
+    steps.pushStep(pending('items'))
 
     expect(steps.opensOn.value).toBe('dark')
   })
@@ -206,7 +206,7 @@ describe('the row a list opens on', () => {
   it('is none where no row remains now', () => {
     const { steps } = createSteps([{ id: 'g', title: 'Themes', items: [row('light')] }])
 
-    steps.pushStep(pending('choice'))
+    steps.pushStep(pending('items'))
 
     expect(steps.opensOn.value).toBe('')
   })

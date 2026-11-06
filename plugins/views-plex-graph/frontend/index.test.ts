@@ -28,19 +28,15 @@ describe('view-plex-graph plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds subscriptions for tab kind, vault, commands and context menus, and releases all', () => {
+  it('holds subscriptions for tab kind, vault and commands, and releases all', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(10)
-    const menus = ctx.getRegisteredContextMenus()
-    expect(menus).toHaveLength(4)
-    expect(menus.map((m) => m.id)).toEqual(['travel', 'child', 'parent', 'jump'])
+    expect(ctx.subscriptions).toHaveLength(6)
 
     ctx.dispose()
     expect(ctx.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
-    expect(ctx.getRegisteredContextMenus()).toHaveLength(0)
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
 
@@ -75,19 +71,17 @@ describe('view-plex-graph plugin', () => {
     activate(ctx)
 
     await ctx.triggerCommand('graph.open')
-    await ctx.triggerCommand('graph.showNote', { path: 'One.md', title: 'One', type: 'note' })
-    await ctx.getRegisteredContextMenus()[0]!.handler({
-      path: 'Two.md',
-      name: 'Two',
+    await ctx.triggerCommand('graph.showNote', {
+      path: 'One.md',
+      title: 'One',
+      type: 'note',
       isFolder: false,
-      isNote: true,
+      others: [],
+      tab: '',
     })
 
     expect(openCalls).toStrictEqual([[PLEX, undefined]])
-    expect(navigateCalls).toStrictEqual([
-      [PLEX, 'One.md'],
-      [PLEX, 'Two.md'],
-    ])
+    expect(navigateCalls).toStrictEqual([[PLEX, 'One.md']])
   })
 
   it('asks every plex for its picture again when the vault changes', async () => {

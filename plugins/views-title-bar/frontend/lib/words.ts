@@ -1,5 +1,7 @@
 /** The words the bar writes itself: the names of its own buttons. */
 export interface TitleBarWords {
+  /** What the row of the buttons of the bar is announced as. */
+  readonly toolbar: string
   readonly more: string
   readonly minimize: string
   readonly maximize: string
@@ -11,9 +13,12 @@ export interface TitleBarWords {
   readonly search: string
   /** What that list says when the search finds nothing. */
   readonly nothing: string
+  /** The last row of that list, which creates a vault. */
+  readonly createVault: string
 }
 
 export const TITLE_BAR_WORDS: TitleBarWords = {
+  toolbar: 'Title bar',
   more: 'More commands',
   minimize: 'Minimize',
   maximize: 'Maximize',
@@ -22,4 +27,5 @@ export const TITLE_BAR_WORDS: TitleBarWords = {
   switcher: 'Switch vault',
   search: 'Search vaults',
   nothing: 'No vault found',
+  createVault: 'Create vault',
 }

@@ -3,9 +3,6 @@
  */
 import { shallowRef } from 'vue'
 import type {
-  CommandNote,
-  ContextMenuRegistration,
-  ContextMenuTarget,
   PluginContext,
   SettingsViewRegistration,
   VaultChangeEvent,
@@ -19,21 +16,17 @@ import { createSlotRegistry } from '../slots/slotRegistry'
 import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views/slotViews'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
-import { addListener, notifyListeners, reportError, runCommand } from './events'
-import { createPaletteCommand } from './available'
-import { readAvailableCommands } from './availableReader'
-import { matchesShortcut } from './shortcuts'
+import { addListener, notifyListeners } from './events'
+import { createCommandApi } from './commandApi'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
   addEntry,
   disposeAllEntries,
   disposePluginEntry,
-  matchesContextMenuTarget,
   setStarting,
   type HostRegistry,
 } from './registry'
-import { isCommandAvailable } from './commandWhen'
 import type { PluginContextHost, PluginHostDeps } from './types'
 
 export { createPluginPaneWrapper }
@@ -63,7 +56,6 @@ type RegistrationBridge = Pick<
   | 'registerReader'
   | 'registerTabKind'
   | 'registerCommand'
-  | 'registerContextMenu'
   | 'registerSettingsView'
   | 'registerAgentProvider'
 >
@@ -92,8 +84,6 @@ function createRegistrationBridge(
       }
       return addEntry(registry.commands, fullId, { pluginId, reg: registration })
     },
-    registerContextMenu: (pluginId, registration) =>
-      addEntry(registry.contextMenus, registration.id, { pluginId, reg: registration }),
     registerSettingsView: (pluginId, registration) =>
       addEntry(registry.settingsViews, getSettingsViewKey(pluginId, registration.id), {
         pluginId,
@@ -204,9 +194,13 @@ function createServiceBridge(
   | 'getRelations'
   | 'getFiles'
   | 'getAgent'
+  | 'getCommands'
+  | 'getVaults'
+  | 'getWindow'
   | 'getBuffers'
   | 'getNotices'
   | 'getTasks'
+  | 'getBackgroundTasks'
   | 'getTexts'
 > {
   return {
@@ -215,9 +209,13 @@ function createServiceBridge(
     getRelations: () => deps.getRelations?.(),
     getFiles: () => deps.getFiles?.(),
     getAgent: () => deps.getAgent?.(),
+    getCommands: () => deps.getCommands?.(),
+    getVaults: () => deps.getVaults?.(),
+    getWindow: () => deps.getWindow?.(),
     getBuffers: () => deps.getBuffers?.(),
     getNotices: (pluginId) => deps.getNotices?.(pluginId),
     getTasks: (pluginId) => deps.getTasks?.(pluginId),
+    getBackgroundTasks: () => deps.getBackgroundTasks?.(),
     getTexts: (pluginId) => deps.getTexts?.(pluginId),
   }
 }
@@ -227,7 +225,6 @@ function createHostRegistry(): HostRegistry {
     readers: new Map(),
     tabKinds: new Map(),
     commands: shallowRef(new Map()),
-    contextMenus: shallowRef(new Map()),
     settingsViews: shallowRef(new Map()),
     agentProviders: new Map(),
     contexts: new Map(),
@@ -238,64 +235,6 @@ function createHostRegistry(): HostRegistry {
     reportedIssues: new Set(),
     vaultListeners: new Set(),
     fileListeners: new Set(),
-  }
-}
-
-/** The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts. */
-function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
-  const getAvailable = () => readAvailableCommands(deps, registry)
-  const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
-  return {
-    getPaletteCommands: () => getAvailable().map(createPaletteCommand),
-    hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
-    executeCommand: async (id: string, note: CommandNote): Promise<boolean> => {
-      const command = findAvailable(id)
-      if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
-      let entry = command.entry
-      if (!entry) {
-        await deps.waitForPlugin?.(command.declaration.pluginId)
-        entry = registry.commands.value.get(id)
-      }
-      if (!entry) return false
-      await runCommand(deps, entry, note)
-      return true
-    },
-    handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
-      for (const { entry, declaration } of getAvailable()) {
-        if (entry && matchesShortcut(event, declaration.shortcut)) {
-          getNote()
-            .then((note) => {
-              if (!isCommandAvailable(declaration, note, deps)) return
-              return runCommand(deps, entry, note)
-            })
-            .catch((error: unknown) => reportError(deps, entry.pluginId, error))
-          return true
-        }
-      }
-      return false
-    },
-  }
-}
-
-/** The context menu items the plugins registered. */
-function createContextMenuApi(registry: HostRegistry) {
-  return {
-    getContextMenuItems: (target: ContextMenuTarget): readonly ContextMenuRegistration[] => {
-      const items: ContextMenuRegistration[] = []
-      for (const { reg } of registry.contextMenus.value.values()) {
-        if (matchesContextMenuTarget(reg.target, target)) {
-          items.push(reg)
-        }
-      }
-      return items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    },
-    getContextMenuIcon: (id: string): unknown => registry.contextMenus.value.get(id)?.reg.icon,
-    runContextMenu: async (id: string, target: ContextMenuTarget): Promise<boolean> => {
-      const entry = registry.contextMenus.value.get(id)
-      if (!entry) return false
-      await entry.reg.handler(target)
-      return true
-    },
   }
 }
 
@@ -315,7 +254,6 @@ function createRegisteredApi(registry: HostRegistry) {
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
     getRegisteredTabKinds: () => [...registry.tabKinds.values()].map((t) => t.reg),
     getRegisteredCommands: () => [...registry.commands.value.values()].map((c) => c.reg),
-    getRegisteredContextMenus: () => [...registry.contextMenus.value.values()].map((c) => c.reg),
   }
 }
 
@@ -370,7 +308,6 @@ export function createPluginHost(deps: PluginHostDeps) {
   return {
     ...createContextApi(registry, contextHost),
     ...createCommandApi(deps, registry),
-    ...createContextMenuApi(registry),
     ...createRegisteredApi(registry),
     getSetting: contextHost.getSetting,
     onSettingChange: contextHost.onSettingChange,

@@ -126,10 +126,10 @@ export function createCruiseConfig(root, matrix = PACKAGE_DEPENDENCIES) {
       ...createSegmentRules(),
       {
         name: "plugin-host-reaches-only-vue",
-        comment: "of third-party code the plugin host knows Vue, and its build helper Vite; its tests are not shipped",
+        comment: "of third-party code the plugin host knows Vue, its build helper Vite and the CEL evaluator of when conditions; its tests are not shipped",
         severity: "error",
         from: { path: "^libs/plugin-host-ts/src/", pathNot: NOT_SHIPPED },
-        to: { path: "(^|/)node_modules/", pathNot: "(^|/)node_modules/(vue|@vue/[^/]+|vite)/" },
+        to: { path: "(^|/)node_modules/", pathNot: "(^|/)node_modules/(vue|@vue/[^/]+|vite|@bufbuild/cel)/" },
       },
       {
         name: "no-cross-slice-entry",

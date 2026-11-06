@@ -2,13 +2,21 @@
  * What one plex tab requests of the window, served by the host's workspace and the
  * notes of the vault.
  */
-import type { VaultNotes, VaultRelations, WorkspaceHost } from '@numen/plugin-sdk'
+import {
+  formatErrorMessage,
+  type CommandsHost,
+  type VaultNotes,
+  type VaultRelations,
+  type WorkspaceHost,
+} from '@numen/plugin-sdk'
 import type { PlexTabDeps } from '../types'
 import type { Nesting } from './nesting'
 
 /** The host services a plex tab is made from, and the plugin's nesting settings. */
 export interface PlexHost {
   readonly workspace: WorkspaceHost
+  /** The commands of the window, where the window offers them. */
+  readonly commands?: CommandsHost
   readonly notes: VaultNotes
   readonly relations: VaultRelations
   readonly nesting: Nesting
@@ -16,7 +24,7 @@ export interface PlexHost {
 
 /** What the plex tab `id` requests of the window. A note it opens goes to its linked tabs first. */
 export function createPlexTabDeps(
-  { workspace, notes, relations, nesting }: PlexHost,
+  { workspace, commands, notes, relations, nesting }: PlexHost,
   id: string,
 ): PlexTabDeps {
   return {
@@ -43,7 +51,11 @@ export function createPlexTabDeps(
       workspace.syncPath(id, path, title ?? '')
     },
     readHeadings: (paths) => notes.getHeadings(paths),
-    runCommand: (command, path, title) => workspace.runCommand(command, { path, title }),
+    runCommand: (command, path, title) => {
+      commands
+        ?.run(command, { path, title, isFolder: false, others: [], tab: '' })
+        .catch((error: unknown) => workspace.showError(formatErrorMessage(error)))
+    },
     getNoteCommands: () => workspace.getNoteCommands(),
     getCommandIcon: (command) => workspace.getCommandIcon(command),
     getNoteIcon: (type) =>

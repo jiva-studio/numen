@@ -114,8 +114,8 @@ const MODE_TEXT = 'Light or dark'
 
 /** The commands of two settings, as the adapter of the settings offers them beside the table. */
 const SETTING_COMMANDS: readonly Command[] = [
-  { id: THEME_ID, text: THEME_TEXT, group: 'settings', input: 'choice', isAvailable: () => true },
-  { id: MODE_ID, text: MODE_TEXT, group: 'settings', input: 'choice', isAvailable: () => true },
+  { id: THEME_ID, text: THEME_TEXT, group: 'settings', input: 'items', isAvailable: () => true },
+  { id: MODE_ID, text: MODE_TEXT, group: 'settings', input: 'items', isAvailable: () => true },
 ]
 
 /** The step lists of the window and every row previewed by a step. */
@@ -629,7 +629,7 @@ describe('a command that offers a list the window holds', () => {
     commands.startCommand(THEME_ID, front())
 
     expect(commands.crumb.value).toBe(THEME_TEXT)
-    expect(commands.placeholder.value).toBe(words.typeChoice)
+    expect(commands.placeholder.value).toBe(words.typeItems)
     expect(commands.groups.value.map((group) => group.title)).toStrictEqual([
       'Built-in',
       'Custom themes',

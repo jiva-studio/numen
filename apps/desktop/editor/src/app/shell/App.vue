@@ -6,20 +6,20 @@
  * sees of it, and the binding between the two.
  */
 import { onMounted, onUnmounted } from 'vue'
-import { StatusBar, WorkspaceLayout } from '@numen/shell'
+import { WorkspaceLayout } from '@numen/shell'
 import { LoadingIndicator } from '@numen/ui'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
-import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
+import { TabLinkIndicator } from '@/features/tab-linking'
+import { StatusBarHost } from '@/features/status-bar-view'
 import { TitleBarHost } from '@/features/title-bar-view'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
-import { useWindowFrame } from '../window/useWindowFrame'
-import { useWindowBar } from '../window/useWindowBar'
+import { useWindowTabMenu } from '../tabs/useTabMenu'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
@@ -38,6 +38,7 @@ const {
   slots,
   runChoice,
   openCurrentVault,
+  readNoteType,
   isLayoutReady,
   bootstrapFailure,
   isStarted,
@@ -52,38 +53,27 @@ const {
   windowTabs,
   layout,
   vaultList,
-  statusBar,
+  statusBarView,
   palette,
   destinations,
   closeTab,
   getTabIcon,
-  getKindIcon,
   getTitle,
   getTarget,
   tabLinks,
-  windowId,
+  windowCommands,
   isHighlighted,
   highlightWindow,
-  isTabAsking,
   detachTab,
-  detachTabAt,
-  moveTab,
+  frame,
 } = useWindow()
 
-const frame = useWindowFrame()
-
-const bar = useWindowBar({ slots, vaultList, runCommand, getTarget, commandDeps })
-
-const linkMenu = useTabLinkMenu({
-  tabLinks,
-  getTabs: () => windowTabs.tabs.value,
-  getKind: (id) => windowTabs.getTab(id)?.kind.kind,
-  isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
-  onDetach: detachTabAt,
-  windowId,
-  isAsking: isTabAsking,
-  onMove: moveTab,
+const tabMenu = useWindowTabMenu({
+  windowTabs,
   onHighlight: highlightWindow,
+  slots,
+  commands: windowCommands,
+  readNoteType,
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -112,10 +102,6 @@ function onCloseTab(id: string, hold?: () => void) {
 function onShowTab(id: string) {
   windowTabs.onTabShown(id)
 }
-
-function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
-  linkMenu.open(tabId, position)
-}
 </script>
 
 <template>
@@ -124,21 +110,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
   <LoadingIndicator v-if="!isStarted" class="starting" :label="words.appName" />
 
   <main v-else :class="{ 'is-highlighted': isHighlighted }">
-    <TitleBarHost
-      :view="titleBarView"
-      :app-name="words.appName"
-      :vault-name="bar.vaultName.value"
-      :platform="frame.platform.value"
-      :is-maximized="frame.isMaximized.value"
-      :is-fullscreen="frame.isFullscreen.value"
-      :commands="bar.commands.value"
-      :vaults="bar.vaults.value"
-      @run-command="bar.runCommand"
-      @switch-vault="bar.switchVault"
-      @minimize-window="frame.minimizeWindow"
-      @toggle-maximize-window="frame.toggleMaximizeWindow"
-      @close-window="frame.closeWindow"
-    />
+    <TitleBarHost :view="titleBarView" />
 
     <CoreFailureNotice :failure="failure" />
 
@@ -147,11 +119,24 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       class="below"
       :tabs="windowTabs.tabs.value"
       :window-edge="titleBarView ? undefined : frame.windowEdge.value"
+      :tab-menu="tabMenu.menu.value"
       @close="onCloseTab"
       @show="onShowTab"
-      @tab-context-menu="onTabContextMenu"
+      @tab-context-menu="tabMenu.open"
+      @tab-menu-choose="tabMenu.choose"
+      @tab-menu-dismiss="tabMenu.dismiss"
+      @tab-menu-highlight="tabMenu.highlight"
       @tear-off="detachTab"
     >
+      <template #tab-menu-icon="{ id }">
+        <component
+          :is="tabMenu.getIcon(id)"
+          v-if="tabMenu.getIcon(id)"
+          class="tab-menu-icon"
+          aria-hidden="true"
+        />
+      </template>
+
       <template #icon="{ id }">
         <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />
         <TabLinkIndicator
@@ -192,33 +177,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       </template>
     </WorkspaceLayout>
 
-    <TabLinkMenu
-      v-if="linkMenu.tabId.value"
-      :tab-id="linkMenu.tabId.value"
-      :eligible-tabs="linkMenu.eligibleTabs.value"
-      :at="linkMenu.at.value"
-      :is-linked="linkMenu.isLinked.value"
-      :can-detach="linkMenu.canDetach.value"
-      :windows="linkMenu.windows.value"
-      :is-asking="linkMenu.isAsking.value"
-      :linked-target-title="linkMenu.linkedTargetTitle.value"
-      :get-tab-icon="getTabIcon"
-      :get-kind-icon="getKindIcon"
-      @link="linkMenu.link"
-      @unlink="linkMenu.unlink"
-      @detach="linkMenu.detach"
-      @move="linkMenu.move"
-      @highlight="linkMenu.highlight"
-      @close="linkMenu.close"
-    />
-
-    <StatusBar
-      :tasks="statusBar.tasks.value"
-      @cancel="statusBar.onCancelTask"
-      @retry="statusBar.onRetryTask"
-      @dismiss="statusBar.onDismissTask"
-      @action="statusBar.onActionTask"
-    />
+    <StatusBarHost :view="statusBarView" />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"
@@ -261,6 +220,12 @@ main.is-highlighted::after {
 .below {
   flex: 1;
   min-height: 0;
+}
+
+.tab-menu-icon {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  stroke-width: 1.75;
 }
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
