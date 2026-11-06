@@ -248,12 +248,25 @@ func (h *Host) closeAllListeners() {
 }
 
 // createListenerTarget returns the target of a connection to a listener: the plugin is started and
-// held until the connection ends, and the connection goes to the port its ready line reported.
+// held until the connection ends, and the connection goes to the port its ready line reported. A
+// failed activation wraps portproxy.ErrTargetReported while an earlier one of the plugin stays reported.
 func (h *Host) createListenerTarget(pluginID, name string) portproxy.Target {
 	return func(ctx context.Context) (string, func(), error) {
 		endpoint, err := h.EnsureActive(ctx, pluginID)
+		h.mu.Lock()
+		_, isReported := h.reportedTargetFailures[pluginID]
+		if err == nil {
+			delete(h.reportedTargetFailures, pluginID)
+		} else {
+			h.reportedTargetFailures[pluginID] = struct{}{}
+		}
+		h.mu.Unlock()
 		if err != nil {
-			return "", nil, fmt.Errorf("activate plugin %s for listener %s: %w", pluginID, name, err)
+			err = fmt.Errorf("activate plugin %s for listener %s: %w", pluginID, name, err)
+			if isReported {
+				return "", nil, fmt.Errorf("%w: %w", portproxy.ErrTargetReported, err)
+			}
+			return "", nil, err
 		}
 		release := func() { h.releaseEndpoint(pluginID, endpoint) }
 		h.mu.RLock()

@@ -121,49 +121,53 @@ type Host struct {
 	listeners map[string]map[string]listenerBinding
 	// listenerPorts maps each running plugin to the loopback port of each listener its ready line reported.
 	listenerPorts map[string]map[string]int
+	// reportedTargetFailures holds each plugin whose failed activation for a listener connection was
+	// reported, until the plugin activates or its failure is cleared.
+	reportedTargetFailures map[string]struct{}
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
 // The host reads the time from clock.
 func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	h := &Host{
-		clock:            clock,
-		mu:               sync.RWMutex{},
-		target:           target,
-		dirs:             dirs,
-		plugins:          make(map[string]manifest.Discovered),
-		supervisors:      make(map[string]*lifecycle.Supervisor),
-		endpoints:        make(map[string]transport.Endpoint),
-		launcher:         nil,
-		safeMode:         false,
-		vaultPath:        "",
-		bus:              nil,
-		settings:         make(map[string]map[string]any),
-		persistHandler:   nil,
-		evictTicker:      time.NewTicker(30 * time.Second),
-		evictDone:        make(chan struct{}),
-		isClosed:         false,
-		stdins:           make(map[stdinKey]io.Closer),
-		processLimits:    process.DefaultLimits(),
-		activation:       lifecycle.DefaultActivationPolicy(),
-		onPluginFailed:   nil,
-		onFailureCleared: nil,
-		errorHandler:     nil,
-		onDisk:           make(map[string]bool),
-		discoverMu:       sync.RWMutex{},
-		failedPlugins:    nil,
-		problems:         nil,
-		completer:        nil,
-		keyStore:         nil,
-		hostEndpoint:     nil,
-		hostAddress:      hostendpoint.Address,
-		dependencies:     nil,
-		work:             nil,
-		builtIns:         make(map[string]builtInPlugin),
-		contentTypes:     nil,
-		typeCache:        contentTypeCache{},
-		listeners:        make(map[string]map[string]listenerBinding),
-		listenerPorts:    make(map[string]map[string]int),
+		clock:                  clock,
+		mu:                     sync.RWMutex{},
+		target:                 target,
+		dirs:                   dirs,
+		plugins:                make(map[string]manifest.Discovered),
+		supervisors:            make(map[string]*lifecycle.Supervisor),
+		endpoints:              make(map[string]transport.Endpoint),
+		launcher:               nil,
+		safeMode:               false,
+		vaultPath:              "",
+		bus:                    nil,
+		settings:               make(map[string]map[string]any),
+		persistHandler:         nil,
+		evictTicker:            time.NewTicker(30 * time.Second),
+		evictDone:              make(chan struct{}),
+		isClosed:               false,
+		stdins:                 make(map[stdinKey]io.Closer),
+		processLimits:          process.DefaultLimits(),
+		activation:             lifecycle.DefaultActivationPolicy(),
+		onPluginFailed:         nil,
+		onFailureCleared:       nil,
+		errorHandler:           nil,
+		onDisk:                 make(map[string]bool),
+		discoverMu:             sync.RWMutex{},
+		failedPlugins:          nil,
+		problems:               nil,
+		completer:              nil,
+		keyStore:               nil,
+		hostEndpoint:           nil,
+		hostAddress:            hostendpoint.Address,
+		dependencies:           nil,
+		work:                   nil,
+		builtIns:               make(map[string]builtInPlugin),
+		contentTypes:           nil,
+		typeCache:              contentTypeCache{},
+		listeners:              make(map[string]map[string]listenerBinding),
+		listenerPorts:          make(map[string]map[string]int),
+		reportedTargetFailures: make(map[string]struct{}),
 	}
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -1650,6 +1654,9 @@ func (h *Host) getFailureLocked(pluginID string) *pluginport.PluginFailure {
 // clearFailure removes the recorded activation failures of a plugin and passes
 // the cleared callback the place where the plugin had been suspended.
 func (h *Host) clearFailure(pluginID string, sup *lifecycle.Supervisor) {
+	h.mu.Lock()
+	delete(h.reportedTargetFailures, pluginID)
+	h.mu.Unlock()
 	wasFailed := sup.IsActivationFailed()
 	sup.ResetActivationFailures()
 	if !wasFailed {

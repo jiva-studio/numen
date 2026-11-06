@@ -9,7 +9,6 @@ import (
 	"io"
 	"net"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -17,6 +16,10 @@ const (
 	minAcceptRetryDelay = 5 * time.Millisecond
 	maxAcceptRetryDelay = time.Second
 )
+
+// ErrTargetReported marks a target error whose cause was reported before. The proxy closes the
+// connection and does not pass the error to onError.
+var ErrTargetReported = errors.New("the target error was reported before")
 
 // Target opens the connection a proxied connection is forwarded to, and holds the plugin for it
 // until release is called.
@@ -29,8 +32,6 @@ type Proxy struct {
 	onError  func(error)
 	// cancel ends the context the targets of the connections are opened with.
 	cancel context.CancelFunc
-	// isTargetFailing is set by a target error and cleared when a target opens.
-	isTargetFailing atomic.Bool
 
 	mu       sync.Mutex
 	conns    map[net.Conn]struct{}
@@ -53,15 +54,14 @@ func Open(ctx context.Context, addr string, target Target, onError func(error)) 
 func newProxy(ctx context.Context, listener net.Listener, target Target, onError func(error)) *Proxy {
 	proxyCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	p := &Proxy{
-		listener:        listener,
-		target:          target,
-		onError:         onError,
-		cancel:          cancel,
-		isTargetFailing: atomic.Bool{},
-		mu:              sync.Mutex{},
-		conns:           make(map[net.Conn]struct{}),
-		isClosed:        false,
-		wg:              sync.WaitGroup{},
+		listener: listener,
+		target:   target,
+		onError:  onError,
+		cancel:   cancel,
+		mu:       sync.Mutex{},
+		conns:    make(map[net.Conn]struct{}),
+		isClosed: false,
+		wg:       sync.WaitGroup{},
 	}
 	p.wg.Add(1)
 	go p.acceptConnections(proxyCtx)
@@ -164,12 +164,11 @@ func (p *Proxy) forward(ctx context.Context, client net.Conn) {
 
 	addr, release, err := p.target(ctx)
 	if err != nil {
-		if !p.isTargetFailing.Swap(true) {
+		if !errors.Is(err, ErrTargetReported) {
 			p.reportUnlessClosed(ctx, fmt.Errorf("open the target of a connection to %s: %w", p.listener.Addr(), err))
 		}
 		return
 	}
-	p.isTargetFailing.Store(false)
 	defer release()
 
 	upstream, err := new(net.Dialer).DialContext(ctx, "tcp", addr)
