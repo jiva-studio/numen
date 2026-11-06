@@ -208,9 +208,10 @@ func (e *vaultEndpoint) ListHostVaults(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	list := e.endpoint.callers.GetPluginVaultList()
 	out := make([]*v1.HostVaultInfo, 0, len(recognized))
 	for _, one := range recognized {
-		out = append(out, &v1.HostVaultInfo{Id: string(one.ID), Name: one.Name, Path: one.Path})
+		out = append(out, &v1.HostVaultInfo{Id: string(one.ID), Name: one.Name, Path: one.Path, IsMissing: list != nil && list.IsMissing(one)})
 	}
 	return connect.NewResponse(&v1.ListHostVaultsResponse{Vaults: out}), nil
 }
@@ -419,7 +420,7 @@ func (e *vaultEndpoint) GetNoteRefs(
 	notes := make([]*v1.HostNoteRef, 0, len(target))
 	for _, path := range req.Msg.GetPaths() {
 		if one, found := target[path]; found {
-			notes = append(notes, &v1.HostNoteRef{Path: one.Path, Title: one.Title})
+			notes = append(notes, &v1.HostNoteRef{Path: one.Path, Title: one.Title, Id: one.ID})
 		}
 	}
 	return connect.NewResponse(&v1.GetNoteRefsResponse{Notes: notes}), nil

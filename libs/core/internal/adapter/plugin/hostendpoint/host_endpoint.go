@@ -66,6 +66,8 @@ type Services interface {
 type windowServices interface {
 	// GetPluginWindow is the main window of the vault, or nil where the host has no window.
 	GetPluginWindow() pluginport.PluginWindow
+	// GetPluginVaultList is the list of vaults plugins change, or nil where the host has no window.
+	GetPluginVaultList() pluginport.PluginVaultList
 }
 
 // Endpoint serves the calls plugins make to the host. It binds the loopback
@@ -78,6 +80,7 @@ type Endpoint struct {
 	port    int
 	// serveResult receives the error that ended the server other than a close, and is closed once the server no longer serves.
 	serveResult chan error
+	troubles    errorHandler
 }
 
 // Open starts serving the host service on the address, which is a

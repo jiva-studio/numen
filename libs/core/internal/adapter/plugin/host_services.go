@@ -130,6 +130,7 @@ func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	endpoint.SetErrorHandler(h.reportError)
 	h.hostEndpoint = endpoint
 	return endpoint.GetPort(), nil
 }
