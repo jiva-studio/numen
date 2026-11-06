@@ -30,8 +30,10 @@ const searchForNote = async (page: Page) => {
     .filter({ has: page.locator('[data-palette="name"]', { hasText: new RegExp(`^${NOTE}$`) }) })
     .first()
   await expect(row).toBeVisible()
-  // The groups answer in any order and the highlight stays where the first answer put it, so the
-  // row is reached by stepping through every row once.
+  // The groups answer in any order, and a group answering while the keyboard steps can move the
+  // highlight back to the first row. Once all have answered, the row is reached by stepping through
+  // every row once from where the highlight is.
+  await expect(page.getByRole('listbox').locator('[role="group"][aria-busy="true"]')).toHaveCount(0)
   const rows = page.getByRole('option')
   for (
     let step = 0;
