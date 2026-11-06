@@ -1,7 +1,10 @@
 import { formatCommandId } from './commandId'
 
 /** The places a window draws menu entries in. */
-export const MENU_LOCATION = { titleBarCommands: 'titleBar.commands', searchResult: 'searchResult' } as const
+export const MENU_LOCATION = {
+  titleBarCommands: 'titleBar.commands',
+  searchResult: 'searchResult',
+} as const
 export type MenuLocation = (typeof MENU_LOCATION)[keyof typeof MENU_LOCATION]
 
 /** One entry of `contributes.menus` of an enabled plugin. */

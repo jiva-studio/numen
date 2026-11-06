@@ -44,7 +44,12 @@ const getCommands = (menus: ReturnType<typeof setup>) =>
 describe('the placements of the application', () => {
   it('are one list that places the settings command in the title bar in a group of its own', () => {
     expect(APP_PLACEMENTS).toEqual([
-      { pluginId: 'app', location: 'titleBar.commands', command: COMMAND.openSettings, group: 'settings' },
+      {
+        pluginId: 'app',
+        location: 'titleBar.commands',
+        command: COMMAND.openSettings,
+        group: 'settings',
+      },
     ])
   })
 
@@ -81,7 +86,13 @@ describe('the settings entry among the entries of the plugins', () => {
   it('sorts the groups by name before the order inside them and keeps settings last', () => {
     const menus = setup([
       { ...tidePlacement, order: 99 },
-      { pluginId: REEF, location: 'titleBar.commands', command: 'reef.open', group: 'new', order: 1 },
+      {
+        pluginId: REEF,
+        location: 'titleBar.commands',
+        command: 'reef.open',
+        group: 'new',
+        order: 1,
+      },
     ])
 
     expect(getCommands(menus)).toEqual([
@@ -110,7 +121,12 @@ describe('the settings entry among the entries of the plugins', () => {
 
   it('merges the list of the application in with a plugin placement and one resolution', () => {
     const menus = setup([tidePlacement], () => [
-      { pluginId: 'app', location: 'titleBar.commands', command: COMMAND.openSettings, group: 'settings' },
+      {
+        pluginId: 'app',
+        location: 'titleBar.commands',
+        command: COMMAND.openSettings,
+        group: 'settings',
+      },
     ])
 
     expect(getCommands(menus)).toEqual([`${TIDE}:tide.open`, 'app:settings.open'])

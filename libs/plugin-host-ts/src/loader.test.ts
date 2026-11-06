@@ -3,7 +3,8 @@ import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { LoaderHost } from './host'
 import { getPluginStyle, registerPluginStyle } from './styles'
-import { createPluginLoader, PLUGIN_SETTLE_MS, PLUGIN_WAIT_MS } from './loader'
+import { createPluginLoader } from './loader'
+import { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
 import { getLifecycleHooks, resolveModule } from './module'
 
 /** The loader, with a module registered under each plugin id. */
@@ -485,7 +486,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       const loader = registerModules(createPluginLoader({ host }), { slow, quick })
 
       const started = loader.start()
-      await vi.advanceTimersByTimeAsync(PLUGIN_WAIT_MS)
+      await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS)
       expect(log).toStrictEqual(['quick'])
       expect(loader.isPluginActive('slow')).toBe(false)
 
@@ -574,7 +575,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     await expect(wait).resolves.toBeUndefined()
   })
 
-  it('settles a wait for a plugin that is never activated after the settle time', async () => {
+  it('settles a wait for a plugin that is never activated after the start limit', async () => {
     vi.useFakeTimers()
     try {
       const { host } = createHost()
@@ -582,7 +583,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       const spy = vi.fn()
 
       const wait = loader.settlePlugin('never').then(spy)
-      await vi.advanceTimersByTimeAsync(PLUGIN_SETTLE_MS - 1)
+      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS - 1)
       expect(spy).not.toHaveBeenCalled()
       await vi.advanceTimersByTimeAsync(1)
       await wait

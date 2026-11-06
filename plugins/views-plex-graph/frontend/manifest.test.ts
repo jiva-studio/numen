@@ -36,7 +36,9 @@ describe('the manifest', () => {
   })
 
   it('keeps the command that shows a note out of the title bar, which has no note', () => {
-    const entries = (manifest.contributes.menus ?? []).filter((one) => one.location === 'titleBar.commands')
+    const entries = (manifest.contributes.menus ?? []).filter(
+      (one) => one.location === 'titleBar.commands',
+    )
 
     expect(entries.map((one) => one.command)).not.toContain('graph.showNote')
   })

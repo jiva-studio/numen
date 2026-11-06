@@ -782,4 +782,30 @@ describe('the title bar of the flashcards window', () => {
     expect(window.find('main').exists()).toBe(true)
     expect(window.find('[data-title-bar]').exists()).toBe(false)
   })
+
+  it('draws a bar that starts after INTERFACE_WAIT_MS once it has started', async () => {
+    vi.useFakeTimers()
+    const deps = createBarDeps([createBarPlugin('org.example.ledger')])
+    const window = mount(App, {
+      props: {
+        deps: {
+          ...deps,
+          dynamicImport: async (url: string) => {
+            if (url.includes('/org.example.ledger/'))
+              await new Promise((resolve) => setTimeout(resolve, INTERFACE_WAIT_MS + 2_000))
+            return deps.dynamicImport(url)
+          },
+        },
+      },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+
+    await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS)
+    expect(window.find('main').exists()).toBe(true)
+    expect(window.find('[data-title-bar]').exists()).toBe(false)
+    await vi.advanceTimersByTimeAsync(2_010)
+
+    expect(window.find('[data-title-bar="org.example.ledger"]').exists()).toBe(true)
+  })
 })

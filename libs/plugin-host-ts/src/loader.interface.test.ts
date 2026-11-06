@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
 import type { LoaderHost } from './host'
 import { createPluginLoader } from './loader'
-import { INTERFACE_WAIT_MS } from './loading/interfaceStart'
+import { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
 
 const BAR = 'org.example.ledger'
 const TABS = 'org.example.orchard'
@@ -30,17 +30,25 @@ const MANIFESTS: Record<string, unknown> = {
   [WORKER]: { id: WORKER, name: 'Harbor worker', version: '1.0.0', frontend: {} },
 }
 
-const createHost = (): LoaderHost => ({
-  createContext: (pluginId) => ({ pluginId }) as unknown as PluginContext,
-  disposePlugin: vi.fn(),
-  disposeAll: vi.fn(),
-})
+const createHost = () =>
+  ({
+    createContext: (pluginId: string) => ({ pluginId }) as unknown as PluginContext,
+    disposePlugin: vi.fn<(pluginId: string) => void>(),
+    disposeAll: vi.fn(),
+  }) satisfies LoaderHost
 
-/** A loader over the invented plugins; `delays` holds the milliseconds each module takes to read. */
-const createLoader = (delays: Record<string, number> = {}) => {
+/**
+ * A loader over the invented plugins; `delays` holds the milliseconds each module takes to read, and
+ * `activations` the milliseconds each activation takes.
+ */
+const createLoader = (
+  delays: Record<string, number> = {},
+  activations: Record<string, number> = {},
+) => {
   const log: string[] = []
+  const host = createHost()
   const loader = createPluginLoader({
-    host: createHost(),
+    host,
     fetch: (async (url: string) => {
       const id = Object.keys(MANIFESTS).find((one) => String(url).includes(`/${one}/`))!
       return new Response(String(url).endsWith('.css') ? '' : JSON.stringify(MANIFESTS[id]))
@@ -50,13 +58,14 @@ const createLoader = (delays: Record<string, number> = {}) => {
       log.push(`read ${id}`)
       await new Promise((resolve) => setTimeout(resolve, delays[id] ?? 0))
       return {
-        activate: () => {
+        activate: async () => {
+          await new Promise((resolve) => setTimeout(resolve, activations[id] ?? 0))
           log.push(`activate ${id}`)
         },
       }
     },
   })
-  return { loader, log }
+  return { loader, log, host }
 }
 
 const startAll = async (loader: ReturnType<typeof createLoader>['loader']) => {
@@ -97,7 +106,7 @@ describe('the start of the plugins of the interface', () => {
     await Promise.all([interfaceWait, started])
   })
 
-  it('settles the wait at INTERFACE_WAIT_MS without a late plugin, which counts as failed', async () => {
+  it('settles the wait at INTERFACE_WAIT_MS, and activates a late plugin once it is read', async () => {
     vi.useFakeTimers()
     const { loader, log } = createLoader({ [BAR]: INTERFACE_WAIT_MS + 5_000 })
     let isSettled = false
@@ -109,10 +118,45 @@ describe('the start of the plugins of the interface', () => {
     await vi.advanceTimersByTimeAsync(1)
 
     expect(isSettled).toBe(true)
-    expect(loader.getPluginFailure(BAR)).toMatch(/did not start within 3 s/)
-    await vi.advanceTimersByTimeAsync(10_000)
-    expect(log).not.toContain(`activate ${BAR}`)
     expect(loader.isPluginActive(BAR)).toBe(false)
+    await vi.advanceTimersByTimeAsync(5_010)
+    expect(log).toContain(`activate ${BAR}`)
+    expect(loader.isPluginActive(BAR)).toBe(true)
+    expect(loader.getPluginFailure(BAR)).toBeUndefined()
     await Promise.all([interfaceWait, started])
+  })
+
+  it('starts the plugins after a late one at INTERFACE_WAIT_MS without waiting for it', async () => {
+    vi.useFakeTimers()
+    const { loader } = createLoader({}, { [TABS]: 10_000 })
+
+    const started = startAll(loader)
+    await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS + 10)
+
+    expect(loader.isPluginActive(TABS)).toBe(false)
+    expect(loader.isPluginActive(BAR)).toBe(true)
+    expect(loader.isPluginActive(WORKER)).toBe(true)
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(loader.isPluginActive(TABS)).toBe(true)
+    await started
+  })
+})
+
+describe('a plugin that has not started within PLUGIN_START_LIMIT_MS', () => {
+  it('counts as failed, and what it registers after is taken back', async () => {
+    vi.useFakeTimers()
+    const { loader, host } = createLoader({}, { [BAR]: PLUGIN_START_LIMIT_MS + 1_000 })
+
+    const started = startAll(loader)
+    await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS - 100)
+    expect(loader.getPluginFailure(BAR)).toBeUndefined()
+    await vi.advanceTimersByTimeAsync(200)
+
+    expect(loader.getPluginFailure(BAR)).toBe('the plugin did not start within 30 s')
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect(loader.isPluginActive(BAR)).toBe(false)
+    expect(host.disposePlugin).toHaveBeenCalledWith(BAR)
+    expect(loader.isPluginActive(TABS)).toBe(true)
+    await started
   })
 })

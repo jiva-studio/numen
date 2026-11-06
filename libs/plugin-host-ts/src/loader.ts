@@ -14,10 +14,8 @@ import {
   resolveModule,
   type ResolveModuleContext,
 } from './module'
-import { INTERFACE_WAIT_MS } from './loading/interfaceStart'
+import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 import { startLoader } from './loading/startLoader'
-
-export { PLUGIN_WAIT_MS } from './loading/startLoader'
 
 export interface PluginLoaderDeps {
   readonly host: LoaderHost
@@ -57,13 +55,20 @@ function setFailure(ctx: ActivateContext, pluginId: string, error: string | unde
   ctx.failures.value = next
 }
 
-async function activateEntry(
+/** Takes back what a plugin registered, for a start that failed. */
+function discardEntry(ctx: ActivateContext, pluginId: string): void {
+  removePluginStyles(pluginId)
+  ctx.host.disposePlugin(pluginId)
+}
+
+/** Reads and activates the plugin. A start that ends after the limit has passed is taken back. */
+async function startEntry(
   ctx: ActivateContext,
   pluginId: string,
-  pluginModule?: unknown,
+  start: { readonly module: unknown; readonly isExpired: () => boolean },
 ): Promise<boolean> {
+  const { module: pluginModule, isExpired } = start
   const { host, activePlugins } = ctx
-  if (activePlugins.value.has(pluginId)) return true
   try {
     const resolved = await resolveModule(pluginId, pluginModule, ctx)
     if (!resolved) return false
@@ -75,6 +80,10 @@ async function activateEntry(
       await activate(host.createContext(pluginId, manifest))
       host.markPluginStarted?.(pluginId)
     }
+    if (isExpired()) {
+      discardEntry(ctx, pluginId)
+      return false
+    }
 
     const next = new Map(activePlugins.value)
     next.set(pluginId, { pluginId, deactivate })
@@ -82,12 +91,40 @@ async function activateEntry(
     setFailure(ctx, pluginId, undefined)
     return true
   } catch (error) {
-    removePluginStyles(pluginId)
-    host.disposePlugin(pluginId)
+    discardEntry(ctx, pluginId)
+    if (isExpired()) return false
     setFailure(ctx, pluginId, getFailureMessage(error))
     ctx.reportError(pluginId, error)
     return false
   }
+}
+
+/**
+ * Starts the plugin within PLUGIN_START_LIMIT_MS. A plugin that has not started by then counts as
+ * failed, and what its start registers afterwards is taken back.
+ */
+async function activateEntry(
+  ctx: ActivateContext,
+  pluginId: string,
+  pluginModule?: unknown,
+): Promise<boolean> {
+  if (ctx.activePlugins.value.has(pluginId)) return true
+  let isExpired = false
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const limit = new Promise<'expired'>((resolve) => {
+    timer = setTimeout(() => resolve('expired'), PLUGIN_START_LIMIT_MS)
+  })
+  const starting = startEntry(ctx, pluginId, {
+    module: pluginModule,
+    isExpired: () => isExpired,
+  })
+  const outcome = await Promise.race([starting, limit]).finally(() => clearTimeout(timer))
+  if (outcome !== 'expired') return outcome
+  isExpired = true
+  const error = new Error(`the plugin did not start within ${PLUGIN_START_LIMIT_MS / 1000} s`)
+  setFailure(ctx, pluginId, error.message)
+  ctx.reportError(pluginId, error)
+  return false
 }
 
 interface DeactivateDeps {
@@ -135,9 +172,6 @@ function listenToPluginState(deps: ListenerDeps, pluginId: string) {
   })
   deps.subscriptions.set(pluginId, sub)
 }
-
-/** How long a command waits for its plugin to be activated before it gives up. */
-export const PLUGIN_SETTLE_MS = 10_000
 
 interface CloseLoaderDeps {
   readonly host: LoaderHost
@@ -205,11 +239,6 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
     loadModule: (id: string) => resolveModule(id, undefined, activateContext),
     isInterface: async (id: string): Promise<boolean> =>
       !moduleLoaders.has(id) && isInterfaceManifest(await readPluginManifest(id, activateContext)),
-    failLate: (id: string): void => {
-      const error = new Error(`the plugin did not start within ${INTERFACE_WAIT_MS / 1000} s`)
-      setFailure(activateContext, id, error.message)
-      activateContext.reportError(id, error)
-    },
     activatePlugin: (id: string, module?: unknown) =>
       enqueue(id, () => activateEntry(activateContext, id, module)),
     deactivatePlugin: (id: string) => enqueue(id, () => deactivateEntry(deactivateContext, id)),
@@ -228,7 +257,6 @@ interface Activation {
   readonly activatePlugin: (id: string, module?: unknown) => Promise<boolean>
   readonly deactivatePlugin: (id: string) => Promise<boolean>
   readonly isInterface: (id: string) => Promise<boolean>
-  readonly failLate: (id: string) => void
 }
 
 /** A promise and the function that settles it. */
@@ -321,7 +349,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
       manifests.set(id, manifest)
       host.registerManifest?.(id, manifest)
     },
-    /** Settles once the plugin is active or has failed, or after PLUGIN_SETTLE_MS. */
+    /** Settles once the plugin is active or has failed, or after PLUGIN_START_LIMIT_MS. */
     settlePlugin: (id: string): Promise<void> =>
       new Promise<void>((resolve) => {
         const isSettled = () => activePlugins.value.has(id) || failures.value.has(id)
@@ -335,7 +363,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
         const timer = setTimeout(() => {
           stop()
           resolve()
-        }, PLUGIN_SETTLE_MS)
+        }, PLUGIN_START_LIMIT_MS)
       }),
     isPluginActive: (id: string) => activePlugins.value.has(id),
     getActivePluginIds: () => [...activePlugins.value.keys()],

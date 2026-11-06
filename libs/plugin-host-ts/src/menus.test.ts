@@ -41,9 +41,12 @@ function listPermutations<T>(items: readonly T[]): T[][] {
 
 describe('the entries of a place', () => {
   it('has none where no plugin places a command in it', () => {
-    const { menus } = setup([{ pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.open' }], {
-      [`${ATLAS}:atlas.open`]: look('Open atlas'),
-    })
+    const { menus } = setup(
+      [{ pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.open' }],
+      {
+        [`${ATLAS}:atlas.open`]: look('Open atlas'),
+      },
+    )
 
     expect(menus.getEntries('searchResult')).toEqual([])
   })
@@ -53,7 +56,12 @@ describe('the entries of a place', () => {
       [
         { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.plain' },
         { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.fresh', group: 'new' },
-        { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.goto', group: 'navigate' },
+        {
+          pluginId: ATLAS,
+          location: 'titleBar.commands',
+          command: 'atlas.goto',
+          group: 'navigate',
+        },
       ],
       {
         [`${ATLAS}:atlas.plain`]: look('Plain'),
@@ -78,16 +86,37 @@ describe('the entries of a place', () => {
       { [`${ATLAS}:atlas.low`]: look('Low'), [`${ATLAS}:atlas.high`]: look('High') },
     )
 
-    expect(ids(menus.getEntries('titleBar.commands'))).toEqual([`${ATLAS}:atlas.high`, `${ATLAS}:atlas.low`])
+    expect(ids(menus.getEntries('titleBar.commands'))).toEqual([
+      `${ATLAS}:atlas.high`,
+      `${ATLAS}:atlas.low`,
+    ])
   })
 
   it('sorts the entries of a group by order, lowest first, and those with no order last', () => {
     const { menus } = setup(
       [
         { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.none', group: 'g' },
-        { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.twenty', group: 'g', order: 20 },
-        { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.ten', group: 'g', order: 10 },
-        { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.zero', group: 'g', order: 0 },
+        {
+          pluginId: ATLAS,
+          location: 'titleBar.commands',
+          command: 'atlas.twenty',
+          group: 'g',
+          order: 20,
+        },
+        {
+          pluginId: ATLAS,
+          location: 'titleBar.commands',
+          command: 'atlas.ten',
+          group: 'g',
+          order: 10,
+        },
+        {
+          pluginId: ATLAS,
+          location: 'titleBar.commands',
+          command: 'atlas.zero',
+          group: 'g',
+          order: 0,
+        },
       ],
       {
         [`${ATLAS}:atlas.none`]: look('None'),
@@ -152,8 +181,20 @@ describe('the entries of a place', () => {
 
   it('gives the same result for the placements in every order of listing', () => {
     const placements: MenuPlacement[] = [
-      { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.one', group: 'b', order: 2 },
-      { pluginId: BOOKS, location: 'titleBar.commands', command: 'books.two', group: 'b', order: 2 },
+      {
+        pluginId: ATLAS,
+        location: 'titleBar.commands',
+        command: 'atlas.one',
+        group: 'b',
+        order: 2,
+      },
+      {
+        pluginId: BOOKS,
+        location: 'titleBar.commands',
+        command: 'books.two',
+        group: 'b',
+        order: 2,
+      },
       { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.three', group: 'a' },
       { pluginId: BOOKS, location: 'titleBar.commands', command: 'app:note.create', order: 1 },
       { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.five' },
@@ -169,7 +210,9 @@ describe('the entries of a place', () => {
     expect(expected).toHaveLength(5)
 
     for (const permutation of listPermutations(placements)) {
-      expect(ids(setup(permutation, commands).menus.getEntries('titleBar.commands'))).toEqual(expected)
+      expect(ids(setup(permutation, commands).menus.getEntries('titleBar.commands'))).toEqual(
+        expected,
+      )
     }
   })
 
@@ -191,8 +234,20 @@ describe('the entries of a place', () => {
 
   it('returns an enabled plugin to the same positions', () => {
     const all: MenuPlacement[] = [
-      { pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.open', group: 'g', order: 2 },
-      { pluginId: BOOKS, location: 'titleBar.commands', command: 'books.open', group: 'g', order: 1 },
+      {
+        pluginId: ATLAS,
+        location: 'titleBar.commands',
+        command: 'atlas.open',
+        group: 'g',
+        order: 2,
+      },
+      {
+        pluginId: BOOKS,
+        location: 'titleBar.commands',
+        command: 'books.open',
+        group: 'g',
+        order: 1,
+      },
       { pluginId: BOOKS, location: 'titleBar.commands', command: 'books.last', group: 'g' },
     ]
     const { menus, state } = setup(all, {

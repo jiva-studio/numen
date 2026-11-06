@@ -249,7 +249,13 @@ describe('the declared commands read more than once', () => {
     const declared = useDeclaredCommands({
       list: async () => ({
         commands: [{ ...createSample, arguments: [...createSample.arguments] }],
-        menus: [{ pluginId: 'org.example.sample', location: 'titleBar.commands', command: 'sample.create' }],
+        menus: [
+          {
+            pluginId: 'org.example.sample',
+            location: 'titleBar.commands',
+            command: 'sample.create',
+          },
+        ],
       }),
     })
     await declared.load()

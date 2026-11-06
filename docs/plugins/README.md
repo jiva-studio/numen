@@ -269,7 +269,7 @@ While no enabled plugin draws the bar, the window draws no strip, no window butt
 
 #### The start of a window
 
-A plugin contributes to the interface when its manifest declares views, tab kinds, menu entries or themes. The loader reads the manifests of the enabled plugins and starts the plugins of the interface before every other plugin. While they start, the window shows only a loading indicator; once all of them have started, it draws the whole window at once. A plugin of the interface that has not started within 3 seconds (`INTERFACE_WAIT_MS` of `@numen/plugin-host`) counts as failed, and the window is drawn without it.
+A plugin contributes to the interface when its manifest declares views, tab kinds, menu entries or themes. The loader reads the manifests of the enabled plugins and starts the plugins of the interface before every other plugin. While they start, the window shows only a loading indicator; once all of them have started, it draws the whole window at once. The window waits for them no longer than 3 seconds (`INTERFACE_WAIT_MS` of `@numen/plugin-host`): it is then drawn with what has started. A plugin of the interface that is not ready by then goes on starting and adds its view, tab kinds, menu entries, commands and styles when it is; the plugins after it in the order start without waiting for it. A plugin, of the interface or not, that has not started within 30 seconds (`PLUGIN_START_LIMIT_MS`, the limit of the backend activation too) counts as failed, and what its start registers after that is taken back. A command of a plugin that is still starting waits for it up to the same 30 seconds.
 
 ### The Application and the System Browser
 

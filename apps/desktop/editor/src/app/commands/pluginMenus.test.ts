@@ -48,11 +48,14 @@ function setup(
 
 describe('a command of a plugin frontend in a place', () => {
   it('carries its title, icon and shortcut and files a short id under its plugin', () => {
-    const { menus } = setup([{ pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.open' }], {
-      plugin: [
-        { id: `${ATLAS}:atlas.open`, title: 'Open atlas', icon: 'map', shortcut: 'mod+shift+m' },
-      ],
-    })
+    const { menus } = setup(
+      [{ pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.open' }],
+      {
+        plugin: [
+          { id: `${ATLAS}:atlas.open`, title: 'Open atlas', icon: 'map', shortcut: 'mod+shift+m' },
+        ],
+      },
+    )
 
     expect(menus.getEntries('titleBar.commands')).toEqual([
       {
@@ -84,9 +87,12 @@ describe('a command of a plugin frontend in a place', () => {
 
 describe('a command that only the backend of a plugin runs, in a place', () => {
   it('is found among the declared commands with its title and icon', () => {
-    const { menus } = setup([{ pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.sync' }], {
-      declared: [declared('atlas.sync', { title: 'Sync atlas', icon: 'refresh-cw' })],
-    })
+    const { menus } = setup(
+      [{ pluginId: ATLAS, location: 'titleBar.commands', command: 'atlas.sync' }],
+      {
+        declared: [declared('atlas.sync', { title: 'Sync atlas', icon: 'refresh-cw' })],
+      },
+    )
 
     expect(menus.getEntries('titleBar.commands')).toMatchObject([
       { command: `${ATLAS}:atlas.sync`, title: 'Sync atlas', icon: 'refresh-cw' },
@@ -99,7 +105,9 @@ describe('a command that only the backend of a plugin runs, in a place', () => {
       { editor: [editorCommand(COMMAND.openSettings, 'Open settings', 'settings')] },
     )
 
-    expect(menus.getEntries('titleBar.commands').map((one) => one.command)).toEqual([COMMAND.openSettings])
+    expect(menus.getEntries('titleBar.commands').map((one) => one.command)).toEqual([
+      COMMAND.openSettings,
+    ])
     expect(reportIssue).toHaveBeenCalledTimes(1)
   })
 })

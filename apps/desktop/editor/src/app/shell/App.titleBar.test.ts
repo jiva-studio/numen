@@ -245,9 +245,27 @@ describe('the buttons of the plugins in the title bar', () => {
       declareCommand(HARBOR, 'log.open', 'Open harbor log'),
     ]
     declared.menus = [
-      { pluginId: HARBOR, location: 'titleBar.commands', command: 'log.open', group: 'new', order: 1 },
-      { pluginId: HARBOR, location: 'titleBar.commands', command: 'map.open', group: 'navigate', order: 2 },
-      { pluginId: TIDE, location: 'titleBar.commands', command: 'chart.open', group: 'navigate', order: 1 },
+      {
+        pluginId: HARBOR,
+        location: 'titleBar.commands',
+        command: 'log.open',
+        group: 'new',
+        order: 1,
+      },
+      {
+        pluginId: HARBOR,
+        location: 'titleBar.commands',
+        command: 'map.open',
+        group: 'navigate',
+        order: 2,
+      },
+      {
+        pluginId: TIDE,
+        location: 'titleBar.commands',
+        command: 'chart.open',
+        group: 'navigate',
+        order: 1,
+      },
     ]
 
     const window = await mountWindow()
