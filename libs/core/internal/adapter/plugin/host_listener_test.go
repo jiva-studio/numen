@@ -618,7 +618,7 @@ func TestCheckPluginSettingRefusesAPortThatCannotBeBoundAndAcceptsAFreeOrTheBoun
 	}
 }
 
-func TestARefusedPortSettingIsNotPersistedNorKeptAndOtherSettingsStillWrite(t *testing.T) {
+func TestAPortSettingThatCannotBeBoundIsNotStoredAndOtherSettingsCanBeUpdated(t *testing.T) {
 	changes := map[string]func(context.Context, *Host, string, any) error{
 		"SetPluginSetting": func(ctx context.Context, host *Host, key string, value any) error {
 			return host.SetPluginSetting(ctx, listenerPlugin, key, value)

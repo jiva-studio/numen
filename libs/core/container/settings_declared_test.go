@@ -153,7 +153,7 @@ func listenOnLoopback(t *testing.T) (net.Listener, int) {
 	return ln, addr.Port
 }
 
-func TestAPluginPortThatIsTakenIsRefusedAndNotWritten(t *testing.T) {
+func TestASettingsWriteOfATakenPluginPortReturnsAnErrorAndDoesNotChangeTheFile(t *testing.T) {
 	free, defaultPort := listenOnLoopback(t)
 	if err := free.Close(); err != nil {
 		t.Fatal(err)
