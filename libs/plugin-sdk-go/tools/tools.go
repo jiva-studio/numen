@@ -71,6 +71,10 @@ type Spec struct {
 	Step Step
 	// Servers are the servers the tool is offered on. None is the full server alone.
 	Servers []Server
+	// Instructions are the sentences an agent reads about the tool before it calls it, each one
+	// sentence. A sentence about several tools goes on each of them with identical text; the host
+	// lists it once.
+	Instructions []string
 }
 
 // ErrDuplicate is a second tool added under a name.
@@ -116,6 +120,7 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 			Effect:       writeEffect(spec.Effect),
 			Servers:      writeServers(spec.Servers),
 			Step:         writeStep(spec.Step),
+			Instructions: slices.Clone(spec.Instructions),
 		},
 		run: func(ctx context.Context, arguments []byte) *v1.ToolResult {
 			var in In
@@ -144,7 +149,7 @@ func (r *Registry) add(one registered) error {
 }
 
 // SetInstructions sets the paragraph the registry lists with its tools: how an agent uses them
-// together, as plain text.
+// together, as plain text. The host takes it in place of the instructions of the tools.
 func (r *Registry) SetInstructions(text string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -359,6 +364,7 @@ type ToolInfo struct {
 	Effect       Effect
 	Step         Step
 	Servers      []Server
+	Instructions []string
 }
 
 func (t *ToolInfo) GetName() string {
@@ -415,6 +421,13 @@ func (t *ToolInfo) GetServers() []Server {
 		return nil
 	}
 	return t.Servers
+}
+
+func (t *ToolInfo) GetInstructions() []string {
+	if t == nil {
+		return nil
+	}
+	return t.Instructions
 }
 
 // Listing is the tools a PluginToolService lists and the instructions that go with them.

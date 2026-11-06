@@ -276,12 +276,14 @@ func (*ListToolsRequest) Descriptor() ([]byte, []int) {
 type ListToolsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Tools []*PluginTool          `protobuf:"bytes,1,rep,name=tools,proto3" json:"tools,omitempty"`
-	// What an agent reads once before it calls the tools listed here: how they
-	// are used together, as plain text. A plugin answers with one paragraph for
-	// all its tools, empty where it has none. The host answers with the
-	// paragraphs of the plugins whose tools it lists, in the order of their ids,
-	// separated by an empty line; a plugin none of whose tools is listed adds
-	// nothing.
+	// The plugin paragraph: what an agent reads once before it calls the tools
+	// of one plugin, as plain text, empty where the plugin sets none. A plugin
+	// that sets it answers it in place of the instructions of its tools. The
+	// host answers one paragraph per plugin whose tools it lists, in the order
+	// of plugin ids, separated by an empty line: the plugin paragraph where the
+	// plugin set one, else the distinct instructions of its listed tools in
+	// listing order, joined with one space. A plugin none of whose tools is
+	// listed adds nothing.
 	Instructions  string `protobuf:"bytes,2,opt,name=instructions,proto3" json:"instructions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -349,8 +351,12 @@ type PluginTool struct {
 	// hold and whether the tool is offered where nothing may be changed.
 	Effect ToolEffect `protobuf:"varint,6,opt,name=effect,proto3,enum=numen.v1.ToolEffect" json:"effect,omitempty"`
 	// The agent servers the tool is offered on. None is the full server alone.
-	Servers       []ToolServer `protobuf:"varint,7,rep,packed,name=servers,proto3,enum=numen.v1.ToolServer" json:"servers,omitempty"`
-	Step          ToolStep     `protobuf:"varint,8,opt,name=step,proto3,enum=numen.v1.ToolStep" json:"step,omitempty"`
+	Servers []ToolServer `protobuf:"varint,7,rep,packed,name=servers,proto3,enum=numen.v1.ToolServer" json:"servers,omitempty"`
+	Step    ToolStep     `protobuf:"varint,8,opt,name=step,proto3,enum=numen.v1.ToolStep" json:"step,omitempty"`
+	// The instructions about this tool, each one sentence of plain English. A
+	// sentence about several tools is attached to each of them with identical
+	// text.
+	Instructions  []string `protobuf:"bytes,9,rep,name=instructions,proto3" json:"instructions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -439,6 +445,13 @@ func (x *PluginTool) GetStep() ToolStep {
 		return x.Step
 	}
 	return ToolStep_TOOL_STEP_UNSPECIFIED
+}
+
+func (x *PluginTool) GetInstructions() []string {
+	if x != nil {
+		return x.Instructions
+	}
+	return nil
 }
 
 type CallToolRequest struct {
@@ -648,7 +661,7 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\x10ListToolsRequest\"c\n" +
 	"\x11ListToolsResponse\x12*\n" +
 	"\x05tools\x18\x01 \x03(\v2\x14.numen.v1.PluginToolR\x05tools\x12\"\n" +
-	"\finstructions\x18\x02 \x01(\tR\finstructions\"\xa6\x02\n" +
+	"\finstructions\x18\x02 \x01(\tR\finstructions\"\xca\x02\n" +
 	"\n" +
 	"PluginTool\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
@@ -658,7 +671,8 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\routput_schema\x18\x05 \x01(\fR\foutputSchema\x12,\n" +
 	"\x06effect\x18\x06 \x01(\x0e2\x14.numen.v1.ToolEffectR\x06effect\x12.\n" +
 	"\aservers\x18\a \x03(\x0e2\x14.numen.v1.ToolServerR\aservers\x12&\n" +
-	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\"\xdc\x01\n" +
+	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\x12\"\n" +
+	"\finstructions\x18\t \x03(\tR\finstructions\"\xdc\x01\n" +
 	"\x0fCallToolRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
 	"\targuments\x18\x02 \x01(\fR\targuments\x12@\n" +

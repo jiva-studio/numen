@@ -64,7 +64,6 @@ func inVault[In, Out any](t *Tools, run func(*Tools, context.Context, In) (Out, 
 // Registry registers and returns all vault tools.
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
-	registry.SetInstructions(instructions)
 	adds := []func(*tools.Registry) error{
 		t.addNoteRead,
 		t.addNoteWrite,

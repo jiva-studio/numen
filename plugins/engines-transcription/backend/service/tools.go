@@ -12,13 +12,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// instructions is the paragraph that tells an agent when to call transcript_create.
-const instructions = "Use transcript_create on an audio or video recording of the vault that has no transcript, " +
-	"when its words are needed now. Transcription is slow, about as long as the recording itself. The call " +
-	"returns a task id at once and the transcription runs in the background; the transcript can be " +
-	"read and searched as it is written. Call it once per recording: a second call while the " +
-	"first runs starts nothing and reports the state running, and a call on a recording already " +
-	"transcribed starts nothing and reports the state done with the version library_read reads."
+// The sentences that tell an agent when to call transcript_create.
+const (
+	transcriptUseSentence        = "Use transcript_create on an audio or video recording of the vault that has no transcript, when its words are needed now."
+	transcriptSlowSentence       = "Transcription is slow, about as long as the recording itself."
+	transcriptBackgroundSentence = "transcript_create returns a task id at once and the transcription runs in the background; the transcript can be read and searched as it is written."
+	transcriptOnceSentence       = "Call transcript_create once per recording: a second call while the first runs starts nothing and reports the state running, and a call on a recording already transcribed starts nothing and reports the state done with the version library_read reads."
+)
 
 // The states transcript_create reports.
 const (
@@ -60,7 +60,6 @@ func NewTools(transcriber *Transcriber, vault host.Vault) *Tools {
 // Registry registers and returns the transcription tool.
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
-	registry.SetInstructions(instructions)
 	err := tools.Add(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "transcript_create",
@@ -73,8 +72,9 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 			"again: the call answers the state done and the version library_read reads, the transcript or a " +
 			"version made from it. A recording that cannot be read shows as the failure of its task in the list " +
 			"of tasks.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{transcriptUseSentence, transcriptSlowSentence, transcriptBackgroundSentence, transcriptOnceSentence},
 	}, t.createTranscript)
 	if err != nil {
 		return nil, err

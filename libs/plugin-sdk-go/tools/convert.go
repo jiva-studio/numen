@@ -118,6 +118,7 @@ func readToolInfo(t *v1.PluginTool) *ToolInfo {
 		Effect:       readEffect(t.GetEffect()),
 		Step:         readStep(t.GetStep()),
 		Servers:      readServers(t.GetServers()),
+		Instructions: t.GetInstructions(),
 	}
 }
 
@@ -134,6 +135,7 @@ func writeToolInfo(t *ToolInfo) *v1.PluginTool {
 		Effect:       writeEffect(t.Effect),
 		Step:         writeStep(t.Step),
 		Servers:      writeServers(t.Servers),
+		Instructions: t.Instructions,
 	}
 }
 
