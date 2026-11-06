@@ -157,16 +157,20 @@ export function useTranscript(
     return isWorking.value ? WORDS.transcribing : WORDS.silence
   })
 
+  /** How many reaches were asked for. */
+  let reachCount = 0
   /**
    * Moves playback to the start time of the first of the spans, and returns that time in
-   * milliseconds, or null where playback did not move.
+   * milliseconds, or null where playback did not move. An answer that arrives after a later reach
+   * was asked for is dropped.
    */
   const reach = async (...spans: readonly TextRange[]): Promise<number | null> => {
+    const request = ++reachCount
     await firstRead
     if (!isOpen || spans.length === 0) return null
     try {
       const ms = await recordings.findCueTime(path, spans[0]!)
-      if (!isOpen || ms === null) return null
+      if (!isOpen || ms === null || request !== reachCount) return null
       playback.controls.go(ms)
       return ms
     } catch (err) {

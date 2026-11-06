@@ -48,16 +48,22 @@ onMounted(() => {
   }
 })
 
-// The window sets a selector for a search hit and for the place saved before a restart.
+/** Moves playback to the start a selector names, and returns it, or null where it names none. */
+const goToSelector = (selector: Selector | null | undefined): number | null => {
+  const start = getSelectorStart(selector)
+  if (start !== null) tab.playback.controls.go(start)
+  return start
+}
+
+// The window sets a selector for a search hit and for the place saved before a restart. The one the
+// tab opens with is the place the window already holds for it, so only a later one is saved.
+goToSelector(props.state?.selector)
 watch(
   () => props.state?.selector,
   (selector: Selector | null | undefined) => {
-    const start = getSelectorStart(selector)
-    if (start === null) return
-    tab.playback.controls.go(start)
-    saveTime(start)
+    const start = goToSelector(selector)
+    if (start !== null) saveTime(start)
   },
-  { immediate: true },
 )
 
 // The window sets a new array each time it asks for ranges, so the same ranges are reached again.
@@ -69,8 +75,13 @@ watch(
   { immediate: true },
 )
 
-/** Saves the current playback time as the place the tab opens at after a restart. */
-const savePlace = () => saveTime(now.value)
+/**
+ * Saves the current playback time as the place the tab opens at after a restart. While another
+ * recording holds the shared player this tab has no time of its own, so nothing is saved.
+ */
+const savePlace = () => {
+  if (tab.playback.isLoaded.value) saveTime(now.value)
+}
 
 // Saved when playback stops and every ten seconds of it, so a restart loses at most that much.
 watch(isPlaying, (playing) => {
