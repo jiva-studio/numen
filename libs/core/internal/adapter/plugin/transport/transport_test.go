@@ -39,10 +39,10 @@ func TestParsePasseshake(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		gotPort, gotOk := ParseHandshake(tt.line)
-		if gotOk != tt.wantOk || gotPort != tt.wantPort {
+		got, gotOk := ParseHandshake(tt.line)
+		if gotOk != tt.wantOk || got.Port != tt.wantPort {
 			t.Errorf("ParseHandshake(%q) = (%d, %v), want (%d, %v)",
-				tt.line, gotPort, gotOk, tt.wantPort, tt.wantOk)
+				tt.line, got.Port, gotOk, tt.wantPort, tt.wantOk)
 		}
 	}
 }
@@ -52,12 +52,12 @@ func TestWaitForPasseshakeSuccess(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 200*time.Millisecond)
 	defer cancel()
 
-	port, err := WaitForHandshake(ctx, strings.NewReader(input))
+	handshake, err := WaitForHandshake(ctx, strings.NewReader(input))
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
-	if port != 12345 {
-		t.Fatalf("expected port 12345, got %d", port)
+	if handshake.Port != 12345 {
+		t.Fatalf("expected port 12345, got %d", handshake.Port)
 	}
 }
 
