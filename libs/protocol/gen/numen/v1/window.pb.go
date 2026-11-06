@@ -487,9 +487,7 @@ type WatchQuitResponse struct {
 	// a caller knows it is listening before anything is asked of it.
 	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	// Set when the window is going and this caller's unwritten work has to land.
-	Flush bool `protobuf:"varint,2,opt,name=flush,proto3" json:"flush,omitempty"`
-	// A flush that writes what it can and reports, showing nothing.
-	IsSilent      bool `protobuf:"varint,3,opt,name=is_silent,json=isSilent,proto3" json:"is_silent,omitempty"`
+	Flush         bool `protobuf:"varint,2,opt,name=flush,proto3" json:"flush,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -534,13 +532,6 @@ func (x *WatchQuitResponse) GetToken() string {
 func (x *WatchQuitResponse) GetFlush() bool {
 	if x != nil {
 		return x.Flush
-	}
-	return false
-}
-
-func (x *WatchQuitResponse) GetIsSilent() bool {
-	if x != nil {
-		return x.IsSilent
 	}
 	return false
 }
@@ -855,11 +846,10 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x0eis_cancellable\x18\v \x01(\bR\risCancellable\x12&\n" +
 	"\x04kind\x18\f \x01(\x0e2\x12.numen.v1.TaskKindR\x04kind\"*\n" +
 	"\x10WatchQuitRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\"\\\n" +
+	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +
 	"\x11WatchQuitResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x14\n" +
-	"\x05flush\x18\x02 \x01(\bR\x05flush\x12\x1b\n" +
-	"\tis_silent\x18\x03 \x01(\bR\bisSilent\"q\n" +
+	"\x05flush\x18\x02 \x01(\bR\x05flush\"q\n" +
 	"\x12ReportFlushRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12-\n" +

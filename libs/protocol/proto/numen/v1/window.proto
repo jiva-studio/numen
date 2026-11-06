@@ -135,9 +135,6 @@ message WatchQuitResponse {
 
   // Set when the window is going and this caller's unwritten work has to land.
   bool flush = 2;
-
-  // A flush that writes what it can and reports, showing nothing.
-  bool is_silent = 3;
 }
 
 // FlushResult is what a caller has left when it answers.
