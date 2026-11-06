@@ -157,7 +157,8 @@ func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, ca
 	return checkArguments(declared, call)
 }
 
-// checkPath reports whether the call names a file the command can run over.
+// checkPath reports whether the call names a file the command can run over. A command that names no
+// content types takes any path as its target, or none.
 func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, call Call) error {
 	switch {
 	case declared.HasFiles() && (call.Path == "" || strings.HasSuffix(call.Path, "/")):
@@ -165,8 +166,6 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	case declared.HasFiles() && !declared.CanRunOn(u.getContentType(call.Path), u.readNoteType(ctx, v, declared, call.Path)):
 		return fmt.Errorf("%w: %s runs over files of %v and notes of types %v, and %s is none",
 			ErrBadArguments, declared.ID, declared.ContentTypes, declared.NoteTypes, call.Path)
-	case !declared.HasFiles() && call.Path != "":
-		return fmt.Errorf("%w: %s runs over no file", ErrBadArguments, declared.ID)
 	}
 	return nil
 }

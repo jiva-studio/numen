@@ -102,7 +102,6 @@ func TestACallThatDoesNotMeetItsDeclarationRunsNothing(t *testing.T) {
 		"a file of a type it does not run over": {
 			PluginID: "md.numen.a", Command: "convert", Path: "a.epub", Arguments: map[string]string{"pages": "1"},
 		},
-		"a file given to a command over none": {PluginID: "md.numen.a", Command: "tidy", Path: "a.md"},
 		"a required argument left out":        {PluginID: "md.numen.a", Command: "convert", Path: "a.pdf"},
 		"an argument it does not take": {
 			PluginID: "md.numen.a", Command: "convert", Path: "a.pdf",
@@ -184,6 +183,27 @@ func TestListExtensionsListsTheExtensionsOfTheCommandTypes(t *testing.T) {
 		if !slices.Equal(got, c.want) {
 			t.Errorf("ListExtensions(%v) = %v; want %v", c.types, got, c.want)
 		}
+	}
+}
+
+// A command that names no content types takes the path of a row as its target, a file or a
+// folder, and runs with none as well.
+func TestACommandOverNoFileTypeRunsOverThePathItIsGivenOrNone(t *testing.T) {
+	for _, row := range []string{"notes/a.md", "notes", ""} {
+		t.Run("over "+row, func(t *testing.T) {
+			declared := newDeclared()
+
+			_, err := plugincommand.NewCommands(declared, getTypes(), nil).Run.Execute(
+				t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "tidy", Path: row},
+			)
+
+			if err != nil {
+				t.Fatalf("the call answered %v", err)
+			}
+			if len(declared.calls) != 1 || declared.calls[0].Path != row {
+				t.Errorf("the plugin received %+v, want the path %q", declared.calls, row)
+			}
+		})
 	}
 }
 

@@ -44,11 +44,10 @@ func TestTheCreateCommandsMakeTheFileAndOpenIt(t *testing.T) {
 }
 
 // A create command run over a row of the file tree makes the file in the folder of the row: the
-// row itself where it is a folder, written with a trailing slash, and the folder holding it where
-// it is a file.
+// row itself where it is a folder of the vault, and the folder holding it where it is a file.
 func TestTheCreateCommandsMakeTheFileInTheFolderOfTheRowTheyRunOver(t *testing.T) {
 	for _, id := range []string{"deck.create", "cardModel.create", "preset.create"} {
-		for _, row := range []string{"Glaciers/", "Glaciers/Lakes.md"} {
+		for _, row := range []string{"Glaciers", "Glaciers/Lakes.md"} {
 			t.Run(id+" over "+row, func(t *testing.T) {
 				env := vaulttest.New(t, map[string]string{"Glaciers/Lakes.md": "# Lakes\n"})
 				commands, err := service.New(service.Config{Vault: env.Host, Now: vaulttest.NewClock()}).Commands()

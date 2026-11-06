@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"path"
-	"strings"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
@@ -47,12 +46,15 @@ func (b *Backend) Commands() (*command.Registry, error) {
 	return registry, nil
 }
 
-// getRowFolder is the folder a file made over a row of the file tree is filed in: the row where it
-// is a folder, written with a trailing slash, the folder holding it where it is a file, and the root
-// of the vault where the command runs over no row.
-func getRowFolder(row string) string {
-	if row == "" || strings.HasSuffix(row, "/") {
-		return strings.TrimSuffix(row, "/")
+// getRowFolder is the folder a file made over a row of the file tree is filed in: the folder holding
+// the row where the row is a file of the vault, the row itself otherwise, and the root of the vault
+// where the command runs over no row.
+func (b *Backend) getRowFolder(ctx context.Context, row string) string {
+	if row == "" {
+		return ""
+	}
+	if _, err := b.vault.StatFile(ctx, row); err != nil {
+		return row
 	}
 	if folder := path.Dir(row); folder != "." {
 		return folder
@@ -68,7 +70,7 @@ func (b *Backend) newCreateRun(
 	return func(ctx context.Context, request command.Request) (command.Result, error) {
 		made, code, _, err := b.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 			return create(ctx, showing, in)
-		}, request.Arguments.GetString(argumentTitle), getRowFolder(request.Path))
+		}, request.Arguments.GetString(argumentTitle), b.getRowFolder(ctx, request.Path))
 		if err != nil {
 			return command.Result{}, err
 		}
