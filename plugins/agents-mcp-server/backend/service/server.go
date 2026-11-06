@@ -311,8 +311,3 @@ func (s *Server) GetAggregator() *ToolAggregator {
 func (s *Server) GetMCPServer() *sdk.Server {
 	return s.mcpServer
 }
-
-// RunStdio runs the server over standard input and output streams.
-func (s *Server) RunStdio(ctx context.Context) error {
-	return s.mcpServer.Run(ctx, &sdk.StdioTransport{MaxLineLength: 0})
-}
