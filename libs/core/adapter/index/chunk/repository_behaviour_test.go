@@ -59,7 +59,7 @@ func TestASavedSourceContainsWhatItWasGiven(t *testing.T) {
 	var path, kind, hash, recipe, producer string
 	var size, mtime int64
 	if err := s.side.QueryRowContext(t.Context(),
-		`SELECT path, kind, size, modified_at, hash, recipe, producer FROM sources`).
+		`SELECT path, kind, size, modified_at, content_hash, recipe, producer FROM sources`).
 		Scan(&path, &kind, &size, &mtime, &hash, &recipe, &producer); err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +194,7 @@ func TestAnExtractionIsASourceAndItsChunksTogether(t *testing.T) {
 	}
 
 	if n := s.count(`SELECT count(*) FROM sources WHERE path = 'a.epub' AND size = 5 AND modified_at = 9
-		AND hash = 'h' AND recipe = 'r' AND producer = 'p'`); n != 1 {
+		AND content_hash = 'h' AND recipe = 'r' AND producer = 'p'`); n != 1 {
 		t.Error("the source was not recorded as given")
 	}
 	if got := s.rowsOf(repoVaultA, "a.epub"); len(got) != 3 {
