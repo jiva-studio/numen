@@ -2,7 +2,6 @@ package service_test
 
 import (
 	"slices"
-	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
