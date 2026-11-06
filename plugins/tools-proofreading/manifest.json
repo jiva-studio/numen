@@ -1,33 +1,44 @@
 {
   "id": "md.numen.tools.proofreading",
   "name": "LLM Proofreading",
-  "version": "2026.11.5",
+  "version": "2026.11.6",
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
-  "targets": ["desktop.editor"],
+  "targets": [
+    "desktop.editor"
+  ],
   "contributes": {
     "category": "tools",
-    "handles": [
-      {
-        "purpose": "text-provider"
-      }
-    ],
     "commands": [
       {
         "id": "proofreading.create",
         "title": "Proofread text",
         "icon": "spell-check",
         "when": "version.isLive && version.kind != ''"
-      },
+      }
+    ],
+    "slots": [
       {
-        "id": "proofreading.delete",
+        "slot": "fileTree.context",
+        "command": "app:version.delete",
+        "group": "3-text",
+        "order": 90
+      }
+    ],
+    "handlers": [
+      {
+        "command": "app:version.delete",
         "title": "Delete proofreading",
-        "icon": "trash-2",
         "when": "version.kind == 'proofreading'"
       }
     ]
   },
-  "permissions": ["vault:read", "vault:write", "ai:complete", "network:outbound"],
+  "permissions": [
+    "vault:read",
+    "vault:write",
+    "ai:complete",
+    "network:outbound"
+  ],
   "secrets": [
     {
       "name": "apiKey",
@@ -35,7 +46,11 @@
       "description": "API key for the remote chat service",
       "when": {
         "setting": "provider",
-        "is": ["openrouter", "openai", "custom"]
+        "is": [
+          "openrouter",
+          "openai",
+          "custom"
+        ]
       }
     }
   ],
@@ -77,7 +92,9 @@
       "default": "",
       "when": {
         "setting": "provider",
-        "is": ["custom"]
+        "is": [
+          "custom"
+        ]
       }
     },
     {
@@ -88,7 +105,11 @@
       "default": "openai/gpt-4o-mini",
       "when": {
         "setting": "provider",
-        "is": ["openrouter", "openai", "custom"]
+        "is": [
+          "openrouter",
+          "openai",
+          "custom"
+        ]
       },
       "optionsBy": {
         "setting": "provider",
@@ -185,6 +206,5 @@
   ],
   "backend": {
     "entrypoint": "bin/tools-proofreading"
-  },
-  "services": ["numen.v1.TextProviderService"]
+  }
 }

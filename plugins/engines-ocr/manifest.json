@@ -1,43 +1,54 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.11.7",
+  "version": "2026.11.8",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
-  "targets": ["desktop.editor"],
+  "targets": [
+    "desktop.editor"
+  ],
   "contributes": {
     "category": "engines",
-    "handles": [
-      {
-        "purpose": "text-provider",
-        "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
-      }
-    ],
-    "commands": [
-      {
-        "id": "recognition.create",
-        "title": "Recognise text",
-        "icon": "scan-text",
-        "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
-      },
-      {
-        "id": "recognition.delete",
-        "title": "Delete recognition",
-        "icon": "trash-2",
-        "when": "version.kind == 'recognition'"
-      }
-    ],
     "slots": [
       {
         "slot": "fileTree.context",
-        "command": "recognition.create",
+        "command": "app:file.createText",
         "group": "3-text",
         "order": 10
+      },
+      {
+        "slot": "fileTree.context",
+        "command": "app:version.delete",
+        "group": "3-text",
+        "order": 90
+      }
+    ],
+    "handlers": [
+      {
+        "command": "app:file.createText",
+        "title": "Recognize text",
+        "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
+      },
+      {
+        "command": "app:version.delete",
+        "title": "Delete recognition",
+        "when": "version.kind == 'recognition'"
+      }
+    ],
+    "triggers": [
+      {
+        "on": "file.added",
+        "command": "app:file.createText",
+        "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeAutomatically == true"
       }
     ]
   },
-  "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "permissions": [
+    "vault:read",
+    "vault:write",
+    "network:outbound"
+  ],
   "dependencies": [
     {
       "id": "onnxruntime",
@@ -137,7 +148,6 @@
   "backend": {
     "entrypoint": "bin/engines-ocr"
   },
-  "services": ["numen.v1.TextProviderService"],
   "settings": [
     {
       "key": "model",
@@ -150,49 +160,65 @@
           "value": "pp-ocrv6-tiny",
           "title": "PP-OCRv6 tiny",
           "detail": "Chinese, English and Latin-script languages, 4.5 MB",
-          "dependencies": ["rec-pp-ocrv6-tiny"]
+          "dependencies": [
+            "rec-pp-ocrv6-tiny"
+          ]
         },
         {
           "value": "pp-ocrv6-small",
           "title": "PP-OCRv6 small",
           "detail": "Chinese, English, Japanese and Latin-script languages, 21 MB",
-          "dependencies": ["rec-pp-ocrv6-small"]
+          "dependencies": [
+            "rec-pp-ocrv6-small"
+          ]
         },
         {
           "value": "pp-ocrv5-latin",
           "title": "PP-OCRv5 Latin",
           "detail": "English, French, German, Spanish, Italian, Portuguese, Dutch, Polish, Czech, Slovak, Hungarian, Romanian, Croatian, Slovenian, Danish, Swedish, Norwegian, Finnish, Estonian, Lithuanian, Latvian, Turkish, Latin and other Latin-script languages, 7.9 MB",
-          "dependencies": ["rec-pp-ocrv5-latin"]
+          "dependencies": [
+            "rec-pp-ocrv5-latin"
+          ]
         },
         {
           "value": "pp-ocrv5-eslav",
           "title": "PP-OCRv5 East Slavic",
           "detail": "Russian, Ukrainian, Belarusian, English, 7.9 MB",
-          "dependencies": ["rec-pp-ocrv5-eslav"]
+          "dependencies": [
+            "rec-pp-ocrv5-eslav"
+          ]
         },
         {
           "value": "pp-ocrv5-cyrillic",
           "title": "PP-OCRv5 Cyrillic",
           "detail": "Russian, Ukrainian, Belarusian, Bulgarian, Serbian, Macedonian, Mongolian, Kazakh, Kyrgyz, Tajik, Tatar and other Cyrillic-script languages, English, 8.1 MB",
-          "dependencies": ["rec-pp-ocrv5-cyrillic"]
+          "dependencies": [
+            "rec-pp-ocrv5-cyrillic"
+          ]
         },
         {
           "value": "pp-ocrv5-devanagari",
           "title": "PP-OCRv5 Devanagari",
           "detail": "Hindi, Sanskrit, Marathi, Nepali, Konkani, Maithili, Bhojpuri, English, 7.9 MB",
-          "dependencies": ["rec-pp-ocrv5-devanagari"]
+          "dependencies": [
+            "rec-pp-ocrv5-devanagari"
+          ]
         },
         {
           "value": "pp-ocrv5-greek",
           "title": "PP-OCRv5 Greek",
           "detail": "Greek, English, 7.8 MB",
-          "dependencies": ["rec-pp-ocrv5-greek"]
+          "dependencies": [
+            "rec-pp-ocrv5-greek"
+          ]
         },
         {
           "value": "custom",
           "title": "Custom model",
           "detail": "Languages unknown: they are those of the model file",
-          "dependencies": ["rec-pp-ocrv6-tiny"]
+          "dependencies": [
+            "rec-pp-ocrv6-tiny"
+          ]
         }
       ]
     },
@@ -201,11 +227,15 @@
       "type": "file",
       "title": "Model file",
       "description": "PaddleOCR text recognition model in ONNX format",
-      "accept": [".onnx"],
+      "accept": [
+        ".onnx"
+      ],
       "default": "",
       "when": {
         "setting": "model",
-        "is": ["custom"]
+        "is": [
+          "custom"
+        ]
       }
     },
     {
@@ -213,11 +243,15 @@
       "type": "file",
       "title": "Character dictionary",
       "description": "UTF-8 text, one character per line. Empty for a model that includes its own",
-      "accept": [".txt"],
+      "accept": [
+        ".txt"
+      ],
       "default": "",
       "when": {
         "setting": "model",
-        "is": ["custom"]
+        "is": [
+          "custom"
+        ]
       }
     },
     {
@@ -248,6 +282,13 @@
           "title": "600 dpi"
         }
       ]
+    },
+    {
+      "key": "recognizeAutomatically",
+      "type": "boolean",
+      "title": "Recognize automatically",
+      "description": "Recognize the text of every PDF and image added to the vault",
+      "default": false
     }
   ]
 }
