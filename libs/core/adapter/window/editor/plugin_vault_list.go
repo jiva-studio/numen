@@ -78,10 +78,15 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) (func
 	}, nil
 }
 
+// errFlushRunning is a decision refused because the window has a request to the pages running, such
+// as a close waiting for the person to answer a page's question.
+var errFlushRunning = errors.New("the window is waiting for its pages")
+
 // decide asks the pages to save their unsaved changes under the exclusion a close and a change of
-// vault take, so it never cuts their request short. A close, a quit or a change of vault of the person
-// cancels it, and it answers ErrUnavailable. A page holding a question keeps the request open, as the
-// change of vault does, so the person answers it.
+// vault take, so it never cuts their request short, and refuses while a request of theirs runs. A
+// close, a quit or a change of vault of the person cancels it, as does the end of the call, and it
+// answers ErrUnavailable. A page holding a question keeps the request open, as the change of vault
+// does, so the person answers it.
 func (l pluginVaultList) decide(ctx context.Context, id domain.VaultID) error {
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
@@ -90,14 +95,20 @@ func (l pluginVaultList) decide(ctx context.Context, id domain.VaultID) error {
 		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, err)
 	}
 	defer end()
+	if l.state.Window.IsFlushRunning() {
+		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, errFlushRunning)
+	}
 	limited, stop := context.WithTimeout(ctx, FlushTimeout)
 	defer stop()
 	isFlushed := l.state.Window.RequestFlush(limited)
-	if cause := context.Cause(ctx); errors.Is(cause, errPersonFirst) {
+	switch {
+	case errors.Is(context.Cause(ctx), errPersonFirst):
+		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, errPersonFirst)
+	case ctx.Err() != nil:
+		// The request belongs to a call that is gone, and would refuse the next decision.
 		l.state.Window.CancelFlush()
-		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, cause)
-	}
-	if !isFlushed {
+		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, ctx.Err())
+	case !isFlushed:
 		return fmt.Errorf("open vault %s: %w", id, pluginport.ErrVaultAsking)
 	}
 	l.state.Window.CancelFlush()
