@@ -3,9 +3,7 @@
  */
 import { shallowRef } from 'vue'
 import type {
-  CommandNote,
   PluginContext,
-  CommandsHost,
   SlotHost,
   SettingsViewRegistration,
   VaultChangeEvent,
@@ -19,10 +17,8 @@ import { createStatusViewRegistry, type StatusViewRegistry } from '../statusView
 import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views/slotViews'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
-import { addListener, notifyListeners, reportError, runCommand } from './events'
-import { createPaletteCommand } from './available'
-import { readAvailableCommands } from './availableReader'
-import { matchesShortcut } from './shortcuts'
+import { addListener, notifyListeners } from './events'
+import { createCommandApi } from './commandApi'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
@@ -239,42 +235,6 @@ function createHostRegistry(): HostRegistry {
   }
 }
 
-/** The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts. */
-function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
-  const getAvailable = () => readAvailableCommands(deps, registry)
-  const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
-  return {
-    getPaletteCommands: () => getAvailable().map(createPaletteCommand),
-    hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
-    executeCommand: async (id: string, note: CommandNote): Promise<boolean> => {
-      const command = findAvailable(id)
-      if (!command) return false
-      let entry = command.entry
-      if (!entry) {
-        await deps.waitForPlugin?.(command.declaration.pluginId)
-        entry = registry.commands.value.get(id)
-      }
-      if (!entry) return false
-      await runCommand(deps, entry, note)
-      return true
-    },
-    handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
-      for (const { entry, declaration } of getAvailable()) {
-        if (entry && matchesShortcut(event, declaration.shortcut)) {
-          getNote()
-            .then((note) => {
-              if (declaration.scope === 'note' && note.path === '') return
-              return runCommand(deps, entry, note)
-            })
-            .catch((error: unknown) => reportError(deps, entry.pluginId, error))
-          return true
-        }
-      }
-      return false
-    },
-  }
-}
-
 /** What the plugins registered, as lists. */
 function createRegisteredApi(registry: HostRegistry) {
   return {
@@ -357,6 +317,4 @@ export function createPluginHost(deps: PluginHostDeps) {
 export type PluginHost = ReturnType<typeof createPluginHost> & {
   // The slots of the window the owners of slots read, where the host serves them.
   readonly slots?: SlotHost
-  // The commands of the window the owners of slots run, where the host serves them.
-  readonly commands?: CommandsHost
 }

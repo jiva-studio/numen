@@ -40,6 +40,8 @@ import { createPluginMenus } from '../commands/pluginMenus'
 import { getNamedIcon } from '@/shared/icons'
 import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
+import { createWindowCommands } from './windowCommands'
+import { createCommandNoteReader } from '../commands/usePluginCommands'
 import { useNoticeTasks } from '../shell/useNoticeTasks'
 import { useWindowKinds } from './useWindowKinds'
 import { useWindowStatusBar } from '../shell/useWindowStatusBar'
@@ -89,7 +91,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     windowTabs,
     getTarget: deps.getTarget,
     knows: deps.knows,
-    kept: settings.paletteLists,
+    paletteLists: settings.paletteLists,
     runs: deps.runs,
     coverage: vaultsModule.coverage,
     making: editing.making,
@@ -668,12 +670,29 @@ const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
   retryBootstrap: bootstrap.retry,
 })
 
+/** The slots of the window and its commands, which its plugins and the menu of a tab read and run. */
+function createSlotServices(
+  base: WindowCore,
+  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget' | 'runCommand'>,
+) {
+  let appIds: readonly string[] | undefined
+  const windowCommands = createWindowCommands({
+    getAppIds: () => (appIds ??= createCommands(words).map((one) => one.id)),
+    getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
+    runCommand: commands.runCommand,
+    getChoices: async (id, target) =>
+      base.pluginHost.hasCommand(id) ? base.pluginHost.getCommandChoices(id, target) : [],
+    runChoice: async (id, target, choice) => {
+      const note = await createCommandNoteReader(core)(target)
+      await base.pluginHost.executeCommand(id, note, choice)
+    },
+    getTarget: commands.getTarget,
+  })
+  Object.assign(base.pluginServices, { commands: windowCommands })
+  return { slots: base.pluginHost.slots, windowCommands }
+}
+
 /** The views plugins draw in the window itself: in the status bar and in the title bar. */
-/** The slots of the window and its commands, which the menu of a tab reads and runs. */
-const getSlotServices = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
-  slots: pluginHost.slots,
-  windowCommands: pluginHost.commands,
-})
 
 const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
   statusViews: pluginHost.statusViews,
@@ -758,7 +777,7 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
-    ...getSlotServices(base.pluginHost),
+    ...createSlotServices(base, { getTarget, runCommand }),
     isHighlighted,
     ...createWindowTabMoves(base, editing, closeTab),
   }

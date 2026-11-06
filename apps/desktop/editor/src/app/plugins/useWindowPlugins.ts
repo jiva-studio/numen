@@ -149,6 +149,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getRelations: () => deps.services?.relations,
     getFiles: () => deps.services?.files,
     getAgent: () => deps.services?.agent,
+    getCommands: () => deps.services?.commands,
     getBuffers: () => deps.services?.buffers,
     getNoteBuffer: () => deps.services?.noteBuffer,
     ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),

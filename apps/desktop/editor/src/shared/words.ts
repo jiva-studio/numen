@@ -18,7 +18,7 @@ const toLowerFirst = (text: string): string => text.charAt(0).toLowerCase() + te
 export const WORDS = {
   /** The name the title bar of every window starts with. */
   appName: 'numen',
-  /** The row of a submenu of choices while they are read. */
+  /** The row of a submenu or a pick list of choices while they are read. */
   loadingChoices: 'Loading…',
   /** The row of a submenu of a command that offers no choice. */
   noChoices: 'No choices',

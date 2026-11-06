@@ -25,6 +25,7 @@ import {
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
 import { usePluginCommands } from './usePluginCommands'
+import { createChoiceLists } from './pluginChoices'
 import { watchCommandLists } from './watchCommandLists'
 import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
@@ -47,7 +48,7 @@ export interface CommandsDepsOptions {
   windowTabs: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
   knows: NoteLookup
-  kept: PaletteLists
+  paletteLists: PaletteLists
   runs: RunSupport
   coverage: () => IndexCoverage
   making: NoteCreator
@@ -98,7 +99,7 @@ const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
 })
 
 export function useCommands(options: CommandsDepsOptions) {
-  const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
+  const { core, words, windowTabs, getTarget, knows, runs, coverage, writeMessage } = options
   const { pluginHost } = options
 
   const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = usePluginCommands(
@@ -111,7 +112,8 @@ export function useCommands(options: CommandsDepsOptions) {
     menu: createSearchMenu(options.slots),
     getTarget,
   })
-  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
+  const { lists, resetWhenClosed } = createChoiceLists(options.paletteLists, pluginHost, getTarget)
+  const commands = useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, () => [
     ...(options.settingPalette?.getCommands() ?? []),
     ...(options.declaredCommands?.paletteCommands.value ?? []),
     ...(options.fileMenuCommands?.paletteCommands.value ?? []),
@@ -119,6 +121,7 @@ export function useCommands(options: CommandsDepsOptions) {
   ])
 
   watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open, getTarget)
+  resetWhenClosed(commands.open)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,

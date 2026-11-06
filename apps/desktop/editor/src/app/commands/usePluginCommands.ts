@@ -14,6 +14,21 @@ type NoteTarget = Pick<CommandTarget, 'path' | 'title' | 'isFolder' | 'others'> 
   readonly tab?: string
 }
 
+/** What a plugin command runs over: the target, the others selected with it, and its type. */
+export const createCommandNoteReader =
+  (core: Pick<VaultCore, 'fileKinds'>) =>
+  async (target: NoteTarget): Promise<CommandNote> => {
+    const { path } = target
+    return {
+      path,
+      title: target.title,
+      type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
+      isFolder: target.isFolder ?? false,
+      others: target.others ?? [],
+      tab: target.tab ?? '',
+    }
+  }
+
 export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | undefined) {
   const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []
   /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
@@ -31,6 +46,7 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
       text: cmd.title,
       ...getPluginLooks(cmd),
       group: cmd.scope === 'note' ? ('note' as const) : ('window' as const),
+      ...(pluginHost?.hasCommandChoices(cmd.id) ? { input: 'choice' as const } : {}),
       isAvailable: (target: CommandTarget) =>
         cmd.scope !== 'note' || (target.isReady && target.path !== ''),
     }))
@@ -51,18 +67,7 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
       .filter((cmd) => cmd.scope === 'note')
       .map((cmd) => ({ id: cmd.id, text: cmd.title, group: 'note' }))
 
-  /** What a plugin command runs over: the target, the others selected with it, and its type. */
-  const getCommandNote = async (target: NoteTarget): Promise<CommandNote> => {
-    const { path } = target
-    return {
-      path,
-      title: target.title,
-      type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
-      isFolder: target.isFolder ?? false,
-      others: target.others ?? [],
-      tab: target.tab ?? '',
-    }
-  }
+  const getCommandNote = createCommandNoteReader(core)
 
   if (pluginHost) {
     let unregisterAll: readonly (() => void)[] = []
@@ -72,7 +77,10 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
         for (const unregister of unregisterAll) unregister()
         unregisterAll = list.map((cmd) =>
           registerCommand(cmd.id, async (invocation) => {
-            await pluginHost.executeCommand(cmd.id, await getCommandNote(invocation))
+            const note = await getCommandNote(invocation)
+            if (pluginHost.hasCommandChoices(cmd.id) && invocation.name !== '') {
+              await pluginHost.executeCommand(cmd.id, note, invocation.name)
+            } else await pluginHost.executeCommand(cmd.id, note)
           }),
         )
       },

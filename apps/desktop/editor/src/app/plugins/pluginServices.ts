@@ -7,6 +7,7 @@ import type {
   AgentHost,
   AgentPort,
   BufferHost,
+  CommandsHost,
   MenuEntry,
   NoteRef,
   VaultFiles,
@@ -35,6 +36,8 @@ export interface PluginServices {
   buffers?: BufferHost
   /** The window's store of open notes, which the tabs of the note kind read and write through. */
   noteBuffer?: NoteBuffer
+  /** The commands of the window, which every plugin runs its commands through. */
+  commands?: CommandsHost
   /** The window's task list, which each plugin's task host reads. */
   taskList?: Readonly<Ref<readonly Task[]>>
 }
