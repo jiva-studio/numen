@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { nextTick, reactive, ref } from 'vue'
 import type { TextRange } from '../types'
 import { useBookRanges, type RangedTab } from './useBookRanges'
@@ -11,6 +11,7 @@ const createReader = (isLoading = false) => {
     focusSpans: async (...spans: readonly TextRange[]) => {
       focusCalls.push(spans)
     },
+    reportFailure: vi.fn(),
   }
   return { reader, focusCalls }
 }
@@ -59,5 +60,21 @@ describe('the ranges of a book tab', () => {
     await nextTick()
 
     expect(focusCalls).toStrictEqual([RANGES, RANGES])
+  })
+
+  it('reports the failure of lighting the ranges through the reader', async () => {
+    const failure = new Error('the chapter at offset 6500 is not in the book')
+    const reportFailure = vi.fn()
+    const reader = {
+      isLoading: ref(false),
+      focusSpans: () => Promise.reject(failure),
+      reportFailure,
+    }
+    useBookRanges(reader, () => createTab(RANGES))
+
+    await nextTick()
+    await Promise.resolve()
+
+    expect(reportFailure).toHaveBeenCalledWith(failure)
   })
 })

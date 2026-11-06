@@ -175,7 +175,7 @@ describe('TaskItem row layout', () => {
 
 describe('TaskItem row of a notice', () => {
   const text =
-    'md.numen.proofreading is the object of no plugin that is installed, and is ignored, so the settings file keeps what it says until the person removes it'
+    'numen.json: "app.appearance.theme": "plugin:md.numen.themes.solarized/dark" is not one of the options listed in themes; the default preset:numen applies'
   const notice: StatusBarTask = { id: 'n1', label: 'Read settings', about: text, state: 'notice' }
 
   it('draws an information icon and the whole text', () => {

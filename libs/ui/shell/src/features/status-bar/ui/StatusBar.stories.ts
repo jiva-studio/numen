@@ -323,7 +323,7 @@ const SETTINGS_NOTICE: StatusBarTask = {
   id: 'settings-notice',
   label: 'Read settings',
   about:
-    'md.numen.proofreading is the object of no plugin that is installed, and is ignored, so the settings file keeps what it says until the person removes it from the file by hand',
+    'numen.json: "app.appearance.theme": "plugin:md.numen.themes.solarized/dark" is not one of the options listed in themes; the default preset:numen applies',
   state: 'notice',
 }
 

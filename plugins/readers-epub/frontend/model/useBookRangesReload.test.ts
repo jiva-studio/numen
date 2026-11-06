@@ -11,6 +11,7 @@ describe('the ranges of a book tab across a reload', () => {
       focusSpans: async (...spans: readonly TextRange[]) => {
         focusCalls.push(spans)
       },
+      reportFailure: () => undefined,
     }
     const tab = reactive({ ranges: [{ start: 40, end: 50 }] as readonly TextRange[] | null })
     useBookRanges(reader, () => tab)

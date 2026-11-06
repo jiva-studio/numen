@@ -63,6 +63,32 @@ describe('the ranges of a recording tab', () => {
     expect(seeks.at(-1)?.[1]).toBe(302_000)
     tab.unmount()
   })
+
+  it('shows the failure of saving the place a range moved playback to', async () => {
+    const setup = createRecordings()
+    setup.state.cueTimes.set(22, 83_000)
+    const { player } = createPlayer()
+    const savePlace = vi.fn((selector: { t: [number, number] }) => {
+      if (selector.t[0] === 83) throw new Error('the place store of talks/Ants.mp3 is full')
+    })
+    const state = reactive({ path: 'talks/Ants.mp3', selector: null, ranges: null as readonly TextRange[] | null, savePlace })
+    const tab = mount(RecordingTab, {
+      props: {
+        path: 'talks/Ants.mp3',
+        state,
+        recordings: setup.recordings,
+        how: { audioPlayer: player, plays: () => true },
+      },
+      attachTo: document.body,
+    })
+    await flush()
+
+    state.ranges = [{ start: 22, end: 30 }]
+    await flush()
+
+    expect(tab.find('[role="alert"]').text()).toContain('the place store of talks/Ants.mp3 is full')
+    tab.unmount()
+  })
 })
 
 describe('the place a recording tab saves when the window moves it', () => {

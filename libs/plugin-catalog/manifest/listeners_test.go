@@ -3,6 +3,7 @@ package manifest_test
 import (
 	"errors"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -80,7 +81,10 @@ func TestReadManifestRejectsAListenerTheHostCannotBind(t *testing.T) {
 }
 
 func TestReadManifestAcceptsTheLowestAndHighestFixedPort(t *testing.T) {
-	for _, port := range []string{"1024", "65535"} {
+	if manifest.MinListenerPort != 1024 || manifest.MaxListenerPort != 65535 {
+		t.Errorf("listener ports %d..%d, want 1024..65535", manifest.MinListenerPort, manifest.MaxListenerPort)
+	}
+	for _, port := range []string{strconv.Itoa(manifest.MinListenerPort), strconv.Itoa(manifest.MaxListenerPort)} {
 		_, err := manifestjson.Read(strings.NewReader(listenersManifestHead +
 			`, "contributes": {"listeners": [{"name": "mcp", "port": ` + port + `, "protocol": "tcp"}]}}`))
 		if err != nil {

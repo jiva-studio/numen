@@ -495,3 +495,28 @@ func TestATextFileWithABinaryTailIsNotText(t *testing.T) {
 		t.Errorf("library_read of it gave %q, want no text version", failure)
 	}
 }
+
+func TestLibrarySearchFailsWhenTheTitlesOfTheNotesCannotBeRead(t *testing.T) {
+	l := newLibrary(t)
+	l.vault.Hide()
+	failure := l.call(t, "library_search", `{"query":"heron"}`, nil)
+	if !strings.Contains(failure, host.ErrNoVault.Error()) {
+		t.Errorf("library_search with the notes unreadable gave %q, want a failure that says %q", failure, host.ErrNoVault.Error())
+	}
+}
+
+func TestLibraryReadFailsOnASegmentWhoseSelectorIsNoSelector(t *testing.T) {
+	l := newLibrary(t)
+	const pondPath = "library/Pond Survey.pdf"
+	file := []byte(pdfBytes + "pond")
+	l.vault.File(pondPath, string(file))
+	l.texts.File(pondPath, file)
+	putText(t, l.texts, readerID, pondPath, "page-text", file, []domain.TextSegment{
+		{Text: "Frogs lay eggs in spring. ", Selector: `{"page":1}`},
+		{Text: "Newts hide under stones. ", Selector: `{"page":"two"}`},
+	})
+	failure := l.call(t, "library_read", `{"path":"`+pondPath+`"}`, nil)
+	if failure == "" || !strings.Contains(failure, pondPath) {
+		t.Errorf("library_read of a text with a selector that does not decode gave %q, want a failure that names %s", failure, pondPath)
+	}
+}

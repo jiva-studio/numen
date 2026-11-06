@@ -25,14 +25,14 @@ func TestGenerateAuthToken(t *testing.T) {
 	}
 }
 
-func TestParsePasseshake(t *testing.T) {
+func TestParseHandshakeReadsOnlyNumenReadyLines(t *testing.T) {
 	tests := []struct {
 		line     string
 		wantPort int
 		wantOk   bool
 	}{
 		{line: "NUMEN_READY port=8080", wantPort: 8080, wantOk: true},
-		{line: "READY port=9999", wantPort: 9999, wantOk: true},
+		{line: "READY port=9999", wantPort: 0, wantOk: false},
 		{line: "info: server starting up...", wantPort: 0, wantOk: false},
 		{line: "NUMEN_READY port=invalid", wantPort: 0, wantOk: false},
 		{line: "NUMEN_READY other=123", wantPort: 0, wantOk: false},
