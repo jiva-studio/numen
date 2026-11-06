@@ -39,10 +39,27 @@ func (a Arranger) getChanges(v domain.Vault) NoteChanges {
 	if a.Shown == nil {
 		return a.Notes
 	}
-	if shown, isShown := a.Shown(); isShown && shown.ID == v.ID {
-		return a.Window
+	if shown, isShown := a.Shown(); !isShown || shown.ID != v.ID {
+		return a.Notes
 	}
-	return a.Notes
+	changes := a.Window
+	changes.Move.Drawing = a.drawWhileShown(v, changes.Move.Drawing)
+	changes.Rename.Move.Drawing = a.drawWhileShown(v, changes.Rename.Move.Drawing)
+	return changes
+}
+
+// drawWhileShown tells the window a move only while the window still shows the vault the move is
+// in: the window may change vault while a rename or a move of a plugin runs.
+func (a Arranger) drawWhileShown(v domain.Vault, draw note.TellMove) note.TellMove {
+	if draw == nil {
+		return nil
+	}
+	return func(ctx context.Context, move domain.Move) error {
+		if shown, isShown := a.Shown(); !isShown || shown.ID != v.ID {
+			return nil
+		}
+		return draw(ctx, move)
+	}
 }
 
 func (a Vault) RenameNote(ctx context.Context, path, title string) (string, bool, *domain.MoveResult, error) {
