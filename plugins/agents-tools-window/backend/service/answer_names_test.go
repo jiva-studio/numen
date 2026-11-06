@@ -115,7 +115,8 @@ func visitSchema(node any, onProperty, onDescription func(string)) {
 	}
 }
 
-// visitEveryToolSchema runs visitSchema over the input and the output schema of every tool.
+// visitEveryToolSchema runs visitSchema over the input and the output schema of every tool, and
+// passes the description of each tool to onDescription as well.
 func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, onDescription func(tool, text string)) {
 	t.Helper()
 	listing, err := registry.ListTools(t.Context())
@@ -123,6 +124,7 @@ func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, on
 		t.Fatal(err)
 	}
 	for _, info := range listing.Tools {
+		onDescription(info.GetName(), info.GetDescription())
 		for _, raw := range [][]byte{info.GetInputSchema(), info.GetOutputSchema()} {
 			if len(raw) == 0 {
 				continue
@@ -139,19 +141,20 @@ func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, on
 	}
 }
 
-// getNarrativeMarkers returns the phrases that mark a field description as narrative prose. Each is
-// taken from a description these tools carried: "as the person reads it", "where in that file the
-// person stands", "in front of them", "the card model it is cut by", "the passages of the file to
-// light", "what the tab is called", "an edit you did not see", "hand this to", "in words to say back
-// to them", "the path the vault files it under", "where you speak about the passage".
+// getNarrativeMarkers returns the phrases that mark a tool or field description as narrative prose.
+// Each is taken from a description these tools carried: "as the person reads it", "where in that
+// file the person stands", "in front of them", "the card model it is cut by", "the passages of the
+// file to light", "lights all of them", "what the tab is called", "an edit you did not see", "hand
+// this to", "in words to say back to them", "the path the vault files it under", "where you speak
+// about the passage".
 func getNarrativeMarkers() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		regexp.MustCompile(`(?i)\bperson\b`),
 		regexp.MustCompile(`(?i)\bin front of\b`),
 		regexp.MustCompile(`(?i)\bstand(s|ing)?\b`),
 		regexp.MustCompile(`(?i)\bcut by\b`),
-		regexp.MustCompile(`(?i)\blight\b`),
-		regexp.MustCompile(`(?i)\bwhat\b`),
+		regexp.MustCompile(`(?i)\blights?\b`),
+		regexp.MustCompile(`(?i)\bis called\b`),
 		regexp.MustCompile(`(?i)\byou did not see\b`),
 		regexp.MustCompile(`(?i)\bhand this\b`),
 		regexp.MustCompile(`(?i)\bsay back\b`),
@@ -201,7 +204,7 @@ func TestWindowTabsGetAnswersLocationAndIsActiveWithoutASummary(t *testing.T) {
 	requireKeys(t, "the output schema of a tab", getSchemaProperties(t, schema, "tabs"), []string{"location", "isActive"}, []string{"where", "active"})
 }
 
-func TestNoteFocusAnswersTheNoteUnderNote(t *testing.T) {
+func TestNoteFocusReturnsTheNoteKey(t *testing.T) {
 	w := newWindowTools(t)
 	answer := w.getAnswer(t, "note_focus", `{"path":"notes/Heron.md"}`)
 	requireKeys(t, "the answer of note_focus", answer, []string{"note"}, []string{"focused"})
@@ -222,10 +225,10 @@ func TestSourceFocusAnswersThePathAndTheHighlightCount(t *testing.T) {
 		t.Errorf("source_focus answered %v, want path %s and highlightCount 2", answer, guidePath)
 	}
 
-	opened := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf"}`)
-	requireKeys(t, "the answer of source_focus with no passages", opened, []string{"path", "highlightCount"}, []string{"shown", "summary"})
-	if opened["highlightCount"] != float64(0) {
-		t.Errorf("source_focus with no passages answered highlightCount %v, want 0", opened["highlightCount"])
+	noPassages := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf"}`)
+	requireKeys(t, "the answer of source_focus with no passages", noPassages, []string{"path", "highlightCount"}, []string{"shown", "summary"})
+	if noPassages["highlightCount"] != float64(0) {
+		t.Errorf("source_focus with no passages answered highlightCount %v, want 0", noPassages["highlightCount"])
 	}
 
 	schema := getToolSchema(t, w.calls, "source_focus", true)
@@ -264,13 +267,13 @@ func TestWindowToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
 	}, func(string, string) {})
 }
 
-func TestWindowToolSchemaDescriptionsContainNoNarrativeMarker(t *testing.T) {
+func TestWindowToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 	w := newWindowTools(t)
 	markers := getNarrativeMarkers()
 	visitEveryToolSchema(t, w.calls, func(string, string) {}, func(tool, description string) {
 		for _, marker := range markers {
 			if marker.MatchString(description) {
-				t.Errorf("a description in the schema of %s matches %s: %q", tool, marker, description)
+				t.Errorf("a description of %s or its schema matches %s: %q", tool, marker, description)
 			}
 		}
 	})

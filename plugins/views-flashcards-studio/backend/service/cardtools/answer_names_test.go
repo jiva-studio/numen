@@ -116,7 +116,8 @@ func visitSchema(node any, onProperty, onDescription func(string)) {
 	}
 }
 
-// visitEveryToolSchema runs visitSchema over the input and the output schema of every tool.
+// visitEveryToolSchema runs visitSchema over the input and the output schema of every tool, and
+// passes the description of each tool to onDescription as well.
 func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, onDescription func(tool, text string)) {
 	t.Helper()
 	listing, err := registry.ListTools(t.Context())
@@ -124,6 +125,7 @@ func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, on
 		t.Fatal(err)
 	}
 	for _, info := range listing.Tools {
+		onDescription(info.GetName(), info.GetDescription())
 		for _, raw := range [][]byte{info.GetInputSchema(), info.GetOutputSchema()} {
 			if len(raw) == 0 {
 				continue
@@ -140,19 +142,20 @@ func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, on
 	}
 }
 
-// getNarrativeMarkers returns the phrases that mark a field description as narrative prose. Each is
-// taken from a description these tools carried: "as the person reads it", "where in that file the
-// person stands", "in front of them", "the card model it is cut by", "the passages of the file to
-// light", "what the tab is called", "an edit you did not see", "hand this to", "in words to say back
-// to them", "the path the vault files it under", "where you speak about the passage".
+// getNarrativeMarkers returns the phrases that mark a tool or field description as narrative prose.
+// Each is taken from a description these tools carried: "as the person reads it", "where in that
+// file the person stands", "in front of them", "the card model it is cut by", "the passages of the
+// file to light", "lights all of them", "what the tab is called", "an edit you did not see", "hand
+// this to", "in words to say back to them", "the path the vault files it under", "where you speak
+// about the passage".
 func getNarrativeMarkers() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		regexp.MustCompile(`(?i)\bperson\b`),
 		regexp.MustCompile(`(?i)\bin front of\b`),
 		regexp.MustCompile(`(?i)\bstand(s|ing)?\b`),
 		regexp.MustCompile(`(?i)\bcut by\b`),
-		regexp.MustCompile(`(?i)\blight\b`),
-		regexp.MustCompile(`(?i)\bwhat\b`),
+		regexp.MustCompile(`(?i)\blights?\b`),
+		regexp.MustCompile(`(?i)\bis called\b`),
 		regexp.MustCompile(`(?i)\byou did not see\b`),
 		regexp.MustCompile(`(?i)\bhand this\b`),
 		regexp.MustCompile(`(?i)\bsay back\b`),
@@ -161,7 +164,7 @@ func getNarrativeMarkers() []*regexp.Regexp {
 	}
 }
 
-func TestCardReadAnswersTheDeckProblemsUnderProblemsWithAMessage(t *testing.T) {
+func TestCardReadReturnsTheProblemsKeyWithAMessage(t *testing.T) {
 	s, _ := newSession(t, vault())
 	answer := call[map[string]any](t, s, "card_read", map[string]any{"path": "Animals.md"})
 	requireKeys(t, "the answer of card_read", answer, []string{"problems"}, []string{"faults"})
@@ -198,7 +201,7 @@ func TestCardFieldRenameAnswersTheUpdatedDecksAndHeadings(t *testing.T) {
 		[]string{"updatedDecks", "updatedHeadings", "failedDecks"}, []string{"decks", "cards", "notWritten"})
 }
 
-func TestCardFieldRenameAnswersTheDecksItCouldNotWriteUnderFailedDecks(t *testing.T) {
+func TestCardFieldRenameReturnsTheFailedDecksKey(t *testing.T) {
 	notes := vault()
 	notes["Herds.md"] = "---\ntype: deck\n---\n\n## Guanaco ^zpqrstvwxy\n\n[[Animal]]\n\n### Height\n\nabout 44\"\n"
 	s, v := newSession(t, notes)
@@ -223,13 +226,13 @@ func TestCardToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
 	}, func(string, string) {})
 }
 
-func TestCardToolSchemaDescriptionsContainNoNarrativeMarker(t *testing.T) {
+func TestCardToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 	s, _ := newSession(t, vault())
 	markers := getNarrativeMarkers()
 	visitEveryToolSchema(t, s.registry, func(string, string) {}, func(tool, description string) {
 		for _, marker := range markers {
 			if marker.MatchString(description) {
-				t.Errorf("a description in the schema of %s matches %s: %q", tool, marker, description)
+				t.Errorf("a description of %s or its schema matches %s: %q", tool, marker, description)
 			}
 		}
 	})

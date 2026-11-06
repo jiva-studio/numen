@@ -116,7 +116,8 @@ func visitSchema(node any, onProperty, onDescription func(string)) {
 	}
 }
 
-// visitEveryToolSchema runs visitSchema over the input and the output schema of every tool.
+// visitEveryToolSchema runs visitSchema over the input and the output schema of every tool, and
+// passes the description of each tool to onDescription as well.
 func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, onDescription func(tool, text string)) {
 	t.Helper()
 	listing, err := registry.ListTools(t.Context())
@@ -124,6 +125,7 @@ func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, on
 		t.Fatal(err)
 	}
 	for _, info := range listing.Tools {
+		onDescription(info.GetName(), info.GetDescription())
 		for _, raw := range [][]byte{info.GetInputSchema(), info.GetOutputSchema()} {
 			if len(raw) == 0 {
 				continue
@@ -140,19 +142,20 @@ func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, on
 	}
 }
 
-// getNarrativeMarkers returns the phrases that mark a field description as narrative prose. Each is
-// taken from a description these tools carried: "as the person reads it", "where in that file the
-// person stands", "in front of them", "the card model it is cut by", "the passages of the file to
-// light", "what the tab is called", "an edit you did not see", "hand this to", "in words to say back
-// to them", "the path the vault files it under", "where you speak about the passage".
+// getNarrativeMarkers returns the phrases that mark a tool or field description as narrative prose.
+// Each is taken from a description these tools carried: "as the person reads it", "where in that
+// file the person stands", "in front of them", "the card model it is cut by", "the passages of the
+// file to light", "lights all of them", "what the tab is called", "an edit you did not see", "hand
+// this to", "in words to say back to them", "the path the vault files it under", "where you speak
+// about the passage".
 func getNarrativeMarkers() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		regexp.MustCompile(`(?i)\bperson\b`),
 		regexp.MustCompile(`(?i)\bin front of\b`),
 		regexp.MustCompile(`(?i)\bstand(s|ing)?\b`),
 		regexp.MustCompile(`(?i)\bcut by\b`),
-		regexp.MustCompile(`(?i)\blight\b`),
-		regexp.MustCompile(`(?i)\bwhat\b`),
+		regexp.MustCompile(`(?i)\blights?\b`),
+		regexp.MustCompile(`(?i)\bis called\b`),
 		regexp.MustCompile(`(?i)\byou did not see\b`),
 		regexp.MustCompile(`(?i)\bhand this\b`),
 		regexp.MustCompile(`(?i)\bsay back\b`),
@@ -161,7 +164,7 @@ func getNarrativeMarkers() []*regexp.Regexp {
 	}
 }
 
-func TestVaultListAnswersTheCalledVaultUnderIsCurrentAndItsRootUnderPath(t *testing.T) {
+func TestVaultListReturnsIsCurrentAndPathKeys(t *testing.T) {
 	sky, registry := newSkyVault(t)
 	garden := hosttest.New("garden-vault")
 	garden.File("Beds.md", "# Beds\nRaised beds of oak.")
@@ -198,7 +201,7 @@ func TestVaultListDescriptionDoesNotNameTheShowingKey(t *testing.T) {
 	}
 }
 
-func TestVaultProblemsAnswersTheChecksItRanUnderChecks(t *testing.T) {
+func TestVaultProblemsReturnsTheChecksKey(t *testing.T) {
 	_, registry := newSkyVault(t)
 	answer := decodeAnswer(t, callTool(t, registry, skyVault, "vault_problems", `{}`))
 	requireKeys(t, "the answer of vault_problems", answer, []string{"problems", "checks"}, []string{"ran"})
@@ -210,7 +213,7 @@ func TestVaultProblemsAnswersTheChecksItRanUnderChecks(t *testing.T) {
 	requireKeys(t, "the output schema of vault_problems", properties, []string{"checks"}, []string{"ran"})
 }
 
-func TestLibraryReadAnswersTheFollowingOffsetUnderNextStart(t *testing.T) {
+func TestLibraryReadReturnsTheNextStartKey(t *testing.T) {
 	l := newLibrary(t)
 	res, err := l.calls.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: "library_read", Arguments: []byte(`{"path":"` + guidePath + `","page":2}`)})
 	if err != nil {
@@ -229,7 +232,7 @@ func TestLibraryReadAnswersTheFollowingOffsetUnderNextStart(t *testing.T) {
 	requireKeys(t, "the output schema of library_read", properties, []string{"nextStart"}, []string{"next"})
 }
 
-func TestLibrarySearchAnswersTheFileOfAMatchUnderPath(t *testing.T) {
+func TestLibrarySearchReturnsThePathKeyOfAMatch(t *testing.T) {
 	l := newLibrary(t)
 	res, err := l.calls.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: "library_search", Arguments: []byte(`{"query":"heron"}`)})
 	if err != nil {
@@ -253,7 +256,7 @@ func TestLibrarySearchAnswersTheFileOfAMatchUnderPath(t *testing.T) {
 	requireKeys(t, "the output schema of a library_search match", properties, []string{"path"}, []string{"source"})
 }
 
-func TestLibrarySearchTakesThePathPrefixUnderPathPrefix(t *testing.T) {
+func TestLibrarySearchAcceptsThePathPrefixArgument(t *testing.T) {
 	l := newLibrary(t)
 	var narrowed librarySearchAnswer
 	if failure := l.call(t, "library_search", `{"query":"heron","pathPrefix":"recordings/"}`, &narrowed); failure != "" {
@@ -292,13 +295,13 @@ func TestVaultToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
 	}, func(string, string) {})
 }
 
-func TestVaultToolSchemaDescriptionsContainNoNarrativeMarker(t *testing.T) {
+func TestVaultToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 	l := newLibrary(t)
 	markers := getNarrativeMarkers()
 	visitEveryToolSchema(t, l.calls, func(string, string) {}, func(tool, description string) {
 		for _, marker := range markers {
 			if marker.MatchString(description) {
-				t.Errorf("a description in the schema of %s matches %s: %q", tool, marker, description)
+				t.Errorf("a description of %s or its schema matches %s: %q", tool, marker, description)
 			}
 		}
 	})
