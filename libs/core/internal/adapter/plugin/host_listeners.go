@@ -36,8 +36,8 @@ const (
 
 var errListenerPortValue = errors.New("the port setting does not hold a port from 1024 to 65535")
 
-// boundListener is a bound listener port and the proxy that forwards its connections.
-type boundListener struct {
+// listenerBinding is a bound listener port and the proxy that forwards its connections.
+type listenerBinding struct {
 	port  int
 	proxy *portproxy.Proxy
 }
@@ -70,13 +70,13 @@ func (h *Host) getWantedPortsLocked(pluginID string) (map[string]int, error) {
 // readPort returns the integer from 1024 to 65535 a setting value holds.
 func readPort(value any) (int, bool) {
 	var number float64
-	switch typed := value.(type) {
+	switch kind := value.(type) {
 	case float64:
-		number = typed
+		number = kind
 	case int:
-		number = float64(typed)
+		number = float64(kind)
 	case int64:
-		number = float64(typed)
+		number = float64(kind)
 	default:
 		return 0, false
 	}
@@ -121,7 +121,7 @@ func (h *Host) syncListeners(ctx context.Context, pluginID string) {
 	if err == nil && isSamePorts(current, wanted) {
 		return
 	}
-	var next map[string]boundListener
+	var next map[string]listenerBinding
 	if err == nil {
 		next, err = h.openChangedListeners(context.WithoutCancel(ctx), pluginID, current, wanted)
 	}
@@ -130,9 +130,9 @@ func (h *Host) syncListeners(ctx context.Context, pluginID string) {
 		h.failListenerBind(pluginID, err)
 		return
 	}
-	for name, bound := range current {
-		if next[name] != bound {
-			h.closeListener(pluginID, bound.proxy)
+	for name, binding := range current {
+		if next[name] != binding {
+			h.closeListener(pluginID, binding.proxy)
 		}
 	}
 	if len(next) == 0 {
@@ -143,12 +143,12 @@ func (h *Host) syncListeners(ctx context.Context, pluginID string) {
 }
 
 // isSamePorts reports whether the bound listeners are the wanted ones on the wanted ports.
-func isSamePorts(current map[string]boundListener, wanted map[string]int) bool {
+func isSamePorts(current map[string]listenerBinding, wanted map[string]int) bool {
 	if len(current) != len(wanted) {
 		return false
 	}
 	for name, port := range wanted {
-		if bound, ok := current[name]; !ok || bound.port != port {
+		if binding, ok := current[name]; !ok || binding.port != port {
 			return false
 		}
 	}
@@ -158,14 +158,14 @@ func isSamePorts(current map[string]boundListener, wanted map[string]int) bool {
 // openChangedListeners returns the listeners to keep bound: those of current already on their wanted
 // port, and a new binding for every other wanted listener. A failed bind closes the bindings it made.
 func (h *Host) openChangedListeners(
-	ctx context.Context, pluginID string, current map[string]boundListener, wanted map[string]int,
-) (map[string]boundListener, error) {
-	next := make(map[string]boundListener, len(wanted))
+	ctx context.Context, pluginID string, current map[string]listenerBinding, wanted map[string]int,
+) (map[string]listenerBinding, error) {
+	next := make(map[string]listenerBinding, len(wanted))
 	var opened []*portproxy.Proxy
 	for _, name := range slices.Sorted(maps.Keys(wanted)) {
 		port := wanted[name]
-		if bound, ok := current[name]; ok && bound.port == port {
-			next[name] = bound
+		if binding, ok := current[name]; ok && binding.port == port {
+			next[name] = binding
 			continue
 		}
 		addr := net.JoinHostPort(listenerAddressHost, strconv.Itoa(port))
@@ -177,7 +177,7 @@ func (h *Host) openChangedListeners(
 			return nil, fmt.Errorf("bind listener %s of plugin %s: %w", name, pluginID, err)
 		}
 		opened = append(opened, proxy)
-		next[name] = boundListener{port: port, proxy: proxy}
+		next[name] = listenerBinding{port: port, proxy: proxy}
 	}
 	return next, nil
 }
@@ -198,8 +198,8 @@ func (h *Host) failListenerBind(pluginID string, err error) {
 
 // closeListenersLocked closes and forgets the bound ports of the plugin. The caller holds listenersMu.
 func (h *Host) closeListenersLocked(pluginID string) {
-	for _, bound := range h.listeners[pluginID] {
-		h.closeListener(pluginID, bound.proxy)
+	for _, binding := range h.listeners[pluginID] {
+		h.closeListener(pluginID, binding.proxy)
 	}
 	delete(h.listeners, pluginID)
 }

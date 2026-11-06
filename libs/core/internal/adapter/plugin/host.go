@@ -118,7 +118,7 @@ type Host struct {
 	// listenersMu orders the binding and closing of listener ports. It is taken before mu, never while mu is held.
 	listenersMu sync.Mutex
 	// listeners maps each plugin to its bound listener ports by listener name.
-	listeners map[string]map[string]boundListener
+	listeners map[string]map[string]listenerBinding
 	// listenerPorts maps each running plugin to the loopback port of each listener its ready line reported.
 	listenerPorts map[string]map[string]int
 }
@@ -162,7 +162,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		builtIns:         make(map[string]builtInPlugin),
 		contentTypes:     nil,
 		typeCache:        contentTypeCache{},
-		listeners:        make(map[string]map[string]boundListener),
+		listeners:        make(map[string]map[string]listenerBinding),
 		listenerPorts:    make(map[string]map[string]int),
 	}
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
