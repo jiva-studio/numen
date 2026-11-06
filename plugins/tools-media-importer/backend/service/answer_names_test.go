@@ -281,3 +281,19 @@ func TestMediaImporterToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 		}
 	})
 }
+
+func TestMediaImporterToolInstructionsContainNoNarrativeMarker(t *testing.T) {
+	s := newReleasedScene(t)
+	listing, err := s.registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listing.Instructions == "" {
+		t.Fatal("the registry lists no instructions")
+	}
+	for _, marker := range getNarrativeMarkers() {
+		if marker.MatchString(listing.Instructions) {
+			t.Errorf("the instructions match %s: %q", marker, listing.Instructions)
+		}
+	}
+}

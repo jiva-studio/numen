@@ -349,3 +349,19 @@ func TestVaultInstructionsNameTheKeysInCamelCase(t *testing.T) {
 		}
 	}
 }
+
+func TestVaultToolInstructionsContainNoNarrativeMarker(t *testing.T) {
+	l := newLibrary(t)
+	listing, err := l.calls.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listing.Instructions == "" {
+		t.Fatal("the registry lists no instructions")
+	}
+	for _, marker := range getNarrativeMarkers() {
+		if marker.MatchString(listing.Instructions) {
+			t.Errorf("the instructions match %s: %q", marker, listing.Instructions)
+		}
+	}
+}

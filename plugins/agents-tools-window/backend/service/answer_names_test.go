@@ -2,12 +2,15 @@ package service_test
 
 import (
 	"encoding/json"
+	"net/http/httptest"
 	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
 )
 
 // decodeAnswer decodes a structured tool answer into a map of its top-level keys.
@@ -313,4 +316,27 @@ func TestWindowToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestWindowToolInstructionsContainNoNarrativeMarker(t *testing.T) {
+	// The window tools set their instructions where the plugin mounts its registry, so they are read
+	// from the handler the host starts.
+	handler, err := service.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "window-token", "NUMEN_HOST_PORT": "1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	web := httptest.NewServer(handler)
+	t.Cleanup(web.Close)
+	listing, err := tools.NewClient(hostcall.Endpoint{BaseURL: web.URL, Token: "window-token"}).ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listing.Instructions == "" {
+		t.Fatal("the registry lists no instructions")
+	}
+	for _, marker := range getNarrativeMarkers() {
+		if marker.MatchString(listing.Instructions) {
+			t.Errorf("the instructions match %s: %q", marker, listing.Instructions)
+		}
+	}
 }

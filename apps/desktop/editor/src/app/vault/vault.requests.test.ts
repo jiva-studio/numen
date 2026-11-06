@@ -369,7 +369,7 @@ describe('a note followed', () => {
         {
           from: { path: 'b.md', title: 'B' },
           role: NOTE_ROLE.PARENT,
-          roleFromHere: NOTE_ROLE.CHILD,
+          sourceRole: NOTE_ROLE.CHILD,
           type: '',
           note: '',
           label: 'under',
@@ -382,7 +382,7 @@ describe('a note followed', () => {
       {
         from: { path: 'b.md', title: 'B' },
         role: 'parent',
-        roleFromHere: 'child',
+        sourceRole: 'child',
         type: '',
         reason: '',
         label: 'under',

@@ -89,7 +89,7 @@ describe('the backlinks of an answer', () => {
     const [one] = mapBacklinks([
       {
         role: NOTE_ROLE.REF,
-        roleFromHere: NOTE_ROLE.UNSPECIFIED,
+        sourceRole: NOTE_ROLE.UNSPECIFIED,
         type: '',
         note: '',
         label: '',
@@ -99,7 +99,7 @@ describe('the backlinks of an answer', () => {
     expect(one).toMatchObject({
       from: { path: '', title: '' },
       role: 'ref',
-      roleFromHere: null,
+      sourceRole: null,
       marker: null,
     })
   })

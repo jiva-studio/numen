@@ -177,7 +177,7 @@ func TestABacklinkCarriesItsRoleFromTheNoteAskedAbout(t *testing.T) {
 		t.Fatalf("got %+v (%v)", got, err)
 	}
 	b := got[0]
-	if b.From != "idea.md" || b.Role != domain.RoleParent || b.RoleFromHere != domain.RoleChild ||
+	if b.From != "idea.md" || b.Role != domain.RoleParent || b.SourceRole != domain.RoleChild ||
 		b.Marker != domain.MarkerArrow || b.Why != "n" {
 		t.Errorf("backlink = %+v", b)
 	}

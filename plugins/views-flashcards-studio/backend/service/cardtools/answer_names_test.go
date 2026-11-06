@@ -189,14 +189,18 @@ func TestCardReadReturnsTheProblemsKeyWithAMessage(t *testing.T) {
 		t.Fatalf("problems = %v, want one", answer["problems"])
 	}
 	problem := requireObject(t, "problems[0]", problems[0])
-	requireKeys(t, "a problem of card_read", problem, []string{"card", "message"}, []string{"why"})
+	requireKeys(t, "a problem of card_read", problem, []string{"cardIndex", "message"}, []string{"why", "card"})
 	if message, isText := problem["message"].(string); !isText || message == "" {
 		t.Errorf("the problem %v has an empty message", problem)
+	}
+	// The second card of the fixture deck, Alpaca, has no card model link.
+	if index, isNumber := problem["cardIndex"].(float64); !isNumber || index != 1 {
+		t.Errorf("cardIndex = %v, want 1", problem["cardIndex"])
 	}
 
 	schema := getToolSchema(t, s.registry, "card_read", true)
 	requireKeys(t, "the output schema of card_read", getSchemaProperties(t, schema), []string{"problems"}, []string{"faults"})
-	requireKeys(t, "the output schema of a card_read problem", getSchemaProperties(t, schema, "problems"), []string{"card", "message"}, []string{"why"})
+	requireKeys(t, "the output schema of a card_read problem", getSchemaProperties(t, schema, "problems"), []string{"cardIndex", "message"}, []string{"why", "card"})
 }
 
 func TestCardFieldRenameAnswersTheUpdatedDecksAndHeadings(t *testing.T) {
@@ -252,4 +256,70 @@ func TestCardToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestCardCurrentReturnsTheCardIDKey(t *testing.T) {
+	s, _ := newSession(t, vault())
+	s.toolContext = map[string]string{
+		"md.numen.views.flashcards.studio/deck":     "Rivers.md",
+		"md.numen.views.flashcards.studio/card":     "w4r8t2mnqz",
+		"md.numen.views.flashcards.studio/template": "Recall",
+	}
+	answer := call[map[string]any](t, s, "card_current", map[string]any{})
+	requireKeys(t, "the answer of card_current", answer, []string{"deck", "cardId", "template"}, []string{"card"})
+	if id, isText := answer["cardId"].(string); !isText || id != "w4r8t2mnqz" {
+		t.Errorf("cardId = %v, want w4r8t2mnqz", answer["cardId"])
+	}
+
+	schema := getToolSchema(t, s.registry, "card_current", true)
+	requireKeys(t, "the output schema of card_current", getSchemaProperties(t, schema), []string{"deck", "cardId", "template"}, []string{"card"})
+}
+
+func TestCardAddReturnsTheTotalKey(t *testing.T) {
+	s, _ := newSession(t, vault())
+	answer := call[map[string]any](t, s, "card_add", map[string]any{
+		"path": "Animals.md", "cardModel": "Animal",
+		"values":      []map[string]string{{"field": "Name", "text": "Guanaco"}},
+		"fingerprint": deckFingerprint(t, s, "Animals.md"),
+	})
+	requireKeys(t, "the answer of card_add", answer, []string{"path", "fingerprint", "total", "cardId"}, []string{"cards"})
+	if total, isNumber := answer["total"].(float64); !isNumber || total != 3 {
+		t.Errorf("total = %v, want 3", answer["total"])
+	}
+}
+
+func TestCardRemoveReturnsTheTotalKey(t *testing.T) {
+	s, _ := newSession(t, vault())
+	answer := call[map[string]any](t, s, "card_remove", map[string]any{
+		"path": "Animals.md", "cardId": alpaca,
+		"fingerprint": deckFingerprint(t, s, "Animals.md"),
+	})
+	requireKeys(t, "the answer of card_remove", answer, []string{"path", "fingerprint", "total"}, []string{"cards"})
+	if total, isNumber := answer["total"].(float64); !isNumber || total != 1 {
+		t.Errorf("total = %v, want 1", answer["total"])
+	}
+}
+
+func TestCardWriteToolSchemasNameTheTotalKey(t *testing.T) {
+	s, _ := newSession(t, vault())
+	for _, name := range []string{
+		"card_add", "card_edit", "card_value_remove", "card_remove",
+		"card_section_add", "card_section_rename", "card_section_remove", "card_model_edit",
+	} {
+		schema := getToolSchema(t, s.registry, name, true)
+		requireKeys(t, "the output schema of "+name, getSchemaProperties(t, schema), []string{"path", "fingerprint", "total"}, []string{"cards"})
+	}
+}
+
+func TestCardToolInstructionsContainNoNarrativeMarker(t *testing.T) {
+	s, _ := newSession(t, vault())
+	listing, err := s.registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, marker := range getNarrativeMarkers() {
+		if marker.MatchString(listing.Instructions) {
+			t.Errorf("the instructions match %s: %q", marker, listing.Instructions)
+		}
+	}
 }

@@ -506,7 +506,7 @@ func TestBacklinksCarryTheirRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 		t.Fatalf("backlinks = %+v", got)
 	}
 	b := got[0]
-	if b.From != "Idea.md" || b.Role != domain.RoleParent || b.RoleFromHere != domain.RoleChild || b.Marker != domain.MarkerArrow {
+	if b.From != "Idea.md" || b.Role != domain.RoleParent || b.SourceRole != domain.RoleChild || b.Marker != domain.MarkerArrow {
 		t.Errorf("backlink = %+v", b)
 	}
 }
