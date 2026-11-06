@@ -51,7 +51,7 @@ describe('the commands over the vaults an installation holds', () => {
 describe('the commands that ask for a choice among a few', () => {
   it('are none of the editor, since the settings offer theirs', () => {
     const choosing = createCommands(words)
-      .filter((one) => one.input === 'choice')
+      .filter((one) => one.input === 'items')
       .map((one) => one.id)
 
     expect(choosing).toStrictEqual([])

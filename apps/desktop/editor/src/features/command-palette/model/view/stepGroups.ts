@@ -204,7 +204,7 @@ export function createStepGroups(state: ViewState) {
       failureMessage: failureMessage.value,
     })
 
-  const getChoosingGroups = (step: PendingStep, text: string): readonly PaletteGroup[] => {
+  const getItemGroups = (step: PendingStep, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
     return lists.getStepGroups(step.command.id, text).map((group) => ({
       id: group.id,
@@ -229,7 +229,7 @@ export function createStepGroups(state: ViewState) {
     getNamingGroup: (step: PendingStep, text: string) => getNamingGroup(step, text, words),
     getArgumentGroup: (step: PendingStep, text: string) => getArgumentGroup(step, text, words),
     getPickingGroup,
-    getChoosingGroups,
+    getItemGroups,
     getVaultsGroup,
     getConfirmGroup: (step: PendingStep, text: string) =>
       getConfirmGroup(step, text, words, getStepLabel(step)),

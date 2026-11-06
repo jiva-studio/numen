@@ -202,7 +202,7 @@ describe('the commands made from the declarations', () => {
 
   it('files every command under the settings and asks for a choice', () => {
     for (const one of createPalette().palette.getCommands()) {
-      expect([one.group, one.input]).toStrictEqual(['settings', 'choice'])
+      expect([one.group, one.input]).toStrictEqual(['settings', 'items'])
     }
   })
 

@@ -19,7 +19,7 @@ import type { NameMatch } from '../search/search'
 const getPrompts = (words: Words): Partial<Record<PromptStep, string>> => ({
   name: words.typeName,
   note: words.typeNote,
-  choice: words.typeChoice,
+  items: words.typeItems,
   vault: words.typeVault,
   confirmation: words.answer,
 })
@@ -76,7 +76,7 @@ function resolveSelectionAction(
   return null
 }
 
-function resolveInputOrChoiceAction(
+function resolveInputOrItemAction(
   step: PendingStep,
   item: string,
   deps: StepActionDeps,
@@ -84,7 +84,7 @@ function resolveInputOrChoiceAction(
   const name = deps.text.value.trim()
   if (step.step === 'name') return name ? deps.invocation(step.command.id, step.on, name) : null
   // Stryker disable next-line ConditionalExpression: Caller guarantees step is naming or choosing.
-  if (step.step === 'choice') {
+  if (step.step === 'items') {
     const rows = deps.lists.getStepGroups(step.command.id, deps.text.value).flatMap((g) => g.items)
     const one = rows.find((r) => r.id === item)
     return !one || one.isDisabled ? null : deps.invocation(step.command.id, step.on, one.id)
@@ -143,8 +143,8 @@ function resolveStepAction(
   if (step.step === 'note' || step.step === 'vault') {
     return resolveSelectionAction(step, choice, deps)
   }
-  if (step.step === 'name' || step.step === 'choice') {
-    return resolveInputOrChoiceAction(step, choice.item, deps)
+  if (step.step === 'name' || step.step === 'items') {
+    return resolveInputOrItemAction(step, choice.item, deps)
   }
   if (step.step === 'arguments') return resolveArgumentAction(step, deps)
   return resolveConfirmationAction(step, choice.item, deps)
@@ -175,7 +175,7 @@ function useStepComputed(deps: {
 
   const opensOn = computed(() => {
     const s = here.value
-    if (s?.step !== 'choice') return ''
+    if (s?.step !== 'items') return ''
     const rows = lists.getStepGroups(s.command.id, text.value).flatMap((g) => g.items)
     return rows.find((one) => one.isCurrent)?.id ?? ''
   })
