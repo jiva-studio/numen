@@ -1,5 +1,10 @@
 import { test, expect, type Locator, type Page } from '../../support/test.js'
-import { createUniqueTitle, destroyNote, writeNote } from '../../support/vault.js'
+import {
+  createUniqueTitle,
+  destroyIndexedNote,
+  destroyNote,
+  writeNote,
+} from '../../support/vault.js'
 import { createNoteWithBody } from '../../support/layout.js'
 import { readBox } from '../../support/browser.js'
 import { openWorkspace } from '../../support/workspace.js'
@@ -40,7 +45,7 @@ test.describe('the index stats item', () => {
   const notes: string[] = []
 
   test.afterEach(async ({ request }) => {
-    for (const path of notes.splice(0)) await destroyNote(request, path)
+    for (const path of notes.splice(0)) await destroyIndexedNote(request, path)
   })
 
   test('shows the number of vectors in the status bar', async ({ page }) => {

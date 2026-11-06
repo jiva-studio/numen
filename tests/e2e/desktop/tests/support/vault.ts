@@ -126,6 +126,31 @@ export const destroyNote = async (request: APIRequestContext, notePath: string):
   await callRPC(request, 'FileService/RemoveFile', { path: notePath, destroy: true })
 }
 
+/** The notes the index has read, as the index stats plugin counts them. */
+export const countIndexedNotes = async (request: APIRequestContext): Promise<number> => {
+  const answer = await request.put('/md.numen.tools.index.stats/GetStats', {
+    data: {},
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (!answer.ok()) throw new Error(`reading the index stats answered ${answer.status()}`)
+  const { kinds = [] } = (await answer.json()) as { kinds?: { kind?: string; sources?: number }[] }
+  return kinds.find((one) => one.kind === 'notes')?.sources ?? 0
+}
+
+/**
+ * Takes a note the index has read off the disk, and returns once the index has dropped it. The
+ * watcher reports the removal after RemoveFile answers, so a test that counts the vectors next
+ * would count the vectors of the removed note too.
+ */
+export const destroyIndexedNote = async (
+  request: APIRequestContext,
+  notePath: string,
+): Promise<void> => {
+  const before = await countIndexedNotes(request)
+  await destroyNote(request, notePath)
+  await expect.poll(() => countIndexedNotes(request), { timeout: 45_000 }).toBeLessThan(before)
+}
+
 /** The files under the vault's `.trash` folder whose name is `name`, as paths of the vault. */
 export const findTrashed = async (request: APIRequestContext, name: string): Promise<string[]> => {
   const vault = getVaultPath()
