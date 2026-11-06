@@ -242,3 +242,47 @@ func TestAFailedDownloadNamesTheHostItWasRedirectedTo(t *testing.T) {
 		t.Errorf("the failure reads %q, which holds the query of the redirect", text)
 	}
 }
+
+func TestAMalformedAddressIsRedactedInTheFailure(t *testing.T) {
+	provisioner := newTestProvisioner(t, true)
+	address := "https://reader:token-6@models.example.invalid/%zz?signature=secret-7#part"
+
+	_, err := provisioner.Provision(t.Context(), newModelRequirement(address, []byte("weights")), nil)
+	if err == nil {
+		t.Fatal("the download succeeded offline")
+	}
+	text := err.Error()
+	for _, secret := range []string{"token-6", "secret-7", "reader", "part"} {
+		if strings.Contains(text, secret) {
+			t.Errorf("the failure reads %q, which holds %q", text, secret)
+		}
+	}
+	if want := "models.example.invalid/%zz"; !strings.Contains(text, want) {
+		t.Errorf("the failure reads %q, want it to name %q", text, want)
+	}
+}
+
+func TestARefusedRedirectIsRedactedInTheFailure(t *testing.T) {
+	redirecting := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "http://reader:token-8@models.example.invalid/weights.onnx?signature=secret-9", http.StatusFound)
+	}))
+	defer redirecting.Close()
+	provisioner := newTestProvisioner(t, false)
+	client := newClient()
+	client.Transport = redirecting.Client().Transport
+	provisioner.cfg.Client = client
+
+	_, err := provisioner.Provision(t.Context(), newModelRequirement(redirecting.URL+"/weights.onnx?token=secret-10", []byte("weights")), nil)
+	if err == nil {
+		t.Fatal("the download over a redirect to http succeeded")
+	}
+	text := err.Error()
+	for _, secret := range []string{"token-8", "secret-9", "secret-10", "reader"} {
+		if strings.Contains(text, secret) {
+			t.Errorf("the failure reads %q, which holds %q", text, secret)
+		}
+	}
+	if want := "http://models.example.invalid/weights.onnx"; !strings.Contains(text, want) {
+		t.Errorf("the failure reads %q, want it to name the refused address %q", text, want)
+	}
+}
