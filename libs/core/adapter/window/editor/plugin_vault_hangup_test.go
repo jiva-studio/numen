@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// A decision whose call ends while the page is still writing leaves no request of its own running,
-// so the next decision is not refused because of it.
-func TestADecisionAfterACallThatEndedIsGiven(t *testing.T) {
+// A plugin open whose call ends while the page is still writing leaves no request of its own running,
+// so the next plugin open succeeds.
+func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
 	f := openTwoVaults(t)
 	f.bindShow()
 	stream, isDone := f.watchQuit(t)
@@ -24,25 +24,24 @@ func TestADecisionAfterACallThatEndedIsGiven(t *testing.T) {
 	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
 
 	ctx, hangUp := context.WithCancel(t.Context())
-	result := make(chan error, 1)
-	go func() {
-		_, err := list.OpenVault(ctx, f.second.ID)
-		result <- err
-	}()
+	openResult := callOpenVault(ctx, list, f.second.ID)
 	select {
 	case <-flushRequest:
 	case <-time.After(5 * time.Second):
 		close(release)
-		t.Fatal("the decision never asked the page to flush")
+		t.Fatal("the plugin's open never asked the page to flush")
 	}
 	hangUp()
-	if err := <-result; !errors.Is(err, pluginport.ErrUnavailable) {
+	if err := <-openResult; !errors.Is(err, pluginport.ErrUnavailable) {
 		close(release)
-		t.Fatalf("the decision whose call ended returned %v, want ErrUnavailable", err)
+		t.Fatalf("the plugin's open whose call ended returned %v, want ErrUnavailable", err)
 	}
 	close(release)
 
-	if _, err := list.OpenVault(t.Context(), f.second.ID); err != nil {
-		t.Errorf("the decision after a call that ended returned %v", err)
+	if err := list.OpenVault(t.Context(), f.second.ID); err != nil {
+		t.Errorf("the plugin's open after a call that ended returned %v", err)
+	}
+	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
+		t.Errorf("the window shows %s after the plugin's open, want %s", got.Name, f.second.Name)
 	}
 }

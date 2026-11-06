@@ -207,6 +207,20 @@ func TestVaultOpenOpensTheVaultByItsNameFolderOrID(t *testing.T) {
 	}
 }
 
+func TestVaultOpenWithUnsavedChangesInTheWindowReturnsTheHostError(t *testing.T) {
+	geology, _, registry := newTwoVaults(t)
+	geology.SetUnsavedChanges(true)
+
+	text := getRefusalText(t, registry, geologyVault, "vault_open", fmt.Sprintf(`{"vault":%q}`, gardenID))
+
+	if !strings.Contains(text, "unsaved changes") {
+		t.Errorf("the vault_open error %q does not say the window has unsaved changes", text)
+	}
+	if opened, ok := geology.GetOpenedVault(); ok {
+		t.Errorf("the vault %s was opened while the window had unsaved changes", opened.ID)
+	}
+}
+
 func TestVaultOpenOfTheVaultOfTheCallIsRefused(t *testing.T) {
 	geology, _, registry := newTwoVaults(t)
 	requireRefusal(t, registry, geologyVault, "vault_open", fmt.Sprintf(`{"vault":%q}`, geologyVault))

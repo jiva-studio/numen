@@ -146,8 +146,9 @@ func (a *arrangingVault) GetProblems(_ context.Context, checks []domain.Check) (
 }
 
 // recordingList is a list of vaults that records the changes it is asked for and returns err for each.
-// Its OpenVault returns err at once, else a swap that waits for release or the end of its context
-// when release is set, and then sends the error of its context.
+// Its OpenVault returns err at once. Otherwise it records the open, sends the vault on opened, waits
+// for release or the end of its context when release is set, sends the error of its context on ended
+// and returns.
 type recordingList struct {
 	mu      sync.Mutex
 	err     error
@@ -197,25 +198,23 @@ func (l *recordingList) RemoveVault(_ context.Context, id domain.VaultID) error 
 	return l.record("remove " + string(id))
 }
 
-func (l *recordingList) OpenVault(_ context.Context, id domain.VaultID) (func(context.Context) error, error) {
+func (l *recordingList) OpenVault(ctx context.Context, id domain.VaultID) error {
 	l.mu.Lock()
 	openErr := l.err
 	l.mu.Unlock()
 	if openErr != nil {
-		return nil, openErr
+		return openErr
 	}
-	return func(ctx context.Context) error {
-		err := l.record("open " + string(id))
-		l.opened <- id
-		if l.release != nil {
-			select {
-			case <-l.release:
-			case <-ctx.Done():
-			}
+	err := l.record("open " + string(id))
+	l.opened <- id
+	if l.release != nil {
+		select {
+		case <-l.release:
+		case <-ctx.Done():
 		}
-		l.ended <- ctx.Err()
-		return err
-	}, nil
+	}
+	l.ended <- ctx.Err()
+	return err
 }
 
 func (l *recordingList) IsMissing(v domain.Vault) bool {
@@ -561,18 +560,24 @@ func TestVaultListChangesAreUnavailableWithoutAList(t *testing.T) {
 	}
 }
 
-func TestOpenVaultReturnsBeforeTheWindowChangesVault(t *testing.T) {
+func TestOpenVaultAnswersAfterTheWindowShowsTheVault(t *testing.T) {
 	list := newRecordingList()
 	list.release = make(chan struct{})
+	release := sync.OnceFunc(func() { close(list.release) })
+	t.Cleanup(release)
 	client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 
-	res, err := client.OpenVault(ctx, connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
-	if err != nil || res.Msg.Failure != nil {
-		close(list.release)
-		t.Fatalf("OpenVault returned %v (%v) while the window was changing vault", res, err)
+	type openAnswer struct {
+		res *connect.Response[v1.HostVaultServiceOpenVaultResponse]
+		err error
 	}
+	answerResult := make(chan openAnswer, 1)
+	go func() {
+		res, err := client.OpenVault(ctx, connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+		answerResult <- openAnswer{res: res, err: err}
+	}()
 	select {
 	case id := <-list.opened:
 		if id != "v2" {
@@ -581,15 +586,28 @@ func TestOpenVaultReturnsBeforeTheWindowChangesVault(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("the window was not asked to open the vault")
 	}
-	close(list.release)
+	select {
+	case a := <-answerResult:
+		t.Fatalf("OpenVault answered %v (%v) before the window showed the vault", a.res, a.err)
+	case <-time.After(200 * time.Millisecond):
+	}
+	release()
 
+	select {
+	case a := <-answerResult:
+		if a.err != nil || a.res.Msg.Failure != nil {
+			t.Errorf("OpenVault after the window showed the vault answered %v (%v)", a.res, a.err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("OpenVault did not answer after the window showed the vault")
+	}
 	select {
 	case ctxErr := <-list.ended:
 		if ctxErr != nil {
-			t.Errorf("the change of vault ran on a context that ended with the call: %v", ctxErr)
+			t.Errorf("the change of vault ended with %v, want it to end on its own", ctxErr)
 		}
-	case <-time.After(10 * time.Second):
-		t.Fatal("the change of vault did not end after it was released")
+	default:
+		t.Error("OpenVault answered while the change of vault was still running")
 	}
 }
 

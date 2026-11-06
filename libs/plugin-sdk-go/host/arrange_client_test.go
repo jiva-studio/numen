@@ -318,7 +318,7 @@ func TestTheClientReturnsEachFailureOfTheListOfVaultsAsItsError(t *testing.T) {
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: host.ErrVaultUnreadable,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       host.ErrVaultCopy,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   host.ErrVaultOverlaps,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING:     host.ErrVaultAsking,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING:     host.ErrUnsavedChanges,
 	} {
 		client := arrangingClient(t, &arranging{vaultsFailure: &code})
 		ctx := t.Context()
@@ -362,5 +362,35 @@ func TestTheClientReturnsTheCoreMessageOfARejectedFolder(t *testing.T) {
 	}
 	if err == nil || !strings.Contains(err.Error(), detail) {
 		t.Errorf("the error is %v, want it to carry %q", err, detail)
+	}
+}
+
+// detailedOpening is a host whose OpenVault rejects the open because the window has unsaved changes,
+// with the core's message.
+type detailedOpening struct {
+	arranging
+	detail string
+}
+
+func (a *detailedOpening) OpenVault(
+	context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest],
+) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
+	failure := v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING
+	return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Failure: &failure, Detail: a.detail}), nil
+}
+
+func TestTheClientReturnsUnsavedChangesWithTheCoreMessageOfARejectedOpen(t *testing.T) {
+	const detail = "open vault v2: the window has unsaved changes; save them and ask again"
+	server := httptest.NewServer(handler(&detailedOpening{detail: detail}))
+	t.Cleanup(server.Close)
+	client := host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
+
+	err := client.OpenVault(t.Context(), "v2")
+
+	if !errors.Is(err, host.ErrUnsavedChanges) {
+		t.Errorf("OpenVault of a window with unsaved changes returned %v, want ErrUnsavedChanges", err)
+	}
+	if err == nil || !strings.Contains(err.Error(), detail) {
+		t.Errorf("the error is %v, want it to contain %q", err, detail)
 	}
 }
