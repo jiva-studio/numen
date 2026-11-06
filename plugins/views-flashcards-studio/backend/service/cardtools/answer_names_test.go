@@ -425,7 +425,7 @@ func TestCardDeckCreateAnswersThePathIDAndTitleKeys(t *testing.T) {
 
 func TestCardModelCreateAnswersThePathIDAndTitleKeys(t *testing.T) {
 	s, _ := newSession(t, vault())
-	answer := call[map[string]any](t, s, "card_model_create", map[string]any{"title": "Term", "fields": []string{"Word", "Meaning"}})
+	answer := call[map[string]any](t, s, "card_model_create", map[string]any{"title": "Term", "fields": []string{"Word", "Meaning"}, "templates": []any{}})
 	requireKeys(t, "the answer of card_model_create", answer, []string{"path", "id", "title"}, []string{"Path", "ID", "Title"})
 	if answer["path"] != "Term.md" || answer["title"] != "Term" {
 		t.Errorf("card_model_create answered %v, want the path Term.md and the title Term", answer)
