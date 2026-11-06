@@ -6,8 +6,10 @@
   "description": "Connects external AI apps to your open vault",
   "capabilities": [],
   "targets": ["desktop.editor"],
-  "contributes": { "category": "agents" },
-  "activationEvents": ["*"],
+  "contributes": {
+    "category": "agents",
+    "listeners": [{ "name": "mcp", "portSetting": "port", "protocol": "tcp" }]
+  },
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "backend": { "entrypoint": "bin/agents-mcp-server" },
   "services": ["md.numen.agents.mcp.server"],

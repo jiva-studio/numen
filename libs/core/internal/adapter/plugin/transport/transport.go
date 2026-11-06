@@ -90,35 +90,67 @@ func GenerateAuthToken() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-// ParseHandshake scans a text line for readiness indicator and allocated port.
-func ParseHandshake(line string) (int, bool) {
-	cleanLine := strings.TrimSpace(line)
-	prefix := "NUMEN_READY"
-	if !strings.HasPrefix(cleanLine, prefix) {
-		prefix = "READY"
-		if !strings.HasPrefix(cleanLine, prefix) {
-			return 0, false
-		}
-	}
-
-	parts := strings.Fields(cleanLine)
-	for _, part := range parts {
-		if strings.HasPrefix(part, "port=") {
-			portStr := strings.TrimPrefix(part, "port=")
-			port, err := strconv.Atoi(portStr)
-			if err == nil && port > 0 {
-				return port, true
-			}
-		}
-	}
-	return 0, false
+// Handshake is the ready line of a plugin process.
+type Handshake struct {
+	// Port is the loopback port of the plugin's RPC server.
+	Port int
+	// Listeners maps the name of each listener the plugin opened to its loopback port.
+	Listeners map[string]int
 }
 
-// WaitForHandshake reads lines from reader until a handshake line is observed or ctx expires.
-func WaitForHandshake(ctx context.Context, r io.Reader) (int, error) {
+const listenerTokenPrefix = "listener."
+
+var errMalformedListenerToken = errors.New("malformed listener token in the ready line")
+
+// ParseHandshake reads a ready line: the port of the plugin's RPC server and one
+// listener.<name>=<port> token per listener it opened. ok is false for a line that is not a ready
+// line; err is set for a ready line with a malformed listener token.
+func ParseHandshake(line string) (handshake Handshake, ok bool, err error) {
+	cleanLine := strings.TrimSpace(line)
+	if !strings.HasPrefix(cleanLine, "NUMEN_READY") && !strings.HasPrefix(cleanLine, "READY") {
+		return Handshake{}, false, nil
+	}
+	handshake = Handshake{Port: 0, Listeners: map[string]int{}}
+	for _, part := range strings.Fields(cleanLine) {
+		if rest, isListener := strings.CutPrefix(part, listenerTokenPrefix); isListener {
+			if err := addListenerToken(handshake.Listeners, rest); err != nil {
+				return Handshake{}, true, fmt.Errorf("%w: %q: %w", errMalformedListenerToken, part, err)
+			}
+			continue
+		}
+		value, isPort := strings.CutPrefix(part, "port=")
+		if port, err := strconv.Atoi(value); isPort && err == nil && port > 0 && handshake.Port == 0 {
+			handshake.Port = port
+		}
+	}
+	return handshake, handshake.Port > 0, nil
+}
+
+var (
+	errListenerTokenName = errors.New("no listener name or a name given twice")
+	errListenerTokenPort = errors.New("no positive integer port")
+)
+
+// addListenerToken adds the listener of a token <name>=<port> to listeners.
+func addListenerToken(listeners map[string]int, token string) error {
+	name, value, hasValue := strings.Cut(token, "=")
+	if _, isRepeated := listeners[name]; name == "" || isRepeated {
+		return errListenerTokenName
+	}
+	port, err := strconv.Atoi(value)
+	if !hasValue || err != nil || port <= 0 {
+		return errListenerTokenPort
+	}
+	listeners[name] = port
+	return nil
+}
+
+// WaitForHandshake reads lines from reader until a handshake line is observed or ctx expires. A ready
+// line with a malformed listener token returns its error at once.
+func WaitForHandshake(ctx context.Context, r io.Reader) (Handshake, error) {
 	type result struct {
-		port int
-		err  error
+		handshake Handshake
+		err       error
 	}
 
 	resultCh := make(chan result, 1)
@@ -126,24 +158,24 @@ func WaitForHandshake(ctx context.Context, r io.Reader) (int, error) {
 	go func() {
 		scanner := bufio.NewScanner(r)
 		for scanner.Scan() {
-			line := scanner.Text()
-			if port, ok := ParseHandshake(line); ok {
-				resultCh <- result{port: port, err: nil}
+			handshake, ok, err := ParseHandshake(scanner.Text())
+			if ok || err != nil {
+				resultCh <- result{handshake: handshake, err: err}
 				return
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			resultCh <- result{port: 0, err: fmt.Errorf("scan handshake: %w", err)}
+			resultCh <- result{handshake: Handshake{}, err: fmt.Errorf("scan handshake: %w", err)}
 			return
 		}
-		resultCh <- result{port: 0, err: errInvalidHandshake}
+		resultCh <- result{handshake: Handshake{}, err: errInvalidHandshake}
 	}()
 
 	select {
 	case <-ctx.Done():
-		return 0, fmt.Errorf("%w: %w", ErrHandshakeTimeout, ctx.Err())
+		return Handshake{}, fmt.Errorf("%w: %w", ErrHandshakeTimeout, ctx.Err())
 	case res := <-resultCh:
-		return res.port, res.err
+		return res.handshake, res.err
 	}
 }
 

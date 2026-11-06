@@ -42,10 +42,7 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 		},
 	}
 
-	cfg := Config{
-		Addr:  "127.0.0.1:0",
-		Token: "test-token-123",
-	}
+	cfg := Config{Token: "test-token-123"}
 
 	srv, err := NewServer(cfg, hostClient)
 	if err != nil {
@@ -56,12 +53,10 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 		t.Fatalf("expected initial SyncTools in NewServer, got %v", got)
 	}
 	if srv.GetURL() != "" || srv.GetHTTPURL() != "" {
-		t.Fatal("expected empty URLs before Start")
+		t.Fatal("expected empty URLs before Serve")
 	}
 
-	if err := srv.Start(); err != nil {
-		t.Fatalf("srv.Start failed: %v", err)
-	}
+	serveOnLoopback(t, srv)
 	defer func() {
 		if err := srv.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -178,9 +173,7 @@ func connectStreamableClient(ctx context.Context, t *testing.T, mcpURL, token st
 }
 
 type failingListener struct {
-	err      error
-	closeErr error
-	onClose  func()
+	err error
 }
 
 func (l *failingListener) Accept() (net.Conn, error) {
@@ -188,10 +181,7 @@ func (l *failingListener) Accept() (net.Conn, error) {
 }
 
 func (l *failingListener) Close() error {
-	if l.onClose != nil {
-		l.onClose()
-	}
-	return l.closeErr
+	return nil
 }
 
 func (l *failingListener) Addr() net.Addr {
@@ -231,26 +221,27 @@ func TestServerOptionsAndRoutes(t *testing.T) {
 	}
 }
 
-func TestServerStartRebindAndClose(t *testing.T) {
+// serveOnLoopback serves srv on a listener bound to 127.0.0.1:0.
+func serveOnLoopback(t *testing.T, srv *Server) {
+	t.Helper()
+	ln, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.Serve(ln); err != nil {
+		cleanup.Close(t, ln)
+		t.Fatalf("Serve failed: %v", err)
+	}
+}
+
+func TestServerSetTokenServeAndClose(t *testing.T) {
 	t.Parallel()
 
-	// Start with invalid address fails.
-	badSrv, err := NewServer(Config{Addr: "127.0.0.1:invalid", Token: "t"}, nil)
+	srv, err := NewServer(Config{Token: "tok-1"}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := badSrv.Start(); err == nil {
-		t.Fatal("expected Start with invalid address to fail")
-	}
-
-	// Start with empty address defaults to 127.0.0.1:0.
-	srv, err := NewServer(Config{Addr: "", Token: "tok-1"}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := srv.Start(); err != nil {
-		t.Fatalf("Start failed: %v", err)
-	}
+	serveOnLoopback(t, srv)
 	defer func() {
 		if err := srv.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -261,123 +252,18 @@ func TestServerStartRebindAndClose(t *testing.T) {
 	if !strings.HasPrefix(url1, "http://127.0.0.1:") {
 		t.Fatalf("expected loopback streamable HTTP URL, got %s", url1)
 	}
-	addr1 := srv.actualAddr
 
-	// Rebind with empty Addr only updates Token without restarting listener.
-	if err := srv.Rebind(t.Context(), Config{Addr: "", Token: "tok-2"}); err != nil {
-		t.Fatalf("Rebind empty addr failed: %v", err)
-	}
+	srv.SetToken("tok-2")
 	if srv.GetToken() != "tok-2" || srv.GetHTTPURL() != url1 {
 		t.Fatalf("expected token tok-2 and unchanged URL %s, got token=%s url=%s", url1, srv.GetToken(), srv.GetHTTPURL())
 	}
 
-	// Reserve a second port to rebind to.
-	probeLn, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	addr2 := probeLn.Addr().String()
-	if err := probeLn.Close(); err != nil {
-		t.Fatal(err)
-	}
-
-	// Rebind to addr2 closes the old listener on addr1 and starts serving on addr2.
-	oldHTTPServer := srv.httpServer
-	if err := srv.Rebind(t.Context(), Config{Addr: addr2, Token: "tok-3"}); err != nil {
-		t.Fatalf("Rebind to %s failed: %v", addr2, err)
-	}
-	if srv.actualAddr != addr2 || srv.GetToken() != "tok-3" {
-		t.Fatalf("unexpected state after Rebind: addr=%s token=%s", srv.actualAddr, srv.GetToken())
-	}
-	if srv.listener == nil || srv.listener.Addr().String() != addr2 {
-		t.Fatalf("expected srv.listener to be updated to %s, got %v", addr2, srv.listener)
-	}
-	if srv.httpServer == oldHTTPServer {
-		t.Fatal("expected srv.httpServer to be replaced on Rebind")
-	}
-
-	// Verify old listener on addr1 was closed.
-	recheckLn, err := new(net.ListenConfig).Listen(t.Context(), "tcp", addr1)
-	if err != nil {
-		t.Fatalf("expected old listener on %s to be closed: %v", addr1, err)
-	}
-	cleanup.Close(t, recheckLn)
-
-	// Rebind with empty Addr when s.config.Addr is non-empty (addr2) only updates Token.
-	if err := srv.Rebind(t.Context(), Config{Addr: "", Token: "tok-3b"}); err != nil {
-		t.Fatalf("Rebind empty addr after addr2 failed: %v", err)
-	}
-	if srv.actualAddr != addr2 || srv.GetToken() != "tok-3b" {
-		t.Fatalf("expected addr %s and token tok-3b, got addr=%s token=%s", addr2, srv.actualAddr, srv.GetToken())
-	}
-
-	// Rebind with the identical address addr2 keeps the existing listener.
-	lnBeforeSameRebind := srv.listener
-	if err := srv.Rebind(t.Context(), Config{Addr: addr2, Token: "tok-4"}); err != nil {
-		t.Fatalf("Rebind same addr failed: %v", err)
-	}
-	if srv.listener != lnBeforeSameRebind || srv.GetToken() != "tok-4" {
-		t.Fatal("expected listener to be unchanged when rebinding to same address")
-	}
-
-	// Rebind to an invalid address on an open server closes oldListener and fails on Listen.
-	if err := srv.Rebind(t.Context(), Config{Addr: "127.0.0.1:invalid", Token: "tok-bad"}); err == nil {
-		t.Fatal("expected Rebind to invalid address on open server to fail")
-	}
-
-	// Subsequent Rebind when oldListener is already closed (returning net.ErrClosed) succeeds.
-	if err := srv.Rebind(t.Context(), Config{Addr: "127.0.0.1:0", Token: "tok-after-closed"}); err != nil {
-		t.Fatalf("expected Rebind after pre-closed listener to succeed, got %v", err)
-	}
-
-	// Close after Rebind succeeds without reporting net.ErrClosed from the old listener.
 	if err := srv.Close(t.Context()); err != nil {
 		t.Fatalf("Close failed: %v", err)
 	}
 
-	// Rebind on a closed server returns nil without attempting to listen.
-	if err := srv.Rebind(t.Context(), Config{Addr: "127.0.0.1:invalid", Token: "tok-5"}); err != nil {
-		t.Fatalf("expected Rebind on closed server to return nil, got %v", err)
-	}
-
-	// Serve on a closed server returns an error.
 	if err := srv.Serve(&failingListener{err: net.ErrClosed}); err == nil {
 		t.Fatal("expected Serve on closed server to fail")
-	}
-}
-
-func TestServerRebindEdgeCases(t *testing.T) {
-	t.Parallel()
-
-	// Rebind returns error when closing oldListener fails with an error other than net.ErrClosed.
-	srvCloseErr, err := NewServer(Config{Addr: "", Token: "t"}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	closeBoom := errors.New("listener close failure")
-	srvCloseErr.listener = &failingListener{err: net.ErrClosed, closeErr: closeBoom}
-	if err := srvCloseErr.Rebind(t.Context(), Config{Addr: "127.0.0.1:0", Token: "t2"}); !errors.Is(err, closeBoom) {
-		t.Fatalf("expected closeBoom from Rebind, got %v", err)
-	}
-
-	// Rebind closes new listener and returns if server closes concurrently during Rebind.
-	srvRace, err := NewServer(Config{Addr: "", Token: "t"}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	srvRace.listener = &failingListener{
-		err: net.ErrClosed,
-		onClose: func() {
-			if err := srvRace.Close(t.Context()); err != nil {
-				t.Error(err)
-			}
-		},
-	}
-	if err := srvRace.Rebind(t.Context(), Config{Addr: "127.0.0.1:0", Token: "t2"}); err != nil {
-		t.Fatalf("expected nil error when closed during Rebind, got %v", err)
-	}
-	if srvRace.actualAddr != "" {
-		t.Fatalf("expected actualAddr to remain empty when closed during Rebind, got %s", srvRace.actualAddr)
 	}
 }
 

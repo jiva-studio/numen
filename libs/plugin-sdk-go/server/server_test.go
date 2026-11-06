@@ -895,8 +895,8 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 		t.Fatal(err)
 	}
 	serveHTTP(httpSrv, lnClose, errsCh)
-	if _, open := <-errsCh; open {
-		t.Fatal("expected serveHTTP to close errs channel")
+	if err, open := <-errsCh; open {
+		t.Fatalf("expected serveHTTP to close errs channel, got %v", err)
 	}
 
 	// notifySignals with empty and non-empty signals

@@ -1,6 +1,6 @@
 ---
 title: MCP server
-description: The Model Context Protocol Server plugin serves your vault to any agent that supports MCP — where it listens and how to change the port.
+description: The Model Context Protocol Server plugin serves your vault to any agent that supports MCP — where it listens, how to change the port and how to turn it off.
 ---
 
 The [panel's agent](/agent/) is not the only one that can work in your vault. The plugin **Model Context Protocol Server** serves the vault's tools over MCP while the window is open, so an assistant you already use — in your terminal, in your editor — can search your notes, read them, write them and connect them. The application answers no questions from outside; it asks agents from inside and serves the vault to them through this plugin.
@@ -11,7 +11,7 @@ The [panel's agent](/agent/) is not the only one that can work in your vault. Th
 http://127.0.0.1:3333/mcp
 ```
 
-That address is the loopback interface: nothing outside your computer can reach it. The port is the plugin's **Port** setting, on its page in the settings, and it takes a number from 1024 to 65535. The server follows the vault the window is showing.
+That address is the loopback interface: nothing outside your computer can reach it. While the plugin is enabled, Numen listens on the port of the plugin's **Port** setting, on its page in the settings (3333 by default, a number from 1024 to 65535), and starts the plugin when an agent connects. A changed port takes effect at once. The server follows the vault the window is showing.
 
 ## What to point your agent at
 
@@ -35,6 +35,6 @@ There is no tool that erases a vault from disk. Removing a folder needs your con
 
 ## Turning it off
 
-Disable the plugin on its page in the settings. Nothing is served while it is disabled.
+Disable the plugin on its page in the settings. The port is closed while the plugin is disabled.
 
 Any program running as you can reach the port while it is open, and it grants everything the tools grant.

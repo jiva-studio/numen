@@ -60,7 +60,10 @@ func TestClosingTheEndpointEndsAChangeOfVaultInProgress(t *testing.T) {
 	}
 
 	select {
-	case <-list.ended:
+	case ctxErr := <-list.ended:
+		if ctxErr == nil {
+			t.Error("the change of vault ended on a context the close did not cancel")
+		}
 	default:
 		t.Error("the change of vault was still running after the endpoint closed")
 	}
