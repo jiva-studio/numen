@@ -11,7 +11,7 @@ Let external AI apps—such as Claude Desktop, Cursor, or Windsurf—read, searc
 
 ## How to Connect
 
-While the plugin is enabled, Numen listens on `127.0.0.1:3333` and starts the MCP server when a client connects:
+While the plugin is enabled, Numen listens on `127.0.0.1` at the plugin's **Port** setting (default `3333`), listens on the new port when the setting changes, and starts the MCP server when a client connects:
 
 - **Streamable HTTP endpoint**: `http://127.0.0.1:3333/mcp`
 

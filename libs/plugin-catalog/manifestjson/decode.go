@@ -515,7 +515,12 @@ func pruneOptionList(value any, path string, unknown []string) []string {
 func newListeners(wire []*v1.ManifestListener) []manifest.Listener {
 	var out []manifest.Listener
 	for _, one := range wire {
-		out = append(out, manifest.Listener{Name: one.GetName(), Port: int(one.GetPort()), Protocol: one.GetProtocol()})
+		out = append(out, manifest.Listener{
+			Name:        one.GetName(),
+			Port:        int(one.GetPort()),
+			PortSetting: one.GetPortSetting(),
+			Protocol:    one.GetProtocol(),
+		})
 	}
 	return out
 }

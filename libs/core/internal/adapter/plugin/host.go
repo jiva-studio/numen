@@ -24,7 +24,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/portproxy"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
@@ -118,9 +117,8 @@ type Host struct {
 	storage        storageRoots
 	// listenersMu orders the binding and closing of listener ports. It is taken before mu, never while mu is held.
 	listenersMu sync.Mutex
-	// listeners are the bound ports of each plugin; listenerSets the declarations they were bound for.
-	listeners    map[string][]*portproxy.Proxy
-	listenerSets map[string][]manifest.Listener
+	// listeners maps each plugin to its bound listener ports by listener name.
+	listeners map[string]map[string]boundListener
 	// listenerPorts maps each running plugin to the loopback port of each listener its ready line reported.
 	listenerPorts map[string]map[string]int
 }
@@ -164,8 +162,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		builtIns:         make(map[string]builtInPlugin),
 		contentTypes:     nil,
 		typeCache:        contentTypeCache{},
-		listeners:        make(map[string][]*portproxy.Proxy),
-		listenerSets:     make(map[string][]manifest.Listener),
+		listeners:        make(map[string]map[string]boundListener),
 		listenerPorts:    make(map[string]map[string]int),
 	}
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
@@ -1329,6 +1326,8 @@ func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, va
 		if err := h.applyEnabledChange(ctx, pluginID, value); err != nil {
 			return err
 		}
+	} else {
+		h.syncListeners(ctx, pluginID)
 	}
 	return h.NotifyPluginConfig(ctx, pluginID)
 }

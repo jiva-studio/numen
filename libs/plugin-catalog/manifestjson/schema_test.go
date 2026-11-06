@@ -49,7 +49,7 @@ const everyFieldManifest = `{
 		"noteTypes": [{"type": "link", "chunks": false, "headings": [1, 2], "idHeadingLevels": [3], "idPattern": "[a-z]+"}],
 		"frameOrigins": ["https://player.example"],
 		"menus": [{"location": "titleBar", "command": "task.run", "group": "run", "order": 1}],
-		"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}]}
+		"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}, {"name": "console", "portSetting": "mode", "protocol": "tcp"}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

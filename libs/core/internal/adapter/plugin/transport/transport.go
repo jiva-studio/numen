@@ -100,34 +100,53 @@ type Handshake struct {
 
 const listenerTokenPrefix = "listener."
 
-// ParseHandshake reads the ready line of a plugin process: the port of its RPC server and one
-// listener.<name>=<port> token per listener it opened.
-func ParseHandshake(line string) (Handshake, bool) {
+var errMalformedListenerToken = errors.New("malformed listener token in the ready line")
+
+// ParseHandshake reads a ready line: the port of the plugin's RPC server and one
+// listener.<name>=<port> token per listener it opened. ok is false for a line that is not a ready
+// line; err is set for a ready line with a malformed listener token.
+func ParseHandshake(line string) (handshake Handshake, ok bool, err error) {
 	cleanLine := strings.TrimSpace(line)
 	if !strings.HasPrefix(cleanLine, "NUMEN_READY") && !strings.HasPrefix(cleanLine, "READY") {
-		return Handshake{}, false
+		return Handshake{}, false, nil
 	}
-	handshake := Handshake{Port: 0, Listeners: map[string]int{}}
+	handshake = Handshake{Port: 0, Listeners: map[string]int{}}
 	for _, part := range strings.Fields(cleanLine) {
-		key, value, ok := strings.Cut(part, "=")
-		if !ok {
+		if rest, isListener := strings.CutPrefix(part, listenerTokenPrefix); isListener {
+			if err := addListenerToken(handshake.Listeners, rest); err != nil {
+				return Handshake{}, true, fmt.Errorf("%w: %q: %w", errMalformedListenerToken, part, err)
+			}
 			continue
 		}
-		port, err := strconv.Atoi(value)
-		if err != nil || port <= 0 {
-			continue
-		}
-		if key == "port" && handshake.Port == 0 {
+		value, isPort := strings.CutPrefix(part, "port=")
+		if port, err := strconv.Atoi(value); isPort && err == nil && port > 0 && handshake.Port == 0 {
 			handshake.Port = port
 		}
-		if name, isListener := strings.CutPrefix(key, listenerTokenPrefix); isListener && name != "" {
-			handshake.Listeners[name] = port
-		}
 	}
-	return handshake, handshake.Port > 0
+	return handshake, handshake.Port > 0, nil
 }
 
-// WaitForHandshake reads lines from reader until a handshake line is observed or ctx expires.
+var (
+	errListenerTokenName = errors.New("no listener name or a name given twice")
+	errListenerTokenPort = errors.New("no positive integer port")
+)
+
+// addListenerToken adds the listener of a token <name>=<port> to listeners.
+func addListenerToken(listeners map[string]int, token string) error {
+	name, value, hasValue := strings.Cut(token, "=")
+	if _, isRepeated := listeners[name]; name == "" || isRepeated {
+		return errListenerTokenName
+	}
+	port, err := strconv.Atoi(value)
+	if !hasValue || err != nil || port <= 0 {
+		return errListenerTokenPort
+	}
+	listeners[name] = port
+	return nil
+}
+
+// WaitForHandshake reads lines from reader until a handshake line is observed or ctx expires. A ready
+// line with a malformed listener token returns its error at once.
 func WaitForHandshake(ctx context.Context, r io.Reader) (Handshake, error) {
 	type result struct {
 		handshake Handshake
@@ -139,9 +158,9 @@ func WaitForHandshake(ctx context.Context, r io.Reader) (Handshake, error) {
 	go func() {
 		scanner := bufio.NewScanner(r)
 		for scanner.Scan() {
-			line := scanner.Text()
-			if handshake, ok := ParseHandshake(line); ok {
-				resultCh <- result{handshake: handshake, err: nil}
+			handshake, ok, err := ParseHandshake(scanner.Text())
+			if ok || err != nil {
+				resultCh <- result{handshake: handshake, err: err}
 				return
 			}
 		}

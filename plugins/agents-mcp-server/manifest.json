@@ -8,7 +8,7 @@
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "agents",
-    "listeners": [{ "name": "mcp", "port": 3333, "protocol": "tcp" }]
+    "listeners": [{ "name": "mcp", "portSetting": "port", "protocol": "tcp" }]
   },
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "backend": { "entrypoint": "bin/agents-mcp-server" },

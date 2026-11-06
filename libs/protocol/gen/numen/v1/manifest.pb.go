@@ -362,10 +362,13 @@ type ManifestListener struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// name identifies the listener within the plugin; lowercase words joined by hyphens.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// port is the port the host binds, 1024 to 65535.
+	// port is a fixed port the host binds, 1024 to 65535. Set exactly one of port and port_setting.
 	Port int32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
 	// protocol is the transport, "tcp".
-	Protocol      string `protobuf:"bytes,3,opt,name=protocol,proto3" json:"protocol,omitempty"`
+	Protocol string `protobuf:"bytes,3,opt,name=protocol,proto3" json:"protocol,omitempty"`
+	// port_setting is the key of the plugin's number setting that holds the port the host binds; the
+	// host binds again when the setting changes. Set exactly one of port and port_setting.
+	PortSetting   string `protobuf:"bytes,4,opt,name=port_setting,json=portSetting,proto3" json:"port_setting,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -417,6 +420,13 @@ func (x *ManifestListener) GetPort() int32 {
 func (x *ManifestListener) GetProtocol() string {
 	if x != nil {
 		return x.Protocol
+	}
+	return ""
+}
+
+func (x *ManifestListener) GetPortSetting() string {
+	if x != nil {
+		return x.PortSetting
 	}
 	return ""
 }
@@ -1794,11 +1804,12 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\rframe_origins\x18\v \x03(\tR\fframeOrigins\x125\n" +
 	"\bcommands\x18\f \x03(\v2\x19.numen.v1.ManifestCommandR\bcommands\x121\n" +
 	"\x05menus\x18\r \x03(\v2\x1b.numen.v1.ManifestMenuEntryR\x05menus\x128\n" +
-	"\tlisteners\x18\x0e \x03(\v2\x1a.numen.v1.ManifestListenerR\tlisteners\"V\n" +
+	"\tlisteners\x18\x0e \x03(\v2\x1a.numen.v1.ManifestListenerR\tlisteners\"y\n" +
 	"\x10ManifestListener\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\x05R\x04port\x12\x1a\n" +
-	"\bprotocol\x18\x03 \x01(\tR\bprotocol\"\x84\x01\n" +
+	"\bprotocol\x18\x03 \x01(\tR\bprotocol\x12!\n" +
+	"\fport_setting\x18\x04 \x01(\tR\vportSetting\"\x84\x01\n" +
 	"\x11ManifestMenuEntry\x12\x1a\n" +
 	"\blocation\x18\x01 \x01(\tR\blocation\x12\x18\n" +
 	"\acommand\x18\x02 \x01(\tR\acommand\x12\x14\n" +

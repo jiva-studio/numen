@@ -140,7 +140,7 @@ The tools are registered by the plugins that own their subjects — `agents-tool
 
 ## An agent the user runs themselves
 
-The tools are served to an agent somebody has configured in their own terminal by the plugin `md.numen.agents.mcp.server`. Its manifest declares the listener `mcp` on port 3333: while the plugin is enabled, the host listens on `127.0.0.1:3333`, starts the plugin when a connection arrives and forwards the connection to the port the plugin reports for `mcp` in its ready line. The plugin stops when it is idle and no connection is open; the port stays bound. The application writes no token file.
+The tools are served to an agent somebody has configured in their own terminal by the plugin `md.numen.agents.mcp.server`. Its manifest declares the listener `mcp` on the plugin's setting `port` (3333 by default): while the plugin is enabled, the host listens on `127.0.0.1` at that port, binds the new port when the setting changes, starts the plugin when a connection arrives and forwards the connection to the port the plugin reports for `mcp` in its ready line. The plugin stops when it is idle and no connection is open; the port stays bound. The application writes no token file.
 
 ## Host agent auto-discovery
 

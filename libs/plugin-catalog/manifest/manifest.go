@@ -124,9 +124,12 @@ const SettingTypeEnum = "enum"
 // SettingTypeFile is the type of a setting that holds a file path on this machine.
 const SettingTypeFile = "file"
 
+// settingTypeNumber is the type of a setting that holds a number.
+const settingTypeNumber = "number"
+
 // listSettingTypes returns the types a setting may have.
 func listSettingTypes() []string {
-	return []string{"boolean", SettingTypeString, "number", SettingTypeEnum, "range", SettingTypeFile}
+	return []string{"boolean", SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile}
 }
 
 // Backend describes the server-side executable of a plugin.
