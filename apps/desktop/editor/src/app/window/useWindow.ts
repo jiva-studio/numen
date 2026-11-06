@@ -43,6 +43,8 @@ import { useWindowDisplay } from './useWindowDisplay'
 import { useWindowFrame } from './useWindowFrame'
 import { createWindowHost } from './windowHost'
 import { createEditorVaults } from './windowVaults'
+import { createWindowCommands } from './windowCommands'
+import { createCommandNoteReader } from '../commands/usePluginCommands'
 import { useNoticeTasks } from '../shell/useNoticeTasks'
 import { useWindowKinds } from './useWindowKinds'
 import { useWindowStatusBar } from '../shell/useWindowStatusBar'
@@ -674,14 +676,27 @@ const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
   retryBootstrap: bootstrap.retry,
 })
 
-/** The frame of the window, and the vaults and the window its plugins read from their contexts. */
+/** The frame of the window, and the commands, the vaults and the window its plugins read. */
 function createWindowFrameServices(
   base: WindowCore,
   ctx: WindowContext,
-  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget'>,
+  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget' | 'runCommand'>,
 ) {
   const frame = useWindowFrame()
+  let appIds: readonly string[] | undefined
   Object.assign(base.pluginServices, {
+    commands: createWindowCommands({
+      getAppIds: () => (appIds ??= createCommands(words).map((one) => one.id)),
+      getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
+      runCommand: commands.runCommand,
+      getChoices: async (id, target) =>
+        base.pluginHost.hasCommand(id) ? base.pluginHost.getCommandChoices(id, target) : [],
+      runChoice: async (id, target, choice) => {
+        const note = await createCommandNoteReader(core)(target)
+        await base.pluginHost.executeCommand(id, note, choice)
+      },
+      getTarget: commands.getTarget,
+    }),
     vaults: createEditorVaults({
       vaultList: getVaults(ctx).vaultList,
       getTarget: commands.getTarget,
@@ -778,7 +793,7 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
-    frame: createWindowFrameServices(base, ctx, { getTarget }),
+    frame: createWindowFrameServices(base, ctx, { getTarget, runCommand }),
     isHighlighted,
     ...createWindowTabMoves(base, editing, closeTab),
   }

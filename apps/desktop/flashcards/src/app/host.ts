@@ -21,6 +21,7 @@ import {
   type Disposable,
   type PluginContext,
   type TabKindRegistration,
+  type CommandsHost,
   type VaultsHost,
   type WindowHost,
 } from '@numen/plugin-host'
@@ -116,11 +117,19 @@ const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginVie
   return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
 }
 
-/** The vaults and the window the plugins of the window read, filled once the window has made them. */
+/** The commands, the vaults and the window the plugins read, filled once the window has made them. */
 export interface ShellServices {
+  commands?: CommandsHost
   vaults?: VaultsHost
   window?: WindowHost
 }
+
+/** The services the window has filled, as a context holds them. */
+const getFilledServices = ({ commands, vaults, window }: ShellServices) => ({
+  ...(commands ? { commands } : {}),
+  ...(vaults ? { vaults } : {}),
+  ...(window ? { window } : {}),
+})
 
 /**
  * The host of the window, whose plugins are given the agent where the window has one, and the
@@ -177,8 +186,7 @@ export function createShellHost(agent?: AgentHost, services: ShellServices = {})
       hasPermission: (permission) => manifest?.permissions?.includes(permission) ?? false,
       notices: createPluginNotices(notices, pluginId),
       ...(agent ? { agent } : {}),
-      ...(services.vaults ? { vaults: services.vaults } : {}),
-      ...(services.window ? { window: services.window } : {}),
+      ...getFilledServices(services),
     }
     contexts.set(pluginId, context)
     return context

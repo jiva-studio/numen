@@ -3,7 +3,6 @@
  */
 import { shallowRef } from 'vue'
 import type {
-  CommandNote,
   ContextMenuRegistration,
   ContextMenuTarget,
   PluginContext,
@@ -19,10 +18,8 @@ import { createStatusViewRegistry, type StatusViewRegistry } from '../statusView
 import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views/slotViews'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
-import { addListener, notifyListeners, reportError, runCommand } from './events'
-import { createPaletteCommand } from './available'
-import { readAvailableCommands } from './availableReader'
-import { matchesShortcut } from './shortcuts'
+import { addListener, notifyListeners } from './events'
+import { createCommandApi } from './commandApi'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
@@ -245,42 +242,6 @@ function createHostRegistry(): HostRegistry {
     reportedIssues: new Set(),
     vaultListeners: new Set(),
     fileListeners: new Set(),
-  }
-}
-
-/** The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts. */
-function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
-  const getAvailable = () => readAvailableCommands(deps, registry)
-  const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
-  return {
-    getPaletteCommands: () => getAvailable().map(createPaletteCommand),
-    hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
-    executeCommand: async (id: string, note: CommandNote): Promise<boolean> => {
-      const command = findAvailable(id)
-      if (!command) return false
-      let entry = command.entry
-      if (!entry) {
-        await deps.waitForPlugin?.(command.declaration.pluginId)
-        entry = registry.commands.value.get(id)
-      }
-      if (!entry) return false
-      await runCommand(deps, entry, note)
-      return true
-    },
-    handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
-      for (const { entry, declaration } of getAvailable()) {
-        if (entry && matchesShortcut(event, declaration.shortcut)) {
-          getNote()
-            .then((note) => {
-              if (declaration.scope === 'note' && note.path === '') return
-              return runCommand(deps, entry, note)
-            })
-            .catch((error: unknown) => reportError(deps, entry.pluginId, error))
-          return true
-        }
-      }
-      return false
-    },
   }
 }
 

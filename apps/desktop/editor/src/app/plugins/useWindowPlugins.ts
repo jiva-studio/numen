@@ -83,6 +83,7 @@ function createServiceAccess(services: PluginServices | undefined) {
     getRelations: () => services?.relations,
     getFiles: () => services?.files,
     getAgent: () => services?.agent,
+    getCommands: () => services?.commands,
     getVaults: () => services?.vaults,
     getWindow: () => services?.window,
     getBuffers: () => services?.buffers,

@@ -4,6 +4,7 @@ import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-
 import { createMockManifest } from '@numen/core-client/testing'
 import type { VaultsHost, WindowHost } from '@numen/plugin-host'
 import { createShellHost, TARGET } from './host'
+import { createWindowCommands } from './windowCommands'
 
 const NOTHING = { dispose: () => undefined }
 
@@ -75,8 +76,12 @@ describe('createShellHost', () => {
     expect(front.value?.registration.kind).toBe('fallback')
   })
 
-  it('gives every plugin the vaults and the window the window offers', () => {
-    const services = { vaults: createMockVaultsHost(), window: createMockWindowHost() }
+  it('gives every plugin the commands, the vaults and the window the window offers', () => {
+    const services = {
+      commands: createWindowCommands(),
+      vaults: createMockVaultsHost(),
+      window: createMockWindowHost(),
+    }
     const { host } = createShellHost(undefined, services)
 
     const bar = host.createContext('org.example.ledger')
@@ -85,6 +90,7 @@ describe('createShellHost', () => {
     expect(bar.vaults).toBe(services.vaults)
     expect(cards.vaults).toBe(services.vaults)
     expect(bar.window).toBe(services.window)
+    expect(cards.commands).toBe(services.commands)
   })
 
   it('gives a plugin the vaults and the window the window offers after the host was made', () => {

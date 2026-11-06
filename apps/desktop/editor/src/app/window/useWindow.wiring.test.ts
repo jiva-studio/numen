@@ -26,7 +26,10 @@ const h = vi.hoisted(() => ({
 }))
 
 vi.mock('../vault', () => ({ core: h.core }))
-vi.mock('@/features/command-palette', () => ({ runSupport: () => ({ name: 'runs' }) }))
+vi.mock('@/features/command-palette', () => ({
+  runSupport: () => ({ name: 'runs' }),
+  createCommands: () => [{ id: 'app:vault.create' }],
+}))
 vi.mock('@/features/tab-linking', () => ({
   useTabLinks: (args: unknown) => {
     h.args.tabLinks = args
@@ -612,13 +615,14 @@ describe('the window started and closed', () => {
 })
 
 describe('the services a plugin is given', () => {
-  it('are the ones the kinds made, the window task list, the vaults and the window', () => {
+  it('are the ones the kinds made, the window task list, the commands, the vaults and the window', () => {
     useWindow()
 
-    const { taskList, vaults, window, ...made } = h.args.plugins.services
+    const { taskList, commands, vaults, window, ...made } = h.args.plugins.services
     expect(made).toStrictEqual(h.f.kinds.services)
     expect(taskList).toBe(h.f.display.tasks)
     expect(vaults?.getState()).toBeDefined()
+    expect(commands?.getIds()).toStrictEqual(['app:vault.create', 'org.example.sample:share.run'])
     expect(window?.getState()).toStrictEqual({ isMaximized: false, isFullscreen: false })
   })
 
