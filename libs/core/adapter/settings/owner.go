@@ -237,7 +237,11 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 	f.dropInvalidApp(declared, registries)
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
 		if _, found := declared(id); !found {
+			isDefault := isDefaultPlugin(id, f.Plugins[id])
 			delete(f.Plugins, id)
+			if isDefault {
+				continue
+			}
 			f.AddNotice(fmt.Sprintf("%s is the object of no plugin that is installed, and is ignored", id))
 			continue
 		}
