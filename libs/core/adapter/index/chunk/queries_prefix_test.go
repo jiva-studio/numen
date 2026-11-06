@@ -103,3 +103,25 @@ func TestFindNearestWithinPathPrefixReturnsOnlyPrefixChunks(t *testing.T) {
 		t.Errorf("a prefix nothing starts with found %v, %v", getSources(none), err)
 	}
 }
+
+// A Linux file name need not be UTF-8, and its bytes after the prefix may sort above every
+// character: the range on the path is bounded by bytes, not by the largest character.
+func TestFindNearestWithinPathPrefixFindsAPathThatIsNotUTF8(t *testing.T) {
+	db := openIndex(t)
+	for _, path := range []string{"notes/\xff.md", "\xff\xff.md", "notes0.md"} {
+		source{path: path, kind: "note", hash: "h-" + path, large: "large " + path, smalls: []string{"first " + path}}.save(t, db)
+		embed(t, db, vaultA, path, 0xF0)
+	}
+
+	for prefix, want := range map[string]string{"notes/": "notes/\xff.md", "\xff": "\xff\xff.md"} {
+		got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{
+			Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1, PathPrefix: prefix,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if sources := slices.Compact(getSources(got)); !slices.Equal(sources, []string{want}) {
+			t.Errorf("under %q the passages are of %q, want only %q", prefix, sources, want)
+		}
+	}
+}

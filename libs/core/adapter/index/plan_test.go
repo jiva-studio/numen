@@ -78,7 +78,7 @@ func getExpectedPlans() []struct {
 		// The coarse pass under a path prefix reaches the sources by the range of their
 		// paths, their chunks by source, and the vector of each chunk by its key: the
 		// "!" of the plan of the vector table is its lookup of one row by key.
-		{chunk.Statements(), "coarse_prefix", []any{getCoarse(), 1, "notes/", 10}, []string{"(vault_id=? AND path>? AND path<?)", "chunks_by_source", "SCAN v VIRTUAL TABLE INDEX 5:2!"}},
+		{chunk.Statements(), "coarse_prefix", []any{getCoarse(), 1, "notes/", 10, "notes0"}, []string{"(vault_id=? AND path>? AND path<?)", "chunks_by_source", "SCAN v VIRTUAL TABLE INDEX 5:2!"}},
 		{chunk.Statements(), "coarse", []any{getCoarse(), 1, 10}, []string{"chunks_vec"}},
 	}
 }

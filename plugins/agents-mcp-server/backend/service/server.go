@@ -90,7 +90,9 @@ func newSyncMiddleware(aggregator *ToolAggregator) sdk.Middleware {
 			case "initialize", "server/discover":
 				reportSyncError(aggregator.SyncTools(ctx))
 				result, err := next(ctx, method, req)
-				writeInstructions(result, joinInstructions(aggregator.GetInstructions()))
+				if err == nil {
+					writeInstructions(result, joinInstructions(aggregator.GetInstructions()))
+				}
 				return result, err
 			}
 			return next(ctx, method, req)
@@ -98,13 +100,18 @@ func newSyncMiddleware(aggregator *ToolAggregator) sdk.Middleware {
 	}
 }
 
-// writeInstructions sets the instructions of an initialize or a discover result.
+// writeInstructions sets the instructions of an initialize or a discover result. The SDK returns a
+// typed nil result with an error, as for a second initialize on a session.
 func writeInstructions(result sdk.Result, text string) {
 	switch res := result.(type) {
 	case *sdk.InitializeResult:
-		res.Instructions = text
+		if res != nil {
+			res.Instructions = text
+		}
 	case *sdk.DiscoverResult:
-		res.Instructions = text
+		if res != nil {
+			res.Instructions = text
+		}
 	}
 }
 

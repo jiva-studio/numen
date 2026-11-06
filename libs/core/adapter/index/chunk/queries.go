@@ -298,7 +298,7 @@ func (q *Queries) findNearestWithPrefix(ctx context.Context, vault int64, query 
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, coarsePrefixSQL, vector.Bits(query), vault, pathPrefix, k)
+	rows, err := q.db.QueryContext(ctx, coarsePrefixSQL, vector.Bits(query), vault, pathPrefix, k, getUpperBound(pathPrefix))
 	if err != nil {
 		return nil, err
 	}
@@ -313,6 +313,21 @@ func (q *Queries) findNearestWithPrefix(ctx context.Context, vault int64, query 
 		kept = append(kept, chunk)
 	}
 	return kept, rows.Err()
+}
+
+// getUpperBound is the least value above every path that starts with prefix, by bytes: the prefix
+// with its trailing 0xFF bytes taken off and its last byte raised by one. Where nothing is left,
+// no text is above them all, and the bound is a BLOB, which SQLite sorts above every TEXT.
+func getUpperBound(prefix string) any {
+	end := []byte(prefix)
+	for len(end) > 0 && end[len(end)-1] == 0xFF {
+		end = end[:len(end)-1]
+	}
+	if len(end) == 0 {
+		return []byte{0xFF}
+	}
+	end[len(end)-1]++
+	return string(end)
 }
 
 // findNearestByBits is the pass over the bit vectors: the chunks of one vault whose signs
