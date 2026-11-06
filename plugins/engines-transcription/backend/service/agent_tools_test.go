@@ -447,6 +447,88 @@ func TestTranscriptCreateAfterAFinishedTranscriptionReturnsItsVersion(t *testing
 	}
 }
 
+// proofreadingID is the plugin that makes versions from other versions in the chain tests.
+const proofreadingID = "md.numen.tools.proofreading"
+
+// putProofread records a proofread version of the lecture, made by the plugin proofreadingID from
+// the source version, or from the recording itself where source is the zero version. It fails the
+// test unless the proofread version is live with the intended source.
+func (s *toolScene) putProofread(t *testing.T, source domain.TextVersion) domain.TextVersion {
+	t.Helper()
+	const file = "proofread-1.jsonl"
+	segments := []domain.TextSegment{{Text: "Heard before, with the commas put back.\n"}}
+	if err := host.WriteText(t.Context(), s.texts.GetStore(proofreadingID), file, segments); err != nil {
+		t.Fatal(err)
+	}
+	params := host.TextPut{
+		Path: lecture, Key: "proofread-1", Source: "", Kind: textKind,
+		SourceHash: domain.HashContent([]byte(lectureSound)), File: file,
+	}
+	if source != (domain.TextVersion{}) {
+		params.Source, params.SourceHash = source.GetID(), source.Hash
+	}
+	version, err := s.texts.As(proofreadingID).PutVersion(t.Context(), params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listing, err := s.texts.ListVersions(t.Context(), lecture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	i := slices.IndexFunc(listing.Versions, func(v domain.TextVersion) bool { return v.GetID() == version.GetID() })
+	if i < 0 || listing.Live != version.GetID() || listing.Versions[i].Source != params.Source ||
+		listing.Versions[i].PluginID != proofreadingID {
+		t.Fatalf("the lecture lists %+v, want %s live, made from %q", listing, version.GetID(), params.Source)
+	}
+	return version
+}
+
+func TestTranscriptCreateOfALiveProofreadOfTheTranscriptReturnsTheProofreadWithoutARun(t *testing.T) {
+	s := newToolScene(t)
+	whole := s.putTranscript(t, true)
+	proofread := s.putProofread(t, whole)
+
+	out := s.createTranscript(t, "Lectures", lecture)
+
+	want := TranscriptCreateOutput{
+		TaskID: "transcription:" + lecture, Path: lecture, State: "done", Version: string(proofread.GetID()),
+	}
+	if out != want {
+		t.Errorf("transcript_create returned %+v, want %+v", out, want)
+	}
+	s.checkNoRun(t)
+}
+
+func TestTranscriptCreateOfALiveProofreadOfTheRecordingStartsTheRun(t *testing.T) {
+	s := newToolScene(t)
+	s.putTranscript(t, true)
+	s.putProofread(t, domain.TextVersion{})
+
+	out := s.createTranscript(t, "Lectures", lecture)
+
+	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	if out != want {
+		t.Errorf("transcript_create returned %+v, want %+v", out, want)
+	}
+	close(s.blocking.release)
+	s.transcriber.Close()
+}
+
+func TestTranscriptCreateOfALiveProofreadOfAPartialTranscriptStartsTheRun(t *testing.T) {
+	s := newToolScene(t)
+	partial := s.putTranscript(t, false)
+	s.putProofread(t, partial)
+
+	out := s.createTranscript(t, "Lectures", lecture)
+
+	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	if out != want {
+		t.Errorf("transcript_create returned %+v, want %+v", out, want)
+	}
+	close(s.blocking.release)
+	s.transcriber.Close()
+}
+
 func TestTranscriptCreateRefusesACallThatNamesNoVault(t *testing.T) {
 	s := newToolScene(t)
 

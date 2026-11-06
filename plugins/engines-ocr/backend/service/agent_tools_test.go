@@ -421,6 +421,77 @@ func TestRecognitionCreateAfterAFinishedRecognitionReturnsItsVersion(t *testing.
 	}
 }
 
+// proofreadingID is the plugin that makes versions from other versions in the chain tests.
+const proofreadingID = "md.numen.tools.proofreading"
+
+// putProofread records a proofread text of the scan, made by the plugin proofreadingID from the
+// source version, or from the scan itself where source is the zero version. It fails the test unless
+// the proofread version is live with the intended source.
+func (s *toolScene) putProofread(t *testing.T, source domain.TextVersion) domain.TextVersion {
+	t.Helper()
+	raw, _, err := s.vault.Read(t.Context(), scanPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const file = "proofread-1.jsonl"
+	segments := []domain.TextSegment{{Text: "Ohm measured the current through a copper wire, twice.\n"}}
+	if err := host.WriteText(t.Context(), s.texts.GetStore(proofreadingID), file, segments); err != nil {
+		t.Fatal(err)
+	}
+	params := host.TextPut{
+		Path: scanPath, Key: "proofread-1", Source: "", Kind: "recognition",
+		SourceHash: domain.HashContent(raw), File: file,
+	}
+	if source != (domain.TextVersion{}) {
+		params.Source, params.SourceHash = source.GetID(), source.Hash
+	}
+	version, err := s.texts.As(proofreadingID).PutVersion(t.Context(), params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listing, err := s.texts.ListVersions(t.Context(), scanPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	i := slices.IndexFunc(listing.Versions, func(v domain.TextVersion) bool { return v.GetID() == version.GetID() })
+	if i < 0 || listing.Live != version.GetID() || listing.Versions[i].Source != params.Source ||
+		listing.Versions[i].PluginID != proofreadingID {
+		t.Fatalf("the scan lists %+v, want %s live, made from %q", listing, version.GetID(), params.Source)
+	}
+	return version
+}
+
+func TestRecognitionCreateOfALiveProofreadOfTheRecognitionReturnsTheProofreadWithoutARun(t *testing.T) {
+	s := newToolScene(t)
+	recognised := s.putRecognition(t)
+	proofread := s.putProofread(t, recognised)
+
+	out := s.recognise(t, "Physics", scanPath)
+
+	want := RecognitionCreateOutput{
+		TaskID: "recognise:" + scanPath, Path: scanPath, State: "done", Version: string(proofread.GetID()),
+	}
+	if out != want {
+		t.Errorf("recognition_create returned %+v, want %+v", out, want)
+	}
+	s.checkNoRun(t)
+}
+
+func TestRecognitionCreateOfALiveProofreadOfTheScanStartsTheRun(t *testing.T) {
+	s := newToolScene(t)
+	s.putRecognition(t)
+	s.putProofread(t, domain.TextVersion{})
+
+	out := s.recognise(t, "Physics", scanPath)
+
+	want := RecognitionCreateOutput{TaskID: "recognise:" + scanPath, Path: scanPath, State: "started"}
+	if out != want {
+		t.Errorf("recognition_create returned %+v, want %+v", out, want)
+	}
+	close(s.recogniser.release)
+	s.tools.Close()
+}
+
 func TestRecognitionCreateRefusesACallThatNamesNoVault(t *testing.T) {
 	s := newToolScene(t)
 
