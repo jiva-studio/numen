@@ -123,7 +123,7 @@ func (l *linkingVault) UpdateLinks(_ context.Context, from string, to domain.Add
 		return domain.FileStat{}, err
 	}
 	if !l.hasLink(from, to) {
-		return domain.FileStat{}, fmt.Errorf("no link to %s is written here", to)
+		return domain.FileStat{}, fmt.Errorf("no link to %s is written here", to.GetWritten())
 	}
 	return l.write(from)
 }
@@ -136,7 +136,7 @@ func (l *linkingVault) RemoveLinks(_ context.Context, from string, to domain.Add
 		return domain.FileStat{}, err
 	}
 	if !l.hasLink(from, to) {
-		return domain.FileStat{}, fmt.Errorf("no link to %s is written here", to)
+		return domain.FileStat{}, fmt.Errorf("no link to %s is written here", to.GetWritten())
 	}
 	return l.write(from)
 }
@@ -407,7 +407,7 @@ func TestUpdateLinksOfATargetTheNoteDoesNotLinkAnswersTheCoreText(t *testing.T) 
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL || res.Msg.GetDetail() != "no link to name://Volga is written here" {
+	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL || res.Msg.GetDetail() != "no link to Volga is written here" {
 		t.Errorf("UpdateLinks of a missing link answered %v, want INTERNAL with the detail naming name://Volga", res.Msg)
 	}
 }
@@ -482,7 +482,7 @@ func TestRemoveLinksOfATargetTheNoteDoesNotLinkAnswersTheCoreText(t *testing.T) 
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL || res.Msg.GetDetail() != "no link to name://Volga is written here" {
+	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL || res.Msg.GetDetail() != "no link to Volga is written here" {
 		t.Errorf("RemoveLinks of a missing link answered %v, want INTERNAL with the detail naming name://Volga", res.Msg)
 	}
 }
