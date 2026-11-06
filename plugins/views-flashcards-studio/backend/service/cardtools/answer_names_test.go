@@ -11,16 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// decodeAnswer decodes a structured tool answer into a map of its top-level keys.
-func decodeAnswer(t *testing.T, structured []byte) map[string]any {
-	t.Helper()
-	var answer map[string]any
-	if err := json.Unmarshal(structured, &answer); err != nil {
-		t.Fatalf("unmarshal %s: %v", structured, err)
-	}
-	return answer
-}
-
 // requireKeys fails the test for every key of want the object lacks and every key of absent it has.
 func requireKeys(t *testing.T, what string, object map[string]any, want, absent []string) {
 	t.Helper()
@@ -34,6 +24,26 @@ func requireKeys(t *testing.T, what string, object map[string]any, want, absent 
 			t.Errorf("%s has the key %q: %v", what, key, object)
 		}
 	}
+}
+
+// requireList returns the value as a JSON array and fails the test when it is not one.
+func requireList(t *testing.T, what string, value any) []any {
+	t.Helper()
+	list, ok := value.([]any)
+	if !ok {
+		t.Fatalf("%s is %v, not an array", what, value)
+	}
+	return list
+}
+
+// requireObject returns the value as a JSON object and fails the test when it is not one.
+func requireObject(t *testing.T, what string, value any) map[string]any {
+	t.Helper()
+	object, ok := value.(map[string]any)
+	if !ok {
+		t.Fatalf("%s is %v, not an object", what, value)
+	}
+	return object
 }
 
 // getToolSchema returns the input or the output JSON schema of the named tool.
@@ -67,7 +77,10 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 	t.Helper()
 	node := schema
 	for _, name := range path {
-		properties, _ := node["properties"].(map[string]any)
+		properties, hasProperties := node["properties"].(map[string]any)
+		if !hasProperties {
+			t.Fatalf("the schema has no properties before %q along %v", name, path)
+		}
 		next, ok := properties[name].(map[string]any)
 		if !ok {
 			t.Fatalf("the schema has no property %q along %v", name, path)
@@ -77,7 +90,10 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 		}
 		node = next
 	}
-	properties, _ := node["properties"].(map[string]any)
+	properties, ok := node["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("the schema has no properties at the end of %v", path)
+	}
 	return properties
 }
 
@@ -168,13 +184,13 @@ func TestCardReadReturnsTheProblemsKeyWithAMessage(t *testing.T) {
 	s, _ := newSession(t, vault())
 	answer := call[map[string]any](t, s, "card_read", map[string]any{"path": "Animals.md"})
 	requireKeys(t, "the answer of card_read", answer, []string{"problems"}, []string{"faults"})
-	problems, _ := answer["problems"].([]any)
+	problems := requireList(t, "answer[problems]", answer["problems"])
 	if len(problems) != 1 {
 		t.Fatalf("problems = %v, want one", answer["problems"])
 	}
-	problem, _ := problems[0].(map[string]any)
+	problem := requireObject(t, "problems[0]", problems[0])
 	requireKeys(t, "a problem of card_read", problem, []string{"card", "message"}, []string{"why"})
-	if message, _ := problem["message"].(string); message == "" {
+	if message, isText := problem["message"].(string); !isText || message == "" {
 		t.Errorf("the problem %v has an empty message", problem)
 	}
 
@@ -189,7 +205,7 @@ func TestCardFieldRenameAnswersTheUpdatedDecksAndHeadings(t *testing.T) {
 		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
 	})
 	requireKeys(t, "the answer of card_field_rename", answer, []string{"updatedDecks", "updatedHeadings"}, []string{"decks", "cards", "notWritten"})
-	if decks, _ := answer["updatedDecks"].([]any); len(decks) != 1 || decks[0] != "Animals.md" {
+	if decks := requireList(t, "answer[updatedDecks]", answer["updatedDecks"]); len(decks) != 1 || decks[0] != "Animals.md" {
 		t.Errorf("updatedDecks = %v, want [Animals.md]", answer["updatedDecks"])
 	}
 	if answer["updatedHeadings"] != float64(1) {
@@ -212,7 +228,7 @@ func TestCardFieldRenameReturnsTheFailedDecksKey(t *testing.T) {
 		"path": "Animal.md", "from": "Height", "to": "Stature",
 	})
 	requireKeys(t, "the answer of card_field_rename", answer, []string{"failedDecks"}, []string{"notWritten"})
-	if failed, _ := answer["failedDecks"].([]any); len(failed) != 1 || failed[0] != "Herds.md" {
+	if failed := requireList(t, "answer[failedDecks]", answer["failedDecks"]); len(failed) != 1 || failed[0] != "Herds.md" {
 		t.Errorf("failedDecks = %v, want [Herds.md]", answer["failedDecks"])
 	}
 }

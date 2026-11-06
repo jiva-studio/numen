@@ -65,7 +65,10 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 	t.Helper()
 	node := schema
 	for _, name := range path {
-		properties, _ := node["properties"].(map[string]any)
+		properties, hasProperties := node["properties"].(map[string]any)
+		if !hasProperties {
+			t.Fatalf("the schema has no properties before %q along %v", name, path)
+		}
 		next, ok := properties[name].(map[string]any)
 		if !ok {
 			t.Fatalf("the schema has no property %q along %v", name, path)
@@ -75,7 +78,10 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 		}
 		node = next
 	}
-	properties, _ := node["properties"].(map[string]any)
+	properties, ok := node["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("the schema has no properties at the end of %v", path)
+	}
 	return properties
 }
 

@@ -36,6 +36,16 @@ func requireKeys(t *testing.T, what string, object map[string]any, want, absent 
 	}
 }
 
+// requireList returns the value as a JSON array and fails the test when it is not one.
+func requireList(t *testing.T, what string, value any) []any {
+	t.Helper()
+	list, ok := value.([]any)
+	if !ok {
+		t.Fatalf("%s is %v, not an array", what, value)
+	}
+	return list
+}
+
 // getToolSchema returns the input or the output JSON schema of the named tool.
 func getToolSchema(t *testing.T, registry *tools.Registry, name string, isOutput bool) map[string]any {
 	t.Helper()
@@ -67,7 +77,10 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 	t.Helper()
 	node := schema
 	for _, name := range path {
-		properties, _ := node["properties"].(map[string]any)
+		properties, hasProperties := node["properties"].(map[string]any)
+		if !hasProperties {
+			t.Fatalf("the schema has no properties before %q along %v", name, path)
+		}
 		next, ok := properties[name].(map[string]any)
 		if !ok {
 			t.Fatalf("the schema has no property %q along %v", name, path)
@@ -77,7 +90,10 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 		}
 		node = next
 	}
-	properties, _ := node["properties"].(map[string]any)
+	properties, ok := node["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("the schema has no properties at the end of %v", path)
+	}
 	return properties
 }
 
@@ -209,7 +225,7 @@ func TestVaultProblemsReturnsTheChecksKey(t *testing.T) {
 	for _, check := range getDefaultChecks() {
 		want = append(want, check)
 	}
-	if checks, _ := answer["checks"].([]any); !slices.Equal(checks, want) {
+	if checks := requireList(t, "answer[checks]", answer["checks"]); !slices.Equal(checks, want) {
 		t.Errorf("checks = %v, want %v", answer["checks"], want)
 	}
 

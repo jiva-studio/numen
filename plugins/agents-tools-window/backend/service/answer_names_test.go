@@ -35,6 +35,26 @@ func requireKeys(t *testing.T, what string, object map[string]any, want, absent 
 	}
 }
 
+// requireList returns the value as a JSON array and fails the test when it is not one.
+func requireList(t *testing.T, what string, value any) []any {
+	t.Helper()
+	list, ok := value.([]any)
+	if !ok {
+		t.Fatalf("%s is %v, not an array", what, value)
+	}
+	return list
+}
+
+// requireObject returns the value as a JSON object and fails the test when it is not one.
+func requireObject(t *testing.T, what string, value any) map[string]any {
+	t.Helper()
+	object, ok := value.(map[string]any)
+	if !ok {
+		t.Fatalf("%s is %v, not an object", what, value)
+	}
+	return object
+}
+
 // getToolSchema returns the input or the output JSON schema of the named tool.
 func getToolSchema(t *testing.T, registry *tools.Registry, name string, isOutput bool) map[string]any {
 	t.Helper()
@@ -66,7 +86,10 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 	t.Helper()
 	node := schema
 	for _, name := range path {
-		properties, _ := node["properties"].(map[string]any)
+		properties, hasProperties := node["properties"].(map[string]any)
+		if !hasProperties {
+			t.Fatalf("the schema has no properties before %q along %v", name, path)
+		}
 		next, ok := properties[name].(map[string]any)
 		if !ok {
 			t.Fatalf("the schema has no property %q along %v", name, path)
@@ -76,7 +99,10 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 		}
 		node = next
 	}
-	properties, _ := node["properties"].(map[string]any)
+	properties, ok := node["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("the schema has no properties at the end of %v", path)
+	}
 	return properties
 }
 
@@ -184,16 +210,16 @@ func TestWindowTabsGetAnswersLocationAndIsActiveWithoutASummary(t *testing.T) {
 	}, "tab-2")
 	answer := w.getAnswer(t, "window_tabs_get", `{}`)
 	requireKeys(t, "the answer of window_tabs_get", answer, []string{"tabs", "activeId"}, []string{"summary"})
-	list, _ := answer["tabs"].([]any)
+	list := requireList(t, "answer[tabs]", answer["tabs"])
 	if len(list) != 2 {
 		t.Fatalf("tabs = %v, want two", answer["tabs"])
 	}
-	active, _ := list[1].(map[string]any)
+	active := requireObject(t, "list[1]", list[1])
 	requireKeys(t, "the active tab", active, []string{"location", "isActive"}, []string{"where", "active"})
 	if active["location"] != "page 4 of 120" || active["isActive"] != true {
 		t.Errorf("the active tab is %v, want location page 4 of 120 and isActive true", active)
 	}
-	inactive, _ := list[0].(map[string]any)
+	inactive := requireObject(t, "list[0]", list[0])
 	requireKeys(t, "the inactive tab", inactive, nil, []string{"where", "active"})
 	if inactive["isActive"] == true {
 		t.Errorf("the inactive tab is %v, want isActive not true", inactive)
@@ -208,7 +234,7 @@ func TestNoteFocusReturnsTheNoteKey(t *testing.T) {
 	w := newWindowTools(t)
 	answer := w.getAnswer(t, "note_focus", `{"path":"notes/Heron.md"}`)
 	requireKeys(t, "the answer of note_focus", answer, []string{"note"}, []string{"focused"})
-	note, _ := answer["note"].(map[string]any)
+	note := requireObject(t, "answer[note]", answer["note"])
 	if note["path"] != notePath || note["title"] != "Grey Heron" {
 		t.Errorf("note = %v, want %s titled Grey Heron", answer["note"], notePath)
 	}
@@ -240,7 +266,7 @@ func TestWindowFocusTabAnswersTheTabWithoutSuccessOrMessage(t *testing.T) {
 	w.window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"}}, "tab-1")
 	answer := w.getAnswer(t, "window_focus_tab", `{"tabId":"tab-1"}`)
 	requireKeys(t, "the answer of window_focus_tab", answer, []string{"tab"}, []string{"success", "message"})
-	tab, _ := answer["tab"].(map[string]any)
+	tab := requireObject(t, "answer[tab]", answer["tab"])
 	if tab["id"] != "tab-1" || tab["path"] != notePath {
 		t.Errorf("tab = %v, want tab-1 at %s", answer["tab"], notePath)
 	}

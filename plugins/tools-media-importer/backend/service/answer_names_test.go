@@ -66,7 +66,10 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 	t.Helper()
 	node := schema
 	for _, name := range path {
-		properties, _ := node["properties"].(map[string]any)
+		properties, hasProperties := node["properties"].(map[string]any)
+		if !hasProperties {
+			t.Fatalf("the schema has no properties before %q along %v", name, path)
+		}
 		next, ok := properties[name].(map[string]any)
 		if !ok {
 			t.Fatalf("the schema has no property %q along %v", name, path)
@@ -76,7 +79,10 @@ func getSchemaProperties(t *testing.T, schema map[string]any, path ...string) ma
 		}
 		node = next
 	}
-	properties, _ := node["properties"].(map[string]any)
+	properties, ok := node["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("the schema has no properties at the end of %v", path)
+	}
 	return properties
 }
 
@@ -209,8 +215,8 @@ func TestURLImportStartsNoDownloadForTheCopyArgument(t *testing.T) {
 	answer := s.getImportAnswer(t, `{"url":"`+videoAddress+`","copy":true}`)
 	s.links.Wait()
 	requireKeys(t, "the answer of url_import", answer, nil, []string{"copy_task_id"})
-	if taskID, _ := answer["downloadTaskId"].(string); taskID != "" {
-		t.Errorf("downloadTaskId = %q, want no download for the argument copy", taskID)
+	if taskID, present := answer["downloadTaskId"]; present && taskID != "" {
+		t.Errorf("downloadTaskId = %v, want no download for the argument copy", taskID)
 	}
 	if hasCopy(t, s.store) {
 		t.Error("the video was downloaded for the argument copy")
@@ -222,8 +228,8 @@ func TestURLImportReturnsTheDownloadErrorKeyForAnAddressWithNoVideo(t *testing.T
 	answer := s.getImportAnswer(t, `{"url":"`+articleAddress+`","downloadVideo":true}`)
 	s.links.Wait()
 	requireKeys(t, "the answer of url_import", answer, []string{"downloadError"}, []string{"copy_error", "copy_task_id"})
-	if taskID, _ := answer["downloadTaskId"].(string); taskID != "" {
-		t.Errorf("downloadTaskId = %q, want none for an address with no video", taskID)
+	if taskID, present := answer["downloadTaskId"]; present && taskID != "" {
+		t.Errorf("downloadTaskId = %v, want none for an address with no video", taskID)
 	}
 	if answer["downloadError"] == "" {
 		t.Error("downloadError is empty for an address with no video")
