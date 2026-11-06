@@ -358,7 +358,7 @@ func (r generatedReader) Open(_ context.Context, path string) (io.ReadSeekCloser
 		return nil, fs.ErrNotExist
 	}
 	r.vault.opens++
-	return &generatedFile{size: gigabyte}, nil
+	return newGeneratedFile(gigabyte), nil
 }
 
 func (r generatedReader) Read(context.Context, string) ([]byte, error) {
@@ -370,6 +370,11 @@ func (r generatedReader) Read(context.Context, string) ([]byte, error) {
 type generatedFile struct {
 	size   int64
 	offset int64
+	block  []byte
+}
+
+func newGeneratedFile(size int64) *generatedFile {
+	return &generatedFile{size: size, block: getBlock()}
 }
 
 func getBlock() []byte {
@@ -380,16 +385,14 @@ func getBlock() []byte {
 	return block
 }
 
-var block = getBlock()
-
 func (f *generatedFile) Read(p []byte) (int, error) {
 	if f.offset >= f.size {
 		return 0, io.EOF
 	}
 	n := 0
 	for n < len(p) && f.offset < f.size {
-		at := f.offset % int64(len(block))
-		k := copy(p[n:], block[at:min(int64(len(block)), at+f.size-f.offset)])
+		position := f.offset % int64(len(f.block))
+		k := copy(p[n:], f.block[position:min(int64(len(f.block)), position+f.size-f.offset)])
 		n += k
 		f.offset += int64(k)
 	}
@@ -426,7 +429,7 @@ func TestAOneGigabyteFileIsHashedFromAStreamWithBoundedMemory(t *testing.T) {
 		t.Fatal(err)
 	}
 	sum := sha256.New()
-	if _, err := io.Copy(sum, &generatedFile{size: gigabyte}); err != nil {
+	if _, err := io.Copy(sum, newGeneratedFile(gigabyte)); err != nil {
 		t.Fatal(err)
 	}
 	want := hex.EncodeToString(sum.Sum(nil))
@@ -443,7 +446,7 @@ func TestAOneGigabyteFileIsHashedFromAStreamWithBoundedMemory(t *testing.T) {
 	if files.opens != 1 {
 		t.Errorf("the file was opened %d times, want once", files.opens)
 	}
-	if grown := after.TotalAlloc - before.TotalAlloc; grown > 64<<20 {
-		t.Errorf("hashing a gigabyte allocated %d MiB, want under 64 MiB", grown>>20)
+	if allocated := after.TotalAlloc - before.TotalAlloc; allocated > 64<<20 {
+		t.Errorf("hashing a gigabyte allocated %d MiB, want under 64 MiB", allocated>>20)
 	}
 }

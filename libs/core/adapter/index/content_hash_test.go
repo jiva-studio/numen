@@ -12,9 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 )
 
+const hashVault domain.VaultID = "01HASHVAULT"
+
 const (
-	hashVault  domain.VaultID = "01HASHVAULT"
-	riversPath                = "library/rivers.pdf"
+	riversPath = "library/rivers.pdf"
 	// riversHash and otherHash are two SHA-256 sums in hex.
 	riversHash = "4f2c8e0b9d7a61e3c5b2a09f8d7e6c5b4a3928170f6e5d4c3b2a1908f7e6d5c4"
 	otherHash  = "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
@@ -74,7 +75,7 @@ func isSameContentHash(a, b textport.ContentHash) bool {
 		a.FileID == b.FileID && a.HashTime.Equal(b.HashTime)
 }
 
-func TestASavedContentHashIsFoundWithItsNanosecondStatFileIDAndHashTime(t *testing.T) {
+func TestFindContentHashReturnsTheSavedHashWithItsNanosecondStatFileIDAndHashTime(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
 	saveContentHash(t, db, getRiversRecord())
@@ -96,7 +97,7 @@ func TestAScannedRowHasNoHashNoFileIDAndNoHashTime(t *testing.T) {
 	}
 }
 
-func TestAContentHashOfAnotherStatAndAnotherHashIsNotSaved(t *testing.T) {
+func TestSaveContentHashWithAnotherStatAndAnotherHashWritesNothing(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
 	saveContentHash(t, db, getRiversRecord())
@@ -111,7 +112,7 @@ func TestAContentHashOfAnotherStatAndAnotherHashIsNotSaved(t *testing.T) {
 	}
 }
 
-func TestAContentHashOfTheSameHashTakesTheNewStat(t *testing.T) {
+func TestSaveContentHashWithTheSameHashWritesTheNewStat(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
 	saveContentHash(t, db, getRiversRecord())
@@ -125,7 +126,7 @@ func TestAContentHashOfTheSameHashTakesTheNewStat(t *testing.T) {
 	}
 }
 
-func TestAContentHashOfAFileWithNoRowIsNotSaved(t *testing.T) {
+func TestSaveContentHashOfAFileWithNoRowWritesNothing(t *testing.T) {
 	db := openHashIndex(t)
 	record := getRiversRecord()
 	record.Path = "library/unscanned.pdf"
@@ -143,7 +144,7 @@ func TestAContentHashOfAFileWithNoRowIsNotSaved(t *testing.T) {
 	}
 }
 
-func TestAContentHashOfAnotherVaultIsNotFound(t *testing.T) {
+func TestFindContentHashOfAnotherVaultFindsNothing(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
 	saveContentHash(t, db, getRiversRecord())
