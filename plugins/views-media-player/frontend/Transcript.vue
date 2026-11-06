@@ -24,7 +24,7 @@ const { failure, isPlaying: playbackIsPlaying } = props.state.playback
 const { current, following, note, isLoading, error, isEditable } = props.state.content
 const { prose, typing } = props.state.draft
 const { timed, times: cueTimes, hasText } = props.state.lines
-const { isStartable, starter } = props.state.options
+const { isStartable } = props.state.options
 const isPlaying = computed(() => props.isPlaying ?? playbackIsPlaying.value)
 
 /** The times in the editor's gutter, and the line being played. */
@@ -83,7 +83,7 @@ function onSave() {
         {{ note }}
       </p>
       <button v-else type="button" class="transcript__ask" @click="onTranscribe">
-        {{ starter?.title }}
+        {{ words.transcribe }}
       </button>
     </div>
 

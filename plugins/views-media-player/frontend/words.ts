@@ -4,8 +4,8 @@ export const WORDS = {
   transcript: 'Transcript',
   /** The view scrolls to keep the current line visible. */
   follow: 'Follow',
-  /** The menu at the end of the strip, and what it is announced as. */
-  more: 'More',
+  /** The button that creates the text of a recording nothing was heard in. */
+  transcribe: 'Transcribe',
   /** The recording is being read, and what it holds is not known yet. */
   loading: 'Loading…',
   /** Nothing has transcribed this recording. */

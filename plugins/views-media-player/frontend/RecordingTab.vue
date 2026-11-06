@@ -29,7 +29,6 @@ const targetPath = props.path || props.file || props.state?.path || props.state?
 
 const tab = useTranscript(props.recordings, targetPath, props.how)
 const { now, runs, isPlaying, isUnplayable } = tab.playback
-const menuItems = tab.options.items
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
@@ -69,10 +68,6 @@ onUnmounted(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-function onChoose(id: string) {
-  tab.options.run(id).catch(tab.reportFailure)
-}
-
 function onPlay() {
   tab.playback.controls.play()
 }
@@ -88,7 +83,7 @@ function onSeek(ms: number) {
 </script>
 
 <template>
-  <MediaLayout :state="tab" :menu-items="menuItems" @choose="onChoose">
+  <MediaLayout :state="tab">
     <template #player>
       <Player
         v-if="!isUnplayable"

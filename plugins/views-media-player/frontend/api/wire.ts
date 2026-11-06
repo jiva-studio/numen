@@ -1,15 +1,15 @@
 /**
- * Wire adapter for media, file menu and plugin tasks; the transcript is
+ * Wire adapter for media, the creation of text and plugin tasks; the transcript is
  * read and edited through the plugin SDK.
  */
 import {
-  getFileMenu,
   resolveAddress,
-  runFileMenuEntry,
+  type CommandsHost,
   type TaskHost,
   type VaultTexts,
 } from '@numen/plugin-sdk'
 import type { Recordings } from '../types'
+import { createTextCommand } from './text'
 import { createWorkWatcher } from './work'
 import { createTranscripts } from './transcripts'
 
@@ -28,6 +28,14 @@ export const bindTexts = (texts: VaultTexts | undefined): void => {
   vaultTexts = texts
 }
 
+/** The commands of the window, as the plugin's context gave them when it was activated. */
+let commandsHost: CommandsHost | undefined
+
+/** Keeps the commands the plugin's context gives, which the text of a recording is created through. */
+export const bindCommands = (commands: CommandsHost | undefined): void => {
+  commandsHost = commands
+}
+
 // Without a task host there is nothing to unsubscribe.
 const work = createWorkWatcher(
   (onTasks) => taskHost?.watchAll(onTasks) ?? { dispose: () => undefined },
@@ -39,8 +47,7 @@ export const recordings: Recordings = {
     return { mediaUrl: source.url, mediaType: source.mediaType }
   },
   ...createTranscripts(() => vaultTexts),
-  getMenu: (path) => getFileMenu(path),
-  runMenuEntry: (path, entry) => runFileMenuEntry(path, entry),
+  ...createTextCommand(() => commandsHost),
   watchWork: (path, onChange) => work.watch(path, onChange),
   watchChanges: (path, onChange) => work.watchChanges(path, onChange),
 }

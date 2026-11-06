@@ -13,21 +13,6 @@ export interface TextRange {
   readonly end: number
 }
 
-/**
- * One entry of the menu the core builds for a file. `versionId` is the version
- * it applies to, and empty for text created from the file; `isLive` marks that
- * version as the one currently displayed and indexed.
- */
-export interface MenuEntry {
-  readonly pluginId: string
-  readonly pluginName: string
-  readonly command: string
-  readonly title: string
-  readonly icon: string
-  readonly versionId: string
-  readonly isLive: boolean
-}
-
 /** All requests a recording tab makes to the application. */
 export interface Recordings {
   /** Where the recording is played from. */
@@ -38,10 +23,10 @@ export interface Recordings {
   writeTranscript(path: string, cues: readonly Cue[]): Promise<void>
   /** The millisecond a span of the words is played from, and null where no cue holds it. */
   findCueTime(path: string, span: TextRange): Promise<number | null>
-  /** What the file's menu offers about its text. */
-  getMenu(path: string): Promise<readonly MenuEntry[]>
-  /** Carries out one entry of the file's menu. */
-  runMenuEntry(path: string, entry: MenuEntry): Promise<void>
+  /** Whether a plugin creates the text of the file, through the shared command `app:file.createText`. */
+  canCreateText(path: string): Promise<boolean>
+  /** Runs the shared command that creates the text of the file. */
+  createText(path: string): Promise<void>
   /**
    * Notifies the handler whether processing of the file is in progress, once
    * immediately and again on every change, until the returned function is called.

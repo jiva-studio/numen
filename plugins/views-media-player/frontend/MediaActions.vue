@@ -2,7 +2,7 @@
 /**
  * The controls over the text, standing together at the end of the media strip.
  */
-import { Ellipsis, LocateFixed } from '@lucide/vue'
+import { LocateFixed } from '@lucide/vue'
 import { WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -11,22 +11,15 @@ const props = defineProps<{
   isTimed?: boolean
   /** Whether the view keeps the active line in view. */
   isFollowing?: boolean
-  /** Whether the menu at the end of the strip offers anything. */
-  hasMenu?: boolean
 }>()
 
 const emit = defineEmits<{
   'toggle-follow': []
-  'open-menu': [event: Event]
 }>()
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggleFollow() {
   emit('toggle-follow')
-}
-
-function onOpenMenu(event: Event) {
-  emit('open-menu', event)
 }
 </script>
 
@@ -42,16 +35,6 @@ function onOpenMenu(event: Event) {
     >
       <LocateFixed class="media__icon" />
     </button>
-    <button
-      v-if="props.hasMenu"
-      type="button"
-      class="media__more"
-      :aria-label="words.more"
-      aria-haspopup="menu"
-      @click="onOpenMenu"
-    >
-      <Ellipsis class="media__icon" />
-    </button>
   </div>
 </template>
 
@@ -63,8 +46,7 @@ function onOpenMenu(event: Event) {
   gap: var(--media-close);
 }
 
-.media__follow,
-.media__more {
+.media__follow {
   display: grid;
   place-items: center;
   flex: none;
@@ -78,8 +60,7 @@ function onOpenMenu(event: Event) {
   cursor: pointer;
 }
 
-.media__follow:hover,
-.media__more:hover {
+.media__follow:hover {
   background: var(--numen-field-bg);
 }
 

@@ -6,16 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, reactive } from 'vue'
 import RecordingTab from './RecordingTab.vue'
-import {
-  CUES,
-  DELETE_ENTRY,
-  PROOFREAD_ENTRY,
-  TALK_URL,
-  TRANSCRIBE_ENTRY,
-  createPlayer,
-  createRecordings,
-  flush,
-} from './model/fakes'
+import { CUES, TALK_URL, createPlayer, createRecordings, flush } from './model/fakes'
 import type { Recordings } from './types'
 import { WORDS } from './words'
 
@@ -87,22 +78,22 @@ describe('a recording tab', () => {
     tab.unmount()
   })
 
-  it('offers to transcribe a recording nothing was heard in, and asks the plugin that reads it', async () => {
-    const { recordings, state } = createRecordings([], [TRANSCRIBE_ENTRY])
+  it('offers to transcribe a recording nothing was heard in, and runs the command that creates its text', async () => {
+    const { recordings, state } = createRecordings([], true)
     const { tab } = mountTab(recordings)
     await flush()
 
     const ask = tab.find('.transcript__ask')
-    expect(ask.text()).toBe(TRANSCRIBE_ENTRY.title)
+    expect(ask.text()).toBe(WORDS.transcribe)
     await ask.trigger('click')
     await flush()
 
-    expect(state.runs).toStrictEqual([TRANSCRIBE_ENTRY])
+    expect(state.textRuns).toBe(1)
     tab.unmount()
   })
 
-  it('offers no transcription where no plugin reads the recording', async () => {
-    const { recordings } = createRecordings([], [])
+  it('offers no transcription where no plugin creates the text of the recording', async () => {
+    const { recordings } = createRecordings([], false)
     const { tab } = mountTab(recordings)
     await flush()
 
@@ -111,60 +102,12 @@ describe('a recording tab', () => {
     tab.unmount()
   })
 
-  it('deletes the transcript from the menu at the end of the strip', async () => {
-    const { recordings, state } = createRecordings(CUES, [DELETE_ENTRY])
+  it('draws no menu at the end of the strip', async () => {
+    const { recordings } = createRecordings(CUES, true)
     const { tab } = mountTab(recordings)
     await flush()
 
-    await tab.find('.media__more').trigger('click')
-    const item = [...document.querySelectorAll('[role="menuitem"]')].find((one) =>
-      one.textContent?.includes(DELETE_ENTRY.title),
-    ) as HTMLElement | undefined
-    expect(item).toBeDefined()
-    item!.click()
-    await flush()
-
-    expect(state.runs).toStrictEqual([DELETE_ENTRY])
-    tab.unmount()
-  })
-
-  it('lists every entry of the menu in the overflow menu when a transcript exists', async () => {
-    const { recordings, state } = createRecordings(CUES, [
-      TRANSCRIBE_ENTRY,
-      PROOFREAD_ENTRY,
-      DELETE_ENTRY,
-    ])
-    const { tab } = mountTab(recordings)
-    await flush()
-
-    await tab.find('.media__more').trigger('click')
-    const titles = [...document.querySelectorAll('[role="menuitem"]')].map((one) =>
-      one.textContent?.trim(),
-    )
-    expect(titles).toStrictEqual([
-      TRANSCRIBE_ENTRY.title,
-      PROOFREAD_ENTRY.title,
-      DELETE_ENTRY.title,
-    ])
-    const icons = [...document.querySelectorAll('[role="menuitem"]')].map(
-      (one) => one.querySelector('.media__menu-icon')?.getAttribute('data-icon') ?? '',
-    )
-    expect(icons).toStrictEqual([TRANSCRIBE_ENTRY.icon, PROOFREAD_ENTRY.icon, ''])
-    const proofreadItem = [...document.querySelectorAll('[role="menuitem"]')].find(
-      (one) => one.textContent?.trim() === PROOFREAD_ENTRY.title,
-    ) as HTMLElement
-    proofreadItem.click()
-    await flush()
-    expect(state.runs).toStrictEqual([PROOFREAD_ENTRY])
-
-    await tab.find('.media__more').trigger('click')
-    const retranscribeItem = [...document.querySelectorAll('[role="menuitem"]')].find(
-      (one) => one.textContent?.trim() === TRANSCRIBE_ENTRY.title,
-    ) as HTMLElement
-    retranscribeItem.click()
-    await flush()
-
-    expect(state.runs).toStrictEqual([PROOFREAD_ENTRY, TRANSCRIBE_ENTRY])
+    expect(tab.find('.media__more').exists()).toBe(false)
     tab.unmount()
   })
 

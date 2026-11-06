@@ -2,7 +2,7 @@ import { AudioLines } from '@lucide/vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import RecordingTab from './RecordingTab.vue'
 import MediaRecordingTab from './MediaRecordingTab.vue'
-import { bindTexts, refreshRecordings, setTaskHost } from './api/wire'
+import { bindCommands, bindTexts, refreshRecordings, setTaskHost } from './api/wire'
 
 export { RecordingTab, MediaRecordingTab }
 
@@ -12,6 +12,7 @@ export const RECORDER = 'recording'
 export function activate(context: PluginContext): void {
   setTaskHost(context.tasks)
   bindTexts(context.texts)
+  bindCommands(context.commands)
   context.onVaultChange?.((event) => refreshRecordings(event.paths ?? []))
   context.registerReader({
     id: 'media-player',

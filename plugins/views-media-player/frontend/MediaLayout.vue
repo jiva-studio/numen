@@ -4,26 +4,19 @@
  *
  * The player is provided through the slot, as is any tab-specific content shown over it.
  */
-import { computed, ref } from 'vue'
-import { Menu, NamedIcon, measureRect } from '@numen/ui'
-import type { MenuItem, Position } from '@numen/ui'
+import { computed } from 'vue'
 import MediaActions from './MediaActions.vue'
 import Transcript from './Transcript.vue'
-import { WORDS as words } from './words'
 import type { TranscriptState } from './model/transcript'
 
-/* ----------------------------- Props & Emits ------------------------------ */
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     state: TranscriptState
-    /** What the menu at the end of the strip offers, and nothing where it offers none. */
-    menuItems?: readonly MenuItem[] | undefined
     isPlaying?: boolean | undefined
   }>(),
-  { isPlaying: undefined, menuItems: undefined },
+  { isPlaying: undefined },
 )
-
-const emit = defineEmits<{ choose: [id: string] }>()
 
 /* --------------------------------- State ---------------------------------- */
 const { following } = props.state.content
@@ -33,28 +26,7 @@ const { isPlaying: playbackIsPlaying } = props.state.playback
 const isFollowing = computed(() => following.value)
 const isPlaying = computed(() => props.isPlaying ?? playbackIsPlaying.value)
 
-const items = computed(() => props.menuItems ?? [])
-
-/** The position the menu was requested at; null while the menu is closed. */
-const menu = ref<{ at: Position; from: HTMLElement } | null>(null)
-
 /* -------------------------------- Handlers -------------------------------- */
-function onOpenMenu(event: Event) {
-  const button = event.currentTarget
-  if (!(button instanceof HTMLElement)) return
-  const box = measureRect(button)
-  menu.value = { at: { x: box.left, y: box.bottom }, from: button }
-}
-
-function onChooseMenuItem(id: string) {
-  menu.value = null
-  emit('choose', id)
-}
-
-function onDismissMenu() {
-  menu.value = null
-}
-
 function onToggleFollow() {
   props.state.content.setFollowing(!isFollowing.value)
 }
@@ -66,35 +38,14 @@ function onToggleFollow() {
       <slot name="player" />
 
       <MediaActions
-        v-if="timed || items.length"
+        v-if="timed"
         :is-timed="timed"
         :is-following="isFollowing"
-        :has-menu="items.length > 0"
         @toggle-follow="onToggleFollow"
-        @open-menu="onOpenMenu"
       />
     </div>
 
     <Transcript :state="props.state" :is-playing="isPlaying" />
-
-    <Menu
-      v-if="menu"
-      :items="items"
-      :at="menu.at"
-      :from="menu.from"
-      is-open
-      :name="words.more"
-      @choose="onChooseMenuItem"
-      @dismiss="onDismissMenu"
-    >
-      <template #icon="{ id }">
-        <NamedIcon
-          v-if="props.state.options.getIcon(id)"
-          :name="props.state.options.getIcon(id)"
-          class="media__menu-icon"
-        />
-      </template>
-    </Menu>
   </div>
 </template>
 
@@ -121,12 +72,5 @@ function onToggleFollow() {
   min-block-size: var(--numen-action-size);
   padding-inline: var(--numen-gutter);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
-}
-
-.media__menu-icon {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
-  stroke-width: 1.875;
-  opacity: 0.75;
 }
 </style>

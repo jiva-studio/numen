@@ -11,7 +11,8 @@ import { ref } from 'vue'
 import RecordingTab from './RecordingTab.vue'
 import type { Cue } from './lib/cues'
 import type { Player } from './model/player'
-import type { MenuEntry, Recordings } from './types'
+import type { Recordings } from './types'
+import { WORDS } from './words'
 
 const MEDIA = 'http://127.0.0.1:1/token/v/Lectures/Lecture 4.mp3'
 const PATH = 'Lectures/Lecture 4.mp3'
@@ -38,34 +39,14 @@ const SPOKEN: readonly Cue[] = SAID.reduce<Cue[]>((cues, text) => {
   return [...cues, { text, from, to: from + 2_400 + text.length * 62 }]
 }, [])
 
-const TRANSCRIBE: MenuEntry = {
-  pluginId: 'md.test.transcription',
-  pluginName: 'Transcription',
-  command: 'make-text',
-  title: 'Transcribe',
-  icon: 'audio-lines',
-  versionId: '',
-  isLive: false,
-}
-
-const TRANSCRIBED: MenuEntry = {
-  pluginId: 'md.test.transcription',
-  pluginName: 'Transcription',
-  command: 'delete-entry',
-  title: 'Delete transcript',
-  icon: '',
-  versionId: 'md.test.transcription/lecture-4',
-  isLive: true,
-}
-
-/** A recording that answers with these words and this menu. */
-const createRecordings = (cues: readonly Cue[], menu: readonly MenuEntry[]): Recordings => ({
+/** A recording that answers with these words, and whether a plugin creates its text. */
+const createRecordings = (cues: readonly Cue[], canCreateText: boolean): Recordings => ({
   getSource: async () => ({ mediaUrl: MEDIA, mediaType: 'audio/mpeg' }),
   readTranscript: async () => cues,
   writeTranscript: async () => undefined,
   findCueTime: async () => null,
-  getMenu: async () => menu,
-  runMenuEntry: async () => undefined,
+  canCreateText: async () => canCreateText,
+  createText: async () => undefined,
   watchChanges: () => () => undefined,
   watchWork: (_, onChange) => {
     onChange(false)
@@ -96,11 +77,11 @@ export default meta
 type Story = StoryObj
 
 /** The tab filling the pane a window gives it. */
-const render = (cues: readonly Cue[], menu: readonly MenuEntry[], isPlaying: boolean) => () => ({
+const render = (cues: readonly Cue[], canCreateText: boolean, isPlaying: boolean) => () => ({
   components: { RecordingTab },
   setup: () => ({
     path: PATH,
-    recordings: createRecordings(cues, menu),
+    recordings: createRecordings(cues, canCreateText),
     how: { audioPlayer: createPlayer(isPlaying), plays: () => true },
   }),
   template: `<div class="numen h-screen bg-surface"><RecordingTab :path="path" :recordings="recordings" :how="how" /></div>`,
@@ -108,7 +89,7 @@ const render = (cues: readonly Cue[], menu: readonly MenuEntry[], isPlaying: boo
 
 /** A lecture playing, with the words heard in it under the player. */
 export const Playing: Story = {
-  render: render(SPOKEN, [TRANSCRIBED], true),
+  render: render(SPOKEN, true, true),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() => expect(canvas.getByText(SAID[0]!)).toBeVisible())
@@ -120,11 +101,11 @@ export const Playing: Story = {
 
 /** A recording nothing has written down, and the run that would. */
 export const NoTranscript: Story = {
-  render: render([], [TRANSCRIBE], false),
+  render: render([], true, false),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() =>
-      expect(canvas.getByRole('button', { name: TRANSCRIBE.title })).toBeVisible(),
+      expect(canvas.getByRole('button', { name: WORDS.transcribe })).toBeVisible(),
     )
   },
 }

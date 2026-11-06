@@ -1,6 +1,6 @@
 /**
  * The state of one recording tab: playback position, transcript cues, the current cue,
- * the edited text, and the text menu entries.
+ * the edited text, and whether its text can be created.
  */
 import { computed, ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
@@ -10,7 +10,7 @@ import { useTranscriptLines } from './lines'
 import { usePlayback } from './playback'
 import { createMediaTypeProbe, player, type MediaTypeProbe, type Player } from './player'
 import { recordings as servedRecordings } from '../api/wire'
-import type { MenuEntry, Recordings, TextRange } from '../types'
+import type { Recordings, TextRange } from '../types'
 import { WORDS } from '../words'
 
 export type TranscriptState = ReturnType<typeof useTranscript>
@@ -27,14 +27,6 @@ export interface TranscriptOptions {
   /** Whether this window can play a media type. */
   plays?: MediaTypeProbe
 }
-
-/** What identifies an entry of the menu among the others. */
-export const getEntryKey = (entry: MenuEntry): string =>
-  `${entry.pluginId}:${entry.command}:${entry.versionId}`
-
-/** The entry that starts text from the file, which is the first command over the file itself. */
-export const findStarter = (entries: readonly MenuEntry[]): MenuEntry | undefined =>
-  entries.find((one) => one.versionId === '')
 
 /** Request ordering: only the latest request may apply its result. */
 function createRequestGuard() {
@@ -65,7 +57,7 @@ export function useTranscript(
   const checkOpen = () => isOpen
 
   const cues = shallowRef<readonly Cue[]>([])
-  const entries = shallowRef<readonly MenuEntry[]>([])
+  const canCreateText = ref(false)
   const isWorking = ref(false)
   const isLoading = ref(true)
   const error = ref('')
@@ -87,15 +79,15 @@ export function useTranscript(
   const readRecording = async () => {
     const mine = requests.begin()
     try {
-      const [source, transcriptCues, menu] = await Promise.all([
+      const [source, transcriptCues, isCreatable] = await Promise.all([
         recordings.getSource(path),
         recordings.readTranscript(path),
-        recordings.getMenu(path),
+        recordings.canCreateText(path),
       ])
       if (!mine.isLatest()) return
       playback.setSource(source)
       cues.value = transcriptCues
-      entries.value = menu
+      canCreateText.value = isCreatable
       draft.setText(getText(transcriptCues))
       error.value = ''
     } catch (err) {
@@ -113,7 +105,7 @@ export function useTranscript(
     if (isOpen) error.value = formatErrorMessage(err)
   }
 
-  /** Work on the recording began or ended: the words and the menu are read again. */
+  /** Work on the recording began or ended: the words are read again. */
   const setWorking = (next: boolean) => {
     if (!isOpen || (!next && !isWorking.value)) return
     isWorking.value = next
@@ -128,22 +120,13 @@ export function useTranscript(
     stopChanges()
   }
 
-  const starter = computed(() => findStarter(entries.value))
   const isSettled = computed(() => !isLoading.value && !isWorking.value)
-  const isStartable = computed(
-    () => isSettled.value && !lines.timed.value && starter.value !== undefined,
-  )
-  /** The entries the menu at the end of the strip lists, once there is text to work on. */
-  const items = computed(() =>
-    isSettled.value && lines.timed.value
-      ? entries.value.map((one) => ({ id: getEntryKey(one), text: one.title }))
-      : [],
-  )
+  const isStartable = computed(() => isSettled.value && !lines.timed.value && canCreateText.value)
 
-  const runEntry = async (entry: MenuEntry | undefined) => {
-    if (!entry || !isOpen) return
+  const createText = async () => {
+    if (!isOpen) return
     try {
-      await recordings.runMenuEntry(path, entry)
+      await recordings.createText(path)
       draft.drop()
       await readRecording()
     } catch (err) {
@@ -210,12 +193,8 @@ export function useTranscript(
       },
     },
     options: {
-      starter,
       isStartable,
-      items,
-      start: () => runEntry(starter.value),
-      run: (key: string) => runEntry(entries.value.find((one) => getEntryKey(one) === key)),
-      getIcon: (key: string) => entries.value.find((one) => getEntryKey(one) === key)?.icon ?? '',
+      start: createText,
     },
     navigation: { reach, goToLine },
     close,

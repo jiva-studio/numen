@@ -3,17 +3,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { formatErrorMessage } from '@numen/plugin-sdk'
-import { findStarter, getEntryKey, useTranscript } from './transcript'
-import {
-  CUES,
-  DELETE_ENTRY,
-  TALK_URL,
-  PROOFREAD_ENTRY,
-  TRANSCRIBE_ENTRY,
-  createPlayer,
-  createRecordings,
-  flush,
-} from './fakes'
+import { useTranscript } from './transcript'
+import { CUES, TALK_URL, createPlayer, createRecordings, flush } from './fakes'
 import { WORDS } from '../words'
 
 const open = (setup = createRecordings()) => {
@@ -58,52 +49,42 @@ describe('a recording firstRead', () => {
   })
 })
 
-describe('what the menu options', () => {
-  it('starts text from the first entry over the file', () => {
-    expect(findStarter([DELETE_ENTRY, TRANSCRIBE_ENTRY, PROOFREAD_ENTRY])).toBe(TRANSCRIBE_ENTRY)
-    expect(findStarter([DELETE_ENTRY, PROOFREAD_ENTRY])).toBeUndefined()
-  })
-
-  it('names an entry by its plugin, command and version', () => {
-    expect(getEntryKey(PROOFREAD_ENTRY)).toBe(
-      'md.test.proofreading:correct-text:md.test.transcription/abc',
-    )
-  })
-
-  it('is starting where nothing was heard, and lists nothing in the menu', async () => {
-    const { tab } = open(createRecordings([], [TRANSCRIBE_ENTRY]))
+describe('creating the text of a recording', () => {
+  it('is offered where nothing was heard and a plugin creates the text of the file', async () => {
+    const { tab } = open(createRecordings([], true))
     await tab.content.firstRead
     expect(tab.options.isStartable.value).toBe(true)
-    expect(tab.options.items.value).toStrictEqual([])
     expect(tab.content.note.value).toBe(WORDS.silence)
   })
 
-  it('lists every entry in the menu where there are words, and is not starting', async () => {
-    const { tab } = open(createRecordings(CUES, [TRANSCRIBE_ENTRY, DELETE_ENTRY]))
+  it('is not offered where no plugin creates the text of the file', async () => {
+    const { tab } = open(createRecordings([], false))
     await tab.content.firstRead
     expect(tab.options.isStartable.value).toBe(false)
-    expect(tab.options.items.value.map((one) => one.text)).toStrictEqual([
-      TRANSCRIBE_ENTRY.title,
-      DELETE_ENTRY.title,
-    ])
   })
 
-  it('carries the entry out, and reads the words again after it', async () => {
-    const setup = createRecordings(CUES, [DELETE_ENTRY])
+  it('is not offered where there are words', async () => {
+    const { tab } = open(createRecordings(CUES, true))
+    await tab.content.firstRead
+    expect(tab.options.isStartable.value).toBe(false)
+  })
+
+  it('runs the command that creates the text, and reads the words again after it', async () => {
+    const setup = createRecordings([], true)
     const { tab, state } = open(setup)
     await tab.content.firstRead
-    state.cues = []
+    state.cues = CUES
 
-    await tab.options.run(getEntryKey(DELETE_ENTRY))
+    await tab.options.start()
 
-    expect(state.runs).toStrictEqual([DELETE_ENTRY])
-    expect(tab.content.cues.value).toStrictEqual([])
+    expect(state.textRuns).toBe(1)
+    expect(tab.content.cues.value).toStrictEqual(CUES)
   })
 })
 
 describe('a transcript still growing', () => {
   it('is read again while work on it goes, once more when it ends, and is not edited meanwhile', async () => {
-    const { tab, state } = open(createRecordings([], [TRANSCRIBE_ENTRY]))
+    const { tab, state } = open(createRecordings([], true))
     await tab.content.firstRead
     const before = state.reads
 
@@ -122,7 +103,7 @@ describe('a transcript still growing', () => {
   })
 
   it('says a run is going where there are no words yet', async () => {
-    const { tab, state } = open(createRecordings([], [TRANSCRIBE_ENTRY]))
+    const { tab, state } = open(createRecordings([], true))
     await tab.content.firstRead
     state.onWork?.(true)
     await flush()
