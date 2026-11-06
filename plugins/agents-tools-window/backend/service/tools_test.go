@@ -67,8 +67,12 @@ func TestWindowTabsGetEmpty(t *testing.T) {
 	if len(output.Tabs) != 0 {
 		t.Errorf("len(Tabs) = %d, want 0", len(output.Tabs))
 	}
-	if output.Summary != "the window has nothing open" {
-		t.Errorf("summary = %q, want 'the window has nothing open'", output.Summary)
+	var keys map[string]json.RawMessage
+	if err := json.Unmarshal(result.GetStructured(), &keys); err != nil {
+		t.Fatalf("unmarshal output: %v", err)
+	}
+	if _, hasSummary := keys["summary"]; hasSummary {
+		t.Errorf("the answer has a summary: %s", result.GetStructured())
 	}
 }
 
@@ -101,47 +105,8 @@ func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 	if output.ActiveID != "front-tab" {
 		t.Errorf("ActiveID = %q, want front-tab", output.ActiveID)
 	}
-	if !strings.Contains(output.Summary, "inferred") {
-		t.Errorf("Summary = %q, want to mention inferred", output.Summary)
-	}
-}
-
-func TestFormatTabsSummaryAndDescribeTab(t *testing.T) {
-	// Empty ID on first tab with empty activeID does not match activeID; picks IsActive tab.
-	tabs := []TabInfo{
-		{ID: "", Kind: "note", Path: "notes/a.md", Title: "A"},
-		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B", IsActive: true},
-	}
-	if got := formatTabsSummary(tabs, ""); got != `the note "B" at notes/b.md is in front of them` {
-		t.Errorf("formatTabsSummary empty activeID = %q", got)
-	}
-
-	// Exact activeID match stops search before a later IsActive tab.
-	tabsBoth := []TabInfo{
-		{ID: "t1", Kind: "note", Path: "notes/a.md", Title: "A"},
-		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B", IsActive: true},
-	}
-	if got := formatTabsSummary(tabsBoth, "t1"); got != `the note "A" at notes/a.md is in front of them` {
-		t.Errorf("formatTabsSummary activeID match = %q", got)
-	}
-
-	// Fallback to first tab when neither activeID nor IsActive matches.
-	tabsNone := []TabInfo{
-		{ID: "t1", Kind: "", Path: "notes/a.md", Title: ""},
-		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B"},
-	}
-	if got := formatTabsSummary(tabsNone, "missing"); got != `the tab notes/a.md is in front of them` {
-		t.Errorf("formatTabsSummary fallback = %q", got)
-	}
-
-	// describeTab with neither Title nor Path.
-	if got := describeTab(TabInfo{Kind: "canvas"}); got != `a tab of kind "canvas" is in front of them` {
-		t.Errorf("describeTab empty title/path = %q", got)
-	}
-
-	// describeTab with Title only (no Path).
-	if got := describeTab(TabInfo{Kind: "note", Title: "Untracked"}); got != `the note "Untracked" is in front of them` {
-		t.Errorf("describeTab title only = %q", got)
+	if output.Tabs[0].Title != "inferred" {
+		t.Errorf("Tabs[0].Title = %q, want inferred", output.Tabs[0].Title)
 	}
 }
 

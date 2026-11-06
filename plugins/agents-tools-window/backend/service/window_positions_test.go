@@ -85,7 +85,7 @@ func TestWindowTabsGetReadsTheChapterOfABookWhoseHeadingsOpenEmptySegments(t *te
 		t.Run(name, func(t *testing.T) {
 			w := newPositionTools(t, getRealBookSegments())
 			out := w.readTabs(t, []host.OpenTab{{ID: "tab-1", Path: bookPath, State: `{"cfi":"` + tc.cfi + `"}`}}, "tab-1")
-			if len(out.Tabs) != 1 || out.Tabs[0].Where != tc.want {
+			if len(out.Tabs) != 1 || out.Tabs[0].Location != tc.want {
 				t.Errorf("answered %+v, want the tab at %q", out.Tabs, tc.want)
 			}
 		})
@@ -110,7 +110,7 @@ func TestWindowTabsGetReadsEachTextVersionOnceAcrossTabsAndCalls(t *testing.T) {
 	if got := w.reads.Load(); got != perFile {
 		t.Errorf("two tabs of one file read %d pages, want the %d of one tab of each file", got, perFile)
 	}
-	if out.Tabs[0].Where != "page 4 of 120" || out.Tabs[1].Where != "page 7 of 120" || out.Tabs[2].Where != `chapter "Herons in Winter"` {
+	if out.Tabs[0].Location != "page 4 of 120" || out.Tabs[1].Location != "page 7 of 120" || out.Tabs[2].Location != `chapter "Herons in Winter"` {
 		t.Errorf("answered %+v", out.Tabs)
 	}
 	w.readTabs(t, tabs, "tab-1")
@@ -123,7 +123,7 @@ func TestWindowTabsGetReadsEachTextVersionOnceAcrossTabsAndCalls(t *testing.T) {
 		{Text: "A new edition. ", Selector: `{"page":200}`},
 	})
 	out = w.readTabs(t, tabs, "tab-1")
-	if out.Tabs[0].Where != "page 4 of 200" {
-		t.Errorf("after a new text version the tab is at %q, want page 4 of 200", out.Tabs[0].Where)
+	if out.Tabs[0].Location != "page 4 of 200" {
+		t.Errorf("after a new text version the tab is at %q, want page 4 of 200", out.Tabs[0].Location)
 	}
 }

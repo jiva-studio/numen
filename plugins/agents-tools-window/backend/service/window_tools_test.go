@@ -139,11 +139,10 @@ type tabsOutput struct {
 		Kind     string `json:"kind"`
 		Path     string `json:"path"`
 		Title    string `json:"title"`
-		Where    string `json:"where"`
-		IsActive bool   `json:"active"`
+		Location string `json:"location"`
+		IsActive bool   `json:"isActive"`
 	} `json:"tabs"`
 	ActiveID string `json:"activeId"`
-	Summary  string `json:"summary"`
 }
 
 func TestTheToolsThatMoveTheWindowAreOnTheFullServerOnly(t *testing.T) {
@@ -179,17 +178,17 @@ func TestNoteFocusDescriptionTellsWhenToMoveThePerson(t *testing.T) {
 func TestNoteFocusAnswersTheFocusedNoteAndMovesTheWindowToIt(t *testing.T) {
 	w := newWindowTools(t)
 	var out struct {
-		Focused struct {
+		Note struct {
 			Path  string `json:"path"`
 			Title string `json:"title"`
 			ID    string `json:"id"`
-		} `json:"focused"`
+		} `json:"note"`
 	}
 	if failure := w.call(t, "note_focus", `{"path":"notes/Heron.md"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if out.Focused.Path != notePath || out.Focused.Title != "Grey Heron" || out.Focused.ID != "01H7X1234567890ABCDEFGHJKM" {
-		t.Errorf("focused %+v", out.Focused)
+	if out.Note.Path != notePath || out.Note.Title != "Grey Heron" || out.Note.ID != "01H7X1234567890ABCDEFGHJKM" {
+		t.Errorf("note %+v", out.Note)
 	}
 	if focused := w.window.GetFocusedNotes(); !slices.Equal(focused, []string{notePath}) {
 		t.Errorf("the window was asked to focus %v", focused)
@@ -206,17 +205,17 @@ func TestNoteFocusOfANoteTheVaultDoesNotHoldIsAToolErrorAndMovesNothing(t *testi
 	}
 }
 
-func TestSourceFocusPassesThePassagesAsTheyStandAndAnswersTheSummary(t *testing.T) {
+func TestSourceFocusPassesThePassagesUnchangedAndAnswersThePathAndHighlightCount(t *testing.T) {
 	w := newWindowTools(t)
 	var out struct {
-		IsShown bool   `json:"shown"`
-		Summary string `json:"summary"`
+		Path           string `json:"path"`
+		HighlightCount *int   `json:"highlightCount"`
 	}
 	arguments := `{"path":"library/Bird Guide.pdf","passages":[{"start":1500,"length":80},{"start":400,"length":700}]}`
 	if failure := w.call(t, "source_focus", arguments, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if !out.IsShown || out.Summary != "the document is open at that passage, with the words of it lit" {
+	if out.Path != guidePath || out.HighlightCount == nil || *out.HighlightCount != 2 {
 		t.Errorf("answered %+v", out)
 	}
 	want := []hosttest.FocusRequest{{Path: guidePath, Passages: []host.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}}}
@@ -228,13 +227,13 @@ func TestSourceFocusPassesThePassagesAsTheyStandAndAnswersTheSummary(t *testing.
 func TestSourceFocusWithNoPassagesOpensTheFileAtItsBeginning(t *testing.T) {
 	w := newWindowTools(t)
 	var out struct {
-		IsShown bool   `json:"shown"`
-		Summary string `json:"summary"`
+		Path           string `json:"path"`
+		HighlightCount *int   `json:"highlightCount"`
 	}
 	if failure := w.call(t, "source_focus", `{"path":"library/Bird Guide.pdf"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if !out.IsShown || out.Summary != "the document is open at its beginning" {
+	if out.Path != guidePath || out.HighlightCount == nil || *out.HighlightCount != 0 {
 		t.Errorf("answered %+v", out)
 	}
 	got := w.window.GetFocusRequests()
@@ -276,10 +275,10 @@ func TestWindowTabsGetAnswersTheTabsOfTheWindow(t *testing.T) {
 		t.Fatalf("answered %+v", out)
 	}
 	first, second := out.Tabs[0], out.Tabs[1]
-	if first.ID != "tab-1" || first.Kind != "note" || first.Path != notePath || first.Title != "Grey Heron" || first.IsActive || first.Where != "" {
+	if first.ID != "tab-1" || first.Kind != "note" || first.Path != notePath || first.Title != "Grey Heron" || first.IsActive || first.Location != "" {
 		t.Errorf("the first tab is %+v", first)
 	}
-	if second.ID != "tab-2" || second.Path != guidePath || !second.IsActive || second.Where != "page 4 of 120" {
+	if second.ID != "tab-2" || second.Path != guidePath || !second.IsActive || second.Location != "page 4 of 120" {
 		t.Errorf("the second tab is %+v", second)
 	}
 }
@@ -310,23 +309,10 @@ func TestWindowTabsGetReadsThePositionOfEachReaderTab(t *testing.T) {
 			tab := tc.tab
 			tab.ID = "tab-1"
 			out := w.readTabs(t, []host.OpenTab{tab}, "tab-1")
-			if len(out.Tabs) != 1 || out.Tabs[0].Where != tc.want {
+			if len(out.Tabs) != 1 || out.Tabs[0].Location != tc.want {
 				t.Errorf("answered %+v, want the tab at %q", out.Tabs, tc.want)
 			}
 		})
-	}
-}
-
-func TestWindowTabsGetSummaryOfTheActiveTabIncludesItsPosition(t *testing.T) {
-	w := newWindowTools(t)
-	out := w.readTabs(t, []host.OpenTab{
-		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: `{"page":4}`},
-	}, "tab-2")
-
-	want := `the reader:reader-pdf "Bird Guide" at library/Bird Guide.pdf is in front of them, open at page 4 of 120`
-	if out.Summary != want {
-		t.Errorf("the summary is %q, want %q", out.Summary, want)
 	}
 }
 
@@ -339,7 +325,7 @@ func TestWindowTabsGetFallsBackToTheFocusOfTheCallWithoutAWindow(t *testing.T) {
 	if failure := w.call(t, "window_tabs_get", `{}`, map[string]string{"focus": "notes/Inferred.md"}, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if len(out.Tabs) != 1 || out.Tabs[0].Path != "notes/Inferred.md" || out.ActiveID != "front-tab" || !strings.Contains(out.Summary, "Inferred") {
+	if len(out.Tabs) != 1 || out.Tabs[0].Path != "notes/Inferred.md" || out.ActiveID != "front-tab" || out.Tabs[0].Title != "Inferred" {
 		t.Errorf("answered %+v, want the focus of the call as the one tab", out)
 	}
 
@@ -347,7 +333,7 @@ func TestWindowTabsGetFallsBackToTheFocusOfTheCallWithoutAWindow(t *testing.T) {
 	if failure := w.call(t, "window_tabs_get", `{}`, nil, &none); failure != "" {
 		t.Fatal(failure)
 	}
-	if len(none.Tabs) != 0 || none.Summary != "the window has nothing open" {
+	if len(none.Tabs) != 0 {
 		t.Errorf("answered %+v, want nothing open", none)
 	}
 }

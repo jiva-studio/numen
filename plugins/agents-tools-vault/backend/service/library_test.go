@@ -31,6 +31,41 @@ const (
 	talkThird  = "Today we speak about the heron. "
 )
 
+// librarySearchAnswer is the answer of library_search under the keys the tool writes.
+type librarySearchAnswer struct {
+	Query   string `json:"query"`
+	Matches []struct {
+		Path     string `json:"path"`
+		Title    string `json:"title"`
+		Location string `json:"location"`
+		Text     string `json:"text"`
+		Start    int    `json:"start"`
+		Length   int    `json:"length"`
+		Line     int    `json:"line"`
+		URI      string `json:"uri"`
+	} `json:"matches"`
+}
+
+// libraryReadAnswer is the answer of library_read under the keys the tool writes.
+type libraryReadAnswer struct {
+	Path      string `json:"path"`
+	Kind      string `json:"kind"`
+	Version   string `json:"version"`
+	Text      string `json:"text"`
+	Start     int    `json:"start"`
+	Length    int    `json:"length"`
+	Size      int    `json:"size"`
+	NextStart *int   `json:"nextStart"`
+	Locations []struct {
+		Start       int     `json:"start"`
+		Length      int     `json:"length"`
+		Page        int     `json:"page"`
+		CFI         string  `json:"cfi"`
+		FromSeconds float64 `json:"fromSeconds"`
+		ToSeconds   float64 `json:"toSeconds"`
+	} `json:"locations"`
+}
+
 type library struct {
 	vault  *hosttest.Vault
 	texts  *hosttest.Texts
@@ -113,7 +148,7 @@ func (l library) call(t *testing.T, name, arguments string, out any) (failure st
 
 func TestLibrarySearchFindsPDFPassageWithPageAndAddress(t *testing.T) {
 	l := newLibrary(t)
-	var out service.LibrarySearchOutput
+	var out librarySearchAnswer
 	if failure := l.call(t, "library_search", `{"query":"heron"}`, &out); failure != "" {
 		t.Fatal(failure)
 	}
@@ -121,7 +156,7 @@ func TestLibrarySearchFindsPDFPassageWithPageAndAddress(t *testing.T) {
 		t.Fatalf("matches %+v", out.Matches)
 	}
 	pdf := out.Matches[0]
-	if pdf.Source != guidePath || pdf.Title != "Bird Guide" || pdf.Location != "page 2" || pdf.Text != "The grey heron stands in the reeds" ||
+	if pdf.Path != guidePath || pdf.Title != "Bird Guide" || pdf.Location != "page 2" || pdf.Text != "The grey heron stands in the reeds" ||
 		pdf.Start != 41 || pdf.Length != 56 {
 		t.Errorf("the PDF passage is %+v", pdf)
 	}
@@ -129,10 +164,10 @@ func TestLibrarySearchFindsPDFPassageWithPageAndAddress(t *testing.T) {
 		t.Errorf("the address is %q, want %q", pdf.URI, want)
 	}
 	note := out.Matches[1]
-	if note.Title != "Herons of the Marsh" || note.Source != "notes/Herons.md" || note.Location != "" {
+	if note.Title != "Herons of the Marsh" || note.Path != "notes/Herons.md" || note.Location != "" {
 		t.Errorf("the note passage is %+v, want the title of the note", note)
 	}
-	if talk := out.Matches[2]; talk.Source != talkPath || talk.Location != "00:04" || talk.Title != "Marsh Talk" {
+	if talk := out.Matches[2]; talk.Path != talkPath || talk.Location != "00:04" || talk.Title != "Marsh Talk" {
 		t.Errorf("the transcript passage is %+v", talk)
 	}
 }
@@ -201,25 +236,25 @@ func TestLibrarySearchSchemaNamesTheAddressURI(t *testing.T) {
 
 func TestLibrarySearchLimitsItToAKindAndAPathPrefix(t *testing.T) {
 	l := newLibrary(t)
-	var files, notes, narrowed service.LibrarySearchOutput
+	var files, notes, narrowed librarySearchAnswer
 	l.call(t, "library_search", `{"query":"heron","kinds":["file"]}`, &files)
 	l.call(t, "library_search", `{"query":"heron","kinds":["note"]}`, &notes)
-	l.call(t, "library_search", `{"query":"heron","path_prefix":"recordings/","limit":1}`, &narrowed)
-	if got := sourcesOf(files); !slices.Equal(got, []string{guidePath, talkPath}) {
+	l.call(t, "library_search", `{"query":"heron","pathPrefix":"recordings/","limit":1}`, &narrowed)
+	if got := getMatchPaths(files); !slices.Equal(got, []string{guidePath, talkPath}) {
 		t.Errorf("the files that answer are %v", got)
 	}
-	if got := sourcesOf(notes); !slices.Equal(got, []string{"notes/Herons.md"}) {
+	if got := getMatchPaths(notes); !slices.Equal(got, []string{"notes/Herons.md"}) {
 		t.Errorf("the notes that answer are %v", got)
 	}
-	if got := sourcesOf(narrowed); !slices.Equal(got, []string{talkPath}) {
+	if got := getMatchPaths(narrowed); !slices.Equal(got, []string{talkPath}) {
 		t.Errorf("one passage under recordings/ is %v", got)
 	}
 }
 
-func sourcesOf(out service.LibrarySearchOutput) []string {
+func getMatchPaths(out librarySearchAnswer) []string {
 	var got []string
 	for _, m := range out.Matches {
-		got = append(got, m.Source)
+		got = append(got, m.Path)
 	}
 	return got
 }
@@ -230,7 +265,7 @@ func TestLibrarySearchRejectsUnknownKindAndBlankQuery(t *testing.T) {
 	if !strings.Contains(failure, `"book"`) || !strings.Contains(failure, "note") || !strings.Contains(failure, "file") {
 		t.Errorf("failure %q, want the kind named and the two kinds offered", failure)
 	}
-	var blank service.LibrarySearchOutput
+	var blank librarySearchAnswer
 	if failure := l.call(t, "library_search", `{"query":"   "}`, &blank); failure != "" || len(blank.Matches) != 0 {
 		t.Errorf("a blank query gave %q and %v", failure, blank.Matches)
 	}
@@ -257,8 +292,8 @@ func TestLibrarySearchWorksTheVaultTheCallNames(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		var out service.LibrarySearchOutput
-		if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil || len(out.Matches) != 1 || out.Matches[0].Source != want {
+		var out librarySearchAnswer
+		if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil || len(out.Matches) != 1 || out.Matches[0].Path != want {
 			t.Errorf("the call naming %s answered %s (%v), want %s alone", vaultID, res.GetResult().GetStructured(), err, want)
 		}
 	}
@@ -275,7 +310,7 @@ func TestLibrarySearchReportsMissingIndexPermission(t *testing.T) {
 
 func TestLibraryReadReturnsPageWithLocationsAndNext(t *testing.T) {
 	l := newLibrary(t)
-	var out service.LibraryReadOutput
+	var out libraryReadAnswer
 	if failure := l.call(t, "library_read", `{"path":"`+guidePath+`","page":2}`, &out); failure != "" {
 		t.Fatal(failure)
 	}
@@ -288,13 +323,13 @@ func TestLibraryReadReturnsPageWithLocationsAndNext(t *testing.T) {
 	if len(out.Locations) != 1 || out.Locations[0].Page != 2 || out.Locations[0].Start != len(pageOne) || out.Locations[0].Length != len(pageTwo) {
 		t.Errorf("locations %+v, want the one page, its two segments joined", out.Locations)
 	}
-	if out.Next == nil || *out.Next != len(pageOne)+len(pageTwo) {
-		t.Fatalf("next %v, want the end of the page", out.Next)
+	if out.NextStart == nil || *out.NextStart != len(pageOne)+len(pageTwo) {
+		t.Fatalf("next %v, want the end of the page", out.NextStart)
 	}
 
-	var rest service.LibraryReadOutput
-	l.call(t, "library_read", `{"path":"`+guidePath+`","start":`+itoa(*out.Next)+`}`, &rest)
-	if rest.Text != pageThree || rest.Next != nil || len(rest.Locations) != 1 || rest.Locations[0].Page != 3 {
+	var rest libraryReadAnswer
+	l.call(t, "library_read", `{"path":"`+guidePath+`","start":`+itoa(*out.NextStart)+`}`, &rest)
+	if rest.Text != pageThree || rest.NextStart != nil || len(rest.Locations) != 1 || rest.Locations[0].Page != 3 {
 		t.Errorf("the continuation is %+v, want page 3 and no next", rest)
 	}
 }
@@ -305,10 +340,10 @@ func itoa(n int) string {
 
 func TestLibraryReadStopsAtCharacterBoundary(t *testing.T) {
 	l := newLibrary(t)
-	var out service.LibraryReadOutput
+	var out libraryReadAnswer
 	l.call(t, "library_read", `{"path":"`+guidePath+`","start":3,"length":10}`, &out)
-	if out.Text != (pageOne + pageTwo + pageThree)[3:13] || out.Start != 3 || out.Length != 10 || out.Next == nil || *out.Next != 13 {
-		t.Errorf("range %q at %d for %d next %v", out.Text, out.Start, out.Length, out.Next)
+	if out.Text != (pageOne + pageTwo + pageThree)[3:13] || out.Start != 3 || out.Length != 10 || out.NextStart == nil || *out.NextStart != 13 {
+		t.Errorf("range %q at %d for %d next %v", out.Text, out.Start, out.Length, out.NextStart)
 	}
 
 	cyrillic := hosttest.NewTexts(testVault, readerID)
@@ -324,18 +359,18 @@ func TestLibraryReadStopsAtCharacterBoundary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var slice service.LibraryReadOutput
+	var slice libraryReadAnswer
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &slice); err != nil {
 		t.Fatal(err)
 	}
-	if slice.Text != "А" || slice.Length != 2 || slice.Next == nil || *slice.Next != 2 {
+	if slice.Text != "А" || slice.Length != 2 || slice.NextStart == nil || *slice.NextStart != 2 {
 		t.Errorf("3 bytes of a two-byte letter text gave %q for %d, want the whole letter before the cut", slice.Text, slice.Length)
 	}
 }
 
 func TestLibraryReadReturnsTranscriptTimes(t *testing.T) {
 	l := newLibrary(t)
-	var out service.LibraryReadOutput
+	var out libraryReadAnswer
 	l.call(t, "library_read", `{"path":"`+talkPath+`"}`, &out)
 	if out.Text != talkSecond+talkThird || out.Kind != "transcript" || len(out.Locations) != 2 {
 		t.Fatalf("transcript %+v", out)
@@ -360,7 +395,7 @@ func TestLibraryReadReportsMissingTextVersion(t *testing.T) {
 
 func TestLibraryReadReadsATextFileThatNeedsNoTextVersion(t *testing.T) {
 	l := newLibrary(t)
-	var out service.LibraryReadOutput
+	var out libraryReadAnswer
 	if failure := l.call(t, "library_read", `{"path":"data.txt"}`, &out); failure != "" {
 		t.Fatal(failure)
 	}

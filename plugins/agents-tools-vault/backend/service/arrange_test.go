@@ -23,7 +23,7 @@ type listedNote struct {
 type noteListOutput struct {
 	Notes      []listedNote `json:"notes"`
 	Total      *int         `json:"total"`
-	NextOffset int          `json:"next_offset"`
+	NextOffset int          `json:"nextOffset"`
 }
 
 type noteTitlesOutput struct {
@@ -36,10 +36,10 @@ type noteResolveOutput struct {
 }
 
 type listedVault struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Folder  string `json:"folder"`
-	Showing *bool  `json:"showing"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Path      string `json:"path"`
+	IsCurrent *bool  `json:"isCurrent"`
 }
 
 type vaultListOutput struct {
@@ -54,7 +54,7 @@ type vaultProblem struct {
 
 type vaultProblemsOutput struct {
 	Problems []vaultProblem `json:"problems"`
-	Ran      []string       `json:"ran"`
+	Checks   []string       `json:"checks"`
 }
 
 // newSkyVault is an invented vault of astronomy notes, with one file that is not a note and one
@@ -141,7 +141,7 @@ func TestNoteListReturnsNotesOrderedByPathWithTitles(t *testing.T) {
 		t.Errorf("total = %v, want 5", out.Total)
 	}
 	if out.NextOffset != 0 {
-		t.Errorf("next_offset = %d, want 0 when nothing is left", out.NextOffset)
+		t.Errorf("nextOffset = %d, want 0 when nothing is left", out.NextOffset)
 	}
 }
 
@@ -171,7 +171,7 @@ func TestNoteListPagesWithLimitAndOffset(t *testing.T) {
 		t.Errorf("total = %v, want 5 (the count before limit)", first.Total)
 	}
 	if first.NextOffset != 2 {
-		t.Errorf("next_offset = %d, want 2", first.NextOffset)
+		t.Errorf("nextOffset = %d, want 2", first.NextOffset)
 	}
 
 	var last noteListOutput
@@ -183,7 +183,7 @@ func TestNoteListPagesWithLimitAndOffset(t *testing.T) {
 		t.Errorf("total = %v, want 5 (the count before offset)", last.Total)
 	}
 	if last.NextOffset != 0 {
-		t.Errorf("next_offset = %d, want 0 when nothing is left", last.NextOffset)
+		t.Errorf("nextOffset = %d, want 0 when nothing is left", last.NextOffset)
 	}
 }
 
@@ -205,7 +205,7 @@ func TestNoteListReturnsAtMostOneHundredNotesByDefault(t *testing.T) {
 		t.Errorf("total = %v, want 120", out.Total)
 	}
 	if out.NextOffset != 100 {
-		t.Errorf("next_offset = %d, want 100", out.NextOffset)
+		t.Errorf("nextOffset = %d, want 100", out.NextOffset)
 	}
 }
 
@@ -302,11 +302,11 @@ func TestVaultListReturnsEveryVaultAndMarksTheCalledOne(t *testing.T) {
 		byID[one.ID] = one
 	}
 	for id, want := range map[string]struct {
-		folder  string
-		showing bool
+		path      string
+		isCurrent bool
 	}{
-		"garden-vault": {folder: "/vaults/garden-vault", showing: true},
-		skyVault:       {folder: "/vaults/" + skyVault, showing: false},
+		"garden-vault": {path: "/vaults/garden-vault", isCurrent: true},
+		skyVault:       {path: "/vaults/" + skyVault, isCurrent: false},
 	} {
 		got, ok := byID[id]
 		if !ok {
@@ -316,11 +316,11 @@ func TestVaultListReturnsEveryVaultAndMarksTheCalledOne(t *testing.T) {
 		if got.Name != id {
 			t.Errorf("vault %s name = %q, want %q", id, got.Name, id)
 		}
-		if got.Folder != want.folder {
-			t.Errorf("vault %s folder = %q, want %q", id, got.Folder, want.folder)
+		if got.Path != want.path {
+			t.Errorf("vault %s path = %q, want %q", id, got.Path, want.path)
 		}
-		if got.Showing == nil || *got.Showing != want.showing {
-			t.Errorf("vault %s showing = %v, want %v", id, got.Showing, want.showing)
+		if got.IsCurrent == nil || *got.IsCurrent != want.isCurrent {
+			t.Errorf("vault %s isCurrent = %v, want %v", id, got.IsCurrent, want.isCurrent)
 		}
 	}
 }
@@ -331,8 +331,8 @@ func TestVaultProblemsRunsTheParseCheckByDefault(t *testing.T) {
 
 	var out vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problems", `{}`), &out)
-	if !slices.Equal(out.Ran, []string{"parse"}) {
-		t.Errorf("ran = %v, want [parse]", out.Ran)
+	if !slices.Equal(out.Checks, []string{"parse"}) {
+		t.Errorf("checks = %v, want [parse]", out.Checks)
 	}
 	if len(out.Problems) != 1 {
 		t.Fatalf("got %d problems, want 1: %v", len(out.Problems), out.Problems)
@@ -349,8 +349,8 @@ func TestVaultProblemsRunsTheParseCheckWhenNamed(t *testing.T) {
 
 	var out vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problems", `{"checks":["parse"]}`), &out)
-	if !slices.Equal(out.Ran, []string{"parse"}) {
-		t.Errorf("ran = %v, want [parse]", out.Ran)
+	if !slices.Equal(out.Checks, []string{"parse"}) {
+		t.Errorf("checks = %v, want [parse]", out.Checks)
 	}
 	if len(out.Problems) != 1 || out.Problems[0].Path != "Sky/Pulsar.md" {
 		t.Errorf("problems = %v, want one for Sky/Pulsar.md", out.Problems)
@@ -364,8 +364,8 @@ func TestVaultProblemsReturnsNoProblemsForValidNotes(t *testing.T) {
 	if len(out.Problems) != 0 {
 		t.Errorf("problems = %v, want none", out.Problems)
 	}
-	if !slices.Equal(out.Ran, []string{"parse"}) {
-		t.Errorf("ran = %v, want [parse]", out.Ran)
+	if !slices.Equal(out.Checks, []string{"parse"}) {
+		t.Errorf("checks = %v, want [parse]", out.Checks)
 	}
 }
 

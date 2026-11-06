@@ -185,7 +185,26 @@ func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tool
 	}
 }
 
-func (s *importScene) callImport(t *testing.T, vault string, in URLImportInput) *tools.CallResponse {
+// importArguments is the arguments of url_import under the keys the tool reads.
+type importArguments struct {
+	URL           string `json:"url"`
+	Folder        string `json:"folder,omitempty"`
+	DownloadVideo bool   `json:"downloadVideo,omitempty"`
+}
+
+// importAnswer is the answer of url_import under the keys the tool writes.
+type importAnswer struct {
+	Path           string `json:"path"`
+	Title          string `json:"title"`
+	Producer       string `json:"producer"`
+	Bytes          int    `json:"bytes"`
+	HasText        bool   `json:"hasText"`
+	Error          string `json:"error"`
+	DownloadTaskID string `json:"downloadTaskId"`
+	DownloadError  string `json:"downloadError"`
+}
+
+func (s *importScene) callImport(t *testing.T, vault string, in importArguments) *tools.CallResponse {
 	t.Helper()
 	arguments, err := json.Marshal(in)
 	if err != nil {
@@ -194,13 +213,13 @@ func (s *importScene) callImport(t *testing.T, vault string, in URLImportInput) 
 	return invokeAtOnce(t, s.registry, tools.Call{VaultID: vault, Name: "url_import", Arguments: arguments})
 }
 
-func (s *importScene) importURL(t *testing.T, vault string, in URLImportInput) URLImportOutput {
+func (s *importScene) importURL(t *testing.T, vault string, in importArguments) importAnswer {
 	t.Helper()
 	res := s.callImport(t, vault, in)
 	if res.GetResult().GetIsRefusal() {
 		t.Fatalf("url_import of %s in %s was refused: %s", in.URL, vault, res.GetResult().GetText())
 	}
-	var out URLImportOutput
+	var out importAnswer
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("decode the result %q: %v", res.GetResult().GetStructured(), err)
 	}
@@ -258,7 +277,7 @@ func TestTheInstructionsAreOneParagraphNamingURLImport(t *testing.T) {
 func TestURLImportMakesTheNoteInTheFolderAndReportsTheArticle(t *testing.T) {
 	s := newReleasedScene(t)
 
-	out := s.importURL(t, "Mills", URLImportInput{URL: articleAddress, Folder: "sources/tides"})
+	out := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "sources/tides"})
 
 	if !strings.HasPrefix(out.Path, "sources/tides/") || !strings.HasSuffix(out.Path, ".md") {
 		t.Errorf("the note is at %q, want a note in sources/tides", out.Path)
@@ -269,7 +288,7 @@ func TestURLImportMakesTheNoteInTheFolderAndReportsTheArticle(t *testing.T) {
 	if out.Title != articleTitle || out.Producer != "article" || out.Bytes <= 0 {
 		t.Errorf("url_import returned %+v, want the title %q, the producer article and the size of the text", out, articleTitle)
 	}
-	if out.IsNothing || out.Error != "" || out.CopyTaskID != "" || out.CopyError != "" {
+	if !out.HasText || out.Error != "" || out.DownloadTaskID != "" || out.DownloadError != "" {
 		t.Errorf("url_import returned %+v, want a fetched text and no copy", out)
 	}
 	if !hasVersion(t, s.texts, out.Path) {
@@ -280,9 +299,9 @@ func TestURLImportMakesTheNoteInTheFolderAndReportsTheArticle(t *testing.T) {
 func TestURLImportReportsTheCaptionsOfAVideo(t *testing.T) {
 	s := newReleasedScene(t)
 
-	out := s.importURL(t, "Mills", URLImportInput{URL: videoAddress})
+	out := s.importURL(t, "Mills", importArguments{URL: videoAddress})
 
-	if out.Title != "Tidal mill at work" || out.Producer != "captions" || out.Bytes <= 0 || out.IsNothing || out.Error != "" {
+	if out.Title != "Tidal mill at work" || out.Producer != "captions" || out.Bytes <= 0 || !out.HasText || out.Error != "" {
 		t.Errorf("url_import returned %+v, want the captions of the video", out)
 	}
 	if strings.Contains(out.Path, "/") {
@@ -293,9 +312,9 @@ func TestURLImportReportsTheCaptionsOfAVideo(t *testing.T) {
 func TestURLImportReportsAnAddressThatPublishesNothing(t *testing.T) {
 	s := newReleasedScene(t)
 
-	out := s.importURL(t, "Mills", URLImportInput{URL: silentAddress})
+	out := s.importURL(t, "Mills", importArguments{URL: silentAddress})
 
-	if !out.IsNothing || out.Error != "" || out.Bytes != 0 {
+	if out.HasText || out.Error != "" || out.Bytes != 0 {
 		t.Errorf("url_import returned %+v, want nothing published and no failure", out)
 	}
 	if notes := getLinkNotes(t, s.vault); !slices.Equal(notes, []string{out.Path}) {
@@ -306,16 +325,16 @@ func TestURLImportReportsAnAddressThatPublishesNothing(t *testing.T) {
 func TestURLImportReportsAFailedFetchAndKeepsTheNote(t *testing.T) {
 	s := newReleasedScene(t)
 
-	res := s.callImport(t, "Mills", URLImportInput{URL: brokenAddress})
+	res := s.callImport(t, "Mills", importArguments{URL: brokenAddress})
 
 	if res.GetResult().GetIsRefusal() {
 		t.Fatalf("a failed fetch was refused: %s", res.GetResult().GetText())
 	}
-	var out URLImportOutput
+	var out importAnswer
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out.Error, "503") || out.IsNothing {
+	if !strings.Contains(out.Error, "503") || out.HasText {
 		t.Errorf("url_import returned %+v, want the failure of the fetch", out)
 	}
 	if _, isKept := s.vault.Content(out.Path); out.Path == "" || !isKept {
@@ -327,7 +346,7 @@ func TestURLImportRefusesWhatIsNoWebAddressAndMakesNoNote(t *testing.T) {
 	s := newReleasedScene(t)
 
 	for _, raw := range []string{"not-a-url", "ftp://tides.example/archive", "tides.example/articles"} {
-		res := s.callImport(t, "Mills", URLImportInput{URL: raw})
+		res := s.callImport(t, "Mills", importArguments{URL: raw})
 		if !res.GetResult().GetIsRefusal() {
 			t.Errorf("%q returned %s, want a refusal", raw, res.GetResult().GetStructured())
 		}
@@ -340,7 +359,7 @@ func TestURLImportRefusesWhatIsNoWebAddressAndMakesNoNote(t *testing.T) {
 func TestURLImportRefusesACallThatNamesNoVault(t *testing.T) {
 	s := newReleasedScene(t)
 
-	res := s.callImport(t, "", URLImportInput{URL: articleAddress})
+	res := s.callImport(t, "", importArguments{URL: articleAddress})
 
 	if !res.GetResult().GetIsRefusal() {
 		t.Errorf("a call with no vault returned %s, want a refusal", res.GetResult().GetStructured())
@@ -353,8 +372,8 @@ func TestURLImportRefusesACallThatNamesNoVault(t *testing.T) {
 func TestURLImportMakesTheNoteInTheVaultTheCallNames(t *testing.T) {
 	s := newReleasedScene(t)
 
-	inChemistry := s.importURL(t, "Chemistry", URLImportInput{URL: articleAddress, Folder: "reading"})
-	inMills := s.importURL(t, "Mills", URLImportInput{URL: otherArticle, Folder: "reading"})
+	inChemistry := s.importURL(t, "Chemistry", importArguments{URL: articleAddress, Folder: "reading"})
+	inMills := s.importURL(t, "Mills", importArguments{URL: otherArticle, Folder: "reading"})
 
 	if notes := getLinkNotes(t, s.chemistry); !slices.Equal(notes, []string{inChemistry.Path}) {
 		t.Errorf("Chemistry holds the link notes %v, want %s alone", notes, inChemistry.Path)
@@ -374,9 +393,9 @@ func TestURLImportStartsTheCopyAndAnswersBeforeItEnds(t *testing.T) {
 	release := make(chan struct{})
 	s := newImportScene(t, release)
 
-	out := s.importURL(t, "Mills", URLImportInput{URL: videoAddress, ShouldCopy: true})
+	out := s.importURL(t, "Mills", importArguments{URL: videoAddress, DownloadVideo: true})
 
-	if out.CopyTaskID != "copy:"+out.Path || out.CopyError != "" {
+	if out.DownloadTaskID != "copy:"+out.Path || out.DownloadError != "" {
 		t.Errorf("url_import returned %+v, want the copy task copy:%s", out, out.Path)
 	}
 	if hasCopy(t, s.store) {
@@ -392,10 +411,10 @@ func TestURLImportStartsTheCopyAndAnswersBeforeItEnds(t *testing.T) {
 func TestURLImportMakesNoCopyUnlessAsked(t *testing.T) {
 	s := newReleasedScene(t)
 
-	out := s.importURL(t, "Mills", URLImportInput{URL: videoAddress})
+	out := s.importURL(t, "Mills", importArguments{URL: videoAddress})
 	s.links.Wait()
 
-	if out.CopyTaskID != "" || out.CopyError != "" {
+	if out.DownloadTaskID != "" || out.DownloadError != "" {
 		t.Errorf("url_import returned %+v, want no copy", out)
 	}
 	if hasCopy(t, s.store) {
@@ -406,10 +425,10 @@ func TestURLImportMakesNoCopyUnlessAsked(t *testing.T) {
 func TestURLImportReportsAnAddressNothingCopies(t *testing.T) {
 	s := newReleasedScene(t)
 
-	out := s.importURL(t, "Mills", URLImportInput{URL: articleAddress, ShouldCopy: true})
+	out := s.importURL(t, "Mills", importArguments{URL: articleAddress, DownloadVideo: true})
 	s.links.Wait()
 
-	if out.CopyError == "" || out.CopyTaskID != "" {
+	if out.DownloadError == "" || out.DownloadTaskID != "" {
 		t.Errorf("url_import returned %+v, want the reason no copy was started", out)
 	}
 	if out.Title != articleTitle || out.Error != "" {

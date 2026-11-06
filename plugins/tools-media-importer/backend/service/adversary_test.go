@@ -67,13 +67,13 @@ func TestURLImportCopiesAVideoWhoseCaptionsFailed(t *testing.T) {
 	close(release)
 	s := newSceneOver(t, captionlessSites{inventedSites{video: download.NewMock(), release: release}})
 
-	out := s.importURL(t, "Mills", URLImportInput{URL: videoAddress, ShouldCopy: true})
+	out := s.importURL(t, "Mills", importArguments{URL: videoAddress, DownloadVideo: true})
 	s.links.Wait()
 
 	if out.Error == "" {
 		t.Fatalf("url_import returned %+v, want the failure of the captions", out)
 	}
-	if out.CopyTaskID == "" && out.CopyError == "" {
+	if out.DownloadTaskID == "" && out.DownloadError == "" {
 		t.Errorf("url_import with copy set returned %+v: no copy task and no reason why no copy was started", out)
 	}
 	if !hasCopy(t, s.store) {
@@ -88,13 +88,13 @@ func TestURLImportOfAnAddressThatNowPublishesNothingReportsNoTitle(t *testing.T)
 	close(release)
 	s := newSceneOver(t, silencedSites{inventedSites{video: download.NewMock(), release: release}, &atomic.Int32{}})
 
-	first := s.importURL(t, "Mills", URLImportInput{URL: articleAddress, Folder: "first"})
+	first := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "first"})
 	if first.Title != articleTitle || first.Bytes == 0 {
 		t.Fatalf("the first import returned %+v, want the article", first)
 	}
-	second := s.importURL(t, "Mills", URLImportInput{URL: articleAddress, Folder: "second"})
+	second := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "second"})
 
-	if second.IsNothing && (second.Title != "" || second.Producer != "") {
+	if !second.HasText && (second.Title != "" || second.Producer != "") {
 		t.Errorf("the second import returned %+v: nothing published, with the title and producer of an earlier fetch", second)
 	}
 }
