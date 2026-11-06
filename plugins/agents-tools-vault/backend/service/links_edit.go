@@ -51,9 +51,9 @@ type LinkUpdateInput struct {
 	To          string `json:"to" jsonschema:"the target as it is written now"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the fingerprint note_read gave for the note"`
 	Role        string `json:"role,omitempty" jsonschema:"the role the link carries: parent, child, jump, ref or attachment; kept when left out"`
-	Type        string `json:"type,omitempty" jsonschema:"the type of the link; cleared when left out"`
-	Label       string `json:"label,omitempty" jsonschema:"a few words naming the relationship; cleared when left out"`
-	Note        string `json:"note,omitempty" jsonschema:"why the link exists; cleared when left out"`
+	Type        string `json:"type,omitempty" jsonschema:"the type of the link; kept when left out"`
+	Label       string `json:"label,omitempty" jsonschema:"a few words naming the relationship; kept when left out"`
+	Note        string `json:"note,omitempty" jsonschema:"why the link exists; kept when left out"`
 }
 
 // LinkRemoveInput is the input of the link_remove tool.
@@ -88,8 +88,8 @@ func (t *Tools) addLinkUpdate(registry *tools.Registry) error {
 		Step:  tools.ByEffect,
 		Name:  "link_update",
 		Title: "Update Link",
-		Description: "Change the role, type, label or note of the link a note has to a target, keeping the " +
-			"target. Fields left out are cleared; a role left out is kept. Needs the fingerprint note_read gave " +
+		Description: "Change the role, type, label or note of the links a note has to a target, keeping the " +
+			"target. Fields left out are kept. Needs the fingerprint note_read gave " +
 			"for the note, and a stale one is refused.",
 		Effect:  tools.ReadWrite,
 		Servers: []tools.Server{tools.Full},
@@ -216,25 +216,16 @@ func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOut
 	if role != "" && !domain.IsKnownRole(role) {
 		return LinkEditOutput{}, fmt.Errorf("%q is not a role a link can have: parent, child, jump, ref or attachment", role)
 	}
+	change := domain.Link{Target: to, Role: role, Type: in.Type, Why: in.Note, Label: in.Label, Marker: domain.MarkerNone}
 	fingerprint, err := t.editNote(ctx, in.From, in.Fingerprint, func(doc *markdown.Document) error {
-		current, err := getFrontmatterLinks(doc, in.From, to, "")
+		changed, err := doc.UpdateLink(to, change)
 		if err != nil {
 			return err
 		}
-		if len(current) != 1 {
-			return fmt.Errorf("%d links to %s are written here, and link_update changes one", len(current), in.To)
+		if changed == 0 {
+			return fmt.Errorf("no link to %s is written here", in.To)
 		}
-		was := current[0]
-		next := domain.Link{Target: was.Target, Role: was.Role, Type: in.Type, Why: in.Note, Label: in.Label, Marker: was.Marker}
-		if role != "" {
-			next.Role = role
-		}
-		if next.Type != was.Type {
-			if _, err := doc.RemoveLink(domain.LinkKey{Target: was.Target, Role: was.Role, Type: was.Type}); err != nil {
-				return err
-			}
-		}
-		return doc.SetLink(next)
+		return nil
 	})
 	if err != nil {
 		return LinkEditOutput{}, err
