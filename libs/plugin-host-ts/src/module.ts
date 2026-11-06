@@ -72,13 +72,15 @@ export async function readPluginManifest(
   return parsed.value
 }
 
-/** Whether the plugin contributes to the interface: a slot view, tab kinds, menu entries or themes. */
+/**
+ * Whether the plugin contributes to the interface: a slot view, tab kinds, readers, menu entries or
+ * themes.
+ */
 export function isInterfaceManifest(manifest: Manifest): boolean {
   const contributes = manifest.contributes
   if (!contributes) return false
-  return [contributes.views, contributes.tabKinds, contributes.menus, contributes.themes].some(
-    (list) => list.length > 0,
-  )
+  const lists = [contributes.views, contributes.tabKinds, contributes.readers, contributes.menus]
+  return [...lists, contributes.themes].some((list) => list.length > 0)
 }
 
 async function loadDynamicModule(

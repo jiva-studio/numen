@@ -60,13 +60,14 @@ async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): 
 
 export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_LIMIT_MS) {
   /**
-   * True once the plugins of the interface have started or the wait for them has passed, or the start
-   * failed: the window is drawn from then on.
+   * True once the plugins of the interface have started, INTERFACE_WAIT_MS has passed since the window
+   * mounted, or the start failed: the window is drawn from then on.
    */
   const isStarted = ref(false)
   /** Why the workspace did not load, shown with a retry; empty while it loads and once it has. */
   const failure = ref('')
   let attempt = 0
+  let drawTimer: ReturnType<typeof setTimeout> | undefined
 
   const run = async (): Promise<void> => {
     // Stryker disable next-line UpdateOperator: generation counter only needs a distinct value per run
@@ -88,9 +89,13 @@ export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_
     deps.startEditing()
   }
 
-  onMounted(run)
+  onMounted(() => {
+    drawTimer = setTimeout(() => (isStarted.value = true), INTERFACE_WAIT_MS)
+    return run()
+  })
 
   onUnmounted(() => {
+    clearTimeout(drawTimer)
     // Stryker disable next-line UpdateOperator: generation counter only needs a distinct value per run
     attempt++
     runInBackground(Promise.resolve(deps.closePlugins?.()), deps.reportError)

@@ -277,6 +277,7 @@ beforeEach(() => {
     pluginLoader: {
       trackPlugins: vi.fn(async () => undefined),
       start: vi.fn(async () => undefined),
+      waitForInterface: vi.fn(async () => undefined),
       close: vi.fn(async () => undefined),
     },
     kinds: {
@@ -617,6 +618,17 @@ describe('the services a plugin is given', () => {
     const { taskList, ...made } = h.args.plugins.services
     expect(made).toStrictEqual(h.f.kinds.services)
     expect(taskList).toBe(h.f.display.tasks)
+  })
+
+  it('stops the tabs waiting for their plugins once the plugins of the interface have started', async () => {
+    useWindow()
+    h.f.pluginLoader.start.mockImplementationOnce(() => new Promise<undefined>(() => undefined))
+
+    const started = h.args.bootstrap.startPlugins()
+    expect(started).toBeInstanceOf(Promise)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(h.args.windowTabs.arePluginsStarting.value).toBe(false)
   })
 
   it('wires plugin support, windowTabs, settings, kinds, commands, statusBar, and lifecycle callbacks', async () => {

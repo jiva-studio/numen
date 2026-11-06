@@ -2,14 +2,13 @@ package manifest
 
 import (
 	"fmt"
-	"slices"
 )
 
 // SlotTitleBar is the slot at the top of a window. The view in it draws the whole title bar.
 const SlotTitleBar = "titleBar"
 
-// slots are the places of a window a view may be drawn in.
-var slots = []string{SlotTitleBar}
+// isSlot reports whether the name is a place of a window a view may be drawn in.
+func isSlot(name string) bool { return name == SlotTitleBar }
 
 // View is a component of the plugin's frontend that the window draws in one of its slots.
 type View struct {
@@ -44,7 +43,7 @@ func listViewIssues(views []View) []error {
 		}
 		observedIDs[declared.ID] = true
 		switch {
-		case !slices.Contains(slots, declared.Slot):
+		case !isSlot(declared.Slot):
 			issues = append(issues, fmt.Errorf("%w: view %q names slot %q, which the window does not have", ErrInvalidContribution, declared.ID, declared.Slot))
 		case observedSlots[declared.Slot]:
 			issues = append(issues, fmt.Errorf("%w: slot %q is declared by two views", ErrInvalidContribution, declared.Slot))

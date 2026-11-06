@@ -184,13 +184,17 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     startLayout,
     // The plugins the settings name are active before the layout opens the tabs of their kinds.
     startPlugins: () => {
+      // Tabs come from the plugins of the interface, so a tab stops waiting for its plugin once they
+      // have started, while the other plugins go on starting.
+      const stopWaiting = () => (deps.arePluginsStarting.value = false)
+      runInBackground(deps.pluginLoader.waitForInterface().then(stopWaiting), () => undefined)
       pluginsStarted = (async () => {
         try {
           const plugins = settings.rest.plugins.value
           await deps.pluginLoader.trackPlugins(getFrontendPluginIds(plugins))
           await deps.pluginLoader.start()
         } finally {
-          deps.arePluginsStarting.value = false
+          stopWaiting()
         }
       })()
       return pluginsStarted

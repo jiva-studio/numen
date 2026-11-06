@@ -3,6 +3,10 @@
  * palette, and the status bar.
  */
 import './styles.css'
+// The package marks only stylesheets as side effects, so the frame's stylesheets are imported by the
+// entry, which every window loads, and not by the module of the frame's sizes.
+import './features/window-frame/tokens/frame.css'
+import './features/window-frame/ui/windowFrame.css'
 
 export { WorkspaceLayout } from './features/workspace'
 export { closeTab, openTab, openTabAdjacent } from './features/workspace'

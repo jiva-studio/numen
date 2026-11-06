@@ -4,11 +4,14 @@ import { expectWorkspaceDrawn } from '../../support/workspace.js'
 /** How long the answer to the settings request is held: longer than the window waits for it. */
 const SETTINGS_HOLD_MS = 15_000
 
-/** How soon the workspace shell is on the screen while the settings have not answered. */
-const SHELL_WITHIN_MS = 2_000
+/**
+ * How soon the workspace shell is on the screen while the settings have not answered: the window waits
+ * up to 3 s for the plugins of its interface, then draws.
+ */
+const SHELL_WITHIN_MS = 5_000
 
 test.describe('Start-up while the settings request never answers', () => {
-  test('draws the workspace at once, then says what did not load and loads on retry', async ({
+  test('draws the workspace once the wait for the interface plugins passes, then says what did not load and loads on retry', async ({
     page,
   }) => {
     let isHolding = true
