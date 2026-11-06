@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 )
@@ -46,20 +48,30 @@ func (b *Backend) Commands() (*command.Registry, error) {
 	return registry, nil
 }
 
+// errRowGone is a row the vault holds no file or folder at.
+var errRowGone = errors.New("no such file or folder")
+
 // getRowFolder is the folder a file made over a row of the file tree is filed in: the folder holding
-// the row where the row is a file of the vault, the row itself otherwise, and the root of the vault
-// where the command runs over no row.
-func (b *Backend) getRowFolder(ctx context.Context, row string) string {
+// the row where the row is a file of the vault, the row itself where the vault answers it as no file,
+// and the root of the vault where the command runs over no row. A row the vault does not hold is
+// errRowGone.
+func (b *Backend) getRowFolder(ctx context.Context, row string) (string, error) {
 	if row == "" {
-		return ""
+		return "", nil
 	}
-	if _, err := b.vault.StatFile(ctx, row); err != nil {
-		return row
+	_, err := b.vault.StatFile(ctx, row)
+	switch {
+	case errors.Is(err, host.ErrNotExist):
+		return "", fmt.Errorf("%s: %w", row, errRowGone)
+	case errors.Is(err, host.ErrNotANote):
+		return row, nil
+	case err != nil:
+		return "", err
 	}
 	if folder := path.Dir(row); folder != "." {
-		return folder
+		return folder, nil
 	}
-	return ""
+	return "", nil
 }
 
 // newCreateRun makes the file under the title in the folder of the row it runs over, or at the root
@@ -68,9 +80,13 @@ func (b *Backend) newCreateRun(
 	create func(context.Context, domain.Vault, cards.New) (cards.CreateNoteResult, error),
 ) command.Run {
 	return func(ctx context.Context, request command.Request) (command.Result, error) {
+		folder, err := b.getRowFolder(ctx, request.Path)
+		if err != nil {
+			return command.Result{}, err
+		}
 		made, code, _, err := b.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 			return create(ctx, showing, in)
-		}, request.Arguments.GetString(argumentTitle), b.getRowFolder(ctx, request.Path))
+		}, request.Arguments.GetString(argumentTitle), folder)
 		if err != nil {
 			return command.Result{}, err
 		}

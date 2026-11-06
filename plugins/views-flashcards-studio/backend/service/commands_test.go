@@ -3,6 +3,8 @@ package service_test
 import (
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -65,6 +67,32 @@ func TestTheCreateCommandsMakeTheFileInTheFolderOfTheRowTheyRunOver(t *testing.T
 				onDisk(t, env.Vault.Path, "Glaciers/Rivers.md")
 			})
 		}
+	}
+}
+
+// A create command run over a row the vault no longer holds makes nothing and says so.
+func TestTheCreateCommandsMakeNothingOverARowThatIsGone(t *testing.T) {
+	for _, row := range []string{"Gone", "Glaciers/Gone.md"} {
+		t.Run(row, func(t *testing.T) {
+			env := vaulttest.New(t, map[string]string{"Glaciers/Lakes.md": "# Lakes\n"})
+			commands, err := service.New(service.Config{Vault: env.Host, Now: vaulttest.NewClock()}).Commands()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := commands.RunCommand(t.Context(), command.Request{
+				Command: "deck.create", Path: row, Arguments: command.Arguments{"title": "Rivers"},
+			})
+
+			if err == nil || !strings.Contains(err.Error(), "no such file or folder") || result.OpenedPath != "" {
+				t.Fatalf("the command answered %+v, %v", result, err)
+			}
+			for _, made := range []string{"Rivers.md", "Gone/Rivers.md", "Glaciers/Rivers.md"} {
+				if _, statErr := os.Stat(filepath.Join(env.Vault.Path, made)); statErr == nil {
+					t.Errorf("the command made %s", made)
+				}
+			}
+		})
 	}
 }
 
