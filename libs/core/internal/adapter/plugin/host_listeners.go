@@ -101,15 +101,24 @@ func (h *Host) syncAllListeners(ctx context.Context) {
 	h.mu.RUnlock()
 	slices.Sort(ids)
 	for _, id := range ids {
-		h.syncListeners(ctx, id)
+		h.syncListenersAndReport(ctx, id)
+	}
+}
+
+// syncListenersAndReport syncs the listeners of the plugin and reports an error the sync did not
+// record as a failure of the plugin.
+func (h *Host) syncListenersAndReport(ctx context.Context, pluginID string) {
+	if err := h.syncListeners(ctx, pluginID); err != nil && !errors.Is(err, errListenerBind) {
+		h.reportError(err)
 	}
 }
 
 // syncListeners binds 127.0.0.1:<port> for each listener of the plugin while it is registered and
 // enabled, and closes its ports otherwise. A listener whose port changed is bound on the new port
-// first and its old port closed after. A port that cannot be bound, or a port setting that holds no
-// port, fails the plugin and closes all its ports.
-func (h *Host) syncListeners(ctx context.Context, pluginID string) {
+// first and its old port closed after. When a port cannot be bound, or a port setting holds no port,
+// a plugin with bound ports keeps them unchanged and the error is returned; a plugin without bound
+// ports is failed, and the returned error wraps errListenerBind.
+func (h *Host) syncListeners(ctx context.Context, pluginID string) error {
 	h.listenersMu.Lock()
 	defer h.listenersMu.Unlock()
 
@@ -119,16 +128,20 @@ func (h *Host) syncListeners(ctx context.Context, pluginID string) {
 
 	current := h.listeners[pluginID]
 	if err == nil && isSamePorts(current, wanted) {
-		return
+		return nil
 	}
 	var next map[string]listenerBinding
 	if err == nil {
 		next, err = h.openChangedListeners(context.WithoutCancel(ctx), pluginID, current, wanted)
 	}
 	if err != nil {
+		if len(current) > 0 {
+			return err
+		}
+		err = fmt.Errorf("%w: %w", errListenerBind, err)
 		h.closeListenersLocked(pluginID)
 		h.failListenerBind(pluginID, err)
-		return
+		return err
 	}
 	for name, binding := range current {
 		if next[name] != binding {
@@ -138,9 +151,10 @@ func (h *Host) syncListeners(ctx context.Context, pluginID string) {
 	h.clearListenerFailure(pluginID)
 	if len(next) == 0 {
 		delete(h.listeners, pluginID)
-		return
+		return nil
 	}
 	h.listeners[pluginID] = next
+	return nil
 }
 
 // isSamePorts reports whether the bound listeners are the wanted ones on the wanted ports.
@@ -183,8 +197,8 @@ func (h *Host) openChangedListeners(
 	return next, nil
 }
 
-// failListenerBind records a port that cannot be bound as a failed activation of the plugin, once
-// while the plugin is failed.
+// failListenerBind records err, which wraps errListenerBind, as a failed activation of the plugin,
+// once while the plugin is failed.
 func (h *Host) failListenerBind(pluginID string, err error) {
 	h.mu.RLock()
 	sup, ok := h.supervisors[pluginID]
@@ -193,7 +207,7 @@ func (h *Host) failListenerBind(pluginID string, err error) {
 	if isFailed {
 		return
 	}
-	h.recordActivationFailure(pluginID, fmt.Errorf("%w: %w", errListenerBind, err))
+	h.recordActivationFailure(pluginID, err)
 	h.deliverPluginFailures()
 }
 

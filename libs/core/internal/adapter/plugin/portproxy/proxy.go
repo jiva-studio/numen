@@ -9,6 +9,13 @@ import (
 	"io"
 	"net"
 	"sync"
+	"sync/atomic"
+	"time"
+)
+
+const (
+	minAcceptRetryDelay = 5 * time.Millisecond
+	maxAcceptRetryDelay = time.Second
 )
 
 // Target opens the connection a proxied connection is forwarded to, and holds the plugin for it
@@ -22,6 +29,8 @@ type Proxy struct {
 	onError  func(error)
 	// cancel ends the context the targets of the connections are opened with.
 	cancel context.CancelFunc
+	// isTargetFailing is set by a target error and cleared when a target opens.
+	isTargetFailing atomic.Bool
 
 	mu       sync.Mutex
 	conns    map[net.Conn]struct{}
@@ -36,20 +45,27 @@ func Open(ctx context.Context, addr string, target Target, onError func(error)) 
 	if err != nil {
 		return nil, fmt.Errorf("listen on %s: %w", addr, err)
 	}
+	return newProxy(ctx, listener, target, onError), nil
+}
+
+// newProxy forwards each connection accepted on listener to the address target returns, and closes
+// listener on Close.
+func newProxy(ctx context.Context, listener net.Listener, target Target, onError func(error)) *Proxy {
 	proxyCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	p := &Proxy{
-		listener: listener,
-		target:   target,
-		onError:  onError,
-		cancel:   cancel,
-		mu:       sync.Mutex{},
-		conns:    make(map[net.Conn]struct{}),
-		isClosed: false,
-		wg:       sync.WaitGroup{},
+		listener:        listener,
+		target:          target,
+		onError:         onError,
+		cancel:          cancel,
+		isTargetFailing: atomic.Bool{},
+		mu:              sync.Mutex{},
+		conns:           make(map[net.Conn]struct{}),
+		isClosed:        false,
+		wg:              sync.WaitGroup{},
 	}
 	p.wg.Add(1)
 	go p.acceptConnections(proxyCtx)
-	return p, nil
+	return p
 }
 
 // Close closes the listening socket and every forwarded connection, and waits until the
@@ -82,22 +98,43 @@ func (p *Proxy) Close() error {
 	return nil
 }
 
+// acceptConnections accepts until the listener is closed. After an accept error it waits before the
+// next accept, from minAcceptRetryDelay doubling to maxAcceptRetryDelay, until an accept succeeds.
 func (p *Proxy) acceptConnections(ctx context.Context) {
 	defer p.wg.Done()
+	var retryDelay time.Duration
 	for {
 		conn, err := p.listener.Accept()
 		if err != nil {
-			if !errors.Is(err, net.ErrClosed) {
-				p.onError(fmt.Errorf("accept on %s: %w", p.listener.Addr(), err))
+			if errors.Is(err, net.ErrClosed) {
+				return
 			}
-			return
+			p.onError(fmt.Errorf("accept on %s: %w", p.listener.Addr(), err))
+			retryDelay = min(max(2*retryDelay, minAcceptRetryDelay), maxAcceptRetryDelay)
+			if !waitFor(ctx, retryDelay) {
+				return
+			}
+			continue
 		}
+		retryDelay = 0
 		if !p.track(conn) {
 			p.closeConn(conn)
 			return
 		}
 		p.wg.Add(1)
 		go p.forward(ctx, conn)
+	}
+}
+
+// waitFor waits for delay and returns false when ctx ends first.
+func waitFor(ctx context.Context, delay time.Duration) bool {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
 	}
 }
 
@@ -127,9 +164,12 @@ func (p *Proxy) forward(ctx context.Context, client net.Conn) {
 
 	addr, release, err := p.target(ctx)
 	if err != nil {
-		p.reportUnlessClosed(ctx, fmt.Errorf("open the target of a connection to %s: %w", p.listener.Addr(), err))
+		if !p.isTargetFailing.Swap(true) {
+			p.reportUnlessClosed(ctx, fmt.Errorf("open the target of a connection to %s: %w", p.listener.Addr(), err))
+		}
 		return
 	}
+	p.isTargetFailing.Store(false)
 	defer release()
 
 	upstream, err := new(net.Dialer).DialContext(ctx, "tcp", addr)

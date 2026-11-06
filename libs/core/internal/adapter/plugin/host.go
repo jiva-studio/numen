@@ -1161,7 +1161,7 @@ func (h *Host) applyEnabledChange(ctx context.Context, pluginID string, value an
 	if sup != nil {
 		h.clearFailure(pluginID, sup)
 	}
-	h.syncListeners(ctx, pluginID)
+	h.syncListenersAndReport(ctx, pluginID)
 	return stopErr
 }
 
@@ -1326,10 +1326,10 @@ func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, va
 		if err := h.applyEnabledChange(ctx, pluginID, value); err != nil {
 			return err
 		}
-	} else {
-		h.syncListeners(ctx, pluginID)
+		return h.NotifyPluginConfig(ctx, pluginID)
 	}
-	return h.NotifyPluginConfig(ctx, pluginID)
+	syncErr := h.syncListeners(ctx, pluginID)
+	return errors.Join(syncErr, h.NotifyPluginConfig(ctx, pluginID))
 }
 
 // PaletteCommand declares a command palette toggle or option action for a plugin setting.
@@ -1673,7 +1673,7 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*pluginport.Pl
 	if !recognized {
 		return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginNotInstalled, Err: errPluginNotFound}
 	}
-	defer h.syncListeners(ctx, pluginID)
+	defer h.syncListenersAndReport(ctx, pluginID)
 	if sup != nil {
 		h.clearFailure(pluginID, sup)
 	}
