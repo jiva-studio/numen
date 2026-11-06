@@ -133,7 +133,9 @@ export const countIndexedNotes = async (request: APIRequestContext): Promise<num
     headers: { 'Content-Type': 'application/json' },
   })
   if (!response.ok()) throw new Error(`reading the index stats returned ${response.status()}`)
-  const { kinds = [] } = (await response.json()) as { kinds?: { kind?: string; sources?: number }[] }
+  const { kinds = [] } = (await response.json()) as {
+    kinds?: { kind?: string; sources?: number }[]
+  }
   return kinds.find((one) => one.kind === 'notes')?.sources ?? 0
 }
 

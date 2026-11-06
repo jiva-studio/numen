@@ -179,9 +179,12 @@ const getStoryTab = (): StoryTab => {
 export const PassageInsideOneChapter: Story = {
   render: openAt([INSIDE]),
   play: async () => {
-    await waitFor(async () => await expect(getHighlightedText()).toStrictEqual(['Kṛṣṇaveṇī ghāṭ']), {
-      timeout: LAYOUT_TIMEOUT,
-    })
+    await waitFor(
+      async () => await expect(getHighlightedText()).toStrictEqual(['Kṛṣṇaveṇī ghāṭ']),
+      {
+        timeout: LAYOUT_TIMEOUT,
+      },
+    )
   },
 }
 
@@ -212,7 +215,8 @@ export const PassageAcrossTwoChaptersInTheNext: Story = {
     // The heading of the third chapter is part of the passage, and the markup sets a line between
     // the heading and the paragraph.
     await waitFor(
-      async () => await expect(getHighlightedText()).toStrictEqual([`${THIRD_HEADING}\n${OPENING}`]),
+      async () =>
+        await expect(getHighlightedText()).toStrictEqual([`${THIRD_HEADING}\n${OPENING}`]),
       { timeout: LAYOUT_TIMEOUT },
     )
   },
