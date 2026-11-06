@@ -81,7 +81,7 @@ func newSkyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	v.File("Skyline.md", "---\ntitle: City Skyline at Night\n---\nLight hides the stars.")
 	v.File("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea.")
 	v.File("Sky/chart.txt", "RA 05h 35m\n")
-	registry, err := service.New(v).Registry()
+	registry, err := service.New(v).WithVaultList(v).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}

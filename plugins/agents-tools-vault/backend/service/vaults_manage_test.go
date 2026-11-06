@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
 const (
@@ -196,5 +197,28 @@ func TestVaultOpenOfAnUnknownVaultIsRefused(t *testing.T) {
 	requireRefusal(t, registry, geologyVault, "vault_open", `{"vault":"Desert"}`)
 	if opened, ok := geology.GetOpenedVault(); ok {
 		t.Errorf("the vault %s was opened", opened.ID)
+	}
+}
+
+func TestVaultListToolsWithoutAVaultListAreNotListed(t *testing.T) {
+	registry, err := service.New(hosttest.New(geologyVault)).Registry()
+	if err != nil {
+		t.Fatalf("registry: %v", err)
+	}
+	infos, err := registry.ListToolInfos(t.Context())
+	if err != nil {
+		t.Fatalf("list tools: %v", err)
+	}
+	names := map[string]bool{}
+	for _, info := range infos {
+		names[info.GetName()] = true
+	}
+	for _, name := range []string{"vault_add", "vault_rename", "vault_remove", "vault_open"} {
+		if names[name] {
+			t.Errorf("the tool %s is listed without a vault list", name)
+		}
+	}
+	if !names["vault_list"] {
+		t.Error("the tool vault_list is not listed without a vault list")
 	}
 }

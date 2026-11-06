@@ -57,7 +57,7 @@ func newGeologyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	v.File("Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
 	v.File("Minerals.md", "---\ntitle: Minerals\n---\nQuartz and feldspar, found in [[Basalt]].\n")
 	v.File("Fossils.md", "Shells kept in limestone.\n")
-	registry, err := service.New(v).Registry()
+	registry, err := service.New(v).WithVaultList(v).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
