@@ -107,7 +107,7 @@ func (u EditLinks) Update(
 			return err
 		}
 		if changed == 0 {
-			return fmt.Errorf("no link to %s is written here", to)
+			return fmt.Errorf("no link to %s is written here", to.GetWritten())
 		}
 		return nil
 	})
@@ -149,7 +149,7 @@ func (u EditLinks) Remove(
 			return err
 		}
 		if removed == 0 {
-			return fmt.Errorf("no link to %s is written here", key.Target)
+			return fmt.Errorf("no link to %s is written here", key.Target.GetWritten())
 		}
 		return nil
 	})
@@ -168,7 +168,7 @@ func (u EditLinks) RemoveTargetLinks(
 			return err
 		}
 		if removed == 0 {
-			return fmt.Errorf("no link to %s is written here", to)
+			return fmt.Errorf("no link to %s is written here", to.GetWritten())
 		}
 		return nil
 	})
