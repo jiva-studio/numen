@@ -18,9 +18,16 @@ type VersionRepository interface {
 	RemoveVersion(ctx context.Context, path string, id domain.TextVersionID) error
 	// RemovePluginVersions removes every version a plugin made, and returns them.
 	RemovePluginVersions(ctx context.Context, pluginID string) ([]domain.TextVersion, error)
+	ContentHashes
+}
+
+// ContentHashes is the hashes recorded for the files of one vault, which the live
+// version of a file is decided by.
+type ContentHashes interface {
 	// FindContentHash is the hash recorded for the file at the path, and false where none is.
 	FindContentHash(ctx context.Context, path string) (ContentHash, bool, error)
-	// SaveContentHash records the hash of a file, replacing the record of its path.
+	// SaveContentHash records the hash of a file on the index row of its path, where
+	// the row holds the record's stat or its hash. A file with no row is not recorded.
 	SaveContentHash(ctx context.Context, record ContentHash) error
 }
 
