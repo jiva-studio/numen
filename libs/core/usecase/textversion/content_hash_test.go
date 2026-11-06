@@ -489,3 +489,36 @@ func TestAFileTheVaultIgnoresIsHashedFromAStreamAndNotRecorded(t *testing.T) {
 		t.Fatalf("the row of an ignored file became %+v, want it kept as %+v", after, before)
 	}
 }
+
+// A file whose modification time is ahead of the clock cannot be changed with
+// its stat kept: a later write stamps the time of the write.
+func TestAFileStampedAnHourAheadOfTheClockIsOpenedOnceOverSixLookups(t *testing.T) {
+	l := newLookup(t)
+	l.clock.set(getAtlasTime().Add(-time.Hour))
+	want := domain.HashContent(getAtlasContent())
+
+	for i := range 6 {
+		if got := l.getHash(t); got != want {
+			t.Fatalf("lookup %d gives %s, want %s", i+1, got, want)
+		}
+	}
+	l.checkAccesses(t, 1)
+}
+
+// A stamp a second after the hash time lies within the tick of the record, so
+// a change that keeps the size and the stamp is found by content.
+func TestAChangeToAFileStampedASecondAfterItsHashIsFoundByContent(t *testing.T) {
+	l := newLookup(t)
+	l.clock.set(getAtlasTime().Add(-time.Second))
+	l.getHash(t)
+	sameSize := []byte("%PDF atlas of rivers, ninth edition")
+	if len(sameSize) != len(getAtlasContent()) {
+		t.Fatal("the changed content must keep the size")
+	}
+	l.files.change(atlasPath, func(f *statFile) { f.raw = sameSize })
+
+	if got, want := l.getHash(t), domain.HashContent(sameSize); got != want {
+		t.Fatalf("a file stamped a second after its hash gives %s, want %s", got, want)
+	}
+	l.checkAccesses(t, 2)
+}
