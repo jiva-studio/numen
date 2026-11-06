@@ -253,15 +253,19 @@ func openInstallation(
 		current := opened.GetCurrentVault()
 		return current, current.Path != ""
 	}
-	shared, err := made.OpenPluginVault(getShownVault, container.PluginVaultHooks{Written: func() {
-		if wake := opened.State.NotifyNoteWritten; wake != nil {
-			wake()
-		}
-	}})
+	shared, err := made.OpenPluginVault(getShownVault, container.PluginVaultHooks{
+		Written: func() {
+			if wake := opened.State.NotifyNoteWritten; wake != nil {
+				wake()
+			}
+		},
+		Notes: opened.Notes(),
+	})
 	if err != nil {
 		return shownInstallation{}, err
 	}
 	cfg.SetPluginVault(shared)
+	cfg.SetPluginVaultList(editor.NewPluginVaultList(opened, cfg.CheckRoot()))
 	cfg.SetPluginTexts()
 	// The plugin window reads the vault of the State on each call, so a vault opened later in the
 	// main window is served without a new binding.

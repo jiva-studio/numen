@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -201,6 +202,14 @@ func (c Config) SetPluginVault(vault pluginport.PluginVault) {
 	}
 }
 
+// SetPluginVaultList is the list of vaults the plugins change. Without one, a plugin that changes
+// the list is answered that the host has none.
+func (c Config) SetPluginVaultList(list pluginport.PluginVaultList) {
+	if c.PluginHost != nil {
+		c.PluginHost.SetPluginVaultList(list)
+	}
+}
+
 // OpenPluginCache is where a plugin keeps what it worked out for a vault: the folder the
 // configuration names for schedules, else the platform's cache location.
 func (c Config) OpenPluginCache() (pluginport.PluginCache, error) {
@@ -223,6 +232,15 @@ type PluginVaultHooks struct {
 	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
 	// Moved signals that something moved in some vault. When nil, the signal is the index file changing.
 	Moved func(ctx context.Context) (<-chan struct{}, error)
+	// Notes is the window's own use cases on notes, so the window follows a note a plugin renames
+	// or moves. The zero value is the host's own, which no window follows.
+	Notes note.Scenarios
+}
+
+// isNotesSet reports whether the window gave its own use cases on notes. A zero Scenarios has a
+// Move with no readers.
+func (h PluginVaultHooks) isNotesSet() bool {
+	return h.Notes.Move.Readers() != nil
 }
 
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
@@ -241,6 +259,10 @@ func (c Config) OpenPluginVault(
 		return err
 	}
 	scenarios := c.Notes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
+	arranged := scenarios
+	if hooks.isNotesSet() {
+		arranged = hooks.Notes
+	}
 	vaults := hostvault.Vault{
 		Current:     current,
 		Readers:     c.VaultReaders(),
@@ -249,11 +271,17 @@ func (c Config) OpenPluginVault(
 		Links:       db.Links(),
 		Connections: note.NewConnections(scenarios),
 		Problems:    db.Problems(),
-		Stores:      derivedfile.PluginStores{Options: c.vaultOptions()},
-		Cache:       cache,
-		Watcher:     c.VaultWatcher(),
-		Written:     hooks.Written,
-		Vaults:      registry.List,
+		Arranger: hostvault.Arranger{
+			Rename: arranged.Rename,
+			Move:   arranged.Move,
+			Remove: arranged.RemoveNote,
+			Checks: vault.NewStandardGetProblems(db.Problems()),
+		},
+		Stores:  derivedfile.PluginStores{Options: c.vaultOptions()},
+		Cache:   cache,
+		Watcher: c.VaultWatcher(),
+		Written: hooks.Written,
+		Vaults:  registry.List,
 		Find: func(id domain.VaultID) (domain.Vault, error) {
 			found, isFound, err := registry.FindVault(string(id))
 			if err != nil {
