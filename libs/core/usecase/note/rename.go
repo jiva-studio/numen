@@ -3,6 +3,7 @@ package note
 import (
 	"context"
 	"errors"
+	"fmt"
 	pathpkg "path"
 	"strings"
 
@@ -81,7 +82,8 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 		return errFilenameNamesIt
 	})
 	if errors.Is(err, vaultport.ErrAlreadyExists) {
-		return RenameResult{Path: path, Title: title, By: source}, err
+		return RenameResult{Path: path, Title: title, By: source},
+			domain.NewDetailError(fmt.Sprintf("%s already exists; %s is unchanged", to, path), err)
 	}
 	if err != nil && !errors.Is(err, errFilenameNamesIt) {
 		return RenameResult{}, err

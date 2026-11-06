@@ -59,13 +59,11 @@ func (v *Vault) AddVault(ctx context.Context, root, name string) (domain.Vault, 
 		return domain.Vault{}, err
 	}
 	if !path.IsAbs(root) {
-		return domain.Vault{}, host.ErrVaultUnreadable
+		return domain.Vault{}, notesdomain.NewDetailError(fmt.Sprintf("%s is not an absolute path", root), host.ErrVaultUnreadable)
 	}
 	root = path.Clean(root)
-	for _, member := range v.world.members {
-		if isOverlapping(root, member.vault.Path) {
-			return domain.Vault{}, host.ErrVaultOverlaps
-		}
+	if err := v.checkOverlap(root); err != nil {
+		return domain.Vault{}, err
 	}
 	name = strings.TrimSpace(name)
 	if name == "" {
@@ -87,14 +85,15 @@ func (v *Vault) RenameVault(ctx context.Context, id domain.VaultID, name string)
 	}
 	target, isKnown := v.findMember(id)
 	if !isKnown {
-		return domain.Vault{}, host.ErrUnknownVault
+		return domain.Vault{}, notesdomain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), host.ErrUnknownVault)
 	}
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return domain.Vault{}, domain.ErrInvalidName
 	}
 	if other, isTaken := v.findNamed(name); isTaken && other != target {
-		return domain.Vault{}, host.ErrVaultNameTaken
+		return domain.Vault{}, notesdomain.NewDetailError(
+			fmt.Sprintf("the vault at %s is already called %s", other.vault.Path, other.vault.Name), host.ErrVaultNameTaken)
 	}
 	target.vault.Name = name
 	return target.vault, nil
@@ -110,13 +109,14 @@ func (v *Vault) RemoveVault(ctx context.Context, id domain.VaultID) (string, err
 	}
 	target, isKnown := v.findMember(id)
 	if !isKnown {
-		return "", host.ErrUnknownVault
+		return "", notesdomain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), host.ErrUnknownVault)
 	}
 	if len(v.world.members) == 1 {
-		return "", host.ErrLastVault
+		return "", notesdomain.NewDetailError(
+			fmt.Sprintf("%s is the only vault; the last vault cannot be removed", target.vault.Name), host.ErrLastVault)
 	}
 	if v.world.opened == target {
-		return "", host.ErrVaultShowing
+		return "", notesdomain.NewDetailError(fmt.Sprintf("%s is the vault the window shows", target.vault.Name), host.ErrVaultShowing)
 	}
 	remaining := make([]*Vault, 0, len(v.world.members)-1)
 	for _, member := range v.world.members {
@@ -146,10 +146,10 @@ func (v *Vault) OpenVault(ctx context.Context, id domain.VaultID) error {
 	}
 	target, isKnown := v.findMember(id)
 	if !isKnown {
-		return host.ErrUnknownVault
+		return notesdomain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), host.ErrUnknownVault)
 	}
 	if v.world.hasUnsavedChanges {
-		return fmt.Errorf("open vault %s: %w", id, host.ErrUnsavedChanges)
+		return host.ErrUnsavedChanges
 	}
 	v.world.opened = target
 	return nil
@@ -205,7 +205,18 @@ func (v *Vault) isNameTaken(name string) bool {
 	return isNamed || isIdentity
 }
 
-// isOverlapping reports whether one folder is the other or lies inside it.
-func isOverlapping(first, second string) bool {
-	return first == second || strings.HasPrefix(first, second+"/") || strings.HasPrefix(second, first+"/")
+// checkOverlap refuses a folder that is a vault on the list, is inside one or contains one, in the
+// sentence of the core. The caller holds the lock.
+func (v *Vault) checkOverlap(root string) error {
+	vaults := make(notesdomain.Vaults, 0, len(v.world.members))
+	for _, member := range v.world.members {
+		if member.vault.Path == root {
+			return notesdomain.NewDetailError(fmt.Sprintf("%s is the vault %s", root, member.vault.Name), host.ErrVaultOverlaps)
+		}
+		vaults = append(vaults, member.vault)
+	}
+	if err := vaults.CheckOverlap(root); err != nil {
+		return notesdomain.NewDetailError(err.Error(), host.ErrVaultOverlaps, err)
+	}
+	return nil
 }

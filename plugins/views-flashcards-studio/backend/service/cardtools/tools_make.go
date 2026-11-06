@@ -26,12 +26,12 @@ func (t *Tools) addCardDeckCreate(registry *tools.Registry) error {
 			"here: a note created with `note_create` is an ordinary note, and `card_add` writes " +
 			"only into a deck. The file is named after the title.",
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
-	}, func(ctx context.Context, in deckCreateInput) (cards.CreateNoteResult, error) {
+	}, func(ctx context.Context, in deckCreateInput) (NoteCreated, error) {
 		v, err := t.getToolVault(ctx)
 		if err != nil {
-			return cards.CreateNoteResult{}, err
+			return NoteCreated{}, err
 		}
-		return t.cards.Create.Deck(ctx, v, cards.New{Title: in.Title, Body: "", Path: in.Folder, Fields: nil, Templates: nil})
+		return newNoteCreated(t.cards.Create.Deck(ctx, v, cards.New{Title: in.Title, Body: "", Path: in.Folder, Fields: nil, Templates: nil}))
 	})
 }
 
@@ -54,14 +54,14 @@ func (t *Tools) addCardCardModelCreate(registry *tools.Registry) error {
 			"the title, and that filename is the name a card's wikilink writes, which " +
 			"`card_model_list` returns under `name`.",
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
-	}, func(ctx context.Context, in cardModelCreateInput) (cards.CreateNoteResult, error) {
+	}, func(ctx context.Context, in cardModelCreateInput) (NoteCreated, error) {
 		v, err := t.getToolVault(ctx)
 		if err != nil {
-			return cards.CreateNoteResult{}, err
+			return NoteCreated{}, err
 		}
-		return t.cards.Create.CardModel(ctx, v, cards.New{
+		return newNoteCreated(t.cards.Create.CardModel(ctx, v, cards.New{
 			Title: in.Title, Body: "", Path: in.Folder, Fields: in.Fields, Templates: newCardTemplates(in.Templates),
-		})
+		}))
 	})
 }
 

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -33,7 +32,7 @@ type NoteSearchOutput struct {
 }
 
 func (t *Tools) addNoteSearch(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Name:  "note_search",
 		Title: "Search Notes",
 		Description: "Search the notes of the vault by title, path and text. It does not look into books, " +
@@ -59,7 +58,7 @@ func (t *Tools) searchNotes(ctx context.Context, in NoteSearchInput) (NoteSearch
 
 	noteRefs, err := t.vault.GetNotes(ctx, candidatePaths)
 	if err != nil {
-		return NoteSearchOutput{}, fmt.Errorf("get notes: %w", err)
+		return NoteSearchOutput{}, err
 	}
 	queryLower := strings.ToLower(q)
 	words := strings.Fields(queryLower)

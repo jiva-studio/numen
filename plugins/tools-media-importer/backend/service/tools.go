@@ -58,7 +58,8 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Description: "Create a link note for a web address and fetch the text published there before returning: " +
 			"the captions of a video with their times, or the prose of an article. The text is stored as a text " +
 			"version of the note, which library_search and library_read read. The note is named after the " +
-			"address and holds only the address. An address that is not http or https is refused. A failed " +
+			"address and holds only the address; the link note of the same address already in the folder is " +
+			"kept, and its text is fetched again. An address that is not http or https is refused. A failed " +
 			"fetch is reported in error and the note is kept. With downloadVideo set, the video is also " +
 			"downloaded to this disk in the background, and the result returns the task id of the download.",
 		Effect:       tools.ReadWrite,
@@ -76,7 +77,7 @@ func (t *Tools) importURL(ctx context.Context, in URLImportInput) (URLImportOutp
 	if vault == "" {
 		return URLImportOutput{}, errNoVault
 	}
-	made, err := t.links.Create(ctx, vault, in.Folder, in.URL)
+	made, err := t.links.FindOrCreate(ctx, vault, in.Folder, in.URL)
 	if err != nil {
 		return URLImportOutput{}, err
 	}

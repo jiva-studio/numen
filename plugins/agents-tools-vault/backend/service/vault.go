@@ -21,7 +21,7 @@ type VaultInfoOutput struct {
 }
 
 func (t *Tools) addVaultGet(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
 		Name:        "vault_get",
 		Title:       "Get Vault Info",

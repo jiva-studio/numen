@@ -197,16 +197,50 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 	if err := errors.Join(doc.SetScalar(typeKey, string(NoteType)), doc.SetScalar(urlKey, string(parsed))); err != nil {
 		return Link{}, err
 	}
-	target := l.host.Vault
-	if vault != "" {
-		target = target.With(vault)
-	}
+	target := l.getVault(vault)
 	path := pathpkg.Join(folder, name+domain.NoteExtension)
 	content := doc.Bytes()
 	if err := target.Create(ctx, path, content); err != nil {
 		return Link{}, err
 	}
 	return newLinkIn(ctx, target, path, parsed, content)
+}
+
+// FindOrCreate is Create, and where a file is already at the path of the note, the link note there
+// when it holds the same address. Any other file at the path is an error naming the path, and the
+// file is unchanged.
+func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, error) {
+	made, err := l.Create(ctx, vault, folder, raw)
+	if !errors.Is(err, host.ErrAlreadyExists) {
+		return made, err
+	}
+	parsed, err := address.Parse(raw)
+	// gomutants:disable-next-line BRANCH_IF reason="Create parsed the same address before it reached the file"
+	if err != nil {
+		return Link{}, err
+	}
+	name, _, err := domain.Filename(string(parsed))
+	// gomutants:disable-next-line BRANCH_IF reason="Create named the same address before it reached the file"
+	if err != nil {
+		return Link{}, err
+	}
+	path := pathpkg.Join(folder, name+domain.NoteExtension)
+	found, err := readLink(ctx, l.getVault(vault), path)
+	if err != nil && !errors.Is(err, ErrNotALink) {
+		return Link{}, err
+	}
+	if err != nil || found.Address != parsed {
+		return Link{}, fmt.Errorf("%s already exists and is not the link note of %s", path, parsed)
+	}
+	return found, nil
+}
+
+// getVault is the vault of the identity, and the vault the host shows for an empty one.
+func (l *Links) getVault(vault domain.VaultID) host.Vault {
+	if vault == "" {
+		return l.host.Vault
+	}
+	return l.host.Vault.With(vault)
 }
 
 // getStore is the plugin's folder in the vault of the link.

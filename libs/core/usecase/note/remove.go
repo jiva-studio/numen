@@ -139,7 +139,7 @@ func moveToTrash(ctx context.Context, writer vaultport.VaultWriter, path string)
 			return "", mapMissingNote(err)
 		}
 		if attempt > 100 {
-			return "", fmt.Errorf("remove %s: the trash already holds it", path)
+			return "", fmt.Errorf("%s cannot be moved to the trash; the trash already holds 100 files of that name", path)
 		}
 		target = pathpkg.Join(TrashDir, withSuffix(path, "-"+strconv.Itoa(attempt)))
 	}

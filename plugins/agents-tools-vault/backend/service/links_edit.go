@@ -71,7 +71,7 @@ type LinkEditOutput struct {
 }
 
 func (t *Tools) addLinkAdd(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "link_add",
 		Title: "Add Links",
@@ -85,7 +85,7 @@ func (t *Tools) addLinkAdd(registry *tools.Registry) error {
 }
 
 func (t *Tools) addLinkUpdate(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "link_update",
 		Title: "Update Link",
@@ -99,7 +99,7 @@ func (t *Tools) addLinkUpdate(registry *tools.Registry) error {
 }
 
 func (t *Tools) addLinkRemove(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "link_remove",
 		Title: "Remove Links",
@@ -136,7 +136,7 @@ func (g *linkGroups) add(i int, in LinkAddition) error {
 		return err
 	}
 	if strings.TrimSpace(in.From) == "" {
-		return errors.New("from required")
+		return errors.New("from is required")
 	}
 	if _, err := parseFingerprint(in.Fingerprint); err != nil {
 		return err
@@ -163,7 +163,7 @@ func checkWritable(link domain.Link) error {
 		return fmt.Errorf("%q is not a marker a link can have", link.Marker)
 	}
 	if link.Target.Value == "" {
-		return errors.New("to required")
+		return errors.New("to is required")
 	}
 	return nil
 }
@@ -171,7 +171,7 @@ func checkWritable(link domain.Link) error {
 func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, error) {
 	switch {
 	case len(in.Links) == 0:
-		return LinkAddOutput{}, errors.New("links required")
+		return LinkAddOutput{}, errors.New("links is required")
 	case len(in.Links) > maxBatch:
 		return LinkAddOutput{}, fmt.Errorf("%d links given, at most %d are allowed", len(in.Links), maxBatch)
 	}
@@ -226,7 +226,7 @@ func addLinksTo(links []domain.Link) func(*markdown.Document) error {
 func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOutput, error) {
 	to := domain.ParseAddress(in.To)
 	if to.Value == "" {
-		return LinkEditOutput{}, errors.New("to required")
+		return LinkEditOutput{}, errors.New("to is required")
 	}
 	role := domain.LinkRole(in.Role)
 	if role != "" && !domain.IsKnownRole(role) {
@@ -252,7 +252,7 @@ func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOut
 func (t *Tools) removeLinks(ctx context.Context, in LinkRemoveInput) (LinkEditOutput, error) {
 	to := domain.ParseAddress(in.To)
 	if to.Value == "" {
-		return LinkEditOutput{}, errors.New("to required")
+		return LinkEditOutput{}, errors.New("to is required")
 	}
 	role := domain.LinkRole(in.Role)
 	fingerprint, err := t.editNote(ctx, in.From, in.Fingerprint, func(doc *markdown.Document) error {
@@ -317,7 +317,7 @@ func (t *Tools) editNote(
 	ctx context.Context, notePath, fingerprint string, change func(*markdown.Document) error,
 ) (string, error) {
 	if strings.TrimSpace(notePath) == "" {
-		return "", errors.New("from required")
+		return "", errors.New("from is required")
 	}
 	baseline, err := parseFingerprint(fingerprint)
 	if err != nil {

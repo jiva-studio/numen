@@ -93,7 +93,7 @@ func (a Vault) RemoveNote(ctx context.Context, path string) (string, []string, e
 	}
 	removal, err := a.Arranger.getChanges(v).Remove.Execute(ctx, v, path, false)
 	if errors.Is(err, note.ErrFolder) {
-		return "", nil, fmt.Errorf("remove %s: %w", path, vaultport.ErrNotANote)
+		return "", nil, domain.NewDetailError(fmt.Sprintf("%s is a folder; name the notes to remove", path), vaultport.ErrNotANote, err)
 	}
 	if removal.Trashed != "" {
 		a.notifyFileWritten()
@@ -107,7 +107,7 @@ func (a Vault) GetProblems(ctx context.Context, checks []domain.Check) ([]domain
 		return nil, nil, err
 	}
 	if a.Arranger.Checks == nil {
-		return nil, nil, fmt.Errorf("run the checks of %s: %w", v.ID, completionport.ErrUnavailable)
+		return nil, nil, fmt.Errorf("the checks of %s cannot run: %w", v.Name, completionport.ErrUnavailable)
 	}
 	report, err := a.Arranger.Checks.Execute(ctx, v, checks...)
 	if err != nil {

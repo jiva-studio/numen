@@ -9,21 +9,21 @@ import (
 
 var (
 	// ErrVaultUnreadable is what an added folder gets when it is not a folder or cannot be read.
-	ErrVaultUnreadable = errors.New("host: the folder is not a folder or cannot be read")
+	ErrVaultUnreadable = errors.New("the folder cannot be read as a vault")
 	// ErrVaultCopy is what an added folder gets when it carries the identity of a vault on the list
 	// whose folder still carries it.
-	ErrVaultCopy = errors.New("host: the folder is a copy of a vault on the list")
-	// ErrVaultOverlaps is what an added folder gets when it lies inside a vault on the list or holds one.
-	ErrVaultOverlaps = errors.New("host: the folder lies inside a vault on the list or holds one")
+	ErrVaultCopy = errors.New("the folder is a copy of a vault on the list")
+	// ErrVaultOverlaps is what an added folder gets when it is inside a vault on the list or contains one.
+	ErrVaultOverlaps = errors.New("a vault cannot contain or be inside another vault")
 	// ErrVaultNameTaken is what a rename gets when another vault has the name.
-	ErrVaultNameTaken = errors.New("host: another vault has the name")
+	ErrVaultNameTaken = errors.New("another vault has this name")
 	// ErrLastVault is what a removal gets for the only vault of the installation.
-	ErrLastVault = errors.New("host: the vault is the only one of the installation")
+	ErrLastVault = errors.New("the last vault cannot be removed")
 	// ErrVaultShowing is what a removal gets for the vault the window shows.
-	ErrVaultShowing = errors.New("host: the window shows the vault")
+	ErrVaultShowing = errors.New("the vault is open in the window")
 	// ErrUnsavedChanges is what an open gets while the window asks the user about unsaved changes.
 	// The window keeps its vault.
-	ErrUnsavedChanges = errors.New("host: the user is asked about unsaved changes in the window; ask again after they answer")
+	ErrUnsavedChanges = errors.New("the user is asked about unsaved changes in the window; ask again after they answer")
 )
 
 // VaultEntry is a vault on the installation's list, and whether nothing is at its folder.

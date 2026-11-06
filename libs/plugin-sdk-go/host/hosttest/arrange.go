@@ -2,6 +2,7 @@ package hosttest
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"slices"
 	"strconv"
@@ -32,7 +33,7 @@ func (v *Vault) RenameNote(ctx context.Context, notePath, title string) (host.No
 	}
 	target := path.Join(path.Dir(notePath), name+path.Ext(notePath))
 	if !strings.EqualFold(notePath, target) && v.isPresent(target) {
-		return host.NoteRename{}, host.ErrAlreadyExists
+		return host.NoteRename{}, notesdomain.NewDetailError(fmt.Sprintf("%s already exists; %s is unchanged", target, notePath), host.ErrAlreadyExists)
 	}
 	isFilenamed, err := v.writeTitle(notePath, title, exact)
 	if err != nil {
@@ -208,7 +209,7 @@ func (v *Vault) isPresent(filePath string) bool {
 // brings the index current with both paths. The caller holds the lock.
 func (v *Vault) moveFile(from, target string) error {
 	if !strings.EqualFold(from, target) && v.isPresent(target) {
-		return host.ErrAlreadyExists
+		return notesdomain.NewDetailError(fmt.Sprintf("%s already exists; %s is not moved", target, from), host.ErrAlreadyExists)
 	}
 	content, err := v.files.read(from)
 	if err != nil {

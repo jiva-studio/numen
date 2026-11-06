@@ -108,7 +108,7 @@ func formatFingerprint(ref domain.FileStat) string {
 
 func parseFingerprint(s string) (domain.FileStat, error) {
 	if s == "" {
-		return domain.FileStat{}, errors.New("fingerprint required")
+		return domain.FileStat{}, errors.New("fingerprint is required")
 	}
 	sizeStr, mtimeStr, found := strings.Cut(s, "-")
 	if !found {
@@ -127,4 +127,16 @@ func parseFingerprint(s string) (domain.FileStat, error) {
 		modTime = time.Unix(0, nanos)
 	}
 	return domain.FileStat{Path: "", Kind: "", Size: size, ModTime: modTime}, nil
+}
+
+// addTool adds the tool to the registry. Every error of the tool starts with the tool's name, and no
+// other layer adds one.
+func addTool[In, Out any](registry *tools.Registry, spec tools.Spec, run func(context.Context, In) (Out, error)) error {
+	return tools.Add(registry, spec, func(ctx context.Context, in In) (Out, error) {
+		out, err := run(ctx, in)
+		if err != nil {
+			return out, fmt.Errorf("%s: %w", spec.Name, err)
+		}
+		return out, nil
+	})
 }

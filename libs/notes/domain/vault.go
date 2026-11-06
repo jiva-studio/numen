@@ -26,7 +26,40 @@ type VaultSummary struct {
 }
 
 // ErrOverlaps reports a folder that is inside a vault on the list, or contains one.
-var ErrOverlaps = errors.New("a vault does not lie inside another")
+var ErrOverlaps = errors.New("a vault cannot contain or be inside another vault")
+
+// OverlapError is ErrOverlaps for one folder and the vault it overlaps. Its text names both.
+type OverlapError struct {
+	Path  string
+	Vault Vault
+	// IsInside is whether the folder is inside the vault; otherwise the folder contains it.
+	IsInside bool
+}
+
+func (e *OverlapError) Error() string {
+	if e.IsInside {
+		return fmt.Sprintf("%s is inside the vault %s; a vault cannot be inside another vault", e.Path, e.Vault.Name)
+	}
+	return fmt.Sprintf("%s contains the vault %s; a vault cannot contain another vault", e.Path, e.Vault.Name)
+}
+
+func (e *OverlapError) Unwrap() error { return ErrOverlaps }
+
+// DetailError is an error whose text is one sentence of its own. errors.Is matches each of its
+// reasons: the sentinel of the failure, and the cause where there is one.
+type DetailError struct {
+	Text    string
+	Reasons []error
+}
+
+func (e *DetailError) Error() string { return e.Text }
+
+func (e *DetailError) Unwrap() []error { return e.Reasons }
+
+// NewDetailError is the DetailError of the text for the reasons.
+func NewDetailError(text string, reasons ...error) error {
+	return &DetailError{Text: text, Reasons: reasons}
+}
 
 // Vaults is the list of vaults of this installation, and the rules
 // that apply to the list as a whole.
@@ -41,12 +74,10 @@ func (vs Vaults) CheckOverlap(path string) error {
 			continue
 		}
 		if isBelow(path, other.Path) {
-			return fmt.Errorf("%w: %s is inside the vault %s at %s",
-				ErrOverlaps, path, other.Name, other.Path)
+			return &OverlapError{Path: path, Vault: other, IsInside: true}
 		}
 		if isBelow(other.Path, path) {
-			return fmt.Errorf("%w: %s holds the vault %s at %s",
-				ErrOverlaps, path, other.Name, other.Path)
+			return &OverlapError{Path: path, Vault: other, IsInside: false}
 		}
 	}
 	return nil

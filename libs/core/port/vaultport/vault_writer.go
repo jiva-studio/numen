@@ -15,7 +15,7 @@ var ErrStale = edit.ErrStale
 
 // ErrAlreadyExists is the move error returned when something already exists
 // where a note was to go.
-var ErrAlreadyExists = errors.New("a file is already there")
+var ErrAlreadyExists = errors.New("the file already exists")
 
 type vaultPathWriter interface {
 	Move(ctx context.Context, from, to string) error

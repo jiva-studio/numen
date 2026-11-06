@@ -32,7 +32,7 @@ type LinkListOutput struct {
 }
 
 func (t *Tools) addLinkList(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
 		Name:        "link_list",
 		Title:       "List Links",
@@ -44,7 +44,7 @@ func (t *Tools) addLinkList(registry *tools.Registry) error {
 
 func (t *Tools) listLinks(ctx context.Context, in LinkListInput) (LinkListOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return LinkListOutput{}, errors.New("path required")
+		return LinkListOutput{}, errors.New("path is required")
 	}
 	path := t.resolveNotePath(ctx, in.Path)
 

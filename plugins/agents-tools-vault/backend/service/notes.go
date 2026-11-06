@@ -29,7 +29,7 @@ type NoteReadOutput struct {
 }
 
 func (t *Tools) addNoteRead(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
 		Name:        "note_read",
 		Title:       "Read Note",
@@ -59,12 +59,12 @@ func (t *Tools) resolveNotePath(ctx context.Context, p string) string {
 
 func (t *Tools) readNote(ctx context.Context, in NoteReadInput) (NoteReadOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return NoteReadOutput{}, errors.New("path required")
+		return NoteReadOutput{}, errors.New("path is required")
 	}
 	path := t.resolveNotePath(ctx, in.Path)
 	data, fp, err := t.vault.Read(ctx, path)
 	if err != nil {
-		return NoteReadOutput{}, fmt.Errorf("read note %s: %w", path, err)
+		return NoteReadOutput{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
 
 	parsed := markdown.Parse(fp, data)
@@ -93,7 +93,7 @@ type NoteWriteOutput struct {
 }
 
 func (t *Tools) addNoteWrite(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
 		Name:        "note_write",
 		Title:       "Write Note",
@@ -105,7 +105,7 @@ func (t *Tools) addNoteWrite(registry *tools.Registry) error {
 
 func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return NoteWriteOutput{}, errors.New("path required")
+		return NoteWriteOutput{}, errors.New("path is required")
 	}
 	path := in.Path
 	if !strings.HasSuffix(path, ".md") {
@@ -113,7 +113,7 @@ func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutp
 	}
 
 	if in.Content == nil {
-		return NoteWriteOutput{}, errors.New("content required")
+		return NoteWriteOutput{}, errors.New("content is required")
 	}
 	content := *in.Content
 
@@ -123,7 +123,7 @@ func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutp
 	}
 
 	if err := t.vault.Scan(ctx, []string{path}); err != nil {
-		return NoteWriteOutput{}, fmt.Errorf("scan note %s: %w", path, err)
+		return NoteWriteOutput{}, fmt.Errorf("%s cannot be indexed: %w", path, err)
 	}
 
 	return NoteWriteOutput{
@@ -147,7 +147,7 @@ func (t *Tools) writeWithFileStat(ctx context.Context, path, content, fpStr stri
 	}
 	newFp, err := t.vault.Write(ctx, path, []byte(content), baseline)
 	if err != nil {
-		return domain.FileStat{}, fmt.Errorf("write note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("%s cannot be written: %w", path, err)
 	}
 	return newFp, nil
 }
@@ -158,14 +158,14 @@ func (t *Tools) writeOrCreate(ctx context.Context, path, content string) (domain
 		return writtenFp, nil
 	}
 	if !errors.Is(err, host.ErrNotExist) {
-		return domain.FileStat{}, fmt.Errorf("write note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("%s cannot be written: %w", path, err)
 	}
 	if err := t.vault.Create(ctx, path, []byte(content)); err != nil {
-		return domain.FileStat{}, fmt.Errorf("create note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("%s cannot be created: %w", path, err)
 	}
 	newFp, err := t.vault.StatFile(ctx, path)
 	if err != nil {
-		return domain.FileStat{}, fmt.Errorf("stat note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
 	return newFp, nil
 }
@@ -190,7 +190,7 @@ type NoteHeadingsOutput struct {
 }
 
 func (t *Tools) addNoteHeadings(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
 		Name:        "note_headings",
 		Title:       "Extract Note Headings",
@@ -202,12 +202,12 @@ func (t *Tools) addNoteHeadings(registry *tools.Registry) error {
 
 func (t *Tools) getNoteHeadings(ctx context.Context, in NoteHeadingsInput) (NoteHeadingsOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return NoteHeadingsOutput{}, errors.New("path required")
+		return NoteHeadingsOutput{}, errors.New("path is required")
 	}
 	path := t.resolveNotePath(ctx, in.Path)
 	data, fp, err := t.vault.Read(ctx, path)
 	if err != nil {
-		return NoteHeadingsOutput{}, fmt.Errorf("read note %s: %w", path, err)
+		return NoteHeadingsOutput{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
 
 	parsed := markdown.Parse(fp, data)

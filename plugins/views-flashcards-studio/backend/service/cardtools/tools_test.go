@@ -548,7 +548,7 @@ func TestACardModelIsMadeAsACardModelAndNotAsANote(t *testing.T) {
 	session, v := newSession(t, vault())
 
 	made := call[struct {
-		Path string `json:"Path"`
+		Path string `json:"path"`
 	}](t, session, "card_model_create", map[string]any{
 		"title":  "Term",
 		"fields": []string{"Word", "Meaning"},
@@ -644,7 +644,7 @@ func TestADeckIsMadeThroughTheTools(t *testing.T) {
 	session, v := newSession(t, vault())
 
 	made := call[struct {
-		Path string `json:"Path"`
+		Path string `json:"path"`
 	}](t, session, "card_deck_create", map[string]any{
 		"title": "Terms", "folder": "decks",
 	})

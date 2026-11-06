@@ -54,7 +54,7 @@ type VaultProblemsOutput struct {
 }
 
 func (t *Tools) addVaultList(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "vault_list",
 		Title: "List Vaults",
@@ -67,7 +67,7 @@ func (t *Tools) addVaultList(registry *tools.Registry) error {
 }
 
 func (t *Tools) addVaultProblems(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "vault_problems",
 		Title: "List Vault Problems",
@@ -83,7 +83,7 @@ func (t *Tools) addVaultProblems(registry *tools.Registry) error {
 func (t *Tools) listVaults(ctx context.Context, _ VaultListInput) (VaultListOutput, error) {
 	vaults, err := t.getVaultEntries(ctx)
 	if err != nil {
-		return VaultListOutput{}, fmt.Errorf("list vaults: %w", err)
+		return VaultListOutput{}, err
 	}
 	current := domain.VaultID(tools.GetVault(ctx))
 	out := VaultListOutput{Vaults: make([]VaultEntry, 0, len(vaults))}
@@ -119,12 +119,12 @@ func (t *Tools) getVaultEntries(ctx context.Context) ([]host.VaultEntry, error) 
 func (t *Tools) listVaultProblems(ctx context.Context, in VaultProblemsInput) (VaultProblemsOutput, error) {
 	for _, check := range in.Checks {
 		if !slices.Contains(getCheckNames(), check) {
-			return VaultProblemsOutput{}, fmt.Errorf("unknown check %q: the checks are %s", check, strings.Join(getCheckNames(), ", "))
+			return VaultProblemsOutput{}, fmt.Errorf("%q is not a check; the checks are %s", check, strings.Join(getCheckNames(), ", "))
 		}
 	}
 	problems, err := t.vault.GetProblems(ctx, in.Checks)
 	if err != nil {
-		return VaultProblemsOutput{}, fmt.Errorf("get vault problems: %w", err)
+		return VaultProblemsOutput{}, err
 	}
 	out := VaultProblemsOutput{
 		Problems: make([]VaultProblemItem, 0, len(problems.Found)),

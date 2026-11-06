@@ -65,7 +65,7 @@ type VaultOpenOutput struct {
 }
 
 func (t *Tools) addVaultAdd(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "vault_add",
 		Title: "Add Vault",
@@ -79,7 +79,7 @@ func (t *Tools) addVaultAdd(registry *tools.Registry) error {
 }
 
 func (t *Tools) addVaultRename(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.Move,
 		Name:  "vault_rename",
 		Title: "Rename Vault",
@@ -93,7 +93,7 @@ func (t *Tools) addVaultRename(registry *tools.Registry) error {
 }
 
 func (t *Tools) addVaultRemove(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.Remove,
 		Name:  "vault_remove",
 		Title: "Remove Vault",
@@ -107,7 +107,7 @@ func (t *Tools) addVaultRemove(registry *tools.Registry) error {
 }
 
 func (t *Tools) addVaultOpen(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "vault_open",
 		Title: "Open Vault",
@@ -125,18 +125,18 @@ func (t *Tools) addVaultOpen(registry *tools.Registry) error {
 
 func (t *Tools) addVault(ctx context.Context, in VaultAddInput) (VaultAddOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return VaultAddOutput{}, errors.New("path required")
+		return VaultAddOutput{}, errors.New("path is required")
 	}
 	vault, err := t.list.AddVault(ctx, in.Path, in.Name)
 	if err != nil {
-		return VaultAddOutput{}, fmt.Errorf("add vault %s: %w", in.Path, err)
+		return VaultAddOutput{}, err
 	}
 	return VaultAddOutput{ID: string(vault.ID), Name: vault.Name, Path: vault.Path}, nil
 }
 
 func (t *Tools) renameVault(ctx context.Context, in VaultRenameInput) (VaultRenameOutput, error) {
 	if strings.TrimSpace(in.Name) == "" {
-		return VaultRenameOutput{}, errors.New("name required")
+		return VaultRenameOutput{}, errors.New("name is required")
 	}
 	target, err := t.findVault(ctx, in.Vault)
 	if err != nil {
@@ -144,25 +144,25 @@ func (t *Tools) renameVault(ctx context.Context, in VaultRenameInput) (VaultRena
 	}
 	result, err := t.list.RenameVault(ctx, target.ID, in.Name)
 	if err != nil {
-		return VaultRenameOutput{}, fmt.Errorf("rename vault %s: %w", in.Vault, err)
+		return VaultRenameOutput{}, err
 	}
 	return VaultRenameOutput{ID: string(result.ID), Name: result.Name, Path: result.Path}, nil
 }
 
 func (t *Tools) removeVault(ctx context.Context, in VaultRemoveInput) (VaultRemoveOutput, error) {
-	target, err := t.findOtherVault(ctx, in.Vault, "remove")
+	target, err := t.findOtherVault(ctx, in.Vault)
 	if err != nil {
 		return VaultRemoveOutput{}, err
 	}
 	folder, err := t.list.RemoveVault(ctx, target.ID)
 	if err != nil {
-		return VaultRemoveOutput{}, fmt.Errorf("remove vault %s: %w", in.Vault, err)
+		return VaultRemoveOutput{}, err
 	}
 	return VaultRemoveOutput{Path: folder}, nil
 }
 
 func (t *Tools) openVault(ctx context.Context, in VaultOpenInput) (VaultOpenOutput, error) {
-	target, err := t.findOtherVault(ctx, in.Vault, "open")
+	target, err := t.findOtherVault(ctx, in.Vault)
 	if err != nil {
 		return VaultOpenOutput{}, err
 	}
@@ -173,13 +173,13 @@ func (t *Tools) openVault(ctx context.Context, in VaultOpenInput) (VaultOpenOutp
 }
 
 // findOtherVault finds the vault the address names, and refuses the vault the call works on.
-func (t *Tools) findOtherVault(ctx context.Context, address, action string) (host.VaultEntry, error) {
+func (t *Tools) findOtherVault(ctx context.Context, address string) (host.VaultEntry, error) {
 	target, err := t.findVault(ctx, address)
 	if err != nil {
 		return host.VaultEntry{}, err
 	}
 	if target.ID == domain.VaultID(tools.GetVault(ctx)) {
-		return host.VaultEntry{}, fmt.Errorf("%s is the vault this call works on, and a call cannot %s it", address, action)
+		return host.VaultEntry{}, fmt.Errorf("%s is the current vault", address)
 	}
 	return target, nil
 }
@@ -188,11 +188,11 @@ func (t *Tools) findOtherVault(ctx context.Context, address, action string) (hos
 func (t *Tools) findVault(ctx context.Context, address string) (host.VaultEntry, error) {
 	address = strings.TrimSpace(address)
 	if address == "" {
-		return host.VaultEntry{}, errors.New("vault required")
+		return host.VaultEntry{}, errors.New("vault is required")
 	}
 	vaults, err := t.list.GetVaultList(ctx)
 	if err != nil {
-		return host.VaultEntry{}, fmt.Errorf("list vaults: %w", err)
+		return host.VaultEntry{}, err
 	}
 	for _, isMatch := range []func(host.VaultEntry) bool{
 		func(v host.VaultEntry) bool { return string(v.ID) == address },
@@ -205,5 +205,5 @@ func (t *Tools) findVault(ctx context.Context, address string) (host.VaultEntry,
 			}
 		}
 	}
-	return host.VaultEntry{}, fmt.Errorf("no vault has the identifier, name or folder %q; vault_list lists them: %w", address, host.ErrUnknownVault)
+	return host.VaultEntry{}, fmt.Errorf("no vault has the identifier, name or folder %q; vault_list lists the vaults", address)
 }

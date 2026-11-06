@@ -4,11 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
@@ -73,7 +71,7 @@ type NoteRemoveOutput struct {
 }
 
 func (t *Tools) addNoteRename(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.Move,
 		Name:  "note_rename",
 		Title: "Rename Note",
@@ -87,7 +85,7 @@ func (t *Tools) addNoteRename(registry *tools.Registry) error {
 }
 
 func (t *Tools) addNoteMove(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.Move,
 		Name:  "note_move",
 		Title: "Move Notes",
@@ -100,7 +98,7 @@ func (t *Tools) addNoteMove(registry *tools.Registry) error {
 }
 
 func (t *Tools) addNoteRemove(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.Remove,
 		Name:  "note_remove",
 		Title: "Remove Notes",
@@ -114,17 +112,14 @@ func (t *Tools) addNoteRemove(registry *tools.Registry) error {
 
 func (t *Tools) renameNote(ctx context.Context, in NoteRenameInput) (NoteRenameOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return NoteRenameOutput{}, errors.New("path required")
+		return NoteRenameOutput{}, errors.New("path is required")
 	}
 	if strings.TrimSpace(in.Title) == "" {
-		return NoteRenameOutput{}, errors.New("title required")
+		return NoteRenameOutput{}, errors.New("title is required")
 	}
 	result, err := t.vault.RenameNote(ctx, in.Path, in.Title)
-	if errors.Is(err, host.ErrAlreadyExists) {
-		return NoteRenameOutput{}, newTakenFilenameError(in.Path, in.Title, err)
-	}
 	if err != nil {
-		return NoteRenameOutput{}, fmt.Errorf("rename note %s: %w", in.Path, err)
+		return NoteRenameOutput{}, err
 	}
 	out := NoteRenameOutput{NewPath: result.Path, Title: result.Title, NameSource: "frontmatter", Move: nil}
 	if result.IsFilenamed {
@@ -147,7 +142,7 @@ func (t *Tools) moveNotes(ctx context.Context, in NoteMoveInput) (NoteMoveOutput
 	}
 	moves, err := t.vault.MoveNotes(ctx, in.Paths, strings.Trim(in.Folder, "/"))
 	if err != nil {
-		return NoteMoveOutput{}, fmt.Errorf("move notes: %w", err)
+		return NoteMoveOutput{}, err
 	}
 	out := NoteMoveOutput{Moves: make([]NoteMoveItem, 0, len(moves))}
 	for _, m := range moves {
@@ -175,7 +170,7 @@ func (t *Tools) removeNotes(ctx context.Context, in NoteRemoveInput) (NoteRemove
 	}
 	removals, err := t.vault.RemoveNotes(ctx, in.Paths)
 	if err != nil {
-		return NoteRemoveOutput{}, fmt.Errorf("remove notes: %w", err)
+		return NoteRemoveOutput{}, err
 	}
 	out := NoteRemoveOutput{Removals: make([]NoteRemoveItem, 0, len(removals))}
 	for _, r := range removals {
@@ -192,7 +187,7 @@ func (t *Tools) removeNotes(ctx context.Context, in NoteRemoveInput) (NoteRemove
 func checkPaths(paths []string) error {
 	switch {
 	case len(paths) == 0:
-		return errors.New("paths required")
+		return errors.New("paths is required")
 	case len(paths) > maxBatch:
 		return fmt.Errorf("%d paths given, at most %d are allowed", len(paths), maxBatch)
 	}
@@ -205,18 +200,4 @@ func getPathList(paths []string) []string {
 		return []string{}
 	}
 	return paths
-}
-
-// newTakenFilenameError is the refusal of a rename whose title gives the filename of a file already in
-// the note's folder. The path is the one the host moves the note to: the folder joined with the
-// filename of the title and the note's extension.
-func newTakenFilenameError(notePath, title string, err error) error {
-	title = strings.TrimSpace(title)
-	name, _, nameErr := domain.Filename(title)
-	if nameErr != nil {
-		return fmt.Errorf("%s was not changed: %w", notePath, err)
-	}
-	target := path.Join(path.Dir(notePath), name+path.Ext(notePath))
-	return fmt.Errorf("%s was not changed: %s is already there, so the note cannot take the title %s: %w",
-		notePath, target, title, err)
 }

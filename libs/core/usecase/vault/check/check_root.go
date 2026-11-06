@@ -24,19 +24,17 @@ func NewCheckRoot(identity vaultport.VaultIdentity, home machineport.HomeFolder)
 // not fully configured rejects every root.
 func (u *CheckRoot) Execute(root string) error {
 	if u == nil || u.identity == nil || u.home == nil {
-		return fmt.Errorf("%s cannot be checked here, so it is not added", root)
+		return fmt.Errorf("%s cannot be checked; the check of a vault folder is not configured", root)
 	}
 	if !domain.IsAbsPath(root) {
-		return fmt.Errorf("%s is not an absolute path, and a vault is named by one", root)
+		return fmt.Errorf("%s is not an absolute path", root)
 	}
 	pos := u.getName(root)
 	if domain.IsRootPath(pos) {
-		return fmt.Errorf(
-			"%s is the root of this filesystem, and a vault is a folder somebody keeps notes in", pos)
+		return fmt.Errorf("%s is the root of this filesystem; a vault cannot be a filesystem root", pos)
 	}
 	if home, err := u.home.GetHomeFolder(); err == nil && u.getName(home) == pos {
-		return fmt.Errorf(
-			"%s is the user's home directory, and a vault is a folder inside it", pos)
+		return fmt.Errorf("%s is the home directory; a vault cannot be the home directory", pos)
 	}
 	return nil
 }

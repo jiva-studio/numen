@@ -12,11 +12,11 @@ import (
 
 // ErrUnreadable is returned for a path that is not a folder, or a folder this
 // application cannot read as the requested vault.
-var ErrUnreadable = errors.New("this folder cannot be read as a vault")
+var ErrUnreadable = errors.New("the folder cannot be read as a vault")
 
 // ErrCopy is one identity carried by two folders that are both there. One index
 // cannot hold both.
-var ErrCopy = errors.New("one vault cannot be in two places")
+var ErrCopy = errors.New("the folder is a copy of a vault on the list")
 
 // Add registers a folder as a vault known to this installation.
 //
@@ -44,13 +44,13 @@ func NewAdd(identity vaultport.VaultIdentity, registry vaultport.VaultRegistry, 
 // was invoked from.
 func (u Add) Execute(root, name string) (domain.Vault, error) {
 	if !domain.IsAbsPath(root) {
-		return domain.Vault{}, fmt.Errorf("vault path must be absolute, got %q", root)
+		return domain.Vault{}, fmt.Errorf("%s is not an absolute path", root)
 	}
 	// One folder has one name here, whichever route reached it, and which
 	// routes lead to it is the machine's to say.
 	root = u.identity.GetName(root)
 	if err := u.identity.CheckReadable(root); err != nil {
-		return domain.Vault{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
+		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("%s cannot be read as a vault: %v", root, err), ErrUnreadable, err)
 	}
 
 	target, err := u.registry.List()
@@ -64,7 +64,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 
 	id, err := u.identity.EnsureIdentity(root, u.now.Now())
 	if err != nil {
-		return domain.Vault{}, fmt.Errorf("give %s an identity: %w", root, err)
+		return domain.Vault{}, fmt.Errorf("%s cannot be given a vault identity: %w", root, err)
 	}
 
 	// This identity may already be registered elsewhere, as either a move or a copy.
@@ -105,11 +105,9 @@ func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
 		return err
 	}
 	if carriesIt && stillThere == id {
-		return fmt.Errorf(
-			"%w: %s and %s both have the identity %s, so they are copies of one "+
-				"vault and cannot both be indexed. To make this a separate "+
-				"vault, delete its service folder and add it again",
-			ErrCopy, root, oldPath, id)
+		return domain.NewDetailError(fmt.Sprintf(
+			"%s is a copy of the vault at %s; delete the service folder of %s to add it as a separate vault",
+			root, oldPath, root), ErrCopy)
 	}
 	return nil
 }

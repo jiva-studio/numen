@@ -130,7 +130,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	// vault has to stay cheap enough to run at startup.
 	if res.Indexed > 0 || res.Removed > 0 {
 		if err := u.maintenance.ReportChanges(ctx); err != nil {
-			return res, fmt.Errorf("index upkeep for %s: %w", v.Name, err)
+			return res, fmt.Errorf("the index upkeep of %s failed: %w", v.Name, err)
 		}
 	}
 
@@ -155,11 +155,11 @@ func (u Scan) readWalk(ctx context.Context, v domain.Vault) (vaultWalk, error) {
 	// The rows the walk writes point at the vault's own row. What the vault is
 	// called and where it is stay as the list has them.
 	if err := u.vaults.Register(ctx, v.ID); err != nil {
-		return vaultWalk{}, fmt.Errorf("register vault: %w", err)
+		return vaultWalk{}, fmt.Errorf("the index cannot record the vault %s: %w", v.Name, err)
 	}
 	recognized, err := u.indexedVal.GetFileStats(ctx, v.ID)
 	if err != nil {
-		return vaultWalk{}, fmt.Errorf("read index: %w", err)
+		return vaultWalk{}, fmt.Errorf("the index of %s cannot be read: %w", v.Name, err)
 	}
 	found, err := walkVault(ctx, reader)
 	if err != nil {
@@ -180,7 +180,7 @@ func (u Scan) getRecutPaths(ctx context.Context, v domain.Vault) (map[string]boo
 	}
 	paths, err := u.GetOtherRecipePaths(ctx, v.ID, u.Cut.Recipe())
 	if err != nil {
-		return nil, fmt.Errorf("read the notes cut another way: %w", err)
+		return nil, fmt.Errorf("the notes of %s cut another way cannot be read: %w", v.Name, err)
 	}
 	recutPaths := make(map[string]bool, len(paths))
 	for _, path := range paths {
@@ -210,7 +210,7 @@ func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
 	return grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.notes.Save(ctx, v.ID, u.Cut.Execute(notes)); err != nil {
 			// The failure is somewhere in a group, so say which one.
-			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
+			return fmt.Errorf("%d notes of %s, %s to %s, cannot be indexed: %w",
 				len(notes), v.Name, notes[0].FileStat.Path, notes[len(notes)-1].FileStat.Path, err)
 		}
 		res.Indexed += len(notes)
@@ -288,7 +288,7 @@ func (u Scan) removeGone(
 		}
 	}
 	if err := u.notes.Remove(ctx, v.ID, removed); err != nil {
-		return fmt.Errorf("remove deleted notes: %w", err)
+		return fmt.Errorf("the deleted notes of %s cannot leave the index: %w", v.Name, err)
 	}
 	res.Removed = len(removed)
 	return nil

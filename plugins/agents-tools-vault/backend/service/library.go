@@ -91,7 +91,7 @@ const (
 var errNoLibrary = errors.New("the plugin was given neither text versions nor a search index")
 
 func (t *Tools) addLibrarySearch(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Name:  "library_search",
 		Title: "Search the library",
 		Description: "Search the text index of everything the vault holds: the notes, and the books, " +
@@ -195,7 +195,7 @@ func formatAddress(source string, start, length int) string {
 }
 
 func (t *Tools) addLibraryRead(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Name:  "library_read",
 		Title: "Read the text of a file",
 		Description: "Read the text of one file of the vault from its text version: the pages of a PDF, " +
@@ -215,7 +215,7 @@ func (t *Tools) addLibraryRead(registry *tools.Registry) error {
 
 func (t *Tools) readLibrary(ctx context.Context, in LibraryReadInput) (LibraryReadOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return LibraryReadOutput{}, errors.New("path required")
+		return LibraryReadOutput{}, errors.New("path is required")
 	}
 	if err := checkReadRange(in); err != nil {
 		return LibraryReadOutput{}, err

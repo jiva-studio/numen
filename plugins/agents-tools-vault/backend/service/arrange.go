@@ -66,7 +66,7 @@ type NoteResolveOutput struct {
 }
 
 func (t *Tools) addNoteList(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:         tools.ByEffect,
 		Name:         "note_list",
 		Title:        "List Notes",
@@ -78,7 +78,7 @@ func (t *Tools) addNoteList(registry *tools.Registry) error {
 }
 
 func (t *Tools) addNoteTitles(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:         tools.ByEffect,
 		Name:         "note_titles",
 		Title:        "Get Note Titles",
@@ -90,7 +90,7 @@ func (t *Tools) addNoteTitles(registry *tools.Registry) error {
 }
 
 func (t *Tools) addNoteResolve(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:         tools.ByEffect,
 		Name:         "note_resolve",
 		Title:        "Resolve Note Name",
@@ -117,7 +117,7 @@ func (t *Tools) listNotes(ctx context.Context, in NoteListInput) (NoteListOutput
 
 	paths, err := t.vault.GetPathsOfType(ctx, domain.TypeNote)
 	if err != nil {
-		return NoteListOutput{}, fmt.Errorf("list notes: %w", err)
+		return NoteListOutput{}, err
 	}
 	if folder := strings.Trim(in.Folder, "/"); folder != "" {
 		prefix := folder + "/"
@@ -131,7 +131,7 @@ func (t *Tools) listNotes(ctx context.Context, in NoteListInput) (NoteListOutput
 	page := paths[start:end]
 	refs, err := t.vault.GetNotes(ctx, page)
 	if err != nil {
-		return NoteListOutput{}, fmt.Errorf("get note titles: %w", err)
+		return NoteListOutput{}, err
 	}
 	notes := make([]NoteEntry, 0, len(page))
 	for _, p := range page {
@@ -150,7 +150,7 @@ func (t *Tools) getNoteTitles(ctx context.Context, in NoteTitlesInput) (NoteTitl
 	}
 	refs, err := t.vault.GetNotes(ctx, in.Paths)
 	if err != nil {
-		return NoteTitlesOutput{}, fmt.Errorf("get note titles: %w", err)
+		return NoteTitlesOutput{}, err
 	}
 	out := NoteTitlesOutput{Notes: make([]NoteTitle, 0, len(refs)), MissingPaths: []string{}}
 	for _, p := range in.Paths {
@@ -166,11 +166,11 @@ func (t *Tools) getNoteTitles(ctx context.Context, in NoteTitlesInput) (NoteTitl
 
 func (t *Tools) resolveNoteName(ctx context.Context, in NoteResolveInput) (NoteResolveOutput, error) {
 	if strings.TrimSpace(in.Name) == "" {
-		return NoteResolveOutput{}, errors.New("name required")
+		return NoteResolveOutput{}, errors.New("name is required")
 	}
 	paths, err := t.vault.GetNamedPaths(ctx, in.Name)
 	if err != nil {
-		return NoteResolveOutput{}, fmt.Errorf("resolve note name %s: %w", in.Name, err)
+		return NoteResolveOutput{}, fmt.Errorf("%s cannot be resolved: %w", in.Name, err)
 	}
 	if paths == nil {
 		paths = []string{}

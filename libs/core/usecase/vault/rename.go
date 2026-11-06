@@ -11,7 +11,7 @@ import (
 )
 
 // ErrNameTaken is a name another vault on the list already has.
-var ErrNameTaken = errors.New("another vault is called this")
+var ErrNameTaken = errors.New("another vault has this name")
 
 // Rename changes a vault's name. The name is the collection's display name and
 // lives in the list this installation keeps; the folder keeps the name assigned
@@ -31,7 +31,7 @@ func NewRename(registry vaultport.VaultRegistry, index vaultport.VaultRepository
 // has is not a change and not an error.
 func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domain.Vault, error) {
 	if name == "" {
-		return domain.Vault{}, errors.New("a vault is called something")
+		return domain.Vault{}, errors.New("the new name is empty; a vault needs a name")
 	}
 	if name == v.Name {
 		return v, nil
@@ -42,8 +42,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 		return domain.Vault{}, err
 	}
 	if other, exists := domain.Vaults(recognized).FindByName(name, v.ID); exists {
-		return domain.Vault{}, fmt.Errorf("%w: the vault at %s is already called %s",
-			ErrNameTaken, other.Path, other.Name)
+		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault at %s is already called %s", other.Path, other.Name), ErrNameTaken)
 	}
 
 	renamedVault := v
@@ -55,7 +54,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 	// vault renamed before its first scan, which has no row yet to be scanned
 	// into.
 	if err := u.index.Register(ctx, renamedVault.ID); err != nil {
-		return domain.Vault{}, fmt.Errorf("register %s in the index: %w", v.Name, err)
+		return domain.Vault{}, fmt.Errorf("the index cannot record the vault %s: %w", v.Name, err)
 	}
 	return renamedVault, nil
 }

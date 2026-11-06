@@ -75,7 +75,7 @@ func (e *vaultEndpoint) beginList(header http.Header) (pluginport.PluginVaultLis
 func (e *vaultEndpoint) findVault(id domain.VaultID) (domain.Vault, error) {
 	vault := e.endpoint.callers.GetPluginVault()
 	if vault == nil {
-		return domain.Vault{}, fmt.Errorf("vault %q: %w", id, vaults.ErrUnknown)
+		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), vaults.ErrUnknown)
 	}
 	known, err := vault.GetVaults()
 	if err != nil {
@@ -86,7 +86,7 @@ func (e *vaultEndpoint) findVault(id domain.VaultID) (domain.Vault, error) {
 			return one, nil
 		}
 	}
-	return domain.Vault{}, fmt.Errorf("vault %q: %w", id, vaults.ErrUnknown)
+	return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), vaults.ErrUnknown)
 }
 
 func writeVault(v domain.Vault) *v1.Vault {

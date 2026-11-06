@@ -71,11 +71,11 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 	}
 	ctx, end, err := l.installation.shutdown.tryBeginPluginOpen(ctx)
 	if err != nil {
-		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, err)
+		return fmt.Errorf("%s cannot be opened now: %w: %w", v.Name, pluginport.ErrUnavailable, err)
 	}
 	defer end()
 	if l.state.Window.IsQuestionOpen() {
-		return fmt.Errorf("open vault %s: %w", id, pluginport.ErrUnsavedChanges)
+		return pluginport.ErrUnsavedChanges
 	}
 	err = l.state.OpenVault(ctx, v)
 	switch {
@@ -85,9 +85,9 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 		if !l.state.Window.IsQuestionOpen() {
 			l.state.Window.CancelFlush()
 		}
-		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, context.Cause(ctx))
+		return fmt.Errorf("%s cannot be opened now: %w: %w", v.Name, pluginport.ErrUnavailable, context.Cause(ctx))
 	case errors.Is(err, errAnswerPending):
-		return fmt.Errorf("open vault %s: %w", id, pluginport.ErrUnsavedChanges)
+		return pluginport.ErrUnsavedChanges
 	}
 	return err
 }

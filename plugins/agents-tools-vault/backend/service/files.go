@@ -29,7 +29,7 @@ type FileReadOutput struct {
 }
 
 func (t *Tools) addFileRead(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "file_read",
 		Title: "Read File",
@@ -43,12 +43,12 @@ func (t *Tools) addFileRead(registry *tools.Registry) error {
 
 func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return FileReadOutput{}, errors.New("path required")
+		return FileReadOutput{}, errors.New("path is required")
 	}
 
 	data, fp, err := t.vault.Read(ctx, in.Path)
 	if err != nil {
-		return FileReadOutput{}, fmt.Errorf("read file %s: %w", in.Path, err)
+		return FileReadOutput{}, fmt.Errorf("%s cannot be read: %w", in.Path, err)
 	}
 	if !isText(data) {
 		return FileReadOutput{}, fmt.Errorf("%s is not a text file: file_read reads text only, and library_read reads the text of a PDF, a book or a recording", in.Path)
@@ -93,7 +93,7 @@ type FileCreateOutput struct {
 }
 
 func (t *Tools) addFileCreate(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
 		Name:        "file_create",
 		Title:       "Create File",
@@ -105,16 +105,16 @@ func (t *Tools) addFileCreate(registry *tools.Registry) error {
 
 func (t *Tools) createFile(ctx context.Context, in FileCreateInput) (FileCreateOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return FileCreateOutput{}, errors.New("path required")
+		return FileCreateOutput{}, errors.New("path is required")
 	}
 
 	data := []byte(in.Content)
 	if err := t.vault.Create(ctx, in.Path, data); err != nil {
-		return FileCreateOutput{}, fmt.Errorf("create file %s: %w", in.Path, err)
+		return FileCreateOutput{}, fmt.Errorf("%s cannot be created: %w", in.Path, err)
 	}
 
 	if err := t.vault.Scan(ctx, []string{in.Path}); err != nil {
-		return FileCreateOutput{}, fmt.Errorf("scan file %s: %w", in.Path, err)
+		return FileCreateOutput{}, fmt.Errorf("%s cannot be indexed: %w", in.Path, err)
 	}
 
 	return FileCreateOutput{

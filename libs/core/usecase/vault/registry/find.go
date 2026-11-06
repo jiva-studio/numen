@@ -10,20 +10,22 @@ import (
 )
 
 // ErrNoName is a call that names no vault.
-var ErrNoName = errors.New("name the vault, as vault_list gives it")
+var ErrNoName = errors.New("the call names no vault")
 
-// be another.
-var ErrShowing = errors.New("this is the vault the window is showing")
+// ErrShowing is the vault the window shows, which a call cannot remove.
+var ErrShowing = errors.New("the vault is open in the window")
 
 // ErrUnknown is a name, a path or an identity no vault on the list answers to.
-var ErrUnknown = errors.New("vault not found")
+var ErrUnknown = errors.New("the vault is not on the list")
 
 // UnknownError is ErrUnknown for the name, path or identity that was looked up.
 type UnknownError struct {
 	Name string
 }
 
-func (e *UnknownError) Error() string { return fmt.Sprintf("%s: %q", ErrUnknown, e.Name) }
+func (e *UnknownError) Error() string {
+	return fmt.Sprintf("no vault on the list has the name, path or identity %q", e.Name)
+}
 
 func (e *UnknownError) Unwrap() error { return ErrUnknown }
 
