@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"path"
 	"slices"
 	"sync"
@@ -17,6 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -217,7 +220,13 @@ func newArrangeClient(
 	vault := newArrangingVault()
 	hosted := newCallers(nil)
 	hosted.vault = vault
-	return newVaultClient(t, listCallers{callers: hosted, list: list, granted: granted}, "token-a"), vault, hosted
+	endpoint := &Endpoint{callers: listCallers{callers: hosted, list: list, granted: granted}}
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return client, vault, hosted
 }
 
 func isDenied(err error) bool {
@@ -294,10 +303,14 @@ func TestVaultListChangesAreServedWithVaultManage(t *testing.T) {
 	list := newRecordingList()
 	client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
 
-	for call, err := range callVaultChanges(t, client) {
+	errs := callVaultChanges(t, client)
+	for call, err := range errs {
 		if err != nil {
 			t.Errorf("%s with vault:manage returned %v", call, err)
 		}
+	}
+	if errs["OpenVault"] != nil {
+		t.FailNow()
 	}
 	select {
 	case <-list.opened:
