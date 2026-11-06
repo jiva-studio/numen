@@ -51,7 +51,7 @@ func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput,
 		return FileReadOutput{}, fmt.Errorf("%s cannot be read: %w", in.Path, err)
 	}
 	if !isText(data) {
-		return FileReadOutput{}, fmt.Errorf("%s is not a text file: file_read reads text only, and library_read reads the text of a PDF, a book or a recording", in.Path)
+		return FileReadOutput{}, fmt.Errorf("%s is not a text file; library_read reads the text of a PDF, a book or a recording", in.Path)
 	}
 
 	start := in.Start
