@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
@@ -16,15 +17,20 @@ const instructions = "Use recognition_create on a scanned PDF or an image that h
 	"whose search results are unreadable text. Recognition is slow, up to an hour for a book. " +
 	"The call returns a task id at once and the recognition runs in the background; once it ends, " +
 	"the recognised text can be read and searched. Call it once per file: a second call " +
-	"while the first runs starts nothing and reports the state running."
+	"while the first runs starts nothing and reports the state running, and a call on a file already " +
+	"recognised starts nothing and reports the state done with the version library_read reads."
 
 // The states recognition_create reports.
 const (
 	stateStarted = "started"
 	stateRunning = "running"
+	stateDone    = "done"
 )
 
-var errNoVault = errors.New("the call names no vault")
+var (
+	errNoVault  = errors.New("the call names no vault")
+	errNotFound = errors.New("the file is not found")
+)
 
 // RecognitionCreateInput is the input of the recognition_create tool.
 type RecognitionCreateInput struct {
@@ -33,9 +39,10 @@ type RecognitionCreateInput struct {
 
 // RecognitionCreateOutput is the output of the recognition_create tool.
 type RecognitionCreateOutput struct {
-	TaskID string `json:"taskId" jsonschema:"the id of the recognition in the list of tasks"`
-	Path   string `json:"path" jsonschema:"the file; library_read and library_search read its text once it is recognised"`
-	State  string `json:"state" jsonschema:"started, or running where a recognition of this file is already in progress and no second one was started"`
+	TaskID  string `json:"taskId" jsonschema:"the id of the recognition in the list of tasks"`
+	Path    string `json:"path" jsonschema:"the file; library_read and library_search read its text once it is recognised"`
+	State   string `json:"state" jsonschema:"started; running where a recognition of this file is already in progress and no second one was started; or done where the file is already recognised and nothing was started"`
+	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the text version that holds the recognised text, the version library_read reads"`
 }
 
 // Tools serves recognition_create, which starts recognitions that run until they end or Close.
@@ -71,7 +78,9 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Description: "Start the text recognition of one scanned PDF or image of the vault, with the model the " +
 			"plugin's setting selects, and return its task id without waiting. The recognised text is stored " +
 			"as a text version of the file, which library_read and library_search read once the recognition " +
-			"ends. A recognition takes up to an hour for a book. A file that is not in the vault is refused.",
+			"ends. A recognition takes up to an hour for a book. A file that is not in the vault is refused. A " +
+			"file that is already recognised is not recognised again: the call answers the state done and the " +
+			"version that holds the text.",
 		Effect:  tools.ReadWrite,
 		Servers: []tools.Server{tools.Full},
 	}, t.createRecognition)
@@ -101,13 +110,32 @@ func (t *Tools) createRecognition(ctx context.Context, in RecognitionCreateInput
 		return RecognitionCreateOutput{}, errors.New("path required")
 	}
 	if _, err := t.recognitions.StatFile(ctx, vault, in.Path); err != nil {
+		if errors.Is(err, host.ErrNotExist) {
+			return RecognitionCreateOutput{}, fmt.Errorf("%s: %w", in.Path, errNotFound)
+		}
 		return RecognitionCreateOutput{}, fmt.Errorf("find %s: %w", in.Path, err)
 	}
-	state, err := t.start(ctx, vault, in.Path)
+	out := RecognitionCreateOutput{TaskID: recognition.GetTaskID(in.Path), Path: in.Path, State: stateRunning, Version: ""}
+	isRunning, err := t.recognitions.IsRunning(ctx, vault, in.Path)
 	if err != nil {
 		return RecognitionCreateOutput{}, err
 	}
-	return RecognitionCreateOutput{TaskID: recognition.GetTaskID(in.Path), Path: in.Path, State: state}, nil
+	if isRunning {
+		return out, nil
+	}
+	version, isFound, err := t.recognitions.FindVersion(ctx, vault, in.Path, PluginID)
+	if err != nil {
+		return RecognitionCreateOutput{}, err
+	}
+	if isFound {
+		out.State, out.Version = stateDone, string(version.GetID())
+		return out, nil
+	}
+	out.State, err = t.start(ctx, vault, in.Path)
+	if err != nil {
+		return RecognitionCreateOutput{}, err
+	}
+	return out, nil
 }
 
 // start runs the recognition of the file in the background, and reports running where another run

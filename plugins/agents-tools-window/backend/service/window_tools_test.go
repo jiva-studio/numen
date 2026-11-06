@@ -290,8 +290,8 @@ func TestWindowTabsGetReadsThePositionOfEachReaderTab(t *testing.T) {
 	}{
 		"a page of a PDF with a text version":     {host.OpenTab{Path: guidePath, State: `{"page":4}`}, "page 4 of 120"},
 		"a page of a PDF with no text version":    {host.OpenTab{Path: scanPath, State: `{"page":4}`}, "page 4"},
-		"a time of a recording past an hour":      {host.OpenTab{Path: talkPath, State: `{"t":[3723.9,3730]}`}, "at 1:02:03"},
-		"a time of a recording under an hour":     {host.OpenTab{Path: talkPath, State: `{"t":[125.5,130]}`}, "at 2:05"},
+		"a time of a recording past an hour":      {host.OpenTab{Path: talkPath, State: `{"t":[3723.9,3730]}`}, "1:02:03"},
+		"a time of a recording under an hour":     {host.OpenTab{Path: talkPath, State: `{"t":[125.5,130]}`}, "2:05"},
 		"a CFI a segment starts at":               {host.OpenTab{Path: bookPath, State: `{"cfi":"epubcfi(/6/6!/4/2/1:0)"}`}, `chapter "Herons in Winter"`},
 		"a CFI between two segments":              {host.OpenTab{Path: bookPath, State: `{"cfi":"epubcfi(/6/4!/4/10/1:17)"}`}, `chapter "The Marsh at Dawn"`},
 		"a CFI after the last segment":            {host.OpenTab{Path: bookPath, State: `{"cfi":"epubcfi(/6/6!/4/20/1:3)"}`}, `chapter "Herons in Winter"`},
@@ -313,6 +313,18 @@ func TestWindowTabsGetReadsThePositionOfEachReaderTab(t *testing.T) {
 				t.Errorf("answered %+v, want the tab at %q", out.Tabs, tc.want)
 			}
 		})
+	}
+}
+
+func TestWindowTabsGetLocationOfARecordingIsTheTime(t *testing.T) {
+	w := newWindowTools(t)
+	out := w.readTabs(t, []host.OpenTab{
+		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
+		{ID: "tab-2", Kind: "recording", Path: talkPath, Title: "Marsh Talk", State: `{"t":[66,66]}`},
+	}, "tab-2")
+
+	if len(out.Tabs) != 2 || out.Tabs[1].Location != "1:06" {
+		t.Errorf("the tabs are %+v, want the recording at location 1:06", out.Tabs)
 	}
 }
 

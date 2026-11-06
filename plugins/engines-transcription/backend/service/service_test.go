@@ -609,7 +609,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		Versions: []domain.TextVersion{
 			{Key: "other", PluginID: PluginID},
 			{Key: "k1", PluginID: "other.plugin"},
-			{Key: "k1", PluginID: PluginID},
+			{Key: "k1", PluginID: PluginID, File: getFileName("k1")},
 		},
 	}
 	if err := s.transcriber.putWholeVersion(ctx, j); err != nil || ft.puts != 0 {

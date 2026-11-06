@@ -165,6 +165,25 @@ describe('a recording firstRead at a place in its words', () => {
     await tab.navigation.reach({ start: 900, end: 910 })
     expect(seeks).toStrictEqual([])
   })
+
+  it('goes to the latest of two reaches when the earlier one is answered last', async () => {
+    const setup = createRecordings()
+    const answers = new Map<number, (ms: number) => void>()
+    setup.recordings.findCueTime = (_, span) =>
+      new Promise((resolve) => answers.set(span.start, resolve))
+    const { tab, seeks } = open(setup)
+    await tab.content.firstRead
+
+    const earlier = tab.navigation.reach({ start: 22, end: 30 })
+    const later = tab.navigation.reach({ start: 140, end: 150 })
+    await flush()
+    answers.get(140)?.(302_000)
+    expect(await later).toBe(302_000)
+    answers.get(22)?.(83_000)
+
+    expect(await earlier).toBeNull()
+    expect(seeks.at(-1)).toStrictEqual([TALK_URL, 302_000])
+  })
 })
 
 describe('a recording whose file the vault changes', () => {

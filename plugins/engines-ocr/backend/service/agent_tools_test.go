@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -48,10 +49,12 @@ func (r blockingRecogniser) Recognise(ctx context.Context, page image.Image) ([]
 	return r.MockRecogniser.Recognise(ctx, page)
 }
 
-// finishingQueue is the queue in memory that sends the id of every task that ends on finished.
+// finishingQueue is the queue in memory that sends the id of every task that ends on finished, and
+// counts the tasks reported and the turns asked for in calls.
 type finishingQueue struct {
 	*hosttest.Queue
 	finished chan string
+	calls    *queueCalls
 }
 
 func (q finishingQueue) FinishTask(ctx context.Context, id string) error {
@@ -60,17 +63,46 @@ func (q finishingQueue) FinishTask(ctx context.Context, id string) error {
 	return err
 }
 
+// queueCalls counts what the runs asked of the queue.
+type queueCalls struct {
+	mu       sync.Mutex
+	reported int
+	turns    int
+}
+
+func (c *queueCalls) getCounts() (reported, turns int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.reported, c.turns
+}
+
+func (q finishingQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, error) {
+	q.calls.mu.Lock()
+	q.calls.turns++
+	q.calls.mu.Unlock()
+	return q.Queue.EnqueueWork(ctx, work)
+}
+
+func (q finishingQueue) ReportTask(ctx context.Context, task host.Task) error {
+	q.calls.mu.Lock()
+	q.calls.reported++
+	q.calls.mu.Unlock()
+	return q.Queue.ReportTask(ctx, task)
+}
+
 // toolScene is the recognition tool over the vault Physics, shown, holding the scan, and the vault
 // Chemistry beside it, holding a scan of its own.
 type toolScene struct {
-	vault      *hosttest.Vault
-	texts      *hosttest.Texts
-	chemistry  *hosttest.Vault
-	chemTexts  *hosttest.Texts
-	queue      finishingQueue
-	recogniser blockingRecogniser
-	tools      *Tools
-	registry   *tools.Registry
+	vault        *hosttest.Vault
+	texts        *hosttest.Texts
+	chemistry    *hosttest.Vault
+	chemTexts    *hosttest.Texts
+	queue        finishingQueue
+	recogniser   blockingRecogniser
+	openCount    atomic.Int32
+	recognitions *recognition.Recognition
+	tools        *Tools
+	registry     *tools.Registry
 }
 
 // chemistryScan is the scan held only by the vault Chemistry.
@@ -86,6 +118,7 @@ func newToolScene(t *testing.T) *toolScene {
 	vault.File(scanPath, string(raw))
 	texts := hosttest.NewTexts("Physics", PluginID)
 	texts.SetStore(PluginID, vault.Store())
+	texts.File(scanPath, raw)
 
 	chemistry := hosttest.New("Chemistry")
 	vault.Beside(chemistry)
@@ -95,17 +128,21 @@ func newToolScene(t *testing.T) *toolScene {
 		t.Fatal("the texts of Chemistry are not hosttest texts")
 	}
 	chemTexts.SetStore(PluginID, chemistry.Store())
+	chemTexts.File(chemistryScan, raw)
 
 	s := &toolScene{
 		vault: vault, texts: texts, chemistry: chemistry, chemTexts: chemTexts,
-		queue: finishingQueue{Queue: hosttest.NewQueue(), finished: make(chan string, 64)},
+		queue: finishingQueue{Queue: hosttest.NewQueue(), finished: make(chan string, 64), calls: &queueCalls{}},
 		recogniser: blockingRecogniser{
 			entered: make(chan struct{}), enterOnce: &sync.Once{}, release: make(chan struct{}),
 		},
 	}
 	recognitions, err := recognition.New(
 		recognition.Host{Vault: vault, Store: vault.Store(), Texts: texts, Queue: s.queue},
-		func(context.Context) (recognition.Recogniser, error) { return s.recogniser, nil },
+		func(context.Context) (recognition.Recogniser, error) {
+			s.openCount.Add(1)
+			return s.recogniser, nil
+		},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -119,6 +156,7 @@ func newToolScene(t *testing.T) *toolScene {
 		})
 		recognitions.SetCompilationCache(compilation)
 	}
+	s.recognitions = recognitions
 	s.tools = NewTools(recognitions)
 	t.Cleanup(s.tools.Close)
 	s.registry, err = s.tools.Registry()
@@ -284,8 +322,102 @@ func TestRecognitionCreateRefusesAFileNotInTheVault(t *testing.T) {
 	if !res.GetResult().GetIsError() {
 		t.Errorf("a file that is not there returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
+	if text := res.GetResult().GetText(); !strings.Contains(text, "not found") || !strings.Contains(text, "books/missing.pdf") {
+		t.Errorf("the refusal reads %q, want it to say books/missing.pdf is not found", text)
+	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("a refused call shows the tasks %+v", tasks)
+	}
+}
+
+// putRecognition keeps a recognised text of the scan in the plugin's folder and records it as the
+// scan's version under recognition.VersionKey, as a finished recognition does. It fails the test
+// unless the version is live.
+func (s *toolScene) putRecognition(t *testing.T) domain.TextVersion {
+	t.Helper()
+	raw, _, err := s.vault.Read(t.Context(), scanPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const file = "scan-recognised.jsonl"
+	segments := []domain.TextSegment{{Text: "Ohm measured the current through a copper wire.\n"}}
+	if err := host.WriteText(t.Context(), s.vault.Store(), file, segments); err != nil {
+		t.Fatal(err)
+	}
+	version, err := s.texts.PutVersion(t.Context(), host.TextPut{
+		Path: scanPath, Key: recognition.VersionKey, Source: "", Kind: "recognition",
+		SourceHash: domain.HashContent(raw), File: file,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	listing, err := s.texts.ListVersions(t.Context(), scanPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listing.Live != version.GetID() {
+		t.Fatalf("the scan lists %+v, want the recognition %s live", listing, version.GetID())
+	}
+	return version
+}
+
+// checkNoRun fails the test where a run of the scan reported a task, asked the queue for a turn,
+// ended a task or opened the recogniser. The tools are closed first, so a run that was started has
+// ended.
+func (s *toolScene) checkNoRun(t *testing.T) {
+	t.Helper()
+	close(s.recogniser.release)
+	s.tools.Close()
+	if reported, turns := s.queue.calls.getCounts(); reported != 0 || turns != 0 {
+		t.Errorf("a run reported %d tasks and asked for %d turns, want none", reported, turns)
+	}
+	if ended := len(s.queue.finished); ended != 0 {
+		t.Errorf("%d tasks ended, want none", ended)
+	}
+	if count := s.openCount.Load(); count != 0 {
+		t.Errorf("the recogniser was opened %d times, want never", count)
+	}
+}
+
+func TestRecognitionCreateOfARecognisedScanReturnsItsVersionWithoutARun(t *testing.T) {
+	s := newToolScene(t)
+	version := s.putRecognition(t)
+
+	out := s.recognise(t, "Physics", scanPath)
+
+	want := RecognitionCreateOutput{
+		TaskID: "recognise:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
+	}
+	if out != want {
+		t.Errorf("recognition_create returned %+v, want %+v", out, want)
+	}
+	s.checkNoRun(t)
+}
+
+func TestRecognitionCreateAfterAFinishedRecognitionReturnsItsVersion(t *testing.T) {
+	s := newToolScene(t)
+	close(s.recogniser.release)
+	if _, err := s.recognitions.Recognise(t.Context(), recognition.Request{
+		Vault: "Physics", Path: scanPath, IsUserStarted: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	listing, err := s.texts.ListVersions(t.Context(), scanPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	i := slices.IndexFunc(listing.Versions, func(v domain.TextVersion) bool { return v.Key == recognition.VersionKey })
+	if i < 0 || listing.Live != listing.Versions[i].GetID() {
+		t.Fatalf("the scan lists %+v, want the recognition live", listing)
+	}
+
+	out := s.recognise(t, "Physics", scanPath)
+
+	want := RecognitionCreateOutput{
+		TaskID: "recognise:" + scanPath, Path: scanPath, State: "done", Version: string(listing.Live),
+	}
+	if out != want {
+		t.Errorf("recognition_create returned %+v, want %+v", out, want)
 	}
 }
 

@@ -83,6 +83,7 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
 
   return {
     url,
+    isLoaded,
     runs,
     now,
     isPlaying,

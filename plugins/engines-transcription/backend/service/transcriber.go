@@ -177,7 +177,7 @@ func (t *Transcriber) runClaimed(ctx context.Context, key string, vault domain.V
 // claim marks the recording as being transcribed and counts the run for Close, and is false where a
 // run already has it or the transcriber is closed. clearRunning releases the claim.
 func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
-	key := string(vault) + "\x00" + path
+	key := getRunKey(vault, path)
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.isClosed || t.running[key] {
@@ -186,6 +186,31 @@ func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
 	t.running[key] = true
 	t.wg.Add(1)
 	return key, true
+}
+
+// getRunKey is what a run claims the recording of a vault under.
+func getRunKey(vault domain.VaultID, path string) string { return string(vault) + "\x00" + path }
+
+// isRunning reports whether a run holds the recording of the vault.
+func (t *Transcriber) isRunning(vault domain.VaultID, path string) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.running[getRunKey(vault, path)]
+}
+
+// findWholeVersion is the live version of the recording of the vault where it is the plugin's whole
+// transcript. A live partial transcript is not returned: a run resumes it.
+func (t *Transcriber) findWholeVersion(ctx context.Context, vault domain.VaultID, path string) (domain.TextVersion, bool, error) {
+	listing, err := t.texts.With(vault).ListVersions(ctx, path)
+	if err != nil {
+		return domain.TextVersion{}, false, err
+	}
+	for _, version := range listing.Versions {
+		if version.GetID() == listing.Live && version.PluginID == PluginID && isWholeFile(version) {
+			return version, true, nil
+		}
+	}
+	return domain.TextVersion{}, false, nil
 }
 
 // getClaimVault is the vault a run claims the recording in. No vault is the vault the host shows,
@@ -301,14 +326,14 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 }
 
 // putWholeVersion puts the version of a transcript a run before this one finished, where the host
-// has no record of it.
+// has no record of it or records it on the partial file.
 func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
 	listing, err := j.texts.ListVersions(ctx, j.path)
 	if err != nil {
 		return err
 	}
 	for _, version := range listing.Versions {
-		if version.Key == j.key && version.PluginID == PluginID {
+		if version.Key == j.key && version.PluginID == PluginID && isWholeFile(version) {
 			return nil
 		}
 	}
