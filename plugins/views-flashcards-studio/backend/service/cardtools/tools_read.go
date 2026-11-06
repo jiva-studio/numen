@@ -24,11 +24,11 @@ func (t *Tools) addCardCurrent(registry *tools.Registry) error {
 			"`card_read` takes, and the name of the template it is shown with. Call it " +
 			"before describing the open card, because the user moves to the next card while " +
 			"you work, and read the card itself with `card_read`. Between cards no card is " +
-			"open, and deck is empty.",
+			"open, and `path` is empty.",
 		Effect: tools.ReadOnly, Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, _ struct{}) (CurrentCard, error) {
 		request := tools.GetCallContext(ctx)
-		return CurrentCard{Deck: request[requestedDeck], Card: request[requestedCard], Template: request[requestedTemplate]}, nil
+		return CurrentCard{Path: request[requestedDeck], CardID: request[requestedCard], TemplateName: request[requestedTemplate]}, nil
 	})
 }
 
@@ -142,9 +142,9 @@ func (t *Tools) readCardCardModel(ctx context.Context, in cardModelReadInput) (c
 
 type cardReadInput struct {
 	Path   string   `json:"path" jsonschema:"the path of the deck to read, relative to the vault folder"`
-	From   int      `json:"from,omitempty" jsonschema:"the index of the first card to return, counted from 0"`
+	Offset int      `json:"offset,omitempty" jsonschema:"the index of the first card to return, counted from 0"`
 	Limit  int      `json:"limit,omitempty" jsonschema:"how many cards to return, at most 50"`
-	CardID string   `json:"cardId,omitempty" jsonschema:"the id of one card to read alone; from and limit are ignored when it is set"`
+	CardID string   `json:"cardId,omitempty" jsonschema:"the id of one card to read alone; offset and limit are ignored when it is set"`
 	Fields []string `json:"fields,omitempty" jsonschema:"the fields to return, spelled as card_read returns them; other values are left out, and a card with none of them is returned with no values"`
 }
 
@@ -163,7 +163,7 @@ func (t *Tools) addCardRead(registry *tools.Registry) error {
 		Title: "Read cards",
 		Description: "Read the cards of one deck in file order, each with the card id every " +
 			"other card tool takes. A deck can hold any number of cards, so this returns a range: " +
-			"`total` is the number of cards, and `from` selects the next range. Sections divide " +
+			"`total` is the number of cards, and `offset` selects the next range. Sections divide " +
 			"the deck, and every card has the index of its section. Problems of the file are " +
 			"returned under `problems`, on the card they concern. Pass the fingerprint to the " +
 			"write tools: a write fails when the deck changed since the read.",
@@ -185,7 +185,7 @@ func (t *Tools) readCards(ctx context.Context, in cardReadInput) (cardReadOutput
 		return cardReadOutput{}, err
 	}
 	read, err := t.deckedit.GetCardPage.Execute(ctx, v, deckedit.Query{
-		Path: in.Path, From: in.From, Limit: limit, CardID: in.CardID, Fields: in.Fields,
+		Path: in.Path, From: in.Offset, Limit: limit, CardID: in.CardID, Fields: in.Fields,
 	})
 	if err != nil {
 		return cardReadOutput{}, err

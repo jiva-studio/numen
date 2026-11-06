@@ -44,10 +44,10 @@ type CardModel struct {
 
 // Card is one card as a deck answers with it.
 type Card struct {
-	CardID    string       `json:"cardId" jsonschema:"the stable identifier of the card, which every card tool takes; empty for a card written by hand, which gets one at the next write of the deck"`
-	Section   int          `json:"section" jsonschema:"the index of the section of the card in the deck, counted from 0; -1 for a card before the first section"`
-	CardModel string       `json:"cardModel,omitempty" jsonschema:"the card model of the card, as the wikilink under its heading names it"`
-	Values    []FieldValue `json:"values,omitempty" jsonschema:"the field values, in file order"`
+	CardID       string       `json:"cardId" jsonschema:"the stable identifier of the card, which every card tool takes; empty for a card written by hand, which gets one at the next write of the deck"`
+	SectionIndex int          `json:"sectionIndex" jsonschema:"the index of the section of the card in the deck, counted from 0; -1 for a card before the first section"`
+	CardModel    string       `json:"cardModel,omitempty" jsonschema:"the card model of the card, as the wikilink under its heading names it"`
+	Values       []FieldValue `json:"values,omitempty" jsonschema:"the field values, in file order"`
 }
 
 // FieldValue is the text of one of a card's fields.
@@ -58,15 +58,15 @@ type FieldValue struct {
 
 // Problem is one problem of a deck, on the card it concerns.
 type Problem struct {
-	Card    int    `json:"card" jsonschema:"the index of the card in the deck, counted from 0; -1 for a problem of no card"`
-	Message string `json:"message" jsonschema:"the problem and the action the application took"`
+	CardIndex int    `json:"cardIndex" jsonschema:"the index of the card in the deck, counted from 0; -1 for a problem of no card"`
+	Message   string `json:"message" jsonschema:"the problem and the action the application took"`
 }
 
-// CurrentCard is the card the user is viewing, as reported to an agent. The deck is the file containing it.
+// CurrentCard is the card the user is viewing, as reported to an agent. The path is the deck file containing it.
 type CurrentCard struct {
-	Deck     string `json:"deck" jsonschema:"the path of the deck of the card, relative to the vault folder; empty when no card is open"`
-	Card     string `json:"card,omitempty" jsonschema:"the card's id, as card_read gives it"`
-	Template string `json:"template,omitempty" jsonschema:"the name of the template the card is shown with, as the card model spells it"`
+	Path         string `json:"path" jsonschema:"the path of the deck of the card, relative to the vault folder; empty when no card is open"`
+	CardID       string `json:"cardId,omitempty" jsonschema:"the id of the card, as card_read returns it"`
+	TemplateName string `json:"templateName,omitempty" jsonschema:"the name of the template the card is shown with, as the card model spells it"`
 }
 
 // CardTemplate is one way a card model shows a card.
@@ -80,16 +80,16 @@ type CardTemplate struct {
 type WriteOutcome struct {
 	Path        string `json:"path" jsonschema:"the path of the deck, relative to the vault folder"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the new deck fingerprint; pass it to the next write of this deck"`
-	Cards       int    `json:"cards" jsonschema:"the number of cards in the deck"`
+	Total       int    `json:"total" jsonschema:"the number of cards in the deck"`
 	CardID      string `json:"cardId,omitempty" jsonschema:"the identifier of the written card"`
 }
 
 func newWriteOutcome(path string, edited deckedit.EditResult) WriteOutcome {
-	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.FileStat), Cards: edited.Cards, CardID: ""}
+	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.FileStat), Total: edited.Cards, CardID: ""}
 }
 
 func newCard(card format.Card) Card {
-	out := Card{CardID: string(card.CardID), Section: card.Section, CardModel: card.CardModelLink, Values: nil}
+	out := Card{CardID: string(card.CardID), SectionIndex: card.Section, CardModel: card.CardModelLink, Values: nil}
 	for _, v := range card.Values {
 		out.Values = append(out.Values, FieldValue{Field: v.Field, Text: v.Text})
 	}
@@ -129,7 +129,7 @@ func getProblems(problems []format.Problem) []Problem {
 	}
 	out := make([]Problem, 0, len(problems))
 	for _, p := range problems {
-		out = append(out, Problem{Card: p.Card, Message: p.Detail})
+		out = append(out, Problem{CardIndex: p.Card, Message: p.Detail})
 	}
 	return out
 }

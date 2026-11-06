@@ -42,11 +42,11 @@ func (t *Tools) writeDeck(
 }
 
 type cardAddInput struct {
-	Path        string       `json:"path" jsonschema:"the path of the deck to write into, relative to the vault folder"`
-	CardModel   string       `json:"cardModel" jsonschema:"the card model of the card, by the name card_model_list returns under name"`
-	Values      []FieldValue `json:"values" jsonschema:"the field values, in the order to write them"`
-	Section     *int         `json:"section,omitempty" jsonschema:"the index of the section to append the card to, counted from 0; when left out, the card is appended to the deck"`
-	Fingerprint string       `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
+	Path         string       `json:"path" jsonschema:"the path of the deck to write into, relative to the vault folder"`
+	CardModel    string       `json:"cardModel" jsonschema:"the card model of the card, by the name card_model_list returns under name"`
+	Values       []FieldValue `json:"values" jsonschema:"the field values, in the order to write them"`
+	SectionIndex *int         `json:"sectionIndex,omitempty" jsonschema:"the index of the section to append the card to, counted from 0; when left out, the card is appended to the deck"`
+	Fingerprint  string       `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
 func (t *Tools) addCardAdd(registry *tools.Registry) error {
@@ -72,7 +72,7 @@ func (t *Tools) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutcome
 	var added deckedit.AddedCard
 	content, err := t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
 		var err error
-		added, err = t.deckedit.AddCard.Execute(ctx, v, pos, in.CardModel, values(in.Values), in.Section)
+		added, err = t.deckedit.AddCard.Execute(ctx, v, pos, in.CardModel, values(in.Values), in.SectionIndex)
 		return added.EditResult, err
 	})
 	if err != nil {
@@ -190,10 +190,10 @@ func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 }
 
 type cardSectionRenameInput struct {
-	Path        string `json:"path" jsonschema:"the path of the deck of the section, relative to the vault folder"`
-	Section     int    `json:"section" jsonschema:"the index of the section in the deck, counted from 0, as card_read returns the sections"`
-	Name        string `json:"name" jsonschema:"the new section name"`
-	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
+	Path         string `json:"path" jsonschema:"the path of the deck of the section, relative to the vault folder"`
+	SectionIndex int    `json:"sectionIndex" jsonschema:"the index of the section in the deck, counted from 0, as card_read returns the sections"`
+	Name         string `json:"name" jsonschema:"the new section name"`
+	Fingerprint  string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
 func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
@@ -208,15 +208,15 @@ func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
 			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardSectionRenameInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
-			return t.deckedit.RenameSection.Execute(ctx, v, pos, in.Section, in.Name)
+			return t.deckedit.RenameSection.Execute(ctx, v, pos, in.SectionIndex, in.Name)
 		})
 	})
 }
 
 type cardSectionRemoveInput struct {
-	Path        string `json:"path" jsonschema:"the path of the deck of the section, relative to the vault folder"`
-	Section     int    `json:"section" jsonschema:"the index of the section in the deck, counted from 0, as card_read returns the sections"`
-	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
+	Path         string `json:"path" jsonschema:"the path of the deck of the section, relative to the vault folder"`
+	SectionIndex int    `json:"sectionIndex" jsonschema:"the index of the section in the deck, counted from 0, as card_read returns the sections"`
+	Fingerprint  string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
 func (t *Tools) addCardSectionRemove(registry *tools.Registry) error {
@@ -232,7 +232,7 @@ func (t *Tools) addCardSectionRemove(registry *tools.Registry) error {
 			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardSectionRemoveInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
-			return t.deckedit.RemoveSection.Execute(ctx, v, pos, in.Section)
+			return t.deckedit.RemoveSection.Execute(ctx, v, pos, in.SectionIndex)
 		})
 	})
 }
@@ -290,7 +290,7 @@ func (t *Tools) writeCardCardModelEdit(ctx context.Context, in cardModelEditInpu
 	return WriteOutcome{
 		Path:        in.Path,
 		Fingerprint: fingerprintOf(newFp),
-		Cards:       0,
+		Total:       0,
 		CardID:      "",
 	}, nil
 }
