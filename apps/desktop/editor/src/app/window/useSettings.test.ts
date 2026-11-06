@@ -10,7 +10,13 @@ import type { Model, PluginInfo, PluginSettingInfo } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
-import { asFailure, asValue, type PluginCatalog } from '@numen/core-client'
+import {
+  ListCatalogResponseSchema,
+  asFailure,
+  asValue,
+  create,
+  type PluginCatalog,
+} from '@numen/core-client'
 import { createLostConnection } from '@numen/core-client/testing'
 
 const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = {}) => {
@@ -475,15 +481,16 @@ describe('the plugin catalog', () => {
 
   it('writes the reason a plugin source failed to the window log', async () => {
     const catalog = createCatalog(
-      asValue({
-        entries: [],
-        sourceErrors: [
-          {
-            source: 'local',
-            message: 'duplicate plugin id "sample.notes" in /plugins/a and /plugins/b',
-          },
-        ] as never,
-      }),
+      asValue(
+        create(ListCatalogResponseSchema, {
+          sourceErrors: [
+            {
+              source: 'local',
+              message: 'duplicate plugin id "sample.notes" in /plugins/a and /plugins/b',
+            },
+          ],
+        }),
+      ),
     )
     const { settings, writerFns } = createSettings({ catalog })
 
