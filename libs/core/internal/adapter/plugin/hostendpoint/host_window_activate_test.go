@@ -39,12 +39,12 @@ func TestHostWindowActivateTabAnswersTheTabWithItsPlaceAndTheActiveID(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	answered := reader.Msg.GetTab()
-	if answered.GetId() != "tab-2" || answered.GetPlace().GetPage() != 4 || answered.GetPlace().GetPageCount() != 80 || reader.Msg.GetActiveId() != "tab-2" {
+	readerTab := reader.Msg.GetTab()
+	if readerTab.GetId() != "tab-2" || readerTab.GetPlace().GetPage() != 4 || readerTab.GetPlace().GetPageCount() != 80 || reader.Msg.GetActiveId() != "tab-2" {
 		t.Errorf("answered %v, want tab-2 at page 4 of 80, active", reader.Msg)
 	}
-	if answered.GetState() != "" {
-		t.Errorf("answered tab-2 with the state %q of its kind, want none", answered.GetState())
+	if readerTab.GetState() != "" {
+		t.Errorf("answered tab-2 with the state %q of its kind, want none", readerTab.GetState())
 	}
 }
 
