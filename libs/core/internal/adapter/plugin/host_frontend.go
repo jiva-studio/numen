@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
 // StopFailedPlugin stops the process of a plugin whose frontend did not start in a window, and records the

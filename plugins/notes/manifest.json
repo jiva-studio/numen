@@ -16,7 +16,9 @@
     "readers": [
       { "id": "markdown", "contentTypes": ["text/markdown", "text/plain"], "rank": "default" }
     ],
-    "menus": [{ "location": "titleBar.commands", "command": "app:note.create", "group": "new", "order": 10 }]
+    "menus": [
+      { "location": "titleBar.commands", "command": "app:note.create", "group": "new", "order": 10 }
+    ]
   },
   "permissions": ["vault:read", "vault:write"],
   "frontend": {},
