@@ -50,9 +50,9 @@ func (l pluginVaultList) RemoveVault(ctx context.Context, id domain.VaultID) err
 	return l.scenarios.Remove.Execute(ctx, string(id), l.state.GetCurrentVault().ID, false)
 }
 
-// OpenVault asks the pages to write what they hold, as a change of vault does, and refuses when a page
-// holds changes the person has to decide on. The change of vault it returns asks them again, so
-// what the person typed in between is written too.
+// OpenVault asks the pages to save their unsaved changes, as a change of vault does, and refuses
+// when a page holds changes the person has to decide on. The change of vault it returns asks them
+// again, so what the person typed in between is saved too.
 func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) (func(context.Context) error, error) {
 	v, err := l.scenarios.Find.Execute(string(id))
 	if err != nil {
@@ -73,7 +73,7 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) (func
 	}, nil
 }
 
-// isFlushed reports whether every page wrote what it holds. A page holding a question keeps the
+// isFlushed reports whether every page saved its unsaved changes. A page holding a question keeps the
 // request open, as the change of vault does, so the person answers it.
 func (l pluginVaultList) isFlushed(ctx context.Context) bool {
 	limited, cancel := context.WithTimeout(ctx, FlushTimeout)
