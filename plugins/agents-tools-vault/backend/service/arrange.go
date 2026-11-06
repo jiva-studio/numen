@@ -17,14 +17,14 @@ const (
 	maxBatch             = 50
 )
 
-// ListedNote is the path and title of a note.
-type ListedNote struct {
+// NoteEntry is the path and title of a note.
+type NoteEntry struct {
 	Path  string `json:"path" jsonschema:"path of the note relative to the vault folder"`
 	Title string `json:"title" jsonschema:"title of the note"`
 }
 
-// TitledNote is the path, title and identifier of a note.
-type TitledNote struct {
+// NoteTitle is the path, title and identifier of a note.
+type NoteTitle struct {
 	Path  string `json:"path" jsonschema:"path of the note relative to the vault folder"`
 	Title string `json:"title" jsonschema:"title of the note"`
 	ID    string `json:"id,omitempty" jsonschema:"identifier written in the note, which [[note://<identifier>]] names; absent for a note without one"`
@@ -34,14 +34,14 @@ type TitledNote struct {
 type NoteListInput struct {
 	Folder string `json:"folder,omitempty" jsonschema:"list only the notes in this folder and its subfolders, relative to the vault folder; the whole vault when left out"`
 	Limit  int    `json:"limit,omitempty" jsonschema:"how many notes to return (default: 100, max: 500)"`
-	Offset int    `json:"offset,omitempty" jsonschema:"how many notes to skip; the next_offset of the previous result continues the list"`
+	Offset int    `json:"offset,omitempty" jsonschema:"how many notes to skip; the nextOffset of the previous result continues the list"`
 }
 
 // NoteListOutput is the output of the note_list tool.
 type NoteListOutput struct {
-	Notes      []ListedNote `json:"notes" jsonschema:"the notes of this page, ordered by path"`
-	Total      int          `json:"total" jsonschema:"number of notes that match, before limit and offset"`
-	NextOffset int          `json:"next_offset,omitempty" jsonschema:"the offset of the next page; absent on the last page"`
+	Notes      []NoteEntry `json:"notes" jsonschema:"the notes of this page, ordered by path"`
+	Total      int         `json:"total" jsonschema:"number of notes that match, before limit and offset"`
+	NextOffset int         `json:"nextOffset,omitempty" jsonschema:"the offset of the next page; absent on the last page"`
 }
 
 // NoteTitlesInput is the input of the note_titles tool.
@@ -51,8 +51,8 @@ type NoteTitlesInput struct {
 
 // NoteTitlesOutput is the output of the note_titles tool.
 type NoteTitlesOutput struct {
-	Notes   []TitledNote `json:"notes" jsonschema:"the notes found, with their titles"`
-	Missing []string     `json:"missing" jsonschema:"the paths that name no note, in the order given"`
+	Notes        []NoteTitle `json:"notes" jsonschema:"the notes found, with their titles"`
+	MissingPaths []string    `json:"missingPaths" jsonschema:"the paths that name no note, in the order given"`
 }
 
 // NoteResolveInput is the input of the note_resolve tool.
@@ -81,7 +81,7 @@ func (t *Tools) addNoteTitles(registry *tools.Registry) error {
 		Step:        tools.ByEffect,
 		Name:        "note_titles",
 		Title:       "Get Note Titles",
-		Description: "Get the titles and identifiers of up to 50 notes by their paths. Paths that name no note are returned in missing.",
+		Description: "Get the titles and identifiers of up to 50 notes by their paths. Paths that name no note are returned in missingPaths.",
 		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).getNoteTitles))
@@ -130,9 +130,9 @@ func (t *Tools) listNotes(ctx context.Context, in NoteListInput) (NoteListOutput
 	if err != nil {
 		return NoteListOutput{}, fmt.Errorf("get note titles: %w", err)
 	}
-	notes := make([]ListedNote, 0, len(page))
+	notes := make([]NoteEntry, 0, len(page))
 	for _, p := range page {
-		notes = append(notes, ListedNote{Path: p, Title: refs[p].Title})
+		notes = append(notes, NoteEntry{Path: p, Title: refs[p].Title})
 	}
 	next := 0
 	if end < total {
@@ -149,14 +149,14 @@ func (t *Tools) getNoteTitles(ctx context.Context, in NoteTitlesInput) (NoteTitl
 	if err != nil {
 		return NoteTitlesOutput{}, fmt.Errorf("get note titles: %w", err)
 	}
-	out := NoteTitlesOutput{Notes: make([]TitledNote, 0, len(refs)), Missing: []string{}}
+	out := NoteTitlesOutput{Notes: make([]NoteTitle, 0, len(refs)), MissingPaths: []string{}}
 	for _, p := range in.Paths {
 		ref, ok := refs[p]
 		if !ok {
-			out.Missing = append(out.Missing, p)
+			out.MissingPaths = append(out.MissingPaths, p)
 			continue
 		}
-		out.Notes = append(out.Notes, TitledNote{Path: p, Title: ref.Title, ID: ref.ID})
+		out.Notes = append(out.Notes, NoteTitle{Path: p, Title: ref.Title, ID: ref.ID})
 	}
 	return out, nil
 }

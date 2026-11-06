@@ -16,13 +16,13 @@ func getCheckNames() []string {
 	return []string{string(domain.CheckParse), "frontmatter", "ambiguous", "dangling"}
 }
 
-// ListedVault is a vault of the installation.
-type ListedVault struct {
+// VaultEntry is a vault of the installation.
+type VaultEntry struct {
 	ID        string `json:"id" jsonschema:"vault identifier, which stays the same when its folder moves"`
 	Name      string `json:"name" jsonschema:"vault display name"`
 	Folder    string `json:"folder" jsonschema:"vault root directory on this machine"`
-	IsShowing bool   `json:"showing" jsonschema:"true for the vault this call works on"`
-	IsMissing bool   `json:"missing,omitempty" jsonschema:"true when nothing is at the vault's folder"`
+	IsCurrent bool   `json:"isCurrent" jsonschema:"true for the vault this call works on"`
+	IsMissing bool   `json:"isMissing,omitempty" jsonschema:"true when nothing is at the vault's folder"`
 }
 
 // VaultListInput is the input of the vault_list tool.
@@ -30,7 +30,7 @@ type VaultListInput struct{}
 
 // VaultListOutput is the output of the vault_list tool.
 type VaultListOutput struct {
-	Vaults []ListedVault `json:"vaults"`
+	Vaults []VaultEntry `json:"vaults"`
 }
 
 // VaultProblemsInput is the input of the vault_problems tool.
@@ -50,7 +50,7 @@ type VaultProblemItem struct {
 // VaultProblemsOutput is the output of the vault_problems tool.
 type VaultProblemsOutput struct {
 	Problems []VaultProblemItem `json:"problems"`
-	Ran      []string           `json:"ran" jsonschema:"the checks this result covers"`
+	Checks   []string           `json:"checks" jsonschema:"the checks this answer covers"`
 }
 
 func (t *Tools) addVaultList(registry *tools.Registry) error {
@@ -59,7 +59,7 @@ func (t *Tools) addVaultList(registry *tools.Registry) error {
 		Name:  "vault_list",
 		Title: "List Vaults",
 		Description: "List every vault of the installation with its identifier, name and folder. The vault this " +
-			"call works on is marked showing, and a vault whose folder is gone is marked missing.",
+			"call works on is marked isCurrent, and a vault whose folder is gone is marked isMissing.",
 		Effect:  tools.ReadOnly,
 		Servers: []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).listVaults))
@@ -79,27 +79,27 @@ func (t *Tools) addVaultProblems(registry *tools.Registry) error {
 }
 
 func (t *Tools) listVaults(ctx context.Context, _ VaultListInput) (VaultListOutput, error) {
-	vaults, err := t.getKnownVaults(ctx)
+	vaults, err := t.getVaultEntries(ctx)
 	if err != nil {
 		return VaultListOutput{}, fmt.Errorf("list vaults: %w", err)
 	}
 	current := domain.VaultID(tools.GetVault(ctx))
-	out := VaultListOutput{Vaults: make([]ListedVault, 0, len(vaults))}
+	out := VaultListOutput{Vaults: make([]VaultEntry, 0, len(vaults))}
 	for _, v := range vaults {
-		out.Vaults = append(out.Vaults, ListedVault{
+		out.Vaults = append(out.Vaults, VaultEntry{
 			ID:        string(v.ID),
 			Name:      v.Name,
 			Folder:    v.Path,
-			IsShowing: v.ID == current,
+			IsCurrent: v.ID == current,
 			IsMissing: v.IsMissing,
 		})
 	}
 	return out, nil
 }
 
-// getKnownVaults returns the vaults of the installation from the vault list, or from the host when the
+// getVaultEntries returns the vaults of the installation from the vault list, or from the host when the
 // tools have no vault list, which reports no vault as missing.
-func (t *Tools) getKnownVaults(ctx context.Context) ([]host.KnownVault, error) {
+func (t *Tools) getVaultEntries(ctx context.Context) ([]host.VaultEntry, error) {
 	if t.list != nil {
 		return t.list.GetVaultList(ctx)
 	}
@@ -107,9 +107,9 @@ func (t *Tools) getKnownVaults(ctx context.Context) ([]host.KnownVault, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := make([]host.KnownVault, 0, len(vaults))
+	out := make([]host.VaultEntry, 0, len(vaults))
 	for _, v := range vaults {
-		out = append(out, host.KnownVault{Vault: v, IsMissing: false})
+		out = append(out, host.VaultEntry{Vault: v, IsMissing: false})
 	}
 	return out, nil
 }
@@ -126,10 +126,10 @@ func (t *Tools) listVaultProblems(ctx context.Context, in VaultProblemsInput) (V
 	}
 	out := VaultProblemsOutput{
 		Problems: make([]VaultProblemItem, 0, len(problems.Found)),
-		Ran:      problems.Ran,
+		Checks:   problems.Checks,
 	}
-	if out.Ran == nil {
-		out.Ran = []string{}
+	if out.Checks == nil {
+		out.Checks = []string{}
 	}
 	for _, p := range problems.Found {
 		address := ""

@@ -12,12 +12,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// MovedFile is the move of a note's file and the links the host wrote again for it.
-type MovedFile struct {
-	From     string   `json:"from" jsonschema:"path the note had"`
-	To       string   `json:"to" jsonschema:"path the note has now"`
-	Repaired []string `json:"repaired" jsonschema:"paths of the notes whose links to the old name were written again"`
-	Dangling []string `json:"dangling" jsonschema:"paths of the notes whose links to the old name could not be written again and reach nothing"`
+// FileMove is the move of a note's file and the links the host wrote again for it.
+type FileMove struct {
+	From          string   `json:"from" jsonschema:"path the note had"`
+	To            string   `json:"to" jsonschema:"path the note has now"`
+	RepairedNotes []string `json:"repairedNotes" jsonschema:"paths of the notes whose links to the old name were written again"`
+	BrokenLinks   []string `json:"brokenLinks" jsonschema:"paths of the notes whose links to the old name could not be written again and reach nothing"`
 }
 
 // NoteRenameInput is the input of the note_rename tool.
@@ -28,10 +28,10 @@ type NoteRenameInput struct {
 
 // NoteRenameOutput is the output of the note_rename tool.
 type NoteRenameOutput struct {
-	Path  string     `json:"path" jsonschema:"path of the note after the rename"`
-	Title string     `json:"title" jsonschema:"title of the note after the rename"`
-	By    string     `json:"by" jsonschema:"where the title is written: frontmatter for the title key, filename for the file name"`
-	Moved *MovedFile `json:"moved,omitempty" jsonschema:"the move of the file; absent when the file kept its path"`
+	NewPath    string    `json:"newPath" jsonschema:"path of the note after the rename"`
+	Title      string    `json:"title" jsonschema:"title of the note after the rename"`
+	NameSource string    `json:"nameSource" jsonschema:"where the title is written: frontmatter for the title key, filename for the file name"`
+	Move       *FileMove `json:"move,omitempty" jsonschema:"the move of the file; absent when the file kept its path"`
 }
 
 // NoteMoveInput is the input of the note_move tool.
@@ -42,16 +42,16 @@ type NoteMoveInput struct {
 
 // NoteMoveItem is the outcome of moving one note.
 type NoteMoveItem struct {
-	From     string   `json:"from" jsonschema:"path of the note as given"`
-	To       string   `json:"to,omitempty" jsonschema:"path of the note now; absent when it did not move"`
-	Repaired []string `json:"repaired,omitempty" jsonschema:"paths of the notes whose links to the note were written again"`
-	Dangling []string `json:"dangling,omitempty" jsonschema:"paths of the notes whose links to the note reach nothing now"`
-	Error    string   `json:"error,omitempty" jsonschema:"why the note did not move"`
+	From          string   `json:"from" jsonschema:"path of the note as given"`
+	To            string   `json:"to,omitempty" jsonschema:"path of the note now; absent when it did not move"`
+	RepairedNotes []string `json:"repairedNotes,omitempty" jsonschema:"paths of the notes whose links to the note were written again"`
+	BrokenLinks   []string `json:"brokenLinks,omitempty" jsonschema:"paths of the notes whose links to the note reach nothing now"`
+	Error         string   `json:"error,omitempty" jsonschema:"why the note did not move"`
 }
 
 // NoteMoveOutput is the output of the note_move tool.
 type NoteMoveOutput struct {
-	Moved []NoteMoveItem `json:"moved" jsonschema:"one entry per path, in the order given"`
+	Moves []NoteMoveItem `json:"moves" jsonschema:"one entry per path, in the order given"`
 }
 
 // NoteRemoveInput is the input of the note_remove tool.
@@ -61,15 +61,15 @@ type NoteRemoveInput struct {
 
 // NoteRemoveItem is the outcome of removing one note.
 type NoteRemoveItem struct {
-	Path     string   `json:"path" jsonschema:"path of the note as given"`
-	Trashed  string   `json:"trashed,omitempty" jsonschema:"path of the file in the vault's trash, where it can be put back from"`
-	Dangling []string `json:"dangling,omitempty" jsonschema:"paths of the notes whose links to the note reach nothing now"`
-	Error    string   `json:"error,omitempty" jsonschema:"why the note was not removed"`
+	Path        string   `json:"path" jsonschema:"path of the note as given"`
+	TrashPath   string   `json:"trashPath,omitempty" jsonschema:"path of the file in the vault's trash, where it can be put back from"`
+	BrokenLinks []string `json:"brokenLinks,omitempty" jsonschema:"paths of the notes whose links to the note reach nothing now"`
+	Error       string   `json:"error,omitempty" jsonschema:"why the note was not removed"`
 }
 
 // NoteRemoveOutput is the output of the note_remove tool.
 type NoteRemoveOutput struct {
-	Removed []NoteRemoveItem `json:"removed" jsonschema:"one entry per path, in the order given"`
+	Removals []NoteRemoveItem `json:"removals" jsonschema:"one entry per path, in the order given"`
 }
 
 func (t *Tools) addNoteRename(registry *tools.Registry) error {
@@ -123,16 +123,16 @@ func (t *Tools) renameNote(ctx context.Context, in NoteRenameInput) (NoteRenameO
 	if err != nil {
 		return NoteRenameOutput{}, fmt.Errorf("rename note %s: %w", in.Path, err)
 	}
-	out := NoteRenameOutput{Path: result.Path, Title: result.Title, By: "frontmatter", Moved: nil}
+	out := NoteRenameOutput{NewPath: result.Path, Title: result.Title, NameSource: "frontmatter", Move: nil}
 	if result.IsFilenamed {
-		out.By = "filename"
+		out.NameSource = "filename"
 	}
-	if result.Moved != nil {
-		out.Moved = &MovedFile{
-			From:     result.Moved.From,
-			To:       result.Moved.To,
-			Repaired: getPathList(result.Moved.Repaired),
-			Dangling: getPathList(result.Moved.Dangling),
+	if result.Move != nil {
+		out.Move = &FileMove{
+			From:          result.Move.From,
+			To:            result.Move.To,
+			RepairedNotes: getPathList(result.Move.Repaired),
+			BrokenLinks:   getPathList(result.Move.Dangling),
 		}
 	}
 	return out, nil
@@ -146,23 +146,23 @@ func (t *Tools) moveNotes(ctx context.Context, in NoteMoveInput) (NoteMoveOutput
 	if err != nil {
 		return NoteMoveOutput{}, fmt.Errorf("move notes: %w", err)
 	}
-	out := NoteMoveOutput{Moved: make([]NoteMoveItem, 0, len(moves))}
+	out := NoteMoveOutput{Moves: make([]NoteMoveItem, 0, len(moves))}
 	for _, m := range moves {
-		out.Moved = append(out.Moved, newNoteMoveItem(m))
+		out.Moves = append(out.Moves, newNoteMoveItem(m))
 	}
 	return out, nil
 }
 
 func newNoteMoveItem(m host.NoteMove) NoteMoveItem {
-	item := NoteMoveItem{From: m.Moved.From, To: "", Repaired: nil, Dangling: nil, Error: ""}
+	item := NoteMoveItem{From: m.Move.From, To: "", RepairedNotes: nil, BrokenLinks: nil, Error: ""}
 	if m.Err != nil {
 		item.Error = m.Err.Error()
 		return item
 	}
-	if m.Moved.IsMoved {
-		item.To = m.Moved.To
+	if m.Move.IsMoved {
+		item.To = m.Move.To
 	}
-	item.Repaired, item.Dangling = m.Moved.Repaired, m.Moved.Dangling
+	item.RepairedNotes, item.BrokenLinks = m.Move.Repaired, m.Move.Dangling
 	return item
 }
 
@@ -174,13 +174,13 @@ func (t *Tools) removeNotes(ctx context.Context, in NoteRemoveInput) (NoteRemove
 	if err != nil {
 		return NoteRemoveOutput{}, fmt.Errorf("remove notes: %w", err)
 	}
-	out := NoteRemoveOutput{Removed: make([]NoteRemoveItem, 0, len(removals))}
+	out := NoteRemoveOutput{Removals: make([]NoteRemoveItem, 0, len(removals))}
 	for _, r := range removals {
-		item := NoteRemoveItem{Path: r.Path, Trashed: r.Trashed, Dangling: r.Dangling, Error: ""}
+		item := NoteRemoveItem{Path: r.Path, TrashPath: r.TrashPath, BrokenLinks: r.BrokenLinks, Error: ""}
 		if r.Err != nil {
-			item.Trashed, item.Dangling, item.Error = "", nil, r.Err.Error()
+			item.TrashPath, item.BrokenLinks, item.Error = "", nil, r.Err.Error()
 		}
-		out.Removed = append(out.Removed, item)
+		out.Removals = append(out.Removals, item)
 	}
 	return out, nil
 }

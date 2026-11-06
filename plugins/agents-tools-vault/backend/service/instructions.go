@@ -4,7 +4,7 @@ package service
 // move and remove notes, edit the links of notes, and list, check and manage vaults.
 const ArrangeInstructions = "Use note_list to list the notes of the vault or of one folder by path and title, and page through them with limit and offset. " +
 	"Use note_titles to get the titles and identifiers of notes whose paths you already have, and note_resolve to get the paths of the notes a wikilink name points to; more than one path means the name is ambiguous. " +
-	"vault_list lists every vault of the installation, marks the vault the call works on as showing and a vault whose folder is gone as missing. " +
+	"vault_list lists every vault of the installation, marks the vault the call works on with isCurrent and a vault whose folder is gone with isMissing. " +
 	"vault_problems runs the parse, frontmatter and ambiguous checks over the vault, and the dangling check only when you name it. " +
 	"note_rename gives a note another title and moves its file to the title's file name, note_move moves notes to a folder, and note_remove moves notes to the vault's trash, from where they can be put back; the host writes again the links that named a renamed or moved note by its old name. " +
 	"link_add, link_update and link_remove write the links in the frontmatter of a note and need the fingerprint note_read gave for that note; a stale fingerprint is refused, so read the note again. " +

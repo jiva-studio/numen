@@ -42,7 +42,7 @@ type LinkAddItem struct {
 
 // LinkAddOutput is the output of the link_add tool.
 type LinkAddOutput struct {
-	Added []LinkAddItem `json:"added" jsonschema:"one entry per link, in the order given"`
+	Results []LinkAddItem `json:"results" jsonschema:"one entry per link, in the order given"`
 }
 
 // LinkUpdateInput is the input of the link_update tool.
@@ -172,7 +172,7 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 	case len(in.Links) > maxBatch:
 		return LinkAddOutput{}, fmt.Errorf("%d links given, at most %d are allowed", len(in.Links), maxBatch)
 	}
-	out := LinkAddOutput{Added: make([]LinkAddItem, len(in.Links))}
+	out := LinkAddOutput{Results: make([]LinkAddItem, len(in.Links))}
 	groups := &linkGroups{
 		order:        nil,
 		links:        map[string][]domain.Link{},
@@ -181,19 +181,19 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 		conflicts:    map[string]error{},
 	}
 	for i, l := range in.Links {
-		out.Added[i] = LinkAddItem{From: l.From, To: l.To, Fingerprint: "", Error: ""}
+		out.Results[i] = LinkAddItem{From: l.From, To: l.To, Fingerprint: "", Error: ""}
 		if err := groups.add(i, l); err != nil {
-			out.Added[i].Error = err.Error()
+			out.Results[i].Error = err.Error()
 		}
 	}
 	for _, from := range groups.order {
 		fingerprint, err := t.writeLinkGroup(ctx, groups, from)
 		for _, i := range groups.positions[from] {
 			if err != nil {
-				out.Added[i].Error = err.Error()
+				out.Results[i].Error = err.Error()
 				continue
 			}
-			out.Added[i].Fingerprint = fingerprint
+			out.Results[i].Fingerprint = fingerprint
 		}
 	}
 	return out, nil
@@ -231,11 +231,11 @@ func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOut
 	}
 	change := domain.Link{Target: to, Role: role, Type: in.Type, Why: in.Note, Label: in.Label, Marker: domain.MarkerNone}
 	fingerprint, err := t.editNote(ctx, in.From, in.Fingerprint, func(doc *markdown.Document) error {
-		changed, err := doc.UpdateLink(to, change)
+		count, err := doc.UpdateLink(to, change)
 		if err != nil {
 			return err
 		}
-		if changed == 0 {
+		if count == 0 {
 			return fmt.Errorf("no link to %s is written here", in.To)
 		}
 		return nil
