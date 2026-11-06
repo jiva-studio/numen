@@ -30,7 +30,14 @@ const searchForNote = async (page: Page) => {
     .filter({ has: page.locator('[data-palette="name"]', { hasText: new RegExp(`^${NOTE}$`) }) })
     .first()
   await expect(row).toBeVisible()
-  for (let step = 0; step < 10 && (await row.getAttribute('aria-selected')) !== 'true'; step += 1) {
+  // The groups answer in any order and the highlight stays where the first answer put it, so the
+  // row is reached by stepping through every row once.
+  const rows = page.getByRole('option')
+  for (
+    let step = 0;
+    step < (await rows.count()) && (await row.getAttribute('aria-selected')) !== 'true';
+    step += 1
+  ) {
     await page.keyboard.press('ArrowDown')
   }
   await expect(row).toHaveAttribute('aria-selected', 'true')
