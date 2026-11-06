@@ -19,6 +19,7 @@ func (m *mixedCommands) ListCommands() []plugincommand.Entry {
 		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"}},
 		{PluginID: "md.numen.tree", Command: plugincommand.Command{ID: "tree.open", Title: "Open file tree", Scope: "note"}},
 		{PluginID: "md.numen.empty", Command: plugincommand.Command{ID: "empty.run", Title: "Run"}},
+		{PluginID: "md.numen.down", Command: plugincommand.Command{ID: "down.run", Title: "Run"}},
 	}
 }
 
@@ -26,6 +27,7 @@ func (m *mixedCommands) GetParts(pluginID string) plugincommand.Parts {
 	return map[string]plugincommand.Parts{
 		"md.numen.cards": {HasBackend: true, HasFrontend: true},
 		"md.numen.tree":  {HasFrontend: true},
+		"md.numen.down":  {HasBackend: true, IsSuspended: true},
 	}[pluginID]
 }
 

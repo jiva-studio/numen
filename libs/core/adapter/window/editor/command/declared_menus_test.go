@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-// menuPlacingPlugins places commands in menus for an enabled plugin with a frontend and one with a
-// frontend and a backend.
+// menuPlacingPlugins places commands in menus for an enabled plugin with a frontend, an enabled one
+// with a backend, and one the host holds suspended.
 type menuPlacingPlugins struct{ declaredByTwoPlugins }
 
 func (menuPlacingPlugins) ListMenus() []plugincommand.MenuEntry {
@@ -21,6 +21,7 @@ func (menuPlacingPlugins) ListMenus() []plugincommand.MenuEntry {
 	return []plugincommand.MenuEntry{
 		{PluginID: "md.numen.cards", Menu: manifest.Menu{Location: "titleBar.commands", Command: "deck.create", Group: "new", Order: &order}},
 		{PluginID: "md.numen.cards", Menu: manifest.Menu{Location: "searchResult", Command: "app:note.create", Order: &zero}},
+		{PluginID: "md.numen.down", Menu: manifest.Menu{Location: "titleBar.commands", Command: "down.run"}},
 		{PluginID: "md.numen.tree", Menu: manifest.Menu{Location: "searchResult", Command: "tree.revealNote", Group: "navigate"}},
 	}
 }
@@ -29,6 +30,8 @@ func (menuPlacingPlugins) GetParts(pluginID string) plugincommand.Parts {
 	switch pluginID {
 	case "md.numen.cards":
 		return plugincommand.Parts{HasBackend: true, HasFrontend: true}
+	case "md.numen.down":
+		return plugincommand.Parts{HasBackend: true, IsSuspended: true}
 	case "md.numen.tree":
 		return plugincommand.Parts{HasFrontend: true}
 	}
@@ -60,5 +63,23 @@ func TestListCommands_ListsTheMenuEntriesOfEnabledPluginsInTheOrderOfTheManifest
 	}
 	if tree.GetPluginId() != "md.numen.tree" || tree.GetLocation() != "searchResult" || tree.GetGroup() != "navigate" || tree.Order != nil {
 		t.Errorf("the third entry came out as %v", tree)
+	}
+}
+
+func TestListCommands_ListsNoMenuEntryOfASuspendedPlugin(t *testing.T) {
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(menuPlacingPlugins{}, nil, nil))
+
+	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, one := range res.Msg.GetMenus() {
+		if one.GetPluginId() == "md.numen.down" {
+			t.Errorf("the suspended plugin has the entry %v", one)
+		}
+	}
+	if len(res.Msg.GetMenus()) == 0 {
+		t.Error("the enabled plugins have no entries")
 	}
 }

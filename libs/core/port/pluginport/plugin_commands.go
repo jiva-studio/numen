@@ -27,6 +27,9 @@ type PluginParts struct {
 	HasBackend bool
 	// HasFrontend is set where the plugin declares a frontend bundle the windows load.
 	HasFrontend bool
+	// IsSuspended is set while the host holds the plugin suspended after it failed to start; its
+	// backend runs nothing then.
+	IsSuspended bool
 }
 
 // PluginCommandCall is one run of a command, checked against its declaration.

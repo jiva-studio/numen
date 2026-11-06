@@ -42,8 +42,6 @@ interface ActivateContext extends ResolveModuleContext {
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly failures: { value: ReadonlyMap<string, string> }
   readonly reportError: (pluginId: string, error: unknown) => void
-  /** The number of the latest start of each plugin, so a start cancelled at the limit takes back only its own. */
-  readonly starts: Map<string, number>
 }
 
 function getFailureMessage(error: unknown): string {
@@ -63,19 +61,13 @@ function discardEntry(ctx: ActivateContext, pluginId: string): void {
   ctx.host.disposePlugin(pluginId)
 }
 
-/**
- * Reads and activates the plugin. A start that ends after the limit has passed is taken back, unless the
- * plugin has been started again since.
- */
+/** Reads and activates the plugin. A start that ends after the limit has passed is taken back. */
 async function startEntry(
   ctx: ActivateContext,
   pluginId: string,
-  start: { readonly module: unknown; readonly isExpired: () => boolean; readonly number: number },
+  start: { readonly module: unknown; readonly isExpired: () => boolean },
 ): Promise<boolean> {
   const { module: pluginModule, isExpired } = start
-  const discardExpired = (): void => {
-    if (ctx.starts.get(pluginId) === start.number) discardEntry(ctx, pluginId)
-  }
   const { host, activePlugins } = ctx
   try {
     const resolved = await resolveModule(pluginId, pluginModule, ctx)
@@ -89,7 +81,7 @@ async function startEntry(
       host.markPluginStarted?.(pluginId)
     }
     if (isExpired()) {
-      discardExpired()
+      discardEntry(ctx, pluginId)
       return false
     }
 
@@ -99,11 +91,8 @@ async function startEntry(
     setFailure(ctx, pluginId, undefined)
     return true
   } catch (error) {
-    if (isExpired()) {
-      discardExpired()
-      return false
-    }
     discardEntry(ctx, pluginId)
+    if (isExpired()) return false
     setFailure(ctx, pluginId, getFailureMessage(error))
     ctx.reportError(pluginId, error)
     return false
@@ -113,8 +102,7 @@ async function startEntry(
 /**
  * Starts the plugin within PLUGIN_START_LIMIT_MS. A plugin that has not started by then counts as
  * failed: what it has registered is taken back at once, what its start registers afterwards is taken
- * back too, and that start never makes it active. Its backend is left running, and its next use starts
- * it again.
+ * back too, and it never becomes active. Its backend is left running.
  */
 async function activateEntry(
   ctx: ActivateContext,
@@ -127,12 +115,9 @@ async function activateEntry(
   const limit = new Promise<'expired'>((resolve) => {
     timer = setTimeout(() => resolve('expired'), PLUGIN_START_LIMIT_MS)
   })
-  const number = (ctx.starts.get(pluginId) ?? 0) + 1
-  ctx.starts.set(pluginId, number)
   const starting = startEntry(ctx, pluginId, {
     module: pluginModule,
     isExpired: () => isExpired,
-    number,
   })
   const outcome = await Promise.race([starting, limit]).finally(() => clearTimeout(timer))
   if (outcome !== 'expired') return outcome
@@ -244,7 +229,6 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
     failures,
     manifests,
     ...defaults,
-    starts: new Map(),
   }
   const deactivateContext: DeactivateDeps = {
     host,
@@ -360,16 +344,6 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
   const { activePlugins, failures, manifests } = state
   const activation = createActivation(deps, state)
 
-  /**
-   * Starts again, within PLUGIN_START_LIMIT_MS, an enabled plugin whose last start failed; its failure
-   * stays until a start succeeds. Settles with whether the plugin is active.
-   */
-  const startFailedPlugin = async (id: string): Promise<boolean> => {
-    if (!failures.value.has(id)) return activePlugins.value.has(id)
-    if (!isPluginEnabledValue(host.getSetting?.(id, 'enabled'))) return false
-    return activation.activatePlugin(id)
-  }
-
   return {
     ...createRuntime(deps, state, activation),
     ...activation,
@@ -377,28 +351,22 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
       manifests.set(id, manifest)
       host.registerManifest?.(id, manifest)
     },
-    startFailedPlugin,
-    /**
-     * Settles once the plugin is active or has failed, or after PLUGIN_START_LIMIT_MS. A plugin whose last
-     * start failed is started again first.
-     */
+    /** Settles once the plugin is active or has failed, or after PLUGIN_START_LIMIT_MS. */
     settlePlugin: (id: string): Promise<void> =>
-      failures.value.has(id)
-        ? startFailedPlugin(id).then(() => undefined)
-        : new Promise<void>((resolve) => {
-            const isSettled = () => activePlugins.value.has(id) || failures.value.has(id)
-            if (isSettled()) return resolve()
-            const stop = watch([activePlugins, failures], () => {
-              if (!isSettled()) return
-              stop()
-              clearTimeout(timer)
-              resolve()
-            })
-            const timer = setTimeout(() => {
-              stop()
-              resolve()
-            }, PLUGIN_START_LIMIT_MS)
-          }),
+      new Promise<void>((resolve) => {
+        const isSettled = () => activePlugins.value.has(id) || failures.value.has(id)
+        if (isSettled()) return resolve()
+        const stop = watch([activePlugins, failures], () => {
+          if (!isSettled()) return
+          stop()
+          clearTimeout(timer)
+          resolve()
+        })
+        const timer = setTimeout(() => {
+          stop()
+          resolve()
+        }, PLUGIN_START_LIMIT_MS)
+      }),
     isPluginActive: (id: string) => activePlugins.value.has(id),
     getActivePluginIds: () => [...activePlugins.value.keys()],
     getPluginFailure: (id: string): string | undefined => failures.value.get(id),

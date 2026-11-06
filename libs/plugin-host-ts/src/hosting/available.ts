@@ -37,28 +37,20 @@ export interface AvailableList {
  * What becomes of a declared command with no handler. It is 'available' while the frontend of its
  * plugin has not started to register. It is 'unbound' once the frontend has started and the plugin
  * has no backend: nothing runs it, the host does not list it, and the missing handler is an issue.
- * It is 'left' to the window for a plugin with a backend, which runs it, and for a plugin with no
- * frontend. A plugin whose last start failed is treated as one that has not started: running the
- * command starts it again.
+ * It is 'left' to the window for a plugin with a backend, which runs it, for a plugin with no
+ * frontend, and for one that failed to load.
  */
 function getBeforeHandlerState(
   deps: PluginHostDeps,
   registry: HostRegistry,
   declaration: CommandDeclaration,
 ): 'available' | 'unbound' | 'left' {
-  const { pluginId } = declaration
-  const leftOr = (state: 'available' | 'unbound') =>
-    deps.hasPluginBackend?.(pluginId) === true ? 'left' : state
-  if (deps.hasPluginFrontend?.(pluginId) === false) return 'left'
-  if (deps.isPluginFailed?.(pluginId)) return leftOr('available')
-  if (!registry.activated.value.has(pluginId)) return 'available'
-  if (registry.starting?.value.has(pluginId)) return 'available'
-  return leftOr('unbound')
+  if (deps.hasPluginFrontend?.(declaration.pluginId) === false) return 'left'
+  if (deps.isPluginFailed?.(declaration.pluginId)) return 'left'
+  if (!registry.activated.value.has(declaration.pluginId)) return 'available'
+  if (registry.starting?.value.has(declaration.pluginId)) return 'available'
+  return deps.hasPluginBackend?.(declaration.pluginId) === true ? 'left' : 'unbound'
 }
-
-/** Whether the declarations of the plugin are left out: it was disposed, and not for a failed start. */
-const isLeftOut = (deps: PluginHostDeps, registry: HostRegistry, pluginId: string): boolean =>
-  registry.disposed.has(pluginId) && deps.isPluginFailed?.(pluginId) !== true
 
 /**
  * The commands of the plugin frontends the window lists: those the manifests declare that have a
@@ -75,7 +67,7 @@ export function listAvailableCommands(deps: PluginHostDeps, registry: HostRegist
   const addIssue = (issue: CommandIssue) => issues.set(getIssueKey(issue), issue)
   const declaredIds = new Set<string>()
   for (const declaration of declarations) {
-    if (isLeftOut(deps, registry, declaration.pluginId)) continue
+    if (registry.disposed.has(declaration.pluginId)) continue
     const id = formatCommandId(declaration.pluginId, declaration.id)
     declaredIds.add(id)
     const entry = registry.commands.value.get(id)

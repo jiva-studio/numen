@@ -67,3 +67,23 @@ func TestRunPluginCommand_AnswersUnknownForACommandOfAPluginWithoutABackend(t *t
 		t.Errorf("the run answered %v", res.Msg)
 	}
 }
+
+// suspendedPlugin declares a command of a plugin the host holds suspended after a failed start.
+type suspendedPlugin struct{ declaredByTwoPlugins }
+
+func (suspendedPlugin) GetParts(string) plugincommand.Parts {
+	return plugincommand.Parts{HasBackend: true, HasFrontend: true, IsSuspended: true}
+}
+
+func TestListCommands_ListsNoCommandOfASuspendedPlugin(t *testing.T) {
+	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(suspendedPlugin{}, nil, nil))
+
+	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if items := res.Msg.GetCommands(); len(items) != 0 {
+		t.Errorf("got %v", items)
+	}
+}

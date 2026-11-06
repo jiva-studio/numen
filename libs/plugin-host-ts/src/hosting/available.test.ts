@@ -18,15 +18,9 @@ function createHost(extra: Partial<PluginHostDeps> = {}) {
   })
 }
 
-describe('the commands of a plugin whose last start failed', () => {
-  it('are listed, so running one starts the plugin again', () => {
+describe('the commands of a plugin that failed to load', () => {
+  it('are not listed while the plugin has not made a context', () => {
     const host = createHost({ isPluginFailed: () => true })
-
-    expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
-  })
-
-  it('are left to the window where the plugin has a backend, which runs them', () => {
-    const host = createHost({ isPluginFailed: () => true, hasPluginBackend: () => true })
 
     expect(host.getPaletteCommands()).toStrictEqual([])
   })

@@ -21,6 +21,7 @@ func (menuPlugins) ListMenus() []plugincommand.MenuEntry {
 		{PluginID: "org.example.atlas", Menu: manifest.Menu{Location: "titleBar.commands", Command: "atlas.open", Group: "navigate", Order: &order}},
 		{PluginID: "org.example.atlas", Menu: manifest.Menu{Location: "searchResult", Command: "atlas.open"}},
 		{PluginID: "org.example.bare", Menu: manifest.Menu{Location: "titleBar.commands", Command: "bare.run"}},
+		{PluginID: "org.example.crash", Menu: manifest.Menu{Location: "titleBar.commands", Command: "crash.run"}},
 		{PluginID: "org.example.worker", Menu: manifest.Menu{Location: "titleBar.commands", Command: "worker.run"}},
 	}
 }
@@ -28,6 +29,7 @@ func (menuPlugins) ListMenus() []plugincommand.MenuEntry {
 func (menuPlugins) GetParts(pluginID string) plugincommand.Parts {
 	return map[string]plugincommand.Parts{
 		"org.example.atlas":  {HasFrontend: true},
+		"org.example.crash":  {HasBackend: true, HasFrontend: true, IsSuspended: true},
 		"org.example.worker": {HasBackend: true},
 	}[pluginID]
 }
