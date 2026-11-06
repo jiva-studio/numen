@@ -326,14 +326,14 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 }
 
 // putWholeVersion puts the version of a transcript a run before this one finished, where the host
-// has no record of it.
+// has no record of it or records it on the partial file.
 func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
 	listing, err := j.texts.ListVersions(ctx, j.path)
 	if err != nil {
 		return err
 	}
 	for _, version := range listing.Versions {
-		if version.Key == j.key && version.PluginID == PluginID {
+		if version.Key == j.key && version.PluginID == PluginID && isWholeFile(version) {
 			return nil
 		}
 	}
