@@ -436,7 +436,7 @@ func TestURLImportReportsAnAddressNothingCopies(t *testing.T) {
 	}
 }
 
-func TestRegistryListsTheURLImportInstructions(t *testing.T) {
+func TestTheImportToolCarriesItsInstructions(t *testing.T) {
 	s := newReleasedScene(t)
 
 	listing, err := s.registry.ListTools(t.Context())
@@ -444,13 +444,19 @@ func TestRegistryListsTheURLImportInstructions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if listing.Instructions == "" || listing.Instructions != instructions {
-		t.Errorf("the registry lists the instructions %q, want %q", listing.Instructions, instructions)
+	if listing.Instructions != "" {
+		t.Errorf("the registry lists the paragraph %q; the instructions go on the tool", listing.Instructions)
 	}
-	if !strings.Contains(listing.Instructions, "url_import") {
-		t.Errorf("the listed instructions do not name url_import: %q", listing.Instructions)
+	sentences := getToolSentences(listing, "url_import")
+	if len(sentences) == 0 {
+		t.Fatal("url_import lists no instructions")
 	}
-	if strings.Contains(strings.TrimSpace(listing.Instructions), "\n\n") {
-		t.Errorf("the listed instructions are more than one paragraph: %q", listing.Instructions)
+	if !strings.Contains(strings.Join(sentences, " "), "url_import") {
+		t.Errorf("no instruction of url_import names it: %q", sentences)
+	}
+	for _, sentence := range sentences {
+		if !isOneSentence(sentence) {
+			t.Errorf("an instruction of url_import is not one sentence: %q", sentence)
+		}
 	}
 }

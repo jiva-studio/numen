@@ -75,15 +75,15 @@ func TestWriteToolsWithACallNamingNoVaultAreRefused(t *testing.T) {
 	}
 }
 
-func TestInstructionsNameEveryWriteTool(t *testing.T) {
-	_, _, registry := newTwoVaults(t)
-	listing, err := registry.ListTools(t.Context())
-	if err != nil {
-		t.Fatalf("list tools: %v", err)
+func TestTheInstructionsOfEveryWriteToolNameIt(t *testing.T) {
+	listing := listVaultTools(t)
+	byTool := map[string][]string{}
+	for _, tool := range listing.Tools {
+		byTool[tool.Name] = tool.Instructions
 	}
 	for name := range getWriteToolArguments() {
-		if !strings.Contains(listing.Instructions, name) {
-			t.Errorf("the instructions do not name %s:\n%s", name, listing.Instructions)
+		if !slices.ContainsFunc(byTool[name], func(sentence string) bool { return namesTool(sentence, name) }) {
+			t.Errorf("no instruction of %s names it: %q", name, byTool[name])
 		}
 	}
 }
