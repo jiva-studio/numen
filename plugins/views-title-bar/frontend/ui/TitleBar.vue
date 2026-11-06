@@ -22,6 +22,9 @@ import { useToolbarFocus } from './useToolbarFocus'
 import './frame/frame.css'
 import './titleBar.css'
 
+/** The id of the last row of the list; its NUL character keeps it apart from every vault id. */
+const CREATE_VAULT_ROW = '\u0000create-vault'
+
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
@@ -37,6 +40,8 @@ const props = withDefaults(
     commands?: readonly SlotItem[]
     /** The entries of `titleBar.status`. */
     status?: readonly SlotItem[]
+    /** Whether the window runs the command that creates a vault, drawn as the last row of the list. */
+    canCreateVault?: boolean
   }>(),
   {
     platform: 'windows',
@@ -46,6 +51,7 @@ const props = withDefaults(
     vaults: () => ({ vaults: [], current: null }),
     commands: () => [],
     status: () => [],
+    canCreateVault: false,
   },
 )
 
@@ -57,6 +63,8 @@ const emit = defineEmits<{
   (event: 'run-command', command: string): void
   /** A vault that is not the current one was chosen. */
   (event: 'switch-vault', id: string): void
+  /** The last row of the list, which creates a vault, was chosen. */
+  (event: 'create-vault'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -86,9 +94,12 @@ const anchor = ref({ x: 0, y: 0 })
 const triggerWidth = ref(0)
 const hasVaults = computed(() => props.vaults.current !== null && props.vaults.vaults.length > 0)
 const isListOpen = computed(() => isOpen.value && hasVaults.value)
-const items = computed<readonly ListItem[]>(() =>
-  props.vaults.vaults.map(({ id, name }) => ({ id, text: name })),
-)
+const items = computed<readonly ListItem[]>(() => [
+  ...props.vaults.vaults.map(({ id, name }) => ({ id, text: name })),
+  ...(props.canCreateVault
+    ? [{ id: CREATE_VAULT_ROW, text: TITLE_BAR_WORDS.createVault, hasSeparator: true }]
+    : []),
+])
 const current = computed(() => props.vaults.current?.id ?? null)
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -119,7 +130,8 @@ function onToggleList(): void {
 
 function onSwitchVault(id: string): void {
   isOpen.value = false
-  if (id !== current.value) emit('switch-vault', id)
+  if (id === CREATE_VAULT_ROW) emit('create-vault')
+  else if (id !== current.value) emit('switch-vault', id)
 }
 
 function onPressTitle(event: Event): void {

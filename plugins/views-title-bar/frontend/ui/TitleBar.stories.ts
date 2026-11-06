@@ -22,6 +22,8 @@ interface Knobs {
   status: readonly SlotItem[]
   onSwitchVault: (id: string) => void
   onRunCommand: (command: string) => void
+  canCreateVault: boolean
+  onCreateVault: () => void
   /** The width the window is drawn at. */
   width: string
 }
@@ -379,6 +381,22 @@ export const ClosingTheList: Story = {
     await waitFor(() => expect(page.queryByRole('option')).toBeNull())
     await expect(canvasElement.ownerDocument.activeElement).toBe(trigger)
     await expect(args.onSwitchVault).not.toHaveBeenCalled()
+  },
+}
+
+/** In a window that creates vaults, the last row of the list does, below a line. */
+export const CreatingAVault: Story = {
+  args: { vaults: VAULTS, canCreateVault: true, onCreateVault: fn() },
+  play: async ({ canvasElement, args }) => {
+    const page = getPage(canvasElement)
+    await userEvent.click(title(canvasElement))
+    const options = await page.findAllByRole('option')
+    await expect(options.at(-1)?.textContent?.trim()).toBe('Create vault')
+    const line = canvasElement.ownerDocument.querySelector('[role="separator"]')!
+    await expect(line.getBoundingClientRect().height).toBeLessThanOrEqual(1)
+    await expect(line.nextElementSibling).toBe(options.at(-1))
+    await userEvent.click(options.at(-1)!)
+    await expect(args.onCreateVault).toHaveBeenCalledOnce()
   },
 }
 

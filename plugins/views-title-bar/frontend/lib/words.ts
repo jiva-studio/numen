@@ -13,6 +13,8 @@ export interface TitleBarWords {
   readonly search: string
   /** What that list says when the search finds nothing. */
   readonly nothing: string
+  /** The last row of that list, which creates a vault. */
+  readonly createVault: string
 }
 
 export const TITLE_BAR_WORDS: TitleBarWords = {
@@ -25,4 +27,5 @@ export const TITLE_BAR_WORDS: TitleBarWords = {
   switcher: 'Switch vault',
   search: 'Search vaults',
   nothing: 'No vault found',
+  createVault: 'Create vault',
 }

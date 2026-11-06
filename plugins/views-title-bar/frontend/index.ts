@@ -14,6 +14,9 @@ export { TitleBar }
 /** The id the manifest declares the view of the title bar under. */
 export const TITLE_BAR_VIEW = 'bar'
 
+/** The command of the window that creates a vault, which the last row of the list of vaults runs. */
+const CREATE_VAULT = 'app:vault.create'
+
 /** The view of the slot: the bar over the context, with the window buttons where `buttons` says. */
 export function createTitleBarView(context: PluginContext) {
   const buttons = shallowRef(readButtonsSetting(context.getSetting(BUTTONS_SETTING)))
@@ -36,11 +39,15 @@ export function createTitleBarView(context: PluginContext) {
           vaults: hosts.vaults.value,
           commands: hosts.commands.value,
           status: hosts.status.value,
+          canCreateVault: hosts.commandIds.value.includes(CREATE_VAULT),
           onRunCommand: (command: string) => {
             if (context.commands) runInBackground(context.commands.run(command), reportError)
           },
           onSwitchVault: (id: string) => {
             if (context.vaults) runInBackground(context.vaults.switchTo(id), reportError)
+          },
+          onCreateVault: () => {
+            if (context.commands) runInBackground(context.commands.run(CREATE_VAULT), reportError)
           },
           onMinimizeWindow: () => context.window?.minimize(),
           onToggleMaximizeWindow: () => context.window?.toggleMaximize(),

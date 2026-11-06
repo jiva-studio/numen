@@ -14,7 +14,6 @@ const VAULTS: VaultsState = {
     ORCHARD,
     { id: 'greenhouse', name: 'Greenhouse log' },
     { id: 'cellar', name: 'Cellar book' },
-    { id: 'add', name: 'Add a folder' },
   ],
   current: ORCHARD,
 }
@@ -121,15 +120,9 @@ describe('opening the list', () => {
   it('lists the vaults in the order given, the current one marked', async () => {
     await open(mountBar())
 
-    expect(getLabels()).toStrictEqual([
-      'Orchard notes',
-      'Greenhouse log',
-      'Cellar book',
-      'Add a folder',
-    ])
+    expect(getLabels()).toStrictEqual(['Orchard notes', 'Greenhouse log', 'Cellar book'])
     expect(getOptions().map((one) => one.getAttribute('aria-current'))).toStrictEqual([
       'true',
-      null,
       null,
       null,
     ])
@@ -165,6 +158,51 @@ describe('searching the list', () => {
     await open(mountBar({ vaults: [ORCHARD], current: ORCHARD }))
 
     expect(getLabels()).toStrictEqual(['Orchard notes'])
+  })
+})
+
+describe('the row that creates a vault', () => {
+  const mountWithCreate = (canCreateVault: boolean) => {
+    const wrapper = mount(TitleBar, {
+      attachTo: document.body,
+      props: { appName: 'numen', vaults: VAULTS, canCreateVault },
+    })
+    mounted.push(wrapper)
+    return wrapper
+  }
+
+  it('is the last row, below a line, while the window can create a vault', async () => {
+    await open(mountWithCreate(true))
+
+    expect(getLabels()).toStrictEqual([
+      'Orchard notes',
+      'Greenhouse log',
+      'Cellar book',
+      'Create vault',
+    ])
+    const separators = document.body.querySelectorAll('[role="separator"]')
+    expect(separators).toHaveLength(1)
+    expect(separators[0]?.nextElementSibling?.textContent?.trim()).toBe('Create vault')
+  })
+
+  it('is not drawn while the window cannot create a vault', async () => {
+    await open(mountWithCreate(false))
+
+    expect(getLabels()).toStrictEqual(['Orchard notes', 'Greenhouse log', 'Cellar book'])
+    expect(document.body.querySelector('[role="separator"]')).toBeNull()
+  })
+
+  it('reports create-vault and no switch when it is chosen, and closes', async () => {
+    const wrapper = mountWithCreate(true)
+    await open(wrapper)
+
+    getOptions().at(-1)!.click()
+    await nextTick()
+    await nextTick()
+
+    expect(wrapper.emitted('create-vault')).toHaveLength(1)
+    expect(wrapper.emitted('switch-vault')).toBeUndefined()
+    expect(getFrame()).toBeNull()
   })
 })
 

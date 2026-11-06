@@ -151,7 +151,7 @@ describe('the commands of the slots', () => {
     await getButton(bar, 'org.example.tide:chart.open').trigger('click')
 
     expect(context.commands.getRuns()).toStrictEqual([
-      { command: 'org.example.tide:chart.open', target: undefined },
+      { command: 'org.example.tide:chart.open', target: undefined, choice: undefined },
     ])
   })
 
@@ -254,7 +254,7 @@ describe('a submenu in a slot', () => {
     await nextTick()
 
     expect(context.commands.getRuns()).toStrictEqual([
-      { command: 'org.example.tide:log.create', target: undefined },
+      { command: 'org.example.tide:log.create', target: undefined, choice: undefined },
     ])
     expect(document.body.querySelector('[role="menu"]')).toBeNull()
   })
@@ -313,6 +313,39 @@ describe('the title', () => {
     await nextTick()
 
     expect(context.vaults.getSwitches()).toStrictEqual(['greenhouse'])
+  })
+
+  it('runs the command of the window that creates a vault from the last row of the list', async () => {
+    const { context, bar } = mountBar()
+    context.commands.setIds(['app:vault.create'])
+    await setVaults(context)
+
+    await bar.find('[data-title]').trigger('click')
+    await nextTick()
+    const options = [...document.body.querySelectorAll<HTMLElement>('[role="option"]')]
+    expect(options.at(-1)?.textContent?.trim()).toBe('Create vault')
+    options.at(-1)!.click()
+    await nextTick()
+
+    expect(context.commands.getRuns()).toStrictEqual([
+      { command: 'app:vault.create', target: undefined, choice: undefined },
+    ])
+    expect(context.vaults.getSwitches()).toStrictEqual([])
+  })
+
+  it('draws the row that creates a vault only while the window runs that command', async () => {
+    const { context, bar } = mountBar()
+    await setVaults(context)
+    const labels = () =>
+      [...document.body.querySelectorAll('[role="option"]')].map((one) => one.textContent?.trim())
+
+    await bar.find('[data-title]').trigger('click')
+    await nextTick()
+    expect(labels()).not.toContain('Create vault')
+
+    context.commands.setIds(['app:vault.create'])
+    await nextTick()
+    expect(labels()).toContain('Create vault')
   })
 
   it('switches to nothing when the vault the window shows is chosen', async () => {
