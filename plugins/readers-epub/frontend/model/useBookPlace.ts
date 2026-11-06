@@ -31,12 +31,17 @@ const createPlace = (cfi: string, chapter: string): Selector =>
   chapter === '' ? createCfiSelector(cfi) : { ...createCfiSelector(cfi), chapter }
 
 export function useBookPlace(reader: PlacedReader, getTab: () => PlacedTab | undefined) {
-  // The window sets a selector for a search hit and for the place saved before a restart.
+  const reportPlace = (cfi: string, chapter: string) =>
+    getTab()?.reportPlace?.(chapter === '' ? { cfi } : { cfi, chapter })
+
+  // The window sets a selector for a search hit and for the place saved before a restart. The place
+  // the tab moved to is reported at once, and it is not saved again.
   watch(
     () => [getTab()?.selector, reader.isLoading.value] as const,
-    ([selector, isLoading]) => {
+    async ([selector, isLoading]) => {
       const cfi = getSelectorCfi(selector)
-      if (!isLoading && cfi !== null) reader.goToCfi(cfi).catch(() => false)
+      if (isLoading || cfi === null) return
+      if (await reader.goToCfi(cfi).catch(() => false)) reportPlace(cfi, reader.chapter.value)
     },
     { immediate: true },
   )
@@ -53,7 +58,7 @@ export function useBookPlace(reader: PlacedReader, getTab: () => PlacedTab | und
       if (request !== turn || cfi === null) return
       const chapter = reader.chapter.value
       getTab()?.savePlace?.(createPlace(cfi, chapter))
-      getTab()?.reportPlace?.(chapter === '' ? { cfi } : { cfi, chapter })
+      reportPlace(cfi, chapter)
     },
   )
 }

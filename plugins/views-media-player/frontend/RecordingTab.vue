@@ -62,8 +62,10 @@ const goToSelector = (selector: Selector | null | undefined): number | null => {
 }
 
 // The window sets a selector for a search hit and for the place saved before a restart. The one the
-// tab opens with is the place the window already holds for it, so only a later one is saved.
-goToSelector(props.state?.selector)
+// tab opens with is the place the window already holds for it, so it is reported and only a later one
+// is saved.
+const openedAt = goToSelector(props.state?.selector)
+if (openedAt !== null) props.state?.reportPlace?.({ positionSeconds: openedAt / 1000 })
 watch(
   () => props.state?.selector,
   (selector: Selector | null | undefined) => {

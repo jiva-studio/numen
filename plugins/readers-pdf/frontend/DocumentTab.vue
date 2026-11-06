@@ -104,9 +104,25 @@ watch(
     const pageCount = activeState.value?.pages.value.length ?? 0
     if (typeof page === 'number' && pageCount > 0 && !activeState.value?.isLoading.value) {
       readerTab.value?.savePlace?.({ page: page + 1, pageCount })
+    }
+  },
+)
+
+// The place is reported as soon as the document has loaded, the page it opens at included, and again
+// on each later page.
+watch(
+  () =>
+    [
+      activeState.value?.pageNumber.value,
+      activeState.value?.pages.value.length ?? 0,
+      activeState.value?.isLoading.value,
+    ] as const,
+  ([page, pageCount, isLoading]) => {
+    if (typeof page === 'number' && pageCount > 0 && !isLoading) {
       readerTab.value?.reportPlace?.({ page: page + 1, pageCount })
     }
   },
+  { immediate: true },
 )
 
 onUnmounted(() => {
