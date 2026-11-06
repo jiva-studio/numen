@@ -138,7 +138,6 @@ const (
 )
 
 var (
-	GetSharedCommandArguments = pluginport.GetSharedCommandArguments
 	ErrDuplicateSettingKey    = pluginport.ErrDuplicateSettingKey
 	ErrEmptyID                = pluginport.ErrEmptyID
 	ErrEmptyName              = pluginport.ErrEmptyName
@@ -194,4 +193,9 @@ func PluginPermissions() []string { return pluginport.PluginPermissions() }
 
 func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, options PluginSettingOptions) PluginSetting {
 	return pluginport.NewPluginSetting(declared, defaultJSON, options)
+}
+
+// GetSharedCommandArguments returns the arguments the shared command of the full id takes.
+func GetSharedCommandArguments(id string) []PluginCommandArgument {
+	return pluginport.GetSharedCommandArguments(id)
 }

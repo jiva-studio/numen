@@ -288,3 +288,6 @@ func NamesTarget(command Command) bool {
 	condition, err := pluginport.ParseCondition(command.When)
 	return err == nil && condition.NamesTarget()
 }
+
+// IsSharedCommand reports whether the full id is a shared command, which the handlers of plugins run.
+func IsSharedCommand(id string) bool { return pluginport.IsSharedCommand(id) }

@@ -179,12 +179,19 @@ func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) 
 func newLink(path string, parsed address.URL, raw []byte) Link {
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="markdown.Parse ignores FileStat.Size"
 	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, raw)
-	media, _ := note.Frontmatter[mediaKey].(string)
-	page, _ := note.Frontmatter[pageKey].(string)
 	return Link{
 		Vault: "", Path: path, Address: parsed, Key: getKey(parsed), Hash: domain.HashContent(raw),
-		Media: media, Page: page,
+		Media: getText(note.Frontmatter[mediaKey]), Page: getText(note.Frontmatter[pageKey]),
 	}
+}
+
+// getText is the value of a frontmatter key that holds text, and empty for any other.
+func getText(value any) string {
+	text, isText := value.(string)
+	if !isText {
+		return ""
+	}
+	return text
 }
 
 // getKey names what is stored for the text of an address.
@@ -240,26 +247,26 @@ func (l *Links) getAddress(name string) string {
 
 // setAddress writes the address under the key of the note's frontmatter, empty where value is empty,
 // and puts the stored text as the version of the note as it reads then.
-func (l *Links) setAddress(ctx context.Context, link Link, key, value string) (Link, error) {
+func (l *Links) setAddress(ctx context.Context, link Link, key, value string) error {
 	vault := l.getVault(link)
 	raw, stat, err := vault.Read(ctx, link.Path)
 	if err != nil {
-		return Link{}, err
+		return err
 	}
 	doc, err := markdown.Open(raw)
 	if err != nil {
-		return Link{}, err
+		return err
 	}
 	if err := doc.SetScalar(key, value); err != nil {
-		return Link{}, err
+		return err
 	}
 	content := doc.Bytes()
 	if _, err := vault.Write(ctx, link.Path, content, stat); err != nil {
-		return Link{}, err
+		return err
 	}
 	written := newLink(link.Path, link.Address, content)
 	written.Vault = link.Vault
-	return written, l.restoreText(ctx, folder{store: l.getStore(written)}, written)
+	return l.restoreText(ctx, folder{store: l.getStore(written)}, written)
 }
 
 // getVault is the vault of the link.
@@ -584,8 +591,7 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	if err := l.recordCopy(ctx, link, name, media); err != nil {
 		return 0, err
 	}
-	_, err = l.setAddress(ctx, link, mediaKey, l.getAddress(name))
-	return into.byteCount, err
+	return into.byteCount, l.setAddress(ctx, link, mediaKey, l.getAddress(name))
 }
 
 // recordCopy writes down the file the copy of a link is kept in, and what media it holds.
@@ -615,8 +621,7 @@ func (l *Links) DeleteCopy(ctx context.Context, link Link) error {
 			return err
 		}
 	}
-	_, err = l.setAddress(ctx, link, mediaKey, "")
-	return err
+	return l.setAddress(ctx, link, mediaKey, "")
 }
 
 // ReadArticle is the text of the live version of a link, read in the link's vault, and nothing

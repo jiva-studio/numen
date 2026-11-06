@@ -1,14 +1,13 @@
-package trigger_test
+package container
 
 import (
 	"reflect"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 )
 
-func TestCreateConfigNestsTheSettingsByOwnerAndKeyAsTheWindowDoes(t *testing.T) {
+func TestCreateTriggerConfigNestsTheSettingsByOwnerAndKeyAsTheWindowDoes(t *testing.T) {
 	written := `{"app": {"editor.lineNumbers": true}, "org.example.scans": {"isAutomatic": true}}`
 	app := []pluginport.PluginSetting{
 		{Key: "editor.lineNumbers", DefaultJSON: "false"},
@@ -21,7 +20,7 @@ func TestCreateConfigNestsTheSettingsByOwnerAndKeyAsTheWindowDoes(t *testing.T) 
 		}},
 	}
 
-	got, err := trigger.CreateConfig(written, app, plugins)
+	got, err := createTriggerConfig(written, app, plugins)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,8 +34,8 @@ func TestCreateConfigNestsTheSettingsByOwnerAndKeyAsTheWindowDoes(t *testing.T) 
 	}
 }
 
-func TestCreateConfigRejectsASettingsFileThatIsNotJSON(t *testing.T) {
-	if _, err := trigger.CreateConfig("{", nil, nil); err == nil {
+func TestCreateTriggerConfigRejectsASettingsFileThatIsNotJSON(t *testing.T) {
+	if _, err := createTriggerConfig("{", nil, nil); err == nil {
 		t.Error("a settings file that is no JSON made a config")
 	}
 }

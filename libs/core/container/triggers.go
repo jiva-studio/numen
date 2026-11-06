@@ -21,7 +21,7 @@ func (c Config) openTriggers(get *settings.Get) *trigger.Triggers {
 			if err != nil {
 				return nil, err
 			}
-			return trigger.CreateConfig(current.Written, current.App, current.Plugins)
+			return createTriggerConfig(current.Written, current.App, current.Plugins)
 		},
 	)
 }

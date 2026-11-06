@@ -445,7 +445,7 @@ func (u Index) source(
 		if ref.Kind == domain.KindNote && errors.Is(err, textport.ErrNoText) {
 			return u.dropVersionOfNote(ctx, v, path)
 		}
-		return u.saveWithoutText(ctx, v, on, domain.Source{FileStat: ref, Hash: hash}, err, res)
+		return u.saveWithoutText(ctx, v, domain.Source{FileStat: ref, Hash: hash}, err, res)
 	}
 
 	chunks := chunksOf(doc, sizes, u.Legibility)
@@ -473,7 +473,6 @@ func (u Index) source(
 func (u Index) saveWithoutText(
 	ctx context.Context,
 	v domain.Vault,
-	on openVault,
 	source domain.Source,
 	readErr error,
 	res *IndexResult,
