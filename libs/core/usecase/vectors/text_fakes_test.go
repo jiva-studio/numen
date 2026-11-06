@@ -2,6 +2,7 @@ package vectors
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -63,3 +64,12 @@ func (t vaultBookTexts) GetVersionText(ctx context.Context, path string, id doma
 func (vaultBookTexts) RequestText(context.Context, string, string) error { return nil }
 
 func (vaultBookTexts) IsTextSource(context.Context, string) (bool, error) { return true, nil }
+
+func (t vaultBookTexts) GetFileHash(ctx context.Context, path string) (_ string, err error) {
+	file, err := t.files.Open(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	defer func() { err = errors.Join(err, file.Close()) }()
+	return domain.HashReader(file)
+}

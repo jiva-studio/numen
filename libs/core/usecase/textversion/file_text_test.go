@@ -10,7 +10,7 @@ import (
 
 func TestFileTextReadsTheLiveTextAndRecordsAnEdit(t *testing.T) {
 	s := newScene(t)
-	text, err := textversion.NewFileText(s.versions, fileReaders(s.files))
+	text, err := textversion.NewFileText(s.versions)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,11 +35,8 @@ func TestFileTextReadsTheLiveTextAndRecordsAnEdit(t *testing.T) {
 	}
 }
 
-func TestNewFileTextRequiresVersionsAndReaders(t *testing.T) {
-	if _, err := textversion.NewFileText(nil, fileReaders{}); err == nil {
+func TestNewFileTextRequiresVersions(t *testing.T) {
+	if _, err := textversion.NewFileText(nil); err == nil {
 		t.Error("a file text was made without versions")
-	}
-	if _, err := textversion.NewFileText(newScene(t).versions, nil); err == nil {
-		t.Error("a file text was made without readers")
 	}
 }

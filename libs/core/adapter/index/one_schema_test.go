@@ -66,7 +66,8 @@ func openRaw(t *testing.T, path string) *sql.DB {
 	return raw
 }
 
-// The dump in testdata is what the ten old steps produced, applied in order on an empty database.
+// The dump in testdata is what the ten old steps produced, applied in order on an empty database,
+// with the content hash columns of sources and the renamed hashes of text_versions.
 func TestAFreshIndexHasExactlyTheSchemaTheTenOldStepsProduced(t *testing.T) {
 	ctx := t.Context()
 	raw, err := os.ReadFile(filepath.Join("testdata", "schema_of_the_ten_steps.json"))

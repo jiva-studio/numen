@@ -35,10 +35,12 @@ type scene struct {
 	ocr      *fakeProvider
 	fixer    *fakeProvider
 	files    map[string][]byte
-	folders  *memoryFiles
-	repo     *memoryVersions
-	made     providers
-	byID     map[string]*fakeProvider
+	// reads counts the reads and opens of vault files through the readers the versions were given.
+	reads   int
+	folders *memoryFiles
+	repo    *memoryVersions
+	made    providers
+	byID    map[string]*fakeProvider
 }
 
 func newScene(t *testing.T) *scene {
@@ -72,7 +74,7 @@ func newScene(t *testing.T) *scene {
 		}}
 	s.made = providers{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
 	s.byID = map[string]*fakeProvider{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
-	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, s.made, fileReaders(s.files), steppingClock())
+	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, s.made, readCounter{fileReaders: s.files, reads: &s.reads}, steppingClock())
 	if err != nil {
 		t.Fatal(err)
 	}

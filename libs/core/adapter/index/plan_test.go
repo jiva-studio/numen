@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/note"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/version"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
@@ -80,6 +81,12 @@ func getExpectedPlans() []struct {
 		// "!" of the plan of the vector table is its lookup of one row by key.
 		{chunk.Statements(), "coarse_prefix", []any{getCoarse(), 1, "notes/", 10, "notes0"}, []string{"(vault_id=? AND path>? AND path<?)", "chunks_by_source", "SCAN v VIRTUAL TABLE INDEX 5:2!"}},
 		{chunk.Statements(), "coarse", []any{getCoarse(), 1, 10}, []string{"chunks_vec"}},
+		// The cached hash of a file is its source row, found by vault and path. The
+		// vault is given by its identifier, then the path; a save gives the record's
+		// hash, size, modification time, file id and hash time, the vault and path, and
+		// the size, modification time and hash the row must hold.
+		{version.Statements(), "find_file_hash", []any{"first", "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)"}},
+		{version.Statements(), "save_file_hash", []any{"h", 1, 1, 7, 9, "first", "folder/note-00001.md", 1, 1, "h"}, []string{"(vault_id=? AND path=?)"}},
 	}
 }
 
@@ -114,7 +121,12 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 	}
 
 	for _, q := range getExpectedPlans() {
-		plan := planFor(ctx, t, db, q.statements[q.name], q.args)
+		statement, ok := q.statements[q.name]
+		if !ok {
+			t.Errorf("there is no statement %s", q.name)
+			continue
+		}
+		plan := planFor(ctx, t, db, statement, q.args)
 		t.Logf("%s:\n    %s", q.name, strings.Join(plan, "\n    "))
 
 		joined := strings.Join(plan, "\n")

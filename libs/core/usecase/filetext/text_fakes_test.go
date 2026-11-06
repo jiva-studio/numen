@@ -2,6 +2,7 @@ package filetext
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"sync"
@@ -165,4 +166,14 @@ func (s *libraryTexts) leaveOut(path string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.outside[path] = true
+}
+
+// GetFileHash hashes the file from a stream of the shelf, which counts it as a read.
+func (t libraryVaultTexts) GetFileHash(ctx context.Context, path string) (_ string, err error) {
+	file, err := t.texts.shelves[t.vault.ID].Open(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	defer func() { err = errors.Join(err, file.Close()) }()
+	return domain.HashReader(file)
 }

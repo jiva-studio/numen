@@ -35,6 +35,10 @@ func (versionTexts) RequestText(context.Context, string, string) error { return 
 
 func (versionTexts) IsTextSource(context.Context, string) (bool, error) { return true, nil }
 
+func (t versionTexts) GetFileHash(context.Context, string) (string, error) {
+	return t.text.Version().SourceHash, nil
+}
+
 func TestAPassageOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
