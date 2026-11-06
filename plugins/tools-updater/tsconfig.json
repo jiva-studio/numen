@@ -15,7 +15,7 @@
     "noEmit": true,
     "skipLibCheck": true,
     "jsx": "preserve",
-    "types": ["vite/client", "node"]
+    "types": ["vite/client"]
   },
   "include": ["frontend/**/*.ts", "frontend/**/*.vue"]
 }
