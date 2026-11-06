@@ -221,6 +221,7 @@ func (h *workspaceHandler) WriteOpenTabs(
 		})
 	}
 	h.state.openTabs.Store(&open)
+	h.state.openTabsReports.notify()
 	if h.state.NotifyOpenTabs != nil {
 		h.state.NotifyOpenTabs(open)
 	}
@@ -298,6 +299,8 @@ func (h *workspaceHandler) WatchFocus(
 ) error {
 	line, isDone := h.state.Places.subscribe()
 	defer isDone()
+	tabIDs, isTabIDsDone := h.state.TabIDs.subscribe()
+	defer isTabIDsDone()
 
 	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
@@ -309,6 +312,13 @@ func (h *workspaceHandler) WatchFocus(
 		case <-repeat.C:
 			// An empty response is a keepalive that fails when the client has disconnected.
 			if err := out.Send(&v1.WatchFocusResponse{}); err != nil {
+				return err
+			}
+		case id, open := <-tabIDs:
+			if !open {
+				return nil
+			}
+			if err := out.Send(&v1.WatchFocusResponse{TabId: id}); err != nil {
 				return err
 			}
 		case pos, open := <-line:

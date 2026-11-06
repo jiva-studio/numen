@@ -90,6 +90,14 @@ func (c *Client) ReadOpenTabs(ctx context.Context) ([]OpenTab, string, error) {
 	return tabs, res.Msg.GetActiveId(), nil
 }
 
-func (c *Client) ActivateTab(context.Context, string) (OpenTab, string, error) {
-	return OpenTab{}, "", errors.New("host: ActivateTab is not implemented")
+func (c *Client) ActivateTab(ctx context.Context, id string) (OpenTab, string, error) {
+	res, err := c.window.ActivateTab(ctx, request(c, &v1.ActivateTabRequest{TabId: id}))
+	if err != nil {
+		return OpenTab{}, "", readWindowCallError(err)
+	}
+	if err := readWindowError(res.Msg.GetError()); err != nil {
+		return OpenTab{}, "", err
+	}
+	tab := res.Msg.GetTab()
+	return OpenTab{ID: tab.GetId(), Kind: tab.GetKind(), Path: tab.GetPath(), Title: tab.GetTitle(), State: tab.GetState()}, res.Msg.GetActiveId(), nil
 }

@@ -61,23 +61,26 @@ async function handleVaultChange(change: VaultChangeData, deps: WindowStreamsDep
 }
 
 async function handleFocusChange(
-  request: { path?: string; ranges: readonly TextRange[] },
-  travelTo: (path: string) => Promise<void> | void,
-  openFileAt: (path: string, spans: readonly TextRange[]) => void,
+  request: { path?: string; ranges: readonly TextRange[]; tabId?: string },
+  deps: Pick<WindowStreamsDeps, 'travelTo' | 'openFileAt' | 'activateTab'>,
 ): Promise<void> {
+  if (request.tabId) {
+    deps.activateTab(request.tabId)
+    return
+  }
   if (!request.path) return
   const ranges = request.ranges
     .map((one) => ({ start: one.start, end: one.end }))
     .filter((one) => one.end > one.start)
   if (!ranges.length) {
-    await travelTo(request.path)
+    await deps.travelTo(request.path)
     return
   }
-  openFileAt(request.path, ranges)
+  deps.openFileAt(request.path, ranges)
 }
 
 export function createWindowStreams(deps: WindowStreamsDeps) {
-  const { core, listening, isOpen, setLost, wait, tasks, reportChange, travelTo, openFileAt } = deps
+  const { core, listening, isOpen, setLost, wait, tasks, reportChange } = deps
 
   /** Every stream is read the same way, and taken up again the same way. */
   const follows = createFollower({
@@ -106,7 +109,7 @@ export function createWindowStreams(deps: WindowStreamsDeps) {
   const watch = () =>
     follows(
       () => core.watchFocus(listening.signal),
-      (request) => handleFocusChange(request, travelTo, openFileAt),
+      (request) => handleFocusChange(request, deps),
     )
 
   const followTasks = () =>

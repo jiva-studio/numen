@@ -290,6 +290,7 @@ func createWindow(
 	state := &State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
+		TabIDs:       newTabIDBroadcaster(),
 		TabLinks:     tabLinks,
 		Edits:        newEditBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},

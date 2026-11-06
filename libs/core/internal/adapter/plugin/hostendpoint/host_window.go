@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
+	"slices"
 
 	"connectrpc.com/connect"
 
@@ -112,7 +113,28 @@ func (e *windowEndpoint) ReadOpenTabs(
 }
 
 func (e *windowEndpoint) ActivateTab(
-	context.Context, *connect.Request[v1.ActivateTabRequest],
+	ctx context.Context, req *connect.Request[v1.ActivateTabRequest],
 ) (*connect.Response[v1.ActivateTabResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("ActivateTab is not implemented"))
+	window, err := e.begin(req.Header())
+	if err != nil {
+		return nil, err
+	}
+	if window == nil {
+		return connect.NewResponse(&v1.ActivateTabResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
+	}
+	id := req.Msg.GetTabId()
+	open, err := window.ActivateTab(ctx, id)
+	code, err := answerWindow(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.ActivateTabResponse{Error: code}), err
+	}
+	index := slices.IndexFunc(open.Tabs, func(tab domain.Tab) bool { return tab.ID == id })
+	if index < 0 {
+		return connect.NewResponse(&v1.ActivateTabResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND}), nil
+	}
+	tab := open.Tabs[index]
+	return connect.NewResponse(&v1.ActivateTabResponse{
+		Tab:      &v1.Tab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, State: tab.State},
+		ActiveId: open.ActiveID,
+	}), nil
 }
