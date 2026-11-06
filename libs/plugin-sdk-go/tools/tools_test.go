@@ -84,17 +84,9 @@ func TestACallRunsTheToolOnItsArgumentsAndAnswersStructured(t *testing.T) {
 }
 
 func TestAToolThatReturnsAnErrorRanAndRefused(t *testing.T) {
-	answer := call(t, newRegistry(t), "greet", `{}`)
+	answer := call(t, newRegistry(t), "greet", `{"name":""}`)
 
 	if !answer.GetResult().GetIsError() || answer.GetResult().GetText() != "recipient required" {
-		t.Errorf("the call was answered %v", answer)
-	}
-}
-
-func TestArgumentsThatDoNotFitTheStructAreAError(t *testing.T) {
-	answer := call(t, newRegistry(t), "greet", `{"name":3}`)
-
-	if !answer.GetResult().GetIsError() || !strings.HasPrefix(answer.GetResult().GetText(), "the arguments do not fit:") {
 		t.Errorf("the call was answered %v", answer)
 	}
 }

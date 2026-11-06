@@ -4,8 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"slices"
+	"strconv"
 	"sync"
 	"testing"
+	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -399,5 +403,224 @@ func TestSanitizeInputSchema(t *testing.T) {
 			result := sanitizeInputSchema(tc.input)
 			tc.validate(t, result)
 		})
+	}
+}
+
+func TestToolAnnotationsFollowEffectStepAndRequires(t *testing.T) {
+	t.Parallel()
+	client := &fakeToolClient{tools: []*tools.ToolInfo{
+		{Name: "pond_read", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadOnly},
+		{Name: "pond_fetch", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadOnly, Requires: []string{"network:outbound"}},
+		{Name: "pond_write", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadWrite, Step: tools.ByEffect},
+		{Name: "pond_drain", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadWrite, Step: tools.Remove, Requires: []string{"vault:manage"}},
+		{Name: "pond_import", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadWrite, Step: tools.ByEffect, Requires: []string{"network:outbound"}},
+		{Name: "pond_rename", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadWrite, Step: tools.Move},
+	}}
+	truth, falsehood := true, false
+	want := map[string]sdk.ToolAnnotations{
+		"pond_read":   {ReadOnlyHint: true, IdempotentHint: true, DestructiveHint: nil, OpenWorldHint: &falsehood},
+		"pond_fetch":  {ReadOnlyHint: true, IdempotentHint: true, DestructiveHint: nil, OpenWorldHint: &truth},
+		"pond_write":  {ReadOnlyHint: false, IdempotentHint: false, DestructiveHint: &falsehood, OpenWorldHint: &falsehood},
+		"pond_drain":  {ReadOnlyHint: false, IdempotentHint: false, DestructiveHint: &truth, OpenWorldHint: &falsehood},
+		"pond_import": {ReadOnlyHint: false, IdempotentHint: false, DestructiveHint: &falsehood, OpenWorldHint: &truth},
+		"pond_rename": {ReadOnlyHint: false, IdempotentHint: false, DestructiveHint: &falsehood, OpenWorldHint: &falsehood},
+	}
+	srv, err := NewServer(Config{}, client)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := connectInMemory(t, srv, nil)
+
+	listed, err := session.ListTools(t.Context(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(listed.Tools) != len(want) {
+		t.Fatalf("tools/list returned %d tools, want %d", len(listed.Tools), len(want))
+	}
+	for _, tool := range listed.Tools {
+		expected, isKnown := want[tool.Name]
+		if !isKnown {
+			t.Errorf("tools/list returned the tool %s", tool.Name)
+			continue
+		}
+		if got := describeAnnotations(tool.Annotations); got != describeAnnotations(&expected) {
+			t.Errorf("%s is annotated %s, want %s", tool.Name, got, describeAnnotations(&expected))
+		}
+	}
+}
+
+// describeAnnotations writes the hints of annotations, with nil for an unset hint.
+func describeAnnotations(annotations *sdk.ToolAnnotations) string {
+	if annotations == nil {
+		return "no annotations"
+	}
+	describe := func(hint *bool) string {
+		if hint == nil {
+			return "nil"
+		}
+		return strconv.FormatBool(*hint)
+	}
+	return fmt.Sprintf("readOnly=%t idempotent=%t destructive=%s openWorld=%s",
+		annotations.ReadOnlyHint, annotations.IdempotentHint,
+		describe(annotations.DestructiveHint), describe(annotations.OpenWorldHint))
+}
+
+// connectInMemory connects an MCP client with the options to the server over in-memory transports.
+func connectInMemory(t *testing.T, srv *Server, opts *sdk.ClientOptions) *sdk.ClientSession {
+	t.Helper()
+	serverSide, clientSide := sdk.NewInMemoryTransports()
+	if _, err := srv.GetMCPServer().Connect(t.Context(), serverSide, nil); err != nil {
+		t.Fatal(err)
+	}
+	session, err := sdk.NewClient(&sdk.Implementation{Name: "pond-client"}, opts).Connect(t.Context(), clientSide, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanup.CloseAfter(t, session)
+	return session
+}
+
+// listChangedDelay is how long a test waits for a notifications/tools/list_changed. go-sdk sends one
+// 10ms after the last change of the tools.
+const listChangedDelay = 500 * time.Millisecond
+
+// connectCountingNotifications connects an MCP client that sends every notifications/tools/list_changed
+// it receives to the returned channel.
+func connectCountingNotifications(t *testing.T, srv *Server) (*sdk.ClientSession, <-chan struct{}) {
+	t.Helper()
+	notifications := make(chan struct{}, 64)
+	opts := &sdk.ClientOptions{
+		ToolListChangedHandler: func(context.Context, *sdk.ToolListChangedRequest) {
+			select {
+			case notifications <- struct{}{}:
+			default:
+			}
+		},
+	}
+	return connectInMemory(t, srv, opts), notifications
+}
+
+func listTools(t *testing.T, session *sdk.ClientSession) []*sdk.Tool {
+	t.Helper()
+	listed, err := session.ListTools(t.Context(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return listed.Tools
+}
+
+// waitForNotification fails the test unless a notification arrives within five seconds.
+func waitForNotification(t *testing.T, notifications <-chan struct{}, what string) {
+	t.Helper()
+	select {
+	case <-notifications:
+	case <-time.After(5 * time.Second):
+		t.Fatalf("no notifications/tools/list_changed arrived after %s", what)
+	}
+}
+
+// drainNotifications waits until no notification has arrived for listChangedDelay.
+func drainNotifications(notifications <-chan struct{}) {
+	for {
+		select {
+		case <-notifications:
+		case <-time.After(listChangedDelay):
+			return
+		}
+	}
+}
+
+func newPondClient() *fakeToolClient {
+	return &fakeToolClient{tools: []*tools.ToolInfo{
+		{Name: "pond_read", Description: "Reads a pond note", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadOnly},
+		{Name: "pond_write", Description: "Writes a pond note", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadWrite},
+	}}
+}
+
+func TestListingUnchangedToolsSendsNoListChangedNotification(t *testing.T) {
+	t.Parallel()
+	srv, err := NewServer(Config{}, newPondClient())
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, notifications := connectCountingNotifications(t, srv)
+
+	for range 3 {
+		listTools(t, session)
+	}
+
+	select {
+	case <-notifications:
+		t.Error("a notifications/tools/list_changed arrived though the host listed the same tools")
+	case <-time.After(listChangedDelay):
+	}
+}
+
+func TestAChangedDescriptionSendsAListChangedNotification(t *testing.T) {
+	t.Parallel()
+	client := newPondClient()
+	srv, err := NewServer(Config{}, client)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, notifications := connectCountingNotifications(t, srv)
+	listTools(t, session)
+	drainNotifications(notifications)
+
+	client.mu.Lock()
+	client.tools[0] = &tools.ToolInfo{Name: "pond_read", Description: "Reads a pond note and its margins", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadOnly}
+	client.mu.Unlock()
+	toolList := listTools(t, session)
+
+	waitForNotification(t, notifications, "a changed description")
+	if index := slices.IndexFunc(toolList, func(tool *sdk.Tool) bool { return tool.Name == "pond_read" }); index < 0 ||
+		toolList[index].Description != "Reads a pond note and its margins" {
+		t.Errorf("tools/list returned %v, want pond_read with the changed description", toolList)
+	}
+}
+
+func TestAnAddedToolSendsAListChangedNotification(t *testing.T) {
+	t.Parallel()
+	client := newPondClient()
+	srv, err := NewServer(Config{}, client)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, notifications := connectCountingNotifications(t, srv)
+	listTools(t, session)
+	drainNotifications(notifications)
+
+	client.mu.Lock()
+	client.tools = append(client.tools, &tools.ToolInfo{Name: "pond_fill", Description: "Fills a pond", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadWrite})
+	client.mu.Unlock()
+	toolList := listTools(t, session)
+
+	waitForNotification(t, notifications, "an added tool")
+	if len(toolList) != 3 {
+		t.Errorf("tools/list returned %d tools, want 3", len(toolList))
+	}
+}
+
+func TestARemovedToolSendsAListChangedNotification(t *testing.T) {
+	t.Parallel()
+	client := newPondClient()
+	srv, err := NewServer(Config{}, client)
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, notifications := connectCountingNotifications(t, srv)
+	listTools(t, session)
+	drainNotifications(notifications)
+
+	client.mu.Lock()
+	client.tools = client.tools[:1]
+	client.mu.Unlock()
+	toolList := listTools(t, session)
+
+	waitForNotification(t, notifications, "a removed tool")
+	if len(toolList) != 1 || toolList[0].Name != "pond_read" {
+		t.Errorf("tools/list returned %v, want pond_read alone", toolList)
 	}
 }

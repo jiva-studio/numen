@@ -1,176 +1,240 @@
 package service
 
 import (
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-func TestCreateRandomToken(t *testing.T) {
-	t.Parallel()
+const gardenToken = "garden-token-4417"
 
-	token1, err := createRandomToken()
+// newServedHandler serves the handler of a server whose token is token.
+func newServedHandler(t *testing.T, token string) (*Server, string) {
+	t.Helper()
+	host := &instructedHost{listing: tools.Listing{Tools: []*tools.ToolInfo{newReadTool("orchard_pick")}}}
+	srv, err := NewServer(Config{Token: token}, host)
 	if err != nil {
-		t.Fatalf("unexpected error creating token: %v", err)
+		t.Fatal(err)
 	}
-	if len(token1) != 64 {
-		t.Fatalf("expected 64 character hex token, got %d", len(token1))
-	}
+	served := httptest.NewServer(srv.Handler())
+	t.Cleanup(served.Close)
+	return srv, served.URL
+}
 
-	token2, err := createRandomToken()
+// sendRequest sends a request of the method to target with the headers and returns the answer with
+// its body read.
+func sendRequest(t *testing.T, method, target string, headers map[string]string) *http.Response {
+	t.Helper()
+	var body io.Reader
+	if method == http.MethodPost {
+		body = strings.NewReader(fmt.Sprintf(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":%s}`, initializeParams))
+	}
+	req, err := http.NewRequestWithContext(t.Context(), method, target, body)
 	if err != nil {
-		t.Fatalf("unexpected error creating second token: %v", err)
+		t.Fatal(err)
 	}
-	if token1 == token2 {
-		t.Fatal("expected distinct random tokens")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.Copy(io.Discard, res.Body); err != nil {
+		t.Error(err)
+	}
+	if err := res.Body.Close(); err != nil {
+		t.Error(err)
+	}
+	return res
+}
+
+func assertUnauthorizedAnswer(t *testing.T, res *http.Response, what string) {
+	t.Helper()
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Errorf("%s was answered %d, want 401", what, res.StatusCode)
+	}
+	if got := res.Header.Get("WWW-Authenticate"); got != `Bearer realm="numen"` {
+		t.Errorf("%s was answered with WWW-Authenticate %q, want Bearer realm=\"numen\"", what, got)
 	}
 }
 
-func TestHasValidToken(t *testing.T) {
+func TestARequestWithTheBearerTokenIsServed(t *testing.T) {
+	t.Parallel()
+	_, url := newServedHandler(t, gardenToken)
+
+	res := sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Authorization": "Bearer " + gardenToken})
+
+	if res.StatusCode != http.StatusOK {
+		t.Errorf("an initialize with the token was answered %d, want 200", res.StatusCode)
+	}
+}
+
+func TestARequestWithoutTheTokenGets401(t *testing.T) {
+	t.Parallel()
+	_, url := newServedHandler(t, gardenToken)
+
+	res := sendRequest(t, http.MethodPost, url+"/mcp", nil)
+
+	assertUnauthorizedAnswer(t, res, "an initialize without the token")
+}
+
+func TestARequestWithAWrongTokenGets401(t *testing.T) {
+	t.Parallel()
+	_, url := newServedHandler(t, gardenToken)
+
+	res := sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Authorization": "Bearer garden-token-4418"})
+
+	assertUnauthorizedAnswer(t, res, "an initialize with a wrong token")
+}
+
+func TestATokenInTheQueryGets401(t *testing.T) {
+	t.Parallel()
+	_, url := newServedHandler(t, gardenToken)
+
+	res := sendRequest(t, http.MethodPost, url+"/mcp?token="+gardenToken, nil)
+
+	assertUnauthorizedAnswer(t, res, "an initialize with the token in the query")
+}
+
+func TestAServerMadeWithoutATokenHasAnEmptyToken(t *testing.T) {
 	t.Parallel()
 
-	token := "test-secret-token"
-
-	tests := []struct {
-		name       string
-		authHeader string
-		queryToken string
-		expected   bool
-	}{
-		{
-			name:       "valid bearer header",
-			authHeader: "Bearer test-secret-token",
-			expected:   true,
-		},
-		{
-			name:       "invalid bearer header",
-			authHeader: "Bearer wrong-token",
-			expected:   false,
-		},
-		{
-			name:       "valid query token",
-			queryToken: "test-secret-token",
-			expected:   true,
-		},
-		{
-			name:       "invalid query token",
-			queryToken: "wrong-token",
-			expected:   false,
-		},
-		{
-			name:     "no token provided",
-			expected: false,
-		},
+	srv, err := NewServer(Config{}, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			url := "http://localhost/mcp"
-			if tc.queryToken != "" {
-				url += "?token=" + tc.queryToken
-			}
-			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
-			if tc.authHeader != "" {
-				req.Header.Set("Authorization", tc.authHeader)
-			}
-
-			if got := hasValidToken(token, req); got != tc.expected {
-				t.Fatalf("hasValidToken() = %v, want %v", got, tc.expected)
-			}
-		})
-	}
-
-	// Empty configured token allows everything.
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/mcp", nil)
-	if !hasValidToken("", req) {
-		t.Fatal("expected empty token to allow access")
+	if got := srv.GetToken(); got != "" {
+		t.Errorf("a server made without a token has the token %q", got)
 	}
 }
 
-type statusRecorder struct {
-	*httptest.ResponseRecorder
-	statusCode int
-}
-
-func (r *statusRecorder) WriteHeader(code int) {
-	r.statusCode = code
-	r.ResponseRecorder.WriteHeader(code)
-}
-
-func TestRequireToken(t *testing.T) {
+func TestAnEmptyTokenLetsNoRequestThrough(t *testing.T) {
 	t.Parallel()
+	srv, url := newServedHandler(t, gardenToken)
+	srv.SetToken("")
 
-	token := "secret"
-	innerCalled := false
-	inner := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		innerCalled = true
-		w.WriteHeader(http.StatusOK)
+	for _, headers := range []map[string]string{
+		nil,
+		{"Authorization": "Bearer "},
+		{"Authorization": "Bearer " + gardenToken},
+	} {
+		res := sendRequest(t, http.MethodPost, url+"/mcp", headers)
+		assertUnauthorizedAnswer(t, res, fmt.Sprintf("an initialize with the headers %v to a server with an empty token", headers))
+	}
+}
+
+func TestASetTokenRefusesTheOldOneAndServesTheNewOne(t *testing.T) {
+	t.Parallel()
+	srv, url := newServedHandler(t, gardenToken)
+
+	srv.SetToken("orchard-token-9021")
+
+	assertUnauthorizedAnswer(t, sendRequest(t, http.MethodPost, url+"/mcp",
+		map[string]string{"Authorization": "Bearer " + gardenToken}), "an initialize with the old token")
+	if res := sendRequest(t, http.MethodPost, url+"/mcp",
+		map[string]string{"Authorization": "Bearer orchard-token-9021"}); res.StatusCode != http.StatusOK {
+		t.Errorf("an initialize with the new token was answered %d, want 200", res.StatusCode)
+	}
+}
+
+func TestAnOptionsRequestWithoutTheTokenGets401(t *testing.T) {
+	t.Parallel()
+	_, url := newServedHandler(t, gardenToken)
+
+	res := sendRequest(t, http.MethodOptions, url+"/mcp", map[string]string{
+		"Access-Control-Request-Method":  "POST",
+		"Access-Control-Request-Headers": "authorization, content-type",
 	})
 
-	handler := requireToken(token, inner)
+	assertUnauthorizedAnswer(t, res, "an OPTIONS request without the token")
+}
 
-	// Options preflight
-	reqOpts := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/mcp", nil)
-	recOpts := &statusRecorder{ResponseRecorder: httptest.NewRecorder()}
-	handler.ServeHTTP(recOpts, reqOpts)
-	if recOpts.statusCode != http.StatusOK {
-		t.Fatalf("OPTIONS wrote status %d, want 200", recOpts.statusCode)
-	}
-	if got := recOpts.Header().Get("Access-Control-Allow-Origin"); got != "*" {
-		t.Fatalf("Access-Control-Allow-Origin = %q, want *", got)
-	}
-	if got := recOpts.Header().Get("Access-Control-Allow-Methods"); got != "GET, POST, OPTIONS" {
-		t.Fatalf("Access-Control-Allow-Methods = %q, want GET, POST, OPTIONS", got)
-	}
-	if got := recOpts.Header().Get("Access-Control-Allow-Headers"); got != "Authorization, Content-Type" {
-		t.Fatalf("Access-Control-Allow-Headers = %q, want Authorization, Content-Type", got)
+func TestNoAnswerCarriesACORSHeader(t *testing.T) {
+	t.Parallel()
+	_, url := newServedHandler(t, gardenToken)
+	authorized := map[string]string{"Authorization": "Bearer " + gardenToken}
+
+	answers := map[string]*http.Response{
+		"an initialize with the token":       sendRequest(t, http.MethodPost, url+"/mcp", authorized),
+		"an initialize without the token":    sendRequest(t, http.MethodPost, url+"/mcp", nil),
+		"an OPTIONS request without a token": sendRequest(t, http.MethodOptions, url+"/mcp", nil),
+		"an OPTIONS request with the token":  sendRequest(t, http.MethodOptions, url+"/mcp", authorized),
 	}
 
-	// Unauthorized request
-	reqUnauth := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/mcp", nil)
-	recUnauth := httptest.NewRecorder()
-	handler.ServeHTTP(recUnauth, reqUnauth)
-	if recUnauth.Code != http.StatusUnauthorized {
-		t.Fatalf("unauthorized returned %d, want 401", recUnauth.Code)
-	}
-	if got := recUnauth.Header().Get("WWW-Authenticate"); got != `Bearer realm="numen"` {
-		t.Fatalf("WWW-Authenticate = %q, want Bearer realm=\"numen\"", got)
-	}
-	if innerCalled {
-		t.Fatal("inner handler called when unauthorized")
-	}
-
-	// Authorized request
-	reqAuth := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/mcp", nil)
-	reqAuth.Header.Set("Authorization", "Bearer secret")
-	recAuth := httptest.NewRecorder()
-	handler.ServeHTTP(recAuth, reqAuth)
-	if recAuth.Code != http.StatusOK {
-		t.Fatalf("authorized returned %d, want 200", recAuth.Code)
-	}
-	if got := recAuth.Header().Get("Access-Control-Allow-Origin"); got != "*" {
-		t.Fatalf("Access-Control-Allow-Origin = %q, want *", got)
-	}
-	if !innerCalled {
-		t.Fatal("inner handler not called when authorized")
+	for what, res := range answers {
+		for key := range res.Header {
+			if strings.HasPrefix(http.CanonicalHeaderKey(key), "Access-Control-Allow-") {
+				t.Errorf("%s was answered with the header %s: %q", what, key, res.Header.Get(key))
+			}
+		}
 	}
 }
 
-func TestReadConfig(t *testing.T) {
-	t.Setenv("MCP_TOKEN", "")
+func TestARequestFromAnOriginOutsideTheMachineGets403(t *testing.T) {
+	t.Parallel()
+	_, url := newServedHandler(t, gardenToken)
+
+	for _, origin := range []string{
+		"null",
+		"http://example.com",
+		"https://example.com:3333",
+		"http://127.0.0.1.example.com",
+		"http://localhost.example.com",
+		"http://192.168.1.20:3333",
+		"ftp://localhost",
+	} {
+		withToken := sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{
+			"Origin": origin, "Authorization": "Bearer " + gardenToken,
+		})
+		if withToken.StatusCode != http.StatusForbidden {
+			t.Errorf("an initialize with the token from the origin %s was answered %d, want 403", origin, withToken.StatusCode)
+		}
+		withoutToken := sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Origin": origin})
+		if withoutToken.StatusCode != http.StatusForbidden {
+			t.Errorf("an initialize without the token from the origin %s was answered %d, want 403", origin, withoutToken.StatusCode)
+		}
+	}
+}
+
+func TestARequestFromALoopbackOriginIsCheckedForTheTokenOnly(t *testing.T) {
+	t.Parallel()
+	_, url := newServedHandler(t, gardenToken)
+
+	for _, origin := range []string{
+		"http://localhost",
+		"http://localhost:5173",
+		"https://localhost:8443",
+		"http://127.0.0.1:3333",
+		"http://127.8.9.10",
+		"http://[::1]:3333",
+	} {
+		res := sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{
+			"Origin": origin, "Authorization": "Bearer " + gardenToken,
+		})
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("an initialize with the token from the origin %s was answered %d, want 200", origin, res.StatusCode)
+		}
+		assertUnauthorizedAnswer(t, sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Origin": origin}),
+			"an initialize without the token from the origin "+origin)
+	}
+}
+
+func TestReadConfigReadsTheTokenValueOnly(t *testing.T) {
+	t.Setenv("MCP_TOKEN", "env-token-5150")
 
 	if cfg := readConfig(nil); cfg.Token != "" {
-		t.Fatalf("expected empty config, got %+v", cfg)
+		t.Errorf("readConfig without values = %+v, want an empty token", cfg)
 	}
-
-	t.Setenv("MCP_TOKEN", "env-token")
-	if cfg := readConfig(nil); cfg.Token != "env-token" {
-		t.Fatalf("expected env config, got %+v", cfg)
-	}
-
 	if cfg := readConfig(map[string]string{"port": "9002", "token": " map-token "}); cfg.Token != "map-token" {
-		t.Fatalf("expected the configured token, got %+v", cfg)
+		t.Errorf("readConfig = %+v, want the configured token trimmed", cfg)
 	}
 }

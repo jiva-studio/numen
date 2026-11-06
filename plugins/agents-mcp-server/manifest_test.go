@@ -76,3 +76,32 @@ func TestManifestDeclaresTheMCPListenerOnThePortSetting(t *testing.T) {
 		t.Errorf("setting port = %+v, want a number with default 3333", port)
 	}
 }
+
+func TestManifestDeclaresTheTokenSettingAsAStringWithoutADefault(t *testing.T) {
+	t.Parallel()
+
+	type setting struct {
+		Key     string          `json:"key"`
+		Type    string          `json:"type"`
+		Title   string          `json:"title"`
+		Default json.RawMessage `json:"default"`
+	}
+	var manifest struct {
+		Settings []setting `json:"settings"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatalf("failed to unmarshal manifest: %v", err)
+	}
+
+	index := slices.IndexFunc(manifest.Settings, func(s setting) bool { return s.Key == "token" })
+	if index < 0 {
+		t.Fatal("manifest declares no setting token")
+	}
+	token := manifest.Settings[index]
+	if token.Type != "string" || token.Title != "Token" {
+		t.Errorf("setting token = %+v, want a string titled Token", token)
+	}
+	if token.Default != nil {
+		t.Errorf("setting token has the default %s, want none", token.Default)
+	}
+}
