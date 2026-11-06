@@ -3,7 +3,6 @@ package note
 import (
 	"context"
 	"errors"
-	"fmt"
 	pathpkg "path"
 	"strings"
 
@@ -102,26 +101,16 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 }
 
 // checkTarget returns vaultport.ErrAlreadyExists when the rename will move the note and another
-// file is at the path it moves to, so the title is not written for a move that cannot happen. A
-// target that differs from the path only in case is the note itself on a filesystem that ignores
-// case.
+// file is at the path it moves to, so the title is not written for a move that cannot happen.
 func (u Rename) checkTarget(ctx context.Context, v domain.Vault, from, to string, source NameSource) error {
-	if moves, _ := u.Sync.GetSetting().GetRenameEffects(source); !moves || strings.EqualFold(from, to) {
+	if moves, _ := u.Sync.GetSetting().GetRenameEffects(source); !moves {
 		return nil
 	}
-	reader, err := u.readers.Open(v)
+	writer, err := u.writers.Open(v)
 	if err != nil {
 		return err
 	}
-	_, err = reader.StatFile(ctx, to)
-	switch {
-	case err == nil, errors.Is(err, vaultport.ErrNotANote):
-		return fmt.Errorf("rename %s to %s: %w", from, to, vaultport.ErrAlreadyExists)
-	case errors.Is(err, vaultport.ErrNotExist):
-		return nil
-	default:
-		return err
-	}
+	return writer.CheckMoveTarget(ctx, from, to)
 }
 
 // WriteFilenameAsTitle writes into the note at this path the name its file

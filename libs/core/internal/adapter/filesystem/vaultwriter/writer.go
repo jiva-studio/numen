@@ -132,6 +132,34 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 	return atomicfile.Rename(ctx, root, leaves, arrives)
 }
 
+// CheckMoveTarget returns ErrAlreadyExists when a file other than the one at from is at to.
+func (w *VaultWriter) CheckMoveTarget(ctx context.Context, from, to string) (err error) {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	source, err := w.resolvePath(from)
+	if err != nil {
+		return err
+	}
+	target, err := w.resolvePath(to)
+	if err != nil {
+		return err
+	}
+	if source == target {
+		return nil
+	}
+	root, arrives, err := w.openRoot(target)
+	if err != nil {
+		return err
+	}
+	defer closeAndJoin(&err, root)
+	leaves, err := w.getRelativeName(source)
+	if err != nil {
+		return err
+	}
+	return checkMoveTarget(root, leaves, arrives, from, to)
+}
+
 func (w *VaultWriter) MakeFolder(ctx context.Context, path string) (err error) {
 	if ctx.Err() != nil {
 		return ctx.Err()
