@@ -89,14 +89,11 @@ import type { PlexRelation } from '@plugins/views-plex-graph/frontend/plex'
 import { Editor } from '@plugins/notes/frontend/editor'
 import { Reader } from '@plugins/readers-pdf/frontend/reader'
 import RecordingTab from '@plugins/views-media-player/frontend/RecordingTab.vue'
-import { DELETE_TRANSCRIPT, DEMO_COMMAND } from './demoCommands'
+import { DEMO_COMMAND } from './demoCommands'
 import UrlTab from './url-tab/UrlTab.vue'
 import type { Cue } from '@plugins/views-media-player/frontend/lib/cues'
 import { createAudioPlayer } from '@plugins/views-media-player/frontend/model/player'
-import type {
-  MenuEntry as MediaMenuEntry,
-  Recordings,
-} from '@plugins/views-media-player/frontend/types'
+import type { Recordings } from '@plugins/views-media-player/frontend/types'
 import DeckTab from '@plugins/views-flashcards-studio/frontend/deck/ui/DeckTab.vue'
 import { createMarks } from '@plugins/views-flashcards-studio/frontend/cards'
 import type { DeckTabState } from '@plugins/views-flashcards-studio/frontend/deck/types'
@@ -565,18 +562,6 @@ const lectureCues = ref<Cue[]>([
   },
 ])
 
-const TRANSCRIBED_MENU: readonly MediaMenuEntry[] = [
-  {
-    pluginId: 'md.numen.engines.transcription',
-    pluginName: 'Transcription',
-    command: DELETE_TRANSCRIPT,
-    title: 'Delete transcript',
-    icon: '',
-    versionId: 'md.numen.engines.transcription/lecture-4',
-    isLive: true,
-  },
-]
-
 const YOUTUBE_EMBED_URL = 'https://www.youtube-nocookie.com/embed/kYXlvBiv9V4?enablejsapi=1&hl=en'
 const youtubeCues = ref<Cue[]>([
   {
@@ -746,10 +731,8 @@ const demoRecordings: Recordings = {
     }
     return list[0]?.from ?? 0
   },
-  getMenu: async () => TRANSCRIBED_MENU,
-  runMenuEntry: async (path) => {
-    getCuesRefForPath(path).value = []
-  },
+  canCreateText: async () => false,
+  createText: async () => undefined,
   watchWork: (_path, onChange) => {
     onChange(false)
     return () => {}

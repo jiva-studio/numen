@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/search"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/settings"
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
@@ -40,8 +39,6 @@ type Services struct {
 	Agent     *wire.AgentHandler
 	Command   *command.Handler
 	Media     *mediaHandler
-	// TextVersion answers the menu a file's text versions make.
-	TextVersion *textmenu.Handler
 	// Text serves the live text of a file and its edits to the views.
 	Text *texts.Handler
 
@@ -78,21 +75,20 @@ type Services struct {
 // nothing yet that needs a vault.
 func createServices(state *State) *Services {
 	return &Services{
-		state:       state,
-		Vault:       &vaultHandler{state: state},
-		Workspace:   &workspaceHandler{state: state},
-		File:        &fileHandler{state: state},
-		Note:        &noteHandler{state: state},
-		Search:      search.NewHandler(state),
-		Vaults:      &vaultsHandler{state: state},
-		Settings:    settings.NewHandler(),
-		Agent:       newAgentHandler(state),
-		Command:     command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil), nil),
-		Media:       &mediaHandler{state: state},
-		TextVersion: textmenu.NewHandler(state, nil),
-		Text:        texts.NewHandler(state, nil),
-		Plugin:      numenv1connect.UnimplementedPluginServiceHandler{},
-		server:      &fileServer{state: state},
+		state:     state,
+		Vault:     &vaultHandler{state: state},
+		Workspace: &workspaceHandler{state: state},
+		File:      &fileHandler{state: state},
+		Note:      &noteHandler{state: state},
+		Search:    search.NewHandler(state),
+		Vaults:    &vaultsHandler{state: state},
+		Settings:  settings.NewHandler(),
+		Agent:     newAgentHandler(state),
+		Command:   command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil), nil),
+		Media:     &mediaHandler{state: state},
+		Text:      texts.NewHandler(state, nil),
+		Plugin:    numenv1connect.UnimplementedPluginServiceHandler{},
+		server:    &fileServer{state: state},
 	}
 }
 

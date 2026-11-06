@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/plugincatalog"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/tablinks"
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
@@ -355,7 +354,6 @@ func (o *Installation) wireUseCases() {
 	services.Playing.setPluginServices(services.PluginServices)
 	var versions command.VersionItems
 	if menu := made.OpenFileMenu(); menu != nil {
-		services.TextVersion = textmenu.NewHandler(o.State, menu)
 		versions = menu
 	}
 	services.Command = command.NewHandler(o.State, made.GetPluginCommands(), versions)

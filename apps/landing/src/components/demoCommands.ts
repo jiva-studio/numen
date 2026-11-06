@@ -23,6 +23,3 @@ export const DEMO_COMMAND = {
   newTreeFolder: 'md.numen.views.file.tree:tree.newFolder',
   renameTreeEntry: 'md.numen.views.file.tree:tree.rename',
 } as const
-
-/** The id of the command a transcript menu entry runs to delete a transcript. */
-export const DELETE_TRANSCRIPT = 'transcript.delete'
