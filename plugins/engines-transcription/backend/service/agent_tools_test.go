@@ -211,10 +211,11 @@ func isListed(tasks []host.Task, id string) bool {
 func TestRegistryListsTranscriptCreateOnTheFullServerOnly(t *testing.T) {
 	s := newToolScene(t)
 
-	infos, err := s.registry.ListToolInfos(t.Context())
+	listing, err := s.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
+	infos := listing.Tools
 	if len(infos) != 1 || infos[0].GetName() != "transcript_create" {
 		t.Fatalf("the registry lists %+v, want transcript_create alone", infos)
 	}
@@ -227,11 +228,11 @@ func TestRegistryListsTranscriptCreateOnTheFullServerOnly(t *testing.T) {
 }
 
 func TestTheInstructionsAreOneParagraphNamingTranscriptCreate(t *testing.T) {
-	if !strings.Contains(Instructions, "transcript_create") {
-		t.Errorf("the instructions do not name transcript_create: %q", Instructions)
+	if !strings.Contains(instructions, "transcript_create") {
+		t.Errorf("the instructions do not name transcript_create: %q", instructions)
 	}
-	if strings.Contains(strings.TrimSpace(Instructions), "\n\n") {
-		t.Errorf("the instructions are more than one paragraph: %q", Instructions)
+	if strings.Contains(strings.TrimSpace(instructions), "\n\n") {
+		t.Errorf("the instructions are more than one paragraph: %q", instructions)
 	}
 }
 
@@ -398,5 +399,24 @@ func TestTranscriptCreateRefusesAFileThatIsNoRecording(t *testing.T) {
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("a refused call shows the tasks %+v", tasks)
+	}
+}
+
+func TestRegistryListsTheTranscriptionInstructions(t *testing.T) {
+	s := newToolScene(t)
+
+	listing, err := s.registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if listing.Instructions == "" || listing.Instructions != instructions {
+		t.Errorf("the registry lists the instructions %q, want %q", listing.Instructions, instructions)
+	}
+	if !strings.Contains(listing.Instructions, "transcript_create") {
+		t.Errorf("the listed instructions do not name transcript_create: %q", listing.Instructions)
+	}
+	if strings.Contains(strings.TrimSpace(listing.Instructions), "\n\n") {
+		t.Errorf("the listed instructions are more than one paragraph: %q", listing.Instructions)
 	}
 }

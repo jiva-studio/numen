@@ -230,10 +230,11 @@ func hasVersion(t *testing.T, texts *hosttest.Texts, path string) bool {
 func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
 	s := newReleasedScene(t)
 
-	infos, err := s.registry.ListToolInfos(t.Context())
+	listing, err := s.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
+	infos := listing.Tools
 	if len(infos) != 1 || infos[0].GetName() != "url_import" {
 		t.Fatalf("the registry lists %+v, want url_import alone", infos)
 	}
@@ -246,11 +247,11 @@ func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
 }
 
 func TestTheInstructionsAreOneParagraphNamingURLImport(t *testing.T) {
-	if !strings.Contains(Instructions, "url_import") {
-		t.Errorf("the instructions do not name url_import: %q", Instructions)
+	if !strings.Contains(instructions, "url_import") {
+		t.Errorf("the instructions do not name url_import: %q", instructions)
 	}
-	if strings.Contains(strings.TrimSpace(Instructions), "\n\n") {
-		t.Errorf("the instructions are more than one paragraph: %q", Instructions)
+	if strings.Contains(strings.TrimSpace(instructions), "\n\n") {
+		t.Errorf("the instructions are more than one paragraph: %q", instructions)
 	}
 }
 
@@ -413,5 +414,24 @@ func TestURLImportReportsAnAddressNothingCopies(t *testing.T) {
 	}
 	if out.Title != articleTitle || out.Error != "" {
 		t.Errorf("url_import returned %+v, want the article fetched", out)
+	}
+}
+
+func TestRegistryListsTheURLImportInstructions(t *testing.T) {
+	s := newReleasedScene(t)
+
+	listing, err := s.registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if listing.Instructions == "" || listing.Instructions != instructions {
+		t.Errorf("the registry lists the instructions %q, want %q", listing.Instructions, instructions)
+	}
+	if !strings.Contains(listing.Instructions, "url_import") {
+		t.Errorf("the listed instructions do not name url_import: %q", listing.Instructions)
+	}
+	if strings.Contains(strings.TrimSpace(listing.Instructions), "\n\n") {
+		t.Errorf("the listed instructions are more than one paragraph: %q", listing.Instructions)
 	}
 }

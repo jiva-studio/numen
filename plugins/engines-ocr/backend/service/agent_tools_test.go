@@ -208,10 +208,11 @@ func isListed(tasks []host.Task, id string) bool {
 func TestRegistryListsRecognitionCreateOnTheFullServerOnly(t *testing.T) {
 	s := newToolScene(t)
 
-	infos, err := s.registry.ListToolInfos(t.Context())
+	listing, err := s.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
+	infos := listing.Tools
 	if len(infos) != 1 || infos[0].GetName() != "recognition_create" {
 		t.Fatalf("the registry lists %+v, want recognition_create alone", infos)
 	}
@@ -224,11 +225,11 @@ func TestRegistryListsRecognitionCreateOnTheFullServerOnly(t *testing.T) {
 }
 
 func TestTheInstructionsAreOneParagraphNamingRecognitionCreate(t *testing.T) {
-	if !strings.Contains(Instructions, "recognition_create") {
-		t.Errorf("the instructions do not name recognition_create: %q", Instructions)
+	if !strings.Contains(instructions, "recognition_create") {
+		t.Errorf("the instructions do not name recognition_create: %q", instructions)
 	}
-	if strings.Contains(strings.TrimSpace(Instructions), "\n\n") {
-		t.Errorf("the instructions are more than one paragraph: %q", Instructions)
+	if strings.Contains(strings.TrimSpace(instructions), "\n\n") {
+		t.Errorf("the instructions are more than one paragraph: %q", instructions)
 	}
 }
 
@@ -323,5 +324,24 @@ func TestRecognitionCreateRecognisesInTheVaultTheCallNames(t *testing.T) {
 	}
 	if hasRecognition(t, s.texts, chemistryScan) {
 		t.Error("the shown vault holds a text version of the scan of Chemistry")
+	}
+}
+
+func TestRegistryListsTheRecognitionInstructions(t *testing.T) {
+	s := newToolScene(t)
+
+	listing, err := s.registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if listing.Instructions == "" || listing.Instructions != instructions {
+		t.Errorf("the registry lists the instructions %q, want %q", listing.Instructions, instructions)
+	}
+	if !strings.Contains(listing.Instructions, "recognition_create") {
+		t.Errorf("the listed instructions do not name recognition_create: %q", listing.Instructions)
+	}
+	if strings.Contains(strings.TrimSpace(listing.Instructions), "\n\n") {
+		t.Errorf("the listed instructions are more than one paragraph: %q", listing.Instructions)
 	}
 }
