@@ -5,7 +5,7 @@
  * and the marks measured from them and changes nothing else.
  */
 import { computed, ref } from 'vue'
-import type { ComputedRef, ShallowRef } from 'vue'
+import type { ComputedRef, Ref, ShallowRef } from 'vue'
 
 import {
   findSpreadAt,
@@ -106,7 +106,7 @@ function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): 
 export interface BookTurnsOptions {
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
   readonly props: SettledBookProps
-  readonly flow: ComputedRef<Flow>
+  readonly flow: Readonly<Ref<Flow>>
   readonly spreadCount: ComputedRef<number>
   readonly marks: Readonly<ShallowRef<readonly Mark[]>>
   readonly onMove: (pos: number) => void
@@ -155,9 +155,28 @@ export function useBookTurns(options: BookTurnsOptions) {
     announce()
   }
 
-  /** The offset currently being read, preserved while the text is laid out again. */
-  const getKeptOffset = () =>
-    inFront(options.marks.value, options.flow.value, activeSpread.value) ?? options.props.at
+  /**
+   * The offset currently being read, preserved while the text is laid out again. A layout moves to
+   * the spread that contains this offset, and the first run of that spread is often an earlier one,
+   * so the offset is kept while its run is in the active spread. Taking the first run every time
+   * moves the passage back by a part of a spread on each layout of a resize.
+   */
+  let keptOffset: number | undefined
+  const isInFront = (pos: number) =>
+    pos >= options.props.span.start &&
+    pos < options.props.span.end &&
+    findSpreadAt(options.marks.value, options.flow.value, pos) === activeSpread.value
+  const getKeptOffset = () => {
+    if (keptOffset !== undefined && isInFront(keptOffset)) return keptOffset
+    const now = inFront(options.marks.value, options.flow.value, activeSpread.value)
+    if (now === undefined) return options.props.at
+    keptOffset = now
+    return now
+  }
+  /** Keeps `pos` in front across the layouts that follow. */
+  const keepOffset = (pos: number) => {
+    keptOffset = pos
+  }
 
   /** The spread one offset of the book's text falls on. */
   const getSpreadOf = (pos: number) => findSpreadAt(options.marks.value, options.flow.value, pos)
@@ -181,6 +200,7 @@ export function useBookTurns(options: BookTurnsOptions) {
     stand,
     goTo,
     getKeptOffset,
+    keepOffset,
     getSpreadOf,
     turn,
   }

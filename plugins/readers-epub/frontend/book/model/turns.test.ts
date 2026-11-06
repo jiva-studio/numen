@@ -149,6 +149,25 @@ describe('the offset kept in front', () => {
 
     expect(turns.getKeptOffset()).toBe(7)
   })
+
+  it('is the offset passed to keepOffset while its spread is in front', () => {
+    const { turns } = setUp()
+
+    turns.stand(2, 'auto')
+    turns.keepOffset(250)
+
+    expect(turns.getKeptOffset()).toBe(250)
+  })
+
+  it('is the first run of the spread in front once the kept offset is turned away from', () => {
+    const { turns } = setUp()
+
+    turns.stand(2, 'auto')
+    turns.keepOffset(250)
+    turns.stand(0, 'auto')
+
+    expect(turns.getKeptOffset()).toBe(0)
+  })
 })
 
 describe('a turn drawn frame by frame', () => {

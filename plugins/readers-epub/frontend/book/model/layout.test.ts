@@ -52,6 +52,7 @@ const setUp = () => {
     leftInChapter: ref(0),
     stand: vi.fn(),
     getKeptOffset: vi.fn(() => KEPT),
+    keepOffset: vi.fn(),
     getSpreadOf: vi.fn(SPREAD_OF),
     turn: vi.fn(),
     standing: ref(0),
@@ -75,12 +76,19 @@ const turns = () =>
     stand: ReturnType<typeof vi.fn>
     turn: ReturnType<typeof vi.fn>
     getKeptOffset: ReturnType<typeof vi.fn>
+    keepOffset: ReturnType<typeof vi.fn>
     getSpreadOf: ReturnType<typeof vi.fn>
     standing: { value: number }
   }
 
 const flushFrames = () => {
   for (const run of fake.frames.splice(0)) run()
+}
+
+/** Runs frames until nothing asks for another one. */
+const flushAllFrames = () => {
+  for (let frame = 0; frame < 100 && fake.frames.length > 0; frame += 1) flushFrames()
+  expect(fake.frames).toHaveLength(0)
 }
 
 interface Options {
@@ -259,7 +267,7 @@ describe('the place a link led to', () => {
 })
 
 describe('the room or the type changing size', () => {
-  it('sets the columns again with the offset in front kept, when the width changes', async () => {
+  it('sets the columns again with the offset in front kept, once a new width has settled', async () => {
     const { layout } = room()
     layout()
     columns().measure.mockClear()
@@ -268,12 +276,13 @@ describe('the room or the type changing size', () => {
     columns().viewport.value = { ...columns().viewport.value, width: 640 }
     await nextTick()
 
+    expect(columns().measure).not.toHaveBeenCalled()
+    flushAllFrames()
     expect(columns().measure).toHaveBeenCalledTimes(1)
-    flushFrames()
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
   })
 
-  it('sets the columns again with the offset in front kept, when the height changes', async () => {
+  it('sets the columns again with the offset in front kept, once a new height has settled', async () => {
     room()
     columns().measure.mockClear()
     fake.frames.length = 0
@@ -281,8 +290,9 @@ describe('the room or the type changing size', () => {
     columns().viewport.value = { ...columns().viewport.value, height: 480 }
     await nextTick()
 
+    expect(columns().measure).not.toHaveBeenCalled()
+    flushAllFrames()
     expect(columns().measure).toHaveBeenCalledTimes(1)
-    flushFrames()
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
   })
 
@@ -307,9 +317,41 @@ describe('the room or the type changing size', () => {
 
     const TURNED = KEPT + 50
     turns().getKeptOffset.mockReturnValue(TURNED)
-    flushFrames()
+    flushAllFrames()
 
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(TURNED), 'auto')
+  })
+
+  it('reads the columns once for a size that changes on every frame, after it has settled', async () => {
+    room()
+    flushAllFrames()
+    columns().readColumns.mockClear()
+
+    for (const width of [620, 640, 660, 680, 700]) {
+      columns().viewport.value = { ...columns().viewport.value, width }
+      await nextTick()
+      flushFrames()
+    }
+    expect(columns().readColumns).not.toHaveBeenCalled()
+
+    flushAllFrames()
+    expect(columns().readColumns).toHaveBeenCalledTimes(1)
+    expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
+  })
+
+  it('reads the columns once when the size it measured itself is reported as a change', async () => {
+    const { layout } = room()
+    flushAllFrames()
+    columns().readColumns.mockClear()
+    columns().measure.mockImplementation(() => {
+      columns().viewport.value = { width: 301, height: 200 }
+    })
+
+    layout().settle(() => 40)
+    await nextTick()
+    flushAllFrames()
+
+    expect(columns().readColumns).toHaveBeenCalledTimes(1)
   })
 
   it('leaves the columns as they are while none of the three changes', async () => {
@@ -487,6 +529,25 @@ describe('an offset requested for from outside', () => {
 
     expect(turns().getSpreadOf).not.toHaveBeenCalled()
     expect(turns().stand).not.toHaveBeenCalled()
+  })
+
+  it('is kept in front when it is turned to', async () => {
+    await request(150)
+
+    expect(turns().keepOffset).toHaveBeenCalledWith(150)
+  })
+
+  it('is kept in front when its spread is the one in front', async () => {
+    await request(150, SPREAD_OF(150))
+
+    expect(turns().stand).not.toHaveBeenCalled()
+    expect(turns().keepOffset).toHaveBeenCalledWith(150)
+  })
+
+  it('is not kept when it falls after the document', async () => {
+    await request(350)
+
+    expect(turns().keepOffset).not.toHaveBeenCalled()
   })
 
   it('is not turned to when it falls after the document', async () => {
