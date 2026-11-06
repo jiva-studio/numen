@@ -47,6 +47,16 @@ vi.mock('./commandDeps', () => ({
 
 const target = { path: 'a.md' } as unknown as CommandTarget
 
+/** What is in front of the palette: the note at the path, or none. */
+const inFront = (path: string, isReady = true) =>
+  ({
+    tab: '',
+    path,
+    file: path,
+    vault: { id: 'v', name: 'V' },
+    isReady,
+  }) as unknown as CommandTarget
+
 const setup = (isPrevented = false) => {
   const content: [string, string][] = []
   const press = vi.fn(() => isPrevented)
@@ -195,7 +205,7 @@ describe('a plugin command over a note', () => {
   const SUMMARY = {
     id: 'org.example.sample:summary.run',
     title: 'Open summary',
-    scope: 'note' as const,
+    when: 'target.isNote',
     shortcut: 'mod+k',
   }
   const GRAPH = {
@@ -252,10 +262,8 @@ describe('a plugin command over a note', () => {
     const entry = findCommand()
 
     expect(entry.group).toBe('note')
-    expect(entry.isAvailable({ isReady: true, path: 'a.md' } as unknown as CommandTarget)).toBe(
-      true,
-    )
-    expect(entry.isAvailable({ isReady: true, path: '' } as unknown as CommandTarget)).toBe(false)
+    expect(entry.isAvailable(inFront('a.md'))).toBe(true)
+    expect(entry.isAvailable(inFront(''))).toBe(false)
   })
 
   it('runs from the palette with the note and the type the vault files it as', async () => {
@@ -287,7 +295,7 @@ describe('a plugin command over a note', () => {
     const entry = entries.find((one) => one.id === GRAPH.id)
 
     expect(entry?.group).toBe('window')
-    expect(entry?.isAvailable({ isReady: false, path: '' } as unknown as CommandTarget)).toBe(true)
+    expect(entry?.isAvailable(inFront('', false))).toBe(true)
     expect(entry?.keys).toStrictEqual({ letter: 'mod+shift+x' })
     expect(entry?.icon).toBe(getNamedIcon('waypoints'))
   })

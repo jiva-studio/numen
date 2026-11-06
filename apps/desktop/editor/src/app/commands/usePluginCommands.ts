@@ -8,8 +8,19 @@ import type { WelcomeAction } from '@numen/shell'
 import { findShortcutKeys, registerCommand, type CommandTarget } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import type { VaultCore } from '../vault'
+import {
+  EMPTY_WHEN_CONTEXT,
+  createWhenAvailability,
+  namesNote,
+  type WindowWhenContext,
+} from './whenContext'
 
-export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | undefined) {
+export function usePluginCommands(
+  core: VaultCore,
+  pluginHost: PluginHost | undefined,
+  context: WindowWhenContext = EMPTY_WHEN_CONTEXT,
+) {
+  const isWhenAvailable = createWhenAvailability(context)
   const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []
   /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
   const getPluginLooks = (cmd: PluginPaletteCommand) => {
@@ -19,15 +30,18 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
       ...(cmd.icon ? { icon: getNamedIcon(cmd.icon) } : {}),
     }
   }
-  /** The commands the plugins declare, as the palette lists them, each available where its scope is. */
+  /**
+   * The commands the plugins declare, as the palette lists them, each available where its condition
+   * holds, and over the note in front where the condition reads target.isNote.
+   */
   const getPaletteEntries = () =>
     getPluginCommands().map((cmd) => ({
       id: cmd.id,
       text: cmd.title,
       ...getPluginLooks(cmd),
-      group: cmd.scope === 'note' ? ('note' as const) : ('window' as const),
-      isAvailable: (target: CommandTarget) =>
-        cmd.scope !== 'note' || (target.isReady && target.path !== ''),
+      group: namesNote(cmd.when) ? ('note' as const) : ('window' as const),
+      ...(cmd.when ? { when: cmd.when } : {}),
+      isAvailable: (target: CommandTarget) => isWhenAvailable(cmd.when, target),
     }))
 
   /**
@@ -36,14 +50,14 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
    */
   const pluginWays = computed<readonly WelcomeAction[]>(() =>
     getPluginCommands()
-      .filter((cmd) => cmd.scope !== 'note' && cmd.shortcut)
+      .filter((cmd) => !namesNote(cmd.when) && cmd.shortcut)
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
 
   /** The commands the plugins declare over one note, in the words the palette offers them by. */
   const getNoteCommands = (): readonly MenuEntry[] =>
     getPluginCommands()
-      .filter((cmd) => cmd.scope === 'note')
+      .filter((cmd) => namesNote(cmd.when))
       .map((cmd) => ({ id: cmd.id, text: cmd.title, group: 'note' }))
 
   const getCommandNote = async (path: string, title: string): Promise<CommandNote> => ({

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.11.6",
+  "version": "2026.11.7",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
@@ -19,18 +19,13 @@
         "id": "recognition.create",
         "title": "Recognise text",
         "icon": "scan-text",
-        "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
+        "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
       },
       {
         "id": "recognition.delete",
         "title": "Delete recognition",
         "icon": "trash-2",
-        "when": [
-          {
-            "key": "version.plugin",
-            "is": ["md.numen.engines.ocr"]
-          }
-        ]
+        "when": "version.kind == 'recognition'"
       }
     ]
   },

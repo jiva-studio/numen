@@ -33,6 +33,7 @@ import {
   setStarting,
   type HostRegistry,
 } from './registry'
+import { isCommandAvailable } from './commandWhen'
 import type { PluginContextHost, PluginHostDeps } from './types'
 
 export { createPluginPaneWrapper }
@@ -249,7 +250,7 @@ function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
     hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
     executeCommand: async (id: string, note: CommandNote): Promise<boolean> => {
       const command = findAvailable(id)
-      if (!command) return false
+      if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
       let entry = command.entry
       if (!entry) {
         await deps.waitForPlugin?.(command.declaration.pluginId)
@@ -264,7 +265,7 @@ function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
         if (entry && matchesShortcut(event, declaration.shortcut)) {
           getNote()
             .then((note) => {
-              if (declaration.scope === 'note' && note.path === '') return
+              if (!isCommandAvailable(declaration, note, deps)) return
               return runCommand(deps, entry, note)
             })
             .catch((error: unknown) => reportError(deps, entry.pluginId, error))
@@ -361,6 +362,7 @@ export function createPluginHost(deps: PluginHostDeps) {
     findCommand: (command, target) => deps.findSlotCommand?.(command, target),
     findView: slotViews.findView,
     ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
+    ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
   })
   contextHost.getSlots = () => slots
   const parts = { registry, slotViews, deps }

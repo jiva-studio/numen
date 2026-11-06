@@ -46,6 +46,7 @@ import {
 } from '../plugins/useWindowPlugins'
 import { createPluginNotes } from '../plugins/pluginNotes'
 
+import { getSettingsConfig } from './settingsConfig'
 import { createDisplayOptions, createTargetResolver } from './useWindowDisplayOptions'
 import type { PluginServices } from '../plugins/pluginServices'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -218,7 +219,21 @@ const getDeclaredCommandsDeps = (
   hasBackend: (pluginId: string): boolean =>
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.hasBackend ??
     true,
+  getConfig: () => getWindowConfig(settingsHolder.current),
 })
+
+/** The settings of the window as the when conditions read them, config by dotted key. */
+const getWindowConfig = (settings: ReturnType<typeof useSettings> | undefined) =>
+  settings
+    ? getSettingsConfig([
+        { id: 'app', name: '', settings: settings.rest.app.value },
+        ...settings.rest.plugins.value.map((one) => ({
+          id: one.id,
+          name: one.name,
+          settings: one.settings,
+        })),
+      ])
+    : {}
 
 /** What the window writes to the message log about a plugin, under the plugin's own writer. */
 function createPluginReports(
@@ -325,6 +340,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     pluginServices,
     pluginNotices,
     pluginNotes,
+    slotWindowValues: slots.windowValues,
   }
 }
 
@@ -420,6 +436,14 @@ function initWindowKindsAndCommands(
 ) {
   const { editing, settings, window, tabSync } = services
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
+  base.slotWindowValues.current = () => {
+    const inFront = getTarget()
+    return {
+      'window.isVaultOpen': inFront.vault.id !== '',
+      'window.isVaultReady': inFront.isReady,
+      'window.isTabOpen': inFront.tab !== '',
+    }
+  }
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
   const fileMenuCommands = useFileMenuCommands({

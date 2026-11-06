@@ -11,8 +11,6 @@ const declare = (pluginId: string, id: string): DeclaredCommand => ({
   pluginId,
   id,
   title: id,
-  contentTypes: [],
-  extensions: [],
   arguments: [],
 })
 

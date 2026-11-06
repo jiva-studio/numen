@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.transcription",
   "name": "Audio/Video Transcription",
-  "version": "2026.11.6",
+  "version": "2026.11.7",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "targets": ["desktop.editor"],
@@ -17,18 +17,13 @@
         "id": "transcript.create",
         "title": "Transcribe recording",
         "icon": "audio-lines",
-        "contentTypes": ["audio/*", "video/*"]
+        "when": "target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')"
       },
       {
         "id": "transcript.delete",
         "title": "Delete transcript",
         "icon": "trash-2",
-        "when": [
-          {
-            "key": "version.plugin",
-            "is": ["md.numen.engines.transcription"]
-          }
-        ]
+        "when": "version.kind == 'transcript'"
       }
     ]
   },

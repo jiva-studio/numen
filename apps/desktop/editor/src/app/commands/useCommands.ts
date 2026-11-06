@@ -102,12 +102,9 @@ const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
 
 export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
-  const { pluginHost } = options
-
-  const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = usePluginCommands(
-    core,
-    pluginHost,
-  )
+  const { pluginHost, declaredCommands } = options
+  const plugins = usePluginCommands(core, pluginHost, declaredCommands?.whenContext)
+  const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = plugins
 
   const palette = useSearch(core, words, {
     coverage,

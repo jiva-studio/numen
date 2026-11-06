@@ -44,7 +44,7 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 			},
 		}},
 		{PluginID: "md.numen.pages", Command: plugincommand.Command{
-			ID: "count-pages", Title: "Count the pages", ContentTypes: []domain.ContentType{"application/pdf"},
+			ID: "count-pages", Title: "Count the pages", When: "target.contentType == 'application/pdf'",
 		}},
 	}}
 	var vaults []domain.Vault
@@ -182,7 +182,7 @@ func TestTheCoreHasNoCommandOfADomain(t *testing.T) {
 func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{{
 		PluginID: "md.numen.engines.transcription",
-		Command:  plugincommand.Command{ID: "transcript.create", Title: "Transcribe a recording", ContentTypes: []domain.ContentType{"audio/*"}},
+		Command:  plugincommand.Command{ID: "transcript.create", Title: "Transcribe a recording", When: "target.contentType.startsWith('audio/')"},
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil)
 	deps := cli.Deps{
@@ -233,7 +233,7 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{{
 		PluginID: "md.numen.links",
-		Command:  plugincommand.Command{ID: "link.deleteVideo", Title: "Delete the copy", NoteTypes: []string{"link"}},
+		Command:  plugincommand.Command{ID: "link.deleteVideo", Title: "Delete the copy", When: "target.noteType == 'link'"},
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{}, nil)
 	deps := cli.Deps{

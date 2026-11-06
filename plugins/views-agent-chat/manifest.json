@@ -27,7 +27,7 @@
         "id": "note.ask",
         "title": "Ask agent about note",
         "icon": "bot",
-        "scope": "note"
+        "when": "target.isNote"
       }
     ],
     "slots": [

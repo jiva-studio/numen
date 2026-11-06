@@ -1,20 +1,25 @@
 /**
- * When a command is offered, and when it is not.
- *
- * A command is offered for what is currently selected: a note or a vault.
- * Each function here answers one such question, and the table in `table.ts` names
- * which one a command uses.
+ * When a command of the application is offered, and when it is not: its when condition over the
+ * values of the palette.
  */
+import { parseWhen } from '@numen/plugin-host'
+import { getPaletteValues } from '@/shared/paletteValues'
 import type { CommandTarget } from '../../types'
 
-/** A command over the note in front, which there has to be one of. */
-export const isNoteOpen = (target: CommandTarget): boolean => target.isReady && target.path !== ''
+/**
+ * The availability of a command of the application by its condition, read once. Its conditions read
+ * the window and whether the target is a note or a file, not content types or settings.
+ */
+export function whenAvailable(when: string): (target: CommandTarget) => boolean {
+  const parsed = parseWhen(when)
+  if (!parsed.ok) throw new Error(parsed.error)
+  return (target) => parsed.value.evaluate(getPaletteValues(target, {}))
+}
 
-/** A command over the vault in front, which there has to be one of. */
-export const isVaultOpen = (target: CommandTarget): boolean => target.vault.id !== ''
-
-export const isAlwaysAvailable = (): boolean => true
-
-/** A command over a file that is no note and was chosen as a result, not the tab in front. */
-export const isFileChosen = (target: CommandTarget): boolean =>
-  target.isReady && target.path === '' && target.file !== '' && target.tab === ''
+/** The condition of a command of the application and the availability it gives. */
+export const withWhen = (
+  when: string,
+): { readonly when: string; isAvailable(target: CommandTarget): boolean } => ({
+  when,
+  isAvailable: whenAvailable(when),
+})

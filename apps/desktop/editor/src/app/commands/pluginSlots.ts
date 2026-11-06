@@ -9,12 +9,14 @@ import {
   type PluginPaletteCommand,
   type SlotCommandLook,
   type CommandTarget,
+  type WhenValues,
 } from '@numen/plugin-host'
 import type { Command } from '@/features/command-palette'
-import { canRunOn, type DeclaredCommand, type DeclaredSlot } from '@/entities/plugin'
+import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import { getPaletteId } from './declaredCommands'
 import { APP_SLOT_ENTRIES } from './appPlacements'
+import { getCondition } from './whenContext'
 
 /** The entries of the plugins with those of the application; undefined until the plugins have been listed. */
 export function readSlotEntries(
@@ -34,27 +36,21 @@ export interface SlotCommandFinderDeps {
   /** The commands the plugins declare; undefined until the first list has loaded. */
   readonly getDeclaredCommands: () => readonly DeclaredCommand[] | undefined
   /** The commands of the editor. */
-  readonly getEditorCommands: () => readonly Pick<Command, 'id' | 'text' | 'iconName'>[]
-}
-
-/** Whether a command of a plugin runs over the target: a command over a note needs one, a command over files a file of its types. */
-const isAvailableOver = (
-  scope: string | undefined,
-  declared: DeclaredCommand | undefined,
-  target: CommandTarget | undefined,
-): boolean => {
-  if (scope === 'note' && (target === undefined || target.isFolder)) return false
-  if (declared === undefined || declared.contentTypes.length === 0) return true
-  return target !== undefined && !target.isFolder && canRunOn(declared, target.path)
+  readonly getEditorCommands: () => readonly Pick<Command, 'id' | 'text' | 'iconName' | 'when'>[]
+  /** The values the when conditions of the commands read over the target of the slot. */
+  readonly getWhenValues: (target: CommandTarget | undefined) => WhenValues
 }
 
 /** How the command of the full id is drawn over the target, and undefined while it is not available there. */
 export function createSlotCommandFinder(
   deps: SlotCommandFinderDeps,
 ): (command: string, target: CommandTarget | undefined) => SlotCommandLook | undefined {
-  const findEditorLook = (command: string): SlotCommandLook | undefined => {
+  const isAvailableOver = (when: string | undefined, target: CommandTarget | undefined) =>
+    getCondition(when)?.evaluate(deps.getWhenValues(target)) ?? false
+
+  const findEditorLook = (command: string, target: CommandTarget | undefined) => {
     const found = deps.getEditorCommands().find((one) => one.id === command)
-    if (!found) return undefined
+    if (!found || !isAvailableOver(found.when, target)) return undefined
     return {
       title: found.text,
       ...(found.iconName ? { icon: getNamedIcon(found.iconName) } : {}),
@@ -66,7 +62,7 @@ export function createSlotCommandFinder(
     const hostCommand = deps.getPluginCommands().find((one) => one.id === command)
     const declared = deps.getDeclaredCommands()?.find((one) => getPaletteId(one) === command)
     const look = hostCommand ?? declared
-    if (!look || !isAvailableOver(look.scope, declared, target)) return undefined
+    if (!look || !isAvailableOver(look.when, target)) return undefined
     return {
       title: look.title,
       ...(look.icon ? { icon: getNamedIcon(look.icon) } : {}),
@@ -76,6 +72,6 @@ export function createSlotCommandFinder(
 
   return (command, target) =>
     getCommandOwner(command) === APP_COMMAND_OWNER
-      ? findEditorLook(command)
+      ? findEditorLook(command, target)
       : findPluginLook(command, target)
 }

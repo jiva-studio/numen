@@ -45,7 +45,15 @@ export interface PluginSupportDeps {
   /** Reports a view of a slot that another plugin, first by plugin id, draws. */
   readonly reportViewIssue?: (pluginId: string, message: string) => void
   /** The entries of the slots of the window, how their commands are drawn and run, and their issues. */
-  readonly slots?: Pick<PluginHostDeps, 'getSlotEntries' | 'findSlotCommand' | 'reportSlotIssue'>
+  readonly slots?: Pick<
+    PluginHostDeps,
+    | 'getSlotEntries'
+    | 'findSlotCommand'
+    | 'reportSlotIssue'
+    | 'getSlotWhenValues'
+    | 'getWindowValues'
+    | 'getContentTypes'
+  >
 }
 
 function createPluginSettingsAccessor(

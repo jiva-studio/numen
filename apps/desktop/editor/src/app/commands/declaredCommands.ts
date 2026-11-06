@@ -4,16 +4,21 @@
  * and the run handed to the plugin's backend.
  */
 import { computed, shallowRef, watch } from 'vue'
-import { formatCommandId, type CommandDeclaration } from '@numen/plugin-host'
+import { formatCommandId, type CommandDeclaration, type WhenSettings } from '@numen/plugin-host'
 import { registerCommand, type Command } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
-  canRunOn,
   listDeclaredCommands,
   runDeclaredCommand,
   type DeclaredCommand,
   type DeclaredSlot,
 } from '@/entities/plugin'
+import {
+  EMPTY_WHEN_CONTEXT,
+  createWhenAvailability,
+  getWhenGroup,
+  type WindowWhenContext,
+} from './whenContext'
 
 /** What the palette files a command a plugin declares under: the plugin and the command's own id. */
 export const getPluginCommandId = (pluginId: string, commandId: string): string =>
@@ -24,19 +29,20 @@ export const getPaletteId = (command: DeclaredCommand): string =>
   getPluginCommandId(command.pluginId, command.id)
 
 /**
- * The palette's commands for the declared ones. A command over files is offered
- * over a file of one of its content types, and one over none over anything.
+ * The palette's commands for the declared ones, each offered where its when condition holds over
+ * what is in front, while the vault accepts operations, and grouped by what the condition reads.
  */
 export function createDeclaredPaletteCommands(
   declared: readonly DeclaredCommand[],
+  context: WindowWhenContext = EMPTY_WHEN_CONTEXT,
 ): readonly Command[] {
+  const isWhenAvailable = createWhenAvailability(context)
   return declared.map((one): Command => {
-    const hasFiles = one.contentTypes.length > 0
     const required = one.arguments.filter(({ isRequired }) => isRequired)
     return {
       id: getPaletteId(one),
       text: one.title,
-      group: hasFiles ? 'file' : 'window',
+      group: getWhenGroup(one.when),
       ...(one.icon ? { icon: getNamedIcon(one.icon) } : {}),
       ...(required.length > 0
         ? {
@@ -48,7 +54,8 @@ export function createDeclaredPaletteCommands(
             })),
           }
         : {}),
-      isAvailable: (target) => target.isReady && (!hasFiles || canRunOn(one, target.file)),
+      ...(one.when ? { when: one.when } : {}),
+      isAvailable: (target) => target.isReady && isWhenAvailable(one.when, target),
     }
   })
 }
@@ -66,6 +73,8 @@ export interface DeclaredCommandsDeps {
   readonly isListed?: (id: string) => boolean
   /** Whether the plugin declares a backend; a command is run in a backend only where it does. */
   readonly hasBackend?: (pluginId: string) => boolean
+  /** The settings by their dotted keys, which the when conditions read as config. */
+  readonly getConfig?: () => WhenSettings
 }
 
 /** The declaration the plugin host receives for a declared command. */
@@ -74,7 +83,7 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
   id: command.id,
   title: command.title,
   ...(command.icon ? { icon: command.icon } : {}),
-  ...(command.scope ? { scope: command.scope } : {}),
+  ...(command.when ? { when: command.when } : {}),
   ...(command.shortcut ? { shortcut: command.shortcut } : {}),
 })
 
@@ -89,6 +98,11 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const hasBackend = deps.hasBackend ?? (() => true)
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
   const declaredSlots = shallowRef<readonly DeclaredSlot[] | undefined>(undefined)
+  const contentTypes = shallowRef<Readonly<Record<string, string>>>({})
+  const whenContext: WindowWhenContext = {
+    getContentTypes: () => contentTypes.value,
+    getConfig: deps.getConfig ?? (() => ({})),
+  }
   let newest = 0
   let unregisterAll: readonly (() => void)[] = []
 
@@ -134,6 +148,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     // the palette lists them.
     if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
     if (!isSameList(declaredSlots.value, commands.slots)) declaredSlots.value = commands.slots
+    if (commands.contentTypes) contentTypes.value = commands.contentTypes
     onFirstList()
   }
 
@@ -146,7 +161,11 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   return {
     /** Settles once the lists of a read are held, or a read has failed. */
     waitForFirstList: (): Promise<void> => firstList,
-    paletteCommands: computed(() => createDeclaredPaletteCommands(backendCommands.value)),
+    paletteCommands: computed(() =>
+      createDeclaredPaletteCommands(backendCommands.value, whenContext),
+    ),
+    /** What the when conditions of the commands read besides their target. */
+    whenContext,
     commands: computed(() => declared.value),
     slots: computed(() => declaredSlots.value),
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),

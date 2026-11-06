@@ -7,6 +7,7 @@ import (
 	"path"
 	"reflect"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -92,7 +93,7 @@ func getPdfTypes() types { return types{".pdf": "application/pdf"} }
 
 func getRecogniseCommand() pluginport.PluginCommandEntry {
 	return pluginport.PluginCommandEntry{PluginID: ocr, PluginName: "OCR", Command: pluginport.PluginCommand{
-		ID: "recognition.create", Title: "Recognise text", Icon: "scan-text", ContentTypes: []domain.ContentType{"application/pdf"},
+		ID: "recognition.create", Title: "Recognise text", Icon: "scan-text", When: "target.contentType == 'application/pdf'",
 	}}
 }
 
@@ -105,21 +106,18 @@ func getProofreadCommand() pluginport.PluginCommandEntry {
 
 func getDeleteProofreadingCommand() pluginport.PluginCommandEntry {
 	return pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
-		ID: "proofreading.delete", Title: "Delete proofreading", When: ownedBy(proofreader),
+		ID: "proofreading.delete", Title: "Delete proofreading", When: ofKind(string(kindRecognition)),
 	}}
 }
 
-// liveOfKinds holds in the context of the live version when it is of one of the kinds.
-func liveOfKinds(kinds ...string) []pluginport.PluginContextCondition {
-	return []pluginport.PluginContextCondition{
-		{Key: textversion.ContextKeyLive, Is: []string{"true"}},
-		{Key: textversion.ContextKeyKind, Is: kinds},
-	}
+// liveOfKinds holds over the live version when it is of one of the kinds.
+func liveOfKinds(kinds ...string) string {
+	return "version.isLive && version.kind in ['" + strings.Join(kinds, "', '") + "']"
 }
 
-// ownedBy holds in the context of a version the plugin made.
-func ownedBy(pluginID string) []pluginport.PluginContextCondition {
-	return []pluginport.PluginContextCondition{{Key: textversion.ContextKeyPlugin, Is: []string{pluginID}}}
+// ofKind holds over a version of the kind.
+func ofKind(kind string) string {
+	return "version.kind == '" + kind + "'"
 }
 
 func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (*textversion.FileMenu, *commands) {
@@ -168,7 +166,7 @@ func TestFileMenuOmitsCommandForUndeclaredKind(t *testing.T) {
 func TestFileMenuAcceptsAnyKindWhereTheCommandNamesAll(t *testing.T) {
 	s := newScene(t)
 	command := getProofreadCommand()
-	command.Command.When = liveOfKinds(pluginport.ContextAnyValue)
+	command.Command.When = "version.isLive && version.kind != ''"
 	menu, _ := newMenu(t, s, command)
 	s.requestText(t)
 
@@ -194,19 +192,19 @@ func TestFileMenuListsDeletionForEachPluginVersion(t *testing.T) {
 	}
 }
 
-func TestFileMenuMatchesLiveVersionToCommandOwner(t *testing.T) {
+func TestFileMenuMatchesTheLiveVersionByItsKind(t *testing.T) {
 	s := newScene(t)
 	command := getDeleteProofreadingCommand()
-	command.Command.When = append(liveOfKinds(string(kindPage), string(kindRecognition)), ownedBy(proofreader)...)
+	command.Command.When = liveOfKinds(string(kindRecognition))
 	menu, _ := newMenu(t, s, command)
 	s.requestText(t)
 
 	if entries, err := menu.GetMenu(t.Context(), s.vault, scanPath); err != nil || len(entries) != 0 {
-		t.Fatalf("a live version of the reader gets %+v (%v) to the proofreader's deletion", entries, err)
+		t.Fatalf("a live %s version gets %+v (%v) to a command over the live %s version", kindPage, entries, err, kindRecognition)
 	}
 	s.runEntry(t, proofreader)
 	if entries, err := menu.GetMenu(t.Context(), s.vault, scanPath); err != nil || len(entries) != 1 {
-		t.Fatalf("a live version of the proofreader gets %+v (%v)", entries, err)
+		t.Fatalf("a live %s version gets %+v (%v)", kindRecognition, entries, err)
 	}
 }
 

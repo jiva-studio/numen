@@ -17,14 +17,14 @@ const request = {
   runPluginCommand: vi.fn(),
 }
 
-const { canRunOn, listDeclaredCommands, runDeclaredCommand } = await import('./declaredCommands')
+const { isOverTarget, listDeclaredCommands, runDeclaredCommand } =
+  await import('./declaredCommands')
 
 const convert = {
   pluginId: 'md.numen.pages',
   id: 'convert',
   title: 'Convert',
-  contentTypes: ['application/pdf'],
-  extensions: ['pdf'],
+  when: "target.contentType == 'application/pdf'",
   arguments: [],
 }
 
@@ -85,8 +85,6 @@ describe('the commands the plugins declare', () => {
           pluginId: 'org.example.sample',
           id: 'create-sample',
           title: 'Create a sample',
-          contentTypes: [],
-          extensions: [],
           arguments: [
             { name: 'title', title: 'Title', isRequired: true },
             { name: 'folder', title: 'Folder', isRequired: false },
@@ -107,7 +105,7 @@ describe('the commands the plugins declare', () => {
     ])
   })
 
-  it('are read with their scope, shortcut, destination flag and the parts of their plugin', async () => {
+  it('are read with their condition, shortcut, destination flag and the parts of their plugin', async () => {
     request.listCommands.mockResolvedValue({
       commands: [
         {
@@ -115,10 +113,8 @@ describe('the commands the plugins declare', () => {
           id: 'tree.revealNote',
           title: 'Show note in file tree',
           icon: 'folder-open',
-          scope: 'note',
+          when: 'target.isNote',
           shortcut: 'mod+shift+e',
-          contentTypes: [],
-          extensions: [],
           arguments: [],
         },
       ],
@@ -134,33 +130,16 @@ describe('the commands the plugins declare', () => {
       id: 'tree.revealNote',
       title: 'Show note in file tree',
       icon: 'folder-open',
-      scope: 'note',
+      when: 'target.isNote',
       shortcut: 'mod+shift+e',
-      contentTypes: [],
-      extensions: [],
       arguments: [],
     })
   })
 
-  it('run over a file of one of their extensions, by the name of the file alone', () => {
-    expect(canRunOn(convert, 'books/Bees.PDF')).toBe(true)
-    expect(canRunOn(convert, '.pdf')).toBe(true)
-    expect(canRunOn(convert, 'pdf')).toBe(false)
-    expect(canRunOn(convert, 'books/Bees.epub')).toBe(false)
-    expect(canRunOn(convert, 'books.pdf/Bees')).toBe(false)
-    expect(canRunOn(convert, '')).toBe(false)
-  })
-
-  it('run over a file of any type where the core lists the extension *', () => {
-    const proofread = {
-      ...convert,
-      id: 'proofread',
-      contentTypes: ['*/*'],
-      extensions: ['*'],
-    }
-    expect(canRunOn(proofread, 'talks/storage.wav')).toBe(true)
-    expect(canRunOn(proofread, 'README')).toBe(true)
-    expect(canRunOn(proofread, 'books/')).toBe(false)
+  it('run over a target where their condition reads one', () => {
+    expect(isOverTarget(convert)).toBe(true)
+    expect(isOverTarget({ when: 'window.isVaultReady' })).toBe(false)
+    expect(isOverTarget({})).toBe(false)
   })
 })
 
@@ -194,7 +173,7 @@ describe('a run', () => {
     })
 
     await runDeclaredCommand(
-      { ...convert, contentTypes: [], extensions: [] },
+      { ...convert, when: 'window.isVaultReady' },
       { path: 'a.md', values: {} },
     )
 

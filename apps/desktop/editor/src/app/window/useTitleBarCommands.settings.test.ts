@@ -27,6 +27,7 @@ function setup(isVaultOpen: boolean) {
       ],
       getDeclaredCommands: () => [],
       getEditorCommands: () => createCommands(WORDS),
+      getWhenValues: () => ({}),
     }),
     findView: () => undefined,
   })

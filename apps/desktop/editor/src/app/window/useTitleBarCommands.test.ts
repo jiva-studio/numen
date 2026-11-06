@@ -273,8 +273,6 @@ describe('the commands over the slots of the window when a plugin is disabled an
     id,
     title,
     icon: 'waves',
-    contentTypes: [],
-    extensions: [],
     arguments: [],
   })
   const place = (pluginId: string, command: string, order: number): DeclaredSlot => ({
@@ -299,6 +297,7 @@ describe('the commands over the slots of the window when a plugin is disabled an
         getPluginCommands: () => [],
         getDeclaredCommands: () => list.value.commands,
         getEditorCommands: () => [],
+        getWhenValues: () => ({}),
       }),
       findView: () => undefined,
     })

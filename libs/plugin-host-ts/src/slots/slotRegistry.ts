@@ -16,9 +16,8 @@ import {
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { formatCommandId } from '../commandId'
-import { evaluateWhen } from '../when/evaluate'
-import { parseWhen, type WhenExpression } from '../when/parse'
-import { getTargetWhenValues } from './targetValues'
+import { getTargetValues } from '../when/targetValues'
+import { parseWhen, type WhenCondition, type WhenValues } from '../when/when'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {
@@ -56,6 +55,11 @@ export interface SlotRegistryDeps {
   /** The component the plugin registered for the view, and undefined while it has registered none. */
   readonly findView: (pluginId: string, view: string) => unknown
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
+  /**
+   * The values the when conditions of the entries read over the target: its target values, the window
+   * and the settings. Without it only the target values of the path are known.
+   */
+  readonly getWhenValues?: (target: CommandTarget | undefined) => WhenValues
 }
 
 const KNOWN_SLOTS: ReadonlySet<string> = new Set(Object.values(SLOT))
@@ -252,7 +256,7 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
   const declared = computed(() => readDeclared(deps.getEntries() ?? [], report))
 
   // Each condition is read once, however often its entries are drawn.
-  const conditions = new Map<string, Result<WhenExpression, string>>()
+  const conditions = new Map<string, Result<WhenCondition, string>>()
   const isDrawnOver = (entry: DeclaredSlotEntry, target: CommandTarget | undefined): boolean => {
     if (!entry.when) return true
     const parsed = conditions.get(entry.when) ?? parseWhen(entry.when)
@@ -266,7 +270,7 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
       )
       return false
     }
-    return evaluateWhen(parsed.value, getTargetWhenValues(target))
+    return parsed.value.evaluate(deps.getWhenValues?.(target) ?? getTargetValues(target, {}))
   }
 
   const toItem = (

@@ -113,6 +113,8 @@ export interface Command {
   readonly prompts?: readonly CommandPrompt[]
   /** The group it is offered in. */
   readonly group: CommandGroup
+  /** The CEL condition under which it is available, where it is given by one. */
+  readonly when?: string
   /** Whether it is offered at all over what is in front, in this window. */
   isAvailable(target: CommandTarget, runs: RunSupport): boolean
   getFieldText?(target: CommandTarget): string

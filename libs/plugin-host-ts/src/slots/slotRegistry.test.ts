@@ -209,7 +209,7 @@ describe('the condition of an entry', () => {
         pluginId: LEDGER,
         slot: 'fileTree.context',
         command: 'ledger.open',
-        when: 'isFolder && !isRoot',
+        when: 'target.isFolder && !target.isRoot',
       },
       { pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.sum' },
     ])
@@ -235,7 +235,7 @@ describe('the condition of an entry', () => {
         submenu: 'ledger.new',
         title: 'New',
         group: '1',
-        when: 'isMultiple',
+        when: 'target.isMultiple',
       },
       { pluginId: LEDGER, slot: 'ledger.new', command: 'ledger.open' },
     ])
@@ -247,13 +247,18 @@ describe('the condition of an entry', () => {
 
   it('that is malformed leaves the entry out and is reported as an error', () => {
     const { registry, reportIssue } = setup([
-      { pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.open', when: 'isFile' },
+      {
+        pluginId: LEDGER,
+        slot: 'fileTree.context',
+        command: 'ledger.open',
+        when: 'target.isRemote',
+      },
     ])
 
     expect(registry.getEntries('fileTree.context', FOLDER)).toStrictEqual([])
     expect(reportIssue).toHaveBeenCalledWith(
       LEDGER,
-      'slots: the condition "isFile" of "ledger.open" cannot be read: "isFile" is none of the keys isRoot, isFolder, isMultiple',
+      'slots: the condition "target.isRemote" of "ledger.open" cannot be read: "target.isRemote" reads target.isRemote, which is no variable of when',
       'error',
     )
   })

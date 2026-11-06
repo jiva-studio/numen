@@ -1,6 +1,6 @@
 /** The slot entries of the window: those the plugins declare and those of the application, and how their commands are drawn. */
 import { describe, expect, it } from 'vitest'
-import type { CommandTarget } from '@numen/plugin-host'
+import { getTargetValues, type CommandTarget } from '@numen/plugin-host'
 import type { DeclaredCommand } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import { APP_SLOT_ENTRIES } from './appPlacements'
@@ -11,8 +11,6 @@ const TIDE = 'org.example.tide'
 const declared = (one: Partial<DeclaredCommand> & { id: string }): DeclaredCommand => ({
   pluginId: TIDE,
   title: one.id,
-  contentTypes: [],
-  extensions: [],
   arguments: [],
   ...one,
 })
@@ -62,17 +60,17 @@ describe('a command of a slot entry', () => {
     ],
     getDeclaredCommands: () => [
       declared({ id: 'tide.open', title: 'Open tide', icon: 'waves' }),
-      declared({ id: 'tide.note', title: 'Tide note', scope: 'note' }),
+      declared({ id: 'tide.note', title: 'Tide note', when: 'target.isNote' }),
       declared({
         id: 'tide.chart',
         title: 'Chart',
-        contentTypes: ['text/csv'],
-        extensions: ['csv'],
+        when: "target.contentType == 'text/csv'",
       }),
     ],
     getEditorCommands: () => [
       { id: 'app:settings.open', text: 'Open settings', iconName: 'settings' },
     ],
+    getWhenValues: (target) => getTargetValues(target, { csv: 'text/csv', md: 'text/markdown' }),
   })
 
   it('is drawn with the title, icon and shortcut of the command', () => {

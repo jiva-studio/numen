@@ -370,24 +370,13 @@ func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
 	var out []manifest.Command
 	for _, one := range wire {
 		out = append(out, manifest.Command{
-			ID:           one.GetId(),
-			Title:        one.GetTitle(),
-			Icon:         one.GetIcon(),
-			ContentTypes: newContentTypes(one.GetContentTypes()),
-			NoteTypes:    one.GetNoteTypes(),
-			When:         newCommandWhen(one.GetWhen()),
-			Arguments:    newCommandArguments(one.GetArguments()),
-			Scope:        one.GetScope(),
-			Shortcut:     one.GetShortcut(),
+			ID:        one.GetId(),
+			Title:     one.GetTitle(),
+			Icon:      one.GetIcon(),
+			When:      one.GetWhen(),
+			Arguments: newCommandArguments(one.GetArguments()),
+			Shortcut:  one.GetShortcut(),
 		})
-	}
-	return out
-}
-
-func newCommandWhen(wire []*v1.ManifestContextCondition) []manifest.ContextCondition {
-	var out []manifest.ContextCondition
-	for _, one := range wire {
-		out = append(out, manifest.ContextCondition{Key: one.GetKey(), Is: one.GetIs()})
 	}
 	return out
 }

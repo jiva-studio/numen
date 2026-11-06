@@ -36,11 +36,11 @@ const everyFieldManifest = `{
 	"secrets": [{"name": "apiKey", "title": "Key", "description": "d", "when": {"setting": "mode", "is": ["a"]}}],
 	"services": ["numen.v1.Full"],
 	"settingsViews": [{"id": "v", "title": "V"}],
-	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play", "contentTypes": ["audio/*"], "noteTypes": ["link"],
-		"when": [{"key": "version.kind", "is": ["k"]}],
+	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play",
+		"when": "target.contentType.startsWith('audio/')",
 		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false},
 			{"name": "m", "title": "M", "type": "number", "required": true}],
-		"scope": "note", "shortcut": "mod+shift+r"}],
+		"shortcut": "mod+shift+r"}],
 		"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views",
 		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
 		"handles": [{"purpose": "sample-purpose", "contentTypes": ["audio/*"], "noteTypes": ["link"]}],
@@ -49,7 +49,7 @@ const everyFieldManifest = `{
 		"frameOrigins": ["https://player.example"],
 		"slots": [{"slot": "titleBar.commands", "command": "task.run", "group": "run", "order": 1},
 			{"slot": "titleBar", "view": "bar"},
-			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus", "when": "isFolder"}]}
+			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus", "when": "target.isFolder"}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

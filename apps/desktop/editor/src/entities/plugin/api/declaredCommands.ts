@@ -4,6 +4,7 @@
  * before it is sent to the plugin.
  */
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
+import { parseWhen } from '@numen/plugin-host'
 import { pluginCommands } from '@/shared/clients'
 
 interface WireCommand {
@@ -11,10 +12,8 @@ interface WireCommand {
   readonly id: string
   readonly title: string
   readonly icon?: string
-  readonly scope?: string
+  readonly when: string
   readonly shortcut?: string
-  readonly contentTypes: readonly string[]
-  readonly extensions: readonly string[]
   readonly arguments: readonly {
     readonly name: string
     readonly title: string
@@ -64,23 +63,19 @@ export interface DeclaredSlot {
 export interface DeclaredList {
   readonly commands: readonly DeclaredCommand[]
   readonly slots: readonly DeclaredSlot[]
+  /** The content type of a file by its extension, lowercase and without the dot. */
+  readonly contentTypes?: Readonly<Record<string, string>>
 }
 
-/** The extension the core lists for a command over a file of any type. */
-const ANY_FILE_EXTENSION = '*'
-
-/** One command a plugin declares. A command with no `contentTypes` runs over no file. */
+/** One command a plugin declares. */
 export interface DeclaredCommand {
   readonly pluginId: string
   readonly id: string
   readonly title: string
   readonly icon?: string
-  /** 'note' for a command listed only while a note is in front. */
-  readonly scope?: 'note'
+  /** The CEL condition under which it is available, as the manifest declares it; absent is always. */
+  readonly when?: string
   readonly shortcut?: string
-  readonly contentTypes: readonly string[]
-  /** The extensions, without the dot, that give a file one of the types, as the core lists them. */
-  readonly extensions: readonly string[]
   readonly arguments: readonly DeclaredArgument[]
 }
 
@@ -103,10 +98,8 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   id: wire.id,
   title: wire.title,
   ...(wire.icon ? { icon: wire.icon } : {}),
-  ...(wire.scope === 'note' ? { scope: 'note' as const } : {}),
+  ...(wire.when ? { when: wire.when } : {}),
   ...(wire.shortcut ? { shortcut: wire.shortcut } : {}),
-  contentTypes: wire.contentTypes,
-  extensions: wire.extensions,
   arguments: wire.arguments.map((one) => ({
     name: one.name,
     title: one.title,
@@ -143,7 +136,11 @@ const readSlotEntry = ({ pluginId, entry }: WireSlotEntry): DeclaredSlot => {
 /** Every command the enabled plugins declare, in the order of the plugins' ids, and their slot entries. */
 export async function listDeclaredCommands(): Promise<DeclaredList> {
   const answer = await pluginCommands.listCommands({})
-  return { commands: answer.commands.map(readCommand), slots: answer.slots.map(readSlotEntry) }
+  return {
+    commands: answer.commands.map(readCommand),
+    slots: answer.slots.map(readSlotEntry),
+    contentTypes: { ...answer.contentTypeByExtension },
+  }
 }
 
 /** Runs the command in the backend of the plugin that declares it. */
@@ -154,7 +151,7 @@ export async function runDeclaredCommand(
   const answer = await pluginCommands.runPluginCommand({
     pluginId: command.pluginId,
     command: command.id,
-    path: command.contentTypes.length > 0 ? run.path : '',
+    path: isOverTarget(command) ? run.path : '',
     arguments: { ...run.values },
   })
   if (answer.error === COMMAND_ERROR_CODE.UNSPECIFIED) {
@@ -163,11 +160,8 @@ export async function runDeclaredCommand(
   return { ok: false, error: answer.message }
 }
 
-/** Whether the command runs over the file at the path, by its extension. */
-export function canRunOn(command: DeclaredCommand, path: string): boolean {
-  const name = path.slice(path.lastIndexOf('/') + 1)
-  if (command.extensions.includes(ANY_FILE_EXTENSION)) return name !== ''
-  const dot = name.lastIndexOf('.')
-  if (dot < 0) return false
-  return command.extensions.includes(name.slice(dot + 1).toLowerCase())
+/** Whether the condition of the command reads its target, so a run of it names the path it is over. */
+export function isOverTarget(command: Pick<DeclaredCommand, 'when'>): boolean {
+  const parsed = parseWhen(command.when ?? '')
+  return parsed.ok && parsed.value.names.some((name) => name.startsWith('target.'))
 }

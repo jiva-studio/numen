@@ -152,7 +152,7 @@ describe('a command over a note', () => {
             pluginId: 'cmd.plugin',
             id: 'summary',
             title: 'Open summary',
-            scope: 'note',
+            when: 'target.isNote',
           },
         ],
       }),
@@ -163,7 +163,7 @@ describe('a command over a note', () => {
     await host.executeCommand('cmd.plugin:summary', NOTE)
 
     expect(host.getPaletteCommands()).toStrictEqual([
-      { id: 'cmd.plugin:summary', title: 'Open summary', scope: 'note' },
+      { id: 'cmd.plugin:summary', title: 'Open summary', when: 'target.isNote' },
     ])
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE)
   })
@@ -177,7 +177,7 @@ describe('a command over a note', () => {
             id: 'summary',
             title: 'Open summary',
             shortcut: 'ctrl+p',
-            scope: 'note',
+            when: 'target.isNote',
           },
         ],
       }),
@@ -246,7 +246,7 @@ describe('a tab kind component', () => {
           id: 'rich',
           title: 'Rich',
           shortcut: 'ctrl+b',
-          scope: 'note',
+          when: 'target.isNote',
           icon: 'star',
         },
       ],
@@ -301,7 +301,7 @@ describe('a tab kind component', () => {
         id: 'reader.plugin:rich',
         title: 'Rich',
         shortcut: 'ctrl+b',
-        scope: 'note',
+        when: 'target.isNote',
         icon: 'star',
       },
     ])

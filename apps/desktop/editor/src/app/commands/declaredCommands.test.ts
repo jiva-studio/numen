@@ -17,8 +17,6 @@ const createSample: DeclaredCommand = {
   id: 'sample.create',
   title: 'Create a sample',
   icon: 'layers',
-  contentTypes: [],
-  extensions: [],
   arguments: [
     { name: 'title', title: 'Title', isRequired: true },
     { name: 'folder', title: 'Folder', isRequired: false },
@@ -29,8 +27,7 @@ const convert: DeclaredCommand = {
   pluginId: 'md.numen.pages',
   id: 'convert',
   title: 'Convert',
-  contentTypes: ['application/pdf'],
-  extensions: ['pdf'],
+  when: "target.contentType == 'application/pdf'",
   arguments: [],
 }
 
@@ -66,8 +63,11 @@ describe('a declared command in the palette', () => {
     expect(one?.prompts).toBeUndefined()
   })
 
-  it('over files is offered over a file of its extensions alone', () => {
-    const [one] = createDeclaredPaletteCommands([convert])
+  it('over files is offered over a file of the content type its condition names alone', () => {
+    const [one] = createDeclaredPaletteCommands([convert], {
+      getContentTypes: () => ({ pdf: 'application/pdf', epub: 'application/epub+zip' }),
+      getConfig: () => ({}),
+    })
     const runs = { canRun: () => true, cannotRun: vi.fn() }
 
     expect(one?.group).toBe('file')

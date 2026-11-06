@@ -135,7 +135,7 @@ describe('the wait of a new vault for the plugins of its tabs', () => {
     let isSettled = false
 
     const started = startAll(loader)
-    const waiting = loader.waitForTabPlugins().then(() => (isSettled = true))
+    const wait = loader.waitForTabPlugins().then(() => (isSettled = true))
     await vi.advanceTimersByTimeAsync(300)
     expect(isSettled).toBe(false)
     await vi.advanceTimersByTimeAsync(1_000)
@@ -143,7 +143,7 @@ describe('the wait of a new vault for the plugins of its tabs', () => {
     expect(isSettled).toBe(true)
     expect(loader.isPluginStarting(HARBOR)).toBe(true)
     await vi.runAllTimersAsync()
-    await Promise.all([started, waiting])
+    await Promise.all([started, wait])
   })
 
   it('settles once a plugin with a kind of tab failed', async () => {
@@ -152,9 +152,9 @@ describe('the wait of a new vault for the plugins of its tabs', () => {
     let isSettled = false
 
     const started = startAll(loader)
-    const waiting = loader.waitForTabPlugins().then(() => (isSettled = true))
+    const wait = loader.waitForTabPlugins().then(() => (isSettled = true))
     await vi.runAllTimersAsync()
-    await Promise.all([started, waiting])
+    await Promise.all([started, wait])
 
     expect(isSettled).toBe(true)
   })
@@ -165,11 +165,11 @@ describe('the wait of a new vault for the plugins of its tabs', () => {
     let isSettled = false
 
     const started = startAll(loader)
-    const waiting = loader.waitForTabPlugins().then(() => (isSettled = true))
+    const wait = loader.waitForTabPlugins().then(() => (isSettled = true))
     await vi.advanceTimersByTimeAsync(1_000)
 
     expect(isSettled).toBe(true)
     await vi.runAllTimersAsync()
-    await Promise.all([started, waiting])
+    await Promise.all([started, wait])
   })
 })

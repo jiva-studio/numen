@@ -98,7 +98,7 @@ export function createPaletteCommand({ id, declaration }: AvailableCommand): Plu
     id,
     title: declaration.title,
     ...(declaration.shortcut ? { shortcut: declaration.shortcut } : {}),
-    ...(declaration.scope ? { scope: declaration.scope } : {}),
+    ...(declaration.when ? { when: declaration.when } : {}),
     ...(declaration.icon ? { icon: declaration.icon } : {}),
   }
 }

@@ -27,7 +27,7 @@
         "id": "tree.revealNote",
         "title": "Show note in file tree",
         "icon": "folder-open",
-        "scope": "note"
+        "when": "target.isNote"
       }
     ],
     "slots": [

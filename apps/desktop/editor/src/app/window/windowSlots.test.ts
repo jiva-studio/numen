@@ -15,8 +15,6 @@ const command = (pluginId: string, id: string, title: string): DeclaredCommand =
   pluginId,
   id,
   title,
-  contentTypes: [],
-  extensions: [],
   arguments: [],
 })
 
@@ -46,7 +44,11 @@ const SLOTS: DeclaredSlot[] = [
 
 function setup() {
   const slots = createWindowSlots({
-    declaredCommands: { slots: computed(() => SLOTS), commands: computed(() => COMMANDS) },
+    declaredCommands: {
+      slots: computed(() => SLOTS),
+      commands: computed(() => COMMANDS),
+      whenContext: { getContentTypes: () => ({}), getConfig: () => ({}) },
+    },
     hostHolder: { current: { getPaletteCommands: () => [] } as unknown as PluginHost },
     writeIssue: vi.fn(),
   })

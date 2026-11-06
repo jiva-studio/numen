@@ -27,7 +27,7 @@
         "id": "graph.showNote",
         "title": "Show note in plex",
         "icon": "waypoints",
-        "scope": "note",
+        "when": "target.isNote",
         "shortcut": "mod+shift+p"
       }
     ],

@@ -46,7 +46,7 @@ describe('the manifest', () => {
   it('keeps the declaration of the command that shows a note, with no field about its place', () => {
     const command = manifest.contributes.commands.find((one) => one.id === 'graph.showNote')
 
-    expect(command).toMatchObject({ title: 'Show note in plex', scope: 'note' })
+    expect(command).toMatchObject({ title: 'Show note in plex', when: 'target.isNote' })
     expect(Object.keys(command ?? {})).not.toContain('location')
     expect(Object.keys(command ?? {})).not.toContain('slots')
   })

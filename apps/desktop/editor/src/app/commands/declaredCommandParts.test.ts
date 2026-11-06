@@ -7,8 +7,6 @@ import type { DeclaredCommand } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
 
 const base: Omit<DeclaredCommand, 'pluginId' | 'id' | 'title'> = {
-  contentTypes: [],
-  extensions: [],
   arguments: [],
 }
 
@@ -23,7 +21,7 @@ const openPreset: DeclaredCommand = {
   pluginId: 'md.cards',
   id: 'preset.open',
   title: 'Open preset',
-  scope: 'note',
+  when: 'target.isNote',
   shortcut: 'mod+shift+o',
 }
 const openTree: DeclaredCommand = {
@@ -76,7 +74,7 @@ describe('the declared commands the palette runs in a backend', () => {
 })
 
 describe('the declarations for the plugin host', () => {
-  it('carry every declared command with its title, icon, scope and shortcut', async () => {
+  it('carry every declared command with its title, icon, condition and shortcut', async () => {
     const declared = await load(() => false)
 
     expect(declared.declarations.value).toStrictEqual([
@@ -89,7 +87,7 @@ describe('the declarations for the plugin host', () => {
         pluginId: 'md.cards',
         id: 'preset.open',
         title: 'Open preset',
-        scope: 'note',
+        when: 'target.isNote',
         shortcut: 'mod+shift+o',
       },
       {

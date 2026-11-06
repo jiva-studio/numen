@@ -1,6 +1,6 @@
 export { useCatalogEntries } from './model/catalogEntries'
 export {
-  canRunOn,
+  isOverTarget,
   listDeclaredCommands,
   runDeclaredCommand,
   type DeclaredCommand,

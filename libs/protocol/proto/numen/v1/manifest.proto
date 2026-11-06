@@ -221,26 +221,15 @@ message ManifestCommandArgument {
   bool is_required = 4 [json_name = "required"];
 }
 
-// ManifestContextCondition holds while the context the window supplies has the key with one of the
-// values listed. The value `*` stands for any value of the key.
-message ManifestContextCondition {
-  string key = 1;
-  repeated string is = 2;
-}
-
 message ManifestCommand {
   string id = 1;
   string title = 2;
   string icon = 3;
-  repeated string content_types = 4;
-  repeated string note_types = 5;
-  // when are the conditions, all of which hold in the context the command is offered over. A
-  // command with conditions is offered over each context that meets them.
-  repeated ManifestContextCondition when = 6;
   repeated ManifestCommandArgument arguments = 7;
-  // scope is "note" for a command listed only while a note is in front. Empty is a command over the
-  // window.
-  string scope = 9;
+  // when is the CEL condition under which the command is available at all, over the variables of
+  // libs/protocol/when.json, such as "target.isNote". Empty is always. A command whose condition
+  // names version.* offers one item per text version of a file for which it holds.
+  string when = 11;
   // shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
   string shortcut = 10;
 }

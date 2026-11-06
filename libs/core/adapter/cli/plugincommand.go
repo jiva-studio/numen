@@ -48,7 +48,7 @@ func writePluginCommandUsage(r *reporter, deps Deps) {
 // over one, and a flag for each argument, an optional one in brackets.
 func getPluginCommandSynopsis(command plugincommand.Command) string {
 	words := []string{command.ID, "<vault>"}
-	if command.HasFiles() {
+	if plugincommand.NamesTarget(command) {
 		words = append(words, "<file>")
 	}
 	for _, argument := range command.Arguments {
@@ -90,7 +90,7 @@ func runPluginCommand(
 		return fmt.Errorf("%w: %w", usage, err)
 	}
 	wanted := 1
-	if declared.HasFiles() {
+	if plugincommand.NamesTarget(declared) {
 		wanted = 2
 	}
 	if len(positional) != wanted {
@@ -107,7 +107,7 @@ func runPluginCommand(
 	defer closeInto(&err, closeRun)
 
 	call := plugincommand.Call{PluginID: entry.PluginID, Command: declared.ID, Arguments: arguments}
-	if declared.HasFiles() {
+	if plugincommand.NamesTarget(declared) {
 		call.Path = positional[1]
 	}
 	result, err := run.Execute(ctx, v, call)

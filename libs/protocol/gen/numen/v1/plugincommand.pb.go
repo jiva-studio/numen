@@ -253,9 +253,12 @@ type ListCommandsResponse struct {
 	Commands []*PluginCommand       `protobuf:"bytes,1,rep,name=commands,proto3" json:"commands,omitempty"`
 	// The slot entries of every enabled plugin, in the order of the plugins' ids and then of each
 	// manifest.
-	Slots         []*PluginSlotEntry `protobuf:"bytes,2,rep,name=slots,proto3" json:"slots,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Slots []*PluginSlotEntry `protobuf:"bytes,2,rep,name=slots,proto3" json:"slots,omitempty"`
+	// The content type of a file by its extension, lowercase and without the dot, for every extension
+	// the core knows a type of. The window derives target.contentType from it.
+	ContentTypeByExtension map[string]string `protobuf:"bytes,3,rep,name=content_type_by_extension,json=contentTypeByExtension,proto3" json:"content_type_by_extension,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ListCommandsResponse) Reset() {
@@ -298,6 +301,13 @@ func (x *ListCommandsResponse) GetCommands() []*PluginCommand {
 func (x *ListCommandsResponse) GetSlots() []*PluginSlotEntry {
 	if x != nil {
 		return x.Slots
+	}
+	return nil
+}
+
+func (x *ListCommandsResponse) GetContentTypeByExtension() map[string]string {
+	if x != nil {
+		return x.ContentTypeByExtension
 	}
 	return nil
 }
@@ -363,20 +373,13 @@ type PluginCommand struct {
 	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	// What a person reads the command as.
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	// The content types of the files the command runs over, such as
-	// text/markdown or audio/*; */* is a file of any type. None is a command
-	// over no file.
-	ContentTypes []string `protobuf:"bytes,4,rep,name=content_types,json=contentTypes,proto3" json:"content_types,omitempty"`
-	// The extensions, lowercase and without the dot, that give a file one of
-	// those types, and * where the command runs over a file of any type.
-	Extensions []string `protobuf:"bytes,6,rep,name=extensions,proto3" json:"extensions,omitempty"`
 	// The arguments, in the order a person is asked for them.
 	Arguments []*CommandArgument `protobuf:"bytes,5,rep,name=arguments,proto3" json:"arguments,omitempty"`
 	// The icon the command shows in the palette, by its Lucide name. Empty shows
 	// the default plugin command icon.
 	Icon string `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
-	// scope is "note" for a command listed only while a note is in front.
-	Scope string `protobuf:"bytes,8,opt,name=scope,proto3" json:"scope,omitempty"`
+	// when is the CEL condition under which the command is available, as the manifest declares it.
+	When string `protobuf:"bytes,10,opt,name=when,proto3" json:"when,omitempty"`
 	// shortcut is the keystroke the plugin suggests for the command.
 	Shortcut      string `protobuf:"bytes,9,opt,name=shortcut,proto3" json:"shortcut,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -434,20 +437,6 @@ func (x *PluginCommand) GetTitle() string {
 	return ""
 }
 
-func (x *PluginCommand) GetContentTypes() []string {
-	if x != nil {
-		return x.ContentTypes
-	}
-	return nil
-}
-
-func (x *PluginCommand) GetExtensions() []string {
-	if x != nil {
-		return x.Extensions
-	}
-	return nil
-}
-
 func (x *PluginCommand) GetArguments() []*CommandArgument {
 	if x != nil {
 		return x.Arguments
@@ -462,9 +451,9 @@ func (x *PluginCommand) GetIcon() string {
 	return ""
 }
 
-func (x *PluginCommand) GetScope() string {
+func (x *PluginCommand) GetWhen() string {
 	if x != nil {
-		return x.Scope
+		return x.When
 	}
 	return ""
 }
@@ -686,24 +675,25 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1f\n" +
 	"\vopened_path\x18\x03 \x01(\tR\n" +
 	"openedPath\"\x15\n" +
-	"\x13ListCommandsRequest\"|\n" +
+	"\x13ListCommandsRequest\"\xbe\x02\n" +
 	"\x14ListCommandsResponse\x123\n" +
 	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\x12/\n" +
-	"\x05slots\x18\x02 \x03(\v2\x19.numen.v1.PluginSlotEntryR\x05slots\"a\n" +
+	"\x05slots\x18\x02 \x03(\v2\x19.numen.v1.PluginSlotEntryR\x05slots\x12u\n" +
+	"\x19content_type_by_extension\x18\x03 \x03(\v2:.numen.v1.ListCommandsResponse.ContentTypeByExtensionEntryR\x16contentTypeByExtension\x1aI\n" +
+	"\x1bContentTypeByExtensionEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"a\n" +
 	"\x0fPluginSlotEntry\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x121\n" +
-	"\x05entry\x18\x02 \x01(\v2\x1b.numen.v1.ManifestSlotEntryR\x05entry\"\x96\x02\n" +
+	"\x05entry\x18\x02 \x01(\v2\x1b.numen.v1.ManifestSlotEntryR\x05entry\"\xcf\x01\n" +
 	"\rPluginCommand\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05title\x12#\n" +
-	"\rcontent_types\x18\x04 \x03(\tR\fcontentTypes\x12\x1e\n" +
-	"\n" +
-	"extensions\x18\x06 \x03(\tR\n" +
-	"extensions\x127\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x127\n" +
 	"\targuments\x18\x05 \x03(\v2\x19.numen.v1.CommandArgumentR\targuments\x12\x12\n" +
-	"\x04icon\x18\a \x01(\tR\x04icon\x12\x14\n" +
-	"\x05scope\x18\b \x01(\tR\x05scope\x12\x1a\n" +
+	"\x04icon\x18\a \x01(\tR\x04icon\x12\x12\n" +
+	"\x04when\x18\n" +
+	" \x01(\tR\x04when\x12\x1a\n" +
 	"\bshortcut\x18\t \x01(\tR\bshortcut\"\\\n" +
 	"\x0fCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
@@ -749,7 +739,7 @@ func file_numen_v1_plugincommand_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_plugincommand_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_plugincommand_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_numen_v1_plugincommand_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_numen_v1_plugincommand_proto_goTypes = []any{
 	(CommandErrorCode)(0),            // 0: numen.v1.CommandErrorCode
 	(*RunCommandRequest)(nil),        // 1: numen.v1.RunCommandRequest
@@ -762,29 +752,31 @@ var file_numen_v1_plugincommand_proto_goTypes = []any{
 	(*RunPluginCommandRequest)(nil),  // 8: numen.v1.RunPluginCommandRequest
 	(*RunPluginCommandResponse)(nil), // 9: numen.v1.RunPluginCommandResponse
 	nil,                              // 10: numen.v1.RunCommandRequest.ArgumentsEntry
-	nil,                              // 11: numen.v1.RunPluginCommandRequest.ArgumentsEntry
-	(*ManifestSlotEntry)(nil),        // 12: numen.v1.ManifestSlotEntry
+	nil,                              // 11: numen.v1.ListCommandsResponse.ContentTypeByExtensionEntry
+	nil,                              // 12: numen.v1.RunPluginCommandRequest.ArgumentsEntry
+	(*ManifestSlotEntry)(nil),        // 13: numen.v1.ManifestSlotEntry
 }
 var file_numen_v1_plugincommand_proto_depIdxs = []int32{
 	10, // 0: numen.v1.RunCommandRequest.arguments:type_name -> numen.v1.RunCommandRequest.ArgumentsEntry
 	0,  // 1: numen.v1.RunCommandResponse.error:type_name -> numen.v1.CommandErrorCode
 	6,  // 2: numen.v1.ListCommandsResponse.commands:type_name -> numen.v1.PluginCommand
 	5,  // 3: numen.v1.ListCommandsResponse.slots:type_name -> numen.v1.PluginSlotEntry
-	12, // 4: numen.v1.PluginSlotEntry.entry:type_name -> numen.v1.ManifestSlotEntry
-	7,  // 5: numen.v1.PluginCommand.arguments:type_name -> numen.v1.CommandArgument
-	11, // 6: numen.v1.RunPluginCommandRequest.arguments:type_name -> numen.v1.RunPluginCommandRequest.ArgumentsEntry
-	0,  // 7: numen.v1.RunPluginCommandResponse.error:type_name -> numen.v1.CommandErrorCode
-	1,  // 8: numen.v1.PluginCommandService.RunCommand:input_type -> numen.v1.RunCommandRequest
-	3,  // 9: numen.v1.CommandService.ListCommands:input_type -> numen.v1.ListCommandsRequest
-	8,  // 10: numen.v1.CommandService.RunPluginCommand:input_type -> numen.v1.RunPluginCommandRequest
-	2,  // 11: numen.v1.PluginCommandService.RunCommand:output_type -> numen.v1.RunCommandResponse
-	4,  // 12: numen.v1.CommandService.ListCommands:output_type -> numen.v1.ListCommandsResponse
-	9,  // 13: numen.v1.CommandService.RunPluginCommand:output_type -> numen.v1.RunPluginCommandResponse
-	11, // [11:14] is the sub-list for method output_type
-	8,  // [8:11] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	11, // 4: numen.v1.ListCommandsResponse.content_type_by_extension:type_name -> numen.v1.ListCommandsResponse.ContentTypeByExtensionEntry
+	13, // 5: numen.v1.PluginSlotEntry.entry:type_name -> numen.v1.ManifestSlotEntry
+	7,  // 6: numen.v1.PluginCommand.arguments:type_name -> numen.v1.CommandArgument
+	12, // 7: numen.v1.RunPluginCommandRequest.arguments:type_name -> numen.v1.RunPluginCommandRequest.ArgumentsEntry
+	0,  // 8: numen.v1.RunPluginCommandResponse.error:type_name -> numen.v1.CommandErrorCode
+	1,  // 9: numen.v1.PluginCommandService.RunCommand:input_type -> numen.v1.RunCommandRequest
+	3,  // 10: numen.v1.CommandService.ListCommands:input_type -> numen.v1.ListCommandsRequest
+	8,  // 11: numen.v1.CommandService.RunPluginCommand:input_type -> numen.v1.RunPluginCommandRequest
+	2,  // 12: numen.v1.PluginCommandService.RunCommand:output_type -> numen.v1.RunCommandResponse
+	4,  // 13: numen.v1.CommandService.ListCommands:output_type -> numen.v1.ListCommandsResponse
+	9,  // 14: numen.v1.CommandService.RunPluginCommand:output_type -> numen.v1.RunPluginCommandResponse
+	12, // [12:15] is the sub-list for method output_type
+	9,  // [9:12] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_plugincommand_proto_init() }
@@ -799,7 +791,7 @@ func file_numen_v1_plugincommand_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_plugincommand_proto_rawDesc), len(file_numen_v1_plugincommand_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

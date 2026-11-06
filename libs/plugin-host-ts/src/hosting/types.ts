@@ -34,6 +34,7 @@ import type {
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from './tabKinds'
 import type { DeclaredSlotEntry, SlotCommandLook } from '../slots/slotRegistry'
+import type { WhenValues } from '../when/when'
 import type { Component } from 'vue'
 
 export type {
@@ -60,16 +61,16 @@ export interface CommandDeclaration {
   /** The Lucide name of the icon it is drawn with. */
   readonly icon?: string
   readonly shortcut?: string
-  /** 'note' where it is listed only while a note is in front. */
-  readonly scope?: 'note'
+  /** The CEL condition under which it is available, as the manifest declares it; absent is always. */
+  readonly when?: string
 }
 
 export interface PluginPaletteCommand {
   readonly id: string
   readonly title: string
   readonly shortcut?: string
-  /** 'note' where it is offered only while a note is in front. */
-  readonly scope?: 'note'
+  /** The CEL condition under which it is available; absent is always. */
+  readonly when?: string
   /** The Lucide name of the icon it is drawn with. */
   readonly icon?: string
 }
@@ -77,6 +78,10 @@ export interface PluginPaletteCommand {
 export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unknown
 
 export interface PluginHostDeps {
+  /** The content type of a file by its extension, as the core lists it, for the conditions of commands. */
+  readonly getContentTypes?: () => Readonly<Record<string, string>>
+  /** The window and settings variables the conditions of commands read: window.isVaultOpen and the others, and config. */
+  readonly getWindowValues?: () => WhenValues
   /** The commands the enabled plugins declare in their manifests; undefined until the first list has loaded. */
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
   /** Whether the plugin declares a frontend the window loads; where absent, every plugin does. */
@@ -151,6 +156,8 @@ export interface PluginHostDeps {
     command: string,
     target: CommandTarget | undefined,
   ) => SlotCommandLook | undefined
+  /** The values the when conditions of slot entries read over the target of a slot: target, window and settings. */
+  readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
   /** Receives what is wrong with the slot entries of a plugin. */
   readonly reportSlotIssue?: (
     pluginId: string,

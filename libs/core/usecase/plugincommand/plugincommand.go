@@ -9,7 +9,6 @@ import (
 	"maps"
 	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -157,16 +156,22 @@ func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, ca
 	return checkArguments(declared, call)
 }
 
-// checkPath reports whether the call names a file the command can run over.
+// checkPath reports whether the condition of the command holds over the path of the call. A condition
+// that does not name the target, or depends on what the core does not know (the window, the settings,
+// whether a path of no known type is a folder), lets the call through.
 func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, call Call) error {
-	switch {
-	case declared.HasFiles() && (call.Path == "" || strings.HasSuffix(call.Path, "/")):
-		return fmt.Errorf("%w: %s runs over a file", ErrBadArguments, declared.ID)
-	case declared.HasFiles() && !declared.CanRunOn(u.getContentType(call.Path), u.readNoteType(ctx, v, declared, call.Path)):
-		return fmt.Errorf("%w: %s runs over files of %v and notes of types %v, and %s is none",
-			ErrBadArguments, declared.ID, declared.ContentTypes, declared.NoteTypes, call.Path)
-	case !declared.HasFiles() && call.Path != "":
-		return fmt.Errorf("%w: %s runs over no file", ErrBadArguments, declared.ID)
+	condition, err := pluginport.ParseCondition(declared.When)
+	if err != nil {
+		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
+	}
+	if !condition.NamesTarget() {
+		return nil
+	}
+	noteType := u.readNoteType(ctx, v, condition, call.Path)
+	values := pluginport.GetTargetValues(call.Path, string(u.getContentType(call.Path)), string(noteType))
+	if condition.Evaluate(values) == pluginport.ConditionFalse {
+		return fmt.Errorf("%w: %s is not available over %q, as its condition %q does not hold there",
+			ErrBadArguments, declared.ID, call.Path, declared.When)
 	}
 	return nil
 }
@@ -223,11 +228,10 @@ func (u Run) getContentType(path string) domain.ContentType {
 	return u.types.GetContentType(path)
 }
 
-// readNoteType is the type of the note at the path where the command runs over notes of some type,
-// and no type where it runs over none, where the vault has no readers, or where the note cannot be
-// read.
-func (u Run) readNoteType(ctx context.Context, v domain.Vault, declared Command, path string) domain.NoteType {
-	if len(declared.NoteTypes) == 0 || u.readers == nil {
+// readNoteType is the type of the note at the path where the condition names it, and no type where
+// it does not, where the vault has no readers, or where the note cannot be read.
+func (u Run) readNoteType(ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, path string) domain.NoteType {
+	if !slices.Contains(condition.Names(), "target.noteType") || u.readers == nil || path == "" {
 		return ""
 	}
 	noteType, err := vaultport.ReadNoteType(ctx, u.readers, v, path)
@@ -237,18 +241,29 @@ func (u Run) readNoteType(ctx context.Context, v domain.Vault, declared Command,
 	return noteType
 }
 
-// ListExtensions lists, lowercase and without the dot, the extensions that give a file a type the
-// command runs over, and `*` alone where it runs over a file of any type.
-func (u List) ListExtensions(command Command) []string {
-	if slices.Contains(command.ContentTypes, domain.AnyContentType) {
-		return []string{"*"}
+// ListContentTypes gives the content type of a file by its extension, lowercase and without the dot,
+// for every extension the table knows a type of; the window derives target.contentType from it.
+func (u List) ListContentTypes() map[string]string {
+	out := map[string]string{}
+	if u.types == nil {
+		return out
 	}
-	var out []string
-	for _, one := range command.ContentTypes {
-		if u.types != nil {
-			out = append(out, u.types.ListExtensions(one)...)
-		}
+	for _, extension := range u.types.ListExtensions(domain.AnyContentType) {
+		out[extension] = string(u.types.GetContentType("file." + extension))
 	}
-	slices.Sort(out)
-	return slices.Compact(out)
+	return out
+}
+
+// HasItems reports whether the command offers one item per text version of a file: its condition
+// names version.*. A condition that cannot be read counts as having items, so it is listed nowhere.
+func HasItems(command Command) bool {
+	condition, err := pluginport.ParseCondition(command.When)
+	return err != nil || condition.HasItems()
+}
+
+// NamesTarget reports whether the condition of the command names the target it runs over, so a call
+// names a path.
+func NamesTarget(command Command) bool {
+	condition, err := pluginport.ParseCondition(command.When)
+	return err == nil && condition.NamesTarget()
 }

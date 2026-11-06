@@ -13,7 +13,7 @@ const showNote: CommandDeclaration = {
   pluginId: PLUGIN,
   id: 'graph.showNote',
   title: 'Show note in plex',
-  scope: 'note',
+  when: 'target.isNote',
 }
 
 /** A window with a plugin that has a frontend and no backend, and the commands its manifest declares. */

@@ -3,7 +3,7 @@
  */
 import { COMMAND } from '@/shared/commandIds'
 import { createRowKeys } from '../chords/chords'
-import { isAlwaysAvailable, isFileChosen } from '../commands/availability'
+import { withWhen } from '../commands/availability'
 import type { Command } from '../../types'
 import type { Words } from '../../words'
 
@@ -15,7 +15,7 @@ export const createWindowCreationCommands = (words: Words, agent: string): reado
     group: 'window',
     iconName: 'file-plus',
     input: 'name',
-    isAvailable: (target) => target.isReady,
+    ...withWhen('window.isVaultReady'),
   },
 ]
 
@@ -25,20 +25,20 @@ export const createWindowNavigationCommands = (words: Words, agent: string): rea
     text: words.close,
     ...createRowKeys(COMMAND.closeTab, agent),
     group: 'window',
-    isAvailable: (target) => target.tab !== '',
+    ...withWhen('window.isTabOpen'),
   },
   {
     id: COMMAND.openFile,
     text: words.readDocument,
     group: 'file',
-    isAvailable: isFileChosen,
+    ...withWhen('target.isFile && !window.isTabOpen'),
   },
   {
     id: COMMAND.searchVault,
     text: words.searchVault,
     keys: words.findKeys,
     group: 'window',
-    isAvailable: isAlwaysAvailable,
+    ...withWhen(''),
   },
 ]
 
@@ -49,7 +49,7 @@ export const createWindowSettingsCommands = (words: Words): readonly Command[] =
     text: words.openSettings,
     group: 'settings',
     iconName: 'settings',
-    isAvailable: isAlwaysAvailable,
+    ...withWhen(''),
   },
 ]
 

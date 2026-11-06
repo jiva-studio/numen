@@ -62,3 +62,5 @@ export {
   type SlotCommandLook,
   type SlotRegistryDeps,
 } from './slots/slotRegistry'
+export { parseWhen, type WhenCondition, type WhenSettings, type WhenValues } from './when/when'
+export { getTargetValues } from './when/targetValues'
