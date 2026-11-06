@@ -1,3 +1,4 @@
+import { runInNewContext } from 'node:vm'
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { ErrorCode as ProtoErrorCode, ErrorCodeSchema } from '@numen/protocol'
@@ -89,6 +90,15 @@ describe('a fault', () => {
     const reported = Object.assign(new Error('The deck sample.deck could not be read: no cards'), {
       name: 'ReportedError',
     })
+    expect(formatErrorMessage(reported)).toBe('The deck sample.deck could not be read: no cards')
+  })
+
+  it('shows the text of a ReportedError built in another realm', () => {
+    const reported: unknown = runInNewContext(
+      'const error = new Error(text); error.name = "ReportedError"; error',
+      { text: 'The deck sample.deck could not be read: no cards' },
+    )
+    expect(reported).not.toBeInstanceOf(Error)
     expect(formatErrorMessage(reported)).toBe('The deck sample.deck could not be read: no cards')
   })
 

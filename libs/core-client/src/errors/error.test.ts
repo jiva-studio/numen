@@ -1,3 +1,4 @@
+import { runInNewContext } from 'node:vm'
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { ErrorCode as ProtoErrorCode, ErrorCodeSchema } from '@numen/protocol'
@@ -94,6 +95,17 @@ describe('a fault', () => {
       new Error('The plugin source local failed: duplicate plugin id "sample.notes"'),
       { name: 'ReportedError' },
     )
+    expect(formatErrorMessage(reported)).toBe(
+      'The plugin source local failed: duplicate plugin id "sample.notes"',
+    )
+  })
+
+  it('shows the text of a ReportedError built in another realm', () => {
+    const reported: unknown = runInNewContext(
+      'const error = new Error(text); error.name = "ReportedError"; error',
+      { text: 'The plugin source local failed: duplicate plugin id "sample.notes"' },
+    )
+    expect(reported).not.toBeInstanceOf(Error)
     expect(formatErrorMessage(reported)).toBe(
       'The plugin source local failed: duplicate plugin id "sample.notes"',
     )
