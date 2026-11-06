@@ -77,7 +77,12 @@ describe('the ranges of a recording tab', () => {
         throw failure
       }
     })
-    const state = reactive({ path: 'talks/Ants.mp3', selector: null, ranges: null as readonly TextRange[] | null, savePlace })
+    const state = reactive({
+      path: 'talks/Ants.mp3',
+      selector: null,
+      ranges: null as readonly TextRange[] | null,
+      savePlace,
+    })
     const tab = mount(RecordingTab, {
       props: {
         path: 'talks/Ants.mp3',

@@ -10,7 +10,14 @@
     "category": "agents",
     "listeners": [{ "name": "mcp", "portSetting": "port", "protocol": "tcp" }]
   },
-  "permissions": ["vault:read", "vault:write", "vault:manage", "window:focus", "index:read", "network:outbound"],
+  "permissions": [
+    "vault:read",
+    "vault:write",
+    "vault:manage",
+    "window:focus",
+    "index:read",
+    "network:outbound"
+  ],
   "backend": { "entrypoint": "bin/agents-mcp-server" },
   "services": ["md.numen.agents.mcp.server"],
   "settings": [
