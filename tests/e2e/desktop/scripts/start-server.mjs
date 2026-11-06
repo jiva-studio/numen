@@ -179,6 +179,8 @@ fs.writeFileSync(
       'md.numen.agents.codex': { enabled: false },
       'md.numen.agents.antigravity': { enabled: false },
       'md.numen.agents.acp': { enabled: false },
+      // The host binds the MCP server's listener port; each server of a parallel run takes its own.
+      'md.numen.agents.mcp.server': { port: Number(port) + 1 },
     },
     null,
     2,
