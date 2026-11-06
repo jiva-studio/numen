@@ -169,3 +169,41 @@ func TestListingWithOnlyDisabledProvidersReportsNothing(t *testing.T) {
 		t.Errorf("listed %+v from disabled providers", programs)
 	}
 }
+
+// staleEnabledHost is a provider host that reports every plugin enabled, as a host does for a
+// plugin disabled between the check and its activation.
+type staleEnabledHost struct {
+	*providerHost
+}
+
+func (h staleEnabledHost) GetPlugin(id string) (manifest.Discovered, bool) {
+	for _, info := range h.GetPluginInfos() {
+		if info.ID == id {
+			return manifest.Discovered{}, true
+		}
+	}
+	return manifest.Discovered{}, false
+}
+
+func TestListingReportsNoProviderDisabledBeforeItsActivation(t *testing.T) {
+	host := newProviderHost(t, map[string]numenv1connect.AgentServiceHandler{
+		disabledProvider:  answeringServer{},
+		failingProvider:   &floodAgentServer{},
+		answeringProvider: answeringServer{},
+	}, disabledProvider)
+
+	programs, err := NewRouter(staleEnabledHost{host}).GetPrograms(t.Context(), nil)
+
+	if err == nil {
+		t.Fatal("the failing provider was not reported")
+	}
+	if strings.Contains(err.Error(), disabledProvider) {
+		t.Errorf("the disabled provider was reported: %v", err)
+	}
+	if !strings.Contains(err.Error(), "rpc get agent programs") {
+		t.Errorf("the failure of the enabled provider was not reported: %v", err)
+	}
+	if len(programs) != 1 || programs[0].Provider != answeringProvider {
+		t.Errorf("listed %+v, want only lark of %s", programs, answeringProvider)
+	}
+}

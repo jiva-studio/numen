@@ -81,16 +81,26 @@ func (r *Router) GetPrograms(
 	return programs, errors.Join(failed...)
 }
 
-// listPrograms queries one provider for the programs it provides.
+// listPrograms queries one provider for the programs it provides. A provider disabled after
+// getProviders listed it provides none.
 func (r *Router) listPrograms(
 	ctx context.Context, id string, commands map[string][]string,
 ) (programs []agentport.AgentProgram, err error) {
 	agent, err := OpenForPlugin(ctx, r.host, id)
+	if isDisabled(err) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = errors.Join(err, agent.Close()) }()
 	return agent.GetPrograms(ctx, commands)
+}
+
+// isDisabled reports whether the error is the host refusing to activate a disabled plugin.
+func isDisabled(err error) bool {
+	var unavailable *pluginport.UnavailableError
+	return errors.As(err, &unavailable) && unavailable.Reason == pluginport.PluginDisabled
 }
 
 // setProviders keeps which plugin runs each program listed. The first plugin to list a program
