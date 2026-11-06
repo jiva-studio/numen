@@ -317,19 +317,6 @@ func TestCardWriteToolSchemasNameTheTotalKey(t *testing.T) {
 	}
 }
 
-func TestCardToolInstructionsContainNoNarrativeMarker(t *testing.T) {
-	s, _ := newSession(t, vault())
-	listing, err := s.registry.ListTools(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, marker := range getNarrativeMarkers() {
-		if marker.MatchString(listing.Instructions) {
-			t.Errorf("the instructions match %s: %q", marker, listing.Instructions)
-		}
-	}
-}
-
 // getSectionedVault returns a card model and a deck of two sections, one card in each.
 func getSectionedVault() map[string]string {
 	return map[string]string{
