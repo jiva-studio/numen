@@ -43,7 +43,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if err := o.checkIdentity.Execute(v); err != nil {
 		return err
 	}
-	end, err := o.shutdown.tryBeginSwitch(ctx)
+	end, isInsidePluginOpen, err := o.shutdown.tryBeginSwitch(ctx)
 	if err != nil {
 		return err
 	}
@@ -57,6 +57,11 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 
 	if !flushPending(target, o.State.Window, &o.State.Writing) {
 		return errAnswerPending
+	}
+	// A plugin's open cancelled during the flush switches nothing.
+	if isInsidePluginOpen && ctx.Err() != nil {
+		o.State.Writing.open()
+		return context.Cause(ctx)
 	}
 
 	was := o.State.GetCurrentVault()

@@ -468,20 +468,21 @@ func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context
 	}, nil
 }
 
-// tryBeginSwitch starts the flush of a change of vault and returns the function that ends it. A
-// change of vault under the context of the running plugin's open takes no exclusion of its own.
-func (s *shutdownState) tryBeginSwitch(ctx context.Context) (func(), error) {
-	open, isPluginOpen := ctx.Value(pluginOpenKey{}).(*pluginOpen)
+// tryBeginSwitch starts the flush of a change of vault and returns the function that ends it, and
+// whether the change runs inside the running plugin's open of ctx. Such a change takes no exclusion
+// of its own.
+func (s *shutdownState) tryBeginSwitch(ctx context.Context) (func(), bool, error) {
+	open, hasPluginOpen := ctx.Value(pluginOpenKey{}).(*pluginOpen)
 	s.mu.Lock()
-	isRunning := isPluginOpen && s.pluginOpen == open
+	isInsidePluginOpen := hasPluginOpen && s.pluginOpen == open
 	s.mu.Unlock()
-	if isRunning {
-		return func() {}, nil
+	if isInsidePluginOpen {
+		return func() {}, true, nil
 	}
 	if err := s.tryBegin(); err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return s.endKeepOpen, nil
+	return s.endKeepOpen, false, nil
 }
 
 // isClosed is whether the window has closed.

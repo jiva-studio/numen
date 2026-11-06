@@ -77,18 +77,19 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 		return fmt.Errorf("open vault %s: %w", id, pluginport.ErrUnsavedChanges)
 	}
 	err = l.state.OpenVault(ctx, v)
-	if !errors.Is(err, errAnswerPending) {
-		return err
-	}
 	switch {
+	case err == nil:
+		return nil
 	case errors.Is(context.Cause(ctx), errUserFirst):
 		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, errUserFirst)
 	case ctx.Err() != nil:
 		l.state.Window.CancelFlush()
 		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, ctx.Err())
+	case errors.Is(err, errAnswerPending):
+		l.state.Window.CancelFlush()
+		return fmt.Errorf("open vault %s: %w", id, pluginport.ErrUnsavedChanges)
 	}
-	l.state.Window.CancelFlush()
-	return fmt.Errorf("open vault %s: %w", id, pluginport.ErrUnsavedChanges)
+	return err
 }
 
 func (l pluginVaultList) IsMissing(v domain.Vault) bool {
