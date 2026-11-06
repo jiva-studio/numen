@@ -8,7 +8,7 @@ import (
 
 // The plugin serves the tools of the others to an agent, so it holds the permissions those tools
 // require besides the one of their effect.
-func TestManifestHoldsThePermissionsTheToolsRequire(t *testing.T) {
+func TestManifestListsVaultManageWindowFocusAndIndexRead(t *testing.T) {
 	var manifest struct {
 		Permissions []string `json:"permissions"`
 	}
