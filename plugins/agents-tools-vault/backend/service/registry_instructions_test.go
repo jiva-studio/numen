@@ -27,7 +27,7 @@ func TestTheVaultToolsListOneParagraphOfInstructions(t *testing.T) {
 		"[[",
 		"[[note://",
 		"file://",
-		"`at`",
+		"`uri`",
 		"numen:",
 		"start=",
 		"length=",
@@ -42,6 +42,9 @@ func TestTheVaultToolsListOneParagraphOfInstructions(t *testing.T) {
 		if !strings.Contains(instructions, want) {
 			t.Errorf("the instructions do not say %q:\n%s", want, instructions)
 		}
+	}
+	if strings.Contains(instructions, "`at`") {
+		t.Errorf("the instructions still name the address field `at`:\n%s", instructions)
 	}
 	if !strings.Contains(instructions, service.ArrangeInstructions) {
 		t.Errorf("the instructions leave out the arranging of notes:\n%s", instructions)

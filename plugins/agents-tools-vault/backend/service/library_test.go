@@ -125,8 +125,8 @@ func TestLibrarySearchFindsPDFPassageWithPageAndAddress(t *testing.T) {
 		pdf.Start != 41 || pdf.Length != 56 {
 		t.Errorf("the PDF passage is %+v", pdf)
 	}
-	if want := "numen:" + url.PathEscape(guidePath) + "?start=41&length=56"; pdf.At != want {
-		t.Errorf("the address is %q, want %q", pdf.At, want)
+	if want := "numen:" + url.PathEscape(guidePath) + "?start=41&length=56"; pdf.URI != want {
+		t.Errorf("the address is %q, want %q", pdf.URI, want)
 	}
 	note := out.Matches[1]
 	if note.Title != "Herons of the Marsh" || note.Source != "notes/Herons.md" || note.Location != "" {
@@ -134,6 +134,68 @@ func TestLibrarySearchFindsPDFPassageWithPageAndAddress(t *testing.T) {
 	}
 	if talk := out.Matches[2]; talk.Source != talkPath || talk.Location != "00:04" || talk.Title != "Marsh Talk" {
 		t.Errorf("the transcript passage is %+v", talk)
+	}
+}
+
+func TestLibrarySearchMatchHasURIKeyAndNoAtKey(t *testing.T) {
+	l := newLibrary(t)
+	res, err := l.calls.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: "library_search", Arguments: []byte(`{"query":"heron"}`)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out map[string]any
+	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
+		t.Fatalf("%v in %s", err, res.GetResult().GetStructured())
+	}
+	matches, isList := out["matches"].([]any)
+	if !isList || len(matches) != 3 {
+		t.Fatalf("matches %v, want three passages", out["matches"])
+	}
+	for _, m := range matches {
+		match, isObject := m.(map[string]any)
+		if !isObject {
+			t.Fatalf("a match is %v, want an object", m)
+		}
+		address, isText := match["uri"].(string)
+		if !isText || !strings.HasPrefix(address, "numen:") {
+			t.Errorf("the match %v has uri %v, want a numen: address", match, match["uri"])
+		}
+		if _, hasAt := match["at"]; hasAt {
+			t.Errorf("the match %v still has the key at", match)
+		}
+	}
+}
+
+func TestLibrarySearchSchemaNamesTheAddressURI(t *testing.T) {
+	l := newLibrary(t)
+	infos, err := l.calls.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var schema []byte
+	for _, info := range infos.Tools {
+		if info.GetName() == "library_search" {
+			schema = info.GetOutputSchema()
+		}
+	}
+	var output struct {
+		Properties struct {
+			Matches struct {
+				Items struct {
+					Properties map[string]json.RawMessage `json:"properties"`
+				} `json:"items"`
+			} `json:"matches"`
+		} `json:"properties"`
+	}
+	if err := json.Unmarshal(schema, &output); err != nil {
+		t.Fatalf("%v in %s", err, schema)
+	}
+	properties := output.Properties.Matches.Items.Properties
+	if _, hasURI := properties["uri"]; !hasURI {
+		t.Errorf("the schema of a match does not name uri: %s", schema)
+	}
+	if _, hasAt := properties["at"]; hasAt {
+		t.Errorf("the schema of a match still names at: %s", schema)
 	}
 }
 
