@@ -99,6 +99,7 @@ describe('a command run by its id', () => {
       type: 'note' as const,
       isFolder: false,
       others: [],
+      tab: '',
     }
 
     expect(host.hasCommand('sample.plugin:count')).toBe(true)

@@ -110,7 +110,7 @@ describe('command handlers', () => {
 
     const handled = host.handleShortcut(
       new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }),
-      async () => ({ path: '', title: '', type: 'note', isFolder: false, others: [] }),
+      async () => ({ path: '', title: '', type: 'note', isFolder: false, others: [], tab: '' }),
     )
     await new Promise((resolve) => setTimeout(resolve, 0))
 
@@ -141,6 +141,7 @@ describe('command handlers', () => {
         type: 'note',
         isFolder: false,
         others: [],
+        tab: '',
       }),
     ).resolves.toBe(true)
     expect(onError).toHaveBeenCalledWith('cmd.plugin', fault)
@@ -148,7 +149,14 @@ describe('command handlers', () => {
 })
 
 describe('a command over a note', () => {
-  const NOTE = { path: 'Animals.md', title: 'Animals', type: 'sample', isFolder: false, others: [] }
+  const NOTE = {
+    path: 'Animals.md',
+    title: 'Animals',
+    type: 'sample',
+    isFolder: false,
+    others: [],
+    tab: '',
+  }
 
   it('is offered as one over a note, and runs with the note it is given', async () => {
     const host = createPluginHost(
@@ -198,6 +206,7 @@ describe('a command over a note', () => {
       type: 'note',
       isFolder: false,
       others: [],
+      tab: '',
     }))
     host.handleShortcut(event, async () => NOTE)
     await new Promise((resolve) => setTimeout(resolve, 0))
@@ -371,6 +380,7 @@ describe('a tab kind component', () => {
         type: 'note',
         isFolder: false,
         others: [],
+        tab: '',
       }),
     ).resolves.toBe(true)
   })

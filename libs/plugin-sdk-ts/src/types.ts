@@ -4,7 +4,7 @@ import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
 import type { BackgroundTaskHost } from './backgroundTasks'
-import type { CommandsHost, CommandTarget } from './commands'
+import type { CommandChoice, CommandsHost, CommandTarget } from './commands'
 import type { SlotHost } from './slots'
 import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
@@ -185,7 +185,13 @@ export interface CommandRegistration {
   // The id as `<object>.<action>`, such as `tree.open`, as the manifest declares it. The host files
   // the command under `<plugin id>:<id>`; registering the same full id twice throws.
   id: string
-  handler: (note: CommandNote) => void | Promise<void>
+  // Runs the command over the note; with `choice`, the id of the choice picked.
+  handler: (note: CommandNote, choice?: string) => void | Promise<void>
+  // The choices the command offers over the target, computed each time a place asks; now or later.
+  // A command without it offers none.
+  getChoices?: (
+    target: CommandTarget,
+  ) => readonly CommandChoice[] | Promise<readonly CommandChoice[]>
 }
 
 // AgentProviderRegistration registers an AI agent provider.

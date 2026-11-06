@@ -274,6 +274,7 @@ describe('a plugin command over a note', () => {
       type: 'sample',
       isFolder: false,
       others: [],
+      tab: '',
     })
   })
 
@@ -332,6 +333,7 @@ describe('a plugin command over a note', () => {
       type: 'sample',
       isFolder: false,
       others: ['Birds.md'],
+      tab: '',
     })
     expect(h.startCommand).not.toHaveBeenCalled()
 
@@ -366,6 +368,7 @@ describe('a plugin command over a note', () => {
         type: 'sample',
         isFolder: false,
         others: [],
+        tab: '',
       }),
     )
     expect(event.preventDefault).toHaveBeenCalledOnce()

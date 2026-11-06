@@ -101,6 +101,7 @@ describe('createPluginHost', () => {
       type: 'note',
       isFolder: false,
       others: [],
+      tab: '',
     })
     expect(executed).toBe(true)
 
@@ -117,6 +118,7 @@ describe('createPluginHost', () => {
       type: 'note',
       isFolder: false,
       others: [],
+      tab: '',
     }))
     expect(handled).toBe(true)
     await new Promise((resolve) => setTimeout(resolve, 0))

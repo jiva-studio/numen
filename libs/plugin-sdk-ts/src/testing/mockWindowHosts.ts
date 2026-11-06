@@ -3,7 +3,7 @@
  * for the unit tests of the plugins that draw them.
  */
 import type { Disposable } from '../types'
-import type { CommandsHost, CommandTarget } from '../commands'
+import type { CommandChoice, CommandsHost, CommandTarget } from '../commands'
 import type { SlotHost, SlotItem, SlotPlace } from '../slots'
 import type { VaultsHost, VaultsState, WindowHost, WindowState } from '../window'
 import type { BackgroundTask, BackgroundTaskHost } from '../backgroundTasks'
@@ -28,11 +28,14 @@ function watchWith<T>(
 export interface MockCommandRun {
   readonly command: string
   readonly target: CommandTarget | undefined
+  readonly choice: string | undefined
 }
 
 // MockCommandsHost is a CommandsHost whose ids a test sets, and whose runs it reads back.
 export interface MockCommandsHost extends CommandsHost {
   setIds(ids: readonly string[]): void
+  // Sets the choices a command offers, whatever the target.
+  setChoices(command: string, choices: readonly CommandChoice[]): void
   getRuns(): MockCommandRun[]
 }
 
@@ -40,11 +43,16 @@ export function createMockCommandsHost(initial: readonly string[] = []): MockCom
   let ids = initial
   const watchers = new Set<(value: readonly string[]) => void>()
   const runs: MockCommandRun[] = []
+  const choices = new Map<string, readonly CommandChoice[]>()
   return {
     getIds: () => ids,
     watch: (handler) => watchWith(watchers, handler, ids),
-    run: async (command, target) => {
-      runs.push({ command, target })
+    getChoices: async (command) => choices.get(command) ?? [],
+    run: async (command, target, choice) => {
+      runs.push({ command, target, choice })
+    },
+    setChoices: (command, next) => {
+      choices.set(command, next)
     },
     setIds: (next) => {
       ids = next

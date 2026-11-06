@@ -53,7 +53,7 @@ export function createPlexTabDeps(
     readHeadings: (paths) => notes.getHeadings(paths),
     runCommand: (command, path, title) => {
       commands
-        ?.run(command, { path, title, isFolder: false, others: [] })
+        ?.run(command, { path, title, isFolder: false, others: [], tab: '' })
         .catch((error: unknown) => workspace.showError(formatErrorMessage(error)))
     },
     getNoteCommands: () => workspace.getNoteCommands(),

@@ -80,6 +80,7 @@ describe('view-file-tree plugin', () => {
       type: 'note',
       isFolder: false,
       others: [],
+      tab: '',
     })
 
     expect(openCalls).toStrictEqual([[FILES, undefined]])

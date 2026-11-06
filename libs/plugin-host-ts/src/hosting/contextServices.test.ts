@@ -279,39 +279,37 @@ describe('a file a plugin writes', () => {
 })
 
 describe('a command a plugin runs over the vault', () => {
-  const target = { path: 'a.md', title: 'A', isFolder: false, others: [] }
+  const target = { path: 'a.md', title: 'A', isFolder: false, others: [], tab: '' }
   const row = { paths: ['a.md'], name: 'a', isNote: true, isFolder: false }
-
-  it.each([
+  const WRITES = [
     'app:note.trash',
     'app:note.createChild',
     'app:note.rename',
     'md.numen.engines.transcription:transcript.create',
-  ])('fails for %s without vault:write', async (id) => {
-    const { context, workspace, commands } = createContext(['vault:read'])
+  ]
 
-    await expect(context.commands!.run(id, target)).rejects.toThrowError(
-      `Plugin "md.numen.sample" lacks required permission "vault:write" for commands.run ${id}`,
-    )
+  it.each(WRITES)('runs %s through the commands of the window with no permission', async (id) => {
+    const { context, commands } = createContext([])
+
+    await context.commands!.run(id, target)
+
+    expect(commands.getRuns()).toStrictEqual([{ command: id, target, choice: undefined }])
+  })
+
+  it.each(WRITES)('fails for %s over a row without vault:write', (id) => {
+    const { context, workspace } = createContext(['vault:read'])
+
     expect(() => context.workspace!.runPathCommand(id, row)).toThrowError(
       `Plugin "md.numen.sample" lacks required permission "vault:write" for workspace.runPathCommand ${id}`,
     )
-    expect(commands.getRuns()).toStrictEqual([])
     expect(workspace.runPathCommand).not.toHaveBeenCalled()
   })
 
-  it.each([
-    'app:note.trash',
-    'app:note.createChild',
-    'app:note.rename',
-    'md.numen.engines.transcription:transcript.create',
-  ])('runs %s with vault:write', async (id) => {
-    const { context, workspace, commands } = createContext(['vault:write'])
+  it.each(WRITES)('runs %s over a row with vault:write', (id) => {
+    const { context, workspace } = createContext(['vault:write'])
 
-    await context.commands!.run(id, target)
     context.workspace!.runPathCommand(id, row)
 
-    expect(commands.getRuns()).toStrictEqual([{ command: id, target }])
     expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
   })
 
@@ -321,17 +319,15 @@ describe('a command a plugin runs over the vault', () => {
     'app:note.copyPath',
     'app:settings.open',
     'md.numen.views.agent.chat:note.ask',
-  ])('runs %s without vault:write', async (id) => {
-    const { context, workspace, commands } = createContext([])
+  ])('runs %s over a row without vault:write', (id) => {
+    const { context, workspace } = createContext([])
 
-    await context.commands!.run(id, target)
     context.workspace!.runPathCommand(id, row)
 
-    expect(commands.getRuns()).toStrictEqual([{ command: id, target }])
     expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
   })
 
-  it('reads the commands of the window without vault:write', () => {
+  it('reads the commands of the window and their choices with no permission', () => {
     const { context, commands } = createContext([])
     const handler = vi.fn()
     context.commands!.watch(handler)

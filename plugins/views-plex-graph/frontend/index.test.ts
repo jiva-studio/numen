@@ -81,6 +81,7 @@ describe('view-plex-graph plugin', () => {
       type: 'note',
       isFolder: false,
       others: [],
+      tab: '',
     })
     await ctx.getRegisteredContextMenus()[0]!.handler({
       path: 'Two.md',

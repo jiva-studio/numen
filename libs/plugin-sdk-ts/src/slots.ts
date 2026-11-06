@@ -29,6 +29,9 @@ export interface SlotCommand {
   readonly icon?: unknown
   // The suggested shortcut of the command, such as `mod+shift+e`; empty for none.
   readonly shortcut: string
+  // Whether the command offers choices, which the owner draws as a submenu read from
+  // `CommandsHost.getChoices` when it opens.
+  readonly hasChoices: boolean
 }
 
 // SlotView is a component a plugin registered with `registerSlotView` and draws itself.

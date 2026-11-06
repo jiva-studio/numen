@@ -173,6 +173,7 @@ describe('flashcards-studio plugin', () => {
       type: 'note',
       isFolder: false,
       others: [],
+      tab: '',
     })
 
     expect(openTab).toHaveBeenCalledExactlyOnceWith(PRESET, 'Plan.md')

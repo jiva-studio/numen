@@ -254,7 +254,7 @@ The view draws the whole bar: the strip, the entries of its slots, the title, th
 | `context.window`   | Whether the window is maximized or fills the screen through `watch`; `minimize`, `toggleMaximize` and `close` are the window buttons.                                           |
 | `context.app`      | `name`, the name of the application, and `platform`: `darwin`, `windows` or `linux`. On macOS the system draws the window buttons at the left, and the bar keeps room for them. |
 
-A window that does not offer `slots`, `commands`, `vaults` or `window` leaves that field out of the context. Running a command that changes the vault needs `vault:write`, except a command that changes nothing in the vault, as for `workspace.runPathCommand`.
+A window that does not offer `slots`, `commands`, `vaults` or `window` leaves that field out of the context. `context.commands.run` runs any command of the window and needs no permission.
 
 When two enabled plugins register a view for `titleBar`, the window draws the one of the plugin first by plugin id, compared as plain text, and writes an error for the other plugin to the message log. The view is drawn in the window, not in a pane, and the window adds the stylesheet of the plugin while its view is drawn.
 
@@ -382,6 +382,8 @@ packaged plugin: plugins/sample/dist/md.numen.sample-0.1.0.zip
 Every command is filed in the window under `<owner>:<object>.<action>`. The owner is the id of the plugin that provides the command, or `app` for a command of the editor itself (`app:note.open`, `app:tab.close`). A plugin writes only the part after the colon, as `<object>.<action>` with each part in camelCase (`tree.revealNote`), in `contributes.commands` of its manifest and in `registerCommand` of its frontend, and the host adds the owner. A command registered twice under one full id makes the activation of its plugin fail with the full id in the message. The title is a separate imperative phrase that says what the command does (`Create deck`).
 
 A plugin declares every command once, in `contributes.commands` of the manifest, whichever part of the plugin runs it. The declaration has no field that names the part: the application learns that from where the handler is registered. A command the frontend runs has its handler bound in the plugin's frontend with `registerCommand({ id, handler })`, and a command the backend runs is served by the plugin's backend. The title, icon, scope and shortcut are read from the declaration, never from the code.
+
+A handler gets a `CommandNote`: the `CommandTarget` of the run (`path`, `title`, `isFolder`, `others` the paths selected with it, and `tab` where a tab menu runs it) and the `type` of the note. A command may offer choices over a target, as "Move to window" offers one per open window: `registerCommand({ id, handler, getChoices })`, where `getChoices(target)` returns `{ id, title }` rows now or as a promise. A place draws such a command as a submenu of its choices and the palette as a pick list; the handler gets the id of the choice picked as its second argument. A plugin runs any command, its own or another's, with `context.commands.run(command, target?, choice?)`, and reads the choices with `context.commands.getChoices(command, target)`.
 
 ```json
 "contributes": {

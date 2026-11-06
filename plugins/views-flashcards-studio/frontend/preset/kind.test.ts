@@ -1160,6 +1160,7 @@ describe('the preset of a note', () => {
     type,
     isFolder: false,
     others: [],
+    tab: '',
   })
   const SLOW: Preset = {
     path: 'presets/Slow.md',

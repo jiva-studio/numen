@@ -100,7 +100,14 @@ function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: 
 
 const DEFAULT_APP: AppInfo = { name: 'numen', version: '0.0.0-test', build: 1, platform: 'linux' }
 
-const EMPTY_NOTE: CommandNote = { path: '', title: '', type: 'note', isFolder: false, others: [] }
+const EMPTY_NOTE: CommandNote = {
+  path: '',
+  title: '',
+  type: 'note',
+  isFolder: false,
+  others: [],
+  tab: '',
+}
 
 // Reports whether the address is an absolute http or https address, as the window opens only those.
 function isWebAddress(url: string): boolean {

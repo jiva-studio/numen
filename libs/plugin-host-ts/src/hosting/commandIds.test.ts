@@ -25,6 +25,7 @@ const NOTE = {
   type: 'note' as const,
   isFolder: false,
   others: [],
+  tab: '',
 }
 
 describe('the full id of a command', () => {

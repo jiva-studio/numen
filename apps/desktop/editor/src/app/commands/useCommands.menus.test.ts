@@ -118,6 +118,7 @@ describe('running the action of a search result that is an entry of its menu', (
       type: 'sample',
       isFolder: false,
       others: [],
+      tab: '',
     })
     expect(h.startCommand).not.toHaveBeenCalled()
   })
@@ -279,6 +280,7 @@ describe('opening the note of a search result as a command', () => {
       type: 'sample',
       isFolder: false,
       others: [],
+      tab: '',
     })
   })
 
@@ -419,6 +421,7 @@ describe('running a command with a text typed for it', () => {
       type: 'sample',
       isFolder: false,
       others: [],
+      tab: 'tab-1',
     })
     expect(h.startCommand).not.toHaveBeenCalled()
   })

@@ -9,8 +9,10 @@ import { findShortcutKeys, registerCommand, type CommandTarget } from '@/feature
 import { getNamedIcon } from '@/shared/icons'
 import type { VaultCore } from '../vault'
 
-/** What a run names: the note, and the others selected with it where it was run from a selection. */
-type NoteTarget = Pick<CommandTarget, 'path' | 'title' | 'isFolder' | 'others'>
+/** What a run names: the note, the others selected with it, and the tab it is over. */
+type NoteTarget = Pick<CommandTarget, 'path' | 'title' | 'isFolder' | 'others'> & {
+  readonly tab?: string
+}
 
 export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | undefined) {
   const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []
@@ -58,6 +60,7 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
       type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
       isFolder: target.isFolder ?? false,
       others: target.others ?? [],
+      tab: target.tab ?? '',
     }
   }
 

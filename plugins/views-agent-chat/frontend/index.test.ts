@@ -96,6 +96,7 @@ describe('view-agent-chat plugin', () => {
       type: 'note',
       isFolder: false,
       others: [],
+      tab: '',
     })
     await ctx.getRegisteredContextMenus()[0]!.handler({
       path: 'Two.md',

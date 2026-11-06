@@ -16,6 +16,7 @@ export const command = (id: string, extra: Partial<SlotCommand> = {}): SlotComma
   title: `Open ${id}`,
   icon: MARK,
   shortcut: '',
+  hasChoices: false,
   ...extra,
 })
 
