@@ -13,7 +13,6 @@ type (
 	ChooseFolder   = picker.ChooseFolder
 	PickFolder     = picker.PickFolder
 	PickedFolder   = picker.PickedFolder
-	CheckRoot      = check.CheckRoot
 	FolderCheck    = check.FolderCheck
 	GetKnownVaults = registry.GetKnownVaults
 	KnownVault     = registry.KnownVault
@@ -37,10 +36,6 @@ func NewChooseFolder(dialog machineport.FolderDialog) picker.ChooseFolder {
 
 func NewPickFolder(dialog machineport.FolderDialog) picker.PickFolder {
 	return picker.NewPickFolder(dialog)
-}
-
-func NewCheckRoot(identity vaultport.VaultIdentity, home machineport.HomeFolder) *check.CheckRoot {
-	return check.NewCheckRoot(identity, home)
 }
 
 func NewFolderCheck(readers vaultport.VaultReaders) check.FolderCheck {

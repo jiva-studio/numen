@@ -21,7 +21,7 @@ func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
 	f.answerFlushes(t, stream, flushRequest, release)
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 
 	ctx, hangUp := context.WithCancel(t.Context())
 	openResult := callOpenVault(ctx, list, f.second.ID)

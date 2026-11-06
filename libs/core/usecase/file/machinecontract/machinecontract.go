@@ -7,7 +7,6 @@ type (
 	Clock        = machineport.Clock
 	Delay        = machineport.Delay
 	FolderDialog = machineport.FolderDialog
-	HomeFolder   = machineport.HomeFolder
 	PathDialog   = machineport.PathDialog
 	Trash        = machineport.Trash
 	Wait         = machineport.Wait

@@ -32,7 +32,7 @@ func TestPluginOpenVaultAfterTheUserAnswersTheSwitchQuestionShowsTheVault(t *tes
 		t.Fatal("the page's answer never completed the flush request")
 	}
 
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 	select {
 	case err := <-callOpenVault(t.Context(), list, f.second.ID):
 		if err != nil {
@@ -80,7 +80,7 @@ func TestAVaultSwitchWithTheContextOfAFinishedPluginOpenFailsDuringTheUsersClose
 			}
 		}
 	}()
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 	select {
 	case err := <-callOpenVault(t.Context(), list, f.second.ID):
 		if err != nil {

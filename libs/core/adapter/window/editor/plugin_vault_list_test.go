@@ -144,7 +144,7 @@ func TestPluginOpenVaultWithUnsavedChangesInAPageAsksTheUserAndReturnsUnsavedCha
 	answerUser := sync.OnceFunc(func() { close(userAnswered) })
 	t.Cleanup(answerUser)
 	page := f.answerAskingUntilAnswered(t, stream, userAnswered)
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 
 	requireUnsavedChanges(t, callOpenVault(t.Context(), list, f.second.ID), "the plugin's open while a page holds unsaved changes")
 	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
@@ -190,7 +190,7 @@ func TestPluginOpenVaultWithNoUnsavedChangesShowsTheVaultBeforeItReturns(t *test
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	f.answerAll(t, stream)
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 
 	select {
 	case err := <-callOpenVault(t.Context(), list, f.second.ID):
@@ -236,7 +236,7 @@ func TestPluginOpenVaultDuringTheClosesQuestionReturnsUnsavedChangesAndKeepsTheC
 	case <-time.After(200 * time.Millisecond):
 	}
 
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 	select {
 	case err := <-callOpenVault(ctx, list, f.second.ID):
 		if !errors.Is(err, pluginport.ErrUnsavedChanges) {
@@ -287,7 +287,7 @@ func TestPluginOpenVaultDuringWindowCloseKeepsTheCloseAndIsRejected(t *testing.T
 		t.Fatal("the close never asked the page to flush")
 	}
 
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 	openResult := callOpenVault(t.Context(), list, f.second.ID)
 
 	select {
@@ -321,7 +321,7 @@ func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
 	f.answerFlushes(t, stream, flushRequest, release)
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 
 	first := callOpenVault(t.Context(), list, f.second.ID)
 	select {
@@ -359,7 +359,7 @@ func TestPluginOpenVaultOfMissingFolderReturnsUnreadable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 	err := list.OpenVault(t.Context(), f.second.ID)
 
 	if !errors.Is(err, vaults.ErrUnreadable) {
@@ -391,7 +391,7 @@ func watchFlushRequests(stream *connect.ServerStreamForClient[v1.WatchQuitRespon
 // been asked to flush for it.
 func startPluginOpen(t *testing.T, f *showing, flushRequest <-chan struct{}, release chan struct{}) <-chan error {
 	t.Helper()
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 	openResult := callOpenVault(context.WithoutCancel(t.Context()), list, f.second.ID)
 	select {
 	case <-flushRequest:
@@ -521,7 +521,7 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 		close(release)
 		t.Fatal("the switch never asked the page to flush")
 	}
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 	err := list.OpenVault(t.Context(), f.first.ID)
 	close(release)
 
@@ -606,7 +606,7 @@ func TestUserSwitchesAmidRepeatedPluginOpensAreAllTaken(t *testing.T) {
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	f.answerAll(t, stream)
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 
 	stop := make(chan struct{})
 	var openers sync.WaitGroup
@@ -712,7 +712,7 @@ func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := watchFlushRequests(stream)
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
+	list := editor.NewPluginVaultList(f.installation)
 
 	ctx, hangUp := context.WithCancel(t.Context())
 	openResult := callOpenVault(ctx, list, f.second.ID)

@@ -21,20 +21,16 @@ type pluginVaultList struct {
 	installation *Installation
 	state        *State
 	scenarios    *vaults.Scenarios
-	checkRoot    *vaults.CheckRoot
 }
 
 // NewPluginVaultList is the list of vaults of the installation as plugins change it: through the
-// use cases on vaults the window answers with, a folder refused by checkRoot before it is added,
-// and the vault the window shows changed through the state.
-func NewPluginVaultList(o *Installation, checkRoot *vaults.CheckRoot) pluginport.PluginVaultList {
-	return pluginVaultList{installation: o, state: o.State, scenarios: o.Vaults(), checkRoot: checkRoot}
+// use cases on vaults the window answers with, and the vault the window shows changed through the
+// state.
+func NewPluginVaultList(o *Installation) pluginport.PluginVaultList {
+	return pluginVaultList{installation: o, state: o.State, scenarios: o.Vaults()}
 }
 
 func (l pluginVaultList) AddVault(_ context.Context, root, name string) (domain.Vault, error) {
-	if err := l.checkRoot.Execute(root); err != nil {
-		return domain.Vault{}, fmt.Errorf("%w: %w", vaults.ErrUnreadable, err)
-	}
 	return l.scenarios.Add.Execute(root, name)
 }
 

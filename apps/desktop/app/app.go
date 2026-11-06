@@ -265,7 +265,7 @@ func openInstallation(
 		return shownInstallation{}, err
 	}
 	cfg.SetPluginVault(shared)
-	cfg.SetPluginVaultList(editor.NewPluginVaultList(opened, cfg.CheckRoot()))
+	cfg.SetPluginVaultList(editor.NewPluginVaultList(opened))
 	cfg.SetPluginTexts()
 	// The plugin window reads the vault of the State on each call, so a vault opened later in the
 	// main window is served without a new binding.
