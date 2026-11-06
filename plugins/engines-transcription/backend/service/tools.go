@@ -37,7 +37,7 @@ type TranscriptCreateInput struct {
 
 // TranscriptCreateOutput is the output of the transcript_create tool.
 type TranscriptCreateOutput struct {
-	TaskID string `json:"task_id" jsonschema:"the id of the transcription in the list of tasks"`
+	TaskID string `json:"taskId" jsonschema:"the id of the transcription in the list of tasks"`
 	Path   string `json:"path" jsonschema:"the recording; library_read and library_search read its transcript"`
 	State  string `json:"state" jsonschema:"started, or running where a transcription of this recording is already in progress and no second one was started"`
 }
