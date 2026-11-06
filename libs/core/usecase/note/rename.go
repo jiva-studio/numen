@@ -81,6 +81,9 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 		source = ByFilename
 		return errFilenameNamesIt
 	})
+	if errors.Is(err, vaultport.ErrAlreadyExists) {
+		return RenameResult{Path: path, Title: title, By: source}, err
+	}
 	if err != nil && !errors.Is(err, errFilenameNamesIt) {
 		return RenameResult{}, err
 	}
