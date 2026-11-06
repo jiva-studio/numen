@@ -19,7 +19,12 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const isEnabling = ref(false)
 const problem = ref('')
-const isStarting = computed(() => props.state.services.arePluginsStarting?.value === true)
+const isStarting = computed(() => {
+  const lookup = props.state.lookup.value
+  return (
+    lookup.status === 'found' && props.state.services.isPluginStarting?.(lookup.entry.id) === true
+  )
+})
 const view = computed(() => getUnavailableView(props.state.lookup.value, isEnabling.value))
 
 /* -------------------------------- Handlers -------------------------------- */

@@ -277,6 +277,8 @@ beforeEach(() => {
       trackPlugins: vi.fn(async () => undefined),
       start: vi.fn(async () => undefined),
       waitForInterface: vi.fn(async () => undefined),
+      waitForTabPlugins: vi.fn(async () => undefined),
+      isPluginStarting: vi.fn((_pluginId: string) => false),
       close: vi.fn(async () => undefined),
     },
     kinds: {
@@ -619,22 +621,18 @@ describe('the services a plugin is given', () => {
     expect(taskList).toBe(h.f.display.tasks)
   })
 
-  it('stops the tabs waiting for their plugins once the plugins of the window slots have started', async () => {
+  it('lets a tab wait while the plugin loader says its own plugin is starting', () => {
     useWindow()
-    h.f.pluginLoader.start.mockImplementationOnce(() => new Promise<undefined>(() => undefined))
+    h.f.pluginLoader.isPluginStarting.mockImplementation((pluginId: string) => pluginId === 'p1')
 
-    const started = h.args.bootstrap.startPlugins()
-    expect(started).toBeInstanceOf(Promise)
-    await new Promise((r) => setTimeout(r, 0))
-
-    expect(h.args.windowTabs.arePluginsStarting.value).toBe(false)
+    expect(h.args.windowTabs.isPluginStarting('p1')).toBe(true)
+    expect(h.args.windowTabs.isPluginStarting('p2')).toBe(false)
   })
 
   it('wires plugin support, windowTabs, settings, kinds, commands, statusBar, and lifecycle callbacks', async () => {
     const window = useWindow()
 
     // useWindowTabs options
-    expect(h.args.windowTabs.arePluginsStarting.value).toBe(true)
     await h.args.windowTabs.enablePlugin('p1')
     expect(h.f.settings.rest.writeSetting).toHaveBeenCalledWith(['p1', 'enabled'], true)
 
@@ -767,7 +765,6 @@ describe('the services a plugin is given', () => {
     await h.args.bootstrap.startPlugins()
     expect(h.f.pluginLoader.trackPlugins).toHaveBeenCalledWith(['p1'])
     expect(h.f.pluginLoader.start).toHaveBeenCalledOnce()
-    expect(h.args.windowTabs.arePluginsStarting.value).toBe(false)
 
     await h.args.bootstrap.closePlugins()
     expect(h.f.pluginLoader.close).toHaveBeenCalledOnce()
@@ -900,17 +897,17 @@ describe('tab links wiring', () => {
     )
   })
 
-  it('places the tabs of a new vault once the plugins of the window slots started, while the others go on', async () => {
+  it('places the tabs of a new vault once the plugins of its tabs started or failed, while the others go on', async () => {
     try {
       vi.stubGlobal('location', new URL('http://localhost/'))
       useWindow()
       h.f.vaults.activeVault.value = { id: 'vault' }
       h.core.readOpenTabs.mockResolvedValueOnce({ tabs: [], activeId: '' })
-      let startInterface: () => void = () => undefined
-      const interfaceStarted = new Promise<undefined>((resolve) => {
-        startInterface = () => resolve(undefined)
+      let settleTabPlugins: () => void = () => undefined
+      const tabPluginsSettled = new Promise<undefined>((resolve) => {
+        settleTabPlugins = () => resolve(undefined)
       })
-      h.f.pluginLoader.waitForInterface.mockImplementation(() => interfaceStarted)
+      h.f.pluginLoader.waitForTabPlugins.mockImplementation(() => tabPluginsSettled)
       h.f.pluginLoader.start.mockImplementationOnce(() => new Promise<undefined>(() => undefined))
       h.f.windowTabs.openPlacedTabs.mockClear()
       h.args.bootstrap.startPlugins().catch(() => undefined)
@@ -918,7 +915,7 @@ describe('tab links wiring', () => {
       const layout = h.args.bootstrap.startLayout()
       await new Promise((resolve) => setTimeout(resolve, 0))
       expect(h.f.windowTabs.openPlacedTabs).not.toHaveBeenCalled()
-      startInterface()
+      settleTabPlugins()
       await layout
 
       expect(h.f.windowTabs.openPlacedTabs).toHaveBeenCalledOnce()

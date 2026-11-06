@@ -109,7 +109,6 @@ interface AppLifecycleDeps {
   /** Settles once the first list of the commands the plugins declare is held. */
   waitForDeclaredCommands: () => Promise<void>
   /** True until every plugin the window starts has started or failed. */
-  arePluginsStarting: Ref<boolean>
   writeMessage: MessageWriter
   /** Called once the tabs the window opens with are open. */
   onLayoutStarted(): void
@@ -160,8 +159,8 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     if (saved.tabs.length > 0) {
       windowTabs.restoreTabs(parseSavedTabs(saved), saved.activeId)
     } else {
-      // A new vault places its tabs once the plugins of the slots of the window have started.
-      await deps.pluginLoader.waitForInterface()
+      // A new vault places its tabs once the plugins of its tabs have started or failed.
+      await deps.pluginLoader.waitForTabPlugins()
       await windowTabs.openPlacedTabs((kind, error) =>
         deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
       )
@@ -174,20 +173,10 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     startSettings: () => settings.start(),
     startLayout,
     // The plugins the settings name are active before the layout opens the tabs of their kinds.
-    startPlugins: () => {
-      // A tab stops waiting for its plugin once the plugins of the slots of the window have started,
-      // while the other plugins go on starting.
-      const stopWaiting = () => (deps.arePluginsStarting.value = false)
-      runInBackground(deps.pluginLoader.waitForInterface().then(stopWaiting), () => undefined)
-      return (async () => {
-        try {
-          const plugins = settings.rest.plugins.value
-          await deps.pluginLoader.trackPlugins(getFrontendPluginIds(plugins))
-          await deps.pluginLoader.start()
-        } finally {
-          stopWaiting()
-        }
-      })()
+    startPlugins: async () => {
+      const plugins = settings.rest.plugins.value
+      await deps.pluginLoader.trackPlugins(getFrontendPluginIds(plugins))
+      await deps.pluginLoader.start()
     },
     // The title bar and the shortcuts read the commands the plugins declare, so the window waits for
     // their first list as it waits for the plugins of the slots of the window.
@@ -267,10 +256,11 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
-  const arePluginsStarting = ref(true)
+  // The plugin loader is made after the tabs; until then every plugin counts as starting.
+  const pluginStarts: { current?: (pluginId: string) => boolean } = {}
   const windowTabs = useWindowTabs({
     catalog: pluginCatalog,
-    arePluginsStarting,
+    isPluginStarting: (pluginId) => pluginStarts.current?.(pluginId) ?? true,
     enablePlugin: async (pluginId) => {
       await settingsHolder.current?.rest.writeSetting([pluginId, 'enabled'], true)
     },
@@ -317,6 +307,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
       return (await core.resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
     },
   })
+  pluginStarts.current = pluginLoader.isPluginStarting
   hostHolder.current = pluginHost
   /* Stryker restore OptionalChaining,ObjectLiteral,StringLiteral,Regex */
   return {
@@ -325,7 +316,6 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     writeMessage,
     windowId,
     windowTabs,
-    arePluginsStarting,
     tabLinks,
     tabReports,
     tabOpeners,
@@ -702,7 +692,6 @@ export const useWindow = () => {
     editing,
     pluginLoader: base.pluginLoader,
     waitForDeclaredCommands: () => base.declaredCommands.waitForFirstList(),
-    arePluginsStarting: base.arePluginsStarting,
     writeMessage: base.writeMessage,
     tabLinkSession,
     windowId: base.windowId,
