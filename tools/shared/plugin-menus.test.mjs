@@ -11,7 +11,7 @@ import { readPluginManifests } from './manifests.mjs'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const EDITOR_SRC = join(ROOT, 'apps/desktop/editor/src')
-const LOCATIONS = ['titleBar', 'searchResult']
+const LOCATIONS = ['titleBar.commands', 'searchResult']
 const APP_PREFIX = 'app:'
 
 const isTestFile = (name) => /\.(test|stories|spec)\.[cm]?[jt]s$/.test(name)
@@ -110,7 +110,7 @@ test('every placement of a manifest of the tree is in a known place and names a 
       )
       if (menu.command.startsWith(APP_PREFIX)) {
         assert.ok(editorCommands.has(menu.command), `${where} is no command of the editor`)
-        if (menu.location === 'titleBar') {
+        if (menu.location === 'titleBar.commands') {
           assert.ok(
             editorCommands.get(menu.command)?.hasIconName,
             `${where} has no icon name in the editor`,
@@ -119,7 +119,7 @@ test('every placement of a manifest of the tree is in a known place and names a 
       } else {
         const command = declared.get(menu.command)
         assert.ok(command, `${where} is not declared by the manifest`)
-        if (menu.location === 'titleBar') {
+        if (menu.location === 'titleBar.commands') {
           assert.match(
             command.icon ?? '',
             /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/,
@@ -149,7 +149,7 @@ test('the plugin documentation describes menus', () => {
   const section = end < 0 ? rest : rest.slice(0, end)
   for (const word of [
     'contributes.menus',
-    'titleBar',
+    'titleBar.commands',
     'searchResult',
     'group',
     'order',
@@ -181,7 +181,7 @@ test('the docs say how the title bar draws an entry', () => {
   const section = menus.slice(0, menus.indexOf('\n## ', 4))
   const titleBar = section
     .split('\n')
-    .filter((line) => line.includes('titleBar'))
+    .filter((line) => line.includes('titleBar.commands'))
     .join('\n')
   assert.match(titleBar, /button/i, 'the section does not say an entry is a button')
   assert.match(titleBar, /vault is open/i, 'the section does not say when the buttons are shown')

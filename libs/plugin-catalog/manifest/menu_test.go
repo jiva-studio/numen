@@ -17,9 +17,9 @@ func readMenus(menus string) (manifest.Manifest, error) {
 
 func TestAManifestDeclaresMenuEntriesWithAndWithoutGroupAndOrder(t *testing.T) {
 	parsed, err := readMenus(`[
-		{"location": "titleBar", "command": "tree.open", "group": "navigate", "order": 10},
+		{"location": "titleBar.commands", "command": "tree.open", "group": "navigate", "order": 10},
 		{"location": "searchResult", "command": "tree.open"},
-		{"location": "titleBar", "command": "app:note.create", "order": 0}
+		{"location": "titleBar.commands", "command": "app:note.create", "order": 0}
 	]`)
 	if err != nil {
 		t.Fatal(err)
@@ -30,7 +30,7 @@ func TestAManifestDeclaresMenuEntriesWithAndWithoutGroupAndOrder(t *testing.T) {
 		t.Fatalf("the menus came out as %+v", menus)
 	}
 	first, second, third := menus[0], menus[1], menus[2]
-	if first.Location != "titleBar" || first.Command != "tree.open" || first.Group != "navigate" || first.Order == nil || *first.Order != 10 {
+	if first.Location != "titleBar.commands" || first.Command != "tree.open" || first.Group != "navigate" || first.Order == nil || *first.Order != 10 {
 		t.Errorf("the first entry came out as %+v", first)
 	}
 	if second.Location != "searchResult" || second.Group != "" || second.Order != nil {
@@ -57,17 +57,17 @@ func TestAMenuEntryThatBreaksARuleIsAnInvalidMenu(t *testing.T) {
 		"an empty location":                 `[{"location":"","command":"tree.open"}]`,
 		"a blank location":                  `[{"location":"  ","command":"tree.open"}]`,
 		"no location":                       `[{"command":"tree.open"}]`,
-		"an empty command":                  `[{"location":"titleBar","command":""}]`,
-		"a blank command":                   `[{"location":"titleBar","command":" "}]`,
-		"no command":                        `[{"location":"titleBar"}]`,
-		"a command in capitals":             `[{"location":"titleBar","command":"Tree.Open"}]`,
-		"a command of another plugin":       `[{"location":"titleBar","command":"other.plugin:tree.open"}]`,
-		"the owner of the editor alone":     `[{"location":"titleBar","command":"app:"}]`,
-		"an editor command in capitals":     `[{"location":"titleBar","command":"app:Note.Create"}]`,
-		"a group with a leading space":      `[{"location":"titleBar","command":"tree.open","group":" navigate"}]`,
-		"a group with a trailing space":     `[{"location":"titleBar","command":"tree.open","group":"navigate "}]`,
-		"the same command twice in a place": `[{"location":"titleBar","command":"tree.open"},{"location":"titleBar","command":"tree.open","group":"other","order":3}]`,
-		"the same editor command twice":     `[{"location":"titleBar","command":"app:note.create"},{"location":"titleBar","command":"app:note.create"}]`,
+		"an empty command":                  `[{"location":"titleBar.commands","command":""}]`,
+		"a blank command":                   `[{"location":"titleBar.commands","command":" "}]`,
+		"no command":                        `[{"location":"titleBar.commands"}]`,
+		"a command in capitals":             `[{"location":"titleBar.commands","command":"Tree.Open"}]`,
+		"a command of another plugin":       `[{"location":"titleBar.commands","command":"other.plugin:tree.open"}]`,
+		"the owner of the editor alone":     `[{"location":"titleBar.commands","command":"app:"}]`,
+		"an editor command in capitals":     `[{"location":"titleBar.commands","command":"app:Note.Create"}]`,
+		"a group with a leading space":      `[{"location":"titleBar.commands","command":"tree.open","group":" navigate"}]`,
+		"a group with a trailing space":     `[{"location":"titleBar.commands","command":"tree.open","group":"navigate "}]`,
+		"the same command twice in a place": `[{"location":"titleBar.commands","command":"tree.open"},{"location":"titleBar.commands","command":"tree.open","group":"other","order":3}]`,
+		"the same editor command twice":     `[{"location":"titleBar.commands","command":"app:note.create"},{"location":"titleBar.commands","command":"app:note.create"}]`,
 	}
 	for name, menus := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -83,7 +83,7 @@ func TestAMenuEntryThatBreaksARuleIsAnInvalidMenu(t *testing.T) {
 func TestAMenuEntryWithAValidCommandIsAccepted(t *testing.T) {
 	for _, command := range []string{"tree.open", "app:note.create"} {
 		t.Run(command, func(t *testing.T) {
-			if _, err := readMenus(`[{"location":"titleBar","command":"` + command + `"}]`); err != nil {
+			if _, err := readMenus(`[{"location":"titleBar.commands","command":"` + command + `"}]`); err != nil {
 				t.Errorf("error = %v", err)
 			}
 		})
@@ -91,7 +91,7 @@ func TestAMenuEntryWithAValidCommandIsAccepted(t *testing.T) {
 }
 
 func TestTheSameCommandInTwoPlacesIsValid(t *testing.T) {
-	parsed, err := readMenus(`[{"location":"titleBar","command":"tree.open","order":1},{"location":"searchResult","command":"tree.open","order":2}]`)
+	parsed, err := readMenus(`[{"location":"titleBar.commands","command":"tree.open","order":1},{"location":"searchResult","command":"tree.open","order":2}]`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestTheSameCommandInTwoPlacesIsValid(t *testing.T) {
 func TestAnOrderThatIsNotANumberIsRefused(t *testing.T) {
 	for name, order := range map[string]string{"a quoted number": `"10"`, "a word": `"first"`, "a boolean": `true`, "a fraction": `1.5`} {
 		t.Run(name, func(t *testing.T) {
-			_, err := readMenus(`[{"location":"titleBar","command":"tree.open","order":` + order + `}]`)
+			_, err := readMenus(`[{"location":"titleBar.commands","command":"tree.open","order":` + order + `}]`)
 
 			if err == nil {
 				t.Error("the manifest was accepted")

@@ -268,7 +268,7 @@ export const ManifestViewSchema: GenMessage<ManifestView> = /*@__PURE__*/
  */
 export type ManifestMenuEntry = Message<"numen.v1.ManifestMenuEntry"> & {
   /**
-   * location is the name of the place, such as titleBar.
+   * location is the name of the place, such as titleBar.commands.
    *
    * @generated from field: string location = 1;
    */

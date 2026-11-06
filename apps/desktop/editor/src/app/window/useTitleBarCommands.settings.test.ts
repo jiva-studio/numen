@@ -14,8 +14,8 @@ const target = { tab: 't' } as unknown as CommandTarget
 
 function setup(isVaultOpen: boolean) {
   const placements: MenuPlacement[] = [
-    { pluginId: TIDE, location: 'titleBar', command: 'tide.open', group: 'navigate' },
-    { pluginId: TIDE, location: 'titleBar', command: 'tide.add', group: 'new' },
+    { pluginId: TIDE, location: 'titleBar.commands', command: 'tide.open', group: 'navigate' },
+    { pluginId: TIDE, location: 'titleBar.commands', command: 'tide.add', group: 'new' },
   ]
   const menus = createPluginMenus({
     getPlacements: () => placements,

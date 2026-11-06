@@ -23,7 +23,7 @@ describe('the manifest', () => {
 
   it('places opening the file tree first among the navigation entries of the title bar', () => {
     expect(manifest.contributes.menus).toStrictEqual([
-      { location: 'titleBar', command: 'tree.open', group: 'navigate', order: 10 },
+      { location: 'titleBar.commands', command: 'tree.open', group: 'navigate', order: 10 },
     ])
   })
 

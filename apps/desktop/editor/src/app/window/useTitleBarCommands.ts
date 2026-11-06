@@ -52,7 +52,7 @@ export function useTitleBarCommands(deps: TitleBarCommandsDeps): TitleBarCommand
   }
 
   const commands = computed(() =>
-    deps.isVaultOpen() ? deps.menus.getEntries(MENU_LOCATION.titleBar).map(toCommand) : [],
+    deps.isVaultOpen() ? deps.menus.getEntries(MENU_LOCATION.titleBarCommands).map(toCommand) : [],
   )
 
   const runCommand = (id: string): void => {

@@ -17,7 +17,7 @@ const manifest = JSON.parse(
 describe('the manifest', () => {
   it('places creating a note, by the full id of the editor command, in the group new of the title bar', () => {
     expect(manifest.contributes.menus).toStrictEqual([
-      { location: 'titleBar', command: 'app:note.create', group: 'new', order: 10 },
+      { location: 'titleBar.commands', command: 'app:note.create', group: 'new', order: 10 },
     ])
   })
 

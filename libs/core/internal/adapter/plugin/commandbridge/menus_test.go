@@ -12,14 +12,14 @@ func TestListMenus_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 	host := &commandHost{
 		plugins: []pluginport.DiscoveredPlugin{
 			{Manifest: manifest.Manifest{ID: "org.example.atlas", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Menus: []manifest.Menu{
-				{Location: "titleBar", Command: "atlas.open", Group: "navigate", Order: &order},
+				{Location: "titleBar.commands", Command: "atlas.open", Group: "navigate", Order: &order},
 				{Location: "searchResult", Command: "atlas.open"},
 			}}}},
 			{Manifest: manifest.Manifest{ID: "org.example.off", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Menus: []manifest.Menu{
-				{Location: "titleBar", Command: "off.run"},
+				{Location: "titleBar.commands", Command: "off.run"},
 			}}}},
 			{Manifest: manifest.Manifest{ID: "org.example.worker", Backend: manifest.Backend{Entrypoint: "bin/worker"}, Contributes: manifest.Contributes{Menus: []manifest.Menu{
-				{Location: "titleBar", Command: "app:note.create"},
+				{Location: "titleBar.commands", Command: "app:note.create"},
 			}}}},
 		},
 		disabled: map[string]bool{"org.example.off": true},

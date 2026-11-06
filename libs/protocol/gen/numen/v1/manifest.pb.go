@@ -415,7 +415,7 @@ func (x *ManifestView) GetSlot() string {
 // the manifest declares it under, or the full id of a command of the application.
 type ManifestMenuEntry struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// location is the name of the place, such as titleBar.
+	// location is the name of the place, such as titleBar.commands.
 	Location string `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
 	Command  string `protobuf:"bytes,2,opt,name=command,proto3" json:"command,omitempty"`
 	// group names the entries a place draws together. Empty for none.

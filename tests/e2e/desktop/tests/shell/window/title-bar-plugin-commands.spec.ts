@@ -4,7 +4,7 @@ import { getTab } from '../../support/layout.js'
 import { writeSetting } from '../../support/vault.js'
 
 /**
- * The buttons the plugins of the application place in `titleBar`. They need a plugin that places
+ * The buttons the plugins of the application place in `titleBar.commands`. They need a plugin that places
  * a command there; the file tree, the plex graph and the editor command Create note are the
  * entries the plugins of the application hold.
  */

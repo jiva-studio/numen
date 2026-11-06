@@ -1,7 +1,7 @@
 import { formatCommandId } from './commandId'
 
 /** The places a window draws menu entries in. */
-export const MENU_LOCATION = { titleBar: 'titleBar', searchResult: 'searchResult' } as const
+export const MENU_LOCATION = { titleBarCommands: 'titleBar.commands', searchResult: 'searchResult' } as const
 export type MenuLocation = (typeof MENU_LOCATION)[keyof typeof MENU_LOCATION]
 
 /** One entry of `contributes.menus` of an enabled plugin. */
@@ -94,7 +94,7 @@ function createIssueReporter(reportIssue: MenusDeps['reportIssue']): (issue: Men
 
 /** The reason the look of a command does not fit the place, and undefined where it does. */
 function findLookIssue(location: string, look: CommandLook): MenuIssue['kind'] | undefined {
-  if (location !== MENU_LOCATION.titleBar) return undefined
+  if (location !== MENU_LOCATION.titleBarCommands) return undefined
   if (look.icon === undefined) return 'icon'
   return look.scope === 'note' ? 'scope' : undefined
 }

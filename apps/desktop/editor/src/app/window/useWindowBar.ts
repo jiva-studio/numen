@@ -1,6 +1,6 @@
 /**
  * What the window gives the view of its title bar: the vault it shows, the buttons the plugins
- * place in `titleBar`, and the vaults the title offers to switch to.
+ * place in `titleBar.commands`, and the vaults the title offers to switch to.
  */
 import { computed, type Ref } from 'vue'
 import type { Menus } from '@numen/plugin-host'

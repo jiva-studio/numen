@@ -18,11 +18,11 @@ func (menuPlugins) ListCommands() []plugincommand.Entry { return nil }
 func (menuPlugins) ListMenus() []plugincommand.MenuEntry {
 	order := 20
 	return []plugincommand.MenuEntry{
-		{PluginID: "org.example.atlas", Menu: manifest.Menu{Location: "titleBar", Command: "atlas.open", Group: "navigate", Order: &order}},
+		{PluginID: "org.example.atlas", Menu: manifest.Menu{Location: "titleBar.commands", Command: "atlas.open", Group: "navigate", Order: &order}},
 		{PluginID: "org.example.atlas", Menu: manifest.Menu{Location: "searchResult", Command: "atlas.open"}},
-		{PluginID: "org.example.bare", Menu: manifest.Menu{Location: "titleBar", Command: "bare.run"}},
-		{PluginID: "org.example.crash", Menu: manifest.Menu{Location: "titleBar", Command: "crash.run"}},
-		{PluginID: "org.example.worker", Menu: manifest.Menu{Location: "titleBar", Command: "worker.run"}},
+		{PluginID: "org.example.bare", Menu: manifest.Menu{Location: "titleBar.commands", Command: "bare.run"}},
+		{PluginID: "org.example.crash", Menu: manifest.Menu{Location: "titleBar.commands", Command: "crash.run"}},
+		{PluginID: "org.example.worker", Menu: manifest.Menu{Location: "titleBar.commands", Command: "worker.run"}},
 	}
 }
 
@@ -48,9 +48,9 @@ func TestTheWindowListsTheMenuEntriesOfPluginsThatRunAndNoOthers(t *testing.T) {
 		got = append(got, one.PluginID+" "+one.Menu.Location+" "+one.Menu.Command)
 	}
 	want := []string{
-		"org.example.atlas titleBar atlas.open",
+		"org.example.atlas titleBar.commands atlas.open",
 		"org.example.atlas searchResult atlas.open",
-		"org.example.worker titleBar worker.run",
+		"org.example.worker titleBar.commands worker.run",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("the window lists %v, want %v", got, want)

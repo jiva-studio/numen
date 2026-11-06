@@ -109,7 +109,7 @@ const registerBar = async (pluginId: string, name = 'LedgerBar') => {
 const placeTideChart = () => {
   declared.commands = [declareCommand(TIDE, 'chart.open', 'Open tide chart')]
   declared.menus = [
-    { pluginId: TIDE, location: 'titleBar', command: 'chart.open', group: 'navigate' },
+    { pluginId: TIDE, location: 'titleBar.commands', command: 'chart.open', group: 'navigate' },
   ]
 }
 
@@ -245,9 +245,9 @@ describe('the buttons of the plugins in the title bar', () => {
       declareCommand(HARBOR, 'log.open', 'Open harbor log'),
     ]
     declared.menus = [
-      { pluginId: HARBOR, location: 'titleBar', command: 'log.open', group: 'new', order: 1 },
-      { pluginId: HARBOR, location: 'titleBar', command: 'map.open', group: 'navigate', order: 2 },
-      { pluginId: TIDE, location: 'titleBar', command: 'chart.open', group: 'navigate', order: 1 },
+      { pluginId: HARBOR, location: 'titleBar.commands', command: 'log.open', group: 'new', order: 1 },
+      { pluginId: HARBOR, location: 'titleBar.commands', command: 'map.open', group: 'navigate', order: 2 },
+      { pluginId: TIDE, location: 'titleBar.commands', command: 'chart.open', group: 'navigate', order: 1 },
     ]
 
     const window = await mountWindow()
@@ -280,7 +280,7 @@ describe('the buttons of the plugins in the title bar', () => {
 
   it('open the palette at the name of a command that needs one when the bar runs it', async () => {
     declared.commands = []
-    declared.menus = [{ pluginId: TIDE, location: 'titleBar', command: 'app:note.create' }]
+    declared.menus = [{ pluginId: TIDE, location: 'titleBar.commands', command: 'app:note.create' }]
     const window = await mountWindowWithPalette()
     await registerBar(LEDGER)
     const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')

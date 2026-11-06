@@ -66,7 +66,7 @@ describe('the title bar', () => {
 
   it('places opening the chat third among the navigation entries', () => {
     expect(contributes.menus).toStrictEqual([
-      { location: 'titleBar', command: 'chat.open', group: 'navigate', order: 30 },
+      { location: 'titleBar.commands', command: 'chat.open', group: 'navigate', order: 30 },
     ])
   })
 
@@ -77,7 +77,7 @@ describe('the title bar', () => {
   })
 
   it('keeps the command that asks about a note out of the title bar, which has no note', () => {
-    const entries = (contributes.menus ?? []).filter((one) => one.location === 'titleBar')
+    const entries = (contributes.menus ?? []).filter((one) => one.location === 'titleBar.commands')
 
     expect(entries.map((one) => one.command)).not.toContain('note.ask')
   })

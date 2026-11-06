@@ -17,7 +17,7 @@ describe('isInterfaceManifest', () => {
       { views: [{ id: 'bar', slot: 'titleBar' }] },
       { tabKinds: [{ kind: 'ledger', title: 'Ledger' }] },
       { readers: [{ id: 'ledger', contentTypes: ['text/csv'] }] },
-      { menus: [{ location: 'titleBar', command: 'ledger.open' }] },
+      { menus: [{ location: 'titleBar.commands', command: 'ledger.open' }] },
       { themes: [{ id: 'harbor', name: 'Harbor', file: 'themes/harbor.css' }] },
     ]) {
       expect(isInterfaceManifest(read(contributes))).toBe(true)

@@ -74,7 +74,7 @@ export interface SlotViewRegistration {
 // as props and emits TitleBarViewEvents.
 export const TITLE_BAR_SLOT = 'titleBar'
 
-// TitleBarCommand is one command placed in `titleBar` of `contributes.menus`, as the window passes it
+// TitleBarCommand is one command placed in `titleBar.commands` of `contributes.menus`, as the window passes it
 // to the title bar view.
 export interface TitleBarCommand {
   // The full id of the command; the view emits it with `run-command`.

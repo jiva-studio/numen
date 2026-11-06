@@ -10,7 +10,7 @@ export const APP_PLACEMENT_OWNER = 'app'
 export const APP_PLACEMENTS: MenuPlacement[] = [
   {
     pluginId: APP_PLACEMENT_OWNER,
-    location: 'titleBar',
+    location: 'titleBar.commands',
     command: 'app:settings.open',
     group: 'settings',
   },

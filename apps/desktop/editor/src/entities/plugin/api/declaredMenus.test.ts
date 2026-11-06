@@ -22,7 +22,7 @@ describe('the menu entries the plugins declare', () => {
           group: 'navigate',
           order: 20,
         },
-        { pluginId: 'org.example.books', location: 'titleBar', command: 'app:note.create' },
+        { pluginId: 'org.example.books', location: 'titleBar.commands', command: 'app:note.create' },
       ],
     })
 
@@ -38,7 +38,7 @@ describe('the menu entries the plugins declare', () => {
     })
     expect(menus[1]).toMatchObject({
       pluginId: 'org.example.books',
-      location: 'titleBar',
+      location: 'titleBar.commands',
       command: 'app:note.create',
     })
   })
@@ -47,8 +47,8 @@ describe('the menu entries the plugins declare', () => {
     request.listCommands.mockResolvedValue({
       commands: [],
       menus: [
-        { pluginId: 'org.example.atlas', location: 'titleBar', command: 'atlas.open', order: 0 },
-        { pluginId: 'org.example.atlas', location: 'titleBar', command: 'atlas.close' },
+        { pluginId: 'org.example.atlas', location: 'titleBar.commands', command: 'atlas.open', order: 0 },
+        { pluginId: 'org.example.atlas', location: 'titleBar.commands', command: 'atlas.close' },
       ],
     })
 
@@ -62,7 +62,7 @@ describe('the menu entries the plugins declare', () => {
     request.listCommands.mockResolvedValue({
       commands: [],
       menus: [
-        { pluginId: 'org.example.atlas', location: 'titleBar', command: 'atlas.open', group: '' },
+        { pluginId: 'org.example.atlas', location: 'titleBar.commands', command: 'atlas.open', group: '' },
       ],
     })
 

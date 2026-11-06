@@ -90,7 +90,7 @@ describe('the commands of the title bar', () => {
       `${REEF}:graph.open`,
       'app:note.create',
     ])
-    expect(getEntries).toHaveBeenCalledWith('titleBar')
+    expect(getEntries).toHaveBeenCalledWith('titleBar.commands')
     expect(getEntries).not.toHaveBeenCalledWith('searchResult')
   })
 
@@ -279,7 +279,7 @@ describe('the commands over the menus of the window when a plugin is disabled an
   })
   const place = (pluginId: string, command: string, order: number): MenuPlacement => ({
     pluginId,
-    location: 'titleBar',
+    location: 'titleBar.commands',
     command,
     group: 'navigate',
     order,

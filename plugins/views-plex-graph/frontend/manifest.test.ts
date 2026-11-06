@@ -24,7 +24,7 @@ describe('the manifest', () => {
   it('places showing a note in the menu of a search result and opening the plex in the title bar, both among the navigation entries', () => {
     expect(manifest.contributes.menus).toStrictEqual([
       { location: 'searchResult', command: 'graph.showNote', group: 'navigate', order: 20 },
-      { location: 'titleBar', command: 'graph.open', group: 'navigate', order: 20 },
+      { location: 'titleBar.commands', command: 'graph.open', group: 'navigate', order: 20 },
     ])
   })
 
@@ -36,7 +36,7 @@ describe('the manifest', () => {
   })
 
   it('keeps the command that shows a note out of the title bar, which has no note', () => {
-    const entries = (manifest.contributes.menus ?? []).filter((one) => one.location === 'titleBar')
+    const entries = (manifest.contributes.menus ?? []).filter((one) => one.location === 'titleBar.commands')
 
     expect(entries.map((one) => one.command)).not.toContain('graph.showNote')
   })

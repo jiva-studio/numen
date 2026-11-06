@@ -12,13 +12,13 @@ const REEF = 'org.example.reef'
 
 const tidePlacement: MenuPlacement = {
   pluginId: TIDE,
-  location: 'titleBar',
+  location: 'titleBar.commands',
   command: 'tide.open',
   group: 'navigate',
 }
 const reefPlacement: MenuPlacement = {
   pluginId: REEF,
-  location: 'titleBar',
+  location: 'titleBar.commands',
   command: 'reef.open',
   group: 'navigate',
 }
@@ -39,12 +39,12 @@ function setup(placements: readonly MenuPlacement[], getAppPlacements?: () => Me
 }
 
 const getCommands = (menus: ReturnType<typeof setup>) =>
-  menus.getEntries('titleBar').map((one) => one.command)
+  menus.getEntries('titleBar.commands').map((one) => one.command)
 
 describe('the placements of the application', () => {
   it('are one list that places the settings command in the title bar in a group of its own', () => {
     expect(APP_PLACEMENTS).toEqual([
-      { pluginId: 'app', location: 'titleBar', command: COMMAND.openSettings, group: 'settings' },
+      { pluginId: 'app', location: 'titleBar.commands', command: COMMAND.openSettings, group: 'settings' },
     ])
   })
 
@@ -60,7 +60,7 @@ describe('the placements of the application', () => {
   it('give the settings entry with the gear icon, the title and no plugin of its own', () => {
     const menus = setup([])
 
-    expect(menus.getEntries('titleBar')).toMatchObject([
+    expect(menus.getEntries('titleBar.commands')).toMatchObject([
       { command: 'app:settings.open', title: 'Open settings', icon: 'settings', group: 'settings' },
     ])
   })
@@ -70,8 +70,8 @@ describe('the settings entry among the entries of the plugins', () => {
   it('stays last when a plugin places a command in a group that sorts before settings', () => {
     const menus = setup([
       tidePlacement,
-      { pluginId: TIDE, location: 'titleBar', command: 'tide.alpha', group: 'alpha' },
-      { pluginId: TIDE, location: 'titleBar', command: 'tide.zeta', group: 'sa' },
+      { pluginId: TIDE, location: 'titleBar.commands', command: 'tide.alpha', group: 'alpha' },
+      { pluginId: TIDE, location: 'titleBar.commands', command: 'tide.zeta', group: 'sa' },
     ])
 
     expect(getCommands(menus).at(-1)).toBe('app:settings.open')
@@ -81,7 +81,7 @@ describe('the settings entry among the entries of the plugins', () => {
   it('sorts the groups by name before the order inside them and keeps settings last', () => {
     const menus = setup([
       { ...tidePlacement, order: 99 },
-      { pluginId: REEF, location: 'titleBar', command: 'reef.open', group: 'new', order: 1 },
+      { pluginId: REEF, location: 'titleBar.commands', command: 'reef.open', group: 'new', order: 1 },
     ])
 
     expect(getCommands(menus)).toEqual([
@@ -95,7 +95,7 @@ describe('the settings entry among the entries of the plugins', () => {
     const placements = [
       tidePlacement,
       reefPlacement,
-      { pluginId: TIDE, location: 'titleBar', command: 'tide.alpha', group: 'alpha' },
+      { pluginId: TIDE, location: 'titleBar.commands', command: 'tide.alpha', group: 'alpha' },
     ]
     const expected = getCommands(setup(placements))
     const orders = [
@@ -110,7 +110,7 @@ describe('the settings entry among the entries of the plugins', () => {
 
   it('merges the list of the application in with a plugin placement and one resolution', () => {
     const menus = setup([tidePlacement], () => [
-      { pluginId: 'app', location: 'titleBar', command: COMMAND.openSettings, group: 'settings' },
+      { pluginId: 'app', location: 'titleBar.commands', command: COMMAND.openSettings, group: 'settings' },
     ])
 
     expect(getCommands(menus)).toEqual([`${TIDE}:tide.open`, 'app:settings.open'])

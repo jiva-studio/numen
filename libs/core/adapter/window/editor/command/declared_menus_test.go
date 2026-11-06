@@ -19,9 +19,9 @@ type menuPlacingPlugins struct{ declaredByTwoPlugins }
 func (menuPlacingPlugins) ListMenus() []plugincommand.MenuEntry {
 	order, zero := 10, 0
 	return []plugincommand.MenuEntry{
-		{PluginID: "md.numen.cards", Menu: manifest.Menu{Location: "titleBar", Command: "deck.create", Group: "new", Order: &order}},
+		{PluginID: "md.numen.cards", Menu: manifest.Menu{Location: "titleBar.commands", Command: "deck.create", Group: "new", Order: &order}},
 		{PluginID: "md.numen.cards", Menu: manifest.Menu{Location: "searchResult", Command: "app:note.create", Order: &zero}},
-		{PluginID: "md.numen.down", Menu: manifest.Menu{Location: "titleBar", Command: "down.run"}},
+		{PluginID: "md.numen.down", Menu: manifest.Menu{Location: "titleBar.commands", Command: "down.run"}},
 		{PluginID: "md.numen.tree", Menu: manifest.Menu{Location: "searchResult", Command: "tree.revealNote", Group: "navigate"}},
 	}
 }
@@ -51,7 +51,7 @@ func TestListCommands_ListsTheMenuEntriesOfEnabledPluginsInTheOrderOfTheManifest
 		t.Fatalf("got %v", menus)
 	}
 	deck, create, tree := menus[0], menus[1], menus[2]
-	if deck.GetPluginId() != "md.numen.cards" || deck.GetLocation() != "titleBar" || deck.GetCommand() != "deck.create" ||
+	if deck.GetPluginId() != "md.numen.cards" || deck.GetLocation() != "titleBar.commands" || deck.GetCommand() != "deck.create" ||
 		deck.GetGroup() != "new" || deck.Order == nil || deck.GetOrder() != 10 {
 		t.Errorf("the first entry came out as %v", deck)
 	}

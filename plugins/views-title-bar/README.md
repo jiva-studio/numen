@@ -23,4 +23,4 @@ Disable the plugin and the bar is gone: the tabs start at the top of the window.
 
 ## How It Works
 
-The manifest declares the view `bar` in the slot `titleBar` of `contributes.views`, and the frontend registers it with `registerSlotView`. The window passes it the commands of `titleBar` in `contributes.menus`, the vault, the vaults to switch to, the platform and the state of the window, and answers the events the bar emits. The bar draws its own window buttons, drag area and room for the macOS buttons.
+The manifest declares the view `bar` in the slot `titleBar` of `contributes.views`, and the frontend registers it with `registerSlotView`. The window passes it the commands of `titleBar.commands` in `contributes.menus`, the vault, the vaults to switch to, the platform and the state of the window, and answers the events the bar emits. The bar draws its own window buttons, drag area and room for the macOS buttons.

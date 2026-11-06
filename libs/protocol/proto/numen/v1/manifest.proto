@@ -82,7 +82,7 @@ message ManifestView {
 // ManifestMenuEntry places one command in a named place of the window. The command is the id
 // the manifest declares it under, or the full id of a command of the application.
 message ManifestMenuEntry {
-  // location is the name of the place, such as titleBar.
+  // location is the name of the place, such as titleBar.commands.
   string location = 1;
   string command = 2;
   // group names the entries a place draws together. Empty for none.
