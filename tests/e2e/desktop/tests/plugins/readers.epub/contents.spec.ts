@@ -1,10 +1,5 @@
 import { test, expect, type APIRequestContext, type Page } from '../../support/test.js'
-import {
-  openAsset,
-  openVaultFile,
-  openWorkspace,
-  waitForPassage,
-} from '../../support/workspace.js'
+import { openAsset, openVaultFile, openWorkspace, waitForPassage } from '../../support/workspace.js'
 import {
   createEpub,
   deleteVaultFiles,
