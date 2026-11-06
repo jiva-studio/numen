@@ -113,6 +113,8 @@ interface AppLifecycleDeps {
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof createNoteEditors>
   pluginLoader: import('@numen/plugin-host').PluginLoader
+  /** Settles once the first list of the commands the plugins declare is held. */
+  waitForDeclaredCommands: () => Promise<void>
   /** True until every plugin the window starts has started or failed. */
   arePluginsStarting: Ref<boolean>
   writeMessage: MessageWriter
@@ -199,7 +201,11 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
       })()
       return pluginsStarted
     },
-    waitForInterfacePlugins: () => deps.pluginLoader.waitForInterface(),
+    // The title bar and the shortcuts read the commands the plugins declare, so the window waits for
+    // their first list as it waits for the plugins of the interface.
+    waitForInterfacePlugins: async () => {
+      await Promise.all([deps.pluginLoader.waitForInterface(), deps.waitForDeclaredCommands()])
+    },
     startWindow: () => {
       runInBackground(deps.tabLinkSession.start(), (error) =>
         deps.writeMessage(`The tab links stopped: ${formatErrorMessage(error)}`, 'error'),
@@ -708,6 +714,7 @@ export const useWindow = () => {
     window,
     editing,
     pluginLoader: base.pluginLoader,
+    waitForDeclaredCommands: () => base.declaredCommands.waitForFirstList(),
     arePluginsStarting: base.arePluginsStarting,
     writeMessage: base.writeMessage,
     tabLinkSession,

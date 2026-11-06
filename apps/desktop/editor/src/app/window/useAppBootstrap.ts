@@ -37,7 +37,7 @@ async function startPluginsWithinLimit(deps: BootstrapDeps): Promise<void> {
   if (!starting) return
   runInBackground(starting, deps.reportError)
   const interfaceStarted = deps.waitForInterfacePlugins?.() ?? starting
-  await waitFor(Promise.race([interfaceStarted, starting]), INTERFACE_WAIT_MS)
+  await waitFor(interfaceStarted, INTERFACE_WAIT_MS)
 }
 
 /** Settles with the work, or fails naming `what` once the limit passes with the work still pending. */

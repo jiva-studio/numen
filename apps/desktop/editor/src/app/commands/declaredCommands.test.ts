@@ -277,6 +277,32 @@ describe('the declared commands read more than once', () => {
     expect(declared.commands.value?.map((one) => one.id)).toStrictEqual(['convert'])
   })
 
+  it('settle the wait for the first list once its lists are held', async () => {
+    let answer: (list: DeclaredList) => void = () => undefined
+    const declared = useDeclaredCommands({
+      list: () => new Promise<DeclaredList>((resolve) => (answer = resolve)),
+    })
+    let isSettled = false
+    const waiting = declared.waitForFirstList().then(() => (isSettled = true))
+
+    const loading = declared.load()
+    await Promise.resolve()
+    expect(isSettled).toBe(false)
+    answer({ commands: [convert], menus: [] })
+    await Promise.all([loading, waiting])
+
+    expect(isSettled).toBe(true)
+    expect(declared.commands.value).toHaveLength(1)
+  })
+
+  it('settle the wait for the first list when the read fails', async () => {
+    const declared = useDeclaredCommands({ list: () => Promise.reject(new Error('core gone')) })
+
+    await expect(declared.load()).rejects.toThrow('core gone')
+
+    await expect(declared.waitForFirstList()).resolves.toBeUndefined()
+  })
+
   it('are none until the first read has answered', async () => {
     const declared = useDeclaredCommands({ list: async () => ({ commands: [convert], menus: [] }) })
 

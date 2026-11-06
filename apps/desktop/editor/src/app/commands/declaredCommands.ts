@@ -118,7 +118,12 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     { flush: 'sync' },
   )
 
-  const load = async (): Promise<void> => {
+  let onFirstList: () => void = () => undefined
+  const firstList = new Promise<void>((resolve) => {
+    onFirstList = resolve
+  })
+
+  const read = async (): Promise<void> => {
     newest += 1
     const mine = newest
     const commands = await list()
@@ -127,9 +132,18 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     // the palette lists them.
     if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
     if (!isSameList(declaredMenus.value, commands.menus)) declaredMenus.value = commands.menus
+    onFirstList()
   }
 
+  const load = (): Promise<void> =>
+    read().catch((error: unknown) => {
+      onFirstList()
+      throw error
+    })
+
   return {
+    /** Settles once the lists of a read are held, or a read has failed. */
+    waitForFirstList: (): Promise<void> => firstList,
     paletteCommands: computed(() => createDeclaredPaletteCommands(backendCommands.value)),
     commands: computed(() => declared.value),
     placements: computed((): readonly MenuPlacement[] | undefined => declaredMenus.value),

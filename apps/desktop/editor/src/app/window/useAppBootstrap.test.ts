@@ -136,6 +136,22 @@ describe('a window mounting while a plugin does not start', () => {
     }
   })
 
+  it('waits for the interface, and not only for every plugin to have started', async () => {
+    vi.useFakeTimers()
+    try {
+      const { bootstrap } = setup({
+        waitForInterfacePlugins: () => new Promise<void>(() => undefined),
+      })
+
+      await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
+      expect(bootstrap().isStarted.value).toBe(false)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(bootstrap().isStarted.value).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('is drawn as soon as the plugins started', async () => {
     const { bootstrap } = setup()
 
