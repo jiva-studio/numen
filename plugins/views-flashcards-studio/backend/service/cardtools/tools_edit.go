@@ -42,10 +42,10 @@ func (t *Tools) writeDeck(
 }
 
 type cardAddInput struct {
-	Path        string       `json:"path" jsonschema:"the deck to write into"`
-	CardModel   string       `json:"cardModel" jsonschema:"the card model it is cut by, by the name card_model_list gave under name"`
-	Values      []FieldValue `json:"values" jsonschema:"what the card holds, in the order to write it"`
-	Section     *int         `json:"section,omitempty" jsonschema:"which of the deck's sections to write it at the end of, counted from the first; left out, the card goes at the end of the deck"`
+	Path        string       `json:"path" jsonschema:"the path of the deck to write into, relative to the vault folder"`
+	CardModel   string       `json:"cardModel" jsonschema:"the card model of the card, by the name card_model_list returns under name"`
+	Values      []FieldValue `json:"values" jsonschema:"the field values, in the order to write them"`
+	Section     *int         `json:"section,omitempty" jsonschema:"the index of the section to append the card to, counted from 0; when left out, the card is appended to the deck"`
 	Fingerprint string       `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
@@ -55,15 +55,13 @@ func (t *Tools) addCardAdd(registry *tools.Registry) error {
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 		Name:  "card_add",
 		Title: "Add a card",
-		Description: "Write one card at the end of a deck, or at the end of one of its " +
-			"sections. Name the card model it is cut by, as `card_model_list` gives that " +
-			"name under `name`, and give a value for every field that card model declares, " +
-			"the first included. Do not write a card into the deck yourself: a card " +
-			"written by hand without the wikilink under its heading is a card with no " +
-			"card model, and nothing says so until somebody opens the deck. The card's " +
-			"heading is written from its first field, and the card id it is addressed by " +
-			"comes back under `cardId`. The fingerprint from `card_read` is required, and a " +
-			"write lands only on the deck that fingerprint names.",
+		Description: "Append one card to a deck, or to one of its sections. Name its card model as " +
+			"`card_model_list` returns it under `name`, and give a value for every field that " +
+			"card model declares, the first included. Do not write cards into the deck file " +
+			"directly: a card written by hand without the wikilink under its heading has no card " +
+			"model, and no error reports it. The heading of the card is written from its first " +
+			"field, and the new card id is returned under `cardId`. " +
+			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, t.writeCardAdd)
 }
 
@@ -85,10 +83,10 @@ func (t *Tools) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutcome
 }
 
 type cardEditInput struct {
-	Path        string       `json:"path" jsonschema:"the deck the card is in"`
-	CardID      string       `json:"cardId" jsonschema:"the card's id, as card_read gives it"`
-	Values      []FieldValue `json:"values" jsonschema:"the fields to write, and what to put under each"`
-	CardModel   string       `json:"cardModel,omitempty" jsonschema:"the card model it is cut by from now on, by the name card_model_list gave under name; left out, the card keeps the one it names"`
+	Path        string       `json:"path" jsonschema:"the path of the deck of the card, relative to the vault folder"`
+	CardID      string       `json:"cardId" jsonschema:"the card id, as card_read returns it"`
+	Values      []FieldValue `json:"values" jsonschema:"the field values to write"`
+	CardModel   string       `json:"cardModel,omitempty" jsonschema:"the new card model of the card, by the name card_model_list returns under name; when left out, the card model is unchanged"`
 	Fingerprint string       `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
@@ -98,16 +96,14 @@ func (t *Tools) addCardEdit(registry *tools.Registry) error {
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 		Name:  "card_edit",
 		Title: "Edit a card",
-		Description: "Write values into one card of a deck. A field the card already " +
-			"carries is replaced, one it does not is added at the end of it, and a field " +
-			"left out of the call is left as it stands. Send the fields you are changing " +
-			"and no others; taking a field off a card is `card_value_remove`. " +
-			"The card is addressed by the " +
-			"card id `card_read` gives it, which is what the card is for as long as it " +
-			"exists: a card rewritten from end to end is still that card, and what is " +
-			"attached to it stays attached. The first field is written like every " +
-			"other, and the card's heading follows it. The fingerprint from `card_read` is " +
-			"required, and a write lands only on the deck that fingerprint names.",
+		Description: "Write field values into one card of a deck. A field the card has is replaced, " +
+			"a field it lacks is appended to the card, and fields left out of the call are " +
+			"unchanged. Send only the fields to change; `card_value_remove` removes a field. " +
+			"The card is addressed by the card id `card_read` returns, which stays the same for " +
+			"the life of the card, so data attached to the card stays attached after any edit. " +
+			"The first field is written like any other, and the heading of the card is updated " +
+			"from it. " +
+			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, t.writeCardEdit)
 }
 
@@ -121,9 +117,9 @@ func (t *Tools) writeCardEdit(ctx context.Context, in cardEditInput) (WriteOutco
 }
 
 type cardValueRemoveInput struct {
-	Path        string `json:"path" jsonschema:"the deck the card is in"`
-	CardID      string `json:"cardId" jsonschema:"the card's id, as card_read gives it"`
-	Field       string `json:"field" jsonschema:"the field to take off, as card_read gives it under field"`
+	Path        string `json:"path" jsonschema:"the path of the deck of the card, relative to the vault folder"`
+	CardID      string `json:"cardId" jsonschema:"the card id, as card_read returns it"`
+	Field       string `json:"field" jsonschema:"the field to remove, as card_read returns it under field"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
@@ -132,15 +128,13 @@ func (t *Tools) addCardValueRemove(registry *tools.Registry) error {
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full}, Step: tools.Remove,
 		Name:  "card_value_remove",
 		Title: "Remove a card's field",
-		Description: "Remove one field from one card: its heading, and what the person " +
-			"wrote under it. `card_edit` writes a value and never takes one away, and an " +
-			"empty value is a field standing empty, not a field gone. The fields around " +
-			"it keep the order they were written in, and every other byte of the file is " +
-			"left as it was. The card model is not touched: it goes on declaring the field, " +
-			"and every other card cut by it goes on carrying its own value. A card " +
-			"writing nothing under that field fails. The card is addressed by the " +
-			"card id `card_read` gives it, the fingerprint from `card_read` is required, and " +
-			"a write lands only on the deck that fingerprint names.",
+		Description: "Remove one field from one card: its heading and its value. `card_edit` writes " +
+			"values and never removes one, and an empty value is an empty field, not a removed " +
+			"one. The other fields keep their order, and the rest of the file is unchanged. " +
+			"The card model is unchanged: it still declares the field, and the other cards of " +
+			"the card model keep their values. The call fails for a card without that field. " +
+			"The card is addressed by the card id `card_read` returns. " +
+			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardValueRemoveInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
 			return t.deckedit.RemoveCardValue.Execute(ctx, v, pos, in.CardID, in.Field)
@@ -149,8 +143,8 @@ func (t *Tools) addCardValueRemove(registry *tools.Registry) error {
 }
 
 type cardRemoveInput struct {
-	Path        string `json:"path" jsonschema:"the deck the card is in"`
-	CardID      string `json:"cardId" jsonschema:"the card's id, as card_read gives it"`
+	Path        string `json:"path" jsonschema:"the path of the deck of the card, relative to the vault folder"`
+	CardID      string `json:"cardId" jsonschema:"the card id, as card_read returns it"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
@@ -159,14 +153,12 @@ func (t *Tools) addCardRemove(registry *tools.Registry) error {
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full}, Step: tools.Remove,
 		Name:  "card_remove",
 		Title: "Remove a card",
-		Description: "Remove one card from a deck: its heading, the card model it named and " +
-			"every value under it. The rest of the file is left the bytes it was, down to " +
-			"the blank lines and the whitespace at the ends of the lines; what every " +
-			"write of a deck puts right is the card id of a card carrying none and the " +
-			"heading of a card that has fallen out of step with its first field. " +
-			"Nothing brings the card back, so read the deck before removing from it. The " +
-			"fingerprint from `card_read` is required, and a write lands only on the deck " +
-			"that fingerprint names.",
+		Description: "Remove one card from a deck: its heading, its card model link and every value. " +
+			"The rest of the file is unchanged byte for byte, blank lines and trailing " +
+			"whitespace included; every deck write adds a missing card id and rewrites a " +
+			"heading that no longer matches its first field. A removed card cannot be restored, " +
+			"so read the deck before removing from it. " +
+			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardRemoveInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
 			return t.deckedit.RemoveCard.Execute(ctx, v, pos, in.CardID)
@@ -175,8 +167,8 @@ func (t *Tools) addCardRemove(registry *tools.Registry) error {
 }
 
 type cardSectionAddInput struct {
-	Path        string `json:"path" jsonschema:"the deck to divide"`
-	Name        string `json:"name" jsonschema:"what the section is called"`
+	Path        string `json:"path" jsonschema:"the path of the deck, relative to the vault folder"`
+	Name        string `json:"name" jsonschema:"the section name"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
@@ -186,12 +178,10 @@ func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 		Name:  "card_section_add",
 		Title: "Add a section",
-		Description: "Write a section at the end of a deck. A section is a name a person " +
-			"gives one run of a deck, and it is a name and nothing else: it carries no " +
-			"field, no card model and no schedule. `card_add` writes a card at the end of " +
-			"one, and `card_read` says which section each card is under. The " +
-			"fingerprint from `card_read` is required, and a write lands only on the deck " +
-			"that fingerprint names.",
+		Description: "Append a section to a deck. A section is a name for a range of cards and holds " +
+			"nothing else: no field, no card model and no schedule. `card_add` appends a card to " +
+			"a section, and `card_read` returns the section index of each card. " +
+			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardSectionAddInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
 			return t.deckedit.AddSection.Execute(ctx, v, pos, in.Name)
@@ -200,9 +190,9 @@ func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 }
 
 type cardSectionRenameInput struct {
-	Path        string `json:"path" jsonschema:"the deck the section is in"`
-	Section     int    `json:"section" jsonschema:"where the section is in the deck's sections, counted from the first, as card_read gives them"`
-	Name        string `json:"name" jsonschema:"what it is called from now on"`
+	Path        string `json:"path" jsonschema:"the path of the deck of the section, relative to the vault folder"`
+	Section     int    `json:"section" jsonschema:"the index of the section in the deck, counted from 0, as card_read returns the sections"`
+	Name        string `json:"name" jsonschema:"the new section name"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
@@ -211,13 +201,11 @@ func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full}, Step: tools.Move,
 		Name:  "card_section_rename",
 		Title: "Rename a section",
-		Description: "Give one of a deck's sections a different name. Only the heading " +
-			"line is written: the cards standing under it stay where they are, keep their " +
-			"card ids and keep what they hold, and what a person wrote beneath the heading is " +
-			"left as it stands. The section is named by where it is in the deck, " +
-			"counted from the first, which is what `card_read` gives under `sections`. The " +
-			"fingerprint from `card_read` is required, and a write lands only on the deck " +
-			"that fingerprint names.",
+		Description: "Rename one section of a deck. Only the heading line is written: the cards under " +
+			"it keep their position, card ids and values, and text under the heading is " +
+			"unchanged. The section is addressed by its index in the deck, counted from 0, as " +
+			"`card_read` returns `sections`. " +
+			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardSectionRenameInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
 			return t.deckedit.RenameSection.Execute(ctx, v, pos, in.Section, in.Name)
@@ -226,8 +214,8 @@ func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
 }
 
 type cardSectionRemoveInput struct {
-	Path        string `json:"path" jsonschema:"the deck the section is in"`
-	Section     int    `json:"section" jsonschema:"where the section is in the deck's sections, counted from the first, as card_read gives them"`
+	Path        string `json:"path" jsonschema:"the path of the deck of the section, relative to the vault folder"`
+	Section     int    `json:"section" jsonschema:"the index of the section in the deck, counted from 0, as card_read returns the sections"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
@@ -236,14 +224,12 @@ func (t *Tools) addCardSectionRemove(registry *tools.Registry) error {
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full}, Step: tools.Remove,
 		Name:  "card_section_remove",
 		Title: "Remove a section",
-		Description: "Remove the heading of one of a deck's sections. A section is a name " +
-			"and nothing else, so this takes away the name alone: no card is removed, and " +
-			"the cards that stood under the heading stay in the file, in the order they " +
-			"were, under whatever section now is above them. What a person wrote " +
-			"beneath the heading stays there too. The section is named by where it stands " +
-			"in the deck, counted from the first, which is what `card_read` gives under " +
-			"`sections`. The fingerprint from `card_read` is required, and a write lands " +
-			"only on the deck that fingerprint names.",
+		Description: "Remove the heading of one section of a deck. A section is only a name, so only " +
+			"the name is removed: no card is removed, and the cards under the heading stay in the " +
+			"file in their order, under the preceding section. Text under the heading stays too. " +
+			"The section is addressed by its index in the deck, counted from 0, as `card_read` " +
+			"returns `sections`. " +
+			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardSectionRemoveInput) (WriteOutcome, error) {
 		return t.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos deckedit.DeckVersion) (deckedit.EditResult, error) {
 			return t.deckedit.RemoveSection.Execute(ctx, v, pos, in.Section)
@@ -252,9 +238,9 @@ func (t *Tools) addCardSectionRemove(registry *tools.Registry) error {
 }
 
 type cardModelEditInput struct {
-	Path        string         `json:"path" jsonschema:"the card model to edit"`
-	Fields      []string       `json:"fields" jsonschema:"the names of the fields, in the order a person is asked for them; a card's heading is read from the first"`
-	Templates   []CardTemplate `json:"templates" jsonschema:"the ways a card cut by this card model is shown"`
+	Path        string         `json:"path" jsonschema:"the path of the card model to edit, relative to the vault folder"`
+	Fields      []string       `json:"fields" jsonschema:"the field names, in order; the heading of a card is taken from the first field"`
+	Templates   []CardTemplate `json:"templates" jsonschema:"the templates that render the cards of this card model"`
 	Fingerprint string         `json:"fingerprint" jsonschema:"the card model fingerprint returned by card_model_read; a write against a changed card model is rejected"`
 }
 
@@ -264,9 +250,8 @@ func (t *Tools) addCardCardModelEdit(registry *tools.Registry) error {
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 		Name:  "card_model_edit",
 		Title: "Edit a card model",
-		Description: "Change a card model in place: its fields and the templates a card cut by " +
-			"it is shown through. Return the fingerprint from `card_model_read` so " +
-			"the write fails if the card model has changed in the meantime.",
+		Description: "Change the field names and templates of a card model in place. Pass the " +
+			"fingerprint from `card_model_read`; a write against a changed card model is rejected.",
 	}, t.writeCardCardModelEdit)
 }
 

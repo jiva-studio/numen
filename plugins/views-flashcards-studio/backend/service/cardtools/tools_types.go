@@ -38,50 +38,50 @@ type CardModel struct {
 	// Name is the text of a card's wikilink. A link is resolved by path and by filename, so
 	// the name that resolves to this card model is its filename without the extension.
 	Name   string   `json:"name" jsonschema:"the name to write in a card's wikilink, which is the filename without its extension"`
-	Title  string   `json:"title" jsonschema:"what the card model is called, which is what a person sees"`
-	Fields []string `json:"fields,omitempty" jsonschema:"what a card cut by this card model is asked for, in order; absent for a card model that could not be read"`
+	Title  string   `json:"title" jsonschema:"the title of the card model"`
+	Fields []string `json:"fields,omitempty" jsonschema:"the field names of the card model, in order; absent for a card model that could not be read"`
 }
 
 // Card is one card as a deck answers with it.
 type Card struct {
-	CardID    string       `json:"cardId" jsonschema:"what the card is for as long as it exists, and how every tool here addresses it; empty for a card typed in by hand, which is given one the next time the deck is written"`
-	Section   int          `json:"section" jsonschema:"where the section of this card is in the deck's sections, counted from the first; -1 for a card standing before the first section"`
-	CardModel string       `json:"cardModel,omitempty" jsonschema:"the card model this card is cut by, as the wikilink beneath its heading names it"`
-	Values    []FieldValue `json:"values,omitempty" jsonschema:"what the card holds, in the order it is in the file"`
+	CardID    string       `json:"cardId" jsonschema:"the stable identifier of the card, which every card tool takes; empty for a card written by hand, which gets one at the next write of the deck"`
+	Section   int          `json:"section" jsonschema:"the index of the section of the card in the deck, counted from 0; -1 for a card before the first section"`
+	CardModel string       `json:"cardModel,omitempty" jsonschema:"the card model of the card, as the wikilink under its heading names it"`
+	Values    []FieldValue `json:"values,omitempty" jsonschema:"the field values, in file order"`
 }
 
 // FieldValue is the text of one of a card's fields.
 type FieldValue struct {
 	Field string `json:"field" jsonschema:"the field's name, spelled as the card model declares it"`
-	Text  string `json:"text" jsonschema:"the HTML under that heading"`
+	Text  string `json:"text" jsonschema:"the HTML of the field value"`
 }
 
-// Fault is one thing wrong with a deck, on the card it is against.
-type Fault struct {
-	Card int    `json:"card" jsonschema:"where the card is in the deck, counted from its first card; -1 for a fault against no card"`
-	Why  string `json:"why" jsonschema:"what is wrong, and what the application did about it"`
+// Problem is one problem of a deck, on the card it concerns.
+type Problem struct {
+	Card    int    `json:"card" jsonschema:"the index of the card in the deck, counted from 0; -1 for a problem of no card"`
+	Message string `json:"message" jsonschema:"the problem and the action the application took"`
 }
 
 // CurrentCard is the card the user is viewing, as reported to an agent. The deck is the file containing it.
 type CurrentCard struct {
-	Deck     string `json:"deck" jsonschema:"the deck the card is in, by the path the vault files it under; empty when no card is in front of them"`
+	Deck     string `json:"deck" jsonschema:"the path of the deck of the card, relative to the vault folder; empty when no card is open"`
 	Card     string `json:"card,omitempty" jsonschema:"the card's id, as card_read gives it"`
-	Template string `json:"template,omitempty" jsonschema:"the template it is being shown through, spelled as the card model writes it"`
+	Template string `json:"template,omitempty" jsonschema:"the name of the template the card is shown with, as the card model spells it"`
 }
 
 // CardTemplate is one way a card model shows a card.
 type CardTemplate struct {
-	Name  string `json:"name" jsonschema:"what the template is called"`
-	Front string `json:"front" jsonschema:"what is shown before the answer, as HTML with {{Field}} where a value goes"`
-	Back  string `json:"back" jsonschema:"what is shown after it"`
+	Name  string `json:"name" jsonschema:"the name of the template"`
+	Front string `json:"front" jsonschema:"the front side, as HTML with {{Field}} placeholders for the values"`
+	Back  string `json:"back" jsonschema:"the back side, as HTML with {{Field}} placeholders for the values"`
 }
 
 // WriteOutcome is what a deck became: where it is, and what to present at the next write of it.
 type WriteOutcome struct {
-	Path        string `json:"path"`
-	Fingerprint string `json:"fingerprint" jsonschema:"hand this to the next write of this deck without reading it back"`
-	Cards       int    `json:"cards" jsonschema:"how many cards the deck now holds"`
-	CardID      string `json:"cardId,omitempty" jsonschema:"the card id the card just written is addressed by, for as long as it exists"`
+	Path        string `json:"path" jsonschema:"the path of the deck, relative to the vault folder"`
+	Fingerprint string `json:"fingerprint" jsonschema:"the new deck fingerprint; pass it to the next write of this deck"`
+	Cards       int    `json:"cards" jsonschema:"the number of cards in the deck"`
+	CardID      string `json:"cardId,omitempty" jsonschema:"the identifier of the written card"`
 }
 
 func newWriteOutcome(path string, edited deckedit.EditResult) WriteOutcome {
@@ -120,16 +120,16 @@ func newTemplates(templates []format.CardTemplate) []CardTemplate {
 	return out
 }
 
-// faults lists the problems of a deck, each on the card it concerns. The position is counted from
+// getProblems lists the problems of a deck, each on the card it concerns. The position is counted from
 // the deck's first card, whichever range of cards a call requested.
-func faults(problems []format.Problem) []Fault {
+func getProblems(problems []format.Problem) []Problem {
 	// gomutants:disable-next-line INTEGER_DECREMENT,BRANCH_IF reason="Slice length is never negative, and an empty slice with omitempty serializes identically to nil."
 	if len(problems) == 0 {
 		return nil
 	}
-	out := make([]Fault, 0, len(problems))
+	out := make([]Problem, 0, len(problems))
 	for _, p := range problems {
-		out = append(out, Fault{Card: p.Card, Why: p.Detail})
+		out = append(out, Problem{Card: p.Card, Message: p.Detail})
 	}
 	return out
 }
