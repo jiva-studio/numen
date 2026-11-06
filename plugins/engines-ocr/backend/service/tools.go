@@ -120,7 +120,7 @@ func (t *Tools) start(ctx context.Context, vault domain.VaultID, path string) (s
 		return "", errors.New("the plugin is stopping")
 	}
 	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-	done, isStarted, err := t.recognitions.Start(runCtx, recognition.Request{Vault: vault, Path: path, IsUserStarted: true})
+	runEnd, isStarted, err := t.recognitions.Start(runCtx, recognition.Request{Vault: vault, Path: path, IsUserStarted: true})
 	if err != nil || !isStarted {
 		cancel()
 		if err != nil {
@@ -130,7 +130,7 @@ func (t *Tools) start(ctx context.Context, vault domain.VaultID, path string) (s
 	}
 	t.running[key] = cancel
 	t.wg.Go(func() {
-		<-done
+		<-runEnd
 		cancel()
 		t.clearRunning(key)
 	})

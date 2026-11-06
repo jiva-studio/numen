@@ -140,9 +140,9 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 	if err != nil {
 		return nil, false, err
 	}
-	done := make(chan struct{})
+	runEnd := make(chan struct{})
 	go func() {
-		defer close(done)
+		defer close(runEnd)
 		defer r.release(key)
 		// recogniseClaimed reports a failure as the task's error.
 		_, err := r.recogniseClaimed(ctx, req)
@@ -151,7 +151,7 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 			fmt.Fprintf(os.Stderr, "engines-ocr: recognise %s: %v\n", req.Path, err)
 		}
 	}()
-	return done, true, nil
+	return runEnd, true, nil
 }
 
 // claim marks the file of the request as held by one run, keyed by the id of its vault. No vault is

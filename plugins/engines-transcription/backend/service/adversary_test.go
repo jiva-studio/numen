@@ -10,10 +10,10 @@ import (
 // names that vault by its identity is the same recording, and must not start a second run.
 func TestTranscriptCreateOfARecordingThePaletteCommandTranscribesReportsItRunning(t *testing.T) {
 	s := newToolScene(t)
-	done := make(chan error, 1)
+	result := make(chan error, 1)
 	go func() {
 		_, err := newTranscribeCommand(s.transcriber)(t.Context(), command.Request{Command: "transcript.create", Path: lecture})
-		done <- err
+		result <- err
 	}()
 	s.waitEntered(t)
 
@@ -23,7 +23,7 @@ func TestTranscriptCreateOfARecordingThePaletteCommandTranscribesReportsItRunnin
 		t.Errorf("transcript_create in the shown vault while the command transcribes the recording returned %+v, want the state running", out)
 	}
 	close(s.blocking.release)
-	if err := <-done; err != nil {
+	if err := <-result; err != nil {
 		t.Errorf("the command: %v", err)
 	}
 }

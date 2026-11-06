@@ -12,10 +12,10 @@ import (
 // the same file must not start a second one.
 func TestRecognitionCreateOfAScanThePaletteCommandRecognisesReportsItRunning(t *testing.T) {
 	s := newToolScene(t)
-	done := make(chan error, 1)
+	result := make(chan error, 1)
 	go func() {
 		_, err := newRecogniseCommand(s.tools.recognitions)(t.Context(), command.Request{Command: "recognition.create", Path: scanPath})
-		done <- err
+		result <- err
 	}()
 	s.waitEntered(t)
 
@@ -25,7 +25,7 @@ func TestRecognitionCreateOfAScanThePaletteCommandRecognisesReportsItRunning(t *
 		t.Errorf("recognition_create while the command recognises the scan returned %+v, want the state running", out)
 	}
 	close(s.recogniser.release)
-	if err := <-done; err != nil {
+	if err := <-result; err != nil {
 		t.Errorf("the command: %v", err)
 	}
 	s.waitFinished(t, out.TaskID)
