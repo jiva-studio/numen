@@ -349,8 +349,8 @@ func TestVaultChecksNeedVaultRead(t *testing.T) {
 		t.Fatalf("the checks with vault:read returned %v", err)
 	}
 
-	if !slices.Equal(res.Msg.GetRan(), []string{"ambiguous", "dangling"}) {
-		t.Errorf("ran is %v, want ambiguous and dangling", res.Msg.GetRan())
+	if !slices.Equal(res.Msg.GetChecks(), []string{"ambiguous", "dangling"}) {
+		t.Errorf("checks are %v, want ambiguous and dangling", res.Msg.GetChecks())
 	}
 	problems := res.Msg.GetProblems()
 	if len(problems) != 1 {
@@ -378,7 +378,7 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 		res.Msg.GetNameSource() != v1.NameSource_NAME_SOURCE_FILENAME {
 		t.Errorf("the rename returned %v", res.Msg)
 	}
-	moved := res.Msg.GetMoved()
+	moved := res.Msg.GetMove()
 	if moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" || !slices.Equal(moved.GetRepaired(), []string{"Deltas.md"}) {
 		t.Errorf("the move came out as %v", moved)
 	}
@@ -406,13 +406,13 @@ func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
 	if len(moves) != 3 {
 		t.Fatalf("the move returned %d entries, want 3: %v", len(moves), moves)
 	}
-	if moves[0].Failure != nil || moves[0].GetMoved().GetFrom() != "Danube.md" || moves[0].GetMoved().GetTo() != "Rivers/Danube.md" {
+	if moves[0].Failure != nil || moves[0].GetMove().GetFrom() != "Danube.md" || moves[0].GetMove().GetTo() != "Rivers/Danube.md" {
 		t.Errorf("the first entry is %v, want Danube.md moved to Rivers/Danube.md", moves[0])
 	}
-	if moves[1].GetMoved().GetFrom() != "Nowhere.md" || moves[1].GetFailure() != v1.ErrorCode_ERROR_CODE_MISSING {
+	if moves[1].GetMove().GetFrom() != "Nowhere.md" || moves[1].GetFailure() != v1.ErrorCode_ERROR_CODE_MISSING {
 		t.Errorf("the second entry is %v, want Nowhere.md with failure MISSING", moves[1])
 	}
-	if moves[2].GetMoved().GetFrom() != "Deltas.md" || moves[2].GetFailure() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
+	if moves[2].GetMove().GetFrom() != "Deltas.md" || moves[2].GetFailure() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("the third entry is %v, want Deltas.md with failure ALREADY_EXISTS", moves[2])
 	}
 
@@ -420,7 +420,7 @@ func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := root.Msg.GetMoves(); len(got) != 1 || got[0].GetMoved().GetTo() != "Rhine.md" {
+	if got := root.Msg.GetMoves(); len(got) != 1 || got[0].GetMove().GetTo() != "Rhine.md" {
 		t.Errorf("a move to the empty folder returned %v, want Rhine.md at the vault root", got)
 	}
 	want := []domain.Move{
@@ -448,8 +448,8 @@ func TestARemovalReturnsTheTrashPathAndAFolderAsNotANote(t *testing.T) {
 	if len(removals) != 3 {
 		t.Fatalf("the removal returned %d entries, want 3: %v", len(removals), removals)
 	}
-	if removals[0].Failure != nil || removals[0].GetPath() != "Danube.md" || removals[0].GetTrashed() != ".trash/Danube.md" ||
-		!slices.Equal(removals[0].GetDangling(), []string{"Deltas.md"}) {
+	if removals[0].Failure != nil || removals[0].GetPath() != "Danube.md" || removals[0].GetTrashPath() != ".trash/Danube.md" ||
+		!slices.Equal(removals[0].GetBrokenLinks(), []string{"Deltas.md"}) {
 		t.Errorf("the first entry is %v, want Danube.md in .trash with Deltas.md dangling", removals[0])
 	}
 	if removals[1].GetPath() != "Rivers" || removals[1].Failure == nil || removals[1].GetFailure() != v1.ErrorCode_ERROR_CODE_NOT_A_NOTE {
@@ -647,13 +647,13 @@ func TestAMoveReportsAPathOutsideTheVaultAndMovesTheOthers(t *testing.T) {
 	if res.Msg.GetError() != 0 || len(moves) != 3 {
 		t.Fatalf("the move returned error %v with %d entries, want 3 entries", res.Msg.GetError(), len(moves))
 	}
-	if moves[0].Failure != nil || moves[0].GetMoved().GetTo() != "Archive/Danube.md" {
+	if moves[0].Failure != nil || moves[0].GetMove().GetTo() != "Archive/Danube.md" {
 		t.Errorf("the first entry is %v, want Danube.md moved to Archive/Danube.md", moves[0])
 	}
-	if moves[1].GetMoved().GetFrom() != "../Baikal.md" || moves[1].Failure == nil {
+	if moves[1].GetMove().GetFrom() != "../Baikal.md" || moves[1].Failure == nil {
 		t.Errorf("the second entry is %v, want ../Baikal.md with a failure", moves[1])
 	}
-	if moves[2].Failure != nil || moves[2].GetMoved().GetTo() != "Archive/Rhine.md" {
+	if moves[2].Failure != nil || moves[2].GetMove().GetTo() != "Archive/Rhine.md" {
 		t.Errorf("the third entry is %v, want Rivers/Rhine.md moved to Archive/Rhine.md", moves[2])
 	}
 	for _, target := range []string{"Archive/Danube.md", "Archive/Rhine.md"} {
@@ -677,13 +677,13 @@ func TestARemovalReportsAPathOutsideTheVaultAndRemovesTheOthers(t *testing.T) {
 	if res.Msg.GetError() != 0 || len(removals) != 3 {
 		t.Fatalf("the removal returned error %v with %d entries, want 3 entries", res.Msg.GetError(), len(removals))
 	}
-	if removals[0].Failure != nil || removals[0].GetTrashed() != ".trash/Danube.md" {
+	if removals[0].Failure != nil || removals[0].GetTrashPath() != ".trash/Danube.md" {
 		t.Errorf("the first entry is %v, want Danube.md in .trash", removals[0])
 	}
 	if removals[1].GetPath() != "../Baikal.md" || removals[1].Failure == nil {
 		t.Errorf("the second entry is %v, want ../Baikal.md with a failure", removals[1])
 	}
-	if removals[2].Failure != nil || removals[2].GetTrashed() != ".trash/Rivers/Rhine.md" {
+	if removals[2].Failure != nil || removals[2].GetTrashPath() != ".trash/Rivers/Rhine.md" {
 		t.Errorf("the third entry is %v, want Rivers/Rhine.md in .trash", removals[2])
 	}
 	for _, target := range []string{"Danube.md", "Rivers/Rhine.md"} {
@@ -725,7 +725,7 @@ func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
 	if res.Msg.Failure != nil || res.Msg.GetError() != 0 || res.Msg.GetPath() != "Donau.md" {
 		t.Errorf("the rename returned %v, want Donau.md with no failure", res.Msg)
 	}
-	if moved := res.Msg.GetMoved(); moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" {
+	if moved := res.Msg.GetMove(); moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" {
 		t.Errorf("the move came out as %v, want Danube.md to Donau.md", moved)
 	}
 }

@@ -51,7 +51,7 @@ func (a *arranging) RenameNote(
 	}
 	return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{
 		Path: "Donau.md", Title: "Donau", NameSource: v1.NameSource_NAME_SOURCE_FILENAME,
-		Moved: &v1.MoveResult{From: "Danube.md", To: "Donau.md", Repaired: []string{"Deltas.md"}, Dangling: []string{"Estuaries.md"}},
+		Move: &v1.MoveResult{From: "Danube.md", To: "Donau.md", Repaired: []string{"Deltas.md"}, Dangling: []string{"Estuaries.md"}},
 	}), nil
 }
 
@@ -63,10 +63,10 @@ func (a *arranging) MoveNotes(
 	notANote := v1.ErrorCode_ERROR_CODE_NOT_A_NOTE
 	exists := v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS
 	return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
-		{Moved: &v1.MoveResult{From: "Danube.md", To: "Rivers/Danube.md", Repaired: []string{"Deltas.md"}}},
-		{Moved: &v1.MoveResult{From: "Nowhere.md"}, Failure: &missing},
-		{Moved: &v1.MoveResult{From: "Rivers"}, Failure: &notANote},
-		{Moved: &v1.MoveResult{From: "Deltas.md"}, Failure: &exists},
+		{Move: &v1.MoveResult{From: "Danube.md", To: "Rivers/Danube.md", Repaired: []string{"Deltas.md"}}},
+		{Move: &v1.MoveResult{From: "Nowhere.md"}, Failure: &missing},
+		{Move: &v1.MoveResult{From: "Rivers"}, Failure: &notANote},
+		{Move: &v1.MoveResult{From: "Deltas.md"}, Failure: &exists},
 	}}), nil
 }
 
@@ -77,7 +77,7 @@ func (a *arranging) RemoveNotes(
 	notANote := v1.ErrorCode_ERROR_CODE_NOT_A_NOTE
 	missing := v1.ErrorCode_ERROR_CODE_MISSING
 	return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Removals: []*v1.HostNoteRemoval{
-		{Path: "Danube.md", Trashed: ".trash/Danube.md", Dangling: []string{"Deltas.md"}},
+		{Path: "Danube.md", TrashPath: ".trash/Danube.md", BrokenLinks: []string{"Deltas.md"}},
 		{Path: "Rivers", Failure: &notANote},
 		{Path: "Nowhere.md", Failure: &missing},
 	}}), nil
@@ -87,7 +87,7 @@ func (a *arranging) GetVaultProblems(
 	_ context.Context, req *connect.Request[v1.GetVaultProblemsRequest],
 ) (*connect.Response[v1.GetVaultProblemsResponse], error) {
 	return connect.NewResponse(&v1.GetVaultProblemsResponse{
-		Ran: req.Msg.GetChecks(),
+		Checks: req.Msg.GetChecks(),
 		Problems: []*v1.HostVaultProblem{{
 			Path: "Deltas.md", Check: "ambiguous", Detail: "Danube matches two notes",
 			TargetScheme: "name", TargetValue: "Danube", Candidates: []string{"Rivers/Danube.md", "Ships/Danube.md"},
@@ -164,10 +164,10 @@ func TestTheClientRenamesANoteAndReadsTheMove(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if renamed.Path != "Donau.md" || renamed.Title != "Donau" || !renamed.IsFilenamed || renamed.Moved == nil {
+	if renamed.Path != "Donau.md" || renamed.Title != "Donau" || !renamed.IsFilenamed || renamed.Move == nil {
 		t.Fatalf("the rename came back as %+v", renamed)
 	}
-	if m := *renamed.Moved; m.From != "Danube.md" || m.To != "Donau.md" || !m.IsMoved ||
+	if m := *renamed.Move; m.From != "Danube.md" || m.To != "Donau.md" || !m.IsMoved ||
 		!slices.Equal(m.Repaired, []string{"Deltas.md"}) || !slices.Equal(m.Dangling, []string{"Estuaries.md"}) {
 		t.Errorf("the move came back as %+v", m)
 	}
@@ -202,12 +202,12 @@ func TestTheClientMovesNotesAndReturnsEachFailure(t *testing.T) {
 	if len(moves) != 4 {
 		t.Fatalf("the moves came back as %+v, want 4", moves)
 	}
-	if m := moves[0]; m.Err != nil || m.Moved.From != "Danube.md" || m.Moved.To != "Rivers/Danube.md" || !m.Moved.IsMoved ||
-		!slices.Equal(m.Moved.Repaired, []string{"Deltas.md"}) {
+	if m := moves[0]; m.Err != nil || m.Move.From != "Danube.md" || m.Move.To != "Rivers/Danube.md" || !m.Move.IsMoved ||
+		!slices.Equal(m.Move.Repaired, []string{"Deltas.md"}) {
 		t.Errorf("the first move came back as %+v", m)
 	}
 	for i, want := range map[int]error{1: host.ErrNotExist, 2: host.ErrNotANote, 3: host.ErrAlreadyExists} {
-		if m := moves[i]; !errors.Is(m.Err, want) || m.Moved.IsMoved || m.Moved.From == "" {
+		if m := moves[i]; !errors.Is(m.Err, want) || m.Move.IsMoved || m.Move.From == "" {
 			t.Errorf("move %d came back as %+v, want the error %v", i, m, want)
 		}
 	}
@@ -225,7 +225,7 @@ func TestTheClientRemovesNotesAndReturnsAFolderAsNotANote(t *testing.T) {
 	if len(removals) != 3 {
 		t.Fatalf("the removals came back as %+v, want 3", removals)
 	}
-	if r := removals[0]; r.Err != nil || r.Path != "Danube.md" || r.Trashed != ".trash/Danube.md" || !slices.Equal(r.Dangling, []string{"Deltas.md"}) {
+	if r := removals[0]; r.Err != nil || r.Path != "Danube.md" || r.TrashPath != ".trash/Danube.md" || !slices.Equal(r.BrokenLinks, []string{"Deltas.md"}) {
 		t.Errorf("the first removal came back as %+v", r)
 	}
 	if r := removals[1]; r.Path != "Rivers" || !errors.Is(r.Err, host.ErrNotANote) {
@@ -244,8 +244,8 @@ func TestTheClientRunsTheNamedChecks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !slices.Equal(problems.Ran, []string{"ambiguous", "dangling"}) {
-		t.Errorf("ran came back as %v", problems.Ran)
+	if !slices.Equal(problems.Checks, []string{"ambiguous", "dangling"}) {
+		t.Errorf("checks came back as %v", problems.Checks)
 	}
 	if len(problems.Found) != 1 {
 		t.Fatalf("the problems came back as %+v, want one", problems.Found)
@@ -272,7 +272,7 @@ func TestTheClientListsTheVaultsAndMarksAMissingFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []host.KnownVault{
+	want := []host.VaultEntry{
 		{Vault: domain.Vault{ID: "v1", Name: "Rivers", Path: "/vaults/Rivers"}},
 		{Vault: domain.Vault{ID: "v2", Name: "Lakes", Path: "/vaults/Lakes"}, IsMissing: true},
 	}
