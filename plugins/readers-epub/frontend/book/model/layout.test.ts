@@ -51,6 +51,7 @@ const setUp = () => {
     front: ref({}),
     leftInChapter: ref(0),
     stand: vi.fn(),
+    enterSpread: vi.fn(),
     getKeptOffset: vi.fn(() => KEPT),
     keepOffset: vi.fn(),
     getSpreadOf: vi.fn(SPREAD_OF),
@@ -74,6 +75,7 @@ const columns = () =>
 const turns = () =>
   fake.turns as {
     stand: ReturnType<typeof vi.fn>
+    enterSpread: ReturnType<typeof vi.fn>
     turn: ReturnType<typeof vi.fn>
     getKeptOffset: ReturnType<typeof vi.fn>
     keepOffset: ReturnType<typeof vi.fn>
@@ -120,6 +122,8 @@ const room = (options: Options = {}) => {
   }
   const area = shallowRef<HTMLElement | null>(options.hasArea === false ? null : box)
   const paper = shallowRef<HTMLElement | null>(options.hasPaper === false ? null : text)
+  const holder = document.createElement('div')
+  const leaving = shallowRef<HTMLElement | null>(holder)
   const onMove = vi.fn()
   const takeLed = vi.fn(() => options.led)
   let layout!: ReturnType<typeof useBookLayout>
@@ -129,6 +133,7 @@ const room = (options: Options = {}) => {
         layout = useBookLayout({
           area,
           paper,
+          leaving,
           props,
           onMove,
           takeLed,
@@ -138,7 +143,7 @@ const room = (options: Options = {}) => {
       },
     }),
   )
-  return { wrapper, props, box, text, onMove, takeLed, layout: () => layout }
+  return { wrapper, props, box, text, holder, onMove, takeLed, layout: () => layout }
 }
 
 beforeEach(setUp)
@@ -731,5 +736,62 @@ describe('the columns of a document with a picture that has not arrived', () => 
     picture.dispatchEvent(new Event('error'))
 
     expect(columns().readColumns).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('a page turned into the adjacent document', () => {
+  /** Turns past the end of the document at 100..200 and draws the one at 200..300. */
+  const turnIntoNext = async (setup: ReturnType<typeof room>, offset: number) => {
+    const { props, layout, text } = setup
+    flushFrames()
+    text.innerHTML = '<p data-offset="190">one</p>'
+    turns().turn.mockReturnValue(200)
+    layout().turn('next')
+    props.at = offset
+    props.span = { start: 200, end: 300 }
+    props.markup = '<p>two</p>'
+    await nextTick()
+  }
+
+  it('carries the columns in and carries out a copy of the spread before', async () => {
+    const setup = room()
+    await turnIntoNext(setup, 200)
+
+    expect(setup.holder.textContent).toBe('one')
+    flushFrames()
+
+    expect(turns().stand).not.toHaveBeenCalledWith(SPREAD_OF(200), 'auto')
+    expect(turns().enterSpread).toHaveBeenCalledExactlyOnceWith(
+      SPREAD_OF(200),
+      'next',
+      setup.holder.firstElementChild,
+    )
+  })
+
+  it('lands at once where the owner moved the reader elsewhere', async () => {
+    const setup = room()
+    await turnIntoNext(setup, 250)
+    flushFrames()
+
+    expect(setup.holder.children).toHaveLength(0)
+    expect(turns().enterSpread).not.toHaveBeenCalled()
+    expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(250), 'auto')
+  })
+
+  it('lands at once for the next document drawn without a turn', async () => {
+    const setup = room()
+    await turnIntoNext(setup, 200)
+    flushFrames()
+    turns().enterSpread.mockClear()
+
+    setup.props.at = 310
+    setup.props.span = { start: 300, end: 400 }
+    setup.props.markup = '<p>three</p>'
+    await nextTick()
+    flushFrames()
+
+    expect(setup.holder.children).toHaveLength(0)
+    expect(turns().enterSpread).not.toHaveBeenCalled()
+    expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(310), 'auto')
   })
 })

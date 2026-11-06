@@ -47,6 +47,7 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const area = useTemplateRef<HTMLElement>('area')
 const paper = useTemplateRef<HTMLElement>('paper')
+const leaving = useTemplateRef<HTMLElement>('leaving')
 
 /** The near edge of a box, which every place across the columns is read from. */
 const getEdge = (of: HTMLElement) => measureRect(of).left
@@ -59,6 +60,7 @@ const links = createBookLinks(props, {
 const layout = useBookLayout({
   area,
   paper,
+  leaving,
   props,
   onMove: (pos) => emit('move', pos),
   takeLed: links.takeLed,
@@ -119,7 +121,7 @@ defineExpose({
     <div class="book__margin h-full">
       <div
         ref="area"
-        class="book__area h-full overflow-hidden"
+        class="book__area relative h-full overflow-hidden"
         role="region"
         :aria-label="words.pages"
         @pointerdown="hand.takeDown"
@@ -139,6 +141,8 @@ defineExpose({
           @click="onFollow"
           @auxclick="onFollow"
         />
+        <!-- A copy of the spread a turn into another document carries out. -->
+        <div ref="leaving" class="book__leaving" aria-hidden="true" />
       </div>
     </div>
 

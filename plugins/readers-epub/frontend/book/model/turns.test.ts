@@ -287,3 +287,46 @@ describe('the curve of a turn', () => {
     expect(getEasedProgress(0.2)).toBeGreaterThan(0.6)
   })
 })
+
+describe('a spread entered from the adjacent document', () => {
+  const createLeaving = (translate: string) => {
+    const holder = document.createElement('div')
+    const leaving = document.createElement('div')
+    leaving.style.translate = translate
+    holder.append(leaving)
+    return { holder, leaving }
+  }
+
+  it('starts one spread on the far side after a forward turn and carries the copy out the other way', () => {
+    const { turns, writes } = setUp()
+    const { holder, leaving } = createLeaving('-5000px 0')
+
+    turns.enterSpread(0, 'next', leaving)
+
+    expect(turns.standing.value).toBe(0)
+    expect(writes).toStrictEqual(['translate 1000px 0', 'translate 0px 0'])
+    expect(leaving.style.translate).toBe('-6000px 0')
+    expect(holder.children).toHaveLength(0)
+  })
+
+  it('starts one spread on the near side after a backward turn', () => {
+    const { turns, writes } = setUp()
+    const { leaving } = createLeaving('0px 0')
+
+    turns.enterSpread(3, 'back', leaving)
+
+    expect(turns.standing.value).toBe(3)
+    expect(writes).toStrictEqual(['translate -4000px 0', 'translate -3000px 0'])
+    expect(leaving.style.translate).toBe('1000px 0')
+  })
+
+  it('removes the copy without a drawn document', () => {
+    const { turns } = setUp(MARKS, 0, false)
+    const { holder, leaving } = createLeaving('0px 0')
+
+    turns.enterSpread(1, 'next', leaving)
+
+    expect(turns.standing.value).toBe(1)
+    expect(holder.children).toHaveLength(0)
+  })
+})
