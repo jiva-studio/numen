@@ -33,7 +33,7 @@ type RecognitionCreateInput struct {
 
 // RecognitionCreateOutput is the output of the recognition_create tool.
 type RecognitionCreateOutput struct {
-	TaskID string `json:"task_id" jsonschema:"the id of the recognition in the list of tasks"`
+	TaskID string `json:"taskId" jsonschema:"the id of the recognition in the list of tasks"`
 	Path   string `json:"path" jsonschema:"the file; library_read and library_search read its text once it is recognised"`
 	State  string `json:"state" jsonschema:"started, or running where a recognition of this file is already in progress and no second one was started"`
 }
