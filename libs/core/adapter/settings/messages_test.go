@@ -63,7 +63,7 @@ func TestTheErrorsOfAWriteNameTheKeyAndTheFault(t *testing.T) {
 	}
 }
 
-func TestARangeWithNoUpperLimitSaysSo(t *testing.T) {
+func TestFormatRangeWithoutUpperLimitPrintsInf(t *testing.T) {
 	declared := func(owner string) ([]pluginport.PluginManifestSetting, bool) {
 		return []pluginport.PluginManifestSetting{{Key: "port", Type: "number", Title: "Port", Min: number(1024)}}, owner == "org.example.relay"
 	}
@@ -81,11 +81,12 @@ func TestAScaleOutsideItsBoundsNamesTheSettingAndTheRange(t *testing.T) {
 }
 
 func TestAFileThatIsNoJSONObjectIsRefusedWithThePlace(t *testing.T) {
-	for body, want := range map[string]string{
-		`null`:     "numen.json: the file is not a JSON object",
-		`{"app": `: "invalid JSON at byte",
-		`[1]`:      "a value has the wrong type at byte",
+	for _, one := range []struct{ body, want string }{
+		{`null`, "numen.json: the file is not a JSON object"},
+		{`{"app":`, "invalid JSON at byte"},
+		{`[1]`, "a value has the wrong type at byte"},
 	} {
+		body, want := one.body, one.want
 		_, err := openAt(write(t, body))
 		if err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("%s: said %v, want %q in it", body, err, want)
@@ -112,7 +113,7 @@ func TestAWriteIntoASectionWithARepeatedNameNamesIt(t *testing.T) {
 	}
 }
 
-func TestAWriteOfASettingWithAnEmptyPathSaysSo(t *testing.T) {
+func TestWriteSettingWithEmptyPathFails(t *testing.T) {
 	path := write(t, `{}`)
 	err := settings.NewFiles().Save(path, newDocument(), settings.Setting{At: nil, Written: 1})
 	if want := "the setting path is empty"; err == nil || !strings.Contains(err.Error(), want) {

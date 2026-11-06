@@ -25,7 +25,7 @@ func TestGenerateAuthToken(t *testing.T) {
 	}
 }
 
-func TestParseHandshakeReadsOnlyNumenReadyLines(t *testing.T) {
+func TestParseReadyLineRequiresNumenReadyPrefix(t *testing.T) {
 	tests := []struct {
 		line     string
 		wantPort int

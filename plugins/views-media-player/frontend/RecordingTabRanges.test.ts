@@ -5,6 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, reactive } from 'vue'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import RecordingTab from './RecordingTab.vue'
 import { createPlayer, createRecordings, flush } from './model/fakes'
 import type { TextRange } from './types'
@@ -68,8 +69,13 @@ describe('the ranges of a recording tab', () => {
     const setup = createRecordings()
     setup.state.cueTimes.set(22, 83_000)
     const { player } = createPlayer()
+    const failure = new Error('the place store of talks/Ants.mp3 is full')
+    let isFull = true
     const savePlace = vi.fn((selector: { t: [number, number] }) => {
-      if (selector.t[0] === 83) throw new Error('the place store of talks/Ants.mp3 is full')
+      if (isFull && selector.t[0] === 83) {
+        isFull = false
+        throw failure
+      }
     })
     const state = reactive({ path: 'talks/Ants.mp3', selector: null, ranges: null as readonly TextRange[] | null, savePlace })
     const tab = mount(RecordingTab, {
@@ -86,7 +92,7 @@ describe('the ranges of a recording tab', () => {
     state.ranges = [{ start: 22, end: 30 }]
     await flush()
 
-    expect(tab.find('[role="alert"]').text()).toContain('the place store of talks/Ants.mp3 is full')
+    expect(tab.find('[role="alert"]').text()).toBe(formatErrorMessage(failure))
     tab.unmount()
   })
 })
