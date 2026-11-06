@@ -302,7 +302,10 @@ describe('a note followed', () => {
     requestLog.saveConnection.mockResolvedValueOnce({ isInvalid: true })
     expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'invalid' })
     requestLog.saveConnection.mockResolvedValueOnce({ error: NOTE_ERROR_CODE.NOT_FOUND })
-    expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'notFound' })
+    expect(await core.relations.saveConnection(connection)).toEqual({
+      ok: false,
+      error: 'notFound',
+    })
   })
 
   it('has one side, or both, removed under the type of the records', async () => {
