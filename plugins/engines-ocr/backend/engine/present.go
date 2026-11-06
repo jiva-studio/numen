@@ -2,12 +2,10 @@ package engine
 
 import "os"
 
-// IsFetched reports whether one recogniser model file is on this machine.
+// IsFetched reports whether every file of the recogniser model is on this machine.
 func IsFetched(cfg Config, model RecogniserModel) bool {
-	if model.Path != "" {
-		return isPresent(model.Path)
-	}
-	_, err := locateModel("", "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx", cfg.Dir)
+	cfg.Recognise = model
+	_, err := locateRecognisers(cfg)
 	return err == nil
 }
 

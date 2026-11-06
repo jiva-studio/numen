@@ -72,8 +72,8 @@
       "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
       "checksumSha256": "e16e242de5937ad92609223f19bc2aff3727ee40b095f996907c24749bad251b",
       "metadata": {
-        "fileName": "pp-ocr-rec.onnx",
-        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+        "fileName": "rec-pp-ocrv6-tiny.onnx",
+        "envVar": "NUMEN_DEPENDENCY_REC_PP_OCRV6_TINY"
       }
     },
     {
@@ -82,8 +82,8 @@
       "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv6/rec/PP-OCRv6_rec_small.onnx",
       "checksumSha256": "6f327246b50388f3c176ae304bd95767ea6dc0c9ae92153ef8cbe210b3c14884",
       "metadata": {
-        "fileName": "pp-ocr-rec.onnx",
-        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+        "fileName": "rec-pp-ocrv6-small.onnx",
+        "envVar": "NUMEN_DEPENDENCY_REC_PP_OCRV6_SMALL"
       }
     },
     {
@@ -92,8 +92,8 @@
       "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile.onnx",
       "checksumSha256": "b20bd37c168a570f583afbc8cd7925603890efbcdc000a59e22c269d160b5f5a",
       "metadata": {
-        "fileName": "pp-ocr-rec.onnx",
-        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+        "fileName": "rec-pp-ocrv5-latin.onnx",
+        "envVar": "NUMEN_DEPENDENCY_REC_PP_OCRV5_LATIN"
       }
     },
     {
@@ -102,8 +102,8 @@
       "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile.onnx",
       "checksumSha256": "08705d6721849b1347d26187f15a5e362c431963a2a62bfff4feac578c489aab",
       "metadata": {
-        "fileName": "pp-ocr-rec.onnx",
-        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+        "fileName": "rec-pp-ocrv5-eslav.onnx",
+        "envVar": "NUMEN_DEPENDENCY_REC_PP_OCRV5_ESLAV"
       }
     },
     {
@@ -112,8 +112,8 @@
       "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/cyrillic_PP-OCRv5_rec_mobile.onnx",
       "checksumSha256": "90f761b4bfcce0c8c561c0cb5c887b0971d3ec01c32164bdf7374a35b0982711",
       "metadata": {
-        "fileName": "pp-ocr-rec.onnx",
-        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+        "fileName": "rec-pp-ocrv5-cyrillic.onnx",
+        "envVar": "NUMEN_DEPENDENCY_REC_PP_OCRV5_CYRILLIC"
       }
     },
     {
@@ -122,8 +122,8 @@
       "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/devanagari_PP-OCRv5_rec_mobile.onnx",
       "checksumSha256": "d6f0a906580e3fa6b324a318718f1f31f268b6ea8ef985f91c2012a37f52c91e",
       "metadata": {
-        "fileName": "pp-ocr-rec.onnx",
-        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+        "fileName": "rec-pp-ocrv5-devanagari.onnx",
+        "envVar": "NUMEN_DEPENDENCY_REC_PP_OCRV5_DEVANAGARI"
       }
     },
     {
@@ -132,8 +132,8 @@
       "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/el_PP-OCRv5_rec_mobile.onnx",
       "checksumSha256": "b4368bccd557123c702b7549fee6cd1e94b581337d1c9b65310f109131542b7f",
       "metadata": {
-        "fileName": "pp-ocr-rec.onnx",
-        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+        "fileName": "rec-pp-ocrv5-greek.onnx",
+        "envVar": "NUMEN_DEPENDENCY_REC_PP_OCRV5_GREEK"
       }
     }
   ],
@@ -147,8 +147,19 @@
       "type": "enum",
       "title": "Model",
       "description": "Text recognition model",
-      "default": "pp-ocrv6-tiny",
+      "default": "multilingual",
       "options": [
+        {
+          "value": "multilingual",
+          "title": "Multilingual",
+          "detail": "Latin-script languages with their diacritics, Cyrillic-script languages, Greek, Chinese, English, 28 MB",
+          "dependencies": [
+            "rec-pp-ocrv5-latin",
+            "rec-pp-ocrv5-cyrillic",
+            "rec-pp-ocrv5-greek",
+            "rec-pp-ocrv6-tiny"
+          ]
+        },
         {
           "value": "pp-ocrv6-tiny",
           "title": "PP-OCRv6 tiny",
@@ -197,7 +208,9 @@
           "detail": "Languages unknown: they are those of the model file",
           "dependencies": ["rec-pp-ocrv6-tiny"]
         }
-      ]
+      ],
+      "palette": true,
+      "icon": "scan-text"
     },
     {
       "key": "customModelPath",

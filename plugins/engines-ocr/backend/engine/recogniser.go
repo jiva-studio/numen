@@ -18,12 +18,15 @@ import (
 // Model describes active OCR models.
 type Model = recognition.Model
 
+// readLines reads the lines of one part of a page.
+type readLines = func(image.Image) ([]read.RecResult, error)
+
 // Recogniser executes OCR recognition models on images.
 type Recogniser struct {
 	shape  *Layout
-	lines  *paddle.Engine
+	lines  []*paddle.Engine
 	layout func(image.Image) ([]Region, error)
-	read   func(image.Image) ([]read.RecResult, error)
+	read   []readLines
 	body   map[string]bool
 	head   map[string]int
 	margin int
@@ -55,14 +58,61 @@ func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, 
 		return nil, err
 	}
 
-	classes, dict, err := alphabet(found.recognise, cfg.Recognise)
+	lines, err := openLines(pos, found, cfg)
 	if err != nil {
 		return nil, errors.Join(err, layout.Close())
 	}
+	reads := make([]readLines, 0, len(lines))
+	names := make([]string, 0, len(lines))
+	for i, line := range lines {
+		reads = append(reads, readUnscaled(line.RunOCR, cfg.Detect.maxSide()))
+		names = append(names, name(found.recognise[i]))
+	}
+
+	return &Recogniser{
+		shape:  layout,
+		lines:  lines,
+		layout: layout.Regions,
+		read:   reads,
+		body:   toSet(cfg.Regions.body()),
+		head:   getDepths(cfg.Regions.head()),
+		margin: cfg.Layout.margin(),
+		jobs:   cfg.jobs(),
+		model: Model{
+			Layout:     name(found.layout),
+			Recogniser: strings.Join(names, "+"),
+			DPI:        cfg.Recognise.dpi(),
+			From:       found.from,
+		},
+	}, nil
+}
+
+// openLines opens one line engine per recognition model, each with the same detector. An engine
+// that fails to open closes the ones opened before it.
+func openLines(runtime string, found paths, cfg Config) ([]*paddle.Engine, error) {
+	lines := make([]*paddle.Engine, 0, len(found.recognise))
+	for _, model := range found.recognise {
+		one, err := openLine(runtime, found.detect, model, cfg)
+		if err != nil {
+			for _, line := range lines {
+				line.Destroy()
+			}
+			return nil, err
+		}
+		lines = append(lines, one)
+	}
+	return lines, nil
+}
+
+func openLine(runtime, detect, model string, cfg Config) (*paddle.Engine, error) {
+	classes, dict, err := alphabet(model, cfg.Recognise)
+	if err != nil {
+		return nil, err
+	}
 	lines, err := paddle.NewEngine(paddle.Config{
-		OnnxRuntimeLibPath:  pos,
-		DetModelPath:        found.detect,
-		RecModelPath:        found.recognise,
+		OnnxRuntimeLibPath:  runtime,
+		DetModelPath:        detect,
+		RecModelPath:        model,
 		DictPath:            dict,
 		RecModelNumClasses:  classes,
 		DetMaxSideLen:       cfg.Detect.maxSide(),
@@ -74,25 +124,9 @@ func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, 
 		UseCuda:             false,
 	})
 	if err != nil {
-		return nil, errors.Join(fmt.Errorf("the recogniser: %w", err), layout.Close())
+		return nil, fmt.Errorf("the recogniser %s: %w", name(model), err)
 	}
-
-	return &Recogniser{
-		shape:  layout,
-		lines:  lines,
-		layout: layout.Regions,
-		read:   lines.RunOCR,
-		body:   toSet(cfg.Regions.body()),
-		head:   getDepths(cfg.Regions.head()),
-		margin: cfg.Layout.margin(),
-		jobs:   cfg.jobs(),
-		model: Model{
-			Layout:     name(found.layout),
-			Recogniser: name(found.recognise),
-			DPI:        cfg.Recognise.dpi(),
-			From:       found.from,
-		},
-	}, nil
+	return lines, nil
 }
 
 // GetRecognitionModel returns model identity information.
@@ -100,8 +134,8 @@ func (r *Recogniser) GetRecognitionModel() Model { return r.model }
 
 // Close releases loaded model sessions.
 func (r *Recogniser) Close() error {
-	if r.lines != nil {
-		r.lines.Destroy()
+	for _, line := range r.lines {
+		line.Destroy()
 	}
 	if r.shape != nil {
 		return r.shape.Close()
@@ -124,7 +158,7 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]Block, 
 	results := make([]outcome, len(targets))
 
 	runBounded(ctx, len(targets), r.jobs, func(pos int) {
-		found, err := r.read(targets[pos].crop)
+		found, err := r.readPart(targets[pos].crop)
 		results[pos] = outcome{found: found, err: err}
 	})
 
@@ -221,6 +255,28 @@ func cropRegion(page image.Image, rect image.Rectangle, margin int) (image.Image
 	return out, wider.Min
 }
 
+// readUnscaled reads a part of a page at the scale the page was rendered at. The line detector scales
+// the longer side of what it is given to side, and widens each line it finds by a number of pixels
+// at that scale; a part smaller than side would be enlarged, and the accents above and below its
+// lines cut off. Such a part is read on a canvas side wide, filled with the colour of its corner.
+func readUnscaled(run readLines, side int) readLines {
+	return func(crop image.Image) ([]read.RecResult, error) {
+		bounds := crop.Bounds()
+		if max(bounds.Dx(), bounds.Dy()) >= side {
+			return run(crop)
+		}
+		canvas := image.NewRGBA(image.Rect(0, 0, side, (bounds.Dy()+31)/32*32))
+		draw.Draw(canvas, canvas.Bounds(), image.NewUniform(crop.At(bounds.Min.X, bounds.Min.Y)), image.Point{}, draw.Src)
+		draw.Draw(canvas, bounds.Sub(bounds.Min), crop, bounds.Min, draw.Src)
+		found, err := run(canvas)
+		for i := range found {
+			box := &found[i].Box
+			box[2], box[3] = min(box[2], bounds.Dx()), min(box[3], bounds.Dy())
+		}
+		return found, err
+	}
+}
+
 func getDepths(names []string) map[string]int {
 	out := make(map[string]int, len(names))
 	for i, n := range names {
@@ -241,10 +297,11 @@ func collapseSpaces(text string) string {
 	return strings.Join(strings.Fields(text), " ")
 }
 
-// NewTestRecogniser creates a Recogniser with custom layout and read functions for testing.
+// NewTestRecogniser creates a Recogniser with custom layout and read functions for testing: one
+// read function per recognition model, in the order a tie is broken in.
 func NewTestRecogniser(
 	layout func(image.Image) ([]Region, error),
-	read func(image.Image) ([]read.RecResult, error),
+	read []func(image.Image) ([]read.RecResult, error),
 	model Model,
 ) *Recogniser {
 	return &Recogniser{

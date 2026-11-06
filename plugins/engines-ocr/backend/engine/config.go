@@ -2,6 +2,8 @@
 package engine
 
 import (
+	"slices"
+
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 )
 
@@ -44,16 +46,24 @@ type DetectModel struct {
 	Minimum float32 `json:"minimum"`
 }
 
-// RecogniserModel configures the model that recognizes the text of a line.
+// RecogniserModel configures the models that recognise the text of a line. Path and Dict name a
+// custom model, which is read in place of Files.
 type RecogniserModel struct {
-	Name    string `json:"name"`
-	Path    string `json:"path"`
-	Dict    string `json:"dict"`
-	Classes int64  `json:"classes"`
-	DPI     int    `json:"dpi"`
-	Height  int    `json:"height"`
-	Jobs    int    `json:"jobs"`
-	Threads int    `json:"threads"`
+	Files   []RecogniserFile `json:"files"`
+	Path    string           `json:"path"`
+	Dict    string           `json:"dict"`
+	Classes int64            `json:"classes"`
+	DPI     int              `json:"dpi"`
+	Height  int              `json:"height"`
+	Jobs    int              `json:"jobs"`
+	Threads int              `json:"threads"`
+}
+
+// IsEqual reports whether both configure the same models read the same way.
+func (r RecogniserModel) IsEqual(other RecogniserModel) bool {
+	return slices.Equal(r.Files, other.Files) && r.Path == other.Path && r.Dict == other.Dict &&
+		r.Classes == other.Classes && r.DPI == other.DPI && r.Height == other.Height &&
+		r.Jobs == other.Jobs && r.Threads == other.Threads
 }
 
 // RegionKinds classifies page regions as body or head.
@@ -75,7 +85,7 @@ func Defaults() Config {
 			Name: detectDefault, Path: "", MaxSide: 0, Expand: 0, Minimum: 0,
 		},
 		Recognise: RecogniserModel{
-			Name: recogDefault, Path: "", Dict: "", Classes: 0, DPI: 300, Height: 0, Jobs: 0, Threads: 0,
+			Files: getRecognisers()[RecogniserMultilingual], Path: "", Dict: "", Classes: 0, DPI: 300, Height: 0, Jobs: 0, Threads: 0,
 		},
 		Regions:  RegionKinds{Body: nil, Head: nil},
 		Compute:  Compute{Threads: 0, Jobs: 0},

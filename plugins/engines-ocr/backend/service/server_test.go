@@ -184,16 +184,16 @@ func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
 		model      string
 		path, dict string
 	}{
-		{map[string]string{"model": "pp-ocrv5-eslav"}, "eslav_PP-OCRv5_rec_mobile.onnx", "", ""},
-		{map[string]string{"model": "custom", "customModelPath": "/m/rec.onnx", "customDictPath": "/m/dict.txt"}, engine.RecogniserCustom, "/m/rec.onnx", "/m/dict.txt"},
-		{map[string]string{"model": "pp-ocrv6-tiny"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
-		{map[string]string{"model": "tesseract"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
+		{map[string]string{"model": "pp-ocrv5-eslav"}, "rec-pp-ocrv5-eslav", "", ""},
+		{map[string]string{"model": "custom", "customModelPath": "/m/rec.onnx", "customDictPath": "/m/dict.txt"}, "rec-pp-ocrv6-tiny", "/m/rec.onnx", "/m/dict.txt"},
+		{map[string]string{"model": "pp-ocrv6-tiny"}, "rec-pp-ocrv6-tiny", "", ""},
+		{map[string]string{"model": "tesseract"}, "rec-pp-ocrv6-tiny", "", ""},
 	} {
 		models.updateConfig(tc.values)
 		if _, err := models.getEngine(t.Context()); err != nil {
 			t.Fatal(err)
 		}
-		if !strings.HasSuffix(got.Recognise.Name, tc.model) || got.Recognise.Path != tc.path || got.Recognise.Dict != tc.dict {
+		if ids := getRecogniserIDs(got); !slices.Equal(ids, []string{tc.model}) || got.Recognise.Path != tc.path || got.Recognise.Dict != tc.dict {
 			t.Errorf("settings %v: opened %+v", tc.values, got.Recognise)
 		}
 	}
@@ -228,7 +228,7 @@ func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 		}
 		for _, option := range setting.Options {
 			count++
-			address, ok := engine.FindRecogniser(option.Value)
+			files, ok := engine.FindRecognisers(option.Value)
 			if !ok {
 				t.Errorf("the manifest offers %s, which the engine does not run", option.Value)
 				continue
@@ -237,8 +237,12 @@ func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 			for _, id := range option.Dependencies {
 				provisioned = append(provisioned, sources[id])
 			}
-			if address != "" && (len(provisioned) != 1 || provisioned[0] != address) {
-				t.Errorf("%s provisions %v, and the engine fetches %s", option.Value, provisioned, address)
+			var fetched []string
+			for _, file := range files {
+				fetched = append(fetched, file.Address)
+			}
+			if option.Value != engine.RecogniserCustom && !slices.Equal(provisioned, fetched) {
+				t.Errorf("%s provisions %v, and the engine fetches %v", option.Value, provisioned, fetched)
 			}
 		}
 	}

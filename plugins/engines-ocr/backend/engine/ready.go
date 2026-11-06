@@ -16,8 +16,6 @@ func Ready(library *onnx.Library, cfg Config) bool {
 	if _, err := locateModel(cfg.Detect.Path, "NUMEN_DEPENDENCY_PP_OCR_DET", "pp-ocr-det.onnx", cfg.Dir); err != nil {
 		return false
 	}
-	if _, err := locateModel(cfg.Recognise.Path, "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx", cfg.Dir); err != nil {
-		return false
-	}
-	return true
+	_, err := locateRecognisers(cfg)
+	return err == nil
 }

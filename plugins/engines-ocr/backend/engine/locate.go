@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,7 +21,7 @@ const EnvDir = "NUMEN_MODELS_DIR"
 type paths struct {
 	layout    string
 	detect    string
-	recognise string
+	recognise []string
 	from      string
 }
 
@@ -85,9 +86,9 @@ func locateModels(ctx context.Context, library *onnx.Library, cfg Config) (*ort.
 	if err != nil {
 		return nil, "", paths{}, fmt.Errorf("detect model: %w", err)
 	}
-	recognise, err := locateModel(cfg.Recognise.Path, "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx", cfg.Dir)
+	recognise, err := locateRecognisers(cfg)
 	if err != nil {
-		return nil, "", paths{}, fmt.Errorf("recognise model: %w", err)
+		return nil, "", paths{}, err
 	}
 
 	found := paths{
@@ -104,4 +105,27 @@ func locateModels(ctx context.Context, library *onnx.Library, cfg Config) (*ort.
 
 func name(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+}
+
+// locateRecognisers finds the custom model where one is configured, else every file the settings name.
+func locateRecognisers(cfg Config) ([]string, error) {
+	if cfg.Recognise.Path != "" {
+		found, err := locateModel(cfg.Recognise.Path, "", "", cfg.Dir)
+		if err != nil {
+			return nil, fmt.Errorf("recognise model: %w", err)
+		}
+		return []string{found}, nil
+	}
+	if len(cfg.Recognise.Files) == 0 {
+		return nil, errors.New("recognise model: the settings name none")
+	}
+	found := make([]string, 0, len(cfg.Recognise.Files))
+	for _, file := range cfg.Recognise.Files {
+		pos, err := locateModel("", file.EnvVar, file.FileName, cfg.Dir)
+		if err != nil {
+			return nil, fmt.Errorf("recognise model %s: %w", file.ID, err)
+		}
+		found = append(found, pos)
+	}
+	return found, nil
 }

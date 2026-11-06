@@ -56,7 +56,8 @@ func newEngines(cfg engine.Config, factory engineFactory) *engines {
 // updateConfig applies the settings received from the host. A resolution that is
 // not a positive number is ignored, as is a model the plugin does not provision.
 // The paths of a custom model are received only while the custom model is
-// selected, and are empty in every other case.
+// selected, and are empty in every other case; a custom model without its file
+// reads with the model the manifest provisions for the custom option.
 func (e *engines) updateConfig(values map[string]string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -65,14 +66,15 @@ func (e *engines) updateConfig(values map[string]string) {
 		e.dropLocked()
 	}
 	recognise := e.cfg.Recognise
-	if address, ok := engine.FindRecogniser(values["model"]); ok {
-		recognise.Name = address
-		if address == "" {
-			recognise.Name = engine.RecogniserCustom
-		}
+	model := values["model"]
+	if model == engine.RecogniserCustom {
+		model = engine.RecogniserCustomFallback
+	}
+	if files, ok := engine.FindRecognisers(model); ok {
+		recognise.Files = files
 	}
 	recognise.Path, recognise.Dict = values["customModelPath"], values["customDictPath"]
-	if recognise != e.cfg.Recognise {
+	if !recognise.IsEqual(e.cfg.Recognise) {
 		e.cfg.Recognise = recognise
 		e.dropLocked()
 	}

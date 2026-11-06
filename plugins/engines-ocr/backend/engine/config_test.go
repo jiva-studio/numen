@@ -62,11 +62,14 @@ func TestTheDefaultsReadAtThreeHundredDPIAndFetchWhatIsMissing(t *testing.T) {
 	if cfg.Compute.Threads != 0 || cfg.Compute.Jobs != 0 {
 		t.Errorf("unexpected compute defaults: %+v", cfg.Compute)
 	}
-	for name, got := range map[string]string{
-		"layout":     cfg.Layout.Name,
-		"detector":   cfg.Detect.Name,
-		"recogniser": cfg.Recognise.Name,
-	} {
+	addresses := map[string]string{"layout": cfg.Layout.Name, "detector": cfg.Detect.Name}
+	for _, file := range cfg.Recognise.Files {
+		addresses[file.ID] = file.Address
+	}
+	if len(cfg.Recognise.Files) == 0 {
+		t.Error("the defaults name no recogniser")
+	}
+	for name, got := range addresses {
 		if !strings.HasPrefix(got, "https://") || !strings.HasSuffix(got, ".onnx") {
 			t.Errorf("the %s model is %q, want an address of an onnx file", name, got)
 		}

@@ -105,9 +105,10 @@ func TestIsFetchedWithConfiguredOrEnvPath(t *testing.T) {
 		t.Fatal("expected IsFetched to be true with explicit path")
 	}
 
-	// True when env var points to existing file
-	t.Setenv("NUMEN_DEPENDENCY_PP_OCR_REC", recPath)
-	if !IsFetched(Config{}, RecogniserModel{}) {
+	// True when the variable of every file points to an existing file
+	latin, _ := FindRecognisers("pp-ocrv5-latin")
+	t.Setenv("NUMEN_DEPENDENCY_REC_PP_OCRV5_LATIN", recPath)
+	if !IsFetched(Config{}, RecogniserModel{Files: latin}) {
 		t.Fatal("expected IsFetched to be true with env var set")
 	}
 

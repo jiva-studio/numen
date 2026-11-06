@@ -41,12 +41,12 @@ func BenchmarkRecognisePage(b *testing.B) {
 			body:   map[string]bool{"text": true},
 			head:   map[string]int{},
 			margin: 10,
-			read: func(image.Image) ([]read.RecResult, error) {
+			read: []readLines{func(image.Image) ([]read.RecResult, error) {
 				time.Sleep(1 * time.Millisecond)
 				return []read.RecResult{
 					{Text: "what the page says", Score: 0.9, Box: [4]int{0, 0, 100, 20}},
 				}, nil
-			},
+			}},
 		}
 	}
 	ctx := b.Context()
@@ -93,9 +93,9 @@ func TestAPageNothingCouldBeReadOnIsAFailure(t *testing.T) {
 		layout: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
 		body:   map[string]bool{"text": true},
 		head:   map[string]int{},
-		read: func(image.Image) ([]read.RecResult, error) {
+		read: []readLines{func(image.Image) ([]read.RecResult, error) {
 			return nil, broken
-		},
+		}},
 	}
 
 	if _, err := r.Recognise(t.Context(), page); !errors.Is(err, broken) {
@@ -111,12 +111,12 @@ func TestOnePartThatCouldNotBeReadPreservesTheRest(t *testing.T) {
 		layout: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
 		body:   map[string]bool{"text": true},
 		head:   map[string]int{},
-		read: func(image.Image) ([]read.RecResult, error) {
+		read: []readLines{func(image.Image) ([]read.RecResult, error) {
 			if request.Add(1) == 1 {
 				return nil, errors.New("the first part")
 			}
 			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
-		},
+		}},
 	}
 
 	blocks, err := r.Recognise(t.Context(), page)
@@ -139,7 +139,7 @@ func TestMultiRegionPreservesReadingOrder(t *testing.T) {
 		),
 		body: map[string]bool{"text": true},
 		head: map[string]int{},
-		read: func(img image.Image) ([]read.RecResult, error) {
+		read: []readLines{func(img image.Image) ([]read.RecResult, error) {
 			h := img.Bounds().Dy()
 			switch {
 			case h < 120:
@@ -151,7 +151,7 @@ func TestMultiRegionPreservesReadingOrder(t *testing.T) {
 			default:
 				return []read.RecResult{{Text: "third section", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
 			}
-		},
+		}},
 	}
 
 	blocks, err := r.Recognise(t.Context(), page)
@@ -178,9 +178,9 @@ func TestRecogniseContextCancelled(t *testing.T) {
 		layout: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
 		body:   map[string]bool{"text": true},
 		head:   map[string]int{},
-		read: func(image.Image) ([]read.RecResult, error) {
+		read: []readLines{func(image.Image) ([]read.RecResult, error) {
 			return []read.RecResult{{Text: "text", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
-		},
+		}},
 	}
 
 	if _, err := r.Recognise(ctx, page); !errors.Is(err, context.Canceled) {
@@ -265,7 +265,7 @@ func TestALayoutThatFailsIsThePagesFailure(t *testing.T) {
 	r := &Recogniser{
 		layout: func(image.Image) ([]Region, error) { return nil, broken },
 		body:   map[string]bool{"text": true},
-		read:   oneLine("what the page says"),
+		read:   []readLines{oneLine("what the page says")},
 	}
 
 	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
@@ -286,12 +286,12 @@ func TestAPartOfAnUnwantedKindIsNotRead(t *testing.T) {
 			Region{Label: "text", Rect: image.Rect(10, 100, 590, 400)},
 		),
 		body: map[string]bool{"text": true},
-		read: func(img image.Image) ([]read.RecResult, error) {
+		read: []readLines{func(img image.Image) ([]read.RecResult, error) {
 			mu.Lock()
 			heights = append(heights, img.Bounds().Dy())
 			mu.Unlock()
 			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
-		},
+		}},
 	}
 
 	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
@@ -312,12 +312,12 @@ func TestAPartOutsideThePageIsNotRead(t *testing.T) {
 	r := &Recogniser{
 		layout: partsOf(image.Rect(700, 900, 800, 950), image.Rect(10, 10, 590, 400)),
 		body:   map[string]bool{"text": true},
-		read: func(img image.Image) ([]read.RecResult, error) {
+		read: []readLines{func(img image.Image) ([]read.RecResult, error) {
 			mu.Lock()
 			request = append(request, img)
 			mu.Unlock()
 			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
-		},
+		}},
 	}
 
 	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
@@ -338,7 +338,7 @@ func TestAPageWithNothingToReadReturnsNothing(t *testing.T) {
 	r := &Recogniser{
 		layout: labelled(Region{Label: "header", Rect: image.Rect(10, 10, 590, 60)}),
 		body:   map[string]bool{"text": true},
-		read:   oneLine("never asked"),
+		read:   []readLines{oneLine("never asked")},
 	}
 
 	blocks, err := r.Recognise(ctx, image.NewRGBA(image.Rect(0, 0, 600, 800)))
@@ -351,9 +351,9 @@ func TestABoxIsAddressedFromThePage(t *testing.T) {
 	r := &Recogniser{
 		layout: partsOf(image.Rect(50, 60, 590, 400)),
 		body:   map[string]bool{"text": true},
-		read: func(image.Image) ([]read.RecResult, error) {
+		read: []readLines{func(image.Image) ([]read.RecResult, error) {
 			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{3, 5, 40, 70}}}, nil
-		},
+		}},
 	}
 
 	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
@@ -373,7 +373,7 @@ func TestAPageOfOnePartThatCouldNotBeReadIsAFailure(t *testing.T) {
 	r := &Recogniser{
 		layout: partsOf(image.Rect(10, 10, 590, 400)),
 		body:   map[string]bool{"text": true},
-		read:   func(image.Image) ([]read.RecResult, error) { return nil, broken },
+		read:   []readLines{func(image.Image) ([]read.RecResult, error) { return nil, broken }},
 	}
 
 	if _, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800))); !errors.Is(err, broken) {
@@ -385,7 +385,7 @@ func TestAPageOfPartsThatSayNothingIsBlank(t *testing.T) {
 	r := &Recogniser{
 		layout: partsOf(image.Rect(10, 10, 590, 400)),
 		body:   map[string]bool{"text": true},
-		read:   func(image.Image) ([]read.RecResult, error) { return nil, nil },
+		read:   []readLines{func(image.Image) ([]read.RecResult, error) { return nil, nil }},
 	}
 
 	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
@@ -843,5 +843,60 @@ func TestMeasureVerticalOverlap(t *testing.T) {
 				t.Errorf("overlap = %v, want %v", got, tc.want)
 			}
 		})
+	}
+}
+
+func TestAReadingThatSkipsLettersLosesToOneThatReadsThemAll(t *testing.T) {
+	box := [4]int{0, 0, 400, 40}
+	skipping := func(image.Image) ([]read.RecResult, error) {
+		return []read.RecResult{{Box: box, Text: "Zaót gela jar", Score: 0.956}}, nil
+	}
+	whole := func(image.Image) ([]read.RecResult, error) {
+		return []read.RecResult{{Box: box, Text: "Zażółć geśla jażr", Score: 0.94}}, nil
+	}
+	r := NewTestRecogniser(partsOf(image.Rect(20, 20, 580, 380)), []readLines{skipping, whole}, Model{})
+	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 400)))
+	if err != nil || len(blocks) != 1 || blocks[0].Text != "Zażółć geśla jażr" {
+		t.Errorf("the part came back as %+v (%v), want the reading with every letter", blocks, err)
+	}
+}
+
+func TestTheWordsOfOneRowAreReadByOneRecogniser(t *testing.T) {
+	left, right := [4]int{0, 0, 100, 40}, [4]int{120, 2, 260, 42}
+	latin := func(image.Image) ([]read.RecResult, error) {
+		return []read.RecResult{{Box: left, Text: "Cbeb", Score: 0.999}, {Box: right, Text: "6yNOK", Score: 0.8}}, nil
+	}
+	cyrillic := func(image.Image) ([]read.RecResult, error) {
+		return []read.RecResult{{Box: left, Text: "Съеш", Score: 0.97}, {Box: right, Text: "булок", Score: 0.95}}, nil
+	}
+	r := NewTestRecogniser(partsOf(image.Rect(20, 20, 580, 380)), []readLines{latin, cyrillic}, Model{})
+	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 400)))
+	if err != nil || len(blocks) != 1 || blocks[0].Text != "Съеш булок" {
+		t.Errorf("the row came back as %+v (%v), want both words of the Cyrillic reading", blocks, err)
+	}
+}
+
+func TestASmallPartIsReadAtItsOwnScale(t *testing.T) {
+	var bounds image.Rectangle
+	run := func(img image.Image) ([]read.RecResult, error) {
+		bounds = img.Bounds()
+		return []read.RecResult{{Box: [4]int{2, 3, 5000, 5000}, Text: "line", Score: 0.9}}, nil
+	}
+	found, err := readUnscaled(run, 1600)(image.NewRGBA(image.Rect(0, 0, 400, 80)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bounds != image.Rect(0, 0, 1600, 96) {
+		t.Errorf("a part of 400 by 80 was read as %v, want a canvas of 1600 by 96", bounds)
+	}
+	if found[0].Box != [4]int{2, 3, 400, 80} {
+		t.Errorf("a line was boxed at %v, want it inside the part", found[0].Box)
+	}
+
+	if _, err := readUnscaled(run, 1600)(image.NewRGBA(image.Rect(0, 0, 2000, 300))); err != nil {
+		t.Fatal(err)
+	}
+	if bounds != image.Rect(0, 0, 2000, 300) {
+		t.Errorf("a part wider than the detector was read as %v, want it as it is", bounds)
 	}
 }

@@ -134,7 +134,7 @@ The settings of the plugin Document OCR.
 
 | | | |
 | --- | --- | --- |
-| `model` | text | text recognition model. One of `pp-ocrv6-tiny`, `pp-ocrv6-small`, `pp-ocrv5-latin`, `pp-ocrv5-eslav`, `pp-ocrv5-cyrillic`, `pp-ocrv5-devanagari`, `pp-ocrv5-greek`, `custom`. |
+| `model` | text | text recognition model. One of `multilingual`, `pp-ocrv6-tiny`, `pp-ocrv6-small`, `pp-ocrv5-latin`, `pp-ocrv5-eslav`, `pp-ocrv5-cyrillic`, `pp-ocrv5-devanagari`, `pp-ocrv5-greek`, `custom`. |
 | `customModelPath` | text | paddleOCR text recognition model in ONNX format. |
 | `customDictPath` | text | UTF-8 text, one character per line. Empty for a model that includes its own. |
 | `dpi` | text | resolution a page is rendered at before recognition. One of `150`, `200`, `300`, `400`, `600`. |

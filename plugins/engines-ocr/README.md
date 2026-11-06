@@ -13,5 +13,5 @@ Reads text from scanned PDFs and images so you can search, select, quote, and co
 
 ## Settings
 
-- **Model**: Choose the language script that matches your documents (such as Latin, East Slavic, Cyrillic, Devanagari, Greek, or Chinese/English), or choose **Custom model** to use your own model file.
+- **Model**: **Multilingual** (the default) reads every line with the Latin, Cyrillic, Greek and PP-OCRv6 tiny models and keeps the most confident reading. Choose one script instead (such as Latin, East Slavic, Cyrillic, Devanagari, Greek, or Chinese/English) to read each line once, or **Custom model** to use your own model file. The command palette offers the choice as `Document OCR: Model`.
 - **Scan resolution**: Higher resolution (such as `400 dpi` or `600 dpi`) helps read small or faded print, while `300 dpi` is a fast everyday default.
