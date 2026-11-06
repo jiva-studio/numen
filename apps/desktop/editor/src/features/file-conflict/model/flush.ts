@@ -13,9 +13,7 @@ export type FlushResult = 'written' | 'asking'
 
 /** What the flush needs of the core. */
 export interface FlushDeps {
-  watchQuit(
-    signal: AbortSignal,
-  ): AsyncIterable<{ token: string; flush: boolean; isSilent?: boolean }>
+  watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
   reportFlush(token: string, result?: FlushResult): Promise<unknown>
 }
 
@@ -80,7 +78,6 @@ function createConflictRegistry(onChanged: () => void) {
     conflicts,
     raise,
     refresh,
-    getOutstanding: () => [...outstanding],
     clearPut: () => postponed.clear(),
   }
 }
@@ -98,15 +95,13 @@ function createFlushReporter(
   handlers: Set<FlushHandler>,
 ) {
   let underVal: string | null = null
-  let isSilent = false
   let lastResult: FlushResult | null = null
   let writing: Promise<unknown> | null = null
 
   async function report() {
     const token = underVal
     if (token === null) return
-    // A silent request reports the outstanding conflicts and draws none.
-    const all = isSilent ? registry.getOutstanding() : registry.refresh()
+    const all = registry.refresh()
     if (all.length === 0 && writing !== null) return
     const result: FlushResult = all.length > 0 ? 'asking' : 'written'
     if (result === lastResult) return
@@ -123,11 +118,10 @@ function createFlushReporter(
     report().catch(forgetResult)
   }
 
-  async function answer(token: string, isSilentRequest: boolean) {
+  async function answer(token: string) {
     underVal = token
-    isSilent = isSilentRequest
     lastResult = null
-    if (!isSilentRequest) registry.clearPut()
+    registry.clearPut()
     const pendingWrites = Promise.allSettled([...handlers].map((one) => one()))
     writing = pendingWrites
     pendingWrites
@@ -142,7 +136,6 @@ function createFlushReporter(
 
   const reset = () => {
     underVal = null
-    isSilent = false
     lastResult = null
     writing = null
   }
@@ -179,7 +172,7 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<u
     follows(
       () => core.watchQuit(abortController.signal),
       async (message) => {
-        if (message.flush) await reporter.answer(message.token, message.isSilent === true)
+        if (message.flush) await reporter.answer(message.token)
       },
     )
 
