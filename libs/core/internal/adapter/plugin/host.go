@@ -98,6 +98,7 @@ type Host struct {
 	vault            pluginport.PluginVault
 	texts            pluginport.PluginTexts
 	window           pluginport.PluginWindow
+	vaultList        pluginport.PluginVaultList
 	search           pluginport.PluginSearch
 	secretLocksMu    sync.Mutex
 	secretLocks      map[string]*sync.Mutex

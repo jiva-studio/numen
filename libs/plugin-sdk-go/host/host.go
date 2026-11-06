@@ -4,7 +4,8 @@
 // It is also the core's shared queue of heavy work and its list of tasks.
 //
 // The host identifies the calling plugin by its token. A call on the vault that reads requires
-// vault:read and one that changes anything requires vault:write; the plugin's own folder requires no
+// vault:read and one that changes anything requires vault:write; a call that changes the list of
+// vaults or the vault the window shows requires vault:manage. The plugin's own folder requires no
 // permission.
 package host
 
@@ -126,10 +127,12 @@ type FileAccess interface {
 	Lock(ctx context.Context) (release func() error, err error)
 }
 
-// VaultNotes reads the notes of a vault and the links between them.
+// VaultNotes reads the notes of a vault and the links between them, and renames, moves and removes
+// the notes.
 type VaultNotes interface {
 	NoteLookup
 	LinkLookup
+	NoteArranger
 }
 
 // NoteLookup finds notes by path, name and type.

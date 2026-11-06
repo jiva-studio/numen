@@ -279,6 +279,22 @@ func (m *memoryVault) GetParseProblems(context.Context) ([]domain.VaultProblem, 
 	return []domain.VaultProblem{{Path: "samples/A.md", Detail: "an entry has no role"}}, nil
 }
 
+func (m *memoryVault) RenameNote(context.Context, string, string) (string, bool, *domain.MoveResult, error) {
+	return "", false, nil, errors.ErrUnsupported
+}
+
+func (m *memoryVault) MoveNote(context.Context, string, string) (domain.MoveResult, error) {
+	return domain.MoveResult{}, errors.ErrUnsupported
+}
+
+func (m *memoryVault) RemoveNote(context.Context, string) (string, []string, error) {
+	return "", nil, errors.ErrUnsupported
+}
+
+func (m *memoryVault) GetProblems(context.Context, []domain.Check) ([]domain.Check, []domain.VaultProblem, error) {
+	return nil, nil, errors.ErrUnsupported
+}
+
 func (m *memoryVault) ReadCache(_ context.Context, pluginID, name string) ([]byte, bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

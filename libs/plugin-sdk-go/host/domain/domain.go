@@ -14,6 +14,7 @@ type NoteRef = notesdomain.NoteRef
 type NoteType = notesdomain.NoteType
 type ResolvedLink = notesdomain.ResolvedLink
 type Link = notesdomain.Link
+type LinkKey = notesdomain.LinkKey
 type Address = notesdomain.Address
 type LinkRole = notesdomain.LinkRole
 type LinkMarker = notesdomain.LinkMarker
@@ -22,6 +23,7 @@ type Side = notesdomain.Side
 type RelatedNote = notesdomain.RelatedNote
 type Backlink = notesdomain.Backlink
 type VaultProblem = notesdomain.VaultProblem
+type MoveResult = notesdomain.MoveResult
 type TextVersion = notesdomain.TextVersion
 type TextVersionID = notesdomain.TextVersionID
 type TextKind = notesdomain.TextKind
@@ -50,6 +52,12 @@ const (
 var ErrInvalidName = notesdomain.ErrInvalidName
 
 func Basename(path string) string { return notesdomain.Basename(path) }
+
+func ParseAddress(raw string) Address { return notesdomain.ParseAddress(raw) }
+
+func IsKnownRole(r LinkRole) bool { return notesdomain.IsKnownRole(r) }
+
+func IsWritableMarker(m LinkMarker) bool { return notesdomain.IsWritableMarker(m) }
 
 func Filename(title string) (filename string, exact bool, err error) {
 	return notesdomain.Filename(title)
