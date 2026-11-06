@@ -81,6 +81,10 @@ type State struct {
 	// openTabsReports is notified after each open-tab report is stored.
 	openTabsReports reportSignal
 
+	// TabActivationBound is how long ActivateTab waits for the window to report the tab active.
+	// Zero is 2 seconds.
+	TabActivationBound time.Duration
+
 	// NotifyOpenTabs is called with each accepted open-tab report. Nil when
 	// nothing consumes the report.
 	NotifyOpenTabs func(domain.OpenTabs)

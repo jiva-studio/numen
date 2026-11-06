@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -169,4 +170,76 @@ func TestWindowFocusTabAnswersIsActiveFromTheWindow(t *testing.T) {
 	if out.Tab.ID != "tab-2" || out.Tab.IsActive {
 		t.Errorf("answered %+v, want tab-2 with isActive false", out.Tab)
 	}
+}
+
+// countingWindow is the window of the vault that counts the ActivateTab calls it receives.
+type countingWindow struct {
+	*hosttest.Window
+	activateCalls *atomic.Int64
+}
+
+func (w countingWindow) ActivateTab(ctx context.Context, id string) (host.OpenTab, string, error) {
+	w.activateCalls.Add(1)
+	return w.Window.ActivateTab(ctx, id)
+}
+
+// newCountingTools is the window tools over a window with the guide tabs and the tab-4 of the
+// state, tab-1 active, that count the ActivateTab calls.
+func newCountingTools(t *testing.T, state string) (windowTools, *atomic.Int64) {
+	t.Helper()
+	vault := hosttest.New(testVault)
+	window := hosttest.NewWindow(vault)
+	tabs := append(getGuideTabs(), host.OpenTab{ID: "tab-4", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: state})
+	window.SetOpenTabs(tabs, "tab-1")
+	calls := &atomic.Int64{}
+	on := service.Host{Vault: vault, Window: countingWindow{Window: window, activateCalls: calls}}
+	return windowTools{window: window, calls: newRegistry(t, on)}, calls
+}
+
+func TestWindowFocusTabRejectsAnUnreadableState(t *testing.T) {
+	for name, state := range map[string]string{
+		"a state that is not JSON": `page 4`,
+		"a page that is a string":  `{"page":"four"}`,
+		"a selection of nulls":     `{"t":[null,null]}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			w, calls := newCountingTools(t, state)
+			failure := w.call(t, "window_focus_tab", `{"tabId":"tab-4"}`, nil, nil)
+			if failure == "" {
+				t.Fatalf("the tab with the state %s was activated without an error", state)
+			}
+			if !strings.Contains(failure, "tab-4") {
+				t.Errorf("the error %q does not name the tab tab-4", failure)
+			}
+			if n := calls.Load(); n != 0 {
+				t.Errorf("the window was asked to activate a tab %d times, want none", n)
+			}
+			if activated := w.window.GetActivatedTabs(); len(activated) != 0 {
+				t.Errorf("the window activated %v", activated)
+			}
+		})
+	}
+}
+
+func TestWindowFocusTabOfAnUnknownIDActivatesNothing(t *testing.T) {
+	w, calls := newCountingTools(t, `{"page":2,"pageCount":120}`)
+	failure := w.call(t, "window_focus_tab", `{"tabId":"tab-9"}`, nil, nil)
+	if !strings.Contains(failure, `no open tab has id "tab-9"`) {
+		t.Errorf("the error is %q, want no open tab has id \"tab-9\"", failure)
+	}
+	if n := calls.Load(); n != 0 {
+		t.Errorf("the window was asked to activate a tab %d times, want none", n)
+	}
+}
+
+func TestWindowFocusTabActivatesATabWithAReadableStateOnce(t *testing.T) {
+	w, calls := newCountingTools(t, `{"page":2,"pageCount":120}`)
+	var out focusTabOutput
+	if failure := w.call(t, "window_focus_tab", `{"tabId":"tab-4"}`, nil, &out); failure != "" {
+		t.Fatal(failure)
+	}
+	if n := calls.Load(); n != 1 || out.Tab.ID != "tab-4" || !out.Tab.IsActive {
+		t.Errorf("the window was asked %d times and answered %+v, want once and tab-4 active", n, out.Tab)
+	}
+	requireLocation(t, "the answered tab", out.Tab.Location, `{"page":2,"pageCount":120}`)
 }

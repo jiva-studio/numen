@@ -265,7 +265,7 @@ func TestPluginWindowActivateTabOfAnUnknownIDIsErrNotExist(t *testing.T) {
 	}
 }
 
-func TestPluginWindowActivateTabOfTheActiveTabReturnsAtOnce(t *testing.T) {
+func TestPluginWindowActivateTabOfTheActiveTabPublishesIt(t *testing.T) {
 	f := newActivateFixture(t)
 
 	select {
@@ -276,26 +276,30 @@ func TestPluginWindowActivateTabOfTheActiveTabReturnsAtOnce(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("ActivateTab of the active tab did not return at once")
 	}
-	if msg := f.receiveTabID(t, 100*time.Millisecond); msg != nil {
-		t.Errorf("the focus stream received %v", msg)
+	msg := f.receiveTabID(t, 5*time.Second)
+	if msg == nil {
+		t.Fatal("the focus stream received no tab id")
+	}
+	if msg.GetTabId() != "tab-1" || msg.GetPath() != "" || len(msg.GetRanges()) != 0 {
+		t.Errorf("the focus stream received %v, want the tab id tab-1 alone", msg)
 	}
 }
 
 func TestPluginWindowActivateTabReturnsTheLastReportAfterItsBound(t *testing.T) {
 	f := newActivateFixture(t)
+	f.state.TabActivationBound = 50 * time.Millisecond
 	results := f.startActivation(t.Context(), "tab-2")
 	if msg := f.receiveTabID(t, 5*time.Second); msg == nil {
 		t.Fatal("the focus stream received no tab id")
 	}
-	f.reportTabs(t, "tab-3")
 
 	select {
 	case got := <-results:
-		if got.err != nil || got.open.ActiveID != "tab-3" {
-			t.Errorf("ActivateTab returned %+v (%v), want the last reported tabs with tab-3 active", got.open, got.err)
+		if got.err != nil || got.open.ActiveID != "tab-1" || len(got.open.Tabs) != 3 {
+			t.Errorf("ActivateTab returned %+v (%v), want the last reported tabs with tab-1 active", got.open, got.err)
 		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("ActivateTab did not return after its bound")
+	case <-time.After(time.Second):
+		t.Fatal("ActivateTab did not return within a second when its bound is 50 ms")
 	}
 }
 
