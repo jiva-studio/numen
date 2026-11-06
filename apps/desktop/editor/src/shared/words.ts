@@ -18,6 +18,8 @@ const toLowerFirst = (text: string): string => text.charAt(0).toLowerCase() + te
 export const WORDS = {
   /** The name the title bar of every window starts with. */
   appName: 'numen',
+  /** The row of the pick list of a command while its choices arrive. */
+  loadingChoices: 'Loading…',
   /** Status corner text shown while something about the vault is wrong. */
   unwatched: 'Vault changes not watched',
   unread: 'Vault unreadable',

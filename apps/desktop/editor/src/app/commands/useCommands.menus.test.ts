@@ -75,6 +75,7 @@ function setup(
   const writeMessage = vi.fn()
   const pluginHost = {
     getPaletteCommands: () => [{ id: SHOW, title: 'Show note in plex' }],
+    hasCommandChoices: () => false,
     hasCommand: options.hasCommand ?? ((id: string) => id === SHOW),
     executeCommand,
     handleShortcut: () => false,
@@ -88,7 +89,7 @@ function setup(
     windowTabs: { onKeyPress: () => false },
     getTarget: () => options.target ?? front,
     knows: {},
-    kept: {},
+    paletteLists: {},
     runs: {},
     coverage: () => ({}),
     rest: {},

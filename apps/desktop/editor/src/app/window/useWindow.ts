@@ -93,7 +93,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     windowTabs,
     getTarget: deps.getTarget,
     knows: deps.knows,
-    kept: settings.paletteLists,
+    paletteLists: settings.paletteLists,
     runs: deps.runs,
     coverage: vaultsModule.coverage,
     making: editing.making,
