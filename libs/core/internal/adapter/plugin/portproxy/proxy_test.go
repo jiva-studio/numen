@@ -360,32 +360,24 @@ func TestTheProxyWaitsLongerAfterEachAcceptErrorAndCloseEndsTheWait(t *testing.T
 	}
 }
 
-func TestATargetThatKeepsFailingIsReportedOncePerFailure(t *testing.T) {
-	echo := serveEcho(t)
-	targetErr := errors.New("plugin disabled")
-	isTargetOpened := []bool{false, false, false, true, false, false}
-	wantReports := []int{1, 1, 1, 1, 2, 2}
+func TestATargetErrorThatWrapsErrTargetReportedClosesTheConnectionAndIsNotReported(t *testing.T) {
+	reportedErr := fmt.Errorf("activate the plugin again: %w", ErrTargetReported)
+	plainErr := errors.New("plugin disabled")
+	targetErrs := []error{reportedErr, plainErr, plainErr}
+	wantReports := []int{0, 1, 2}
 	var openCount atomic.Int32
 	var reports errorLog
 	_, addr := openProxy(t, func(context.Context) (string, func(), error) {
 		i := int(openCount.Add(1)) - 1
-		if i >= len(isTargetOpened) || !isTargetOpened[i] {
-			return "", nil, targetErr
+		if i >= len(targetErrs) {
+			return "", nil, plainErr
 		}
-		return echo, func() {}, nil
+		return "", nil, targetErrs[i]
 	}, reports.add)
 
-	for i, isOpened := range isTargetOpened {
+	for i := range targetErrs {
 		conn := dial(t, addr)
-		if isOpened {
-			line := fmt.Sprintf("connection %d\n", i+1)
-			if _, err := io.WriteString(conn, line); err != nil {
-				t.Fatal(err)
-			}
-			if reply, err := bufio.NewReader(conn).ReadString('\n'); err != nil || reply != line {
-				t.Fatalf("connection %d: reply = %q, %v, want the echo of the line", i+1, reply, err)
-			}
-		} else if _, err := conn.Read(make([]byte, 1)); err == nil {
+		if _, err := conn.Read(make([]byte, 1)); err == nil {
 			t.Fatalf("connection %d stayed open after the target failed", i+1)
 		}
 		testsupport.Close(t, conn)
@@ -395,8 +387,8 @@ func TestATargetThatKeepsFailingIsReportedOncePerFailure(t *testing.T) {
 			t.Fatalf("after connection %d: reported %d errors (%v), want %d", i+1, len(errs), errs, wantReports[i])
 		}
 		for _, err := range errs {
-			if !errors.Is(err, targetErr) {
-				t.Errorf("reported %v, want the target error", err)
+			if !errors.Is(err, plainErr) {
+				t.Errorf("reported %v, want only the target error that does not wrap ErrTargetReported", err)
 			}
 		}
 	}

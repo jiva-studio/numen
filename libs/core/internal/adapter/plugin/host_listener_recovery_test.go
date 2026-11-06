@@ -163,3 +163,59 @@ func TestASyncKeepsTheFailureOfAPluginThatFailedToStart(t *testing.T) {
 		t.Errorf("status = %+v, want the failure of the start kept", status)
 	}
 }
+
+// listenerTargetErrors collects the reported errors of the targets of the listener console.
+type listenerTargetErrors struct {
+	mu   sync.Mutex
+	errs []error
+}
+
+func (e *listenerTargetErrors) add(err error) {
+	if !strings.Contains(err.Error(), "activate plugin "+listenerPlugin+" for listener console") {
+		return
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.errs = append(e.errs, err)
+}
+
+func (e *listenerTargetErrors) get() []error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return slices.Clone(e.errs)
+}
+
+// connectUntilClosed connects to the listener port and waits until the host closes the connection.
+func connectUntilClosed(t *testing.T, port int) {
+	t.Helper()
+	conn := connectListener(t, port)
+	if _, err := conn.Read(make([]byte, 1)); err == nil {
+		t.Fatal("the connection stayed open after the plugin failed to activate")
+	}
+}
+
+func TestAPluginThatKeepsFailingToActivateIsReportedOnceAndAgainAfterARetry(t *testing.T) {
+	w := newUndiscoveredListenerHost(t, "console", getFreePort(t), "")
+	var reports listenerTargetErrors
+	w.host.SetErrorHandler(reports.add)
+	discover(t, w.host)
+
+	for i := range 3 {
+		connectUntilClosed(t, w.port)
+		if errs := reports.get(); len(errs) != 1 {
+			t.Fatalf("after connection %d: reported %d activation failures (%v), want 1", i+1, len(errs), errs)
+		}
+	}
+
+	failure, err := w.host.RetryPlugin(t.Context(), listenerPlugin)
+	if failure == nil && err == nil {
+		t.Fatal("RetryPlugin succeeded for a plugin that does not report its listener")
+	}
+
+	for i := range 2 {
+		connectUntilClosed(t, w.port)
+		if errs := reports.get(); len(errs) != 2 {
+			t.Fatalf("after connection %d since the retry: reported %d activation failures (%v), want 2", i+1, len(errs), errs)
+		}
+	}
+}
