@@ -164,7 +164,11 @@ func TestTheWindowReturnsErrNotExistForATabIDItHasNoTabWith(t *testing.T) {
 	if activated := window.GetActivatedTabs(); len(activated) != 0 {
 		t.Errorf("the window recorded %v for a tab it does not have", activated)
 	}
-	if _, activeID, _ := window.ReadOpenTabs(t.Context()); activeID != "tab-1" {
+	_, activeID, err := window.ReadOpenTabs(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if activeID != "tab-1" {
 		t.Errorf("the window reads %q as active, want tab-1", activeID)
 	}
 }

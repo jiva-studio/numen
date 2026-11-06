@@ -68,7 +68,11 @@ func TestWindowFocusTabOfAnIDNoTabHasIsAToolErrorNamingTheID(t *testing.T) {
 	if activated := w.window.GetActivatedTabs(); len(activated) != 0 {
 		t.Errorf("the window activated %v", activated)
 	}
-	if _, activeID, _ := w.window.ReadOpenTabs(t.Context()); activeID != "tab-1" {
+	_, activeID, err := w.window.ReadOpenTabs(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if activeID != "tab-1" {
 		t.Errorf("the window reports %q as active, want tab-1", activeID)
 	}
 	requireWindowNotMoved(t, w.window)
@@ -108,7 +112,10 @@ func TestWindowFocusTabInputSchemaRequiresTheTabIDAlone(t *testing.T) {
 	w := newWindowTools(t)
 	schema := getToolSchema(t, w.calls, "window_focus_tab", false)
 	requireKeys(t, "the input schema of window_focus_tab", getSchemaProperties(t, schema), []string{"tabId"}, []string{"path", "title"})
-	required, _ := schema["required"].([]any)
+	required, isList := schema["required"].([]any)
+	if !isList {
+		t.Fatalf("the input schema has no list of required keys: %v", schema["required"])
+	}
 	if !slices.Contains(required, any("tabId")) {
 		t.Errorf("the input schema requires %v, want tabId", schema["required"])
 	}
