@@ -109,7 +109,7 @@ Five tools:
 | `vault_remove` | remove a vault from the list and the index.                                                                                                                                                                                                                                                                                                                 |
 | `vault_open`   | show another vault to the person. The agent's session ends with the vault it was serving.                                                                                                                                                                                                                                                                   |
 
-Every other tool operates on the vault marked `showing`, and no other.
+Every other tool operates on the vault `vault_list` marks with `isCurrent`, and no other.
 
 **There is no tool that erases a vault from disk.** Deleting a person's folder is done only in the window, by the person.
 
