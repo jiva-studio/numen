@@ -20,44 +20,44 @@ type VaultAddInput struct {
 
 // VaultAddOutput is the output of the vault_add tool.
 type VaultAddOutput struct {
-	ID     string `json:"id" jsonschema:"identifier of the new vault"`
-	Name   string `json:"name" jsonschema:"display name of the new vault"`
-	Folder string `json:"folder" jsonschema:"root directory of the new vault"`
+	ID   string `json:"id" jsonschema:"identifier of the new vault"`
+	Name string `json:"name" jsonschema:"display name of the new vault"`
+	Path string `json:"path" jsonschema:"root directory of the new vault"`
 }
 
 // VaultRenameInput is the input of the vault_rename tool.
 type VaultRenameInput struct {
-	Vault string `json:"vault" jsonschema:"the vault's name, folder or identifier, as vault_list gives them"`
+	Vault string `json:"vault" jsonschema:"the vault's name, path or identifier, as vault_list returns them"`
 	Name  string `json:"name" jsonschema:"the new display name"`
 }
 
 // VaultRenameOutput is the output of the vault_rename tool.
 type VaultRenameOutput struct {
-	ID     string `json:"id" jsonschema:"identifier of the vault"`
-	Name   string `json:"name" jsonschema:"display name of the vault after the rename"`
-	Folder string `json:"folder" jsonschema:"root directory of the vault"`
+	ID   string `json:"id" jsonschema:"identifier of the vault"`
+	Name string `json:"name" jsonschema:"display name of the vault after the rename"`
+	Path string `json:"path" jsonschema:"root directory of the vault"`
 }
 
 // VaultRemoveInput is the input of the vault_remove tool.
 type VaultRemoveInput struct {
-	Vault string `json:"vault" jsonschema:"the vault's name, folder or identifier, as vault_list gives them"`
+	Vault string `json:"vault" jsonschema:"the vault's name, path or identifier, as vault_list returns them"`
 }
 
 // VaultRemoveOutput is the output of the vault_remove tool.
 type VaultRemoveOutput struct {
-	Folder string `json:"folder" jsonschema:"root directory of the vault, which stays on the disk"`
+	Path string `json:"path" jsonschema:"root directory of the vault, which stays on the disk"`
 }
 
 // VaultOpenInput is the input of the vault_open tool.
 type VaultOpenInput struct {
-	Vault string `json:"vault" jsonschema:"the vault's name, folder or identifier, as vault_list gives them"`
+	Vault string `json:"vault" jsonschema:"the vault's name, path or identifier, as vault_list returns them"`
 }
 
 // VaultOpenOutput is the output of the vault_open tool.
 type VaultOpenOutput struct {
-	ID     string `json:"id" jsonschema:"identifier of the vault the window opens"`
-	Name   string `json:"name" jsonschema:"display name of the vault the window opens"`
-	Folder string `json:"folder" jsonschema:"root directory of the vault the window opens"`
+	ID   string `json:"id" jsonschema:"identifier of the vault the window opens"`
+	Name string `json:"name" jsonschema:"display name of the vault the window opens"`
+	Path string `json:"path" jsonschema:"root directory of the vault the window opens"`
 }
 
 func (t *Tools) addVaultAdd(registry *tools.Registry) error {
@@ -77,7 +77,7 @@ func (t *Tools) addVaultRename(registry *tools.Registry) error {
 		Step:  tools.Move,
 		Name:  "vault_rename",
 		Title: "Rename Vault",
-		Description: "Change the display name of a vault, named by its name, folder or identifier. A name " +
+		Description: "Change the display name of a vault, named by its name, path or identifier. A name " +
 			"another vault has is refused.",
 		Effect:  tools.ReadWrite,
 		Servers: []tools.Server{tools.Full},
@@ -101,9 +101,9 @@ func (t *Tools) addVaultOpen(registry *tools.Registry) error {
 		Step:  tools.ByEffect,
 		Name:  "vault_open",
 		Title: "Open Vault",
-		Description: "Make the person's window show another vault, named by its name, folder or identifier. " +
-			"The window moves after the answer, and this session's view of the vault it works on ends. Call " +
-			"it only when the person asks for it.",
+		Description: "Make the window show another vault, named by its name, path or identifier. The window " +
+			"switches after the answer, and this session's view of the vault it works on ends. Call it " +
+			"only when the user asks for it.",
 		Effect:  tools.ReadWrite,
 		Servers: []tools.Server{tools.Full},
 	}, inVault(t, (*Tools).openVault))
@@ -117,7 +117,7 @@ func (t *Tools) addVault(ctx context.Context, in VaultAddInput) (VaultAddOutput,
 	if err != nil {
 		return VaultAddOutput{}, fmt.Errorf("add vault %s: %w", in.Path, err)
 	}
-	return VaultAddOutput{ID: string(vault.ID), Name: vault.Name, Folder: vault.Path}, nil
+	return VaultAddOutput{ID: string(vault.ID), Name: vault.Name, Path: vault.Path}, nil
 }
 
 func (t *Tools) renameVault(ctx context.Context, in VaultRenameInput) (VaultRenameOutput, error) {
@@ -132,7 +132,7 @@ func (t *Tools) renameVault(ctx context.Context, in VaultRenameInput) (VaultRena
 	if err != nil {
 		return VaultRenameOutput{}, fmt.Errorf("rename vault %s: %w", in.Vault, err)
 	}
-	return VaultRenameOutput{ID: string(result.ID), Name: result.Name, Folder: result.Path}, nil
+	return VaultRenameOutput{ID: string(result.ID), Name: result.Name, Path: result.Path}, nil
 }
 
 func (t *Tools) removeVault(ctx context.Context, in VaultRemoveInput) (VaultRemoveOutput, error) {
@@ -144,7 +144,7 @@ func (t *Tools) removeVault(ctx context.Context, in VaultRemoveInput) (VaultRemo
 	if err != nil {
 		return VaultRemoveOutput{}, fmt.Errorf("remove vault %s: %w", in.Vault, err)
 	}
-	return VaultRemoveOutput{Folder: folder}, nil
+	return VaultRemoveOutput{Path: folder}, nil
 }
 
 func (t *Tools) openVault(ctx context.Context, in VaultOpenInput) (VaultOpenOutput, error) {
@@ -155,7 +155,7 @@ func (t *Tools) openVault(ctx context.Context, in VaultOpenInput) (VaultOpenOutp
 	if err := t.list.OpenVault(ctx, target.ID); err != nil {
 		return VaultOpenOutput{}, fmt.Errorf("open vault %s: %w", in.Vault, err)
 	}
-	return VaultOpenOutput{ID: string(target.ID), Name: target.Name, Folder: target.Path}, nil
+	return VaultOpenOutput{ID: string(target.ID), Name: target.Name, Path: target.Path}, nil
 }
 
 // findOtherVault finds the vault the address names, and refuses the vault the call works on.

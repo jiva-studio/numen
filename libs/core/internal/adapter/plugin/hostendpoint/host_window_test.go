@@ -242,7 +242,7 @@ func TestHostWindowAnswersNotFoundForAPathTheVaultDoesNotHold(t *testing.T) {
 }
 
 func TestHostWindowRejectsAPlaceTheUseCaseRefusesAsAnInvalidArgument(t *testing.T) {
-	window := &recordingWindow{err: fmt.Errorf("light at most 8 places of one document: %w", pluginport.ErrInvalidFocus)}
+	window := &recordingWindow{err: fmt.Errorf("highlight at most 8 places of one document: %w", pluginport.ErrInvalidFocus)}
 	client, _ := newWindowClient(t, window, "token-a")
 	ctx := t.Context()
 
@@ -251,7 +251,7 @@ func TestHostWindowRejectsAPlaceTheUseCaseRefusesAsAnInvalidArgument(t *testing.
 		Path: "library/Birds.pdf", Passages: []*v1.PassageSpan{{Start: -1, Length: 4}},
 	}))
 	for name, err := range map[string]error{"FocusNote": noteErr, "FocusPassages": passagesErr} {
-		if connect.CodeOf(err) != connect.CodeInvalidArgument || !strings.Contains(err.Error(), "light at most 8 places") {
+		if connect.CodeOf(err) != connect.CodeInvalidArgument || !strings.Contains(err.Error(), "highlight at most 8 places") {
 			t.Errorf("%s got %v, want invalid argument with the use case's message", name, err)
 		}
 	}

@@ -158,7 +158,7 @@ func TestClientReturnsTheErrorsOfTheWindowCalls(t *testing.T) {
 }
 
 func TestClientReturnsAnInvalidPassageAsTheHostRejectedIt(t *testing.T) {
-	h := &windowHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New("light at most 8 places of one document"))}
+	h := &windowHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New("highlight at most 8 places of one document"))}
 	c := dialWindow(t, h)
 
 	err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: -1, Length: 4}})

@@ -62,7 +62,7 @@ func checkPassages(in FocusPassagesInput) error {
 		return fmt.Errorf("name the document to show: %w", ErrInvalidPassage)
 	}
 	if len(in.Passages) > mostPassages {
-		return fmt.Errorf("light at most %d places of one document: %w", mostPassages, ErrInvalidPassage)
+		return fmt.Errorf("highlight at most %d places of one document: %w", mostPassages, ErrInvalidPassage)
 	}
 	for _, passage := range in.Passages {
 		if passage.Start < 0 || passage.Empty() {

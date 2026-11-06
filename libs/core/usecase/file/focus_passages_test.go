@@ -107,7 +107,7 @@ func TestFocusPassagesRefusesAPlaceItCannotShowAndDoesNotMoveTheWindow(t *testin
 		"negative start": {file.FocusPassagesInput{Path: talkPath, Passages: []domain.ByteRange{{Start: -1, End: 4}}}, "begins at or after the start"},
 		"empty range":    {file.FocusPassagesInput{Path: talkPath, Passages: []domain.ByteRange{{Start: 3, End: 3}}}, "longer than nothing"},
 		"later empty":    {file.FocusPassagesInput{Path: talkPath, Passages: []domain.ByteRange{{Start: 0, End: 4}, {Start: 9, End: 2}}}, "longer than nothing"},
-		"nine passages":  {file.FocusPassagesInput{Path: talkPath, Passages: nine}, "light at most 8"},
+		"nine passages":  {file.FocusPassagesInput{Path: talkPath, Passages: nine}, "highlight at most 8"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			err := focus.Execute(t.Context(), v, tc.in)
