@@ -63,6 +63,8 @@ type Contributes struct {
 	Menus []Menu
 	// Views are the components the window draws in its slots.
 	Views []View
+	// Slots place the commands, views and submenus of the plugin in the slots of a window and in submenus.
+	Slots []SlotEntry
 }
 
 // ListStatusViews returns the ids of the components the plugin registers for the status bar.

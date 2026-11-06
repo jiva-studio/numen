@@ -69,6 +69,36 @@ message ManifestContributes {
   // views are the components of the plugin's frontend the window draws in its slots, such as the
   // title bar.
   repeated ManifestView views = 14;
+  // slots place the commands, views and submenus of the plugin in the slots of a window and in
+  // submenus, see slots.json for the list of slots.
+  repeated ManifestSlotEntry slots = 15;
+}
+
+// ManifestSlotEntry places one thing in a slot of a window, or in a submenu a plugin declares. The
+// owner of the slot draws a command, as a button in a bar and as a row in a menu; a view draws
+// itself; a submenu becomes a place other entries name as their slot.
+message ManifestSlotEntry {
+  // slot is a slot of the list in slots.json, or the id of a submenu.
+  string slot = 1;
+  oneof placed {
+    // command is the id the manifest declares the command under, or the full id of a command of
+    // another owner, such as app:settings.open.
+    string command = 2;
+    // view is the id the frontend registers the component under.
+    string view = 3;
+    // submenu is the id of the submenu the entry declares. It is unique among all plugins.
+    string submenu = 4;
+  }
+  // title is the title of a submenu.
+  string title = 5;
+  // icon is the kebab-case icon name of a submenu. Empty for none.
+  string icon = 6;
+  // group names the entries a slot draws together; groups sort alphanumerically, and an entry
+  // without one is in the last group. A separator is drawn between groups.
+  string group = 7;
+  // order sorts the entries of a group, lowest first, then by plugin id. Absent sorts after every
+  // order.
+  optional int32 order = 8;
 }
 
 // ManifestView is a component of the plugin's frontend that the window draws in one of its slots.

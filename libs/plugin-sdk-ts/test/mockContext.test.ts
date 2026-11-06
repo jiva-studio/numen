@@ -62,9 +62,9 @@ describe('mock plugin context', () => {
 
   it('describes the application build', () => {
     const ctx = createMockPluginContext({
-      app: { version: '2026.10.3', build: 42, platform: 'windows' },
+      app: { name: 'numen', version: '2026.10.3', build: 42, platform: 'windows' },
     })
-    expect(ctx.app).toEqual({ version: '2026.10.3', build: 42, platform: 'windows' })
+    expect(ctx.app).toEqual({ name: 'numen', version: '2026.10.3', build: 42, platform: 'windows' })
     expect(createMockPluginContext().app.platform).toBe('linux')
   })
 

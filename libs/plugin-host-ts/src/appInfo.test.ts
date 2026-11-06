@@ -30,11 +30,12 @@ describe('the application info', () => {
   it('carries what the build was given', () => {
     expect(
       createAppInfo({ version: '2026.10.1', build: '884', userAgent: 'Windows NT 10.0' }),
-    ).toEqual({ version: '2026.10.1', build: 884, platform: 'windows' })
+    ).toEqual({ name: 'numen', version: '2026.10.1', build: 884, platform: 'windows' })
   })
 
   it('names a build made without a version the development build', () => {
     expect(createAppInfo({ userAgent: 'Linux' })).toEqual({
+      name: 'numen',
       version: DEV_VERSION,
       build: 0,
       platform: 'linux',

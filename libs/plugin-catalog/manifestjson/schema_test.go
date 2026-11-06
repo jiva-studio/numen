@@ -49,7 +49,10 @@ const everyFieldManifest = `{
 		"noteTypes": [{"type": "link", "chunks": false, "headings": [1, 2], "idHeadingLevels": [3], "idPattern": "[a-z]+"}],
 		"frameOrigins": ["https://player.example"],
 		"menus": [{"location": "titleBar.commands", "command": "task.run", "group": "run", "order": 1}],
-		"views": [{"id": "bar", "slot": "titleBar"}]}
+		"views": [{"id": "bar", "slot": "titleBar"}],
+		"slots": [{"slot": "titleBar.commands", "command": "task.run", "group": "run", "order": 1},
+			{"slot": "titleBar", "view": "bar"},
+			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus"}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

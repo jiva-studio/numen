@@ -3,6 +3,9 @@ import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
+import type { BackgroundTaskHost } from './backgroundTasks'
+import type { SlotHost } from './slots'
+import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
 import type { MountedView, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from './workspace'
@@ -127,6 +130,8 @@ export interface TitleBarViewEvents {
 
 // AppInfo describes the application build a plugin runs in.
 export interface AppInfo {
+  // The name of the application, as a window title names it.
+  readonly name: string
   // The version the build calls itself, such as `2026.10.3` or `0.0.0-dev` for a manual build.
   readonly version: string
   // The build number; 0 where the build has none.
@@ -343,6 +348,14 @@ export interface PluginContext {
   readonly notices?: NoticeHost
   // The tasks the plugins report, where the host offers them.
   readonly tasks?: TaskHost
+  // The slots of the window: the entries of a slot, read by its owner, and their commands.
+  readonly slots?: SlotHost
+  // The vaults the window can show, where the host offers them.
+  readonly vaults?: VaultsHost
+  // The window the plugin runs in, where the host offers it.
+  readonly window?: WindowHost
+  // The background work of the window, where the host offers it.
+  readonly backgroundTasks?: BackgroundTaskHost
   // Declares the data dragged in from outside the window the plugin takes, where the host offers drops.
   registerDropHandler?(registration: DropRegistration): Disposable
   // Hands a drop to the plugin that takes it, where the host offers drops.

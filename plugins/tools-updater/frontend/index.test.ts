@@ -36,7 +36,7 @@ const setup = (answer: Status) => {
   const check = vi.fn(async () => ({ ok: true as const, value: answer }))
   const context = createMockPluginContext({
     pluginId: 'md.numen.tools.updater',
-    app: { version: '2026.9.0', build: 900, platform: 'windows' },
+    app: { name: 'numen', version: '2026.9.0', build: 900, platform: 'windows' },
     initialSettings: { checkIntervalHours: 2 },
   })
   activate(context, { api: { check }, timer })
@@ -55,7 +55,7 @@ describe('the updater frontend', () => {
     const { check } = setup(AVAILABLE)
     await flush()
 
-    expect(check).toHaveBeenCalledWith({ version: '2026.9.0', build: 900, platform: 'windows' })
+    expect(check).toHaveBeenCalledWith({ name: 'numen', version: '2026.9.0', build: 900, platform: 'windows' })
   })
 
   it('draws the indicator for the update found, and the popover opens the download', async () => {

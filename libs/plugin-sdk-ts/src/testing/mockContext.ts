@@ -17,6 +17,16 @@ import type {
 import { asFailure, asValue, type Result } from '../result'
 import type { MountedView, ViewRegistration } from '../views'
 import type { DropRegistration } from '../drops'
+import {
+  createMockBackgroundTaskHost,
+  createMockSlotHost,
+  createMockVaultsHost,
+  createMockWindowHost,
+  type MockBackgroundTaskHost,
+  type MockSlotHost,
+  type MockVaultsHost,
+  type MockWindowHost,
+} from './mockWindowHosts'
 
 // MockMountedView records one mountView call of a plugin under test, and whether its view was disposed.
 export interface MockMountedView {
@@ -29,6 +39,10 @@ export interface MockMountedView {
 
 // MockPluginContext extends PluginContext with inspection and simulation methods.
 export interface MockPluginContext extends PluginContext {
+  readonly slots: MockSlotHost
+  readonly vaults: MockVaultsHost
+  readonly window: MockWindowHost
+  readonly backgroundTasks: MockBackgroundTaskHost
   getRegisteredReaders(): ReaderRegistration[]
   getRegisteredSettingsViews(): SettingsViewRegistration[]
   getRegisteredStatusViews(): StatusViewRegistration[]
@@ -81,7 +95,7 @@ function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: 
   })
 }
 
-const DEFAULT_APP: AppInfo = { version: '0.0.0-test', build: 1, platform: 'linux' }
+const DEFAULT_APP: AppInfo = { name: 'numen', version: '0.0.0-test', build: 1, platform: 'linux' }
 
 const EMPTY_NOTE: CommandNote = { path: '', title: '', type: 'note' }
 
@@ -150,6 +164,10 @@ export function createMockPluginContext(
     subscriptions,
     app: init.app ?? DEFAULT_APP,
     ...getOptionalServices(init),
+    slots: createMockSlotHost(),
+    vaults: createMockVaultsHost(),
+    window: createMockWindowHost(),
+    backgroundTasks: createMockBackgroundTaskHost(),
 
     openExternal(url: string): Promise<Result<null>> {
       if (!isWebAddress(url)) return Promise.resolve(asFailure(`not a web address: ${url}`))

@@ -25,7 +25,7 @@ describe('PluginContext', () => {
       registerSettingsView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
       registerStatusView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
       registerSlotView: vi.fn((_id, _slot, _reg) => ({ dispose: vi.fn() })),
-      app: { version: '2026.10.1', build: 884, platform: 'linux' },
+      app: { name: 'numen', version: '2026.10.1', build: 884, platform: 'linux' },
       openExternal: vi.fn(async (_url: string) => undefined),
       registerTabKind: vi.fn((_id, _reg) => {
         calls.registerTabKind++
@@ -305,6 +305,7 @@ describe('PluginContext', () => {
     const { host } = createMockHost()
 
     expect(createPluginContext('test.plugin', host).app).toEqual({
+      name: 'numen',
       version: '2026.10.1',
       build: 884,
       platform: 'linux',

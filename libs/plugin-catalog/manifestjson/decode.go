@@ -208,7 +208,30 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Commands:     newCommands(wire.GetCommands()),
 		Menus:        newMenus(wire.GetMenus()),
 		Views:        newViews(wire.GetViews()),
+		Slots:        newSlots(wire.GetSlots()),
 	}, nil
+}
+
+func newSlots(wire []*v1.ManifestSlotEntry) []manifest.SlotEntry {
+	var out []manifest.SlotEntry
+	for _, one := range wire {
+		var order *int
+		if one.Order != nil {
+			value := int(one.GetOrder())
+			order = &value
+		}
+		out = append(out, manifest.SlotEntry{
+			Slot:    one.GetSlot(),
+			Command: one.GetCommand(),
+			View:    one.GetView(),
+			Submenu: one.GetSubmenu(),
+			Title:   one.GetTitle(),
+			Icon:    one.GetIcon(),
+			Group:   one.GetGroup(),
+			Order:   order,
+		})
+	}
+	return out
 }
 
 func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequirement {

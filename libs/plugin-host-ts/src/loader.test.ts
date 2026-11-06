@@ -60,7 +60,7 @@ describe('createPluginLoader', () => {
           pluginId,
           target: 'desktop.test',
           subscriptions: [],
-          app: { version: '0.0.0-test', build: 1, platform: 'linux' },
+          app: { name: 'numen', version: '0.0.0-test', build: 1, platform: 'linux' },
           openExternal: vi.fn(async () => ({ ok: true as const, value: null })),
           registerStatusView: vi.fn(() => ({ dispose: vi.fn() })),
           registerSlotView: vi.fn(() => ({ dispose: vi.fn() })),

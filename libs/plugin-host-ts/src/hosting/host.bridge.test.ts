@@ -235,7 +235,7 @@ describe('a tab kind component', () => {
     const onError = vi.fn()
 
     const deps = createDeps({
-      app: { version: '1.2.3', build: 9, platform: 'darwin' },
+      app: { name: 'numen', version: '1.2.3', build: 9, platform: 'darwin' },
       openExternal,
       navigateTab: navigateTab as never,
       closeTab,
@@ -265,7 +265,7 @@ describe('a tab kind component', () => {
     const ctx = host.createContext('reader.plugin')
     expect(host.createContext('reader.plugin')).toBe(ctx)
     expect(ctx.hasPermission?.('vault:read')).toBe(true)
-    expect(ctx.app).toEqual({ version: '1.2.3', build: 9, platform: 'darwin' })
+    expect(ctx.app).toEqual({ name: 'numen', version: '1.2.3', build: 9, platform: 'darwin' })
     expect(ctx.relations).toBeDefined()
     expect(ctx.files).toBeDefined()
     expect(ctx.agent).toBeDefined()
@@ -334,7 +334,7 @@ describe('a tab kind component', () => {
       }),
     )
     const bareCtx = bareHost.createContext('bare')
-    expect(bareCtx.app).toEqual({ version: '0.0.0-dev', build: 0, platform: 'linux' })
+    expect(bareCtx.app).toEqual({ name: 'numen', version: '0.0.0-dev', build: 0, platform: 'linux' })
     expect(await bareCtx.openExternal('https://numen.md/')).toEqual({
       ok: false,
       error: 'Numen is not responding; retrying',
