@@ -26,7 +26,8 @@ vi.mock('@numen/ui', async (importOriginal) => ({
   },
 }))
 vi.mock('./columns', () => ({ useBookColumns: () => fake.columns }))
-vi.mock('./turns', () => ({ useBookTurns: () => fake.turns }))
+/** The place the running turn of the paper goes to when the paper is copied. */
+vi.mock('./turns', () => ({ useBookTurns: () => fake.turns, getTurnTarget: () => -900 }))
 
 const KEPT = 77
 const SPREAD_OF = (pos: number) => pos + 1000
@@ -46,11 +47,14 @@ const setUp = () => {
     readColumns: vi.fn(),
     findFragmentOffset: vi.fn(),
     markRuns: vi.fn(),
+    markCopy: vi.fn(),
+    unmarkCopy: vi.fn(),
   }
   fake.turns = {
     front: ref({}),
     leftInChapter: ref(0),
     stand: vi.fn(),
+    enterSpread: vi.fn(),
     getKeptOffset: vi.fn(() => KEPT),
     keepOffset: vi.fn(),
     getSpreadOf: vi.fn(SPREAD_OF),
@@ -69,11 +73,14 @@ const columns = () =>
     readColumns: ReturnType<typeof vi.fn>
     findFragmentOffset: ReturnType<typeof vi.fn>
     markRuns: ReturnType<typeof vi.fn>
+    markCopy: ReturnType<typeof vi.fn>
+    unmarkCopy: ReturnType<typeof vi.fn>
   }
 
 const turns = () =>
   fake.turns as {
     stand: ReturnType<typeof vi.fn>
+    enterSpread: ReturnType<typeof vi.fn>
     turn: ReturnType<typeof vi.fn>
     getKeptOffset: ReturnType<typeof vi.fn>
     keepOffset: ReturnType<typeof vi.fn>
@@ -120,6 +127,8 @@ const room = (options: Options = {}) => {
   }
   const area = shallowRef<HTMLElement | null>(options.hasArea === false ? null : box)
   const paper = shallowRef<HTMLElement | null>(options.hasPaper === false ? null : text)
+  const holder = document.createElement('div')
+  const leaving = shallowRef<HTMLElement | null>(holder)
   const onMove = vi.fn()
   const takeLed = vi.fn(() => options.led)
   let layout!: ReturnType<typeof useBookLayout>
@@ -129,6 +138,7 @@ const room = (options: Options = {}) => {
         layout = useBookLayout({
           area,
           paper,
+          leaving,
           props,
           onMove,
           takeLed,
@@ -138,7 +148,7 @@ const room = (options: Options = {}) => {
       },
     }),
   )
-  return { wrapper, props, box, text, onMove, takeLed, layout: () => layout }
+  return { wrapper, props, box, text, holder, onMove, takeLed, layout: () => layout }
 }
 
 beforeEach(setUp)
@@ -731,5 +741,91 @@ describe('the columns of a document with a picture that has not arrived', () => 
     picture.dispatchEvent(new Event('error'))
 
     expect(columns().readColumns).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('a page turned into the adjacent document', () => {
+  /** Turns past the end of the document at 100..200 and draws the one at 200..300. */
+  const turnIntoNext = async (setup: ReturnType<typeof room>, offset: number) => {
+    const { props, layout, text } = setup
+    flushFrames()
+    text.innerHTML = '<p data-offset="190">one</p>'
+    turns().turn.mockReturnValue(200)
+    layout().turn('next')
+    props.at = offset
+    props.span = { start: 200, end: 300 }
+    props.markup = '<p>two</p>'
+    await nextTick()
+  }
+
+  it('carries the columns in and carries out a copy of the spread before', async () => {
+    const setup = room()
+    await turnIntoNext(setup, 200)
+
+    expect(setup.holder.textContent).toBe('one')
+    flushFrames()
+
+    expect(turns().stand).not.toHaveBeenCalledWith(SPREAD_OF(200), 'auto')
+    expect(turns().enterSpread).toHaveBeenCalledExactlyOnceWith(SPREAD_OF(200), 'next', {
+      copy: setup.holder.firstElementChild,
+      target: -900,
+      remove: expect.any(Function),
+    })
+  })
+
+  it('highlights the copy, and removes it with its highlights at the end of the turn', async () => {
+    const setup = room()
+    await turnIntoNext(setup, 200)
+    const copy = setup.holder.firstElementChild
+    expect(columns().markCopy).toHaveBeenCalledExactlyOnceWith(copy)
+    flushFrames()
+
+    const leaving = turns().enterSpread.mock.calls[0]?.[2] as { remove: () => void }
+    leaving.remove()
+
+    expect(setup.holder.children).toHaveLength(0)
+    expect(columns().unmarkCopy).toHaveBeenCalledExactlyOnceWith(copy)
+  })
+
+  it('removes the copy with its highlights when another document is drawn', async () => {
+    const setup = room()
+    await turnIntoNext(setup, 200)
+    const copy = setup.holder.firstElementChild
+    flushFrames()
+
+    setup.props.at = 310
+    setup.props.span = { start: 300, end: 400 }
+    setup.props.markup = '<p>three</p>'
+    await nextTick()
+
+    expect(setup.holder.children).toHaveLength(0)
+    expect(columns().unmarkCopy).toHaveBeenCalledExactlyOnceWith(copy)
+  })
+
+  it('lands at once where the owner moved the reader elsewhere', async () => {
+    const setup = room()
+    await turnIntoNext(setup, 250)
+    flushFrames()
+
+    expect(setup.holder.children).toHaveLength(0)
+    expect(turns().enterSpread).not.toHaveBeenCalled()
+    expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(250), 'auto')
+  })
+
+  it('lands at once for the next document drawn without a turn', async () => {
+    const setup = room()
+    await turnIntoNext(setup, 200)
+    flushFrames()
+    turns().enterSpread.mockClear()
+
+    setup.props.at = 310
+    setup.props.span = { start: 300, end: 400 }
+    setup.props.markup = '<p>three</p>'
+    await nextTick()
+    flushFrames()
+
+    expect(setup.holder.children).toHaveLength(0)
+    expect(turns().enterSpread).not.toHaveBeenCalled()
+    expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(310), 'auto')
   })
 })

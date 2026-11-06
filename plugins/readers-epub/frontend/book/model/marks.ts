@@ -50,11 +50,29 @@ export function useBookMarks(
     highlight(OTHER_HIGHLIGHT, props, rangesOver(runs, props.otherHighlights))
   }
 
+  /** The copies of the paper highlighted under their own key. */
+  const markedCopies = new Set<HTMLElement>()
+
+  /** Highlights the runs of `copy`, a copy of the paper that still carries the run offsets. */
+  const markCopy = (copy: HTMLElement) => {
+    const copied = getRuns(copy)
+    highlight(HIGHLIGHT, copy, rangesOver(copied, props.highlights))
+    highlight(OTHER_HIGHLIGHT, copy, rangesOver(copied, props.otherHighlights))
+    markedCopies.add(copy)
+  }
+
+  /** Removes the highlights of a copy given to `markCopy`. */
+  const unmarkCopy = (copy: HTMLElement) => {
+    if (markedCopies.delete(copy)) unhighlight(copy)
+  }
+
   watch([() => props.highlights, () => props.otherHighlights], markRuns)
 
   onBeforeUnmount(() => {
     unhighlight(props)
+    for (const copy of markedCopies) unhighlight(copy)
+    markedCopies.clear()
   })
 
-  return { marks, gather, findFragmentOffset, markRuns }
+  return { marks, gather, findFragmentOffset, markRuns, markCopy, unmarkCopy }
 }

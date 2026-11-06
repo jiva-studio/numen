@@ -109,7 +109,7 @@ export function useBookColumns(options: BookColumnsOptions) {
   const laidFlow = shallowRef<Flow>(viewportFlow.value)
   const spreadCount = computed(() => countSpreads(laidFlow.value))
 
-  const { marks, gather, findFragmentOffset, markRuns } = useBookMarks(
+  const { marks, gather, findFragmentOffset, markRuns, markCopy, unmarkCopy } = useBookMarks(
     options.paper,
     options.props,
     options.getEdge,
@@ -155,6 +155,8 @@ export function useBookColumns(options: BookColumnsOptions) {
     readColumns,
     findFragmentOffset,
     markRuns,
+    markCopy,
+    unmarkCopy,
   }
   return state
 }
