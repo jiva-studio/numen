@@ -78,6 +78,14 @@ export interface HandlerDeclaration {
   readonly hasItems: boolean
 }
 
+/** One run of a handler in its plugin's backend: over the target, with `argument` the id of the item picked. */
+export interface BackendHandlerRun {
+  readonly pluginId: string
+  readonly command: string
+  readonly target: CommandTarget
+  readonly argument?: string | undefined
+}
+
 export interface PluginPaletteCommand {
   readonly id: string
   readonly title: string
@@ -105,13 +113,8 @@ export interface PluginHostDeps {
     command: string,
     target: CommandTarget,
   ) => Promise<readonly CommandItem[]>
-  /** Runs a handler in its plugin's backend over the target; with `argument`, the id of the item picked. */
-  readonly runBackendHandler?: (
-    pluginId: string,
-    command: string,
-    target: CommandTarget,
-    argument?: string,
-  ) => Promise<void>
+  /** Runs a handler in its plugin's backend. */
+  readonly runBackendHandler?: (run: BackendHandlerRun) => Promise<void>
   /** Whether the plugin declares a frontend the window loads; where absent, every plugin does. */
   readonly hasPluginFrontend?: (pluginId: string) => boolean
   /** Whether the plugin declares a backend that runs the commands no frontend handler takes; where absent, none does. */

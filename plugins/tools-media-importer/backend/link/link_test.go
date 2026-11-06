@@ -406,7 +406,7 @@ func TestCopyWritesTheAddressOfTheMediaIntoTheNote(t *testing.T) {
 	}
 }
 
-func TestTheTextStaysLiveWhenTheMediaAddressIsWritten(t *testing.T) {
+func TestTheTextIsLiveAfterTheMediaAddressIsSet(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
 	if err := w.links.FetchText(t.Context(), made, true); err != nil {

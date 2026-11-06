@@ -24,30 +24,30 @@ const (
 	linker  = "org.example.links"
 )
 
-// shelf is a vault in memory: its files by path, each with a modification time.
-type shelf struct {
+// memoryVault is a vault in memory: its files by path, each with a modification time.
+type memoryVault struct {
 	mu    sync.Mutex
 	files map[string]string
 	times map[string]time.Time
 	reads int
 }
 
-func newShelf(files map[string]string) *shelf {
-	s := &shelf{files: map[string]string{}, times: map[string]time.Time{}}
+func newMemoryVault(files map[string]string) *memoryVault {
+	s := &memoryVault{files: map[string]string{}, times: map[string]time.Time{}}
 	for _, path := range slices.Sorted(maps.Keys(files)) {
 		s.put(path, files[path])
 	}
 	return s
 }
 
-func (s *shelf) put(path, content string) {
+func (s *memoryVault) put(path, content string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.files[path] = content
 	s.times[path] = time.Unix(int64(1_700_000_000+len(s.times)*100+len(content)), 0)
 }
 
-func (s *shelf) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
+func (s *memoryVault) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
 	s.mu.Lock()
 	paths := slices.Sorted(maps.Keys(s.files))
 	s.mu.Unlock()
@@ -63,9 +63,9 @@ func (s *shelf) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) e
 	return nil
 }
 
-func (s *shelf) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
+func (s *memoryVault) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
 
-func (s *shelf) Read(_ context.Context, path string) ([]byte, error) {
+func (s *memoryVault) Read(_ context.Context, path string) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	content, ok := s.files[path]
@@ -76,11 +76,11 @@ func (s *shelf) Read(_ context.Context, path string) ([]byte, error) {
 	return []byte(content), nil
 }
 
-func (s *shelf) Open(context.Context, string) (io.ReadSeekCloser, error) {
+func (s *memoryVault) Open(context.Context, string) (io.ReadSeekCloser, error) {
 	return nil, errors.ErrUnsupported
 }
 
-func (s *shelf) StatFile(_ context.Context, path string) (domain.FileStat, error) {
+func (s *memoryVault) StatFile(_ context.Context, path string) (domain.FileStat, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	content, ok := s.files[path]
@@ -94,10 +94,10 @@ func (s *shelf) StatFile(_ context.Context, path string) (domain.FileStat, error
 	return domain.FileStat{Path: path, Kind: kind, Size: int64(len(content)), ModTime: s.times[path]}, nil
 }
 
-// readers opens the one shelf for every vault.
-type readers struct{ shelf *shelf }
+// readers opens the one memoryVault for every vault.
+type readers struct{ memoryVault *memoryVault }
 
-func (r readers) Open(domain.Vault) (vaultport.VaultReader, error) { return r.shelf, nil }
+func (r readers) Open(domain.Vault) (vaultport.VaultReader, error) { return r.memoryVault, nil }
 
 // types gives a PDF and a PNG their type by extension.
 type types struct{}
@@ -170,16 +170,16 @@ func (m *memoryRecord) Write(_ context.Context, state pluginport.TriggerState) e
 }
 
 type scene struct {
-	shelf    *shelf
-	plugins  *plugins
-	config   map[string]any
-	triggers *trigger.Triggers
+	memoryVault *memoryVault
+	plugins     *plugins
+	config      map[string]any
+	triggers    *trigger.Triggers
 }
 
 func newScene(t *testing.T, files map[string]string, entries ...pluginport.PluginTriggerEntry) *scene {
 	t.Helper()
-	s := &scene{shelf: newShelf(files), plugins: &plugins{triggers: entries, failing: map[string]bool{}}, config: map[string]any{}}
-	s.triggers = trigger.NewTriggers(s.plugins, readers{s.shelf}, types{}, &memoryRecord{},
+	s := &scene{memoryVault: newMemoryVault(files), plugins: &plugins{triggers: entries, failing: map[string]bool{}}, config: map[string]any{}}
+	s.triggers = trigger.NewTriggers(s.plugins, readers{s.memoryVault}, types{}, &memoryRecord{},
 		func() (map[string]any, error) { return s.config, nil })
 	return s
 }
@@ -229,7 +229,7 @@ func TestATriggerOnFileAddedRunsOnceOverEachMatchingFile(t *testing.T) {
 	if got := s.scan(t); len(got) != 0 {
 		t.Errorf("a second scan over the same content ran %v", got)
 	}
-	s.shelf.put("scans/b.pdf", "%PDF b")
+	s.memoryVault.put("scans/b.pdf", "%PDF b")
 	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/b.pdf"}; !slices.Equal(got, want) {
 		t.Errorf("a file added ran %v, want %v", got, want)
 	}
@@ -239,7 +239,7 @@ func TestATriggerOnFileAddedDoesNotRunWhenAFileChanges(t *testing.T) {
 	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, getExtractOnAdd())
 	s.scan(t)
 
-	s.shelf.put("scans/a.pdf", "%PDF a, second printing")
+	s.memoryVault.put("scans/a.pdf", "%PDF a, second printing")
 	if got := s.scan(t); len(got) != 0 {
 		t.Errorf("a changed file ran %v", got)
 	}
@@ -251,7 +251,7 @@ func TestATriggerOnFileChangedRunsWhenTheContentChanges(t *testing.T) {
 		t.Fatalf("a file found for the first time ran %v on file.changed", got)
 	}
 
-	s.shelf.put("scans/a.png", "other pixels")
+	s.memoryVault.put("scans/a.png", "other pixels")
 	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.png"}; !slices.Equal(got, want) {
 		t.Errorf("a changed file ran %v, want %v", got, want)
 	}
@@ -312,10 +312,10 @@ func TestAFailedRunIsTriedAgainOnTheNextScan(t *testing.T) {
 func TestAScanReadsNoFileWhenNothingChanged(t *testing.T) {
 	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.png": "pixels"}, getExtractOnAdd())
 	s.scan(t)
-	before := s.shelf.reads
+	before := s.memoryVault.reads
 
 	s.scan(t)
-	if s.shelf.reads != before {
-		t.Errorf("a scan over unchanged files read %d files", s.shelf.reads-before)
+	if s.memoryVault.reads != before {
+		t.Errorf("a scan over unchanged files read %d files", s.memoryVault.reads-before)
 	}
 }

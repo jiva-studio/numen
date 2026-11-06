@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 )
 
-func TestTheHandlerOfDeleteTextTakesTheVersionTheHostNames(t *testing.T) {
+func TestTheHandlerOfDeleteTextRequiresAVersionArgument(t *testing.T) {
 	s := newScene(t)
 	commands, err := newCommands(s.run, Host{Store: s.store, Texts: s.texts, Queue: s.queue})
 	if err != nil {

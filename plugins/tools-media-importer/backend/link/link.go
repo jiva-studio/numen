@@ -264,9 +264,9 @@ func (l *Links) setAddress(ctx context.Context, link Link, key, value string) er
 	if _, err := vault.Write(ctx, link.Path, content, stat); err != nil {
 		return err
 	}
-	written := newLink(link.Path, link.Address, content)
-	written.Vault = link.Vault
-	return l.restoreText(ctx, folder{store: l.getStore(written)}, written)
+	updated := newLink(link.Path, link.Address, content)
+	updated.Vault = link.Vault
+	return l.restoreText(ctx, folder{store: l.getStore(updated)}, updated)
 }
 
 // getVault is the vault of the link.

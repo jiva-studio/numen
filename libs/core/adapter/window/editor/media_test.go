@@ -158,7 +158,7 @@ func TestResolveAddress_ServesAPageOfAPluginStoreWithItsFramesAndReferrer(t *tes
 	}
 }
 
-func TestResolveAddress_RefusesTheAddressOfAPluginFileWrittenAgain(t *testing.T) {
+func TestResolveAddress_RejectsTheAddressOfAPluginFileOfAnotherSize(t *testing.T) {
 	files := storedFiles{importer: {clipName: []byte(clipBytes)}}
 	client := newStoreClient(t, files)
 	answer, err := client.ResolveAddress(t.Context(), connect.NewRequest(&v1.ResolveAddressRequest{Address: "plugin://" + importer + "/" + clipName}))

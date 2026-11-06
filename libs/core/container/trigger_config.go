@@ -15,9 +15,9 @@ const configAppOwner = "app"
 // it: each setting at config.app.<key> or config.<plugin id split at dots>.<key>, the key split at
 // dots, holding the value the settings file holds for its owner and key, or its declared default.
 // A declared default that is no JSON leaves the setting out.
-func createTriggerConfig(written string, app []pluginport.PluginSetting, plugins []pluginport.PluginInfo) (map[string]any, error) {
+func createTriggerConfig(settingsFile string, app []pluginport.PluginSetting, plugins []pluginport.PluginInfo) (map[string]any, error) {
 	var file map[string]map[string]any
-	if err := json.Unmarshal([]byte(written), &file); err != nil {
+	if err := json.Unmarshal([]byte(settingsFile), &file); err != nil {
 		return nil, fmt.Errorf("read the settings file: %w", err)
 	}
 	config := map[string]any{}

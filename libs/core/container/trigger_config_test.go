@@ -8,7 +8,7 @@ import (
 )
 
 func TestCreateTriggerConfigNestsTheSettingsByOwnerAndKeyAsTheWindowDoes(t *testing.T) {
-	written := `{"app": {"editor.lineNumbers": true}, "org.example.scans": {"isAutomatic": true}}`
+	settingsFile := `{"app": {"editor.lineNumbers": true}, "org.example.scans": {"isAutomatic": true}}`
 	app := []pluginport.PluginSetting{
 		{Key: "editor.lineNumbers", DefaultJSON: "false"},
 		{Key: "appearance", DefaultJSON: `"dark"`},
@@ -20,7 +20,7 @@ func TestCreateTriggerConfigNestsTheSettingsByOwnerAndKeyAsTheWindowDoes(t *test
 		}},
 	}
 
-	got, err := createTriggerConfig(written, app, plugins)
+	got, err := createTriggerConfig(settingsFile, app, plugins)
 	if err != nil {
 		t.Fatal(err)
 	}

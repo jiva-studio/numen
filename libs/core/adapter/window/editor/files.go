@@ -267,11 +267,11 @@ func newWireProperties(properties map[string]any) *structpb.Struct {
 	if err != nil {
 		return &structpb.Struct{}
 	}
-	var plain map[string]any
-	if err := json.Unmarshal(raw, &plain); err != nil {
+	var decoded map[string]any
+	if err := json.Unmarshal(raw, &decoded); err != nil {
 		return &structpb.Struct{}
 	}
-	wire, err := structpb.NewStruct(plain)
+	wire, err := structpb.NewStruct(decoded)
 	if err != nil {
 		return &structpb.Struct{}
 	}

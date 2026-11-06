@@ -28,6 +28,9 @@ export function isCommandAvailable(
   const target = note.path === '' && !note.isFolder ? undefined : note
   return condition.evaluate({
     ...deps.getWindowValues?.(),
-    ...getTargetValues(target, deps.getContentTypes?.() ?? {}, note.type, note.properties),
+    ...getTargetValues(target, deps.getContentTypes?.() ?? {}, {
+      type: note.type,
+      properties: note.properties,
+    }),
   })
 }

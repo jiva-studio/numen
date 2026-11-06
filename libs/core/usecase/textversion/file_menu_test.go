@@ -362,7 +362,7 @@ func TestNewFileMenuRequiresVersionsCommandsTypesAndReaders(t *testing.T) {
 	}
 }
 
-func TestAHandlerOfASharedCommandOffersEveryVersionItsConditionHoldsOver(t *testing.T) {
+func TestAHandlerOfASharedCommandListsEveryVersionItsConditionMatches(t *testing.T) {
 	s := newScene(t)
 	deleteText := pluginport.PluginCommandEntry{PluginID: ocr, Command: pluginport.PluginCommand{
 		ID: "app:version.delete", Title: "Delete recognition", When: "version.kind != ''",

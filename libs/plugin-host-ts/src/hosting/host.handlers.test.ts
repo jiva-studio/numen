@@ -93,18 +93,23 @@ describe('a shared command', () => {
     const { host, runBackendHandler } = createHost()
 
     expect(await host.executeCommand(CREATE, { ...SCAN, type: '' }, TIDES)).toBe(true)
-    expect(runBackendHandler).toHaveBeenCalledWith(TIDES, CREATE, { ...SCAN, type: '' }, undefined)
+    expect(runBackendHandler).toHaveBeenCalledWith({
+      pluginId: TIDES,
+      command: CREATE,
+      target: { ...SCAN, type: '' },
+      argument: undefined,
+    })
   })
 
   it('runs its one matching handler without an argument, and nothing where several match', async () => {
     const one = createHost(HANDLERS.filter((handler) => handler.pluginId === SCANS))
     expect(await one.host.executeCommand(CREATE, { ...SCAN, type: '' })).toBe(true)
-    expect(one.runBackendHandler).toHaveBeenCalledWith(
-      SCANS,
-      CREATE,
-      { ...SCAN, type: '' },
-      undefined,
-    )
+    expect(one.runBackendHandler).toHaveBeenCalledWith({
+      pluginId: SCANS,
+      command: CREATE,
+      target: { ...SCAN, type: '' },
+      argument: undefined,
+    })
 
     const several = createHost()
     expect(await several.host.executeCommand(CREATE, { ...SCAN, type: '' })).toBe(false)
@@ -118,12 +123,12 @@ describe('a shared command', () => {
       { id: `${SCANS}:org.example.scans/reading`, title: 'reading', group: SCANS },
     ])
     await host.executeCommand(DELETE, { ...SCAN, type: '' }, `${SCANS}:org.example.scans/reading`)
-    expect(runBackendHandler).toHaveBeenCalledWith(
-      SCANS,
-      DELETE,
-      { ...SCAN, type: '' },
-      'org.example.scans/reading',
-    )
+    expect(runBackendHandler).toHaveBeenCalledWith({
+      pluginId: SCANS,
+      command: DELETE,
+      target: { ...SCAN, type: '' },
+      argument: 'org.example.scans/reading',
+    })
   })
 
   it('runs a handler the frontend of its plugin registered there, with its own items', async () => {

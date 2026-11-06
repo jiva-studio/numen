@@ -82,7 +82,7 @@ func (u *Triggers) Execute(ctx context.Context, v domain.Vault) error {
 	if err != nil {
 		return fmt.Errorf("read the settings: %w", err)
 	}
-	pass := &pass{triggers: u, reader: reader, list: triggers, config: config, state: newState(state), seen: map[string]bool{}}
+	pass := &pass{triggers: u, reader: reader, list: triggers, config: config, state: newState(state), found: map[string]bool{}}
 	var failures []error
 	err = reader.WalkFiles(ctx, func(stat domain.FileStat) error {
 		if stat.Kind != domain.KindFile && stat.Kind != domain.KindNote {
@@ -136,7 +136,7 @@ type pass struct {
 	list      []trigger
 	config    map[string]any
 	state     pluginport.TriggerState
-	seen      map[string]bool
+	found     map[string]bool
 	isChanged bool
 }
 
@@ -152,7 +152,7 @@ type file struct {
 
 // runFile runs the triggers over one file and returns the failures of its runs.
 func (p *pass) runFile(ctx context.Context, stat domain.FileStat) []error {
-	p.seen[stat.Path] = true
+	p.found[stat.Path] = true
 	current, err := p.readFile(ctx, stat)
 	if err != nil {
 		return []error{err}
@@ -242,13 +242,13 @@ func (p *pass) getValues(ctx context.Context, current *file, condition pluginpor
 // forgetUnseen takes the files no longer in the vault out of the record, with the runs over them.
 func (p *pass) forgetUnseen() {
 	for path := range p.state.Files {
-		if !p.seen[path] {
+		if !p.found[path] {
 			delete(p.state.Files, path)
 			p.isChanged = true
 		}
 	}
 	for key := range p.state.Runs {
-		if !p.seen[getRunPath(key)] {
+		if !p.found[getRunPath(key)] {
 			delete(p.state.Runs, key)
 			p.isChanged = true
 		}

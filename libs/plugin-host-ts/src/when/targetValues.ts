@@ -4,6 +4,12 @@
  */
 import type { CommandTarget } from '@numen/plugin-sdk'
 
+/** What a place read of the note of a target: its type and its frontmatter. */
+export interface TargetNote {
+  readonly type?: string | undefined
+  readonly properties?: Readonly<Record<string, unknown>> | undefined
+}
+
 /** What the derivation reads of a target. */
 export type TargetPath = Pick<CommandTarget, 'path' | 'isFolder' | 'others'>
 
@@ -35,10 +41,10 @@ const getExtension = (path: string): string => {
 export function getTargetValues(
   target: TargetPath | undefined,
   contentTypes: Readonly<Record<string, string>>,
-  noteType = '',
-  properties: Readonly<Record<string, unknown>> = {},
+  note: TargetNote = {},
 ): Readonly<Record<string, unknown>> {
   if (!target) return NO_TARGET
+  const { type = '', properties = {} } = note
   const { path, isFolder, others } = target
   const extension = isFolder ? '' : getExtension(path)
   const isNote = extension === NOTE_EXTENSION
@@ -49,7 +55,7 @@ export function getTargetValues(
     'target.isNote': isNote,
     'target.isFile': !isFolder && !isNote && path !== '',
     'target.contentType': contentTypes[extension] ?? '',
-    'target.noteType': isNote ? noteType : '',
+    'target.noteType': isNote ? type : '',
     'target.properties': isNote ? properties : {},
   }
 }
