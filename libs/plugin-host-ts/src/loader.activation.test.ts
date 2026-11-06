@@ -117,6 +117,22 @@ describe('a command whose handler is missing after the plugin has started', () =
   })
 })
 
+describe('the commands of a plugin that is turned off', () => {
+  it('are not reported as missing while its handlers are removed', async () => {
+    const { host, loader, reportCommandIssue } = createWindow((context) => {
+      context.registerCommand({ id: 'graph.open', handler: () => undefined })
+      context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+    })
+    await loader.start()
+    const reports = followCommands(host)
+
+    host.disposePlugin(PLUGIN)
+
+    expect(reportCommandIssue).not.toHaveBeenCalled()
+    expect(reports.at(-1)).toStrictEqual([])
+  })
+})
+
 describe('a plugin whose activation throws', () => {
   it('reports its own failure and no command as missing', async () => {
     const { host, loader, reportCommandIssue, onError } = createWindow((context) => {

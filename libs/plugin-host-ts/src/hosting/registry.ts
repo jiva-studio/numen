@@ -156,14 +156,16 @@ export function addEntry<T>(
 
 export function disposePluginEntry(pluginId: string, parts: DisposalParts): void {
   const { registry, statusViews, deps } = parts
+  // The plugin is marked disposed before its subscriptions are cleared: each handler removed is read
+  // at once by the parts that follow the commands, and an active plugin without it is reported.
+  registry.disposed.add(pluginId)
+  registry.activated.value = new Set([...registry.activated.value].filter((id) => id !== pluginId))
+  setStarting(registry, pluginId, false)
   deps?.closeTabsForPlugin?.(pluginId)
   deps?.clearNotices?.(pluginId)
   clearSubscriptions(registry.contexts.get(pluginId))
   registry.contexts.delete(pluginId)
-  registry.activated.value = new Set([...registry.activated.value].filter((id) => id !== pluginId))
-  setStarting(registry, pluginId, false)
   registry.manifests.delete(pluginId)
-  registry.disposed.add(pluginId)
   cleanupMapItems(registry.readers, pluginId)
   cleanupMapItems(registry.tabKinds, pluginId)
   cleanupProviderItems(registry.agentProviders, pluginId)

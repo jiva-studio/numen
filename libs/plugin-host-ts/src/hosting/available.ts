@@ -81,11 +81,15 @@ export function listAvailableCommands(deps: PluginHostDeps, registry: HostRegist
       addIssue({ pluginId: declaration.pluginId, id: declaration.id, kind: 'unbound' })
     }
   }
-  for (const [id, entry] of registry.commands.value) {
-    if (declaredIds.has(id)) continue
-    addIssue({ pluginId: entry.pluginId, id: entry.reg.id, kind: 'undeclared' })
-  }
+  for (const issue of listUndeclared(registry, declaredIds)) addIssue(issue)
   return { commands, issues: [...issues.values()] }
+}
+
+/** The handlers of plugins that are not disposed whose commands no manifest declares. */
+function listUndeclared(registry: HostRegistry, declaredIds: ReadonlySet<string>): CommandIssue[] {
+  return [...registry.commands.value]
+    .filter(([id, entry]) => !declaredIds.has(id) && !registry.disposed.has(entry.pluginId))
+    .map(([, entry]) => ({ pluginId: entry.pluginId, id: entry.reg.id, kind: 'undeclared' }))
 }
 
 /** The palette's view of an listed command. */
