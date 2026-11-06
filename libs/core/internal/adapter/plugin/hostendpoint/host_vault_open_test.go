@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -100,5 +101,34 @@ func TestOpenVaultWhileTheWindowFlushesIsUnavailable(t *testing.T) {
 	}
 	if got := list.getCalls(); len(got) != 0 {
 		t.Errorf("the opens that ran were %v, want none", got)
+	}
+}
+
+// A call still running when the shutdown tolerance ends is cut off by the close, and Close returns
+// an error that says so.
+func TestCloseWithACallRunningPastTheShutdownToleranceReturnsAnError(t *testing.T) {
+	t.Parallel()
+	list := newRecordingList()
+	list.release = make(chan struct{})
+	t.Cleanup(func() { close(list.release) })
+	endpoint, client := openListEndpoint(t, list)
+	callResult := make(chan error, 1)
+	go func() {
+		_, err := client.OpenVault(context.WithoutCancel(t.Context()), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+		callResult <- err
+	}()
+	select {
+	case <-list.opened:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the window was not asked to open the vault")
+	}
+
+	if err := endpoint.Close(context.WithoutCancel(t.Context())); err == nil {
+		t.Error("Close returned nil although a call ran past the shutdown tolerance and was cut off")
+	}
+	select {
+	case <-callResult:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the call cut off by Close never returned")
 	}
 }
