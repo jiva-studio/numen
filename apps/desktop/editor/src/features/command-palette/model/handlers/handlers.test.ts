@@ -401,7 +401,7 @@ describe('a note renamed', () => {
     expect(one.notices).toStrictEqual([])
   })
 
-  it('says the name was taken, and that the note carries the new one', async () => {
+  it('says the name was taken, and that the note keeps its name', async () => {
     const one = window({ renamed: asFailure('alreadyExists' as const) })
 
     await carry(createInvocation('app:note.rename', front(), 'Entropy'), one.on)
@@ -1171,5 +1171,17 @@ describe('the command of a setting', () => {
 
     expect(one.notices).toStrictEqual(['value out of range'])
     expect(one.severities).toStrictEqual(['error'])
+  })
+})
+
+describe('a note renamed onto a name another file has', () => {
+  it('shows the error and changes nothing in the window', async () => {
+    const one = window({ renamed: asFailure('alreadyExists' as const) })
+
+    await carry(createInvocation('app:note.rename', front(), 'Entropy'), one.on)
+
+    expect(one.notices).toStrictEqual([words.errors.alreadyExists])
+    expect(one.severities).toStrictEqual(['error'])
+    expect(one.actions).toStrictEqual(['flushPending active', 'rename physics/Ontology.md Entropy'])
   })
 })

@@ -65,21 +65,24 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 		return RenameResult{}, err
 	}
 
+	to := pathpkg.Join(pathpkg.Dir(path), name+pathpkg.Ext(path))
 	var source NameSource
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	_, err = e.Apply(ctx, v, path, func(doc *markdown.Document) error {
-		if _, titled := doc.Title(); titled {
+		if _, titled := doc.Title(); titled || !exact {
+			// A title key keeps the name, and so does a title no filename can carry.
 			source = ByFrontmatter
+			if err := u.checkTarget(ctx, v, path, to, source); err != nil {
+				return err
+			}
 			return doc.SetTitle(title)
 		}
-		if exact {
-			source = ByFilename
-			return errFilenameNamesIt
-		}
-		// The filename cannot carry the title, so the frontmatter takes it.
-		source = ByFrontmatter
-		return doc.SetTitle(title)
+		source = ByFilename
+		return errFilenameNamesIt
 	})
+	if errors.Is(err, vaultport.ErrAlreadyExists) {
+		return RenameResult{Path: path, Title: title, By: source}, err
+	}
 	if err != nil && !errors.Is(err, errFilenameNamesIt) {
 		return RenameResult{}, err
 	}
@@ -90,12 +93,24 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	if moves, _ := u.Sync.GetSetting().GetRenameEffects(source); !moves {
 		return res, nil
 	}
-	to := pathpkg.Join(pathpkg.Dir(path), name+pathpkg.Ext(path))
 	moved, err := u.Move.Execute(ctx, v, path, to)
 	if moved.IsMoved {
 		res.Path, res.Moved = moved.To, &moved
 	}
 	return res, err
+}
+
+// checkTarget returns vaultport.ErrAlreadyExists when the rename will move the note and another
+// file is at the path it moves to, so the title is not written for a move that cannot happen.
+func (u Rename) checkTarget(ctx context.Context, v domain.Vault, from, to string, source NameSource) error {
+	if moves, _ := u.Sync.GetSetting().GetRenameEffects(source); !moves {
+		return nil
+	}
+	writer, err := u.writers.Open(v)
+	if err != nil {
+		return err
+	}
+	return writer.CheckMoveTarget(ctx, from, to)
 }
 
 // WriteFilenameAsTitle writes into the note at this path the name its file

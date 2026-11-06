@@ -15,41 +15,54 @@ import (
 // skyVault is the identity of the invented astronomy vault the tests of this file call.
 const skyVault = "sky-vault"
 
-type listedNote struct {
+type noteEntry struct {
 	Path  string `json:"path"`
 	Title string `json:"title"`
 }
 
 type noteListOutput struct {
-	Notes      []listedNote `json:"notes"`
-	Total      *int         `json:"total"`
-	NextOffset int          `json:"nextOffset"`
+	Notes      []noteEntry `json:"notes"`
+	Total      *int        `json:"total"`
+	NextOffset int         `json:"nextOffset"`
 }
 
 type noteTitlesOutput struct {
-	Notes   []listedNote `json:"notes"`
-	Missing []string     `json:"missing"`
+	Notes        []noteEntry `json:"notes"`
+	MissingPaths []string    `json:"missingPaths"`
+}
+
+type noteTitle struct {
+	Path  string  `json:"path"`
+	Title string  `json:"title"`
+	ID    *string `json:"id"`
+}
+
+type noteTitlesWithIDsOutput struct {
+	Notes []noteTitle `json:"notes"`
 }
 
 type noteResolveOutput struct {
 	Paths *[]string `json:"paths"`
 }
 
-type listedVault struct {
+type vaultEntry struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Path      string `json:"path"`
 	IsCurrent *bool  `json:"isCurrent"`
+	IsMissing *bool  `json:"isMissing"`
 }
 
 type vaultListOutput struct {
-	Vaults []listedVault `json:"vaults"`
+	Vaults []vaultEntry `json:"vaults"`
 }
 
 type vaultProblem struct {
-	Path   string `json:"path"`
-	Check  string `json:"check"`
-	Detail string `json:"detail"`
+	Path       string   `json:"path"`
+	Check      string   `json:"check"`
+	Detail     string   `json:"detail"`
+	Address    string   `json:"address"`
+	Candidates []string `json:"candidates"`
 }
 
 type vaultProblemsOutput struct {
@@ -68,7 +81,7 @@ func newSkyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	v.File("Skyline.md", "---\ntitle: City Skyline at Night\n---\nLight hides the stars.")
 	v.File("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea.")
 	v.File("Sky/chart.txt", "RA 05h 35m\n")
-	registry, err := service.New(v).Registry()
+	registry, err := service.New(v).WithVaultList(v).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -114,7 +127,7 @@ func decodeInto(t *testing.T, structured []byte, out any) {
 	}
 }
 
-func getPaths(notes []listedNote) []string {
+func getPaths(notes []noteEntry) []string {
 	out := make([]string, 0, len(notes))
 	for _, n := range notes {
 		out = append(out, n.Path)
@@ -127,7 +140,7 @@ func TestNoteListReturnsNotesOrderedByPathWithTitles(t *testing.T) {
 	var out noteListOutput
 	decodeInto(t, callTool(t, registry, skyVault, "note_list", `{}`), &out)
 
-	want := []listedNote{
+	want := []noteEntry{
 		{Path: "Sky/Comets.md", Title: "Comets and Their Tails"},
 		{Path: "Sky/Deep/Nebula.md", Title: "The Crab Nebula"},
 		{Path: "Sky/Orion.md", Title: "The Hunter Orion"},
@@ -229,8 +242,34 @@ func TestNoteTitlesReturnsTitlesAndMissingPaths(t *testing.T) {
 	if len(got) != len(want) || got["Tides.md"] != want["Tides.md"] || got["Sky/Orion.md"] != want["Sky/Orion.md"] {
 		t.Errorf("titles = %v, want %v", got, want)
 	}
-	if !slices.Equal(out.Missing, []string{"Sky/Pulsar.md"}) {
-		t.Errorf("missing = %v, want [Sky/Pulsar.md]", out.Missing)
+	if !slices.Equal(out.MissingPaths, []string{"Sky/Pulsar.md"}) {
+		t.Errorf("missingPaths = %v, want [Sky/Pulsar.md]", out.MissingPaths)
+	}
+}
+
+func TestNoteTitlesReturnsTheIdentifierOfANoteThatHasOne(t *testing.T) {
+	v, registry := newSkyVault(t)
+	v.File("Sky/Pulsar.md", "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: The Vela Pulsar\n---\nIt spins.")
+
+	var out noteTitlesWithIDsOutput
+	decodeInto(t, callTool(t, registry, skyVault, "note_titles", `{"paths":["Sky/Pulsar.md","Tides.md"]}`), &out)
+	byPath := map[string]noteTitle{}
+	for _, n := range out.Notes {
+		byPath[n.Path] = n
+	}
+	pulsar, ok := byPath["Sky/Pulsar.md"]
+	if !ok {
+		t.Fatalf("Sky/Pulsar.md is not in %+v", out.Notes)
+	}
+	if pulsar.ID == nil || *pulsar.ID != "01H7X1234567890ABCDEFGHJKM" {
+		t.Errorf("id of Sky/Pulsar.md = %v, want 01H7X1234567890ABCDEFGHJKM", pulsar.ID)
+	}
+	tides, ok := byPath["Tides.md"]
+	if !ok {
+		t.Fatalf("Tides.md is not in %+v", out.Notes)
+	}
+	if tides.ID != nil {
+		t.Errorf("id of Tides.md = %q, want it left out for a note without an identifier", *tides.ID)
 	}
 }
 
@@ -252,8 +291,8 @@ func TestNoteTitlesRefusesMoreThanFiftyPaths(t *testing.T) {
 	}
 	var out noteTitlesOutput
 	decodeInto(t, callTool(t, registry, skyVault, "note_titles", string(fifty)), &out)
-	if len(out.Missing) != 50 {
-		t.Errorf("got %d missing paths, want 50", len(out.Missing))
+	if len(out.MissingPaths) != 50 {
+		t.Errorf("got %d missing paths, want 50", len(out.MissingPaths))
 	}
 }
 
@@ -297,7 +336,7 @@ func TestVaultListReturnsEveryVaultAndMarksTheCalledOne(t *testing.T) {
 	if len(out.Vaults) != 2 {
 		t.Fatalf("got %d vaults, want 2: %v", len(out.Vaults), out.Vaults)
 	}
-	byID := map[string]listedVault{}
+	byID := map[string]vaultEntry{}
 	for _, one := range out.Vaults {
 		byID[one.ID] = one
 	}
@@ -325,25 +364,61 @@ func TestVaultListReturnsEveryVaultAndMarksTheCalledOne(t *testing.T) {
 	}
 }
 
-func TestVaultProblemsRunsTheParseCheckByDefault(t *testing.T) {
+func TestVaultListMarksAVaultWithoutItsFolderAsMissing(t *testing.T) {
+	sky, registry := newSkyVault(t)
+	garden := hosttest.New("garden-vault")
+	sky.Beside(garden)
+	garden.SetMissing(true)
+
+	var out vaultListOutput
+	decodeInto(t, callTool(t, registry, skyVault, "vault_list", `{}`), &out)
+	byID := map[string]vaultEntry{}
+	for _, one := range out.Vaults {
+		byID[one.ID] = one
+	}
+	if got, ok := byID["garden-vault"]; !ok || got.IsMissing == nil || !*got.IsMissing {
+		t.Errorf("garden-vault = %+v, want it listed with isMissing true", got)
+	}
+	if got, ok := byID[skyVault]; !ok || (got.IsMissing != nil && *got.IsMissing) {
+		t.Errorf("%s = %+v, want it listed and not missing", skyVault, got)
+	}
+}
+
+// getDefaultChecks is the checks vault_problems runs when the call names none.
+func getDefaultChecks() []string {
+	return []string{"parse", "frontmatter", "ambiguous"}
+}
+
+// filterProblems is the problems the check found.
+func filterProblems(problems []vaultProblem, check string) []vaultProblem {
+	var out []vaultProblem
+	for _, p := range problems {
+		if p.Check == check {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func TestVaultProblemsRunsParseFrontmatterAndAmbiguousByDefault(t *testing.T) {
 	v, registry := newSkyVault(t)
 	v.File("Sky/Pulsar.md", "---\nid: not-an-identifier\n---\n# Pulsar\nIt spins.")
 
 	var out vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problems", `{}`), &out)
-	if !slices.Equal(out.Checks, []string{"parse"}) {
-		t.Errorf("checks = %v, want [parse]", out.Checks)
+	if !slices.Equal(out.Checks, getDefaultChecks()) {
+		t.Errorf("checks = %v, want %v", out.Checks, getDefaultChecks())
 	}
-	if len(out.Problems) != 1 {
-		t.Fatalf("got %d problems, want 1: %v", len(out.Problems), out.Problems)
+	parse := filterProblems(out.Problems, "parse")
+	if len(parse) != 1 {
+		t.Fatalf("got %d parse problems, want 1: %v", len(parse), out.Problems)
 	}
-	got := out.Problems[0]
-	if got.Path != "Sky/Pulsar.md" || got.Check != "parse" || !strings.Contains(got.Detail, "not-an-identifier") {
-		t.Errorf("problem = %+v, want Sky/Pulsar.md, parse, a detail naming not-an-identifier", got)
+	if got := parse[0]; got.Path != "Sky/Pulsar.md" || !strings.Contains(got.Detail, "not-an-identifier") {
+		t.Errorf("problem = %+v, want Sky/Pulsar.md, a detail naming not-an-identifier", got)
 	}
 }
 
-func TestVaultProblemsRunsTheParseCheckWhenNamed(t *testing.T) {
+func TestVaultProblemsRunsOnlyTheParseCheckWhenNamed(t *testing.T) {
 	v, registry := newSkyVault(t)
 	v.File("Sky/Pulsar.md", "---\nid: not-an-identifier\n---\n# Pulsar\nIt spins.")
 
@@ -352,8 +427,8 @@ func TestVaultProblemsRunsTheParseCheckWhenNamed(t *testing.T) {
 	if !slices.Equal(out.Checks, []string{"parse"}) {
 		t.Errorf("checks = %v, want [parse]", out.Checks)
 	}
-	if len(out.Problems) != 1 || out.Problems[0].Path != "Sky/Pulsar.md" {
-		t.Errorf("problems = %v, want one for Sky/Pulsar.md", out.Problems)
+	if len(out.Problems) != 1 || out.Problems[0].Path != "Sky/Pulsar.md" || out.Problems[0].Check != "parse" {
+		t.Errorf("problems = %v, want one parse problem for Sky/Pulsar.md", out.Problems)
 	}
 }
 
@@ -364,15 +439,64 @@ func TestVaultProblemsReturnsNoProblemsForValidNotes(t *testing.T) {
 	if len(out.Problems) != 0 {
 		t.Errorf("problems = %v, want none", out.Problems)
 	}
-	if !slices.Equal(out.Checks, []string{"parse"}) {
-		t.Errorf("checks = %v, want [parse]", out.Checks)
+	if !slices.Equal(out.Checks, getDefaultChecks()) {
+		t.Errorf("checks = %v, want %v", out.Checks, getDefaultChecks())
 	}
 }
 
-func TestVaultProblemsRefusesACheckOtherThanParse(t *testing.T) {
+func TestVaultProblemsReturnsCandidatesOfAnAmbiguousLink(t *testing.T) {
+	v, registry := newSkyVault(t)
+	v.File("A/Comet.md", "# Comet\nHalley.")
+	v.File("B/Comet.md", "# Comet\nHale-Bopp.")
+	v.File("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea, unlike a [[Comet]].")
+
+	var out vaultProblemsOutput
+	decodeInto(t, callTool(t, registry, skyVault, "vault_problems", `{}`), &out)
+	ambiguous := filterProblems(out.Problems, "ambiguous")
+	if len(ambiguous) != 1 {
+		t.Fatalf("got %d ambiguous problems, want 1: %v", len(ambiguous), out.Problems)
+	}
+	got := ambiguous[0]
+	if got.Path != "Tides.md" {
+		t.Errorf("path = %q, want Tides.md", got.Path)
+	}
+	if !strings.Contains(got.Address, "Comet") {
+		t.Errorf("address = %q, want one naming Comet", got.Address)
+	}
+	candidates := slices.Clone(got.Candidates)
+	slices.Sort(candidates)
+	if want := []string{"A/Comet.md", "B/Comet.md"}; !slices.Equal(candidates, want) {
+		t.Errorf("candidates = %v, want %v", got.Candidates, want)
+	}
+}
+
+func TestVaultProblemsRunsTheDanglingCheckOnlyWhenNamed(t *testing.T) {
+	v, registry := newSkyVault(t)
+	v.File("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea, see [[Quasar]].")
+
+	var byDefault vaultProblemsOutput
+	decodeInto(t, callTool(t, registry, skyVault, "vault_problems", `{}`), &byDefault)
+	if slices.Contains(byDefault.Checks, "dangling") || len(filterProblems(byDefault.Problems, "dangling")) != 0 {
+		t.Errorf("the default run checked dangling links: %+v", byDefault)
+	}
+
+	var named vaultProblemsOutput
+	decodeInto(t, callTool(t, registry, skyVault, "vault_problems", `{"checks":["dangling"]}`), &named)
+	if !slices.Equal(named.Checks, []string{"dangling"}) {
+		t.Errorf("checks = %v, want [dangling]", named.Checks)
+	}
+	if len(named.Problems) != 1 {
+		t.Fatalf("got %d problems, want 1: %v", len(named.Problems), named.Problems)
+	}
+	if got := named.Problems[0]; got.Path != "Tides.md" || got.Check != "dangling" || !strings.Contains(got.Address, "Quasar") {
+		t.Errorf("problem = %+v, want Tides.md, dangling, an address naming Quasar", got)
+	}
+}
+
+func TestVaultProblemsWithAnUnknownCheckNameIsRefused(t *testing.T) {
 	_, registry := newSkyVault(t)
-	requireRefusal(t, registry, skyVault, "vault_problems", `{"checks":["dangling"]}`)
-	requireRefusal(t, registry, skyVault, "vault_problems", `{"checks":["parse","dangling"]}`)
+	requireRefusal(t, registry, skyVault, "vault_problems", `{"checks":["spelling"]}`)
+	requireRefusal(t, registry, skyVault, "vault_problems", `{"checks":["parse","spelling"]}`)
 }
 
 // getArrangeToolNames returns the note_list group: the tools that list, title and resolve notes, list vaults and check problems.

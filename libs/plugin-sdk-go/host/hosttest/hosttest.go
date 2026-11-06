@@ -36,6 +36,7 @@ type Vault struct {
 	scanned    [][]string
 	watches    []chan host.Change
 	unknown    bool
+	isMissing  bool
 	state      host.IndexState
 	moves      []chan struct{}
 	folder     *folder
@@ -91,6 +92,8 @@ func newVault(v domain.Vault, files store) *Vault {
 type world struct {
 	mu      sync.Mutex
 	members []*Vault
+	// opened is the vault OpenVault last opened, nil before any.
+	opened *Vault
 }
 
 // Vault is the vault as the host names it: its identity, its name and where it is.
@@ -426,10 +429,14 @@ func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedL
 	if err := v.gate(ctx); err != nil {
 		return nil, err
 	}
-	notes := v.parsed()
+	return v.getBacklinks(v.parsed(), to), nil
+}
+
+// getBacklinks is the links of the notes that reach the note at to. The caller holds the lock.
+func (v *Vault) getBacklinks(notes map[string]domain.Note, to string) []domain.ResolvedLink {
 	target, ok := notes[to]
 	if !ok {
-		return nil, nil
+		return nil
 	}
 	base := notesdomain.FoldName(domain.Basename(to))
 	var out []domain.ResolvedLink
@@ -447,7 +454,7 @@ func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedL
 			}
 		}
 	}
-	return out, nil
+	return out
 }
 
 // ResolveLinks answers each written link by the links the note holds whose target is written so.

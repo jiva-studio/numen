@@ -7,6 +7,6 @@
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": { "category": "agents" },
-  "permissions": ["vault:read", "vault:write", "index:read"],
+  "permissions": ["vault:read", "vault:write", "vault:manage", "index:read"],
   "backend": { "entrypoint": "bin/agents-tools-vault" }
 }

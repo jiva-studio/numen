@@ -34,6 +34,7 @@ type Vault struct {
 	Connections noteport.ConnectionOperations
 	// Problems answers what parsing turned up. Without it nothing is.
 	Problems problemport.ProblemQueries
+	Arranger Arranger
 	Stores   pluginport.PluginStores
 	Cache    pluginport.PluginCache
 	Watcher  vaultport.VaultWatcher

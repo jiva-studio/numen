@@ -1,0 +1,195 @@
+package hostendpoint
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io/fs"
+	"path"
+	"strings"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
+	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+)
+
+// batchLimit is the most notes one call moves or removes.
+const batchLimit = 50
+
+var errBatchTooLarge = fmt.Errorf("a call names at most %d notes", batchLimit)
+
+// getNoteFailure is the error code of a note that was not changed, and false for an error that is
+// not about the note.
+func getNoteFailure(err error) (v1.ErrorCode, bool) {
+	if code, ok := wire.GetErrorCode(err); ok {
+		return code, true
+	}
+	if errors.Is(err, fs.ErrNotExist) {
+		return v1.ErrorCode_ERROR_CODE_MISSING, true
+	}
+	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
+}
+
+// answerNote splits the error of a change of one note into the failure of that note and the
+// failure of the call: a vault the host does not show and a cancelled call fail the call, and every
+// other error is the note's, UNSPECIFIED where the schema has no code for it.
+func answerNote(ctx context.Context, err error) (v1.ErrorCode, v1.HostVaultErrorCode, error) {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return 0, 0, connect.NewError(connect.CodeCanceled, ctxErr)
+	}
+	if errors.Is(err, hostvault.ErrNoVault) {
+		return 0, noVault, nil
+	}
+	failure, _ := getNoteFailure(err)
+	return failure, 0, nil
+}
+
+func writeMove(m domain.MoveResult) *v1.MoveResult {
+	if !m.IsMoved {
+		return &v1.MoveResult{From: m.From}
+	}
+	return &v1.MoveResult{From: m.From, To: m.To, Repaired: m.Repaired, Dangling: m.Dangling}
+}
+
+func checkBatch(paths []string) error {
+	if len(paths) > batchLimit {
+		return connect.NewError(connect.CodeInvalidArgument, errBatchTooLarge)
+	}
+	return nil
+}
+
+func (e *vaultEndpoint) GetVaultProblems(
+	ctx context.Context, req *connect.Request[v1.GetVaultProblemsRequest],
+) (*connect.Response[v1.GetVaultProblemsResponse], error) {
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	if err != nil {
+		return nil, err
+	}
+	if vault == nil {
+		return connect.NewResponse(&v1.GetVaultProblemsResponse{Error: noVault}), nil
+	}
+	checks := make([]domain.Check, 0, len(req.Msg.GetChecks()))
+	for _, one := range req.Msg.GetChecks() {
+		checks = append(checks, domain.Check(one))
+	}
+	checkNames, problems, err := vault.GetProblems(ctx, checks)
+	code, err := answer(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.GetVaultProblemsResponse{Error: code}), err
+	}
+	out := &v1.GetVaultProblemsResponse{
+		Checks:   make([]string, 0, len(checkNames)),
+		Problems: make([]*v1.HostVaultProblem, 0, len(problems)),
+	}
+	for _, one := range checkNames {
+		out.Checks = append(out.Checks, string(one))
+	}
+	for _, one := range problems {
+		out.Problems = append(out.Problems, &v1.HostVaultProblem{
+			Path: one.Path, Check: string(one.Kind), Detail: one.Detail,
+			TargetScheme: one.Target.Scheme, TargetValue: one.Target.Value, Candidates: one.Candidates,
+		})
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (e *vaultEndpoint) RenameNote(
+	ctx context.Context, req *connect.Request[v1.HostVaultServiceRenameNoteRequest],
+) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	if err != nil {
+		return nil, err
+	}
+	if vault == nil {
+		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: noVault}), nil
+	}
+	newPath, isFilenamed, move, err := vault.RenameNote(ctx, req.Msg.GetPath(), req.Msg.GetTitle())
+	// A note whose file landed under the new name is renamed, whatever came apart after it.
+	if err != nil && move == nil {
+		failure, code, err := answerNote(ctx, err)
+		if err != nil || code != 0 {
+			return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: code}), err
+		}
+		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Path: req.Msg.GetPath(), Failure: &failure}), nil
+	}
+	out := &v1.HostVaultServiceRenameNoteResponse{
+		Path: newPath, Title: strings.TrimSpace(req.Msg.GetTitle()), NameSource: v1.NameSource_NAME_SOURCE_FRONTMATTER,
+	}
+	if isFilenamed {
+		out.NameSource = v1.NameSource_NAME_SOURCE_FILENAME
+	}
+	if move != nil {
+		out.Move = writeMove(*move)
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (e *vaultEndpoint) MoveNotes(
+	ctx context.Context, req *connect.Request[v1.HostVaultServiceMoveNotesRequest],
+) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error) {
+	if err := checkBatch(req.Msg.GetPaths()); err != nil {
+		return nil, err
+	}
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	if err != nil {
+		return nil, err
+	}
+	if vault == nil {
+		return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: noVault}), nil
+	}
+	out := &v1.HostVaultServiceMoveNotesResponse{Moves: make([]*v1.HostNoteMove, 0, len(req.Msg.GetPaths()))}
+	for _, from := range req.Msg.GetPaths() {
+		if err := ctx.Err(); err != nil {
+			return nil, connect.NewError(connect.CodeCanceled, err)
+		}
+		move, err := vault.MoveNote(ctx, from, path.Join(req.Msg.GetFolder(), path.Base(from)))
+		entry := &v1.HostNoteMove{Move: writeMove(move)}
+		if err != nil && !move.IsMoved {
+			failure, code, err := answerNote(ctx, err)
+			if err != nil || code != 0 {
+				return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: code}), err
+			}
+			entry = &v1.HostNoteMove{Move: &v1.MoveResult{From: from}, Failure: &failure}
+		}
+		out.Moves = append(out.Moves, entry)
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (e *vaultEndpoint) RemoveNotes(
+	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveNotesRequest],
+) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error) {
+	if err := checkBatch(req.Msg.GetPaths()); err != nil {
+		return nil, err
+	}
+	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	if err != nil {
+		return nil, err
+	}
+	if vault == nil {
+		return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: noVault}), nil
+	}
+	out := &v1.HostVaultServiceRemoveNotesResponse{Removals: make([]*v1.HostNoteRemoval, 0, len(req.Msg.GetPaths()))}
+	for _, target := range req.Msg.GetPaths() {
+		if err := ctx.Err(); err != nil {
+			return nil, connect.NewError(connect.CodeCanceled, err)
+		}
+		trashPath, brokenLinks, err := vault.RemoveNote(ctx, target)
+		entry := &v1.HostNoteRemoval{Path: target, TrashPath: trashPath, BrokenLinks: brokenLinks}
+		if err != nil && trashPath == "" {
+			failure, code, err := answerNote(ctx, err)
+			if err != nil || code != 0 {
+				return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: code}), err
+			}
+			entry = &v1.HostNoteRemoval{Path: target, Failure: &failure}
+		}
+		out.Removals = append(out.Removals, entry)
+	}
+	return connect.NewResponse(out), nil
+}

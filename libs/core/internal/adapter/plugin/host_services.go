@@ -72,6 +72,20 @@ func (h *Host) GetPluginWindow() pluginport.PluginWindow {
 	return h.window
 }
 
+// SetPluginVaultList is the list of vaults the plugins change. Nil is none.
+func (h *Host) SetPluginVaultList(list pluginport.PluginVaultList) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.vaultList = list
+}
+
+// GetPluginVaultList is the list of vaults the plugins change, or nil.
+func (h *Host) GetPluginVaultList() pluginport.PluginVaultList {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.vaultList
+}
+
 // SetCompleter sets what answers the completions plugins ask for. The host
 // endpoint starts serving when the first plugin launches after it is set.
 func (h *Host) SetCompleter(completer completionport.Completer) {
@@ -116,6 +130,7 @@ func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	endpoint.SetErrorHandler(h.reportError)
 	h.hostEndpoint = endpoint
 	return endpoint.GetPort(), nil
 }

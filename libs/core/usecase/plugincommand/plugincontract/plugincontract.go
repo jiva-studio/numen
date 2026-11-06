@@ -86,6 +86,8 @@ type (
 	PluginVaultLifecycle   = pluginport.PluginVaultLifecycle
 	PluginWindow           = pluginport.PluginWindow
 	PluginWindowHost       = pluginport.PluginWindowHost
+	PluginVaultList        = pluginport.PluginVaultList
+	PluginVaultListHost    = pluginport.PluginVaultListHost
 	PluginVaultReader      = pluginport.PluginVaultReader
 	PluginVaultStore       = pluginport.PluginVaultStore
 	PluginVaultWriter      = pluginport.PluginVaultWriter
@@ -117,6 +119,7 @@ const (
 	PermissionNetworkOutbound   = pluginport.PermissionNetworkOutbound
 	PermissionVaultRead         = pluginport.PermissionVaultRead
 	PermissionVaultWrite        = pluginport.PermissionVaultWrite
+	PermissionVaultManage       = pluginport.PermissionVaultManage
 	PermissionWindowFocus       = pluginport.PermissionWindowFocus
 	MaxEmbeddedBytes            = pluginport.MaxEmbeddedBytes
 	MaxEmbeddedTexts            = pluginport.MaxEmbeddedTexts
@@ -186,6 +189,7 @@ var (
 	ErrNoKeyStore             = pluginport.ErrNoKeyStore
 	ErrNoProvisioner          = pluginport.ErrNoProvisioner
 	ErrNoWindow               = pluginport.ErrNoWindow
+	ErrVaultAsking            = pluginport.ErrVaultAsking
 	ErrInvalidFocus           = pluginport.ErrInvalidFocus
 	ErrPathTraversal          = pluginport.ErrPathTraversal
 	ErrPermissionDenied       = pluginport.ErrPermissionDenied

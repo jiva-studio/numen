@@ -10,3 +10,4 @@ Allows AI assistants in Numen to search your library, read notes and books, crea
 - **Reading and quoting sources**: Allows the assistant to open specific pages or timestamps so its answers include clickable links back to the original passage.
 - **Creating and organizing notes**: Lets the assistant draft new notes, update existing ones, and connect related notes with links.
 - **Viewing the link graph**: Helps the assistant see which notes link to each other and discover isolated or unlinked notes.
+- **Arranging notes and vaults**: Lets the assistant rename and move notes, move them to the vault's trash, change the links in their frontmatter, and add, rename, remove and open vaults.

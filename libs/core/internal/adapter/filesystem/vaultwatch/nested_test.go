@@ -24,9 +24,25 @@ func stopFileWatch(t *testing.T, hub *watchhub.Hub, path string) {
 	}
 }
 
+// getNestedFixture is the vault the tests of a watch inside a watched vault start from.
+func getNestedFixture() map[string]string {
+	return map[string]string{"Note.md": "# Note\n", "settings/numen.json": "{}"}
+}
+
+// nextAfterFixture is the first batch that names a path the fixture did not write. The watch may
+// still report the files of the fixture being created, as a batch of its own.
+func nextAfterFixture(next func() []string) []string {
+	for {
+		got := next()
+		if slices.ContainsFunc(got, func(path string) bool { _, isFixture := getNestedFixture()[path]; return !isFixture }) {
+			return got
+		}
+	}
+}
+
 // A file followed inside the vault and let go leaves the vault followed.
 func TestAVaultIsFollowedAfterAWatchInsideItStops(t *testing.T) {
-	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n", "settings/numen.json": "{}"}, nil)
+	root := vaultfixture.CreateVault(t, getNestedFixture(), nil)
 	// The two watches go through one hub, as every watch of one container does.
 	hub := watchhub.NewHub()
 	next := watchVault(t, hub, root)
@@ -34,14 +50,14 @@ func TestAVaultIsFollowedAfterAWatchInsideItStops(t *testing.T) {
 	stopFileWatch(t, hub, filepath.Join(root, "settings", "numen.json"))
 	write(t, root, "Later.md", "# Later\n")
 
-	if got := next(); !slices.Contains(got, "Later.md") {
+	if got := nextAfterFixture(next); !slices.Contains(got, "Later.md") {
 		t.Errorf("reported %v", got)
 	}
 }
 
 // A file followed inside the vault before the vault was, and let go after, leaves the vault followed.
 func TestAVaultIsFollowedAfterAnEarlierWatchInsideItStops(t *testing.T) {
-	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n", "settings/numen.json": "{}"}, nil)
+	root := vaultfixture.CreateVault(t, getNestedFixture(), nil)
 	// The two watches go through one hub, as every watch of one container does.
 	hub := watchhub.NewHub()
 	ctx, stop := context.WithCancel(t.Context())
@@ -56,7 +72,7 @@ func TestAVaultIsFollowedAfterAnEarlierWatchInsideItStops(t *testing.T) {
 	}
 	write(t, root, "Later.md", "# Later\n")
 
-	if got := next(); !slices.Contains(got, "Later.md") {
+	if got := nextAfterFixture(next); !slices.Contains(got, "Later.md") {
 		t.Errorf("reported %v", got)
 	}
 }

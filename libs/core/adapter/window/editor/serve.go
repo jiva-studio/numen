@@ -401,11 +401,33 @@ type shutdownState struct {
 	mu        sync.Mutex
 	isBusy    bool
 	isClosing bool
+	// decision is the running decision of a plugin to open a vault. A close, a quit or a change of
+	// vault cancels it and waits for it to end.
+	decision *pluginDecision
 }
 
-// tryBegin starts a flush, or returns the reason one cannot start.
+// pluginDecision is a plugin's decision to open a vault, as a flush of the person cancels it.
+type pluginDecision struct {
+	cancel context.CancelCauseFunc
+	// end closes when the decision ends.
+	end chan struct{}
+}
+
+// errPersonFirst is the cause a plugin's decision is cancelled with when the person closes the window,
+// quits or changes its vault.
+var errPersonFirst = errors.New("the person closed the window or changed its vault")
+
+// tryBegin starts a flush, or returns the reason one cannot start. A running decision of a plugin is
+// cancelled and waited for first.
 func (s *shutdownState) tryBegin() error {
 	s.mu.Lock()
+	for s.decision != nil {
+		current := s.decision
+		s.mu.Unlock()
+		current.cancel(errPersonFirst)
+		<-current.end
+		s.mu.Lock()
+	}
 	defer s.mu.Unlock()
 
 	switch {
@@ -416,6 +438,28 @@ func (s *shutdownState) tryBegin() error {
 	}
 	s.isBusy = true
 	return nil
+}
+
+// tryBeginDecision starts a plugin's decision, which a tryBegin cancels through cancel, and returns
+// the function that ends it.
+func (s *shutdownState) tryBeginDecision(cancel context.CancelCauseFunc) (func(), error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	switch {
+	case s.isClosing:
+		return nil, errWindowClosing
+	case s.isBusy:
+		return nil, errShutdownInProgress
+	}
+	decision := &pluginDecision{cancel: cancel, end: make(chan struct{})}
+	s.isBusy, s.decision = true, decision
+	return func() {
+		s.mu.Lock()
+		s.isBusy, s.decision = false, nil
+		s.mu.Unlock()
+		close(decision.end)
+	}, nil
 }
 
 // isClosed is whether the window has closed.

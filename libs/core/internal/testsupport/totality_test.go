@@ -29,6 +29,7 @@ func getWalked() map[protoreflect.FullName]string {
 		"numen.v1.HostSearchErrorCode":    "plugin-sdk-go/host: read by readSearchError",
 		"numen.v1.HostStoreErrorCode":     "plugin-sdk-go/host: read by readStoreError",
 		"numen.v1.HostVaultErrorCode":     "plugin-sdk-go/host: read by fail",
+		"numen.v1.HostWindowErrorCode":    "plugin-sdk-go/host: read by readWindowError",
 		"numen.v1.DependencyKind":         "internal/adapter/plugin: walked by TestDependencyKindsRoundTripTheWire",
 		"numen.v1.DependencyState":        "internal/adapter/plugin: walked by TestDependencyStatesAreWrittenToTheWire",
 		"numen.v1.Mode":                   "internal/adapterlib/wire: round trip through ConvertModeFromWire and ConvertModeToWire",

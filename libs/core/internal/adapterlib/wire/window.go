@@ -241,6 +241,10 @@ func (w *Window) RequestFlush(ctx context.Context) bool {
 	return !request.isPending() && w.clients.getRunning() == request
 }
 
+// IsFlushOpen reports whether a request is running: one that waits for its clients, or for a
+// client's question to be answered.
+func (w *Window) IsFlushOpen() bool { return w.clients.getRunning() != nil }
+
 // WaitForFlush waits for the running request to end with every client written.
 func (w *Window) WaitForFlush(ctx context.Context) bool {
 	request := w.clients.getRunning()

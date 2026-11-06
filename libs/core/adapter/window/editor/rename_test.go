@@ -1664,3 +1664,31 @@ func TestResolveAddressesRejectsAVaultTheWindowDoesNotShow(t *testing.T) {
 		t.Errorf("got %v, want invalid argument", err)
 	}
 }
+
+func TestRenamingATitledNoteOntoATakenNameReturnsTheErrorAndWritesNothing(t *testing.T) {
+	const old = "---\ntitle: Old\n---\n\nA measure.\n"
+	f := openWindow(t, nil, map[string]string{
+		"Old.md":     old,
+		"Entropy.md": "# Entropy\n",
+	})
+
+	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
+		Path: "Old.md", Title: "Entropy",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
+		t.Errorf("a name already taken was answered with %v", code)
+	}
+	if path := answer.Msg.GetPath(); path != "Old.md" {
+		t.Errorf("the note is filed at %q", path)
+	}
+	if now := fileAt(t, f.root, "Old.md"); now != old {
+		t.Errorf("the note was written although the rename failed:\n%s", now)
+	}
+	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {
+		t.Errorf("the note already there was written:\n%s", now)
+	}
+}
