@@ -64,3 +64,64 @@ describe('the ranges of a recording tab', () => {
     tab.unmount()
   })
 })
+
+describe('the place a recording tab saves when the window moves it', () => {
+  const mountSavingTab = (ranges: readonly TextRange[] | null) => {
+    const setup = createRecordings()
+    setup.state.cueTimes.set(22, 83_000)
+    setup.state.cueTimes.set(140, 66_000)
+    const { player } = createPlayer()
+    const savePlace = vi.fn()
+    const state = reactive({
+      path: 'talks/Ants.mp3',
+      selector: null as Record<string, unknown> | null,
+      ranges,
+      savePlace,
+    })
+    const tab = mount(RecordingTab, {
+      props: {
+        path: 'talks/Ants.mp3',
+        state,
+        recordings: setup.recordings,
+        how: { audioPlayer: player, plays: () => true },
+      },
+      attachTo: document.body,
+    })
+    return { tab, state, savePlace }
+  }
+
+  it('is the time of the first range the window sets, saved as soon as it is reached', async () => {
+    const { tab, state, savePlace } = mountSavingTab(null)
+    await flush()
+    savePlace.mockClear()
+
+    state.ranges = [
+      { start: 140, end: 150 },
+      { start: 22, end: 30 },
+    ]
+    await flush()
+
+    expect(savePlace).toHaveBeenLastCalledWith({ t: [66, 66] })
+    tab.unmount()
+  })
+
+  it('is the time of the first range the tab opens with, saved before anything plays', async () => {
+    const { tab, savePlace } = mountSavingTab([{ start: 22, end: 30 }])
+    await flush()
+
+    expect(savePlace).toHaveBeenLastCalledWith({ t: [83, 83] })
+    tab.unmount()
+  })
+
+  it('is the time a selector the window sets names, saved as soon as playback goes there', async () => {
+    const { tab, state, savePlace } = mountSavingTab(null)
+    await flush()
+    savePlace.mockClear()
+
+    state.selector = { t: [125, 125] }
+    await flush()
+
+    expect(savePlace).toHaveBeenLastCalledWith({ t: [125, 125] })
+    tab.unmount()
+  })
+})

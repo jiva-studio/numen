@@ -225,9 +225,27 @@ describe('a stretch of the book over a run of several nodes', () => {
     expect(rangesOver(getRuns(paper), [{ start: 12, end: 22 }])).toStrictEqual([])
   })
 
-  it('is left out where it ends before every run it could begin in', () => {
+  it('begins at the first run where it begins in an earlier document and ends in this one', () => {
     const paper = createMarkupPaper('<p data-offset="5">Один</p>')
 
-    expect(rangesOver(getRuns(paper), [{ start: 0, end: 8 }])).toStrictEqual([])
+    const [range] = rangesOver(getRuns(paper), [{ start: 0, end: 9 }])
+
+    expect(range?.toString()).toBe('Од')
+  })
+
+  it('ends with the last run where it begins in this document and ends in a later one', () => {
+    const paper = createMarkupPaper(TWO)
+
+    const [range] = rangesOver(getRuns(paper), [{ start: 4, end: 400 }])
+
+    expect(range?.toString()).toBe('индва')
+  })
+
+  it('covers every run where it begins in an earlier document and ends in a later one', () => {
+    const paper = createMarkupPaper('<p data-offset="40">Один</p><p data-offset="48">два</p>')
+
+    const [range] = rangesOver(getRuns(paper), [{ start: 10, end: 400 }])
+
+    expect(range?.toString()).toBe('Одиндва')
   })
 })
