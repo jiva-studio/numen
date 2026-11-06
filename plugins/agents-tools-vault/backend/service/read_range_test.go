@@ -199,8 +199,8 @@ func TestFileReadMovesAStartInsideACharacterToTheNextCharacter(t *testing.T) {
 	if failure := l.call(t, "file_read", `{"path":"notes/Moor.txt","start":1,"length":5}`, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if out.Content != "l und" || out.Start != 2 || out.Length != 5 || out.Size != len("Öl und Ödland") {
-		t.Errorf("file_read from the middle of Ö gave %+v, want l und from 2 for 5 bytes of %d", out, len("Öl und Ödland"))
+	if out.Content != "l un" || out.Start != 2 || out.Length != 4 || out.Size != len("Öl und Ödland") {
+		t.Errorf("file_read from the middle of Ö gave %+v, want l un from 2 for 4 bytes of %d", out, len("Öl und Ödland"))
 	}
 }
 
