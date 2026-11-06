@@ -115,11 +115,17 @@ test.describe('The model of the OCR plugin', () => {
       .toMatchObject({ model: 'pp-ocrv5-cyrillic' })
 
     await runCommand(page, 'Recognise', /^Recognise text$/)
-    const passage = await waitForPassage(
-      page,
-      MOCK_RECOGNISED_WORDS,
-      'assets/regenerative-braking.pdf',
-    )
-    await expect(passage).toContainText(/kinetic energy/i)
+    // The mock recogniser names the recognition model it was opened with in the text it reads, and
+    // the vault keeps the recognition of an earlier test until this one replaces it.
+    await expect(async () => {
+      const passage = await waitForPassage(
+        page,
+        MOCK_RECOGNISED_WORDS,
+        'assets/regenerative-braking.pdf',
+        3_000,
+      )
+      await expect(passage).toContainText(/kinetic energy/i)
+      await expect(passage).toContainText('rec-pp-ocrv5-cyrillic', { timeout: 1_000 })
+    }).toPass({ timeout: 90_000 })
   })
 })

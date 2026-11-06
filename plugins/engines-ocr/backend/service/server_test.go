@@ -403,6 +403,57 @@ func TestTheReplacingCommandRecognisesOverATextLayer(t *testing.T) {
 	}
 }
 
+func TestRecogniseOverAPartialTextLayerReportsTheRecognisedAndTheTextLayerPageCounts(t *testing.T) {
+	v := hosttest.New("Physics")
+	raw, err := os.ReadFile("../document/testdata/mixed.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	v.File("books/mixed.pdf", string(raw))
+	texts := hosttest.NewTexts("Physics", PluginID)
+	texts.SetStore(PluginID, v.Store())
+	texts.File("books/mixed.pdf", raw)
+	plugin := newCommandService(t, v, texts)
+
+	answer := plugin.runCommand(t, "recognition.create", "books/mixed.pdf")
+	const want = "recognised 2 pages of books/mixed.pdf and kept the text layer of 1 page"
+	if answer.Error != "" || answer.Message != want || plugin.opens != 1 {
+		t.Errorf("Recognise answered %+v, opened the recogniser %d times; want %q", answer, plugin.opens, want)
+	}
+	listing, err := texts.ListVersions(t.Context(), "books/mixed.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	isLive := false
+	for _, version := range listing.Versions {
+		isLive = isLive || (version.GetID() == listing.Live && version.Key == recognition.VersionKey)
+	}
+	if !isLive {
+		t.Errorf("the live version of books/mixed.pdf is %q in %+v, want the recognition", listing.Live, listing.Versions)
+	}
+}
+
+func TestTheMockRecogniserReadsTheModelOfTheSettings(t *testing.T) {
+	t.Setenv(EnvMockML, "true")
+	cfg := engine.Defaults()
+	files, ok := engine.FindRecognisers("pp-ocrv5-cyrillic")
+	if !ok {
+		t.Fatal("pp-ocrv5-cyrillic is not a model the engine runs")
+	}
+	cfg.Recognise.Files = files
+	opened, err := newEngineOpener(engine.NewLibrary())(t.Context(), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := opened.GetRecognitionModel().Recogniser; got != "rec-pp-ocrv5-cyrillic" {
+		t.Errorf("the mock records the recognition as read with %q, want rec-pp-ocrv5-cyrillic", got)
+	}
+	blocks, err := opened.Recognise(t.Context(), image.NewGray(image.Rect(0, 0, 200, 100)))
+	if err != nil || len(blocks) != 1 || !strings.Contains(blocks[0].Text, "rec-pp-ocrv5-cyrillic") {
+		t.Errorf("the mock read %+v (%v), want a text that names rec-pp-ocrv5-cyrillic", blocks, err)
+	}
+}
+
 // getRecogniserIDs is the ids of the recognition models a configuration opens.
 func getRecogniserIDs(cfg engine.Config) []string {
 	ids := make([]string, 0, len(cfg.Recognise.Files))

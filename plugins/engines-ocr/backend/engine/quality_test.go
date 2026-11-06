@@ -14,12 +14,22 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
-// getUnicodeFonts lists fonts that draw Latin, Cyrillic, polytonic Greek and Chinese in one file.
+// envFont names a TrueType font that draws Latin, Cyrillic, polytonic Greek and Chinese in one file,
+// for a machine that has none of the files getUnicodeFonts lists.
+const envFont = "NUMEN_OCR_FONT"
+
+// getUnicodeFonts lists fonts that draw Latin, Cyrillic, polytonic Greek and Chinese in one file: the
+// one envFont names, then Arial Unicode where macOS and Microsoft Office install it.
 func getUnicodeFonts() []string {
-	return []string{
+	fonts := []string{
 		"/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
 		"/Library/Fonts/Arial Unicode.ttf",
+		`C:\Windows\Fonts\ARIALUNI.TTF`,
 	}
+	if path := os.Getenv(envFont); path != "" {
+		return append([]string{path}, fonts...)
+	}
+	return fonts
 }
 
 // openFace is the first of paths on this machine at the size of 12 pt print scanned at 300 dpi, the
@@ -41,7 +51,7 @@ func openFace(t *testing.T, paths []string) font.Face {
 		}
 		return face
 	}
-	t.Fatalf("no font that draws every script is on this machine: looked at %v", paths)
+	t.Skipf("no font that draws every script is on this machine: looked at %v; name one in %s", paths, envFont)
 	return nil
 }
 
@@ -155,5 +165,75 @@ func TestMultilingualReadsARussianLineInCyrillicAndAnEnglishLineInLatin(t *testi
 	}
 	if strings.Contains(text, "BHMMAHME") {
 		t.Errorf("the Russian line came back in Latin look-alikes: %q", text)
+	}
+}
+
+// readWords reads a page that prints line and fails for every word that is not returned as it is
+// printed and for any letter of the scripts in foreign.
+func readWords(t *testing.T, r *Recogniser, face font.Face, line string, words []string, foreign ...*unicode.RangeTable) {
+	t.Helper()
+	text := readPage(t, r, drawPage(face, line))
+	for _, word := range words {
+		if !strings.Contains(text, word) {
+			t.Errorf("%q came back as %q, without %q", line, text, word)
+		}
+	}
+	for _, script := range foreign {
+		if hasLetterOf(text, script) {
+			t.Errorf("%q came back as %q, with letters of another script", line, text)
+		}
+	}
+}
+
+func TestMultilingualKeepsTheCyrillicOfRussianLinesWithLatinLetters(t *testing.T) {
+	r := openMultilingual(t)
+	face := openFace(t, getUnicodeFonts())
+	for _, page := range []struct {
+		line  string
+		words []string
+	}{
+		{"Программа Numen читает PDF", []string{"Программа", "читает", "PDF"}},
+		{"Версия Python 3.12 вышла осенью", []string{"Версия", "3.12", "вышла", "осенью"}},
+		// Every letter of this line has a Latin look-alike.
+		{"сорок рек и сухое море", []string{"сорок", "рек", "сухое", "море"}},
+	} {
+		t.Run(page.line, func(t *testing.T) {
+			readWords(t, r, face, page.line, page.words, unicode.Greek, unicode.Han)
+		})
+	}
+}
+
+func TestMultilingualKeepsAGreekLineGreekAndAnEnglishLineLatin(t *testing.T) {
+	r := openMultilingual(t)
+	face := openFace(t, getUnicodeFonts())
+	for _, page := range []struct {
+		line  string
+		words []string
+	}{
+		{"Τα παιδιά παίζουν στον κήπο", []string{"παιδιά", "παίζουν", "κήπο"}},
+		{"TAKE HOME COMET", []string{"TAKE", "HOME", "COMET"}},
+		{"Caution: high voltage", []string{"Caution", "high", "voltage"}},
+	} {
+		t.Run(page.line, func(t *testing.T) {
+			readWords(t, r, face, page.line, page.words, unicode.Cyrillic)
+		})
+	}
+}
+
+// The Cyrillic model alone reads these lines as "Программа Нитен читает PDF" and "Версия Руthоn 3.12
+// вышла осенью": the Latin word of each comes from another model.
+func TestMultilingualKeepsTheLatinWordsOfRussianLines(t *testing.T) {
+	r := openMultilingual(t)
+	face := openFace(t, getUnicodeFonts())
+	for _, page := range []struct {
+		line  string
+		words []string
+	}{
+		{"Программа Numen читает PDF", []string{"Программа", "Numen", "читает", "PDF"}},
+		{"Версия Python 3.12 вышла осенью", []string{"Версия", "Python", "3.12", "вышла", "осенью"}},
+	} {
+		t.Run(page.line, func(t *testing.T) {
+			readWords(t, r, face, page.line, page.words, unicode.Greek, unicode.Han)
+		})
 	}
 }

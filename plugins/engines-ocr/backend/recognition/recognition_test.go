@@ -108,7 +108,8 @@ func (t textsOfVault) PutVersion(ctx context.Context, params host.TextPut) (doma
 	return t.Texts.PutVersion(ctx, params)
 }
 
-// scene is one vault holding a scan and a PDF with a text layer, and the plugin over it.
+// scene is one vault holding a scan, a PDF with a text layer and a PDF with a text layer on its first
+// page only, and the plugin over it.
 type scene struct {
 	vault      *hosttest.Vault
 	store      host.Store
@@ -137,7 +138,7 @@ func newScene(t *testing.T) *scene {
 	}
 	s.store = s.vault.Store()
 	s.texts.SetStore(pluginID, s.store)
-	for path, name := range map[string]string{"books/scan.pdf": "scan.pdf", "books/layer.pdf": "tiny.pdf"} {
+	for path, name := range map[string]string{"books/scan.pdf": "scan.pdf", "books/layer.pdf": "tiny.pdf", "books/mixed.pdf": "mixed.pdf"} {
 		raw := readFixture(t, name)
 		s.vault.File(path, raw)
 		s.texts.File(path, []byte(raw))
@@ -249,6 +250,54 @@ func TestRecogniseReplacesATextLayerWhenTheReplacementIsAskedFor(t *testing.T) {
 	}
 	if text := s.readLive(t, "books/layer.pdf"); text.Version().Key != recognition.VersionKey {
 		t.Errorf("the live version is %+v, want the recognition", text.Version())
+	}
+}
+
+// readSelectorPage is the page the selector of the text at offset places it on, counted from one.
+func readSelectorPage(t *testing.T, text domain.VersionText, offset int) int {
+	t.Helper()
+	var selector struct {
+		Page int `json:"page"`
+	}
+	if err := json.Unmarshal([]byte(text.GetSelector(offset)), &selector); err != nil {
+		t.Fatalf("the selector at %d of %q: %v", offset, text.Text, err)
+	}
+	return selector.Page
+}
+
+func TestRecogniseReadsThePagesWithoutATextLayerAndKeepsTheTextOfTheOthers(t *testing.T) {
+	for name, req := range map[string]recognition.Request{
+		"started by the host": {Path: "books/mixed.pdf"},
+		"started by the user": {Path: "books/mixed.pdf", IsUserStarted: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := newScene(t)
+
+			res, err := s.run.Recognise(t.Context(), req)
+			if err != nil || res.IsSkipped || res.HasTextLayer || res.IsEmpty || res.Pages != 3 {
+				t.Fatalf("a PDF with a text layer on its first page only: %+v (%v), want its three pages", res, err)
+			}
+			if got := s.recogniser.getPageCount(); got != 2 {
+				t.Errorf("%d pages were recognised, want the two without a text layer", got)
+			}
+			text := s.readLive(t, "books/mixed.pdf")
+			if text.Version().Key != recognition.VersionKey {
+				t.Fatalf("the live version is %+v, want the recognition", text.Version())
+			}
+			kept, recognised := strings.Index(text.Text, "Alpha beta gamma"), strings.Index(text.Text, "page one")
+			if kept < 0 || recognised < kept {
+				t.Fatalf("the text reads %q, want the text layer of page 1 and then the recognised pages", text.Text)
+			}
+			if got := readSelectorPage(t, text, kept); got != 1 {
+				t.Errorf("the kept text is placed on page %d, want page 1", got)
+			}
+			if got := readSelectorPage(t, text, recognised); got != 2 {
+				t.Errorf("the first recognised text is placed on page %d, want page 2", got)
+			}
+			if got := readSelectorPage(t, text, strings.LastIndex(text.Text, "page one")); got != 3 {
+				t.Errorf("the last recognised text is placed on page %d, want page 3", got)
+			}
+		})
 	}
 }
 

@@ -3,7 +3,10 @@ package engine
 import (
 	"errors"
 	"image"
+	"slices"
+	"strings"
 	"testing"
+	"unicode"
 
 	read "github.com/getcharzp/go-ocr"
 )
@@ -114,5 +117,106 @@ func TestAPageEveryRecogniserFailsOnIsAFailure(t *testing.T) {
 	broken := errors.New("the session is gone")
 	if _, err := recogniseOnePart(t, failingWith(broken), failingWith(broken)); !errors.Is(err, broken) {
 		t.Errorf("a page every recogniser failed on answered with %v", err)
+	}
+}
+
+// readLine is one recogniser's reading of a page that holds one line.
+func readLine(text string, score float32) func(image.Image) ([]read.RecResult, error) {
+	return readingOf(read.RecResult{Box: upperBox(), Text: text, Score: score})
+}
+
+// The four readings of each line are those of multilingual, in its order: Latin, Cyrillic, Greek,
+// PP-OCRv6 tiny. The Greek and tiny models read Latin, and they read Cyrillic as Latin, Greek or
+// Chinese look-alikes as confidently as the Cyrillic model reads it right, or more. The Cyrillic
+// model reads a Latin word of a Russian line as Cyrillic or as a word of both scripts.
+func TestEachLineKeepsTheReadingInTheScriptOfItsLetters(t *testing.T) {
+	for _, line := range []struct {
+		name  string
+		reads []func(image.Image) ([]read.RecResult, error)
+		// words are returned as they are printed, and no letter of foreign is returned.
+		words   []string
+		foreign []*unicode.RangeTable
+	}{
+		{
+			name: "a Russian line of letters Latin also has",
+			reads: []func(image.Image) ([]read.RecResult, error){
+				readLine("κ κ   pe", 0.781),
+				readLine("сорок рек и сухое море", 0.977),
+				readLine("copok pek i cyxoe mope", 0.990),
+				readLine("copok pek n cyxoe Mope", 0.920),
+			},
+			words:   []string{"сорок", "рек", "и", "сухое", "море"},
+			foreign: []*unicode.RangeTable{unicode.Latin, unicode.Greek},
+		},
+		{
+			name: "a Russian line with a Latin word",
+			reads: []func(image.Image) ([]read.RecResult, error){
+				readLine("Nporpamma Numen yntaet PDF", 0.700),
+				readLine("Программа Нитен читает PDF", 0.955),
+				readLine("ΠporpaMMa Numen 4uτaet PDF", 0.975),
+				readLine("NporpaMMa Numen 4uTaet PDF", 0.930),
+			},
+			words:   []string{"Программа", "читает", "PDF"},
+			foreign: []*unicode.RangeTable{unicode.Greek},
+		},
+		{
+			name: "a Russian line with a Latin word and a version",
+			reads: []func(image.Image) ([]read.RecResult, error){
+				readLine("Bepcna Python 3.12 Bblwna oceHblo", 0.720),
+				readLine("Версия Руthоn 3.12 вышла осенью", 0.950),
+				readLine("Bepcna Python 3.12 Bbl山na oceHb1o", 0.960),
+				readLine("Bepcna Python 3.12 Bbl山na oceHb1o", 0.965),
+			},
+			words:   []string{"Версия", "3.12", "вышла", "осенью"},
+			foreign: []*unicode.RangeTable{unicode.Han},
+		},
+		{
+			name: "an English line",
+			reads: []func(image.Image) ([]read.RecResult, error){
+				readLine("TAKE HOME COMET", 0.950),
+				readLine("ТАКЕ НОМЕ СОМЕТ", 0.930),
+				readLine("TAKE HOME COMET", 0.940),
+				readLine("TAKE HOME COMET", 0.945),
+			},
+			words:   []string{"TAKE", "HOME", "COMET"},
+			foreign: []*unicode.RangeTable{unicode.Cyrillic},
+		},
+		{
+			name: "an English line the Cyrillic model reads with look-alikes",
+			reads: []func(image.Image) ([]read.RecResult, error){
+				readLine("Caution: high voltage", 0.960),
+				readLine("Сaution: high vоltage", 0.990),
+				readLine("Caution: high voltage", 0.950),
+				readLine("Caution: high voltage", 0.955),
+			},
+			words:   []string{"Caution:", "high", "voltage"},
+			foreign: []*unicode.RangeTable{unicode.Cyrillic},
+		},
+		{
+			name: "a Greek line",
+			reads: []func(image.Image) ([]read.RecResult, error){
+				readLine("Ta(eec kai uuptiec", 0.800),
+				readLine("Гaзeec кai мypтиec", 0.850),
+				readLine("Γαζέες καὶ μυρτιὲς", 0.960),
+				readLine("Ta3eec kai uuptiec", 0.700),
+			},
+			words:   []string{"Γαζέες", "καὶ", "μυρτιὲς"},
+			foreign: []*unicode.RangeTable{unicode.Cyrillic, unicode.Latin},
+		},
+	} {
+		t.Run(line.name, func(t *testing.T) {
+			blocks, err := recogniseOnePart(t, line.reads...)
+			got := readText(t, blocks, err)
+			for _, word := range line.words {
+				if !slices.Contains(strings.Fields(got), word) {
+					t.Errorf("the line reads %q, without %q", got, word)
+				}
+			}
+			for _, script := range line.foreign {
+				if hasLetterOf(got, script) {
+					t.Errorf("the line reads %q, with letters of another script", got)
+				}
+			}
+		})
 	}
 }
