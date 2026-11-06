@@ -114,7 +114,7 @@ func (w pluginWindow) ActivateTab(ctx context.Context, id string) (domain.OpenTa
 			if err := ctx.Err(); err != nil {
 				return domain.OpenTabs{}, err
 			}
-			return w.state.GetOpenTabs(), nil
+			return domain.OpenTabs{}, fmt.Errorf("editor: activate tab %q: %w", id, pluginport.ErrTabNotShown)
 		}
 	}
 }

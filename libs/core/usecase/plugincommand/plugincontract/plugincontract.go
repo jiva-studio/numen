@@ -189,6 +189,7 @@ var (
 	ErrNoWindow               = pluginport.ErrNoWindow
 	ErrUnsavedChanges         = pluginport.ErrUnsavedChanges
 	ErrInvalidFocus           = pluginport.ErrInvalidFocus
+	ErrTabNotShown            = pluginport.ErrTabNotShown
 	ErrPathTraversal          = pluginport.ErrPathTraversal
 	ErrPermissionDenied       = pluginport.ErrPermissionDenied
 	ErrRangeInvalidBounds     = pluginport.ErrRangeInvalidBounds

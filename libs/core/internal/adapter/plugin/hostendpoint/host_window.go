@@ -46,6 +46,8 @@ func answerWindow(ctx context.Context, err error) (v1.HostWindowErrorCode, error
 		return v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW, nil
 	case errors.Is(err, fs.ErrNotExist):
 		return v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND, nil
+	case errors.Is(err, pluginport.ErrTabNotShown):
+		return 0, connect.NewError(connect.CodeDeadlineExceeded, err)
 	case errors.Is(err, pluginport.ErrInvalidFocus):
 		return 0, connect.NewError(connect.CodeInvalidArgument, err)
 	case ctx.Err() != nil:

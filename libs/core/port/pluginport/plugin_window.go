@@ -14,6 +14,9 @@ var (
 	// a passage that starts before the text or is empty, or too many passages. The error wraps it
 	// with the use case's message.
 	ErrInvalidFocus = errors.New("the place cannot be shown")
+	// ErrTabNotShown is what an ActivateTab call gets when the window does not report the tab active
+	// within the bound of the call. The error wraps it with the id of the tab.
+	ErrTabNotShown = errors.New("the window did not show the tab in time")
 )
 
 // PluginWindow is the main window of the vault, as the plugins that call the host move it and read
@@ -27,7 +30,8 @@ type PluginWindow interface {
 	// ReadOpenTabs is the tabs the window last reported, and the active one.
 	ReadOpenTabs(ctx context.Context) (domain.OpenTabs, error)
 	// ActivateTab makes the open tab with the id the active tab, and returns the open tabs as the
-	// window reports them afterwards. An id no open tab has is fs.ErrNotExist.
+	// window reports them afterwards. An id no open tab has is fs.ErrNotExist, and a tab the window
+	// does not report active in time is ErrTabNotShown.
 	ActivateTab(ctx context.Context, id string) (domain.OpenTabs, error)
 }
 
