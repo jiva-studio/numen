@@ -80,11 +80,9 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 	switch {
 	case err == nil:
 		return nil
-	case errors.Is(context.Cause(ctx), errUserFirst):
-		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, errUserFirst)
 	case ctx.Err() != nil:
 		l.state.Window.CancelFlush()
-		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, ctx.Err())
+		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, context.Cause(ctx))
 	case errors.Is(err, errAnswerPending):
 		l.state.Window.CancelFlush()
 		return fmt.Errorf("open vault %s: %w", id, pluginport.ErrUnsavedChanges)
