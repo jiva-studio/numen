@@ -245,6 +245,13 @@ func (w *Window) RequestFlush(ctx context.Context) bool {
 // client's question to be answered.
 func (w *Window) IsFlushOpen() bool { return w.clients.getRunning() != nil }
 
+// IsQuestionOpen reports whether the running request has a client awaiting a user decision with
+// its work unwritten.
+func (w *Window) IsQuestionOpen() bool {
+	request := w.clients.getRunning()
+	return request != nil && request.isPending() && !request.isWritten()
+}
+
 // WaitForFlush waits for the running request to end with every client written.
 func (w *Window) WaitForFlush(ctx context.Context) bool {
 	request := w.clients.getRunning()
@@ -365,6 +372,16 @@ type flushRequest struct {
 func (r *flushRequest) isPending() bool {
 	select {
 	case <-r.questionRaised:
+		return true
+	default:
+		return false
+	}
+}
+
+// isWritten reports whether every client has written its work.
+func (r *flushRequest) isWritten() bool {
+	select {
+	case <-r.allWritten:
 		return true
 	default:
 		return false

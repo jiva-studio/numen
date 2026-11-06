@@ -36,7 +36,7 @@ func getVaultsFailure(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING, true
 	case errors.Is(err, vaults.ErrUnknown), errors.Is(err, vaults.ErrNoName):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN, true
-	case errors.Is(err, pluginport.ErrVaultAsking):
+	case errors.Is(err, pluginport.ErrUnsavedChanges):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING, true
 	default:
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED, false
@@ -145,8 +145,8 @@ func (e *vaultEndpoint) RemoveVault(
 	return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Path: entry.Path}), nil
 }
 
-// OpenVault answers once the window has decided, before it changes vault: the change closes the
-// session of the calling plugin, so it runs under a context the end of the call does not cancel.
+// OpenVault answers once the window shows the vault or has rejected the open. A rejection for unsaved
+// changes answers ASKING with the window's message in detail.
 func (e *vaultEndpoint) OpenVault(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceOpenVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
@@ -159,18 +159,13 @@ func (e *vaultEndpoint) OpenVault(
 		failure, err := answerVaults(err)
 		return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Failure: failure}), err
 	}
-	swap, err := list.OpenVault(ctx, id)
+	openErr := list.OpenVault(ctx, id)
+	failure, err := answerVaults(openErr)
 	if err != nil {
-		failure, err := answerVaults(err)
-		return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Failure: failure}), err
+		return nil, err
 	}
-	isStarted := e.endpoint.background.start(ctx, func(ctx context.Context) {
-		if err := swap(ctx); err != nil {
-			e.endpoint.background.report(fmt.Errorf("open vault %s for a plugin: %w", id, err))
-		}
-	})
-	if !isStarted {
-		return nil, connect.NewError(connect.CodeUnavailable, errEndpointShutdown)
+	if failure != nil {
+		return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Failure: failure, Detail: openErr.Error()}), nil
 	}
 	return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{}), nil
 }

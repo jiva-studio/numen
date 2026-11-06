@@ -641,6 +641,8 @@ message HostVaultServiceOpenVaultRequest {
 message HostVaultServiceOpenVaultResponse {
   HostVaultErrorCode error = 1;
   optional VaultsErrorCode failure = 2;
+  // The message of the core when the open is rejected.
+  string detail = 3;
 }
 
 message ReadCacheRequest {
