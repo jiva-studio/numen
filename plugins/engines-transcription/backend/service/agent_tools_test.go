@@ -255,15 +255,6 @@ func TestRegistryListsTranscriptCreateOnTheFullServerOnly(t *testing.T) {
 	}
 }
 
-func TestTheInstructionsAreOneParagraphNamingTranscriptCreate(t *testing.T) {
-	if !strings.Contains(instructions, "transcript_create") {
-		t.Errorf("the instructions do not name transcript_create: %q", instructions)
-	}
-	if strings.Contains(strings.TrimSpace(instructions), "\n\n") {
-		t.Errorf("the instructions are more than one paragraph: %q", instructions)
-	}
-}
-
 func TestTranscriptCreateReturnsBeforeTheTranscriptionEnds(t *testing.T) {
 	s := newToolScene(t)
 

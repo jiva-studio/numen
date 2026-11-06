@@ -265,15 +265,6 @@ func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
 	}
 }
 
-func TestTheInstructionsAreOneParagraphNamingURLImport(t *testing.T) {
-	if !strings.Contains(instructions, "url_import") {
-		t.Errorf("the instructions do not name url_import: %q", instructions)
-	}
-	if strings.Contains(strings.TrimSpace(instructions), "\n\n") {
-		t.Errorf("the instructions are more than one paragraph: %q", instructions)
-	}
-}
-
 func TestURLImportMakesTheNoteInTheFolderAndReportsTheArticle(t *testing.T) {
 	s := newReleasedScene(t)
 

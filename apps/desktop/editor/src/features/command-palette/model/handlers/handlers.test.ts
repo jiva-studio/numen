@@ -505,7 +505,7 @@ describe('a note removed', () => {
 
     await carry(createInvocation('app:note.trash', front()), one.on)
 
-    expect(one.notices).toStrictEqual([words.errors.missing])
+    expect(one.notices).toStrictEqual([words.errors.notFound])
     expect(one.actions.at(-1)).toBe('remove physics/Ontology.md false')
   })
 
@@ -573,7 +573,7 @@ describe('several files removed at once', () => {
       'remove physics/Ontology.md false',
       'remove physics/Heat.pdf false',
     ])
-    expect(one.notices).toStrictEqual([words.errors.missing])
+    expect(one.notices).toStrictEqual([words.errors.notFound])
   })
 })
 
@@ -1042,7 +1042,7 @@ describe('what the voice says in which severity', () => {
 
     expect(pendingItem.severities).toStrictEqual(['warning'])
     expect(acquiredItem.severities).toStrictEqual(['error'])
-    expect(failingWindow.notices).toStrictEqual([words.errors.missing])
+    expect(failingWindow.notices).toStrictEqual([words.errors.notFound])
     expect(failingWindow.severities).toStrictEqual(['error'])
   })
 
