@@ -33,16 +33,16 @@ func (v *Vault) GetOpenedVault() (domain.Vault, bool) {
 }
 
 // GetVaultList lists the vaults GetVaults lists, each with whether its folder is gone.
-func (v *Vault) GetVaultList(ctx context.Context) ([]host.KnownVault, error) {
+func (v *Vault) GetVaultList(ctx context.Context) ([]host.VaultEntry, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gateList(ctx); err != nil {
 		return nil, err
 	}
-	out := []host.KnownVault{}
+	out := []host.VaultEntry{}
 	for _, member := range v.world.members {
 		if member.isShown {
-			out = append(out, host.KnownVault{Vault: member.vault, IsMissing: member.isMissing || member.reach() != nil})
+			out = append(out, host.VaultEntry{Vault: member.vault, IsMissing: member.isMissing || member.reach() != nil})
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })

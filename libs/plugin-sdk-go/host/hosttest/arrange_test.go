@@ -22,8 +22,8 @@ func TestRenameNoteWritesTheTitleKeyAndMovesTheFile(t *testing.T) {
 	if got.Path != "notes/New.md" || got.Title != "New" || got.IsFilenamed {
 		t.Errorf("got %+v", got)
 	}
-	if got.Moved == nil || got.Moved.From != "notes/Old.md" || got.Moved.To != "notes/New.md" || !got.Moved.IsMoved {
-		t.Errorf("got move %+v", got.Moved)
+	if got.Move == nil || got.Move.From != "notes/Old.md" || got.Move.To != "notes/New.md" || !got.Move.IsMoved {
+		t.Errorf("got move %+v", got.Move)
 	}
 	content, isThere := v.Content("notes/New.md")
 	if !isThere || !strings.Contains(content, "title: New") {
@@ -75,13 +75,13 @@ func TestMoveNotesReportsEachPathInOrder(t *testing.T) {
 	if len(got) != 3 {
 		t.Fatalf("got %d moves, want 3", len(got))
 	}
-	if got[0].Err != nil || got[0].Moved.To != "archive/a.md" || !got[0].Moved.IsMoved {
+	if got[0].Err != nil || got[0].Move.To != "archive/a.md" || !got[0].Move.IsMoved {
 		t.Errorf("got %+v", got[0])
 	}
-	if !errors.Is(got[1].Err, host.ErrNotExist) || got[1].Moved.From != "gone.md" || got[1].Moved.IsMoved {
+	if !errors.Is(got[1].Err, host.ErrNotExist) || got[1].Move.From != "gone.md" || got[1].Move.IsMoved {
 		t.Errorf("got %+v", got[1])
 	}
-	if !errors.Is(got[2].Err, host.ErrAlreadyExists) || got[2].Moved.From != "b.md" {
+	if !errors.Is(got[2].Err, host.ErrAlreadyExists) || got[2].Move.From != "b.md" {
 		t.Errorf("got %+v", got[2])
 	}
 	if content, _ := v.Content("archive/a.md"); content != "a" {
@@ -100,7 +100,7 @@ func TestRemoveNotesMovesTheNoteToTheTrashAndReportsDanglingLinks(t *testing.T) 
 		t.Fatal(err)
 	}
 
-	if got[0].Err != nil || got[0].Trashed != ".trash/Entropy.md" || !slices.Equal(got[0].Dangling, []string{"Notes.md"}) {
+	if got[0].Err != nil || got[0].TrashPath != ".trash/Entropy.md" || !slices.Equal(got[0].BrokenLinks, []string{"Notes.md"}) {
 		t.Errorf("got %+v", got[0])
 	}
 	if !errors.Is(got[1].Err, host.ErrNotANote) {
@@ -130,7 +130,7 @@ func TestGetProblemsRunsDanglingOnlyWhenNamed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !slices.Equal(byDefault.Ran, []string{"parse", "frontmatter", "ambiguous"}) || len(byDefault.Found) != 0 {
+	if !slices.Equal(byDefault.Checks, []string{"parse", "frontmatter", "ambiguous"}) || len(byDefault.Found) != 0 {
 		t.Errorf("got %+v", byDefault)
 	}
 	if len(named.Found) != 1 || named.Found[0].Path != "Notes.md" || named.Found[0].Target.Value != "Nowhere" {

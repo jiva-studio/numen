@@ -144,13 +144,14 @@ type PluginVaultLifecycle interface {
 type pluginVaultArranger interface {
 	// RenameNote returns the path of the note after the rename, whether its filename carries the
 	// title, and the move of its file, nil when the file kept its path.
-	RenameNote(ctx context.Context, path, title string) (to string, isFilenamed bool, moved *domain.MoveResult, err error)
+	RenameNote(ctx context.Context, path, title string) (newPath string, isFilenamed bool, move *domain.MoveResult, err error)
 	MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error)
 	// RemoveNote moves the note to the vault's trash and returns its path there and the notes whose
 	// links now resolve to nothing. A folder is ErrNotANote of the notes library.
-	RemoveNote(ctx context.Context, path string) (trashed string, dangling []string, err error)
-	// GetProblems runs the checks named, or every check that is not opt-in when none is named.
-	GetProblems(ctx context.Context, checks []domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
+	RemoveNote(ctx context.Context, path string) (trashPath string, brokenLinks []string, err error)
+	// GetProblems runs the checks named, or every check that is not opt-in when none is named, and
+	// returns the names of the checks the answer covers and what they found.
+	GetProblems(ctx context.Context, checks []domain.Check) (checkNames []domain.Check, problems []domain.VaultProblem, err error)
 }
 
 // PluginVault is the open vault as the host exposes it to a plugin: its files,

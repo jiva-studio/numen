@@ -6,37 +6,37 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
-// RenamedNote is a note after a rename: its path and title, whether its filename carries the title,
-// and the move of its file, nil when the file kept its path.
-type RenamedNote struct {
+// NoteRename is the outcome of renaming a note: its path and title, whether its filename carries
+// the title, and the move of its file, nil when the file kept its path.
+type NoteRename struct {
 	Path        string
 	Title       string
 	IsFilenamed bool
-	Moved       *domain.MoveResult
+	Move        *domain.MoveResult
 }
 
-// NoteMove is the outcome of moving one note. Moved.From is always set; Moved.To and Moved.IsMoved
+// NoteMove is the outcome of moving one note. Move.From is always set; Move.To and Move.IsMoved
 // only when the note moved. Err is why it did not: ErrNotExist, ErrNotANote, ErrAlreadyExists,
 // ErrStale, domain.ErrInvalidName or another error.
 type NoteMove struct {
-	Moved domain.MoveResult
-	Err   error
+	Move domain.MoveResult
+	Err  error
 }
 
 // NoteRemoval is the outcome of removing one note: where its file is in the trash and the notes whose
 // links now resolve to nothing. Err is why it was not removed: ErrNotExist, ErrNotANote for a folder
 // or a file that is not a note, or another error.
 type NoteRemoval struct {
-	Path     string
-	Trashed  string
-	Dangling []string
-	Err      error
+	Path        string
+	TrashPath   string
+	BrokenLinks []string
+	Err         error
 }
 
-// VaultProblems is what the checks of a vault found, and the names of the checks that ran.
+// VaultProblems is what the checks of a vault found, and the names of the checks the answer covers.
 type VaultProblems struct {
-	Ran   []string
-	Found []domain.VaultProblem
+	Checks []string
+	Found  []domain.VaultProblem
 }
 
 // NoteArranger renames, moves and removes the notes of a vault, with the links that stop resolving
@@ -44,7 +44,7 @@ type VaultProblems struct {
 // vault:read.
 type NoteArranger interface {
 	// RenameNote gives the note another title and moves its file to the filename of the title.
-	RenameNote(ctx context.Context, path, title string) (RenamedNote, error)
+	RenameNote(ctx context.Context, path, title string) (NoteRename, error)
 	// MoveNotes moves each note to the folder, keeping its filename. An empty folder is the vault root.
 	// The answer has one entry per path, in order; a note that fails does not stop the others.
 	MoveNotes(ctx context.Context, paths []string, folder string) ([]NoteMove, error)

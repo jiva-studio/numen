@@ -3153,8 +3153,8 @@ type GetVaultProblemsResponse struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Error    HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
 	Problems []*HostVaultProblem    `protobuf:"bytes,2,rep,name=problems,proto3" json:"problems,omitempty"`
-	// The checks that ran.
-	Ran           []string `protobuf:"bytes,3,rep,name=ran,proto3" json:"ran,omitempty"`
+	// The checks this answer covers.
+	Checks        []string `protobuf:"bytes,3,rep,name=checks,proto3" json:"checks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3203,9 +3203,9 @@ func (x *GetVaultProblemsResponse) GetProblems() []*HostVaultProblem {
 	return nil
 }
 
-func (x *GetVaultProblemsResponse) GetRan() []string {
+func (x *GetVaultProblemsResponse) GetChecks() []string {
 	if x != nil {
-		return x.Ran
+		return x.Checks
 	}
 	return nil
 }
@@ -3271,7 +3271,7 @@ type HostVaultServiceRenameNoteResponse struct {
 	// Where the title is kept: the frontmatter or the filename.
 	NameSource NameSource `protobuf:"varint,4,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
 	// Unset when the file kept its path.
-	Moved *MoveResult `protobuf:"bytes,5,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
+	Move *MoveResult `protobuf:"bytes,5,opt,name=move,proto3,oneof" json:"move,omitempty"`
 	// Why the note was not renamed: MISSING, NOT_A_NOTE, INVALID_NAME,
 	// ALREADY_EXISTS, STALE and the other per-note codes.
 	Failure       *ErrorCode `protobuf:"varint,6,opt,name=failure,proto3,enum=numen.v1.ErrorCode,oneof" json:"failure,omitempty"`
@@ -3337,9 +3337,9 @@ func (x *HostVaultServiceRenameNoteResponse) GetNameSource() NameSource {
 	return NameSource_NAME_SOURCE_UNSPECIFIED
 }
 
-func (x *HostVaultServiceRenameNoteResponse) GetMoved() *MoveResult {
+func (x *HostVaultServiceRenameNoteResponse) GetMove() *MoveResult {
 	if x != nil {
-		return x.Moved
+		return x.Move
 	}
 	return nil
 }
@@ -3409,7 +3409,7 @@ func (x *HostVaultServiceMoveNotesRequest) GetFolder() string {
 type HostNoteMove struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// From is always set; to only when the note moved.
-	Moved *MoveResult `protobuf:"bytes,1,opt,name=moved,proto3" json:"moved,omitempty"`
+	Move *MoveResult `protobuf:"bytes,1,opt,name=move,proto3" json:"move,omitempty"`
 	// Why this note did not move.
 	Failure       *ErrorCode `protobuf:"varint,2,opt,name=failure,proto3,enum=numen.v1.ErrorCode,oneof" json:"failure,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -3446,9 +3446,9 @@ func (*HostNoteMove) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{61}
 }
 
-func (x *HostNoteMove) GetMoved() *MoveResult {
+func (x *HostNoteMove) GetMove() *MoveResult {
 	if x != nil {
-		return x.Moved
+		return x.Move
 	}
 	return nil
 }
@@ -3563,9 +3563,9 @@ type HostNoteRemoval struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The path of the file in the trash.
-	Trashed string `protobuf:"bytes,2,opt,name=trashed,proto3" json:"trashed,omitempty"`
+	TrashPath string `protobuf:"bytes,2,opt,name=trash_path,json=trashPath,proto3" json:"trash_path,omitempty"`
 	// The notes whose links now resolve to nothing.
-	Dangling []string `protobuf:"bytes,3,rep,name=dangling,proto3" json:"dangling,omitempty"`
+	BrokenLinks []string `protobuf:"bytes,3,rep,name=broken_links,json=brokenLinks,proto3" json:"broken_links,omitempty"`
 	// Why this note was not removed: MISSING, or NOT_A_NOTE for a folder or a
 	// file that is not a note.
 	Failure       *ErrorCode `protobuf:"varint,4,opt,name=failure,proto3,enum=numen.v1.ErrorCode,oneof" json:"failure,omitempty"`
@@ -3610,16 +3610,16 @@ func (x *HostNoteRemoval) GetPath() string {
 	return ""
 }
 
-func (x *HostNoteRemoval) GetTrashed() string {
+func (x *HostNoteRemoval) GetTrashPath() string {
 	if x != nil {
-		return x.Trashed
+		return x.TrashPath
 	}
 	return ""
 }
 
-func (x *HostNoteRemoval) GetDangling() []string {
+func (x *HostNoteRemoval) GetBrokenLinks() []string {
 	if x != nil {
-		return x.Dangling
+		return x.BrokenLinks
 	}
 	return nil
 }
@@ -4602,30 +4602,30 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\ftarget_value\x18\x05 \x01(\tR\vtargetValue\x12\x1e\n" +
 	"\n" +
 	"candidates\x18\x06 \x03(\tR\n" +
-	"candidates\"\x98\x01\n" +
+	"candidates\"\x9e\x01\n" +
 	"\x18GetVaultProblemsResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x126\n" +
-	"\bproblems\x18\x02 \x03(\v2\x1a.numen.v1.HostVaultProblemR\bproblems\x12\x10\n" +
-	"\x03ran\x18\x03 \x03(\tR\x03ran\"M\n" +
+	"\bproblems\x18\x02 \x03(\v2\x1a.numen.v1.HostVaultProblemR\bproblems\x12\x16\n" +
+	"\x06checks\x18\x03 \x03(\tR\x06checks\"M\n" +
 	"!HostVaultServiceRenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xb4\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xb1\x02\n" +
 	"\"HostVaultServiceRenameNoteResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x125\n" +
 	"\vname_source\x18\x04 \x01(\x0e2\x14.numen.v1.NameSourceR\n" +
-	"nameSource\x12/\n" +
-	"\x05moved\x18\x05 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x122\n" +
-	"\afailure\x18\x06 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\afailure\x88\x01\x01B\b\n" +
-	"\x06_movedB\n" +
+	"nameSource\x12-\n" +
+	"\x04move\x18\x05 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x04move\x88\x01\x01\x122\n" +
+	"\afailure\x18\x06 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\afailure\x88\x01\x01B\a\n" +
+	"\x05_moveB\n" +
 	"\n" +
 	"\b_failure\"P\n" +
 	" HostVaultServiceMoveNotesRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\"z\n" +
-	"\fHostNoteMove\x12*\n" +
-	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultR\x05moved\x122\n" +
+	"\x06folder\x18\x02 \x01(\tR\x06folder\"x\n" +
+	"\fHostNoteMove\x12(\n" +
+	"\x04move\x18\x01 \x01(\v2\x14.numen.v1.MoveResultR\x04move\x122\n" +
 	"\afailure\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\afailure\x88\x01\x01B\n" +
 	"\n" +
 	"\b_failure\"\x85\x01\n" +
@@ -4633,11 +4633,12 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12,\n" +
 	"\x05moves\x18\x02 \x03(\v2\x16.numen.v1.HostNoteMoveR\x05moves\":\n" +
 	"\"HostVaultServiceRemoveNotesRequest\x12\x14\n" +
-	"\x05paths\x18\x01 \x03(\tR\x05paths\"\x9b\x01\n" +
+	"\x05paths\x18\x01 \x03(\tR\x05paths\"\xa7\x01\n" +
 	"\x0fHostNoteRemoval\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
-	"\atrashed\x18\x02 \x01(\tR\atrashed\x12\x1a\n" +
-	"\bdangling\x18\x03 \x03(\tR\bdangling\x122\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +
+	"\n" +
+	"trash_path\x18\x02 \x01(\tR\ttrashPath\x12!\n" +
+	"\fbroken_links\x18\x03 \x03(\tR\vbrokenLinks\x122\n" +
 	"\afailure\x18\x04 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\afailure\x88\x01\x01B\n" +
 	"\n" +
 	"\b_failure\"\x90\x01\n" +
@@ -4912,9 +4913,9 @@ var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	58,  // 44: numen.v1.GetVaultProblemsResponse.problems:type_name -> numen.v1.HostVaultProblem
 	0,   // 45: numen.v1.HostVaultServiceRenameNoteResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	88,  // 46: numen.v1.HostVaultServiceRenameNoteResponse.name_source:type_name -> numen.v1.NameSource
-	89,  // 47: numen.v1.HostVaultServiceRenameNoteResponse.moved:type_name -> numen.v1.MoveResult
+	89,  // 47: numen.v1.HostVaultServiceRenameNoteResponse.move:type_name -> numen.v1.MoveResult
 	90,  // 48: numen.v1.HostVaultServiceRenameNoteResponse.failure:type_name -> numen.v1.ErrorCode
-	89,  // 49: numen.v1.HostNoteMove.moved:type_name -> numen.v1.MoveResult
+	89,  // 49: numen.v1.HostNoteMove.move:type_name -> numen.v1.MoveResult
 	90,  // 50: numen.v1.HostNoteMove.failure:type_name -> numen.v1.ErrorCode
 	0,   // 51: numen.v1.HostVaultServiceMoveNotesResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	63,  // 52: numen.v1.HostVaultServiceMoveNotesResponse.moves:type_name -> numen.v1.HostNoteMove

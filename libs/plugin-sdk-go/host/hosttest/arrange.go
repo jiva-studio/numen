@@ -19,26 +19,26 @@ const trashDir = ".trash"
 // RenameNote sets the title key of the note's frontmatter, or leaves the note unwritten when it has no
 // title key and its filename can carry the title, and moves the file to the filename of the title in
 // its folder. It repairs no link.
-func (v *Vault) RenameNote(ctx context.Context, notePath, title string) (host.RenamedNote, error) {
+func (v *Vault) RenameNote(ctx context.Context, notePath, title string) (host.NoteRename, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.checkNote(ctx, notePath); err != nil {
-		return host.RenamedNote{}, err
+		return host.NoteRename{}, err
 	}
 	title = strings.TrimSpace(title)
 	name, exact, err := notesdomain.Filename(title)
 	if err != nil {
-		return host.RenamedNote{}, err
+		return host.NoteRename{}, err
 	}
 	target := path.Join(path.Dir(notePath), name+path.Ext(notePath))
 	if !strings.EqualFold(notePath, target) && v.isPresent(target) {
-		return host.RenamedNote{}, host.ErrAlreadyExists
+		return host.NoteRename{}, host.ErrAlreadyExists
 	}
 	isFilenamed, err := v.writeTitle(notePath, title, exact)
 	if err != nil {
-		return host.RenamedNote{}, err
+		return host.NoteRename{}, err
 	}
-	out := host.RenamedNote{Path: notePath, Title: title, IsFilenamed: isFilenamed}
+	out := host.NoteRename{Path: notePath, Title: title, IsFilenamed: isFilenamed}
 	if target == notePath {
 		return out, nil
 	}
@@ -46,7 +46,7 @@ func (v *Vault) RenameNote(ctx context.Context, notePath, title string) (host.Re
 		return out, err
 	}
 	out.Path = target
-	out.Moved = &domain.MoveResult{From: notePath, To: target, IsMoved: true}
+	out.Move = &domain.MoveResult{From: notePath, To: target, IsMoved: true}
 	return out, nil
 }
 
@@ -87,14 +87,14 @@ func (v *Vault) MoveNotes(ctx context.Context, paths []string, folder string) ([
 	}
 	out := make([]host.NoteMove, 0, len(paths))
 	for _, from := range paths {
-		one := host.NoteMove{Moved: domain.MoveResult{From: from}}
+		one := host.NoteMove{Move: domain.MoveResult{From: from}}
 		target := path.Join(folder, path.Base(from))
 		one.Err = v.checkFile(ctx, from)
 		if one.Err == nil && target != from {
 			one.Err = v.moveFile(from, target)
 		}
 		if one.Err == nil && target != from {
-			one.Moved.To, one.Moved.IsMoved = target, true
+			one.Move.To, one.Move.IsMoved = target, true
 		}
 		out = append(out, one)
 	}
@@ -114,7 +114,7 @@ func (v *Vault) RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRem
 		one := host.NoteRemoval{Path: notePath}
 		one.Err = v.checkNote(ctx, notePath)
 		if one.Err == nil {
-			one.Trashed, one.Dangling, one.Err = v.trashNote(notePath)
+			one.TrashPath, one.BrokenLinks, one.Err = v.trashNote(notePath)
 		}
 		out = append(out, one)
 	}

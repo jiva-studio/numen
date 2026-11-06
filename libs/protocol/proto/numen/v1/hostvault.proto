@@ -530,8 +530,8 @@ message HostVaultProblem {
 message GetVaultProblemsResponse {
   HostVaultErrorCode error = 1;
   repeated HostVaultProblem problems = 2;
-  // The checks that ran.
-  repeated string ran = 3;
+  // The checks this answer covers.
+  repeated string checks = 3;
 }
 
 message HostVaultServiceRenameNoteRequest {
@@ -547,7 +547,7 @@ message HostVaultServiceRenameNoteResponse {
   // Where the title is kept: the frontmatter or the filename.
   NameSource name_source = 4;
   // Unset when the file kept its path.
-  optional MoveResult moved = 5;
+  optional MoveResult move = 5;
   // Why the note was not renamed: MISSING, NOT_A_NOTE, INVALID_NAME,
   // ALREADY_EXISTS, STALE and the other per-note codes.
   optional ErrorCode failure = 6;
@@ -563,7 +563,7 @@ message HostVaultServiceMoveNotesRequest {
 // HostNoteMove is the outcome of moving one note.
 message HostNoteMove {
   // From is always set; to only when the note moved.
-  MoveResult moved = 1;
+  MoveResult move = 1;
   // Why this note did not move.
   optional ErrorCode failure = 2;
 }
@@ -583,9 +583,9 @@ message HostVaultServiceRemoveNotesRequest {
 message HostNoteRemoval {
   string path = 1;
   // The path of the file in the trash.
-  string trashed = 2;
+  string trash_path = 2;
   // The notes whose links now resolve to nothing.
-  repeated string dangling = 3;
+  repeated string broken_links = 3;
   // Why this note was not removed: MISSING, or NOT_A_NOTE for a folder or a
   // file that is not a note.
   optional ErrorCode failure = 4;

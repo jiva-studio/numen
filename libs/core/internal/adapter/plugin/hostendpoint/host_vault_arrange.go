@@ -74,23 +74,23 @@ func (e *vaultEndpoint) GetVaultProblems(
 	if vault == nil {
 		return connect.NewResponse(&v1.GetVaultProblemsResponse{Error: noVault}), nil
 	}
-	named := make([]domain.Check, 0, len(req.Msg.GetChecks()))
+	checks := make([]domain.Check, 0, len(req.Msg.GetChecks()))
 	for _, one := range req.Msg.GetChecks() {
-		named = append(named, domain.Check(one))
+		checks = append(checks, domain.Check(one))
 	}
-	ran, found, err := vault.GetProblems(ctx, named)
+	checkNames, problems, err := vault.GetProblems(ctx, checks)
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.GetVaultProblemsResponse{Error: code}), err
 	}
 	out := &v1.GetVaultProblemsResponse{
-		Ran:      make([]string, 0, len(ran)),
-		Problems: make([]*v1.HostVaultProblem, 0, len(found)),
+		Checks:   make([]string, 0, len(checkNames)),
+		Problems: make([]*v1.HostVaultProblem, 0, len(problems)),
 	}
-	for _, one := range ran {
-		out.Ran = append(out.Ran, string(one))
+	for _, one := range checkNames {
+		out.Checks = append(out.Checks, string(one))
 	}
-	for _, one := range found {
+	for _, one := range problems {
 		out.Problems = append(out.Problems, &v1.HostVaultProblem{
 			Path: one.Path, Check: string(one.Kind), Detail: one.Detail,
 			TargetScheme: one.Target.Scheme, TargetValue: one.Target.Value, Candidates: one.Candidates,
@@ -109,9 +109,9 @@ func (e *vaultEndpoint) RenameNote(
 	if vault == nil {
 		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: noVault}), nil
 	}
-	to, isFilenamed, moved, err := vault.RenameNote(ctx, req.Msg.GetPath(), req.Msg.GetTitle())
+	newPath, isFilenamed, move, err := vault.RenameNote(ctx, req.Msg.GetPath(), req.Msg.GetTitle())
 	// A note whose file landed under the new name is renamed, whatever came apart after it.
-	if err != nil && moved == nil {
+	if err != nil && move == nil {
 		failure, code, err := answerNote(ctx, err)
 		if err != nil || code != 0 {
 			return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: code}), err
@@ -119,13 +119,13 @@ func (e *vaultEndpoint) RenameNote(
 		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Path: req.Msg.GetPath(), Failure: &failure}), nil
 	}
 	out := &v1.HostVaultServiceRenameNoteResponse{
-		Path: to, Title: strings.TrimSpace(req.Msg.GetTitle()), NameSource: v1.NameSource_NAME_SOURCE_FRONTMATTER,
+		Path: newPath, Title: strings.TrimSpace(req.Msg.GetTitle()), NameSource: v1.NameSource_NAME_SOURCE_FRONTMATTER,
 	}
 	if isFilenamed {
 		out.NameSource = v1.NameSource_NAME_SOURCE_FILENAME
 	}
-	if moved != nil {
-		out.Moved = writeMove(*moved)
+	if move != nil {
+		out.Move = writeMove(*move)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -148,14 +148,14 @@ func (e *vaultEndpoint) MoveNotes(
 		if err := ctx.Err(); err != nil {
 			return nil, connect.NewError(connect.CodeCanceled, err)
 		}
-		moved, err := vault.MoveNote(ctx, from, path.Join(req.Msg.GetFolder(), path.Base(from)))
-		entry := &v1.HostNoteMove{Moved: writeMove(moved)}
-		if err != nil && !moved.IsMoved {
+		move, err := vault.MoveNote(ctx, from, path.Join(req.Msg.GetFolder(), path.Base(from)))
+		entry := &v1.HostNoteMove{Move: writeMove(move)}
+		if err != nil && !move.IsMoved {
 			failure, code, err := answerNote(ctx, err)
 			if err != nil || code != 0 {
 				return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: code}), err
 			}
-			entry = &v1.HostNoteMove{Moved: &v1.MoveResult{From: from}, Failure: &failure}
+			entry = &v1.HostNoteMove{Move: &v1.MoveResult{From: from}, Failure: &failure}
 		}
 		out.Moves = append(out.Moves, entry)
 	}
@@ -180,9 +180,9 @@ func (e *vaultEndpoint) RemoveNotes(
 		if err := ctx.Err(); err != nil {
 			return nil, connect.NewError(connect.CodeCanceled, err)
 		}
-		trashed, dangling, err := vault.RemoveNote(ctx, target)
-		entry := &v1.HostNoteRemoval{Path: target, Trashed: trashed, Dangling: dangling}
-		if err != nil && trashed == "" {
+		trashPath, brokenLinks, err := vault.RemoveNote(ctx, target)
+		entry := &v1.HostNoteRemoval{Path: target, TrashPath: trashPath, BrokenLinks: brokenLinks}
+		if err != nil && trashPath == "" {
 			failure, code, err := answerNote(ctx, err)
 			if err != nil || code != 0 {
 				return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: code}), err

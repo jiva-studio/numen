@@ -26,8 +26,8 @@ var (
 	ErrVaultAsking = errors.New("host: a tab holds changes the person has to decide on")
 )
 
-// KnownVault is a vault on the installation's list, and whether nothing is at its folder.
-type KnownVault struct {
+// VaultEntry is a vault on the installation's list, and whether nothing is at its folder.
+type VaultEntry struct {
 	domain.Vault
 	IsMissing bool
 }
@@ -35,7 +35,7 @@ type KnownVault struct {
 // VaultList is the installation's list of vaults and the vault the window shows. GetVaultList needs
 // vault:read; the other calls need vault:manage. A vault that is not on the list is ErrUnknownVault.
 type VaultList interface {
-	GetVaultList(ctx context.Context) ([]KnownVault, error)
+	GetVaultList(ctx context.Context) ([]VaultEntry, error)
 	// AddVault adds the folder at the absolute root. An empty name takes the folder's name.
 	AddVault(ctx context.Context, root, name string) (domain.Vault, error)
 	RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error)

@@ -78,26 +78,26 @@ func readVault(v *v1.Vault) domain.Vault {
 	return domain.Vault{ID: domain.VaultID(v.GetId()), Name: v.GetName(), Path: v.GetPath()}
 }
 
-func (c *Client) RenameNote(ctx context.Context, path, title string) (RenamedNote, error) {
+func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename, error) {
 	res, err := c.rpc.RenameNote(ctx, request(c, &v1.HostVaultServiceRenameNoteRequest{Path: path, Title: title}))
 	if err != nil {
-		return RenamedNote{}, readError(err)
+		return NoteRename{}, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
-		return RenamedNote{}, err
+		return NoteRename{}, err
 	}
 	if err := failNote(res.Msg.Failure); err != nil {
-		return RenamedNote{}, fmt.Errorf("rename %s: %w", path, err)
+		return NoteRename{}, fmt.Errorf("rename %s: %w", path, err)
 	}
-	out := RenamedNote{
+	out := NoteRename{
 		Path:        res.Msg.GetPath(),
 		Title:       res.Msg.GetTitle(),
 		IsFilenamed: res.Msg.GetNameSource() == v1.NameSource_NAME_SOURCE_FILENAME,
-		Moved:       nil,
+		Move:        nil,
 	}
-	if res.Msg.Moved != nil {
-		moved := readMove(res.Msg.GetMoved())
-		out.Moved = &moved
+	if res.Msg.Move != nil {
+		move := readMove(res.Msg.GetMove())
+		out.Move = &move
 	}
 	return out, nil
 }
@@ -112,9 +112,9 @@ func (c *Client) MoveNotes(ctx context.Context, paths []string, folder string) (
 	}
 	out := make([]NoteMove, 0, len(res.Msg.GetMoves()))
 	for _, one := range res.Msg.GetMoves() {
-		move := NoteMove{Moved: readMove(one.GetMoved()), Err: failNote(one.Failure)}
+		move := NoteMove{Move: readMove(one.GetMove()), Err: failNote(one.Failure)}
 		if move.Err != nil {
-			move.Moved.To, move.Moved.IsMoved = "", false
+			move.Move.To, move.Move.IsMoved = "", false
 		}
 		out = append(out, move)
 	}
@@ -132,10 +132,10 @@ func (c *Client) RemoveNotes(ctx context.Context, paths []string) ([]NoteRemoval
 	out := make([]NoteRemoval, 0, len(res.Msg.GetRemovals()))
 	for _, one := range res.Msg.GetRemovals() {
 		out = append(out, NoteRemoval{
-			Path:     one.GetPath(),
-			Trashed:  one.GetTrashed(),
-			Dangling: one.GetDangling(),
-			Err:      failNote(one.Failure),
+			Path:        one.GetPath(),
+			TrashPath:   one.GetTrashPath(),
+			BrokenLinks: one.GetBrokenLinks(),
+			Err:         failNote(one.Failure),
 		})
 	}
 	return out, nil
@@ -159,10 +159,10 @@ func (c *Client) GetProblems(ctx context.Context, checks []string) (VaultProblem
 			Candidates: one.GetCandidates(),
 		})
 	}
-	return VaultProblems{Ran: res.Msg.GetRan(), Found: found}, nil
+	return VaultProblems{Checks: res.Msg.GetChecks(), Found: found}, nil
 }
 
-func (c *Client) GetVaultList(ctx context.Context) ([]KnownVault, error) {
+func (c *Client) GetVaultList(ctx context.Context) ([]VaultEntry, error) {
 	res, err := c.rpc.ListHostVaults(ctx, request(c, &v1.ListHostVaultsRequest{}))
 	if err != nil {
 		return nil, readError(err)
@@ -170,9 +170,9 @@ func (c *Client) GetVaultList(ctx context.Context) ([]KnownVault, error) {
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
 	}
-	out := make([]KnownVault, 0, len(res.Msg.GetVaults()))
+	out := make([]VaultEntry, 0, len(res.Msg.GetVaults()))
 	for _, one := range res.Msg.GetVaults() {
-		out = append(out, KnownVault{
+		out = append(out, VaultEntry{
 			Vault:     domain.Vault{ID: domain.VaultID(one.GetId()), Name: one.GetName(), Path: one.GetPath()},
 			IsMissing: one.GetIsMissing(),
 		})

@@ -37,9 +37,9 @@ func (v *Vault) GetProblems(ctx context.Context, checks []string) (host.VaultPro
 		}
 	}
 	notes := v.parsed()
-	out := host.VaultProblems{Ran: make([]string, 0, len(wanted))}
+	out := host.VaultProblems{Checks: make([]string, 0, len(wanted))}
 	for _, check := range wanted {
-		out.Ran = append(out.Ran, string(check))
+		out.Checks = append(out.Checks, string(check))
 		out.Found = append(out.Found, v.findProblems(notes, check)...)
 	}
 	return out, nil
