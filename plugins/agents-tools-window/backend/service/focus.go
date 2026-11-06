@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path"
 	"strings"
 
@@ -22,11 +21,10 @@ func addNoteFocus(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "note_focus",
 		Title: "Focus a note",
-		Description: "Make a note the one the person is looking at, so that the " +
-			"neighbourhood they see is drawn around it. Use it only where the person " +
-			"asked to be taken to a note. Talking about one is not asking, and neither " +
-			"is changing one: the person may be working somewhere else, and this moves " +
-			"them. It reads nothing back: `note_read` does that.",
+		Description: "Make a note the current note of the window; the neighbourhood view is drawn " +
+			"around it. Call it only when the user asked to be taken to a note. Talking about one is " +
+			"not asking, and neither is editing one: the call changes what the window shows. It " +
+			"returns no note content: `note_read` does that.",
 		Effect:  tools.ReadOnly,
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full},
@@ -38,7 +36,7 @@ func addNoteFocus(registry *tools.Registry, on Host) error {
 		if err != nil {
 			return NoteFocusOutput{}, err
 		}
-		return NoteFocusOutput{Focused: FocusedNote{Path: note.Path, Title: note.Title, ID: note.ID}}, nil
+		return NoteFocusOutput{Note: FocusedNote{Path: note.Path, Title: note.Title, ID: note.ID}}, nil
 	})
 }
 
@@ -46,13 +44,12 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "source_focus",
 		Title: "Focus passages of a file",
-		Description: "Open a file of the vault in front of the person: the window goes to the " +
-			"first passage and lights all of them. `library_search` gives the start and " +
-			"length of every passage it answers with; pass them unchanged. Where a question " +
-			"is answered in several places of one source, pass them all: the first is the one " +
-			"the person is taken to. No passages opens the file at its beginning. Use it only " +
-			"where the person asked to be shown something. Talking about a passage is not " +
-			"asking: the person may be working somewhere else, and this moves them.",
+		Description: "Open a file of the vault in the window, scroll to the first passage and " +
+			"highlight every passage. `library_search` returns the start and length of each " +
+			"passage; pass them unchanged. When several passages of one source answer a " +
+			"question, pass them all; the window scrolls to the first. An empty list opens the " +
+			"file at its beginning. Call it only when the user asked to see a passage. Talking " +
+			"about a passage is not asking: the call changes what the window shows.",
 		Effect:  tools.ReadOnly,
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full},
@@ -61,11 +58,10 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 		for _, passage := range in.Passages {
 			passages = append(passages, host.PassageSpan{Start: passage.Start, Length: passage.Length})
 		}
-		summary, err := focusFile(ctx, on, in.Path, passages)
-		if err != nil {
+		if err := focusFile(ctx, on, in.Path, passages); err != nil {
 			return SourceFocusOutput{}, err
 		}
-		return SourceFocusOutput{IsShown: true, Summary: summary}, nil
+		return SourceFocusOutput{Path: in.Path, HighlightCount: len(passages)}, nil
 	})
 }
 
@@ -73,9 +69,9 @@ func addWindowFocusTab(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "window_focus_tab",
 		Title: "Focus window tab",
-		Description: "Bring a tab of the person's window to the front, found by its tab ID, else " +
-			"its path, else its title. A path no tab holds opens that note or file. Use it only " +
-			"where the person asked to be taken there: this moves them.",
+		Description: "Make a tab of the window the active tab, found by its tab ID, else its path, " +
+			"else its title. A path no tab holds opens that note or file. Call it only when the " +
+			"user asked to open the tab: the call changes what the window shows.",
 		Effect:  tools.ReadOnly,
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full},
@@ -87,11 +83,7 @@ func addWindowFocusTab(registry *tools.Registry, on Host) error {
 		if err := focusPath(ctx, on, tab.Path); err != nil {
 			return WindowFocusTabOutput{}, err
 		}
-		return WindowFocusTabOutput{
-			Success: true,
-			Tab:     tab,
-			Message: fmt.Sprintf("focused tab %s", formatTabName(tab)),
-		}, nil
+		return WindowFocusTabOutput{Tab: tab}, nil
 	})
 }
 
@@ -99,8 +91,7 @@ func addWindowFocusTab(registry *tools.Registry, on Host) error {
 // at its beginning.
 func focusPath(ctx context.Context, on Host, filePath string) error {
 	if !isNotePath(filePath) {
-		_, err := focusFile(ctx, on, filePath, nil)
-		return err
+		return focusFile(ctx, on, filePath, nil)
 	}
 	if on.Window == nil {
 		return host.ErrNoWindow
@@ -109,10 +100,10 @@ func focusPath(ctx context.Context, on Host, filePath string) error {
 	return err
 }
 
-// focusFile opens the file in the window at the passages and returns what the person now looks at.
-func focusFile(ctx context.Context, on Host, path string, passages []host.PassageSpan) (string, error) {
+// focusFile opens the file in the window at the passages and highlights them.
+func focusFile(ctx context.Context, on Host, path string, passages []host.PassageSpan) error {
 	if on.Window == nil {
-		return "", host.ErrNoWindow
+		return host.ErrNoWindow
 	}
 	return on.Window.FocusPassages(ctx, path, passages)
 }
@@ -135,9 +126,9 @@ func findFocusTab(ctx context.Context, on Host, in WindowFocusTabInput) (TabInfo
 	case isFound && tab.Path == "":
 		return TabInfo{}, errTabWithoutPath
 	case isFound:
-		return TabInfo{ID: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, Where: "", IsActive: true}, nil
+		return TabInfo{ID: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, Location: "", IsActive: true}, nil
 	case in.Path != "":
-		return TabInfo{ID: "", Kind: "", Path: in.Path, Title: formatTitleFromPath(in.Path), Where: "", IsActive: true}, nil
+		return TabInfo{ID: "", Kind: "", Path: in.Path, Title: formatTitleFromPath(in.Path), Location: "", IsActive: true}, nil
 	}
 	return TabInfo{}, errTabNotFound
 }

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -40,9 +39,8 @@ func addWindowTabsGet(registry *tools.Registry, on Host, summaries *textSummarie
 	return tools.Add(registry, tools.Spec{
 		Name:  "window_tabs_get",
 		Title: "Get open window tabs",
-		Description: "Inspect currently open tabs in the user window, including their titles, " +
-			"paths, kinds, positions, and which tab is in front. Ask it before stating " +
-			"what is in front of the user.",
+		Description: "List the open tabs of the window with their titles, paths, kinds and locations, " +
+			"and the identifier of the active tab. Call it before describing the active tab.",
 		Effect:  tools.ReadOnly,
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full, tools.Reading},
@@ -58,7 +56,6 @@ func addWindowTabsGet(registry *tools.Registry, on Host, summaries *textSummarie
 					Kind:     "",
 					Path:     focus,
 					Title:    formatTitleFromPath(focus),
-					Where:    "",
 					IsActive: true,
 				}
 				tabs = []TabInfo{inferredTab}
@@ -68,7 +65,6 @@ func addWindowTabsGet(registry *tools.Registry, on Host, summaries *textSummarie
 		return WindowTabsGetOutput{
 			Tabs:     tabs,
 			ActiveID: activeID,
-			Summary:  formatTabsSummary(tabs, activeID),
 		}, nil
 	})
 }
@@ -94,7 +90,7 @@ func readWindowTabs(ctx context.Context, on Host, summaries *textSummaries) ([]T
 			Kind:     tab.Kind,
 			Path:     tab.Path,
 			Title:    tab.Title,
-			Where:    positions.readPosition(ctx, tab),
+			Location: positions.readPosition(ctx, tab),
 			IsActive: tab.ID != "" && tab.ID == activeID,
 		})
 	}
@@ -133,15 +129,12 @@ func addEditPreview(registry *tools.Registry, manager *WindowManager, vault host
 		}
 		manager.SavePreview(preview)
 
-		summary := fmt.Sprintf("proposed changes to %s: +%d, -%d lines", in.Path, additions, deletions)
 		return EditPreviewOutput{
 			PreviewID: previewID,
 			Path:      in.Path,
 			Diff:      diffText,
 			Additions: additions,
 			Deletions: deletions,
-			Status:    "preview_ready",
-			Summary:   summary,
 		}, nil
 	})
 }
@@ -160,51 +153,6 @@ func prepareDiff(ctx context.Context, in EditPreviewInput, vault host.Vault) (st
 		}
 	}
 	return CreateUnifiedDiff(in.Path, original, in.ProposedContent)
-}
-
-func formatTabsSummary(tabs []TabInfo, activeID string) string {
-	if len(tabs) == 0 {
-		return "the window has nothing open"
-	}
-	var activeTab *TabInfo
-	for i := range tabs {
-		if tabs[i].ID != "" && tabs[i].ID == activeID {
-			activeTab = &tabs[i]
-			break
-		}
-		if tabs[i].IsActive {
-			activeTab = &tabs[i]
-		}
-	}
-	if activeTab == nil {
-		activeTab = &tabs[0]
-	}
-	return describeTab(*activeTab)
-}
-
-func describeTab(t TabInfo) string {
-	name := formatTabName(t)
-	kind := t.Kind
-	if kind == "" {
-		kind = "tab"
-	}
-	if t.Title == "" && t.Path == "" {
-		return fmt.Sprintf("a tab of kind %q is in front of them", kind)
-	}
-	if t.Where != "" {
-		return fmt.Sprintf("the %s %s is in front of them, open at %s", kind, name, t.Where)
-	}
-	return fmt.Sprintf("the %s %s is in front of them", kind, name)
-}
-
-func formatTabName(t TabInfo) string {
-	switch {
-	case t.Title != "" && t.Path != "":
-		return fmt.Sprintf("%q at %s", t.Title, t.Path)
-	case t.Path != "":
-		return t.Path
-	}
-	return fmt.Sprintf("%q", t.Title)
 }
 
 func formatTitleFromPath(filePath string) string {

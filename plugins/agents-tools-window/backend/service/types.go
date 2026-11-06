@@ -6,11 +6,11 @@ import "time"
 // TabInfo describes an open tab in the user window.
 type TabInfo struct {
 	ID       string `json:"id" jsonschema:"the identifier of the tab"`
-	Kind     string `json:"kind" jsonschema:"what kind of tab it is (e.g. note, document, book, recording, plex)"`
-	Path     string `json:"path,omitempty" jsonschema:"the file it holds, by the path the vault files it under"`
-	Title    string `json:"title,omitempty" jsonschema:"what the tab is called, as the person reads it"`
-	Where    string `json:"where,omitempty" jsonschema:"where in that file the person stands"`
-	IsActive bool   `json:"active,omitempty" jsonschema:"whether this tab is the active one"`
+	Kind     string `json:"kind" jsonschema:"the kind of the tab (e.g. note, document, book, recording, plex)"`
+	Path     string `json:"path,omitempty" jsonschema:"the path of the file in the tab, relative to the vault folder"`
+	Title    string `json:"title,omitempty" jsonschema:"the tab title"`
+	Location string `json:"location,omitempty" jsonschema:"the location in the file, as the window reports it (e.g. page 4 of 120)"`
+	IsActive bool   `json:"isActive,omitempty" jsonschema:"true for the active tab"`
 }
 
 // WindowTabsGetInput represents the arguments for window_tabs_get.
@@ -18,9 +18,8 @@ type WindowTabsGetInput struct{}
 
 // WindowTabsGetOutput represents the result of inspecting open window tabs.
 type WindowTabsGetOutput struct {
-	Tabs     []TabInfo `json:"tabs"`
+	Tabs     []TabInfo `json:"tabs" jsonschema:"the open tabs, in window order"`
 	ActiveID string    `json:"activeId,omitempty" jsonschema:"the identifier of the active tab"`
-	Summary  string    `json:"summary" jsonschema:"the tab the person is looking at, in words to say back to them"`
 }
 
 // WindowFocusTabInput represents the arguments for window_focus_tab.
@@ -32,9 +31,7 @@ type WindowFocusTabInput struct {
 
 // WindowFocusTabOutput represents the result of focusing a tab.
 type WindowFocusTabOutput struct {
-	Success bool    `json:"success"`
-	Tab     TabInfo `json:"tab"`
-	Message string  `json:"message"`
+	Tab TabInfo `json:"tab" jsonschema:"the focused tab"`
 }
 
 // EditPreviewInput represents the arguments for edit_preview.
@@ -48,12 +45,10 @@ type EditPreviewInput struct {
 // EditPreviewOutput represents the result of generating an edit preview.
 type EditPreviewOutput struct {
 	PreviewID string `json:"previewId" jsonschema:"unique identifier for the proposed edit preview"`
-	Path      string `json:"path"`
+	Path      string `json:"path" jsonschema:"the path of the note, relative to the vault folder"`
 	Diff      string `json:"diff" jsonschema:"unified diff representation of the proposed changes"`
 	Additions int    `json:"additions" jsonschema:"number of lines added"`
 	Deletions int    `json:"deletions" jsonschema:"number of lines removed"`
-	Status    string `json:"status"`
-	Summary   string `json:"summary"`
 }
 
 // EditPreview stores a pending or proposed edit preview.
@@ -75,30 +70,30 @@ type NoteFocusInput struct {
 
 // FocusedNote is the note note_focus made the current one.
 type FocusedNote struct {
-	Path  string `json:"path"`
-	Title string `json:"title"`
-	ID    string `json:"id,omitempty" jsonschema:"the note's stable identifier, empty for a note written outside the application"`
+	Path  string `json:"path" jsonschema:"the path of the note, relative to the vault folder"`
+	Title string `json:"title" jsonschema:"the title of the note"`
+	ID    string `json:"id,omitempty" jsonschema:"the stable identifier of the note, empty for a note written outside the application"`
 }
 
 // NoteFocusOutput represents the result of note_focus.
 type NoteFocusOutput struct {
-	Focused FocusedNote `json:"focused"`
+	Note FocusedNote `json:"note" jsonschema:"the note now in focus"`
 }
 
 // Passage is a run of a file's text version in bytes, as library_search returns it.
 type Passage struct {
-	Start  int `json:"start" jsonschema:"where the passage begins in the file's text, in bytes, as library_search gives it"`
-	Length int `json:"length" jsonschema:"how long the passage is, in bytes, as library_search gives it"`
+	Start  int `json:"start" jsonschema:"the byte offset of the passage in the text of the file, as library_search returns it"`
+	Length int `json:"length" jsonschema:"the length of the passage in bytes, as library_search returns it"`
 }
 
 // SourceFocusInput represents the arguments for source_focus.
 type SourceFocusInput struct {
 	Path     string    `json:"path" jsonschema:"the file to open, by its path relative to the vault folder"`
-	Passages []Passage `json:"passages,omitempty" jsonschema:"the passages of the file to light; the window goes to the first, and none opens the file at its beginning"`
+	Passages []Passage `json:"passages,omitempty" jsonschema:"the passages of the file to highlight; the window scrolls to the first, and an empty list opens the file at its beginning"`
 }
 
 // SourceFocusOutput represents the result of source_focus.
 type SourceFocusOutput struct {
-	IsShown bool   `json:"shown"`
-	Summary string `json:"summary" jsonschema:"what the person is now looking at, in words to say back to them"`
+	Path           string `json:"path" jsonschema:"the path of the opened file, relative to the vault folder"`
+	HighlightCount int    `json:"highlightCount" jsonschema:"the number of highlighted passages"`
 }
