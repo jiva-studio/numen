@@ -299,3 +299,13 @@ func TestNoteRemoveOfMoreThanFiftyPathsIsRefused(t *testing.T) {
 		t.Errorf("got %d removals, want 50", len(out.Removals))
 	}
 }
+
+func TestNoteRenameOntoATakenFilenameAnswersTheTakenPathAndTheUnchangedNote(t *testing.T) {
+	_, registry := newGeologyVault(t)
+
+	text := getRefusalText(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":"Granite"}`)
+
+	if want := "note_rename: Rocks/Granite.md already exists; Rocks/Basalt.md is unchanged"; text != want {
+		t.Errorf("the refusal is %q, want %q", text, want)
+	}
+}

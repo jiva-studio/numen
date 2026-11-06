@@ -356,3 +356,17 @@ func TestVaultToolInstructionsContainNoNarrativeMarker(t *testing.T) {
 		}
 	}
 }
+
+// lowerCamelCase is the form of every property name of a tool schema.
+var lowerCamelCase = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
+
+func TestVaultToolSchemasNameEveryPropertyInLowerCamelCase(t *testing.T) {
+	_, withVaultList := newGeologyVault(t)
+	for _, registry := range []*tools.Registry{newLibrary(t).calls, withVaultList} {
+		visitEveryToolSchema(t, registry, func(tool, name string) {
+			if !lowerCamelCase.MatchString(name) {
+				t.Errorf("the schema of %s names the property %q, which is not lowerCamelCase", tool, name)
+			}
+		}, func(string, string) {})
+	}
+}

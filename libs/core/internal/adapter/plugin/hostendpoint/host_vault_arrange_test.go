@@ -898,3 +898,29 @@ func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
 		})
 	}
 }
+
+func TestAddVaultRefusedForOverlapAnswersOverlapsWithTheCoreSentenceAsTheDetail(t *testing.T) {
+	vaultList := domain.Vaults{{ID: "v1", Name: "Rivers", Path: "/vaults/Rivers"}}
+	for root, want := range map[string]string{
+		"/vaults/Rivers/Deltas": "/vaults/Rivers/Deltas is inside the vault Rivers; a vault cannot be inside another vault",
+		"/vaults":               "/vaults contains the vault Rivers; a vault cannot contain another vault",
+	} {
+		t.Run(root, func(t *testing.T) {
+			list := newRecordingList()
+			list.err = vaultList.CheckOverlap(root)
+			client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
+
+			res, err := client.AddVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: root}))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS {
+				t.Errorf("AddVault of %s answered %v, want error OVERLAPS", root, res.Msg)
+			}
+			if detail := res.Msg.GetDetail(); detail != want {
+				t.Errorf("AddVault of %s answered the detail %q, want %q", root, detail, want)
+			}
+		})
+	}
+}

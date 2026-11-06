@@ -348,3 +348,15 @@ func TestWindowToolInstructionsContainNoNarrativeMarker(t *testing.T) {
 		t.Fatal("no window tool lists instructions")
 	}
 }
+
+// lowerCamelCase is the form of every property name of a tool schema.
+var lowerCamelCase = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
+
+func TestWindowToolSchemasNameEveryPropertyInLowerCamelCase(t *testing.T) {
+	w := newWindowTools(t)
+	visitEveryToolSchema(t, w.calls, func(tool, name string) {
+		if !lowerCamelCase.MatchString(name) {
+			t.Errorf("the schema of %s names the property %q, which is not lowerCamelCase", tool, name)
+		}
+	}, func(string, string) {})
+}

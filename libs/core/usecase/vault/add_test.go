@@ -341,3 +341,49 @@ func TestAnOldLocationThatIsNotThisVaultAnyMoreIsAMove(t *testing.T) {
 		})
 	}
 }
+
+func TestAddOfAFolderInsideAVaultAnswersTheOverlapSentenceAlone(t *testing.T) {
+	t.Parallel()
+	add, _ := newAdd(t)
+	outer := folder(t, "outer")
+	if _, err := add.Execute(outer, "Rivers"); err != nil {
+		t.Fatal(err)
+	}
+	inner := filepath.Join(outer, "deltas")
+	if err := os.MkdirAll(inner, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := add.Execute(inner, "")
+
+	if !errors.Is(err, domain.ErrOverlaps) {
+		t.Fatalf("a folder inside a vault was answered %v, want ErrOverlaps", err)
+	}
+	named := vaultreader.Identity{}.GetName(inner)
+	if want := named + " is inside the vault Rivers; a vault cannot be inside another vault"; err.Error() != want {
+		t.Errorf("a folder inside a vault was answered %q, want %q", err.Error(), want)
+	}
+}
+
+func TestAddOfAFolderContainingAVaultAnswersTheOverlapSentenceAlone(t *testing.T) {
+	t.Parallel()
+	add, _ := newAdd(t)
+	outer := folder(t, "outer")
+	inner := filepath.Join(outer, "deltas")
+	if err := os.MkdirAll(inner, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := add.Execute(inner, "Deltas"); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := add.Execute(outer, "")
+
+	if !errors.Is(err, domain.ErrOverlaps) {
+		t.Fatalf("a folder containing a vault was answered %v, want ErrOverlaps", err)
+	}
+	named := vaultreader.Identity{}.GetName(outer)
+	if want := named + " contains the vault Deltas; a vault cannot contain another vault"; err.Error() != want {
+		t.Errorf("a folder containing a vault was answered %q, want %q", err.Error(), want)
+	}
+}

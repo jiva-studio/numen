@@ -401,3 +401,33 @@ func TestCardSectionRemoveRemovesTheSectionAtTheSectionIndex(t *testing.T) {
 	input := getSchemaProperties(t, getToolSchema(t, s.registry, "card_section_remove", false))
 	requireKeys(t, "the input schema of card_section_remove", input, []string{"sectionIndex"}, []string{"section"})
 }
+
+// lowerCamelCase is the form of every property name of a tool schema.
+var lowerCamelCase = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
+
+func TestCardToolSchemasNameEveryPropertyInLowerCamelCase(t *testing.T) {
+	s, _ := newSession(t, vault())
+	visitEveryToolSchema(t, s.registry, func(tool, name string) {
+		if !lowerCamelCase.MatchString(name) {
+			t.Errorf("the schema of %s names the property %q, which is not lowerCamelCase", tool, name)
+		}
+	}, func(string, string) {})
+}
+
+func TestCardDeckCreateAnswersThePathIDAndTitleKeys(t *testing.T) {
+	s, _ := newSession(t, vault())
+	answer := call[map[string]any](t, s, "card_deck_create", map[string]any{"title": "Terms", "folder": "decks"})
+	requireKeys(t, "the answer of card_deck_create", answer, []string{"path", "id", "title"}, []string{"Path", "ID", "Title"})
+	if answer["path"] != "decks/Terms.md" || answer["title"] != "Terms" {
+		t.Errorf("card_deck_create answered %v, want the path decks/Terms.md and the title Terms", answer)
+	}
+}
+
+func TestCardModelCreateAnswersThePathIDAndTitleKeys(t *testing.T) {
+	s, _ := newSession(t, vault())
+	answer := call[map[string]any](t, s, "card_model_create", map[string]any{"title": "Term", "fields": []string{"Word", "Meaning"}})
+	requireKeys(t, "the answer of card_model_create", answer, []string{"path", "id", "title"}, []string{"Path", "ID", "Title"})
+	if answer["path"] != "Term.md" || answer["title"] != "Term" {
+		t.Errorf("card_model_create answered %v, want the path Term.md and the title Term", answer)
+	}
+}

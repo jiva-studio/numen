@@ -94,3 +94,92 @@ func TestTheClientKeepsTheDetailOfARemovalEntryInItsError(t *testing.T) {
 		t.Errorf("the removal of Broken.md came back as %+v, want an error carrying %q", r, diskFull)
 	}
 }
+
+// getVaultsErrors is the sentinel each error code of a change of the list of vaults gives.
+func getVaultsErrors() map[v1.VaultsErrorCode]error {
+	return map[v1.VaultsErrorCode]error{
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   host.ErrVaultOverlaps,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: host.ErrVaultNameTaken,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    host.ErrVaultShowing,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: host.ErrLastVault,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  host.ErrUnknownVault,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: host.ErrVaultUnreadable,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       host.ErrVaultCopy,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:    host.ErrUnsavedChanges,
+	}
+}
+
+// changeVaults calls each change of the list of vaults on the client and returns its error by call.
+func changeVaults(t *testing.T, client *host.Client) map[string]error {
+	t.Helper()
+	ctx := t.Context()
+	_, addErr := client.AddVault(ctx, "/vaults/Seas", "")
+	_, renameErr := client.RenameVault(ctx, "v2", "Ponds")
+	_, removeErr := client.RemoveVault(ctx, "v2")
+	openErr := client.OpenVault(ctx, "v2")
+	return map[string]error{"AddVault": addErr, "RenameVault": renameErr, "RemoveVault": removeErr, "OpenVault": openErr}
+}
+
+func TestAVaultsErrorWithADetailHasTheDetailAsItsText(t *testing.T) {
+	const detail = "/vaults/Seas contains the vault Rivers; a vault cannot contain another vault"
+	for code, want := range getVaultsErrors() {
+		client := arrangingClient(t, &arranging{vaultsError: code, vaultsDetail: detail})
+		for call, err := range changeVaults(t, client) {
+			if !errors.Is(err, want) {
+				t.Errorf("%s refused with %s returned %v, want %v", call, code, err, want)
+			}
+			if err == nil || err.Error() != detail {
+				t.Errorf("%s refused with %s returned the text %q, want the detail %q alone", call, code, err, detail)
+			}
+		}
+	}
+}
+
+func TestAVaultsErrorWithNoDetailHasThePlainSentinelText(t *testing.T) {
+	for code, want := range getVaultsErrors() {
+		client := arrangingClient(t, &arranging{vaultsError: code})
+		for call, err := range changeVaults(t, client) {
+			if !errors.Is(err, want) {
+				t.Fatalf("%s refused with %s returned %v, want %v", call, code, err, want)
+			}
+			text := err.Error()
+			if text != want.Error() {
+				t.Errorf("%s refused with %s returned the text %q, want the text of the sentinel %q", call, code, text, want.Error())
+			}
+			for _, phrase := range []string{"host:", "add vault", "rename vault", "remove vault", "open vault"} {
+				if strings.Contains(text, phrase) {
+					t.Errorf("%s refused with %s returned the text %q, which contains %q", call, code, text, phrase)
+				}
+			}
+		}
+	}
+}
+
+// detailedRenaming is a host whose rename of a note is refused with a code and the core's text.
+type detailedRenaming struct {
+	arranging
+	code   v1.HostVaultErrorCode
+	detail string
+}
+
+func (a *detailedRenaming) RenameNote(
+	_ context.Context, req *connect.Request[v1.HostVaultServiceRenameNoteRequest],
+) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
+	return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: a.code, Path: req.Msg.GetPath(), Detail: a.detail}), nil
+}
+
+func TestANoteErrorWithADetailHasTheDetailAsItsText(t *testing.T) {
+	const detail = "Rivers/Donau.md already exists; Rivers/Danube.md is unchanged"
+	server := httptest.NewServer(handler(&detailedRenaming{code: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS, detail: detail}))
+	t.Cleanup(server.Close)
+	client := host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
+
+	_, err := client.RenameNote(t.Context(), "Rivers/Danube.md", "Donau")
+
+	if !errors.Is(err, host.ErrAlreadyExists) {
+		t.Errorf("the rename returned %v, want ErrAlreadyExists", err)
+	}
+	if err == nil || err.Error() != detail {
+		t.Errorf("the rename returned the text %q, want the detail %q alone", err, detail)
+	}
+}

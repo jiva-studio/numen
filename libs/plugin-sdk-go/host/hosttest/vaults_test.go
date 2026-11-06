@@ -94,3 +94,29 @@ func TestOpenVaultRecordsTheVault(t *testing.T) {
 		t.Errorf("got %v", err)
 	}
 }
+
+func TestAddVaultOfAFolderContainingAVaultAnswersTheCoreSentence(t *testing.T) {
+	physics := hosttest.New("Physics")
+
+	_, err := physics.AddVault(t.Context(), "/vaults", "")
+
+	if !errors.Is(err, host.ErrVaultOverlaps) {
+		t.Fatalf("AddVault of /vaults returned %v, want ErrVaultOverlaps", err)
+	}
+	if want := "/vaults contains the vault Physics; a vault cannot contain another vault"; err.Error() != want {
+		t.Errorf("AddVault of /vaults returned %q, want %q", err.Error(), want)
+	}
+}
+
+func TestAddVaultOfAFolderInsideAVaultAnswersTheCoreSentence(t *testing.T) {
+	physics := hosttest.New("Physics")
+
+	_, err := physics.AddVault(t.Context(), "/vaults/Physics/optics", "")
+
+	if !errors.Is(err, host.ErrVaultOverlaps) {
+		t.Fatalf("AddVault of /vaults/Physics/optics returned %v, want ErrVaultOverlaps", err)
+	}
+	if want := "/vaults/Physics/optics is inside the vault Physics; a vault cannot be inside another vault"; err.Error() != want {
+		t.Errorf("AddVault of /vaults/Physics/optics returned %q, want %q", err.Error(), want)
+	}
+}

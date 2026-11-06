@@ -259,3 +259,91 @@ func TestVaultListToolsWithoutAVaultListAreNotListed(t *testing.T) {
 		t.Error("the tool vault_list is not listed without a vault list")
 	}
 }
+
+func TestVaultAddOfAFolderInsideAVaultAnswersThePathAndTheVault(t *testing.T) {
+	_, _, registry := newTwoVaults(t)
+
+	text := getRefusalText(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
+
+	if want := "vault_add: /vaults/garden-vault/Seeds is inside the vault Kitchen Garden; a vault cannot be inside another vault"; text != want {
+		t.Errorf("the refusal is %q, want %q", text, want)
+	}
+}
+
+func TestVaultAddOfAFolderContainingAVaultAnswersThePathAndTheVault(t *testing.T) {
+	_, _, registry := newTwoVaults(t)
+	callTool(t, registry, geologyVault, "vault_add", `{"path":"/fields/meadow","name":"Meadow"}`)
+
+	text := getRefusalText(t, registry, geologyVault, "vault_add", `{"path":"/fields"}`)
+
+	if want := "vault_add: /fields contains the vault Meadow; a vault cannot contain another vault"; text != want {
+		t.Errorf("the refusal is %q, want %q", text, want)
+	}
+}
+
+func TestVaultOpenAndRemoveOfTheCurrentVaultAnswerItIsTheCurrentVault(t *testing.T) {
+	geology, _, registry := newTwoVaults(t)
+	for _, address := range []string{geologyVault, geology.Vault().Path} {
+		for _, name := range []string{"vault_open", "vault_remove"} {
+			text := getRefusalText(t, registry, geologyVault, name, fmt.Sprintf(`{"vault":%q}`, address))
+			if want := name + ": " + address + " is the current vault"; text != want {
+				t.Errorf("the refusal is %q, want %q", text, want)
+			}
+		}
+	}
+}
+
+// getFailingCalls is a call of each vault and note tool whose arguments make it fail: an unknown
+// vault, a missing note, an empty path and the like.
+func getFailingCalls() []struct{ name, arguments string } {
+	return []struct{ name, arguments string }{
+		{"vault_add", `{"path":""}`},
+		{"vault_add", `{"path":"/vaults/garden-vault/Seeds"}`},
+		{"vault_rename", `{"vault":"Desert","name":"Dunes"}`},
+		{"vault_rename", `{"vault":"garden-vault","name":"geology-vault"}`},
+		{"vault_rename", `{"vault":"garden-vault","name":""}`},
+		{"vault_remove", `{"vault":"Desert"}`},
+		{"vault_remove", `{"vault":""}`},
+		{"vault_remove", `{"vault":"geology-vault"}`},
+		{"vault_open", `{"vault":"Desert"}`},
+		{"vault_open", `{"vault":"geology-vault"}`},
+		{"vault_problems", `{"checks":["spelling"]}`},
+		{"note_read", `{"path":"Rocks/Obsidian.md"}`},
+		{"note_read", `{"path":""}`},
+		{"note_write", `{"path":"","content":"Pumice floats."}`},
+		{"note_headings", `{"path":"Rocks/Obsidian.md"}`},
+		{"note_list", `{"limit":-1}`},
+		{"note_resolve", `{"name":""}`},
+		{"note_rename", `{"path":"Rocks/Obsidian.md","title":"Glass"}`},
+		{"note_rename", `{"path":"","title":"Glass"}`},
+		{"note_rename", `{"path":"Rocks/Basalt.md","title":"Granite"}`},
+		{"note_move", `{"paths":[],"folder":"Archive"}`},
+		{"note_remove", `{"paths":[]}`},
+	}
+}
+
+func TestEveryVaultAndNoteToolErrorStartsWithTheToolNameOnceAndNamesNoInnerCall(t *testing.T) {
+	inner := []string{
+		"host:", "add vault", "rename vault", "remove vault", "open vault", "list vaults",
+		"move notes", "remove notes", "was not changed", "this call works on",
+	}
+	for _, c := range getFailingCalls() {
+		t.Run(c.name+" "+c.arguments, func(t *testing.T) {
+			_, _, registry := newTwoVaults(t)
+
+			text := getRefusalText(t, registry, geologyVault, c.name, c.arguments)
+
+			if !strings.HasPrefix(text, c.name+": ") {
+				t.Errorf("the error %q does not start with %q", text, c.name+": ")
+			}
+			if count := strings.Count(text, c.name); count != 1 {
+				t.Errorf("the error %q names %s %d times, want once", text, c.name, count)
+			}
+			for _, phrase := range inner {
+				if strings.Contains(text, phrase) {
+					t.Errorf("the error %q contains %q", text, phrase)
+				}
+			}
+		})
+	}
+}

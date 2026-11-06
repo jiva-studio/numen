@@ -244,3 +244,15 @@ func getToolSentences(listing tools.Listing, name string) []string {
 func isOneSentence(text string) bool {
 	return strings.TrimSpace(text) == text && strings.HasSuffix(text, ".") && !regexp.MustCompile(`[.!?]\s+\S`).MatchString(text)
 }
+
+// lowerCamelCase is the form of every property name of a tool schema.
+var lowerCamelCase = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
+
+func TestOCRToolSchemasNameEveryPropertyInLowerCamelCase(t *testing.T) {
+	s := newToolScene(t)
+	visitEveryToolSchema(t, s.registry, func(tool, name string) {
+		if !lowerCamelCase.MatchString(name) {
+			t.Errorf("the schema of %s names the property %q, which is not lowerCamelCase", tool, name)
+		}
+	}, func(string, string) {})
+}
