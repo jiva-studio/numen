@@ -5,6 +5,7 @@ import type {
   AgentHost,
   AgentProviderRegistration,
   AppInfo,
+  BackgroundTaskHost,
   BufferHost,
   CommandRegistration,
   CommandsHost,
@@ -173,6 +174,8 @@ export interface PluginHostDeps {
     message: string,
     severity: 'warning' | 'error',
   ) => void
+  /** The background work of the window, as every plugin reads and acts on it. */
+  readonly getBackgroundTasks?: () => BackgroundTaskHost | undefined
   /** Everything a plugin showed, taken away with the plugin. */
   readonly clearNotices?: (pluginId: string) => void
   /** The build the window is, as plugins read it from their context. */
@@ -248,6 +251,7 @@ export interface PluginContextHost {
   getBuffers?(): BufferHost | undefined
   getNotices?(pluginId: string): NoticeHost | undefined
   getTasks?(pluginId: string): TaskHost | undefined
+  getBackgroundTasks?(): BackgroundTaskHost | undefined
   getTexts?(pluginId: string): VaultTexts | undefined
   getSlots?(): SlotHost | undefined
 }

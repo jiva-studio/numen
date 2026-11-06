@@ -1,0 +1,4 @@
+{
+  "//": "The plugins an installation runs only once the person turns them on.",
+  "off": ["md.numen.views.statusBar"]
+}

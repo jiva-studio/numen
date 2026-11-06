@@ -126,8 +126,8 @@ test.describe('the update indicator', () => {
     expect(box.x + box.width).toBeLessThanOrEqual(viewport.width)
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height)
 
-    const bar = await getBox(page.getByRole('region', { name: 'Status Bar' }))
-    expect(box.y + box.height).toBeLessThanOrEqual(bar.y)
+    const bar = await getBox(page.locator('[data-title-bar]'))
+    expect(box.y).toBeGreaterThanOrEqual(bar.y + bar.height)
     const trigger = await getBox(indicator)
     expect(box.x).toBeLessThan(trigger.x + trigger.width)
     expect(box.x + box.width).toBeGreaterThan(trigger.x)

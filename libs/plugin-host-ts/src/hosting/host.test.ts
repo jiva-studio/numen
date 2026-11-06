@@ -5,6 +5,7 @@ import { createPluginHost, createPluginPaneWrapper } from './host'
 import { disposeAllEntries, type HostRegistry } from './registry'
 import { registerPluginStyle } from '../styles'
 import { CONVERSATION } from '@numen/plugin-sdk'
+import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { PluginHostDeps } from './types'
 
@@ -289,6 +290,23 @@ describe('createPluginHost', () => {
     const host = createPluginHost(deps)
 
     expect(host.createContext('test.plugin').tasks).toBeUndefined()
+  })
+
+  it('gives every plugin the background tasks of the window', () => {
+    const { deps } = createMockDeps()
+    const backgroundTasks = createMockBackgroundTaskHost()
+    const host = createPluginHost({ ...deps, getBackgroundTasks: () => backgroundTasks })
+
+    expect(host.createContext('test.plugin').backgroundTasks).toBe(backgroundTasks)
+    expect(host.createContext('other.plugin').backgroundTasks).toBe(backgroundTasks)
+  })
+
+  it('gives a plugin no background tasks where the window offers none', () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost({ ...deps, getBackgroundTasks: () => undefined })
+
+    expect(host.createContext('test.plugin').backgroundTasks).toBeUndefined()
+    expect(createPluginHost(deps).createContext('test.plugin').backgroundTasks).toBeUndefined()
   })
 
   it('registers context menu, removes it on dispose, and restores on reactivate', () => {

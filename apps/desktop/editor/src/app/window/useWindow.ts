@@ -4,7 +4,7 @@
  */
 import { computed, ref, watch, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import { TITLE_BAR_SLOT, type SlotHost } from '@numen/plugin-host'
+import { SLOT, TITLE_BAR_SLOT, type SlotHost } from '@numen/plugin-host'
 import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
@@ -45,7 +45,7 @@ import { createWindowCommands } from './windowCommands'
 import { createCommandNoteReader } from '../commands/usePluginCommands'
 import { useNoticeTasks } from '../shell/useNoticeTasks'
 import { useWindowKinds } from './useWindowKinds'
-import { useWindowStatusBar } from '../shell/useWindowStatusBar'
+import { createBackgroundTaskHost } from '../shell/backgroundTasks'
 import { resolveTaskAction } from '../shell/taskActions'
 import { useAppHotkeys } from '../commands/useAppHotkeys'
 import { useAppBootstrap } from './useAppBootstrap'
@@ -486,7 +486,10 @@ function initWindowKindsAndCommands(
     getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
 
-  Object.assign(base.pluginServices, getKinds(ctx).services, { taskList: window.tasks })
+  Object.assign(base.pluginServices, getKinds(ctx).services, {
+    taskList: window.tasks,
+    backgroundTasks: createBackgroundTasks(base, window, settings),
+  })
 
   const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
 
@@ -528,7 +531,8 @@ function isSecondaryWindow(): boolean {
 
 type WindowSettings = ReturnType<typeof useSettings>
 
-function createStatusBar(
+/** The tasks of the window, its messages and the notices of its plugins, as the plugins read them. */
+function createBackgroundTasks(
   base: WindowCore,
   window: WindowServices['window'],
   settings: WindowSettings,
@@ -539,13 +543,13 @@ function createStatusBar(
     window,
     settings,
   })
-  return useWindowStatusBar({
+  return createBackgroundTaskHost({
     tasks: computed(() => [...window.tasks.value, ...noticeTasks.value]),
     cancelTask: (id) => core.cancelTask(id),
     reportCancelError: (error) =>
       base.writeMessage(`The task was not cancelled: ${formatErrorMessage(error)}`, 'error'),
     resolveAction: resolveTaskAction,
-    onAction: (pluginId) => settings.configured.openSettings(pluginId),
+    openSettings: (pluginId) => settings.configured.openSettings(pluginId),
   })
 }
 
@@ -716,9 +720,10 @@ function createWindowFrameServices(
   return frame
 }
 
-/** The view a plugin draws in the window itself: the title bar. */
+/** The views plugins draw in the window itself: the title bar and the status bar. */
 const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
   titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
+  statusBarView: pluginHost.getSlotView(SLOT.statusBar),
 })
 
 /** Everything the window is made of, made once and handed to what draws it. */
@@ -788,7 +793,6 @@ export const useWindow = () => {
     layout: base.windowTabs.layout,
     vaultList: getVaults(ctx).vaultList,
     log: base.log,
-    statusBar: createStatusBar(base, window, settings),
     ...getPluginViews(base.pluginHost),
     palette: getCommands(ctx).palette,
     destinations: getKinds(ctx).destinations,

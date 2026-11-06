@@ -2,7 +2,7 @@
  * The title bar item that counts the vectors of the search index, with its popover open. Also the
  * test corpus: each story is run in a browser by `@storybook/addon-vitest`.
  *
- * The popover is drawn above the item and must not be clipped by the bar or the window, and its
+ * The popover is drawn below the item and must not be clipped by the bar or the window, and its
  * ground must be a colour of the theme and never see-through; only a browser lays that out.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -48,10 +48,10 @@ const meta = {
     components: { StatsIndicator },
     setup: () => ({ args }),
     template: `
-      <div class="numen" style="display:flex;align-items:flex-end;justify-content:flex-end;block-size:100vh;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
-        <footer style="display:flex;align-items:center;justify-content:flex-end;position:relative;inline-size:100%;block-size:1.375rem;background:var(--numen-surface);border-top:1px solid var(--numen-rule);font-size:var(--numen-text-1)">
+      <div class="numen" style="display:flex;align-items:flex-start;justify-content:flex-end;block-size:100vh;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
+        <header style="display:flex;align-items:center;justify-content:flex-end;position:relative;inline-size:100%;block-size:2.25rem;background:var(--numen-surface);border-bottom:1px solid var(--numen-rule);font-size:var(--numen-text-1)">
           <StatsIndicator v-bind="args" />
-        </footer>
+        </header>
       </div>
     `,
   }),
@@ -67,20 +67,20 @@ const getShade = (colour: string): { shade: number; alpha: number } => {
   return { shade: red + green + blue, alpha }
 }
 
-/** Opens the popover and checks that it is inside the window, above the bar, on a solid ground. */
+/** Opens the popover and checks that it is inside the window, below the bar, on a solid ground. */
 const openAndMeasure: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   await userEvent.click(await canvas.findByRole('button', { name: /12,480/ }))
   const popover = await canvas.findByRole('dialog', { name: 'Index stats' })
-  const bar = canvasElement.querySelector('footer') as HTMLElement
+  const bar = canvasElement.querySelector('header') as HTMLElement
 
   await waitFor(() => {
     const box = popover.getBoundingClientRect()
-    return expect(box.bottom).toBeLessThanOrEqual(bar.getBoundingClientRect().top)
+    return expect(box.top).toBeGreaterThanOrEqual(bar.getBoundingClientRect().bottom)
   })
   await expect(popover.getBoundingClientRect().width).toBeGreaterThan(200)
   const box = popover.getBoundingClientRect()
-  await expect(box.top).toBeGreaterThanOrEqual(0)
+  await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
   await expect(box.left).toBeGreaterThanOrEqual(0)
   await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
   await expect(getShade(getComputedStyle(popover).backgroundColor).alpha).toBe(1)

@@ -5,10 +5,10 @@
  * received from the recorded log, and mounts the window with `mountWindow`.
  */
 import './vaultMock'
-import './moduleMocks'
+import { readWindowTasks } from './moduleMocks'
 import { afterEach } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { getPanes, StatusBar, WorkspaceLayout, type Workspace } from '@numen/shell'
+import { getPanes, WorkspaceLayout, type Workspace } from '@numen/shell'
 import { requests, forgetRequests } from './requests'
 import {
   folders,
@@ -93,15 +93,9 @@ async function mountWindowWithPalette() {
   return window
 }
 
-/** What the failed tasks of the status bar say, one string per task. */
-const cards = (window: VueWrapper): readonly string[] =>
-  (
-    window.findComponent(StatusBar).props('tasks') as readonly {
-      state: string
-      label: string
-      about?: string
-    }[]
-  )
+/** What the failed background tasks of the mounted window say, one string per task. */
+const cards = (): readonly string[] =>
+  readWindowTasks()
     .filter((task) => task.state === 'failed')
     .map((task) => [task.label, task.about].filter(Boolean).join(' '))
 

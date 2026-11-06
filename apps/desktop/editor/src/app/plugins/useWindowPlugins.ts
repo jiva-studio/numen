@@ -99,6 +99,11 @@ function createServiceAccess(services: PluginServices | undefined) {
     getWindow: () => services?.window,
     getBuffers: () => services?.buffers,
     getNoteBuffer: () => services?.noteBuffer,
+    getTasks: (pluginId: string) => {
+      const list = services?.taskList
+      return list ? createPluginTasks(list, pluginId) : undefined
+    },
+    getBackgroundTasks: () => services?.backgroundTasks,
   }
   /* Stryker restore OptionalChaining,ArrowFunction,ObjectLiteral */
 }
@@ -182,10 +187,6 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
     ...createServiceAccess(deps.services),
     ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),
-    getTasks: (pluginId) => {
-      const list = deps.services?.taskList
-      return list ? createPluginTasks(list, pluginId) : undefined
-    },
     getTexts: (pluginId: string) => createPluginTexts(texts, pluginId),
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })

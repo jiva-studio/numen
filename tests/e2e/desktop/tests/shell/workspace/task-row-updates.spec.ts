@@ -25,7 +25,7 @@ test.describe('A task row that is reported again', () => {
 
     await page.goto('/')
     await waitForWindow(page)
-    await page.locator('.status-bar__trigger').click()
+    await page.locator('.tasks-status__trigger').click()
     const row = page.locator(`.task-item[data-task-id="${TASK_ID}"]`)
     await expect(row).toBeVisible()
 

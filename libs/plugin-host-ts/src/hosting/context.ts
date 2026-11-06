@@ -314,7 +314,10 @@ function createEvents(pluginId: string, host: PluginContextHost, guard: EventGua
   }
 }
 
-/** The services of the window that need no permission: its notices, tasks and texts. */
+/**
+ * The services of the window that need no permission: its notices, tasks, background tasks and
+ * texts.
+ */
 function createWindowServices(
   pluginId: string,
   host: PluginContextHost,
@@ -322,10 +325,12 @@ function createWindowServices(
 ) {
   const notices = host.getNotices?.(pluginId)
   const tasks = host.getTasks?.(pluginId)
+  const backgroundTasks = host.getBackgroundTasks?.()
   const texts = host.getTexts?.(pluginId)
   return {
     ...(notices ? { notices } : {}),
     ...(tasks ? { tasks } : {}),
+    ...(backgroundTasks ? { backgroundTasks } : {}),
     ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
     ...createFrameServices(host),
   }

@@ -56,7 +56,7 @@ describe('the window holding no tab', () => {
 
     const window = await mountWindow()
 
-    expect(cards(window).join(' ')).toContain('Vault list unavailable')
+    expect(cards().join(' ')).toContain('Vault list unavailable')
     expect(window.findComponent(WelcomePage).props('vaults')).toStrictEqual([])
   })
 })

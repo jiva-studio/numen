@@ -2,6 +2,7 @@ package settings
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -283,5 +284,38 @@ func DefaultFile() File {
 		Appearance:  DefaultAppearance(),
 		Titles:      DefaultTitles(),
 		Performance: DefaultPerformance(),
+		Plugins:     getDefaultPlugins(),
 	}
+}
+
+// defaultPlugins lists, under "off", the plugins an installation runs only once the person turns
+// them on.
+//
+//go:embed plugins.json
+var defaultPlugins []byte
+
+// listPluginsOffByDefault returns the ids of the plugins that are off by default.
+func listPluginsOffByDefault() []string {
+	var declared struct {
+		Off []string `json:"off"`
+	}
+	if err := json.Unmarshal(defaultPlugins, &declared); err != nil {
+		return nil
+	}
+	return declared.Off
+}
+
+// getDefaultPlugins returns the objects of the plugins the defaults name: each plugin that is off by
+// default, disabled.
+func getDefaultPlugins() map[string]map[string]any {
+	plugins := map[string]map[string]any{}
+	for _, id := range listPluginsOffByDefault() {
+		plugins[id] = map[string]any{manifest.SettingEnabled: false}
+	}
+	return plugins
+}
+
+// isDefaultPlugin reports whether the object of a plugin is the one the defaults give it.
+func isDefaultPlugin(id string, values map[string]any) bool {
+	return maps.EqualFunc(values, getDefaultPlugins()[id], func(a, b any) bool { return a == b })
 }

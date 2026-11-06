@@ -6,7 +6,7 @@
  * sees of it, and the binding between the two.
  */
 import { onMounted, onUnmounted } from 'vue'
-import { StatusBar, WorkspaceLayout } from '@numen/shell'
+import { WorkspaceLayout } from '@numen/shell'
 import { LoadingIndicator } from '@numen/ui'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
@@ -14,6 +14,7 @@ import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
+import { StatusBarHost } from '@/features/status-bar-view'
 import { TitleBarHost } from '@/features/title-bar-view'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
@@ -49,7 +50,7 @@ const {
   windowTabs,
   layout,
   vaultList,
-  statusBar,
+  statusBarView,
   palette,
   destinations,
   closeTab,
@@ -192,13 +193,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       @close="linkMenu.close"
     />
 
-    <StatusBar
-      :tasks="statusBar.tasks.value"
-      @cancel="statusBar.onCancelTask"
-      @retry="statusBar.onRetryTask"
-      @dismiss="statusBar.onDismissTask"
-      @action="statusBar.onActionTask"
-    />
+    <StatusBarHost :view="statusBarView" />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"

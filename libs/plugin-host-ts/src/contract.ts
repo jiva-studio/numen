@@ -17,6 +17,8 @@ export type {
   AgentHost,
   AgentPort,
   AgentProviderRegistration,
+  BackgroundTask,
+  BackgroundTaskHost,
   Backlink,
   BufferHost,
   CommandItem,
