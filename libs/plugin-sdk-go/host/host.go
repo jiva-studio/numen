@@ -21,15 +21,15 @@ import (
 
 var (
 	// ErrNoVault is what a call gets while the host shows no vault.
-	ErrNoVault = errors.New("host: no vault is shown")
+	ErrNoVault = errors.New("no vault is shown")
 	// ErrOutside is what a path that does not stay in the vault gets.
-	ErrOutside = errors.New("host: not a path inside the vault")
+	ErrOutside = errors.New("the path is outside the vault")
 	// ErrStale is what a write gets when the file changed since the baseline.
 	ErrStale = notesedit.ErrStale
 	// ErrAlreadyExists is what a create gets when a file is already there.
 	ErrAlreadyExists = errors.New("the file already exists")
 	// ErrLockedByAnother is what a name gets when another program holds the file.
-	ErrLockedByAnother = errors.New("host: the file is held by another program")
+	ErrLockedByAnother = errors.New("another program holds the file")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
 	ErrNotANote = notesedit.ErrNotANote
 	// ErrInvalidConnection is what a connection gets that is not one: a role no connection
