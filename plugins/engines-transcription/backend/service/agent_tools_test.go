@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
 
 const (
@@ -46,11 +47,26 @@ func (m *blockingModel) Open(ctx context.Context, raw []byte) (engine.Recording,
 	return m.heardModel.Open(ctx, raw)
 }
 
-// finishingQueue is the queue in memory that sends the id of every task that ends on finished.
+// finishingQueue is the queue in memory that sends the id of every task that ends on finished, and
+// counts the tasks reported and the turns asked for in calls.
 type finishingQueue struct {
 	*hosttest.Queue
 	finished chan string
 	failed   chan host.Task
+	calls    *queueCalls
+}
+
+// queueCalls counts what the runs asked of the queue.
+type queueCalls struct {
+	mu       sync.Mutex
+	reported int
+	turns    int
+}
+
+func (c *queueCalls) getCounts() (reported, turns int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.reported, c.turns
 }
 
 func (q finishingQueue) FinishTask(ctx context.Context, id string) error {
@@ -59,8 +75,18 @@ func (q finishingQueue) FinishTask(ctx context.Context, id string) error {
 	return err
 }
 
+func (q finishingQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, error) {
+	q.calls.mu.Lock()
+	q.calls.turns++
+	q.calls.mu.Unlock()
+	return q.Queue.EnqueueWork(ctx, work)
+}
+
 // ReportTask also sends every task reported with a failure on failed.
 func (q finishingQueue) ReportTask(ctx context.Context, task host.Task) error {
+	q.calls.mu.Lock()
+	q.calls.reported++
+	q.calls.mu.Unlock()
 	err := q.Queue.ReportTask(ctx, task)
 	if task.FailureReason != "" {
 		q.failed <- task
@@ -127,7 +153,9 @@ func newToolSceneOver(t *testing.T, wrap func(Files) Files) *toolScene {
 	chemTexts.File(chemistryLecture, []byte(chemistrySound))
 	s.chemTexts = chemTexts
 
-	s.finishing = finishingQueue{Queue: s.queue, finished: make(chan string, 64), failed: make(chan host.Task, 64)}
+	s.finishing = finishingQueue{
+		Queue: s.queue, finished: make(chan string, 64), failed: make(chan host.Task, 64), calls: &queueCalls{},
+	}
 	s.blocking = &blockingModel{heardModel: s.model, entered: make(chan struct{}), release: make(chan struct{})}
 	s.transcriber = NewTranscriber(wrap(vaultFiles{vault: s.vault}), s.store, s.texts, s.finishing,
 		func(context.Context) (engine.TranscriberPort, error) { return s.blocking, nil })
@@ -284,6 +312,139 @@ func TestTranscriptCreateRefusesARecordingNotInTheVault(t *testing.T) {
 	if !res.GetResult().GetIsRefusal() {
 		t.Errorf("a recording that is not there returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
+	if text := res.GetResult().GetText(); !strings.Contains(text, "not found") || !strings.Contains(text, "assets/missing.wav") {
+		t.Errorf("the refusal reads %q, want it to say assets/missing.wav is not found", text)
+	}
+}
+
+func TestTranscriptCreateRefusesAMissingNoteAsNotFound(t *testing.T) {
+	s := newToolScene(t)
+
+	res := invokeAtOnce(t, s.registry, tools.Call{
+		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"notes.md"}`),
+	})
+
+	if !res.GetResult().GetIsRefusal() {
+		t.Fatalf("a note that is not there returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
+	}
+	text := res.GetResult().GetText()
+	if !strings.Contains(text, "not found") || !strings.Contains(text, "notes.md") {
+		t.Errorf("the refusal reads %q, want it to say notes.md is not found", text)
+	}
+	if strings.Contains(text, "not an audio or video recording") {
+		t.Errorf("the refusal reads %q, want no word on the kind of a file that is not there", text)
+	}
+}
+
+// putTranscript keeps a transcript of the lecture in the plugin's folder and records it as the
+// lecture's version, as a run does: whole, as a finished run leaves it, or partial, as an interrupted
+// run leaves it. It fails the test unless the version is live.
+func (s *toolScene) putTranscript(t *testing.T, isWhole bool) domain.TextVersion {
+	t.Helper()
+	fileHash := domain.HashContent([]byte(lectureSound))
+	key := getTranscriptionKey(fileHash)
+	transcriptStore := transcripts{store: s.store}
+	cues := []transcript.Cue{{Text: "heard before", From: 0, To: 1000}}
+	if err := transcriptStore.appendBatch(t.Context(), key, cues, 1000); err != nil {
+		t.Fatal(err)
+	}
+	file := getPartialName(key)
+	if isWhole {
+		if err := transcriptStore.finish(t.Context(), key); err != nil {
+			t.Fatal(err)
+		}
+		file = getFileName(key)
+	}
+	j := &job{
+		vault: "Lectures", path: lecture, key: key, fileHash: fileHash,
+		store: transcriptStore, texts: s.texts, turn: nil,
+	}
+	if err := s.transcriber.putVersion(t.Context(), j, file); err != nil {
+		t.Fatal(err)
+	}
+	listing, err := s.texts.ListVersions(t.Context(), lecture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	i := slices.IndexFunc(listing.Versions, func(v domain.TextVersion) bool { return v.Key == key && v.PluginID == PluginID })
+	if i < 0 || listing.Live != listing.Versions[i].GetID() || listing.Versions[i].File != file {
+		t.Fatalf("the lecture lists %+v, want the transcript in %s live", listing, file)
+	}
+	return listing.Versions[i]
+}
+
+// checkNoRun fails the test where a run of the recording reported a task, asked the queue for a
+// turn, ended a task or opened the recording. The transcriber is closed first, so a run that was
+// started has ended.
+func (s *toolScene) checkNoRun(t *testing.T) {
+	t.Helper()
+	close(s.blocking.release)
+	s.transcriber.Close()
+	if reported, turns := s.finishing.calls.getCounts(); reported != 0 || turns != 0 {
+		t.Errorf("a run reported %d tasks and asked for %d turns, want none", reported, turns)
+	}
+	if ended := len(s.finishing.finished); ended != 0 {
+		t.Errorf("%d tasks ended, want none", ended)
+	}
+	select {
+	case <-s.blocking.entered:
+		t.Error("the model opened the recording")
+	default:
+	}
+}
+
+func TestTranscriptCreateOfATranscribedRecordingReturnsItsVersionWithoutARun(t *testing.T) {
+	s := newToolScene(t)
+	version := s.putTranscript(t, true)
+
+	out := s.createTranscript(t, "Lectures", lecture)
+
+	want := TranscriptCreateOutput{
+		TaskID: "transcription:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
+	}
+	if out != want {
+		t.Errorf("transcript_create returned %+v, want %+v", out, want)
+	}
+	s.checkNoRun(t)
+}
+
+func TestTranscriptCreateOfAPartlyTranscribedRecordingStartsTheRun(t *testing.T) {
+	s := newToolScene(t)
+	s.putTranscript(t, false)
+	close(s.blocking.release)
+
+	out := s.createTranscript(t, "Lectures", lecture)
+
+	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	if out != want {
+		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
+	}
+	s.waitFinished(t, want.TaskID)
+	s.transcriber.Close()
+	if _, text := s.readLive(t); text != "heard before\nsecond words\n" {
+		t.Errorf("the transcript reads %q, want the partial transcript carried on", text)
+	}
+}
+
+func TestTranscriptCreateAfterAFinishedTranscriptionReturnsItsVersion(t *testing.T) {
+	s := newToolScene(t)
+	close(s.blocking.release)
+	if err := s.transcriber.Transcribe(t.Context(), "Lectures", lecture); err != nil {
+		t.Fatal(err)
+	}
+	version, _ := s.readLive(t)
+
+	out := s.createTranscript(t, "Lectures", lecture)
+
+	want := TranscriptCreateOutput{
+		TaskID: "transcription:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
+	}
+	if out != want {
+		t.Errorf("transcript_create returned %+v, want %+v", out, want)
+	}
+	if version.File != getFileName(version.Key) {
+		t.Errorf("the live version is in %s, want the whole transcript", version.File)
+	}
 }
 
 func TestTranscriptCreateRefusesACallThatNamesNoVault(t *testing.T) {
@@ -396,6 +557,9 @@ func TestTranscriptCreateRefusesAFileThatIsNoRecording(t *testing.T) {
 
 	if !res.GetResult().GetIsRefusal() {
 		t.Errorf("a note returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
+	}
+	if text := res.GetResult().GetText(); !strings.Contains(text, "not an audio or video recording") {
+		t.Errorf("the refusal reads %q, want it to say the note is not an audio or video recording", text)
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("a refused call shows the tasks %+v", tasks)
