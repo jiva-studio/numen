@@ -33,6 +33,12 @@ const getExtension = (path: string): string => {
   return dot > 0 ? name.slice(dot + 1).toLowerCase() : ''
 }
 
+/** The note variables of a target: the type and the frontmatter the place read, or none. */
+const getNoteValues = ({ type, properties }: TargetNote) => ({
+  'target.noteType': type ?? '',
+  'target.properties': properties ?? {},
+})
+
 /**
  * The target variables over the target: its content type by its extension from the table the core
  * sends, and its note type and properties where the place read them. All are false or empty where
@@ -44,7 +50,6 @@ export function getTargetValues(
   note: TargetNote = {},
 ): Readonly<Record<string, unknown>> {
   if (!target) return NO_TARGET
-  const { type = '', properties = {} } = note
   const { path, isFolder, others } = target
   const extension = isFolder ? '' : getExtension(path)
   const isNote = extension === NOTE_EXTENSION
@@ -55,7 +60,6 @@ export function getTargetValues(
     'target.isNote': isNote,
     'target.isFile': !isFolder && !isNote && path !== '',
     'target.contentType': contentTypes[extension] ?? '',
-    'target.noteType': isNote ? type : '',
-    'target.properties': isNote ? properties : {},
+    ...getNoteValues(isNote ? note : {}),
   }
 }

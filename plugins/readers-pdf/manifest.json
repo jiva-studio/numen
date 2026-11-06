@@ -5,9 +5,7 @@
   "protocol": 1,
   "description": "PDF document reader with highlights and passage links",
   "capabilities": [],
-  "targets": [
-    "desktop.editor"
-  ],
+  "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [
       {
@@ -21,9 +19,7 @@
     "readers": [
       {
         "id": "reader-pdf",
-        "contentTypes": [
-          "application/pdf"
-        ],
+        "contentTypes": ["application/pdf"],
         "rank": "default"
       }
     ],
@@ -50,13 +46,8 @@
       }
     ]
   },
-  "permissions": [
-    "vault:read",
-    "vault:write"
-  ],
-  "services": [
-    "md.numen.readers.pdf"
-  ],
+  "permissions": ["vault:read", "vault:write"],
+  "services": ["md.numen.readers.pdf"],
   "backend": {
     "entrypoint": "bin/readers-pdf"
   },
@@ -67,11 +58,7 @@
       "type": "enum",
       "title": "Default Zoom",
       "description": "Initial zoom level when opening a PDF document",
-      "options": [
-        "page",
-        "width",
-        "100%"
-      ],
+      "options": ["page", "width", "100%"],
       "default": "page"
     }
   ]

@@ -4,9 +4,7 @@
   "version": "2026.11.8",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
-  "targets": [
-    "desktop.editor"
-  ],
+  "targets": ["desktop.editor"],
   "contributes": {
     "category": "engines",
     "slots": [
@@ -43,11 +41,7 @@
       }
     ]
   },
-  "permissions": [
-    "vault:read",
-    "vault:write",
-    "network:outbound"
-  ],
+  "permissions": ["vault:read", "vault:write", "network:outbound"],
   "dependencies": [
     {
       "id": "onnxruntime",

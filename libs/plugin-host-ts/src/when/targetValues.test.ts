@@ -42,7 +42,9 @@ describe('the target values', () => {
     const note = { path: 'notes/Bees.md', isFolder: false, others: [] }
     const paper = { path: 'papers/Hive.pdf', isFolder: false, others: [] }
 
-    expect(getTargetValues(note, TYPES, { type: 'link', properties })['target.properties']).toBe(properties)
+    expect(getTargetValues(note, TYPES, { type: 'link', properties })['target.properties']).toBe(
+      properties,
+    )
     expect(getTargetValues(paper, TYPES, { properties })['target.properties']).toStrictEqual({})
   })
 

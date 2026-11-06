@@ -46,7 +46,9 @@ async function listOwnItems(
   try {
     if (entry?.reg.listItems) return await entry.reg.listItems(note)
     if (!entry && handler.hasItems) {
-      return (await parts.deps.listBackendHandlerItems?.(handler.pluginId, handler.command, note)) ?? []
+      return (
+        (await parts.deps.listBackendHandlerItems?.(handler.pluginId, handler.command, note)) ?? []
+      )
     }
   } catch (error) {
     reportError(parts.deps, handler.pluginId, error)

@@ -73,7 +73,7 @@ The core discovers plugins from their manifests and has no code that names a plu
 | `contributes.feature`      | `ManifestContributes`  | What the plugin provides, as text for the placeholder of an unavailable tab.                                                                             |
 | `contributes.category`     | `ManifestContributes`  | The group the plugin is listed in.                                                                                                                       |
 | `contributes.themes`       | `ManifestContributes`  | Stylesheets added to the list of themes: `id`, `name`, `appearance`, `file`.                                                                             |
-| `contributes.handlers`     | `ManifestContributes`  | The plugin's handlers of shared commands: `command`, `title`, `when` (see [Shared commands and handlers](#shared-commands-and-handlers)).                 |
+| `contributes.handlers`     | `ManifestContributes`  | The plugin's handlers of shared commands: `command`, `title`, `when` (see [Shared commands and handlers](#shared-commands-and-handlers)).                |
 | `contributes.triggers`     | `ManifestContributes`  | Events on which the plugin's own handlers run: `on`, `command`, `when` (see [Triggers](#triggers)).                                                      |
 | `contributes.readers`      | `ManifestContributes`  | Tabs that open files of some types: `id`, `contentTypes`, `rank`.                                                                                        |
 | `contributes.noteTypes`    | `ManifestContributes`  | Types of note the plugin defines: `type`, `chunks`, `headings`, `idHeadingLevels`, `idPattern`.                                                          |
@@ -424,12 +424,12 @@ It starts the plugin host without a window, lets the plugins use the vault throu
 
 A shared command is a command of the application that does nothing by itself: plugins handle it. The shared commands are declared once, in `libs/protocol/commands.json`, which the manifest check and the SDK (`SHARED_COMMANDS`) read:
 
-| Command                  | Title          | What a handler does                         |
-| ------------------------ | -------------- | ------------------------------------------- |
-| `app:file.createText`    | Create text    | Creates a text version of a file.           |
-| `app:version.delete`     | Delete text    | Deletes a text version of a file.           |
-| `app:link.import`        | Import link    | Creates a link note from a web address.     |
-| `app:link.downloadMedia` | Download media | Downloads the media of a link note.         |
+| Command                  | Title          | What a handler does                          |
+| ------------------------ | -------------- | -------------------------------------------- |
+| `app:file.createText`    | Create text    | Creates a text version of a file.            |
+| `app:version.delete`     | Delete text    | Deletes a text version of a file.            |
+| `app:link.import`        | Import link    | Creates a link note from a web address.      |
+| `app:link.downloadMedia` | Download media | Downloads the media of a link note.          |
 | `app:link.deleteMedia`   | Delete media   | Deletes the downloaded media of a link note. |
 
 A plugin handles one in `contributes.handlers` with `{ "command", "title", "when"? }`: the full id of the shared command, what a person reads the handler as, and the condition over which targets it handles it. Its code registers the handler under the full id of the command: the frontend with `registerCommand({ id: 'app:file.createText', handler, listItems? })`, the backend by adding a run under that id to its `command.Registry`. A handler the frontend registers runs there; any other runs in the backend. The manifest check rejects a handler of a command that is not shared, a command handled twice in one manifest, a handler without a title, a `when` that does not compile, and handlers of a plugin with neither a frontend nor a backend.
@@ -526,22 +526,22 @@ The application places commands of its own in the same slots, from a list of its
 
 A condition, `when`, is an expression of [CEL](https://cel.dev), as a when clause of VS Code: `target.isNote`, `target.contentType in ['application/pdf', 'image/png']`, `target.contentType.startsWith('audio/')`, `version.isLive && version.kind != ''`. The manifest check compiles it against the variables below and rejects one that is malformed, names another variable or gives no true or false. An empty or absent `when` always holds. The variables are listed once, in `libs/protocol/when.json`, which the Go check of the manifest and the window both read; a plugin writes no code for them.
 
-| Variable              | Type   | What it is                                                                                                    |
-| --------------------- | ------ | ------------------------------------------------------------------------------------------------------------- |
-| `target.isRoot`       | bool   | The target is the root folder of the vault.                                                                   |
-| `target.isFolder`     | bool   | The target is a folder.                                                                                       |
-| `target.isMultiple`   | bool   | The target is one of several paths selected together.                                                         |
-| `target.isNote`       | bool   | The target is a note.                                                                                         |
-| `target.isFile`       | bool   | The target is a file that is not a note.                                                                      |
-| `target.contentType`  | string | The content type of the target, such as `application/pdf`; empty for a folder.                                |
-| `target.noteType`     | string | The type of the note, such as `link`; empty where the target is no note.                                      |
+| Variable              | Type   | What it is                                                                                                     |
+| --------------------- | ------ | -------------------------------------------------------------------------------------------------------------- |
+| `target.isRoot`       | bool   | The target is the root folder of the vault.                                                                    |
+| `target.isFolder`     | bool   | The target is a folder.                                                                                        |
+| `target.isMultiple`   | bool   | The target is one of several paths selected together.                                                          |
+| `target.isNote`       | bool   | The target is a note.                                                                                          |
+| `target.isFile`       | bool   | The target is a file that is not a note.                                                                       |
+| `target.contentType`  | string | The content type of the target, such as `application/pdf`; empty for a folder.                                 |
+| `target.noteType`     | string | The type of the note, such as `link`; empty where the target is no note.                                       |
 | `target.properties`   | map    | The frontmatter of the note by its keys, such as `target.properties.media`; empty where the target is no note. |
-| `version.kind`        | string | The kind of a text version of the file, as the plugin that made it names it.                                  |
-| `version.isLive`      | bool   | The text version is the one shown and indexed now.                                                            |
-| `window.isVaultOpen`  | bool   | A vault is open in the window.                                                                                |
-| `window.isVaultReady` | bool   | The vault of the window is open and accepts operations.                                                       |
-| `window.isTabOpen`    | bool   | A tab is in front.                                                                                            |
-| `config.<key>`        | any    | A setting by its dotted key: `config.app.<key>` for the application, `config.<plugin id>.<key>` for a plugin. |
+| `version.kind`        | string | The kind of a text version of the file, as the plugin that made it names it.                                   |
+| `version.isLive`      | bool   | The text version is the one shown and indexed now.                                                             |
+| `window.isVaultOpen`  | bool   | A vault is open in the window.                                                                                 |
+| `window.isVaultReady` | bool   | The vault of the window is open and accepts operations.                                                        |
+| `window.isTabOpen`    | bool   | A tab is in front.                                                                                             |
+| `config.<key>`        | any    | A setting by its dotted key: `config.app.<key>` for the application, `config.<plugin id>.<key>` for a plugin.  |
 
 `target` is what the command runs over, as its place gives it: the clicked row in the file tree, the file of the tab in the tab menu, the result in the palette search, and in the palette the note or file in front. A bar gives no target, and every target variable is then false or empty. The window derives `target.contentType`, `target.isNote` and `target.isFile` from the path; the menus of the file tree and of a tab read the note type and the properties of the row before they open (`FileService.ListFileKinds` returns both). `version.*` is set only over a text version of a file, in its menu.
 

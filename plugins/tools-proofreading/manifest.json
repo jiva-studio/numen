@@ -4,9 +4,7 @@
   "version": "2026.11.6",
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
-  "targets": [
-    "desktop.editor"
-  ],
+  "targets": ["desktop.editor"],
   "contributes": {
     "category": "tools",
     "commands": [
@@ -33,12 +31,7 @@
       }
     ]
   },
-  "permissions": [
-    "vault:read",
-    "vault:write",
-    "ai:complete",
-    "network:outbound"
-  ],
+  "permissions": ["vault:read", "vault:write", "ai:complete", "network:outbound"],
   "secrets": [
     {
       "name": "apiKey",
@@ -46,11 +39,7 @@
       "description": "API key for the remote chat service",
       "when": {
         "setting": "provider",
-        "is": [
-          "openrouter",
-          "openai",
-          "custom"
-        ]
+        "is": ["openrouter", "openai", "custom"]
       }
     }
   ],
@@ -92,9 +81,7 @@
       "default": "",
       "when": {
         "setting": "provider",
-        "is": [
-          "custom"
-        ]
+        "is": ["custom"]
       }
     },
     {
@@ -105,11 +92,7 @@
       "default": "openai/gpt-4o-mini",
       "when": {
         "setting": "provider",
-        "is": [
-          "openrouter",
-          "openai",
-          "custom"
-        ]
+        "is": ["openrouter", "openai", "custom"]
       },
       "optionsBy": {
         "setting": "provider",

@@ -4,9 +4,7 @@
   "version": "2026.11.9",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
-  "targets": [
-    "desktop.editor"
-  ],
+  "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [
       {
@@ -22,9 +20,7 @@
         "type": "link"
       }
     ],
-    "frameOrigins": [
-      "https://www.youtube-nocookie.com"
-    ],
+    "frameOrigins": ["https://www.youtube-nocookie.com"],
     "slots": [
       {
         "slot": "fileTree.context",
@@ -85,14 +81,8 @@
       }
     ]
   },
-  "permissions": [
-    "vault:read",
-    "vault:write",
-    "network:outbound"
-  ],
-  "services": [
-    "md.numen.tools.media.importer"
-  ],
+  "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "services": ["md.numen.tools.media.importer"],
   "backend": {
     "entrypoint": "bin/tools-media-importer"
   },

@@ -4,9 +4,7 @@
   "version": "2026.11.6",
   "protocol": 1,
   "description": "Notifies when a newer build of Numen is published",
-  "targets": [
-    "desktop.editor"
-  ],
+  "targets": ["desktop.editor"],
   "contributes": {
     "category": "tools",
     "slots": [
@@ -16,12 +14,8 @@
       }
     ]
   },
-  "permissions": [
-    "network:outbound"
-  ],
-  "services": [
-    "md.numen.tools.updater"
-  ],
+  "permissions": ["network:outbound"],
+  "services": ["md.numen.tools.updater"],
   "backend": {
     "entrypoint": "bin/tools-updater"
   },
@@ -59,9 +53,7 @@
       "default": "",
       "when": {
         "setting": "channel",
-        "is": [
-          "custom"
-        ]
+        "is": ["custom"]
       }
     },
     {

@@ -5,9 +5,7 @@
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
-  "targets": [
-    "desktop.editor"
-  ],
+  "targets": ["desktop.editor"],
   "contributes": {
     "category": "engines",
     "slots": [
@@ -44,11 +42,7 @@
       }
     ]
   },
-  "permissions": [
-    "vault:read",
-    "vault:write",
-    "network:outbound"
-  ],
+  "permissions": ["vault:read", "vault:write", "network:outbound"],
   "dependencies": [
     {
       "id": "onnxruntime",
@@ -160,65 +154,49 @@
           "value": "pp-ocrv6-tiny",
           "title": "PP-OCRv6 tiny",
           "detail": "Chinese, English and Latin-script languages, 4.5 MB",
-          "dependencies": [
-            "rec-pp-ocrv6-tiny"
-          ]
+          "dependencies": ["rec-pp-ocrv6-tiny"]
         },
         {
           "value": "pp-ocrv6-small",
           "title": "PP-OCRv6 small",
           "detail": "Chinese, English, Japanese and Latin-script languages, 21 MB",
-          "dependencies": [
-            "rec-pp-ocrv6-small"
-          ]
+          "dependencies": ["rec-pp-ocrv6-small"]
         },
         {
           "value": "pp-ocrv5-latin",
           "title": "PP-OCRv5 Latin",
           "detail": "English, French, German, Spanish, Italian, Portuguese, Dutch, Polish, Czech, Slovak, Hungarian, Romanian, Croatian, Slovenian, Danish, Swedish, Norwegian, Finnish, Estonian, Lithuanian, Latvian, Turkish, Latin and other Latin-script languages, 7.9 MB",
-          "dependencies": [
-            "rec-pp-ocrv5-latin"
-          ]
+          "dependencies": ["rec-pp-ocrv5-latin"]
         },
         {
           "value": "pp-ocrv5-eslav",
           "title": "PP-OCRv5 East Slavic",
           "detail": "Russian, Ukrainian, Belarusian, English, 7.9 MB",
-          "dependencies": [
-            "rec-pp-ocrv5-eslav"
-          ]
+          "dependencies": ["rec-pp-ocrv5-eslav"]
         },
         {
           "value": "pp-ocrv5-cyrillic",
           "title": "PP-OCRv5 Cyrillic",
           "detail": "Russian, Ukrainian, Belarusian, Bulgarian, Serbian, Macedonian, Mongolian, Kazakh, Kyrgyz, Tajik, Tatar and other Cyrillic-script languages, English, 8.1 MB",
-          "dependencies": [
-            "rec-pp-ocrv5-cyrillic"
-          ]
+          "dependencies": ["rec-pp-ocrv5-cyrillic"]
         },
         {
           "value": "pp-ocrv5-devanagari",
           "title": "PP-OCRv5 Devanagari",
           "detail": "Hindi, Sanskrit, Marathi, Nepali, Konkani, Maithili, Bhojpuri, English, 7.9 MB",
-          "dependencies": [
-            "rec-pp-ocrv5-devanagari"
-          ]
+          "dependencies": ["rec-pp-ocrv5-devanagari"]
         },
         {
           "value": "pp-ocrv5-greek",
           "title": "PP-OCRv5 Greek",
           "detail": "Greek, English, 7.8 MB",
-          "dependencies": [
-            "rec-pp-ocrv5-greek"
-          ]
+          "dependencies": ["rec-pp-ocrv5-greek"]
         },
         {
           "value": "custom",
           "title": "Custom model",
           "detail": "Languages unknown: they are those of the model file",
-          "dependencies": [
-            "rec-pp-ocrv6-tiny"
-          ]
+          "dependencies": ["rec-pp-ocrv6-tiny"]
         }
       ]
     },
@@ -227,15 +205,11 @@
       "type": "file",
       "title": "Model file",
       "description": "PaddleOCR text recognition model in ONNX format",
-      "accept": [
-        ".onnx"
-      ],
+      "accept": [".onnx"],
       "default": "",
       "when": {
         "setting": "model",
-        "is": [
-          "custom"
-        ]
+        "is": ["custom"]
       }
     },
     {
@@ -243,15 +217,11 @@
       "type": "file",
       "title": "Character dictionary",
       "description": "UTF-8 text, one character per line. Empty for a model that includes its own",
-      "accept": [
-        ".txt"
-      ],
+      "accept": [".txt"],
       "default": "",
       "when": {
         "setting": "model",
-        "is": [
-          "custom"
-        ]
+        "is": ["custom"]
       }
     },
     {
