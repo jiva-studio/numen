@@ -67,7 +67,13 @@ const parseLinks = (links: WireTabLinks): TabLinksSnapshot => ({
   })),
 })
 
-const parseTab = ({ id, kind, path, title, state }: Tab): Tab => ({ id, kind, path, title, state })
+const parseTab = ({ id, kind, path, title, state }: Omit<Tab, 'place'>): Tab => ({
+  id,
+  kind,
+  path,
+  title,
+  state,
+})
 
 const moveErrors: Record<TabMoveErrorCodeValue, TabMoveError | null> = {
   [TAB_MOVE_ERROR_CODE.UNSPECIFIED]: null,

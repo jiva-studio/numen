@@ -23,7 +23,7 @@ import {
   type TextRange,
 } from '@numen/plugin-sdk'
 import { adoptPluginStyle } from '../styles'
-import type { AnyTabKind } from './tabKinds'
+import type { AnyTabKind, OpenTab } from './tabKinds'
 import {
   attachPluginRoot,
   extractFilename,
@@ -101,6 +101,38 @@ const isSelector = (value: unknown): value is Selector =>
   // Stryker disable next-line ConditionalExpression: null saved value maps to null place in both branches
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+/**
+ * The state of a reader tab: the place it saves for a restart, and apart from it the place its
+ * reader last reported to the window.
+ */
+const createReaderState = (pluginId: string, targetPath: string, saved: unknown) => {
+  const place = isSelector(saved) ? saved : null
+  const state = reactive({
+    path: targetPath,
+    file: targetPath,
+    pluginId,
+    title: extractFilename(targetPath),
+    selector: place,
+    ranges: null as readonly TextRange[] | null,
+    place,
+    savePlace: (next: Selector) => {
+      state.place = next
+    },
+    reported: null as TabPlace | null,
+    reportPlace: (next: TabPlace) => {
+      state.reported = next
+    },
+  })
+  return state
+}
+
+/** The file a reader tab holds, and the place its reader last reported, left out while none was. */
+const getReaderOpenTab = (state: unknown): OpenTab => {
+  const s = state as { path?: string; reported?: TabPlace | null } | undefined
+  const path = s?.path ?? ''
+  return s?.reported ? { path, place: { ...s.reported } } : { path }
+}
+
 export function createReaderTabKind(
   pluginId: string,
   registration: ReaderRegistration,
@@ -113,26 +145,8 @@ export function createReaderTabKind(
     kind: kindId,
     pluginId,
     ...(registration.icon ? { icon: registration.icon as Component } : {}),
-    open: (targetPath: string, _id: string, saved?: unknown) => {
-      const place = isSelector(saved) ? saved : null
-      const state = reactive({
-        path: targetPath,
-        file: targetPath,
-        pluginId,
-        title: extractFilename(targetPath),
-        selector: place,
-        ranges: null as readonly TextRange[] | null,
-        place,
-        savePlace: (next: Selector) => {
-          state.place = next
-        },
-        reported: null as TabPlace | null,
-        reportPlace: (next: TabPlace) => {
-          state.reported = next
-        },
-      })
-      return state
-    },
+    open: (targetPath: string, _id: string, saved?: unknown) =>
+      createReaderState(pluginId, targetPath, saved),
     getState: (state: unknown) =>
       (state as { place?: Selector | null } | undefined)?.place ?? undefined,
     onShow: (state: unknown) => {
@@ -162,11 +176,7 @@ export function createReaderTabKind(
         title: s?.title ?? '',
       }
     },
-    getOpenTab: (state: unknown) => {
-      const s = state as { path?: string; reported?: TabPlace | null } | undefined
-      const path = s?.path ?? ''
-      return s?.reported ? { path, place: { ...s.reported } } : { path }
-    },
+    getOpenTab: getReaderOpenTab,
   }
 }
 
