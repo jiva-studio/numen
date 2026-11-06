@@ -26,9 +26,15 @@ func newServedHandler(t *testing.T, token string) (*Server, string) {
 	return srv, served.URL
 }
 
-// sendRequest sends a request of the method to target with the headers and returns the answer with
-// its body read.
-func sendRequest(t *testing.T, method, target string, headers map[string]string) *http.Response {
+// httpAnswer is the status and the headers of an answer whose body was read and closed.
+type httpAnswer struct {
+	StatusCode int
+	Header     http.Header
+}
+
+// sendRequest sends a request of the method to target with the headers and returns the status and
+// the headers of the answer.
+func sendRequest(t *testing.T, method, target string, headers map[string]string) httpAnswer {
 	t.Helper()
 	var body io.Reader
 	if method == http.MethodPost {
@@ -53,10 +59,10 @@ func sendRequest(t *testing.T, method, target string, headers map[string]string)
 	if err := res.Body.Close(); err != nil {
 		t.Error(err)
 	}
-	return res
+	return httpAnswer{StatusCode: res.StatusCode, Header: res.Header}
 }
 
-func assertUnauthorizedAnswer(t *testing.T, res *http.Response, what string) {
+func assertUnauthorizedAnswer(t *testing.T, res httpAnswer, what string) {
 	t.Helper()
 	if res.StatusCode != http.StatusUnauthorized {
 		t.Errorf("%s was answered %d, want 401", what, res.StatusCode)
@@ -163,7 +169,7 @@ func TestNoAnswerCarriesACORSHeader(t *testing.T) {
 	_, url := newServedHandler(t, gardenToken)
 	authorized := map[string]string{"Authorization": "Bearer " + gardenToken}
 
-	answers := map[string]*http.Response{
+	answers := map[string]httpAnswer{
 		"an initialize with the token":       sendRequest(t, http.MethodPost, url+"/mcp", authorized),
 		"an initialize without the token":    sendRequest(t, http.MethodPost, url+"/mcp", nil),
 		"an OPTIONS request without a token": sendRequest(t, http.MethodOptions, url+"/mcp", nil),

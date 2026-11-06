@@ -1056,7 +1056,7 @@ func TestCardToolsLimitsAndEdgeCases(t *testing.T) {
 		{"Entropy.md", "1-1", "not a card model", "not a card model"},
 	} {
 		msg := getToolError(t, session, "card_model_edit", map[string]any{
-			"path": tc.path, "fields": []string{"Name"}, "fingerprint": tc.fingerprint,
+			"path": tc.path, "fields": []string{"Name"}, "templates": []any{}, "fingerprint": tc.fingerprint,
 		})
 		if !strings.Contains(msg, tc.want) {
 			t.Fatalf("expected %s error, got %q", tc.label, msg)
