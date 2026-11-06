@@ -193,9 +193,10 @@ func (r *Recognition) getRunKey(ctx context.Context, vault domain.VaultID, fileP
 	return string(vault) + "\x00" + filePath, nil
 }
 
-// FindVersion is the live version of the file of the vault where it is kept under VersionKey, which
-// a recognition writes only once it is complete. No vault is the vault the host shows.
-func (r *Recognition) FindVersion(ctx context.Context, vault domain.VaultID, filePath string) (domain.TextVersion, bool, error) {
+// FindVersion is the live version of the file of the vault where the plugin named keeps it under
+// VersionKey, which a recognition writes only once it is complete. No vault is the vault the host
+// shows.
+func (r *Recognition) FindVersion(ctx context.Context, vault domain.VaultID, filePath, pluginID string) (domain.TextVersion, bool, error) {
 	texts := r.host.Texts
 	if vault != "" {
 		texts = texts.With(vault)
@@ -205,7 +206,7 @@ func (r *Recognition) FindVersion(ctx context.Context, vault domain.VaultID, fil
 		return domain.TextVersion{}, false, err
 	}
 	for _, version := range listing.Versions {
-		if version.GetID() == listing.Live && version.Key == VersionKey {
+		if version.GetID() == listing.Live && version.Key == VersionKey && version.PluginID == pluginID {
 			return version, true, nil
 		}
 	}

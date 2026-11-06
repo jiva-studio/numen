@@ -123,11 +123,11 @@ func (t *Tools) createRecognition(ctx context.Context, in RecognitionCreateInput
 	if isRunning {
 		return out, nil
 	}
-	version, isFound, err := t.recognitions.FindVersion(ctx, vault, in.Path)
+	version, isFound, err := t.recognitions.FindVersion(ctx, vault, in.Path, PluginID)
 	if err != nil {
 		return RecognitionCreateOutput{}, err
 	}
-	if isFound && version.PluginID == PluginID {
+	if isFound {
 		out.State, out.Version = stateDone, string(version.GetID())
 		return out, nil
 	}
