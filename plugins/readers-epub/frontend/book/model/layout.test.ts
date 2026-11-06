@@ -52,6 +52,7 @@ const setUp = () => {
     leftInChapter: ref(0),
     stand: vi.fn(),
     getKeptOffset: vi.fn(() => KEPT),
+    keepOffset: vi.fn(),
     getSpreadOf: vi.fn(SPREAD_OF),
     turn: vi.fn(),
     standing: ref(0),
@@ -75,6 +76,7 @@ const turns = () =>
     stand: ReturnType<typeof vi.fn>
     turn: ReturnType<typeof vi.fn>
     getKeptOffset: ReturnType<typeof vi.fn>
+    keepOffset: ReturnType<typeof vi.fn>
     getSpreadOf: ReturnType<typeof vi.fn>
     standing: { value: number }
   }
@@ -527,6 +529,25 @@ describe('an offset requested for from outside', () => {
 
     expect(turns().getSpreadOf).not.toHaveBeenCalled()
     expect(turns().stand).not.toHaveBeenCalled()
+  })
+
+  it('is kept in front when it is turned to', async () => {
+    await request(150)
+
+    expect(turns().keepOffset).toHaveBeenCalledWith(150)
+  })
+
+  it('is kept in front when its spread is the one in front', async () => {
+    await request(150, SPREAD_OF(150))
+
+    expect(turns().stand).not.toHaveBeenCalled()
+    expect(turns().keepOffset).toHaveBeenCalledWith(150)
+  })
+
+  it('is not kept when it falls after the document', async () => {
+    await request(350)
+
+    expect(turns().keepOffset).not.toHaveBeenCalled()
   })
 
   it('is not turned to when it falls after the document', async () => {

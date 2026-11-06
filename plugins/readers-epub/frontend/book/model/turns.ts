@@ -173,6 +173,10 @@ export function useBookTurns(options: BookTurnsOptions) {
     keptOffset = now
     return now
   }
+  /** Keeps `pos` in front across the layouts that follow. */
+  const keepOffset = (pos: number) => {
+    keptOffset = pos
+  }
 
   /** The spread one offset of the book's text falls on. */
   const getSpreadOf = (pos: number) => findSpreadAt(options.marks.value, options.flow.value, pos)
@@ -196,6 +200,7 @@ export function useBookTurns(options: BookTurnsOptions) {
     stand,
     goTo,
     getKeptOffset,
+    keepOffset,
     getSpreadOf,
     turn,
   }
