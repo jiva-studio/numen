@@ -56,7 +56,7 @@ test.describe('the window shows no corner notices', () => {
     test('is a failed task, not a notice', async ({ page, request }) => {
       const before = await listFilePaths(request)
       await openWorkspace(page)
-      await runCommand(page, 'Import from URL', /^Import from URL/)
+      await runCommand(page, 'Import link', /^Import link/)
       await getPaletteField(page).fill(MISSING_PAGE_ADDRESS)
       await page.keyboard.press('Enter')
 

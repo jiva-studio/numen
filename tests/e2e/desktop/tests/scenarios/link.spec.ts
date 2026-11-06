@@ -30,7 +30,7 @@ const readOpenPaths = async (page: Page): Promise<string[]> => {
 }
 
 const importAddress = async (page: Page, address: string): Promise<void> => {
-  await runCommand(page, 'Import from URL', /^Import from URL/)
+  await runCommand(page, 'Import link', /^Import link/)
   await getPaletteField(page).fill(address)
   await page.keyboard.press('Enter')
 }

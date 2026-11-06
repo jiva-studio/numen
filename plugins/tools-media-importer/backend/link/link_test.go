@@ -31,6 +31,7 @@ type sites struct {
 	texts  atomic.Int32
 	failAt int
 	clip   []byte
+	media  []download.Media
 }
 
 func (s *sites) CanCopy(address string) bool { return address == videoAddress }
@@ -57,7 +58,8 @@ func (s *sites) GetText(_ context.Context, address string, _ download.PreferredC
 	return download.Text{}, download.ErrNothingDownloaded
 }
 
-func (s *sites) Download(_ context.Context, _ string, into io.Writer) (download.Copy, error) {
+func (s *sites) Download(_ context.Context, _ string, media download.Media, into io.Writer) (download.Copy, error) {
+	s.media = append(s.media, media)
 	if s.failAt > 0 {
 		if _, err := into.Write(s.clip[:s.failAt]); err != nil {
 			return download.Copy{}, err
@@ -65,6 +67,9 @@ func (s *sites) Download(_ context.Context, _ string, into io.Writer) (download.
 		return download.Copy{}, errors.New("the site hung up")
 	}
 	_, err := into.Write(s.clip)
+	if media == download.MediaAudio {
+		return download.Copy{MediaType: "audio/mp4", Extension: ".m4a"}, err
+	}
 	return download.Copy{MediaType: "video/mp4", Extension: ".mp4"}, err
 }
 
@@ -206,7 +211,7 @@ func TestCopyWritesTheVideoToTheKeyFile(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
 
-	size, err := w.links.Copy(t.Context(), made)
+	size, err := w.links.Copy(t.Context(), made, download.MediaVideo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,12 +241,12 @@ func TestCopyDeletesThePartialFileOnFailure(t *testing.T) {
 	made := w.create(t, videoAddress)
 
 	w.sites.failAt = 100
-	if _, err := w.links.Copy(t.Context(), made); err == nil {
+	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); err == nil {
 		t.Fatal("a copy the site hung up on was kept")
 	}
 	w.sites.failAt = 0
 	w.limit = 100
-	if _, err := w.links.Copy(t.Context(), made); !errors.Is(err, link.ErrTooLarge) {
+	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); !errors.Is(err, link.ErrTooLarge) {
 		t.Errorf("a copy past the limit was answered %v", err)
 	}
 	files, err := w.store.List(t.Context())
@@ -252,7 +257,7 @@ func TestCopyDeletesThePartialFileOnFailure(t *testing.T) {
 	if len(tasks) != 1 || tasks[0].FailureReason == "" || tasks[0].Detail != made.Path {
 		t.Errorf("the failure is shown as %+v", tasks)
 	}
-	if _, err := w.links.Copy(t.Context(), w.create(t, articleAddress)); !errors.Is(err, link.ErrNotCopyable) {
+	if _, err := w.links.Copy(t.Context(), w.create(t, articleAddress), download.MediaVideo); !errors.Is(err, link.ErrNotCopyable) {
 		t.Errorf("an article was copied: %v", err)
 	}
 }
@@ -370,7 +375,7 @@ func TestAnEditedNoteGetsItsStoredTextWithoutAFetch(t *testing.T) {
 func TestTheCopyFollowsAnEditOfTheNote(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
-	size, err := w.links.Copy(t.Context(), made)
+	size, err := w.links.Copy(t.Context(), made, download.MediaVideo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -385,7 +390,7 @@ func TestCopyWritesTheAddressOfTheMediaIntoTheNote(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
 
-	if _, err := w.links.Copy(t.Context(), made); err != nil {
+	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -401,14 +406,14 @@ func TestCopyWritesTheAddressOfTheMediaIntoTheNote(t *testing.T) {
 	}
 }
 
-func TestTheTextStaysLiveWhenTheMediaAddressIsWritten(t *testing.T) {
+func TestTheTextIsLiveAfterTheMediaAddressIsSet(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
 	if err := w.links.FetchText(t.Context(), made, true); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := w.links.Copy(t.Context(), made); err != nil {
+	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -442,7 +447,7 @@ func TestCreateWritesThePageThatFramesThePlayer(t *testing.T) {
 func TestFetchTextAfterACopyFetchesTheText(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
-	if _, err := w.links.Copy(t.Context(), made); err != nil {
+	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); err != nil {
 		t.Fatal(err)
 	}
 

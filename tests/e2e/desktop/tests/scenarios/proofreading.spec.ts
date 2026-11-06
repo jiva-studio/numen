@@ -24,7 +24,7 @@ const PROOFREAD_MARK = 'proofread'
 const expectProofreadVersion = async (page: Page): Promise<void> => {
   await expect(async () => {
     await page.keyboard.press('Escape')
-    await runCommand(page, 'Delete proofreading', /^Delete proofreading/)
+    await runCommand(page, 'Delete text', /^Delete text/)
     await expect(page.getByRole('option')).toHaveCount(2, { timeout: 2_000 })
   }).toPass({ timeout: 90_000 })
   await page.keyboard.press('Escape')
@@ -41,7 +41,7 @@ test.describe('Proofreading', () => {
   test('puts the recognised text of a scan right', async ({ page }) => {
     await openWorkspace(page)
     await openVaultFile(page, 'assets', 'pumped-storage.pdf')
-    await runCommand(page, 'Recognise', /^Recognise/)
+    await runCommandOverItem(page, 'Create text', /^Create text$/, /^Recognize text$/)
     await waitForPassage(page, MOCK_RECOGNISED_WORDS, 'assets/pumped-storage.pdf')
     await page.keyboard.press('Escape')
 

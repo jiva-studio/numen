@@ -24,16 +24,16 @@ type PluginTriggers interface {
 // TriggerFile is a file of the vault as the triggers last saw it: its size, its modification time
 // and the hash of its content.
 type TriggerFile struct {
-	Size    int64     `json:"size"`
-	ModTime time.Time `json:"modTime"`
-	Hash    string    `json:"hash"`
+	Size    int64
+	ModTime time.Time
+	Hash    string
 }
 
 // TriggerState is what the triggers of a vault last saw and ran: each file by its path, and for each
 // trigger over a file the hash of the content it last ran on, by the key of the trigger and the path.
 type TriggerState struct {
-	Files map[string]TriggerFile `json:"files"`
-	Runs  map[string]string      `json:"runs"`
+	Files map[string]TriggerFile
+	Runs  map[string]string
 }
 
 // TriggerRecord is what the triggers of one vault saw and ran.

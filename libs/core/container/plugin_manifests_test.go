@@ -362,11 +362,28 @@ func isNamedIn(source, key string) bool {
 	return false
 }
 
+// isReadByCondition reports whether a condition of the manifest reads the setting of the key, as
+// config.<plugin id>.<key>: the core reads it for the plugin.
+func isReadByCondition(manifest pluginport.PluginManifest, key string) bool {
+	conditions := make([]string, 0, len(manifest.Contributes.Triggers)+len(manifest.Contributes.Handlers))
+	for _, one := range manifest.Contributes.Triggers {
+		conditions = append(conditions, one.When)
+	}
+	for _, one := range manifest.Contributes.Handlers {
+		conditions = append(conditions, one.When)
+	}
+	name := "config." + manifest.ID + "." + key
+	return slices.ContainsFunc(conditions, func(condition string) bool { return strings.Contains(condition, name) })
+}
+
 // listUnreadSettings lists the settings a manifest declares that none of the
-// sources name.
+// sources name and no condition of the manifest reads.
 func listUnreadSettings(manifest pluginport.PluginManifest, sources []string) []string {
 	var unread []string
 	for _, setting := range manifest.Settings {
+		if isReadByCondition(manifest, setting.Key) {
+			continue
+		}
 		if !slices.ContainsFunc(sources, func(source string) bool { return isNamedIn(source, setting.Key) }) {
 			unread = append(unread, setting.Key)
 		}
@@ -409,6 +426,11 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 	}
 	if got := listUnreadSettings(manifest, []string{`languages := "dpis"`}); !slices.Equal(got, []string{"language", "dpi"}) {
 		t.Errorf("a key inside another word is found as read: %v", got)
+	}
+	triggered := pluginport.PluginManifest{ID: "org.example.scans", Settings: []pluginport.PluginManifestSetting{{Key: "isAutomatic"}}}
+	triggered.Contributes.Triggers = []pluginport.PluginTrigger{{On: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
+	if got := listUnreadSettings(triggered, nil); len(got) != 0 {
+		t.Errorf("a setting the condition of a trigger reads is found unread: %v", got)
 	}
 }
 

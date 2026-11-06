@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
@@ -78,7 +77,7 @@ func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandR
 // or its handler of the shared command of the id.
 func (h *Handler) findEntry(pluginID, command string) (plugincommand.Entry, bool) {
 	entries := h.list.ExecuteAll()
-	if pluginport.IsSharedCommand(command) {
+	if plugincommand.IsSharedCommand(command) {
 		entries = h.list.ExecuteHandlers()
 	}
 	for _, one := range entries {

@@ -28,7 +28,7 @@ function createLinks(facts: LinkFacts) {
       link.fetches.push(isForced)
       return { ok: true, value: null }
     },
-    copyVideo: async (path) => {
+    copyMedia: async (path) => {
       link.started.push(`copy ${path}`)
       return { ok: true, value: null }
     },

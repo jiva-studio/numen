@@ -24,30 +24,30 @@ const (
 	linker  = "org.example.links"
 )
 
-// shelf is a vault in memory: its files by path, each with a modification time.
-type shelf struct {
+// memoryVault is a vault in memory: its files by path, each with a modification time.
+type memoryVault struct {
 	mu    sync.Mutex
 	files map[string]string
 	times map[string]time.Time
 	reads int
 }
 
-func newShelf(files map[string]string) *shelf {
-	s := &shelf{files: map[string]string{}, times: map[string]time.Time{}}
+func newMemoryVault(files map[string]string) *memoryVault {
+	s := &memoryVault{files: map[string]string{}, times: map[string]time.Time{}}
 	for _, path := range slices.Sorted(maps.Keys(files)) {
 		s.put(path, files[path])
 	}
 	return s
 }
 
-func (s *shelf) put(path, content string) {
+func (s *memoryVault) put(path, content string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.files[path] = content
 	s.times[path] = time.Unix(int64(1_700_000_000+len(s.times)*100+len(content)), 0)
 }
 
-func (s *shelf) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
+func (s *memoryVault) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
 	s.mu.Lock()
 	paths := slices.Sorted(maps.Keys(s.files))
 	s.mu.Unlock()
@@ -63,9 +63,9 @@ func (s *shelf) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) e
 	return nil
 }
 
-func (s *shelf) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
+func (s *memoryVault) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
 
-func (s *shelf) Read(_ context.Context, path string) ([]byte, error) {
+func (s *memoryVault) Read(_ context.Context, path string) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	content, ok := s.files[path]
@@ -76,11 +76,11 @@ func (s *shelf) Read(_ context.Context, path string) ([]byte, error) {
 	return []byte(content), nil
 }
 
-func (s *shelf) Open(context.Context, string) (io.ReadSeekCloser, error) {
+func (s *memoryVault) Open(context.Context, string) (io.ReadSeekCloser, error) {
 	return nil, errors.ErrUnsupported
 }
 
-func (s *shelf) StatFile(_ context.Context, path string) (domain.FileStat, error) {
+func (s *memoryVault) StatFile(_ context.Context, path string) (domain.FileStat, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	content, ok := s.files[path]
@@ -94,10 +94,10 @@ func (s *shelf) StatFile(_ context.Context, path string) (domain.FileStat, error
 	return domain.FileStat{Path: path, Kind: kind, Size: int64(len(content)), ModTime: s.times[path]}, nil
 }
 
-// readers opens the one shelf for every vault.
-type readers struct{ shelf *shelf }
+// readers opens the one memoryVault for every vault.
+type readers struct{ memoryVault *memoryVault }
 
-func (r readers) Open(domain.Vault) (vaultport.VaultReader, error) { return r.shelf, nil }
+func (r readers) Open(domain.Vault) (vaultport.VaultReader, error) { return r.memoryVault, nil }
 
 // types gives a PDF and a PNG their type by extension.
 type types struct{}
@@ -170,16 +170,16 @@ func (m *memoryRecord) Write(_ context.Context, state pluginport.TriggerState) e
 }
 
 type scene struct {
-	shelf    *shelf
-	plugins  *plugins
-	config   map[string]any
-	triggers *trigger.Triggers
+	memoryVault *memoryVault
+	plugins     *plugins
+	config      map[string]any
+	triggers    *trigger.Triggers
 }
 
 func newScene(t *testing.T, files map[string]string, entries ...pluginport.PluginTriggerEntry) *scene {
 	t.Helper()
-	s := &scene{shelf: newShelf(files), plugins: &plugins{triggers: entries, failing: map[string]bool{}}, config: map[string]any{}}
-	s.triggers = trigger.NewTriggers(s.plugins, readers{s.shelf}, types{}, &memoryRecord{},
+	s := &scene{memoryVault: newMemoryVault(files), plugins: &plugins{triggers: entries, failing: map[string]bool{}}, config: map[string]any{}}
+	s.triggers = trigger.NewTriggers(s.plugins, readers{s.memoryVault}, types{}, &memoryRecord{},
 		func() (map[string]any, error) { return s.config, nil })
 	return s
 }
@@ -192,23 +192,36 @@ func (s *scene) scan(t *testing.T) []string {
 	return s.plugins.take()
 }
 
-var (
-	extractOnAdd = pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
+// getExtractOnAdd extracts the text of a PDF added.
+func getExtractOnAdd() pluginport.PluginTriggerEntry {
+	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
 		On: manifest.EventFileAdded, Command: "app:file.createText", When: "target.contentType == 'application/pdf'",
 	}}
-	recognizeWhenOn = pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
+}
+
+// getRecognizeWhenOn runs over every file added while a setting is on.
+func getRecognizeWhenOn() pluginport.PluginTriggerEntry {
+	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
 		On: manifest.EventFileAdded, Command: "app:version.delete", When: "config.org.example.scans.isAutomatic == true",
 	}}
-	recheckOnChange = pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
+}
+
+// getRecheckOnChange reads a picture again when it changes.
+func getRecheckOnChange() pluginport.PluginTriggerEntry {
+	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
 		On: manifest.EventFileChanged, Command: "app:file.createText", When: "target.contentType == 'image/png'",
 	}}
-	captionsOnLink = pluginport.PluginTriggerEntry{PluginID: linker, Trigger: manifest.Trigger{
+}
+
+// getCaptionsOnLink downloads the captions of a link note that holds an address.
+func getCaptionsOnLink() pluginport.PluginTriggerEntry {
+	return pluginport.PluginTriggerEntry{PluginID: linker, Trigger: manifest.Trigger{
 		On: manifest.EventFileAdded, Command: "app:file.createText", When: "target.noteType == 'link' && has(target.properties.url)",
 	}}
-)
+}
 
 func TestATriggerOnFileAddedRunsOnceOverEachMatchingFile(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "notes/n.md": "# A note\n"}, extractOnAdd)
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "notes/n.md": "# A note\n"}, getExtractOnAdd())
 
 	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
 		t.Fatalf("the first scan ran %v, want %v", got, want)
@@ -216,29 +229,29 @@ func TestATriggerOnFileAddedRunsOnceOverEachMatchingFile(t *testing.T) {
 	if got := s.scan(t); len(got) != 0 {
 		t.Errorf("a second scan over the same content ran %v", got)
 	}
-	s.shelf.put("scans/b.pdf", "%PDF b")
+	s.memoryVault.put("scans/b.pdf", "%PDF b")
 	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/b.pdf"}; !slices.Equal(got, want) {
 		t.Errorf("a file added ran %v, want %v", got, want)
 	}
 }
 
 func TestATriggerOnFileAddedDoesNotRunWhenAFileChanges(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, extractOnAdd)
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, getExtractOnAdd())
 	s.scan(t)
 
-	s.shelf.put("scans/a.pdf", "%PDF a, second printing")
+	s.memoryVault.put("scans/a.pdf", "%PDF a, second printing")
 	if got := s.scan(t); len(got) != 0 {
 		t.Errorf("a changed file ran %v", got)
 	}
 }
 
 func TestATriggerOnFileChangedRunsWhenTheContentChanges(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.png": "pixels"}, recheckOnChange)
+	s := newScene(t, map[string]string{"scans/a.png": "pixels"}, getRecheckOnChange())
 	if got := s.scan(t); len(got) != 0 {
 		t.Fatalf("a file found for the first time ran %v on file.changed", got)
 	}
 
-	s.shelf.put("scans/a.png", "other pixels")
+	s.memoryVault.put("scans/a.png", "other pixels")
 	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.png"}; !slices.Equal(got, want) {
 		t.Errorf("a changed file ran %v, want %v", got, want)
 	}
@@ -248,7 +261,7 @@ func TestATriggerOnFileChangedRunsWhenTheContentChanges(t *testing.T) {
 }
 
 func TestATriggerRunsOverTheFilesAlreadyThereOnceASettingMakesItsConditionTrue(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.png": "pixels", "scans/b.pdf": "%PDF b"}, recognizeWhenOn)
+	s := newScene(t, map[string]string{"scans/a.png": "pixels", "scans/b.pdf": "%PDF b"}, getRecognizeWhenOn())
 	if got := s.scan(t); len(got) != 0 {
 		t.Fatalf("a trigger whose setting is off ran %v", got)
 	}
@@ -265,7 +278,7 @@ func TestATriggerOfAPluginEnabledLaterRunsOverTheFilesAlreadyThere(t *testing.T)
 	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"})
 	s.scan(t)
 
-	s.plugins.triggers = []pluginport.PluginTriggerEntry{extractOnAdd}
+	s.plugins.triggers = []pluginport.PluginTriggerEntry{getExtractOnAdd()}
 	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
 		t.Errorf("the trigger of the plugin enabled ran %v, want %v", got, want)
 	}
@@ -276,7 +289,7 @@ func TestATriggerReadsTheTypeAndPropertiesOfANote(t *testing.T) {
 		"links/tide.md":  "---\ntype: link\nurl: https://tides.example/mill\n---\n",
 		"links/plain.md": "---\ntype: link\n---\n",
 		"notes/n.md":     "# A note\n",
-	}, captionsOnLink)
+	}, getCaptionsOnLink())
 
 	if got, want := s.scan(t), []string{linker + " app:file.createText links/tide.md"}; !slices.Equal(got, want) {
 		t.Errorf("the scan ran %v, want %v", got, want)
@@ -284,7 +297,7 @@ func TestATriggerReadsTheTypeAndPropertiesOfANote(t *testing.T) {
 }
 
 func TestAFailedRunIsTriedAgainOnTheNextScan(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, extractOnAdd)
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, getExtractOnAdd())
 	s.plugins.failing["scans/a.pdf"] = true
 	if err := s.triggers.Execute(t.Context(), domain.Vault{ID: "v1"}); err == nil {
 		t.Fatal("a failing run reported no error")
@@ -297,12 +310,12 @@ func TestAFailedRunIsTriedAgainOnTheNextScan(t *testing.T) {
 }
 
 func TestAScanReadsNoFileWhenNothingChanged(t *testing.T) {
-	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.png": "pixels"}, extractOnAdd)
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.png": "pixels"}, getExtractOnAdd())
 	s.scan(t)
-	before := s.shelf.reads
+	before := s.memoryVault.reads
 
 	s.scan(t)
-	if s.shelf.reads != before {
-		t.Errorf("a scan over unchanged files read %d files", s.shelf.reads-before)
+	if s.memoryVault.reads != before {
+		t.Errorf("a scan over unchanged files read %d files", s.memoryVault.reads-before)
 	}
 }

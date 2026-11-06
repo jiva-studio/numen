@@ -231,7 +231,7 @@ func (f *stubFetcher) GetText(ctx context.Context, _ string, _ download.Preferre
 	return f.text, f.textErr
 }
 
-func (f *stubFetcher) Download(_ context.Context, _ string, into io.Writer) (download.Copy, error) {
+func (f *stubFetcher) Download(_ context.Context, _ string, _ download.Media, into io.Writer) (download.Copy, error) {
 	f.downloads++
 	if len(f.copyBytes) > 0 {
 		if _, err := into.Write(f.copyBytes); err != nil {
@@ -507,7 +507,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	l.release("text", made, made.Key)
 
 	l.claim("copy", made, made.Key)
-	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrBeingFetched) || size != 0 {
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrBeingFetched) || size != 0 {
 		t.Errorf("Copy while claimed = (%d, %v), want (0, ErrBeingFetched)", size, err)
 	}
 	l.release("copy", made, made.Key)
@@ -628,7 +628,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	if _, err := l.FindCopy(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("FindCopy(list err) = %v, want %v", err, boom)
 	}
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(FindCopy err) = %v, want %v", err, boom)
 	}
 	hs.listErr = func(call int) error {
@@ -645,32 +645,32 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 
 	// Copy error and boundary paths.
 	sf.canCopy = false
-	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrNotCopyable) || size != 0 {
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrNotCopyable) || size != 0 {
 		t.Errorf("Copy(not copyable) = (%d, %v)", size, err)
 	}
 	sf.canCopy = true
 
 	sf.metaErr = boom
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(metaErr) = %v", err)
 	}
 	sf.metaErr = nil
 
 	*maxSize = 3
 	sf.meta = download.Metadata{Bytes: 4}
-	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrTooLarge) || size != 4 {
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrTooLarge) || size != 4 {
 		t.Errorf("Copy(too large meta) = (%d, %v), want (4, ErrTooLarge)", size, err)
 	}
 	*maxSize = 1
 	sf.meta = download.Metadata{Bytes: 2}
-	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrTooLarge) || size != 2 {
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrTooLarge) || size != 2 {
 		t.Errorf("Copy(meta 2 > limit 1) = (%d, %v), want (2, ErrTooLarge)", size, err)
 	}
 	*maxSize = 4
 	sf.meta = download.Metadata{Bytes: 4}
 
 	hq.enqueueErr = boom
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(enqueueErr) = %v", err)
 	}
 	hq.enqueueErr = nil
@@ -681,25 +681,25 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		}
 		return nil
 	}
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(delete part err) = %v", err)
 	}
 	hs.deleteErr = nil
 
 	hs.appendErr = func(string) error { return boom }
-	if size, err := l.Copy(ctx, made); !errors.Is(err, boom) || size != 0 {
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) || size != 0 {
 		t.Errorf("Copy(flush appendErr) = (%d, %v)", size, err)
 	}
 	hs.appendErr = nil
 
 	sf.copyRes = download.Copy{MediaType: "application/octet-stream", Extension: ".exe"}
-	if _, err := l.Copy(ctx, made); err == nil {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); err == nil {
 		t.Error("Copy(.exe) succeeded")
 	}
 	sf.copyRes = download.Copy{MediaType: "video/mp4", Extension: ".mp4"}
 
 	hs.renameErr = boom
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(renameErr) = %v", err)
 	}
 	hs.renameErr = nil
@@ -710,7 +710,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		}
 		return nil
 	}
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(recordCopy readErr) = %v", err)
 	}
 	hs.readErr = nil
@@ -719,7 +719,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	}
 
 	hq.releaseErr = boom
-	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(releaseErr) = %v", err)
 	}
 	hq.releaseErr = nil
@@ -733,14 +733,14 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	sf.copyBytes = []byte{0x7f}
 	sf.downloads = 0
 	hq.tasks = nil
-	size, err := l.Copy(ctx, made)
+	size, err := l.Copy(ctx, made, download.MediaVideo)
 	if err != nil || size != 1 || sf.downloads != 1 {
 		t.Fatalf("Copy(1 byte) = (%d, %v), downloads=%d", size, err, sf.downloads)
 	}
 	if len(hq.tasks) < 2 || hq.tasks[0].CompletedCount != 0 || hq.tasks[0].TotalCount != 0 || hq.tasks[1].CompletedCount != 1 || hq.tasks[1].TotalCount != 1 {
 		t.Errorf("Copy tasks = %+v", hq.tasks)
 	}
-	size, err = l.Copy(ctx, made)
+	size, err = l.Copy(ctx, made, download.MediaVideo)
 	if err != nil || size != 1 || sf.downloads != 1 {
 		t.Fatalf("second Copy(1 byte) = (%d, %v), downloads=%d", size, err, sf.downloads)
 	}

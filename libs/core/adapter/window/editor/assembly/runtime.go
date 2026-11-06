@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
@@ -78,6 +79,7 @@ type Runtime[H, V any] struct {
 	SetTextVersionListenerFn func(listener textport.VersionListener)
 	OpenFileMenuFn           func() *textversion.FileMenu
 	OpenPluginFileFn         func() *file.OpenPluginFile
+	OpenTriggersFn           func() *trigger.Triggers
 	GetMediaTypeFn           func() *file.GetMediaType
 	OpenChoosePluginPathFn   func(dialog machineport.PathDialog) *settings.ChoosePluginPath
 	OpenFileTextFn           func() *textversion.FileText
@@ -167,7 +169,14 @@ func (e Runtime[H, V]) SetTextVersionListener(listener textport.VersionListener)
 }
 func (e Runtime[H, V]) OpenFileMenu() *textversion.FileMenu  { return e.OpenFileMenuFn() }
 func (e Runtime[H, V]) OpenPluginFile() *file.OpenPluginFile { return e.OpenPluginFileFn() }
-func (e Runtime[H, V]) GetMediaType() *file.GetMediaType     { return e.GetMediaTypeFn() }
+
+func (e Runtime[H, V]) OpenTriggers() *trigger.Triggers {
+	if e.OpenTriggersFn == nil {
+		return nil
+	}
+	return e.OpenTriggersFn()
+}
+func (e Runtime[H, V]) GetMediaType() *file.GetMediaType { return e.GetMediaTypeFn() }
 func (e Runtime[H, V]) OpenChoosePluginPath(dialog machineport.PathDialog) *settings.ChoosePluginPath {
 	return e.OpenChoosePluginPathFn(dialog)
 }

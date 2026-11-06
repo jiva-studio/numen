@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
@@ -23,7 +24,7 @@ func mountAPI(s *server.Server, links *link.Links) error {
 	server.Handle(a, api.MethodGetLink, service.getLink)
 	server.Handle(a, api.MethodReadArticle, service.readArticle)
 	server.Handle(a, api.MethodFetchText, service.fetchText)
-	server.Handle(a, api.MethodCopyVideo, service.copyVideo)
+	server.Handle(a, api.MethodCopyMedia, service.copyMedia)
 	server.Handle(a, api.MethodDeleteCopy, service.deleteCopy)
 	server.Handle(a, api.MethodCreateLinks, service.createLinks)
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="compile-time API service and method constants are valid so a.Err() is always nil"
@@ -90,13 +91,17 @@ func (s linkServer) fetchText(ctx context.Context, req api.FetchTextRequest) (ap
 	return api.FetchTextResponse{}, nil
 }
 
-func (s linkServer) copyVideo(ctx context.Context, req api.CopyVideoRequest) (api.CopyVideoResponse, error) {
+func (s linkServer) copyMedia(ctx context.Context, req api.CopyMediaRequest) (api.CopyMediaResponse, error) {
 	found, err := s.readLink(ctx, req.Path)
 	if err != nil {
-		return api.CopyVideoResponse{}, err
+		return api.CopyMediaResponse{}, err
 	}
-	s.links.StartCopy(ctx, found)
-	return api.CopyVideoResponse{}, nil
+	media := download.MediaVideo
+	if req.Kind == string(download.MediaAudio) {
+		media = download.MediaAudio
+	}
+	s.links.StartCopy(ctx, found, media)
+	return api.CopyMediaResponse{}, nil
 }
 
 func (s linkServer) deleteCopy(ctx context.Context, req api.DeleteCopyRequest) (api.DeleteCopyResponse, error) {

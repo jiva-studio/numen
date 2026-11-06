@@ -150,7 +150,7 @@ func TestProofreadMakesTheLiveVersionFromTheScan(t *testing.T) {
 		})
 	}
 
-	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID(), IsUserStarted: true})
+	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -296,7 +296,7 @@ func TestProofreadMakesAVersionOfTheSourceThePluginIsGiven(t *testing.T) {
 	s := newScene(t)
 	scan := s.holdScan(t)
 
-	if _, err := s.run.Proofread(t.Context(), Request{Vault: "Physics", Path: scanPath, Source: scan.GetID(), IsUserStarted: true}); err != nil {
+	if _, err := s.run.Proofread(t.Context(), Request{Vault: "Physics", Path: scanPath, Source: scan.GetID()}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -380,7 +380,7 @@ func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := s.run.Proofread(t.Context(), Request{Vault: "Chemistry", Path: scanPath, Source: scan.GetID(), IsUserStarted: true}); err != nil {
+	if _, err := s.run.Proofread(t.Context(), Request{Vault: "Chemistry", Path: scanPath, Source: scan.GetID()}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -444,7 +444,7 @@ func TestProofreadUsesDirectChatAPIWhenProviderIsConfigured(t *testing.T) {
 	})
 	scan := s.holdScan(t)
 
-	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID(), IsUserStarted: true})
+	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Source: scan.GetID()})
 	if err != nil {
 		t.Fatal(err)
 	}

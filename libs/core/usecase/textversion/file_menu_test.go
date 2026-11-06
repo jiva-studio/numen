@@ -362,7 +362,7 @@ func TestNewFileMenuRequiresVersionsCommandsTypesAndReaders(t *testing.T) {
 	}
 }
 
-func TestAHandlerOfASharedCommandOffersOnlyTheVersionsItsPluginMade(t *testing.T) {
+func TestAHandlerOfASharedCommandListsEveryVersionItsConditionMatches(t *testing.T) {
 	s := newScene(t)
 	deleteText := pluginport.PluginCommandEntry{PluginID: ocr, Command: pluginport.PluginCommand{
 		ID: "app:version.delete", Title: "Delete recognition", When: "version.kind != ''",
@@ -375,13 +375,10 @@ func TestAHandlerOfASharedCommandOffersOnlyTheVersionsItsPluginMade(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(items) != 1 || items[0].PluginID != ocr {
-		t.Fatalf("the handler offers %+v, want the one version of %s", items, ocr)
+	if len(items) != 2 {
+		t.Fatalf("the handler offers %+v, want the versions of both plugins", items)
 	}
-	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, deleteText, s.getReaderVersion()); !errors.Is(err, textversion.ErrInvalidVersion) {
-		t.Errorf("a version of another plugin: got %v, want ErrInvalidVersion", err)
-	}
-	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, deleteText, items[0].Version); err != nil || len(recorder.ran) != 1 {
-		t.Errorf("the version of the plugin: got %v, ran %+v", err, recorder.ran)
+	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, deleteText, s.getReaderVersion()); err != nil || len(recorder.ran) != 1 {
+		t.Errorf("a version of another plugin: got %v, ran %+v", err, recorder.ran)
 	}
 }

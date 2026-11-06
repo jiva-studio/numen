@@ -36,7 +36,8 @@ export interface Links {
    * a stored text without fetching it.
    */
   fetchText(path: string, isForced: boolean): Promise<Outcome<null>>
-  copyVideo(path: string): Promise<Outcome<null>>
+  /** Starts downloading the video of a link, or its sound alone. */
+  copyMedia(path: string, kind: 'video' | 'audio'): Promise<Outcome<null>>
   deleteCopy(path: string): Promise<Outcome<null>>
   /**
    * Calls onChange with whether work on the file is running; the returned

@@ -1,39 +1,44 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.11.7",
+  "version": "2026.11.8",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "engines",
-    "handles": [
-      {
-        "purpose": "text-provider",
-        "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
-      }
-    ],
-    "commands": [
-      {
-        "id": "recognition.create",
-        "title": "Recognise text",
-        "icon": "scan-text",
-        "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
-      },
-      {
-        "id": "recognition.delete",
-        "title": "Delete recognition",
-        "icon": "trash-2",
-        "when": "version.kind == 'recognition'"
-      }
-    ],
     "slots": [
       {
         "slot": "fileTree.context",
-        "command": "recognition.create",
+        "command": "app:file.createText",
         "group": "3-text",
         "order": 10
+      },
+      {
+        "slot": "fileTree.context",
+        "command": "app:version.delete",
+        "group": "3-text",
+        "order": 90
+      }
+    ],
+    "handlers": [
+      {
+        "command": "app:file.createText",
+        "title": "Recognize text",
+        "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
+      },
+      {
+        "command": "app:version.delete",
+        "title": "Delete recognition",
+        "when": "version.kind == 'recognition'"
+      }
+    ],
+    "triggers": [
+      {
+        "on": "file.added",
+        "command": "app:file.createText",
+        "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeAutomatically == true"
       }
     ]
   },
@@ -137,7 +142,6 @@
   "backend": {
     "entrypoint": "bin/engines-ocr"
   },
-  "services": ["numen.v1.TextProviderService"],
   "settings": [
     {
       "key": "model",
@@ -248,6 +252,13 @@
           "title": "600 dpi"
         }
       ]
+    },
+    {
+      "key": "recognizeAutomatically",
+      "type": "boolean",
+      "title": "Recognize automatically",
+      "description": "Recognize the text of every PDF and image added to the vault",
+      "default": false
     }
   ]
 }

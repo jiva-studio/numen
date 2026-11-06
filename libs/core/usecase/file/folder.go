@@ -6,4 +6,6 @@ import "github.com/jiva-studio/numen/libs/notes/domain"
 type Folder struct {
 	Entries []domain.Entry
 	Types   map[string]domain.NoteType
+	// Properties is the frontmatter of each note by its path.
+	Properties map[string]map[string]any
 }
