@@ -58,6 +58,7 @@ func addWindowTabsGet(registry *tools.Registry, on Host) error {
 					Path:     focus,
 					Title:    formatTitleFromPath(focus),
 					Location: nil,
+					Error:    "",
 					IsActive: true,
 				}
 				tabs = []TabInfo{inferredTab}
@@ -99,6 +100,8 @@ func newTabInfo(tab host.OpenTab, activeID string) TabInfo {
 		Kind:     tab.Kind,
 		Path:     tab.Path,
 		Title:    tab.Title,
+		Location: nil,
+		Error:    "",
 		IsActive: tab.ID != "" && tab.ID == activeID,
 	}
 	location, err := readTabLocation(tab)

@@ -82,35 +82,31 @@ func readError(err error) error {
 	return err
 }
 
-func fail(code v1.HostVaultErrorCode) error {
-	switch code {
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED:
-		return nil
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:
-		return ErrNoVault
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:
-		return ErrNotExist
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT:
-		return ErrOutside
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:
-		return ErrStale
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS:
-		return ErrAlreadyExists
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED:
-		return ErrLockedByAnother
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:
-		return ErrNotANote
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION:
-		return ErrInvalidConnection
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE:
-		return ErrHierarchyCycle
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED:
-		return ErrNoFreeName
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:
-		return domain.ErrInvalidName
-	default:
-		return fmt.Errorf("host: rejected with code %s", code)
+// getHostVaultErrors is the error of each code a call on a vault is refused with.
+func getHostVaultErrors() map[v1.HostVaultErrorCode]error {
+	return map[v1.HostVaultErrorCode]error{
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:           ErrNoVault,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:          ErrNotExist,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT:      ErrOutside,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:           ErrStale,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS:     ErrAlreadyExists,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED:             ErrLockedByAnother,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:         ErrNotANote,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION: ErrInvalidConnection,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE:    ErrHierarchyCycle,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED:     ErrNoFreeName,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:       domain.ErrInvalidName,
 	}
+}
+
+func fail(code v1.HostVaultErrorCode) error {
+	if code == v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED {
+		return nil
+	}
+	if err, isKnown := getHostVaultErrors()[code]; isKnown {
+		return err
+	}
+	return fmt.Errorf("the host refused the call with the code %s", code)
 }
 
 func readFileStat(f *v1.HostFileStat) domain.FileStat {
