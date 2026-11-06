@@ -83,8 +83,8 @@ func (t *Tools) importURL(ctx context.Context, in URLImportInput) (URLImportOutp
 	out := URLImportOutput{
 		Path: made.Path, Title: "", Producer: "", Bytes: 0, IsNothing: false, Error: "", CopyTaskID: "", CopyError: "",
 	}
-	if !t.readText(ctx, made, &out) {
-		return out, nil
+	if err := t.fetchText(ctx, made, &out); err != nil {
+		out.Error = err.Error()
 	}
 	if in.ShouldCopy {
 		t.startCopy(ctx, made, &out)
@@ -92,16 +92,7 @@ func (t *Tools) importURL(ctx context.Context, in URLImportInput) (URLImportOutp
 	return out, nil
 }
 
-// readText fetches the text of the link note and writes what was fetched into out, or the reason
-// it was not fetched, and is false where it was not.
-func (t *Tools) readText(ctx context.Context, made link.Link, out *URLImportOutput) bool {
-	err := t.fetchText(ctx, made, out)
-	if err != nil {
-		out.Error = err.Error()
-	}
-	return err == nil
-}
-
+// fetchText fetches the text of the link note and writes what was fetched into out.
 func (t *Tools) fetchText(ctx context.Context, made link.Link, out *URLImportOutput) error {
 	if err := t.links.FetchText(ctx, made, true); err != nil {
 		return err
