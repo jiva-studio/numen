@@ -80,7 +80,7 @@ func TestTheLimitOfASearchOfPassagesIsClamped(t *testing.T) {
 	}
 }
 
-func TestSearchPassagesCutsTextAroundTheHit(t *testing.T) {
+func TestSearchPassagesTrimsTextAroundTheHit(t *testing.T) {
 	body := strings.Repeat("filler words ", 400) + "the grey heron stands" + strings.Repeat(" trailing words", 400)
 	hitAt := strings.Index(body, "heron")
 	finder := &recordingFinder{found: []domain.Passage{
