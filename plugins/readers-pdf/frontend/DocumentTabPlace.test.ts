@@ -1,12 +1,12 @@
 /**
- * The place a PDF tab saves: the page shown and the number of pages of the document, saved when the
- * reader goes to another page and when the window moves the tab to a passage. The tab's own reader
- * runs over a made-up port.
+ * The place a PDF tab saves and reports to the window: the page shown and the number of pages of the
+ * document, when the reader goes to another page and when the window moves the tab to a passage. The
+ * tab's own reader runs over a made-up port.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, shallowRef } from 'vue'
-import type { Selector } from '@numen/plugin-sdk'
+import type { Selector, TabPlace } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
 import { useDocumentReader } from './model/useDocumentReader'
 import { useDocumentTab } from './model/useDocumentTab'
@@ -61,13 +61,14 @@ const mountTab = (documents: Documents) => {
   const reader = useDocumentTab(useDocumentReader(documents, PATH))
   const ranges = shallowRef<readonly TextRange[] | null>(null)
   const savePlace = vi.fn((_place: Selector) => undefined)
+  const reportPlace = vi.fn((_place: TabPlace) => undefined)
   const state = Object.defineProperty(
-    Object.assign(reader, { title: 'Wading Birds', selector: null, savePlace }),
+    Object.assign(reader, { title: 'Wading Birds', selector: null, savePlace, reportPlace }),
     'ranges',
     { get: () => ranges.value, enumerable: true },
   )
   const tab = mount(DocumentTab, { props: { state } })
-  return { tab, ranges, savePlace, reader }
+  return { tab, ranges, savePlace, reportPlace, reader }
 }
 
 describe('the place a PDF tab saves when the window moves it', () => {
@@ -111,6 +112,45 @@ describe('the place a PDF tab saves when the reader goes to another page', () =>
     await flush()
 
     expect(savePlace).toHaveBeenLastCalledWith({ page: 4, pageCount: 12 })
+    tab.unmount()
+  })
+})
+
+describe('the place a PDF tab reports to the window', () => {
+  it('is the page shown, from 1, and the number of pages when the reader goes to another page', async () => {
+    const { documents, release } = createDocuments()
+    release()
+    const { tab, reportPlace, reader } = mountTab(documents)
+    await flush()
+    reportPlace.mockClear()
+
+    await reader.goToPage(3)
+    await flush()
+
+    expect(reportPlace).toHaveBeenLastCalledWith({ page: 4, pageCount: 12 })
+    tab.unmount()
+  })
+
+  it('is the page of the first range the window sets on an open tab', async () => {
+    const { documents, release } = createDocuments()
+    release()
+    const { tab, ranges, reportPlace } = mountTab(documents)
+    await flush()
+    reportPlace.mockClear()
+
+    ranges.value = [...RANGES]
+    await flush()
+
+    expect(reportPlace).toHaveBeenLastCalledWith({ page: 7, pageCount: 12 })
+    tab.unmount()
+  })
+
+  it('is nothing while the document is loading', async () => {
+    const { documents } = createDocuments()
+    const { tab, reportPlace } = mountTab(documents)
+    await flush()
+
+    expect(reportPlace).not.toHaveBeenCalled()
     tab.unmount()
   })
 })

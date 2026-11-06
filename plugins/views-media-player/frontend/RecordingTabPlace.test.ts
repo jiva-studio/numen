@@ -1,5 +1,6 @@
 /**
- * The place a recording tab saves when it opens at a restored place and when it closes.
+ * The place a recording tab saves when it opens at a restored place and when it closes, and the place
+ * it reports to the window.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -24,7 +25,8 @@ const mountTab = (selector: Record<string, unknown> | null) => {
   const { recordings } = createRecordings()
   const { player } = createPlayer()
   const savePlace = vi.fn()
-  const state = reactive({ path: 'talks/Ants.mp3', selector, ranges: null, savePlace })
+  const reportPlace = vi.fn()
+  const state = reactive({ path: 'talks/Ants.mp3', selector, ranges: null, savePlace, reportPlace })
   const tab = mount(RecordingTab, {
     props: {
       path: 'talks/Ants.mp3',
@@ -34,7 +36,7 @@ const mountTab = (selector: Record<string, unknown> | null) => {
     },
     attachTo: document.body,
   })
-  return { tab, player, savePlace }
+  return { tab, player, savePlace, reportPlace }
 }
 
 describe('the place a recording tab opens at', () => {
@@ -67,5 +69,38 @@ describe('the place a recording tab saves when it closes', () => {
     tab.unmount()
 
     expect(savePlace).not.toHaveBeenCalled()
+  })
+})
+
+describe('the place a recording tab reports to the window', () => {
+  it('is the time it is at, in seconds from the start, when it closes while it holds the player', async () => {
+    const { tab, player, reportPlace } = mountTab(null)
+    await flush()
+    player.seek(TALK_URL, 66_500)
+
+    tab.unmount()
+
+    expect(reportPlace).toHaveBeenLastCalledWith({ positionSeconds: 66.5 })
+  })
+
+  it('is a time past an hour, in seconds, when it closes there', async () => {
+    const { tab, player, reportPlace } = mountTab(null)
+    await flush()
+    player.seek(TALK_URL, 3_723_900)
+
+    tab.unmount()
+
+    expect(reportPlace).toHaveBeenLastCalledWith({ positionSeconds: 3723.9 })
+  })
+
+  it('is nothing while another recording holds the player', async () => {
+    const { tab, player, reportPlace } = mountTab({ t: [42, 42] })
+    await flush()
+    player.seek(OTHER_URL, 0)
+    reportPlace.mockClear()
+
+    tab.unmount()
+
+    expect(reportPlace).not.toHaveBeenCalled()
   })
 })

@@ -3,9 +3,11 @@ package host_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"slices"
+	"reflect"
+	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -62,7 +64,9 @@ func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.Hos
 		ActiveId: "tab-2",
 		Tabs: []*v1.Tab{
 			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
-			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`},
+			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &v1.TabPlace{Page: 4, PageCount: 80}},
+			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &v1.TabPlace{PositionSeconds: new(float64)}},
+			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &v1.TabPlace{Cfi: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
 		},
 	}), nil
 }
@@ -111,7 +115,7 @@ func TestClientSendsThePassagesInTheirOrder(t *testing.T) {
 	}
 }
 
-func TestClientReadsTheOpenTabsAndTheActiveTab(t *testing.T) {
+func TestClientReadsTheOpenTabsWithThePlaceEachReaderReported(t *testing.T) {
 	h := &windowHost{}
 	c := dialWindow(t, h)
 
@@ -119,13 +123,32 @@ func TestClientReadsTheOpenTabsAndTheActiveTab(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	atStart := 0.0
 	want := []host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 4, PageCount: 80}},
+		{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &host.TabPlace{PositionSeconds: &atStart}},
+		{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
 	}
-	if !slices.Equal(tabs, want) || activeID != "tab-2" {
-		t.Errorf("read %+v with %q active, want %+v with tab-2", tabs, activeID, want)
+	if !reflect.DeepEqual(tabs, want) || activeID != "tab-2" {
+		t.Errorf("read %s with %q active, want %s with tab-2", formatTabs(tabs), activeID, formatTabs(want))
 	}
+}
+
+// formatTabs is the tabs with the place each points at, for a failure message.
+func formatTabs(tabs []host.OpenTab) string {
+	var b strings.Builder
+	for _, tab := range tabs {
+		fmt.Fprintf(&b, "%+v", tab)
+		if tab.Place != nil {
+			fmt.Fprintf(&b, " at %+v", *tab.Place)
+			if tab.Place.PositionSeconds != nil {
+				fmt.Fprintf(&b, " (%v s)", *tab.Place.PositionSeconds)
+			}
+		}
+		b.WriteString("; ")
+	}
+	return b.String()
 }
 
 func TestClientReturnsTheErrorsOfTheWindowCalls(t *testing.T) {

@@ -209,7 +209,7 @@ func TestWindowTabsGetAnswersLocationAndIsActiveWithoutASummary(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs([]host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: `{"page":4,"pageCount":120}`},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
 	}, "tab-2")
 	answer := w.getAnswer(t, "window_tabs_get", `{}`)
 	requireKeys(t, "the answer of window_tabs_get", answer, []string{"tabs", "activeId"}, []string{"summary"})

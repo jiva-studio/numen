@@ -94,12 +94,12 @@ func TestTheWindowServesTheTabsItWasGiven(t *testing.T) {
 	}
 	open := []host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 4}},
 	}
 	window.SetOpenTabs(open, "tab-2")
 
 	tabs, activeID, err := window.ReadOpenTabs(t.Context())
-	if err != nil || !slices.Equal(tabs, open) || activeID != "tab-2" {
+	if err != nil || !reflect.DeepEqual(tabs, open) || activeID != "tab-2" {
 		t.Errorf("the window has %+v open with %q active (%v), want %+v with tab-2", tabs, activeID, err, open)
 	}
 }
@@ -127,8 +127,8 @@ func TestTheWindowSetToNoWindowAnswersErrNoWindow(t *testing.T) {
 // getBirdTabs is one PDF open in two tabs, the first of them active.
 func getBirdTabs() []host.OpenTab {
 	return []host.OpenTab{
-		{ID: "tab-1", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4,"pageCount":80}`},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":61,"pageCount":80}`},
+		{ID: "tab-1", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 4, PageCount: 80}},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &host.TabPlace{Page: 61, PageCount: 80}},
 	}
 }
 
@@ -140,7 +140,7 @@ func TestTheWindowActivatesATabItHasAndRecordsTheID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tab != getBirdTabs()[1] || activeID != "tab-2" {
+	if !reflect.DeepEqual(tab, getBirdTabs()[1]) || activeID != "tab-2" {
 		t.Errorf("activated %+v with %q active, want %+v with tab-2", tab, activeID, getBirdTabs()[1])
 	}
 	if _, readID, err := window.ReadOpenTabs(t.Context()); err != nil || readID != "tab-2" {

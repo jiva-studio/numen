@@ -266,7 +266,7 @@ func TestWindowTabsGetAnswersTheTabsOfTheWindow(t *testing.T) {
 	w := newWindowTools(t)
 	out := w.readTabs(t, []host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: `{"page":4,"pageCount":120}`},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
 	}, "tab-2")
 
 	if len(out.Tabs) != 2 || out.ActiveID != "tab-2" {
@@ -283,41 +283,40 @@ func TestWindowTabsGetAnswersTheTabsOfTheWindow(t *testing.T) {
 	requireLocation(t, "the PDF tab", second.Location, `{"page":4,"pageCount":120}`)
 }
 
-func TestWindowTabsGetReadsTheLocationFromTheTabState(t *testing.T) {
+// seconds is a time of a recording, from its start.
+func seconds(n float64) *float64 { return &n }
+
+func TestWindowTabsGetReportsTheLocationFromThePlaceTheReaderReported(t *testing.T) {
 	for name, tc := range map[string]struct {
 		tab  host.OpenTab
 		want string
 	}{
 		"a page of a PDF and its page count": {
-			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, State: `{"page":4,"pageCount":120}`}, `{"page":4,"pageCount":120}`,
+			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: &host.TabPlace{Page: 4, PageCount: 120}}, `{"page":4,"pageCount":120}`,
 		},
 		"a page of a PDF with no page count": {
-			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, State: `{"page":4}`}, `{"page":4}`,
+			host.OpenTab{Kind: "reader:reader-pdf", Path: guidePath, Place: &host.TabPlace{Page: 4}}, `{"page":4}`,
 		},
-		"a recording at the start of its selection": {
-			host.OpenTab{Kind: "recording", Path: talkPath, State: `{"t":[66.5,70]}`}, `{"positionSeconds":66.5}`,
+		"a recording at a time": {
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: seconds(66.5)}}, `{"positionSeconds":66.5}`,
 		},
 		"a recording at its beginning": {
-			host.OpenTab{Kind: "recording", Path: talkPath, State: `{"t":[0,0]}`}, `{"positionSeconds":0}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: seconds(0)}}, `{"positionSeconds":0}`,
 		},
 		"a recording past an hour": {
-			host.OpenTab{Kind: "recording", Path: talkPath, State: `{"t":[3723.9,3730]}`}, `{"positionSeconds":3723.9}`,
+			host.OpenTab{Kind: "recording", Path: talkPath, Place: &host.TabPlace{PositionSeconds: seconds(3723.9)}}, `{"positionSeconds":3723.9}`,
 		},
 		"a place of an EPUB and its chapter": {
-			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, State: `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`},
+			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
 			`{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":"The Reed Beds"}`,
 		},
 		"a place of an EPUB with no chapter": {
-			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, State: `{"cfi":"epubcfi(/6/6!/4/12/1:0)"}`}, `{"cfi":"epubcfi(/6/6!/4/12/1:0)"}`,
+			host.OpenTab{Kind: "reader:reader-epub", Path: bookPath, Place: &host.TabPlace{CFI: "epubcfi(/6/6!/4/12/1:0)"}}, `{"cfi":"epubcfi(/6/6!/4/12/1:0)"}`,
 		},
-		"the page key read whatever the tab kind": {
-			host.OpenTab{Kind: "plex", Path: guidePath, State: `{"page":7}`}, `{"page":7}`,
+		"the place of a tab of any kind": {
+			host.OpenTab{Kind: "plex", Path: guidePath, Place: &host.TabPlace{Page: 7}}, `{"page":7}`,
 		},
-		"a note tab with no state": {host.OpenTab{Kind: "note", Path: notePath}, ""},
-		"a state of keys no reader saves": {
-			host.OpenTab{Kind: "note", Path: notePath, State: `{"scroll":120,"zoom":2}`}, "",
-		},
-		"an empty state object": {host.OpenTab{Kind: "note", Path: notePath, State: `{}`}, ""},
+		"a note tab whose kind reports no place": {host.OpenTab{Kind: "note", Path: notePath}, ""},
 	} {
 		t.Run(name, func(t *testing.T) {
 			w := newWindowTools(t)
@@ -332,9 +331,34 @@ func TestWindowTabsGetReadsTheLocationFromTheTabState(t *testing.T) {
 	}
 }
 
+// The location comes from the place the reader reported alone, so window_tabs_get has no saved state
+// to fail on and answers no error for any tab.
+func TestWindowTabsGetAnswersNoErrorForAnyTab(t *testing.T) {
+	w := newWindowTools(t)
+	w.window.SetOpenTabs(getGuideTabs(), "tab-1")
+
+	var out struct {
+		Tabs []map[string]json.RawMessage `json:"tabs"`
+	}
+	if failure := w.call(t, "window_tabs_get", `{}`, nil, &out); failure != "" {
+		t.Fatal(failure)
+	}
+	if len(out.Tabs) != len(getGuideTabs()) {
+		t.Fatalf("answered %d tabs, want %d", len(out.Tabs), len(getGuideTabs()))
+	}
+	for _, tab := range out.Tabs {
+		if message, hasError := tab["error"]; hasError {
+			t.Errorf("the tab %s is answered with the error %s", tab["id"], message)
+		}
+	}
+	if _, hasError := reflect.TypeFor[service.TabInfo]().FieldByName("Error"); hasError {
+		t.Error("service.TabInfo has the field Error; a tab whose reader reported no place has no location and no error")
+	}
+}
+
 func TestWindowToolsHostHasNoTextVersions(t *testing.T) {
 	if field, hasTexts := reflect.TypeFor[service.Host]().FieldByName("Texts"); hasTexts {
-		t.Errorf("service.Host has the field %s of type %s; window_tabs_get reads the location from the tab state alone", field.Name, field.Type)
+		t.Errorf("service.Host has the field %s of type %s; window_tabs_get reads the location from the place the reader reported alone", field.Name, field.Type)
 	}
 }
 

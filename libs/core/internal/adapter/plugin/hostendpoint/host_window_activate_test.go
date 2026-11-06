@@ -3,6 +3,7 @@ package hostendpoint
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -12,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-func TestHostWindowActivateTabAnswersTheTabAndTheActiveID(t *testing.T) {
+func TestHostWindowActivateTabAnswersTheTabWithItsPlaceAndTheActiveID(t *testing.T) {
 	window := &recordingWindow{}
 	client, fakeCallers := newWindowClient(t, window, "token-a")
 
@@ -38,8 +39,12 @@ func TestHostWindowActivateTabAnswersTheTabAndTheActiveID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reader.Msg.GetTab().GetId() != "tab-2" || reader.Msg.GetTab().GetState() != `{"page":4}` || reader.Msg.GetActiveId() != "tab-2" {
-		t.Errorf("answered %v, want tab-2 with its state, active", reader.Msg)
+	answered := reader.Msg.GetTab()
+	if answered.GetId() != "tab-2" || answered.GetPlace().GetPage() != 4 || answered.GetPlace().GetPageCount() != 80 || reader.Msg.GetActiveId() != "tab-2" {
+		t.Errorf("answered %v, want tab-2 at page 4 of 80, active", reader.Msg)
+	}
+	if answered.GetState() != "" {
+		t.Errorf("answered tab-2 with the state %q of its kind, want none", answered.GetState())
 	}
 }
 
@@ -84,5 +89,18 @@ func TestHostWindowActivateTabWithoutAWindowAnswersNoWindow(t *testing.T) {
 				t.Errorf("ActivateTab answered %s, want no window", got)
 			}
 		})
+	}
+}
+
+func TestHostWindowActivateTabAnswersATabTheWindowDidNotShowInTimeAsADeadline(t *testing.T) {
+	window := &recordingWindow{err: fmt.Errorf("activate tab %q: %w", "tab-1", pluginport.ErrTabNotShown)}
+	client, _ := newWindowClient(t, window, "token-a")
+
+	got, err := client.ActivateTab(t.Context(), connect.NewRequest(&v1.ActivateTabRequest{TabId: "tab-1"}))
+	if connect.CodeOf(err) != connect.CodeDeadlineExceeded {
+		t.Fatalf("ActivateTab answered %v (%v), want deadline exceeded", got, err)
+	}
+	if !strings.Contains(err.Error(), `"tab-1"`) || !strings.Contains(err.Error(), pluginport.ErrTabNotShown.Error()) {
+		t.Errorf("ActivateTab got %v, want the message of the window naming tab-1", err)
 	}
 }

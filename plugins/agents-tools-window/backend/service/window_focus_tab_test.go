@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -15,8 +16,8 @@ import (
 // getGuideTabs is one bird guide open in two tabs, and a note.
 func getGuideTabs() []host.OpenTab {
 	return []host.OpenTab{
-		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: `{"page":4,"pageCount":120}`},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: `{"page":88,"pageCount":120}`},
+		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 88, PageCount: 120}},
 		{ID: "tab-3", Kind: "note", Path: notePath, Title: "Grey Heron"},
 	}
 }
@@ -183,46 +184,21 @@ func (w countingWindow) ActivateTab(ctx context.Context, id string) (host.OpenTa
 	return w.Window.ActivateTab(ctx, id)
 }
 
-// newCountingTools is the window tools over a window with the guide tabs and the tab-4 of the
-// state, tab-1 active, that count the ActivateTab calls.
-func newCountingTools(t *testing.T, state string) (windowTools, *atomic.Int64) {
+// newCountingTools is the window tools over a window with the guide tabs and a tab-4 of the guide at
+// page 2, tab-1 active, that count the ActivateTab calls.
+func newCountingTools(t *testing.T) (windowTools, *atomic.Int64) {
 	t.Helper()
 	vault := hosttest.New(testVault)
 	window := hosttest.NewWindow(vault)
-	tabs := append(getGuideTabs(), host.OpenTab{ID: "tab-4", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: state})
+	tabs := append(getGuideTabs(), host.OpenTab{ID: "tab-4", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 2, PageCount: 120}})
 	window.SetOpenTabs(tabs, "tab-1")
 	calls := &atomic.Int64{}
 	on := service.Host{Vault: vault, Window: countingWindow{Window: window, activateCalls: calls}}
 	return windowTools{window: window, calls: newRegistry(t, on)}, calls
 }
 
-func TestWindowFocusTabRejectsAnUnreadableState(t *testing.T) {
-	for name, state := range map[string]string{
-		"a state that is not JSON": `page 4`,
-		"a page that is a string":  `{"page":"four"}`,
-		"a selection of nulls":     `{"t":[null,null]}`,
-	} {
-		t.Run(name, func(t *testing.T) {
-			w, calls := newCountingTools(t, state)
-			failure := w.call(t, "window_focus_tab", `{"tabId":"tab-4"}`, nil, nil)
-			if failure == "" {
-				t.Fatalf("the tab with the state %s was activated without an error", state)
-			}
-			if !strings.Contains(failure, "tab-4") {
-				t.Errorf("the error %q does not name the tab tab-4", failure)
-			}
-			if n := calls.Load(); n != 0 {
-				t.Errorf("the window was asked to activate a tab %d times, want none", n)
-			}
-			if activated := w.window.GetActivatedTabs(); len(activated) != 0 {
-				t.Errorf("the window activated %v", activated)
-			}
-		})
-	}
-}
-
 func TestWindowFocusTabOfAnUnknownIDActivatesNothing(t *testing.T) {
-	w, calls := newCountingTools(t, `{"page":2,"pageCount":120}`)
+	w, calls := newCountingTools(t)
 	failure := w.call(t, "window_focus_tab", `{"tabId":"tab-9"}`, nil, nil)
 	if !strings.Contains(failure, `no open tab has id "tab-9"`) {
 		t.Errorf("the error is %q, want no open tab has id \"tab-9\"", failure)
@@ -232,8 +208,8 @@ func TestWindowFocusTabOfAnUnknownIDActivatesNothing(t *testing.T) {
 	}
 }
 
-func TestWindowFocusTabActivatesATabWithAReadableStateOnce(t *testing.T) {
-	w, calls := newCountingTools(t, `{"page":2,"pageCount":120}`)
+func TestWindowFocusTabActivatesATabOnce(t *testing.T) {
+	w, calls := newCountingTools(t)
 	var out focusTabOutput
 	if failure := w.call(t, "window_focus_tab", `{"tabId":"tab-4"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
@@ -242,4 +218,29 @@ func TestWindowFocusTabActivatesATabWithAReadableStateOnce(t *testing.T) {
 		t.Errorf("the window was asked %d times and answered %+v, want once and tab-4 active", n, out.Tab)
 	}
 	requireLocation(t, "the answered tab", out.Tab.Location, `{"page":2,"pageCount":120}`)
+}
+
+// lateWindow is a window that does not show the asked tab in time: ActivateTab answers the error
+// the host sends when the window does not report the tab active within its bound.
+type lateWindow struct {
+	*hosttest.Window
+}
+
+func (w lateWindow) ActivateTab(_ context.Context, id string) (host.OpenTab, string, error) {
+	return host.OpenTab{}, "", fmt.Errorf("activate tab %q: the window did not show the tab in time", id)
+}
+
+func TestWindowFocusTabReportsATabTheWindowDidNotShowInTimeAsAToolError(t *testing.T) {
+	vault := hosttest.New(testVault)
+	window := hosttest.NewWindow(vault)
+	window.SetOpenTabs(getGuideTabs(), "tab-1")
+	w := windowTools{window: window, calls: newRegistry(t, service.Host{Vault: vault, Window: lateWindow{Window: window}})}
+
+	failure := w.call(t, "window_focus_tab", `{"tabId":"tab-2"}`, nil, nil)
+	if failure == "" {
+		t.Fatal("a tab the window did not show was answered as focused")
+	}
+	if !strings.Contains(failure, `"tab-2"`) || !strings.Contains(failure, "did not show") || !strings.Contains(failure, "in time") {
+		t.Errorf("the tool error is %q, want plain text that the window did not show tab-2 in time", failure)
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"math"
 	"net/http"
 	"reflect"
 	"slices"
@@ -42,6 +43,8 @@ type recordingWindow struct {
 	reads     int
 	activated []string
 	err       error
+	// open is the tabs the window answers in place of the fixed ones, where it is set.
+	open *domain.OpenTabs
 }
 
 func (w *recordingWindow) FocusNote(_ context.Context, path string) (domain.NoteRef, error) {
@@ -71,11 +74,14 @@ func (w *recordingWindow) ReadOpenTabs(context.Context) (domain.OpenTabs, error)
 	if w.err != nil {
 		return domain.OpenTabs{}, w.err
 	}
+	if w.open != nil {
+		return *w.open, nil
+	}
 	return domain.OpenTabs{
 		ActiveID: "tab-2",
 		Tabs: []domain.Tab{
 			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
-			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`},
+			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4,"zoom":2}`, Place: &domain.TabPlace{Page: 4, PageCount: 80}},
 		},
 	}, nil
 }
@@ -184,7 +190,7 @@ func TestHostWindowOpensAFileWithNoPassagesAtItsBeginning(t *testing.T) {
 	}
 }
 
-func TestHostWindowAnswersTheOpenTabsAndTheActiveTab(t *testing.T) {
+func TestHostWindowAnswersTheOpenTabsWithTheirPlacesAndNoState(t *testing.T) {
 	window := &recordingWindow{}
 	client, fakeCallers := newWindowClient(t, window, "token-a")
 
@@ -203,8 +209,16 @@ func TestHostWindowAnswersTheOpenTabsAndTheActiveTab(t *testing.T) {
 		t.Errorf("the first tab is %v", tabs[0])
 	}
 	if tabs[1].GetId() != "tab-2" || tabs[1].GetKind() != "reader:reader-pdf" || tabs[1].GetPath() != "library/Birds.pdf" ||
-		tabs[1].GetTitle() != "Birds" || tabs[1].GetState() != `{"page":4}` {
-		t.Errorf("the second tab is %v", tabs[1])
+		tabs[1].GetTitle() != "Birds" || tabs[1].GetPlace().GetPage() != 4 || tabs[1].GetPlace().GetPageCount() != 80 {
+		t.Errorf("the second tab is %v, want page 4 of 80", tabs[1])
+	}
+	if tabs[0].GetPlace() != nil {
+		t.Errorf("the note tab has the place %v, want none", tabs[0].GetPlace())
+	}
+	for _, tab := range tabs {
+		if tab.GetState() != "" {
+			t.Errorf("the tab %s carries the state %q of its kind, want none", tab.GetId(), tab.GetState())
+		}
 	}
 	if !slices.Equal(fakeCallers.checked, []string{"md.numen.a window:focus"}) {
 		t.Errorf("checked %v, want window:focus asked once", fakeCallers.checked)
@@ -302,4 +316,68 @@ func readWindowCode[T any, M interface {
 		return err.Error()
 	}
 	return M(res.Msg).GetError().String()
+}
+
+func TestHostWindowAnswersEveryFieldOfThePlaceEachReaderReported(t *testing.T) {
+	atStart, pastAnHour := 0.0, 3723.9
+	window := &recordingWindow{open: &domain.OpenTabs{ActiveID: "tab-1", Tabs: []domain.Tab{
+		{ID: "tab-1", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &domain.TabPlace{PositionSeconds: &atStart}},
+		{ID: "tab-2", Kind: "recording", Path: "talks/Marsh Talk.mp3", Title: "Marsh Talk", Place: &domain.TabPlace{PositionSeconds: &pastAnHour}},
+		{ID: "tab-3", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &domain.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+		{ID: "tab-4", Kind: "recording", Path: "talks/Bees.mp3", Title: "Bees", Place: &domain.TabPlace{}},
+	}}}
+	client, _ := newWindowClient(t, window, "token-a")
+
+	got, err := client.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.HostWindowServiceReadOpenTabsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	tabs := got.Msg.GetTabs()
+	if len(tabs) != 4 {
+		t.Fatalf("answered %d tabs, want 4: %v", len(tabs), tabs)
+	}
+	if place := tabs[0].GetPlace(); !place.HasPositionSeconds() || place.GetPositionSeconds() != 0 {
+		t.Errorf("the recording at its start is at %v, want 0 seconds", place)
+	}
+	if place := tabs[1].GetPlace(); !place.HasPositionSeconds() || place.GetPositionSeconds() != 3723.9 {
+		t.Errorf("the recording past an hour is at %v, want 3723.9 seconds", place)
+	}
+	if place := tabs[2].GetPlace(); place.GetCfi() != "epubcfi(/6/4!/4/2/1:0)" || place.GetChapter() != "The Reed Beds" || place.GetPage() != 0 {
+		t.Errorf("the book is at %v, want its CFI and chapter", place)
+	}
+	if place := tabs[3].GetPlace(); place.HasPositionSeconds() {
+		t.Errorf("a recording that reported no time is at %v, want no time", place)
+	}
+}
+
+func TestHostWindowRefusesAPassageThatEndsPastThe32BitRangeBeforeTheWindowIsAsked(t *testing.T) {
+	window := &recordingWindow{}
+	client, _ := newWindowClient(t, window, "token-a")
+
+	_, err := client.FocusPassages(t.Context(), connect.NewRequest(&v1.FocusPassagesRequest{
+		Path:     "library/Birds.pdf",
+		Passages: []*v1.PassageSpan{{Start: 400, Length: 80}, {Start: math.MaxInt32 - 10, Length: 20}},
+	}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("a passage past the 32-bit range got %v, want invalid argument", err)
+	}
+	if _, places, _ := window.getAsked(); len(places) != 0 {
+		t.Errorf("the window was asked %+v for a passage past the 32-bit range", places)
+	}
+}
+
+func TestHostWindowFocusesAPassageThatEndsAtThe32BitLimit(t *testing.T) {
+	window := &recordingWindow{}
+	client, _ := newWindowClient(t, window, "token-a")
+
+	if _, err := client.FocusPassages(t.Context(), connect.NewRequest(&v1.FocusPassagesRequest{
+		Path:     "library/Birds.pdf",
+		Passages: []*v1.PassageSpan{{Start: math.MaxInt32 - 10, Length: 10}},
+	})); err != nil {
+		t.Fatal(err)
+	}
+	want := []domain.Place{{Path: "library/Birds.pdf", Ranges: []domain.ByteRange{{Start: math.MaxInt32 - 10, End: math.MaxInt32}}}}
+	if _, places, _ := window.getAsked(); !reflect.DeepEqual(places, want) {
+		t.Errorf("the window was asked %+v, want %+v", places, want)
+	}
 }

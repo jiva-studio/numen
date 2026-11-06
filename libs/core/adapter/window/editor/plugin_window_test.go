@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -76,15 +78,18 @@ func TestPluginWindowRefusesAnInvalidPassageAndAMissingFileAndDoesNotMoveTheWind
 	}
 }
 
-func TestPluginWindowReadsTheTabsTheWindowLastReported(t *testing.T) {
+func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 	state, window, _ := newBoundWindow(t)
 	api := &workspaceHandler{state: state}
+	atStart := 0.0
 
 	if _, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
 		ActiveId: "tab-2",
 		Tabs: []*v1.Tab{
 			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
-			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`},
+			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &v1.TabPlace{Page: 4, PageCount: 80}},
+			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &v1.TabPlace{PositionSeconds: &atStart}},
+			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &v1.TabPlace{Cfi: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
 		},
 	})); err != nil {
 		t.Fatal(err)
@@ -98,7 +103,9 @@ func TestPluginWindowReadsTheTabsTheWindowLastReported(t *testing.T) {
 		ActiveID: "tab-2",
 		Tabs: []domain.Tab{
 			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
-			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`},
+			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &domain.TabPlace{Page: 4, PageCount: 80}},
+			{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &domain.TabPlace{PositionSeconds: &atStart}},
+			{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &domain.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
 		},
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -285,7 +292,7 @@ func TestPluginWindowActivateTabOfTheActiveTabPublishesIt(t *testing.T) {
 	}
 }
 
-func TestPluginWindowActivateTabReturnsTheLastReportAfterItsBound(t *testing.T) {
+func TestPluginWindowActivateTabReturnsAnErrorNamingTheTabWhenTheWindowDoesNotShowItWithinTheBound(t *testing.T) {
 	f := newActivateFixture(t)
 	f.state.TabActivationBound = 50 * time.Millisecond
 	results := f.startActivation(t.Context(), "tab-2")
@@ -295,8 +302,11 @@ func TestPluginWindowActivateTabReturnsTheLastReportAfterItsBound(t *testing.T) 
 
 	select {
 	case got := <-results:
-		if got.err != nil || got.open.ActiveID != "tab-1" || len(got.open.Tabs) != 3 {
-			t.Errorf("ActivateTab returned %+v (%v), want the last reported tabs with tab-1 active", got.open, got.err)
+		if !errors.Is(got.err, pluginport.ErrTabNotShown) || !strings.Contains(got.err.Error(), `"tab-2"`) {
+			t.Errorf("ActivateTab returned %+v (%v), want ErrTabNotShown naming tab-2", got.open, got.err)
+		}
+		if len(got.open.Tabs) != 0 {
+			t.Errorf("ActivateTab returned the tabs %+v with its error, want none", got.open)
 		}
 	case <-time.After(time.Second):
 		t.Fatal("ActivateTab did not return within a second when its bound is 50 ms")
@@ -316,5 +326,26 @@ func TestPluginWindowActivateTabReturnsWhenTheContextEnds(t *testing.T) {
 	case <-results:
 	case <-time.After(time.Second):
 		t.Fatal("ActivateTab did not return within a second of the end of its context")
+	}
+}
+
+// The window receives the ranges as 32-bit offsets, so a range that does not fit is left out rather
+// than wrapped to another place.
+func TestARangeBeyondThe32BitRangeIsLeftOutOfTheFocusSentToTheWindow(t *testing.T) {
+	got := convertByteRangesToWire([]domain.ByteRange{
+		{Start: 400, End: 480},
+		{Start: math.MaxInt32 - 5, End: math.MaxInt32 + 5},
+		{Start: math.MaxInt32 + 1, End: math.MaxInt32 + 9},
+		{Start: math.MaxInt32 - 10, End: math.MaxInt32},
+		{Start: 1500, End: 1580},
+	})
+
+	want := [][2]int32{{400, 480}, {math.MaxInt32 - 10, math.MaxInt32}, {1500, 1580}}
+	ranges := make([][2]int32, 0, len(got))
+	for _, one := range got {
+		ranges = append(ranges, [2]int32{one.GetStart(), one.GetEnd()})
+	}
+	if !reflect.DeepEqual(ranges, want) {
+		t.Errorf("the window is sent the ranges %v, want %v", ranges, want)
 	}
 }

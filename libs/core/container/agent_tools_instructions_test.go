@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,9 +15,11 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -249,5 +252,86 @@ func TestTheReadingCatalogListsOnlyReadingServerToolsWithTheirSentences(t *testi
 
 	if len(specs) != 1 || specs[0].GetName() != "atlas_open" || !slices.Equal(specs[0].GetInstructions(), []string{atlasOpenSentence}) {
 		t.Errorf("the reading catalog lists %v, want atlas_open alone with its sentence", specs)
+	}
+}
+
+// runInApp runs a task with the instructions on the agent of the editor over the host, and returns
+// the instructions the agent plugin received.
+func runInApp(t *testing.T, instructions string, plugins ...testPlugin) string {
+	t.Helper()
+	agent := &toolAgent{}
+	host := hostOver(t, append([]testPlugin{agentAt(agent)}, plugins...)...)
+	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
+
+	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Instructions: instructions})
+
+	requests := agent.getRequests()
+	if len(requests) != 1 {
+		t.Fatalf("the agent received %d requests, want one", len(requests))
+	}
+	return requests[0].GetInstructions()
+}
+
+func TestAnInAppRunReceivesTheDistinctSentencesOfItsToolsAfterItsInstructions(t *testing.T) {
+	got := runInApp(t, "Answer the gardener in short sentences.",
+		instructedAt(zitherPlugin, []string{"vault:read"}, toolsPlugin(readOnlyTool("zither_tune", zitherTuneSentence))),
+		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
+			readOnlyTool("atlas_open", atlasOpenSentence),
+			readOnlyTool("atlas_fold", atlasFoldSentence, atlasSharedSentence),
+			readOnlyTool("atlas_close", atlasSharedSentence),
+		)),
+	)
+
+	want := "Answer the gardener in short sentences.\n\n" +
+		strings.Join([]string{atlasOpenSentence, atlasFoldSentence, atlasSharedSentence, zitherTuneSentence}, " ")
+	if got != want {
+		t.Errorf("the run received the instructions %q, want %q", got, want)
+	}
+}
+
+func TestAnInAppRunWithNoInstructionsReceivesTheSentencesOfItsToolsAlone(t *testing.T) {
+	got := runInApp(t, "",
+		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
+			readOnlyTool("atlas_open", atlasOpenSentence),
+			readOnlyTool("atlas_fold", atlasFoldSentence),
+		)),
+	)
+
+	if want := atlasOpenSentence + " " + atlasFoldSentence; got != want {
+		t.Errorf("the run received the instructions %q, want %q", got, want)
+	}
+}
+
+// The atlas plugin holds vault:read only, so its read-write tool is not served, and a tool offered on
+// the reading server only is not served on the full server an in-app run uses.
+func TestAToolLeftOutOfAnInAppRunAddsNoSentenceToItsInstructions(t *testing.T) {
+	burnSentence := "Burn the old maps with atlas_burn after you copy them."
+	lensSentence := "Read the small print with atlas_lens."
+	got := runInApp(t, "Answer the gardener in short sentences.",
+		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
+			readOnlyTool("atlas_open", atlasOpenSentence),
+			instructedTool("atlas_burn", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, []string{burnSentence}),
+			instructedTool("atlas_lens", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{lensSentence}, v1.ToolServer_TOOL_SERVER_READING),
+		)),
+	)
+
+	if want := "Answer the gardener in short sentences.\n\n" + atlasOpenSentence; got != want {
+		t.Errorf("the run received the instructions %q, want %q", got, want)
+	}
+}
+
+func TestAnInAppRunWhoseToolsCarryNoSentencesKeepsItsInstructions(t *testing.T) {
+	got := runInApp(t, "Answer the gardener in short sentences.",
+		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(readOnlyTool("atlas_open"))),
+	)
+
+	if want := "Answer the gardener in short sentences."; got != want {
+		t.Errorf("the run received the instructions %q, want %q", got, want)
+	}
+}
+
+func TestAnInAppRunWithNoToolsKeepsItsInstructions(t *testing.T) {
+	if got, want := runInApp(t, "Answer the gardener in short sentences."), "Answer the gardener in short sentences."; got != want {
+		t.Errorf("the run received the instructions %q, want %q", got, want)
 	}
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick, reactive, ref } from 'vue'
-import type { Selector } from '@numen/plugin-sdk'
+import type { Selector, TabPlace } from '@numen/plugin-sdk'
 import { useBookPlace, type PlacedTab } from './useBookPlace'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
@@ -28,13 +28,17 @@ const createReader = (isLoading = false) => {
 
 const createTab = (selector: Selector | null = null) => {
   const saved: Selector[] = []
+  const reported: TabPlace[] = []
   const tab: PlacedTab = reactive({
     selector,
     savePlace: (place: Selector) => {
       saved.push(place)
     },
+    reportPlace: (place: TabPlace) => {
+      reported.push(place)
+    },
   })
-  return { tab, saved }
+  return { tab, saved, reported }
 }
 
 describe('the place of a book tab', () => {
@@ -138,5 +142,67 @@ describe('the place of a book tab', () => {
 
     expect(pending.has(60)).toBe(false)
     expect(saved).toStrictEqual([])
+  })
+})
+
+describe('the place a book tab reports to the window', () => {
+  it('is the CFI and the chapter the reader is in at the offset', async () => {
+    const { reader, pending } = createReader()
+    const { tab, reported } = createTab()
+    useBookPlace(reader, () => tab)
+
+    reader.chapter.value = 'The Reed Beds'
+    reader.offset.value = 120
+    await nextTick()
+    pending.get(120)?.('epubcfi(/8/2!/4/4/1:40)')
+    await settle()
+
+    expect(reported).toStrictEqual([{ cfi: 'epubcfi(/8/2!/4/4/1:40)', chapter: 'The Reed Beds' }])
+  })
+
+  it('is the CFI alone where the reader names no chapter', async () => {
+    const { reader, pending } = createReader()
+    const { tab, reported } = createTab()
+    useBookPlace(reader, () => tab)
+
+    reader.offset.value = 120
+    await nextTick()
+    pending.get(120)?.('epubcfi(/8/2!/4/4/1:40)')
+    await settle()
+
+    expect(reported).toStrictEqual([{ cfi: 'epubcfi(/8/2!/4/4/1:40)' }])
+  })
+
+  it('is the place of the later offset when the CFI of an earlier one arrives last', async () => {
+    const { reader, pending } = createReader()
+    const { tab, reported } = createTab()
+    useBookPlace(reader, () => tab)
+
+    reader.offset.value = 120
+    await nextTick()
+    reader.chapter.value = 'Herons in Winter'
+    reader.offset.value = 900
+    await nextTick()
+    pending.get(900)?.('epubcfi(/8/4!/4/2/1:0)')
+    pending.get(120)?.('epubcfi(/8/2!/4/4/1:40)')
+    await settle()
+
+    expect(reported).toStrictEqual([{ cfi: 'epubcfi(/8/4!/4/2/1:0)', chapter: 'Herons in Winter' }])
+  })
+
+  it('is nothing while loading or when the backend finds no CFI', async () => {
+    const { reader, pending } = createReader(true)
+    const { tab, reported } = createTab()
+    useBookPlace(reader, () => tab)
+
+    reader.offset.value = 60
+    await nextTick()
+    reader.isLoading.value = false
+    reader.offset.value = 70
+    await nextTick()
+    pending.get(70)?.(null)
+    await settle()
+
+    expect(reported).toStrictEqual([])
   })
 })

@@ -89,3 +89,15 @@ func TestTheWindowToolsThatShowAPlaceRequireWindowFocus(t *testing.T) {
 		}
 	}
 }
+
+// The core no longer says what "this note" means, so the tool that names the active tab does.
+func TestTheTabListInstructionsSayThisNoteMeansTheNoteOfTheActiveTab(t *testing.T) {
+	sentences := getWindowToolSentences(listWindowTools(t))["window_tabs_get"]
+
+	if !slices.ContainsFunc(sentences, func(sentence string) bool {
+		return strings.Contains(sentence, `"this note"`) && strings.Contains(sentence, "active tab") &&
+			strings.Contains(sentence, "window_tabs_get")
+	}) {
+		t.Errorf("no instruction of window_tabs_get says that \"this note\" is the note of the active tab: %q", sentences)
+	}
+}
