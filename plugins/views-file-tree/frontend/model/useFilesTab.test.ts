@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import type { Entry } from '../types'
 import { useFilesTab } from './useFilesTab'
 import { getFolderPath, ROOT, createFileTree } from './useFileTree'
-import type { SlotTarget } from '@numen/plugin-sdk'
+import type { CommandTarget } from '@numen/plugin-sdk'
 import { NEW_MENU, ROW_MENU, TRASH } from '../fixtures/host'
 import { WORDS as words } from '../words'
 
@@ -41,7 +41,7 @@ const windowCommands = {
 }
 
 /** What a run of a command records: its id, the paths it is over and the title of the target. */
-const describeRun = (command: string, target: SlotTarget): string =>
+const describeRun = (command: string, target: CommandTarget): string =>
   `runs ${command} ${[target.path, ...target.others].join(' ')} ${target.title}`
 
 /** Waits for the vault requests issued by a gesture to complete. */
@@ -51,8 +51,8 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const isDone: string[] = []
   const request: string[] = []
-  const targets: SlotTarget[] = []
-  const runs: SlotTarget[] = []
+  const targets: CommandTarget[] = []
+  const runs: CommandTarget[] = []
   const vault: Record<string, readonly Entry[]> = { ...target, ...extra }
   const list = createFileTree({
     list: async (folderPath: string) => {
@@ -172,7 +172,7 @@ describe('what the menu offers', () => {
 
     expect(items.map((item) => item.id)).toContain(TRASH.key)
     expect(targets).toStrictEqual([
-      { path: 'Entropy.md', title: 'Entropy.md', isFolder: false, others: [] },
+      { path: 'Entropy.md', title: 'Entropy.md', isFolder: false, others: [], tab: '' },
     ])
   })
 
@@ -183,7 +183,7 @@ describe('what the menu offers', () => {
     one.getMenuItems('physics')
 
     expect(targets).toStrictEqual([
-      { path: 'physics', title: 'physics', isFolder: true, others: [] },
+      { path: 'physics', title: 'physics', isFolder: true, others: [], tab: '' },
     ])
   })
 
@@ -192,7 +192,7 @@ describe('what the menu offers', () => {
 
     one.getMenuItems(null)
 
-    expect(targets).toStrictEqual([{ path: ROOT, title: '', isFolder: true, others: [] }])
+    expect(targets).toStrictEqual([{ path: ROOT, title: '', isFolder: true, others: [], tab: '' }])
   })
 
   it('asks for the entries over the row and the others selected with it', async () => {
@@ -203,7 +203,7 @@ describe('what the menu offers', () => {
     one.getMenuItems('Entropy.md')
 
     expect(targets).toStrictEqual([
-      { path: 'Entropy.md', title: 'Entropy.md', isFolder: false, others: ['Cover.png'] },
+      { path: 'Entropy.md', title: 'Entropy.md', isFolder: false, others: ['Cover.png'], tab: '' },
     ])
   })
 

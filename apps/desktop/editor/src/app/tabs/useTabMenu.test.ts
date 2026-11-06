@@ -9,7 +9,7 @@ import {
   type SlotCommand,
   type SlotHost,
   type SlotItem,
-  type SlotTarget,
+  type CommandTarget as RunTarget,
 } from '@numen/plugin-host'
 import type { TabLinksState } from '@/features/tab-linking'
 import { getTabFileTarget, useTabMenu } from './useTabMenu'
@@ -25,6 +25,7 @@ const SHOW: SlotCommand = {
   title: 'Show note in plex',
   icon: Pin,
   shortcut: '',
+  hasChoices: false,
 }
 const COPY: SlotCommand = {
   kind: 'command',
@@ -33,12 +34,13 @@ const COPY: SlotCommand = {
   command: 'app:note.copyPath',
   title: 'Copy path',
   shortcut: '',
+  hasChoices: false,
 }
 const ENTRIES: readonly SlotItem[] = [SHOW, { kind: 'separator', key: 'separator/1' }, COPY]
 
-const TARGETS: Record<string, SlotTarget> = {
-  reef: { path: 'Reef.md', title: 'Reef', isFolder: false, others: [] },
-  plex: { path: '', title: '', isFolder: false, others: [] },
+const TARGETS: Record<string, RunTarget> = {
+  reef: { path: 'Reef.md', title: 'Reef', isFolder: false, others: [], tab: 'reef' },
+  plex: { path: '', title: '', isFolder: false, others: [], tab: 'plex' },
 }
 
 const tabLinks = {
@@ -50,18 +52,17 @@ const tabLinks = {
   unlinkTab: vi.fn(),
 } as unknown as TabLinksState
 
-/** Slots of a window that hold the entries in the menu of a tab; they run no command. */
+/** Slots of a window that hold the entries in the menu of a tab. */
 const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
   getEntries: (slot) => (slot === SLOT.tabStripContext ? entries : []),
   watchEntries: () => ({ dispose: () => undefined }),
-  runCommand: () => Promise.reject(new Error('the slots run no command')),
 })
 
 /** The commands of a window, recording each command run and its target. */
 const createCommands = () => {
-  const runs: { command: string; target: SlotTarget | undefined }[] = []
+  const runs: { command: string; target: RunTarget | undefined }[] = []
   return {
-    run: async (command: string, target?: SlotTarget) => {
+    run: async (command: string, target?: RunTarget) => {
       runs.push({ command, target })
     },
     getRuns: () => [...runs],
@@ -116,6 +117,7 @@ describe('the target the entries of the menu of a tab run over', () => {
       title: 'Atlas',
       isFolder: false,
       others: [],
+      tab: 'book',
     })
     expect(getTabFileTarget(windowTabs, 'note').path).toBe('Reef.md')
   })
@@ -126,6 +128,7 @@ describe('the target the entries of the menu of a tab run over', () => {
       title: '',
       isFolder: false,
       others: [],
+      tab: 'none',
     })
   })
 })

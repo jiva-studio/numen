@@ -2,7 +2,7 @@
  * Search hit lookup, item formatting, and the command a chosen action of a hit runs.
  */
 import type { PaletteItem } from '@numen/shell'
-import type { Selector, SlotItem, SlotTarget } from '@numen/plugin-host'
+import type { Selector, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
 import type { NoteType } from '@/entities/file'
 import { COMMAND } from '@/shared/commandIds'
 import type { TextRange } from '@/shared/textRange'
@@ -47,7 +47,7 @@ export interface Passage {
 
 /** The entries of the slot of a search result, over the note of a result, in the order drawn. */
 export interface SearchMenuDeps {
-  getEntries(target: SlotTarget): readonly SlotItem[]
+  getEntries(target: RunTarget): readonly SlotItem[]
 }
 
 /**

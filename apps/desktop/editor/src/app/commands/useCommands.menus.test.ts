@@ -1,7 +1,12 @@
 /** Running an entry of the menu of a search result, and what the window hands the search. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage } from '@numen/core-client'
-import { SLOT, type SlotCommand, type SlotHost, type SlotTarget } from '@numen/plugin-host'
+import {
+  SLOT,
+  type SlotCommand,
+  type SlotHost,
+  type CommandTarget as RunTarget,
+} from '@numen/plugin-host'
 import type { CommandTarget, ResultChoice } from '@/features/command-palette'
 import { useCommands, type CommandsDepsOptions } from './useCommands'
 
@@ -13,7 +18,7 @@ const h = vi.hoisted(() => ({
   isCommandsOpen: { value: false },
   runInvocation: vi.fn(() => Promise.resolve()),
   searchOptions: null as null | {
-    menu?: { getEntries(target: SlotTarget): readonly unknown[] }
+    menu?: { getEntries(target: RunTarget): readonly unknown[] }
     getTarget?: () => unknown
   },
   getExtraCommands: null as null | (() => readonly unknown[]),
@@ -68,15 +73,15 @@ const entry = (command: string, title: string): SlotCommand => ({
   command,
   title,
   shortcut: '',
+  hasChoices: false,
 })
 
-const REEF: SlotTarget = { path: 'Reef.md', title: 'Reef', isFolder: false, others: [] }
+const REEF: RunTarget = { path: 'Reef.md', title: 'Reef', isFolder: false, others: [], tab: '' }
 
 /** The slots of a window whose entries are those `getEntries` answers for a slot. */
 const createSlots = (getEntries: SlotHost['getEntries']): SlotHost => ({
   getEntries,
   watchEntries: () => ({ dispose: () => undefined }),
-  runCommand: async () => undefined,
 })
 
 function setup(
@@ -127,6 +132,9 @@ describe('running the action of a search result that is an entry of its menu', (
       path: 'Reef.md',
       title: 'Reef',
       type: 'sample',
+      isFolder: false,
+      others: [],
+      tab: '',
     })
     expect(h.startCommand).not.toHaveBeenCalled()
   })
@@ -286,6 +294,9 @@ describe('opening the note of a search result as a command', () => {
       path: 'Reef.md',
       title: 'Reef',
       type: 'sample',
+      isFolder: false,
+      others: [],
+      tab: '',
     })
   })
 
@@ -424,6 +435,9 @@ describe('running a command with a text typed for it', () => {
       path: 'Animals.md',
       title: 'Animals',
       type: 'sample',
+      isFolder: false,
+      others: [],
+      tab: 'tab-1',
     })
     expect(h.startCommand).not.toHaveBeenCalled()
   })

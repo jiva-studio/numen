@@ -43,6 +43,7 @@ const entry = (
   command,
   title,
   shortcut: '',
+  hasChoices: false,
   ...overrides,
 })
 

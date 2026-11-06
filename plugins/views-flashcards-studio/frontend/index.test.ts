@@ -166,7 +166,14 @@ describe('flashcards-studio plugin', () => {
     const openTab = vi.spyOn(ctx, 'openTab')
     activate(ctx)
 
-    await ctx.triggerCommand('preset.open', { path: 'Plan.md', title: 'Plan', type: 'note' })
+    await ctx.triggerCommand('preset.open', {
+      path: 'Plan.md',
+      title: 'Plan',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
 
     expect(openTab).toHaveBeenCalledExactlyOnceWith(PRESET, 'Plan.md')
   })

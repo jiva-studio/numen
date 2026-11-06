@@ -5,7 +5,13 @@
 import { computed, type Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
 import type { TabMenu } from '@numen/shell'
-import { SLOT, type SlotHost, type SlotItem, type SlotTarget } from '@numen/plugin-host'
+import {
+  SLOT,
+  type CommandsHost,
+  type CommandTarget as RunTarget,
+  type SlotHost,
+  type SlotItem,
+} from '@numen/plugin-host'
 import type { useWindowTabs } from '@/entities/tab'
 import { AppWindow, ExternalLink, Link2Off } from '@lucide/vue'
 import {
@@ -26,9 +32,9 @@ export interface TabMenuDeps {
   /** The slots of the window; without them the menu holds the rows of linking alone. */
   readonly slots?: SlotHost | undefined
   /** Runs a command of an entry over the file of the tab. */
-  runCommand?(command: string, target: SlotTarget): Promise<void>
+  runCommand?(command: string, target: RunTarget): Promise<void>
   /** The file a tab shows, which the commands of the entries run over. */
-  getTabTarget(tab: string): SlotTarget
+  getTabTarget(tab: string): RunTarget
   getTabIcon(tab: string): Component | null
   getKindIcon(kind: string): Component | null
   /** Receives the failure of a command that runs after the menu closed. */
@@ -151,23 +157,30 @@ export interface WindowTabMenuDeps extends Pick<
 > {
   readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'tabs' | 'getTab'>
   readonly slots?: SlotHost | undefined
+  readonly commands?: CommandsHost | undefined
   getTabIcon(tab: string): Component | null | undefined
   getKindIcon(kind: string): Component | null | undefined
 }
 
-/** The file a tab of the window shows, as the commands of the menu of the tab run over it. */
+/** The tab of the window and the file it shows, as the commands of its menu run over them. */
 export const getTabFileTarget = (
   windowTabs: WindowTabMenuDeps['windowTabs'],
   id: string,
-): SlotTarget => {
+): RunTarget => {
   const tab = windowTabs.getTab(id)
   const on = tab ? tab.kind.getTarget?.(tab.state) : undefined
-  return { path: on?.file || on?.path || '', title: on?.title ?? '', isFolder: false, others: [] }
+  return {
+    path: on?.file || on?.path || '',
+    title: on?.title ?? '',
+    isFolder: false,
+    others: [],
+    tab: id,
+  }
 }
 
 /** The menu of a tab of the window: a tab whose kind navigates can be linked. */
 export function useWindowTabMenu(deps: WindowTabMenuDeps) {
-  const { windowTabs, slots, getTabIcon, getKindIcon, ...link } = deps
+  const { windowTabs, slots, commands, getTabIcon, getKindIcon, ...link } = deps
   return useTabMenu({
     link: {
       ...link,
@@ -176,7 +189,7 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
       isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
     },
     slots,
-    runCommand: (command, target) => slots?.runCommand(command, target) ?? Promise.resolve(),
+    runCommand: (command, target) => commands?.run(command, target) ?? Promise.resolve(),
     getTabTarget: (id) => getTabFileTarget(windowTabs, id),
     getTabIcon: (id) => getTabIcon(id) ?? null,
     getKindIcon: (kind) => getKindIcon(kind) ?? null,

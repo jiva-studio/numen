@@ -88,7 +88,14 @@ describe('view-file-tree plugin', () => {
       'tree.newFolder',
     ])
     await ctx.triggerCommand('tree.open')
-    await ctx.triggerCommand('tree.revealNote', { path: 'notes/A.md', title: 'A', type: 'note' })
+    await ctx.triggerCommand('tree.revealNote', {
+      path: 'notes/A.md',
+      title: 'A',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
 
     expect(openCalls).toStrictEqual([[FILES, undefined]])
     expect(navigateCalls).toStrictEqual([[FILES, 'notes/A.md']])
@@ -108,17 +115,18 @@ describe('view-file-tree plugin', () => {
     expect(state.list.rows.value.map((row) => row.entry.path)).toStrictEqual(['B.md'])
   })
 
-  it('draws the menu of a row from the entries of its slot, and runs their commands there', async () => {
+  it('draws the menu of a row from the entries of its slot, and runs their commands', async () => {
     const { ctx, state } = await openTab()
 
     state.openMenu({ path: 'A.md', at: { x: 0, y: 0 } })
     expect(state.getMenuItems('A.md').map((one) => one.id)).toContain(TRASH.key)
     state.chooseMenuItem(TRASH.key)
 
-    expect(ctx.slots.getRuns()).toStrictEqual([
+    expect(ctx.commands.getRuns()).toStrictEqual([
       {
         command: 'app:note.trash',
-        target: { path: 'A.md', title: 'A.md', isFolder: false, others: [] },
+        target: { path: 'A.md', title: 'A.md', isFolder: false, others: [], tab: '' },
+        choice: undefined,
       },
     ])
   })
@@ -127,7 +135,14 @@ describe('view-file-tree plugin', () => {
     const { ctx, state } = await openTab()
     state.openMenu({ path: 'A.md', at: { x: 0, y: 0 } })
 
-    await ctx.triggerCommand('tree.rename', { path: 'A.md', title: 'A.md', type: 'note' })
+    await ctx.triggerCommand('tree.rename', {
+      path: 'A.md',
+      title: 'A.md',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
 
     expect(state.renamingPath.value).toBe('A.md')
   })
@@ -136,7 +151,14 @@ describe('view-file-tree plugin', () => {
     const { ctx, state } = await openTab()
     state.openMenu({ path: null, at: { x: 0, y: 0 } })
 
-    await ctx.triggerCommand('tree.rename', { path: '', title: '', type: 'note' })
+    await ctx.triggerCommand('tree.rename', {
+      path: '',
+      title: '',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
 
     expect(state.renamingPath.value).toBeNull()
   })
@@ -145,8 +167,22 @@ describe('view-file-tree plugin', () => {
     const { ctx, recorded, state } = await openTab()
     state.openMenu({ path: 'A.md', at: { x: 0, y: 0 } })
 
-    await ctx.triggerCommand('tree.newNote', { path: 'A.md', title: 'A.md', type: 'note' })
-    await ctx.triggerCommand('tree.newFolder', { path: '', title: '', type: 'note' })
+    await ctx.triggerCommand('tree.newNote', {
+      path: 'A.md',
+      title: 'A.md',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
+    await ctx.triggerCommand('tree.newFolder', {
+      path: '',
+      title: '',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
 
     expect(recorded.made).toStrictEqual(['note ', 'folder New folder'])
   })
@@ -155,8 +191,22 @@ describe('view-file-tree plugin', () => {
     const { ctx, recorded } = createContext()
     activate(ctx)
 
-    await ctx.triggerCommand('tree.newNote', { path: 'A.md', title: 'A.md', type: 'note' })
-    await ctx.triggerCommand('tree.rename', { path: 'A.md', title: 'A.md', type: 'note' })
+    await ctx.triggerCommand('tree.newNote', {
+      path: 'A.md',
+      title: 'A.md',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
+    await ctx.triggerCommand('tree.rename', {
+      path: 'A.md',
+      title: 'A.md',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
 
     expect(recorded.made).toStrictEqual([])
   })

@@ -3,7 +3,7 @@
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/shell'
-import type { SlotItem, SlotTarget } from '@numen/plugin-host'
+import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { NoteType } from '@/entities/file'
@@ -111,17 +111,18 @@ interface BuildGroupsDeps {
   readonly meanings: readonly Passage[]
   readonly words: Words
   /** The entries of the menu of a result over its note. */
-  readonly getMenu: (target: SlotTarget) => readonly SlotItem[]
+  readonly getMenu: (target: RunTarget) => readonly SlotItem[]
   readonly isWorking: Record<SearchGroup, boolean>
   readonly getSilence: (id: SearchGroup) => string
 }
 
 /** The target the entries of the menu of a result run over: the note of the result. */
-const getNoteTarget = (path: string, title: string): SlotTarget => ({
+const getNoteTarget = (path: string, title: string): RunTarget => ({
   path,
   title,
   isFolder: false,
   others: [],
+  tab: '',
 })
 
 /** The entries of the menu of a passage of a note; a passage of a file that is no note has none. */

@@ -71,7 +71,14 @@ describe('view-plex-graph plugin', () => {
     activate(ctx)
 
     await ctx.triggerCommand('graph.open')
-    await ctx.triggerCommand('graph.showNote', { path: 'One.md', title: 'One', type: 'note' })
+    await ctx.triggerCommand('graph.showNote', {
+      path: 'One.md',
+      title: 'One',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
 
     expect(openCalls).toStrictEqual([[PLEX, undefined]])
     expect(navigateCalls).toStrictEqual([[PLEX, 'One.md']])

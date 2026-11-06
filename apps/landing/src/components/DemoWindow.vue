@@ -67,7 +67,7 @@ import {
   type SlotCommand,
   type SlotItem,
   type SlotSeparator,
-  type SlotTarget,
+  type CommandTarget as RowTarget,
   type VaultEntry,
 } from '@numen/plugin-host'
 import {
@@ -1216,6 +1216,7 @@ const createMenuCommand = (command: string, title: string): SlotCommand => ({
   title,
   ...(COMMAND_ICONS[command] ? { icon: COMMAND_ICONS[command] } : {}),
   shortcut: '',
+  hasChoices: false,
 })
 
 const createMenuSeparator = (index: number): SlotSeparator => ({
@@ -1338,7 +1339,7 @@ function listFolderEntries(folder: string): readonly VaultEntry[] {
 }
 
 /** The entries of the menu of a row of the tree, as the slot registry of a window resolves them. */
-function getMenuEntriesForRow(target: SlotTarget): readonly SlotItem[] {
+function getMenuEntriesForRow(target: RowTarget): readonly SlotItem[] {
   const entry = fileTree.getEntryAt(target.path)
   const removeItem = createMenuCommand(
     DEMO_COMMAND.trashNote,
@@ -1379,7 +1380,7 @@ function getMenuEntriesForRow(target: SlotTarget): readonly SlotItem[] {
 }
 
 /** Runs a command of the menu of a row over the row and the others selected with it. */
-async function runMenuCommand(command: string, target: SlotTarget): Promise<void> {
+async function runMenuCommand(command: string, target: RowTarget): Promise<void> {
   const paths = command === DEMO_COMMAND.trashNote ? [target.path, ...target.others] : [target.path]
   for (const p of paths) runVaultCommand(command, p, 'files')
 }

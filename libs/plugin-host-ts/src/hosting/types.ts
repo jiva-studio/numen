@@ -7,6 +7,7 @@ import type {
   AppInfo,
   BufferHost,
   CommandRegistration,
+  CommandsHost,
   Disposable,
   DropHost,
   DropRegistration,
@@ -127,6 +128,8 @@ export interface PluginHostDeps {
   readonly getFiles?: () => VaultFiles | undefined
   /** The agent the window queries, once the window has created it. */
   readonly getAgent?: () => AgentHost | undefined
+  /** The commands of the window, once the window has made them. */
+  readonly getCommands?: () => CommandsHost | undefined
   /** The open files of the window, once the window has made them. */
   readonly getBuffers?: () => BufferHost | undefined
   /** The window's store of open notes, which the tabs of the note kind read and write through. */
@@ -208,6 +211,7 @@ export interface PluginContextHost {
   getRelations?(): VaultRelations | undefined
   getFiles?(): VaultFiles | undefined
   getAgent?(): AgentHost | undefined
+  getCommands?(): CommandsHost | undefined
   getBuffers?(): BufferHost | undefined
   getNotices?(pluginId: string): NoticeHost | undefined
   getTasks?(pluginId: string): TaskHost | undefined

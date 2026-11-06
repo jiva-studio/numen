@@ -5,6 +5,7 @@ import { shallowRef } from 'vue'
 import type {
   CommandNote,
   PluginContext,
+  CommandsHost,
   SlotHost,
   SettingsViewRegistration,
   VaultChangeEvent,
@@ -200,6 +201,7 @@ function createServiceBridge(
   | 'getRelations'
   | 'getFiles'
   | 'getAgent'
+  | 'getCommands'
   | 'getBuffers'
   | 'getNotices'
   | 'getTasks'
@@ -211,6 +213,7 @@ function createServiceBridge(
     getRelations: () => deps.getRelations?.(),
     getFiles: () => deps.getFiles?.(),
     getAgent: () => deps.getAgent?.(),
+    getCommands: () => deps.getCommands?.(),
     getBuffers: () => deps.getBuffers?.(),
     getNotices: (pluginId) => deps.getNotices?.(pluginId),
     getTasks: (pluginId) => deps.getTasks?.(pluginId),
@@ -354,4 +357,6 @@ export function createPluginHost(deps: PluginHostDeps) {
 export type PluginHost = ReturnType<typeof createPluginHost> & {
   // The slots of the window the owners of slots read, where the host serves them.
   readonly slots?: SlotHost
+  // The commands of the window the owners of slots run, where the host serves them.
+  readonly commands?: CommandsHost
 }

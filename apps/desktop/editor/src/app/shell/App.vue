@@ -65,6 +65,7 @@ const {
   getTarget,
   tabLinks,
   slots,
+  windowCommands,
   windowId,
   isHighlighted,
   highlightWindow,
@@ -87,6 +88,7 @@ const tabMenu = useWindowTabMenu({
   onMove: moveTab,
   onHighlight: highlightWindow,
   slots,
+  commands: windowCommands,
   getTabIcon,
   getKindIcon,
 })

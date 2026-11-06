@@ -3,7 +3,14 @@ import { createPluginHost } from './host'
 import { formatCommandId } from '../commandId'
 import type { CommandDeclaration, PluginHostDeps } from './types'
 
-const note = { path: 'a.md', title: 'A', type: 'note' as const }
+const note = {
+  path: 'a.md',
+  title: 'A',
+  type: 'note' as const,
+  isFolder: false,
+  others: [],
+  tab: '',
+}
 
 function declare(changes: Partial<CommandDeclaration> = {}): CommandDeclaration {
   return {

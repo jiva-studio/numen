@@ -753,6 +753,7 @@ export const useWindow = () => {
     getTarget,
     tabLinks: base.tabLinks,
     slots: base.pluginHost.slots,
+    windowCommands: base.pluginHost.commands,
     isHighlighted,
     ...createWindowTabMoves(base, editing, closeTab),
   }

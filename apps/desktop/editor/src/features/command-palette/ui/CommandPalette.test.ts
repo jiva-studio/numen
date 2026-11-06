@@ -27,6 +27,7 @@ const SHOW: SlotCommand = {
   command: `${ATLAS}:graph.showNote`,
   title: 'Show note in plex',
   shortcut: '',
+  hasChoices: false,
 }
 
 const inFront: CommandTarget = {

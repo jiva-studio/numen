@@ -83,7 +83,7 @@ describe('a path a files tab selects', () => {
 })
 
 describe('the menu of a row', () => {
-  const rowTarget = { path: 'a.md', title: 'a.md', isFolder: false, others: ['b.md'] }
+  const rowTarget = { path: 'a.md', title: 'a.md', isFolder: false, others: ['b.md'], tab: '' }
 
   it('is the entries of the slot of the file tree', () => {
     const { host } = createHost()
@@ -92,12 +92,13 @@ describe('the menu of a row', () => {
   })
 
   it('runs the command of an entry through the commands of the window', async () => {
-    const { host, commands, slots } = createHost()
+    const { host, commands } = createHost()
 
     await createFilesTabDeps(host, 'files').runCommand('app:note.trash', rowTarget)
 
-    expect(commands.getRuns()).toStrictEqual([{ command: 'app:note.trash', target: rowTarget }])
-    expect(slots.getRuns()).toStrictEqual([])
+    expect(commands.getRuns()).toStrictEqual([
+      { command: 'app:note.trash', target: rowTarget, choice: undefined },
+    ])
   })
 
   it('is empty, and runs nothing, in a window that offers no slots and no commands', async () => {

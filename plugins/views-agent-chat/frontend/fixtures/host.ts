@@ -6,6 +6,8 @@ import { ref } from 'vue'
 import type {
   AgentHost,
   AgentModel,
+  CommandTarget,
+  CommandsHost,
   NoteRef,
   OpenFileOptions,
   TextRange,
@@ -45,16 +47,13 @@ export function createHost({
     finished: [] as string[],
     resolved: [] as string[],
     questions: [] as string[],
-    commands: [] as [string, NoteRef][],
+    commands: [] as [string, CommandTarget | undefined][],
   }
 
   const request: Pick<
     WorkspaceHost,
-    'openFile' | 'openFileAt' | 'getNoteInFocus' | 'isReady' | 'ask' | 'runCommand'
+    'openFile' | 'openFileAt' | 'getNoteInFocus' | 'isReady' | 'ask'
   > = {
-    runCommand: (id, target) => {
-      recorded.commands.push([id, target])
-    },
     openFile: (path, options) => {
       recorded.opened.push([path, options])
     },
@@ -88,6 +87,15 @@ export function createHost({
     getModelsAt: (path) => models[path.join('.')] ?? [],
   }
 
-  const host: AgentChatHost = { workspace, agent, getReasoning: () => reasoning }
+  const commands: CommandsHost = {
+    getIds: () => [],
+    watch: () => ({ dispose: () => undefined }),
+    getChoices: async () => [],
+    run: async (id, target) => {
+      recorded.commands.push([id, target])
+    },
+  }
+
+  const host: AgentChatHost = { workspace, agent, commands, getReasoning: () => reasoning }
   return { host, workspace, agent, recorded }
 }

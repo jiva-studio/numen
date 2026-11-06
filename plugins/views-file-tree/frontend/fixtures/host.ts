@@ -11,12 +11,11 @@ import {
   type SlotItem,
   type SlotSeparator,
   type SlotSubmenu,
-  type SlotTarget,
   type SlotView,
   type VaultEntry,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
-import { createMockSlotHost } from '@numen/plugin-sdk/testing'
+import { createMockCommandsHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
 import type { FileTreeHost } from '../model/tabDeps'
 
 const TREE = 'md.numen.views.file.tree'
@@ -36,6 +35,7 @@ const command = (pluginId: string, id: string, title: string, icon?: unknown): S
   title,
   ...(icon ? { icon } : {}),
   shortcut: '',
+  hasChoices: false,
 })
 
 export const separator = (index: number): SlotSeparator => ({
@@ -122,7 +122,6 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
       recorded.synced.push([tabId, path, title])
       return linked[tabId] ?? false
     },
-    runCommand: () => undefined,
     getNoteCommands: () => [],
     ask: () => undefined,
     showError: (text) => {
@@ -153,13 +152,7 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
   const slots = createMockSlotHost()
   slots.setEntries(SLOT.fileTreeContext, ROW_MENU)
 
-  const runs: { command: string; target: SlotTarget | undefined }[] = []
-  const commands = {
-    run: async (command: string, target?: SlotTarget) => {
-      runs.push({ command, target })
-    },
-    getRuns: () => [...runs],
-  }
+  const commands = createMockCommandsHost()
 
   const host: FileTreeHost = { workspace, files, slots, commands }
   return { host, recorded, slots, commands }

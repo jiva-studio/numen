@@ -24,9 +24,9 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import { APP_COMMAND_OWNER, formatCommandId } from '../commandId'
 import { createExternalOpener } from '../externalOpener'
 import { getDeclaredSlot, type SlotViewManifest } from '../slot-views/slotViews'
+import { createFrameServices } from './frameServices'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: Disposable[], disposable: Disposable): Disposable {
@@ -54,15 +54,6 @@ function checkPermission(target: PermissionTarget, permission: string, operation
     )
   }
 }
-
-/** The commands of the window that change nothing in the vault. */
-const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set([
-  formatCommandId(APP_COMMAND_OWNER, 'note.open'),
-  formatCommandId(APP_COMMAND_OWNER, 'note.copyPath'),
-  formatCommandId(APP_COMMAND_OWNER, 'settings.open'),
-  formatCommandId('md.numen.views.plex.graph', 'graph.showNote'),
-  formatCommandId('md.numen.views.agent.chat', 'note.ask'),
-])
 
 function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void): VaultNotes {
   return {
@@ -208,19 +199,6 @@ function guardBuffers(
   }
 }
 
-function guardWorkspace(
-  workspace: WorkspaceHost,
-  requireWrite: (operation: string) => void,
-): WorkspaceHost {
-  return {
-    ...workspace,
-    runCommand: (id, target) => {
-      if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runCommand ${id}`)
-      workspace.runCommand(id, target)
-    },
-  }
-}
-
 type Services = Pick<
   PluginContext,
   'workspace' | 'notes' | 'relations' | 'files' | 'agent' | 'buffers'
@@ -245,7 +223,7 @@ function guardServices(
 ): Services {
   const requireWrite = (operation: string) => requirePerm('vault:write', operation)
   return {
-    ...guardService('workspace', host.getWorkspace?.(), (one) => guardWorkspace(one, requireWrite)),
+    ...guardService('workspace', host.getWorkspace?.(), (one: WorkspaceHost) => one),
     ...guardService('notes', host.getNotes?.(), (one) => guardNotes(one, requireWrite)),
     ...guardService('relations', host.getRelations?.(), (one) => guardRelations(one, requirePerm)),
     ...guardService('files', host.getFiles?.(), (one) => guardFiles(one, requireWrite)),
@@ -340,6 +318,7 @@ function createWindowServices(
     ...(notices ? { notices } : {}),
     ...(tasks ? { tasks } : {}),
     ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
+    ...createFrameServices(host),
   }
 }
 

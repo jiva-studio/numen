@@ -3,7 +3,13 @@
  */
 import type { Component, Ref } from 'vue'
 import type { MenuItem } from '@numen/ui'
-import type { DroppedData, PathRename, SlotItem, SlotTarget, VaultEntry } from '@numen/plugin-sdk'
+import type {
+  DroppedData,
+  PathRename,
+  SlotItem,
+  CommandTarget,
+  VaultEntry,
+} from '@numen/plugin-sdk'
 
 /** One file or folder of the vault, as represented by a row of the tree. */
 export type Entry = VaultEntry
@@ -40,9 +46,9 @@ export interface FilesTabDeps {
   openEntry(entry: Entry): void
   onSelectPath?(path: string, state: FilesTabState): void
   /** The entries of the menu of a row, over the row it was opened on. */
-  getMenuEntries(target: SlotTarget): readonly SlotItem[]
+  getMenuEntries(target: CommandTarget): readonly SlotItem[]
   /** Runs a command of the window or of a plugin over the row. */
-  runCommand(command: string, target: SlotTarget): Promise<void>
+  runCommand(command: string, target: CommandTarget): Promise<void>
   movePath(from: string, to: string): Promise<void>
   setDraggedPaths(paths: readonly string[]): void
   createFolder(path: string): Promise<void>

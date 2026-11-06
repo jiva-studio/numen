@@ -21,7 +21,12 @@ export function activate(context: PluginContext): void {
     throw new Error('an agent chat requires a window and an agent')
   }
   const chats = createAgentKind(
-    { workspace, agent, getReasoning: () => context.getSetting<string>('reasoning') ?? '' },
+    {
+      workspace,
+      agent,
+      ...(context.commands ? { commands: context.commands } : {}),
+      getReasoning: () => context.getSetting<string>('reasoning') ?? '',
+    },
     (deps) =>
       useAgentConversation(
         useConversation({

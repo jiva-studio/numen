@@ -7,8 +7,8 @@ import {
   isNotePath,
   SLOT,
   type DropHost,
+  type CommandsHost,
   type SlotHost,
-  type SlotTarget,
   type VaultFiles,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
@@ -22,13 +22,8 @@ export interface FileTreeHost {
   readonly drops?: DropHost
   /** The slots of the window the menu of a row is drawn from, where the host offers them. */
   readonly slots?: SlotHost
-  /** What runs the commands of the window and of the plugins over a row. */
-  readonly commands?: CommandRunner
-}
-
-/** Runs a command over a target, as `context.commands` of the SDK does. */
-export interface CommandRunner {
-  run(command: string, target?: SlotTarget): Promise<void>
+  /** The commands of the window and of the plugins, run over a row. */
+  readonly commands?: CommandsHost
 }
 
 /**

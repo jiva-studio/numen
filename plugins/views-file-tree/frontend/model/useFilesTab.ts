@@ -2,7 +2,7 @@
  * Tab state, tree interactions, and window tab registration for the files tab.
  */
 import { computed, ref, type Component } from 'vue'
-import { formatErrorMessage, getFileName, NOTE_TYPE, type SlotTarget } from '@numen/plugin-sdk'
+import { formatErrorMessage, getFileName, NOTE_TYPE, type CommandTarget } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import { createMenuItems, findMenuEntry, TRASH_NOTE } from '../lib/menu'
 import { resolveRenamePath } from './rename'
@@ -81,9 +81,9 @@ const getMenuEntry = (list: FileTree, path: string): Entry =>
   }
 
 /** The target of a command over the path and the others selected with it. */
-const getPathTarget = (list: FileTree, path: string, others: readonly string[]): SlotTarget => {
+const getPathTarget = (list: FileTree, path: string, others: readonly string[]): CommandTarget => {
   const entry = getMenuEntry(list, path)
-  return { path, title: entry.name, isFolder: entry.isFolder, others }
+  return { path, title: entry.name, isFolder: entry.isFolder, others, tab: '' }
 }
 
 /** The target of the menu opened on a row, or on the root where it was opened off every row. */
@@ -91,9 +91,9 @@ const getMenuTarget = (
   list: FileTree,
   path: string | null,
   overPaths: readonly string[],
-): SlotTarget =>
+): CommandTarget =>
   path === null
-    ? { path: ROOT, title: '', isFolder: true, others: [] }
+    ? { path: ROOT, title: '', isFolder: true, others: [], tab: '' }
     : getPathTarget(
         list,
         path,
@@ -115,7 +115,7 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   const getOverPaths = (path: string): readonly string[] =>
     list.selectedPaths.value.includes(path) ? list.selectedPaths.value : [path]
 
-  const getTarget = (path: string | null): SlotTarget =>
+  const getTarget = (path: string | null): CommandTarget =>
     getMenuTarget(list, path, path === null ? [] : getOverPaths(path))
 
   const getMenuItems = (path: string | null) =>

@@ -9,6 +9,7 @@ const BUTTON: SlotItem = {
   command: 'org.example.ledger:ledger.open',
   title: 'Open ledger',
   shortcut: '',
+  hasChoices: false,
 }
 
 const SYNC: BackgroundTask = {
@@ -27,18 +28,68 @@ const SYNC: BackgroundTask = {
 }
 
 describe('the slots of a mock context', () => {
-  it('hand a watcher the entries a test sets, and record the commands run', async () => {
+  it('hand a watcher the entries a test sets', () => {
     const ctx = createMockPluginContext()
     const handler = vi.fn()
     ctx.slots.watchEntries(SLOT.titleBarCommands, handler)
 
     ctx.slots.setEntries(SLOT.titleBarCommands, [BUTTON])
-    await ctx.slots.runCommand(BUTTON.kind === 'command' ? BUTTON.command : '')
 
     expect(handler.mock.calls).toStrictEqual([[[]], [[BUTTON]]])
     expect(ctx.slots.getEntries(SLOT.titleBarCommands)).toStrictEqual([BUTTON])
-    expect(ctx.slots.getRuns()).toStrictEqual([
-      { command: 'org.example.ledger:ledger.open', target: undefined },
+    expect(ctx.slots).not.toHaveProperty('runCommand')
+  })
+})
+
+describe('the commands of a mock context', () => {
+  const TARGET = { path: 'ledger/March.md', title: 'March', isFolder: false, others: [], tab: '' }
+
+  it('give the choices a test sets for a command, and none for another', async () => {
+    const ctx = createMockPluginContext()
+    const windows = [{ id: 'w2', title: 'Second window' }]
+
+    ctx.commands.setChoices('app:tab.move', windows)
+
+    expect(await ctx.commands.getChoices('app:tab.move', TARGET)).toStrictEqual(windows)
+    expect(await ctx.commands.getChoices('app:vault.create')).toStrictEqual([])
+  })
+
+  it('record the choice a command runs with', async () => {
+    const ctx = createMockPluginContext()
+
+    await ctx.commands.run('app:tab.move', TARGET, 'w2')
+
+    expect(ctx.commands.getRuns()).toStrictEqual([
+      { command: 'app:tab.move', target: TARGET, choice: 'w2' },
+    ])
+  })
+
+  it('hand a watcher the ids a test sets, at once and on every change', () => {
+    const ctx = createMockPluginContext()
+    const handler = vi.fn()
+    ctx.commands.watch(handler)
+
+    ctx.commands.setIds(['app:vault.create', 'org.example.ledger:ledger.open'])
+
+    expect(handler.mock.calls).toStrictEqual([
+      [[]],
+      [['app:vault.create', 'org.example.ledger:ledger.open']],
+    ])
+    expect(ctx.commands.getIds()).toStrictEqual([
+      'app:vault.create',
+      'org.example.ledger:ledger.open',
+    ])
+  })
+
+  it('record each command run, with its target', async () => {
+    const ctx = createMockPluginContext()
+
+    await ctx.commands.run('app:vault.create')
+    await ctx.commands.run('org.example.ledger:ledger.open', TARGET)
+
+    expect(ctx.commands.getRuns()).toStrictEqual([
+      { command: 'app:vault.create', target: undefined, choice: undefined },
+      { command: 'org.example.ledger:ledger.open', target: TARGET, choice: undefined },
     ])
   })
 })

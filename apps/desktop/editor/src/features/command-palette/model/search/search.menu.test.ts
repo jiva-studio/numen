@@ -1,7 +1,7 @@
 /** The menu of a search result as the palette draws it and answers a choice from it. */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { SlotCommand, SlotItem, SlotTarget } from '@numen/plugin-host'
+import type { SlotCommand, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
 import { COMMAND } from '@/shared/commandIds'
 import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
 import type { CommandTarget } from '../../types'
@@ -33,6 +33,7 @@ const SHOW: SlotCommand = {
   command: `${ATLAS}:graph.showNote`,
   title: 'Show note in plex',
   shortcut: '',
+  hasChoices: false,
 }
 const OTHER: SlotCommand = {
   kind: 'command',
@@ -41,6 +42,7 @@ const OTHER: SlotCommand = {
   command: `${ATLAS}:other.run`,
   title: 'Another',
   shortcut: '',
+  hasChoices: false,
 }
 const SEPARATOR: SlotItem = { kind: 'separator', key: 'separator/1' }
 const SKETCH: SlotItem = {
@@ -121,7 +123,7 @@ describe('a note found by name in the search', () => {
   })
 
   it('asks for the entries of the menu over the note of each result', async () => {
-    const targets: SlotTarget[] = []
+    const targets: RunTarget[] = []
     const palette = useSearch(createCore([nameMatch]), WORDS, {
       wait: now,
       menu: {
@@ -140,6 +142,7 @@ describe('a note found by name in the search', () => {
       title: 'Coral',
       isFolder: false,
       others: [],
+      tab: '',
     })
   })
 
