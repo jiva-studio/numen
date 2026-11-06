@@ -3,6 +3,7 @@ package plugin
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -53,7 +54,7 @@ func getFreePort(t *testing.T) int {
 }
 
 // createListenerPlugin writes a plugin under root whose manifest declares the number setting port with
-// defaultPort as its default, and the listener name on that setting.
+// defaultPort as its default, the listener name on that setting, and the string setting greeting.
 func createListenerPlugin(t *testing.T, root, name string, defaultPort int) {
 	t.Helper()
 	dir := filepath.Join(root, "relay")
@@ -68,7 +69,10 @@ func createListenerPlugin(t *testing.T, root, name string, defaultPort int) {
 		"targets": ["desktop.editor"],
 		"backend": {"entrypoint": "bin/relay"},
 		"contributes": {"listeners": [{"name": %q, "portSetting": "port", "protocol": "tcp"}]},
-		"settings": [{"key": "port", "type": "number", "title": "Port", "default": %d, "step": 1}]
+		"settings": [
+			{"key": "port", "type": "number", "title": "Port", "default": %d, "step": 1},
+			{"key": "greeting", "type": "string", "title": "Greeting", "default": "good morning"}
+		]
 	}`, listenerPlugin, name, defaultPort)
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(m), 0o600); err != nil {
 		t.Fatal(err)
@@ -550,5 +554,118 @@ func TestAListenerWithAFixedPortBindsThatPortAndForwardsTheBytes(t *testing.T) {
 	}
 	if got := started.Load(); got != 1 {
 		t.Errorf("the plugin started %d times, want 1", got)
+	}
+}
+
+// getStoredSettings returns the settings of the listener plugin the host holds in memory.
+func getStoredSettings(t *testing.T, host *Host) map[string]any {
+	t.Helper()
+	raw, err := host.GetPluginConfigJSON(listenerPlugin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stored map[string]any
+	if err := json.Unmarshal([]byte(raw), &stored); err != nil {
+		t.Fatalf("parse %s: %v", raw, err)
+	}
+	return stored
+}
+
+// persistedKeys records the keys the persist handler of a host is called with.
+type persistedKeys struct {
+	mu   sync.Mutex
+	keys []string
+}
+
+func (p *persistedKeys) add(_, key string, _ any) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.keys = append(p.keys, key)
+	return nil
+}
+
+func (p *persistedKeys) get() []string {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return slices.Clone(p.keys)
+}
+
+func TestCheckPluginSettingRefusesAPortThatCannotBeBoundAndAcceptsAFreeOrTheBoundPort(t *testing.T) {
+	w := newListenerHost(t)
+	_, takenPort := listenLoopback(t)
+	freePort := getFreePort(t)
+
+	if err := w.host.CheckPluginSetting(listenerPlugin, "port", float64(takenPort)); err == nil {
+		t.Errorf("CheckPluginSetting accepted the taken port %d", takenPort)
+	}
+	if err := w.host.CheckPluginSetting(listenerPlugin, "port", float64(80)); !errors.Is(err, errListenerPortValue) {
+		t.Errorf("CheckPluginSetting of port 80 = %v, want errListenerPortValue", err)
+	}
+	if err := w.host.CheckPluginSetting(listenerPlugin, "port", float64(freePort)); err != nil {
+		t.Errorf("CheckPluginSetting of the free port %d = %v, want nil", freePort, err)
+	}
+	if isPortOpen(t, freePort) {
+		t.Errorf("the free port %d stays bound after the check", freePort)
+	}
+	if err := w.host.CheckPluginSetting(listenerPlugin, "port", float64(w.port)); err != nil {
+		t.Errorf("CheckPluginSetting of the bound port %d = %v, want nil", w.port, err)
+	}
+	if err := w.host.CheckPluginSetting(listenerPlugin, "greeting", "good evening"); err != nil {
+		t.Errorf("CheckPluginSetting of greeting = %v, want nil", err)
+	}
+	if reply := sendLine(t, connectListener(t, w.port), "checked"); reply != "checked" {
+		t.Errorf("reply = %q on the bound port after the checks, want the echo of the line", reply)
+	}
+}
+
+func TestARefusedPortSettingIsNotPersistedNorKeptAndOtherSettingsStillWrite(t *testing.T) {
+	changes := map[string]func(context.Context, *Host, string, any) error{
+		"SetPluginSetting": func(ctx context.Context, host *Host, key string, value any) error {
+			return host.SetPluginSetting(ctx, listenerPlugin, key, value)
+		},
+		"UpdatePluginSetting": func(ctx context.Context, host *Host, key string, value any) error {
+			return host.UpdatePluginSetting(ctx, listenerPlugin, key, value)
+		},
+	}
+	values := map[string]func(t *testing.T) any{
+		"port 80": func(*testing.T) any { return float64(80) },
+		"a taken port": func(t *testing.T) any {
+			_, takenPort := listenLoopback(t)
+			return float64(takenPort)
+		},
+	}
+	for changeName, change := range changes {
+		for valueName, getValue := range values {
+			t.Run(changeName+" to "+valueName, func(t *testing.T) {
+				w := newListenerHost(t)
+				var persisted persistedKeys
+				w.host.SetPersistHandler(persisted.add)
+				value := getValue(t)
+
+				if err := change(t.Context(), w.host, "port", value); err == nil {
+					t.Errorf("writing the port setting %v returned no error", value)
+				}
+
+				if keys := persisted.get(); slices.Contains(keys, "port") {
+					t.Errorf("persisted keys = %v, want the refused port not persisted", keys)
+				}
+				if got := getStoredSettings(t, w.host)["port"]; got != float64(w.port) {
+					t.Errorf("port in memory = %v, want the old port %d", got, w.port)
+				}
+				if reply := sendLine(t, connectListener(t, w.port), "kept"); reply != "kept" {
+					t.Errorf("reply = %q on the old port, want the echo of the line", reply)
+				}
+
+				if err := change(t.Context(), w.host, "greeting", "good evening"); err != nil {
+					t.Fatalf("writing greeting after the refused port = %v, want nil", err)
+				}
+				if got := getStoredSettings(t, w.host)["greeting"]; got != "good evening" {
+					t.Errorf("greeting in memory = %v, want good evening", got)
+				}
+				if got := getStoredSettings(t, w.host)["port"]; got != float64(w.port) {
+					t.Errorf("port in memory after writing greeting = %v, want the old port %d", got, w.port)
+				}
+			})
+		}
 	}
 }
