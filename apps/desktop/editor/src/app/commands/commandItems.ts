@@ -50,8 +50,8 @@ export function createCommandItems(deps: CommandItemsDeps) {
       if (command) return (await command.listItems?.(toAppTarget(target))) ?? []
       if (!deps.pluginHost?.hasCommandItems(id)) return []
       const isShared = SHARED_COMMANDS.some((one) => one.id === id)
-      const typed = isShared && deps.readTarget ? await deps.readTarget(target) : target
-      return deps.pluginHost.listCommandItems(id, typed)
+      const noteTarget = isShared && deps.readTarget ? await deps.readTarget(target) : target
+      return deps.pluginHost.listCommandItems(id, noteTarget)
     },
     runWithArgument: (id: string, target: RunTarget, argument: string): Promise<void> =>
       findAppCommand(id)

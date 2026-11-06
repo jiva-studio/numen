@@ -47,14 +47,14 @@ const MENU_WORDS = { loadingText: WORDS.loadingItems, emptyText: WORDS.noItems }
 /** The items of the commands of the open menu that offer them, read as the menu opens. */
 function useEntryItems(deps: Pick<TabMenuDeps, 'listItems' | 'reportError'>) {
   const lists = shallowRef<CommandItemLists>(new Map())
-  let reading: Disposable | null = null
+  let itemSubscription: Disposable | null = null
   const stop = () => {
-    reading?.dispose()
-    reading = null
+    itemSubscription?.dispose()
+    itemSubscription = null
   }
   const read = (entries: readonly SlotItem[], target: RunTarget) => {
     stop()
-    reading = readCommandItemLists(
+    itemSubscription = readCommandItemLists(
       entries,
       (command) => deps.listItems?.(command, target) ?? Promise.resolve([]),
       (next) => (lists.value = next),

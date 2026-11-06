@@ -236,13 +236,13 @@ describe('readCommandItemLists', () => {
   it('stops reporting once disposed', async () => {
     let resolve: (items: readonly CommandItem[]) => void = () => undefined
     const onChange = vi.fn()
-    const reading = readCommandItemLists(
+    const itemSubscription = readCommandItemLists(
       [MOVE],
       () => new Promise((done) => (resolve = done)),
       onChange,
     )
 
-    reading.dispose()
+    itemSubscription.dispose()
     resolve([{ id: 'w1', title: 'Window 1' }])
     await Promise.resolve()
 

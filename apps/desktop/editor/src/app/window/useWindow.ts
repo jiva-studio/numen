@@ -280,6 +280,29 @@ function createPluginReports(
   }
 }
 
+/** The handlers of shared commands the window runs in their plugins' backends. */
+const createWindowHandlers = (
+  declaredCommands: ReturnType<typeof useDeclaredCommands>,
+  writeMessage: (text: string, severity: 'info') => void,
+  tabOpeners: ReturnType<typeof fileOpeners>,
+) =>
+  createBackendHandlers({
+    getHandlers: () => declaredCommands.handlers.value,
+    list: listDeclaredCommandItems,
+    run: runDeclaredHandler,
+    writeMessage,
+    openFile: (path) => tabOpeners.openFile(path, '', 'current').then(() => undefined),
+  })
+
+/** The type and the properties of the note at the path, which the menu of its tab is read over. */
+const readNoteKind = async (path: string) => {
+  const kind = (await core.fileKinds([path])).get(path)
+  return {
+    noteType: kind?.type ?? '',
+    ...(kind?.properties ? { properties: kind.properties } : {}),
+  }
+}
+
 function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
   const getPluginName = (pluginId: string): string =>
@@ -326,13 +349,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const { pluginHost, pluginLoader } = createPluginSupport({
     slots: slots.hostDeps,
     getCommandDeclarations: () => declaredCommands.declarations.value,
-    handlers: createBackendHandlers({
-      getHandlers: () => declaredCommands.handlers.value,
-      list: listDeclaredCommandItems,
-      run: runDeclaredHandler,
-      writeMessage,
-      openFile: (path) => tabOpeners.openFile(path, '', 'current').then(() => undefined),
-    }),
+    handlers: createWindowHandlers(declaredCommands, writeMessage, tabOpeners),
     windowTabs,
     tabLinks,
     tabOpeners,

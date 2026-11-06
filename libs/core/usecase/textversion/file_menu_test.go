@@ -36,27 +36,6 @@ func (r fileReader) Read(_ context.Context, path string) ([]byte, error) {
 	return raw, nil
 }
 
-// readCounter counts the files read through the readers it wraps.
-type readCounter struct {
-	fileReaders
-	reads *int
-}
-
-func (r readCounter) Open(v domain.Vault) (vaultport.VaultReader, error) {
-	inner, err := r.fileReaders.Open(v)
-	return countingReader{VaultReader: inner, reads: r.reads}, err
-}
-
-type countingReader struct {
-	vaultport.VaultReader
-	reads *int
-}
-
-func (r countingReader) Read(ctx context.Context, path string) ([]byte, error) {
-	*r.reads++
-	return r.VaultReader.Read(ctx, path)
-}
-
 // commands offers the commands it holds, and records each run.
 type commands struct {
 	all []pluginport.PluginCommandEntry
@@ -105,20 +84,9 @@ func getProofreadCommand() pluginport.PluginCommandEntry {
 	}}
 }
 
-func getDeleteProofreadingCommand() pluginport.PluginCommandEntry {
-	return pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
-		ID: "proofreading.delete", Title: "Delete proofreading", When: ofKind(string(kindRecognition)),
-	}}
-}
-
 // liveOfKinds holds over the live version when it is of one of the kinds.
 func liveOfKinds(kinds ...string) string {
 	return "version.isLive && version.kind in ['" + strings.Join(kinds, "', '") + "']"
-}
-
-// ofKind holds over a version of the kind.
-func ofKind(kind string) string {
-	return "version.kind == '" + kind + "'"
 }
 
 func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (*textversion.FileMenu, *commands) {

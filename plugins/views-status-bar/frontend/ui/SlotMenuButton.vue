@@ -25,7 +25,7 @@ const props = withDefaults(
     label: string
     icon?: unknown
     tooltip?: string
-    /** Whether the menu is the items of the one command of the entries, rather than its row. */
+    /** Whether the menu holds the items of the one command of the entries, without the row of the command. */
     isItemList?: boolean
     /** The items a command lists. */
     listItems: (command: string) => Promise<readonly CommandItem[]>
@@ -42,7 +42,7 @@ const isOpen = ref(false)
 const trigger = ref<MenuTrigger>('pointer')
 const anchor = ref({ x: 0, y: 0 })
 const itemLists = shallowRef<CommandItemLists>(new Map())
-let reading: Disposable | null = null
+let itemSubscription: Disposable | null = null
 const menu = computed(() => createSlotMenu(props.entries, itemLists.value, WORDS))
 const rows = computed(() => {
   const [first] = menu.value.items
@@ -51,7 +51,7 @@ const rows = computed(() => {
 const isMenuOpen = computed(() => isOpen.value && rows.value.length > 0)
 
 /* --------------------------------- Hooks ---------------------------------- */
-onBeforeUnmount(() => reading?.dispose())
+onBeforeUnmount(() => itemSubscription?.dispose())
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle(event: MouseEvent): void {
@@ -62,8 +62,8 @@ function onToggle(event: MouseEvent): void {
   const box = measureRect(button.value)
   anchor.value = { x: box?.left ?? 0, y: box?.top ?? 0 }
   trigger.value = event.detail === 0 ? 'keyboard' : 'pointer'
-  reading?.dispose()
-  reading = readCommandItemLists(
+  itemSubscription?.dispose()
+  itemSubscription = readCommandItemLists(
     props.entries,
     props.listItems,
     (lists) => (itemLists.value = lists),
@@ -72,8 +72,8 @@ function onToggle(event: MouseEvent): void {
 }
 
 function onClose(): void {
-  reading?.dispose()
-  reading = null
+  itemSubscription?.dispose()
+  itemSubscription = null
   isOpen.value = false
 }
 
