@@ -193,14 +193,14 @@ func moveNote(ctx context.Context, vault pluginport.PluginVault, from, folder st
 		Move: &v1.MoveResult{From: from}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
 		Detail: fmt.Sprintf("the call was cancelled before %s was moved", from),
 	}
-	if ctx.Err() != nil {
+	if isCancelled(ctx) {
 		return notAttempted, 0, nil
 	}
 	move, err := vault.MoveNote(ctx, from, path.Join(folder, path.Base(from)))
 	if err == nil || move.IsMoved {
 		return &v1.HostNoteMove{Move: writeMove(move)}, 0, nil
 	}
-	if ctx.Err() != nil {
+	if isCancelled(ctx) {
 		return notAttempted, 0, nil
 	}
 	noteCode, code, callErr := answerNote(ctx, err)
@@ -241,14 +241,14 @@ func removeNote(ctx context.Context, vault pluginport.PluginVault, target string
 		Path: target, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
 		Detail: fmt.Sprintf("the call was cancelled before %s was removed", target),
 	}
-	if ctx.Err() != nil {
+	if isCancelled(ctx) {
 		return notAttempted, 0, nil
 	}
 	trashPath, brokenLinks, err := vault.RemoveNote(ctx, target)
 	if err == nil || trashPath != "" {
 		return &v1.HostNoteRemoval{Path: target, TrashPath: trashPath, BrokenLinks: brokenLinks}, 0, nil
 	}
-	if ctx.Err() != nil {
+	if isCancelled(ctx) {
 		return notAttempted, 0, nil
 	}
 	noteCode, code, callErr := answerNote(ctx, err)
@@ -256,4 +256,9 @@ func removeNote(ctx context.Context, vault pluginport.PluginVault, target string
 		return nil, code, callErr
 	}
 	return &v1.HostNoteRemoval{Path: target, Error: noteCode, Detail: err.Error()}, 0, nil
+}
+
+// isCancelled reports whether the call was cancelled, after which a batch changes no further note.
+func isCancelled(ctx context.Context) bool {
+	return ctx.Err() != nil
 }
