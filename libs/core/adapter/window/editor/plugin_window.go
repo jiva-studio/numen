@@ -101,7 +101,8 @@ func (w pluginWindow) ActivateTab(ctx context.Context, id string) (domain.OpenTa
 	if open.ActiveID == id {
 		return open, nil
 	}
-	bound, stop := context.WithTimeout(ctx, cmp.Or(w.state.TabActivationBound, defaultTabActivationBound))
+	wait := cmp.Or(w.state.TabActivationBound, defaultTabActivationBound)
+	bound, stop := context.WithTimeout(ctx, wait)
 	defer stop()
 	for {
 		select {
@@ -114,7 +115,7 @@ func (w pluginWindow) ActivateTab(ctx context.Context, id string) (domain.OpenTa
 			if err := ctx.Err(); err != nil {
 				return domain.OpenTabs{}, err
 			}
-			return domain.OpenTabs{}, fmt.Errorf("editor: activate tab %q: %w", id, pluginport.ErrTabNotShown)
+			return domain.OpenTabs{}, fmt.Errorf("editor: activate tab %q within %s: %w", id, wait, pluginport.ErrTabNotShown)
 		}
 	}
 }

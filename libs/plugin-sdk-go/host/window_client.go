@@ -92,6 +92,9 @@ func (c *Client) ReadOpenTabs(ctx context.Context) ([]OpenTab, string, error) {
 
 func (c *Client) ActivateTab(ctx context.Context, id string) (OpenTab, string, error) {
 	res, err := c.window.ActivateTab(ctx, request(c, &v1.ActivateTabRequest{TabId: id}))
+	if connect.CodeOf(err) == connect.CodeDeadlineExceeded && ctx.Err() == nil {
+		return OpenTab{}, "", fmt.Errorf("%w: %w", ErrTabNotShown, err)
+	}
 	if err != nil {
 		return OpenTab{}, "", readWindowCallError(err)
 	}

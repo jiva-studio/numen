@@ -5,8 +5,13 @@ import (
 	"errors"
 )
 
-// ErrNoWindow is what a window call gets from a host with no window.
-var ErrNoWindow = errors.New("host: the host has no window")
+var (
+	// ErrNoWindow is what a window call gets from a host with no window.
+	ErrNoWindow = errors.New("host: the host has no window")
+	// ErrTabNotShown is what ActivateTab gets when the window does not show the tab within the bound
+	// of the host. It wraps the deadline error the host answers.
+	ErrTabNotShown = errors.New("host: the window did not show the tab in time")
+)
 
 // FocusedNote is the note FocusNote made the current one.
 type FocusedNote struct{ Path, Title, ID string }
@@ -44,6 +49,6 @@ type Window interface {
 	ReadOpenTabs(ctx context.Context) (tabs []OpenTab, activeID string, err error)
 	// ActivateTab makes the open tab with the id the active tab, and answers the tab and the active id
 	// as the window reports them afterwards. An id the window has no tab with is ErrNotExist, and a tab
-	// the window does not show within the bound of the host is the deadline error the host answers.
+	// the window does not show within the bound of the host is ErrTabNotShown.
 	ActivateTab(ctx context.Context, id string) (tab OpenTab, activeID string, err error)
 }

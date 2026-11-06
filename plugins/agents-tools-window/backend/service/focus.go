@@ -98,7 +98,7 @@ func addWindowFocusTab(registry *tools.Registry, on Host) error {
 
 // activateWindowTab makes the open tab with the id the active tab and answers it as the window
 // reports it. A tab the window has not reported is an error, and the window is not asked. A tab the
-// window does not show in time is the error the host answers.
+// window does not show in time is an error in plain text.
 func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error) {
 	if on.Window == nil {
 		return TabInfo{}, host.ErrNoWindow
@@ -114,6 +114,9 @@ func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error)
 	tab, activeID, err := on.Window.ActivateTab(ctx, id)
 	if errors.Is(err, host.ErrNotExist) {
 		return TabInfo{}, fmt.Errorf("no open tab has id %q", id)
+	}
+	if errors.Is(err, host.ErrTabNotShown) {
+		return TabInfo{}, fmt.Errorf("window_focus_tab: the window did not show tab %q within %s", id, tabActivationBound)
 	}
 	if err != nil {
 		return TabInfo{}, err
@@ -133,3 +136,7 @@ func focusFile(ctx context.Context, on Host, path string, passages []host.Passag
 func isNotePath(filePath string) bool {
 	return strings.EqualFold(path.Ext(filePath), domain.NoteExtension)
 }
+
+// tabActivationBound is how long the host waits for the window to show an activated tab. The host
+// does not send its bound, so the text of the error names the default of the host.
+const tabActivationBound = "2 s"
