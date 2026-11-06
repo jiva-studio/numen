@@ -6,9 +6,12 @@ import (
 	"errors"
 	"io"
 	"net"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // serveEcho starts a loopback TCP server that writes back what it reads and returns its address.
@@ -18,19 +21,25 @@ func serveEcho(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = ln.Close() })
-	go func() {
+	var echoes sync.WaitGroup
+	t.Cleanup(func() {
+		testsupport.Close(t, ln)
+		echoes.Wait()
+	})
+	echoes.Go(func() {
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
 				return
 			}
-			go func() {
-				defer func() { _ = conn.Close() }()
-				_, _ = io.Copy(conn, conn)
-			}()
+			echoes.Go(func() {
+				defer testsupport.Close(t, conn)
+				if _, err := io.Copy(conn, conn); err != nil {
+					t.Logf("echo: %v", err)
+				}
+			})
 		}
-	}()
+	})
 	return ln.Addr().String()
 }
 
@@ -41,17 +50,26 @@ func openProxy(t *testing.T, target Target, onError func(error)) (*Proxy, string
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = p.Close() })
+	testsupport.CloseAfter(t, p)
 	return p, p.listener.Addr().String()
+}
+
+func dialLoopback(ctx context.Context, addr string) (net.Conn, error) {
+	dialer := net.Dialer{Timeout: time.Second}
+	return dialer.DialContext(ctx, "tcp", addr)
 }
 
 func dial(t *testing.T, addr string) net.Conn {
 	t.Helper()
-	conn, err := net.DialTimeout("tcp", addr, time.Second)
+	conn, err := dialLoopback(t.Context(), addr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = conn.Close() })
+	t.Cleanup(func() {
+		if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			t.Errorf("close: %v", err)
+		}
+	})
 	if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
 		t.Fatal(err)
 	}
@@ -136,8 +154,8 @@ func TestCloseClosesTheListeningPortAndTheForwardedConnections(t *testing.T) {
 	default:
 		t.Error("Close returned before the target was released")
 	}
-	if second, err := net.DialTimeout("tcp", addr, time.Second); err == nil {
-		_ = second.Close()
+	if second, err := dialLoopback(t.Context(), addr); err == nil {
+		testsupport.Close(t, second)
 		t.Error("the port accepts connections after Close")
 	}
 	if err := p.Close(); err != nil {
@@ -165,13 +183,13 @@ func TestOpenFailsOnAPortThatIsTaken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = taken.Close() })
+	testsupport.CloseAfter(t, taken)
 
 	p, err := Open(t.Context(), taken.Addr().String(), func(context.Context) (string, func(), error) {
 		return "", nil, errors.New("unused")
 	}, func(error) {})
 	if err == nil {
-		_ = p.Close()
+		testsupport.Close(t, p)
 		t.Fatal("Open succeeded on a port that is taken")
 	}
 }

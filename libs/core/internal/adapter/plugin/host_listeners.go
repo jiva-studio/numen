@@ -41,7 +41,7 @@ func (h *Host) getWantedListenersLocked(pluginID string) []manifest.Listener {
 
 // syncAllListeners brings the bound ports of every registered plugin, and of every plugin that has
 // bound ports, in line with its manifest and state.
-func (h *Host) syncAllListeners() {
+func (h *Host) syncAllListeners(ctx context.Context) {
 	h.listenersMu.Lock()
 	ids := slices.Collect(maps.Keys(h.listeners))
 	h.listenersMu.Unlock()
@@ -54,14 +54,14 @@ func (h *Host) syncAllListeners() {
 	h.mu.RUnlock()
 	slices.Sort(ids)
 	for _, id := range ids {
-		h.syncListeners(id)
+		h.syncListeners(ctx, id)
 	}
 }
 
 // syncListeners binds 127.0.0.1:<port> for each listener the plugin declares while it is
 // registered and enabled, and closes its ports otherwise. A changed set of listeners is closed and
 // bound again. A port that cannot be bound fails the plugin.
-func (h *Host) syncListeners(pluginID string) {
+func (h *Host) syncListeners(ctx context.Context, pluginID string) {
 	h.listenersMu.Lock()
 	defer h.listenersMu.Unlock()
 
@@ -76,7 +76,7 @@ func (h *Host) syncListeners(pluginID string) {
 	if len(wanted) == 0 {
 		return
 	}
-	proxies, err := h.openListeners(pluginID, wanted)
+	proxies, err := h.openListeners(context.WithoutCancel(ctx), pluginID, wanted)
 	if err != nil {
 		h.failListenerBind(pluginID, err)
 		return
@@ -86,11 +86,11 @@ func (h *Host) syncListeners(pluginID string) {
 }
 
 // openListeners binds every listener, or none: a failed bind closes the ports bound before it.
-func (h *Host) openListeners(pluginID string, wanted []manifest.Listener) ([]*portproxy.Proxy, error) {
+func (h *Host) openListeners(ctx context.Context, pluginID string, wanted []manifest.Listener) ([]*portproxy.Proxy, error) {
 	proxies := make([]*portproxy.Proxy, 0, len(wanted))
 	for _, declared := range wanted {
 		addr := net.JoinHostPort(listenerAddressHost, strconv.Itoa(declared.Port))
-		proxy, err := portproxy.Open(context.Background(), addr, h.createListenerTarget(pluginID, declared.Name), h.reportError)
+		proxy, err := portproxy.Open(ctx, addr, h.createListenerTarget(pluginID, declared.Name), h.reportError)
 		if err != nil {
 			for _, opened := range proxies {
 				h.closeListener(pluginID, opened)

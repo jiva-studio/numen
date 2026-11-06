@@ -243,7 +243,7 @@ func (h *Host) SetSafeMode(enabled bool) {
 			h.reportError(err)
 		}
 	}
-	h.syncAllListeners()
+	h.syncAllListeners(context.Background())
 }
 
 func (h *Host) getRunningPluginIDsLocked() []string {
@@ -1121,7 +1121,7 @@ func (h *Host) SetSettings(all map[string]map[string]any) {
 		}
 	}
 	h.mu.Unlock()
-	h.syncAllListeners()
+	h.syncAllListeners(context.Background())
 }
 
 // IsPluginEnabled reports whether the specified plugin is enabled.
@@ -1164,7 +1164,7 @@ func (h *Host) applyEnabledChange(ctx context.Context, pluginID string, value an
 	if sup != nil {
 		h.clearFailure(pluginID, sup)
 	}
-	h.syncListeners(pluginID)
+	h.syncListeners(ctx, pluginID)
 	return stopErr
 }
 
@@ -1674,7 +1674,7 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*pluginport.Pl
 	if !recognized {
 		return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginNotInstalled, Err: errPluginNotFound}
 	}
-	defer h.syncListeners(pluginID)
+	defer h.syncListeners(ctx, pluginID)
 	if sup != nil {
 		h.clearFailure(pluginID, sup)
 	}

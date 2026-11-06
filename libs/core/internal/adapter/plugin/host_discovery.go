@@ -16,7 +16,7 @@ func (h *Host) Discover() error {
 	if err := h.discoverPlugins(); err != nil {
 		return err
 	}
-	h.syncAllListeners()
+	h.syncAllListeners(context.Background())
 	return nil
 }
 
