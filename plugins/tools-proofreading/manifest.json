@@ -23,7 +23,7 @@
         "id": "proofreading.delete",
         "title": "Delete proofreading",
         "icon": "trash-2",
-        "when": "version.kind != ''"
+        "when": "version.kind == 'proofreading'"
       }
     ]
   },

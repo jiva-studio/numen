@@ -156,7 +156,7 @@ func TestProofreadMakesTheLiveVersionFromTheScan(t *testing.T) {
 	}
 
 	parts, live := s.readLive(t, scanPath)
-	if live.PluginID != PluginID || live.Source != scan.GetID() || live.SourceHash != scan.Hash || live.Kind != kindRecognition {
+	if live.PluginID != PluginID || live.Source != scan.GetID() || live.SourceHash != scan.Hash || live.Kind != proofreadingKind {
 		t.Fatalf("the live version is %+v", live)
 	}
 	if res.Lines != 3 || res.Corrected != 1 {

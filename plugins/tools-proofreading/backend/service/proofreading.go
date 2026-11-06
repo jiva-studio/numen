@@ -106,7 +106,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 		return Result{}, err
 	}
 	version, err := texts.PutVersion(ctx, host.TextPut{
-		Path: req.Path, Key: key, Source: source.GetID(), Kind: source.Kind,
+		Path: req.Path, Key: key, Source: source.GetID(), Kind: proofreadingKind,
 		SourceHash: source.Hash, File: getFileName(key),
 	})
 	if err != nil {
