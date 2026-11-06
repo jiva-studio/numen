@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
@@ -26,12 +27,12 @@ func getWriteToolArguments() map[string]string {
 
 func TestWriteToolsAreOnTheFullServerOnly(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
-	infos, err := registry.ListToolInfos(t.Context())
+	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
 	servers := map[string][]tools.Server{}
-	for _, info := range infos {
+	for _, info := range infos.Tools {
 		servers[info.GetName()] = info.GetServers()
 	}
 	for name := range getWriteToolArguments() {
@@ -71,5 +72,18 @@ func TestWriteToolsWithACallNamingNoVaultAreRefused(t *testing.T) {
 	}
 	if opened, ok := geology.GetOpenedVault(); ok {
 		t.Errorf("the vault %s was opened", opened.ID)
+	}
+}
+
+func TestInstructionsNameEveryWriteTool(t *testing.T) {
+	_, _, registry := newTwoVaults(t)
+	listing, err := registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatalf("list tools: %v", err)
+	}
+	for name := range getWriteToolArguments() {
+		if !strings.Contains(listing.Instructions, name) {
+			t.Errorf("the instructions do not name %s:\n%s", name, listing.Instructions)
+		}
 	}
 }

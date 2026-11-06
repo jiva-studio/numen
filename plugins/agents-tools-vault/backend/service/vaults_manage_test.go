@@ -205,12 +205,12 @@ func TestVaultListToolsWithoutAVaultListAreNotListed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
-	infos, err := registry.ListToolInfos(t.Context())
+	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
 	names := map[string]bool{}
-	for _, info := range infos {
+	for _, info := range infos.Tools {
 		names[info.GetName()] = true
 	}
 	for _, name := range []string{"vault_add", "vault_rename", "vault_remove", "vault_open"} {
