@@ -9,6 +9,8 @@ import { createCfiSelector, getSelectorCfi } from '../lib/place'
 export interface PlacedReader {
   readonly offset: Ref<number>
   readonly isLoading: Ref<boolean>
+  /** The table-of-contents title at the offset, empty where the book names none. */
+  readonly chapter: Ref<string>
   getCfi(offset: number): Promise<string | null>
   goToCfi(cfi: string): Promise<boolean>
 }

@@ -89,3 +89,7 @@ func (c *Client) ReadOpenTabs(ctx context.Context) ([]OpenTab, string, error) {
 	}
 	return tabs, res.Msg.GetActiveId(), nil
 }
+
+func (c *Client) ActivateTab(context.Context, string) (OpenTab, string, error) {
+	return OpenTab{}, "", errors.New("host: ActivateTab is not implemented")
+}

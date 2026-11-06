@@ -77,3 +77,7 @@ func (w pluginWindow) ReadOpenTabs(context.Context) (domain.OpenTabs, error) {
 	}
 	return w.state.GetOpenTabs(), nil
 }
+
+func (w pluginWindow) ActivateTab(context.Context, string) (domain.OpenTabs, error) {
+	return domain.OpenTabs{}, errors.New("editor: ActivateTab is not implemented")
+}

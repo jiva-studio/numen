@@ -371,3 +371,7 @@ type DetachedTab struct {
 	// X and Y are the screen position of the new window.
 	X, Y int
 }
+
+func (v view) ActivateTab(context.Context, string) error {
+	return errors.New("editor: ActivateTab is not implemented")
+}

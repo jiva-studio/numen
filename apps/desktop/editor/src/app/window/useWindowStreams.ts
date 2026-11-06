@@ -30,6 +30,7 @@ export interface WindowStreamsDeps {
   readonly reportChange: (edit: NoteEdit) => void
   readonly travelTo: (path: string) => Promise<void> | void
   readonly openFileAt: (path: string, spans: readonly TextRange[]) => void
+  readonly activateTab: (id: string) => void
 }
 
 interface VaultChangeData {

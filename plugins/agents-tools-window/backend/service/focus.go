@@ -11,12 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-var (
-	errMissingFocusTarget = errors.New("specify tabId, path, or title to focus")
-	errTabNotFound        = errors.New("no open tab matches criteria")
-	errTabWithoutPath     = errors.New("the tab holds no file to focus")
-)
-
 func addNoteFocus(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "note_focus",
@@ -80,29 +74,9 @@ func addWindowFocusTab(registry *tools.Registry, on Host) error {
 		Effect:  tools.ReadOnly,
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full},
-	}, func(ctx context.Context, in WindowFocusTabInput) (WindowFocusTabOutput, error) {
-		tab, err := findFocusTab(ctx, on, in)
-		if err != nil {
-			return WindowFocusTabOutput{}, err
-		}
-		if err := focusPath(ctx, on, tab.Path); err != nil {
-			return WindowFocusTabOutput{}, err
-		}
-		return WindowFocusTabOutput{Tab: tab}, nil
+	}, func(context.Context, WindowFocusTabInput) (WindowFocusTabOutput, error) {
+		return WindowFocusTabOutput{}, errors.New("window_focus_tab is not implemented")
 	})
-}
-
-// focusPath moves the window to the path: a note becomes the current one, and any other file opens
-// at its beginning.
-func focusPath(ctx context.Context, on Host, filePath string) error {
-	if !isNotePath(filePath) {
-		return focusFile(ctx, on, filePath, nil)
-	}
-	if on.Window == nil {
-		return host.ErrNoWindow
-	}
-	_, err := on.Window.FocusNote(ctx, filePath)
-	return err
 }
 
 // focusFile opens the file in the window at the passages and highlights them.
@@ -111,47 +85,6 @@ func focusFile(ctx context.Context, on Host, path string, passages []host.Passag
 		return host.ErrNoWindow
 	}
 	return on.Window.FocusPassages(ctx, path, passages)
-}
-
-// findFocusTab is the open tab the input names, by its id, else its path, else its title, or a tab
-// of the path where no open tab matches. A tab that holds no file is an error.
-func findFocusTab(ctx context.Context, on Host, in WindowFocusTabInput) (TabInfo, error) {
-	if in.TabID == "" && in.Path == "" && in.Title == "" {
-		return TabInfo{}, errMissingFocusTarget
-	}
-	if on.Window == nil {
-		return TabInfo{}, host.ErrNoWindow
-	}
-	open, _, err := on.Window.ReadOpenTabs(ctx)
-	if err != nil {
-		return TabInfo{}, err
-	}
-	tab, isFound := findOpenTab(open, in)
-	switch {
-	case isFound && tab.Path == "":
-		return TabInfo{}, errTabWithoutPath
-	case isFound:
-		return TabInfo{ID: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, Location: "", IsActive: true}, nil
-	case in.Path != "":
-		return TabInfo{ID: "", Kind: "", Path: in.Path, Title: formatTitleFromPath(in.Path), Location: "", IsActive: true}, nil
-	}
-	return TabInfo{}, errTabNotFound
-}
-
-// findOpenTab is the tab whose id the input names, else whose path, else whose title.
-func findOpenTab(open []host.OpenTab, in WindowFocusTabInput) (host.OpenTab, bool) {
-	for _, matches := range []func(host.OpenTab) bool{
-		func(tab host.OpenTab) bool { return in.TabID != "" && tab.ID == in.TabID },
-		func(tab host.OpenTab) bool { return in.Path != "" && tab.Path == in.Path },
-		func(tab host.OpenTab) bool { return in.Title != "" && tab.Title == in.Title },
-	} {
-		for _, tab := range open {
-			if matches(tab) {
-				return tab, true
-			}
-		}
-	}
-	return host.OpenTab{}, false
 }
 
 // isNotePath reports whether the path names a note of the vault.

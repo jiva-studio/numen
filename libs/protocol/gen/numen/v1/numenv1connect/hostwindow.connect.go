@@ -42,6 +42,9 @@ const (
 	// HostWindowServiceReadOpenTabsProcedure is the fully-qualified name of the HostWindowService's
 	// ReadOpenTabs RPC.
 	HostWindowServiceReadOpenTabsProcedure = "/numen.v1.HostWindowService/ReadOpenTabs"
+	// HostWindowServiceActivateTabProcedure is the fully-qualified name of the HostWindowService's
+	// ActivateTab RPC.
+	HostWindowServiceActivateTabProcedure = "/numen.v1.HostWindowService/ActivateTab"
 )
 
 // HostWindowServiceClient is a client for the numen.v1.HostWindowService service.
@@ -53,6 +56,9 @@ type HostWindowServiceClient interface {
 	FocusPassages(context.Context, *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error)
 	// ReadOpenTabs is the tabs the window last reported, and the active one.
 	ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error)
+	// ActivateTab makes the open tab with the id the active tab of the window, and answers the tab and
+	// the active id as the window reports them after the activation.
+	ActivateTab(context.Context, *connect.Request[v1.ActivateTabRequest]) (*connect.Response[v1.ActivateTabResponse], error)
 }
 
 // NewHostWindowServiceClient constructs a client for the numen.v1.HostWindowService service. By
@@ -84,6 +90,12 @@ func NewHostWindowServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(hostWindowServiceMethods.ByName("ReadOpenTabs")),
 			connect.WithClientOptions(opts...),
 		),
+		activateTab: connect.NewClient[v1.ActivateTabRequest, v1.ActivateTabResponse](
+			httpClient,
+			baseURL+HostWindowServiceActivateTabProcedure,
+			connect.WithSchema(hostWindowServiceMethods.ByName("ActivateTab")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -92,6 +104,7 @@ type hostWindowServiceClient struct {
 	focusNote     *connect.Client[v1.FocusNoteRequest, v1.FocusNoteResponse]
 	focusPassages *connect.Client[v1.FocusPassagesRequest, v1.FocusPassagesResponse]
 	readOpenTabs  *connect.Client[v1.HostWindowServiceReadOpenTabsRequest, v1.HostWindowServiceReadOpenTabsResponse]
+	activateTab   *connect.Client[v1.ActivateTabRequest, v1.ActivateTabResponse]
 }
 
 // FocusNote calls numen.v1.HostWindowService.FocusNote.
@@ -109,6 +122,11 @@ func (c *hostWindowServiceClient) ReadOpenTabs(ctx context.Context, req *connect
 	return c.readOpenTabs.CallUnary(ctx, req)
 }
 
+// ActivateTab calls numen.v1.HostWindowService.ActivateTab.
+func (c *hostWindowServiceClient) ActivateTab(ctx context.Context, req *connect.Request[v1.ActivateTabRequest]) (*connect.Response[v1.ActivateTabResponse], error) {
+	return c.activateTab.CallUnary(ctx, req)
+}
+
 // HostWindowServiceHandler is an implementation of the numen.v1.HostWindowService service.
 type HostWindowServiceHandler interface {
 	// FocusNote makes a note the current one, and the neighbourhood view is drawn around it.
@@ -118,6 +136,9 @@ type HostWindowServiceHandler interface {
 	FocusPassages(context.Context, *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error)
 	// ReadOpenTabs is the tabs the window last reported, and the active one.
 	ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error)
+	// ActivateTab makes the open tab with the id the active tab of the window, and answers the tab and
+	// the active id as the window reports them after the activation.
+	ActivateTab(context.Context, *connect.Request[v1.ActivateTabRequest]) (*connect.Response[v1.ActivateTabResponse], error)
 }
 
 // NewHostWindowServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -145,6 +166,12 @@ func NewHostWindowServiceHandler(svc HostWindowServiceHandler, opts ...connect.H
 		connect.WithSchema(hostWindowServiceMethods.ByName("ReadOpenTabs")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostWindowServiceActivateTabHandler := connect.NewUnaryHandler(
+		HostWindowServiceActivateTabProcedure,
+		svc.ActivateTab,
+		connect.WithSchema(hostWindowServiceMethods.ByName("ActivateTab")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostWindowService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostWindowServiceFocusNoteProcedure:
@@ -153,6 +180,8 @@ func NewHostWindowServiceHandler(svc HostWindowServiceHandler, opts ...connect.H
 			hostWindowServiceFocusPassagesHandler.ServeHTTP(w, r)
 		case HostWindowServiceReadOpenTabsProcedure:
 			hostWindowServiceReadOpenTabsHandler.ServeHTTP(w, r)
+		case HostWindowServiceActivateTabProcedure:
+			hostWindowServiceActivateTabHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -172,4 +201,8 @@ func (UnimplementedHostWindowServiceHandler) FocusPassages(context.Context, *con
 
 func (UnimplementedHostWindowServiceHandler) ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostWindowService.ReadOpenTabs is not implemented"))
+}
+
+func (UnimplementedHostWindowServiceHandler) ActivateTab(context.Context, *connect.Request[v1.ActivateTabRequest]) (*connect.Response[v1.ActivateTabResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostWindowService.ActivateTab is not implemented"))
 }

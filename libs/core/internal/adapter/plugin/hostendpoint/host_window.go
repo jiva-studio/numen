@@ -110,3 +110,9 @@ func (e *windowEndpoint) ReadOpenTabs(
 	}
 	return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Tabs: tabs, ActiveId: open.ActiveID}), nil
 }
+
+func (e *windowEndpoint) ActivateTab(
+	context.Context, *connect.Request[v1.ActivateTabRequest],
+) (*connect.Response[v1.ActivateTabResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("ActivateTab is not implemented"))
+}

@@ -23,4 +23,7 @@ type Window interface {
 	// ShowEdit reports that a change to a note's prose is in progress, so a view of
 	// that note shows the change at the right position.
 	ShowEdit(ctx context.Context, response domain.Edit) error
+
+	// ActivateTab asks the window to make the tab with the id the active tab.
+	ActivateTab(ctx context.Context, id string) error
 }

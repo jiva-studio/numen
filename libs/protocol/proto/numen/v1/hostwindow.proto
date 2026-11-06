@@ -17,6 +17,9 @@ service HostWindowService {
   rpc FocusPassages(FocusPassagesRequest) returns (FocusPassagesResponse);
   // ReadOpenTabs is the tabs the window last reported, and the active one.
   rpc ReadOpenTabs(HostWindowServiceReadOpenTabsRequest) returns (HostWindowServiceReadOpenTabsResponse);
+  // ActivateTab makes the open tab with the id the active tab of the window, and answers the tab and
+  // the active id as the window reports them after the activation.
+  rpc ActivateTab(ActivateTabRequest) returns (ActivateTabResponse);
 }
 
 // HostWindowErrorCode is why a window call was not served. UNSPECIFIED is a call that was served.
@@ -24,7 +27,7 @@ enum HostWindowErrorCode {
   HOST_WINDOW_ERROR_CODE_UNSPECIFIED = 0;
   // NO_WINDOW is a host with no window.
   HOST_WINDOW_ERROR_CODE_NO_WINDOW = 1;
-  // NOT_FOUND is a path the vault holds no note or file at.
+  // NOT_FOUND is a path the vault holds no note or file at, or a tab id the window has no tab with.
   HOST_WINDOW_ERROR_CODE_NOT_FOUND = 2;
 }
 
@@ -62,5 +65,15 @@ message HostWindowServiceReadOpenTabsRequest {}
 message HostWindowServiceReadOpenTabsResponse {
   HostWindowErrorCode error = 1;
   repeated Tab tabs = 2;
+  string active_id = 3;
+}
+
+message ActivateTabRequest {
+  string tab_id = 1;
+}
+
+message ActivateTabResponse {
+  HostWindowErrorCode error = 1;
+  Tab tab = 2;
   string active_id = 3;
 }

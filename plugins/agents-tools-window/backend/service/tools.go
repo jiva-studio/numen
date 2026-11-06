@@ -56,7 +56,7 @@ func addWindowTabsGet(registry *tools.Registry, on Host, summaries *textSummarie
 					Kind:     "",
 					Path:     focus,
 					Title:    formatTitleFromPath(focus),
-					Location: "",
+					Location: nil,
 					IsActive: true,
 				}
 				tabs = []TabInfo{inferredTab}
@@ -83,7 +83,6 @@ func readWindowTabs(ctx context.Context, on Host, summaries *textSummaries) ([]T
 	if err != nil {
 		return nil, "", err
 	}
-	positions := newPositionReader(ctx, on.Texts, summaries)
 	tabs := make([]TabInfo, 0, len(open))
 	for _, tab := range open {
 		tabs = append(tabs, TabInfo{
@@ -91,7 +90,7 @@ func readWindowTabs(ctx context.Context, on Host, summaries *textSummaries) ([]T
 			Kind:     tab.Kind,
 			Path:     tab.Path,
 			Title:    tab.Title,
-			Location: positions.readPosition(ctx, tab),
+			Location: nil,
 			IsActive: tab.ID != "" && tab.ID == activeID,
 		})
 	}

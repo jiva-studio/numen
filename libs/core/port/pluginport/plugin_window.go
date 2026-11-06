@@ -26,6 +26,9 @@ type PluginWindow interface {
 	FocusPassages(ctx context.Context, path string, passages []domain.ByteRange) error
 	// ReadOpenTabs is the tabs the window last reported, and the active one.
 	ReadOpenTabs(ctx context.Context) (domain.OpenTabs, error)
+	// ActivateTab makes the open tab with the id the active tab, and returns the open tabs as the
+	// window reports them afterwards. An id no open tab has is fs.ErrNotExist.
+	ActivateTab(ctx context.Context, id string) (domain.OpenTabs, error)
 }
 
 // PluginWindowHost receives the window that plugins move.

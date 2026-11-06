@@ -113,3 +113,12 @@ func (w *Window) GetFocusRequests() []FocusRequest {
 	defer w.mu.Unlock()
 	return slices.Clone(w.focusCalls)
 }
+
+func (w *Window) ActivateTab(context.Context, string) (host.OpenTab, string, error) {
+	return host.OpenTab{}, "", errors.New("hosttest: ActivateTab is not implemented")
+}
+
+// GetActivatedTabs is the ids of the tabs ActivateTab made the active one, in order.
+func (w *Window) GetActivatedTabs() []string {
+	return nil
+}
