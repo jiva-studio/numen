@@ -60,7 +60,6 @@ type Runtime[H, V any] struct {
 	OpenWritePluginSecretFn  func() *settings.WriteSecret
 	OpenDeletePluginSecretFn func() *settings.DeleteSecret
 	OpenRetryPluginFn        func() *settings.RetryPlugin
-	OpenStopFailedPluginFn   func() *settings.StopFailedPlugin
 	ReportPluginFailuresFn   func(tasks *run.Tasks)
 	SetPluginWorkFn          func(tasks *run.Tasks, models *run.Lock)
 	IsRebuildingIndexVal     bool
@@ -114,10 +113,7 @@ func (e Runtime[H, V]) OpenDeletePluginSecret() *settings.DeleteSecret {
 	return e.OpenDeletePluginSecretFn()
 }
 func (e Runtime[H, V]) OpenRetryPlugin() *settings.RetryPlugin { return e.OpenRetryPluginFn() }
-func (e Runtime[H, V]) OpenStopFailedPlugin() *settings.StopFailedPlugin {
-	return e.OpenStopFailedPluginFn()
-}
-func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks) { e.ReportPluginFailuresFn(tasks) }
+func (e Runtime[H, V]) ReportPluginFailures(tasks *run.Tasks)  { e.ReportPluginFailuresFn(tasks) }
 func (e Runtime[H, V]) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
 	e.SetPluginWorkFn(tasks, models)
 }

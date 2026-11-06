@@ -82,27 +82,26 @@ func (u List) Execute() []Entry {
 }
 
 // ExecuteAll lists every command the enabled plugins declare, whichever part of the plugin runs it.
-// A plugin with neither a frontend nor a backend has nothing that runs its commands, and a plugin the
-// host holds suspended runs none; both list none.
+// A plugin with neither a frontend nor a backend has nothing that runs its commands, and lists none.
 func (u List) ExecuteAll() []Entry {
 	if u.commands == nil {
 		return nil
 	}
 	return slices.DeleteFunc(u.commands.ListCommands(), func(one Entry) bool {
 		parts := u.commands.GetParts(one.PluginID)
-		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+		return !parts.HasBackend && !parts.HasFrontend
 	})
 }
 
-// ExecuteMenus lists the menu entries of the enabled plugins, leaving out those of a plugin the host
-// holds suspended and of a plugin with neither a frontend nor a backend.
+// ExecuteMenus lists the menu entries of the enabled plugins, leaving out those of a plugin with
+// neither a frontend nor a backend.
 func (u List) ExecuteMenus() []MenuEntry {
 	if u.commands == nil {
 		return nil
 	}
 	return slices.DeleteFunc(u.commands.ListMenus(), func(one MenuEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
-		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+		return !parts.HasBackend && !parts.HasFrontend
 	})
 }
 

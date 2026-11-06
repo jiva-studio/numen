@@ -53,9 +53,9 @@ type PluginStatus struct {
 	Dir      string `json:"dir,omitempty"`
 	Enabled  bool   `json:"enabled"`
 	IsActive bool   `json:"isActive"`
-	// Failed reports that the plugin failed to activate repeatedly and is not started again.
+	// Failed reports that the last start of the plugin failed. The next use starts it again.
 	Failed bool `json:"failed"`
-	// FailureReason is the last activation error of a failed plugin.
+	// FailureReason is the error of the last start, while it failed.
 	FailureReason string `json:"failureReason,omitempty"`
 }
 
@@ -167,7 +167,7 @@ func (h *Host) SetProcessLimits(limits process.Limits) {
 	h.processLimits = limits
 }
 
-// SetActivationPolicy sets the activation deadline and the restart backoff of plugins.
+// SetActivationPolicy sets the activation deadline of plugins.
 func (h *Host) SetActivationPolicy(policy lifecycle.ActivationPolicy) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -193,8 +193,7 @@ func (h *Host) reportError(err error) {
 	}
 }
 
-// SetOnPluginFailed registers a callback invoked once when a plugin has failed to activate repeatedly,
-// and again when a retry of it fails.
+// SetOnPluginFailed registers a callback invoked each time a start of a plugin fails.
 func (h *Host) SetOnPluginFailed(fn func(pluginport.PluginFailure)) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -539,8 +538,8 @@ func (h *Host) acquireRunningLocked(pluginID string, sup *lifecycle.Supervisor) 
 	return endpoint, true
 }
 
-// failActivation returns a plugin whose activation failed to Dormant and counts the failure in the same step,
-// so no other caller can start it again before the backoff applies.
+// failActivation returns a plugin whose activation failed to Dormant and records why, in the same step. The
+// next use of the plugin starts it again.
 func (h *Host) failActivation(ctx context.Context, pluginID string, sup *lifecycle.Supervisor, cause error) {
 	h.mu.Lock()
 	if sup.GetState() != lifecycle.StateActivating {
@@ -548,12 +547,8 @@ func (h *Host) failActivation(ctx context.Context, pluginID string, sup *lifecyc
 		return
 	}
 	sup.SetDormant(cause)
-	failedNow := false
 	if ctx.Err() == nil {
-		wasFailed := sup.IsActivationFailed()
-		failedNow = sup.RecordActivationFailure(h.clock.Now(), h.activation, cause) && !wasFailed
-	}
-	if failedNow {
+		sup.RecordActivationFailure(h.clock.Now(), cause)
 		h.failedPlugins = append(h.failedPlugins, h.newPluginFailureLocked(pluginID, sup, cause))
 	}
 	h.mu.Unlock()
@@ -569,7 +564,7 @@ func (h *Host) newPluginFailureLocked(pluginID string, sup *lifecycle.Supervisor
 	}
 }
 
-// deliverPluginFailures passes the plugins that failed permanently since the
+// deliverPluginFailures passes the plugins whose start failed since the
 // previous call to the failure callback, outside every lock.
 func (h *Host) deliverPluginFailures() {
 	h.mu.Lock()
@@ -642,23 +637,16 @@ func (h *Host) ensureActiveDuringDiscovery(ctx context.Context, pluginID string)
 			continue
 		}
 
-		if err := h.beginActivationLocked(pluginID, sup); err != nil {
-			h.mu.Unlock()
-			return emptyEndpoint(), err
-		}
+		h.beginActivationLocked(sup)
 		h.mu.Unlock()
 
 		return h.runActivation(ctx, p, sup)
 	}
 }
 
-// beginActivationLocked moves a dormant plugin to Activating unless it is backing off or has failed.
-func (h *Host) beginActivationLocked(pluginID string, sup *lifecycle.Supervisor) error {
-	if err := sup.CheckActivationAllowed(h.clock.Now()); err != nil {
-		return fmt.Errorf("activate plugin %s: %w", pluginID, err)
-	}
+// beginActivationLocked moves a dormant plugin to Activating.
+func (h *Host) beginActivationLocked(sup *lifecycle.Supervisor) {
 	sup.SetActivating()
-	return nil
 }
 
 func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
@@ -667,7 +655,7 @@ func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *li
 		h.failActivation(ctx, p.Manifest.ID, sup, err)
 		return endpoint, err
 	}
-	sup.RecordActivationSuccess()
+	h.clearFailure(p.Manifest.ID, sup)
 
 	// The plugin also receives its settings on the next change, so a failed push leaves it running.
 	if err := h.NotifyPluginConfig(ctx, p.Manifest.ID); err != nil {
@@ -1163,7 +1151,7 @@ func (h *Host) getPluginStatusLocked(pluginID string) PluginStatus {
 		Dir:           "",
 	}
 	if sup, ok := h.supervisors[pluginID]; ok {
-		if failed, cause := sup.GetActivationFailure(); failed {
+		if cause := sup.GetActivationFailure(); cause != nil {
 			status.Failed = true
 			status.FailureReason = cause.Error()
 		}
@@ -1607,26 +1595,24 @@ func isEmptyEndpoint(e transport.Endpoint) bool {
 	return e.Host == "" && e.Port == 0 && e.Transport == nil
 }
 
-// getFailureLocked is why the host suspends a plugin, and nil while it does not.
+// getFailureLocked is why the last start of a plugin failed, and nil while it did not.
 func (h *Host) getFailureLocked(pluginID string) *pluginport.PluginFailure {
 	sup, ok := h.supervisors[pluginID]
 	if !ok {
 		return nil
 	}
-	failed, cause := sup.GetActivationFailure()
-	if !failed {
+	cause := sup.GetActivationFailure()
+	if cause == nil {
 		return nil
 	}
 	failure := h.newPluginFailureLocked(pluginID, sup, cause)
 	return &failure
 }
 
-// clearFailure removes the recorded activation failures of a plugin and passes
-// the cleared callback the place where the plugin had been suspended.
+// clearFailure forgets why the last start of a plugin failed and tells the cleared callback, where there was
+// a failure.
 func (h *Host) clearFailure(pluginID string, sup *lifecycle.Supervisor) {
-	wasFailed := sup.IsActivationFailed()
-	sup.ResetActivationFailures()
-	if !wasFailed {
+	if !sup.ClearActivationFailure() {
 		return
 	}
 	h.mu.RLock()
@@ -1637,18 +1623,13 @@ func (h *Host) clearFailure(pluginID string, sup *lifecycle.Supervisor) {
 	}
 }
 
-// RetryPlugin forgets the failures of a plugin and starts it once. The failure is set where the plugin fails
-// again, and the host suspends it at once.
+// RetryPlugin starts a plugin once, as any use of it does, and answers why the start failed where it did.
 func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
 	h.mu.RLock()
 	_, recognized := h.plugins[pluginID]
-	sup := h.supervisors[pluginID]
 	h.mu.RUnlock()
 	if !recognized {
 		return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginNotInstalled, Err: errPluginNotFound}
-	}
-	if sup != nil {
-		h.clearFailure(pluginID, sup)
 	}
 
 	_, err := h.EnsureActive(ctx, pluginID)
@@ -1660,12 +1641,13 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*pluginport.Pl
 	if errors.As(err, &unavailable) || ctx.Err() != nil {
 		return nil, err
 	}
-	failure := h.recordActivationFailure(pluginID, err)
-	h.deliverPluginFailures()
+	h.mu.RLock()
+	failure := h.getFailureLocked(pluginID)
+	h.mu.RUnlock()
 	return failure, nil
 }
 
-// recordActivationFailure records a failed activation as the last one the plugin is allowed, and returns the failure.
+// recordActivationFailure records why a start of the plugin failed, and returns the failure.
 func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport.PluginFailure {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -1673,11 +1655,7 @@ func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport
 	if !ok {
 		return nil
 	}
-	policy := h.activation
-	policy.MaxFailures = 1
-	if !sup.RecordActivationFailure(h.clock.Now(), policy, cause) {
-		return nil
-	}
+	sup.RecordActivationFailure(h.clock.Now(), cause)
 	failure := h.newPluginFailureLocked(pluginID, sup, cause)
 	h.failedPlugins = append(h.failedPlugins, failure)
 	return &failure

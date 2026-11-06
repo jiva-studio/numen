@@ -57,9 +57,6 @@ const (
 	// SettingsServiceRetryPluginProcedure is the fully-qualified name of the SettingsService's
 	// RetryPlugin RPC.
 	SettingsServiceRetryPluginProcedure = "/numen.v1.SettingsService/RetryPlugin"
-	// SettingsServiceStopFailedPluginProcedure is the fully-qualified name of the SettingsService's
-	// StopFailedPlugin RPC.
-	SettingsServiceStopFailedPluginProcedure = "/numen.v1.SettingsService/StopFailedPlugin"
 	// SettingsServiceChoosePluginPathProcedure is the fully-qualified name of the SettingsService's
 	// ChoosePluginPath RPC.
 	SettingsServiceChoosePluginPathProcedure = "/numen.v1.SettingsService/ChoosePluginPath"
@@ -95,10 +92,6 @@ type SettingsServiceClient interface {
 	// it once. A plugin that fails again is suspended again, and the call answers
 	// the reason.
 	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
-	// StopFailedPlugin stops the backend process of a plugin whose frontend did
-	// not start in a window, and records the plugin as failed with the reason, so
-	// the host does not start it again until it is retried.
-	StopFailedPlugin(context.Context, *connect.Request[v1.StopFailedPluginRequest]) (*connect.Response[v1.StopFailedPluginResponse], error)
 	// ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
 	// of type file or folder, and writes the path they chose. A path the setting does not take is not
 	// written, and the answer says why.
@@ -159,12 +152,6 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(settingsServiceMethods.ByName("RetryPlugin")),
 			connect.WithClientOptions(opts...),
 		),
-		stopFailedPlugin: connect.NewClient[v1.StopFailedPluginRequest, v1.StopFailedPluginResponse](
-			httpClient,
-			baseURL+SettingsServiceStopFailedPluginProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("StopFailedPlugin")),
-			connect.WithClientOptions(opts...),
-		),
 		choosePluginPath: connect.NewClient[v1.ChoosePluginPathRequest, v1.ChoosePluginPathResponse](
 			httpClient,
 			baseURL+SettingsServiceChoosePluginPathProcedure,
@@ -199,7 +186,6 @@ type settingsServiceClient struct {
 	writePluginSecret  *connect.Client[v1.WritePluginSecretRequest, v1.WritePluginSecretResponse]
 	deletePluginSecret *connect.Client[v1.DeletePluginSecretRequest, v1.DeletePluginSecretResponse]
 	retryPlugin        *connect.Client[v1.RetryPluginRequest, v1.RetryPluginResponse]
-	stopFailedPlugin   *connect.Client[v1.StopFailedPluginRequest, v1.StopFailedPluginResponse]
 	choosePluginPath   *connect.Client[v1.ChoosePluginPathRequest, v1.ChoosePluginPathResponse]
 	getPluginData      *connect.Client[v1.GetPluginDataRequest, v1.GetPluginDataResponse]
 	deletePluginData   *connect.Client[v1.DeletePluginDataRequest, v1.DeletePluginDataResponse]
@@ -229,11 +215,6 @@ func (c *settingsServiceClient) DeletePluginSecret(ctx context.Context, req *con
 // RetryPlugin calls numen.v1.SettingsService.RetryPlugin.
 func (c *settingsServiceClient) RetryPlugin(ctx context.Context, req *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error) {
 	return c.retryPlugin.CallUnary(ctx, req)
-}
-
-// StopFailedPlugin calls numen.v1.SettingsService.StopFailedPlugin.
-func (c *settingsServiceClient) StopFailedPlugin(ctx context.Context, req *connect.Request[v1.StopFailedPluginRequest]) (*connect.Response[v1.StopFailedPluginResponse], error) {
-	return c.stopFailedPlugin.CallUnary(ctx, req)
 }
 
 // ChoosePluginPath calls numen.v1.SettingsService.ChoosePluginPath.
@@ -277,10 +258,6 @@ type SettingsServiceHandler interface {
 	// it once. A plugin that fails again is suspended again, and the call answers
 	// the reason.
 	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
-	// StopFailedPlugin stops the backend process of a plugin whose frontend did
-	// not start in a window, and records the plugin as failed with the reason, so
-	// the host does not start it again until it is retried.
-	StopFailedPlugin(context.Context, *connect.Request[v1.StopFailedPluginRequest]) (*connect.Response[v1.StopFailedPluginResponse], error)
 	// ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
 	// of type file or folder, and writes the path they chose. A path the setting does not take is not
 	// written, and the answer says why.
@@ -337,12 +314,6 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 		connect.WithSchema(settingsServiceMethods.ByName("RetryPlugin")),
 		connect.WithHandlerOptions(opts...),
 	)
-	settingsServiceStopFailedPluginHandler := connect.NewUnaryHandler(
-		SettingsServiceStopFailedPluginProcedure,
-		svc.StopFailedPlugin,
-		connect.WithSchema(settingsServiceMethods.ByName("StopFailedPlugin")),
-		connect.WithHandlerOptions(opts...),
-	)
 	settingsServiceChoosePluginPathHandler := connect.NewUnaryHandler(
 		SettingsServiceChoosePluginPathProcedure,
 		svc.ChoosePluginPath,
@@ -379,8 +350,6 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 			settingsServiceDeletePluginSecretHandler.ServeHTTP(w, r)
 		case SettingsServiceRetryPluginProcedure:
 			settingsServiceRetryPluginHandler.ServeHTTP(w, r)
-		case SettingsServiceStopFailedPluginProcedure:
-			settingsServiceStopFailedPluginHandler.ServeHTTP(w, r)
 		case SettingsServiceChoosePluginPathProcedure:
 			settingsServiceChoosePluginPathHandler.ServeHTTP(w, r)
 		case SettingsServiceGetPluginDataProcedure:
@@ -416,10 +385,6 @@ func (UnimplementedSettingsServiceHandler) DeletePluginSecret(context.Context, *
 
 func (UnimplementedSettingsServiceHandler) RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.RetryPlugin is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) StopFailedPlugin(context.Context, *connect.Request[v1.StopFailedPluginRequest]) (*connect.Response[v1.StopFailedPluginResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.StopFailedPlugin is not implemented"))
 }
 
 func (UnimplementedSettingsServiceHandler) ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error) {

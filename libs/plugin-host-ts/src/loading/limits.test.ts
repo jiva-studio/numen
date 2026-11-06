@@ -12,6 +12,6 @@ const ACTIVATION = fileURLToPath(
 describe('the start limit of a plugin', () => {
   it('is 30 s, as the backend activation takes', () => {
     expect(PLUGIN_START_LIMIT_MS).toBe(30_000)
-    expect(readFileSync(ACTIVATION, 'utf8')).toMatch(/Timeout:\s+30 \* time\.Second,/)
+    expect(readFileSync(ACTIVATION, 'utf8')).toMatch(/Timeout:\s*30 \* time\.Second/)
   })
 })

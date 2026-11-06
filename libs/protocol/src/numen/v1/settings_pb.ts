@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IqIBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nIvEBCgVNb2RlbBIQCghuYW1lZF9hdBgBIAMoCRIMCgRuYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKCmlzX2RlZmF1bHQYBSABKAgSIQoGd3JpdGVzGAYgAygLMhEubnVtZW4udjEuU2V0dGluZxIkCghwcmVzZW5jZRgHIAEoDjISLm51bWVuLnYxLlByZXNlbmNlEjIKEHJlYXNvbmluZ19sZXZlbHMYCCADKAsyGC5udW1lbi52MS5SZWFzb25pbmdMZXZlbBIZChFkZWZhdWx0X3JlYXNvbmluZxgJIAEoCSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlIkgKGFdyaXRlUGx1Z2luU2VjcmV0UmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDAoEbmFtZRgCIAEoCRILCgNrZXkYAyABKAkiGwoZV3JpdGVQbHVnaW5TZWNyZXRSZXNwb25zZSI8ChlEZWxldGVQbHVnaW5TZWNyZXRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJIhwKGkRlbGV0ZVBsdWdpblNlY3JldFJlc3BvbnNlIicKElJldHJ5UGx1Z2luUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiJgoTUmV0cnlQbHVnaW5SZXNwb25zZRIPCgdmYWlsdXJlGAEgASgJIjwKF1N0b3BGYWlsZWRQbHVnaW5SZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIOCgZyZWFzb24YAiABKAkiGgoYU3RvcEZhaWxlZFBsdWdpblJlc3BvbnNlIjkKF0Nob29zZVBsdWdpblBhdGhSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRILCgNrZXkYAiABKAkiTAoYQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIEg8KB3Byb2JsZW0YAyABKAkiKQoUR2V0UGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIj8KFUdldFBsdWdpbkRhdGFSZXNwb25zZRISCgpmaWxlX2NvdW50GAEgASgFEhIKCmJ5dGVfY291bnQYAiABKAMiLAoXRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIhoKGERlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZSpzCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhQKEFBSRVNFTkNFX1BSRVNFTlQQARIYChRQUkVTRU5DRV9OT1RfRkVUQ0hFRBACEh0KGVBSRVNFTkNFX05PVEhJTkdfVE9fRkVUQ0gQAzLxBgoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USXAoRV3JpdGVQbHVnaW5TZWNyZXQSIi5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlcXVlc3QaIy5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlc3BvbnNlEl8KEkRlbGV0ZVBsdWdpblNlY3JldBIjLm51bWVuLnYxLkRlbGV0ZVBsdWdpblNlY3JldFJlcXVlc3QaJC5udW1lbi52MS5EZWxldGVQbHVnaW5TZWNyZXRSZXNwb25zZRJKCgtSZXRyeVBsdWdpbhIcLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVxdWVzdBodLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVzcG9uc2USWQoQU3RvcEZhaWxlZFBsdWdpbhIhLm51bWVuLnYxLlN0b3BGYWlsZWRQbHVnaW5SZXF1ZXN0GiIubnVtZW4udjEuU3RvcEZhaWxlZFBsdWdpblJlc3BvbnNlElkKEENob29zZVBsdWdpblBhdGgSIS5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBoiLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXNwb25zZRJQCg1HZXRQbHVnaW5EYXRhEh4ubnVtZW4udjEuR2V0UGx1Z2luRGF0YVJlcXVlc3QaHy5udW1lbi52MS5HZXRQbHVnaW5EYXRhUmVzcG9uc2USWQoQRGVsZXRlUGx1Z2luRGF0YRIhLm51bWVuLnYxLkRlbGV0ZVBsdWdpbkRhdGFSZXF1ZXN0GiIubnVtZW4udjEuRGVsZXRlUGx1Z2luRGF0YVJlc3BvbnNlElIKDVdhdGNoU2V0dGluZ3MSHi5udW1lbi52MS5XYXRjaFNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXNwb25zZTABQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_plugin, file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IqIBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nIvEBCgVNb2RlbBIQCghuYW1lZF9hdBgBIAMoCRIMCgRuYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKCmlzX2RlZmF1bHQYBSABKAgSIQoGd3JpdGVzGAYgAygLMhEubnVtZW4udjEuU2V0dGluZxIkCghwcmVzZW5jZRgHIAEoDjISLm51bWVuLnYxLlByZXNlbmNlEjIKEHJlYXNvbmluZ19sZXZlbHMYCCADKAsyGC5udW1lbi52MS5SZWFzb25pbmdMZXZlbBIZChFkZWZhdWx0X3JlYXNvbmluZxgJIAEoCSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlIkgKGFdyaXRlUGx1Z2luU2VjcmV0UmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDAoEbmFtZRgCIAEoCRILCgNrZXkYAyABKAkiGwoZV3JpdGVQbHVnaW5TZWNyZXRSZXNwb25zZSI8ChlEZWxldGVQbHVnaW5TZWNyZXRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJIhwKGkRlbGV0ZVBsdWdpblNlY3JldFJlc3BvbnNlIicKElJldHJ5UGx1Z2luUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiJgoTUmV0cnlQbHVnaW5SZXNwb25zZRIPCgdmYWlsdXJlGAEgASgJIjkKF0Nob29zZVBsdWdpblBhdGhSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRILCgNrZXkYAiABKAkiTAoYQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIEg8KB3Byb2JsZW0YAyABKAkiKQoUR2V0UGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIj8KFUdldFBsdWdpbkRhdGFSZXNwb25zZRISCgpmaWxlX2NvdW50GAEgASgFEhIKCmJ5dGVfY291bnQYAiABKAMiLAoXRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIhoKGERlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZSpzCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhQKEFBSRVNFTkNFX1BSRVNFTlQQARIYChRQUkVTRU5DRV9OT1RfRkVUQ0hFRBACEh0KGVBSRVNFTkNFX05PVEhJTkdfVE9fRkVUQ0gQAzKWBgoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USXAoRV3JpdGVQbHVnaW5TZWNyZXQSIi5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlcXVlc3QaIy5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlc3BvbnNlEl8KEkRlbGV0ZVBsdWdpblNlY3JldBIjLm51bWVuLnYxLkRlbGV0ZVBsdWdpblNlY3JldFJlcXVlc3QaJC5udW1lbi52MS5EZWxldGVQbHVnaW5TZWNyZXRSZXNwb25zZRJKCgtSZXRyeVBsdWdpbhIcLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVxdWVzdBodLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVzcG9uc2USWQoQQ2hvb3NlUGx1Z2luUGF0aBIhLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXF1ZXN0GiIubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlElAKDUdldFBsdWdpbkRhdGESHi5udW1lbi52MS5HZXRQbHVnaW5EYXRhUmVxdWVzdBofLm51bWVuLnYxLkdldFBsdWdpbkRhdGFSZXNwb25zZRJZChBEZWxldGVQbHVnaW5EYXRhEiEubnVtZW4udjEuRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QaIi5udW1lbi52MS5EZWxldGVQbHVnaW5EYXRhUmVzcG9uc2USUgoNV2F0Y2hTZXR0aW5ncxIeLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1Jlc3BvbnNlMAFCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -385,45 +385,6 @@ export const RetryPluginResponseSchema: GenMessage<RetryPluginResponse> = /*@__P
   messageDesc(file_numen_v1_settings, 13);
 
 /**
- * @generated from message numen.v1.StopFailedPluginRequest
- */
-export type StopFailedPluginRequest = Message<"numen.v1.StopFailedPluginRequest"> & {
-  /**
-   * The plugin, by its id.
-   *
-   * @generated from field: string plugin_id = 1;
-   */
-  pluginId: string;
-
-  /**
-   * Why its frontend did not start, in words a person reads.
-   *
-   * @generated from field: string reason = 2;
-   */
-  reason: string;
-};
-
-/**
- * Describes the message numen.v1.StopFailedPluginRequest.
- * Use `create(StopFailedPluginRequestSchema)` to create a new message.
- */
-export const StopFailedPluginRequestSchema: GenMessage<StopFailedPluginRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 14);
-
-/**
- * @generated from message numen.v1.StopFailedPluginResponse
- */
-export type StopFailedPluginResponse = Message<"numen.v1.StopFailedPluginResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.StopFailedPluginResponse.
- * Use `create(StopFailedPluginResponseSchema)` to create a new message.
- */
-export const StopFailedPluginResponseSchema: GenMessage<StopFailedPluginResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 15);
-
-/**
  * @generated from message numen.v1.ChoosePluginPathRequest
  */
 export type ChoosePluginPathRequest = Message<"numen.v1.ChoosePluginPathRequest"> & {
@@ -445,7 +406,7 @@ export type ChoosePluginPathRequest = Message<"numen.v1.ChoosePluginPathRequest"
  * Use `create(ChoosePluginPathRequestSchema)` to create a new message.
  */
 export const ChoosePluginPathRequestSchema: GenMessage<ChoosePluginPathRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 16);
+  messageDesc(file_numen_v1_settings, 14);
 
 /**
  * @generated from message numen.v1.ChoosePluginPathResponse
@@ -478,7 +439,7 @@ export type ChoosePluginPathResponse = Message<"numen.v1.ChoosePluginPathRespons
  * Use `create(ChoosePluginPathResponseSchema)` to create a new message.
  */
 export const ChoosePluginPathResponseSchema: GenMessage<ChoosePluginPathResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 17);
+  messageDesc(file_numen_v1_settings, 15);
 
 /**
  * @generated from message numen.v1.GetPluginDataRequest
@@ -495,7 +456,7 @@ export type GetPluginDataRequest = Message<"numen.v1.GetPluginDataRequest"> & {
  * Use `create(GetPluginDataRequestSchema)` to create a new message.
  */
 export const GetPluginDataRequestSchema: GenMessage<GetPluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 18);
+  messageDesc(file_numen_v1_settings, 16);
 
 /**
  * @generated from message numen.v1.GetPluginDataResponse
@@ -517,7 +478,7 @@ export type GetPluginDataResponse = Message<"numen.v1.GetPluginDataResponse"> & 
  * Use `create(GetPluginDataResponseSchema)` to create a new message.
  */
 export const GetPluginDataResponseSchema: GenMessage<GetPluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 19);
+  messageDesc(file_numen_v1_settings, 17);
 
 /**
  * @generated from message numen.v1.DeletePluginDataRequest
@@ -534,7 +495,7 @@ export type DeletePluginDataRequest = Message<"numen.v1.DeletePluginDataRequest"
  * Use `create(DeletePluginDataRequestSchema)` to create a new message.
  */
 export const DeletePluginDataRequestSchema: GenMessage<DeletePluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 20);
+  messageDesc(file_numen_v1_settings, 18);
 
 /**
  * @generated from message numen.v1.DeletePluginDataResponse
@@ -547,7 +508,7 @@ export type DeletePluginDataResponse = Message<"numen.v1.DeletePluginDataRespons
  * Use `create(DeletePluginDataResponseSchema)` to create a new message.
  */
 export const DeletePluginDataResponseSchema: GenMessage<DeletePluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 21);
+  messageDesc(file_numen_v1_settings, 19);
 
 /**
  * Presence is what a model's files are on this machine. It says where files
@@ -656,18 +617,6 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof RetryPluginRequestSchema;
     output: typeof RetryPluginResponseSchema;
-  },
-  /**
-   * StopFailedPlugin stops the backend process of a plugin whose frontend did
-   * not start in a window, and records the plugin as failed with the reason, so
-   * the host does not start it again until it is retried.
-   *
-   * @generated from rpc numen.v1.SettingsService.StopFailedPlugin
-   */
-  stopFailedPlugin: {
-    methodKind: "unary";
-    input: typeof StopFailedPluginRequestSchema;
-    output: typeof StopFailedPluginResponseSchema;
   },
   /**
    * ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting

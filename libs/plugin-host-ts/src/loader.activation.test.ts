@@ -161,31 +161,82 @@ describe('a plugin whose start passes PLUGIN_START_LIMIT_MS', () => {
       vi.useRealTimers()
     }
   })
+})
 
-  it('has its backend stopped with the reason', async () => {
+/** A window whose host runs a command of a plugin that has not started by starting it, as the editor does. */
+function createStartingWindow(activate: (context: PluginContext) => void | Promise<void>) {
+  const holder: { loader?: ReturnType<typeof createPluginLoader> } = {}
+  const host = createPluginHost({
+    registerKind: vi.fn(() => vi.fn()),
+    registerExtensionReader: vi.fn(() => vi.fn()),
+    openTab: vi.fn(async () => 'tab-1'),
+    getCommandDeclarations: () => [open],
+    hasPluginFrontend: () => true,
+    hasPluginBackend: () => false,
+    isPluginFailed: (id) => holder.loader?.getPluginFailure(id) !== undefined,
+    waitForPlugin: (id) => holder.loader?.settlePlugin(id) ?? Promise.resolve(),
+  })
+  const loader = createPluginLoader({ host, onError: vi.fn() })
+  holder.loader = loader
+  loader.registerPluginModule(PLUGIN, async () => ({ activate }))
+  return { host, loader }
+}
+
+const NOTE = { path: '', title: '', type: '' } as const
+
+describe('a plugin whose last start failed', () => {
+  it('is started again by the next run of its command, at once, and runs it', async () => {
+    let starts = 0
+    const ran = vi.fn()
+    const { host, loader } = createStartingWindow((context) => {
+      starts += 1
+      if (starts === 1) throw new Error('the plex has no notes yet')
+      context.registerCommand({ id: 'graph.open', handler: ran })
+    })
+    await loader.start()
+    expect(loader.getPluginFailure(PLUGIN)).toBe('the plex has no notes yet')
+
+    const isRun = await host.executeCommand(`${PLUGIN}:graph.open`, NOTE)
+
+    expect(starts).toBe(2)
+    expect(isRun).toBe(true)
+    expect(ran).toHaveBeenCalledTimes(1)
+    expect(loader.isPluginActive(PLUGIN)).toBe(true)
+    expect(loader.getPluginFailure(PLUGIN)).toBeUndefined()
+  })
+
+  it('keeps its failure while a start again fails, and is tried on every use', async () => {
+    let starts = 0
+    const { host, loader } = createStartingWindow(() => {
+      starts += 1
+      throw new Error(`start ${starts} failed`)
+    })
+    await loader.start()
+
+    await host.executeCommand(`${PLUGIN}:graph.open`, NOTE)
+    await host.executeCommand(`${PLUGIN}:graph.open`, NOTE)
+
+    expect(starts).toBe(3)
+    expect(loader.getPluginFailure(PLUGIN)).toBe('start 3 failed')
+    expect(loader.isPluginActive(PLUGIN)).toBe(false)
+  })
+
+  it('is started again after it missed PLUGIN_START_LIMIT_MS, with a new limit', async () => {
     vi.useFakeTimers()
     try {
-      const stopFailedPlugin = vi.fn()
-      const host = createPluginHost({
-        registerKind: vi.fn(() => vi.fn()),
-        registerExtensionReader: vi.fn(() => vi.fn()),
-        openTab: vi.fn(async () => 'tab-1'),
+      let starts = 0
+      const { host, loader } = createStartingWindow(async (context) => {
+        starts += 1
+        if (starts === 1) await new Promise(() => undefined)
+        context.registerCommand({ id: 'graph.open', handler: () => undefined })
       })
-      const loader = createPluginLoader({ host, stopFailedPlugin })
-      loader.registerPluginModule(PLUGIN, async () => ({
-        activate: () => new Promise<void>(() => undefined),
-      }))
-
       const started = loader.start()
-      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS - 100)
-      expect(stopFailedPlugin).not.toHaveBeenCalled()
-      await vi.advanceTimersByTimeAsync(200)
-
-      expect(stopFailedPlugin).toHaveBeenCalledExactlyOnceWith(
-        PLUGIN,
-        'the plugin did not start within 30 s',
-      )
+      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 100)
       await started
+      expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
+
+      expect(await host.executeCommand(`${PLUGIN}:graph.open`, NOTE)).toBe(true)
+      expect(loader.isPluginActive(PLUGIN)).toBe(true)
     } finally {
       vi.useRealTimers()
     }

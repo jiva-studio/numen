@@ -147,7 +147,7 @@ func (c Config) GetPluginServices() PluginServices {
 	return servicebridge.Open(c.PluginHost)
 }
 
-// GetPluginRetrier restarts, on request from the window, a plugin the host has suspended.
+// GetPluginRetrier starts again, on request from the window, a plugin whose last start failed.
 func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
 	return func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
 		if c.PluginHost == nil {
@@ -157,18 +157,7 @@ func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*
 	}
 }
 
-// GetFailedPluginStopper stops, on request from the window, the backend of a plugin whose frontend did not
-// start, and records the plugin as failed.
-func (c Config) GetFailedPluginStopper() func(ctx context.Context, pluginID, reason string) (*pluginport.PluginFailure, error) {
-	return func(ctx context.Context, pluginID, reason string) (*pluginport.PluginFailure, error) {
-		if c.PluginHost == nil {
-			return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginNotInstalled}
-		}
-		return c.PluginHost.StopFailedPlugin(ctx, pluginID, reason)
-	}
-}
-
-// ReportPluginFailures keeps one task in the list for each plugin the host suspends, with the reason as its
+// ReportPluginFailures keeps one task in the list for each plugin whose last start failed, with the reason as its
 // error, and takes it out when the host forgets the failure.
 func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 	if c.PluginHost == nil {

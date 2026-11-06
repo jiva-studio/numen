@@ -1,5 +1,5 @@
 /**
- * Retry of a plugin the host suspends.
+ * Retry of a plugin whose last start failed.
  */
 import { formatErrorMessage } from '@numen/core-client'
 import type { MessageWriter } from '@/shared/notices/messages'

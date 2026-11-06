@@ -472,7 +472,7 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
   storedSecrets: string[];
 
   /**
-   * Set while the host suspends the plugin after it failed to start.
+   * Set while the last start of the plugin failed, until a start succeeds.
    *
    * @generated from field: numen.v1.PluginFailure failure = 13;
    */
@@ -573,7 +573,7 @@ export const PluginReaderSchema: GenMessage<PluginReader> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugin, 14);
 
 /**
- * PluginFailure is why a plugin is suspended, and when it was.
+ * PluginFailure is why the last start of a plugin failed, and when.
  *
  * @generated from message numen.v1.PluginFailure
  */

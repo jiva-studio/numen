@@ -76,7 +76,6 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		OpenWritePluginSecretFn:  func() *settings.WriteSecret { return settings.NewWriteSecret(cfg.GetPluginSecretWriter()) },
 		OpenDeletePluginSecretFn: func() *settings.DeleteSecret { return settings.NewDeleteSecret(cfg.GetPluginSecretDeleter()) },
 		OpenRetryPluginFn:        cfg.openRetryPlugin,
-		OpenStopFailedPluginFn:   cfg.openStopFailedPlugin,
 		ReportPluginFailuresFn:   func(tasks *run.Tasks) { cfg.ReportPluginFailures(tasks); cfg.ReportDependencies(tasks) },
 		SetPluginWorkFn:          cfg.SetPluginWork,
 		IsRebuildingIndexVal:     cfg.ShouldRebuildIndex,
@@ -134,14 +133,6 @@ func (c Config) emitPluginEvent(event string) {
 		var emitter pluginport.PluginEventEmitter = c.PluginHost
 		emitter.EmitEvent(event)
 	}
-}
-
-func (c Config) openStopFailedPlugin() *settings.StopFailedPlugin {
-	stop, err := settings.NewStopFailedPlugin(c.GetFailedPluginStopper())
-	if err != nil {
-		return nil
-	}
-	return stop
 }
 
 func (c Config) openRetryPlugin() *settings.RetryPlugin {

@@ -8,7 +8,7 @@ import (
 // ErrNoRetrier is a RetryPlugin made without a retry.
 var ErrNoRetrier = errors.New("retry plugin: no retrier")
 
-// RetryPlugin starts a plugin the host suspends once more, and answers the failure where it fails again.
+// RetryPlugin starts a plugin whose last start failed once more, and answers the failure where it fails again.
 type RetryPlugin struct {
 	retry func(ctx context.Context, pluginID string) (*PluginFailure, error)
 }

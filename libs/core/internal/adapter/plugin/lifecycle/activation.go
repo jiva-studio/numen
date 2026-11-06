@@ -2,119 +2,66 @@ package lifecycle
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
-var (
-	ErrActivationBackoff = errors.New("plugin activation is backing off after a failure")
-	ErrPluginFailed      = errors.New("plugin failed to activate repeatedly")
-	ErrActivationAborted = errors.New("plugin activation aborted")
-)
+var ErrActivationAborted = errors.New("plugin activation aborted")
 
-// ActivationPolicy bounds how long one activation may take and how often a failing plugin is started again.
+// ActivationPolicy bounds how long one start of a plugin may take. A start that fails is not waited out: the
+// next use of the plugin starts it again.
 type ActivationPolicy struct {
 	// Timeout is the deadline for a started process to print its handshake.
 	Timeout time.Duration
-	// BackoffBase is the wait after the first failure; each further failure doubles it.
-	BackoffBase time.Duration
-	// BackoffMax caps the wait between two attempts.
-	BackoffMax time.Duration
-	// MaxFailures is the number of consecutive failures after which the plugin is reported failed.
-	MaxFailures int
 }
 
 // DefaultActivationPolicy returns the policy a new host applies.
 func DefaultActivationPolicy() ActivationPolicy {
-	return ActivationPolicy{
-		Timeout:     30 * time.Second,
-		BackoffBase: time.Second,
-		BackoffMax:  time.Minute,
-		MaxFailures: 5,
-	}
+	return ActivationPolicy{Timeout: 30 * time.Second}
 }
 
-func (p ActivationPolicy) GetBackoff(failures int) time.Duration {
-	delay := p.BackoffBase
-	for i := 1; i < failures && delay < p.BackoffMax; i++ {
-		delay *= 2
-	}
-	if p.BackoffMax > 0 && delay > p.BackoffMax {
-		return p.BackoffMax
-	}
-	return delay
-}
-
-// RecordActivationFailure counts a failed activation and reports whether the plugin has now failed for good.
-func (s *Supervisor) RecordActivationFailure(now time.Time, policy ActivationPolicy, cause error) bool {
+// RecordActivationFailure keeps why the last start failed and when, and reports whether the plugin had no
+// failure before.
+func (s *Supervisor) RecordActivationFailure(now time.Time, cause error) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if policy.BackoffBase == 0 && policy.BackoffMax == 0 && policy.MaxFailures == 0 {
-		policy = s.activationPolicy
-	}
-	s.failures++
+	isNew := s.failure == nil
 	s.failure = cause
-	s.retryAt = now.Add(policy.GetBackoff(s.failures))
-	if (policy.MaxFailures > 0 && s.failures >= policy.MaxFailures) || errors.Is(cause, pluginport.ErrUnsupportedProtocol) {
-		if !s.failed {
-			s.failedAt = now
-		}
-		s.failed = true
-	}
-	return s.failed
+	s.failedAt = now
+	return isNew
 }
 
-// RecordActivationSuccess clears the failure count after a plugin activated.
-func (s *Supervisor) RecordActivationSuccess() {
-	s.ResetActivationFailures()
-}
-
-// ResetActivationFailures forgets earlier failed activations.
-func (s *Supervisor) ResetActivationFailures() {
+// ClearActivationFailure forgets the failure of the last start, and reports whether there was one.
+func (s *Supervisor) ClearActivationFailure() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.failures = 0
+	hadFailure := s.failure != nil
 	s.failure = nil
-	s.failed = false
 	s.failedAt = time.Time{}
-	s.retryAt = time.Time{}
+	return hadFailure
 }
 
-// CheckActivationAllowed returns an error while the plugin has failed or is within its backoff.
-func (s *Supervisor) CheckActivationAllowed(now time.Time) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.failed {
-		return fmt.Errorf("%w: %w", ErrPluginFailed, s.failure)
-	}
-	if s.failures > 0 && now.Before(s.retryAt) {
-		return fmt.Errorf("%w until %s: %w", ErrActivationBackoff, s.retryAt.Format(time.RFC3339), s.failure)
-	}
-	return nil
-}
-
-// GetFailedAt returns when the plugin was given up, and the zero time while it has not failed.
+// GetFailedAt returns when the last start failed, and the zero time while the plugin has no failure.
 func (s *Supervisor) GetFailedAt() time.Time {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.failedAt
 }
 
-// GetActivationFailure returns the last activation error once the plugin has failed for good.
-func (s *Supervisor) GetActivationFailure() (bool, error) {
+// GetActivationFailure returns why the last start failed, and nil while it did not.
+func (s *Supervisor) GetActivationFailure() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.failed, s.failure
+	return s.failure
 }
 
-// IsActivationFailed reports whether the plugin has failed activation for good.
+// IsActivationFailed reports whether the last start of the plugin failed.
 func (s *Supervisor) IsActivationFailed() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.failed
+	return s.failure != nil
 }
 
 // DescribeFailure returns a short UI label for why a plugin failed to start. The error itself is the detail.

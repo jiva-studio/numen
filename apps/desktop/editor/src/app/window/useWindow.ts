@@ -6,7 +6,7 @@ import { computed, ref, watch, type Ref } from 'vue'
 import { waitFor } from './waitFor'
 import { formatErrorMessage } from '@numen/core-client'
 import { TITLE_BAR_SLOT, type Menus } from '@numen/plugin-host'
-import { pluginCatalog, settingsService } from '@/shared/clients'
+import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
 import { createNoteLookup } from '../tabs/editorTabs'
@@ -270,15 +270,6 @@ function createPluginReports(
         ),
         'error',
       ),
-    stopFailedPlugin: (pluginId: string, reason: string) => {
-      settingsService.stopFailedPlugin({ pluginId, reason }).catch((error: unknown) => {
-        write(
-          pluginId,
-          words.pluginError(getPluginName(pluginId), formatErrorMessage(error)),
-          'error',
-        )
-      })
-    },
   }
 }
 

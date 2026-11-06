@@ -187,7 +187,6 @@ type pluginFailureCallbacks interface {
 	SetOnPluginFailed(fn func(PluginFailure))
 	SetOnFailureCleared(fn func(pluginID string))
 	RetryPlugin(ctx context.Context, pluginID string) (*PluginFailure, error)
-	StopFailedPlugin(ctx context.Context, pluginID, reason string) (*PluginFailure, error)
 	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 }
 

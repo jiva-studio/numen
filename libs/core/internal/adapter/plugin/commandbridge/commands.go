@@ -71,19 +71,14 @@ func (c Commands) ListMenus() []pluginport.PluginMenuEntry {
 	return found
 }
 
-// GetParts says what the enabled plugin of the id has, and whether the host holds it suspended.
+// GetParts says what the enabled plugin of the id has. A plugin whose last start failed has the same parts:
+// the next use starts it again.
 func (c Commands) GetParts(pluginID string) pluginport.PluginParts {
 	plugin, isEnabled := c.host.GetPlugin(pluginID)
 	if !isEnabled {
 		return pluginport.PluginParts{}
 	}
-	parts := pluginport.PluginParts{HasBackend: plugin.Manifest.HasBackend(), HasFrontend: plugin.Manifest.HasFrontend()}
-	for _, info := range c.host.GetPluginInfos() {
-		if info.ID == pluginID {
-			parts.IsSuspended = info.Failure != nil
-		}
-	}
-	return parts
+	return pluginport.PluginParts{HasBackend: plugin.Manifest.HasBackend(), HasFrontend: plugin.Manifest.HasFrontend()}
 }
 
 // RunCommand starts the plugin where it is not running and runs the command in its backend, holding

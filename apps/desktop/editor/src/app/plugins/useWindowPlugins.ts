@@ -31,8 +31,6 @@ export interface PluginSupportDeps {
   readonly reportError?: (pluginId: string, error: unknown) => void
   /** Reports a plugin whose frontend failed to load or activate; falls back to `reportError`. */
   readonly reportLoadError?: (pluginId: string, error: unknown) => void
-  /** Stops the backend of a plugin whose frontend did not start, and records it as failed. */
-  readonly stopFailedPlugin?: (pluginId: string, reason: string) => void
   readonly resolveLink?: (from: string, address: string) => Promise<string>
   readonly writeNote?: (path: string, body: string) => Promise<void>
   /** The window and the notes a plugin's tabs are given, filled once the window has made them. */
@@ -80,15 +78,6 @@ function createNoticeAccess(queue: NoticeQueue) {
   return {
     getNotices: (pluginId: string) => createPluginNotices(queue, pluginId),
     clearNotices: (pluginId: string) => queue.clear(pluginId),
-  }
-}
-
-/** What the loader reports a plugin that does not start through. */
-function getLoaderReports(deps: PluginSupportDeps) {
-  const reportLoadError = deps.reportLoadError ?? deps.reportError
-  return {
-    ...(reportLoadError !== undefined ? { onError: reportLoadError } : {}),
-    ...(deps.stopFailedPlugin !== undefined ? { stopFailedPlugin: deps.stopFailedPlugin } : {}),
   }
 }
 
@@ -169,7 +158,11 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getTexts: (pluginId: string) => createPluginTexts(texts, pluginId),
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })
-  const pluginLoader = createPluginLoader({ host: pluginHost, ...getLoaderReports(deps) })
+  const reportLoadError = deps.reportLoadError ?? deps.reportError
+  const pluginLoader = createPluginLoader({
+    host: pluginHost,
+    ...(reportLoadError !== undefined ? { onError: reportLoadError } : {}),
+  })
   loaderHolder.current = pluginLoader
   /* Stryker restore OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction */
 
