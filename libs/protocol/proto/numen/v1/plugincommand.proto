@@ -99,7 +99,7 @@ message PluginHandler {
   string plugin_id = 1;
   ManifestHandler handler = 2;
   // has_items is set for a handler whose when names version.*: it offers the text versions of the
-  // file over which it holds, made by its own plugin.
+  // file over which it holds.
   bool has_items = 3;
 }
 
