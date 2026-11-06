@@ -146,8 +146,8 @@ func (a *arrangingVault) GetProblems(_ context.Context, checks []domain.Check) (
 }
 
 // recordingList is a list of vaults that records the changes it is asked for and returns err for each.
-// Its OpenVault waits for release or the end of its context when release is set, and then sends the
-// error of its context.
+// Its OpenVault returns err at once, else a swap that waits for release or the end of its context
+// when release is set, and then sends the error of its context.
 type recordingList struct {
 	mu      sync.Mutex
 	err     error
@@ -197,17 +197,25 @@ func (l *recordingList) RemoveVault(_ context.Context, id domain.VaultID) error 
 	return l.record("remove " + string(id))
 }
 
-func (l *recordingList) OpenVault(ctx context.Context, id domain.VaultID) error {
-	err := l.record("open " + string(id))
-	l.opened <- id
-	if l.release != nil {
-		select {
-		case <-l.release:
-		case <-ctx.Done():
-		}
+func (l *recordingList) OpenVault(_ context.Context, id domain.VaultID) (func(context.Context) error, error) {
+	l.mu.Lock()
+	openErr := l.err
+	l.mu.Unlock()
+	if openErr != nil {
+		return nil, openErr
 	}
-	l.ended <- ctx.Err()
-	return err
+	return func(ctx context.Context) error {
+		err := l.record("open " + string(id))
+		l.opened <- id
+		if l.release != nil {
+			select {
+			case <-l.release:
+			case <-ctx.Done():
+			}
+		}
+		l.ended <- ctx.Err()
+		return err
+	}, nil
 }
 
 func (l *recordingList) IsMissing(v domain.Vault) bool {
