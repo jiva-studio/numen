@@ -292,10 +292,8 @@ func (x *FocusPassagesRequest) GetPassages() []*PassageSpan {
 }
 
 type FocusPassagesResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostWindowErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostWindowErrorCode" json:"error,omitempty"`
-	// Summary is what the person now looks at, in words to say back to them.
-	Summary       string `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         HostWindowErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostWindowErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -335,13 +333,6 @@ func (x *FocusPassagesResponse) GetError() HostWindowErrorCode {
 		return x.Error
 	}
 	return HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED
-}
-
-func (x *FocusPassagesResponse) GetSummary() string {
-	if x != nil {
-		return x.Summary
-	}
-	return ""
 }
 
 type HostWindowServiceReadOpenTabsRequest struct {
@@ -457,10 +448,9 @@ const file_numen_v1_hostwindow_proto_rawDesc = "" +
 	"\x06length\x18\x02 \x01(\x05R\x06length\"]\n" +
 	"\x14FocusPassagesRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x121\n" +
-	"\bpassages\x18\x02 \x03(\v2\x15.numen.v1.PassageSpanR\bpassages\"f\n" +
+	"\bpassages\x18\x02 \x03(\v2\x15.numen.v1.PassageSpanR\bpassages\"[\n" +
 	"\x15FocusPassagesResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12\x18\n" +
-	"\asummary\x18\x02 \x01(\tR\asummary\"&\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05errorJ\x04\b\x02\x10\x03R\asummary\"&\n" +
 	"$HostWindowServiceReadOpenTabsRequest\"\x9c\x01\n" +
 	"%HostWindowServiceReadOpenTabsResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12!\n" +

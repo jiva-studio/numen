@@ -66,7 +66,7 @@ func (s *session) list(t *testing.T) []*tools.ToolInfo {
 func call[T any](t *testing.T, s *session, name string, args any) T {
 	t.Helper()
 	res := s.invoke(t, name, args).GetResult()
-	if res.GetIsRefusal() {
+	if res.GetIsError() {
 		t.Fatalf("%s: %s", name, res.GetText())
 	}
 	var out T
@@ -79,7 +79,7 @@ func call[T any](t *testing.T, s *session, name string, args any) T {
 func getToolError(t *testing.T, s *session, name string, args any) string {
 	t.Helper()
 	res := s.invoke(t, name, args).GetResult()
-	if !res.GetIsRefusal() {
+	if !res.GetIsError() {
 		t.Fatalf("%s: expected an error, got %s", name, res.GetStructured())
 	}
 	return res.GetText()

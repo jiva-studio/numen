@@ -278,5 +278,5 @@ message HostSearchServiceSearchPassagesResponse {
   HostSearchErrorCode error = 1;
 
   // The passages that answer, best first, at most three of one source.
-  repeated Passage found = 2;
+  repeated Passage passages = 2;
 }

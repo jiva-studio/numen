@@ -1249,7 +1249,7 @@ type HostSearchServiceSearchPassagesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
 	// The passages that answer, best first, at most three of one source.
-	Found         []*Passage `protobuf:"bytes,2,rep,name=found,proto3" json:"found,omitempty"`
+	Passages      []*Passage `protobuf:"bytes,2,rep,name=passages,proto3" json:"passages,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1291,9 +1291,9 @@ func (x *HostSearchServiceSearchPassagesResponse) GetError() HostSearchErrorCode
 	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *HostSearchServiceSearchPassagesResponse) GetFound() []*Passage {
+func (x *HostSearchServiceSearchPassagesResponse) GetPassages() []*Passage {
 	if x != nil {
-		return x.Found
+		return x.Passages
 	}
 	return nil
 }
@@ -1384,10 +1384,10 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x14\n" +
 	"\x05kinds\x18\x03 \x03(\tR\x05kinds\x12\x1f\n" +
 	"\vpath_prefix\x18\x04 \x01(\tR\n" +
-	"pathPrefix\"\x87\x01\n" +
+	"pathPrefix\"\x8d\x01\n" +
 	"'HostSearchServiceSearchPassagesResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12'\n" +
-	"\x05found\x18\x02 \x03(\v2\x11.numen.v1.PassageR\x05found*\xdf\x02\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12-\n" +
+	"\bpassages\x18\x02 \x03(\v2\x11.numen.v1.PassageR\bpassages*\xdf\x02\n" +
 	"\x13HostSearchErrorCode\x12&\n" +
 	"\"HOST_SEARCH_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fHOST_SEARCH_ERROR_CODE_NO_VAULT\x10\x01\x12#\n" +
@@ -1467,7 +1467,7 @@ var file_numen_v1_hostsearch_proto_depIdxs = []int32{
 	1,  // 11: numen.v1.GetSearchFloorResponse.source:type_name -> numen.v1.SearchFloorSource
 	0,  // 12: numen.v1.SetSearchFloorResponse.error:type_name -> numen.v1.HostSearchErrorCode
 	0,  // 13: numen.v1.HostSearchServiceSearchPassagesResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	22, // 14: numen.v1.HostSearchServiceSearchPassagesResponse.found:type_name -> numen.v1.Passage
+	22, // 14: numen.v1.HostSearchServiceSearchPassagesResponse.passages:type_name -> numen.v1.Passage
 	2,  // 15: numen.v1.HostSearchService.GetEmbeddingState:input_type -> numen.v1.GetEmbeddingStateRequest
 	4,  // 16: numen.v1.HostSearchService.GetIndexStats:input_type -> numen.v1.GetIndexStatsRequest
 	7,  // 17: numen.v1.HostSearchService.EmbedTexts:input_type -> numen.v1.EmbedTextsRequest

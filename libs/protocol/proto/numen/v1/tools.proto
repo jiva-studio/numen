@@ -139,7 +139,9 @@ message ToolResult {
   // tool listed none.
   bytes structured = 2;
 
-  bool is_refusal = 3;
+  // Set when the tool ran and answered with an error; text then holds the
+  // error message.
+  bool is_error = 3;
 }
 
 // ToolErrorCode is why a call was served and not run.

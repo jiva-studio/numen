@@ -121,12 +121,12 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 			var in In
 			if len(arguments) > 0 {
 				if err := json.Unmarshal(arguments, &in); err != nil {
-					return &v1.ToolResult{Text: fmt.Sprintf("the arguments do not fit: %v", err), IsRefusal: true}
+					return &v1.ToolResult{Text: fmt.Sprintf("the arguments do not fit: %v", err), IsError: true}
 				}
 			}
 			out, err := run(ctx, in)
 			if err != nil {
-				return &v1.ToolResult{Text: err.Error(), IsRefusal: true}
+				return &v1.ToolResult{Text: err.Error(), IsError: true}
 			}
 			return writeResult(out)
 		},
@@ -255,7 +255,7 @@ func schemaOf(t reflect.Type) ([]byte, error) {
 func writeResult(out any) *v1.ToolResult {
 	encoded, err := json.Marshal(out)
 	if err != nil {
-		return &v1.ToolResult{Text: fmt.Sprintf("the result cannot be encoded: %v", err), IsRefusal: true}
+		return &v1.ToolResult{Text: fmt.Sprintf("the result cannot be encoded: %v", err), IsError: true}
 	}
 	if isObject(encoded) {
 		return &v1.ToolResult{Structured: encoded}
@@ -305,7 +305,7 @@ func (c *Call) GetContext() map[string]string {
 type CallResult struct {
 	Text       string
 	Structured []byte
-	IsRefusal  bool
+	IsError    bool
 }
 
 func (r *CallResult) GetText() string {
@@ -322,11 +322,11 @@ func (r *CallResult) GetStructured() []byte {
 	return r.Structured
 }
 
-func (r *CallResult) GetIsRefusal() bool {
+func (r *CallResult) GetIsError() bool {
 	if r == nil {
 		return false
 	}
-	return r.IsRefusal
+	return r.IsError
 }
 
 // CallResponse is the response from a tool invocation.

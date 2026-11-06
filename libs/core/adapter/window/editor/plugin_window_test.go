@@ -36,12 +36,8 @@ func TestPluginWindowFocusPassagesReachesTheWindowWithTheRanges(t *testing.T) {
 	_, window, line := newBoundWindow(t)
 	ranges := []domain.ByteRange{{Start: 1500, End: 1580}, {Start: 400, End: 1100}}
 
-	summary, err := window.FocusPassages(t.Context(), "library/Birds.pdf", ranges)
-	if err != nil {
+	if err := window.FocusPassages(t.Context(), "library/Birds.pdf", ranges); err != nil {
 		t.Fatal(err)
-	}
-	if summary != "the document is open at that passage, with the words of it lit" {
-		t.Errorf("the summary is %q", summary)
 	}
 	select {
 	case place := <-line:
@@ -57,7 +53,7 @@ func TestPluginWindowFocusPassagesReachesTheWindowWithTheRanges(t *testing.T) {
 func TestPluginWindowRefusesAnInvalidPassageAndAMissingFileAndDoesNotMoveTheWindow(t *testing.T) {
 	_, window, line := newBoundWindow(t)
 
-	_, invalid := window.FocusPassages(t.Context(), "library/Birds.pdf", []domain.ByteRange{{Start: -1, End: 4}})
+	invalid := window.FocusPassages(t.Context(), "library/Birds.pdf", []domain.ByteRange{{Start: -1, End: 4}})
 	if !errors.Is(invalid, pluginport.ErrInvalidFocus) {
 		t.Errorf("a passage before the text answered %v, want ErrInvalidFocus", invalid)
 	}
@@ -65,7 +61,7 @@ func TestPluginWindowRefusesAnInvalidPassageAndAMissingFileAndDoesNotMoveTheWind
 	if !errors.Is(emptyPath, pluginport.ErrInvalidFocus) {
 		t.Errorf("a note with no path answered %v, want ErrInvalidFocus", emptyPath)
 	}
-	_, missing := window.FocusPassages(t.Context(), "library/Gone.pdf", nil)
+	missing := window.FocusPassages(t.Context(), "library/Gone.pdf", nil)
 	if !errors.Is(missing, fs.ErrNotExist) {
 		t.Errorf("a missing file answered %v, want fs.ErrNotExist", missing)
 	}

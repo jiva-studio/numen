@@ -157,7 +157,7 @@ func (s *toolScene) recognise(t *testing.T, vault, path string) RecognitionCreat
 	res := invokeAtOnce(t, s.registry, tools.Call{
 		VaultID: vault, Name: "recognition_create", Arguments: []byte(`{"path":"` + path + `"}`),
 	})
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("recognition_create of %s in %s was refused: %s", path, vault, res.GetResult().GetText())
 	}
 	var out RecognitionCreateOutput
@@ -281,7 +281,7 @@ func TestRecognitionCreateRefusesAFileNotInTheVault(t *testing.T) {
 		VaultID: "Physics", Name: "recognition_create", Arguments: []byte(`{"path":"books/missing.pdf"}`),
 	})
 
-	if !res.GetResult().GetIsRefusal() {
+	if !res.GetResult().GetIsError() {
 		t.Errorf("a file that is not there returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
@@ -296,7 +296,7 @@ func TestRecognitionCreateRefusesACallThatNamesNoVault(t *testing.T) {
 		VaultID: "", Name: "recognition_create", Arguments: []byte(`{"path":"` + scanPath + `"}`),
 	})
 
-	if !res.GetResult().GetIsRefusal() {
+	if !res.GetResult().GetIsError() {
 		t.Errorf("a call with no vault returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
 }
@@ -307,7 +307,7 @@ func TestRecognitionCreateRecognisesInTheVaultTheCallNames(t *testing.T) {
 	inShown := invokeAtOnce(t, s.registry, tools.Call{
 		VaultID: "Physics", Name: "recognition_create", Arguments: []byte(`{"path":"` + chemistryScan + `"}`),
 	})
-	if !inShown.GetResult().GetIsRefusal() {
+	if !inShown.GetResult().GetIsError() {
 		t.Errorf("a scan only Chemistry holds was accepted in Physics: %s", inShown.GetResult().GetStructured())
 	}
 

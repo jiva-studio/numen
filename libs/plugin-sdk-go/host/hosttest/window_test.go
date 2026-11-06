@@ -51,12 +51,8 @@ func TestTheWindowOpensAFileAtThePassagesItIsGivenAndRecordsThem(t *testing.T) {
 	window := newWindowVault()
 	passages := []host.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}
 
-	summary, err := window.FocusPassages(t.Context(), "library/Birds.pdf", passages)
-	if err != nil {
+	if err := window.FocusPassages(t.Context(), "library/Birds.pdf", passages); err != nil {
 		t.Fatal(err)
-	}
-	if summary != "the document is open at that passage, with the words of it lit" {
-		t.Errorf("the summary is %q", summary)
 	}
 	want := []hosttest.FocusRequest{{Path: "library/Birds.pdf", Passages: passages}}
 	if got := window.GetFocusRequests(); !reflect.DeepEqual(got, want) {
@@ -64,23 +60,25 @@ func TestTheWindowOpensAFileAtThePassagesItIsGivenAndRecordsThem(t *testing.T) {
 	}
 }
 
-func TestTheWindowSummaryNamesABeginningAndANote(t *testing.T) {
+func TestTheWindowOpensAFileWithNoPassagesAndANote(t *testing.T) {
 	window := newWindowVault()
 
-	beginning, err := window.FocusPassages(t.Context(), "library/Birds.pdf", nil)
-	if err != nil || beginning != "the document is open at its beginning" {
-		t.Errorf("a file with no passages answered %q (%v)", beginning, err)
+	if err := window.FocusPassages(t.Context(), "library/Birds.pdf", nil); err != nil {
+		t.Errorf("a file with no passages answered %v", err)
 	}
-	note, err := window.FocusPassages(t.Context(), "notes/Heron.md", []host.PassageSpan{{Start: 0, Length: 6}})
-	if err != nil || note != "the note is in front of them, and a note is shown whole" {
-		t.Errorf("a note answered %q (%v)", note, err)
+	if err := window.FocusPassages(t.Context(), "notes/Heron.md", []host.PassageSpan{{Start: 0, Length: 6}}); err != nil {
+		t.Errorf("a note answered %v", err)
+	}
+	want := []hosttest.FocusRequest{{Path: "library/Birds.pdf"}, {Path: "notes/Heron.md", Passages: []host.PassageSpan{{Start: 0, Length: 6}}}}
+	if got := window.GetFocusRequests(); !reflect.DeepEqual(got, want) {
+		t.Errorf("the window recorded %+v, want %+v", got, want)
 	}
 }
 
 func TestTheWindowOpensNoFileTheVaultDoesNotHold(t *testing.T) {
 	window := newWindowVault()
 
-	if _, err := window.FocusPassages(t.Context(), "library/Gone.pdf", nil); !errors.Is(err, host.ErrNotExist) {
+	if err := window.FocusPassages(t.Context(), "library/Gone.pdf", nil); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("FocusPassages of a missing file got %v, want ErrNotExist", err)
 	}
 	if got := window.GetFocusRequests(); len(got) != 0 {
@@ -115,7 +113,7 @@ func TestTheWindowSetToNoWindowAnswersErrNoWindow(t *testing.T) {
 	if _, err := window.FocusNote(ctx, "notes/Heron.md"); !errors.Is(err, host.ErrNoWindow) {
 		t.Errorf("FocusNote got %v, want ErrNoWindow", err)
 	}
-	if _, err := window.FocusPassages(ctx, "library/Birds.pdf", nil); !errors.Is(err, host.ErrNoWindow) {
+	if err := window.FocusPassages(ctx, "library/Birds.pdf", nil); !errors.Is(err, host.ErrNoWindow) {
 		t.Errorf("FocusPassages got %v, want ErrNoWindow", err)
 	}
 	if _, _, err := window.ReadOpenTabs(ctx); !errors.Is(err, host.ErrNoWindow) {

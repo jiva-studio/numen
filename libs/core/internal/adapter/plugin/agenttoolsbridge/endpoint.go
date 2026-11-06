@@ -206,7 +206,7 @@ func readResult(name string, res *v1.CallToolResponse) *sdk.CallToolResult {
 		return newErrorResult("the arguments are not a JSON object")
 	}
 	answer := res.GetResult()
-	result := &sdk.CallToolResult{IsError: answer.GetIsRefusal()}
+	result := &sdk.CallToolResult{IsError: answer.GetIsError()}
 	if structured := answer.GetStructured(); len(structured) > 0 {
 		result.StructuredContent = json.RawMessage(structured)
 	}

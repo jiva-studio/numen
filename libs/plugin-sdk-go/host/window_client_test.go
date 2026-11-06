@@ -47,7 +47,7 @@ func (h *windowHost) FocusPassages(_ context.Context, req *connect.Request[v1.Fo
 	if h.code != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
 		return connect.NewResponse(&v1.FocusPassagesResponse{Error: h.code}), nil
 	}
-	return connect.NewResponse(&v1.FocusPassagesResponse{Summary: "the document is open at that passage, with the words of it lit"}), nil
+	return connect.NewResponse(&v1.FocusPassagesResponse{}), nil
 }
 
 func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error) {
@@ -93,16 +93,12 @@ func TestClientFocusesANoteAndReadsWhatTheHostFocused(t *testing.T) {
 	}
 }
 
-func TestClientSendsThePassagesInTheirOrderAndReadsTheSummary(t *testing.T) {
+func TestClientSendsThePassagesInTheirOrder(t *testing.T) {
 	h := &windowHost{}
 	c := dialWindow(t, h)
 
-	summary, err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}})
-	if err != nil {
+	if err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}); err != nil {
 		t.Fatal(err)
-	}
-	if summary != "the document is open at that passage, with the words of it lit" {
-		t.Errorf("the summary is %q", summary)
 	}
 	if len(h.passages) != 1 {
 		t.Fatalf("the host was asked %d times, want once", len(h.passages))
@@ -148,7 +144,7 @@ func TestClientReturnsTheErrorsOfTheWindowCalls(t *testing.T) {
 			if _, err := c.FocusNote(ctx, "notes/Heron.md"); !errors.Is(err, tc.want) {
 				t.Errorf("FocusNote got %v, want %v", err, tc.want)
 			}
-			if _, err := c.FocusPassages(ctx, "library/Birds.pdf", nil); !errors.Is(err, tc.want) {
+			if err := c.FocusPassages(ctx, "library/Birds.pdf", nil); !errors.Is(err, tc.want) {
 				t.Errorf("FocusPassages got %v, want %v", err, tc.want)
 			}
 			if tc.want == host.ErrNotExist {
@@ -165,7 +161,7 @@ func TestClientReturnsAnInvalidPassageAsTheHostRejectedIt(t *testing.T) {
 	h := &windowHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New("light at most 8 places of one document"))}
 	c := dialWindow(t, h)
 
-	_, err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: -1, Length: 4}})
+	err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: -1, Length: 4}})
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("got %v, want the invalid argument the host answered", err)
 	}

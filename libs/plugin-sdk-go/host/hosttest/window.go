@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // FocusRequest is one FocusPassages call a Window received.
@@ -60,27 +59,21 @@ func (w *Window) FocusNote(ctx context.Context, path string) (host.FocusedNote, 
 	return host.FocusedNote{Path: ref.Path, Title: ref.Title, ID: ref.ID}, nil
 }
 
-func (w *Window) FocusPassages(ctx context.Context, path string, passages []host.PassageSpan) (string, error) {
+func (w *Window) FocusPassages(ctx context.Context, path string, passages []host.PassageSpan) error {
 	if w.hasNoWindow() {
-		return "", host.ErrNoWindow
+		return host.ErrNoWindow
 	}
-	stat, err := w.vault.StatFile(ctx, path)
+	_, err := w.vault.StatFile(ctx, path)
 	if errors.Is(err, host.ErrNotANote) {
-		return "", fmt.Errorf("this vault holds nothing at %s: %w", path, host.ErrNotExist)
+		return fmt.Errorf("this vault holds nothing at %s: %w", path, host.ErrNotExist)
 	}
 	if err != nil {
-		return "", err
+		return err
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.focusCalls = append(w.focusCalls, FocusRequest{Path: path, Passages: slices.Clone(passages)})
-	switch {
-	case stat.Kind == domain.KindNote:
-		return "the note is in front of them, and a note is shown whole", nil
-	case len(passages) == 0:
-		return "the document is open at its beginning", nil
-	}
-	return "the document is open at that passage, with the words of it lit", nil
+	return nil
 }
 
 func (w *Window) ReadOpenTabs(context.Context) ([]host.OpenTab, string, error) {

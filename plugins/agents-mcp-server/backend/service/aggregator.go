@@ -175,7 +175,7 @@ func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json
 		Meta:              nil,
 		Content:           nil,
 		StructuredContent: nil,
-		IsError:           wireResult.GetIsRefusal(),
+		IsError:           wireResult.GetIsError(),
 		InputRequests:     nil,
 		RequestState:      "",
 	}

@@ -75,7 +75,7 @@ func TestListTools_ReturnsSchemasAndServers(t *testing.T) {
 func TestACallRunsTheToolOnItsArgumentsAndAnswersStructured(t *testing.T) {
 	answer := call(t, newRegistry(t), "greet", `{"name":"Sita"}`)
 
-	if answer.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || answer.GetResult().GetIsRefusal() {
+	if answer.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || answer.GetResult().GetIsError() {
 		t.Fatalf("the call was answered %v", answer)
 	}
 	if string(answer.GetResult().GetStructured()) != `{"greeting":"hello Sita"}` {
@@ -86,7 +86,7 @@ func TestACallRunsTheToolOnItsArgumentsAndAnswersStructured(t *testing.T) {
 func TestAToolThatReturnsAnErrorRanAndRefused(t *testing.T) {
 	answer := call(t, newRegistry(t), "greet", `{}`)
 
-	if !answer.GetResult().GetIsRefusal() || answer.GetResult().GetText() != "recipient required" {
+	if !answer.GetResult().GetIsError() || answer.GetResult().GetText() != "recipient required" {
 		t.Errorf("the call was answered %v", answer)
 	}
 }
@@ -94,7 +94,7 @@ func TestAToolThatReturnsAnErrorRanAndRefused(t *testing.T) {
 func TestArgumentsThatDoNotFitTheStructAreAError(t *testing.T) {
 	answer := call(t, newRegistry(t), "greet", `{"name":3}`)
 
-	if !answer.GetResult().GetIsRefusal() || !strings.HasPrefix(answer.GetResult().GetText(), "the arguments do not fit:") {
+	if !answer.GetResult().GetIsError() || !strings.HasPrefix(answer.GetResult().GetText(), "the arguments do not fit:") {
 		t.Errorf("the call was answered %v", answer)
 	}
 }
@@ -215,7 +215,7 @@ func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
 	if got := writeCallResponse(nil); got == nil || got.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || got.GetResult() != nil {
 		t.Fatalf("writeCallResponse(nil) = %v", got)
 	}
-	if res := writeResult(make(chan int)); !res.GetIsRefusal() || !strings.HasPrefix(res.GetText(), "the result cannot be encoded:") {
+	if res := writeResult(make(chan int)); !res.GetIsError() || !strings.HasPrefix(res.GetText(), "the result cannot be encoded:") {
 		t.Fatalf("writeResult(chan) = %v", res)
 	}
 

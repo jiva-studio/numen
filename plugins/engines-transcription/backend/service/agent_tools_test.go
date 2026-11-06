@@ -169,7 +169,7 @@ func (s *toolScene) createTranscript(t *testing.T, vault, path string) Transcrip
 	res := invokeAtOnce(t, s.registry, tools.Call{
 		VaultID: vault, Name: "transcript_create", Arguments: []byte(`{"path":"` + path + `"}`),
 	})
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("transcript_create of %s in %s was refused: %s", path, vault, res.GetResult().GetText())
 	}
 	var out TranscriptCreateOutput
@@ -281,7 +281,7 @@ func TestTranscriptCreateRefusesARecordingNotInTheVault(t *testing.T) {
 		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"assets/missing.wav"}`),
 	})
 
-	if !res.GetResult().GetIsRefusal() {
+	if !res.GetResult().GetIsError() {
 		t.Errorf("a recording that is not there returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
 }
@@ -293,7 +293,7 @@ func TestTranscriptCreateRefusesACallThatNamesNoVault(t *testing.T) {
 		VaultID: "", Name: "transcript_create", Arguments: []byte(`{"path":"` + lecture + `"}`),
 	})
 
-	if !res.GetResult().GetIsRefusal() {
+	if !res.GetResult().GetIsError() {
 		t.Errorf("a call with no vault returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
 }
@@ -304,7 +304,7 @@ func TestTranscriptCreateTranscribesInTheVaultTheCallNames(t *testing.T) {
 	inShown := invokeAtOnce(t, s.registry, tools.Call{
 		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"` + chemistryLecture + `"}`),
 	})
-	if !inShown.GetResult().GetIsRefusal() {
+	if !inShown.GetResult().GetIsError() {
 		t.Errorf("a recording only Chemistry holds was accepted in Lectures: %s", inShown.GetResult().GetStructured())
 	}
 
@@ -394,7 +394,7 @@ func TestTranscriptCreateRefusesAFileThatIsNoRecording(t *testing.T) {
 		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"notes/plan.md"}`),
 	})
 
-	if !res.GetResult().GetIsRefusal() {
+	if !res.GetResult().GetIsError() {
 		t.Errorf("a note returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {

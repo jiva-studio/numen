@@ -202,8 +202,8 @@ func (c *SearchClient) SearchPassages(ctx context.Context, query PassageQuery) (
 	if err := readSearchError(res.Msg.GetError()); err != nil {
 		return nil, err
 	}
-	found := make([]Passage, len(res.Msg.GetFound()))
-	for i, one := range res.Msg.GetFound() {
+	found := make([]Passage, len(res.Msg.GetPassages()))
+	for i, one := range res.Msg.GetPassages() {
 		start, end := int(one.GetRange().GetStart()), int(one.GetRange().GetEnd())
 		found[i] = Passage{
 			Path: one.GetPath(), Text: one.GetText(), Location: one.GetLocation(),

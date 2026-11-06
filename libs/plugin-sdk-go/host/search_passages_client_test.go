@@ -33,7 +33,7 @@ func (h *passagesHost) SearchPassages(_ context.Context, req *connect.Request[v1
 	}
 	return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{
 		Error: h.code,
-		Found: []*v1.Passage{{
+		Passages: []*v1.Passage{{
 			Path: "library/Birds.pdf", Text: "the heron stands in the reeds", Location: "page 12",
 			Range: &v1.Range{Start: 400, End: 1100}, Line: 0, Selector: `{"page":12}`,
 		}, {

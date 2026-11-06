@@ -53,14 +53,14 @@ func (w *recordingWindow) FocusNote(_ context.Context, path string) (domain.Note
 	return domain.NoteRef{Path: path, Title: "Grey Heron", ID: "01J8HERON0000000000000000"}, nil
 }
 
-func (w *recordingWindow) FocusPassages(_ context.Context, path string, passages []domain.ByteRange) (string, error) {
+func (w *recordingWindow) FocusPassages(_ context.Context, path string, passages []domain.ByteRange) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.err != nil {
-		return "", w.err
+		return w.err
 	}
 	w.passages = append(w.passages, domain.Place{Path: path, Ranges: passages})
-	return "the document is open at that passage, with the words of it lit", nil
+	return nil
 }
 
 func (w *recordingWindow) ReadOpenTabs(context.Context) (domain.OpenTabs, error) {
@@ -134,8 +134,7 @@ func TestHostWindowFocusesThePassagesInTheirOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED ||
-		got.Msg.GetSummary() != "the document is open at that passage, with the words of it lit" {
+	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
 		t.Errorf("answered %v", got.Msg)
 	}
 	want := []domain.Place{{Path: "library/Birds.pdf", Ranges: []domain.ByteRange{{Start: 1500, End: 1580}, {Start: 400, End: 1100}}}}

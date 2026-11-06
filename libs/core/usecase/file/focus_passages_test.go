@@ -39,14 +39,11 @@ func newFocusPassages(t *testing.T) (*file.FocusPassages, *placeRecorder, domain
 func TestFocusPassagesShowsTheFileWithThePassagesLitInTheirOrder(t *testing.T) {
 	focus, view, v := newFocusPassages(t)
 
-	summary, err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
+	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
 		Path: talkPath, Passages: []domain.ByteRange{{Start: 40, End: 50}, {Start: 10, End: 15}},
 	})
 	if err != nil {
 		t.Fatal(err)
-	}
-	if summary != "the document is open at that passage, with the words of it lit" {
-		t.Errorf("the summary is %q", summary)
 	}
 	want := []domain.Place{{Path: talkPath, Ranges: []domain.ByteRange{{Start: 40, End: 50}, {Start: 10, End: 15}}}}
 	if !reflect.DeepEqual(view.requested, want) {
@@ -57,29 +54,23 @@ func TestFocusPassagesShowsTheFileWithThePassagesLitInTheirOrder(t *testing.T) {
 func TestFocusPassagesWithNoPassagesOpensTheFileAtItsBeginning(t *testing.T) {
 	focus, view, v := newFocusPassages(t)
 
-	summary, err := focus.Execute(t.Context(), v, file.FocusPassagesInput{Path: talkPath})
+	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{Path: talkPath})
 	if err != nil {
 		t.Fatal(err)
-	}
-	if summary != "the document is open at its beginning" {
-		t.Errorf("the summary is %q", summary)
 	}
 	if len(view.requested) != 1 || view.requested[0].Path != talkPath || len(view.requested[0].Ranges) != 0 {
 		t.Errorf("the window was asked %+v", view.requested)
 	}
 }
 
-func TestFocusPassagesOfANoteReturnsTheWholeNoteSummary(t *testing.T) {
+func TestFocusPassagesOfANoteOpensTheNote(t *testing.T) {
 	focus, view, v := newFocusPassages(t)
 
-	summary, err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
+	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
 		Path: "notes/Heron.md", Passages: []domain.ByteRange{{Start: 2, End: 12}},
 	})
 	if err != nil {
 		t.Fatal(err)
-	}
-	if summary != "the note is in front of them, and a note is shown whole" {
-		t.Errorf("the summary is %q", summary)
 	}
 	if len(view.requested) != 1 || view.requested[0].Path != "notes/Heron.md" {
 		t.Errorf("the window was asked %+v", view.requested)
@@ -93,7 +84,7 @@ func TestFocusPassagesLightsAtMostEightPassages(t *testing.T) {
 		eight[i] = domain.ByteRange{Start: i * 10, End: i*10 + 5}
 	}
 
-	if _, err := focus.Execute(t.Context(), v, file.FocusPassagesInput{Path: talkPath, Passages: eight}); err != nil {
+	if err := focus.Execute(t.Context(), v, file.FocusPassagesInput{Path: talkPath, Passages: eight}); err != nil {
 		t.Fatalf("eight passages were refused: %v", err)
 	}
 	if len(view.requested) != 1 || len(view.requested[0].Ranges) != 8 {
@@ -119,7 +110,7 @@ func TestFocusPassagesRefusesAPlaceItCannotShowAndDoesNotMoveTheWindow(t *testin
 		"nine passages":  {file.FocusPassagesInput{Path: talkPath, Passages: nine}, "light at most 8"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			_, err := focus.Execute(t.Context(), v, tc.in)
+			err := focus.Execute(t.Context(), v, tc.in)
 			if !errors.Is(err, file.ErrInvalidPassage) || !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("refused as %v, want ErrInvalidPassage saying %q", err, tc.want)
 			}
@@ -133,7 +124,7 @@ func TestFocusPassagesRefusesAPlaceItCannotShowAndDoesNotMoveTheWindow(t *testin
 func TestFocusPassagesOfAPathTheVaultDoesNotHoldIsNotFoundAndDoesNotMoveTheWindow(t *testing.T) {
 	focus, view, v := newFocusPassages(t)
 
-	_, err := focus.Execute(t.Context(), v, file.FocusPassagesInput{Path: "talks/Gone.mp3"})
+	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{Path: "talks/Gone.mp3"})
 	if !errors.Is(err, fs.ErrNotExist) || !strings.Contains(err.Error(), "holds nothing at talks/Gone.mp3") {
 		t.Errorf("a missing file answered %v, want fs.ErrNotExist saying the vault holds nothing there", err)
 	}

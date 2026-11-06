@@ -581,8 +581,10 @@ type ToolResult struct {
 	Text string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	// The structured result as JSON, meeting the output schema. Empty where the
 	// tool listed none.
-	Structured    []byte `protobuf:"bytes,2,opt,name=structured,proto3" json:"structured,omitempty"`
-	IsRefusal     bool   `protobuf:"varint,3,opt,name=is_refusal,json=isRefusal,proto3" json:"is_refusal,omitempty"`
+	Structured []byte `protobuf:"bytes,2,opt,name=structured,proto3" json:"structured,omitempty"`
+	// Set when the tool ran and answered with an error; text then holds the
+	// error message.
+	IsError       bool `protobuf:"varint,3,opt,name=is_error,json=isError,proto3" json:"is_error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -631,9 +633,9 @@ func (x *ToolResult) GetStructured() []byte {
 	return nil
 }
 
-func (x *ToolResult) GetIsRefusal() bool {
+func (x *ToolResult) GetIsError() bool {
 	if x != nil {
-		return x.IsRefusal
+		return x.IsError
 	}
 	return false
 }
@@ -667,15 +669,14 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"o\n" +
 	"\x10CallToolResponse\x12-\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.ToolErrorCodeR\x05error\x12,\n" +
-	"\x06result\x18\x02 \x01(\v2\x14.numen.v1.ToolResultR\x06result\"_\n" +
+	"\x06result\x18\x02 \x01(\v2\x14.numen.v1.ToolResultR\x06result\"[\n" +
 	"\n" +
 	"ToolResult\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x1e\n" +
 	"\n" +
 	"structured\x18\x02 \x01(\fR\n" +
-	"structured\x12\x1d\n" +
-	"\n" +
-	"is_refusal\x18\x03 \x01(\bR\tisRefusal*`\n" +
+	"structured\x12\x19\n" +
+	"\bis_error\x18\x03 \x01(\bR\aisError*`\n" +
 	"\n" +
 	"ToolEffect\x12\x1b\n" +
 	"\x17TOOL_EFFECT_UNSPECIFIED\x10\x00\x12\x19\n" +

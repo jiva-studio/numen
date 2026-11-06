@@ -23,7 +23,7 @@ func TestToolInfo_RoundTripsThroughTheWire(t *testing.T) {
 
 func TestCallResponse_RoundTripsThroughTheWire(t *testing.T) {
 	cases := []*CallResponse{
-		{Result: &CallResult{Text: "failed", IsRefusal: true}},
+		{Result: &CallResult{Text: "failed", IsError: true}},
 		{Result: &CallResult{Structured: []byte(`{"a":1}`)}},
 		{Error: ErrorCodeUnknownTool},
 		{Error: ErrorCodeBadArguments},

@@ -222,8 +222,8 @@ func TestToolAggregatorExecuteMarksDeniedResultAsError(t *testing.T) {
 	client := &fakeToolClient{
 		callResp: &tools.CallResponse{
 			Result: &tools.CallResult{
-				Text:      "permission denied to note",
-				IsRefusal: true,
+				Text:    "permission denied to note",
+				IsError: true,
 			},
 		},
 	}

@@ -21,9 +21,9 @@ var (
 type PluginWindow interface {
 	// FocusNote makes the note at the path the current one and returns it.
 	FocusNote(ctx context.Context, path string) (domain.NoteRef, error)
-	// FocusPassages opens the file at the path at the first passage, lights all of them, and returns
-	// what the person now looks at. No passages opens the file at its beginning.
-	FocusPassages(ctx context.Context, path string, passages []domain.ByteRange) (string, error)
+	// FocusPassages opens the file at the path at the first passage and highlights every passage. No
+	// passages opens the file at its beginning.
+	FocusPassages(ctx context.Context, path string, passages []domain.ByteRange) error
 	// ReadOpenTabs is the tabs the window last reported, and the active one.
 	ReadOpenTabs(ctx context.Context) (domain.OpenTabs, error)
 }

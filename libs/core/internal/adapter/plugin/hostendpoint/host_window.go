@@ -85,12 +85,8 @@ func (e *windowEndpoint) FocusPassages(
 		start := int(span.GetStart())
 		passages = append(passages, domain.ByteRange{Start: start, End: start + int(span.GetLength())})
 	}
-	summary, err := window.FocusPassages(ctx, req.Msg.GetPath(), passages)
-	code, err := answerWindow(ctx, err)
-	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.FocusPassagesResponse{Error: code}), err
-	}
-	return connect.NewResponse(&v1.FocusPassagesResponse{Summary: summary}), nil
+	code, err := answerWindow(ctx, window.FocusPassages(ctx, req.Msg.GetPath(), passages))
+	return connect.NewResponse(&v1.FocusPassagesResponse{Error: code}), err
 }
 
 func (e *windowEndpoint) ReadOpenTabs(

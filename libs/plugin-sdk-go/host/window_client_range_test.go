@@ -17,7 +17,7 @@ func TestClientRefusesAPassageOutsideThe32BitRangeWithoutCallingTheHost(t *testi
 			h := &windowHost{}
 			c := dialWindow(t, h)
 
-			if _, err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{passage}); err == nil {
+			if err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{passage}); err == nil {
 				t.Error("the passage was sent")
 			}
 			if len(h.passages) != 0 {

@@ -18,7 +18,7 @@ func TestPluginWindowOfAStateShowingNoVaultAnswersErrNoWindow(t *testing.T) {
 	if _, err := window.FocusNote(ctx, "notes/Heron.md"); !errors.Is(err, pluginport.ErrNoWindow) {
 		t.Errorf("FocusNote answered %v, want ErrNoWindow", err)
 	}
-	if _, err := window.FocusPassages(ctx, "library/Birds.pdf", []domain.ByteRange{{Start: 0, End: 4}}); !errors.Is(err, pluginport.ErrNoWindow) {
+	if err := window.FocusPassages(ctx, "library/Birds.pdf", []domain.ByteRange{{Start: 0, End: 4}}); !errors.Is(err, pluginport.ErrNoWindow) {
 		t.Errorf("FocusPassages answered %v, want ErrNoWindow", err)
 	}
 	if _, err := window.ReadOpenTabs(ctx); !errors.Is(err, pluginport.ErrNoWindow) {

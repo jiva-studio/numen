@@ -137,7 +137,7 @@ func TestNoteWriteWithBodyInsteadOfContentStoresNoText(t *testing.T) {
 	if content, ok := vault.Content("Orbit.md"); ok && strings.Contains(content, "Orbits curve.") {
 		t.Errorf("the text of the argument body was stored: %q", content)
 	}
-	if !res.GetResult().GetIsRefusal() {
+	if !res.GetResult().GetIsError() {
 		t.Error("a call with body and no content was not refused")
 	}
 }

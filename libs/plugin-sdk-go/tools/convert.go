@@ -146,7 +146,7 @@ func readCallResponse(res *v1.CallToolResponse) *CallResponse {
 		out.Result = &CallResult{
 			Text:       r.GetText(),
 			Structured: r.GetStructured(),
-			IsRefusal:  r.GetIsRefusal(),
+			IsError:    r.GetIsError(),
 		}
 	}
 	return out
@@ -161,7 +161,7 @@ func writeCallResponse(res *CallResponse) *v1.CallToolResponse {
 		out.Result = &v1.ToolResult{
 			Text:       res.Result.Text,
 			Structured: res.Result.Structured,
-			IsRefusal:  res.Result.IsRefusal,
+			IsError:    res.Result.IsError,
 		}
 	}
 	return out

@@ -12,7 +12,7 @@ import (
 func TestFocusPassagesRefusesAPassageThatEndsPastThe32BitRange(t *testing.T) {
 	focus, view, v := newFocusPassages(t)
 
-	_, err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
+	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
 		Path: talkPath, Passages: []domain.ByteRange{{Start: math.MaxInt32 - 2, End: math.MaxInt32 + 3}},
 	})
 	if !errors.Is(err, file.ErrInvalidPassage) {
@@ -26,7 +26,7 @@ func TestFocusPassagesRefusesAPassageThatEndsPastThe32BitRange(t *testing.T) {
 func TestFocusPassagesAcceptsAPassageThatEndsAtThe32BitLimit(t *testing.T) {
 	focus, view, v := newFocusPassages(t)
 
-	_, err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
+	err := focus.Execute(t.Context(), v, file.FocusPassagesInput{
 		Path: talkPath, Passages: []domain.ByteRange{{Start: math.MaxInt32 - 2, End: math.MaxInt32}},
 	})
 	if err != nil {

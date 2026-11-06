@@ -37,7 +37,7 @@ func TestNoteRead(t *testing.T) {
 	if res.GetError() != tools.ErrorCodeUnspecified {
 		t.Fatalf("unexpected tool error code: %v", res.GetError())
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
@@ -69,7 +69,7 @@ func TestNoteRead(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res2.GetResult().GetIsRefusal() {
+	if res2.GetResult().GetIsError() {
 		t.Fatalf("tool refused for Heat: %s", res2.GetResult().GetText())
 	}
 	var out2 service.NoteReadOutput
@@ -99,7 +99,7 @@ func TestNoteWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 	var writeOut service.NoteWriteOutput
@@ -121,7 +121,7 @@ func TestNoteWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res2.GetResult().GetIsRefusal() {
+	if res2.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res2.GetResult().GetText())
 	}
 
@@ -136,7 +136,7 @@ func TestNoteWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if !res3.GetResult().GetIsRefusal() {
+	if !res3.GetResult().GetIsError() {
 		t.Error("expected refusal on stale fingerprint write")
 	}
 }
@@ -158,7 +158,7 @@ func TestNoteHeadings(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
@@ -189,7 +189,7 @@ func testSearchQuery(t *testing.T, registry *tools.Registry, toolName string) {
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
@@ -237,7 +237,7 @@ func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName str
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
@@ -275,7 +275,7 @@ func testVaultInfoQuery(t *testing.T, registry *tools.Registry, toolName string)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
@@ -320,7 +320,7 @@ func TestFileReadAndCreate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call file_read: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("file_read refused: %s", res.GetResult().GetText())
 	}
 	var readOut service.FileReadOutput
@@ -344,7 +344,7 @@ func TestFileReadAndCreate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call file_create: %v", err)
 	}
-	if createRes.GetResult().GetIsRefusal() {
+	if createRes.GetResult().GetIsError() {
 		t.Fatalf("file_create refused: %s", createRes.GetResult().GetText())
 	}
 
@@ -353,7 +353,7 @@ func TestFileReadAndCreate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call file_create duplicate: %v", err)
 	}
-	if !createAgainRes.GetResult().GetIsRefusal() {
+	if !createAgainRes.GetResult().GetIsError() {
 		t.Error("expected refusal creating file that already exists")
 	}
 }
@@ -427,7 +427,7 @@ func TestACallWorksTheVaultItNames(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.GetResult().GetIsRefusal() || res.GetResult().GetText() != "the call names no vault" {
+	if !res.GetResult().GetIsError() || res.GetResult().GetText() != "the call names no vault" {
 		t.Errorf("a call naming no vault answered %v", res.GetResult())
 	}
 }

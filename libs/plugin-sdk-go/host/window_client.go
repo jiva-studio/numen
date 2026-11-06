@@ -63,19 +63,16 @@ func writePassageSpans(passages []PassageSpan) ([]*v1.PassageSpan, error) {
 
 func isInt32(n int) bool { return n >= math.MinInt32 && n <= math.MaxInt32 }
 
-func (c *Client) FocusPassages(ctx context.Context, path string, passages []PassageSpan) (string, error) {
+func (c *Client) FocusPassages(ctx context.Context, path string, passages []PassageSpan) error {
 	spans, err := writePassageSpans(passages)
 	if err != nil {
-		return "", err
+		return err
 	}
 	res, err := c.window.FocusPassages(ctx, request(c, &v1.FocusPassagesRequest{Path: path, Passages: spans}))
 	if err != nil {
-		return "", readWindowCallError(err)
+		return readWindowCallError(err)
 	}
-	if err := readWindowError(res.Msg.GetError()); err != nil {
-		return "", err
-	}
-	return res.Msg.GetSummary(), nil
+	return readWindowError(res.Msg.GetError())
 }
 
 func (c *Client) ReadOpenTabs(ctx context.Context) ([]OpenTab, string, error) {

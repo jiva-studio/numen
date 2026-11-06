@@ -59,16 +59,16 @@ func (w pluginWindow) FocusNote(ctx context.Context, path string) (domain.NoteRe
 	return ref, err
 }
 
-func (w pluginWindow) FocusPassages(ctx context.Context, path string, passages []domain.ByteRange) (string, error) {
+func (w pluginWindow) FocusPassages(ctx context.Context, path string, passages []domain.ByteRange) error {
 	v, err := w.getVault()
 	if err != nil {
-		return "", err
+		return err
 	}
-	summary, err := w.focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
+	err = w.focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
 	if errors.Is(err, file.ErrInvalidPassage) {
-		return "", invalidFocusError{err: err}
+		return invalidFocusError{err: err}
 	}
-	return summary, err
+	return err
 }
 
 func (w pluginWindow) ReadOpenTabs(context.Context) (domain.OpenTabs, error) {

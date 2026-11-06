@@ -32,10 +32,10 @@ func TestHostSearchPassagesReturnPlacesAndCheckPermission(t *testing.T) {
 	got, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{
 		Query: "heron", Limit: 5, Kinds: []string{"file"}, PathPrefix: "library/",
 	}))
-	if err != nil || got.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED || len(got.Msg.GetFound()) != 2 {
+	if err != nil || got.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED || len(got.Msg.GetPassages()) != 2 {
 		t.Fatalf("answered %v (%v)", got.Msg, err)
 	}
-	first, second := got.Msg.GetFound()[0], got.Msg.GetFound()[1]
+	first, second := got.Msg.GetPassages()[0], got.Msg.GetPassages()[1]
 	if first.GetPath() != "library/Birds.pdf" || first.GetText() != "the grey heron" || first.GetLocation() != "page 12" ||
 		first.GetRange().GetStart() != 400 || first.GetRange().GetEnd() != 1100 || first.GetSelector() != `{"page":12}` {
 		t.Errorf("the first passage is %v", first)

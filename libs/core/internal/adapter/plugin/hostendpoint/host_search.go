@@ -247,7 +247,7 @@ func (e *searchEndpoint) SearchPassages(
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Found: passages}), nil
+	return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Passages: passages}), nil
 }
 
 // writePassages converts the passages to the wire. A passage whose end or line exceeds int32 is an
