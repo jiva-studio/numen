@@ -34,6 +34,7 @@ const setup = (overrides: Partial<WindowStreamsDeps> = {}) => {
     reportChange: vi.fn(),
     travelTo: vi.fn(),
     openFileAt: vi.fn(),
+    activateTab: vi.fn(),
     ...overrides,
   } as WindowStreamsDeps
   return deps
@@ -199,7 +200,7 @@ describe('following the edits', () => {
 describe('following the focus', () => {
   it('travels nowhere on a focus that names no path', async () => {
     const deps = setup({
-      core: { ...setup().core, watchFocus: () => yielding({ path: '', ranges: [] }) },
+      core: { ...setup().core, watchFocus: () => yielding({ path: '', ranges: [], tabId: '' }) },
     })
 
     await createWindowStreams(deps).watch()
@@ -214,9 +215,9 @@ describe('following the focus', () => {
         ...setup().core,
         watchFocus: () =>
           yielding(
-            { path: 'a.md', ranges: [] },
-            { path: 'b.md', ranges: [{ start: 3, end: 3 }] },
-            { path: 'c.md', ranges: [{ start: 2, end: 9 }] },
+            { path: 'a.md', ranges: [], tabId: '' },
+            { path: 'b.md', ranges: [{ start: 3, end: 3 }], tabId: '' },
+            { path: 'c.md', ranges: [{ start: 2, end: 9 }], tabId: '' },
           ),
       },
     })
@@ -228,6 +229,36 @@ describe('following the focus', () => {
     expect(deps.travelTo).toHaveBeenNthCalledWith(2, 'b.md')
     expect(deps.openFileAt).toHaveBeenCalledTimes(1)
     expect(deps.openFileAt).toHaveBeenCalledWith('c.md', [{ start: 2, end: 9 }])
+  })
+
+  it('activates the tab of a focus that names a tab id, and neither travels nor opens a file', async () => {
+    const deps = setup({
+      core: {
+        ...setup().core,
+        watchFocus: () => yielding({ path: '', ranges: [], tabId: 'tab-2' }),
+      },
+    })
+
+    await createWindowStreams(deps).watch()
+
+    expect(deps.activateTab).toHaveBeenCalledTimes(1)
+    expect(deps.activateTab).toHaveBeenCalledWith('tab-2')
+    expect(deps.travelTo).not.toHaveBeenCalled()
+    expect(deps.openFileAt).not.toHaveBeenCalled()
+  })
+
+  it('does not activate a tab on a focus that names a path', async () => {
+    const deps = setup({
+      core: {
+        ...setup().core,
+        watchFocus: () => yielding({ path: 'a.md', ranges: [], tabId: '' }),
+      },
+    })
+
+    await createWindowStreams(deps).watch()
+
+    expect(deps.activateTab).not.toHaveBeenCalled()
+    expect(deps.travelTo).toHaveBeenCalledWith('a.md')
   })
 })
 

@@ -24,4 +24,7 @@ func TestPluginWindowOfAStateShowingNoVaultAnswersErrNoWindow(t *testing.T) {
 	if _, err := window.ReadOpenTabs(ctx); !errors.Is(err, pluginport.ErrNoWindow) {
 		t.Errorf("ReadOpenTabs answered %v, want ErrNoWindow", err)
 	}
+	if _, err := window.ActivateTab(ctx, "tab-1"); !errors.Is(err, pluginport.ErrNoWindow) {
+		t.Errorf("ActivateTab answered %v, want ErrNoWindow", err)
+	}
 }

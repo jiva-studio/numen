@@ -36,11 +36,12 @@ func (c windowCallers) GetPluginWindow() pluginport.PluginWindow { return c.wind
 
 // recordingWindow is a window that records what it is asked to show and answers with fixed values.
 type recordingWindow struct {
-	mu       sync.Mutex
-	notes    []string
-	passages []domain.Place
-	reads    int
-	err      error
+	mu        sync.Mutex
+	notes     []string
+	passages  []domain.Place
+	reads     int
+	activated []string
+	err       error
 }
 
 func (w *recordingWindow) FocusNote(_ context.Context, path string) (domain.NoteRef, error) {
@@ -77,6 +78,30 @@ func (w *recordingWindow) ReadOpenTabs(context.Context) (domain.OpenTabs, error)
 			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`},
 		},
 	}, nil
+}
+
+// ActivateTab records the id and answers the fixed open tabs, whose active id stays tab-2. An id none of
+// them has is fs.ErrNotExist.
+func (w *recordingWindow) ActivateTab(ctx context.Context, id string) (domain.OpenTabs, error) {
+	open, err := w.ReadOpenTabs(ctx)
+	if err != nil {
+		return domain.OpenTabs{}, err
+	}
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	for _, tab := range open.Tabs {
+		if tab.ID == id {
+			w.activated = append(w.activated, id)
+			return open, nil
+		}
+	}
+	return domain.OpenTabs{}, fmt.Errorf("no open tab has id %q: %w", id, fs.ErrNotExist)
+}
+
+func (w *recordingWindow) getActivated() []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return slices.Clone(w.activated)
 }
 
 func (w *recordingWindow) getAsked() ([]string, []domain.Place, int) {

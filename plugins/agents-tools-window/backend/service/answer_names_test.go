@@ -209,7 +209,7 @@ func TestWindowTabsGetAnswersLocationAndIsActiveWithoutASummary(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs([]host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
-		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: `{"page":4}`},
+		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: `{"page":4,"pageCount":120}`},
 	}, "tab-2")
 	answer := w.getAnswer(t, "window_tabs_get", `{}`)
 	requireKeys(t, "the answer of window_tabs_get", answer, []string{"tabs", "activeId"}, []string{"summary"})
@@ -219,11 +219,12 @@ func TestWindowTabsGetAnswersLocationAndIsActiveWithoutASummary(t *testing.T) {
 	}
 	active := requireObject(t, "list[1]", list[1])
 	requireKeys(t, "the active tab", active, []string{"location", "isActive"}, []string{"where", "active"})
-	if active["location"] != "page 4 of 120" || active["isActive"] != true {
-		t.Errorf("the active tab is %v, want location page 4 of 120 and isActive true", active)
+	location := requireObject(t, "the location of the active tab", active["location"])
+	if location["page"] != float64(4) || location["pageCount"] != float64(120) || len(location) != 2 || active["isActive"] != true {
+		t.Errorf("the active tab is %v, want location {page 4, pageCount 120} and isActive true", active)
 	}
 	inactive := requireObject(t, "list[0]", list[0])
-	requireKeys(t, "the inactive tab", inactive, nil, []string{"where", "active"})
+	requireKeys(t, "the inactive note tab", inactive, nil, []string{"where", "active", "location"})
 	if inactive["isActive"] == true {
 		t.Errorf("the inactive tab is %v, want isActive not true", inactive)
 	}
@@ -231,6 +232,8 @@ func TestWindowTabsGetAnswersLocationAndIsActiveWithoutASummary(t *testing.T) {
 	schema := getToolSchema(t, w.calls, "window_tabs_get", true)
 	requireKeys(t, "the output schema of window_tabs_get", getSchemaProperties(t, schema), []string{"tabs"}, []string{"summary"})
 	requireKeys(t, "the output schema of a tab", getSchemaProperties(t, schema, "tabs"), []string{"location", "isActive"}, []string{"where", "active"})
+	requireKeys(t, "the output schema of a tab location", getSchemaProperties(t, schema, "tabs", "location"),
+		[]string{"page", "pageCount", "positionSeconds", "cfi", "chapter"}, nil)
 }
 
 func TestNoteFocusReturnsTheNoteKey(t *testing.T) {
