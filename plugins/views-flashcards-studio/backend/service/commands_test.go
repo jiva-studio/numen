@@ -70,8 +70,8 @@ func TestTheCreateCommandsMakeTheFileInTheFolderOfTheRowTheyRunOver(t *testing.T
 	}
 }
 
-// A create command run over a row the vault no longer holds makes nothing and says so.
-func TestTheCreateCommandsMakeNothingOverARowThatIsGone(t *testing.T) {
+// A create command run over a path the vault holds no file or folder at makes nothing.
+func TestTheCreateCommandsMakeNothingOverAMissingRow(t *testing.T) {
 	for _, row := range []string{"Gone", "Glaciers/Gone.md"} {
 		t.Run(row, func(t *testing.T) {
 			env := vaulttest.New(t, map[string]string{"Glaciers/Lakes.md": "# Lakes\n"})
