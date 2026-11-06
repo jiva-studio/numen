@@ -31,7 +31,6 @@ func getServerPort(t *testing.T, rawURL string) string {
 func TestMountAndConfigure(t *testing.T) {
 	t.Setenv("NUMEN_HOST_PORT", "")
 	t.Setenv("NUMEN_PLUGIN_TOKEN", "")
-	t.Setenv("MCP_TOKEN", "")
 
 	host := &standInHost{}
 	mux := http.NewServeMux()

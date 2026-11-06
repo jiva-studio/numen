@@ -210,13 +210,14 @@ func TestURLImportDownloadsTheVideoWhenDownloadVideoIsSet(t *testing.T) {
 	}
 }
 
-func TestURLImportStartsNoDownloadForTheCopyArgument(t *testing.T) {
+func TestURLImportRefusesTheCopyArgumentAndStartsNoDownload(t *testing.T) {
 	s := newReleasedScene(t)
-	answer := s.getImportAnswer(t, `{"url":"`+videoAddress+`","copy":true}`)
+	res := invokeAtOnce(t, s.registry, tools.Call{
+		VaultID: "Mills", Name: "url_import", Arguments: []byte(`{"url":"` + videoAddress + `","copy":true}`),
+	})
 	s.links.Wait()
-	requireKeys(t, "the answer of url_import", answer, nil, []string{"copy_task_id"})
-	if taskID, present := answer["downloadTaskId"]; present && taskID != "" {
-		t.Errorf("downloadTaskId = %v, want no download for the argument copy", taskID)
+	if !res.GetResult().GetIsError() || !strings.Contains(res.GetResult().GetText(), "copy") {
+		t.Errorf("url_import with the argument copy was answered %+v, want an error naming copy", res.GetResult())
 	}
 	if hasCopy(t, s.store) {
 		t.Error("the video was downloaded for the argument copy")

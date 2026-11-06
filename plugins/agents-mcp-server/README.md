@@ -15,15 +15,19 @@ While the plugin is enabled, Numen listens on `127.0.0.1` at the plugin's **Port
 
 - **Streamable HTTP endpoint**: `http://127.0.0.1:3333/mcp`
 
+A client authenticates with the header `Authorization: Bearer <token>`, where `<token>` is the value of the plugin's **Token** setting on its page in the settings. The setting is empty until you type a token, and while it is empty the server answers every request with 401. A changed token takes effect at once. A request sent from a web page whose origin is not `localhost` or a loopback address is answered with 403.
+
 ### Example JSON Configuration (`mcpServers`)
 
-Add the following entry to your client's MCP configuration file (such as `claude_desktop_config.json`, `.cursor/mcp.json`, or `~/.codeium/windsurf/mcp_config.json`):
+Add the following entry to your client's MCP configuration file (such as `claude_desktop_config.json`, `.cursor/mcp.json`, or `~/.codeium/windsurf/mcp_config.json`), with your token in place of `<token>`:
 
 ```json
 {
   "mcpServers": {
     "numen": {
-      "url": "http://127.0.0.1:3333/mcp"
+      "type": "http",
+      "url": "http://127.0.0.1:3333/mcp",
+      "headers": { "Authorization": "Bearer <token>" }
     }
   }
 }

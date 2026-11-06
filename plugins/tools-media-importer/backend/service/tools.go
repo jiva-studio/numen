@@ -65,6 +65,7 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{importerUseSentence, importerFetchSentence, importerOwnNotesSentence, importerDownloadSentence},
+		Requires:     []string{"network:outbound"},
 	}, t.importURL)
 	if err != nil {
 		return nil, err

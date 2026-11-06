@@ -1,0 +1,85 @@
+package tools
+
+import (
+	"context"
+	"testing"
+)
+
+type locationInput struct {
+	Title string `json:"title"`
+}
+
+type bookInput struct {
+	Shelf  locationInput `json:"location"`
+	Pages  int           `json:"pages,omitempty"`
+	Tags   []string      `json:"tags,omitempty"`
+	Author string        `json:"author"`
+}
+
+func newBookRegistry(t *testing.T) *Registry {
+	t.Helper()
+	registry := New()
+	if err := Add(registry, Spec{Name: "book_create", Effect: ReadWrite}, func(_ context.Context, in bookInput) (bookInput, error) {
+		return in, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	return registry
+}
+
+func TestValidationMessagesNameTheArgumentInPlainWords(t *testing.T) {
+	registry := newBookRegistry(t)
+
+	for arguments, want := range map[string]string{
+		`{"location":{"title":"Ferns"},"author":"Mira","pages":"many"}`:   `the argument pages is invalid: many has type "string", want "integer"`,
+		`{"location":{"title":"Ferns"},"author":"Mira","tags":[3]}`:       `the argument tags is invalid: 3 has type "integer", want "string"`,
+		`{"location":{"title":"Ferns"}}`:                                  `the argument author is missing`,
+		`{}`:                                                              `the arguments location, author are missing`,
+		`{"location":{},"author":"Mira"}`:                                 `the argument location.title is missing`,
+		`{"location":{"title":"Ferns","row":2},"author":"Mira"}`:          `the argument location.row is not known`,
+		`{"location":{"title":"Ferns"},"author":"Mira","colour":"green"}`: `the argument colour is not known`,
+	} {
+		res := invoke(t, registry, "book_create", []byte(arguments))
+		if !res.GetResult().GetIsError() || res.GetResult().GetText() != want {
+			t.Errorf("the arguments %s were answered %+v, want the error %q", arguments, res.GetResult(), want)
+		}
+	}
+}
+
+func TestReadPropertyPathReadsThePropertyNamesOfAPointer(t *testing.T) {
+	for pointer, want := range map[string]string{
+		"root":                                  "",
+		"/properties/location/properties/title": "location.title",
+		"/properties/properties":                "properties",
+		"/properties/a~1b/items":                "a/b",
+	} {
+		got := ""
+		for i, name := range readPropertyPath(pointer) {
+			if i > 0 {
+				got += "."
+			}
+			got += name
+		}
+		if got != want {
+			t.Errorf("readPropertyPath(%q) = %q, want %q", pointer, got, want)
+		}
+	}
+}
+
+func TestNullArgumentsAreTheEmptyObject(t *testing.T) {
+	registry, runs := newShelvingRegistry(t)
+
+	counted := invoke(t, registry, "shelf_count", []byte(`null`))
+	if counted.GetError() != ErrorCodeUnspecified || counted.GetResult().GetIsError() || runs.Load() != 1 {
+		t.Errorf("shelf_count with null arguments was answered %+v with the error code %v after %d runs",
+			counted.GetResult(), counted.GetError(), runs.Load())
+	}
+
+	shelved := invoke(t, registry, "shelve_book", []byte(`null`))
+	if text := shelved.GetResult().GetText(); !shelved.GetResult().GetIsError() || text != "the argument title is missing" {
+		t.Errorf("shelve_book with null arguments was answered %+v, want the error %q", shelved.GetResult(), "the argument title is missing")
+	}
+	if got := runs.Load(); got != 1 {
+		t.Errorf("the run functions were called %d times, want once", got)
+	}
+}

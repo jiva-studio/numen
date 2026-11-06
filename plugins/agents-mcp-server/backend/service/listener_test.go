@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"net"
+	"net/http"
 	"regexp"
 	"strconv"
 	"sync"
@@ -42,7 +43,6 @@ func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 	t.Setenv("NUMEN_HOST_PORT", "")
 	t.Setenv("NUMEN_PLUGIN_TOKEN", "")
 	t.Setenv("MCP_PORT", "")
-	t.Setenv("MCP_TOKEN", listenerMCPToken)
 	stdout := &lockedBuffer{}
 	s := server.New(server.WithPort(0), server.WithToken("plugin-token"),
 		server.WithStdout(stdout), server.WithStdin(nil), server.WithSignals())
@@ -81,7 +81,8 @@ func waitForMCPListenerPort(t *testing.T, stdout *lockedBuffer) int {
 }
 
 func TestMountServesMCPOnTheListenerTheReadyLineReports(t *testing.T) {
-	_, stdout := serveMounted(t)
+	s, stdout := serveMounted(t)
+	configureToken(t, s, listenerMCPToken)
 
 	port := waitForMCPListenerPort(t, stdout)
 
@@ -92,6 +93,41 @@ func TestMountServesMCPOnTheListenerTheReadyLineReports(t *testing.T) {
 	if result := session.InitializeResult(); result == nil || result.ServerInfo == nil {
 		t.Errorf("initialize result = %+v, want the server info", result)
 	}
+}
+
+// configureToken configures the mounted plugin with the value token, as the host passes the setting.
+func configureToken(t *testing.T, s *server.Server, token string) {
+	t.Helper()
+	if _, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{"token": token}); err != nil {
+		t.Fatalf("configure failed: %v", err)
+	}
+}
+
+func TestAConfiguredNewTokenRefusesTheOldOne(t *testing.T) {
+	s, stdout := serveMounted(t)
+	configureToken(t, s, listenerMCPToken)
+	mcpURL := "http://127.0.0.1:" + strconv.Itoa(waitForMCPListenerPort(t, stdout)) + "/mcp"
+	if res := sendRequest(t, http.MethodPost, mcpURL, map[string]string{"Authorization": "Bearer " + listenerMCPToken}); res.StatusCode != http.StatusOK {
+		t.Fatalf("an initialize with the configured token was answered %d, want 200", res.StatusCode)
+	}
+
+	configureToken(t, s, "listener-mcp-token-2")
+
+	assertUnauthorizedAnswer(t, sendRequest(t, http.MethodPost, mcpURL,
+		map[string]string{"Authorization": "Bearer " + listenerMCPToken}), "an initialize with the old token")
+	if res := sendRequest(t, http.MethodPost, mcpURL, map[string]string{"Authorization": "Bearer listener-mcp-token-2"}); res.StatusCode != http.StatusOK {
+		t.Errorf("an initialize with the new token was answered %d, want 200", res.StatusCode)
+	}
+}
+
+func TestTheMCPTokenVariableOpensNothing(t *testing.T) {
+	t.Setenv("MCP_TOKEN", "variable-token-3307")
+	_, stdout := serveMounted(t)
+	mcpURL := "http://127.0.0.1:" + strconv.Itoa(waitForMCPListenerPort(t, stdout)) + "/mcp"
+
+	res := sendRequest(t, http.MethodPost, mcpURL, map[string]string{"Authorization": "Bearer variable-token-3307"})
+
+	assertUnauthorizedAnswer(t, res, "an initialize with the token of MCP_TOKEN")
 }
 
 func TestAConfiguredPortOpensNoListener(t *testing.T) {

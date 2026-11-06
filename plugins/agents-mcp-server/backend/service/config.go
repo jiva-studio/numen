@@ -1,20 +1,13 @@
 package service
 
-import (
-	"os"
-	"strings"
-)
+import "strings"
 
 // Config configures the MCP server.
 type Config struct {
 	Token string
 }
 
-// readConfig builds a configuration from values and environment variables.
+// readConfig reads the configuration from the setting values.
 func readConfig(values map[string]string) Config {
-	token := values["token"]
-	if token == "" {
-		token = os.Getenv("MCP_TOKEN")
-	}
-	return Config{Token: strings.TrimSpace(token)}
+	return Config{Token: strings.TrimSpace(values["token"])}
 }

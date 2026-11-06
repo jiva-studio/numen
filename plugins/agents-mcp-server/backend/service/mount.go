@@ -18,7 +18,6 @@ func Mount(s *server.Server) error {
 
 	cfg := readConfig(nil)
 	srv, err := NewServer(cfg, client)
-	// gomutants:disable-next-line BRANCH_IF reason="NewServer fails only when crypto/rand.Read fails"
 	if err != nil {
 		return err
 	}

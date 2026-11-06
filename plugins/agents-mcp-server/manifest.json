@@ -30,6 +30,12 @@
       "min": 1024,
       "max": 65535,
       "step": 1
+    },
+    {
+      "key": "token",
+      "type": "string",
+      "title": "Token",
+      "description": "Token an MCP client sends in the header Authorization: Bearer <token>; while it is empty the server refuses every request"
     }
   ]
 }

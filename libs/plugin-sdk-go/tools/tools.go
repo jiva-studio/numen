@@ -100,9 +100,20 @@ func New() *Registry {
 }
 
 // Add adds the tool run answers for. The schemas of the arguments and of the result are derived
-// from In and Out; an Out that is not a struct is answered as text. A run that returns an error is
+// from In and Out; an Out that is not a struct is answered as text. The arguments of a call are
+// validated against the schema of In before run is called, and arguments that do not match it are
+// answered with an error result naming the argument. A run that returns an error is answered with
+// an error result.
 func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in In) (Out, error)) error {
-	input, err := schemaOf(reflect.TypeFor[In]())
+	inputSchema, err := createSchema(reflect.TypeFor[In]())
+	if err != nil {
+		return fmt.Errorf("tool %s: arguments: %w", spec.Name, err)
+	}
+	input, err := json.Marshal(inputSchema)
+	if err != nil {
+		return fmt.Errorf("tool %s: arguments: %w", spec.Name, err)
+	}
+	resolved, err := inputSchema.Resolve(nil)
 	if err != nil {
 		return fmt.Errorf("tool %s: arguments: %w", spec.Name, err)
 	}
@@ -126,11 +137,9 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 			Requires:     slices.Clone(spec.Requires),
 		},
 		run: func(ctx context.Context, arguments []byte) *v1.ToolResult {
-			var in In
-			if len(arguments) > 0 {
-				if err := json.Unmarshal(arguments, &in); err != nil {
-					return &v1.ToolResult{Text: fmt.Sprintf("the arguments do not fit: %v", err), IsError: true}
-				}
+			in, err := readArguments[In](resolved, arguments)
+			if err != nil {
+				return &v1.ToolResult{Text: err.Error(), IsError: true}
 			}
 			out, err := run(ctx, in)
 			if err != nil {
@@ -237,13 +246,19 @@ func isStruct(t reflect.Type) bool {
 	return t.Kind() == reflect.Struct
 }
 
+// createSchema creates the JSON schema of a struct, and an object schema without properties for
+// any other type.
+func createSchema(t reflect.Type) (*jsonschema.Schema, error) {
+	if !isStruct(t) {
+		return &jsonschema.Schema{Type: "object"}, nil
+	}
+	return jsonschema.ForType(t, &jsonschema.ForOptions{})
+}
+
 // schemaOf is the JSON schema of a struct as a JSON object, and an empty object schema for any
 // other type.
 func schemaOf(t reflect.Type) ([]byte, error) {
-	if !isStruct(t) {
-		return []byte(`{"type":"object"}`), nil
-	}
-	schema, err := jsonschema.ForType(t, &jsonschema.ForOptions{})
+	schema, err := createSchema(t)
 	if err != nil {
 		return nil, err
 	}

@@ -120,9 +120,9 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 		"card_model_list":   {},
 		"card_model_read":   {"path": "Animal.md"},
 		"card_section_add":  {"path": "Animals.md", "name": "S", "fingerprint": "1-1"},
-		"card_model_edit":   {"path": "Animal.md", "fields": []string{"Name"}, "fingerprint": "1-1"},
+		"card_model_edit":   {"path": "Animal.md", "fields": []string{"Name"}, "templates": []any{}, "fingerprint": "1-1"},
 		"card_deck_create":  {"title": "D"},
-		"card_model_create": {"title": "M", "fields": []string{"Name"}},
+		"card_model_create": {"title": "M", "fields": []string{"Name"}, "templates": []any{}},
 		"card_field_rename": {"path": "Animal.md", "from": "Name", "to": "Species"},
 	} {
 		if got := getToolError(t, s, toolName, args); got != "the call names no vault" {

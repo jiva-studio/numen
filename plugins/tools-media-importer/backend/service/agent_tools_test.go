@@ -265,6 +265,21 @@ func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
 	}
 }
 
+func TestURLImportRequiresOutboundNetwork(t *testing.T) {
+	s := newReleasedScene(t)
+
+	listing, err := s.registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Tools) != 1 {
+		t.Fatalf("the registry lists %+v, want url_import alone", listing.Tools)
+	}
+	if requires := listing.Tools[0].GetRequires(); !slices.Contains(requires, "network:outbound") {
+		t.Errorf("url_import requires %q, want network:outbound among them", requires)
+	}
+}
+
 func TestURLImportMakesTheNoteInTheFolderAndReportsTheArticle(t *testing.T) {
 	s := newReleasedScene(t)
 
