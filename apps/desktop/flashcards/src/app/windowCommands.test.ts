@@ -17,7 +17,7 @@ describe('the commands of the flashcards window', () => {
   })
 
   it('offer no choices', async () => {
-    expect(await createWindowCommands().getChoices('app:vault.create')).toStrictEqual([])
+    expect(await createWindowCommands().listItems('app:vault.create')).toStrictEqual([])
   })
 
   it('refuse a run, naming the command the window does not run', async () => {

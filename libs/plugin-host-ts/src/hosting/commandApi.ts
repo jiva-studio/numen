@@ -1,8 +1,8 @@
 /**
  * The commands the plugins registered, as the window reads and runs them: the palette's list, the
- * choices a command offers, running one with its choice, and the plugins' shortcuts.
+ * items a command offers, running one with its argument, and the plugins' shortcuts.
  */
-import type { CommandChoice, CommandNote, CommandTarget } from '@numen/plugin-sdk'
+import type { CommandItem, CommandNote, CommandTarget } from '@numen/plugin-sdk'
 import { createPaletteCommand } from './available'
 import { readAvailableCommands } from './availableReader'
 import { reportError, runCommand } from './events'
@@ -17,21 +17,21 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
   return {
     getPaletteCommands: () => getAvailable().map(createPaletteCommand),
     hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
-    hasCommandChoices: (id: string): boolean =>
-      registry.commands.value.get(id)?.reg.getChoices !== undefined,
-    getCommandChoices: async (
+    hasCommandItems: (id: string): boolean =>
+      registry.commands.value.get(id)?.reg.listItems !== undefined,
+    listCommandItems: async (
       id: string,
       target: CommandTarget,
-    ): Promise<readonly CommandChoice[]> => {
+    ): Promise<readonly CommandItem[]> => {
       const entry = registry.commands.value.get(id)
       try {
-        return (await entry?.reg.getChoices?.(target)) ?? []
+        return (await entry?.reg.listItems?.(target)) ?? []
       } catch (error) {
         if (entry) reportError(deps, entry.pluginId, error)
         return []
       }
     },
-    executeCommand: async (id: string, note: CommandNote, choice?: string): Promise<boolean> => {
+    executeCommand: async (id: string, note: CommandNote, argument?: string): Promise<boolean> => {
       const command = findAvailable(id)
       if (!command) return false
       let entry = command.entry
@@ -40,7 +40,7 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
         entry = registry.commands.value.get(id)
       }
       if (!entry) return false
-      await runCommand(deps, entry, { note, choice })
+      await runCommand(deps, entry, { note, argument })
       return true
     },
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {

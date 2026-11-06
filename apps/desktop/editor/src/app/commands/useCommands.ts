@@ -24,7 +24,7 @@ import {
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
 import { usePluginCommands } from './usePluginCommands'
-import { createChoiceLists } from './pluginChoices'
+import { createItemLists } from './pluginItems'
 import { watchCommandLists } from './watchCommandLists'
 import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
@@ -106,7 +106,7 @@ export function useCommands(options: CommandsDepsOptions) {
     menu: { getEntries: () => options.menus?.getEntries(MENU_LOCATION.searchResult) ?? [] },
     getTarget,
   })
-  const { lists, resetWhenClosed } = createChoiceLists(options.paletteLists, pluginHost, getTarget)
+  const { lists, resetWhenClosed } = createItemLists(options.paletteLists, pluginHost, getTarget)
   const commands = useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, () => [
     ...(options.settingPalette?.getCommands() ?? []),
     ...(options.declaredCommands?.paletteCommands.value ?? []),

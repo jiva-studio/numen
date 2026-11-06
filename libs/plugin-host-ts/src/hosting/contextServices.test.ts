@@ -293,7 +293,7 @@ describe('a command a plugin runs over the vault', () => {
 
     await context.commands!.run(id, target)
 
-    expect(commands.getRuns()).toStrictEqual([{ command: id, target, choice: undefined }])
+    expect(commands.getRuns()).toStrictEqual([{ command: id, target, argument: undefined }])
   })
 
   it.each(WRITES)('fails for %s over a row without vault:write', (id) => {
@@ -327,7 +327,7 @@ describe('a command a plugin runs over the vault', () => {
     expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
   })
 
-  it('reads the commands of the window and their choices with no permission', () => {
+  it('reads the commands of the window and their items with no permission', () => {
     const { context, commands } = createContext([])
     const handler = vi.fn()
     context.commands!.watch(handler)

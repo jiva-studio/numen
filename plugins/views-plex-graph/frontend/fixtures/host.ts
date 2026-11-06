@@ -110,7 +110,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   const commands: CommandsHost = {
     getIds: () => [],
     watch: () => ({ dispose: () => undefined }),
-    getChoices: async () => [],
+    listItems: async () => [],
     run: async (id, target) => {
       recorded.commands.push([id, target])
     },

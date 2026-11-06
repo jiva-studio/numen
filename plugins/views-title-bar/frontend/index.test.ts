@@ -151,7 +151,7 @@ describe('the commands of the slots', () => {
     await getButton(bar, 'org.example.tide:chart.open').trigger('click')
 
     expect(context.commands.getRuns()).toStrictEqual([
-      { command: 'org.example.tide:chart.open', target: undefined, choice: undefined },
+      { command: 'org.example.tide:chart.open', target: undefined, argument: undefined },
     ])
   })
 
@@ -254,7 +254,7 @@ describe('a submenu in a slot', () => {
     await nextTick()
 
     expect(context.commands.getRuns()).toStrictEqual([
-      { command: 'org.example.tide:log.create', target: undefined, choice: undefined },
+      { command: 'org.example.tide:log.create', target: undefined, argument: undefined },
     ])
     expect(document.body.querySelector('[role="menu"]')).toBeNull()
   })
@@ -328,7 +328,7 @@ describe('the title', () => {
     await nextTick()
 
     expect(context.commands.getRuns()).toStrictEqual([
-      { command: 'app:vault.create', target: undefined, choice: undefined },
+      { command: 'app:vault.create', target: undefined, argument: undefined },
     ])
     expect(context.vaults.getSwitches()).toStrictEqual([])
   })

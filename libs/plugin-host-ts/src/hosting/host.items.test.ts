@@ -1,5 +1,5 @@
 /**
- * The choices a plugin command offers over a target, and the run of the command with the choice
+ * The items a plugin command offers over a target, and the run of the command with the argument
  * picked.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -32,14 +32,14 @@ function createHost() {
   return { host, context }
 }
 
-describe('the choices of a plugin command', () => {
+describe('the items of a plugin command', () => {
   it('are the ones its registration gives for the target', async () => {
     const { host, context } = createHost()
-    const getChoices = vi.fn(() => WINDOWS)
-    context.registerCommand({ id: 'chart.move', handler: () => undefined, getChoices })
+    const listItems = vi.fn(() => WINDOWS)
+    context.registerCommand({ id: 'chart.move', handler: () => undefined, listItems })
 
-    expect(await host.getCommandChoices(`${TIDE}:chart.move`, TARGET)).toStrictEqual(WINDOWS)
-    expect(getChoices).toHaveBeenCalledWith(TARGET)
+    expect(await host.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual(WINDOWS)
+    expect(listItems).toHaveBeenCalledWith(TARGET)
   })
 
   it('are the ones a registration gives later, as a promise', async () => {
@@ -47,18 +47,18 @@ describe('the choices of a plugin command', () => {
     context.registerCommand({
       id: 'chart.move',
       handler: () => undefined,
-      getChoices: async () => WINDOWS,
+      listItems: async () => WINDOWS,
     })
 
-    expect(await host.getCommandChoices(`${TIDE}:chart.move`, TARGET)).toStrictEqual(WINDOWS)
+    expect(await host.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual(WINDOWS)
   })
 
-  it('are none for a command without choices, and for one no plugin registered', async () => {
+  it('are none for a command without items, and for one no plugin registered', async () => {
     const { host, context } = createHost()
     context.registerCommand({ id: 'chart.open', handler: () => undefined })
 
-    expect(await host.getCommandChoices(`${TIDE}:chart.open`, TARGET)).toStrictEqual([])
-    expect(await host.getCommandChoices(`${TIDE}:chart.share`, TARGET)).toStrictEqual([])
+    expect(await host.listCommandItems(`${TIDE}:chart.open`, TARGET)).toStrictEqual([])
+    expect(await host.listCommandItems(`${TIDE}:chart.share`, TARGET)).toStrictEqual([])
   })
 
   it('are none when the registration fails to give them', async () => {
@@ -66,18 +66,18 @@ describe('the choices of a plugin command', () => {
     context.registerCommand({
       id: 'chart.move',
       handler: () => undefined,
-      getChoices: () => {
+      listItems: () => {
         throw new Error('the windows could not be listed')
       },
     })
 
-    expect(await host.getCommandChoices(`${TIDE}:chart.move`, TARGET)).toStrictEqual([])
+    expect(await host.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual([])
   })
 
-  it('reach the handler as the id of the choice picked', async () => {
+  it('reach the handler as its argument, by the id of the item picked', async () => {
     const { host, context } = createHost()
     const handler = vi.fn()
-    context.registerCommand({ id: 'chart.move', handler, getChoices: () => WINDOWS })
+    context.registerCommand({ id: 'chart.move', handler, listItems: () => WINDOWS })
 
     await host.executeCommand(`${TIDE}:chart.move`, NOTE, 'w2')
 
@@ -86,10 +86,10 @@ describe('the choices of a plugin command', () => {
 
   it('say whether a command offers choices', () => {
     const { host, context } = createHost()
-    context.registerCommand({ id: 'chart.move', handler: () => undefined, getChoices: () => [] })
+    context.registerCommand({ id: 'chart.move', handler: () => undefined, listItems: () => [] })
     context.registerCommand({ id: 'chart.open', handler: () => undefined })
 
-    expect(host.hasCommandChoices(`${TIDE}:chart.move`)).toBe(true)
-    expect(host.hasCommandChoices(`${TIDE}:chart.open`)).toBe(false)
+    expect(host.hasCommandItems(`${TIDE}:chart.move`)).toBe(true)
+    expect(host.hasCommandItems(`${TIDE}:chart.open`)).toBe(false)
   })
 })

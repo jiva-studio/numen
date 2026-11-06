@@ -45,11 +45,11 @@ export interface CommandEntry {
 export async function runCommand(
   deps: PluginHostDeps,
   entry: CommandEntry,
-  run: { readonly note: CommandNote; readonly choice?: string | undefined },
+  run: { readonly note: CommandNote; readonly argument?: string | undefined },
 ): Promise<void> {
-  const { note, choice } = run
+  const { note, argument } = run
   try {
-    await (choice === undefined ? entry.reg.handler(note) : entry.reg.handler(note, choice))
+    await (argument === undefined ? entry.reg.handler(note) : entry.reg.handler(note, argument))
   } catch (error) {
     reportError(deps, entry.pluginId, error)
   }

@@ -90,7 +90,7 @@ export function createHost({
   const commands: CommandsHost = {
     getIds: () => [],
     watch: () => ({ dispose: () => undefined }),
-    getChoices: async () => [],
+    listItems: async () => [],
     run: async (id, target) => {
       recorded.commands.push([id, target])
     },

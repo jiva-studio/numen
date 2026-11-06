@@ -1,10 +1,10 @@
 /**
  * The commands the window gives its plugins: the ids of its own commands and of those its plugins
- * registered, the choices a command offers, and the run of one through the runner the palette and
+ * registered, the items a command offers, and the run of one through the runner the palette and
  * the shortcuts use.
  */
 import { computed, watch } from 'vue'
-import type { CommandChoice, CommandsHost, CommandTarget as RunTarget } from '@numen/plugin-host'
+import type { CommandItem, CommandsHost, CommandTarget as RunTarget } from '@numen/plugin-host'
 import type { CommandTarget } from '@/features/command-palette'
 
 interface WindowCommandsDeps {
@@ -13,10 +13,10 @@ interface WindowCommandsDeps {
   readonly getPluginIds: () => readonly string[]
   /** The runner the palette and the shortcuts use. */
   readonly runCommand: (id: string, target: CommandTarget) => void
-  /** The choices a command offers over the target; none for a command of the window. */
-  readonly getChoices: (id: string, target: RunTarget) => Promise<readonly CommandChoice[]>
-  /** Runs a command with the choice picked. */
-  readonly runChoice: (id: string, target: RunTarget, choice: string) => Promise<void>
+  /** The items a command offers over the target; none for a command of the window. */
+  readonly listItems: (id: string, target: RunTarget) => Promise<readonly CommandItem[]>
+  /** Runs a command with the item picked as its argument. */
+  readonly runWithArgument: (id: string, target: RunTarget, argument: string) => Promise<void>
   readonly getTarget: () => CommandTarget
 }
 
@@ -37,7 +37,7 @@ export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
     }
   }
 
-  /** The run target in the words of the SDK, which the choices and a run with a choice take. */
+  /** The run target in the words of the SDK, which the items and a run with an argument take. */
   const toRunTarget = (target: CommandTarget): RunTarget => ({
     path: target.path,
     title: target.title,
@@ -49,11 +49,11 @@ export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
   return {
     getIds: () => ids.value,
     watch: (handler) => ({ dispose: watch(ids, handler, { immediate: true }) }),
-    getChoices: (id, target) => deps.getChoices(id, toRunTarget(getRunTarget(target))),
-    run: async (id, target, choice) => {
+    listItems: (id, target) => deps.listItems(id, toRunTarget(getRunTarget(target))),
+    run: async (id, target, argument) => {
       const runTarget = getRunTarget(target)
-      if (choice === undefined) deps.runCommand(id, runTarget)
-      else await deps.runChoice(id, toRunTarget(runTarget), choice)
+      if (argument === undefined) deps.runCommand(id, runTarget)
+      else await deps.runWithArgument(id, toRunTarget(runTarget), argument)
     },
   }
 }

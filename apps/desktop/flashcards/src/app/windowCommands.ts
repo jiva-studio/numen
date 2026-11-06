@@ -13,7 +13,7 @@ export function createWindowCommands(): CommandsHost {
       handler(NO_IDS)
       return { dispose: () => undefined }
     },
-    getChoices: async () => [],
+    listItems: async () => [],
     run: async (command) => {
       throw new Error(`The flashcards window runs no command ${command}`)
     },

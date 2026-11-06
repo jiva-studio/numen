@@ -1,5 +1,5 @@
 /**
- * The commands of the window: which ones it runs now, the choices a command offers, and the one way
+ * The commands of the window: which ones it runs now, the items a command offers, and the one way
  * a plugin runs a command, its own or another's, from a button, a menu row or its code.
  */
 import type { Disposable } from './types'
@@ -18,9 +18,9 @@ export interface CommandTarget {
   readonly tab: string
 }
 
-// CommandChoice is one choice a command offers over a target, such as one open window for "Move to
-// window". A place draws the command as a submenu of its choices, the palette as a pick list.
-export interface CommandChoice {
+// CommandItem is one item a command offers over a target, such as one open window for "Move to
+// window". A place draws the command as a submenu of its items, the palette as a pick list.
+export interface CommandItem {
   readonly id: string
   readonly title: string
 }
@@ -32,9 +32,9 @@ export interface CommandsHost {
   getIds(): readonly string[]
   // Calls the handler with the ids at once and again whenever they change, as plugins start and stop.
   watch(handler: (ids: readonly string[]) => void): Disposable
-  // The choices the command offers over the target; empty for a command without choices. A place
+  // The items the command offers over the target; empty for a command without items. A place
   // shows a loading row while the list is pending.
-  getChoices(command: string, target?: CommandTarget): Promise<readonly CommandChoice[]>
-  // Runs the command of the full id over the target; with `choice`, the id of the choice picked.
-  run(command: string, target?: CommandTarget, choice?: string): Promise<void>
+  listItems(command: string, target?: CommandTarget): Promise<readonly CommandItem[]>
+  // Runs the command of the full id over the target; with `argument`, the id of the item picked.
+  run(command: string, target?: CommandTarget, argument?: string): Promise<void>
 }

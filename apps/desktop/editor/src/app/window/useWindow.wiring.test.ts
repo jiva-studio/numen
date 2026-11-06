@@ -267,7 +267,7 @@ beforeEach(() => {
     },
     pluginHost: {
       notifyVaultChange: vi.fn(),
-      hasCommandChoices: vi.fn(() => false),
+      hasCommandItems: vi.fn(() => false),
       getPaletteCommands: vi.fn(() => [
         { id: 'org.example.sample:share.run', title: 'Share', icon: 'share' },
       ]),

@@ -18,7 +18,7 @@ export type {
   AgentProviderRegistration,
   Backlink,
   BufferHost,
-  CommandChoice,
+  CommandItem,
   CommandNote,
   CommandTarget,
   CommandsHost,

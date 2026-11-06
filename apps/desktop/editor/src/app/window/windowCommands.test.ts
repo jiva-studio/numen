@@ -20,19 +20,21 @@ const FRONT = {
 function setup() {
   const pluginIds = shallowRef<readonly string[]>(['org.example.tide:chart.open'])
   const runCommand = vi.fn<(id: string, target: CommandTarget) => void>()
-  const runChoice = vi.fn(async (_id: string, _target: RunTarget, _choice: string) => undefined)
-  const getChoices = vi.fn(async (id: string, _target: RunTarget) =>
+  const runWithArgument = vi.fn(
+    async (_id: string, _target: RunTarget, _argument: string) => undefined,
+  )
+  const listItems = vi.fn(async (id: string, _target: RunTarget) =>
     id === 'org.example.tide:chart.move' ? WINDOWS : [],
   )
   const commands = createWindowCommands({
     getAppIds: () => ['app:vault.create', 'app:settings.open'],
     getPluginIds: () => pluginIds.value,
     runCommand,
-    getChoices,
-    runChoice,
+    listItems,
+    runWithArgument,
     getTarget: () => FRONT,
   })
-  return { commands, pluginIds, runCommand, runChoice, getChoices }
+  return { commands, pluginIds, runCommand, runWithArgument, listItems }
 }
 
 describe('the commands of the window', () => {
@@ -102,25 +104,25 @@ describe('the commands of the window', () => {
     expect(runCommand.mock.calls[0]?.[1].tab).toBe('note:7')
   })
 
-  it('give the choices a command offers over the target, over the tab in front where none is named', async () => {
-    const { commands, getChoices } = setup()
+  it('give the items a command offers over the target, over the tab in front where none is named', async () => {
+    const { commands, listItems } = setup()
 
-    expect(await commands.getChoices('org.example.tide:chart.move')).toStrictEqual(WINDOWS)
-    expect(await commands.getChoices('app:vault.create')).toStrictEqual([])
-    expect(getChoices.mock.calls[0]?.[1]).toMatchObject({
+    expect(await commands.listItems('org.example.tide:chart.move')).toStrictEqual(WINDOWS)
+    expect(await commands.listItems('app:vault.create')).toStrictEqual([])
+    expect(listItems.mock.calls[0]?.[1]).toMatchObject({
       path: 'Front.md',
       title: 'Front',
       tab: 'plex:1',
     })
   })
 
-  it('run a command with the choice picked through the run of a choice', async () => {
-    const { commands, runCommand, runChoice } = setup()
+  it('run a command with the item picked as its argument', async () => {
+    const { commands, runCommand, runWithArgument } = setup()
 
     await commands.run('org.example.tide:chart.move', undefined, 'w2')
 
     expect(runCommand).not.toHaveBeenCalled()
-    expect(runChoice.mock.calls[0]?.[0]).toBe('org.example.tide:chart.move')
-    expect(runChoice.mock.calls[0]?.[2]).toBe('w2')
+    expect(runWithArgument.mock.calls[0]?.[0]).toBe('org.example.tide:chart.move')
+    expect(runWithArgument.mock.calls[0]?.[2]).toBe('w2')
   })
 })

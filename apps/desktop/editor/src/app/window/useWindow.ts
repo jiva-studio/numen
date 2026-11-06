@@ -689,11 +689,11 @@ function createWindowFrameServices(
       getAppIds: () => (appIds ??= createCommands(words).map((one) => one.id)),
       getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
       runCommand: commands.runCommand,
-      getChoices: async (id, target) =>
-        base.pluginHost.hasCommand(id) ? base.pluginHost.getCommandChoices(id, target) : [],
-      runChoice: async (id, target, choice) => {
+      listItems: async (id, target) =>
+        base.pluginHost.hasCommand(id) ? base.pluginHost.listCommandItems(id, target) : [],
+      runWithArgument: async (id, target, argument) => {
         const note = await createCommandNoteReader(core)(target)
-        await base.pluginHost.executeCommand(id, note, choice)
+        await base.pluginHost.executeCommand(id, note, argument)
       },
       getTarget: commands.getTarget,
     }),
