@@ -127,7 +127,7 @@ describe('the preset a deck is scheduled by', () => {
 
   it('is the defaults where the vault rejected the read', async () => {
     const { schedule, state } = open()
-    state.read = asFailure('missing')
+    state.read = asFailure('notFound')
 
     await schedule.refreshDeckPreset('Animals.md')
 
@@ -235,7 +235,7 @@ describe('a deck put on a preset', () => {
 
   it('says nothing once it was put on, whatever an earlier choice came to', async () => {
     const { schedule, state } = open()
-    state.write = asFailure('missing')
+    state.write = asFailure('notFound')
     await schedule.scheduleDeck('a', 'Slow.md')
     expect(schedule.getDeckPreset('a').errorMessage).toBe(WORDS.notScheduled)
     state.write = asValue({ at: '' })

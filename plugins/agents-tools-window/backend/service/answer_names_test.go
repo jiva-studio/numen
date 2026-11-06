@@ -322,8 +322,7 @@ func TestWindowToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 }
 
 func TestWindowToolInstructionsContainNoNarrativeMarker(t *testing.T) {
-	// The window tools set their instructions where the plugin mounts its registry, so they are read
-	// from the handler the host starts.
+	// The window tools are read from the handler the host starts, where the plugin mounts its registry.
 	handler, err := service.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "window-token", "NUMEN_HOST_PORT": "1"})
 	if err != nil {
 		t.Fatal(err)
@@ -334,12 +333,18 @@ func TestWindowToolInstructionsContainNoNarrativeMarker(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if listing.Instructions == "" {
-		t.Fatal("the registry lists no instructions")
-	}
-	for _, marker := range getNarrativeMarkers() {
-		if marker.MatchString(listing.Instructions) {
-			t.Errorf("the instructions match %s: %q", marker, listing.Instructions)
+	hasSentence := false
+	for _, tool := range listing.Tools {
+		for _, sentence := range tool.Instructions {
+			hasSentence = true
+			for _, marker := range getNarrativeMarkers() {
+				if marker.MatchString(sentence) {
+					t.Errorf("an instruction of %s matches %s: %q", tool.GetName(), marker, sentence)
+				}
+			}
 		}
+	}
+	if !hasSentence {
+		t.Fatal("no window tool lists instructions")
 	}
 }

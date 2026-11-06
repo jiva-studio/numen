@@ -221,7 +221,7 @@ func TestWritingADeckPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Error != api.ErrorCodeStale {
+	if answer.Error != api.ErrorCodeConflict {
 		t.Errorf("a write over a deck the person had edited answered %+v", answer)
 	}
 	if target := onDisk(t, f.root, "Animals.md"); target != theirs {
@@ -553,7 +553,7 @@ func TestRenameCardModelField_StaleModelErrorsWithoutDeckWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Error != api.ErrorCodeStale {
+	if answer.Error != api.ErrorCodeConflict {
 		t.Errorf("a rename over a card model the person had edited answered %+v", answer)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != theirs {
@@ -718,7 +718,7 @@ func TestWritingACardModelThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Error != api.ErrorCodeStale {
+	if answer.Error != api.ErrorCodeConflict {
 		t.Fatalf("a write over a card model the person had edited answered %+v", answer)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != theirs {
@@ -738,7 +738,7 @@ func TestWritingACardModelWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Error; code != api.ErrorCodeMissing {
+	if code := answer.Error; code != api.ErrorCodeNotFound {
 		t.Errorf("writing a card model where the vault holds no note answered %v", code)
 	}
 	if _, err := os.Stat(filepath.Join(f.root, "cards", "Nowhere.md")); err == nil {

@@ -18,8 +18,10 @@ import (
 const (
 	wantServerLine = "These tools work on one Numén vault: markdown notes in an ordinary folder, joined by links, with books, PDFs and recordings filed beside them."
 
-	orchardInstructions = "Pick a fruit with orchard_pick before you name its tree, and link every tree you name."
-	beehiveInstructions = "Count the bees with beehive_count, one frame at a time."
+	orchardPickSentence  = "Pick a fruit with orchard_pick before you name its tree."
+	orchardShareSentence = "Link every tree you name, whether orchard_pick or orchard_graft found it."
+	orchardGraftSentence = "Graft a branch with orchard_graft only onto a tree you have picked from."
+	beehiveCountSentence = "Count the bees with beehive_count, one frame at a time."
 )
 
 // instructedHost lists the tools and instructions it holds, which a test changes between sessions.
@@ -79,12 +81,21 @@ func openSession(t *testing.T, srv *Server) string {
 	return session.InitializeResult().Instructions
 }
 
-func TestTheServerShowsTheInstructionsOfAPluginRegistry(t *testing.T) {
+// newInstructedTool is a read-only tool of the host that carries the sentences given.
+func newInstructedTool(name string, sentences ...string) *tools.ToolInfo {
+	tool := newReadTool(name)
+	tool.Instructions = sentences
+	return tool
+}
+
+func TestTheServerSendsTheDistinctSentencesOfItsToolsInListingOrder(t *testing.T) {
 	t.Parallel()
-	host := &instructedHost{listing: tools.Listing{
-		Tools:        []*tools.ToolInfo{newReadTool("orchard_pick")},
-		Instructions: orchardInstructions,
-	}}
+	host := &instructedHost{listing: tools.Listing{Tools: []*tools.ToolInfo{
+		newInstructedTool("beehive_count", beehiveCountSentence),
+		newInstructedTool("orchard_pick", orchardPickSentence, orchardShareSentence),
+		newInstructedTool("orchard_graft", orchardGraftSentence, orchardShareSentence),
+		newReadTool("orchard_rest"),
+	}}}
 	srv, err := NewServer(Config{}, host)
 	if err != nil {
 		t.Fatal(err)
@@ -92,56 +103,38 @@ func TestTheServerShowsTheInstructionsOfAPluginRegistry(t *testing.T) {
 
 	instructions := openSession(t, srv)
 
-	if want := wantServerLine + "\n\n" + orchardInstructions; instructions != want {
+	want := wantServerLine + "\n\n" + beehiveCountSentence + " " + orchardPickSentence + " " + orchardShareSentence + " " + orchardGraftSentence
+	if instructions != want {
 		t.Errorf("the instructions are\n%q\nwant\n%q", instructions, want)
 	}
 }
 
-func TestTheServerKeepsTheJoinOfTheHost(t *testing.T) {
+func TestASentenceOfAToolTheHostNoLongerListsIsNotSentToANewSession(t *testing.T) {
 	t.Parallel()
-	joined := beehiveInstructions + "\n\n" + orchardInstructions
-	host := &instructedHost{listing: tools.Listing{
-		Tools:        []*tools.ToolInfo{newReadTool("beehive_count"), newReadTool("orchard_pick")},
-		Instructions: joined,
-	}}
+	host := &instructedHost{listing: tools.Listing{Tools: []*tools.ToolInfo{
+		newInstructedTool("beehive_count", beehiveCountSentence),
+		newInstructedTool("orchard_pick", orchardPickSentence),
+	}}}
 	srv, err := NewServer(Config{}, host)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	instructions := openSession(t, srv)
-
-	if want := wantServerLine + "\n\n" + joined; instructions != want {
-		t.Errorf("the instructions are\n%q\nwant\n%q", instructions, want)
-	}
-}
-
-func TestDisablingThePluginRemovesItsInstructionsFromANewSession(t *testing.T) {
-	t.Parallel()
-	host := &instructedHost{listing: tools.Listing{
-		Tools:        []*tools.ToolInfo{newReadTool("beehive_count"), newReadTool("orchard_pick")},
-		Instructions: orchardInstructions,
-	}}
-	srv, err := NewServer(Config{}, host)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if before := openSession(t, srv); !strings.Contains(before, orchardInstructions) {
+	if before := openSession(t, srv); !strings.Contains(before, orchardPickSentence) {
 		t.Fatalf("before the plugin is disabled the instructions are %q", before)
 	}
 
-	host.setListing(tools.Listing{Tools: []*tools.ToolInfo{newReadTool("beehive_count")}})
+	host.setListing(tools.Listing{Tools: []*tools.ToolInfo{newInstructedTool("beehive_count", beehiveCountSentence)}})
 	instructions := openSession(t, srv)
 
-	if strings.Contains(instructions, orchardInstructions) {
+	if strings.Contains(instructions, orchardPickSentence) {
 		t.Errorf("a session opened after the plugin is disabled is told %q", instructions)
 	}
-	if instructions != wantServerLine {
-		t.Errorf("the instructions are %q, want %q", instructions, wantServerLine)
+	if want := wantServerLine + "\n\n" + beehiveCountSentence; instructions != want {
+		t.Errorf("the instructions are %q, want %q", instructions, want)
 	}
 }
 
-func TestTheServerNamesNoToolOfAnotherPlugin(t *testing.T) {
+func TestToolsWithNoSentencesLeaveOnlyTheServerLine(t *testing.T) {
 	t.Parallel()
 	names := []string{
 		"library_search", "library_read", "note_search", "note_list", "file_read", "source_focus", "window_tabs_get",
@@ -167,12 +160,11 @@ func TestTheServerNamesNoToolOfAnotherPlugin(t *testing.T) {
 	}
 }
 
-func TestTheInstructionsTheHostListsReachTheServerOverTheWire(t *testing.T) {
+func TestTheSentencesTheHostListsReachTheServerOverTheWire(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
 	mux.Handle(tools.NewServiceHandler(instructedHostHandler{listing: tools.Listing{
-		Tools:        []*tools.ToolInfo{newReadTool("orchard_pick")},
-		Instructions: orchardInstructions,
+		Tools: []*tools.ToolInfo{newInstructedTool("orchard_pick", orchardPickSentence)},
 	}}))
 	served := httptest.NewServer(mux)
 	t.Cleanup(served.Close)
@@ -183,7 +175,7 @@ func TestTheInstructionsTheHostListsReachTheServerOverTheWire(t *testing.T) {
 
 	instructions := openSession(t, srv)
 
-	if want := wantServerLine + "\n\n" + orchardInstructions; instructions != want {
+	if want := wantServerLine + "\n\n" + orchardPickSentence; instructions != want {
 		t.Errorf("the instructions are\n%q\nwant\n%q", instructions, want)
 	}
 }

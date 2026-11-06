@@ -458,7 +458,7 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
-				Result: v1.FlushResult_FLUSH_RESULT_ASKING,
+				Result: v1.FlushResult_FLUSH_RESULT_UNSAVED,
 			})); err != nil {
 				t.Error(err)
 			}

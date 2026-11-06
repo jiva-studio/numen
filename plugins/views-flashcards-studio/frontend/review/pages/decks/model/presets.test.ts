@@ -619,7 +619,7 @@ describe('which preset schedules each deck', () => {
   // at nothing beside them is a day drawn as unbegun.
   it('draws a preset it could not read from the figures the count gave', async () => {
     const one = useVaultPresets({
-      presets: { getVaultDeckPreset: async () => ({ error: ErrorCode.MISSING }) },
+      presets: { getVaultDeckPreset: async () => ({ error: ErrorCode.NOT_FOUND }) },
     })
 
     await one.read(
@@ -651,7 +651,7 @@ describe('which preset schedules each deck', () => {
 
   it('says why a preset it could not read has no settings', async () => {
     const one = useVaultPresets({
-      presets: { getVaultDeckPreset: async () => ({ error: ErrorCode.MISSING }) },
+      presets: { getVaultDeckPreset: async () => ({ error: ErrorCode.NOT_FOUND }) },
     })
 
     await one.read(
@@ -894,7 +894,7 @@ describe('what is wrong with a preset no deck answered for', () => {
   it('is the error the decks that failed gave, whatever the decks that read gave', async () => {
     const one = useVaultPresets({
       presets: createFailingPresets(
-        { 'decks/Roots.md': ErrorCode.MISSING },
+        { 'decks/Roots.md': ErrorCode.NOT_FOUND },
         { 'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() } },
       ),
     })
@@ -919,7 +919,7 @@ describe('what is wrong with a preset no deck answered for', () => {
   it('is no one of the errors where the decks gave several', async () => {
     const one = useVaultPresets({
       presets: createFailingPresets({
-        'decks/Words.md': ErrorCode.MISSING,
+        'decks/Words.md': ErrorCode.NOT_FOUND,
         'decks/Roots.md': ErrorCode.NOT_A_NOTE,
       }),
     })
@@ -940,7 +940,7 @@ describe('what is wrong with a preset no deck answered for', () => {
 
   it('is nothing for a preset no deck names, whatever the other decks gave', async () => {
     const one = useVaultPresets({
-      presets: createFailingPresets({ 'decks/Words.md': ErrorCode.MISSING }),
+      presets: createFailingPresets({ 'decks/Words.md': ErrorCode.NOT_FOUND }),
     })
 
     await one.read(

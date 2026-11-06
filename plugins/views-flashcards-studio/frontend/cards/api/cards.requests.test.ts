@@ -104,9 +104,9 @@ describe('reading a deck', () => {
   })
 
   it('fails in the service words even where a deck came with them', async () => {
-    answer('readDeck', { error: ErrorCode.MISSING, deck: deckMessage, bound: 400 })
+    answer('readDeck', { error: ErrorCode.NOT_FOUND, deck: deckMessage, bound: 400 })
 
-    expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'missing', bound: 400 }))
+    expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'notFound', bound: 400 }))
   })
 
   it('fails in the service words where no deck came', async () => {
@@ -122,7 +122,7 @@ describe('reading a deck', () => {
   })
 
   it('is changed where the file moved past what was requested', async () => {
-    answer('readDeck', { error: ErrorCode.STALE, bound: 400 })
+    answer('readDeck', { error: ErrorCode.CONFLICT, bound: 400 })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'changed', bound: 400 }))
   })
@@ -223,15 +223,15 @@ describe('renaming a field', () => {
   })
 
   it('fails in the service words', async () => {
-    answer('renameCardModelField', { error: ErrorCode.MISSING })
+    answer('renameCardModelField', { error: ErrorCode.NOT_FOUND })
 
     expect(await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, null)).toEqual(
-      asFailure('missing'),
+      asFailure('notFound'),
     )
   })
 
   it('is changed where the file moved past what was read', async () => {
-    answer('renameCardModelField', { error: ErrorCode.STALE })
+    answer('renameCardModelField', { error: ErrorCode.CONFLICT })
 
     expect(await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, carried)).toEqual(
       asFailure('changed'),
@@ -271,9 +271,9 @@ describe('reading a card model', () => {
   })
 
   it('fails in the service words even where a card model came with them', async () => {
-    answer('readCardModel', { error: ErrorCode.MISSING, cardModel: cardModelMessage })
+    answer('readCardModel', { error: ErrorCode.NOT_FOUND, cardModel: cardModelMessage })
 
-    expect(await cards.readCardModel('Word.md')).toEqual(asFailure('missing'))
+    expect(await cards.readCardModel('Word.md')).toEqual(asFailure('notFound'))
   })
 
   it('fails in the service words where no card model came', async () => {
@@ -283,7 +283,7 @@ describe('reading a card model', () => {
   })
 
   it('is changed where the file moved past what was requested, though a card model came', async () => {
-    answer('readCardModel', { error: ErrorCode.STALE, cardModel: cardModelMessage })
+    answer('readCardModel', { error: ErrorCode.CONFLICT, cardModel: cardModelMessage })
 
     expect(await cards.readCardModel('Word.md')).toEqual(asFailure('changed'))
   })
@@ -345,7 +345,7 @@ describe('writing a card model', () => {
   })
 
   it('is changed where the file moved past what was read', async () => {
-    answer('writeCardModel', { error: ErrorCode.STALE })
+    answer('writeCardModel', { error: ErrorCode.CONFLICT })
 
     expect(
       await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, carried),

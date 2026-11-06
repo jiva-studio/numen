@@ -43,14 +43,6 @@ func isOnReadingServer(tool *tools.ToolInfo) bool {
 	return slices.Contains(tool.Servers, tools.Reading)
 }
 
-func TestTheVaultRegistrySetsNoParagraphOfInstructions(t *testing.T) {
-	listing := listVaultTools(t)
-
-	if listing.Instructions != "" {
-		t.Errorf("the registry lists the paragraph %q; the instructions go on the tools", listing.Instructions)
-	}
-}
-
 func TestTheVaultToolInstructionsSayHowToCiteAndArrange(t *testing.T) {
 	instructions := joinToolInstructions(listVaultTools(t))
 

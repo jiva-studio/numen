@@ -529,9 +529,6 @@ func TestTheRecognitionToolCarriesItsInstructions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if listing.Instructions != "" {
-		t.Errorf("the registry lists the paragraph %q; the instructions go on the tool", listing.Instructions)
-	}
 	sentences := getToolSentences(listing, "recognition_create")
 	if len(sentences) == 0 {
 		t.Fatal("recognition_create lists no instructions")

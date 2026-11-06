@@ -112,7 +112,7 @@ func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Error != api.ErrorCodeStale {
+	if answer.Error != api.ErrorCodeConflict {
 		t.Errorf("a write over a preset the person had edited answered %+v", answer)
 	}
 	if onDiskContent := onDisk(t, f.root, "Sanskrit.md"); onDiskContent != concurrentEdit {
@@ -444,7 +444,7 @@ func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if off.Error == api.ErrorCodeStale {
+	if off.Error == api.ErrorCodeConflict {
 		t.Fatal("the deck this caller had just written was answered as changed")
 	}
 	if onDiskContent := onDisk(t, f.root, "decks/Terms.md"); strings.Contains(onDiskContent, "preset") {
@@ -495,7 +495,7 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Error != api.ErrorCodeMissing {
+	if answer.Error != api.ErrorCodeNotFound {
 		t.Errorf("the write was answered %v", answer.Error)
 	}
 	if onDiskContent := onDisk(t, f.root, "decks/Terms.md"); onDiskContent != terms {
@@ -526,7 +526,7 @@ func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Error != api.ErrorCodeStale {
+	if answer.Error != api.ErrorCodeConflict {
 		t.Errorf("a write over a deck the person had edited answered %+v", answer)
 	}
 	if onDiskContent := onDisk(t, f.root, "decks/Roots.md"); onDiskContent != concurrentEdit {

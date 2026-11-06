@@ -191,7 +191,7 @@ func TestCardsLimitsErrorCodesAndCreateCardNote(t *testing.T) {
 	if code, ok := errorCodeOfDeck(note.Ok, format.TypeCardModel); !ok || code != api.ErrorCodeNotADeck {
 		t.Fatalf("unexpected errorCodeOfDeck(Ok, TypeCardModel): %v, %v", code, ok)
 	}
-	if code, ok := errorCodeOfDeck(note.Missing, format.TypeCardModel); !ok || code != api.ErrorCodeMissing {
+	if code, ok := errorCodeOfDeck(note.Missing, format.TypeCardModel); !ok || code != api.ErrorCodeNotFound {
 		t.Fatalf("unexpected errorCodeOfDeck(Missing, TypeCardModel): %v, %v", code, ok)
 	}
 
@@ -201,7 +201,7 @@ func TestCardsLimitsErrorCodesAndCreateCardNote(t *testing.T) {
 	if code, ok := errorCodeOfCardModel(note.Ok, format.TypeDeck); !ok || code != api.ErrorCodeNotACardModel {
 		t.Fatalf("unexpected errorCodeOfCardModel(Ok, TypeDeck): %v, %v", code, ok)
 	}
-	if code, ok := errorCodeOfCardModel(note.Missing, format.TypeDeck); !ok || code != api.ErrorCodeMissing {
+	if code, ok := errorCodeOfCardModel(note.Missing, format.TypeDeck); !ok || code != api.ErrorCodeNotFound {
 		t.Fatalf("unexpected errorCodeOfCardModel(Missing, TypeDeck): %v, %v", code, ok)
 	}
 
@@ -411,7 +411,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 			To:       "Other",
 			Baseline: &api.FileStat{Path: "Term.md", Size: 999999, Mtime: 1},
 		})
-		if err != nil || renamedStale.Error != api.ErrorCodeStale || renamedStale.Cards != 0 || renamedStale.IsIndexOutdated {
+		if err != nil || renamedStale.Error != api.ErrorCodeConflict || renamedStale.Cards != 0 || renamedStale.IsIndexOutdated {
 			t.Fatalf("unexpected RenameCardModelField on stale: %+v, %v", renamedStale, err)
 		}
 
@@ -420,7 +420,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 			t.Fatalf("unexpected ReadDeck ok: %+v, %v", readOK, err)
 		}
 		readMissing, err := cardsAPI.ReadDeck(ctx, &api.ReadDeckRequest{Path: "Missing.md"})
-		if err != nil || readMissing.Error != api.ErrorCodeMissing || readMissing.Bound != 0 {
+		if err != nil || readMissing.Error != api.ErrorCodeNotFound || readMissing.Bound != 0 {
 			t.Fatalf("unexpected ReadDeck missing: %+v, %v", readMissing, err)
 		}
 		readHuge, err := cardsAPI.ReadDeck(ctx, &api.ReadDeckRequest{Path: "Huge.md"})
@@ -440,7 +440,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 			t.Fatalf("unexpected WriteDeck huge: %+v, %v", writeHuge, err)
 		}
 		writeMissing, err := cardsAPI.WriteDeck(ctx, &api.WriteDeckRequest{Path: "Missing.md"})
-		if err != nil || writeMissing.Error != api.ErrorCodeMissing || writeMissing.Bound != 0 || writeMissing.IsIndexOutdated {
+		if err != nil || writeMissing.Error != api.ErrorCodeNotFound || writeMissing.Bound != 0 || writeMissing.IsIndexOutdated {
 			t.Fatalf("unexpected WriteDeck missing: %+v, %v", writeMissing, err)
 		}
 		if _, err := cardsAPI.WriteDeck(ctx, &api.WriteDeckRequest{Path: "../../outside.md"}); codeOf(err) != server.CodeInvalidArgument {
@@ -514,7 +514,7 @@ func TestCommandsErrorCodesAndFileStatHelpers(t *testing.T) {
 	if got := describeCreateError(api.ErrorCodeInvalidName); got != "a note cannot be called that" {
 		t.Fatalf("unexpected invalid name error: %q", got)
 	}
-	if got := describeCreateError(api.ErrorCodeMissing); got != "the file could not be made: missing" {
+	if got := describeCreateError(api.ErrorCodeNotFound); got != "the file could not be made: notFound" {
 		t.Fatalf("unexpected missing error: %q", got)
 	}
 	if got := describeCreateError(api.ErrorCode("CUSTOM")); got != "the file could not be made: CUSTOM" {

@@ -89,7 +89,7 @@ func (f *showing) answerAskingUntilAnswered(
 			page.flushCount++
 			page.lastToken = stream.Msg().GetToken()
 			page.mu.Unlock()
-			result := v1.FlushResult_FLUSH_RESULT_ASKING
+			result := v1.FlushResult_FLUSH_RESULT_UNSAVED
 			select {
 			case <-userAnswered:
 				result = v1.FlushResult_FLUSH_RESULT_WRITTEN
@@ -567,7 +567,7 @@ func (f *showing) answerAskingUntil(
 					return
 				}
 			default:
-				if f.reportFlush(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_ASKING) != nil {
+				if f.reportFlush(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_UNSAVED) != nil {
 					return
 				}
 			}

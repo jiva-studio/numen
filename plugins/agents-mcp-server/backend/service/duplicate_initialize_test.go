@@ -42,7 +42,7 @@ func sendInitialize(t *testing.T, conn sdk.Connection, number int) *jsonrpc.Resp
 func TestASecondInitializeIsAnsweredWithAnError(t *testing.T) {
 	t.Parallel()
 	host := &instructedHost{listing: tools.Listing{
-		Tools: []*tools.ToolInfo{newReadTool("orchard_pick")}, Instructions: orchardInstructions,
+		Tools: []*tools.ToolInfo{newInstructedTool("orchard_pick", orchardPickSentence)},
 	}}
 	srv, err := NewServer(Config{}, host)
 	if err != nil {

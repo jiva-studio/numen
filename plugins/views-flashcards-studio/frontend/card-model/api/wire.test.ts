@@ -93,7 +93,7 @@ describe('reading a card model', () => {
 
   it('leaves a failed read with no file to name in a later rename', async () => {
     const cards = vault()
-    cards.readCardModel.mockResolvedValue(asFailure('missing'))
+    cards.readCardModel.mockResolvedValue(asFailure('notFound'))
     cards.renameField.mockResolvedValue(asValue({ decks: [], cards: 0, notWritten: [], at: '' }))
     const { wire } = createWire(cards)
     await wire.read('Word.md')
@@ -196,12 +196,12 @@ describe('what is shown for a fault', () => {
 
   it('says the file could not be read where the read failed for anything else', async () => {
     const cards = vault()
-    cards.readCardModel.mockResolvedValue(asFailure('missing'))
+    cards.readCardModel.mockResolvedValue(asFailure('notFound'))
     const { wire } = createWire(cards)
 
     await wire.read('Notes.md')
 
-    expect(wire.getErrorMessage('Notes.md', 'missing')).toBe(words.notRead)
+    expect(wire.getErrorMessage('Notes.md', 'notFound')).toBe(words.notRead)
   })
 
   it('says the note is no card model where the write failed for that', async () => {

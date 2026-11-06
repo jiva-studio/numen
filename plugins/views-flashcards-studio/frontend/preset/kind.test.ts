@@ -480,7 +480,7 @@ describe('a preset no tab has open', () => {
 // Each error code has its own message, so the user can act on it. One shared
 // sentence for every error identifies none of them.
 describe('what the tab says it encountered as an error', () => {
-  const errors: readonly ErrorCode[] = ['missing', 'tooLarge', 'notANote', 'unreadable']
+  const errors: readonly ErrorCode[] = ['notFound', 'tooLarge', 'notANote', 'unreadable']
 
   it('is a sentence of its own for each error a read answers', async () => {
     const messages: string[] = []
@@ -1045,7 +1045,7 @@ describe('a tab read again', () => {
 
   it('stops saying a read failed once a read succeeds', async () => {
     const { state } = await openPresetTab({}, curve, (time) =>
-      time === 0 ? { error: 'missing' } : {},
+      time === 0 ? { error: 'notFound' } : {},
     )
     expect(state.errorMessage.value).not.toBe('')
     state.reload()

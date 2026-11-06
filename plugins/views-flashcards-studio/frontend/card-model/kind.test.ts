@@ -57,7 +57,7 @@ const vault = (
       }))
       return asValue({ decks: [], cards: 0, notWritten: [], at: 'renamed' })
     },
-    readDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
+    readDeck: async () => asFailure({ code: 'notFound' as const, bound: 0 }),
     writeDeck: async () => asValue({ at: '' }),
     readCardModel: async (path) => {
       if (answers.isUnreachable) throw new Error('out of reach')

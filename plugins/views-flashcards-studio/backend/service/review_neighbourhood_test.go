@@ -83,7 +83,7 @@ func TestGetDeckNeighbourhood_UnreadableNoteMatchesEditorError(t *testing.T) {
 	if found.Error == api.ErrorCodeUnspecified {
 		t.Fatal("a note that is not there came back without an error")
 	}
-	if got := found.Error; got != api.ErrorCodeMissing {
+	if got := found.Error; got != api.ErrorCodeNotFound {
 		t.Errorf("a note that is not there fails as %v", got)
 	}
 	if found.Body != "" {
