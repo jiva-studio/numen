@@ -1216,7 +1216,7 @@ const createMenuCommand = (command: string, title: string): SlotCommand => ({
   title,
   ...(COMMAND_ICONS[command] ? { icon: COMMAND_ICONS[command] } : {}),
   shortcut: '',
-  hasChoices: false,
+  hasItems: false,
 })
 
 const createMenuSeparator = (index: number): SlotSeparator => ({

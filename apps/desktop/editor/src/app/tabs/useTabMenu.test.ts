@@ -28,12 +28,12 @@ const command = (
   command: pluginId === 'app' ? `app:${id}` : `${pluginId}:${id}`,
   title,
   shortcut: '',
-  hasChoices: false,
+  hasItems: false,
   ...more,
 })
 
 const DETACH = command('app', 'tab.detach', 'Detach tab')
-const MOVE = command('app', 'tab.moveToWindow', 'Move to window', { hasChoices: true })
+const MOVE = command('app', 'tab.moveToWindow', 'Move to window', { hasItems: true })
 const SHOW = command(ATLAS, 'graph.showNote', 'Show note in plex', { icon: Pin })
 const ENTRIES: readonly SlotItem[] = [DETACH, MOVE, { kind: 'separator', key: 'separator/1' }, SHOW]
 
@@ -49,14 +49,16 @@ const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
   watchEntries: () => ({ dispose: () => undefined }),
 })
 
-/** The commands of a window, recording each command run, its target and its choice. */
+/** The commands of a window, recording each command run, its target and its argument. */
 const createCommands = () => {
-  const runs: { command: string; target: RunTarget | undefined; choice?: string }[] = []
+  const runs: { command: string; target: RunTarget | undefined; argument?: string }[] = []
   return {
-    run: async (id: string, target?: RunTarget, choice?: string) => {
-      runs.push(choice === undefined ? { command: id, target } : { command: id, target, choice })
+    run: async (id: string, target?: RunTarget, argument?: string) => {
+      runs.push(
+        argument === undefined ? { command: id, target } : { command: id, target, argument },
+      )
     },
-    getChoices: vi.fn(async (_id: string, _target?: RunTarget) => [
+    listItems: vi.fn(async (_id: string, _target?: RunTarget) => [
       { id: 'window-a', title: 'Atlas' },
       { id: 'window-b', title: 'Tide log' },
     ]),
@@ -72,7 +74,7 @@ const setup = (entries: readonly SlotItem[] = ENTRIES) => {
   const menu = useTabMenu({
     slots,
     runCommand: commands.run,
-    getChoices: commands.getChoices,
+    listItems: commands.listItems,
     getTabTarget: (tab) => TARGETS[tab]!,
     onHighlight,
   })
@@ -194,8 +196,8 @@ describe('the menu of a tab', () => {
   })
 })
 
-describe('an entry of the menu of a tab that offers choices', () => {
-  const getChoiceRows = (menu: ReturnType<typeof setup>['menu']) =>
+describe('an entry of the menu of a tab that offers items', () => {
+  const getItemRows = (menu: ReturnType<typeof setup>['menu']) =>
     menu.menu.value?.items
       .find((one) => one.id === MOVE.key)
       ?.children?.map((one) => ({
@@ -204,33 +206,33 @@ describe('an entry of the menu of a tab that offers choices', () => {
         isDisabled: one.isDisabled ?? false,
       }))
 
-  it('asks for its choices over the tab when the menu opens, and shows a loading row until then', () => {
+  it('asks for its items over the tab when the menu opens, and shows a loading row until then', () => {
     const { menu, commands } = setup()
 
     menu.open('reef', { x: 4, y: 8 })
 
-    expect(commands.getChoices).toHaveBeenCalledWith(MOVE.command, TARGETS.reef)
-    expect(getChoiceRows(menu)?.map((one) => one.isDisabled)).toStrictEqual([true])
+    expect(commands.listItems).toHaveBeenCalledWith(MOVE.command, TARGETS.reef)
+    expect(getItemRows(menu)?.map((one) => one.isDisabled)).toStrictEqual([true])
   })
 
-  it('is a submenu of its choices once they are read', async () => {
+  it('is a submenu of its items once they are read', async () => {
     const { menu } = setup()
     menu.open('reef', { x: 4, y: 8 })
 
     await settle()
 
-    expect(getChoiceRows(menu)?.map((one) => one.text)).toStrictEqual(['Atlas', 'Tide log'])
+    expect(getItemRows(menu)?.map((one) => one.text)).toStrictEqual(['Atlas', 'Tide log'])
   })
 
-  it('runs the command over the tab with the id of the choice picked', async () => {
+  it('runs the command over the tab with the id of the argument picked', async () => {
     const { menu, commands } = setup()
     menu.open('reef', { x: 4, y: 8 })
     await settle()
 
-    menu.choose('reef', getChoiceRows(menu)![1]!.id)
+    menu.choose('reef', getItemRows(menu)![1]!.id)
 
     expect(commands.getRuns()).toStrictEqual([
-      { command: MOVE.command, target: TARGETS.reef, choice: 'window-b' },
+      { command: MOVE.command, target: TARGETS.reef, argument: 'window-b' },
     ])
   })
 
@@ -244,12 +246,12 @@ describe('an entry of the menu of a tab that offers choices', () => {
     expect(commands.getRuns()).toStrictEqual([])
   })
 
-  it('highlights the window of a move choice under the pointer, and clears the highlight after', async () => {
+  it('highlights the window of a move argument under the pointer, and clears the highlight after', async () => {
     const { menu, onHighlight } = setup()
     menu.open('reef', { x: 4, y: 8 })
     await settle()
 
-    menu.highlight(getChoiceRows(menu)![0]!.id)
+    menu.highlight(getItemRows(menu)![0]!.id)
     menu.highlight(SHOW.key)
 
     expect(onHighlight.mock.calls).toStrictEqual([

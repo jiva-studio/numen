@@ -84,10 +84,10 @@ vi.mock('../commands/useCommands', () => ({
     h.args.commands = args
     return h.f.commands
   },
-  createPaletteChoices: () => ({
-    hasCommandChoices: () => false,
-    getCommandChoices: async () => [],
-    runChoice: async () => undefined,
+  createPaletteItems: () => ({
+    hasCommandItems: () => false,
+    listCommandItems: async () => [],
+    runWithArgument: async () => undefined,
   }),
 }))
 vi.mock('../commands/fileMenuCommands', () => ({

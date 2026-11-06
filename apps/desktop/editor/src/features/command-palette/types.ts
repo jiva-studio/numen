@@ -6,7 +6,7 @@
  * available while a command runs are `model/deps.ts`.
  */
 import type { Component } from 'vue'
-import type { CommandChoice, Selector } from '@numen/plugin-host'
+import type { CommandItem, Selector } from '@numen/plugin-host'
 import type { PaletteKeys } from '@numen/ui'
 import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
@@ -124,10 +124,10 @@ export interface Command {
   /** The command Shift and Enter reach on the same row. */
   readonly also?: string
   /**
-   * The choices it offers over the target, for a command whose step is a choice; the choice picked
+   * The items it offers over the target, for a command whose step is a argument; the argument picked
    * is the name of its invocation.
    */
-  getChoices?(target: CommandTarget): readonly CommandChoice[]
+  listItems?(target: CommandTarget): readonly CommandItem[]
 }
 
 /** One command as it is carried out: what it is over, and what was typed for it. */

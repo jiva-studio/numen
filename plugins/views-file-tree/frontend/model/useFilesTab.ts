@@ -6,15 +6,15 @@ import {
   formatErrorMessage,
   getFileName,
   NOTE_TYPE,
-  type CommandChoice,
+  type CommandItem,
   type CommandTarget,
 } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import {
   createMenuItems,
   findMenuEntry,
-  listChoiceCommands,
-  parseChoiceRowId,
+  listItemCommands,
+  parseItemRowId,
   TRASH_NOTE,
 } from '../lib/menu'
 import { resolveRenamePath } from './rename'
@@ -115,38 +115,38 @@ const getMenuTarget = (
 function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   const menu = ref<MenuRequest | null>(null)
   const reportFailure = createFailureReporter(deps)
-  const choices = shallowRef<ReadonlyMap<string, readonly CommandChoice[] | null>>(new Map())
+  const items = shallowRef<ReadonlyMap<string, readonly CommandItem[] | null>>(new Map())
 
-  const setChoices = (key: string, read: readonly CommandChoice[] | null) => {
-    choices.value = new Map([...choices.value, [key, read]])
+  const setItems = (key: string, read: readonly CommandItem[] | null) => {
+    items.value = new Map([...items.value, [key, read]])
   }
 
-  /** How many menus were opened, which tells the menu a read of choices was made for. */
+  /** How many menus were opened, which tells the menu a read of items was made for. */
   let openings = 0
 
-  /** Reads the choices of the commands of the menu opened by the request, while it stays open. */
-  const readChoices = (request: MenuRequest) => {
+  /** Reads the items of the commands of the menu opened by the request, while it stays open. */
+  const readItems = (request: MenuRequest) => {
     const opening = ++openings
     const isOpen = () => menu.value !== null && opening === openings
     const target = getTarget(request.path)
-    for (const entry of listChoiceCommands(deps.getMenuEntries(target))) {
-      setChoices(entry.key, null)
+    for (const entry of listItemCommands(deps.getMenuEntries(target))) {
+      setItems(entry.key, null)
       deps
-        .getChoices(entry.command, target)
+        .listItems(entry.command, target)
         .then((read) => {
-          if (isOpen()) setChoices(entry.key, read)
+          if (isOpen()) setItems(entry.key, read)
         })
         .catch((error: unknown) => {
           reportFailure(error)
-          if (isOpen()) setChoices(entry.key, [])
+          if (isOpen()) setItems(entry.key, [])
         })
     }
   }
 
   const openMenu = (request: MenuRequest) => {
     menu.value = request
-    choices.value = new Map()
-    readChoices(request)
+    items.value = new Map()
+    readItems(request)
   }
 
   const dismissMenu = () => {
@@ -161,9 +161,9 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
 
   const getMenuItems = (path: string | null) =>
     createMenuItems(deps.getMenuEntries(getTarget(path)), {
-      byKey: choices.value,
-      loadingText: words.loadingChoices,
-      noneText: words.noChoices,
+      byKey: items.value,
+      loadingText: words.loadingItems,
+      noneText: words.noItems,
     })
 
   const openEntries = computed(() =>
@@ -180,11 +180,11 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
     const request = menu.value
     if (!request) return
     const target = getTarget(request.path)
-    const picked = parseChoiceRowId(id)
+    const picked = parseItemRowId(id)
     const entry = findMenuEntry(openEntries.value, picked ? picked.key : id)
     menu.value = null
-    if (entry?.kind !== 'command' || (entry.hasChoices && !picked)) return
-    deps.runCommand(entry.command, target, picked?.choice).catch(reportFailure)
+    if (entry?.kind !== 'command' || (entry.hasItems && !picked)) return
+    deps.runCommand(entry.command, target, picked?.item).catch(reportFailure)
   }
 
   return {

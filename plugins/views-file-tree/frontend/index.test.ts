@@ -126,7 +126,7 @@ describe('view-file-tree plugin', () => {
       {
         command: 'app:note.trash',
         target: { path: 'A.md', title: 'A.md', isFolder: false, others: [], tab: '' },
-        choice: undefined,
+        argument: undefined,
       },
     ])
   })

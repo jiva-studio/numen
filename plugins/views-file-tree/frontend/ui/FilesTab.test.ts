@@ -40,7 +40,7 @@ const mountFiles = async (open: readonly string[] = []) => {
     openEntry: (entry) => {
       isDone.push(`lands file ${entry.path}`)
     },
-    getChoices: async () => [],
+    listItems: async () => [],
     getMenuEntries: () => ROW_MENU,
     runCommand: async (command, rowTarget) => {
       isDone.push(
@@ -295,7 +295,7 @@ describe('a folder that could not be read', () => {
     const tab: FilesTabState = useFilesTab(list, {
       ...renderDeps,
       openEntry: () => undefined,
-      getChoices: async () => [],
+      listItems: async () => [],
       getMenuEntries: () => [],
       runCommand: async () => undefined,
       movePath: async () => undefined,

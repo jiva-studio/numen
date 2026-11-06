@@ -3,7 +3,7 @@
  * opens, and a run of the command with the choice picked.
  */
 import { describe, expect, it } from 'vitest'
-import type { CommandChoice, CommandTarget, SlotCommand } from '@numen/plugin-sdk'
+import type { CommandItem, CommandTarget, SlotCommand } from '@numen/plugin-sdk'
 import type { Entry } from '../types'
 import { useFilesTab } from './useFilesTab'
 import { createFileTree, ROOT } from './useFileTree'
@@ -17,10 +17,10 @@ const VERSIONS: SlotCommand = {
   command: 'org.example.scan:version.delete',
   title: 'Delete version',
   shortcut: '',
-  hasChoices: true,
+  hasItems: true,
 }
 
-const CHOICES: readonly CommandChoice[] = [
+const CHOICES: readonly CommandItem[] = [
   { id: 'ocr/1', title: 'Recognised text' },
   { id: 'fix/2', title: 'Proofread text' },
 ]
@@ -36,7 +36,7 @@ const entry = (path: string): Entry => ({
 /** Waits for the choices the tab choiceRequests for. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-const setUp = async (answer: () => Promise<readonly CommandChoice[]>) => {
+const setUp = async (answer: () => Promise<readonly CommandItem[]>) => {
   const choiceRequests: [string, CommandTarget][] = []
   const runs: [string, CommandTarget, string | undefined][] = []
   const errors: string[] = []
@@ -46,7 +46,7 @@ const setUp = async (answer: () => Promise<readonly CommandChoice[]>) => {
     getEntryIcon: () => ({}),
     openEntry: () => undefined,
     getMenuEntries: () => [VERSIONS, { kind: 'separator', key: 'separator/1' }, TRASH],
-    getChoices: async (command, target) => {
+    listItems: async (command, target) => {
       choiceRequests.push([command, target])
       await new Promise<void>((done) => {
         release = done
@@ -96,7 +96,7 @@ describe('a command of the menu that offers choices', () => {
   it('is a submenu holding a row that says it is loading until its choices are read', async () => {
     const { one } = await setUp(async () => CHOICES)
 
-    expect(getChildren(one)).toStrictEqual([{ text: WORDS.loadingChoices, isDisabled: true }])
+    expect(getChildren(one)).toStrictEqual([{ text: WORDS.loadingItems, isDisabled: true }])
   })
 
   it('is a submenu of its choices once they are read', async () => {
@@ -115,7 +115,7 @@ describe('a command of the menu that offers choices', () => {
 
     await answerChoices()
 
-    expect(getChildren(one)).toStrictEqual([{ text: WORDS.noChoices, isDisabled: true }])
+    expect(getChildren(one)).toStrictEqual([{ text: WORDS.noItems, isDisabled: true }])
   })
 
   it('runs the command over the row with the id of the choice picked', async () => {
@@ -147,6 +147,6 @@ describe('a command of the menu that offers choices', () => {
 
     expect(runs).toStrictEqual([])
     expect(errors).toHaveLength(1)
-    expect(getChildren(one)).toStrictEqual([{ text: WORDS.noChoices, isDisabled: true }])
+    expect(getChildren(one)).toStrictEqual([{ text: WORDS.noItems, isDisabled: true }])
   })
 })

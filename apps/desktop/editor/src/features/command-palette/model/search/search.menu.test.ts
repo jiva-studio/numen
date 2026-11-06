@@ -33,7 +33,7 @@ const SHOW: SlotCommand = {
   command: `${ATLAS}:graph.showNote`,
   title: 'Show note in plex',
   shortcut: '',
-  hasChoices: false,
+  hasItems: false,
 }
 const OTHER: SlotCommand = {
   kind: 'command',
@@ -42,7 +42,7 @@ const OTHER: SlotCommand = {
   command: `${ATLAS}:other.run`,
   title: 'Another',
   shortcut: '',
-  hasChoices: false,
+  hasItems: false,
 }
 const SEPARATOR: SlotItem = { kind: 'separator', key: 'separator/1' }
 const SKETCH: SlotItem = {

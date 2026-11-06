@@ -26,8 +26,8 @@ import {
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
-import { createChoiceLists } from './pluginChoices'
-import { createCommandChoices } from './commandChoices'
+import { createItemLists } from './pluginItems'
+import { createCommandItems } from './commandItems'
 import { watchCommandLists } from './watchCommandLists'
 import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
@@ -115,13 +115,13 @@ const listExtraCommands = (
 ]
 
 /** The choices of the commands of the palette, of the window and of the plugins, and their runs. */
-export function createPaletteChoices(
+export function createPaletteItems(
   options: Pick<CommandsDepsOptions, 'getAppCommands' | 'pluginHost' | 'getTarget'>,
   getCommandNote: ReturnType<typeof createCommandNoteReader>,
   getCommandDeps: () => CommandDeps,
 ) {
   const { pluginHost } = options
-  return createCommandChoices({
+  return createCommandItems({
     getAppCommands: () => options.getAppCommands?.() ?? [],
     pluginHost,
     getTarget: options.getTarget,
@@ -148,8 +148,8 @@ export function useCommands(options: CommandsDepsOptions) {
     menu: createSearchMenu(options.slots),
     getTarget,
   })
-  const choices = createPaletteChoices(options, getCommandNote, () => commandDeps)
-  const { lists, resetWhenClosed } = createChoiceLists(options.paletteLists, choices, getTarget)
+  const choices = createPaletteItems(options, getCommandNote, () => commandDeps)
+  const { lists, resetWhenClosed } = createItemLists(options.paletteLists, choices, getTarget)
   const extra = () => listExtraCommands(options, getPaletteEntries())
   const commands = useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, extra)
 

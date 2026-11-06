@@ -34,7 +34,7 @@ import { useVaults } from './useVaults'
 import type { TabsHold } from '../commands/leaveVault'
 import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
-import { createPaletteChoices, useCommands } from '../commands/useCommands'
+import { createPaletteItems, useCommands } from '../commands/useCommands'
 import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
 import { createPluginMenus } from '../commands/pluginMenus'
@@ -705,7 +705,7 @@ function createSlotServices(
 ) {
   let tableIds: readonly string[] | undefined
   const getAppCommands = () => ctx.tabCommands?.commands ?? []
-  const choices = createPaletteChoices(
+  const choices = createPaletteItems(
     { getAppCommands, pluginHost: base.pluginHost, getTarget: commands.getTarget },
     createCommandNoteReader(core),
     () => getCommands(ctx).commandDeps,
@@ -717,8 +717,8 @@ function createSlotServices(
     ],
     getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
     runCommand: commands.runCommand,
-    getChoices: choices.getCommandChoices,
-    runChoice: choices.runChoice,
+    listItems: choices.listCommandItems,
+    runWithArgument: choices.runWithArgument,
     getTarget: commands.getTarget,
   })
   Object.assign(base.pluginServices, { commands: windowCommands })

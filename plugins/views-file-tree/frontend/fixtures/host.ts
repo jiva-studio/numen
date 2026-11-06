@@ -35,7 +35,7 @@ const command = (pluginId: string, id: string, title: string, icon?: unknown): S
   title,
   ...(icon ? { icon } : {}),
   shortcut: '',
-  hasChoices: false,
+  hasItems: false,
 })
 
 export const separator = (index: number): SlotSeparator => ({

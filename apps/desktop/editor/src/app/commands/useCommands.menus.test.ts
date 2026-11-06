@@ -73,7 +73,7 @@ const entry = (command: string, title: string): SlotCommand => ({
   command,
   title,
   shortcut: '',
-  hasChoices: false,
+  hasItems: false,
 })
 
 const REEF: RunTarget = { path: 'Reef.md', title: 'Reef', isFolder: false, others: [], tab: '' }

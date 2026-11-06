@@ -65,7 +65,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
     openEntry: (entry) => {
       isDone.push(`lands file ${entry.path}`)
     },
-    getChoices: async () => [],
+    listItems: async () => [],
     getMenuEntries: (menuTarget) => {
       targets.push(menuTarget)
       return ROW_MENU
@@ -342,7 +342,7 @@ describe('rows release', () => {
     const one = useFilesTab(list, {
       ...windowCommands,
       openEntry: () => undefined,
-      getChoices: async () => [],
+      listItems: async () => [],
       getMenuEntries: () => [],
       runCommand: async () => undefined,
       movePath: async () => undefined,

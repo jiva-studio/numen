@@ -1,8 +1,8 @@
 /**
  * The commands of the window over a tab: detach it, unlink it, move it to another window and link
- * it with another tab. Moving and linking offer one choice per window and per tab.
+ * it with another tab. Moving and linking offer one item per window and per tab.
  */
-import type { CommandChoice } from '@numen/plugin-host'
+import type { CommandItem } from '@numen/plugin-host'
 import {
   registerCommand,
   type Command,
@@ -57,7 +57,7 @@ export function createTabCommands(deps: TabCommandsDeps) {
   const getWindows = () => deps.tabLinks.windows.filter((one) => one.id !== deps.windowId)
   const isMovable = (target: CommandTarget) => target.tab !== '' && !deps.isAsking(target.tab)
 
-  const getLinkChoices = (target: CommandTarget): readonly CommandChoice[] =>
+  const getLinkItems = (target: CommandTarget): readonly CommandItem[] =>
     getEligibleTabs({
       from: target.tab,
       tabs: getAllTabs(deps.getTabs(), deps.tabLinks.tabs),
@@ -83,17 +83,17 @@ export function createTabCommands(deps: TabCommandsDeps) {
       id: TAB_COMMAND.moveToWindow,
       text: TAB_WORDS.moveToWindow,
       group: 'window',
-      input: 'choice',
+      input: 'items',
       isAvailable: (target) => isMovable(target) && getWindows().length > 0,
-      getChoices: () => getWindows().map((one) => ({ id: one.id, title: getWindowName(one) })),
+      listItems: () => getWindows().map((one) => ({ id: one.id, title: getWindowName(one) })),
     },
     {
       id: TAB_COMMAND.link,
       text: TAB_WORDS.link,
       group: 'window',
-      input: 'choice',
+      input: 'items',
       isAvailable: (target) => target.tab !== '' && isLinkable(target.tab),
-      getChoices: getLinkChoices,
+      listItems: getLinkItems,
     },
   ]
 
@@ -103,7 +103,7 @@ export function createTabCommands(deps: TabCommandsDeps) {
       (run: (invocation: CommandInvocation) => void) => (invocation: CommandInvocation) => {
         if (invocation.tab !== '') run(invocation)
       }
-    const withChoice = (run: (tab: TabId, choice: string) => void) =>
+    const withArgument = (run: (tab: TabId, argument: string) => void) =>
       requireTab((invocation) => {
         if (invocation.name !== '') run(invocation.tab, invocation.name)
       })
@@ -118,11 +118,11 @@ export function createTabCommands(deps: TabCommandsDeps) {
       ),
       registerCommand(
         TAB_COMMAND.moveToWindow,
-        withChoice((tab, choice) => deps.move(tab, choice)),
+        withArgument((tab, argument) => deps.move(tab, argument)),
       ),
       registerCommand(
         TAB_COMMAND.link,
-        withChoice((tab, choice) => deps.tabLinks.linkTabs(tab, choice)),
+        withArgument((tab, argument) => deps.tabLinks.linkTabs(tab, argument)),
       ),
     ]
     return () => {
