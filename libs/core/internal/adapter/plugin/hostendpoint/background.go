@@ -13,19 +13,19 @@ var errClosing = errors.New("the host endpoint is closing")
 // as a change of the vault the window shows. It runs under a context the end of that call does not
 // cancel, and the endpoint cancels and waits for it when it closes.
 type background struct {
-	mu      sync.Mutex
-	cancels map[int]context.CancelFunc
-	next    int
-	closed  bool
-	running sync.WaitGroup
-	handle  atomic.Pointer[func(error)]
+	mu       sync.Mutex
+	cancels  map[int]context.CancelFunc
+	next     int
+	isClosed bool
+	running  sync.WaitGroup
+	handle   atomic.Pointer[func(error)]
 }
 
 // start runs the work, and returns false when the endpoint is closing and runs nothing.
 func (b *background) start(ctx context.Context, work func(ctx context.Context)) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if b.closed {
+	if b.isClosed {
 		return false
 	}
 	detached, cancel := context.WithCancel(context.WithoutCancel(ctx))
@@ -56,7 +56,7 @@ func (b *background) finish(id int) {
 // stop cancels the work that runs and waits for it to end. Nothing starts afterwards.
 func (b *background) stop() {
 	b.mu.Lock()
-	b.closed = true
+	b.isClosed = true
 	for _, cancel := range b.cancels {
 		cancel()
 	}
