@@ -205,8 +205,12 @@ func TestVaultProblemsReturnsTheChecksKey(t *testing.T) {
 	_, registry := newSkyVault(t)
 	answer := decodeAnswer(t, callTool(t, registry, skyVault, "vault_problems", `{}`))
 	requireKeys(t, "the answer of vault_problems", answer, []string{"problems", "checks"}, []string{"ran"})
-	if checks, _ := answer["checks"].([]any); !slices.Equal(checks, []any{"parse"}) {
-		t.Errorf("checks = %v, want [parse]", answer["checks"])
+	want := make([]any, 0, len(getDefaultChecks()))
+	for _, check := range getDefaultChecks() {
+		want = append(want, check)
+	}
+	if checks, _ := answer["checks"].([]any); !slices.Equal(checks, want) {
+		t.Errorf("checks = %v, want %v", answer["checks"], want)
 	}
 
 	properties := getSchemaProperties(t, getToolSchema(t, registry, "vault_problems", true))
