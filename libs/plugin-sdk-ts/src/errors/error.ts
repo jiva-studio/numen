@@ -62,8 +62,14 @@ export class ReportedError extends Error {
   }
 }
 
-const isReportedError = (error: unknown): error is Error =>
-  error instanceof Error && error.name === REPORTED
+/** Matched by shape: another realm has an Error prototype of its own. */
+const isReportedError = (error: unknown): error is { readonly message: string } =>
+  typeof error === 'object' &&
+  error !== null &&
+  'name' in error &&
+  error.name === REPORTED &&
+  'message' in error &&
+  typeof error.message === 'string'
 
 /**
  * The message for a caught error, shown to the user who awaited the result.
