@@ -448,8 +448,27 @@ func listDomainPlugins() []string {
 	return []string{"notes"}
 }
 
+// getKebabName returns the segments of a plugin id joined by hyphens, a camelCase segment written in
+// kebab-case: views.titleBar is views-title-bar.
+func getKebabName(id string) string {
+	var out strings.Builder
+	for _, r := range id {
+		switch {
+		case r == '.':
+			out.WriteRune('-')
+		case r >= 'A' && r <= 'Z':
+			out.WriteRune('-')
+			out.WriteRune(r - 'A' + 'a')
+		default:
+			out.WriteRune(r)
+		}
+	}
+	return out.String()
+}
+
 // listPluginNamingIssues lists what a plugin folder and id break: the id starts
-// with md.numen., matches the folder name (with hyphens mapped to dots),
+// with md.numen., matches the folder name (with hyphens mapped to dots, and a camelCase segment of
+// the id written in kebab-case in the folder),
 // and the kind is one of agents, readers, editors, views, engines, tools or themes, or
 // the folder is a domain plugin.
 func listPluginNamingIssues(folder, id string) []string {
@@ -458,8 +477,8 @@ func listPluginNamingIssues(folder, id string) []string {
 		issues = append(issues, fmt.Sprintf("id %q does not start with md.numen.", id))
 	}
 	dotFolder := strings.ReplaceAll(folder, "-", ".")
-	expectedID := "md.numen." + dotFolder
-	if id != expectedID && id != "md.numen."+folder {
+	name, hasPrefix := strings.CutPrefix(id, "md.numen.")
+	if !hasPrefix || getKebabName(name) != strings.ReplaceAll(folder, ".", "-") {
 		issues = append(issues, fmt.Sprintf("folder %q differs from id %q without md.numen.", folder, id))
 	}
 	parts := strings.Split(dotFolder, ".")
@@ -494,6 +513,8 @@ func TestPluginNamingRule_ReportsNamingIssues(t *testing.T) {
 		"missing md.numen prefix": {"views-file-tree", "views.file.tree", 2},
 		"no name segment":         {"views", "md.numen.views", 1},
 		"domain plugin":           {"notes", "md.numen.notes", 0},
+		"camelCase segment":       {"views-title-bar", "md.numen.views.titleBar", 0},
+		"camelCase folder":        {"views-titleBar", "md.numen.views.titleBar", 1},
 	} {
 		if got := listPluginNamingIssues(one.folder, one.id); len(got) != one.issues {
 			t.Errorf("%s: %d issues found, want %d: %v", name, len(got), one.issues, got)

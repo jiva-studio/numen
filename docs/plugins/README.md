@@ -225,7 +225,7 @@ export default definePlugin({
 
 ### The Title Bar
 
-The title bar of a window is a view a plugin draws in the slot `titleBar`. The manifest declares it in `contributes.views`, and the frontend registers the component under the same id with `context.registerSlotView({ id, component })`; an id the manifest does not declare throws, and the activation fails. The Title bar plugin (`plugins/views-titleBar`, `md.numen.views.titleBar`) draws the bar of the application this way, in the editor and in the flashcards window.
+The title bar of a window is a view a plugin draws in the slot `titleBar`. The manifest declares it in `contributes.views`, and the frontend registers the component under the same id with `context.registerSlotView({ id, component })`; an id the manifest does not declare throws, and the activation fails. The Title bar plugin (`plugins/views-title-bar`, `md.numen.views.titleBar`) draws the bar of the application this way, in the editor and in the flashcards window.
 
 ```json
 "contributes": {

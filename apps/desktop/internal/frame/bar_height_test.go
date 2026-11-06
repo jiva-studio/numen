@@ -12,7 +12,7 @@ import (
 // bar of the Title bar plugin declares its own.
 const (
 	shellTokens = "../../../../libs/ui/shell/src/features/window-frame/tokens/frame.css"
-	pluginBar   = "../../../../plugins/views-titleBar/frontend/ui/titleBar.css"
+	pluginBar   = "../../../../plugins/views-title-bar/frontend/ui/titleBar.css"
 )
 
 var (
