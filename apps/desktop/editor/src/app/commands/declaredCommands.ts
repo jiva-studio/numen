@@ -53,6 +53,10 @@ export function createDeclaredPaletteCommands(
   })
 }
 
+/** Whether two lists the core answered hold the same entries in the same order. */
+const isSameList = (held: readonly unknown[] | undefined, answered: readonly unknown[]): boolean =>
+  held !== undefined && JSON.stringify(held) === JSON.stringify(answered)
+
 export interface DeclaredCommandsDeps {
   readonly list?: typeof listDeclaredCommands
   readonly run?: typeof runDeclaredCommand
@@ -119,8 +123,10 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     const mine = newest
     const commands = await list()
     if (mine !== newest) return
-    declared.value = commands.commands
-    declaredMenus.value = commands.menus
+    // An answer equal to the lists held keeps them, so the commands are not registered again while
+    // the palette lists them.
+    if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
+    if (!isSameList(declaredMenus.value, commands.menus)) declaredMenus.value = commands.menus
   }
 
   return {

@@ -245,6 +245,38 @@ describe('the declared commands read more than once', () => {
     expect(declared.declarations.value?.map((one) => one.id)).toStrictEqual(['convert'])
   })
 
+  it('keep the lists they hold, and register no command again, when a read answers the same', async () => {
+    const declared = useDeclaredCommands({
+      list: async () => ({
+        commands: [{ ...createSample, arguments: [...createSample.arguments] }],
+        menus: [{ pluginId: 'org.example.sample', location: 'titleBar', command: 'sample.create' }],
+      }),
+    })
+    await declared.load()
+    const commandsBefore = declared.commands.value
+    const placementsBefore = declared.placements.value
+    const paletteBefore = declared.paletteCommands.value
+
+    await declared.load()
+
+    expect(declared.commands.value).toBe(commandsBefore)
+    expect(declared.placements.value).toStrictEqual(placementsBefore)
+    expect(declared.paletteCommands.value).toBe(paletteBefore)
+  })
+
+  it('take the new list when a read answers another one', async () => {
+    const lists = [
+      { commands: [createSample], menus: [] },
+      { commands: [convert], menus: [] },
+    ]
+    const declared = useDeclaredCommands({ list: async () => lists.shift() as DeclaredList })
+    await declared.load()
+
+    await declared.load()
+
+    expect(declared.commands.value?.map((one) => one.id)).toStrictEqual(['convert'])
+  })
+
   it('are none until the first read has answered', async () => {
     const declared = useDeclaredCommands({ list: async () => ({ commands: [convert], menus: [] }) })
 
