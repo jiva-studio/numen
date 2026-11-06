@@ -1,8 +1,9 @@
+import { runInNewContext } from 'node:vm'
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { ErrorCode as ProtoErrorCode, ErrorCodeSchema } from '@numen/protocol'
 
-import { formatErrorCodeMessage, formatErrorMessage } from './error'
+import { ReportedError, formatErrorCodeMessage, formatErrorMessage } from './error'
 
 /** Past every error code the schema names today. */
 const UNNAMED_CODE = 999 as ProtoErrorCode
@@ -79,6 +80,87 @@ describe('a fault', () => {
     expect(formatErrorMessage(new TypeError('undefined is not a function'))).toMatch(/\S/)
     expect(formatErrorMessage('nothing in particular')).toMatch(/\S/)
     expect(formatErrorMessage(undefined)).toMatch(/\S/)
+  })
+
+  it('shows the text of a ReportedError', () => {
+    expect(
+      formatErrorMessage(
+        new ReportedError('The plugin source local failed: duplicate plugin id "sample.notes"'),
+      ),
+    ).toBe('The plugin source local failed: duplicate plugin id "sample.notes"')
+  })
+
+  it('shows the text of an error named ReportedError from the plugin SDK copy', () => {
+    const reported = Object.assign(
+      new Error('The plugin source local failed: duplicate plugin id "sample.notes"'),
+      { name: 'ReportedError' },
+    )
+    expect(formatErrorMessage(reported)).toBe(
+      'The plugin source local failed: duplicate plugin id "sample.notes"',
+    )
+  })
+
+  it('shows the text of a ReportedError built in another realm', () => {
+    const reported: unknown = runInNewContext(
+      'const error = new Error(text); error.name = "ReportedError"; error',
+      { text: 'The plugin source local failed: duplicate plugin id "sample.notes"' },
+    )
+    expect(reported).not.toBeInstanceOf(Error)
+    expect(formatErrorMessage(reported)).toBe(
+      'The plugin source local failed: duplicate plugin id "sample.notes"',
+    )
+  })
+
+  it('shows the generic text for a ReportedError with blank text', () => {
+    expect(formatErrorMessage(new ReportedError('  '))).toBe('Numen is not responding; retrying')
+  })
+
+  it('shows the generic text for null', () => {
+    expect(formatErrorMessage(null)).toBe('Numen is not responding; retrying')
+  })
+
+  it('shows the generic text for an object named ReportedError whose message is not text', () => {
+    expect(formatErrorMessage({ name: 'ReportedError', message: 42 })).toBe(
+      'Numen is not responding; retrying',
+    )
+  })
+
+  it('shows the generic text for an Error that is not a ReportedError', () => {
+    const failure = new Error('open /Users/someone/Vault/library/Broken.epub: permission denied')
+    expect(formatErrorMessage(failure)).toBe('Numen is not responding; retrying')
+  })
+
+  it('shows the generic text for a TypeError thrown by fetch outside connect', () => {
+    expect(formatErrorMessage(new TypeError('Load failed'))).toBe(
+      'Numen is not responding; retrying',
+    )
+  })
+
+  it('shows the generic text for a native error with its own code field', () => {
+    const failure = Object.assign(
+      new Error('mkdir /data/user/0/md.numen.sample/files/vault: permission denied'),
+      { code: 'UNAVAILABLE' },
+    )
+    expect(formatErrorMessage(failure)).toBe('Numen is not responding; retrying')
+  })
+
+  it('shows the generic text for a ConnectError from a failed fetch', () => {
+    const dropped = ConnectError.from(new TypeError('Failed to fetch'))
+    expect(formatErrorMessage(dropped)).toBe('Numen is not responding; retrying')
+  })
+
+  it('shows the busy text for Unavailable with an empty message', () => {
+    expect(formatErrorMessage(new ConnectError('', Code.Unavailable))).toBe(
+      'Numen is busy; try again',
+    )
+  })
+
+  it('returns empty text for an AbortError', () => {
+    expect(formatErrorMessage(new DOMException('aborted', 'AbortError'))).toBe('')
+  })
+
+  it('shows the generic text for an Error with blank text', () => {
+    expect(formatErrorMessage(new Error('  '))).toBe('Numen is not responding; retrying')
   })
 
   it('says something plain where the code is empty here yet', () => {

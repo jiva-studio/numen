@@ -10,6 +10,14 @@ import type { Model, PluginInfo, PluginSettingInfo } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
+import {
+  ListCatalogResponseSchema,
+  asFailure,
+  asValue,
+  create,
+  type PluginCatalog,
+} from '@numen/core-client'
+import { createLostConnection } from '@numen/core-client/testing'
 
 /** The settings over a vault containing `{}`, and every writer they requested from the log. */
 const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = {}) => {
@@ -408,7 +416,7 @@ describe('the settings tab', () => {
       vi.useRealTimers()
     }
 
-    vi.mocked(core.choosePluginPath).mockRejectedValueOnce(new Error('dialog crashed'))
+    vi.mocked(core.choosePluginPath).mockRejectedValueOnce(createLostConnection('dialog crashed'))
     expect(await installation.choosePath('plugin.ocr', 'dir')).toBe(
       'Numen is not responding; retrying',
     )
@@ -419,12 +427,16 @@ describe('the settings tab', () => {
     expect(await installation.deletePluginData?.('plugin.ocr')).toBe('')
     expect(core.deletePluginData).toHaveBeenCalledWith('plugin.ocr')
 
-    vi.mocked(core.deletePluginData).mockRejectedValueOnce(new Error('permission denied'))
+    vi.mocked(core.deletePluginData).mockRejectedValueOnce(
+      createLostConnection('permission denied'),
+    )
     expect(await installation.deletePluginData?.('plugin.ocr')).toBe(
       'Numen is not responding; retrying',
     )
 
-    vi.spyOn(settings.rest, 'writeSettings').mockRejectedValueOnce(new Error('write failed'))
+    vi.spyOn(settings.rest, 'writeSettings').mockRejectedValueOnce(
+      createLostConnection('write failed'),
+    )
     const failed = installation.write([
       { at: ['app', 'performance', 'profile'], value: '"eco"' },
     ]) as unknown as Promise<void>
@@ -432,6 +444,57 @@ describe('the settings tab', () => {
     await vi.waitFor(() =>
       expect(writerFns.configured).toHaveBeenCalledWith(
         'Numen is not responding; retrying',
+        'error',
+      ),
+    )
+    settings.close()
+  })
+})
+
+describe('the plugin catalog', () => {
+  const createCatalog = (listing: Awaited<ReturnType<PluginCatalog['list']>>): PluginCatalog => ({
+    list: vi.fn(async () => listing),
+    get: vi.fn(),
+    findByTabKind: vi.fn(),
+  })
+
+  it('writes the reason a plugin source failed to the window log', async () => {
+    const catalog = createCatalog(
+      asValue(
+        create(ListCatalogResponseSchema, {
+          sourceErrors: [
+            {
+              source: 'local',
+              message: 'duplicate plugin id "sample.notes" in /plugins/a and /plugins/b',
+            },
+          ],
+        }),
+      ),
+    )
+    const { settings, writerFns } = createSettings({ catalog })
+
+    settings.rest.plugins.value = [SCANNER]
+
+    await vi.waitFor(() =>
+      expect(writerFns.configured).toHaveBeenCalledWith(
+        'The plugin source local failed: duplicate plugin id "sample.notes" in /plugins/a and /plugins/b',
+        'error',
+      ),
+    )
+    settings.close()
+  })
+
+  it('writes the reason the catalog is unavailable to the window log', async () => {
+    const catalog = createCatalog(
+      asFailure({ kind: 'unavailable', message: 'Numen is busy; try again' }),
+    )
+    const { settings, writerFns } = createSettings({ catalog })
+
+    settings.rest.plugins.value = [SCANNER]
+
+    await vi.waitFor(() =>
+      expect(writerFns.configured).toHaveBeenCalledWith(
+        'The plugin catalog is unavailable: Numen is busy; try again',
         'error',
       ),
     )

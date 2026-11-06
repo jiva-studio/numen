@@ -2,6 +2,7 @@
  * The editors of a window: what each is made with, what is flushed, what raises conflicts.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import { createNoteEditors } from './useNoteEditors'
 
 interface MockParts {
@@ -213,7 +214,7 @@ describe('the store of open notes, as the palette reads it', () => {
     expect(h.parts.notes.flushPending).toHaveBeenCalledWith('known-note')
 
     ;(h.parts.notes.close as ReturnType<typeof vi.fn>).mockReturnValue(
-      Promise.reject(new Error('disk locked')),
+      Promise.reject(createLostConnection('disk locked')),
     )
     store.close('known-note')
     expect(h.parts.notes.close).toHaveBeenCalledWith('known-note')
