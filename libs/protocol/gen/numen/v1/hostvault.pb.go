@@ -4069,9 +4069,11 @@ func (x *HostVaultServiceOpenVaultRequest) GetId() string {
 }
 
 type HostVaultServiceOpenVaultResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	Failure       *VaultsErrorCode       `protobuf:"varint,2,opt,name=failure,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"failure,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Error   HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Failure *VaultsErrorCode       `protobuf:"varint,2,opt,name=failure,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"failure,omitempty"`
+	// The message of the core when the open is rejected.
+	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4118,6 +4120,13 @@ func (x *HostVaultServiceOpenVaultResponse) GetFailure() VaultsErrorCode {
 		return *x.Failure
 	}
 	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *HostVaultServiceOpenVaultResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
 }
 
 type ReadCacheRequest struct {
@@ -4674,10 +4683,11 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\n" +
 	"\b_failure\"2\n" +
 	" HostVaultServiceOpenVaultRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\x9d\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xb5\x01\n" +
 	"!HostVaultServiceOpenVaultResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x128\n" +
-	"\afailure\x18\x02 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\afailure\x88\x01\x01B\n" +
+	"\afailure\x18\x02 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\afailure\x88\x01\x01\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detailB\n" +
 	"\n" +
 	"\b_failure\"&\n" +
 	"\x10ReadCacheRequest\x12\x12\n" +
