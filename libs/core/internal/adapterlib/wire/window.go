@@ -157,7 +157,7 @@ func (w *Window) WatchQuit(
 			if !isOpen {
 				return nil
 			}
-			if err := out.Send(&v1.WatchQuitResponse{Token: request, Flush: true}); err != nil {
+			if err := out.Send(&v1.WatchQuitResponse{Token: request, Flush: true, IsSilent: w.clients.isSilentRequest()}); err != nil {
 				return err
 			}
 		}
@@ -231,7 +231,16 @@ func (w *Window) RemoveTask(id string) {
 // the request to end. It returns false when a client holds work awaiting a user
 // decision, or when another request superseded this one.
 func (w *Window) RequestFlush(ctx context.Context) bool {
-	request := w.clients.startRequest()
+	return w.waitForRequest(ctx, w.clients.startRequest())
+}
+
+// RequestSilentFlush is RequestFlush with a request the clients answer without showing anything
+// to the user.
+func (w *Window) RequestSilentFlush(ctx context.Context) bool {
+	return w.waitForRequest(ctx, w.clients.startSilentRequest())
+}
+
+func (w *Window) waitForRequest(ctx context.Context, request *flushRequest) bool {
 	select {
 	case <-request.allWritten:
 	case <-request.questionRaised:
@@ -244,6 +253,13 @@ func (w *Window) RequestFlush(ctx context.Context) bool {
 // IsFlushOpen reports whether a request is running: one that waits for its clients, or for a
 // client's question to be answered.
 func (w *Window) IsFlushOpen() bool { return w.clients.getRunning() != nil }
+
+// IsQuestionOpen reports whether the running request has a client awaiting a user decision with
+// its work unwritten.
+func (w *Window) IsQuestionOpen() bool {
+	request := w.clients.getRunning()
+	return request != nil && request.isPending() && !request.isWritten()
+}
 
 // WaitForFlush waits for the running request to end with every client written.
 func (w *Window) WaitForFlush(ctx context.Context) bool {
@@ -354,6 +370,8 @@ type flushRequest struct {
 	questionRaised chan struct{}
 	// superseded closes once another request replaces this one.
 	superseded chan struct{}
+	// isSilent is a request whose clients show nothing to the user.
+	isSilent bool
 
 	// The flush coordinator's lock guards these fields.
 	isAllWrittenSignaled bool
@@ -365,6 +383,16 @@ type flushRequest struct {
 func (r *flushRequest) isPending() bool {
 	select {
 	case <-r.questionRaised:
+		return true
+	default:
+		return false
+	}
+}
+
+// isWritten reports whether every client has written its work.
+func (r *flushRequest) isWritten() bool {
+	select {
+	case <-r.allWritten:
 		return true
 	default:
 		return false
@@ -429,6 +457,16 @@ func (l *flushCoordinator) disconnectClient(token string, p *client) {
 // states from the previous request are cleared. A running request is superseded
 // and its waiters are released.
 func (l *flushCoordinator) startRequest() *flushRequest {
+	return l.beginRequest(false)
+}
+
+// startSilentRequest begins a request whose clients write what they can and
+// report, showing nothing to the user.
+func (l *flushCoordinator) startSilentRequest() *flushRequest {
+	return l.beginRequest(true)
+}
+
+func (l *flushCoordinator) beginRequest(isSilent bool) *flushRequest {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -440,6 +478,7 @@ func (l *flushCoordinator) startRequest() *flushRequest {
 		allWritten:     make(chan struct{}),
 		questionRaised: make(chan struct{}),
 		superseded:     make(chan struct{}),
+		isSilent:       isSilent,
 	}
 	for token, p := range l.clients {
 		p.state = flushUnanswered
@@ -466,6 +505,14 @@ func (l *flushCoordinator) endRequest() {
 	l.current.isSuperseded = true
 	close(l.current.superseded)
 	l.current = nil
+}
+
+// isSilentRequest reports whether the running request is silent.
+func (l *flushCoordinator) isSilentRequest() bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	return l.isRunning() && l.current.isSilent
 }
 
 // getRunning is the request running, or nothing.

@@ -55,7 +55,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	target, elapsed := context.WithTimeout(ctx, FlushTimeout)
 	defer elapsed()
 
-	if !flushPending(target, o.State.Window, &o.State.Writing) {
+	if !flushPending(target, o.State.Window, &o.State.Writing, isInsidePluginOpen) {
 		return errAnswerPending
 	}
 	// A plugin's open cancelled during the flush switches nothing.

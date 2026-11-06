@@ -529,7 +529,7 @@ func (o *Installation) FlushPending(ctx context.Context) bool {
 		return false
 	}
 
-	flushed := flushPending(ctx, o.State.Window, &o.State.Writing)
+	flushed := flushPending(ctx, o.State.Window, &o.State.Writing, false)
 	o.shutdown.end(flushed)
 	return flushed
 }
@@ -545,9 +545,13 @@ func (o *Installation) WaitForFlush(ctx context.Context) bool {
 //
 // A silent client is bounded by ctx. A client with a pending user prompt ends the
 // flush with false: the vault stays open until the user responds. The writes
-// themselves have no bound.
-func flushPending(ctx context.Context, pages *wire.Window, writes *inflight) bool {
-	if !pages.RequestFlush(ctx) {
+// themselves have no bound. A silent flush asks the clients to show nothing to the user.
+func flushPending(ctx context.Context, pages *wire.Window, writes *inflight, isSilent bool) bool {
+	request := pages.RequestFlush
+	if isSilent {
+		request = pages.RequestSilentFlush
+	}
+	if !request(ctx) {
 		return false
 	}
 	<-writes.seal()
