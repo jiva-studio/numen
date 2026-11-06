@@ -44,10 +44,10 @@ func newClient() *http.Client {
 	return &http.Client{
 		CheckRedirect: func(request *http.Request, via []*http.Request) error {
 			if request.URL.Scheme != "https" {
-				return fmt.Errorf("%s redirects to %s", via[len(via)-1].URL, request.URL)
+				return fmt.Errorf("%s redirects to %s", redactAddress(via[len(via)-1].URL.String()), redactAddress(request.URL.String()))
 			}
 			if len(via) >= 10 {
-				return fmt.Errorf("%s redirects ten times", via[0].URL)
+				return fmt.Errorf("%s redirects ten times", redactAddress(via[0].URL.String()))
 			}
 			return nil
 		},

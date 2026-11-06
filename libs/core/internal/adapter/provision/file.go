@@ -152,14 +152,35 @@ func newDownloadError(req pluginport.DependencyRequirement, cause error) error {
 }
 
 // redactAddress returns the address without its credentials, query and fragment, which can hold
-// tokens. An address that does not parse is quoted, so its control characters are escaped.
+// tokens. An address that does not parse loses the same parts by position and is quoted, so its
+// control characters are escaped.
 func redactAddress(raw string) string {
 	address, err := url.Parse(raw)
 	if err != nil {
-		return strconv.Quote(raw)
+		return strconv.Quote(redactUnparsedAddress(raw))
 	}
 	address.User, address.RawQuery, address.ForceQuery, address.Fragment, address.RawFragment = nil, "", false, "", ""
 	return address.String()
+}
+
+// redactUnparsedAddress cuts the address at its first ? or #, and drops what its authority holds
+// up to the last @.
+func redactUnparsedAddress(raw string) string {
+	if end := strings.IndexAny(raw, "?#"); end >= 0 {
+		raw = raw[:end]
+	}
+	scheme, rest, ok := strings.Cut(raw, "://")
+	if !ok {
+		return raw
+	}
+	authority, tail := rest, ""
+	if slash := strings.IndexByte(rest, '/'); slash >= 0 {
+		authority, tail = rest[:slash], rest[slash:]
+	}
+	if atSign := strings.LastIndexByte(authority, '@'); atSign >= 0 {
+		authority = authority[atSign+1:]
+	}
+	return scheme + "://" + authority + tail
 }
 
 func getPercent(done, total int64) float64 {
