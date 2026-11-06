@@ -15,7 +15,7 @@ import (
 // declaredByTwoPlugins declares a command of a plugin with only a frontend and one of a plugin with a backend.
 type declaredByTwoPlugins struct{}
 
-func (declaredByTwoPlugins) ListMenus() []plugincommand.MenuEntry { return nil }
+func (declaredByTwoPlugins) ListSlots() []plugincommand.SlotEntry { return nil }
 
 func (declaredByTwoPlugins) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{

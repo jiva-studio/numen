@@ -47,12 +47,12 @@ func (h *Handler) ListCommands(
 		}
 		commands = append(commands, newWireCommand(one, h.list.ListExtensions(one.Command)))
 	}
-	menuEntries := h.list.ExecuteMenus()
-	menus := make([]*v1.PluginMenu, 0, len(menuEntries))
-	for _, one := range menuEntries {
-		menus = append(menus, newWireMenu(one))
+	slotEntries := h.list.ExecuteSlots()
+	slots := make([]*v1.PluginSlotEntry, 0, len(slotEntries))
+	for _, one := range slotEntries {
+		slots = append(slots, newWireSlotEntry(one))
 	}
-	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands, Menus: menus}), nil
+	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands, Slots: slots}), nil
 }
 
 // RunPluginCommand runs one of them. A call that is not a command, matches none, fails, or is routed to
@@ -120,19 +120,27 @@ func getContentTypeTexts(types []domain.ContentType) []string {
 	return out
 }
 
-// newWireMenu is a menu entry as the schema carries it.
-func newWireMenu(entry plugincommand.MenuEntry) *v1.PluginMenu {
-	wire := &v1.PluginMenu{
-		PluginId: entry.PluginID,
-		Location: entry.Menu.Location,
-		Command:  entry.Menu.Command,
-		Group:    entry.Menu.Group,
+// newWireSlotEntry is a slot entry as the schema carries it.
+func newWireSlotEntry(one plugincommand.SlotEntry) *v1.PluginSlotEntry {
+	entry := &v1.ManifestSlotEntry{
+		Slot:  one.Entry.Slot,
+		Title: one.Entry.Title,
+		Icon:  one.Entry.Icon,
+		Group: one.Entry.Group,
 	}
-	if entry.Menu.Order != nil {
-		order := clampToInt32(*entry.Menu.Order)
-		wire.Order = &order
+	switch {
+	case one.Entry.Command != "":
+		entry.Placed = &v1.ManifestSlotEntry_Command{Command: one.Entry.Command}
+	case one.Entry.View != "":
+		entry.Placed = &v1.ManifestSlotEntry_View{View: one.Entry.View}
+	case one.Entry.Submenu != "":
+		entry.Placed = &v1.ManifestSlotEntry_Submenu{Submenu: one.Entry.Submenu}
 	}
-	return wire
+	if one.Entry.Order != nil {
+		order := clampToInt32(*one.Entry.Order)
+		entry.Order = &order
+	}
+	return &v1.PluginSlotEntry{PluginId: one.PluginID, Entry: entry}
 }
 
 // clampToInt32 narrows an order to the 32 bits the schema carries.

@@ -1,25 +1,25 @@
-/** The placements the window passes on, read from the answers of the core. */
+/** The slot entries the window passes on, read from the answers of the core. */
 import { describe, expect, it } from 'vitest'
-import type { DeclaredList, DeclaredMenu } from '@/entities/plugin'
+import type { DeclaredList, DeclaredSlot } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
 
-const menu = (command: string, overrides: Partial<DeclaredMenu> = {}): DeclaredMenu => ({
+const menu = (command: string, overrides: Partial<DeclaredSlot> = {}): DeclaredSlot => ({
   pluginId: 'org.example.atlas',
-  location: 'searchResult',
+  slot: 'palette.searchResult',
   command,
   ...overrides,
 })
 
-const list = (...menus: DeclaredMenu[]): DeclaredList => ({ commands: [], menus })
+const list = (...slots: DeclaredSlot[]): DeclaredList => ({ commands: [], slots })
 
-describe('the placements of the plugins', () => {
+describe('the slot entries of the plugins', () => {
   it('are unknown until the first list has answered', async () => {
     const declared = useDeclaredCommands({ list: async () => list(menu('atlas.open')) })
 
-    expect(declared.placements.value).toBeUndefined()
+    expect(declared.slots.value).toBeUndefined()
     await declared.load()
 
-    expect(declared.placements.value).toEqual([menu('atlas.open')])
+    expect(declared.slots.value).toEqual([menu('atlas.open')])
   })
 
   it('keep the group and the order of each entry', async () => {
@@ -33,7 +33,7 @@ describe('the placements of the plugins', () => {
 
     await declared.load()
 
-    expect(declared.placements.value).toEqual([
+    expect(declared.slots.value).toEqual([
       menu('atlas.open', { group: 'navigate', order: 20 }),
       menu('atlas.zero', { order: 0 }),
     ])
@@ -52,7 +52,7 @@ describe('the placements of the plugins', () => {
     answerFirst(list(menu('atlas.stale')))
     await slow
 
-    expect(declared.placements.value?.map((one) => one.command)).toEqual(['atlas.newest'])
+    expect(declared.slots.value?.map((one) => one.command)).toEqual(['atlas.newest'])
   })
 
   it('are none once the plugins no longer place a command', async () => {
@@ -63,6 +63,6 @@ describe('the placements of the plugins', () => {
     answer = list()
     await declared.load()
 
-    expect(declared.placements.value).toEqual([])
+    expect(declared.slots.value).toEqual([])
   })
 })

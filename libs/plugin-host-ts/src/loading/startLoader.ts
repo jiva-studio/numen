@@ -1,5 +1,5 @@
 /**
- * The start of the plugins of a window: those of the interface first, then every other one.
+ * The start of the plugins of a window: those of the window slots first, then every other one.
  */
 import { startInterfacePlugins } from './interfaceStart'
 import { INTERFACE_WAIT_MS } from './limits'
@@ -12,7 +12,7 @@ export interface StartLoaderDeps {
   readonly load: (id: string) => Promise<unknown>
   /** Whether the plugin contributes to the interface, read from its manifest. */
   readonly isInterface: (id: string) => Promise<boolean>
-  /** Called once the plugins of the interface have started or INTERFACE_WAIT_MS has passed. */
+  /** Called once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
   readonly onInterfaceStarted: () => void
 }
 
@@ -72,8 +72,8 @@ async function startInOrder(deps: StartLoaderDeps, activate: Activate, ids: read
 }
 
 /**
- * Starts the enabled plugins of the interface first (`startInterfacePlugins`), then every other
- * enabled plugin, while the late plugins of the interface go on starting. The promise settles when every plugin has been activated or has failed.
+ * Starts the enabled plugins of the window slots first (`startInterfacePlugins`), then every other
+ * enabled plugin, while the late plugins of the window slots go on starting. The promise settles when every plugin has been activated or has failed.
  */
 export async function startLoader(deps: StartLoaderDeps, activate: Activate): Promise<void> {
   for (const pluginId of deps.pluginIds) deps.listen(pluginId)

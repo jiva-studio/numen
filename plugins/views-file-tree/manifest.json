@@ -30,8 +30,8 @@
         "scope": "note"
       }
     ],
-    "menus": [
-      { "location": "titleBar.commands", "command": "tree.open", "group": "navigate", "order": 10 }
+    "slots": [
+      { "slot": "titleBar.commands", "command": "tree.open", "group": "navigate", "order": 10 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

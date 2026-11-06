@@ -4,7 +4,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage } from '@numen/core-client'
-import type { PlacedCommand } from '@numen/plugin-host'
+import type { SlotItem } from '@numen/plugin-host'
 import type { CommandTarget } from '@/features/command-palette'
 import { useCommands, type CommandsDepsOptions } from '../commands/useCommands'
 import { useTitleBarCommands } from './useTitleBarCommands'
@@ -47,12 +47,14 @@ const front = {
   isReady: true,
 } as unknown as CommandTarget
 
-const entry = (command: string): PlacedCommand => ({
+const entry = (command: string): SlotItem => ({
+  kind: 'command',
+  key: `${TIDE}/command/${command}`,
   pluginId: TIDE,
   command,
   title: command,
-  icon: 'waves',
-  group: '',
+  icon: { render: () => null },
+  shortcut: '',
 })
 
 function setup(executeCommand: () => Promise<boolean> = async () => true) {
@@ -78,11 +80,10 @@ function setup(executeCommand: () => Promise<boolean> = async () => true) {
     pluginHost,
   } as unknown as CommandsDepsOptions)
   const bar = useTitleBarCommands({
-    menus: { getEntries: () => [entry(OPEN), entry('app:note.create')] },
+    slots: { getEntries: () => [entry(OPEN), entry('app:note.create')] },
     isVaultOpen: () => true,
     runCommand: used.runCommand,
     getTarget: () => front,
-    getIcon: () => ({ render: () => null }),
     agent: 'Linux',
   })
   return { bar, execute, writeMessage }

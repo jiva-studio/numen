@@ -5,7 +5,7 @@
 import type { Stats } from '../types'
 import { WORDS as words } from '../words'
 
-/** The mark in front of the count in the status bar. */
+/** The mark in front of the count in the title bar. */
 export const MARK = '⬡'
 
 const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const
@@ -21,7 +21,7 @@ export function isPending(stats: Pick<Stats, 'waiting'>): boolean {
   return stats.waiting > 0
 }
 
-/** The figure of the status bar item: the vectors the index holds, and never the chunks. */
+/** The figure of the title bar item: the vectors the index holds, and never the chunks. */
 export function formatVectors(stats: Pick<Stats, 'vectors'>, locale?: string): string {
   return formatCount(stats.vectors, locale)
 }

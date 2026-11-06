@@ -5,5 +5,5 @@ export {
   runDeclaredCommand,
   type DeclaredCommand,
   type DeclaredList,
-  type DeclaredMenu,
+  type DeclaredSlot,
 } from './api/declaredCommands'

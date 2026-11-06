@@ -90,7 +90,7 @@ export function useShell(deps: ShellDeps = {}) {
   const appearance = useAppearance(notices, deps.appearance)
 
   /**
-   * True once the plugins of the interface have started or INTERFACE_WAIT_MS has passed since the
+   * True once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed since the
    * window mounted: the window is drawn then.
    */
   const isStarted = ref(false)

@@ -2,7 +2,7 @@
  * Search hit lookup, item formatting, and the command a chosen action of a hit runs.
  */
 import type { PaletteItem } from '@numen/shell'
-import type { PlacedCommand, Selector } from '@numen/plugin-host'
+import type { Selector } from '@numen/plugin-host'
 import type { NoteType } from '@/entities/file'
 import { COMMAND } from '@/shared/commandIds'
 import type { TextRange } from '@/shared/textRange'
@@ -45,9 +45,15 @@ export interface Passage {
   at: readonly TextRange[]
 }
 
+/** A command placed in the menu of a search result, by its full id and its title. */
+export interface SearchMenuEntry {
+  readonly command: string
+  readonly title: string
+}
+
 /** The entries plugins place in the menu of a search result, in the order they are drawn. */
 export interface SearchMenuDeps {
-  getEntries(): readonly PlacedCommand[]
+  getEntries(): readonly SearchMenuEntry[]
 }
 
 /**
@@ -85,7 +91,7 @@ function createNoteActions(
   return { actions, actionIds: actions.map((one) => one.id) }
 }
 
-function createMenuActions(entries: readonly PlacedCommand[]): readonly PaletteAction[] {
+function createMenuActions(entries: readonly SearchMenuEntry[]): readonly PaletteAction[] {
   return entries.map((one) => ({ id: one.command, text: one.title }))
 }
 
@@ -96,7 +102,7 @@ function createMenuActions(entries: readonly PlacedCommand[]): readonly PaletteA
 export function createNameItem(
   one: NameMatch,
   words: Words,
-  entries: readonly PlacedCommand[] = [],
+  entries: readonly SearchMenuEntry[] = [],
 ): SearchRow {
   const menu = createMenuActions(entries)
   const atHeading = createNoteActions(words.readAt, menu)
@@ -145,7 +151,7 @@ export function createPassageItem(
   group: string,
   one: Passage,
   words: Words,
-  entries: readonly PlacedCommand[] = [],
+  entries: readonly SearchMenuEntry[] = [],
 ): SearchRow {
   const note = createNoteActions(words.read, createMenuActions(entries))
   const document = [{ id: COMMAND.openFile, text: words.readDocument }]

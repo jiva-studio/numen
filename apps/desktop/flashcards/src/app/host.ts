@@ -11,8 +11,10 @@ import {
   createAppInfo,
   createExternalOpener,
   createPluginNotices,
+  createSlotRegistry,
   createSlotViewRegistry,
-  getDeclaredSlot,
+  getDeclaredSlots,
+  readManifestSlotEntries,
   createViewRegistry,
   TITLE_BAR_SLOT,
   openExternalUrl,
@@ -20,9 +22,11 @@ import {
   type AgentHost,
   type Disposable,
   type PluginContext,
+  type SlotViewRegistry,
   type TabKindRegistration,
 } from '@numen/plugin-host'
 import { createNoticeQueue } from '@numen/shell'
+import { createNamedIcon } from '@numen/ui'
 
 /** The target of this window, which names the plugins it loads. */
 export const TARGET = 'desktop.flashcards'
@@ -98,7 +102,6 @@ const UNUSED_CAPABILITIES = {
   registerContextMenu: () => NOTHING,
   registerAgentProvider: () => NOTHING,
   registerSettingsView: () => NOTHING,
-  registerStatusView: () => NOTHING,
   getSetting: () => undefined,
   onSettingChange: () => NOTHING,
   onVaultChange: () => NOTHING,
@@ -107,6 +110,31 @@ const UNUSED_CAPABILITIES = {
   emitVaultChange: () => undefined,
   emitFileSelect: () => undefined,
 } satisfies Partial<PluginContext>
+
+/**
+ * The slots of the window over the manifests of its plugins. The window lists no commands, so only
+ * the views of the entries are drawn.
+ */
+function createWindowSlots(slotViews: SlotViewRegistry) {
+  const manifests = shallowRef<ReadonlyMap<string, Manifest>>(new Map())
+  const slots = createSlotRegistry({
+    getEntries: () =>
+      [...manifests.value].flatMap(([pluginId, manifest]) =>
+        readManifestSlotEntries(pluginId, manifest, createNamedIcon),
+      ),
+    findCommand: () => undefined,
+    findView: slotViews.findView,
+  })
+  const track = (pluginId: string, manifest: Manifest | undefined): void => {
+    if (manifest) manifests.value = new Map(manifests.value).set(pluginId, manifest)
+  }
+  const forget = (pluginId: string): void => {
+    const next = new Map(manifests.value)
+    next.delete(pluginId)
+    manifests.value = next
+  }
+  return { slots, track, forget }
+}
 
 /** Adds the view to the list, and takes it out again on dispose. */
 const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginView): Disposable => {
@@ -123,6 +151,7 @@ export function createShellHost(agent?: AgentHost) {
   const slotViews = createSlotViewRegistry({
     reportIssue: (pluginId, message) => notices.show(pluginId, `${pluginId}: ${message}`, 'error'),
   })
+  const windowSlots = createWindowSlots(slotViews)
 
   const front = createFrontView(views)
   const { tab, openTab, closeTab } = createWindowTab(() => front.value)
@@ -149,14 +178,13 @@ export function createShellHost(agent?: AgentHost) {
         add(addView({ pluginId, registration: registration as TabKindRegistration })),
       ...UNUSED_CAPABILITIES,
       registerView: (registration) => add(declaredViews.registerView(pluginId, registration)),
-      registerSlotView: (registration) =>
-        add(
-          slotViews.registerSlotView(
-            pluginId,
-            getDeclaredSlot(pluginId, manifest, registration.id),
-            registration,
-          ),
-        ),
+      registerSlotView: (registration) => {
+        const registrations = getDeclaredSlots(pluginId, manifest, registration.id).map((slot) =>
+          slotViews.registerSlotView(pluginId, slot, registration),
+        )
+        return add({ dispose: () => registrations.forEach((one) => one.dispose()) })
+      },
+      slots: windowSlots.slots,
       mountView: (capability, element, viewContext) => {
         const view = declaredViews.mountView(capability, element, viewContext)
         add(view)
@@ -168,6 +196,7 @@ export function createShellHost(agent?: AgentHost) {
       ...(agent ? { agent } : {}),
     }
     contexts.set(pluginId, context)
+    windowSlots.track(pluginId, manifest)
     return context
   }
 
@@ -177,6 +206,7 @@ export function createShellHost(agent?: AgentHost) {
     contexts.delete(pluginId)
     views.value = views.value.filter((one) => one.pluginId !== pluginId)
     slotViews.disposePlugin(pluginId)
+    windowSlots.forget(pluginId)
     notices.clear(pluginId)
   }
 

@@ -271,7 +271,6 @@ beforeEach(() => {
       getContextMenuItems: vi.fn(() => ['ctx-item']),
       runContextMenu: vi.fn(),
       getContextMenuIcon: vi.fn(() => 'ctx-icon'),
-      statusViews: ref([]),
       getSlotView: vi.fn(() => ref(null)),
     },
     pluginLoader: {
@@ -620,7 +619,7 @@ describe('the services a plugin is given', () => {
     expect(taskList).toBe(h.f.display.tasks)
   })
 
-  it('stops the tabs waiting for their plugins once the plugins of the interface have started', async () => {
+  it('stops the tabs waiting for their plugins once the plugins of the window slots have started', async () => {
     useWindow()
     h.f.pluginLoader.start.mockImplementationOnce(() => new Promise<undefined>(() => undefined))
 
@@ -899,6 +898,33 @@ describe('tab links wiring', () => {
       'The tabs were not linked: Numen is not responding; retrying',
       'error',
     )
+  })
+
+  it('places the tabs of a new vault once the plugins of the window slots started, while the others go on', async () => {
+    try {
+      vi.stubGlobal('location', new URL('http://localhost/'))
+      useWindow()
+      h.f.vaults.activeVault.value = { id: 'vault' }
+      h.core.readOpenTabs.mockResolvedValueOnce({ tabs: [], activeId: '' })
+      let startInterface: () => void = () => undefined
+      const interfaceStarted = new Promise<undefined>((resolve) => {
+        startInterface = () => resolve(undefined)
+      })
+      h.f.pluginLoader.waitForInterface.mockImplementation(() => interfaceStarted)
+      h.f.pluginLoader.start.mockImplementationOnce(() => new Promise<undefined>(() => undefined))
+      h.f.windowTabs.openPlacedTabs.mockClear()
+      h.args.bootstrap.startPlugins().catch(() => undefined)
+
+      const layout = h.args.bootstrap.startLayout()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      expect(h.f.windowTabs.openPlacedTabs).not.toHaveBeenCalled()
+      startInterface()
+      await layout
+
+      expect(h.f.windowTabs.openPlacedTabs).toHaveBeenCalledOnce()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('opens a detached tab with its id and saved state', async () => {

@@ -44,7 +44,7 @@ describe('the commands the plugins declare', () => {
           ],
         },
       ],
-      menus: [],
+      slots: [],
     })
 
     const {
@@ -73,7 +73,7 @@ describe('the commands the plugins declare', () => {
           arguments: [],
         },
       ],
-      menus: [],
+      slots: [],
     })
 
     const {

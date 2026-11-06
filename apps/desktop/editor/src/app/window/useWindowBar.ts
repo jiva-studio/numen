@@ -3,14 +3,14 @@
  * place in `titleBar.commands`, and the vaults the title offers to switch to.
  */
 import { computed, type Ref } from 'vue'
-import type { Menus } from '@numen/plugin-host'
+import type { SlotHost } from '@numen/plugin-host'
 import type { CommandDeps, CommandTarget } from '@/features/command-palette'
 import type { VaultList } from '@/entities/vault'
 import { useWindowTitleBar } from './useTitleBarCommands'
 import { useWindowVaultSwitcher } from './useVaultSwitcher'
 
 export interface WindowBarDeps {
-  readonly menus: Pick<Menus, 'getEntries'>
+  readonly slots: Pick<SlotHost, 'getEntries'>
   readonly vaultList: Readonly<Ref<VaultList>>
   readonly runCommand: (id: string, target: CommandTarget) => void
   readonly getTarget: () => CommandTarget

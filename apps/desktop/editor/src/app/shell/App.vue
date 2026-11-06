@@ -14,7 +14,6 @@ import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
-import { StatusViewHost } from '@/features/status-views'
 import { TitleBarHost } from '@/features/title-bar-view'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
@@ -36,7 +35,7 @@ const unsaved = {
 
 const {
   runCommand,
-  menus,
+  slots,
   runChoice,
   openCurrentVault,
   isLayoutReady,
@@ -54,7 +53,6 @@ const {
   layout,
   vaultList,
   statusBar,
-  statusViews,
   palette,
   destinations,
   closeTab,
@@ -74,7 +72,7 @@ const {
 
 const frame = useWindowFrame()
 
-const bar = useWindowBar({ menus, vaultList, runCommand, getTarget, commandDeps })
+const bar = useWindowBar({ slots, vaultList, runCommand, getTarget, commandDeps })
 
 const linkMenu = useTabLinkMenu({
   tabLinks,
@@ -121,7 +119,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
 </script>
 
 <template>
-  <!-- The window is drawn once the plugins of the interface have started or the wait for them has
+  <!-- The window is drawn once the plugins of the window slots have started or the wait for them has
        passed, so the layout does not move when the bar is drawn. -->
   <LoadingIndicator v-if="!isStarted" class="starting" :label="words.appName" />
 
@@ -220,11 +218,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       @retry="statusBar.onRetryTask"
       @dismiss="statusBar.onDismissTask"
       @action="statusBar.onActionTask"
-    >
-      <template #trailing>
-        <StatusViewHost :views="statusViews" />
-      </template>
-    </StatusBar>
+    />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"

@@ -30,8 +30,8 @@
         "scope": "note"
       }
     ],
-    "menus": [
-      { "location": "titleBar.commands", "command": "chat.open", "group": "navigate", "order": 30 }
+    "slots": [
+      { "slot": "titleBar.commands", "command": "chat.open", "group": "navigate", "order": 30 }
     ]
   },
   "permissions": ["vault:read"],

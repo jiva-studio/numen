@@ -12,7 +12,7 @@ const MANIFEST = {
   id: PLUGIN,
   name: 'Ledger bar',
   version: '1.0.0',
-  contributes: { views: [{ id: 'bar', slot: 'titleBar' }] },
+  contributes: { slots: [{ slot: 'titleBar', placed: { case: 'view', value: 'bar' } }] },
 } as unknown as Manifest
 
 function createWindow(activate: (context: PluginContext) => Promise<void>) {

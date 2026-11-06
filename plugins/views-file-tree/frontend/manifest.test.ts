@@ -12,7 +12,7 @@ const manifest = JSON.parse(
   permissions: readonly string[]
   contributes: {
     commands: readonly { id: string; title: string; icon: string }[]
-    menus?: readonly { location: string; command: string; group?: string; order?: number }[]
+    slots?: readonly { slot: string; command?: string; view?: string; group?: string; order?: number }[]
   }
 }
 
@@ -22,8 +22,8 @@ describe('the manifest', () => {
   })
 
   it('places opening the file tree first among the navigation entries of the title bar', () => {
-    expect(manifest.contributes.menus).toStrictEqual([
-      { location: 'titleBar.commands', command: 'tree.open', group: 'navigate', order: 10 },
+    expect(manifest.contributes.slots).toStrictEqual([
+      { slot: 'titleBar.commands', command: 'tree.open', group: 'navigate', order: 10 },
     ])
   })
 

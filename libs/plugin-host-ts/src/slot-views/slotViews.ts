@@ -4,7 +4,13 @@
  * reported.
  */
 import { computed, shallowRef, type ComputedRef, type ShallowRef } from 'vue'
-import type { Disposable, SlotViewRegistration } from '@numen/plugin-sdk'
+import {
+  WINDOW_SLOTS,
+  type Disposable,
+  type SlotName,
+  type SlotViewRegistration,
+} from '@numen/plugin-sdk'
+import { createStyledView } from '../slots/styledView'
 
 /** A view of a slot with the plugin that registered it. */
 export interface DeclaredSlotView {
@@ -19,37 +25,50 @@ export interface SlotViewRegistryDeps {
 }
 
 export interface SlotViewRegistry {
+  /**
+   * The component the plugin registered for the view, in any slot, drawn with the stylesheet of the
+   * plugin; undefined while it has registered none.
+   */
+  findView(pluginId: string, view: string): unknown
   /** Every registered view, in order of registration; reactive. */
   readonly views: Readonly<ShallowRef<readonly DeclaredSlotView[]>>
   registerSlotView(pluginId: string, slot: string, registration: SlotViewRegistration): Disposable
-  /** The view the slot draws, or null while no plugin registered one; reactive. */
+  /** The view a window slot draws, or null while no plugin registered one; reactive. */
   getSlotView(slot: string): ComputedRef<DeclaredSlotView | null>
   /** Removes every view the plugin registered. */
   disposePlugin(pluginId: string): void
 }
 
-/** The part of a manifest that declares the views of a plugin. */
+/** The part of a manifest that places the views of a plugin in slots. */
 export interface SlotViewManifest {
   readonly contributes?:
-    { readonly views: readonly { readonly id: string; readonly slot: string }[] } | undefined
+    | {
+        readonly slots: readonly {
+          readonly slot: string
+          readonly placed: { readonly case?: string | undefined; readonly value?: unknown }
+        }[]
+      }
+    | undefined
 }
 
 /**
- * The slot the manifest declares the view of the id in. A view the manifest does not declare
- * throws, so the plugin's activation fails with the reason.
+ * The slots the manifest places the view of the id in. A view the manifest places nowhere throws,
+ * so the plugin's activation fails with the reason.
  */
-export function getDeclaredSlot(
+export function getDeclaredSlots(
   pluginId: string,
   manifest: SlotViewManifest | undefined,
   id: string,
-): string {
-  const declared = manifest?.contributes?.views.find((one) => one.id === id)
-  if (!declared) {
+): string[] {
+  const slots = (manifest?.contributes?.slots ?? [])
+    .filter((one) => one.placed.case === 'view' && one.placed.value === id)
+    .map((one) => one.slot)
+  if (slots.length === 0) {
     throw new Error(
-      `Plugin "${pluginId}" registers the view "${id}", which contributes.views does not declare`,
+      `Plugin "${pluginId}" registers the view "${id}", which contributes.slots places nowhere`,
     )
   }
-  return declared.slot
+  return slots
 }
 
 /** The view of the slot first by plugin id, of the views given. */
@@ -81,13 +100,17 @@ export function createSlotViewRegistry(deps: SlotViewRegistryDeps = {}): SlotVie
     const before = findSlotView(views.value, slot)
     views.value = [
       ...views.value.filter(
-        (one) => one.pluginId !== pluginId || one.registration.id !== registration.id,
+        (one) =>
+          one.pluginId !== pluginId || one.registration.id !== registration.id || one.slot !== slot,
       ),
       declared,
     ]
     const after = findSlotView(views.value, slot)
-    if (after && after !== declared) reportHidden(declared, after)
-    else if (after && before && before.pluginId !== pluginId) reportHidden(before, after)
+    // A window slot draws one view; a slot inside a bar or a menu draws the views of every plugin.
+    const isWindowSlot = WINDOW_SLOTS.includes(slot as SlotName)
+    if (isWindowSlot && after && after !== declared) reportHidden(declared, after)
+    else if (isWindowSlot && after && before && before.pluginId !== pluginId)
+      reportHidden(before, after)
     return {
       dispose: () => {
         views.value = views.value.filter((one) => one !== declared)
@@ -102,6 +125,12 @@ export function createSlotViewRegistry(deps: SlotViewRegistryDeps = {}): SlotVie
   return {
     views,
     registerSlotView,
+    findView: (pluginId, view) => {
+      const found = views.value.find(
+        (one) => one.pluginId === pluginId && one.registration.id === view,
+      )
+      return found && createStyledView(pluginId, found.registration.component)
+    },
     getSlotView: (slot) => computed(() => findSlotView(views.value, slot)),
     disposePlugin,
   }

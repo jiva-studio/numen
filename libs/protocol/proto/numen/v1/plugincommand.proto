@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/manifest.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
 // PluginCommandService is what the backend of a plugin that declares commands
@@ -74,18 +76,15 @@ message ListCommandsRequest {}
 
 message ListCommandsResponse {
   repeated PluginCommand commands = 1;
-  // The menu entries of every enabled plugin, in the order of the plugins' ids and then of each
+  // The slot entries of every enabled plugin, in the order of the plugins' ids and then of each
   // manifest.
-  repeated PluginMenu menus = 2;
+  repeated PluginSlotEntry slots = 2;
 }
 
-// PluginMenu is one entry of contributes.menus of a plugin.
-message PluginMenu {
+// PluginSlotEntry is one entry of contributes.slots of a plugin.
+message PluginSlotEntry {
   string plugin_id = 1;
-  string location = 2;
-  string command = 3;
-  string group = 4;
-  optional int32 order = 5;
+  ManifestSlotEntry entry = 2;
 }
 
 // PluginCommand is one command as a manifest declares it.

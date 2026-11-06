@@ -12,7 +12,7 @@ const manifest = JSON.parse(
 ) as {
   id: string
   targets: readonly string[]
-  contributes: { views: readonly { id: string; slot: string }[] }
+  contributes: { slots: readonly { slot: string; view: string }[] }
   settings: readonly { key: string; default: string; options: readonly { value: string }[] }[]
 }
 
@@ -28,7 +28,7 @@ describe('the plugin', () => {
     const { view } = activateBar()
 
     expect(view).toBeDefined()
-    expect(manifest.contributes.views).toStrictEqual([{ id: TITLE_BAR_VIEW, slot: TITLE_BAR_SLOT }])
+    expect(manifest.contributes.slots).toStrictEqual([{ slot: TITLE_BAR_SLOT, view: TITLE_BAR_VIEW }])
   })
 
   it('runs in the editor and in the flashcards window', () => {

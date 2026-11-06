@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ManifestSlotEntry } from "./manifest_pb.js";
+import { file_numen_v1_manifest } from "./manifest_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/plugincommand.proto.
  */
 export const file_numen_v1_plugincommand: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiZgoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kEiMKBW1lbnVzGAIgAygLMhQubnVtZW4udjEuUGx1Z2luTWVudSJvCgpQbHVnaW5NZW51EhEKCXBsdWdpbl9pZBgBIAEoCRIQCghsb2NhdGlvbhgCIAEoCRIPCgdjb21tYW5kGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKBW9yZGVyGAUgASgFSACIAQFCCAoGX29yZGVyIsUBCg1QbHVnaW5Db21tYW5kEhEKCXBsdWdpbl9pZBgBIAEoCRIKCgJpZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIVCg1jb250ZW50X3R5cGVzGAQgAygJEhIKCmV4dGVuc2lvbnMYBiADKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50EgwKBGljb24YByABKAkSDQoFc2NvcGUYCCABKAkSEAoIc2hvcnRjdXQYCSABKAkiQwoPQ29tbWFuZEFyZ3VtZW50EgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLaXNfcmVxdWlyZWQYAyABKAgiwgEKF1J1blBsdWdpbkNvbW1hbmRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIPCgdjb21tYW5kGAIgASgJEgwKBHBhdGgYAyABKAkSQwoJYXJndW1lbnRzGAQgAygLMjAubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QuQXJndW1lbnRzRW50cnkaMAoOQXJndW1lbnRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJrChhSdW5QbHVnaW5Db21tYW5kUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5Db21tYW5kRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkSEwoLb3BlbmVkX3BhdGgYAyABKAkqxwEKEENvbW1hbmRFcnJvckNvZGUSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJgoiQ09NTUFORF9FUlJPUl9DT0RFX1VOS05PV05fQ09NTUFORBABEiQKIENPTU1BTkRfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAISHQoZQ09NTUFORF9FUlJPUl9DT0RFX0ZBSUxFRBADEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTkFWQUlMQUJMRRAEMl8KFFBsdWdpbkNvbW1hbmRTZXJ2aWNlEkcKClJ1bkNvbW1hbmQSGy5udW1lbi52MS5SdW5Db21tYW5kUmVxdWVzdBocLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXNwb25zZTK6AQoOQ29tbWFuZFNlcnZpY2USTQoMTGlzdENvbW1hbmRzEh0ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVxdWVzdBoeLm51bWVuLnYxLkxpc3RDb21tYW5kc1Jlc3BvbnNlElkKEFJ1blBsdWdpbkNvbW1hbmQSIS5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVxdWVzdBoiLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiawoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kEigKBXNsb3RzGAIgAygLMhkubnVtZW4udjEuUGx1Z2luU2xvdEVudHJ5IlAKD1BsdWdpblNsb3RFbnRyeRIRCglwbHVnaW5faWQYASABKAkSKgoFZW50cnkYAiABKAsyGy5udW1lbi52MS5NYW5pZmVzdFNsb3RFbnRyeSLFAQoNUGx1Z2luQ29tbWFuZBIRCglwbHVnaW5faWQYASABKAkSCgoCaWQYAiABKAkSDQoFdGl0bGUYAyABKAkSFQoNY29udGVudF90eXBlcxgEIAMoCRISCgpleHRlbnNpb25zGAYgAygJEiwKCWFyZ3VtZW50cxgFIAMoCzIZLm51bWVuLnYxLkNvbW1hbmRBcmd1bWVudBIMCgRpY29uGAcgASgJEg0KBXNjb3BlGAggASgJEhAKCHNob3J0Y3V0GAkgASgJIkMKD0NvbW1hbmRBcmd1bWVudBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhMKC2lzX3JlcXVpcmVkGAMgASgIIsIBChdSdW5QbHVnaW5Db21tYW5kUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgRwYXRoGAMgASgJEkMKCWFyZ3VtZW50cxgEIAMoCzIwLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiawoYUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJKscBChBDb21tYW5kRXJyb3JDb2RlEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiYKIkNPTU1BTkRfRVJST1JfQ09ERV9VTktOT1dOX0NPTU1BTkQQARIkCiBDT01NQU5EX0VSUk9SX0NPREVfQkFEX0FSR1VNRU5UUxACEh0KGUNPTU1BTkRfRVJST1JfQ09ERV9GQUlMRUQQAxIiCh5DT01NQU5EX0VSUk9SX0NPREVfVU5BVkFJTEFCTEUQBDJfChRQbHVnaW5Db21tYW5kU2VydmljZRJHCgpSdW5Db21tYW5kEhsubnVtZW4udjEuUnVuQ29tbWFuZFJlcXVlc3QaHC5udW1lbi52MS5SdW5Db21tYW5kUmVzcG9uc2UyugEKDkNvbW1hbmRTZXJ2aWNlEk0KDExpc3RDb21tYW5kcxIdLm51bWVuLnYxLkxpc3RDb21tYW5kc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXNwb25zZRJZChBSdW5QbHVnaW5Db21tYW5kEiEubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QaIi5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_manifest]);
 
 /**
  * @generated from message numen.v1.RunCommandRequest
@@ -106,12 +108,12 @@ export type ListCommandsResponse = Message<"numen.v1.ListCommandsResponse"> & {
   commands: PluginCommand[];
 
   /**
-   * The menu entries of every enabled plugin, in the order of the plugins' ids and then of each
+   * The slot entries of every enabled plugin, in the order of the plugins' ids and then of each
    * manifest.
    *
-   * @generated from field: repeated numen.v1.PluginMenu menus = 2;
+   * @generated from field: repeated numen.v1.PluginSlotEntry slots = 2;
    */
-  menus: PluginMenu[];
+  slots: PluginSlotEntry[];
 };
 
 /**
@@ -122,42 +124,27 @@ export const ListCommandsResponseSchema: GenMessage<ListCommandsResponse> = /*@_
   messageDesc(file_numen_v1_plugincommand, 3);
 
 /**
- * PluginMenu is one entry of contributes.menus of a plugin.
+ * PluginSlotEntry is one entry of contributes.slots of a plugin.
  *
- * @generated from message numen.v1.PluginMenu
+ * @generated from message numen.v1.PluginSlotEntry
  */
-export type PluginMenu = Message<"numen.v1.PluginMenu"> & {
+export type PluginSlotEntry = Message<"numen.v1.PluginSlotEntry"> & {
   /**
    * @generated from field: string plugin_id = 1;
    */
   pluginId: string;
 
   /**
-   * @generated from field: string location = 2;
+   * @generated from field: numen.v1.ManifestSlotEntry entry = 2;
    */
-  location: string;
-
-  /**
-   * @generated from field: string command = 3;
-   */
-  command: string;
-
-  /**
-   * @generated from field: string group = 4;
-   */
-  group: string;
-
-  /**
-   * @generated from field: optional int32 order = 5;
-   */
-  order?: number | undefined;
+  entry?: ManifestSlotEntry | undefined;
 };
 
 /**
- * Describes the message numen.v1.PluginMenu.
- * Use `create(PluginMenuSchema)` to create a new message.
+ * Describes the message numen.v1.PluginSlotEntry.
+ * Use `create(PluginSlotEntrySchema)` to create a new message.
  */
-export const PluginMenuSchema: GenMessage<PluginMenu> = /*@__PURE__*/
+export const PluginSlotEntrySchema: GenMessage<PluginSlotEntry> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugincommand, 4);
 
 /**

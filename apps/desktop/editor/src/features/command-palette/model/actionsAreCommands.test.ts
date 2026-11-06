@@ -6,7 +6,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { PaletteGroup } from '@numen/shell'
-import type { PlacedCommand } from '@numen/plugin-host'
+import type { SearchMenuEntry } from './search/lookup'
 import { WORDS as words } from '@/shared/words'
 import { createCommands } from '../lib/commands/table'
 import { runSupport } from './palette/runSupport'
@@ -15,11 +15,9 @@ import { useSearch, type NameMatch, type Passage, type SearchDeps } from './sear
 import type { CommandTarget } from '../types'
 
 const ATLAS = 'org.example.atlas'
-const SHOW: PlacedCommand = {
-  pluginId: ATLAS,
+const SHOW: SearchMenuEntry = {
   command: `${ATLAS}:graph.showNote`,
   title: 'Show note in plex',
-  group: '',
 }
 
 const inFront: CommandTarget = {

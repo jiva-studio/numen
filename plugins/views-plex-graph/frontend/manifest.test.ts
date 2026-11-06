@@ -1,6 +1,6 @@
 /**
  * The permissions the plugin's manifest declares, which the window holds every call to, and the
- * menus it places its commands in.
+ * slots it places its commands in.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -12,7 +12,7 @@ const manifest = JSON.parse(
   permissions: readonly string[]
   contributes: {
     commands: readonly { id: string; title: string; icon?: string; scope?: string }[]
-    menus?: readonly { location: string; command: string; group?: string; order?: number }[]
+    slots?: readonly { slot: string; command?: string; view?: string; group?: string; order?: number }[]
   }
 }
 
@@ -22,9 +22,9 @@ describe('the manifest', () => {
   })
 
   it('places showing a note in the menu of a search result and opening the plex in the title bar, both among the navigation entries', () => {
-    expect(manifest.contributes.menus).toStrictEqual([
-      { location: 'searchResult', command: 'graph.showNote', group: 'navigate', order: 20 },
-      { location: 'titleBar.commands', command: 'graph.open', group: 'navigate', order: 20 },
+    expect(manifest.contributes.slots).toStrictEqual([
+      { slot: 'palette.searchResult', command: 'graph.showNote', group: 'navigate', order: 20 },
+      { slot: 'titleBar.commands', command: 'graph.open', group: 'navigate', order: 20 },
     ])
   })
 
@@ -36,8 +36,8 @@ describe('the manifest', () => {
   })
 
   it('keeps the command that shows a note out of the title bar, which has no note', () => {
-    const entries = (manifest.contributes.menus ?? []).filter(
-      (one) => one.location === 'titleBar.commands',
+    const entries = (manifest.contributes.slots ?? []).filter(
+      (one) => one.slot === 'titleBar.commands',
     )
 
     expect(entries.map((one) => one.command)).not.toContain('graph.showNote')
@@ -48,7 +48,7 @@ describe('the manifest', () => {
 
     expect(command).toMatchObject({ title: 'Show note in plex', scope: 'note' })
     expect(Object.keys(command ?? {})).not.toContain('location')
-    expect(Object.keys(command ?? {})).not.toContain('menus')
+    expect(Object.keys(command ?? {})).not.toContain('slots')
   })
 })
 

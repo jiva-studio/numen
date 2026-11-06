@@ -2,7 +2,7 @@
  * How a plugin module is found and read: its stylesheet, its lifecycle hooks, its loader.
  */
 import { parseManifest, type Manifest } from '@numen/core-client'
-import type { PluginLifecycle } from '@numen/plugin-sdk'
+import { WINDOW_SLOTS, type PluginLifecycle, type SlotName } from '@numen/plugin-sdk'
 import { loadPluginStyle, unregisterPluginStyle } from './styles'
 
 /** The bundle every plugin frontend builds to, relative to the plugin folder. */
@@ -72,15 +72,11 @@ export async function readPluginManifest(
   return parsed.value
 }
 
-/**
- * Whether the plugin contributes to the interface: a slot view, tab kinds, readers, menu entries or
- * themes.
- */
-export function isInterfaceManifest(manifest: Manifest): boolean {
-  const contributes = manifest.contributes
-  if (!contributes) return false
-  const lists = [contributes.views, contributes.tabKinds, contributes.readers, contributes.menus]
-  return [...lists, contributes.themes].some((list) => list.length > 0)
+/** Whether the plugin fills a slot of the window itself, which the window waits for before it is drawn. */
+export function isWindowSlotManifest(manifest: Manifest): boolean {
+  return (manifest.contributes?.slots ?? []).some((one) =>
+    WINDOW_SLOTS.includes(one.slot as SlotName),
+  )
 }
 
 async function loadDynamicModule(

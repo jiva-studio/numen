@@ -1,7 +1,7 @@
 /** The menu of a search result as the palette draws it and answers a choice from it. */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { PlacedCommand } from '@numen/plugin-host'
+import type { SearchMenuEntry } from './lookup'
 import { COMMAND } from '@/shared/commandIds'
 import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
 import type { CommandTarget } from '../../types'
@@ -26,18 +26,13 @@ const WORDS: Words = {
 }
 
 const ATLAS = 'org.example.atlas'
-const SHOW: PlacedCommand = {
-  pluginId: ATLAS,
+const SHOW: SearchMenuEntry = {
   command: `${ATLAS}:graph.showNote`,
   title: 'Show note in plex',
-  group: 'navigate',
-  order: 20,
 }
-const OTHER: PlacedCommand = {
-  pluginId: ATLAS,
+const OTHER: SearchMenuEntry = {
   command: `${ATLAS}:other.run`,
   title: 'Another',
-  group: '',
 }
 const openId = COMMAND.openNote
 const showId = SHOW.command
@@ -110,7 +105,7 @@ describe('a note found by name in the search', () => {
   })
 
   it('offers opening the note alone once the plugin that placed the entry is disabled', async () => {
-    const entries = ref<readonly PlacedCommand[]>([SHOW])
+    const entries = ref<readonly SearchMenuEntry[]>([SHOW])
     const palette = useSearch(createCore([nameMatch]), WORDS, {
       wait: now,
       menu: { getEntries: () => entries.value },

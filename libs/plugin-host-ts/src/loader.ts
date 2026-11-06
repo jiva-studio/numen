@@ -9,7 +9,7 @@ import type { LoaderHost } from './host'
 import {
   getLifecycleHooks,
   removePluginStyles,
-  isInterfaceManifest,
+  isWindowSlotManifest,
   readPluginManifest,
   resolveModule,
   type ResolveModuleContext,
@@ -258,7 +258,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   return {
     loadModule: (id: string) => resolveModule(id, undefined, activateContext),
     isInterface: async (id: string): Promise<boolean> =>
-      !moduleLoaders.has(id) && isInterfaceManifest(await readPluginManifest(id, activateContext)),
+      !moduleLoaders.has(id) && isWindowSlotManifest(await readPluginManifest(id, activateContext)),
     activatePlugin: (id: string, module?: unknown) =>
       enqueue(id, () => activateEntry(activateContext, id, module)),
     deactivatePlugin: (id: string) => enqueue(id, () => deactivateEntry(deactivateContext, id)),
@@ -338,7 +338,7 @@ function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: A
         onInterfaceStarted,
       )
     },
-    /** Settles once the plugins of the interface have started or INTERFACE_WAIT_MS has passed. */
+    /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
     waitForInterface: (): Promise<void> => interfaceStarted.promise,
     close: async (): Promise<void> => {
       hasStarted = false

@@ -1,13 +1,13 @@
 {
   "id": "md.numen.tools.updater",
   "name": "Update Notifier",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Notifies when a newer build of Numen is published",
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "tools",
-    "statusViews": [{ "id": "update" }],
+    "slots": [{ "slot": "titleBar.status", "view": "update" }],
     "handles": [{ "purpose": "text-provider" }]
   },
   "permissions": ["network:outbound"],

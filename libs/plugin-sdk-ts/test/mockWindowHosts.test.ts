@@ -27,19 +27,15 @@ const SYNC: BackgroundTask = {
 }
 
 describe('the slots of a mock context', () => {
-  it('hand a watcher the entries a test sets, and record the commands run', async () => {
+  it('hand a watcher the entries a test sets', () => {
     const ctx = createMockPluginContext()
     const handler = vi.fn()
     ctx.slots.watchEntries(SLOT.titleBarCommands, handler)
 
     ctx.slots.setEntries(SLOT.titleBarCommands, [BUTTON])
-    await ctx.slots.runCommand(BUTTON.kind === 'command' ? BUTTON.command : '')
 
     expect(handler.mock.calls).toStrictEqual([[[]], [[BUTTON]]])
     expect(ctx.slots.getEntries(SLOT.titleBarCommands)).toStrictEqual([BUTTON])
-    expect(ctx.slots.getRuns()).toStrictEqual([
-      { command: 'org.example.ledger:ledger.open', target: undefined },
-    ])
   })
 })
 

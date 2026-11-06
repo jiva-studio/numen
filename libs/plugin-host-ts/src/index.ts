@@ -22,14 +22,9 @@ export {
 export { createViewRegistry, type ViewRegistry } from './views'
 export { createDropRegistry } from './drops'
 export {
-  createStatusViewRegistry,
-  type DeclaredStatusView,
-  type StatusViewRegistry,
-} from './statusViews'
-export {
   createSlotViewRegistry,
   findSlotView,
-  getDeclaredSlot,
+  getDeclaredSlots,
   type DeclaredSlotView,
   type SlotViewManifest,
   type SlotViewRegistry,
@@ -61,13 +56,9 @@ export type {
 } from './hosting/types'
 export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './hosting/tabKinds'
 export {
-  MENU_LOCATION,
-  compareEntries,
-  createMenus,
-  type CommandLook,
-  type MenuLocation,
-  type MenuPlacement,
-  type Menus,
-  type MenusDeps,
-  type PlacedCommand,
-} from './menus'
+  createSlotRegistry,
+  readManifestSlotEntries,
+  type DeclaredSlotEntry,
+  type SlotCommandLook,
+  type SlotRegistryDeps,
+} from './slots/slotRegistry'

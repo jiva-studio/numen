@@ -7,7 +7,7 @@
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": {
     "category": "views",
-    "views": [{ "id": "bar", "slot": "titleBar" }]
+    "slots": [{ "slot": "titleBar", "view": "bar" }]
   },
   "settings": [
     {

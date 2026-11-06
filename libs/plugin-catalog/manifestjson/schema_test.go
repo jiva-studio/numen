@@ -43,13 +43,10 @@ const everyFieldManifest = `{
 		"scope": "note", "shortcut": "mod+shift+r"}],
 		"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views",
 		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
-		"statusViews": [{"id": "gauge"}],
 		"handles": [{"purpose": "sample-purpose", "contentTypes": ["audio/*"], "noteTypes": ["link"]}],
 		"readers": [{"id": "r", "contentTypes": ["audio/*"], "rank": "default"}],
 		"noteTypes": [{"type": "link", "chunks": false, "headings": [1, 2], "idHeadingLevels": [3], "idPattern": "[a-z]+"}],
 		"frameOrigins": ["https://player.example"],
-		"menus": [{"location": "titleBar.commands", "command": "task.run", "group": "run", "order": 1}],
-		"views": [{"id": "bar", "slot": "titleBar"}],
 		"slots": [{"slot": "titleBar.commands", "command": "task.run", "group": "run", "order": 1},
 			{"slot": "titleBar", "view": "bar"},
 			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus"}]}

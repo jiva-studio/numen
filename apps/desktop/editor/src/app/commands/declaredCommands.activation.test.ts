@@ -30,7 +30,7 @@ async function createWindow() {
         declare(VIEW, 'tree.revealNote'),
         declare(BACKEND, 'import'),
       ],
-      menus: [],
+      slots: [],
     }),
     isListed: (id) => holder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
     hasBackend,

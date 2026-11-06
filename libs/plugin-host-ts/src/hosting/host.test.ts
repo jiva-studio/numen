@@ -3,7 +3,6 @@ import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPluginHost, createPluginPaneWrapper } from './host'
 import { disposeAllEntries, type HostRegistry } from './registry'
-import { createStatusViewRegistry } from '../statusViews'
 import { registerPluginStyle } from '../styles'
 import { CONVERSATION } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
@@ -177,7 +176,7 @@ describe('createPluginHost', () => {
       disposed: new Set(),
       reportedIssues: new Set(),
     }
-    disposeAllEntries({ registry: reg, statusViews: createStatusViewRegistry(), deps })
+    disposeAllEntries({ registry: reg, deps })
     expect(reg.agentProviders.size).toBe(0)
   })
 

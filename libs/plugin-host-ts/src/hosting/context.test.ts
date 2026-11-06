@@ -23,7 +23,6 @@ describe('PluginContext', () => {
         return { dispose: vi.fn() }
       }),
       registerSettingsView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
-      registerStatusView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
       registerSlotView: vi.fn((_id, _slot, _reg) => ({ dispose: vi.fn() })),
       app: { name: 'numen', version: '2026.10.1', build: 884, platform: 'linux' },
       openExternal: vi.fn(async (_url: string) => undefined),
@@ -261,26 +260,13 @@ describe('PluginContext', () => {
     expect(host.emitVaultChange).toHaveBeenCalledWith('writer.plugin', { vaultPath: '/test' })
   })
 
-  it('tracks the status views a plugin registers', () => {
-    const { host } = createMockHost()
-    const ctx = createPluginContext('test.plugin', host)
-
-    ctx.registerStatusView({ id: 'update', component: null })
-
-    expect(ctx.subscriptions).toHaveLength(1)
-    expect(host.registerStatusView).toHaveBeenCalledWith(
-      'test.plugin',
-      expect.objectContaining({ id: 'update' }),
-    )
-  })
-
-  it('registers a view in the slot its manifest declares for the id', () => {
+  it('registers a view in the slot its manifest places the id in', () => {
     const { host } = createMockHost()
     const ctx = createPluginContext('org.example.orchard', host, {
       id: 'org.example.orchard',
       name: 'Orchard',
       version: '1.0.0',
-      contributes: { views: [{ id: 'bar', slot: 'titleBar' }] },
+      contributes: { slots: [{ slot: 'titleBar', placed: { case: 'view', value: 'bar' } }] },
     } as unknown as Parameters<typeof createPluginContext>[2])
 
     ctx.registerSlotView({ id: 'bar', component: null })
@@ -293,11 +279,11 @@ describe('PluginContext', () => {
     )
   })
 
-  it('rejects a view its manifest does not declare', () => {
+  it('rejects a view its manifest places nowhere', () => {
     const { host } = createMockHost()
     const ctx = createPluginContext('org.example.orchard', host)
 
-    expect(() => ctx.registerSlotView({ id: 'bar', component: null })).toThrow(/does not declare/)
+    expect(() => ctx.registerSlotView({ id: 'bar', component: null })).toThrow(/places nowhere/)
     expect(host.registerSlotView).not.toHaveBeenCalled()
   })
 

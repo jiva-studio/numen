@@ -1,6 +1,7 @@
 /**
- * The menus of the plugins in the tree: each placement names a command the manifest declares or
- * the editor provides, in a place the window draws, and the window and the host name no plugin.
+ * The slot entries of the plugins in the tree: each names a slot of the window or a submenu a plugin
+ * declares, and a command the manifest declares or the editor provides; the window and the host name no
+ * plugin.
  */
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -11,7 +12,9 @@ import { readPluginManifests } from './manifests.mjs'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const EDITOR_SRC = join(ROOT, 'apps/desktop/editor/src')
-const LOCATIONS = ['titleBar.commands', 'searchResult']
+const SLOTS = JSON.parse(readFileSync(join(ROOT, 'libs/protocol/slots.json'), 'utf8')).slots.map(
+  (one) => one.name,
+)
 const APP_PREFIX = 'app:'
 
 const isTestFile = (name) => /\.(test|stories|spec)\.[cm]?[jt]s$/.test(name)
@@ -57,7 +60,10 @@ const readEditorCommands = () => {
 }
 
 test('neither the host module nor the window names a plugin', () => {
-  const files = [join(ROOT, 'libs/plugin-host-ts/src/menus.ts'), ...readEditorSources()]
+  const files = [
+    join(ROOT, 'libs/plugin-host-ts/src/slots/slotRegistry.ts'),
+    ...readEditorSources(),
+  ]
   for (const file of files) {
     assert.doesNotMatch(
       readFileSync(file, 'utf8'),
@@ -85,7 +91,7 @@ test('a command declaration says nothing of where it is shown', () => {
   const body = command.slice(0, command.indexOf('\n}'))
   assert.doesNotMatch(
     body,
-    /\b(menus?|location)\b\s*=/,
+    /\b(menus?|location|slots?)\b\s*=/,
     'ManifestCommand has a field about a place',
   )
   const types = readFileSync(join(ROOT, 'libs/plugin-sdk-ts/src/types.ts'), 'utf8')
@@ -93,33 +99,40 @@ test('a command declaration says nothing of where it is shown', () => {
   const registrationBody = registration.slice(0, registration.indexOf('\n}'))
   assert.doesNotMatch(
     registrationBody,
-    /\b(menus?|location)\??:/,
+    /\b(menus?|location|slots?)\??:/,
     'CommandRegistration has a field about a place',
   )
 })
 
-test('every placement of a manifest of the tree is in a known place and names a command', () => {
+test('every slot entry of a manifest of the tree is in a known place and names a command', () => {
   const editorCommands = readEditorCommands()
-  for (const { name, document } of readPluginManifests()) {
+  const manifests = readPluginManifests()
+  const submenus = new Set(
+    manifests.flatMap(({ document }) =>
+      (document.contributes?.slots ?? []).filter((one) => one.submenu).map((one) => one.submenu),
+    ),
+  )
+  for (const { name, document } of manifests) {
     const declared = new Map((document.contributes?.commands ?? []).map((one) => [one.id, one]))
-    for (const menu of document.contributes?.menus ?? []) {
-      const where = `${name}: ${menu.location} ${menu.command}`
+    for (const entry of document.contributes?.slots ?? []) {
+      const where = `${name}: ${entry.slot} ${entry.command ?? entry.view ?? entry.submenu}`
       assert.ok(
-        LOCATIONS.includes(menu.location),
-        `${where} is in a place the window does not draw`,
+        SLOTS.includes(entry.slot) || submenus.has(entry.slot),
+        `${where} is neither in a slot of the window nor in a submenu a plugin declares`,
       )
-      if (menu.command.startsWith(APP_PREFIX)) {
-        assert.ok(editorCommands.has(menu.command), `${where} is no command of the editor`)
-        if (menu.location === 'titleBar.commands') {
+      if (!entry.command) continue
+      if (entry.command.startsWith(APP_PREFIX)) {
+        assert.ok(editorCommands.has(entry.command), `${where} is no command of the editor`)
+        if (entry.slot === 'titleBar.commands') {
           assert.ok(
-            editorCommands.get(menu.command)?.hasIconName,
+            editorCommands.get(entry.command)?.hasIconName,
             `${where} has no icon name in the editor`,
           )
         }
       } else {
-        const command = declared.get(menu.command)
+        const command = declared.get(entry.command)
         assert.ok(command, `${where} is not declared by the manifest`)
-        if (menu.location === 'titleBar.commands') {
+        if (entry.slot === 'titleBar.commands') {
           assert.match(
             command.icon ?? '',
             /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/,
@@ -134,33 +147,33 @@ test('every placement of a manifest of the tree is in a known place and names a 
 test('the plugin that edits notes places nothing in the menu of a search result', () => {
   const notes = readPluginManifests().find(({ document }) => document.id === 'md.numen.notes')
   assert.ok(notes, 'the notes plugin is not in the tree')
-  const placed = (notes.document.contributes?.menus ?? []).filter(
-    (one) => one.location === 'searchResult',
+  const placed = (notes.document.contributes?.slots ?? []).filter(
+    (one) => one.slot === 'palette.searchResult',
   )
   assert.deepEqual(placed, [])
 })
 
-test('the plugin documentation describes menus', () => {
+test('the plugin documentation describes slots', () => {
   const docs = readFileSync(join(ROOT, 'docs/plugins/README.md'), 'utf8')
-  const start = docs.search(/^#{2,3} Menus\s*$/m)
-  assert.ok(start >= 0, 'the documentation has no Menus section')
+  const start = docs.search(/^#{2,3} Slots\s*$/m)
+  assert.ok(start >= 0, 'the documentation has no Slots section')
   const rest = docs.slice(start + 1)
-  const end = rest.search(/\n#{2,3} /)
+  const end = rest.search(/\n## /)
   const section = end < 0 ? rest : rest.slice(0, end)
   for (const word of [
-    'contributes.menus',
-    'titleBar.commands',
-    'searchResult',
+    'contributes.slots',
+    ...SLOTS,
+    'submenu',
     'group',
     'order',
-    'alphabetical',
+    'alphanumerically',
   ]) {
-    assert.ok(section.includes(word), `the Menus section does not mention ${word}`)
+    assert.ok(section.includes(word), `the Slots section does not mention ${word}`)
   }
   assert.match(
     docs,
-    /\|\s*`contributes\.menus`/,
-    'the table of contributions has no row for contributes.menus',
+    /\|\s*`contributes\.slots`/,
+    'the table of contributions has no row for contributes.slots',
   )
 })
 
@@ -177,8 +190,8 @@ test('the window frame of the shell names no plugin', () => {
 
 test('the docs say how the title bar draws an entry', () => {
   const readme = readFileSync(join(ROOT, 'docs/plugins/README.md'), 'utf8')
-  const menus = readme.slice(readme.indexOf('\n## Menus'))
-  const section = menus.slice(0, menus.indexOf('\n## ', 4))
+  const slots = readme.slice(readme.indexOf('\n## Slots'))
+  const section = slots.slice(0, slots.indexOf('\n## ', 4))
   const titleBar = section
     .split('\n')
     .filter((line) => line.includes('titleBar.commands'))

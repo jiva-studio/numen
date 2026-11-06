@@ -22,12 +22,18 @@ interface WireCommand {
   }[]
 }
 
-interface WireMenu {
+interface WireSlotEntry {
   readonly pluginId: string
-  readonly location: string
-  readonly command: string
-  readonly group: string
-  readonly order?: number | undefined
+  readonly entry?:
+    | {
+        readonly slot: string
+        readonly placed: { readonly case?: string | undefined; readonly value?: string | undefined }
+        readonly title: string
+        readonly icon: string
+        readonly group: string
+        readonly order?: number | undefined
+      }
+    | undefined
 }
 
 interface DeclaredArgument {
@@ -36,11 +42,17 @@ interface DeclaredArgument {
   readonly isRequired: boolean
 }
 
-/** One entry of `contributes.menus` of an enabled plugin, as the core lists it. */
-export interface DeclaredMenu {
+/** One entry of `contributes.slots` of an enabled plugin, as the core lists it. Exactly one of command, view and submenu is set. */
+export interface DeclaredSlot {
   readonly pluginId: string
-  readonly location: string
-  readonly command: string
+  readonly slot: string
+  readonly command?: string
+  readonly view?: string
+  readonly submenu?: string
+  /** The title of a submenu. */
+  readonly title?: string
+  /** The Lucide name of the icon of a submenu. */
+  readonly iconName?: string
   readonly group?: string
   readonly order?: number
 }
@@ -48,7 +60,7 @@ export interface DeclaredMenu {
 /** What the core lists of the enabled plugins: the commands they declare and where they place them. */
 export interface DeclaredList {
   readonly commands: readonly DeclaredCommand[]
-  readonly menus: readonly DeclaredMenu[]
+  readonly slots: readonly DeclaredSlot[]
 }
 
 /** The extension the core lists for a command over a file of any type. */
@@ -99,18 +111,30 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   })),
 })
 
-const readMenu = (wire: WireMenu): DeclaredMenu => ({
-  pluginId: wire.pluginId,
-  location: wire.location,
-  command: wire.command,
-  ...(wire.group ? { group: wire.group } : {}),
-  ...(wire.order === undefined ? {} : { order: wire.order }),
-})
+const PLACED_KINDS = ['command', 'view', 'submenu'] as const
 
-/** Every command the enabled plugins declare, in the order of the plugins' ids, and their menu entries. */
+/** What an entry places, as the field of its kind. */
+const readPlaced = (entry: WireSlotEntry['entry']) => {
+  const kind = PLACED_KINDS.find((one) => one === entry?.placed.case)
+  return kind && entry?.placed.value ? { [kind]: entry.placed.value } : {}
+}
+
+const readSlotEntry = ({ pluginId, entry }: WireSlotEntry): DeclaredSlot => {
+  return {
+    pluginId,
+    slot: entry?.slot ?? '',
+    ...readPlaced(entry),
+    ...(entry?.title ? { title: entry.title } : {}),
+    ...(entry?.icon ? { iconName: entry.icon } : {}),
+    ...(entry?.group ? { group: entry.group } : {}),
+    ...(entry?.order === undefined ? {} : { order: entry.order }),
+  }
+}
+
+/** Every command the enabled plugins declare, in the order of the plugins' ids, and their slot entries. */
 export async function listDeclaredCommands(): Promise<DeclaredList> {
   const answer = await pluginCommands.listCommands({})
-  return { commands: answer.commands.map(readCommand), menus: answer.menus.map(readMenu) }
+  return { commands: answer.commands.map(readCommand), slots: answer.slots.map(readSlotEntry) }
 }
 
 /** Runs the command in the backend of the plugin that declares it. */

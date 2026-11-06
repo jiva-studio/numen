@@ -31,14 +31,14 @@
         "shortcut": "mod+shift+p"
       }
     ],
-    "menus": [
+    "slots": [
       {
-        "location": "searchResult",
+        "slot": "palette.searchResult",
         "command": "graph.showNote",
         "group": "navigate",
         "order": 20
       },
-      { "location": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 }
+      { "slot": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

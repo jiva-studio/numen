@@ -10,14 +10,14 @@ const manifest = JSON.parse(
 ) as {
   contributes: {
     commands?: readonly unknown[]
-    menus?: readonly { location: string; command: string; group?: string; order?: number }[]
+    slots?: readonly { slot: string; command?: string; view?: string; group?: string; order?: number }[]
   }
 }
 
 describe('the manifest', () => {
   it('places creating a note, by the full id of the editor command, in the group new of the title bar', () => {
-    expect(manifest.contributes.menus).toStrictEqual([
-      { location: 'titleBar.commands', command: 'app:note.create', group: 'new', order: 10 },
+    expect(manifest.contributes.slots).toStrictEqual([
+      { slot: 'titleBar.commands', command: 'app:note.create', group: 'new', order: 10 },
     ])
   })
 
@@ -26,8 +26,8 @@ describe('the manifest', () => {
   })
 
   it('places nothing in the menu of a search result', () => {
-    const entries = (manifest.contributes.menus ?? []).filter(
-      (one) => one.location === 'searchResult',
+    const entries = (manifest.contributes.slots ?? []).filter(
+      (one) => one.slot === 'palette.searchResult',
     )
 
     expect(entries).toStrictEqual([])

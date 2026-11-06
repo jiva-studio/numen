@@ -4,7 +4,7 @@
  * and the run handed to the plugin's backend.
  */
 import { computed, shallowRef, watch } from 'vue'
-import { formatCommandId, type CommandDeclaration, type MenuPlacement } from '@numen/plugin-host'
+import { formatCommandId, type CommandDeclaration } from '@numen/plugin-host'
 import { registerCommand, type Command } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
@@ -12,7 +12,7 @@ import {
   listDeclaredCommands,
   runDeclaredCommand,
   type DeclaredCommand,
-  type DeclaredMenu,
+  type DeclaredSlot,
 } from '@/entities/plugin'
 
 /** What the palette files a command a plugin declares under: the plugin and the command's own id. */
@@ -88,7 +88,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const isListed = deps.isListed ?? (() => false)
   const hasBackend = deps.hasBackend ?? (() => true)
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
-  const declaredMenus = shallowRef<readonly DeclaredMenu[] | undefined>(undefined)
+  const declaredSlots = shallowRef<readonly DeclaredSlot[] | undefined>(undefined)
   let newest = 0
   let unregisterAll: readonly (() => void)[] = []
 
@@ -133,7 +133,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     // An answer equal to the lists held keeps them, so the commands are not registered again while
     // the palette lists them.
     if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
-    if (!isSameList(declaredMenus.value, commands.menus)) declaredMenus.value = commands.menus
+    if (!isSameList(declaredSlots.value, commands.slots)) declaredSlots.value = commands.slots
     onFirstList()
   }
 
@@ -148,7 +148,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     waitForFirstList: (): Promise<void> => firstList,
     paletteCommands: computed(() => createDeclaredPaletteCommands(backendCommands.value)),
     commands: computed(() => declared.value),
-    placements: computed((): readonly MenuPlacement[] | undefined => declaredMenus.value),
+    slots: computed(() => declaredSlots.value),
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load,
   }

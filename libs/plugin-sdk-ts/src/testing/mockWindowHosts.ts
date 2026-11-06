@@ -3,7 +3,7 @@
  * for the unit tests of the plugins that draw them.
  */
 import type { Disposable } from '../types'
-import type { SlotHost, SlotItem, SlotPlace, SlotTarget } from '../slots'
+import type { SlotHost, SlotItem, SlotPlace } from '../slots/slots'
 import type { VaultsHost, VaultsState, WindowHost, WindowState } from '../window'
 import type { BackgroundTask, BackgroundTaskHost } from '../backgroundTasks'
 
@@ -23,23 +23,15 @@ function watchWith<T>(
   return { dispose: () => handlers.delete(handler) }
 }
 
-// MockSlotRun is one run of a command a test reads back.
-export interface MockSlotRun {
-  readonly command: string
-  readonly target: SlotTarget | undefined
-}
-
-// MockSlotHost is a SlotHost whose entries a test sets, and whose command runs it reads back.
+// MockSlotHost is a SlotHost whose entries a test sets.
 export interface MockSlotHost extends SlotHost {
   // Sets the entries of a slot, whatever the target, and calls its watchers.
   setEntries(slot: SlotPlace, entries: readonly SlotItem[]): void
-  getRuns(): MockSlotRun[]
 }
 
 export function createMockSlotHost(): MockSlotHost {
   const entries = new Map<string, readonly SlotItem[]>()
   const watchers = new Map<string, Set<(value: readonly SlotItem[]) => void>>()
-  const runs: MockSlotRun[] = []
   const getWatchers = (slot: string) => {
     const found = watchers.get(slot) ?? new Set()
     watchers.set(slot, found)
@@ -48,14 +40,10 @@ export function createMockSlotHost(): MockSlotHost {
   return {
     getEntries: (slot) => entries.get(slot) ?? [],
     watchEntries: (slot, handler) => watchWith(getWatchers(slot), handler, entries.get(slot) ?? []),
-    runCommand: async (command, target) => {
-      runs.push({ command, target })
-    },
     setEntries: (slot, next) => {
       entries.set(slot, next)
       notifyAll(getWatchers(slot), next)
     },
-    getRuns: () => [...runs],
   }
 }
 

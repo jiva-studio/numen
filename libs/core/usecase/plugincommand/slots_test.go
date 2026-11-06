@@ -15,14 +15,14 @@ type menuPlugins struct{}
 
 func (menuPlugins) ListCommands() []plugincommand.Entry { return nil }
 
-func (menuPlugins) ListMenus() []plugincommand.MenuEntry {
+func (menuPlugins) ListSlots() []plugincommand.SlotEntry {
 	order := 20
-	return []plugincommand.MenuEntry{
-		{PluginID: "org.example.atlas", Menu: manifest.Menu{Location: "titleBar.commands", Command: "atlas.open", Group: "navigate", Order: &order}},
-		{PluginID: "org.example.atlas", Menu: manifest.Menu{Location: "searchResult", Command: "atlas.open"}},
-		{PluginID: "org.example.bare", Menu: manifest.Menu{Location: "titleBar.commands", Command: "bare.run"}},
-		{PluginID: "org.example.crash", Menu: manifest.Menu{Location: "titleBar.commands", Command: "crash.run"}},
-		{PluginID: "org.example.worker", Menu: manifest.Menu{Location: "titleBar.commands", Command: "worker.run"}},
+	return []plugincommand.SlotEntry{
+		{PluginID: "org.example.atlas", Entry: manifest.SlotEntry{Slot: "titleBar.commands", Command: "atlas.open", Group: "navigate", Order: &order}},
+		{PluginID: "org.example.atlas", Entry: manifest.SlotEntry{Slot: "palette.searchResult", Command: "atlas.open"}},
+		{PluginID: "org.example.bare", Entry: manifest.SlotEntry{Slot: "titleBar.commands", Command: "bare.run"}},
+		{PluginID: "org.example.crash", Entry: manifest.SlotEntry{Slot: "titleBar.commands", Command: "crash.run"}},
+		{PluginID: "org.example.worker", Entry: manifest.SlotEntry{Slot: "titleBar.commands", Command: "worker.run"}},
 	}
 }
 
@@ -41,15 +41,15 @@ func (menuPlugins) RunCommand(context.Context, plugincommand.Call) (plugincomman
 func TestTheWindowListsTheMenuEntriesOfPluginsThatRunAndNoOthers(t *testing.T) {
 	commands := plugincommand.NewCommands(menuPlugins{}, getTypes(), nil)
 
-	entries := commands.List.ExecuteMenus()
+	entries := commands.List.ExecuteSlots()
 
 	var got []string
 	for _, one := range entries {
-		got = append(got, one.PluginID+" "+one.Menu.Location+" "+one.Menu.Command)
+		got = append(got, one.PluginID+" "+one.Entry.Slot+" "+one.Entry.Command)
 	}
 	want := []string{
 		"org.example.atlas titleBar.commands atlas.open",
-		"org.example.atlas searchResult atlas.open",
+		"org.example.atlas palette.searchResult atlas.open",
 		"org.example.worker titleBar.commands worker.run",
 	}
 	if !slices.Equal(got, want) {
@@ -60,12 +60,12 @@ func TestTheWindowListsTheMenuEntriesOfPluginsThatRunAndNoOthers(t *testing.T) {
 func TestAMenuEntryKeepsItsGroupAndOrder(t *testing.T) {
 	commands := plugincommand.NewCommands(menuPlugins{}, getTypes(), nil)
 
-	entries := commands.List.ExecuteMenus()
+	entries := commands.List.ExecuteSlots()
 
 	if len(entries) == 0 {
 		t.Fatal("the window lists no menu entries")
 	}
-	first := entries[0].Menu
+	first := entries[0].Entry
 	if first.Group != "navigate" || first.Order == nil || *first.Order != 20 {
 		t.Errorf("the entry came out as %+v", first)
 	}
@@ -74,7 +74,7 @@ func TestAMenuEntryKeepsItsGroupAndOrder(t *testing.T) {
 func TestTheWindowListsNoMenuEntriesWhereThereIsNoPluginHost(t *testing.T) {
 	commands := plugincommand.NewCommands(nil, getTypes(), nil)
 
-	if entries := commands.List.ExecuteMenus(); len(entries) != 0 {
+	if entries := commands.List.ExecuteSlots(); len(entries) != 0 {
 		t.Errorf("the window lists %+v", entries)
 	}
 }

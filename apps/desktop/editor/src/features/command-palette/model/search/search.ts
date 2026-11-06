@@ -3,7 +3,6 @@
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/shell'
-import type { PlacedCommand } from '@numen/plugin-host'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { NoteType } from '@/entities/file'
@@ -17,6 +16,7 @@ import {
   type ResultChoice,
   type SearchHit,
   type SearchMenuDeps,
+  type SearchMenuEntry,
   type SearchRow,
 } from './lookup'
 import type { TextRange } from '@/shared/textRange'
@@ -110,7 +110,7 @@ interface BuildGroupsDeps {
   readonly texts: readonly Passage[]
   readonly meanings: readonly Passage[]
   readonly words: Words
-  readonly entries: readonly PlacedCommand[]
+  readonly entries: readonly SearchMenuEntry[]
   readonly isWorking: Record<SearchGroup, boolean>
   readonly getSilence: (id: SearchGroup) => string
 }

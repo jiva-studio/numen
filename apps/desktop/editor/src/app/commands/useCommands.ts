@@ -3,7 +3,7 @@
  */
 
 import { formatErrorMessage } from '@numen/core-client'
-import { MENU_LOCATION, type Menus } from '@numen/plugin-host'
+import { SLOT, type SlotHost, type CommandTarget as PluginCommandTarget } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
   isChord,
@@ -72,13 +72,22 @@ export interface CommandsDepsOptions {
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@numen/plugin-host').PluginHost | undefined
-  /** The places plugins put their commands in. */
-  menus?: Menus
+  /** The slots of the window; only `palette.searchResult` is read. */
+  slots?: Pick<SlotHost, 'getEntries'>
   /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
   /** The menu the text versions of the file in front make, read each time the palette opens. */
   fileMenuCommands?: FileMenuCommands
 }
+
+/** A note a search found, which the entries of `palette.searchResult` are offered over. */
+const SEARCH_RESULT_NOTE: PluginCommandTarget = { path: '', title: '', isFolder: false, others: [] }
+
+/** The commands placed in `palette.searchResult`, offered over every note a search finds. */
+const getSearchResultEntries = (slots: Pick<SlotHost, 'getEntries'> | undefined) =>
+  (slots?.getEntries(SLOT.paletteSearchResult, SEARCH_RESULT_NOTE) ?? []).flatMap((one) =>
+    one.kind === 'command' ? [{ command: one.command, title: one.title }] : [],
+  )
 
 /** What a chosen result is over, replacing the tab and the note of the window. */
 const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
@@ -102,7 +111,7 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const palette = useSearch(core, words, {
     coverage,
-    menu: { getEntries: () => options.menus?.getEntries(MENU_LOCATION.searchResult) ?? [] },
+    menu: { getEntries: () => getSearchResultEntries(options.slots) },
     getTarget,
   })
   const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [

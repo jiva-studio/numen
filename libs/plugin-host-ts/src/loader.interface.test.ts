@@ -1,5 +1,5 @@
 /**
- * The plugins of the interface: started before the other plugins, and the wait the window draws
+ * The plugins of the window slots: started before the other plugins, and the wait the window draws
  * after. Every plugin here is invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -18,14 +18,14 @@ const MANIFESTS: Record<string, unknown> = {
     name: 'Ledger bar',
     version: '1.0.0',
     frontend: {},
-    contributes: { views: [{ id: 'bar', slot: 'titleBar' }] },
+    contributes: { slots: [{ slot: 'titleBar', view: 'bar' }] },
   },
   [TABS]: {
     id: TABS,
-    name: 'Orchard tabs',
+    name: 'Orchard strip',
     version: '1.0.0',
     frontend: {},
-    contributes: { tabKinds: [{ kind: 'orchard', title: 'Orchard' }] },
+    contributes: { slots: [{ slot: 'statusBar', view: 'strip' }] },
   },
   [WORKER]: { id: WORKER, name: 'Harbor worker', version: '1.0.0', frontend: {} },
 }
@@ -77,8 +77,8 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-describe('the start of the plugins of the interface', () => {
-  it('reads and activates the plugins of the interface before the others', async () => {
+describe('the start of the plugins of the window slots', () => {
+  it('reads and activates the plugins of the window slots before the others', async () => {
     vi.useFakeTimers()
     const { loader, log } = createLoader()
 
@@ -90,7 +90,7 @@ describe('the start of the plugins of the interface', () => {
     expect(log.indexOf(`activate ${BAR}`)).toBeLessThan(log.indexOf(`read ${WORKER}`))
   })
 
-  it('settles the wait as soon as the plugins of the interface started, before the others', async () => {
+  it('settles the wait as soon as the plugins of the window slots started, before the others', async () => {
     vi.useFakeTimers()
     const { loader, log } = createLoader({ [WORKER]: 10_000 })
     let isSettled = false

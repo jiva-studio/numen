@@ -1,7 +1,7 @@
 /** Running an entry of the menu of a search result, and what the window hands the search. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage } from '@numen/core-client'
-import type { Menus, PlacedCommand } from '@numen/plugin-host'
+import type { SlotHost, SlotItem } from '@numen/plugin-host'
 import type { CommandTarget, ResultChoice } from '@/features/command-palette'
 import { useCommands, type CommandsDepsOptions } from './useCommands'
 
@@ -61,15 +61,21 @@ const choice = (command: string, line = -1): ResultChoice => ({
   input: '',
 })
 
-const entry = (command: string, title: string): PlacedCommand => ({
+const entry = (command: string, title: string): SlotItem => ({
+  kind: 'command',
+  key: `${ATLAS}/command/${command}`,
   pluginId: ATLAS,
   command,
   title,
-  group: '',
+  shortcut: '',
 })
 
 function setup(
-  options: { menus?: Menus; hasCommand?: (id: string) => boolean; target?: CommandTarget } = {},
+  options: {
+    slots?: Pick<SlotHost, 'getEntries'>
+    hasCommand?: (id: string) => boolean
+    target?: CommandTarget
+  } = {},
 ) {
   const executeCommand = vi.fn(async () => true)
   const writeMessage = vi.fn()
@@ -94,7 +100,7 @@ function setup(
     rest: {},
     writeMessage,
     pluginHost,
-    ...(options.menus ? { menus: options.menus } : {}),
+    ...(options.slots ? { slots: options.slots } : {}),
   } as unknown as CommandsDepsOptions)
   return { executeCommand, writeMessage, ...used }
 }
@@ -419,15 +425,24 @@ describe('running a command with a text typed for it', () => {
 })
 
 describe('the search the window builds', () => {
-  it('reads its menu from the entries of the place for a result', () => {
-    const getEntries = vi.fn((location: string) =>
-      location === 'searchResult' ? [entry(SHOW, 'Show note in plex')] : [entry('x:y.z', 'Wrong')],
+  it('reads its menu from the commands of the slot of a result, over a note', () => {
+    const getEntries = vi.fn((slot: string) =>
+      slot === 'palette.searchResult'
+        ? [entry(SHOW, 'Show note in plex'), { kind: 'separator' as const, key: 'gap' }]
+        : [entry('x:y.z', 'Wrong')],
     )
 
-    setup({ menus: { getEntries } })
+    setup({ slots: { getEntries } })
 
-    expect(h.searchOptions?.menu?.getEntries()).toEqual([entry(SHOW, 'Show note in plex')])
-    expect(getEntries).toHaveBeenCalledWith('searchResult')
+    expect(h.searchOptions?.menu?.getEntries()).toEqual([
+      { command: SHOW, title: 'Show note in plex' },
+    ])
+    expect(getEntries).toHaveBeenCalledWith('palette.searchResult', {
+      path: '',
+      title: '',
+      isFolder: false,
+      others: [],
+    })
   })
 
   it('reads the target of the window for the row that creates a note', () => {
@@ -436,7 +451,7 @@ describe('the search the window builds', () => {
     expect(h.searchOptions?.getTarget?.()).toBe(front)
   })
 
-  it('has no entry in its menu where the window has no places', () => {
+  it('has no entry in its menu where the window has no slots', () => {
     setup()
 
     expect(h.searchOptions?.menu?.getEntries() ?? []).toEqual([])
@@ -444,16 +459,18 @@ describe('the search the window builds', () => {
 })
 
 describe('the commands of the palette', () => {
-  it('are the same whatever the plugins place in menus', () => {
+  it('are the same whatever the plugins place in slots', () => {
     const listCommands = () =>
       ((h.getExtraCommands?.() ?? []) as { id: string; text: string; group: string }[]).map(
         ({ id, text, group }) => ({ id, text, group }),
       )
     setup()
     const baseline = listCommands()
-    const menus: Menus = { getEntries: () => [entry(SHOW, 'Show note in plex')] }
+    const slots: Pick<SlotHost, 'getEntries'> = {
+      getEntries: () => [entry(SHOW, 'Show note in plex')],
+    }
 
-    setup({ menus })
+    setup({ slots })
     const withPlacements = listCommands()
 
     expect(withPlacements).toEqual(baseline)

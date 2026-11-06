@@ -334,7 +334,12 @@ describe('a tab kind component', () => {
       }),
     )
     const bareCtx = bareHost.createContext('bare')
-    expect(bareCtx.app).toEqual({ name: 'numen', version: '0.0.0-dev', build: 0, platform: 'linux' })
+    expect(bareCtx.app).toEqual({
+      name: 'numen',
+      version: '0.0.0-dev',
+      build: 0,
+      platform: 'linux',
+    })
     expect(await bareCtx.openExternal('https://numen.md/')).toEqual({
       ok: false,
       error: 'Numen is not responding; retrying',

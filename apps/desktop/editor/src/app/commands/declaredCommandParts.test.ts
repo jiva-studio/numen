@@ -39,7 +39,7 @@ async function load(
   hasBackend: (pluginId: string) => boolean = () => true,
 ) {
   const declared = useDeclaredCommands({
-    list: async () => ({ commands: [createDeck, openPreset, openTree], menus: [] }),
+    list: async () => ({ commands: [createDeck, openPreset, openTree], slots: [] }),
     isListed,
     hasBackend,
   })

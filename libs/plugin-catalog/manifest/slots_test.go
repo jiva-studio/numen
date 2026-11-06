@@ -1,14 +1,16 @@
-package protocol
+package manifest_test
 
 import (
 	"encoding/json"
 	"os"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 func TestTheSlotsAreTheOnesSlotsJSONLists(t *testing.T) {
-	text, err := os.ReadFile("slots.json")
+	text, err := os.ReadFile("../../protocol/slots.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,14 +27,14 @@ func TestTheSlotsAreTheOnesSlotsJSONLists(t *testing.T) {
 	var names []string
 	for _, one := range document.Slots {
 		names = append(names, one.Name)
-		if !IsSlot(one.Name) || IsWindowSlot(one.Name) != one.IsWindow {
-			t.Errorf("slot %q: IsSlot %v, IsWindowSlot %v", one.Name, IsSlot(one.Name), IsWindowSlot(one.Name))
+		if !manifest.IsSlot(one.Name) || manifest.IsWindowSlot(one.Name) != one.IsWindow {
+			t.Errorf("slot %q: IsSlot %v, IsWindowSlot %v", one.Name, manifest.IsSlot(one.Name), manifest.IsWindowSlot(one.Name))
 		}
 	}
-	if !slices.Equal(names, Slots) {
-		t.Errorf("Slots = %v, want %v", Slots, names)
+	if !slices.Equal(names, manifest.Slots) {
+		t.Errorf("Slots = %v, want %v", manifest.Slots, names)
 	}
-	if IsSlot("sideBar") || IsWindowSlot("titleBar.commands") {
+	if manifest.IsSlot("sideBar") || manifest.IsWindowSlot("titleBar.commands") {
 		t.Error("a name outside the list, or an inner slot, is taken for a slot of the window")
 	}
 }

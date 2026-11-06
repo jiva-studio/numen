@@ -49,8 +49,6 @@ message ManifestContributes {
   string category = 3;
   // themes are the stylesheets the plugin adds to the list of themes.
   repeated ManifestTheme themes = 5;
-  // status_views are the components of the plugin's frontend the window draws in its status bar.
-  repeated ManifestStatusView status_views = 4;
   // handles are the capabilities the plugin takes part in for files and notes of some types.
   repeated ManifestHandle handles = 7;
   // readers are the tabs of the plugin's frontend that open files, each by the id the frontend
@@ -64,11 +62,6 @@ message ManifestContributes {
   // commands are the commands the plugin declares, whichever part of the plugin runs them. The
   // application learns which part from where the handler is registered.
   repeated ManifestCommand commands = 12;
-  // menus place commands in the named places the window draws.
-  repeated ManifestMenuEntry menus = 13;
-  // views are the components of the plugin's frontend the window draws in its slots, such as the
-  // title bar.
-  repeated ManifestView views = 14;
   // slots place the commands, views and submenus of the plugin in the slots of a window and in
   // submenus, see slots.json for the list of slots.
   repeated ManifestSlotEntry slots = 15;
@@ -101,26 +94,6 @@ message ManifestSlotEntry {
   optional int32 order = 8;
 }
 
-// ManifestView is a component of the plugin's frontend that the window draws in one of its slots.
-message ManifestView {
-  // id is the id the frontend registers the component under.
-  string id = 1;
-  // slot is the name of the place in the window, such as titleBar.
-  string slot = 2;
-}
-
-// ManifestMenuEntry places one command in a named place of the window. The command is the id
-// the manifest declares it under, or the full id of a command of the application.
-message ManifestMenuEntry {
-  // location is the name of the place, such as titleBar.commands.
-  string location = 1;
-  string command = 2;
-  // group names the entries a place draws together. Empty for none.
-  string group = 3;
-  // order sorts the entries of a group, lowest first. Absent sorts after every order.
-  optional int32 order = 4;
-}
-
 // ManifestHandle declares that the plugin takes part in a capability for files of some content
 // types and notes of some note types. The purpose is the id of the capability; the part of the
 // application that defines the capability owns the id and gives the declaration its meaning.
@@ -141,13 +114,6 @@ message ManifestTheme {
   string appearance = 3;
   // file is the path of the stylesheet relative to the plugin folder.
   string file = 4;
-}
-
-// ManifestStatusView is a component of the plugin's frontend that the window draws in its status
-// bar.
-message ManifestStatusView {
-  // id is the id the frontend registers the component under.
-  string id = 1;
 }
 
 // ManifestTabKind is a kind of tab the plugin registers.

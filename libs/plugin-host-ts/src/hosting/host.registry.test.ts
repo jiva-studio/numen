@@ -178,14 +178,12 @@ describe('a registration replaced under the same id', () => {
       handler: vi.fn(),
     })
     host.contextHost.registerSettingsView('orphan.settings', { id: 's1', component: {} })
-    host.contextHost.registerStatusView('orphan.status', { id: 'st1', component: {} })
 
     expect(host.getRegisteredReaders()).toHaveLength(1)
     expect(host.getRegisteredTabKinds()).toHaveLength(1)
     expect(host.getRegisteredCommands()).toHaveLength(1)
     expect(host.getRegisteredContextMenus()).toHaveLength(1)
     expect(host.getRegisteredSettingsViews('orphan.settings').size).toBe(1)
-    expect(host.statusViews.value).toHaveLength(1)
 
     host.disposeAll()
 
@@ -194,7 +192,6 @@ describe('a registration replaced under the same id', () => {
     expect(host.getRegisteredCommands()).toHaveLength(0)
     expect(host.getRegisteredContextMenus()).toHaveLength(0)
     expect(host.getRegisteredSettingsViews('orphan.settings').size).toBe(0)
-    expect(host.statusViews.value).toHaveLength(0)
 
     expect(() =>
       disposePluginEntry('none', {
@@ -212,11 +209,6 @@ describe('a registration replaced under the same id', () => {
           activated: { value: new Set() },
           disposed: new Set(),
           reportedIssues: new Set(),
-        },
-        statusViews: {
-          views: { value: [] } as never,
-          registerStatusView: vi.fn(),
-          disposePlugin: vi.fn(),
         },
       }),
     ).not.toThrow()
@@ -272,34 +264,51 @@ describe('the settings views of a plugin', () => {
   })
 })
 
-describe('the status views of the plugins', () => {
-  it('list the registrations of every plugin in order, reactively', () => {
-    const host = createPluginHost(createDeps())
-    const count = computed(() => host.statusViews.value.length)
+describe('the views the plugins place in a slot of a bar', () => {
+  const manifest = (view: string) =>
+    ({
+      contributes: { slots: [{ slot: 'statusBar.right', placed: { case: 'view', value: view } }] },
+    }) as unknown as Parameters<ReturnType<typeof createPluginHost>['createContext']>[1]
+  const entries = [
+    { pluginId: 'second.plugin', slot: 'statusBar.right', view: 'update' },
+    { pluginId: 'first.plugin', slot: 'statusBar.right', view: 'update' },
+  ]
 
-    expect(count.value).toBe(0)
-    host.createContext('first.plugin').registerStatusView({ id: 'update', component: 'A' })
-    host.createContext('second.plugin').registerStatusView({ id: 'update', component: 'B' })
-
-    expect(count.value).toBe(2)
-    expect(host.statusViews.value.map((one) => [one.pluginId, one.registration.component])).toEqual(
-      [
-        ['first.plugin', 'A'],
-        ['second.plugin', 'B'],
-      ],
+  it('are the entries of the slot once registered, in the order of the plugins, reactively', () => {
+    const host = createPluginHost(createDeps({ getSlotEntries: () => entries }))
+    const components = computed(() =>
+      host.slots
+        .getEntries('statusBar.right')
+        .map((one) => (one.kind === 'view' ? one.component : '')),
     )
+
+    expect(components.value).toStrictEqual([])
+    host
+      .createContext('second.plugin', manifest('update'))
+      .registerSlotView({ id: 'update', component: 'B' })
+    host
+      .createContext('first.plugin', manifest('update'))
+      .registerSlotView({ id: 'update', component: 'A' })
+
+    expect(components.value).toStrictEqual(['A', 'B'])
   })
 
   it('are removed with the plugin and with the host', () => {
-    const host = createPluginHost(createDeps())
-    host.createContext('first.plugin').registerStatusView({ id: 'update', component: {} })
-    host.createContext('second.plugin').registerStatusView({ id: 'update', component: {} })
+    const host = createPluginHost(createDeps({ getSlotEntries: () => entries }))
+    host
+      .createContext('first.plugin', manifest('update'))
+      .registerSlotView({ id: 'update', component: {} })
+    host
+      .createContext('second.plugin', manifest('update'))
+      .registerSlotView({ id: 'update', component: {} })
 
     host.disposePlugin('first.plugin')
-    expect(host.statusViews.value.map((one) => one.pluginId)).toEqual(['second.plugin'])
+    expect(
+      host.slots.getEntries('statusBar.right').map((one) => one.kind === 'view' && one.pluginId),
+    ).toStrictEqual(['second.plugin'])
 
     host.disposeAll()
-    expect(host.statusViews.value).toHaveLength(0)
+    expect(host.slots.getEntries('statusBar.right')).toStrictEqual([])
   })
 })
 

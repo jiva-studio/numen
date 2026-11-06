@@ -1,4 +1,4 @@
-// Writes the list of the slots of a window, from slots.json, as Go for the manifest reader and as
+// Writes the list of the slots of a window, from slots.json, as Go for the manifest reader (in its package, which knows no wire format) and as
 // TypeScript for the plugin SDK. Run by `make lib_protocol_generate`; the generated files are committed.
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -21,7 +21,7 @@ const getGoName = (name) =>
 const go = [
   `// ${HEADER}`,
   '',
-  'package protocol',
+  'package manifest',
   '',
   ...slots.flatMap((one) => [
     `// ${getGoName(one.name)} is ${one.about}, drawn by ${one.owner}.`,
@@ -79,5 +79,5 @@ const ts = [
   '',
 ].join('\n')
 
-write('../slots.go', go)
-write('../../plugin-sdk-ts/src/slotNames.ts', ts)
+write('../../plugin-catalog/manifest/slots.go', go)
+write('../../plugin-sdk-ts/src/slots/slotNames.ts', ts)

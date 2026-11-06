@@ -1,13 +1,14 @@
 /**
- * The commands of the title bar: what a place entry becomes, when the bar shows any, and what a
- * press runs.
+ * The commands of the title bar: what an entry of its slot becomes, when the bar shows any, and
+ * what a press runs.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { markRaw, shallowRef, type Component } from 'vue'
-import type { MenuPlacement, PlacedCommand } from '@numen/plugin-host'
+import { createSlotRegistry } from '@numen/plugin-host'
+import type { SlotItem } from '@numen/plugin-host'
 import type { CommandTarget } from '@/features/command-palette'
-import type { DeclaredCommand } from '@/entities/plugin'
-import { createPluginMenus } from '../commands/pluginMenus'
+import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
+import { createSlotCommandFinder, readSlotEntries } from '../commands/pluginSlots'
 import { formatShortcut, useTitleBarCommands } from './useTitleBarCommands'
 
 const LINUX = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15'
@@ -25,24 +26,35 @@ const target = {
   isReady: true,
 } as unknown as CommandTarget
 
-const entry = (command: string, overrides: Partial<PlacedCommand> = {}): PlacedCommand => ({
-  pluginId: TIDE,
-  command,
-  title: `Title of ${command}`,
-  icon: 'waves',
-  group: '',
-  ...overrides,
-})
-
 const icons = new Map<string, Component>()
-const getIcon = vi.fn((name: string): Component => {
+const getIcon = (name: string): Component => {
   if (!icons.has(name)) icons.set(name, markRaw({ render: () => null, name }))
   return icons.get(name)!
+}
+
+interface EntryLook {
+  readonly pluginId?: string
+  readonly title?: string
+  readonly icon?: string
+  readonly shortcut?: string
+}
+
+const entry = (command: string, look: EntryLook = {}): SlotItem => ({
+  kind: 'command',
+  key: `${look.pluginId ?? TIDE}/command/${command}`,
+  pluginId: look.pluginId ?? TIDE,
+  command,
+  title: look.title ?? `Title of ${command}`,
+  icon: getIcon(look.icon ?? 'waves'),
+  shortcut: look.shortcut ?? '',
 })
+
+/** The separator between two groups of the slot. */
+const gap: SlotItem = { kind: 'separator', key: 'titleBar.commands/separator/navigate' }
 
 function setup(
   options: {
-    entries?: readonly PlacedCommand[]
+    entries?: readonly SlotItem[]
     isVaultOpen?: boolean
     agent?: string
   } = {},
@@ -53,15 +65,14 @@ function setup(
   }
   const entries = shallowRef(state.entries)
   const isVaultOpen = shallowRef(state.isVaultOpen)
-  const getEntries = vi.fn((_location: string) => entries.value)
+  const getEntries = vi.fn((_slot: string) => entries.value)
   const runCommand = vi.fn<(id: string, target: CommandTarget) => void>()
   const getTarget = vi.fn(() => target)
   const bar = useTitleBarCommands({
-    menus: { getEntries },
+    slots: { getEntries },
     isVaultOpen: () => isVaultOpen.value,
     runCommand,
     getTarget,
-    getIcon,
     agent: options.agent ?? LINUX,
   })
   return { bar, entries, isVaultOpen, getEntries, runCommand, getTarget }
@@ -71,19 +82,13 @@ describe('the commands of the title bar', () => {
   const tree = entry(`${TIDE}:tree.open`, {
     title: 'Open tide chart',
     icon: 'waves',
-    group: 'navigate',
     shortcut: 'mod+shift+e',
   })
-  const graph = entry(`${REEF}:graph.open`, {
-    pluginId: REEF,
-    title: 'Open reef map',
-    icon: 'map',
-    group: 'navigate',
-  })
-  const note = entry('app:note.create', { title: 'Create note', icon: 'file-plus', group: '' })
+  const graph = entry(`${REEF}:graph.open`, { pluginId: REEF, title: 'Open reef map', icon: 'map' })
+  const note = entry('app:note.create', { title: 'Create note', icon: 'file-plus' })
 
-  it('are the entries of the title bar place in the order the place gives them', () => {
-    const { bar, getEntries } = setup({ entries: [tree, graph, note] })
+  it('are the commands of the title bar slot in the order the slot gives them', () => {
+    const { bar, getEntries } = setup({ entries: [tree, graph, gap, note] })
 
     expect(bar.commands.value.map((one) => one.id)).toStrictEqual([
       `${TIDE}:tree.open`,
@@ -91,10 +96,9 @@ describe('the commands of the title bar', () => {
       'app:note.create',
     ])
     expect(getEntries).toHaveBeenCalledWith('titleBar.commands')
-    expect(getEntries).not.toHaveBeenCalledWith('searchResult')
   })
 
-  it('carry the title of the command and the icon its name draws', () => {
+  it('carry the title and the icon of the command', () => {
     const { bar } = setup({ entries: [tree, graph] })
 
     const [first, second] = bar.commands.value
@@ -104,19 +108,15 @@ describe('the commands of the title bar', () => {
     expect(second?.icon).toBe(getIcon('map'))
   })
 
-  it('carry the group of the entry and none for an entry noShortcut one', () => {
-    const { bar } = setup({ entries: [tree, graph, note] })
+  it('carry the group the separators before them count', () => {
+    const { bar } = setup({ entries: [tree, graph, gap, note] })
 
-    const [first, second, third] = bar.commands.value
-    expect(first?.group).toBe('navigate')
-    expect(second?.group).toBe('navigate')
-    expect(third).toBeDefined()
-    expect(third && 'group' in third).toBe(false)
+    expect(bar.commands.value.map((one) => one.group)).toStrictEqual(['0', '0', '1'])
   })
 
-  it('sort, filter and merge nothing of what the place gives', () => {
+  it('sort, filter and merge nothing of what the slot gives', () => {
     const { bar } = setup({
-      entries: [note, graph, tree, entry('app:vault.create', { group: 'z' })],
+      entries: [note, graph, tree, entry('app:vault.create')],
     })
 
     expect(bar.commands.value.map((one) => one.id)).toStrictEqual([
@@ -127,13 +127,13 @@ describe('the commands of the title bar', () => {
     ])
   })
 
-  it('are empty where the place has no entries', () => {
+  it('are empty where the slot has no entries', () => {
     const { bar } = setup({ entries: [] })
 
     expect(bar.commands.value).toStrictEqual([])
   })
 
-  it('are empty while no vault is open, whatever the place gives', () => {
+  it('are empty while no vault is open, whatever the slot gives', () => {
     const { bar, isVaultOpen } = setup({ entries: [tree, note], isVaultOpen: false })
 
     expect(bar.commands.value).toStrictEqual([])
@@ -150,7 +150,7 @@ describe('the commands of the title bar', () => {
     expect(bar.commands.value).toStrictEqual([])
   })
 
-  it('follow the place when its entries change', () => {
+  it('follow the slot when its entries change', () => {
     const { bar, entries } = setup({ entries: [tree] })
     expect(bar.commands.value).toHaveLength(1)
 
@@ -267,7 +267,7 @@ describe('the press of a command', () => {
   })
 })
 
-describe('the commands over the menus of the window when a plugin is disabled and enabled', () => {
+describe('the commands over the slots of the window when a plugin is disabled and enabled', () => {
   const declare = (pluginId: string, id: string, title: string): DeclaredCommand => ({
     pluginId,
     id,
@@ -277,9 +277,9 @@ describe('the commands over the menus of the window when a plugin is disabled an
     extensions: [],
     arguments: [],
   })
-  const place = (pluginId: string, command: string, order: number): MenuPlacement => ({
+  const place = (pluginId: string, command: string, order: number): DeclaredSlot => ({
     pluginId,
-    location: 'titleBar.commands',
+    slot: 'titleBar.commands',
     command,
     group: 'navigate',
     order,
@@ -293,18 +293,20 @@ describe('the commands over the menus of the window when a plugin is disabled an
       placements: [place(TIDE, 'tide.open', 10), place(REEF, 'reef.open', 20)],
     }
     const list = shallowRef<typeof both>(both)
-    const menus = createPluginMenus({
-      getPlacements: () => list.value.placements,
-      getPluginCommands: () => [],
-      getDeclaredCommands: () => list.value.commands,
-      getEditorCommands: () => [],
+    const slots = createSlotRegistry({
+      getEntries: () => readSlotEntries(list.value.placements),
+      findCommand: createSlotCommandFinder({
+        getPluginCommands: () => [],
+        getDeclaredCommands: () => list.value.commands,
+        getEditorCommands: () => [],
+      }),
+      findView: () => undefined,
     })
     const bar = useTitleBarCommands({
-      menus,
+      slots,
       isVaultOpen: () => true,
       runCommand: vi.fn(),
       getTarget: () => target,
-      getIcon,
       agent: LINUX,
     })
     return { bar, list, both, tide, reef }

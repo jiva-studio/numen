@@ -60,13 +60,13 @@ describe('the title bar', () => {
   ) as {
     contributes: {
       commands: readonly { id: string; title: string }[]
-      menus?: readonly { location: string; command: string; group?: string; order?: number }[]
+      slots?: readonly { slot: string; command?: string; view?: string; group?: string; order?: number }[]
     }
   }
 
   it('places opening the chat third among the navigation entries', () => {
-    expect(contributes.menus).toStrictEqual([
-      { location: 'titleBar.commands', command: 'chat.open', group: 'navigate', order: 30 },
+    expect(contributes.slots).toStrictEqual([
+      { slot: 'titleBar.commands', command: 'chat.open', group: 'navigate', order: 30 },
     ])
   })
 
@@ -77,7 +77,7 @@ describe('the title bar', () => {
   })
 
   it('keeps the command that asks about a note out of the title bar, which has no note', () => {
-    const entries = (contributes.menus ?? []).filter((one) => one.location === 'titleBar.commands')
+    const entries = (contributes.slots ?? []).filter((one) => one.slot === 'titleBar.commands')
 
     expect(entries.map((one) => one.command)).not.toContain('note.ask')
   })

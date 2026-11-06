@@ -3,7 +3,7 @@
  * `contributes.slots`; the owner of a slot reads them here, draws them, and runs their commands over
  * its target.
  */
-import type { Disposable } from './types'
+import type { Disposable } from '../types'
 import type { SlotName } from './slotNames'
 
 export { SLOT, WINDOW_SLOTS, type SlotName } from './slotNames'
@@ -11,9 +11,9 @@ export { SLOT, WINDOW_SLOTS, type SlotName } from './slotNames'
 // SlotPlace is a slot of the window or a submenu a plugin declares; a submenu is named by its id.
 export type SlotPlace = SlotName | (string & {})
 
-// SlotTarget is what the owner of a slot runs the commands of its entries over: the file or folder a
-// row of the file tree was opened on, the file of a tab, the note of a search result. A bar has none.
-export interface SlotTarget {
+// CommandTarget is what a command runs over: the file or folder a row of the file tree was opened
+// on, the file of a tab, the note of a search result. A bar has none.
+export interface CommandTarget {
   // The path of the file or folder; empty where there is none.
   readonly path: string
   // What the target is called, such as the title of a note; empty where there is none.
@@ -80,13 +80,11 @@ export interface SlotHost {
   // The entries of the slot over the target, in the order they are drawn, groups resolved into
   // separators. An entry whose command is not available over the target or in this window, or whose
   // plugin is suspended, is left out; so is a view that has not been registered yet.
-  getEntries(slot: SlotPlace, target?: SlotTarget): readonly SlotItem[]
+  getEntries(slot: SlotPlace, target?: CommandTarget): readonly SlotItem[]
   // Calls the handler with the entries of the slot at once and again on every change.
   watchEntries(
     slot: SlotPlace,
     handler: (entries: readonly SlotItem[]) => void,
-    target?: SlotTarget,
+    target?: CommandTarget,
   ): Disposable
-  // Runs the command of an entry over the target.
-  runCommand(command: string, target?: SlotTarget): Promise<void>
 }

@@ -26,7 +26,7 @@ type (
 	PluginCommandCall      = pluginport.PluginCommandCall
 	PluginCommandEntry     = pluginport.PluginCommandEntry
 	PluginCommandResult    = pluginport.PluginCommandResult
-	PluginMenuEntry        = pluginport.PluginMenuEntry
+	PluginSlotEntry        = pluginport.PluginSlotEntry
 	PluginContextCondition = pluginport.PluginContextCondition
 	PluginContext          = pluginport.PluginContext
 	PluginContributes      = pluginport.PluginContributes

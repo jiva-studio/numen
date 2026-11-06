@@ -70,7 +70,7 @@ func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 	if err := decoder.Decode(&value); err != nil {
 		return nil, nil, err
 	}
-	if err := checkMenuOrders(value); err != nil {
+	if err := checkSlotOrders(value); err != nil {
 		return nil, nil, err
 	}
 	unknown = pruneUnknown(value, (&v1.Manifest{}).ProtoReflect().Descriptor(), "", nil)
@@ -83,10 +83,10 @@ func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 	return canonical, unknown, err
 }
 
-var errMenuOrderShape = errors.New("the order of a menu entry must be a number, not a string")
+var errSlotOrderShape = fmt.Errorf("%w: the order of an entry must be a number, not a string", manifest.ErrInvalidSlotEntry)
 
-// checkMenuOrders rejects an order written as a string, which the wire reader would read as a number.
-func checkMenuOrders(root any) error {
+// checkSlotOrders rejects an order written as a string, which the wire reader would read as a number.
+func checkSlotOrders(root any) error {
 	object, isObject := root.(map[string]any)
 	if !isObject {
 		return nil
@@ -95,7 +95,7 @@ func checkMenuOrders(root any) error {
 	if !isObject {
 		return nil
 	}
-	entries, isList := contributes["menus"].([]any)
+	entries, isList := contributes["slots"].([]any)
 	if !isList {
 		return nil
 	}
@@ -105,36 +105,10 @@ func checkMenuOrders(root any) error {
 			continue
 		}
 		if text, isText := fields["order"].(string); isText {
-			return fmt.Errorf("%w: %q", errMenuOrderShape, text)
+			return fmt.Errorf("%w: %q", errSlotOrderShape, text)
 		}
 	}
 	return nil
-}
-
-func newMenus(wire []*v1.ManifestMenuEntry) []manifest.Menu {
-	var out []manifest.Menu
-	for _, one := range wire {
-		var order *int
-		if one.Order != nil {
-			value := int(one.GetOrder())
-			order = &value
-		}
-		out = append(out, manifest.Menu{
-			Location: one.GetLocation(),
-			Command:  one.GetCommand(),
-			Group:    one.GetGroup(),
-			Order:    order,
-		})
-	}
-	return out
-}
-
-func newViews(wire []*v1.ManifestView) []manifest.View {
-	var out []manifest.View
-	for _, one := range wire {
-		out = append(out, manifest.View{ID: one.GetId(), Slot: one.GetSlot()})
-	}
-	return out
 }
 
 func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
@@ -187,10 +161,6 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 	for _, one := range wire.GetThemes() {
 		themes = append(themes, manifest.Theme{ID: one.GetId(), Name: one.GetName(), Appearance: one.GetAppearance(), File: one.GetFile()})
 	}
-	var views []manifest.StatusView
-	for _, one := range wire.GetStatusViews() {
-		views = append(views, manifest.StatusView{ID: one.GetId()})
-	}
 	noteTypes, err := newNoteTypes(wire.GetNoteTypes())
 	if err != nil {
 		return manifest.Contributes{}, err
@@ -200,14 +170,11 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Feature:      wire.GetFeature(),
 		Category:     wire.GetCategory(),
 		Themes:       themes,
-		StatusViews:  views,
 		Handles:      newHandles(wire.GetHandles()),
 		Readers:      newReaders(wire.GetReaders()),
 		NoteTypes:    noteTypes,
 		FrameOrigins: wire.GetFrameOrigins(),
 		Commands:     newCommands(wire.GetCommands()),
-		Menus:        newMenus(wire.GetMenus()),
-		Views:        newViews(wire.GetViews()),
 		Slots:        newSlots(wire.GetSlots()),
 	}, nil
 }
