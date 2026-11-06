@@ -92,8 +92,8 @@ func (h *Host) openListeners(ctx context.Context, pluginID string, wanted []mani
 		addr := net.JoinHostPort(listenerAddressHost, strconv.Itoa(declared.Port))
 		proxy, err := portproxy.Open(ctx, addr, h.createListenerTarget(pluginID, declared.Name), h.reportError)
 		if err != nil {
-			for _, opened := range proxies {
-				h.closeListener(pluginID, opened)
+			for _, proxy := range proxies {
+				h.closeListener(pluginID, proxy)
 			}
 			return nil, fmt.Errorf("bind listener %s of plugin %s: %w", declared.Name, pluginID, err)
 		}

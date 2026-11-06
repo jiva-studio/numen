@@ -155,7 +155,7 @@ type Server struct {
 	mux         *http.ServeMux
 	listener    net.Listener
 	actualPort  int
-	listeners   []openedListener
+	listeners   []listenerPort
 }
 
 // New constructs a plugin server using command flags, environment variables, and options.

@@ -79,9 +79,9 @@ func dial(t *testing.T, addr string) net.Conn {
 func TestAConnectionIsForwardedToTheTargetAndReleasedWhenItCloses(t *testing.T) {
 	echo := serveEcho(t)
 	released := make(chan struct{})
-	var opened atomic.Int32
+	var openCount atomic.Int32
 	_, addr := openProxy(t, func(context.Context) (string, func(), error) {
-		opened.Add(1)
+		openCount.Add(1)
 		return echo, func() { close(released) }, nil
 	}, func(err error) { t.Errorf("onError: %v", err) })
 
@@ -102,7 +102,7 @@ func TestAConnectionIsForwardedToTheTargetAndReleasedWhenItCloses(t *testing.T) 
 	case <-time.After(5 * time.Second):
 		t.Fatal("the target was not released after the connection closed")
 	}
-	if got := opened.Load(); got != 1 {
+	if got := openCount.Load(); got != 1 {
 		t.Errorf("target opened %d times, want 1", got)
 	}
 }
