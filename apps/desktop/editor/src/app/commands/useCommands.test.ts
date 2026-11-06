@@ -272,6 +272,8 @@ describe('a plugin command over a note', () => {
       path: 'Animals.md',
       title: 'Animals',
       type: 'sample',
+      isFolder: false,
+      others: [],
     })
   })
 
@@ -312,10 +314,15 @@ describe('a plugin command over a note', () => {
     ])
   })
 
-  it('runs by id with the note of the target and reports errors', async () => {
+  it('runs by id with the note of the target, the others selected with it, and reports errors', async () => {
     const one = setupPlugin()
 
-    one.runCommand('summary', { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget)
+    one.runCommand('summary', {
+      path: 'Animals.md',
+      title: 'Animals',
+      isFolder: false,
+      others: ['Birds.md'],
+    } as unknown as CommandTarget)
     await vi.waitFor(() => expect(one.executeCommand).toHaveBeenCalled())
 
     expect(h.setCommandsOpen).toHaveBeenCalledWith(false)
@@ -323,6 +330,8 @@ describe('a plugin command over a note', () => {
       path: 'Animals.md',
       title: 'Animals',
       type: 'sample',
+      isFolder: false,
+      others: ['Birds.md'],
     })
     expect(h.startCommand).not.toHaveBeenCalled()
 
@@ -355,6 +364,8 @@ describe('a plugin command over a note', () => {
         path: 'Animals.md',
         title: 'Animals',
         type: 'sample',
+        isFolder: false,
+        others: [],
       }),
     )
     expect(event.preventDefault).toHaveBeenCalledOnce()

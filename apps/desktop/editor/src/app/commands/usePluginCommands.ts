@@ -9,6 +9,9 @@ import { findShortcutKeys, registerCommand, type CommandTarget } from '@/feature
 import { getNamedIcon } from '@/shared/icons'
 import type { VaultCore } from '../vault'
 
+/** What a run names: the note, and the others selected with it where it was run from a selection. */
+type NoteTarget = Pick<CommandTarget, 'path' | 'title' | 'isFolder' | 'others'>
+
 export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | undefined) {
   const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []
   /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
@@ -46,11 +49,17 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
       .filter((cmd) => cmd.scope === 'note')
       .map((cmd) => ({ id: cmd.id, text: cmd.title, group: 'note' }))
 
-  const getCommandNote = async (path: string, title: string): Promise<CommandNote> => ({
-    path,
-    title,
-    type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
-  })
+  /** What a plugin command runs over: the target, the others selected with it, and its type. */
+  const getCommandNote = async (target: NoteTarget): Promise<CommandNote> => {
+    const { path } = target
+    return {
+      path,
+      title: target.title,
+      type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
+      isFolder: target.isFolder ?? false,
+      others: target.others ?? [],
+    }
+  }
 
   if (pluginHost) {
     let unregisterAll: readonly (() => void)[] = []
@@ -60,10 +69,7 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
         for (const unregister of unregisterAll) unregister()
         unregisterAll = list.map((cmd) =>
           registerCommand(cmd.id, async (invocation) => {
-            await pluginHost.executeCommand(
-              cmd.id,
-              await getCommandNote(invocation.path, invocation.title),
-            )
+            await pluginHost.executeCommand(cmd.id, await getCommandNote(invocation))
           }),
         )
       },

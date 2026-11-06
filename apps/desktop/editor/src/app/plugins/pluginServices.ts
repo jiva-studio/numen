@@ -93,7 +93,6 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     },
     getNoteInFocus: () => deps.getNoteInFocus(),
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,
-    runCommand: (id, { path, title }) => deps.runCommand(id, { ...deps.getTarget(), path, title }),
     getNoteCommands: () => deps.getNoteCommands(),
     ask: (text) => deps.ask(text),
     showError: (text) => writeMessage(text, 'error'),

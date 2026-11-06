@@ -74,7 +74,13 @@ describe('view-file-tree plugin', () => {
       'tree.revealNote',
     ])
     await ctx.triggerCommand('tree.open')
-    await ctx.triggerCommand('tree.revealNote', { path: 'notes/A.md', title: 'A', type: 'note' })
+    await ctx.triggerCommand('tree.revealNote', {
+      path: 'notes/A.md',
+      title: 'A',
+      type: 'note',
+      isFolder: false,
+      others: [],
+    })
 
     expect(openCalls).toStrictEqual([[FILES, undefined]])
     expect(navigateCalls).toStrictEqual([[FILES, 'notes/A.md']])

@@ -67,13 +67,20 @@ describe('what an agent tab asks of the window', () => {
 })
 
 describe('opening the settings from an agent tab', () => {
-  it('runs the command of the window that opens the settings', () => {
+  it('runs the command of the window that opens the settings, over no target', () => {
     const { host, recorded } = createHost({ focus: { path: 'Orchard.md', title: 'Orchard' } })
 
     createAgentTabDeps(host).openSettings?.()
 
-    expect(recorded.commands).toStrictEqual([
-      ['app:settings.open', { path: 'Orchard.md', title: 'Orchard' }],
-    ])
+    expect(recorded.commands).toStrictEqual([['app:settings.open', undefined]])
+  })
+
+  it('opens no settings in a window that offers no commands', () => {
+    const { host, recorded } = createHost()
+    const { commands: _commands, ...rest } = host
+
+    createAgentTabDeps(rest).openSettings?.()
+
+    expect(recorded.commands).toStrictEqual([])
   })
 })

@@ -19,10 +19,12 @@ import type { MountedView, ViewRegistration } from '../views'
 import type { DropRegistration } from '../drops'
 import {
   createMockBackgroundTaskHost,
+  createMockCommandsHost,
   createMockSlotHost,
   createMockVaultsHost,
   createMockWindowHost,
   type MockBackgroundTaskHost,
+  type MockCommandsHost,
   type MockSlotHost,
   type MockVaultsHost,
   type MockWindowHost,
@@ -39,6 +41,7 @@ export interface MockMountedView {
 
 // MockPluginContext extends PluginContext with inspection and simulation methods.
 export interface MockPluginContext extends PluginContext {
+  readonly commands: MockCommandsHost
   readonly slots: MockSlotHost
   readonly vaults: MockVaultsHost
   readonly window: MockWindowHost
@@ -97,7 +100,7 @@ function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: 
 
 const DEFAULT_APP: AppInfo = { name: 'numen', version: '0.0.0-test', build: 1, platform: 'linux' }
 
-const EMPTY_NOTE: CommandNote = { path: '', title: '', type: 'note' }
+const EMPTY_NOTE: CommandNote = { path: '', title: '', type: 'note', isFolder: false, others: [] }
 
 // Reports whether the address is an absolute http or https address, as the window opens only those.
 function isWebAddress(url: string): boolean {
@@ -164,6 +167,7 @@ export function createMockPluginContext(
     subscriptions,
     app: init.app ?? DEFAULT_APP,
     ...getOptionalServices(init),
+    commands: createMockCommandsHost(),
     slots: createMockSlotHost(),
     vaults: createMockVaultsHost(),
     window: createMockWindowHost(),

@@ -96,7 +96,7 @@ describe('the host reading the listed commands', () => {
     })
     host.createContext('md.tree')
     const event = new KeyboardEvent('keydown', { key: 'e' })
-    const note = { path: 'a.md', title: 'A', type: 'note' as const }
+    const note = { path: 'a.md', title: 'A', type: 'note' as const, isFolder: false, others: [] }
 
     host.getPaletteCommands()
     host.handleShortcut(event, async () => note)

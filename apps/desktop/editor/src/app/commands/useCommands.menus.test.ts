@@ -116,6 +116,8 @@ describe('running the action of a search result that is an entry of its menu', (
       path: 'Reef.md',
       title: 'Reef',
       type: 'sample',
+      isFolder: false,
+      others: [],
     })
     expect(h.startCommand).not.toHaveBeenCalled()
   })
@@ -275,6 +277,8 @@ describe('opening the note of a search result as a command', () => {
       path: 'Reef.md',
       title: 'Reef',
       type: 'sample',
+      isFolder: false,
+      others: [],
     })
   })
 
@@ -413,6 +417,8 @@ describe('running a command with a text typed for it', () => {
       path: 'Animals.md',
       title: 'Animals',
       type: 'sample',
+      isFolder: false,
+      others: [],
     })
     expect(h.startCommand).not.toHaveBeenCalled()
   })

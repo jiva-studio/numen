@@ -246,14 +246,15 @@ export default definePlugin({
 
 The view draws the whole bar: the strip, the entries of its slots, the title, the window buttons, the area that moves the window and the room the macOS buttons take. The window draws nothing of its own in it and adds nothing beside it, and the shell offers no components for it: a bar plugin draws its own. The window passes the view no props and answers no events of it. The view reads what it draws from the context of its plugin:
 
-| Context          | What the bar reads and does                                                                                                                                                                          |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `context.slots`  | The entries of `titleBar.commands` and `titleBar.status` through `watchEntries`, in the order they are drawn; `runCommand` runs the command of an entry. An entry the window cannot run is left out. |
-| `context.vaults` | The vaults the window can show and the one it shows (`null` while it shows none) through `watch`; `switchTo` shows another one. In the editor the last vault is a row that adds a folder as a vault. |
-| `context.window` | Whether the window is maximized or fills the screen through `watch`; `minimize`, `toggleMaximize` and `close` are the window buttons.                                                                |
-| `context.app`    | `name`, the name of the application, and `platform`: `darwin`, `windows` or `linux`. On macOS the system draws the window buttons at the left, and the bar keeps room for them.                      |
+| Context            | What the bar reads and does                                                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `context.slots`    | The entries of `titleBar.commands` and `titleBar.status` through `watchEntries`, in the order they are drawn. An entry the window cannot run is left out.                       |
+| `context.commands` | `run` runs the command of an entry, with no target in a bar; `getIds` and `watch` tell which commands the window runs now.                                                      |
+| `context.vaults`   | The vaults the window can show and the one it shows (`null` while it shows none) through `watch`; `switchTo` shows another one.                                                 |
+| `context.window`   | Whether the window is maximized or fills the screen through `watch`; `minimize`, `toggleMaximize` and `close` are the window buttons.                                           |
+| `context.app`      | `name`, the name of the application, and `platform`: `darwin`, `windows` or `linux`. On macOS the system draws the window buttons at the left, and the bar keeps room for them. |
 
-A window that does not offer `slots`, `vaults` or `window` leaves that field out of the context.
+A window that does not offer `slots`, `commands`, `vaults` or `window` leaves that field out of the context. Running a command that changes the vault needs `vault:write`, except a command that changes nothing in the vault, as for `workspace.runPathCommand`.
 
 When two enabled plugins register a view for `titleBar`, the window draws the one of the plugin first by plugin id, compared as plain text, and writes an error for the other plugin to the message log. The view is drawn in the window, not in a pane, and the window adds the stylesheet of the plugin while its view is drawn.
 

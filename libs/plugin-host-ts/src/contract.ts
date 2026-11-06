@@ -19,6 +19,8 @@ export type {
   Backlink,
   BufferHost,
   CommandNote,
+  CommandTarget,
+  CommandsHost,
   CommandRegistration,
   Connection,
   ConnectionRole,

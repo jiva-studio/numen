@@ -83,17 +83,10 @@ describe('the window a plugin is handed', () => {
     expect(createWorkspaceHost(unlinked).syncPath('plex:1', 'One.md')).toBe(false)
   })
 
-  it('runs a command over the note named, from the tab in front', () => {
-    const { workspace, deps } = createWorkspace()
+  it('runs no command itself: a plugin runs one through the commands of its context', () => {
+    const { workspace } = createWorkspace()
 
-    workspace.runCommand('rename', { path: 'One.md', title: 'One' })
-
-    expect(deps.runCommand).toHaveBeenCalledWith('rename', {
-      tab: 'plex:1',
-      kind: 'plex',
-      path: 'One.md',
-      title: 'One',
-    })
+    expect(workspace).not.toHaveProperty('runCommand')
   })
 
   it('lists the commands the plugins declare over a note', () => {

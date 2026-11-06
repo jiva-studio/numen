@@ -110,7 +110,7 @@ describe('command handlers', () => {
 
     const handled = host.handleShortcut(
       new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }),
-      async () => ({ path: '', title: '', type: 'note' }),
+      async () => ({ path: '', title: '', type: 'note', isFolder: false, others: [] }),
     )
     await new Promise((resolve) => setTimeout(resolve, 0))
 
@@ -135,14 +135,20 @@ describe('command handlers', () => {
     })
 
     await expect(
-      host.executeCommand('cmd.plugin:run', { path: '', title: '', type: 'note' }),
+      host.executeCommand('cmd.plugin:run', {
+        path: '',
+        title: '',
+        type: 'note',
+        isFolder: false,
+        others: [],
+      }),
     ).resolves.toBe(true)
     expect(onError).toHaveBeenCalledWith('cmd.plugin', fault)
   })
 })
 
 describe('a command over a note', () => {
-  const NOTE = { path: 'Animals.md', title: 'Animals', type: 'sample' }
+  const NOTE = { path: 'Animals.md', title: 'Animals', type: 'sample', isFolder: false, others: [] }
 
   it('is offered as one over a note, and runs with the note it is given', async () => {
     const host = createPluginHost(
@@ -186,7 +192,13 @@ describe('a command over a note', () => {
     host.createContext('cmd.plugin').registerCommand({ id: 'summary', handler })
     const event = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true })
 
-    host.handleShortcut(event, async () => ({ path: '', title: '', type: 'note' }))
+    host.handleShortcut(event, async () => ({
+      path: '',
+      title: '',
+      type: 'note',
+      isFolder: false,
+      others: [],
+    }))
     host.handleShortcut(event, async () => NOTE)
     await new Promise((resolve) => setTimeout(resolve, 0))
 
@@ -334,7 +346,12 @@ describe('a tab kind component', () => {
       }),
     )
     const bareCtx = bareHost.createContext('bare')
-    expect(bareCtx.app).toEqual({ name: 'numen', version: '0.0.0-dev', build: 0, platform: 'linux' })
+    expect(bareCtx.app).toEqual({
+      name: 'numen',
+      version: '0.0.0-dev',
+      build: 0,
+      platform: 'linux',
+    })
     expect(await bareCtx.openExternal('https://numen.md/')).toEqual({
       ok: false,
       error: 'Numen is not responding; retrying',
@@ -348,7 +365,13 @@ describe('a tab kind component', () => {
       },
     })
     await expect(
-      bareHost.executeCommand('bare:fail-quietly', { path: '', title: '', type: 'note' }),
+      bareHost.executeCommand('bare:fail-quietly', {
+        path: '',
+        title: '',
+        type: 'note',
+        isFolder: false,
+        others: [],
+      }),
     ).resolves.toBe(true)
   })
 })

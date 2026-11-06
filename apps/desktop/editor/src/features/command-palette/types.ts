@@ -83,6 +83,8 @@ export interface CommandTarget {
   readonly line?: number
   /** The place in a file that is no note a command that opens it moves to. */
   readonly selector?: Selector
+  /** Whether the target at `path` is a folder; a note where absent. */
+  readonly isFolder?: boolean
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   readonly vault: VaultRef
@@ -142,6 +144,8 @@ export interface CommandInvocation {
   readonly line?: number
   /** The place in a file that is no note a command that opens it moves to. */
   readonly selector?: Selector
+  /** Whether the target at `path` is a folder; a note where absent. */
+  readonly isFolder?: boolean
   /** The other files it is over, beside the one at `path`. */
   readonly others: readonly string[]
   /**

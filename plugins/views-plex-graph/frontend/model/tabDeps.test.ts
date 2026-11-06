@@ -80,7 +80,9 @@ describe('what else a plex tab asks of the window', () => {
     deps.runCommand('rename', 'One.md', 'One')
     deps.showMessage('the link was not written')
 
-    expect(recorded.commands).toStrictEqual([['rename', { path: 'One.md', title: 'One' }]])
+    expect(recorded.commands).toStrictEqual([
+      ['rename', { path: 'One.md', title: 'One', isFolder: false, others: [] }],
+    ])
     expect(deps.getNoteCommands()).toStrictEqual([
       { id: 'org.example.sample:share.run', text: 'Share the note', group: 'note' },
     ])

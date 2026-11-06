@@ -25,7 +25,7 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import { APP_COMMAND_OWNER, formatCommandId } from '../commandId'
+import { guardCommands, READ_ONLY_COMMANDS } from './commandGuard'
 import { createExternalOpener } from '../externalOpener'
 import { getDeclaredSlot, type SlotViewManifest } from '../slot-views/slotViews'
 import type { PluginContextHost } from './types'
@@ -55,15 +55,6 @@ function checkPermission(target: PermissionTarget, permission: string, operation
     )
   }
 }
-
-/** The commands of the window that change nothing in the vault. */
-const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set([
-  formatCommandId(APP_COMMAND_OWNER, 'note.open'),
-  formatCommandId(APP_COMMAND_OWNER, 'note.copyPath'),
-  formatCommandId(APP_COMMAND_OWNER, 'settings.open'),
-  formatCommandId('md.numen.views.plex.graph', 'graph.showNote'),
-  formatCommandId('md.numen.views.agent.chat', 'note.ask'),
-])
 
 function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void): VaultNotes {
   return {
@@ -215,10 +206,6 @@ function guardWorkspace(
 ): WorkspaceHost {
   return {
     ...workspace,
-    runCommand: (id, target) => {
-      if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runCommand ${id}`)
-      workspace.runCommand(id, target)
-    },
     runPathCommand: (id, target) => {
       if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runPathCommand ${id}`)
       workspace.runPathCommand(id, target)
@@ -347,15 +334,22 @@ function createWindowServices(
     ...(notices ? { notices } : {}),
     ...(tasks ? { tasks } : {}),
     ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
-    ...createFrameServices(host),
+    ...createFrameServices(host, requirePerm),
   }
 }
 
-/** The vaults the window can show and the window itself, the same for every plugin. */
-function createFrameServices(host: PluginContextHost) {
+/** The commands, the vaults and the window itself; running a command that writes needs vault:write. */
+function createFrameServices(host: PluginContextHost, requirePerm: RequirePermission) {
+  const commands = host.getCommands?.()
   const vaults = host.getVaults?.()
   const window = host.getWindow?.()
-  return { ...(vaults ? { vaults } : {}), ...(window ? { window } : {}) }
+  return {
+    ...(commands
+      ? { commands: guardCommands(commands, (op) => requirePerm('vault:write', op)) }
+      : {}),
+    ...(vaults ? { vaults } : {}),
+    ...(window ? { window } : {}),
+  }
 }
 
 export function createPluginContext(

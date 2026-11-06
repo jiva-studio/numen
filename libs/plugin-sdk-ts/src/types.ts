@@ -4,6 +4,7 @@ import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
 import type { BackgroundTaskHost } from './backgroundTasks'
+import type { CommandsHost, CommandTarget } from './commands'
 import type { SlotHost } from './slots'
 import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
@@ -167,11 +168,10 @@ export interface TabKindRegistration<State = unknown> {
   placement?: TabPlacement
 }
 
-// CommandNote is the note a command runs over: the note in front, or the one a menu was opened on.
-// Its path is empty where there is none.
-export interface CommandNote {
-  readonly path: string
-  readonly title: string
+// CommandNote is what a command runs over, as its handler gets it: the target of the run, the note
+// in front where the run names none, and the type the vault files it as. Its path is empty where
+// there is none.
+export interface CommandNote extends CommandTarget {
   readonly type: NoteType
 }
 
@@ -297,7 +297,9 @@ export interface PluginContext {
   readonly notices?: NoticeHost
   // The tasks the plugins report, where the host offers them.
   readonly tasks?: TaskHost
-  // The slots of the window: the entries of a slot, read by its owner, and their commands.
+  // The commands of the window: which ones it runs now, and the one way to run a command.
+  readonly commands?: CommandsHost
+  // The slots of the window: the entries of a slot, read by its owner.
   readonly slots?: SlotHost
   // The vaults the window can show, where the host offers them.
   readonly vaults?: VaultsHost

@@ -196,8 +196,6 @@ export interface WorkspaceHost {
   getNoteInFocus(): NoteRef
   // The tabs linked to tab `tabId` move to the path. False where none is linked to it.
   syncPath(tabId: string, path: string, title?: string): boolean
-  // A command of the window, run over one note.
-  runCommand(id: string, target: NoteRef): void
   // The commands the plugins declare over one note, in the words the palette offers them by.
   getNoteCommands(): readonly MenuEntry[]
   // Sends a question to the agent and shows it to the user.

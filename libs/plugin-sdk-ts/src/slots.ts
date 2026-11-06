@@ -1,27 +1,16 @@
 /**
  * The slots of a window as a plugin reads and fills them. The manifest places entries with
- * `contributes.slots`; the owner of a slot reads them here, draws them, and runs their commands over
- * its target.
+ * `contributes.slots`; the owner of a slot reads them here, draws them, and runs their commands
+ * over its target through `CommandsHost.run`.
  */
 import type { Disposable } from './types'
 import type { SlotName } from './slotNames'
+import type { CommandTarget } from './commands'
 
 export { SLOT, WINDOW_SLOTS, type SlotName } from './slotNames'
 
 // SlotPlace is a slot of the window or a submenu a plugin declares; a submenu is named by its id.
 export type SlotPlace = SlotName | (string & {})
-
-// SlotTarget is what the owner of a slot runs the commands of its entries over: the file or folder a
-// row of the file tree was opened on, the file of a tab, the note of a search result. A bar has none.
-export interface SlotTarget {
-  // The path of the file or folder; empty where there is none.
-  readonly path: string
-  // What the target is called, such as the title of a note; empty where there is none.
-  readonly title: string
-  readonly isFolder: boolean
-  // The other paths selected together with the target, as in the file tree.
-  readonly others: readonly string[]
-}
 
 // SlotEntryKey names one entry for as long as its plugin declares it: the plugin and its command,
 // view or submenu, as `<plugin id>/<kind>/<id>`.
@@ -33,7 +22,7 @@ export interface SlotCommand {
   readonly key: SlotEntryKey
   // The plugin that placed the entry.
   readonly pluginId: string
-  // The full id of the command, which `SlotHost.runCommand` takes.
+  // The full id of the command, which `CommandsHost.run` takes.
   readonly command: string
   readonly title: string
   // The icon component of the command; undefined for a command without one.
@@ -80,13 +69,11 @@ export interface SlotHost {
   // The entries of the slot over the target, in the order they are drawn, groups resolved into
   // separators. An entry whose command is not available over the target or in this window, or whose
   // plugin is suspended, is left out; so is a view that has not been registered yet.
-  getEntries(slot: SlotPlace, target?: SlotTarget): readonly SlotItem[]
+  getEntries(slot: SlotPlace, target?: CommandTarget): readonly SlotItem[]
   // Calls the handler with the entries of the slot at once and again on every change.
   watchEntries(
     slot: SlotPlace,
     handler: (entries: readonly SlotItem[]) => void,
-    target?: SlotTarget,
+    target?: CommandTarget,
   ): Disposable
-  // Runs the command of an entry over the target.
-  runCommand(command: string, target?: SlotTarget): Promise<void>
 }

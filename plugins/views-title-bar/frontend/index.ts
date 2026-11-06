@@ -37,7 +37,7 @@ export function createTitleBarView(context: PluginContext) {
           commands: hosts.commands.value,
           status: hosts.status.value,
           onRunCommand: (command: string) => {
-            if (context.slots) runInBackground(context.slots.runCommand(command), reportError)
+            if (context.commands) runInBackground(context.commands.run(command), reportError)
           },
           onSwitchVault: (id: string) => {
             if (context.vaults) runInBackground(context.vaults.switchTo(id), reportError)

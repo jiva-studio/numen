@@ -205,6 +205,7 @@ function createServiceBridge(
   | 'getRelations'
   | 'getFiles'
   | 'getAgent'
+  | 'getCommands'
   | 'getVaults'
   | 'getWindow'
   | 'getBuffers'
@@ -218,6 +219,7 @@ function createServiceBridge(
     getRelations: () => deps.getRelations?.(),
     getFiles: () => deps.getFiles?.(),
     getAgent: () => deps.getAgent?.(),
+    getCommands: () => deps.getCommands?.(),
     getVaults: () => deps.getVaults?.(),
     getWindow: () => deps.getWindow?.(),
     getBuffers: () => deps.getBuffers?.(),

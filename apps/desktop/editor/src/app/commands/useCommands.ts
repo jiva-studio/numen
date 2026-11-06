@@ -128,9 +128,7 @@ export function useCommands(options: CommandsDepsOptions) {
     if (pluginHost?.hasCommand(id)) {
       commands.setOpen(false)
       runInBackground(
-        getCommandNote(target.path, target.title).then((note) =>
-          pluginHost.executeCommand(id, note),
-        ),
+        getCommandNote(target).then((note) => pluginHost.executeCommand(id, note)),
         reportError,
       )
       return
@@ -161,7 +159,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
-    const getNote = () => getCommandNote(getTarget().path, getTarget().title)
+    const getNote = () => getCommandNote(getTarget())
     if (pluginHost?.handleShortcut(event, getNote)) return event.preventDefault()
     if (!isChord(event)) return
     const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)

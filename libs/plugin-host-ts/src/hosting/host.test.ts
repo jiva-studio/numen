@@ -95,7 +95,13 @@ describe('createPluginHost', () => {
     expect(palette[0]?.id).toBe('sample.plugin:test.run')
 
     // Execute command
-    await host.executeCommand('sample.plugin:test.run', { path: '', title: '', type: 'note' })
+    await host.executeCommand('sample.plugin:test.run', {
+      path: '',
+      title: '',
+      type: 'note',
+      isFolder: false,
+      others: [],
+    })
     expect(executed).toBe(true)
 
     // Shortcut matching
@@ -105,7 +111,13 @@ describe('createPluginHost', () => {
       ctrlKey: true,
       shiftKey: true,
     })
-    const handled = host.handleShortcut(event, async () => ({ path: '', title: '', type: 'note' }))
+    const handled = host.handleShortcut(event, async () => ({
+      path: '',
+      title: '',
+      type: 'note',
+      isFolder: false,
+      others: [],
+    }))
     expect(handled).toBe(true)
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(executed).toBe(true)

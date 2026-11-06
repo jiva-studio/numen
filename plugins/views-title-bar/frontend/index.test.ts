@@ -143,14 +143,14 @@ describe('the commands of the slots', () => {
     expect(getButton(bar, 'org.example.tide:map.open').attributes('title')).toBe('Open map.open')
   })
 
-  it('runs the command of a button through the slots, with no target', async () => {
+  it('runs the command of a button through the commands of the context, with no target', async () => {
     const { context, bar } = mountBar()
     context.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
     await nextTick()
 
     await getButton(bar, 'org.example.tide:chart.open').trigger('click')
 
-    expect(context.slots.getRuns()).toStrictEqual([
+    expect(context.commands.getRuns()).toStrictEqual([
       { command: 'org.example.tide:chart.open', target: undefined },
     ])
   })
@@ -253,7 +253,7 @@ describe('a submenu in a slot', () => {
     document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')[1]!.click()
     await nextTick()
 
-    expect(context.slots.getRuns()).toStrictEqual([
+    expect(context.commands.getRuns()).toStrictEqual([
       { command: 'org.example.tide:log.create', target: undefined },
     ])
     expect(document.body.querySelector('[role="menu"]')).toBeNull()

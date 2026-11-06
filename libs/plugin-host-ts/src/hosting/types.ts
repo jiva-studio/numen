@@ -7,6 +7,7 @@ import type {
   AppInfo,
   BufferHost,
   CommandRegistration,
+  CommandsHost,
   ContextMenuRegistration,
   ContextMenuTarget,
   Disposable,
@@ -134,6 +135,8 @@ export interface PluginHostDeps {
   /** The agent the window queries, once the window has created it. */
   readonly getAgent?: () => AgentHost | undefined
   /** The vaults the window can show, once the window has made them. */
+  /** The commands of the window, once the window has made them. */
+  readonly getCommands?: () => CommandsHost | undefined
   readonly getVaults?: () => VaultsHost | undefined
   /** The window the plugins run in, once the window has made it. */
   readonly getWindow?: () => WindowHost | undefined
@@ -219,6 +222,7 @@ export interface PluginContextHost {
   getRelations?(): VaultRelations | undefined
   getFiles?(): VaultFiles | undefined
   getAgent?(): AgentHost | undefined
+  getCommands?(): CommandsHost | undefined
   getVaults?(): VaultsHost | undefined
   getWindow?(): WindowHost | undefined
   getBuffers?(): BufferHost | undefined

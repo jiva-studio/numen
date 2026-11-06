@@ -93,7 +93,13 @@ describe('a command run by its id', () => {
     )
     const handler = vi.fn()
     host.createContext('sample.plugin').registerCommand({ id: 'count', handler })
-    const note = { path: 'Notes/One.md', title: 'One', type: 'note' as const }
+    const note = {
+      path: 'Notes/One.md',
+      title: 'One',
+      type: 'note' as const,
+      isFolder: false,
+      others: [],
+    }
 
     expect(host.hasCommand('sample.plugin:count')).toBe(true)
     expect(host.hasCommand('count')).toBe(false)
