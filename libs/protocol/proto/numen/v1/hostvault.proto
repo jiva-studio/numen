@@ -34,14 +34,14 @@ service HostVaultService {
   rpc EnsureVaultIndexed(EnsureVaultIndexedRequest) returns (EnsureVaultIndexedResponse);
 
   // StatFile says what a file is now. A file that is not there is
-  // answered with the error code MISSING.
+  // answered with the error code NOT_FOUND.
   rpc StatFile(StatFileRequest) returns (StatFileResponse);
 
   // ReadFile reads a whole file, with the file stat it had when it was read.
   rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
 
   // WriteFile replaces a file that has not changed since the file stat given.
-  // A file that moved past it is answered with the error code STALE and
+  // A file that moved past it is answered with the error code CONFLICT and
   // nothing is written.
   rpc WriteFile(WriteFileRequest) returns (WriteFileResponse);
 
@@ -167,19 +167,19 @@ enum HostVaultErrorCode {
   HOST_VAULT_ERROR_CODE_NO_VAULT = 1;
 
   // The file or the note is not there.
-  HOST_VAULT_ERROR_CODE_MISSING = 2;
+  HOST_VAULT_ERROR_CODE_NOT_FOUND = 2;
 
   // The path is outside the vault or names no file.
-  HOST_VAULT_ERROR_CODE_OUTSIDE = 3;
+  HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT = 3;
 
   // The file changed since the file stat given.
-  HOST_VAULT_ERROR_CODE_STALE = 4;
+  HOST_VAULT_ERROR_CODE_CONFLICT = 4;
 
   // A file is already there.
   HOST_VAULT_ERROR_CODE_ALREADY_EXISTS = 5;
 
   // Another program holds the file.
-  HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER = 6;
+  HOST_VAULT_ERROR_CODE_LOCKED = 6;
 
   // The path is not a note this vault holds.
   HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
@@ -387,7 +387,7 @@ message HostLink {
   Marker marker = 11;
   // For a backlink, the role of the note the link is written in, relative to the
   // note asked about. ROLE_UNSPECIFIED where the role has no counterpart.
-  Role role_from_here = 12;
+  Role source_role = 12;
 }
 
 message GetLinksRequest {
@@ -412,7 +412,7 @@ message ResolveLinksRequest {
   // The note the links are written in.
   string path = 1;
   // How each link is written between its brackets.
-  repeated string written = 2;
+  repeated string addresses = 2;
 }
 
 message ResolveLinksResponse {
@@ -548,8 +548,8 @@ message HostVaultServiceRenameNoteResponse {
   NameSource name_source = 4;
   // Unset when the file kept its path.
   optional MoveResult move = 5;
-  // Why the note was not renamed: MISSING, NOT_A_NOTE, INVALID_NAME,
-  // ALREADY_EXISTS, STALE and the other per-note codes.
+  // Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
+  // ALREADY_EXISTS, CONFLICT and the other per-note codes.
   optional ErrorCode failure = 6;
 }
 
@@ -586,7 +586,7 @@ message HostNoteRemoval {
   string trash_path = 2;
   // The notes whose links now resolve to nothing.
   repeated string broken_links = 3;
-  // Why this note was not removed: MISSING, or NOT_A_NOTE for a folder or a
+  // Why this note was not removed: NOT_FOUND, or NOT_A_NOTE for a folder or a
   // file that is not a note.
   optional ErrorCode failure = 4;
 }
@@ -651,7 +651,7 @@ message ReadCacheResponse {
   HostVaultErrorCode error = 1;
   // Whether anything is kept under the name. A cache with nothing in it is the
   // answer that nothing has been worked out yet.
-  bool found = 2;
+  bool is_found = 2;
   bytes content = 3;
 }
 

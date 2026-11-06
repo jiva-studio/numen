@@ -88,15 +88,15 @@ func fail(code v1.HostVaultErrorCode) error {
 		return nil
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:
 		return ErrNoVault
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING:
+	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:
 		return ErrNotExist
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE:
+	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT:
 		return ErrOutside
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE:
+	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:
 		return ErrStale
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS:
 		return ErrAlreadyExists
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER:
+	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED:
 		return ErrLockedByAnother
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:
 		return ErrNotANote
@@ -319,7 +319,7 @@ func (c *Client) GetBacklinks(ctx context.Context, to string) ([]domain.Resolved
 }
 
 func (c *Client) ResolveLinks(ctx context.Context, from string, targets []string) (map[string]domain.ResolvedLink, error) {
-	res, err := c.rpc.ResolveLinks(ctx, request(c, &v1.ResolveLinksRequest{Path: from, Written: targets}))
+	res, err := c.rpc.ResolveLinks(ctx, request(c, &v1.ResolveLinksRequest{Path: from, Addresses: targets}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -356,7 +356,7 @@ func (c *Client) ReadCache(ctx context.Context, name string) ([]byte, bool, erro
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, false, err
 	}
-	return res.Msg.GetContent(), res.Msg.GetFound(), nil
+	return res.Msg.GetContent(), res.Msg.GetIsFound(), nil
 }
 
 func (c *Client) WriteCache(ctx context.Context, name string, content []byte) error {

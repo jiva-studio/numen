@@ -119,13 +119,13 @@ func TestTheClientPresentsItsTokenAndReadsTheFingerprint(t *testing.T) {
 
 func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
 	cases := map[v1.HostVaultErrorCode]error{
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:          host.ErrNoVault,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING:           host.ErrNotExist,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE:           host.ErrOutside,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE:             host.ErrStale,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS:    host.ErrAlreadyExists,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER: host.ErrLockedByAnother,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:        host.ErrNotANote,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:       host.ErrNoVault,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:      host.ErrNotExist,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT:  host.ErrOutside,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:       host.ErrStale,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS: host.ErrAlreadyExists,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED:         host.ErrLockedByAnother,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:     host.ErrNotANote,
 	}
 	for code, want := range cases {
 		_, err := clientTo(t, &answering{code: code}).StatFile(t.Context(), "n.md")
@@ -136,7 +136,7 @@ func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
 }
 
 func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
-	a := &answering{code: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE}
+	a := &answering{code: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT}
 	baseline := domain.FileStat{Path: "n.md", Size: 3, ModTime: time.Unix(5, 6)}
 
 	_, err := clientTo(t, a).Write(t.Context(), "n.md", []byte("abc"), baseline)

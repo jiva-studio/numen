@@ -97,17 +97,17 @@ func getVaultErrorCode(err error) (v1.HostVaultErrorCode, bool) {
 	case errors.Is(err, hostvault.ErrNoVault):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT, true
 	case errors.Is(err, vaultport.ErrStale):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE, true
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT, true
 	case errors.Is(err, vaultport.ErrAlreadyExists):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS, true
 	case errors.Is(err, vaultport.ErrLockedByAnother):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER, true
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED, true
 	case errors.Is(err, vaultport.ErrNotANote):
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE, true
 	case errors.Is(err, vaultport.ErrOutside):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE, true
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT, true
 	case errors.Is(err, fs.ErrNotExist):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING, true
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND, true
 	}
 	return 0, false
 }
@@ -520,7 +520,7 @@ func (e *vaultEndpoint) GetBacklinks(
 	withRoles := writeLinks(links)
 	for i, l := range links {
 		inverse, _ := domain.GetInverseRole(l.Role)
-		withRoles[i].RoleFromHere = wire.ConvertRoleToWire(inverse)
+		withRoles[i].SourceRole = wire.ConvertRoleToWire(inverse)
 	}
 	return connect.NewResponse(&v1.GetBacklinksResponse{Links: withRoles}), nil
 }
@@ -535,7 +535,7 @@ func (e *vaultEndpoint) ResolveLinks(
 	if vault == nil {
 		return connect.NewResponse(&v1.ResolveLinksResponse{Error: noVault}), nil
 	}
-	reached, err := vault.ResolveLinks(ctx, req.Msg.GetPath(), req.Msg.GetWritten())
+	reached, err := vault.ResolveLinks(ctx, req.Msg.GetPath(), req.Msg.GetAddresses())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ResolveLinksResponse{Error: code}), err
@@ -584,7 +584,7 @@ func (e *vaultEndpoint) ReadCache(
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ReadCacheResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.ReadCacheResponse{Found: found, Content: content}), nil
+	return connect.NewResponse(&v1.ReadCacheResponse{IsFound: found, Content: content}), nil
 }
 
 func (e *vaultEndpoint) WriteCache(

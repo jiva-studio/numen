@@ -29,15 +29,15 @@ const (
 	// The host is showing no vault.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT HostVaultErrorCode = 1
 	// The file or the note is not there.
-	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING HostVaultErrorCode = 2
+	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND HostVaultErrorCode = 2
 	// The path is outside the vault or names no file.
-	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE HostVaultErrorCode = 3
+	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT HostVaultErrorCode = 3
 	// The file changed since the file stat given.
-	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE HostVaultErrorCode = 4
+	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT HostVaultErrorCode = 4
 	// A file is already there.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS HostVaultErrorCode = 5
 	// Another program holds the file.
-	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER HostVaultErrorCode = 6
+	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED HostVaultErrorCode = 6
 	// The path is not a note this vault holds.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE HostVaultErrorCode = 8
 	// The connection is not one: a role no connection carries, roles that are not
@@ -54,11 +54,11 @@ var (
 	HostVaultErrorCode_name = map[int32]string{
 		0:  "HOST_VAULT_ERROR_CODE_UNSPECIFIED",
 		1:  "HOST_VAULT_ERROR_CODE_NO_VAULT",
-		2:  "HOST_VAULT_ERROR_CODE_MISSING",
-		3:  "HOST_VAULT_ERROR_CODE_OUTSIDE",
-		4:  "HOST_VAULT_ERROR_CODE_STALE",
+		2:  "HOST_VAULT_ERROR_CODE_NOT_FOUND",
+		3:  "HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT",
+		4:  "HOST_VAULT_ERROR_CODE_CONFLICT",
 		5:  "HOST_VAULT_ERROR_CODE_ALREADY_EXISTS",
-		6:  "HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER",
+		6:  "HOST_VAULT_ERROR_CODE_LOCKED",
 		8:  "HOST_VAULT_ERROR_CODE_NOT_A_NOTE",
 		9:  "HOST_VAULT_ERROR_CODE_INVALID_CONNECTION",
 		10: "HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE",
@@ -67,11 +67,11 @@ var (
 	HostVaultErrorCode_value = map[string]int32{
 		"HOST_VAULT_ERROR_CODE_UNSPECIFIED":        0,
 		"HOST_VAULT_ERROR_CODE_NO_VAULT":           1,
-		"HOST_VAULT_ERROR_CODE_MISSING":            2,
-		"HOST_VAULT_ERROR_CODE_OUTSIDE":            3,
-		"HOST_VAULT_ERROR_CODE_STALE":              4,
+		"HOST_VAULT_ERROR_CODE_NOT_FOUND":          2,
+		"HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT":      3,
+		"HOST_VAULT_ERROR_CODE_CONFLICT":           4,
 		"HOST_VAULT_ERROR_CODE_ALREADY_EXISTS":     5,
-		"HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER":  6,
+		"HOST_VAULT_ERROR_CODE_LOCKED":             6,
 		"HOST_VAULT_ERROR_CODE_NOT_A_NOTE":         8,
 		"HOST_VAULT_ERROR_CODE_INVALID_CONNECTION": 9,
 		"HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE":    10,
@@ -1804,7 +1804,7 @@ type HostLink struct {
 	Marker Marker `protobuf:"varint,11,opt,name=marker,proto3,enum=numen.v1.Marker" json:"marker,omitempty"`
 	// For a backlink, the role of the note the link is written in, relative to the
 	// note asked about. ROLE_UNSPECIFIED where the role has no counterpart.
-	RoleFromHere  Role `protobuf:"varint,12,opt,name=role_from_here,json=roleFromHere,proto3,enum=numen.v1.Role" json:"role_from_here,omitempty"`
+	SourceRole    Role `protobuf:"varint,12,opt,name=source_role,json=sourceRole,proto3,enum=numen.v1.Role" json:"source_role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1916,9 +1916,9 @@ func (x *HostLink) GetMarker() Marker {
 	return Marker_MARKER_UNSPECIFIED
 }
 
-func (x *HostLink) GetRoleFromHere() Role {
+func (x *HostLink) GetSourceRole() Role {
 	if x != nil {
-		return x.RoleFromHere
+		return x.SourceRole
 	}
 	return Role_ROLE_UNSPECIFIED
 }
@@ -2120,7 +2120,7 @@ type ResolveLinksRequest struct {
 	// The note the links are written in.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// How each link is written between its brackets.
-	Written       []string `protobuf:"bytes,2,rep,name=written,proto3" json:"written,omitempty"`
+	Addresses     []string `protobuf:"bytes,2,rep,name=addresses,proto3" json:"addresses,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2162,9 +2162,9 @@ func (x *ResolveLinksRequest) GetPath() string {
 	return ""
 }
 
-func (x *ResolveLinksRequest) GetWritten() []string {
+func (x *ResolveLinksRequest) GetAddresses() []string {
 	if x != nil {
-		return x.Written
+		return x.Addresses
 	}
 	return nil
 }
@@ -3272,8 +3272,8 @@ type HostVaultServiceRenameNoteResponse struct {
 	NameSource NameSource `protobuf:"varint,4,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
 	// Unset when the file kept its path.
 	Move *MoveResult `protobuf:"bytes,5,opt,name=move,proto3,oneof" json:"move,omitempty"`
-	// Why the note was not renamed: MISSING, NOT_A_NOTE, INVALID_NAME,
-	// ALREADY_EXISTS, STALE and the other per-note codes.
+	// Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
+	// ALREADY_EXISTS, CONFLICT and the other per-note codes.
 	Failure       *ErrorCode `protobuf:"varint,6,opt,name=failure,proto3,enum=numen.v1.ErrorCode,oneof" json:"failure,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3566,7 +3566,7 @@ type HostNoteRemoval struct {
 	TrashPath string `protobuf:"bytes,2,opt,name=trash_path,json=trashPath,proto3" json:"trash_path,omitempty"`
 	// The notes whose links now resolve to nothing.
 	BrokenLinks []string `protobuf:"bytes,3,rep,name=broken_links,json=brokenLinks,proto3" json:"broken_links,omitempty"`
-	// Why this note was not removed: MISSING, or NOT_A_NOTE for a folder or a
+	// Why this note was not removed: NOT_FOUND, or NOT_A_NOTE for a folder or a
 	// file that is not a note.
 	Failure       *ErrorCode `protobuf:"varint,4,opt,name=failure,proto3,enum=numen.v1.ErrorCode,oneof" json:"failure,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -4169,7 +4169,7 @@ type ReadCacheResponse struct {
 	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
 	// Whether anything is kept under the name. A cache with nothing in it is the
 	// answer that nothing has been worked out yet.
-	Found         bool   `protobuf:"varint,2,opt,name=found,proto3" json:"found,omitempty"`
+	IsFound       bool   `protobuf:"varint,2,opt,name=is_found,json=isFound,proto3" json:"is_found,omitempty"`
 	Content       []byte `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -4212,9 +4212,9 @@ func (x *ReadCacheResponse) GetError() HostVaultErrorCode {
 	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *ReadCacheResponse) GetFound() bool {
+func (x *ReadCacheResponse) GetIsFound() bool {
 	if x != nil {
-		return x.Found
+		return x.IsFound
 	}
 	return false
 }
@@ -4508,7 +4508,7 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x04type\x18\x01 \x01(\tR\x04type\"b\n" +
 	"\x16GetPathsOfTypeResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x14\n" +
-	"\x05paths\x18\x02 \x03(\tR\x05paths\"\xff\x02\n" +
+	"\x05paths\x18\x02 \x03(\tR\x05paths\"\xfa\x02\n" +
 	"\bHostLink\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x19\n" +
@@ -4521,8 +4521,9 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x04role\x18\t \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x12\n" +
 	"\x04note\x18\n" +
 	" \x01(\tR\x04note\x12(\n" +
-	"\x06marker\x18\v \x01(\x0e2\x10.numen.v1.MarkerR\x06marker\x124\n" +
-	"\x0erole_from_here\x18\f \x01(\x0e2\x0e.numen.v1.RoleR\froleFromHere\"%\n" +
+	"\x06marker\x18\v \x01(\x0e2\x10.numen.v1.MarkerR\x06marker\x12/\n" +
+	"\vsource_role\x18\f \x01(\x0e2\x0e.numen.v1.RoleR\n" +
+	"sourceRole\"%\n" +
 	"\x0fGetLinksRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"p\n" +
 	"\x10GetLinksResponse\x122\n" +
@@ -4532,10 +4533,10 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"t\n" +
 	"\x14GetBacklinksResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12(\n" +
-	"\x05links\x18\x02 \x03(\v2\x12.numen.v1.HostLinkR\x05links\"C\n" +
+	"\x05links\x18\x02 \x03(\v2\x12.numen.v1.HostLinkR\x05links\"G\n" +
 	"\x13ResolveLinksRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
-	"\awritten\x18\x02 \x03(\tR\awritten\"\xd9\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1c\n" +
+	"\taddresses\x18\x02 \x03(\tR\taddresses\"\xd9\x01\n" +
 	"\x14ResolveLinksResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12?\n" +
 	"\x05links\x18\x02 \x03(\v2).numen.v1.ResolveLinksResponse.LinksEntryR\x05links\x1aL\n" +
@@ -4680,10 +4681,10 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\n" +
 	"\b_failure\"&\n" +
 	"\x10ReadCacheRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"w\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"|\n" +
 	"\x11ReadCacheResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x14\n" +
-	"\x05found\x18\x02 \x01(\bR\x05found\x12\x18\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x19\n" +
+	"\bis_found\x18\x02 \x01(\bR\aisFound\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\"A\n" +
 	"\x11WriteCacheRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
@@ -4696,12 +4697,12 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x10is_vault_changed\x18\x02 \x01(\bR\x0eisVaultChanged*\xc6\x03\n" +
 	"\x12HostVaultErrorCode\x12%\n" +
 	"!HOST_VAULT_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
-	"\x1eHOST_VAULT_ERROR_CODE_NO_VAULT\x10\x01\x12!\n" +
-	"\x1dHOST_VAULT_ERROR_CODE_MISSING\x10\x02\x12!\n" +
-	"\x1dHOST_VAULT_ERROR_CODE_OUTSIDE\x10\x03\x12\x1f\n" +
-	"\x1bHOST_VAULT_ERROR_CODE_STALE\x10\x04\x12(\n" +
-	"$HOST_VAULT_ERROR_CODE_ALREADY_EXISTS\x10\x05\x12+\n" +
-	"'HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER\x10\x06\x12$\n" +
+	"\x1eHOST_VAULT_ERROR_CODE_NO_VAULT\x10\x01\x12#\n" +
+	"\x1fHOST_VAULT_ERROR_CODE_NOT_FOUND\x10\x02\x12'\n" +
+	"#HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT\x10\x03\x12\"\n" +
+	"\x1eHOST_VAULT_ERROR_CODE_CONFLICT\x10\x04\x12(\n" +
+	"$HOST_VAULT_ERROR_CODE_ALREADY_EXISTS\x10\x05\x12 \n" +
+	"\x1cHOST_VAULT_ERROR_CODE_LOCKED\x10\x06\x12$\n" +
 	" HOST_VAULT_ERROR_CODE_NOT_A_NOTE\x10\b\x12,\n" +
 	"(HOST_VAULT_ERROR_CODE_INVALID_CONNECTION\x10\t\x12)\n" +
 	"%HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE\x10\n" +
@@ -4889,7 +4890,7 @@ var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	0,   // 20: numen.v1.GetPathsOfTypeResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	84,  // 21: numen.v1.HostLink.role:type_name -> numen.v1.Role
 	85,  // 22: numen.v1.HostLink.marker:type_name -> numen.v1.Marker
-	84,  // 23: numen.v1.HostLink.role_from_here:type_name -> numen.v1.Role
+	84,  // 23: numen.v1.HostLink.source_role:type_name -> numen.v1.Role
 	0,   // 24: numen.v1.GetLinksResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	35,  // 25: numen.v1.GetLinksResponse.links:type_name -> numen.v1.HostLink
 	0,   // 26: numen.v1.GetBacklinksResponse.error:type_name -> numen.v1.HostVaultErrorCode

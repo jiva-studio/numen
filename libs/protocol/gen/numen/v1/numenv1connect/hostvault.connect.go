@@ -155,12 +155,12 @@ type HostVaultServiceClient interface {
 	// caller asks again once WatchMoves tells it something moved.
 	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
 	// StatFile says what a file is now. A file that is not there is
-	// answered with the error code MISSING.
+	// answered with the error code NOT_FOUND.
 	StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error)
 	// ReadFile reads a whole file, with the file stat it had when it was read.
 	ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error)
 	// WriteFile replaces a file that has not changed since the file stat given.
-	// A file that moved past it is answered with the error code STALE and
+	// A file that moved past it is answered with the error code CONFLICT and
 	// nothing is written.
 	WriteFile(context.Context, *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error)
 	// CreateFile makes a file that is not there yet. A file that is there is
@@ -710,12 +710,12 @@ type HostVaultServiceHandler interface {
 	// caller asks again once WatchMoves tells it something moved.
 	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
 	// StatFile says what a file is now. A file that is not there is
-	// answered with the error code MISSING.
+	// answered with the error code NOT_FOUND.
 	StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error)
 	// ReadFile reads a whole file, with the file stat it had when it was read.
 	ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error)
 	// WriteFile replaces a file that has not changed since the file stat given.
-	// A file that moved past it is answered with the error code STALE and
+	// A file that moved past it is answered with the error code CONFLICT and
 	// nothing is written.
 	WriteFile(context.Context, *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error)
 	// CreateFile makes a file that is not there yet. A file that is there is

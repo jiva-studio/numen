@@ -81,7 +81,7 @@ func (r *relating) GetBacklinks(
 ) (*connect.Response[v1.GetBacklinksResponse], error) {
 	return connect.NewResponse(&v1.GetBacklinksResponse{Links: []*v1.HostLink{{
 		From: "idea.md", To: "area.md", TargetScheme: "name", TargetValue: "Area",
-		Role: v1.Role_ROLE_PARENT, RoleFromHere: v1.Role_ROLE_CHILD, Marker: v1.Marker_MARKER_ARROW, Note: "n",
+		Role: v1.Role_ROLE_PARENT, SourceRole: v1.Role_ROLE_CHILD, Marker: v1.Marker_MARKER_ARROW, Note: "n",
 	}}}), nil
 }
 
