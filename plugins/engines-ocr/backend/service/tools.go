@@ -12,11 +12,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
-// Instructions is the paragraph that tells an agent when to call recognition_create.
-const Instructions = "Use recognition_create on a scanned PDF or an image that has no text layer, or on a file " +
-	"whose library_search results are unreadable text. Recognition is slow, up to an hour for a book. " +
+// instructions is the paragraph that tells an agent when to call recognition_create.
+const instructions = "Use recognition_create on a scanned PDF or an image that has no text layer, or on a file " +
+	"whose search results are unreadable text. Recognition is slow, up to an hour for a book. " +
 	"The call returns a task id at once and the recognition runs in the background; once it ends, " +
-	"library_read and library_search read the recognised text. Call it once per file: a second call " +
+	"the recognised text can be read and searched. Call it once per file: a second call " +
 	"while the first runs starts nothing and reports the state running."
 
 // The states recognition_create reports.
@@ -64,6 +64,7 @@ func NewTools(recognitions *recognition.Recognition) *Tools {
 // Registry registers and returns the recognition tool.
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
+	registry.SetInstructions(instructions)
 	err := tools.Add(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "recognition_create",

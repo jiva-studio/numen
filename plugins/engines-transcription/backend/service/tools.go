@@ -12,11 +12,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// Instructions is the paragraph that tells an agent when to call transcript_create.
-const Instructions = "Use transcript_create on an audio or video recording of the vault that has no transcript, " +
+// instructions is the paragraph that tells an agent when to call transcript_create.
+const instructions = "Use transcript_create on an audio or video recording of the vault that has no transcript, " +
 	"when its words are needed now. Transcription is slow, about as long as the recording itself. The call " +
-	"returns a task id at once and the transcription runs in the background; library_search and " +
-	"library_read read the transcript as it is written. Call it once per recording: a second call while the " +
+	"returns a task id at once and the transcription runs in the background; the transcript can be " +
+	"read and searched as it is written. Call it once per recording: a second call while the " +
 	"first runs starts nothing and reports the state running."
 
 // The states transcript_create reports.
@@ -56,6 +56,7 @@ func NewTools(transcriber *Transcriber, vault host.Vault) *Tools {
 // Registry registers and returns the transcription tool.
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
+	registry.SetInstructions(instructions)
 	err := tools.Add(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "transcript_create",

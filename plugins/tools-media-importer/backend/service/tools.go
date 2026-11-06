@@ -9,10 +9,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
-// Instructions is the paragraph that tells an agent when to call url_import.
-const Instructions = "Use url_import to add a web page or a video to the vault by its address. It creates a link " +
+// instructions is the paragraph that tells an agent when to call url_import.
+const instructions = "Use url_import to add a web page or a video to the vault by its address. It creates a link " +
 	"note named after the address and fetches the text published there, the prose of an article or the " +
-	"captions of a video, before it returns; library_search and library_read read that text from then on. " +
+	"captions of a video, before it returns; that text can be read and searched from then on. " +
 	"Write your own notes about the page as separate notes that link to the link note. Set copy only when " +
 	"the person wants the video on this disk: a copy is large and runs in the background, and the result " +
 	"names its task."
@@ -51,6 +51,7 @@ func NewTools(links *link.Links) *Tools {
 // Registry registers and returns the import tool.
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
+	registry.SetInstructions(instructions)
 	err := tools.Add(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "url_import",
