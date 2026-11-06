@@ -34,4 +34,32 @@ export const APP_PLACEMENTS: MenuPlacement[] = [
     command: 'app:note.trash',
     group: '9-remove',
   },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    location: 'tabStrip.context',
+    command: 'app:tab.moveToWindow',
+    group: '0-window',
+    order: 10,
+  },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    location: 'tabStrip.context',
+    command: 'app:tab.detach',
+    group: '0-window',
+    order: 20,
+  },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    location: 'tabStrip.context',
+    command: 'app:tab.link',
+    group: '1-link',
+    order: 10,
+  },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    location: 'tabStrip.context',
+    command: 'app:tab.unlink',
+    group: '1-link',
+    order: 20,
+  },
 ]

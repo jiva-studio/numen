@@ -5,6 +5,7 @@ export const MENU_LOCATION = {
   titleBarCommands: 'titleBar.commands',
   searchResult: 'searchResult',
   fileTreeContext: 'fileTree.context',
+  tabStripContext: 'tabStrip.context',
 } as const
 export type MenuLocation = (typeof MENU_LOCATION)[keyof typeof MENU_LOCATION]
 

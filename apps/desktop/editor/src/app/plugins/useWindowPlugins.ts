@@ -82,6 +82,18 @@ function createNoticeAccess(queue: NoticeQueue) {
   }
 }
 
+/** The services of the window the host hands its plugins, read as each plugin asks. */
+const createServiceAccess = (deps: Pick<PluginSupportDeps, 'services'>) => ({
+  getWorkspace: () => deps.services?.workspace,
+  getNotes: () => deps.services?.notes,
+  getRelations: () => deps.services?.relations,
+  getFiles: () => deps.services?.files,
+  getAgent: () => deps.services?.agent,
+  getCommands: () => deps.services?.commands,
+  getBuffers: () => deps.services?.buffers,
+  getNoteBuffer: () => deps.services?.noteBuffer,
+})
+
 export function createPluginSupport(deps: PluginSupportDeps) {
   const { windowTabs, tabOpeners, settingsHolder } = deps
   const { getSetting, onSettingChange } = createPluginSettingsAccessor(
@@ -144,14 +156,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     closeTabsForPlugin,
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
-    getWorkspace: () => deps.services?.workspace,
-    getNotes: () => deps.services?.notes,
-    getRelations: () => deps.services?.relations,
-    getFiles: () => deps.services?.files,
-    getAgent: () => deps.services?.agent,
-    getCommands: () => deps.services?.commands,
-    getBuffers: () => deps.services?.buffers,
-    getNoteBuffer: () => deps.services?.noteBuffer,
+    ...createServiceAccess(deps),
     ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),
     getTasks: (pluginId) => {
       const list = deps.services?.taskList

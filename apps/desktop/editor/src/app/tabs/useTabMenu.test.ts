@@ -1,6 +1,6 @@
 /**
- * The menu of a tab: the rows the window offers for the tab, then the entries of the slot
- * `tabStrip.context` over the file of the tab.
+ * The menu of a tab: the entries of the slot `tabStrip.context` over the tab and its file, with the
+ * commands of the window over a tab among them.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
@@ -11,61 +11,52 @@ import {
   type SlotItem,
   type CommandTarget as RunTarget,
 } from '@numen/plugin-host'
-import type { TabLinksState } from '@/features/tab-linking'
 import { getTabFileTarget, useTabMenu } from './useTabMenu'
 
 const ATLAS = 'org.example.atlas'
 const Pin = defineComponent({ name: 'PinIcon', setup: () => () => h('svg') })
 
-const SHOW: SlotCommand = {
+const command = (
+  pluginId: string,
+  id: string,
+  title: string,
+  more: Partial<SlotCommand> = {},
+): SlotCommand => ({
   kind: 'command',
-  key: `${ATLAS}/command/graph.showNote`,
-  pluginId: ATLAS,
-  command: `${ATLAS}:graph.showNote`,
-  title: 'Show note in plex',
-  icon: Pin,
+  key: `${pluginId}/command/${id}`,
+  pluginId,
+  command: pluginId === 'app' ? `app:${id}` : `${pluginId}:${id}`,
+  title,
   shortcut: '',
   hasChoices: false,
-}
-const COPY: SlotCommand = {
-  kind: 'command',
-  key: 'app/command/note.copyPath',
-  pluginId: 'app',
-  command: 'app:note.copyPath',
-  title: 'Copy path',
-  shortcut: '',
-  hasChoices: false,
-}
-const ENTRIES: readonly SlotItem[] = [SHOW, { kind: 'separator', key: 'separator/1' }, COPY]
+  ...more,
+})
+
+const DETACH = command('app', 'tab.detach', 'Detach tab')
+const MOVE = command('app', 'tab.moveToWindow', 'Move to window', { hasChoices: true })
+const SHOW = command(ATLAS, 'graph.showNote', 'Show note in plex', { icon: Pin })
+const ENTRIES: readonly SlotItem[] = [DETACH, MOVE, { kind: 'separator', key: 'separator/1' }, SHOW]
 
 const TARGETS: Record<string, RunTarget> = {
   reef: { path: 'Reef.md', title: 'Reef', isFolder: false, others: [], tab: 'reef' },
   plex: { path: '', title: '', isFolder: false, others: [], tab: 'plex' },
 }
 
-const tabLinks = {
-  tabs: [],
-  windows: [],
-  getGroupOf: () => null,
-  getLinkedTargets: () => [],
-  linkTabs: vi.fn(),
-  unlinkTab: vi.fn(),
-} as unknown as TabLinksState
-
-/** Slots of a window that hold the entries in the menu of a tab. */
+/** Slots of a window that hold the entries in the menu of a tab, for every tab but plex. */
 const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
-  getEntries: (slot) => (slot === SLOT.tabStripContext ? entries : []),
+  getEntries: (slot, target) =>
+    slot === SLOT.tabStripContext && target?.tab !== 'plex' ? entries : [],
   watchEntries: () => ({ dispose: () => undefined }),
 })
 
-/** The commands of a window, recording each command run and its target. */
+/** The commands of a window, recording each command run, its target and its choice. */
 const createCommands = () => {
   const runs: { command: string; target: RunTarget | undefined; choice?: string }[] = []
   return {
-    run: async (command: string, target?: RunTarget, choice?: string) => {
-      runs.push(choice === undefined ? { command, target } : { command, target, choice })
+    run: async (id: string, target?: RunTarget, choice?: string) => {
+      runs.push(choice === undefined ? { command: id, target } : { command: id, target, choice })
     },
-    getChoices: vi.fn(async (_command: string, _target?: RunTarget) => [
+    getChoices: vi.fn(async (_id: string, _target?: RunTarget) => [
       { id: 'window-a', title: 'Atlas' },
       { id: 'window-b', title: 'Tide log' },
     ]),
@@ -73,41 +64,22 @@ const createCommands = () => {
   }
 }
 
-const MOVE: SlotCommand = {
-  kind: 'command',
-  key: 'app/command/tab.move',
-  pluginId: 'app',
-  command: 'app:tab.move',
-  title: 'Move to window',
-  shortcut: '',
-  hasChoices: true,
-}
-
-const setup = (options: { entries?: readonly SlotItem[]; canDetach?: boolean } = {}) => {
-  const slots = createSlots(options.entries ?? ENTRIES)
+const setup = (entries: readonly SlotItem[] = ENTRIES) => {
+  const slots = createSlots(entries)
   const getEntries = vi.spyOn(slots, 'getEntries')
   const commands = createCommands()
-  const onDetach = vi.fn()
+  const onHighlight = vi.fn()
   const menu = useTabMenu({
-    link: {
-      tabLinks,
-      getTabs: () => [
-        { id: 'reef', title: 'Reef' },
-        { id: 'plex', title: 'Plex' },
-      ],
-      getKind: () => 'note',
-      isLinkable: () => false,
-      ...(options.canDetach === false ? {} : { onDetach }),
-    },
     slots,
     runCommand: commands.run,
     getChoices: commands.getChoices,
     getTabTarget: (tab) => TARGETS[tab]!,
-    getTabIcon: () => null,
-    getKindIcon: () => null,
+    onHighlight,
   })
-  return { menu, commands, getEntries, onDetach }
+  return { menu, commands, getEntries, onHighlight }
 }
+
+const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 describe('the target the entries of the menu of a tab run over', () => {
   const windowTabs = {
@@ -126,7 +98,7 @@ describe('the target the entries of the menu of a tab run over', () => {
           },
   } as never
 
-  it('is the file the tab shows, or the note where it shows no file', () => {
+  it('is the tab and the file it shows, or the note where it shows no file', () => {
     expect(getTabFileTarget(windowTabs, 'book')).toStrictEqual({
       path: 'books/Atlas.pdf',
       title: 'Atlas',
@@ -137,7 +109,7 @@ describe('the target the entries of the menu of a tab run over', () => {
     expect(getTabFileTarget(windowTabs, 'note').path).toBe('Reef.md')
   })
 
-  it('is nothing for a tab the window does not hold', () => {
+  it('is the tab alone for a tab the window does not hold', () => {
     expect(getTabFileTarget(windowTabs, 'none')).toStrictEqual({
       path: '',
       title: '',
@@ -148,8 +120,81 @@ describe('the target the entries of the menu of a tab run over', () => {
   })
 })
 
+describe('the menu of a tab', () => {
+  it('is drawn nowhere until it is requested on a tab', () => {
+    expect(setup().menu.menu.value).toBeNull()
+  })
+
+  it('draws the entries of the slot over the tab, and no row of its own', () => {
+    const { menu, getEntries } = setup()
+
+    menu.open('reef', { x: 4, y: 8 })
+
+    expect(menu.menu.value?.tab).toBe('reef')
+    expect(menu.menu.value?.at).toStrictEqual({ x: 4, y: 8 })
+    expect(menu.menu.value?.items.map((one) => one.id)).toStrictEqual([
+      DETACH.key,
+      MOVE.key,
+      SHOW.key,
+    ])
+    expect(getEntries).toHaveBeenCalledWith(SLOT.tabStripContext, TARGETS.reef)
+  })
+
+  it('stays closed on a tab the slot holds no entry for', () => {
+    const { menu } = setup()
+
+    menu.open('plex', { x: 4, y: 8 })
+
+    expect(menu.menu.value).toBeNull()
+  })
+
+  it('runs the command of an entry over the tab and its file, and closes', () => {
+    const { menu, commands } = setup()
+    menu.open('reef', { x: 4, y: 8 })
+
+    menu.choose('reef', DETACH.key)
+
+    expect(commands.getRuns()).toStrictEqual([{ command: DETACH.command, target: TARGETS.reef }])
+    expect(menu.menu.value).toBeNull()
+  })
+
+  it('runs nothing for a menu since closed, or one requested on another tab', () => {
+    const { menu, commands } = setup()
+    menu.open('reef', { x: 4, y: 8 })
+
+    menu.choose('plex', DETACH.key)
+    menu.dismiss()
+    menu.choose('reef', DETACH.key)
+
+    expect(commands.getRuns()).toStrictEqual([])
+  })
+
+  it('draws an entry with the icon of its command', () => {
+    const { menu } = setup()
+    menu.open('reef', { x: 4, y: 8 })
+
+    expect(menu.getIcon(SHOW.key)).toBe(Pin)
+    expect(menu.getIcon(DETACH.key)).toBeNull()
+  })
+
+  it('draws a view of the slot as a row holding its component, and runs nothing for it', () => {
+    const view: SlotItem = {
+      kind: 'view',
+      key: `${ATLAS}/view/tide`,
+      pluginId: ATLAS,
+      view: 'tide',
+      component: Pin,
+    }
+    const { menu, commands } = setup([view])
+    menu.open('reef', { x: 4, y: 8 })
+
+    expect(menu.menu.value?.items.at(-1)).toMatchObject({ id: view.key, component: Pin })
+    menu.choose('reef', view.key)
+    expect(commands.getRuns()).toStrictEqual([])
+  })
+})
+
 describe('an entry of the menu of a tab that offers choices', () => {
-  const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
   const getChoiceRows = (menu: ReturnType<typeof setup>['menu']) =>
     menu.menu.value?.items
       .find((one) => one.id === MOVE.key)
@@ -160,7 +205,7 @@ describe('an entry of the menu of a tab that offers choices', () => {
       }))
 
   it('asks for its choices over the tab when the menu opens, and shows a loading row until then', () => {
-    const { menu, commands } = setup({ entries: [MOVE] })
+    const { menu, commands } = setup()
 
     menu.open('reef', { x: 4, y: 8 })
 
@@ -169,7 +214,7 @@ describe('an entry of the menu of a tab that offers choices', () => {
   })
 
   it('is a submenu of its choices once they are read', async () => {
-    const { menu } = setup({ entries: [MOVE] })
+    const { menu } = setup()
     menu.open('reef', { x: 4, y: 8 })
 
     await settle()
@@ -178,7 +223,7 @@ describe('an entry of the menu of a tab that offers choices', () => {
   })
 
   it('runs the command over the tab with the id of the choice picked', async () => {
-    const { menu, commands } = setup({ entries: [MOVE] })
+    const { menu, commands } = setup()
     menu.open('reef', { x: 4, y: 8 })
     await settle()
 
@@ -190,7 +235,7 @@ describe('an entry of the menu of a tab that offers choices', () => {
   })
 
   it('runs nothing for the entry itself', async () => {
-    const { menu, commands } = setup({ entries: [MOVE] })
+    const { menu, commands } = setup()
     menu.open('reef', { x: 4, y: 8 })
     await settle()
 
@@ -198,161 +243,18 @@ describe('an entry of the menu of a tab that offers choices', () => {
 
     expect(commands.getRuns()).toStrictEqual([])
   })
-})
 
-describe('the menu of a tab', () => {
-  it('is drawn nowhere until it is requested on a tab', () => {
-    const { menu } = setup()
-
-    expect(menu.menu.value).toBeNull()
-  })
-
-  it('draws the rows of the window for the tab, then the entries of the slot', () => {
-    const { menu } = setup()
-
+  it('highlights the window of a move choice under the pointer, and clears the highlight after', async () => {
+    const { menu, onHighlight } = setup()
     menu.open('reef', { x: 4, y: 8 })
+    await settle()
 
-    expect(menu.menu.value?.tab).toBe('reef')
-    expect(menu.menu.value?.at).toStrictEqual({ x: 4, y: 8 })
-    expect(menu.menu.value?.items.map((one) => one.id)).toStrictEqual([
-      '__detach__',
-      SHOW.key,
-      COPY.key,
+    menu.highlight(getChoiceRows(menu)![0]!.id)
+    menu.highlight(SHOW.key)
+
+    expect(onHighlight.mock.calls).toStrictEqual([
+      ['window-a', true],
+      ['window-a', false],
     ])
-  })
-
-  it('divides the groups of the slot from the rows of the window and from one another', () => {
-    const { menu } = setup()
-
-    menu.open('reef', { x: 4, y: 8 })
-    const groups = menu.menu.value?.items.map((one) => one.group) ?? []
-
-    expect(new Set(groups).size).toBe(3)
-  })
-
-  it('asks the slot for its entries over the file of the tab', () => {
-    const { menu, getEntries } = setup()
-
-    menu.open('reef', { x: 4, y: 8 })
-    expect(menu.menu.value).not.toBeNull()
-
-    expect(getEntries).toHaveBeenCalledWith(SLOT.tabStripContext, TARGETS.reef)
-  })
-
-  it('runs the command of an entry over the file of the tab, and closes', async () => {
-    const { menu, commands } = setup()
-    menu.open('reef', { x: 4, y: 8 })
-
-    menu.choose('reef', SHOW.key)
-
-    expect(commands.getRuns()).toStrictEqual([{ command: SHOW.command, target: TARGETS.reef }])
-    expect(menu.menu.value).toBeNull()
-  })
-
-  it('detaches the tab on the row of the window that detaches it', async () => {
-    const { menu, commands, onDetach } = setup()
-    menu.open('reef', { x: 4, y: 8 })
-
-    menu.choose('reef', '__detach__')
-
-    expect(onDetach).toHaveBeenCalledWith('reef', { x: 4, y: 8 })
-    expect(commands.getRuns()).toStrictEqual([])
-  })
-
-  it('opens on a tab that only the slot has rows for', () => {
-    const { menu } = setup({ canDetach: false })
-
-    menu.open('reef', { x: 4, y: 8 })
-
-    expect(menu.menu.value?.items.map((one) => one.id)).toStrictEqual([SHOW.key, COPY.key])
-  })
-
-  it('stays closed on a tab nothing can be done to', () => {
-    const { menu } = setup({ canDetach: false, entries: [] })
-
-    menu.open('plex', { x: 4, y: 8 })
-
-    expect(menu.menu.value).toBeNull()
-  })
-
-  it('draws an entry of the slot with the icon of its command', () => {
-    const { menu } = setup()
-    menu.open('reef', { x: 4, y: 8 })
-
-    expect(menu.getIcon(SHOW.key)).toBe(Pin)
-    expect(menu.getIcon(COPY.key)).toBeNull()
-  })
-
-  it('links, unlinks and moves the tab on the rows of the window that do so', async () => {
-    const linkTabs = vi.fn()
-    const unlinkTab = vi.fn()
-    const onMove = vi.fn()
-    const onHighlight = vi.fn()
-    const group = { id: 'g', colorIndex: 0, tabs: ['reef', 'plex'], path: '', title: '' }
-    const menu = useTabMenu({
-      link: {
-        tabLinks: {
-          ...tabLinks,
-          windows: [
-            { id: 'window-a', isMain: true, activeTitle: 'Atlas', activeKind: 'note', tabCount: 1 },
-          ],
-          getGroupOf: (tab: string) => (tab === 'reef' ? group : null),
-          linkTabs,
-          unlinkTab,
-        } as unknown as TabLinksState,
-        getTabs: () => [
-          { id: 'reef', title: 'Reef' },
-          { id: 'plex', title: 'Plex' },
-        ],
-        getKind: () => 'note',
-        isLinkable: () => true,
-        onMove,
-        onHighlight,
-        windowId: 'window-b',
-      },
-      getTabTarget: (tab) => TARGETS[tab]!,
-      getTabIcon: () => null,
-      getKindIcon: (kind) => (kind === 'note' ? Pin : null),
-    })
-
-    menu.open('reef', { x: 4, y: 8 })
-    expect(menu.getIcon('__move__:window-a')).toBe(Pin)
-    menu.highlight('__move__:window-a')
-    expect(onHighlight).toHaveBeenCalledWith('window-a', true)
-    menu.choose('reef', '__move__:window-a')
-    menu.open('reef', { x: 4, y: 8 })
-    menu.choose('reef', '__unlink__')
-    menu.open('reef', { x: 4, y: 8 })
-    menu.choose('reef', 'plex')
-
-    expect(onMove).toHaveBeenCalledWith('reef', 'window-a')
-    expect(unlinkTab).toHaveBeenCalledWith('reef')
-    expect(linkTabs).toHaveBeenCalledWith('reef', 'plex')
-  })
-
-  it('draws a view of the slot as a row holding its component, and runs nothing for it', () => {
-    const view: SlotItem = {
-      kind: 'view',
-      key: `${ATLAS}/view/tide`,
-      pluginId: ATLAS,
-      view: 'tide',
-      component: Pin,
-    }
-    const { menu, commands } = setup({ entries: [view] })
-    menu.open('reef', { x: 4, y: 8 })
-
-    expect(menu.menu.value?.items.at(-1)).toMatchObject({ id: view.key, component: Pin })
-    menu.choose('reef', view.key)
-    expect(commands.getRuns()).toStrictEqual([])
-  })
-
-  it('closes on request, and runs nothing', () => {
-    const { menu, commands } = setup()
-    menu.open('reef', { x: 4, y: 8 })
-
-    menu.dismiss()
-
-    expect(menu.menu.value).toBeNull()
-    expect(commands.getRuns()).toStrictEqual([])
   })
 })

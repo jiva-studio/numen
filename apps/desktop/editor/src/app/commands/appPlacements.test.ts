@@ -1,7 +1,7 @@
 /** The places the application puts its own commands in: one list, merged with the plugins'. */
 import { describe, expect, it } from 'vitest'
 import type { MenuPlacement } from '@numen/plugin-host'
-import { createCommands } from '@/features/command-palette'
+import { createCommands, type Command } from '@/features/command-palette'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS } from '@/shared/words'
 import { APP_PLACEMENTS } from './appPlacements'
@@ -37,6 +37,13 @@ function setup(placements: readonly MenuPlacement[], getAppPlacements?: () => Me
     ...(getAppPlacements ? { getAppPlacements } : {}),
   })
 }
+
+const createTabCommand = (id: string, text: string): Command => ({
+  id,
+  text,
+  group: 'window',
+  isAvailable: () => true,
+})
 
 const getCommands = (menus: ReturnType<typeof setup>) =>
   menus.getEntries('titleBar.commands').map((one) => one.command)
@@ -75,6 +82,61 @@ describe('the placements of the application', () => {
         command: COMMAND.trashNote,
         group: '9-remove',
       },
+    ])
+  })
+
+  it('place the commands of the window over a tab in the menu of a tab', () => {
+    expect(APP_PLACEMENTS.filter((one) => one.location === 'tabStrip.context')).toEqual([
+      {
+        pluginId: 'app',
+        location: 'tabStrip.context',
+        command: COMMAND.moveTabToWindow,
+        group: '0-window',
+        order: 10,
+      },
+      {
+        pluginId: 'app',
+        location: 'tabStrip.context',
+        command: COMMAND.detachTab,
+        group: '0-window',
+        order: 20,
+      },
+      {
+        pluginId: 'app',
+        location: 'tabStrip.context',
+        command: COMMAND.linkTab,
+        group: '1-link',
+        order: 10,
+      },
+      {
+        pluginId: 'app',
+        location: 'tabStrip.context',
+        command: COMMAND.unlinkTab,
+        group: '1-link',
+        order: 20,
+      },
+    ])
+  })
+
+  it('give the menu of a tab its commands with the titles the window made for them', () => {
+    const menus = createPluginMenus({
+      getPlacements: () => [],
+      getPluginCommands: () => [],
+      getDeclaredCommands: () => [],
+      getEditorCommands: () => [
+        ...createCommands(WORDS),
+        createTabCommand(COMMAND.moveTabToWindow, 'Move to window'),
+        createTabCommand(COMMAND.detachTab, 'Detach tab'),
+        createTabCommand(COMMAND.linkTab, 'Link with tab'),
+        createTabCommand(COMMAND.unlinkTab, 'Unlink tab'),
+      ],
+    })
+
+    expect(menus.getEntries('tabStrip.context').map((one) => one.title)).toEqual([
+      'Move to window',
+      'Detach tab',
+      'Link with tab',
+      'Unlink tab',
     ])
   })
 

@@ -29,6 +29,7 @@ vi.mock('../vault', () => ({ core: h.core }))
 vi.mock('@/features/command-palette', () => ({
   runSupport: () => ({ name: 'runs' }),
   createCommands: () => [{ id: 'app:vault.create' }],
+  registerCommand: () => () => undefined,
 }))
 vi.mock('@/features/tab-linking', () => ({
   useTabLinks: (args: unknown) => {
@@ -83,6 +84,11 @@ vi.mock('../commands/useCommands', () => ({
     h.args.commands = args
     return h.f.commands
   },
+  createPaletteChoices: () => ({
+    hasCommandChoices: () => false,
+    getCommandChoices: async () => [],
+    runChoice: async () => undefined,
+  }),
 }))
 vi.mock('../commands/fileMenuCommands', () => ({
   useFileMenuCommands: (args: unknown) => {
@@ -612,13 +618,20 @@ describe('the window started and closed', () => {
 })
 
 describe('the services a plugin is given', () => {
-  it('are the ones the kinds made, the window task list and the commands, handed to the plugins', () => {
+  it('are the ones the kinds made, the window task list and the commands with those over a tab', () => {
     useWindow()
 
     const { taskList, commands, ...made } = h.args.plugins.services
     expect(made).toStrictEqual(h.f.kinds.services)
     expect(taskList).toBe(h.f.display.tasks)
-    expect(commands?.getIds()).toStrictEqual(['app:vault.create', 'org.example.sample:share.run'])
+    expect(commands?.getIds()).toStrictEqual([
+      'app:vault.create',
+      'app:tab.detach',
+      'app:tab.unlink',
+      'app:tab.moveToWindow',
+      'app:tab.link',
+      'org.example.sample:share.run',
+    ])
   })
 
   it('stops the tabs waiting for their plugins once the plugins of the interface have started', async () => {

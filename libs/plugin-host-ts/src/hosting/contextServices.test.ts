@@ -294,7 +294,6 @@ describe('a command a plugin runs over the vault', () => {
     expect(commands.getRuns()).toStrictEqual([{ command: id, target, choice: undefined }])
   })
 
-
   it('reads the commands of the window and their choices with no permission', () => {
     const { context, commands } = createContext([])
     const handler = vi.fn()

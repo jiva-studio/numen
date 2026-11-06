@@ -60,19 +60,14 @@ const {
   destinations,
   closeTab,
   getTabIcon,
-  getKindIcon,
   getTitle,
   getTarget,
   tabLinks,
   slots,
   windowCommands,
-  windowId,
   isHighlighted,
   highlightWindow,
-  isTabAsking,
   detachTab,
-  detachTabAt,
-  moveTab,
 } = useWindow()
 
 const frame = useWindowFrame()
@@ -81,16 +76,9 @@ const bar = useWindowBar({ menus, vaultList, runCommand, getTarget, commandDeps 
 
 const tabMenu = useWindowTabMenu({
   windowTabs,
-  tabLinks,
-  windowId,
-  isAsking: isTabAsking,
-  onDetach: detachTabAt,
-  onMove: moveTab,
   onHighlight: highlightWindow,
   slots,
   commands: windowCommands,
-  getTabIcon,
-  getKindIcon,
 })
 
 /* --------------------------------- Hooks ---------------------------------- */

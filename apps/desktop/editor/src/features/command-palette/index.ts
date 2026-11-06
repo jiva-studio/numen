@@ -26,6 +26,7 @@ export { ANSWER_WORDS } from './words'
 export type { AnswerWords } from './words'
 export type {
   Command,
+  CommandInvocation,
   CommandPlace,
   CommandsDeps,
   CommandTarget,

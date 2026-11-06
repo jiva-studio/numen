@@ -34,7 +34,8 @@ import { useVaults } from './useVaults'
 import type { TabsHold } from '../commands/leaveVault'
 import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
-import { useCommands } from '../commands/useCommands'
+import { createPaletteChoices, useCommands } from '../commands/useCommands'
+import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
 import { createPluginMenus } from '../commands/pluginMenus'
 import { getNamedIcon } from '@/shared/icons'
@@ -77,6 +78,8 @@ interface WindowCommandsOptions {
   declaredCommands: ReturnType<typeof useDeclaredCommands>
   /** The slots of the window, read by the palette and the menu of a tab. */
   slots?: SlotHost | undefined
+  /** The commands of the window made as it runs, such as those over a tab. */
+  getAppCommands: () => readonly Command[]
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
@@ -85,6 +88,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     declaredCommands: deps.declaredCommands,
     fileMenuCommands: deps.fileMenuCommands,
     ...(deps.slots ? { slots: deps.slots } : {}),
+    getAppCommands: deps.getAppCommands,
     core,
     words,
     log: deps.log,
@@ -354,6 +358,8 @@ interface WindowContext {
   vaults?: ReturnType<typeof useVaults>
   /** Holds the open tabs back while the vault is switched; bound once the tabs are written. */
   tabsHold?: TabsHold
+  /** The commands over a tab, made once the moves of the tabs are. */
+  tabCommands?: TabCommands
 }
 
 function getCommands(ctx: WindowContext): NonNullable<WindowContext['commands']> {
@@ -445,7 +451,10 @@ function initWindowKindsAndCommands(
     getPlacements: () => base.declaredCommands.placements.value,
     getPluginCommands: () => base.pluginHost.getPaletteCommands(),
     getDeclaredCommands: () => base.declaredCommands.commands.value,
-    getEditorCommands: () => (editorCommands ??= createCommands(words)),
+    getEditorCommands: () => [
+      ...(editorCommands ??= createCommands(words)),
+      ...(ctx.tabCommands?.commands ?? []),
+    ],
     reportIssue: (pluginId, message) => {
       const name = settings.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
       base.log.getWriter(`plugin:${pluginId}`)(`${name}: ${message}`, 'warning')
@@ -501,6 +510,7 @@ function initWindowKindsAndCommands(
     declaredCommands: base.declaredCommands,
     fileMenuCommands,
     slots: base.pluginHost.slots,
+    getAppCommands: () => ctx.tabCommands?.commands ?? [],
   })
 
   return { getTarget, runCommand, menuApi: { menus, runChoice: getCommands(ctx).runChoice } }
@@ -663,6 +673,24 @@ function createWindowTabMoves(
   }
 }
 
+/** The commands of the window over a tab, registered for the palette and the menu of a tab. */
+function createWindowTabCommands(base: WindowCore, moves: ReturnType<typeof createWindowTabMoves>) {
+  const { windowTabs, tabLinks } = base
+  const tabCommands = createTabCommands({
+    tabLinks,
+    getTabs: () => windowTabs.tabs.value,
+    getKind: (id) => windowTabs.getTab(id)?.kind.kind,
+    isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
+    windowId: moves.windowId,
+    isAsking: moves.isTabAsking,
+    // The window opens at the top left corner of this one; a menu has no point to give.
+    detach: (id) => moves.detachTabAt(id, { x: 0, y: 0 }),
+    move: moves.moveTab,
+  })
+  tabCommands.register()
+  return tabCommands
+}
+
 /** Whether the window is drawn yet, why its workspace did not load, and the retry of the start. */
 const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
   bootstrapFailure: bootstrap.failure,
@@ -673,19 +701,25 @@ const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
 /** The slots of the window and its commands, which its plugins and the menu of a tab read and run. */
 function createSlotServices(
   base: WindowCore,
+  ctx: WindowContext,
   commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget' | 'runCommand'>,
 ) {
-  let appIds: readonly string[] | undefined
+  let tableIds: readonly string[] | undefined
+  const getAppCommands = () => ctx.tabCommands?.commands ?? []
+  const choices = createPaletteChoices(
+    { getAppCommands, pluginHost: base.pluginHost, getTarget: commands.getTarget },
+    createCommandNoteReader(core),
+    () => getCommands(ctx).commandDeps,
+  )
   const windowCommands = createWindowCommands({
-    getAppIds: () => (appIds ??= createCommands(words).map((one) => one.id)),
+    getAppIds: () => [
+      ...(tableIds ??= createCommands(words).map((one) => one.id)),
+      ...getAppCommands().map((one) => one.id),
+    ],
     getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
     runCommand: commands.runCommand,
-    getChoices: async (id, target) =>
-      base.pluginHost.hasCommand(id) ? base.pluginHost.getCommandChoices(id, target) : [],
-    runChoice: async (id, target, choice) => {
-      const note = await createCommandNoteReader(core)(target)
-      await base.pluginHost.executeCommand(id, note, choice)
-    },
+    getChoices: choices.getCommandChoices,
+    runChoice: choices.runChoice,
     getTarget: commands.getTarget,
   })
   Object.assign(base.pluginServices, { commands: windowCommands })
@@ -698,6 +732,16 @@ const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => 
   statusViews: pluginHost.statusViews,
   titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
 })
+
+/** The open tabs of the window, written while `isWriting` is on. */
+const useWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>
+  useOpenTabs({
+    core,
+    windowTabs: base.windowTabs,
+    isWriting,
+    reportError: (error) =>
+      base.writeMessage(`The open tabs were not saved: ${formatErrorMessage(error)}`, 'error'),
+  })
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
@@ -712,16 +756,12 @@ export const useWindow = () => {
   )
   const isWritingTabs = ref(false)
   const isLayoutReady = ref(false)
-  const openTabs = useOpenTabs({
-    core,
-    windowTabs: base.windowTabs,
-    isWriting: isWritingTabs,
-    reportError: (error) =>
-      base.writeMessage(`The open tabs were not saved: ${formatErrorMessage(error)}`, 'error'),
-  })
+  const openTabs = useWindowOpenTabs(base, isWritingTabs)
   ctx.tabsHold = openTabs
 
   const closeTab = createTabCloser(base)
+  const moves = createWindowTabMoves(base, editing, closeTab)
+  ctx.tabCommands = createWindowTabCommands(base, moves)
   const isHighlighted = ref(false)
   useAppHotkeys(getCommands(ctx).onKeyDown)
   const tabLinkSession = createWindowTabLinks(base, {
@@ -777,9 +817,9 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
-    ...createSlotServices(base, { getTarget, runCommand }),
+    ...createSlotServices(base, ctx, { getTarget, runCommand }),
     isHighlighted,
-    ...createWindowTabMoves(base, editing, closeTab),
+    ...moves,
   }
   return api
 }
