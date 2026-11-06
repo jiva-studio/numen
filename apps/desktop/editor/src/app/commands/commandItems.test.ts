@@ -133,3 +133,29 @@ describe('a run with the argument picked', () => {
     expect(runApp).not.toHaveBeenCalled()
   })
 })
+
+describe('the target the items of a plugin command are read over', () => {
+  it('carries the note type and the properties the window reads for its file', async () => {
+    const pluginHost = {
+      hasCommandItems: () => true,
+      listCommandItems: vi.fn(async () => []),
+    }
+    const items = createCommandItems({
+      getAppCommands: () => [],
+      pluginHost,
+      getTarget: () => FRONT,
+      runApp: vi.fn(),
+      runPlugin: vi.fn(),
+      readTarget: async (target) => ({ ...target, noteType: 'link', properties: { media: 'a' } }),
+    })
+    const target = { path: 'talk.md', title: 'talk', isFolder: false, others: [], tab: '' }
+
+    await items.listCommandItems('app:file.createText', target)
+
+    expect(pluginHost.listCommandItems).toHaveBeenCalledWith('app:file.createText', {
+      ...target,
+      noteType: 'link',
+      properties: { media: 'a' },
+    })
+  })
+})

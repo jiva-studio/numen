@@ -68,6 +68,7 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     declaredCommands: {
       slots: computed(() => slotEntries),
       commands: computed(() => COMMANDS),
+      handlers: computed(() => []),
       whenContext: { getContentTypes: () => ({ md: 'text/markdown' }), getConfig: () => ({}) },
     },
     hostHolder: { current: host as unknown as PluginHost },
@@ -79,7 +80,7 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     findCommand: slots.hostDeps.findSlotCommand,
     findView: () => undefined,
   })
-  return { registry }
+  return { registry, hostDeps: slots.hostDeps }
 }
 
 const describeItems = (items: readonly SlotItem[]) =>
@@ -168,5 +169,25 @@ describe('the entries of a menu over a target', () => {
         hasItems: true,
       }),
     ])
+  })
+})
+
+describe('the when values of a target', () => {
+  it('carry the note type and the properties the place read', () => {
+    const { hostDeps } = setup()
+    const target = {
+      path: 'links/talk.md',
+      title: 'talk',
+      isFolder: false,
+      others: [],
+      tab: '',
+      noteType: 'link',
+      properties: { media: 'plugin://md.importer/a.mp4' },
+    }
+
+    expect(hostDeps.getSlotWhenValues(target)).toMatchObject({
+      'target.noteType': 'link',
+      'target.properties': { media: 'plugin://md.importer/a.mp4' },
+    })
   })
 })

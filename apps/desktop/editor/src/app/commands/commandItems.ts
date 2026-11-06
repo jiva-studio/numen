@@ -2,7 +2,12 @@
  * The items of a command, whoever owns it: a command of the window that offers them over its
  * target, or a command a plugin registered with items; and the run of one with the argument picked.
  */
-import type { CommandItem, CommandTarget as RunTarget, PluginHost } from '@numen/plugin-host'
+import {
+  SHARED_COMMANDS,
+  type CommandItem,
+  type CommandTarget as RunTarget,
+  type PluginHost,
+} from '@numen/plugin-host'
 import type { Command, CommandTarget } from '@/features/command-palette'
 
 interface CommandItemsDeps {
@@ -15,6 +20,8 @@ interface CommandItemsDeps {
   readonly runApp: (id: string, target: CommandTarget, argument: string) => Promise<void>
   /** Runs a plugin command with the argument picked. */
   readonly runPlugin: (id: string, target: RunTarget, argument: string) => Promise<void>
+  /** The target with the note type and properties of its file, which the handlers of a shared command read. */
+  readonly readTarget?: (target: RunTarget) => Promise<RunTarget>
 }
 
 export function createCommandItems(deps: CommandItemsDeps) {
@@ -41,9 +48,10 @@ export function createCommandItems(deps: CommandItemsDeps) {
     listCommandItems: async (id: string, target: RunTarget): Promise<readonly CommandItem[]> => {
       const command = findAppCommand(id)
       if (command) return (await command.listItems?.(toAppTarget(target))) ?? []
-      return deps.pluginHost?.hasCommandItems(id)
-        ? deps.pluginHost.listCommandItems(id, target)
-        : []
+      if (!deps.pluginHost?.hasCommandItems(id)) return []
+      const isShared = SHARED_COMMANDS.some((one) => one.id === id)
+      const typed = isShared && deps.readTarget ? await deps.readTarget(target) : target
+      return deps.pluginHost.listCommandItems(id, typed)
     },
     runWithArgument: (id: string, target: RunTarget, argument: string): Promise<void> =>
       findAppCommand(id)

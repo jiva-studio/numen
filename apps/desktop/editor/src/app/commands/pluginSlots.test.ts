@@ -173,3 +173,27 @@ describe('a command of a slot entry', () => {
     })
   })
 })
+
+describe('a shared command in a slot', () => {
+  const find = createSlotCommandFinder({
+    getPluginCommands: () => [],
+    getDeclaredCommands: () => [],
+    getEditorCommands: () => [],
+    getHandlerDeclarations: () => [
+      { pluginId: TIDE, command: 'app:file.createText', title: 'Extract text', hasItems: false },
+    ],
+    getWhenValues: (target) => getTargetValues(target, {}),
+  })
+
+  it('is drawn under its own title as a command with items, its handlers', () => {
+    expect(find('app:file.createText', NOTE)).toStrictEqual({
+      title: 'Create text',
+      shortcut: '',
+      hasItems: true,
+    })
+  })
+
+  it('is not available while no enabled plugin handles it', () => {
+    expect(find('app:link.deleteMedia', NOTE)).toBeUndefined()
+  })
+})

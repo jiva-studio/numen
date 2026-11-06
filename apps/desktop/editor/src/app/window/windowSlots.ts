@@ -17,7 +17,10 @@ import { createSlotCommandFinder, readSlotEntries } from '../commands/pluginSlot
 import { getPaletteId } from '../commands/declaredCommands'
 
 export interface WindowSlotsDeps {
-  readonly declaredCommands: Pick<DeclaredCommands, 'slots' | 'commands' | 'whenContext'>
+  readonly declaredCommands: Pick<
+    DeclaredCommands,
+    'slots' | 'commands' | 'handlers' | 'whenContext'
+  >
   readonly hostHolder: { readonly current?: PluginHost }
   /** Writes what is wrong with the slot entries of a plugin to its messages. */
   readonly writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') => void
@@ -48,12 +51,13 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
   })
   const getWhenValues = (target: CommandTarget | undefined): WhenValues => ({
     ...getWindowValues(),
-    ...getTargetValues(target, whenContext.getContentTypes(), target?.noteType),
+    ...getTargetValues(target, whenContext.getContentTypes(), target?.noteType, target?.properties),
   })
   const findCommand = createSlotCommandFinder({
     getWhenValues,
     getPluginCommands: () => deps.hostHolder.current?.getPaletteCommands() ?? [],
     getDeclaredCommands: () => deps.declaredCommands.commands.value,
+    getHandlerDeclarations: () => deps.declaredCommands.handlers.value,
     getEditorCommands: () => [
       ...(editorCommands ??= createCommands(words)),
       ...(deps.getAppCommands?.() ?? []),

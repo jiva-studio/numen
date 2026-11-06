@@ -4,8 +4,10 @@
  */
 import {
   APP_COMMAND_OWNER,
+  SHARED_COMMANDS,
   getCommandOwner,
   type DeclaredSlotEntry,
+  type HandlerDeclaration,
   type PluginPaletteCommand,
   type SlotCommandLook,
   type CommandTarget,
@@ -40,6 +42,8 @@ export interface SlotCommandFinderDeps {
     Command,
     'id' | 'text' | 'iconName' | 'when' | 'listItems'
   >[]
+  /** The handlers of shared commands the enabled plugins declare; none where absent. */
+  readonly getHandlerDeclarations?: () => readonly HandlerDeclaration[] | undefined
   /** Whether the plugin command of the full id lists items; none where absent. */
   readonly hasPluginItems?: (command: string) => boolean
   /** The values the when conditions of the commands read over the target of the slot. */
@@ -84,8 +88,18 @@ export function createSlotCommandFinder(
     }
   }
 
-  return (command, target) =>
-    getCommandOwner(command) === APP_COMMAND_OWNER
+  /** A shared command some enabled plugin handles: its handlers are its items, read when a menu opens. */
+  const findSharedLook = (command: string) => {
+    const shared = SHARED_COMMANDS.find((one) => one.id === command)
+    if (!shared) return undefined
+    const isHandled = deps.getHandlerDeclarations?.()?.some((one) => one.command === command)
+    return isHandled ? { title: shared.title, shortcut: '', hasItems: true } : undefined
+  }
+
+  return (command, target) => {
+    if (SHARED_COMMANDS.some((one) => one.id === command)) return findSharedLook(command)
+    return getCommandOwner(command) === APP_COMMAND_OWNER
       ? findEditorLook(command, target)
       : findPluginLook(command, target)
+  }
 }

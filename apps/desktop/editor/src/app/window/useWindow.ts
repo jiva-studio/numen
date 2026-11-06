@@ -37,6 +37,8 @@ import { createPaletteItems, useCommands } from '../commands/useCommands'
 import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
 import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
 import { createWindowSlots } from './windowSlots'
+import { createBackendHandlers } from '../commands/backendHandlers'
+import { listDeclaredCommandItems, runDeclaredHandler } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import { useWindowDisplay } from './useWindowDisplay'
 import { useWindowFrame } from './useWindowFrame'
@@ -324,6 +326,13 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const { pluginHost, pluginLoader } = createPluginSupport({
     slots: slots.hostDeps,
     getCommandDeclarations: () => declaredCommands.declarations.value,
+    handlers: createBackendHandlers({
+      getHandlers: () => declaredCommands.handlers.value,
+      list: listDeclaredCommandItems,
+      run: runDeclaredHandler,
+      writeMessage,
+      openFile: (path) => tabOpeners.openFile(path, '', 'current').then(() => undefined),
+    }),
     windowTabs,
     tabLinks,
     tabOpeners,
@@ -819,7 +828,13 @@ export const useWindow = () => {
     runCommand,
     ...menuApi,
     openCurrentVault: () => openPlacedTabs(base),
-    readNoteType: async (path: string) => (await core.fileKinds([path])).get(path)?.type ?? '',
+    readNoteKind: async (path: string) => {
+      const kind = (await core.fileKinds([path])).get(path)
+      return {
+        noteType: kind?.type ?? '',
+        ...(kind?.properties ? { properties: kind.properties } : {}),
+      }
+    },
     isLayoutReady,
     ...getBootstrapApi(bootstrap),
     openSettings: (pluginId?: string, filter?: string) =>

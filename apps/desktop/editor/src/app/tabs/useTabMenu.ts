@@ -34,8 +34,8 @@ export interface TabMenuDeps {
   onHighlight?(windowId: string, isOn: boolean): void
   /** Receives the failure of a command that runs after the menu closed. */
   reportError?(error: unknown): void
-  /** The type the vault files the note of the path as, which the entries are asked for over. */
-  readNoteType?(path: string): Promise<string>
+  /** The type and the properties of the note of the path, which the entries are asked for over. */
+  readNoteKind?(path: string): Promise<NoteKind>
 }
 
 /** The extension that makes a file a note. */
@@ -70,14 +70,21 @@ const getMoveWindow = (tree: SlotMenu, id: string | null): string | null => {
   return pick?.command === COMMAND.moveTabToWindow ? (pick.argument ?? null) : null
 }
 
-/** The target of a tab with the type of its note, where the type is read; without it otherwise. */
+/** The type the vault files a note as, and its frontmatter where it has any. */
+export interface NoteKind {
+  readonly noteType: string
+  readonly properties?: Readonly<Record<string, unknown>>
+}
+
+/** The target of a tab with the type and properties of its note, where they are read; without them otherwise. */
 const readTypedTarget = async (
   target: RunTarget,
-  readNoteType: (path: string) => Promise<string>,
+  readNoteKind: (path: string) => Promise<NoteKind>,
 ): Promise<RunTarget> => {
   try {
-    const noteType = await readNoteType(target.path)
-    return noteType === '' ? target : { ...target, noteType }
+    const { noteType, properties } = await readNoteKind(target.path)
+    if (noteType === '') return target
+    return { ...target, noteType, ...(properties ? { properties } : {}) }
   } catch {
     return target
   }
@@ -128,17 +135,17 @@ export function useTabMenu(deps: TabMenuDeps) {
   }
 
   /**
-   * Opens the menu on a tab, over the type of its note where the menu reads one first; a tab the
+   * Opens the menu on a tab, over the type and properties of its note where the menu reads one first; a tab the
    * slot holds no entry for has none.
    */
   const open = (tab: string, where: { x: number; y: number }): void => {
     const target = deps.getTabTarget(tab)
     const request = ++requests
-    if (!deps.readNoteType || !target.path.endsWith(NOTE_EXTENSION)) {
+    if (!deps.readNoteKind || !target.path.endsWith(NOTE_EXTENSION)) {
       show(tab, where, target)
       return
     }
-    readTypedTarget(target, deps.readNoteType)
+    readTypedTarget(target, deps.readNoteKind)
       .then((typed) => {
         if (request === requests) show(tab, where, typed)
       })
@@ -170,8 +177,8 @@ export interface WindowTabMenuDeps {
   readonly slots?: SlotHost | undefined
   readonly commands?: CommandsHost | undefined
   onHighlight?(windowId: string, isOn: boolean): void
-  /** The type the vault files the note of the path as. */
-  readNoteType?(path: string): Promise<string>
+  /** The type and the properties of the note of the path. */
+  readNoteKind?(path: string): Promise<NoteKind>
 }
 
 /** The tab of the window and the file it shows, as the commands of its menu run over them. */
@@ -200,6 +207,6 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
     listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
     getTabTarget: (id) => getTabFileTarget(windowTabs, id),
     ...(deps.onHighlight ? { onHighlight: deps.onHighlight } : {}),
-    ...(deps.readNoteType ? { readNoteType: deps.readNoteType } : {}),
+    ...(deps.readNoteKind ? { readNoteKind: deps.readNoteKind } : {}),
   })
 }

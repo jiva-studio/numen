@@ -233,6 +233,67 @@ describe('the settings and notices a plugin is given', () => {
     )
   })
 
+  it('lists the handlers of a shared command and runs one in its backend', async () => {
+    const rest = { plugins: ref([{ id: 'md.numen.pages', hasFrontend: false, hasBackend: true }]) }
+    const runBackendHandler = vi.fn(async () => undefined)
+    const { pluginHost } = createWith({
+      settingsHolder: { current: { rest } as never },
+      handlers: {
+        getHandlerDeclarations: () => [
+          {
+            pluginId: 'md.numen.pages',
+            command: 'app:file.createText',
+            title: 'Extract text layer',
+            hasItems: false,
+          },
+        ],
+        runBackendHandler,
+      },
+    })
+    const target = { path: 'scan.pdf', title: 'scan', isFolder: false, others: [], tab: '' }
+
+    expect(await pluginHost.listCommandItems('app:file.createText', target)).toStrictEqual([
+      { id: 'md.numen.pages', title: 'Extract text layer' },
+    ])
+    await pluginHost.executeCommand('app:file.createText', { ...target, type: '' })
+
+    expect(runBackendHandler).toHaveBeenCalledWith(
+      'md.numen.pages',
+      'app:file.createText',
+      expect.objectContaining({ path: 'scan.pdf' }),
+      undefined,
+    )
+  })
+
+  it('lists the items of a handler the core lists them for', async () => {
+    const rest = { plugins: ref([{ id: 'md.numen.ocr', hasFrontend: false, hasBackend: true }]) }
+    const listBackendHandlerItems = vi.fn(async () => [{ id: 'v1', title: 'Recognition' }])
+    const { pluginHost } = createWith({
+      settingsHolder: { current: { rest } as never },
+      handlers: {
+        getHandlerDeclarations: () => [
+          {
+            pluginId: 'md.numen.ocr',
+            command: 'app:version.delete',
+            title: 'Delete',
+            hasItems: true,
+          },
+        ],
+        listBackendHandlerItems,
+      },
+    })
+    const target = { path: 'scan.pdf', title: 'scan', isFolder: false, others: [], tab: '' }
+
+    expect(await pluginHost.listCommandItems('app:version.delete', target)).toStrictEqual([
+      { id: 'md.numen.ocr:v1', title: 'Recognition', group: 'md.numen.ocr' },
+    ])
+    expect(listBackendHandlerItems).toHaveBeenCalledWith(
+      'md.numen.ocr',
+      'app:version.delete',
+      expect.objectContaining({ path: 'scan.pdf' }),
+    )
+  })
+
   it('reads no setting before the window has its settings', () => {
     const { pluginHost } = createWith({})
 

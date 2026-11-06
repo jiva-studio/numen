@@ -99,3 +99,22 @@ describe('the declarations for the plugin host', () => {
     ])
   })
 })
+
+describe('the handlers for the plugin host', () => {
+  it('are the handlers of shared commands the core lists, undefined before the first list', async () => {
+    const handler = {
+      pluginId: 'md.pages',
+      command: 'app:file.createText',
+      title: 'Extract text layer',
+      hasItems: false,
+    }
+    const declared = useDeclaredCommands({
+      list: async () => ({ commands: [], slots: [], handlers: [handler] }),
+    })
+    expect(declared.handlers.value).toBeUndefined()
+
+    await declared.load()
+
+    expect(declared.handlers.value).toStrictEqual([handler])
+  })
+})

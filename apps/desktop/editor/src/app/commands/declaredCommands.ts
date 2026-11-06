@@ -4,7 +4,12 @@
  * and the run handed to the plugin's backend.
  */
 import { computed, shallowRef, watch } from 'vue'
-import { formatCommandId, type CommandDeclaration, type WhenSettings } from '@numen/plugin-host'
+import {
+  formatCommandId,
+  type CommandDeclaration,
+  type HandlerDeclaration,
+  type WhenSettings,
+} from '@numen/plugin-host'
 import { registerCommand, type Command, type CommandTarget } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
@@ -109,6 +114,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const hasBackend = deps.hasBackend ?? (() => true)
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
   const declaredSlots = shallowRef<readonly DeclaredSlot[] | undefined>(undefined)
+  const declaredHandlers = shallowRef<readonly HandlerDeclaration[] | undefined>(undefined)
   const contentTypes = shallowRef<Readonly<Record<string, string>>>({})
   const whenContext: WindowWhenContext = {
     getContentTypes: () => contentTypes.value,
@@ -163,6 +169,8 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     // the palette lists them.
     if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
     if (!isSameList(declaredSlots.value, commands.slots)) declaredSlots.value = commands.slots
+    const handlers = commands.handlers ?? []
+    if (!isSameList(declaredHandlers.value, handlers)) declaredHandlers.value = handlers
     if (commands.contentTypes) contentTypes.value = commands.contentTypes
     onFirstList()
   }
@@ -183,6 +191,8 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     whenContext,
     commands: computed(() => declared.value),
     slots: computed(() => declaredSlots.value),
+    /** The handlers of shared commands the enabled plugins declare; undefined until the first list. */
+    handlers: computed(() => declaredHandlers.value),
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load,
   }

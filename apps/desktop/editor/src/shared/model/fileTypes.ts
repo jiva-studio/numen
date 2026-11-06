@@ -15,6 +15,8 @@ export type NoteType = string
 export interface FileKind {
   readonly isNote: boolean
   readonly type: NoteType
+  /** The frontmatter of a note by its keys; absent for a file that is no note or a note without any. */
+  readonly properties?: Readonly<Record<string, unknown>>
 }
 
 export interface Entry {

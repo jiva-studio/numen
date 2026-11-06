@@ -40,6 +40,11 @@ export interface PluginSupportDeps {
   readonly notices?: NoticeQueue
   /** The commands the enabled plugins declare in their manifests. */
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
+  /** The handlers of shared commands the enabled plugins declare, and how their backends list and run them. */
+  readonly handlers?: Pick<
+    PluginHostDeps,
+    'getHandlerDeclarations' | 'listBackendHandlerItems' | 'runBackendHandler'
+  >
   /** Reports a command whose declaration and handler do not match. */
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
   /** Reports a view of a slot that another plugin, first by plugin id, draws. */
@@ -119,6 +124,7 @@ function createNoticeAccess(queue: NoticeQueue) {
 function getHostDeclarations(deps: PluginSupportDeps) {
   return {
     ...deps.slots,
+    ...deps.handlers,
     ...(deps.getCommandDeclarations !== undefined
       ? { getCommandDeclarations: deps.getCommandDeclarations }
       : {}),

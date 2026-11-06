@@ -5,6 +5,7 @@
 export {
   CONVERSATION,
   NOTE_TYPE,
+  SHARED_COMMANDS,
   SLOT,
   TITLE_BAR_SLOT,
   VAULT_SUMMARY,
@@ -25,6 +26,7 @@ export type {
   BufferHost,
   CommandItem,
   CommandItemLists,
+  SlotMenu,
   CommandNote,
   CommandTarget,
   CommandsHost,

@@ -93,6 +93,7 @@ function setup(
     getPaletteCommands: () => [{ id: SHOW, title: 'Show note in plex' }],
     hasCommandItems: () => false,
     hasCommand: options.hasCommand ?? ((id: string) => id === SHOW),
+    isSharedCommand: (id: string) => id === 'app:file.createText',
     executeCommand,
     handleShortcut: () => false,
   }
@@ -137,6 +138,19 @@ describe('running the action of a search result that is an entry of its menu', (
       others: [],
       tab: '',
     })
+    expect(h.startCommand).not.toHaveBeenCalled()
+  })
+
+  it('runs a shared command in the plugin host, which runs its one handler', async () => {
+    const one = setup()
+
+    one.runChoice(choice('app:file.createText'))
+    await vi.waitFor(() => expect(one.executeCommand).toHaveBeenCalled())
+
+    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith(
+      'app:file.createText',
+      expect.objectContaining({ path: 'Reef.md', type: 'sample' }),
+    )
     expect(h.startCommand).not.toHaveBeenCalled()
   })
 

@@ -11,7 +11,7 @@ import {
   type SlotItem,
   type CommandTarget as RunTarget,
 } from '@numen/plugin-host'
-import { getTabFileTarget, useTabMenu } from './useTabMenu'
+import { getTabFileTarget, useTabMenu, type NoteKind } from './useTabMenu'
 
 const ATLAS = 'org.example.atlas'
 const Pin = defineComponent({ name: 'PinIcon', setup: () => () => h('svg') })
@@ -196,8 +196,8 @@ describe('the menu of a tab', () => {
   })
 })
 
-describe('the note type of the file of a tab', () => {
-  const setupTyped = (readNoteType: (path: string) => Promise<string>) => {
+describe('the note type and the properties of the file of a tab', () => {
+  const setupTyped = (readNoteKind: (path: string) => Promise<NoteKind>) => {
     const slots = createSlots(ENTRIES)
     const getEntries = vi.spyOn(slots, 'getEntries')
     const commands = createCommands()
@@ -206,13 +206,13 @@ describe('the note type of the file of a tab', () => {
       runCommand: commands.run,
       listItems: commands.listItems,
       getTabTarget: (tab) => TARGETS[tab]!,
-      readNoteType,
+      readNoteKind,
     })
     return { menu, getEntries, commands }
   }
 
   it('is read first, and the slot gives the entries over the typed target', async () => {
-    const { menu, getEntries } = setupTyped(async () => 'link')
+    const { menu, getEntries } = setupTyped(async () => ({ noteType: 'link' }))
 
     menu.open('reef', { x: 4, y: 8 })
     await settle()
@@ -224,8 +224,24 @@ describe('the note type of the file of a tab', () => {
     expect(menu.menu.value?.tab).toBe('reef')
   })
 
+  it('gives the slot the properties of the note with its type', async () => {
+    const { menu, getEntries } = setupTyped(async () => ({
+      noteType: 'link',
+      properties: { media: 'plugin://md.importer/a.mp4' },
+    }))
+
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+
+    expect(getEntries).toHaveBeenCalledWith(SLOT.tabStripContext, {
+      ...TARGETS.reef,
+      noteType: 'link',
+      properties: { media: 'plugin://md.importer/a.mp4' },
+    })
+  })
+
   it('goes with the target of a command run from the menu', async () => {
-    const { menu, commands } = setupTyped(async () => 'link')
+    const { menu, commands } = setupTyped(async () => ({ noteType: 'link' }))
     menu.open('reef', { x: 4, y: 8 })
     await settle()
 
@@ -248,17 +264,17 @@ describe('the note type of the file of a tab', () => {
   })
 
   it('opens nothing where another menu was requested while it was read', async () => {
-    let finish: (type: string) => void = () => undefined
+    let finish: (kind: NoteKind) => void = () => undefined
     const { menu } = setupTyped(
       () =>
-        new Promise<string>((done) => {
+        new Promise<NoteKind>((done) => {
           finish = done
         }),
     )
 
     menu.open('reef', { x: 4, y: 8 })
     menu.dismiss()
-    finish('link')
+    finish({ noteType: 'link' })
     await settle()
 
     expect(menu.menu.value).toBeNull()

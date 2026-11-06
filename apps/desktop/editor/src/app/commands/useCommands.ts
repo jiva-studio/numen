@@ -133,13 +133,22 @@ export function createPaletteItems(
     runPlugin: async (id, target, argument) => {
       await pluginHost?.executeCommand(id, await getCommandNote(target), argument)
     },
+    readTarget: async (target) => {
+      const { type, properties } = await getCommandNote(target)
+      return { ...target, noteType: type, ...(properties ? { properties } : {}) }
+    },
   })
 }
 
 export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, knows, runs, coverage, writeMessage } = options
   const { pluginHost, declaredCommands } = options
-  const plugins = usePluginCommands(core, pluginHost, declaredCommands?.whenContext)
+  const plugins = usePluginCommands(
+    core,
+    pluginHost,
+    declaredCommands?.whenContext,
+    () => declaredCommands?.handlers.value,
+  )
   const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = plugins
 
   const palette = useSearch(core, words, {
@@ -166,7 +175,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const reportError = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
 
   const runCommand = (id: string, target: CommandTarget, input?: string) => {
-    if (pluginHost?.hasCommand(id)) {
+    if (pluginHost && (pluginHost.hasCommand(id) || pluginHost.isSharedCommand(id))) {
       commands.setOpen(false)
       runInBackground(
         getCommandNote(target).then((note) => pluginHost.executeCommand(id, note)),

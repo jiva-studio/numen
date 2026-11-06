@@ -38,7 +38,7 @@ const {
   slots,
   runChoice,
   openCurrentVault,
-  readNoteType,
+  readNoteKind,
   isLayoutReady,
   bootstrapFailure,
   isStarted,
@@ -73,7 +73,7 @@ const tabMenu = useWindowTabMenu({
   onHighlight: highlightWindow,
   slots,
   commands: windowCommands,
-  readNoteType,
+  readNoteKind,
 })
 
 /* --------------------------------- Hooks ---------------------------------- */

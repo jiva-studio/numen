@@ -4,7 +4,7 @@
  * before it is sent to the plugin.
  */
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
-import { parseWhen, type CommandItem } from '@numen/plugin-host'
+import { parseWhen, type CommandItem, type HandlerDeclaration } from '@numen/plugin-host'
 import { pluginCommands } from '@/shared/clients'
 
 interface WireCommand {
@@ -37,6 +37,13 @@ interface WireSlotEntry {
     | undefined
 }
 
+interface WireHandler {
+  readonly pluginId: string
+  readonly handler?:
+    { readonly command: string; readonly title: string; readonly when: string } | undefined
+  readonly hasItems: boolean
+}
+
 interface DeclaredArgument {
   readonly name: string
   readonly title: string
@@ -66,6 +73,8 @@ export interface DeclaredList {
   readonly slots: readonly DeclaredSlot[]
   /** The content type of a file by its extension, lowercase and without the dot. */
   readonly contentTypes?: Readonly<Record<string, string>>
+  /** The handlers of shared commands the enabled plugins declare. */
+  readonly handlers?: readonly HandlerDeclaration[]
 }
 
 /** One command a plugin declares. */
@@ -141,6 +150,15 @@ const readSlotEntry = ({ pluginId, entry }: WireSlotEntry): DeclaredSlot => {
   }
 }
 
+/** A handler of a shared command, with whether the core lists its items. */
+const readHandler = ({ pluginId, handler, hasItems }: WireHandler): HandlerDeclaration => ({
+  pluginId,
+  command: handler?.command ?? '',
+  title: handler?.title ?? '',
+  ...(handler?.when ? { when: handler.when } : {}),
+  hasItems,
+})
+
 /** Every command the enabled plugins declare, in the order of the plugins' ids, and their slot entries. */
 export async function listDeclaredCommands(): Promise<DeclaredList> {
   const answer = await pluginCommands.listCommands({})
@@ -148,7 +166,27 @@ export async function listDeclaredCommands(): Promise<DeclaredList> {
     commands: answer.commands.map(readCommand),
     slots: answer.slots.map(readSlotEntry),
     contentTypes: { ...answer.contentTypeByExtension },
+    handlers: (answer.handlers as readonly WireHandler[] | undefined)?.map(readHandler) ?? [],
   }
+}
+
+/** Runs the plugin's handler of the shared command in its backend, over the file, with the item picked. */
+export async function runDeclaredHandler(
+  handler: Pick<HandlerDeclaration, 'pluginId' | 'command'>,
+  path: string,
+  argument?: string,
+): Promise<DeclaredCommandOutcome> {
+  const answer = await pluginCommands.runPluginCommand({
+    pluginId: handler.pluginId,
+    command: handler.command,
+    path,
+    arguments: {},
+    ...(argument === undefined ? {} : { argument }),
+  })
+  if (answer.error === COMMAND_ERROR_CODE.UNSPECIFIED) {
+    return { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
+  }
+  return { ok: false, error: answer.message }
 }
 
 /** Runs the command in the backend of the plugin that declares it. */

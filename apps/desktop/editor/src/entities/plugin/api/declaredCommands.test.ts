@@ -18,8 +18,13 @@ const request = {
   listCommandItems: vi.fn(),
 }
 
-const { isOverTarget, listDeclaredCommandItems, listDeclaredCommands, runDeclaredCommand } =
-  await import('./declaredCommands')
+const {
+  isOverTarget,
+  listDeclaredCommandItems,
+  listDeclaredCommands,
+  runDeclaredCommand,
+  runDeclaredHandler,
+} = await import('./declaredCommands')
 
 const proofread = {
   pluginId: 'org.example.ink',
@@ -265,6 +270,86 @@ describe('the items of a command', () => {
       arguments: {},
       argument: 'org.example.ears/ears',
     })
+  })
+})
+
+describe('the handlers of shared commands', () => {
+  it('are read with their plugin, command, title, condition and whether the core lists their items', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      slots: [],
+      handlers: [
+        {
+          pluginId: 'org.example.ink',
+          handler: {
+            command: 'app:version.delete',
+            title: 'Delete proofread',
+            when: "version.kind == 'ink'",
+          },
+          hasItems: true,
+        },
+        {
+          pluginId: 'org.example.pages',
+          handler: { command: 'app:file.createText', title: 'Extract text layer', when: '' },
+          hasItems: false,
+        },
+      ],
+    })
+
+    const { handlers } = await listDeclaredCommands()
+
+    expect(handlers).toStrictEqual([
+      {
+        pluginId: 'org.example.ink',
+        command: 'app:version.delete',
+        title: 'Delete proofread',
+        when: "version.kind == 'ink'",
+        hasItems: true,
+      },
+      {
+        pluginId: 'org.example.pages',
+        command: 'app:file.createText',
+        title: 'Extract text layer',
+        hasItems: false,
+      },
+    ])
+  })
+
+  it('run in the backend under the full id of the command, with the item picked', async () => {
+    request.runPluginCommand.mockResolvedValue({
+      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      message: 'Deleted',
+      openedPath: '',
+    })
+
+    const outcome = await runDeclaredHandler(
+      { pluginId: 'org.example.ink', command: 'app:version.delete' },
+      'talks/a.mp3',
+      'v1',
+    )
+
+    expect(outcome).toStrictEqual({ ok: true, value: { message: 'Deleted', openedPath: '' } })
+    expect(request.runPluginCommand).toHaveBeenLastCalledWith({
+      pluginId: 'org.example.ink',
+      command: 'app:version.delete',
+      path: 'talks/a.mp3',
+      arguments: {},
+      argument: 'v1',
+    })
+  })
+
+  it('that did not succeed answer why', async () => {
+    request.runPluginCommand.mockResolvedValue({
+      error: COMMAND_ERROR_CODE.FAILED,
+      message: 'no such version',
+    })
+
+    expect(
+      await runDeclaredHandler(
+        { pluginId: 'org.example.ink', command: 'app:version.delete' },
+        'a.mp3',
+      ),
+    ).toStrictEqual({ ok: false, error: 'no such version' })
   })
 })
 
