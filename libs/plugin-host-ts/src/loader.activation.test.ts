@@ -4,6 +4,7 @@ import type { PluginContext } from '@numen/plugin-sdk'
 import { createPluginHost } from './hosting/host'
 import type { CommandDeclaration, PluginHostDeps } from './hosting/types'
 import { createPluginLoader } from './loader'
+import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 
 const PLUGIN = 'md.numen.views.plex.graph'
 
@@ -130,6 +131,64 @@ describe('the commands of a plugin that is turned off', () => {
 
     expect(reportCommandIssue).not.toHaveBeenCalled()
     expect(reports.at(-1)).toStrictEqual([])
+  })
+})
+
+describe('a plugin whose start passes PLUGIN_START_LIMIT_MS', () => {
+  it('holds no registration and stays inactive when its start ends later', async () => {
+    vi.useFakeTimers()
+    try {
+      const { host, loader, onError } = createWindow(async (context) => {
+        context.registerCommand({ id: 'graph.open', handler: () => undefined })
+        await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 1_000))
+        context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      })
+
+      const started = loader.start()
+      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 100)
+
+      expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
+      expect(onError).toHaveBeenCalledTimes(1)
+      expect(host.getRegisteredCommands()).toStrictEqual([])
+      await vi.advanceTimersByTimeAsync(1_000)
+      await started
+
+      expect(loader.isPluginActive(PLUGIN)).toBe(false)
+      expect(host.getRegisteredCommands()).toStrictEqual([])
+      expect(host.getPaletteCommands()).toStrictEqual([])
+      expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('has its backend stopped with the reason', async () => {
+    vi.useFakeTimers()
+    try {
+      const stopFailedPlugin = vi.fn()
+      const host = createPluginHost({
+        registerKind: vi.fn(() => vi.fn()),
+        registerExtensionReader: vi.fn(() => vi.fn()),
+        openTab: vi.fn(async () => 'tab-1'),
+      })
+      const loader = createPluginLoader({ host, stopFailedPlugin })
+      loader.registerPluginModule(PLUGIN, async () => ({
+        activate: () => new Promise<void>(() => undefined),
+      }))
+
+      const started = loader.start()
+      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS - 100)
+      expect(stopFailedPlugin).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(200)
+
+      expect(stopFailedPlugin).toHaveBeenCalledExactlyOnceWith(
+        PLUGIN,
+        'the plugin did not start within 30 s',
+      )
+      await started
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

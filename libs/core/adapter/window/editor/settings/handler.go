@@ -24,6 +24,7 @@ type Handler struct {
 	WriteSecret  *setting.WriteSecret
 	DeleteSecret *setting.DeleteSecret
 	PluginRetry  *setting.RetryPlugin
+	PluginStop   *setting.StopFailedPlugin
 	// PluginData and Vaults are nil where the installation keeps no text versions.
 	PluginData PluginData
 	Vaults     VaultProvider
@@ -231,6 +232,24 @@ func (h *Handler) RetryPlugin(
 		reply.Failure = failure.Reason
 	}
 	return connect.NewResponse(reply), nil
+}
+
+// StopFailedPlugin stops the backend of a plugin whose frontend did not start in the window, and records the
+// plugin as failed with the reason the window gives. A plugin the host does not know is not found.
+func (h *Handler) StopFailedPlugin(
+	ctx context.Context, r *connect.Request[v1.StopFailedPluginRequest],
+) (*connect.Response[v1.StopFailedPluginResponse], error) {
+	if h.PluginStop == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	if _, err := h.PluginStop.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetReason()); err != nil {
+		var unavailable *setting.UnavailableError
+		if errors.As(err, &unavailable) && unavailable.Reason == setting.PluginNotInstalled {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&v1.StopFailedPluginResponse{}), nil
 }
 
 // newWireReasoningLevels is the levels of reasoning as the wire carries them.

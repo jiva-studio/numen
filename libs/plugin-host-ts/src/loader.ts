@@ -23,6 +23,8 @@ export interface PluginLoaderDeps {
   readonly fetch?: typeof fetch
   readonly dynamicImport?: (url: string) => Promise<unknown>
   readonly onError?: (pluginId: string, error: unknown) => void
+  /** Stops the backend of a plugin whose frontend did not start, and records it as failed with the reason. */
+  readonly stopFailedPlugin?: (pluginId: string, reason: string) => void
 }
 
 export const DEFAULT_PLUGIN_ENABLED = true
@@ -42,6 +44,7 @@ interface ActivateContext extends ResolveModuleContext {
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly failures: { value: ReadonlyMap<string, string> }
   readonly reportError: (pluginId: string, error: unknown) => void
+  readonly stopFailedPlugin?: ((pluginId: string, reason: string) => void) | undefined
 }
 
 function getFailureMessage(error: unknown): string {
@@ -101,7 +104,8 @@ async function startEntry(
 
 /**
  * Starts the plugin within PLUGIN_START_LIMIT_MS. A plugin that has not started by then counts as
- * failed, and what its start registers afterwards is taken back.
+ * failed: what it has registered is taken back at once, what its start registers afterwards is taken
+ * back too, it never becomes active, and its backend is stopped.
  */
 async function activateEntry(
   ctx: ActivateContext,
@@ -121,9 +125,11 @@ async function activateEntry(
   const outcome = await Promise.race([starting, limit]).finally(() => clearTimeout(timer))
   if (outcome !== 'expired') return outcome
   isExpired = true
+  discardEntry(ctx, pluginId)
   const error = new Error(`the plugin did not start within ${PLUGIN_START_LIMIT_MS / 1000} s`)
   setFailure(ctx, pluginId, error.message)
   ctx.reportError(pluginId, error)
+  ctx.stopFailedPlugin?.(pluginId, error.message)
   return false
 }
 
@@ -227,6 +233,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
     failures,
     manifests,
     ...defaults,
+    stopFailedPlugin: deps.stopFailedPlugin,
   }
   const deactivateContext: DeactivateDeps = {
     host,

@@ -39,6 +39,7 @@ type pluginSecretAssembly interface {
 type pluginWorkAssembly interface {
 	EmitEvent(event string)
 	OpenRetryPlugin() *settings.RetryPlugin
+	OpenStopFailedPlugin() *settings.StopFailedPlugin
 	ReportPluginFailures(tasks *run.Tasks)
 	SetPluginWork(tasks *run.Tasks, models *run.Lock)
 }
