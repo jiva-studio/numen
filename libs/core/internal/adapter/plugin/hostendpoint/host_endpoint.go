@@ -138,9 +138,9 @@ func (e *Endpoint) Close(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, hostEndpointShutdownTolerance)
 	defer cancel()
 	if err := e.server.Shutdown(ctx); err != nil {
-		closeErr := e.server.Close()
 		// Shutdown waits up to 5 seconds for a connection that has sent no request.
 		isIdle := errors.Is(err, context.DeadlineExceeded) && e.callCount.Load() == 0
+		closeErr := e.server.Close()
 		if !isIdle || closeErr != nil {
 			return fmt.Errorf("close host endpoint: %w", errors.Join(err, closeErr))
 		}
