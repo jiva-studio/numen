@@ -9,7 +9,7 @@ const ArrangeInstructions = "Use note_list to list the notes of the vault or of 
 	"note_rename gives a note another title and moves its file to the title's file name, note_move moves notes to a folder, and note_remove moves notes to the vault's trash, from where they can be put back; the host writes again the links that named a renamed or moved note by its old name. " +
 	"link_add, link_update and link_remove write the links in the frontmatter of a note and need the fingerprint note_read gave for that note; a stale fingerprint is refused, so read the note again. " +
 	"vault_add adds a folder as a vault, vault_rename changes the name of a vault, and vault_remove takes a vault off the list and leaves its folder on the disk. " +
-	"vault_open switches the user's window to another vault and ends this session's access to the vault it works on, so call it only when the user asks for it. When the window has unsaved changes, vault_open switches nothing and returns an error that asks the user to save them."
+	"vault_open switches the user's window to another vault and ends this session's access to the vault it works on, so call it only when the user asks for it. When the window has unsaved changes, vault_open switches nothing, the window asks the user about them, and the error says to call it again after the user answers."
 
 // citeInstructions is the instruction paragraph for naming notes and passages, and for note_search,
 // library_search, library_read and file_read.

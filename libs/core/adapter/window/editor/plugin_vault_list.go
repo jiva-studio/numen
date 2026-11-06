@@ -52,11 +52,12 @@ func (l pluginVaultList) RemoveVault(ctx context.Context, id domain.VaultID) err
 }
 
 // OpenVault rejects a vault whose folder is not the vault, as a change of vault does, and switches
-// the window through State.OpenVault, which flushes the pages silently first. It runs under the
-// exclusion a close and a change of vault take and never ends their flush request. A close, a quit
-// or a change of vault of the user cancels it, as does the end of the call, and it returns
-// ErrUnavailable. A flush request with a question unanswered, or a page that answers ASKING, returns
-// ErrUnsavedChanges and leaves no flush request of its own open.
+// the window through State.OpenVault, which flushes the pages first. It runs under the exclusion a
+// close and a change of vault take and never ends their flush request. A close, a quit or a change
+// of vault of the user cancels it, as does the end of the call, and it returns ErrUnavailable. A
+// page that answers ASKING keeps the flush request open for the user's answer, and OpenVault
+// returns ErrUnsavedChanges; while that question is unanswered, it returns ErrUnsavedChanges
+// without a flush.
 func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error {
 	v, err := l.scenarios.Find.Execute(string(id))
 	if err != nil {
@@ -81,10 +82,11 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 	case err == nil:
 		return nil
 	case ctx.Err() != nil:
-		l.state.Window.CancelFlush()
+		if !l.state.Window.IsQuestionOpen() {
+			l.state.Window.CancelFlush()
+		}
 		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, context.Cause(ctx))
 	case errors.Is(err, errAnswerPending):
-		l.state.Window.CancelFlush()
 		return fmt.Errorf("open vault %s: %w", id, pluginport.ErrUnsavedChanges)
 	}
 	return err

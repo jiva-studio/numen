@@ -7,9 +7,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ErrUnsavedChanges is what OpenVault returns when a page holds text it cannot write without the
-// user, or a request to the pages is open for a question. The window keeps its vault.
-var ErrUnsavedChanges = errors.New("the window has unsaved changes; save them and ask again")
+// ErrUnsavedChanges is what OpenVault returns while the window asks the user about text a page
+// cannot write without them. The window keeps its vault.
+var ErrUnsavedChanges = errors.New("the user is asked about unsaved changes in the window; ask again after they answer")
 
 // PluginVaultList is the installation's list of vaults and the vault the window shows, as the
 // plugins that hold vault:manage change them. The window provides it; a host with no window has

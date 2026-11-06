@@ -21,9 +21,9 @@ var (
 	ErrLastVault = errors.New("host: the vault is the only one of the installation")
 	// ErrVaultShowing is what a removal gets for the vault the window shows.
 	ErrVaultShowing = errors.New("host: the window shows the vault")
-	// ErrUnsavedChanges is what an open gets when the window has unsaved changes. The window keeps
-	// its vault.
-	ErrUnsavedChanges = errors.New("host: the window has unsaved changes")
+	// ErrUnsavedChanges is what an open gets while the window asks the user about unsaved changes.
+	// The window keeps its vault.
+	ErrUnsavedChanges = errors.New("host: the user is asked about unsaved changes in the window; ask again after they answer")
 )
 
 // VaultEntry is a vault on the installation's list, and whether nothing is at its folder.

@@ -103,7 +103,8 @@ func (t *Tools) addVaultOpen(registry *tools.Registry) error {
 		Title: "Open Vault",
 		Description: "Make the window show another vault, named by its name, path or identifier, and answer " +
 			"once the window shows it; this session's view of the vault it works on then ends. A window with " +
-			"unsaved changes keeps its vault and the answer is an error. Call it " +
+			"unsaved changes keeps its vault, asks the user about them, and the answer is an error; call it " +
+			"again after the user answers. Call it " +
 			"only when the user asks for it.",
 		Effect:  tools.ReadWrite,
 		Servers: []tools.Server{tools.Full},
