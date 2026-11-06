@@ -216,7 +216,7 @@ func (s *importScene) callImport(t *testing.T, vault string, in importArguments)
 func (s *importScene) importURL(t *testing.T, vault string, in importArguments) importAnswer {
 	t.Helper()
 	res := s.callImport(t, vault, in)
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("url_import of %s in %s was refused: %s", in.URL, vault, res.GetResult().GetText())
 	}
 	var out importAnswer
@@ -327,7 +327,7 @@ func TestURLImportReportsAFailedFetchAndKeepsTheNote(t *testing.T) {
 
 	res := s.callImport(t, "Mills", importArguments{URL: brokenAddress})
 
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("a failed fetch was refused: %s", res.GetResult().GetText())
 	}
 	var out importAnswer
@@ -347,7 +347,7 @@ func TestURLImportRefusesWhatIsNoWebAddressAndMakesNoNote(t *testing.T) {
 
 	for _, raw := range []string{"not-a-url", "ftp://tides.example/archive", "tides.example/articles"} {
 		res := s.callImport(t, "Mills", importArguments{URL: raw})
-		if !res.GetResult().GetIsRefusal() {
+		if !res.GetResult().GetIsError() {
 			t.Errorf("%q returned %s, want a refusal", raw, res.GetResult().GetStructured())
 		}
 	}
@@ -361,7 +361,7 @@ func TestURLImportRefusesACallThatNamesNoVault(t *testing.T) {
 
 	res := s.callImport(t, "", importArguments{URL: articleAddress})
 
-	if !res.GetResult().GetIsRefusal() {
+	if !res.GetResult().GetIsError() {
 		t.Errorf("a call with no vault returned %s, want a refusal", res.GetResult().GetStructured())
 	}
 	if notes := getLinkNotes(t, s.vault); len(notes) != 0 {

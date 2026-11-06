@@ -219,7 +219,7 @@ func TestLibraryReadReturnsTheNextStartKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatal(res.GetResult().GetText())
 	}
 	answer := decodeAnswer(t, res.GetResult().GetStructured())

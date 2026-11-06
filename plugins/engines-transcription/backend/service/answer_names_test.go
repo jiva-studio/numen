@@ -167,7 +167,7 @@ func TestTranscriptCreateReturnsTheTaskIDKey(t *testing.T) {
 	res := invokeAtOnce(t, s.registry, tools.Call{
 		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"` + lecture + `"}`),
 	})
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("transcript_create was refused: %s", res.GetResult().GetText())
 	}
 	answer := decodeAnswer(t, res.GetResult().GetStructured())

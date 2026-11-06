@@ -86,7 +86,7 @@ func callTool(t *testing.T, registry *tools.Registry, vaultID, name, arguments s
 	if res.GetError() != tools.ErrorCodeUnspecified {
 		t.Fatalf("call %s %s: error code %v", name, arguments, res.GetError())
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("call %s %s refused: %s", name, arguments, res.GetResult().GetText())
 	}
 	return res.GetResult().GetStructured()
@@ -102,7 +102,7 @@ func requireRefusal(t *testing.T, registry *tools.Registry, vaultID, name, argum
 	if res.GetError() == tools.ErrorCodeUnknownTool {
 		t.Fatalf("call %s: the tool is unknown", name)
 	}
-	if !res.GetResult().GetIsRefusal() && res.GetError() == tools.ErrorCodeUnspecified {
+	if !res.GetResult().GetIsError() && res.GetError() == tools.ErrorCodeUnspecified {
 		t.Errorf("call %s %s was not refused: %s", name, arguments, res.GetResult().GetStructured())
 	}
 }
@@ -423,7 +423,7 @@ func TestNoteListGroupRefusesCallWithoutVault(t *testing.T) {
 			t.Errorf("call %s: the tool is unknown", name)
 			continue
 		}
-		if !res.GetResult().GetIsRefusal() || res.GetResult().GetText() != "the call names no vault" {
+		if !res.GetResult().GetIsError() || res.GetResult().GetText() != "the call names no vault" {
 			t.Errorf("a call of %s naming no vault answered %v", name, res.GetResult())
 		}
 	}

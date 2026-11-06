@@ -56,7 +56,7 @@ func TestWindowTabsGetEmpty(t *testing.T) {
 		t.Fatalf("CallTool: %v", err)
 	}
 	result := resp.GetResult()
-	if result.GetIsRefusal() {
+	if result.GetIsError() {
 		t.Fatalf("unexpected refusal: %s", result.GetText())
 	}
 
@@ -135,7 +135,7 @@ func TestEditPreviewFromVault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if resp.GetResult().GetIsRefusal() {
+	if resp.GetResult().GetIsError() {
 		t.Fatalf("refusal: %s", resp.GetResult().GetText())
 	}
 
@@ -252,7 +252,7 @@ func TestEditPreviewValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if !resp.GetResult().GetIsRefusal() {
+	if !resp.GetResult().GetIsError() {
 		t.Errorf("expected refusal for missing path")
 	}
 
@@ -265,7 +265,7 @@ func TestEditPreviewValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if !resp.GetResult().GetIsRefusal() {
+	if !resp.GetResult().GetIsError() {
 		t.Errorf("expected refusal for missing content and diff")
 	}
 }

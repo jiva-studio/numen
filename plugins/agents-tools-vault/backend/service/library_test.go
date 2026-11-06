@@ -132,7 +132,7 @@ func (l library) call(t *testing.T, name, arguments string, out any) (failure st
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		return res.GetResult().GetText()
 	}
 	if res.GetError() != tools.ErrorCodeUnspecified {

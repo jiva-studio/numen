@@ -95,7 +95,7 @@ func (w windowTools) call(t *testing.T, name, arguments string, callContext map[
 	if res.GetError() != tools.ErrorCodeUnspecified {
 		t.Fatalf("%s gave error code %v", name, res.GetError())
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		if text := res.GetResult().GetText(); text != "" {
 			return text
 		}

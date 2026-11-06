@@ -167,7 +167,7 @@ func TestRecognitionCreateReturnsTheTaskIDKey(t *testing.T) {
 	res := invokeAtOnce(t, s.registry, tools.Call{
 		VaultID: "Physics", Name: "recognition_create", Arguments: []byte(`{"path":"` + scanPath + `"}`),
 	})
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("recognition_create was refused: %s", res.GetResult().GetText())
 	}
 	answer := decodeAnswer(t, res.GetResult().GetStructured())

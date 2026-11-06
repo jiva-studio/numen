@@ -170,7 +170,7 @@ func (w windowTools) getAnswer(t *testing.T, name, arguments string) map[string]
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.GetError() != tools.ErrorCodeUnspecified || res.GetResult().GetIsRefusal() {
+	if res.GetError() != tools.ErrorCodeUnspecified || res.GetResult().GetIsError() {
 		t.Fatalf("%s %s failed: %v %s", name, arguments, res.GetError(), res.GetResult().GetText())
 	}
 	return decodeAnswer(t, res.GetResult().GetStructured())

@@ -167,7 +167,7 @@ func getNarrativeMarkers() []*regexp.Regexp {
 func (s *importScene) getImportAnswer(t *testing.T, arguments string) map[string]any {
 	t.Helper()
 	res := invokeAtOnce(t, s.registry, tools.Call{VaultID: "Mills", Name: "url_import", Arguments: []byte(arguments)})
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("url_import %s was refused: %s", arguments, res.GetResult().GetText())
 	}
 	return decodeAnswer(t, res.GetResult().GetStructured())
