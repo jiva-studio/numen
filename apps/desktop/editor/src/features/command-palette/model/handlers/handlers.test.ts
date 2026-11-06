@@ -1173,3 +1173,15 @@ describe('the command of a setting', () => {
     expect(one.severities).toStrictEqual(['error'])
   })
 })
+
+describe('a note renamed onto a name another file has', () => {
+  it('shows the error and changes nothing in the window', async () => {
+    const one = window({ renamed: asFailure('alreadyExists' as const) })
+
+    await carry(createInvocation('app:note.rename', front(), 'Entropy'), one.on)
+
+    expect(one.notices).toStrictEqual([words.errors.alreadyExists])
+    expect(one.severities).toStrictEqual(['error'])
+    expect(one.actions).toStrictEqual(['flushPending active', 'rename physics/Ontology.md Entropy'])
+  })
+})

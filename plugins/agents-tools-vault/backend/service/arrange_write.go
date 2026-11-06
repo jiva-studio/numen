@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
@@ -115,6 +117,9 @@ func (t *Tools) renameNote(ctx context.Context, in NoteRenameInput) (NoteRenameO
 		return NoteRenameOutput{}, errors.New("title required")
 	}
 	result, err := t.vault.RenameNote(ctx, in.Path, in.Title)
+	if errors.Is(err, host.ErrAlreadyExists) {
+		return NoteRenameOutput{}, newTakenFilenameError(in.Path, in.Title, err)
+	}
 	if err != nil {
 		return NoteRenameOutput{}, fmt.Errorf("rename note %s: %w", in.Path, err)
 	}
@@ -197,4 +202,18 @@ func getPathList(paths []string) []string {
 		return []string{}
 	}
 	return paths
+}
+
+// newTakenFilenameError is the refusal of a rename whose title gives the filename of a file already in
+// the note's folder. The path is the one the host moves the note to: the folder joined with the
+// filename of the title and the note's extension.
+func newTakenFilenameError(notePath, title string, err error) error {
+	title = strings.TrimSpace(title)
+	name, _, nameErr := domain.Filename(title)
+	if nameErr != nil {
+		return fmt.Errorf("%s was not changed: %w", notePath, err)
+	}
+	target := path.Join(path.Dir(notePath), name+path.Ext(notePath))
+	return fmt.Errorf("%s was not changed: %s is already there, so the note cannot take the title %s: %w",
+		notePath, target, title, err)
 }

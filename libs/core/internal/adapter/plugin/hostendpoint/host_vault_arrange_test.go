@@ -729,3 +729,45 @@ func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
 		t.Errorf("the move came out as %v, want Danube.md to Donau.md", moved)
 	}
 }
+
+func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
+	for name, c := range map[string]struct {
+		err     error
+		want    v1.VaultsErrorCode
+		message string
+	}{
+		"home folder": {
+			err:     fmt.Errorf("%w: %w", vaults.ErrUnreadable, errors.New("/Users/river is the person's home directory, and a vault is a folder inside it")),
+			want:    v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE,
+			message: "/Users/river is the person's home directory, and a vault is a folder inside it",
+		},
+		"filesystem root": {
+			err:     fmt.Errorf("%w: %w", vaults.ErrUnreadable, errors.New("/ is the root of this filesystem, and a vault is a folder somebody keeps notes in")),
+			want:    v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE,
+			message: "/ is the root of this filesystem, and a vault is a folder somebody keeps notes in",
+		},
+		"folder inside a vault": {
+			err:     fmt.Errorf("/vaults/Rivers/Deltas lies inside Rivers: %w", domain.ErrOverlaps),
+			want:    v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS,
+			message: "/vaults/Rivers/Deltas lies inside Rivers",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			list := newRecordingList()
+			list.err = c.err
+			client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
+
+			res, err := client.AddVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if res.Msg.Failure == nil || res.Msg.GetFailure() != c.want {
+				t.Errorf("AddVault returned %v, want failure %s", res.Msg, c.want)
+			}
+			if !strings.Contains(res.Msg.GetDetail(), c.message) {
+				t.Errorf("the detail is %q, want it to carry %q", res.Msg.GetDetail(), c.message)
+			}
+		})
+	}
+}

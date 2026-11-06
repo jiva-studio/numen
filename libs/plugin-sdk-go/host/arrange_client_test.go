@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 
@@ -332,5 +333,34 @@ func TestTheClientReturnsEachFailureOfTheListOfVaultsAsItsError(t *testing.T) {
 				t.Errorf("%s with failure %s: got %v, want %v", call, code, err, want)
 			}
 		}
+	}
+}
+
+// detailedAdding is a host whose AddVault refuses the folder with the core's message.
+type detailedAdding struct {
+	arranging
+	detail string
+}
+
+func (a *detailedAdding) AddVault(
+	context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest],
+) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
+	failure := v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE
+	return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Failure: &failure, Detail: a.detail}), nil
+}
+
+func TestTheClientReturnsTheCoreMessageOfARejectedFolder(t *testing.T) {
+	const detail = "/Users/river is the person's home directory, and a vault is a folder inside it"
+	server := httptest.NewServer(handler(&detailedAdding{detail: detail}))
+	t.Cleanup(server.Close)
+	client := host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
+
+	_, err := client.AddVault(t.Context(), "/Users/river", "")
+
+	if !errors.Is(err, host.ErrVaultUnreadable) {
+		t.Errorf("AddVault of the home folder returned %v, want ErrVaultUnreadable", err)
+	}
+	if err == nil || !strings.Contains(err.Error(), detail) {
+		t.Errorf("the error is %v, want it to carry %q", err, detail)
 	}
 }
