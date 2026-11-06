@@ -207,3 +207,23 @@ func TestAPluginRunsTheChecksOfTheVault(t *testing.T) {
 		t.Errorf("the dangling problems were %+v, want one against Lakes.md for Baikal", found)
 	}
 }
+
+func TestPluginRenameToExistingFilenameKeepsNoteUnchanged(t *testing.T) {
+	const danube = "---\ntitle: Danube\n---\n# Danube\n\nA river of central Europe.\n"
+	v, shared := openScannedPluginVault(t, map[string]string{
+		"Rivers/Danube.md": danube,
+		"Rivers/Deltas.md": "# Deltas\n",
+	}, container.PluginVaultHooks{})
+
+	_, _, _, err := shared.RenameNote(t.Context(), "Rivers/Danube.md", "Deltas")
+
+	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+		t.Errorf("the rename onto Rivers/Deltas.md returned %v, want ErrAlreadyExists", err)
+	}
+	if content, found := readVaultFile(t, v, "Rivers/Danube.md"); !found || content != danube {
+		t.Errorf("Rivers/Danube.md holds %q (found %v), want it unchanged:\n%q", content, found, danube)
+	}
+	if content, _ := readVaultFile(t, v, "Rivers/Deltas.md"); content != "# Deltas\n" {
+		t.Errorf("Rivers/Deltas.md holds %q, want it unchanged", content)
+	}
+}
