@@ -56,7 +56,7 @@ The window a person runs their cards in opens neither: an answer there states in
 
 ## The tools
 
-Three plugins register the tools an agent can call, each for its own subject, and `agents-mcp-server` serves them. The server column says where each is offered: `full`, `reading`, or both.
+Six plugins register the tools an agent can call, each for its own subject, and `agents-mcp-server` serves them. The server column says where each is offered: `full`, `reading`, or both.
 
 `agents-tools-vault`, the notes and files of the vault:
 
@@ -106,6 +106,14 @@ Three plugins register the tools an agent can call, each for its own subject, an
 | `card_remove`                                                    | remove one card from a deck                                                     | full    |
 | `card_section_add`, `card_section_rename`, `card_section_remove` | write, rename and remove the sections a deck is divided into                    | full    |
 
+`engines-ocr`, `engines-transcription` and `tools-media-importer`, the text versions of scans, recordings and web addresses:
+
+| Tool                 | What it does                                                                                                                                  | Servers |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `recognition_create` | start the recognition of a scanned PDF or image in the background and return its task id; a second call while it runs reports `running`       | full    |
+| `transcript_create`  | start the transcription of a recording in the background and return its task id; a second call while it runs reports `running`                | full    |
+| `url_import`         | create a link note for an http or https address, fetch its text before returning, and with `copy` start a copy of the video in the background | full    |
+
 A card is named by its card id and never by the place it is in, so the cards stay addressable when a deck is reordered during a run. Every write to a deck takes the fingerprint `card_read` returned, and is applied only to the deck that fingerprint identifies.
 
 `file_read` is how a text file that is not a note is read — a transcript somebody typed, an export, whatever text they put in the folder — and how a file too long to return whole is read one range at a time. A binary file, such as a PDF, is read with `library_read`.
@@ -118,7 +126,7 @@ A tool is named for the subject it acts on, then what it does: `note_read`, `car
 
 A tool declares the servers it is offered on: the full server, which gives an agent access to the whole vault, and the reading server, whose tools all read. A tool that writes is on the full server alone; a tool that reads is on both. `card_current` returns the card shown to the person in the window they run their cards in, and an empty deck between cards.
 
-The tools are registered by the plugins that own their subjects — `agents-tools-vault`, `agents-tools-window`, `views-flashcards-studio` — and `agents-mcp-server` gathers the tools of every plugin and of the host and serves them to an agent.
+The tools are registered by the plugins that own their subjects — `agents-tools-vault`, `agents-tools-window`, `views-flashcards-studio`, `engines-ocr`, `engines-transcription`, `tools-media-importer` — and `agents-mcp-server` gathers the tools of every plugin and of the host and serves them to an agent.
 
 ## An agent a person runs themselves
 

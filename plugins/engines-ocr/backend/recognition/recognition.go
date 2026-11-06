@@ -115,7 +115,7 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 		on = reach{vault: on.vault.With(req.Vault), store: on.store.With(req.Vault), texts: on.texts.With(req.Vault)}
 	}
 	task := host.Task{
-		ID: "recognise:" + req.Path, Title: "Recognising " + path.Base(req.Path), Detail: req.Path,
+		ID: GetTaskID(req.Path), Title: "Recognising " + path.Base(req.Path), Detail: req.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: req.IsUserStarted,
 	}
 	res, err := r.recognise(ctx, on, req, &task)
@@ -130,6 +130,18 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 		return res, finishErr
 	}
 	return res, err
+}
+
+// GetTaskID is the id of the recognition of a file in the list of tasks.
+func GetTaskID(filePath string) string { return "recognise:" + filePath }
+
+// StatFile is the metadata of a file of a vault, empty for the vault the host shows.
+func (r *Recognition) StatFile(ctx context.Context, vault domain.VaultID, filePath string) (domain.FileStat, error) {
+	on := r.host.Vault
+	if vault != "" {
+		on = on.With(vault)
+	}
+	return on.StatFile(ctx, filePath)
 }
 
 // isMissing reports whether the file is no longer in the vault.

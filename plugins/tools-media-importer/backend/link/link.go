@@ -171,9 +171,9 @@ func newLink(path string, parsed address.URL, raw []byte) Link {
 // getKey names what is stored for the text of an address.
 func getKey(parsed address.URL) string { return domain.HashContent([]byte(parsed)) }
 
-// Create makes the link note of an address in a folder of the vault the host shows, named by the
-// address.
-func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
+// Create makes the link note of an address in a folder of a vault, named by the address. An empty
+// vault is the vault the host shows.
+func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, error) {
 	parsed, err := address.Parse(raw)
 	if err != nil {
 		return Link{}, err
@@ -197,12 +197,16 @@ func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
 	if err := errors.Join(doc.SetScalar(typeKey, string(NoteType)), doc.SetScalar(urlKey, string(parsed))); err != nil {
 		return Link{}, err
 	}
+	target := l.host.Vault
+	if vault != "" {
+		target = target.With(vault)
+	}
 	path := pathpkg.Join(folder, name+domain.NoteExtension)
 	content := doc.Bytes()
-	if err := l.host.Vault.Create(ctx, path, content); err != nil {
+	if err := target.Create(ctx, path, content); err != nil {
 		return Link{}, err
 	}
-	return newLinkIn(ctx, l.host.Vault, path, parsed, content)
+	return newLinkIn(ctx, target, path, parsed, content)
 }
 
 // getStore is the plugin's folder in the vault of the link.
@@ -331,6 +335,9 @@ const (
 
 func getTaskID(work, path string) string { return work + ":" + path }
 
+// GetCopyTaskID is the id of the copy of the video of a link note in the list of tasks.
+func GetCopyTaskID(path string) string { return getTaskID("copy", path) }
+
 // FetchText fetches the text published at a link's address and stores it as a
 // text version of the link. An address that publishes no text is marked as such.
 // A fetch not requested by the user skips an address marked as publishing no
@@ -458,7 +465,7 @@ func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
 		return 0, ErrNotCopyable
 	}
 	task := host.Task{
-		ID: getTaskID("copy", link.Path), Title: copyingVideo, Detail: link.Path,
+		ID: GetCopyTaskID(link.Path), Title: copyingVideo, Detail: link.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitBytes, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
@@ -566,6 +573,29 @@ func (l *Links) ReadArticle(ctx context.Context, link Link) (string, error) {
 func (l *Links) GetTitle(ctx context.Context, link Link) (string, error) {
 	rec, err := folder{store: l.getStore(link)}.readRecord(ctx, link.Key)
 	return rec.Title, err
+}
+
+// TextInfo describes the text fetched for a link. IsNothing is set for an address marked as
+// publishing no text.
+type TextInfo struct {
+	Title     string
+	Producer  string
+	IsNothing bool
+}
+
+// GetTextInfo is the title and the producer of the text fetched for a link, and whether its address
+// publishes no text. A link with no text fetched has an empty title and producer.
+func (l *Links) GetTextInfo(ctx context.Context, link Link) (TextInfo, error) {
+	folder := folder{store: l.getStore(link)}
+	isNone, err := folder.isNone(ctx, link.Key)
+	if err != nil {
+		return TextInfo{}, err
+	}
+	rec, err := folder.readRecord(ctx, link.Key)
+	if err != nil {
+		return TextInfo{}, err
+	}
+	return TextInfo{Title: rec.Title, Producer: rec.Producer, IsNothing: isNone}, nil
 }
 
 // reportTask shows a task. A host that cannot show it leaves the work to go on unseen.

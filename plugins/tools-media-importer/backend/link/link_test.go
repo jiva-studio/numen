@@ -96,7 +96,7 @@ func newWorld(t *testing.T) *world {
 // create makes the link note of an address, and gives the texts its file as the host would.
 func (w *world) create(t *testing.T, address string) link.Link {
 	t.Helper()
-	made, err := w.links.Create(t.Context(), "links", address)
+	made, err := w.links.Create(t.Context(), "", "links", address)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,10 +120,10 @@ func TestCreateMakesANoteOfTypeLinkWithTheAddress(t *testing.T) {
 	if err != nil || read != made {
 		t.Errorf("the link reads back as %+v (%v), want %+v", read, err, made)
 	}
-	if _, err := w.links.Create(t.Context(), "links", articleAddress); !errors.Is(err, host.ErrAlreadyExists) {
+	if _, err := w.links.Create(t.Context(), "", "links", articleAddress); !errors.Is(err, host.ErrAlreadyExists) {
 		t.Errorf("a second link of one address was answered %v", err)
 	}
-	if _, err := w.links.Create(t.Context(), "", "file:///etc/passwd"); !errors.Is(err, address.ErrNotAURL) {
+	if _, err := w.links.Create(t.Context(), "", "", "file:///etc/passwd"); !errors.Is(err, address.ErrNotAURL) {
 		t.Errorf("a file address was answered %v", err)
 	}
 	w.vault.File("notes/plain.md", "---\ntype: deck\nurl: https://a.example/\n---\n")

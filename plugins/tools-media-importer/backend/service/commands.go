@@ -34,7 +34,7 @@ func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error)
 // A video published there is copied in the background.
 func newImportCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		made, err := links.Create(ctx, "", req.Arguments.GetString("address"))
+		made, err := links.Create(ctx, "", "", req.Arguments.GetString("address"))
 		if err != nil {
 			return command.Result{}, err
 		}

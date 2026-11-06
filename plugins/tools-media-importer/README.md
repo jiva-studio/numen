@@ -8,6 +8,7 @@ Save web articles and online videos (such as YouTube lectures) into your vault f
 
 - **Save articles for offline reading**: Paste a web link to save a clean, readable copy of the article into your vault.
 - **Download videos and captions**: Save online videos along with their subtitles so you can watch them offline in the Media Player, search their transcripts, and quote from them in your notes.
+- **Ask the agent to import a link**: The agent in the chat panel can save an address with the tool `url_import`, which creates the link note, fetches its text and, when asked, copies the video.
 
 ## Settings
 

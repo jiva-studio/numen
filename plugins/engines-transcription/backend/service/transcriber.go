@@ -44,8 +44,9 @@ type Transcriber struct {
 	closeOnce sync.Once
 	wg        sync.WaitGroup
 
-	mu      sync.Mutex
-	running map[string]bool
+	mu       sync.Mutex
+	isClosed bool
+	running  map[string]bool
 }
 
 // NewTranscriber is the transcriber over what the host gives the plugin.
@@ -53,12 +54,16 @@ func NewTranscriber(files Files, stores host.Store, texts host.Texts, queue host
 	return &Transcriber{
 		files: files, stores: stores, texts: texts, queue: queue, engines: engines,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
-		mu: sync.Mutex{}, running: map[string]bool{},
+		mu: sync.Mutex{}, isClosed: false, running: map[string]bool{},
 	}
 }
 
-// Close stops every transcription and waits for them.
+// Close stops every transcription and waits for them. A transcription asked for after Close is not
+// started.
 func (t *Transcriber) Close() {
+	t.mu.Lock()
+	t.isClosed = true
+	t.mu.Unlock()
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing channel cancels in-flight transcriptions"
 	t.closeOnce.Do(func() { close(t.closing) })
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Wait synchronizes shutdown with active goroutines"
@@ -81,19 +86,72 @@ func (t *Transcriber) withClosing(ctx context.Context) (context.Context, context
 // getTaskID is what the transcription of one recording is called in the list of tasks.
 func getTaskID(path string) string { return "transcription:" + path }
 
-// errAlreadyTranscribing is a recording another run is transcribing.
-var errAlreadyTranscribing = errors.New("the recording is already being transcribed")
+var (
+	// errAlreadyTranscribing is a recording another run is transcribing.
+	errAlreadyTranscribing = errors.New("the recording is already being transcribed")
+	// errClosed is a transcription asked for after Close.
+	errClosed = errors.New("the transcriber is closed")
+)
+
+// readRecording returns the bytes of the recording a run transcribes.
+type readRecording func(ctx context.Context) ([]byte, error)
 
 // Transcribe transcribes a recording and returns once its transcript is written, with the error the
 // transcription stopped on. It ends when ctx ends or the plugin stops.
 func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path string) error {
+	key, err := t.claimOrFail(vault, path)
+	if err != nil {
+		return err
+	}
+	return t.runClaimed(ctx, key, vault, path, func(ctx context.Context) ([]byte, error) {
+		return t.files.ReadFile(ctx, vault, path)
+	})
+}
+
+// Start claims the recording and transcribes it in the background, and is false where a run already
+// has it. The error is a recording that cannot be read, checked before Start returns. Close cancels
+// the transcription and waits for it.
+func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path string) (bool, error) {
 	key, isClaimed := t.claim(vault, path)
 	if !isClaimed {
-		return fmt.Errorf("%s: %w", path, errAlreadyTranscribing)
+		if t.isClosing() {
+			return false, errClosed
+		}
+		return false, nil
 	}
+	raw, err := t.files.ReadFile(ctx, vault, path)
+	if err != nil {
+		t.clearRunning(key)
+		return false, fmt.Errorf("read %s: %w", path, err)
+	}
+	go func() {
+		// Run reports a failure as the task's error.
+		// gomutants:disable-next-line BRANCH_IF,CONDITIONALS_NEGATION reason="best-effort stderr diagnostic log does not affect transcription control flow"
+		if err := t.runClaimed(context.WithoutCancel(ctx), key, vault, path, func(context.Context) ([]byte, error) {
+			return raw, nil
+		}); err != nil && !errors.Is(err, context.Canceled) {
+			fmt.Fprintf(os.Stderr, "engines-transcription: transcribe %s: %v\n", path, err)
+		}
+	}()
+	return true, nil
+}
+
+// claimOrFail claims the recording, and returns the error that names why it cannot be claimed.
+func (t *Transcriber) claimOrFail(vault domain.VaultID, path string) (string, error) {
+	key, isClaimed := t.claim(vault, path)
+	switch {
+	case isClaimed:
+		return key, nil
+	case t.isClosing():
+		return "", fmt.Errorf("%s: %w", path, errClosed)
+	default:
+		return "", fmt.Errorf("%s: %w", path, errAlreadyTranscribing)
+	}
+}
+
+// runClaimed transcribes a claimed recording, reported as a task, and releases the claim.
+func (t *Transcriber) runClaimed(ctx context.Context, key string, vault domain.VaultID, path string, read readRecording) error {
 	defer t.clearRunning(key)
-	t.wg.Add(1)
-	defer t.wg.Done()
 	ctx, cancel := t.withClosing(ctx)
 	defer cancel()
 
@@ -104,18 +162,20 @@ func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path
 	}); err != nil {
 		return err
 	}
-	return t.transcribe(ctx, vault, path)
+	return t.transcribe(ctx, vault, path, read)
 }
 
-// claim marks the recording as being transcribed, and is false where a run already has it.
+// claim marks the recording as being transcribed and counts the run for Close, and is false where a
+// run already has it or the transcriber is closed. clearRunning releases the claim.
 func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
 	key := string(vault) + "\x00" + path
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if t.running[key] {
+	if t.isClosed || t.running[key] {
 		return key, false
 	}
 	t.running[key] = true
+	t.wg.Add(1)
 	return key, true
 }
 
@@ -123,12 +183,19 @@ func (t *Transcriber) clearRunning(key string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	delete(t.running, key)
+	t.wg.Done()
+}
+
+func (t *Transcriber) isClosing() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.isClosed
 }
 
 // transcribe is one recording heard and reported. A failure stays in the list of tasks under the
 // recording until the next run of it.
-func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string) error {
-	err := t.run(ctx, vault, path)
+func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string, read readRecording) error {
+	err := t.run(ctx, vault, path, read)
 	switch {
 	case err == nil, errors.Is(err, context.Canceled):
 		t.finishTask(ctx, path)
@@ -153,8 +220,8 @@ type job struct {
 	turn     host.Turn
 }
 
-func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string) (err error) {
-	raw, err := t.files.ReadFile(ctx, vault, path)
+func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string, read readRecording) (err error) {
+	raw, err := read(ctx)
 	if err != nil {
 		return fmt.Errorf("read %s: %w", path, err)
 	}

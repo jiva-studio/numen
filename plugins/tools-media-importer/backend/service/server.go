@@ -114,8 +114,9 @@ func getLanguages(value string) []string {
 	return out
 }
 
-// Mount registers the importer API and the commands on s over the host given. A
-// video site is reached through the mock downloader where isMock is set. The fetches end with s.
+// Mount registers the importer API, the commands and the agent tool url_import on s over the host
+// given. A video site is reached through the mock downloader where isMock is set. The fetches end
+// with s.
 func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	f := newFetchers(isMock)
 	links := link.New(hosted, f.getFetcher, f.getSettings)
@@ -129,7 +130,12 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	if err := mountAPI(s, links); err != nil {
 		return err
 	}
+	registry, err := NewTools(links).Registry()
+	if err != nil {
+		return err
+	}
 	command.Mount(s, commands)
+	registry.Mount(s)
 	s.RegisterRoute(embedPattern, http.HandlerFunc(serveEmbed))
 	s.OnClose(func() error {
 		links.Close()

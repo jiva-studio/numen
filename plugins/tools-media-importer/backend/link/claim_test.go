@@ -488,7 +488,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	l, v, _, hs, ht, hq, sf, maxSize := createTestLinks()
 	t.Cleanup(l.Close)
 
-	made, err := l.Create(ctx, "links", "https://example.com/a")
+	made, err := l.Create(ctx, "", "links", "https://example.com/a")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,9 +1,10 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.7",
+  "version": "2026.11.8",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
+  "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [

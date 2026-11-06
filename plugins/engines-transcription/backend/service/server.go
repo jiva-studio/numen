@@ -132,7 +132,7 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 	return cfg
 }
 
-// Mount registers the text provider on s over the host given. The model
+// Mount registers the commands and the agent tool transcript_create on s over the host given. The model
 // is the mock one where isMock is set. The transcriptions and the model end with s.
 func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error {
 	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: newParakeetOpener(engine.NewRuntime()), current: nil}
@@ -145,7 +145,12 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error 
 	if err := commands.Add("transcript.delete", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID)); err != nil {
 		return err
 	}
+	registry, err := NewTools(transcriber).Registry()
+	if err != nil {
+		return err
+	}
 	command.Mount(s, commands)
+	registry.Mount(s)
 	s.OnClose(func() error {
 		transcriber.Close()
 		return model.close()
