@@ -99,3 +99,24 @@ func TestAlphabetReadsMetadataAndHandlesErrors(t *testing.T) {
 		t.Fatalf("alphabet with invalid TMPDIR = (%d, %v), want error", gotClasses, err)
 	}
 }
+
+// The dictionary written for a recogniser is removed once the recogniser is opened, and when it fails to open.
+func TestTheDictionaryWrittenForARecogniserIsRemovedAfterItOpens(t *testing.T) {
+	dict := filepath.Join(t.TempDir(), "letters.txt")
+	if err := os.WriteFile(dict, []byte("а\nб\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	scratch := t.TempDir()
+	t.Setenv("TMPDIR", scratch)
+
+	if _, err := openLine("", "detect.onnx", "model.onnx", Config{Recognise: RecogniserModel{Dict: dict}}); err == nil {
+		t.Fatal("a recogniser without a runtime opened")
+	}
+	entries, err := os.ReadDir(scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		t.Errorf("the temporary folder holds %s after the recogniser was opened", entry.Name())
+	}
+}
