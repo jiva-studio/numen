@@ -422,7 +422,7 @@ func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKi
 		return err
 	}
 	for _, version := range listing.Versions {
-		if version.Key == link.Key && version.SourceHash == link.Hash {
+		if version.Key == link.Key && version.InputHash == link.Hash {
 			return nil
 		}
 	}
@@ -432,7 +432,7 @@ func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKi
 // putVersion puts the text stored for a link to the host as the link's version.
 func (l *Links) putVersion(ctx context.Context, link Link, kind domain.TextKind) error {
 	_, err := l.getTexts(link).PutVersion(ctx, host.TextPut{
-		Path: link.Path, Key: link.Key, Source: "", Kind: kind, SourceHash: link.Hash, File: link.Key + textExt,
+		Path: link.Path, Key: link.Key, Source: "", Kind: kind, InputHash: link.Hash, File: link.Key + textExt,
 	})
 	return err
 }

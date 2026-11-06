@@ -379,7 +379,7 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 		return Result{}, err
 	}
 	_, err = on.texts.PutVersion(ctx, host.TextPut{
-		Path: rec.Path, Key: VersionKey, Source: "", Kind: textKind, SourceHash: rec.InputHash, File: file,
+		Path: rec.Path, Key: VersionKey, Source: "", Kind: textKind, InputHash: rec.InputHash, File: file,
 	})
 	if err != nil {
 		return Result{}, fmt.Errorf("report the recognition of %s: %w", rec.Path, err)
@@ -397,7 +397,7 @@ func hasRecognition(ctx context.Context, texts host.Texts, path, inputHash strin
 		return false, fmt.Errorf("list the versions of %s: %w", path, err)
 	}
 	for _, version := range listing.Versions {
-		if version.Key == VersionKey && version.Kind == textKind && version.IsFromFile() && version.SourceHash == inputHash {
+		if version.Key == VersionKey && version.Kind == textKind && version.IsFromFile() && version.InputHash == inputHash {
 			return true, nil
 		}
 	}

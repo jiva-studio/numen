@@ -119,7 +119,7 @@ func putText(t *testing.T, texts *hosttest.Texts, pluginID, path, kind string, f
 		t.Fatal(err)
 	}
 	if _, err := texts.PutVersion(t.Context(), host.TextPut{
-		Path: path, Key: kind, Kind: domain.TextKind(kind), SourceHash: domain.HashContent(file), File: name,
+		Path: path, Key: kind, Kind: domain.TextKind(kind), InputHash: domain.HashContent(file), File: name,
 	}); err != nil {
 		t.Fatal(err)
 	}

@@ -75,7 +75,7 @@ func TestTextClientSavesListsAndReadsThroughTheHost(t *testing.T) {
 	h := &textHost{}
 	client := newTextClient(t, h)
 
-	version, err := client.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Source: "q/x", Kind: "transcript", SourceHash: "i", File: "k.jsonl"})
+	version, err := client.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Source: "q/x", Kind: "transcript", InputHash: "i", File: "k.jsonl"})
 	if err != nil {
 		t.Fatal(err)
 	}

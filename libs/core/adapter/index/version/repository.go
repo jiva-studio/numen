@@ -46,7 +46,7 @@ func (r *Repository) ListVersions(ctx context.Context, vaultID domain.VaultID) (
 func (r *Repository) SaveVersion(ctx context.Context, vaultID domain.VaultID, v domain.TextVersion) error {
 	_, err := sqlwrite.Exec(ctx, r.write, getStatement("save"),
 		string(vaultID), v.Path, v.PluginID, v.Key, string(v.Source), string(v.Kind), v.File,
-		v.SourceHash, v.Hash, v.CreateTime.UnixNano())
+		v.InputHash, v.TextHash, v.CreateTime.UnixNano())
 	if err != nil {
 		return fmt.Errorf("save version %s of %s: %w", v.GetID(), v.Path, err)
 	}
@@ -125,7 +125,7 @@ func scan(rows *sql.Rows, queryErr error) (out []domain.TextVersion, err error) 
 		var v domain.TextVersion
 		var source, kind string
 		var created int64
-		if err := rows.Scan(&v.Path, &v.PluginID, &v.Key, &source, &kind, &v.File, &v.SourceHash, &v.Hash, &created); err != nil {
+		if err := rows.Scan(&v.Path, &v.PluginID, &v.Key, &source, &kind, &v.File, &v.InputHash, &v.TextHash, &created); err != nil {
 			return nil, fmt.Errorf("read versions: %w", err)
 		}
 		v.Source, v.Kind, v.CreateTime = domain.TextVersionID(source), domain.TextKind(kind), time.Unix(0, created).UTC()

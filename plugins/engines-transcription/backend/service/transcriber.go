@@ -343,7 +343,7 @@ func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
 // putVersion records the transcript in the file of the plugin's folder named.
 func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error {
 	_, err := j.texts.PutVersion(ctx, host.TextPut{
-		Path: j.path, Key: j.key, Source: "", Kind: textKind, SourceHash: j.fileHash, File: file,
+		Path: j.path, Key: j.key, Source: "", Kind: textKind, InputHash: j.fileHash, File: file,
 	})
 	return err
 }

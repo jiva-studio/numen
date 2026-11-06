@@ -62,7 +62,7 @@ func (s *textSummaries) get(ctx context.Context, texts host.Texts, vault, path s
 	s.mu.Lock()
 	cached, isCached := s.entries[key]
 	s.mu.Unlock()
-	if isCached && cached.version == live.GetID() && cached.hash == live.Hash {
+	if isCached && cached.version == live.GetID() && cached.hash == live.TextHash {
 		return cached.summary
 	}
 	text, err := host.ReadWholeText(ctx, texts, live)
@@ -71,7 +71,7 @@ func (s *textSummaries) get(ctx context.Context, texts host.Texts, vault, path s
 	}
 	summary := summarizeSegments(text.GetSegments())
 	s.mu.Lock()
-	s.entries[key] = cachedSummary{version: live.GetID(), hash: live.Hash, summary: summary}
+	s.entries[key] = cachedSummary{version: live.GetID(), hash: live.TextHash, summary: summary}
 	s.mu.Unlock()
 	return summary
 }

@@ -20,7 +20,7 @@ type memoryVersions struct {
 	mu       sync.Mutex
 	versions map[domain.VaultID][]domain.TextVersion
 	// sources is the source rows of every vault, by path.
-	sources map[domain.VaultID]map[string]textport.FileHash
+	sources map[domain.VaultID]map[string]textport.ContentHash
 }
 
 func (m *memoryVersions) Open(v domain.Vault) (textport.VersionRepository, error) {
@@ -104,7 +104,7 @@ func (m *memoryFiles) ReadTextFile(_ context.Context, pluginID, name string) (te
 	if err != nil {
 		return textport.TextFile{}, err
 	}
-	return textport.TextFile{Segments: segments, Hash: domain.HashContent(raw)}, nil
+	return textport.TextFile{Segments: segments, TextHash: domain.HashContent(raw)}, nil
 }
 
 func (m *memoryFiles) WriteTextFile(_ context.Context, pluginID, name string, segments []domain.TextSegment) (string, error) {
@@ -219,15 +219,15 @@ func (f *fakeProvider) create(ctx context.Context, path string, source domain.Te
 	params := textversion.VersionPut{Path: path, Source: source, Kind: f.kind}
 	var segments []domain.TextSegment
 	if source == "" {
-		params.SourceHash = domain.HashContent(f.files[path])
-		params.Key = "file-" + params.SourceHash[:8]
+		params.InputHash = domain.HashContent(f.files[path])
+		params.Key = "file-" + params.InputHash[:8]
 		segments = f.make(path, domain.VersionText{}, false)
 	} else {
 		text, err := f.versions.GetVersionText(ctx, f.vault, path, source)
 		if err != nil {
 			return err
 		}
-		params.SourceHash = text.Version().Hash
+		params.InputHash = text.Version().TextHash
 		params.Key = "from-" + strings.ReplaceAll(string(source), "/", "-")
 		segments = f.make(path, text, true)
 	}
@@ -265,18 +265,18 @@ func (c *minuteClock) Now() time.Time {
 	return c.now
 }
 
-// FindFileHash is the source row of the path, as the sources table holds it.
-func (r memoryRepo) FindFileHash(_ context.Context, path string) (textport.FileHash, bool, error) {
+// FindContentHash is the source row of the path, as the sources table holds it.
+func (r memoryRepo) FindContentHash(_ context.Context, path string) (textport.ContentHash, bool, error) {
 	r.store.mu.Lock()
 	defer r.store.mu.Unlock()
 	row, ok := r.store.sources[r.vault][path]
 	return row, ok, nil
 }
 
-// SaveFileHash writes the record over the row of its path where the row holds
+// SaveContentHash writes the record over the row of its path where the row holds
 // the record's size and modification time or already holds its hash. A path
 // with no row is not saved.
-func (r memoryRepo) SaveFileHash(_ context.Context, record textport.FileHash) error {
+func (r memoryRepo) SaveContentHash(_ context.Context, record textport.ContentHash) error {
 	r.store.mu.Lock()
 	defer r.store.mu.Unlock()
 	row, ok := r.store.sources[r.vault][record.Path]
@@ -293,24 +293,24 @@ func (r memoryRepo) SaveFileHash(_ context.Context, record textport.FileHash) er
 // addScannedSource puts the row a scan of the vault writes for a file: its
 // path, size and modification time, with no hash.
 func (m *memoryVersions) addScannedSource(vault domain.VaultID, path string, size int64, modTime time.Time) {
-	m.addSource(vault, textport.FileHash{Path: path, Size: size, ModTime: modTime})
+	m.addSource(vault, textport.ContentHash{Path: path, Size: size, ModTime: modTime})
 }
 
 // addSource puts a source row as it is given.
-func (m *memoryVersions) addSource(vault domain.VaultID, row textport.FileHash) {
+func (m *memoryVersions) addSource(vault domain.VaultID, row textport.ContentHash) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.sources == nil {
-		m.sources = map[domain.VaultID]map[string]textport.FileHash{}
+		m.sources = map[domain.VaultID]map[string]textport.ContentHash{}
 	}
 	if m.sources[vault] == nil {
-		m.sources[vault] = map[string]textport.FileHash{}
+		m.sources[vault] = map[string]textport.ContentHash{}
 	}
 	m.sources[vault][row.Path] = row
 }
 
 // getSource is the source row of the path.
-func (m *memoryVersions) getSource(vault domain.VaultID, path string) (textport.FileHash, bool) {
+func (m *memoryVersions) getSource(vault domain.VaultID, path string) (textport.ContentHash, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	row, ok := m.sources[vault][path]

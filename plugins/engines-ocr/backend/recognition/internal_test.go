@@ -494,10 +494,10 @@ func TestRecognitionVersionStorage(t *testing.T) {
 		Texts: texts,
 		listRes: host.TextListing{
 			Versions: []domain.TextVersion{
-				{Key: "other", Kind: textKind, File: "a.jsonl", SourceHash: "h1"},
-				{Key: VersionKey, Kind: "other", File: "a.jsonl", SourceHash: "h1"},
-				{Key: VersionKey, Kind: textKind, Source: "parent", File: "a.jsonl", SourceHash: "h1"},
-				{Key: VersionKey, Kind: textKind, File: "a.jsonl", SourceHash: "h2"},
+				{Key: "other", Kind: textKind, File: "a.jsonl", InputHash: "h1"},
+				{Key: VersionKey, Kind: "other", File: "a.jsonl", InputHash: "h1"},
+				{Key: VersionKey, Kind: textKind, Source: "parent", File: "a.jsonl", InputHash: "h1"},
+				{Key: VersionKey, Kind: textKind, File: "a.jsonl", InputHash: "h2"},
 			},
 		},
 	}

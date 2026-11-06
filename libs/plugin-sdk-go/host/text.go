@@ -20,16 +20,16 @@ var (
 
 // TextPut is what a plugin reports of one of its text versions. The plugin writes the version's
 // file into its folder first, with WriteText; File is that file's name. Source names the version the
-// text was made from, and is empty for the file itself. SourceHash is HashContent of the
-// file for the first, and the Hash of the source version for the second. Kind is what the text is,
+// text was made from, and is empty for the file itself. InputHash is HashContent of the
+// file for the first, and the TextHash of the source version for the second. Kind is what the text is,
 // as the plugin names it. The host records the hash of the file.
 type TextPut struct {
-	Path       string
-	Key        string
-	Source     domain.TextVersionID
-	Kind       domain.TextKind
-	SourceHash string
-	File       string
+	Path      string
+	Key       string
+	Source    domain.TextVersionID
+	Kind      domain.TextKind
+	InputHash string
+	File      string
 }
 
 // TextListing is the versions of a file and the one the host shows, which is empty where none is live.

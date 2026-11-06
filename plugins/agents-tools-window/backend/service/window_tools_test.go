@@ -76,7 +76,7 @@ func putText(t *testing.T, texts *hosttest.Texts, path, kind string, file []byte
 		t.Fatal(err)
 	}
 	if _, err := texts.PutVersion(t.Context(), host.TextPut{
-		Path: path, Key: kind, Kind: domain.TextKind(kind), SourceHash: domain.HashContent(file), File: name,
+		Path: path, Key: kind, Kind: domain.TextKind(kind), InputHash: domain.HashContent(file), File: name,
 	}); err != nil {
 		t.Fatal(err)
 	}

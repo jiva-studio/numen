@@ -346,7 +346,7 @@ func (s *toolScene) putRecognition(t *testing.T) domain.TextVersion {
 	}
 	version, err := s.texts.PutVersion(t.Context(), host.TextPut{
 		Path: scanPath, Key: recognition.VersionKey, Source: "", Kind: "recognition",
-		SourceHash: domain.HashContent(raw), File: file,
+		InputHash: domain.HashContent(raw), File: file,
 	})
 	if err != nil {
 		t.Fatal(err)

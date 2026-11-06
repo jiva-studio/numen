@@ -121,7 +121,7 @@ func (t *Texts) PutVersion(ctx context.Context, params host.TextPut) (domain.Tex
 	}
 	version := domain.TextVersion{
 		Path: params.Path, PluginID: t.pluginID, Key: params.Key, Source: params.Source, Kind: params.Kind,
-		File: params.File, SourceHash: params.SourceHash,
+		File: params.File, InputHash: params.InputHash,
 	}
 	if params.Source == version.GetID() || (params.Source != "" && w.indexOf(params.Path, params.Source) < 0) {
 		return domain.TextVersion{}, host.ErrInvalidVersion
@@ -130,7 +130,7 @@ func (t *Texts) PutVersion(ctx context.Context, params host.TextPut) (domain.Tex
 	if err != nil {
 		return domain.TextVersion{}, errors.Join(host.ErrInvalidVersion, err)
 	}
-	version.Hash = hash
+	version.TextHash = hash
 	if i := w.indexOf(params.Path, version.GetID()); i >= 0 {
 		version.CreateTime = w.versions[i].CreateTime
 		w.versions[i] = version
@@ -165,7 +165,7 @@ func (t *Texts) ListVersions(ctx context.Context, path string) (host.TextListing
 	}
 	isIntact := func(v domain.TextVersion) bool {
 		_, hash, err := w.readFile(ctx, v)
-		return err == nil && hash == v.Hash
+		return err == nil && hash == v.TextHash
 	}
 	if live, ok := notesdomain.FindLiveVersion(listing.Versions, domain.HashContent(w.files[path]), isIntact); ok {
 		listing.Live = live.GetID()
@@ -183,7 +183,7 @@ func (t *Texts) ReadText(ctx context.Context, path string, id domain.TextVersion
 		return host.TextPage{}, host.ErrNotExist
 	}
 	segments, hash, err := w.readFile(ctx, w.versions[i])
-	if err != nil || hash != w.versions[i].Hash {
+	if err != nil || hash != w.versions[i].TextHash {
 		return host.TextPage{}, host.ErrNotExist
 	}
 	return host.TextPage{Segments: segments}, nil

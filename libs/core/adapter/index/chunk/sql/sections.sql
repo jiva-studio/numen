@@ -15,7 +15,7 @@ WITH hits AS (
     ORDER BY rank
     LIMIT ?3
 )
-SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.hash, ''),
+SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.content_hash, ''),
        c.start,
        c.length,
        COALESCE(c.location, ''),

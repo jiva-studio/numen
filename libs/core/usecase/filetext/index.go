@@ -285,7 +285,7 @@ func (u Index) recordIfOutdated(
 	source sourceport.SourceText,
 	res *IndexResult,
 ) error {
-	live, err := on.texts.FindLiveVersion(ctx, source.Path, source.Hash)
+	live, err := on.texts.FindLiveVersion(ctx, source.Path, source.ContentHash)
 	switch {
 	case err == nil && string(live) == source.Producer:
 		return nil
@@ -445,16 +445,16 @@ func (u Index) source(
 		if ref.Kind == domain.KindNote && errors.Is(err, textport.ErrNoText) {
 			return u.dropVersionOfNote(ctx, v, path)
 		}
-		return u.saveWithoutText(ctx, v, on, domain.Source{FileStat: ref, Hash: hash}, err, res)
+		return u.saveWithoutText(ctx, v, on, domain.Source{FileStat: ref, ContentHash: hash}, err, res)
 	}
 
 	chunks := chunksOf(doc, sizes, u.Legibility)
 	extraction := domain.SourceChunks{
 		Source: domain.Source{
-			FileStat: ref,
-			Hash:     hash,
-			Recipe:   recipe(versionReader, sizes),
-			Producer: string(doc.Version().GetID()),
+			FileStat:    ref,
+			ContentHash: hash,
+			Recipe:      recipe(versionReader, sizes),
+			Producer:    string(doc.Version().GetID()),
 		},
 		Chunks: chunks,
 	}
@@ -486,7 +486,7 @@ func (u Index) saveWithoutText(
 		return fmt.Errorf("write the chunks of %s: %w", source.FileStat.Path, err)
 	}
 	if errors.Is(readErr, textport.ErrNoText) {
-		if err := on.texts.RequestText(ctx, source.FileStat.Path, source.Hash); err != nil {
+		if err := on.texts.RequestText(ctx, source.FileStat.Path, source.ContentHash); err != nil {
 			u.reportError(fmt.Errorf("ask for the text of %s: %w", source.FileStat.Path, err))
 		}
 	}
@@ -585,8 +585,8 @@ type noTexts struct {
 	files vaultport.VaultReader
 }
 
-// GetFileHash hashes the file from a stream on every call: with no versions there is no record to keep.
-func (t noTexts) GetFileHash(ctx context.Context, path string) (_ string, err error) {
+// GetContentHash hashes the file from a stream on every call: with no versions there is no record to keep.
+func (t noTexts) GetContentHash(ctx context.Context, path string) (_ string, err error) {
 	file, err := t.files.Open(ctx, path)
 	if err != nil {
 		return "", err

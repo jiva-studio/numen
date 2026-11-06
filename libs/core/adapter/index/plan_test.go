@@ -85,8 +85,8 @@ func getExpectedPlans() []struct {
 		// vault is given by its identifier, then the path; a save gives the record's
 		// hash, size, modification time, file id and hash time, the vault and path, and
 		// the size, modification time and hash the row must hold.
-		{version.Statements(), "find_file_hash", []any{"first", "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)"}},
-		{version.Statements(), "save_file_hash", []any{"h", 1, 1, 7, 9, "first", "folder/note-00001.md", 1, 1, "h"}, []string{"(vault_id=? AND path=?)"}},
+		{version.Statements(), "find_content_hash", []any{"first", "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)"}},
+		{version.Statements(), "save_content_hash", []any{"h", 1, 1, 7, 9, "first", "folder/note-00001.md", 1, 1, "h"}, []string{"(vault_id=? AND path=?)"}},
 	}
 }
 

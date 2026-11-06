@@ -26,7 +26,7 @@ func NewTexts(versions *textversion.Versions) Texts {
 func (p Texts) PutVersion(ctx context.Context, v domain.Vault, pluginID string, params pluginport.PluginTextPut) (domain.TextVersion, error) {
 	return p.versions.PutVersion(ctx, v, pluginID, textversion.VersionPut{
 		Path: params.Path, Key: params.Key, Source: params.Source, Kind: params.Kind,
-		SourceHash: params.SourceHash, File: params.File,
+		InputHash: params.InputHash, File: params.File,
 	})
 }
 
@@ -38,11 +38,11 @@ func (p Texts) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path
 // ListVersions lists the versions of a file of the vault and names the live one for the file's
 // current content.
 func (p Texts) ListVersions(ctx context.Context, v domain.Vault, path string) (pluginport.PluginTextListing, error) {
-	fileHash, err := p.versions.GetFileHash(ctx, v, path)
+	contentHash, err := p.versions.GetContentHash(ctx, v, path)
 	if err != nil {
 		return pluginport.PluginTextListing{}, fmt.Errorf("%w: %w", textport.ErrNoText, err)
 	}
-	listing, err := p.versions.ListVersions(ctx, v, path, fileHash)
+	listing, err := p.versions.ListVersions(ctx, v, path, contentHash)
 	if err != nil {
 		return pluginport.PluginTextListing{}, err
 	}

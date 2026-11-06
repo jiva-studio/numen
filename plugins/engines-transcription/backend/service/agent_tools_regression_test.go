@@ -31,7 +31,7 @@ func TestTranscriptCreateOverAnotherPluginsWholeVersionStartsARun(t *testing.T) 
 		t.Fatal(err)
 	}
 	if _, err := other.PutVersion(t.Context(), host.TextPut{
-		Path: lecture, Key: "k", Kind: "transcript", SourceHash: domain.HashContent([]byte(lectureSound)), File: "k.jsonl",
+		Path: lecture, Key: "k", Kind: "transcript", InputHash: domain.HashContent([]byte(lectureSound)), File: "k.jsonl",
 	}); err != nil {
 		t.Fatal(err)
 	}

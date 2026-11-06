@@ -42,7 +42,7 @@ func fillVault(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte)
 
 	path := "library/" + stem + "-sections.pdf"
 	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
-		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "pdf",
+		Path: path, Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-" + path, Recipe: "pdf",
 	}); err != nil {
 		t.Fatal(err)
 	}

@@ -83,11 +83,11 @@ func (u *FileMenu) findLiveVersion(ctx context.Context, v domain.Vault, path str
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
 	}
-	fileHash, err := u.versions.GetFileHash(ctx, v, path)
+	contentHash, err := u.versions.GetContentHash(ctx, v, path)
 	if err != nil {
 		return domain.TextVersion{}, false, fmt.Errorf("read %s: %w", path, err)
 	}
-	return u.versions.findLive(ctx, v, versions, fileHash)
+	return u.versions.findLive(ctx, v, versions, contentHash)
 }
 
 // hasRequiredArgument reports whether the command cannot run without a value a menu does not give.

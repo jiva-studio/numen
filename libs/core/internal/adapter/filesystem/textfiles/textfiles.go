@@ -47,7 +47,7 @@ func (f files) ReadTextFile(ctx context.Context, pluginID, name string) (textpor
 	if err != nil {
 		return textport.TextFile{}, fmt.Errorf("%s/%s: %w", pluginID, name, err)
 	}
-	return textport.TextFile{Segments: segments, Hash: domain.HashContent(raw)}, nil
+	return textport.TextFile{Segments: segments, TextHash: domain.HashContent(raw)}, nil
 }
 
 func (f files) WriteTextFile(ctx context.Context, pluginID, name string, segments []domain.TextSegment) (string, error) {

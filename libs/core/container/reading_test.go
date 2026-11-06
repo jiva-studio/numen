@@ -38,9 +38,9 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 	}
 	err = db.Sources().SaveExtraction(t.Context(), vault.ID, domain.SourceChunks{
 		Source: domain.Source{
-			FileStat: domain.FileStat{Path: "Entropy.md", Kind: domain.KindNote, Size: int64(len(entropy)), ModTime: time.Unix(0, 1)},
-			Hash:     "hash-entropy",
-			Recipe:   "markdown",
+			FileStat:    domain.FileStat{Path: "Entropy.md", Kind: domain.KindNote, Size: int64(len(entropy)), ModTime: time.Unix(0, 1)},
+			ContentHash: "hash-entropy",
+			Recipe:      "markdown",
 		},
 		Chunks: []domain.Chunk{{
 			Start: 0, Length: len(entropy), Text: entropy,

@@ -153,7 +153,7 @@ func newLookup(t *testing.T) *lookup {
 
 func (l *lookup) getHash(t *testing.T) string {
 	t.Helper()
-	hash, err := l.versions.GetFileHash(t.Context(), l.vault, atlasPath)
+	hash, err := l.versions.GetContentHash(t.Context(), l.vault, atlasPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +216,7 @@ func TestALookupReadsAFileReplacedAtTheSamePath(t *testing.T) {
 
 func TestARecordWithoutAHashTimeIsCheckedByContent(t *testing.T) {
 	l := newLookup(t)
-	l.repo.addSource(l.vault.ID, textport.FileHash{
+	l.repo.addSource(l.vault.ID, textport.ContentHash{
 		Path: atlasPath, Hash: domain.HashContent(getAtlasContent()), Size: int64(len(getAtlasContent())),
 		ModTime: getAtlasTime(), FileID: 4242,
 	})
@@ -295,7 +295,7 @@ func TestAChangedFileKeepsTheRowStatAndGetsTheNewHash(t *testing.T) {
 	}
 	after, _ := l.repo.getSource(l.vault.ID, atlasPath)
 	if after.Hash != before.Hash || after.Size != before.Size || !after.ModTime.Equal(before.ModTime) ||
-		after.FileID != before.FileID || !after.RecordTime.Equal(before.RecordTime) {
+		after.FileID != before.FileID || !after.HashTime.Equal(before.HashTime) {
 		t.Fatalf("the row became %+v, want it kept as %+v", after, before)
 	}
 }
@@ -307,7 +307,7 @@ func TestAFileWithNoRowIsHashedOnEveryLookupAndNothingIsSaved(t *testing.T) {
 	l.files.files[loose] = &statFile{raw: raw, modTime: getAtlasTime(), id: 77}
 
 	for range 2 {
-		got, err := l.versions.GetFileHash(t.Context(), l.vault, loose)
+		got, err := l.versions.GetContentHash(t.Context(), l.vault, loose)
 		if err != nil || got != domain.HashContent(raw) {
 			t.Fatalf("a file with no row gives %s (%v), want %s", got, err, domain.HashContent(raw))
 		}
@@ -322,7 +322,7 @@ func TestAFileWithNoRowIsHashedOnEveryLookupAndNothingIsSaved(t *testing.T) {
 
 func TestALookupOfAMissingFileIsNotFound(t *testing.T) {
 	l := newLookup(t)
-	if _, err := l.versions.GetFileHash(t.Context(), l.vault, "books/gone.pdf"); !errors.Is(err, fs.ErrNotExist) {
+	if _, err := l.versions.GetContentHash(t.Context(), l.vault, "books/gone.pdf"); !errors.Is(err, fs.ErrNotExist) {
 		t.Fatalf("a file that is not there gives %v, want fs.ErrNotExist", err)
 	}
 }
@@ -434,7 +434,7 @@ func TestAOneGigabyteFileIsHashedFromAStreamWithBoundedMemory(t *testing.T) {
 	var before, after runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&before)
-	got, err := versions.GetFileHash(t.Context(), domain.Vault{ID: "v1", Name: "v1"}, path)
+	got, err := versions.GetContentHash(t.Context(), domain.Vault{ID: "v1", Name: "v1"}, path)
 	runtime.ReadMemStats(&after)
 
 	if err != nil || got != want {

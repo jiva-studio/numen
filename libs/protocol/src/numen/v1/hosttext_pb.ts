@@ -12,15 +12,15 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hosttext.proto.
  */
 export const file_numen_v1_hosttext: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEivgEKC1RleHRWZXJzaW9uEgoKAmlkGAEgASgJEgwKBHBhdGgYAiABKAkSEQoJcGx1Z2luX2lkGAMgASgJEgsKA2tleRgEIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgFIAEoCRIMCgRraW5kGAYgASgJEhMKC3NvdXJjZV9oYXNoGAcgASgJEgwKBGhhc2gYCCABKAkSGwoTY3JlYXRlX3RpbWVfdW5peF9tcxgJIAEoAxIMCgRmaWxlGAogASgJIn4KFVB1dFRleHRWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2tleRgCIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgDIAEoCRIMCgRraW5kGAQgASgJEhMKC3NvdXJjZV9oYXNoGAUgASgJEgwKBGZpbGUYBiABKAkiaAoWUHV0VGV4dFZlcnNpb25SZXNwb25zZRImCgd2ZXJzaW9uGAEgASgLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SJgoFZXJyb3IYAiABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIjUKGFJlbW92ZVRleHRWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2tleRgCIAEoCSJDChlSZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSInChdMaXN0VGV4dFZlcnNpb25zUmVxdWVzdBIMCgRwYXRoGAEgASgJIoQBChhMaXN0VGV4dFZlcnNpb25zUmVzcG9uc2USJwoIdmVyc2lvbnMYASADKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhIXCg9saXZlX3ZlcnNpb25faWQYAiABKAkSJgoFZXJyb3IYAyABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIkMKD1JlYWRUZXh0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhIKCnZlcnNpb25faWQYAiABKAkSDgoGY3Vyc29yGAMgASgJIngKEFJlYWRUZXh0UmVzcG9uc2USJwoIc2VnbWVudHMYASADKAsyFS5udW1lbi52MS5UZXh0U2VnbWVudBITCgtuZXh0X2N1cnNvchgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUy4gIKD0hvc3RUZXh0U2VydmljZRJTCg5QdXRUZXh0VmVyc2lvbhIfLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVxdWVzdBogLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVzcG9uc2USXAoRUmVtb3ZlVGV4dFZlcnNpb24SIi5udW1lbi52MS5SZW1vdmVUZXh0VmVyc2lvblJlcXVlc3QaIy5udW1lbi52MS5SZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlElkKEExpc3RUZXh0VmVyc2lvbnMSIS5udW1lbi52MS5MaXN0VGV4dFZlcnNpb25zUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RUZXh0VmVyc2lvbnNSZXNwb25zZRJBCghSZWFkVGV4dBIZLm51bWVuLnYxLlJlYWRUZXh0UmVxdWVzdBoaLm51bWVuLnYxLlJlYWRUZXh0UmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_textprovider]);
+  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEiwgEKC1RleHRWZXJzaW9uEgoKAmlkGAEgASgJEgwKBHBhdGgYAiABKAkSEQoJcGx1Z2luX2lkGAMgASgJEgsKA2tleRgEIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgFIAEoCRIMCgRraW5kGAYgASgJEhIKCmlucHV0X2hhc2gYByABKAkSEQoJdGV4dF9oYXNoGAggASgJEhsKE2NyZWF0ZV90aW1lX3VuaXhfbXMYCSABKAMSDAoEZmlsZRgKIAEoCSJ9ChVQdXRUZXh0VmVyc2lvblJlcXVlc3QSDAoEcGF0aBgBIAEoCRILCgNrZXkYAiABKAkSGQoRc291cmNlX3ZlcnNpb25faWQYAyABKAkSDAoEa2luZBgEIAEoCRISCgppbnB1dF9oYXNoGAUgASgJEgwKBGZpbGUYBiABKAkiaAoWUHV0VGV4dFZlcnNpb25SZXNwb25zZRImCgd2ZXJzaW9uGAEgASgLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SJgoFZXJyb3IYAiABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIjUKGFJlbW92ZVRleHRWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2tleRgCIAEoCSJDChlSZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSInChdMaXN0VGV4dFZlcnNpb25zUmVxdWVzdBIMCgRwYXRoGAEgASgJIoQBChhMaXN0VGV4dFZlcnNpb25zUmVzcG9uc2USJwoIdmVyc2lvbnMYASADKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhIXCg9saXZlX3ZlcnNpb25faWQYAiABKAkSJgoFZXJyb3IYAyABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIkMKD1JlYWRUZXh0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhIKCnZlcnNpb25faWQYAiABKAkSDgoGY3Vyc29yGAMgASgJIngKEFJlYWRUZXh0UmVzcG9uc2USJwoIc2VnbWVudHMYASADKAsyFS5udW1lbi52MS5UZXh0U2VnbWVudBITCgtuZXh0X2N1cnNvchgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUy4gIKD0hvc3RUZXh0U2VydmljZRJTCg5QdXRUZXh0VmVyc2lvbhIfLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVxdWVzdBogLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVzcG9uc2USXAoRUmVtb3ZlVGV4dFZlcnNpb24SIi5udW1lbi52MS5SZW1vdmVUZXh0VmVyc2lvblJlcXVlc3QaIy5udW1lbi52MS5SZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlElkKEExpc3RUZXh0VmVyc2lvbnMSIS5udW1lbi52MS5MaXN0VGV4dFZlcnNpb25zUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RUZXh0VmVyc2lvbnNSZXNwb25zZRJBCghSZWFkVGV4dBIZLm51bWVuLnYxLlJlYWRUZXh0UmVxdWVzdBoaLm51bWVuLnYxLlJlYWRUZXh0UmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_textprovider]);
 
 /**
  * TextVersion is the host's record of one text of a file.
  *
- * source_version_id is empty for a version made from the file. source_hash is
+ * source_version_id is empty for a version made from the file. input_hash is
  * the SHA-256, in hex, of the file's bytes for such a version, and the hash of
  * the source version otherwise. file is the name of the version's file in the
- * folder of the plugin that made it; hash is the SHA-256 of that file's bytes.
+ * folder of the plugin that made it; text_hash is the SHA-256 of that file's bytes.
  * kind is what the text is, as the plugin that made it names it;
  * the host compares it as an opaque string.
  *
@@ -58,14 +58,14 @@ export type TextVersion = Message<"numen.v1.TextVersion"> & {
   kind: string;
 
   /**
-   * @generated from field: string source_hash = 7;
+   * @generated from field: string input_hash = 7;
    */
-  sourceHash: string;
+  inputHash: string;
 
   /**
-   * @generated from field: string hash = 8;
+   * @generated from field: string text_hash = 8;
    */
-  hash: string;
+  textHash: string;
 
   /**
    * @generated from field: int64 create_time_unix_ms = 9;
@@ -110,9 +110,9 @@ export type PutTextVersionRequest = Message<"numen.v1.PutTextVersionRequest"> & 
   kind: string;
 
   /**
-   * @generated from field: string source_hash = 5;
+   * @generated from field: string input_hash = 5;
    */
-  sourceHash: string;
+  inputHash: string;
 
   /**
    * file is the name of the version's file in the calling plugin's folder.

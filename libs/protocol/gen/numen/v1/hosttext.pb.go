@@ -23,10 +23,10 @@ const (
 
 // TextVersion is the host's record of one text of a file.
 //
-// source_version_id is empty for a version made from the file. source_hash is
+// source_version_id is empty for a version made from the file. input_hash is
 // the SHA-256, in hex, of the file's bytes for such a version, and the hash of
 // the source version otherwise. file is the name of the version's file in the
-// folder of the plugin that made it; hash is the SHA-256 of that file's bytes.
+// folder of the plugin that made it; text_hash is the SHA-256 of that file's bytes.
 // kind is what the text is, as the plugin that made it names it;
 // the host compares it as an opaque string.
 type TextVersion struct {
@@ -37,8 +37,8 @@ type TextVersion struct {
 	Key              string                 `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
 	SourceVersionId  string                 `protobuf:"bytes,5,opt,name=source_version_id,json=sourceVersionId,proto3" json:"source_version_id,omitempty"`
 	Kind             string                 `protobuf:"bytes,6,opt,name=kind,proto3" json:"kind,omitempty"`
-	SourceHash       string                 `protobuf:"bytes,7,opt,name=source_hash,json=sourceHash,proto3" json:"source_hash,omitempty"`
-	Hash             string                 `protobuf:"bytes,8,opt,name=hash,proto3" json:"hash,omitempty"`
+	InputHash        string                 `protobuf:"bytes,7,opt,name=input_hash,json=inputHash,proto3" json:"input_hash,omitempty"`
+	TextHash         string                 `protobuf:"bytes,8,opt,name=text_hash,json=textHash,proto3" json:"text_hash,omitempty"`
 	CreateTimeUnixMs int64                  `protobuf:"varint,9,opt,name=create_time_unix_ms,json=createTimeUnixMs,proto3" json:"create_time_unix_ms,omitempty"`
 	File             string                 `protobuf:"bytes,10,opt,name=file,proto3" json:"file,omitempty"`
 	unknownFields    protoimpl.UnknownFields
@@ -117,16 +117,16 @@ func (x *TextVersion) GetKind() string {
 	return ""
 }
 
-func (x *TextVersion) GetSourceHash() string {
+func (x *TextVersion) GetInputHash() string {
 	if x != nil {
-		return x.SourceHash
+		return x.InputHash
 	}
 	return ""
 }
 
-func (x *TextVersion) GetHash() string {
+func (x *TextVersion) GetTextHash() string {
 	if x != nil {
-		return x.Hash
+		return x.TextHash
 	}
 	return ""
 }
@@ -151,7 +151,7 @@ type PutTextVersionRequest struct {
 	Key             string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	SourceVersionId string                 `protobuf:"bytes,3,opt,name=source_version_id,json=sourceVersionId,proto3" json:"source_version_id,omitempty"`
 	Kind            string                 `protobuf:"bytes,4,opt,name=kind,proto3" json:"kind,omitempty"`
-	SourceHash      string                 `protobuf:"bytes,5,opt,name=source_hash,json=sourceHash,proto3" json:"source_hash,omitempty"`
+	InputHash       string                 `protobuf:"bytes,5,opt,name=input_hash,json=inputHash,proto3" json:"input_hash,omitempty"`
 	// file is the name of the version's file in the calling plugin's folder.
 	File          string `protobuf:"bytes,6,opt,name=file,proto3" json:"file,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -216,9 +216,9 @@ func (x *PutTextVersionRequest) GetKind() string {
 	return ""
 }
 
-func (x *PutTextVersionRequest) GetSourceHash() string {
+func (x *PutTextVersionRequest) GetInputHash() string {
 	if x != nil {
-		return x.SourceHash
+		return x.InputHash
 	}
 	return ""
 }
@@ -609,27 +609,27 @@ var File_numen_v1_hosttext_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/hosttext.proto\x12\bnumen.v1\x1a\x1bnumen/v1/textprovider.proto\"\x98\x02\n" +
+	"\x17numen/v1/hosttext.proto\x12\bnumen.v1\x1a\x1bnumen/v1/textprovider.proto\"\x9f\x02\n" +
 	"\vTextVersion\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1b\n" +
 	"\tplugin_id\x18\x03 \x01(\tR\bpluginId\x12\x10\n" +
 	"\x03key\x18\x04 \x01(\tR\x03key\x12*\n" +
 	"\x11source_version_id\x18\x05 \x01(\tR\x0fsourceVersionId\x12\x12\n" +
-	"\x04kind\x18\x06 \x01(\tR\x04kind\x12\x1f\n" +
-	"\vsource_hash\x18\a \x01(\tR\n" +
-	"sourceHash\x12\x12\n" +
-	"\x04hash\x18\b \x01(\tR\x04hash\x12-\n" +
+	"\x04kind\x18\x06 \x01(\tR\x04kind\x12\x1d\n" +
+	"\n" +
+	"input_hash\x18\a \x01(\tR\tinputHash\x12\x1b\n" +
+	"\ttext_hash\x18\b \x01(\tR\btextHash\x12-\n" +
 	"\x13create_time_unix_ms\x18\t \x01(\x03R\x10createTimeUnixMs\x12\x12\n" +
 	"\x04file\x18\n" +
-	" \x01(\tR\x04file\"\xb2\x01\n" +
+	" \x01(\tR\x04file\"\xb0\x01\n" +
 	"\x15PutTextVersionRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12*\n" +
 	"\x11source_version_id\x18\x03 \x01(\tR\x0fsourceVersionId\x12\x12\n" +
-	"\x04kind\x18\x04 \x01(\tR\x04kind\x12\x1f\n" +
-	"\vsource_hash\x18\x05 \x01(\tR\n" +
-	"sourceHash\x12\x12\n" +
+	"\x04kind\x18\x04 \x01(\tR\x04kind\x12\x1d\n" +
+	"\n" +
+	"input_hash\x18\x05 \x01(\tR\tinputHash\x12\x12\n" +
 	"\x04file\x18\x06 \x01(\tR\x04file\"x\n" +
 	"\x16PutTextVersionResponse\x12/\n" +
 	"\aversion\x18\x01 \x01(\v2\x15.numen.v1.TextVersionR\aversion\x12-\n" +

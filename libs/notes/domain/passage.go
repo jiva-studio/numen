@@ -36,10 +36,10 @@ type Passage struct {
 	// in. Empty for a note.
 	Selector Selector
 
-	// SourceHash addresses the content of the source, and is what the
+	// ContentHash addresses the content of the source, and is what the
 	// text made from it is kept under. Reading a passage back composes the name
 	// from this and Producer.
-	SourceHash string
+	ContentHash string
 
 	// HitAt is where the chunk that matched begins inside Text, in bytes. A
 	// passage whose hit is the chunk itself begins at its own beginning.

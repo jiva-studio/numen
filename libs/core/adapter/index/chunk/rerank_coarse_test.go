@@ -48,7 +48,7 @@ func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, [
 		t.Fatal(err)
 	}
 	if err := db.Chunks().SaveSource(ctx, vault, chunk.Source{
-		Path: "library/ranks.epub", Kind: "book", Size: 1000, MTime: 1, Hash: "hash-ranks", Recipe: "epub",
+		Path: "library/ranks.epub", Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-ranks", Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}

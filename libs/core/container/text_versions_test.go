@@ -40,7 +40,7 @@ func putTranscript(t *testing.T, db *Index, v domain.Vault, words string) domain
 	}
 	version := domain.TextVersion{
 		Path: talkPath, PluginID: transcriber, Key: "talk", Kind: "transcript", File: "talk.jsonl",
-		SourceHash: domain.HashContent(raw), Hash: hash, CreateTime: time.Date(2026, 5, 1, 8, 0, 0, 0, time.UTC),
+		InputHash: domain.HashContent(raw), TextHash: hash, CreateTime: time.Date(2026, 5, 1, 8, 0, 0, 0, time.UTC),
 	}
 	repo, err := db.TextVersions().Open(v)
 	if err != nil {
@@ -308,7 +308,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	}
 	subtitles := domain.TextVersion{
 		Path: talkPath, PluginID: other, Key: "notes", Kind: "subtitles", File: "notes.jsonl",
-		SourceHash: domain.HashContent(raw), Hash: hash, CreateTime: time.Date(2026, 4, 1, 8, 0, 0, 0, time.UTC),
+		InputHash: domain.HashContent(raw), TextHash: hash, CreateTime: time.Date(2026, 4, 1, 8, 0, 0, 0, time.UTC),
 	}
 	repo, err := db.TextVersions().Open(v)
 	if err != nil {

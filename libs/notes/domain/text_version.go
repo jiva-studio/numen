@@ -28,10 +28,10 @@ func NewTextVersionID(pluginID, key string) TextVersionID {
 // holds its segments.
 //
 // Source is empty for a version made from the file itself; for any other
-// version it names another version of the same file. SourceHash is HashContent of the file for
-// the first, and the Hash of the source version for the second, as both were
+// version it names another version of the same file. InputHash is HashContent of the file for
+// the first, and the TextHash of the source version for the second, as both were
 // when the version was made. File is the name of the version's file in the
-// folder of PluginID; Hash is HashContent of that file's bytes when the version
+// folder of PluginID; TextHash is HashContent of that file's bytes when the version
 // was recorded.
 type TextVersion struct {
 	Path       string
@@ -40,8 +40,8 @@ type TextVersion struct {
 	Source     TextVersionID
 	Kind       TextKind
 	File       string
-	SourceHash string
-	Hash       string
+	InputHash  string
+	TextHash   string
 	CreateTime time.Time
 }
 
@@ -70,8 +70,8 @@ func HashReader(r io.Reader) (string, error) {
 // IsChainValid reports whether every source in a version's chain, down to the
 // file, is still what it was when the version above it was made.
 //
-// fileHash is HashContent of the file as it is now.
-func IsChainValid(versions []TextVersion, id TextVersionID, fileHash string) bool {
+// contentHash is HashContent of the file as it is now.
+func IsChainValid(versions []TextVersion, id TextVersionID, contentHash string) bool {
 	byID := make(map[TextVersionID]TextVersion, len(versions))
 	for _, v := range versions {
 		byID[v.GetID()] = v
@@ -84,11 +84,11 @@ func IsChainValid(versions []TextVersion, id TextVersionID, fileHash string) boo
 		}
 		visited[id] = true
 		if v.IsFromFile() {
-			return v.SourceHash == fileHash
+			return v.InputHash == contentHash
 		}
 		source, ok := byID[v.Source]
-		// gomutants:disable-next-line EXPRESSION_REMOVE reason="a missing source either mismatches a non-empty SourceHash here or fails the byID lookup on the next iteration"
-		if !ok || source.Hash != v.SourceHash {
+		// gomutants:disable-next-line EXPRESSION_REMOVE reason="a missing source either mismatches a non-empty InputHash here or fails the byID lookup on the next iteration"
+		if !ok || source.TextHash != v.InputHash {
 			return false
 		}
 		id = v.Source
@@ -100,7 +100,7 @@ func IsChainValid(versions []TextVersion, id TextVersionID, fileHash string) boo
 // a later CreateTime; of two made at one instant the later in the list is
 // newer. The plugin that made a version need not be enabled.
 func FindLiveVersion(
-	versions []TextVersion, fileHash string, isIntact func(TextVersion) bool,
+	versions []TextVersion, contentHash string, isIntact func(TextVersion) bool,
 ) (TextVersion, bool) {
 	order := make([]int, len(versions))
 	for i := range order {
@@ -113,7 +113,7 @@ func FindLiveVersion(
 		return cmp.Compare(b, a)
 	})
 	for _, i := range order {
-		if IsChainValid(versions, versions[i].GetID(), fileHash) && isIntact(versions[i]) {
+		if IsChainValid(versions, versions[i].GetID(), contentHash) && isIntact(versions[i]) {
 			return versions[i], true
 		}
 	}

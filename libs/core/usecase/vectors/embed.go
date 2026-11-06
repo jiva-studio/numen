@@ -407,7 +407,7 @@ func (u Embed) read(
 
 	isFirst := true
 	for _, p := range pending {
-		if u.IsSkipped != nil && u.IsSkipped(p.Source, p.SourceHash) {
+		if u.IsSkipped != nil && u.IsSkipped(p.Source, p.ContentHash) {
 			mu.Lock()
 			res.Skipped++
 			mu.Unlock()

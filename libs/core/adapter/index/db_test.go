@@ -183,7 +183,7 @@ func embedAtWidth(t *testing.T, db *DB, vault domain.Vault, dims int) {
 
 	path := "library/" + strconv.Itoa(dims) + ".epub"
 	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
-		Path: path, Kind: "book", Size: 100, MTime: 1, Hash: "h" + path, Recipe: "epub",
+		Path: path, Kind: "book", Size: 100, MTime: 1, ContentHash: "h" + path, Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}

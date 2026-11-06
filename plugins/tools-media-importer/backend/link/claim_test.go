@@ -594,7 +594,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	ht.listOverride = &host.TextListing{
 		Live: liveListing.Live,
 		Versions: []domain.TextVersion{
-			{PluginID: "other-plugin", Key: "other", SourceHash: "other-hash"},
+			{PluginID: "other-plugin", Key: "other", InputHash: "other-hash"},
 			liveListing.Versions[0],
 		},
 	}

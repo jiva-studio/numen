@@ -36,7 +36,7 @@ func TestWriteThenReadKeepsTheSegmentsAndTheHash(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Hash != hash || len(got.Segments) != 1 || got.Segments[0] != segments[0] {
+	if got.TextHash != hash || len(got.Segments) != 1 || got.Segments[0] != segments[0] {
 		t.Fatalf("read %+v", got)
 	}
 }

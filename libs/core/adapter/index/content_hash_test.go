@@ -46,41 +46,41 @@ func scan(t *testing.T, db *DB, path string, size int64, modTime time.Time) {
 	}
 }
 
-func getRiversRecord() textport.FileHash {
-	return textport.FileHash{
+func getRiversRecord() textport.ContentHash {
+	return textport.ContentHash{
 		Path: riversPath, Hash: riversHash, Size: 2048, ModTime: getRiversTime(), FileID: 4242,
-		RecordTime: getRiversTime().Add(90*time.Second + 7),
+		HashTime: getRiversTime().Add(90*time.Second + 7),
 	}
 }
 
-func saveFileHash(t *testing.T, db *DB, record textport.FileHash) {
+func saveContentHash(t *testing.T, db *DB, record textport.ContentHash) {
 	t.Helper()
-	if err := db.TextVersions().SaveFileHash(t.Context(), hashVault, record); err != nil {
+	if err := db.TextVersions().SaveContentHash(t.Context(), hashVault, record); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func findFileHash(t *testing.T, db *DB, path string) (textport.FileHash, bool) {
+func findContentHash(t *testing.T, db *DB, path string) (textport.ContentHash, bool) {
 	t.Helper()
-	got, ok, err := db.TextVersions().FindFileHash(t.Context(), hashVault, path)
+	got, ok, err := db.TextVersions().FindContentHash(t.Context(), hashVault, path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return got, ok
 }
 
-func isSameFileHash(a, b textport.FileHash) bool {
+func isSameContentHash(a, b textport.ContentHash) bool {
 	return a.Path == b.Path && a.Hash == b.Hash && a.Size == b.Size && a.ModTime.Equal(b.ModTime) &&
-		a.FileID == b.FileID && a.RecordTime.Equal(b.RecordTime)
+		a.FileID == b.FileID && a.HashTime.Equal(b.HashTime)
 }
 
-func TestASavedFileHashIsFoundWithItsNanosecondStatFileIDAndHashTime(t *testing.T) {
+func TestASavedContentHashIsFoundWithItsNanosecondStatFileIDAndHashTime(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
-	saveFileHash(t, db, getRiversRecord())
+	saveContentHash(t, db, getRiversRecord())
 
-	got, ok := findFileHash(t, db, riversPath)
-	if !ok || !isSameFileHash(got, getRiversRecord()) {
+	got, ok := findContentHash(t, db, riversPath)
+	if !ok || !isSameContentHash(got, getRiversRecord()) {
 		t.Fatalf("found %+v (%v), want %+v", got, ok, getRiversRecord())
 	}
 }
@@ -89,49 +89,49 @@ func TestAScannedRowHasNoHashNoFileIDAndNoHashTime(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
 
-	got, ok := findFileHash(t, db, riversPath)
-	want := textport.FileHash{Path: riversPath, Size: 2048, ModTime: getRiversTime()}
-	if !ok || !isSameFileHash(got, want) {
+	got, ok := findContentHash(t, db, riversPath)
+	want := textport.ContentHash{Path: riversPath, Size: 2048, ModTime: getRiversTime()}
+	if !ok || !isSameContentHash(got, want) {
 		t.Fatalf("found %+v (%v), want %+v", got, ok, want)
 	}
 }
 
-func TestAFileHashOfAnotherStatAndAnotherHashIsNotSaved(t *testing.T) {
+func TestAContentHashOfAnotherStatAndAnotherHashIsNotSaved(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
-	saveFileHash(t, db, getRiversRecord())
+	saveContentHash(t, db, getRiversRecord())
 
 	changed := getRiversRecord()
 	changed.Hash, changed.Size, changed.ModTime = otherHash, 4096, getRiversTime().Add(time.Minute)
-	changed.FileID, changed.RecordTime = 4243, getRiversTime().Add(2*time.Minute)
-	saveFileHash(t, db, changed)
+	changed.FileID, changed.HashTime = 4243, getRiversTime().Add(2*time.Minute)
+	saveContentHash(t, db, changed)
 
-	if got, _ := findFileHash(t, db, riversPath); !isSameFileHash(got, getRiversRecord()) {
+	if got, _ := findContentHash(t, db, riversPath); !isSameContentHash(got, getRiversRecord()) {
 		t.Fatalf("the row became %+v, want it kept as %+v", got, getRiversRecord())
 	}
 }
 
-func TestAFileHashOfTheSameHashTakesTheNewStat(t *testing.T) {
+func TestAContentHashOfTheSameHashTakesTheNewStat(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
-	saveFileHash(t, db, getRiversRecord())
+	saveContentHash(t, db, getRiversRecord())
 
 	touched := getRiversRecord()
-	touched.ModTime, touched.FileID, touched.RecordTime = getRiversTime().Add(time.Minute+3), 4243, getRiversTime().Add(2*time.Minute)
-	saveFileHash(t, db, touched)
+	touched.ModTime, touched.FileID, touched.HashTime = getRiversTime().Add(time.Minute+3), 4243, getRiversTime().Add(2*time.Minute)
+	saveContentHash(t, db, touched)
 
-	if got, _ := findFileHash(t, db, riversPath); !isSameFileHash(got, touched) {
+	if got, _ := findContentHash(t, db, riversPath); !isSameContentHash(got, touched) {
 		t.Fatalf("the row became %+v, want %+v", got, touched)
 	}
 }
 
-func TestAFileHashOfAFileWithNoRowIsNotSaved(t *testing.T) {
+func TestAContentHashOfAFileWithNoRowIsNotSaved(t *testing.T) {
 	db := openHashIndex(t)
 	record := getRiversRecord()
 	record.Path = "library/unscanned.pdf"
-	saveFileHash(t, db, record)
+	saveContentHash(t, db, record)
 
-	if got, ok := findFileHash(t, db, record.Path); ok {
+	if got, ok := findContentHash(t, db, record.Path); ok {
 		t.Fatalf("a file with no row has %+v", got)
 	}
 	var rows int
@@ -143,15 +143,15 @@ func TestAFileHashOfAFileWithNoRowIsNotSaved(t *testing.T) {
 	}
 }
 
-func TestAFileHashOfAnotherVaultIsNotFound(t *testing.T) {
+func TestAContentHashOfAnotherVaultIsNotFound(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
-	saveFileHash(t, db, getRiversRecord())
+	saveContentHash(t, db, getRiversRecord())
 	if err := db.Vaults().Register(t.Context(), "01OTHERVAULT"); err != nil {
 		t.Fatal(err)
 	}
 
-	if got, ok, err := db.TextVersions().FindFileHash(t.Context(), "01OTHERVAULT", riversPath); err != nil || ok {
+	if got, ok, err := db.TextVersions().FindContentHash(t.Context(), "01OTHERVAULT", riversPath); err != nil || ok {
 		t.Fatalf("another vault has %+v (%v, %v)", got, ok, err)
 	}
 }
@@ -170,7 +170,7 @@ func readHashColumns(t *testing.T, db *DB, path string) (sql.NullInt64, sql.Null
 func TestAScanOfTheFileClearsItsFileIDAndHashTime(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
-	saveFileHash(t, db, getRiversRecord())
+	saveContentHash(t, db, getRiversRecord())
 	if fileID, hashTime := readHashColumns(t, db, riversPath); !fileID.Valid || !hashTime.Valid {
 		t.Fatalf("the saved row has file id %v and hash time %v", fileID, hashTime)
 	}
@@ -180,8 +180,8 @@ func TestAScanOfTheFileClearsItsFileIDAndHashTime(t *testing.T) {
 	if fileID, hashTime := readHashColumns(t, db, riversPath); fileID.Valid || hashTime.Valid {
 		t.Fatalf("after a scan the row has file id %v and hash time %v, want both NULL", fileID, hashTime)
 	}
-	got, _ := findFileHash(t, db, riversPath)
-	if got.Hash != "" || got.FileID != 0 || !got.RecordTime.IsZero() {
+	got, _ := findContentHash(t, db, riversPath)
+	if got.Hash != "" || got.FileID != 0 || !got.HashTime.IsZero() {
 		t.Fatalf("after a scan the row is %+v, want no hash, file id or hash time", got)
 	}
 }
@@ -197,9 +197,9 @@ func TestASaveOfTheNoteClearsItsFileIDAndHashTime(t *testing.T) {
 		}
 	}
 	saveNote()
-	saveFileHash(t, db, textport.FileHash{
+	saveContentHash(t, db, textport.ContentHash{
 		Path: path, Hash: riversHash, Size: note.FileStat.Size, ModTime: note.FileStat.ModTime, FileID: 51,
-		RecordTime: note.FileStat.ModTime.Add(time.Hour),
+		HashTime: note.FileStat.ModTime.Add(time.Hour),
 	})
 	if fileID, hashTime := readHashColumns(t, db, path); !fileID.Valid || !hashTime.Valid {
 		t.Fatalf("the saved note row has file id %v and hash time %v", fileID, hashTime)

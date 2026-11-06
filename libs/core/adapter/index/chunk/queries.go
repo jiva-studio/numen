@@ -49,8 +49,8 @@ type Passage struct {
 	// Producer is what made the text this chunk is a place in. Empty where the
 	// source's own bytes are the text, which is the ordinary case.
 	Producer string
-	// Hash addresses the content of the source, and is what the 	// recognition of it are kept under.
-	Hash string
+	// ContentHash addresses the content of the source, and is what the 	// recognition of it are kept under.
+	ContentHash string
 	// ChunkHash addresses the text this chunk held when the index cut it.
 	ChunkHash string
 	// MTime is when the source was last modified.
@@ -202,7 +202,7 @@ func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, quer
 	for rows.Next() {
 		var p domain.Passage
 		var row int64
-		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.Producer, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
 			return nil, err
 		}
 		p.ChunkID = ID(row)
@@ -374,7 +374,7 @@ func (q *Queries) getEnclosingPassages(ctx context.Context, vault int64, chunks 
 	for _, chunk := range chunks {
 		p := domain.Passage{ChunkID: ID(chunk)}
 		err := enclosing.QueryRowContext(ctx, chunk, vault).
-			Scan(&p.Source, &p.Kind, &p.Producer, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt)
+			Scan(&p.Source, &p.Kind, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.HitAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}
@@ -402,7 +402,7 @@ func (q *Queries) Passage(ctx context.Context, vaultID domain.VaultID, chunk int
 
 func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
 	p := Passage{Chunk: chunk}
-	err := row.Scan(&p.Path, &p.Producer, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent)
+	err := row.Scan(&p.Path, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.Parent)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Passage{}, false, nil
 	}
@@ -468,7 +468,7 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 	var out []Passage
 	for rows.Next() {
 		var p Passage
-		if err := rows.Scan(&p.Chunk, &p.Path, &p.Producer, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.ChunkHash, &p.MTime, &p.Source); err != nil {
+		if err := rows.Scan(&p.Chunk, &p.Path, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.ChunkHash, &p.MTime, &p.Source); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -573,11 +573,11 @@ func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte
 // SourceText is one source whose text a producer made: where the file is, what
 // made the text, and the hash the files of that recognition are kept under.
 type SourceText struct {
-	Path     string
-	Producer string
-	Hash     string
-	Size     int64
-	MTime    int64
+	Path        string
+	Producer    string
+	ContentHash string
+	Size        int64
+	MTime       int64
 }
 
 // GetSourceText is what one source's text came from, and false where the index holds
@@ -591,7 +591,7 @@ func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, pat
 		return SourceText{}, false, err
 	}
 	found := SourceText{Path: path}
-	err = q.db.QueryRowContext(ctx, sourceTextSQL, vault, path).Scan(&found.Producer, &found.Hash, &found.Size, &found.MTime)
+	err = q.db.QueryRowContext(ctx, sourceTextSQL, vault, path).Scan(&found.Producer, &found.ContentHash, &found.Size, &found.MTime)
 	if errors.Is(err, sql.ErrNoRows) {
 		return SourceText{}, false, nil
 	}
@@ -624,7 +624,7 @@ func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.Vault
 	var out []SourceText
 	for rows.Next() {
 		var r SourceText
-		if err := rows.Scan(&r.Path, &r.Producer, &r.Hash); err != nil {
+		if err := rows.Scan(&r.Path, &r.Producer, &r.ContentHash); err != nil {
 			return nil, err
 		}
 		out = append(out, r)

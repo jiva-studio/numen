@@ -80,7 +80,7 @@ func (memoryFile) Close() error { return nil }
 
 // mapsVersions is the one version of the maps and the row a scan wrote for them.
 type mapsVersions struct {
-	source textport.FileHash
+	source textport.ContentHash
 	hasRow bool
 }
 
@@ -92,7 +92,7 @@ func (m *mapsVersions) GetVersions(_ context.Context, path string) ([]domain.Tex
 	}
 	return []domain.TextVersion{{
 		Path: mapsPath, PluginID: pdfReader, Key: "pages", Kind: "page-text", File: "pages.jsonl",
-		SourceHash: domain.HashContent(getMapsContent()), Hash: textOfMaps, CreateTime: getMapsTime(),
+		InputHash: domain.HashContent(getMapsContent()), TextHash: textOfMaps, CreateTime: getMapsTime(),
 	}}, nil
 }
 
@@ -104,14 +104,14 @@ func (m *mapsVersions) RemovePluginVersions(context.Context, string) ([]domain.T
 	return nil, nil
 }
 
-func (m *mapsVersions) FindFileHash(_ context.Context, path string) (textport.FileHash, bool, error) {
+func (m *mapsVersions) FindContentHash(_ context.Context, path string) (textport.ContentHash, bool, error) {
 	if path != mapsPath || !m.hasRow {
-		return textport.FileHash{}, false, nil
+		return textport.ContentHash{}, false, nil
 	}
 	return m.source, true, nil
 }
 
-func (m *mapsVersions) SaveFileHash(_ context.Context, record textport.FileHash) error {
+func (m *mapsVersions) SaveContentHash(_ context.Context, record textport.ContentHash) error {
 	if record.Path != mapsPath || !m.hasRow {
 		return nil
 	}
@@ -128,7 +128,7 @@ type textFiles struct{}
 func (textFiles) Open(domain.Vault) (textport.TextFiles, error) { return textFiles{}, nil }
 
 func (textFiles) ReadTextFile(context.Context, string, string) (textport.TextFile, error) {
-	return textport.TextFile{Hash: textOfMaps}, nil
+	return textport.TextFile{TextHash: textOfMaps}, nil
 }
 
 func (textFiles) WriteTextFile(context.Context, string, string, []domain.TextSegment) (string, error) {
@@ -181,7 +181,7 @@ func TestListVersionsReadsTheVaultItIsGiven(t *testing.T) {
 // opened for its hash once.
 func TestListingTheVersionsOfAnUnchangedPDFTwiceOpensItOnce(t *testing.T) {
 	files := &mapsVault{}
-	repo := &mapsVersions{hasRow: true, source: textport.FileHash{
+	repo := &mapsVersions{hasRow: true, source: textport.ContentHash{
 		Path: mapsPath, Size: int64(len(getMapsContent())), ModTime: getMapsTime(),
 	}}
 	texts := newTexts(t, files, repo)

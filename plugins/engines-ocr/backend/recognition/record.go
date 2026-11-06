@@ -107,7 +107,7 @@ func (r *record) getText() (domain.VersionText, error) {
 	}
 	return domain.NewVersionText(domain.TextVersion{
 		Path: "", PluginID: "", Key: "", Source: "", Kind: textKind, File: "",
-		SourceHash: "", Hash: "", CreateTime: time.Time{},
+		InputHash: "", TextHash: "", CreateTime: time.Time{},
 	}, segments), nil
 }
 

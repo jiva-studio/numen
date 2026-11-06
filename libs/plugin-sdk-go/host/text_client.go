@@ -85,7 +85,7 @@ func failText(code v1.TextErrorCode) error {
 func (c *TextClient) PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error) {
 	res, err := c.rpc.PutTextVersion(ctx, newTextRequest(c, &v1.PutTextVersionRequest{
 		Path: params.Path, Key: params.Key, SourceVersionId: string(params.Source), Kind: string(params.Kind),
-		SourceHash: params.SourceHash, File: params.File,
+		InputHash: params.InputHash, File: params.File,
 	}))
 	if err != nil {
 		return domain.TextVersion{}, readError(err)
@@ -133,7 +133,7 @@ func (c *TextClient) ReadText(ctx context.Context, path string, id domain.TextVe
 func readTextVersion(v *v1.TextVersion) domain.TextVersion {
 	return domain.TextVersion{
 		Path: v.GetPath(), PluginID: v.GetPluginId(), Key: v.GetKey(), Source: domain.TextVersionID(v.GetSourceVersionId()),
-		Kind: domain.TextKind(v.GetKind()), File: v.GetFile(), SourceHash: v.GetSourceHash(), Hash: v.GetHash(),
+		Kind: domain.TextKind(v.GetKind()), File: v.GetFile(), InputHash: v.GetInputHash(), TextHash: v.GetTextHash(),
 		CreateTime: time.UnixMilli(v.GetCreateTimeUnixMs()),
 	}
 }

@@ -86,19 +86,19 @@ func newScene(t *testing.T) *scene {
 	return s
 }
 
-func (s *scene) fileHash() string { return domain.HashContent(s.files[scanPath]) }
+func (s *scene) contentHash() string { return domain.HashContent(s.files[scanPath]) }
 
 // getLive is the live version of the scan and its text.
 func (s *scene) getLive(t *testing.T) (domain.TextVersionID, string) {
 	t.Helper()
-	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, s.fileHash())
+	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, s.contentHash())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if listing.Live == "" {
 		return "", ""
 	}
-	text, err := s.versions.GetLiveText(t.Context(), s.vault, scanPath, s.fileHash())
+	text, err := s.versions.GetLiveText(t.Context(), s.vault, scanPath, s.contentHash())
 	if err != nil {
 		t.Fatalf("read the live text: %v", err)
 	}
@@ -130,13 +130,13 @@ func (s *scene) runEntry(t *testing.T, pluginID string) {
 // requestText requests text for the scan from the standalone plugins.
 func (s *scene) requestText(t *testing.T) {
 	t.Helper()
-	if err := s.versions.RequestText(t.Context(), s.vault, scanPath, s.fileHash()); err != nil {
+	if err := s.versions.RequestText(t.Context(), s.vault, scanPath, s.contentHash()); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func (s *scene) getReaderVersion() domain.TextVersionID {
-	return domain.NewTextVersionID(pdfReader, "file-"+s.fileHash()[:8])
+	return domain.NewTextVersionID(pdfReader, "file-"+s.contentHash()[:8])
 }
 
 func getProofreadingOf(source domain.TextVersionID) domain.TextVersionID {
@@ -147,7 +147,7 @@ func TestThePDFExampleShowsTheLiveVersionAtEveryStep(t *testing.T) {
 	s := newScene(t)
 	a := s.getReaderVersion()
 	b := getProofreadingOf(a)
-	c := domain.NewTextVersionID(ocr, "file-"+s.fileHash()[:8])
+	c := domain.NewTextVersionID(ocr, "file-"+s.contentHash()[:8])
 	d := getProofreadingOf(c)
 
 	// A: the file has no version, so the standalone reader is queried for one.
@@ -173,7 +173,7 @@ func TestThePDFExampleShowsTheLiveVersionAtEveryStep(t *testing.T) {
 func TestADisabledPluginsVersionStaysLiveAndReadable(t *testing.T) {
 	s := newScene(t)
 	s.runEntry(t, ocr)
-	c := domain.NewTextVersionID(ocr, "file-"+s.fileHash()[:8])
+	c := domain.NewTextVersionID(ocr, "file-"+s.contentHash()[:8])
 	s.plugins.setEnabled(ocr, false)
 
 	s.requireLive(t, "OCR disabled", c, "scanned teh ")
@@ -248,13 +248,13 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	s := newScene(t)
 	s.requestText(t)
 	s.runEntry(t, proofreader)
-	first := s.fileHash()
+	first := s.contentHash()
 
 	s.files[scanPath] = []byte("%PDF scan, second printing")
 	if id, _ := s.getLive(t); id != "" {
 		t.Fatalf("%s is live after the file was replaced", id)
 	}
-	if _, err := s.versions.GetLiveText(t.Context(), s.vault, scanPath, s.fileHash()); !errors.Is(err, textport.ErrNoText) {
+	if _, err := s.versions.GetLiveText(t.Context(), s.vault, scanPath, s.contentHash()); !errors.Is(err, textport.ErrNoText) {
 		t.Fatalf("the live text of a replaced file: got %v, want ErrNoText", err)
 	}
 
@@ -294,7 +294,7 @@ func TestDeletePluginVersionsRemovesTheRecordsAndReportsTheFiles(t *testing.T) {
 	if err := s.versions.DeletePluginVersions(t.Context(), s.vault, ocr); err != nil {
 		t.Fatal(err)
 	}
-	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, s.fileHash())
+	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, s.contentHash())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -343,10 +343,10 @@ func TestRecordVersionRejectsInvalidVersions(t *testing.T) {
 	}
 }
 
-func TestRecordVersionStoresTheFileHashAndCreateTime(t *testing.T) {
+func TestRecordVersionStoresTheTextHashAndCreateTime(t *testing.T) {
 	s := newScene(t)
 	ctx := t.Context()
-	params := textversion.VersionPut{Path: scanPath, Key: "k", Kind: kindRecognition, SourceHash: s.fileHash(), File: "k.jsonl"}
+	params := textversion.VersionPut{Path: scanPath, Key: "k", Kind: kindRecognition, InputHash: s.contentHash(), File: "k.jsonl"}
 	firstHash, err := s.folders.WriteTextFile(ctx, ocr, params.File, []domain.TextSegment{{Text: "one"}})
 	if err != nil {
 		t.Fatal(err)
@@ -363,7 +363,7 @@ func TestRecordVersionStoresTheFileHashAndCreateTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first.Hash != firstHash || second.Hash != secondHash || !second.CreateTime.Equal(first.CreateTime) {
+	if first.TextHash != firstHash || second.TextHash != secondHash || !second.CreateTime.Equal(first.CreateTime) {
 		t.Fatalf("versions %+v then %+v, want the file's hash each time and the first time", first, second)
 	}
 }

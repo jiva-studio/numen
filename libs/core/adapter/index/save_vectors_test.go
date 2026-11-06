@@ -15,7 +15,7 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 	path := "doc.md"
 
 	if err := db.Chunks().SaveSource(ctx, vault, chunk.Source{
-		Path: path, Kind: "note", Size: 100, MTime: 1, Hash: "h" + path, Recipe: "text",
+		Path: path, Kind: "note", Size: 100, MTime: 1, ContentHash: "h" + path, Recipe: "text",
 	}); err != nil {
 		t.Fatal(err)
 	}

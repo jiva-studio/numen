@@ -142,7 +142,7 @@ func (s source) save(t *testing.T, db *index.DB) {
 	}
 	err := db.Chunks().SaveExtraction(t.Context(), s.vault, chunk.Source{
 		Path: s.path, Kind: s.kind, Size: s.size, MTime: s.mtime,
-		Hash: s.hash, Recipe: s.recipe, Producer: s.producer,
+		ContentHash: s.hash, Recipe: s.recipe, Producer: s.producer,
 	}, chunks)
 	if err != nil {
 		t.Fatal(err)
@@ -399,7 +399,7 @@ func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 	}
 	for _, p := range got {
 		if p.Source != "lib/zebra.epub" || p.Kind != domain.KindFile || p.Producer != "ocr" ||
-			p.SourceHash != "h-zebra" || p.Start != 100 || p.Length != 100 || p.Location != "chapter 4" {
+			p.ContentHash != "h-zebra" || p.Start != 100 || p.Length != 100 || p.Location != "chapter 4" {
 			t.Errorf("a hit is %+v, want the large chunk of the book at 100 for 100 in chapter 4", p)
 		}
 		row, err := chunk.Row(p.ChunkID)
@@ -549,7 +549,7 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 			book = p
 		}
 	}
-	if book.Kind != domain.KindFile || book.Producer != "ocr" || book.SourceHash != "h-guide" ||
+	if book.Kind != domain.KindFile || book.Producer != "ocr" || book.ContentHash != "h-guide" ||
 		book.Start != 100 || book.Length != 100 || book.Location != "chapter 9" || book.HitAt != 0 || book.ChunkID == "" {
 		t.Errorf("the section is %+v, want the chunk it opens in chapter 9", book)
 	}
@@ -657,7 +657,7 @@ func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 		t.Errorf("the nearest are %v, want %v", getSources(got)[:4], want)
 	}
 	first := got[0]
-	if first.Kind != domain.KindFile || first.Producer != "ocr" || first.SourceHash != "h-lib/near.epub" ||
+	if first.Kind != domain.KindFile || first.Producer != "ocr" || first.ContentHash != "h-lib/near.epub" ||
 		first.Start != 100 || first.Length != 100 || first.Location != "chapter 1" {
 		t.Errorf("the nearest is %+v, want the large chunk it is inside", first)
 	}
@@ -789,7 +789,7 @@ func TestAPassageIsWhereOneChunkIsReadFrom(t *testing.T) {
 	if err != nil || !found {
 		t.Fatalf("the small chunk is not found: %v", err)
 	}
-	if got.Chunk != small.Chunk || got.Path != "lib/a.epub" || got.Producer != "ocr" || got.Hash != "h-a" ||
+	if got.Chunk != small.Chunk || got.Path != "lib/a.epub" || got.Producer != "ocr" || got.ContentHash != "h-a" ||
 		got.Start != 150 || got.Length != 50 || got.Location != "" || got.Parent != small.Parent || got.Parent == 0 {
 		t.Errorf("the small chunk is %+v, want it at 150 for 50, inside %d", got, small.Parent)
 	}
@@ -923,13 +923,13 @@ func TestUnembeddedChunksAreSmallOnesNewestSourceFirst(t *testing.T) {
 	}
 	first, last := got[0], got[3]
 	if first.Start != 100 || first.Length != 50 || first.Location != "" || first.Parent == 0 || first.MTime != century+5 ||
-		first.Source == 0 || first.ChunkHash == "" || first.Hash == "" || first.Chunk == 0 {
+		first.Source == 0 || first.ChunkHash == "" || first.ContentHash == "" || first.Chunk == 0 {
 		t.Errorf("the first unembedded chunk is %+v", first)
 	}
 	if got[1].Start != 150 || got[1].Chunk <= first.Chunk {
 		t.Errorf("the second chunk of a source follows the first: %+v after %+v", got[1], first)
 	}
-	if last.Producer != "ocr" || last.Hash != "h-old" || last.MTime != century+1 || last.Source >= first.Source {
+	if last.Producer != "ocr" || last.ContentHash != "h-old" || last.MTime != century+1 || last.Source >= first.Source {
 		t.Errorf("the last unembedded chunk is %+v", last)
 	}
 }
@@ -1135,7 +1135,7 @@ func TestASourceTextReturnsWhatMadeItAndTheFileItWasMadeFrom(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	got, found, err := queries.GetSourceText(t.Context(), vaultA, "lib/scan.pdf")
-	want := chunk.SourceText{Path: "lib/scan.pdf", Producer: "ocr", Hash: "h-scan", Size: 321, MTime: century + 7}
+	want := chunk.SourceText{Path: "lib/scan.pdf", Producer: "ocr", ContentHash: "h-scan", Size: 321, MTime: century + 7}
 	if err != nil || !found || got != want {
 		t.Errorf("got %+v, %v, %v; want %+v", got, found, err, want)
 	}
@@ -1189,9 +1189,9 @@ func TestRecognisedSourcesAreTheOnesAProducerMadeTheTextOf(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []chunk.SourceText{
-		{Path: "lib/a.pdf", Producer: "asr", Hash: "h-a"},
-		{Path: "lib/b.pdf", Producer: "ocr", Hash: "h-b"},
-		{Path: "lib/c.pdf", Producer: "ocr", Hash: "hash-lib/c.pdf"},
+		{Path: "lib/a.pdf", Producer: "asr", ContentHash: "h-a"},
+		{Path: "lib/b.pdf", Producer: "ocr", ContentHash: "h-b"},
+		{Path: "lib/c.pdf", Producer: "ocr", ContentHash: "hash-lib/c.pdf"},
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)

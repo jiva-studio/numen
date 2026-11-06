@@ -11,12 +11,12 @@ import (
 )
 
 // GetLiveText is the text of the file's live version, or textport.ErrNoText.
-func (u *Versions) GetLiveText(ctx context.Context, v domain.Vault, path, fileHash string) (domain.VersionText, error) {
+func (u *Versions) GetLiveText(ctx context.Context, v domain.Vault, path, contentHash string) (domain.VersionText, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
 		return domain.VersionText{}, err
 	}
-	live, ok, err := u.findLive(ctx, v, versions, fileHash)
+	live, ok, err := u.findLive(ctx, v, versions, contentHash)
 	if err != nil {
 		return domain.VersionText{}, err
 	}
@@ -88,7 +88,7 @@ func (u *Versions) readText(ctx context.Context, v domain.Vault, version domain.
 	if err != nil {
 		return domain.VersionText{}, fmt.Errorf("read text %s of %s: %w", version.GetID(), version.Path, err)
 	}
-	if file.Hash != version.Hash {
+	if file.TextHash != version.TextHash {
 		return domain.VersionText{}, fmt.Errorf("%w: the file of %s of %s changed", textport.ErrNoText, version.GetID(), version.Path)
 	}
 	return domain.NewVersionText(version, file.Segments), nil
@@ -104,8 +104,8 @@ type vaultTexts struct {
 	vault    domain.Vault
 }
 
-func (t vaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) (domain.TextVersionID, error) {
-	listing, err := t.versions.ListVersions(ctx, t.vault, path, fileHash)
+func (t vaultTexts) FindLiveVersion(ctx context.Context, path, contentHash string) (domain.TextVersionID, error) {
+	listing, err := t.versions.ListVersions(ctx, t.vault, path, contentHash)
 	if err != nil {
 		return "", err
 	}
@@ -115,22 +115,22 @@ func (t vaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) 
 	return listing.Live, nil
 }
 
-func (t vaultTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
-	return t.versions.GetLiveText(ctx, t.vault, path, fileHash)
+func (t vaultTexts) GetLiveText(ctx context.Context, path, contentHash string) (domain.VersionText, error) {
+	return t.versions.GetLiveText(ctx, t.vault, path, contentHash)
 }
 
 func (t vaultTexts) GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error) {
 	return t.versions.GetVersionText(ctx, t.vault, path, id)
 }
 
-func (t vaultTexts) RequestText(ctx context.Context, path, fileHash string) error {
-	return t.versions.RequestText(ctx, t.vault, path, fileHash)
+func (t vaultTexts) RequestText(ctx context.Context, path, contentHash string) error {
+	return t.versions.RequestText(ctx, t.vault, path, contentHash)
 }
 
 func (t vaultTexts) IsTextSource(ctx context.Context, path string) (bool, error) {
 	return t.versions.IsTextSource(ctx, t.vault, path)
 }
 
-func (t vaultTexts) GetFileHash(ctx context.Context, path string) (string, error) {
-	return t.versions.GetFileHash(ctx, t.vault, path)
+func (t vaultTexts) GetContentHash(ctx context.Context, path string) (string, error) {
+	return t.versions.GetContentHash(ctx, t.vault, path)
 }

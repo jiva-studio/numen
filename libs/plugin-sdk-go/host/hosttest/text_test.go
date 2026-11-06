@@ -21,7 +21,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	a, err := ocr.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", SourceHash: domain.HashContent(file), File: "k.jsonl"})
+	a, err := ocr.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: domain.HashContent(file), File: "k.jsonl"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 	if err := host.WriteText(ctx, fixer.GetStore("org.example.fixer"), "b.jsonl", []domain.TextSegment{{Text: "the end"}}); err != nil {
 		t.Fatal(err)
 	}
-	b, err := fixer.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "b", Source: a.GetID(), Kind: "recognition", SourceHash: a.Hash, File: "b.jsonl"})
+	b, err := fixer.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "b", Source: a.GetID(), Kind: "recognition", InputHash: a.TextHash, File: "b.jsonl"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestDeleteTextRemovesVersionRecordAndFile(t *testing.T) {
 	if err := host.WriteText(ctx, store, "k.jsonl", []domain.TextSegment{{Text: "a"}}); err != nil {
 		t.Fatal(err)
 	}
-	a, err := ocr.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", SourceHash: domain.HashContent(file), File: "k.jsonl"})
+	a, err := ocr.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: domain.HashContent(file), File: "k.jsonl"})
 	if err != nil {
 		t.Fatal(err)
 	}

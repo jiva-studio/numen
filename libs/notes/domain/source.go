@@ -3,13 +3,13 @@ package domain
 // Source is one file with text that the index holds: what the file was when it
 // was read, and what read it.
 //
-// Hash addresses the content, and Recipe names what took the text out and the
+// ContentHash addresses the content, and Recipe names what took the text out and the
 // sizes that produced the source's chunks. Both are empty on a source nothing
 // has taken text out of yet.
 type Source struct {
-	FileStat FileStat
-	Hash     string
-	Recipe   string
+	FileStat    FileStat
+	ContentHash string
+	Recipe      string
 
 	// Producer is what made the text this source's chunks are places in. Empty
 	// where the source's own bytes are the text, which is the ordinary case.

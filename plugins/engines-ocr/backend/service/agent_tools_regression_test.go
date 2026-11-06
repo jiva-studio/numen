@@ -40,7 +40,7 @@ func TestRecognitionCreateOverAnotherPluginsRecognitionKeyStartsARun(t *testing.
 		t.Fatal(err)
 	}
 	if _, err := other.PutVersion(t.Context(), host.TextPut{
-		Path: scanPath, Key: recognition.VersionKey, Kind: "recognition", SourceHash: domain.HashContent(raw), File: "r.jsonl",
+		Path: scanPath, Key: recognition.VersionKey, Kind: "recognition", InputHash: domain.HashContent(raw), File: "r.jsonl",
 	}); err != nil {
 		t.Fatal(err)
 	}

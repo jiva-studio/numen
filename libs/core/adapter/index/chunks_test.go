@@ -115,7 +115,7 @@ func cutBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 
 	stem := strings.TrimSuffix(filepath.Base(path), ".epub")
 	if err := chunks.SaveSource(ctx, vault.ID, chunk.Source{
-		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "epub",
+		Path: path, Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-" + path, Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -347,7 +347,7 @@ func source(t *testing.T, db *DB, vault domain.Vault, path string, kind domain.S
 	ctx := t.Context()
 	chunks := db.Chunks()
 	if err := chunks.SaveSource(ctx, vault.ID, chunk.Source{
-		Path: path, Kind: string(kind), Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "any",
+		Path: path, Kind: string(kind), Size: 1000, MTime: 1, ContentHash: "hash-" + path, Recipe: "any",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -606,13 +606,13 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	// Nothing computes a hash for a note, and the column is null.
 	var hashed int
 	if err := db.read.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM sources WHERE kind = 'note' AND hash IS NOT NULL`).Scan(&hashed); err != nil {
+		`SELECT COUNT(*) FROM sources WHERE kind = 'note' AND content_hash IS NOT NULL`).Scan(&hashed); err != nil {
 		t.Fatal(err)
 	}
 	if hashed != 0 {
 		t.Errorf("%d notes carry a content hash", hashed)
 	}
-	if got := countRows(t, db, `SELECT COUNT(*) FROM sources WHERE hash IS NOT NULL`); got != 1 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM sources WHERE content_hash IS NOT NULL`); got != 1 {
 		t.Errorf("%d sources carry a content hash, want the book", got)
 	}
 }
@@ -779,7 +779,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 
 	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
 		Path: "library/one.epub", Kind: "book", Size: 1000, MTime: 1,
-		Hash: "hash-one", Recipe: "epub",
+		ContentHash: "hash-one", Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -847,7 +847,7 @@ func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...str
 	ctx := t.Context()
 
 	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
-		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "epub",
+		Path: path, Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-" + path, Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -1168,7 +1168,7 @@ func saveRecognisedSource(t *testing.T, db *DB, vault domain.Vault, path, hash s
 	t.Helper()
 
 	if err := db.Chunks().SaveSource(t.Context(), vault.ID, chunk.Source{
-		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: hash, Producer: "ocr",
+		Path: path, Kind: "book", Size: 1000, MTime: 1, ContentHash: hash, Producer: "ocr",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -1187,8 +1187,8 @@ func TestRecognisedStaysInsideItsVault(t *testing.T) {
 		vault domain.Vault
 		want  chunk.SourceText
 	}{
-		{getFirst(), chunk.SourceText{Path: "library/first.pdf", Producer: "ocr", Hash: "hash-first"}},
-		{getSecond(), chunk.SourceText{Path: "library/second.pdf", Producer: "ocr", Hash: "hash-second"}},
+		{getFirst(), chunk.SourceText{Path: "library/first.pdf", Producer: "ocr", ContentHash: "hash-first"}},
+		{getSecond(), chunk.SourceText{Path: "library/second.pdf", Producer: "ocr", ContentHash: "hash-second"}},
 	} {
 		found, err := db.ChunkQueries().GetRecognisedSources(t.Context(), c.vault.ID, "book")
 		if err != nil {
@@ -1212,7 +1212,7 @@ func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 	chunks := db.Chunks()
 
 	if err := chunks.SaveSource(ctx, vault.ID, chunk.Source{
-		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "pdf",
+		Path: path, Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-" + path, Recipe: "pdf",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -1324,7 +1324,7 @@ func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 	chunks := db.Chunks()
 
 	if err := chunks.SaveSource(ctx, getFirst().ID, chunk.Source{
-		Path: "library/gone.pdf", Kind: "book", Size: 1000, MTime: 1, Hash: "hash-gone", Recipe: "pdf",
+		Path: "library/gone.pdf", Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-gone", Recipe: "pdf",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -1343,7 +1343,7 @@ func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 	// The next book's chunks take the numbers the first one left, and this book
 	// names no section of its own to write over them.
 	if err := chunks.SaveSource(ctx, getFirst().ID, chunk.Source{
-		Path: "library/next.pdf", Kind: "book", Size: 1000, MTime: 1, Hash: "hash-next", Recipe: "pdf",
+		Path: "library/next.pdf", Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-next", Recipe: "pdf",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -1403,8 +1403,8 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 			FileStat: domain.FileStat{
 				Path: "library/chaitanya.pdf", Kind: domain.KindFile, Size: 1000, ModTime: getWalked(),
 			},
-			Hash:   "hash",
-			Recipe: "pdf",
+			ContentHash: "hash",
+			Recipe:      "pdf",
 		},
 		Chunks: []domain.Chunk{{
 			Start: 0, Length: 60, Location: "Madhavendra Puri",
@@ -1435,7 +1435,7 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 
 	chunks := db.Chunks()
 	if err := chunks.SaveSource(ctx, getFirst().ID, chunk.Source{
-		Path: "library/old.epub", Kind: "book", Size: 1000, MTime: 100, Hash: "hash-old", Recipe: "epub",
+		Path: "library/old.epub", Kind: "book", Size: 1000, MTime: 100, ContentHash: "hash-old", Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -1447,7 +1447,7 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 	}
 
 	if err := chunks.SaveSource(ctx, getFirst().ID, chunk.Source{
-		Path: "notes/recent.md", Kind: "note", Size: 500, MTime: 200, Hash: "hash-recent",
+		Path: "notes/recent.md", Kind: "note", Size: 500, MTime: 200, ContentHash: "hash-recent",
 	}); err != nil {
 		t.Fatal(err)
 	}
