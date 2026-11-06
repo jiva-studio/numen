@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-const listenerHost = "127.0.0.1"
+const listenerAddressHost = "127.0.0.1"
 
 var errListenerNotReported = errors.New("the ready line does not report the listener")
 
@@ -89,7 +89,7 @@ func (h *Host) syncListeners(pluginID string) {
 func (h *Host) openListeners(pluginID string, wanted []manifest.Listener) ([]*portproxy.Proxy, error) {
 	proxies := make([]*portproxy.Proxy, 0, len(wanted))
 	for _, declared := range wanted {
-		addr := net.JoinHostPort(listenerHost, strconv.Itoa(declared.Port))
+		addr := net.JoinHostPort(listenerAddressHost, strconv.Itoa(declared.Port))
 		proxy, err := portproxy.Open(context.Background(), addr, h.createListenerTarget(pluginID, declared.Name), h.reportError)
 		if err != nil {
 			for _, opened := range proxies {
@@ -154,6 +154,6 @@ func (h *Host) createListenerTarget(pluginID, name string) portproxy.Target {
 			h.Release(pluginID)
 			return "", nil, fmt.Errorf("plugin %s listener %s: %w", pluginID, name, errListenerNotReported)
 		}
-		return net.JoinHostPort(listenerHost, strconv.Itoa(port)), func() { h.Release(pluginID) }, nil
+		return net.JoinHostPort(listenerAddressHost, strconv.Itoa(port)), func() { h.Release(pluginID) }, nil
 	}
 }
