@@ -139,8 +139,8 @@ func (e *vaultEndpoint) RemoveVault(
 	return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Path: removed.Path}), nil
 }
 
-// OpenVault answers before the window changes vault: the change closes the session of the calling
-// plugin, so it runs under a context the end of the call does not cancel.
+// OpenVault answers once the window has decided, before it changes vault: the change closes the
+// session of the calling plugin, so it runs under a context the end of the call does not cancel.
 func (e *vaultEndpoint) OpenVault(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceOpenVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
@@ -153,8 +153,13 @@ func (e *vaultEndpoint) OpenVault(
 		failure, err := answerVaults(err)
 		return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Failure: failure}), err
 	}
+	swap, err := list.OpenVault(ctx, id)
+	if err != nil {
+		failure, err := answerVaults(err)
+		return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Failure: failure}), err
+	}
 	isStarted := e.endpoint.background.start(ctx, func(ctx context.Context) {
-		if err := list.OpenVault(ctx, id); err != nil {
+		if err := swap(ctx); err != nil {
 			e.endpoint.background.report(fmt.Errorf("open vault %s for a plugin: %w", id, err))
 		}
 	})

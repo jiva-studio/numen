@@ -20,8 +20,9 @@ type PluginVaultList interface {
 	RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error)
 	// RemoveVault takes the vault off the list and out of the index. The folder stays.
 	RemoveVault(ctx context.Context, id domain.VaultID) error
-	// OpenVault makes the window show the vault.
-	OpenVault(ctx context.Context, id domain.VaultID) error
+	// OpenVault decides whether the window can show the vault and returns the change of vault, which
+	// the caller runs. A refusal is the error: ErrVaultAsking, or an unknown vault.
+	OpenVault(ctx context.Context, id domain.VaultID) (swap func(ctx context.Context) error, err error)
 	// IsMissing reports whether nothing is at the vault's folder.
 	IsMissing(v domain.Vault) bool
 }
