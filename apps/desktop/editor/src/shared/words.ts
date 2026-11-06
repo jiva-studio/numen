@@ -18,10 +18,10 @@ const toLowerFirst = (text: string): string => text.charAt(0).toLowerCase() + te
 export const WORDS = {
   /** The name the title bar of every window starts with. */
   appName: 'numen',
-  /** The row of a submenu or a pick list of choices while they are read. */
-  loadingChoices: 'Loading…',
-  /** The row of a submenu of a command that offers no choice. */
-  noChoices: 'No choices',
+  /** The row of a submenu or a pick list of items while they are read. */
+  loadingItems: 'Loading…',
+  /** The row of a submenu of a command that lists no item. */
+  noItems: 'No items',
   /** Status corner text shown while something about the vault is wrong. */
   unwatched: 'Vault changes not watched',
   unread: 'Vault unreadable',

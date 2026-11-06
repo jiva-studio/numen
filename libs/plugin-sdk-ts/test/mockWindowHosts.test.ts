@@ -9,7 +9,7 @@ const BUTTON: SlotItem = {
   command: 'org.example.ledger:ledger.open',
   title: 'Open ledger',
   shortcut: '',
-  hasChoices: false,
+  hasItems: false,
 }
 
 const SYNC: BackgroundTask = {
@@ -44,23 +44,23 @@ describe('the slots of a mock context', () => {
 describe('the commands of a mock context', () => {
   const TARGET = { path: 'ledger/March.md', title: 'March', isFolder: false, others: [], tab: '' }
 
-  it('give the choices a test sets for a command, and none for another', async () => {
+  it('give the items a test sets for a command, and none for another', async () => {
     const ctx = createMockPluginContext()
     const windows = [{ id: 'w2', title: 'Second window' }]
 
-    ctx.commands.setChoices('app:tab.move', windows)
+    ctx.commands.setItems('app:tab.move', windows)
 
-    expect(await ctx.commands.getChoices('app:tab.move', TARGET)).toStrictEqual(windows)
-    expect(await ctx.commands.getChoices('app:vault.create')).toStrictEqual([])
+    expect(await ctx.commands.listItems('app:tab.move', TARGET)).toStrictEqual(windows)
+    expect(await ctx.commands.listItems('app:vault.create')).toStrictEqual([])
   })
 
-  it('record the choice a command runs with', async () => {
+  it('record the argument a command runs with', async () => {
     const ctx = createMockPluginContext()
 
     await ctx.commands.run('app:tab.move', TARGET, 'w2')
 
     expect(ctx.commands.getRuns()).toStrictEqual([
-      { command: 'app:tab.move', target: TARGET, choice: 'w2' },
+      { command: 'app:tab.move', target: TARGET, argument: 'w2' },
     ])
   })
 
@@ -88,8 +88,8 @@ describe('the commands of a mock context', () => {
     await ctx.commands.run('org.example.ledger:ledger.open', TARGET)
 
     expect(ctx.commands.getRuns()).toStrictEqual([
-      { command: 'app:vault.create', target: undefined, choice: undefined },
-      { command: 'org.example.ledger:ledger.open', target: TARGET, choice: undefined },
+      { command: 'app:vault.create', target: undefined, argument: undefined },
+      { command: 'org.example.ledger:ledger.open', target: TARGET, argument: undefined },
     ])
   })
 })

@@ -7,7 +7,7 @@ import { usePluginCommands } from './usePluginCommands'
 describe('the palette entry of a command a plugin declares', () => {
   it('is drawn with the icon the manifest names', () => {
     const host = {
-      hasCommandChoices: () => false,
+      hasCommandItems: () => false,
       getPaletteCommands: () => [
         { id: 'md.tree:tree.open', title: 'Open file tree', icon: 'folder-tree' },
       ],

@@ -291,7 +291,7 @@ describe('a command a plugin runs over the vault', () => {
 
     await context.commands!.run(id, target)
 
-    expect(commands.getRuns()).toStrictEqual([{ command: id, target, choice: undefined }])
+    expect(commands.getRuns()).toStrictEqual([{ command: id, target, argument: undefined }])
   })
 
   it('reads the commands of the window and their choices with no permission', () => {

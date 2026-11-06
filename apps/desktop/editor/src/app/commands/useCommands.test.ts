@@ -212,7 +212,7 @@ describe('a plugin command over a note', () => {
     const writeMessage = vi.fn()
     const pluginHost = {
       getPaletteCommands: () => declared,
-      hasCommandChoices: () => false,
+      hasCommandItems: () => false,
       hasCommand: (id: string) => id === 'summary',
       executeCommand,
       handleShortcut,
@@ -379,16 +379,16 @@ describe('a plugin command over a note', () => {
   })
 })
 
-describe('a plugin command with choices in the palette', () => {
+describe('a plugin command with items in the palette', () => {
   const MOVE = { id: 'org.example.tide:chart.move', title: 'Move chart to window' }
   const WINDOWS = [
     { id: 'w1', title: 'First window' },
     { id: 'w2', title: 'Second window' },
   ]
 
-  const setupChoices = () => {
-    let answer: (choices: readonly { id: string; title: string }[]) => void = () => undefined
-    const getCommandChoices = vi.fn(
+  const setupItems = () => {
+    let answer: (items: readonly { id: string; title: string }[]) => void = () => undefined
+    const listCommandItems = vi.fn(
       () =>
         new Promise<readonly { id: string; title: string }[]>((resolve) => {
           answer = resolve
@@ -399,8 +399,8 @@ describe('a plugin command with choices in the palette', () => {
     const pluginHost = {
       getPaletteCommands: () => [MOVE],
       hasCommand: () => false,
-      hasCommandChoices: (id: string) => id === MOVE.id,
-      getCommandChoices,
+      hasCommandItems: (id: string) => id === MOVE.id,
+      listCommandItems,
       executeCommand,
       handleShortcut: vi.fn(() => false),
     }
@@ -419,7 +419,7 @@ describe('a plugin command with choices in the palette', () => {
     } as unknown as CommandsDepsOptions
     useCommands(options)
     return {
-      getCommandChoices,
+      listCommandItems,
       executeCommand,
       windowLists,
       answer: (list: typeof WINDOWS) => answer(list),
@@ -430,7 +430,7 @@ describe('a plugin command with choices in the palette', () => {
     (h.lists?.getStepGroups(MOVE.id, typed) ?? []).flatMap((group) => group.items)
 
   it('asks the palette for a pick list before it runs', () => {
-    setupChoices()
+    setupItems()
     const entry = (h.getExtraCommands?.() ?? []).find(
       (one) => (one as { id: string }).id === MOVE.id,
     ) as { input?: string }
@@ -438,8 +438,8 @@ describe('a plugin command with choices in the palette', () => {
     expect(entry.input).toBe('choice')
   })
 
-  it('lists a loading row while its choices arrive, then the choices of the target', async () => {
-    const { getCommandChoices, answer } = setupChoices()
+  it('lists a loading row while its items arrive, then the items of the target', async () => {
+    const { listCommandItems, answer } = setupItems()
 
     expect(rows().map((one) => [one.title, one.isDisabled ?? false])).toStrictEqual([
       ['Loading…', true],
@@ -448,7 +448,7 @@ describe('a plugin command with choices in the palette', () => {
     await vi.waitFor(() => expect(rows()).toHaveLength(2))
 
     expect(rows().map((one) => one.title)).toStrictEqual(['First window', 'Second window'])
-    expect(getCommandChoices).toHaveBeenCalledExactlyOnceWith(MOVE.id, {
+    expect(listCommandItems).toHaveBeenCalledExactlyOnceWith(MOVE.id, {
       path: 'Tide.md',
       title: 'Tide',
       isFolder: false,
@@ -457,8 +457,8 @@ describe('a plugin command with choices in the palette', () => {
     })
   })
 
-  it('keeps the choices that hold what is typed', async () => {
-    const { answer } = setupChoices()
+  it('keeps the items that hold what is typed', async () => {
+    const { answer } = setupItems()
     rows()
     answer(WINDOWS)
     await vi.waitFor(() => expect(rows()).toHaveLength(2))
@@ -466,8 +466,8 @@ describe('a plugin command with choices in the palette', () => {
     expect(rows('second').map((one) => one.id)).toStrictEqual(['w2'])
   })
 
-  it('runs the command with the choice picked', async () => {
-    const { executeCommand } = setupChoices()
+  it('runs the command with the item picked as its argument', async () => {
+    const { executeCommand } = setupItems()
     const call = h.registerCommand.mock.calls.find(([id]) => id === MOVE.id) as [
       string,
       (invocation: { path: string; title: string; name: string }) => Promise<void>,
@@ -483,7 +483,7 @@ describe('a plugin command with choices in the palette', () => {
   })
 
   it('leaves the lists of the window to a command without choices', () => {
-    const { windowLists } = setupChoices()
+    const { windowLists } = setupItems()
 
     h.lists?.getStepGroups('app:setting.theme', 'dark')
 

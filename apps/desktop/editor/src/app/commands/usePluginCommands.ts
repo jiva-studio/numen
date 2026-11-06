@@ -46,7 +46,7 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
       text: cmd.title,
       ...getPluginLooks(cmd),
       group: cmd.scope === 'note' ? ('note' as const) : ('window' as const),
-      ...(pluginHost?.hasCommandChoices(cmd.id) ? { input: 'choice' as const } : {}),
+      ...(pluginHost?.hasCommandItems(cmd.id) ? { input: 'choice' as const } : {}),
       isAvailable: (target: CommandTarget) =>
         cmd.scope !== 'note' || (target.isReady && target.path !== ''),
     }))
@@ -78,7 +78,7 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
         unregisterAll = list.map((cmd) =>
           registerCommand(cmd.id, async (invocation) => {
             const note = await getCommandNote(invocation)
-            if (pluginHost.hasCommandChoices(cmd.id) && invocation.name !== '') {
+            if (pluginHost.hasCommandItems(cmd.id) && invocation.name !== '') {
               await pluginHost.executeCommand(cmd.id, note, invocation.name)
             } else await pluginHost.executeCommand(cmd.id, note)
           }),
