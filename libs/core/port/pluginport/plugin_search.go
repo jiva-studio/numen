@@ -30,10 +30,6 @@ const (
 	// many small chunks it compares each of them with.
 	MaxSampledQueries  = 256
 	MaxSampledPassages = 500
-	// MaxSearchedPassages is how many passages one SearchPassages call returns at most, and
-	// MaxPassageBytes how many bytes of text each of them carries: a window around the hit.
-	MaxSearchedPassages = 100
-	MaxPassageBytes     = 1200
 )
 
 // PluginEmbeddingState is the model in use and how far a vault is embedded under it.

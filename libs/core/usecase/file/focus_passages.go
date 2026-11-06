@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -68,10 +67,6 @@ func checkPassages(in FocusPassagesInput) error {
 		if passage.Start < 0 || passage.Empty() {
 			return fmt.Errorf(
 				"a passage begins at or after the start of the text, and is longer than nothing: %w", ErrInvalidPassage)
-		}
-		// The window receives the ranges as 32-bit offsets.
-		if passage.End > math.MaxInt32 {
-			return fmt.Errorf("a passage ends at most %d bytes into the text: %w", math.MaxInt32, ErrInvalidPassage)
 		}
 	}
 	return nil

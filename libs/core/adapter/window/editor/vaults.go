@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	"connectrpc.com/connect"
@@ -335,9 +336,14 @@ func receiveFocus(
 	}
 }
 
+// convertByteRangesToWire returns the ranges as the window receives them, in 32-bit offsets. A
+// range whose start or end does not fit is left out.
 func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {
 	out := make([]*v1.Range, 0, len(pos))
 	for _, span := range pos {
+		if span.Start < math.MinInt32 || span.Start > math.MaxInt32 || span.End < math.MinInt32 || span.End > math.MaxInt32 {
+			continue
+		}
 		out = append(out, &v1.Range{Start: int32(span.Start), End: int32(span.End)})
 	}
 	return out

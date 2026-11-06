@@ -3,6 +3,7 @@ package hostendpoint
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"math"
 	"net/http"
@@ -84,8 +85,12 @@ func (e *windowEndpoint) FocusPassages(
 	spans := req.Msg.GetPassages()
 	passages := make([]domain.ByteRange, 0, len(spans))
 	for _, span := range spans {
-		start := int(span.GetStart())
-		passages = append(passages, domain.ByteRange{Start: start, End: start + int(span.GetLength())})
+		start, end := int64(span.GetStart()), int64(span.GetStart())+int64(span.GetLength())
+		if end > math.MaxInt32 {
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("the passage at %d with length %d ends past the 32-bit offsets the window takes", start, span.GetLength()))
+		}
+		passages = append(passages, domain.ByteRange{Start: int(start), End: int(end)})
 	}
 	code, err := answerWindow(ctx, window.FocusPassages(ctx, req.Msg.GetPath(), passages))
 	return connect.NewResponse(&v1.FocusPassagesResponse{Error: code}), err

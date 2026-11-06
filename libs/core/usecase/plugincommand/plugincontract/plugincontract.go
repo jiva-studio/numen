@@ -125,8 +125,6 @@ const (
 	MaxEmbeddedTexts            = pluginport.MaxEmbeddedTexts
 	MaxSampledQueries           = pluginport.MaxSampledQueries
 	MaxSampledPassages          = pluginport.MaxSampledPassages
-	MaxSearchedPassages         = pluginport.MaxSearchedPassages
-	MaxPassageBytes             = pluginport.MaxPassageBytes
 	PluginFloorDefault          = pluginport.PluginFloorDefault
 	PluginFloorModelHint        = pluginport.PluginFloorModelHint
 	PluginFloorStored           = pluginport.PluginFloorStored

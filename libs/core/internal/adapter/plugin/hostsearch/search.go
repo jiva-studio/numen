@@ -6,8 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -30,56 +28,15 @@ type Search struct {
 	// Stats reads what the index holds for GetIndexStats.
 	Stats  *Stats
 	Policy search.FloorPolicy
-	// Finds is the search the window runs, over the same index and the model in Embedder.
-	Finds PassageFinder
+	// Passages is the passage search, over the same index and the model in Embedder.
+	Passages *search.SearchPassages
 }
 
-// PassageFinder is the search of the passages of a vault, which search.Search is.
-type PassageFinder interface {
-	Execute(ctx context.Context, v domain.Vault, query string, p search.Parameters) ([]domain.Passage, error)
-}
-
-// passagesEach is how many passages of one source a search answers with at most.
-const passagesEach = 3
-
-// SearchPassages is the text of the vault that answers the query, by the words and by the meaning,
-// as the window searches. An installation with no model answers by the words alone. The text of
-// each passage is cut to the window around the hit, and its range is the whole passage.
+// SearchPassages is the text of the vault that answers the query, as the passage search finds it.
 func (s Search) SearchPassages(ctx context.Context, v domain.Vault, q pluginport.PluginPassageQuery) ([]domain.Passage, error) {
-	query := strings.TrimSpace(q.Query)
-	if query == "" {
-		return nil, nil
-	}
-	parameters := search.GetTypingParameters(search.Hybrid, min(max(q.Limit, 0), pluginport.MaxSearchedPassages))
-	parameters.IsGrowing = false
-	parameters.Each = passagesEach
-	parameters.Kinds = q.Kinds
-	parameters.PathPrefix = q.PathPrefix
-	found, err := s.Finds.Execute(ctx, v, query, parameters)
-	if err != nil {
-		return nil, err
-	}
-	for i := range found {
-		found[i].Text = getWindow(found[i].Text, found[i].HitAt)
-	}
-	return found, nil
-}
-
-// getWindow is at most MaxPassageBytes of the text around the match, from a quarter of that before it,
-// and never splits a character.
-func getWindow(text string, matchAt int) string {
-	if len(text) <= pluginport.MaxPassageBytes {
-		return text
-	}
-	start := min(max(matchAt-pluginport.MaxPassageBytes/4, 0), len(text))
-	end := min(start+pluginport.MaxPassageBytes, len(text))
-	for start < end && !utf8.RuneStart(text[start]) {
-		start++
-	}
-	for end < len(text) && end > start && !utf8.RuneStart(text[end]) {
-		end--
-	}
-	return text[start:end]
+	return s.Passages.Execute(ctx, v, search.PassageQuery{
+		Query: q.Query, Limit: q.Limit, Kinds: q.Kinds, PathPrefix: q.PathPrefix,
+	})
 }
 
 // getRecipe is the recipe of the model in use, or ErrNoModel.

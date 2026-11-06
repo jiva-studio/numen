@@ -29,7 +29,7 @@ func (c Config) SetPluginSearch(db *Index, embedder embeddingport.Embedder, erro
 		Progress: db.Progress(),
 		Stats:    hostsearch.NewStats(db.Stats(), c.Clock()),
 		Policy:   c.NewFloorPolicy(db, embedder, errorHandler),
-		Finds:    c.NewSearch(db, embedder, errorHandler),
+		Passages: search.NewSearchPassages(c.NewSearch(db, embedder, errorHandler)),
 	})
 }
 
