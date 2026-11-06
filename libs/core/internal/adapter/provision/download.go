@@ -113,11 +113,7 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	}
 	answer, err := t.client.Do(request)
 	if err != nil {
-		var urlErr *url.Error
-		if errors.As(err, &urlErr) {
-			return urlErr.Err
-		}
-		return err
+		return t.unwrapRequestError(err)
 	}
 	defer closeAndJoin(&err, answer.Body)
 
@@ -146,12 +142,36 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 func (t transfer) newRequest(ctx context.Context, offset int64) (*http.Request, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, t.address, nil)
 	if err != nil {
-		return nil, err
+		return nil, unwrapAddressError(err)
 	}
 	if offset > 0 {
 		request.Header.Set("Range", "bytes="+strconv.FormatInt(offset, 10)+"-")
 	}
 	return request, nil
+}
+
+// unwrapRequestError returns the cause of a failed request without the address, which the caller
+// names. A request redirected to another host names that host, without the query of the redirect.
+func (t transfer) unwrapRequestError(err error) error {
+	var urlErr *url.Error
+	if !errors.As(err, &urlErr) {
+		return err
+	}
+	failed, parseErr := url.Parse(urlErr.URL)
+	started, startErr := url.Parse(t.address)
+	if parseErr == nil && startErr == nil && failed.Host != started.Host {
+		return fmt.Errorf("redirected to %s: %w", failed.Host, urlErr.Err)
+	}
+	return urlErr.Err
+}
+
+// unwrapAddressError returns the cause of an address that does not parse, without the address.
+func unwrapAddressError(err error) error {
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		return urlErr.Err
+	}
+	return err
 }
 
 // store writes the body to the partial, from its start where offset is zero and after

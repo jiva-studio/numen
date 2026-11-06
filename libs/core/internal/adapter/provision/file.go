@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -147,7 +148,18 @@ func (p *FileProvisioner) Provision(
 
 // newDownloadError is a failed fetch of the dependency. The cause does not name the address.
 func newDownloadError(req pluginport.DependencyRequirement, cause error) error {
-	return fmt.Errorf("download %s %s from %s: %w", req.Kind, req.ID, req.SourceURL, cause)
+	return fmt.Errorf("download %s %s from %s: %w", req.Kind, req.ID, redactAddress(req.SourceURL), cause)
+}
+
+// redactAddress returns the address without its credentials, query and fragment, which can hold
+// tokens. An address that does not parse is quoted, so its control characters are escaped.
+func redactAddress(raw string) string {
+	address, err := url.Parse(raw)
+	if err != nil {
+		return strconv.Quote(raw)
+	}
+	address.User, address.RawQuery, address.ForceQuery, address.Fragment, address.RawFragment = nil, "", false, "", ""
+	return address.String()
 }
 
 func getPercent(done, total int64) float64 {

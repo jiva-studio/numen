@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	"os"
 	"strings"
 
 	read "github.com/getcharzp/go-ocr"
@@ -104,6 +105,8 @@ func openLines(runtime string, found paths, cfg Config) ([]*paddle.Engine, error
 	return lines, nil
 }
 
+// openLine opens the line engine of one recognition model. The engine reads the dictionary written
+// for it while it opens, and the dictionary is removed after.
 func openLine(runtime, detect, model string, cfg Config) (*paddle.Engine, error) {
 	classes, dict, err := alphabet(model, cfg.Recognise)
 	if err != nil {
@@ -123,8 +126,13 @@ func openLine(runtime, detect, model string, cfg Config) (*paddle.Engine, error)
 		ThreadCount:         cfg.jobs(),
 		UseCuda:             false,
 	})
+	removeErr := os.Remove(dict)
 	if err != nil {
-		return nil, fmt.Errorf("the recogniser %s: %w", name(model), err)
+		return nil, errors.Join(fmt.Errorf("the recogniser %s: %w", name(model), err), removeErr)
+	}
+	if removeErr != nil {
+		lines.Destroy()
+		return nil, removeErr
 	}
 	return lines, nil
 }
