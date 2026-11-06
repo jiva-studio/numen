@@ -463,7 +463,7 @@ describe('createPluginLoader failures, order and toggles', () => {
 
     const started = loader.start()
 
-    expect(read).toStrictEqual(['a', 'b', 'c'])
+    await vi.waitFor(() => expect(read).toStrictEqual(['a', 'b', 'c']))
     await started
   })
 

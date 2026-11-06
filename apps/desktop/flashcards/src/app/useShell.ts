@@ -5,7 +5,7 @@
  */
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import {
-  PLUGIN_WAIT_MS,
+  INTERFACE_WAIT_MS,
   createPluginLoader,
   getPluginStyle,
   type PluginLoaderDeps,
@@ -13,6 +13,7 @@ import {
 } from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
 import { formatErrorMessage } from '@numen/core-client'
+import { runInBackground } from '@numen/ui'
 import { agentService, noteService, pluginService, vaultsService } from '@/shared/clients'
 import { createWindowAgent, type WindowAgentClient } from './agent'
 import { createShellHost } from './host'
@@ -88,13 +89,21 @@ export function useShell(deps: ShellDeps = {}) {
   useExternalLinks(notices)
   const appearance = useAppearance(notices, deps.appearance)
 
-  /** True once the plugins have started or PLUGIN_WAIT_MS has passed: the window is drawn then. */
+  /**
+   * True once the plugins of the interface have started or INTERFACE_WAIT_MS has passed since the
+   * window mounted: the window is drawn then.
+   */
   const isStarted = ref(false)
   let startTimer: ReturnType<typeof setTimeout> | undefined
+  const onStarted = (): void => {
+    isStarted.value = true
+    clearTimeout(startTimer)
+  }
 
   onMounted(async () => {
     window.addEventListener('keydown', onKeyDown)
-    startTimer = setTimeout(() => (isStarted.value = true), PLUGIN_WAIT_MS)
+    startTimer = setTimeout(onStarted, INTERFACE_WAIT_MS)
+    runInBackground(loader.waitForInterface().then(onStarted), () => undefined)
     try {
       await loader.trackPlugins(await (deps.listPlugins ?? listPlugins)())
       await loader.start()
@@ -102,8 +111,7 @@ export function useShell(deps: ShellDeps = {}) {
       listError.value = formatErrorMessage(error)
     } finally {
       isLoading.value = false
-      isStarted.value = true
-      clearTimeout(startTimer)
+      onStarted()
     }
   })
   onUnmounted(() => {

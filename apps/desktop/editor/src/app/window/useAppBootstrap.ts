@@ -3,6 +3,7 @@
  */
 import { onMounted, onUnmounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
+import { INTERFACE_WAIT_MS } from '@numen/plugin-host'
 import { waitFor } from './waitFor'
 
 export interface BootstrapDeps {
@@ -11,7 +12,10 @@ export interface BootstrapDeps {
   startWindow(): Promise<void>
   startEditing(): void
   startLayout(): Promise<void>
+  /** Starts every plugin; settles once all have started or failed. */
   startPlugins?(): Promise<void>
+  /** Settles once the plugins of the interface have started or failed. */
+  waitForInterfacePlugins?(): Promise<void>
   closeWindow(): void
   closeEditing(): void
   closeTabs(): void
@@ -21,18 +25,19 @@ export interface BootstrapDeps {
   reportError(error: unknown): void
 }
 
-/** How long the window waits for the plugins before it opens the tabs without the ones still starting. */
-export const PLUGINS_WAIT_MS = 2_000
-
 /** How long one of the steps the workspace depends on may take before the window says it could not load. */
 export const STEP_LIMIT_MS = 10_000
 
-/** Starts the plugins and waits for them no longer than PLUGINS_WAIT_MS; the ones still starting go on. */
+/**
+ * Starts the plugins and waits for the plugins of the interface, no longer than INTERFACE_WAIT_MS;
+ * every other plugin goes on starting.
+ */
 async function startPluginsWithinLimit(deps: BootstrapDeps): Promise<void> {
   const starting = deps.startPlugins?.()
   if (!starting) return
   runInBackground(starting, deps.reportError)
-  await waitFor(starting, PLUGINS_WAIT_MS)
+  const interfaceStarted = deps.waitForInterfacePlugins?.() ?? starting
+  await waitFor(Promise.race([interfaceStarted, starting]), INTERFACE_WAIT_MS)
 }
 
 /** Settles with the work, or fails naming `what` once the limit passes with the work still pending. */

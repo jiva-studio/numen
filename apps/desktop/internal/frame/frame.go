@@ -21,7 +21,7 @@ const BarHeight = 32
 // areas it marks with `--wails-draggable`; on macOS the hidden title bar keeps no area of its own,
 // so the tabs at the top of a window without a bar take their own presses. On Windows the page marks
 // its window buttons with `--wails-non-client-region`, which composition hosting maps to the system
-// buttons, so the maximise button opens Snap Layouts.
+// buttons, so the maximize button opens Snap Layouts.
 func Apply(opts application.WebviewWindowOptions, goos string) application.WebviewWindowOptions {
 	if goos == "darwin" {
 		opts.Mac.TitleBar = application.MacTitleBarHidden

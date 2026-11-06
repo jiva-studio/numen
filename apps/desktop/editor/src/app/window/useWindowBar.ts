@@ -6,8 +6,8 @@ import { computed, type Ref } from 'vue'
 import type { Menus } from '@numen/plugin-host'
 import type { CommandDeps, CommandTarget } from '@/features/command-palette'
 import type { VaultList } from '@/entities/vault'
-import { useWindowTitleBar } from './useTitleBarActions'
-import { useWindowVaultChoices } from './useVaultChoices'
+import { useWindowTitleBar } from './useTitleBarCommands'
+import { useWindowVaultSwitcher } from './useVaultSwitcher'
 
 export interface WindowBarDeps {
   readonly menus: Pick<Menus, 'getEntries'>
@@ -25,12 +25,12 @@ export function useWindowBar(deps: WindowBarDeps) {
       '',
   )
   const titleBar = useWindowTitleBar({ ...deps, vaultName })
-  const vaultChoices = useWindowVaultChoices(deps)
+  const vaultSwitcher = useWindowVaultSwitcher(deps)
   return {
     vaultName,
-    actions: titleBar.actions,
-    run: titleBar.run,
-    choices: vaultChoices.choices,
-    choose: vaultChoices.choose,
+    commands: titleBar.commands,
+    runCommand: titleBar.runCommand,
+    vaults: vaultSwitcher.vaults,
+    switchVault: vaultSwitcher.switchVault,
   }
 }

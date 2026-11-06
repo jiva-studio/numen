@@ -15,9 +15,9 @@ const props = defineProps<
 >()
 
 const emit = defineEmits<{
-  (event: 'minimise'): void
-  (event: 'toggle-maximise'): void
-  (event: 'close'): void
+  (event: 'minimize-window'): void
+  (event: 'toggle-maximize-window'): void
+  (event: 'close-window'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -33,14 +33,14 @@ const style = computed(() => (props.view ? getPluginStyle(props.view.pluginId) :
       :plugin-id="view.pluginId"
       :app-name="appName"
       :vault-name="vaultName"
-      :controls="controls"
-      :is-maximised="isMaximised"
+      :platform="platform"
+      :is-maximized="isMaximized"
       :is-fullscreen="isFullscreen"
-      :actions="actions"
-      :choices="choices"
-      @minimise="emit('minimise')"
-      @toggle-maximise="emit('toggle-maximise')"
-      @close="emit('close')"
+      :commands="commands"
+      :vaults="vaults"
+      @minimize-window="emit('minimize-window')"
+      @toggle-maximize-window="emit('toggle-maximize-window')"
+      @close-window="emit('close-window')"
     />
   </template>
 </template>

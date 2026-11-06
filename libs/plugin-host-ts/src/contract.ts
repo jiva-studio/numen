@@ -53,8 +53,8 @@ export type {
   TabKindRegistration,
   TaskHost,
   TextLink,
-  TitleBarAction,
-  TitleBarChoice,
+  TitleBarCommand,
+  TitleBarVault,
   TitleBarViewProps,
   TextRange,
   VaultChangeEvent,
@@ -64,6 +64,5 @@ export type {
   VaultRelations,
   VaultTexts,
   ViewRegistration,
-  WindowControlsStyle,
   WorkspaceHost,
 } from '@numen/plugin-sdk'

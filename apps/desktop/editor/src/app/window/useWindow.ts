@@ -195,6 +195,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
       })()
       return pluginsStarted
     },
+    waitForInterfacePlugins: () => deps.pluginLoader.waitForInterface(),
     startWindow: () => {
       runInBackground(deps.tabLinkSession.start(), (error) =>
         deps.writeMessage(`The tab links stopped: ${formatErrorMessage(error)}`, 'error'),
@@ -717,7 +718,6 @@ export const useWindow = () => {
   if (isSecondaryWindow()) closeWhenEmpty(base, isLayoutReady)
 
   const api = {
-    windowButtons: settings.windowButtons,
     runCommand,
     ...menuApi,
     openCurrentVault: () => openPlacedTabs(base),

@@ -7,7 +7,7 @@ import { writeSetting } from '../../support/vault.js'
  * runtime reads to move, resize and snap the window. The page is served a stand-in of the Wails
  * runtime, which records the calls of the window buttons and names the platform.
  */
-const BAR_ID = 'md.numen.views.title.bar'
+const BAR_ID = 'md.numen.views.titleBar'
 
 type Platform = 'windows' | 'mac'
 
@@ -60,18 +60,18 @@ test.describe('The title bar of the plugin', () => {
     await expect(getBar(page)).toBeVisible()
     expect(await readProperty(getBar(page), '--wails-draggable')).toBe('drag')
     expect(
-      await readProperty(page.locator('[data-title-bar-action]').first(), '--wails-draggable'),
+      await readProperty(page.locator('[data-title-bar-command]').first(), '--wails-draggable'),
     ).toBe('no-drag')
     expect(await readProperty(getControl(page, 'close'), '--wails-draggable')).toBe('no-drag')
     await expect(getTopStrips(page)).toHaveCount(0)
   })
 
-  test('minimises, maximises and closes the window through the runtime', async ({ page }) => {
+  test('minimizes, maximizes and closes the window through the runtime', async ({ page }) => {
     await serveRuntime(page, 'windows')
     await openWorkspace(page)
 
-    await getControl(page, 'minimise').click()
-    await getControl(page, 'toggle-maximise').click()
+    await getControl(page, 'minimize').click()
+    await getControl(page, 'toggle-maximize').click()
     await getControl(page, 'close').click()
 
     await expect
@@ -86,9 +86,9 @@ test.describe('The title bar of the plugin', () => {
     await openWorkspace(page)
 
     expect(
-      await readProperty(getControl(page, 'toggle-maximise'), '--wails-non-client-region'),
+      await readProperty(getControl(page, 'toggle-maximize'), '--wails-non-client-region'),
     ).toBe('maximize')
-    expect(await readProperty(getControl(page, 'minimise'), '--wails-non-client-region')).toBe(
+    expect(await readProperty(getControl(page, 'minimize'), '--wails-non-client-region')).toBe(
       'minimize',
     )
     expect(await readProperty(getControl(page, 'close'), '--wails-non-client-region')).toBe('close')

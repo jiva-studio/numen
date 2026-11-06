@@ -44,7 +44,6 @@ const {
   isStarted,
   titleBarView,
   retryBootstrap,
-  windowButtons,
   openSettings,
   commands,
   pluginWays,
@@ -73,7 +72,7 @@ const {
   moveTab,
 } = useWindow()
 
-const frame = useWindowFrame(undefined, windowButtons)
+const frame = useWindowFrame()
 
 const bar = useWindowBar({ menus, vaultList, runCommand, getTarget, commandDeps })
 
@@ -131,16 +130,16 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       :view="titleBarView"
       :app-name="words.appName"
       :vault-name="bar.vaultName.value"
-      :controls="frame.controls.value"
-      :is-maximised="frame.isMaximised.value"
+      :platform="frame.platform.value"
+      :is-maximized="frame.isMaximized.value"
       :is-fullscreen="frame.isFullscreen.value"
-      :actions="bar.actions.value"
-      :choices="bar.choices.value"
-      @run="bar.run"
-      @choose="bar.choose"
-      @minimise="frame.minimise"
-      @toggle-maximise="frame.toggleMaximise"
-      @close="frame.close"
+      :commands="bar.commands.value"
+      :vaults="bar.vaults.value"
+      @run-command="bar.runCommand"
+      @switch-vault="bar.switchVault"
+      @minimize-window="frame.minimizeWindow"
+      @toggle-maximize-window="frame.toggleMaximizeWindow"
+      @close-window="frame.closeWindow"
     />
 
     <CoreFailureNotice :failure="failure" />

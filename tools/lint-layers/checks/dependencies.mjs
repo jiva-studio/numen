@@ -9,7 +9,7 @@ import { REPO_ROOT, failOnFindings, requireMatches } from "./helpers.mjs";
 const PACKAGE_KINDS = { libs: "library", apps: "application", plugins: "plugin" };
 
 /** The first-party packages a plugin depends on. */
-const PLUGIN_PACKAGES = ["@numen/plugin-sdk", "@numen/ui", "@numen/shell"];
+const PLUGIN_PACKAGES = ["@numen/plugin-sdk", "@numen/ui"];
 
 /** The packages an application reaches the core without: it goes through `@numen/core-client`. */
 const APPLICATION_EXCLUDED = ["@numen/plugin-sdk", "@numen/protocol"];

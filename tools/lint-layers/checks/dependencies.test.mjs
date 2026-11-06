@@ -85,8 +85,8 @@ describe("the packages a package may depend on", () => {
     { dir: "apps/window", name: "@numen/window", kind: "application" },
     { dir: "plugins/alpha", name: "@numen/alpha", kind: "plugin" },
   ];
-  it("gives a plugin the SDK, the UI and the shell, a window every library but the SDK and the schema, a library its row", () => {
-    assert.deepEqual(getAllowedPackages(packages[4], packages), ["@numen/plugin-sdk", "@numen/ui", "@numen/shell"]);
+  it("gives a plugin the SDK and the UI, a window every library but the SDK and the schema, a library its row", () => {
+    assert.deepEqual(getAllowedPackages(packages[4], packages), ["@numen/plugin-sdk", "@numen/ui"]);
     assert.deepEqual(getAllowedPackages(packages[3], packages), ["@numen/core-client"]);
     assert.deepEqual(getAllowedPackages(packages[2], packages, { "@numen/core-client": ["@numen/protocol"] }), ["@numen/protocol"]);
     assert.equal(getAllowedPackages(packages[2], packages, {}), null);

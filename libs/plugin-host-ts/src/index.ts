@@ -1,11 +1,11 @@
 export {
   DEFAULT_PLUGIN_ENABLED,
-  PLUGIN_WAIT_MS,
   createPluginLoader,
   isPluginEnabledValue,
   type PluginLoader,
   type PluginLoaderDeps,
 } from './loader'
+export { INTERFACE_WAIT_MS } from './interfaceStart'
 export type { LoaderHost } from './host'
 export {
   adoptPluginStyle,

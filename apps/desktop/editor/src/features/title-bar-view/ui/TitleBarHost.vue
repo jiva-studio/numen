@@ -16,11 +16,11 @@ const props = defineProps<
 >()
 
 const emit = defineEmits<{
-  (event: 'run', id: string): void
-  (event: 'choose', id: string): void
-  (event: 'minimise'): void
-  (event: 'toggle-maximise'): void
-  (event: 'close'): void
+  (event: 'run-command', id: string): void
+  (event: 'switch-vault', id: string): void
+  (event: 'minimize-window'): void
+  (event: 'toggle-maximize-window'): void
+  (event: 'close-window'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -38,15 +38,15 @@ usePluginStyles(() => views.value)
     :plugin-id="view.pluginId"
     :app-name="appName"
     :vault-name="vaultName"
-    :controls="controls"
-    :is-maximised="isMaximised"
+    :platform="platform"
+    :is-maximized="isMaximized"
     :is-fullscreen="isFullscreen"
-    :actions="actions"
-    :choices="choices"
-    @run="(id: string) => emit('run', id)"
-    @choose="(id: string) => emit('choose', id)"
-    @minimise="emit('minimise')"
-    @toggle-maximise="emit('toggle-maximise')"
-    @close="emit('close')"
+    :commands="commands"
+    :vaults="vaults"
+    @run-command="(id: string) => emit('run-command', id)"
+    @switch-vault="(id: string) => emit('switch-vault', id)"
+    @minimize-window="emit('minimize-window')"
+    @toggle-maximize-window="emit('toggle-maximize-window')"
+    @close-window="emit('close-window')"
   />
 </template>

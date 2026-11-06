@@ -52,7 +52,7 @@ Plugins communicating over Connect-RPC use loopback TCP:
 ## What a plugin may depend on
 
 - The core routes every call. A window of the application (editor, flashcards, mobile) calls the core through `@numen/core-client`. A plugin's frontend calls it through `@numen/plugin-sdk`, and a plugin's backend through `plugin-sdk-go`. A window or a plugin frontend calls a plugin's service through the core, and the core forwards the call to the backend whose manifest declares the service. A backend calls the host endpoint, where the core checks the permissions of its manifest. Windows and plugins never call each other directly.
-- A plugin depends on the plugin SDK (`plugin-sdk-go`, `@numen/plugin-sdk`) and third-party code, and its frontend also on `@numen/ui` and `@numen/shell`. A plugin never imports or requires `libs/notes`, `libs/protocol`, `@numen/core-client`, `@connectrpc` or another library of this repository. An `// indirect` line for `libs/notes` or `libs/protocol` in a plugin's `go.mod` comes from Go, because the SDK depends on them.
+- A plugin depends on the plugin SDK (`plugin-sdk-go`, `@numen/plugin-sdk`) and third-party code, and its frontend also on `@numen/ui`. A plugin never imports or requires `libs/notes`, `libs/protocol`, `@numen/core-client`, `@connectrpc` or another library of this repository. An `// indirect` line for `libs/notes` or `libs/protocol` in a plugin's `go.mod` comes from Go, because the SDK depends on them.
 - The SDK contains what plugins use, plus the contracts of capabilities (agent provider, embedding). It contains no concrete agent, engine or runtime, and no application-side API (catalog client, manifest parser, transport, raw core clients that only windows use). Those are in `@numen/core-client` (`libs/core-client`), which is private.
 - The Go SDK exposes no generated protocol type. A type of the SDK may be an alias of a `libs/notes` type, with one name per type. The SDK builds the Connect handlers and clients itself and converts between its types and the wire messages in unexported code. `server.NewLifecycleClient`, `embedding.NewClient` and `tools.NewClient` are the clients for plugin tests.
 - A plugin has no `.proto` file and no protobuf code. Its backend serves its frontend with JSON methods (see `services` in §3).
@@ -225,7 +225,7 @@ export default definePlugin({
 
 ### The Title Bar
 
-The title bar of a window is a view a plugin draws in the slot `titleBar`. The manifest declares it in `contributes.views`, and the frontend registers the component under the same id with `context.registerSlotView({ id, component })`; an id the manifest does not declare throws, and the activation fails. The Title bar plugin (`plugins/views-title-bar`) draws the bar of the application this way, in the editor and in the flashcards window.
+The title bar of a window is a view a plugin draws in the slot `titleBar`. The manifest declares it in `contributes.views`, and the frontend registers the component under the same id with `context.registerSlotView({ id, component })`; an id the manifest does not declare throws, and the activation fails. The Title bar plugin (`plugins/views-titleBar`, `md.numen.views.titleBar`) draws the bar of the application this way, in the editor and in the flashcards window.
 
 ```json
 "contributes": {
@@ -244,37 +244,32 @@ export default definePlugin({
 })
 ```
 
-The view draws the whole bar: the strip, the buttons of the commands, the title, the window buttons and the area that moves the window. The window draws nothing of its own in it and adds nothing beside it. The component takes the props of `TitleBarViewProps`:
+The view draws the whole bar: the strip, the buttons of the commands, the title, the window buttons, the area that moves the window and the room the macOS buttons take. The window draws nothing of its own in it and adds nothing beside it, and the shell offers no components for it: a bar plugin draws its own. The component takes the props of `TitleBarViewProps`:
 
 | Prop           | What it holds                                                                                                                                                                     |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pluginId`     | The id of the plugin.                                                                                                                                                             |
 | `appName`      | The name of the application.                                                                                                                                                      |
 | `vaultName`    | The vault the window shows; empty where none is open. In the flashcards window, the name of the window.                                                                           |
-| `controls`     | `windows`: the bar draws the window buttons at the right. `mac`: three circles at the left (Linux, setting **Window buttons**). `native-mac`: macOS draws them at the left.       |
-| `isMaximised`  | Whether the window is maximised.                                                                                                                                                  |
+| `platform`     | The operating system: `darwin`, `windows` or `linux`. On macOS the system draws the window buttons at the left, and the bar keeps room for them.                                  |
+| `isMaximized`  | Whether the window is maximized.                                                                                                                                                  |
 | `isFullscreen` | Whether the window fills the screen; macOS then shows no system buttons.                                                                                                          |
-| `actions`      | The commands placed in `titleBar` of `contributes.menus`, sorted as [Menus](#menus) says: `id`, `title`, `icon` (a component), `group`, `shortcut`. Empty while no vault is open. |
-| `choices`      | The entries the title offers to switch to (the vaults and a row that adds one): `id`, `label`, `isCurrent`. Empty while no vault is open.                                         |
+| `commands`     | The commands placed in `titleBar` of `contributes.menus`, sorted as [Menus](#menus) says: `id`, `title`, `icon` (a component), `group`, `shortcut`. Empty while no vault is open. |
+| `vaults`       | The vaults the title offers to switch to, and a last row that adds one: `id`, `name`, `isCurrent`. Empty while no vault is open.                                                  |
 
-It emits `TitleBarViewEvents`: `run` with the id of an action, `choose` with the id of a choice, `minimise`, `toggle-maximise` and `close`. The window runs an action as the palette runs it, opens the vault chosen, and minimises, maximises or closes itself.
+It emits `TitleBarViewEvents`: `run-command` with the id of a command, `switch-vault` with the id of a vault, `minimize-window`, `toggle-maximize-window` and `close-window`. The window runs a command as the palette runs it, shows the vault (or adds one for the last row), and minimizes, maximizes or closes itself.
 
 When two enabled plugins register a view for `titleBar`, the window draws the one of the plugin first by plugin id, compared as plain text, and writes an error for the other plugin to the message log. The view is drawn in the window, not in a pane, and the window adds the stylesheet of the plugin while its view is drawn.
 
-`@numen/shell` gives an author the parts of a window frame, which a bar uses or not:
-
-- `WindowControls` (props `look`: `windows` or `mac`, `isMaximised`, `words`; emits `minimise`, `toggle-maximise`, `close`) draws the window buttons. On Windows each button carries `--wails-non-client-region` (`minimize`, `maximize`, `close`), so the system treats it as its own button and the maximise button opens Snap Layouts.
-- `WindowDragArea` moves the window by what it holds (`--wails-draggable: drag`). A button, a field or a link inside it carries `--wails-draggable: no-drag` to take the press itself.
-- `MacButtonsInset` (prop `isFullscreen`) keeps the room the macOS buttons take at the left, `MAC_BUTTONS_INSET` (80 pixels), and none in full screen.
-- `TITLE_BAR_HEIGHT` (32 pixels, `--numen-title-bar-height` in CSS) is the height at which the macOS buttons sit inside the bar.
-
-The shell sets `--wails-resize: all` on the page, so a window on Windows and Linux is resized by its edges whichever plugin draws the bar.
+The Wails runtime reads CSS custom properties of the page. A bar marks the area that moves the window with `--wails-draggable: drag`, and every button, field or link inside it with `--wails-draggable: no-drag`. On Windows it marks its window buttons with `--wails-non-client-region` (`minimize`, `maximize`, `close`), so the system treats them as its own buttons and the maximize button opens Snap Layouts. The macOS buttons take 80 pixels at the left, and sit inside a bar 32 pixels high. The shell sets `--wails-resize: all` on the page, so a window on Windows and Linux is resized by its edges whichever plugin draws the bar.
 
 #### Without a title bar
 
-While no enabled plugin draws the bar, the window draws no strip, no window buttons and no area of its own at the top: the tabs start at the top of the window. The strips of tabs of the panes that touch the top edge move the window by their free space; a tab and its close button do not move it, and a strip that the tabs fill has no free space. A double click on the free space does nothing. The strip in the top-left corner keeps room for the macOS buttons, except in full screen; on Windows and Linux the window has no buttons, and it is closed and moved by the system (Alt+F4, the system menu). The strip of a pane below another pane does not move the window. The window finds these panes from its split tree after each change of the layout. A window with no vault open has no strip and nothing at the top.
+While no enabled plugin draws the bar, the window draws no strip, no window buttons and no area of its own at the top: the tabs start at the top of the window. The strips of tabs of the panes that touch the top edge move the window by their free space; a tab and its close button do not move it, and a strip that the tabs fill has no free space. A double click on the free space does nothing of the application's; on macOS the system zooms the window. The strip in the top-left corner keeps room for the macOS buttons, except in full screen; on Windows and Linux the window has no buttons, and it is closed and moved by the system (Alt+F4, the system menu). The strip of a pane below another pane does not move the window. The window finds these panes from its split tree after each change of the layout. A window with no vault open has no strip and nothing at the top. Turning the plugin on or off needs no restart.
 
-The window is drawn once the plugins of the interface have started, so the layout does not move when the bar is drawn; a plugin that has not started within the wait of the plugin loader is drawn later, when it starts. Turning the plugin on or off needs no restart.
+#### The start of a window
+
+A plugin contributes to the interface when its manifest declares views, tab kinds, menu entries or themes. The loader reads the manifests of the enabled plugins and starts the plugins of the interface before every other plugin. While they start, the window shows only a loading indicator; once all of them have started, it draws the whole window at once. A plugin of the interface that has not started within 3 seconds (`INTERFACE_WAIT_MS` of `@numen/plugin-host`) counts as failed, and the window is drawn without it.
 
 ### The Application and the System Browser
 

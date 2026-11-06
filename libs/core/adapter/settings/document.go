@@ -22,7 +22,6 @@ type File struct {
 	Appearance  Appearance           `json:"appearance"`
 	Agent       Agent                `json:"agent"`
 	Titles      Titles               `json:"naming"`
-	Window      Window               `json:"window"`
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
 	// Plugins holds the object of each plugin, keyed by plugin id.
@@ -37,7 +36,6 @@ type appObject struct {
 	Appearance  Appearance           `json:"appearance"`
 	Agent       Agent                `json:"agent"`
 	Titles      Titles               `json:"naming"`
-	Window      Window               `json:"window"`
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
 }
@@ -48,7 +46,6 @@ type appSections struct {
 	Appearance  *Appearance           `json:"appearance"`
 	Agent       *Agent                `json:"agent"`
 	Titles      *Titles               `json:"naming"`
-	Window      *Window               `json:"window"`
 	Performance *hardware.Performance `json:"performance"`
 	AI          *AI                   `json:"ai"`
 }
@@ -90,7 +87,7 @@ func (f File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Version},
-		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Window, f.Performance, f.AI}},
+		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Performance, f.AI}},
 	}
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
 		members = append(members, struct {
@@ -182,7 +179,7 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	sections := appSections{&f.Appearance, &f.Agent, &f.Titles, &f.Window, &f.Performance, &f.AI}
+	sections := appSections{&f.Appearance, &f.Agent, &f.Titles, &f.Performance, &f.AI}
 	return hasInterfaceScale, json.Unmarshal(content, &sections)
 }
 
@@ -285,7 +282,6 @@ func DefaultFile() File {
 		Version:     DefaultVersion,
 		Appearance:  DefaultAppearance(),
 		Titles:      DefaultTitles(),
-		Window:      DefaultWindow(),
 		Performance: DefaultPerformance(),
 	}
 }

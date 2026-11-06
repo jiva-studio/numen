@@ -8,21 +8,29 @@ import (
 	"testing"
 )
 
-// frameStyles is the token file of the sizes a window frame reserves.
-const frameStyles = "../../../../libs/ui/shell/src/features/window-frame/tokens/frame.css"
+// The height of a strip of tabs at the top of a window without a bar is the token of the shell; the
+// bar of the Title bar plugin declares its own.
+const (
+	shellTokens = "../../../../libs/ui/shell/src/features/window-frame/tokens/frame.css"
+	pluginBar   = "../../../../plugins/views-titleBar/frontend/ui/titleBar.css"
+)
 
-var barHeightValue = regexp.MustCompile(`(?m)^\s*--numen-title-bar-height:\s*(\d+)px;`)
+var (
+	tokenHeight = regexp.MustCompile(`(?m)^\s*--numen-title-bar-height:\s*(\d+)px;`)
+	barRule     = regexp.MustCompile(`(?s)\.title-bar\s*\{(.*?)\}`)
+	ruleHeight  = regexp.MustCompile(`(?m)^\s*height:\s*(\d+)px;`)
+)
 
-// readDrawnBarHeight returns the height of a title bar in the page, in pixels.
-func readDrawnBarHeight(t *testing.T) int {
+// readPixels returns the pixels the pattern finds in the file, failing where it finds none.
+func readPixels(t *testing.T, file string, pattern *regexp.Regexp) int {
 	t.Helper()
-	css, err := os.ReadFile(filepath.FromSlash(frameStyles))
+	css, err := os.ReadFile(filepath.FromSlash(file))
 	if err != nil {
-		t.Fatalf("reading the styles of the frame: %v", err)
+		t.Fatalf("reading %s: %v", file, err)
 	}
-	match := barHeightValue.FindSubmatch(css)
+	match := pattern.FindSubmatch(css)
 	if match == nil {
-		t.Fatal("the styles of the frame declare no --numen-title-bar-height in px")
+		t.Fatalf("%s declares no height in px", file)
 	}
 	height, err := strconv.Atoi(string(match[1]))
 	if err != nil {
@@ -31,8 +39,26 @@ func readDrawnBarHeight(t *testing.T) int {
 	return height
 }
 
-func TestBarHeightIsTheHeightThePageDraws(t *testing.T) {
-	if height := readDrawnBarHeight(t); BarHeight != height {
-		t.Errorf("BarHeight = %d, the page draws a bar %d high", BarHeight, height)
+func TestBarHeightIsTheHeightOfTheStripsAtTheTop(t *testing.T) {
+	if height := readPixels(t, shellTokens, tokenHeight); BarHeight != height {
+		t.Errorf("BarHeight = %d, the strips at the top are %d high", BarHeight, height)
+	}
+}
+
+func TestBarHeightIsTheHeightOfTheBarOfThePlugin(t *testing.T) {
+	css, err := os.ReadFile(filepath.FromSlash(pluginBar))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rule := barRule.FindSubmatch(css)
+	if rule == nil {
+		t.Fatal("the styles of the bar have no .title-bar rule")
+	}
+	match := ruleHeight.FindSubmatch(rule[1])
+	if match == nil {
+		t.Fatal("the .title-bar rule has no height in px")
+	}
+	if height, _ := strconv.Atoi(string(match[1])); BarHeight != height {
+		t.Errorf("BarHeight = %d, the plugin draws a bar %d high", BarHeight, height)
 	}
 }

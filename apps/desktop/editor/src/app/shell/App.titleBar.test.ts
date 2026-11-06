@@ -19,12 +19,12 @@ import {
 } from '@/testing/window'
 
 const frame = vi.hoisted(() => ({
-  controls: 'windows' as 'windows' | 'native-mac',
-  isMaximised: false,
+  platform: 'windows' as 'windows' | 'darwin',
+  isMaximized: false,
   isFullscreen: false,
-  close: vi.fn(),
-  minimise: vi.fn(),
-  toggleMaximise: vi.fn(),
+  closeWindow: vi.fn(),
+  minimizeWindow: vi.fn(),
+  toggleMaximizeWindow: vi.fn(),
 }))
 
 vi.mock('../window/useWindowFrame', async () => {
@@ -32,16 +32,16 @@ vi.mock('../window/useWindowFrame', async () => {
   const { MAC_BUTTONS_INSET } = await import('@numen/shell')
   return {
     useWindowFrame: () => ({
-      controls: computed(() => frame.controls),
-      isMaximised: computed(() => frame.isMaximised),
+      platform: computed(() => frame.platform),
+      isMaximized: computed(() => frame.isMaximized),
       isFullscreen: computed(() => frame.isFullscreen),
       windowEdge: computed(() => ({
-        leftInset: frame.controls === 'native-mac' && !frame.isFullscreen ? MAC_BUTTONS_INSET : 0,
+        leftInset: frame.platform === 'darwin' && !frame.isFullscreen ? MAC_BUTTONS_INSET : 0,
         rightInset: 0,
       })),
-      close: frame.close,
-      minimise: frame.minimise,
-      toggleMaximise: frame.toggleMaximise,
+      closeWindow: frame.closeWindow,
+      minimizeWindow: frame.minimizeWindow,
+      toggleMaximizeWindow: frame.toggleMaximizeWindow,
     }),
   }
 })
@@ -65,26 +65,35 @@ const LEDGER = 'org.example.ledger'
 const HARBOR = 'org.example.harbor'
 const TIDE = 'org.example.tide'
 
-/** A bar a plugin draws: the title and one button for each action and window control. */
+/** A bar a plugin draws: the title and one button for each command and window control. */
 const createBar = (name: string) =>
   defineComponent({
     name,
     props: {
       appName: { type: String, required: true },
       vaultName: { type: String, required: true },
-      actions: { type: Array as PropType<readonly { id: string }[]>, required: true },
+      commands: { type: Array as PropType<readonly { id: string }[]>, required: true },
     },
-    emits: ['run', 'choose', 'minimise', 'toggle-maximise', 'close'],
+    emits: [
+      'run-command',
+      'switch-vault',
+      'minimize-window',
+      'toggle-maximize-window',
+      'close-window',
+    ],
     setup:
       (props, { emit }) =>
       () =>
         h('header', { 'data-title-bar': name }, [
           h('span', { 'data-title': '' }, `${props.appName} — ${props.vaultName}`),
-          ...props.actions.map((one) =>
-            h('button', { 'data-title-bar-action': one.id, onClick: () => emit('run', one.id) }),
+          ...props.commands.map((one) =>
+            h('button', {
+              'data-title-bar-command': one.id,
+              onClick: () => emit('run-command', one.id),
+            }),
           ),
-          h('button', { 'data-control': 'close', onClick: () => emit('close') }),
-          h('button', { 'data-choice': 'trees', onClick: () => emit('choose', 'trees') }),
+          h('button', { 'data-control': 'close', onClick: () => emit('close-window') }),
+          h('button', { 'data-vault': 'trees', onClick: () => emit('switch-vault', 'trees') }),
         ]),
   })
 
@@ -104,8 +113,8 @@ const placeTideChart = () => {
   ]
 }
 
-const getActions = (window: Awaited<ReturnType<typeof mountWindow>>) =>
-  window.findComponent(TitleBarHost).props('actions') as readonly {
+const getCommands = (window: Awaited<ReturnType<typeof mountWindow>>) =>
+  window.findComponent(TitleBarHost).props('commands') as readonly {
     id: string
     title: string
     group?: string
@@ -116,10 +125,10 @@ const getWindowEdge = (window: Awaited<ReturnType<typeof mountWindow>>) =>
     { leftInset: number; rightInset: number } | undefined
 
 afterEach(() => {
-  frame.controls = 'windows'
-  frame.isMaximised = false
+  frame.platform = 'windows'
+  frame.isMaximized = false
   frame.isFullscreen = false
-  frame.close.mockClear()
+  frame.closeWindow.mockClear()
   hosts.current = undefined
 })
 
@@ -140,7 +149,7 @@ describe('the window without a plugin that draws the title bar', () => {
   })
 
   it('keeps room for the macOS buttons in the top-left strip, and none in full screen', async () => {
-    frame.controls = 'native-mac'
+    frame.platform = 'darwin'
     const window = await mountWindow()
 
     expect(getWindowEdge(window)?.leftInset).toBe(80)
@@ -189,18 +198,18 @@ describe('the window with a plugin that draws the title bar', () => {
 
     await window.find('[data-control="close"]').trigger('click')
 
-    expect(frame.close).toHaveBeenCalledTimes(1)
+    expect(frame.closeWindow).toHaveBeenCalledTimes(1)
   })
 
   it('passes the bar the state of the frame', async () => {
-    frame.controls = 'native-mac'
-    frame.isMaximised = true
+    frame.platform = 'darwin'
+    frame.isMaximized = true
     frame.isFullscreen = true
     const window = await mountWindow()
 
     const host = window.findComponent(TitleBarHost)
-    expect(host.props('controls')).toBe('native-mac')
-    expect(host.props('isMaximised')).toBe(true)
+    expect(host.props('platform')).toBe('darwin')
+    expect(host.props('isMaximized')).toBe(true)
     expect(host.props('isFullscreen')).toBe(true)
   })
 
@@ -209,7 +218,7 @@ describe('the window with a plugin that draws the title bar', () => {
     const window = await mountWindow()
     await registerBar(LEDGER)
 
-    await window.find('[data-choice="trees"]').trigger('click')
+    await window.find('[data-vault="trees"]').trigger('click')
     await settle()
 
     expect(requests.opened).toStrictEqual(['trees'])
@@ -222,11 +231,11 @@ describe('the buttons of the plugins in the title bar', () => {
 
     const window = await mountWindow()
 
-    expect(getActions(window).map((one) => one.id)).toStrictEqual([
+    expect(getCommands(window).map((one) => one.id)).toStrictEqual([
       `${TIDE}:chart.open`,
       'app:settings.open',
     ])
-    expect(getActions(window)[0]?.title).toBe('Open tide chart')
+    expect(getCommands(window)[0]?.title).toBe('Open tide chart')
   })
 
   it('come in the groups and the order the plugins place them', async () => {
@@ -243,7 +252,7 @@ describe('the buttons of the plugins in the title bar', () => {
 
     const window = await mountWindow()
 
-    expect(getActions(window).map((one) => [one.id, one.group])).toStrictEqual([
+    expect(getCommands(window).map((one) => [one.id, one.group])).toStrictEqual([
       [`${TIDE}:chart.open`, 'navigate'],
       [`${HARBOR}:map.open`, 'navigate'],
       [`${HARBOR}:log.open`, 'new'],
@@ -257,7 +266,7 @@ describe('the buttons of the plugins in the title bar', () => {
 
     const window = await mountWindow()
 
-    expect(getActions(window).map((one) => one.id)).toStrictEqual(['app:settings.open'])
+    expect(getCommands(window).map((one) => one.id)).toStrictEqual(['app:settings.open'])
   })
 
   it('are none while no vault is shown, even with commands placed', async () => {
@@ -266,7 +275,7 @@ describe('the buttons of the plugins in the title bar', () => {
 
     const window = await mountWindow()
 
-    expect(getActions(window)).toStrictEqual([])
+    expect(getCommands(window)).toStrictEqual([])
   })
 
   it('open the palette at the name of a command that needs one when the bar runs it', async () => {
@@ -276,7 +285,7 @@ describe('the buttons of the plugins in the title bar', () => {
     await registerBar(LEDGER)
     const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 
-    await window.find('[data-title-bar-action="app:note.create"]').trigger('click')
+    await window.find('[data-title-bar-command="app:note.create"]').trigger('click')
     await settle()
 
     expect(field()).not.toBeNull()

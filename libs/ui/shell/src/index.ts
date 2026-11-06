@@ -32,16 +32,7 @@ export { WelcomePage, getVaultForKey } from './features/welcome'
 export type { VaultRow, WelcomeAction } from './features/welcome'
 
 /**
- * The parts of a window frame a title bar is drawn with: the window buttons, the area that moves
- * the window and the room the macOS buttons take. The shell draws no bar and no window buttons of
- * its own.
+ * The sizes a strip of tabs at the top of a window without a title bar takes: the height of a bar
+ * and the room of the macOS buttons. The shell draws no bar and no window buttons.
  */
-export {
-  MAC_BUTTONS_INSET,
-  MacButtonsInset,
-  TITLE_BAR_HEIGHT,
-  WINDOW_CONTROLS_WORDS,
-  WindowControls,
-  WindowDragArea,
-} from './features/window-frame'
-export type { ControlsStyle, WindowControlsWords } from './features/window-frame'
+export { MAC_BUTTONS_INSET, TITLE_BAR_HEIGHT } from './features/window-frame'

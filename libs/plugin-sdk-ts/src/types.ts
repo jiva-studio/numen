@@ -69,36 +69,31 @@ export interface SlotViewRegistration {
   readonly component: unknown
 }
 
-// TITLE_BAR_SLOT is the slot at the top of a window. Its view draws the whole bar: the actions, the
+// TITLE_BAR_SLOT is the slot at the top of a window. Its view draws the whole bar: the commands, the
 // title, the window buttons and the area that drags the window. The component gets TitleBarViewProps
 // as props and emits TitleBarViewEvents.
 export const TITLE_BAR_SLOT = 'titleBar'
 
-// WindowControlsStyle is who draws the window buttons and where: the view at the right (`windows`),
-// the view as three circles at the left (`mac`), or the system at the left (`native-mac`), where the
-// view keeps room for them.
-export type WindowControlsStyle = 'windows' | 'mac' | 'native-mac'
-
-// TitleBarAction is one command placed in `titleBar` of `contributes.menus`, as the window passes it
+// TitleBarCommand is one command placed in `titleBar` of `contributes.menus`, as the window passes it
 // to the title bar view.
-export interface TitleBarAction {
-  // The full id of the command; the view emits it with `run`.
+export interface TitleBarCommand {
+  // The full id of the command; the view emits it with `run-command`.
   readonly id: string
   readonly title: string
   // The icon component of the command.
   readonly icon: unknown
-  // Actions that share a group are drawn together.
+  // Commands that share a group are drawn together.
   readonly group?: string
   // The shortcut as the person reads it, such as `Ctrl+Shift+E`.
   readonly shortcut?: string
 }
 
-// TitleBarChoice is one entry of the list the title opens, such as a vault to switch to.
-export interface TitleBarChoice {
-  // The id the view emits with `choose`.
+// TitleBarVault is one entry of the list of vaults the title opens.
+export interface TitleBarVault {
+  // The id the view emits with `switch-vault`.
   readonly id: string
-  readonly label: string
-  // Whether the entry is what the title names now.
+  readonly name: string
+  // Whether the entry is the vault the window shows.
   readonly isCurrent?: boolean
 }
 
@@ -108,24 +103,26 @@ export interface TitleBarViewProps {
   readonly appName: string
   // The vault the window shows; empty where none is open.
   readonly vaultName: string
-  readonly controls: WindowControlsStyle
-  readonly isMaximised: boolean
+  // The operating system the window runs on.
+  readonly platform: AppInfo['platform']
+  readonly isMaximized: boolean
   // True while the window fills the screen; macOS then shows no system buttons.
   readonly isFullscreen: boolean
   // In the order the menus sort them.
-  readonly actions: readonly TitleBarAction[]
-  readonly choices: readonly TitleBarChoice[]
+  readonly commands: readonly TitleBarCommand[]
+  // The vaults the title offers to switch to; empty while no vault is open.
+  readonly vaults: readonly TitleBarVault[]
 }
 
 // TitleBarViewEvents are the events the window answers from the component of the title bar view.
 export interface TitleBarViewEvents {
-  // Runs the action of the id.
-  run: [id: string]
-  // Chooses the entry of the id from the list the title opens.
-  choose: [id: string]
-  minimise: []
-  'toggle-maximise': []
-  close: []
+  // Runs the command of the id.
+  'run-command': [id: string]
+  // Shows the vault of the id in the window.
+  'switch-vault': [id: string]
+  'minimize-window': []
+  'toggle-maximize-window': []
+  'close-window': []
 }
 
 // AppInfo describes the application build a plugin runs in.

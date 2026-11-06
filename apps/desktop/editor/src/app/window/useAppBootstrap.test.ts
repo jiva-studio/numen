@@ -2,12 +2,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import {
-  PLUGINS_WAIT_MS,
-  STEP_LIMIT_MS,
-  useAppBootstrap,
-  type BootstrapDeps,
-} from './useAppBootstrap'
+import { INTERFACE_WAIT_MS } from '@numen/plugin-host'
+import { STEP_LIMIT_MS, useAppBootstrap, type BootstrapDeps } from './useAppBootstrap'
 
 const setup = (overrides: Partial<BootstrapDeps> = {}) => {
   const calls: string[] = []
@@ -84,7 +80,7 @@ describe('a window mounting while a plugin does not start', () => {
           }),
       })
 
-      await vi.advanceTimersByTimeAsync(PLUGINS_WAIT_MS - 1)
+      await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
       expect(calls).not.toContain('startLayout')
       await vi.advanceTimersByTimeAsync(1)
       expect(calls).toContain('startLayout')
@@ -101,13 +97,25 @@ describe('a window mounting while a plugin does not start', () => {
     try {
       const { bootstrap } = setup({ startPlugins: () => new Promise<void>(() => undefined) })
 
-      await vi.advanceTimersByTimeAsync(PLUGINS_WAIT_MS - 1)
+      await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
       expect(bootstrap().isStarted.value).toBe(false)
       await vi.advanceTimersByTimeAsync(1)
       expect(bootstrap().isStarted.value).toBe(true)
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('is drawn as soon as the plugins of the interface started, while the others go on', async () => {
+    const { bootstrap, calls } = setup({
+      startPlugins: () => new Promise<void>(() => undefined),
+      waitForInterfacePlugins: () => Promise.resolve(),
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(bootstrap().isStarted.value).toBe(true)
+    expect(calls).toContain('startLayout')
   })
 
   it('is drawn as soon as the plugins started', async () => {

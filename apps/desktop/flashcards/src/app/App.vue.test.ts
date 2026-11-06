@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
-import { VAULT_SUMMARY } from '@numen/plugin-host'
+import { INTERFACE_WAIT_MS, VAULT_SUMMARY } from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
 
 const wire = vi.hoisted(() => {
@@ -721,7 +721,7 @@ describe('the title bar of the flashcards window', () => {
     ).toBe(true)
   })
 
-  it('waits for the plugins before the window is drawn', async () => {
+  it('shows only the loading indicator while the plugins of the interface start', async () => {
     const window = mount(App, {
       props: {
         deps: { ...createDeps(), listPlugins: () => new Promise<string[]>(() => undefined) },
@@ -733,5 +733,53 @@ describe('the title bar of the flashcards window', () => {
 
     expect(window.find('[role="status"]').exists()).toBe(true)
     expect(window.find('main').exists()).toBe(false)
+  })
+
+  it('draws the window at once when the bar has started, while another plugin still loads', async () => {
+    vi.useFakeTimers()
+    const deps = createBarDeps([createBarPlugin('org.example.ledger')])
+    const window = mount(App, {
+      props: {
+        deps: {
+          ...deps,
+          dynamicImport: (url: string) =>
+            url.includes('/md.numen.cards/')
+              ? new Promise<unknown>(() => undefined)
+              : deps.dynamicImport(url),
+        },
+      },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+
+    await vi.advanceTimersByTimeAsync(10)
+
+    expect(window.find('main').exists()).toBe(true)
+    expect(window.find('[data-title-bar="org.example.ledger"]').exists()).toBe(true)
+  })
+
+  it('draws the window at INTERFACE_WAIT_MS without a bar that has not started', async () => {
+    vi.useFakeTimers()
+    const deps = createBarDeps([createBarPlugin('org.example.ledger')])
+    const window = mount(App, {
+      props: {
+        deps: {
+          ...deps,
+          dynamicImport: (url: string) =>
+            url.includes('/org.example.ledger/')
+              ? new Promise<unknown>(() => undefined)
+              : deps.dynamicImport(url),
+        },
+      },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+
+    await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
+    expect(window.find('main').exists()).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+
+    expect(window.find('main').exists()).toBe(true)
+    expect(window.find('[data-title-bar]').exists()).toBe(false)
   })
 })

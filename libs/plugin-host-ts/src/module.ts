@@ -52,11 +52,14 @@ export interface LoadModuleOptions {
   readonly manifests: Map<string, Manifest>
 }
 
-async function loadDynamicModule(
+/** The manifest.json of a plugin, read from the window once and kept in `manifests`. */
+export async function readPluginManifest(
   pluginId: string,
-  options: LoadModuleOptions,
-): Promise<unknown | undefined> {
-  const { baseUrl, fetchFn, importFn, manifests } = options
+  options: Pick<LoadModuleOptions, 'baseUrl' | 'fetchFn' | 'manifests'>,
+): Promise<Manifest> {
+  const { baseUrl, fetchFn, manifests } = options
+  const cached = manifests.get(pluginId)
+  if (cached) return cached
   const res = await fetchFn(`${baseUrl}/${pluginId}/manifest.json`)
   if (!res.ok) {
     throw new Error(`manifest.json of plugin "${pluginId}" answered ${res.status}`)
@@ -65,8 +68,25 @@ async function loadDynamicModule(
   if (!parsed.ok) {
     throw new Error(`manifest.json of plugin "${pluginId}" is invalid: ${parsed.error}`)
   }
-  const manifest = parsed.value
-  manifests.set(pluginId, manifest)
+  manifests.set(pluginId, parsed.value)
+  return parsed.value
+}
+
+/** Whether the plugin contributes to the interface: a slot view, tab kinds, menu entries or themes. */
+export function isInterfaceManifest(manifest: Manifest): boolean {
+  const contributes = manifest.contributes
+  if (!contributes) return false
+  return [contributes.views, contributes.tabKinds, contributes.menus, contributes.themes].some(
+    (list) => list.length > 0,
+  )
+}
+
+async function loadDynamicModule(
+  pluginId: string,
+  options: LoadModuleOptions,
+): Promise<unknown | undefined> {
+  const { baseUrl, fetchFn, importFn } = options
+  const manifest = await readPluginManifest(pluginId, options)
   if (manifest.frontend === undefined) return undefined
   const style = loadPluginStyle(pluginId, `${baseUrl}/${pluginId}/${FRONTEND_STYLES}`, fetchFn)
   const [loaded] = await Promise.all([

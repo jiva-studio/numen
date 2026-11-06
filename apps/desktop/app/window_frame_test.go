@@ -71,7 +71,7 @@ func TestFatalReportPage_DrawsNoPluginAction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, unwanted := range []string{"data-title-bar-action", "data-title-bar-more", "/plugin/"} {
+	for _, unwanted := range []string{"data-title-bar-command", "data-title-bar-more", "/plugin/"} {
 		if strings.Contains(string(page), unwanted) {
 			t.Errorf("the report page contains %q", unwanted)
 		}
