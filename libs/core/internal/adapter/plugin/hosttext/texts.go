@@ -2,6 +2,7 @@ package hosttext
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -39,6 +40,9 @@ func (p Texts) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path
 // current content.
 func (p Texts) ListVersions(ctx context.Context, v domain.Vault, path string) (pluginport.PluginTextListing, error) {
 	contentHash, err := p.versions.GetContentHash(ctx, v, path)
+	if errors.Is(err, textversion.ErrNoVaultReader) {
+		return pluginport.PluginTextListing{}, err
+	}
 	if err != nil {
 		return pluginport.PluginTextListing{}, fmt.Errorf("%w: %w", textport.ErrNoText, err)
 	}

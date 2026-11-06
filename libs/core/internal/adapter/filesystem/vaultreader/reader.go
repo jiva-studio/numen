@@ -348,6 +348,7 @@ func (s *VaultReader) StatFile(ctx context.Context, path string) (domain.FileSta
 		Kind:    kind,
 		Size:    info.Size(),
 		ModTime: info.ModTime(),
+		FileID:  getFileID(info),
 	}, nil
 }
 

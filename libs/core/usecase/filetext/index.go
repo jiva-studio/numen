@@ -421,7 +421,7 @@ func (u Index) source(
 	if err != nil {
 		return fmt.Errorf("stat %s: %w", path, err)
 	}
-	raw, err := on.files.Read(ctx, path)
+	hash, err := on.texts.GetContentHash(ctx, path)
 	if errors.Is(err, vaultport.ErrNotExist) {
 		res.Vanished++
 		return nil
@@ -436,7 +436,6 @@ func (u Index) source(
 		res.Unreadable++
 		return nil
 	}
-	hash := domain.HashContent(raw)
 	doc, err := on.texts.GetLiveText(ctx, path, hash)
 	if err != nil {
 		if ctx.Err() != nil {

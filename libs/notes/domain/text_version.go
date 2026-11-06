@@ -60,11 +60,11 @@ func HashContent(raw []byte) string {
 
 // HashReader is HashContent of the bytes the reader gives, read as a stream.
 func HashReader(r io.Reader) (string, error) {
-	raw, err := io.ReadAll(r)
-	if err != nil {
+	sum := sha256.New()
+	if _, err := io.Copy(sum, r); err != nil {
 		return "", err
 	}
-	return HashContent(raw), nil
+	return hex.EncodeToString(sum.Sum(nil)), nil
 }
 
 // IsChainValid reports whether every source in a version's chain, down to the
