@@ -255,22 +255,25 @@ func TestLinkUpdateChangesTheLabelAndKeepsTheRoleLeftOut(t *testing.T) {
 	}
 }
 
-func TestLinkUpdateClearsTheLabelAndNoteLeftOut(t *testing.T) {
+func TestLinkUpdateKeepsTheFieldsLeftOut(t *testing.T) {
 	v, registry := newGeologyVault(t)
 	v.File("Rocks/Basalt.md", "---\ntitle: Basalt\nlinks:\n"+
-		"  - to: Granite\n    role: jump\n    label: cousin\n    note: both are igneous\n"+
+		"  - to: Granite\n    role: jump\n    type: contrast\n    label: cousin\n    note: both are igneous\n"+
 		"---\nA volcanic rock.\n")
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
 
 	callTool(t, registry, geologyVault, "link_update", fmt.Sprintf(
-		`{"from":"Rocks/Basalt.md","to":"Granite","fingerprint":%q,"role":"ref","type":"contrast"}`, fingerprint))
+		`{"from":"Rocks/Basalt.md","to":"Granite","fingerprint":%q,"role":"ref"}`, fingerprint))
 	links := readLinks(t, v, "Rocks/Basalt.md")
 	if len(links) != 1 {
 		t.Fatalf("got %d links, want 1: %+v", len(links), links)
 	}
 	got := links[0]
-	if got.Target.Value != "Granite" || got.Role != domain.RoleRef || got.Type != "contrast" || got.Label != "" || got.Why != "" {
-		t.Errorf("link = %+v, want a ref to Granite of type contrast with no label and no note", got)
+	if got.Target.Value != "Granite" || got.Role != domain.RoleRef {
+		t.Errorf("link = %+v, want a ref to Granite", got)
+	}
+	if got.Type != "contrast" || got.Label != "cousin" || got.Why != "both are igneous" {
+		t.Errorf("link = %+v, want type contrast, label cousin and note both are igneous kept", got)
 	}
 }
 
