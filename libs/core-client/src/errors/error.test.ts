@@ -115,6 +115,16 @@ describe('a fault', () => {
     expect(formatErrorMessage(new ReportedError('  '))).toBe('Numen is not responding; retrying')
   })
 
+  it('shows the generic text for null', () => {
+    expect(formatErrorMessage(null)).toBe('Numen is not responding; retrying')
+  })
+
+  it('shows the generic text for an object named ReportedError whose message is not text', () => {
+    expect(formatErrorMessage({ name: 'ReportedError', message: 42 })).toBe(
+      'Numen is not responding; retrying',
+    )
+  })
+
   it('shows the generic text for an Error that is not a ReportedError', () => {
     const failure = new Error('open /Users/someone/Vault/library/Broken.epub: permission denied')
     expect(formatErrorMessage(failure)).toBe('Numen is not responding; retrying')
