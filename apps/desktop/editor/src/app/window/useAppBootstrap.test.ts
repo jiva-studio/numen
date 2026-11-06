@@ -106,7 +106,7 @@ describe('a window mounting while a plugin does not start', () => {
     }
   })
 
-  it('is drawn as soon as the plugins of the interface started, while the others go on', async () => {
+  it('is drawn as soon as the plugins of the window slots started, while the others go on', async () => {
     const { bootstrap, calls } = setup({
       startPlugins: () => new Promise<void>(() => undefined),
       waitForInterfacePlugins: () => Promise.resolve(),
@@ -136,7 +136,7 @@ describe('a window mounting while a plugin does not start', () => {
     }
   })
 
-  it('waits for the interface, and not only for every plugin to have started', async () => {
+  it('waits for the plugins of the window slots, and not only for every plugin to have started', async () => {
     vi.useFakeTimers()
     try {
       const { bootstrap } = setup({

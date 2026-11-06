@@ -12,8 +12,6 @@ import type {
   PluginContext,
   ReaderRegistration,
   SettingsViewRegistration,
-  SlotViewRegistration,
-  StatusViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
   VaultFiles,
@@ -25,8 +23,8 @@ import type {
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
-import { getDeclaredSlot, type SlotViewManifest } from '../slot-views/slotViews'
 import { createFrameServices } from './frameServices'
+import { createSlotContext } from './slotContext'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: Disposable[], disposable: Disposable): Disposable {
@@ -238,27 +236,12 @@ const EDITOR_TARGET = 'desktop.editor'
 type Track = (disposable: Disposable) => Disposable
 type RequirePermission = (permission: string, operation: string) => void
 
-/** The view a plugin registers for a slot, in the slot its manifest declares for the view. */
-function createSlotRegistration(
-  plugin: { readonly pluginId: string; readonly manifest?: SlotViewManifest | undefined },
-  host: PluginContextHost,
-  add: Track,
-) {
-  const { pluginId, manifest } = plugin
-  return {
-    registerSlotView: (reg: SlotViewRegistration) =>
-      add(host.registerSlotView(pluginId, getDeclaredSlot(pluginId, manifest, reg.id), reg)),
-  }
-}
-
 /** The registrations a plugin makes, each taken with the plugin's subscriptions. */
 function createRegistrations(pluginId: string, host: PluginContextHost, add: Track) {
   return {
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerSettingsView: (reg: SettingsViewRegistration) =>
       add(host.registerSettingsView(pluginId, reg)),
-    registerStatusView: (reg: StatusViewRegistration) =>
-      add(host.registerStatusView(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>
       add(host.registerTabKind(pluginId, reg)),
     registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
@@ -342,7 +325,7 @@ export function createPluginContext(
     ...createWindowServices(pluginId, host, requirePerm),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     ...createRegistrations(pluginId, host, add),
-    ...createSlotRegistration(
+    ...createSlotContext(
       { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
       host,
       add,

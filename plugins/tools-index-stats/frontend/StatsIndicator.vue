@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The status bar item that counts the vectors of the search index, and the popover with its details.
+ * The title bar item that counts the vectors of the search index, and the popover with its details.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'

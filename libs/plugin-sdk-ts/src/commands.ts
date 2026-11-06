@@ -16,6 +16,9 @@ export interface CommandTarget {
   readonly others: readonly string[]
   // The id of the tab the command runs over, as in a tab menu; empty where there is none.
   readonly tab: string
+  // The type the vault files the note of the target as, which a place reads before it asks for the
+  // entries of its slot; empty or absent where the place has not read it or the target is no note.
+  readonly noteType?: string
 }
 
 // CommandItem is one item a command offers over a target, such as one open window for "Move to

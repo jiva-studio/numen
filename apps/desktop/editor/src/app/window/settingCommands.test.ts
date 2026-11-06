@@ -227,15 +227,19 @@ describe('the commands made from the declarations', () => {
     expect(ids).not.toContain('setting:md.example.scanner:label')
   })
 
-  it('offers a command only while its setting is shown under the values in force', () => {
-    const concealed: SettingOwner = {
+  it('offers a command only while the condition of its setting holds under the values in force', () => {
+    const conditional: SettingOwner = {
       ...APP,
-      settings: [{ ...MODE, isShown: false }, { ...SYNC, isShown: true }, PROFILE],
+      settings: [
+        { ...MODE, when: { setting: 'performance.profile', is: ['eco'] } },
+        { ...SYNC, when: { setting: 'performance.profile', is: ['balanced', 'maximum'] } },
+        PROFILE,
+      ],
     }
+    const commands = createPalette([conditional]).palette.getCommands()
+    const target = { tab: '', path: '', file: '', vault: { id: 'v' }, isReady: true } as never
     const available = Object.fromEntries(
-      createPalette([concealed])
-        .palette.getCommands()
-        .map((one) => [one.id, one.isAvailable({} as never, {} as never)]),
+      commands.map((one) => [one.id, one.isAvailable(target, {} as never)]),
     )
 
     expect(available).toStrictEqual({
@@ -243,6 +247,7 @@ describe('the commands made from the declarations', () => {
       'setting:app:naming.syncTitleAndFilename': true,
       'setting:app:performance.profile': true,
     })
+    expect(commands[0]?.when).toBe("string(config.app.performance.profile) in ['eco']")
   })
 
   it('reads the owners again for each request of the commands', () => {

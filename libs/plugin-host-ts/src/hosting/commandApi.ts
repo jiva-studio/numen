@@ -5,6 +5,7 @@
 import type { CommandItem, CommandNote, CommandTarget } from '@numen/plugin-sdk'
 import { createPaletteCommand } from './available'
 import { readAvailableCommands } from './availableReader'
+import { isCommandAvailable } from './commandWhen'
 import { reportError, runCommand } from './events'
 import type { HostRegistry } from './registry'
 import { matchesShortcut } from './shortcuts'
@@ -33,7 +34,7 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
     },
     executeCommand: async (id: string, note: CommandNote, argument?: string): Promise<boolean> => {
       const command = findAvailable(id)
-      if (!command) return false
+      if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
       let entry = command.entry
       if (!entry) {
         await deps.waitForPlugin?.(command.declaration.pluginId)
@@ -48,7 +49,7 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
         if (entry && matchesShortcut(event, declaration.shortcut)) {
           getNote()
             .then((note) => {
-              if (declaration.scope === 'note' && note.path === '') return
+              if (!isCommandAvailable(declaration, note, deps)) return
               return runCommand(deps, entry, { note })
             })
             .catch((error: unknown) => reportError(deps, entry.pluginId, error))

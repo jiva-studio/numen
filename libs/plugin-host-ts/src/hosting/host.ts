@@ -4,7 +4,6 @@
 import { shallowRef } from 'vue'
 import type {
   PluginContext,
-  SlotHost,
   SettingsViewRegistration,
   VaultChangeEvent,
   DropRegistry,
@@ -13,7 +12,7 @@ import type { Manifest } from '@numen/core-client'
 import { createAppInfo } from '../appInfo'
 import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
-import { createStatusViewRegistry, type StatusViewRegistry } from '../statusViews'
+import { createSlotRegistry } from '../slots/slotRegistry'
 import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views/slotViews'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
@@ -131,15 +130,14 @@ function createSettingBridge(
   }
 }
 
-type SharedBridge = 'registerStatusView' | 'registerSlotView' | 'registerView' | 'mountView'
+type SharedBridge = 'registerSlotView' | 'registerView' | 'mountView'
 
 /** The views, status views and drops a plugin registers, which the shared registries hold. */
 function createSharedBridge(
   shared: SharedRegistries,
 ): Pick<PluginContextHost, SharedBridge | 'registerDropHandler' | 'drops'> {
-  const { views, drops, statusViews, slotViews } = shared
+  const { views, drops, slotViews } = shared
   return {
-    registerStatusView: statusViews.registerStatusView,
     registerSlotView: slotViews.registerSlotView,
     registerView: views.registerView,
     mountView: views.mountView,
@@ -163,7 +161,6 @@ function createTabBridge(
 interface SharedRegistries {
   readonly views: ViewRegistry
   readonly drops: DropRegistry
-  readonly statusViews: StatusViewRegistry
   readonly slotViews: SlotViewRegistry
 }
 
@@ -284,17 +281,23 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
 
 export function createPluginHost(deps: PluginHostDeps) {
   const registry = createHostRegistry()
-  const statusViews = createStatusViewRegistry()
   const slotViews = createSlotViewRegistry(
     deps.reportViewIssue ? { reportIssue: deps.reportViewIssue } : {},
   )
   const contextHost = createHostContextBridge(deps, registry, {
     views: createViewRegistry(),
     drops: createDropRegistry(),
-    statusViews,
     slotViews,
   })
-  const parts = { registry, statusViews, slotViews, deps }
+  const slots = createSlotRegistry({
+    getEntries: () => deps.getSlotEntries?.(),
+    findCommand: (command, target) => deps.findSlotCommand?.(command, target),
+    findView: slotViews.findView,
+    ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
+    ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
+  })
+  contextHost.getSlots = () => slots
+  const parts = { registry, slotViews, deps }
 
   return {
     ...createContextApi(registry, contextHost),
@@ -307,14 +310,11 @@ export function createPluginHost(deps: PluginHostDeps) {
       notifyListeners(registry.vaultListeners, event, deps),
     disposePlugin: (pluginId: string) => disposePluginEntry(pluginId, parts),
     disposeAll: () => disposeAllEntries(parts),
-    /** The status bar views the plugins registered, in order of registration; reactive. */
-    statusViews: statusViews.views,
+    /** The entries of the slots of the window, as their owners read them. */
+    slots,
     /** The view a slot of the window draws, or null while no plugin registered one; reactive. */
     getSlotView: slotViews.getSlotView,
   }
 }
 
-export type PluginHost = ReturnType<typeof createPluginHost> & {
-  // The slots of the window the owners of slots read, where the host serves them.
-  readonly slots?: SlotHost
-}
+export type PluginHost = ReturnType<typeof createPluginHost>

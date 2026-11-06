@@ -5,7 +5,7 @@ import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
 import type { BackgroundTaskHost } from './backgroundTasks'
 import type { CommandItem, CommandsHost, CommandTarget } from './commands'
-import type { SlotHost } from './slots'
+import type { SlotHost } from './slots/slots'
 import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
 import type { MountedView, ViewRegistration } from './views'
@@ -54,20 +54,13 @@ export interface SettingsViewProps {
   readonly values: Readonly<Record<string, unknown>>
 }
 
-// StatusViewRegistration registers a component the window draws in its status bar. The manifest
-// declares the same id under `contributes.statusViews`. The component gets StatusViewProps as props.
-export interface StatusViewRegistration {
-  readonly id: string
-  readonly component: unknown
-}
-
-// StatusViewProps are the props the window passes the component of a status view.
+// StatusViewProps are the props the window passes the component of a view in a slot of a bar.
 export interface StatusViewProps {
   readonly pluginId: string
 }
 
-// SlotViewRegistration registers a component the window draws in one of its slots. The manifest
-// declares, under `contributes.views` with the same id, the slot it is drawn in.
+// SlotViewRegistration registers a component a slot draws. The manifest places it, as an entry
+// `{ "slot", "view" }` of `contributes.slots` with the same id, in the slots it is drawn in.
 export interface SlotViewRegistration {
   readonly id: string
   readonly component: unknown
@@ -78,7 +71,7 @@ export interface SlotViewRegistration {
 // as props and emits TitleBarViewEvents.
 export const TITLE_BAR_SLOT = 'titleBar'
 
-// TitleBarCommand is one command placed in `titleBar.commands` of `contributes.menus`, as the window passes it
+// TitleBarCommand is one command placed in `titleBar.commands` with `contributes.slots`, as the window passes it
 // to the title bar view.
 export interface TitleBarCommand {
   // The full id of the command; the view emits it with `run-command`.
@@ -280,11 +273,9 @@ export interface PluginContext {
   registerReader(registration: ReaderRegistration): Disposable
   // Registers the component of the settings view the manifest declares under the same id.
   registerSettingsView(registration: SettingsViewRegistration): Disposable
-  // Registers the component of the status bar view the manifest declares under the same id.
-  registerStatusView(registration: StatusViewRegistration): Disposable
-  // Registers the component of the view the manifest declares under the same id in
-  // `contributes.views`, drawn in the slot the manifest names. An id the manifest does not declare
-  // throws.
+  // Registers the component of the view the manifest places under the same id in
+  // `contributes.slots`, drawn in every slot the manifest places it in. An id the manifest places
+  // nowhere throws.
   registerSlotView(registration: SlotViewRegistration): Disposable
   registerTabKind<State>(registration: TabKindRegistration<State>): Disposable
   registerCommand(registration: CommandRegistration): Disposable

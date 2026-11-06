@@ -1,6 +1,9 @@
 package pluginport
 
-import "github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+import (
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/when"
+)
 
 // The manifest of a plugin, as the plugin catalog library reads and validates it.
 type (
@@ -10,8 +13,8 @@ type (
 	PluginBackend          = manifest.Backend
 	PluginCommand          = manifest.Command
 	PluginCommandArgument  = manifest.CommandArgument
-	PluginContextCondition = manifest.ContextCondition
-	PluginContext          = manifest.Context
+	PluginCondition        = when.Condition
+	PluginConditionResult  = when.Result
 	PluginContributes      = manifest.Contributes
 	PluginFrontend         = manifest.Frontend
 	PluginManifest         = manifest.Manifest
@@ -42,7 +45,9 @@ const (
 	HandlePlaybackCopy        = "playback-copy"
 	HandleTextProvider        = "text-provider"
 	ActivationEventAll        = manifest.ActivationEventAll
-	ContextAnyValue           = manifest.ContextAnyValue
+	ConditionTrue             = when.True
+	ConditionFalse            = when.False
+	ConditionUnknown          = when.Unknown
 	PluginProtocolVersion     = manifest.ProtocolVersion
 	SettingStoredSecrets      = manifest.SettingStoredSecrets
 	SettingTypeString         = manifest.SettingTypeString
@@ -100,3 +105,8 @@ func NormalizePermission(permission string) string { return manifest.NormalizePe
 func PluginCapabilities() []string { return manifest.PluginCapabilities() }
 
 func PluginPermissions() []string { return manifest.PluginPermissions() }
+
+// ParseCondition reads the when condition of a command or a slot entry; see package when.
+func ParseCondition(text string) (PluginCondition, error) {
+	return when.Parse(text)
+}

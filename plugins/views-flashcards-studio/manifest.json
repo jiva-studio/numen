@@ -91,13 +91,31 @@
         "id": "preset.open",
         "title": "Open preset",
         "icon": "gauge",
-        "scope": "note"
+        "when": "target.isNote"
       }
     ],
     "slots": [
-      { "slot": "fileTree.new", "command": "deck.create", "group": "1-cards", "order": 10 },
-      { "slot": "fileTree.new", "command": "cardModel.create", "group": "1-cards", "order": 20 },
-      { "slot": "fileTree.new", "command": "preset.create", "group": "1-cards", "order": 30 }
+      {
+        "slot": "fileTree.new",
+        "command": "deck.create",
+        "group": "1-cards",
+        "order": 10,
+        "when": "target.isFolder"
+      },
+      {
+        "slot": "fileTree.new",
+        "command": "cardModel.create",
+        "group": "1-cards",
+        "order": 20,
+        "when": "target.isFolder"
+      },
+      {
+        "slot": "fileTree.new",
+        "command": "preset.create",
+        "group": "1-cards",
+        "order": 30,
+        "when": "target.isFolder"
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

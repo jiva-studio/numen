@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createSlotViewRegistry, getDeclaredSlot } from './slotViews'
+import { createSlotViewRegistry, getDeclaredSlots } from './slotViews'
 
 const BAR = { id: 'bar', component: { name: 'OrchardBar' } }
 const OTHER_BAR = { id: 'strip', component: { name: 'HarborBar' } }
@@ -85,20 +85,31 @@ describe('createSlotViewRegistry', () => {
   })
 })
 
-describe('getDeclaredSlot', () => {
-  const manifest = { contributes: { views: [{ id: 'bar', slot: 'titleBar' }] } }
+describe('getDeclaredSlots', () => {
+  const manifest = {
+    contributes: {
+      slots: [
+        { slot: 'titleBar', placed: { case: 'view', value: 'bar' } },
+        { slot: 'titleBar.commands', placed: { case: 'command', value: 'bar.open' } },
+        { slot: 'statusBar.right', placed: { case: 'view', value: 'bar' } },
+      ],
+    },
+  }
 
-  it('returns the slot the manifest declares for the id', () => {
-    expect(getDeclaredSlot('org.example.orchard', manifest, 'bar')).toBe('titleBar')
+  it('returns every slot the manifest places the view of the id in', () => {
+    expect(getDeclaredSlots('org.example.orchard', manifest, 'bar')).toStrictEqual([
+      'titleBar',
+      'statusBar.right',
+    ])
   })
 
-  it('throws for an id the manifest does not declare', () => {
-    expect(() => getDeclaredSlot('org.example.orchard', manifest, 'strip')).toThrow(
-      /contributes\.views does not declare/,
+  it('throws for an id the manifest places nowhere', () => {
+    expect(() => getDeclaredSlots('org.example.orchard', manifest, 'strip')).toThrow(
+      /contributes\.slots places nowhere/,
     )
   })
 
   it('throws where the plugin has no manifest', () => {
-    expect(() => getDeclaredSlot('org.example.orchard', undefined, 'bar')).toThrow()
+    expect(() => getDeclaredSlots('org.example.orchard', undefined, 'bar')).toThrow()
   })
 })

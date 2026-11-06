@@ -14,7 +14,6 @@ import type {
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import type { StatusViewRegistry } from '../statusViews'
 import type { SlotViewRegistry } from '../slot-views/slotViews'
 import type { PluginListener } from './events'
 import type { PluginHostDeps } from './types'
@@ -104,8 +103,7 @@ export function cleanupProviderItems(
 /** What the disposal of a plugin's entries works on. */
 export interface DisposalParts {
   readonly registry: HostRegistry
-  readonly statusViews: StatusViewRegistry
-  readonly slotViews?: Pick<SlotViewRegistry, 'disposePlugin'> | undefined
+  readonly slotViews?: Pick<SlotViewRegistry, 'disposePlugin' | 'views'> | undefined
   readonly deps?: PluginHostDeps | undefined
 }
 
@@ -155,7 +153,7 @@ export function addEntry<T>(
 }
 
 export function disposePluginEntry(pluginId: string, parts: DisposalParts): void {
-  const { registry, statusViews, slotViews, deps } = parts
+  const { registry, slotViews, deps } = parts
   // The plugin is marked disposed before its subscriptions are cleared: each handler removed is read
   // at once by the parts that follow the commands, and an active plugin without it is reported.
   registry.disposed.add(pluginId)
@@ -171,14 +169,13 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   cleanupProviderItems(registry.agentProviders, pluginId)
   removePluginItems(registry.commands, pluginId)
   removePluginItems(registry.settingsViews, pluginId)
-  statusViews.disposePlugin(pluginId)
   slotViews?.disposePlugin(pluginId)
   removePluginListeners(registry.vaultListeners, pluginId)
   removePluginListeners(registry.fileListeners, pluginId)
 }
 
 export function disposeAllEntries(parts: DisposalParts & { readonly deps: PluginHostDeps }) {
-  const { registry, statusViews } = parts
+  const { registry, slotViews } = parts
   const allPluginIds = new Set<string>([
     ...registry.contexts.keys(),
     ...[...registry.readers.values()].map((r) => r.pluginId),
@@ -186,7 +183,7 @@ export function disposeAllEntries(parts: DisposalParts & { readonly deps: Plugin
     ...[...registry.commands.value.values()].map((c) => c.pluginId),
     ...[...registry.settingsViews.value.values()].map((v) => v.pluginId),
     ...[...registry.agentProviders.values()].map((p) => p.pluginId),
-    ...statusViews.views.value.map((v) => v.pluginId),
+    ...(slotViews?.views.value ?? []).map((v) => v.pluginId),
   ])
   for (const pluginId of allPluginIds) disposePluginEntry(pluginId, parts)
 }

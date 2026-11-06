@@ -27,13 +27,11 @@
         "id": "note.ask",
         "title": "Ask agent about note",
         "icon": "bot",
-        "scope": "note"
+        "when": "target.isNote"
       }
     ],
-    "menus": [
-      { "location": "titleBar.commands", "command": "chat.open", "group": "navigate", "order": 30 }
-    ],
     "slots": [
+      { "slot": "titleBar.commands", "command": "chat.open", "group": "navigate", "order": 30 },
       { "slot": "fileTree.context", "command": "note.ask", "group": "5-agent", "order": 10 }
     ]
   },

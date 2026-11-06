@@ -4,7 +4,7 @@
  */
 import type { Disposable } from '../types'
 import type { CommandItem, CommandsHost, CommandTarget } from '../commands'
-import type { SlotHost, SlotItem, SlotPlace } from '../slots'
+import type { SlotHost, SlotItem, SlotPlace } from '../slots/slots'
 import type { VaultsHost, VaultsState, WindowHost, WindowState } from '../window'
 import type { BackgroundTask, BackgroundTaskHost } from '../backgroundTasks'
 

@@ -17,18 +17,13 @@
         "id": "transcript.create",
         "title": "Transcribe recording",
         "icon": "audio-lines",
-        "contentTypes": ["audio/*", "video/*"]
+        "when": "target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')"
       },
       {
         "id": "transcript.delete",
         "title": "Delete transcript",
         "icon": "trash-2",
-        "when": [
-          {
-            "key": "version.plugin",
-            "is": ["md.numen.engines.transcription"]
-          }
-        ]
+        "when": "version.kind == 'transcript'"
       }
     ],
     "slots": [

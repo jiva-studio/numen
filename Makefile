@@ -219,13 +219,14 @@ lib_plugin_catalog_lint: ## run linters for the plugin catalog
 lib_protocol_generate: ## generate protocol code and the list of slots
 	cd $(PROTOCOL) && buf generate
 	node $(PROTOCOL)/tools/slots.mjs
+	node $(PROTOCOL)/tools/when.mjs
 
 protocol_gen: lib_protocol_generate ## alias for lib_protocol_generate
 
 .PHONY: lib_protocol_generate_check
 lib_protocol_generate_check: lib_protocol_generate ## verify protocol schema is up to date
-	git add -AN -- $(PROTOCOL)/gen $(PROTOCOL)/src $(PROTOCOL)/slots.go libs/plugin-sdk-ts/src/slotNames.ts
-	git diff --exit-code -- $(PROTOCOL)/gen $(PROTOCOL)/src $(PROTOCOL)/slots.go libs/plugin-sdk-ts/src/slotNames.ts
+	git add -AN -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin-catalog/manifest/slots.go libs/plugin-sdk-ts/src/slots/slotNames.ts libs/plugin-catalog/when/variables.go libs/plugin-sdk-ts/src/slots/whenVariables.ts
+	git diff --exit-code -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin-catalog/manifest/slots.go libs/plugin-sdk-ts/src/slots/slotNames.ts libs/plugin-catalog/when/variables.go libs/plugin-sdk-ts/src/slots/whenVariables.ts
 
 .PHONY: lib_protocol_compile
 lib_protocol_compile: ## compile protocol Go packages

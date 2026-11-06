@@ -16,13 +16,14 @@ const manifest = JSON.parse(
 }
 
 describe('the New submenu of the file tree', () => {
-  it('holds the commands that create a deck, a card model and a preset', () => {
+  it('holds the commands that create a deck, a card model and a preset, over a folder', () => {
+    const overFolder = { group: '1-cards', when: 'target.isFolder' }
     expect(
       (manifest.contributes.slots ?? []).filter((one) => one.slot === 'fileTree.new'),
     ).toStrictEqual([
-      { slot: 'fileTree.new', command: 'deck.create', group: '1-cards', order: 10 },
-      { slot: 'fileTree.new', command: 'cardModel.create', group: '1-cards', order: 20 },
-      { slot: 'fileTree.new', command: 'preset.create', group: '1-cards', order: 30 },
+      { slot: 'fileTree.new', command: 'deck.create', order: 10, ...overFolder },
+      { slot: 'fileTree.new', command: 'cardModel.create', order: 20, ...overFolder },
+      { slot: 'fileTree.new', command: 'preset.create', order: 30, ...overFolder },
     ])
   })
 

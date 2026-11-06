@@ -1,7 +1,7 @@
 /**
- * The start of the plugins that contribute to the interface of a window, before every other plugin.
- * A window is drawn once they have started, or once INTERFACE_WAIT_MS has passed. A plugin of the
- * interface that is not ready by then goes on starting and adds what it contributes when it is.
+ * The start of the plugins with an entry in a window slot, before every other plugin.
+ * A window is drawn once they have started, or once INTERFACE_WAIT_MS has passed. A plugin of a
+ * window slot that is not ready by then goes on starting and adds what it contributes when it is.
  */
 import { INTERFACE_WAIT_MS } from './limits'
 
@@ -10,7 +10,7 @@ export { INTERFACE_WAIT_MS } from './limits'
 export interface InterfaceStartDeps<Loaded> {
   /** The enabled plugins, in the order they are activated. */
   readonly ids: readonly string[]
-  /** Whether the plugin contributes to the interface; false where the manifest cannot be read. */
+  /** Whether the plugin has an entry in a window slot; false where the manifest cannot be read. */
   readonly isInterface: (id: string) => Promise<boolean>
   readonly load: (id: string) => Promise<Loaded>
   /** Starts the plugin; never rejects. */
@@ -18,9 +18,9 @@ export interface InterfaceStartDeps<Loaded> {
 }
 
 export interface InterfaceStart {
-  /** The plugins that do not contribute to the interface, in their order. */
+  /** The plugins with no entry in a window slot, in their order. */
   readonly others: readonly string[]
-  /** Settles once every plugin of the interface has started or failed, late ones included. */
+  /** Settles once every plugin of a window slot has started or failed, late ones included. */
   readonly started: Promise<void>
 }
 
@@ -34,7 +34,7 @@ function createDeadline(): { readonly late: Promise<'late'>; readonly cancel: ()
 }
 
 /**
- * Starts the plugins of the interface, all read at once and activated in the order of the list,
+ * Starts the plugins of the window slots, all read at once and activated in the order of the list,
  * each after the one before it until INTERFACE_WAIT_MS has passed, and from then on without waiting
  * for a late one. Settles once they have all started or INTERFACE_WAIT_MS has passed, which also
  * covers telling them apart.

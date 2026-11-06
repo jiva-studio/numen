@@ -56,16 +56,16 @@ func (c Commands) ListCommands() []pluginport.PluginCommandEntry {
 	return found
 }
 
-// ListMenus lists the menu entries the manifests of the enabled plugins declare. No plugin is started.
-func (c Commands) ListMenus() []pluginport.PluginMenuEntry {
-	var found []pluginport.PluginMenuEntry
+// ListSlots lists the slot entries the manifests of the enabled plugins declare. No plugin is started.
+func (c Commands) ListSlots() []pluginport.PluginSlotEntry {
+	var found []pluginport.PluginSlotEntry
 	for _, info := range c.host.GetPluginInfos() {
 		plugin, isEnabled := c.host.GetPlugin(info.ID)
 		if !isEnabled {
 			continue
 		}
-		for _, menu := range plugin.Manifest.Contributes.Menus {
-			found = append(found, pluginport.PluginMenuEntry{PluginID: plugin.Manifest.ID, Menu: menu})
+		for _, entry := range plugin.Manifest.Contributes.Slots {
+			found = append(found, pluginport.PluginSlotEntry{PluginID: plugin.Manifest.ID, Entry: entry})
 		}
 	}
 	return found
@@ -137,7 +137,7 @@ type NoCommands struct{}
 
 func (NoCommands) ListCommands() []pluginport.PluginCommandEntry { return nil }
 
-func (NoCommands) ListMenus() []pluginport.PluginMenuEntry { return nil }
+func (NoCommands) ListSlots() []pluginport.PluginSlotEntry { return nil }
 
 func (NoCommands) GetParts(string) pluginport.PluginParts { return pluginport.PluginParts{} }
 

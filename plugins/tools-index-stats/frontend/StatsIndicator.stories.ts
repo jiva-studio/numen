@@ -1,5 +1,5 @@
 /**
- * The status bar item that counts the vectors of the search index, with its popover open. Also the
+ * The title bar item that counts the vectors of the search index, with its popover open. Also the
  * test corpus: each story is run in a browser by `@storybook/addon-vitest`.
  *
  * The popover is drawn above the item and must not be clipped by the bar or the window, and its

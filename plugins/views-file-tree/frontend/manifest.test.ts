@@ -12,7 +12,6 @@ const manifest = JSON.parse(
   permissions: readonly string[]
   contributes: {
     commands: readonly { id: string; title: string; icon: string }[]
-    menus?: readonly { location: string; command: string; group?: string; order?: number }[]
     slots?: readonly Record<string, unknown>[]
   }
 }
@@ -29,8 +28,10 @@ describe('the manifest', () => {
   })
 
   it('places opening the file tree first among the navigation entries of the title bar', () => {
-    expect(manifest.contributes.menus).toStrictEqual([
-      { location: 'titleBar.commands', command: 'tree.open', group: 'navigate', order: 10 },
+    expect(
+      (manifest.contributes.slots ?? []).filter((one) => one.slot === 'titleBar.commands'),
+    ).toStrictEqual([
+      { slot: 'titleBar.commands', command: 'tree.open', group: 'navigate', order: 10 },
     ])
   })
 
@@ -43,12 +44,36 @@ describe('the manifest', () => {
 })
 
 describe('the menu of a row', () => {
-  it('declares the New submenu and places renaming in the menu of a row', () => {
+  it('declares the New submenu over a folder and renaming over one row that is not the root', () => {
     expect(getMenuEntries()).toStrictEqual([
-      { slot: 'fileTree.context', submenu: 'fileTree.new', title: 'New', group: '1-new' },
-      { slot: 'fileTree.new', command: 'tree.newNote', group: '0-tree', order: 10 },
-      { slot: 'fileTree.new', command: 'tree.newFolder', group: '0-tree', order: 20 },
-      { slot: 'fileTree.context', command: 'tree.rename', group: '2-edit', order: 10 },
+      {
+        slot: 'fileTree.context',
+        submenu: 'fileTree.new',
+        title: 'New',
+        group: '1-new',
+        when: 'target.isFolder',
+      },
+      {
+        slot: 'fileTree.new',
+        command: 'tree.newNote',
+        group: '0-tree',
+        order: 10,
+        when: 'target.isFolder',
+      },
+      {
+        slot: 'fileTree.new',
+        command: 'tree.newFolder',
+        group: '0-tree',
+        order: 20,
+        when: 'target.isFolder',
+      },
+      {
+        slot: 'fileTree.context',
+        command: 'tree.rename',
+        group: '2-edit',
+        order: 10,
+        when: '!target.isRoot && !target.isMultiple',
+      },
     ])
   })
 

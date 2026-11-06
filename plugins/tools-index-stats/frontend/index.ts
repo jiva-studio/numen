@@ -1,5 +1,5 @@
 /**
- * Frontend entrypoint for the Index stats plugin: a status bar item that counts the vectors of the
+ * Frontend entrypoint for the Index stats plugin: a title bar item that counts the vectors of the
  * search index, and a popover with the details.
  */
 import { defineComponent, h } from 'vue'
@@ -11,7 +11,7 @@ import './styles.css'
 
 export { StatsIndicator }
 
-/** The id the manifest declares the status bar view under. */
+/** The id the manifest declares the title bar view under. */
 export const STATS_VIEW = 'stats'
 
 /** What the plugin is made of outside the window, replaced by a test. */
@@ -44,7 +44,7 @@ const browserActivity: Activity = {
 
 const browserParts: StatsParts = { api: statsApi, timer: browserTimer, activity: browserActivity }
 
-/** The component of the status bar view: the indicator over the stats of the model. */
+/** The component of the title bar view: the indicator over the stats of the model. */
 export function createStatusView(model: IndexStats) {
   return defineComponent({
     name: 'IndexStatsStatusView',
@@ -55,7 +55,7 @@ export function createStatusView(model: IndexStats) {
 
 export const activate = (context: PluginContext, parts: StatsParts = browserParts): void => {
   const model = createIndexStats(parts)
-  context.registerStatusView({ id: STATS_VIEW, component: createStatusView(model) })
+  context.registerSlotView({ id: STATS_VIEW, component: createStatusView(model) })
   context.subscriptions.push({ dispose: () => model.stop() })
   model.start()
 }

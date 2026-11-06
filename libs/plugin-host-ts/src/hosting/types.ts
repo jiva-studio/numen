@@ -19,7 +19,8 @@ import type {
   ReaderRegistration,
   SettingsViewRegistration,
   SlotViewRegistration,
-  StatusViewRegistration,
+  SlotHost,
+  CommandTarget,
   TabKindRegistration,
   TaskHost,
   VaultChangeEvent,
@@ -31,6 +32,8 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from './tabKinds'
+import type { DeclaredSlotEntry, SlotCommandLook } from '../slots/slotRegistry'
+import type { WhenValues } from '../when/when'
 import type { Component } from 'vue'
 
 export type {
@@ -42,7 +45,6 @@ export type {
   PluginLifecycle,
   ReaderRegistration,
   SettingsViewRegistration,
-  StatusViewRegistration,
   TabKindRegistration,
   TaskHost,
   VaultChangeEvent,
@@ -56,16 +58,16 @@ export interface CommandDeclaration {
   /** The Lucide name of the icon it is drawn with. */
   readonly icon?: string
   readonly shortcut?: string
-  /** 'note' where it is listed only while a note is in front. */
-  readonly scope?: 'note'
+  /** The CEL condition under which it is available, as the manifest declares it; absent is always. */
+  readonly when?: string
 }
 
 export interface PluginPaletteCommand {
   readonly id: string
   readonly title: string
   readonly shortcut?: string
-  /** 'note' where it is offered only while a note is in front. */
-  readonly scope?: 'note'
+  /** The CEL condition under which it is available; absent is always. */
+  readonly when?: string
   /** The Lucide name of the icon it is drawn with. */
   readonly icon?: string
 }
@@ -73,6 +75,10 @@ export interface PluginPaletteCommand {
 export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unknown
 
 export interface PluginHostDeps {
+  /** The content type of a file by its extension, as the core lists it, for the conditions of commands. */
+  readonly getContentTypes?: () => Readonly<Record<string, string>>
+  /** The window and settings variables the conditions of commands read: window.isVaultOpen and the others, and config. */
+  readonly getWindowValues?: () => WhenValues
   /** The commands the enabled plugins declare in their manifests; undefined until the first list has loaded. */
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
   /** Whether the plugin declares a frontend the window loads; where absent, every plugin does. */
@@ -142,6 +148,21 @@ export interface PluginHostDeps {
   readonly getNotices?: (pluginId: string) => NoticeHost
   /** The tasks the plugins report, as one plugin watches them. */
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
+  /** The entries the enabled plugins and the window place in slots; undefined until the first list has loaded. */
+  readonly getSlotEntries?: () => readonly DeclaredSlotEntry[] | undefined
+  /** How a command of a slot entry is drawn over the target, and undefined while it is not available there. */
+  readonly findSlotCommand?: (
+    command: string,
+    target: CommandTarget | undefined,
+  ) => SlotCommandLook | undefined
+  /** The values the when conditions of slot entries read over the target of a slot: target, window and settings. */
+  readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
+  /** Receives what is wrong with the slot entries of a plugin. */
+  readonly reportSlotIssue?: (
+    pluginId: string,
+    message: string,
+    severity: 'warning' | 'error',
+  ) => void
   /** Everything a plugin showed, taken away with the plugin. */
   readonly clearNotices?: (pluginId: string) => void
   /** The build the window is, as plugins read it from their context. */
@@ -176,7 +197,6 @@ export interface NoteBuffer {
 export interface PluginContextHost {
   registerReader(pluginId: string, registration: ReaderRegistration): Disposable
   registerSettingsView(pluginId: string, registration: SettingsViewRegistration): Disposable
-  registerStatusView(pluginId: string, registration: StatusViewRegistration): Disposable
   registerSlotView(pluginId: string, slot: string, registration: SlotViewRegistration): Disposable
   readonly app: AppInfo
   openExternal(url: string): Promise<void>
@@ -216,4 +236,5 @@ export interface PluginContextHost {
   getNotices?(pluginId: string): NoticeHost | undefined
   getTasks?(pluginId: string): TaskHost | undefined
   getTexts?(pluginId: string): VaultTexts | undefined
+  getSlots?(): SlotHost | undefined
 }

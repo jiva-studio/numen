@@ -2,6 +2,7 @@ package command_test
 
 import (
 	"context"
+	"maps"
 	"path"
 	"slices"
 	"strings"
@@ -29,21 +30,21 @@ type pluginCommands struct {
 	err    error
 }
 
-func (p pluginCommands) ListMenus() []plugincommand.MenuEntry { return nil }
+func (p pluginCommands) ListSlots() []plugincommand.SlotEntry { return nil }
 
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
-			ID: "sample.create", Title: "Create a sample", Icon: "layers", ContentTypes: []domain.ContentType{"text/markdown"},
+			ID: "sample.create", Title: "Create a sample", Icon: "layers", When: "target.contentType == 'text/markdown'",
 			Arguments: []plugincommand.Argument{
 				{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true},
 				{Name: "preview", Title: "Preview", Type: plugincommand.ArgumentBoolean},
 			},
 		}},
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
-			ID: "print-sample", Title: "Print a sample", ContentTypes: []domain.ContentType{"text/markdown"},
+			ID: "print-sample", Title: "Print a sample", When: "target.contentType == 'text/markdown'",
 		}},
-		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "shuffle-deck", Title: "Shuffle a deck", NoteTypes: []string{"deck"}}},
+		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "shuffle-deck", Title: "Shuffle a deck", When: "target.noteType == 'deck'"}},
 	}
 }
 
@@ -64,7 +65,7 @@ func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequ
 	return res.Msg
 }
 
-func TestListCommands_ListsTheCommandsWithConditionsAndNoteTypesLikeTheOthers(t *testing.T) {
+func TestListCommands_ListsTheCommandsWithTheirConditionAndTheContentTypesByExtension(t *testing.T) {
 	res, err := command.NewHandler(shownVault{}, plugincommand.NewCommands(pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -77,9 +78,12 @@ func TestListCommands_ListsTheCommandsWithConditionsAndNoteTypesLikeTheOthers(t 
 	}
 	one := commands[0]
 	argument := one.GetArguments()[0]
-	if one.GetPluginId() != "org.example.sample" || one.GetId() != "sample.create" || one.GetIcon() != "layers" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
+	if one.GetPluginId() != "org.example.sample" || one.GetId() != "sample.create" || one.GetIcon() != "layers" || one.GetWhen() != "target.contentType == 'text/markdown'" ||
 		!argument.GetIsRequired() || len(one.GetArguments()) != 2 {
 		t.Errorf("got %v", one)
+	}
+	if types := res.Msg.GetContentTypeByExtension(); !maps.Equal(types, map[string]string{"md": "text/markdown", "markdown": "text/markdown"}) {
+		t.Errorf("the content types came out as %v", types)
 	}
 }
 

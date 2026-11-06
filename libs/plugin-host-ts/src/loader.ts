@@ -2,14 +2,14 @@
  * Loads plugin frontends: each module is fetched from the window, activated with a context
  * created by the host, and deactivated according to its `enabled` setting.
  */
-import { shallowRef, watch, type ShallowRef } from 'vue'
+import { shallowRef, type ShallowRef } from 'vue'
 import type { Disposable } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import type { LoaderHost } from './host'
 import {
   getLifecycleHooks,
   removePluginStyles,
-  isInterfaceManifest,
+  isWindowSlotManifest,
   readPluginManifest,
   resolveModule,
   type ResolveModuleContext,
@@ -17,6 +17,8 @@ import {
 import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 import { startLoader } from './loading/startLoader'
 import { createStartContext } from './loading/startContext'
+import { createPluginStarts } from './loading/pluginStarts'
+import { createSignal } from './loading/signal'
 
 export interface PluginLoaderDeps {
   readonly host: LoaderHost
@@ -258,7 +260,11 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   return {
     loadModule: (id: string) => resolveModule(id, undefined, activateContext),
     isInterface: async (id: string): Promise<boolean> =>
-      !moduleLoaders.has(id) && isInterfaceManifest(await readPluginManifest(id, activateContext)),
+      !moduleLoaders.has(id) && isWindowSlotManifest(await readPluginManifest(id, activateContext)),
+    hasTabKinds: async (id: string): Promise<boolean> =>
+      !moduleLoaders.has(id) &&
+      ((await readPluginManifest(id, activateContext).catch(() => undefined))?.contributes?.tabKinds
+        .length ?? 0) > 0,
     activatePlugin: (id: string, module?: unknown) =>
       enqueue(id, () => activateEntry(activateContext, id, module)),
     deactivatePlugin: (id: string) => enqueue(id, () => deactivateEntry(deactivateContext, id)),
@@ -277,27 +283,41 @@ interface Activation {
   readonly activatePlugin: (id: string, module?: unknown) => Promise<boolean>
   readonly deactivatePlugin: (id: string) => Promise<boolean>
   readonly isInterface: (id: string) => Promise<boolean>
+  readonly hasTabKinds: (id: string) => Promise<boolean>
 }
 
-/** A promise and the function that settles it. */
-function createSignal(): { readonly promise: Promise<void>; readonly settle: () => void } {
-  let settle: () => void = () => undefined
-  const promise = new Promise<void>((resolve) => {
-    settle = resolve
+/** The plugins the window loads, whether the loader runs, and where the start of each plugin stands. */
+function createTracking(deps: PluginLoaderDeps, state: LoaderState, activation: Activation) {
+  const tracked = shallowRef<ReadonlySet<string>>(new Set())
+  const isRunning = shallowRef(false)
+  const isEnabled = (id: string): boolean =>
+    isPluginEnabledValue(deps.host.getSetting?.(id, 'enabled'))
+  const listPlugins = (): string[] => [
+    ...new Set([...state.moduleLoaders.keys(), ...tracked.value]),
+  ]
+  const starts = createPluginStarts({
+    isRunning,
+    listPlugins,
+    isEnabled,
+    activePlugins: state.activePlugins,
+    failures: state.failures,
+    hasTabKinds: activation.hasTabKinds,
   })
-  return { promise, settle }
+  return { tracked, isRunning, isEnabled, listPlugins, starts }
 }
 
 function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: Activation) {
   const { host } = deps
   const { activatePlugin, deactivatePlugin, loadModule } = activation
   const { activePlugins, moduleLoaders } = state
-  const trackedIds = new Set<string>()
+  const { tracked, isRunning, isEnabled, listPlugins, starts } = createTracking(
+    deps,
+    state,
+    activation,
+  )
   const settingSubscriptions = new Map<string, Disposable>()
-  let hasStarted = false
   const interfaceStarted = createSignal()
 
-  const isEnabled = (id: string): boolean => isPluginEnabledValue(host.getSetting?.(id, 'enabled'))
   const listenDeps = { host, subscriptions: settingSubscriptions }
   const listen = (id: string) =>
     listenToPluginState(
@@ -313,35 +333,36 @@ function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: A
   }
 
   return {
+    ...starts,
     registerPluginModule: (id: string, loader: () => Promise<unknown>) => {
       moduleLoaders.set(id, loader)
-      if (hasStarted) {
+      if (isRunning.value) {
         listen(id)
         if (isEnabled(id)) activateInBackground(id)
       }
     },
     trackPlugins: async (ids: readonly string[]): Promise<void> => {
       for (const id of ids) {
-        if (trackedIds.has(id)) continue
-        trackedIds.add(id)
-        if (!hasStarted) continue
+        if (tracked.value.has(id)) continue
+        tracked.value = new Set([...tracked.value, id])
+        if (!isRunning.value) continue
         listen(id)
         if (isEnabled(id)) await activatePlugin(id)
       }
     },
     start: async (): Promise<void> => {
-      hasStarted = true
-      const pluginIds = [...new Set([...moduleLoaders.keys(), ...trackedIds])]
+      isRunning.value = true
+      const pluginIds = listPlugins()
       const { settle: onInterfaceStarted } = interfaceStarted
       const startDeps = { ...activation, load: loadModule, pluginIds, listen, isEnabled }
       await startLoader({ ...startDeps, onInterfaceStarted }, activatePlugin).finally(
         onInterfaceStarted,
       )
     },
-    /** Settles once the plugins of the interface have started or INTERFACE_WAIT_MS has passed. */
+    /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
     waitForInterface: (): Promise<void> => interfaceStarted.promise,
     close: async (): Promise<void> => {
-      hasStarted = false
+      isRunning.value = false
       await closeLoader(
         { host, subscriptions: settingSubscriptions },
         [...activePlugins.value.keys()],
@@ -369,22 +390,6 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
       manifests.set(id, manifest)
       host.registerManifest?.(id, manifest)
     },
-    /** Settles once the plugin is active or has failed, or after PLUGIN_START_LIMIT_MS. */
-    settlePlugin: (id: string): Promise<void> =>
-      new Promise<void>((resolve) => {
-        const isSettled = () => activePlugins.value.has(id) || failures.value.has(id)
-        if (isSettled()) return resolve()
-        const stop = watch([activePlugins, failures], () => {
-          if (!isSettled()) return
-          stop()
-          clearTimeout(timer)
-          resolve()
-        })
-        const timer = setTimeout(() => {
-          stop()
-          resolve()
-        }, PLUGIN_START_LIMIT_MS)
-      }),
     isPluginActive: (id: string) => activePlugins.value.has(id),
     getActivePluginIds: () => [...activePlugins.value.keys()],
     getPluginFailure: (id: string): string | undefined => failures.value.get(id),

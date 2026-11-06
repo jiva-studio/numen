@@ -26,9 +26,7 @@ type (
 	PluginCommandCall      = pluginport.PluginCommandCall
 	PluginCommandEntry     = pluginport.PluginCommandEntry
 	PluginCommandResult    = pluginport.PluginCommandResult
-	PluginMenuEntry        = pluginport.PluginMenuEntry
-	PluginContextCondition = pluginport.PluginContextCondition
-	PluginContext          = pluginport.PluginContext
+	PluginSlotEntry        = pluginport.PluginSlotEntry
 	PluginContributes      = pluginport.PluginContributes
 	PluginCommands         = pluginport.PluginCommands
 	PluginParts            = pluginport.PluginParts
@@ -131,7 +129,6 @@ const (
 	RuntimeONNX                 = pluginport.RuntimeONNX
 	HandlePlaybackCopy          = pluginport.HandlePlaybackCopy
 	HandleTextProvider          = pluginport.HandleTextProvider
-	ContextAnyValue             = pluginport.ContextAnyValue
 	ConfigPerformanceProfile    = pluginport.ConfigPerformanceProfile
 	SettingStoredSecrets        = pluginport.SettingStoredSecrets
 	SettingTypeEnum             = pluginport.SettingTypeEnum

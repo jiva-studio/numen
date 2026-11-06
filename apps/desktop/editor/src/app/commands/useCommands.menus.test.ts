@@ -472,7 +472,7 @@ describe('the search the window builds', () => {
 })
 
 describe('the commands of the palette', () => {
-  it('are the same whatever the plugins place in menus', () => {
+  it('are the same whatever the plugins place in slots', () => {
     const listCommands = () =>
       ((h.getExtraCommands?.() ?? []) as { id: string; text: string; group: string }[]).map(
         ({ id, text, group }) => ({ id, text, group }),

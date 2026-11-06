@@ -14,7 +14,7 @@ export interface BootstrapDeps {
   startLayout(): Promise<void>
   /** Starts every plugin; settles once all have started or failed. */
   startPlugins?(): Promise<void>
-  /** Settles once the plugins of the interface have started or failed. */
+  /** Settles once the plugins of the window slots have started or failed. */
   waitForInterfacePlugins?(): Promise<void>
   closeWindow(): void
   closeEditing(): void
@@ -29,7 +29,7 @@ export interface BootstrapDeps {
 export const STEP_LIMIT_MS = 10_000
 
 /**
- * Starts the plugins and waits for the plugins of the interface, no longer than INTERFACE_WAIT_MS;
+ * Starts the plugins and waits for the plugins of the window slots, no longer than INTERFACE_WAIT_MS;
  * every other plugin goes on starting.
  */
 async function startPluginsWithinLimit(deps: BootstrapDeps): Promise<void> {
@@ -60,7 +60,7 @@ async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): 
 
 export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_LIMIT_MS) {
   /**
-   * True once the plugins of the interface have started, INTERFACE_WAIT_MS has passed since the window
+   * True once the plugins of the window slots have started, INTERFACE_WAIT_MS has passed since the window
    * mounted, or the start failed: the window is drawn from then on.
    */
   const isStarted = ref(false)

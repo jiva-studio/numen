@@ -62,7 +62,7 @@ describe('createShellHost', () => {
       id: 'org.example.ledger',
       name: 'Ledger bar',
       version: '1.0.0',
-      contributes: { views: [{ id: 'bar', slot: 'titleBar' }] },
+      contributes: { slots: [{ slot: 'titleBar', placed: { case: 'view', value: 'bar' } }] },
     } as unknown as Parameters<typeof host.createContext>[1]
     const context = host.createContext('org.example.ledger', manifest)
     context.registerSlotView({ id: 'bar', component: {} })
@@ -121,7 +121,6 @@ describe('createShellHost', () => {
     context.registerCommand?.({} as never).dispose()
     context.registerAgentProvider?.({} as never).dispose()
     context.registerSettingsView?.({} as never).dispose()
-    context.registerStatusView?.({} as never).dispose()
     expect(context.getSetting?.('key')).toBeUndefined()
     context.onSettingChange?.('key', () => undefined).dispose()
     context.onVaultChange?.(() => undefined).dispose()

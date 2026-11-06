@@ -1,4 +1,4 @@
-import { shallowRef, type Component, type Ref, type ShallowRef } from 'vue'
+import { shallowRef, type Component, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { CatalogEntry, PluginCatalog } from '@numen/core-client'
 import UnavailablePane from './UnavailablePane.vue'
@@ -16,8 +16,11 @@ export interface UnavailableServices {
   readonly catalog?: PluginCatalog | undefined
   /** Switches the plugin on; the plugin registers its kinds again and its tabs return. */
   readonly enablePlugin?: ((pluginId: string) => Promise<void>) | undefined
-  /** Whether the plugins are still starting: a tab of a kind not registered yet then waits for its plugin. */
-  readonly arePluginsStarting?: Readonly<Ref<boolean>> | undefined
+  /**
+   * Whether the start of the plugin is going on; reactive. A tab of a kind its plugin has not
+   * registered yet waits while it is, until the plugin has started or failed.
+   */
+  readonly isPluginStarting?: ((pluginId: string) => boolean) | undefined
   /** Shows the plugin where the person installs or inspects it. */
   readonly openPlugin?: ((pluginId: string | undefined) => void) | undefined
 }

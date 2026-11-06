@@ -35,22 +35,6 @@ describe('mock plugin context', () => {
     expect(ctx.getRegisteredSettingsViews()).toHaveLength(0)
   })
 
-  it('manages status view registrations', () => {
-    const ctx = createMockPluginContext({ pluginId: 'status-plugin' })
-    const d = ctx.registerStatusView({ id: 'update', component: {} })
-
-    expect(ctx.getRegisteredStatusViews()).toEqual([{ id: 'update', component: {} }])
-    d.dispose()
-    expect(ctx.getRegisteredStatusViews()).toHaveLength(0)
-  })
-
-  it('removes status views on dispose', () => {
-    const ctx = createMockPluginContext()
-    ctx.registerStatusView({ id: 'update', component: {} })
-    ctx.dispose()
-    expect(ctx.getRegisteredStatusViews()).toHaveLength(0)
-  })
-
   it('lists a slot view until it is disposed', () => {
     const ctx = createMockPluginContext({ pluginId: 'bar-plugin' })
     const d = ctx.registerSlotView({ id: 'bar', component: {} })

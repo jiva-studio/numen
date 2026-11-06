@@ -51,14 +51,14 @@ describe('the index stats frontend', () => {
     const { context } = setup(STATS)
 
     expect(STATS_VIEW).toBe('stats')
-    expect(context.getRegisteredStatusViews().map((one) => one.id)).toEqual(['stats'])
+    expect(context.getRegisteredSlotViews().map((one) => one.id)).toEqual(['stats'])
   })
 
   it('asks the backend when it starts and draws the count', async () => {
     const { context, get } = setup(STATS)
     await flush()
 
-    const wrapper = mount(context.getRegisteredStatusViews()[0]?.component as never)
+    const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
     expect(get).toHaveBeenCalledTimes(1)
     expect(wrapper.find('.index-stats__label').text()).toMatch(/^⬡ 12.480$/)
@@ -67,7 +67,7 @@ describe('the index stats frontend', () => {
   it('draws the new count when the next ask returns one', async () => {
     const { context, waits } = setup(STATS)
     await flush()
-    const wrapper = mount(context.getRegisteredStatusViews()[0]?.component as never)
+    const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
     expect(waits.map((one) => one.delayMs)).toEqual([2000])
     expect(wrapper.find('.index-stats').exists()).toBe(true)

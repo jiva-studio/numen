@@ -108,8 +108,8 @@ const registerBar = async (pluginId: string, name = 'LedgerBar') => {
 
 const placeTideChart = () => {
   declared.commands = [declareCommand(TIDE, 'chart.open', 'Open tide chart')]
-  declared.menus = [
-    { pluginId: TIDE, location: 'titleBar.commands', command: 'chart.open', group: 'navigate' },
+  declared.slots = [
+    { pluginId: TIDE, slot: 'titleBar.commands', command: 'chart.open', group: 'navigate' },
   ]
 }
 
@@ -244,24 +244,24 @@ describe('the buttons of the plugins in the title bar', () => {
       declareCommand(HARBOR, 'map.open', 'Open harbor map'),
       declareCommand(HARBOR, 'log.open', 'Open harbor log'),
     ]
-    declared.menus = [
+    declared.slots = [
       {
         pluginId: HARBOR,
-        location: 'titleBar.commands',
+        slot: 'titleBar.commands',
         command: 'log.open',
         group: 'new',
         order: 1,
       },
       {
         pluginId: HARBOR,
-        location: 'titleBar.commands',
+        slot: 'titleBar.commands',
         command: 'map.open',
         group: 'navigate',
         order: 2,
       },
       {
         pluginId: TIDE,
-        location: 'titleBar.commands',
+        slot: 'titleBar.commands',
         command: 'chart.open',
         group: 'navigate',
         order: 1,
@@ -271,16 +271,16 @@ describe('the buttons of the plugins in the title bar', () => {
     const window = await mountWindow()
 
     expect(getCommands(window).map((one) => [one.id, one.group])).toStrictEqual([
-      [`${TIDE}:chart.open`, 'navigate'],
-      [`${HARBOR}:map.open`, 'navigate'],
-      [`${HARBOR}:log.open`, 'new'],
-      ['app:settings.open', 'settings'],
+      [`${TIDE}:chart.open`, '0'],
+      [`${HARBOR}:map.open`, '0'],
+      [`${HARBOR}:log.open`, '1'],
+      ['app:settings.open', '2'],
     ])
   })
 
   it('leave out a command placed in the search results', async () => {
     declared.commands = [declareCommand(TIDE, 'chart.open', 'Open tide chart')]
-    declared.menus = [{ pluginId: TIDE, location: 'searchResult', command: 'chart.open' }]
+    declared.slots = [{ pluginId: TIDE, slot: 'palette.searchResult', command: 'chart.open' }]
 
     const window = await mountWindow()
 
@@ -298,7 +298,7 @@ describe('the buttons of the plugins in the title bar', () => {
 
   it('open the palette at the name of a command that needs one when the bar runs it', async () => {
     declared.commands = []
-    declared.menus = [{ pluginId: TIDE, location: 'titleBar.commands', command: 'app:note.create' }]
+    declared.slots = [{ pluginId: TIDE, slot: 'titleBar.commands', command: 'app:note.create' }]
     const window = await mountWindowWithPalette()
     await registerBar(LEDGER)
     const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')

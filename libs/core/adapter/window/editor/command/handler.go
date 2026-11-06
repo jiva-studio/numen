@@ -34,25 +34,27 @@ func NewHandler(vaults VaultProvider, commands plugincommand.Commands) *Handler 
 }
 
 // ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them,
-// except a command with conditions: the menu of a file offers it over a version, and run without one
-// it fails.
+// except a command with items: its condition names version.*, the menu of a file offers it over a
+// version, and run without one it fails. It carries the content type of a file by its extension.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
 	entries := h.list.ExecuteAll()
 	commands := make([]*v1.PluginCommand, 0, len(entries))
 	for _, one := range entries {
-		if len(one.Command.When) > 0 {
+		if plugincommand.HasItems(one.Command) {
 			continue
 		}
-		commands = append(commands, newWireCommand(one, h.list.ListExtensions(one.Command)))
+		commands = append(commands, newWireCommand(one))
 	}
-	menuEntries := h.list.ExecuteMenus()
-	menus := make([]*v1.PluginMenu, 0, len(menuEntries))
-	for _, one := range menuEntries {
-		menus = append(menus, newWireMenu(one))
+	slotEntries := h.list.ExecuteSlots()
+	slots := make([]*v1.PluginSlotEntry, 0, len(slotEntries))
+	for _, one := range slotEntries {
+		slots = append(slots, newWireSlotEntry(one))
 	}
-	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands, Menus: menus}), nil
+	return connect.NewResponse(&v1.ListCommandsResponse{
+		Commands: commands, Slots: slots, ContentTypeByExtension: h.list.ListContentTypes(),
+	}), nil
 }
 
 // RunPluginCommand runs one of them. A call that is not a command, matches none, fails, or is routed to
@@ -90,7 +92,7 @@ func getErrorCode(err error) v1.CommandErrorCode {
 }
 
 // newWireCommand is a command as the schema carries it.
-func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCommand {
+func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
 	arguments := make([]*v1.CommandArgument, 0, len(entry.Command.Arguments))
 	for _, one := range entry.Command.Arguments {
 		arguments = append(arguments, &v1.CommandArgument{
@@ -100,39 +102,38 @@ func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCo
 		})
 	}
 	return &v1.PluginCommand{
-		PluginId:     entry.PluginID,
-		Id:           entry.Command.ID,
-		Title:        entry.Command.Title,
-		Icon:         entry.Command.Icon,
-		ContentTypes: getContentTypeTexts(entry.Command.ContentTypes),
-		Extensions:   extensions,
-		Arguments:    arguments,
-		Scope:        entry.Command.Scope,
-		Shortcut:     entry.Command.Shortcut,
+		PluginId:  entry.PluginID,
+		Id:        entry.Command.ID,
+		Title:     entry.Command.Title,
+		Icon:      entry.Command.Icon,
+		Arguments: arguments,
+		When:      entry.Command.When,
+		Shortcut:  entry.Command.Shortcut,
 	}
 }
 
-func getContentTypeTexts(types []domain.ContentType) []string {
-	out := make([]string, 0, len(types))
-	for _, one := range types {
-		out = append(out, string(one))
+// newWireSlotEntry is a slot entry as the schema carries it.
+func newWireSlotEntry(one plugincommand.SlotEntry) *v1.PluginSlotEntry {
+	entry := &v1.ManifestSlotEntry{
+		Slot:  one.Entry.Slot,
+		Title: one.Entry.Title,
+		Icon:  one.Entry.Icon,
+		Group: one.Entry.Group,
+		When:  one.Entry.When,
 	}
-	return out
-}
-
-// newWireMenu is a menu entry as the schema carries it.
-func newWireMenu(entry plugincommand.MenuEntry) *v1.PluginMenu {
-	wire := &v1.PluginMenu{
-		PluginId: entry.PluginID,
-		Location: entry.Menu.Location,
-		Command:  entry.Menu.Command,
-		Group:    entry.Menu.Group,
+	switch {
+	case one.Entry.Command != "":
+		entry.Placed = &v1.ManifestSlotEntry_Command{Command: one.Entry.Command}
+	case one.Entry.View != "":
+		entry.Placed = &v1.ManifestSlotEntry_View{View: one.Entry.View}
+	case one.Entry.Submenu != "":
+		entry.Placed = &v1.ManifestSlotEntry_Submenu{Submenu: one.Entry.Submenu}
 	}
-	if entry.Menu.Order != nil {
-		order := clampToInt32(*entry.Menu.Order)
-		wire.Order = &order
+	if one.Entry.Order != nil {
+		order := clampToInt32(*one.Entry.Order)
+		entry.Order = &order
 	}
-	return wire
+	return &v1.PluginSlotEntry{PluginId: one.PluginID, Entry: entry}
 }
 
 // clampToInt32 narrows an order to the 32 bits the schema carries.

@@ -12,7 +12,7 @@ import {
   createPluginTexts,
   openExternalUrl,
   type CommandDeclaration,
-  type PluginHost,
+  type PluginHostDeps,
   type PluginLoader,
 } from '@numen/plugin-host'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
@@ -44,6 +44,16 @@ export interface PluginSupportDeps {
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
   /** Reports a view of a slot that another plugin, first by plugin id, draws. */
   readonly reportViewIssue?: (pluginId: string, message: string) => void
+  /** The entries of the slots of the window, how their commands are drawn and run, and their issues. */
+  readonly slots?: Pick<
+    PluginHostDeps,
+    | 'getSlotEntries'
+    | 'findSlotCommand'
+    | 'reportSlotIssue'
+    | 'getSlotWhenValues'
+    | 'getWindowValues'
+    | 'getContentTypes'
+  >
 }
 
 function createPluginSettingsAccessor(
@@ -94,6 +104,20 @@ const createServiceAccess = (deps: Pick<PluginSupportDeps, 'services'>) => ({
   getNoteBuffer: () => deps.services?.noteBuffer,
 })
 
+/** The commands and slot entries the plugins declare, and what the host reports about them. */
+function getHostDeclarations(deps: PluginSupportDeps) {
+  return {
+    ...deps.slots,
+    ...(deps.getCommandDeclarations !== undefined
+      ? { getCommandDeclarations: deps.getCommandDeclarations }
+      : {}),
+    ...(deps.reportViewIssue !== undefined ? { reportViewIssue: deps.reportViewIssue } : {}),
+    ...(deps.reportCommandIssue !== undefined
+      ? { reportCommandIssue: deps.reportCommandIssue }
+      : {}),
+  }
+}
+
 export function createPluginSupport(deps: PluginSupportDeps) {
   const { windowTabs, tabOpeners, settingsHolder } = deps
   const { getSetting, onSettingChange } = createPluginSettingsAccessor(
@@ -109,14 +133,8 @@ export function createPluginSupport(deps: PluginSupportDeps) {
 
   /* Stryker disable OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction: host and loader wiring forwards optional capabilities */
   const loaderHolder: { current?: PluginLoader } = {}
-  const pluginHost: PluginHost = createPluginHost({
-    ...(deps.getCommandDeclarations !== undefined
-      ? { getCommandDeclarations: deps.getCommandDeclarations }
-      : {}),
-    ...(deps.reportViewIssue !== undefined ? { reportViewIssue: deps.reportViewIssue } : {}),
-    ...(deps.reportCommandIssue !== undefined
-      ? { reportCommandIssue: deps.reportCommandIssue }
-      : {}),
+  const pluginHost = createPluginHost({
+    ...getHostDeclarations(deps),
     hasPluginFrontend: (pluginId) =>
       settingsHolder.current?.rest?.plugins?.value.find((plugin) => plugin.id === pluginId)
         ?.hasFrontend ?? true,

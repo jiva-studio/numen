@@ -3,7 +3,6 @@
  * few requests one kind makes of another.
  */
 import { computed, ref, watch, type Ref } from 'vue'
-import { waitFor } from './waitFor'
 import { formatErrorMessage } from '@numen/core-client'
 import { TITLE_BAR_SLOT, type SlotHost } from '@numen/plugin-host'
 import { pluginCatalog } from '@/shared/clients'
@@ -37,7 +36,7 @@ import type { MovedTab } from '../ports/vault'
 import { createPaletteItems, useCommands } from '../commands/useCommands'
 import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
-import { createPluginMenus } from '../commands/pluginMenus'
+import { createWindowSlots } from './windowSlots'
 import { getNamedIcon } from '@/shared/icons'
 import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
@@ -56,6 +55,7 @@ import {
 } from '../plugins/useWindowPlugins'
 import { createPluginNotes } from '../plugins/pluginNotes'
 
+import { getSettingsConfig } from './settingsConfig'
 import { createDisplayOptions, createTargetResolver } from './useWindowDisplayOptions'
 import type { PluginServices } from '../plugins/pluginServices'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -123,7 +123,6 @@ interface AppLifecycleDeps {
   /** Settles once the first list of the commands the plugins declare is held. */
   waitForDeclaredCommands: () => Promise<void>
   /** True until every plugin the window starts has started or failed. */
-  arePluginsStarting: Ref<boolean>
   writeMessage: MessageWriter
   /** Called once the tabs the window opens with are open. */
   onLayoutStarted(): void
@@ -134,9 +133,6 @@ interface AppLifecycleDeps {
   /** Opens the tab of a detach and accepts it; runs in the background. */
   openDetachedTab(moved: MovedTab): void
 }
-
-/** How long a vault with no saved tabs waits for the plugins that place tabs. */
-const NEW_VAULT_PLUGINS_WAIT_MS = 5_000
 
 /** Returns the tab of a pending detach, or null when the request fails or none is pending. */
 const readDetachedTab = async (windowId: string, tabId: string) => {
@@ -159,7 +155,6 @@ const readSavedTabs = async () => {
 
 function initAppLifecycle(deps: AppLifecycleDeps) {
   const { vaultsModule, windowTabs, settings, window, editing } = deps
-  let pluginsStarted: Promise<void> = Promise.resolve()
   const startLayout = async () => {
     if (!vaultsModule.activeVault.value.id) return
     // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: location is always defined in the window environment
@@ -178,8 +173,8 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     if (saved.tabs.length > 0) {
       windowTabs.restoreTabs(parseSavedTabs(saved), saved.activeId)
     } else {
-      // A new vault places the tabs of the kinds registered, so it gives the plugins still starting a while longer.
-      await waitFor(pluginsStarted, NEW_VAULT_PLUGINS_WAIT_MS)
+      // A new vault places its tabs once the plugins of its tabs have started or failed.
+      await deps.pluginLoader.waitForTabPlugins()
       await windowTabs.openPlacedTabs((kind, error) =>
         deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
       )
@@ -192,24 +187,13 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     startSettings: () => settings.start(),
     startLayout,
     // The plugins the settings name are active before the layout opens the tabs of their kinds.
-    startPlugins: () => {
-      // Tabs come from the plugins of the interface, so a tab stops waiting for its plugin once they
-      // have started, while the other plugins go on starting.
-      const stopWaiting = () => (deps.arePluginsStarting.value = false)
-      runInBackground(deps.pluginLoader.waitForInterface().then(stopWaiting), () => undefined)
-      pluginsStarted = (async () => {
-        try {
-          const plugins = settings.rest.plugins.value
-          await deps.pluginLoader.trackPlugins(getFrontendPluginIds(plugins))
-          await deps.pluginLoader.start()
-        } finally {
-          stopWaiting()
-        }
-      })()
-      return pluginsStarted
+    startPlugins: async () => {
+      const plugins = settings.rest.plugins.value
+      await deps.pluginLoader.trackPlugins(getFrontendPluginIds(plugins))
+      await deps.pluginLoader.start()
     },
     // The title bar and the shortcuts read the commands the plugins declare, so the window waits for
-    // their first list as it waits for the plugins of the interface.
+    // their first list as it waits for the plugins of the slots of the window.
     waitForInterfacePlugins: async () => {
       await Promise.all([deps.pluginLoader.waitForInterface(), deps.waitForDeclaredCommands()])
     },
@@ -248,7 +232,21 @@ const getDeclaredCommandsDeps = (
   hasBackend: (pluginId: string): boolean =>
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.hasBackend ??
     true,
+  getConfig: () => getWindowConfig(settingsHolder.current),
 })
+
+/** The settings of the window as the when conditions read them, config by dotted key. */
+const getWindowConfig = (settings: ReturnType<typeof useSettings> | undefined) =>
+  settings
+    ? getSettingsConfig([
+        { id: 'app', name: '', settings: settings.rest.app.value },
+        ...settings.rest.plugins.value.map((one) => ({
+          id: one.id,
+          name: one.name,
+          settings: one.settings,
+        })),
+      ])
+    : {}
 
 /** What the window writes to the message log about a plugin, under the plugin's own writer. */
 function createPluginReports(
@@ -286,10 +284,11 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
-  const arePluginsStarting = ref(true)
+  // The plugin loader is made after the tabs; until then every plugin counts as starting.
+  const pluginStarts: { current?: (pluginId: string) => boolean } = {}
   const windowTabs = useWindowTabs({
     catalog: pluginCatalog,
-    arePluginsStarting,
+    isPluginStarting: (pluginId) => pluginStarts.current?.(pluginId) ?? true,
     enablePlugin: async (pluginId) => {
       await settingsHolder.current?.rest.writeSetting([pluginId, 'enabled'], true)
     },
@@ -314,7 +313,16 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const declaredCommands = useDeclaredCommands({
     ...getDeclaredCommandsDeps(hostHolder, settingsHolder),
   })
+  const appCommands: { current?: () => readonly Command[] } = {}
+  const slots = createWindowSlots({
+    declaredCommands,
+    hostHolder,
+    getAppCommands: () => appCommands.current?.() ?? [],
+    writeIssue: (pluginId, message, severity) =>
+      log.getWriter(`plugin:${pluginId}`)(`${getPluginName(pluginId)}: ${message}`, severity),
+  })
   const { pluginHost, pluginLoader } = createPluginSupport({
+    slots: slots.hostDeps,
     getCommandDeclarations: () => declaredCommands.declarations.value,
     windowTabs,
     tabLinks,
@@ -329,6 +337,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
       return (await core.resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
     },
   })
+  pluginStarts.current = pluginLoader.isPluginStarting
   hostHolder.current = pluginHost
   /* Stryker restore OptionalChaining,ObjectLiteral,StringLiteral,Regex */
   return {
@@ -337,7 +346,6 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     writeMessage,
     windowId,
     windowTabs,
-    arePluginsStarting,
     tabLinks,
     tabReports,
     tabOpeners,
@@ -347,6 +355,8 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     pluginServices,
     pluginNotices,
     pluginNotes,
+    slotWindowValues: slots.windowValues,
+    appCommands,
   }
 }
 
@@ -444,22 +454,17 @@ function initWindowKindsAndCommands(
 ) {
   const { editing, settings, window, tabSync } = services
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
+  base.appCommands.current = () => ctx.tabCommands?.commands ?? []
+  base.slotWindowValues.current = () => {
+    const inFront = getTarget()
+    return {
+      'window.isVaultOpen': inFront.vault.id !== '',
+      'window.isVaultReady': inFront.isReady,
+      'window.isTabOpen': inFront.tab !== '',
+    }
+  }
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
-  let editorCommands: readonly Command[] | undefined
-  const menus = createPluginMenus({
-    getPlacements: () => base.declaredCommands.placements.value,
-    getPluginCommands: () => base.pluginHost.getPaletteCommands(),
-    getDeclaredCommands: () => base.declaredCommands.commands.value,
-    getEditorCommands: () => [
-      ...(editorCommands ??= createCommands(words)),
-      ...(ctx.tabCommands?.commands ?? []),
-    ],
-    reportIssue: (pluginId, message) => {
-      const name = settings.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
-      base.log.getWriter(`plugin:${pluginId}`)(`${name}: ${message}`, 'warning')
-    },
-  })
   const fileMenuCommands = useFileMenuCommands({
     onRun: (file) => base.pluginHost.notifyVaultChange({ paths: [file] }),
     onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
@@ -513,7 +518,11 @@ function initWindowKindsAndCommands(
     getAppCommands: () => ctx.tabCommands?.commands ?? [],
   })
 
-  return { getTarget, runCommand, menuApi: { menus, runChoice: getCommands(ctx).runChoice } }
+  return {
+    getTarget,
+    runCommand,
+    menuApi: { slots: base.pluginHost.slots, runChoice: getCommands(ctx).runChoice },
+  }
 }
 
 function isSecondaryWindow(): boolean {
@@ -725,10 +734,8 @@ function createSlotServices(
   return { slots: base.pluginHost.slots, windowCommands }
 }
 
-/** The views plugins draw in the window itself: in the status bar and in the title bar. */
-
+/** The view a plugin draws in the window itself: the title bar. */
 const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
-  statusViews: pluginHost.statusViews,
   titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
 })
 
@@ -776,7 +783,6 @@ export const useWindow = () => {
     editing,
     pluginLoader: base.pluginLoader,
     waitForDeclaredCommands: () => base.declaredCommands.waitForFirstList(),
-    arePluginsStarting: base.arePluginsStarting,
     writeMessage: base.writeMessage,
     tabLinkSession,
     windowId: base.windowId,

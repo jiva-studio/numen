@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
-	"strconv"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -63,18 +63,23 @@ func (u *FileMenu) GetMenu(ctx context.Context, v domain.Vault, path string) ([]
 	if err != nil {
 		return nil, err
 	}
-	contentType := u.types.GetContentType(path)
+	values := pluginport.GetTargetValues(path, string(u.types.GetContentType(path)), "")
 	var entries []MenuEntry
 	for _, one := range u.commands.ListCommands() {
 		command := one.Command
+		condition, err := pluginport.ParseCondition(command.When)
+		if err != nil {
+			continue
+		}
 		entry := MenuEntry{PluginID: one.PluginID, PluginName: one.PluginName, Command: command.ID, Title: command.Title, Icon: command.Icon}
 		switch {
-		case len(command.When) > 0:
-			for _, version := range listCandidates(command, versions, live, hasLive) {
-				entry.Version, entry.IsLive = version.GetID(), hasLive && version.GetID() == live.GetID()
+		case condition.HasItems():
+			for _, item := range listVersionItems(condition, values, versions, live, hasLive) {
+				entry.Version, entry.IsLive = item.Version, item.IsLive
 				entries = append(entries, entry)
 			}
-		case len(command.ContentTypes) > 0 && len(command.NoteTypes) == 0 && !hasRequiredArgument(command) && command.CanRunOn(contentType, ""):
+		case condition.NamesTarget() && !slices.Contains(condition.Names(), "target.noteType") &&
+			!hasRequiredArgument(command) && condition.Evaluate(values) == pluginport.ConditionTrue:
 			entries = append(entries, entry)
 		}
 	}
@@ -108,36 +113,50 @@ func hasRequiredArgument(command pluginport.PluginCommand) bool {
 	return false
 }
 
-// The keys of the context the menu supplies for each version of a file. A condition of a command
-// names them, and every condition has to hold in the context of one version.
-const (
-	// ContextKeyLive is "true" for the version displayed and indexed now, and "false" for the others.
-	ContextKeyLive = "version.live"
-	// ContextKeyKind is the kind of the version, as the plugin that made it names it.
-	ContextKeyKind = "version.kind"
-	// ContextKeyPlugin is the id of the plugin that made the version.
-	ContextKeyPlugin = "version.plugin"
-)
-
-// getVersionContext is the context a command is offered over for the version.
-func getVersionContext(version domain.TextVersion, isLive bool) pluginport.PluginContext {
-	return pluginport.PluginContext{
-		ContextKeyLive:   strconv.FormatBool(isLive),
-		ContextKeyKind:   string(version.Kind),
-		ContextKeyPlugin: version.PluginID,
-	}
+// VersionItem is a text version of a file that a command with items offers to run over.
+type VersionItem struct {
+	Version domain.TextVersionID
+	Kind    string
+	IsLive  bool
 }
 
-// listCandidates is the versions in whose context every condition of the command holds.
-func listCandidates(command pluginport.PluginCommand, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []domain.TextVersion {
-	var candidates []domain.TextVersion
+// getVersionValues gives the version variables of a when condition for one version of a file.
+func getVersionValues(target map[string]any, version domain.TextVersion, isLive bool) map[string]any {
+	values := maps.Clone(target)
+	values["version.kind"] = string(version.Kind)
+	values["version.isLive"] = isLive
+	return values
+}
+
+// listVersionItems is the versions of the file over which the condition holds, in their order.
+func listVersionItems(condition pluginport.PluginCondition, target map[string]any, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []VersionItem {
+	var items []VersionItem
 	for _, version := range versions {
 		isLive := hasLive && version.GetID() == live.GetID()
-		if command.CanRunIn(getVersionContext(version, isLive)) {
-			candidates = append(candidates, version)
+		if condition.Evaluate(getVersionValues(target, version, isLive)) == pluginport.ConditionTrue {
+			items = append(items, VersionItem{Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive})
 		}
 	}
-	return candidates
+	return items
+}
+
+// ListVersionItems lists the text versions of the file at the path over which the when condition of
+// the command holds; a command whose condition names no version.* variable has none.
+func (u *FileMenu) ListVersionItems(ctx context.Context, v domain.Vault, path string, command pluginport.PluginCommand) ([]VersionItem, error) {
+	condition, err := pluginport.ParseCondition(command.When)
+	if err != nil || !condition.HasItems() {
+		return nil, err
+	}
+	versions, err := u.versions.getVersions(ctx, v, path)
+	if err != nil {
+		return nil, err
+	}
+	live, hasLive, err := u.findLiveVersion(ctx, v, path, versions)
+	if err != nil {
+		return nil, err
+	}
+	values := pluginport.GetTargetValues(path, string(u.types.GetContentType(path)), "")
+	return listVersionItems(condition, values, versions, live, hasLive), nil
 }
 
 // RunMenuEntry runs the command of an entry the file's menu offers now, over

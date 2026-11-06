@@ -640,7 +640,7 @@ const createBarPlugin = (pluginId: string) => ({
     name: 'Bar',
     version: '1.0.0',
     frontend: {},
-    contributes: { views: [{ id: 'bar', slot: 'titleBar' }] },
+    contributes: { slots: [{ slot: 'titleBar', view: 'bar' }] },
   },
   activate: (context: { registerSlotView: (one: unknown) => void }) => {
     context.registerSlotView({
@@ -721,7 +721,7 @@ describe('the title bar of the flashcards window', () => {
     ).toBe(true)
   })
 
-  it('shows only the loading indicator while the plugins of the interface start', async () => {
+  it('shows only the loading indicator while the plugins of the window slots start', async () => {
     const window = mount(App, {
       props: {
         deps: { ...createDeps(), listPlugins: () => new Promise<string[]>(() => undefined) },

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/manifest.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
 // PluginCommandService is what the backend of a plugin that declares commands
@@ -74,18 +76,18 @@ message ListCommandsRequest {}
 
 message ListCommandsResponse {
   repeated PluginCommand commands = 1;
-  // The menu entries of every enabled plugin, in the order of the plugins' ids and then of each
+  // The slot entries of every enabled plugin, in the order of the plugins' ids and then of each
   // manifest.
-  repeated PluginMenu menus = 2;
+  repeated PluginSlotEntry slots = 2;
+  // The content type of a file by its extension, lowercase and without the dot, for every extension
+  // the core knows a type of. The window derives target.contentType from it.
+  map<string, string> content_type_by_extension = 3;
 }
 
-// PluginMenu is one entry of contributes.menus of a plugin.
-message PluginMenu {
+// PluginSlotEntry is one entry of contributes.slots of a plugin.
+message PluginSlotEntry {
   string plugin_id = 1;
-  string location = 2;
-  string command = 3;
-  string group = 4;
-  optional int32 order = 5;
+  ManifestSlotEntry entry = 2;
 }
 
 // PluginCommand is one command as a manifest declares it.
@@ -98,15 +100,6 @@ message PluginCommand {
   // What a person reads the command as.
   string title = 3;
 
-  // The content types of the files the command runs over, such as
-  // text/markdown or audio/*; */* is a file of any type. None is a command
-  // over no file.
-  repeated string content_types = 4;
-
-  // The extensions, lowercase and without the dot, that give a file one of
-  // those types, and * where the command runs over a file of any type.
-  repeated string extensions = 6;
-
   // The arguments, in the order a person is asked for them.
   repeated CommandArgument arguments = 5;
 
@@ -114,8 +107,8 @@ message PluginCommand {
   // the default plugin command icon.
   string icon = 7;
 
-  // scope is "note" for a command listed only while a note is in front.
-  string scope = 8;
+  // when is the CEL condition under which the command is available, as the manifest declares it.
+  string when = 10;
 
   // shortcut is the keystroke the plugin suggests for the command.
   string shortcut = 9;
