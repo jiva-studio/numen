@@ -9,7 +9,7 @@ export type { NoteContents }
 
 /**
  * What a read came back with: the contents, or the code of why there are none.
- * A file that is not there is `missing`.
+ * A file that is not there is `notFound`.
  */
 export type NoteResult = Result<NoteContents, string>
 

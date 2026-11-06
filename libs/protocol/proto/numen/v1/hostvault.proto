@@ -4,7 +4,6 @@ package numen.v1;
 
 import "numen/v1/file.proto";
 import "numen/v1/note.proto";
-import "numen/v1/shared.proto";
 import "numen/v1/vaults.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
@@ -193,6 +192,25 @@ enum HostVaultErrorCode {
 
   // Every numbered "Untitled note N" name is taken.
   HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED = 11;
+
+  // The file is not text a note can carry.
+  HOST_VAULT_ERROR_CODE_NOT_TEXT = 12;
+
+  // The file is past the size a note is read at.
+  HOST_VAULT_ERROR_CODE_TOO_LARGE = 13;
+
+  // The prose opens with a frontmatter delimiter, so writing it would put a
+  // second block inside the first.
+  HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE = 14;
+
+  // The frontmatter cannot be read, so the note can be neither read nor
+  // written.
+  HOST_VAULT_ERROR_CODE_UNREADABLE = 15;
+
+  // A note cannot be called this: the title leaves nothing a file can be named
+  // after, it is more than one line, or a heading would read it back as
+  // something else.
+  HOST_VAULT_ERROR_CODE_INVALID_NAME = 16;
 }
 
 // HostFileStat is what a file was at a moment: at its current position, how large it
@@ -540,6 +558,8 @@ message HostVaultServiceRenameNoteRequest {
 }
 
 message HostVaultServiceRenameNoteResponse {
+  // Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
+  // ALREADY_EXISTS, CONFLICT and the other per-note codes.
   HostVaultErrorCode error = 1;
   // The path of the note after the rename.
   string path = 2;
@@ -548,9 +568,6 @@ message HostVaultServiceRenameNoteResponse {
   NameSource name_source = 4;
   // Unset when the file kept its path.
   optional MoveResult move = 5;
-  // Why the note was not renamed: MISSING, NOT_A_NOTE, INVALID_NAME,
-  // ALREADY_EXISTS, STALE and the other per-note codes.
-  optional ErrorCode failure = 6;
 }
 
 message HostVaultServiceMoveNotesRequest {
@@ -565,7 +582,7 @@ message HostNoteMove {
   // From is always set; to only when the note moved.
   MoveResult move = 1;
   // Why this note did not move.
-  optional ErrorCode failure = 2;
+  HostVaultErrorCode error = 2;
 }
 
 message HostVaultServiceMoveNotesResponse {
@@ -586,9 +603,9 @@ message HostNoteRemoval {
   string trash_path = 2;
   // The notes whose links now resolve to nothing.
   repeated string broken_links = 3;
-  // Why this note was not removed: MISSING, or NOT_A_NOTE for a folder or a
+  // Why this note was not removed: NOT_FOUND, or NOT_A_NOTE for a folder or a
   // file that is not a note.
-  optional ErrorCode failure = 4;
+  HostVaultErrorCode error = 4;
 }
 
 message HostVaultServiceRemoveNotesResponse {
@@ -605,11 +622,10 @@ message HostVaultServiceAddVaultRequest {
 }
 
 message HostVaultServiceAddVaultResponse {
-  HostVaultErrorCode error = 1;
+  VaultsErrorCode error = 1;
   Vault vault = 2;
-  optional VaultsErrorCode failure = 3;
-  // The reason the core gives for a refusal, in its own words.
-  string detail = 4;
+  // The core's error text of a refusal; empty on success.
+  string detail = 3;
 }
 
 message HostVaultServiceRenameVaultRequest {
@@ -618,9 +634,10 @@ message HostVaultServiceRenameVaultRequest {
 }
 
 message HostVaultServiceRenameVaultResponse {
-  HostVaultErrorCode error = 1;
+  VaultsErrorCode error = 1;
   Vault vault = 2;
-  optional VaultsErrorCode failure = 3;
+  // The core's error text of a refusal; empty on success.
+  string detail = 3;
 }
 
 message HostVaultServiceRemoveVaultRequest {
@@ -628,10 +645,11 @@ message HostVaultServiceRemoveVaultRequest {
 }
 
 message HostVaultServiceRemoveVaultResponse {
-  HostVaultErrorCode error = 1;
+  VaultsErrorCode error = 1;
   // The folder of the vault, which stays on the disk.
   string path = 2;
-  optional VaultsErrorCode failure = 3;
+  // The core's error text of a refusal; empty on success.
+  string detail = 3;
 }
 
 message HostVaultServiceOpenVaultRequest {
@@ -639,10 +657,9 @@ message HostVaultServiceOpenVaultRequest {
 }
 
 message HostVaultServiceOpenVaultResponse {
-  HostVaultErrorCode error = 1;
-  optional VaultsErrorCode failure = 2;
-  // The message of the core when the open is rejected.
-  string detail = 3;
+  VaultsErrorCode error = 1;
+  // The core's error text of a refusal; empty on success.
+  string detail = 2;
 }
 
 message ReadCacheRequest {

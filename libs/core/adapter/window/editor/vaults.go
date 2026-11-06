@@ -185,13 +185,13 @@ func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 	case errors.Is(err, vaults.ErrLastVault):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
 	case errors.Is(err, vaults.ErrShowing):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT, true
 	case errors.Is(err, vaults.ErrUnknown), errors.Is(err, vaults.ErrNoName):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, vaults.ErrNoTrash):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH, true
 	case errors.Is(err, errAnswerPending):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED, true
 	default:
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED, false
 	}

@@ -5,7 +5,7 @@ import { ERRORS, getKnownErrorCode } from './codes'
 
 describe('the words of an error code', () => {
   it('are the words the wire gives the code of the schema', () => {
-    expect(ERRORS.missing).toBe(formatErrorCodeMessage(NOTE_ERROR_CODE.MISSING))
+    expect(ERRORS.notFound).toBe(formatErrorCodeMessage(NOTE_ERROR_CODE.NOT_FOUND))
     expect(ERRORS.notANote).toBe(formatErrorCodeMessage(NOTE_ERROR_CODE.NOT_A_NOTE))
     expect(ERRORS.notText).toBe(formatErrorCodeMessage(NOTE_ERROR_CODE.NOT_TEXT))
     expect(ERRORS.tooLarge).toBe(formatErrorCodeMessage(NOTE_ERROR_CODE.TOO_LARGE))

@@ -23,7 +23,7 @@ import (
 func ConvertOutcomeToErrorCode(o note.ReadOutcome) (v1.ErrorCode, bool) {
 	switch o {
 	case note.Missing:
-		return v1.ErrorCode_ERROR_CODE_MISSING, true
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
 	case note.NotANote:
 		return v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true
 	case note.NotText:
@@ -42,9 +42,9 @@ func ConvertOutcomeToErrorCode(o note.ReadOutcome) (v1.ErrorCode, bool) {
 func GetErrorCode(err error) (v1.ErrorCode, bool) {
 	switch {
 	case errors.Is(err, vaultport.ErrStale):
-		return v1.ErrorCode_ERROR_CODE_STALE, true
+		return v1.ErrorCode_ERROR_CODE_CONFLICT, true
 	case errors.Is(err, note.ErrNoNote):
-		return v1.ErrorCode_ERROR_CODE_MISSING, true
+		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, note.ErrTooLarge):
 		return v1.ErrorCode_ERROR_CODE_TOO_LARGE, true
 	case errors.Is(err, note.ErrInvalidName):

@@ -743,8 +743,8 @@ export const WriteLinkRequestSchema: GenMessage<WriteLinkRequest> = /*@__PURE__*
 export type WriteLinkResponse = Message<"numen.v1.WriteLinkResponse"> & {
   /**
    * Set when nothing was written, and why. A note that moved between being
-   * read and being written is ERROR_CODE_STALE, and the caller reads it again
-   * before asking for this.
+   * read and being written is ERROR_CODE_CONFLICT, and the caller reads it
+   * again before asking for this.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 1;
    */
@@ -1347,7 +1347,7 @@ export type RenameNoteResponse = Message<"numen.v1.RenameNoteResponse"> & {
   /**
    * Set when the rename did not finish, and why. The note may already have been
    * written: `path`, `title` and `by` say what stands. A note holding prose the
-   * caller never saw is ERROR_CODE_STALE, and nothing was written at all.
+   * caller never saw is ERROR_CODE_CONFLICT, and nothing was written at all.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 5;
    */

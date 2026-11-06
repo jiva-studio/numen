@@ -106,8 +106,11 @@ func fail(code v1.HostVaultErrorCode) error {
 		return ErrHierarchyCycle
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED:
 		return ErrNoFreeName
+	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:
+		return domain.ErrInvalidName
+	default:
+		return fmt.Errorf("host: rejected with code %s", code)
 	}
-	return fmt.Errorf("host: rejected with code %s", code)
 }
 
 func readFileStat(f *v1.HostFileStat) domain.FileStat {

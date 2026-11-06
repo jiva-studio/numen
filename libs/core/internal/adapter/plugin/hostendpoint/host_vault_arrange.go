@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"path"
 	"strings"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
 // batchLimit is the most notes one call moves or removes.
@@ -24,30 +24,59 @@ const batchLimit = 50
 
 var errBatchTooLarge = fmt.Errorf("a call names at most %d notes", batchLimit)
 
-// getNoteFailure is the error code of a note that was not changed, and false for an error that is
-// not about the note.
-func getNoteFailure(err error) (v1.ErrorCode, bool) {
+// getNoteErrorCode is the error code of a note that was not changed, and false for an error that
+// has no code.
+func getNoteErrorCode(err error) (v1.HostVaultErrorCode, bool) {
+	if errors.Is(err, vaultport.ErrOutside) {
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT, true
+	}
 	if code, ok := wire.GetErrorCode(err); ok {
-		return code, true
+		return convertNoteErrorCode(code), true
 	}
-	if errors.Is(err, fs.ErrNotExist) {
-		return v1.ErrorCode_ERROR_CODE_MISSING, true
-	}
-	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
+	return getVaultErrorCode(err)
 }
 
-// answerNote splits the error of a change of one note into the failure of that note and the
-// failure of the call: a vault the host does not show and a cancelled call fail the call, and every
-// other error is the note's, UNSPECIFIED where the schema has no code for it.
-func answerNote(ctx context.Context, err error) (v1.ErrorCode, v1.HostVaultErrorCode, error) {
+// convertNoteErrorCode is the HostVaultErrorCode of a per-note error code.
+func convertNoteErrorCode(code v1.ErrorCode) v1.HostVaultErrorCode {
+	switch code {
+	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND
+	case v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE
+	case v1.ErrorCode_ERROR_CODE_NOT_TEXT:
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT
+	case v1.ErrorCode_ERROR_CODE_TOO_LARGE:
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_TOO_LARGE
+	case v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE:
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE
+	case v1.ErrorCode_ERROR_CODE_UNREADABLE:
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNREADABLE
+	case v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS
+	case v1.ErrorCode_ERROR_CODE_INVALID_NAME:
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME
+	case v1.ErrorCode_ERROR_CODE_CONFLICT:
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT
+	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
+	}
+	return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+}
+
+// answerNote splits the error of a change of one note into the error code of that note and the
+// error code of the call: a vault the host does not show answers NO_VAULT for the call, a cancelled
+// call and an error with no code fail the call, and every other error is the note's.
+func answerNote(ctx context.Context, err error) (noteCode, callCode v1.HostVaultErrorCode, callErr error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	if errors.Is(err, hostvault.ErrNoVault) {
 		return 0, noVault, nil
 	}
-	failure, _ := getNoteFailure(err)
-	return failure, 0, nil
+	code, ok := getNoteErrorCode(err)
+	if !ok {
+		return 0, 0, connect.NewError(connect.CodeInternal, err)
+	}
+	return code, 0, nil
 }
 
 func writeMove(m domain.MoveResult) *v1.MoveResult {
@@ -112,11 +141,11 @@ func (e *vaultEndpoint) RenameNote(
 	newPath, isFilenamed, move, err := vault.RenameNote(ctx, req.Msg.GetPath(), req.Msg.GetTitle())
 	// A note whose file landed under the new name is renamed, whatever came apart after it.
 	if err != nil && move == nil {
-		failure, code, err := answerNote(ctx, err)
+		noteCode, code, err := answerNote(ctx, err)
 		if err != nil || code != 0 {
 			return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: code}), err
 		}
-		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Path: req.Msg.GetPath(), Failure: &failure}), nil
+		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Path: req.Msg.GetPath(), Error: noteCode}), nil
 	}
 	out := &v1.HostVaultServiceRenameNoteResponse{
 		Path: newPath, Title: strings.TrimSpace(req.Msg.GetTitle()), NameSource: v1.NameSource_NAME_SOURCE_FRONTMATTER,
@@ -151,11 +180,11 @@ func (e *vaultEndpoint) MoveNotes(
 		move, err := vault.MoveNote(ctx, from, path.Join(req.Msg.GetFolder(), path.Base(from)))
 		entry := &v1.HostNoteMove{Move: writeMove(move)}
 		if err != nil && !move.IsMoved {
-			failure, code, err := answerNote(ctx, err)
+			noteCode, code, err := answerNote(ctx, err)
 			if err != nil || code != 0 {
 				return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: code}), err
 			}
-			entry = &v1.HostNoteMove{Move: &v1.MoveResult{From: from}, Failure: &failure}
+			entry = &v1.HostNoteMove{Move: &v1.MoveResult{From: from}, Error: noteCode}
 		}
 		out.Moves = append(out.Moves, entry)
 	}
@@ -183,11 +212,11 @@ func (e *vaultEndpoint) RemoveNotes(
 		trashPath, brokenLinks, err := vault.RemoveNote(ctx, target)
 		entry := &v1.HostNoteRemoval{Path: target, TrashPath: trashPath, BrokenLinks: brokenLinks}
 		if err != nil && trashPath == "" {
-			failure, code, err := answerNote(ctx, err)
+			noteCode, code, err := answerNote(ctx, err)
 			if err != nil || code != 0 {
 				return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: code}), err
 			}
-			entry = &v1.HostNoteRemoval{Path: target, Failure: &failure}
+			entry = &v1.HostNoteRemoval{Path: target, Error: noteCode}
 		}
 		out.Removals = append(out.Removals, entry)
 	}

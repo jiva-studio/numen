@@ -46,15 +46,15 @@ const (
 	VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN VaultsErrorCode = 4
 	// It is the only vault this installation has.
 	VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT VaultsErrorCode = 5
-	VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING    VaultsErrorCode = 6
+	// The vault is the one the window shows.
+	VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT VaultsErrorCode = 6
 	// No vault of that identity is on the list.
-	VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN VaultsErrorCode = 7
+	VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND VaultsErrorCode = 7
 	// This machine has no trash, so the folder stays where
 	// it is and the vault stays on the list.
 	VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH VaultsErrorCode = 8
-	// A tab is holding text the person has to answer for, so the window stayed
-	// where it was.
-	VaultsErrorCode_VAULTS_ERROR_CODE_ASKING VaultsErrorCode = 9
+	// A tab holds unsaved changes, so the window keeps the vault it shows.
+	VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED VaultsErrorCode = 9
 )
 
 // Enum value maps for VaultsErrorCode.
@@ -66,10 +66,10 @@ var (
 		3: "VAULTS_ERROR_CODE_OVERLAPS",
 		4: "VAULTS_ERROR_CODE_NAME_TAKEN",
 		5: "VAULTS_ERROR_CODE_LAST_VAULT",
-		6: "VAULTS_ERROR_CODE_SHOWING",
-		7: "VAULTS_ERROR_CODE_UNKNOWN",
+		6: "VAULTS_ERROR_CODE_CURRENT",
+		7: "VAULTS_ERROR_CODE_NOT_FOUND",
 		8: "VAULTS_ERROR_CODE_NO_TRASH",
-		9: "VAULTS_ERROR_CODE_ASKING",
+		9: "VAULTS_ERROR_CODE_UNSAVED",
 	}
 	VaultsErrorCode_value = map[string]int32{
 		"VAULTS_ERROR_CODE_UNSPECIFIED": 0,
@@ -78,10 +78,10 @@ var (
 		"VAULTS_ERROR_CODE_OVERLAPS":    3,
 		"VAULTS_ERROR_CODE_NAME_TAKEN":  4,
 		"VAULTS_ERROR_CODE_LAST_VAULT":  5,
-		"VAULTS_ERROR_CODE_SHOWING":     6,
-		"VAULTS_ERROR_CODE_UNKNOWN":     7,
+		"VAULTS_ERROR_CODE_CURRENT":     6,
+		"VAULTS_ERROR_CODE_NOT_FOUND":   7,
 		"VAULTS_ERROR_CODE_NO_TRASH":    8,
-		"VAULTS_ERROR_CODE_ASKING":      9,
+		"VAULTS_ERROR_CODE_UNSAVED":     9,
 	}
 )
 
@@ -836,7 +836,7 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"S\n" +
 	"\x11OpenVaultResponse\x124\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
-	"\x06_error*\xd2\x02\n" +
+	"\x06_error*\xd5\x02\n" +
 	"\x0fVaultsErrorCode\x12!\n" +
 	"\x1dVAULTS_ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cVAULTS_ERROR_CODE_UNREADABLE\x10\x01\x12\x1a\n" +
@@ -844,10 +844,10 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\x1aVAULTS_ERROR_CODE_OVERLAPS\x10\x03\x12 \n" +
 	"\x1cVAULTS_ERROR_CODE_NAME_TAKEN\x10\x04\x12 \n" +
 	"\x1cVAULTS_ERROR_CODE_LAST_VAULT\x10\x05\x12\x1d\n" +
-	"\x19VAULTS_ERROR_CODE_SHOWING\x10\x06\x12\x1d\n" +
-	"\x19VAULTS_ERROR_CODE_UNKNOWN\x10\a\x12\x1e\n" +
-	"\x1aVAULTS_ERROR_CODE_NO_TRASH\x10\b\x12\x1c\n" +
-	"\x18VAULTS_ERROR_CODE_ASKING\x10\t2\xc8\x03\n" +
+	"\x19VAULTS_ERROR_CODE_CURRENT\x10\x06\x12\x1f\n" +
+	"\x1bVAULTS_ERROR_CODE_NOT_FOUND\x10\a\x12\x1e\n" +
+	"\x1aVAULTS_ERROR_CODE_NO_TRASH\x10\b\x12\x1d\n" +
+	"\x19VAULTS_ERROR_CODE_UNSAVED\x10\t2\xc8\x03\n" +
 	"\rVaultsService\x12G\n" +
 	"\n" +
 	"ListVaults\x12\x1b.numen.v1.ListVaultsRequest\x1a\x1c.numen.v1.ListVaultsResponse\x12M\n" +

@@ -47,6 +47,20 @@ const (
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE HostVaultErrorCode = 10
 	// Every numbered "Untitled note N" name is taken.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED HostVaultErrorCode = 11
+	// The file is not text a note can carry.
+	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT HostVaultErrorCode = 12
+	// The file is past the size a note is read at.
+	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_TOO_LARGE HostVaultErrorCode = 13
+	// The prose opens with a frontmatter delimiter, so writing it would put a
+	// second block inside the first.
+	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE HostVaultErrorCode = 14
+	// The frontmatter cannot be read, so the note can be neither read nor
+	// written.
+	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNREADABLE HostVaultErrorCode = 15
+	// A note cannot be called this: the title leaves nothing a file can be named
+	// after, it is more than one line, or a heading would read it back as
+	// something else.
+	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME HostVaultErrorCode = 16
 )
 
 // Enum value maps for HostVaultErrorCode.
@@ -63,6 +77,11 @@ var (
 		9:  "HOST_VAULT_ERROR_CODE_INVALID_CONNECTION",
 		10: "HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE",
 		11: "HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED",
+		12: "HOST_VAULT_ERROR_CODE_NOT_TEXT",
+		13: "HOST_VAULT_ERROR_CODE_TOO_LARGE",
+		14: "HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE",
+		15: "HOST_VAULT_ERROR_CODE_UNREADABLE",
+		16: "HOST_VAULT_ERROR_CODE_INVALID_NAME",
 	}
 	HostVaultErrorCode_value = map[string]int32{
 		"HOST_VAULT_ERROR_CODE_UNSPECIFIED":        0,
@@ -76,6 +95,11 @@ var (
 		"HOST_VAULT_ERROR_CODE_INVALID_CONNECTION": 9,
 		"HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE":    10,
 		"HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED":     11,
+		"HOST_VAULT_ERROR_CODE_NOT_TEXT":           12,
+		"HOST_VAULT_ERROR_CODE_TOO_LARGE":          13,
+		"HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE":    14,
+		"HOST_VAULT_ERROR_CODE_UNREADABLE":         15,
+		"HOST_VAULT_ERROR_CODE_INVALID_NAME":       16,
 	}
 )
 
@@ -3264,17 +3288,16 @@ func (x *HostVaultServiceRenameNoteRequest) GetTitle() string {
 
 type HostVaultServiceRenameNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	// Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
+	// ALREADY_EXISTS, CONFLICT and the other per-note codes.
+	Error HostVaultErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
 	// The path of the note after the rename.
 	Path  string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	// Where the title is kept: the frontmatter or the filename.
 	NameSource NameSource `protobuf:"varint,4,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
 	// Unset when the file kept its path.
-	Move *MoveResult `protobuf:"bytes,5,opt,name=move,proto3,oneof" json:"move,omitempty"`
-	// Why the note was not renamed: MISSING, NOT_A_NOTE, INVALID_NAME,
-	// ALREADY_EXISTS, STALE and the other per-note codes.
-	Failure       *ErrorCode `protobuf:"varint,6,opt,name=failure,proto3,enum=numen.v1.ErrorCode,oneof" json:"failure,omitempty"`
+	Move          *MoveResult `protobuf:"bytes,5,opt,name=move,proto3,oneof" json:"move,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3344,13 +3367,6 @@ func (x *HostVaultServiceRenameNoteResponse) GetMove() *MoveResult {
 	return nil
 }
 
-func (x *HostVaultServiceRenameNoteResponse) GetFailure() ErrorCode {
-	if x != nil && x.Failure != nil {
-		return *x.Failure
-	}
-	return ErrorCode_ERROR_CODE_UNSPECIFIED
-}
-
 type HostVaultServiceMoveNotesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// At most 50 paths.
@@ -3411,7 +3427,7 @@ type HostNoteMove struct {
 	// From is always set; to only when the note moved.
 	Move *MoveResult `protobuf:"bytes,1,opt,name=move,proto3" json:"move,omitempty"`
 	// Why this note did not move.
-	Failure       *ErrorCode `protobuf:"varint,2,opt,name=failure,proto3,enum=numen.v1.ErrorCode,oneof" json:"failure,omitempty"`
+	Error         HostVaultErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3453,11 +3469,11 @@ func (x *HostNoteMove) GetMove() *MoveResult {
 	return nil
 }
 
-func (x *HostNoteMove) GetFailure() ErrorCode {
-	if x != nil && x.Failure != nil {
-		return *x.Failure
+func (x *HostNoteMove) GetError() HostVaultErrorCode {
+	if x != nil {
+		return x.Error
 	}
-	return ErrorCode_ERROR_CODE_UNSPECIFIED
+	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
 }
 
 type HostVaultServiceMoveNotesResponse struct {
@@ -3566,9 +3582,9 @@ type HostNoteRemoval struct {
 	TrashPath string `protobuf:"bytes,2,opt,name=trash_path,json=trashPath,proto3" json:"trash_path,omitempty"`
 	// The notes whose links now resolve to nothing.
 	BrokenLinks []string `protobuf:"bytes,3,rep,name=broken_links,json=brokenLinks,proto3" json:"broken_links,omitempty"`
-	// Why this note was not removed: MISSING, or NOT_A_NOTE for a folder or a
+	// Why this note was not removed: NOT_FOUND, or NOT_A_NOTE for a folder or a
 	// file that is not a note.
-	Failure       *ErrorCode `protobuf:"varint,4,opt,name=failure,proto3,enum=numen.v1.ErrorCode,oneof" json:"failure,omitempty"`
+	Error         HostVaultErrorCode `protobuf:"varint,4,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3624,11 +3640,11 @@ func (x *HostNoteRemoval) GetBrokenLinks() []string {
 	return nil
 }
 
-func (x *HostNoteRemoval) GetFailure() ErrorCode {
-	if x != nil && x.Failure != nil {
-		return *x.Failure
+func (x *HostNoteRemoval) GetError() HostVaultErrorCode {
+	if x != nil {
+		return x.Error
 	}
-	return ErrorCode_ERROR_CODE_UNSPECIFIED
+	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
 }
 
 type HostVaultServiceRemoveNotesResponse struct {
@@ -3739,12 +3755,11 @@ func (x *HostVaultServiceAddVaultRequest) GetName() string {
 }
 
 type HostVaultServiceAddVaultResponse struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	Error   HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	Vault   *Vault                 `protobuf:"bytes,2,opt,name=vault,proto3" json:"vault,omitempty"`
-	Failure *VaultsErrorCode       `protobuf:"varint,3,opt,name=failure,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"failure,omitempty"`
-	// The reason the core gives for a refusal, in its own words.
-	Detail        string `protobuf:"bytes,4,opt,name=detail,proto3" json:"detail,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Error VaultsErrorCode        `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode" json:"error,omitempty"`
+	Vault *Vault                 `protobuf:"bytes,2,opt,name=vault,proto3" json:"vault,omitempty"`
+	// The core's error text of a refusal; empty on success.
+	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3779,11 +3794,11 @@ func (*HostVaultServiceAddVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{67}
 }
 
-func (x *HostVaultServiceAddVaultResponse) GetError() HostVaultErrorCode {
+func (x *HostVaultServiceAddVaultResponse) GetError() VaultsErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostVaultServiceAddVaultResponse) GetVault() *Vault {
@@ -3791,13 +3806,6 @@ func (x *HostVaultServiceAddVaultResponse) GetVault() *Vault {
 		return x.Vault
 	}
 	return nil
-}
-
-func (x *HostVaultServiceAddVaultResponse) GetFailure() VaultsErrorCode {
-	if x != nil && x.Failure != nil {
-		return *x.Failure
-	}
-	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostVaultServiceAddVaultResponse) GetDetail() string {
@@ -3860,10 +3868,11 @@ func (x *HostVaultServiceRenameVaultRequest) GetName() string {
 }
 
 type HostVaultServiceRenameVaultResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	Vault         *Vault                 `protobuf:"bytes,2,opt,name=vault,proto3" json:"vault,omitempty"`
-	Failure       *VaultsErrorCode       `protobuf:"varint,3,opt,name=failure,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"failure,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Error VaultsErrorCode        `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode" json:"error,omitempty"`
+	Vault *Vault                 `protobuf:"bytes,2,opt,name=vault,proto3" json:"vault,omitempty"`
+	// The core's error text of a refusal; empty on success.
+	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3898,11 +3907,11 @@ func (*HostVaultServiceRenameVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{69}
 }
 
-func (x *HostVaultServiceRenameVaultResponse) GetError() HostVaultErrorCode {
+func (x *HostVaultServiceRenameVaultResponse) GetError() VaultsErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostVaultServiceRenameVaultResponse) GetVault() *Vault {
@@ -3912,11 +3921,11 @@ func (x *HostVaultServiceRenameVaultResponse) GetVault() *Vault {
 	return nil
 }
 
-func (x *HostVaultServiceRenameVaultResponse) GetFailure() VaultsErrorCode {
-	if x != nil && x.Failure != nil {
-		return *x.Failure
+func (x *HostVaultServiceRenameVaultResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
 	}
-	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
+	return ""
 }
 
 type HostVaultServiceRemoveVaultRequest struct {
@@ -3965,10 +3974,11 @@ func (x *HostVaultServiceRemoveVaultRequest) GetId() string {
 
 type HostVaultServiceRemoveVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error VaultsErrorCode        `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode" json:"error,omitempty"`
 	// The folder of the vault, which stays on the disk.
-	Path          string           `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	Failure       *VaultsErrorCode `protobuf:"varint,3,opt,name=failure,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"failure,omitempty"`
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	// The core's error text of a refusal; empty on success.
+	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4003,11 +4013,11 @@ func (*HostVaultServiceRemoveVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{71}
 }
 
-func (x *HostVaultServiceRemoveVaultResponse) GetError() HostVaultErrorCode {
+func (x *HostVaultServiceRemoveVaultResponse) GetError() VaultsErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostVaultServiceRemoveVaultResponse) GetPath() string {
@@ -4017,11 +4027,11 @@ func (x *HostVaultServiceRemoveVaultResponse) GetPath() string {
 	return ""
 }
 
-func (x *HostVaultServiceRemoveVaultResponse) GetFailure() VaultsErrorCode {
-	if x != nil && x.Failure != nil {
-		return *x.Failure
+func (x *HostVaultServiceRemoveVaultResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
 	}
-	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
+	return ""
 }
 
 type HostVaultServiceOpenVaultRequest struct {
@@ -4069,11 +4079,10 @@ func (x *HostVaultServiceOpenVaultRequest) GetId() string {
 }
 
 type HostVaultServiceOpenVaultResponse struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	Error   HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	Failure *VaultsErrorCode       `protobuf:"varint,2,opt,name=failure,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"failure,omitempty"`
-	// The message of the core when the open is rejected.
-	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Error VaultsErrorCode        `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode" json:"error,omitempty"`
+	// The core's error text of a refusal; empty on success.
+	Detail        string `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4108,16 +4117,9 @@ func (*HostVaultServiceOpenVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{73}
 }
 
-func (x *HostVaultServiceOpenVaultResponse) GetError() HostVaultErrorCode {
+func (x *HostVaultServiceOpenVaultResponse) GetError() VaultsErrorCode {
 	if x != nil {
 		return x.Error
-	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
-}
-
-func (x *HostVaultServiceOpenVaultResponse) GetFailure() VaultsErrorCode {
-	if x != nil && x.Failure != nil {
-		return *x.Failure
 	}
 	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
 }
@@ -4427,7 +4429,7 @@ var File_numen_v1_hostvault_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\n" +
-	"\x18numen/v1/hostvault.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\x1a\x15numen/v1/vaults.proto\"j\n" +
+	"\x18numen/v1/hostvault.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/vaults.proto\"j\n" +
 	"\fHostFileStat\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x19\n" +
@@ -4619,77 +4621,60 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x06checks\x18\x03 \x03(\tR\x06checks\"M\n" +
 	"!HostVaultServiceRenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xb1\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xf1\x01\n" +
 	"\"HostVaultServiceRenameNoteResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x125\n" +
 	"\vname_source\x18\x04 \x01(\x0e2\x14.numen.v1.NameSourceR\n" +
 	"nameSource\x12-\n" +
-	"\x04move\x18\x05 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x04move\x88\x01\x01\x122\n" +
-	"\afailure\x18\x06 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\afailure\x88\x01\x01B\a\n" +
-	"\x05_moveB\n" +
-	"\n" +
-	"\b_failure\"P\n" +
+	"\x04move\x18\x05 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x04move\x88\x01\x01B\a\n" +
+	"\x05_move\"P\n" +
 	" HostVaultServiceMoveNotesRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\"x\n" +
+	"\x06folder\x18\x02 \x01(\tR\x06folder\"l\n" +
 	"\fHostNoteMove\x12(\n" +
 	"\x04move\x18\x01 \x01(\v2\x14.numen.v1.MoveResultR\x04move\x122\n" +
-	"\afailure\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\afailure\x88\x01\x01B\n" +
-	"\n" +
-	"\b_failure\"\x85\x01\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\"\x85\x01\n" +
 	"!HostVaultServiceMoveNotesResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12,\n" +
 	"\x05moves\x18\x02 \x03(\v2\x16.numen.v1.HostNoteMoveR\x05moves\":\n" +
 	"\"HostVaultServiceRemoveNotesRequest\x12\x14\n" +
-	"\x05paths\x18\x01 \x03(\tR\x05paths\"\xa7\x01\n" +
+	"\x05paths\x18\x01 \x03(\tR\x05paths\"\x9b\x01\n" +
 	"\x0fHostNoteRemoval\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
 	"trash_path\x18\x02 \x01(\tR\ttrashPath\x12!\n" +
 	"\fbroken_links\x18\x03 \x03(\tR\vbrokenLinks\x122\n" +
-	"\afailure\x18\x04 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\afailure\x88\x01\x01B\n" +
-	"\n" +
-	"\b_failure\"\x90\x01\n" +
+	"\x05error\x18\x04 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\"\x90\x01\n" +
 	"#HostVaultServiceRemoveNotesResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x125\n" +
 	"\bremovals\x18\x02 \x03(\v2\x19.numen.v1.HostNoteRemovalR\bremovals\"I\n" +
 	"\x1fHostVaultServiceAddVaultRequest\x12\x12\n" +
 	"\x04root\x18\x01 \x01(\tR\x04root\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\xdb\x01\n" +
-	" HostVaultServiceAddVaultResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12%\n" +
-	"\x05vault\x18\x02 \x01(\v2\x0f.numen.v1.VaultR\x05vault\x128\n" +
-	"\afailure\x18\x03 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\afailure\x88\x01\x01\x12\x16\n" +
-	"\x06detail\x18\x04 \x01(\tR\x06detailB\n" +
-	"\n" +
-	"\b_failure\"H\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x92\x01\n" +
+	" HostVaultServiceAddVaultResponse\x12/\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeR\x05error\x12%\n" +
+	"\x05vault\x18\x02 \x01(\v2\x0f.numen.v1.VaultR\x05vault\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"H\n" +
 	"\"HostVaultServiceRenameVaultRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\xc6\x01\n" +
-	"#HostVaultServiceRenameVaultResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12%\n" +
-	"\x05vault\x18\x02 \x01(\v2\x0f.numen.v1.VaultR\x05vault\x128\n" +
-	"\afailure\x18\x03 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\afailure\x88\x01\x01B\n" +
-	"\n" +
-	"\b_failure\"4\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x95\x01\n" +
+	"#HostVaultServiceRenameVaultResponse\x12/\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeR\x05error\x12%\n" +
+	"\x05vault\x18\x02 \x01(\v2\x0f.numen.v1.VaultR\x05vault\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"4\n" +
 	"\"HostVaultServiceRemoveVaultRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xb3\x01\n" +
-	"#HostVaultServiceRemoveVaultResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x128\n" +
-	"\afailure\x18\x03 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\afailure\x88\x01\x01B\n" +
-	"\n" +
-	"\b_failure\"2\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x82\x01\n" +
+	"#HostVaultServiceRemoveVaultResponse\x12/\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeR\x05error\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"2\n" +
 	" HostVaultServiceOpenVaultRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xb5\x01\n" +
-	"!HostVaultServiceOpenVaultResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x128\n" +
-	"\afailure\x18\x02 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\afailure\x88\x01\x01\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detailB\n" +
-	"\n" +
-	"\b_failure\"&\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"l\n" +
+	"!HostVaultServiceOpenVaultResponse\x12/\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"&\n" +
 	"\x10ReadCacheRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"|\n" +
 	"\x11ReadCacheResponse\x122\n" +
@@ -4704,7 +4689,7 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x11WatchVaultRequest\"T\n" +
 	"\x12WatchVaultResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12(\n" +
-	"\x10is_vault_changed\x18\x02 \x01(\bR\x0eisVaultChanged*\xc6\x03\n" +
+	"\x10is_vault_changed\x18\x02 \x01(\bR\x0eisVaultChanged*\x88\x05\n" +
 	"\x12HostVaultErrorCode\x12%\n" +
 	"!HOST_VAULT_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eHOST_VAULT_ERROR_CODE_NO_VAULT\x10\x01\x12#\n" +
@@ -4717,7 +4702,12 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"(HOST_VAULT_ERROR_CODE_INVALID_CONNECTION\x10\t\x12)\n" +
 	"%HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE\x10\n" +
 	"\x12(\n" +
-	"$HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED\x10\v*\x8c\x01\n" +
+	"$HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED\x10\v\x12\"\n" +
+	"\x1eHOST_VAULT_ERROR_CODE_NOT_TEXT\x10\f\x12#\n" +
+	"\x1fHOST_VAULT_ERROR_CODE_TOO_LARGE\x10\r\x12)\n" +
+	"%HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE\x10\x0e\x12$\n" +
+	" HOST_VAULT_ERROR_CODE_UNREADABLE\x10\x0f\x12&\n" +
+	"\"HOST_VAULT_ERROR_CODE_INVALID_NAME\x10\x10*\x8c\x01\n" +
 	"\x0eHostIndexState\x12 \n" +
 	"\x1cHOST_INDEX_STATE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18HOST_INDEX_STATE_INDEXED\x10\x01\x12\x1d\n" +
@@ -4872,9 +4862,8 @@ var file_numen_v1_hostvault_proto_goTypes = []any{
 	(*ConnectionSide)(nil),                            // 87: numen.v1.ConnectionSide
 	(NameSource)(0),                                   // 88: numen.v1.NameSource
 	(*MoveResult)(nil),                                // 89: numen.v1.MoveResult
-	(ErrorCode)(0),                                    // 90: numen.v1.ErrorCode
+	(VaultsErrorCode)(0),                              // 90: numen.v1.VaultsErrorCode
 	(*Vault)(nil),                                     // 91: numen.v1.Vault
-	(VaultsErrorCode)(0),                              // 92: numen.v1.VaultsErrorCode
 }
 var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	0,   // 0: numen.v1.ListHostVaultsResponse.error:type_name -> numen.v1.HostVaultErrorCode
@@ -4925,104 +4914,99 @@ var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	0,   // 45: numen.v1.HostVaultServiceRenameNoteResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	88,  // 46: numen.v1.HostVaultServiceRenameNoteResponse.name_source:type_name -> numen.v1.NameSource
 	89,  // 47: numen.v1.HostVaultServiceRenameNoteResponse.move:type_name -> numen.v1.MoveResult
-	90,  // 48: numen.v1.HostVaultServiceRenameNoteResponse.failure:type_name -> numen.v1.ErrorCode
-	89,  // 49: numen.v1.HostNoteMove.move:type_name -> numen.v1.MoveResult
-	90,  // 50: numen.v1.HostNoteMove.failure:type_name -> numen.v1.ErrorCode
-	0,   // 51: numen.v1.HostVaultServiceMoveNotesResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	63,  // 52: numen.v1.HostVaultServiceMoveNotesResponse.moves:type_name -> numen.v1.HostNoteMove
-	90,  // 53: numen.v1.HostNoteRemoval.failure:type_name -> numen.v1.ErrorCode
-	0,   // 54: numen.v1.HostVaultServiceRemoveNotesResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	66,  // 55: numen.v1.HostVaultServiceRemoveNotesResponse.removals:type_name -> numen.v1.HostNoteRemoval
-	0,   // 56: numen.v1.HostVaultServiceAddVaultResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	91,  // 57: numen.v1.HostVaultServiceAddVaultResponse.vault:type_name -> numen.v1.Vault
-	92,  // 58: numen.v1.HostVaultServiceAddVaultResponse.failure:type_name -> numen.v1.VaultsErrorCode
-	0,   // 59: numen.v1.HostVaultServiceRenameVaultResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	91,  // 60: numen.v1.HostVaultServiceRenameVaultResponse.vault:type_name -> numen.v1.Vault
-	92,  // 61: numen.v1.HostVaultServiceRenameVaultResponse.failure:type_name -> numen.v1.VaultsErrorCode
-	0,   // 62: numen.v1.HostVaultServiceRemoveVaultResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	92,  // 63: numen.v1.HostVaultServiceRemoveVaultResponse.failure:type_name -> numen.v1.VaultsErrorCode
-	0,   // 64: numen.v1.HostVaultServiceOpenVaultResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	92,  // 65: numen.v1.HostVaultServiceOpenVaultResponse.failure:type_name -> numen.v1.VaultsErrorCode
-	0,   // 66: numen.v1.ReadCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	0,   // 67: numen.v1.WriteCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	35,  // 68: numen.v1.ResolveLinksResponse.LinksEntry.value:type_name -> numen.v1.HostLink
-	10,  // 69: numen.v1.HostVaultService.GetHostVault:input_type -> numen.v1.GetHostVaultRequest
-	3,   // 70: numen.v1.HostVaultService.ListHostVaults:input_type -> numen.v1.ListHostVaultsRequest
-	6,   // 71: numen.v1.HostVaultService.EnsureVaultIndexed:input_type -> numen.v1.EnsureVaultIndexedRequest
-	12,  // 72: numen.v1.HostVaultService.StatFile:input_type -> numen.v1.StatFileRequest
-	14,  // 73: numen.v1.HostVaultService.ReadFile:input_type -> numen.v1.ReadFileRequest
-	16,  // 74: numen.v1.HostVaultService.WriteFile:input_type -> numen.v1.WriteFileRequest
-	18,  // 75: numen.v1.HostVaultService.CreateFile:input_type -> numen.v1.CreateFileRequest
-	20,  // 76: numen.v1.HostVaultService.LockVault:input_type -> numen.v1.LockVaultRequest
-	22,  // 77: numen.v1.HostVaultService.UnlockVault:input_type -> numen.v1.UnlockVaultRequest
-	24,  // 78: numen.v1.HostVaultService.ScanFiles:input_type -> numen.v1.ScanFilesRequest
-	27,  // 79: numen.v1.HostVaultService.GetNoteRefs:input_type -> numen.v1.GetNoteRefsRequest
-	29,  // 80: numen.v1.HostVaultService.GetNoteTypes:input_type -> numen.v1.GetNoteTypesRequest
-	31,  // 81: numen.v1.HostVaultService.GetNamedPaths:input_type -> numen.v1.GetNamedPathsRequest
-	33,  // 82: numen.v1.HostVaultService.GetPathsOfType:input_type -> numen.v1.GetPathsOfTypeRequest
-	36,  // 83: numen.v1.HostVaultService.GetLinks:input_type -> numen.v1.GetLinksRequest
-	38,  // 84: numen.v1.HostVaultService.GetBacklinks:input_type -> numen.v1.GetBacklinksRequest
-	40,  // 85: numen.v1.HostVaultService.ResolveLinks:input_type -> numen.v1.ResolveLinksRequest
-	42,  // 86: numen.v1.HostVaultService.GetConnection:input_type -> numen.v1.HostVaultServiceGetConnectionRequest
-	44,  // 87: numen.v1.HostVaultService.SaveConnection:input_type -> numen.v1.HostVaultServiceSaveConnectionRequest
-	46,  // 88: numen.v1.HostVaultService.RemoveSide:input_type -> numen.v1.HostVaultServiceRemoveSideRequest
-	48,  // 89: numen.v1.HostVaultService.RemoveConnection:input_type -> numen.v1.HostVaultServiceRemoveConnectionRequest
-	50,  // 90: numen.v1.HostVaultService.JoinNotes:input_type -> numen.v1.HostVaultServiceJoinNotesRequest
-	52,  // 91: numen.v1.HostVaultService.CreateRelatedNote:input_type -> numen.v1.HostVaultServiceCreateRelatedNoteRequest
-	54,  // 92: numen.v1.HostVaultService.GetParseProblems:input_type -> numen.v1.GetParseProblemsRequest
-	57,  // 93: numen.v1.HostVaultService.GetVaultProblems:input_type -> numen.v1.GetVaultProblemsRequest
-	60,  // 94: numen.v1.HostVaultService.RenameNote:input_type -> numen.v1.HostVaultServiceRenameNoteRequest
-	62,  // 95: numen.v1.HostVaultService.MoveNotes:input_type -> numen.v1.HostVaultServiceMoveNotesRequest
-	65,  // 96: numen.v1.HostVaultService.RemoveNotes:input_type -> numen.v1.HostVaultServiceRemoveNotesRequest
-	68,  // 97: numen.v1.HostVaultService.AddVault:input_type -> numen.v1.HostVaultServiceAddVaultRequest
-	70,  // 98: numen.v1.HostVaultService.RenameVault:input_type -> numen.v1.HostVaultServiceRenameVaultRequest
-	72,  // 99: numen.v1.HostVaultService.RemoveVault:input_type -> numen.v1.HostVaultServiceRemoveVaultRequest
-	74,  // 100: numen.v1.HostVaultService.OpenVault:input_type -> numen.v1.HostVaultServiceOpenVaultRequest
-	76,  // 101: numen.v1.HostVaultService.ReadCache:input_type -> numen.v1.ReadCacheRequest
-	78,  // 102: numen.v1.HostVaultService.WriteCache:input_type -> numen.v1.WriteCacheRequest
-	8,   // 103: numen.v1.HostVaultService.WatchMoves:input_type -> numen.v1.WatchMovesRequest
-	80,  // 104: numen.v1.HostVaultService.WatchVault:input_type -> numen.v1.WatchVaultRequest
-	11,  // 105: numen.v1.HostVaultService.GetHostVault:output_type -> numen.v1.GetHostVaultResponse
-	5,   // 106: numen.v1.HostVaultService.ListHostVaults:output_type -> numen.v1.ListHostVaultsResponse
-	7,   // 107: numen.v1.HostVaultService.EnsureVaultIndexed:output_type -> numen.v1.EnsureVaultIndexedResponse
-	13,  // 108: numen.v1.HostVaultService.StatFile:output_type -> numen.v1.StatFileResponse
-	15,  // 109: numen.v1.HostVaultService.ReadFile:output_type -> numen.v1.ReadFileResponse
-	17,  // 110: numen.v1.HostVaultService.WriteFile:output_type -> numen.v1.WriteFileResponse
-	19,  // 111: numen.v1.HostVaultService.CreateFile:output_type -> numen.v1.CreateFileResponse
-	21,  // 112: numen.v1.HostVaultService.LockVault:output_type -> numen.v1.LockVaultResponse
-	23,  // 113: numen.v1.HostVaultService.UnlockVault:output_type -> numen.v1.UnlockVaultResponse
-	25,  // 114: numen.v1.HostVaultService.ScanFiles:output_type -> numen.v1.ScanFilesResponse
-	28,  // 115: numen.v1.HostVaultService.GetNoteRefs:output_type -> numen.v1.GetNoteRefsResponse
-	30,  // 116: numen.v1.HostVaultService.GetNoteTypes:output_type -> numen.v1.GetNoteTypesResponse
-	32,  // 117: numen.v1.HostVaultService.GetNamedPaths:output_type -> numen.v1.GetNamedPathsResponse
-	34,  // 118: numen.v1.HostVaultService.GetPathsOfType:output_type -> numen.v1.GetPathsOfTypeResponse
-	37,  // 119: numen.v1.HostVaultService.GetLinks:output_type -> numen.v1.GetLinksResponse
-	39,  // 120: numen.v1.HostVaultService.GetBacklinks:output_type -> numen.v1.GetBacklinksResponse
-	41,  // 121: numen.v1.HostVaultService.ResolveLinks:output_type -> numen.v1.ResolveLinksResponse
-	43,  // 122: numen.v1.HostVaultService.GetConnection:output_type -> numen.v1.HostVaultServiceGetConnectionResponse
-	45,  // 123: numen.v1.HostVaultService.SaveConnection:output_type -> numen.v1.HostVaultServiceSaveConnectionResponse
-	47,  // 124: numen.v1.HostVaultService.RemoveSide:output_type -> numen.v1.HostVaultServiceRemoveSideResponse
-	49,  // 125: numen.v1.HostVaultService.RemoveConnection:output_type -> numen.v1.HostVaultServiceRemoveConnectionResponse
-	51,  // 126: numen.v1.HostVaultService.JoinNotes:output_type -> numen.v1.HostVaultServiceJoinNotesResponse
-	53,  // 127: numen.v1.HostVaultService.CreateRelatedNote:output_type -> numen.v1.HostVaultServiceCreateRelatedNoteResponse
-	56,  // 128: numen.v1.HostVaultService.GetParseProblems:output_type -> numen.v1.GetParseProblemsResponse
-	59,  // 129: numen.v1.HostVaultService.GetVaultProblems:output_type -> numen.v1.GetVaultProblemsResponse
-	61,  // 130: numen.v1.HostVaultService.RenameNote:output_type -> numen.v1.HostVaultServiceRenameNoteResponse
-	64,  // 131: numen.v1.HostVaultService.MoveNotes:output_type -> numen.v1.HostVaultServiceMoveNotesResponse
-	67,  // 132: numen.v1.HostVaultService.RemoveNotes:output_type -> numen.v1.HostVaultServiceRemoveNotesResponse
-	69,  // 133: numen.v1.HostVaultService.AddVault:output_type -> numen.v1.HostVaultServiceAddVaultResponse
-	71,  // 134: numen.v1.HostVaultService.RenameVault:output_type -> numen.v1.HostVaultServiceRenameVaultResponse
-	73,  // 135: numen.v1.HostVaultService.RemoveVault:output_type -> numen.v1.HostVaultServiceRemoveVaultResponse
-	75,  // 136: numen.v1.HostVaultService.OpenVault:output_type -> numen.v1.HostVaultServiceOpenVaultResponse
-	77,  // 137: numen.v1.HostVaultService.ReadCache:output_type -> numen.v1.ReadCacheResponse
-	79,  // 138: numen.v1.HostVaultService.WriteCache:output_type -> numen.v1.WriteCacheResponse
-	9,   // 139: numen.v1.HostVaultService.WatchMoves:output_type -> numen.v1.WatchMovesResponse
-	81,  // 140: numen.v1.HostVaultService.WatchVault:output_type -> numen.v1.WatchVaultResponse
-	105, // [105:141] is the sub-list for method output_type
-	69,  // [69:105] is the sub-list for method input_type
-	69,  // [69:69] is the sub-list for extension type_name
-	69,  // [69:69] is the sub-list for extension extendee
-	0,   // [0:69] is the sub-list for field type_name
+	89,  // 48: numen.v1.HostNoteMove.move:type_name -> numen.v1.MoveResult
+	0,   // 49: numen.v1.HostNoteMove.error:type_name -> numen.v1.HostVaultErrorCode
+	0,   // 50: numen.v1.HostVaultServiceMoveNotesResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	63,  // 51: numen.v1.HostVaultServiceMoveNotesResponse.moves:type_name -> numen.v1.HostNoteMove
+	0,   // 52: numen.v1.HostNoteRemoval.error:type_name -> numen.v1.HostVaultErrorCode
+	0,   // 53: numen.v1.HostVaultServiceRemoveNotesResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	66,  // 54: numen.v1.HostVaultServiceRemoveNotesResponse.removals:type_name -> numen.v1.HostNoteRemoval
+	90,  // 55: numen.v1.HostVaultServiceAddVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
+	91,  // 56: numen.v1.HostVaultServiceAddVaultResponse.vault:type_name -> numen.v1.Vault
+	90,  // 57: numen.v1.HostVaultServiceRenameVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
+	91,  // 58: numen.v1.HostVaultServiceRenameVaultResponse.vault:type_name -> numen.v1.Vault
+	90,  // 59: numen.v1.HostVaultServiceRemoveVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
+	90,  // 60: numen.v1.HostVaultServiceOpenVaultResponse.error:type_name -> numen.v1.VaultsErrorCode
+	0,   // 61: numen.v1.ReadCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	0,   // 62: numen.v1.WriteCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	35,  // 63: numen.v1.ResolveLinksResponse.LinksEntry.value:type_name -> numen.v1.HostLink
+	10,  // 64: numen.v1.HostVaultService.GetHostVault:input_type -> numen.v1.GetHostVaultRequest
+	3,   // 65: numen.v1.HostVaultService.ListHostVaults:input_type -> numen.v1.ListHostVaultsRequest
+	6,   // 66: numen.v1.HostVaultService.EnsureVaultIndexed:input_type -> numen.v1.EnsureVaultIndexedRequest
+	12,  // 67: numen.v1.HostVaultService.StatFile:input_type -> numen.v1.StatFileRequest
+	14,  // 68: numen.v1.HostVaultService.ReadFile:input_type -> numen.v1.ReadFileRequest
+	16,  // 69: numen.v1.HostVaultService.WriteFile:input_type -> numen.v1.WriteFileRequest
+	18,  // 70: numen.v1.HostVaultService.CreateFile:input_type -> numen.v1.CreateFileRequest
+	20,  // 71: numen.v1.HostVaultService.LockVault:input_type -> numen.v1.LockVaultRequest
+	22,  // 72: numen.v1.HostVaultService.UnlockVault:input_type -> numen.v1.UnlockVaultRequest
+	24,  // 73: numen.v1.HostVaultService.ScanFiles:input_type -> numen.v1.ScanFilesRequest
+	27,  // 74: numen.v1.HostVaultService.GetNoteRefs:input_type -> numen.v1.GetNoteRefsRequest
+	29,  // 75: numen.v1.HostVaultService.GetNoteTypes:input_type -> numen.v1.GetNoteTypesRequest
+	31,  // 76: numen.v1.HostVaultService.GetNamedPaths:input_type -> numen.v1.GetNamedPathsRequest
+	33,  // 77: numen.v1.HostVaultService.GetPathsOfType:input_type -> numen.v1.GetPathsOfTypeRequest
+	36,  // 78: numen.v1.HostVaultService.GetLinks:input_type -> numen.v1.GetLinksRequest
+	38,  // 79: numen.v1.HostVaultService.GetBacklinks:input_type -> numen.v1.GetBacklinksRequest
+	40,  // 80: numen.v1.HostVaultService.ResolveLinks:input_type -> numen.v1.ResolveLinksRequest
+	42,  // 81: numen.v1.HostVaultService.GetConnection:input_type -> numen.v1.HostVaultServiceGetConnectionRequest
+	44,  // 82: numen.v1.HostVaultService.SaveConnection:input_type -> numen.v1.HostVaultServiceSaveConnectionRequest
+	46,  // 83: numen.v1.HostVaultService.RemoveSide:input_type -> numen.v1.HostVaultServiceRemoveSideRequest
+	48,  // 84: numen.v1.HostVaultService.RemoveConnection:input_type -> numen.v1.HostVaultServiceRemoveConnectionRequest
+	50,  // 85: numen.v1.HostVaultService.JoinNotes:input_type -> numen.v1.HostVaultServiceJoinNotesRequest
+	52,  // 86: numen.v1.HostVaultService.CreateRelatedNote:input_type -> numen.v1.HostVaultServiceCreateRelatedNoteRequest
+	54,  // 87: numen.v1.HostVaultService.GetParseProblems:input_type -> numen.v1.GetParseProblemsRequest
+	57,  // 88: numen.v1.HostVaultService.GetVaultProblems:input_type -> numen.v1.GetVaultProblemsRequest
+	60,  // 89: numen.v1.HostVaultService.RenameNote:input_type -> numen.v1.HostVaultServiceRenameNoteRequest
+	62,  // 90: numen.v1.HostVaultService.MoveNotes:input_type -> numen.v1.HostVaultServiceMoveNotesRequest
+	65,  // 91: numen.v1.HostVaultService.RemoveNotes:input_type -> numen.v1.HostVaultServiceRemoveNotesRequest
+	68,  // 92: numen.v1.HostVaultService.AddVault:input_type -> numen.v1.HostVaultServiceAddVaultRequest
+	70,  // 93: numen.v1.HostVaultService.RenameVault:input_type -> numen.v1.HostVaultServiceRenameVaultRequest
+	72,  // 94: numen.v1.HostVaultService.RemoveVault:input_type -> numen.v1.HostVaultServiceRemoveVaultRequest
+	74,  // 95: numen.v1.HostVaultService.OpenVault:input_type -> numen.v1.HostVaultServiceOpenVaultRequest
+	76,  // 96: numen.v1.HostVaultService.ReadCache:input_type -> numen.v1.ReadCacheRequest
+	78,  // 97: numen.v1.HostVaultService.WriteCache:input_type -> numen.v1.WriteCacheRequest
+	8,   // 98: numen.v1.HostVaultService.WatchMoves:input_type -> numen.v1.WatchMovesRequest
+	80,  // 99: numen.v1.HostVaultService.WatchVault:input_type -> numen.v1.WatchVaultRequest
+	11,  // 100: numen.v1.HostVaultService.GetHostVault:output_type -> numen.v1.GetHostVaultResponse
+	5,   // 101: numen.v1.HostVaultService.ListHostVaults:output_type -> numen.v1.ListHostVaultsResponse
+	7,   // 102: numen.v1.HostVaultService.EnsureVaultIndexed:output_type -> numen.v1.EnsureVaultIndexedResponse
+	13,  // 103: numen.v1.HostVaultService.StatFile:output_type -> numen.v1.StatFileResponse
+	15,  // 104: numen.v1.HostVaultService.ReadFile:output_type -> numen.v1.ReadFileResponse
+	17,  // 105: numen.v1.HostVaultService.WriteFile:output_type -> numen.v1.WriteFileResponse
+	19,  // 106: numen.v1.HostVaultService.CreateFile:output_type -> numen.v1.CreateFileResponse
+	21,  // 107: numen.v1.HostVaultService.LockVault:output_type -> numen.v1.LockVaultResponse
+	23,  // 108: numen.v1.HostVaultService.UnlockVault:output_type -> numen.v1.UnlockVaultResponse
+	25,  // 109: numen.v1.HostVaultService.ScanFiles:output_type -> numen.v1.ScanFilesResponse
+	28,  // 110: numen.v1.HostVaultService.GetNoteRefs:output_type -> numen.v1.GetNoteRefsResponse
+	30,  // 111: numen.v1.HostVaultService.GetNoteTypes:output_type -> numen.v1.GetNoteTypesResponse
+	32,  // 112: numen.v1.HostVaultService.GetNamedPaths:output_type -> numen.v1.GetNamedPathsResponse
+	34,  // 113: numen.v1.HostVaultService.GetPathsOfType:output_type -> numen.v1.GetPathsOfTypeResponse
+	37,  // 114: numen.v1.HostVaultService.GetLinks:output_type -> numen.v1.GetLinksResponse
+	39,  // 115: numen.v1.HostVaultService.GetBacklinks:output_type -> numen.v1.GetBacklinksResponse
+	41,  // 116: numen.v1.HostVaultService.ResolveLinks:output_type -> numen.v1.ResolveLinksResponse
+	43,  // 117: numen.v1.HostVaultService.GetConnection:output_type -> numen.v1.HostVaultServiceGetConnectionResponse
+	45,  // 118: numen.v1.HostVaultService.SaveConnection:output_type -> numen.v1.HostVaultServiceSaveConnectionResponse
+	47,  // 119: numen.v1.HostVaultService.RemoveSide:output_type -> numen.v1.HostVaultServiceRemoveSideResponse
+	49,  // 120: numen.v1.HostVaultService.RemoveConnection:output_type -> numen.v1.HostVaultServiceRemoveConnectionResponse
+	51,  // 121: numen.v1.HostVaultService.JoinNotes:output_type -> numen.v1.HostVaultServiceJoinNotesResponse
+	53,  // 122: numen.v1.HostVaultService.CreateRelatedNote:output_type -> numen.v1.HostVaultServiceCreateRelatedNoteResponse
+	56,  // 123: numen.v1.HostVaultService.GetParseProblems:output_type -> numen.v1.GetParseProblemsResponse
+	59,  // 124: numen.v1.HostVaultService.GetVaultProblems:output_type -> numen.v1.GetVaultProblemsResponse
+	61,  // 125: numen.v1.HostVaultService.RenameNote:output_type -> numen.v1.HostVaultServiceRenameNoteResponse
+	64,  // 126: numen.v1.HostVaultService.MoveNotes:output_type -> numen.v1.HostVaultServiceMoveNotesResponse
+	67,  // 127: numen.v1.HostVaultService.RemoveNotes:output_type -> numen.v1.HostVaultServiceRemoveNotesResponse
+	69,  // 128: numen.v1.HostVaultService.AddVault:output_type -> numen.v1.HostVaultServiceAddVaultResponse
+	71,  // 129: numen.v1.HostVaultService.RenameVault:output_type -> numen.v1.HostVaultServiceRenameVaultResponse
+	73,  // 130: numen.v1.HostVaultService.RemoveVault:output_type -> numen.v1.HostVaultServiceRemoveVaultResponse
+	75,  // 131: numen.v1.HostVaultService.OpenVault:output_type -> numen.v1.HostVaultServiceOpenVaultResponse
+	77,  // 132: numen.v1.HostVaultService.ReadCache:output_type -> numen.v1.ReadCacheResponse
+	79,  // 133: numen.v1.HostVaultService.WriteCache:output_type -> numen.v1.WriteCacheResponse
+	9,   // 134: numen.v1.HostVaultService.WatchMoves:output_type -> numen.v1.WatchMovesResponse
+	81,  // 135: numen.v1.HostVaultService.WatchVault:output_type -> numen.v1.WatchVaultResponse
+	100, // [100:136] is the sub-list for method output_type
+	64,  // [64:100] is the sub-list for method input_type
+	64,  // [64:64] is the sub-list for extension type_name
+	64,  // [64:64] is the sub-list for extension extendee
+	0,   // [0:64] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostvault_proto_init() }
@@ -5032,15 +5016,8 @@ func file_numen_v1_hostvault_proto_init() {
 	}
 	file_numen_v1_file_proto_init()
 	file_numen_v1_note_proto_init()
-	file_numen_v1_shared_proto_init()
 	file_numen_v1_vaults_proto_init()
 	file_numen_v1_hostvault_proto_msgTypes[59].OneofWrappers = []any{}
-	file_numen_v1_hostvault_proto_msgTypes[61].OneofWrappers = []any{}
-	file_numen_v1_hostvault_proto_msgTypes[64].OneofWrappers = []any{}
-	file_numen_v1_hostvault_proto_msgTypes[67].OneofWrappers = []any{}
-	file_numen_v1_hostvault_proto_msgTypes[69].OneofWrappers = []any{}
-	file_numen_v1_hostvault_proto_msgTypes[71].OneofWrappers = []any{}
-	file_numen_v1_hostvault_proto_msgTypes[73].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

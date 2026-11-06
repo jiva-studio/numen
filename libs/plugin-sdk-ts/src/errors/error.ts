@@ -62,7 +62,7 @@ export const formatErrorMessage = (error: unknown): string => {
  */
 const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
   [ProtoErrorCode.UNSPECIFIED]: 'note unreadable',
-  [ProtoErrorCode.MISSING]: 'note not in the vault',
+  [ProtoErrorCode.NOT_FOUND]: 'note not in the vault',
   [ProtoErrorCode.NOT_A_NOTE]: 'not a note',
   [ProtoErrorCode.NOT_TEXT]: 'not a text file',
   [ProtoErrorCode.TOO_LARGE]: 'note too large',
@@ -70,7 +70,7 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
   [ProtoErrorCode.UNREADABLE]: 'frontmatter unreadable',
   [ProtoErrorCode.ALREADY_EXISTS]: 'a file with this name exists',
   [ProtoErrorCode.INVALID_NAME]: 'invalid note name',
-  [ProtoErrorCode.STALE]: 'not saved: the note changed on disk',
+  [ProtoErrorCode.CONFLICT]: 'not saved: the note changed on disk',
 }
 
 /** The message for one error code; empty when there was no error. */

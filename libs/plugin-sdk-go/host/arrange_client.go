@@ -11,35 +11,21 @@ import (
 
 var _ VaultList = (*Client)(nil)
 
-// failNote converts the per-note failure of an answer into its error, nil when there is none. A
-// failure the schema has no code for is UNSPECIFIED.
-func failNote(code *v1.ErrorCode) error {
-	if code == nil {
+// failVaults converts the error code of a change of the list of vaults into its error, nil when
+// there is none. A refusal carries the core's text in detail.
+func failVaults(call string, code v1.VaultsErrorCode, detail string) error {
+	err := readVaultsError(code)
+	if err == nil {
 		return nil
 	}
-	switch *code {
-	case v1.ErrorCode_ERROR_CODE_MISSING:
-		return ErrNotExist
-	case v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:
-		return ErrNotANote
-	case v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:
-		return ErrAlreadyExists
-	case v1.ErrorCode_ERROR_CODE_STALE:
-		return ErrStale
-	case v1.ErrorCode_ERROR_CODE_INVALID_NAME:
-		return domain.ErrInvalidName
-	default:
-		return fmt.Errorf("host: the note was refused with code %s", *code)
+	if detail != "" {
+		return fmt.Errorf("%s: %w: %s", call, err, detail)
 	}
+	return fmt.Errorf("%s: %w", call, err)
 }
 
-// failVaults converts the failure of a change of the list of vaults into its error, nil when there
-// is none.
-func failVaults(code *v1.VaultsErrorCode) error {
-	if code == nil {
-		return nil
-	}
-	switch *code {
+func readVaultsError(code v1.VaultsErrorCode) error {
+	switch code {
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED:
 		return nil
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE:
@@ -52,14 +38,14 @@ func failVaults(code *v1.VaultsErrorCode) error {
 		return ErrVaultNameTaken
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT:
 		return ErrLastVault
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING:
+	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:
 		return ErrVaultShowing
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN:
+	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:
 		return ErrUnknownVault
-	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING:
+	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:
 		return ErrUnsavedChanges
 	default:
-		return fmt.Errorf("host: the list of vaults was not changed, code %s", *code)
+		return fmt.Errorf("host: the list of vaults was not changed, code %s", code)
 	}
 }
 
@@ -84,9 +70,6 @@ func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename
 		return NoteRename{}, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
-		return NoteRename{}, err
-	}
-	if err := failNote(res.Msg.Failure); err != nil {
 		return NoteRename{}, fmt.Errorf("rename %s: %w", path, err)
 	}
 	out := NoteRename{
@@ -112,7 +95,7 @@ func (c *Client) MoveNotes(ctx context.Context, paths []string, folder string) (
 	}
 	out := make([]NoteMove, 0, len(res.Msg.GetMoves()))
 	for _, one := range res.Msg.GetMoves() {
-		move := NoteMove{Move: readMove(one.GetMove()), Err: failNote(one.Failure)}
+		move := NoteMove{Move: readMove(one.GetMove()), Err: fail(one.GetError())}
 		if move.Err != nil {
 			move.Move.To, move.Move.IsMoved = "", false
 		}
@@ -135,7 +118,7 @@ func (c *Client) RemoveNotes(ctx context.Context, paths []string) ([]NoteRemoval
 			Path:        one.GetPath(),
 			TrashPath:   one.GetTrashPath(),
 			BrokenLinks: one.GetBrokenLinks(),
-			Err:         failNote(one.Failure),
+			Err:         fail(one.GetError()),
 		})
 	}
 	return out, nil
@@ -185,14 +168,8 @@ func (c *Client) AddVault(ctx context.Context, root, name string) (domain.Vault,
 	if err != nil {
 		return domain.Vault{}, readError(err)
 	}
-	if err := fail(res.Msg.GetError()); err != nil {
+	if err := failVaults("add vault "+root, res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return domain.Vault{}, err
-	}
-	if err := failVaults(res.Msg.Failure); err != nil {
-		if detail := res.Msg.GetDetail(); detail != "" {
-			return domain.Vault{}, fmt.Errorf("add vault %s: %w: %s", root, err, detail)
-		}
-		return domain.Vault{}, fmt.Errorf("add vault %s: %w", root, err)
 	}
 	return readVault(res.Msg.GetVault()), nil
 }
@@ -202,11 +179,8 @@ func (c *Client) RenameVault(ctx context.Context, id domain.VaultID, name string
 	if err != nil {
 		return domain.Vault{}, readError(err)
 	}
-	if err := fail(res.Msg.GetError()); err != nil {
+	if err := failVaults("rename vault "+string(id), res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return domain.Vault{}, err
-	}
-	if err := failVaults(res.Msg.Failure); err != nil {
-		return domain.Vault{}, fmt.Errorf("rename vault %s: %w", id, err)
 	}
 	return readVault(res.Msg.GetVault()), nil
 }
@@ -216,11 +190,8 @@ func (c *Client) RemoveVault(ctx context.Context, id domain.VaultID) (string, er
 	if err != nil {
 		return "", readError(err)
 	}
-	if err := fail(res.Msg.GetError()); err != nil {
+	if err := failVaults("remove vault "+string(id), res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return "", err
-	}
-	if err := failVaults(res.Msg.Failure); err != nil {
-		return "", fmt.Errorf("remove vault %s: %w", id, err)
 	}
 	return res.Msg.GetPath(), nil
 }
@@ -230,14 +201,5 @@ func (c *Client) OpenVault(ctx context.Context, id domain.VaultID) error {
 	if err != nil {
 		return readError(err)
 	}
-	if err := fail(res.Msg.GetError()); err != nil {
-		return err
-	}
-	if err := failVaults(res.Msg.Failure); err != nil {
-		if detail := res.Msg.GetDetail(); detail != "" {
-			return fmt.Errorf("open vault %s: %w: %s", id, err, detail)
-		}
-		return fmt.Errorf("open vault %s: %w", id, err)
-	}
-	return nil
+	return failVaults("open vault "+string(id), res.Msg.GetError(), res.Msg.GetDetail())
 }

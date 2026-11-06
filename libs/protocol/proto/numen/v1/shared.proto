@@ -17,14 +17,14 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 // ErrorCode is why a note could not be read or written.
 //
 // Every code is spelled in the window as the same word in camel case, and
-// three do not read straight across: UNSPECIFIED is `unreadable` there, STALE
-// is carried as a question for the person and not a message, and the window
+// three do not read straight across: UNSPECIFIED is `unreadable` there,
+// CONFLICT is carried as a question for the person and not a message, and the window
 // holds one code of its own for a core it could not reach at all.
 enum ErrorCode {
   ERROR_CODE_UNSPECIFIED = 0;
 
   // Nothing is at the path. A read says so; a write creates the file.
-  ERROR_CODE_MISSING = 1;
+  ERROR_CODE_NOT_FOUND = 1;
 
   // The file is in the vault and is not a note.
   ERROR_CODE_NOT_A_NOTE = 2;
@@ -54,7 +54,7 @@ enum ErrorCode {
 
   // The file is no longer the one this caller read. Nothing was written, and
   // the person chooses what happens to what they have.
-  ERROR_CODE_STALE = 13;
+  ERROR_CODE_CONFLICT = 13;
 }
 
 // FileStat is which file this is: where it is filed, how big it is, and when
