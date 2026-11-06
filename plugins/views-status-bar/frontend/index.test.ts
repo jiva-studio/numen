@@ -60,11 +60,29 @@ afterEach(() => {
   for (const one of mounted.splice(0)) one.unmount()
 })
 
-const activateBar = (): { context: MockPluginContext; view: Component } => {
+/** A stand-in of context.commands, shaped as createMockCommandsHost: the runs a test reads back. */
+const createCommandsStandIn = () => {
+  const runs: { command: string; target: unknown }[] = []
+  return {
+    getIds: () => [],
+    watch: () => ({ dispose: () => undefined }),
+    run: async (command: string, target?: unknown) => {
+      runs.push({ command, target })
+    },
+    getRuns: () => [...runs],
+  }
+}
+
+const activateBar = (): {
+  context: MockPluginContext
+  commands: ReturnType<typeof createCommandsStandIn>
+  view: Component
+} => {
   const context = createMockPluginContext({ pluginId: manifest.id })
-  activate(context)
+  const commands = createCommandsStandIn()
+  activate({ ...context, commands } as typeof context)
   const [registration] = context.getRegisteredSlotViews()
-  return { context, view: registration!.component as Component }
+  return { context, commands, view: registration!.component as Component }
 }
 
 const mountBar = (view: Component): VueWrapper => {
@@ -136,15 +154,14 @@ describe('the bar', () => {
 
 describe('a command', () => {
   it('is a button that runs the command with no target', async () => {
-    const { context, view } = activateBar()
+    const { context, commands, view } = activateBar()
     context.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
     const wrapper = mountBar(view)
 
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
 
-    expect(context.slots.getRuns()).toStrictEqual([
-      { command: `${PLUGIN}:count`, target: undefined },
-    ])
+    expect(context.slots.getRuns()).toStrictEqual([])
+    expect(commands.getRuns()).toStrictEqual([{ command: `${PLUGIN}:count`, target: undefined }])
   })
 
   it('shows the icon of the command with its title and shortcut as the hover text', () => {
@@ -222,21 +239,20 @@ describe('a submenu', () => {
   })
 
   it('runs a command of the list and closes it', async () => {
-    const { context, view } = activateBar()
+    const { context, commands, view } = activateBar()
     context.slots.setEntries('statusBar.right', [submenu])
     const wrapper = mountBar(view)
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
 
     await wrapper.find('[role="menuitem"]').trigger('click')
 
-    expect(context.slots.getRuns()).toStrictEqual([
-      { command: `${PLUGIN}:count`, target: undefined },
-    ])
+    expect(context.slots.getRuns()).toStrictEqual([])
+    expect(commands.getRuns()).toStrictEqual([{ command: `${PLUGIN}:count`, target: undefined }])
     expect(wrapper.find('[role="menu"]').exists()).toBe(false)
   })
 
   it('opens a nested submenu from its row', async () => {
-    const { context, view } = activateBar()
+    const { context, commands, view } = activateBar()
     context.slots.setEntries('statusBar.right', [submenu])
     const wrapper = mountBar(view)
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
@@ -248,9 +264,8 @@ describe('a submenu', () => {
     const nested = wrapper.find('[role="menu"][aria-label="Language"]')
     expect(nested.text()).toBe('English')
     await nested.find('[role="menuitem"]').trigger('click')
-    expect(context.slots.getRuns()).toStrictEqual([
-      { command: `${PLUGIN}:english`, target: undefined },
-    ])
+    expect(context.slots.getRuns()).toStrictEqual([])
+    expect(commands.getRuns()).toStrictEqual([{ command: `${PLUGIN}:english`, target: undefined }])
   })
 
   it('closes on Escape', async () => {
