@@ -54,8 +54,10 @@ export function createDeclaredPaletteCommands(
 }
 
 /** Whether two lists the core answered hold the same entries in the same order. */
-const isSameList = (held: readonly unknown[] | undefined, answered: readonly unknown[]): boolean =>
-  held !== undefined && JSON.stringify(held) === JSON.stringify(answered)
+const isSameList = (
+  current: readonly unknown[] | undefined,
+  received: readonly unknown[],
+): boolean => current !== undefined && JSON.stringify(current) === JSON.stringify(received)
 
 export interface DeclaredCommandsDeps {
   readonly list?: typeof listDeclaredCommands
