@@ -4,6 +4,7 @@ import {
   openVaultFile,
   openWorkspace,
   runCommand,
+  runCommandOverItem,
   waitForPassage,
 } from '../support/workspace.js'
 
@@ -65,7 +66,7 @@ test.describe('With the OCR plugin disabled after a proofreading', () => {
     await waitForPassage(page, SCANNED_WORDS, PATH)
     await page.keyboard.press('Escape')
 
-    await runCommand(page, 'Proofread', /^Proofread/)
+    await runCommandOverItem(page, 'Proofread', /^Proofread/, /\(live\)$/)
     await waitForPassage(page, PROOFREAD_MARK, PATH)
     await page.keyboard.press('Escape')
 
