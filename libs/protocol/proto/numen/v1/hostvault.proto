@@ -211,6 +211,10 @@ enum HostVaultErrorCode {
   // after, it is more than one line, or a heading would read it back as
   // something else.
   HOST_VAULT_ERROR_CODE_INVALID_NAME = 16;
+
+  // The change of a note failed for a reason with no code of its own; the
+  // detail of that note holds the core's error text.
+  HOST_VAULT_ERROR_CODE_INTERNAL = 17;
 }
 
 // HostFileStat is what a file was at a moment: at its current position, how large it
@@ -568,6 +572,8 @@ message HostVaultServiceRenameNoteResponse {
   NameSource name_source = 4;
   // Unset when the file kept its path.
   optional MoveResult move = 5;
+  // The core's error text where the note was not renamed, empty on success.
+  string detail = 6;
 }
 
 message HostVaultServiceMoveNotesRequest {
@@ -583,6 +589,8 @@ message HostNoteMove {
   MoveResult move = 1;
   // Why this note did not move.
   HostVaultErrorCode error = 2;
+  // The core's error text where this note did not move, empty on success.
+  string detail = 3;
 }
 
 message HostVaultServiceMoveNotesResponse {
@@ -603,9 +611,11 @@ message HostNoteRemoval {
   string trash_path = 2;
   // The notes whose links now resolve to nothing.
   repeated string broken_links = 3;
-  // Why this note was not removed: NOT_FOUND, or NOT_A_NOTE for a folder or a
-  // file that is not a note.
+  // Why this note was not removed: NOT_FOUND, NOT_A_NOTE for a folder or a
+  // file that is not a note, or INTERNAL.
   HostVaultErrorCode error = 4;
+  // The core's error text where this note was not removed, empty on success.
+  string detail = 5;
 }
 
 message HostVaultServiceRemoveNotesResponse {

@@ -22,17 +22,9 @@ service PluginToolService {
 message ListToolsRequest {}
 
 message ListToolsResponse {
+  // The host answers the tools of the plugins it lists grouped by plugin, in
+  // the order of plugin ids.
   repeated PluginTool tools = 1;
-
-  // The plugin paragraph: what an agent reads once before it calls the tools
-  // of one plugin, as plain text, empty where the plugin sets none. A plugin
-  // that sets it answers it in place of the instructions of its tools. The
-  // host answers one paragraph per plugin whose tools it lists, in the order
-  // of plugin ids, separated by an empty line: the plugin paragraph where the
-  // plugin set one, else the distinct instructions of its listed tools in
-  // listing order, joined with one space. A plugin none of whose tools is
-  // listed adds nothing.
-  string instructions = 2;
 }
 
 // PluginTool is one tool as an agent is told of it.
@@ -64,8 +56,14 @@ message PluginTool {
 
   // The instructions about this tool, each one sentence of plain English. A
   // sentence about several tools is attached to each of them with identical
-  // text.
+  // text. An agent server sends an agent the distinct sentences of the tools it
+  // offers, in listing order.
   repeated string instructions = 9;
+
+  // The permissions the caller must hold besides the one of the effect, such
+  // as vault:manage. The host lists and runs the tool only for a caller that
+  // holds all of them.
+  repeated string requires = 10;
 }
 
 // ToolEffect is what a tool does to the vault. The zero value means no effect
