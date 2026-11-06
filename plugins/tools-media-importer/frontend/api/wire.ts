@@ -89,7 +89,7 @@ export const links: Links = {
     return { mediaUrl: source.url, mediaType: source.mediaType }
   },
   fetchText: async (path, isForced) => readOutcome(await call('FetchText', { path, isForced })),
-  copyVideo: async (path) => readOutcome(await call('CopyVideo', { path })),
+  copyMedia: async (path, kind) => readOutcome(await call('CopyMedia', { path, kind })),
   deleteCopy: async (path) => readOutcome(await call('DeleteCopy', { path })),
   watchWork: (path, onChange) => work.watch(path, onChange),
 }

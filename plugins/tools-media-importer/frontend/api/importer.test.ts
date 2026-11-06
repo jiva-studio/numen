@@ -28,7 +28,7 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
     response: { text: 'A tidal mill stored seawater.' },
   },
   FetchText: { request: { path: 'links/clip.md', isForced: true }, response: {} },
-  CopyVideo: { request: { path: 'links/clip.md' }, response: {} },
+  CopyMedia: { request: { path: 'links/clip.md', kind: 'audio' }, response: {} },
   DeleteCopy: { request: { path: 'links/clip.md' }, response: {} },
   CreateLinks: {
     request: {

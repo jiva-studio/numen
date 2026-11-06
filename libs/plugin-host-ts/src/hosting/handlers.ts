@@ -71,8 +71,8 @@ export function createHandlerApi(deps: PluginHostDeps, registry: HostRegistry) {
     /**
      * The items a shared command offers over the note: one for each handler whose condition holds,
      * by its plugin id and title; or, where those handlers offer items of their own, theirs in one
-     * list, each in the group of its plugin. A handler that offers none of its own is then an item
-     * of its own group.
+     * list, each in the group it gives or else in the group of its plugin. A handler that offers none
+     * of its own is then an item of its own group.
      */
     listHandlerItems: async (
       command: string,
@@ -84,10 +84,10 @@ export function createHandlerApi(deps: PluginHostDeps, registry: HostRegistry) {
         return handlers.map((one) => ({ id: one.pluginId, title: one.title }))
       }
       return handlers.flatMap((one, at) =>
-        (own[at] ?? [{ id: '', title: one.title }]).map((item) => ({
+        (own[at] ?? [{ id: '', title: one.title } as CommandItem]).map((item) => ({
           id: item.id === '' ? one.pluginId : one.pluginId + ITEM_SEPARATOR + item.id,
           title: item.title,
-          group: one.pluginId,
+          group: item.group ?? one.pluginId,
         })),
       )
     },

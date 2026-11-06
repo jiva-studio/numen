@@ -27,8 +27,11 @@ export type CreateLinks = (
   urls: readonly string[],
 ) => Promise<Outcome<readonly string[]>>
 
-/** The id of the item of app:link.downloadMedia that downloads the video of a link. */
-const VIDEO = 'video'
+/** The items of app:link.downloadMedia: the video of a link, or its sound alone. */
+const MEDIA = ['video', 'audio'] as const
+
+const isMedia = (id: string | undefined): id is (typeof MEDIA)[number] =>
+  MEDIA.some((one) => one === id)
 
 export const activate = (
   context: PluginContext,
@@ -50,11 +53,11 @@ export const activate = (
     id: 'app:link.downloadMedia',
     listItems: async (target) => {
       const facts = await links.getLink(target.path)
-      return facts.ok && facts.value.isCopyable ? [{ id: VIDEO, title: words.video }] : []
+      return facts.ok && facts.value.isCopyable ? MEDIA.map((id) => ({ id, title: words[id] })) : []
     },
     handler: async (note, argument) => {
-      if (argument !== VIDEO) return
-      const outcome = await links.copyVideo(note.path)
+      if (!isMedia(argument)) return
+      const outcome = await links.copyMedia(note.path, argument)
       if (!outcome.ok) context.workspace?.showError(outcome.error)
     },
   })

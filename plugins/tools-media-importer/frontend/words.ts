@@ -8,6 +8,7 @@ export const WORDS = {
   fetchText: 'Download text again',
   copyVideo: 'Download video',
   video: 'Video',
+  audio: 'Audio',
   deleteCopy: 'Delete downloaded video',
   play: 'Play',
   pause: 'Pause',
