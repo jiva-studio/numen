@@ -678,13 +678,12 @@ const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
 function createWindowFrameServices(
   base: WindowCore,
   ctx: WindowContext,
-  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'runCommand' | 'getTarget'>,
+  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget'>,
 ) {
   const frame = useWindowFrame()
   Object.assign(base.pluginServices, {
     vaults: createEditorVaults({
       vaultList: getVaults(ctx).vaultList,
-      runCommand: commands.runCommand,
       getTarget: commands.getTarget,
       commandDeps: getCommands(ctx).commandDeps,
     }),
@@ -779,7 +778,7 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
-    frame: createWindowFrameServices(base, ctx, { getTarget, runCommand }),
+    frame: createWindowFrameServices(base, ctx, { getTarget }),
     isHighlighted,
     ...createWindowTabMoves(base, editing, closeTab),
   }

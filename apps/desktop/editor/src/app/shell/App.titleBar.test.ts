@@ -192,16 +192,15 @@ describe('the window with a plugin that draws the title bar', () => {
     expect(window.find('[data-title-bar]').attributes('data-maximized')).toBe('true')
   })
 
-  it('gives the bar the vaults of the installation and the row that adds a folder', async () => {
+  it('gives the bar only the vaults of the installation', async () => {
     listed.vaults.push({ id: 'trees', name: 'Trees', path: '/vaults/Trees', isMissing: false })
     const window = await mountWindow()
 
     await registerBar(LEDGER)
 
-    expect(window.find('[data-vaults]').text().split(',').slice(-2)).toStrictEqual([
-      'trees',
-      COMMAND.createVault,
-    ])
+    const ids = window.find('[data-vaults]').text().split(',')
+    expect(ids.at(-1)).toBe('trees')
+    expect(ids).not.toContain(COMMAND.createVault)
   })
 
   it('opens the vault the bar switches to through the use case that opens a vault', async () => {

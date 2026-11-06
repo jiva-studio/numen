@@ -1,11 +1,11 @@
 /**
  * The vaults the window gives its plugins: the vaults of the installation as the welcome screen
- * lists them and a last row for adding a folder, the one the window shows, and the switch to another.
+ * lists them, the one the window shows, and the switch to another.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { VaultsState } from '@numen/plugin-host'
-import type { CommandTarget, VaultRef } from '@/features/command-palette'
+import type { VaultRef } from '@/features/command-palette'
 import type { VaultList } from '@/entities/vault'
 import { COMMAND } from '@/shared/commandIds'
 import { createWindowVaults } from './windowVaults'
@@ -26,31 +26,19 @@ const LIST: VaultList = {
   showing: 'greenhouse',
 }
 
-const target = { vault: { id: 'greenhouse', name: 'Greenhouse log' } } as unknown as CommandTarget
-
 function setup(list: VaultList = LIST) {
   const vaultList = ref(list)
-  const runCommand = vi.fn<(id: string, target: CommandTarget) => void>()
   const openVault = vi.fn<(vault: VaultRef) => Promise<void>>(async () => undefined)
-  const vaults = createWindowVaults({
-    vaultList,
-    words: { add: 'Create vault' },
-    runCommand,
-    openVault,
-    getTarget: () => target,
-  })
-  return { vaults, vaultList, runCommand, openVault }
+  const vaults = createWindowVaults({ vaultList, openVault })
+  return { vaults, vaultList, openVault }
 }
 
 describe('the vaults of the window', () => {
-  it('list the vaults in the order of the vault list and then the row that adds a folder', () => {
-    const { vaults } = setup()
-
-    expect(vaults.getState().vaults).toStrictEqual([
+  it('list only the vaults of the installation, in the order of the vault list', () => {
+    expect(setup().vaults.getState().vaults).toStrictEqual([
       { id: 'orchard', name: 'Orchard notes' },
       { id: 'greenhouse', name: 'Greenhouse log' },
       { id: 'cellar', name: 'Cellar book' },
-      { id: COMMAND.createVault, name: 'Create vault' },
     ])
   })
 
@@ -77,35 +65,32 @@ describe('the vaults of the window', () => {
     await nextTick()
 
     expect(states.map((one) => one.current?.id)).toStrictEqual(['greenhouse', 'cellar'])
-    expect(states[1]?.vaults.map((one) => one.id)).toStrictEqual(['cellar', COMMAND.createVault])
+    expect(states[1]?.vaults.map((one) => one.id)).toStrictEqual(['cellar'])
   })
 })
 
 describe('switching the vault of the window', () => {
   it('opens a vault of the list as the welcome screen does, with the id and the name of the vault', async () => {
-    const { vaults, openVault, runCommand } = setup()
+    const { vaults, openVault } = setup()
 
     await vaults.switchTo('cellar')
 
     expect(openVault.mock.calls).toStrictEqual([[{ id: 'cellar', name: 'Cellar book' }]])
-    expect(runCommand).not.toHaveBeenCalled()
   })
 
-  it('runs the command that adds a folder for the last row', async () => {
-    const { vaults, openVault, runCommand } = setup()
+  it('opens nothing for the id of the command that creates a vault', async () => {
+    const { vaults, openVault } = setup()
 
     await vaults.switchTo(COMMAND.createVault)
 
-    expect(runCommand.mock.calls).toStrictEqual([[COMMAND.createVault, target]])
     expect(openVault).not.toHaveBeenCalled()
   })
 
-  it('does nothing for an id the list does not hold', async () => {
-    const { vaults, openVault, runCommand } = setup()
+  it('opens nothing for an id the list does not hold', async () => {
+    const { vaults, openVault } = setup()
 
     await vaults.switchTo('lost')
 
     expect(openVault).not.toHaveBeenCalled()
-    expect(runCommand).not.toHaveBeenCalled()
   })
 })
