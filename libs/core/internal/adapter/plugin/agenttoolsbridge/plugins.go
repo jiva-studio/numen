@@ -132,3 +132,28 @@ func hasPermission(permissions []string, effect v1.ToolEffect) bool {
 	return slices.Contains(permissions, pluginport.PermissionVaultRead) ||
 		slices.Contains(permissions, pluginport.PermissionVaultWrite)
 }
+
+// getPermissions is the permissions the plugin of the id holds, and none for a plugin the host does
+// not know.
+func (p plugins) getPermissions(pluginID string) []string {
+	for _, info := range p.host.GetPluginInfos() {
+		if info.ID == pluginID {
+			return info.Permissions
+		}
+	}
+	return nil
+}
+
+// listToolsFor is the tools offered on the server whose required permissions the caller holds all
+// of. The caller's own tools are listed too.
+func (p plugins) listToolsFor(ctx context.Context, server Server, callerID string) []tool {
+	permissions := p.getPermissions(callerID)
+	all := p.listTools(ctx, server, "")
+	required := make([]tool, 0, len(all))
+	for _, one := range all {
+		if hasAll(permissions, one.spec.GetRequires()) {
+			required = append(required, one)
+		}
+	}
+	return required
+}

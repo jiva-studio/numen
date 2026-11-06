@@ -108,18 +108,21 @@ func (c Config) setCompleter() {
 // plugins. Each run connects to the tools of the plugins on an endpoint of its own. It is nil where
 // AgentProvider is nil.
 func (c Config) GetSettingsAgent() agentport.Agent {
-	provider := c.AgentProvider()
+	provider := c.getToolProvider()
 	if provider == nil {
 		return nil
 	}
-	return c.serveTools(completion.NewSettingsAgent(completion.NewPrograms(provider, c.completionAgentSettings)))
+	return completion.NewSettingsAgent(completion.NewPrograms(provider, c.completionAgentSettings))
 }
 
-// serveTools gives each run of the agent an MCP endpoint of its own, serving the tools the plugins
-// with the tools capability offer on the full server. A nil agent stays nil.
-func (c Config) serveTools(agent agentport.Agent) agentport.Agent {
-	if agent == nil {
+// getToolProvider is AgentProvider with an MCP endpoint of its own for each run, serving the tools
+// the plugins with the tools capability offer on the full server whose required permissions the
+// plugin that runs the task holds. It is nil where AgentProvider is nil.
+func (c Config) getToolProvider() agentport.AgentProvider {
+	if c.PluginHost == nil || c.SafeMode {
 		return nil
 	}
-	return agenttoolsbridge.NewAgent(agent, c.PluginHost, agenttoolsbridge.Full)
+	return agentbridge.NewServingRouter(c.PluginHost, func(agent agentport.Agent, pluginID string) agentport.Agent {
+		return agenttoolsbridge.NewAgent(agent, c.PluginHost, agenttoolsbridge.Full, pluginID)
+	})
 }

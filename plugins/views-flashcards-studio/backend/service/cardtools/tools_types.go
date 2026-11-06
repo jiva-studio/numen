@@ -191,7 +191,7 @@ func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 
 func describeCode(reason api.ErrorCode) string {
 	descriptions := map[api.ErrorCode]string{
-		api.ErrorCodeNotFound:        "the vault holds no note at this path",
+		api.ErrorCodeNotFound:       "the vault holds no note at this path",
 		api.ErrorCodeNotANote:       "this is not a note the vault holds",
 		api.ErrorCodeNotText:        "this file is not text: some of it is not valid UTF-8, so open it as a file",
 		api.ErrorCodeTooLarge:       fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead", edit.MaxBytes),
@@ -203,7 +203,7 @@ func describeCode(reason api.ErrorCode) string {
 		api.ErrorCodeNotADeck:       "this note is not a deck",
 		api.ErrorCodeDeckTooLarge:   "this deck is larger than a deck is read at",
 		api.ErrorCodeNotAPreset:     "this note is not a preset",
-		api.ErrorCodeConflict:          "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now",
+		api.ErrorCodeConflict:       "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now",
 	}
 	if text, ok := descriptions[reason]; ok {
 		return text

@@ -19,22 +19,23 @@ const listLimit = 10 * time.Second
 // Agent starts each run of the agent it wraps with an MCP endpoint of its own, which serves the
 // tools the window allows and lives until the run is stopped.
 type Agent struct {
-	agent   agentport.Agent
-	plugins plugins
-	server  Server
+	agent    agentport.Agent
+	plugins  plugins
+	server   Server
+	callerID string
 }
 
-// NewAgent wraps the agent so its runs can call the tools that the host's
-// plugins provide on the server.
-func NewAgent(agent agentport.Agent, host Host, server Server) *Agent {
-	return &Agent{agent: agent, plugins: plugins{host: host}, server: server}
+// NewAgent wraps the agent of the plugin given so its runs can call the tools that the host's
+// plugins provide on the server and whose required permissions that plugin holds.
+func NewAgent(agent agentport.Agent, host Host, server Server, callerID string) *Agent {
+	return &Agent{agent: agent, plugins: plugins{host: host}, server: server, callerID: callerID}
 }
 
 // StartRun serves the tools the window allows and starts the run with their endpoint, their names
 // and their declarations. A run with no tool to call is started with no endpoint.
 func (a *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
 	listing, cancel := context.WithTimeout(ctx, listLimit)
-	available := a.plugins.listTools(listing, a.server, "")
+	available := a.plugins.listToolsFor(listing, a.server, a.callerID)
 	cancel()
 	if len(available) == 0 {
 		task.Tools, task.ToolDeclarations, task.Endpoint = nil, nil, agentport.ToolEndpoint{}

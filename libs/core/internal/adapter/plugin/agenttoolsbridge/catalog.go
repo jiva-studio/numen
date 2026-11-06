@@ -49,12 +49,7 @@ func (c *Catalog) CallTool(
 // listAllowed is the tools of the other plugins whose effect the caller holds the permission of,
 // and whose required permissions the caller holds all of.
 func (c *Catalog) listAllowed(ctx context.Context, callerID string) []tool {
-	var permissions []string
-	for _, info := range c.plugins.host.GetPluginInfos() {
-		if info.ID == callerID {
-			permissions = info.Permissions
-		}
-	}
+	permissions := c.plugins.getPermissions(callerID)
 	all := c.plugins.listTools(ctx, c.server, callerID)
 	allowed := make([]tool, 0, len(all))
 	for _, one := range all {
