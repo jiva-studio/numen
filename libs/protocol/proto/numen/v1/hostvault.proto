@@ -608,6 +608,8 @@ message HostVaultServiceAddVaultResponse {
   HostVaultErrorCode error = 1;
   Vault vault = 2;
   optional VaultsErrorCode failure = 3;
+  // The reason the core gives for a refusal, in its own words.
+  string detail = 4;
 }
 
 message HostVaultServiceRenameVaultRequest {

@@ -189,6 +189,9 @@ func (c *Client) AddVault(ctx context.Context, root, name string) (domain.Vault,
 		return domain.Vault{}, err
 	}
 	if err := failVaults(res.Msg.Failure); err != nil {
+		if detail := res.Msg.GetDetail(); detail != "" {
+			return domain.Vault{}, fmt.Errorf("add vault %s: %w: %s", root, err, detail)
+		}
 		return domain.Vault{}, fmt.Errorf("add vault %s: %w", root, err)
 	}
 	return readVault(res.Msg.GetVault()), nil

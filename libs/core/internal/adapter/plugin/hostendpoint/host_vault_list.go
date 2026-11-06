@@ -99,10 +99,13 @@ func (e *vaultEndpoint) AddVault(
 	if err != nil {
 		return nil, err
 	}
-	added, err := list.AddVault(ctx, req.Msg.GetRoot(), req.Msg.GetName())
-	failure, err := answerVaults(err)
-	if err != nil || failure != nil {
-		return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Failure: failure}), err
+	added, addErr := list.AddVault(ctx, req.Msg.GetRoot(), req.Msg.GetName())
+	failure, err := answerVaults(addErr)
+	if err != nil {
+		return nil, err
+	}
+	if failure != nil {
+		return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Failure: failure, Detail: addErr.Error()}), nil
 	}
 	return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Vault: writeVault(added)}), nil
 }

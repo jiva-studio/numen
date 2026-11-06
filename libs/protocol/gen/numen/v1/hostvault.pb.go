@@ -3739,10 +3739,12 @@ func (x *HostVaultServiceAddVaultRequest) GetName() string {
 }
 
 type HostVaultServiceAddVaultResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	Vault         *Vault                 `protobuf:"bytes,2,opt,name=vault,proto3" json:"vault,omitempty"`
-	Failure       *VaultsErrorCode       `protobuf:"varint,3,opt,name=failure,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"failure,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Error   HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Vault   *Vault                 `protobuf:"bytes,2,opt,name=vault,proto3" json:"vault,omitempty"`
+	Failure *VaultsErrorCode       `protobuf:"varint,3,opt,name=failure,proto3,enum=numen.v1.VaultsErrorCode,oneof" json:"failure,omitempty"`
+	// The reason the core gives for a refusal, in its own words.
+	Detail        string `protobuf:"bytes,4,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3796,6 +3798,13 @@ func (x *HostVaultServiceAddVaultResponse) GetFailure() VaultsErrorCode {
 		return *x.Failure
 	}
 	return VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *HostVaultServiceAddVaultResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
 }
 
 type HostVaultServiceRenameVaultRequest struct {
@@ -4637,11 +4646,12 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\bremovals\x18\x02 \x03(\v2\x19.numen.v1.HostNoteRemovalR\bremovals\"I\n" +
 	"\x1fHostVaultServiceAddVaultRequest\x12\x12\n" +
 	"\x04root\x18\x01 \x01(\tR\x04root\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\xc3\x01\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xdb\x01\n" +
 	" HostVaultServiceAddVaultResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12%\n" +
 	"\x05vault\x18\x02 \x01(\v2\x0f.numen.v1.VaultR\x05vault\x128\n" +
-	"\afailure\x18\x03 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\afailure\x88\x01\x01B\n" +
+	"\afailure\x18\x03 \x01(\x0e2\x19.numen.v1.VaultsErrorCodeH\x00R\afailure\x88\x01\x01\x12\x16\n" +
+	"\x06detail\x18\x04 \x01(\tR\x06detailB\n" +
 	"\n" +
 	"\b_failure\"H\n" +
 	"\"HostVaultServiceRenameVaultRequest\x12\x0e\n" +
