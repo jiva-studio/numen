@@ -1647,20 +1647,6 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*pluginport.Pl
 	return failure, nil
 }
 
-// recordActivationFailure records why a start of the plugin failed, and returns the failure.
-func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport.PluginFailure {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	sup, ok := h.supervisors[pluginID]
-	if !ok {
-		return nil
-	}
-	sup.RecordActivationFailure(h.clock.Now(), cause)
-	failure := h.newPluginFailureLocked(pluginID, sup, cause)
-	h.failedPlugins = append(h.failedPlugins, failure)
-	return &failure
-}
-
 // getRequirements returns the dependencies the plugin is launched with under the settings in force.
 func (h *Host) getRequirements(p manifest.Discovered) []pluginport.DependencyRequirement {
 	h.mu.RLock()
