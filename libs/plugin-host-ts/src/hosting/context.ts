@@ -347,7 +347,15 @@ function createWindowServices(
     ...(notices ? { notices } : {}),
     ...(tasks ? { tasks } : {}),
     ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
+    ...createFrameServices(host),
   }
+}
+
+/** The vaults the window can show and the window itself, the same for every plugin. */
+function createFrameServices(host: PluginContextHost) {
+  const vaults = host.getVaults?.()
+  const window = host.getWindow?.()
+  return { ...(vaults ? { vaults } : {}), ...(window ? { window } : {}) }
 }
 
 export function createPluginContext(

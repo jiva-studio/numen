@@ -1,10 +1,12 @@
 /**
  * Frontend entrypoint for the Title bar plugin: the bar at the top of each window, drawn in the
- * slot `titleBar`.
+ * slot `titleBar`. The bar reads its slots, the vaults and the window from the context.
  */
 import { defineComponent, h, shallowRef } from 'vue'
+import { runInBackground } from '@numen/ui'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { BUTTONS_SETTING, readButtonsSetting } from './lib/frame'
+import { useTitleBarHosts } from './model/useTitleBarHosts'
 import TitleBar from './ui/TitleBar.vue'
 
 export { TitleBar }
@@ -12,19 +14,39 @@ export { TitleBar }
 /** The id the manifest declares the view of the title bar under. */
 export const TITLE_BAR_VIEW = 'bar'
 
-/** The view of the slot: the bar, with the window buttons placed where the setting `buttons` says. */
+/** The view of the slot: the bar over the context, with the window buttons where `buttons` says. */
 export function createTitleBarView(context: PluginContext) {
   const buttons = shallowRef(readButtonsSetting(context.getSetting(BUTTONS_SETTING)))
   context.onSettingChange(BUTTONS_SETTING, (value) => {
     buttons.value = readButtonsSetting(value)
   })
+  const reportError = (error: unknown): void =>
+    context.notices?.show(error instanceof Error ? error.message : String(error), 'error')
   return defineComponent({
     name: 'TitleBarView',
-    inheritAttrs: false,
-    setup:
-      (_, { attrs }) =>
-      () =>
-        h(TitleBar, { ...attrs, buttons: buttons.value }),
+    setup: () => {
+      const hosts = useTitleBarHosts(context)
+      return () =>
+        h(TitleBar, {
+          appName: context.app.name,
+          platform: context.app.platform,
+          buttons: buttons.value,
+          isMaximized: hosts.window.value.isMaximized,
+          isFullscreen: hosts.window.value.isFullscreen,
+          vaults: hosts.vaults.value,
+          commands: hosts.commands.value,
+          status: hosts.status.value,
+          onRunCommand: (command: string) => {
+            if (context.slots) runInBackground(context.slots.runCommand(command), reportError)
+          },
+          onSwitchVault: (id: string) => {
+            if (context.vaults) runInBackground(context.vaults.switchTo(id), reportError)
+          },
+          onMinimizeWindow: () => context.window?.minimize(),
+          onToggleMaximizeWindow: () => context.window?.toggleMaximize(),
+          onCloseWindow: () => context.window?.close(),
+        })
+    },
   })
 }
 

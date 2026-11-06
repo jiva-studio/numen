@@ -6,23 +6,26 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import TitleBar from './TitleBar.vue'
-import type { TitleBarVault } from '@numen/plugin-sdk'
+import type { VaultsState, VaultSummary } from '@numen/plugin-sdk'
 
-const VAULTS: readonly TitleBarVault[] = [
-  { id: 'orchard', name: 'Orchard notes', isCurrent: true },
-  { id: 'greenhouse', name: 'Greenhouse log' },
-  { id: 'cellar', name: 'Cellar book' },
-  { id: 'add', name: 'Add a folder' },
-]
+const ORCHARD: VaultSummary = { id: 'orchard', name: 'Orchard notes' }
+const VAULTS: VaultsState = {
+  vaults: [
+    ORCHARD,
+    { id: 'greenhouse', name: 'Greenhouse log' },
+    { id: 'cellar', name: 'Cellar book' },
+    { id: 'add', name: 'Add a folder' },
+  ],
+  current: ORCHARD,
+}
 
 const mounted: VueWrapper[] = []
 
-const mountBar = (vaults: readonly TitleBarVault[] | null = VAULTS): VueWrapper => {
+const mountBar = (vaults: VaultsState | null = VAULTS): VueWrapper => {
   const wrapper = mount(TitleBar, {
     attachTo: document.body,
     props: {
       appName: 'numen',
-      vaultName: 'Orchard notes',
       ...(vaults === null ? {} : { vaults }),
     },
   })
@@ -84,7 +87,7 @@ describe('the title with vaults', () => {
   })
 
   it('is the plain title when the bar has no vaults', () => {
-    for (const vaults of [null, []] as const) {
+    for (const vaults of [null, { vaults: [], current: ORCHARD }, { ...VAULTS, current: null }]) {
       const wrapper = mountBar(vaults)
       expect(getTrigger(wrapper).element.tagName).toBe('SPAN')
       expect(wrapper.find('[data-title-fill]').exists()).toBe(false)
@@ -159,7 +162,7 @@ describe('searching the list', () => {
   })
 
   it('lists only the current vault and nothing else when it is the only one', async () => {
-    await open(mountBar([VAULTS[0]!]))
+    await open(mountBar({ vaults: [ORCHARD], current: ORCHARD }))
 
     expect(getLabels()).toStrictEqual(['Orchard notes'])
   })
@@ -245,7 +248,7 @@ describe('closing the list', () => {
     const wrapper = mountBar()
     await open(wrapper)
 
-    await wrapper.setProps({ vaults: [] })
+    await wrapper.setProps({ vaults: { vaults: [], current: null } })
     await nextTick()
 
     expect(getFrame()).toBeNull()

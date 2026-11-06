@@ -1,55 +1,57 @@
 /**
  * Every state the title bar has to survive. Also the test corpus: the cut of a long vault name, the
- * move of commands into the menu and the stacking of the menu need a browser to fail.
+ * move of commands into the menu, the hiding of views and the stacking of the menu need a browser
+ * to fail.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { h, markRaw, type FunctionalComponent } from 'vue'
 import { FilePlus, FolderTree, Search, Settings, Waypoints } from '@lucide/vue'
 import TitleBar from './TitleBar.vue'
-import type { TitleBarViewProps, TitleBarCommand, TitleBarVault } from '@numen/plugin-sdk'
+import type { AppInfo, SlotItem, VaultsState, VaultSummary } from '@numen/plugin-sdk'
+import { command, separator, submenu, view } from '../testing/entries'
 import { DARK, LONG, RUSSIAN } from './fixtures'
 
 interface Knobs {
   appName: string
-  vaultName: string
-  platform: TitleBarViewProps['platform']
+  vaults: VaultsState
+  platform: AppInfo['platform']
   buttons: 'windows' | 'mac'
   isMaximized: boolean
-  commands: readonly TitleBarCommand[]
-  vaults: readonly TitleBarVault[]
+  commands: readonly SlotItem[]
+  status: readonly SlotItem[]
   onSwitchVault: (id: string) => void
+  onRunCommand: (command: string) => void
   /** The width the window is drawn at. */
   width: string
 }
 
-const FILES: TitleBarCommand = {
-  id: 'files',
+const FILES = command('files', {
   title: 'Open file tree',
   icon: FolderTree,
-  group: 'navigate',
-  shortcut: 'Ctrl+Shift+E',
+  shortcut: 'mod+shift+e',
+})
+const PLEX = command('plex', { title: 'Open plex graph', icon: Waypoints, shortcut: 'mod+shift+x' })
+const NEW_NOTE = command('note', { title: 'Create note', icon: FilePlus })
+const SEARCH = command('search', { title: 'Search vault', icon: Search })
+const SETTINGS = command('settings', { title: 'Open settings', icon: Settings })
+const THREE = [FILES, PLEX, separator(1), NEW_NOTE]
+const ALL = [FILES, PLEX, separator(1), NEW_NOTE, separator(2), SEARCH, SETTINGS]
+
+/** A view of the status slot: a label as wide as its text. */
+const createChip = (text: string): FunctionalComponent =>
+  markRaw(() =>
+    h('span', { 'data-chip': text, style: 'padding-inline: 8px; white-space: nowrap' }, text),
+  )
+const TASKS = view('tasks', createChip('2 active'))
+const STATS = view('stats', createChip('6,792 notes'))
+const UPDATE = view('update', createChip('v2026.11.2'))
+
+const ORCHARD: VaultSummary = { id: 'orchard', name: 'Orchard notes' }
+const named = (name: string): VaultsState => {
+  const one = { id: 'orchard', name }
+  return { vaults: [one], current: one }
 }
-const PLEX: TitleBarCommand = {
-  id: 'plex',
-  title: 'Open plex graph',
-  icon: Waypoints,
-  group: 'navigate',
-  shortcut: 'Ctrl+Shift+X',
-}
-const NEW_NOTE: TitleBarCommand = { id: 'note', title: 'Create note', icon: FilePlus, group: 'new' }
-const SEARCH: TitleBarCommand = {
-  id: 'search',
-  title: 'Search vault',
-  icon: Search,
-  group: 'tools',
-}
-const SETTINGS: TitleBarCommand = {
-  id: 'settings',
-  title: 'Open settings',
-  icon: Settings,
-  group: 'tools',
-}
-const ALL = [FILES, PLEX, NEW_NOTE, SEARCH, SETTINGS]
 
 const meta: Meta<Knobs> = {
   title: 'Application/TitleBar',
@@ -61,12 +63,13 @@ const meta: Meta<Knobs> = {
   },
   args: {
     appName: 'numen',
-    vaultName: 'Orchard notes',
+    vaults: { vaults: [ORCHARD], current: ORCHARD },
     platform: 'windows',
     isMaximized: false,
-    commands: [FILES, PLEX, NEW_NOTE],
-    vaults: [],
+    commands: THREE,
+    status: [TASKS],
     onSwitchVault: fn(),
+    onRunCommand: fn(),
     width: '60rem',
   },
   render: (args) => ({
@@ -87,15 +90,19 @@ const title = (canvas: HTMLElement): HTMLElement =>
   canvas.querySelector<HTMLElement>('[data-title]')!
 const getShownIds = (canvas: HTMLElement): string[] =>
   [...canvas.querySelectorAll('[data-title-bar-command]')].map((one) =>
-    one.getAttribute('data-title-bar-command')!,
+    one.getAttribute('data-title-bar-command')!.replace('org.example.tide:', ''),
   )
+const getShownChips = (canvas: HTMLElement): string[] =>
+  [...canvas.querySelectorAll('[data-chip]')].map((one) => one.getAttribute('data-chip')!)
+const getPage = (canvas: HTMLElement) => within(canvas.ownerDocument.body)
 
-/** The bar of a window with a vault open and three commands in two groups. */
+/** The bar of a window with a vault open, three commands in two groups and one view. */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(title(canvasElement).textContent).toBe('numen — Orchard notes'))
     await expect(getShownIds(canvasElement)).toStrictEqual(['files', 'plex', 'note'])
-    await expect(canvasElement.querySelectorAll('[data-group-start]')).toHaveLength(1)
+    await expect(canvasElement.querySelectorAll('[data-title-bar-gap]')).toHaveLength(1)
+    await expect(getShownChips(canvasElement)).toStrictEqual(['2 active'])
   },
 }
 
@@ -118,19 +125,20 @@ export const Maximized: Story = {
   },
 }
 
-/** No vault is open: the title is only the name of the application and no command is offered. */
+/** No vault is open: the title is only the name of the application and the slots are empty. */
 export const NoVault: Story = {
-  args: { vaultName: '', commands: [] },
+  args: { vaults: { vaults: [ORCHARD], current: null }, commands: [], status: [] },
   play: async ({ canvasElement }) => {
     await expect(title(canvasElement).textContent).toBe('numen')
+    await expect(title(canvasElement).tagName).toBe('SPAN')
     await expect(getShownIds(canvasElement)).toStrictEqual([])
     await expect(canvasElement.querySelector('[data-title-bar-more]')).toBeNull()
   },
 }
 
-/** A vault name far too long is cut, and the commands and the controls stay in view. */
+/** A vault name far too long is cut, and the commands, the views and the controls stay in view. */
 export const LongVaultName: Story = {
-  args: { vaultName: LONG },
+  args: { vaults: named(LONG) },
   play: async ({ canvasElement }) => {
     const text = title(canvasElement)
     await waitFor(() => expect(text.scrollWidth).toBeGreaterThan(text.clientWidth))
@@ -138,49 +146,109 @@ export const LongVaultName: Story = {
     const close = canvasElement.querySelector('[data-control="close"]')!.getBoundingClientRect()
     await expect(close.right).toBeLessThanOrEqual(canvasElement.getBoundingClientRect().right)
     await expect(getShownIds(canvasElement)).toStrictEqual(['files', 'plex', 'note'])
+    await expect(getShownChips(canvasElement)).toStrictEqual(['2 active'])
   },
 }
 
 /** A vault named in a script that is not Latin. */
 export const NotLatin: Story = {
-  args: { vaultName: RUSSIAN },
+  args: { vaults: named(RUSSIAN) },
   play: async ({ canvasElement }) => {
     await expect(title(canvasElement).textContent).toContain(RUSSIAN)
   },
 }
 
-/** Five commands in three groups, all in view. */
+/** Five commands in three groups, all in view, with a gap between two groups. */
 export const TwoOrMoreGroups: Story = {
   args: { commands: ALL },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(getShownIds(canvasElement)).toHaveLength(5))
-    await expect(canvasElement.querySelectorAll('[data-group-start]')).toHaveLength(2)
-    const start = canvasElement.querySelector('[data-group-start]')!
-    await expect(getComputedStyle(start, '::before').width).not.toBe('auto')
+    const gaps = [...canvasElement.querySelectorAll('[data-title-bar-gap]')]
+    await expect(gaps).toHaveLength(2)
+    await expect(gaps[0]!.getBoundingClientRect().width).toBeGreaterThan(0)
   },
 }
 
-/** The window is too narrow: the commands that do not fit are in the menu. */
+/** The window is too narrow: the commands that do not fit are in the menu, in their groups. */
 export const Overflowing: Story = {
-  args: { commands: ALL, width: '22rem' },
+  args: { commands: ALL, width: '30rem' },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('[data-title-bar-more]')).not.toBeNull())
     const visible = getShownIds(canvasElement)
     await expect(visible.length).toBeLessThan(5)
+    await expect(getShownChips(canvasElement)).toStrictEqual(['2 active'])
     await userEvent.click(canvasElement.querySelector('[data-title-bar-more]')!)
-    const menu = within(canvasElement.ownerDocument.body)
+    const menu = getPage(canvasElement)
     const entries = await menu.findAllByRole('menuitem')
     await expect(entries.length + visible.length).toBe(5)
     await expect(menu.getAllByRole('separator').length).toBeGreaterThan(0)
   },
 }
 
+/** Narrower still: every command is in the menu and the views go from the end of the bar. */
+export const ViewsHiddenFromTheEdge: Story = {
+  args: { commands: ALL, status: [TASKS, STATS, UPDATE], width: '22rem' },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(canvasElement.querySelector('[data-title-bar-more]')).not.toBeNull())
+    await waitFor(() => expect(getShownChips(canvasElement).length).toBeLessThan(3))
+    await expect(getShownIds(canvasElement)).toStrictEqual([])
+    const chips = getShownChips(canvasElement)
+    await expect(chips).toStrictEqual(
+      ['2 active', '6,792 notes', 'v2026.11.2'].slice(0, chips.length),
+    )
+    await userEvent.click(canvasElement.querySelector('[data-title-bar-more]')!)
+    const entries = await getPage(canvasElement).findAllByRole('menuitem')
+    await expect(entries).toHaveLength(5)
+    const close = canvasElement.querySelector('[data-control="close"]')!.getBoundingClientRect()
+    await expect(close.right).toBeLessThanOrEqual(canvasElement.getBoundingClientRect().right)
+  },
+}
+
 /** Only the menu button is left. */
 export const OnlyTheMenu: Story = {
-  args: { commands: ALL, width: '14rem' },
+  args: { commands: ALL, status: [], width: '14rem' },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('[data-title-bar-more]')).not.toBeNull())
     await expect(getShownIds(canvasElement)).toStrictEqual([])
+  },
+}
+
+/** A submenu a plugin places is a button that opens its entries; a pick runs the command. */
+export const Submenu: Story = {
+  args: {
+    commands: [
+      FILES,
+      separator(1),
+      submenu('tide.new', [NEW_NOTE, command('deck', { title: 'Create deck' })], {
+        icon: FilePlus,
+      }),
+    ],
+  },
+  play: async ({ canvasElement, args }) => {
+    const button = canvasElement.querySelector<HTMLElement>('[data-title-bar-submenu="tide.new"]')!
+    await expect(button.getAttribute('aria-haspopup')).toBe('menu')
+    await userEvent.click(button)
+    const page = getPage(canvasElement)
+    const entries = await page.findAllByRole('menuitem')
+    await expect(entries.map((one) => one.textContent?.trim())).toStrictEqual([
+      'Create note',
+      'Create deck',
+    ])
+    await userEvent.click(entries[1]!)
+    await expect(args.onRunCommand).toHaveBeenCalledWith('org.example.tide:deck')
+  },
+}
+
+/** The arrow keys move along the buttons of the bar, which hold one stop of the tab order. */
+export const KeyboardNavigation: Story = {
+  play: async ({ canvasElement }) => {
+    const buttons = [...canvasElement.querySelectorAll<HTMLElement>('[data-title-bar-focusable]')]
+    await expect(buttons.filter((one) => one.tabIndex === 0)).toHaveLength(1)
+    buttons[0]!.focus()
+    await userEvent.keyboard('{ArrowRight}')
+    await expect(canvasElement.ownerDocument.activeElement).toBe(buttons[1])
+    await userEvent.keyboard('{End}')
+    await expect(canvasElement.ownerDocument.activeElement).toBe(buttons.at(-1))
   },
 }
 
@@ -204,63 +272,23 @@ export const NativeMacControls: Story = {
   },
 }
 
-/** The tooltip of an command reads its title and its shortcut. */
-export const TooltipOfAnCommand: Story = {
+/** The tooltip of a command reads its title and its shortcut, written for the platform. */
+export const TooltipOfACommand: Story = {
   play: async ({ canvasElement }) => {
-    const files = canvasElement.querySelector('[data-title-bar-command="files"]')!
+    const files = canvasElement.querySelector('[data-title-bar-command="org.example.tide:files"]')!
     await expect(files.getAttribute('title')).toBe('Open file tree (Ctrl+Shift+E)')
+    await expect(files.getAttribute('aria-label')).toBe('Open file tree')
   },
 }
 
-const FROM_PLUGINS: readonly TitleBarCommand[] = [
-  {
-    id: 'org.example.tide:chart.open',
-    title: 'Open tide chart',
-    icon: FolderTree,
-    group: 'navigate',
-    shortcut: 'Ctrl+Shift+E',
-  },
-  { id: 'org.example.reef:map.open', title: 'Open reef map', icon: Waypoints, group: 'navigate' },
-  { id: 'app:note.create', title: 'Create note', icon: FilePlus, group: 'new' },
-  { id: 'org.example.tide:log.open', title: 'Open tide log', icon: Search },
-]
-
-/** The buttons plugins place: the groups are separated and the hover text reads title and shortcut. */
-export const PluginCommands: Story = {
-  args: { commands: FROM_PLUGINS },
-  play: async ({ canvasElement }) => {
-    await waitFor(() => expect(getShownIds(canvasElement)).toHaveLength(4))
-    await expect(getShownIds(canvasElement)).toStrictEqual(FROM_PLUGINS.map((one) => one.id))
-    await expect(canvasElement.querySelectorAll('[data-group-start]')).toHaveLength(2)
-    const tooltip = (id: string) =>
-      canvasElement.querySelector(`[data-title-bar-command="${id}"]`)!.getAttribute('title')
-    await expect(tooltip('org.example.tide:chart.open')).toBe('Open tide chart (Ctrl+Shift+E)')
-    await expect(tooltip('org.example.reef:map.open')).toBe('Open reef map')
-  },
+const VAULTS: VaultsState = {
+  vaults: [
+    ORCHARD,
+    { id: 'greenhouse', name: 'Greenhouse log' },
+    { id: 'cellar', name: 'Cellar book' },
+  ],
+  current: ORCHARD,
 }
-
-/** More buttons than the width holds: the last ones are in the menu, in order, and a pick runs. */
-export const PluginCommandsOverflowing: Story = {
-  args: { commands: FROM_PLUGINS, width: '20rem' },
-  play: async ({ canvasElement }) => {
-    await waitFor(() => expect(canvasElement.querySelector('[data-title-bar-more]')).not.toBeNull())
-    const visible = getShownIds(canvasElement)
-    await expect(visible).toStrictEqual(FROM_PLUGINS.slice(0, visible.length).map((one) => one.id))
-    await userEvent.click(canvasElement.querySelector('[data-title-bar-more]')!)
-    const entries = await within(canvasElement.ownerDocument.body).findAllByRole('menuitem')
-    await expect(entries.map((one) => one.textContent?.trim())).toStrictEqual(
-      FROM_PLUGINS.slice(visible.length).map((one) => one.title),
-    )
-  },
-}
-
-const VAULTS: readonly TitleBarVault[] = [
-  { id: 'orchard', name: 'Orchard notes', isCurrent: true },
-  { id: 'greenhouse', name: 'Greenhouse log' },
-  { id: 'cellar', name: 'Cellar book' },
-]
-
-const getPage = (canvas: HTMLElement) => within(canvas.ownerDocument.body)
 
 /** The title opens a list of the vaults: it is narrowed by typing and a vault is reported. */
 export const ChoosingAVault: Story = {
@@ -275,7 +303,7 @@ export const ChoosingAVault: Story = {
     await expect(trigger.getAttribute('aria-expanded')).toBe('true')
     const options = await page.findAllByRole('option')
     await expect(options.map((one) => one.textContent?.trim())).toStrictEqual(
-      VAULTS.map((one) => one.name),
+      VAULTS.vaults.map((one) => one.name),
     )
     await expect(options[0]!.getAttribute('aria-current')).toBe('true')
 

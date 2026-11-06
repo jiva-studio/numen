@@ -40,6 +40,9 @@ import { createPluginMenus } from '../commands/pluginMenus'
 import { getNamedIcon } from '@/shared/icons'
 import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
+import { useWindowFrame } from './useWindowFrame'
+import { createWindowHost } from './windowHost'
+import { createEditorVaults } from './windowVaults'
 import { useNoticeTasks } from '../shell/useNoticeTasks'
 import { useWindowKinds } from './useWindowKinds'
 import { useWindowStatusBar } from '../shell/useWindowStatusBar'
@@ -671,6 +674,27 @@ const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
   retryBootstrap: bootstrap.retry,
 })
 
+/** The frame of the window, and the vaults and the window its plugins read from their contexts. */
+function createWindowFrameServices(
+  base: WindowCore,
+  ctx: WindowContext,
+  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'runCommand' | 'getTarget'>,
+) {
+  const frame = useWindowFrame()
+  Object.assign(base.pluginServices, {
+    vaults: createEditorVaults({
+      vaultList: getVaults(ctx).vaultList,
+      runCommand: commands.runCommand,
+      getTarget: commands.getTarget,
+      commandDeps: getCommands(ctx).commandDeps,
+    }),
+    window: createWindowHost(frame, (error) =>
+      base.writeMessage(formatErrorMessage(error), 'error'),
+    ),
+  })
+  return frame
+}
+
 /** The views plugins draw in the window itself: in the status bar and in the title bar. */
 const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
   statusViews: pluginHost.statusViews,
@@ -755,6 +779,7 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
+    frame: createWindowFrameServices(base, ctx, { getTarget, runCommand }),
     isHighlighted,
     ...createWindowTabMoves(base, editing, closeTab),
   }

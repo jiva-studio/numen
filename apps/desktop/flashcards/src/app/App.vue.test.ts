@@ -1,8 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
-import { INTERFACE_WAIT_MS, VAULT_SUMMARY } from '@numen/plugin-host'
+import { INTERFACE_WAIT_MS, VAULT_SUMMARY, type PluginContext } from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
 
 const wire = vi.hoisted(() => {
@@ -642,15 +642,31 @@ const createBarPlugin = (pluginId: string) => ({
     frontend: {},
     contributes: { views: [{ id: 'bar', slot: 'titleBar' }] },
   },
-  activate: (context: { registerSlotView: (one: unknown) => void }) => {
+  activate: (context: PluginContext) => {
     context.registerSlotView({
       id: 'bar',
       component: defineComponent({
-        props: { appName: String, vaultName: String },
-        setup: (props) => () =>
-          h('header', { 'data-title-bar': pluginId }, [
-            h('span', { 'data-title': '' }, `${props.appName} — ${props.vaultName}`),
-          ]),
+        setup: () => {
+          const vaults = shallowRef(context.vaults!.getState())
+          context.vaults!.watch((state) => (vaults.value = state))
+          return () =>
+            h(
+              'header',
+              {
+                'data-title-bar': pluginId,
+                'data-maximized': String(context.window!.getState().isMaximized),
+              },
+              [
+                h('span', { 'data-title': '' }, context.app.name),
+                h('span', { 'data-vault': '' }, vaults.value.current?.name ?? ''),
+                h('span', { 'data-vaults': '' }, vaults.value.vaults.map((one) => one.id).join()),
+                h('button', {
+                  'data-switch': 'words',
+                  onClick: () => context.vaults!.switchTo('words'),
+                }),
+              ],
+            )
+        },
       }),
     })
   },
@@ -692,7 +708,48 @@ describe('the title bar of the flashcards window', () => {
     await flushPromises()
 
     expect(window.find('[data-title-bar="org.example.ledger"]').exists()).toBe(true)
-    expect(window.find('[data-title]').text()).toBe('numen — flashcards')
+    expect(window.find('[data-title]').text()).toBe('numen')
+  })
+
+  it('gives the bar the vaults of the window, and the vault of the open review as the current one', async () => {
+    const window = mount(App, {
+      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+    expect(window.find('[data-vaults]').text()).toBe('physics,words')
+    expect(window.find('[data-vault]').text()).toBe('')
+
+    await window.findAll('.welcome-page__row--vault')[0]!.trigger('click')
+
+    expect(window.find('[data-vault]').text()).toBe('Physics')
+  })
+
+  it('opens the review on the vault the bar switches to', async () => {
+    const window = mount(App, {
+      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+
+    await window.find('[data-switch="words"]').trigger('click')
+    await flushPromises()
+
+    expect(window.find('.review').text()).toBe('Review of words')
+    expect(window.find('[data-vault]').text()).toBe('Words')
+  })
+
+  it('gives the bar the state of the window', async () => {
+    const window = mount(App, {
+      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+
+    expect(window.find('[data-title-bar]').attributes('data-maximized')).toBe('false')
   })
 
   it('is drawn by the plugin first by id, and the other plugin is reported', async () => {

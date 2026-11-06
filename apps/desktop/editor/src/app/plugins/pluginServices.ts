@@ -12,6 +12,8 @@ import type {
   VaultFiles,
   VaultNotes,
   VaultRelations,
+  VaultsHost,
+  WindowHost,
   WorkspaceHost,
 } from '@numen/plugin-host'
 import type { SearchDeps } from '@/features/command-palette'
@@ -35,6 +37,10 @@ export interface PluginServices {
   buffers?: BufferHost
   /** The window's store of open notes, which the tabs of the note kind read and write through. */
   noteBuffer?: NoteBuffer
+  /** The vaults the window can show, which every plugin reads. */
+  vaults?: VaultsHost
+  /** The window the plugins run in. */
+  window?: WindowHost
   /** The window's task list, which each plugin's task host reads. */
   taskList?: Readonly<Ref<readonly Task[]>>
 }

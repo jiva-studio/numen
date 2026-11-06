@@ -244,20 +244,16 @@ export default definePlugin({
 })
 ```
 
-The view draws the whole bar: the strip, the buttons of the commands, the title, the window buttons, the area that moves the window and the room the macOS buttons take. The window draws nothing of its own in it and adds nothing beside it, and the shell offers no components for it: a bar plugin draws its own. The component takes the props of `TitleBarViewProps`:
+The view draws the whole bar: the strip, the entries of its slots, the title, the window buttons, the area that moves the window and the room the macOS buttons take. The window draws nothing of its own in it and adds nothing beside it, and the shell offers no components for it: a bar plugin draws its own. The window passes the view no props and answers no events of it. The view reads what it draws from the context of its plugin:
 
-| Prop           | What it holds                                                                                                                                                                     |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pluginId`     | The id of the plugin.                                                                                                                                                             |
-| `appName`      | The name of the application.                                                                                                                                                      |
-| `vaultName`    | The vault the window shows; empty where none is open. In the flashcards window, the name of the window.                                                                           |
-| `platform`     | The operating system: `darwin`, `windows` or `linux`. On macOS the system draws the window buttons at the left, and the bar keeps room for them.                                  |
-| `isMaximized`  | Whether the window is maximized.                                                                                                                                                  |
-| `isFullscreen` | Whether the window fills the screen; macOS then shows no system buttons.                                                                                                          |
-| `commands`     | The commands placed in `titleBar.commands` of `contributes.menus`, sorted as [Menus](#menus) says: `id`, `title`, `icon` (a component), `group`, `shortcut`. Empty while no vault is open. |
-| `vaults`       | The vaults the title offers to switch to, and a last row that adds one: `id`, `name`, `isCurrent`. Empty while no vault is open.                                                  |
+| Context          | What the bar reads and does                                                                                                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `context.slots`  | The entries of `titleBar.commands` and `titleBar.status` through `watchEntries`, in the order they are drawn; `runCommand` runs the command of an entry. An entry the window cannot run is left out. |
+| `context.vaults` | The vaults the window can show and the one it shows (`null` while it shows none) through `watch`; `switchTo` shows another one. In the editor the last vault is a row that adds a folder as a vault. |
+| `context.window` | Whether the window is maximized or fills the screen through `watch`; `minimize`, `toggleMaximize` and `close` are the window buttons.                                                                |
+| `context.app`    | `name`, the name of the application, and `platform`: `darwin`, `windows` or `linux`. On macOS the system draws the window buttons at the left, and the bar keeps room for them.                      |
 
-It emits `TitleBarViewEvents`: `run-command` with the id of a command, `switch-vault` with the id of a vault, `minimize-window`, `toggle-maximize-window` and `close-window`. The window runs a command as the palette runs it, shows the vault (or adds one for the last row), and minimizes, maximizes or closes itself.
+A window that does not offer `slots`, `vaults` or `window` leaves that field out of the context.
 
 When two enabled plugins register a view for `titleBar`, the window draws the one of the plugin first by plugin id, compared as plain text, and writes an error for the other plugin to the message log. The view is drawn in the window, not in a pane, and the window adds the stylesheet of the plugin while its view is drawn.
 

@@ -612,12 +612,14 @@ describe('the window started and closed', () => {
 })
 
 describe('the services a plugin is given', () => {
-  it('are the ones the kinds made and the window task list, handed to the plugins', () => {
+  it('are the ones the kinds made, the window task list, the vaults and the window', () => {
     useWindow()
 
-    const { taskList, ...made } = h.args.plugins.services
+    const { taskList, vaults, window, ...made } = h.args.plugins.services
     expect(made).toStrictEqual(h.f.kinds.services)
     expect(taskList).toBe(h.f.display.tasks)
+    expect(vaults?.getState()).toBeDefined()
+    expect(window?.getState()).toStrictEqual({ isMaximized: false, isFullscreen: false })
   })
 
   it('stops the tabs waiting for their plugins once the plugins of the interface have started', async () => {

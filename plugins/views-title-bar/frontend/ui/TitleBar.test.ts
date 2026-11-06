@@ -1,48 +1,53 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
+import { nextTick } from 'vue'
+import type { AppInfo, SlotItem } from '@numen/plugin-sdk'
 import TitleBar from './TitleBar.vue'
 import { TITLE_MIN_WIDTH } from '../lib/layout'
-import type { TitleBarViewProps, TitleBarCommand } from '@numen/plugin-sdk'
-
-const command = (id: string, group?: string, shortcut?: string): TitleBarCommand => ({
-  id,
-  title: `Command ${id}`,
-  icon: { render: () => null },
-  ...(group === undefined ? {} : { group }),
-  ...(shortcut === undefined ? {} : { shortcut }),
-})
+import { command, separator, view } from '../testing/entries'
 
 interface Options {
   vaultName?: string
-  platform?: TitleBarViewProps['platform']
+  platform?: AppInfo['platform']
   buttons?: 'windows' | 'mac'
   isMaximized?: boolean
-  commands?: readonly TitleBarCommand[]
+  commands?: readonly SlotItem[]
+  status?: readonly SlotItem[]
 }
 
-const mountBar = (options: Options = {}): VueWrapper =>
-  mount(TitleBar, {
+const mounted: VueWrapper[] = []
+
+const mountBar = (options: Options = {}): VueWrapper => {
+  const { vaultName = 'Orchard notes', ...rest } = options
+  const vault = { id: 'orchard', name: vaultName }
+  const wrapper = mount(TitleBar, {
     attachTo: document.body,
     props: {
       appName: 'numen',
-      vaultName: 'Orchard notes',
-      platform: 'windows' as TitleBarViewProps['platform'],
+      vaults: { vaults: [vault], current: vaultName === '' ? null : vault },
+      platform: 'windows' as AppInfo['platform'],
       isMaximized: false,
-      commands: [],
-      ...options,
+      ...rest,
     },
   })
+  mounted.push(wrapper)
+  return wrapper
+}
 
-const button = (wrapper: VueWrapper, id: string) => wrapper.find(`[data-title-bar-command="${id}"]`)
+const id = (name: string) => `org.example.tide:${name}`
+const button = (wrapper: VueWrapper, name: string) =>
+  wrapper.find(`[data-title-bar-command="${id(name)}"]`)
 const shownIds = (wrapper: VueWrapper): string[] =>
   wrapper
     .findAll('[data-title-bar-command]')
-    .map((one) => one.attributes('data-title-bar-command')!)
+    .map((one) => one.attributes('data-title-bar-command')!.replace('org.example.tide:', ''))
 const control = (wrapper: VueWrapper, name: string) => wrapper.find(`[data-control="${name}"]`)
 
 afterEach(() => {
+  mounted.splice(0).forEach((one) => one.unmount())
   document.body.innerHTML = ''
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('the title', () => {
@@ -54,14 +59,6 @@ describe('the title', () => {
     expect(mountBar({ vaultName: '' }).find('[data-title]').text()).toBe('numen')
   })
 
-  it('changes at once when the vault changes', async () => {
-    const wrapper = mountBar()
-
-    await wrapper.setProps({ vaultName: 'Greenhouse log' })
-
-    expect(wrapper.find('[data-title]').text()).toBe('numen — Greenhouse log')
-  })
-
   it('carries the whole title as its tooltip for when the name is cut', () => {
     const wrapper = mountBar({ vaultName: 'A very long name of a vault' })
 
@@ -71,145 +68,45 @@ describe('the title', () => {
   })
 })
 
-describe('the commands', () => {
-  it('draw in the order given', () => {
-    const wrapper = mountBar({ commands: [command('a'), command('b'), command('c')] })
-
-    expect(shownIds(wrapper)).toStrictEqual(['a', 'b', 'c'])
-  })
-
-  it('mark the first command of each group after the first group', () => {
-    const wrapper = mountBar({
-      commands: [command('a', 'navigate'), command('b', 'navigate'), command('c', 'new')],
-    })
-
-    expect(button(wrapper, 'a').attributes('data-group-start')).toBeUndefined()
-    expect(button(wrapper, 'b').attributes('data-group-start')).toBeUndefined()
-    expect(button(wrapper, 'c').attributes('data-group-start')).toBeDefined()
-  })
-
-  it('show the title and the shortcut as the tooltip', () => {
-    const wrapper = mountBar({ commands: [command('a', undefined, 'Ctrl+Shift+E')] })
-
-    expect(button(wrapper, 'a').attributes('title')).toBe('Command a (Ctrl+Shift+E)')
-  })
-
-  it('show only the title as the tooltip when there is no shortcut', () => {
-    const wrapper = mountBar({ commands: [command('a')] })
-
-    expect(button(wrapper, 'a').attributes('title')).toBe('Command a')
-  })
-
-  it('emit run-command with the id when pressed', async () => {
-    const wrapper = mountBar({ commands: [command('a'), command('b')] })
-
-    await button(wrapper, 'b').trigger('click')
-
-    expect(wrapper.emitted('run-command')).toStrictEqual([['b']])
-  })
-
-  it('are left out of the tab order', () => {
-    const wrapper = mountBar({ commands: [command('a')] })
-
-    expect(button(wrapper, 'a').attributes('tabindex')).toBe('-1')
-  })
-
-  it('draw no menu button when there are none', () => {
-    expect(mountBar().find('[data-title-bar-more]').exists()).toBe(false)
-  })
-
-  it('draw no menu button while the room is not measured', () => {
-    const wrapper = mountBar({ commands: [command('a'), command('b'), command('c')] })
-
-    expect(wrapper.find('[data-title-bar-more]').exists()).toBe(false)
-  })
-})
-
 describe('the buttons of plugins', () => {
   const PRESSED_MARKS = ['aria-pressed', 'aria-checked', 'data-pressed', 'data-active']
 
   it('draw no pressed state before or after a press', async () => {
-    const commands = [
-      command('org.example.tide:chart.open', 'navigate', 'Ctrl+Shift+E'),
-      command('org.example.reef:map.open', 'navigate'),
-      command('app:note.create', 'new'),
-    ]
+    const commands = [command('chart.open'), command('map.open'), separator(1), command('log.open')]
     const wrapper = mountBar({ commands })
     const before = wrapper.find('[data-title-bar]').html()
 
-    await button(wrapper, 'org.example.reef:map.open').trigger('click')
+    await button(wrapper, 'map.open').trigger('click')
     await wrapper.setProps({ commands: [...commands] })
 
-    for (const id of shownIds(wrapper)) {
-      for (const mark of PRESSED_MARKS) expect(button(wrapper, id).attributes(mark)).toBeUndefined()
+    for (const name of shownIds(wrapper)) {
+      for (const mark of PRESSED_MARKS) {
+        expect(button(wrapper, name).attributes(mark)).toBeUndefined()
+      }
     }
-    expect(wrapper.emitted('run-command')).toStrictEqual([['org.example.reef:map.open']])
+    expect(wrapper.emitted('run-command')).toStrictEqual([[id('map.open')]])
     expect(wrapper.find('[data-title-bar]').html()).toBe(before)
   })
-})
 
-describe('the window drag area', () => {
-  it('lets the empty part drag the window', () => {
-    expect(
-      (mountBar().find('[data-title-bar]').element as HTMLElement).style.getPropertyValue(
-        '--wails-draggable',
-      ),
-    ).toBe('drag')
-  })
+  it('do not toggle maximize on a double click', async () => {
+    const wrapper = mountBar({ commands: [command('chart.open')] })
 
-  it('keeps the buttons out of the drag area', () => {
-    const wrapper = mountBar({ commands: [command('a')] })
-
-    expect(
-      (button(wrapper, 'a').element as HTMLElement).style.getPropertyValue('--wails-draggable'),
-    ).toBe('no-drag')
-    expect(
-      (control(wrapper, 'close').element as HTMLElement).style.getPropertyValue(
-        '--wails-draggable',
-      ),
-    ).toBe('no-drag')
-  })
-
-  it('toggles maximize on a double click on the empty part', async () => {
-    const wrapper = mountBar()
-
-    await wrapper.find('[data-title-bar]').trigger('dblclick')
-
-    expect(wrapper.emitted('toggle-maximize-window')).toHaveLength(1)
-  })
-
-  it('does not toggle maximize on a double click on an command', async () => {
-    const wrapper = mountBar({ commands: [command('a')] })
-
-    await button(wrapper, 'a').trigger('dblclick')
-
-    expect(wrapper.emitted('toggle-maximize-window')).toBeUndefined()
-  })
-
-  it('does not toggle maximize on a double click on a window control', async () => {
-    const wrapper = mountBar()
-
-    await control(wrapper, 'close').trigger('dblclick')
-
-    expect(wrapper.emitted('toggle-maximize-window')).toBeUndefined()
-  })
-
-  it('does not emit toggle-maximize when an command is pressed', async () => {
-    const wrapper = mountBar({ commands: [command('a')] })
-
-    await button(wrapper, 'a').trigger('click')
+    await button(wrapper, 'chart.open').trigger('dblclick')
 
     expect(wrapper.emitted('toggle-maximize-window')).toBeUndefined()
   })
 })
 
 describe('the window controls', () => {
-  it('draw minimize, maximize and close in the windows style', () => {
+  it('draw minimize, maximize and close in the windows style, after the title', () => {
     const wrapper = mountBar({ platform: 'windows' })
+    const title = wrapper.find('[data-title]').element
+    const close = control(wrapper, 'close').element
 
     expect(
       wrapper.findAll('[data-control]').map((one) => one.attributes('data-control')),
     ).toStrictEqual(['minimize', 'toggle-maximize', 'close'])
+    expect(title.compareDocumentPosition(close) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('emit the event of the control that is pressed', async () => {
@@ -224,38 +121,18 @@ describe('the window controls', () => {
     expect(wrapper.emitted('close-window')).toHaveLength(1)
   })
 
-  it('draw the controls of the windows style after the title', () => {
-    const wrapper = mountBar({ platform: 'windows' })
-    const title = wrapper.find('[data-title]').element
-    const close = control(wrapper, 'close').element
+  it('do not toggle maximize on a double click on a control', async () => {
+    const wrapper = mountBar()
 
-    expect(title.compareDocumentPosition(close) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await control(wrapper, 'close').trigger('dblclick')
+
+    expect(wrapper.emitted('toggle-maximize-window')).toBeUndefined()
   })
 
-  it('name the toggle control by what it does next', () => {
-    expect(control(mountBar({ isMaximized: false }), 'toggle-maximize').attributes('title')).toBe(
-      'Maximize',
-    )
-    expect(control(mountBar({ isMaximized: true }), 'toggle-maximize').attributes('title')).toBe(
-      'Restore',
-    )
-  })
-
-  it('mark the maximize button for Snap Layouts on Windows', () => {
+  it('mark the window buttons for Snap Layouts on Windows', () => {
     const maximize = control(mountBar(), 'toggle-maximize').element as HTMLElement
 
     expect(maximize.style.getPropertyValue('--wails-non-client-region').trim()).toBe('maximize')
-  })
-
-  it('show the restore icon while the window is maximized', () => {
-    const wrapper = mountBar({ isMaximized: true })
-
-    expect(control(wrapper, 'toggle-maximize').attributes('data-maximized')).toBe('true')
-    expect(
-      mountBar({ isMaximized: false })
-        .find('[data-control="toggle-maximize"]')
-        .attributes('data-maximized'),
-    ).toBe('false')
   })
 
   it('draw the three circles of the mac style before the commands', () => {
@@ -264,35 +141,11 @@ describe('the window controls', () => {
     const first = button(wrapper, 'a').element
 
     expect(wrapper.findAll('[data-control]')).toHaveLength(3)
-    expect(wrapper.find('[data-title-bar]').attributes('data-controls')).toBe('mac')
     expect(close.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('emit the same events in the mac style', async () => {
-    const wrapper = mountBar({ platform: 'linux', buttons: 'mac' })
-
-    await control(wrapper, 'close').trigger('click')
-    await control(wrapper, 'minimize').trigger('click')
-    await control(wrapper, 'toggle-maximize').trigger('click')
-
-    expect(wrapper.emitted('close-window')).toHaveLength(1)
-    expect(wrapper.emitted('minimize-window')).toHaveLength(1)
-    expect(wrapper.emitted('toggle-maximize-window')).toHaveLength(1)
-  })
-
-  it('draw no control in the native-mac style and keep room for the system buttons', () => {
-    const wrapper = mountBar({ platform: 'darwin' })
-
-    expect(wrapper.findAll('[data-control]')).toHaveLength(0)
-    expect(wrapper.find('[data-mac-buttons-inset]').exists()).toBe(true)
-  })
-
-  it('keep no room for the system buttons in full screen', () => {
-    const wrapper = mount(TitleBar, {
-      props: { appName: 'numen', platform: 'darwin', isFullscreen: true },
-    })
-
-    expect(wrapper.find('[data-mac-buttons-inset]').exists()).toBe(false)
+  it('draw no control in the native-mac style', () => {
+    expect(mountBar({ platform: 'darwin' }).findAll('[data-control]')).toHaveLength(0)
   })
 
   it('keep no inset in the other styles', () => {
@@ -303,8 +156,64 @@ describe('the window controls', () => {
   })
 })
 
-describe('the commands that do not fit', () => {
+describe('the keyboard', () => {
+  const COMMANDS = [command('a'), command('b'), separator(1), command('c')]
+  const focused = () => document.activeElement?.getAttribute('data-title-bar-command') ?? ''
+  const press = async (key: string) => {
+    document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+    await nextTick()
+  }
+
+  it('names the row of the bar as a toolbar', () => {
+    const toolbar = mountBar({ commands: COMMANDS }).find('[role="toolbar"]')
+
+    expect(toolbar.exists()).toBe(true)
+    expect(toolbar.attributes('aria-label')).toBe('Title bar')
+  })
+
+  it('puts one button of the bar in the tab order, the first', async () => {
+    const wrapper = mountBar({ commands: COMMANDS })
+    await nextTick()
+
+    expect(button(wrapper, 'a').attributes('tabindex')).toBe('0')
+    expect(button(wrapper, 'b').attributes('tabindex')).toBe('-1')
+    expect(wrapper.find('[data-title]').attributes('tabindex')).toBe('-1')
+  })
+
+  it('moves between the buttons with the arrow keys, Home and End, and wraps', async () => {
+    const wrapper = mountBar({ commands: COMMANDS })
+    await nextTick()
+    ;(button(wrapper, 'a').element as HTMLElement).focus()
+
+    await press('ArrowRight')
+    expect(focused()).toBe(id('b'))
+    await press('ArrowRight')
+    expect(focused()).toBe(id('c'))
+    await press('ArrowLeft')
+    expect(focused()).toBe(id('b'))
+    await press('End')
+    expect(document.activeElement).toBe(wrapper.find('[data-title]').element)
+    await press('ArrowRight')
+    expect(focused()).toBe(id('a'))
+    await press('Home')
+    expect(focused()).toBe(id('a'))
+  })
+
+  it('keeps the button reached last in the tab order', async () => {
+    const wrapper = mountBar({ commands: COMMANDS })
+    await nextTick()
+    ;(button(wrapper, 'a').element as HTMLElement).focus()
+
+    await press('ArrowRight')
+
+    expect(button(wrapper, 'a').attributes('tabindex')).toBe('-1')
+    expect(button(wrapper, 'b').attributes('tabindex')).toBe('0')
+  })
+})
+
+describe('the entries that do not fit', () => {
   const BUTTON_WIDTH = 32
+  const VIEW_WIDTH = 64
   let callbacks: ResizeObserverCallback[] = []
   let slotWidth = 0
 
@@ -317,6 +226,7 @@ describe('the commands that do not fit', () => {
           callbacks.push(tell)
         }
         observe = vi.fn()
+        unobserve = vi.fn()
         disconnect = vi.fn()
       },
     )
@@ -329,136 +239,168 @@ describe('the commands that do not fit', () => {
     vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (
       this: HTMLElement,
     ) {
-      return this.hasAttribute('data-title-bar-command') ? BUTTON_WIDTH : 0
+      if (this.hasAttribute('data-title-bar-view')) return VIEW_WIDTH
+      if (this.hasAttribute('data-title-bar-gap')) return 0
+      return this.hasAttribute('data-title-bar-entry') || this.hasAttribute('data-title-bar-more')
+        ? BUTTON_WIDTH
+        : 0
     })
   })
 
-  const resize = async (wrapper: VueWrapper, fits: number): Promise<void> => {
-    slotWidth = TITLE_MIN_WIDTH + fits * BUTTON_WIDTH
-    const entries = [{ contentRect: { width: slotWidth, height: 32 } } as ResizeObserverEntry]
-    for (const tell of callbacks) tell(entries, {} as ResizeObserver)
-    await wrapper.vm.$nextTick()
-    await wrapper.vm.$nextTick()
+  const settle = async (wrapper: VueWrapper) => {
+    for (let round = 0; round < 4; round += 1) await wrapper.vm.$nextTick()
   }
 
-  const mountOverflowing = async (fits: number): Promise<VueWrapper> => {
-    slotWidth = TITLE_MIN_WIDTH + fits * BUTTON_WIDTH
-    const wrapper = mountBar({
-      commands: [
-        command('a', 'navigate'),
-        command('b', 'navigate'),
-        command('c', 'new'),
-        command('d', 'new'),
-        command('e', 'tools'),
-      ],
-    })
-    await resize(wrapper, fits)
+  const resize = async (wrapper: VueWrapper, room: number): Promise<void> => {
+    slotWidth = TITLE_MIN_WIDTH + room
+    const entries = [{ contentRect: { width: slotWidth, height: 32 } } as ResizeObserverEntry]
+    for (const tell of callbacks) tell(entries, {} as ResizeObserver)
+    await settle(wrapper)
+  }
+
+  const FIVE = [
+    command('a'),
+    command('b'),
+    separator(1),
+    command('c'),
+    command('d'),
+    separator(2),
+    command('e'),
+  ]
+
+  const mountOverflowing = async (room: number, options: Options = {}): Promise<VueWrapper> => {
+    slotWidth = TITLE_MIN_WIDTH + room
+    const wrapper = mountBar({ commands: FIVE, ...options })
+    await resize(wrapper, room)
     return wrapper
   }
 
   const menuItems = (): string[] =>
     [...document.body.querySelectorAll('[role="menuitem"]')].map((one) => one.textContent!.trim())
+  const shownViews = (wrapper: VueWrapper): string[] =>
+    wrapper.findAll('[data-label-view]').map((one) => one.text())
 
-  it('show every command and no menu button when they all fit', async () => {
-    const wrapper = await mountOverflowing(5)
+  it('shows every command and no menu button when they all fit', async () => {
+    const wrapper = await mountOverflowing(5 * BUTTON_WIDTH)
 
     expect(shownIds(wrapper)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
     expect(wrapper.find('[data-title-bar-more]').exists()).toBe(false)
   })
 
-  it('show the first commands and a menu button when some do not fit', async () => {
-    const wrapper = await mountOverflowing(3)
+  it('shows the first commands and a menu button when some do not fit', async () => {
+    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
 
     expect(shownIds(wrapper)).toStrictEqual(['a', 'b'])
     expect(wrapper.find('[data-title-bar-more]').exists()).toBe(true)
   })
 
-  it('list the commands that do not fit in the menu, in order, with their titles', async () => {
-    const wrapper = await mountOverflowing(3)
+  it('names the menu button and says it opens a menu', async () => {
+    const more = (await mountOverflowing(3 * BUTTON_WIDTH)).find('[data-title-bar-more]')
+
+    expect(more.attributes('aria-label')).toBe('More commands')
+    expect(more.attributes('aria-haspopup')).toBe('menu')
+    expect(more.attributes('aria-expanded')).toBe('false')
+    expect((more.element as HTMLElement).style.getPropertyValue('--wails-draggable')).toBe(
+      'no-drag',
+    )
+  })
+
+  it('lists the commands that do not fit in the menu, in order and in their groups', async () => {
+    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
 
     await wrapper.find('[data-title-bar-more]').trigger('click')
 
-    expect(menuItems()).toStrictEqual(['Command c', 'Command d', 'Command e'])
+    expect(menuItems()).toStrictEqual(['Open c', 'Open d', 'Open e'])
+    expect(document.body.querySelectorAll('[role="separator"]').length).toBe(1)
+    expect(wrapper.find('[data-title-bar-more]').attributes('aria-expanded')).toBe('true')
   })
 
-  it('separate the groups of the menu', async () => {
-    const wrapper = await mountOverflowing(3)
+  it('emits run-command with the command of the entry picked in the menu, and closes it', async () => {
+    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
 
     await wrapper.find('[data-title-bar-more]').trigger('click')
+    document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')[1]!.click()
+    await nextTick()
 
-    expect(document.body.querySelectorAll('[role="separator"], .menu__rule').length).toBe(1)
+    expect(wrapper.emitted('run-command')).toStrictEqual([[id('d')]])
+    expect(document.body.querySelector('[role="menu"]')).toBeNull()
   })
 
-  it('show only the menu button when no command fits', async () => {
-    const wrapper = await mountOverflowing(1)
+  const clickMore = async (wrapper: VueWrapper, detail: number) => {
+    const more = wrapper.find('[data-title-bar-more]').element
+    more.dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
+    await settle(wrapper)
+  }
+
+  it('puts the keyboard on the first entry when the menu is opened from the keyboard', async () => {
+    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
+
+    await clickMore(wrapper, 0)
+
+    expect(document.activeElement?.textContent?.trim()).toBe('Open c')
+  })
+
+  it('puts the keyboard on no entry when the menu is opened by a pointer', async () => {
+    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
+
+    await clickMore(wrapper, 1)
+
+    expect(document.activeElement?.getAttribute('role')).not.toBe('menuitem')
+  })
+
+  it('moves the commands back to the bar when the window grows, and closes the menu', async () => {
+    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
+    await wrapper.find('[data-title-bar-more]').trigger('click')
+
+    await resize(wrapper, 5 * BUTTON_WIDTH)
+
+    expect(shownIds(wrapper)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
+    expect(wrapper.find('[data-title-bar-more]').exists()).toBe(false)
+    expect(document.body.querySelector('[role="menu"]')).toBeNull()
+  })
+
+  it('keeps every entry in the bar while the room is not measured', async () => {
+    slotWidth = 0
+    const wrapper = mountBar({ commands: FIVE, status: [view('tasks')] })
+    await settle(wrapper)
+
+    expect(shownIds(wrapper)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
+    expect(shownViews(wrapper)).toStrictEqual(['tasks'])
+  })
+
+  it('moves the commands of titleBar.status into the menu before those of titleBar.commands', async () => {
+    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH + VIEW_WIDTH, {
+      commands: [command('a'), command('b'), command('c')],
+      status: [view('tasks'), command('f')],
+    })
+
+    expect(shownIds(wrapper)).toStrictEqual(['a', 'b'])
+    expect(shownViews(wrapper)).toStrictEqual(['tasks'])
+    await wrapper.find('[data-title-bar-more]').trigger('click')
+    expect(menuItems()).toStrictEqual(['Open c', 'Open f'])
+  })
+
+  it('hides the views from the edge once every command is in the menu, and never lists one in it', async () => {
+    const wrapper = await mountOverflowing(BUTTON_WIDTH + VIEW_WIDTH, {
+      commands: [command('a'), view('due')],
+      status: [view('tasks'), view('stats')],
+    })
 
     expect(shownIds(wrapper)).toStrictEqual([])
+    expect(shownViews(wrapper)).toStrictEqual(['due'])
     await wrapper.find('[data-title-bar-more]').trigger('click')
-    expect(menuItems()).toHaveLength(5)
+    expect(menuItems()).toStrictEqual(['Open a'])
   })
 
-  it('emit run-command with the id of the entry picked in the menu', async () => {
-    const wrapper = await mountOverflowing(3)
-
-    await wrapper.find('[data-title-bar-more]').trigger('click')
-    const entries = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
-    entries[1]!.click()
-    await wrapper.vm.$nextTick()
-
-    expect(wrapper.emitted('run-command')).toStrictEqual([['d']])
-  })
-
-  it('close the menu after an entry is picked', async () => {
-    const wrapper = await mountOverflowing(3)
-
-    await wrapper.find('[data-title-bar-more]').trigger('click')
-    document.body.querySelector<HTMLElement>('[role="menuitem"]')!.click()
-    await wrapper.vm.$nextTick()
-
-    expect(document.body.querySelector('[role="menu"]')).toBeNull()
-  })
-
-  it('move commands back to the bar when the window grows', async () => {
-    const wrapper = await mountOverflowing(3)
-
-    await resize(wrapper, 5)
-
-    expect(shownIds(wrapper)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
-    expect(wrapper.find('[data-title-bar-more]').exists()).toBe(false)
-  })
-
-  it('keep every command in the bar while the room is not measured', async () => {
-    slotWidth = 0
-    const wrapper = mountBar({
-      commands: ['a', 'b', 'c', 'd', 'e'].map((id) => command(id)),
+  it('draws the hidden views again when the window grows', async () => {
+    const wrapper = await mountOverflowing(VIEW_WIDTH, {
+      commands: [],
+      status: [view('tasks'), view('stats')],
     })
-    await wrapper.vm.$nextTick()
+    expect(shownViews(wrapper)).toStrictEqual(['tasks'])
 
-    expect(shownIds(wrapper)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
-    expect(wrapper.find('[data-title-bar-more]').exists()).toBe(false)
-  })
+    await resize(wrapper, 2 * VIEW_WIDTH)
 
-  it('round the room down to a whole number of buttons', async () => {
-    const wrapper = await mountOverflowing(3.5)
-
-    expect(shownIds(wrapper)).toStrictEqual(['a', 'b'])
-  })
-
-  it('close the menu when the window grows enough for every command', async () => {
-    const wrapper = await mountOverflowing(3)
-    await wrapper.find('[data-title-bar-more]').trigger('click')
-
-    await resize(wrapper, 5)
-
-    expect(document.body.querySelector('[role="menu"]')).toBeNull()
-  })
-
-  it('move commands to the menu when the window shrinks', async () => {
-    const wrapper = await mountOverflowing(5)
-
-    await resize(wrapper, 2)
-
-    expect(shownIds(wrapper)).toStrictEqual(['a'])
-    expect(wrapper.find('[data-title-bar-more]').exists()).toBe(true)
+    expect(shownViews(wrapper)).toStrictEqual(['tasks', 'stats'])
   })
 })

@@ -16,7 +16,10 @@ import { formatErrorMessage } from '@numen/core-client'
 import { runInBackground } from '@numen/ui'
 import { agentService, noteService, pluginService, vaultsService } from '@/shared/clients'
 import { createWindowAgent, type WindowAgentClient } from './agent'
-import { createShellHost } from './host'
+import { createShellHost, type ShellServices } from './host'
+import { useWindowFrame } from './useWindowFrame'
+import { createWindowHost } from './windowHost'
+import { createWindowVaults } from './windowVaults'
 import { createWindowKeys } from './windowKeys'
 import { useExternalLinks } from './useExternalLinks'
 import { useWindowTasks, WINDOW_SOURCE } from './useWindowTasks'
@@ -67,8 +70,10 @@ export function useShell(deps: ShellDeps = {}) {
     deps.agentClient ?? agentService,
     deps.linkClient ?? noteService,
   )
+  const services: ShellServices = {}
   const { host, front, tab, openTab, notices, mountView, titleBarView } = createShellHost(
     windowAgent.agent,
+    services,
   )
   const loader = createPluginLoader({
     host,
@@ -79,6 +84,14 @@ export function useShell(deps: ShellDeps = {}) {
   const listError = ref('')
   const { vaults, isListing } = useVaults(deps.listVaults ?? listVaults, (text) =>
     notices.show(WINDOW_SOURCE, text, 'error'),
+  )
+  services.vaults = createWindowVaults({
+    list: vaults,
+    getTabVault: () => tab.value?.vault ?? null,
+    openTab,
+  })
+  services.window = createWindowHost(useWindowFrame(), (error) =>
+    notices.show(WINDOW_SOURCE, formatErrorMessage(error), 'error'),
   )
   const onKeyDown = createWindowKeys({
     getTab: () => tab.value,
