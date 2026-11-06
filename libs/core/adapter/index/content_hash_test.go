@@ -213,7 +213,7 @@ func TestASaveOfTheNoteClearsItsFileIDAndHashTime(t *testing.T) {
 	}
 }
 
-func TestSaveContentHashLeavesTheRowOfAnotherVaultAsItIs(t *testing.T) {
+func TestSaveContentHashWritesOnlyTheRowOfItsVault(t *testing.T) {
 	db := openHashIndex(t)
 	const otherVault domain.VaultID = "01OTHERVAULT"
 	if err := db.Vaults().Register(t.Context(), otherVault); err != nil {
