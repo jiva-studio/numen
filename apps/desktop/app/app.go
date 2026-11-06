@@ -361,8 +361,10 @@ func connectWindow(
 	})
 
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
-		hooks.cfg.SetPluginVaultPath(v.Path)
 		err := opened.Show(ctx, v)
+		if err == nil {
+			hooks.cfg.SetPluginVaultPath(v.Path)
+		}
 		naming(opened.State.GetOpenTabs())
 		return err
 	}
