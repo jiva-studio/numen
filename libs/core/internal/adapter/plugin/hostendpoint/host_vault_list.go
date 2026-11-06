@@ -51,6 +51,9 @@ func answerVaults(err error) (*v1.VaultsErrorCode, error) {
 	if failure, ok := getVaultsFailure(err); ok {
 		return &failure, nil
 	}
+	if errors.Is(err, pluginport.ErrUnavailable) {
+		return nil, connect.NewError(connect.CodeUnavailable, err)
+	}
 	return nil, connect.NewError(connect.CodeInternal, err)
 }
 
