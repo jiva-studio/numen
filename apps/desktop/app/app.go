@@ -360,8 +360,8 @@ func connectWindow(
 		importDroppedFiles(ctx, opened, event)
 	})
 
-	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
-		err := opened.Show(ctx, v)
+	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *editor.PluginOpen) error {
+		err := opened.Show(ctx, v, open)
 		if err == nil {
 			hooks.cfg.SetPluginVaultPath(v.Path)
 		}

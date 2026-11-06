@@ -404,18 +404,16 @@ type shutdownState struct {
 	isClosing bool
 	// pluginOpen is the running open of a vault by a plugin. A close, a quit or a change of vault of
 	// the user cancels it and waits for it to end.
-	pluginOpen *pluginOpen
+	pluginOpen *PluginOpen
 }
 
-// pluginOpen is a plugin's open of a vault, as a flush of the user cancels it.
-type pluginOpen struct {
+// PluginOpen is a plugin's open of a vault, as a flush of the user cancels it. A change of vault
+// given the running open runs inside it; a change of the user is given nil.
+type PluginOpen struct {
 	cancel context.CancelCauseFunc
 	// end closes when the open ends.
 	end chan struct{}
 }
-
-// pluginOpenKey is the context key of the plugin's open a change of vault runs inside.
-type pluginOpenKey struct{}
 
 // errUserFirst is the cause a plugin's open is cancelled with when the user closes the window,
 // quits or changes its vault.
@@ -445,22 +443,22 @@ func (s *shutdownState) tryBegin() error {
 }
 
 // tryBeginPluginOpen starts a plugin's open, which a tryBegin cancels with errUserFirst. It returns
-// the context of the open and the function that ends it. A change of vault that runs under the
-// returned context runs inside the open.
-func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context, func(), error) {
+// the context of the open, the open and the function that ends it. A change of vault given the open
+// runs inside it.
+func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context, *PluginOpen, func(), error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	switch {
 	case s.isClosing:
-		return nil, nil, errWindowClosing
+		return nil, nil, nil, errWindowClosing
 	case s.isBusy:
-		return nil, nil, errShutdownInProgress
+		return nil, nil, nil, errShutdownInProgress
 	}
 	ctx, cancel := context.WithCancelCause(ctx)
-	open := &pluginOpen{cancel: cancel, end: make(chan struct{})}
+	open := &PluginOpen{cancel: cancel, end: make(chan struct{})}
 	s.isBusy, s.pluginOpen = true, open
-	return context.WithValue(ctx, pluginOpenKey{}, open), func() {
+	return ctx, open, func() {
 		s.mu.Lock()
 		s.isBusy, s.pluginOpen = false, nil
 		s.mu.Unlock()
@@ -470,12 +468,11 @@ func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context
 }
 
 // tryBeginSwitch starts the flush of a change of vault and returns the function that ends it, and
-// whether the change runs inside the running plugin's open of ctx. Such a change takes no exclusion
-// of its own.
-func (s *shutdownState) tryBeginSwitch(ctx context.Context) (func(), bool, error) {
-	open, hasPluginOpen := ctx.Value(pluginOpenKey{}).(*pluginOpen)
+// whether the change runs inside the running plugin's open, which open names. Such a change takes no
+// exclusion of its own, and a nil open is a change of the user.
+func (s *shutdownState) tryBeginSwitch(open *PluginOpen) (func(), bool, error) {
 	s.mu.Lock()
-	isInsidePluginOpen := hasPluginOpen && s.pluginOpen == open
+	isInsidePluginOpen := open != nil && s.pluginOpen == open
 	s.mu.Unlock()
 	if isInsidePluginOpen {
 		return func() {}, true, nil

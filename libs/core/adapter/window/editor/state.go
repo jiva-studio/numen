@@ -57,8 +57,9 @@ type State struct {
 
 	// OpenVault puts another vault in the window: the agents are stopped, the vault
 	// is swapped, and the agents are started again against the one that
-	// arrived. It is bound by every build that serves the list of vaults.
-	OpenVault func(context.Context, domain.Vault) error
+	// arrived. It is bound by every build that serves the list of vaults. The open is the
+	// plugin's open the change runs inside, nil for a change of the user.
+	OpenVault func(context.Context, domain.Vault, *PluginOpen) error
 
 	// NotifyNoteWritten is called after a note save. The embedding pipeline then
 	// queries the index for chunks without vectors once the vault is idle. Nil

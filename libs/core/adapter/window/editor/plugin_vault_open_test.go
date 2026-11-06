@@ -22,7 +22,7 @@ func TestPluginOpenVaultAfterTheUserAnswersTheSwitchQuestionShowsTheVault(t *tes
 	userAnswered := make(chan struct{})
 	f.answerAskingUntil(t, stream, userAnswered)
 
-	if err := f.installation.State.OpenVault(t.Context(), f.second); err == nil {
+	if err := f.installation.State.OpenVault(t.Context(), f.second, nil); err == nil {
 		t.Fatal("the user's switch while a page asks returned nil")
 	}
 	close(userAnswered)
@@ -46,19 +46,20 @@ func TestPluginOpenVaultAfterTheUserAnswersTheSwitchQuestionShowsTheVault(t *tes
 	}
 }
 
-// A vault switch made under the context of a plugin's open that has ended takes the exclusion like
+// A vault switch given a plugin's open that has ended takes the exclusion like
 // any other switch: during the user's close it is rejected and the close completes.
-func TestAVaultSwitchWithTheContextOfAFinishedPluginOpenFailsDuringTheUsersClose(t *testing.T) {
+func TestAVaultSwitchGivenAFinishedPluginOpenFailsDuringTheUsersClose(t *testing.T) {
 	f := openTwoVaults(t)
 	var mu sync.Mutex
 	var pluginOpenCtx context.Context
-	f.installation.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
+	var finishedOpen *editor.PluginOpen
+	f.installation.State.OpenVault = func(ctx context.Context, v domain.Vault, open *editor.PluginOpen) error {
 		mu.Lock()
 		if pluginOpenCtx == nil {
-			pluginOpenCtx = ctx
+			pluginOpenCtx, finishedOpen = ctx, open
 		}
 		mu.Unlock()
-		return f.installation.Show(ctx, v)
+		return f.installation.Show(ctx, v, open)
 	}
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
@@ -101,9 +102,9 @@ func TestAVaultSwitchWithTheContextOfAFinishedPluginOpenFailsDuringTheUsersClose
 		t.Fatal("the user's close never asked the page to flush")
 	}
 	mu.Lock()
-	switchCtx := pluginOpenCtx
+	switchCtx, switchOpen := pluginOpenCtx, finishedOpen
 	mu.Unlock()
-	err := f.installation.Show(switchCtx, f.first)
+	err := f.installation.Show(switchCtx, f.first, switchOpen)
 	close(release)
 	if err == nil {
 		t.Error("a switch under the context of an ended plugin open ran during the user's close")

@@ -27,8 +27,8 @@ const immediateBound = editor.FlushTimeout / 2
 
 // bindShow binds the change of vault of the state the way the desktop app does.
 func (f *showing) bindShow() {
-	f.installation.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
-		return f.installation.Show(ctx, v)
+	f.installation.State.OpenVault = func(ctx context.Context, v domain.Vault, open *editor.PluginOpen) error {
+		return f.installation.Show(ctx, v, open)
 	}
 }
 
@@ -486,7 +486,7 @@ func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
 	openResult := startPluginOpen(t, f, flushRequest, release)
 
 	switched := make(chan error, 1)
-	go func() { switched <- f.installation.State.OpenVault(t.Context(), f.second) }()
+	go func() { switched <- f.installation.State.OpenVault(t.Context(), f.second, nil) }()
 	select {
 	case err := <-switched:
 		close(release)
@@ -514,7 +514,7 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	release := make(chan struct{})
 	f.answerFlushes(t, stream, flushRequest, release)
 	switched := make(chan error, 1)
-	go func() { switched <- f.installation.Show(t.Context(), f.second) }()
+	go func() { switched <- f.installation.Show(t.Context(), f.second, nil) }()
 	select {
 	case <-flushRequest:
 	case <-time.After(5 * time.Second):
@@ -638,7 +638,7 @@ func TestUserSwitchesAmidRepeatedPluginOpensAreAllTaken(t *testing.T) {
 			target = f.first
 		}
 		switchResult := make(chan error, 1)
-		go func() { switchResult <- f.installation.State.OpenVault(t.Context(), target) }()
+		go func() { switchResult <- f.installation.State.OpenVault(t.Context(), target, nil) }()
 		select {
 		case err := <-switchResult:
 			if err != nil {
@@ -676,7 +676,7 @@ func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 	defer cancel()
 	switched := make(chan error, 1)
 	closed := make(chan bool, 1)
-	go func() { switched <- f.installation.State.OpenVault(ctx, f.second) }()
+	go func() { switched <- f.installation.State.OpenVault(ctx, f.second, nil) }()
 	go func() { closed <- closeLikeTheApp(ctx, f.installation) }()
 	select {
 	case err := <-openResult:

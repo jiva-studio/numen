@@ -161,7 +161,7 @@ func onAList(t *testing.T) *onTheList {
 	f.api.Vaults.add = &adding
 	f.api.Vaults.rename = &rename
 	f.api.Vaults.remove = &remove
-	f.api.state.OpenVault = func(_ context.Context, v domain.Vault) error {
+	f.api.state.OpenVault = func(_ context.Context, v domain.Vault, _ *PluginOpen) error {
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		f.expected = append(f.expected, v)

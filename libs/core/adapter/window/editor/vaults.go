@@ -144,7 +144,7 @@ func (s *vaultsHandler) OpenVault(
 	}
 	v, err := s.find.Execute(r.Msg.GetId())
 	if err == nil {
-		err = s.state.OpenVault(ctx, v)
+		err = s.state.OpenVault(ctx, v, nil)
 	}
 	if err == nil {
 		return connect.NewResponse(&v1.OpenVaultResponse{}), nil

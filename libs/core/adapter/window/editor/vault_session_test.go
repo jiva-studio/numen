@@ -176,7 +176,7 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 		t.Errorf("the window says it is showing %q, want %s", got, string(f.first.ID))
 	}
 
-	if err := f.installation.Show(t.Context(), f.second); err != nil {
+	if err := f.installation.Show(t.Context(), f.second, nil); err != nil {
 		t.Fatalf("the second vault would not open: %v", err)
 	}
 	f.read(t)
@@ -223,7 +223,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 		}
 	}()
 
-	if err := f.installation.Show(t.Context(), f.second); err != nil {
+	if err := f.installation.Show(t.Context(), f.second, nil); err != nil {
 		t.Fatalf("the second vault would not open: %v", err)
 	}
 	f.read(t)
@@ -270,7 +270,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 	f := openTwoVaults(t)
 
-	if err := f.installation.Show(t.Context(), f.second); err != nil {
+	if err := f.installation.Show(t.Context(), f.second, nil); err != nil {
 		t.Fatalf("the second vault would not open: %v", err)
 	}
 	if err := f.installation.Close(); err != nil {
@@ -293,7 +293,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 func TestTheVaultThatWentIsNoLongerFollowed(t *testing.T) {
 	f := openTwoVaults(t)
 
-	if err := f.installation.Show(t.Context(), f.second); err != nil {
+	if err := f.installation.Show(t.Context(), f.second, nil); err != nil {
 		t.Fatalf("the second vault would not open: %v", err)
 	}
 	f.read(t)
@@ -343,7 +343,7 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 func TestTheVaultAlreadyShownIsNotOpenedAgain(t *testing.T) {
 	f := openTwoVaults(t)
 
-	if err := f.installation.Show(t.Context(), f.first); err != nil {
+	if err := f.installation.Show(t.Context(), f.first, nil); err != nil {
 		t.Fatalf("the vault already shown failed: %v", err)
 	}
 	if state := f.state(t); !state.GetScan().GetIsReady() {
@@ -376,7 +376,7 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 			f := openTwoVaults(t)
 			one.spoil(t, f.second)
 
-			if err := f.installation.Show(t.Context(), f.second); err == nil {
+			if err := f.installation.Show(t.Context(), f.second, nil); err == nil {
 				t.Fatal("the window opened a vault it cannot read")
 			}
 			state := f.state(t)
@@ -424,7 +424,7 @@ func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 	defer isDone()
 
 	swapped := make(chan error, 1)
-	go func() { swapped <- f.installation.Show(t.Context(), f.second) }()
+	go func() { swapped <- f.installation.Show(t.Context(), f.second, nil) }()
 
 	select {
 	case err := <-swapped:
@@ -468,7 +468,7 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
-	if err := f.installation.Show(ctx, f.second); err == nil {
+	if err := f.installation.Show(ctx, f.second, nil); err == nil {
 		t.Fatal("a page holding work the user has to answer for did not call the swap off")
 	}
 
@@ -528,7 +528,7 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 		t.Fatal("the close never asked the page for what it holds")
 	}
 
-	if err := f.installation.Show(t.Context(), f.second); err == nil {
+	if err := f.installation.Show(t.Context(), f.second, nil); err == nil {
 		t.Fatal("a vault was opened while the window was settling to close")
 	}
 	close(release)

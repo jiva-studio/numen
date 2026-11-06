@@ -65,7 +65,7 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 	if err := l.installation.checkIdentity.Execute(v); err != nil {
 		return err
 	}
-	ctx, end, err := l.installation.shutdown.tryBeginPluginOpen(ctx)
+	ctx, open, end, err := l.installation.shutdown.tryBeginPluginOpen(ctx)
 	if err != nil {
 		return fmt.Errorf("%s cannot be opened now: %w: %w", v.Name, pluginport.ErrUnavailable, err)
 	}
@@ -73,7 +73,7 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 	if l.state.Window.IsQuestionOpen() {
 		return pluginport.ErrUnsavedChanges
 	}
-	err = l.state.OpenVault(ctx, v)
+	err = l.state.OpenVault(ctx, v, open)
 	switch {
 	case err == nil:
 		return nil

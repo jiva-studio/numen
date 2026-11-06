@@ -35,15 +35,15 @@ var errAnswerPending = errors.New("pending review confirmation")
 // page has written its pending state. A page holding text awaiting user
 // confirmation aborts the swap, as does a vault that fails to start: the window
 // stays on its current vault, and a window with no vault to fall back on reports
-// the error.
-func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
+// the error. The open is the plugin's open the change runs inside, nil for a change of the user.
+func (o *Installation) Show(ctx context.Context, v domain.Vault, open *PluginOpen) error {
 	if v.ID == o.State.GetCurrentVault().ID {
 		return nil
 	}
 	if err := o.checkIdentity.Execute(v); err != nil {
 		return err
 	}
-	end, isInsidePluginOpen, err := o.shutdown.tryBeginSwitch(ctx)
+	end, isInsidePluginOpen, err := o.shutdown.tryBeginSwitch(open)
 	if err != nil {
 		return err
 	}
