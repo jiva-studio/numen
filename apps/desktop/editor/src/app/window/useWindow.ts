@@ -845,13 +845,7 @@ export const useWindow = () => {
     runCommand,
     ...menuApi,
     openCurrentVault: () => openPlacedTabs(base),
-    readNoteKind: async (path: string) => {
-      const kind = (await core.fileKinds([path])).get(path)
-      return {
-        noteType: kind?.type ?? '',
-        ...(kind?.properties ? { properties: kind.properties } : {}),
-      }
-    },
+    readNoteKind,
     isLayoutReady,
     ...getBootstrapApi(bootstrap),
     openSettings: (pluginId?: string, filter?: string) =>
