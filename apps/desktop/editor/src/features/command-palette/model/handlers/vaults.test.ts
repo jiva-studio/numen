@@ -107,6 +107,7 @@ describe('showing another vault', () => {
 
     await showVault('heat', one.on, words)
 
+    expect(words.vaultErrors.current).toBeTypeOf('string')
     expect(one.messages).toStrictEqual([{ text: words.vaultErrors.current, kind: 'error' }])
     expect(one.calls.reload).not.toHaveBeenCalled()
   })
