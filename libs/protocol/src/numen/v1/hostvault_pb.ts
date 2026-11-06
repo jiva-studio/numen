@@ -1445,8 +1445,8 @@ export type HostVaultServiceRenameNoteResponse = Message<"numen.v1.HostVaultServ
   move?: MoveResult | undefined;
 
   /**
-   * Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
-   * ALREADY_EXISTS, CONFLICT and the other per-note codes.
+   * Why the note was not renamed: MISSING, NOT_A_NOTE, INVALID_NAME,
+   * ALREADY_EXISTS, STALE and the other per-note codes.
    *
    * @generated from field: optional numen.v1.ErrorCode failure = 6;
    */
@@ -1583,7 +1583,7 @@ export type HostNoteRemoval = Message<"numen.v1.HostNoteRemoval"> & {
   brokenLinks: string[];
 
   /**
-   * Why this note was not removed: NOT_FOUND, or NOT_A_NOTE for a folder or a
+   * Why this note was not removed: MISSING, or NOT_A_NOTE for a folder or a
    * file that is not a note.
    *
    * @generated from field: optional numen.v1.ErrorCode failure = 4;

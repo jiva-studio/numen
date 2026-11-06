@@ -3272,8 +3272,8 @@ type HostVaultServiceRenameNoteResponse struct {
 	NameSource NameSource `protobuf:"varint,4,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
 	// Unset when the file kept its path.
 	Move *MoveResult `protobuf:"bytes,5,opt,name=move,proto3,oneof" json:"move,omitempty"`
-	// Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
-	// ALREADY_EXISTS, CONFLICT and the other per-note codes.
+	// Why the note was not renamed: MISSING, NOT_A_NOTE, INVALID_NAME,
+	// ALREADY_EXISTS, STALE and the other per-note codes.
 	Failure       *ErrorCode `protobuf:"varint,6,opt,name=failure,proto3,enum=numen.v1.ErrorCode,oneof" json:"failure,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3566,7 +3566,7 @@ type HostNoteRemoval struct {
 	TrashPath string `protobuf:"bytes,2,opt,name=trash_path,json=trashPath,proto3" json:"trash_path,omitempty"`
 	// The notes whose links now resolve to nothing.
 	BrokenLinks []string `protobuf:"bytes,3,rep,name=broken_links,json=brokenLinks,proto3" json:"broken_links,omitempty"`
-	// Why this note was not removed: NOT_FOUND, or NOT_A_NOTE for a folder or a
+	// Why this note was not removed: MISSING, or NOT_A_NOTE for a folder or a
 	// file that is not a note.
 	Failure       *ErrorCode `protobuf:"varint,4,opt,name=failure,proto3,enum=numen.v1.ErrorCode,oneof" json:"failure,omitempty"`
 	unknownFields protoimpl.UnknownFields
