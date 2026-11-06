@@ -21,9 +21,9 @@ var (
 	ErrLastVault = errors.New("host: the vault is the only one of the installation")
 	// ErrVaultShowing is what a removal gets for the vault the window shows.
 	ErrVaultShowing = errors.New("host: the window shows the vault")
-	// ErrVaultAsking is what an open gets when a tab holds changes the user has to decide on, so the
-	// window kept its vault.
-	ErrVaultAsking = errors.New("host: a tab holds changes the user has to decide on")
+	// ErrUnsavedChanges is what an open gets when the window has unsaved changes. The window keeps
+	// its vault.
+	ErrUnsavedChanges = errors.New("host: the window has unsaved changes")
 )
 
 // VaultEntry is a vault on the installation's list, and whether nothing is at its folder.
@@ -42,6 +42,7 @@ type VaultList interface {
 	// RemoveVault takes the vault off the list and out of the index, and returns its folder, which
 	// stays on the disk.
 	RemoveVault(ctx context.Context, id domain.VaultID) (folder string, err error)
-	// OpenVault makes the window show the vault. It returns before the window changes vault.
+	// OpenVault makes the window show the vault and returns once the window shows it. A window with
+	// unsaved changes is ErrUnsavedChanges.
 	OpenVault(ctx context.Context, id domain.VaultID) error
 }

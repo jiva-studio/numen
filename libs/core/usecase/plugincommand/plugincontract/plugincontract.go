@@ -189,7 +189,7 @@ var (
 	ErrNoKeyStore             = pluginport.ErrNoKeyStore
 	ErrNoProvisioner          = pluginport.ErrNoProvisioner
 	ErrNoWindow               = pluginport.ErrNoWindow
-	ErrVaultAsking            = pluginport.ErrVaultAsking
+	ErrUnsavedChanges         = pluginport.ErrUnsavedChanges
 	ErrInvalidFocus           = pluginport.ErrInvalidFocus
 	ErrPathTraversal          = pluginport.ErrPathTraversal
 	ErrPermissionDenied       = pluginport.ErrPermissionDenied

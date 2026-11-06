@@ -101,8 +101,9 @@ func (t *Tools) addVaultOpen(registry *tools.Registry) error {
 		Step:  tools.ByEffect,
 		Name:  "vault_open",
 		Title: "Open Vault",
-		Description: "Make the window show another vault, named by its name, path or identifier. The window " +
-			"switches after the answer, and this session's view of the vault it works on ends. Call it " +
+		Description: "Make the window show another vault, named by its name, path or identifier, and answer " +
+			"once the window shows it; this session's view of the vault it works on then ends. A window with " +
+			"unsaved changes keeps its vault and the answer is an error. Call it " +
 			"only when the user asks for it.",
 		Effect:  tools.ReadWrite,
 		Servers: []tools.Server{tools.Full},
@@ -153,7 +154,7 @@ func (t *Tools) openVault(ctx context.Context, in VaultOpenInput) (VaultOpenOutp
 		return VaultOpenOutput{}, err
 	}
 	if err := t.list.OpenVault(ctx, target.ID); err != nil {
-		return VaultOpenOutput{}, fmt.Errorf("open vault %s: %w", in.Vault, err)
+		return VaultOpenOutput{}, err
 	}
 	return VaultOpenOutput{ID: string(target.ID), Name: target.Name, Path: target.Path}, nil
 }

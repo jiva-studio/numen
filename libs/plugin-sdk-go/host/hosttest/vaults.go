@@ -2,6 +2,7 @@ package hosttest
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"sort"
 	"strconv"
@@ -128,6 +129,14 @@ func (v *Vault) RemoveVault(ctx context.Context, id domain.VaultID) (string, err
 	return target.vault.Path, nil
 }
 
+// SetUnsavedChanges makes OpenVault return host.ErrUnsavedChanges, as a window whose pages hold
+// unsaved changes does, and false lets it open vaults again.
+func (v *Vault) SetUnsavedChanges(hasUnsavedChanges bool) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	v.world.hasUnsavedChanges = hasUnsavedChanges
+}
+
 // OpenVault records the vault as the one the window shows; GetOpenedVault returns it.
 func (v *Vault) OpenVault(ctx context.Context, id domain.VaultID) error {
 	v.world.mu.Lock()
@@ -138,6 +147,9 @@ func (v *Vault) OpenVault(ctx context.Context, id domain.VaultID) error {
 	target, isKnown := v.findMember(id)
 	if !isKnown {
 		return host.ErrUnknownVault
+	}
+	if v.world.hasUnsavedChanges {
+		return fmt.Errorf("open vault %s: %w", id, host.ErrUnsavedChanges)
 	}
 	v.world.opened = target
 	return nil

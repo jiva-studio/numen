@@ -7,9 +7,9 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ErrVaultAsking is what OpenVault returns when a tab holds changes the user has to decide on, so
-// the window keeps its vault.
-var ErrVaultAsking = errors.New("a tab holds changes the user has to decide on")
+// ErrUnsavedChanges is what OpenVault returns when a page holds text it cannot write without the
+// user, or a request to the pages is open for a question. The window keeps its vault.
+var ErrUnsavedChanges = errors.New("the window has unsaved changes; save them and ask again")
 
 // PluginVaultList is the installation's list of vaults and the vault the window shows, as the
 // plugins that hold vault:manage change them. The window provides it; a host with no window has
@@ -20,9 +20,9 @@ type PluginVaultList interface {
 	RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error)
 	// RemoveVault takes the vault off the list and out of the index. The folder stays.
 	RemoveVault(ctx context.Context, id domain.VaultID) error
-	// OpenVault decides whether the window can show the vault and returns the change of vault, which
-	// the caller runs. A refusal is the error: ErrVaultAsking, or an unknown vault.
-	OpenVault(ctx context.Context, id domain.VaultID) (swap func(ctx context.Context) error, err error)
+	// OpenVault shows the vault in the window and returns once the window shows it. A rejected open
+	// is the error: ErrUnsavedChanges, ErrUnavailable, or an unknown vault.
+	OpenVault(ctx context.Context, id domain.VaultID) error
 	// IsMissing reports whether nothing is at the vault's folder.
 	IsMissing(v domain.Vault) bool
 }

@@ -57,7 +57,7 @@ func failVaults(code *v1.VaultsErrorCode) error {
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN:
 		return ErrUnknownVault
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING:
-		return ErrVaultAsking
+		return ErrUnsavedChanges
 	default:
 		return fmt.Errorf("host: the list of vaults was not changed, code %s", *code)
 	}
@@ -234,6 +234,9 @@ func (c *Client) OpenVault(ctx context.Context, id domain.VaultID) error {
 		return err
 	}
 	if err := failVaults(res.Msg.Failure); err != nil {
+		if detail := res.Msg.GetDetail(); detail != "" {
+			return fmt.Errorf("open vault %s: %w: %s", id, err, detail)
+		}
 		return fmt.Errorf("open vault %s: %w", id, err)
 	}
 	return nil

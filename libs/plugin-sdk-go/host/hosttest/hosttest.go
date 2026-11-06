@@ -94,6 +94,8 @@ type world struct {
 	members []*Vault
 	// opened is the vault OpenVault last opened, nil before any.
 	opened *Vault
+	// hasUnsavedChanges makes OpenVault return host.ErrUnsavedChanges.
+	hasUnsavedChanges bool
 }
 
 // Vault is the vault as the host names it: its identity, its name and where it is.
