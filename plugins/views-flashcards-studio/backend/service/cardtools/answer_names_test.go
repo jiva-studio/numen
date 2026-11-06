@@ -258,7 +258,7 @@ func TestCardToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 	})
 }
 
-func TestCardCurrentReturnsTheCardIDKey(t *testing.T) {
+func TestCardCurrentReturnsThePathCardIDAndTemplateNameKeys(t *testing.T) {
 	s, _ := newSession(t, vault())
 	s.toolContext = map[string]string{
 		"md.numen.views.flashcards.studio/deck":     "Rivers.md",
@@ -266,13 +266,19 @@ func TestCardCurrentReturnsTheCardIDKey(t *testing.T) {
 		"md.numen.views.flashcards.studio/template": "Recall",
 	}
 	answer := call[map[string]any](t, s, "card_current", map[string]any{})
-	requireKeys(t, "the answer of card_current", answer, []string{"deck", "cardId", "template"}, []string{"card"})
+	requireKeys(t, "the answer of card_current", answer, []string{"path", "cardId", "templateName"}, []string{"card", "deck", "template"})
 	if id, isText := answer["cardId"].(string); !isText || id != "w4r8t2mnqz" {
 		t.Errorf("cardId = %v, want w4r8t2mnqz", answer["cardId"])
 	}
+	if path, isText := answer["path"].(string); !isText || path != "Rivers.md" {
+		t.Errorf("path = %v, want Rivers.md", answer["path"])
+	}
+	if name, isText := answer["templateName"].(string); !isText || name != "Recall" {
+		t.Errorf("templateName = %v, want Recall", answer["templateName"])
+	}
 
 	schema := getToolSchema(t, s.registry, "card_current", true)
-	requireKeys(t, "the output schema of card_current", getSchemaProperties(t, schema), []string{"deck", "cardId", "template"}, []string{"card"})
+	requireKeys(t, "the output schema of card_current", getSchemaProperties(t, schema), []string{"path", "cardId", "templateName"}, []string{"card", "deck", "template"})
 }
 
 func TestCardAddReturnsTheTotalKey(t *testing.T) {
@@ -322,4 +328,89 @@ func TestCardToolInstructionsContainNoNarrativeMarker(t *testing.T) {
 			t.Errorf("the instructions match %s: %q", marker, listing.Instructions)
 		}
 	}
+}
+
+// getSectionedVault returns a card model and a deck of two sections, one card in each.
+func getSectionedVault() map[string]string {
+	return map[string]string{
+		"Animal.md": animalCardModel,
+		"Herd.md": "---\ntype: deck\n---\n\n" +
+			"# Camelids\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
+			"# Bovids\n\n## Bison ^p4r7t2wxk9\n\n[[Animal]]\n\n### Name\n\nBison\n",
+	}
+}
+
+func TestCardReadReturnsTheSectionIndexKey(t *testing.T) {
+	s, _ := newSession(t, getSectionedVault())
+	answer := call[map[string]any](t, s, "card_read", map[string]any{"path": "Herd.md"})
+	cardList := requireList(t, "answer[cards]", answer["cards"])
+	if len(cardList) != 2 {
+		t.Fatalf("cards = %v, want two", answer["cards"])
+	}
+	bison := requireObject(t, "cards[1]", cardList[1])
+	requireKeys(t, "a card of card_read", bison, []string{"sectionIndex"}, []string{"section"})
+	if index, isNumber := bison["sectionIndex"].(float64); !isNumber || index != 1 {
+		t.Errorf("sectionIndex = %v, want 1", bison["sectionIndex"])
+	}
+
+	schema := getToolSchema(t, s.registry, "card_read", true)
+	requireKeys(t, "the output schema of a card_read card", getSchemaProperties(t, schema, "cards"), []string{"sectionIndex"}, []string{"section"})
+}
+
+func TestCardReadSkipsTheCardsBeforeTheOffset(t *testing.T) {
+	s, _ := newSession(t, vault())
+	read := readCards(t, s, map[string]any{"path": "Animals.md", "offset": 1, "limit": 1})
+	if len(read.Cards) != 1 || read.Cards[0].CardID != alpaca {
+		t.Errorf("card_read with offset 1 returned %+v, want the card %s", read.Cards, alpaca)
+	}
+
+	input := getSchemaProperties(t, getToolSchema(t, s.registry, "card_read", false))
+	requireKeys(t, "the input schema of card_read", input, []string{"offset", "limit"}, []string{"from"})
+}
+
+func TestCardAddWritesTheCardIntoTheSectionIndex(t *testing.T) {
+	s, v := newSession(t, getSectionedVault())
+	call[map[string]any](t, s, "card_add", map[string]any{
+		"path": "Herd.md", "cardModel": "Animal", "sectionIndex": 0,
+		"values":      []map[string]string{{"field": "Name", "text": "Guanaco"}},
+		"fingerprint": deckFingerprint(t, s, "Herd.md"),
+	})
+	content := readVaultFile(t, v, "Herd.md")
+	guanaco, bovids := strings.Index(content, "## Guanaco"), strings.Index(content, "# Bovids")
+	if guanaco < 0 || bovids < 0 || guanaco > bovids {
+		t.Errorf("the card is not in section 0: %q", content)
+	}
+
+	input := getSchemaProperties(t, getToolSchema(t, s.registry, "card_add", false))
+	requireKeys(t, "the input schema of card_add", input, []string{"sectionIndex"}, []string{"section"})
+}
+
+func TestCardSectionRenameRenamesTheSectionAtTheSectionIndex(t *testing.T) {
+	s, v := newSession(t, getSectionedVault())
+	call[map[string]any](t, s, "card_section_rename", map[string]any{
+		"path": "Herd.md", "sectionIndex": 1, "name": "Cattle",
+		"fingerprint": deckFingerprint(t, s, "Herd.md"),
+	})
+	content := readVaultFile(t, v, "Herd.md")
+	if !strings.Contains(content, "# Camelids\n") || !strings.Contains(content, "# Cattle\n") || strings.Contains(content, "# Bovids") {
+		t.Errorf("section 1 was not renamed to Cattle: %q", content)
+	}
+
+	input := getSchemaProperties(t, getToolSchema(t, s.registry, "card_section_rename", false))
+	requireKeys(t, "the input schema of card_section_rename", input, []string{"sectionIndex"}, []string{"section"})
+}
+
+func TestCardSectionRemoveRemovesTheSectionAtTheSectionIndex(t *testing.T) {
+	s, v := newSession(t, getSectionedVault())
+	call[map[string]any](t, s, "card_section_remove", map[string]any{
+		"path": "Herd.md", "sectionIndex": 1,
+		"fingerprint": deckFingerprint(t, s, "Herd.md"),
+	})
+	content := readVaultFile(t, v, "Herd.md")
+	if !strings.Contains(content, "# Camelids\n") || strings.Contains(content, "# Bovids") {
+		t.Errorf("section 1 was not removed: %q", content)
+	}
+
+	input := getSchemaProperties(t, getToolSchema(t, s.registry, "card_section_remove", false))
+	requireKeys(t, "the input schema of card_section_remove", input, []string{"sectionIndex"}, []string{"section"})
 }
