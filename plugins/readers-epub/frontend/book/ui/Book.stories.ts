@@ -80,6 +80,8 @@ const activeReading =
       // How large the text is set belongs to whatever holds the reader, so the
       // story holds it, and presses its own way of setting it.
       const size = ref(1)
+      // A passage asked for, as a search hit asks for one; a story sends it as a `jump` event.
+      const target = ref<{ offset: number } | null>(null)
 
       // Keys also go to the element that hosts the reader. The story registers the
       // key handler on that element, and the book reports whether it handled the key.
@@ -97,8 +99,12 @@ const activeReading =
         markup: chapter.markup,
         span: chapter.span,
         highlights,
+        target,
         onMove: (to: number) => {
           offset.value = to
+        },
+        jump: (event: Event) => {
+          if (event instanceof CustomEvent) target.value = { offset: Number(event.detail) }
         },
         larger: () => {
           size.value *= 1.25
@@ -106,7 +112,7 @@ const activeReading =
       }
     },
     template: `
-      <div class="h-full" :data-front="offset">
+      <div class="h-full" :data-front="offset" @jump="jump">
         <button type="button" aria-label="Larger" class="sr-only" @click="larger">Larger</button>
         <Book
           ref="book"
@@ -117,6 +123,7 @@ const activeReading =
           :at="offset"
           :text-size="size"
           :highlights="highlights"
+          :target="target"
           @move="onMove"
         />
       </div>
@@ -713,6 +720,50 @@ export const NarrowedTo852Then691RightAfterATurn: Story = {
   decorators: [WIDE],
   render: activeReading(LONG_CHAPTER),
   play: resizedRightAfterATurn([852, 691]),
+}
+
+/**
+ * A passage asked for on the spread in front, in its second column, stays in front when the area
+ * narrows to one column and the passage falls on the next spread.
+ */
+export const TargetInFrontKeptAcrossAResize: Story = {
+  decorators: [WIDE],
+  render: activeReading(LONG_CHAPTER),
+  play: async ({ canvasElement }) => {
+    await waitForLayout(canvasElement)
+    for (let frame = 0; frame < 60; frame += 1) await waitForFrame()
+
+    const box = getArea(canvasElement).getBoundingClientRect()
+    const middle = box.left + box.width / 2
+    const inSecondColumn = getRunsOf(canvasElement).filter((run) => {
+      const rect = run.getClientRects()[0]
+      return rect !== undefined && rect.left > middle && rect.left < box.right
+    })
+    const offset = Number(inSecondColumn.at(-1)!.dataset['offset'])
+    const translated = getPaper(canvasElement).style.translate
+
+    canvasElement
+      .querySelector('[data-front]')!
+      .dispatchEvent(new CustomEvent('jump', { detail: offset }))
+    for (let frame = 0; frame < 4; frame += 1) await waitForFrame()
+    await expect(getPaper(canvasElement).style.translate).toBe(translated)
+    await expectRunInArea(canvasElement, offset)
+
+    getHolder(canvasElement).style.inlineSize = '640px'
+    await waitFor(
+      async () => {
+        const width = getArea(canvasElement).getBoundingClientRect().width
+        await expect(width).toBeLessThan(box.width * 0.6)
+        const shift = -Number.parseFloat(getPaper(canvasElement).style.translate)
+        const rest = shift % width
+        await expect(Math.min(rest, width - rest)).toBeLessThan(1)
+        await expectRunInArea(canvasElement, offset)
+      },
+      { timeout: ITS_OWN_PACE },
+    )
+    for (let frame = 0; frame < 20; frame += 1) await waitForFrame()
+    await expectRunInArea(canvasElement, offset)
+  },
 }
 
 /**
