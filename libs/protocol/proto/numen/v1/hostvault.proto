@@ -2,14 +2,18 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/file.proto";
 import "numen/v1/note.proto";
+import "numen/v1/shared.proto";
+import "numen/v1/vaults.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
 // HostVaultService is what the host answers for a plugin that works the vault
 // call to a permission: a call that reads needs vault:read and one that changes
-// anything needs vault:write. Every path is relative to the vault root and
-// written with forward slashes.
+// anything needs vault:write; a call that changes the list of vaults or the
+// vault the window shows needs vault:manage. Every path is relative to the
+// vault root and written with forward slashes.
 //
 // Numen-Vault works the vault of that identity instead, which is how a window
 // that shows no vault of its own, or a plugin counting every vault, reaches them.
@@ -105,6 +109,38 @@ service HostVaultService {
   // GetParseProblems lists what parsing each file of the vault turned up.
   rpc GetParseProblems(GetParseProblemsRequest) returns (GetParseProblemsResponse);
 
+  // GetVaultProblems runs the named checks of the vault (parse, frontmatter,
+  // ambiguous, dangling), or every check that is not opt-in when none is named.
+  // It needs vault:read.
+  rpc GetVaultProblems(GetVaultProblemsRequest) returns (GetVaultProblemsResponse);
+
+  // RenameNote gives a note another title and moves its file to the filename of
+  // that title, repairing the links that stop resolving. It needs vault:write.
+  rpc RenameNote(HostVaultServiceRenameNoteRequest) returns (HostVaultServiceRenameNoteResponse);
+
+  // MoveNotes moves notes to another folder, keeping their filenames, and
+  // repairs the links that stop resolving. It needs vault:write.
+  rpc MoveNotes(HostVaultServiceMoveNotesRequest) returns (HostVaultServiceMoveNotesResponse);
+
+  // RemoveNotes moves notes to the vault's trash. A folder is answered with
+  // NOT_A_NOTE. It needs vault:write.
+  rpc RemoveNotes(HostVaultServiceRemoveNotesRequest) returns (HostVaultServiceRemoveNotesResponse);
+
+  // AddVault adds a folder to the installation's list of vaults. It needs
+  // vault:manage.
+  rpc AddVault(HostVaultServiceAddVaultRequest) returns (HostVaultServiceAddVaultResponse);
+
+  // RenameVault changes the name of a vault on the list. It needs vault:manage.
+  rpc RenameVault(HostVaultServiceRenameVaultRequest) returns (HostVaultServiceRenameVaultResponse);
+
+  // RemoveVault takes a vault off the list and out of the index. The folder
+  // stays. It needs vault:manage.
+  rpc RemoveVault(HostVaultServiceRemoveVaultRequest) returns (HostVaultServiceRemoveVaultResponse);
+
+  // OpenVault makes the window show another vault. It answers before the window
+  // changes vault. It needs vault:manage.
+  rpc OpenVault(HostVaultServiceOpenVaultRequest) returns (HostVaultServiceOpenVaultResponse);
+
   // ReadCache reads what the plugin kept for this vault under a name. The cache
   // belongs to the installation and not to the vault, and can be made again.
   rpc ReadCache(ReadCacheRequest) returns (ReadCacheResponse);
@@ -176,6 +212,8 @@ message HostVaultInfo {
   string id = 1;
   string name = 2;
   string path = 3;
+  // Set when nothing is at the path.
+  bool is_missing = 4;
 }
 
 message ListHostVaultsResponse {
@@ -282,6 +320,8 @@ message ScanFilesResponse {
 message HostNoteRef {
   string path = 1;
   string title = 2;
+  // The identifier written in the note's frontmatter, empty when it has none.
+  string id = 3;
 }
 
 message GetNoteRefsRequest {
@@ -466,6 +506,139 @@ message HostParseProblem {
 message GetParseProblemsResponse {
   HostVaultErrorCode error = 1;
   repeated HostParseProblem problems = 2;
+}
+
+message GetVaultProblemsRequest {
+  // The checks to run. Empty runs every check that is not opt-in.
+  repeated string checks = 1;
+}
+
+// HostVaultProblem is something a check found in a vault.
+message HostVaultProblem {
+  // The note to open to resolve the problem.
+  string path = 1;
+  // The check that found it.
+  string check = 2;
+  string detail = 3;
+  // The target of the link the problem is about: its scheme and its value.
+  string target_scheme = 4;
+  string target_value = 5;
+  // The notes an ambiguous link could reach.
+  repeated string candidates = 6;
+}
+
+message GetVaultProblemsResponse {
+  HostVaultErrorCode error = 1;
+  repeated HostVaultProblem problems = 2;
+  // The checks that ran.
+  repeated string ran = 3;
+}
+
+message HostVaultServiceRenameNoteRequest {
+  string path = 1;
+  string title = 2;
+}
+
+message HostVaultServiceRenameNoteResponse {
+  HostVaultErrorCode error = 1;
+  // The path of the note after the rename.
+  string path = 2;
+  string title = 3;
+  // Where the title is kept: the frontmatter or the filename.
+  NameSource name_source = 4;
+  // Unset when the file kept its path.
+  optional MoveResult moved = 5;
+  // Why the note was not renamed: MISSING, NOT_A_NOTE, INVALID_NAME,
+  // ALREADY_EXISTS, STALE and the other per-note codes.
+  optional ErrorCode failure = 6;
+}
+
+message HostVaultServiceMoveNotesRequest {
+  // At most 50 paths.
+  repeated string paths = 1;
+  // Relative to the vault root. Empty is the root.
+  string folder = 2;
+}
+
+// HostNoteMove is the outcome of moving one note.
+message HostNoteMove {
+  // From is always set; to only when the note moved.
+  MoveResult moved = 1;
+  // Why this note did not move.
+  optional ErrorCode failure = 2;
+}
+
+message HostVaultServiceMoveNotesResponse {
+  HostVaultErrorCode error = 1;
+  // One per path, in the order of the request.
+  repeated HostNoteMove moves = 2;
+}
+
+message HostVaultServiceRemoveNotesRequest {
+  // At most 50 paths.
+  repeated string paths = 1;
+}
+
+// HostNoteRemoval is the outcome of removing one note.
+message HostNoteRemoval {
+  string path = 1;
+  // The path of the file in the trash.
+  string trashed = 2;
+  // The notes whose links now resolve to nothing.
+  repeated string dangling = 3;
+  // Why this note was not removed: MISSING, or NOT_A_NOTE for a folder or a
+  // file that is not a note.
+  optional ErrorCode failure = 4;
+}
+
+message HostVaultServiceRemoveNotesResponse {
+  HostVaultErrorCode error = 1;
+  // One per path, in the order of the request.
+  repeated HostNoteRemoval removals = 2;
+}
+
+message HostVaultServiceAddVaultRequest {
+  // The folder, absolute on this machine.
+  string root = 1;
+  // Empty takes the name of the folder.
+  string name = 2;
+}
+
+message HostVaultServiceAddVaultResponse {
+  HostVaultErrorCode error = 1;
+  Vault vault = 2;
+  optional VaultsErrorCode failure = 3;
+}
+
+message HostVaultServiceRenameVaultRequest {
+  string id = 1;
+  string name = 2;
+}
+
+message HostVaultServiceRenameVaultResponse {
+  HostVaultErrorCode error = 1;
+  Vault vault = 2;
+  optional VaultsErrorCode failure = 3;
+}
+
+message HostVaultServiceRemoveVaultRequest {
+  string id = 1;
+}
+
+message HostVaultServiceRemoveVaultResponse {
+  HostVaultErrorCode error = 1;
+  // The folder of the vault, which stays on the disk.
+  string path = 2;
+  optional VaultsErrorCode failure = 3;
+}
+
+message HostVaultServiceOpenVaultRequest {
+  string id = 1;
+}
+
+message HostVaultServiceOpenVaultResponse {
+  HostVaultErrorCode error = 1;
+  optional VaultsErrorCode failure = 2;
 }
 
 message ReadCacheRequest {
