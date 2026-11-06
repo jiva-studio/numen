@@ -9,19 +9,17 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
-	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
 // Texts is the text versions of the vaults, for the plugins that call the host. Each call works
 // the vault it is given. Which version is live is decided for the file as it is now.
 type Texts struct {
 	versions *textversion.Versions
-	readers  vaultport.VaultReaders
 }
 
-// NewTexts makes the text versions of the vaults, read through readers.
-func NewTexts(versions *textversion.Versions, readers vaultport.VaultReaders) Texts {
-	return Texts{versions: versions, readers: readers}
+// NewTexts makes the text versions of the vaults.
+func NewTexts(versions *textversion.Versions) Texts {
+	return Texts{versions: versions}
 }
 
 // PutVersion records a version a plugin made of a file of the vault.
@@ -40,15 +38,11 @@ func (p Texts) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path
 // ListVersions lists the versions of a file of the vault and names the live one for the file's
 // current content.
 func (p Texts) ListVersions(ctx context.Context, v domain.Vault, path string) (pluginport.PluginTextListing, error) {
-	reader, err := p.readers.Open(v)
-	if err != nil {
-		return pluginport.PluginTextListing{}, err
-	}
-	raw, err := reader.Read(ctx, path)
+	fileHash, err := p.versions.GetFileHash(ctx, v, path)
 	if err != nil {
 		return pluginport.PluginTextListing{}, fmt.Errorf("%w: %w", textport.ErrNoText, err)
 	}
-	listing, err := p.versions.ListVersions(ctx, v, path, domain.HashContent(raw))
+	listing, err := p.versions.ListVersions(ctx, v, path, fileHash)
 	if err != nil {
 		return pluginport.PluginTextListing{}, err
 	}

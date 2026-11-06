@@ -570,7 +570,7 @@ func (u Index) open(v domain.Vault) (openVault, error) {
 		return openVault{}, err
 	}
 	if u.texts == nil {
-		return openVault{files: files, texts: noTexts{}}, nil
+		return openVault{files: files, texts: noTexts{files: files}}, nil
 	}
 	texts, err := u.texts.Open(v)
 	if err != nil {
@@ -581,7 +581,19 @@ func (u Index) open(v domain.Vault) (openVault, error) {
 
 // noTexts is a vault with no text versions: every file has no text, and no
 // text is requested.
-type noTexts struct{}
+type noTexts struct {
+	files vaultport.VaultReader
+}
+
+// GetFileHash hashes the file from a stream on every call: with no versions there is no record to keep.
+func (t noTexts) GetFileHash(ctx context.Context, path string) (_ string, err error) {
+	file, err := t.files.Open(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	defer func() { err = errors.Join(err, file.Close()) }()
+	return domain.HashReader(file)
+}
 
 func (noTexts) FindLiveVersion(context.Context, string, string) (domain.TextVersionID, error) {
 	return "", textport.ErrNoText

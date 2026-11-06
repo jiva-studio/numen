@@ -26,6 +26,8 @@ type TextReaders interface {
 // VaultTexts reads the text of one vault and requests text for files that have none.
 type VaultTexts interface {
 	Texts
+	// GetFileHash is domain.HashContent of the file as it is now.
+	GetFileHash(ctx context.Context, path string) (string, error)
 	// RequestText requests text for the file from every enabled plugin that runs
 	// automatically and accepts the file. A file with a live version is not requested.
 	RequestText(ctx context.Context, path, fileHash string) error

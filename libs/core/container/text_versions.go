@@ -50,7 +50,7 @@ func (c Config) SetPluginTexts() {
 		host.SetPluginTexts(nil)
 		return
 	}
-	host.SetPluginTexts(hosttext.NewTexts(c.TextVersions, c.VaultReaders()))
+	host.SetPluginTexts(hosttext.NewTexts(c.TextVersions))
 }
 
 // OpenPluginData is the folders plugins keep in a vault's store and the records of their text

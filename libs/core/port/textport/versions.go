@@ -2,6 +2,7 @@ package textport
 
 import (
 	"context"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -17,6 +18,21 @@ type VersionRepository interface {
 	RemoveVersion(ctx context.Context, path string, id domain.TextVersionID) error
 	// RemovePluginVersions removes every version a plugin made, and returns them.
 	RemovePluginVersions(ctx context.Context, pluginID string) ([]domain.TextVersion, error)
+	// FindFileHash is the hash recorded for the file at the path, and false where none is.
+	FindFileHash(ctx context.Context, path string) (FileHash, bool, error)
+	// SaveFileHash records the hash of a file, replacing the record of its path.
+	SaveFileHash(ctx context.Context, record FileHash) error
+}
+
+// FileHash is the hash of a vault file's bytes, recorded with the file's stat at
+// the time it was hashed. RecordTime is when the record was written.
+type FileHash struct {
+	Path       string
+	Hash       string
+	Size       int64
+	ModTime    time.Time
+	FileID     domain.FileID
+	RecordTime time.Time
 }
 
 // VersionRepositories opens the versions of one vault.

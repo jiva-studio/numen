@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
 // MenuEntry is one entry of a file's menu: a command a plugin declares, offered
@@ -38,18 +37,15 @@ type FileMenu struct {
 	versions *Versions
 	commands pluginport.PluginCommands
 	types    contenttypeport.ContentTypeTable
-	readers  vaultport.VaultReaders
 }
 
-// NewFileMenu is the menu the plugin commands make of the files the readers open,
-// where the table gives the type of a file.
-func NewFileMenu(
-	versions *Versions, commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable, readers vaultport.VaultReaders,
-) (*FileMenu, error) {
-	if versions == nil || commands == nil || types == nil || readers == nil {
-		return nil, errors.New("a file menu needs text versions, plugin commands, a content type table and vault readers")
+// NewFileMenu is the menu the plugin commands make of the vault files, where the
+// table gives the type of a file.
+func NewFileMenu(versions *Versions, commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable) (*FileMenu, error) {
+	if versions == nil || commands == nil || types == nil {
+		return nil, errors.New("a file menu needs text versions, plugin commands and a content type table")
 	}
-	return &FileMenu{versions: versions, commands: commands, types: types, readers: readers}, nil
+	return &FileMenu{versions: versions, commands: commands, types: types}, nil
 }
 
 // GetMenu is what the file's menu offers. A file is read and hashed only when
@@ -87,15 +83,11 @@ func (u *FileMenu) findLiveVersion(ctx context.Context, v domain.Vault, path str
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
 	}
-	reader, err := u.readers.Open(v)
-	if err != nil {
-		return domain.TextVersion{}, false, err
-	}
-	raw, err := reader.Read(ctx, path)
+	fileHash, err := u.versions.GetFileHash(ctx, v, path)
 	if err != nil {
 		return domain.TextVersion{}, false, fmt.Errorf("read %s: %w", path, err)
 	}
-	return u.versions.findLive(ctx, v, versions, domain.HashContent(raw))
+	return u.versions.findLive(ctx, v, versions, fileHash)
 }
 
 // hasRequiredArgument reports whether the command cannot run without a value a menu does not give.

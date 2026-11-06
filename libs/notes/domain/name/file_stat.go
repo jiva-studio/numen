@@ -28,7 +28,15 @@ type FileStat struct {
 	// edge: the index and the wire carry nanoseconds since the epoch, and a
 	// stamp in seconds put here matches nothing a walk took.
 	ModTime time.Time
+	// FileID identifies the file on its file system: the inode on Unix. A
+	// stat of one file reports it; a walk, the index and a reader with no such
+	// number leave it zero.
+	FileID FileID
 }
+
+// FileID is the number a file system gives a file, which a rename keeps and a
+// replacement of the file does not.
+type FileID uint64
 
 // IsUnchanged reports whether the file can be skipped. Size and modification
 // time are the invalidation key; content is not hashed during a walk, since

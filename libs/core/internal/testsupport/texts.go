@@ -111,3 +111,11 @@ func (t vaultTexts) IsTextSource(ctx context.Context, path string) (bool, error)
 	_, err := t.read(ctx, path)
 	return err == nil, nil
 }
+
+func (t vaultTexts) GetFileHash(ctx context.Context, path string) (string, error) {
+	raw, err := t.files.Read(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	return domain.HashContent(raw), nil
+}

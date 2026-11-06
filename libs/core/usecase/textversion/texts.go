@@ -130,3 +130,7 @@ func (t vaultTexts) RequestText(ctx context.Context, path, fileHash string) erro
 func (t vaultTexts) IsTextSource(ctx context.Context, path string) (bool, error) {
 	return t.versions.IsTextSource(ctx, t.vault, path)
 }
+
+func (t vaultTexts) GetFileHash(ctx context.Context, path string) (string, error) {
+	return t.versions.GetFileHash(ctx, t.vault, path)
+}

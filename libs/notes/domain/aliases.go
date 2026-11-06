@@ -10,6 +10,7 @@ type (
 	// From name subpackage
 	SourceKind = name.SourceKind
 	FileStat   = name.FileStat
+	FileID     = name.FileID
 )
 
 const (

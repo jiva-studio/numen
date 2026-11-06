@@ -43,3 +43,11 @@ func (r vaultVersions) RemoveVersion(ctx context.Context, path string, id domain
 func (r vaultVersions) RemovePluginVersions(ctx context.Context, pluginID string) ([]domain.TextVersion, error) {
 	return r.repo.RemovePluginVersions(ctx, r.vault, pluginID)
 }
+
+func (r vaultVersions) FindFileHash(ctx context.Context, path string) (textport.FileHash, bool, error) {
+	return r.repo.FindFileHash(ctx, r.vault, path)
+}
+
+func (r vaultVersions) SaveFileHash(ctx context.Context, record textport.FileHash) error {
+	return r.repo.SaveFileHash(ctx, r.vault, record)
+}

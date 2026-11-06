@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"crypto/sha256"
 	"encoding/hex"
+	"io"
 	"slices"
 	"strings"
 	"time"
@@ -55,6 +56,15 @@ func (v TextVersion) IsFromFile() bool { return v.Source == "" }
 func HashContent(raw []byte) string {
 	sum := sha256.Sum256(raw)
 	return hex.EncodeToString(sum[:])
+}
+
+// HashReader is HashContent of the bytes the reader gives, read as a stream.
+func HashReader(r io.Reader) (string, error) {
+	raw, err := io.ReadAll(r)
+	if err != nil {
+		return "", err
+	}
+	return HashContent(raw), nil
 }
 
 // IsChainValid reports whether every source in a version's chain, down to the
