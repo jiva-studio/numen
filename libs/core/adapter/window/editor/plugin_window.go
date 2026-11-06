@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -82,26 +83,26 @@ func (w pluginWindow) ReadOpenTabs(context.Context) (domain.OpenTabs, error) {
 	return w.state.GetOpenTabs(), nil
 }
 
-// activationBound is how long ActivateTab waits for the window to report the tab active.
-const activationBound = 2 * time.Second
+// defaultTabActivationBound is the wait of ActivateTab when State.TabActivationBound is zero.
+const defaultTabActivationBound = 2 * time.Second
 
 func (w pluginWindow) ActivateTab(ctx context.Context, id string) (domain.OpenTabs, error) {
 	if _, err := w.getVault(); err != nil {
 		return domain.OpenTabs{}, err
 	}
+	report := w.state.openTabsReports.wait()
 	open := w.state.GetOpenTabs()
 	if !slices.ContainsFunc(open.Tabs, func(tab domain.Tab) bool { return tab.ID == id }) {
 		return domain.OpenTabs{}, fmt.Errorf("editor: no open tab has id %q: %w", id, fs.ErrNotExist)
 	}
-	if open.ActiveID == id {
-		return open, nil
-	}
-	bound, stop := context.WithTimeout(ctx, activationBound)
-	defer stop()
-	report := w.state.openTabsReports.wait()
 	if err := w.state.GetWindow().ActivateTab(ctx, id); err != nil {
 		return domain.OpenTabs{}, err
 	}
+	if open.ActiveID == id {
+		return open, nil
+	}
+	bound, stop := context.WithTimeout(ctx, cmp.Or(w.state.TabActivationBound, defaultTabActivationBound))
+	defer stop()
 	for {
 		select {
 		case <-report:

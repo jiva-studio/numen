@@ -297,10 +297,10 @@ func (h *workspaceHandler) WatchFocus(
 	_ *connect.Request[v1.WatchFocusRequest],
 	out *connect.ServerStream[v1.WatchFocusResponse],
 ) error {
-	places, isPlacesDone := h.state.Places.subscribe()
-	defer isPlacesDone()
-	tabIDs, isTabIDsDone := h.state.TabIDs.subscribe()
-	defer isTabIDsDone()
+	places, stopPlaces := h.state.Places.subscribe()
+	defer stopPlaces()
+	tabIDs, stopTabIDs := h.state.TabIDs.subscribe()
+	defer stopTabIDs()
 
 	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()

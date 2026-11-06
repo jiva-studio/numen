@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -81,22 +82,40 @@ func addWindowFocusTab(registry *tools.Registry, on Host) error {
 		if in.TabID == "" {
 			return WindowFocusTabOutput{}, errMissingTabID
 		}
-		if on.Window == nil {
-			return WindowFocusTabOutput{}, host.ErrNoWindow
-		}
-		tab, activeID, err := on.Window.ActivateTab(ctx, in.TabID)
-		if errors.Is(err, host.ErrNotExist) {
-			return WindowFocusTabOutput{}, fmt.Errorf("no open tab has id %q", in.TabID)
-		}
-		if err != nil {
-			return WindowFocusTabOutput{}, err
-		}
-		info, err := newTabInfo(tab, activeID)
+		info, err := activateWindowTab(ctx, on, in.TabID)
 		if err != nil {
 			return WindowFocusTabOutput{}, err
 		}
 		return WindowFocusTabOutput{Tab: info}, nil
 	})
+}
+
+// activateWindowTab makes the open tab with the id the active tab and answers it as the window
+// reports it. A tab the window has not reported, or one whose state cannot be read, is an error,
+// and the window is not asked.
+func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error) {
+	if on.Window == nil {
+		return TabInfo{}, host.ErrNoWindow
+	}
+	open, _, err := on.Window.ReadOpenTabs(ctx)
+	if err != nil {
+		return TabInfo{}, err
+	}
+	index := slices.IndexFunc(open, func(tab host.OpenTab) bool { return tab.ID == id })
+	if index < 0 {
+		return TabInfo{}, fmt.Errorf("no open tab has id %q", id)
+	}
+	if _, err := readTabLocation(open[index]); err != nil {
+		return TabInfo{}, err
+	}
+	tab, activeID, err := on.Window.ActivateTab(ctx, id)
+	if errors.Is(err, host.ErrNotExist) {
+		return TabInfo{}, fmt.Errorf("no open tab has id %q", id)
+	}
+	if err != nil {
+		return TabInfo{}, err
+	}
+	return newTabInfo(tab, activeID)
 }
 
 // focusFile opens the file in the window at the passages and highlights them.

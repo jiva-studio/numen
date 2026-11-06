@@ -64,16 +64,16 @@ func readPositiveInt(raw json.RawMessage, target *int) error {
 
 // readSelectionStart reads the start of a selection saved as [start, end] seconds.
 func readSelectionStart(raw json.RawMessage, target **float64) error {
-	var selection []float64
+	var selection []*float64
 	if err := json.Unmarshal(raw, &selection); err != nil || len(selection) == 0 {
 		return errNotSelection
 	}
 	for _, seconds := range selection {
-		if seconds < 0 {
+		if seconds == nil || *seconds < 0 {
 			return errNotSelection
 		}
 	}
-	*target = &selection[0]
+	*target = selection[0]
 	return nil
 }
 
