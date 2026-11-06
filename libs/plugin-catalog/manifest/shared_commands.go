@@ -11,3 +11,15 @@ func IsSharedCommand(id string) bool {
 	}
 	return false
 }
+
+// GetSharedCommandArguments returns the arguments the shared command of the full id takes, as
+// commands.json declares them once for every handler.
+func GetSharedCommandArguments(id string) []CommandArgument {
+	switch id {
+	case "app:link.import":
+		return []CommandArgument{
+			{Name: "address", Title: "Web address", Type: "string", IsRequired: true},
+		}
+	}
+	return nil
+}

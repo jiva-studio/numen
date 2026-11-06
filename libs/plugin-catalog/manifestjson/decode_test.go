@@ -23,7 +23,7 @@ func TestReadManifest(t *testing.T) {
 		"backend": {
 			"entrypoint": "bin/engines.ocr"
 		},
-		"services": ["numen.v1.TextProviderService"],
+		"services": ["md.numen.engines.ocr"],
 		"frontend": {},
 		"settings": [
 			{
@@ -61,7 +61,7 @@ func TestReadManifest(t *testing.T) {
 	if !m.IsActivatedByAnyEvent() {
 		t.Errorf("expected activation on every event")
 	}
-	if !m.HasService("numen.v1.TextProviderService") || !m.HasFrontend() {
+	if !m.HasService("md.numen.engines.ocr") || !m.HasFrontend() {
 		t.Errorf("expected the service and the frontend")
 	}
 }

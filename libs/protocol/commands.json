@@ -1,5 +1,5 @@
 {
-  "about": "The shared commands of the application. A shared command does nothing by itself: a plugin handles it with an entry of contributes.handlers and registers the handler under the id of the command. Run over a target, a command with one matching handler runs it, and a command with several offers the matching handlers as its items. tools/commands.mjs writes the Go and TypeScript lists from this file.",
+  "about": "The shared commands of the application. A shared command does nothing by itself: a plugin handles it with an entry of contributes.handlers and registers the handler under the id of the command. Run over a target, a command with one matching handler runs it, and a command with several offers the matching handlers as its items. `arguments` are declared once, as a manifest command declares them; the palette asks for them and the core checks them for every handler. tools/commands.mjs writes the Go and TypeScript lists from this file.",
   "commands": [
     {
       "id": "app:file.createText",
@@ -14,7 +14,15 @@
     {
       "id": "app:link.import",
       "title": "Import link",
-      "about": "creates a link note from a web address"
+      "about": "creates a link note from a web address",
+      "arguments": [
+        {
+          "name": "address",
+          "title": "Web address",
+          "type": "string",
+          "required": true
+        }
+      ]
     },
     {
       "id": "app:link.downloadMedia",

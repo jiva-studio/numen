@@ -1,7 +1,6 @@
 package plugincommand_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -40,7 +39,7 @@ func TestRun_RefusesAHandlerWhoseConditionDoesNotHold(t *testing.T) {
 	plugins := &handlingPlugins{}
 	commands := plugincommand.NewCommands(plugins, getTypes(), nil)
 
-	_, err := commands.Run.Execute(context.Background(), domain.Vault{}, plugincommand.Call{
+	_, err := commands.Run.Execute(t.Context(), domain.Vault{}, plugincommand.Call{
 		PluginID: "md.numen.cards", Command: "app:file.createText", Path: "notes/tides.md",
 	})
 	if !errors.Is(err, plugincommand.ErrBadArguments) || len(plugins.calls) != 0 {

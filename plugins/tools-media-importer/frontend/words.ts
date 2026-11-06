@@ -7,6 +7,8 @@ export const WORDS = {
   textDeleted: 'The text of this link was deleted.',
   fetchText: 'Download text again',
   copyVideo: 'Download video',
+  video: 'Video',
+  audio: 'Audio',
   deleteCopy: 'Delete downloaded video',
   play: 'Play',
   pause: 'Pause',

@@ -184,8 +184,9 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	if !condition.NamesTarget() {
 		return nil
 	}
-	noteType := u.readNoteType(ctx, v, condition, call.Path)
+	noteType, properties := u.readNote(ctx, v, condition, call.Path)
 	values := pluginport.GetTargetValues(call.Path, string(u.getContentType(call.Path)), string(noteType))
+	values["target.properties"] = properties
 	if condition.Evaluate(values) == pluginport.ConditionFalse {
 		return fmt.Errorf("%w: %s is not available over %q, as its condition %q does not hold there",
 			ErrBadArguments, declared.ID, call.Path, declared.When)
@@ -245,17 +246,20 @@ func (u Run) getContentType(path string) domain.ContentType {
 	return u.types.GetContentType(path)
 }
 
-// readNoteType is the type of the note at the path where the condition names it, and no type where
-// it does not, where the vault has no readers, or where the note cannot be read.
-func (u Run) readNoteType(ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, path string) domain.NoteType {
-	if !slices.Contains(condition.Names(), "target.noteType") || u.readers == nil || path == "" {
-		return ""
+// readNote is the type and the frontmatter of the note at the path where the condition names either,
+// and none where it does not, where the vault has no readers, or where the note cannot be read.
+func (u Run) readNote(
+	ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, path string,
+) (domain.NoteType, map[string]any) {
+	names := condition.Names()
+	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || u.readers == nil || path == "" {
+		return "", map[string]any{}
 	}
-	noteType, err := vaultport.ReadNoteType(ctx, u.readers, v, path)
+	noteType, properties, err := vaultport.ReadNote(ctx, u.readers, v, path)
 	if err != nil {
-		return ""
+		return "", map[string]any{}
 	}
-	return noteType
+	return noteType, properties
 }
 
 // ListContentTypes gives the content type of a file by its extension, lowercase and without the dot,
@@ -284,3 +288,6 @@ func NamesTarget(command Command) bool {
 	condition, err := pluginport.ParseCondition(command.When)
 	return err == nil && condition.NamesTarget()
 }
+
+// IsSharedCommand reports whether the full id is a shared command, which the handlers of plugins run.
+func IsSharedCommand(id string) bool { return pluginport.IsSharedCommand(id) }

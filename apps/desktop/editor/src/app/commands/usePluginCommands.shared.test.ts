@@ -43,3 +43,15 @@ describe('a shared command in the palette', () => {
     expect(entry?.isAvailable?.({ ...target, path: '', file: '' })).toBe(false)
   })
 })
+
+describe('a shared command that asks for a value', () => {
+  it('is not offered with a pick list of its handlers', () => {
+    const importer = { ...HANDLER, command: 'app:link.import', title: 'Import link' }
+
+    const entries = usePluginCommands({} as VaultCore, createHost(), undefined, () => [
+      importer,
+    ]).getPaletteEntries()
+
+    expect(entries).toStrictEqual([])
+  })
+})

@@ -149,7 +149,7 @@ func (f *configurableFetcher) GetText(context.Context, string, download.Preferre
 	return download.Text{Producer: "article", Title: "T", Prose: "prose"}, nil
 }
 
-func (f *configurableFetcher) Download(ctx context.Context, _ string, into io.Writer) (download.Copy, error) {
+func (f *configurableFetcher) Download(ctx context.Context, _ string, _ download.Media, into io.Writer) (download.Copy, error) {
 	if f.startedCh != nil {
 		close(f.startedCh)
 	}
@@ -251,7 +251,7 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	links.StartCopy(t.Context(), foundLink)
+	links.StartCopy(t.Context(), foundLink, download.MediaVideo)
 	<-cf.startedCh
 	ans, callErr := commands.RunCommand(t.Context(), command.Request{Command: commandDownloadMedia, Path: res.OpenedPath})
 	close(cf.blockCh)

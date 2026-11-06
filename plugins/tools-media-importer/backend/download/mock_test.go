@@ -29,11 +29,11 @@ func TestTheMockCopiesAClipOfAVideoSiteAndPublishesItsCaptions(t *testing.T) {
 	if err != nil || text.Producer != "captions" || text.Length != 3000 || !slices.Equal(text.Cues, wantCues) {
 		t.Fatalf("the captions are %+v (%v)", text, err)
 	}
-	if _, err := mock.Download(t.Context(), clip, failingWriter{}); err == nil {
+	if _, err := mock.Download(t.Context(), clip, MediaVideo, failingWriter{}); err == nil {
 		t.Fatal("expected error from failing writer")
 	}
 	var into bytes.Buffer
-	copied, err := mock.Download(t.Context(), clip, &into)
+	copied, err := mock.Download(t.Context(), clip, MediaAudio, &into)
 	if err != nil {
 		t.Fatal(err)
 	}

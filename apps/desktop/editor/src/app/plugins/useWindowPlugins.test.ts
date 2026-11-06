@@ -257,12 +257,12 @@ describe('the settings and notices a plugin is given', () => {
     ])
     await pluginHost.executeCommand('app:file.createText', { ...target, type: '' })
 
-    expect(runBackendHandler).toHaveBeenCalledWith(
-      'md.numen.pages',
-      'app:file.createText',
-      expect.objectContaining({ path: 'scan.pdf' }),
-      undefined,
-    )
+    expect(runBackendHandler).toHaveBeenCalledWith({
+      pluginId: 'md.numen.pages',
+      command: 'app:file.createText',
+      target: expect.objectContaining({ path: 'scan.pdf' }),
+      argument: undefined,
+    })
   })
 
   it('lists the items of a handler the core lists them for', async () => {

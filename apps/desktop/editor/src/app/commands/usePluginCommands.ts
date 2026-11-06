@@ -56,12 +56,17 @@ export function usePluginCommands(
 ) {
   const isWhenAvailable = createWhenAvailability(context)
   const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []
-  /** The shared commands an enabled plugin handles; their handlers are their items. */
+  /**
+   * The shared commands an enabled plugin handles that run over a file with no value asked for;
+   * their handlers are their items.
+   */
   const getSharedCommands = (): readonly PluginPaletteCommand[] => {
     const handlers = getHandlers() ?? []
-    return SHARED_COMMANDS.filter(({ id }) => handlers.some((one) => one.command === id)).map(
-      ({ id, title }) => ({ id, title }),
-    )
+    return SHARED_COMMANDS.filter(
+      (shared) =>
+        shared.arguments.every((one: { readonly isRequired: boolean }) => !one.isRequired) &&
+        handlers.some((one) => one.command === shared.id),
+    ).map(({ id, title }) => ({ id, title }))
   }
   const getSharedEntries = () =>
     getSharedCommands().map((cmd) => ({

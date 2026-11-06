@@ -84,7 +84,7 @@ export function useLink(links: Links | undefined, path: string) {
     error,
     actions: {
       fetchText: () => run(() => activeLinks.fetchText(path, true)),
-      copyVideo: () => run(() => activeLinks.copyVideo(path)),
+      copyVideo: () => run(() => activeLinks.copyMedia(path, 'video')),
       deleteCopy: async () => {
         await run(() => activeLinks.deleteCopy(path))
         await load()

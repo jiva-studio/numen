@@ -51,7 +51,10 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
   })
   const getWhenValues = (target: CommandTarget | undefined): WhenValues => ({
     ...getWindowValues(),
-    ...getTargetValues(target, whenContext.getContentTypes(), target?.noteType, target?.properties),
+    ...getTargetValues(target, whenContext.getContentTypes(), {
+      type: target?.noteType,
+      properties: target?.properties,
+    }),
   })
   const findCommand = createSlotCommandFinder({
     getWhenValues,

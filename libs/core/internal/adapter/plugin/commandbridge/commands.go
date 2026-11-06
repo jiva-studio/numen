@@ -83,7 +83,10 @@ func (c Commands) ListHandlers() []pluginport.PluginCommandEntry {
 		for _, handler := range plugin.Manifest.Contributes.Handlers {
 			found = append(found, pluginport.PluginCommandEntry{
 				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name,
-				Command: pluginport.PluginCommand{ID: handler.Command, Title: handler.Title, When: handler.When},
+				Command: pluginport.PluginCommand{
+					ID: handler.Command, Title: handler.Title, When: handler.When,
+					Arguments: pluginport.GetSharedCommandArguments(handler.Command),
+				},
 			})
 		}
 	}

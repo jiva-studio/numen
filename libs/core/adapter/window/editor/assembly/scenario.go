@@ -5,6 +5,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
@@ -20,6 +21,9 @@ type textScenarioAssembly interface {
 
 type fileScenarioAssembly interface {
 	OpenPluginFile() *file.OpenPluginFile
+	// OpenTriggers is the triggers of the enabled plugins over the files of a vault, nil where the
+	// installation runs no plugins.
+	OpenTriggers() *trigger.Triggers
 	GetMediaType() *file.GetMediaType
 	GetRefresh() vaults.Refresh
 }

@@ -41,11 +41,12 @@ export interface FetchTextRequest {
 
 export type FetchTextResponse = Record<string, never>
 
-export interface CopyVideoRequest {
+export interface CopyMediaRequest {
   readonly path: string
+  readonly kind: 'video' | 'audio'
 }
 
-export type CopyVideoResponse = Record<string, never>
+export type CopyMediaResponse = Record<string, never>
 
 export interface DeleteCopyRequest {
   readonly path: string
@@ -67,7 +68,7 @@ export interface Methods {
   GetLink: { request: GetLinkRequest; response: GetLinkResponse }
   ReadArticle: { request: ReadArticleRequest; response: ReadArticleResponse }
   FetchText: { request: FetchTextRequest; response: FetchTextResponse }
-  CopyVideo: { request: CopyVideoRequest; response: CopyVideoResponse }
+  CopyMedia: { request: CopyMediaRequest; response: CopyMediaResponse }
   DeleteCopy: { request: DeleteCopyRequest; response: DeleteCopyResponse }
   CreateLinks: { request: CreateLinksRequest; response: CreateLinksResponse }
 }

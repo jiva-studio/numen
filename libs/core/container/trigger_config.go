@@ -1,4 +1,4 @@
-package trigger
+package container
 
 import (
 	"encoding/json"
@@ -8,16 +8,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// appOwner is the owner of the settings of the application in the settings file and in config.
-const appOwner = "app"
+// configAppOwner is the owner of the settings of the application in the settings file and in config.
+const configAppOwner = "app"
 
-// CreateConfig is the settings as when conditions read them under config, built as the window builds
+// createTriggerConfig is the settings as when conditions read them under config, built as the window builds
 // it: each setting at config.app.<key> or config.<plugin id split at dots>.<key>, the key split at
 // dots, holding the value the settings file holds for its owner and key, or its declared default.
 // A declared default that is no JSON leaves the setting out.
-func CreateConfig(written string, app []pluginport.PluginSetting, plugins []pluginport.PluginInfo) (map[string]any, error) {
+func createTriggerConfig(settingsFile string, app []pluginport.PluginSetting, plugins []pluginport.PluginInfo) (map[string]any, error) {
 	var file map[string]map[string]any
-	if err := json.Unmarshal([]byte(written), &file); err != nil {
+	if err := json.Unmarshal([]byte(settingsFile), &file); err != nil {
 		return nil, fmt.Errorf("read the settings file: %w", err)
 	}
 	config := map[string]any{}
@@ -27,18 +27,18 @@ func CreateConfig(written string, app []pluginport.PluginSetting, plugins []plug
 			if !isWritten && json.Unmarshal([]byte(one.DefaultJSON), &value) != nil {
 				continue
 			}
-			setAt(config, append(append([]string(nil), path...), strings.Split(one.Key, ".")...), value)
+			setConfigAt(config, append(append([]string(nil), path...), strings.Split(one.Key, ".")...), value)
 		}
 	}
-	add(appOwner, []string{appOwner}, app)
+	add(configAppOwner, []string{configAppOwner}, app)
 	for _, plugin := range plugins {
 		add(plugin.ID, strings.Split(plugin.ID, "."), plugin.Settings)
 	}
 	return config, nil
 }
 
-// setAt puts the value at the path of nested maps, making the maps on the way.
-func setAt(config map[string]any, path []string, value any) {
+// setConfigAt puts the value at the path of nested maps, making the maps on the way.
+func setConfigAt(config map[string]any, path []string, value any) {
 	level := config
 	for _, part := range path[:len(path)-1] {
 		next, ok := level[part].(map[string]any)

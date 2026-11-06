@@ -23,7 +23,7 @@ describe('the target values', () => {
       getTargetValues(
         { path: 'notes/Bees.md', isFolder: false, others: ['notes/Wasps.md'] },
         TYPES,
-        'link',
+        { type: 'link' },
       ),
     ).toStrictEqual({
       'target.isRoot': false,
@@ -42,8 +42,10 @@ describe('the target values', () => {
     const note = { path: 'notes/Bees.md', isFolder: false, others: [] }
     const paper = { path: 'papers/Hive.pdf', isFolder: false, others: [] }
 
-    expect(getTargetValues(note, TYPES, 'link', properties)['target.properties']).toBe(properties)
-    expect(getTargetValues(paper, TYPES, '', properties)['target.properties']).toStrictEqual({})
+    expect(getTargetValues(note, TYPES, { type: 'link', properties })['target.properties']).toBe(
+      properties,
+    )
+    expect(getTargetValues(paper, TYPES, { properties })['target.properties']).toStrictEqual({})
   })
 
   it('are those of a file that is no note, with its content type by its extension in any case', () => {

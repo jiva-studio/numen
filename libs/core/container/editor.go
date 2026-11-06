@@ -24,6 +24,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -112,6 +113,9 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 			}
 		},
 		OpenFileMenuFn: cfg.openFileMenu,
+		OpenTriggersFn: func() *trigger.Triggers {
+			return cfg.openTriggers(settings.NewGet(cfg.ReadSettings(), nil, cfg.Plugins(), cfg.listAppSettings))
+		},
 		OpenPluginFileFn: func() *file.OpenPluginFile {
 			return file.NewOpenPluginFile(derivedfile.PluginStores{Options: cfg.vaultOptions()})
 		},

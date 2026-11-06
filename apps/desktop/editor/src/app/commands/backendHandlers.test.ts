@@ -39,7 +39,12 @@ describe('createBackendHandlers', () => {
       value: { message: 'Transcribed', openedPath: 'talks/a.md' },
     })
 
-    await handlers.runBackendHandler('md.ears', 'app:file.createText', TARGET, 'fast')
+    await handlers.runBackendHandler({
+      pluginId: 'md.ears',
+      command: 'app:file.createText',
+      target: TARGET,
+      argument: 'fast',
+    })
 
     expect(deps.run).toHaveBeenCalledWith(
       { pluginId: 'md.ears', command: 'app:file.createText' },
@@ -54,7 +59,11 @@ describe('createBackendHandlers', () => {
     const { deps, handlers } = createWith({ ok: false, error: 'no audio' })
 
     await expect(
-      handlers.runBackendHandler('md.ears', 'app:file.createText', TARGET),
+      handlers.runBackendHandler({
+        pluginId: 'md.ears',
+        command: 'app:file.createText',
+        target: TARGET,
+      }),
     ).rejects.toThrow('no audio')
     expect(deps.openFile).not.toHaveBeenCalled()
   })

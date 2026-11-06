@@ -296,9 +296,7 @@ func (s *scene) runHandler(t *testing.T, req command.Request) (command.Result, e
 
 func TestTheHandlerOfCreateTextWaitsForTheTranscript(t *testing.T) {
 	s := newScene(t)
-	run := func(_ context.Context, req command.Request) (command.Result, error) { return s.runHandler(t, req) }
-
-	res, err := run(t.Context(), command.Request{Command: "app:file.createText", Path: lecture})
+	res, err := s.runHandler(t, command.Request{Command: "app:file.createText", Path: lecture})
 	if err != nil || res.Message != "transcribed "+lecture {
 		t.Fatalf("answered %+v (%v)", res, err)
 	}

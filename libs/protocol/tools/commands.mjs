@@ -25,17 +25,54 @@ const go = [
   '\treturn false',
   '}',
   '',
+  '// GetSharedCommandArguments returns the arguments the shared command of the full id takes, as',
+  '// commands.json declares them once for every handler.',
+  'func GetSharedCommandArguments(id string) []CommandArgument {',
+  '\tswitch id {',
+  ...commands
+    .filter((one) => (one.arguments ?? []).length > 0)
+    .flatMap((one) => [
+      `\tcase ${JSON.stringify(one.id)}:`,
+      '\t\treturn []CommandArgument{',
+      ...one.arguments.map(
+        (argument) =>
+          `\t\t\t{Name: ${JSON.stringify(argument.name)}, Title: ${JSON.stringify(argument.title)}, Type: ${JSON.stringify(argument.type)}, IsRequired: ${argument.required === true}},`,
+      ),
+      '\t\t}',
+    ]),
+  '\t}',
+  '\treturn nil',
+  '}',
+  '',
 ].join('\n')
+
+/** The TypeScript of the arguments of a command. */
+const getTsArguments = (one) =>
+  (one.arguments ?? [])
+    .map(
+      (argument) =>
+        `{ name: '${argument.name}', title: '${argument.title}', type: '${argument.type}', isRequired: ${argument.required === true} }`,
+    )
+    .join(', ')
 
 const ts = [
   `// ${HEADER}`,
   '',
   '// SHARED_COMMANDS are the shared commands of the application: plugins handle them with the entries of',
-  '// `contributes.handlers`. A command runs its one matching handler, or offers several as its items.',
+  '// `contributes.handlers`. A command runs its one matching handler, or offers several as its items. The',
+  '// palette asks for its arguments as it asks for those of a command of a manifest.',
   'export const SHARED_COMMANDS = [',
   ...commands.flatMap((one) => [
     `  // ${one.about[0].toUpperCase() + one.about.slice(1)}.`,
-    `  { id: '${one.id}', title: '${one.title}' },`,
+    ...((one.arguments ?? []).length === 0
+      ? [`  { id: '${one.id}', title: '${one.title}', arguments: [] },`]
+      : [
+          '  {',
+          `    id: '${one.id}',`,
+          `    title: '${one.title}',`,
+          `    arguments: [${getTsArguments(one)}],`,
+          '  },',
+        ]),
   ]),
   '] as const',
   '',

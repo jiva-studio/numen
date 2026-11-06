@@ -111,7 +111,7 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 		api.MethodGetLink,
 		api.MethodReadArticle,
 		api.MethodFetchText,
-		api.MethodCopyVideo,
+		api.MethodCopyMedia,
 		api.MethodDeleteCopy,
 	} {
 		if code := call(http.MethodPost, "/"+api.Service+"/"+method, `{"path":"missing.md"}`); code != http.StatusNotFound {
