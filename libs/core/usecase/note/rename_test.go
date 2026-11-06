@@ -311,8 +311,8 @@ func TestRename_RejectsExistingTarget(t *testing.T) {
 	if renamed.Moved != nil {
 		t.Errorf("the file did not move, and the answer says %+v", renamed.Moved)
 	}
-	if body := c.read(t, "Old.md"); !strings.Contains(body, "title: Entropy") {
-		t.Errorf("the title was not written:\n%s", body)
+	if body := c.read(t, "Old.md"); body != "---\ntitle: Old\n---\nA measure.\n" {
+		t.Errorf("the note was written although the rename failed:\n%s", body)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
 		t.Errorf("the note already there was written over:\n%s", body)
