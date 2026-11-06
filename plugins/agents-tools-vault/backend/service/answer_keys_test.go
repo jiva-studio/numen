@@ -33,9 +33,9 @@ func collectPropertyNames(schema any, names map[string]bool) {
 // getBranchToolNames is the tools this branch adds or changes, whose answers take camelCase keys.
 func getBranchToolNames() []string {
 	return []string{
-		"note_list", "note_titles", "note_resolve", "note_rename", "note_move", "note_remove",
+		"note_list", "note_title_list", "note_resolve", "note_rename", "note_move", "note_remove",
 		"link_add", "link_update", "link_remove",
-		"vault_list", "vault_problems", "vault_add", "vault_rename", "vault_remove", "vault_open",
+		"vault_list", "vault_problem_list", "vault_add", "vault_rename", "vault_remove", "vault_open",
 	}
 }
 

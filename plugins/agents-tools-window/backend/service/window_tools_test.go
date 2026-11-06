@@ -145,15 +145,15 @@ func requireLocation(t *testing.T, what string, location json.RawMessage, want s
 
 func TestTheToolsThatMoveTheWindowAreOnTheFullServerOnly(t *testing.T) {
 	w := newWindowTools(t)
-	for _, name := range []string{"note_focus", "source_focus", "window_focus_tab"} {
+	for _, name := range []string{"note_focus", "source_focus", "window_tab_activate"} {
 		info := w.getToolInfo(t, name)
 		if !isOnServer(info, tools.Full) || isOnServer(info, tools.Reading) {
 			t.Errorf("%s is on %v, want the full server only", name, info.GetServers())
 		}
 	}
-	tabs := w.getToolInfo(t, "window_tabs_get")
+	tabs := w.getToolInfo(t, "window_tab_list")
 	if !isOnServer(tabs, tools.Full) || !isOnServer(tabs, tools.Reading) {
-		t.Errorf("window_tabs_get is on %v, want the full and the reading server", tabs.GetServers())
+		t.Errorf("window_tab_list is on %v, want the full and the reading server", tabs.GetServers())
 	}
 }
 
@@ -251,18 +251,18 @@ func TestSourceFocusReportsAHostErrorAsAToolError(t *testing.T) {
 	}
 }
 
-// readTabs sets the window's tabs and returns what window_tabs_get answers.
+// readTabs sets the window's tabs and returns what window_tab_list answers.
 func (w windowTools) readTabs(t *testing.T, tabs []host.OpenTab, activeID string) tabsOutput {
 	t.Helper()
 	w.window.SetOpenTabs(tabs, activeID)
 	var out tabsOutput
-	if failure := w.call(t, "window_tabs_get", `{}`, nil, &out); failure != "" {
+	if failure := w.call(t, "window_tab_list", `{}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
 	return out
 }
 
-func TestWindowTabsGetAnswersTheTabsOfTheWindow(t *testing.T) {
+func TestWindowTabListReturnsTheTabsOfTheWindow(t *testing.T) {
 	w := newWindowTools(t)
 	out := w.readTabs(t, []host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
@@ -286,7 +286,7 @@ func TestWindowTabsGetAnswersTheTabsOfTheWindow(t *testing.T) {
 // seconds is a time of a recording, from its start.
 func seconds(n float64) *float64 { return &n }
 
-func TestWindowTabsGetReportsTheLocationFromThePlaceTheReaderReported(t *testing.T) {
+func TestWindowTabListReturnsTheLocationTheReaderReported(t *testing.T) {
 	for name, tc := range map[string]struct {
 		tab  host.OpenTab
 		want string
@@ -331,16 +331,16 @@ func TestWindowTabsGetReportsTheLocationFromThePlaceTheReaderReported(t *testing
 	}
 }
 
-// The location comes from the place the reader reported alone, so window_tabs_get has no saved state
+// The location comes from the place the reader reported alone, so window_tab_list has no saved state
 // to fail on and answers no error for any tab.
-func TestWindowTabsGetAnswersNoErrorForAnyTab(t *testing.T) {
+func TestWindowTabListReturnsNoErrorForAnyTab(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs(getGuideTabs(), "tab-1")
 
 	var out struct {
 		Tabs []map[string]json.RawMessage `json:"tabs"`
 	}
-	if failure := w.call(t, "window_tabs_get", `{}`, nil, &out); failure != "" {
+	if failure := w.call(t, "window_tab_list", `{}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
 	if len(out.Tabs) != len(getGuideTabs()) {
@@ -358,17 +358,17 @@ func TestWindowTabsGetAnswersNoErrorForAnyTab(t *testing.T) {
 
 func TestWindowToolsHostHasNoTextVersions(t *testing.T) {
 	if field, hasTexts := reflect.TypeFor[service.Host]().FieldByName("Texts"); hasTexts {
-		t.Errorf("service.Host has the field %s of type %s; window_tabs_get reads the location from the place the reader reported alone", field.Name, field.Type)
+		t.Errorf("service.Host has the field %s of type %s; window_tab_list reads the location from the place the reader reported alone", field.Name, field.Type)
 	}
 }
 
-func TestWindowTabsGetFallsBackToTheFocusOfTheCallWithoutAWindow(t *testing.T) {
+func TestWindowTabListUsesTheCallFocusWithoutAWindow(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"}}, "tab-1")
 	w.window.SetNoWindow()
 
 	var out tabsOutput
-	if failure := w.call(t, "window_tabs_get", `{}`, map[string]string{"focus": "notes/Inferred.md"}, &out); failure != "" {
+	if failure := w.call(t, "window_tab_list", `{}`, map[string]string{"focus": "notes/Inferred.md"}, &out); failure != "" {
 		t.Fatal(failure)
 	}
 	if len(out.Tabs) != 1 || out.Tabs[0].Path != "notes/Inferred.md" || out.ActiveID != "front-tab" || out.Tabs[0].Title != "Inferred" {
@@ -377,7 +377,7 @@ func TestWindowTabsGetFallsBackToTheFocusOfTheCallWithoutAWindow(t *testing.T) {
 	requireLocation(t, "the tab of the focus", out.Tabs[0].Location, "")
 
 	var none tabsOutput
-	if failure := w.call(t, "window_tabs_get", `{}`, nil, &none); failure != "" {
+	if failure := w.call(t, "window_tab_list", `{}`, nil, &none); failure != "" {
 		t.Fatal(failure)
 	}
 	if len(none.Tabs) != 0 {
@@ -385,12 +385,12 @@ func TestWindowTabsGetFallsBackToTheFocusOfTheCallWithoutAWindow(t *testing.T) {
 	}
 }
 
-func TestWindowTabsGetPrefersTheTabsOfTheWindowToTheFocusOfTheCall(t *testing.T) {
+func TestWindowTabListPrefersWindowTabsToTheCallFocus(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"}}, "tab-1")
 
 	var out tabsOutput
-	if failure := w.call(t, "window_tabs_get", `{}`, map[string]string{"focus": "notes/Inferred.md"}, &out); failure != "" {
+	if failure := w.call(t, "window_tab_list", `{}`, map[string]string{"focus": "notes/Inferred.md"}, &out); failure != "" {
 		t.Fatal(failure)
 	}
 	if len(out.Tabs) != 1 || out.Tabs[0].Path != notePath || out.ActiveID != "tab-1" {

@@ -141,7 +141,7 @@ func TestNoteWrite(t *testing.T) {
 	}
 }
 
-func TestNoteHeadings(t *testing.T) {
+func TestNoteHeadingListReturnsHeadings(t *testing.T) {
 	ctx := t.Context()
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
@@ -151,7 +151,7 @@ func TestNoteHeadings(t *testing.T) {
 
 	callReq := tools.Call{
 		VaultID:   testVault,
-		Name:      "note_headings",
+		Name:      "note_heading_list",
 		Arguments: []byte(`{"path":"Entropy.md"}`),
 	}
 	res, err := registry.InvokeTool(ctx, callReq)
@@ -372,14 +372,14 @@ func TestListTools(t *testing.T) {
 	}
 
 	expectedTools := map[string]bool{
-		"note_read":     false,
-		"note_write":    false,
-		"note_headings": false,
-		"note_search":   false,
-		"link_list":     false,
-		"vault_get":     false,
-		"file_read":     false,
-		"file_create":   false,
+		"note_read":         false,
+		"note_write":        false,
+		"note_heading_list": false,
+		"note_search":       false,
+		"link_list":         false,
+		"vault_get":         false,
+		"file_read":         false,
+		"file_create":       false,
 	}
 
 	for _, tool := range listed.Tools {

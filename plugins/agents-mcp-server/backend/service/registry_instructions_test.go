@@ -137,7 +137,7 @@ func TestASentenceOfAToolTheHostNoLongerListsIsNotSentToANewSession(t *testing.T
 func TestToolsWithNoSentencesLeaveOnlyTheServerLine(t *testing.T) {
 	t.Parallel()
 	names := []string{
-		"library_search", "library_read", "note_search", "note_list", "file_read", "source_focus", "window_tabs_get",
+		"library_search", "library_read", "note_search", "note_list", "file_read", "source_focus", "window_tab_list",
 	}
 	toolInfos := make([]*tools.ToolInfo, 0, len(names))
 	for _, name := range names {

@@ -170,12 +170,8 @@ func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, on
 	}
 }
 
-// getNarrativeMarkers returns the phrases that mark a tool or field description as narrative prose.
-// Each is taken from a description these tools carried: "as the person reads it", "where in that
-// file the person stands", "in front of them", "the card model it is cut by", "the passages of the
-// file to light", "lights all of them", "what the tab is called", "an edit you did not see", "hand
-// this to", "in words to say back to them", "the path the vault files it under", "where you speak
-// about the passage".
+// getNarrativeMarkers returns the patterns of narrative wording that tool descriptions, field
+// descriptions and tool instructions must not contain.
 func getNarrativeMarkers() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		regexp.MustCompile(`(?i)\bperson\b`),
@@ -189,6 +185,14 @@ func getNarrativeMarkers() []*regexp.Regexp {
 		regexp.MustCompile(`(?i)\bsay back\b`),
 		regexp.MustCompile(`(?i)\bfiles it under\b`),
 		regexp.MustCompile(`(?i)\bspeak\b`),
+		regexp.MustCompile(`(?i)\bhold(s|ing)?\b`),
+		regexp.MustCompile(`(?i)\breach(es|ing)?\b`),
+		regexp.MustCompile(`(?i)\bcarr(y|ies|ied|ying)\b`),
+		regexp.MustCompile(`(?i)\brefus(e|es|ed|ing)\b`),
+		regexp.MustCompile(`(?i)\blies inside\b`),
+		regexp.MustCompile(`(?i)\bgoes to\b`),
+		regexp.MustCompile(`(?i)\blit\b`),
+		regexp.MustCompile(`(?i)\btak(e|es|ing)\b[^.;]*\boff\b`),
 	}
 }
 
@@ -205,14 +209,14 @@ func (w windowTools) getAnswer(t *testing.T, name, arguments string) map[string]
 	return decodeAnswer(t, res.GetResult().GetStructured())
 }
 
-func TestWindowTabsGetAnswersLocationAndIsActiveWithoutASummary(t *testing.T) {
+func TestWindowTabListReturnsLocationAndIsActive(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs([]host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
 		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
 	}, "tab-2")
-	answer := w.getAnswer(t, "window_tabs_get", `{}`)
-	requireKeys(t, "the answer of window_tabs_get", answer, []string{"tabs", "activeId"}, []string{"summary"})
+	answer := w.getAnswer(t, "window_tab_list", `{}`)
+	requireKeys(t, "the answer of window_tab_list", answer, []string{"tabs", "activeId"}, []string{"summary"})
 	list := requireList(t, "answer[tabs]", answer["tabs"])
 	if len(list) != 2 {
 		t.Fatalf("tabs = %v, want two", answer["tabs"])
@@ -229,8 +233,8 @@ func TestWindowTabsGetAnswersLocationAndIsActiveWithoutASummary(t *testing.T) {
 		t.Errorf("the inactive tab is %v, want isActive not true", inactive)
 	}
 
-	schema := getToolSchema(t, w.calls, "window_tabs_get", true)
-	requireKeys(t, "the output schema of window_tabs_get", getSchemaProperties(t, schema), []string{"tabs"}, []string{"summary"})
+	schema := getToolSchema(t, w.calls, "window_tab_list", true)
+	requireKeys(t, "the output schema of window_tab_list", getSchemaProperties(t, schema), []string{"tabs"}, []string{"summary"})
 	requireKeys(t, "the output schema of a tab", getSchemaProperties(t, schema, "tabs"), []string{"location", "isActive"}, []string{"where", "active"})
 	requireKeys(t, "the output schema of a tab location", getSchemaProperties(t, schema, "tabs", "location"),
 		[]string{"page", "pageCount", "positionSeconds", "cfi", "chapter"}, nil)
@@ -277,27 +281,27 @@ func TestSourceFocusOfANoteAnswersAHighlightCountOfZero(t *testing.T) {
 	}
 }
 
-func TestWindowFocusTabAnswersTheTabWithoutSuccessOrMessage(t *testing.T) {
+func TestWindowTabActivateReturnsTheTabOnly(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"}}, "tab-1")
-	answer := w.getAnswer(t, "window_focus_tab", `{"tabId":"tab-1"}`)
-	requireKeys(t, "the answer of window_focus_tab", answer, []string{"tab"}, []string{"success", "message"})
+	answer := w.getAnswer(t, "window_tab_activate", `{"tabId":"tab-1"}`)
+	requireKeys(t, "the answer of window_tab_activate", answer, []string{"tab"}, []string{"success", "message"})
 	tab := requireObject(t, "answer[tab]", answer["tab"])
 	if tab["id"] != "tab-1" || tab["path"] != notePath {
 		t.Errorf("tab = %v, want tab-1 at %s", answer["tab"], notePath)
 	}
 
-	schema := getToolSchema(t, w.calls, "window_focus_tab", true)
-	requireKeys(t, "the output schema of window_focus_tab", getSchemaProperties(t, schema), []string{"tab"}, []string{"success", "message"})
+	schema := getToolSchema(t, w.calls, "window_tab_activate", true)
+	requireKeys(t, "the output schema of window_tab_activate", getSchemaProperties(t, schema), []string{"tab"}, []string{"success", "message"})
 }
 
-func TestEditPreviewAnswersTheDiffWithoutStatusOrSummary(t *testing.T) {
+func TestNoteEditPreviewReturnsTheDiffOnly(t *testing.T) {
 	w := newWindowTools(t)
-	answer := w.getAnswer(t, "edit_preview", `{"path":"notes/Heron.md","proposedContent":"Herons fish at dawn."}`)
-	requireKeys(t, "the answer of edit_preview", answer, []string{"previewId", "path", "diff", "additions", "deletions"}, []string{"status", "summary"})
+	answer := w.getAnswer(t, "note_edit_preview", `{"path":"notes/Heron.md","proposedContent":"Herons fish at dawn."}`)
+	requireKeys(t, "the answer of note_edit_preview", answer, []string{"previewId", "path", "diff", "additions", "deletions"}, []string{"status", "summary"})
 
-	schema := getToolSchema(t, w.calls, "edit_preview", true)
-	requireKeys(t, "the output schema of edit_preview", getSchemaProperties(t, schema), []string{"previewId", "diff", "additions", "deletions"}, []string{"status", "summary"})
+	schema := getToolSchema(t, w.calls, "note_edit_preview", true)
+	requireKeys(t, "the output schema of note_edit_preview", getSchemaProperties(t, schema), []string{"previewId", "diff", "additions", "deletions"}, []string{"status", "summary"})
 }
 
 func TestWindowToolSchemasNameEveryKeyInCamelCase(t *testing.T) {

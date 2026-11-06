@@ -1,11 +1,11 @@
 package service_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -142,8 +142,12 @@ func TestNoteWriteWithBodyInsteadOfContentStoresNoText(t *testing.T) {
 	}
 }
 
+// getRemovedToolNames returns the tool names that no plugin registers any more.
 func getRemovedToolNames() []string {
-	return []string{"search_query", "note_neighbourhood", "vault_info"}
+	return []string{
+		"search_query", "note_neighbourhood", "vault_info",
+		"window_tabs_get", "window_focus_tab", "vault_problems", "note_titles", "note_headings", "card_current", "edit_preview",
+	}
 }
 
 func TestToolsListHasOneNameForEachTool(t *testing.T) {
@@ -160,7 +164,7 @@ func TestToolsListHasOneNameForEachTool(t *testing.T) {
 	for _, info := range infos.Tools {
 		names[info.GetName()] = true
 	}
-	for _, present := range []string{"note_search", "link_list", "vault_get"} {
+	for _, present := range []string{"note_search", "link_list", "vault_get", "vault_problem_list", "note_title_list", "note_heading_list"} {
 		if !names[present] {
 			t.Errorf("the tool %s is not listed", present)
 		}
@@ -205,6 +209,10 @@ func TestDocsNameEachToolOnce(t *testing.T) {
 
 func TestNoSourceFileNamesARemovedTool(t *testing.T) {
 	root := getRepoRoot(t)
+	removed := map[string]*regexp.Regexp{}
+	for _, name := range getRemovedToolNames() {
+		removed[name] = regexp.MustCompile(`\b` + regexp.QuoteMeta(name) + `\b`)
+	}
 	for _, top := range []string{"plugins", "docs"} {
 		err := filepath.WalkDir(filepath.Join(root, top), func(path string, entry fs.DirEntry, err error) error {
 			if err != nil {
@@ -227,10 +235,10 @@ func TestNoSourceFileNamesARemovedTool(t *testing.T) {
 			if !utf8.Valid(content) {
 				return nil
 			}
-			for _, removed := range getRemovedToolNames() {
-				if bytes.Contains(content, []byte(removed)) {
+			for name, pattern := range removed {
+				if pattern.Match(content) {
 					rel := strings.TrimPrefix(path, root)
-					t.Errorf("%s names the removed tool %s", rel, removed)
+					t.Errorf("%s names the removed tool %s", rel, name)
 				}
 			}
 			return nil

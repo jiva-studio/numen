@@ -763,7 +763,7 @@ func TestEditingTheFirstFieldWritesTheHeadingAgain(t *testing.T) {
 // The current card is a tool response, so a deck name set by the author of the
 // vault content arrives at the agent as data. The host sends the current card with each call,
 // and the tool is offered only on the server of the review window.
-func TestCardCurrentReturnsTheOpenCard(t *testing.T) {
+func TestCardCurrentGetReturnsTheOpenCard(t *testing.T) {
 	session, _ := newSession(t, vault())
 	type current struct {
 		Deck     string `json:"path"`
@@ -777,13 +777,13 @@ func TestCardCurrentReturnsTheOpenCard(t *testing.T) {
 		"md.numen.views.flashcards.studio/template": on.Template,
 	}
 
-	if got := call[current](t, session, "card_current", map[string]any{}); got != on {
-		t.Errorf("card_current returned %+v", got)
+	if got := call[current](t, session, "card_current_get", map[string]any{}); got != on {
+		t.Errorf("card_current_get returned %+v", got)
 	}
 
 	session.toolContext = nil
-	if got := call[current](t, session, "card_current", map[string]any{}); got != (current{}) {
-		t.Errorf("card_current without a tool context returned %+v, want an empty card", got)
+	if got := call[current](t, session, "card_current_get", map[string]any{}); got != (current{}) {
+		t.Errorf("card_current_get without a tool context returned %+v, want an empty card", got)
 	}
 }
 
@@ -1117,7 +1117,7 @@ func TestTools_ServerAvailabilityAndDisplayLabel(t *testing.T) {
 	reads, writes := tools.ReadOnly, tools.ReadWrite
 	byEffect, remove, move := tools.ByEffect, tools.Remove, tools.Move
 	want := map[string]placed{
-		"card_current":        {reads, byEffect, []tools.Server{full, reading}},
+		"card_current_get":    {reads, byEffect, []tools.Server{full, reading}},
 		"card_model_list":     {reads, byEffect, []tools.Server{full, reading}},
 		"card_model_read":     {reads, byEffect, []tools.Server{full, reading}},
 		"card_read":           {reads, byEffect, []tools.Server{full, reading}},

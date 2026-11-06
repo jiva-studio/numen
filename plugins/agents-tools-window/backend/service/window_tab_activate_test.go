@@ -22,8 +22,8 @@ func getGuideTabs() []host.OpenTab {
 	}
 }
 
-// focusTabOutput is what window_focus_tab answers.
-type focusTabOutput struct {
+// tabActivateOutput is the result of window_tab_activate.
+type tabActivateOutput struct {
 	Tab tabOutput `json:"tab"`
 }
 
@@ -35,12 +35,12 @@ func requireWindowNotMoved(t *testing.T, window *hosttest.Window) {
 	}
 }
 
-func TestWindowFocusTabActivatesTheTabWithTheIDAmongTabsOfOneFile(t *testing.T) {
+func TestWindowTabActivateActivatesTheTabWithTheID(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs(getGuideTabs(), "tab-1")
 
-	var out focusTabOutput
-	if failure := w.call(t, "window_focus_tab", `{"tabId":"tab-2"}`, nil, &out); failure != "" {
+	var out tabActivateOutput
+	if failure := w.call(t, "window_tab_activate", `{"tabId":"tab-2"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
 	if out.Tab.ID != "tab-2" || out.Tab.Kind != "reader:reader-pdf" || out.Tab.Path != guidePath || out.Tab.Title != "Bird Guide" || !out.Tab.IsActive {
@@ -56,11 +56,11 @@ func TestWindowFocusTabActivatesTheTabWithTheIDAmongTabsOfOneFile(t *testing.T) 
 	requireWindowNotMoved(t, w.window)
 }
 
-func TestWindowFocusTabOfAnIDNoTabHasIsAToolErrorNamingTheID(t *testing.T) {
+func TestWindowTabActivateRejectsAnUnknownIDByName(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs(getGuideTabs(), "tab-1")
 
-	failure := w.call(t, "window_focus_tab", `{"tabId":"tab-9"}`, nil, nil)
+	failure := w.call(t, "window_tab_activate", `{"tabId":"tab-9"}`, nil, nil)
 	if failure == "" {
 		t.Fatal("a tab id no tab has was activated")
 	}
@@ -80,7 +80,7 @@ func TestWindowFocusTabOfAnIDNoTabHasIsAToolErrorNamingTheID(t *testing.T) {
 	requireWindowNotMoved(t, w.window)
 }
 
-func TestWindowFocusTabWithoutATabIDIsAToolError(t *testing.T) {
+func TestWindowTabActivateRejectsAMissingTabID(t *testing.T) {
 	for name, arguments := range map[string]string{
 		"no arguments":              `{}`,
 		"an empty tab id":           `{"tabId":""}`,
@@ -90,7 +90,7 @@ func TestWindowFocusTabWithoutATabIDIsAToolError(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			w := newWindowTools(t)
 			w.window.SetOpenTabs(getGuideTabs(), "tab-1")
-			if failure := w.call(t, "window_focus_tab", arguments, nil, nil); failure == "" {
+			if failure := w.call(t, "window_tab_activate", arguments, nil, nil); failure == "" {
 				t.Error("the call was answered without an error")
 			}
 			if activated := w.window.GetActivatedTabs(); len(activated) != 0 {
@@ -101,19 +101,19 @@ func TestWindowFocusTabWithoutATabIDIsAToolError(t *testing.T) {
 	}
 }
 
-func TestWindowFocusTabWithNoWindowIsAToolError(t *testing.T) {
+func TestWindowTabActivateRejectsACallWithNoWindow(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs(getGuideTabs(), "tab-1")
 	w.window.SetNoWindow()
-	if failure := w.call(t, "window_focus_tab", `{"tabId":"tab-2"}`, nil, nil); failure == "" {
+	if failure := w.call(t, "window_tab_activate", `{"tabId":"tab-2"}`, nil, nil); failure == "" {
 		t.Error("a host with no window activated the tab")
 	}
 }
 
-func TestWindowFocusTabInputSchemaRequiresTheTabIDAlone(t *testing.T) {
+func TestWindowTabActivateSchemaRequiresOnlyTheTabID(t *testing.T) {
 	w := newWindowTools(t)
-	schema := getToolSchema(t, w.calls, "window_focus_tab", false)
-	requireKeys(t, "the input schema of window_focus_tab", getSchemaProperties(t, schema), []string{"tabId"}, []string{"path", "title"})
+	schema := getToolSchema(t, w.calls, "window_tab_activate", false)
+	requireKeys(t, "the input schema of window_tab_activate", getSchemaProperties(t, schema), []string{"tabId"}, []string{"path", "title"})
 	required, isList := schema["required"].([]any)
 	if !isList {
 		t.Fatalf("the input schema has no list of required keys: %v", schema["required"])
@@ -123,17 +123,17 @@ func TestWindowFocusTabInputSchemaRequiresTheTabIDAlone(t *testing.T) {
 	}
 }
 
-func TestWindowFocusTabDescriptionNamesWindowTabsGet(t *testing.T) {
+func TestWindowTabActivateDescriptionNamesWindowTabList(t *testing.T) {
 	w := newWindowTools(t)
-	description := w.getToolInfo(t, "window_focus_tab").GetDescription()
-	for _, want := range []string{"window_tabs_get", "asked", "changes what the window shows"} {
+	description := w.getToolInfo(t, "window_tab_activate").GetDescription()
+	for _, want := range []string{"window_tab_list", "asked", "changes what the window shows"} {
 		if !strings.Contains(description, want) {
-			t.Errorf("the description of window_focus_tab does not say %q: %s", want, description)
+			t.Errorf("the description of window_tab_activate does not say %q: %s", want, description)
 		}
 	}
 	for _, absent := range []string{"path", "title"} {
 		if strings.Contains(description, absent) {
-			t.Errorf("the description of window_focus_tab says %q: %s", absent, description)
+			t.Errorf("the description of window_tab_activate says %q: %s", absent, description)
 		}
 	}
 }
@@ -158,14 +158,14 @@ func (w otherActiveWindow) ActivateTab(ctx context.Context, id string) (host.Ope
 	return host.OpenTab{}, "", host.ErrNotExist
 }
 
-func TestWindowFocusTabAnswersIsActiveFromTheWindow(t *testing.T) {
+func TestWindowTabActivateReturnsIsActiveFromTheWindow(t *testing.T) {
 	vault := hosttest.New(testVault)
 	window := hosttest.NewWindow(vault)
 	window.SetOpenTabs(getGuideTabs(), "tab-1")
 	w := windowTools{window: window, calls: newRegistry(t, service.Host{Vault: vault, Window: otherActiveWindow{Window: window, activeID: "tab-1"}})}
 
-	var out focusTabOutput
-	if failure := w.call(t, "window_focus_tab", `{"tabId":"tab-2"}`, nil, &out); failure != "" {
+	var out tabActivateOutput
+	if failure := w.call(t, "window_tab_activate", `{"tabId":"tab-2"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
 	if out.Tab.ID != "tab-2" || out.Tab.IsActive {
@@ -197,9 +197,9 @@ func newCountingTools(t *testing.T) (windowTools, *atomic.Int64) {
 	return windowTools{window: window, calls: newRegistry(t, on)}, calls
 }
 
-func TestWindowFocusTabOfAnUnknownIDActivatesNothing(t *testing.T) {
+func TestWindowTabActivateOfAnUnknownIDActivatesNothing(t *testing.T) {
 	w, calls := newCountingTools(t)
-	failure := w.call(t, "window_focus_tab", `{"tabId":"tab-9"}`, nil, nil)
+	failure := w.call(t, "window_tab_activate", `{"tabId":"tab-9"}`, nil, nil)
 	if !strings.Contains(failure, `no open tab has id "tab-9"`) {
 		t.Errorf("the error is %q, want no open tab has id \"tab-9\"", failure)
 	}
@@ -208,10 +208,10 @@ func TestWindowFocusTabOfAnUnknownIDActivatesNothing(t *testing.T) {
 	}
 }
 
-func TestWindowFocusTabActivatesATabOnce(t *testing.T) {
+func TestWindowTabActivateActivatesATabOnce(t *testing.T) {
 	w, calls := newCountingTools(t)
-	var out focusTabOutput
-	if failure := w.call(t, "window_focus_tab", `{"tabId":"tab-4"}`, nil, &out); failure != "" {
+	var out tabActivateOutput
+	if failure := w.call(t, "window_tab_activate", `{"tabId":"tab-4"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
 	if n := calls.Load(); n != 1 || out.Tab.ID != "tab-4" || !out.Tab.IsActive {
@@ -230,13 +230,13 @@ func (w lateWindow) ActivateTab(_ context.Context, id string) (host.OpenTab, str
 	return host.OpenTab{}, "", fmt.Errorf("activate tab %q: the window did not show the tab in time", id)
 }
 
-func TestWindowFocusTabReportsATabTheWindowDidNotShowInTimeAsAToolError(t *testing.T) {
+func TestWindowTabActivateRejectsATabNotShownInTime(t *testing.T) {
 	vault := hosttest.New(testVault)
 	window := hosttest.NewWindow(vault)
 	window.SetOpenTabs(getGuideTabs(), "tab-1")
 	w := windowTools{window: window, calls: newRegistry(t, service.Host{Vault: vault, Window: lateWindow{Window: window}})}
 
-	failure := w.call(t, "window_focus_tab", `{"tabId":"tab-2"}`, nil, nil)
+	failure := w.call(t, "window_tab_activate", `{"tabId":"tab-2"}`, nil, nil)
 	if failure == "" {
 		t.Fatal("a tab the window did not show was answered as focused")
 	}

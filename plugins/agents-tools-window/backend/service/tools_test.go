@@ -29,10 +29,9 @@ func TestRegisterTools(t *testing.T) {
 		names = append(names, tool.GetName())
 	}
 
-	for _, expected := range []string{"window_tabs_get", "window_focus_tab", "edit_preview"} {
-		if !slices.Contains(names, expected) {
-			t.Errorf("ListTools missing %q, got %v", expected, names)
-		}
+	slices.Sort(names)
+	if want := []string{"note_edit_preview", "note_focus", "source_focus", "window_tab_activate", "window_tab_list"}; !slices.Equal(names, want) {
+		t.Errorf("ListTools returns %v, want %v", names, want)
 	}
 
 	// Registering duplicate tools returns an error.
@@ -41,7 +40,7 @@ func TestRegisterTools(t *testing.T) {
 	}
 }
 
-func TestWindowTabsGetEmpty(t *testing.T) {
+func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
@@ -49,7 +48,7 @@ func TestWindowTabsGetEmpty(t *testing.T) {
 	}
 
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_tabs_get",
+		Name:      "window_tab_list",
 		Arguments: []byte(`{}`),
 	})
 	if err != nil {
@@ -76,7 +75,7 @@ func TestWindowTabsGetEmpty(t *testing.T) {
 	}
 }
 
-func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
+func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
@@ -84,7 +83,7 @@ func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 	}
 
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_tabs_get",
+		Name:      "window_tab_list",
 		Arguments: []byte(`{}`),
 		Context:   map[string]string{"focus": "notes/inferred.md"},
 	})
@@ -110,7 +109,7 @@ func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 	}
 }
 
-func TestEditPreviewFromVault(t *testing.T) {
+func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	vault := hosttest.New("test-vault")
 	ctx := t.Context()
@@ -129,7 +128,7 @@ func TestEditPreviewFromVault(t *testing.T) {
 	}
 	args := marshalJSON(t, input)
 	resp, err := registry.InvokeTool(ctx, tools.Call{
-		Name:      "edit_preview",
+		Name:      "note_edit_preview",
 		Arguments: args,
 	})
 	if err != nil {
@@ -159,7 +158,7 @@ func TestEditPreviewFromVault(t *testing.T) {
 	}
 }
 
-func TestEditPreviewWithDirectDiff(t *testing.T) {
+func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
@@ -172,7 +171,7 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 		Diff: customDiff,
 	})
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "edit_preview",
+		Name:      "note_edit_preview",
 		Arguments: args,
 	})
 	if err != nil {
@@ -200,7 +199,7 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 	respOverride, err := registryWithVault.InvokeTool(t.Context(), tools.Call{
-		Name: "edit_preview",
+		Name: "note_edit_preview",
 		Arguments: marshalJSON(t, EditPreviewInput{
 			Path:            "notes/override.md",
 			OriginalContent: "explicit original\n",
@@ -219,7 +218,7 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 
 	// Nil vault with empty OriginalContent diffs against empty string.
 	respNilVault, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name: "edit_preview",
+		Name: "note_edit_preview",
 		Arguments: marshalJSON(t, EditPreviewInput{
 			Path:            "notes/new.md",
 			ProposedContent: "brand new\n",
@@ -236,7 +235,7 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 	}
 }
 
-func TestEditPreviewValidation(t *testing.T) {
+func TestNoteEditPreviewRejectsMissingArguments(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
@@ -246,7 +245,7 @@ func TestEditPreviewValidation(t *testing.T) {
 	// Missing path
 	args := marshalJSON(t, EditPreviewInput{ProposedContent: "abc"})
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "edit_preview",
+		Name:      "note_edit_preview",
 		Arguments: args,
 	})
 	if err != nil {
@@ -259,7 +258,7 @@ func TestEditPreviewValidation(t *testing.T) {
 	// Missing content and diff
 	args = marshalJSON(t, EditPreviewInput{Path: "notes/a.md"})
 	resp, err = registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "edit_preview",
+		Name:      "note_edit_preview",
 		Arguments: args,
 	})
 	if err != nil {

@@ -526,3 +526,14 @@ func TestLibraryReadFailsOnASegmentWhoseSelectorIsNoSelector(t *testing.T) {
 		t.Errorf("library_read of a text with a selector that does not decode gave %q, want a failure that names %s", failure, pondPath)
 	}
 }
+
+func TestLibraryReadLengthStatesThePlainTextFileLimit(t *testing.T) {
+	l := newLibrary(t)
+	length, _ := getSchemaProperties(t, getToolSchema(t, l.calls, "library_read", false))["length"].(map[string]any)
+	description, _ := length["description"].(string)
+	for _, want := range []string{"20000", "50000", "16000"} {
+		if !strings.Contains(description, want) {
+			t.Errorf("the length of library_read does not state %s: %q", want, description)
+		}
+	}
+}

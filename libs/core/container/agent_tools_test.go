@@ -288,7 +288,7 @@ func vaultAndCards(t *testing.T, agent *toolAgent) (*plugin.Host, *toolPlugin, *
 		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE),
 	}}
 	cards := &toolPlugin{tools: []*v1.PluginTool{
-		newPluginTool("card_current", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_FULL),
+		newPluginTool("card_current_get", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_FULL),
 	}}
 	host := hostOver(t,
 		agentAt(agent),
@@ -321,7 +321,7 @@ func runToEnd(t *testing.T, agent agentport.Agent, task agentport.Task) []agentp
 func TestAnEditorRunCallsTheToolsOfThePluginsWithItsContext(t *testing.T) {
 	agent := &toolAgent{calls: []toolCall{
 		{name: "note_read", arguments: `{"path":"Garden.md"}`},
-		{name: "card_current", arguments: `{}`},
+		{name: "card_current_get", arguments: `{}`},
 	}}
 	host, vault, cards := vaultAndCards(t, agent)
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
@@ -336,16 +336,16 @@ func TestAnEditorRunCallsTheToolsOfThePluginsWithItsContext(t *testing.T) {
 	if !strings.HasPrefix(request.GetToolsUrl(), "http://127.0.0.1:") || request.GetToolsToken() == "" {
 		t.Errorf("the agent was given the tools at %q with token %q", request.GetToolsUrl(), request.GetToolsToken())
 	}
-	if want := []string{"card_current", "note_read", "note_write"}; !slices.Equal(request.GetTools(), want) {
+	if want := []string{"card_current_get", "note_read", "note_write"}; !slices.Equal(request.GetTools(), want) {
 		t.Errorf("the agent may call %v, want %v", request.GetTools(), want)
 	}
-	if kinds := getDeclaredKinds(request); !maps.Equal(kinds, map[string]string{"note_read": "read", "note_write": "edit", "card_current": "read"}) {
+	if kinds := getDeclaredKinds(request); !maps.Equal(kinds, map[string]string{"note_read": "read", "note_write": "edit", "card_current_get": "read"}) {
 		t.Errorf("the tools are declared as %v", kinds)
 	}
-	if names := agent.getToolNames(); !slices.Equal(names, []string{"card_current", "note_read", "note_write"}) {
+	if names := agent.getToolNames(); !slices.Equal(names, []string{"card_current_get", "note_read", "note_write"}) {
 		t.Errorf("the endpoint lists %v", names)
 	}
-	if results := agent.getResults(); !slices.Equal(results, []string{`note_read {"path":"Garden.md"} c-7`, "card_current {} c-7"}) {
+	if results := agent.getResults(); !slices.Equal(results, []string{`note_read {"path":"Garden.md"} c-7`, "card_current_get {} c-7"}) {
 		t.Errorf("the calls returned %v", results)
 	}
 	for _, served := range []*toolPlugin{vault, cards} {
@@ -365,13 +365,13 @@ func getDeclaredKinds(request *v1.AskAgentRequest) map[string]string {
 
 // The window of the flashcards serves its runs the tools too.
 func TestASettingsAgentRunCallsTheToolsOfThePlugins(t *testing.T) {
-	agent := &toolAgent{calls: []toolCall{{name: "card_current", arguments: `{}`}}}
+	agent := &toolAgent{calls: []toolCall{{name: "card_current_get", arguments: `{}`}}}
 	host, _, cards := vaultAndCards(t, agent)
 	settingsAgent := openSettingsAgent(t, host, `{"app": {"agent": {"use": "alpha"}}}`)
 
 	runToEnd(t, settingsAgent, agentport.Task{Question: "q", Context: map[string]string{cardKey: "c-9"}})
 
-	if results := agent.getResults(); !slices.Equal(results, []string{"card_current {} c-9"}) {
+	if results := agent.getResults(); !slices.Equal(results, []string{"card_current_get {} c-9"}) {
 		t.Errorf("the calls returned %v", results)
 	}
 	if requests := cards.getRequests(); len(requests) != 1 || requests[0].GetContext()[cardKey] != "c-9" {
@@ -390,7 +390,7 @@ func TestOnlyTheToolsTheWindowAllowsAreServed(t *testing.T) {
 		newPluginTool("note_quote", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_READING),
 		newPluginTool("note_guess", v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED),
 	}}
-	undeclared := &toolPlugin{tools: []*v1.PluginTool{newPluginTool("card_current", v1.ToolEffect_TOOL_EFFECT_READ_ONLY)}}
+	undeclared := &toolPlugin{tools: []*v1.PluginTool{newPluginTool("card_current_get", v1.ToolEffect_TOOL_EFFECT_READ_ONLY)}}
 	host := hostOver(t,
 		agentAt(agent),
 		toolsAt(vaultPlugin, []string{"vault:read"}, reader),
@@ -473,7 +473,7 @@ func TestToolsEndpoint_RejectsWrongToken(t *testing.T) {
 
 // Every call of a run is made in the vault the run works, which the card tools read.
 func TestACardToolCallCarriesTheVaultOfTheRun(t *testing.T) {
-	agent := &toolAgent{calls: []toolCall{{name: "card_current", arguments: `{}`}}}
+	agent := &toolAgent{calls: []toolCall{{name: "card_current_get", arguments: `{}`}}}
 	host, _, cards := vaultAndCards(t, agent)
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 

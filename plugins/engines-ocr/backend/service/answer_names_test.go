@@ -146,12 +146,8 @@ func visitEveryToolSchema(t *testing.T, registry *tools.Registry, onProperty, on
 	}
 }
 
-// getNarrativeMarkers returns the phrases that mark a tool or field description as narrative prose.
-// Each is taken from a description these tools carried: "as the person reads it", "where in that
-// file the person stands", "in front of them", "the card model it is cut by", "the passages of the
-// file to light", "lights all of them", "what the tab is called", "an edit you did not see", "hand
-// this to", "in words to say back to them", "the path the vault files it under", "where you speak
-// about the passage".
+// getNarrativeMarkers returns the patterns of narrative wording that tool descriptions, field
+// descriptions and tool instructions must not contain.
 func getNarrativeMarkers() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		regexp.MustCompile(`(?i)\bperson\b`),
@@ -165,6 +161,14 @@ func getNarrativeMarkers() []*regexp.Regexp {
 		regexp.MustCompile(`(?i)\bsay back\b`),
 		regexp.MustCompile(`(?i)\bfiles it under\b`),
 		regexp.MustCompile(`(?i)\bspeak\b`),
+		regexp.MustCompile(`(?i)\bhold(s|ing)?\b`),
+		regexp.MustCompile(`(?i)\breach(es|ing)?\b`),
+		regexp.MustCompile(`(?i)\bcarr(y|ies|ied|ying)\b`),
+		regexp.MustCompile(`(?i)\brefus(e|es|ed|ing)\b`),
+		regexp.MustCompile(`(?i)\blies inside\b`),
+		regexp.MustCompile(`(?i)\bgoes to\b`),
+		regexp.MustCompile(`(?i)\blit\b`),
+		regexp.MustCompile(`(?i)\btak(e|es|ing)\b[^.;]*\boff\b`),
 	}
 }
 

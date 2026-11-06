@@ -39,7 +39,7 @@ func getWindowToolSentences(listing tools.Listing) map[string][]string {
 func TestTheWindowToolsCarryTheirInstructionsOnShowingAPlace(t *testing.T) {
 	byTool := getWindowToolSentences(listWindowTools(t))
 
-	for _, name := range []string{"window_tabs_get", "source_focus"} {
+	for _, name := range []string{"window_tab_list", "source_focus"} {
 		if !slices.ContainsFunc(byTool[name], func(sentence string) bool { return strings.Contains(sentence, name) }) {
 			t.Errorf("no instruction of %s names it: %q", name, byTool[name])
 		}
@@ -71,10 +71,10 @@ func TestEveryWindowToolWithInstructionsNamesItself(t *testing.T) {
 
 func TestTheWindowToolsThatShowAPlaceRequireWindowFocus(t *testing.T) {
 	want := map[string][]string{
-		"note_focus":       {"window:focus"},
-		"source_focus":     {"window:focus"},
-		"window_focus_tab": {"window:focus"},
-		"window_tabs_get":  {"window:focus"},
+		"note_focus":          {"window:focus"},
+		"source_focus":        {"window:focus"},
+		"window_tab_activate": {"window:focus"},
+		"window_tab_list":     {"window:focus"},
 	}
 	listing := listWindowTools(t)
 	for name := range want {
@@ -92,12 +92,12 @@ func TestTheWindowToolsThatShowAPlaceRequireWindowFocus(t *testing.T) {
 
 // The core no longer says what "this note" means, so the tool that names the active tab does.
 func TestTheTabListInstructionsSayThisNoteMeansTheNoteOfTheActiveTab(t *testing.T) {
-	sentences := getWindowToolSentences(listWindowTools(t))["window_tabs_get"]
+	sentences := getWindowToolSentences(listWindowTools(t))["window_tab_list"]
 
 	if !slices.ContainsFunc(sentences, func(sentence string) bool {
 		return strings.Contains(sentence, `"this note"`) && strings.Contains(sentence, "active tab") &&
-			strings.Contains(sentence, "window_tabs_get")
+			strings.Contains(sentence, "window_tab_list")
 	}) {
-		t.Errorf("no instruction of window_tabs_get says that \"this note\" is the note of the active tab: %q", sentences)
+		t.Errorf("no instruction of window_tab_list says that \"this note\" is the note of the active tab: %q", sentences)
 	}
 }

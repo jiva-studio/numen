@@ -23,15 +23,15 @@ func (w deadlineWindow) ActivateTab(_ context.Context, id string) (host.OpenTab,
 	return host.OpenTab{}, "", fmt.Errorf("%w: %w", host.ErrTabNotShown, deadline)
 }
 
-func TestWindowFocusTabAnswersADeadlineOfTheHostInPlainText(t *testing.T) {
+func TestWindowTabActivateReturnsAHostDeadlineAsText(t *testing.T) {
 	vault := hosttest.New(testVault)
 	window := hosttest.NewWindow(vault)
 	window.SetOpenTabs(getGuideTabs(), "tab-1")
 	w := windowTools{window: window, calls: newRegistry(t, service.Host{Vault: vault, Window: deadlineWindow{Window: window}})}
 
-	failure := w.call(t, "window_focus_tab", `{"tabId":"tab-2"}`, nil, nil)
+	failure := w.call(t, "window_tab_activate", `{"tabId":"tab-2"}`, nil, nil)
 
-	if want := `window_focus_tab: the window did not show tab "tab-2" within 2 s`; failure != want {
+	if want := `window_tab_activate: the window did not show tab "tab-2" within 2 s`; failure != want {
 		t.Errorf("the tool error is %q, want %q", failure, want)
 	}
 	if strings.Contains(failure, "deadline_exceeded") {
