@@ -86,6 +86,43 @@ func readPort(value any) (int, bool) {
 	return int(number), true
 }
 
+// checkListenerPort returns an error when key is the port setting of a listener of the plugin and
+// value is not a port from 1024 to 65535, or, while the host binds the listeners of the plugin, a
+// port other than the bound one that cannot be bound.
+func (h *Host) checkListenerPort(ctx context.Context, pluginID, key string, value any) error {
+	h.listenersMu.Lock()
+	defer h.listenersMu.Unlock()
+	h.mu.RLock()
+	p, ok := h.plugins[pluginID]
+	isBinding := ok && !h.isClosed && !h.safeMode && h.isPluginEnabledLocked(pluginID)
+	h.mu.RUnlock()
+	if !ok {
+		return nil
+	}
+	for _, declared := range p.Manifest.Contributes.Listeners {
+		if declared.PortSetting != key {
+			continue
+		}
+		port, isPort := readPort(value)
+		if !isPort {
+			return fmt.Errorf("listener %s of plugin %s: setting %s = %v: %w",
+				declared.Name, pluginID, key, value, errListenerPortValue)
+		}
+		if !isBinding || h.listeners[pluginID][declared.Name].port == port {
+			continue
+		}
+		addr := net.JoinHostPort(listenerAddressHost, strconv.Itoa(port))
+		listener, err := new(net.ListenConfig).Listen(ctx, "tcp", addr)
+		if err != nil {
+			return fmt.Errorf("listener %s of plugin %s: bind %s: %w", declared.Name, pluginID, addr, err)
+		}
+		if err := listener.Close(); err != nil {
+			return fmt.Errorf("listener %s of plugin %s: close %s: %w", declared.Name, pluginID, addr, err)
+		}
+	}
+	return nil
+}
+
 // syncAllListeners brings the bound ports of every registered plugin, and of every plugin that has
 // bound ports, in line with its manifest, its settings and its state.
 func (h *Host) syncAllListeners(ctx context.Context) {

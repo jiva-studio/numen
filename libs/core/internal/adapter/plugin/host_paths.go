@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -19,9 +20,12 @@ var (
 )
 
 // CheckPluginSetting reports why a setting the plugin declares does not take the value. A setting
-// of type file takes an empty value or a file that exists with an extension it accepts. Any other
-// setting takes any value.
+// of type file takes an empty value or a file that exists with an extension it accepts. The port
+// setting of a listener takes a port the host can bind. Any other setting takes any value.
 func (h *Host) CheckPluginSetting(pluginID, key string, value any) error {
+	if err := h.checkListenerPort(context.Background(), pluginID, key, value); err != nil {
+		return err
+	}
 	h.mu.RLock()
 	p, ok := h.plugins[pluginID]
 	h.mu.RUnlock()

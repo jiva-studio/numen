@@ -1288,10 +1288,14 @@ func (h *Host) getPluginConfigJSONLocked(pluginID string) (string, error) {
 	return string(data), nil
 }
 
-// SetPluginSetting persists one setting, then writes it to memory and notifies the plugin.
+// SetPluginSetting persists one setting, then writes it to memory and notifies the plugin. A listener
+// port the host cannot bind is refused before it is persisted.
 func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value any) error {
 	if key == pluginport.SettingStoredSecrets {
 		return fmt.Errorf("plugin %s: %w: %s", pluginID, pluginport.ErrReservedSettingKey, key)
+	}
+	if err := h.checkListenerPort(ctx, pluginID, key, value); err != nil {
+		return err
 	}
 	h.mu.RLock()
 	persist := h.persistHandler
@@ -1306,7 +1310,8 @@ func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value
 
 // UpdatePluginSetting updates the setting in memory and notifies the plugin without re-persisting.
 // The record of the stored secrets is written by the host alone, so a write of it
-// here changes nothing.
+// here changes nothing. A value the listeners of the plugin cannot be synced with is replaced by the
+// previous one, and the error is returned.
 func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error {
 	if key == pluginport.SettingStoredSecrets {
 		return nil
@@ -1316,6 +1321,7 @@ func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, va
 	if _, ok := h.settings[pluginID]; !ok {
 		h.settings[pluginID] = make(map[string]any)
 	}
+	previous, hasPrevious := h.settings[pluginID][key]
 	h.settings[pluginID][key] = value
 	isRequirementChanged := !slices.Equal(before, h.getRequirementIDsLocked(pluginID))
 	h.mu.Unlock()
@@ -1332,8 +1338,18 @@ func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, va
 		}
 		return h.NotifyPluginConfig(ctx, pluginID)
 	}
-	syncErr := h.syncListeners(ctx, pluginID)
-	return errors.Join(syncErr, h.NotifyPluginConfig(ctx, pluginID))
+	if err := h.syncListeners(ctx, pluginID); err != nil {
+		h.mu.Lock()
+		if values, ok := h.settings[pluginID]; ok && hasPrevious {
+			values[key] = previous
+		} else if ok {
+			delete(values, key)
+		}
+		h.mu.Unlock()
+		h.syncListenersAndReport(ctx, pluginID)
+		return err
+	}
+	return h.NotifyPluginConfig(ctx, pluginID)
 }
 
 // PaletteCommand declares a command palette toggle or option action for a plugin setting.
