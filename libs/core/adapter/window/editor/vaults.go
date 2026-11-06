@@ -360,7 +360,7 @@ func convertTabPlaceFromWire(place *v1.TabPlace) *domain.TabPlace {
 		CFI:       place.GetCfi(),
 		Chapter:   place.GetChapter(),
 	}
-	if place.HasPositionSeconds() {
+	if place.PositionSeconds != nil {
 		seconds := place.GetPositionSeconds()
 		out.PositionSeconds = &seconds
 	}

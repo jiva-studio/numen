@@ -114,7 +114,7 @@ func readOpenTab(tab *v1.Tab) OpenTab {
 			CFI:       place.GetCfi(),
 			Chapter:   place.GetChapter(),
 		}
-		if place.HasPositionSeconds() {
+		if place.PositionSeconds != nil {
 			seconds := place.GetPositionSeconds()
 			out.Place.PositionSeconds = &seconds
 		}
