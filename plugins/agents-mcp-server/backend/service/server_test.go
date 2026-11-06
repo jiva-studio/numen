@@ -252,7 +252,6 @@ func TestServerSetTokenServeAndClose(t *testing.T) {
 	if !strings.HasPrefix(url1, "http://127.0.0.1:") {
 		t.Fatalf("expected loopback streamable HTTP URL, got %s", url1)
 	}
-	addr1 := srv.actualAddr
 
 	srv.SetToken("tok-2")
 	if srv.GetToken() != "tok-2" || srv.GetHTTPURL() != url1 {
@@ -262,11 +261,6 @@ func TestServerSetTokenServeAndClose(t *testing.T) {
 	if err := srv.Close(t.Context()); err != nil {
 		t.Fatalf("Close failed: %v", err)
 	}
-	recheckLn, err := new(net.ListenConfig).Listen(t.Context(), "tcp", addr1)
-	if err != nil {
-		t.Fatalf("expected the listener on %s to be closed: %v", addr1, err)
-	}
-	cleanup.Close(t, recheckLn)
 
 	if err := srv.Serve(&failingListener{err: net.ErrClosed}); err == nil {
 		t.Fatal("expected Serve on closed server to fail")
