@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/container"
@@ -123,5 +124,77 @@ func TestTheWindowIsNotShownAPluginMoveInAnotherVault(t *testing.T) {
 
 	if got := window.getMoves(); len(got) != 0 {
 		t.Errorf("the window showing another vault was shown %+v from %s", got, other.Name)
+	}
+}
+
+// shownMovesWindow records each move it is shown with the vault the window showed at that moment.
+type shownMovesWindow struct {
+	movesWindow
+	current  func() (domain.Vault, bool)
+	shownIDs []domain.VaultID
+}
+
+func (w *shownMovesWindow) ShowMove(ctx context.Context, move domain.Move) error {
+	v, _ := w.current()
+	w.mu.Lock()
+	w.shownIDs = append(w.shownIDs, v.ID)
+	w.mu.Unlock()
+	return w.movesWindow.ShowMove(ctx, move)
+}
+
+func TestTheWindowIsNotShownAPluginRenameThatLandsAfterItChangedVault(t *testing.T) {
+	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
+	registry, err := cfg.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	db, err := cfg.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	testsupport.CloseAfter(t, db)
+	rivers := testsupport.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA river.\n"})
+	lakes := testsupport.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA lake of the same name.\n"})
+	for _, v := range []domain.Vault{rivers, lakes} {
+		if err := registry.Save(v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var isSwitched atomic.Bool
+	current := func() (domain.Vault, bool) {
+		if isSwitched.Load() {
+			return lakes, true
+		}
+		return rivers, true
+	}
+	assembly := container.NewEditorAssembly(cfg, registry, db)
+	refresh := assembly.GetRefresh()
+	window := &shownMovesWindow{current: current}
+	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
+		_, err := refresh.Execute(ctx, v, paths)
+		// The window changes vault while the rename writes the title, before the file moves.
+		isSwitched.Store(true)
+		return err
+	}).FollowMoves(window)
+	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: scenarios})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := shared.Scan(t.Context(), []string{"Danube.md"}); err != nil {
+		t.Fatal(err)
+	}
+	isSwitched.Store(false)
+
+	if _, _, _, err := shared.RenameNote(t.Context(), "Danube.md", "Donau"); err != nil {
+		t.Fatalf("the rename in %s failed: %v", rivers.Name, err)
+	}
+
+	moves := window.getMoves()
+	window.mu.Lock()
+	defer window.mu.Unlock()
+	for i, shownID := range window.shownIDs {
+		if shownID != rivers.ID {
+			t.Errorf("the move %+v of %s was shown to the window while it showed %s", moves[i], rivers.Name, lakes.Name)
+		}
 	}
 }

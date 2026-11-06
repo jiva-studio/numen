@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -81,5 +82,27 @@ func TestOpenVaultReturnsAskingWhenTheWindowKeepsItsVault(t *testing.T) {
 
 	if res.Msg.Failure == nil || res.Msg.GetFailure() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING {
 		t.Errorf("OpenVault of a window whose tab holds undecided text returned %v, want failure ASKING", res.Msg)
+	}
+}
+
+func TestTwoOpenVaultCallsAtOnceBothReturnAndBothSwapsRun(t *testing.T) {
+	list := newRecordingList()
+	endpoint, client := openListEndpoint(t, list)
+	var wg sync.WaitGroup
+	for range 2 {
+		wg.Go(func() {
+			res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+			if err != nil || res.Msg.Failure != nil {
+				t.Errorf("OpenVault of v2 returned %v (%v)", res, err)
+			}
+		})
+	}
+	wg.Wait()
+	if err := endpoint.Close(context.WithoutCancel(t.Context())); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := list.getCalls(); len(got) != 2 {
+		t.Errorf("the swaps that ran were %v, want 2", got)
 	}
 }
