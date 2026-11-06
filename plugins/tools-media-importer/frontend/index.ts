@@ -1,13 +1,14 @@
 /**
- * Frontend entrypoint for the Media Importer plugin: a note of type `link` opens in its tab, and web
- * addresses dropped from outside the window become link notes.
+ * Frontend entrypoint for the Media Importer plugin: a note of type `link` opens in its tab, web
+ * addresses dropped from outside the window become link notes, and the media a link publishes are
+ * offered to download.
  */
 import { definePlugin, getFileStem, type PluginContext } from '@numen/plugin-sdk'
 import LinkTab from './LinkTab.vue'
 import './styles.css'
-import { createLinks, refreshLinks, setTaskHost } from './api/wire'
+import { createLinks, links as servedLinks, refreshLinks, setTaskHost } from './api/wire'
 import { getUrls, URI_LIST } from './lib/uriList'
-import type { Outcome } from './types'
+import type { Links, Outcome } from './types'
 import { WORDS as words } from './words'
 
 export { LinkTab }
@@ -26,7 +27,14 @@ export type CreateLinks = (
   urls: readonly string[],
 ) => Promise<Outcome<readonly string[]>>
 
-export const activate = (context: PluginContext, create: CreateLinks = createLinks): void => {
+/** The id of the item of app:link.downloadMedia that downloads the video of a link. */
+const VIDEO = 'video'
+
+export const activate = (
+  context: PluginContext,
+  create: CreateLinks = createLinks,
+  links: Links = servedLinks,
+): void => {
   setTaskHost(context.tasks)
   context.onVaultChange?.((event) => refreshLinks(event.paths ?? []))
   context.registerDropHandler?.({
@@ -36,6 +44,18 @@ export const activate = (context: PluginContext, create: CreateLinks = createLin
       if (made.ok) return made.value
       context.workspace?.showError(made.error)
       return []
+    },
+  })
+  context.registerCommand({
+    id: 'app:link.downloadMedia',
+    listItems: async (target) => {
+      const facts = await links.getLink(target.path)
+      return facts.ok && facts.value.isCopyable ? [{ id: VIDEO, title: words.video }] : []
+    },
+    handler: async (note, argument) => {
+      if (argument !== VIDEO) return
+      const outcome = await links.copyVideo(note.path)
+      if (!outcome.ok) context.workspace?.showError(outcome.error)
     },
   })
   const getTitle = (path: string) => getFileStem(path) || words.link
