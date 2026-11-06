@@ -83,7 +83,7 @@ func TestFindRecognisersNamesTheFilesTheManifestProvisions(t *testing.T) {
 	}
 }
 
-func TestFindRecognisersGivesMultilingualInTheOrderATieIsBrokenIn(t *testing.T) {
+func TestFindRecognisersListsMultilingualInTieBreakOrder(t *testing.T) {
 	files, ok := FindRecognisers(RecogniserMultilingual)
 	want := []string{"rec-pp-ocrv5-latin", "rec-pp-ocrv5-cyrillic", "rec-pp-ocrv5-greek", "rec-pp-ocrv6-tiny"}
 	if got := getIDs(files); !ok || !slices.Equal(got, want) {

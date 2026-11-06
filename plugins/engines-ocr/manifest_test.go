@@ -185,7 +185,7 @@ func TestEachOtherModelRequiresOnlyItsOwnRecogniser(t *testing.T) {
 	}
 }
 
-func TestTheModelSettingIsOfferedInThePaletteWithMultilingualFirst(t *testing.T) {
+func TestTheModelSettingIsInThePaletteWithMultilingualFirst(t *testing.T) {
 	for _, setting := range readManifest(t).Settings {
 		if setting.Key != "model" {
 			continue

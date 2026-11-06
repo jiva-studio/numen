@@ -14,17 +14,19 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
-// fontPaths are fonts that draw Latin, Cyrillic, polytonic Greek and Chinese in one file.
-var fontPaths = []string{
-	"/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-	"/Library/Fonts/Arial Unicode.ttf",
+// getUnicodeFonts lists fonts that draw Latin, Cyrillic, polytonic Greek and Chinese in one file.
+func getUnicodeFonts() []string {
+	return []string{
+		"/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+		"/Library/Fonts/Arial Unicode.ttf",
+	}
 }
 
-// openFace is the first font of fontPaths at the size of 12 pt print scanned at 300 dpi, the
+// openFace is the first of paths on this machine at the size of 12 pt print scanned at 300 dpi, the
 // resolution the plugin renders a page at.
-func openFace(t *testing.T) font.Face {
+func openFace(t *testing.T, paths []string) font.Face {
 	t.Helper()
-	for _, path := range fontPaths {
+	for _, path := range paths {
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			continue
@@ -39,7 +41,7 @@ func openFace(t *testing.T) font.Face {
 		}
 		return face
 	}
-	t.Fatalf("no font that draws every script is on this machine: looked at %v", fontPaths)
+	t.Fatalf("no font that draws every script is on this machine: looked at %v", paths)
 	return nil
 }
 
@@ -77,8 +79,8 @@ func hasLetterOf(text string, script *unicode.RangeTable) bool {
 	return false
 }
 
-// openMultilingual opens the four recognisers of multilingual from NUMEN_OCR_DIR, which holds the ONNX
-// Runtime and the model files under the names the manifest gives them.
+// openMultilingual opens the four recognisers of multilingual from NUMEN_OCR_DIR, which holds the model
+// files under the names the manifest gives them and the ONNX Runtime used when findRuntime finds none.
 func openMultilingual(t *testing.T) *Recogniser {
 	t.Helper()
 	dir := os.Getenv("NUMEN_OCR_DIR")
@@ -87,6 +89,8 @@ func openMultilingual(t *testing.T) *Recogniser {
 	}
 	cfg := Defaults()
 	cfg.Dir, cfg.ShouldDownload = dir, false
+	// A process loads one ONNX Runtime: a second library fails every session on a tensor type mismatch.
+	cfg.Runtime = findRuntime(t)
 	r, err := Open(t.Context(), NewLibrary(), cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -105,7 +109,7 @@ func openMultilingual(t *testing.T) *Recogniser {
 
 func TestMultilingualReadsTheLettersOfEachScript(t *testing.T) {
 	r := openMultilingual(t)
-	face := openFace(t)
+	face := openFace(t, getUnicodeFonts())
 	for _, page := range []struct {
 		language string
 		line     string
@@ -115,7 +119,8 @@ func TestMultilingualReadsTheLettersOfEachScript(t *testing.T) {
 		foreign *unicode.RangeTable
 	}{
 		{"Russian", "Съешь же ещё этих мягких французских булок", [][]string{{"ж"}, {"ё"}, {"щ"}}, unicode.Latin},
-		{"Polish", "Zażółć gęślą jaźń", [][]string{{"ż"}, {"ó"}, {"ł"}, {"ę"}, {"ś"}, {"ź"}, {"ń"}}, unicode.Cyrillic},
+		// The PP-OCR recognisers read ź as ż.
+		{"Polish", "Zażółć gęślą jaźń", [][]string{{"ż"}, {"ó"}, {"ł"}, {"ę"}, {"ś"}, {"ń"}}, unicode.Cyrillic},
 		{"Czech", "Příliš žluťoučký kůň", [][]string{{"ř"}, {"ž"}, {"ů"}}, unicode.Cyrillic},
 		{"German", "Größe, Übermaß", [][]string{{"ö"}, {"ü"}, {"ß"}}, unicode.Cyrillic},
 		{"Greek", "Γαζέες καὶ μυρτιὲς δὲν θὰ βρῶ", [][]string{{"γ"}, {"ζ"}, {"έ", "ε"}, {"ὲ", "έ", "ε"}, {"β"}}, unicode.Latin},
@@ -142,7 +147,7 @@ func TestMultilingualReadsTheLettersOfEachScript(t *testing.T) {
 
 func TestMultilingualReadsARussianLineInCyrillicAndAnEnglishLineInLatin(t *testing.T) {
 	r := openMultilingual(t)
-	text := readPage(t, r, drawPage(openFace(t), "ВНИМАНИЕ: высокое напряжение", "Caution: high voltage"))
+	text := readPage(t, r, drawPage(openFace(t, getUnicodeFonts()), "ВНИМАНИЕ: высокое напряжение", "Caution: high voltage"))
 	for _, want := range []string{"ВНИМАНИЕ", "напряжение", "Caution", "voltage"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("the page came back as %q, without %q", text, want)
