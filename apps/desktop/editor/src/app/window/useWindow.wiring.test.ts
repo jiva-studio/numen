@@ -105,10 +105,10 @@ vi.mock('./useWindowKinds', () => ({
     return h.f.kinds
   },
 }))
-vi.mock('../shell/useWindowStatusBar', () => ({
-  useWindowStatusBar: (args: unknown) => {
-    h.args.statusBar = args
-    return { name: 'statusBar' }
+vi.mock('../shell/backgroundTasks', () => ({
+  createBackgroundTaskHost: (args: unknown) => {
+    h.args.backgroundTasks = args
+    return { name: 'backgroundTasks' }
   },
 }))
 vi.mock('../commands/useAppHotkeys', () => ({ useAppHotkeys: vi.fn() }))
@@ -612,12 +612,13 @@ describe('the window started and closed', () => {
 })
 
 describe('the services a plugin is given', () => {
-  it('are the ones the kinds made and the window task list, handed to the plugins', () => {
+  it('are the ones the kinds made, the window task list and the background tasks, handed to the plugins', () => {
     useWindow()
 
-    const { taskList, ...made } = h.args.plugins.services
+    const { taskList, backgroundTasks, ...made } = h.args.plugins.services
     expect(made).toStrictEqual(h.f.kinds.services)
     expect(taskList).toBe(h.f.display.tasks)
+    expect(backgroundTasks).toStrictEqual({ name: 'backgroundTasks' })
   })
 
   it('stops the tabs waiting for their plugins once the plugins of the interface have started', async () => {
@@ -631,7 +632,7 @@ describe('the services a plugin is given', () => {
     expect(h.args.windowTabs.arePluginsStarting.value).toBe(false)
   })
 
-  it('wires plugin support, windowTabs, settings, kinds, commands, statusBar, and lifecycle callbacks', async () => {
+  it('wires plugin support, windowTabs, settings, kinds, commands, background tasks, and lifecycle callbacks', async () => {
     const window = useWindow()
 
     // useWindowTabs options
@@ -718,17 +719,17 @@ describe('the services a plugin is given', () => {
     h.args.commands.tabsHold.resume()
     expect(h.f.openTabs.resume).toHaveBeenCalledOnce()
 
-    // statusBar & noticeTasks
+    // background tasks & noticeTasks
     expect(h.args.noticeTasks.window).toBe(h.f.display)
-    expect(h.args.statusBar.tasks.value).toEqual([{ id: 'task:1' }, { id: 'notice:1' }])
-    await h.args.statusBar.cancelTask('task:1')
+    expect(h.args.backgroundTasks.tasks.value).toEqual([{ id: 'task:1' }, { id: 'notice:1' }])
+    await h.args.backgroundTasks.cancelTask('task:1')
     expect(h.core.cancelTask).toHaveBeenCalledWith('task:1')
-    h.args.statusBar.reportCancelError(new Error('cancel failed'))
+    h.args.backgroundTasks.reportCancelError(new Error('cancel failed'))
     expect(h.f.writer).toHaveBeenCalledWith(
       'The task was not cancelled: Numen is not responding; retrying',
       'error',
     )
-    h.args.statusBar.onAction('p1')
+    h.args.backgroundTasks.openSettings('p1')
     expect(h.f.settings.configured.openSettings).toHaveBeenCalledWith('p1')
 
     // Returned window methods

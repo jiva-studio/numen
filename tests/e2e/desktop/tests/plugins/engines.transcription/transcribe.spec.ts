@@ -42,11 +42,11 @@ const expectPassageGone = async (
  * Waits until no task recognises the file. The plugin recognises a scan on its own when it opens,
  * and the Recognise command starts a second run: the words of the first run are found while the
  * second still runs. Deleting the recognition then takes away the file the second run is about to
- * report, and that run ends as a failed task that stays in the status bar.
+ * report, and that run ends as a failed task that stays in the list of background tasks.
  */
 const expectNoRecognitionRunning = async (page: Page, name: string): Promise<void> => {
-  await expect(page.locator('.status-bar__summary')).not.toHaveText(/^[1-9]\d* active$/)
-  await page.locator('.status-bar__trigger').click()
+  await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^[1-9]\d* active$/)
+  await page.locator('.tasks-status__trigger').click()
   await expect(page.locator('.task-item').filter({ hasText: name })).toHaveCount(0)
   await page.keyboard.press('Escape')
 }

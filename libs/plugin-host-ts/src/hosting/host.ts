@@ -208,6 +208,7 @@ function createServiceBridge(
   | 'getBuffers'
   | 'getNotices'
   | 'getTasks'
+  | 'getBackgroundTasks'
   | 'getTexts'
 > {
   return {
@@ -219,6 +220,7 @@ function createServiceBridge(
     getBuffers: () => deps.getBuffers?.(),
     getNotices: (pluginId) => deps.getNotices?.(pluginId),
     getTasks: (pluginId) => deps.getTasks?.(pluginId),
+    getBackgroundTasks: () => deps.getBackgroundTasks?.(),
     getTexts: (pluginId) => deps.getTexts?.(pluginId),
   }
 }

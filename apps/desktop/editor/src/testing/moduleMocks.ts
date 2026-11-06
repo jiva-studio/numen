@@ -6,6 +6,7 @@
  * door is mocked too, over the rest of what it gives.
  */
 import { vi } from 'vitest'
+import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-host'
 import { declared, mockVaultState, pendingStream } from './answers'
 
 vi.mock('@/app/plugins/agentPort', () => ({
@@ -51,3 +52,22 @@ vi.mock('@/entities/plugin', async (original) => ({
   ...(await original<typeof import('@/entities/plugin')>()),
   ...declaredCommandsResponse,
 }))
+
+/** The background tasks the window last made, as its plugins read them. */
+const windowTasks = vi.hoisted(() => ({ current: undefined as BackgroundTaskHost | undefined }))
+
+vi.mock('@/app/shell/backgroundTasks', async (original) => {
+  const module = await original<typeof import('@/app/shell/backgroundTasks')>()
+  return {
+    ...module,
+    createBackgroundTaskHost: (deps: Parameters<typeof module.createBackgroundTaskHost>[0]) =>
+      (windowTasks.current = module.createBackgroundTaskHost(deps)),
+  }
+})
+
+/** The tasks the window lists for its plugins now; empty before a window is mounted. */
+export const readWindowTasks = (): readonly BackgroundTask[] => {
+  let tasks: readonly BackgroundTask[] = []
+  windowTasks.current?.watch((list) => (tasks = list)).dispose()
+  return tasks
+}

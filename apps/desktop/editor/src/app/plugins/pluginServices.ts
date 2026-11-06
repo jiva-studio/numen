@@ -6,6 +6,7 @@ import { formatErrorMessage } from '@numen/core-client'
 import type {
   AgentHost,
   AgentPort,
+  BackgroundTaskHost,
   BufferHost,
   MenuEntry,
   NoteRef,
@@ -37,6 +38,8 @@ export interface PluginServices {
   noteBuffer?: NoteBuffer
   /** The window's task list, which each plugin's task host reads. */
   taskList?: Readonly<Ref<readonly Task[]>>
+  /** The background work of the window, which every plugin reads. */
+  backgroundTasks?: BackgroundTaskHost
 }
 
 /** What the window hands a plugin's tabs. */

@@ -95,7 +95,7 @@ A `.tar.gz` containing the program alone. Unpack it anywhere and run `numen`.
 
 ## Updating
 
-When a newer build is published, a version badge appears at the right end of the status bar. It
+When a newer build is published, a version badge appears in the title bar, after its title. It
 shows the release date, the way to install on your system and the release notes. It comes from the
 Update Notifier plugin, whose settings choose the channel (**Stable** or **Beta**), the address of
 the release feed and the hours between two checks. A machine without a network shows nothing.

@@ -5,6 +5,7 @@
 export {
   CONVERSATION,
   NOTE_TYPE,
+  SLOT,
   TITLE_BAR_SLOT,
   VAULT_SUMMARY,
   createMockAgentHost,
@@ -16,6 +17,8 @@ export type {
   AgentHost,
   AgentPort,
   AgentProviderRegistration,
+  BackgroundTask,
+  BackgroundTaskHost,
   Backlink,
   BufferHost,
   CommandNote,
