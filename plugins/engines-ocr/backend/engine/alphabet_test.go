@@ -100,8 +100,8 @@ func TestAlphabetReadsMetadataAndHandlesErrors(t *testing.T) {
 	}
 }
 
-// The dictionary written for a recogniser is removed once the recogniser is opened, and when it fails to open.
-func TestTheDictionaryWrittenForARecogniserIsRemovedAfterItOpens(t *testing.T) {
+// The temporary dictionary of a line engine is removed after the engine opens or fails to open.
+func TestOpenLineRemovesTheTemporaryDictionary(t *testing.T) {
 	dict := filepath.Join(t.TempDir(), "letters.txt")
 	if err := os.WriteFile(dict, []byte("а\nб\n"), 0o600); err != nil {
 		t.Fatal(err)

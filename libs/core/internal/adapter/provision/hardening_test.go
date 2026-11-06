@@ -207,7 +207,7 @@ func TestAFailedDownloadNamesTheHostItWasRedirectedTo(t *testing.T) {
 	dropping := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		hijacker, ok := w.(http.Hijacker)
 		if !ok {
-			t.Error("the server cannot hand over its connection")
+			t.Error("the response writer does not support hijacking")
 			return
 		}
 		conn, _, err := hijacker.Hijack()
