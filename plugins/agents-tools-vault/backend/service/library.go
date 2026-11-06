@@ -33,7 +33,7 @@ type LibraryMatch struct {
 	Start    int    `json:"start" jsonschema:"where the passage begins in the source's text, in bytes"`
 	Length   int    `json:"length" jsonschema:"how long the passage is, in bytes"`
 	Line     int    `json:"line,omitempty" jsonschema:"the line of the hit in a note, counted from the first line of its prose"`
-	At       string `json:"at" jsonschema:"the address of this passage; write it into your answer as a markdown link where you speak about the passage, so that the person can go to it"`
+	URI      string `json:"uri" jsonschema:"the address of this passage; write it into your answer as a markdown link where you speak about the passage, so that the person can go to it"`
 }
 
 // LibrarySearchOutput is the output of the library_search tool.
@@ -143,7 +143,7 @@ func (t *Tools) searchLibrary(ctx context.Context, in LibrarySearchInput) (Libra
 			Start:    passage.Start,
 			Length:   passage.Length,
 			Line:     passage.Line,
-			At:       formatAddress(passage.Path, passage.Start, passage.Length),
+			URI:      formatAddress(passage.Path, passage.Start, passage.Length),
 		})
 	}
 	return out, nil

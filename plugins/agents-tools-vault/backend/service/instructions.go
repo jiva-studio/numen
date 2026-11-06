@@ -7,7 +7,7 @@ const ArrangeInstructions = "Use note_list to list the notes of the vault or of 
 // citeInstructions is the instruction paragraph for naming notes and passages, and for note_search,
 // library_search, library_read and file_read.
 const citeInstructions = "Name a note you write about as a link with the title the person knows it by, for example [[Tidal pools]], where you write about it, not in a list at the end; a title several notes share is written as [[note://<identifier>]], which names one of them. " +
-	"Write every passage of a book, a PDF or a recording that you write about as a markdown link to the address library_search returns for it under `at`, in place, not in a list at the end, for example [the harbour chapter](numen:library%2FA%20Sea%20Atlas.pdf?start=40120&length=980). " +
+	"Write every passage of a book, a PDF or a recording that you write about as a markdown link to the address library_search returns for it under `uri`, in place, not in a list at the end, for example [the harbour chapter](numen:library%2FA%20Sea%20Atlas.pdf?start=40120&length=980). " +
 	"Never use file:// links for notes or books. " +
 	"note_search finds notes only; library_search finds passages in everything the vault holds: notes, books, PDFs, scans and recordings. library_read reads the text of one source a page or a range at a time, and file_read reads text files and refuses a binary. " +
 	"Search with the person's own words before your own. " +
