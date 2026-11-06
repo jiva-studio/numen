@@ -42,6 +42,8 @@ interface ActivateContext extends ResolveModuleContext {
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly failures: { value: ReadonlyMap<string, string> }
   readonly reportError: (pluginId: string, error: unknown) => void
+  /** The number of the latest start of each plugin, so a start cancelled at the limit takes back only its own. */
+  readonly starts: Map<string, number>
 }
 
 function getFailureMessage(error: unknown): string {
@@ -61,13 +63,19 @@ function discardEntry(ctx: ActivateContext, pluginId: string): void {
   ctx.host.disposePlugin(pluginId)
 }
 
-/** Reads and activates the plugin. A start that ends after the limit has passed is taken back. */
+/**
+ * Reads and activates the plugin. A start that ends after the limit has passed is taken back, unless the
+ * plugin has been started again since.
+ */
 async function startEntry(
   ctx: ActivateContext,
   pluginId: string,
-  start: { readonly module: unknown; readonly isExpired: () => boolean },
+  start: { readonly module: unknown; readonly isExpired: () => boolean; readonly number: number },
 ): Promise<boolean> {
   const { module: pluginModule, isExpired } = start
+  const discardExpired = (): void => {
+    if (ctx.starts.get(pluginId) === start.number) discardEntry(ctx, pluginId)
+  }
   const { host, activePlugins } = ctx
   try {
     const resolved = await resolveModule(pluginId, pluginModule, ctx)
@@ -81,7 +89,7 @@ async function startEntry(
       host.markPluginStarted?.(pluginId)
     }
     if (isExpired()) {
-      discardEntry(ctx, pluginId)
+      discardExpired()
       return false
     }
 
@@ -91,8 +99,11 @@ async function startEntry(
     setFailure(ctx, pluginId, undefined)
     return true
   } catch (error) {
+    if (isExpired()) {
+      discardExpired()
+      return false
+    }
     discardEntry(ctx, pluginId)
-    if (isExpired()) return false
     setFailure(ctx, pluginId, getFailureMessage(error))
     ctx.reportError(pluginId, error)
     return false
@@ -115,9 +126,12 @@ async function activateEntry(
   const limit = new Promise<'expired'>((resolve) => {
     timer = setTimeout(() => resolve('expired'), PLUGIN_START_LIMIT_MS)
   })
+  const number = (ctx.starts.get(pluginId) ?? 0) + 1
+  ctx.starts.set(pluginId, number)
   const starting = startEntry(ctx, pluginId, {
     module: pluginModule,
     isExpired: () => isExpired,
+    number,
   })
   const outcome = await Promise.race([starting, limit]).finally(() => clearTimeout(timer))
   if (outcome !== 'expired') return outcome
@@ -229,6 +243,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
     failures,
     manifests,
     ...defaults,
+    starts: new Map(),
   }
   const deactivateContext: DeactivateDeps = {
     host,

@@ -163,6 +163,38 @@ describe('a plugin whose start passes PLUGIN_START_LIMIT_MS', () => {
   })
 })
 
+describe('a start cancelled at PLUGIN_START_LIMIT_MS that ends after a newer start', () => {
+  it('leaves what the newer start registered', async () => {
+    vi.useFakeTimers()
+    try {
+      let starts = 0
+      const { host, loader } = createWindow(async (context) => {
+        starts += 1
+        if (starts === 1) {
+          await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 2_000))
+          return
+        }
+        context.registerCommand({ id: 'graph.open', handler: () => undefined })
+        context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      })
+      const started = loader.start()
+      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 100)
+      await started
+
+      expect(await loader.activatePlugin(PLUGIN)).toBe(true)
+      await vi.advanceTimersByTimeAsync(2_000)
+
+      expect(loader.isPluginActive(PLUGIN)).toBe(true)
+      expect(host.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
+        'graph.open',
+        'graph.showNote',
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
 describe('a plugin whose activation throws', () => {
   it('reports its own failure and no command as missing', async () => {
     const { host, loader, reportCommandIssue, onError } = createWindow((context) => {
