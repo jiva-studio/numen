@@ -6,6 +6,7 @@ import { getErrorWords, getRelationErrorWords } from './codes'
 describe('the words of an error code', () => {
   it('are the words the wire gives the code of the schema', () => {
     expect(getErrorWords('notFound')).toBe(formatErrorCodeMessage(ProtoErrorCode.NOT_FOUND))
+    expect(getErrorWords('notFound')).toBe('note not in the vault')
     expect(getErrorWords('notANote')).toBe(formatErrorCodeMessage(ProtoErrorCode.NOT_A_NOTE))
     expect(getErrorWords('notText')).toBe(formatErrorCodeMessage(ProtoErrorCode.NOT_TEXT))
     expect(getErrorWords('tooLarge')).toBe(formatErrorCodeMessage(ProtoErrorCode.TOO_LARGE))
