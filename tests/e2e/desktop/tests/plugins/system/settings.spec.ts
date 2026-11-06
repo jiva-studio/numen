@@ -122,7 +122,7 @@ test.describe('OCR settings', () => {
     const model = page.getByTestId('setting-model')
     await expect(model).toBeVisible({ timeout: 10_000 })
 
-    await expect(model.locator('.settings__choice')).toHaveText('PP-OCRv6 tiny')
+    await expect(model.locator('.settings__choice')).toHaveText('Multilingual')
     await expect(page.getByTestId('setting-dpi').locator('.settings__choice')).toHaveText('300 dpi')
     await expect(page.getByText('Model file', { exact: true })).toHaveCount(0)
 
@@ -148,7 +148,7 @@ test.describe('OCR settings', () => {
     await expect(page.getByRole('button', { name: 'Choose…' })).toHaveCount(2)
 
     await model.locator('.settings__choice').click()
-    await page.getByRole('menuitemradio', { name: /^PP-OCRv6 tiny/ }).click()
+    await page.getByRole('menuitemradio', { name: /^Multilingual/ }).click()
     await expect(page.getByText('Model file', { exact: true })).toHaveCount(0)
   })
 })
