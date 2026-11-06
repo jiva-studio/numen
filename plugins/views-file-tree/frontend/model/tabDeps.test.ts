@@ -91,17 +91,18 @@ describe('the menu of a row', () => {
     expect(createFilesTabDeps(host, 'files').getMenuEntries(rowTarget)).toStrictEqual(ROW_MENU)
   })
 
-  it('runs the command of an entry through the slots of the window', async () => {
-    const { host, slots } = createHost()
+  it('runs the command of an entry through the commands of the window', async () => {
+    const { host, commands, slots } = createHost()
 
     await createFilesTabDeps(host, 'files').runCommand('app:note.trash', rowTarget)
 
-    expect(slots.getRuns()).toStrictEqual([{ command: 'app:note.trash', target: rowTarget }])
+    expect(commands.getRuns()).toStrictEqual([{ command: 'app:note.trash', target: rowTarget }])
+    expect(slots.getRuns()).toStrictEqual([])
   })
 
-  it('is empty, and runs nothing, in a window that offers no slots', async () => {
+  it('is empty, and runs nothing, in a window that offers no slots and no commands', async () => {
     const { host } = createHost()
-    const { slots: _slots, ...withoutSlots } = host
+    const { slots: _slots, commands: _commands, ...withoutSlots } = host
     const deps = createFilesTabDeps(withoutSlots, 'files')
 
     expect(deps.getMenuEntries(rowTarget)).toStrictEqual([])

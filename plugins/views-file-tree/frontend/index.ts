@@ -2,7 +2,14 @@ import { definePlugin, type CommandNote, type PluginContext } from '@numen/plugi
 import FilesTab from './ui/FilesTab.vue'
 import { createFilesKind, FILES } from './kind'
 import { createFileTree, ROOT } from './model/useFileTree'
+import type { CommandRunner } from './model/tabDeps'
 import type { FilesTabState } from './types'
+
+/** What runs the commands of the menu: the one place that names how the window runs a command. */
+const getCommandRunner = (context: PluginContext): CommandRunner | undefined => {
+  const { slots } = context
+  return slots ? { run: (command, target) => slots.runCommand(command, target) } : undefined
+}
 
 export { FilesTab }
 export { createFilesKind, FILES } from './kind'
@@ -17,8 +24,15 @@ export function activate(context: PluginContext): void {
   if (!workspace || !files) {
     throw new Error('a files tab needs the window it is drawn in and the files of the vault')
   }
+  const commands = getCommandRunner(context)
   const trees = createFilesKind(
-    { workspace, files, ...(drops ? { drops } : {}), ...(slots ? { slots } : {}) },
+    {
+      workspace,
+      files,
+      ...(drops ? { drops } : {}),
+      ...(slots ? { slots } : {}),
+      ...(commands ? { commands } : {}),
+    },
     () => createFileTree(files),
   )
   context.registerTabKind(trees.kind)

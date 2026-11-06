@@ -8,6 +8,7 @@ import {
   SLOT,
   type DropHost,
   type SlotHost,
+  type SlotTarget,
   type VaultFiles,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
@@ -21,6 +22,13 @@ export interface FileTreeHost {
   readonly drops?: DropHost
   /** The slots of the window the menu of a row is drawn from, where the host offers them. */
   readonly slots?: SlotHost
+  /** What runs the commands of the window and of the plugins over a row. */
+  readonly commands?: CommandRunner
+}
+
+/** Runs a command over a target, as `context.commands` of the SDK does. */
+export interface CommandRunner {
+  run(command: string, target?: SlotTarget): Promise<void>
 }
 
 /**
@@ -28,7 +36,7 @@ export interface FileTreeHost {
  * goes to the tabs linked to it first, titled by its file name without the extension.
  */
 export function createFilesTabDeps(
-  { workspace, files, drops, slots }: FileTreeHost,
+  { workspace, files, drops, slots, commands }: FileTreeHost,
   id: string,
 ): FilesTabDeps {
   return {
@@ -44,7 +52,7 @@ export function createFilesTabDeps(
     },
     getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],
     runCommand: async (command, target) => {
-      await slots?.runCommand(command, target)
+      await commands?.run(command, target)
     },
     movePath: (from, to) => files.move(from, to),
     setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),

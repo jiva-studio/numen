@@ -50,23 +50,28 @@ const tabLinks = {
   unlinkTab: vi.fn(),
 } as unknown as TabLinksState
 
-/** Slots of a window that hold the entries in the menu of a tab, and record the commands run. */
-const createSlots = (entries: readonly SlotItem[]) => {
+/** Slots of a window that hold the entries in the menu of a tab; they run no command. */
+const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
+  getEntries: (slot) => (slot === SLOT.tabStripContext ? entries : []),
+  watchEntries: () => ({ dispose: () => undefined }),
+  runCommand: () => Promise.reject(new Error('the slots run no command')),
+})
+
+/** The commands of a window, recording each command run and its target. */
+const createCommands = () => {
   const runs: { command: string; target: SlotTarget | undefined }[] = []
-  const slots: SlotHost & { getRuns(): typeof runs } = {
-    getEntries: (slot) => (slot === SLOT.tabStripContext ? entries : []),
-    watchEntries: () => ({ dispose: () => undefined }),
-    runCommand: async (command, target) => {
+  return {
+    run: async (command: string, target?: SlotTarget) => {
       runs.push({ command, target })
     },
     getRuns: () => [...runs],
   }
-  return slots
 }
 
 const setup = (options: { entries?: readonly SlotItem[]; canDetach?: boolean } = {}) => {
   const slots = createSlots(options.entries ?? ENTRIES)
   const getEntries = vi.spyOn(slots, 'getEntries')
+  const commands = createCommands()
   const onDetach = vi.fn()
   const menu = useTabMenu({
     link: {
@@ -80,11 +85,12 @@ const setup = (options: { entries?: readonly SlotItem[]; canDetach?: boolean } =
       ...(options.canDetach === false ? {} : { onDetach }),
     },
     slots,
+    runCommand: commands.run,
     getTabTarget: (tab) => TARGETS[tab]!,
     getTabIcon: () => null,
     getKindIcon: () => null,
   })
-  return { menu, slots, getEntries, onDetach }
+  return { menu, commands, getEntries, onDetach }
 }
 
 describe('the target the entries of the menu of a tab run over', () => {
@@ -164,23 +170,23 @@ describe('the menu of a tab', () => {
   })
 
   it('runs the command of an entry over the file of the tab, and closes', async () => {
-    const { menu, slots } = setup()
+    const { menu, commands } = setup()
     menu.open('reef', { x: 4, y: 8 })
 
     menu.choose('reef', SHOW.key)
 
-    expect(slots.getRuns()).toStrictEqual([{ command: SHOW.command, target: TARGETS.reef }])
+    expect(commands.getRuns()).toStrictEqual([{ command: SHOW.command, target: TARGETS.reef }])
     expect(menu.menu.value).toBeNull()
   })
 
   it('detaches the tab on the row of the window that detaches it', async () => {
-    const { menu, slots, onDetach } = setup()
+    const { menu, commands, onDetach } = setup()
     menu.open('reef', { x: 4, y: 8 })
 
     menu.choose('reef', '__detach__')
 
     expect(onDetach).toHaveBeenCalledWith('reef', { x: 4, y: 8 })
-    expect(slots.getRuns()).toStrictEqual([])
+    expect(commands.getRuns()).toStrictEqual([])
   })
 
   it('opens on a tab that only the slot has rows for', () => {
@@ -262,21 +268,21 @@ describe('the menu of a tab', () => {
       view: 'tide',
       component: Pin,
     }
-    const { menu, slots } = setup({ entries: [view] })
+    const { menu, commands } = setup({ entries: [view] })
     menu.open('reef', { x: 4, y: 8 })
 
     expect(menu.menu.value?.items.at(-1)).toMatchObject({ id: view.key, component: Pin })
     menu.choose('reef', view.key)
-    expect(slots.getRuns()).toStrictEqual([])
+    expect(commands.getRuns()).toStrictEqual([])
   })
 
   it('closes on request, and runs nothing', () => {
-    const { menu, slots } = setup()
+    const { menu, commands } = setup()
     menu.open('reef', { x: 4, y: 8 })
 
     menu.dismiss()
 
     expect(menu.menu.value).toBeNull()
-    expect(slots.getRuns()).toStrictEqual([])
+    expect(commands.getRuns()).toStrictEqual([])
   })
 })

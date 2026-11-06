@@ -11,6 +11,7 @@ import {
   type SlotItem,
   type SlotSeparator,
   type SlotSubmenu,
+  type SlotTarget,
   type SlotView,
   type VaultEntry,
   type WorkspaceHost,
@@ -152,6 +153,14 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
   const slots = createMockSlotHost()
   slots.setEntries(SLOT.fileTreeContext, ROW_MENU)
 
-  const host: FileTreeHost = { workspace, files, slots }
-  return { host, recorded, slots }
+  const runs: { command: string; target: SlotTarget | undefined }[] = []
+  const commands = {
+    run: async (command: string, target?: SlotTarget) => {
+      runs.push({ command, target })
+    },
+    getRuns: () => [...runs],
+  }
+
+  const host: FileTreeHost = { workspace, files, slots, commands }
+  return { host, recorded, slots, commands }
 }

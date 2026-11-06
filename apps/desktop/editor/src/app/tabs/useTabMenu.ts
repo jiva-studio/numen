@@ -25,6 +25,8 @@ export interface TabMenuDeps {
   readonly link: TabLinkMenuDeps
   /** The slots of the window; without them the menu holds the rows of linking alone. */
   readonly slots?: SlotHost | undefined
+  /** Runs a command of an entry over the file of the tab. */
+  runCommand?(command: string, target: SlotTarget): Promise<void>
   /** The file a tab shows, which the commands of the entries run over. */
   getTabTarget(tab: string): SlotTarget
   getTabIcon(tab: string): Component | null
@@ -103,8 +105,7 @@ export function useTabMenu(deps: TabMenuDeps) {
     const entry = findSlotEntry(entries.value, id)
     if (entry) {
       link.close()
-      if (entry.kind === 'command')
-        await deps.slots?.runCommand(entry.command, deps.getTabTarget(tab))
+      if (entry.kind === 'command') await deps.runCommand?.(entry.command, deps.getTabTarget(tab))
       return
     }
     const windowId = getMoveTarget(id)
@@ -175,6 +176,7 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
       isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
     },
     slots,
+    runCommand: (command, target) => slots?.runCommand(command, target) ?? Promise.resolve(),
     getTabTarget: (id) => getTabFileTarget(windowTabs, id),
     getTabIcon: (id) => getTabIcon(id) ?? null,
     getKindIcon: (kind) => getKindIcon(kind) ?? null,
