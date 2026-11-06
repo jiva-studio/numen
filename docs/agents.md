@@ -118,11 +118,11 @@ Six plugins register the tools an agent can call, each for its own subject, and 
 
 `engines-ocr`, `engines-transcription` and `tools-media-importer`, the text versions of scans, recordings and web addresses:
 
-| Tool                 | What it does                                                                                                                                  | Servers |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `recognition_create` | start the recognition of a scanned PDF or image in the background and return its task id; a second call while it runs reports `running`       | full    |
-| `transcript_create`  | start the transcription of a recording in the background and return its task id; a second call while it runs reports `running`                | full    |
-| `url_import`         | create a link note for an http or https address, fetch its text before returning, and with `copy` start a copy of the video in the background | full    |
+| Tool                 | What it does                                                                                                                                                                                                | Servers |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `recognition_create` | start the recognition of a scanned PDF or image in the background and return its task id; a second call while it runs reports `running`, a call on a recognised file reports `done` and the version to read | full    |
+| `transcript_create`  | start the transcription of a recording in the background and return its task id; a second call while it runs reports `running`, a call on a transcribed recording reports `done` and the version to read    | full    |
+| `url_import`         | create a link note for an http or https address, fetch its text before returning, and with `copy` start a copy of the video in the background                                                               | full    |
 
 A card is named by its card id and never by the place it is in, so the cards stay addressable when a deck is reordered during a run. Every write to a deck takes the fingerprint `card_read` returned, and is applied only to the deck that fingerprint identifies.
 

@@ -157,15 +157,10 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 // claim marks the file of the request as held by one run, keyed by the id of its vault. No vault is
 // the vault the host shows.
 func (r *Recognition) claim(ctx context.Context, req Request) (string, error) {
-	vault := req.Vault
-	if vault == "" {
-		shown, err := r.host.Vault.GetVault(ctx)
-		if err != nil {
-			return "", fmt.Errorf("get the shown vault: %w", err)
-		}
-		vault = shown.ID
+	key, err := r.getRunKey(ctx, req.Vault, req.Path)
+	if err != nil {
+		return "", err
 	}
-	key := string(vault) + "\x00" + req.Path
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.running[key] {
@@ -173,6 +168,48 @@ func (r *Recognition) claim(ctx context.Context, req Request) (string, error) {
 	}
 	r.running[key] = true
 	return key, nil
+}
+
+// IsRunning reports whether a run holds the file of the vault. No vault is the vault the host shows.
+func (r *Recognition) IsRunning(ctx context.Context, vault domain.VaultID, filePath string) (bool, error) {
+	key, err := r.getRunKey(ctx, vault, filePath)
+	if err != nil {
+		return false, err
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.running[key], nil
+}
+
+// getRunKey is what a run holds the file of the vault under. No vault is the vault the host shows.
+func (r *Recognition) getRunKey(ctx context.Context, vault domain.VaultID, filePath string) (string, error) {
+	if vault == "" {
+		shown, err := r.host.Vault.GetVault(ctx)
+		if err != nil {
+			return "", fmt.Errorf("get the shown vault: %w", err)
+		}
+		vault = shown.ID
+	}
+	return string(vault) + "\x00" + filePath, nil
+}
+
+// FindVersion is the live version of the file of the vault where it is kept under VersionKey, which
+// a recognition writes only once it is complete. No vault is the vault the host shows.
+func (r *Recognition) FindVersion(ctx context.Context, vault domain.VaultID, filePath string) (domain.TextVersion, bool, error) {
+	texts := r.host.Texts
+	if vault != "" {
+		texts = texts.With(vault)
+	}
+	listing, err := texts.ListVersions(ctx, filePath)
+	if err != nil {
+		return domain.TextVersion{}, false, err
+	}
+	for _, version := range listing.Versions {
+		if version.GetID() == listing.Live && version.Key == VersionKey {
+			return version, true, nil
+		}
+	}
+	return domain.TextVersion{}, false, nil
 }
 
 func (r *Recognition) release(key string) {
