@@ -183,15 +183,7 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 		}
 	}
 	for _, from := range groups.order {
-		links := groups.links[from]
-		fingerprint, err := t.editNote(ctx, from, groups.fingerprints[from], func(doc *markdown.Document) error {
-			for _, link := range links {
-				if err := doc.AddLink(link); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
+		fingerprint, err := t.editNote(ctx, from, groups.fingerprints[from], addLinksTo(groups.links[from]))
 		for _, i := range groups.positions[from] {
 			if err != nil {
 				out.Added[i].Error = err.Error()
@@ -201,6 +193,18 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 		}
 	}
 	return out, nil
+}
+
+// addLinksTo returns the change that writes the links into a document.
+func addLinksTo(links []domain.Link) func(*markdown.Document) error {
+	return func(doc *markdown.Document) error {
+		for _, link := range links {
+			if err := doc.AddLink(link); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 }
 
 func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOutput, error) {
@@ -245,30 +249,36 @@ func (t *Tools) removeLinks(ctx context.Context, in LinkRemoveInput) (LinkEditOu
 	}
 	role := domain.LinkRole(in.Role)
 	fingerprint, err := t.editNote(ctx, in.From, in.Fingerprint, func(doc *markdown.Document) error {
-		current, err := getFrontmatterLinks(doc, in.From, to, role)
-		if err != nil {
-			return err
-		}
-		if len(current) == 0 {
-			return fmt.Errorf("no link to %s is written here", in.To)
-		}
-		var types []string
-		for _, l := range current {
-			if !slices.Contains(types, l.Type) {
-				types = append(types, l.Type)
-			}
-		}
-		for _, linkType := range types {
-			if _, err := doc.RemoveLink(domain.LinkKey{Target: to, Role: role, Type: linkType}); err != nil {
-				return err
-			}
-		}
-		return nil
+		return removeLinksFrom(doc, in.From, to, role)
 	})
 	if err != nil {
 		return LinkEditOutput{}, err
 	}
 	return LinkEditOutput{Path: in.From, Fingerprint: fingerprint}, nil
+}
+
+// removeLinksFrom removes the frontmatter links of the document to the target, of every type, and only
+// those of the role when one is given.
+func removeLinksFrom(doc *markdown.Document, notePath string, to domain.Address, role domain.LinkRole) error {
+	current, err := getFrontmatterLinks(doc, notePath, to, role)
+	if err != nil {
+		return err
+	}
+	if len(current) == 0 {
+		return fmt.Errorf("no link to %s is written here", to.GetWritten())
+	}
+	var types []string
+	for _, l := range current {
+		if !slices.Contains(types, l.Type) {
+			types = append(types, l.Type)
+		}
+	}
+	for _, linkType := range types {
+		if _, err := doc.RemoveLink(domain.LinkKey{Target: to, Role: role, Type: linkType}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // getFrontmatterLinks returns the links of the document's frontmatter to the target, only those of the
