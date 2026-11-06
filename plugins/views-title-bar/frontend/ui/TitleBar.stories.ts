@@ -47,6 +47,23 @@ const TASKS = view('tasks', createChip('2 active'))
 const STATS = view('stats', createChip('6,792 notes'))
 const UPDATE = view('update', createChip('v2026.11.2'))
 
+/** A view of the status slot with its popover open, placed below it as the tasks plugin places it. */
+const POPOVER: FunctionalComponent = markRaw(() =>
+  h('span', { style: 'position: relative; display: inline-block; padding-inline: 8px' }, [
+    'Tasks',
+    h(
+      'span',
+      {
+        'data-popover': '',
+        style:
+          'position: absolute; inset-block-start: 100%; inset-inline-end: 0; inline-size: 12rem; ' +
+          'block-size: 6rem; background: var(--numen-raised)',
+      },
+      'Indexing notes',
+    ),
+  ]),
+)
+
 const ORCHARD: VaultSummary = { id: 'orchard', name: 'Orchard notes' }
 const named = (name: string): VaultsState => {
   const one = { id: 'orchard', name }
@@ -201,6 +218,35 @@ export const ViewsHiddenFromTheEdge: Story = {
     await expect(entries).toHaveLength(5)
     const close = canvasElement.querySelector('[data-control="close"]')!.getBoundingClientRect()
     await expect(close.right).toBeLessThanOrEqual(canvasElement.getBoundingClientRect().right)
+  },
+}
+
+/** A popover a view of the status slot opens below the bar is drawn whole: the bar clips nothing. */
+export const PopoverBelowTheBar: Story = {
+  args: { status: [view('tasks', POPOVER)] },
+  render: (args) => ({
+    components: { TitleBar },
+    setup: () => ({ args }),
+    template: `
+      <div :style="{ inlineSize: args.width, blockSize: '12rem' }">
+        <TitleBar v-bind="{ ...args, width: undefined }" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const popover = await waitFor(() => {
+      const found = canvasElement.querySelector<HTMLElement>('[data-popover]')
+      if (!found) throw new Error('the popover is not drawn')
+      return found
+    })
+    const bar = canvasElement.querySelector('[data-title-bar]')!.getBoundingClientRect()
+    const box = popover.getBoundingClientRect()
+    await expect(box.top).toBeGreaterThanOrEqual(bar.bottom - 1)
+    const topmost = canvasElement.ownerDocument.elementFromPoint(
+      box.left + box.width / 2,
+      box.top + box.height / 2,
+    )
+    await expect(topmost).toBe(popover)
   },
 }
 
