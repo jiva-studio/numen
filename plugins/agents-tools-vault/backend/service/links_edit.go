@@ -100,7 +100,7 @@ func (t *Tools) addLinkUpdate(registry *tools.Registry) error {
 
 func (t *Tools) addLinkRemove(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:  tools.ByEffect,
+		Step:  tools.Remove,
 		Name:  "link_remove",
 		Title: "Remove Links",
 		Description: "Remove the links a note has to a target from its frontmatter, or only the link of one " +
