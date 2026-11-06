@@ -46,7 +46,7 @@ export function usePluginCommands(core: VaultCore, pluginHost: PluginHost | unde
       text: cmd.title,
       ...getPluginLooks(cmd),
       group: cmd.scope === 'note' ? ('note' as const) : ('window' as const),
-      ...(pluginHost?.hasCommandItems(cmd.id) ? { input: 'choice' as const } : {}),
+      ...(pluginHost?.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
       isAvailable: (target: CommandTarget) =>
         cmd.scope !== 'note' || (target.isReady && target.path !== ''),
     }))

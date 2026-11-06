@@ -435,7 +435,7 @@ describe('a plugin command with items in the palette', () => {
       (one) => (one as { id: string }).id === MOVE.id,
     ) as { input?: string }
 
-    expect(entry.input).toBe('choice')
+    expect(entry.input).toBe('items')
   })
 
   it('lists a loading row while its items arrive, then the items of the target', async () => {

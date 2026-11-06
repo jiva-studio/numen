@@ -89,7 +89,7 @@ export const WORDS = {
   leavesOut: 'Clear',
   typeNote: 'Search notes',
   /** One of a list the window holds: the field, and what Enter does. */
-  typeChoice: 'Search',
+  typeItems: 'Search',
   chooses: 'Select',
   /** The vaults the installation holds, and why one of them cannot be chosen. */
   vaults: 'Vaults',

@@ -246,7 +246,7 @@ function createPaletteStepsAndSearch(
   const previewItem = (item: string) => {
     // Stryker disable next-line OptionalChaining: stepsRef.current is initialized synchronously below.
     const step = stepsRef.current?.here.value
-    if (step?.step === 'choice') deps.lists.previewItem(step.command.id, item)
+    if (step?.step === 'items') deps.lists.previewItem(step.command.id, item)
   }
 
   const setOpen = (now: boolean) => {

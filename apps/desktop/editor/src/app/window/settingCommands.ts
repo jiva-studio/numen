@@ -174,7 +174,7 @@ export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
           id: getSettingCommandId(owner.id, setting.key),
           text: owner.name ? `${owner.name}: ${setting.title}` : setting.title,
           group: 'settings' as const,
-          input: 'choice' as const,
+          input: 'items' as const,
           ...(setting.icon ? { icon: getNamedIcon(setting.icon) } : {}),
           isAvailable: () => setting.isShown !== false,
         })),

@@ -50,7 +50,7 @@ const createPalette = () => {
         id: 'setting:app:appearance.theme',
         text: 'Theme',
         group: 'settings',
-        input: 'choice',
+        input: 'items',
         isAvailable: () => true,
       },
     ],
