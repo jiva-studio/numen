@@ -150,7 +150,7 @@ describe('the offset kept in front', () => {
     expect(turns.getKeptOffset()).toBe(7)
   })
 
-  it('is the offset asked to be kept while its spread is in front', () => {
+  it('is the offset passed to keepOffset while its spread is in front', () => {
     const { turns } = setUp()
 
     turns.stand(2, 'auto')
