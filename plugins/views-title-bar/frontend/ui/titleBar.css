@@ -16,14 +16,14 @@
   margin-inline-end: 4px;
 }
 
-/* The slots and the title share the room between the controls. The room is measured here. */
+/* The slots and the title share the room between the controls. The room is measured here. It
+   clips nothing: the views of the slots draw their popovers below the bar. */
 .title-bar__start {
   display: flex;
   flex: 1 1 0;
   align-items: center;
   min-width: 0;
   height: 100%;
-  overflow: hidden;
 }
 
 .title-bar__slot {
