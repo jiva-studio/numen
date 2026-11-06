@@ -41,7 +41,7 @@ const expectPassageGone = async (
 
 /**
  * Waits until no task recognises the file. The plugin recognises a scan on its own when it opens,
- * and the Recognise command starts a second run: the words of the first run are found while the
+ * and Recognize text starts a second run: the words of the first run are found while the
  * second still runs. Deleting the recognition then takes away the file the second run is about to
  * report, and that run ends as a failed task that stays in the list of background tasks.
  */
@@ -104,7 +104,7 @@ test.describe('the text versions of a file', () => {
     await waitForPassage(page, 'Mock transcribed', `assets/${deleted}`)
     await page.keyboard.press('Escape')
 
-    await runCommandOverItem(page, 'Delete transcript', /^Delete transcript$/, /^transcript/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^transcript/)
 
     await expect(tab.getByRole('button', { name: 'Transcribe' })).toBeVisible()
     await expect(tab.getByText(MOCK_TRANSCRIPT)).toHaveCount(0)
@@ -124,13 +124,13 @@ test.describe('the text versions of a file', () => {
     for (const name of [control, deleted]) {
       await openWorkspace(page)
       await openVaultFile(page, 'assets', name)
-      await runCommand(page, 'Recognise', /^Recognise/)
+      await runCommandOverItem(page, 'Create text', /^Create text$/, /^Recognize text$/)
       await waitForPassage(page, MOCK_RECOGNISED_WORDS, `assets/${name}`)
       await page.keyboard.press('Escape')
       await expectNoRecognitionRunning(page, name)
     }
 
-    await runCommandOverItem(page, 'Delete recognition', /^Delete recognition$/, /^recognition/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^recognition/)
 
     await expectPassageGone(page, MOCK_RECOGNISED_WORDS, `assets/${control}`, `assets/${deleted}`)
   })
@@ -146,7 +146,7 @@ test.describe('the text versions of a file', () => {
     })
 
     // The proofread version is the live one once it is made.
-    await runCommandOverItem(page, 'Delete proofreading', /^Delete proofreading$/, /\(live\)$/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /^proofreading \(live\)$/)
 
     await expect(tab.getByText(MOCK_TRANSCRIPT)).toBeVisible()
     await expect(tab.getByText(PROOFREAD_MARK)).toHaveCount(0)
