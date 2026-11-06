@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"slices"
 	"strings"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
@@ -48,12 +50,50 @@ func (m *blockingModel) Open(ctx context.Context, raw []byte) (engine.Recording,
 type finishingQueue struct {
 	*hosttest.Queue
 	finished chan string
+	failed   chan host.Task
 }
 
 func (q finishingQueue) FinishTask(ctx context.Context, id string) error {
 	err := q.Queue.FinishTask(ctx, id)
 	q.finished <- id
 	return err
+}
+
+// ReportTask also sends every task reported with a failure on failed.
+func (q finishingQueue) ReportTask(ctx context.Context, task host.Task) error {
+	err := q.Queue.ReportTask(ctx, task)
+	if task.FailureReason != "" {
+		q.failed <- task
+	}
+	return err
+}
+
+// blockingFiles reads recordings through files, but each read waits until release is closed. The
+// first read closes entered.
+type blockingFiles struct {
+	files     Files
+	entered   chan struct{}
+	enterOnce *sync.Once
+	release   chan struct{}
+}
+
+func (f blockingFiles) ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error) {
+	f.enterOnce.Do(func() { close(f.entered) })
+	select {
+	case <-f.release:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	return f.files.ReadFile(ctx, vault, path)
+}
+
+// failingFiles is the files of a vault whose every read fails, while the vault still lists them.
+type failingFiles struct{}
+
+var errUnreadable = errors.New("the disk returned an input/output error")
+
+func (failingFiles) ReadFile(context.Context, domain.VaultID, string) ([]byte, error) {
+	return nil, errUnreadable
 }
 
 // toolScene is the transcription tool over the scene's vault Lectures, shown, and the vault
@@ -68,6 +108,13 @@ type toolScene struct {
 
 func newToolScene(t *testing.T) *toolScene {
 	t.Helper()
+	return newToolSceneOver(t, func(files Files) Files { return files })
+}
+
+// newToolSceneOver is the scene whose transcriber reads recordings through what wrap makes of the
+// files of the vault.
+func newToolSceneOver(t *testing.T, wrap func(Files) Files) *toolScene {
+	t.Helper()
 	s := &toolScene{scene: newScene(t)}
 	chemistry := hosttest.New("Chemistry")
 	s.vault.Beside(chemistry)
@@ -80,12 +127,12 @@ func newToolScene(t *testing.T) *toolScene {
 	chemTexts.File(chemistryLecture, []byte(chemistrySound))
 	s.chemTexts = chemTexts
 
-	s.finishing = finishingQueue{Queue: s.queue, finished: make(chan string, 64)}
+	s.finishing = finishingQueue{Queue: s.queue, finished: make(chan string, 64), failed: make(chan host.Task, 64)}
 	s.blocking = &blockingModel{heardModel: s.model, entered: make(chan struct{}), release: make(chan struct{})}
-	s.transcriber = NewTranscriber(vaultFiles{vault: s.vault}, s.store, s.texts, s.finishing,
+	s.transcriber = NewTranscriber(wrap(vaultFiles{vault: s.vault}), s.store, s.texts, s.finishing,
 		func(context.Context) (engine.TranscriberPort, error) { return s.blocking, nil })
 	t.Cleanup(s.transcriber.Close)
-	registry, err := NewTools(s.transcriber).Registry()
+	registry, err := NewTools(s.transcriber, s.vault).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,5 +325,78 @@ func TestTranscriptCreateTranscribesInTheVaultTheCallNames(t *testing.T) {
 	}
 	if len(inLectures.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inLectures.Versions)
+	}
+}
+
+func TestTranscriptCreateAnswersBeforeTheRecordingIsRead(t *testing.T) {
+	reader := blockingFiles{entered: make(chan struct{}), enterOnce: &sync.Once{}, release: make(chan struct{})}
+	s := newToolSceneOver(t, func(files Files) Files {
+		reader.files = files
+		return reader
+	})
+	close(s.blocking.release)
+
+	out := s.createTranscript(t, "Lectures", lecture)
+
+	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	if out != want {
+		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
+	}
+	select {
+	case <-reader.entered:
+	case <-time.After(workDeadline):
+		t.Fatalf("the recording was not read within %v; tasks %+v", workDeadline, s.queue.ListTasks())
+	}
+	close(reader.release)
+	s.waitFinished(t, want.TaskID)
+	s.transcriber.Close()
+
+	if _, text := s.readLive(t); text != "first words\nsecond words\n" {
+		t.Errorf("the transcript reads %q", text)
+	}
+}
+
+func TestTranscriptCreateReportsAFailedReadInTheTask(t *testing.T) {
+	s := newToolSceneOver(t, func(Files) Files { return failingFiles{} })
+	close(s.blocking.release)
+
+	out := s.createTranscript(t, "Lectures", lecture)
+
+	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
+	if out != want {
+		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
+	}
+	deadline := time.After(workDeadline)
+	for {
+		select {
+		case task := <-s.finishing.failed:
+			if task.ID != want.TaskID {
+				continue
+			}
+			tasks := s.queue.ListTasks()
+			i := slices.IndexFunc(tasks, func(one host.Task) bool { return one.ID == want.TaskID })
+			if i < 0 || tasks[i].FailureReason == "" {
+				t.Errorf("the tasks %+v do not list %s with its failure", tasks, want.TaskID)
+			}
+			return
+		case <-deadline:
+			t.Fatalf("no failure of %s was reported within %v; tasks %+v", want.TaskID, workDeadline, s.queue.ListTasks())
+		}
+	}
+}
+
+func TestTranscriptCreateRefusesAFileThatIsNoRecording(t *testing.T) {
+	s := newToolScene(t)
+	s.vault.File("notes/plan.md", "# Plan\nRecord the lecture on tides.\n")
+
+	res := invokeAtOnce(t, s.registry, tools.Call{
+		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"notes/plan.md"}`),
+	})
+
+	if !res.GetResult().GetIsRefusal() {
+		t.Errorf("a note returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
+	}
+	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("a refused call shows the tasks %+v", tasks)
 	}
 }
