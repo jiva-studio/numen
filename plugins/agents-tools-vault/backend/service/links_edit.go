@@ -330,14 +330,14 @@ func (t *Tools) editNote(
 		Baseline:        nil,
 	}
 	v := domain.Vault{ID: domain.VaultID(tools.GetVault(ctx)), Name: "", Path: ""}
-	written, err := e.Apply(ctx, v, notePath, change)
+	stat, err := e.Apply(ctx, v, notePath, change)
 	if err = errors.Join(err, files.releaseErr); err != nil {
 		if errors.Is(err, host.ErrStale) || errors.Is(err, edit.ErrStale) {
 			return "", fmt.Errorf("%s changed since note_read gave the fingerprint; read it again: %w", notePath, err)
 		}
 		return "", err
 	}
-	return formatFingerprint(written), nil
+	return formatFingerprint(stat), nil
 }
 
 // vaultFiles is the vault of a call as the notes library edits it.

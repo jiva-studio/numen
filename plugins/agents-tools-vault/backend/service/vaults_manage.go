@@ -114,11 +114,11 @@ func (t *Tools) addVault(ctx context.Context, in VaultAddInput) (VaultAddOutput,
 	if strings.TrimSpace(in.Path) == "" {
 		return VaultAddOutput{}, errors.New("path required")
 	}
-	added, err := t.list.AddVault(ctx, in.Path, in.Name)
+	vault, err := t.list.AddVault(ctx, in.Path, in.Name)
 	if err != nil {
 		return VaultAddOutput{}, fmt.Errorf("add vault %s: %w", in.Path, err)
 	}
-	return VaultAddOutput{IsAdded: true, ID: string(added.ID), Name: added.Name, Folder: added.Path}, nil
+	return VaultAddOutput{IsAdded: true, ID: string(vault.ID), Name: vault.Name, Folder: vault.Path}, nil
 }
 
 func (t *Tools) renameVault(ctx context.Context, in VaultRenameInput) (VaultRenameOutput, error) {
@@ -129,11 +129,11 @@ func (t *Tools) renameVault(ctx context.Context, in VaultRenameInput) (VaultRena
 	if err != nil {
 		return VaultRenameOutput{}, err
 	}
-	renamed, err := t.list.RenameVault(ctx, target.ID, in.Name)
+	result, err := t.list.RenameVault(ctx, target.ID, in.Name)
 	if err != nil {
 		return VaultRenameOutput{}, fmt.Errorf("rename vault %s: %w", in.Vault, err)
 	}
-	return VaultRenameOutput{ID: string(renamed.ID), Name: renamed.Name, Folder: renamed.Path}, nil
+	return VaultRenameOutput{ID: string(result.ID), Name: result.Name, Folder: result.Path}, nil
 }
 
 func (t *Tools) removeVault(ctx context.Context, in VaultRemoveInput) (VaultRemoveOutput, error) {

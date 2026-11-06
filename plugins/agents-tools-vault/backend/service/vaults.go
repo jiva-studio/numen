@@ -107,11 +107,11 @@ func (t *Tools) getKnownVaults(ctx context.Context) ([]host.KnownVault, error) {
 	if err != nil {
 		return nil, err
 	}
-	known := make([]host.KnownVault, 0, len(vaults))
+	out := make([]host.KnownVault, 0, len(vaults))
 	for _, v := range vaults {
-		known = append(known, host.KnownVault{Vault: v, IsMissing: false})
+		out = append(out, host.KnownVault{Vault: v, IsMissing: false})
 	}
-	return known, nil
+	return out, nil
 }
 
 func (t *Tools) listVaultProblems(ctx context.Context, in VaultProblemsInput) (VaultProblemsOutput, error) {

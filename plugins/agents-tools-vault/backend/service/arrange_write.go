@@ -114,20 +114,20 @@ func (t *Tools) renameNote(ctx context.Context, in NoteRenameInput) (NoteRenameO
 	if strings.TrimSpace(in.Title) == "" {
 		return NoteRenameOutput{}, errors.New("title required")
 	}
-	renamed, err := t.vault.RenameNote(ctx, in.Path, in.Title)
+	result, err := t.vault.RenameNote(ctx, in.Path, in.Title)
 	if err != nil {
 		return NoteRenameOutput{}, fmt.Errorf("rename note %s: %w", in.Path, err)
 	}
-	out := NoteRenameOutput{Path: renamed.Path, Title: renamed.Title, By: "frontmatter", Moved: nil}
-	if renamed.IsFilenamed {
+	out := NoteRenameOutput{Path: result.Path, Title: result.Title, By: "frontmatter", Moved: nil}
+	if result.IsFilenamed {
 		out.By = "filename"
 	}
-	if renamed.Moved != nil {
+	if result.Moved != nil {
 		out.Moved = &MovedFile{
-			From:     renamed.Moved.From,
-			To:       renamed.Moved.To,
-			Repaired: getPathList(renamed.Moved.Repaired),
-			Dangling: getPathList(renamed.Moved.Dangling),
+			From:     result.Moved.From,
+			To:       result.Moved.To,
+			Repaired: getPathList(result.Moved.Repaired),
+			Dangling: getPathList(result.Moved.Dangling),
 		}
 	}
 	return out, nil
