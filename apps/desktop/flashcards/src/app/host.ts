@@ -23,6 +23,7 @@ import {
   type Disposable,
   type PluginContext,
   type SlotViewRegistry,
+  type SlotViewRegistration,
   type TabKindRegistration,
   type CommandsHost,
   type VaultsHost,
@@ -102,7 +103,6 @@ function createFrontView(views: Readonly<ShallowRef<readonly PluginView[]>>) {
 const UNUSED_CAPABILITIES = {
   registerReader: () => NOTHING,
   registerCommand: () => NOTHING,
-  registerContextMenu: () => NOTHING,
   registerAgentProvider: () => NOTHING,
   registerSettingsView: () => NOTHING,
   getSetting: () => undefined,
@@ -159,6 +159,19 @@ const getFilledServices = ({ commands, vaults, window }: ShellServices) => ({
   ...(window ? { window } : {}),
 })
 
+/** Registers the view of the plugin in every slot its manifest places it in. */
+const registerInSlots = (
+  slotViews: SlotViewRegistry,
+  plugin: { readonly pluginId: string; readonly manifest: Manifest | undefined },
+  registration: SlotViewRegistration,
+): Disposable => {
+  const { pluginId, manifest } = plugin
+  const registrations = getDeclaredSlots(pluginId, manifest, registration.id).map((slot) =>
+    slotViews.registerSlotView(pluginId, slot, registration),
+  )
+  return { dispose: () => registrations.forEach((one) => one.dispose()) }
+}
+
 /**
  * The host of the window, whose plugins are given the agent where the window has one, and the
  * vaults and the window the services hold when the plugin starts.
@@ -198,12 +211,8 @@ export function createShellHost(agent?: AgentHost, services: ShellServices = {})
         add(addView({ pluginId, registration: registration as TabKindRegistration })),
       ...UNUSED_CAPABILITIES,
       registerView: (registration) => add(declaredViews.registerView(pluginId, registration)),
-      registerSlotView: (registration) => {
-        const registrations = getDeclaredSlots(pluginId, manifest, registration.id).map((slot) =>
-          slotViews.registerSlotView(pluginId, slot, registration),
-        )
-        return add({ dispose: () => registrations.forEach((one) => one.dispose()) })
-      },
+      registerSlotView: (registration) =>
+        add(registerInSlots(slotViews, { pluginId, manifest }, registration)),
       slots: windowSlots.slots,
       mountView: (capability, element, viewContext) => {
         const view = declaredViews.mountView(capability, element, viewContext)

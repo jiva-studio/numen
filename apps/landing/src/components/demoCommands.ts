@@ -19,6 +19,9 @@ export const DEMO_COMMAND = {
   showNoteInPlex: 'md.numen.views.plex.graph:graph.showNote',
   openAgent: 'md.numen.views.agent.chat:chat.open',
   askAgent: 'md.numen.views.agent.chat:note.ask',
+  newTreeNote: 'md.numen.views.file.tree:tree.newNote',
+  newTreeFolder: 'md.numen.views.file.tree:tree.newFolder',
+  renameTreeEntry: 'md.numen.views.file.tree:tree.rename',
 } as const
 
 /** The id of the command a transcript menu entry runs to delete a transcript. */

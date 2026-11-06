@@ -4,7 +4,7 @@
  * before it is sent to the plugin.
  */
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
-import { parseWhen } from '@numen/plugin-host'
+import { parseWhen, type CommandItem } from '@numen/plugin-host'
 import { pluginCommands } from '@/shared/clients'
 
 interface WireCommand {
@@ -14,6 +14,7 @@ interface WireCommand {
   readonly icon?: string
   readonly when: string
   readonly shortcut?: string
+  readonly hasItems?: boolean
   readonly arguments: readonly {
     readonly name: string
     readonly title: string
@@ -76,13 +77,19 @@ export interface DeclaredCommand {
   /** The CEL condition under which it is available, as the manifest declares it; absent is always. */
   readonly when?: string
   readonly shortcut?: string
+  /** Set for a command that offers items, the text versions of a file it runs over. */
+  readonly hasItems?: true
   readonly arguments: readonly DeclaredArgument[]
 }
 
-/** One run of a command: the file it is over, and the values of its arguments by name. */
+/**
+ * One run of a command: the file it is over, the values of its arguments by name, and for a command
+ * that offers items the id of the one picked.
+ */
 export interface DeclaredCommandRun {
   readonly path: string
   readonly values: Readonly<Record<string, string>>
+  readonly argument?: string
 }
 
 /**
@@ -100,6 +107,7 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   ...(wire.icon ? { icon: wire.icon } : {}),
   ...(wire.when ? { when: wire.when } : {}),
   ...(wire.shortcut ? { shortcut: wire.shortcut } : {}),
+  ...(wire.hasItems ? { hasItems: true as const } : {}),
   arguments: wire.arguments.map((one) => ({
     name: one.name,
     title: one.title,
@@ -151,13 +159,28 @@ export async function runDeclaredCommand(
   const answer = await pluginCommands.runPluginCommand({
     pluginId: command.pluginId,
     command: command.id,
-    path: isOverTarget(command) ? run.path : '',
+    path: isOverTarget(command) || command.hasItems ? run.path : '',
     arguments: { ...run.values },
+    ...(run.argument === undefined ? {} : { argument: run.argument }),
   })
   if (answer.error === COMMAND_ERROR_CODE.UNSPECIFIED) {
     return { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
   }
   return { ok: false, error: answer.message }
+}
+
+/** The items the command offers over the file, as the core lists them. */
+export async function listDeclaredCommandItems(
+  command: Pick<DeclaredCommand, 'pluginId' | 'id'>,
+  path: string,
+): Promise<readonly CommandItem[]> {
+  const answer = await pluginCommands.listCommandItems({
+    pluginId: command.pluginId,
+    command: command.id,
+    path,
+  })
+  if (answer.error !== COMMAND_ERROR_CODE.UNSPECIFIED) throw new Error(answer.message)
+  return answer.items.map((one) => ({ id: one.id, title: one.title }))
 }
 
 /** Whether the condition of the command reads its target, so a run of it names the path it is over. */

@@ -32,14 +32,6 @@ export function getEligibleTabs(input: EligibilityInput): readonly EligibleLinkT
     }))
 }
 
-/** The titles of the tabs a tab is linked to, joined; a tab with no title is named by its identity. */
-export function getLinkedTitle(
-  targets: readonly TabId[],
-  tabs: readonly { readonly id: TabId; readonly title: string }[],
-): string {
-  return targets.map((id) => tabs.find((tab) => tab.id === id)?.title || id).join(', ')
-}
-
 /** Returns the tabs of this window, then the linkable tabs of other windows. */
 export function getAllTabs(
   own: readonly { readonly id: TabId; readonly title: string }[],

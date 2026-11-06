@@ -29,6 +29,7 @@ vi.mock('../vault', () => ({ core: h.core }))
 vi.mock('@/features/command-palette', () => ({
   runSupport: () => ({ name: 'runs' }),
   createCommands: () => [{ id: 'app:vault.create' }],
+  registerCommand: () => () => undefined,
 }))
 vi.mock('@/features/tab-linking', () => ({
   useTabLinks: (args: unknown) => {
@@ -83,12 +84,11 @@ vi.mock('../commands/useCommands', () => ({
     h.args.commands = args
     return h.f.commands
   },
-}))
-vi.mock('../commands/fileMenuCommands', () => ({
-  useFileMenuCommands: (args: unknown) => {
-    h.args.fileMenu = args
-    return h.f.fileMenu
-  },
+  createPaletteItems: () => ({
+    hasCommandItems: () => false,
+    listCommandItems: async () => [],
+    runWithArgument: async () => undefined,
+  }),
 }))
 vi.mock('./useWindowDisplay', () => ({
   useWindowDisplay: (_core: unknown, args: unknown) => {
@@ -187,7 +187,7 @@ beforeEach(() => {
     windowReport: ref<unknown>({ tabs: [], window: {} }),
     tabMover: {
       detachTab: vi.fn(async () => undefined),
-      detachTabAt: vi.fn(async () => undefined),
+      detachTabInPlace: vi.fn(async () => undefined),
       moveTab: vi.fn(async () => undefined),
     },
     openMovedTab: vi.fn(async () => undefined),
@@ -250,10 +250,6 @@ beforeEach(() => {
       listed: {},
     },
     openTabs: { getTabIcon: vi.fn(), pause: vi.fn(async () => undefined), resume: vi.fn() },
-    fileMenu: {
-      getForFile: vi.fn(() => ['file-item']),
-      getIcon: vi.fn((id: string) => (id === 'file:cmd' ? 'file-icon' : undefined)),
-    },
     commands: {
       commands: { applyRenames: vi.fn() },
       runCommand: vi.fn(),
@@ -272,9 +268,6 @@ beforeEach(() => {
         { id: 'org.example.sample:share.run', title: 'Share', icon: 'share' },
       ]),
       getRegisteredSettingsViews: vi.fn(() => ['view-1']),
-      getContextMenuItems: vi.fn(() => ['ctx-item']),
-      runContextMenu: vi.fn(),
-      getContextMenuIcon: vi.fn(() => 'ctx-icon'),
       getSlotView: vi.fn(() => ref(null)),
     },
     pluginLoader: {
@@ -519,11 +512,11 @@ describe('tab detach and move wiring', () => {
     const window = useWindow()
 
     window.detachTab('t1', { x: 1, y: 2 })
-    window.detachTabAt('t1', { x: 3, y: 4 })
+    window.detachTabInPlace('t1')
     window.moveTab('t1', 'window-b')
 
     expect(h.f.tabMover.detachTab).toHaveBeenCalledWith('t1', { x: 1, y: 2 })
-    expect(h.f.tabMover.detachTabAt).toHaveBeenCalledWith('t1', { x: 3, y: 4 })
+    expect(h.f.tabMover.detachTabInPlace).toHaveBeenCalledWith('t1')
     expect(h.f.tabMover.moveTab).toHaveBeenCalledWith('t1', 'window-b')
     expect(h.args.tabMover.windowId).toBe(window.windowId)
     expect(h.args.tabMover.core).toBe(h.core)
@@ -617,14 +610,21 @@ describe('the window started and closed', () => {
 })
 
 describe('the services a plugin is given', () => {
-  it('are the ones the kinds made, the window task list, the background tasks, the commands, the vaults and the window', () => {
+  it('are the ones the kinds made, the window task list, the background tasks, the commands with those over a tab, the vaults and the window', () => {
     useWindow()
 
     const { taskList, backgroundTasks, commands, vaults, window, ...made } = h.args.plugins.services
     expect(made).toStrictEqual(h.f.kinds.services)
     expect(taskList).toBe(h.f.display.tasks)
     expect(vaults?.getState()).toBeDefined()
-    expect(commands?.getIds()).toStrictEqual(['app:vault.create', 'org.example.sample:share.run'])
+    expect(commands?.getIds()).toStrictEqual([
+      'app:vault.create',
+      'app:tab.detach',
+      'app:tab.unlink',
+      'app:tab.moveToWindow',
+      'app:tab.link',
+      'org.example.sample:share.run',
+    ])
     expect(window?.getState()).toStrictEqual({ isMaximized: false, isFullscreen: false })
     expect(backgroundTasks).toStrictEqual({ name: 'backgroundTasks' })
   })
@@ -699,23 +699,12 @@ describe('the services a plugin is given', () => {
     expect(h.f.editing.noted.measureAll).toHaveBeenCalledOnce()
     expect(h.args.settings.getSettingsViews('p1')).toEqual(['view-1'])
 
-    // useFileMenuCommands callbacks
-    h.args.fileMenu.onRun('notes/a.md')
-    expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths: ['notes/a.md'] })
-    h.f.writer.mockClear()
-    h.args.fileMenu.onError(new Error('file menu err'))
-    expect(h.f.writer).toHaveBeenCalledWith('Numen is not responding; retrying', 'error')
-
     // useWindowKinds callbacks
     const target = window.getTarget()
     h.args.kinds.runCommand('cmd-1', target)
     expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-1', target)
-    expect(h.args.kinds.getContextMenuItems(target)).toEqual(['ctx-item'])
-    h.args.kinds.runContextMenu('ctx-1', target)
-    expect(h.f.pluginHost.runContextMenu).toHaveBeenCalledWith('ctx-1', target)
-    expect(h.args.kinds.getFileMenuItems('a.md')).toEqual(['file-item'])
-    expect(h.args.kinds.getContextMenuIcon('ctx-1')).toBe('ctx-icon')
-    expect(h.args.kinds.getPluginCommandIcon('file:cmd')).toBe('file-icon')
+    expect(h.args.kinds).not.toHaveProperty('getContextMenuItems')
+    expect(h.args.kinds).not.toHaveProperty('getFileMenuItems')
 
     // tabsHold callbacks
     await h.args.commands.tabsHold.pause()

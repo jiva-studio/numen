@@ -126,6 +126,9 @@ func (d disk) stat(filePath string) (domain.FileStat, error) {
 	if err != nil {
 		return domain.FileStat{}, err
 	}
+	if !info.Mode().IsRegular() {
+		return domain.FileStat{}, host.ErrNotANote
+	}
 	return domain.FileStat{Path: filePath, Kind: getKind(filePath), Size: info.Size(), ModTime: info.ModTime()}, nil
 }
 

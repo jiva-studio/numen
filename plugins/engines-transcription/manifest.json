@@ -25,6 +25,9 @@
         "icon": "trash-2",
         "when": "version.kind == 'transcript'"
       }
+    ],
+    "slots": [
+      { "slot": "fileTree.context", "command": "transcript.create", "group": "3-text", "order": 20 }
     ]
   },
   "permissions": ["vault:read", "vault:write", "network:outbound"],

@@ -148,9 +148,3 @@ export interface Words extends EmptyWords {
   readonly asParent: string
   readonly asJump: string
 }
-
-/** What the menu on a row of the files tree offers besides the commands over a note. */
-export const PATH_WORDS = {
-  remove: 'Remove',
-  relation: 'Relation',
-}

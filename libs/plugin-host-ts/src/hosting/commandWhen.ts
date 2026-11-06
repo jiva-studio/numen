@@ -25,7 +25,7 @@ export function isCommandAvailable(
 ): boolean {
   const condition = getCondition(declaration.when ?? '')
   if (!condition) return false
-  const target = note.path === '' ? undefined : { path: note.path, isFolder: false, others: [] }
+  const target = note.path === '' && !note.isFolder ? undefined : note
   return condition.evaluate({
     ...deps.getWindowValues?.(),
     ...getTargetValues(target, deps.getContentTypes?.() ?? {}, note.type),

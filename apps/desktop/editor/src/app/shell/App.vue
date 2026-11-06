@@ -13,12 +13,13 @@ import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
-import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
+import { TabLinkIndicator } from '@/features/tab-linking'
 import { StatusBarHost } from '@/features/status-bar-view'
 import { TitleBarHost } from '@/features/title-bar-view'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
+import { useWindowTabMenu } from '../tabs/useTabMenu'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
@@ -34,8 +35,10 @@ const unsaved = {
 
 const {
   runCommand,
+  slots,
   runChoice,
   openCurrentVault,
+  readNoteType,
   isLayoutReady,
   bootstrapFailure,
   isStarted,
@@ -55,30 +58,22 @@ const {
   destinations,
   closeTab,
   getTabIcon,
-  getKindIcon,
   getTitle,
   getTarget,
   tabLinks,
-  windowId,
+  windowCommands,
   isHighlighted,
   highlightWindow,
-  isTabAsking,
   detachTab,
-  detachTabAt,
-  moveTab,
   frame,
 } = useWindow()
 
-const linkMenu = useTabLinkMenu({
-  tabLinks,
-  getTabs: () => windowTabs.tabs.value,
-  getKind: (id) => windowTabs.getTab(id)?.kind.kind,
-  isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
-  onDetach: detachTabAt,
-  windowId,
-  isAsking: isTabAsking,
-  onMove: moveTab,
+const tabMenu = useWindowTabMenu({
+  windowTabs,
   onHighlight: highlightWindow,
+  slots,
+  commands: windowCommands,
+  readNoteType,
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -107,10 +102,6 @@ function onCloseTab(id: string, hold?: () => void) {
 function onShowTab(id: string) {
   windowTabs.onTabShown(id)
 }
-
-function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
-  linkMenu.open(tabId, position)
-}
 </script>
 
 <template>
@@ -128,11 +119,24 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       class="below"
       :tabs="windowTabs.tabs.value"
       :window-edge="titleBarView ? undefined : frame.windowEdge.value"
+      :tab-menu="tabMenu.menu.value"
       @close="onCloseTab"
       @show="onShowTab"
-      @tab-context-menu="onTabContextMenu"
+      @tab-context-menu="tabMenu.open"
+      @tab-menu-choose="tabMenu.choose"
+      @tab-menu-dismiss="tabMenu.dismiss"
+      @tab-menu-highlight="tabMenu.highlight"
       @tear-off="detachTab"
     >
+      <template #tab-menu-icon="{ id }">
+        <component
+          :is="tabMenu.getIcon(id)"
+          v-if="tabMenu.getIcon(id)"
+          class="tab-menu-icon"
+          aria-hidden="true"
+        />
+      </template>
+
       <template #icon="{ id }">
         <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />
         <TabLinkIndicator
@@ -172,26 +176,6 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
         <div v-else />
       </template>
     </WorkspaceLayout>
-
-    <TabLinkMenu
-      v-if="linkMenu.tabId.value"
-      :tab-id="linkMenu.tabId.value"
-      :eligible-tabs="linkMenu.eligibleTabs.value"
-      :at="linkMenu.at.value"
-      :is-linked="linkMenu.isLinked.value"
-      :can-detach="linkMenu.canDetach.value"
-      :windows="linkMenu.windows.value"
-      :is-asking="linkMenu.isAsking.value"
-      :linked-target-title="linkMenu.linkedTargetTitle.value"
-      :get-tab-icon="getTabIcon"
-      :get-kind-icon="getKindIcon"
-      @link="linkMenu.link"
-      @unlink="linkMenu.unlink"
-      @detach="linkMenu.detach"
-      @move="linkMenu.move"
-      @highlight="linkMenu.highlight"
-      @close="linkMenu.close"
-    />
 
     <StatusBarHost :view="statusBarView" />
 
@@ -236,6 +220,12 @@ main.is-highlighted::after {
 .below {
   flex: 1;
   min-height: 0;
+}
+
+.tab-menu-icon {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  stroke-width: 1.75;
 }
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */

@@ -168,9 +168,6 @@ export interface CommandNote extends CommandTarget {
   readonly type: NoteType
 }
 
-// NOTE_TARGET offers a context menu item on a note.
-export const NOTE_TARGET = 'note' as const
-
 // CommandRegistration binds the handler of a command the manifest declares under `contributes.commands`.
 // The title, icon, scope and shortcut are read from the declaration. A handler registered for an id the
 // manifest does not declare is never listed.
@@ -212,31 +209,6 @@ export interface FileSelectEvent {
   readonly title?: string
 }
 
-// ContextMenuTarget describes the subject the context menu is opened on.
-export interface ContextMenuTarget {
-  readonly path: string
-  readonly name?: string
-  readonly isFolder: boolean
-  readonly isNote: boolean
-  readonly isSeveral?: boolean
-}
-
-// ContextMenuRegistration registers an item to be contributed to the context menu.
-export interface ContextMenuRegistration {
-  readonly id: string
-  readonly text: string
-  readonly detail?: string
-  readonly group?: string
-  /** Submenu parent identifier (e.g. 'new' or 'relation'). */
-  readonly parentId?: string
-  /** Which target kinds this item applies to. */
-  readonly target?: 'all' | 'file' | 'folder' | 'root' | 'note' | readonly string[]
-  readonly order?: number
-  readonly isDisabled?: boolean // The icon the item is drawn with.
-  readonly icon?: unknown | ((target: ContextMenuTarget) => boolean)
-  readonly handler: (target: ContextMenuTarget) => void | Promise<void>
-}
-
 // PluginContext provides registration and host services to an activated plugin.
 export interface PluginContext {
   readonly pluginId: string
@@ -256,7 +228,6 @@ export interface PluginContext {
   registerSlotView(registration: SlotViewRegistration): Disposable
   registerTabKind<State>(registration: TabKindRegistration<State>): Disposable
   registerCommand(registration: CommandRegistration): Disposable
-  registerContextMenu(registration: ContextMenuRegistration): Disposable
   registerAgentProvider(registration: AgentProviderRegistration): Disposable
   // Declares a view other plugins mount by its capability.
   registerView(registration: ViewRegistration): Disposable

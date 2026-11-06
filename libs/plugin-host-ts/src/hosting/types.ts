@@ -9,8 +9,6 @@ import type {
   BufferHost,
   CommandRegistration,
   CommandsHost,
-  ContextMenuRegistration,
-  ContextMenuTarget,
   Disposable,
   DropHost,
   DropRegistration,
@@ -44,8 +42,6 @@ import type { Component } from 'vue'
 export type {
   AgentProviderRegistration,
   CommandRegistration,
-  ContextMenuRegistration,
-  ContextMenuTarget,
   Disposable,
   FileSelectEvent,
   PluginContext,
@@ -141,9 +137,9 @@ export interface PluginHostDeps {
   readonly getFiles?: () => VaultFiles | undefined
   /** The agent the window queries, once the window has created it. */
   readonly getAgent?: () => AgentHost | undefined
-  /** The vaults the window can show, once the window has made them. */
   /** The commands of the window, once the window has made them. */
   readonly getCommands?: () => CommandsHost | undefined
+  /** The vaults the window can show, once the window has made them. */
   readonly getVaults?: () => VaultsHost | undefined
   /** The window the plugins run in, once the window has made it. */
   readonly getWindow?: () => WindowHost | undefined
@@ -215,7 +211,6 @@ export interface PluginContextHost {
   openExternal(url: string): Promise<void>
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable
-  registerContextMenu(pluginId: string, registration: ContextMenuRegistration): Disposable
   registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
   registerView(pluginId: string, registration: ViewRegistration): Disposable
   mountView(capability: string, element: HTMLElement, context: unknown): MountedView

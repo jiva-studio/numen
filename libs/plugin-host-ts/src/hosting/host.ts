@@ -3,8 +3,6 @@
  */
 import { shallowRef } from 'vue'
 import type {
-  ContextMenuRegistration,
-  ContextMenuTarget,
   PluginContext,
   SettingsViewRegistration,
   VaultChangeEvent,
@@ -26,7 +24,6 @@ import {
   addEntry,
   disposeAllEntries,
   disposePluginEntry,
-  matchesContextMenuTarget,
   setStarting,
   type HostRegistry,
 } from './registry'
@@ -59,7 +56,6 @@ type RegistrationBridge = Pick<
   | 'registerReader'
   | 'registerTabKind'
   | 'registerCommand'
-  | 'registerContextMenu'
   | 'registerSettingsView'
   | 'registerAgentProvider'
 >
@@ -88,8 +84,6 @@ function createRegistrationBridge(
       }
       return addEntry(registry.commands, fullId, { pluginId, reg: registration })
     },
-    registerContextMenu: (pluginId, registration) =>
-      addEntry(registry.contextMenus, registration.id, { pluginId, reg: registration }),
     registerSettingsView: (pluginId, registration) =>
       addEntry(registry.settingsViews, getSettingsViewKey(pluginId, registration.id), {
         pluginId,
@@ -231,7 +225,6 @@ function createHostRegistry(): HostRegistry {
     readers: new Map(),
     tabKinds: new Map(),
     commands: shallowRef(new Map()),
-    contextMenus: shallowRef(new Map()),
     settingsViews: shallowRef(new Map()),
     agentProviders: new Map(),
     contexts: new Map(),
@@ -242,28 +235,6 @@ function createHostRegistry(): HostRegistry {
     reportedIssues: new Set(),
     vaultListeners: new Set(),
     fileListeners: new Set(),
-  }
-}
-
-/** The context menu items the plugins registered. */
-function createContextMenuApi(registry: HostRegistry) {
-  return {
-    getContextMenuItems: (target: ContextMenuTarget): readonly ContextMenuRegistration[] => {
-      const items: ContextMenuRegistration[] = []
-      for (const { reg } of registry.contextMenus.value.values()) {
-        if (matchesContextMenuTarget(reg.target, target)) {
-          items.push(reg)
-        }
-      }
-      return items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    },
-    getContextMenuIcon: (id: string): unknown => registry.contextMenus.value.get(id)?.reg.icon,
-    runContextMenu: async (id: string, target: ContextMenuTarget): Promise<boolean> => {
-      const entry = registry.contextMenus.value.get(id)
-      if (!entry) return false
-      await entry.reg.handler(target)
-      return true
-    },
   }
 }
 
@@ -283,7 +254,6 @@ function createRegisteredApi(registry: HostRegistry) {
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
     getRegisteredTabKinds: () => [...registry.tabKinds.values()].map((t) => t.reg),
     getRegisteredCommands: () => [...registry.commands.value.values()].map((c) => c.reg),
-    getRegisteredContextMenus: () => [...registry.contextMenus.value.values()].map((c) => c.reg),
   }
 }
 
@@ -338,7 +308,6 @@ export function createPluginHost(deps: PluginHostDeps) {
   return {
     ...createContextApi(registry, contextHost),
     ...createCommandApi(deps, registry),
-    ...createContextMenuApi(registry),
     ...createRegisteredApi(registry),
     getSetting: contextHost.getSetting,
     onSettingChange: contextHost.onSettingChange,

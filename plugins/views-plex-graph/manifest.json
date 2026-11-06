@@ -38,7 +38,17 @@
         "group": "navigate",
         "order": 20
       },
-      { "slot": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 }
+      { "slot": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 },
+      { "slot": "fileTree.context", "command": "graph.showNote", "group": "0-open", "order": 20 },
+      {
+        "slot": "fileTree.context",
+        "submenu": "plex.relation",
+        "title": "Relation",
+        "group": "4-relation"
+      },
+      { "slot": "plex.relation", "command": "app:note.createChild", "order": 10 },
+      { "slot": "plex.relation", "command": "app:note.createParent", "order": 20 },
+      { "slot": "plex.relation", "command": "app:note.createJump", "order": 30 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

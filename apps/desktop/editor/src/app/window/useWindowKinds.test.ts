@@ -27,7 +27,7 @@ vi.mock('../plugins/fileServices', () => ({
     hoisted.built.vaultFiles = args as MockSeen & { making?: unknown }
     return { name: 'files' }
   },
-  createPathCommandHost: () => ({}),
+  createIconHost: () => ({}),
 }))
 
 /** A tool tab that follows a note, and the note its kind is attached to. */

@@ -19,7 +19,6 @@ import type { PluginContextHost } from './types'
 
 const createServices = () => {
   const workspace = {
-    runPathCommand: vi.fn(),
     openFile: vi.fn(),
     showError: vi.fn(),
   } as unknown as WorkspaceHost
@@ -280,7 +279,6 @@ describe('a file a plugin writes', () => {
 
 describe('a command a plugin runs over the vault', () => {
   const target = { path: 'a.md', title: 'A', isFolder: false, others: [], tab: '' }
-  const row = { paths: ['a.md'], name: 'a', isNote: true, isFolder: false }
   const WRITES = [
     'app:note.trash',
     'app:note.createChild',
@@ -294,37 +292,6 @@ describe('a command a plugin runs over the vault', () => {
     await context.commands!.run(id, target)
 
     expect(commands.getRuns()).toStrictEqual([{ command: id, target, argument: undefined }])
-  })
-
-  it.each(WRITES)('fails for %s over a row without vault:write', (id) => {
-    const { context, workspace } = createContext(['vault:read'])
-
-    expect(() => context.workspace!.runPathCommand(id, row)).toThrowError(
-      `Plugin "md.numen.sample" lacks required permission "vault:write" for workspace.runPathCommand ${id}`,
-    )
-    expect(workspace.runPathCommand).not.toHaveBeenCalled()
-  })
-
-  it.each(WRITES)('runs %s over a row with vault:write', (id) => {
-    const { context, workspace } = createContext(['vault:write'])
-
-    context.workspace!.runPathCommand(id, row)
-
-    expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
-  })
-
-  it.each([
-    'app:note.open',
-    'md.numen.views.plex.graph:graph.showNote',
-    'app:note.copyPath',
-    'app:settings.open',
-    'md.numen.views.agent.chat:note.ask',
-  ])('runs %s over a row without vault:write', (id) => {
-    const { context, workspace } = createContext([])
-
-    context.workspace!.runPathCommand(id, row)
-
-    expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
   })
 
   it('reads the commands of the window and their items with no permission', () => {

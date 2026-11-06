@@ -73,6 +73,17 @@ export const runCommand = async (page: Page, query: string, name: RegExp): Promi
   await page.getByRole('option', { name }).first().click()
 }
 
+/** Runs a command that offers items over the item the palette lists under the name `item`. */
+export const runCommandOverItem = async (
+  page: Page,
+  query: string,
+  name: RegExp,
+  item: RegExp,
+): Promise<void> => {
+  await runCommand(page, query, name)
+  await page.getByRole('option', { name: item }).first().click()
+}
+
 /**
  * Opens a file of the vault from the files tab and gives back the panel it is drawn in, found by
  * the file's name without its extension.

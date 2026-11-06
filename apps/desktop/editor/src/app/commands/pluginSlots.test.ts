@@ -48,12 +48,66 @@ describe('the slot entries of the window', () => {
   })
 
   it('place the settings button of the application last in the title bar', () => {
-    expect(APP_SLOT_ENTRIES).toStrictEqual([
+    expect(APP_SLOT_ENTRIES.filter((one) => one.slot === 'titleBar.commands')).toStrictEqual([
       {
         pluginId: 'app',
         slot: 'titleBar.commands',
         command: 'app:settings.open',
         group: 'settings',
+      },
+    ])
+  })
+
+  it('place the commands of the window over a row in the menu of the file tree', () => {
+    expect(APP_SLOT_ENTRIES.filter((one) => one.slot === 'fileTree.context')).toStrictEqual([
+      {
+        pluginId: 'app',
+        slot: 'fileTree.context',
+        command: 'app:note.open',
+        group: '0-open',
+        order: 10,
+      },
+      {
+        pluginId: 'app',
+        slot: 'fileTree.context',
+        command: 'app:note.copyPath',
+        group: '2-edit',
+        order: 20,
+        when: '!target.isRoot && !target.isMultiple',
+      },
+      { pluginId: 'app', slot: 'fileTree.context', command: 'app:note.trash', group: '9-remove' },
+    ])
+  })
+
+  it('place the commands of the window over a tab in the menu of a tab', () => {
+    expect(APP_SLOT_ENTRIES.filter((one) => one.slot === 'tabStrip.context')).toStrictEqual([
+      {
+        pluginId: 'app',
+        slot: 'tabStrip.context',
+        command: 'app:tab.moveToWindow',
+        group: '0-window',
+        order: 10,
+      },
+      {
+        pluginId: 'app',
+        slot: 'tabStrip.context',
+        command: 'app:tab.detach',
+        group: '0-window',
+        order: 20,
+      },
+      {
+        pluginId: 'app',
+        slot: 'tabStrip.context',
+        command: 'app:tab.link',
+        group: '1-link',
+        order: 10,
+      },
+      {
+        pluginId: 'app',
+        slot: 'tabStrip.context',
+        command: 'app:tab.unlink',
+        group: '1-link',
+        order: 20,
       },
     ])
   })
@@ -84,16 +138,19 @@ describe('a command of a slot entry', () => {
       title: 'Live tide',
       icon: getNamedIcon('waves'),
       shortcut: 'mod+t',
+      hasItems: false,
     })
     expect(find(`${TIDE}:tide.open`, undefined)).toStrictEqual({
       title: 'Open tide',
       icon: getNamedIcon('waves'),
       shortcut: '',
+      hasItems: false,
     })
     expect(find('app:settings.open', undefined)).toStrictEqual({
       title: 'Open settings',
       icon: getNamedIcon('settings'),
       shortcut: '',
+      hasItems: false,
     })
   })
 

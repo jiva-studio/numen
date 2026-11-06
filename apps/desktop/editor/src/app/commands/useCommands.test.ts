@@ -490,7 +490,7 @@ describe('a plugin command with items in the palette', () => {
     )
   })
 
-  it('leaves the lists of the window to a command without choices', () => {
+  it('leaves the lists of the window to a command without items', () => {
     const { windowLists } = setupItems()
 
     h.lists?.getStepGroups('app:setting.theme', 'dark')

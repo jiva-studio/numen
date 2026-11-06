@@ -304,6 +304,46 @@ func TestFileMenuRejectsRunningUnofferedEntry(t *testing.T) {
 	}
 }
 
+func TestFileMenuRunsACommandOverAVersionItemWithTheVersionArgument(t *testing.T) {
+	s := newScene(t)
+	proofread := getProofreadCommand()
+	menu, recorder := newMenu(t, s, proofread)
+	s.requestText(t)
+
+	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, proofread, s.getReaderVersion()); err != nil {
+		t.Fatal(err)
+	}
+	want := []pluginport.PluginCommandCall{{
+		PluginID: proofreader, Command: "proofreading.create", Path: scanPath,
+		Arguments: map[string]string{pluginport.CommandArgumentVersion: string(s.getReaderVersion())},
+	}}
+	if !reflect.DeepEqual(recorder.ran, want) {
+		t.Fatalf("ran %+v, want %+v", recorder.ran, want)
+	}
+}
+
+func TestFileMenuRejectsAVersionTheCommandDoesNotList(t *testing.T) {
+	s := newScene(t)
+	proofread := getProofreadCommand()
+	menu, recorder := newMenu(t, s, proofread)
+	s.requestText(t)
+
+	for name, version := range map[string]domain.TextVersionID{
+		"another version": "org.numen.tools-proofreading/other",
+		"no version":      "",
+	} {
+		if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, proofread, version); !errors.Is(err, textversion.ErrInvalidVersion) {
+			t.Errorf("%s: got %v, want ErrInvalidVersion", name, err)
+		}
+	}
+	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, getRecogniseCommand(), s.getReaderVersion()); !errors.Is(err, textversion.ErrInvalidVersion) {
+		t.Errorf("a command without items: got %v, want ErrInvalidVersion", err)
+	}
+	if len(recorder.ran) != 0 {
+		t.Fatalf("ran %+v", recorder.ran)
+	}
+}
+
 func TestNewFileMenuRequiresVersionsCommandsTypesAndReaders(t *testing.T) {
 	s := newScene(t)
 	if _, err := textversion.NewFileMenu(nil, &commands{}, getPdfTypes(), fileReaders{}); err == nil {

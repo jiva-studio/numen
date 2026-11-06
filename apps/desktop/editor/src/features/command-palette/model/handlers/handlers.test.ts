@@ -288,6 +288,21 @@ describe('a note made', () => {
     expect(one.actions[0]).toBe('createNote Entropy physics/Ontology.md child')
   })
 
+  it('relates to the note of a row it runs over, which is not the tab in front', async () => {
+    const one = window()
+    const row = front({ tab: '', kind: null, path: 'reef/Coral.md', title: 'Coral', file: '' })
+
+    await carry(createInvocation('app:note.createChild', row, 'Polyp'), one.on)
+    await carry(createInvocation('app:note.createParent', row, 'Atoll'), one.on)
+    await carry(createInvocation('app:note.createJump', row, 'Lagoon'), one.on)
+
+    expect(one.actions.filter((action) => action.startsWith('createNote'))).toStrictEqual([
+      'createNote Polyp reef/Coral.md child',
+      'createNote Atoll reef/Coral.md parent',
+      'createNote Lagoon reef/Coral.md jump',
+    ])
+  })
+
   it('relies on its own where no relation was requested for', async () => {
     const one = window()
 

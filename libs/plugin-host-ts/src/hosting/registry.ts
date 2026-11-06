@@ -5,8 +5,6 @@
 import type {
   AgentProviderRegistration,
   CommandRegistration,
-  ContextMenuRegistration,
-  ContextMenuTarget,
   Disposable,
   FileSelectEvent,
   PluginContext,
@@ -37,11 +35,6 @@ export interface RegisteredCommand {
   reg: CommandRegistration
 }
 
-export interface RegisteredContextMenu {
-  pluginId: string
-  reg: ContextMenuRegistration
-}
-
 export interface RegisteredAgentProvider {
   pluginId: string
   reg: AgentProviderRegistration
@@ -58,7 +51,6 @@ export interface HostRegistry {
   readonly readers: Map<string, RegisteredReader>
   readonly tabKinds: Map<string, RegisteredTabKind>
   readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
-  readonly contextMenus: { value: ReadonlyMap<string, RegisteredContextMenu> }
   readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
   readonly agentProviders: Map<string, RegisteredAgentProvider>
   readonly contexts: Map<string, PluginContext>
@@ -176,31 +168,10 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   cleanupMapItems(registry.tabKinds, pluginId)
   cleanupProviderItems(registry.agentProviders, pluginId)
   removePluginItems(registry.commands, pluginId)
-  removePluginItems(registry.contextMenus, pluginId)
   removePluginItems(registry.settingsViews, pluginId)
   slotViews?.disposePlugin(pluginId)
   removePluginListeners(registry.vaultListeners, pluginId)
   removePluginListeners(registry.fileListeners, pluginId)
-}
-
-function matchesSingleTarget(pattern: string, actual: ContextMenuTarget): boolean {
-  if (pattern === 'all') return true
-  if (pattern === 'root') return actual.path === '' || actual.path === null
-  if (pattern === 'folder') return actual.isFolder
-  if (pattern === 'file') return !actual.isFolder
-  if (pattern === 'note') return !actual.isFolder && actual.isNote
-  return false
-}
-
-export function matchesContextMenuTarget(
-  targetPattern: ContextMenuRegistration['target'],
-  actual: ContextMenuTarget,
-): boolean {
-  if (!targetPattern) return true
-  if (typeof targetPattern === 'string') {
-    return matchesSingleTarget(targetPattern, actual)
-  }
-  return targetPattern.some((p) => matchesSingleTarget(p, actual))
 }
 
 export function disposeAllEntries(parts: DisposalParts & { readonly deps: PluginHostDeps }) {
@@ -210,7 +181,6 @@ export function disposeAllEntries(parts: DisposalParts & { readonly deps: Plugin
     ...[...registry.readers.values()].map((r) => r.pluginId),
     ...[...registry.tabKinds.values()].map((t) => t.pluginId),
     ...[...registry.commands.value.values()].map((c) => c.pluginId),
-    ...[...registry.contextMenus.value.values()].map((c) => c.pluginId),
     ...[...registry.settingsViews.value.values()].map((v) => v.pluginId),
     ...[...registry.agentProviders.values()].map((p) => p.pluginId),
     ...(slotViews?.views.value ?? []).map((v) => v.pluginId),

@@ -31,7 +31,8 @@
       }
     ],
     "slots": [
-      { "slot": "titleBar.commands", "command": "chat.open", "group": "navigate", "order": 30 }
+      { "slot": "titleBar.commands", "command": "chat.open", "group": "navigate", "order": 30 },
+      { "slot": "fileTree.context", "command": "note.ask", "group": "5-agent", "order": 10 }
     ]
   },
   "permissions": ["vault:read"],

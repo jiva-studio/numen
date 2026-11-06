@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
 import { SLOT, createSlotRegistry, type PluginHost, type SlotItem } from '@numen/plugin-host'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
+import type { Command } from '@/features/command-palette'
 import { createWindowSlots } from './windowSlots'
 
 const TIDE = 'org.example.tide'
@@ -22,7 +23,23 @@ const COMMANDS = [
   command(TIDE, 'tide.open', 'Open tide'),
   command(TIDE, 'tide.add', 'Add tide'),
   command(HARBOR, 'harbor.open', 'Open harbor'),
+  { ...command(HARBOR, 'harbor.moor', 'Moor link'), when: "target.noteType == 'link'" },
+  command(HARBOR, 'harbor.dock', 'Dock'),
+  {
+    ...command(HARBOR, 'harbor.read', 'Read aloud'),
+    when: 'version.isLive',
+    hasItems: true as const,
+  },
 ]
+
+const MOVE: Command = {
+  id: 'app:tab.moveToWindow',
+  text: 'Move to window',
+  group: 'window',
+  input: 'items',
+  isAvailable: () => true,
+  listItems: () => [],
+}
 
 const SLOTS: DeclaredSlot[] = [
   { pluginId: TIDE, slot: SLOT.titleBarCommands, command: 'tide.add', group: 'new' },
@@ -42,15 +59,20 @@ const SLOTS: DeclaredSlot[] = [
   },
 ]
 
-function setup() {
+function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
+  const host = {
+    getPaletteCommands: () => [],
+    hasCommandItems: (id: string) => id === `${HARBOR}:harbor.dock`,
+  }
   const slots = createWindowSlots({
     declaredCommands: {
-      slots: computed(() => SLOTS),
+      slots: computed(() => slotEntries),
       commands: computed(() => COMMANDS),
-      whenContext: { getContentTypes: () => ({}), getConfig: () => ({}) },
+      whenContext: { getContentTypes: () => ({ md: 'text/markdown' }), getConfig: () => ({}) },
     },
-    hostHolder: { current: { getPaletteCommands: () => [] } as unknown as PluginHost },
+    hostHolder: { current: host as unknown as PluginHost },
     writeIssue: vi.fn(),
+    getAppCommands: () => [MOVE],
   })
   const registry = createSlotRegistry({
     getEntries: slots.hostDeps.getSlotEntries,
@@ -79,11 +101,72 @@ describe('the buttons of the title bar', () => {
     ])
   })
 
+  it('carry the title of their command, and no items', () => {
+    const { registry } = setup()
+
+    expect(registry.getEntries(SLOT.titleBarCommands)[0]).toMatchObject({ hasItems: false })
+  })
+
   it('carry the title of their command', () => {
     const { registry } = setup()
 
     const [first] = registry.getEntries(SLOT.titleBarCommands)
 
     expect(first).toMatchObject({ kind: 'command', title: 'Open tide' })
+  })
+})
+
+describe('the entries of a menu over a target', () => {
+  const LINK = {
+    path: 'links/Pier.md',
+    title: 'Pier',
+    isFolder: false,
+    others: [],
+    tab: '',
+    noteType: 'link',
+  }
+  const menu: DeclaredSlot[] = [
+    { pluginId: HARBOR, slot: SLOT.fileTreeContext, command: 'harbor.moor' },
+    { pluginId: HARBOR, slot: SLOT.fileTreeContext, command: 'harbor.dock' },
+    { pluginId: HARBOR, slot: SLOT.fileTreeContext, command: 'harbor.read' },
+  ]
+
+  it('read the note type of the target, which the place gives with it', () => {
+    const { registry } = setup(menu)
+
+    expect(describeItems(registry.getEntries(SLOT.fileTreeContext, LINK))).toContain(
+      `${HARBOR}:harbor.moor`,
+    )
+    expect(
+      describeItems(registry.getEntries(SLOT.fileTreeContext, { ...LINK, noteType: 'note' })),
+    ).not.toContain(`${HARBOR}:harbor.moor`)
+  })
+
+  it('mark a command of a plugin that lists items', () => {
+    const { registry } = setup(menu)
+
+    expect(registry.getEntries(SLOT.fileTreeContext, LINK)).toContainEqual(
+      expect.objectContaining({ command: `${HARBOR}:harbor.dock`, hasItems: true }),
+    )
+  })
+
+  it('mark a command a backend runs that the core lists with items', () => {
+    const { registry } = setup(menu)
+
+    expect(registry.getEntries(SLOT.fileTreeContext, LINK)).toContainEqual(
+      expect.objectContaining({ command: `${HARBOR}:harbor.read`, hasItems: true }),
+    )
+  })
+
+  it('draw the commands the window makes as it runs, and mark those that list items', () => {
+    const { registry } = setup(menu)
+
+    expect(registry.getEntries(SLOT.tabStripContext, { ...LINK, tab: 'reef' })).toStrictEqual([
+      expect.objectContaining({
+        command: 'app:tab.moveToWindow',
+        title: 'Move to window',
+        hasItems: true,
+      }),
+    ])
   })
 })

@@ -13,8 +13,8 @@ export { closeTab, openTab, openTabAdjacent } from './features/workspace'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { branch, pane } from './features/workspace'
-export { paneById, getPanes } from './features/workspace'
-export type { Tab, WindowEdge, Workspace } from './features/workspace'
+export { paneById, getPanes, getTabPaneRect } from './features/workspace'
+export type { Tab, TabMenu, WindowEdge, Workspace } from './features/workspace'
 
 export { Palette } from './features/palette'
 export { commandKeyChord } from './features/palette'

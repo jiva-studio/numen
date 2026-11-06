@@ -1,7 +1,7 @@
 /** The menu of a search result as the palette draws it and answers a choice from it. */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { SearchMenuEntry } from './lookup'
+import type { SlotCommand, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
 import { COMMAND } from '@/shared/commandIds'
 import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
 import type { CommandTarget } from '../../types'
@@ -26,13 +26,31 @@ const WORDS: Words = {
 }
 
 const ATLAS = 'org.example.atlas'
-const SHOW: SearchMenuEntry = {
+const SHOW: SlotCommand = {
+  kind: 'command',
+  key: `${ATLAS}/command/graph.showNote`,
+  pluginId: ATLAS,
   command: `${ATLAS}:graph.showNote`,
   title: 'Show note in plex',
+  shortcut: '',
+  hasItems: false,
 }
-const OTHER: SearchMenuEntry = {
+const OTHER: SlotCommand = {
+  kind: 'command',
+  key: `${ATLAS}/command/other.run`,
+  pluginId: ATLAS,
   command: `${ATLAS}:other.run`,
   title: 'Another',
+  shortcut: '',
+  hasItems: false,
+}
+const SEPARATOR: SlotItem = { kind: 'separator', key: 'separator/1' }
+const SKETCH: SlotItem = {
+  kind: 'view',
+  key: `${ATLAS}/view/sketch`,
+  pluginId: ATLAS,
+  view: 'sketch',
+  component: {},
 }
 const openId = COMMAND.openNote
 const showId = SHOW.command
@@ -104,8 +122,47 @@ describe('a note found by name in the search', () => {
     ])
   })
 
+  it('asks for the entries of the menu over the note of each result', async () => {
+    const targets: RunTarget[] = []
+    const palette = useSearch(createCore([nameMatch]), WORDS, {
+      wait: now,
+      menu: {
+        getEntries: (target) => {
+          targets.push(target)
+          return [SHOW]
+        },
+      },
+    })
+
+    await typeQuery(palette)
+    expect(getNamesGroup(palette)).toBeDefined()
+
+    expect(targets).toContainEqual({
+      path: 'reef/Coral.md',
+      title: 'Coral',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
+  })
+
+  it('offers the commands of the entries alone, without separators and views', async () => {
+    const palette = useSearch(createCore([nameMatch]), WORDS, {
+      wait: now,
+      menu: { getEntries: () => [SHOW, SEPARATOR, SKETCH, OTHER] },
+    })
+
+    await typeQuery(palette)
+
+    expect(getNamesGroup(palette)?.items[0]?.actions?.map((one) => one.id)).toStrictEqual([
+      openId,
+      showId,
+      OTHER.command,
+    ])
+  })
+
   it('offers opening the note alone once the plugin that placed the entry is disabled', async () => {
-    const entries = ref<readonly SearchMenuEntry[]>([SHOW])
+    const entries = ref<readonly SlotItem[]>([SHOW])
     const palette = useSearch(createCore([nameMatch]), WORDS, {
       wait: now,
       menu: { getEntries: () => entries.value },

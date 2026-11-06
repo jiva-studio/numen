@@ -6,7 +6,7 @@
  * available while a command runs are `model/deps.ts`.
  */
 import type { Component } from 'vue'
-import type { Selector } from '@numen/plugin-host'
+import type { CommandItem, Selector } from '@numen/plugin-host'
 import type { PaletteKeys } from '@numen/ui'
 import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
@@ -125,6 +125,11 @@ export interface Command {
   readonly warns?: RetypeWords
   /** The command Shift and Enter reach on the same row. */
   readonly also?: string
+  /**
+   * The items it offers over the target, for a command whose step is a argument; the argument picked
+   * is the name of its invocation.
+   */
+  listItems?(target: CommandTarget): readonly CommandItem[] | Promise<readonly CommandItem[]>
 }
 
 /** One command as it is carried out: what it is over, and what was typed for it. */

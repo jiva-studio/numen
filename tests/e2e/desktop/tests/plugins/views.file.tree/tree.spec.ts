@@ -117,7 +117,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
     }
   })
 
-  test('moves two notes selected with Ctrl-click to the trash with Remove', async ({
+  test('moves two notes selected with Ctrl-click to the trash with Move note to trash', async ({
     page,
     request,
   }) => {
@@ -134,7 +134,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
       await expect(getRow(page, first)).toHaveAttribute('aria-selected', 'true')
       await expect(getRow(page, second)).toHaveAttribute('aria-selected', 'true')
       await getRow(page, second).click({ button: 'right' })
-      await page.getByRole('menuitem', { name: 'Remove', exact: true }).click()
+      await page.getByRole('menuitem', { name: 'Move note to trash', exact: true }).click()
 
       await expect
         .poll(async () =>

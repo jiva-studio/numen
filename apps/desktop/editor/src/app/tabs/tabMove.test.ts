@@ -7,6 +7,7 @@ import {
   createMovedTabOpener,
   createTabMover,
   STILL_OPEN_MESSAGE,
+  type PaneRect,
   type TabMoverDeps,
 } from './tabMove'
 import type { TabMoveError } from '../ports/vault'
@@ -62,6 +63,7 @@ const setup = (asking: () => boolean = () => false) => {
       return true
     }),
     writeMessage: vi.fn(),
+    getPaneRect: vi.fn((_id: string): PaneRect | null => null),
   } as unknown as TabMoverDeps & {
     core: typeof core
     notes: { flushPending: ReturnType<typeof vi.fn<() => Promise<void>>> }
@@ -165,7 +167,27 @@ describe('detachTab', () => {
     await mover.detachTab(ORBITS_ID, { x: 100, y: 200 })
 
     expect(steps).toStrictEqual(['flush', 'detach', 'close'])
-    expect(core.detachTab).toHaveBeenCalledExactlyOnceWith(SAVED_ORBITS, { x: 100, y: 200 })
+    expect(core.detachTab).toHaveBeenCalledExactlyOnceWith(SAVED_ORBITS, {
+      x: 100,
+      y: 200,
+      width: 0,
+      height: 0,
+    })
+  })
+
+  it('opens the new window at the drop point with the size of the pane of the tab', async () => {
+    const { core, deps, mover } = setup()
+    vi.mocked(deps.getPaneRect).mockReturnValue({ x: 0, y: 40, width: 600, height: 800 })
+
+    await mover.detachTab(ORBITS_ID, { x: 100, y: 200 })
+
+    expect(deps.getPaneRect).toHaveBeenCalledWith(ORBITS_ID)
+    expect(core.detachTab).toHaveBeenCalledWith(SAVED_ORBITS, {
+      x: 100,
+      y: 200,
+      width: 600,
+      height: 800,
+    })
   })
 
   it('keeps the source tab open until the new window accepts the tab', async () => {
@@ -181,17 +203,36 @@ describe('detachTab', () => {
     )
   })
 
-  it('converts a viewport point to screen coordinates', async () => {
-    const { core, mover } = setup()
+  it('opens the new window over the pane of the tab, on the screen, with its size', async () => {
+    const { core, deps, mover } = setup()
+    vi.mocked(deps.getPaneRect).mockReturnValue({ x: 30, y: 40, width: 600, height: 800 })
     vi.stubGlobal('screenX', 1000)
     vi.stubGlobal('screenY', 500)
     try {
-      await mover.detachTabAt(ORBITS_ID, { x: 30, y: 40 })
+      await mover.detachTabInPlace(ORBITS_ID)
     } finally {
       vi.unstubAllGlobals()
     }
 
-    expect(core.detachTab).toHaveBeenCalledWith(SAVED_ORBITS, { x: 1030, y: 540 })
+    expect(core.detachTab).toHaveBeenCalledWith(SAVED_ORBITS, {
+      x: 1030,
+      y: 540,
+      width: 600,
+      height: 800,
+    })
+  })
+
+  it('opens the new window where the system puts it for a tab whose pane is not drawn', async () => {
+    const { core, mover } = setup()
+
+    await mover.detachTabInPlace(ORBITS_ID)
+
+    expect(core.detachTab).toHaveBeenCalledWith(SAVED_ORBITS, {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    })
   })
 
   it('keeps the tab and writes the error when the request fails', async () => {
@@ -218,7 +259,7 @@ describe('detachTab', () => {
 
     expect(core.detachTab).toHaveBeenCalledWith(
       { id: 'settings:settings', kind: 'settings', path: '', title: '', state: '' },
-      { x: 1, y: 2 },
+      { x: 1, y: 2, width: 0, height: 0 },
     )
   })
 })

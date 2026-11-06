@@ -18,14 +18,14 @@ import type {
   WindowHost,
   WorkspaceHost,
 } from '@numen/plugin-host'
-import type { SearchDeps } from '@/features/command-palette'
+import type { CommandTarget, SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
 import type { NoteCreator } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { Task } from '@/shared/notices/task'
 import type { NotePort } from '@/app/ports/notes'
 import type { useSettings } from '../window/useSettings'
-import { createPathCommandHost, type PathCommandDeps } from './fileServices'
+import { createIconHost, type IconHostDeps } from './fileServices'
 import type { PluginNotes } from './pluginNotes'
 import type { NoteBuffer } from '@numen/plugin-host'
 
@@ -52,7 +52,9 @@ export interface PluginServices {
 }
 
 /** What the window hands a plugin's tabs. */
-export interface WorkspaceHostDeps extends Omit<PathCommandDeps, 'reportError'> {
+export interface WorkspaceHostDeps extends IconHostDeps {
+  readonly getTarget: () => CommandTarget
+  readonly runCommand: (id: string, target: CommandTarget) => void
   readonly window: {
     readonly failure: Readonly<Ref<string>>
     readonly opening: Readonly<Ref<string>>
@@ -104,10 +106,9 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     showError: (text) => writeMessage(text, 'error'),
     getMessageWriter: (name) => deps.getMessageWriter(name),
     getToday: () => deps.today(),
-    ...createPathCommandHost({
-      ...deps,
+    ...createIconHost({
+      ...(deps.getPluginCommandIcon ? { getPluginCommandIcon: deps.getPluginCommandIcon } : {}),
       findFileIcon: tabOpeners.findFileIcon,
-      reportError: (error) => writeMessage(formatErrorMessage(error), 'error'),
     }),
   }
 }

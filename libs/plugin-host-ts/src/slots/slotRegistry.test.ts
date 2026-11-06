@@ -131,6 +131,7 @@ describe('the entries of a slot', () => {
         command: `${LEDGER}:ledger.open`,
         title: 'Open ledger',
         shortcut: '',
+        hasItems: false,
       },
     ])
     expect(registry.getEntries('titleBar.status')).toStrictEqual([
@@ -141,6 +142,19 @@ describe('the entries of a slot', () => {
         view: 'balance',
         component: { name: `${LEDGER}-balance` },
       },
+    ])
+  })
+
+  it('mark a command that lists items, which the owner draws as a submenu of them', () => {
+    const { registry } = setup(
+      [{ pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.sum' }],
+      {
+        findCommand: () => ({ title: 'Sum', shortcut: '', hasItems: true }),
+      },
+    )
+
+    expect(registry.getEntries('fileTree.context', NOTE)).toMatchObject([
+      { kind: 'command', command: `${LEDGER}:ledger.sum`, hasItems: true },
     ])
   })
 

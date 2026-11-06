@@ -44,8 +44,6 @@ export const WORDS = {
   apply: 'Done',
   /** Button to cancel and close inspector without saving. */
   cancel: 'Cancel',
-  /** The command that puts a note in front in the plex. */
-  travel: 'Show note in plex',
   /** Menu command labels */
   read: 'Open note',
   copy: 'Copy note path',

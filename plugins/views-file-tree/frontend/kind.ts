@@ -21,6 +21,7 @@ export const FILES = 'files'
  */
 export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) {
   const tabs = new Map<string, FilesTabState>()
+  let menuTab: FilesTabState | null = null
 
   const kind: TabKindRegistration<FilesTabState> = {
     kind: FILES,
@@ -39,12 +40,20 @@ export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) 
         const path = paths[0]
         if (path) deps.onSelectPath?.(path, state)
       })
+      watch(
+        state.menu,
+        (request) => {
+          if (request) menuTab = state
+        },
+        { flush: 'sync' },
+      )
       return state
     },
     getTitle: () => words.files,
     onClose: (state, id) => {
       state.list.close()
       tabs.delete(id)
+      if (menuTab === state) menuTab = null
       return true
     },
     navigate: (state, path) => state.list.revealPath(path),
@@ -55,5 +64,8 @@ export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) 
     await Promise.all([...tabs.values()].map((state) => state.list.refreshChanged(paths, renamed)))
   }
 
-  return { kind, refresh }
+  /** The tab whose menu was opened last, or the tab opened last; null while none is open. */
+  const getMenuTab = (): FilesTabState | null => menuTab ?? [...tabs.values()].at(-1) ?? null
+
+  return { kind, refresh, getMenuTab }
 }

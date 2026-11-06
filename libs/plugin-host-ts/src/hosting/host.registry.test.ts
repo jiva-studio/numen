@@ -1,11 +1,9 @@
 /**
- * What the host answers about the registrations of its plugins: which menu items
- * a target is offered, which command or item an id runs, the editor a kind is
- * opened as, and a registration replaced under the same id.
+ * What the host answers about the registrations of its plugins: which command an id runs, the
+ * editor a kind is opened as, and a registration replaced under the same id.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
-import type { ContextMenuTarget } from '@numen/plugin-sdk'
 import { createPluginHost } from './host'
 import { disposePluginEntry } from './registry'
 import type { PluginHostDeps } from './types'
@@ -15,67 +13,6 @@ const createDeps = (more: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
   registerExtensionReader: vi.fn(() => vi.fn()),
   openTab: vi.fn(async () => 'tab-1'),
   ...more,
-})
-
-const target = (more: Partial<ContextMenuTarget> = {}): ContextMenuTarget => ({
-  path: 'Notes/One.md',
-  isFolder: false,
-  isNote: true,
-  ...more,
-})
-
-const ROOT = target({ path: '', isFolder: true, isNote: false })
-const FOLDER = target({ path: 'Notes', isFolder: true, isNote: false })
-const NOTE = target()
-const FILE = target({ path: 'Books/One.bin', isNote: false })
-
-describe('the menu items a target is offered', () => {
-  const createHost = () => {
-    const host = createPluginHost(createDeps())
-    const ctx = host.createContext('sample.plugin')
-    const handler = vi.fn()
-    const add = (id: string, more: object = {}) =>
-      ctx.registerContextMenu({ id, text: id, handler, ...more })
-    add('any')
-    add('all', { target: 'all', order: 5 })
-    add('root', { target: 'root', order: 1 })
-    add('folder', { target: 'folder', order: 2 })
-    add('file', { target: 'file', order: 3 })
-    add('note', { target: 'note', order: 4, icon: 'note-icon' })
-    add('either', { target: ['note', 'folder'], order: 7 })
-    add('arrayAll', { target: ['all'], order: 8 })
-    add('unknownTarget', { target: ['nonexistent' as never], order: 9 })
-    return { host, handler }
-  }
-  const ids = (host: ReturnType<typeof createHost>['host'], one: ContextMenuTarget) =>
-    host.getContextMenuItems(one).map((item) => item.id)
-
-  it('are the items for the root, in their order', () => {
-    const { host } = createHost()
-
-    expect(ids(host, ROOT)).toStrictEqual(['any', 'root', 'folder', 'all', 'either', 'arrayAll'])
-    expect(
-      ids(host, target({ path: null as unknown as string, isFolder: true, isNote: false })),
-    ).toStrictEqual(['any', 'root', 'folder', 'all', 'either', 'arrayAll'])
-  })
-
-  it('are the items for a folder, a note and a file of another kind', () => {
-    const { host } = createHost()
-
-    expect(ids(host, FOLDER)).toStrictEqual(['any', 'folder', 'all', 'either', 'arrayAll'])
-    expect(ids(host, NOTE)).toStrictEqual(['any', 'file', 'note', 'all', 'either', 'arrayAll'])
-    expect(ids(host, FILE)).toStrictEqual(['any', 'file', 'all', 'arrayAll'])
-  })
-
-  it('runs the item an id names, and nothing for an id no item has', async () => {
-    const { host, handler } = createHost()
-
-    expect(await host.runContextMenu('note', NOTE)).toBe(true)
-    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE)
-    expect(host.getContextMenuIcon('note')).toBe('note-icon')
-    expect(await host.runContextMenu('missing', NOTE)).toBe(false)
-    expect(host.getContextMenuIcon('missing')).toBeUndefined()
-  })
 })
 
 describe('a command run by its id', () => {
@@ -116,9 +53,6 @@ describe('a registration replaced under the same id', () => {
   it('stays when the registration it replaced is disposed', () => {
     const host = createPluginHost(createDeps())
     const ctx = host.createContext('sample.plugin')
-    const handler = vi.fn()
-    const firstMenu = ctx.registerContextMenu({ id: 'menu', text: 'First', handler })
-    ctx.registerContextMenu({ id: 'menu', text: 'Second', handler })
     const firstReader = ctx.registerReader({ id: 'pdf', title: 'First', component: null })
     ctx.registerReader({ id: 'pdf', title: 'Second', component: null })
     const firstTab = ctx.registerTabKind({ kind: 'custom', title: 'First', component: null })
@@ -134,12 +68,10 @@ describe('a registration replaced under the same id', () => {
       createAgent: vi.fn(),
     })
 
-    firstMenu.dispose()
     firstReader.dispose()
     firstTab.dispose()
     firstAgent.dispose()
 
-    expect(host.getRegisteredContextMenus().map((one) => one.text)).toStrictEqual(['Second'])
     expect(host.getRegisteredReaders().map((one) => one.title)).toStrictEqual(['Second'])
     expect(host.getRegisteredTabKinds().map((one) => one.title)).toStrictEqual(['Second'])
     secondAgent.dispose()
@@ -157,7 +89,6 @@ describe('a registration replaced under the same id', () => {
       } as never)
       const ctx = host.createContext(pluginId)
       ctx.registerCommand({ id: `${pluginId}.count`, handler })
-      ctx.registerContextMenu({ id: `${pluginId}.menu`, text: pluginId, handler })
       ctx.registerAgentProvider({ id: `${pluginId}.agent`, name: pluginId, createAgent: vi.fn() })
       ctx.registerReader({ id: `${pluginId}.reader`, title: pluginId, component: null })
       ctx.registerTabKind({ kind: `${pluginId}.kind`, component: {} })
@@ -167,7 +98,6 @@ describe('a registration replaced under the same id', () => {
     expect(host.createContext('first.plugin').hasPermission?.('vault:read')).toBe(false)
 
     expect(host.getRegisteredCommands().map((one) => one.id)).toStrictEqual(['second.plugin.count'])
-    expect(host.getRegisteredContextMenus().map((one) => one.text)).toStrictEqual(['second.plugin'])
     expect(host.getRegisteredReaders().map((one) => one.title)).toStrictEqual(['second.plugin'])
     expect(host.getRegisteredTabKinds().map((one) => one.kind)).toStrictEqual([
       'second.plugin.kind',
@@ -179,17 +109,11 @@ describe('a registration replaced under the same id', () => {
     host.contextHost.registerReader('orphan.reader', { id: 'r1', component: null })
     host.contextHost.registerTabKind('orphan.tab', { kind: 't1', component: null })
     host.contextHost.registerCommand('orphan.cmd', { id: 'c1', handler: vi.fn() })
-    host.contextHost.registerContextMenu('orphan.menu', {
-      id: 'm1',
-      text: 'M1',
-      handler: vi.fn(),
-    })
     host.contextHost.registerSettingsView('orphan.settings', { id: 's1', component: {} })
 
     expect(host.getRegisteredReaders()).toHaveLength(1)
     expect(host.getRegisteredTabKinds()).toHaveLength(1)
     expect(host.getRegisteredCommands()).toHaveLength(1)
-    expect(host.getRegisteredContextMenus()).toHaveLength(1)
     expect(host.getRegisteredSettingsViews('orphan.settings').size).toBe(1)
 
     host.disposeAll()
@@ -197,7 +121,6 @@ describe('a registration replaced under the same id', () => {
     expect(host.getRegisteredReaders()).toHaveLength(0)
     expect(host.getRegisteredTabKinds()).toHaveLength(0)
     expect(host.getRegisteredCommands()).toHaveLength(0)
-    expect(host.getRegisteredContextMenus()).toHaveLength(0)
     expect(host.getRegisteredSettingsViews('orphan.settings').size).toBe(0)
 
     expect(() =>
@@ -208,7 +131,6 @@ describe('a registration replaced under the same id', () => {
           readers: new Map(),
           tabKinds: new Map(),
           commands: { value: new Map() },
-          contextMenus: { value: new Map() },
           settingsViews: { value: new Map() },
           agentProviders: new Map(),
           contexts: new Map(),

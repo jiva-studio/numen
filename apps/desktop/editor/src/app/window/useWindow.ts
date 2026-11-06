@@ -12,12 +12,13 @@ import { createNoteLookup } from '../tabs/editorTabs'
 import {
   createCommands,
   runSupport,
+  type Command,
   type CommandTarget,
   type NoteLookup,
 } from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
-import { createNoticeQueue } from '@numen/shell'
+import { createNoticeQueue, getTabPaneRect } from '@numen/shell'
 import { WORDS as words } from '@/shared/words'
 import { useTabLinks } from '@/features/tab-linking'
 import { createTabSync } from '../tabs/useTabSync'
@@ -32,11 +33,11 @@ import { useVaults } from './useVaults'
 import type { TabsHold } from '../commands/leaveVault'
 import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
-import { useCommands } from '../commands/useCommands'
-import { useDeclaredCommands } from '../commands/declaredCommands'
+import { createPaletteItems, useCommands } from '../commands/useCommands'
+import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
+import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
 import { createWindowSlots } from './windowSlots'
 import { getNamedIcon } from '@/shared/icons'
-import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
 import { useWindowFrame } from './useWindowFrame'
 import { createWindowHost } from './windowHost'
@@ -75,17 +76,19 @@ interface WindowCommandsOptions {
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
   pluginHost: import('@numen/plugin-host').PluginHost
-  fileMenuCommands: ReturnType<typeof useFileMenuCommands>
   declaredCommands: ReturnType<typeof useDeclaredCommands>
-  slots: Pick<SlotHost, 'getEntries'>
+  /** The slots of the window, read by the palette and the menu of a tab. */
+  slots?: SlotHost | undefined
+  /** The commands of the window made as it runs, such as those over a tab. */
+  getAppCommands: () => readonly Command[]
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
   const { windowTabs, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
   return useCommands({
     declaredCommands: deps.declaredCommands,
-    fileMenuCommands: deps.fileMenuCommands,
-    slots: deps.slots,
+    ...(deps.slots ? { slots: deps.slots } : {}),
+    getAppCommands: deps.getAppCommands,
     core,
     words,
     log: deps.log,
@@ -310,9 +313,11 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const declaredCommands = useDeclaredCommands({
     ...getDeclaredCommandsDeps(hostHolder, settingsHolder),
   })
+  const appCommands: { current?: () => readonly Command[] } = {}
   const slots = createWindowSlots({
     declaredCommands,
     hostHolder,
+    getAppCommands: () => appCommands.current?.() ?? [],
     writeIssue: (pluginId, message, severity) =>
       log.getWriter(`plugin:${pluginId}`)(`${getPluginName(pluginId)}: ${message}`, severity),
   })
@@ -351,6 +356,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     pluginNotices,
     pluginNotes,
     slotWindowValues: slots.windowValues,
+    appCommands,
   }
 }
 
@@ -362,6 +368,8 @@ interface WindowContext {
   vaults?: ReturnType<typeof useVaults>
   /** Holds the open tabs back while the vault is switched; bound once the tabs are written. */
   tabsHold?: TabsHold
+  /** The commands over a tab, made once the moves of the tabs are. */
+  tabCommands?: TabCommands
 }
 
 function getCommands(ctx: WindowContext): NonNullable<WindowContext['commands']> {
@@ -446,6 +454,7 @@ function initWindowKindsAndCommands(
 ) {
   const { editing, settings, window, tabSync } = services
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
+  base.appCommands.current = () => ctx.tabCommands?.commands ?? []
   base.slotWindowValues.current = () => {
     const inFront = getTarget()
     return {
@@ -456,11 +465,6 @@ function initWindowKindsAndCommands(
   }
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
-  const fileMenuCommands = useFileMenuCommands({
-    onRun: (file) => base.pluginHost.notifyVaultChange({ paths: [file] }),
-    onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
-  })
-
   ctx.kinds = useWindowKinds({
     core,
     log: base.log,
@@ -475,13 +479,11 @@ function initWindowKindsAndCommands(
     commandDeps: () => getCommands(ctx).commandDeps,
     tabLinks: base.tabLinks,
     tabSync,
-    getContextMenuItems: (target) => base.pluginHost.getContextMenuItems(target),
-    runContextMenu: (id, target) => base.pluginHost.runContextMenu(id, target),
-    getFileMenuItems: (path) => fileMenuCommands.getForFile(path),
-    getContextMenuIcon: (id) => base.pluginHost.getContextMenuIcon(id),
     getPluginCommandIcon: (id) => {
-      const name = base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon
-      return name ? getNamedIcon(name) : fileMenuCommands.getIcon(id)
+      const name =
+        base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon ??
+        base.declaredCommands.commands.value?.find((one) => getPaletteId(one) === id)?.icon
+      return name ? getNamedIcon(name) : undefined
     },
     getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
@@ -512,7 +514,7 @@ function initWindowKindsAndCommands(
     pluginHost: base.pluginHost,
     declaredCommands: base.declaredCommands,
     slots: base.pluginHost.slots,
-    fileMenuCommands,
+    getAppCommands: () => ctx.tabCommands?.commands ?? [],
   })
 
   return {
@@ -656,6 +658,7 @@ function createWindowTabMoves(
     notes,
     closeTab,
     writeMessage: base.writeMessage,
+    getPaneRect: (id) => getTabPaneRect(base.windowTabs.layout.value, id),
   })
   /** The mover writes its own errors; a failed highlight request is ignored. */
   const ignoreError = () => undefined
@@ -673,11 +676,27 @@ function createWindowTabMoves(
     },
     detachTab: (id: string, point: Point) =>
       runInBackground(mover.detachTab(id, point), ignoreError),
-    detachTabAt: (id: string, point: Point) =>
-      runInBackground(mover.detachTabAt(id, point), ignoreError),
+    detachTabInPlace: (id: string) => runInBackground(mover.detachTabInPlace(id), ignoreError),
     moveTab: (id: string, windowId: string) =>
       runInBackground(mover.moveTab(id, windowId), ignoreError),
   }
+}
+
+/** The commands of the window over a tab, registered for the palette and the menu of a tab. */
+function createWindowTabCommands(base: WindowCore, moves: ReturnType<typeof createWindowTabMoves>) {
+  const { windowTabs, tabLinks } = base
+  const tabCommands = createTabCommands({
+    tabLinks,
+    getTabs: () => windowTabs.tabs.value,
+    getKind: (id) => windowTabs.getTab(id)?.kind.kind,
+    isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
+    windowId: moves.windowId,
+    isAsking: moves.isTabAsking,
+    detach: moves.detachTabInPlace,
+    move: moves.moveTab,
+  })
+  tabCommands.register()
+  return tabCommands
 }
 
 /** Whether the window is drawn yet, why its workspace did not load, and the retry of the start. */
@@ -687,27 +706,41 @@ const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
   retryBootstrap: bootstrap.retry,
 })
 
-/** The frame of the window, and the commands, the vaults and the window its plugins read. */
+/**
+ * The frame of the window, its slots and its commands, which its plugins and the menu of a tab read
+ * and run, and the vaults and the window its plugins read.
+ */
 function createWindowFrameServices(
   base: WindowCore,
   ctx: WindowContext,
   commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget' | 'runCommand'>,
 ) {
   const frame = useWindowFrame()
-  let appIds: readonly string[] | undefined
-  Object.assign(base.pluginServices, {
-    commands: createWindowCommands({
-      getAppIds: () => (appIds ??= createCommands(words).map((one) => one.id)),
-      getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
-      runCommand: commands.runCommand,
-      listItems: async (id, target) =>
-        base.pluginHost.hasCommand(id) ? base.pluginHost.listCommandItems(id, target) : [],
-      runWithArgument: async (id, target, argument) => {
-        const note = await createCommandNoteReader(core)(target)
-        await base.pluginHost.executeCommand(id, note, argument)
-      },
+  let tableIds: readonly string[] | undefined
+  const getAppCommands = () => ctx.tabCommands?.commands ?? []
+  const items = createPaletteItems(
+    {
+      getAppCommands,
+      declaredCommands: base.declaredCommands,
+      pluginHost: base.pluginHost,
       getTarget: commands.getTarget,
-    }),
+    },
+    createCommandNoteReader(core),
+    () => getCommands(ctx).commandDeps,
+  )
+  const windowCommands = createWindowCommands({
+    getAppIds: () => [
+      ...(tableIds ??= createCommands(words).map((one) => one.id)),
+      ...getAppCommands().map((one) => one.id),
+    ],
+    getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
+    runCommand: commands.runCommand,
+    listItems: items.listCommandItems,
+    runWithArgument: items.runWithArgument,
+    getTarget: commands.getTarget,
+  })
+  Object.assign(base.pluginServices, {
+    commands: windowCommands,
     vaults: createEditorVaults({
       vaultList: getVaults(ctx).vaultList,
       getTarget: commands.getTarget,
@@ -717,7 +750,7 @@ function createWindowFrameServices(
       base.writeMessage(formatErrorMessage(error), 'error'),
     ),
   })
-  return frame
+  return { frame, slots: base.pluginHost.slots, windowCommands }
 }
 
 /** The views plugins draw in the window itself: the title bar and the status bar. */
@@ -725,6 +758,16 @@ const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => 
   titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
   statusBarView: pluginHost.getSlotView(SLOT.statusBar),
 })
+
+/** The open tabs of the window, written while `isWriting` is on. */
+const useWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>
+  useOpenTabs({
+    core,
+    windowTabs: base.windowTabs,
+    isWriting,
+    reportError: (error) =>
+      base.writeMessage(`The open tabs were not saved: ${formatErrorMessage(error)}`, 'error'),
+  })
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
@@ -739,16 +782,12 @@ export const useWindow = () => {
   )
   const isWritingTabs = ref(false)
   const isLayoutReady = ref(false)
-  const openTabs = useOpenTabs({
-    core,
-    windowTabs: base.windowTabs,
-    isWriting: isWritingTabs,
-    reportError: (error) =>
-      base.writeMessage(`The open tabs were not saved: ${formatErrorMessage(error)}`, 'error'),
-  })
+  const openTabs = useWindowOpenTabs(base, isWritingTabs)
   ctx.tabsHold = openTabs
 
   const closeTab = createTabCloser(base)
+  const moves = createWindowTabMoves(base, editing, closeTab)
+  ctx.tabCommands = createWindowTabCommands(base, moves)
   const isHighlighted = ref(false)
   useAppHotkeys(getCommands(ctx).onKeyDown)
   const tabLinkSession = createWindowTabLinks(base, {
@@ -780,6 +819,7 @@ export const useWindow = () => {
     runCommand,
     ...menuApi,
     openCurrentVault: () => openPlacedTabs(base),
+    readNoteType: async (path: string) => (await core.fileKinds([path])).get(path)?.type ?? '',
     isLayoutReady,
     ...getBootstrapApi(bootstrap),
     openSettings: (pluginId?: string, filter?: string) =>
@@ -802,9 +842,9 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
-    frame: createWindowFrameServices(base, ctx, { getTarget, runCommand }),
+    ...createWindowFrameServices(base, ctx, { getTarget, runCommand }),
     isHighlighted,
-    ...createWindowTabMoves(base, editing, closeTab),
+    ...moves,
   }
   return api
 }

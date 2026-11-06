@@ -14,12 +14,15 @@ import { createCommands, type Command } from '@/features/command-palette'
 import { WORDS as words } from '@/shared/words'
 import type { DeclaredCommands } from '../commands/declaredCommands'
 import { createSlotCommandFinder, readSlotEntries } from '../commands/pluginSlots'
+import { getPaletteId } from '../commands/declaredCommands'
 
 export interface WindowSlotsDeps {
   readonly declaredCommands: Pick<DeclaredCommands, 'slots' | 'commands' | 'whenContext'>
   readonly hostHolder: { readonly current?: PluginHost }
   /** Writes what is wrong with the slot entries of a plugin to its messages. */
   readonly writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') => void
+  /** The commands the window makes as it runs, such as those over a tab. */
+  readonly getAppCommands?: () => readonly Command[]
 }
 
 type WindowHostDeps = Required<
@@ -45,13 +48,22 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
   })
   const getWhenValues = (target: CommandTarget | undefined): WhenValues => ({
     ...getWindowValues(),
-    ...getTargetValues(target, whenContext.getContentTypes()),
+    ...getTargetValues(target, whenContext.getContentTypes(), target?.noteType),
   })
   const findCommand = createSlotCommandFinder({
     getWhenValues,
     getPluginCommands: () => deps.hostHolder.current?.getPaletteCommands() ?? [],
     getDeclaredCommands: () => deps.declaredCommands.commands.value,
-    getEditorCommands: () => (editorCommands ??= createCommands(words)),
+    getEditorCommands: () => [
+      ...(editorCommands ??= createCommands(words)),
+      ...(deps.getAppCommands?.() ?? []),
+    ],
+    hasPluginItems: (command) =>
+      (deps.hostHolder.current?.hasCommandItems(command) ?? false) ||
+      (deps.declaredCommands.commands.value?.some(
+        (one) => one.hasItems && getPaletteId(one) === command,
+      ) ??
+        false),
   })
   const hostDeps: WindowHostDeps = {
     getSlotEntries: () => readSlotEntries(deps.declaredCommands.slots.value),
