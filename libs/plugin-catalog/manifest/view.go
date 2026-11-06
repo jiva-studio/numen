@@ -18,16 +18,6 @@ type View struct {
 	Slot string
 }
 
-// GetSlotView returns the view the plugin declares for the slot.
-func (c Contributes) GetSlotView(slot string) (View, bool) {
-	for _, declared := range c.Views {
-		if declared.Slot == slot {
-			return declared, true
-		}
-	}
-	return View{}, false
-}
-
 // listViewIssues checks that each view has an id written as the frontend registers it, that no id is
 // declared twice, that each names a slot of the window, and that no slot is declared twice.
 func listViewIssues(views []View) []error {

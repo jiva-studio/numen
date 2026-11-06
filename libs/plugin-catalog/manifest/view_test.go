@@ -9,22 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
-func TestAManifestDeclaresTheTitleBarViewOfThePlugin(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(contributesHead + `,"contributes":{
-		"views":[{"id":"bar","slot":"titleBar"}]}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	view, ok := m.Contributes.GetSlotView(manifest.SlotTitleBar)
-	if !ok || view.ID != "bar" {
-		t.Errorf("the title bar view = %+v, %v", view, ok)
-	}
-	if _, ok := m.Contributes.GetSlotView("statusBar"); ok {
-		t.Error("a view is found for a slot the manifest does not declare")
-	}
-}
-
 func TestAViewTheApplicationCannotUseIsRejected(t *testing.T) {
 	cases := map[string]string{
 		"an id in capitals":          `{"views":[{"id":"Bar","slot":"titleBar"}]}`,
