@@ -609,3 +609,48 @@ func isGone(t *testing.T, c changing, path string) bool {
 	_, err := os.Stat(filepath.Join(c.vault.Path, filepath.FromSlash(path)))
 	return errors.Is(err, fs.ErrNotExist)
 }
+
+// On a filesystem that tells case apart, a file whose name differs from the target only in case is
+// another file, and a rename onto it leaves the note as it was.
+func TestRename_RejectsTargetThatDiffersOnlyInCase(t *testing.T) {
+	t.Parallel()
+	const old = "---\ntitle: rust\n---\nOxidised iron.\n"
+	const other = "# Rust\n\nA programming language.\n"
+	c := openChanging(t, map[string]string{"rust.md": old, "Rust.md": other})
+	if c.read(t, "rust.md") != old {
+		t.Skip("the filesystem ignores case, so rust.md and Rust.md are one file")
+	}
+
+	renamed, err := c.rename().Execute(t.Context(), c.vault, "rust.md", "Rust")
+
+	if !errors.Is(err, vaultport.ErrAlreadyExists) {
+		t.Fatalf("want ErrAlreadyExists, got %v (%+v)", err, renamed)
+	}
+	if body := c.read(t, "rust.md"); body != old {
+		t.Errorf("the note was written although the rename failed:\n%s", body)
+	}
+	if body := c.read(t, "Rust.md"); body != other {
+		t.Errorf("the other note was written over:\n%s", body)
+	}
+}
+
+// On a filesystem that ignores Unicode normalization, the decomposed and the composed spelling of a
+// name are one file, so a rename to the other spelling of the note's own name is not a rename onto
+// another file.
+func TestRename_AcceptsOtherNormalizationOfOwnFilename(t *testing.T) {
+	t.Parallel()
+	const decomposed, composed = "Café", "Café"
+	c := openChanging(t, map[string]string{decomposed + ".md": "---\ntitle: Bistro\n---\nA place.\n"})
+	if _, err := os.Stat(filepath.Join(c.vault.Path, composed+".md")); err != nil {
+		t.Skip("the filesystem tells the two spellings apart")
+	}
+
+	renamed, err := c.rename().Execute(t.Context(), c.vault, decomposed+".md", composed)
+
+	if err != nil {
+		t.Fatalf("renaming the note to the composed spelling of its own filename failed: %v (%+v)", err, renamed)
+	}
+	if body := c.read(t, renamed.Path); !strings.Contains(body, "title: "+composed) {
+		t.Errorf("the title was not written:\n%s", body)
+	}
+}

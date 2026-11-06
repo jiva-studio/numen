@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"path"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -577,5 +578,142 @@ func TestOpenVaultReturnsBeforeTheWindowChangesVault(t *testing.T) {
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("the change of vault did not end after it was released")
+	}
+}
+
+// outsideVault is the vault of rivers that refuses a path leaving the vault with ErrOutside, as the
+// vault writer does, and whose rename moves the file and then fails to update the index.
+type outsideVault struct{ *arrangingVault }
+
+func (o outsideVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
+	if strings.HasPrefix(from, "../") {
+		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, vaultport.ErrOutside)
+	}
+	return o.arrangingVault.MoveNote(ctx, from, to)
+}
+
+func (o outsideVault) RemoveNote(ctx context.Context, target string) (string, []string, error) {
+	if strings.HasPrefix(target, "../") {
+		return "", nil, fmt.Errorf("remove %s: %w", target, vaultport.ErrOutside)
+	}
+	return o.arrangingVault.RemoveNote(ctx, target)
+}
+
+func (o outsideVault) RenameNote(ctx context.Context, from, title string) (string, bool, *domain.MoveResult, error) {
+	to, isFilenamed, moved, err := o.arrangingVault.RenameNote(ctx, from, title)
+	if err != nil {
+		return to, isFilenamed, moved, err
+	}
+	return to, isFilenamed, moved, errors.New("the index could not be updated for the repaired notes")
+}
+
+func newOutsideClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *arrangingVault) {
+	t.Helper()
+	vault := newArrangingVault()
+	hosted := newCallers(nil)
+	hosted.vault = outsideVault{vault}
+	endpoint := &Endpoint{callers: listCallers{callers: hosted, granted: []string{pluginport.PermissionVaultWrite}}}
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return client, vault
+}
+
+func TestAMoveReportsAPathOutsideTheVaultAndMovesTheOthers(t *testing.T) {
+	client, vault := newOutsideClient(t)
+
+	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
+		Paths: []string{"Danube.md", "../Baikal.md", "Rivers/Rhine.md"}, Folder: "Archive",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	moves := res.Msg.GetMoves()
+	if res.Msg.GetError() != 0 || len(moves) != 3 {
+		t.Fatalf("the move returned error %v with %d entries, want 3 entries", res.Msg.GetError(), len(moves))
+	}
+	if moves[0].Failure != nil || moves[0].GetMoved().GetTo() != "Archive/Danube.md" {
+		t.Errorf("the first entry is %v, want Danube.md moved to Archive/Danube.md", moves[0])
+	}
+	if moves[1].GetMoved().GetFrom() != "../Baikal.md" || moves[1].Failure == nil {
+		t.Errorf("the second entry is %v, want ../Baikal.md with a failure", moves[1])
+	}
+	if moves[2].Failure != nil || moves[2].GetMoved().GetTo() != "Archive/Rhine.md" {
+		t.Errorf("the third entry is %v, want Rivers/Rhine.md moved to Archive/Rhine.md", moves[2])
+	}
+	for _, target := range []string{"Archive/Danube.md", "Archive/Rhine.md"} {
+		if _, found := vault.files[target]; !found {
+			t.Errorf("%s is not in the vault", target)
+		}
+	}
+}
+
+func TestARemovalReportsAPathOutsideTheVaultAndRemovesTheOthers(t *testing.T) {
+	client, vault := newOutsideClient(t)
+
+	res, err := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
+		Paths: []string{"Danube.md", "../Baikal.md", "Rivers/Rhine.md"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	removals := res.Msg.GetRemovals()
+	if res.Msg.GetError() != 0 || len(removals) != 3 {
+		t.Fatalf("the removal returned error %v with %d entries, want 3 entries", res.Msg.GetError(), len(removals))
+	}
+	if removals[0].Failure != nil || removals[0].GetTrashed() != ".trash/Danube.md" {
+		t.Errorf("the first entry is %v, want Danube.md in .trash", removals[0])
+	}
+	if removals[1].GetPath() != "../Baikal.md" || removals[1].Failure == nil {
+		t.Errorf("the second entry is %v, want ../Baikal.md with a failure", removals[1])
+	}
+	if removals[2].Failure != nil || removals[2].GetTrashed() != ".trash/Rivers/Rhine.md" {
+		t.Errorf("the third entry is %v, want Rivers/Rhine.md in .trash", removals[2])
+	}
+	for _, target := range []string{"Danube.md", "Rivers/Rhine.md"} {
+		if _, found := vault.files[target]; found {
+			t.Errorf("%s is still in the vault", target)
+		}
+	}
+}
+
+func TestTheHostRejectsABatchOfMoreThanFiftyNotes(t *testing.T) {
+	client, vault := newOutsideClient(t)
+	paths := make([]string, 51)
+	for i := range paths {
+		paths[i] = fmt.Sprintf("Lake %d.md", i)
+	}
+
+	_, moveErr := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{Paths: paths}))
+	_, removeErr := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{Paths: paths}))
+
+	for call, err := range map[string]error{"MoveNotes": moveErr, "RemoveNotes": removeErr} {
+		var failure *connect.Error
+		if !errors.As(err, &failure) || failure.Code() != connect.CodeInvalidArgument {
+			t.Errorf("%s of 51 paths returned %v, want invalid argument", call, err)
+		}
+	}
+	if len(vault.moved) != 0 || len(vault.removed) != 0 {
+		t.Errorf("the vault was asked to move %d and remove %d notes of a batch of 51", len(vault.moved), len(vault.removed))
+	}
+}
+
+func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
+	client, _ := newOutsideClient(t)
+
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+	if err != nil {
+		t.Fatalf("the rename returned %v, want the move", err)
+	}
+
+	if res.Msg.Failure != nil || res.Msg.GetError() != 0 || res.Msg.GetPath() != "Donau.md" {
+		t.Errorf("the rename returned %v, want Donau.md with no failure", res.Msg)
+	}
+	if moved := res.Msg.GetMoved(); moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" {
+		t.Errorf("the move came out as %v, want Danube.md to Donau.md", moved)
 	}
 }

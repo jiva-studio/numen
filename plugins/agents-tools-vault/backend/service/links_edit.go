@@ -115,6 +115,8 @@ type linkGroups struct {
 	links        map[string][]domain.Link
 	fingerprints map[string]string
 	positions    map[string][]int
+	// conflicts is why a note is not written: its links carry two different fingerprints.
+	conflicts map[string]error
 }
 
 // add groups the link at position i under its note, or returns why it cannot be written.
@@ -137,7 +139,8 @@ func (g *linkGroups) add(i int, in LinkAddition) error {
 		return err
 	}
 	if first, isGrouped := g.fingerprints[in.From]; isGrouped && first != in.Fingerprint {
-		return fmt.Errorf("the links into %s carry two different fingerprints, and they are one write", in.From)
+		g.conflicts[in.From] = fmt.Errorf("the links into %s carry two different fingerprints, and they are one write", in.From)
+		return g.conflicts[in.From]
 	}
 	if _, isGrouped := g.links[in.From]; !isGrouped {
 		g.order = append(g.order, in.From)
@@ -175,6 +178,7 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 		links:        map[string][]domain.Link{},
 		fingerprints: map[string]string{},
 		positions:    map[string][]int{},
+		conflicts:    map[string]error{},
 	}
 	for i, l := range in.Links {
 		out.Added[i] = LinkAddItem{From: l.From, To: l.To, Fingerprint: "", Error: ""}
@@ -183,7 +187,7 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 		}
 	}
 	for _, from := range groups.order {
-		fingerprint, err := t.editNote(ctx, from, groups.fingerprints[from], addLinksTo(groups.links[from]))
+		fingerprint, err := t.writeLinkGroup(ctx, groups, from)
 		for _, i := range groups.positions[from] {
 			if err != nil {
 				out.Added[i].Error = err.Error()
@@ -193,6 +197,15 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 		}
 	}
 	return out, nil
+}
+
+// writeLinkGroup writes the links of the call into the note, unless they carry two different
+// fingerprints, and returns the fingerprint of the note written.
+func (t *Tools) writeLinkGroup(ctx context.Context, groups *linkGroups, from string) (string, error) {
+	if err := groups.conflicts[from]; err != nil {
+		return "", err
+	}
+	return t.editNote(ctx, from, groups.fingerprints[from], addLinksTo(groups.links[from]))
 }
 
 // addLinksTo returns the change that writes the links into a document.
