@@ -65,14 +65,19 @@ func dial(t *testing.T, addr string) net.Conn {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
+	closeConn := func() {
 		if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
 			t.Errorf("close: %v", err)
 		}
-	})
-	if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
-		t.Fatal(err)
 	}
+	// The connection is closed after 5 seconds, so a read that gets no reply ends the test.
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	stop := context.AfterFunc(ctx, closeConn)
+	t.Cleanup(func() {
+		stop()
+		cancel()
+		closeConn()
+	})
 	return conn
 }
 
