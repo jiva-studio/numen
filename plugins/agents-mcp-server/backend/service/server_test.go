@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 	"errors"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +15,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
@@ -288,5 +291,132 @@ func TestServerServeErrorAndIdempotentClose(t *testing.T) {
 	}
 	if got := srv.GetToken(); got != "tok" {
 		t.Fatalf("GetToken() = %q, want tok", got)
+	}
+}
+
+func TestServerCloseClosesConnectionWithoutRequest(t *testing.T) {
+	t.Parallel()
+
+	srv, err := NewServer(Config{Token: "tok"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	serveOnLoopback(t, srv)
+	addr := srv.actualAddr
+
+	silentConn, err := new(net.Dialer).DialContext(t.Context(), "tcp", addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup.Close(t, silentConn)
+
+	// The server accepts connections in order, so an answer on a later connection means it holds silentConn.
+	client := &http.Client{Transport: &http.Transport{DisableKeepAlives: true}}
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+addr+"/mcp", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := srv.Close(t.Context()); err != nil {
+		t.Fatalf("Close with a connection that sent no request: %v", err)
+	}
+}
+
+// isPeerClosed reports whether the end of a net.Pipe opposite to peer has been closed.
+func isPeerClosed(t *testing.T, peer net.Conn) bool {
+	t.Helper()
+	err := peer.SetReadDeadline(time.Unix(1, 0))
+	if errors.Is(err, io.ErrClosedPipe) {
+		return true
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = peer.Read(make([]byte, 1))
+	if !errors.Is(err, os.ErrDeadlineExceeded) {
+		t.Fatalf("read from an open pipe: got %v, want a deadline error", err)
+	}
+	return false
+}
+
+// waitPeerClosed fails the test with msg unless the end of a net.Pipe opposite to peer is closed
+// within five seconds.
+func waitPeerClosed(t *testing.T, peer net.Conn, msg string) {
+	t.Helper()
+	err := peer.SetReadDeadline(clock.System{}.Now().Add(5 * time.Second))
+	if errors.Is(err, io.ErrClosedPipe) {
+		return
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = peer.Read(make([]byte, 1))
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrClosedPipe) {
+		return
+	}
+	t.Fatalf("%s: read from the peer returned %v", msg, err)
+}
+
+func TestServerCloseKeepsConnectionsThatSentRequest(t *testing.T) {
+	t.Parallel()
+
+	srv, err := NewServer(Config{Token: "tok"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	silentConn, silentPeer := net.Pipe()
+	activeConn, activePeer := net.Pipe()
+	for _, c := range []net.Conn{silentConn, silentPeer, activeConn, activePeer} {
+		cleanup.CloseAfter(t, c)
+	}
+
+	srv.trackConn(silentConn, http.StateNew)
+	srv.trackConn(activeConn, http.StateNew)
+	srv.trackConn(activeConn, http.StateActive)
+	if err := srv.Close(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	waitPeerClosed(t, silentPeer, "Close left open a connection that sent no request")
+	// The connections are closed in one pass under s.mu, so the pass has ended once the lock is free.
+	srv.mu.Lock()
+	tracked := len(srv.newConns)
+	srv.mu.Unlock()
+	if tracked != 0 {
+		t.Fatalf("Close left %d connections tracked as without a request", tracked)
+	}
+	if isPeerClosed(t, activePeer) {
+		t.Fatal("Close closed a connection that sent a request")
+	}
+}
+
+func TestServerClosesConnectionAcceptedAfterClose(t *testing.T) {
+	t.Parallel()
+
+	srv, err := NewServer(Config{Token: "tok"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.Close(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	// Shutdown runs the hook in its own goroutine; the second run makes sure it has run before the
+	// connection arrives, so only trackConn can close it.
+	srv.closeNewConns()
+	lateConn, latePeer := net.Pipe()
+	cleanup.CloseAfter(t, lateConn)
+	cleanup.CloseAfter(t, latePeer)
+
+	srv.trackConn(lateConn, http.StateNew)
+
+	if !isPeerClosed(t, latePeer) {
+		t.Fatal("a connection accepted after Close stays open")
 	}
 }

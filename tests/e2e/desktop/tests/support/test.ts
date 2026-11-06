@@ -1,15 +1,14 @@
 /**
- * Playwright's `test`, with the open tabs the core keeps for the vault cleared before each test.
- * The window opens the tabs the core kept, and every test shares the vault, so each one starts
- * from the tabs a new vault opens with.
+ * The `test` of ./certificate.ts, with the open tabs the core keeps for the vault cleared before
+ * each test. The window opens the tabs the core kept, and every test shares the vault, so each one
+ * starts from the tabs a new vault opens with.
  */
 import fs from 'node:fs'
 import https from 'node:https'
-import os from 'node:os'
-import path from 'node:path'
-import { expect, test as base, type APIRequestContext } from 'playwright/test'
+import { expect, getCertificateFile, test as base, type APIRequestContext } from './certificate.js'
 
 export * from 'playwright/test'
+export { getCertificateFile, getKeyFile } from './certificate.js'
 
 /** Clears the open tabs the core keeps for the vault in the window. */
 export const forgetOpenTabs = async (request: APIRequestContext): Promise<void> => {
@@ -44,10 +43,6 @@ export const readActivePath = async (request: APIRequestContext): Promise<string
   }
   return tabs.find((one) => one.id === activeId)?.path ?? ''
 }
-
-/** The TLS certificate the debug server listening on port wrote, which scripts/start-server.mjs names. */
-const getCertificateFile = (port: string): string =>
-  path.join(os.tmpdir(), `numen-e2e-certificate-${port}.pem`)
 
 /** The vault fixture whose text cannot be read, which the core reports as a failed task in every run. */
 const UNREADABLE_FIXTURE = 'corrupted.pdf'

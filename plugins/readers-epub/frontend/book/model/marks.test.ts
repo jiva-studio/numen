@@ -167,3 +167,43 @@ describe('the runs marked', () => {
     expect(unhighlight).toHaveBeenCalledExactlyOnceWith(props)
   })
 })
+
+describe('the runs of a copy of the paper marked', () => {
+  it('put the highlights over the runs of the copy under the copy as key', () => {
+    const { marks } = setUp(createPaper(MARKUP), [{ start: 1, end: 3 }], [{ start: 7, end: 10 }])
+    const copy = createPaper(MARKUP)
+
+    marks.markCopy(copy)
+
+    const calls = vi.mocked(highlight).mock.calls
+    expect(calls.map((call) => [call[0], call[1]])).toStrictEqual([
+      [HIGHLIGHT, copy],
+      [OTHER_HIGHLIGHT, copy],
+    ])
+    expect(calls.map(getText)).toStrictEqual([['bc'], ['hij']])
+    for (const call of calls) {
+      for (const range of call[2]) expect(copy.contains(range.commonAncestorContainer)).toBe(true)
+    }
+  })
+
+  it('are removed once when the copy is unmarked twice', () => {
+    const { marks } = setUp(createPaper(MARKUP))
+    const copy = createPaper(MARKUP)
+    marks.markCopy(copy)
+
+    marks.unmarkCopy(copy)
+    marks.unmarkCopy(copy)
+
+    expect(unhighlight).toHaveBeenCalledExactlyOnceWith(copy)
+  })
+
+  it('are removed when the component is unmounted', () => {
+    const { wrapper, marks, props } = setUp(createPaper(MARKUP))
+    const copy = createPaper(MARKUP)
+    marks.markCopy(copy)
+
+    wrapper.unmount()
+
+    expect(vi.mocked(unhighlight).mock.calls).toStrictEqual([[props], [copy]])
+  })
+})

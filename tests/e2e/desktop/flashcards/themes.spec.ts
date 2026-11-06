@@ -1,4 +1,4 @@
-import { expect, test, type Page } from 'playwright/test'
+import { expect, test, type Page } from '../tests/support/certificate.js'
 
 /** `--numen-surface` in the Dracula theme of the preset themes plugin. */
 const DRACULA_SURFACE = '#21222c'

@@ -31,9 +31,12 @@ type Clock interface {
 }
 
 // Serve serves handler at addr until ctx is done or the process is interrupted.
-// It serves TLS with its own certificate unless NUMEN_DEBUG_TLS is "false",
-// writes that certificate in PEM to the file NUMEN_DEBUG_TLS_CERT names when it
-// is set, and writes the listening address to out once the listener is bound.
+// It serves TLS unless NUMEN_DEBUG_TLS is "false": with the PEM certificate and
+// key NUMEN_DEBUG_TLS_USE_CERT and NUMEN_DEBUG_TLS_USE_KEY name, which are set
+// both or neither, or else with a new self-signed certificate. It writes the
+// certificate it serves in PEM to the file NUMEN_DEBUG_TLS_CERT names and its
+// key in PEM (PKCS #8) to the file NUMEN_DEBUG_TLS_KEY names, when they are
+// set, and writes the listening address to out once the listener is bound.
 func Serve(
 	ctx context.Context,
 	clock Clock,
@@ -91,21 +94,55 @@ func Serve(
 	return server.Shutdown(shutdownCtx)
 }
 
-// createTLSListener serves TLS on ln with a new self-signed certificate.
+// createTLSListener serves TLS on ln with the certificate getCertificate gives,
+// and writes it and its key to the files NUMEN_DEBUG_TLS_CERT and
+// NUMEN_DEBUG_TLS_KEY name.
 func createTLSListener(ln net.Listener, clock Clock) (net.Listener, error) {
-	cert, err := generateSelfSignedCert(clock)
+	cert, err := getCertificate(clock)
 	if err != nil {
-		return nil, fmt.Errorf("generate debug tls cert: %w", err)
+		return nil, err
 	}
 	if path := os.Getenv("NUMEN_DEBUG_TLS_CERT"); path != "" {
-		if err := writeCertificate(path, cert.Certificate[0]); err != nil {
-			return nil, err
+		if err := writePEMFile(path, "CERTIFICATE", cert.Certificate[0]); err != nil {
+			return nil, fmt.Errorf("write debug tls cert: %w", err)
+		}
+	}
+	if path := os.Getenv("NUMEN_DEBUG_TLS_KEY"); path != "" {
+		key, err := x509.MarshalPKCS8PrivateKey(cert.PrivateKey)
+		if err != nil {
+			return nil, fmt.Errorf("marshal debug tls key: %w", err)
+		}
+		if err := writePEMFile(path, "PRIVATE KEY", key); err != nil {
+			return nil, fmt.Errorf("write debug tls key: %w", err)
 		}
 	}
 	return tls.NewListener(ln, &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		NextProtos:   []string{"h2", "http/1.1"},
 	}), nil
+}
+
+// getCertificate loads the pair NUMEN_DEBUG_TLS_USE_CERT and
+// NUMEN_DEBUG_TLS_USE_KEY name, or generates a self-signed certificate when
+// neither is set.
+func getCertificate(clock Clock) (tls.Certificate, error) {
+	certFile := os.Getenv("NUMEN_DEBUG_TLS_USE_CERT")
+	keyFile := os.Getenv("NUMEN_DEBUG_TLS_USE_KEY")
+	if certFile == "" && keyFile == "" {
+		cert, err := generateSelfSignedCert(clock)
+		if err != nil {
+			return tls.Certificate{}, fmt.Errorf("generate debug tls cert: %w", err)
+		}
+		return cert, nil
+	}
+	if certFile == "" || keyFile == "" {
+		return tls.Certificate{}, errors.New("NUMEN_DEBUG_TLS_USE_CERT and NUMEN_DEBUG_TLS_USE_KEY must be set together")
+	}
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return tls.Certificate{}, fmt.Errorf("load debug tls cert: %w", err)
+	}
+	return cert, nil
 }
 
 func generateSelfSignedCert(clock Clock) (tls.Certificate, error) {
@@ -139,16 +176,22 @@ func generateSelfSignedCert(clock Clock) (tls.Certificate, error) {
 	}, nil
 }
 
-// writeCertificate writes the DER certificate to path in PEM. The file appears
-// whole: it is written beside path and renamed into place.
-func writeCertificate(path string, der []byte) error {
+// writePEMFile writes der to path as one PEM block of blockType, readable by
+// its owner only. The file appears whole: it is written beside path and renamed
+// into place. A part file left from an earlier run is removed rather than
+// written over, so neither its mode nor a symlink in its place reaches path.
+func writePEMFile(path, blockType string, der []byte) error {
 	part := path + ".part"
-	data := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
-	if err := os.WriteFile(part, data, 0o600); err != nil {
-		return fmt.Errorf("write debug tls cert: %w", err)
+	if err := os.Remove(part); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
 	}
-	if err := os.Rename(part, path); err != nil {
-		return fmt.Errorf("write debug tls cert: %w", err)
+	file, err := os.OpenFile(part, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
 	}
-	return nil
+	_, err = file.Write(pem.EncodeToMemory(&pem.Block{Type: blockType, Bytes: der}))
+	if err := errors.Join(err, file.Close()); err != nil {
+		return err
+	}
+	return os.Rename(part, path)
 }

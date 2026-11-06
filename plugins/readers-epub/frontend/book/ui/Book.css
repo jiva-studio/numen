@@ -108,3 +108,12 @@
 .book__paper--unset {
   visibility: hidden;
 }
+
+/* The copy stands where the paper stands and takes no press or selection. */
+.book__leaving {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
