@@ -29,21 +29,6 @@
         "icon": "waypoints",
         "scope": "note",
         "shortcut": "mod+shift+p"
-      },
-      {
-        "id": "relation.createChild",
-        "title": "New child note",
-        "scope": "note"
-      },
-      {
-        "id": "relation.createParent",
-        "title": "New parent note",
-        "scope": "note"
-      },
-      {
-        "id": "relation.createJump",
-        "title": "New jump note",
-        "scope": "note"
       }
     ],
     "menus": [
@@ -63,9 +48,9 @@
         "title": "Relation",
         "group": "4-relation"
       },
-      { "slot": "plex.relation", "command": "relation.createChild", "order": 10 },
-      { "slot": "plex.relation", "command": "relation.createParent", "order": 20 },
-      { "slot": "plex.relation", "command": "relation.createJump", "order": 30 }
+      { "slot": "plex.relation", "command": "app:note.createChild", "order": 10 },
+      { "slot": "plex.relation", "command": "app:note.createParent", "order": 20 },
+      { "slot": "plex.relation", "command": "app:note.createJump", "order": 30 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

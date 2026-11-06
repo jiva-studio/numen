@@ -50,7 +50,7 @@ test.describe('a deck or a card model made through the palette', () => {
 })
 
 test.describe('a deck made from the New submenu of a row of the file tree', () => {
-  test('is filed in the folder of the row', async ({ page, request }) => {
+  test('is filed in the folder of the row under the name typed', async ({ page, request }) => {
     await createFolder(request, 'Glaciers')
     try {
       await openWorkspace(page)
@@ -59,11 +59,15 @@ test.describe('a deck made from the New submenu of a row of the file tree', () =
       const newItem = page.getByRole('menuitem', { name: 'New', exact: true })
       await newItem.focus()
       await newItem.press('ArrowRight')
-      await page.getByRole('menuitem', { name: 'New deck', exact: true }).click()
+      await page.getByRole('menuitem', { name: 'Create deck', exact: true }).click()
+      const field = page.locator('input[data-palette="field"]').first()
+      await expect(field).toBeVisible()
+      await field.fill('Moraines')
+      await page.keyboard.press('Enter')
 
       await expect
         .poll(async () => listPaths(request, 'Glaciers'))
-        .toEqual(['Glaciers/New deck.md'])
+        .toEqual(['Glaciers/Moraines.md'])
     } finally {
       await trashFiles(request, ['Glaciers'])
     }

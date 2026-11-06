@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"path"
+	"strings"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
@@ -45,15 +47,28 @@ func (b *Backend) Commands() (*command.Registry, error) {
 	return registry, nil
 }
 
-// newCreateRun makes the file under the title at the root of the vault the window shows, and answers
-// it as the file to open.
+// getRowFolder is the folder a file made over a row of the file tree is filed in: the row where it
+// is a folder, written with a trailing slash, the folder holding it where it is a file, and the root
+// of the vault where the command runs over no row.
+func getRowFolder(row string) string {
+	if row == "" || strings.HasSuffix(row, "/") {
+		return strings.TrimSuffix(row, "/")
+	}
+	if folder := path.Dir(row); folder != "." {
+		return folder
+	}
+	return ""
+}
+
+// newCreateRun makes the file under the title in the folder of the row it runs over, or at the root
+// of the vault the window shows, and answers it as the file to open.
 func (b *Backend) newCreateRun(
 	create func(context.Context, domain.Vault, cards.New) (cards.CreateNoteResult, error),
 ) command.Run {
 	return func(ctx context.Context, request command.Request) (command.Result, error) {
 		made, code, _, err := b.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 			return create(ctx, showing, in)
-		}, request.Arguments.GetString(argumentTitle), "")
+		}, request.Arguments.GetString(argumentTitle), getRowFolder(request.Path))
 		if err != nil {
 			return command.Result{}, err
 		}

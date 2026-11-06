@@ -129,17 +129,14 @@ test.describe('Making a related note', () => {
 })
 
 test.describe('The Relation submenu of a row of the file tree', () => {
-  test('makes an untitled child of the note of the row, joined below it', async ({
+  test('makes a child of the note of the row under the name typed, joined below it', async ({
     page,
     request,
   }) => {
     const parentTitle = createUniqueTitle('Lagoon')
+    const childTitle = createUniqueTitle('Reef flat')
     const parent = await createNote(request, parentTitle)
-    const before = new Set([
-      ...(await listFilePaths(request, '')),
-      ...(await listFilePaths(request, 'notes')),
-    ])
-    let made: string[] = []
+    let child = ''
     try {
       await openWorkspace(page)
       await showInFiles(page, ['notes'])
@@ -147,23 +144,13 @@ test.describe('The Relation submenu of a row of the file tree', () => {
       const relation = page.getByRole('menuitem', { name: 'Relation', exact: true })
       await relation.focus()
       await relation.press('ArrowRight')
-      await page.getByRole('menuitem', { name: 'New child note', exact: true }).click()
+      await page.getByRole('menuitem', { name: 'Create child note', exact: true }).click()
+      await nameNote(page, childTitle)
 
-      await expect
-        .poll(async () =>
-          [
-            ...(await listFilePaths(request, '')),
-            ...(await listFilePaths(request, 'notes')),
-          ].filter((one) => !before.has(one)),
-        )
-        .toHaveLength(1)
-      made = [
-        ...(await listFilePaths(request, '')),
-        ...(await listFilePaths(request, 'notes')),
-      ].filter((one) => !before.has(one))
-      expect((await getConnection(request, parent, made[0]!)).role).toBe('ROLE_CHILD')
+      child = await waitForMadeNote(page, childTitle)
+      expect((await getConnection(request, parent, child)).role).toBe('ROLE_CHILD')
     } finally {
-      for (const one of [parent, ...made]) await destroyNote(request, one)
+      for (const one of [parent, child].filter(Boolean)) await destroyNote(request, one)
     }
   })
 })

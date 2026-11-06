@@ -22,9 +22,6 @@ export const DEMO_COMMAND = {
   newTreeNote: 'md.numen.views.file.tree:tree.newNote',
   newTreeFolder: 'md.numen.views.file.tree:tree.newFolder',
   renameTreeEntry: 'md.numen.views.file.tree:tree.rename',
-  createChildRelation: 'md.numen.views.plex.graph:relation.createChild',
-  createParentRelation: 'md.numen.views.plex.graph:relation.createParent',
-  createJumpRelation: 'md.numen.views.plex.graph:relation.createJump',
 } as const
 
 /** The id of the command a transcript menu entry runs to delete a transcript. */

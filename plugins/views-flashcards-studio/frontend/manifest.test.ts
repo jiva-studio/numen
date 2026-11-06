@@ -1,6 +1,6 @@
 /**
- * The entries the plugin's manifest places in the New submenu of the file tree, and the commands
- * they run.
+ * The entries the plugin's manifest places in the New submenu of the file tree: the commands that
+ * create a deck, a card model and a preset.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -15,34 +15,23 @@ const manifest = JSON.parse(
   }
 }
 
-const getCommand = (id: string) => manifest.contributes.commands.find((one) => one.id === id)
-
 describe('the New submenu of the file tree', () => {
-  it('holds making a deck, a card model and a preset', () => {
+  it('holds the commands that create a deck, a card model and a preset', () => {
     expect(
       (manifest.contributes.slots ?? []).filter((one) => one.slot === 'fileTree.new'),
     ).toStrictEqual([
-      { slot: 'fileTree.new', command: 'deck.new', group: '1-cards', order: 10 },
-      { slot: 'fileTree.new', command: 'cardModel.new', group: '1-cards', order: 20 },
-      { slot: 'fileTree.new', command: 'preset.new', group: '1-cards', order: 30 },
+      { slot: 'fileTree.new', command: 'deck.create', group: '1-cards', order: 10 },
+      { slot: 'fileTree.new', command: 'cardModel.create', group: '1-cards', order: 20 },
+      { slot: 'fileTree.new', command: 'preset.create', group: '1-cards', order: 30 },
     ])
   })
 
-  it('declares the commands it runs, over any row and with no argument', () => {
-    expect(getCommand('deck.new')).toStrictEqual({
-      id: 'deck.new',
-      title: 'New deck',
-      icon: 'layers',
-    })
-    expect(getCommand('cardModel.new')).toStrictEqual({
-      id: 'cardModel.new',
-      title: 'New card model',
-      icon: 'layout-template',
-    })
-    expect(getCommand('preset.new')).toStrictEqual({
-      id: 'preset.new',
-      title: 'New preset',
-      icon: 'gauge',
-    })
+  it('declares one command for each, the one the palette lists', () => {
+    const ids = manifest.contributes.commands.map((one) => one.id)
+
+    expect(ids).toContain('deck.create')
+    expect(ids).not.toContain('deck.new')
+    expect(ids).not.toContain('cardModel.new')
+    expect(ids).not.toContain('preset.new')
   })
 })

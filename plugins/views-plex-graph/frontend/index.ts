@@ -1,9 +1,4 @@
-import {
-  definePlugin,
-  getRelationErrorWords,
-  type ConnectionRole,
-  type PluginContext,
-} from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import PlexGraphView from './PlexGraphView.vue'
 import { createPlexKind, PLEX } from './kind'
 import { usePlexView } from './model/usePlexView'
@@ -31,12 +26,6 @@ export function activate(context: PluginContext): void {
   context.registerTabKind(plexes.kind)
   context.onVaultChange((event) => plexes.refresh(event))
 
-  /** Makes an untitled note in a relation to another, and says why where the core made none. */
-  const createRelated = async (from: string, role: ConnectionRole): Promise<void> => {
-    const made = await relations.createRelated({ from, role })
-    if (!made.ok) workspace.showError(getRelationErrorWords(made.error))
-  }
-
   /** Opens the note in the plex that was last active, or in a new plex when none is open. */
   const travel = async (path: string): Promise<void> => {
     await context.navigateTab?.(PLEX, path)
@@ -51,19 +40,6 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'graph.showNote',
     handler: (note) => travel(note.path),
-  })
-
-  context.registerCommand({
-    id: 'relation.createChild',
-    handler: (note) => createRelated(note.path, 'child'),
-  })
-  context.registerCommand({
-    id: 'relation.createParent',
-    handler: (note) => createRelated(note.path, 'parent'),
-  })
-  context.registerCommand({
-    id: 'relation.createJump',
-    handler: (note) => createRelated(note.path, 'jump'),
   })
 }
 

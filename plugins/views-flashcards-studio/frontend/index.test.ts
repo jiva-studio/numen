@@ -9,7 +9,6 @@ import {
 import { VAULT_SUMMARY, type WorkspaceHost } from '@numen/plugin-sdk'
 import { effectScope } from 'vue'
 import plugin, { activate, DECK, PRESET, REVIEW, CARD_MODEL } from './index'
-import { cards, presets } from './cards'
 
 const createContext = () => {
   const writers: string[] = []
@@ -203,40 +202,12 @@ describe('flashcards-studio plugin', () => {
     expect(ctx.getRegisteredTabKinds()).toHaveLength(3)
   })
 
-  it('makes a deck, a card model and a preset in the folder of the row the command runs over', async () => {
-    const createDeck = vi
-      .spyOn(cards, 'createDeck')
-      .mockResolvedValue({ ok: true, value: { path: 'Decks/New deck.md' } } as never)
-    const createCardModel = vi
-      .spyOn(cards, 'createCardModel')
-      .mockResolvedValue({ ok: true, value: { path: 'Card models/New card model.md' } } as never)
-    const createPreset = vi
-      .spyOn(presets, 'createPreset')
-      .mockResolvedValue({ ok: true, value: { path: 'Presets/New preset.md' } } as never)
+  it('registers no command of its own for the New submenu, where the files of the vault are given', () => {
     const { ctx } = createContext()
-    const root = [
-      { path: 'Decks', name: 'Decks', isFolder: true, isNote: false, type: 'note' },
-      { path: 'Lakes.md', name: 'Lakes.md', isFolder: false, isNote: true, type: 'deck' },
-    ]
-    ;(ctx as unknown as { files: unknown }).files = {
-      list: async (folder: string) => (folder === '' ? root : []),
-    }
+    ;(ctx as unknown as { files: unknown }).files = { list: async () => [] }
 
     activate(ctx)
 
-    expect(ctx.getRegisteredCommands().map(({ id }) => id)).toStrictEqual([
-      'preset.open',
-      'deck.new',
-      'cardModel.new',
-      'preset.new',
-    ])
-    await ctx.triggerCommand('deck.new', { path: 'Decks', title: 'Decks', type: 'note' })
-    expect(createDeck).toHaveBeenCalledWith('New deck', 'Decks')
-    await ctx.triggerCommand('cardModel.new', { path: 'Decks/One.md', title: 'One', type: 'note' })
-    expect(createCardModel).toHaveBeenCalledWith('New card model', 'Decks', [])
-    await ctx.triggerCommand('preset.new', { path: 'Lakes.md', title: 'Lakes', type: 'deck' })
-    expect(createPreset).toHaveBeenCalledWith('New preset', '')
-    await ctx.triggerCommand('preset.new', { path: '', title: '', type: 'note' })
-    expect(createPreset).toHaveBeenLastCalledWith('New preset', '')
+    expect(ctx.getRegisteredCommands().map(({ id }) => id)).toStrictEqual(['preset.open'])
   })
 })

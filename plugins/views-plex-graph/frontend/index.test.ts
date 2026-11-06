@@ -32,7 +32,7 @@ describe('view-plex-graph plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(9)
+    expect(ctx.subscriptions).toHaveLength(6)
 
     ctx.dispose()
     expect(ctx.subscriptions).toHaveLength(0)
@@ -40,38 +40,13 @@ describe('view-plex-graph plugin', () => {
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
 
-  it('registers the handlers that open the plex, show a note in it and make related notes', () => {
+  it('registers the handlers that open the plex and show a note in it', () => {
     const { ctx } = createContext()
     activate(ctx)
 
     expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
       'graph.open',
       'graph.showNote',
-      'relation.createChild',
-      'relation.createParent',
-      'relation.createJump',
-    ])
-  })
-
-  it('makes an untitled note in each relation to the note the command runs over', async () => {
-    const { host, recorded } = createHost({ opening: 'Root.md' })
-    const ctx = createMockPluginContext({
-      pluginId: 'md.numen.views.plex.graph',
-      workspace: host.workspace,
-      notes: host.notes,
-      relations: host.relations,
-    })
-    activate(ctx)
-    const note = { path: 'Kelvin.md', title: 'Kelvin', type: 'note' }
-
-    await ctx.triggerCommand('relation.createChild', note)
-    await ctx.triggerCommand('relation.createParent', note)
-    await ctx.triggerCommand('relation.createJump', note)
-
-    expect(recorded.made).toStrictEqual([
-      ['Kelvin.md', 'child'],
-      ['Kelvin.md', 'parent'],
-      ['Kelvin.md', 'jump'],
     ])
   })
 

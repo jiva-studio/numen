@@ -60,7 +60,7 @@ describe('the manifest', () => {
 })
 
 describe('the menu of a row of the file tree', () => {
-  it('places showing the note, and the submenu of relations with its three commands', () => {
+  it('places showing the note, and the submenu of relations with the window’s commands', () => {
     expect(getMenuEntries()).toStrictEqual([
       { slot: 'fileTree.context', command: 'graph.showNote', group: '0-open', order: 20 },
       {
@@ -69,30 +69,16 @@ describe('the menu of a row of the file tree', () => {
         title: 'Relation',
         group: '4-relation',
       },
-      { slot: 'plex.relation', command: 'relation.createChild', order: 10 },
-      { slot: 'plex.relation', command: 'relation.createParent', order: 20 },
-      { slot: 'plex.relation', command: 'relation.createJump', order: 30 },
+      { slot: 'plex.relation', command: 'app:note.createChild', order: 10 },
+      { slot: 'plex.relation', command: 'app:note.createParent', order: 20 },
+      { slot: 'plex.relation', command: 'app:note.createJump', order: 30 },
     ])
   })
 
-  it('declares the commands of the relations over a note', () => {
-    const byId = (id: string) => manifest.contributes.commands.find((one) => one.id === id)
-
-    expect(byId('relation.createChild')).toStrictEqual({
-      id: 'relation.createChild',
-      title: 'New child note',
-      scope: 'note',
-    })
-    expect(byId('relation.createParent')).toStrictEqual({
-      id: 'relation.createParent',
-      title: 'New parent note',
-      scope: 'note',
-    })
-    expect(byId('relation.createJump')).toStrictEqual({
-      id: 'relation.createJump',
-      title: 'New jump note',
-      scope: 'note',
-    })
+  it('declares no command of its own for the relations', () => {
+    expect(
+      manifest.contributes.commands.map((one) => one.id).filter((id) => id.startsWith('relation.')),
+    ).toStrictEqual([])
   })
 })
 

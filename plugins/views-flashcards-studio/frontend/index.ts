@@ -1,4 +1,4 @@
-import { definePlugin, type PluginContext, type VaultFiles } from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
 import { createCardModelTabs } from './card-model/kind'
@@ -26,7 +26,7 @@ export type { PresetTabState } from './preset/types'
 export { REVIEW } from './review'
 
 export function activate(context: PluginContext): void {
-  const { workspace, buffers, files } = context
+  const { workspace, buffers } = context
   if (!workspace) {
     const { notices, closeTab, agent } = context
     if (!notices || !closeTab || !agent) {
@@ -78,31 +78,6 @@ export function activate(context: PluginContext): void {
       await schedules.openPresetOf(note, (kind, path) => context.openTab?.(kind, path))
     },
   })
-
-  if (files) {
-    const commands: readonly (readonly [string, (folder: string) => Promise<unknown>])[] = [
-      ['deck.new', (folder) => cards.createDeck('New deck', folder)],
-      ['cardModel.new', (folder) => cards.createCardModel('New card model', folder, [])],
-      ['preset.new', (folder) => presets.createPreset('New preset', folder)],
-    ]
-    for (const [id, create] of commands) {
-      context.registerCommand({
-        id,
-        handler: async (note) => {
-          await create(await getFolderOf(files, note.path))
-        },
-      })
-    }
-  }
-}
-
-/** The folder a file is made in for a row: the row where it is a folder, else the folder holding it. */
-async function getFolderOf(files: VaultFiles, path: string): Promise<string> {
-  if (path === '') return ''
-  const slash = path.lastIndexOf('/')
-  const parent = slash < 0 ? '' : path.slice(0, slash)
-  const entries = await files.list(parent)
-  return entries.some((one) => one.path === path && one.isFolder) ? path : parent
 }
 
 export default definePlugin({

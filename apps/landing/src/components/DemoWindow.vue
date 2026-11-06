@@ -1246,9 +1246,9 @@ const RELATION_SUBMENU: SlotItem = {
   title: 'Relation',
   icon: Waypoints,
   entries: [
-    createMenuCommand(DEMO_COMMAND.createChildRelation, 'New child note'),
-    createMenuCommand(DEMO_COMMAND.createParentRelation, 'New parent note'),
-    createMenuCommand(DEMO_COMMAND.createJumpRelation, 'New jump note'),
+    createMenuCommand(DEMO_COMMAND.createChildNote, 'Create child note'),
+    createMenuCommand(DEMO_COMMAND.createParentNote, 'Create parent note'),
+    createMenuCommand(DEMO_COMMAND.createJumpNote, 'Create jump note'),
   ],
 }
 
@@ -2453,12 +2453,6 @@ function runVaultCommand(command: string, targetPath: string, source: 'files' | 
     void filesState.createFolder(folder)
   } else if (command === DEMO_COMMAND.renameTreeEntry) {
     if (folder !== null) filesState.setRenamingPath(targetPath)
-  } else if (command === DEMO_COMMAND.createChildRelation) {
-    createNoteInRelationInVault('', targetPath, 'child')
-  } else if (command === DEMO_COMMAND.createParentRelation) {
-    createNoteInRelationInVault('', targetPath, 'parent')
-  } else if (command === DEMO_COMMAND.createJumpRelation) {
-    createNoteInRelationInVault('', targetPath, 'jump')
   } else if (command === DEMO_COMMAND.openNote) {
     openVaultFile(targetPath, 'current')
   } else if (command === DEMO_COMMAND.openNoteBeside) {
