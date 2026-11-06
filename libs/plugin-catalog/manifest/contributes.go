@@ -61,6 +61,8 @@ type Contributes struct {
 	Commands []Command
 	// Menus place commands in the named places the window draws.
 	Menus []Menu
+	// Listeners are the TCP ports on 127.0.0.1 the host binds for the plugin while it is enabled.
+	Listeners []Listener
 }
 
 // ListStatusViews returns the ids of the components the plugin registers for the status bar.
@@ -116,6 +118,7 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, m.listHandleIssues()...)
 	issues = append(issues, m.listReaderIssues()...)
 	issues = append(issues, m.listMenuIssues()...)
+	issues = append(issues, m.listListenerIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
 

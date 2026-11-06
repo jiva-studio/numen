@@ -159,28 +159,18 @@ func TestRequireToken(t *testing.T) {
 }
 
 func TestReadConfig(t *testing.T) {
-	t.Setenv("MCP_PORT", "")
 	t.Setenv("MCP_TOKEN", "")
 
-	if cfg := readConfig(nil); cfg.Addr != "" || cfg.Token != "" {
+	if cfg := readConfig(nil); cfg.Token != "" {
 		t.Fatalf("expected empty config, got %+v", cfg)
 	}
 
-	t.Setenv("MCP_PORT", "9001")
 	t.Setenv("MCP_TOKEN", "env-token")
-	if cfg := readConfig(nil); cfg.Addr != "127.0.0.1:9001" || cfg.Token != "env-token" {
+	if cfg := readConfig(nil); cfg.Token != "env-token" {
 		t.Fatalf("expected env config, got %+v", cfg)
 	}
 
-	if cfg := readConfig(map[string]string{"port": "9002", "token": "map-token"}); cfg.Addr != "127.0.0.1:9002" || cfg.Token != "map-token" {
-		t.Fatalf("expected port config, got %+v", cfg)
-	}
-
-	if cfg := readConfig(map[string]string{"address": "127.0.0.1:9003", "port": "9002"}); cfg.Addr != "127.0.0.1:9003" {
-		t.Fatalf("expected address config, got %+v", cfg)
-	}
-
-	if cfg := readConfig(map[string]string{"addr": " 127.0.0.1:9004 ", "address": "127.0.0.1:9003", "port": "9002", "token": " tok "}); cfg.Addr != "127.0.0.1:9004" || cfg.Token != "tok" {
-		t.Fatalf("expected addr config, got %+v", cfg)
+	if cfg := readConfig(map[string]string{"port": "9002", "token": " map-token "}); cfg.Token != "map-token" {
+		t.Fatalf("expected the configured token, got %+v", cfg)
 	}
 }

@@ -90,35 +90,48 @@ func GenerateAuthToken() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-// ParseHandshake scans a text line for readiness indicator and allocated port.
-func ParseHandshake(line string) (int, bool) {
-	cleanLine := strings.TrimSpace(line)
-	prefix := "NUMEN_READY"
-	if !strings.HasPrefix(cleanLine, prefix) {
-		prefix = "READY"
-		if !strings.HasPrefix(cleanLine, prefix) {
-			return 0, false
-		}
-	}
+// Handshake is the ready line of a plugin process.
+type Handshake struct {
+	// Port is the loopback port of the plugin's RPC server.
+	Port int
+	// Listeners maps the name of each listener the plugin opened to its loopback port.
+	Listeners map[string]int
+}
 
-	parts := strings.Fields(cleanLine)
-	for _, part := range parts {
-		if strings.HasPrefix(part, "port=") {
-			portStr := strings.TrimPrefix(part, "port=")
-			port, err := strconv.Atoi(portStr)
-			if err == nil && port > 0 {
-				return port, true
-			}
+const listenerTokenPrefix = "listener."
+
+// ParseHandshake reads the ready line of a plugin process: the port of its RPC server and one
+// listener.<name>=<port> token per listener it opened.
+func ParseHandshake(line string) (Handshake, bool) {
+	cleanLine := strings.TrimSpace(line)
+	if !strings.HasPrefix(cleanLine, "NUMEN_READY") && !strings.HasPrefix(cleanLine, "READY") {
+		return Handshake{}, false
+	}
+	handshake := Handshake{Port: 0, Listeners: map[string]int{}}
+	for _, part := range strings.Fields(cleanLine) {
+		key, value, ok := strings.Cut(part, "=")
+		if !ok {
+			continue
+		}
+		port, err := strconv.Atoi(value)
+		if err != nil || port <= 0 {
+			continue
+		}
+		if key == "port" && handshake.Port == 0 {
+			handshake.Port = port
+		}
+		if name, isListener := strings.CutPrefix(key, listenerTokenPrefix); isListener && name != "" {
+			handshake.Listeners[name] = port
 		}
 	}
-	return 0, false
+	return handshake, handshake.Port > 0
 }
 
 // WaitForHandshake reads lines from reader until a handshake line is observed or ctx expires.
-func WaitForHandshake(ctx context.Context, r io.Reader) (int, error) {
+func WaitForHandshake(ctx context.Context, r io.Reader) (Handshake, error) {
 	type result struct {
-		port int
-		err  error
+		handshake Handshake
+		err       error
 	}
 
 	resultCh := make(chan result, 1)
@@ -127,23 +140,23 @@ func WaitForHandshake(ctx context.Context, r io.Reader) (int, error) {
 		scanner := bufio.NewScanner(r)
 		for scanner.Scan() {
 			line := scanner.Text()
-			if port, ok := ParseHandshake(line); ok {
-				resultCh <- result{port: port, err: nil}
+			if handshake, ok := ParseHandshake(line); ok {
+				resultCh <- result{handshake: handshake, err: nil}
 				return
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			resultCh <- result{port: 0, err: fmt.Errorf("scan handshake: %w", err)}
+			resultCh <- result{handshake: Handshake{}, err: fmt.Errorf("scan handshake: %w", err)}
 			return
 		}
-		resultCh <- result{port: 0, err: errInvalidHandshake}
+		resultCh <- result{handshake: Handshake{}, err: errInvalidHandshake}
 	}()
 
 	select {
 	case <-ctx.Done():
-		return 0, fmt.Errorf("%w: %w", ErrHandshakeTimeout, ctx.Err())
+		return Handshake{}, fmt.Errorf("%w: %w", ErrHandshakeTimeout, ctx.Err())
 	case res := <-resultCh:
-		return res.port, res.err
+		return res.handshake, res.err
 	}
 }
 

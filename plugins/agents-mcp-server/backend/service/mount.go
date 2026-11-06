@@ -37,17 +37,20 @@ func Mount(s *server.Server) error {
 			}
 		}
 
-		newCfg := readConfig(values)
-		err := srv.Rebind(ctx, newCfg)
+		srv.SetToken(readConfig(values).Token)
 		reportSyncError(srv.aggregator.SyncTools(ctx))
-		return err
+		return nil
 	})
 
 	s.Register("/mcp", srv.Handler())
 	s.Register("/mcp/", srv.Handler())
 	s.Register("/md.numen.agents.mcp.server/", srv.Handler())
 
-	return srv.Start()
+	ln, err := s.OpenListener("mcp")
+	if err != nil {
+		return err
+	}
+	return srv.Serve(ln)
 }
 
 // NewHandler returns the handler of the plugin backend for a host that links the plugin in.

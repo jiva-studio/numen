@@ -24,6 +24,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/portproxy"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
@@ -115,6 +116,13 @@ type Host struct {
 	typeCache      contentTypeCache
 	clock          machineport.Clock
 	storage        storageRoots
+	// listenersMu orders the binding and closing of listener ports. It is taken before mu, never while mu is held.
+	listenersMu sync.Mutex
+	// listeners are the bound ports of each plugin; listenerSets the declarations they were bound for.
+	listeners    map[string][]*portproxy.Proxy
+	listenerSets map[string][]manifest.Listener
+	// listenerPorts maps each running plugin to the loopback port of each listener its ready line reported.
+	listenerPorts map[string]map[string]int
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
@@ -156,6 +164,9 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		builtIns:         make(map[string]builtInPlugin),
 		contentTypes:     nil,
 		typeCache:        contentTypeCache{},
+		listeners:        make(map[string][]*portproxy.Proxy),
+		listenerSets:     make(map[string][]manifest.Listener),
+		listenerPorts:    make(map[string]map[string]int),
 	}
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -232,6 +243,7 @@ func (h *Host) SetSafeMode(enabled bool) {
 			h.reportError(err)
 		}
 	}
+	h.syncAllListeners()
 }
 
 func (h *Host) getRunningPluginIDsLocked() []string {
@@ -253,7 +265,7 @@ func (h *Host) stopPlugin(ctx context.Context, pluginID string) error {
 		return nil
 	}
 	target := pluginTeardownTarget{id: pluginID, pid: sup.GetProcessID(), sup: sup, endpoint: h.endpoints[pluginID]}
-	delete(h.endpoints, pluginID)
+	h.forgetEndpointLocked(pluginID)
 	h.mu.Unlock()
 
 	ctx, cancel := context.WithTimeout(ctx, stopPluginTimeout)
@@ -526,10 +538,16 @@ func (h *Host) awaitActivation(ctx context.Context, pluginID string, sup *lifecy
 // supervisor runs it before it goes Dormant, so no replacement is running yet.
 func (h *Host) dropEndpointOfStoppedPlugin(pluginID string) {
 	h.mu.Lock()
-	delete(h.endpoints, pluginID)
+	h.forgetEndpointLocked(pluginID)
 	h.mu.Unlock()
 	h.clearPluginWork(pluginID)
 	h.clearPluginTasks(pluginID)
+}
+
+// forgetEndpointLocked forgets the endpoint of the plugin and the ports its ready line reported.
+func (h *Host) forgetEndpointLocked(pluginID string) {
+	delete(h.endpoints, pluginID)
+	delete(h.listenerPorts, pluginID)
 }
 
 // acquireRunningLocked holds the plugin for a consumer when it is running with a usable endpoint.
@@ -714,7 +732,7 @@ func (h *Host) closeStdin(pluginID string, pid int) {
 }
 
 // waitForReady reads the handshake of a started process within the activation deadline.
-func (h *Host) waitForReady(ctx context.Context, stdout io.Reader) (int, error) {
+func (h *Host) waitForReady(ctx context.Context, stdout io.Reader) (transport.Handshake, error) {
 	h.mu.RLock()
 	timeout := h.activation.Timeout
 	h.mu.RUnlock()
@@ -747,7 +765,10 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifest.Discovered, su
 		return transport.Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
 
-	actualPort, err := h.waitForReady(ctx, stdout)
+	handshake, err := h.waitForReady(ctx, stdout)
+	if err == nil {
+		err = checkReportedListeners(p.Manifest, handshake.Listeners)
+	}
 	if err != nil {
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
 		return transport.Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("handshake plugin %s: %w", p.Manifest.ID, err)
@@ -762,7 +783,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifest.Discovered, su
 
 	endpoint := transport.Endpoint{
 		Host:      "127.0.0.1",
-		Port:      actualPort,
+		Port:      handshake.Port,
 		Token:     token,
 		Transport: transport.NewNetworkTransport(),
 	}
@@ -792,6 +813,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifest.Discovered, su
 	sup.Acquire(now)
 
 	h.endpoints[p.Manifest.ID] = endpoint
+	h.listenerPorts[p.Manifest.ID] = handshake.Listeners
 	sup.SetRPCShutdown(h.createRPCShutdown(endpoint, 2*time.Second))
 	sup.FinishActivating()
 	h.mu.Unlock()
@@ -939,7 +961,7 @@ func (h *Host) EvictIdle(ctx context.Context, threshold, gracePeriod time.Durati
 				sup:      sup,
 				endpoint: h.endpoints[id],
 			})
-			delete(h.endpoints, id)
+			h.forgetEndpointLocked(id)
 		}
 	}
 	h.mu.Unlock()
@@ -1002,6 +1024,7 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 	}
 
 	targets := h.takeTeardownTargets()
+	h.closeAllListeners()
 
 	for _, target := range targets {
 		if err := h.teardownTarget(ctx, target, gracePeriod); err != nil && firstErr == nil &&
@@ -1033,7 +1056,7 @@ func (h *Host) takeTeardownTargets() []pluginTeardownTarget {
 				sup:      sup,
 				endpoint: h.endpoints[id],
 			})
-			delete(h.endpoints, id)
+			h.forgetEndpointLocked(id)
 		}
 	}
 	return targets
@@ -1089,7 +1112,6 @@ func (h *Host) SetPersistHandler(handler PersistHandler) {
 // SetSettings loads persisted plugin configurations into host memory.
 func (h *Host) SetSettings(all map[string]map[string]any) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
 	for pluginID, cfg := range all {
 		if _, ok := h.settings[pluginID]; !ok {
 			h.settings[pluginID] = make(map[string]any)
@@ -1098,6 +1120,8 @@ func (h *Host) SetSettings(all map[string]map[string]any) {
 			h.settings[pluginID][k] = v
 		}
 	}
+	h.mu.Unlock()
+	h.syncAllListeners()
 }
 
 // IsPluginEnabled reports whether the specified plugin is enabled.
@@ -1140,6 +1164,7 @@ func (h *Host) applyEnabledChange(ctx context.Context, pluginID string, value an
 	if sup != nil {
 		h.clearFailure(pluginID, sup)
 	}
+	h.syncListeners(pluginID)
 	return stopErr
 }
 
@@ -1649,6 +1674,7 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*pluginport.Pl
 	if !recognized {
 		return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginNotInstalled, Err: errPluginNotFound}
 	}
+	defer h.syncListeners(pluginID)
 	if sup != nil {
 		h.clearFailure(pluginID, sup)
 	}

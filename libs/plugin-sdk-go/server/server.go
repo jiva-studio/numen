@@ -155,6 +155,7 @@ type Server struct {
 	mux         *http.ServeMux
 	listener    net.Listener
 	actualPort  int
+	listeners   []openedListener
 }
 
 // New constructs a plugin server using command flags, environment variables, and options.
@@ -463,7 +464,7 @@ func (s *Server) announceReady() error {
 	if s.stdout == nil {
 		return nil
 	}
-	if _, err := fmt.Fprintf(s.stdout, "NUMEN_READY port=%d\n", s.actualPort); err != nil {
+	if _, err := io.WriteString(s.stdout, s.formatReadyLine()); err != nil {
 		return fmt.Errorf("write ready line: %w", err)
 	}
 	return nil

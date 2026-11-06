@@ -21,7 +21,6 @@ type Server struct {
 	httpServer *http.Server
 	handler    http.Handler
 	aggregator *ToolAggregator
-	listener   net.Listener
 	actualAddr string
 	isClosed   bool
 	mu         sync.Mutex
@@ -64,7 +63,6 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 		httpServer: nil,
 		handler:    nil,
 		aggregator: aggregator,
-		listener:   nil,
 		actualAddr: "",
 		isClosed:   false,
 		mu:         sync.Mutex{},
@@ -171,40 +169,11 @@ func newStreamableOptions() *sdk.StreamableHTTPOptions {
 	return opts
 }
 
-// Rebind updates the server address and token, restarting the listener when the address changes.
-func (s *Server) Rebind(ctx context.Context, cfg Config) error {
+// SetToken replaces the token a client authenticates with.
+func (s *Server) SetToken(token string) {
 	s.mu.Lock()
-	s.config.Token = cfg.Token
-	if cfg.Addr == "" || cfg.Addr == s.config.Addr || s.isClosed {
-		s.mu.Unlock()
-		return nil
-	}
-	oldListener := s.listener
-	s.config.Addr = cfg.Addr
-	s.mu.Unlock()
-
-	if oldListener != nil {
-		if err := oldListener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
-			return fmt.Errorf("close the listener on %s: %w", oldListener.Addr(), err)
-		}
-	}
-	ln, err := new(net.ListenConfig).Listen(context.WithoutCancel(ctx), "tcp", cfg.Addr)
-	if err != nil {
-		return fmt.Errorf("listen on %s: %w", cfg.Addr, err)
-	}
-	s.mu.Lock()
-	if s.isClosed {
-		s.mu.Unlock()
-		return ln.Close()
-	}
-	s.listener = ln
-	s.actualAddr = ln.Addr().String()
-	s.httpServer = newHTTPServer(s.handler)
-	httpSrv := s.httpServer
-	s.mu.Unlock()
-
-	go s.serveHTTP(httpSrv, ln)
-	return nil
+	defer s.mu.Unlock()
+	s.config.Token = token
 }
 
 // serveHTTP serves srv on ln until it is shut down or ln is closed, and keeps any other error for
@@ -219,21 +188,6 @@ func (s *Server) serveHTTP(srv *http.Server, ln net.Listener) {
 	s.mu.Unlock()
 }
 
-// Start opens the network listener and begins serving requests.
-func (s *Server) Start() error {
-	addr := s.config.Addr
-	if addr == "" {
-		addr = "127.0.0.1:0"
-	}
-
-	ln, err := new(net.ListenConfig).Listen(context.Background(), "tcp", addr)
-	if err != nil {
-		return fmt.Errorf("listen on %s: %w", addr, err)
-	}
-
-	return s.Serve(ln)
-}
-
 // Serve begins serving on the provided listener.
 func (s *Server) Serve(ln net.Listener) error {
 	s.mu.Lock()
@@ -241,7 +195,6 @@ func (s *Server) Serve(ln net.Listener) error {
 		s.mu.Unlock()
 		return errors.New("server is closed")
 	}
-	s.listener = ln
 	s.actualAddr = ln.Addr().String()
 	s.mu.Unlock()
 

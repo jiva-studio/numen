@@ -9,9 +9,18 @@ import (
 	"reflect"
 )
 
-// Discover scans the configured directories and brings the registered plugins in line with what is on disk.
-// A plugin whose directory could not be read stays registered.
+// Discover scans the configured directories and brings the registered plugins, and the ports bound
+// for their listeners, in line with what is on disk. A plugin whose directory could not be read stays
+// registered.
 func (h *Host) Discover() error {
+	if err := h.discoverPlugins(); err != nil {
+		return err
+	}
+	h.syncAllListeners()
+	return nil
+}
+
+func (h *Host) discoverPlugins() error {
 	h.discoverMu.Lock()
 	defer h.discoverMu.Unlock()
 
