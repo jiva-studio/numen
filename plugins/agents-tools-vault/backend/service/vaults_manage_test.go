@@ -120,7 +120,7 @@ func TestVaultAddOfAnOverlappingFolderReportsTheHostReason(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
 
 	text := getRefusalText(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
-	if reason := "the folder lies inside a vault on the list or holds one"; !strings.Contains(text, reason) {
+	if reason := "a vault cannot be inside another vault"; !strings.Contains(text, reason) {
 		t.Errorf("the refusal %q does not carry the reason %q", text, reason)
 	}
 }

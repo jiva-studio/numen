@@ -33,8 +33,8 @@ func TestCheckOverlap_FolderContainingVaultFails(t *testing.T) {
 	if !errors.Is(err, domain.ErrOverlaps) {
 		t.Fatalf("CheckOverlap error = %v, want ErrOverlaps", err)
 	}
-	if got := err.Error(); !strings.Contains(got, "Vault /notes/deep") || !strings.Contains(got, "holds") {
-		t.Errorf("CheckOverlap error = %q, want it to name the vault it holds", got)
+	if got := err.Error(); !strings.Contains(got, "Vault /notes/deep") || !strings.Contains(got, "contains") {
+		t.Errorf("CheckOverlap error = %q, want it to name the vault it contains", got)
 	}
 }
 

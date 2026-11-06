@@ -547,7 +547,7 @@ func TestNoteListGroupRefusesCallWithoutVault(t *testing.T) {
 			t.Errorf("call %s: the tool is unknown", name)
 			continue
 		}
-		if !res.GetResult().GetIsError() || res.GetResult().GetText() != "the call names no vault" {
+		if !res.GetResult().GetIsError() || res.GetResult().GetText() != name+": the call names no vault" {
 			t.Errorf("a call of %s naming no vault answered %v", name, res.GetResult())
 		}
 	}

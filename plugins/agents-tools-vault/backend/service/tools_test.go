@@ -427,7 +427,7 @@ func TestACallWorksTheVaultItNames(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.GetResult().GetIsError() || res.GetResult().GetText() != "the call names no vault" {
+	if !res.GetResult().GetIsError() || res.GetResult().GetText() != "note_read: the call names no vault" {
 		t.Errorf("a call naming no vault answered %v", res.GetResult())
 	}
 }
