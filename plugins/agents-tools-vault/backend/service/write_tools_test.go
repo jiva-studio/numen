@@ -49,7 +49,7 @@ func TestWriteToolsAreOnTheFullServerOnly(t *testing.T) {
 	}
 }
 
-func TestWriteToolsWithACallNamingNoVaultAreRefused(t *testing.T) {
+func TestWriteToolsWithoutAVaultAreRejected(t *testing.T) {
 	geology, _, registry := newTwoVaults(t)
 	before, _ := geology.Content("Rocks/Basalt.md")
 	for name, arguments := range getWriteToolArguments() {
@@ -62,7 +62,7 @@ func TestWriteToolsWithACallNamingNoVaultAreRefused(t *testing.T) {
 			continue
 		}
 		if !res.GetResult().GetIsError() || res.GetResult().GetText() != name+": the call names no vault" {
-			t.Errorf("a call of %s naming no vault answered %v", name, res.GetResult())
+			t.Errorf("a call of %s naming no vault returned %v", name, res.GetResult())
 		}
 	}
 	requireContent(t, geology, "Rocks/Basalt.md", before)
@@ -81,7 +81,7 @@ func TestTheInstructionsOfEveryWriteToolNameIt(t *testing.T) {
 		byTool[tool.Name] = tool.Instructions
 	}
 	for name := range getWriteToolArguments() {
-		if !slices.ContainsFunc(byTool[name], func(sentence string) bool { return namesTool(sentence, name) }) {
+		if !slices.ContainsFunc(byTool[name], func(sentence string) bool { return hasToolName(sentence, name) }) {
 			t.Errorf("no instruction of %s names it: %q", name, byTool[name])
 		}
 	}

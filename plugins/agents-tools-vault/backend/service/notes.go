@@ -178,36 +178,36 @@ type HeadingItem struct {
 	Offset int    `json:"offset" jsonschema:"byte offset in the body"`
 }
 
-// NoteHeadingsInput is the input of the note_headings tool.
-type NoteHeadingsInput struct {
+// NoteHeadingListInput is the input of the note_heading_list tool.
+type NoteHeadingListInput struct {
 	Path string `json:"path" jsonschema:"relative path to the note file"`
 }
 
-// NoteHeadingsOutput is the output of the note_headings tool.
-type NoteHeadingsOutput struct {
+// NoteHeadingListOutput is the output of the note_heading_list tool.
+type NoteHeadingListOutput struct {
 	Path     string        `json:"path"`
 	Headings []HeadingItem `json:"headings"`
 }
 
-func (t *Tools) addNoteHeadings(registry *tools.Registry) error {
+func (t *Tools) addNoteHeadingList(registry *tools.Registry) error {
 	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
-		Name:        "note_headings",
+		Name:        "note_heading_list",
 		Title:       "Extract Note Headings",
 		Description: "Extract the outline and headings from a note in the vault.",
 		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, inVault(t, (*Tools).getNoteHeadings))
+	}, inVault(t, (*Tools).listNoteHeadings))
 }
 
-func (t *Tools) getNoteHeadings(ctx context.Context, in NoteHeadingsInput) (NoteHeadingsOutput, error) {
+func (t *Tools) listNoteHeadings(ctx context.Context, in NoteHeadingListInput) (NoteHeadingListOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return NoteHeadingsOutput{}, errors.New("path is required")
+		return NoteHeadingListOutput{}, errors.New("path is required")
 	}
 	path := t.resolveNotePath(ctx, in.Path)
 	data, fp, err := t.vault.Read(ctx, path)
 	if err != nil {
-		return NoteHeadingsOutput{}, fmt.Errorf("%s cannot be read: %w", path, err)
+		return NoteHeadingListOutput{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
 
 	parsed := markdown.Parse(fp, data)
@@ -221,7 +221,7 @@ func (t *Tools) getNoteHeadings(ctx context.Context, in NoteHeadingsInput) (Note
 		})
 	}
 
-	return NoteHeadingsOutput{
+	return NoteHeadingListOutput{
 		Path:     path,
 		Headings: items,
 	}, nil

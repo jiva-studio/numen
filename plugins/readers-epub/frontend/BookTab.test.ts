@@ -1,5 +1,5 @@
 /**
- * A book tab the window asks to light ranges of the book's text: the tab passes them to its reader.
+ * A book tab whose text ranges the window highlights: the tab passes them to its reader.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'

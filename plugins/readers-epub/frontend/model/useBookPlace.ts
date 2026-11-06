@@ -1,6 +1,6 @@
 /**
- * The place of a book tab, found, saved and reported to the window as the EPUB CFI the plugin's
- * backend names it by.
+ * The place of a book tab as an EPUB CFI, the form the plugin's backend uses: found, saved and
+ * reported to the window.
  */
 import { watch, type Ref } from 'vue'
 import type { Selector, TabPlace } from '@numen/plugin-sdk'
@@ -10,7 +10,7 @@ import { createCfiSelector, getSelectorCfi } from '../lib/place'
 export interface PlacedReader {
   readonly offset: Ref<number>
   readonly isLoading: Ref<boolean>
-  /** The table-of-contents title at the offset, empty where the book names none. */
+  /** The table-of-contents title at the offset, empty when the book has none. */
   readonly chapter: Ref<string>
   getCfi(offset: number): Promise<string | null>
   goToCfi(cfi: string): Promise<boolean>
@@ -26,7 +26,7 @@ export interface PlacedTab {
   reportPlace?(place: TabPlace): void
 }
 
-/** The place saved for a CFI: the CFI and the chapter title, the title left out where it is empty. */
+/** Returns the selector saved for a CFI: the CFI and the chapter title, omitted when empty. */
 const createPlace = (cfi: string, chapter: string): Selector =>
   chapter === '' ? createCfiSelector(cfi) : { ...createCfiSelector(cfi), chapter }
 

@@ -14,10 +14,10 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
-var errTooManyLinks = fmt.Errorf("a call writes at most %d links", batchLimit)
+var errTooManyLinks = fmt.Errorf("too many links: at most %d per call", batchLimit)
 
-// readRole is the role of a link on the wire, empty for ROLE_UNSPECIFIED. A value the schema does
-// not name is kept as its number, which no link carries, so the core refuses it.
+// readRole returns the role of a link on the wire, empty for ROLE_UNSPECIFIED. A value the schema does
+// not name is kept as its number, which no link has, so the core rejects it.
 func readRole(role v1.Role) domain.LinkRole {
 	if converted, isKnown := wire.ConvertRoleFromWire(role); isKnown || role == v1.Role_ROLE_UNSPECIFIED {
 		return converted
@@ -47,7 +47,7 @@ func (e *vaultEndpoint) AddLinks(
 	}
 	added, err := vault.AddLinks(ctx, additions)
 	if err != nil {
-		_, code, callErr := answerNote(ctx, err)
+		_, code, callErr := splitNoteError(ctx, err)
 		if callErr == nil && code == 0 {
 			callErr = connect.NewError(connect.CodeInternal, err)
 		}
@@ -110,14 +110,14 @@ type linkEdit struct {
 	detail string
 }
 
-// writeLinkEdit is the outcome of an edit of the links of one note: the file stat after the write,
+// writeLinkEdit returns the outcome of an edit of the links of one note: the file stat after the write,
 // or the code and the core's text of the failure. A failure of the call is returned as the call's
 // code or error.
 func writeLinkEdit(ctx context.Context, stat domain.FileStat, err error) (linkEdit, v1.HostVaultErrorCode, error) {
 	if err == nil {
 		return linkEdit{stat: writeFileStat(stat)}, 0, nil
 	}
-	noteCode, code, callErr := answerNote(ctx, err)
+	noteCode, code, callErr := splitNoteError(ctx, err)
 	if callErr != nil || code != 0 {
 		return linkEdit{}, code, callErr
 	}

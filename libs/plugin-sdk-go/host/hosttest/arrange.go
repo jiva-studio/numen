@@ -18,7 +18,7 @@ import (
 const trashDir = ".trash"
 
 // RenameNote sets the title key of the note's frontmatter, or leaves the note unwritten when it has no
-// title key and its filename can carry the title, and moves the file to the filename of the title in
+// title key and the title can be stored in its filename, and moves the file to the filename of the title in
 // its folder. It repairs no link.
 func (v *Vault) RenameNote(ctx context.Context, notePath, title string) (host.NoteRename, error) {
 	v.world.mu.Lock()
@@ -52,8 +52,8 @@ func (v *Vault) RenameNote(ctx context.Context, notePath, title string) (host.No
 }
 
 // writeTitle writes the title into the frontmatter of the note, unless the note has no title key and
-// its filename carries the title exactly, and reports whether the filename carries it. The caller
-// holds the lock.
+// the title is stored exactly in its filename, and reports whether the filename has it. The caller
+// has the lock.
 func (v *Vault) writeTitle(notePath, title string, isExact bool) (bool, error) {
 	raw, err := v.files.read(notePath)
 	if err != nil {
@@ -102,8 +102,8 @@ func (v *Vault) MoveNotes(ctx context.Context, paths []string, folder string) ([
 	return out, nil
 }
 
-// RemoveNotes moves each note to `.trash/<path>`, or to a numbered name there when the trash holds one,
-// and reports the notes whose links reached it and now reach nothing.
+// RemoveNotes moves each note to `.trash/<path>`, or to a numbered name there when the trash has one,
+// and reports the notes whose links pointed to it and are now broken.
 func (v *Vault) RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRemoval, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
@@ -122,8 +122,8 @@ func (v *Vault) RemoveNotes(ctx context.Context, paths []string) ([]host.NoteRem
 	return out, nil
 }
 
-// trashNote moves the note into the trash and returns where it is and the notes whose links reached
-// it and reach nothing now. The caller holds the lock.
+// trashNote moves the note into the trash and returns its path there and the notes whose links pointed
+// to it and are now broken. The caller has the lock.
 func (v *Vault) trashNote(notePath string) (string, []string, error) {
 	backlinks := v.getBacklinks(v.parsed(), notePath)
 	target := path.Join(trashDir, notePath)
@@ -137,7 +137,7 @@ func (v *Vault) trashNote(notePath string) (string, []string, error) {
 	return target, v.getDangling(backlinks), nil
 }
 
-// getDangling is the notes, by path, of the links given that reach nothing now. The caller holds the
+// getDangling returns the notes, by path, of the given links that are now broken. The caller has the
 // lock.
 func (v *Vault) getDangling(links []domain.ResolvedLink) []string {
 	notes := v.parsed()
@@ -155,8 +155,8 @@ func (v *Vault) getDangling(links []domain.ResolvedLink) []string {
 	return out
 }
 
-// checkFile fails a call on a file that is not there, that the vault skips, or that may not be
-// written. The caller holds the lock.
+// checkFile returns an error for a file that is missing, that the vault skips, or that may not be
+// written. The caller has the lock.
 func (v *Vault) checkFile(ctx context.Context, filePath string) error {
 	if err := v.check(ctx, filePath); err != nil {
 		return err
@@ -170,8 +170,8 @@ func (v *Vault) checkFile(ctx context.Context, filePath string) error {
 	return v.unwritable[filePath]
 }
 
-// checkNote is checkFile for a note: a folder or a file that is not a note is host.ErrNotANote. The
-// caller holds the lock.
+// checkNote runs checkFile for a note: a folder or a file that is not a note returns host.ErrNotANote. The
+// caller has the lock.
 func (v *Vault) checkNote(ctx context.Context, notePath string) error {
 	if v.isFolder(notePath) {
 		return host.ErrNotANote
@@ -185,7 +185,7 @@ func (v *Vault) checkNote(ctx context.Context, notePath string) error {
 	return nil
 }
 
-// isFolder reports whether a file of the vault is under the path. The caller holds the lock.
+// isFolder reports whether a file of the vault is under the path. The caller has the lock.
 func (v *Vault) isFolder(folder string) bool {
 	paths, err := v.files.paths()
 	if err != nil {
@@ -199,14 +199,14 @@ func (v *Vault) isFolder(folder string) bool {
 	return false
 }
 
-// isPresent reports whether a file is at the path. The caller holds the lock.
+// isPresent reports whether a file is at the path. The caller has the lock.
 func (v *Vault) isPresent(filePath string) bool {
 	_, err := v.files.stat(filePath)
 	return err == nil
 }
 
 // moveFile moves the file to the target, which must be free unless it differs only in case, and
-// brings the index current with both paths. The caller holds the lock.
+// updates the index for both paths. The caller has the lock.
 func (v *Vault) moveFile(from, target string) error {
 	if !strings.EqualFold(from, target) && v.isPresent(target) {
 		return notesdomain.NewDetailError(fmt.Sprintf("%s already exists; %s is not moved", target, from), host.ErrAlreadyExists)

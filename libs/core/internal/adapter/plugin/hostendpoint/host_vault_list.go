@@ -18,7 +18,7 @@ import (
 
 var errNoVaultList = errors.New("this host has no list of vaults to change")
 
-// getVaultsErrorCode is the error code of a change of the list of vaults that was refused, and
+// getVaultsErrorCode returns the error code of a rejected change of the list of vaults, and
 // false for any other failure.
 func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
 	switch {
@@ -43,9 +43,9 @@ func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
 	}
 }
 
-// answerVaults is the error code and the detail a change of the list answers with, or the error of
-// the call. The detail is the core's text of a refusal.
-func answerVaults(err error) (code v1.VaultsErrorCode, detail string, callErr error) {
+// getVaultsResult returns the error code and the detail of a change of the list, or the error of
+// the call. The detail is the core's error text.
+func getVaultsResult(err error) (code v1.VaultsErrorCode, detail string, callErr error) {
 	if err == nil {
 		return 0, "", nil
 	}
@@ -59,7 +59,7 @@ func answerVaults(err error) (code v1.VaultsErrorCode, detail string, callErr er
 }
 
 // beginList authorizes a change of the list of vaults and returns the list. A host with no list
-// answers that it is unavailable.
+// returns CodeUnavailable.
 func (e *vaultEndpoint) beginList(header http.Header) (pluginport.PluginVaultList, error) {
 	if _, err := e.endpoint.authorize(header.Get("Authorization"), pluginport.PermissionVaultManage); err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func (e *vaultEndpoint) beginList(header http.Header) (pluginport.PluginVaultLis
 	return list, nil
 }
 
-// findVault is the vault of the identity on the list the plugins read.
+// findVault returns the vault with the identity on the list the plugins read.
 func (e *vaultEndpoint) findVault(id domain.VaultID) (domain.Vault, error) {
 	vault := e.endpoint.callers.GetPluginVault()
 	if vault == nil {
@@ -101,7 +101,7 @@ func (e *vaultEndpoint) AddVault(
 		return nil, err
 	}
 	vault, addErr := list.AddVault(ctx, req.Msg.GetRoot(), req.Msg.GetName())
-	code, detail, err := answerVaults(addErr)
+	code, detail, err := getVaultsResult(addErr)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (e *vaultEndpoint) RenameVault(
 		return nil, err
 	}
 	vault, err := list.RenameVault(ctx, domain.VaultID(req.Msg.GetId()), req.Msg.GetName())
-	code, detail, err := answerVaults(err)
+	code, detail, err := getVaultsResult(err)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (e *vaultEndpoint) RemoveVault(
 	if err == nil {
 		err = list.RemoveVault(ctx, id)
 	}
-	code, detail, err := answerVaults(err)
+	code, detail, err := getVaultsResult(err)
 	if err != nil {
 		return nil, err
 	}
@@ -152,8 +152,8 @@ func (e *vaultEndpoint) RemoveVault(
 	return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Path: entry.Path}), nil
 }
 
-// OpenVault answers once the window shows the vault or has rejected the open. A rejection for unsaved
-// changes answers UNSAVED with the window's message in detail.
+// OpenVault returns once the window shows the vault or has rejected the open. A rejection for unsaved
+// changes returns UNSAVED with the window's message in detail.
 func (e *vaultEndpoint) OpenVault(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceOpenVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
@@ -166,7 +166,7 @@ func (e *vaultEndpoint) OpenVault(
 	if openErr == nil {
 		openErr = list.OpenVault(ctx, id)
 	}
-	code, detail, err := answerVaults(openErr)
+	code, detail, err := getVaultsResult(openErr)
 	if err != nil {
 		return nil, err
 	}

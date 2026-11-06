@@ -207,7 +207,7 @@ func TestCardReadReturnsTheProblemsKeyWithAMessage(t *testing.T) {
 	requireKeys(t, "the output schema of a card_read problem", getSchemaProperties(t, schema, "problems"), []string{"cardIndex", "message"}, []string{"why", "card"})
 }
 
-func TestCardFieldRenameAnswersTheUpdatedDecksAndHeadings(t *testing.T) {
+func TestCardFieldRenameReturnsTheUpdatedDecksAndHeadings(t *testing.T) {
 	s, _ := newSession(t, vault())
 	answer := call[map[string]any](t, s, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
@@ -418,20 +418,20 @@ func TestCardToolSchemasNameEveryPropertyInLowerCamelCase(t *testing.T) {
 	}, func(string, string) {})
 }
 
-func TestCardDeckCreateAnswersThePathIDAndTitleKeys(t *testing.T) {
+func TestCardDeckCreateReturnsThePathIDAndTitleKeys(t *testing.T) {
 	s, _ := newSession(t, vault())
 	answer := call[map[string]any](t, s, "card_deck_create", map[string]any{"title": "Terms", "folder": "decks"})
 	requireKeys(t, "the answer of card_deck_create", answer, []string{"path", "id", "title"}, []string{"Path", "ID", "Title"})
 	if answer["path"] != "decks/Terms.md" || answer["title"] != "Terms" {
-		t.Errorf("card_deck_create answered %v, want the path decks/Terms.md and the title Terms", answer)
+		t.Errorf("card_deck_create returned %v, want the path decks/Terms.md and the title Terms", answer)
 	}
 }
 
-func TestCardModelCreateAnswersThePathIDAndTitleKeys(t *testing.T) {
+func TestCardModelCreateReturnsThePathIDAndTitleKeys(t *testing.T) {
 	s, _ := newSession(t, vault())
 	answer := call[map[string]any](t, s, "card_model_create", map[string]any{"title": "Term", "fields": []string{"Word", "Meaning"}, "templates": []any{}})
 	requireKeys(t, "the answer of card_model_create", answer, []string{"path", "id", "title"}, []string{"Path", "ID", "Title"})
 	if answer["path"] != "Term.md" || answer["title"] != "Term" {
-		t.Errorf("card_model_create answered %v, want the path Term.md and the title Term", answer)
+		t.Errorf("card_model_create returned %v, want the path Term.md and the title Term", answer)
 	}
 }

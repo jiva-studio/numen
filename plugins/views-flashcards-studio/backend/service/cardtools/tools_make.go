@@ -22,7 +22,7 @@ func (t *Tools) addCardDeckCreate(registry *tools.Registry) error {
 		Name:  "card_deck_create",
 		Title: "Create a deck",
 		Description: "Create an empty deck; add cards with `card_add`. A deck is a file of " +
-			"cards and is marked as a deck from creation, before it holds a card. Create decks " +
+			"cards and is marked as a deck from creation, before it has any card. Create decks " +
 			"here: a note created with `note_create` is an ordinary note, and `card_add` writes " +
 			"only into a deck. The file is named after the title.",
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
@@ -51,7 +51,7 @@ func (t *Tools) addCardCardModelCreate(registry *tools.Registry) error {
 			"cards are rendered with. A template is HTML with `{{Field}}` placeholders, and " +
 			"every name in braces must be one of the fields. The heading of a card is the first " +
 			"line of its first field, so at least one field is required. The file is named after " +
-			"the title, and that filename is the name a card's wikilink writes, which " +
+			"the title, and that filename is the name used in a card's wikilink, which " +
 			"`card_model_list` returns under `name`.",
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 	}, func(ctx context.Context, in cardModelCreateInput) (NoteCreated, error) {

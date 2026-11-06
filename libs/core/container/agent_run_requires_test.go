@@ -10,23 +10,23 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 )
 
-// agentWith is the agent plugin of the test host holding the permissions given.
-func agentWith(agent *toolAgent, permissions ...string) testPlugin {
+// newAgentPlugin is the agent plugin of the test host with the permissions given.
+func newAgentPlugin(agent *toolAgent, permissions ...string) testPlugin {
 	plugin := agentAt(agent)
 	plugin.permissions = permissions
 	return plugin
 }
 
-// runReshelve runs the agent, which calls atlas_reshelve, on the editor over a tools plugin offering
-// atlas_open and atlas_reshelve, the second requiring vault:manage, and returns the tool plugin.
-func runReshelve(t *testing.T, agent *toolAgent, agentPermissions ...string) *toolPlugin {
+// runWrite runs the agent, which calls atlas_write, on the editor over a tools plugin offering
+// atlas_open and atlas_write, the second requiring vault:manage, and returns the tool plugin.
+func runWrite(t *testing.T, agent *toolAgent, agentPermissions ...string) *toolPlugin {
 	t.Helper()
 	served := &toolPlugin{tools: []*v1.PluginTool{
 		newPluginTool("atlas_open", v1.ToolEffect_TOOL_EFFECT_READ_ONLY),
-		requiringTool("atlas_reshelve", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, "vault:manage"),
+		newToolRequiring("atlas_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, "vault:manage"),
 	}}
 	host := hostOver(t,
-		agentWith(agent, agentPermissions...),
+		newAgentPlugin(agent, agentPermissions...),
 		toolsAt(atlasToolsPlugin, []string{"vault:read", "vault:write", "vault:manage"}, served),
 	)
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
@@ -36,11 +36,11 @@ func runReshelve(t *testing.T, agent *toolAgent, agentPermissions ...string) *to
 }
 
 func TestAnAgentRunWithoutVaultManageIsNotServedAToolRequiringIt(t *testing.T) {
-	agent := &toolAgent{calls: []toolCall{{name: "atlas_reshelve", arguments: `{}`}}}
+	agent := &toolAgent{calls: []toolCall{{name: "atlas_write", arguments: `{}`}}}
 
-	served := runReshelve(t, agent, "vault:read", "vault:write")
+	served := runWrite(t, agent, "vault:read", "vault:write")
 
-	if names := agent.getToolNames(); slices.Contains(names, "atlas_reshelve") {
+	if names := agent.getToolNames(); slices.Contains(names, "atlas_write") {
 		t.Errorf("an agent plugin without vault:manage is served %v", names)
 	}
 	if requests := served.getRequests(); len(requests) != 0 {
@@ -48,15 +48,15 @@ func TestAnAgentRunWithoutVaultManageIsNotServedAToolRequiringIt(t *testing.T) {
 	}
 }
 
-func TestAnAgentRunWithVaultManageIsServedAToolRequiringItAndTheCallReachesThePlugin(t *testing.T) {
-	agent := &toolAgent{calls: []toolCall{{name: "atlas_reshelve", arguments: `{}`}}}
+func TestAgentRunWithVaultManageGetsToolAndCallsThePlugin(t *testing.T) {
+	agent := &toolAgent{calls: []toolCall{{name: "atlas_write", arguments: `{}`}}}
 
-	served := runReshelve(t, agent, "vault:read", "vault:write", "vault:manage")
+	served := runWrite(t, agent, "vault:read", "vault:write", "vault:manage")
 
-	if names := agent.getToolNames(); !slices.Contains(names, "atlas_reshelve") {
-		t.Errorf("an agent plugin holding vault:manage is served %v, want atlas_reshelve among them", names)
+	if names := agent.getToolNames(); !slices.Contains(names, "atlas_write") {
+		t.Errorf("an agent plugin with vault:manage is served %v, want atlas_write among them", names)
 	}
-	if requests := served.getRequests(); len(requests) != 1 || requests[0].GetName() != "atlas_reshelve" {
-		t.Errorf("the tool plugin ran %v, want one call of atlas_reshelve", requests)
+	if requests := served.getRequests(); len(requests) != 1 || requests[0].GetName() != "atlas_write" {
+		t.Errorf("the tool plugin ran %v, want one call of atlas_write", requests)
 	}
 }

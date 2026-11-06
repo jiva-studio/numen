@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
-// The sentences that tell an agent when to call recognition_create.
+// The instruction sentences of recognition_create: when to call it and what it returns.
 const (
 	recognitionUseSentence        = "Use recognition_create on a scanned PDF or an image that has no text layer, or on a file whose search results are unreadable text."
 	recognitionSlowSentence       = "Recognition is slow, up to an hour for a book."
@@ -41,7 +41,7 @@ type RecognitionCreateInput struct {
 type RecognitionCreateOutput struct {
 	TaskID  string `json:"taskId" jsonschema:"the id of the recognition in the list of tasks"`
 	Path    string `json:"path" jsonschema:"the file; library_read and library_search read its text once it is recognised"`
-	State   string `json:"state" jsonschema:"started; running where a recognition of this file is already in progress and no second one was started; or done where the file is already recognised and nothing was started"`
+	State   string `json:"state" jsonschema:"started; running when a recognition of this file is already in progress and no second one was started; or done when the file is already recognised and nothing was started"`
 	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the live text version, the version library_read reads: the recognised text, or a version made from it such as a proofread"`
 }
 
@@ -56,7 +56,7 @@ type Tools struct {
 	running  map[string]context.CancelFunc
 }
 
-// NewTools is the tools over the recognitions.
+// NewTools returns the tools for the recognitions.
 func NewTools(recognitions *recognition.Recognition) *Tools {
 	return &Tools{
 		recognitions: recognitions,
@@ -77,8 +77,8 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Description: "Start the text recognition of one scanned PDF or image of the vault, with the model the " +
 			"plugin's setting selects, and return its task id without waiting. The recognised text is stored " +
 			"as a text version of the file, which library_read and library_search read once the recognition " +
-			"ends. A recognition takes up to an hour for a book. A file that is not in the vault is refused. A " +
-			"file that is already recognised is not recognised again: the call answers the state done and the " +
+			"ends. A recognition takes up to an hour for a book. A file that is not in the vault is rejected. A " +
+			"file that is already recognised is not recognised again: the call returns the state done and the " +
 			"version library_read reads, the recognised text or a version made from it.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
@@ -123,7 +123,7 @@ func (t *Tools) createRecognition(ctx context.Context, in RecognitionCreateInput
 	if isRunning {
 		return out, nil
 	}
-	version, isFound, err := t.recognitions.FindLiveVersionFrom(ctx, vault, in.Path, PluginID)
+	version, isFound, err := t.recognitions.FindLiveDerivedVersion(ctx, vault, in.Path, PluginID)
 	if err != nil {
 		return RecognitionCreateOutput{}, err
 	}
@@ -138,8 +138,8 @@ func (t *Tools) createRecognition(ctx context.Context, in RecognitionCreateInput
 	return out, nil
 }
 
-// start runs the recognition of the file in the background, and reports running where another run
-// holds the file.
+// start runs the recognition of the file in the background, and returns running when another run
+// has locked the file.
 func (t *Tools) start(ctx context.Context, vault domain.VaultID, path string) (string, error) {
 	key := string(vault) + "\x00" + path
 	t.mu.Lock()

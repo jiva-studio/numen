@@ -109,7 +109,7 @@ func TestTheReleaseOfACrashedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) 
 	}
 }
 
-func TestAPortSettingFixedAfterABindFailureClearsTheFailureAndServes(t *testing.T) {
+func TestPortSettingFixedAfterBindFailureClearsFailureAndServes(t *testing.T) {
 	w := newUndiscoveredListenerHost(t, "mcp", getFreePort(t), "listener.mcp="+strconv.Itoa(serveEcho(t)))
 	w.host.SetSettings(map[string]map[string]any{listenerPlugin: {"port": float64(80)}})
 	discover(t, w.host)
@@ -133,7 +133,7 @@ func TestAPortSettingFixedAfterABindFailureClearsTheFailureAndServes(t *testing.
 	}
 }
 
-func TestAListenerPortFreedAfterABindFailureClearsTheFailureOnTheNextDiscovery(t *testing.T) {
+func TestListenerPortFreedAfterBindFailureClearsItOnDiscovery(t *testing.T) {
 	taken, takenPort := listenLoopback(t)
 	w := newUndiscoveredListenerHost(t, "mcp", takenPort, "listener.mcp="+strconv.Itoa(serveEcho(t)))
 	discover(t, w.host)
@@ -194,7 +194,7 @@ func connectUntilClosed(t *testing.T, port int) {
 	}
 }
 
-func TestAPluginThatKeepsFailingToActivateIsReportedOnceAndAgainAfterARetry(t *testing.T) {
+func TestRepeatedActivationFailureIsReportedOnceAndAfterRetry(t *testing.T) {
 	w := newUndiscoveredListenerHost(t, "console", getFreePort(t), "")
 	var reports listenerTargetErrors
 	w.host.SetErrorHandler(reports.add)

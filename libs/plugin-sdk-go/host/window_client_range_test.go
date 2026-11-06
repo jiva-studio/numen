@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
-func TestClientRefusesAPassageOutsideThe32BitRangeWithoutCallingTheHost(t *testing.T) {
+func TestClientRejectsPassagePast32BitsWithoutCallingHost(t *testing.T) {
 	for name, passage := range map[string]host.PassageSpan{
 		"a start past the range":  {Start: 1<<32 + 5, Length: 4},
 		"a length past the range": {Start: 5, Length: math.MaxInt32 + 1},

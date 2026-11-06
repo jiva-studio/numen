@@ -27,7 +27,7 @@ func TestTheNoticesOfReadingTheFileNameTheKeyAndWhatHappens(t *testing.T) {
 	} {
 		cfg, err := openAt(write(t, body))
 		if err != nil {
-			t.Fatalf("%s: the file was refused: %v", body, err)
+			t.Fatalf("%s: the file was rejected: %v", body, err)
 		}
 		cfg.DropInvalid(declaredSettings, installedThemes)
 		if !slices.Contains(cfg.Notices, want) {
@@ -80,7 +80,7 @@ func TestAScaleOutsideItsBoundsNamesTheSettingAndTheRange(t *testing.T) {
 	}
 }
 
-func TestAFileThatIsNoJSONObjectIsRefusedWithThePlace(t *testing.T) {
+func TestNonObjectJSONFileIsRejectedWithTheBytePosition(t *testing.T) {
 	for _, one := range []struct{ body, want string }{
 		{`null`, "numen.json: the file is not a JSON object"},
 		{`{"app":`, "invalid JSON at byte"},
@@ -97,7 +97,7 @@ func TestAFileThatIsNoJSONObjectIsRefusedWithThePlace(t *testing.T) {
 	}
 }
 
-func TestAWriteIntoAValueThatIsNoObjectNamesThePath(t *testing.T) {
+func TestAWriteIntoANonObjectValueNamesThePath(t *testing.T) {
 	path := write(t, `{"app":{"appearance":3}}`)
 	err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord"))
 	if want := `"app": "appearance": not a JSON object; a setting cannot be written inside it`; err == nil || !strings.Contains(err.Error(), want) {

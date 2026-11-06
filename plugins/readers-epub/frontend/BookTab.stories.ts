@@ -1,10 +1,10 @@
 /**
- * A book tab the window asks to light passages of the book's text, rendered in a browser: the tab's
+ * A book tab whose passages the window highlights, rendered in a browser: the tab's
  * own reader, place and ranges over a book of three chapters that a made-up port serves.
  *
  * The window sets the ranges once the tab has loaded, as `source_focus` does on a tab already
- * open. The text carries IAST diacritics, so a letter is one to three bytes and no offset below
- * is a count of characters. What is lit is read off the browser's highlight registry.
+ * open. The text has IAST diacritics, so a letter is one to three bytes and no offset below
+ * is a count of characters. The highlighted text is read from CSS.highlights.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor } from 'storybook/test'
@@ -27,8 +27,8 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** How long a wait goes on where the browser sets the pace: laying out the columns. */
-const ITS_OWN_PACE = 10_000
+/** Timeout for the browser layout of the columns. */
+const LAYOUT_TIMEOUT = 10_000
 
 const PATH = 'library/Ferry at Dawn.epub'
 
@@ -112,7 +112,7 @@ const BOOK: Book = {
   stat: 'ferry-1',
 }
 
-/** The book's backend, made up: every CFI names its offset, so a saved place shows where it is. */
+/** The book's backend, made up: every CFI encodes its offset, so a saved place shows its offset. */
 const BOOKS: Books = {
   getBook: async () => BOOK,
   readMarkup: async (_path, document) => CHAPTERS[document]?.markup ?? '',
@@ -121,7 +121,7 @@ const BOOKS: Books = {
   findOffset: async () => null,
 }
 
-/** The tab the story draws: its reader, and what the window passes it. */
+/** The rendered tab: its reader, and what the window passes it. */
 interface StoryTab {
   readonly state: ReturnType<typeof useBookTab>
   readonly places: Selector[]
@@ -165,46 +165,46 @@ const openAt =
     `,
   })
 
-/** The text of every range lit as the passage in front. */
-const getLitText = (): string[] =>
+/** The text of every range highlighted for the current passage. */
+const getHighlightedText = (): string[] =>
   [...(CSS.highlights.get(HIGHLIGHT) ?? [])].map((range) => (range as Range).toString())
 
-/** The tab the story in front renders. */
+/** The tab the current story renders. */
 const getStoryTab = (): StoryTab => {
-  if (!storyTab) throw new Error('the story drew no book tab')
+  if (!storyTab) throw new Error('the story rendered no book tab')
   return storyTab
 }
 
-/** A passage inside one chapter: its words are lit where the tab opens. */
+/** A passage inside one chapter: its words are highlighted when the tab opens. */
 export const PassageInsideOneChapter: Story = {
   render: openAt([INSIDE]),
   play: async () => {
-    await waitFor(async () => await expect(getLitText()).toStrictEqual(['Kṛṣṇaveṇī ghāṭ']), {
-      timeout: ITS_OWN_PACE,
+    await waitFor(async () => await expect(getHighlightedText()).toStrictEqual(['Kṛṣṇaveṇī ghāṭ']), {
+      timeout: LAYOUT_TIMEOUT,
     })
   },
 }
 
 /**
  * A passage that runs from the end of one chapter into the next: the words of it the rendered
- * chapter holds are lit.
+ * chapter has are highlighted.
  */
 export const PassageAcrossTwoChapters: Story = {
   render: openAt([ACROSS]),
   play: async () => {
-    await waitFor(async () => await expect(getLitText()).toStrictEqual([CLOSING]), {
-      timeout: ITS_OWN_PACE,
+    await waitFor(async () => await expect(getHighlightedText()).toStrictEqual([CLOSING]), {
+      timeout: LAYOUT_TIMEOUT,
     })
   },
 }
 
-/** The rest of a passage across two chapters is lit when the reader goes on to the next chapter. */
+/** The rest of a passage across two chapters is highlighted when the reader moves to the next chapter. */
 export const PassageAcrossTwoChaptersInTheNext: Story = {
   render: openAt([ACROSS]),
   play: async () => {
     const { state } = getStoryTab()
     await waitFor(async () => await expect(state.renderedChapter.value).toBe('text/two.xhtml'), {
-      timeout: ITS_OWN_PACE,
+      timeout: LAYOUT_TIMEOUT,
     })
 
     await state.goToOffset(THREE.span.start)
@@ -212,13 +212,13 @@ export const PassageAcrossTwoChaptersInTheNext: Story = {
     // The heading of the third chapter is part of the passage, and the markup sets a line between
     // the heading and the paragraph.
     await waitFor(
-      async () => await expect(getLitText()).toStrictEqual([`${THIRD_HEADING}\n${OPENING}`]),
-      { timeout: ITS_OWN_PACE },
+      async () => await expect(getHighlightedText()).toStrictEqual([`${THIRD_HEADING}\n${OPENING}`]),
+      { timeout: LAYOUT_TIMEOUT },
     )
   },
 }
 
-/** The place the tab saves after the window moves it is the passage it went to, with its chapter. */
+/** The place the tab saves after the window moves it is the passage it scrolled to, with its chapter. */
 export const PlaceSavedAfterTheFocusMoves: Story = {
   render: openAt([ACROSS]),
   play: async () => {
@@ -229,7 +229,7 @@ export const PlaceSavedAfterTheFocusMoves: Story = {
           cfi: `epubcfi(/6/2!/${ACROSS.start})`,
           chapter: 'Dvitīya: the crossing',
         }),
-      { timeout: ITS_OWN_PACE },
+      { timeout: LAYOUT_TIMEOUT },
     )
   },
 }

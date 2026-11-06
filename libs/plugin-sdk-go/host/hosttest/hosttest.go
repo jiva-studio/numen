@@ -93,8 +93,8 @@ func newVault(v domain.Vault, files store) *Vault {
 type world struct {
 	mu      sync.Mutex
 	members []*Vault
-	// opened is the vault OpenVault last opened, nil before any.
-	opened *Vault
+	// openedVault is the vault OpenVault last opened, nil before any.
+	openedVault *Vault
 	// hasUnsavedChanges makes OpenVault return host.ErrUnsavedChanges.
 	hasUnsavedChanges bool
 }
@@ -275,14 +275,14 @@ func (v *Vault) ReadRange(ctx context.Context, filePath string, start, length in
 	if err != nil {
 		return host.FileRange{}, err
 	}
-	if length <= 0 || length > mostRead {
-		length = mostRead
+	if length <= 0 || length > maxReadLength {
+		length = maxReadLength
 	}
-	from, to := cutRange(content, start, length)
-	if !utf8.Valid(content[from:to]) {
-		return host.FileRange{}, fmt.Errorf("read %s from %d: %w", filePath, from, host.ErrNotText)
+	rangeStart, rangeEnd := getRange(content, start, length)
+	if !utf8.Valid(content[rangeStart:rangeEnd]) {
+		return host.FileRange{}, fmt.Errorf("read %s from %d: %w", filePath, rangeStart, host.ErrNotText)
 	}
-	return host.FileRange{Text: string(content[from:to]), Start: from, Stat: stat}, nil
+	return host.FileRange{Text: string(content[rangeStart:rangeEnd]), Start: rangeStart, Stat: stat}, nil
 }
 
 func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileStat, error) {
@@ -450,7 +450,7 @@ func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedL
 	return v.getBacklinks(v.parsed(), to), nil
 }
 
-// getBacklinks is the links of the notes that reach the note at to. The caller holds the lock.
+// getBacklinks returns the links of the notes that point to the note at to. The caller has the lock.
 func (v *Vault) getBacklinks(notes map[string]domain.Note, to string) []domain.ResolvedLink {
 	target, ok := notes[to]
 	if !ok {

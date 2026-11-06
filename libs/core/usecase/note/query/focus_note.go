@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
-// ErrNoNotePath is what a focus with no path gets.
-var ErrNoNotePath = errors.New("name the note to put in focus")
+// ErrNoNotePath is returned by a focus with no path.
+var ErrNoNotePath = errors.New("note path is empty")
 
 // FocusNote sets the focused note.
 type FocusNote struct {
@@ -25,8 +25,8 @@ func NewFocusNote(queries noteport.NoteQueries, view windowport.Window) *FocusNo
 	return &FocusNote{queries: queries, view: view}
 }
 
-// Execute puts the note at path in focus and returns what it is called. A path the index holds no
-// note at is vaultport.ErrNotExist.
+// Execute puts the note at path in focus and returns its reference. A path with no note in the
+// index returns vaultport.ErrNotExist.
 func (u *FocusNote) Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteRef, error) {
 	if path == "" {
 		return domain.NoteRef{}, ErrNoNotePath

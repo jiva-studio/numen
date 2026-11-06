@@ -1,5 +1,5 @@
 /**
- * Stretches of the book at the edge of a drawn document whose first run begins past the start of
+ * Spans at the boundary of a rendered document whose first run begins past the start of
  * the book. The text is Cyrillic, two bytes a letter.
  */
 import { describe, expect, it } from 'vitest'
@@ -16,14 +16,14 @@ const createMarkupPaper = (markup: string): HTMLElement => {
   return paper
 }
 
-describe('a stretch at the start of a document drawn from the middle of the book', () => {
-  it('lights nothing where it ends exactly where the document begins', () => {
+describe('a span at the start of a document rendered from the middle of the book', () => {
+  it('highlights nothing when it ends exactly where the document begins', () => {
     const paper = createMarkupPaper(DOCUMENT)
 
     expect(rangesOver(getRuns(paper), [{ start: 10, end: 40 }])).toStrictEqual([])
   })
 
-  it('lights the first run where its start and end name the offset of that run', () => {
+  it('highlights the first run when its start and end are the offset of that run', () => {
     const paper = createMarkupPaper(DOCUMENT)
 
     const [range] = rangesOver(getRuns(paper), [{ start: 40, end: 40 }])

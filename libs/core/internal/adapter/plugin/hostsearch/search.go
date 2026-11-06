@@ -32,7 +32,8 @@ type Search struct {
 	Passages *search.SearchPassages
 }
 
-// SearchPassages is the text of the vault that answers the query, as the passage search finds it.
+// SearchPassages returns passages matching the query by keywords and, when a model exists, by
+// embedding.
 func (s Search) SearchPassages(ctx context.Context, v domain.Vault, q pluginport.PluginPassageQuery) ([]domain.Passage, error) {
 	return s.Passages.Execute(ctx, v, search.PassageQuery{
 		Query: q.Query, Limit: q.Limit, Kinds: q.Kinds, PathPrefix: q.PathPrefix,

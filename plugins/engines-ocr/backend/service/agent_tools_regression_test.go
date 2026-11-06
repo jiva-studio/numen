@@ -9,7 +9,7 @@ import (
 )
 
 func TestRecognitionCreateOfAChangedScanStartsARun(t *testing.T) {
-	s := newToolScene(t)
+	s := newToolFixture(t)
 	s.putRecognition(t)
 	raw, _, err := s.vault.Read(t.Context(), scanPath)
 	if err != nil {
@@ -28,8 +28,8 @@ func TestRecognitionCreateOfAChangedScanStartsARun(t *testing.T) {
 	s.tools.Close()
 }
 
-func TestRecognitionCreateOverAnotherPluginsRecognitionKeyStartsARun(t *testing.T) {
-	s := newToolScene(t)
+func TestRecognitionCreateOverOtherPluginsKeyStartsARun(t *testing.T) {
+	s := newToolFixture(t)
 	raw, _, err := s.vault.Read(t.Context(), scanPath)
 	if err != nil {
 		t.Fatal(err)
@@ -55,8 +55,8 @@ func TestRecognitionCreateOverAnotherPluginsRecognitionKeyStartsARun(t *testing.
 }
 
 func TestRecognitionCreateInChemistryReadsChemistryVersions(t *testing.T) {
-	s := newToolScene(t)
-	s.putRecognition(t) // Physics holds a recognition of books/scan.pdf; Chemistry holds none.
+	s := newToolFixture(t)
+	s.putRecognition(t) // Physics has a recognition of books/scan.pdf; Chemistry has none.
 	s.chemistry.File(scanPath, "x")
 
 	res := s.recognise(t, "Chemistry", scanPath)

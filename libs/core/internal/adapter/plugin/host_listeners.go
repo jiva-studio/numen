@@ -31,7 +31,7 @@ func checkReportedListeners(m manifest.Manifest, reported map[string]int) error 
 }
 
 var (
-	errListenerPortValue = errors.New("the port setting does not hold a port from 1024 to 65535")
+	errListenerPortValue = errors.New("port setting is not a port from 1024 to 65535")
 	// errListenerBind marks a failure of the plugin that a sync of its listeners recorded.
 	errListenerBind = errors.New("listener port not bound")
 )
@@ -67,7 +67,7 @@ func (h *Host) getWantedPortsLocked(pluginID string) (map[string]int, error) {
 	return ports, nil
 }
 
-// readPort returns the integer from 1024 to 65535 a setting value holds.
+// readPort parses a setting value as a port from 1024 to 65535.
 func readPort(value any) (int, bool) {
 	var number float64
 	switch kind := value.(type) {
@@ -123,8 +123,8 @@ func (h *Host) checkListenerPort(ctx context.Context, pluginID, key string, valu
 	return nil
 }
 
-// syncAllListeners brings the bound ports of every registered plugin, and of every plugin that has
-// bound ports, in line with its manifest, its settings and its state.
+// syncAllListeners synchronizes the bound ports of every registered plugin, and of every plugin that has
+// bound ports, with its manifest, its settings and its state.
 func (h *Host) syncAllListeners(ctx context.Context) {
 	h.listenersMu.Lock()
 	ids := slices.Collect(maps.Keys(h.listeners))
@@ -152,7 +152,7 @@ func (h *Host) syncListenersAndReport(ctx context.Context, pluginID string) {
 
 // syncListeners binds 127.0.0.1:<port> for each listener of the plugin while it is registered and
 // enabled, and closes its ports otherwise. A listener whose port changed is bound on the new port
-// first and its old port closed after. When a port cannot be bound, or a port setting holds no port,
+// first and its old port closed after. When a port cannot be bound, or a port setting has no port,
 // a plugin with bound ports keeps them unchanged and the error is returned; a plugin without bound
 // ports is failed, and the returned error wraps errListenerBind.
 func (h *Host) syncListeners(ctx context.Context, pluginID string) error {
@@ -160,16 +160,16 @@ func (h *Host) syncListeners(ctx context.Context, pluginID string) error {
 	defer h.listenersMu.Unlock()
 
 	h.mu.RLock()
-	wanted, err := h.getWantedPortsLocked(pluginID)
+	wantedPorts, err := h.getWantedPortsLocked(pluginID)
 	h.mu.RUnlock()
 
 	current := h.listeners[pluginID]
-	if err == nil && isSamePorts(current, wanted) {
+	if err == nil && isSamePorts(current, wantedPorts) {
 		return nil
 	}
 	var next map[string]listenerBinding
 	if err == nil {
-		next, err = h.openChangedListeners(context.WithoutCancel(ctx), pluginID, current, wanted)
+		next, err = h.openChangedListeners(context.WithoutCancel(ctx), pluginID, current, wantedPorts)
 	}
 	if err != nil {
 		if len(current) > 0 {
@@ -195,11 +195,11 @@ func (h *Host) syncListeners(ctx context.Context, pluginID string) error {
 }
 
 // isSamePorts reports whether the bound listeners are the wanted ones on the wanted ports.
-func isSamePorts(current map[string]listenerBinding, wanted map[string]int) bool {
-	if len(current) != len(wanted) {
+func isSamePorts(current map[string]listenerBinding, wantedPorts map[string]int) bool {
+	if len(current) != len(wantedPorts) {
 		return false
 	}
-	for name, port := range wanted {
+	for name, port := range wantedPorts {
 		if binding, ok := current[name]; !ok || binding.port != port {
 			return false
 		}
@@ -210,12 +210,12 @@ func isSamePorts(current map[string]listenerBinding, wanted map[string]int) bool
 // openChangedListeners returns the listeners to keep bound: those of current already on their wanted
 // port, and a new binding for every other wanted listener. A failed bind closes the bindings it made.
 func (h *Host) openChangedListeners(
-	ctx context.Context, pluginID string, current map[string]listenerBinding, wanted map[string]int,
+	ctx context.Context, pluginID string, current map[string]listenerBinding, wantedPorts map[string]int,
 ) (map[string]listenerBinding, error) {
-	next := make(map[string]listenerBinding, len(wanted))
-	var opened []*portproxy.Proxy
-	for _, name := range slices.Sorted(maps.Keys(wanted)) {
-		port := wanted[name]
+	next := make(map[string]listenerBinding, len(wantedPorts))
+	var openedProxies []*portproxy.Proxy
+	for _, name := range slices.Sorted(maps.Keys(wantedPorts)) {
+		port := wantedPorts[name]
 		if binding, ok := current[name]; ok && binding.port == port {
 			next[name] = binding
 			continue
@@ -223,12 +223,12 @@ func (h *Host) openChangedListeners(
 		addr := net.JoinHostPort(listenerAddressHost, strconv.Itoa(port))
 		proxy, err := portproxy.Open(ctx, addr, h.createListenerTarget(pluginID, name), h.reportError)
 		if err != nil {
-			for _, proxy := range opened {
+			for _, proxy := range openedProxies {
 				h.closeListener(pluginID, proxy)
 			}
 			return nil, fmt.Errorf("bind listener %s of plugin %s: %w", name, pluginID, err)
 		}
-		opened = append(opened, proxy)
+		openedProxies = append(openedProxies, proxy)
 		next[name] = listenerBinding{port: port, proxy: proxy}
 	}
 	return next, nil
@@ -261,7 +261,7 @@ func (h *Host) clearListenerFailure(pluginID string) {
 	}
 }
 
-// closeListenersLocked closes and forgets the bound ports of the plugin. The caller holds listenersMu.
+// closeListenersLocked closes and forgets the bound ports of the plugin. The caller has locked listenersMu.
 func (h *Host) closeListenersLocked(pluginID string) {
 	for _, binding := range h.listeners[pluginID] {
 		h.closeListener(pluginID, binding.proxy)
@@ -284,9 +284,9 @@ func (h *Host) closeAllListeners() {
 	}
 }
 
-// createListenerTarget returns the target of a connection to a listener: the plugin is started and
-// held until the connection ends, and the connection goes to the port its ready line reported. A
-// failed activation wraps portproxy.ErrTargetReported while an earlier one of the plugin stays reported.
+// createListenerTarget returns the target of a connection to a listener: the plugin is started
+// and kept active until the connection ends, and the connection is forwarded to the port its ready
+// line reported. A failed activation wraps portproxy.ErrTargetReported while an earlier one of the plugin stays reported.
 func (h *Host) createListenerTarget(pluginID, name string) portproxy.Target {
 	return func(ctx context.Context) (string, func(), error) {
 		endpoint, err := h.EnsureActive(ctx, pluginID)
@@ -317,8 +317,8 @@ func (h *Host) createListenerTarget(pluginID, name string) portproxy.Target {
 	}
 }
 
-// releaseEndpoint gives back a lease taken with EnsureActive on the process that served endpoint. A
-// lease of a process that has stopped is not given back: the process that runs now holds its own.
+// releaseEndpoint releases a lease acquired with EnsureActive on the process that served endpoint. A
+// lease of a stopped process is not released: the process that runs now has its own.
 func (h *Host) releaseEndpoint(pluginID string, endpoint transport.Endpoint) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

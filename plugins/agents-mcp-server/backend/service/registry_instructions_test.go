@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	wantServerLine = "These tools work on one Numén vault: markdown notes in an ordinary folder, joined by links, with books, PDFs and recordings filed beside them."
+	wantServerLine = "These tools work on one Numén vault: markdown notes in a folder, connected by links, and the books, PDFs and recordings stored in the same folder."
 
 	orchardPickSentence  = "Pick a fruit with orchard_pick before you name its tree."
 	orchardShareSentence = "Link every tree you name, whether orchard_pick or orchard_graft found it."
@@ -24,38 +24,38 @@ const (
 	beehiveCountSentence = "Count the bees with beehive_count, one frame at a time."
 )
 
-// instructedHost lists the tools and instructions it holds, which a test changes between sessions.
-type instructedHost struct {
+// fakeToolHost lists the tools and instructions it has, which a test changes between sessions.
+type fakeToolHost struct {
 	mu      sync.Mutex
 	listing tools.Listing
 }
 
-func (h *instructedHost) ListTools(context.Context) (tools.Listing, error) {
+func (h *fakeToolHost) ListTools(context.Context) (tools.Listing, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.listing, nil
 }
 
-func (h *instructedHost) InvokeTool(context.Context, tools.Call) (*tools.CallResponse, error) {
+func (h *fakeToolHost) InvokeTool(context.Context, tools.Call) (*tools.CallResponse, error) {
 	return &tools.CallResponse{Result: &tools.CallResult{Text: "picked"}}, nil
 }
 
-func (h *instructedHost) setListing(listing tools.Listing) {
+func (h *fakeToolHost) setListing(listing tools.Listing) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.listing = listing
 }
 
-// instructedHostHandler serves a listing as the host's PluginToolService does.
-type instructedHostHandler struct {
+// fakeToolHostHandler serves a listing as the host's PluginToolService does.
+type fakeToolHostHandler struct {
 	listing tools.Listing
 }
 
-func (h instructedHostHandler) ListTools(context.Context, http.Header) (tools.Listing, error) {
+func (h fakeToolHostHandler) ListTools(context.Context, http.Header) (tools.Listing, error) {
 	return h.listing, nil
 }
 
-func (h instructedHostHandler) InvokeTool(context.Context, http.Header, tools.Call) (*tools.CallResponse, error) {
+func (h fakeToolHostHandler) InvokeTool(context.Context, http.Header, tools.Call) (*tools.CallResponse, error) {
 	return &tools.CallResponse{Result: &tools.CallResult{Text: "picked"}}, nil
 }
 
@@ -81,19 +81,19 @@ func openSession(t *testing.T, srv *Server) string {
 	return session.InitializeResult().Instructions
 }
 
-// newInstructedTool is a read-only tool of the host that carries the sentences given.
-func newInstructedTool(name string, sentences ...string) *tools.ToolInfo {
+// newToolWithSentences is a read-only tool of the host that has the sentences given.
+func newToolWithSentences(name string, sentences ...string) *tools.ToolInfo {
 	tool := newReadTool(name)
 	tool.Instructions = sentences
 	return tool
 }
 
-func TestTheServerSendsTheDistinctSentencesOfItsToolsInListingOrder(t *testing.T) {
+func TestServerSendsDistinctToolSentencesInListingOrder(t *testing.T) {
 	t.Parallel()
-	host := &instructedHost{listing: tools.Listing{Tools: []*tools.ToolInfo{
-		newInstructedTool("beehive_count", beehiveCountSentence),
-		newInstructedTool("orchard_pick", orchardPickSentence, orchardShareSentence),
-		newInstructedTool("orchard_graft", orchardGraftSentence, orchardShareSentence),
+	host := &fakeToolHost{listing: tools.Listing{Tools: []*tools.ToolInfo{
+		newToolWithSentences("beehive_count", beehiveCountSentence),
+		newToolWithSentences("orchard_pick", orchardPickSentence, orchardShareSentence),
+		newToolWithSentences("orchard_graft", orchardGraftSentence, orchardShareSentence),
 		newReadTool("orchard_rest"),
 	}}}
 	srv, err := NewServer(Config{}, host)
@@ -109,11 +109,11 @@ func TestTheServerSendsTheDistinctSentencesOfItsToolsInListingOrder(t *testing.T
 	}
 }
 
-func TestASentenceOfAToolTheHostNoLongerListsIsNotSentToANewSession(t *testing.T) {
+func TestSentenceOfUnlistedToolIsNotSentToANewSession(t *testing.T) {
 	t.Parallel()
-	host := &instructedHost{listing: tools.Listing{Tools: []*tools.ToolInfo{
-		newInstructedTool("beehive_count", beehiveCountSentence),
-		newInstructedTool("orchard_pick", orchardPickSentence),
+	host := &fakeToolHost{listing: tools.Listing{Tools: []*tools.ToolInfo{
+		newToolWithSentences("beehive_count", beehiveCountSentence),
+		newToolWithSentences("orchard_pick", orchardPickSentence),
 	}}}
 	srv, err := NewServer(Config{}, host)
 	if err != nil {
@@ -123,7 +123,7 @@ func TestASentenceOfAToolTheHostNoLongerListsIsNotSentToANewSession(t *testing.T
 		t.Fatalf("before the plugin is disabled the instructions are %q", before)
 	}
 
-	host.setListing(tools.Listing{Tools: []*tools.ToolInfo{newInstructedTool("beehive_count", beehiveCountSentence)}})
+	host.setListing(tools.Listing{Tools: []*tools.ToolInfo{newToolWithSentences("beehive_count", beehiveCountSentence)}})
 	instructions := openSession(t, srv)
 
 	if strings.Contains(instructions, orchardPickSentence) {
@@ -143,7 +143,7 @@ func TestToolsWithNoSentencesLeaveOnlyTheServerLine(t *testing.T) {
 	for _, name := range names {
 		toolInfos = append(toolInfos, newReadTool(name))
 	}
-	srv, err := NewServer(Config{}, &instructedHost{listing: tools.Listing{Tools: toolInfos}})
+	srv, err := NewServer(Config{}, &fakeToolHost{listing: tools.Listing{Tools: toolInfos}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,11 +160,11 @@ func TestToolsWithNoSentencesLeaveOnlyTheServerLine(t *testing.T) {
 	}
 }
 
-func TestTheSentencesTheHostListsReachTheServerOverTheWire(t *testing.T) {
+func TestHostListedSentencesAreSentToTheServerOverTheWire(t *testing.T) {
 	t.Parallel()
 	mux := http.NewServeMux()
-	mux.Handle(tools.NewServiceHandler(instructedHostHandler{listing: tools.Listing{
-		Tools: []*tools.ToolInfo{newInstructedTool("orchard_pick", orchardPickSentence)},
+	mux.Handle(tools.NewServiceHandler(fakeToolHostHandler{listing: tools.Listing{
+		Tools: []*tools.ToolInfo{newToolWithSentences("orchard_pick", orchardPickSentence)},
 	}}))
 	served := httptest.NewServer(mux)
 	t.Cleanup(served.Close)

@@ -35,7 +35,7 @@ func (t *Tools) addNoteSearch(registry *tools.Registry) error {
 	return addTool(registry, tools.Spec{
 		Name:  "note_search",
 		Title: "Search Notes",
-		Description: "Search the notes of the vault by title, path and text. It does not look into books, " +
+		Description: "Search the notes of the vault by title, path and text. It does not search books, " +
 			"PDFs, scans or recordings: library_search finds the text of those.",
 		Effect:       tools.ReadOnly,
 		Step:         tools.Search,

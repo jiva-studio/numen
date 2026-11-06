@@ -171,8 +171,8 @@ func newLink(path string, parsed address.URL, raw []byte) Link {
 // getKey names what is stored for the text of an address.
 func getKey(parsed address.URL) string { return domain.HashContent([]byte(parsed)) }
 
-// Create makes the link note of an address in a folder of a vault, named by the address. An empty
-// vault is the vault the host shows.
+// Create creates the link note of an address in a folder of a vault, named by the address. An empty
+// vault ID means the vault the host shows.
 func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, error) {
 	parsed, err := address.Parse(raw)
 	if err != nil {
@@ -206,21 +206,21 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 	return newLinkIn(ctx, target, path, parsed, content)
 }
 
-// FindOrCreate is Create, and where a file is already at the path of the note, the link note there
-// when it holds the same address. Any other file at the path is an error naming the path, and the
-// file is unchanged.
+// FindOrCreate calls Create and, when a file is already at the path of the note, returns the link
+// note there if it has the same address. Any other file at the path is an error naming the path,
+// and the file is unchanged.
 func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, error) {
 	made, err := l.Create(ctx, vault, folder, raw)
 	if !errors.Is(err, host.ErrAlreadyExists) {
 		return made, err
 	}
 	parsed, err := address.Parse(raw)
-	// gomutants:disable-next-line BRANCH_IF reason="Create parsed the same address before it reached the file"
+	// gomutants:disable-next-line BRANCH_IF reason="Create parsed the same address before it opened the file"
 	if err != nil {
 		return Link{}, err
 	}
 	name, _, err := domain.Filename(string(parsed))
-	// gomutants:disable-next-line BRANCH_IF reason="Create named the same address before it reached the file"
+	// gomutants:disable-next-line BRANCH_IF reason="Create named the same address before it opened the file"
 	if err != nil {
 		return Link{}, err
 	}
@@ -235,7 +235,7 @@ func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, 
 	return found, nil
 }
 
-// getVault is the vault of the identity, and the vault the host shows for an empty one.
+// getVault returns the vault of the identity, or the vault the host shows for an empty one.
 func (l *Links) getVault(vault domain.VaultID) host.Vault {
 	if vault == "" {
 		return l.host.Vault
@@ -369,7 +369,7 @@ const (
 
 func getTaskID(work, path string) string { return work + ":" + path }
 
-// GetCopyTaskID is the id of the copy of the video of a link note in the list of tasks.
+// GetCopyTaskID returns the id of the copy of the video of a link note in the list of tasks.
 func GetCopyTaskID(path string) string { return getTaskID("copy", path) }
 
 // FetchText fetches the text published at a link's address and stores it as a
@@ -424,7 +424,7 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 		Languages: settings.Captions, IsAutomatic: settings.IsAutomatic,
 	})
 	if errors.Is(err, download.ErrNothingDownloaded) {
-		return folder.markNone(ctx, link.Key)
+		return folder.markNoText(ctx, link.Key)
 	}
 	if err != nil {
 		return err
@@ -609,16 +609,16 @@ func (l *Links) GetTitle(ctx context.Context, link Link) (string, error) {
 	return rec.Title, err
 }
 
-// TextInfo describes the text fetched for a link. IsNothing is set for an address marked as
+// TextInfo describes the text fetched for a link. HasNoText is set for an address marked as
 // publishing no text.
 type TextInfo struct {
 	Title     string
 	Producer  string
-	IsNothing bool
+	HasNoText bool
 }
 
-// GetTextInfo is the title and the producer of the text fetched for a link, and whether its address
-// publishes no text. A link with no text fetched has an empty title and producer.
+// GetTextInfo returns the title and the producer of the text fetched for a link, and whether its
+// address publishes no text. A link with no text fetched has an empty title and producer.
 func (l *Links) GetTextInfo(ctx context.Context, link Link) (TextInfo, error) {
 	folder := folder{store: l.getStore(link)}
 	isNone, err := folder.isNone(ctx, link.Key)
@@ -629,7 +629,7 @@ func (l *Links) GetTextInfo(ctx context.Context, link Link) (TextInfo, error) {
 	if err != nil {
 		return TextInfo{}, err
 	}
-	return TextInfo{Title: rec.Title, Producer: rec.Producer, IsNothing: isNone}, nil
+	return TextInfo{Title: rec.Title, Producer: rec.Producer, HasNoText: isNone}, nil
 }
 
 // reportTask shows a task. A host that cannot show it leaves the work to go on unseen.

@@ -64,7 +64,7 @@ func newGeologyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	return v, registry
 }
 
-// requireContent fails the test unless the file of the vault holds exactly the content.
+// requireContent fails the test unless the file of the vault contains exactly the content.
 func requireContent(t *testing.T, v *hosttest.Vault, filePath, want string) {
 	t.Helper()
 	got, ok := v.Content(filePath)
@@ -73,7 +73,7 @@ func requireContent(t *testing.T, v *hosttest.Vault, filePath, want string) {
 		return
 	}
 	if got != want {
-		t.Errorf("%s holds %q, want %q", filePath, got, want)
+		t.Errorf("%s contains %q, want %q", filePath, got, want)
 	}
 }
 
@@ -117,7 +117,7 @@ func TestNoteRenameWithATitleKeyWritesTheTitleAndMovesTheFile(t *testing.T) {
 	}
 	content, ok := v.Content("Rocks/Flood Basalt.md")
 	if !ok || !strings.Contains(content, "title: Flood Basalt") {
-		t.Errorf("Rocks/Flood Basalt.md holds %q, %v, want the new title key", content, ok)
+		t.Errorf("Rocks/Flood Basalt.md contains %q, %v, want the new title key", content, ok)
 	}
 	requireAbsent(t, v, "Rocks/Basalt.md")
 }
@@ -138,18 +138,18 @@ func TestNoteRenameWithoutATitleKeyRenamesByFilename(t *testing.T) {
 	requireAbsent(t, v, "Fossils.md")
 }
 
-func TestNoteRenameOntoAnExistingNoteIsRefused(t *testing.T) {
+func TestNoteRenameOntoAnExistingNoteIsRejected(t *testing.T) {
 	v, registry := newGeologyVault(t)
 	before, _ := v.Content("Rocks/Basalt.md")
 
-	requireRefusal(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":"Granite"}`)
+	requireRejection(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":"Granite"}`)
 	requireContent(t, v, "Rocks/Basalt.md", before)
 	requireContent(t, v, "Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
 }
 
-// getRefusalText calls the tool, fails the test unless the tool is known and refuses the call, and
-// returns the text of the refusal.
-func getRefusalText(t *testing.T, registry *tools.Registry, vaultID, name, arguments string) string {
+// getRejectionText calls the tool, fails the test unless the tool is known and rejects the call, and
+// returns the text of the error.
+func getRejectionText(t *testing.T, registry *tools.Registry, vaultID, name, arguments string) string {
 	t.Helper()
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: vaultID, Name: name, Arguments: []byte(arguments)})
 	if err != nil {
@@ -159,29 +159,29 @@ func getRefusalText(t *testing.T, registry *tools.Registry, vaultID, name, argum
 		t.Fatalf("call %s: the tool is unknown", name)
 	}
 	if !res.GetResult().GetIsError() {
-		t.Fatalf("call %s %s was not refused: %s", name, arguments, res.GetResult().GetStructured())
+		t.Fatalf("call %s %s was not rejected: %s", name, arguments, res.GetResult().GetStructured())
 	}
 	return res.GetResult().GetText()
 }
 
-func TestNoteRenameOntoATakenFilenameNamesTheUnchangedNote(t *testing.T) {
+func TestNoteRenameOntoATakenFilenameReportsTheUnchangedNote(t *testing.T) {
 	_, registry := newGeologyVault(t)
 
-	text := getRefusalText(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":"Granite"}`)
+	text := getRejectionText(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":"Granite"}`)
 	for _, part := range []string{"Rocks/Basalt.md", "Rocks/Granite.md"} {
 		if !strings.Contains(text, part) {
-			t.Errorf("the refusal %q does not name %s", text, part)
+			t.Errorf("the error %q does not name %s", text, part)
 		}
 	}
 	lower := strings.ToLower(text)
 	if !strings.Contains(lower, "not changed") && !strings.Contains(lower, "unchanged") {
-		t.Errorf("the refusal %q does not say the note was left unchanged", text)
+		t.Errorf("the error %q does not state that the note was left unchanged", text)
 	}
 }
 
-func TestNoteRenameOfAMissingNoteIsRefused(t *testing.T) {
+func TestNoteRenameOfAMissingNoteIsRejected(t *testing.T) {
 	_, registry := newGeologyVault(t)
-	requireRefusal(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Obsidian.md","title":"Glass"}`)
+	requireRejection(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Obsidian.md","title":"Glass"}`)
 }
 
 func TestNoteMoveMovesEachPathInOrderAndReportsTheOneThatFails(t *testing.T) {
@@ -232,9 +232,9 @@ func TestNoteMoveWithAnEmptyFolderMovesToTheVaultRoot(t *testing.T) {
 	requireContent(t, v, "Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
 }
 
-func TestNoteMoveOfMoreThanFiftyPathsIsRefused(t *testing.T) {
+func TestNoteMoveOfMoreThanFiftyPathsIsRejected(t *testing.T) {
 	_, registry := newGeologyVault(t)
-	requireRefusal(t, registry, geologyVault, "note_move", makePathsArguments(t, 51, map[string]any{"folder": "Archive"}))
+	requireRejection(t, registry, geologyVault, "note_move", makePathsArguments(t, 51, map[string]any{"folder": "Archive"}))
 
 	var out noteMoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_move",
@@ -289,9 +289,9 @@ func TestNoteRemoveReportsAFolderAndAMissingPathAndRemovesTheRest(t *testing.T) 
 	requireAbsent(t, v, "Fossils.md")
 }
 
-func TestNoteRemoveOfMoreThanFiftyPathsIsRefused(t *testing.T) {
+func TestNoteRemoveOfMoreThanFiftyPathsIsRejected(t *testing.T) {
 	_, registry := newGeologyVault(t)
-	requireRefusal(t, registry, geologyVault, "note_remove", makePathsArguments(t, 51, nil))
+	requireRejection(t, registry, geologyVault, "note_remove", makePathsArguments(t, 51, nil))
 
 	var out noteRemoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_remove", makePathsArguments(t, 50, nil)), &out)
@@ -300,12 +300,12 @@ func TestNoteRemoveOfMoreThanFiftyPathsIsRefused(t *testing.T) {
 	}
 }
 
-func TestNoteRenameOntoATakenFilenameAnswersTheTakenPathAndTheUnchangedNote(t *testing.T) {
+func TestNoteRenameOntoTakenFilenameReturnsPathAndUnchangedNote(t *testing.T) {
 	_, registry := newGeologyVault(t)
 
-	text := getRefusalText(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":"Granite"}`)
+	text := getRejectionText(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":"Granite"}`)
 
 	if want := "note_rename: Rocks/Granite.md already exists; Rocks/Basalt.md is unchanged"; text != want {
-		t.Errorf("the refusal is %q, want %q", text, want)
+		t.Errorf("the error is %q, want %q", text, want)
 	}
 }

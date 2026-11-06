@@ -27,7 +27,7 @@ func TestASearchClientSendsTheLimitUnchanged(t *testing.T) {
 }
 
 func TestASearchClientSendsAnUnknownKindAndReturnsTheHostError(t *testing.T) {
-	const rejection = `"recording" is not a kind of source a search reaches: use "note" or "file"`
+	const rejection = `invalid source kind "recording": use "note" or "file"`
 	h := &passagesHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New(rejection))}
 
 	_, err := dialPassages(t, h).SearchPassages(t.Context(), host.PassageQuery{

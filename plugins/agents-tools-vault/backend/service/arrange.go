@@ -45,13 +45,13 @@ type NoteListOutput struct {
 	NextOffset int         `json:"nextOffset,omitempty" jsonschema:"the offset of the next page; absent on the last page"`
 }
 
-// NoteTitlesInput is the input of the note_titles tool.
-type NoteTitlesInput struct {
+// NoteTitleListInput is the input of the note_title_list tool.
+type NoteTitleListInput struct {
 	Paths []string `json:"paths" jsonschema:"paths of the notes, at most 50"`
 }
 
-// NoteTitlesOutput is the output of the note_titles tool.
-type NoteTitlesOutput struct {
+// NoteTitleListOutput is the output of the note_title_list tool.
+type NoteTitleListOutput struct {
 	Notes        []NoteTitle `json:"notes" jsonschema:"the notes found, with their titles"`
 	MissingPaths []string    `json:"missingPaths" jsonschema:"the paths that name no note, in the order given"`
 }
@@ -78,16 +78,16 @@ func (t *Tools) addNoteList(registry *tools.Registry) error {
 	}, inVault(t, (*Tools).listNotes))
 }
 
-func (t *Tools) addNoteTitles(registry *tools.Registry) error {
+func (t *Tools) addNoteTitleList(registry *tools.Registry) error {
 	return addTool(registry, tools.Spec{
 		Step:         tools.ByEffect,
-		Name:         "note_titles",
+		Name:         "note_title_list",
 		Title:        "Get Note Titles",
 		Description:  "Get the titles and identifiers of up to 50 notes by their paths. Paths that name no note are returned in missingPaths.",
 		Effect:       tools.ReadOnly,
 		Servers:      []tools.Server{tools.Full, tools.Reading},
-		Instructions: []string{noteTitlesSentence},
-	}, inVault(t, (*Tools).getNoteTitles))
+		Instructions: []string{noteTitleListSentence},
+	}, inVault(t, (*Tools).listNoteTitles))
 }
 
 func (t *Tools) addNoteResolve(registry *tools.Registry) error {
@@ -144,15 +144,15 @@ func (t *Tools) listNotes(ctx context.Context, in NoteListInput) (NoteListOutput
 	return NoteListOutput{Notes: notes, Total: total, NextOffset: next}, nil
 }
 
-func (t *Tools) getNoteTitles(ctx context.Context, in NoteTitlesInput) (NoteTitlesOutput, error) {
+func (t *Tools) listNoteTitles(ctx context.Context, in NoteTitleListInput) (NoteTitleListOutput, error) {
 	if len(in.Paths) > maxBatch {
-		return NoteTitlesOutput{}, fmt.Errorf("%d paths given, at most %d are allowed", len(in.Paths), maxBatch)
+		return NoteTitleListOutput{}, fmt.Errorf("%d paths given, at most %d are allowed", len(in.Paths), maxBatch)
 	}
 	refs, err := t.vault.GetNotes(ctx, in.Paths)
 	if err != nil {
-		return NoteTitlesOutput{}, err
+		return NoteTitleListOutput{}, err
 	}
-	out := NoteTitlesOutput{Notes: make([]NoteTitle, 0, len(refs)), MissingPaths: []string{}}
+	out := NoteTitleListOutput{Notes: make([]NoteTitle, 0, len(refs)), MissingPaths: []string{}}
 	for _, p := range in.Paths {
 		ref, ok := refs[p]
 		if !ok {
@@ -178,7 +178,7 @@ func (t *Tools) resolveNoteName(ctx context.Context, in NoteResolveInput) (NoteR
 	return NoteResolveOutput{Paths: paths}, nil
 }
 
-// getFolderPrefix is the folder as the paths of the vault begin with it: without a leading "./" or
+// getFolderPrefix returns the folder in the form vault paths start with: without a leading "./" or
 // "/" and a trailing "/", composed (NFC), and followed by a slash, so "library" matches
 // "library/a.pdf" and not "library2/a.pdf". The vault root is empty.
 func getFolderPrefix(folder string) string {

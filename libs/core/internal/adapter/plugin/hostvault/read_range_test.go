@@ -39,7 +39,7 @@ func TestReadRangeReturnsTheTextOfTheRangeAndTheFileStat(t *testing.T) {
 	}
 }
 
-func TestReadRangeMovesAStartInsideACharacterForwardToTheNextWholeCharacter(t *testing.T) {
+func TestReadRangeMovesStartInsideCharacterToNextCharacter(t *testing.T) {
 	access, _ := diskVault(t, riverFiles())
 
 	got, err := access.ReadRange(t.Context(), "Nandu.txt", 1, 4)
@@ -66,7 +66,7 @@ func TestReadRangeOmitsACharacterTheRangeEndsInside(t *testing.T) {
 	}
 }
 
-func TestReadRangeOfZeroOrMoreThanTheMostReadsSixteenThousandBytes(t *testing.T) {
+func TestReadRangeOfZeroOrOverMaxReads16000Bytes(t *testing.T) {
 	access, _ := diskVault(t, riverFiles())
 
 	for _, length := range []int{0, 16000, 16001, 50000} {

@@ -527,14 +527,14 @@ export type HostSearchServiceSearchPassagesRequest = Message<"numen.v1.HostSearc
   query: string;
 
   /**
-   * How many passages to answer with. Zero takes the number the host chooses.
+   * Maximum passages to return. Zero means the number the host chooses.
    *
    * @generated from field: int32 limit = 2;
    */
   limit: number;
 
   /**
-   * The kinds of source to look in, "note" or "file". Empty looks in every one.
+   * The kinds of source to search, "note" or "file". Empty means every kind.
    *
    * @generated from field: repeated string kinds = 3;
    */
@@ -543,7 +543,7 @@ export type HostSearchServiceSearchPassagesRequest = Message<"numen.v1.HostSearc
   /**
    * Limits the search to the sources whose path starts with it, relative to the
    * vault. The index applies it, so the limit counts passages under the prefix.
-   * Empty looks in the whole vault.
+   * Empty means the whole vault.
    *
    * @generated from field: string path_prefix = 4;
    */
@@ -567,7 +567,7 @@ export type HostSearchServiceSearchPassagesResponse = Message<"numen.v1.HostSear
   error: HostSearchErrorCode;
 
   /**
-   * The passages that answer, best first, at most three of one source.
+   * Matching passages, best first, at most three of one source.
    *
    * @generated from field: repeated numen.v1.Passage passages = 2;
    */
@@ -770,10 +770,10 @@ export const HostSearchService: GenService<{
     output: typeof GetBestSimilarityResponseSchema;
   },
   /**
-   * SearchPassages is the text of the vault that answers a query, from the index
-   * of every source and every text version: by the words in it and by what it
-   * means where the installation has an embedding model, by the words alone
-   * where it has none. It is the search the window runs, with the same floor.
+   * SearchPassages returns passages matching the query, from the index of every
+   * source and every text version: by keywords, and by embedding when the
+   * installation has an embedding model. It is the search the window runs, with
+   * the window's similarity threshold.
    *
    * @generated from rpc numen.v1.HostSearchService.SearchPassages
    */

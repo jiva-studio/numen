@@ -164,12 +164,12 @@ type HostVaultServiceClient interface {
 	// caller asks again once WatchMoves tells it something moved.
 	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
 	// StatFile says what a file is now. A file that is not there is
-	// answered with the error code NOT_FOUND.
+	// returns the error code NOT_FOUND.
 	StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error)
 	// ReadFile reads a whole file, with the file stat it had when it was read.
 	ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error)
 	// WriteFile replaces a file that has not changed since the file stat given.
-	// A file that moved past it is answered with the error code CONFLICT and
+	// A file changed since returns the error code CONFLICT and
 	// nothing is written.
 	WriteFile(context.Context, *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error)
 	// CreateFile makes a file that is not there yet. A file that is there is
@@ -222,13 +222,13 @@ type HostVaultServiceClient interface {
 	// ambiguous, dangling), or every check that is not opt-in when none is named.
 	// It needs vault:read.
 	GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error)
-	// RenameNote gives a note another title and moves its file to the filename of
+	// RenameNote renames a note and moves its file to the filename of
 	// that title, repairing the links that stop resolving. It needs vault:write.
 	RenameNote(context.Context, *connect.Request[v1.HostVaultServiceRenameNoteRequest]) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error)
 	// MoveNotes moves notes to another folder, keeping their filenames, and
 	// repairs the links that stop resolving. It needs vault:write.
 	MoveNotes(context.Context, *connect.Request[v1.HostVaultServiceMoveNotesRequest]) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error)
-	// RemoveNotes moves notes to the vault's trash. A folder is answered with
+	// RemoveNotes moves notes to the vault's trash. A folder returns
 	// NOT_A_NOTE. It needs vault:write.
 	RemoveNotes(context.Context, *connect.Request[v1.HostVaultServiceRemoveNotesRequest]) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error)
 	// AddLinks writes links into the frontmatter links of notes. The links of one
@@ -248,10 +248,10 @@ type HostVaultServiceClient interface {
 	AddVault(context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest]) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error)
 	// RenameVault changes the name of a vault on the list. It needs vault:manage.
 	RenameVault(context.Context, *connect.Request[v1.HostVaultServiceRenameVaultRequest]) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error)
-	// RemoveVault takes a vault off the list and out of the index. The folder
+	// RemoveVault removes a vault from the list and from the index. The folder
 	// stays. It needs vault:manage.
 	RemoveVault(context.Context, *connect.Request[v1.HostVaultServiceRemoveVaultRequest]) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error)
-	// OpenVault makes the window show another vault. It answers before the window
+	// OpenVault makes the window show another vault. It returns before the window
 	// changes vault. It needs vault:manage.
 	OpenVault(context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest]) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error)
 	// ReadCache reads what the plugin kept for this vault under a name. The cache
@@ -767,12 +767,12 @@ type HostVaultServiceHandler interface {
 	// caller asks again once WatchMoves tells it something moved.
 	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
 	// StatFile says what a file is now. A file that is not there is
-	// answered with the error code NOT_FOUND.
+	// returns the error code NOT_FOUND.
 	StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error)
 	// ReadFile reads a whole file, with the file stat it had when it was read.
 	ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error)
 	// WriteFile replaces a file that has not changed since the file stat given.
-	// A file that moved past it is answered with the error code CONFLICT and
+	// A file changed since returns the error code CONFLICT and
 	// nothing is written.
 	WriteFile(context.Context, *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error)
 	// CreateFile makes a file that is not there yet. A file that is there is
@@ -825,13 +825,13 @@ type HostVaultServiceHandler interface {
 	// ambiguous, dangling), or every check that is not opt-in when none is named.
 	// It needs vault:read.
 	GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error)
-	// RenameNote gives a note another title and moves its file to the filename of
+	// RenameNote renames a note and moves its file to the filename of
 	// that title, repairing the links that stop resolving. It needs vault:write.
 	RenameNote(context.Context, *connect.Request[v1.HostVaultServiceRenameNoteRequest]) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error)
 	// MoveNotes moves notes to another folder, keeping their filenames, and
 	// repairs the links that stop resolving. It needs vault:write.
 	MoveNotes(context.Context, *connect.Request[v1.HostVaultServiceMoveNotesRequest]) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error)
-	// RemoveNotes moves notes to the vault's trash. A folder is answered with
+	// RemoveNotes moves notes to the vault's trash. A folder returns
 	// NOT_A_NOTE. It needs vault:write.
 	RemoveNotes(context.Context, *connect.Request[v1.HostVaultServiceRemoveNotesRequest]) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error)
 	// AddLinks writes links into the frontmatter links of notes. The links of one
@@ -851,10 +851,10 @@ type HostVaultServiceHandler interface {
 	AddVault(context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest]) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error)
 	// RenameVault changes the name of a vault on the list. It needs vault:manage.
 	RenameVault(context.Context, *connect.Request[v1.HostVaultServiceRenameVaultRequest]) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error)
-	// RemoveVault takes a vault off the list and out of the index. The folder
+	// RemoveVault removes a vault from the list and from the index. The folder
 	// stays. It needs vault:manage.
 	RemoveVault(context.Context, *connect.Request[v1.HostVaultServiceRemoveVaultRequest]) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error)
-	// OpenVault makes the window show another vault. It answers before the window
+	// OpenVault makes the window show another vault. It returns before the window
 	// changes vault. It needs vault:manage.
 	OpenVault(context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest]) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error)
 	// ReadCache reads what the plugin kept for this vault under a name. The cache

@@ -217,15 +217,15 @@ func (d *Document) RemoveLink(key domain.LinkKey) (int, error) {
 	})
 }
 
-// RemoveLinksTo takes out every entry to the target, of every type, and only those of the role
-// when one is named. An empty block goes with them.
-func (d *Document) RemoveLinksTo(to domain.Address, role domain.LinkRole) (int, error) {
+// RemoveTargetLinks removes every entry to the target, of every type, and only those of the role
+// when one is given. A block left empty is removed too.
+func (d *Document) RemoveTargetLinks(target domain.Address, role domain.LinkRole) (int, error) {
 	return d.removeEntries(func(link domain.Link) bool {
-		return link.Target == to && (role == "" || link.Role == role)
+		return link.Target == target && (role == "" || link.Role == role)
 	})
 }
 
-// removeEntries takes out every entry whose link matches, and the block when no entry is left.
+// removeEntries removes every entry whose link matches, and the block when no entry is left.
 func (d *Document) removeEntries(matches func(domain.Link) bool) (int, error) {
 	b, err := d.block()
 	if err != nil {

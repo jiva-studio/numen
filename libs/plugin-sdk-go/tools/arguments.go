@@ -18,7 +18,7 @@ var quotedPattern = regexp.MustCompile(`"(?:[^"\\]|\\.)*"`)
 // "type: " or "dependentRequired[\"a\"]: ".
 var keywordPattern = regexp.MustCompile(`^[A-Za-z]+(\[[^\]]*\])?: `)
 
-// readArguments validates the JSON arguments of a call against schema and decodes them into In. No
+// readArguments validates the JSON arguments of a call against schema and decodes them into In. Empty
 // arguments and JSON null are validated as the empty object and leave In zero.
 func readArguments[In any](schema *jsonschema.Resolved, arguments []byte) (In, error) {
 	var in In
@@ -36,7 +36,7 @@ func readArguments[In any](schema *jsonschema.Resolved, arguments []byte) (In, e
 		return in, err
 	}
 	if err := json.Unmarshal(arguments, &in); err != nil {
-		return in, fmt.Errorf("the arguments do not fit: %w", err)
+		return in, fmt.Errorf("invalid arguments: %w", err)
 	}
 	return in, nil
 }

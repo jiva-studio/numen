@@ -180,7 +180,7 @@ func (u Scan) getRecutPaths(ctx context.Context, v domain.Vault) (map[string]boo
 	}
 	paths, err := u.GetOtherRecipePaths(ctx, v.ID, u.Cut.Recipe())
 	if err != nil {
-		return nil, fmt.Errorf("the notes of %s cut another way cannot be read: %w", v.Name, err)
+		return nil, fmt.Errorf("the notes of %s chunked with another method cannot be read: %w", v.Name, err)
 	}
 	recutPaths := make(map[string]bool, len(paths))
 	for _, path := range paths {
@@ -288,7 +288,7 @@ func (u Scan) removeGone(
 		}
 	}
 	if err := u.notes.Remove(ctx, v.ID, removed); err != nil {
-		return fmt.Errorf("the deleted notes of %s cannot leave the index: %w", v.Name, err)
+		return fmt.Errorf("the deleted notes of %s cannot be removed from the index: %w", v.Name, err)
 	}
 	res.Removed = len(removed)
 	return nil

@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// The sentences that tell an agent when to call transcript_create.
+// The instruction sentences of transcript_create: when to call it and what it returns.
 const (
 	transcriptUseSentence        = "Use transcript_create on an audio or video recording of the vault that has no transcript, when its words are needed now."
 	transcriptSlowSentence       = "Transcription is slow, about as long as the recording itself."
@@ -42,7 +42,7 @@ type TranscriptCreateInput struct {
 type TranscriptCreateOutput struct {
 	TaskID  string `json:"taskId" jsonschema:"the id of the transcription in the list of tasks"`
 	Path    string `json:"path" jsonschema:"the recording; library_read and library_search read its transcript"`
-	State   string `json:"state" jsonschema:"started; running where a transcription of this recording is already in progress and no second one was started; or done where the recording is already transcribed and nothing was started"`
+	State   string `json:"state" jsonschema:"started; running when a transcription of this recording is already in progress and no second one was started; or done when the recording is already transcribed and nothing was started"`
 	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the live text version, the version library_read reads: the transcript, or a version made from it such as a proofread"`
 }
 
@@ -52,7 +52,8 @@ type Tools struct {
 	vault       host.Vault
 }
 
-// NewTools is the tools over the transcriber, checking the recordings named through the vault.
+// NewTools returns the tools for the transcriber, which check the requested recordings through the
+// vault.
 func NewTools(transcriber *Transcriber, vault host.Vault) *Tools {
 	return &Tools{transcriber: transcriber, vault: vault}
 }
@@ -68,9 +69,9 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 			"plugin's setting selects, and return its task id without waiting. The transcript is stored as a " +
 			"text version of the recording; library_search and library_read read it as it is written. A " +
 			"transcription takes about as long as the recording. A file that is not in the vault, or is not an " +
-			"audio or video recording, is refused. A recording that is already transcribed is not transcribed " +
-			"again: the call answers the state done and the version library_read reads, the transcript or a " +
-			"version made from it. A recording that cannot be read shows as the failure of its task in the list " +
+			"audio or video recording, is rejected. A recording that is already transcribed is not transcribed " +
+			"again: the call returns the state done and the version library_read reads, the transcript or a " +
+			"version made from it. A recording that cannot be read is reported as a failed task in the list " +
 			"of tasks.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
@@ -103,7 +104,7 @@ func (t *Tools) createTranscript(ctx context.Context, in TranscriptCreateInput) 
 	if t.transcriber.isRunning(vault, in.Path) {
 		return out, nil
 	}
-	version, isDone, err := t.transcriber.findLiveVersionFromWhole(ctx, vault, in.Path)
+	version, isDone, err := t.transcriber.findLiveVersionOfWholeTranscript(ctx, vault, in.Path)
 	if err != nil {
 		return TranscriptCreateOutput{}, err
 	}
@@ -123,7 +124,7 @@ func (t *Tools) createTranscript(ctx context.Context, in TranscriptCreateInput) 
 
 // isRecording reports whether the extension of the file gives it an audio/* or video/* type, the
 // types the manifest declares transcript.create for. The extensions are those shared-mime-info maps
-// to the two types; the plugin cannot reach the host's table.
+// to the two types; the plugin cannot read the MIME table of the host.
 func isRecording(file string) bool {
 	switch strings.ToLower(path.Ext(file)) {
 	case ".aac", ".ac3", ".aif", ".aifc", ".aiff", ".amr", ".ape", ".au", ".flac", ".m4a", ".m4b",

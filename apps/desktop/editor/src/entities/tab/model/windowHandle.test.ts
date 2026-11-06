@@ -1,4 +1,4 @@
-/** The window handle a kind receives, showing tabs by id. */
+/** The window handle a kind receives, activating tabs by id. */
 import { describe, expect, it } from 'vitest'
 import { getPanes } from '@numen/shell'
 import type { AnyTabKind } from './kinds'
@@ -12,7 +12,7 @@ const thing: AnyTabKind = {
 }
 
 describe('the show of the window handle', () => {
-  it('puts an open tab in front', async () => {
+  it('activates an open tab', async () => {
     const window = useWindowTabs()
     window.registerKinds([thing])
     const first = await window.openTabOfKind('thing', 'Heron.md')

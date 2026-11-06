@@ -15,7 +15,7 @@ type timeSource interface {
 // WindowManager keeps the edit previews.
 type WindowManager struct {
 	mu         sync.RWMutex
-	previews   map[string]EditPreview
+	previews   map[string]NoteEditPreview
 	previewSeq atomic.Uint64
 	clock      timeSource
 }
@@ -24,21 +24,21 @@ type WindowManager struct {
 func NewManager(clock timeSource) *WindowManager {
 	return &WindowManager{
 		mu:         sync.RWMutex{},
-		previews:   make(map[string]EditPreview),
+		previews:   make(map[string]NoteEditPreview),
 		previewSeq: atomic.Uint64{},
 		clock:      clock,
 	}
 }
 
 // SavePreview stores an edit preview.
-func (m *WindowManager) SavePreview(preview EditPreview) {
+func (m *WindowManager) SavePreview(preview NoteEditPreview) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.previews[preview.ID] = preview
 }
 
 // GetPreview retrieves a preview by its identifier.
-func (m *WindowManager) GetPreview(id string) (EditPreview, bool) {
+func (m *WindowManager) GetPreview(id string) (NoteEditPreview, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	p, ok := m.previews[id]
@@ -46,10 +46,10 @@ func (m *WindowManager) GetPreview(id string) (EditPreview, bool) {
 }
 
 // ListPreviews returns all stored edit previews.
-func (m *WindowManager) ListPreviews() []EditPreview {
+func (m *WindowManager) ListPreviews() []NoteEditPreview {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	result := make([]EditPreview, 0, len(m.previews))
+	result := make([]NoteEditPreview, 0, len(m.previews))
 	for _, p := range m.previews {
 		result = append(result, p)
 	}
@@ -60,7 +60,7 @@ func (m *WindowManager) ListPreviews() []EditPreview {
 func (m *WindowManager) ClearPreviews() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.previews = make(map[string]EditPreview)
+	m.previews = make(map[string]NoteEditPreview)
 }
 
 // NextPreviewID generates a unique identifier for an edit preview.

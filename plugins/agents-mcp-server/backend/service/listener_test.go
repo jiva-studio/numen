@@ -103,20 +103,20 @@ func configureToken(t *testing.T, s *server.Server, token string) {
 	}
 }
 
-func TestAConfiguredNewTokenRefusesTheOldOne(t *testing.T) {
+func TestConfiguredNewTokenRejectsTheOldOne(t *testing.T) {
 	s, stdout := serveMounted(t)
 	configureToken(t, s, listenerMCPToken)
 	mcpURL := "http://127.0.0.1:" + strconv.Itoa(waitForMCPListenerPort(t, stdout)) + "/mcp"
 	if res := sendRequest(t, http.MethodPost, mcpURL, map[string]string{"Authorization": "Bearer " + listenerMCPToken}); res.StatusCode != http.StatusOK {
-		t.Fatalf("an initialize with the configured token was answered %d, want 200", res.StatusCode)
+		t.Fatalf("an initialize with the configured token returned %d, want 200", res.StatusCode)
 	}
 
 	configureToken(t, s, "listener-mcp-token-2")
 
-	assertUnauthorizedAnswer(t, sendRequest(t, http.MethodPost, mcpURL,
+	assertUnauthorizedResponse(t, sendRequest(t, http.MethodPost, mcpURL,
 		map[string]string{"Authorization": "Bearer " + listenerMCPToken}), "an initialize with the old token")
 	if res := sendRequest(t, http.MethodPost, mcpURL, map[string]string{"Authorization": "Bearer listener-mcp-token-2"}); res.StatusCode != http.StatusOK {
-		t.Errorf("an initialize with the new token was answered %d, want 200", res.StatusCode)
+		t.Errorf("an initialize with the new token returned %d, want 200", res.StatusCode)
 	}
 }
 
@@ -127,7 +127,7 @@ func TestTheMCPTokenVariableOpensNothing(t *testing.T) {
 
 	res := sendRequest(t, http.MethodPost, mcpURL, map[string]string{"Authorization": "Bearer variable-token-3307"})
 
-	assertUnauthorizedAnswer(t, res, "an initialize with the token of MCP_TOKEN")
+	assertUnauthorizedResponse(t, res, "an initialize with the token of MCP_TOKEN")
 }
 
 func TestAConfiguredPortOpensNoListener(t *testing.T) {

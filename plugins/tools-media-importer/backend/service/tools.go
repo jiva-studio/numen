@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
-// The sentences that tell an agent when to call url_import.
+// The instruction sentences of url_import: when to call it and what it returns.
 const (
 	importerUseSentence      = "Use url_import to add a web page or a video to the vault by its address."
 	importerFetchSentence    = "url_import creates a link note named after the address and fetches the text published there, the prose of an article or the captions of a video, before it returns; that text can be read and searched from then on."
@@ -33,7 +33,7 @@ type URLImportOutput struct {
 	Producer       string `json:"producer,omitempty" jsonschema:"what fetched the text: captions for the words of a video, article for the prose of a page"`
 	Bytes          int    `json:"bytes,omitempty" jsonschema:"the size of the fetched text in bytes"`
 	HasText        bool   `json:"hasText" jsonschema:"true when text was fetched; false when the address publishes no text or the fetch failed"`
-	Error          string `json:"error,omitempty" jsonschema:"why the text was not fetched; the link note is kept"`
+	Error          string `json:"error,omitempty" jsonschema:"error message when the text was not fetched; the link note is kept"`
 	DownloadTaskID string `json:"downloadTaskId,omitempty" jsonschema:"the id of the background download of the video in the list of tasks"`
 	DownloadError  string `json:"downloadError,omitempty" jsonschema:"the reason no download was started"`
 }
@@ -43,7 +43,7 @@ type Tools struct {
 	links *link.Links
 }
 
-// NewTools is the tools over the links.
+// NewTools returns the tools for the links.
 func NewTools(links *link.Links) *Tools {
 	return &Tools{links: links}
 }
@@ -58,8 +58,8 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Description: "Create a link note for a web address and fetch the text published there before returning: " +
 			"the captions of a video with their times, or the prose of an article. The text is stored as a text " +
 			"version of the note, which library_search and library_read read. The note is named after the " +
-			"address and holds only the address; the link note of the same address already in the folder is " +
-			"kept, and its text is fetched again. An address that is not http or https is refused. A failed " +
+			"address and contains only the address; the link note of the same address already in the folder is " +
+			"kept, and its text is fetched again. An address that is not http or https is rejected. A failed " +
 			"fetch is reported in error and the note is kept. With downloadVideo set, the video is also " +
 			"downloaded to this disk in the background, and the result returns the task id of the download.",
 		Effect:       tools.ReadWrite,
@@ -107,7 +107,7 @@ func (t *Tools) fetchText(ctx context.Context, made link.Link, out *URLImportOut
 	if err != nil {
 		return err
 	}
-	out.Title, out.Producer, out.HasText, out.Bytes = info.Title, info.Producer, !info.IsNothing, len(text)
+	out.Title, out.Producer, out.HasText, out.Bytes = info.Title, info.Producer, !info.HasNoText, len(text)
 	return nil
 }
 

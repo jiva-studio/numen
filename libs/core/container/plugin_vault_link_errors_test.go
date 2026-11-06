@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func TestALinkEditOfATargetTheNoteDoesNotLinkReportsTheTargetWithoutItsScheme(t *testing.T) {
+func TestLinkEditOfUnlinkedTargetReportsTargetWithoutScheme(t *testing.T) {
 	_, shared := openScannedPluginVault(t, getRivers(), container.PluginVaultHooks{})
 	volga := domain.Address{Scheme: domain.SchemeName, Value: "Volga"}
 	const want = "Deltas.md: no link to Volga is written here"
@@ -17,7 +17,7 @@ func TestALinkEditOfATargetTheNoteDoesNotLinkReportsTheTargetWithoutItsScheme(t 
 
 	for call, err := range map[string]error{"RemoveLinks": removeErr, "UpdateLinks": updateErr} {
 		if err == nil || err.Error() != want {
-			t.Errorf("%s of a target Deltas.md does not link answered %v, want %q", call, err, want)
+			t.Errorf("%s of a target Deltas.md does not link returned %v, want %q", call, err, want)
 		}
 	}
 }

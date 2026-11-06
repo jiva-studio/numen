@@ -49,10 +49,10 @@ service HostSearchService {
   // nearest a vector under the recipe, and zero when the vault has none.
   rpc GetBestSimilarity(GetBestSimilarityRequest) returns (GetBestSimilarityResponse);
 
-  // SearchPassages is the text of the vault that answers a query, from the index
-  // of every source and every text version: by the words in it and by what it
-  // means where the installation has an embedding model, by the words alone
-  // where it has none. It is the search the window runs, with the same floor.
+  // SearchPassages returns passages matching the query, from the index of every
+  // source and every text version: by keywords, and by embedding when the
+  // installation has an embedding model. It is the search the window runs, with
+  // the window's similarity threshold.
   rpc SearchPassages(HostSearchServiceSearchPassagesRequest) returns (HostSearchServiceSearchPassagesResponse);
 
   // GetSearchFloor is the floor a search by meaning applies to the vault under
@@ -262,21 +262,21 @@ message SetSearchFloorResponse {
 message HostSearchServiceSearchPassagesRequest {
   string query = 1;
 
-  // How many passages to answer with. Zero takes the number the host chooses.
+  // Maximum passages to return. Zero means the number the host chooses.
   int32 limit = 2;
 
-  // The kinds of source to look in, "note" or "file". Empty looks in every one.
+  // The kinds of source to search, "note" or "file". Empty means every kind.
   repeated string kinds = 3;
 
   // Limits the search to the sources whose path starts with it, relative to the
   // vault. The index applies it, so the limit counts passages under the prefix.
-  // Empty looks in the whole vault.
+  // Empty means the whole vault.
   string path_prefix = 4;
 }
 
 message HostSearchServiceSearchPassagesResponse {
   HostSearchErrorCode error = 1;
 
-  // The passages that answer, best first, at most three of one source.
+  // Matching passages, best first, at most three of one source.
   repeated Passage passages = 2;
 }

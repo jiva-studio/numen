@@ -16,7 +16,7 @@ const gardenToken = "garden-token-4417"
 // newServedHandler serves the handler of a server whose token is token.
 func newServedHandler(t *testing.T, token string) (*Server, string) {
 	t.Helper()
-	host := &instructedHost{listing: tools.Listing{Tools: []*tools.ToolInfo{newReadTool("orchard_pick")}}}
+	host := &fakeToolHost{listing: tools.Listing{Tools: []*tools.ToolInfo{newReadTool("orchard_pick")}}}
 	srv, err := NewServer(Config{Token: token}, host)
 	if err != nil {
 		t.Fatal(err)
@@ -26,15 +26,15 @@ func newServedHandler(t *testing.T, token string) (*Server, string) {
 	return srv, served.URL
 }
 
-// httpAnswer is the status and the headers of an answer whose body was read and closed.
-type httpAnswer struct {
+// httpResponse is the status and the headers of a response whose body was read and closed.
+type httpResponse struct {
 	StatusCode int
 	Header     http.Header
 }
 
 // sendRequest sends a request of the method to target with the headers and returns the status and
-// the headers of the answer.
-func sendRequest(t *testing.T, method, target string, headers map[string]string) httpAnswer {
+// the headers of the response.
+func sendRequest(t *testing.T, method, target string, headers map[string]string) httpResponse {
 	t.Helper()
 	var body io.Reader
 	if method == http.MethodPost {
@@ -59,16 +59,16 @@ func sendRequest(t *testing.T, method, target string, headers map[string]string)
 	if err := res.Body.Close(); err != nil {
 		t.Error(err)
 	}
-	return httpAnswer{StatusCode: res.StatusCode, Header: res.Header}
+	return httpResponse{StatusCode: res.StatusCode, Header: res.Header}
 }
 
-func assertUnauthorizedAnswer(t *testing.T, res httpAnswer, what string) {
+func assertUnauthorizedResponse(t *testing.T, res httpResponse, what string) {
 	t.Helper()
 	if res.StatusCode != http.StatusUnauthorized {
-		t.Errorf("%s was answered %d, want 401", what, res.StatusCode)
+		t.Errorf("%s returned %d, want 401", what, res.StatusCode)
 	}
 	if got := res.Header.Get("WWW-Authenticate"); got != `Bearer realm="numen"` {
-		t.Errorf("%s was answered with WWW-Authenticate %q, want Bearer realm=\"numen\"", what, got)
+		t.Errorf("%s returned WWW-Authenticate %q, want Bearer realm=\"numen\"", what, got)
 	}
 }
 
@@ -79,7 +79,7 @@ func TestARequestWithTheBearerTokenIsServed(t *testing.T) {
 	res := sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Authorization": "Bearer " + gardenToken})
 
 	if res.StatusCode != http.StatusOK {
-		t.Errorf("an initialize with the token was answered %d, want 200", res.StatusCode)
+		t.Errorf("an initialize with the token returned %d, want 200", res.StatusCode)
 	}
 }
 
@@ -89,7 +89,7 @@ func TestARequestWithoutTheTokenGets401(t *testing.T) {
 
 	res := sendRequest(t, http.MethodPost, url+"/mcp", nil)
 
-	assertUnauthorizedAnswer(t, res, "an initialize without the token")
+	assertUnauthorizedResponse(t, res, "an initialize without the token")
 }
 
 func TestARequestWithAWrongTokenGets401(t *testing.T) {
@@ -98,7 +98,7 @@ func TestARequestWithAWrongTokenGets401(t *testing.T) {
 
 	res := sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Authorization": "Bearer garden-token-4418"})
 
-	assertUnauthorizedAnswer(t, res, "an initialize with a wrong token")
+	assertUnauthorizedResponse(t, res, "an initialize with a wrong token")
 }
 
 func TestATokenInTheQueryGets401(t *testing.T) {
@@ -107,7 +107,7 @@ func TestATokenInTheQueryGets401(t *testing.T) {
 
 	res := sendRequest(t, http.MethodPost, url+"/mcp?token="+gardenToken, nil)
 
-	assertUnauthorizedAnswer(t, res, "an initialize with the token in the query")
+	assertUnauthorizedResponse(t, res, "an initialize with the token in the query")
 }
 
 func TestAServerMadeWithoutATokenHasAnEmptyToken(t *testing.T) {
@@ -134,21 +134,21 @@ func TestAnEmptyTokenLetsNoRequestThrough(t *testing.T) {
 		{"Authorization": "Bearer " + gardenToken},
 	} {
 		res := sendRequest(t, http.MethodPost, url+"/mcp", headers)
-		assertUnauthorizedAnswer(t, res, fmt.Sprintf("an initialize with the headers %v to a server with an empty token", headers))
+		assertUnauthorizedResponse(t, res, fmt.Sprintf("an initialize with the headers %v to a server with an empty token", headers))
 	}
 }
 
-func TestASetTokenRefusesTheOldOneAndServesTheNewOne(t *testing.T) {
+func TestSetTokenRejectsTheOldOneAndServesTheNewOne(t *testing.T) {
 	t.Parallel()
 	srv, url := newServedHandler(t, gardenToken)
 
 	srv.SetToken("orchard-token-9021")
 
-	assertUnauthorizedAnswer(t, sendRequest(t, http.MethodPost, url+"/mcp",
+	assertUnauthorizedResponse(t, sendRequest(t, http.MethodPost, url+"/mcp",
 		map[string]string{"Authorization": "Bearer " + gardenToken}), "an initialize with the old token")
 	if res := sendRequest(t, http.MethodPost, url+"/mcp",
 		map[string]string{"Authorization": "Bearer orchard-token-9021"}); res.StatusCode != http.StatusOK {
-		t.Errorf("an initialize with the new token was answered %d, want 200", res.StatusCode)
+		t.Errorf("an initialize with the new token returned %d, want 200", res.StatusCode)
 	}
 }
 
@@ -161,25 +161,25 @@ func TestAnOptionsRequestWithoutTheTokenGets401(t *testing.T) {
 		"Access-Control-Request-Headers": "authorization, content-type",
 	})
 
-	assertUnauthorizedAnswer(t, res, "an OPTIONS request without the token")
+	assertUnauthorizedResponse(t, res, "an OPTIONS request without the token")
 }
 
-func TestNoAnswerCarriesACORSHeader(t *testing.T) {
+func TestNoResponseHasACORSHeader(t *testing.T) {
 	t.Parallel()
 	_, url := newServedHandler(t, gardenToken)
 	authorized := map[string]string{"Authorization": "Bearer " + gardenToken}
 
-	answers := map[string]httpAnswer{
+	responses := map[string]httpResponse{
 		"an initialize with the token":       sendRequest(t, http.MethodPost, url+"/mcp", authorized),
 		"an initialize without the token":    sendRequest(t, http.MethodPost, url+"/mcp", nil),
 		"an OPTIONS request without a token": sendRequest(t, http.MethodOptions, url+"/mcp", nil),
 		"an OPTIONS request with the token":  sendRequest(t, http.MethodOptions, url+"/mcp", authorized),
 	}
 
-	for what, res := range answers {
+	for what, res := range responses {
 		for key := range res.Header {
 			if strings.HasPrefix(http.CanonicalHeaderKey(key), "Access-Control-Allow-") {
-				t.Errorf("%s was answered with the header %s: %q", what, key, res.Header.Get(key))
+				t.Errorf("%s returned the header %s: %q", what, key, res.Header.Get(key))
 			}
 		}
 	}
@@ -202,11 +202,11 @@ func TestARequestFromAnOriginOutsideTheMachineGets403(t *testing.T) {
 			"Origin": origin, "Authorization": "Bearer " + gardenToken,
 		})
 		if withToken.StatusCode != http.StatusForbidden {
-			t.Errorf("an initialize with the token from the origin %s was answered %d, want 403", origin, withToken.StatusCode)
+			t.Errorf("an initialize with the token from the origin %s returned %d, want 403", origin, withToken.StatusCode)
 		}
 		withoutToken := sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Origin": origin})
 		if withoutToken.StatusCode != http.StatusForbidden {
-			t.Errorf("an initialize without the token from the origin %s was answered %d, want 403", origin, withoutToken.StatusCode)
+			t.Errorf("an initialize without the token from the origin %s returned %d, want 403", origin, withoutToken.StatusCode)
 		}
 	}
 }
@@ -227,9 +227,9 @@ func TestARequestFromALoopbackOriginIsCheckedForTheTokenOnly(t *testing.T) {
 			"Origin": origin, "Authorization": "Bearer " + gardenToken,
 		})
 		if res.StatusCode != http.StatusOK {
-			t.Errorf("an initialize with the token from the origin %s was answered %d, want 200", origin, res.StatusCode)
+			t.Errorf("an initialize with the token from the origin %s returned %d, want 200", origin, res.StatusCode)
 		}
-		assertUnauthorizedAnswer(t, sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Origin": origin}),
+		assertUnauthorizedResponse(t, sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Origin": origin}),
 			"an initialize without the token from the origin "+origin)
 	}
 }

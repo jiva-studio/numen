@@ -16,7 +16,7 @@ import (
 // SearchClient works the search index and the search floor through HostSearchService.
 type SearchClient struct {
 	rpc numenv1connect.HostSearchServiceClient
-	// vault is the identity of the vault the client works. Empty is the vault the window shows.
+	// vault is the identity of the vault the client calls. An empty vault ID means the vault the window shows.
 	vault string
 }
 

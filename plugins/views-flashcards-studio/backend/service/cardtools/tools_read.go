@@ -14,11 +14,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 )
 
-// addCardCurrent adds the tool that returns the card currently open.
-func (t *Tools) addCardCurrent(registry *tools.Registry) error {
+// addCardCurrentGet adds the tool that returns the card currently open.
+func (t *Tools) addCardCurrentGet(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Step:  tools.ByEffect,
-		Name:  "card_current",
+		Name:  "card_current_get",
 		Title: "Get the open card",
 		Description: "Get the card open in the review window: the path of its deck, the card id " +
 			"`card_read` takes, and the name of the template it is shown with. Call it " +
@@ -38,7 +38,7 @@ type cardModelListInput struct {
 
 type cardModelListOutput struct {
 	CardModels []CardModel `json:"cardModels" jsonschema:"the card models, at most 50"`
-	Total      int         `json:"total" jsonschema:"the number of card models in the vault; larger than the list length when the limit was reached"`
+	Total      int         `json:"total" jsonschema:"the number of card models in the vault; larger than the list length when the list is truncated at the limit"`
 }
 
 func (t *Tools) addCardCardModelList(registry *tools.Registry) error {
@@ -46,8 +46,8 @@ func (t *Tools) addCardCardModelList(registry *tools.Registry) error {
 		Step:  tools.ByEffect,
 		Name:  "card_model_list",
 		Title: "List card models",
-		Description: "List the card models of the vault: the path of each, the name a card's " +
-			"wikilink writes, the title, and the field names. Call it before writing a card, " +
+		Description: "List the card models of the vault: the path of each, the name used in a card's " +
+			"wikilink, the title, and the field names. Call it before writing a card, " +
 			"because a card names its card model and takes the fields that card model declares. " +
 			"At most 50 are returned, and `total` is the number in the vault, so a list shorter " +
 			"than `total` was truncated at the limit. A card model with no fields listed could " +
@@ -162,7 +162,7 @@ func (t *Tools) addCardRead(registry *tools.Registry) error {
 		Name:  "card_read",
 		Title: "Read cards",
 		Description: "Read the cards of one deck in file order, each with the card id every " +
-			"other card tool takes. A deck can hold any number of cards, so this returns a range: " +
+			"other card tool takes. A deck can contain any number of cards, so this returns a range: " +
 			"`total` is the number of cards, and `offset` selects the next range. Sections divide " +
 			"the deck, and every card has the index of its section. Problems of the file are " +
 			"returned under `problems`, on the card they concern. Pass the fingerprint to the " +

@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
-// errInvalidArgument is how the client of the host reports a call the host refused as invalid.
+// errInvalidArgument is how the client of the host reports a call the host rejected as invalid.
 var errInvalidArgument = errors.New("invalid_argument")
 
 // searchCalls is the queries the host's search received.
@@ -31,7 +31,7 @@ func (s *searchCalls) getQueries() []host.PassageQuery {
 	return slices.Clone(s.queries)
 }
 
-// recordingSearch is the fake search that records every query and refuses a kind it does not know as
+// recordingSearch is the fake search that records every query and rejects a kind it does not know as
 // the host does.
 type recordingSearch struct {
 	host.Search
@@ -48,7 +48,7 @@ func (r recordingSearch) SearchPassages(ctx context.Context, query host.PassageQ
 	r.calls.mu.Unlock()
 	for _, kind := range query.Kinds {
 		if kind != domain.KindNote && kind != domain.KindFile {
-			return nil, fmt.Errorf("%w: %q is not a kind of source a search reaches: use \"note\" or \"file\"", errInvalidArgument, kind)
+			return nil, fmt.Errorf("%w: %q is not a searchable source kind: use \"note\" or \"file\"", errInvalidArgument, kind)
 		}
 	}
 	return r.Search.SearchPassages(ctx, query)
@@ -69,13 +69,13 @@ func newRecordedSearch(t *testing.T, vault *hosttest.Vault, passages []host.Pass
 	return calls, registry
 }
 
-func TestLibrarySearchPassesAnUnknownKindToTheHostAndReturnsItsError(t *testing.T) {
+func TestLibrarySearchPassesUnknownKindToHostAndReturnsItsError(t *testing.T) {
 	calls, registry := newRecordedSearch(t, hosttest.New(testVault), []host.Passage{
 		{Path: "library/Tea.pdf", Text: "green tea leaves", Start: 0, Length: 16},
 	})
 
 	failure := callFailure(t, registry, testVault, "library_search", `{"query":"tea","kinds":["book"]}`, nil)
-	want := `"book" is not a kind of source a search reaches: use "note" or "file"`
+	want := `"book" is not a searchable source kind: use "note" or "file"`
 	if !strings.Contains(failure, want) {
 		t.Errorf("library_search of the kind book gave %q, want the host's error %q", failure, want)
 	}
@@ -92,7 +92,7 @@ func TestLibrarySearchPassesTheLimitToTheHostUnchanged(t *testing.T) {
 
 	for _, arguments := range []string{`{"query":"tea","limit":500}`, `{"query":"tea"}`, `{"query":"tea","limit":0}`} {
 		if failure := callFailure(t, registry, testVault, "library_search", arguments, nil); failure != "" {
-			t.Fatalf("library_search %s refused: %s", arguments, failure)
+			t.Fatalf("library_search %s rejected: %s", arguments, failure)
 		}
 	}
 	queries := calls.getQueries()
@@ -101,7 +101,7 @@ func TestLibrarySearchPassesTheLimitToTheHostUnchanged(t *testing.T) {
 	}
 	for i, want := range []int{500, 0, 0} {
 		if queries[i].Limit != want {
-			t.Errorf("query %d reached the host with the limit %d, want %d", i, queries[i].Limit, want)
+			t.Errorf("query %d was sent to the host with the limit %d, want %d", i, queries[i].Limit, want)
 		}
 	}
 }

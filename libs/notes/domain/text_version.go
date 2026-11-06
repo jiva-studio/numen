@@ -58,7 +58,7 @@ func HashContent(raw []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// HashReader is HashContent of the bytes the reader gives, read as a stream.
+// HashReader returns HashContent of the bytes of the reader, read as a stream.
 func HashReader(r io.Reader) (string, error) {
 	sum := sha256.New()
 	if _, err := io.Copy(sum, r); err != nil {

@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-// listenerProtocolTCP is the one transport a listener has.
+// listenerProtocolTCP is the only supported listener protocol.
 const listenerProtocolTCP = "tcp"
 
 // MinListenerPort and MaxListenerPort bound the port of a listener: the host binds no privileged port.
@@ -23,7 +23,7 @@ type Listener struct {
 	Name string
 	// Port is the fixed port the host binds. Zero for a listener with a PortSetting.
 	Port int
-	// PortSetting is the key of the number setting of the plugin that holds the port the host binds.
+	// PortSetting is the key of the number setting of the plugin that stores the port the host binds.
 	// Empty for a listener with a fixed Port.
 	PortSetting string
 	// Protocol is the transport, "tcp".
@@ -39,15 +39,15 @@ func (m Manifest) listListenerIssues() []error {
 	if len(listeners) > 0 && !m.HasBackend() {
 		issues = append(issues, fmt.Errorf("%w: the plugin declares listeners and has no backend to serve them", ErrInvalidContribution))
 	}
-	observed := map[string]bool{}
+	seenNames := map[string]bool{}
 	for _, declared := range listeners {
 		switch {
 		case !listenerNamePattern.MatchString(declared.Name):
 			issues = append(issues, fmt.Errorf("%w: listener %q is not lowercase words joined by hyphens", ErrInvalidContribution, declared.Name))
-		case observed[declared.Name]:
+		case seenNames[declared.Name]:
 			issues = append(issues, fmt.Errorf("%w: listener %q is declared twice", ErrInvalidContribution, declared.Name))
 		}
-		observed[declared.Name] = true
+		seenNames[declared.Name] = true
 		if err := m.checkListenerPort(declared); err != nil {
 			issues = append(issues, err)
 		}

@@ -136,9 +136,9 @@ export const ReasoningLevelSchema: GenMessage<ReasoningLevel> = /*@__PURE__*/
  * ErrorCode is why a note could not be read or written.
  *
  * Every code is spelled in the window as the same word in camel case, and
- * three do not read straight across: UNSPECIFIED is `unreadable` there,
- * CONFLICT is carried as a question for the person and not a message, and the window
- * holds one code of its own for a core it could not reach at all.
+ * three map differently: UNSPECIFIED is `unreadable` there, CONFLICT is
+ * shown as a user prompt and not a message, and the window has one code of
+ * its own for a core it could not connect to at all.
  *
  * @generated from enum numen.v1.ErrorCode
  */

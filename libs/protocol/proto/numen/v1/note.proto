@@ -366,9 +366,9 @@ message WriteLinkRequest {
 }
 
 message WriteLinkResponse {
-  // Set when nothing was written, and why. A note that moved between being
-  // read and being written is ERROR_CODE_CONFLICT, and the caller reads it
-  // again before asking for this.
+  // Set when nothing was written, with the reason. A note that changed between
+  // being read and being written returns ERROR_CODE_CONFLICT, and the caller
+  // reads it again before retrying.
   optional ErrorCode error = 1;
 }
 
@@ -511,7 +511,7 @@ message Backlink {
   Note from = 1;
   // The role as written, which is relative to the note it is written in.
   Role role = 2;
-  // The role of the note the link is written in, relative to the note asked about.
+  // The role of the note the link is written in, relative to the requested note.
   // ROLE_UNSPECIFIED for a role with no counterpart.
   Role source_role = 3;
   string type = 4;

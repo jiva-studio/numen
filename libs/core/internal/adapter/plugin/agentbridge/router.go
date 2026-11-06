@@ -19,16 +19,16 @@ type RouterHost interface {
 	GetPluginInfos() []pluginport.PluginInfo
 }
 
-// NewRouter is a Router over the plugins of the host.
+// NewRouter returns a Router over the plugins of the host.
 func NewRouter(host RouterHost) *Router {
 	return &Router{host: host}
 }
 
-// ServeRun gives the agent of the plugin of the id what a run of it is served, and returns the agent
-// that starts the run.
+// ServeRun returns the agent that starts a run of the plugin with the id, wrapping the plugin's agent
+// with the tools the run is allowed.
 type ServeRun func(agent agentport.Agent, pluginID string) agentport.Agent
 
-// NewServingRouter is a Router over the plugins of the host that starts each run through the agent
+// NewServingRouter returns a Router over the plugins of the host that starts each run through the agent
 // serve returns for the plugin that runs it.
 func NewServingRouter(host RouterHost, serve ServeRun) *Router {
 	return &Router{host: host, serve: serve}
@@ -39,7 +39,7 @@ func NewServingRouter(host RouterHost, serve ServeRun) *Router {
 // host.
 type Router struct {
 	host RouterHost
-	// serve is what a run is started through, nil for the agent of the plugin itself.
+	// serve wraps the agent each run is started through, nil for the agent of the plugin itself.
 	serve ServeRun
 
 	mu sync.Mutex

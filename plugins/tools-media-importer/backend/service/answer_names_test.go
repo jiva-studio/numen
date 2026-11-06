@@ -174,17 +174,17 @@ func getNarrativeMarkers() []*regexp.Regexp {
 }
 
 // getImportAnswer calls url_import on Mills with the raw arguments and returns its answer as a map.
-func (s *importScene) getImportAnswer(t *testing.T, arguments string) map[string]any {
+func (s *importFixture) getImportAnswer(t *testing.T, arguments string) map[string]any {
 	t.Helper()
 	res := invokeAtOnce(t, s.registry, tools.Call{VaultID: "Mills", Name: "url_import", Arguments: []byte(arguments)})
 	if res.GetResult().GetIsError() {
-		t.Fatalf("url_import %s was refused: %s", arguments, res.GetResult().GetText())
+		t.Fatalf("url_import %s was rejected: %s", arguments, res.GetResult().GetText())
 	}
 	return decodeAnswer(t, res.GetResult().GetStructured())
 }
 
-func TestURLImportAnswersHasTextTrueWhenTheTextWasFetched(t *testing.T) {
-	s := newReleasedScene(t)
+func TestURLImportReturnsHasTextTrueWhenTheTextWasFetched(t *testing.T) {
+	s := newUnblockedFixture(t)
 	answer := s.getImportAnswer(t, `{"url":"`+articleAddress+`"}`)
 	requireKeys(t, "the answer of url_import", answer, []string{"hasText"}, []string{"nothing"})
 	if answer["hasText"] != true {
@@ -192,8 +192,8 @@ func TestURLImportAnswersHasTextTrueWhenTheTextWasFetched(t *testing.T) {
 	}
 }
 
-func TestURLImportAnswersHasTextFalseWhenTheAddressPublishesNoText(t *testing.T) {
-	s := newReleasedScene(t)
+func TestURLImportReturnsHasTextFalseWhenAddressHasNoText(t *testing.T) {
+	s := newUnblockedFixture(t)
 	answer := s.getImportAnswer(t, `{"url":"`+silentAddress+`"}`)
 	requireKeys(t, "the answer of url_import", answer, []string{"hasText"}, []string{"nothing"})
 	if answer["hasText"] != false {
@@ -202,7 +202,7 @@ func TestURLImportAnswersHasTextFalseWhenTheAddressPublishesNoText(t *testing.T)
 }
 
 func TestURLImportDownloadsTheVideoWhenDownloadVideoIsSet(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 	answer := s.getImportAnswer(t, `{"url":"`+videoAddress+`","downloadVideo":true}`)
 	s.links.Wait()
 	requireKeys(t, "the answer of url_import", answer, []string{"downloadTaskId"}, []string{"copy_task_id", "copy_error"})
@@ -214,22 +214,22 @@ func TestURLImportDownloadsTheVideoWhenDownloadVideoIsSet(t *testing.T) {
 	}
 }
 
-func TestURLImportRefusesTheCopyArgumentAndStartsNoDownload(t *testing.T) {
-	s := newReleasedScene(t)
+func TestURLImportRejectsTheCopyArgumentAndStartsNoDownload(t *testing.T) {
+	s := newUnblockedFixture(t)
 	res := invokeAtOnce(t, s.registry, tools.Call{
 		VaultID: "Mills", Name: "url_import", Arguments: []byte(`{"url":"` + videoAddress + `","copy":true}`),
 	})
 	s.links.Wait()
 	if !res.GetResult().GetIsError() || !strings.Contains(res.GetResult().GetText(), "copy") {
-		t.Errorf("url_import with the argument copy was answered %+v, want an error naming copy", res.GetResult())
+		t.Errorf("url_import with the argument copy returned %+v, want an error naming copy", res.GetResult())
 	}
 	if hasCopy(t, s.store) {
 		t.Error("the video was downloaded for the argument copy")
 	}
 }
 
-func TestURLImportReturnsTheDownloadErrorKeyForAnAddressWithNoVideo(t *testing.T) {
-	s := newReleasedScene(t)
+func TestURLImportReturnsDownloadErrorKeyForAddressWithNoVideo(t *testing.T) {
+	s := newUnblockedFixture(t)
 	answer := s.getImportAnswer(t, `{"url":"`+articleAddress+`","downloadVideo":true}`)
 	s.links.Wait()
 	requireKeys(t, "the answer of url_import", answer, []string{"downloadError"}, []string{"copy_error", "copy_task_id"})
@@ -242,7 +242,7 @@ func TestURLImportReturnsTheDownloadErrorKeyForAnAddressWithNoVideo(t *testing.T
 }
 
 func TestURLImportSchemasNameTheDownloadAndTextKeys(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 	input := getSchemaProperties(t, getToolSchema(t, s.registry, "url_import", false))
 	requireKeys(t, "the input schema of url_import", input, []string{"url", "folder", "downloadVideo"}, []string{"copy"})
 	output := getSchemaProperties(t, getToolSchema(t, s.registry, "url_import", true))
@@ -251,7 +251,7 @@ func TestURLImportSchemasNameTheDownloadAndTextKeys(t *testing.T) {
 }
 
 func TestURLImportInstructionsAndDescriptionNameDownloadVideo(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 	listing, err := s.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -268,7 +268,7 @@ func TestURLImportInstructionsAndDescriptionNameDownloadVideo(t *testing.T) {
 }
 
 func TestMediaImporterToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 	visitEveryToolSchema(t, s.registry, func(tool, name string) {
 		if strings.Contains(name, "_") {
 			t.Errorf("the schema of %s names the key %q, which is not camelCase", tool, name)
@@ -277,7 +277,7 @@ func TestMediaImporterToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
 }
 
 func TestMediaImporterToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 	markers := getNarrativeMarkers()
 	visitEveryToolSchema(t, s.registry, func(string, string) {}, func(tool, description string) {
 		for _, marker := range markers {
@@ -289,7 +289,7 @@ func TestMediaImporterToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 }
 
 func TestMediaImporterToolInstructionsContainNoNarrativeMarker(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 	listing, err := s.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -318,7 +318,7 @@ func getToolSentences(listing tools.Listing, name string) []string {
 	return nil
 }
 
-// isOneSentence reports whether the text is one sentence: it ends with a full stop and holds no
+// isOneSentence reports whether the text is one sentence: it ends with a full stop and has no
 // other end of a sentence.
 func isOneSentence(text string) bool {
 	return strings.TrimSpace(text) == text && strings.HasSuffix(text, ".") && !regexp.MustCompile(`[.!?]\s+\S`).MatchString(text)
@@ -327,8 +327,8 @@ func isOneSentence(text string) bool {
 // lowerCamelCase is the form of every property name of a tool schema.
 var lowerCamelCase = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
 
-func TestMediaImporterToolSchemasNameEveryPropertyInLowerCamelCase(t *testing.T) {
-	s := newReleasedScene(t)
+func TestMediaImporterToolSchemasUseLowerCamelCaseProperties(t *testing.T) {
+	s := newUnblockedFixture(t)
 	visitEveryToolSchema(t, s.registry, func(tool, name string) {
 		if !lowerCamelCase.MatchString(name) {
 			t.Errorf("the schema of %s names the property %q, which is not lowerCamelCase", tool, name)

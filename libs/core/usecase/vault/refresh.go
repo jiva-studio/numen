@@ -221,16 +221,16 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	}
 	u.writeLedger(v, recorded)
 	if err := u.followRenames(ctx, v, reader, res); err != nil {
-		return res, fmt.Errorf("the renamed notes of %s cannot be followed: %w", v.Name, err)
+		return res, fmt.Errorf("the renamed notes of %s cannot be tracked: %w", v.Name, err)
 	}
 	// Both leave the index, and they leave it for different reasons: one path
 	// has nothing at it, the other has something that is not a note.
 	removed := append(append([]string(nil), res.Removed...), res.LeftAlone...)
 	if err := u.notes.Remove(ctx, v.ID, removed); err != nil {
-		return res, fmt.Errorf("the removed notes of %s cannot leave the index: %w", v.Name, err)
+		return res, fmt.Errorf("the removed notes of %s cannot be removed from the index: %w", v.Name, err)
 	}
 	if err := u.dropSources(ctx, v, removed); err != nil {
-		return res, fmt.Errorf("the sources of the removed notes of %s cannot leave the index: %w", v.Name, err)
+		return res, fmt.Errorf("the sources of the removed notes of %s cannot be removed from the index: %w", v.Name, err)
 	}
 	return res, nil
 }

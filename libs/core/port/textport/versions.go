@@ -21,13 +21,13 @@ type VersionRepository interface {
 	ContentHashes
 }
 
-// ContentHashes is the hashes recorded for the files of one vault, which the live
-// version of a file is decided by.
+// ContentHashes is the hashes recorded for the files of one vault, used to select
+// the live version of a file.
 type ContentHashes interface {
-	// FindContentHash is the hash recorded for the file at the path, and false where none is.
+	// FindContentHash returns the hash recorded for the file at the path, and false when none is.
 	FindContentHash(ctx context.Context, path string) (ContentHash, bool, error)
 	// SaveContentHash records the hash of a file on the index row of its path, where
-	// the row holds the record's stat or its hash. A file with no row is not recorded.
+	// the row has the record's stat or its hash. A file with no row is not recorded.
 	SaveContentHash(ctx context.Context, record ContentHash) error
 }
 

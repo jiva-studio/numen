@@ -11,13 +11,13 @@ import (
 
 var _ VaultList = (*Client)(nil)
 
-// failVaults converts the error code of a change of the list of vaults into its error, nil when
-// there is none. A refusal carries the core's text in detail.
-func failVaults(code v1.VaultsErrorCode, detail string) error {
+// getVaultsError returns the error of the error code of a change of the list of vaults, nil when
+// there is none. The detail field has the core's error text.
+func getVaultsError(code v1.VaultsErrorCode, detail string) error {
 	return addDetail(readVaultsError(code), detail)
 }
 
-// addDetail is the error with the detail as its text, matching the error with errors.Is. An empty
+// addDetail returns the error with the detail as its text, matching the error with errors.Is. An empty
 // detail leaves the error as it is.
 func addDetail(err error, detail string) error {
 	if err == nil || detail == "" {
@@ -33,7 +33,7 @@ func readVaultsError(code v1.VaultsErrorCode) error {
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE:
 		return ErrVaultUnreadable
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:
-		return ErrVaultCopy
+		return ErrVaultDuplicate
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:
 		return ErrVaultOverlaps
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN:
@@ -41,19 +41,19 @@ func readVaultsError(code v1.VaultsErrorCode) error {
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT:
 		return ErrLastVault
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:
-		return ErrVaultShowing
+		return ErrVaultActive
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:
 		return ErrUnknownVault
 	case v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:
 		return ErrUnsavedChanges
 	default:
-		return fmt.Errorf("the list of vaults is unchanged; the host refused with the code %s", code)
+		return fmt.Errorf("the list of vaults is unchanged; the host returned the code %s", code)
 	}
 }
 
-// failNote converts the error code of one note into its error, nil when there is none. A refused
-// note carries the core's text in detail.
-func failNote(code v1.HostVaultErrorCode, detail string) error {
+// getNoteError returns the error of the error code of one note, nil when there is none. The detail
+// field has the core's error text.
+func getNoteError(code v1.HostVaultErrorCode, detail string) error {
 	return addDetail(fail(code), detail)
 }
 
@@ -77,7 +77,7 @@ func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename
 	if err != nil {
 		return NoteRename{}, readError(err)
 	}
-	if err := failNote(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
+	if err := getNoteError(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return NoteRename{}, err
 	}
 	out := NoteRename{
@@ -103,7 +103,7 @@ func (c *Client) MoveNotes(ctx context.Context, paths []string, folder string) (
 	}
 	out := make([]NoteMove, 0, len(res.Msg.GetMoves()))
 	for _, one := range res.Msg.GetMoves() {
-		move := NoteMove{Move: readMove(one.GetMove()), Err: failNote(one.GetError(), one.GetDetail())}
+		move := NoteMove{Move: readMove(one.GetMove()), Err: getNoteError(one.GetError(), one.GetDetail())}
 		if move.Err != nil {
 			move.Move.To, move.Move.IsMoved = "", false
 		}
@@ -126,7 +126,7 @@ func (c *Client) RemoveNotes(ctx context.Context, paths []string) ([]NoteRemoval
 			Path:        one.GetPath(),
 			TrashPath:   one.GetTrashPath(),
 			BrokenLinks: one.GetBrokenLinks(),
-			Err:         failNote(one.GetError(), one.GetDetail()),
+			Err:         getNoteError(one.GetError(), one.GetDetail()),
 		})
 	}
 	return out, nil
@@ -176,7 +176,7 @@ func (c *Client) AddVault(ctx context.Context, root, name string) (domain.Vault,
 	if err != nil {
 		return domain.Vault{}, readError(err)
 	}
-	if err := failVaults(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
+	if err := getVaultsError(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return domain.Vault{}, err
 	}
 	return readVault(res.Msg.GetVault()), nil
@@ -187,7 +187,7 @@ func (c *Client) RenameVault(ctx context.Context, id domain.VaultID, name string
 	if err != nil {
 		return domain.Vault{}, readError(err)
 	}
-	if err := failVaults(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
+	if err := getVaultsError(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return domain.Vault{}, err
 	}
 	return readVault(res.Msg.GetVault()), nil
@@ -198,7 +198,7 @@ func (c *Client) RemoveVault(ctx context.Context, id domain.VaultID) (string, er
 	if err != nil {
 		return "", readError(err)
 	}
-	if err := failVaults(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
+	if err := getVaultsError(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return "", err
 	}
 	return res.Msg.GetPath(), nil
@@ -209,7 +209,7 @@ func (c *Client) OpenVault(ctx context.Context, id domain.VaultID) error {
 	if err != nil {
 		return readError(err)
 	}
-	return failVaults(res.Msg.GetError(), res.Msg.GetDetail())
+	return getVaultsError(res.Msg.GetError(), res.Msg.GetDetail())
 }
 
 func (c *Client) AddLinks(ctx context.Context, additions []LinkAddition) ([]LinkAdded, error) {
@@ -229,7 +229,7 @@ func (c *Client) AddLinks(ctx context.Context, additions []LinkAddition) ([]Link
 	}
 	out := make([]LinkAdded, 0, len(res.Msg.GetResults()))
 	for _, one := range res.Msg.GetResults() {
-		added := LinkAdded{Err: failNote(one.GetError(), one.GetDetail())}
+		added := LinkAdded{Err: getNoteError(one.GetError(), one.GetDetail())}
 		if added.Err == nil {
 			added.Stat = readFileStat(one.GetStat())
 		}
@@ -251,7 +251,7 @@ func (c *Client) UpdateLinks(
 	if err != nil {
 		return domain.FileStat{}, readError(err)
 	}
-	if err := failNote(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
+	if err := getNoteError(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return domain.FileStat{}, err
 	}
 	return readFileStat(res.Msg.GetStat()), nil
@@ -269,13 +269,13 @@ func (c *Client) RemoveLinks(
 	if err != nil {
 		return domain.FileStat{}, readError(err)
 	}
-	if err := failNote(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
+	if err := getNoteError(res.Msg.GetError(), res.Msg.GetDetail()); err != nil {
 		return domain.FileStat{}, err
 	}
 	return readFileStat(res.Msg.GetStat()), nil
 }
 
-// checkRole refuses a role the wire cannot carry, which it would send as no role.
+// checkRole rejects a role the wire has no value for, which it would send as no role.
 func checkRole(role domain.LinkRole) error {
 	if role != "" && writeRole(role) == v1.Role_ROLE_UNSPECIFIED {
 		return fmt.Errorf("%q is not a role a link can have", role)

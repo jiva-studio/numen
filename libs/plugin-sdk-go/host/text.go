@@ -21,7 +21,7 @@ var (
 // TextPut is what a plugin reports of one of its text versions. The plugin writes the version's
 // file into its folder first, with WriteText; File is that file's name. Source names the version the
 // text was made from, and is empty for the file itself. InputHash is HashContent of the
-// file for the first, and the TextHash of the source version for the second. Kind is what the text is,
+// file for the first, and the TextHash of the source version for the second. Kind is the type of the text,
 // as the plugin names it. The host records the hash of the file.
 type TextPut struct {
 	Path      string
@@ -38,7 +38,7 @@ type TextListing struct {
 	Live     domain.TextVersionID
 }
 
-// TextRange is a ranged read of a version: the segments that cover the range, each cut to it, where
+// TextRange is a ranged read of a version: the segments that cover the range, each truncated to it, where
 // the first begins in the whole text, and the bytes of the whole text.
 type TextRange struct {
 	Segments []domain.TextSegment
@@ -74,8 +74,8 @@ type TextReader interface {
 	// ReadText is one page of any version's segments, read by the host from the version's file, or
 	// ErrNotExist.
 	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (TextPage, error)
-	// ReadTextRange is the segments of a version that cover length bytes of its whole text from start,
-	// cut at whole characters. A length of zero reads to the end.
+	// ReadTextRange returns the segments of a version that cover length bytes of its whole text from start,
+	// truncated at whole characters. A length of zero reads to the end.
 	ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (TextRange, error)
 }
 

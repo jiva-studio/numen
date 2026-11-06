@@ -383,7 +383,7 @@ describe('a note requested for from outside the window', () => {
 })
 
 describe('a tab requested from outside the window', () => {
-  it('activates the tab with the id and travels nowhere', async () => {
+  it('activates the tab with the id and does not navigate', async () => {
     const core = fake({
       watchFocus: async function* () {
         yield { path: '', ranges: [], tabId: 'tab-2' }

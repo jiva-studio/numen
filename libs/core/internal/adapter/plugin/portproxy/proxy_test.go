@@ -172,14 +172,14 @@ func TestCloseClosesTheListeningPortAndTheForwardedConnections(t *testing.T) {
 }
 
 func TestCloseCancelsATargetThatIsOpening(t *testing.T) {
-	isOpening := make(chan struct{})
+	isOpenStarted := make(chan struct{})
 	p, addr := openProxy(t, func(ctx context.Context) (string, func(), error) {
-		close(isOpening)
+		close(isOpenStarted)
 		<-ctx.Done()
 		return "", nil, ctx.Err()
 	}, func(err error) { t.Errorf("onError: %v", err) })
 	dial(t, addr)
-	<-isOpening
+	<-isOpenStarted
 
 	if err := p.Close(); err != nil {
 		t.Fatalf("Close: %v", err)
@@ -292,10 +292,10 @@ func TestAnAcceptErrorIsReportedAndTheProxyKeepsAccepting(t *testing.T) {
 	}
 }
 
-func TestTheProxyWaitsLongerAfterEachAcceptErrorAndCloseEndsTheWait(t *testing.T) {
+func TestProxyBacksOffOnAcceptErrorsAndCloseEndsTheWait(t *testing.T) {
 	ln := newFailingListener(t, -1)
 	var reports errorLog
-	// The buffer holds more reports than the proxy makes before Close.
+	// The buffer contains more reports than the proxy makes before Close.
 	reported := make(chan struct{}, 64)
 	p := newProxy(t.Context(), ln, func(context.Context) (string, func(), error) {
 		return "", nil, errors.New("unused")
@@ -360,7 +360,7 @@ func TestTheProxyWaitsLongerAfterEachAcceptErrorAndCloseEndsTheWait(t *testing.T
 	}
 }
 
-func TestATargetErrorThatWrapsErrTargetReportedClosesTheConnectionAndIsNotReported(t *testing.T) {
+func TestErrTargetReportedClosesConnectionWithoutReport(t *testing.T) {
 	reportedErr := fmt.Errorf("activate the plugin again: %w", ErrTargetReported)
 	plainErr := errors.New("plugin disabled")
 	targetErrs := []error{reportedErr, plainErr, plainErr}

@@ -41,7 +41,7 @@ func TestValidationMessagesNameTheArgumentInPlainWords(t *testing.T) {
 	} {
 		res := invoke(t, registry, "book_create", []byte(arguments))
 		if !res.GetResult().GetIsError() || res.GetResult().GetText() != want {
-			t.Errorf("the arguments %s were answered %+v, want the error %q", arguments, res.GetResult(), want)
+			t.Errorf("the arguments %s were returned %+v, want the error %q", arguments, res.GetResult(), want)
 		}
 	}
 }
@@ -71,13 +71,13 @@ func TestNullArgumentsAreTheEmptyObject(t *testing.T) {
 
 	counted := invoke(t, registry, "shelf_count", []byte(`null`))
 	if counted.GetError() != ErrorCodeUnspecified || counted.GetResult().GetIsError() || runs.Load() != 1 {
-		t.Errorf("shelf_count with null arguments was answered %+v with the error code %v after %d runs",
+		t.Errorf("shelf_count with null arguments returned %+v with the error code %v after %d runs",
 			counted.GetResult(), counted.GetError(), runs.Load())
 	}
 
 	shelved := invoke(t, registry, "shelve_book", []byte(`null`))
 	if text := shelved.GetResult().GetText(); !shelved.GetResult().GetIsError() || text != "the argument title is missing" {
-		t.Errorf("shelve_book with null arguments was answered %+v, want the error %q", shelved.GetResult(), "the argument title is missing")
+		t.Errorf("shelve_book with null arguments returned %+v, want the error %q", shelved.GetResult(), "the argument title is missing")
 	}
 	if got := runs.Load(); got != 1 {
 		t.Errorf("the run functions were called %d times, want once", got)

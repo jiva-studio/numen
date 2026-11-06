@@ -157,20 +157,20 @@ export function useTranscript(
     return isWorking.value ? WORDS.transcribing : WORDS.silence
   })
 
-  /** How many reaches were asked for. */
-  let reachCount = 0
+  /** Number of seek requests. */
+  let seekRequestCount = 0
   /**
-   * Moves playback to the start time of the first of the spans, and returns that time in
-   * milliseconds, or null where playback did not move. An answer that arrives after a later reach
-   * was asked for is dropped.
+   * Seeks playback to the start time of the first of the spans, and returns that time in
+   * milliseconds, or null when playback did not seek. A cue time that resolves after a later seek
+   * request is dropped.
    */
-  const reach = async (...spans: readonly TextRange[]): Promise<number | null> => {
-    const request = ++reachCount
+  const seekToSpans = async (...spans: readonly TextRange[]): Promise<number | null> => {
+    const request = ++seekRequestCount
     await firstRead
     if (!isOpen || spans.length === 0) return null
     try {
       const ms = await recordings.findCueTime(path, spans[0]!)
-      if (!isOpen || ms === null || request !== reachCount) return null
+      if (!isOpen || ms === null || request !== seekRequestCount) return null
       playback.controls.go(ms)
       return ms
     } catch (err) {
@@ -227,7 +227,7 @@ export function useTranscript(
       run: (key: string) => runEntry(entries.value.find((one) => getEntryKey(one) === key)),
       getIcon: (key: string) => entries.value.find((one) => getEntryKey(one) === key)?.icon ?? '',
     },
-    navigation: { reach, goToLine },
+    navigation: { seekToSpans, goToLine },
     close,
   }
 }

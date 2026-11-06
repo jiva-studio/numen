@@ -36,9 +36,9 @@ type Passage struct {
 	// in. Empty for a note.
 	Selector Selector
 
-	// ContentHash addresses the content of the source, and is what the
-	// text made from it is kept under. Reading a passage back composes the name
-	// from this and Producer.
+	// ContentHash is the SHA-256 of the source content; text versions are
+	// stored under it. Reading a passage back composes the name from this
+	// and Producer.
 	ContentHash string
 
 	// HitAt is where the chunk that matched begins inside Text, in bytes. A

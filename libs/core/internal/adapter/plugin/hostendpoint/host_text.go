@@ -155,7 +155,7 @@ func (e *textEndpoint) ReadText(
 		return connect.NewResponse(&v1.ReadTextResponse{Error: noTexts}), nil
 	}
 	if req.Msg.Length != nil {
-		return answerTextRange(ctx, call, req.Msg)
+		return serveTextRange(ctx, call, req.Msg)
 	}
 	page, err := call.texts.ReadText(ctx, call.vault, req.Msg.GetPath(), domain.TextVersionID(req.Msg.GetVersionId()), req.Msg.GetCursor())
 	code, err := answerText(ctx, err)
@@ -167,12 +167,12 @@ func (e *textEndpoint) ReadText(
 	}), nil
 }
 
-// answerTextRange answers a ReadText that sets a length: the segments of the range, where the first
-// begins and the size of the whole text.
-func answerTextRange(ctx context.Context, call textCall, req *v1.ReadTextRequest) (*connect.Response[v1.ReadTextResponse], error) {
+// serveTextRange serves a ReadText that sets a length: it returns the segments of the range, the start of the first
+// and the size of the whole text.
+func serveTextRange(ctx context.Context, call textCall, req *v1.ReadTextRequest) (*connect.Response[v1.ReadTextResponse], error) {
 	if req.GetStart() < 0 || req.GetLength() < 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("a range of the text of %s begins at %d and holds %d bytes: give numbers of zero or more", req.GetPath(), req.GetStart(), req.GetLength()))
+			fmt.Errorf("invalid range of the text of %s: start %d and length %d must be >= 0", req.GetPath(), req.GetStart(), req.GetLength()))
 	}
 	read, err := call.texts.ReadTextRange(ctx, call.vault, req.GetPath(), domain.TextVersionID(req.GetVersionId()),
 		int(req.GetStart()), int(req.GetLength()))

@@ -47,9 +47,9 @@ const (
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE HostVaultErrorCode = 10
 	// Every numbered "Untitled note N" name is taken.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED HostVaultErrorCode = 11
-	// The file is not text a note can carry.
+	// The file is not valid note text.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT HostVaultErrorCode = 12
-	// The file is past the size a note is read at.
+	// The file exceeds the maximum note size.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_TOO_LARGE HostVaultErrorCode = 13
 	// The prose opens with a frontmatter delimiter, so writing it would put a
 	// second block inside the first.
@@ -57,12 +57,11 @@ const (
 	// The frontmatter cannot be read, so the note can be neither read nor
 	// written.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNREADABLE HostVaultErrorCode = 15
-	// A note cannot be called this: the title leaves nothing a file can be named
-	// after, it is more than one line, or a heading would read it back as
-	// something else.
+	// The title is invalid: it is empty after sanitising, spans lines, or parses
+	// as markup.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME HostVaultErrorCode = 16
 	// The change of a note failed for a reason with no code of its own; the
-	// detail of that note holds the core's error text.
+	// detail of that note contains the core's error text.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL HostVaultErrorCode = 17
 	// The call was cancelled before this note was changed: the note is as it was.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED HostVaultErrorCode = 18
@@ -795,11 +794,11 @@ func (x *StatFileResponse) GetStat() *HostFileStat {
 type ReadFileRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// Where a ranged read begins, in bytes.
+	// The start of a ranged read, in bytes.
 	Start int64 `protobuf:"varint,2,opt,name=start,proto3" json:"start,omitempty"`
-	// Set: read at most this many bytes from start as text, cut at whole
+	// Set: read at most this many bytes from start as text, truncated at whole
 	// characters; zero or more than 16000 reads 16000. A range that is not UTF-8
-	// is answered NOT_TEXT, a folder or a path the vault does not list NOT_FOUND.
+	// returns NOT_TEXT, a folder or a path not in the vault NOT_FOUND.
 	// Unset: read the whole file as bytes.
 	Length        *int64 `protobuf:"varint,3,opt,name=length,proto3,oneof" json:"length,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -862,7 +861,7 @@ type ReadFileResponse struct {
 	Error   HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
 	Content []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
 	Stat    *HostFileStat          `protobuf:"bytes,3,opt,name=stat,proto3" json:"stat,omitempty"`
-	// Where content begins in the file: start moved forward to a whole
+	// The start of content in the file: start moved forward to a whole
 	// character. Zero for a whole read.
 	Start         int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -3135,7 +3134,7 @@ type HostVaultProblem struct {
 	// The target of the link the problem is about: its scheme and its value.
 	TargetScheme string `protobuf:"bytes,4,opt,name=target_scheme,json=targetScheme,proto3" json:"target_scheme,omitempty"`
 	TargetValue  string `protobuf:"bytes,5,opt,name=target_value,json=targetValue,proto3" json:"target_value,omitempty"`
-	// The notes an ambiguous link could reach.
+	// The notes an ambiguous link could resolve to.
 	Candidates    []string `protobuf:"bytes,6,rep,name=candidates,proto3" json:"candidates,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3217,7 +3216,7 @@ type GetVaultProblemsResponse struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Error    HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
 	Problems []*HostVaultProblem    `protobuf:"bytes,2,rep,name=problems,proto3" json:"problems,omitempty"`
-	// The checks this answer covers.
+	// The checks this result covers.
 	Checks        []string `protobuf:"bytes,3,rep,name=checks,proto3" json:"checks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3638,7 +3637,7 @@ type HostNoteRemoval struct {
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The path of the file in the trash.
 	TrashPath string `protobuf:"bytes,2,opt,name=trash_path,json=trashPath,proto3" json:"trash_path,omitempty"`
-	// The notes whose links now resolve to nothing.
+	// The notes whose links are now broken.
 	BrokenLinks []string `protobuf:"bytes,3,rep,name=broken_links,json=brokenLinks,proto3" json:"broken_links,omitempty"`
 	// Why this note was not removed: NOT_FOUND, NOT_A_NOTE for a folder or a
 	// file that is not a note, or INTERNAL.
@@ -4323,7 +4322,7 @@ type HostVaultServiceAddVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The folder, absolute on this machine.
 	Root string `protobuf:"bytes,1,opt,name=root,proto3" json:"root,omitempty"`
-	// Empty takes the name of the folder.
+	// Empty means the name of the folder.
 	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -4377,7 +4376,7 @@ type HostVaultServiceAddVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error VaultsErrorCode        `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode" json:"error,omitempty"`
 	Vault *Vault                 `protobuf:"bytes,2,opt,name=vault,proto3" json:"vault,omitempty"`
-	// The core's error text of a refusal; empty on success.
+	// The core's error text of a rejected call; empty on success.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -4490,7 +4489,7 @@ type HostVaultServiceRenameVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error VaultsErrorCode        `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode" json:"error,omitempty"`
 	Vault *Vault                 `protobuf:"bytes,2,opt,name=vault,proto3" json:"vault,omitempty"`
-	// The core's error text of a refusal; empty on success.
+	// The core's error text of a rejected call; empty on success.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -4596,7 +4595,7 @@ type HostVaultServiceRemoveVaultResponse struct {
 	Error VaultsErrorCode        `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode" json:"error,omitempty"`
 	// The folder of the vault, which stays on the disk.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// The core's error text of a refusal; empty on success.
+	// The core's error text of a rejected call; empty on success.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -4700,7 +4699,7 @@ func (x *HostVaultServiceOpenVaultRequest) GetId() string {
 type HostVaultServiceOpenVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error VaultsErrorCode        `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.VaultsErrorCode" json:"error,omitempty"`
-	// The core's error text of a refusal; empty on success.
+	// The core's error text of a rejected call; empty on success.
 	Detail        string `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

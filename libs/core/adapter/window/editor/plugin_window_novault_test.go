@@ -10,21 +10,21 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
-func TestPluginWindowOfAStateShowingNoVaultAnswersErrNoWindow(t *testing.T) {
+func TestPluginWindowWithNoVaultReturnsErrNoWindow(t *testing.T) {
 	state := &State{Places: newPlaceBroadcaster()}
 	window := NewPluginWindow(state, nil, vaultreader.Readers{})
 	ctx := t.Context()
 
 	if _, err := window.FocusNote(ctx, "notes/Heron.md"); !errors.Is(err, pluginport.ErrNoWindow) {
-		t.Errorf("FocusNote answered %v, want ErrNoWindow", err)
+		t.Errorf("FocusNote returned %v, want ErrNoWindow", err)
 	}
 	if err := window.FocusPassages(ctx, "library/Birds.pdf", []domain.ByteRange{{Start: 0, End: 4}}); !errors.Is(err, pluginport.ErrNoWindow) {
-		t.Errorf("FocusPassages answered %v, want ErrNoWindow", err)
+		t.Errorf("FocusPassages returned %v, want ErrNoWindow", err)
 	}
 	if _, err := window.ReadOpenTabs(ctx); !errors.Is(err, pluginport.ErrNoWindow) {
-		t.Errorf("ReadOpenTabs answered %v, want ErrNoWindow", err)
+		t.Errorf("ReadOpenTabs returned %v, want ErrNoWindow", err)
 	}
 	if _, err := window.ActivateTab(ctx, "tab-1"); !errors.Is(err, pluginport.ErrNoWindow) {
-		t.Errorf("ActivateTab answered %v, want ErrNoWindow", err)
+		t.Errorf("ActivateTab returned %v, want ErrNoWindow", err)
 	}
 }

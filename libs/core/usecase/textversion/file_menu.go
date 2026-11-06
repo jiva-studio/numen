@@ -39,11 +39,11 @@ type FileMenu struct {
 	types    contenttypeport.ContentTypeTable
 }
 
-// NewFileMenu is the menu the plugin commands make of the vault files, where the
-// table gives the type of a file.
+// NewFileMenu returns the menu of plugin commands for the vault files, using the
+// table to find the type of a file.
 func NewFileMenu(versions *Versions, commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable) (*FileMenu, error) {
 	if versions == nil || commands == nil || types == nil {
-		return nil, errors.New("a file menu needs text versions, plugin commands and a content type table")
+		return nil, errors.New("file menu: text versions, plugin commands and content type table are required")
 	}
 	return &FileMenu{versions: versions, commands: commands, types: types}, nil
 }

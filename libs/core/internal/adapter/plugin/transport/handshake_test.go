@@ -56,7 +56,7 @@ func TestParseReadyLineRejectsAMalformedListenerToken(t *testing.T) {
 	}
 }
 
-func TestParseReadyLineReturnsNoErrorForALineThatIsNoReadyLine(t *testing.T) {
+func TestParseReadyLineReturnsNoErrorForNonReadyLine(t *testing.T) {
 	_, ok, err := ParseHandshake("starting listener.mcp=none")
 
 	if ok || err != nil {
@@ -82,7 +82,7 @@ func TestWaitForReadyLineReturnsTheListenerPorts(t *testing.T) {
 	}
 }
 
-func TestWaitForReadyLineReturnsTheErrorOfAMalformedListenerTokenAtOnce(t *testing.T) {
+func TestWaitForReadyLineFailsAtOnceOnMalformedListenerToken(t *testing.T) {
 	output, writer := io.Pipe()
 	t.Cleanup(func() {
 		if err := writer.Close(); err != nil {

@@ -22,7 +22,7 @@ func NewCatalog(host Host, server Server) *Catalog {
 }
 
 // ListTools lists the tools the caller is allowed: those the other plugins offer on the server,
-// whose effect the caller holds the permission of, and every permission they require as well. The
+// for which the caller has the effect permission and all required permissions. The
 // tools of one plugin are listed together, in the order of plugin ids.
 func (c *Catalog) ListTools(ctx context.Context, callerID string) []*v1.PluginTool {
 	allowed := c.listAllowed(ctx, callerID)
@@ -46,8 +46,8 @@ func (c *Catalog) CallTool(
 	return c.plugins.callTool(ctx, allowed[index], arguments, callScope{vault: vault})
 }
 
-// listAllowed is the tools of the other plugins whose effect the caller holds the permission of,
-// and whose required permissions the caller holds all of.
+// listAllowed returns the tools of the other plugins for which the caller has the effect permission
+// and all required permissions.
 func (c *Catalog) listAllowed(ctx context.Context, callerID string) []tool {
 	permissions := c.plugins.getPermissions(callerID)
 	all := c.plugins.listTools(ctx, c.server, callerID)
@@ -60,7 +60,7 @@ func (c *Catalog) listAllowed(ctx context.Context, callerID string) []tool {
 	return allowed
 }
 
-// hasAll reports whether the permissions hold every one required.
+// hasAll reports whether the permissions contain every required one.
 func hasAll(permissions, required []string) bool {
 	for _, one := range required {
 		if !slices.Contains(permissions, one) {

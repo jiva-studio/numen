@@ -402,31 +402,31 @@ type shutdownState struct {
 	mu        sync.Mutex
 	isBusy    bool
 	isClosing bool
-	// pluginOpen is the running open of a vault by a plugin. A close, a quit or a change of vault of
-	// the user cancels it and waits for it to end.
+	// pluginOpen is the running vault open of a plugin. A close, a quit or a user vault switch
+	// cancels it and waits for it to end.
 	pluginOpen *PluginOpen
 }
 
-// PluginOpen is a plugin's open of a vault, as a flush of the user cancels it. A change of vault
-// given the running open runs inside it; a change of the user is given nil.
+// PluginOpen tracks a running plugin-initiated vault open; a user flush cancels it. A vault switch
+// given the running open shares the open's lock; a user vault switch is given nil.
 type PluginOpen struct {
 	cancel context.CancelCauseFunc
 	// end closes when the open ends.
 	end chan struct{}
 }
 
-// errUserFirst is the cause a plugin's open is cancelled with when the user closes the window,
-// quits or changes its vault.
-var errUserFirst = errors.New("the user closed the window or changed its vault")
+// errCancelledByUser is the cause a plugin's vault open is cancelled with when the user closes the window,
+// quits or switches its vault.
+var errCancelledByUser = errors.New("the user closed the window or switched its vault")
 
-// tryBegin starts a flush, or returns the reason one cannot start. A running open of a plugin is
+// tryBegin starts a flush, or returns the reason one cannot start. A running vault open of a plugin is
 // cancelled and waited for first.
 func (s *shutdownState) tryBegin() error {
 	s.mu.Lock()
 	for s.pluginOpen != nil {
 		current := s.pluginOpen
 		s.mu.Unlock()
-		current.cancel(errUserFirst)
+		current.cancel(errCancelledByUser)
 		<-current.end
 		s.mu.Lock()
 	}
@@ -442,9 +442,9 @@ func (s *shutdownState) tryBegin() error {
 	return nil
 }
 
-// tryBeginPluginOpen starts a plugin's open, which a tryBegin cancels with errUserFirst. It returns
-// the context of the open, the open and the function that ends it. A change of vault given the open
-// runs inside it.
+// tryBeginPluginOpen starts a plugin's vault open, which a tryBegin cancels with
+// errCancelledByUser. It returns the context of the open, the open and the function that ends it.
+// A vault switch given the open shares the open's lock.
 func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context, *PluginOpen, func(), error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -467,9 +467,9 @@ func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context
 	}, nil
 }
 
-// tryBeginSwitch starts the flush of a change of vault and returns the function that ends it, and
-// whether the change runs inside the running plugin's open, which open names. Such a change takes no
-// exclusion of its own, and a nil open is a change of the user.
+// tryBeginSwitch starts the flush of a vault switch and returns the function that ends it, and
+// whether the switch shares the lock of the running plugin open named by open. Such a switch takes no
+// lock of its own, and a nil open is a user vault switch.
 func (s *shutdownState) tryBeginSwitch(open *PluginOpen) (func(), bool, error) {
 	s.mu.Lock()
 	isInsidePluginOpen := open != nil && s.pluginOpen == open

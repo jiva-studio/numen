@@ -742,9 +742,9 @@ export const WriteLinkRequestSchema: GenMessage<WriteLinkRequest> = /*@__PURE__*
  */
 export type WriteLinkResponse = Message<"numen.v1.WriteLinkResponse"> & {
   /**
-   * Set when nothing was written, and why. A note that moved between being
-   * read and being written is ERROR_CODE_CONFLICT, and the caller reads it
-   * again before asking for this.
+   * Set when nothing was written, with the reason. A note that changed between
+   * being read and being written returns ERROR_CODE_CONFLICT, and the caller
+   * reads it again before retrying.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 1;
    */
@@ -1232,7 +1232,7 @@ export type Backlink = Message<"numen.v1.Backlink"> & {
   role: Role;
 
   /**
-   * The role of the note the link is written in, relative to the note asked about.
+   * The role of the note the link is written in, relative to the requested note.
    * ROLE_UNSPECIFIED for a role with no counterpart.
    *
    * @generated from field: numen.v1.Role source_role = 3;

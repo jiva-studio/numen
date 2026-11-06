@@ -475,7 +475,7 @@ func (s *Search) SearchPassages(_ context.Context, query host.PassageQuery) ([]h
 }
 
 // hasKind reports whether the path is of one of the kinds, where a note is a markdown file and every
-// other file is a file. No kinds is every kind.
+// other file is a file. No kinds means every kind.
 func hasKind(path string, kinds []domain.SourceKind) bool {
 	if len(kinds) == 0 {
 		return true
@@ -487,20 +487,20 @@ func hasKind(path string, kinds []domain.SourceKind) bool {
 	return slices.Contains(kinds, kind)
 }
 
-// hasEveryWord reports whether the text holds every one of the words as a whole word, ignoring case, as the
+// hasEveryWord reports whether the text contains every one of the words as a whole word, ignoring case, as the
 // index of the host matches the words of a query.
 func hasEveryWord(text string, words []string) bool {
 	in := getWords(text)
 	return !slices.ContainsFunc(words, func(word string) bool { return !slices.Contains(in, word) })
 }
 
-// getWords is the words of the text in lower case: the runs of letters and digits.
+// getWords returns the words of the text in lower case: the runs of letters and digits.
 func getWords(text string) []string {
 	return strings.FieldsFunc(strings.ToLower(text), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
 }
 
-// SetIndexedPassages is the passages the index of the vault holds, in the order it lists them. A
-// SearchPassages call answers with those whose text holds every word of the query.
+// SetIndexedPassages sets the passages in the index of the vault, in the order it lists them. A
+// SearchPassages call returns those whose text contains every word of the query.
 func (s *Search) SetIndexedPassages(passages []host.Passage) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
@@ -509,11 +509,11 @@ func (s *Search) SetIndexedPassages(passages []host.Passage) {
 	}
 }
 
-// checkKinds refuses a kind of source the search of the host does not reach, with the host's text.
+// checkKinds rejects a kind of source the search of the host does not cover, with the host's text.
 func checkKinds(kinds []domain.SourceKind) error {
 	for _, kind := range kinds {
 		if kind != domain.KindNote && kind != domain.KindFile {
-			return fmt.Errorf("%q is not a kind of source a search reaches: use %q or %q", kind, domain.KindNote, domain.KindFile)
+			return fmt.Errorf("invalid source kind %q: use %q or %q", kind, domain.KindNote, domain.KindFile)
 		}
 	}
 	return nil

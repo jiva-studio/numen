@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// fileReadMost is how many bytes one file_read returns at most, the most the host reads at once.
+// fileReadMost is the maximum number of bytes one file_read returns, the maximum the host reads at once.
 const fileReadMost = 16000
 
 // FileReadInput is the input of the file_read tool.
@@ -38,7 +38,7 @@ func (t *Tools) addFileRead(registry *tools.Registry) error {
 		Name:  "file_read",
 		Title: "Read File",
 		Description: "Read the content or a byte range of a text file of the vault, as text. A file that is " +
-			"not text — a PDF, a book, a recording — is refused: library_read reads its text.",
+			"not text — a PDF, a book, a recording — returns an error; library_read reads its text.",
 		Effect:       tools.ReadOnly,
 		Servers:      []tools.Server{tools.Full, tools.Reading},
 		Instructions: []string{fileReadSentence},

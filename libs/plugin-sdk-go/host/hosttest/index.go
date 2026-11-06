@@ -43,7 +43,7 @@ func (v *Vault) parsed() map[string]domain.Note {
 }
 
 // rescan brings the index current with the named files, the way the host does when it is notified of a
-// change. The caller holds the lock.
+// change. The caller has the lock.
 func (v *Vault) rescan(paths ...string) {
 	for _, filePath := range paths {
 		fp, err := v.files.stat(filePath)

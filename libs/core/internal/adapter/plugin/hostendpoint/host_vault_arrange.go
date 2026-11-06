@@ -19,12 +19,12 @@ import (
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
-// batchLimit is the most notes one call moves or removes.
+// batchLimit is the maximum number of notes one call moves or removes.
 const batchLimit = 50
 
-var errBatchTooLarge = fmt.Errorf("a call names at most %d notes", batchLimit)
+var errBatchTooLarge = fmt.Errorf("too many notes: at most %d per call", batchLimit)
 
-// getNoteErrorCode is the error code of a note that was not changed, and false for an error that
+// getNoteErrorCode returns the error code of a note that was not changed, and false for an error that
 // has no code.
 func getNoteErrorCode(err error) (v1.HostVaultErrorCode, bool) {
 	if errors.Is(err, vaultport.ErrOutside) {
@@ -36,7 +36,7 @@ func getNoteErrorCode(err error) (v1.HostVaultErrorCode, bool) {
 	return getVaultErrorCode(err)
 }
 
-// convertNoteErrorCode is the HostVaultErrorCode of a per-note error code.
+// convertNoteErrorCode returns the HostVaultErrorCode of a per-note error code.
 func convertNoteErrorCode(code v1.ErrorCode) v1.HostVaultErrorCode {
 	switch code {
 	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
@@ -62,11 +62,11 @@ func convertNoteErrorCode(code v1.ErrorCode) v1.HostVaultErrorCode {
 	return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
 }
 
-// answerNote splits the error of a change of one note into the error code of that note and the
-// error code of the call: a vault the host does not show answers NO_VAULT for the call, a cancelled
+// splitNoteError splits the error of a change of one note into the error code of that note and the
+// error code of the call: a vault the host does not show returns NO_VAULT for the call, a cancelled
 // call fails the call, an error with no code is the note's INTERNAL, and every other error is the
 // note's own code.
-func answerNote(ctx context.Context, err error) (noteCode, callCode v1.HostVaultErrorCode, callErr error) {
+func splitNoteError(ctx context.Context, err error) (noteCode, callCode v1.HostVaultErrorCode, callErr error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
@@ -140,9 +140,9 @@ func (e *vaultEndpoint) RenameNote(
 		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: noVault}), nil
 	}
 	newPath, isFilenamed, move, err := vault.RenameNote(ctx, req.Msg.GetPath(), req.Msg.GetTitle())
-	// A note whose file landed under the new name is renamed, whatever came apart after it.
+	// A note whose file was moved to the new name is renamed, even if a later step failed.
 	if err != nil && move == nil {
-		noteCode, code, callErr := answerNote(ctx, err)
+		noteCode, code, callErr := splitNoteError(ctx, err)
 		if callErr != nil || code != 0 {
 			return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: code}), callErr
 		}
@@ -187,7 +187,7 @@ func (e *vaultEndpoint) MoveNotes(
 }
 
 // moveNote moves one note of a batch into the folder and returns its entry, or the error of the
-// call. A note the call was cancelled before is answered NOT_ATTEMPTED.
+// call. A note not reached before the call was cancelled returns NOT_ATTEMPTED.
 func moveNote(ctx context.Context, vault pluginport.PluginVault, from, folder string) (*v1.HostNoteMove, v1.HostVaultErrorCode, error) {
 	notAttempted := &v1.HostNoteMove{
 		Move: &v1.MoveResult{From: from}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
@@ -203,7 +203,7 @@ func moveNote(ctx context.Context, vault pluginport.PluginVault, from, folder st
 	if isCancelled(ctx) {
 		return notAttempted, 0, nil
 	}
-	noteCode, code, callErr := answerNote(ctx, err)
+	noteCode, code, callErr := splitNoteError(ctx, err)
 	if callErr != nil || code != 0 {
 		return nil, code, callErr
 	}
@@ -235,7 +235,7 @@ func (e *vaultEndpoint) RemoveNotes(
 }
 
 // removeNote moves one note of a batch to the trash and returns its entry, or the error of the
-// call. A note the call was cancelled before is answered NOT_ATTEMPTED.
+// call. A note not reached before the call was cancelled returns NOT_ATTEMPTED.
 func removeNote(ctx context.Context, vault pluginport.PluginVault, target string) (*v1.HostNoteRemoval, v1.HostVaultErrorCode, error) {
 	notAttempted := &v1.HostNoteRemoval{
 		Path: target, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
@@ -251,7 +251,7 @@ func removeNote(ctx context.Context, vault pluginport.PluginVault, target string
 	if isCancelled(ctx) {
 		return notAttempted, 0, nil
 	}
-	noteCode, code, callErr := answerNote(ctx, err)
+	noteCode, code, callErr := splitNoteError(ctx, err)
 	if callErr != nil || code != 0 {
 		return nil, code, callErr
 	}

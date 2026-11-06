@@ -10,12 +10,12 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-func newRequiringRegistry(t *testing.T) *Registry {
+func newRegistryWithRequires(t *testing.T) *Registry {
 	t.Helper()
 	registry := New()
 	for _, spec := range []Spec{
-		{Name: "shelf_move", Description: "Moves a shelf.", Effect: ReadWrite, Requires: []string{"vault:manage"}},
-		{Name: "shelf_look", Description: "Looks at a shelf.", Effect: ReadOnly},
+		{Name: "fixture_write", Description: "Writes the fixture.", Effect: ReadWrite, Requires: []string{"vault:manage"}},
+		{Name: "fixture_read", Description: "Reads the fixture.", Effect: ReadOnly},
 	} {
 		if err := Add(registry, spec, func(context.Context, greetIn) (greetOut, error) { return greetOut{}, nil }); err != nil {
 			t.Fatal(err)
@@ -25,7 +25,7 @@ func newRequiringRegistry(t *testing.T) *Registry {
 }
 
 func TestAToolListsThePermissionsItsSpecRequires(t *testing.T) {
-	res, err := registryHandler{registry: newRequiringRegistry(t)}.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
+	res, err := registryHandler{registry: newRegistryWithRequires(t)}.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,15 +35,15 @@ func TestAToolListsThePermissionsItsSpecRequires(t *testing.T) {
 		t.Fatalf("%d tools listed", len(specs))
 	}
 	if got := specs[0].GetRequires(); !slices.Equal(got, []string{"vault:manage"}) {
-		t.Errorf("shelf_move lists the requirements %q, want vault:manage", got)
+		t.Errorf("fixture_write lists the requirements %q, want vault:manage", got)
 	}
 	if got := specs[1].GetRequires(); len(got) != 0 {
-		t.Errorf("shelf_look requires nothing and lists %q", got)
+		t.Errorf("fixture_read requires nothing and lists %q", got)
 	}
 }
 
-func TestThePermissionsAToolRequiresReachAClientOverTheWire(t *testing.T) {
-	listing, err := serveRegistry(t, newRequiringRegistry(t)).ListTools(t.Context())
+func TestToolRequiredPermissionsAreSentOverTheWire(t *testing.T) {
+	listing, err := serveRegistry(t, newRegistryWithRequires(t)).ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

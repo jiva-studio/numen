@@ -34,7 +34,7 @@ type FileStat struct {
 	FileID FileID
 }
 
-// FileID is the number a file system gives a file, which a rename keeps and a
+// FileID is the number a file system assigns to a file, which a rename keeps and a
 // replacement of the file does not.
 type FileID uint64
 

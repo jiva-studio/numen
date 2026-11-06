@@ -95,10 +95,11 @@ message ReadTextRequest {
   // cursor is the next_cursor of the page before, and empty for the first. Not
   // used with a length.
   string cursor = 3;
-  // Where a ranged read begins in the whole text, in bytes.
+  // The start of a ranged read in the whole text, in bytes.
   int64 start = 4;
-  // Set: read the range from start of this many bytes, zero to the end, cut at
-  // whole characters, as the segments it covers, each cut to the range. Unset:
+  // Set: read the range from start of this many bytes, zero to the end,
+  // truncated at whole characters, as the segments it covers, each truncated to
+  // the range. Unset:
   // read one page by cursor.
   optional int64 length = 5;
 }
@@ -108,8 +109,8 @@ message ReadTextResponse {
   // next_cursor is empty on the last page.
   string next_cursor = 2;
   TextErrorCode error = 3;
-  // For a ranged read: where the first segment returned begins in the whole
-  // text, and the bytes of the whole text.
+  // For a ranged read: the start of the first segment returned in the whole
+  // text, and the size of the whole text in bytes.
   int64 start = 4;
   int64 size = 5;
 }

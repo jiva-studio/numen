@@ -14,7 +14,7 @@ export interface Tab {
   readonly title: string
   /** The JSON the plugin owning the kind saved for the tab, empty where it saved none. */
   readonly state: string
-  /** The place the reader of the tab reported, left out where it reported none. */
+  /** The place the reader of the tab reported, omitted when it reported none. */
   readonly place?: OpenTab['place']
 }
 

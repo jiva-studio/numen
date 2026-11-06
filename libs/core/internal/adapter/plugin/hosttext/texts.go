@@ -18,7 +18,7 @@ type Texts struct {
 	versions *textversion.Versions
 }
 
-// NewTexts makes the text versions of the vaults.
+// NewTexts returns the text versions of the vaults.
 func NewTexts(versions *textversion.Versions) Texts {
 	return Texts{versions: versions}
 }

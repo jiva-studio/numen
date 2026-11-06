@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// getCheckNames returns the checks vault_problems runs. dangling runs only when the call names it.
+// getCheckNames returns the checks vault_problem_list runs. dangling runs only when the call names it.
 func getCheckNames() []string {
 	return []string{string(domain.CheckParse), "frontmatter", "ambiguous", "dangling"}
 }
@@ -21,8 +21,8 @@ type VaultEntry struct {
 	ID        string `json:"id" jsonschema:"vault identifier, which stays the same when its folder moves"`
 	Name      string `json:"name" jsonschema:"vault display name"`
 	Path      string `json:"path" jsonschema:"vault root directory on this machine"`
-	IsCurrent bool   `json:"isCurrent" jsonschema:"true for the vault this call works on"`
-	IsMissing bool   `json:"isMissing,omitempty" jsonschema:"true when nothing is at the vault's folder"`
+	IsCurrent bool   `json:"isCurrent" jsonschema:"true for the current vault"`
+	IsMissing bool   `json:"isMissing,omitempty" jsonschema:"true when the vault folder does not exist"`
 }
 
 // VaultListInput is the input of the vault_list tool.
@@ -33,8 +33,8 @@ type VaultListOutput struct {
 	Vaults []VaultEntry `json:"vaults"`
 }
 
-// VaultProblemsInput is the input of the vault_problems tool.
-type VaultProblemsInput struct {
+// VaultProblemListInput is the input of the vault_problem_list tool.
+type VaultProblemListInput struct {
 	Checks []string `json:"checks,omitempty" jsonschema:"the checks to run: parse, frontmatter, ambiguous and dangling; parse, frontmatter and ambiguous run when left out"`
 }
 
@@ -42,15 +42,15 @@ type VaultProblemsInput struct {
 type VaultProblemItem struct {
 	Path       string   `json:"path" jsonschema:"path of the file with the problem"`
 	Check      string   `json:"check" jsonschema:"the check that found the problem"`
-	Detail     string   `json:"detail" jsonschema:"description of the problem in the terms of the file"`
+	Detail     string   `json:"detail" jsonschema:"description of the problem"`
 	Address    string   `json:"address,omitempty" jsonschema:"the link target as written, for the ambiguous and dangling checks"`
-	Candidates []string `json:"candidates,omitempty" jsonschema:"paths of the notes an ambiguous link could mean"`
+	Candidates []string `json:"candidates,omitempty" jsonschema:"paths of the notes an ambiguous link could resolve to"`
 }
 
-// VaultProblemsOutput is the output of the vault_problems tool.
-type VaultProblemsOutput struct {
+// VaultProblemListOutput is the output of the vault_problem_list tool.
+type VaultProblemListOutput struct {
 	Problems []VaultProblemItem `json:"problems"`
-	Checks   []string           `json:"checks" jsonschema:"the checks this answer covers"`
+	Checks   []string           `json:"checks" jsonschema:"the checks this result covers"`
 }
 
 func (t *Tools) addVaultList(registry *tools.Registry) error {
@@ -58,25 +58,25 @@ func (t *Tools) addVaultList(registry *tools.Registry) error {
 		Step:  tools.ByEffect,
 		Name:  "vault_list",
 		Title: "List Vaults",
-		Description: "List every vault of the installation with its identifier, name and folder path. The vault this " +
-			"call works on is marked isCurrent, and a vault whose folder is gone is marked isMissing.",
+		Description: "List every vault of the installation with its identifier, name and folder path. The current " +
+			"vault is marked isCurrent, and a vault whose folder is missing is marked isMissing.",
 		Effect:       tools.ReadOnly,
 		Servers:      []tools.Server{tools.Full, tools.Reading},
 		Instructions: []string{vaultListSentence},
 	}, inVault(t, (*Tools).listVaults))
 }
 
-func (t *Tools) addVaultProblems(registry *tools.Registry) error {
+func (t *Tools) addVaultProblemList(registry *tools.Registry) error {
 	return addTool(registry, tools.Spec{
 		Step:  tools.ByEffect,
-		Name:  "vault_problems",
+		Name:  "vault_problem_list",
 		Title: "List Vault Problems",
 		Description: "Run checks over the vault and list the problems found: parse for files that could not be " +
-			"read, frontmatter for frontmatter that is not valid, ambiguous for links that several notes answer " +
-			"to, and dangling for links that reach no note. dangling runs only when named.",
+			"read, frontmatter for frontmatter that is not valid, ambiguous for links that resolve to several " +
+			"notes, and dangling for links that resolve to no note. dangling runs only when named.",
 		Effect:       tools.ReadOnly,
 		Servers:      []tools.Server{tools.Full, tools.Reading},
-		Instructions: []string{vaultProblemsSentence},
+		Instructions: []string{vaultProblemListSentence},
 	}, inVault(t, (*Tools).listVaultProblems))
 }
 
@@ -100,7 +100,7 @@ func (t *Tools) listVaults(ctx context.Context, _ VaultListInput) (VaultListOutp
 }
 
 // getVaultEntries returns the vaults of the installation from the vault list, or from the host when the
-// tools have no vault list, which reports no vault as missing.
+// tools have no vault list, where IsMissing is always false.
 func (t *Tools) getVaultEntries(ctx context.Context) ([]host.VaultEntry, error) {
 	if t.list != nil {
 		return t.list.GetVaultList(ctx)
@@ -116,17 +116,17 @@ func (t *Tools) getVaultEntries(ctx context.Context) ([]host.VaultEntry, error) 
 	return out, nil
 }
 
-func (t *Tools) listVaultProblems(ctx context.Context, in VaultProblemsInput) (VaultProblemsOutput, error) {
+func (t *Tools) listVaultProblems(ctx context.Context, in VaultProblemListInput) (VaultProblemListOutput, error) {
 	for _, check := range in.Checks {
 		if !slices.Contains(getCheckNames(), check) {
-			return VaultProblemsOutput{}, fmt.Errorf("%q is not a check; the checks are %s", check, strings.Join(getCheckNames(), ", "))
+			return VaultProblemListOutput{}, fmt.Errorf("%q is not a check; the checks are %s", check, strings.Join(getCheckNames(), ", "))
 		}
 	}
 	problems, err := t.vault.GetProblems(ctx, in.Checks)
 	if err != nil {
-		return VaultProblemsOutput{}, err
+		return VaultProblemListOutput{}, err
 	}
-	out := VaultProblemsOutput{
+	out := VaultProblemListOutput{
 		Problems: make([]VaultProblemItem, 0, len(problems.Found)),
 		Checks:   problems.Checks,
 	}

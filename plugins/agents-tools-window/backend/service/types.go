@@ -22,35 +22,35 @@ type TabInfo struct {
 	IsActive bool         `json:"isActive,omitempty" jsonschema:"true for the active tab"`
 }
 
-// WindowTabsGetInput represents the arguments for window_tabs_get.
-type WindowTabsGetInput struct{}
+// WindowTabListInput represents the arguments for window_tab_list.
+type WindowTabListInput struct{}
 
-// WindowTabsGetOutput represents the result of inspecting open window tabs.
-type WindowTabsGetOutput struct {
+// WindowTabListOutput represents the result of inspecting open window tabs.
+type WindowTabListOutput struct {
 	Tabs     []TabInfo `json:"tabs" jsonschema:"the open tabs, in window order"`
 	ActiveID string    `json:"activeId,omitempty" jsonschema:"the identifier of the active tab"`
 }
 
-// WindowFocusTabInput represents the arguments for window_focus_tab.
-type WindowFocusTabInput struct {
-	TabID string `json:"tabId" jsonschema:"the identifier of the tab to make active, as window_tabs_get returns it"`
+// WindowTabActivateInput represents the arguments for window_tab_activate.
+type WindowTabActivateInput struct {
+	TabID string `json:"tabId" jsonschema:"the identifier of the tab to make active, as window_tab_list returns it"`
 }
 
-// WindowFocusTabOutput represents the result of focusing a tab.
-type WindowFocusTabOutput struct {
-	Tab TabInfo `json:"tab" jsonschema:"the focused tab"`
+// WindowTabActivateOutput represents the result of activating a tab.
+type WindowTabActivateOutput struct {
+	Tab TabInfo `json:"tab" jsonschema:"the active tab"`
 }
 
-// EditPreviewInput represents the arguments for edit_preview.
-type EditPreviewInput struct {
+// NoteEditPreviewInput represents the arguments for note_edit_preview.
+type NoteEditPreviewInput struct {
 	Path            string `json:"path" jsonschema:"the note to propose changes to, by its path relative to the vault folder"`
 	ProposedContent string `json:"proposedContent,omitempty" jsonschema:"the proposed new content of the note"`
 	OriginalContent string `json:"originalContent,omitempty" jsonschema:"optional baseline content to diff against if not reading from vault"`
 	Diff            string `json:"diff,omitempty" jsonschema:"optional unified diff patch to preview directly"`
 }
 
-// EditPreviewOutput represents the result of generating an edit preview.
-type EditPreviewOutput struct {
+// NoteEditPreviewOutput represents the result of generating an edit preview.
+type NoteEditPreviewOutput struct {
 	PreviewID string `json:"previewId" jsonschema:"unique identifier for the proposed edit preview"`
 	Path      string `json:"path" jsonschema:"the path of the note, relative to the vault folder"`
 	Diff      string `json:"diff" jsonschema:"unified diff representation of the proposed changes"`
@@ -58,8 +58,8 @@ type EditPreviewOutput struct {
 	Deletions int    `json:"deletions" jsonschema:"number of lines removed"`
 }
 
-// EditPreview stores a pending or proposed edit preview.
-type EditPreview struct {
+// NoteEditPreview stores a pending or proposed edit preview.
+type NoteEditPreview struct {
 	ID              string
 	Path            string
 	ProposedContent string
@@ -72,7 +72,7 @@ type EditPreview struct {
 
 // NoteFocusInput represents the arguments for note_focus.
 type NoteFocusInput struct {
-	Path string `json:"path" jsonschema:"the note to put in focus, by its path relative to the vault folder"`
+	Path string `json:"path" jsonschema:"the note to focus, by its path relative to the vault folder"`
 }
 
 // FocusedNote is the note note_focus made the current one.
@@ -84,7 +84,7 @@ type FocusedNote struct {
 
 // NoteFocusOutput represents the result of note_focus.
 type NoteFocusOutput struct {
-	Note FocusedNote `json:"note" jsonschema:"the note now in focus"`
+	Note FocusedNote `json:"note" jsonschema:"the focused note"`
 }
 
 // Passage is a run of a file's text version in bytes, as library_search returns it.

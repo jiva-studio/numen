@@ -28,20 +28,20 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// GetPluginVaultList is no list of vaults: the fake host of the other tests lends none.
+// GetPluginVaultList is no list of vaults: the fake host of the other tests provides none.
 func (c *callers) GetPluginVaultList() pluginport.PluginVaultList { return nil }
 
-// listCallers is the fake host that lends its plugins a list of vaults and grants md.numen.a only
+// vaultListCallers is the fake host that provides its plugins a list of vaults and grants md.numen.a only
 // the permissions named.
-type listCallers struct {
+type vaultListCallers struct {
 	*callers
 	list    pluginport.PluginVaultList
 	granted []string
 }
 
-func (c listCallers) GetPluginVaultList() pluginport.PluginVaultList { return c.list }
+func (c vaultListCallers) GetPluginVaultList() pluginport.PluginVaultList { return c.list }
 
-func (c listCallers) CheckPluginPermission(pluginID, permission string) error {
+func (c vaultListCallers) CheckPluginPermission(pluginID, permission string) error {
 	if err := c.callers.CheckPluginPermission(pluginID, permission); err != nil {
 		return err
 	}
@@ -51,9 +51,9 @@ func (c listCallers) CheckPluginPermission(pluginID, permission string) error {
 	return nil
 }
 
-// arrangingVault is the vault of rivers that renames, moves and removes its notes and runs its
-// checks as the host does, and records what it was asked.
-type arrangingVault struct {
+// fakeNoteVault is the vault of rivers that renames, moves and removes its notes and runs its
+// checks as the host does, and records the requests.
+type fakeNoteVault struct {
 	*memoryVault
 	folders map[string]bool
 	moved   []domain.Move
@@ -61,8 +61,8 @@ type arrangingVault struct {
 	checks  [][]domain.Check
 }
 
-func newArrangingVault() *arrangingVault {
-	return &arrangingVault{
+func newFakeNoteVault() *fakeNoteVault {
+	return &fakeNoteVault{
 		memoryVault: newMemoryVault(map[string]string{
 			"Danube.md":        "# Danube\n",
 			"Deltas.md":        "---\nlinks:\n  - to: Danube\n    role: parent\n---\n# Deltas\n",
@@ -73,14 +73,14 @@ func newArrangingVault() *arrangingVault {
 	}
 }
 
-func (a *arrangingVault) GetVaults() ([]domain.Vault, error) {
+func (a *fakeNoteVault) GetVaults() ([]domain.Vault, error) {
 	return []domain.Vault{
 		{ID: "v1", Name: "Rivers", Path: "/vaults/Rivers"},
 		{ID: "v2", Name: "Lakes", Path: "/vaults/Lakes"},
 	}, nil
 }
 
-func (a *arrangingVault) GetNotes(_ context.Context, paths []string) (map[string]domain.NoteRef, error) {
+func (a *fakeNoteVault) GetNotes(_ context.Context, paths []string) (map[string]domain.NoteRef, error) {
 	out := map[string]domain.NoteRef{}
 	for _, one := range paths {
 		if _, found := a.files[one]; found {
@@ -90,7 +90,7 @@ func (a *arrangingVault) GetNotes(_ context.Context, paths []string) (map[string
 	return out, nil
 }
 
-func (a *arrangingVault) RenameNote(_ context.Context, from, title string) (string, bool, *domain.MoveResult, error) {
+func (a *fakeNoteVault) RenameNote(_ context.Context, from, title string) (string, bool, *domain.MoveResult, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if _, found := a.files[from]; !found {
@@ -102,7 +102,7 @@ func (a *arrangingVault) RenameNote(_ context.Context, from, title string) (stri
 	return to, true, &domain.MoveResult{From: from, To: to, IsMoved: true, Repaired: []string{"Deltas.md"}}, nil
 }
 
-func (a *arrangingVault) MoveNote(_ context.Context, from, to string) (domain.MoveResult, error) {
+func (a *fakeNoteVault) MoveNote(_ context.Context, from, to string) (domain.MoveResult, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.moved = append(a.moved, domain.Move{From: from, To: to})
@@ -117,7 +117,7 @@ func (a *arrangingVault) MoveNote(_ context.Context, from, to string) (domain.Mo
 	return domain.MoveResult{From: from, To: to, IsMoved: true}, nil
 }
 
-func (a *arrangingVault) RemoveNote(_ context.Context, target string) (string, []string, error) {
+func (a *fakeNoteVault) RemoveNote(_ context.Context, target string) (string, []string, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.removed = append(a.removed, target)
@@ -131,7 +131,7 @@ func (a *arrangingVault) RemoveNote(_ context.Context, target string) (string, [
 	return ".trash/" + target, []string{"Deltas.md"}, nil
 }
 
-func (a *arrangingVault) GetProblems(_ context.Context, checks []domain.Check) ([]domain.Check, []domain.VaultProblem, error) {
+func (a *fakeNoteVault) GetProblems(_ context.Context, checks []domain.Check) ([]domain.Check, []domain.VaultProblem, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.checks = append(a.checks, checks)
@@ -146,25 +146,25 @@ func (a *arrangingVault) GetProblems(_ context.Context, checks []domain.Check) (
 	}}, nil
 }
 
-// recordingList is a list of vaults that records the changes it is asked for and returns err for each.
-// Its OpenVault returns err at once. Otherwise it records the open, sends the vault on opened, waits
-// for release or the end of its context when release is set, sends the error of its context on ended
+// recordingList is a list of vaults that records the changes it receives and returns err for each.
+// Its OpenVault returns err at once. Otherwise it records the open, sends the vault on openCh, waits
+// for release or the end of its context when release is set, sends the error of its context on endCh
 // and returns.
 type recordingList struct {
 	mu      sync.Mutex
 	err     error
 	missing map[domain.VaultID]bool
 	calls   []string
-	opened  chan domain.VaultID
+	openCh  chan domain.VaultID
 	release chan struct{}
-	ended   chan error
+	endCh   chan error
 }
 
 func newRecordingList() *recordingList {
 	return &recordingList{
 		missing: map[domain.VaultID]bool{"v2": true},
-		opened:  make(chan domain.VaultID, 4),
-		ended:   make(chan error, 4),
+		openCh:  make(chan domain.VaultID, 4),
+		endCh:   make(chan error, 4),
 	}
 }
 
@@ -207,14 +207,14 @@ func (l *recordingList) OpenVault(ctx context.Context, id domain.VaultID) error 
 		return openErr
 	}
 	err := l.record("open " + string(id))
-	l.opened <- id
+	l.openCh <- id
 	if l.release != nil {
 		select {
 		case <-l.release:
 		case <-ctx.Done():
 		}
 	}
-	l.ended <- ctx.Err()
+	l.endCh <- ctx.Err()
 	return err
 }
 
@@ -228,18 +228,18 @@ func (l *recordingList) IsMissing(v domain.Vault) bool {
 // nil for none, with md.numen.a granted the permissions named.
 func newArrangeClient(
 	t *testing.T, list pluginport.PluginVaultList, granted ...string,
-) (numenv1connect.HostVaultServiceClient, *arrangingVault, *callers) {
+) (numenv1connect.HostVaultServiceClient, *fakeNoteVault, *callers) {
 	t.Helper()
-	vault := newArrangingVault()
-	hosted := newCallers(nil)
-	hosted.vault = vault
-	endpoint := &Endpoint{callers: listCallers{callers: hosted, list: list, granted: granted}}
+	vault := newFakeNoteVault()
+	hostCallers := newCallers(nil)
+	hostCallers.vault = vault
+	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, list: list, granted: granted}}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
-	return client, vault, hosted
+	return client, vault, hostCallers
 }
 
 func isDenied(err error) bool {
@@ -282,16 +282,16 @@ func TestNoteChangesAreDeniedWithoutVaultWrite(t *testing.T) {
 }
 
 func TestNoteChangesAreServedWithVaultWrite(t *testing.T) {
-	client, _, hosted := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultWrite)
+	client, _, hostCallers := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultWrite)
 
 	for call, err := range callNoteChanges(t, client) {
 		if err != nil {
 			t.Errorf("%s with vault:write returned %v", call, err)
 		}
 	}
-	hosted.mu.Lock()
-	defer hosted.mu.Unlock()
-	for _, one := range hosted.checked {
+	hostCallers.mu.Lock()
+	defer hostCallers.mu.Unlock()
+	for _, one := range hostCallers.checked {
 		if one != "md.numen.a "+pluginport.PermissionVaultWrite {
 			t.Errorf("a note change checked %q, want vault:write only", one)
 		}
@@ -326,13 +326,13 @@ func TestVaultListChangesAreServedWithVaultManage(t *testing.T) {
 		t.FailNow()
 	}
 	select {
-	case <-list.opened:
+	case <-list.openCh:
 	case <-time.After(10 * time.Second):
-		t.Fatal("the list was not asked to open the vault")
+		t.Fatal("the list received no call to open the vault")
 	}
 	want := []string{"add /vaults/Seas ", "rename v2 Ponds", "remove v2", "open v2"}
 	if calls := list.getCalls(); !slices.Equal(calls, want) {
-		t.Errorf("the list was asked %v, want %v", calls, want)
+		t.Errorf("the list received %v, want %v", calls, want)
 	}
 }
 
@@ -363,7 +363,7 @@ func TestVaultChecksNeedVaultRead(t *testing.T) {
 		t.Errorf("the problem came out as %v", problem)
 	}
 	if len(vault.checks) != 1 || !slices.Equal(vault.checks[0], []domain.Check{domain.CheckAmbiguous, domain.CheckDangling}) {
-		t.Errorf("the vault was asked for the checks %v", vault.checks)
+		t.Errorf("the vault received a request for the checks %v", vault.checks)
 	}
 }
 
@@ -430,7 +430,7 @@ func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
 		{From: "Rivers/Rhine.md", To: "Rhine.md"},
 	}
 	if !slices.Equal(vault.moved, want) {
-		t.Errorf("the vault was asked to move %v, want %v", vault.moved, want)
+		t.Errorf("the vault received a call to move %v, want %v", vault.moved, want)
 	}
 }
 
@@ -459,7 +459,7 @@ func TestARemovalReturnsTheTrashPathAndAFolderAsNotANote(t *testing.T) {
 		t.Errorf("the third entry is %v, want error NOT_FOUND", removals[2])
 	}
 	if !slices.Equal(vault.removed, []string{"Danube.md", "Rivers", "Nowhere.md"}) {
-		t.Errorf("the vault was asked to remove %v", vault.removed)
+		t.Errorf("the vault received a call to remove %v", vault.removed)
 	}
 }
 
@@ -477,7 +477,7 @@ func TestTheListOfVaultsMarksAMissingFolder(t *testing.T) {
 	}
 }
 
-func TestNoteRefsCarryTheIdentifier(t *testing.T) {
+func TestNoteRefsHaveTheIdentifier(t *testing.T) {
 	client, _, _ := newArrangeClient(t, nil, pluginport.PermissionVaultRead)
 
 	res, err := client.GetNoteRefs(t.Context(), connect.NewRequest(&v1.GetNoteRefsRequest{Paths: []string{"Danube.md"}}))
@@ -523,17 +523,17 @@ func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) 
 				"OpenVault":   {err: openErr, code: opened.Msg.GetError(), detail: opened.Msg.GetDetail()},
 			} {
 				if answer.err != nil || answer.code != c.want {
-					t.Errorf("%s answered %s (%v), want error %s", call, answer.code, answer.err, c.want)
+					t.Errorf("%s returned %s (%v), want error %s", call, answer.code, answer.err, c.want)
 				}
 				if !strings.Contains(answer.detail, list.err.Error()) {
-					t.Errorf("%s answered the detail %q, want the core's text %q", call, answer.detail, list.err.Error())
+					t.Errorf("%s returned the detail %q, want the core's text %q", call, answer.detail, list.err.Error())
 				}
 			}
 		})
 	}
 }
 
-func TestOpenVaultOfAnUnknownIdAnswersNotFoundWithTheDetail(t *testing.T) {
+func TestOpenVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
 	list := newRecordingList()
 	client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
 
@@ -543,17 +543,17 @@ func TestOpenVaultOfAnUnknownIdAnswersNotFoundWithTheDetail(t *testing.T) {
 	}
 
 	if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND {
-		t.Errorf("OpenVault of v9 answered %v, want error NOT_FOUND", res.Msg)
+		t.Errorf("OpenVault of v9 returned %v, want error NOT_FOUND", res.Msg)
 	}
 	if !strings.Contains(res.Msg.GetDetail(), "v9") {
-		t.Errorf("OpenVault of v9 answered the detail %q, want the core's text naming v9", res.Msg.GetDetail())
+		t.Errorf("OpenVault of v9 returned the detail %q, want the core's text naming v9", res.Msg.GetDetail())
 	}
 	if got := list.getCalls(); len(got) != 0 {
-		t.Errorf("the list was asked for %v, want nothing", got)
+		t.Errorf("the list received a request for %v, want nothing", got)
 	}
 }
 
-func TestRemoveVaultOfAnUnknownIdAnswersNotFoundWithTheDetail(t *testing.T) {
+func TestRemoveVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
 	client, _, _ := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultManage)
 
 	res, err := client.RemoveVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v9"}))
@@ -562,11 +562,11 @@ func TestRemoveVaultOfAnUnknownIdAnswersNotFoundWithTheDetail(t *testing.T) {
 	}
 
 	if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND || !strings.Contains(res.Msg.GetDetail(), "v9") {
-		t.Errorf("RemoveVault of v9 answered %v, want error NOT_FOUND with the core's text naming v9", res.Msg)
+		t.Errorf("RemoveVault of v9 returned %v, want error NOT_FOUND with the core's text naming v9", res.Msg)
 	}
 }
 
-func TestVaultListChangesThatSucceedAnswerNoDetail(t *testing.T) {
+func TestVaultListChangesThatSucceedReturnNoDetail(t *testing.T) {
 	client, _, _ := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultManage)
 	ctx := t.Context()
 
@@ -586,17 +586,17 @@ func TestVaultListChangesThatSucceedAnswerNoDetail(t *testing.T) {
 	}
 }
 
-// refusingVault is the vault of rivers whose rename of a note fails with err before any file moves.
-type refusingVault struct {
-	*arrangingVault
+// failingRenameVault is the vault of rivers whose rename of a note fails with err before any file moves.
+type failingRenameVault struct {
+	*fakeNoteVault
 	err error
 }
 
-func (r refusingVault) RenameNote(context.Context, string, string) (string, bool, *domain.MoveResult, error) {
+func (r failingRenameVault) RenameNote(context.Context, string, string) (string, bool, *domain.MoveResult, error) {
 	return "", false, nil, r.err
 }
 
-func TestARefusedRenameAnswersItsCodeInError(t *testing.T) {
+func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 	for name, c := range map[string]struct {
 		err  error
 		want v1.HostVaultErrorCode
@@ -607,9 +607,9 @@ func TestARefusedRenameAnswersItsCodeInError(t *testing.T) {
 		"conflict":       {err: vaultport.ErrStale, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
 	} {
 		t.Run(name, func(t *testing.T) {
-			hosted := newCallers(nil)
-			hosted.vault = refusingVault{arrangingVault: newArrangingVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)}
-			endpoint := &Endpoint{callers: listCallers{callers: hosted, granted: []string{pluginport.PermissionVaultWrite}}}
+			hostCallers := newCallers(nil)
+			hostCallers.vault = failingRenameVault{fakeNoteVault: newFakeNoteVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)}
+			endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}}
 			mux := http.NewServeMux()
 			mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 			server := httptest.NewServer(mux)
@@ -622,10 +622,10 @@ func TestARefusedRenameAnswersItsCodeInError(t *testing.T) {
 			}
 
 			if res.Msg.GetError() != c.want {
-				t.Errorf("the refused rename answered %v, want error %s", res.Msg, c.want)
+				t.Errorf("the rejected rename returned %v, want error %s", res.Msg, c.want)
 			}
 			if res.Msg.GetMove() != nil {
-				t.Errorf("the refused rename answered the move %v", res.Msg.GetMove())
+				t.Errorf("the rejected rename returned the move %v", res.Msg.GetMove())
 			}
 		})
 	}
@@ -669,7 +669,7 @@ func TestVaultListChangesAreUnavailableWithoutAList(t *testing.T) {
 	}
 }
 
-func TestOpenVaultAnswersAfterTheWindowShowsTheVault(t *testing.T) {
+func TestOpenVaultReturnsAfterTheWindowShowsTheVault(t *testing.T) {
 	list := newRecordingList()
 	list.release = make(chan struct{})
 	release := sync.OnceFunc(func() { close(list.release) })
@@ -688,16 +688,16 @@ func TestOpenVaultAnswersAfterTheWindowShowsTheVault(t *testing.T) {
 		answerResult <- openAnswer{res: res, err: err}
 	}()
 	select {
-	case id := <-list.opened:
+	case id := <-list.openCh:
 		if id != "v2" {
-			t.Errorf("the window was asked to open %q, want v2", id)
+			t.Errorf("the window received a call to open %q, want v2", id)
 		}
 	case <-time.After(10 * time.Second):
-		t.Fatal("the window was not asked to open the vault")
+		t.Fatal("the window received no call to open the vault")
 	}
 	select {
 	case a := <-answerResult:
-		t.Fatalf("OpenVault answered %v (%v) before the window showed the vault", a.res, a.err)
+		t.Fatalf("OpenVault returned %v (%v) before the window showed the vault", a.res, a.err)
 	case <-time.After(200 * time.Millisecond):
 	}
 	release()
@@ -705,53 +705,53 @@ func TestOpenVaultAnswersAfterTheWindowShowsTheVault(t *testing.T) {
 	select {
 	case a := <-answerResult:
 		if a.err != nil || a.res.Msg.GetError() != 0 {
-			t.Errorf("OpenVault after the window showed the vault answered %v (%v)", a.res, a.err)
+			t.Errorf("OpenVault after the window showed the vault returned %v (%v)", a.res, a.err)
 		}
 	case <-time.After(10 * time.Second):
-		t.Fatal("OpenVault did not answer after the window showed the vault")
+		t.Fatal("OpenVault did not return after the window showed the vault")
 	}
 	select {
-	case ctxErr := <-list.ended:
+	case ctxErr := <-list.endCh:
 		if ctxErr != nil {
 			t.Errorf("the change of vault ended with %v, want it to end on its own", ctxErr)
 		}
 	default:
-		t.Error("OpenVault answered while the change of vault was still running")
+		t.Error("OpenVault returned while the change of vault was still running")
 	}
 }
 
-// outsideVault is the vault of rivers that refuses a path leaving the vault with ErrOutside, as the
+// escapingPathVault is the vault of rivers that rejects a path leaving the vault with ErrOutside, as the
 // vault writer does, and whose rename moves the file and then fails to update the index.
-type outsideVault struct{ *arrangingVault }
+type escapingPathVault struct{ *fakeNoteVault }
 
-func (o outsideVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
+func (o escapingPathVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
 	if strings.HasPrefix(from, "../") {
 		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, vaultport.ErrOutside)
 	}
-	return o.arrangingVault.MoveNote(ctx, from, to)
+	return o.fakeNoteVault.MoveNote(ctx, from, to)
 }
 
-func (o outsideVault) RemoveNote(ctx context.Context, target string) (string, []string, error) {
+func (o escapingPathVault) RemoveNote(ctx context.Context, target string) (string, []string, error) {
 	if strings.HasPrefix(target, "../") {
 		return "", nil, fmt.Errorf("remove %s: %w", target, vaultport.ErrOutside)
 	}
-	return o.arrangingVault.RemoveNote(ctx, target)
+	return o.fakeNoteVault.RemoveNote(ctx, target)
 }
 
-func (o outsideVault) RenameNote(ctx context.Context, from, title string) (string, bool, *domain.MoveResult, error) {
-	to, isFilenamed, moved, err := o.arrangingVault.RenameNote(ctx, from, title)
+func (o escapingPathVault) RenameNote(ctx context.Context, from, title string) (string, bool, *domain.MoveResult, error) {
+	to, isFilenamed, moved, err := o.fakeNoteVault.RenameNote(ctx, from, title)
 	if err != nil {
 		return to, isFilenamed, moved, err
 	}
 	return to, isFilenamed, moved, errors.New("the index could not be updated for the repaired notes")
 }
 
-func newOutsideClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *arrangingVault) {
+func newEscapingPathClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *fakeNoteVault) {
 	t.Helper()
-	vault := newArrangingVault()
-	hosted := newCallers(nil)
-	hosted.vault = outsideVault{vault}
-	endpoint := &Endpoint{callers: listCallers{callers: hosted, granted: []string{pluginport.PermissionVaultWrite}}}
+	vault := newFakeNoteVault()
+	hostCallers := newCallers(nil)
+	hostCallers.vault = escapingPathVault{vault}
+	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)
@@ -761,7 +761,7 @@ func newOutsideClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *arr
 }
 
 func TestAMoveReportsAPathOutsideTheVaultAndMovesTheOthers(t *testing.T) {
-	client, vault := newOutsideClient(t)
+	client, vault := newEscapingPathClient(t)
 
 	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
 		Paths: []string{"Danube.md", "../Baikal.md", "Rivers/Rhine.md"}, Folder: "Archive",
@@ -791,7 +791,7 @@ func TestAMoveReportsAPathOutsideTheVaultAndMovesTheOthers(t *testing.T) {
 }
 
 func TestARemovalReportsAPathOutsideTheVaultAndRemovesTheOthers(t *testing.T) {
-	client, vault := newOutsideClient(t)
+	client, vault := newEscapingPathClient(t)
 
 	res, err := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
 		Paths: []string{"Danube.md", "../Baikal.md", "Rivers/Rhine.md"},
@@ -821,7 +821,7 @@ func TestARemovalReportsAPathOutsideTheVaultAndRemovesTheOthers(t *testing.T) {
 }
 
 func TestTheHostRejectsABatchOfMoreThanFiftyNotes(t *testing.T) {
-	client, vault := newOutsideClient(t)
+	client, vault := newEscapingPathClient(t)
 	paths := make([]string, 51)
 	for i := range paths {
 		paths[i] = fmt.Sprintf("Lake %d.md", i)
@@ -837,12 +837,12 @@ func TestTheHostRejectsABatchOfMoreThanFiftyNotes(t *testing.T) {
 		}
 	}
 	if len(vault.moved) != 0 || len(vault.removed) != 0 {
-		t.Errorf("the vault was asked to move %d and remove %d notes of a batch of 51", len(vault.moved), len(vault.removed))
+		t.Errorf("the vault received a call to move %d and remove %d notes of a batch of 51", len(vault.moved), len(vault.removed))
 	}
 }
 
 func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
-	client, _ := newOutsideClient(t)
+	client, _ := newEscapingPathClient(t)
 
 	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 	if err != nil {
@@ -894,7 +894,7 @@ func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
 	}
 }
 
-func TestAddVaultRefusedForOverlapAnswersOverlapsWithTheCoreSentenceAsTheDetail(t *testing.T) {
+func TestAddVaultOverlapReturnsOverlapsWithCoreTextAsDetail(t *testing.T) {
 	vaultList := domain.Vaults{{ID: "v1", Name: "Rivers", Path: "/vaults/Rivers"}}
 	for root, want := range map[string]string{
 		"/vaults/Rivers/Deltas": "/vaults/Rivers/Deltas is inside the vault Rivers; a vault cannot be inside another vault",
@@ -911,10 +911,10 @@ func TestAddVaultRefusedForOverlapAnswersOverlapsWithTheCoreSentenceAsTheDetail(
 			}
 
 			if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS {
-				t.Errorf("AddVault of %s answered %v, want error OVERLAPS", root, res.Msg)
+				t.Errorf("AddVault of %s returned %v, want error OVERLAPS", root, res.Msg)
 			}
 			if detail := res.Msg.GetDetail(); detail != want {
-				t.Errorf("AddVault of %s answered the detail %q, want %q", root, detail, want)
+				t.Errorf("AddVault of %s returned the detail %q, want %q", root, detail, want)
 			}
 		})
 	}

@@ -18,11 +18,11 @@ import (
 const racyWindow = 2 * time.Second
 
 // ErrFileUnreadable wraps the failure to stat, open or read the file whose
-// hash is asked for. A failure of the vault, of the index or of the context is
+// hash is requested. A failure of the vault, of the index or of the context is
 // returned without it.
 var ErrFileUnreadable = errors.New("the file cannot be read")
 
-// GetContentHash is domain.HashContent of the file at the path as it is now. A
+// GetContentHash returns domain.HashContent of the file at the path as it is now. A
 // recorded hash whose stat equals the file's is returned without opening the
 // file; otherwise the file is hashed from a stream and the hash is recorded
 // with the stat. A file the vault ignores has no index row and is hashed
@@ -84,7 +84,7 @@ func isRecordCurrent(record textport.ContentHash, stat domain.FileStat) bool {
 }
 
 // isRacy reports whether the file may have changed after it was hashed with
-// its modification time kept (git's racy check): its modification time lies
+// its modification time kept (git's racy check): its modification time is
 // within one tick of the hash time. A modification time further ahead cannot be
 // kept by a later write, which stamps the current time.
 func isRacy(record textport.ContentHash) bool {
@@ -94,7 +94,7 @@ func isRacy(record textport.ContentHash) bool {
 	return !record.ModTime.Before(record.HashTime.Add(-racyWindow)) && record.ModTime.Before(record.HashTime.Add(racyWindow))
 }
 
-// hashFile is domain.HashReader of the file at the path.
+// hashFile returns domain.HashReader of the file at the path.
 func hashFile(ctx context.Context, reader vaultport.VaultReader, path string) (hash string, err error) {
 	file, err := reader.Open(ctx, path)
 	if err != nil {

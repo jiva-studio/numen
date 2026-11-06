@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
-func TestClientActivateTabAnswersErrTabNotShownForADeadlineOfTheHost(t *testing.T) {
+func TestClientActivateTabReturnsErrTabNotShownOnHostDeadline(t *testing.T) {
 	c := dialActivate(t, &activateHost{status: connect.NewError(connect.CodeDeadlineExceeded, errors.New(`activate tab "tab-4": the window did not show the tab in time`))})
 
 	_, _, err := c.ActivateTab(t.Context(), "tab-4")
@@ -18,7 +18,7 @@ func TestClientActivateTabAnswersErrTabNotShownForADeadlineOfTheHost(t *testing.
 	}
 }
 
-func TestClientActivateTabAnswersAnotherFailureOfTheHostWithoutErrTabNotShown(t *testing.T) {
+func TestClientActivateTabReturnsOtherHostErrorsAsIs(t *testing.T) {
 	c := dialActivate(t, &activateHost{status: connect.NewError(connect.CodeInternal, errors.New("the window broke"))})
 
 	_, _, err := c.ActivateTab(t.Context(), "tab-4")

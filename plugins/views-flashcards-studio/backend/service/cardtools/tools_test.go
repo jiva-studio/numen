@@ -799,7 +799,7 @@ func TestRenamingTheFirstFieldReachesTheDecks(t *testing.T) {
 		"path": "Animal.md", "from": "Name", "to": "Species",
 	})
 	if renameResult.UpdatedHeadings != 1 {
-		t.Fatalf("renaming the first field reached %d cards", renameResult.UpdatedHeadings)
+		t.Fatalf("renaming the first field changed %d cards", renameResult.UpdatedHeadings)
 	}
 	if content := readVaultFile(t, v, "Animals.md"); !strings.Contains(content, "### Species\n\nLlama\n") {
 		t.Errorf("the card cut by that card model came back as %q", content)
@@ -1085,7 +1085,7 @@ func TestCardToolsLimitsAndEdgeCases(t *testing.T) {
 		t.Fatalf("expected fingerprint error on card_section_add, got %q", msg)
 	}
 
-	// Remove DeckA.md and DeckB.md from disk so card_field_rename answers 2 items in failedDecks.
+	// Remove DeckA.md and DeckB.md from disk so card_field_rename returns 2 items in failedDecks.
 	if err := os.Remove(filepath.Join(v.Path, "DeckA.md")); err != nil {
 		t.Fatal(err)
 	}

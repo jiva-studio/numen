@@ -66,7 +66,7 @@ export const FocusNoteResponseSchema: GenMessage<FocusNoteResponse> = /*@__PURE_
   messageDesc(file_numen_v1_hostwindow, 1);
 
 /**
- * A PassageSpan is a run of the text version of a file, in bytes, as library_search returns it.
+ * A PassageSpan is a byte range in a file's text version, as library_search returns it.
  *
  * @generated from message numen.v1.PassageSpan
  */
@@ -213,7 +213,7 @@ export const ActivateTabResponseSchema: GenMessage<ActivateTabResponse> = /*@__P
   messageDesc(file_numen_v1_hostwindow, 8);
 
 /**
- * HostWindowErrorCode is why a window call was not served. UNSPECIFIED is a call that was served.
+ * HostWindowErrorCode is the reason a window call was not served. UNSPECIFIED means success.
  *
  * @generated from enum numen.v1.HostWindowErrorCode
  */
@@ -224,14 +224,14 @@ export enum HostWindowErrorCode {
   UNSPECIFIED = 0,
 
   /**
-   * NO_WINDOW is a host with no window.
+   * NO_WINDOW means the host has no window.
    *
    * @generated from enum value: HOST_WINDOW_ERROR_CODE_NO_WINDOW = 1;
    */
   NO_WINDOW = 1,
 
   /**
-   * NOT_FOUND is a path the vault holds no note or file at, or a tab id the window has no tab with.
+   * NOT_FOUND means a path with no note or file in the vault, or a tab id with no tab in the window.
    *
    * @generated from enum value: HOST_WINDOW_ERROR_CODE_NOT_FOUND = 2;
    */
@@ -245,15 +245,15 @@ export const HostWindowErrorCodeSchema: GenEnum<HostWindowErrorCode> = /*@__PURE
   enumDesc(file_numen_v1_hostwindow, 0);
 
 /**
- * HostWindowService is the window of the vault a plugin works, as an agent tool reaches it.
- * Every call needs window:focus. A host with no window answers HOST_WINDOW_ERROR_CODE_NO_WINDOW.
- * With several windows the main window of the vault is the one meant.
+ * HostWindowService exposes the main window of the plugin's vault to plugins.
+ * Every call needs window:focus. A host with no window returns HOST_WINDOW_ERROR_CODE_NO_WINDOW.
+ * With several windows, the main window of the vault is used.
  *
  * @generated from service numen.v1.HostWindowService
  */
 export const HostWindowService: GenService<{
   /**
-   * FocusNote makes a note the current one, and the neighbourhood view is drawn around it.
+   * FocusNote makes a note the current one, and the neighbourhood view is centred on it.
    *
    * @generated from rpc numen.v1.HostWindowService.FocusNote
    */
@@ -263,8 +263,8 @@ export const HostWindowService: GenService<{
     output: typeof FocusNoteResponseSchema;
   },
   /**
-   * FocusPassages opens a file in front of the person: the window goes to the first passage and
-   * lights all of them. No passages opens the file at its beginning.
+   * FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
+   * passages opens the file at its beginning.
    *
    * @generated from rpc numen.v1.HostWindowService.FocusPassages
    */
@@ -274,7 +274,7 @@ export const HostWindowService: GenService<{
     output: typeof FocusPassagesResponseSchema;
   },
   /**
-   * ReadOpenTabs is the tabs the window last reported, and the active one.
+   * ReadOpenTabs returns the tabs the window last reported, and the active one.
    *
    * @generated from rpc numen.v1.HostWindowService.ReadOpenTabs
    */
@@ -284,7 +284,7 @@ export const HostWindowService: GenService<{
     output: typeof HostWindowServiceReadOpenTabsResponseSchema;
   },
   /**
-   * ActivateTab makes the open tab with the id the active tab of the window, and answers the tab and
+   * ActivateTab makes the open tab with the id the active tab of the window, and returns the tab and
    * the active id as the window reports them after the activation.
    *
    * @generated from rpc numen.v1.HostWindowService.ActivateTab

@@ -8,14 +8,14 @@ import (
 
 // The palette command transcribes in the vault the host shows, passed as no vault. A tool call that
 // names that vault by its identity is the same recording, and must not start a second run.
-func TestTranscriptCreateOfARecordingThePaletteCommandTranscribesReportsItRunning(t *testing.T) {
-	s := newToolScene(t)
+func TestTranscriptCreateDuringPaletteTranscriptionReportsRunning(t *testing.T) {
+	s := newToolFixture(t)
 	result := make(chan error, 1)
 	go func() {
 		_, err := newTranscribeCommand(s.transcriber)(t.Context(), command.Request{Command: "transcript.create", Path: lecture})
 		result <- err
 	}()
-	s.waitEntered(t)
+	s.waitStarted(t)
 
 	out := s.createTranscript(t, "Lectures", lecture)
 

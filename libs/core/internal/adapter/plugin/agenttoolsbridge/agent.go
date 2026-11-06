@@ -28,7 +28,7 @@ type Agent struct {
 }
 
 // NewAgent wraps the agent of the plugin given so its runs can call the tools that the host's
-// plugins provide on the server and whose required permissions that plugin holds.
+// plugins provide on the server and whose required permissions that plugin has.
 func NewAgent(agent agentport.Agent, host Host, server Server, callerID string) *Agent {
 	return &Agent{agent: agent, plugins: plugins{host: host}, server: server, callerID: callerID}
 }

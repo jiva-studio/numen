@@ -5,7 +5,7 @@
 -- a result shows, and where the hit itself is inside it. A chunk with
 -- nothing enclosing it is its own, and is at its own beginning.
 --
--- A path prefix limits the sources before the list is cut at the limit, so the
+-- A path prefix limits the sources before the list is truncated to the limit, so the
 -- limit counts the passages under it. The prefix is compared as text, and an empty
 -- prefix limits none.
 WITH hits AS (

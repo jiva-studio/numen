@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// The 32-bit range is a limit of the wire to the window, which its converters hold; the use case
+// The 32-bit range is a limit of the wire to the window, which its converters enforce; the use case
 // shows any passage of the file.
 func TestFocusPassagesShowsAPassageThatEndsPastThe32BitRange(t *testing.T) {
 	focus, view, v := newFocusPassages(t)
@@ -20,7 +20,7 @@ func TestFocusPassagesShowsAPassageThatEndsPastThe32BitRange(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(view.requested) != 1 {
-		t.Errorf("the window was asked %+v", view.requested)
+		t.Errorf("the window received %+v", view.requested)
 	}
 }
 
@@ -34,6 +34,6 @@ func TestFocusPassagesAcceptsAPassageThatEndsAtThe32BitLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(view.requested) != 1 {
-		t.Errorf("the window was asked %+v", view.requested)
+		t.Errorf("the window received %+v", view.requested)
 	}
 }

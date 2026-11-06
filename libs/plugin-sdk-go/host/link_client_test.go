@@ -21,7 +21,7 @@ import (
 const staleDetail = "Deltas.md changed since it was read"
 
 // linking is a host of a vault of rivers that serves the link edits and records the requests. Its
-// AddLinks writes the first link, refuses the second as stale and fails the third with no code.
+// AddLinks writes the first link, rejects the second as stale and fails the third with no code.
 type linking struct {
 	numenv1connect.UnimplementedHostVaultServiceHandler
 	mu sync.Mutex
@@ -111,16 +111,16 @@ func TestTheClientSendsEachLinkAdditionWithItsBaselineAndRole(t *testing.T) {
 	first := links[0]
 	if first.GetFrom() != "Deltas.md" || first.GetTo() != "Danube" || first.GetRole() != v1.Role_ROLE_PARENT ||
 		first.GetType() != "tributary" || first.GetLabel() != "the Danube" || first.GetNote() != "it ends in the Danube delta" {
-		t.Errorf("the first link reached the host as %v", first)
+		t.Errorf("the first link was sent to the host as %v", first)
 	}
 	if b := first.GetBaseline(); b.GetPath() != "Deltas.md" || b.GetSize() != 48 || b.GetModTime() != 1700 {
-		t.Errorf("the baseline of the first link reached the host as %v, want Deltas.md of 48 bytes at 1700", b)
+		t.Errorf("the baseline of the first link was sent to the host as %v, want Deltas.md of 48 bytes at 1700", b)
 	}
 	if second := links[1]; second.GetTo() != "note://01JRIVERRHINE" || second.GetRole() != v1.Role_ROLE_JUMP {
-		t.Errorf("the second link reached the host as %v, want the target note://01JRIVERRHINE with role jump", second)
+		t.Errorf("the second link was sent to the host as %v, want the target note://01JRIVERRHINE with role jump", second)
 	}
 	if third := links[2]; third.GetFrom() != "Estuaries.md" || third.GetRole() != v1.Role_ROLE_REF {
-		t.Errorf("the third link reached the host as %v", third)
+		t.Errorf("the third link was sent to the host as %v", third)
 	}
 }
 
@@ -144,10 +144,10 @@ func TestTheClientReturnsOneResultPerLinkAdditionInOrder(t *testing.T) {
 		t.Errorf("the first result came back as %+v, want the stat %+v", r, want)
 	}
 	if r := results[1]; !errors.Is(r.Err, host.ErrStale) || !strings.Contains(r.Err.Error(), staleDetail) {
-		t.Errorf("the second result came back as %+v, want ErrStale carrying %q", r, staleDetail)
+		t.Errorf("the second result came back as %+v, want ErrStale containing %q", r, staleDetail)
 	}
 	if r := results[2]; r.Err == nil || !strings.Contains(r.Err.Error(), diskFull) {
-		t.Errorf("the third result came back as %+v, want an error carrying %q", r, diskFull)
+		t.Errorf("the third result came back as %+v, want an error containing %q", r, diskFull)
 	}
 }
 
@@ -163,10 +163,10 @@ func TestTheClientSendsTheChangeOfTheLinksToATarget(t *testing.T) {
 	r := l.updated
 	if r.GetFrom() != "Deltas.md" || r.GetTo() != "Danube" || r.GetRole() != v1.Role_ROLE_CHILD || r.GetType() != "distributary" ||
 		r.GetLabel() != "Danube arm" || r.GetNote() != "the delta splits the river" {
-		t.Errorf("the update reached the host as %v", r)
+		t.Errorf("the update was sent to the host as %v", r)
 	}
 	if b := r.GetBaseline(); b.GetSize() != 48 || b.GetModTime() != 1700 {
-		t.Errorf("the baseline reached the host as %v, want 48 bytes at 1700", b)
+		t.Errorf("the baseline was sent to the host as %v, want 48 bytes at 1700", b)
 	}
 	if stat.Path != "Deltas.md" || stat.Size != 90 || !stat.ModTime.Equal(time.Unix(0, 3000)) {
 		t.Errorf("the update returned the stat %+v, want Deltas.md of 90 bytes at 3000", stat)
@@ -184,7 +184,7 @@ func TestTheClientSendsTheRemovalOfTheLinksToATargetWithItsRole(t *testing.T) {
 
 		r := l.removed
 		if r.GetFrom() != "Deltas.md" || r.GetTo() != "note://01JRIVERDANUBE" || r.GetRole() != want || r.GetBaseline().GetModTime() != 1700 {
-			t.Errorf("the removal with role %q reached the host as %v, want role %v", role, r, want)
+			t.Errorf("the removal with role %q was sent to the host as %v, want role %v", role, r, want)
 		}
 		if stat.Size != 40 || !stat.ModTime.Equal(time.Unix(0, 4000)) {
 			t.Errorf("the removal returned the stat %+v, want 40 bytes at 4000", stat)
@@ -201,7 +201,7 @@ func TestTheClientReturnsAStaleLinkEditAsErrStaleWithTheDetail(t *testing.T) {
 
 	for call, err := range map[string]error{"UpdateLinks": updateErr, "RemoveLinks": removeErr} {
 		if !errors.Is(err, host.ErrStale) || !strings.Contains(err.Error(), staleDetail) {
-			t.Errorf("%s returned %v, want ErrStale carrying %q", call, err, staleDetail)
+			t.Errorf("%s returned %v, want ErrStale containing %q", call, err, staleDetail)
 		}
 	}
 }
@@ -216,7 +216,7 @@ func TestTheClientKeepsTheDetailOfALinkEditThatFailed(t *testing.T) {
 
 	for call, err := range map[string]error{"UpdateLinks": updateErr, "RemoveLinks": removeErr} {
 		if err == nil || !strings.Contains(err.Error(), detail) {
-			t.Errorf("%s returned %v, want an error carrying %q", call, err, detail)
+			t.Errorf("%s returned %v, want an error containing %q", call, err, detail)
 		}
 	}
 }

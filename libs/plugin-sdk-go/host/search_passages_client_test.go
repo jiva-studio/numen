@@ -18,7 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// passagesHost answers SearchPassages with fixed passages and records what it was asked.
+// passagesHost returns SearchPassages with fixed passages and records the requests.
 type passagesHost struct {
 	numenv1connect.UnimplementedHostSearchServiceHandler
 	code    v1.HostSearchErrorCode

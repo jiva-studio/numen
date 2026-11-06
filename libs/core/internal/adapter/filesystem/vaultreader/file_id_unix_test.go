@@ -25,12 +25,12 @@ func getInode(t *testing.T, path string) uint64 {
 	}
 	stat, ok := info.Sys().(*syscall.Stat_t)
 	if !ok {
-		t.Fatalf("the stat of %s carries no inode", path)
+		t.Fatalf("the stat of %s has no inode", path)
 	}
 	return uint64(stat.Ino)
 }
 
-func statChart(t *testing.T, root string) domain.FileStat {
+func statFixture(t *testing.T, root string) domain.FileStat {
 	t.Helper()
 	src, err := vaultreader.Open(root, vaultconfig.Options{})
 	if err != nil {
@@ -43,7 +43,7 @@ func statChart(t *testing.T, root string) domain.FileStat {
 	return stat
 }
 
-func writeChart(t *testing.T, path, content string) {
+func writeFixture(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
@@ -56,9 +56,9 @@ func writeChart(t *testing.T, path, content string) {
 func TestStatReportsTheInodeOfTheFile(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	target := filepath.Join(root, filepath.FromSlash(chartPath))
-	writeChart(t, target, "%PDF chart of the harbour")
+	writeFixture(t, target, "%PDF chart of the harbour")
 
-	stat := statChart(t, root)
+	stat := statFixture(t, root)
 	if want := domain.FileID(getInode(t, target)); stat.FileID != want || want == 0 {
 		t.Fatalf("stat gives file id %d, want the inode %d", stat.FileID, want)
 	}
@@ -67,16 +67,16 @@ func TestStatReportsTheInodeOfTheFile(t *testing.T) {
 func TestAFileReplacedAtTheSamePathHasAnotherFileID(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	target := filepath.Join(root, filepath.FromSlash(chartPath))
-	writeChart(t, target, "%PDF chart of the harbour")
-	before := statChart(t, root)
+	writeFixture(t, target, "%PDF chart of the harbour")
+	before := statFixture(t, root)
 
 	replacement := filepath.Join(root, "library", "chart.pdf.new")
-	writeChart(t, replacement, "%PDF chart of the harbour")
+	writeFixture(t, replacement, "%PDF chart of the harbour")
 	if err := os.Rename(replacement, target); err != nil {
 		t.Fatal(err)
 	}
 
-	after := statChart(t, root)
+	after := statFixture(t, root)
 	if after.FileID == before.FileID {
 		t.Fatalf("a replaced file keeps the file id %d", after.FileID)
 	}

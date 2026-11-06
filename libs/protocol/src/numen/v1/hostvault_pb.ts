@@ -288,16 +288,16 @@ export type ReadFileRequest = Message<"numen.v1.ReadFileRequest"> & {
   path: string;
 
   /**
-   * Where a ranged read begins, in bytes.
+   * The start of a ranged read, in bytes.
    *
    * @generated from field: int64 start = 2;
    */
   start: bigint;
 
   /**
-   * Set: read at most this many bytes from start as text, cut at whole
+   * Set: read at most this many bytes from start as text, truncated at whole
    * characters; zero or more than 16000 reads 16000. A range that is not UTF-8
-   * is answered NOT_TEXT, a folder or a path the vault does not list NOT_FOUND.
+   * returns NOT_TEXT, a folder or a path not in the vault NOT_FOUND.
    * Unset: read the whole file as bytes.
    *
    * @generated from field: optional int64 length = 3;
@@ -332,7 +332,7 @@ export type ReadFileResponse = Message<"numen.v1.ReadFileResponse"> & {
   stat?: HostFileStat | undefined;
 
   /**
-   * Where content begins in the file: start moved forward to a whole
+   * The start of content in the file: start moved forward to a whole
    * character. Zero for a whole read.
    *
    * @generated from field: int64 start = 4;
@@ -1367,7 +1367,7 @@ export type HostVaultProblem = Message<"numen.v1.HostVaultProblem"> & {
   targetValue: string;
 
   /**
-   * The notes an ambiguous link could reach.
+   * The notes an ambiguous link could resolve to.
    *
    * @generated from field: repeated string candidates = 6;
    */
@@ -1396,7 +1396,7 @@ export type GetVaultProblemsResponse = Message<"numen.v1.GetVaultProblemsRespons
   problems: HostVaultProblem[];
 
   /**
-   * The checks this answer covers.
+   * The checks this result covers.
    *
    * @generated from field: repeated string checks = 3;
    */
@@ -1608,7 +1608,7 @@ export type HostNoteRemoval = Message<"numen.v1.HostNoteRemoval"> & {
   trashPath: string;
 
   /**
-   * The notes whose links now resolve to nothing.
+   * The notes whose links are now broken.
    *
    * @generated from field: repeated string broken_links = 3;
    */
@@ -1965,7 +1965,7 @@ export type HostVaultServiceAddVaultRequest = Message<"numen.v1.HostVaultService
   root: string;
 
   /**
-   * Empty takes the name of the folder.
+   * Empty means the name of the folder.
    *
    * @generated from field: string name = 2;
    */
@@ -1994,7 +1994,7 @@ export type HostVaultServiceAddVaultResponse = Message<"numen.v1.HostVaultServic
   vault?: Vault | undefined;
 
   /**
-   * The core's error text of a refusal; empty on success.
+   * The core's error text of a rejected call; empty on success.
    *
    * @generated from field: string detail = 3;
    */
@@ -2045,7 +2045,7 @@ export type HostVaultServiceRenameVaultResponse = Message<"numen.v1.HostVaultSer
   vault?: Vault | undefined;
 
   /**
-   * The core's error text of a refusal; empty on success.
+   * The core's error text of a rejected call; empty on success.
    *
    * @generated from field: string detail = 3;
    */
@@ -2093,7 +2093,7 @@ export type HostVaultServiceRemoveVaultResponse = Message<"numen.v1.HostVaultSer
   path: string;
 
   /**
-   * The core's error text of a refusal; empty on success.
+   * The core's error text of a rejected call; empty on success.
    *
    * @generated from field: string detail = 3;
    */
@@ -2134,7 +2134,7 @@ export type HostVaultServiceOpenVaultResponse = Message<"numen.v1.HostVaultServi
   error: VaultsErrorCode;
 
   /**
-   * The core's error text of a refusal; empty on success.
+   * The core's error text of a rejected call; empty on success.
    *
    * @generated from field: string detail = 2;
    */
@@ -2358,14 +2358,14 @@ export enum HostVaultErrorCode {
   NAME_EXHAUSTED = 11,
 
   /**
-   * The file is not text a note can carry.
+   * The file is not valid note text.
    *
    * @generated from enum value: HOST_VAULT_ERROR_CODE_NOT_TEXT = 12;
    */
   NOT_TEXT = 12,
 
   /**
-   * The file is past the size a note is read at.
+   * The file exceeds the maximum note size.
    *
    * @generated from enum value: HOST_VAULT_ERROR_CODE_TOO_LARGE = 13;
    */
@@ -2388,9 +2388,8 @@ export enum HostVaultErrorCode {
   UNREADABLE = 15,
 
   /**
-   * A note cannot be called this: the title leaves nothing a file can be named
-   * after, it is more than one line, or a heading would read it back as
-   * something else.
+   * The title is invalid: it is empty after sanitising, spans lines, or parses
+   * as markup.
    *
    * @generated from enum value: HOST_VAULT_ERROR_CODE_INVALID_NAME = 16;
    */
@@ -2398,7 +2397,7 @@ export enum HostVaultErrorCode {
 
   /**
    * The change of a note failed for a reason with no code of its own; the
-   * detail of that note holds the core's error text.
+   * detail of that note contains the core's error text.
    *
    * @generated from enum value: HOST_VAULT_ERROR_CODE_INTERNAL = 17;
    */
@@ -2506,7 +2505,7 @@ export const HostVaultService: GenService<{
   },
   /**
    * StatFile says what a file is now. A file that is not there is
-   * answered with the error code NOT_FOUND.
+   * returns the error code NOT_FOUND.
    *
    * @generated from rpc numen.v1.HostVaultService.StatFile
    */
@@ -2527,7 +2526,7 @@ export const HostVaultService: GenService<{
   },
   /**
    * WriteFile replaces a file that has not changed since the file stat given.
-   * A file that moved past it is answered with the error code CONFLICT and
+   * A file changed since returns the error code CONFLICT and
    * nothing is written.
    *
    * @generated from rpc numen.v1.HostVaultService.WriteFile
@@ -2740,7 +2739,7 @@ export const HostVaultService: GenService<{
     output: typeof GetVaultProblemsResponseSchema;
   },
   /**
-   * RenameNote gives a note another title and moves its file to the filename of
+   * RenameNote renames a note and moves its file to the filename of
    * that title, repairing the links that stop resolving. It needs vault:write.
    *
    * @generated from rpc numen.v1.HostVaultService.RenameNote
@@ -2762,7 +2761,7 @@ export const HostVaultService: GenService<{
     output: typeof HostVaultServiceMoveNotesResponseSchema;
   },
   /**
-   * RemoveNotes moves notes to the vault's trash. A folder is answered with
+   * RemoveNotes moves notes to the vault's trash. A folder returns
    * NOT_A_NOTE. It needs vault:write.
    *
    * @generated from rpc numen.v1.HostVaultService.RemoveNotes
@@ -2830,7 +2829,7 @@ export const HostVaultService: GenService<{
     output: typeof HostVaultServiceRenameVaultResponseSchema;
   },
   /**
-   * RemoveVault takes a vault off the list and out of the index. The folder
+   * RemoveVault removes a vault from the list and from the index. The folder
    * stays. It needs vault:manage.
    *
    * @generated from rpc numen.v1.HostVaultService.RemoveVault
@@ -2841,7 +2840,7 @@ export const HostVaultService: GenService<{
     output: typeof HostVaultServiceRemoveVaultResponseSchema;
   },
   /**
-   * OpenVault makes the window show another vault. It answers before the window
+   * OpenVault makes the window show another vault. It returns before the window
    * changes vault. It needs vault:manage.
    *
    * @generated from rpc numen.v1.HostVaultService.OpenVault

@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 )
 
-// askedFinder answers a search with fixed passages and records the query and the parameters.
+// askedFinder returns a search with fixed passages and records the query and the parameters.
 type askedFinder struct {
 	found  []domain.Passage
 	query  string
@@ -22,7 +22,7 @@ func (f *askedFinder) Execute(_ context.Context, _ domain.Vault, query string, p
 	return f.found, nil
 }
 
-func TestSearchPassagesPassesTheQueryOfThePluginToThePassageSearch(t *testing.T) {
+func TestSearchPassagesPassesPluginQueryToThePassageSearch(t *testing.T) {
 	finder := &askedFinder{found: []domain.Passage{{Source: "library/Birds.pdf", Text: "the grey heron"}}}
 	s := Search{Passages: search.NewSearchPassages(finder)}
 
@@ -33,10 +33,10 @@ func TestSearchPassagesPassesTheQueryOfThePluginToThePassageSearch(t *testing.T)
 		t.Fatal(err)
 	}
 	if len(got) != 1 || got[0].Source != "library/Birds.pdf" {
-		t.Errorf("answered %+v, want the passage the search found", got)
+		t.Errorf("returned %+v, want the passage the search found", got)
 	}
 	p := finder.params
 	if finder.query != "heron" || p.Limit != 7 || p.PathPrefix != "library/" || len(p.Kinds) != 1 || p.Kinds[0] != domain.KindFile {
-		t.Errorf("the search was asked %q with %+v, want heron, limit 7, the prefix and the kind", finder.query, p)
+		t.Errorf("the search received %q with %+v, want heron, limit 7, the prefix and the kind", finder.query, p)
 	}
 }

@@ -88,7 +88,7 @@ watch(
   { immediate: true },
 )
 
-// The window sets a new array each time it asks for ranges, so the same ranges are lit again.
+// The window sets a new array on each request, so the same ranges are highlighted again.
 watch(
   () => readerTab.value?.ranges,
   (ranges) => {

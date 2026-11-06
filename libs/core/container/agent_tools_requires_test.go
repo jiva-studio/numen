@@ -12,9 +12,9 @@ import (
 
 const atlasToolsPlugin = "md.test.atlastools"
 
-// requiringTool is a tool of a test plugin that requires the permissions given besides the one of
+// newToolRequiring is a tool of a test plugin that requires the permissions given besides the one of
 // its effect.
-func requiringTool(name string, effect v1.ToolEffect, requires ...string) *v1.PluginTool {
+func newToolRequiring(name string, effect v1.ToolEffect, requires ...string) *v1.PluginTool {
 	tool := newPluginTool(name, effect)
 	tool.Requires = requires
 	return tool
@@ -31,21 +31,21 @@ func getRequireCases() map[string]struct {
 		effect []string
 	}{
 		"vault:manage": {
-			tool:   requiringTool("atlas_reshelve", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, "vault:manage"),
+			tool:   newToolRequiring("atlas_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, "vault:manage"),
 			effect: []string{"vault:read", "vault:write"},
 		},
 		"index:read": {
-			tool:   requiringTool("atlas_index", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, "index:read"),
+			tool:   newToolRequiring("atlas_index", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, "index:read"),
 			effect: []string{"vault:read"},
 		},
 		"window:focus": {
-			tool:   requiringTool("atlas_spotlight", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, "window:focus"),
+			tool:   newToolRequiring("atlas_spotlight", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, "window:focus"),
 			effect: []string{"vault:read"},
 		},
 	}
 }
 
-func TestACallerWithoutTheRequiredPermissionNeitherListsNorCallsTheTool(t *testing.T) {
+func TestCallerWithoutRequiredPermissionCannotListOrCallTool(t *testing.T) {
 	for permission, c := range getRequireCases() {
 		t.Run(permission, func(t *testing.T) {
 			served := &toolPlugin{tools: []*v1.PluginTool{newPluginTool("atlas_open", v1.ToolEffect_TOOL_EFFECT_READ_ONLY), c.tool}}
@@ -63,7 +63,7 @@ func TestACallerWithoutTheRequiredPermissionNeitherListsNorCallsTheTool(t *testi
 				t.Fatal(err)
 			}
 			if res.Msg.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL {
-				t.Errorf("a call of %s without %s answered %v, want UNKNOWN_TOOL", c.tool.GetName(), permission, res.Msg)
+				t.Errorf("a call of %s without %s returned %v, want UNKNOWN_TOOL", c.tool.GetName(), permission, res.Msg)
 			}
 			if requests := served.getRequests(); len(requests) != 0 {
 				t.Errorf("the plugin was called with %v", requests)
@@ -90,7 +90,7 @@ func TestACallerWithTheRequiredPermissionListsAndCallsTheTool(t *testing.T) {
 				t.Fatal(err)
 			}
 			if res.Msg.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || res.Msg.GetResult() == nil {
-				t.Errorf("a call of %s with %s answered %v", c.tool.GetName(), permission, res.Msg)
+				t.Errorf("a call of %s with %s returned %v", c.tool.GetName(), permission, res.Msg)
 			}
 			if requests := served.getRequests(); len(requests) != 1 || requests[0].GetName() != c.tool.GetName() {
 				t.Errorf("the plugin was called with %v", requests)

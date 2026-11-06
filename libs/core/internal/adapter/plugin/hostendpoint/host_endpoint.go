@@ -65,9 +65,9 @@ type Services interface {
 }
 
 type windowServices interface {
-	// GetPluginWindow is the main window of the vault, or nil where the host has no window.
+	// GetPluginWindow returns the main window of the vault, or nil when the host has no window.
 	GetPluginWindow() pluginport.PluginWindow
-	// GetPluginVaultList is the list of vaults plugins change, or nil where the host has no window.
+	// GetPluginVaultList returns the list of vaults plugins change, or nil when the host has no window.
 	GetPluginVaultList() pluginport.PluginVaultList
 }
 
@@ -111,12 +111,12 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux.Handle(numenv1connect.NewHostSearchServiceHandler(&searchEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostWindowServiceHandler(&windowEndpoint{endpoint: endpoint}))
-	counted := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	countingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		endpoint.callCount.Add(1)
 		defer endpoint.callCount.Add(-1)
 		mux.ServeHTTP(w, r)
 	})
-	endpoint.server = &http.Server{Handler: counted, ReadHeaderTimeout: hostEndpointHeaderTimeout}
+	endpoint.server = &http.Server{Handler: countingHandler, ReadHeaderTimeout: hostEndpointHeaderTimeout}
 	go func() {
 		defer close(endpoint.serveResult)
 		// Serve returns http.ErrServerClosed after Close.

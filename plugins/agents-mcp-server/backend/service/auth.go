@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// hasValidToken reports whether the request carries the header Authorization: Bearer <token>. An
+// hasValidToken reports whether the request has the header Authorization: Bearer <token>. An
 // empty token matches no request.
 func hasValidToken(token string, r *http.Request) bool {
 	if token == "" {
@@ -33,7 +33,7 @@ func isLoopbackOrigin(origin string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-// requireToken refuses a request from a browser page outside the machine with 403, then a request
+// requireToken rejects a request from a browser page outside the machine with 403, then a request
 // without the token with 401.
 func requireToken(token string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

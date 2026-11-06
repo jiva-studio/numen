@@ -58,7 +58,7 @@ func (r fileReader) StatFile(_ context.Context, path string) (domain.FileStat, e
 
 func getFilesTime() time.Time { return time.Date(2026, 2, 1, 8, 0, 0, 0, time.UTC) }
 
-// memoryFile is a file held in memory, with nothing to release.
+// memoryFile is a file stored in memory, with nothing to release.
 type memoryFile struct{ *bytes.Reader }
 
 func (memoryFile) Close() error { return nil }

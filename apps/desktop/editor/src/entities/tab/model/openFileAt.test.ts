@@ -1,12 +1,12 @@
 /**
- * A file that is no note, opened at ranges of its text: its reader is given the ranges to light.
+ * A non-note file opened at text ranges: its reader receives the ranges to highlight.
  */
 import { describe, expect, it } from 'vitest'
 import type { FileKind } from '@/shared/model/fileTypes'
 import type { TextRange } from '@/shared/textRange'
 import { fileOpeners, type FileOpenerDeps } from './openers'
 
-/** A vault that answers with the kinds it is given. */
+/** A vault that returns the given kinds. */
 const createVault = (kinds: Record<string, FileKind>): FileOpenerDeps => ({
   fileKinds: async (paths) => {
     const found = new Map<string, FileKind>()

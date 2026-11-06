@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-// The plugin serves the tools of the others to an agent, so it holds the permissions those tools
-// require besides the one of their effect.
+// The plugin serves the tools of the others to an agent, so it declares the extra
+// permissions those tools require.
 func TestManifestListsVaultManageWindowFocusAndIndexRead(t *testing.T) {
 	var manifest struct {
 		Permissions []string `json:"permissions"`
@@ -18,7 +18,7 @@ func TestManifestListsVaultManageWindowFocusAndIndexRead(t *testing.T) {
 
 	for _, want := range []string{"vault:read", "vault:write", "vault:manage", "window:focus", "index:read"} {
 		if !slices.Contains(manifest.Permissions, want) {
-			t.Errorf("the manifest holds the permissions %v, want %s among them", manifest.Permissions, want)
+			t.Errorf("the manifest declares the permissions %v, want %s among them", manifest.Permissions, want)
 		}
 	}
 }

@@ -21,7 +21,7 @@ func TestWindowManagerPreviews(t *testing.T) {
 		t.Fatalf("second NextPreviewID() = %q, want prev-1700000000000000000-2", id2)
 	}
 
-	prev := EditPreview{
+	prev := NoteEditPreview{
 		ID:        id,
 		Path:      "notes/test.md",
 		Diff:      "sample diff",

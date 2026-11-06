@@ -16,9 +16,9 @@ type FocusRequest struct {
 	Passages []host.PassageSpan
 }
 
-// Window is the window of a vault, in memory. A note FocusNote is asked for is found among the notes
-// of the vault, and a file FocusPassages is asked for among its files; a path the vault holds nothing
-// at is ErrNotExist and is not recorded. The window serves the tabs SetOpenTabs gives it.
+// Window is the in-memory window of a vault. FocusNote looks up the note among the notes
+// of the vault, and FocusPassages looks up the file among its files; a path with no file in the vault
+// returns ErrNotExist and is not recorded. The window returns the tabs set by SetOpenTabs.
 type Window struct {
 	vault *Vault
 
@@ -33,7 +33,7 @@ type Window struct {
 
 var _ host.Window = (*Window)(nil)
 
-// NewWindow is the window of the vault, with no tab open.
+// NewWindow returns the window of the vault, with no tab open.
 func NewWindow(vault *Vault) *Window { return &Window{vault: vault} }
 
 func (w *Window) hasNoWindow() bool {
@@ -66,7 +66,7 @@ func (w *Window) FocusPassages(ctx context.Context, path string, passages []host
 	}
 	_, err := w.vault.StatFile(ctx, path)
 	if errors.Is(err, host.ErrNotANote) {
-		return fmt.Errorf("this vault holds nothing at %s: %w", path, host.ErrNotExist)
+		return fmt.Errorf("no file at %s: %w", path, host.ErrNotExist)
 	}
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func (w *Window) ReadOpenTabs(context.Context) ([]host.OpenTab, string, error) {
 	return slices.Clone(w.tabs), w.activeID, nil
 }
 
-// SetOpenTabs is the tabs the window reports from now on, and the active one.
+// SetOpenTabs sets the tabs the window reports from now on, and the active one.
 func (w *Window) SetOpenTabs(tabs []host.OpenTab, activeID string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -94,21 +94,21 @@ func (w *Window) SetOpenTabs(tabs []host.OpenTab, activeID string) {
 	w.activeID = activeID
 }
 
-// SetNoWindow makes every later call answer ErrNoWindow, as a host with no window does.
+// SetNoWindow makes every later call return ErrNoWindow, as a host with no window does.
 func (w *Window) SetNoWindow() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.isAbsent = true
 }
 
-// GetFocusedNotes is the paths of the notes FocusNote made the current one, in order.
+// GetFocusedNotes returns the paths of the notes FocusNote made the current one, in order.
 func (w *Window) GetFocusedNotes() []string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return slices.Clone(w.notes)
 }
 
-// GetFocusRequests is the FocusPassages calls the window served, in order.
+// GetFocusRequests returns the FocusPassages calls the window served, in order.
 func (w *Window) GetFocusRequests() []FocusRequest {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -130,7 +130,7 @@ func (w *Window) ActivateTab(_ context.Context, id string) (host.OpenTab, string
 	return w.tabs[index], id, nil
 }
 
-// GetActivatedTabs is the ids of the tabs ActivateTab made the active one, in order.
+// GetActivatedTabs returns the ids of the tabs ActivateTab made the active one, in order.
 func (w *Window) GetActivatedTabs() []string {
 	w.mu.Lock()
 	defer w.mu.Unlock()

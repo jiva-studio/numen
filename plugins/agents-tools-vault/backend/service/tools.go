@@ -35,14 +35,14 @@ func New(vault host.Vault) *Tools {
 	return &Tools{host: vault, vault: nil, texts: nil, search: nil, list: nil}
 }
 
-// WithVaultList gives the tools the installation's list of vaults, which vault_list reads and the
+// WithVaultList sets the installation's list of vaults, which vault_list reads and the
 // tools that add, rename, remove and open vaults change.
 func (t *Tools) WithVaultList(list host.VaultList) *Tools {
 	t.list = list
 	return t
 }
 
-// inVault runs the tool on the vault the call names. A call that names none is refused.
+// inVault runs the tool on the vault the call names. A call that names no vault returns an error.
 func inVault[In, Out any](t *Tools, run func(*Tools, context.Context, In) (Out, error)) func(context.Context, In) (Out, error) {
 	return func(ctx context.Context, in In) (Out, error) {
 		id := tools.GetVault(ctx)
@@ -67,17 +67,17 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 	adds := []func(*tools.Registry) error{
 		t.addNoteRead,
 		t.addNoteWrite,
-		t.addNoteHeadings,
+		t.addNoteHeadingList,
 		t.addNoteSearch,
 		t.addNoteList,
-		t.addNoteTitles,
+		t.addNoteTitleList,
 		t.addNoteResolve,
 		t.addLibrarySearch,
 		t.addLibraryRead,
 		t.addLinkList,
 		t.addVaultGet,
 		t.addVaultList,
-		t.addVaultProblems,
+		t.addVaultProblemList,
 		t.addFileRead,
 		t.addFileCreate,
 		t.addNoteRename,

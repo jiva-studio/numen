@@ -17,10 +17,10 @@ type FileText struct {
 	versions *Versions
 }
 
-// NewFileText is the text the versions give the vault files.
+// NewFileText returns the text of the vault files from their text versions.
 func NewFileText(versions *Versions) (*FileText, error) {
 	if versions == nil {
-		return nil, errors.New("a file text needs text versions")
+		return nil, errors.New("file text: text versions are required")
 	}
 	return &FileText{versions: versions}, nil
 }

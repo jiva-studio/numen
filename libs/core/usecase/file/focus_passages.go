@@ -11,15 +11,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
-// mostPassages is how many passages of one file a focus highlights at once.
-const mostPassages = 8
+// maxPassages is the maximum number of passages of one file a focus highlights at once.
+const maxPassages = 8
 
-// ErrInvalidPassage is what a focus gets for no path, a passage that starts before the text or is
+// ErrInvalidPassage is returned by a focus with no path, a passage that starts before the text or is
 // empty, or more passages than one file may highlight.
-var ErrInvalidPassage = errors.New("the passages cannot be shown")
+var ErrInvalidPassage = errors.New("invalid passage")
 
-// FocusPassagesInput is the file to show and the passages of it to highlight. The first passage is the
-// one the window goes to; none opens the file at its beginning.
+// FocusPassagesInput is the file to show and the passages of it to highlight. The window scrolls to
+// the first passage; no passages opens the file at its beginning.
 type FocusPassagesInput struct {
 	Path     string
 	Passages []domain.ByteRange
@@ -46,7 +46,7 @@ func (u *FocusPassages) Execute(ctx context.Context, v domain.Vault, in FocusPas
 	}
 	_, err = reader.StatFile(ctx, in.Path)
 	if vaultport.IsNoNote(err) {
-		return fmt.Errorf("this vault holds nothing at %s: %w", in.Path, vaultport.ErrNotExist)
+		return fmt.Errorf("no file at %s: %w", in.Path, vaultport.ErrNotExist)
 	}
 	if err != nil {
 		return err
@@ -58,15 +58,14 @@ func (u *FocusPassages) Execute(ctx context.Context, v domain.Vault, in FocusPas
 // or is empty, or more passages than one file may highlight.
 func checkPassages(in FocusPassagesInput) error {
 	if in.Path == "" {
-		return fmt.Errorf("name the document to show: %w", ErrInvalidPassage)
+		return fmt.Errorf("path is empty: %w", ErrInvalidPassage)
 	}
-	if len(in.Passages) > mostPassages {
-		return fmt.Errorf("highlight at most %d places of one document: %w", mostPassages, ErrInvalidPassage)
+	if len(in.Passages) > maxPassages {
+		return fmt.Errorf("too many passages: at most %d: %w", maxPassages, ErrInvalidPassage)
 	}
 	for _, passage := range in.Passages {
 		if passage.Start < 0 || passage.Empty() {
-			return fmt.Errorf(
-				"a passage begins at or after the start of the text, and is longer than nothing: %w", ErrInvalidPassage)
+			return fmt.Errorf("passage start must be >= 0 and length > 0: %w", ErrInvalidPassage)
 		}
 	}
 	return nil

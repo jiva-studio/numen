@@ -41,7 +41,7 @@ type linkRemoval struct {
 // the note moved past is vaultport.ErrStale, a note that is not there fs.ErrNotExist, a target the
 // note has no link to the core's "no link to <to> is written here". It records every call.
 type linkingVault struct {
-	*arrangingVault
+	*fakeNoteVault
 	additions [][]pluginport.PluginLinkAddition
 	updates   []linkUpdate
 	removals  []linkRemoval
@@ -51,8 +51,8 @@ type linkingVault struct {
 
 func newLinkingVault() *linkingVault {
 	return &linkingVault{
-		arrangingVault: newArrangingVault(),
-		links:          map[string][]domain.Address{"Deltas.md": {{Scheme: domain.SchemeName, Value: "Danube"}}},
+		fakeNoteVault: newFakeNoteVault(),
+		links:         map[string][]domain.Address{"Deltas.md": {{Scheme: domain.SchemeName, Value: "Danube"}}},
 	}
 }
 
@@ -157,11 +157,11 @@ func (l *linkingVault) readBaseline(t *testing.T, from string) *v1.HostFileStat 
 // with md.numen.a granted the permissions named.
 func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) numenv1connect.HostVaultServiceClient {
 	t.Helper()
-	hosted := newCallers(nil)
+	hostCallers := newCallers(nil)
 	if vault != nil {
-		hosted.vault = vault
+		hostCallers.vault = vault
 	}
-	endpoint := &Endpoint{callers: listCallers{callers: hosted, granted: granted}}
+	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: granted}}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)
@@ -186,15 +186,15 @@ func TestLinkEditsAreDeniedWithoutVaultWrite(t *testing.T) {
 
 	for name, err := range map[string]error{"AddLinks": addErr, "UpdateLinks": updateErr, "RemoveLinks": removeErr} {
 		if !isDenied(err) {
-			t.Errorf("%s with only vault:read answered %v, want permission denied", name, err)
+			t.Errorf("%s with only vault:read returned %v, want permission denied", name, err)
 		}
 	}
 	if len(vault.additions) != 0 || len(vault.updates) != 0 || len(vault.removals) != 0 {
-		t.Errorf("a denied call reached the vault: %v %v %v", vault.additions, vault.updates, vault.removals)
+		t.Errorf("a denied call was sent to the vault: %v %v %v", vault.additions, vault.updates, vault.removals)
 	}
 }
 
-func TestLinkEditsWithoutAVaultAnswerNoVault(t *testing.T) {
+func TestLinkEditsWithoutAVaultReturnNoVault(t *testing.T) {
 	client := newLinksClient(t, nil, pluginport.PermissionVaultWrite)
 	ctx := t.Context()
 
@@ -205,17 +205,17 @@ func TestLinkEditsWithoutAVaultAnswerNoVault(t *testing.T) {
 	removed, removeErr := client.RemoveLinks(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveLinksRequest{From: "Deltas.md", To: "Danube"}))
 
 	if addErr != nil || added.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT || len(added.Msg.GetResults()) != 0 {
-		t.Errorf("AddLinks answered %v (%v), want NO_VAULT and no results", added, addErr)
+		t.Errorf("AddLinks returned %v (%v), want NO_VAULT and no results", added, addErr)
 	}
 	if updateErr != nil || updated.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT {
-		t.Errorf("UpdateLinks answered %v (%v), want NO_VAULT", updated, updateErr)
+		t.Errorf("UpdateLinks returned %v (%v), want NO_VAULT", updated, updateErr)
 	}
 	if removeErr != nil || removed.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT {
-		t.Errorf("RemoveLinks answered %v (%v), want NO_VAULT", removed, removeErr)
+		t.Errorf("RemoveLinks returned %v (%v), want NO_VAULT", removed, removeErr)
 	}
 }
 
-func TestAddLinksPassesEveryAdditionInOneCallAndAnswersOneResultPerLinkInOrder(t *testing.T) {
+func TestAddLinksSendsOneCallAndReturnsOneResultPerLink(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
 	danube := vault.readBaseline(t, "Danube.md")
@@ -249,12 +249,12 @@ func TestAddLinksPassesEveryAdditionInOneCallAndAnswersOneResultPerLinkInOrder(t
 	for i := range want {
 		if got[i].From != want[i].From || got[i].Link != want[i].Link ||
 			got[i].Baseline.Size != want[i].Baseline.Size || !got[i].Baseline.ModTime.Equal(want[i].Baseline.ModTime) {
-			t.Errorf("addition %d reached the vault as %+v, want %+v", i, got[i], want[i])
+			t.Errorf("addition %d was sent to the vault as %+v, want %+v", i, got[i], want[i])
 		}
 	}
 	results := res.Msg.GetResults()
 	if res.Msg.GetError() != 0 || len(results) != 3 {
-		t.Fatalf("AddLinks answered error %v with %d results, want 3 results", res.Msg.GetError(), len(results))
+		t.Fatalf("AddLinks returned error %v with %d results, want 3 results", res.Msg.GetError(), len(results))
 	}
 	for i, from := range []string{"Danube.md", "Rivers/Rhine.md", "Danube.md"} {
 		if r := results[i]; r.GetError() != 0 || r.GetDetail() != "" || r.GetStat().GetPath() != from || r.GetStat().GetSize() == 0 {
@@ -262,11 +262,11 @@ func TestAddLinksPassesEveryAdditionInOneCallAndAnswersOneResultPerLinkInOrder(t
 		}
 	}
 	if results[0].GetStat().GetModTime() != results[2].GetStat().GetModTime() {
-		t.Errorf("the two links of Danube.md answered the file stats %v and %v, want the one write", results[0].GetStat(), results[2].GetStat())
+		t.Errorf("the two links of Danube.md returned the file stats %v and %v, want the one write", results[0].GetStat(), results[2].GetStat())
 	}
 }
 
-func TestAddLinksOverAStaleBaselineAnswersConflictForThatNoteAndWritesTheOthers(t *testing.T) {
+func TestAddLinksOverStaleBaselineReturnsConflictAndWritesOthers(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
 	outdated := vault.readBaseline(t, "Danube.md")
@@ -284,7 +284,7 @@ func TestAddLinksOverAStaleBaselineAnswersConflictForThatNoteAndWritesTheOthers(
 
 	results := res.Msg.GetResults()
 	if res.Msg.GetError() != 0 || len(results) != 3 {
-		t.Fatalf("AddLinks answered error %v with %d results, want 3 results", res.Msg.GetError(), len(results))
+		t.Fatalf("AddLinks returned error %v with %d results, want 3 results", res.Msg.GetError(), len(results))
 	}
 	for _, i := range []int{0, 2} {
 		if r := results[i]; r.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT || r.GetStat() != nil ||
@@ -293,11 +293,11 @@ func TestAddLinksOverAStaleBaselineAnswersConflictForThatNoteAndWritesTheOthers(
 		}
 	}
 	if r := results[1]; r.GetError() != 0 || r.GetStat().GetPath() != "Rivers/Rhine.md" {
-		t.Errorf("the link of Rivers/Rhine.md answered %v, want it written", r)
+		t.Errorf("the link of Rivers/Rhine.md returned %v, want it written", r)
 	}
 }
 
-func TestAddLinksToANoteThatIsNotThereAnswersNotFoundWithTheDetail(t *testing.T) {
+func TestAddLinksToMissingNoteReturnsNotFoundWithTheDetail(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
 
@@ -310,7 +310,7 @@ func TestAddLinksToANoteThatIsNotThereAnswersNotFoundWithTheDetail(t *testing.T)
 
 	if r := res.Msg.GetResults(); len(r) != 1 || r[0].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND ||
 		!strings.Contains(r[0].GetDetail(), "Volga.md") {
-		t.Errorf("AddLinks answered %v, want one result NOT_FOUND naming Volga.md", res.Msg)
+		t.Errorf("AddLinks returned %v, want one result NOT_FOUND naming Volga.md", res.Msg)
 	}
 }
 
@@ -326,10 +326,10 @@ func TestAddLinksRejectsMoreThanFiftyLinks(t *testing.T) {
 	_, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: links}))
 
 	if readCode(t, err) != connect.CodeInvalidArgument {
-		t.Errorf("51 links answered %v, want invalid argument", err)
+		t.Errorf("51 links returned %v, want invalid argument", err)
 	}
 	if len(vault.additions) != 0 {
-		t.Errorf("a refused call reached the vault with %d calls", len(vault.additions))
+		t.Errorf("a rejected call was sent to the vault with %d calls", len(vault.additions))
 	}
 }
 
@@ -345,11 +345,11 @@ func TestAddLinksAcceptsFiftyLinks(t *testing.T) {
 	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: links}))
 
 	if err != nil || len(res.Msg.GetResults()) != 50 {
-		t.Fatalf("50 links answered %v (%v), want 50 results", res, err)
+		t.Fatalf("50 links returned %v (%v), want 50 results", res, err)
 	}
 }
 
-func TestUpdateLinksPassesTheChangeAndAnswersTheFileStatAfterTheWrite(t *testing.T) {
+func TestUpdateLinksPassesTheChangeAndReturnsTheFileStat(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
 	baseline := vault.readBaseline(t, "Deltas.md")
@@ -370,15 +370,15 @@ func TestUpdateLinksPassesTheChangeAndAnswersTheFileStatAfterTheWrite(t *testing
 	if got.from != "Deltas.md" || got.to != (domain.Address{Scheme: domain.SchemeName, Value: "Danube"}) ||
 		got.change.Role != wantChange.Role || got.change.Type != wantChange.Type || got.change.Label != wantChange.Label || got.change.Why != wantChange.Why ||
 		got.baseline.Size != baseline.GetSize() || got.baseline.ModTime.UnixNano() != baseline.GetModTime() {
-		t.Errorf("the update reached the vault as %+v, want Deltas.md to name://Danube with %+v over the baseline %v", got, wantChange, baseline)
+		t.Errorf("the update was sent to the vault as %+v, want Deltas.md to name://Danube with %+v over the baseline %v", got, wantChange, baseline)
 	}
 	if res.Msg.GetError() != 0 || res.Msg.GetDetail() != "" || res.Msg.GetStat().GetPath() != "Deltas.md" ||
 		res.Msg.GetStat().GetModTime() == baseline.GetModTime() {
-		t.Errorf("UpdateLinks answered %v, want the file stat of Deltas.md after the write", res.Msg)
+		t.Errorf("UpdateLinks returned %v, want the file stat of Deltas.md after the write", res.Msg)
 	}
 }
 
-func TestUpdateLinksOverAStaleBaselineAnswersConflict(t *testing.T) {
+func TestUpdateLinksOverAStaleBaselineReturnsConflict(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
 	outdated := vault.readBaseline(t, "Deltas.md")
@@ -392,11 +392,11 @@ func TestUpdateLinksOverAStaleBaselineAnswersConflict(t *testing.T) {
 	}
 
 	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT || res.Msg.GetStat() != nil || res.Msg.GetDetail() == "" {
-		t.Errorf("UpdateLinks over a stale baseline answered %v, want CONFLICT with the core's text", res.Msg)
+		t.Errorf("UpdateLinks over a stale baseline returned %v, want CONFLICT with the core's text", res.Msg)
 	}
 }
 
-func TestUpdateLinksOfATargetTheNoteDoesNotLinkAnswersTheCoreText(t *testing.T) {
+func TestUpdateLinksOfUnlinkedTargetReturnsTheCoreText(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
 
@@ -408,11 +408,11 @@ func TestUpdateLinksOfATargetTheNoteDoesNotLinkAnswersTheCoreText(t *testing.T) 
 	}
 
 	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL || res.Msg.GetDetail() != "no link to Volga is written here" {
-		t.Errorf("UpdateLinks of a missing link answered %v, want INTERNAL with the detail naming name://Volga", res.Msg)
+		t.Errorf("UpdateLinks of a missing link returned %v, want INTERNAL with the detail naming name://Volga", res.Msg)
 	}
 }
 
-func TestRemoveLinksPassesTheRoleAndAnswersTheFileStatAfterTheWrite(t *testing.T) {
+func TestRemoveLinksPassesTheRoleAndReturnsTheFileStat(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
 	baseline := vault.readBaseline(t, "Deltas.md")
@@ -430,10 +430,10 @@ func TestRemoveLinksPassesTheRoleAndAnswersTheFileStatAfterTheWrite(t *testing.T
 	got := vault.removals[0]
 	if got.from != "Deltas.md" || got.to != (domain.Address{Scheme: domain.SchemeName, Value: "Danube"}) || got.role != domain.RoleParent ||
 		got.baseline.Size != baseline.GetSize() || got.baseline.ModTime.UnixNano() != baseline.GetModTime() {
-		t.Errorf("the removal reached the vault as %+v, want Deltas.md to name://Danube of role parent", got)
+		t.Errorf("the removal was sent to the vault as %+v, want Deltas.md to name://Danube of role parent", got)
 	}
 	if res.Msg.GetError() != 0 || res.Msg.GetDetail() != "" || res.Msg.GetStat().GetPath() != "Deltas.md" {
-		t.Errorf("RemoveLinks answered %v, want the file stat of Deltas.md after the write", res.Msg)
+		t.Errorf("RemoveLinks returned %v, want the file stat of Deltas.md after the write", res.Msg)
 	}
 }
 
@@ -449,11 +449,11 @@ func TestRemoveLinksWithoutARolePassesNoRole(t *testing.T) {
 	}
 
 	if len(vault.removals) != 1 || vault.removals[0].role != "" {
-		t.Errorf("the removal reached the vault as %+v, want no role so every role is removed", vault.removals)
+		t.Errorf("the removal was sent to the vault as %+v, want no role so every role is removed", vault.removals)
 	}
 }
 
-func TestRemoveLinksOverAStaleBaselineAnswersConflict(t *testing.T) {
+func TestRemoveLinksOverAStaleBaselineReturnsConflict(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
 	outdated := vault.readBaseline(t, "Deltas.md")
@@ -467,11 +467,11 @@ func TestRemoveLinksOverAStaleBaselineAnswersConflict(t *testing.T) {
 	}
 
 	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT || res.Msg.GetStat() != nil || res.Msg.GetDetail() == "" {
-		t.Errorf("RemoveLinks over a stale baseline answered %v, want CONFLICT with the core's text", res.Msg)
+		t.Errorf("RemoveLinks over a stale baseline returned %v, want CONFLICT with the core's text", res.Msg)
 	}
 }
 
-func TestRemoveLinksOfATargetTheNoteDoesNotLinkAnswersTheCoreText(t *testing.T) {
+func TestRemoveLinksOfUnlinkedTargetReturnsTheCoreText(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
 
@@ -483,6 +483,6 @@ func TestRemoveLinksOfATargetTheNoteDoesNotLinkAnswersTheCoreText(t *testing.T) 
 	}
 
 	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL || res.Msg.GetDetail() != "no link to Volga is written here" {
-		t.Errorf("RemoveLinks of a missing link answered %v, want INTERNAL with the detail naming name://Volga", res.Msg)
+		t.Errorf("RemoveLinks of a missing link returned %v, want INTERNAL with the detail naming name://Volga", res.Msg)
 	}
 }

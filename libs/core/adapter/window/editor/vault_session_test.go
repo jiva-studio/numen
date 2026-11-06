@@ -469,7 +469,7 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	if err := f.installation.Show(ctx, f.second, nil); err == nil {
-		t.Fatal("a page holding work the user has to answer for did not call the swap off")
+		t.Fatal("a page with unsaved changes that prompts the user did not cancel the switch")
 	}
 
 	select {
@@ -873,8 +873,7 @@ func TestOpenWindow_NoVaultCreatesNothing(t *testing.T) {
 }
 
 // TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens. These run before the
-// user can do anything, and one of them refusing is a window that never comes
-// up.
+// user can do anything; if one fails, the window never opens.
 func TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	f := openEmptyWindow(t)
 

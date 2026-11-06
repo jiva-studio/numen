@@ -25,16 +25,16 @@ import (
 // immediateBound is how long a call that must not wait for a page's FlushTimeout may take.
 const immediateBound = editor.FlushTimeout / 2
 
-// bindShow binds the change of vault of the state the way the desktop app does.
-func (f *showing) bindShow() {
+// bindVaultSwitch binds the change of vault of the state the way the desktop app does.
+func (f *showing) bindVaultSwitch() {
 	f.installation.State.OpenVault = func(ctx context.Context, v domain.Vault, open *editor.PluginOpen) error {
 		return f.installation.Show(ctx, v, open)
 	}
 }
 
-// answerFlushes answers each flush of the page with NOTHING. Before it answers the first one, it sends
-// on flushRequest and waits for release. It stops at the first answer that fails.
-func (f *showing) answerFlushes(
+// respondToFlushes reports NOTHING for each flush of the page. Before the first report it sends on
+// flushRequest and waits for release. It stops at the first report that fails.
+func (f *showing) respondToFlushes(
 	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], flushRequest chan<- struct{}, release <-chan struct{},
 ) {
 	t.Helper()
@@ -57,29 +57,29 @@ func (f *showing) answerFlushes(
 	}()
 }
 
-// unsavedChangesText is what the unsaved-changes error of a plugin's open says while the user is asked.
-const unsavedChangesText = "the user is asked about unsaved changes in the window; ask again after they answer"
+// unsavedChangesText is the text of the unsaved-changes error of a plugin's open while the window prompts the user.
+const unsavedChangesText = "the window has unsaved changes and is prompting the user; retry after the prompt closes"
 
-// askingPage is a page that answers every flush with ASKING until the user answers its question,
-// and then reports the request it was asking in as WRITTEN.
-type askingPage struct {
+// promptingPage is a page that reports UNSAVED for every flush until the user responds to its prompt,
+// and then reports the last flush request as WRITTEN.
+type promptingPage struct {
 	mu         sync.Mutex
 	flushCount int
 	lastToken  string
 }
 
-func (p *askingPage) getFlushCount() int {
+func (p *promptingPage) getFlushCount() int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.flushCount
 }
 
-// answerAskingUntilAnswered starts an askingPage on the stream; closing userAnswered is the user's
-// answer to the page's question.
-func (f *showing) answerAskingUntilAnswered(
-	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userAnswered <-chan struct{},
-) *askingPage {
-	page := &askingPage{}
+// startPromptingPage starts a promptingPage on the stream; closing userResponded closes the page's
+// prompt.
+func (f *showing) startPromptingPage(
+	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userResponded <-chan struct{},
+) *promptingPage {
+	page := &promptingPage{}
 	go func() {
 		for stream.Receive() {
 			if !stream.Msg().GetFlush() {
@@ -91,7 +91,7 @@ func (f *showing) answerAskingUntilAnswered(
 			page.mu.Unlock()
 			result := v1.FlushResult_FLUSH_RESULT_UNSAVED
 			select {
-			case <-userAnswered:
+			case <-userResponded:
 				result = v1.FlushResult_FLUSH_RESULT_WRITTEN
 			default:
 			}
@@ -101,7 +101,7 @@ func (f *showing) answerAskingUntilAnswered(
 		}
 	}()
 	go func() {
-		<-userAnswered
+		<-userResponded
 		page.mu.Lock()
 		token := page.lastToken
 		page.mu.Unlock()
@@ -135,15 +135,15 @@ func requireUnsavedChanges(t *testing.T, openResult <-chan error, action string)
 	}
 }
 
-func TestPluginOpenVaultWithUnsavedChangesInAPageAsksTheUserAndReturnsUnsavedChanges(t *testing.T) {
+func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
-	userAnswered := make(chan struct{})
-	answerUser := sync.OnceFunc(func() { close(userAnswered) })
-	t.Cleanup(answerUser)
-	page := f.answerAskingUntilAnswered(t, stream, userAnswered)
+	userResponded := make(chan struct{})
+	respondAsUser := sync.OnceFunc(func() { close(userResponded) })
+	t.Cleanup(respondAsUser)
+	page := f.startPromptingPage(t, stream, userResponded)
 	list := editor.NewPluginVaultList(f.installation)
 
 	requireUnsavedChanges(t, callOpenVault(t.Context(), list, f.second.ID), "the plugin's open while a page holds unsaved changes")
@@ -151,13 +151,13 @@ func TestPluginOpenVaultWithUnsavedChangesInAPageAsksTheUserAndReturnsUnsavedCha
 		t.Errorf("the window shows %s after the plugin's open was rejected, want %s", got.Name, f.first.Name)
 	}
 	if !f.installation.State.Window.IsQuestionOpen() {
-		t.Error("the plugin's open ended the flush request in which the page asks the user")
+		t.Error("the plugin's open ended the flush request in which the page prompts the user")
 	}
 	if got := page.getFlushCount(); got != 1 {
 		t.Errorf("the page received %d flush requests, want 1", got)
 	}
 
-	requireUnsavedChanges(t, callOpenVault(t.Context(), list, f.second.ID), "a second plugin open while the user is asked")
+	requireUnsavedChanges(t, callOpenVault(t.Context(), list, f.second.ID), "a second plugin open during the prompt")
 	if got := page.getFlushCount(); got != 1 {
 		t.Errorf("the page received %d flush requests after the second plugin open, want 1: the open sent a new one", got)
 	}
@@ -165,31 +165,31 @@ func TestPluginOpenVaultWithUnsavedChangesInAPageAsksTheUserAndReturnsUnsavedCha
 		t.Errorf("the window shows %s after the second plugin open, want %s", got.Name, f.first.Name)
 	}
 
-	answerUser()
+	respondAsUser()
 	waitCtx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 	if !f.installation.WaitForFlush(waitCtx) {
-		t.Fatal("the user's answer never completed the flush request")
+		t.Fatal("closing the prompt never completed the flush request")
 	}
 	select {
 	case err := <-callOpenVault(t.Context(), list, f.second.ID):
 		if err != nil {
-			t.Errorf("the plugin's open after the user answered returned %v, want nil", err)
+			t.Errorf("the plugin's open after the prompt closed returned %v, want nil", err)
 		}
 	case <-time.After(20 * time.Second):
-		t.Fatal("the plugin's open after the user answered never returned")
+		t.Fatal("the plugin's open after the prompt closed never returned")
 	}
 	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s after the plugin's open, want %s", got.Name, f.second.Name)
 	}
 }
 
-func TestPluginOpenVaultWithNoUnsavedChangesShowsTheVaultBeforeItReturns(t *testing.T) {
+func TestPluginOpenVaultWithoutUnsavedChangesShowsVaultFirst(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
-	f.answerAll(t, stream)
+	f.respondToAllFlushes(t, stream)
 	list := editor.NewPluginVaultList(f.installation)
 
 	select {
@@ -212,27 +212,27 @@ func TestPluginOpenVaultWithNoUnsavedChangesShowsTheVaultBeforeItReturns(t *test
 	}
 }
 
-// A close refused because a page asks the user waits for the user's answer (closeLikeTheApp). A
+// A close rejected because a page prompts the user waits until the prompt closes (closeAsDesktopApp). A
 // plugin's open that starts in that wait returns ErrUnsavedChanges and does not end the user's flush.
-func TestPluginOpenVaultDuringTheClosesQuestionReturnsUnsavedChangesAndKeepsTheCloseWaiting(t *testing.T) {
+func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
-	userAnswered := make(chan struct{})
-	f.answerAskingUntil(t, stream, userAnswered)
+	userResponded := make(chan struct{})
+	f.respondPromptUntil(t, stream, userResponded)
 
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 	defer cancel()
 	if f.installation.FlushPending(ctx) {
-		t.Fatal("the close flushed although the page asks the user")
+		t.Fatal("the close flushed although the page prompts the user")
 	}
-	confirmed := make(chan bool, 1)
-	go func() { confirmed <- f.installation.WaitForFlush(ctx) }()
+	confirmCh := make(chan bool, 1)
+	go func() { confirmCh <- f.installation.WaitForFlush(ctx) }()
 	select {
-	case isFlushed := <-confirmed:
-		close(userAnswered)
-		t.Fatalf("the close's wait ended with %v before the user answered", isFlushed)
+	case isFlushed := <-confirmCh:
+		close(userResponded)
+		t.Fatalf("the close's wait ended with %v before the prompt closed", isFlushed)
 	case <-time.After(200 * time.Millisecond):
 	}
 
@@ -240,11 +240,11 @@ func TestPluginOpenVaultDuringTheClosesQuestionReturnsUnsavedChangesAndKeepsTheC
 	select {
 	case err := <-callOpenVault(ctx, list, f.second.ID):
 		if !errors.Is(err, pluginport.ErrUnsavedChanges) {
-			t.Errorf("the plugin's open during the close's question returned %v, want ErrUnsavedChanges", err)
+			t.Errorf("the plugin's open during the close prompt returned %v, want ErrUnsavedChanges", err)
 		}
 	case <-time.After(immediateBound):
-		close(userAnswered)
-		t.Fatalf("the plugin's open during the close's question did not return within %v", immediateBound)
+		close(userResponded)
+		t.Fatalf("the plugin's open during the close prompt did not return within %v", immediateBound)
 	}
 	if !f.installation.State.Window.IsFlushOpen() {
 		t.Error("the plugin's open ended the flush request of the user's close")
@@ -254,25 +254,25 @@ func TestPluginOpenVaultDuringTheClosesQuestionReturnsUnsavedChangesAndKeepsTheC
 	}
 
 	select {
-	case isFlushed := <-confirmed:
-		close(userAnswered)
-		t.Fatalf("the plugin's open ended the close's wait for the user's answer with %v", isFlushed)
+	case isFlushed := <-confirmCh:
+		close(userResponded)
+		t.Fatalf("the plugin's open ended the close's wait for the prompt with %v", isFlushed)
 	case <-time.After(500 * time.Millisecond):
 	}
-	close(userAnswered)
-	if !<-confirmed {
-		t.Error("the close's wait ended unflushed after the user answered")
+	close(userResponded)
+	if !<-confirmCh {
+		t.Error("the close's wait ended unflushed after the prompt closed")
 	}
 }
 
-func TestPluginOpenVaultDuringWindowCloseKeepsTheCloseAndIsRejected(t *testing.T) {
+func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
-	f.answerFlushes(t, stream, flushRequest, release)
+	f.respondToFlushes(t, stream, flushRequest, release)
 
 	resolved := make(chan bool, 1)
 	go func() {
@@ -284,7 +284,7 @@ func TestPluginOpenVaultDuringWindowCloseKeepsTheCloseAndIsRejected(t *testing.T
 	case <-flushRequest:
 	case <-time.After(5 * time.Second):
 		close(release)
-		t.Fatal("the close never asked the page to flush")
+		t.Fatal("the close never requested a flush from the page")
 	}
 
 	list := editor.NewPluginVaultList(f.installation)
@@ -292,7 +292,7 @@ func TestPluginOpenVaultDuringWindowCloseKeepsTheCloseAndIsRejected(t *testing.T
 
 	select {
 	case isFlushed := <-resolved:
-		t.Errorf("the close ended with %v before the page answered: the plugin's open cancelled it", isFlushed)
+		t.Errorf("the close ended with %v before the page reported: the plugin's open cancelled it", isFlushed)
 		close(release)
 	case <-time.After(2 * time.Second):
 		close(release)
@@ -315,12 +315,12 @@ func TestPluginOpenVaultDuringWindowCloseKeepsTheCloseAndIsRejected(t *testing.T
 
 func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
-	f.answerFlushes(t, stream, flushRequest, release)
+	f.respondToFlushes(t, stream, flushRequest, release)
 	list := editor.NewPluginVaultList(f.installation)
 
 	first := callOpenVault(t.Context(), list, f.second.ID)
@@ -328,9 +328,9 @@ func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 	case <-flushRequest:
 	case <-time.After(5 * time.Second):
 		close(release)
-		t.Fatal("the first open never asked the page to flush")
+		t.Fatal("the first open never requested a flush from the page")
 	}
-	// The second open runs while the page has not answered the first one.
+	// The second open runs before the page has reported the first one.
 	second := callOpenVault(t.Context(), list, f.second.ID)
 	select {
 	case err := <-second:
@@ -354,7 +354,7 @@ func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 
 func TestPluginOpenVaultOfMissingFolderReturnsUnreadable(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	if err := os.RemoveAll(f.second.Path); err != nil {
 		t.Fatal(err)
 	}
@@ -370,8 +370,8 @@ func TestPluginOpenVaultOfMissingFolderReturnsUnreadable(t *testing.T) {
 	}
 }
 
-// watchFlushRequests returns a channel that receives once the page is asked to flush. The page never
-// answers.
+// watchFlushRequests returns a channel that receives once the page receives a flush request. The page never
+// reports a result.
 func watchFlushRequests(stream *connect.ServerStreamForClient[v1.WatchQuitResponse]) <-chan struct{} {
 	flushRequest := make(chan struct{}, 1)
 	go func() {
@@ -388,7 +388,7 @@ func watchFlushRequests(stream *connect.ServerStreamForClient[v1.WatchQuitRespon
 }
 
 // startPluginOpen runs a plugin's open of the second vault and returns its result once the page has
-// been asked to flush for it.
+// received a flush request for it.
 func startPluginOpen(t *testing.T, f *showing, flushRequest <-chan struct{}, release chan struct{}) <-chan error {
 	t.Helper()
 	list := editor.NewPluginVaultList(f.installation)
@@ -399,12 +399,12 @@ func startPluginOpen(t *testing.T, f *showing, flushRequest <-chan struct{}, rel
 		if release != nil {
 			close(release)
 		}
-		t.Fatal("the plugin's open never asked the page to flush")
+		t.Fatal("the plugin's open never requested a flush from the page")
 	}
 	return openResult
 }
 
-// expectOpenUnavailable checks that the plugin's open gave way to the user's action.
+// expectOpenUnavailable checks that the plugin's open was cancelled by the user action.
 func expectOpenUnavailable(t *testing.T, openResult <-chan error) {
 	t.Helper()
 	select {
@@ -417,9 +417,9 @@ func expectOpenUnavailable(t *testing.T, openResult <-chan error) {
 	}
 }
 
-// closeLikeTheApp is the close of apps/desktop/app: a rejected flush waits for the running flush and
+// closeAsDesktopApp is the close of apps/desktop/app: a rejected flush waits for the running flush and
 // closes again once every page is written.
-func closeLikeTheApp(ctx context.Context, o *editor.Installation) bool {
+func closeAsDesktopApp(ctx context.Context, o *editor.Installation) bool {
 	if o.FlushPending(ctx) {
 		return true
 	}
@@ -431,14 +431,14 @@ func closeLikeTheApp(ctx context.Context, o *editor.Installation) bool {
 
 func TestACloseDuringAPluginOpenWithASilentPageClosesTheWindow(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	openResult := startPluginOpen(t, f, watchFlushRequests(stream), nil)
 
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 	defer cancel()
-	if !closeLikeTheApp(ctx, f.installation) {
+	if !closeAsDesktopApp(ctx, f.installation) {
 		t.Error("the user's close during a plugin's open was rejected: the window stays open")
 	}
 	expectOpenUnavailable(t, openResult)
@@ -446,12 +446,12 @@ func TestACloseDuringAPluginOpenWithASilentPageClosesTheWindow(t *testing.T) {
 
 func TestAQuitDuringAPluginOpenIsAccepted(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
-	f.answerFlushes(t, stream, flushRequest, release)
+	f.respondToFlushes(t, stream, flushRequest, release)
 	openResult := startPluginOpen(t, f, flushRequest, release)
 
 	resolved := make(chan bool, 1)
@@ -477,25 +477,25 @@ func TestAQuitDuringAPluginOpenIsAccepted(t *testing.T) {
 
 func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
-	f.answerFlushes(t, stream, flushRequest, release)
+	f.respondToFlushes(t, stream, flushRequest, release)
 	openResult := startPluginOpen(t, f, flushRequest, release)
 
-	switched := make(chan error, 1)
-	go func() { switched <- f.installation.State.OpenVault(t.Context(), f.second, nil) }()
+	switchCh := make(chan error, 1)
+	go func() { switchCh <- f.installation.State.OpenVault(t.Context(), f.second, nil) }()
 	select {
-	case err := <-switched:
+	case err := <-switchCh:
 		close(release)
 		if err != nil {
 			t.Errorf("the user's vault switch was rejected during a plugin's open: %v", err)
 		}
 	case <-time.After(2 * time.Second):
 		close(release)
-		if err := <-switched; err != nil {
+		if err := <-switchCh; err != nil {
 			t.Errorf("the user's vault switch was rejected during a plugin's open: %v", err)
 		}
 	}
@@ -507,19 +507,19 @@ func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
 
 func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
-	f.answerFlushes(t, stream, flushRequest, release)
-	switched := make(chan error, 1)
-	go func() { switched <- f.installation.Show(t.Context(), f.second, nil) }()
+	f.respondToFlushes(t, stream, flushRequest, release)
+	switchCh := make(chan error, 1)
+	go func() { switchCh <- f.installation.Show(t.Context(), f.second, nil) }()
 	select {
 	case <-flushRequest:
 	case <-time.After(5 * time.Second):
 		close(release)
-		t.Fatal("the switch never asked the page to flush")
+		t.Fatal("the switch never requested a flush from the page")
 	}
 	list := editor.NewPluginVaultList(f.installation)
 	err := list.OpenVault(t.Context(), f.first.ID)
@@ -528,7 +528,7 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	if !errors.Is(err, pluginport.ErrUnavailable) {
 		t.Errorf("the plugin's open during the user's switch returned %v, want ErrUnavailable", err)
 	}
-	if err := <-switched; err != nil {
+	if err := <-switchCh; err != nil {
 		t.Errorf("the user's switch returned %v", err)
 	}
 	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
@@ -536,7 +536,7 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	}
 }
 
-// reportFlush answers one flush of the page.
+// reportFlush reports the result of one flush of the page.
 func (f *showing) reportFlush(t *testing.T, token string, result v1.FlushResult) error {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), 5*time.Second)
 	defer cancel()
@@ -546,10 +546,10 @@ func (f *showing) reportFlush(t *testing.T, token string, result v1.FlushResult)
 	return err
 }
 
-// answerAskingUntil answers every flush with ASKING until userAnswered is closed, then answers the last
-// token with NOTHING, as a page whose user has answered its question.
-func (f *showing) answerAskingUntil(
-	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userAnswered <-chan struct{},
+// respondPromptUntil reports UNSAVED for every flush until userResponded is closed, then reports NOTHING
+// for the last token, as a page whose prompt the user has closed.
+func (f *showing) respondPromptUntil(
+	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userResponded <-chan struct{},
 ) {
 	var mu sync.Mutex
 	last := ""
@@ -562,7 +562,7 @@ func (f *showing) answerAskingUntil(
 			last = stream.Msg().GetToken()
 			mu.Unlock()
 			select {
-			case <-userAnswered:
+			case <-userResponded:
 				if f.reportFlush(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
 					return
 				}
@@ -574,7 +574,7 @@ func (f *showing) answerAskingUntil(
 		}
 	}()
 	go func() {
-		<-userAnswered
+		<-userResponded
 		mu.Lock()
 		token := last
 		mu.Unlock()
@@ -584,8 +584,8 @@ func (f *showing) answerAskingUntil(
 	}()
 }
 
-// answerAll answers every flush of the page with NOTHING at once.
-func (f *showing) answerAll(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse]) {
+// respondToAllFlushes reports NOTHING for every flush of the page at once.
+func (f *showing) respondToAllFlushes(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse]) {
 	go func() {
 		for stream.Receive() {
 			if !stream.Msg().GetFlush() {
@@ -598,14 +598,14 @@ func (f *showing) answerAll(t *testing.T, stream *connect.ServerStreamForClient[
 	}()
 }
 
-// The user switches vault again and again while plugins keep opening vaults: every switch of the user
-// is taken, none waits past its bound, and no plugin open is left holding the window.
-func TestUserSwitchesAmidRepeatedPluginOpensAreAllTaken(t *testing.T) {
+// The user switches vault again and again while plugins keep opening vaults: every user switch
+// completes within its bound and no plugin open blocks the window.
+func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
-	f.answerAll(t, stream)
+	f.respondToAllFlushes(t, stream)
 	list := editor.NewPluginVaultList(f.installation)
 
 	stop := make(chan struct{})
@@ -656,28 +656,28 @@ func TestUserSwitchesAmidRepeatedPluginOpensAreAllTaken(t *testing.T) {
 		t.Errorf("a plugin open returned other than ErrUnavailable or nil: %v", v)
 	}
 	if err := list.OpenVault(t.Context(), f.second.ID); err != nil {
-		t.Errorf("a plugin open after the switches returned %v: the exclusion is still held", err)
+		t.Errorf("a plugin open after the switches returned %v: the exclusion is still locked", err)
 	}
 }
 
 // Two user actions, a close and a vault switch, arrive while a plugin opens a vault. Neither hangs,
-// one of them is taken, and the plugin's open gives way.
+// one succeeds and the plugin open is cancelled.
 func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
-	f.answerFlushes(t, stream, flushRequest, release)
+	f.respondToFlushes(t, stream, flushRequest, release)
 	openResult := startPluginOpen(t, f, flushRequest, release)
 
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 	defer cancel()
-	switched := make(chan error, 1)
+	switchCh := make(chan error, 1)
 	closed := make(chan bool, 1)
-	go func() { switched <- f.installation.State.OpenVault(ctx, f.second, nil) }()
-	go func() { closed <- closeLikeTheApp(ctx, f.installation) }()
+	go func() { switchCh <- f.installation.State.OpenVault(ctx, f.second, nil) }()
+	go func() { closed <- closeAsDesktopApp(ctx, f.installation) }()
 	select {
 	case err := <-openResult:
 		close(release)
@@ -692,7 +692,7 @@ func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 	var isClosed bool
 	for range 2 {
 		select {
-		case switchErr = <-switched:
+		case switchErr = <-switchCh:
 		case isClosed = <-closed:
 		case <-time.After(20 * time.Second):
 			t.Fatal("a user's action never returned")
@@ -700,7 +700,7 @@ func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 	}
 	t.Logf("switch: %v, close: %v", switchErr, isClosed)
 	if switchErr != nil && !isClosed {
-		t.Error("neither the user's switch nor the user's close was taken")
+		t.Error("neither the user's switch nor the user's close succeeded")
 	}
 }
 
@@ -708,7 +708,7 @@ func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 // unavailable and does not change the vault of the window.
 func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := watchFlushRequests(stream)
@@ -719,7 +719,7 @@ func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	select {
 	case <-flushRequest:
 	case <-time.After(5 * time.Second):
-		t.Fatal("the plugin's open never asked the page to flush")
+		t.Fatal("the plugin's open never requested a flush from the page")
 	}
 	hangUp()
 	select {

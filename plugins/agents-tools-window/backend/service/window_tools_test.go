@@ -26,8 +26,8 @@ const (
 )
 
 type windowTools struct {
-	window *hosttest.Window
-	calls  *tools.Registry
+	window   *hosttest.Window
+	registry *tools.Registry
 }
 
 func newWindowTools(t *testing.T) windowTools {
@@ -39,7 +39,7 @@ func newWindowTools(t *testing.T) windowTools {
 	vault.File(talkPath, "ID3\x00\x03audio")
 
 	window := hosttest.NewWindow(vault)
-	return windowTools{window: window, calls: newRegistry(t, service.Host{Vault: vault, Window: window})}
+	return windowTools{window: window, registry: newRegistry(t, service.Host{Vault: vault, Window: window})}
 }
 
 // newRegistry is the window tools registered over the host.
@@ -53,11 +53,11 @@ func newRegistry(t *testing.T, on service.Host) *tools.Registry {
 	return registry
 }
 
-// call runs a tool on the vault with the call context and returns the structured answer, or the
+// call runs a tool on the vault with the call context and returns the structured result, or the
 // text of the tool error.
 func (w windowTools) call(t *testing.T, name, arguments string, callContext map[string]string, out any) (failure string) {
 	t.Helper()
-	res, err := w.calls.InvokeTool(t.Context(), tools.Call{
+	res, err := w.registry.InvokeTool(t.Context(), tools.Call{
 		VaultID: testVault, Name: name, Arguments: []byte(arguments), Context: callContext,
 	})
 	if err != nil {
@@ -82,7 +82,7 @@ func (w windowTools) call(t *testing.T, name, arguments string, callContext map[
 
 func (w windowTools) getToolInfo(t *testing.T, name string) *tools.ToolInfo {
 	t.Helper()
-	listed, err := w.calls.ListTools(t.Context())
+	listed, err := w.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func isOnServer(info *tools.ToolInfo, server tools.Server) bool {
 	return slices.Contains(info.GetServers(), server)
 }
 
-// tabOutput is one tab as a tool answers it. Location is the raw JSON of the location key, nil where
+// tabOutput is one tab as returned by a tool. Location is the raw JSON of the location key, nil where
 // the key is absent.
 type tabOutput struct {
 	ID       string          `json:"id"`
@@ -162,18 +162,18 @@ func TestNoteFocusDescriptionExplainsWhenToMoveTheWindow(t *testing.T) {
 	description := w.getToolInfo(t, "note_focus").GetDescription()
 	for _, want := range []string{"neighbourhood", "asked to be taken to a note", "Talking about one is not asking", "`note_read`"} {
 		if !strings.Contains(description, want) {
-			t.Errorf("the description of note_focus does not say %q: %s", want, description)
+			t.Errorf("the description of note_focus does not contain %q: %s", want, description)
 		}
 	}
 	sourceDescription := w.getToolInfo(t, "source_focus").GetDescription()
 	for _, want := range []string{"`library_search`", "start", "length", "first", "Talking about a passage is not asking"} {
 		if !strings.Contains(sourceDescription, want) {
-			t.Errorf("the description of source_focus does not say %q: %s", want, sourceDescription)
+			t.Errorf("the description of source_focus does not contain %q: %s", want, sourceDescription)
 		}
 	}
 }
 
-func TestNoteFocusAnswersTheFocusedNoteAndMovesTheWindowToIt(t *testing.T) {
+func TestNoteFocusReturnsTheFocusedNoteAndMovesTheWindowToIt(t *testing.T) {
 	w := newWindowTools(t)
 	var out struct {
 		Note struct {
@@ -189,21 +189,21 @@ func TestNoteFocusAnswersTheFocusedNoteAndMovesTheWindowToIt(t *testing.T) {
 		t.Errorf("note %+v", out.Note)
 	}
 	if focused := w.window.GetFocusedNotes(); !slices.Equal(focused, []string{notePath}) {
-		t.Errorf("the window was asked to focus %v", focused)
+		t.Errorf("the window received a call to focus %v", focused)
 	}
 }
 
-func TestNoteFocusOfANoteTheVaultDoesNotHoldIsAToolErrorAndMovesNothing(t *testing.T) {
+func TestNoteFocusOfNoteNotInVaultIsAToolErrorAndMovesNothing(t *testing.T) {
 	w := newWindowTools(t)
 	if failure := w.call(t, "note_focus", `{"path":"notes/Gone.md"}`, nil, nil); failure == "" {
-		t.Error("a note the vault does not hold was focused")
+		t.Error("a note not in the vault was focused")
 	}
 	if focused := w.window.GetFocusedNotes(); len(focused) != 0 {
-		t.Errorf("the window was asked to focus %v", focused)
+		t.Errorf("the window received a call to focus %v", focused)
 	}
 }
 
-func TestSourceFocusPassesThePassagesUnchangedAndAnswersThePathAndHighlightCount(t *testing.T) {
+func TestSourceFocusPassesPassagesAndReturnsPathAndCount(t *testing.T) {
 	w := newWindowTools(t)
 	var out struct {
 		Path           string `json:"path"`
@@ -214,11 +214,11 @@ func TestSourceFocusPassesThePassagesUnchangedAndAnswersThePathAndHighlightCount
 		t.Fatal(failure)
 	}
 	if out.Path != guidePath || out.HighlightCount == nil || *out.HighlightCount != 2 {
-		t.Errorf("answered %+v", out)
+		t.Errorf("returned %+v", out)
 	}
 	want := []hosttest.FocusRequest{{Path: guidePath, Passages: []host.PassageSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}}}}
 	if got := w.window.GetFocusRequests(); !reflect.DeepEqual(got, want) {
-		t.Errorf("the window was asked %+v, want %+v", got, want)
+		t.Errorf("the window received %+v, want %+v", got, want)
 	}
 }
 
@@ -232,18 +232,18 @@ func TestSourceFocusWithNoPassagesOpensTheFileAtItsBeginning(t *testing.T) {
 		t.Fatal(failure)
 	}
 	if out.Path != guidePath || out.HighlightCount == nil || *out.HighlightCount != 0 {
-		t.Errorf("answered %+v", out)
+		t.Errorf("returned %+v", out)
 	}
 	got := w.window.GetFocusRequests()
 	if len(got) != 1 || got[0].Path != guidePath || len(got[0].Passages) != 0 {
-		t.Errorf("the window was asked %+v", got)
+		t.Errorf("the window received %+v", got)
 	}
 }
 
 func TestSourceFocusReportsAHostErrorAsAToolError(t *testing.T) {
 	w := newWindowTools(t)
 	if failure := w.call(t, "source_focus", `{"path":"library/Gone.pdf"}`, nil, nil); failure == "" {
-		t.Error("a file the vault does not hold was reported as shown")
+		t.Error("a file not in the vault was reported as shown")
 	}
 	w.window.SetNoWindow()
 	if failure := w.call(t, "source_focus", `{"path":"library/Bird Guide.pdf"}`, nil, nil); failure == "" {
@@ -251,7 +251,7 @@ func TestSourceFocusReportsAHostErrorAsAToolError(t *testing.T) {
 	}
 }
 
-// readTabs sets the window's tabs and returns what window_tab_list answers.
+// readTabs sets the window's tabs and returns what window_tab_list returns.
 func (w windowTools) readTabs(t *testing.T, tabs []host.OpenTab, activeID string) tabsOutput {
 	t.Helper()
 	w.window.SetOpenTabs(tabs, activeID)
@@ -270,7 +270,7 @@ func TestWindowTabListReturnsTheTabsOfTheWindow(t *testing.T) {
 	}, "tab-2")
 
 	if len(out.Tabs) != 2 || out.ActiveID != "tab-2" {
-		t.Fatalf("answered %+v", out)
+		t.Fatalf("returned %+v", out)
 	}
 	first, second := out.Tabs[0], out.Tabs[1]
 	if first.ID != "tab-1" || first.Kind != "note" || first.Path != notePath || first.Title != "Grey Heron" || first.IsActive {
@@ -324,7 +324,7 @@ func TestWindowTabListReturnsTheLocationTheReaderReported(t *testing.T) {
 			tab.ID = "tab-1"
 			out := w.readTabs(t, []host.OpenTab{tab}, "tab-1")
 			if len(out.Tabs) != 1 {
-				t.Fatalf("answered %+v, want one tab", out.Tabs)
+				t.Fatalf("returned %+v, want one tab", out.Tabs)
 			}
 			requireLocation(t, "the tab", out.Tabs[0].Location, tc.want)
 		})
@@ -332,7 +332,7 @@ func TestWindowTabListReturnsTheLocationTheReaderReported(t *testing.T) {
 }
 
 // The location comes from the place the reader reported alone, so window_tab_list has no saved state
-// to fail on and answers no error for any tab.
+// to fail on and returns no error for any tab.
 func TestWindowTabListReturnsNoErrorForAnyTab(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs(getGuideTabs(), "tab-1")
@@ -344,11 +344,11 @@ func TestWindowTabListReturnsNoErrorForAnyTab(t *testing.T) {
 		t.Fatal(failure)
 	}
 	if len(out.Tabs) != len(getGuideTabs()) {
-		t.Fatalf("answered %d tabs, want %d", len(out.Tabs), len(getGuideTabs()))
+		t.Fatalf("returned %d tabs, want %d", len(out.Tabs), len(getGuideTabs()))
 	}
 	for _, tab := range out.Tabs {
 		if message, hasError := tab["error"]; hasError {
-			t.Errorf("the tab %s is answered with the error %s", tab["id"], message)
+			t.Errorf("the tab %s returns the error %s", tab["id"], message)
 		}
 	}
 	if _, hasError := reflect.TypeFor[service.TabInfo]().FieldByName("Error"); hasError {
@@ -372,7 +372,7 @@ func TestWindowTabListUsesTheCallFocusWithoutAWindow(t *testing.T) {
 		t.Fatal(failure)
 	}
 	if len(out.Tabs) != 1 || out.Tabs[0].Path != "notes/Inferred.md" || out.ActiveID != "front-tab" || out.Tabs[0].Title != "Inferred" {
-		t.Fatalf("answered %+v, want the focus of the call as the one tab", out)
+		t.Fatalf("returned %+v, want the focus of the call as the one tab", out)
 	}
 	requireLocation(t, "the tab of the focus", out.Tabs[0].Location, "")
 
@@ -381,7 +381,7 @@ func TestWindowTabListUsesTheCallFocusWithoutAWindow(t *testing.T) {
 		t.Fatal(failure)
 	}
 	if len(none.Tabs) != 0 {
-		t.Errorf("answered %+v, want nothing open", none)
+		t.Errorf("returned %+v, want nothing open", none)
 	}
 }
 
@@ -394,6 +394,6 @@ func TestWindowTabListPrefersWindowTabsToTheCallFocus(t *testing.T) {
 		t.Fatal(failure)
 	}
 	if len(out.Tabs) != 1 || out.Tabs[0].Path != notePath || out.ActiveID != "tab-1" {
-		t.Errorf("answered %+v, want the tab of the window", out)
+		t.Errorf("returned %+v, want the tab of the window", out)
 	}
 }

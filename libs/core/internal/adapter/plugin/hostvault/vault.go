@@ -173,7 +173,7 @@ func (a Vault) ReadRange(ctx context.Context, path string, start, length int) (p
 	}
 	pos, err := reader.StatFile(ctx, path)
 	if errors.Is(err, vaultport.ErrNotANote) {
-		return pluginport.PluginFileRange{}, fmt.Errorf("%s is not a file the vault lists: %w", path, fs.ErrNotExist)
+		return pluginport.PluginFileRange{}, fmt.Errorf("%s is not a file in the vault: %w", path, fs.ErrNotExist)
 	}
 	if err != nil {
 		return pluginport.PluginFileRange{}, err

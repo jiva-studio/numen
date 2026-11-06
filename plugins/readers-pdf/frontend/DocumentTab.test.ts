@@ -1,6 +1,6 @@
 /**
- * A PDF tab the window asks to light ranges of the document's text: the reader goes to the first and
- * lights all of them.
+ * A PDF tab whose text ranges the window highlights: the reader scrolls to the first and
+ * highlights all of them.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -61,7 +61,7 @@ const mountTab = (ranges: readonly TextRange[] | null) => {
 }
 
 describe('the ranges of a PDF tab', () => {
-  it('lights the ranges the tab opens with, in their order', async () => {
+  it('highlights the ranges the tab opens with, in their order', async () => {
     const { tab } = mountTab(RANGES)
     await nextTick()
 
@@ -69,7 +69,7 @@ describe('the ranges of a PDF tab', () => {
     tab.unmount()
   })
 
-  it('lights the ranges the window sets later, each time it sets them', async () => {
+  it('highlights the ranges the window sets later, each time it sets them', async () => {
     const { tab, state } = mountTab(null)
     await nextTick()
     expect(reader.focusSpans).not.toHaveBeenCalled()

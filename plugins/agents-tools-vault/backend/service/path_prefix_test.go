@@ -15,8 +15,8 @@ const (
 	shelfNFD = "Bücher"
 )
 
-// shelfPassages are the passages of the invented shelves: library holds one, library2 holds one whose
-// path starts with the letters of library, and the shelf of books holds one.
+// shelfPassages are the passages of the invented shelves: library has one, library2 has one whose
+// path starts with the letters of library, and the shelf of books has one.
 func shelfPassages() []host.Passage {
 	return []host.Passage{
 		{Path: "library/Tea.pdf", Text: "green tea leaves", Start: 0, Length: 16},
@@ -25,17 +25,17 @@ func shelfPassages() []host.Passage {
 	}
 }
 
-func TestLibrarySearchSendsEveryFormOfAFolderPrefixAsTheFolderWithASlash(t *testing.T) {
+func TestLibrarySearchSendsEveryFolderPrefixFormWithASlash(t *testing.T) {
 	calls, registry := newRecordedSearch(t, hosttest.New(testVault), shelfPassages())
 
 	for _, prefix := range []string{"./library", "/library/", "library", "library/"} {
 		var out librarySearchAnswer
 		if failure := callFailure(t, registry, testVault, "library_search", `{"query":"tea","pathPrefix":"`+prefix+`"}`, &out); failure != "" {
-			t.Fatalf("library_search with the prefix %q refused: %s", prefix, failure)
+			t.Fatalf("library_search with the prefix %q rejected: %s", prefix, failure)
 		}
 		queries := calls.getQueries()
 		if got := queries[len(queries)-1].PathPrefix; got != "library/" {
-			t.Errorf("the prefix %q reached the host as %q, want library/", prefix, got)
+			t.Errorf("the prefix %q was sent to the host as %q, want library/", prefix, got)
 		}
 		if got := getMatchPaths(out); !slices.Equal(got, []string{"library/Tea.pdf"}) {
 			t.Errorf("the prefix %q found %v, want library/Tea.pdf alone, not library2", prefix, got)
@@ -52,7 +52,7 @@ func TestLibrarySearchSendsADecomposedPrefixComposed(t *testing.T) {
 	}
 	queries := calls.getQueries()
 	if len(queries) != 1 || queries[0].PathPrefix != shelfNFC+"/" {
-		t.Errorf("the decomposed prefix reached the host as %+v, want %q", queries, shelfNFC+"/")
+		t.Errorf("the decomposed prefix was sent to the host as %+v, want %q", queries, shelfNFC+"/")
 	}
 	if got := getMatchPaths(out); !slices.Equal(got, []string{shelfNFC + "/Teebuch.pdf"}) {
 		t.Errorf("the decomposed prefix found %v, want the book of the shelf", got)
@@ -69,7 +69,7 @@ func TestLibrarySearchWithoutAPrefixSearchesTheWholeVault(t *testing.T) {
 		}
 		queries := calls.getQueries()
 		if got := queries[len(queries)-1].PathPrefix; got != "" {
-			t.Errorf("the prefix %q reached the host as %q, want none", prefix, got)
+			t.Errorf("the prefix %q was sent to the host as %q, want none", prefix, got)
 		}
 		if len(out.Matches) != 3 {
 			t.Errorf("the prefix %q found %v, want every passage", prefix, getMatchPaths(out))
@@ -95,7 +95,7 @@ func TestNoteListAcceptsAFolderWithADotSlashOrSlashes(t *testing.T) {
 	for _, folder := range []string{"./notes", "/notes/", "notes", "notes/"} {
 		var out noteListOutput
 		if failure := callFailure(t, registry, testVault, "note_list", `{"folder":"`+folder+`"}`, &out); failure != "" {
-			t.Fatalf("note_list of the folder %q refused: %s", folder, failure)
+			t.Fatalf("note_list of the folder %q rejected: %s", folder, failure)
 		}
 		if got := getPaths(out.Notes); !slices.Equal(got, []string{"notes/Tea.md"}) {
 			t.Errorf("note_list of the folder %q listed %v, want notes/Tea.md alone, not notes2", folder, got)

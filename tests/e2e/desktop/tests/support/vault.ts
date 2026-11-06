@@ -121,25 +121,25 @@ export const listFiles = async (request: APIRequestContext, folder = ''): Promis
 export const listFilePaths = async (request: APIRequestContext, folder = ''): Promise<string[]> =>
   (await listFiles(request, folder)).filter((one) => !one.isFolder).map((one) => one.path)
 
-/** Takes a note off the disk, and nothing where it is already gone. */
+/** Deletes a note file, and does nothing when it is already gone. */
 export const destroyNote = async (request: APIRequestContext, notePath: string): Promise<void> => {
   await callRPC(request, 'FileService/RemoveFile', { path: notePath, destroy: true })
 }
 
 /** The notes the index has read, as the index stats plugin counts them. */
 export const countIndexedNotes = async (request: APIRequestContext): Promise<number> => {
-  const answer = await request.put('/md.numen.tools.index.stats/GetStats', {
+  const response = await request.put('/md.numen.tools.index.stats/GetStats', {
     data: {},
     headers: { 'Content-Type': 'application/json' },
   })
-  if (!answer.ok()) throw new Error(`reading the index stats answered ${answer.status()}`)
-  const { kinds = [] } = (await answer.json()) as { kinds?: { kind?: string; sources?: number }[] }
+  if (!response.ok()) throw new Error(`reading the index stats returned ${response.status()}`)
+  const { kinds = [] } = (await response.json()) as { kinds?: { kind?: string; sources?: number }[] }
   return kinds.find((one) => one.kind === 'notes')?.sources ?? 0
 }
 
 /**
- * Takes a note the index has read off the disk, and returns once the index has dropped it. The
- * watcher reports the removal after RemoveFile answers, so a test that counts the vectors next
+ * Deletes an indexed note file and returns once the index has dropped it. The
+ * watcher reports the removal after RemoveFile returns, so a test that counts the vectors next
  * would count the vectors of the removed note too.
  */
 export const destroyIndexedNote = async (

@@ -12,7 +12,7 @@ import (
 )
 
 // AddLinks writes the links into the frontmatter of their notes, as the host does: the links of one
-// note are one write against its baseline, and a link that cannot be written refuses only itself.
+// note are one write against its baseline, and a link that cannot be written fails only itself.
 func (v *Vault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]host.LinkAdded, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
@@ -46,7 +46,7 @@ func (v *Vault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]
 	return out, nil
 }
 
-// checkWritable is why the addition cannot be written: a link the notes library refuses, or a
+// checkWritable returns the reason the addition cannot be written: a link the notes library rejects, or a
 // baseline other than the one of the links before it into the same note.
 func checkWritable(one host.LinkAddition, additions []host.LinkAddition, grouped []int) error {
 	switch {
@@ -55,9 +55,9 @@ func checkWritable(one host.LinkAddition, additions []host.LinkAddition, grouped
 	case !domain.IsWritableMarker(one.Link.Marker):
 		return fmt.Errorf("%q is not a marker a link can have", one.Link.Marker)
 	case one.Link.Target.Value == "":
-		return errors.New("a link needs somewhere to go")
+		return errors.New("link target is empty")
 	case len(grouped) > 0 && additions[grouped[0]].Baseline != one.Baseline:
-		return fmt.Errorf("the links written into %s name two different fingerprints, and they are one write", one.From)
+		return fmt.Errorf("links for %s have different fingerprints", one.From)
 	}
 	return nil
 }
@@ -92,7 +92,7 @@ func (v *Vault) RemoveLinks(
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	return v.editLinks(ctx, from, baseline, func(doc *notesmarkdown.Document) error {
-		removed, err := doc.RemoveLinksTo(to, role)
+		removed, err := doc.RemoveTargetLinks(to, role)
 		if err != nil {
 			return err
 		}
@@ -104,7 +104,7 @@ func (v *Vault) RemoveLinks(
 }
 
 // editLinks makes one change to the note at from in one read and one write, against the baseline
-// when one is given, and returns the stat of the note written. The caller holds the lock.
+// when one is given, and returns the stat of the note written. The caller has the lock.
 func (v *Vault) editLinks(
 	ctx context.Context, from string, baseline domain.FileStat, change func(*notesmarkdown.Document) error,
 ) (domain.FileStat, error) {

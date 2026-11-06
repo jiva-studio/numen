@@ -259,15 +259,16 @@ export type ReadTextRequest = Message<"numen.v1.ReadTextRequest"> & {
   cursor: string;
 
   /**
-   * Where a ranged read begins in the whole text, in bytes.
+   * The start of a ranged read in the whole text, in bytes.
    *
    * @generated from field: int64 start = 4;
    */
   start: bigint;
 
   /**
-   * Set: read the range from start of this many bytes, zero to the end, cut at
-   * whole characters, as the segments it covers, each cut to the range. Unset:
+   * Set: read the range from start of this many bytes, zero to the end,
+   * truncated at whole characters, as the segments it covers, each truncated to
+   * the range. Unset:
    * read one page by cursor.
    *
    * @generated from field: optional int64 length = 5;
@@ -304,8 +305,8 @@ export type ReadTextResponse = Message<"numen.v1.ReadTextResponse"> & {
   error: TextErrorCode;
 
   /**
-   * For a ranged read: where the first segment returned begins in the whole
-   * text, and the bytes of the whole text.
+   * For a ranged read: the start of the first segment returned in the whole
+   * text, and the size of the whole text in bytes.
    *
    * @generated from field: int64 start = 4;
    */

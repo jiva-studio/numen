@@ -23,15 +23,15 @@ import (
 // revisedProse is what articleAddress publishes from the second fetch of its text on.
 const revisedProse = "The mill pond was dredged in spring, and the wheel now turns on both tides."
 
-// revisedSites is inventedSites whose article publishes revisedProse from the second fetch on.
+// revisedSites is fakeSites whose article publishes revisedProse from the second fetch on.
 type revisedSites struct {
-	inventedSites
+	fakeSites
 	mu      sync.Mutex
 	fetches int
 }
 
 func (s *revisedSites) GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error) {
-	text, err := s.inventedSites.GetText(ctx, address, want)
+	text, err := s.fakeSites.GetText(ctx, address, want)
 	if err != nil || address != articleAddress {
 		return text, err
 	}
@@ -44,9 +44,9 @@ func (s *revisedSites) GetText(ctx context.Context, address string, want downloa
 	return text, nil
 }
 
-// newRevisedScene is the import tool over the vault Mills, whose article changes after its first
+// newRevisedFixture is the import tool over the vault Mills, whose article changes after its first
 // fetch.
-func newRevisedScene(t *testing.T) *importScene {
+func newRevisedFixture(t *testing.T) *importFixture {
 	t.Helper()
 	release := make(chan struct{})
 	close(release)
@@ -54,9 +54,9 @@ func newRevisedScene(t *testing.T) *importScene {
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
-	sites := &revisedSites{inventedSites: inventedSites{video: download.NewMock(), release: release}}
+	sites := &revisedSites{fakeSites: fakeSites{video: download.NewMock(), release: release}}
 	hosted := link.Host{
-		Vault: notedVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}},
+		Vault: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}},
 		Store: store, Texts: texts, Queue: hosttest.NewQueue(),
 		Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
 	}
@@ -68,7 +68,7 @@ func newRevisedScene(t *testing.T) *importScene {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &importScene{vault: vault, store: store, texts: texts, links: links, registry: registry}
+	return &importFixture{vault: vault, store: store, texts: texts, links: links, registry: registry}
 }
 
 // readLiveText is the text of the live version of the file, and fails the test where it has none.
@@ -92,7 +92,7 @@ func readLiveText(t *testing.T, texts *hosttest.Texts, filePath string) string {
 	return ""
 }
 
-// decodeImportAnswer is the answer of a url_import call that was not refused.
+// decodeImportAnswer is the result of a url_import call that was not rejected.
 func decodeImportAnswer(t *testing.T, res *tools.CallResponse) importAnswer {
 	t.Helper()
 	var out importAnswer
@@ -102,71 +102,71 @@ func decodeImportAnswer(t *testing.T, res *tools.CallResponse) importAnswer {
 	return out
 }
 
-// readNoteID is the identifier the frontmatter of the note carries.
+// readNoteID is the identifier the frontmatter of the note has.
 func readNoteID(filePath, content string) string {
 	return markdown.Parse(domain.FileStat{Path: filePath}, []byte(content)).ID
 }
 
-func TestURLImportOfTheSameAddressIntoTheSameFolderUpdatesTheLinkNote(t *testing.T) {
-	s := newRevisedScene(t)
+func TestURLImportOfSameAddressToSameFolderUpdatesLinkNote(t *testing.T) {
+	s := newRevisedFixture(t)
 	first := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "sources"})
 	before, isThere := s.vault.Content(first.Path)
 	if !isThere {
 		t.Fatalf("the first import made no note at %s", first.Path)
 	}
 	if text := readLiveText(t, s.texts, first.Path); !strings.Contains(text, articleProse) {
-		t.Fatalf("the first import recorded the text %q, want it to hold %q", text, articleProse)
+		t.Fatalf("the first import recorded the text %q, want it to contain %q", text, articleProse)
 	}
 
 	res := s.callImport(t, "Mills", importArguments{URL: articleAddress, Folder: "sources"})
 
 	if res.GetResult().GetIsError() {
-		t.Fatalf("the second url_import of %s into sources was refused: %s", articleAddress, res.GetResult().GetText())
+		t.Fatalf("the second url_import of %s into sources was rejected: %s", articleAddress, res.GetResult().GetText())
 	}
 	second := decodeImportAnswer(t, res)
 	if second.Path != first.Path || second.HasText != first.HasText || !second.HasText {
-		t.Errorf("the second import answered %+v, want the path %s and hasText %v of the first", second, first.Path, first.HasText)
+		t.Errorf("the second import returned %+v, want the path %s and hasText %v of the first", second, first.Path, first.HasText)
 	}
 	if second.Title != first.Title || second.Producer != first.Producer || second.Error != "" {
-		t.Errorf("the second import answered %+v, want the title and the producer of the first %+v and no error", second, first)
+		t.Errorf("the second import returned %+v, want the title and the producer of the first %+v and no error", second, first)
 	}
 	after, isKept := s.vault.Content(first.Path)
 	if !isKept || after != before {
 		t.Errorf("the note %s reads %q after the second import, want it unchanged as %q", first.Path, after, before)
 	}
 	if id := readNoteID(first.Path, after); id == "" || id != readNoteID(first.Path, before) {
-		t.Errorf("the note carries the id %q after the second import, want %q", id, readNoteID(first.Path, before))
+		t.Errorf("the note has the id %q after the second import, want %q", id, readNoteID(first.Path, before))
 	}
 	if notes := getLinkNotes(t, s.vault); !slices.Equal(notes, []string{first.Path}) {
-		t.Errorf("the vault holds the link notes %v, want %s alone", notes, first.Path)
+		t.Errorf("the vault has the link notes %v, want %s alone", notes, first.Path)
 	}
 	text := readLiveText(t, s.texts, first.Path)
 	if !strings.Contains(text, revisedProse) || strings.Contains(text, articleProse) {
 		t.Errorf("the live text of %s is %q, want the newly fetched text %q", first.Path, text, revisedProse)
 	}
 	if second.Bytes != len(text) {
-		t.Errorf("the second import answered bytes %d, want %d, the size of the newly fetched text", second.Bytes, len(text))
+		t.Errorf("the second import returned bytes %d, want %d, the size of the newly fetched text", second.Bytes, len(text))
 	}
 }
 
-func TestURLImportOfTheSameAddressIntoAnotherFolderCreatesASecondNote(t *testing.T) {
-	s := newReleasedScene(t)
+func TestURLImportOfSameAddressToOtherFolderCreatesSecondNote(t *testing.T) {
+	s := newUnblockedFixture(t)
 	first := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "reading"})
 	before, _ := s.vault.Content(first.Path)
 
 	res := s.callImport(t, "Mills", importArguments{URL: articleAddress, Folder: "archive"})
 
 	if res.GetResult().GetIsError() {
-		t.Fatalf("url_import of %s into archive was refused: %s", articleAddress, res.GetResult().GetText())
+		t.Fatalf("url_import of %s into archive was rejected: %s", articleAddress, res.GetResult().GetText())
 	}
 	second := decodeImportAnswer(t, res)
 	if !strings.HasPrefix(second.Path, "archive/") || !second.HasText {
-		t.Errorf("url_import into archive answered %+v, want a note in archive with its text", second)
+		t.Errorf("url_import into archive returned %+v, want a note in archive with its text", second)
 	}
 	notes := getLinkNotes(t, s.vault)
 	slices.Sort(notes)
 	if want := []string{second.Path, first.Path}; !slices.Equal(notes, want) {
-		t.Errorf("the vault holds the link notes %v, want %v", notes, want)
+		t.Errorf("the vault has the link notes %v, want %v", notes, want)
 	}
 	if after, isKept := s.vault.Content(first.Path); !isKept || after != before {
 		t.Errorf("the first note %s reads %q, want it unchanged as %q", first.Path, after, before)
@@ -176,13 +176,13 @@ func TestURLImportOfTheSameAddressIntoAnotherFolderCreatesASecondNote(t *testing
 	}
 }
 
-func TestURLImportOntoAFileThatIsNotTheLinkNoteOfTheAddressIsRefused(t *testing.T) {
+func TestURLImportOntoFileThatIsNotItsLinkNoteIsRejected(t *testing.T) {
 	for name, content := range map[string]string{
 		"a note of its own":              "---\ntitle: Pond survey\n---\nWater level measured at the sluice.\n",
 		"a link note of another address": "---\ntype: link\nurl: " + otherArticle + "\n---\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := newReleasedScene(t)
+			s := newUnblockedFixture(t)
 			probe := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "probe"})
 			targetPath := path.Join("desk", path.Base(probe.Path))
 			s.vault.File(targetPath, content)
@@ -190,13 +190,13 @@ func TestURLImportOntoAFileThatIsNotTheLinkNoteOfTheAddressIsRefused(t *testing.
 			res := s.callImport(t, "Mills", importArguments{URL: articleAddress, Folder: "desk"})
 
 			if !res.GetResult().GetIsError() {
-				t.Fatalf("url_import onto %s answered %s, want an error", targetPath, res.GetResult().GetStructured())
+				t.Fatalf("url_import onto %s returned %s, want an error", targetPath, res.GetResult().GetStructured())
 			}
 			if text := res.GetResult().GetText(); !strings.Contains(text, targetPath) {
 				t.Errorf("the error %q does not name the path %s", text, targetPath)
 			}
 			if after, _ := s.vault.Content(targetPath); after != content {
-				t.Errorf("%s reads %q after the refused import, want it unchanged as %q", targetPath, after, content)
+				t.Errorf("%s reads %q after the rejected import, want it unchanged as %q", targetPath, after, content)
 			}
 		})
 	}

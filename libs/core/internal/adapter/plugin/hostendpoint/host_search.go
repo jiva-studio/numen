@@ -233,7 +233,7 @@ func (e *searchEndpoint) SearchPassages(
 		case domain.KindNote, domain.KindFile:
 			kinds[i] = one
 		default:
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%q is not a kind of source a search reaches: use %q or %q", kind, domain.KindNote, domain.KindFile))
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source kind %q: use %q or %q", kind, domain.KindNote, domain.KindFile))
 		}
 	}
 	found, err := call.search.SearchPassages(ctx, call.vault, pluginport.PluginPassageQuery{
@@ -250,14 +250,14 @@ func (e *searchEndpoint) SearchPassages(
 	return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Passages: passages}), nil
 }
 
-// writePassages converts the passages to the wire. A passage whose end or line exceeds int32 is an
+// writePassages converts the passages to the wire. A passage whose end or line exceeds int32 returns an
 // error, not a wrapped offset.
 func writePassages(found []domain.Passage) ([]*v1.Passage, error) {
 	passages := make([]*v1.Passage, len(found))
 	for i, one := range found {
 		end := one.Start + one.Length
 		if one.Start < 0 || one.Length < 0 || end > math.MaxInt32 || one.Line < 0 || one.Line > math.MaxInt32 {
-			return nil, connect.NewError(connect.CodeOutOfRange, fmt.Errorf("the passage of %s at %d+%d, line %d, does not fit a 32-bit range", one.Source, one.Start, one.Length, one.Line))
+			return nil, connect.NewError(connect.CodeOutOfRange, fmt.Errorf("the passage of %s at %d+%d, line %d, exceeds the 32-bit range", one.Source, one.Start, one.Length, one.Line))
 		}
 		passages[i] = &v1.Passage{
 			Path: one.Source, Text: one.Text, Location: one.Location,

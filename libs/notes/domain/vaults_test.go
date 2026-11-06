@@ -139,7 +139,7 @@ func TestAnOverlapIsFoundAfterTheVaultAtTheSamePath(t *testing.T) {
 	}
 }
 
-func TestCheckOverlapOfAFolderInsideAVaultNamesThePathAndTheVault(t *testing.T) {
+func TestCheckOverlapOfFolderInsideVaultNamesPathAndVault(t *testing.T) {
 	vs := domain.Vaults{{ID: "a", Name: "Rivers", Path: "/vaults/rivers"}}
 
 	err := vs.CheckOverlap("/vaults/rivers/deltas")
@@ -152,7 +152,7 @@ func TestCheckOverlapOfAFolderInsideAVaultNamesThePathAndTheVault(t *testing.T) 
 	}
 }
 
-func TestCheckOverlapOfAFolderContainingAVaultNamesThePathAndTheVault(t *testing.T) {
+func TestCheckOverlapOfFolderContainingVaultNamesPathAndVault(t *testing.T) {
 	vs := domain.Vaults{{ID: "a", Name: "Rivers", Path: "/vaults/rivers"}}
 
 	err := vs.CheckOverlap("/vaults")

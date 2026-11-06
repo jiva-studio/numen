@@ -13,8 +13,8 @@ import (
 
 var _ Window = (*Client)(nil)
 
-// readWindowCallError converts the failure of a window call into its error: a permission the manifest
-// lacks is ErrPermissionDenied, and an argument the host rejects keeps its connect code.
+// readWindowCallError returns the error of a failed window call: a permission the manifest
+// lacks returns ErrPermissionDenied, and an argument the host rejects keeps its connect code.
 func readWindowCallError(err error) error {
 	if connect.CodeOf(err) == connect.CodePermissionDenied {
 		return fmt.Errorf("%w: %w", ErrPermissionDenied, err)
@@ -45,10 +45,10 @@ func (c *Client) FocusNote(ctx context.Context, path string) (FocusedNote, error
 	return FocusedNote{Path: res.Msg.GetPath(), Title: res.Msg.GetTitle(), ID: res.Msg.GetId()}, nil
 }
 
-// errPassageOutOfRange is a passage whose start or length the wire cannot carry in 32 bits.
-var errPassageOutOfRange = errors.New("host: a passage start and length are within the 32-bit range")
+// errPassageOutOfRange is returned for a passage whose start or length exceeds 32 bits.
+var errPassageOutOfRange = errors.New("host: passage start or length exceeds 32 bits")
 
-// writePassageSpans is the passages as the wire carries them, and an error for one outside the
+// writePassageSpans converts the passages to wire spans, and returns an error for one outside the
 // 32-bit range.
 func writePassageSpans(passages []PassageSpan) ([]*v1.PassageSpan, error) {
 	spans := make([]*v1.PassageSpan, 0, len(passages))

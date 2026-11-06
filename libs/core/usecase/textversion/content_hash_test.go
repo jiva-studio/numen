@@ -32,11 +32,11 @@ type statFile struct {
 	raw     []byte
 	modTime time.Time
 	id      domain.FileID
-	// isIgnored is a file the vault ignores: a stat of it answers ErrNotANote, and it still opens.
+	// isIgnored is a file the vault ignores: a stat of it returns ErrNotANote, and it still opens.
 	isIgnored bool
 }
 
-// statVault is a vault whose files carry a modification time and a file id,
+// statVault is a vault whose files have a modification time and a file id,
 // and which counts the files opened and read whole.
 type statVault struct {
 	mu    sync.Mutex
@@ -127,7 +127,7 @@ func (c *setClock) set(now time.Time) {
 	c.now = now
 }
 
-// lookup is one vault holding the atlas, with the row a scan wrote for it, and
+// lookup is one vault containing the atlas, with the row a scan wrote for it, and
 // the versions that look its hash up.
 type lookup struct {
 	vault    domain.Vault
@@ -231,7 +231,7 @@ func TestARecordWithoutAHashTimeIsCheckedByContent(t *testing.T) {
 }
 
 // A file changed in the same clock tick as its record keeps its size and its
-// modification time; only its content tells.
+// modification time; only the content differs.
 func TestAChangeWithinTheTickOfTheRecordIsFoundByContent(t *testing.T) {
 	l := newLookup(t)
 	l.clock.set(getAtlasTime())
@@ -334,7 +334,7 @@ func TestALookupOfAMissingFileIsNotFound(t *testing.T) {
 
 const gigabyte = 1 << 30
 
-// generatedVault holds one file of a gigabyte whose bytes are made as it is
+// generatedVault contains one file of a gigabyte whose bytes are made as it is
 // read. Reading it whole fails the test.
 type generatedVault struct {
 	t     *testing.T
@@ -457,8 +457,8 @@ func TestAOneGigabyteFileIsHashedFromAStreamWithBoundedMemory(t *testing.T) {
 }
 
 // A file system with a coarse tick keeps the stamp of a file changed half a
-// second after it was hashed, a second after the stamp; the content tells.
-func TestAChangeHalfASecondAfterAHashTakenASecondAfterTheStampIsFoundByContent(t *testing.T) {
+// second after it was hashed, a second after the stamp; only the content differs.
+func TestChangeWithinRacyWindowIsDetectedByContent(t *testing.T) {
 	l := newLookup(t)
 	l.clock.set(getAtlasTime().Add(time.Second))
 	l.getHash(t)
@@ -492,7 +492,7 @@ func TestAFileTheVaultIgnoresIsHashedFromAStreamAndNotRecorded(t *testing.T) {
 
 // A file whose modification time is ahead of the clock cannot be changed with
 // its stat kept: a later write stamps the time of the write.
-func TestAFileStampedAnHourAheadOfTheClockIsOpenedOnceOverSixLookups(t *testing.T) {
+func TestFutureMtimeFileIsOpenedOnceOverSixLookups(t *testing.T) {
 	l := newLookup(t)
 	l.clock.set(getAtlasTime().Add(-time.Hour))
 	want := domain.HashContent(getAtlasContent())
@@ -505,7 +505,7 @@ func TestAFileStampedAnHourAheadOfTheClockIsOpenedOnceOverSixLookups(t *testing.
 	l.checkAccesses(t, 1)
 }
 
-// A stamp a second after the hash time lies within the tick of the record, so
+// A stamp a second after the hash time is within the tick of the record, so
 // a change that keeps the size and the stamp is found by content.
 func TestAChangeToAFileStampedASecondAfterItsHashIsFoundByContent(t *testing.T) {
 	l := newLookup(t)

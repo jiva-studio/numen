@@ -261,7 +261,7 @@ export type ManifestListener = Message<"numen.v1.ManifestListener"> & {
   protocol: string;
 
   /**
-   * port_setting is the key of the plugin's number setting that holds the port the host binds; the
+   * port_setting is the key of the plugin's number setting that stores the port the host binds; the
    * host binds again when the setting changes. Set exactly one of port and port_setting.
    *
    * @generated from field: string port_setting = 4;

@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// listenerPort is the name and the bound port of a listener OpenListener opened.
+// listenerPort is the name and the bound port of a listener opened by OpenListener.
 type listenerPort struct {
 	name string
 	port int

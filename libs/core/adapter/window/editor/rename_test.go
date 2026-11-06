@@ -1665,7 +1665,7 @@ func TestResolveAddressesRejectsAVaultTheWindowDoesNotShow(t *testing.T) {
 	}
 }
 
-func TestRenamingATitledNoteOntoATakenNameReturnsTheErrorAndWritesNothing(t *testing.T) {
+func TestRenameTitledNoteOntoTakenNameFailsAndWritesNothing(t *testing.T) {
 	const old = "---\ntitle: Old\n---\n\nA measure.\n"
 	f := openWindow(t, nil, map[string]string{
 		"Old.md":     old,
@@ -1680,7 +1680,7 @@ func TestRenamingATitledNoteOntoATakenNameReturnsTheErrorAndWritesNothing(t *tes
 	}
 
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
-		t.Errorf("a name already taken was answered with %v", code)
+		t.Errorf("a name already taken returned %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "Old.md" {
 		t.Errorf("the note is filed at %q", path)

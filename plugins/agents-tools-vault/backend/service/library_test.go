@@ -32,7 +32,7 @@ const (
 	talkThird  = "Today we speak about the heron. "
 )
 
-// librarySearchAnswer is the answer of library_search under the keys the tool writes.
+// librarySearchAnswer is the result of library_search with the tool's JSON keys.
 type librarySearchAnswer struct {
 	Query   string `json:"query"`
 	Matches []struct {
@@ -47,7 +47,7 @@ type librarySearchAnswer struct {
 	} `json:"matches"`
 }
 
-// libraryReadAnswer is the answer of library_read under the keys the tool writes.
+// libraryReadAnswer is the result of library_read with the tool's JSON keys.
 type libraryReadAnswer struct {
 	Path      string `json:"path"`
 	Kind      string `json:"kind"`
@@ -68,10 +68,10 @@ type libraryReadAnswer struct {
 }
 
 type library struct {
-	vault  *hosttest.Vault
-	texts  *hosttest.Texts
-	search *hosttest.Search
-	calls  *tools.Registry
+	vault    *hosttest.Vault
+	texts    *hosttest.Texts
+	search   *hosttest.Search
+	registry *tools.Registry
 }
 
 func newLibrary(t *testing.T) library {
@@ -110,7 +110,7 @@ func newLibrary(t *testing.T) library {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return library{vault: vault, texts: texts, search: search, calls: registry}
+	return library{vault: vault, texts: texts, search: search, registry: registry}
 }
 
 func putText(t *testing.T, texts *hosttest.Texts, pluginID, path, kind string, file []byte, segments []domain.TextSegment) {
@@ -126,10 +126,10 @@ func putText(t *testing.T, texts *hosttest.Texts, pluginID, path, kind string, f
 	}
 }
 
-// call runs a tool on the vault and returns the structured answer, or the failure text.
+// call runs a tool on the vault and returns the structured result, or the failure text.
 func (l library) call(t *testing.T, name, arguments string, out any) (failure string) {
 	t.Helper()
-	res, err := l.calls.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: name, Arguments: []byte(arguments)})
+	res, err := l.registry.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: name, Arguments: []byte(arguments)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func TestLibrarySearchFindsPDFPassageWithPageAndAddress(t *testing.T) {
 
 func TestLibrarySearchMatchHasURIKeyAndNoAtKey(t *testing.T) {
 	l := newLibrary(t)
-	res, err := l.calls.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: "library_search", Arguments: []byte(`{"query":"heron"}`)})
+	res, err := l.registry.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: "library_search", Arguments: []byte(`{"query":"heron"}`)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +204,7 @@ func TestLibrarySearchMatchHasURIKeyAndNoAtKey(t *testing.T) {
 
 func TestLibrarySearchSchemaNamesTheAddressURI(t *testing.T) {
 	l := newLibrary(t)
-	infos, err := l.calls.ListTools(t.Context())
+	infos, err := l.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,10 +242,10 @@ func TestLibrarySearchLimitsItToAKindAndAPathPrefix(t *testing.T) {
 	l.call(t, "library_search", `{"query":"heron","kinds":["note"]}`, &notes)
 	l.call(t, "library_search", `{"query":"heron","pathPrefix":"recordings/","limit":1}`, &narrowed)
 	if got := getMatchPaths(files); !slices.Equal(got, []string{guidePath, talkPath}) {
-		t.Errorf("the files that answer are %v", got)
+		t.Errorf("the files that match are %v", got)
 	}
 	if got := getMatchPaths(notes); !slices.Equal(got, []string{"notes/Herons.md"}) {
-		t.Errorf("the notes that answer are %v", got)
+		t.Errorf("the notes that match are %v", got)
 	}
 	if got := getMatchPaths(narrowed); !slices.Equal(got, []string{talkPath}) {
 		t.Errorf("one passage under recordings/ is %v", got)
@@ -272,7 +272,7 @@ func TestLibrarySearchRejectsUnknownKindAndBlankQuery(t *testing.T) {
 	}
 }
 
-func TestLibrarySearchWorksTheVaultTheCallNames(t *testing.T) {
+func TestLibrarySearchUsesTheNamedVault(t *testing.T) {
 	vault := hosttest.New(testVault)
 	garden := hosttest.New("garden-vault")
 	vault.Beside(garden)
@@ -295,7 +295,7 @@ func TestLibrarySearchWorksTheVaultTheCallNames(t *testing.T) {
 		}
 		var out librarySearchAnswer
 		if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil || len(out.Matches) != 1 || out.Matches[0].Path != want {
-			t.Errorf("the call naming %s answered %s (%v), want %s alone", vaultID, res.GetResult().GetStructured(), err, want)
+			t.Errorf("the call naming %s returned %s (%v), want %s alone", vaultID, res.GetResult().GetStructured(), err, want)
 		}
 	}
 }
@@ -389,7 +389,7 @@ func TestLibraryReadReportsMissingTextVersion(t *testing.T) {
 	failure := l.call(t, "library_read", `{"path":"`+scanPath+`"}`, nil)
 	for _, want := range []string{scanPath, "has no text version", "recognition_create", "transcript_create"} {
 		if !strings.Contains(failure, want) {
-			t.Errorf("failure %q does not say %q", failure, want)
+			t.Errorf("failure %q does not contain %q", failure, want)
 		}
 	}
 }
@@ -405,7 +405,7 @@ func TestLibraryReadReadsATextFileThatNeedsNoTextVersion(t *testing.T) {
 	}
 }
 
-func TestLibraryReadRefusesAPageThatIsNotThereAndAFileThatIsNot(t *testing.T) {
+func TestLibraryReadRejectsMissingPageAndMissingFile(t *testing.T) {
 	l := newLibrary(t)
 	if failure := l.call(t, "library_read", `{"path":"`+guidePath+`","page":9}`, nil); !strings.Contains(failure, "page 9") || !strings.Contains(failure, "1 to 3") {
 		t.Errorf("failure %q, want the page and the pages there are", failure)
@@ -421,12 +421,12 @@ func TestLibraryReadRefusesAPageThatIsNotThereAndAFileThatIsNot(t *testing.T) {
 	}
 }
 
-func TestFileReadRefusesABinaryAndNamesLibraryRead(t *testing.T) {
+func TestFileReadRejectsABinaryAndNamesLibraryRead(t *testing.T) {
 	l := newLibrary(t)
 	for _, path := range []string{guidePath, talkPath} {
 		failure := l.call(t, "file_read", `{"path":"`+path+`"}`, nil)
 		if !strings.Contains(failure, "library_read") || !strings.Contains(failure, path) {
-			t.Errorf("file_read of %s refused with %q, want the path and library_read named", path, failure)
+			t.Errorf("file_read of %s rejected with %q, want the path and library_read named", path, failure)
 		}
 	}
 	var md service.FileReadOutput
@@ -441,7 +441,7 @@ func TestFileReadRefusesABinaryAndNamesLibraryRead(t *testing.T) {
 
 func TestTheDescriptionsSayWhichToolReadsWhat(t *testing.T) {
 	l := newLibrary(t)
-	infos, err := l.calls.ListTools(t.Context())
+	infos, err := l.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -461,7 +461,7 @@ func TestTheDescriptionsSayWhichToolReadsWhat(t *testing.T) {
 		}
 		for _, want := range mentions {
 			if !strings.Contains(info.GetDescription(), want) {
-				t.Errorf("%s says %q, want %q in it", name, info.GetDescription(), want)
+				t.Errorf("the description of %s is %q, want %q in it", name, info.GetDescription(), want)
 			}
 		}
 	}
@@ -473,7 +473,7 @@ func TestTheDescriptionsSayWhichToolReadsWhat(t *testing.T) {
 	}
 }
 
-func TestLibraryReadRefusesAPageWithAStartAndANegativeNumber(t *testing.T) {
+func TestLibraryReadRejectsAPageWithAStartAndANegativeNumber(t *testing.T) {
 	l := newLibrary(t)
 	if failure := l.call(t, "library_read", `{"path":"`+guidePath+`","page":2,"start":5}`, nil); !strings.Contains(failure, "page") || !strings.Contains(failure, "start") {
 		t.Errorf("a page with a start gave %q, want both named", failure)
@@ -495,7 +495,7 @@ func TestARangeOverTheBinaryTailOfATextFileIsNotText(t *testing.T) {
 		t.Errorf("file_read of the text before the binary tail gave %q and %d bytes, want the 16000 bytes of text", failure, len(head.Content))
 	}
 	if failure := l.call(t, "file_read", `{"path":"export.dat","start":16000}`, nil); !strings.Contains(failure, "library_read") {
-		t.Errorf("file_read of the binary tail gave %q, want a refusal", failure)
+		t.Errorf("file_read of the binary tail gave %q, want an error", failure)
 	}
 	if failure := l.call(t, "library_read", `{"path":"export.dat","start":16000}`, nil); !strings.Contains(failure, "no text version") {
 		t.Errorf("library_read of the binary tail gave %q, want no text version", failure)
@@ -507,11 +507,11 @@ func TestLibrarySearchFailsWhenTheTitlesOfTheNotesCannotBeRead(t *testing.T) {
 	l.vault.Hide()
 	failure := l.call(t, "library_search", `{"query":"heron"}`, nil)
 	if !strings.Contains(failure, host.ErrNoVault.Error()) {
-		t.Errorf("library_search with the notes unreadable gave %q, want a failure that says %q", failure, host.ErrNoVault.Error())
+		t.Errorf("library_search with the notes unreadable gave %q, want a failure containing %q", failure, host.ErrNoVault.Error())
 	}
 }
 
-func TestLibraryReadFailsOnASegmentWhoseSelectorIsNoSelector(t *testing.T) {
+func TestLibraryReadFailsOnASegmentWithInvalidSelector(t *testing.T) {
 	l := newLibrary(t)
 	const pondPath = "library/Pond Survey.pdf"
 	file := []byte(pdfBytes + "pond")
@@ -529,7 +529,7 @@ func TestLibraryReadFailsOnASegmentWhoseSelectorIsNoSelector(t *testing.T) {
 
 func TestLibraryReadLengthStatesThePlainTextFileLimit(t *testing.T) {
 	l := newLibrary(t)
-	length, _ := getSchemaProperties(t, getToolSchema(t, l.calls, "library_read", false))["length"].(map[string]any)
+	length, _ := getSchemaProperties(t, getToolSchema(t, l.registry, "library_read", false))["length"].(map[string]any)
 	description, _ := length["description"].(string)
 	for _, want := range []string{"20000", "50000", "16000"} {
 		if !strings.Contains(description, want) {

@@ -30,7 +30,7 @@ export const ListToolsRequestSchema: GenMessage<ListToolsRequest> = /*@__PURE__*
  */
 export type ListToolsResponse = Message<"numen.v1.ListToolsResponse"> & {
   /**
-   * The host answers the tools of the plugins it lists grouped by plugin, in
+   * The host returns the tools of the plugins it lists grouped by plugin, in
    * the order of plugin ids.
    *
    * @generated from field: repeated numen.v1.PluginTool tools = 1;
@@ -118,9 +118,9 @@ export type PluginTool = Message<"numen.v1.PluginTool"> & {
   instructions: string[];
 
   /**
-   * The permissions the caller must hold besides the one of the effect, such
+   * The permissions the caller must have besides the one of the effect, such
    * as vault:manage. The host lists and runs the tool only for a caller that
-   * holds all of them.
+   * has all of them.
    *
    * @generated from field: repeated string requires = 10;
    */
@@ -229,7 +229,7 @@ export type ToolResult = Message<"numen.v1.ToolResult"> & {
   structured: Uint8Array;
 
   /**
-   * Set when the tool ran and answered with an error; text then holds the
+   * Set when the tool ran and returned an error; text then contains the
    * error message.
    *
    * @generated from field: bool is_error = 3;

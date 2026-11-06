@@ -55,8 +55,8 @@ func (f vaultFiles) ReadFile(ctx context.Context, vault domain.VaultID, path str
 	return raw, err
 }
 
-// GetShownVault returns the id of the vault the host shows.
-func (f vaultFiles) GetShownVault(ctx context.Context) (domain.VaultID, error) {
+// GetActiveVaultID returns the id of the vault the host shows.
+func (f vaultFiles) GetActiveVaultID(ctx context.Context) (domain.VaultID, error) {
 	shown, err := f.vault.GetVault(ctx)
 	if err != nil {
 		return "", err

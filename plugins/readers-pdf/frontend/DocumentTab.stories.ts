@@ -1,5 +1,5 @@
 /**
- * A PDF tab the window moves to a passage, drawn in a browser: the tab's own reader over a
+ * A PDF tab scrolled to a passage, rendered in a browser: the tab's own reader over a
  * document of twelve pages that a made-up port serves, and the place the tab saves.
  *
  * The window sets the ranges once the tab has loaded, as `source_focus` does on a tab already
@@ -24,7 +24,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** How long the tab has to save the page it was moved to: well under the window's next look. */
+/** Timeout for saving the page the tab was moved to: shorter than the window's poll interval. */
 const AT_ONCE = 1_000
 
 const PATH = 'library/Wading Birds.pdf'
@@ -35,7 +35,7 @@ const RANGES: readonly TextRange[] = [
   { start: 2_310, end: 2_355 },
 ]
 
-/** A page drawn to the requested width, carrying its own number. */
+/** A page rendered at the requested width, showing its page number. */
 const renderPage = (page: number, width: number): string => {
   const tall = Math.round((width * 792) / 612)
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${tall}">
@@ -91,7 +91,7 @@ const openAt =
     template: `<DocumentTab :state="state" />`,
   })
 
-/** The page the window moves the tab to is the place it saves, as soon as it is there. */
+/** The page the window moves the tab to is the place it saves on arrival. */
 export const PlaceSavedAfterTheFocusMoves: Story = {
   render: openAt(RANGES),
   play: async () => {
@@ -100,7 +100,7 @@ export const PlaceSavedAfterTheFocusMoves: Story = {
       { timeout: AT_ONCE },
     )
 
-    // The turn to the page has settled by now, and nothing has moved the tab since.
+    // Page navigation has finished by now, and nothing has moved the tab since.
     await new Promise((resolve) => setTimeout(resolve, 2 * AT_ONCE))
     await expect(places.at(-1)).toStrictEqual({ page: 7, pageCount: 12 })
   },

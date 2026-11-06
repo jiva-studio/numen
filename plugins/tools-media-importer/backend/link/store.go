@@ -118,9 +118,9 @@ func (f folder) readRecord(ctx context.Context, key string) (record, error) {
 	return rec, err
 }
 
-// markNone marks the key as an address that publishes no text, and clears the title, producer and
+// markNoText marks the key as an address that publishes no text, and clears the title, producer and
 // kind an earlier fetch recorded. The record keeps the address and the copy.
-func (f folder) markNone(ctx context.Context, key string) error {
+func (f folder) markNoText(ctx context.Context, key string) error {
 	rec, hasRecord, err := f.findRecord(ctx, key)
 	if err != nil {
 		return err

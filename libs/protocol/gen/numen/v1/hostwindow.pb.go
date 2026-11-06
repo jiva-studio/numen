@@ -21,14 +21,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// HostWindowErrorCode is why a window call was not served. UNSPECIFIED is a call that was served.
+// HostWindowErrorCode is the reason a window call was not served. UNSPECIFIED means success.
 type HostWindowErrorCode int32
 
 const (
 	HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED HostWindowErrorCode = 0
-	// NO_WINDOW is a host with no window.
+	// NO_WINDOW means the host has no window.
 	HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW HostWindowErrorCode = 1
-	// NOT_FOUND is a path the vault holds no note or file at, or a tab id the window has no tab with.
+	// NOT_FOUND means a path with no note or file in the vault, or a tab id with no tab in the window.
 	HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND HostWindowErrorCode = 2
 )
 
@@ -186,7 +186,7 @@ func (x *FocusNoteResponse) GetId() string {
 	return ""
 }
 
-// A PassageSpan is a run of the text version of a file, in bytes, as library_search returns it.
+// A PassageSpan is a byte range in a file's text version, as library_search returns it.
 type PassageSpan struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Start         int32                  `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`

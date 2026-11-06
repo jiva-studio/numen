@@ -1643,9 +1643,9 @@ func (x *WriteLinkRequest) GetLink() *Link {
 
 type WriteLinkResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when nothing was written, and why. A note that moved between being
-	// read and being written is ERROR_CODE_CONFLICT, and the caller reads it
-	// again before asking for this.
+	// Set when nothing was written, with the reason. A note that changed between
+	// being read and being written returns ERROR_CODE_CONFLICT, and the caller
+	// reads it again before retrying.
 	Error         *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2613,7 +2613,7 @@ type Backlink struct {
 	From *Note `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	// The role as written, which is relative to the note it is written in.
 	Role Role `protobuf:"varint,2,opt,name=role,proto3,enum=numen.v1.Role" json:"role,omitempty"`
-	// The role of the note the link is written in, relative to the note asked about.
+	// The role of the note the link is written in, relative to the requested note.
 	// ROLE_UNSPECIFIED for a role with no counterpart.
 	SourceRole    Role   `protobuf:"varint,3,opt,name=source_role,json=sourceRole,proto3,enum=numen.v1.Role" json:"source_role,omitempty"`
 	Type          string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`

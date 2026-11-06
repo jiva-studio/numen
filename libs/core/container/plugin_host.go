@@ -202,8 +202,8 @@ func (c Config) SetPluginVault(vault pluginport.PluginVault) {
 	}
 }
 
-// SetPluginVaultList is the list of vaults the plugins change. Without one, a plugin that changes
-// the list is answered that the host has none.
+// SetPluginVaultList sets the list of vaults exposed to plugins. Without one, calls that change
+// the list fail with ErrUnavailable.
 func (c Config) SetPluginVaultList(list pluginport.PluginVaultList) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetPluginVaultList(list)
@@ -232,8 +232,8 @@ type PluginVaultHooks struct {
 	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
 	// Moved signals that something moved in some vault. When nil, the signal is the index file changing.
 	Moved func(ctx context.Context) (<-chan struct{}, error)
-	// Notes is the window's own use cases on notes, used for the vault current shows, so the window
-	// follows a note a plugin renames or moves there. The zero value is the host's own, which no
+	// Notes is the window's own use cases on notes, used for the vault the window shows, so the
+	// window follows a note a plugin renames or moves there. The zero value is the host's own, which no
 	// window follows.
 	Notes note.Scenarios
 }
@@ -372,8 +372,8 @@ func (c Config) GetFrontendPluginIDs() []string {
 	return ids
 }
 
-// SetPluginWindow is the main window the plugins move and read the tabs of. A host with no window
-// sets none, and the plugins are answered that there is no window.
+// SetPluginWindow sets the window exposed to plugins. A host with no window sets none, and calls
+// fail with ErrNoWindow.
 func (c Config) SetPluginWindow(window pluginport.PluginWindow) {
 	if c.PluginHost != nil {
 		var host pluginport.PluginWindowHost = c.PluginHost

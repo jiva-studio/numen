@@ -16,13 +16,13 @@ import (
 
 const diskFull = "write Broken.md: the disk is full"
 
-// brokenArranging is a host whose change of Broken.md fails with an error that has no code of its
-// own, and whose other refusals carry the core's text.
-type brokenArranging struct {
-	arranging
+// noCodeErrorHost is a host whose change of Broken.md fails with an error that has no code of its
+// own, and whose other errors have the core's text.
+type noCodeErrorHost struct {
+	fakeArrangeHost
 }
 
-func (a *brokenArranging) RenameNote(
+func (a *noCodeErrorHost) RenameNote(
 	context.Context, *connect.Request[v1.HostVaultServiceRenameNoteRequest],
 ) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
 	return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{
@@ -30,7 +30,7 @@ func (a *brokenArranging) RenameNote(
 	}), nil
 }
 
-func (a *brokenArranging) MoveNotes(
+func (a *noCodeErrorHost) MoveNotes(
 	context.Context, *connect.Request[v1.HostVaultServiceMoveNotesRequest],
 ) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error) {
 	return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
@@ -40,7 +40,7 @@ func (a *brokenArranging) MoveNotes(
 	}}), nil
 }
 
-func (a *brokenArranging) RemoveNotes(
+func (a *noCodeErrorHost) RemoveNotes(
 	context.Context, *connect.Request[v1.HostVaultServiceRemoveNotesRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error) {
 	return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Removals: []*v1.HostNoteRemoval{
@@ -49,23 +49,23 @@ func (a *brokenArranging) RemoveNotes(
 	}}), nil
 }
 
-func brokenClient(t *testing.T) *host.Client {
+func newNoCodeErrorClient(t *testing.T) *host.Client {
 	t.Helper()
-	server := httptest.NewServer(handler(&brokenArranging{}))
+	server := httptest.NewServer(handler(&noCodeErrorHost{}))
 	t.Cleanup(server.Close)
 	return host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 }
 
 func TestTheClientKeepsTheDetailOfARenameThatFailedWithNoCode(t *testing.T) {
-	_, err := brokenClient(t).RenameNote(t.Context(), "Broken.md", "Mended")
+	_, err := newNoCodeErrorClient(t).RenameNote(t.Context(), "Broken.md", "Mended")
 
 	if err == nil || !strings.Contains(err.Error(), diskFull) {
-		t.Errorf("the rename returned %v, want an error carrying %q", err, diskFull)
+		t.Errorf("the rename returned %v, want an error containing %q", err, diskFull)
 	}
 }
 
 func TestTheClientKeepsTheDetailOfEachMoveEntryInItsError(t *testing.T) {
-	moves, err := brokenClient(t).MoveNotes(t.Context(), []string{"Danube.md", "Broken.md", "Nowhere.md"}, "Archive")
+	moves, err := newNoCodeErrorClient(t).MoveNotes(t.Context(), []string{"Danube.md", "Broken.md", "Nowhere.md"}, "Archive")
 	if err != nil {
 		t.Fatalf("the move failed as a whole: %v", err)
 	}
@@ -74,15 +74,15 @@ func TestTheClientKeepsTheDetailOfEachMoveEntryInItsError(t *testing.T) {
 		t.Fatalf("the moves came back as %+v", moves)
 	}
 	if m := moves[1]; m.Err == nil || !strings.Contains(m.Err.Error(), diskFull) {
-		t.Errorf("the move of Broken.md came back as %+v, want an error carrying %q", m, diskFull)
+		t.Errorf("the move of Broken.md came back as %+v, want an error containing %q", m, diskFull)
 	}
 	if m := moves[2]; !errors.Is(m.Err, host.ErrNotExist) || !strings.Contains(m.Err.Error(), "move Nowhere.md: no such note") {
-		t.Errorf("the move of Nowhere.md came back as %+v, want ErrNotExist carrying the core's text", m)
+		t.Errorf("the move of Nowhere.md came back as %+v, want ErrNotExist containing the core's text", m)
 	}
 }
 
 func TestTheClientKeepsTheDetailOfARemovalEntryInItsError(t *testing.T) {
-	removals, err := brokenClient(t).RemoveNotes(t.Context(), []string{"Danube.md", "Broken.md"})
+	removals, err := newNoCodeErrorClient(t).RemoveNotes(t.Context(), []string{"Danube.md", "Broken.md"})
 	if err != nil {
 		t.Fatalf("the removal failed as a whole: %v", err)
 	}
@@ -91,7 +91,7 @@ func TestTheClientKeepsTheDetailOfARemovalEntryInItsError(t *testing.T) {
 		t.Fatalf("the removals came back as %+v", removals)
 	}
 	if r := removals[1]; r.Err == nil || !strings.Contains(r.Err.Error(), diskFull) {
-		t.Errorf("the removal of Broken.md came back as %+v, want an error carrying %q", r, diskFull)
+		t.Errorf("the removal of Broken.md came back as %+v, want an error containing %q", r, diskFull)
 	}
 }
 
@@ -100,11 +100,11 @@ func getVaultsErrors() map[v1.VaultsErrorCode]error {
 	return map[v1.VaultsErrorCode]error{
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   host.ErrVaultOverlaps,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: host.ErrVaultNameTaken,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    host.ErrVaultShowing,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    host.ErrVaultActive,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: host.ErrLastVault,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  host.ErrUnknownVault,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: host.ErrVaultUnreadable,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       host.ErrVaultCopy,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       host.ErrVaultDuplicate,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:    host.ErrUnsavedChanges,
 	}
 }
@@ -123,13 +123,13 @@ func changeVaults(t *testing.T, client *host.Client) map[string]error {
 func TestAVaultsErrorWithADetailHasTheDetailAsItsText(t *testing.T) {
 	const detail = "/vaults/Seas contains the vault Rivers; a vault cannot contain another vault"
 	for code, want := range getVaultsErrors() {
-		client := arrangingClient(t, &arranging{vaultsError: code, vaultsDetail: detail})
+		client := newFakeArrangeClient(t, &fakeArrangeHost{vaultsError: code, vaultsDetail: detail})
 		for call, err := range changeVaults(t, client) {
 			if !errors.Is(err, want) {
-				t.Errorf("%s refused with %s returned %v, want %v", call, code, err, want)
+				t.Errorf("%s rejected with %s returned %v, want %v", call, code, err, want)
 			}
 			if err == nil || err.Error() != detail {
-				t.Errorf("%s refused with %s returned the text %q, want the detail %q alone", call, code, err, detail)
+				t.Errorf("%s rejected with %s returned the text %q, want the detail %q alone", call, code, err, detail)
 			}
 		}
 	}
@@ -137,27 +137,27 @@ func TestAVaultsErrorWithADetailHasTheDetailAsItsText(t *testing.T) {
 
 func TestAVaultsErrorWithNoDetailHasThePlainSentinelText(t *testing.T) {
 	for code, want := range getVaultsErrors() {
-		client := arrangingClient(t, &arranging{vaultsError: code})
+		client := newFakeArrangeClient(t, &fakeArrangeHost{vaultsError: code})
 		for call, err := range changeVaults(t, client) {
 			if !errors.Is(err, want) {
-				t.Fatalf("%s refused with %s returned %v, want %v", call, code, err, want)
+				t.Fatalf("%s rejected with %s returned %v, want %v", call, code, err, want)
 			}
 			text := err.Error()
 			if text != want.Error() {
-				t.Errorf("%s refused with %s returned the text %q, want the text of the sentinel %q", call, code, text, want.Error())
+				t.Errorf("%s rejected with %s returned the text %q, want the text of the sentinel %q", call, code, text, want.Error())
 			}
 			for _, phrase := range []string{"host:", "add vault", "rename vault", "remove vault", "open vault"} {
 				if strings.Contains(text, phrase) {
-					t.Errorf("%s refused with %s returned the text %q, which contains %q", call, code, text, phrase)
+					t.Errorf("%s rejected with %s returned the text %q, which contains %q", call, code, text, phrase)
 				}
 			}
 		}
 	}
 }
 
-// detailedRenaming is a host whose rename of a note is refused with a code and the core's text.
+// detailedRenaming is a host whose rename of a note is rejected with a code and the core's text.
 type detailedRenaming struct {
-	arranging
+	fakeArrangeHost
 	code   v1.HostVaultErrorCode
 	detail string
 }

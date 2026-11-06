@@ -163,7 +163,7 @@ func (u EditLinks) RemoveTargetLinks(
 	e := u.newEdit()
 	e.FileStat = stat
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
-		removed, err := doc.RemoveLinksTo(to, role)
+		removed, err := doc.RemoveTargetLinks(to, role)
 		if err != nil {
 			return err
 		}

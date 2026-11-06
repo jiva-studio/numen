@@ -490,10 +490,11 @@ type ReadTextRequest struct {
 	// cursor is the next_cursor of the page before, and empty for the first. Not
 	// used with a length.
 	Cursor string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
-	// Where a ranged read begins in the whole text, in bytes.
+	// The start of a ranged read in the whole text, in bytes.
 	Start int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
-	// Set: read the range from start of this many bytes, zero to the end, cut at
-	// whole characters, as the segments it covers, each cut to the range. Unset:
+	// Set: read the range from start of this many bytes, zero to the end,
+	// truncated at whole characters, as the segments it covers, each truncated to
+	// the range. Unset:
 	// read one page by cursor.
 	Length        *int64 `protobuf:"varint,5,opt,name=length,proto3,oneof" json:"length,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -571,8 +572,8 @@ type ReadTextResponse struct {
 	// next_cursor is empty on the last page.
 	NextCursor string        `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
 	Error      TextErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
-	// For a ranged read: where the first segment returned begins in the whole
-	// text, and the bytes of the whole text.
+	// For a ranged read: the start of the first segment returned in the whole
+	// text, and the size of the whole text in bytes.
 	Start         int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
 	Size          int64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
 	unknownFields protoimpl.UnknownFields

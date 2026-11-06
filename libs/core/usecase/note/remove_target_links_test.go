@@ -71,11 +71,11 @@ func TestRemoveTargetLinksRemovesEveryRecordToTheTargetInOneWrite(t *testing.T) 
 		t.Errorf("the removal wrote the note %d times, want 1", writes)
 	}
 	if stat.Size != int64(len(body)) {
-		t.Errorf("the removal answered the file stat %+v, want the size of the written file, %d", stat, len(body))
+		t.Errorf("the removal returned the file stat %+v, want the size of the written file, %d", stat, len(body))
 	}
 }
 
-func TestRemoveTargetLinksWithARoleRemovesOnlyTheRecordsOfThatRole(t *testing.T) {
+func TestRemoveTargetLinksWithARoleRemovesOnlyThatRole(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": heatWithEntropyLinks})
 
@@ -95,7 +95,7 @@ func TestRemoveTargetLinksWithARoleRemovesOnlyTheRecordsOfThatRole(t *testing.T)
 	}
 }
 
-func TestRemoveTargetLinksOfATargetTheNoteDoesNotLinkIsRefused(t *testing.T) {
+func TestRemoveTargetLinksOfUnlinkedTargetIsRejected(t *testing.T) {
 	t.Parallel()
 	for name, role := range map[string]domain.LinkRole{"any role": "", "a role no record has": domain.RoleChild} {
 		t.Run(name, func(t *testing.T) {

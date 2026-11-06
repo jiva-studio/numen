@@ -75,7 +75,7 @@ func isSameContentHash(a, b textport.ContentHash) bool {
 		a.FileID == b.FileID && a.HashTime.Equal(b.HashTime)
 }
 
-func TestFindContentHashReturnsTheSavedHashWithItsNanosecondStatFileIDAndHashTime(t *testing.T) {
+func TestFindContentHashReturnsSavedHashStatFileIDAndHashTime(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
 	saveContentHash(t, db, getRiversRecord())
@@ -97,7 +97,7 @@ func TestAScannedRowHasNoHashNoFileIDAndNoHashTime(t *testing.T) {
 	}
 }
 
-func TestSaveContentHashWithAnotherStatAndAnotherHashWritesNothing(t *testing.T) {
+func TestSaveContentHashWithOtherStatAndHashWritesNothing(t *testing.T) {
 	db := openHashIndex(t)
 	scan(t, db, riversPath, 2048, getRiversTime())
 	saveContentHash(t, db, getRiversRecord())
@@ -247,8 +247,8 @@ func writeSource(t *testing.T, db *DB, size int64, modTime time.Time, contentHas
 }
 
 // The indexer's write of a file it read keeps the record the lookup wrote when
-// it carries the row's own hash and stat, and clears it otherwise.
-func TestASourceWriteKeepsTheFileIDAndHashTimeOnlyForTheRowsOwnHashAndStat(t *testing.T) {
+// it has the row's own hash and stat, and clears it otherwise.
+func TestSourceWriteKeepsFileIDAndHashTimeOnlyForOwnHashAndStat(t *testing.T) {
 	for name, c := range map[string]struct {
 		size        int64
 		modTime     time.Time

@@ -22,7 +22,7 @@ service PluginToolService {
 message ListToolsRequest {}
 
 message ListToolsResponse {
-  // The host answers the tools of the plugins it lists grouped by plugin, in
+  // The host returns the tools of the plugins it lists grouped by plugin, in
   // the order of plugin ids.
   repeated PluginTool tools = 1;
 }
@@ -60,9 +60,9 @@ message PluginTool {
   // offers, in listing order.
   repeated string instructions = 9;
 
-  // The permissions the caller must hold besides the one of the effect, such
+  // The permissions the caller must have besides the one of the effect, such
   // as vault:manage. The host lists and runs the tool only for a caller that
-  // holds all of them.
+  // has all of them.
   repeated string requires = 10;
 }
 
@@ -144,7 +144,7 @@ message ToolResult {
   // tool listed none.
   bytes structured = 2;
 
-  // Set when the tool ran and answered with an error; text then holds the
+  // Set when the tool ran and returned an error; text then contains the
   // error message.
   bool is_error = 3;
 }

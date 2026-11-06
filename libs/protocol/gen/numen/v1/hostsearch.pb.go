@@ -1175,13 +1175,13 @@ func (x *SetSearchFloorResponse) GetError() HostSearchErrorCode {
 type HostSearchServiceSearchPassagesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	// How many passages to answer with. Zero takes the number the host chooses.
+	// Maximum passages to return. Zero means the number the host chooses.
 	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	// The kinds of source to look in, "note" or "file". Empty looks in every one.
+	// The kinds of source to search, "note" or "file". Empty means every kind.
 	Kinds []string `protobuf:"bytes,3,rep,name=kinds,proto3" json:"kinds,omitempty"`
 	// Limits the search to the sources whose path starts with it, relative to the
 	// vault. The index applies it, so the limit counts passages under the prefix.
-	// Empty looks in the whole vault.
+	// Empty means the whole vault.
 	PathPrefix    string `protobuf:"bytes,4,opt,name=path_prefix,json=pathPrefix,proto3" json:"path_prefix,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1248,7 +1248,7 @@ func (x *HostSearchServiceSearchPassagesRequest) GetPathPrefix() string {
 type HostSearchServiceSearchPassagesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
-	// The passages that answer, best first, at most three of one source.
+	// Matching passages, best first, at most three of one source.
 	Passages      []*Passage `protobuf:"bytes,2,rep,name=passages,proto3" json:"passages,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

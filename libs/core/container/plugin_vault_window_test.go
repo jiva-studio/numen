@@ -16,28 +16,28 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
-// movesWindow is a window that records the note moves it is shown.
-type movesWindow struct {
+// moveRecordingWindow is a window that records the note moves it is shown.
+type moveRecordingWindow struct {
 	mu    sync.Mutex
 	moves []domain.Move
 }
 
-var _ windowport.Window = (*movesWindow)(nil)
+var _ windowport.Window = (*moveRecordingWindow)(nil)
 
-func (w *movesWindow) FocusPlace(context.Context, domain.Place) error { return nil }
+func (w *moveRecordingWindow) FocusPlace(context.Context, domain.Place) error { return nil }
 
-func (w *movesWindow) ShowMove(_ context.Context, move domain.Move) error {
+func (w *moveRecordingWindow) ShowMove(_ context.Context, move domain.Move) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.moves = append(w.moves, move)
 	return nil
 }
 
-func (w *movesWindow) ShowEdit(context.Context, domain.Edit) error { return nil }
+func (w *moveRecordingWindow) ShowEdit(context.Context, domain.Edit) error { return nil }
 
-func (w *movesWindow) ActivateTab(context.Context, string) error { return nil }
+func (w *moveRecordingWindow) ActivateTab(context.Context, string) error { return nil }
 
-func (w *movesWindow) getMoves() []domain.Move {
+func (w *moveRecordingWindow) getMoves() []domain.Move {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return slices.Clone(w.moves)
@@ -47,7 +47,7 @@ func TestTheWindowFollowsANoteAPluginRenamesOrMoves(t *testing.T) {
 	notes := getRivers()
 	v, current, assembly := openPluginVault(t, notes)
 	refresh := assembly.GetRefresh()
-	window := &movesWindow{}
+	window := &moveRecordingWindow{}
 	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
@@ -97,10 +97,10 @@ func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (doma
 	return other, func() (domain.Vault, bool) { return rivers, true }, container.NewEditorAssembly(cfg, registry, db)
 }
 
-func TestTheWindowIsNotShownAPluginMoveInAnotherVault(t *testing.T) {
+func TestWindowIgnoresPluginMoveInOtherVault(t *testing.T) {
 	other, current, assembly := openTwoPluginVaults(t)
 	refresh := assembly.GetRefresh()
-	window := &movesWindow{}
+	window := &moveRecordingWindow{}
 	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
@@ -129,22 +129,22 @@ func TestTheWindowIsNotShownAPluginMoveInAnotherVault(t *testing.T) {
 	}
 }
 
-// shownMovesWindow records each move it is shown with the vault the window showed at that moment.
-type shownMovesWindow struct {
-	movesWindow
+// vaultMoveRecordingWindow records each move it is shown with the vault the window showed at that moment.
+type vaultMoveRecordingWindow struct {
+	moveRecordingWindow
 	current  func() (domain.Vault, bool)
 	shownIDs []domain.VaultID
 }
 
-func (w *shownMovesWindow) ShowMove(ctx context.Context, move domain.Move) error {
+func (w *vaultMoveRecordingWindow) ShowMove(ctx context.Context, move domain.Move) error {
 	v, _ := w.current()
 	w.mu.Lock()
 	w.shownIDs = append(w.shownIDs, v.ID)
 	w.mu.Unlock()
-	return w.movesWindow.ShowMove(ctx, move)
+	return w.moveRecordingWindow.ShowMove(ctx, move)
 }
 
-func TestTheWindowIsNotShownAPluginRenameThatLandsAfterItChangedVault(t *testing.T) {
+func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -171,7 +171,7 @@ func TestTheWindowIsNotShownAPluginRenameThatLandsAfterItChangedVault(t *testing
 	}
 	assembly := container.NewEditorAssembly(cfg, registry, db)
 	refresh := assembly.GetRefresh()
-	window := &shownMovesWindow{current: current}
+	window := &vaultMoveRecordingWindow{current: current}
 	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		// The window changes vault while the rename writes the title, before the file moves.
@@ -204,7 +204,7 @@ func TestTheWindowIsNotShownAPluginRenameThatLandsAfterItChangedVault(t *testing
 func TestWindowMoveAfterPluginMoveIsShownToTheWindow(t *testing.T) {
 	v, current, assembly := openPluginVault(t, getRivers())
 	refresh := assembly.GetRefresh()
-	window := &movesWindow{}
+	window := &moveRecordingWindow{}
 	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err

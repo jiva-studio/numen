@@ -23,21 +23,21 @@ func (v *Vault) SetMissing(isMissing bool) {
 	v.isMissing = isMissing
 }
 
-// GetOpenedVault is the vault OpenVault last opened, and false before any was.
+// GetOpenedVault returns the vault OpenVault last opened, and false before any was.
 func (v *Vault) GetOpenedVault() (domain.Vault, bool) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if v.world.opened == nil {
+	if v.world.openedVault == nil {
 		return domain.Vault{}, false
 	}
-	return v.world.opened.vault, true
+	return v.world.openedVault.vault, true
 }
 
 // GetVaultList lists the vaults GetVaults lists, each with whether its folder is gone.
 func (v *Vault) GetVaultList(ctx context.Context) ([]host.VaultEntry, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gateList(ctx); err != nil {
+	if err := v.checkListMember(ctx); err != nil {
 		return nil, err
 	}
 	out := []host.VaultEntry{}
@@ -50,12 +50,12 @@ func (v *Vault) GetVaultList(ctx context.Context) ([]host.VaultEntry, error) {
 	return out, nil
 }
 
-// AddVault adds a vault held in memory at the root, beside this one. Its identity is its name, and a
-// name another vault has takes a number, as the host gives it.
+// AddVault adds an in-memory vault at the root, in addition to this vault. Its identity is its name,
+// and a duplicate name gets a numeric suffix, as in the host.
 func (v *Vault) AddVault(ctx context.Context, root, name string) (domain.Vault, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gateList(ctx); err != nil {
+	if err := v.checkListMember(ctx); err != nil {
 		return domain.Vault{}, err
 	}
 	if !path.IsAbs(root) {
@@ -76,14 +76,14 @@ func (v *Vault) AddVault(ctx context.Context, root, name string) (domain.Vault, 
 	return added.vault, nil
 }
 
-// RenameVault changes the name of a vault beside this one, or of this one.
+// RenameVault renames this vault or another vault on its list.
 func (v *Vault) RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gateList(ctx); err != nil {
+	if err := v.checkListMember(ctx); err != nil {
 		return domain.Vault{}, err
 	}
-	target, isKnown := v.findMember(id)
+	target, isKnown := v.findByID(id)
 	if !isKnown {
 		return domain.Vault{}, notesdomain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), host.ErrUnknownVault)
 	}
@@ -91,23 +91,23 @@ func (v *Vault) RenameVault(ctx context.Context, id domain.VaultID, name string)
 	if name == "" {
 		return domain.Vault{}, domain.ErrInvalidName
 	}
-	if other, isTaken := v.findNamed(name); isTaken && other != target {
+	if other, isTaken := v.findByName(name); isTaken && other != target {
 		return domain.Vault{}, notesdomain.NewDetailError(
-			fmt.Sprintf("the vault at %s is already called %s", other.vault.Path, other.vault.Name), host.ErrVaultNameTaken)
+			fmt.Sprintf("the vault at %s already has the name %s", other.vault.Path, other.vault.Name), host.ErrVaultNameTaken)
 	}
 	target.vault.Name = name
 	return target.vault, nil
 }
 
-// RemoveVault takes a vault off the list. A call on it afterwards gets host.ErrUnknownVault. The last
-// vault and the vault last opened are refused.
+// RemoveVault removes a vault from the list. A call on it afterwards returns host.ErrUnknownVault. The last
+// vault and the vault last opened are rejected.
 func (v *Vault) RemoveVault(ctx context.Context, id domain.VaultID) (string, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gateList(ctx); err != nil {
+	if err := v.checkListMember(ctx); err != nil {
 		return "", err
 	}
-	target, isKnown := v.findMember(id)
+	target, isKnown := v.findByID(id)
 	if !isKnown {
 		return "", notesdomain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), host.ErrUnknownVault)
 	}
@@ -115,8 +115,8 @@ func (v *Vault) RemoveVault(ctx context.Context, id domain.VaultID) (string, err
 		return "", notesdomain.NewDetailError(
 			fmt.Sprintf("%s is the only vault; the last vault cannot be removed", target.vault.Name), host.ErrLastVault)
 	}
-	if v.world.opened == target {
-		return "", notesdomain.NewDetailError(fmt.Sprintf("%s is the vault the window shows", target.vault.Name), host.ErrVaultShowing)
+	if v.world.openedVault == target {
+		return "", notesdomain.NewDetailError(fmt.Sprintf("%s is the vault the window shows", target.vault.Name), host.ErrVaultActive)
 	}
 	remaining := make([]*Vault, 0, len(v.world.members)-1)
 	for _, member := range v.world.members {
@@ -129,7 +129,7 @@ func (v *Vault) RemoveVault(ctx context.Context, id domain.VaultID) (string, err
 	return target.vault.Path, nil
 }
 
-// SetUnsavedChanges makes OpenVault return host.ErrUnsavedChanges, as a window whose pages hold
+// SetUnsavedChanges makes OpenVault return host.ErrUnsavedChanges, as a window whose pages have
 // unsaved changes does, and false lets it open vaults again.
 func (v *Vault) SetUnsavedChanges(hasUnsavedChanges bool) {
 	v.world.mu.Lock()
@@ -141,23 +141,23 @@ func (v *Vault) SetUnsavedChanges(hasUnsavedChanges bool) {
 func (v *Vault) OpenVault(ctx context.Context, id domain.VaultID) error {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gateList(ctx); err != nil {
+	if err := v.checkListMember(ctx); err != nil {
 		return err
 	}
-	target, isKnown := v.findMember(id)
+	target, isKnown := v.findByID(id)
 	if !isKnown {
 		return notesdomain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), host.ErrUnknownVault)
 	}
 	if v.world.hasUnsavedChanges {
 		return host.ErrUnsavedChanges
 	}
-	v.world.opened = target
+	v.world.openedVault = target
 	return nil
 }
 
-// gateList fails a call on the list of vaults made through a vault the list does not hold. The caller
-// holds the lock.
-func (v *Vault) gateList(ctx context.Context) error {
+// checkListMember returns an error for a call on the list of vaults made through a vault not on
+// the list. The caller has the lock.
+func (v *Vault) checkListMember(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -167,8 +167,8 @@ func (v *Vault) gateList(ctx context.Context) error {
 	return nil
 }
 
-// findMember is the vault of the identity on the list. The caller holds the lock.
-func (v *Vault) findMember(id domain.VaultID) (*Vault, bool) {
+// findByID returns the vault on the list with the identity. The caller has the lock.
+func (v *Vault) findByID(id domain.VaultID) (*Vault, bool) {
 	for _, member := range v.world.members {
 		if member.vault.ID == id {
 			return member, true
@@ -177,20 +177,20 @@ func (v *Vault) findMember(id domain.VaultID) (*Vault, bool) {
 	return nil, false
 }
 
-// findNamed is the vault on the list called the name, compared as the host compares names. The
-// caller holds the lock.
-func (v *Vault) findNamed(name string) (*Vault, bool) {
-	folded := notesdomain.FoldName(name)
+// findByName returns the vault on the list with the name, compared as the host compares names. The
+// caller has the lock.
+func (v *Vault) findByName(name string) (*Vault, bool) {
+	foldedName := notesdomain.FoldName(name)
 	for _, member := range v.world.members {
-		if notesdomain.FoldName(member.vault.Name) == folded {
+		if notesdomain.FoldName(member.vault.Name) == foldedName {
 			return member, true
 		}
 	}
 	return nil, false
 }
 
-// getFreeName is the name, or the name with the lowest number from 2 that neither a name nor an
-// identity on the list has. The caller holds the lock.
+// getFreeName returns the name, or the name with the lowest number from 2 that neither a name nor an
+// identity on the list has. The caller has the lock.
 func (v *Vault) getFreeName(name string) string {
 	candidate := name
 	for attempt := 2; v.isNameTaken(candidate); attempt++ {
@@ -200,13 +200,13 @@ func (v *Vault) getFreeName(name string) string {
 }
 
 func (v *Vault) isNameTaken(name string) bool {
-	_, isNamed := v.findNamed(name)
-	_, isIdentity := v.findMember(domain.VaultID(name))
+	_, isNamed := v.findByName(name)
+	_, isIdentity := v.findByID(domain.VaultID(name))
 	return isNamed || isIdentity
 }
 
-// checkOverlap refuses a folder that is a vault on the list, is inside one or contains one, in the
-// sentence of the core. The caller holds the lock.
+// checkOverlap rejects a folder that is a vault on the list, is inside one or contains one, with the
+// text of the core. The caller has the lock.
 func (v *Vault) checkOverlap(root string) error {
 	vaults := make(notesdomain.Vaults, 0, len(v.world.members))
 	for _, member := range v.world.members {

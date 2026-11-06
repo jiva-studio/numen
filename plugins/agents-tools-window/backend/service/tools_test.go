@@ -59,7 +59,7 @@ func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
 		t.Fatalf("unexpected refusal: %s", result.GetText())
 	}
 
-	var output WindowTabsGetOutput
+	var output WindowTabListOutput
 	if err := json.Unmarshal(result.GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
 		t.Fatalf("unmarshal output: %v", err)
 	}
 	if _, hasSummary := keys["summary"]; hasSummary {
-		t.Errorf("the answer has a summary: %s", result.GetStructured())
+		t.Errorf("the result has a summary: %s", result.GetStructured())
 	}
 }
 
@@ -91,7 +91,7 @@ func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
 		t.Fatalf("CallTool: %v", err)
 	}
 
-	var output WindowTabsGetOutput
+	var output WindowTabListOutput
 	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -122,7 +122,7 @@ func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	input := EditPreviewInput{
+	input := NoteEditPreviewInput{
 		Path:            "notes/sample.md",
 		ProposedContent: "hello world\nline 2 modified\nnew line\n",
 	}
@@ -138,7 +138,7 @@ func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 		t.Fatalf("refusal: %s", resp.GetResult().GetText())
 	}
 
-	var output EditPreviewOutput
+	var output NoteEditPreviewOutput
 	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -166,7 +166,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 	}
 
 	customDiff := "--- a/notes/custom.md\n+++ b/notes/custom.md\n@@ -1 +1 @@\n-old\n+new\n"
-	args := marshalJSON(t, EditPreviewInput{
+	args := marshalJSON(t, NoteEditPreviewInput{
 		Path: "notes/custom.md",
 		Diff: customDiff,
 	})
@@ -178,7 +178,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 		t.Fatalf("CallTool: %v", err)
 	}
 
-	var output EditPreviewOutput
+	var output NoteEditPreviewOutput
 	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -200,7 +200,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 	}
 	respOverride, err := registryWithVault.InvokeTool(t.Context(), tools.Call{
 		Name: "note_edit_preview",
-		Arguments: marshalJSON(t, EditPreviewInput{
+		Arguments: marshalJSON(t, NoteEditPreviewInput{
 			Path:            "notes/override.md",
 			OriginalContent: "explicit original\n",
 			ProposedContent: "explicit proposed\n",
@@ -219,7 +219,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 	// Nil vault with empty OriginalContent diffs against empty string.
 	respNilVault, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name: "note_edit_preview",
-		Arguments: marshalJSON(t, EditPreviewInput{
+		Arguments: marshalJSON(t, NoteEditPreviewInput{
 			Path:            "notes/new.md",
 			ProposedContent: "brand new\n",
 		}),
@@ -243,7 +243,7 @@ func TestNoteEditPreviewRejectsMissingArguments(t *testing.T) {
 	}
 
 	// Missing path
-	args := marshalJSON(t, EditPreviewInput{ProposedContent: "abc"})
+	args := marshalJSON(t, NoteEditPreviewInput{ProposedContent: "abc"})
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "note_edit_preview",
 		Arguments: args,
@@ -256,7 +256,7 @@ func TestNoteEditPreviewRejectsMissingArguments(t *testing.T) {
 	}
 
 	// Missing content and diff
-	args = marshalJSON(t, EditPreviewInput{Path: "notes/a.md"})
+	args = marshalJSON(t, NoteEditPreviewInput{Path: "notes/a.md"})
 	resp, err = registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "note_edit_preview",
 		Arguments: args,

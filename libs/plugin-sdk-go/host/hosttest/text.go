@@ -189,7 +189,7 @@ func (t *Texts) ReadText(ctx context.Context, path string, id domain.TextVersion
 	return host.TextPage{Segments: segments}, nil
 }
 
-// readFile is the segments of a version's file and the hash of its bytes. The caller holds the lock.
+// readFile returns the segments of a version's file and the hash of its bytes. The caller has the lock.
 func (w *textWorld) readFile(ctx context.Context, v domain.TextVersion) ([]domain.TextSegment, string, error) {
 	raw, err := w.getStore(v.PluginID).Read(ctx, v.File)
 	if err != nil {
@@ -206,7 +206,7 @@ func (w *textWorld) indexOf(path string, id domain.TextVersionID) int {
 	return slices.IndexFunc(w.versions, func(v domain.TextVersion) bool { return v.Path == path && v.GetID() == id })
 }
 
-// ReadTextRange returns the segments of the version that cover the range of its whole text, cut at
+// ReadTextRange returns the segments of the version that cover the range of its whole text, truncated at
 // whole characters.
 func (t *Texts) ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (host.TextRange, error) {
 	page, err := t.ReadText(ctx, path, id, "")
@@ -214,6 +214,6 @@ func (t *Texts) ReadTextRange(ctx context.Context, path string, id domain.TextVe
 		return host.TextRange{}, err
 	}
 	text := notesdomain.NewVersionText(domain.TextVersion{}, page.Segments)
-	from, to := cutRange([]byte(text.Text), start, length)
-	return host.TextRange{Segments: text.GetSegmentsIn(from, to), Start: from, Size: len(text.Text)}, nil
+	rangeStart, rangeEnd := getRange([]byte(text.Text), start, length)
+	return host.TextRange{Segments: text.GetSegmentsIn(rangeStart, rangeEnd), Start: rangeStart, Size: len(text.Text)}, nil
 }

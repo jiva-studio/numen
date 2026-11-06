@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 )
 
-func indexedPassages() []host.Passage {
+func getIndexedPassages() []host.Passage {
 	return []host.Passage{
 		{Path: "library/Birds.pdf", Text: "The grey heron stands in the reeds", Location: "page 12", Start: 400, Length: 700},
 		{Path: "library/Birds.pdf", Text: "A heron fishes at dusk", Location: "page 40", Start: 9000, Length: 500},
@@ -22,20 +22,20 @@ func indexedPassages() []host.Passage {
 
 func TestTheSearchFindsThePassagesWithTheWordsOfTheQuery(t *testing.T) {
 	search := newSearch()
-	search.SetIndexedPassages(indexedPassages())
+	search.SetIndexedPassages(getIndexedPassages())
 
 	got, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(got) != 3 || got[0].Path != "library/Birds.pdf" || got[0].Location != "page 12" {
-		t.Errorf("found %+v, want the three passages that hold the word, in the order of the index", got)
+		t.Errorf("found %+v, want the three passages that contain the word, in the order of the index", got)
 	}
 }
 
 func TestTheSearchAppliesThePathPrefixBeforeTheLimitAndTheKinds(t *testing.T) {
 	search := newSearch()
-	search.SetIndexedPassages(indexedPassages())
+	search.SetIndexedPassages(getIndexedPassages())
 
 	withinPrefix, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Limit: 1, PathPrefix: "notes/"})
 	if err != nil || len(withinPrefix) != 1 || withinPrefix[0].Path != "notes/Heron.md" {
@@ -43,19 +43,19 @@ func TestTheSearchAppliesThePathPrefixBeforeTheLimitAndTheKinds(t *testing.T) {
 	}
 	files, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Kinds: []domain.SourceKind{domain.KindFile}})
 	if err != nil || len(files) != 2 || files[0].Path != "library/Birds.pdf" {
-		t.Errorf("the files that answer are %+v, %v", files, err)
+		t.Errorf("the files that match are %+v, %v", files, err)
 	}
 	notes, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron", Kinds: []domain.SourceKind{domain.KindNote}})
 	if err != nil || len(notes) != 1 || notes[0].Path != "notes/Heron.md" {
-		t.Errorf("the notes that answer are %+v, %v", notes, err)
+		t.Errorf("the notes that match are %+v, %v", notes, err)
 	}
 }
 
 func TestSearchPassagesNeedsPermissionAndVaultButNoModel(t *testing.T) {
 	search := hosttest.NewSearch("physics")
-	search.SetIndexedPassages(indexedPassages())
+	search.SetIndexedPassages(getIndexedPassages())
 	if got, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "heron"}); err != nil || len(got) != 3 {
-		t.Errorf("a host with no model found %d, %v, want the words alone to answer", len(got), err)
+		t.Errorf("a host with no model found %d, %v, want the words alone to match", len(got), err)
 	}
 	if got, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "  "}); err != nil || len(got) != 0 {
 		t.Errorf("a blank query found %d, %v", len(got), err)
@@ -93,11 +93,11 @@ func TestTheSearchKeepsAtMostThreePassagesOfOneSource(t *testing.T) {
 
 func TestTheSearchMatchesEveryWordOfTheQueryAsAWholeWord(t *testing.T) {
 	search := newSearch()
-	search.SetIndexedPassages(indexedPassages())
+	search.SetIndexedPassages(getIndexedPassages())
 
 	both, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "Grey HERON"})
 	if err != nil || len(both) != 1 || both[0].Location != "page 12" {
-		t.Errorf("grey heron found %+v, %v, want only the passage that holds both words", both, err)
+		t.Errorf("grey heron found %+v, %v, want only the passage that contains both words", both, err)
 	}
 	part, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "her"})
 	if err != nil || len(part) != 0 {

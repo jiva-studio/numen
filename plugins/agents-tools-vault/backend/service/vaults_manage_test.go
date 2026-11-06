@@ -27,7 +27,7 @@ type vaultRemoveOutput struct {
 	Path string `json:"path"`
 }
 
-// requireExactKeys fails the test unless the answer has exactly the keys.
+// requireExactKeys fails the test unless the result has exactly the keys.
 func requireExactKeys(t *testing.T, structured []byte, want ...string) {
 	t.Helper()
 	var answer map[string]any
@@ -40,11 +40,11 @@ func requireExactKeys(t *testing.T, structured []byte, want ...string) {
 	want = slices.Clone(want)
 	slices.Sort(want)
 	if !slices.Equal(got, want) {
-		t.Errorf("answer %s has the keys %v, want %v", structured, got, want)
+		t.Errorf("result %s has the keys %v, want %v", structured, got, want)
 	}
 }
 
-// newTwoVaults is the geology vault, which the calls work on, beside a garden vault whose name
+// newTwoVaults is the geology vault, which the calls work on, and a garden vault whose name
 // differs from its identity and its folder.
 func newTwoVaults(t *testing.T) (*hosttest.Vault, *hosttest.Vault, *tools.Registry) {
 	t.Helper()
@@ -102,30 +102,30 @@ func TestVaultAddWithoutANameUsesTheFolderName(t *testing.T) {
 	}
 }
 
-func TestVaultAddWithoutAPathIsRefused(t *testing.T) {
+func TestVaultAddWithoutAPathIsRejected(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
-	requireRefusal(t, registry, geologyVault, "vault_add", `{}`)
-	requireRefusal(t, registry, geologyVault, "vault_add", `{"name":"Meadow"}`)
+	requireRejection(t, registry, geologyVault, "vault_add", `{}`)
+	requireRejection(t, registry, geologyVault, "vault_add", `{"name":"Meadow"}`)
 	if got := getVaultsByID(t, registry); len(got) != 2 {
 		t.Errorf("vault_list gives %d vaults, want the 2 there were: %v", len(got), got)
 	}
 }
 
-func TestVaultAddOfAFolderInsideAVaultIsRefused(t *testing.T) {
+func TestVaultAddOfAFolderInsideAVaultIsRejected(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
-	requireRefusal(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
+	requireRejection(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
 }
 
 func TestVaultAddOfAnOverlappingFolderReportsTheHostReason(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
 
-	text := getRefusalText(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
+	text := getRejectionText(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
 	if reason := "a vault cannot be inside another vault"; !strings.Contains(text, reason) {
-		t.Errorf("the refusal %q does not carry the reason %q", text, reason)
+		t.Errorf("the error %q does not have the reason %q", text, reason)
 	}
 }
 
-func TestVaultRenameNamesTheVaultByItsNameFolderOrID(t *testing.T) {
+func TestVaultRenameAcceptsNameFolderOrID(t *testing.T) {
 	for kind, address := range getGardenAddresses() {
 		t.Run(kind, func(t *testing.T) {
 			_, _, registry := newTwoVaults(t)
@@ -144,10 +144,10 @@ func TestVaultRenameNamesTheVaultByItsNameFolderOrID(t *testing.T) {
 	}
 }
 
-func TestVaultRenameOntoATakenNameOrOfAnUnknownVaultIsRefused(t *testing.T) {
+func TestVaultRenameOntoTakenNameOrOfUnknownVaultIsRejected(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
-	requireRefusal(t, registry, geologyVault, "vault_rename", fmt.Sprintf(`{"vault":%q,"name":%q}`, gardenID, geologyVault))
-	requireRefusal(t, registry, geologyVault, "vault_rename", `{"vault":"Desert","name":"Dunes"}`)
+	requireRejection(t, registry, geologyVault, "vault_rename", fmt.Sprintf(`{"vault":%q,"name":%q}`, gardenID, geologyVault))
+	requireRejection(t, registry, geologyVault, "vault_rename", `{"vault":"Desert","name":"Dunes"}`)
 	if got := getVaultsByID(t, registry)[gardenID]; got.Name != gardenName {
 		t.Errorf("vault_list gives the name %q, want %q kept", got.Name, gardenName)
 	}
@@ -176,11 +176,11 @@ func TestVaultRemoveByNameFolderOrIDDropsTheVault(t *testing.T) {
 	}
 }
 
-func TestVaultRemoveOfTheVaultOfTheCallIsRefused(t *testing.T) {
+func TestVaultRemoveOfTheVaultOfTheCallIsRejected(t *testing.T) {
 	geology, _, registry := newTwoVaults(t)
 	folder := geology.Vault().Path
 	for _, address := range []string{geologyVault, folder} {
-		requireRefusal(t, registry, geologyVault, "vault_remove", fmt.Sprintf(`{"vault":%q}`, address))
+		requireRejection(t, registry, geologyVault, "vault_remove", fmt.Sprintf(`{"vault":%q}`, address))
 	}
 	if _, ok := getVaultsByID(t, registry)[geologyVault]; !ok {
 		t.Errorf("vault_list no longer gives %s", geologyVault)
@@ -207,31 +207,31 @@ func TestVaultOpenOpensTheVaultByItsNameFolderOrID(t *testing.T) {
 	}
 }
 
-func TestVaultOpenWithUnsavedChangesInTheWindowReturnsTheHostError(t *testing.T) {
+func TestVaultOpenWithUnsavedChangesReturnsTheHostError(t *testing.T) {
 	geology, _, registry := newTwoVaults(t)
 	geology.SetUnsavedChanges(true)
 
-	text := getRefusalText(t, registry, geologyVault, "vault_open", fmt.Sprintf(`{"vault":%q}`, gardenID))
+	text := getRejectionText(t, registry, geologyVault, "vault_open", fmt.Sprintf(`{"vault":%q}`, gardenID))
 
 	if !strings.Contains(text, "unsaved changes") {
-		t.Errorf("the vault_open error %q does not say the window has unsaved changes", text)
+		t.Errorf("the vault_open error %q does not state that the window has unsaved changes", text)
 	}
 	if opened, ok := geology.GetOpenedVault(); ok {
 		t.Errorf("the vault %s was opened while the window had unsaved changes", opened.ID)
 	}
 }
 
-func TestVaultOpenOfTheVaultOfTheCallIsRefused(t *testing.T) {
+func TestVaultOpenOfTheVaultOfTheCallIsRejected(t *testing.T) {
 	geology, _, registry := newTwoVaults(t)
-	requireRefusal(t, registry, geologyVault, "vault_open", fmt.Sprintf(`{"vault":%q}`, geologyVault))
+	requireRejection(t, registry, geologyVault, "vault_open", fmt.Sprintf(`{"vault":%q}`, geologyVault))
 	if opened, ok := geology.GetOpenedVault(); ok {
 		t.Errorf("the vault %s was opened", opened.ID)
 	}
 }
 
-func TestVaultOpenOfAnUnknownVaultIsRefused(t *testing.T) {
+func TestVaultOpenOfAnUnknownVaultIsRejected(t *testing.T) {
 	geology, _, registry := newTwoVaults(t)
-	requireRefusal(t, registry, geologyVault, "vault_open", `{"vault":"Desert"}`)
+	requireRejection(t, registry, geologyVault, "vault_open", `{"vault":"Desert"}`)
 	if opened, ok := geology.GetOpenedVault(); ok {
 		t.Errorf("the vault %s was opened", opened.ID)
 	}
@@ -260,34 +260,34 @@ func TestVaultListToolsWithoutAVaultListAreNotListed(t *testing.T) {
 	}
 }
 
-func TestVaultAddOfAFolderInsideAVaultAnswersThePathAndTheVault(t *testing.T) {
+func TestVaultAddOfFolderInsideVaultReturnsPathAndVault(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
 
-	text := getRefusalText(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
+	text := getRejectionText(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
 
 	if want := "vault_add: /vaults/garden-vault/Seeds is inside the vault Kitchen Garden; a vault cannot be inside another vault"; text != want {
-		t.Errorf("the refusal is %q, want %q", text, want)
+		t.Errorf("the error is %q, want %q", text, want)
 	}
 }
 
-func TestVaultAddOfAFolderContainingAVaultAnswersThePathAndTheVault(t *testing.T) {
+func TestVaultAddOfFolderContainingVaultReturnsPathAndVault(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
 	callTool(t, registry, geologyVault, "vault_add", `{"path":"/fields/meadow","name":"Meadow"}`)
 
-	text := getRefusalText(t, registry, geologyVault, "vault_add", `{"path":"/fields"}`)
+	text := getRejectionText(t, registry, geologyVault, "vault_add", `{"path":"/fields"}`)
 
 	if want := "vault_add: /fields contains the vault Meadow; a vault cannot contain another vault"; text != want {
-		t.Errorf("the refusal is %q, want %q", text, want)
+		t.Errorf("the error is %q, want %q", text, want)
 	}
 }
 
-func TestVaultOpenAndRemoveOfTheCurrentVaultAnswerItIsTheCurrentVault(t *testing.T) {
+func TestVaultOpenAndRemoveRejectTheCurrentVault(t *testing.T) {
 	geology, _, registry := newTwoVaults(t)
 	for _, address := range []string{geologyVault, geology.Vault().Path} {
 		for _, name := range []string{"vault_open", "vault_remove"} {
-			text := getRefusalText(t, registry, geologyVault, name, fmt.Sprintf(`{"vault":%q}`, address))
+			text := getRejectionText(t, registry, geologyVault, name, fmt.Sprintf(`{"vault":%q}`, address))
 			if want := name + ": " + address + " is the current vault"; text != want {
-				t.Errorf("the refusal is %q, want %q", text, want)
+				t.Errorf("the error is %q, want %q", text, want)
 			}
 		}
 	}
@@ -322,7 +322,7 @@ func getFailingCalls() []struct{ name, arguments string } {
 	}
 }
 
-func TestEveryVaultAndNoteToolErrorStartsWithTheToolNameOnceAndNamesNoInnerCall(t *testing.T) {
+func TestToolErrorsHaveToolNameOnceAndNoInnerCallName(t *testing.T) {
 	inner := []string{
 		"host:", "add vault", "rename vault", "remove vault", "open vault", "list vaults",
 		"move notes", "remove notes", "was not changed", "this call works on",
@@ -331,7 +331,7 @@ func TestEveryVaultAndNoteToolErrorStartsWithTheToolNameOnceAndNamesNoInnerCall(
 		t.Run(c.name+" "+c.arguments, func(t *testing.T) {
 			_, _, registry := newTwoVaults(t)
 
-			text := getRefusalText(t, registry, geologyVault, c.name, c.arguments)
+			text := getRejectionText(t, registry, geologyVault, c.name, c.arguments)
 
 			if !strings.HasPrefix(text, c.name+": ") {
 				t.Errorf("the error %q does not start with %q", text, c.name+": ")

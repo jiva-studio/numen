@@ -53,7 +53,7 @@ const (
 	// This machine has no trash, so the folder stays where
 	// it is and the vault stays on the list.
 	VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH VaultsErrorCode = 8
-	// A tab holds unsaved changes, so the window keeps the vault it shows.
+	// A tab has unsaved changes, so the window keeps the vault it shows.
 	VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED VaultsErrorCode = 9
 )
 

@@ -6,10 +6,10 @@ import (
 )
 
 var (
-	// ErrNoWindow is what a window call gets from a host with no window.
+	// ErrNoWindow is returned by a window call when the host has no window.
 	ErrNoWindow = errors.New("host: the host has no window")
-	// ErrTabNotShown is what ActivateTab gets when the window does not show the tab within the bound
-	// of the host. It wraps the deadline error the host answers.
+	// ErrTabNotShown is returned by ActivateTab when the window does not show the tab within the bound
+	// of the host. It wraps the deadline error the host returns.
 	ErrTabNotShown = errors.New("host: the window did not show the tab in time")
 )
 
@@ -35,20 +35,20 @@ type TabPlace struct {
 	CFI, Chapter string
 }
 
-// PassageSpan is a run of a file's text version in bytes, as library_search returns it.
+// PassageSpan is a byte range in a file's text version, as library_search returns it.
 type PassageSpan struct{ Start, Length int }
 
-// Window is the window of the vault a plugin works. Every call needs window:focus. A path the vault
-// holds nothing at is ErrNotExist, and a host with no window answers ErrNoWindow.
+// Window is the main window of the plugin's vault. Every call needs window:focus. A path with no file
+// in the vault returns ErrNotExist, and a host with no window returns ErrNoWindow.
 type Window interface {
-	// FocusNote makes the note at the path the current one, and the neighbourhood view is drawn around it.
+	// FocusNote makes the note at the path the current one, and the neighbourhood view is centred on it.
 	FocusNote(ctx context.Context, path string) (FocusedNote, error)
 	// FocusPassages opens the file at the first passage and highlights every passage.
 	FocusPassages(ctx context.Context, path string, passages []PassageSpan) error
-	// ReadOpenTabs is the tabs the window last reported, and the active one.
+	// ReadOpenTabs returns the tabs the window last reported, and the ID of the active one.
 	ReadOpenTabs(ctx context.Context) (tabs []OpenTab, activeID string, err error)
-	// ActivateTab makes the open tab with the id the active tab, and answers the tab and the active id
-	// as the window reports them afterwards. An id the window has no tab with is ErrNotExist, and a tab
-	// the window does not show within the bound of the host is ErrTabNotShown.
+	// ActivateTab makes the open tab with the id the active tab, and returns the tab and the active id
+	// as the window reports them afterwards. An id with no tab in the window returns ErrNotExist, and a tab
+	// the window does not show within the bound of the host returns ErrTabNotShown.
 	ActivateTab(ctx context.Context, id string) (tab OpenTab, activeID string, err error)
 }

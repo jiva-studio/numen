@@ -16,7 +16,7 @@ import (
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
-// NoteChanges is the use cases that rename, move and remove the notes of a vault, repairing the
+// NoteChanges has the use cases that rename, move and remove the notes of a vault, repairing the
 // links that stop resolving.
 type NoteChanges struct {
 	Rename   note.Rename
@@ -26,7 +26,7 @@ type NoteChanges struct {
 	AddLinks note.AddLinks
 }
 
-// Arranger is the use cases that change the notes of a vault and that run the checks of a vault.
+// Arranger has the use cases that change the notes of a vault and that run the checks of a vault.
 type Arranger struct {
 	Notes NoteChanges
 	// Window is the window's own NoteChanges, used for a call on the vault WindowVault names, so the
@@ -38,7 +38,7 @@ type Arranger struct {
 	Checks *vaults.GetProblems
 }
 
-// getChanges is the NoteChanges for a call on the vault.
+// getChanges returns the NoteChanges for a call on the vault.
 func (a Arranger) getChanges(v domain.Vault) NoteChanges {
 	if a.WindowVault == nil {
 		return a.Notes
@@ -47,14 +47,14 @@ func (a Arranger) getChanges(v domain.Vault) NoteChanges {
 		return a.Notes
 	}
 	changes := a.Window
-	changes.Move.Drawing = a.drawWhileCurrent(v, changes.Move.Drawing)
-	changes.Rename.Move.Drawing = a.drawWhileCurrent(v, changes.Rename.Move.Drawing)
+	changes.Move.Drawing = a.notifyWindowIfCurrent(v, changes.Move.Drawing)
+	changes.Rename.Move.Drawing = a.notifyWindowIfCurrent(v, changes.Rename.Move.Drawing)
 	return changes
 }
 
-// drawWhileCurrent tells the window a move only while the window still shows the vault the move is
-// in: the window may change vault while a rename or a move of a plugin runs.
-func (a Arranger) drawWhileCurrent(v domain.Vault, draw note.TellMove) note.TellMove {
+// notifyWindowIfCurrent notifies the window of a move only while the window still shows the vault
+// of the move: the window may switch vault while a rename or a move of a plugin runs.
+func (a Arranger) notifyWindowIfCurrent(v domain.Vault, draw note.TellMove) note.TellMove {
 	if draw == nil {
 		return nil
 	}
@@ -97,7 +97,7 @@ func (a Vault) RemoveNote(ctx context.Context, path string) (string, []string, e
 	}
 	removal, err := a.Arranger.getChanges(v).Remove.Execute(ctx, v, path, false)
 	if errors.Is(err, note.ErrFolder) {
-		return "", nil, domain.NewDetailError(fmt.Sprintf("%s is a folder; name the notes to remove", path), vaultport.ErrNotANote, err)
+		return "", nil, domain.NewDetailError(fmt.Sprintf("%s is a folder; pass the paths of the notes to remove", path), vaultport.ErrNotANote, err)
 	}
 	if removal.Trashed != "" {
 		a.notifyFileWritten()

@@ -24,6 +24,6 @@ type Window interface {
 	// that note shows the change at the right position.
 	ShowEdit(ctx context.Context, response domain.Edit) error
 
-	// ActivateTab asks the window to make the tab with the id the active tab.
+	// ActivateTab requests the window to make the tab with the id the active tab.
 	ActivateTab(ctx context.Context, id string) error
 }

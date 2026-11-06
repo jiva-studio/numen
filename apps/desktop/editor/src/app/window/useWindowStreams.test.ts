@@ -231,7 +231,7 @@ describe('following the focus', () => {
     expect(deps.openFileAt).toHaveBeenCalledWith('c.md', [{ start: 2, end: 9 }])
   })
 
-  it('activates the tab of a focus that names a tab id, and neither travels nor opens a file', async () => {
+  it('activates the tab of a focus with a tab id, and does not navigate or open a file', async () => {
     const deps = setup({
       core: {
         ...setup().core,

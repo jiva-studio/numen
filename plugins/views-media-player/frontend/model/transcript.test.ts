@@ -156,30 +156,30 @@ describe('a recording firstRead at a place in its words', () => {
     const setup = createRecordings()
     setup.state.cueTimes.set(22, 83_000)
     const { tab, seeks } = open(setup)
-    await tab.navigation.reach({ start: 22, end: 30 })
+    await tab.navigation.seekToSpans({ start: 22, end: 30 })
     expect(seeks.at(-1)).toStrictEqual([TALK_URL, 83_000])
   })
 
   it('keeps the position when no cue holds the span', async () => {
     const { tab, seeks } = open()
-    await tab.navigation.reach({ start: 900, end: 910 })
+    await tab.navigation.seekToSpans({ start: 900, end: 910 })
     expect(seeks).toStrictEqual([])
   })
 
-  it('goes to the latest of two reaches when the earlier one is answered last', async () => {
+  it('seeks to the latest request when the earlier one resolves last', async () => {
     const setup = createRecordings()
-    const answers = new Map<number, (ms: number) => void>()
+    const resolvers = new Map<number, (ms: number) => void>()
     setup.recordings.findCueTime = (_, span) =>
-      new Promise((resolve) => answers.set(span.start, resolve))
+      new Promise((resolve) => resolvers.set(span.start, resolve))
     const { tab, seeks } = open(setup)
     await tab.content.firstRead
 
-    const earlier = tab.navigation.reach({ start: 22, end: 30 })
-    const later = tab.navigation.reach({ start: 140, end: 150 })
+    const earlier = tab.navigation.seekToSpans({ start: 22, end: 30 })
+    const later = tab.navigation.seekToSpans({ start: 140, end: 150 })
     await flush()
-    answers.get(140)?.(302_000)
+    resolvers.get(140)?.(302_000)
     expect(await later).toBe(302_000)
-    answers.get(22)?.(83_000)
+    resolvers.get(22)?.(83_000)
 
     expect(await earlier).toBeNull()
     expect(seeks.at(-1)).toStrictEqual([TALK_URL, 302_000])

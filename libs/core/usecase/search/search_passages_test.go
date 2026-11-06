@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// recordingFinder answers a search with fixed passages and records what it was asked.
+// recordingFinder returns a search with fixed passages and records the requests.
 type recordingFinder struct {
 	found  []domain.Passage
 	vaults []domain.VaultID
@@ -27,7 +27,7 @@ func (f *recordingFinder) Execute(_ context.Context, v domain.Vault, query strin
 // getMarshVault is the vault every passage search here runs on.
 func getMarshVault() domain.Vault { return domain.Vault{ID: "v-marsh", Name: "Marsh"} }
 
-func TestASearchOfPassagesRunsByTheWordsAndTheMeaningWithThreePassagesOfOneSource(t *testing.T) {
+func TestSearchPassagesRunsKeywordAndEmbeddingWithThreePerSource(t *testing.T) {
 	finder := &recordingFinder{}
 
 	_, err := search.NewSearchPassages(finder).Execute(t.Context(), getMarshVault(), search.PassageQuery{
@@ -37,7 +37,7 @@ func TestASearchOfPassagesRunsByTheWordsAndTheMeaningWithThreePassagesOfOneSourc
 		t.Fatal(err)
 	}
 	if len(finder.params) != 1 || finder.vaults[0] != getMarshVault().ID || finder.query[0] != "heron" {
-		t.Fatalf("the search was asked %v %v, want the trimmed query once on the vault", finder.vaults, finder.query)
+		t.Fatalf("the search received %v %v, want the trimmed query once on the vault", finder.vaults, finder.query)
 	}
 	p := finder.params[0]
 	if p.Limit != 7 || p.PathPrefix != "library/" || len(p.Kinds) != 1 || p.Kinds[0] != domain.KindFile || p.Each != 3 || p.IsGrowing {
@@ -73,10 +73,10 @@ func TestTheLimitOfASearchOfPassagesIsClamped(t *testing.T) {
 	}
 
 	if finder.params[0].Limit != search.MaxSearchedPassages {
-		t.Errorf("a limit of 5000 asked for %d passages, want the most a search answers, %d", finder.params[0].Limit, search.MaxSearchedPassages)
+		t.Errorf("a limit of 5000 requested %d passages, want the most a search returns, %d", finder.params[0].Limit, search.MaxSearchedPassages)
 	}
 	if want := search.GetTypingParameters(search.Hybrid, 0).Limit; finder.params[1].Limit != want {
-		t.Errorf("a negative limit asked for %d passages, want the default of the search, %d", finder.params[1].Limit, want)
+		t.Errorf("a negative limit requested %d passages, want the default of the search, %d", finder.params[1].Limit, want)
 	}
 }
 
@@ -94,7 +94,7 @@ func TestSearchPassagesTrimsTextAroundTheHit(t *testing.T) {
 	}
 	long := got[0]
 	if !strings.Contains(long.Text, "heron") || len(long.Text) > search.MaxPassageBytes || !strings.Contains(body, long.Text) {
-		t.Errorf("the text holds %d bytes of %d, want a part of at most %d bytes that holds the hit",
+		t.Errorf("the text has %d bytes of %d, want a part of at most %d bytes that contains the hit",
 			len(long.Text), len(body), search.MaxPassageBytes)
 	}
 	if before := strings.Index(long.Text, "heron"); before < search.MaxPassageBytes/4-len("the grey ") || before > search.MaxPassageBytes/4 {
@@ -118,6 +118,6 @@ func TestTheWindowAroundAHitNeverSplitsACharacter(t *testing.T) {
 		t.Fatalf("found %v, %v, want one passage", got, err)
 	}
 	if !strings.Contains(got[0].Text, "Ачарьи") || strings.ToValidUTF8(got[0].Text, "") != got[0].Text {
-		t.Errorf("the window %q does not hold the word whole or splits a character", got[0].Text[:10])
+		t.Errorf("the window %q does not contain the whole word or splits a character", got[0].Text[:10])
 	}
 }

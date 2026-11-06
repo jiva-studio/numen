@@ -30,7 +30,7 @@ export interface WindowHandle {
   openTab(kind: string, at?: string): Promise<string>
   /** The same, opened in a pane adjacent to the focused pane. */
   openTabAdjacent(kind: string, at?: string): Promise<string>
-  /** A tab the window already holds, put in front. An id of no open tab changes nothing. */
+  /** Activates an open tab. An id with no open tab changes nothing. */
   show(id: string): void
   /** A tab that took its own close, going now. */
   closeTab(id: string): void

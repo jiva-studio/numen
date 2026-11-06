@@ -239,7 +239,7 @@ func TestVaultProblemListReturnsTheChecksKey(t *testing.T) {
 
 func TestLibraryReadReturnsTheNextStartKey(t *testing.T) {
 	l := newLibrary(t)
-	res, err := l.calls.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: "library_read", Arguments: []byte(`{"path":"` + guidePath + `","page":2}`)})
+	res, err := l.registry.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: "library_read", Arguments: []byte(`{"path":"` + guidePath + `","page":2}`)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,13 +252,13 @@ func TestLibraryReadReturnsTheNextStartKey(t *testing.T) {
 		t.Errorf("nextStart = %v, want %v", got, want)
 	}
 
-	properties := getSchemaProperties(t, getToolSchema(t, l.calls, "library_read", true))
+	properties := getSchemaProperties(t, getToolSchema(t, l.registry, "library_read", true))
 	requireKeys(t, "the output schema of library_read", properties, []string{"nextStart"}, []string{"next"})
 }
 
 func TestLibrarySearchReturnsThePathKeyOfAMatch(t *testing.T) {
 	l := newLibrary(t)
-	res, err := l.calls.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: "library_search", Arguments: []byte(`{"query":"heron"}`)})
+	res, err := l.registry.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: "library_search", Arguments: []byte(`{"query":"heron"}`)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -276,7 +276,7 @@ func TestLibrarySearchReturnsThePathKeyOfAMatch(t *testing.T) {
 		t.Errorf("the first match has path %v, want %s", answer.Matches[0]["path"], guidePath)
 	}
 
-	properties := getSchemaProperties(t, getToolSchema(t, l.calls, "library_search", true), "matches")
+	properties := getSchemaProperties(t, getToolSchema(t, l.registry, "library_search", true), "matches")
 	requireKeys(t, "the output schema of a library_search match", properties, []string{"path"}, []string{"source"})
 }
 
@@ -290,11 +290,11 @@ func TestLibrarySearchAcceptsThePathPrefixArgument(t *testing.T) {
 		t.Errorf("the passages under recordings/ are %v, want only %s", got, talkPath)
 	}
 
-	properties := getSchemaProperties(t, getToolSchema(t, l.calls, "library_search", false))
+	properties := getSchemaProperties(t, getToolSchema(t, l.registry, "library_search", false))
 	requireKeys(t, "the input schema of library_search", properties, []string{"pathPrefix"}, []string{"path_prefix"})
 }
 
-func TestFileCreateAnswersThePathAndSizeWithoutSuccess(t *testing.T) {
+func TestFileCreateReturnsThePathAndSizeWithoutSuccess(t *testing.T) {
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
@@ -303,7 +303,7 @@ func TestFileCreateAnswersThePathAndSizeWithoutSuccess(t *testing.T) {
 	answer := decodeAnswer(t, callTool(t, registry, testVault, "file_create", `{"path":"orbits.txt","content":"perihelion"}`))
 	requireKeys(t, "the answer of file_create", answer, []string{"path", "size"}, []string{"success"})
 	if answer["path"] != "orbits.txt" || answer["size"] != float64(len("perihelion")) {
-		t.Errorf("file_create answered %v, want orbits.txt of 10 bytes", answer)
+		t.Errorf("file_create returned %v, want orbits.txt of 10 bytes", answer)
 	}
 
 	properties := getSchemaProperties(t, getToolSchema(t, registry, "file_create", true))
@@ -312,7 +312,7 @@ func TestFileCreateAnswersThePathAndSizeWithoutSuccess(t *testing.T) {
 
 func TestVaultToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
 	l := newLibrary(t)
-	visitEveryToolSchema(t, l.calls, func(tool, name string) {
+	visitEveryToolSchema(t, l.registry, func(tool, name string) {
 		if strings.Contains(name, "_") {
 			t.Errorf("the schema of %s names the key %q, which is not camelCase", tool, name)
 		}
@@ -322,7 +322,7 @@ func TestVaultToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
 func TestVaultToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 	l := newLibrary(t)
 	markers := getNarrativeMarkers()
-	visitEveryToolSchema(t, l.calls, func(string, string) {}, func(tool, description string) {
+	visitEveryToolSchema(t, l.registry, func(string, string) {}, func(tool, description string) {
 		for _, marker := range markers {
 			if marker.MatchString(description) {
 				t.Errorf("a description of %s or its schema matches %s: %q", tool, marker, description)
@@ -366,7 +366,7 @@ var lowerCamelCase = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
 
 func TestVaultToolSchemasNameEveryPropertyInLowerCamelCase(t *testing.T) {
 	_, withVaultList := newGeologyVault(t)
-	for _, registry := range []*tools.Registry{newLibrary(t).calls, withVaultList} {
+	for _, registry := range []*tools.Registry{newLibrary(t).registry, withVaultList} {
 		visitEveryToolSchema(t, registry, func(tool, name string) {
 			if !lowerCamelCase.MatchString(name) {
 				t.Errorf("the schema of %s names the property %q, which is not lowerCamelCase", tool, name)

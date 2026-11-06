@@ -58,7 +58,7 @@ type State struct {
 	// OpenVault puts another vault in the window: the agents are stopped, the vault
 	// is swapped, and the agents are started again against the one that
 	// arrived. It is bound by every build that serves the list of vaults. The open is the
-	// plugin's open the change runs inside, nil for a change of the user.
+	// plugin open whose lock the switch shares, nil for a user vault switch.
 	OpenVault func(context.Context, domain.Vault, *PluginOpen) error
 
 	// NotifyNoteWritten is called after a note save. The embedding pipeline then
@@ -82,8 +82,8 @@ type State struct {
 	// openTabsReports is notified after each open-tab report is stored.
 	openTabsReports reportSignal
 
-	// TabActivationBound is how long ActivateTab waits for the window to report the tab active.
-	// Zero is 2 seconds.
+	// TabActivationBound is the maximum time ActivateTab waits for the window to report the tab active.
+	// Zero means 2 seconds.
 	TabActivationBound time.Duration
 
 	// NotifyOpenTabs is called with each accepted open-tab report. Nil when

@@ -1,6 +1,6 @@
 -- The chunks of one vault whose text matches the words typed, restricted to
 -- chosen source kinds, best first. A path prefix limits the sources before the
--- list is cut at the limit.
+-- list is truncated to the limit.
 WITH hits AS (
     SELECT chunks_fts.rowid, bm25(chunks_fts) AS rank
     FROM chunks_fts

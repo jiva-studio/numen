@@ -36,7 +36,7 @@ func getWindowToolSentences(listing tools.Listing) map[string][]string {
 	return byTool
 }
 
-func TestTheWindowToolsCarryTheirInstructionsOnShowingAPlace(t *testing.T) {
+func TestTheWindowToolsHaveInstructionsOnShowingAPlace(t *testing.T) {
 	byTool := getWindowToolSentences(listWindowTools(t))
 
 	for _, name := range []string{"window_tab_list", "source_focus"} {
@@ -90,14 +90,14 @@ func TestTheWindowToolsThatShowAPlaceRequireWindowFocus(t *testing.T) {
 	}
 }
 
-// The core no longer says what "this note" means, so the tool that names the active tab does.
-func TestTheTabListInstructionsSayThisNoteMeansTheNoteOfTheActiveTab(t *testing.T) {
+// The core no longer defines what "this note" means, so the tool that names the active tab does.
+func TestTabListInstructionsDefineThisNoteAsTheActiveTabNote(t *testing.T) {
 	sentences := getWindowToolSentences(listWindowTools(t))["window_tab_list"]
 
 	if !slices.ContainsFunc(sentences, func(sentence string) bool {
 		return strings.Contains(sentence, `"this note"`) && strings.Contains(sentence, "active tab") &&
 			strings.Contains(sentence, "window_tab_list")
 	}) {
-		t.Errorf("no instruction of window_tab_list says that \"this note\" is the note of the active tab: %q", sentences)
+		t.Errorf("no instruction of window_tab_list states that \"this note\" is the note of the active tab: %q", sentences)
 	}
 }

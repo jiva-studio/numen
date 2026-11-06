@@ -17,7 +17,7 @@ import (
 
 const initializeParams = `{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"orchard","version":"1"}}`
 
-// sendInitialize writes an initialize request of the id on the connection and reads its answer.
+// sendInitialize writes an initialize request of the id on the connection and reads its response.
 func sendInitialize(t *testing.T, conn sdk.Connection, number int) *jsonrpc.Response {
 	t.Helper()
 	id, err := jsonrpc.MakeID(float64(number))
@@ -34,15 +34,15 @@ func sendInitialize(t *testing.T, conn sdk.Connection, number int) *jsonrpc.Resp
 	}
 	res, ok := msg.(*jsonrpc.Response)
 	if !ok {
-		t.Fatalf("initialize %d was answered with %T", number, msg)
+		t.Fatalf("initialize %d returned %T", number, msg)
 	}
 	return res
 }
 
-func TestASecondInitializeIsAnsweredWithAnError(t *testing.T) {
+func TestSecondInitializeReturnsAnError(t *testing.T) {
 	t.Parallel()
-	host := &instructedHost{listing: tools.Listing{
-		Tools: []*tools.ToolInfo{newInstructedTool("orchard_pick", orchardPickSentence)},
+	host := &fakeToolHost{listing: tools.Listing{
+		Tools: []*tools.ToolInfo{newToolWithSentences("orchard_pick", orchardPickSentence)},
 	}}
 	srv, err := NewServer(Config{}, host)
 	if err != nil {
@@ -66,15 +66,15 @@ func TestASecondInitializeIsAnsweredWithAnError(t *testing.T) {
 	second := sendInitialize(t, conn, 2)
 
 	if first.Error != nil || !strings.Contains(string(first.Result), "orchard_pick") {
-		t.Errorf("the first initialize is answered %s, error %v", first.Result, first.Error)
+		t.Errorf("the first initialize is returned %s, error %v", first.Result, first.Error)
 	}
 	if second.Error == nil {
-		t.Errorf("a second initialize is answered %s with no error", second.Result)
+		t.Errorf("a second initialize is returned %s with no error", second.Result)
 	}
 }
 
 // postInitialize posts an initialize request of the id to the server, in the session given, and
-// returns the status, the body and the session of the answer.
+// returns the status, the body and the session of the response.
 func postInitialize(t *testing.T, url string, number int, session string) (status int, body, sessionID string) {
 	t.Helper()
 	payload := fmt.Sprintf(`{"jsonrpc":"2.0","id":%d,"method":"initialize","params":%s}`, number, initializeParams)
@@ -104,9 +104,9 @@ func postInitialize(t *testing.T, url string, number int, session string) (statu
 	return res.StatusCode, string(out), res.Header.Get("Mcp-Session-Id")
 }
 
-func TestASecondInitializeOverHTTPIsAnsweredWithAnError(t *testing.T) {
+func TestSecondInitializeOverHTTPReturnsAnError(t *testing.T) {
 	t.Parallel()
-	host := &instructedHost{listing: tools.Listing{Tools: []*tools.ToolInfo{newReadTool("orchard_pick")}}}
+	host := &fakeToolHost{listing: tools.Listing{Tools: []*tools.ToolInfo{newReadTool("orchard_pick")}}}
 	srv, err := NewServer(Config{Token: "orchard-token"}, host)
 	if err != nil {
 		t.Fatal(err)
@@ -121,6 +121,6 @@ func TestASecondInitializeOverHTTPIsAnsweredWithAnError(t *testing.T) {
 	status, body, _ := postInitialize(t, served.URL, 2, session)
 
 	if status != http.StatusOK || !strings.Contains(body, `"error"`) {
-		t.Errorf("a second initialize is answered %d %s", status, body)
+		t.Errorf("a second initialize is returned %d %s", status, body)
 	}
 }

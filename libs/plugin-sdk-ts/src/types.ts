@@ -91,8 +91,8 @@ export interface ReaderTabState {
   // The location to show: the selector of a search hit, or the location saved before a restart. The
   // window sets a new object each time it requests a location; null shows the file from its start.
   readonly selector: Selector | null
-  // The runs of the text version to light, in bytes; the first is the one to go to. The window sets a
-  // new array each time it requests them; null where none is requested.
+  // Byte ranges of the text version to highlight; the reader scrolls to the first. The window sets a
+  // new array each time it requests them; null when none is requested.
   readonly ranges: readonly TextRange[] | null
   // Saves the place the reader shows. The window keeps it with the tab and passes it back as
   // `selector` when the tab opens after a restart.
@@ -149,7 +149,7 @@ export interface TabKindRegistration<State = unknown> {
   // A key struck while the tab is in front, answered with whether the tab took it.
   onKeyPress?(state: State, event: KeyboardEvent): boolean
   getTarget?(state: State): TabTarget
-  // The file the tab holds, and the place its reader last reported, left out where it reported none.
+  // Returns the file the tab shows, and the place its reader last reported, left out when it reported none.
   getOpenTab?(state: State): { readonly path: string; readonly place?: TabPlace }
   // The window is going; what the tab holds is released without asking.
   onDestroy?(state: State, id: string): void

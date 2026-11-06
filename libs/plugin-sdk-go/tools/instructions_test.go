@@ -45,20 +45,20 @@ func serveHandler(t *testing.T, handler ServiceHandler) Client {
 }
 
 const (
-	lanternLightSentence = "Light the lantern with lantern_light before you read the map."
-	lanternTrimSentence  = "Trim the wick with lantern_trim when the flame smokes."
+	findSentence  = "Find the fixture with fixture_find before you write it."
+	writeSentence = "Write the fixture with fixture_write when it changes."
 )
 
-func newInstructedRegistry(t *testing.T) *Registry {
+func newRegistryWithInstructions(t *testing.T) *Registry {
 	t.Helper()
 	registry := New()
 	for _, spec := range []Spec{
 		{
-			Name: "lantern_light", Description: "Lights the lantern.", Effect: ReadOnly,
-			Instructions: []string{lanternLightSentence, lanternTrimSentence},
+			Name: "fixture_find", Description: "Finds the fixture.", Effect: ReadOnly,
+			Instructions: []string{findSentence, writeSentence},
 		},
-		{Name: "lantern_trim", Description: "Trims the wick.", Effect: ReadWrite, Instructions: []string{lanternTrimSentence}},
-		{Name: "lantern_look", Description: "Looks at the flame.", Effect: ReadOnly},
+		{Name: "fixture_write", Description: "Writes the fixture.", Effect: ReadWrite, Instructions: []string{writeSentence}},
+		{Name: "fixture_list", Description: "Lists the fixtures.", Effect: ReadOnly},
 	} {
 		if err := Add(registry, spec, func(context.Context, greetIn) (greetOut, error) { return greetOut{}, nil }); err != nil {
 			t.Fatal(err)
@@ -76,7 +76,7 @@ func getToolInstructions(listing Listing) map[string][]string {
 }
 
 func TestAToolListsTheInstructionsOfItsSpecOnTheWire(t *testing.T) {
-	res, err := registryHandler{registry: newInstructedRegistry(t)}.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
+	res, err := registryHandler{registry: newRegistryWithInstructions(t)}.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,38 +85,38 @@ func TestAToolListsTheInstructionsOfItsSpecOnTheWire(t *testing.T) {
 	if len(specs) != 3 {
 		t.Fatalf("%d tools listed", len(specs))
 	}
-	if got := specs[0].GetInstructions(); !slices.Equal(got, []string{lanternLightSentence, lanternTrimSentence}) {
-		t.Errorf("lantern_light lists the instructions %q", got)
+	if got := specs[0].GetInstructions(); !slices.Equal(got, []string{findSentence, writeSentence}) {
+		t.Errorf("fixture_find lists the instructions %q", got)
 	}
-	if got := specs[1].GetInstructions(); !slices.Equal(got, []string{lanternTrimSentence}) {
-		t.Errorf("lantern_trim lists the instructions %q", got)
+	if got := specs[1].GetInstructions(); !slices.Equal(got, []string{writeSentence}) {
+		t.Errorf("fixture_write lists the instructions %q", got)
 	}
 	if got := specs[2].GetInstructions(); len(got) != 0 {
-		t.Errorf("lantern_look has no instructions in its spec and lists %q", got)
+		t.Errorf("fixture_list has no instructions in its spec and lists %q", got)
 	}
 }
 
-func TestTheInstructionsOfEachToolReachAClientOverTheWire(t *testing.T) {
-	listing, err := serveRegistry(t, newInstructedRegistry(t)).ListTools(t.Context())
+func TestToolInstructionsAreSentToAClientOverTheWire(t *testing.T) {
+	listing, err := serveRegistry(t, newRegistryWithInstructions(t)).ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	byTool := getToolInstructions(listing)
-	if got := byTool["lantern_light"]; !slices.Equal(got, []string{lanternLightSentence, lanternTrimSentence}) {
-		t.Errorf("the client read the instructions of lantern_light as %q", got)
+	if got := byTool["fixture_find"]; !slices.Equal(got, []string{findSentence, writeSentence}) {
+		t.Errorf("the client read the instructions of fixture_find as %q", got)
 	}
-	if got := byTool["lantern_trim"]; !slices.Equal(got, []string{lanternTrimSentence}) {
-		t.Errorf("the client read the instructions of lantern_trim as %q", got)
+	if got := byTool["fixture_write"]; !slices.Equal(got, []string{writeSentence}) {
+		t.Errorf("the client read the instructions of fixture_write as %q", got)
 	}
-	if got := byTool["lantern_look"]; len(got) != 0 {
-		t.Errorf("the client read the instructions of lantern_look as %q", got)
+	if got := byTool["fixture_list"]; len(got) != 0 {
+		t.Errorf("the client read the instructions of fixture_list as %q", got)
 	}
 }
 
-func TestTheToolInstructionsOfAServiceHandlerReachAClientOverTheWire(t *testing.T) {
+func TestServiceHandlerToolInstructionsAreSentOverTheWire(t *testing.T) {
 	handler := listingHandler{listing: Listing{Tools: []*ToolInfo{
-		{Name: "lantern_light", Description: "Lights the lantern.", Effect: ReadOnly, Instructions: []string{lanternLightSentence}},
+		{Name: "fixture_find", Description: "Finds the fixture.", Effect: ReadOnly, Instructions: []string{findSentence}},
 	}}}
 
 	listing, err := serveHandler(t, handler).ListTools(t.Context())
@@ -124,7 +124,7 @@ func TestTheToolInstructionsOfAServiceHandlerReachAClientOverTheWire(t *testing.
 		t.Fatal(err)
 	}
 
-	if got := getToolInstructions(listing)["lantern_light"]; !slices.Equal(got, []string{lanternLightSentence}) {
-		t.Errorf("the client read the instructions of lantern_light as %q", got)
+	if got := getToolInstructions(listing)["fixture_find"]; !slices.Equal(got, []string{findSentence}) {
+		t.Errorf("the client read the instructions of fixture_find as %q", got)
 	}
 }

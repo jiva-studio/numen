@@ -242,7 +242,7 @@ func (w *Window) RequestFlush(ctx context.Context) bool {
 }
 
 // IsFlushOpen reports whether a request is running: one that waits for its clients, or for a
-// client's question to be answered.
+// client's user prompt to close.
 func (w *Window) IsFlushOpen() bool { return w.clients.getRunning() != nil }
 
 // IsQuestionOpen reports whether the running request has a client awaiting a user decision with
@@ -314,7 +314,7 @@ const (
 	flushUnanswered flushState = iota
 	// flushWritten is a client with no unsaved work left.
 	flushWritten
-	// flushUnsaved is a client holding unwritten work while the user decides what to
+	// flushUnsaved is a client with unwritten work while the user decides what to
 	// do with it.
 	flushUnsaved
 )

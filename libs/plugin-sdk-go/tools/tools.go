@@ -72,11 +72,11 @@ type Spec struct {
 	// Servers are the servers the tool is offered on. None is the full server alone.
 	Servers []Server
 	// Instructions are the sentences an agent reads about the tool before it calls it, each one
-	// sentence. A sentence about several tools goes on each of them with identical text; the host
-	// lists it once.
+	// sentence. A sentence about several tools is attached to each of them with identical text; the
+	// host lists it once.
 	Instructions []string
-	// Requires are the permissions the caller must hold besides the one of the effect, such as
-	// vault:manage. The host lists and runs the tool only for a caller holding all of them.
+	// Requires are the permissions the caller must have besides the one of the effect, such as
+	// vault:manage. The host lists and runs the tool only for a caller that has all of them.
 	Requires []string
 }
 
@@ -99,10 +99,10 @@ func New() *Registry {
 	return &Registry{}
 }
 
-// Add adds the tool run answers for. The schemas of the arguments and of the result are derived
-// from In and Out; an Out that is not a struct is answered as text. The arguments of a call are
+// Add adds the tool that run implements. The schemas of the arguments and of the result are derived
+// from In and Out; an Out that is not a struct is returned as text. The arguments of a call are
 // validated against the schema of In before run is called, and arguments that do not match it are
-// answered with an error result naming the argument. A run that returns an error is answered with
+// rejected with an error result naming the argument. A run that returns an error returns
 // an error result.
 func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in In) (Out, error)) error {
 	inputSchema, err := createSchema(reflect.TypeFor[In]())
@@ -448,7 +448,7 @@ func (t *ToolInfo) GetRequires() []string {
 	return t.Requires
 }
 
-// Listing is the tools a PluginToolService lists.
+// Listing is the list of tools a PluginToolService returns.
 type Listing struct {
 	Tools []*ToolInfo
 }

@@ -38,7 +38,7 @@ func newBoundWindow(t *testing.T) (*State, pluginport.PluginWindow, <-chan domai
 	return state, NewPluginWindow(state, nil, vaultreader.Readers{}), line
 }
 
-func TestPluginWindowFocusPassagesReachesTheWindowWithTheRanges(t *testing.T) {
+func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {
 	_, window, line := newBoundWindow(t)
 	ranges := []domain.ByteRange{{Start: 1500, End: 1580}, {Start: 400, End: 1100}}
 
@@ -56,20 +56,20 @@ func TestPluginWindowFocusPassagesReachesTheWindowWithTheRanges(t *testing.T) {
 	}
 }
 
-func TestPluginWindowRefusesAnInvalidPassageAndAMissingFileAndDoesNotMoveTheWindow(t *testing.T) {
+func TestPluginWindowRejectsBadPassageOrMissingFile(t *testing.T) {
 	_, window, line := newBoundWindow(t)
 
 	invalid := window.FocusPassages(t.Context(), "library/Birds.pdf", []domain.ByteRange{{Start: -1, End: 4}})
 	if !errors.Is(invalid, pluginport.ErrInvalidFocus) {
-		t.Errorf("a passage before the text answered %v, want ErrInvalidFocus", invalid)
+		t.Errorf("a passage before the text returned %v, want ErrInvalidFocus", invalid)
 	}
 	_, emptyPath := window.FocusNote(t.Context(), "")
 	if !errors.Is(emptyPath, pluginport.ErrInvalidFocus) {
-		t.Errorf("a note with no path answered %v, want ErrInvalidFocus", emptyPath)
+		t.Errorf("a note with no path returned %v, want ErrInvalidFocus", emptyPath)
 	}
 	missing := window.FocusPassages(t.Context(), "library/Gone.pdf", nil)
 	if !errors.Is(missing, fs.ErrNotExist) {
-		t.Errorf("a missing file answered %v, want fs.ErrNotExist", missing)
+		t.Errorf("a missing file returned %v, want fs.ErrNotExist", missing)
 	}
 	select {
 	case place := <-line:
@@ -154,7 +154,7 @@ func newActivateFixture(t *testing.T) activateFixture {
 }
 
 // waitSubscribed requests a place until the stream delivers one, so the stream handler is subscribed
-// before the test asks for anything else.
+// before the test requests anything else.
 func (f activateFixture) waitSubscribed(t *testing.T) {
 	t.Helper()
 	deadline := time.After(5 * time.Second)
@@ -292,7 +292,7 @@ func TestPluginWindowActivateTabOfTheActiveTabPublishesIt(t *testing.T) {
 	}
 }
 
-func TestPluginWindowActivateTabReturnsAnErrorNamingTheTabWhenTheWindowDoesNotShowItWithinTheBound(t *testing.T) {
+func TestPluginWindowActivateTabTimeoutErrorNamesTheTab(t *testing.T) {
 	f := newActivateFixture(t)
 	f.state.TabActivationBound = 50 * time.Millisecond
 	results := f.startActivation(t.Context(), "tab-2")
@@ -331,7 +331,7 @@ func TestPluginWindowActivateTabReturnsWhenTheContextEnds(t *testing.T) {
 
 // The window receives the ranges as 32-bit offsets, so a range that does not fit is left out rather
 // than wrapped to another place.
-func TestARangeBeyondThe32BitRangeIsLeftOutOfTheFocusSentToTheWindow(t *testing.T) {
+func TestFocusSentToWindowOmitsRangeBeyond32Bits(t *testing.T) {
 	got := convertByteRangesToWire([]domain.ByteRange{
 		{Start: 400, End: 480},
 		{Start: math.MaxInt32 - 5, End: math.MaxInt32 + 5},

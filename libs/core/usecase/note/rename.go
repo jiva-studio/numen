@@ -71,7 +71,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	_, err = e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled || !exact {
-			// A title key keeps the name, and so does a title no filename can carry.
+			// A title key keeps the name, and so does a title that cannot be stored in a filename.
 			source = ByFrontmatter
 			if err := u.checkTarget(ctx, v, path, to, source); err != nil {
 				return err
@@ -100,7 +100,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 		res.Path, res.Moved = moved.To, &moved
 	}
 	if source == ByFilename && errors.Is(err, vaultport.ErrAlreadyExists) {
-		// A note its filename names was not written before the move, so it is as it was.
+		// A note whose title is stored in its filename was not written before the move, so it is unchanged.
 		return res, domain.NewDetailError(fmt.Sprintf("%s already exists; %s is unchanged", to, path), err)
 	}
 	return res, err

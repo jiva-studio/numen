@@ -109,9 +109,9 @@ const getPlaceInRun = (
 }
 
 /**
- * `span` clipped to the text of the drawn runs, so a stretch reaching into the document before or
- * after this one keeps the part drawn here. Undefined where it falls wholly outside them. A span
- * whose start and end name one offset names the run at it and is not clipped.
+ * Returns `span` clipped to the text of the rendered runs, so a span extending past this document
+ * keeps the part rendered here, or undefined when the span is wholly outside them. An empty span
+ * selects the run at its offset and is not clipped.
  */
 const clipSpan = (runs: readonly Run[], span: TextRange): TextRange | undefined => {
   const first = runs[0]
@@ -128,16 +128,16 @@ const rangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => 
   const clipped = clipSpan(runs, span)
   if (!clipped) return undefined
   const { start, end } = clipped
-  const opens = findRun(runs, start)
-  const closes = findRun(runs, end)
-  if (!opens || !closes) return undefined
-  const endBytes = end > start ? end - closes.at : countBytes(closes.element.textContent ?? '')
-  const from = getPlaceInRun(opens.element, start - opens.at)
-  const to = getPlaceInRun(closes.element, endBytes)
-  if (!from || !to) return undefined
+  const startRun = findRun(runs, start)
+  const endRun = findRun(runs, end)
+  if (!startRun || !endRun) return undefined
+  const endBytes = end > start ? end - endRun.at : countBytes(endRun.element.textContent ?? '')
+  const startPoint = getPlaceInRun(startRun.element, start - startRun.at)
+  const endPoint = getPlaceInRun(endRun.element, endBytes)
+  if (!startPoint || !endPoint) return undefined
   const range = doc.createRange()
-  range.setStart(from.node, from.offset)
-  range.setEnd(to.node, to.offset)
+  range.setStart(startPoint.node, startPoint.offset)
+  range.setEnd(endPoint.node, endPoint.offset)
   return range
 }
 

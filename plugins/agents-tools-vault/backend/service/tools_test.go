@@ -162,7 +162,7 @@ func TestNoteHeadingListReturnsHeadings(t *testing.T) {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
-	var out service.NoteHeadingsOutput
+	var out service.NoteHeadingListOutput
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}

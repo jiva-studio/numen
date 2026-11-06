@@ -4,7 +4,7 @@ import type { TextRange } from '../types'
 import { useBookRanges } from './useBookRanges'
 
 describe('the ranges of a book tab across a reload', () => {
-  it('does not light the same array again when the book loads again', async () => {
+  it('does not highlight the same array again when the book loads again', async () => {
     const focusCalls: (readonly TextRange[])[] = []
     const reader = {
       isLoading: ref(false),

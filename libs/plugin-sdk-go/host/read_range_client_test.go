@@ -18,7 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// rangeReading is a host that answers a ranged ReadFile with a fixed range of Glaciers.md, or with
+// rangeReading is a host that returns a ranged ReadFile with a fixed range of Glaciers.md, or with
 // code when it is set, and records the request.
 type rangeReading struct {
 	numenv1connect.UnimplementedHostVaultServiceHandler
@@ -75,7 +75,7 @@ func TestTheClientSendsALengthOfZeroAsSet(t *testing.T) {
 	}
 }
 
-func TestTheClientReturnsTheErrorOfARefusedRange(t *testing.T) {
+func TestClientReturnsTheErrorOfARejectedRange(t *testing.T) {
 	for code, want := range map[v1.HostVaultErrorCode]error{
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT:  host.ErrNotText,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND: host.ErrNotExist,
@@ -88,7 +88,7 @@ func TestTheClientReturnsTheErrorOfARefusedRange(t *testing.T) {
 	}
 }
 
-// rangeTexts is a host of texts that answers a ranged ReadText with two segments cut to the range,
+// rangeTexts is a host of texts that returns a ranged ReadText with two segments cut to the range,
 // and records the request.
 type rangeTexts struct {
 	numenv1connect.UnimplementedHostTextServiceHandler

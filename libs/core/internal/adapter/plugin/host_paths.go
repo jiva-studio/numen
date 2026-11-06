@@ -20,8 +20,8 @@ var (
 )
 
 // CheckPluginSetting reports why a setting the plugin declares does not take the value. A setting
-// of type file takes an empty value or a file that exists with an extension it accepts. The port
-// setting of a listener takes a port the host can bind. Any other setting takes any value.
+// of type file accepts an empty value or an existing file with an extension it accepts. The port
+// setting of a listener accepts a port the host can bind. Any other setting accepts any value.
 func (h *Host) CheckPluginSetting(pluginID, key string, value any) error {
 	if err := h.checkListenerPort(context.Background(), pluginID, key, value); err != nil {
 		return err

@@ -401,7 +401,7 @@ describe('a note renamed', () => {
     expect(one.notices).toStrictEqual([])
   })
 
-  it('says the name was taken, and that the note keeps its name', async () => {
+  it('shows a name-taken error, and the note keeps its name', async () => {
     const one = window({ renamed: asFailure('alreadyExists' as const) })
 
     await carry(createInvocation('app:note.rename', front(), 'Entropy'), one.on)

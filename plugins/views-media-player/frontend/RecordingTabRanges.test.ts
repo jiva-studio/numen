@@ -1,5 +1,5 @@
 /**
- * A recording tab the window asks to light ranges of the transcript: playback goes to the cue of the
+ * A recording tab whose transcript ranges the window highlights: playback seeks to the cue of the
  * first range.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -127,7 +127,7 @@ describe('the place a recording tab saves when the window moves it', () => {
     return { tab, state, savePlace }
   }
 
-  it('is the time of the first range the window sets, saved as soon as it is reached', async () => {
+  it('is the time of the first range the window sets, saved after the seek', async () => {
     const { tab, state, savePlace } = mountSavingTab(null)
     await flush()
     savePlace.mockClear()

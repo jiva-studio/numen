@@ -43,7 +43,7 @@ func (o openFailure) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	return nil, errors.New("vault is gone")
 }
 
-// mapsVault holds the maps PDF, and counts the times it is opened or read whole.
+// mapsVault has the maps PDF, and counts the times it is opened or read whole.
 type mapsVault struct {
 	opens int
 }
@@ -88,7 +88,7 @@ func (memoryFile) Close() error { return nil }
 type mapsVersions struct {
 	source textport.ContentHash
 	hasRow bool
-	// findFailure and saveFailure, where set, are what the index answers instead.
+	// findFailure and saveFailure, where set, are what the index returns instead.
 	findFailure error
 	saveFailure error
 }
@@ -137,7 +137,7 @@ func (m *mapsVersions) SaveContentHash(_ context.Context, record textport.Conten
 	return nil
 }
 
-// textFiles holds the text file of every version, unchanged since it was recorded.
+// textFiles contains the text file of every version, unchanged since it was recorded.
 type textFiles struct{}
 
 func (textFiles) Open(domain.Vault) (textport.TextFiles, error) { return textFiles{}, nil }
@@ -217,7 +217,7 @@ func getScannedMaps() textport.ContentHash {
 	return textport.ContentHash{Path: mapsPath, Size: int64(len(getMapsContent())), ModTime: getMapsTime()}
 }
 
-// checkLive fails the test unless the listing holds the one version of the maps, live.
+// checkLive fails the test unless the listing has the one version of the maps, live.
 func checkLive(t *testing.T, listing pluginport.PluginTextListing, err error) {
 	t.Helper()
 	if err != nil || len(listing.Versions) != 1 || listing.Live != listing.Versions[0].GetID() {
@@ -226,7 +226,7 @@ func checkLive(t *testing.T, listing pluginport.PluginTextListing, err error) {
 }
 
 // The recorded hash is a cache: a hash that cannot be recorded still decides the live version.
-func TestListVersionsListsTheLiveVersionWhenTheHashCannotBeRecorded(t *testing.T) {
+func TestListVersionsListsLiveVersionWhenHashCannotBeRecorded(t *testing.T) {
 	repo := &mapsVersions{hasRow: true, source: getScannedMaps(), saveFailure: errors.New("database is locked")}
 	texts := newTexts(t, &mapsVault{}, repo)
 

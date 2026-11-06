@@ -108,8 +108,8 @@ export function fileOpeners(vault: FileOpenerDeps) {
     extensionReaders.get(getExtension(path))?.icon
 
   /**
-   * A file opened in its reader at a place, with ranges of its text lit; a file no reader takes opens
-   * nothing.
+   * Opens a file in its reader at a place, with text ranges highlighted; a file with no reader is not
+   * opened.
    */
   const readFile = (
     path: string,

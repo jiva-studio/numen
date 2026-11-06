@@ -56,7 +56,7 @@ func (e *DetailError) Error() string { return e.Text }
 
 func (e *DetailError) Unwrap() []error { return e.Reasons }
 
-// NewDetailError is the DetailError of the text for the reasons.
+// NewDetailError returns the DetailError with the text and the reasons.
 func NewDetailError(text string, reasons ...error) error {
 	return &DetailError{Text: text, Reasons: reasons}
 }

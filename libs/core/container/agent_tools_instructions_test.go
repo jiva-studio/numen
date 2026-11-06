@@ -28,20 +28,20 @@ const (
 	zitherPlugin = "md.test.zither"
 
 	atlasOpenSentence   = "Open the atlas with atlas_open before you name a country."
-	atlasFoldSentence   = "Fold a map with atlas_fold along its printed creases."
-	atlasSharedSentence = "Close the atlas with atlas_close or atlas_fold when the reading ends."
+	atlasFindSentence   = "Find a map with atlas_find by its title."
+	atlasSharedSentence = "Close the atlas with atlas_close or atlas_find when the reading ends."
 	zitherTuneSentence  = "Tune the zither with zither_tune, one string at a time."
 )
 
-// instructedPlugin is a plugin that lists the tools it is given, or fails to list when it is given
+// toolPluginFixture is a plugin that lists the tools it is given, or fails to list when it is given
 // an error.
-type instructedPlugin struct {
+type toolPluginFixture struct {
 	numenv1connect.UnimplementedPluginToolServiceHandler
 	tools []*v1.PluginTool
 	err   error
 }
 
-func (p *instructedPlugin) ListTools(
+func (p *toolPluginFixture) ListTools(
 	context.Context, *connect.Request[v1.ListToolsRequest],
 ) (*connect.Response[v1.ListToolsResponse], error) {
 	if p.err != nil {
@@ -50,31 +50,31 @@ func (p *instructedPlugin) ListTools(
 	return connect.NewResponse(&v1.ListToolsResponse{Tools: p.tools}), nil
 }
 
-func instructedAt(id string, permissions []string, served *instructedPlugin) testPlugin {
+func getInstructionsAt(id string, permissions []string, served *toolPluginFixture) testPlugin {
 	return testPlugin{
 		id: id, capabilities: []string{"tools"}, permissions: permissions,
 		mount: func(mux *http.ServeMux) { mux.Handle(numenv1connect.NewPluginToolServiceHandler(served)) },
 	}
 }
 
-// instructedTool is a tool of a test plugin that carries the instruction sentences given.
-func instructedTool(name string, effect v1.ToolEffect, sentences []string, servers ...v1.ToolServer) *v1.PluginTool {
+// newToolWithInstructions is a tool of a test plugin that has the instruction sentences given.
+func newToolWithInstructions(name string, effect v1.ToolEffect, sentences []string, servers ...v1.ToolServer) *v1.PluginTool {
 	tool := newPluginTool(name, effect, servers...)
 	tool.Instructions = sentences
 	return tool
 }
 
-func toolsPlugin(tools ...*v1.PluginTool) *instructedPlugin {
-	return &instructedPlugin{tools: tools}
+func newToolsPlugin(tools ...*v1.PluginTool) *toolPluginFixture {
+	return &toolPluginFixture{tools: tools}
 }
 
-func readOnlyTool(name string, sentences ...string) *v1.PluginTool {
-	return instructedTool(name, v1.ToolEffect_TOOL_EFFECT_READ_ONLY, sentences)
+func newReadOnlyTool(name string, sentences ...string) *v1.PluginTool {
+	return newToolWithInstructions(name, v1.ToolEffect_TOOL_EFFECT_READ_ONLY, sentences)
 }
 
-// mcpCaller is the plugin that serves the tools of the others outside Numen: it holds vault:read
+// newMCPCaller is the plugin that serves the tools of the others outside Numen: it has vault:read
 // only.
-func mcpCaller() testPlugin {
+func newMCPCaller() testPlugin {
 	return testPlugin{id: mcpPlugin, permissions: []string{"vault:read"}, mount: func(*http.ServeMux) {}}
 }
 
@@ -132,23 +132,23 @@ func getSentencesByTool(listing *v1.ListToolsResponse) map[string][]string {
 
 func TestTheHostListsEachToolWithItsOwnSentencesInPluginIdOrder(t *testing.T) {
 	host := hostOver(t,
-		instructedAt(zitherPlugin, []string{"vault:read"}, toolsPlugin(readOnlyTool("zither_tune", zitherTuneSentence))),
-		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
-			readOnlyTool("atlas_open", atlasOpenSentence),
-			readOnlyTool("atlas_fold", atlasFoldSentence, atlasSharedSentence),
-			readOnlyTool("atlas_close", atlasSharedSentence),
+		getInstructionsAt(zitherPlugin, []string{"vault:read"}, newToolsPlugin(newReadOnlyTool("zither_tune", zitherTuneSentence))),
+		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(
+			newReadOnlyTool("atlas_open", atlasOpenSentence),
+			newReadOnlyTool("atlas_find", atlasFindSentence, atlasSharedSentence),
+			newReadOnlyTool("atlas_close", atlasSharedSentence),
 		)),
-		mcpCaller(),
+		newMCPCaller(),
 	)
 
 	listing := listToolsOfHost(t, openToolsOfHost(t, host))
 
-	if names := getToolNames(listing); !slices.Equal(names, []string{"atlas_open", "atlas_fold", "atlas_close", "zither_tune"}) {
+	if names := getToolNames(listing); !slices.Equal(names, []string{"atlas_open", "atlas_find", "atlas_close", "zither_tune"}) {
 		t.Fatalf("the host lists the tools %v", names)
 	}
 	want := map[string][]string{
 		"atlas_open":  {atlasOpenSentence},
-		"atlas_fold":  {atlasFoldSentence, atlasSharedSentence},
+		"atlas_find":  {atlasFindSentence, atlasSharedSentence},
 		"atlas_close": {atlasSharedSentence},
 		"zither_tune": {zitherTuneSentence},
 	}
@@ -159,18 +159,18 @@ func TestTheHostListsEachToolWithItsOwnSentencesInPluginIdOrder(t *testing.T) {
 	}
 }
 
-// The MCP plugin holds vault:read only, so a read-write tool is not listed to it, and the host
+// The MCP plugin has vault:read only, so a read-write tool is not listed to it, and the host
 // endpoint offers the full server, so a tool offered on the reading server only is not listed.
-func TestNoListedToolCarriesTheSentenceOfAToolLeftOut(t *testing.T) {
+func TestListedToolsHaveNoSentenceOfAnOmittedTool(t *testing.T) {
 	burnSentence := "Burn the old maps with atlas_burn after you copy them."
 	lensSentence := "Read the small print with atlas_lens."
 	host := hostOver(t,
-		instructedAt(atlasPlugin, []string{"vault:read", "vault:write"}, toolsPlugin(
-			readOnlyTool("atlas_open", atlasOpenSentence),
-			instructedTool("atlas_burn", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, []string{burnSentence}),
-			instructedTool("atlas_lens", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{lensSentence}, v1.ToolServer_TOOL_SERVER_READING),
+		getInstructionsAt(atlasPlugin, []string{"vault:read", "vault:write"}, newToolsPlugin(
+			newReadOnlyTool("atlas_open", atlasOpenSentence),
+			newToolWithInstructions("atlas_burn", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, []string{burnSentence}),
+			newToolWithInstructions("atlas_lens", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{lensSentence}, v1.ToolServer_TOOL_SERVER_READING),
 		)),
-		mcpCaller(),
+		newMCPCaller(),
 	)
 
 	listing := listToolsOfHost(t, openToolsOfHost(t, host))
@@ -184,12 +184,12 @@ func TestNoListedToolCarriesTheSentenceOfAToolLeftOut(t *testing.T) {
 }
 
 func TestTheHostListsTheToolsOfTheOthersWhenAPluginFailsToList(t *testing.T) {
-	broken := toolsPlugin(readOnlyTool("bellows_pump", "Pump the bellows with bellows_pump."))
-	broken.err = errors.New("the bellows are torn")
+	failingPlugin := newToolsPlugin(newReadOnlyTool("bellows_pump", "Pump the bellows with bellows_pump."))
+	failingPlugin.err = errors.New("the bellows are torn")
 	host := hostOver(t,
-		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(readOnlyTool("atlas_open", atlasOpenSentence))),
-		instructedAt("md.test.bellows", []string{"vault:read"}, broken),
-		mcpCaller(),
+		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(newReadOnlyTool("atlas_open", atlasOpenSentence))),
+		getInstructionsAt("md.test.bellows", []string{"vault:read"}, failingPlugin),
+		newMCPCaller(),
 	)
 
 	listing := listToolsOfHost(t, openToolsOfHost(t, host))
@@ -201,9 +201,9 @@ func TestTheHostListsTheToolsOfTheOthersWhenAPluginFailsToList(t *testing.T) {
 
 func TestDisablingAPluginRemovesItsToolsAndTheirSentences(t *testing.T) {
 	host := hostOver(t,
-		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(readOnlyTool("atlas_open", atlasOpenSentence))),
-		instructedAt(zitherPlugin, []string{"vault:read"}, toolsPlugin(readOnlyTool("zither_tune", zitherTuneSentence))),
-		mcpCaller(),
+		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(newReadOnlyTool("atlas_open", atlasOpenSentence))),
+		getInstructionsAt(zitherPlugin, []string{"vault:read"}, newToolsPlugin(newReadOnlyTool("zither_tune", zitherTuneSentence))),
+		newMCPCaller(),
 	)
 	client := openToolsOfHost(t, host)
 	if before := getToolNames(listToolsOfHost(t, client)); !slices.Equal(before, []string{"atlas_open", "zither_tune"}) {
@@ -220,9 +220,9 @@ func TestDisablingAPluginRemovesItsToolsAndTheirSentences(t *testing.T) {
 }
 
 func TestTheToolsOfTheCallerItselfAreNotListed(t *testing.T) {
-	caller := instructedAt(mcpPlugin, []string{"vault:read"}, toolsPlugin(readOnlyTool("mirror_look", "Look in the mirror with mirror_look.")))
+	caller := getInstructionsAt(mcpPlugin, []string{"vault:read"}, newToolsPlugin(newReadOnlyTool("mirror_look", "Look in the mirror with mirror_look.")))
 	host := hostOver(t,
-		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(readOnlyTool("atlas_open", atlasOpenSentence))),
+		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(newReadOnlyTool("atlas_open", atlasOpenSentence))),
 		caller,
 	)
 
@@ -231,16 +231,16 @@ func TestTheToolsOfTheCallerItselfAreNotListed(t *testing.T) {
 	}
 }
 
-func TestTheReadingCatalogListsOnlyReadingServerToolsWithTheirSentences(t *testing.T) {
+func TestReadingCatalogListsOnlyReadingToolsWithSentences(t *testing.T) {
 	glanceSentence := "Glance at the atlas index with atlas_glance."
 	host := hostOver(t,
-		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
-			instructedTool("atlas_open", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasOpenSentence},
+		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(
+			newToolWithInstructions("atlas_open", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasOpenSentence},
 				v1.ToolServer_TOOL_SERVER_FULL, v1.ToolServer_TOOL_SERVER_READING),
-			instructedTool("atlas_fold", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasFoldSentence}, v1.ToolServer_TOOL_SERVER_FULL),
-			readOnlyTool("atlas_glance", glanceSentence),
+			newToolWithInstructions("atlas_find", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasFindSentence}, v1.ToolServer_TOOL_SERVER_FULL),
+			newReadOnlyTool("atlas_glance", glanceSentence),
 		)),
-		mcpCaller(),
+		newMCPCaller(),
 	)
 	t.Cleanup(func() {
 		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
@@ -272,46 +272,46 @@ func runInApp(t *testing.T, instructions string, plugins ...testPlugin) string {
 	return requests[0].GetInstructions()
 }
 
-func TestAnInAppRunReceivesTheDistinctSentencesOfItsToolsAfterItsInstructions(t *testing.T) {
+func TestInAppRunReceivesDistinctToolSentencesAfterInstructions(t *testing.T) {
 	got := runInApp(t, "Answer the gardener in short sentences.",
-		instructedAt(zitherPlugin, []string{"vault:read"}, toolsPlugin(readOnlyTool("zither_tune", zitherTuneSentence))),
-		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
-			readOnlyTool("atlas_open", atlasOpenSentence),
-			readOnlyTool("atlas_fold", atlasFoldSentence, atlasSharedSentence),
-			readOnlyTool("atlas_close", atlasSharedSentence),
+		getInstructionsAt(zitherPlugin, []string{"vault:read"}, newToolsPlugin(newReadOnlyTool("zither_tune", zitherTuneSentence))),
+		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(
+			newReadOnlyTool("atlas_open", atlasOpenSentence),
+			newReadOnlyTool("atlas_find", atlasFindSentence, atlasSharedSentence),
+			newReadOnlyTool("atlas_close", atlasSharedSentence),
 		)),
 	)
 
 	want := "Answer the gardener in short sentences.\n\n" +
-		strings.Join([]string{atlasOpenSentence, atlasFoldSentence, atlasSharedSentence, zitherTuneSentence}, " ")
+		strings.Join([]string{atlasOpenSentence, atlasFindSentence, atlasSharedSentence, zitherTuneSentence}, " ")
 	if got != want {
 		t.Errorf("the run received the instructions %q, want %q", got, want)
 	}
 }
 
-func TestAnInAppRunWithNoInstructionsReceivesTheSentencesOfItsToolsAlone(t *testing.T) {
+func TestInAppRunWithoutInstructionsReceivesOnlyToolSentences(t *testing.T) {
 	got := runInApp(t, "",
-		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
-			readOnlyTool("atlas_open", atlasOpenSentence),
-			readOnlyTool("atlas_fold", atlasFoldSentence),
+		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(
+			newReadOnlyTool("atlas_open", atlasOpenSentence),
+			newReadOnlyTool("atlas_find", atlasFindSentence),
 		)),
 	)
 
-	if want := atlasOpenSentence + " " + atlasFoldSentence; got != want {
+	if want := atlasOpenSentence + " " + atlasFindSentence; got != want {
 		t.Errorf("the run received the instructions %q, want %q", got, want)
 	}
 }
 
-// The atlas plugin holds vault:read only, so its read-write tool is not served, and a tool offered on
+// The atlas plugin has vault:read only, so its read-write tool is not served, and a tool offered on
 // the reading server only is not served on the full server an in-app run uses.
 func TestAToolLeftOutOfAnInAppRunAddsNoSentenceToItsInstructions(t *testing.T) {
 	burnSentence := "Burn the old maps with atlas_burn after you copy them."
 	lensSentence := "Read the small print with atlas_lens."
 	got := runInApp(t, "Answer the gardener in short sentences.",
-		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
-			readOnlyTool("atlas_open", atlasOpenSentence),
-			instructedTool("atlas_burn", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, []string{burnSentence}),
-			instructedTool("atlas_lens", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{lensSentence}, v1.ToolServer_TOOL_SERVER_READING),
+		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(
+			newReadOnlyTool("atlas_open", atlasOpenSentence),
+			newToolWithInstructions("atlas_burn", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, []string{burnSentence}),
+			newToolWithInstructions("atlas_lens", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{lensSentence}, v1.ToolServer_TOOL_SERVER_READING),
 		)),
 	)
 
@@ -320,9 +320,9 @@ func TestAToolLeftOutOfAnInAppRunAddsNoSentenceToItsInstructions(t *testing.T) {
 	}
 }
 
-func TestAnInAppRunWhoseToolsCarryNoSentencesKeepsItsInstructions(t *testing.T) {
+func TestInAppRunWithoutToolSentencesKeepsItsInstructions(t *testing.T) {
 	got := runInApp(t, "Answer the gardener in short sentences.",
-		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(readOnlyTool("atlas_open"))),
+		getInstructionsAt(atlasPlugin, []string{"vault:read"}, newToolsPlugin(newReadOnlyTool("atlas_open"))),
 	)
 
 	if want := "Answer the gardener in short sentences."; got != want {

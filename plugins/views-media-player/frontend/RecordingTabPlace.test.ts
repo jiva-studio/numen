@@ -50,7 +50,7 @@ describe('the place a recording tab opens at', () => {
 })
 
 describe('the place a recording tab saves when it closes', () => {
-  it('is the time it is at while it holds the player', async () => {
+  it('is the current time while it owns the shared player', async () => {
     const { tab, player, savePlace } = mountTab(null)
     await flush()
     player.seek(TALK_URL, 42_000)
@@ -60,7 +60,7 @@ describe('the place a recording tab saves when it closes', () => {
     expect(savePlace).toHaveBeenLastCalledWith({ t: [42, 42] })
   })
 
-  it('is nothing while another recording holds the player', async () => {
+  it('is nothing while another recording owns the shared player', async () => {
     const { tab, player, savePlace } = mountTab({ t: [42, 42] })
     await flush()
     player.seek(OTHER_URL, 0)
@@ -73,7 +73,7 @@ describe('the place a recording tab saves when it closes', () => {
 })
 
 describe('the place a recording tab reports to the window', () => {
-  it('is the time it is at, in seconds from the start, when it closes while it holds the player', async () => {
+  it('is the current time in seconds when it closes while it owns the shared player', async () => {
     const { tab, player, reportPlace } = mountTab(null)
     await flush()
     player.seek(TALK_URL, 66_500)
@@ -93,7 +93,7 @@ describe('the place a recording tab reports to the window', () => {
     expect(reportPlace).toHaveBeenLastCalledWith({ positionSeconds: 3723.9 })
   })
 
-  it('is nothing while another recording holds the player', async () => {
+  it('is nothing while another recording owns the shared player', async () => {
     const { tab, player, reportPlace } = mountTab({ t: [42, 42] })
     await flush()
     player.seek(OTHER_URL, 0)

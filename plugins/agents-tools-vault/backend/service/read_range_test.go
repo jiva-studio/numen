@@ -24,21 +24,21 @@ type rangeRequest struct {
 	Start, Length int
 }
 
-// rangeCalls is what the host of a ranged vault was asked.
+// rangeCalls is what the host of a ranged vault received.
 type rangeCalls struct {
 	mu     sync.Mutex
 	ranges []rangeRequest
 	reads  []string
 }
 
-// rangeVault is a vault whose host answers ReadRange with the range set for a path, else the error
+// rangeVault is a vault whose host returns ReadRange with the range set for a path, else the error
 // set for it, else as the fake host does, and records every ReadRange and Read.
 type rangeVault struct {
 	*hosttest.Vault
 	calls       *rangeCalls
 	answers     map[string]host.FileRange
 	rangeErrors map[string]error
-	// readRefused is the error a whole Read of the path is answered with.
+	// readRefused is the error a whole Read of the path returns.
 	readRefused map[string]error
 }
 
@@ -74,7 +74,7 @@ func (r rangeVault) Read(ctx context.Context, filePath string) ([]byte, domain.F
 	return r.Vault.Read(ctx, filePath)
 }
 
-// textCalls is what the host of the counted text versions was asked.
+// textCalls is what the host of the counted text versions received.
 type textCalls struct {
 	mu sync.Mutex
 	// isReadTextRefused fails every ReadText, for a read that must not read the whole text.
@@ -111,7 +111,7 @@ func (c countingTexts) ReadTextRange(ctx context.Context, path string, id domain
 	return c.Texts.ReadTextRange(ctx, path, id, start, length)
 }
 
-// callFailure calls the tool on the registry and returns its refusal text, or "" when it answered.
+// callFailure calls the tool on the registry and returns its error text, or "" when it returned.
 func callFailure(t *testing.T, registry *tools.Registry, vaultID, name, arguments string, out any) string {
 	t.Helper()
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: vaultID, Name: name, Arguments: []byte(arguments)})
@@ -161,14 +161,14 @@ func TestFileReadReturnsTheRangeTheHostGaveAndTheSizeOfTheFile(t *testing.T) {
 		t.Errorf("file_read read %v whole, want only the range", vault.calls.reads)
 	}
 	if out.Path != "data.txt" || out.Content != "line 2" || out.Start != 8 || out.Length != 6 || out.Size != 4096 {
-		t.Errorf("file_read answered %+v, want line 2 from 8 for 6 bytes of a file of 4096", out)
+		t.Errorf("file_read returned %+v, want line 2 from 8 for 6 bytes of a file of 4096", out)
 	}
 	if want := "4096-" + strconv.FormatInt(stat.ModTime.UnixNano(), 10); out.Fingerprint != want {
 		t.Errorf("the fingerprint is %q, want %q from the file stat of the range", out.Fingerprint, want)
 	}
 }
 
-func TestFileReadWithoutALengthAsksTheHostForSixteenThousandBytes(t *testing.T) {
+func TestFileReadWithoutALengthRequests16000BytesFromTheHost(t *testing.T) {
 	_, vault, _, registry := newRangeLibrary(t)
 	vault.answers["data.txt"] = host.FileRange{Text: "line 1\n", Start: 0, Stat: domain.FileStat{Path: "data.txt", Size: 7}}
 
@@ -204,7 +204,7 @@ func TestFileReadMovesAStartInsideACharacterToTheNextCharacter(t *testing.T) {
 	}
 }
 
-func TestLibraryReadOfAFileWithNoTextVersionThatIsNotTextNamesWhatMakesOne(t *testing.T) {
+func TestLibraryReadOfNonTextFileNamesTheTextVersionTools(t *testing.T) {
 	l := newLibrary(t)
 	failure := l.call(t, "library_read", `{"path":"`+scanPath+`"}`, nil)
 	want := scanPath + " has no text version; recognition_create or transcript_create makes one"
@@ -213,7 +213,7 @@ func TestLibraryReadOfAFileWithNoTextVersionThatIsNotTextNamesWhatMakesOne(t *te
 	}
 }
 
-func TestLibraryReadOfABinaryLargerThanANoteNamesWhatMakesATextVersion(t *testing.T) {
+func TestLibraryReadOfLargeBinaryNamesTheTextVersionTools(t *testing.T) {
 	const archivePath = "recordings/Long Night.wav"
 	l, vault, _, registry := newRangeLibrary(t)
 	l.vault.File(archivePath, "RIFF\x00\x00wave body")
@@ -246,7 +246,7 @@ func TestLibraryReadOfATextFileReadsItsRangeThroughTheHost(t *testing.T) {
 	}
 }
 
-func TestLibraryReadByStartAndLengthReadsOnlyTheRangeOfTheTextVersion(t *testing.T) {
+func TestLibraryReadByStartAndLengthReadsOnlyThatTextRange(t *testing.T) {
 	_, _, counted, registry := newRangeLibrary(t)
 	counted.isReadTextRefused = true
 	whole := pageOne + pageTwo + pageThree
@@ -270,7 +270,7 @@ func TestLibraryReadByStartAndLengthReadsOnlyTheRangeOfTheTextVersion(t *testing
 	}
 }
 
-func TestLibraryReadOfAPageReturnsThePageWithItsLocationsThroughATextRange(t *testing.T) {
+func TestLibraryReadOfAPageReturnsItsLocationsViaATextRange(t *testing.T) {
 	_, _, counted, registry := newRangeLibrary(t)
 
 	var out libraryReadAnswer

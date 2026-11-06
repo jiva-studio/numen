@@ -307,7 +307,7 @@ func (e *vaultEndpoint) ReadFile(
 		return connect.NewResponse(&v1.ReadFileResponse{Error: noVault}), nil
 	}
 	if req.Msg.Length != nil {
-		return answerFileRange(ctx, vault, req.Msg)
+		return serveFileRange(ctx, vault, req.Msg)
 	}
 	content, pos, err := vault.Read(ctx, req.Msg.GetPath())
 	code, err := answer(ctx, err)
@@ -541,13 +541,13 @@ func (e *vaultEndpoint) ResolveLinks(
 	if vault == nil {
 		return connect.NewResponse(&v1.ResolveLinksResponse{Error: noVault}), nil
 	}
-	reached, err := vault.ResolveLinks(ctx, req.Msg.GetPath(), req.Msg.GetAddresses())
+	resolvedLinks, err := vault.ResolveLinks(ctx, req.Msg.GetPath(), req.Msg.GetAddresses())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ResolveLinksResponse{Error: code}), err
 	}
-	links := make(map[string]*v1.HostLink, len(reached))
-	for content, one := range reached {
+	links := make(map[string]*v1.HostLink, len(resolvedLinks))
+	for content, one := range resolvedLinks {
 		links[content] = writeLink(one)
 	}
 	return connect.NewResponse(&v1.ResolveLinksResponse{Links: links}), nil
@@ -660,12 +660,12 @@ func followVault(
 	}
 }
 
-// answerFileRange answers a ReadFile that sets a length: the text of the range, where it begins and
+// serveFileRange serves a ReadFile that sets a length: it returns the text of the range, its start and
 // the file stat.
-func answerFileRange(ctx context.Context, vault pluginport.PluginVault, req *v1.ReadFileRequest) (*connect.Response[v1.ReadFileResponse], error) {
+func serveFileRange(ctx context.Context, vault pluginport.PluginVault, req *v1.ReadFileRequest) (*connect.Response[v1.ReadFileResponse], error) {
 	if req.GetStart() < 0 || req.GetLength() < 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("a range of %s begins at %d and holds %d bytes: give numbers of zero or more", req.GetPath(), req.GetStart(), req.GetLength()))
+			fmt.Errorf("invalid range of %s: start %d and length %d must be >= 0", req.GetPath(), req.GetStart(), req.GetLength()))
 	}
 	read, err := vault.ReadRange(ctx, req.GetPath(), int(req.GetStart()), int(min(req.GetLength(), math.MaxInt32)))
 	code, err := answer(ctx, err)

@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-func TestTheVaultToolsRequireOnlyThePermissionsOfWhatTheyReach(t *testing.T) {
+func TestTheVaultToolsRequireOnlyThePermissionsOfWhatTheyCall(t *testing.T) {
 	want := map[string][]string{
 		"vault_add":      {"vault:manage"},
 		"vault_rename":   {"vault:manage"},

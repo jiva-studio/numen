@@ -42,7 +42,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 		return domain.Vault{}, err
 	}
 	if other, exists := domain.Vaults(recognized).FindByName(name, v.ID); exists {
-		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault at %s is already called %s", other.Path, other.Name), ErrNameTaken)
+		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault at %s already has the name %s", other.Path, other.Name), ErrNameTaken)
 	}
 
 	renamedVault := v

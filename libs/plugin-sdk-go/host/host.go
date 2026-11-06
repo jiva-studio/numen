@@ -28,8 +28,8 @@ var (
 	ErrStale = notesedit.ErrStale
 	// ErrAlreadyExists is what a create gets when a file is already there.
 	ErrAlreadyExists = errors.New("the file already exists")
-	// ErrLockedByAnother is what a name gets when another program holds the file.
-	ErrLockedByAnother = errors.New("another program holds the file")
+	// ErrLockedByAnother is returned when another program has locked the file.
+	ErrLockedByAnother = errors.New("the file is locked by another program")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
 	ErrNotANote = notesedit.ErrNotANote
 	// ErrInvalidConnection is what a connection gets that is not one: a role no connection
@@ -43,9 +43,9 @@ var (
 	ErrUnknownVault = errors.New("the vault is not on the list")
 	// ErrNotExist is fs.ErrNotExist: a file, a note or a name that is not there.
 	ErrNotExist = fs.ErrNotExist
-	// ErrNotAttempted is what a note of a batch gets when the call was cancelled before it was changed.
+	// ErrNotAttempted is returned for a note of a batch when the call was cancelled before it was changed.
 	ErrNotAttempted = errors.New("the call was cancelled before this note was changed")
-	// ErrNotText is what a ranged read gets for bytes that are not UTF-8.
+	// ErrNotText is returned by a ranged read for bytes that are not UTF-8.
 	ErrNotText = errors.New("the file is not text")
 )
 
@@ -130,8 +130,8 @@ type FileReader interface {
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	// Read returns the file with the file stat it had when it was read.
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
-	// ReadRange reads at most length bytes of the file from start as text, cut at whole characters.
-	// Zero or more than 16000 reads 16000. A range that is not UTF-8 is ErrNotText; a folder is
+	// ReadRange reads at most length bytes of the file from start as text, truncated at whole characters.
+	// Zero or more than 16000 reads 16000. A range that is not UTF-8 returns ErrNotText; a folder returns
 	// ErrNotExist.
 	ReadRange(ctx context.Context, path string, start, length int) (FileRange, error)
 }

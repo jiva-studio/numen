@@ -414,7 +414,7 @@ export enum VaultsErrorCode {
   NO_TRASH = 8,
 
   /**
-   * A tab holds unsaved changes, so the window keeps the vault it shows.
+   * A tab has unsaved changes, so the window keeps the vault it shows.
    *
    * @generated from enum value: VAULTS_ERROR_CODE_UNSAVED = 9;
    */

@@ -269,7 +269,7 @@ func sendLine(t *testing.T, conn net.Conn, line string) string {
 	return strings.TrimSuffix(reply, "\n")
 }
 
-func TestAConnectionToTheListenerPortStartsThePluginAndForwardsTheBytes(t *testing.T) {
+func TestListenerConnectionStartsThePluginAndForwardsBytes(t *testing.T) {
 	w := newListenerHost(t)
 	if w.started.Load() != 0 {
 		t.Fatalf("the plugin started %d times before a connection", w.started.Load())
@@ -311,7 +311,7 @@ func TestIdleEvictionStopsThePluginOnlyAfterTheConnectionCloses(t *testing.T) {
 	}
 }
 
-func TestADisabledPluginsListenerPortRefusesConnections(t *testing.T) {
+func TestDisabledPluginListenerPortRejectsConnections(t *testing.T) {
 	w := newListenerHost(t)
 	if !isPortOpen(t, w.port) {
 		t.Fatal("the listener port of the enabled plugin is not bound")
@@ -418,7 +418,7 @@ func TestAPortSettingOutOfRangeMakesThePluginFailed(t *testing.T) {
 	}
 }
 
-func TestAListenerPortThatIsTakenMakesThePluginFailed(t *testing.T) {
+func TestListenerPortInUseMarksThePluginFailed(t *testing.T) {
 	_, takenPort := listenLoopback(t)
 	w := newUndiscoveredListenerHost(t, "mcp", takenPort, "listener.mcp="+strconv.Itoa(serveEcho(t)))
 
@@ -427,7 +427,7 @@ func TestAListenerPortThatIsTakenMakesThePluginFailed(t *testing.T) {
 	waitForFailure(t, w.host)
 }
 
-func TestAPortSettingChangedToAPortThatCannotBeBoundKeepsTheOldPortAndTheStatus(t *testing.T) {
+func TestPortSettingChangedToUnbindablePortKeepsOldPortAndStatus(t *testing.T) {
 	changes := map[string]func(context.Context, *Host, any) error{
 		"SetPluginSetting": func(ctx context.Context, host *Host, value any) error {
 			return host.SetPluginSetting(ctx, listenerPlugin, "port", value)
@@ -457,7 +457,7 @@ func TestAPortSettingChangedToAPortThatCannotBeBoundKeepsTheOldPortAndTheStatus(
 				}
 
 				if status, _ := w.host.GetPluginStatus(listenerPlugin); status.Failed {
-					t.Errorf("status = %+v after the port setting change was refused, want not failed", status)
+					t.Errorf("status = %+v after the port setting change was rejected, want not failed", status)
 				}
 				if reply := sendLine(t, connectListener(t, w.port), "kept"); reply != "kept" {
 					t.Errorf("reply = %q on the old port, want the echo of the line", reply)
@@ -467,7 +467,7 @@ func TestAPortSettingChangedToAPortThatCannotBeBoundKeepsTheOldPortAndTheStatus(
 	}
 }
 
-func TestAPluginWhoseReadyLineDoesNotReportItsListenerFailsToActivate(t *testing.T) {
+func TestReadyLineWithoutListenerFailsActivation(t *testing.T) {
 	w := newUndiscoveredListenerHost(t, "console", getFreePort(t), "")
 	discover(t, w.host)
 
@@ -482,7 +482,7 @@ func TestAPluginWhoseReadyLineDoesNotReportItsListenerFailsToActivate(t *testing
 	}
 }
 
-func TestAPluginWhoseReadyLineHasAMalformedListenerTokenFailsToActivate(t *testing.T) {
+func TestReadyLineWithMalformedListenerTokenFailsActivation(t *testing.T) {
 	for name, token := range map[string]string{
 		"a port that is text": "listener.mcp=open",
 		"port 0":              "listener.mcp=0",
@@ -557,7 +557,7 @@ func TestAListenerWithAFixedPortBindsThatPortAndForwardsTheBytes(t *testing.T) {
 	}
 }
 
-// getStoredSettings returns the settings of the listener plugin the host holds in memory.
+// getStoredSettings returns the settings of the listener plugin the host has in memory.
 func getStoredSettings(t *testing.T, host *Host) map[string]any {
 	t.Helper()
 	raw, err := host.GetPluginConfigJSON(listenerPlugin)
@@ -590,7 +590,7 @@ func (p *persistedKeys) get() []string {
 	return slices.Clone(p.keys)
 }
 
-func TestCheckPluginSettingRefusesAPortThatCannotBeBoundAndAcceptsAFreeOrTheBoundPort(t *testing.T) {
+func TestCheckPluginSettingAcceptsOnlyFreeOrBoundPort(t *testing.T) {
 	w := newListenerHost(t)
 	_, takenPort := listenLoopback(t)
 	freePort := getFreePort(t)
@@ -618,7 +618,7 @@ func TestCheckPluginSettingRefusesAPortThatCannotBeBoundAndAcceptsAFreeOrTheBoun
 	}
 }
 
-func TestAPortSettingThatCannotBeBoundIsNotStoredAndOtherSettingsCanBeUpdated(t *testing.T) {
+func TestUnbindablePortSettingIsNotStoredAndOthersUpdate(t *testing.T) {
 	changes := map[string]func(context.Context, *Host, string, any) error{
 		"SetPluginSetting": func(ctx context.Context, host *Host, key string, value any) error {
 			return host.SetPluginSetting(ctx, listenerPlugin, key, value)
@@ -647,7 +647,7 @@ func TestAPortSettingThatCannotBeBoundIsNotStoredAndOtherSettingsCanBeUpdated(t 
 				}
 
 				if keys := persisted.get(); slices.Contains(keys, "port") {
-					t.Errorf("persisted keys = %v, want the refused port not persisted", keys)
+					t.Errorf("persisted keys = %v, want the rejected port not persisted", keys)
 				}
 				if got := getStoredSettings(t, w.host)["port"]; got != float64(w.port) {
 					t.Errorf("port in memory = %v, want the old port %d", got, w.port)
@@ -657,7 +657,7 @@ func TestAPortSettingThatCannotBeBoundIsNotStoredAndOtherSettingsCanBeUpdated(t 
 				}
 
 				if err := change(t.Context(), w.host, "greeting", "good evening"); err != nil {
-					t.Fatalf("writing greeting after the refused port = %v, want nil", err)
+					t.Fatalf("writing greeting after the rejected port = %v, want nil", err)
 				}
 				if got := getStoredSettings(t, w.host)["greeting"]; got != "good evening" {
 					t.Errorf("greeting in memory = %v, want good evening", got)

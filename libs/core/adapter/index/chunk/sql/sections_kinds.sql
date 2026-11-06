@@ -1,6 +1,6 @@
 -- The sections of one vault whose names match the words typed, restricted to
 -- chosen source kinds, best first. A path prefix limits the sources before the
--- list is cut at the limit.
+-- list is truncated to the limit.
 WITH hits AS (
     SELECT sections_fts.rowid, bm25(sections_fts) AS rank
     FROM sections_fts

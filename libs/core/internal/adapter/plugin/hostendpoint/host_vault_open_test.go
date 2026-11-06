@@ -24,9 +24,9 @@ import (
 // md.numen.a granted vault:manage, and returns the endpoint and a client calling it.
 func openListEndpoint(t *testing.T, list pluginport.PluginVaultList) (*Endpoint, numenv1connect.HostVaultServiceClient) {
 	t.Helper()
-	hosted := newCallers(nil)
-	hosted.vault = newArrangingVault()
-	endpoint, err := Open(t.Context(), Address, listCallers{callers: hosted, list: list, granted: []string{pluginport.PermissionVaultManage}})
+	hostCallers := newCallers(nil)
+	hostCallers.vault = newFakeNoteVault()
+	endpoint, err := Open(t.Context(), Address, vaultListCallers{callers: hostCallers, list: list, granted: []string{pluginport.PermissionVaultManage}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestOpenVaultWithUnsavedChangesReturnsUnsavedWithTheDetail(t *testing.T) {
 	if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED {
 		t.Errorf("OpenVault of a window with unsaved changes returned %v, want error UNSAVED", res.Msg)
 	}
-	const question = "the user is asked about unsaved changes in the window; ask again after they answer"
+	const question = "the window has unsaved changes and is prompting the user; retry after the prompt closes"
 	if detail := res.Msg.GetDetail(); !strings.Contains(detail, unsaved.Error()) || !strings.Contains(detail, question) {
 		t.Errorf("OpenVault of a window with unsaved changes has the detail %q, want it to contain %q and %q", detail, unsaved.Error(), question)
 	}
@@ -75,7 +75,7 @@ func TestTwoOpenVaultCallsAtOnceBothReturnAndBothOpen(t *testing.T) {
 		})
 	}
 	wg.Wait()
-	// Both calls have answered, so both opens have ended before the endpoint closes.
+	// Both calls have returned, so both opens have ended before the endpoint closes.
 	if got := list.getCalls(); len(got) != 2 {
 		t.Errorf("the opens that ran were %v, want 2", got)
 	}
@@ -105,9 +105,8 @@ func TestOpenVaultWhileTheWindowFlushesIsUnavailable(t *testing.T) {
 	}
 }
 
-// A call still running when the shutdown tolerance ends is cut off by the close, and Close returns
-// an error that says so.
-func TestCloseWithACallRunningPastTheShutdownToleranceReturnsAnError(t *testing.T) {
+// A call still running when the shutdown tolerance ends is aborted by Close, which returns an error.
+func TestCloseWithCallRunningPastShutdownToleranceReturnsError(t *testing.T) {
 	t.Parallel()
 	list := newRecordingList()
 	list.release = make(chan struct{})
@@ -119,17 +118,20 @@ func TestCloseWithACallRunningPastTheShutdownToleranceReturnsAnError(t *testing.
 		callResult <- err
 	}()
 	select {
-	case <-list.opened:
+	case <-list.openCh:
 	case <-time.After(10 * time.Second):
-		t.Fatal("the window was not asked to open the vault")
+		t.Fatal("the window received no call to open the vault")
 	}
 
 	if err := endpoint.Close(context.WithoutCancel(t.Context())); err == nil {
-		t.Error("Close returned nil although a call ran past the shutdown tolerance and was cut off")
+		t.Error("Close returned nil although a call ran past the shutdown tolerance")
 	}
 	select {
-	case <-callResult:
+	case err := <-callResult:
+		if err == nil {
+			t.Error("the call aborted by Close returned nil, want an error")
+		}
 	case <-time.After(10 * time.Second):
-		t.Fatal("the call cut off by Close never returned")
+		t.Fatal("the call aborted by Close never returned")
 	}
 }

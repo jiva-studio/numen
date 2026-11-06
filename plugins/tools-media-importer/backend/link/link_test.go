@@ -191,7 +191,7 @@ func TestFetchText_SkipsEmptyAddressUnlessUserStarted(t *testing.T) {
 		t.Errorf("the address was asked %d times, want once", count)
 	}
 	if err := w.links.FetchText(t.Context(), made, true); err != nil || w.sites.texts.Load() != 2 {
-		t.Errorf("the user asking again asked the address %d times in all (%v)", w.sites.texts.Load(), err)
+		t.Errorf("after a user request the address was fetched %d times in all (%v)", w.sites.texts.Load(), err)
 	}
 	listing, err := w.texts.ListVersions(t.Context(), made.Path)
 	if err != nil {
@@ -286,7 +286,7 @@ func (w *world) deleteVersion(t *testing.T, made link.Link) {
 	}
 }
 
-func TestFetchText_SkipsDeletedTextUnlessUserStarted(t *testing.T) {
+func TestFetchTextSkipsDeletedTextUnlessUserRequested(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, articleAddress)
 	if err := w.links.FetchText(t.Context(), made, true); err != nil {
@@ -315,7 +315,7 @@ func TestFetchText_SkipsDeletedTextUnlessUserStarted(t *testing.T) {
 		t.Fatal(err)
 	}
 	if text, err := w.links.ReadArticle(t.Context(), made); err != nil || text == "" {
-		t.Errorf("the user asking again leaves the article %q (%v)", text, err)
+		t.Errorf("after a user request the article is %q (%v)", text, err)
 	}
 	if isDeleted, err := w.links.IsTextDeleted(t.Context(), made); err != nil || isDeleted {
 		t.Errorf("IsTextDeleted after a fetch = %v (%v); want false", isDeleted, err)

@@ -3,9 +3,9 @@ package domain
 // Source is one file with text that the index holds: what the file was when it
 // was read, and what read it.
 //
-// ContentHash addresses the content, and Recipe names what took the text out and the
-// sizes that produced the source's chunks. Both are empty on a source nothing
-// has taken text out of yet.
+// ContentHash is the hash of the content, and Recipe identifies the extractor and the
+// sizes that produced the source's chunks. Both are empty on a source with no
+// extracted text yet.
 type Source struct {
 	FileStat    FileStat
 	ContentHash string

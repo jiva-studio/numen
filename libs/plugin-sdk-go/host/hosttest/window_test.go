@@ -34,7 +34,7 @@ func TestTheWindowFocusesANoteOfTheVaultAndRecordsIt(t *testing.T) {
 	}
 }
 
-func TestTheWindowReturnsErrNotExistForAPathThatIsNoNote(t *testing.T) {
+func TestWindowReturnsErrNotExistForNonNote(t *testing.T) {
 	window := newWindowVault()
 
 	for _, path := range []string{"notes/Gone.md", "library/Birds.pdf"} {
@@ -43,7 +43,7 @@ func TestTheWindowReturnsErrNotExistForAPathThatIsNoNote(t *testing.T) {
 		}
 	}
 	if focused := window.GetFocusedNotes(); len(focused) != 0 {
-		t.Errorf("the window recorded %v for notes it does not hold", focused)
+		t.Errorf("the window recorded %v for notes not in the vault", focused)
 	}
 }
 
@@ -64,10 +64,10 @@ func TestTheWindowOpensAFileWithNoPassagesAndANote(t *testing.T) {
 	window := newWindowVault()
 
 	if err := window.FocusPassages(t.Context(), "library/Birds.pdf", nil); err != nil {
-		t.Errorf("a file with no passages answered %v", err)
+		t.Errorf("a file with no passages returned %v", err)
 	}
 	if err := window.FocusPassages(t.Context(), "notes/Heron.md", []host.PassageSpan{{Start: 0, Length: 6}}); err != nil {
-		t.Errorf("a note answered %v", err)
+		t.Errorf("a note returned %v", err)
 	}
 	want := []hosttest.FocusRequest{{Path: "library/Birds.pdf"}, {Path: "notes/Heron.md", Passages: []host.PassageSpan{{Start: 0, Length: 6}}}}
 	if got := window.GetFocusRequests(); !reflect.DeepEqual(got, want) {
@@ -75,14 +75,14 @@ func TestTheWindowOpensAFileWithNoPassagesAndANote(t *testing.T) {
 	}
 }
 
-func TestTheWindowOpensNoFileTheVaultDoesNotHold(t *testing.T) {
+func TestWindowOpensNoFileNotInVault(t *testing.T) {
 	window := newWindowVault()
 
 	if err := window.FocusPassages(t.Context(), "library/Gone.pdf", nil); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("FocusPassages of a missing file got %v, want ErrNotExist", err)
 	}
 	if got := window.GetFocusRequests(); len(got) != 0 {
-		t.Errorf("the window recorded %+v for a file it does not hold", got)
+		t.Errorf("the window recorded %+v for a file not in the vault", got)
 	}
 }
 
@@ -104,7 +104,7 @@ func TestTheWindowServesTheTabsItWasGiven(t *testing.T) {
 	}
 }
 
-func TestTheWindowSetToNoWindowAnswersErrNoWindow(t *testing.T) {
+func TestWindowSetToNoWindowReturnsErrNoWindow(t *testing.T) {
 	window := newWindowVault()
 	window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: "notes/Heron.md"}}, "tab-1")
 	window.SetNoWindow()

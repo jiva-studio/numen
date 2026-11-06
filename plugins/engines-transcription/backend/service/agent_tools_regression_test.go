@@ -8,7 +8,7 @@ import (
 )
 
 func TestTranscriptCreateOfAChangedRecordingStartsARun(t *testing.T) {
-	s := newToolScene(t)
+	s := newToolFixture(t)
 	s.putTranscript(t, true)
 	changed := lectureSound + " and a second half"
 	s.vault.File(lecture, changed)
@@ -24,7 +24,7 @@ func TestTranscriptCreateOfAChangedRecordingStartsARun(t *testing.T) {
 }
 
 func TestTranscriptCreateOverAnotherPluginsWholeVersionStartsARun(t *testing.T) {
-	s := newToolScene(t)
+	s := newToolFixture(t)
 	other := s.texts.As("md.numen.other")
 	if err := host.WriteText(t.Context(), other.GetStore("md.numen.other"), "k.jsonl",
 		[]domain.TextSegment{{Text: "other words\n"}}); err != nil {
@@ -45,10 +45,10 @@ func TestTranscriptCreateOverAnotherPluginsWholeVersionStartsARun(t *testing.T) 
 	s.waitFinished(t, out.TaskID)
 }
 
-// The host has the version recorded on the partial file while the plugin's folder holds the whole
+// The host has the version recorded on the partial file while the plugin's folder has the whole
 // transcript: a run renamed the partial file and stopped before PutVersion (Close, or a failed call).
 func TestTranscriptCreateOverAStalePartialRecordReturnsTheVersion(t *testing.T) {
-	s := newToolScene(t)
+	s := newToolFixture(t)
 	close(s.blocking.release)
 	s.putTranscript(t, false)
 	key := getTranscriptionKey(domain.HashContent([]byte(lectureSound)))

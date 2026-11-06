@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 )
 
-func TestTheErrorCodesOfANoteNotFoundAndAConflictAreSpelledInCamelCase(t *testing.T) {
+func TestNoteNotFoundAndConflictErrorCodesAreCamelCase(t *testing.T) {
 	if api.ErrorCodeNotFound != "notFound" {
 		t.Errorf("ErrorCodeNotFound is %q, want notFound", api.ErrorCodeNotFound)
 	}
@@ -19,7 +19,7 @@ func TestTheErrorCodesOfANoteNotFoundAndAConflictAreSpelledInCamelCase(t *testin
 func TestNoErrorCodeIsSpelledMissingOrStale(t *testing.T) {
 	for _, code := range api.GetErrorCodeValues() {
 		if code == "missing" || code == "stale" {
-			t.Errorf("the error codes hold %q", code)
+			t.Errorf("the error codes contain %q", code)
 		}
 	}
 	if !slices.Contains(api.GetErrorCodeValues(), api.ErrorCodeNotFound) || !slices.Contains(api.GetErrorCodeValues(), api.ErrorCodeConflict) {

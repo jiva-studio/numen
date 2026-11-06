@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// permissionVaultManage is the permission a caller holds to change the list of vaults and the vault
+// permissionVaultManage is the permission a caller needs to change the list of vaults and the vault
 // the window shows.
 const permissionVaultManage = "vault:manage"
 
@@ -49,7 +49,7 @@ type VaultRemoveInput struct {
 
 // VaultRemoveOutput is the output of the vault_remove tool.
 type VaultRemoveOutput struct {
-	Path string `json:"path" jsonschema:"root directory of the vault, which stays on the disk"`
+	Path string `json:"path" jsonschema:"root directory of the vault, which is not deleted"`
 }
 
 // VaultOpenInput is the input of the vault_open tool.
@@ -70,7 +70,7 @@ func (t *Tools) addVaultAdd(registry *tools.Registry) error {
 		Name:  "vault_add",
 		Title: "Add Vault",
 		Description: "Add a folder of this machine to the installation's list of vaults, by its absolute path. " +
-			"A folder inside a vault on the list, or one that holds one, is refused.",
+			"A folder that is inside a vault on the list, or that contains one, is rejected.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{vaultAddSentence},
@@ -84,7 +84,7 @@ func (t *Tools) addVaultRename(registry *tools.Registry) error {
 		Name:  "vault_rename",
 		Title: "Rename Vault",
 		Description: "Change the display name of a vault, named by its name, path or identifier. A name " +
-			"another vault has is refused.",
+			"another vault has is rejected.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{vaultRenameSentence},
@@ -97,8 +97,8 @@ func (t *Tools) addVaultRemove(registry *tools.Registry) error {
 		Step:  tools.Remove,
 		Name:  "vault_remove",
 		Title: "Remove Vault",
-		Description: "Take a vault off the installation's list; its folder stays on the disk. The vault this " +
-			"call works on and the last vault are refused.",
+		Description: "Remove a vault from the installation's list; its folder is not deleted. The current " +
+			"vault and the last vault are rejected.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{vaultRemoveSentence},
@@ -111,14 +111,13 @@ func (t *Tools) addVaultOpen(registry *tools.Registry) error {
 		Step:  tools.ByEffect,
 		Name:  "vault_open",
 		Title: "Open Vault",
-		Description: "Make the window show another vault, named by its name, path or identifier, and answer " +
-			"once the window shows it; this session's view of the vault it works on then ends. A window with " +
-			"unsaved changes keeps its vault, asks the user about them, and the answer is an error; call it " +
-			"again after the user answers. Call it " +
-			"only when the user asks for it.",
+		Description: "Switch the window to another vault, named by its name, path or identifier, and return " +
+			"when the window shows it; this session then loses access to the current vault. If the window " +
+			"has unsaved changes, the vault is not switched, the window prompts the user, and the call returns " +
+			"an error; call it again after the user responds. Call it only when the user asks for it.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
-		Instructions: []string{vaultOpenSentence, vaultOpenAskSentence},
+		Instructions: []string{vaultOpenSentence, vaultOpenPromptSentence},
 		Requires:     []string{permissionVaultManage},
 	}, inVault(t, (*Tools).openVault))
 }
@@ -172,7 +171,7 @@ func (t *Tools) openVault(ctx context.Context, in VaultOpenInput) (VaultOpenOutp
 	return VaultOpenOutput{ID: string(target.ID), Name: target.Name, Path: target.Path}, nil
 }
 
-// findOtherVault finds the vault the address names, and refuses the vault the call works on.
+// findOtherVault finds the vault the address names, and rejects the current vault.
 func (t *Tools) findOtherVault(ctx context.Context, address string) (host.VaultEntry, error) {
 	target, err := t.findVault(ctx, address)
 	if err != nil {
@@ -205,5 +204,5 @@ func (t *Tools) findVault(ctx context.Context, address string) (host.VaultEntry,
 			}
 		}
 	}
-	return host.VaultEntry{}, fmt.Errorf("no vault has the identifier, name or folder %q; vault_list lists the vaults", address)
+	return host.VaultEntry{}, fmt.Errorf("unknown vault %q: no vault has this identifier, name or folder; call vault_list", address)
 }

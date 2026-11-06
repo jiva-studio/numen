@@ -337,7 +337,7 @@ func receiveFocus(
 }
 
 // convertByteRangesToWire returns the ranges as the window receives them, in 32-bit offsets. A
-// range whose start or end does not fit is left out.
+// range whose start or end exceeds 32 bits is left out.
 func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {
 	out := make([]*v1.Range, 0, len(pos))
 	for _, span := range pos {
@@ -349,7 +349,7 @@ func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {
 	return out
 }
 
-// convertTabPlaceFromWire returns the place a reader reported for a tab, nil where it reported none.
+// convertTabPlaceFromWire returns the place a reader reported for a tab, nil when it reported none.
 func convertTabPlaceFromWire(place *v1.TabPlace) *domain.TabPlace {
 	if place == nil {
 		return nil

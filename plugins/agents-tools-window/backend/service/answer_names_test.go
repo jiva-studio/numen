@@ -196,10 +196,10 @@ func getNarrativeMarkers() []*regexp.Regexp {
 	}
 }
 
-// getAnswer calls the tool on the vault and returns its structured answer as a map.
+// getAnswer calls the tool on the vault and returns its structured result as a map.
 func (w windowTools) getAnswer(t *testing.T, name, arguments string) map[string]any {
 	t.Helper()
-	res, err := w.calls.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: name, Arguments: []byte(arguments)})
+	res, err := w.registry.InvokeTool(t.Context(), tools.Call{VaultID: testVault, Name: name, Arguments: []byte(arguments)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +233,7 @@ func TestWindowTabListReturnsLocationAndIsActive(t *testing.T) {
 		t.Errorf("the inactive tab is %v, want isActive not true", inactive)
 	}
 
-	schema := getToolSchema(t, w.calls, "window_tab_list", true)
+	schema := getToolSchema(t, w.registry, "window_tab_list", true)
 	requireKeys(t, "the output schema of window_tab_list", getSchemaProperties(t, schema), []string{"tabs"}, []string{"summary"})
 	requireKeys(t, "the output schema of a tab", getSchemaProperties(t, schema, "tabs"), []string{"location", "isActive"}, []string{"where", "active"})
 	requireKeys(t, "the output schema of a tab location", getSchemaProperties(t, schema, "tabs", "location"),
@@ -249,35 +249,35 @@ func TestNoteFocusReturnsTheNoteKey(t *testing.T) {
 		t.Errorf("note = %v, want %s titled Grey Heron", answer["note"], notePath)
 	}
 
-	schema := getToolSchema(t, w.calls, "note_focus", true)
+	schema := getToolSchema(t, w.registry, "note_focus", true)
 	requireKeys(t, "the output schema of note_focus", getSchemaProperties(t, schema), []string{"note"}, []string{"focused"})
 }
 
-func TestSourceFocusAnswersThePathAndTheHighlightCount(t *testing.T) {
+func TestSourceFocusReturnsThePathAndTheHighlightCount(t *testing.T) {
 	w := newWindowTools(t)
 	answer := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf","passages":[{"start":1500,"length":80},{"start":400,"length":700}]}`)
 	requireKeys(t, "the answer of source_focus", answer, []string{"path", "highlightCount"}, []string{"shown", "summary", "kind"})
 	if answer["path"] != guidePath || answer["highlightCount"] != float64(2) {
-		t.Errorf("source_focus answered %v, want path %s and highlightCount 2", answer, guidePath)
+		t.Errorf("source_focus returned %v, want path %s and highlightCount 2", answer, guidePath)
 	}
 
 	noPassages := w.getAnswer(t, "source_focus", `{"path":"library/Bird Guide.pdf"}`)
 	requireKeys(t, "the answer of source_focus with no passages", noPassages, []string{"path", "highlightCount"}, []string{"shown", "summary"})
 	if noPassages["highlightCount"] != float64(0) {
-		t.Errorf("source_focus with no passages answered highlightCount %v, want 0", noPassages["highlightCount"])
+		t.Errorf("source_focus with no passages returned highlightCount %v, want 0", noPassages["highlightCount"])
 	}
 
-	schema := getToolSchema(t, w.calls, "source_focus", true)
+	schema := getToolSchema(t, w.registry, "source_focus", true)
 	requireKeys(t, "the output schema of source_focus", getSchemaProperties(t, schema), []string{"path", "highlightCount"}, []string{"shown", "summary", "kind"})
 }
 
 // The window opens a note whole and highlights none of the passages given for it.
-func TestSourceFocusOfANoteAnswersAHighlightCountOfZero(t *testing.T) {
+func TestSourceFocusOfANoteReturnsAHighlightCountOfZero(t *testing.T) {
 	w := newWindowTools(t)
 	answer := w.getAnswer(t, "source_focus", `{"path":"notes/Heron.md","passages":[{"start":4,"length":10},{"start":20,"length":5}]}`)
 	requireKeys(t, "the answer of source_focus for a note", answer, []string{"path", "highlightCount"}, nil)
 	if answer["path"] != notePath || answer["highlightCount"] != float64(0) {
-		t.Errorf("source_focus of a note answered %v, want path %s and highlightCount 0", answer, notePath)
+		t.Errorf("source_focus of a note returned %v, want path %s and highlightCount 0", answer, notePath)
 	}
 }
 
@@ -291,7 +291,7 @@ func TestWindowTabActivateReturnsTheTabOnly(t *testing.T) {
 		t.Errorf("tab = %v, want tab-1 at %s", answer["tab"], notePath)
 	}
 
-	schema := getToolSchema(t, w.calls, "window_tab_activate", true)
+	schema := getToolSchema(t, w.registry, "window_tab_activate", true)
 	requireKeys(t, "the output schema of window_tab_activate", getSchemaProperties(t, schema), []string{"tab"}, []string{"success", "message"})
 }
 
@@ -300,13 +300,13 @@ func TestNoteEditPreviewReturnsTheDiffOnly(t *testing.T) {
 	answer := w.getAnswer(t, "note_edit_preview", `{"path":"notes/Heron.md","proposedContent":"Herons fish at dawn."}`)
 	requireKeys(t, "the answer of note_edit_preview", answer, []string{"previewId", "path", "diff", "additions", "deletions"}, []string{"status", "summary"})
 
-	schema := getToolSchema(t, w.calls, "note_edit_preview", true)
+	schema := getToolSchema(t, w.registry, "note_edit_preview", true)
 	requireKeys(t, "the output schema of note_edit_preview", getSchemaProperties(t, schema), []string{"previewId", "diff", "additions", "deletions"}, []string{"status", "summary"})
 }
 
 func TestWindowToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
 	w := newWindowTools(t)
-	visitEveryToolSchema(t, w.calls, func(tool, name string) {
+	visitEveryToolSchema(t, w.registry, func(tool, name string) {
 		if strings.Contains(name, "_") {
 			t.Errorf("the schema of %s names the key %q, which is not camelCase", tool, name)
 		}
@@ -316,7 +316,7 @@ func TestWindowToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
 func TestWindowToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 	w := newWindowTools(t)
 	markers := getNarrativeMarkers()
-	visitEveryToolSchema(t, w.calls, func(string, string) {}, func(tool, description string) {
+	visitEveryToolSchema(t, w.registry, func(string, string) {}, func(tool, description string) {
 		for _, marker := range markers {
 			if marker.MatchString(description) {
 				t.Errorf("a description of %s or its schema matches %s: %q", tool, marker, description)
@@ -358,7 +358,7 @@ var lowerCamelCase = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
 
 func TestWindowToolSchemasNameEveryPropertyInLowerCamelCase(t *testing.T) {
 	w := newWindowTools(t)
-	visitEveryToolSchema(t, w.calls, func(tool, name string) {
+	visitEveryToolSchema(t, w.registry, func(tool, name string) {
 		if !lowerCamelCase.MatchString(name) {
 			t.Errorf("the schema of %s names the property %q, which is not lowerCamelCase", tool, name)
 		}

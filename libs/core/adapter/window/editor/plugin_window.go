@@ -18,15 +18,15 @@ import (
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
-// pluginWindow is the window of the state, as the plugins that call the host move it and read its tabs.
+// pluginWindow implements PluginWindow over the window state.
 type pluginWindow struct {
 	state         *State
 	focusNote     *note.FocusNote
 	focusPassages *file.FocusPassages
 }
 
-// NewPluginWindow is the window the state serves, as the plugins move it to a note through the
-// queries and to a file of the vault through the readers, and read the tabs it last reported.
+// NewPluginWindow returns a PluginWindow over the window state: it focuses a note through the
+// queries and a file of the vault through the readers, and returns the tabs the window last reported.
 func NewPluginWindow(state *State, queries noteport.NoteQueries, readers vaultport.VaultReaders) pluginport.PluginWindow {
 	view := state.GetWindow()
 	return pluginWindow{
@@ -36,14 +36,14 @@ func NewPluginWindow(state *State, queries noteport.NoteQueries, readers vaultpo
 	}
 }
 
-// invalidFocusError is an argument a focus use case refuses, with the use case's message.
+// invalidFocusError is returned for an argument a focus use case rejects, with the use case's message.
 type invalidFocusError struct{ err error }
 
 func (e invalidFocusError) Error() string { return e.err.Error() }
 
 func (e invalidFocusError) Unwrap() []error { return []error{e.err, pluginport.ErrInvalidFocus} }
 
-// getVault is the vault the window shows, and ErrNoWindow where it shows none.
+// getVault returns the open vault, or ErrNoWindow when the window shows none.
 func (w pluginWindow) getVault() (domain.Vault, error) {
 	v := w.state.GetCurrentVault()
 	if v.Path == "" {

@@ -168,7 +168,7 @@ func (s *libraryTexts) leaveOut(path string) {
 	s.outside[path] = true
 }
 
-// GetContentHash hashes the file from a stream of the shelf, which counts it as a read.
+// GetContentHash hashes the file from a stream of the fake vault, which counts it as a read.
 func (t libraryVaultTexts) GetContentHash(ctx context.Context, path string) (_ string, err error) {
 	file, err := t.texts.shelves[t.vault.ID].Open(ctx, path)
 	if err != nil {

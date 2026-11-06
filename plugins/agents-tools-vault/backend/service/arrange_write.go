@@ -10,12 +10,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// FileMove is the move of a note's file and the links the host wrote again for it.
+// FileMove is the move of a note's file and the links the host rewrote for it.
 type FileMove struct {
-	From          string   `json:"from" jsonschema:"path the note had"`
-	To            string   `json:"to" jsonschema:"path the note has now"`
-	RepairedNotes []string `json:"repairedNotes" jsonschema:"paths of the notes whose links to the old name were written again"`
-	BrokenLinks   []string `json:"brokenLinks" jsonschema:"paths of the notes whose links to the old name could not be written again and reach nothing"`
+	From          string   `json:"from" jsonschema:"previous path of the note"`
+	To            string   `json:"to" jsonschema:"new path of the note"`
+	RepairedNotes []string `json:"repairedNotes" jsonschema:"paths of the notes whose links to the old name were rewritten"`
+	BrokenLinks   []string `json:"brokenLinks" jsonschema:"paths of the notes whose links to the old name could not be rewritten and are broken"`
 }
 
 // NoteRenameInput is the input of the note_rename tool.
@@ -42,9 +42,9 @@ type NoteMoveInput struct {
 type NoteMoveItem struct {
 	From          string   `json:"from" jsonschema:"path of the note as given"`
 	To            string   `json:"to,omitempty" jsonschema:"path of the note now; absent when it did not move"`
-	RepairedNotes []string `json:"repairedNotes,omitempty" jsonschema:"paths of the notes whose links to the note were written again"`
-	BrokenLinks   []string `json:"brokenLinks,omitempty" jsonschema:"paths of the notes whose links to the note reach nothing now"`
-	Error         string   `json:"error,omitempty" jsonschema:"why the note did not move"`
+	RepairedNotes []string `json:"repairedNotes,omitempty" jsonschema:"paths of the notes whose links to the note were rewritten"`
+	BrokenLinks   []string `json:"brokenLinks,omitempty" jsonschema:"paths of the notes whose links to the note are now broken"`
+	Error         string   `json:"error,omitempty" jsonschema:"error message when the note was not moved"`
 }
 
 // NoteMoveOutput is the output of the note_move tool.
@@ -60,9 +60,9 @@ type NoteRemoveInput struct {
 // NoteRemoveItem is the outcome of removing one note.
 type NoteRemoveItem struct {
 	Path        string   `json:"path" jsonschema:"path of the note as given"`
-	TrashPath   string   `json:"trashPath,omitempty" jsonschema:"path of the file in the vault's trash, where it can be put back from"`
-	BrokenLinks []string `json:"brokenLinks,omitempty" jsonschema:"paths of the notes whose links to the note reach nothing now"`
-	Error       string   `json:"error,omitempty" jsonschema:"why the note was not removed"`
+	TrashPath   string   `json:"trashPath,omitempty" jsonschema:"path of the file in the vault's trash, from which it can be restored"`
+	BrokenLinks []string `json:"brokenLinks,omitempty" jsonschema:"paths of the notes whose links to the note are now broken"`
+	Error       string   `json:"error,omitempty" jsonschema:"error message when the note was not removed"`
 }
 
 // NoteRemoveOutput is the output of the note_remove tool.
@@ -75,9 +75,9 @@ func (t *Tools) addNoteRename(registry *tools.Registry) error {
 		Step:  tools.Move,
 		Name:  "note_rename",
 		Title: "Rename Note",
-		Description: "Give a note another title. The title is written in the title key when the note has one, " +
-			"else in the file name, and the file moves to the file name of the title. Links that named the " +
-			"note by its old name are written again by the host.",
+		Description: "Rename a note. The title is written in the title key when the note has one, " +
+			"else in the file name, and the file moves to the file name of the title. The host rewrites " +
+			"the links that use the old name of the note.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{noteRenameSentence, linkRewriteSentence},
@@ -102,8 +102,8 @@ func (t *Tools) addNoteRemove(registry *tools.Registry) error {
 		Step:  tools.Remove,
 		Name:  "note_remove",
 		Title: "Remove Notes",
-		Description: "Move up to 50 notes to the vault's trash, from where they can be put back. A folder is " +
-			"refused. Each path gets its own result with the notes whose links reach nothing now.",
+		Description: "Move up to 50 notes to the vault's trash, from which they can be restored. A folder is " +
+			"rejected. Each path gets its own result with the notes whose links are now broken.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{noteRemoveSentence},
@@ -183,7 +183,7 @@ func (t *Tools) removeNotes(ctx context.Context, in NoteRemoveInput) (NoteRemove
 	return out, nil
 }
 
-// checkPaths refuses a batch of no paths or of more than maxBatch.
+// checkPaths rejects a batch of no paths or of more than maxBatch.
 func checkPaths(paths []string) error {
 	switch {
 	case len(paths) == 0:
@@ -194,7 +194,7 @@ func checkPaths(paths []string) error {
 	return nil
 }
 
-// getPathList returns the paths, or an empty list for none, so the result always carries the field.
+// getPathList returns the paths, or an empty list for none, so the result always has the field.
 func getPathList(paths []string) []string {
 	if paths == nil {
 		return []string{}

@@ -6,7 +6,7 @@ import { useBookPlace, type PlacedTab } from './useBookPlace'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** A reader that reaches a CFI where `canReach` is true, and is then in the chapter given. */
+/** A reader that scrolls to a CFI when `canReach` is true, and is then in the chapter given. */
 const createReader = (chapterThere: string, canReach = true) => {
   const chapter = ref('')
   const reader = {
@@ -47,7 +47,7 @@ describe('the place a book tab reports when it opens', () => {
     expect(saved).toStrictEqual([])
   })
 
-  it('is nothing where the reader cannot reach the CFI', async () => {
+  it('is nothing when the reader cannot scroll to the CFI', async () => {
     const { tab, reported } = createTab(createCfiSelector('epubcfi(/6/8!/4/2/1:0)'))
     useBookPlace(createReader('The Reed Beds', false), () => tab)
     await settle()

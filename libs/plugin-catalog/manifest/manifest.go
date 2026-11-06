@@ -34,8 +34,8 @@ const (
 	// PermissionSearchPolicy allows reading and setting the floor that a search by meaning applies.
 	PermissionSearchPolicy = "search:policy"
 
-	// PermissionWindowFocus allows moving the window of the vault to a note or a file, and reading the
-	// tabs it has open.
+	// PermissionWindowFocus allows focusing the window of the vault on a note or a file, and reading
+	// the tabs it has open.
 	PermissionWindowFocus = "window:focus"
 
 	// PermissionNetworkAlias is the accepted short spelling of PermissionNetworkOutbound.
@@ -124,7 +124,7 @@ const SettingTypeEnum = "enum"
 // SettingTypeFile is the type of a setting that holds a file path on this machine.
 const SettingTypeFile = "file"
 
-// settingTypeNumber is the type of a setting that holds a number.
+// settingTypeNumber is the type of a setting that stores a number.
 const settingTypeNumber = "number"
 
 // listSettingTypes returns the types a setting may have.

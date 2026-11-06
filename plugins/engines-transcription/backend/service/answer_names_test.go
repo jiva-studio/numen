@@ -173,12 +173,12 @@ func getNarrativeMarkers() []*regexp.Regexp {
 }
 
 func TestTranscriptCreateReturnsTheTaskIDKey(t *testing.T) {
-	s := newToolScene(t)
+	s := newToolFixture(t)
 	res := invokeAtOnce(t, s.registry, tools.Call{
 		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"` + lecture + `"}`),
 	})
 	if res.GetResult().GetIsError() {
-		t.Fatalf("transcript_create was refused: %s", res.GetResult().GetText())
+		t.Fatalf("transcript_create was rejected: %s", res.GetResult().GetText())
 	}
 	answer := decodeAnswer(t, res.GetResult().GetStructured())
 	requireKeys(t, "the answer of transcript_create", answer, []string{"taskId", "path", "state"}, []string{"task_id"})
@@ -193,7 +193,7 @@ func TestTranscriptCreateReturnsTheTaskIDKey(t *testing.T) {
 }
 
 func TestTranscriptionToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
-	s := newToolScene(t)
+	s := newToolFixture(t)
 	visitEveryToolSchema(t, s.registry, func(tool, name string) {
 		if strings.Contains(name, "_") {
 			t.Errorf("the schema of %s names the key %q, which is not camelCase", tool, name)
@@ -202,7 +202,7 @@ func TestTranscriptionToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
 }
 
 func TestTranscriptionToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
-	s := newToolScene(t)
+	s := newToolFixture(t)
 	markers := getNarrativeMarkers()
 	visitEveryToolSchema(t, s.registry, func(string, string) {}, func(tool, description string) {
 		for _, marker := range markers {
@@ -214,7 +214,7 @@ func TestTranscriptionToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 }
 
 func TestTranscriptionToolInstructionsContainNoNarrativeMarker(t *testing.T) {
-	s := newToolScene(t)
+	s := newToolFixture(t)
 	listing, err := s.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -243,7 +243,7 @@ func getToolSentences(listing tools.Listing, name string) []string {
 	return nil
 }
 
-// isOneSentence reports whether the text is one sentence: it ends with a full stop and holds no
+// isOneSentence reports whether the text is one sentence: it ends with a full stop and has no
 // other end of a sentence.
 func isOneSentence(text string) bool {
 	return strings.TrimSpace(text) == text && strings.HasSuffix(text, ".") && !regexp.MustCompile(`[.!?]\s+\S`).MatchString(text)
@@ -252,8 +252,8 @@ func isOneSentence(text string) bool {
 // lowerCamelCase is the form of every property name of a tool schema.
 var lowerCamelCase = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
 
-func TestTranscriptionToolSchemasNameEveryPropertyInLowerCamelCase(t *testing.T) {
-	s := newToolScene(t)
+func TestTranscriptionToolSchemasUseLowerCamelCaseProperties(t *testing.T) {
+	s := newToolFixture(t)
 	visitEveryToolSchema(t, s.registry, func(tool, name string) {
 		if !lowerCamelCase.MatchString(name) {
 			t.Errorf("the schema of %s names the property %q, which is not lowerCamelCase", tool, name)

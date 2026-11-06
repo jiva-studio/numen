@@ -41,7 +41,7 @@ func readFingerprint(t *testing.T, registry *tools.Registry, notePath string) st
 	return out.Fingerprint
 }
 
-// readLinks is the links written in the frontmatter of the note as the vault holds it now.
+// readLinks is the links written in the frontmatter of the note as the vault has it now.
 func readLinks(t *testing.T, v *hosttest.Vault, notePath string) []domain.Link {
 	t.Helper()
 	content, ok := v.Content(notePath)
@@ -99,7 +99,7 @@ func TestLinkAddWritesTheLinksIntoTheFrontmatterOfEachNote(t *testing.T) {
 		}
 	}
 	if out.Results[0].Fingerprint != out.Results[1].Fingerprint {
-		t.Errorf("the links into Rocks/Basalt.md carry fingerprints %q and %q, want one write",
+		t.Errorf("the links into Rocks/Basalt.md have fingerprints %q and %q, want one write",
 			out.Results[0].Fingerprint, out.Results[1].Fingerprint)
 	}
 	if now := readFingerprint(t, registry, "Rocks/Basalt.md"); now != out.Results[0].Fingerprint {
@@ -108,7 +108,7 @@ func TestLinkAddWritesTheLinksIntoTheFrontmatterOfEachNote(t *testing.T) {
 
 	content, _ := v.Content("Rocks/Basalt.md")
 	if !strings.Contains(content, "links:") || !strings.HasSuffix(content, "A volcanic rock.\n") {
-		t.Errorf("Rocks/Basalt.md holds %q, want a links block and the body kept", content)
+		t.Errorf("Rocks/Basalt.md contains %q, want a links block and the body kept", content)
 	}
 	links := readLinks(t, v, "Rocks/Basalt.md")
 	jump, ok := findLink(links, "Granite", domain.RoleJump)
@@ -151,7 +151,7 @@ func TestLinkAddWithAnOldFingerprintSkipsOnlyThatNote(t *testing.T) {
 	}
 }
 
-func TestLinkAddWithTwoFingerprintsForOneNoteRefusesBothLinks(t *testing.T) {
+func TestLinkAddWithTwoFingerprintsForOneNoteRejectsBothLinks(t *testing.T) {
 	for order, isOtherFirst := range map[string]bool{"current first": false, "other first": true} {
 		t.Run(order, func(t *testing.T) {
 			v, registry := newGeologyVault(t)
@@ -236,13 +236,13 @@ func TestLinkAddWithoutAFingerprintWritesNothing(t *testing.T) {
 		var out linkAddOutput
 		decodeInto(t, res.GetResult().GetStructured(), &out)
 		if len(out.Results) != 1 || out.Results[0].Error == "" {
-			t.Errorf("result = %+v, want the call refused or the link reported with an error", out.Results)
+			t.Errorf("result = %+v, want the call rejected or the link reported with an error", out.Results)
 		}
 	}
 	requireContent(t, v, "Rocks/Basalt.md", before)
 }
 
-func TestLinkAddOfMoreThanFiftyLinksIsRefused(t *testing.T) {
+func TestLinkAddOfMoreThanFiftyLinksIsRejected(t *testing.T) {
 	_, registry := newGeologyVault(t)
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
 	links := make([]map[string]string, 51)
@@ -255,7 +255,7 @@ func TestLinkAddOfMoreThanFiftyLinksIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	requireRefusal(t, registry, geologyVault, "link_add", string(raw))
+	requireRejection(t, registry, geologyVault, "link_add", string(raw))
 
 	raw, err = json.Marshal(map[string]any{"links": links[:50]})
 	if err != nil {
@@ -312,19 +312,19 @@ func TestLinkUpdateKeepsTheFieldsLeftOut(t *testing.T) {
 	}
 }
 
-func TestLinkUpdateWithAnOldFingerprintIsRefused(t *testing.T) {
+func TestLinkUpdateWithAnOldFingerprintIsRejected(t *testing.T) {
 	v, registry := newLinkedGeologyVault(t)
 	oldFingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
 	content, _ := v.Content("Rocks/Basalt.md")
 	v.File("Rocks/Basalt.md", content+"Changed by another program.\n")
 	before, _ := v.Content("Rocks/Basalt.md")
 
-	requireRefusal(t, registry, geologyVault, "link_update", fmt.Sprintf(
+	requireRejection(t, registry, geologyVault, "link_update", fmt.Sprintf(
 		`{"from":"Rocks/Basalt.md","to":"Minerals","fingerprint":%q,"label":"made of"}`, oldFingerprint))
 	requireContent(t, v, "Rocks/Basalt.md", before)
 }
 
-func TestLinkUpdateWithMissingOrUnknownFieldsIsRefused(t *testing.T) {
+func TestLinkUpdateWithMissingOrUnknownFieldsIsRejected(t *testing.T) {
 	v, registry := newLinkedGeologyVault(t)
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
 	before, _ := v.Content("Rocks/Basalt.md")
@@ -334,7 +334,7 @@ func TestLinkUpdateWithMissingOrUnknownFieldsIsRefused(t *testing.T) {
 		fmt.Sprintf(`{"from":"Rocks/Basalt.md","to":"Fossils","fingerprint":%q,"label":"none"}`, fingerprint),
 		fmt.Sprintf(`{"from":"Rocks/Basalt.md","to":"Minerals","fingerprint":%q,"role":"sideways"}`, fingerprint),
 	} {
-		requireRefusal(t, registry, geologyVault, "link_update", arguments)
+		requireRejection(t, registry, geologyVault, "link_update", arguments)
 	}
 	requireContent(t, v, "Rocks/Basalt.md", before)
 }
@@ -376,19 +376,19 @@ func TestLinkRemoveWithARoleRemovesOnlyTheLinkOfThatRole(t *testing.T) {
 	}
 }
 
-func TestLinkRemoveWithAnOldFingerprintIsRefused(t *testing.T) {
+func TestLinkRemoveWithAnOldFingerprintIsRejected(t *testing.T) {
 	v, registry := newLinkedGeologyVault(t)
 	oldFingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
 	content, _ := v.Content("Rocks/Basalt.md")
 	v.File("Rocks/Basalt.md", content+"Changed by another program.\n")
 	before, _ := v.Content("Rocks/Basalt.md")
 
-	requireRefusal(t, registry, geologyVault, "link_remove", fmt.Sprintf(
+	requireRejection(t, registry, geologyVault, "link_remove", fmt.Sprintf(
 		`{"from":"Rocks/Basalt.md","to":"Granite","fingerprint":%q}`, oldFingerprint))
 	requireContent(t, v, "Rocks/Basalt.md", before)
 }
 
-func TestLinkRemoveWithoutAFingerprintOrAMatchingLinkIsRefused(t *testing.T) {
+func TestLinkRemoveWithoutAFingerprintOrAMatchingLinkIsRejected(t *testing.T) {
 	v, registry := newLinkedGeologyVault(t)
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
 	before, _ := v.Content("Rocks/Basalt.md")
@@ -398,7 +398,7 @@ func TestLinkRemoveWithoutAFingerprintOrAMatchingLinkIsRefused(t *testing.T) {
 		fmt.Sprintf(`{"from":"Rocks/Basalt.md","to":"Fossils","fingerprint":%q}`, fingerprint),
 		fmt.Sprintf(`{"from":"Rocks/Basalt.md","to":"Granite","fingerprint":%q,"role":"child"}`, fingerprint),
 	} {
-		requireRefusal(t, registry, geologyVault, "link_remove", arguments)
+		requireRejection(t, registry, geologyVault, "link_remove", arguments)
 	}
 	requireContent(t, v, "Rocks/Basalt.md", before)
 }

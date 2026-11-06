@@ -15,12 +15,12 @@ import (
 // so the next plugin open succeeds.
 func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
-	f.answerFlushes(t, stream, flushRequest, release)
+	f.respondToFlushes(t, stream, flushRequest, release)
 	list := editor.NewPluginVaultList(f.installation)
 
 	ctx, hangUp := context.WithCancel(t.Context())
@@ -29,7 +29,7 @@ func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
 	case <-flushRequest:
 	case <-time.After(5 * time.Second):
 		close(release)
-		t.Fatal("the plugin's open never asked the page to flush")
+		t.Fatal("the plugin's open never requested a flush from the page")
 	}
 	hangUp()
 	if err := <-openResult; !errors.Is(err, pluginport.ErrUnavailable) {

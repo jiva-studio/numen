@@ -18,7 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// windowHost answers HostWindowService with fixed values and records what it was asked.
+// windowHost returns HostWindowService with fixed values and records the requests.
 type windowHost struct {
 	numenv1connect.UnimplementedHostWindowServiceHandler
 	code       v1.HostWindowErrorCode
@@ -105,7 +105,7 @@ func TestClientSendsThePassagesInTheirOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(h.passages) != 1 {
-		t.Fatalf("the host was asked %d times, want once", len(h.passages))
+		t.Fatalf("the host received %d times, want once", len(h.passages))
 	}
 	r := h.passages[0]
 	spans := r.GetPassages()
@@ -186,6 +186,6 @@ func TestClientReturnsAnInvalidPassageAsTheHostRejectedIt(t *testing.T) {
 
 	err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: -1, Length: 4}})
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Errorf("got %v, want the invalid argument the host answered", err)
+		t.Errorf("got %v, want the invalid argument the host returned", err)
 	}
 }

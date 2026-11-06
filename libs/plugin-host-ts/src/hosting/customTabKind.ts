@@ -126,7 +126,7 @@ const createReaderState = (pluginId: string, targetPath: string, saved: unknown)
   return state
 }
 
-/** The file a reader tab holds, and the place its reader last reported, left out while none was. */
+/** Returns the file a reader tab shows, and the place its reader last reported, left out while none was. */
 const getReaderOpenTab = (state: unknown): OpenTab => {
   const s = state as { path?: string; reported?: TabPlace | null } | undefined
   const path = s?.path ?? ''

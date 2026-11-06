@@ -115,9 +115,9 @@ func (c Config) GetSettingsAgent() agentport.Agent {
 	return completion.NewSettingsAgent(completion.NewPrograms(provider, c.completionAgentSettings))
 }
 
-// getToolProvider is AgentProvider with an MCP endpoint of its own for each run, serving the tools
-// the plugins with the tools capability offer on the full server whose required permissions the
-// plugin that runs the task holds. It is nil where AgentProvider is nil.
+// getToolProvider returns AgentProvider with an MCP endpoint of its own for each run, serving the
+// tools the plugins with the tools capability offer on the full server whose required permissions
+// the plugin that runs the task has. It returns nil when AgentProvider is nil.
 func (c Config) getToolProvider() agentport.AgentProvider {
 	if c.PluginHost == nil || c.SafeMode {
 		return nil

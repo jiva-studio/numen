@@ -20,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-// windowEndpoint answers HostWindowService for the plugins that call the host.
+// windowEndpoint serves HostWindowService for the plugins that call the host.
 type windowEndpoint struct {
 	endpoint *Endpoint
 }
@@ -35,10 +35,10 @@ func (e *windowEndpoint) begin(header http.Header) (pluginport.PluginWindow, err
 	return e.endpoint.callers.GetPluginWindow(), nil
 }
 
-// answerWindow sorts the failure of a window call: an answer the protocol names is a code, an
-// argument the use case refuses is invalid, the end of the caller's context is cancelled, and
+// mapWindowError maps the error of a window call to a code: an error the protocol names is a code, an
+// argument the use case rejects is invalid, the end of the caller's context is cancelled, and
 // anything else is internal.
-func answerWindow(ctx context.Context, err error) (v1.HostWindowErrorCode, error) {
+func mapWindowError(ctx context.Context, err error) (v1.HostWindowErrorCode, error) {
 	switch {
 	case err == nil:
 		return v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED, nil
@@ -67,7 +67,7 @@ func (e *windowEndpoint) FocusNote(
 		return connect.NewResponse(&v1.FocusNoteResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
 	}
 	ref, err := window.FocusNote(ctx, req.Msg.GetPath())
-	code, err := answerWindow(ctx, err)
+	code, err := mapWindowError(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.FocusNoteResponse{Error: code}), err
 	}
@@ -90,11 +90,11 @@ func (e *windowEndpoint) FocusPassages(
 		start, end := int64(span.GetStart()), int64(span.GetStart())+int64(span.GetLength())
 		if end > math.MaxInt32 {
 			return nil, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("the passage at %d with length %d ends past the 32-bit offsets the window takes", start, span.GetLength()))
+				fmt.Errorf("the passage at %d with length %d exceeds the 32-bit offsets of the window", start, span.GetLength()))
 		}
 		passages = append(passages, domain.ByteRange{Start: int(start), End: int(end)})
 	}
-	code, err := answerWindow(ctx, window.FocusPassages(ctx, req.Msg.GetPath(), passages))
+	code, err := mapWindowError(ctx, window.FocusPassages(ctx, req.Msg.GetPath(), passages))
 	return connect.NewResponse(&v1.FocusPassagesResponse{Error: code}), err
 }
 
@@ -109,7 +109,7 @@ func (e *windowEndpoint) ReadOpenTabs(
 		return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW}), nil
 	}
 	open, err := window.ReadOpenTabs(ctx)
-	code, err := answerWindow(ctx, err)
+	code, err := mapWindowError(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Error: code}), err
 	}
@@ -132,7 +132,7 @@ func (e *windowEndpoint) ActivateTab(
 	}
 	id := req.Msg.GetTabId()
 	open, err := window.ActivateTab(ctx, id)
-	code, err := answerWindow(ctx, err)
+	code, err := mapWindowError(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ActivateTabResponse{Error: code}), err
 	}

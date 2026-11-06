@@ -73,7 +73,7 @@ enum VaultsErrorCode {
   // it is and the vault stays on the list.
   VAULTS_ERROR_CODE_NO_TRASH = 8;
 
-  // A tab holds unsaved changes, so the window keeps the vault it shows.
+  // A tab has unsaved changes, so the window keeps the vault it shows.
   VAULTS_ERROR_CODE_UNSAVED = 9;
 }
 

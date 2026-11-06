@@ -176,41 +176,44 @@ type SearchIndex interface {
 
 // PassageSearch searches the text of a vault. It needs the index:read permission.
 type PassageSearch interface {
-	// SearchPassages is the text of the vault that answers the query, best first, from the index of
-	// every source and every text version: by the words, and by the meaning where the installation has
-	// an embedding model. An installation with no model answers by the words alone, so the call
+	// SearchPassages returns the passages of the vault matching the query, best first, from the index of
+	// every source and every text version: by keywords, and by embedding when the installation has
+	// an embedding model. An installation with no model searches by keywords only, so the call
 	// does not return ErrNoModel. It returns at most MaxSearchedPassagesPerSource passages of one source.
 	SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error)
 }
 
 const (
-	// MaxSearchedPassagesPerSource is how many passages of one source a SearchPassages call returns at most.
+	// MaxSearchedPassagesPerSource is the maximum number of passages of one source a
+	// SearchPassages call returns.
 	MaxSearchedPassagesPerSource = 3
-	// DefaultSearchedPassages is how many passages a SearchPassages call returns at most when its limit
-	// is zero, and MaxSearchedPassages how many it returns at most for any limit.
+	// DefaultSearchedPassages is the maximum number of passages a SearchPassages call returns when its limit
+	// is zero, and MaxSearchedPassages the maximum for any limit.
 	DefaultSearchedPassages = 20
 	MaxSearchedPassages     = 100
 )
 
-// PassageQuery is a question to the passages of a vault.
+// PassageQuery is a passage search request.
 type PassageQuery struct {
 	Query string
-	// Limit is how many passages to return: DefaultSearchedPassages when zero, at most MaxSearchedPassages.
+	// Limit is the maximum number of passages to return: DefaultSearchedPassages when zero, at
+	// most MaxSearchedPassages.
 	Limit int
-	// Kinds are the kinds of source to look in, KindNote or KindFile. Empty looks in every one.
+	// Kinds are the kinds of source to search, KindNote or KindFile. Empty means every kind.
 	Kinds []domain.SourceKind
 	// PathPrefix limits the search to the sources whose path starts with it, relative to the vault.
-	// The index applies it before it cuts the list at Limit. Empty looks in the whole vault.
+	// The index applies it before it truncates the list to Limit. Empty means the whole vault.
 	PathPrefix string
 }
 
-// Passage is a stretch of a source that answers a query.
+// Passage is a span of source text matching a query.
 type Passage struct {
 	// Path is the file the text is read from, relative to the vault.
 	Path string
-	// Text is the words around the hit, cut to a size and so possibly ending mid-sentence.
+	// Text is the text around the hit, truncated to a size and so possibly ending mid-sentence.
 	Text string
-	// Location is what the source's own numbering calls the place, empty when the format offers none.
+	// Location is the location label in the source's numbering (page, chapter, time), empty
+	// when the format has none.
 	Location string
 	// Start and Length locate the whole passage in the source text, in bytes.
 	Start  int

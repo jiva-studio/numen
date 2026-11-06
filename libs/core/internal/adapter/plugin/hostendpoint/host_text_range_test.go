@@ -23,7 +23,7 @@ type textRangeCall struct {
 	length int
 }
 
-// rangingTexts are the memory texts whose ranged read of herons.pdf answers two segments of an
+// rangingTexts are the memory texts whose ranged read of herons.pdf returns two segments of an
 // invented text about herons, and that record each ranged read.
 type rangingTexts struct {
 	*memoryTexts
@@ -60,7 +60,7 @@ func newRangingTexts(t *testing.T) (*rangingTexts, *callers) {
 	return texts, fakeCallers
 }
 
-func TestARangedReadTextAnswersTheSegmentsOfTheRangeWhereTheyBeginAndTheSizeOfTheText(t *testing.T) {
+func TestRangedReadTextReturnsSegmentsOffsetsAndTextSize(t *testing.T) {
 	texts, fakeCallers := newRangingTexts(t)
 	client := newTextClient(t, fakeCallers, "token-a")
 	length := int64(29)
@@ -81,7 +81,7 @@ func TestARangedReadTextAnswersTheSegmentsOfTheRangeWhereTheyBeginAndTheSizeOfTh
 	}
 	segments := res.Msg.GetSegments()
 	if res.Msg.GetError() != 0 || len(segments) != 2 || res.Msg.GetStart() != 120 || res.Msg.GetSize() != 4800 || res.Msg.GetNextCursor() != "" {
-		t.Fatalf("the ranged read answered %v, want two segments from 120 of a text of 4800 bytes", res.Msg)
+		t.Fatalf("the ranged read returned %v, want two segments from 120 of a text of 4800 bytes", res.Msg)
 	}
 	if segments[0].GetText() != "grey heron waits" || segments[0].GetHeading() != "Herons" || segments[0].GetSelector() != `{"page":2}` ||
 		segments[1].GetText() != " by the reeds" || segments[1].GetSelector() != `{"page":3}` {
@@ -105,7 +105,7 @@ func TestARangedReadTextOfLengthZeroPassesZeroForTheRestOfTheText(t *testing.T) 
 	}
 }
 
-func TestARangedReadTextOfAVersionWithNoTextAnswersMissing(t *testing.T) {
+func TestRangedReadTextOfVersionWithNoTextReturnsMissing(t *testing.T) {
 	_, fakeCallers := newRangingTexts(t)
 	client := newTextClient(t, fakeCallers, "token-a")
 	length := int64(100)
@@ -118,7 +118,7 @@ func TestARangedReadTextOfAVersionWithNoTextAnswersMissing(t *testing.T) {
 	}
 
 	if res.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_MISSING || len(res.Msg.GetSegments()) != 0 {
-		t.Errorf("a ranged read of a version with no text answered %v, want MISSING", res.Msg)
+		t.Errorf("a ranged read of a version with no text returned %v, want MISSING", res.Msg)
 	}
 }
 
@@ -142,6 +142,6 @@ func TestAReadTextWithoutALengthReadsOnePageByCursor(t *testing.T) {
 		t.Errorf("a read with no length made %d ranged reads and %d page reads, want one page read", len(texts.ranges), texts.pages)
 	}
 	if segments := res.Msg.GetSegments(); len(segments) != 1 || segments[0].GetText() != "ocr" || res.Msg.GetStart() != 0 || res.Msg.GetSize() != 0 {
-		t.Errorf("a read with no length answered %v, want the page of the version", res.Msg)
+		t.Errorf("a read with no length returned %v, want the page of the version", res.Msg)
 	}
 }

@@ -77,10 +77,10 @@ func TestAPluginRenameMovesTheFileAndRepairsTheLinksByName(t *testing.T) {
 	}
 
 	if to != "Donau.md" || !isFilenamed {
-		t.Errorf("the rename answered path %q, filenamed %v; want Donau.md, true", to, isFilenamed)
+		t.Errorf("the rename returned path %q, filenamed %v; want Donau.md, true", to, isFilenamed)
 	}
 	if moved == nil {
-		t.Fatal("the rename answered no move, and the file moved")
+		t.Fatal("the rename returned no move, and the file moved")
 	}
 	repaired := slices.Sorted(slices.Values(moved.Repaired))
 	if moved.From != "Danube.md" || moved.To != "Donau.md" || !slices.Equal(repaired, []string{"Deltas.md", "Estuaries.md"}) {
@@ -97,12 +97,12 @@ func TestAPluginRenameMovesTheFileAndRepairsTheLinksByName(t *testing.T) {
 			t.Errorf("%s does not link to Donau:\n%s", from, content)
 		}
 		if targets := getLinkTargets(t, shared, from); !slices.Equal(targets, []string{"Donau.md"}) {
-			t.Errorf("the links of %s reach %v, want Donau.md", from, targets)
+			t.Errorf("the links of %s point to %v, want Donau.md", from, targets)
 		}
 	}
 }
 
-func TestAPluginMoveFilesTheNoteInTheFolderAndKeepsLinksByName(t *testing.T) {
+func TestPluginMovePlacesNoteInFolderAndKeepsLinksByName(t *testing.T) {
 	v, shared := openScannedPluginVault(t, getRivers(), container.PluginVaultHooks{})
 
 	moved, err := shared.MoveNote(t.Context(), "Danube.md", "Rivers/Danube.md")
@@ -123,7 +123,7 @@ func TestAPluginMoveFilesTheNoteInTheFolderAndKeepsLinksByName(t *testing.T) {
 		t.Error("Danube.md is still on the disk")
 	}
 	if targets := getLinkTargets(t, shared, "Deltas.md"); !slices.Equal(targets, []string{"Rivers/Danube.md"}) {
-		t.Errorf("the links of Deltas.md reach %v, want Rivers/Danube.md", targets)
+		t.Errorf("the links of Deltas.md point to %v, want Rivers/Danube.md", targets)
 	}
 }
 
@@ -139,7 +139,7 @@ func TestPluginRemovalMovesNoteToTrashAndReportsDangling(t *testing.T) {
 		t.Errorf("the note is at %q, want a path under .trash/", trashed)
 	}
 	if content, found := readVaultFile(t, v, trashed); !found || !strings.Contains(content, "A river of central Europe.") {
-		t.Errorf("the trash holds %q (found %v), want the note's content", content, found)
+		t.Errorf("the trash contains %q (found %v), want the note's content", content, found)
 	}
 	if _, found := readVaultFile(t, v, "Danube.md"); found {
 		t.Error("Danube.md is still at its path")
@@ -162,7 +162,7 @@ func TestAPluginRemovalOfAFolderReturnsNotANote(t *testing.T) {
 	}
 	for _, path := range []string{"Rivers/Danube.md", "Rivers/Rhine.md"} {
 		if _, found := readVaultFile(t, v, path); !found {
-			t.Errorf("%s is not on the disk after the folder was refused", path)
+			t.Errorf("%s is not on the disk after the folder was rejected", path)
 		}
 	}
 }
@@ -221,9 +221,9 @@ func TestPluginRenameToExistingFilenameKeepsNoteUnchanged(t *testing.T) {
 		t.Errorf("the rename onto Rivers/Deltas.md returned %v, want ErrAlreadyExists", err)
 	}
 	if content, found := readVaultFile(t, v, "Rivers/Danube.md"); !found || content != danube {
-		t.Errorf("Rivers/Danube.md holds %q (found %v), want it unchanged:\n%q", content, found, danube)
+		t.Errorf("Rivers/Danube.md contains %q (found %v), want it unchanged:\n%q", content, found, danube)
 	}
 	if content, _ := readVaultFile(t, v, "Rivers/Deltas.md"); content != "# Deltas\n" {
-		t.Errorf("Rivers/Deltas.md holds %q, want it unchanged", content)
+		t.Errorf("Rivers/Deltas.md contains %q, want it unchanged", content)
 	}
 }

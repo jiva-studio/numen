@@ -58,28 +58,28 @@ func (h *Host) GetPluginTexts() pluginport.PluginTexts {
 	return h.texts
 }
 
-// SetPluginWindow is the main window the plugins move and read the tabs of. Nil is none.
+// SetPluginWindow sets the window exposed to plugins. Nil means none.
 func (h *Host) SetPluginWindow(window pluginport.PluginWindow) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.window = window
 }
 
-// GetPluginWindow is the main window the plugins move and read the tabs of, or nil.
+// GetPluginWindow returns the window exposed to plugins, or nil.
 func (h *Host) GetPluginWindow() pluginport.PluginWindow {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.window
 }
 
-// SetPluginVaultList is the list of vaults the plugins change. Nil is none.
+// SetPluginVaultList sets the list of vaults exposed to plugins. Nil means none.
 func (h *Host) SetPluginVaultList(list pluginport.PluginVaultList) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.vaultList = list
 }
 
-// GetPluginVaultList is the list of vaults the plugins change, or nil.
+// GetPluginVaultList returns the list of vaults exposed to plugins, or nil.
 func (h *Host) GetPluginVaultList() pluginport.PluginVaultList {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

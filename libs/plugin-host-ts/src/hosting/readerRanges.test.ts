@@ -1,5 +1,5 @@
 /**
- * The ranges a reader tab is asked to light: the reader tab kind opens a tab with none, and a file
+ * The ranges a reader tab highlights: the reader tab kind opens a tab with none, and a file
  * opened at ranges puts a new array of them on the state of its tab.
  */
 import { describe, expect, it, vi } from 'vitest'

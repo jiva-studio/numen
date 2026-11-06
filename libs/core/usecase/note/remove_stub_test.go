@@ -215,7 +215,7 @@ func TestRemove_FullTrashFailsAfter100Names(t *testing.T) {
 	}
 
 	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")
-	if err == nil || !strings.Contains(err.Error(), "the trash already holds 100 files of that name") {
+	if err == nil || !strings.Contains(err.Error(), "the trash already has 100 files of that name") {
 		t.Fatalf("want the trash refusing, got %v", err)
 	}
 	if len(*tr.moves) != 100 {

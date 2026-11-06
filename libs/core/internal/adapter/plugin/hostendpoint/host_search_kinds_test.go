@@ -9,7 +9,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-func TestSearchPassagesOfAnUnknownKindAnswersInvalidArgumentNamingTheKinds(t *testing.T) {
+func TestSearchPassagesOfUnknownKindReturnsInvalidArgument(t *testing.T) {
 	search := &recordingSearch{}
 	client := newSearchClient(t, newSearchCallers(search), "token-a")
 
@@ -19,14 +19,14 @@ func TestSearchPassagesOfAnUnknownKindAnswersInvalidArgumentNamingTheKinds(t *te
 
 	var failure *connect.Error
 	if !errors.As(err, &failure) || failure.Code() != connect.CodeInvalidArgument {
-		t.Fatalf("the kind book answered %v, want invalid argument", err)
+		t.Fatalf("the kind book returned %v, want invalid argument", err)
 	}
-	want := `"book" is not a kind of source a search reaches: use "note" or "file"`
+	want := `invalid source kind "book": use "note" or "file"`
 	if failure.Message() != want {
-		t.Errorf("the kind book answered %q, want %q", failure.Message(), want)
+		t.Errorf("the kind book returned %q, want %q", failure.Message(), want)
 	}
 	if len(search.passageQueries) != 0 {
-		t.Errorf("the search ran for a refused kind: %+v", search.passageQueries)
+		t.Errorf("the search ran for a rejected kind: %+v", search.passageQueries)
 	}
 }
 

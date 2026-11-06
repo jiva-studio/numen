@@ -15,11 +15,11 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// Client works the vault through HostVaultService and its window through HostWindowService.
+// Client calls HostVaultService for the vault and HostWindowService for its window.
 type Client struct {
 	rpc    numenv1connect.HostVaultServiceClient
 	window numenv1connect.HostWindowServiceClient
-	// vault is the identity of the vault the client works. Empty is the vault the window shows.
+	// vault is the identity of the vault the client calls. An empty vault ID means the vault the window shows.
 	vault string
 }
 
@@ -82,7 +82,7 @@ func readError(err error) error {
 	return err
 }
 
-// getHostVaultErrors is the error of each code a call on a vault is refused with.
+// getHostVaultErrors returns the error of each error code of a call on a vault.
 func getHostVaultErrors() map[v1.HostVaultErrorCode]error {
 	return map[v1.HostVaultErrorCode]error{
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:           ErrNoVault,
@@ -108,7 +108,7 @@ func fail(code v1.HostVaultErrorCode) error {
 	if err, isKnown := getHostVaultErrors()[code]; isKnown {
 		return err
 	}
-	return fmt.Errorf("the host refused the call with the code %s", code)
+	return fmt.Errorf("the host returned the error code %s", code)
 }
 
 func readFileStat(f *v1.HostFileStat) domain.FileStat {

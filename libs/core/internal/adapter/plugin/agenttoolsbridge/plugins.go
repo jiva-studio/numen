@@ -77,8 +77,8 @@ func (p plugins) listTools(ctx context.Context, server Server, except string) []
 	return found
 }
 
-// listPluginTools lists the tools of one plugin, holding its reference for the
-// length of the call.
+// listPluginTools lists the tools of one plugin, keeping a reference to it during
+// the call.
 func (p plugins) listPluginTools(ctx context.Context, pluginID string) (listing *v1.ListToolsResponse, err error) {
 	client, lease, err := bridge.Open(ctx, p.host, pluginID, numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
@@ -133,7 +133,7 @@ func hasPermission(permissions []string, effect v1.ToolEffect) bool {
 		slices.Contains(permissions, pluginport.PermissionVaultWrite)
 }
 
-// getPermissions is the permissions the plugin of the id holds, and none for a plugin the host does
+// getPermissions returns the permissions of the plugin with the id, and none for a plugin the host does
 // not know.
 func (p plugins) getPermissions(pluginID string) []string {
 	for _, info := range p.host.GetPluginInfos() {
@@ -144,8 +144,8 @@ func (p plugins) getPermissions(pluginID string) []string {
 	return nil
 }
 
-// listToolsFor is the tools offered on the server whose required permissions the caller holds all
-// of. The caller's own tools are listed too.
+// listToolsFor returns the tools offered on the server for which the caller has all required
+// permissions. The caller's own tools are listed too.
 func (p plugins) listToolsFor(ctx context.Context, server Server, callerID string) []tool {
 	permissions := p.getPermissions(callerID)
 	all := p.listTools(ctx, server, "")

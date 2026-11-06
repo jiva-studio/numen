@@ -610,14 +610,14 @@ func isGone(t *testing.T, c changing, path string) bool {
 	return errors.Is(err, fs.ErrNotExist)
 }
 
-// On a filesystem that tells case apart, a file whose name differs from the target only in case is
+// On a case-sensitive filesystem, a file whose name differs from the target only in case is
 // another file, and a rename onto it leaves the note as it was.
 func TestRename_RejectsTargetThatDiffersOnlyInCase(t *testing.T) {
 	t.Parallel()
 	const old = "---\ntitle: rust\n---\nOxidised iron.\n"
 	const other = "# Rust\n\nA programming language.\n"
 	c := openChanging(t, map[string]string{"rust.md": old, "Rust.md": other})
-	// Where the filesystem ignores case, the two names are one file, holding whichever was written last.
+	// Where the filesystem ignores case, the two names are one file, containing whichever was written last.
 	if c.read(t, "rust.md") != old || c.read(t, "Rust.md") != other {
 		t.Skip("the filesystem ignores case, so rust.md and Rust.md are one file")
 	}
@@ -643,7 +643,7 @@ func TestRename_AcceptsOtherNormalizationOfOwnFilename(t *testing.T) {
 	const decomposed, composed = "Café", "Café"
 	c := openChanging(t, map[string]string{decomposed + ".md": "---\ntitle: Bistro\n---\nA place.\n"})
 	if _, err := os.Stat(filepath.Join(c.vault.Path, composed+".md")); err != nil {
-		t.Skip("the filesystem tells the two spellings apart")
+		t.Skip("the filesystem is case-sensitive")
 	}
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, decomposed+".md", composed)

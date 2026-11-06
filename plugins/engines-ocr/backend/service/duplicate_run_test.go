@@ -10,14 +10,14 @@ import (
 
 // A recognition the palette command runs is a recognition of the file in progress. A tool call for
 // the same file must not start a second one.
-func TestRecognitionCreateOfAScanThePaletteCommandRecognisesReportsItRunning(t *testing.T) {
-	s := newToolScene(t)
+func TestRecognitionCreateDuringPaletteRecognitionReportsRunning(t *testing.T) {
+	s := newToolFixture(t)
 	result := make(chan error, 1)
 	go func() {
 		_, err := newRecogniseCommand(s.tools.recognitions)(t.Context(), command.Request{Command: "recognition.create", Path: scanPath})
 		result <- err
 	}()
-	s.waitEntered(t)
+	s.waitStarted(t)
 
 	out := s.recognise(t, "Physics", scanPath)
 
@@ -31,12 +31,12 @@ func TestRecognitionCreateOfAScanThePaletteCommandRecognisesReportsItRunning(t *
 	s.waitFinished(t, out.TaskID)
 }
 
-// The palette command run while the tool's recognition holds the scan is refused as already being
+// The palette command run while the tool's recognition has the scan is rejected as already being
 // recognised.
-func TestRecogniseCommandOfAScanTheToolRecognisesFails(t *testing.T) {
-	s := newToolScene(t)
+func TestRecogniseCommandDuringToolRecognitionFails(t *testing.T) {
+	s := newToolFixture(t)
 	out := s.recognise(t, "Physics", scanPath)
-	s.waitEntered(t)
+	s.waitStarted(t)
 
 	_, err := newRecogniseCommand(s.tools.recognitions)(t.Context(), command.Request{Command: "recognition.create", Path: scanPath})
 

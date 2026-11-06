@@ -82,7 +82,7 @@ const isFramedPage = computed(() => url.value !== '' && !url.value.endsWith('.mp
 onMounted(() => {
   if (props.state) {
     const shared = props.state as Record<string, unknown>
-    shared.focusSpans = (...spans: readonly TextRange[]) => tab.navigation.reach(...spans)
+    shared.focusSpans = (...spans: readonly TextRange[]) => tab.navigation.seekToSpans(...spans)
   }
 })
 

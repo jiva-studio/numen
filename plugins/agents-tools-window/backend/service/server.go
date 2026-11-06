@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// Mount registers the window tools on s, working the vault and its window through the host the
+// Mount registers the window tools on s, using the vault and the window of the host the
 // environment names.
 func Mount(s *server.Server) error {
 	return mount(s, connectHost(hostcall.FromEnv()))
@@ -23,8 +23,8 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	})
 }
 
-// connectHost is the vault and the window of the host at the endpoint, or none where the host cannot
-// be reached.
+// connectHost returns the vault and the window of the host at the endpoint, or none when the
+// endpoint is not configured.
 func connectHost(endpoint hostcall.Endpoint, err error) Host {
 	if err != nil {
 		return Host{}

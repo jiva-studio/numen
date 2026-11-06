@@ -19,19 +19,19 @@ import (
 type cancelMode int
 
 const (
-	// changeThenCancel changes the note, then cancels the call and answers success.
+	// changeThenCancel changes the note, then cancels the call and returns success.
 	changeThenCancel cancelMode = iota
-	// cancelAndFail cancels the call and answers the error of the cancel, leaving the note as it was.
+	// cancelAndFail cancels the call and returns the error of the cancel, leaving the note as it was.
 	cancelAndFail
-	// changeThenCancelAndFail changes the note, then cancels the call and answers the error of the
+	// changeThenCancelAndFail changes the note, then cancels the call and returns the error of the
 	// cancel with the change it made.
 	changeThenCancelAndFail
 )
 
 // cancellingVault is the vault of rivers that cancels the call it serves on its change number cancelIndex
-// (counted from one), as mode says.
+// (counted from one), as mode sets.
 type cancellingVault struct {
-	*arrangingVault
+	*fakeNoteVault
 	cancel      context.CancelFunc
 	cancelIndex int
 	mode        cancelMode
@@ -41,7 +41,7 @@ type cancellingVault struct {
 func (c *cancellingVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
 	c.calls++
 	if c.calls != c.cancelIndex {
-		return c.arrangingVault.MoveNote(ctx, from, to)
+		return c.fakeNoteVault.MoveNote(ctx, from, to)
 	}
 	if c.mode == cancelAndFail {
 		c.mu.Lock()
@@ -50,7 +50,7 @@ func (c *cancellingVault) MoveNote(ctx context.Context, from, to string) (domain
 		c.cancel()
 		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, ctx.Err())
 	}
-	move, err := c.arrangingVault.MoveNote(ctx, from, to)
+	move, err := c.fakeNoteVault.MoveNote(ctx, from, to)
 	c.cancel()
 	if err == nil && c.mode == changeThenCancelAndFail {
 		err = fmt.Errorf("repair the links to %s: %w", from, ctx.Err())
@@ -61,7 +61,7 @@ func (c *cancellingVault) MoveNote(ctx context.Context, from, to string) (domain
 func (c *cancellingVault) RemoveNote(ctx context.Context, target string) (string, []string, error) {
 	c.calls++
 	if c.calls != c.cancelIndex {
-		return c.arrangingVault.RemoveNote(ctx, target)
+		return c.fakeNoteVault.RemoveNote(ctx, target)
 	}
 	if c.mode == cancelAndFail {
 		c.mu.Lock()
@@ -70,7 +70,7 @@ func (c *cancellingVault) RemoveNote(ctx context.Context, target string) (string
 		c.cancel()
 		return "", nil, fmt.Errorf("remove %s: %w", target, ctx.Err())
 	}
-	trashPath, broken, err := c.arrangingVault.RemoveNote(ctx, target)
+	trashPath, broken, err := c.fakeNoteVault.RemoveNote(ctx, target)
 	c.cancel()
 	if err == nil && c.mode == changeThenCancelAndFail {
 		err = fmt.Errorf("report the links to %s: %w", target, ctx.Err())
@@ -84,10 +84,10 @@ func newCancellingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (*vau
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
-	vault := &cancellingVault{arrangingVault: newArrangingVault(), cancel: cancel, cancelIndex: cancelIndex, mode: mode}
-	hosted := newCallers(nil)
-	hosted.vault = vault
-	endpoint := newVaultEndpoint(&Endpoint{callers: listCallers{callers: hosted, granted: []string{pluginport.PermissionVaultWrite}}})
+	vault := &cancellingVault{fakeNoteVault: newFakeNoteVault(), cancel: cancel, cancelIndex: cancelIndex, mode: mode}
+	hostCallers := newCallers(nil)
+	hostCallers.vault = vault
+	endpoint := newVaultEndpoint(&Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}})
 	return endpoint, vault, ctx
 }
 
@@ -131,7 +131,7 @@ func requireRemoved(t *testing.T, entry *v1.HostNoteRemoval, target string) {
 	}
 }
 
-func TestAMoveCancelledAfterTwoNotesAnswersTheTwoMovesAndTheRestAsNotAttempted(t *testing.T) {
+func TestMoveCancelledAfterTwoNotesReturnsRestAsNotAttempted(t *testing.T) {
 	endpoint, vault, ctx := newCancellingEndpoint(t, 2, changeThenCancel)
 
 	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
@@ -143,7 +143,7 @@ func TestAMoveCancelledAfterTwoNotesAnswersTheTwoMovesAndTheRestAsNotAttempted(t
 
 	moves := res.Msg.GetMoves()
 	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED || len(moves) != 3 {
-		t.Fatalf("the move answered error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
+		t.Fatalf("the move returned error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
 	}
 	requireMoved(t, moves[0], "Danube.md", "Archive/Danube.md")
 	requireMoved(t, moves[1], "Rivers/Rhine.md", "Archive/Rhine.md")
@@ -152,11 +152,11 @@ func TestAMoveCancelledAfterTwoNotesAnswersTheTwoMovesAndTheRestAsNotAttempted(t
 		t.Error("Deltas.md was moved after the cancel")
 	}
 	if len(vault.moved) != 2 {
-		t.Errorf("the vault was asked for the moves %v, want only the two before the cancel", vault.moved)
+		t.Errorf("the vault received a request for the moves %v, want only the two before the cancel", vault.moved)
 	}
 }
 
-func TestAMoveWhoseNoteFailsOnTheCancelAnswersThatNoteAndTheRestAsNotAttempted(t *testing.T) {
+func TestMoveFailingOnCancelReturnsNoteErrorAndRestNotAttempted(t *testing.T) {
 	endpoint, vault, ctx := newCancellingEndpoint(t, 2, cancelAndFail)
 
 	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
@@ -168,7 +168,7 @@ func TestAMoveWhoseNoteFailsOnTheCancelAnswersThatNoteAndTheRestAsNotAttempted(t
 
 	moves := res.Msg.GetMoves()
 	if res.Msg.GetError() != 0 || len(moves) != 3 {
-		t.Fatalf("the move answered error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
+		t.Fatalf("the move returned error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
 	}
 	requireMoved(t, moves[0], "Danube.md", "Archive/Danube.md")
 	requireNotAttemptedMove(t, moves[1], "Rivers/Rhine.md")
@@ -180,7 +180,7 @@ func TestAMoveWhoseNoteFailsOnTheCancelAnswersThatNoteAndTheRestAsNotAttempted(t
 	}
 }
 
-func TestAMoveWhoseNoteMovedBeforeTheCancelAnswersThatNoteAsMoved(t *testing.T) {
+func TestMoveDoneBeforeCancelReturnsThatNoteAsMoved(t *testing.T) {
 	endpoint, _, ctx := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
 
 	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
@@ -192,14 +192,14 @@ func TestAMoveWhoseNoteMovedBeforeTheCancelAnswersThatNoteAsMoved(t *testing.T) 
 
 	moves := res.Msg.GetMoves()
 	if res.Msg.GetError() != 0 || len(moves) != 3 {
-		t.Fatalf("the move answered error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
+		t.Fatalf("the move returned error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
 	}
 	requireMoved(t, moves[0], "Danube.md", "Archive/Danube.md")
 	requireMoved(t, moves[1], "Rivers/Rhine.md", "Archive/Rhine.md")
 	requireNotAttemptedMove(t, moves[2], "Deltas.md")
 }
 
-func TestAMoveCancelledBeforeTheFirstNoteAnswersEveryPathAsNotAttempted(t *testing.T) {
+func TestMoveCancelledBeforeFirstNoteReturnsAllNotAttempted(t *testing.T) {
 	endpoint, vault, ctx := newCancellingEndpoint(t, 0, changeThenCancel)
 	vault.cancel()
 
@@ -212,17 +212,17 @@ func TestAMoveCancelledBeforeTheFirstNoteAnswersEveryPathAsNotAttempted(t *testi
 
 	moves := res.Msg.GetMoves()
 	if res.Msg.GetError() != 0 || len(moves) != 3 {
-		t.Fatalf("the move answered error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
+		t.Fatalf("the move returned error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
 	}
 	for i, from := range getCancelledBatch() {
 		requireNotAttemptedMove(t, moves[i], from)
 	}
 	if len(vault.moved) != 0 {
-		t.Errorf("the vault was asked for the moves %v after the cancel", vault.moved)
+		t.Errorf("the vault received a request for the moves %v after the cancel", vault.moved)
 	}
 }
 
-func TestARemovalCancelledAfterOneNoteAnswersTheRemovalAndTheRestAsNotAttempted(t *testing.T) {
+func TestRemovalCancelledAfterOneNoteReturnsRestAsNotAttempted(t *testing.T) {
 	endpoint, vault, ctx := newCancellingEndpoint(t, 1, changeThenCancel)
 
 	res, err := endpoint.RemoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
@@ -234,17 +234,17 @@ func TestARemovalCancelledAfterOneNoteAnswersTheRemovalAndTheRestAsNotAttempted(
 
 	removals := res.Msg.GetRemovals()
 	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED || len(removals) != 3 {
-		t.Fatalf("the removal answered error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(removals))
+		t.Fatalf("the removal returned error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(removals))
 	}
 	requireRemoved(t, removals[0], "Danube.md")
 	requireNotAttemptedRemoval(t, removals[1], "Rivers/Rhine.md")
 	requireNotAttemptedRemoval(t, removals[2], "Deltas.md")
 	if !slices.Equal(vault.removed, []string{"Danube.md"}) {
-		t.Errorf("the vault was asked to remove %v, want only Danube.md", vault.removed)
+		t.Errorf("the vault received a call to remove %v, want only Danube.md", vault.removed)
 	}
 }
 
-func TestARemovalWhoseNoteFailsOnTheCancelAnswersThatNoteAndTheRestAsNotAttempted(t *testing.T) {
+func TestRemovalFailingOnCancelReturnsErrorAndRestNotAttempted(t *testing.T) {
 	endpoint, vault, ctx := newCancellingEndpoint(t, 2, cancelAndFail)
 
 	res, err := endpoint.RemoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
@@ -256,7 +256,7 @@ func TestARemovalWhoseNoteFailsOnTheCancelAnswersThatNoteAndTheRestAsNotAttempte
 
 	removals := res.Msg.GetRemovals()
 	if res.Msg.GetError() != 0 || len(removals) != 3 {
-		t.Fatalf("the removal answered error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(removals))
+		t.Fatalf("the removal returned error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(removals))
 	}
 	requireRemoved(t, removals[0], "Danube.md")
 	requireNotAttemptedRemoval(t, removals[1], "Rivers/Rhine.md")
@@ -268,7 +268,7 @@ func TestARemovalWhoseNoteFailsOnTheCancelAnswersThatNoteAndTheRestAsNotAttempte
 	}
 }
 
-func TestARemovalWhoseNoteWentToTheTrashBeforeTheCancelAnswersThatNoteAsRemoved(t *testing.T) {
+func TestRemovalTrashedBeforeCancelReturnsThatNoteAsRemoved(t *testing.T) {
 	endpoint, _, ctx := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
 
 	res, err := endpoint.RemoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
@@ -280,7 +280,7 @@ func TestARemovalWhoseNoteWentToTheTrashBeforeTheCancelAnswersThatNoteAsRemoved(
 
 	removals := res.Msg.GetRemovals()
 	if res.Msg.GetError() != 0 || len(removals) != 3 {
-		t.Fatalf("the removal answered error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(removals))
+		t.Fatalf("the removal returned error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(removals))
 	}
 	requireRemoved(t, removals[0], "Danube.md")
 	requireRemoved(t, removals[1], "Rivers/Rhine.md")

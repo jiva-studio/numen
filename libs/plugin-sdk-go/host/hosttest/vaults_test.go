@@ -56,14 +56,14 @@ func TestRenameVaultToATakenNameIsNameTaken(t *testing.T) {
 	}
 }
 
-func TestRemoveVaultRefusesTheLastAndTheOpenedVault(t *testing.T) {
+func TestRemoveVaultRejectsTheLastAndTheOpenedVault(t *testing.T) {
 	physics, chemistry := hosttest.New("Physics"), hosttest.New("Chemistry")
 	physics.Beside(chemistry)
 	if err := physics.OpenVault(t.Context(), physics.Vault().ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := physics.RemoveVault(t.Context(), physics.Vault().ID); !errors.Is(err, host.ErrVaultShowing) {
+	if _, err := physics.RemoveVault(t.Context(), physics.Vault().ID); !errors.Is(err, host.ErrVaultActive) {
 		t.Errorf("got %v", err)
 	}
 	folder, err := physics.RemoveVault(t.Context(), chemistry.Vault().ID)
@@ -95,7 +95,7 @@ func TestOpenVaultRecordsTheVault(t *testing.T) {
 	}
 }
 
-func TestAddVaultOfAFolderContainingAVaultAnswersTheCoreSentence(t *testing.T) {
+func TestAddVaultOfFolderContainingVaultReturnsTheCoreText(t *testing.T) {
 	physics := hosttest.New("Physics")
 
 	_, err := physics.AddVault(t.Context(), "/vaults", "")
@@ -108,7 +108,7 @@ func TestAddVaultOfAFolderContainingAVaultAnswersTheCoreSentence(t *testing.T) {
 	}
 }
 
-func TestAddVaultOfAFolderInsideAVaultAnswersTheCoreSentence(t *testing.T) {
+func TestAddVaultOfFolderInsideVaultReturnsTheCoreText(t *testing.T) {
 	physics := hosttest.New("Physics")
 
 	_, err := physics.AddVault(t.Context(), "/vaults/Physics/optics", "")

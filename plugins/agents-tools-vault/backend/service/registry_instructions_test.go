@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// listVaultTools lists the tools of a registry that holds the tools that manage the list of vaults.
+// listVaultTools lists the tools of a registry that has the tools that manage the list of vaults.
 func listVaultTools(t *testing.T) tools.Listing {
 	t.Helper()
 	_, _, registry := newTwoVaults(t)
@@ -34,8 +34,8 @@ func joinToolInstructions(listing tools.Listing) string {
 	return strings.Join(sentences, " ")
 }
 
-// namesTool reports whether the text names the tool as a whole word.
-func namesTool(text, name string) bool {
+// hasToolName reports whether the text names the tool as a whole word.
+func hasToolName(text, name string) bool {
 	return regexp.MustCompile(`\b` + regexp.QuoteMeta(name) + `\b`).MatchString(text)
 }
 
@@ -65,7 +65,7 @@ func TestTheVaultToolInstructionsSayHowToCiteAndArrange(t *testing.T) {
 		"vault_open",
 	} {
 		if !strings.Contains(instructions, want) {
-			t.Errorf("the instructions do not say %q:\n%s", want, instructions)
+			t.Errorf("the instructions do not contain %q:\n%s", want, instructions)
 		}
 	}
 	if strings.Contains(instructions, "`at`") {
@@ -90,13 +90,13 @@ func TestEveryVaultToolWithInstructionsNamesItself(t *testing.T) {
 		if len(tool.Instructions) == 0 {
 			continue
 		}
-		if !slices.ContainsFunc(tool.Instructions, func(sentence string) bool { return namesTool(sentence, tool.Name) }) {
+		if !slices.ContainsFunc(tool.Instructions, func(sentence string) bool { return hasToolName(sentence, tool.Name) }) {
 			t.Errorf("no instruction of %s names it: %q", tool.Name, tool.Instructions)
 		}
 	}
 }
 
-func TestTheInstructionsOfTheReadingToolsNameNoToolOfTheFullServerOnly(t *testing.T) {
+func TestReadingToolInstructionsNameNoFullServerOnlyTool(t *testing.T) {
 	listing := listVaultTools(t)
 	var fullOnly []string
 	for _, tool := range listing.Tools {
@@ -119,7 +119,7 @@ func TestTheInstructionsOfTheReadingToolsNameNoToolOfTheFullServerOnly(t *testin
 		}
 		for _, sentence := range tool.Instructions {
 			for _, name := range fullOnly {
-				if namesTool(sentence, name) {
+				if hasToolName(sentence, name) {
 					t.Errorf("an instruction of %s, a tool of the reading server, names %s: %q", tool.Name, name, sentence)
 				}
 			}
@@ -127,7 +127,7 @@ func TestTheInstructionsOfTheReadingToolsNameNoToolOfTheFullServerOnly(t *testin
 	}
 }
 
-func TestTheReadingToolsOfTheVaultCarryInstructions(t *testing.T) {
+func TestTheReadingToolsOfTheVaultHaveInstructions(t *testing.T) {
 	listing := listVaultTools(t)
 	var subset tools.Listing
 	for _, tool := range listing.Tools {
@@ -139,7 +139,7 @@ func TestTheReadingToolsOfTheVaultCarryInstructions(t *testing.T) {
 	instructions := joinToolInstructions(subset)
 	for _, want := range []string{"library_search", "library_read", "note_search", "`uri`"} {
 		if !strings.Contains(instructions, want) {
-			t.Errorf("the instructions of the reading tools do not say %q:\n%s", want, instructions)
+			t.Errorf("the instructions of the reading tools do not contain %q:\n%s", want, instructions)
 		}
 	}
 }

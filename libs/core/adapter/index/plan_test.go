@@ -76,7 +76,7 @@ func getExpectedPlans() []struct {
 		// The coarse pass reads the vector index. That it stays inside one vault is
 		// asserted in TestTheCoarsePassIsConstrainedInsideTheQuery and
 		// TestTheCoarsePassStaysInsideItsVault.
-		// The coarse pass under a path prefix reaches the sources by the range of their
+		// The coarse pass under a path prefix finds the sources by the range of their
 		// paths, their chunks by source, and the vector of each chunk by its key: the
 		// "!" of the plan of the vector table is its lookup of one row by key.
 		{chunk.Statements(), "coarse_prefix", []any{getCoarse(), 1, "notes/", 10, "notes0"}, []string{"(vault_id=? AND path>? AND path<?)", "chunks_by_source", "SCAN v VIRTUAL TABLE INDEX 5:2!"}},
@@ -84,7 +84,7 @@ func getExpectedPlans() []struct {
 		// The cached hash of a file is its source row, found by vault and path. The
 		// vault is given by its identifier, then the path; a save gives the record's
 		// hash, size, modification time, file id and hash time, the vault and path, and
-		// the size, modification time and hash the row must hold.
+		// the size, modification time and hash the row must have.
 		{version.Statements(), "find_content_hash", []any{"first", "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)"}},
 		{version.Statements(), "save_content_hash", []any{"h", 1, 1, 7, 9, "first", "folder/note-00001.md", 1, 1, "h"}, []string{"(vault_id=? AND path=?)"}},
 	}

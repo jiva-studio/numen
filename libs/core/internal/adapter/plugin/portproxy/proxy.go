@@ -21,7 +21,7 @@ const (
 // connection and does not pass the error to onError.
 var ErrTargetReported = errors.New("the target error was reported before")
 
-// Target opens the connection a proxied connection is forwarded to, and holds the plugin for it
+// Target opens the connection a proxied connection is forwarded to, and keeps the plugin active for it
 // until release is called.
 type Target func(ctx context.Context) (addr string, release func(), err error)
 

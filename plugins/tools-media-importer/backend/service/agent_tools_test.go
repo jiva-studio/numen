@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
-// The invented pages the importer's tool is tested against, besides videoAddress.
+// The fake pages the importer's tool is tested against, in addition to videoAddress.
 const (
 	articleAddress = "https://tides.example/articles/mill-ponds"
 	articleTitle   = "Mill ponds of the estuary"
@@ -32,34 +32,34 @@ const (
 	callDeadline = 30 * time.Second
 )
 
-// inventedSites answers videoAddress through the mock downloader and the invented pages itself, with
+// fakeSites returns videoAddress through the mock downloader and the fake pages itself, with
 // no network. A copy of a video waits until release is closed.
-type inventedSites struct {
+type fakeSites struct {
 	video   link.Fetcher
 	release chan struct{}
 }
 
-func (s inventedSites) isVideo(address string) bool { return strings.Contains(address, "youtube.com") }
+func (s fakeSites) isVideo(address string) bool { return strings.Contains(address, "youtube.com") }
 
-func (s inventedSites) CanCopy(address string) bool {
+func (s fakeSites) CanCopy(address string) bool {
 	return s.isVideo(address) && s.video.CanCopy(address)
 }
 
-func (s inventedSites) GetDownloadModel(address string) download.Model {
+func (s fakeSites) GetDownloadModel(address string) download.Model {
 	if s.isVideo(address) {
 		return s.video.GetDownloadModel(address)
 	}
 	return download.Model{Tool: "invented", Version: "1", Producer: "article"}
 }
 
-func (s inventedSites) GetMetadata(ctx context.Context, address string) (download.Metadata, error) {
+func (s fakeSites) GetMetadata(ctx context.Context, address string) (download.Metadata, error) {
 	if s.isVideo(address) {
 		return s.video.GetMetadata(ctx, address)
 	}
 	return download.Metadata{Title: articleTitle}, nil
 }
 
-func (s inventedSites) GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error) {
+func (s fakeSites) GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error) {
 	switch {
 	case s.isVideo(address):
 		return s.video.GetText(ctx, address, want)
@@ -72,7 +72,7 @@ func (s inventedSites) GetText(ctx context.Context, address string, want downloa
 	}
 }
 
-func (s inventedSites) Download(ctx context.Context, address string, into io.Writer) (download.Copy, error) {
+func (s fakeSites) Download(ctx context.Context, address string, into io.Writer) (download.Copy, error) {
 	select {
 	case <-s.release:
 	case <-ctx.Done():
@@ -81,17 +81,17 @@ func (s inventedSites) Download(ctx context.Context, address string, into io.Wri
 	return s.video.Download(ctx, address, into)
 }
 
-// notedVault is the vault whose texts compare versions with the notes it makes, as the host's texts
+// textVault is the vault whose texts compare versions with the notes it makes, as the host's texts
 // read the vault's files.
-type notedVault struct {
+type textVault struct {
 	host.Vault
-	// texts is the texts of this vault, nil for a vault the scene does not hold.
+	// texts is the texts of this vault, nil for a vault not in the fixture.
 	texts *hosttest.Texts
-	// all is the texts of every vault of the scene, by identity.
+	// all is the texts of every vault of the fixture, by identity.
 	all map[domain.VaultID]*hosttest.Texts
 }
 
-func (v notedVault) Create(ctx context.Context, path string, content []byte) error {
+func (v textVault) Create(ctx context.Context, path string, content []byte) error {
 	if err := v.Vault.Create(ctx, path, content); err != nil {
 		return err
 	}
@@ -101,12 +101,12 @@ func (v notedVault) Create(ctx context.Context, path string, content []byte) err
 	return nil
 }
 
-func (v notedVault) With(id domain.VaultID) host.Vault {
-	return notedVault{Vault: v.Vault.With(id), texts: v.all[id], all: v.all}
+func (v textVault) With(id domain.VaultID) host.Vault {
+	return textVault{Vault: v.Vault.With(id), texts: v.all[id], all: v.all}
 }
 
-// importScene is the import tool over the vault Mills, shown, and the vault Chemistry beside it.
-type importScene struct {
+// importFixture is the import tool over the open vault Mills, and the vault Chemistry.
+type importFixture struct {
 	vault     *hosttest.Vault
 	store     *hosttest.Store
 	texts     *hosttest.Texts
@@ -116,8 +116,8 @@ type importScene struct {
 	registry  *tools.Registry
 }
 
-// newImportScene is the scene whose copies wait until release is closed.
-func newImportScene(t *testing.T, release chan struct{}) *importScene {
+// newImportFixture returns the fixture whose copies wait until release is closed.
+func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	t.Helper()
 	vault := hosttest.New("Mills")
 	store := vault.Store()
@@ -131,9 +131,9 @@ func newImportScene(t *testing.T, release chan struct{}) *importScene {
 	}
 	chemTexts.SetStore(PluginID, chemistry.Store())
 
-	sites := inventedSites{video: download.NewMock(), release: release}
+	sites := fakeSites{video: download.NewMock(), release: release}
 	hosted := link.Host{
-		Vault: notedVault{
+		Vault: textVault{
 			Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts, "Chemistry": chemTexts},
 		},
 		Store: store, Texts: texts, Queue: hosttest.NewQueue(),
@@ -147,21 +147,21 @@ func newImportScene(t *testing.T, release chan struct{}) *importScene {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &importScene{
+	return &importFixture{
 		vault: vault, store: store, texts: texts, chemistry: chemistry, chemTexts: chemTexts,
 		links: links, registry: registry,
 	}
 }
 
-// newReleasedScene is the scene whose copies run at once.
-func newReleasedScene(t *testing.T) *importScene {
+// newUnblockedFixture returns the fixture whose copies run at once.
+func newUnblockedFixture(t *testing.T) *importFixture {
 	t.Helper()
 	release := make(chan struct{})
 	close(release)
-	return newImportScene(t, release)
+	return newImportFixture(t, release)
 }
 
-// invokeAtOnce calls the tool and fails the test when the call does not answer within callDeadline.
+// invokeAtOnce calls the tool and fails the test when the call does not return within callDeadline.
 func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tools.CallResponse {
 	t.Helper()
 	type answer struct {
@@ -180,19 +180,19 @@ func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tool
 		}
 		return got.res
 	case <-time.After(callDeadline):
-		t.Fatalf("%s did not answer within %v: the call waits for the copy", call.Name, callDeadline)
+		t.Fatalf("%s did not return within %v: the call waits for the copy", call.Name, callDeadline)
 		return nil
 	}
 }
 
-// importArguments is the arguments of url_import under the keys the tool reads.
+// importArguments is the arguments of url_import with the tool's JSON keys.
 type importArguments struct {
 	URL           string `json:"url"`
 	Folder        string `json:"folder,omitempty"`
 	DownloadVideo bool   `json:"downloadVideo,omitempty"`
 }
 
-// importAnswer is the answer of url_import under the keys the tool writes.
+// importAnswer is the result of url_import with the tool's JSON keys.
 type importAnswer struct {
 	Path           string `json:"path"`
 	Title          string `json:"title"`
@@ -204,7 +204,7 @@ type importAnswer struct {
 	DownloadError  string `json:"downloadError"`
 }
 
-func (s *importScene) callImport(t *testing.T, vault string, in importArguments) *tools.CallResponse {
+func (s *importFixture) callImport(t *testing.T, vault string, in importArguments) *tools.CallResponse {
 	t.Helper()
 	arguments, err := json.Marshal(in)
 	if err != nil {
@@ -213,11 +213,11 @@ func (s *importScene) callImport(t *testing.T, vault string, in importArguments)
 	return invokeAtOnce(t, s.registry, tools.Call{VaultID: vault, Name: "url_import", Arguments: arguments})
 }
 
-func (s *importScene) importURL(t *testing.T, vault string, in importArguments) importAnswer {
+func (s *importFixture) importURL(t *testing.T, vault string, in importArguments) importAnswer {
 	t.Helper()
 	res := s.callImport(t, vault, in)
 	if res.GetResult().GetIsError() {
-		t.Fatalf("url_import of %s in %s was refused: %s", in.URL, vault, res.GetResult().GetText())
+		t.Fatalf("url_import of %s in %s was rejected: %s", in.URL, vault, res.GetResult().GetText())
 	}
 	var out importAnswer
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
@@ -226,7 +226,7 @@ func (s *importScene) importURL(t *testing.T, vault string, in importArguments) 
 	return out
 }
 
-// getLinkNotes is the link notes the vault holds.
+// getLinkNotes returns the link notes the vault contains.
 func getLinkNotes(t *testing.T, vault *hosttest.Vault) []string {
 	t.Helper()
 	vault.Reindex()
@@ -247,7 +247,7 @@ func hasVersion(t *testing.T, texts *hosttest.Texts, path string) bool {
 }
 
 func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 
 	listing, err := s.registry.ListTools(t.Context())
 	if err != nil {
@@ -266,7 +266,7 @@ func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
 }
 
 func TestURLImportRequiresOutboundNetwork(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 
 	listing, err := s.registry.ListTools(t.Context())
 	if err != nil {
@@ -281,7 +281,7 @@ func TestURLImportRequiresOutboundNetwork(t *testing.T) {
 }
 
 func TestURLImportMakesTheNoteInTheFolderAndReportsTheArticle(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 
 	out := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "sources/tides"})
 
@@ -289,7 +289,7 @@ func TestURLImportMakesTheNoteInTheFolderAndReportsTheArticle(t *testing.T) {
 		t.Errorf("the note is at %q, want a note in sources/tides", out.Path)
 	}
 	if notes := getLinkNotes(t, s.vault); !slices.Equal(notes, []string{out.Path}) {
-		t.Errorf("the vault holds the link notes %v, want %s alone", notes, out.Path)
+		t.Errorf("the vault has the link notes %v, want %s alone", notes, out.Path)
 	}
 	if out.Title != articleTitle || out.Producer != "article" || out.Bytes <= 0 {
 		t.Errorf("url_import returned %+v, want the title %q, the producer article and the size of the text", out, articleTitle)
@@ -303,7 +303,7 @@ func TestURLImportMakesTheNoteInTheFolderAndReportsTheArticle(t *testing.T) {
 }
 
 func TestURLImportReportsTheCaptionsOfAVideo(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 
 	out := s.importURL(t, "Mills", importArguments{URL: videoAddress})
 
@@ -316,7 +316,7 @@ func TestURLImportReportsTheCaptionsOfAVideo(t *testing.T) {
 }
 
 func TestURLImportReportsAnAddressThatPublishesNothing(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 
 	out := s.importURL(t, "Mills", importArguments{URL: silentAddress})
 
@@ -324,17 +324,17 @@ func TestURLImportReportsAnAddressThatPublishesNothing(t *testing.T) {
 		t.Errorf("url_import returned %+v, want nothing published and no failure", out)
 	}
 	if notes := getLinkNotes(t, s.vault); !slices.Equal(notes, []string{out.Path}) {
-		t.Errorf("the vault holds the link notes %v, want %s alone", notes, out.Path)
+		t.Errorf("the vault has the link notes %v, want %s alone", notes, out.Path)
 	}
 }
 
 func TestURLImportReportsAFailedFetchAndKeepsTheNote(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 
 	res := s.callImport(t, "Mills", importArguments{URL: brokenAddress})
 
 	if res.GetResult().GetIsError() {
-		t.Fatalf("a failed fetch was refused: %s", res.GetResult().GetText())
+		t.Fatalf("a failed fetch was rejected: %s", res.GetResult().GetText())
 	}
 	var out importAnswer
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
@@ -348,44 +348,44 @@ func TestURLImportReportsAFailedFetchAndKeepsTheNote(t *testing.T) {
 	}
 }
 
-func TestURLImportRefusesWhatIsNoWebAddressAndMakesNoNote(t *testing.T) {
-	s := newReleasedScene(t)
+func TestURLImportRejectsNonHTTPAddressAndCreatesNoNote(t *testing.T) {
+	s := newUnblockedFixture(t)
 
 	for _, raw := range []string{"not-a-url", "ftp://tides.example/archive", "tides.example/articles"} {
 		res := s.callImport(t, "Mills", importArguments{URL: raw})
 		if !res.GetResult().GetIsError() {
-			t.Errorf("%q returned %s, want a refusal", raw, res.GetResult().GetStructured())
+			t.Errorf("%q returned %s, want an error", raw, res.GetResult().GetStructured())
 		}
 	}
 	if notes := getLinkNotes(t, s.vault); len(notes) != 0 {
-		t.Errorf("the vault holds the link notes %v, want none", notes)
+		t.Errorf("the vault has the link notes %v, want none", notes)
 	}
 }
 
-func TestURLImportRefusesACallThatNamesNoVault(t *testing.T) {
-	s := newReleasedScene(t)
+func TestURLImportRejectsACallWithoutAVault(t *testing.T) {
+	s := newUnblockedFixture(t)
 
 	res := s.callImport(t, "", importArguments{URL: articleAddress})
 
 	if !res.GetResult().GetIsError() {
-		t.Errorf("a call with no vault returned %s, want a refusal", res.GetResult().GetStructured())
+		t.Errorf("a call with no vault returned %s, want an error", res.GetResult().GetStructured())
 	}
 	if notes := getLinkNotes(t, s.vault); len(notes) != 0 {
-		t.Errorf("the vault holds the link notes %v, want none", notes)
+		t.Errorf("the vault has the link notes %v, want none", notes)
 	}
 }
 
-func TestURLImportMakesTheNoteInTheVaultTheCallNames(t *testing.T) {
-	s := newReleasedScene(t)
+func TestURLImportCreatesTheNoteInTheNamedVault(t *testing.T) {
+	s := newUnblockedFixture(t)
 
 	inChemistry := s.importURL(t, "Chemistry", importArguments{URL: articleAddress, Folder: "reading"})
 	inMills := s.importURL(t, "Mills", importArguments{URL: otherArticle, Folder: "reading"})
 
 	if notes := getLinkNotes(t, s.chemistry); !slices.Equal(notes, []string{inChemistry.Path}) {
-		t.Errorf("Chemistry holds the link notes %v, want %s alone", notes, inChemistry.Path)
+		t.Errorf("Chemistry has the link notes %v, want %s alone", notes, inChemistry.Path)
 	}
 	if notes := getLinkNotes(t, s.vault); !slices.Equal(notes, []string{inMills.Path}) {
-		t.Errorf("Mills holds the link notes %v, want %s alone", notes, inMills.Path)
+		t.Errorf("Mills has the link notes %v, want %s alone", notes, inMills.Path)
 	}
 	if !hasVersion(t, s.chemTexts, inChemistry.Path) || hasVersion(t, s.texts, inChemistry.Path) {
 		t.Errorf("the text of %s is not in Chemistry alone", inChemistry.Path)
@@ -395,9 +395,9 @@ func TestURLImportMakesTheNoteInTheVaultTheCallNames(t *testing.T) {
 	}
 }
 
-func TestURLImportStartsTheCopyAndAnswersBeforeItEnds(t *testing.T) {
+func TestURLImportStartsTheDownloadAndReturnsBeforeItEnds(t *testing.T) {
 	release := make(chan struct{})
-	s := newImportScene(t, release)
+	s := newImportFixture(t, release)
 
 	out := s.importURL(t, "Mills", importArguments{URL: videoAddress, DownloadVideo: true})
 
@@ -414,8 +414,8 @@ func TestURLImportStartsTheCopyAndAnswersBeforeItEnds(t *testing.T) {
 	}
 }
 
-func TestURLImportMakesNoCopyUnlessAsked(t *testing.T) {
-	s := newReleasedScene(t)
+func TestURLImportDownloadsOnlyWhenRequested(t *testing.T) {
+	s := newUnblockedFixture(t)
 
 	out := s.importURL(t, "Mills", importArguments{URL: videoAddress})
 	s.links.Wait()
@@ -424,12 +424,12 @@ func TestURLImportMakesNoCopyUnlessAsked(t *testing.T) {
 		t.Errorf("url_import returned %+v, want no copy", out)
 	}
 	if hasCopy(t, s.store) {
-		t.Error("a video was copied with copy not asked")
+		t.Error("a video was copied without the copy argument")
 	}
 }
 
 func TestURLImportReportsAnAddressNothingCopies(t *testing.T) {
-	s := newReleasedScene(t)
+	s := newUnblockedFixture(t)
 
 	out := s.importURL(t, "Mills", importArguments{URL: articleAddress, DownloadVideo: true})
 	s.links.Wait()
@@ -442,8 +442,8 @@ func TestURLImportReportsAnAddressNothingCopies(t *testing.T) {
 	}
 }
 
-func TestTheImportToolCarriesItsInstructions(t *testing.T) {
-	s := newReleasedScene(t)
+func TestTheImportToolHasItsInstructions(t *testing.T) {
+	s := newUnblockedFixture(t)
 
 	listing, err := s.registry.ListTools(t.Context())
 	if err != nil {

@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// activateHost answers ActivateTab with a fixed answer and records the requests.
+// activateHost returns ActivateTab with a fixed result and records the requests.
 type activateHost struct {
 	numenv1connect.UnimplementedHostWindowServiceHandler
 	code         v1.HostWindowErrorCode
@@ -87,7 +87,7 @@ func TestClientActivateTabReturnsTheErrorsOfTheHost(t *testing.T) {
 	}
 }
 
-func TestClientActivateTabReturnsATabTheWindowDidNotShowInTimeAsAnError(t *testing.T) {
+func TestClientActivateTabReturnsErrorWhenTabNotShownInTime(t *testing.T) {
 	h := &activateHost{status: connect.NewError(connect.CodeDeadlineExceeded, errors.New(`the window did not show the tab "tab-4" in time`))}
 	c := dialActivate(t, h)
 
@@ -96,6 +96,6 @@ func TestClientActivateTabReturnsATabTheWindowDidNotShowInTimeAsAnError(t *testi
 		t.Fatalf("ActivateTab returned %+v with %q active, want an error", tab, activeID)
 	}
 	if connect.CodeOf(err) != connect.CodeDeadlineExceeded || !strings.Contains(err.Error(), `"tab-4"`) {
-		t.Errorf("ActivateTab got %v, want the deadline the host answered, naming tab-4", err)
+		t.Errorf("ActivateTab got %v, want the deadline the host returned, naming tab-4", err)
 	}
 }

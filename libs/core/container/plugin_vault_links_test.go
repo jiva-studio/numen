@@ -49,7 +49,7 @@ func statFile(t *testing.T, shared pluginport.PluginVault, path string) domain.F
 	return stat
 }
 
-func TestALinkAPluginAddsInTheShownVaultIsSavedThroughTheWindowsNoteUseCases(t *testing.T) {
+func TestPluginLinkAddInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 	notes := map[string]string{
 		"Danube.md": "# Danube\n\nA river of central Europe.\n",
 		"Rhine.md":  "# Rhine\n\nA river of western Europe.\n",
@@ -74,20 +74,20 @@ func TestALinkAPluginAddsInTheShownVaultIsSavedThroughTheWindowsNoteUseCases(t *
 	}
 
 	if len(added) != 1 || added[0].Err != nil {
-		t.Fatalf("the addition answered %+v, want one entry with no error", added)
+		t.Fatalf("the addition returned %+v, want one entry with no error", added)
 	}
 	if got := index.getPaths()[before:]; !slices.Contains(got, "Rhine.md") {
 		t.Errorf("the window's index updater was given %v, want Rhine.md", got)
 	}
 	if content, _ := readVaultFile(t, v, "Rhine.md"); !strings.Contains(content, "to: Danube") || !strings.Contains(content, "role: ref") {
-		t.Errorf("Rhine.md does not hold the link to Danube:\n%s", content)
+		t.Errorf("Rhine.md does not contain the link to Danube:\n%s", content)
 	}
 	if targets := getLinkTargets(t, shared, "Rhine.md"); !slices.Contains(targets, "Danube.md") {
-		t.Errorf("the links of Rhine.md reach %v, want Danube.md", targets)
+		t.Errorf("the links of Rhine.md point to %v, want Danube.md", targets)
 	}
 }
 
-func TestALinkAPluginRemovesInTheShownVaultIsSavedThroughTheWindowsNoteUseCases(t *testing.T) {
+func TestPluginLinkRemoveInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 	v, current, assembly := openPluginVault(t, getRivers())
 	hooks, index := openWindowScenarios(assembly)
 	shared, err := assembly.OpenPluginVault(current, hooks)
@@ -112,7 +112,7 @@ func TestALinkAPluginRemovesInTheShownVaultIsSavedThroughTheWindowsNoteUseCases(
 	}
 }
 
-func TestALinkAPluginAddsInAnotherVaultIsNotSavedThroughTheWindowsNoteUseCases(t *testing.T) {
+func TestPluginLinkAddInOtherVaultBypassesWindowNoteUseCases(t *testing.T) {
 	other, current, assembly := openTwoPluginVaults(t)
 	hooks, index := openWindowScenarios(assembly)
 	shared, err := assembly.OpenPluginVault(current, hooks)
@@ -133,13 +133,13 @@ func TestALinkAPluginAddsInAnotherVaultIsNotSavedThroughTheWindowsNoteUseCases(t
 		Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Baikal"}, Role: domain.RoleChild},
 	}})
 	if err != nil || len(added) != 1 || added[0].Err != nil {
-		t.Fatalf("the addition in %s answered %+v, %v, want one entry with no error", other.Name, added, err)
+		t.Fatalf("the addition in %s returned %+v, %v, want one entry with no error", other.Name, added, err)
 	}
 
 	if got := index.getPaths()[before:]; len(got) != 0 {
 		t.Errorf("the window showing another vault had its index updater given %v from %s", got, other.Name)
 	}
 	if content, _ := readVaultFile(t, other, "Lakes.md"); !strings.Contains(content, "to: Baikal") {
-		t.Errorf("Lakes.md does not hold the link to Baikal:\n%s", content)
+		t.Errorf("Lakes.md does not contain the link to Baikal:\n%s", content)
 	}
 }

@@ -78,31 +78,31 @@ func (u *Versions) GetTextPage(ctx context.Context, v domain.Vault, path string,
 	return page, nil
 }
 
-// TextRange is the segments of a version that cover a range of its whole text, each cut to the
-// range: where the first begins in the whole text, and the bytes of the whole text.
+// TextRange is the segments of a version that cover a range of its whole text, each truncated to
+// the range, the start of the first in the whole text, and the size of the whole text in bytes.
 type TextRange struct {
 	Segments []domain.TextSegment
 	Start    int
 	Size     int
 }
 
-// GetTextRange is the segments of a version that cover length bytes of its whole text from start,
-// cut at whole characters. A length of zero reads to the end.
+// GetTextRange returns the segments of a version that cover length bytes of its whole text from
+// start, truncated at whole characters. A length of zero reads to the end.
 func (u *Versions) GetTextRange(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (TextRange, error) {
 	if start < 0 || length < 0 {
-		return TextRange{}, fmt.Errorf("a range of the text of %s begins at %d and holds %d bytes", path, start, length)
+		return TextRange{}, fmt.Errorf("invalid range of the text of %s: start %d and length %d must be >= 0", path, start, length)
 	}
 	version, err := u.GetVersionText(ctx, v, path, id)
 	if err != nil {
 		return TextRange{}, err
 	}
 	size := len(version.Text)
-	from, to := min(start, size), size
-	if length > 0 && length < size-from {
-		to = from + length
+	rangeStart, rangeEnd := min(start, size), size
+	if length > 0 && length < size-rangeStart {
+		rangeEnd = rangeStart + length
 	}
-	from, raw := text.WholeCharacters(from, []byte(version.Text[from:to]), size)
-	return TextRange{Segments: version.GetSegmentsIn(from, from+len(raw)), Start: from, Size: size}, nil
+	rangeStart, raw := text.WholeCharacters(rangeStart, []byte(version.Text[rangeStart:rangeEnd]), size)
+	return TextRange{Segments: version.GetSegmentsIn(rangeStart, rangeStart+len(raw)), Start: rangeStart, Size: size}, nil
 }
 
 // readText reads a version's file. It returns textport.ErrNoText when the file

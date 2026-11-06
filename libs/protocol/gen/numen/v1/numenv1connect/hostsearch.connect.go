@@ -83,10 +83,10 @@ type HostSearchServiceClient interface {
 	// GetBestSimilarity is the cosine similarity of the passage of the vault
 	// nearest a vector under the recipe, and zero when the vault has none.
 	GetBestSimilarity(context.Context, *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error)
-	// SearchPassages is the text of the vault that answers a query, from the index
-	// of every source and every text version: by the words in it and by what it
-	// means where the installation has an embedding model, by the words alone
-	// where it has none. It is the search the window runs, with the same floor.
+	// SearchPassages returns passages matching the query, from the index of every
+	// source and every text version: by keywords, and by embedding when the
+	// installation has an embedding model. It is the search the window runs, with
+	// the window's similarity threshold.
 	SearchPassages(context.Context, *connect.Request[v1.HostSearchServiceSearchPassagesRequest]) (*connect.Response[v1.HostSearchServiceSearchPassagesResponse], error)
 	// GetSearchFloor is the floor a search by meaning applies to the vault under
 	// the recipe, and where it comes from.
@@ -235,10 +235,10 @@ type HostSearchServiceHandler interface {
 	// GetBestSimilarity is the cosine similarity of the passage of the vault
 	// nearest a vector under the recipe, and zero when the vault has none.
 	GetBestSimilarity(context.Context, *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error)
-	// SearchPassages is the text of the vault that answers a query, from the index
-	// of every source and every text version: by the words in it and by what it
-	// means where the installation has an embedding model, by the words alone
-	// where it has none. It is the search the window runs, with the same floor.
+	// SearchPassages returns passages matching the query, from the index of every
+	// source and every text version: by keywords, and by embedding when the
+	// installation has an embedding model. It is the search the window runs, with
+	// the window's similarity threshold.
 	SearchPassages(context.Context, *connect.Request[v1.HostSearchServiceSearchPassagesRequest]) (*connect.Response[v1.HostSearchServiceSearchPassagesResponse], error)
 	// GetSearchFloor is the floor a search by meaning applies to the vault under
 	// the recipe, and where it comes from.

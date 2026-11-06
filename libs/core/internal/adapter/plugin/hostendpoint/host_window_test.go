@@ -24,10 +24,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// GetPluginWindow is no window: the fake host of the other tests lends none.
+// GetPluginWindow is no window: the fake host of the other tests provides none.
 func (c *callers) GetPluginWindow() pluginport.PluginWindow { return nil }
 
-// windowCallers is the fake host that lends its plugins the window.
+// windowCallers is the fake host that provides its plugins the window.
 type windowCallers struct {
 	*callers
 	window pluginport.PluginWindow
@@ -35,7 +35,7 @@ type windowCallers struct {
 
 func (c windowCallers) GetPluginWindow() pluginport.PluginWindow { return c.window }
 
-// recordingWindow is a window that records what it is asked to show and answers with fixed values.
+// recordingWindow is a window that records the places it receives and returns fixed values.
 type recordingWindow struct {
 	mu        sync.Mutex
 	notes     []string
@@ -43,7 +43,7 @@ type recordingWindow struct {
 	reads     int
 	activated []string
 	err       error
-	// open is the tabs the window answers in place of the fixed ones, where it is set.
+	// open is the tabs the window returns in place of the fixed ones, where it is set.
 	open *domain.OpenTabs
 }
 
@@ -86,7 +86,7 @@ func (w *recordingWindow) ReadOpenTabs(context.Context) (domain.OpenTabs, error)
 	}, nil
 }
 
-// ActivateTab records the id and answers the fixed open tabs, whose active id stays tab-2. An id none of
+// ActivateTab records the id and returns the fixed open tabs, whose active id stays tab-2. An id none of
 // them has is fs.ErrNotExist.
 func (w *recordingWindow) ActivateTab(ctx context.Context, id string) (domain.OpenTabs, error) {
 	open, err := w.ReadOpenTabs(ctx)
@@ -104,19 +104,19 @@ func (w *recordingWindow) ActivateTab(ctx context.Context, id string) (domain.Op
 	return domain.OpenTabs{}, fmt.Errorf("no open tab has id %q: %w", id, fs.ErrNotExist)
 }
 
-func (w *recordingWindow) getActivated() []string {
+func (w *recordingWindow) getActivatedIDs() []string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return slices.Clone(w.activated)
 }
 
-func (w *recordingWindow) getAsked() ([]string, []domain.Place, int) {
+func (w *recordingWindow) getRequests() ([]string, []domain.Place, int) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return slices.Clone(w.notes), slices.Clone(w.passages), w.reads
 }
 
-// newWindowClient opens the host endpoint over fake callers that lend the window, nil for none, and
+// newWindowClient opens the host endpoint over fake callers that provide the window, nil for none, and
 // returns a client calling HostWindowService with the token.
 func newWindowClient(t *testing.T, window pluginport.PluginWindow, token string) (numenv1connect.HostWindowServiceClient, *callers) {
 	t.Helper()
@@ -144,13 +144,13 @@ func TestHostWindowFocusesANoteAndChecksThePermission(t *testing.T) {
 	}
 	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED || got.Msg.GetPath() != "notes/Heron.md" ||
 		got.Msg.GetTitle() != "Grey Heron" || got.Msg.GetId() != "01J8HERON0000000000000000" {
-		t.Errorf("answered %v", got.Msg)
+		t.Errorf("returned %v", got.Msg)
 	}
-	if notes, _, _ := window.getAsked(); !slices.Equal(notes, []string{"notes/Heron.md"}) {
-		t.Errorf("the window was asked to focus %v", notes)
+	if notes, _, _ := window.getRequests(); !slices.Equal(notes, []string{"notes/Heron.md"}) {
+		t.Errorf("the window received a call to focus %v", notes)
 	}
 	if !slices.Equal(fakeCallers.checked, []string{"md.numen.a window:focus"}) {
-		t.Errorf("checked %v, want window:focus asked once", fakeCallers.checked)
+		t.Errorf("checked %v, want window:focus checked once", fakeCallers.checked)
 	}
 }
 
@@ -166,14 +166,14 @@ func TestHostWindowFocusesThePassagesInTheirOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED {
-		t.Errorf("answered %v", got.Msg)
+		t.Errorf("returned %v", got.Msg)
 	}
 	want := []domain.Place{{Path: "library/Birds.pdf", Ranges: []domain.ByteRange{{Start: 1500, End: 1580}, {Start: 400, End: 1100}}}}
-	if _, places, _ := window.getAsked(); !reflect.DeepEqual(places, want) {
-		t.Errorf("the window was asked %+v, want %+v", places, want)
+	if _, places, _ := window.getRequests(); !reflect.DeepEqual(places, want) {
+		t.Errorf("the window received %+v, want %+v", places, want)
 	}
 	if !slices.Equal(fakeCallers.checked, []string{"md.numen.a window:focus"}) {
-		t.Errorf("checked %v, want window:focus asked once", fakeCallers.checked)
+		t.Errorf("checked %v, want window:focus checked once", fakeCallers.checked)
 	}
 }
 
@@ -184,13 +184,13 @@ func TestHostWindowOpensAFileWithNoPassagesAtItsBeginning(t *testing.T) {
 	if _, err := client.FocusPassages(t.Context(), connect.NewRequest(&v1.FocusPassagesRequest{Path: "library/Birds.pdf"})); err != nil {
 		t.Fatal(err)
 	}
-	_, places, _ := window.getAsked()
+	_, places, _ := window.getRequests()
 	if len(places) != 1 || places[0].Path != "library/Birds.pdf" || len(places[0].Ranges) != 0 {
-		t.Errorf("the window was asked %+v, want the file with no passages", places)
+		t.Errorf("the window received %+v, want the file with no passages", places)
 	}
 }
 
-func TestHostWindowAnswersTheOpenTabsWithTheirPlacesAndNoState(t *testing.T) {
+func TestHostWindowReturnsOpenTabsWithPlacesAndNoState(t *testing.T) {
 	window := &recordingWindow{}
 	client, fakeCallers := newWindowClient(t, window, "token-a")
 
@@ -199,11 +199,11 @@ func TestHostWindowAnswersTheOpenTabsWithTheirPlacesAndNoState(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got.Msg.GetError() != v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED || got.Msg.GetActiveId() != "tab-2" {
-		t.Fatalf("answered %v", got.Msg)
+		t.Fatalf("returned %v", got.Msg)
 	}
 	tabs := got.Msg.GetTabs()
 	if len(tabs) != 2 {
-		t.Fatalf("answered %d tabs, want 2: %v", len(tabs), tabs)
+		t.Fatalf("returned %d tabs, want 2: %v", len(tabs), tabs)
 	}
 	if tabs[0].GetId() != "tab-1" || tabs[0].GetKind() != "note" || tabs[0].GetPath() != "notes/Heron.md" || tabs[0].GetTitle() != "Grey Heron" {
 		t.Errorf("the first tab is %v", tabs[0])
@@ -217,15 +217,15 @@ func TestHostWindowAnswersTheOpenTabsWithTheirPlacesAndNoState(t *testing.T) {
 	}
 	for _, tab := range tabs {
 		if tab.GetState() != "" {
-			t.Errorf("the tab %s carries the state %q of its kind, want none", tab.GetId(), tab.GetState())
+			t.Errorf("the tab %s has the state %q of its kind, want none", tab.GetId(), tab.GetState())
 		}
 	}
 	if !slices.Equal(fakeCallers.checked, []string{"md.numen.a window:focus"}) {
-		t.Errorf("checked %v, want window:focus asked once", fakeCallers.checked)
+		t.Errorf("checked %v, want window:focus checked once", fakeCallers.checked)
 	}
 }
 
-func TestHostWindowRefusesEveryCallFromAPluginWithoutThePermission(t *testing.T) {
+func TestHostWindowRejectsEveryCallWithoutThePermission(t *testing.T) {
 	window := &recordingWindow{}
 	client, _ := newWindowClient(t, window, "token-b")
 	ctx := t.Context()
@@ -238,12 +238,12 @@ func TestHostWindowRefusesEveryCallFromAPluginWithoutThePermission(t *testing.T)
 			t.Errorf("%s from a plugin without window:focus got %v, want permission denied", name, err)
 		}
 	}
-	if notes, places, reads := window.getAsked(); len(notes) != 0 || len(places) != 0 || reads != 0 {
-		t.Errorf("the window was asked %v, %v and %d reads for calls that were refused", notes, places, reads)
+	if notes, places, reads := window.getRequests(); len(notes) != 0 || len(places) != 0 || reads != 0 {
+		t.Errorf("the window received %v, %v and %d reads for calls that were rejected", notes, places, reads)
 	}
 }
 
-func TestHostWindowWithoutAWindowAnswersNoWindow(t *testing.T) {
+func TestHostWindowWithoutAWindowReturnsNoWindow(t *testing.T) {
 	for name, window := range map[string]pluginport.PluginWindow{
 		"no window bound":                 nil,
 		"a window that reports no window": &recordingWindow{err: fmt.Errorf("focus: %w", pluginport.ErrNoWindow)},
@@ -254,33 +254,33 @@ func TestHostWindowWithoutAWindowAnswersNoWindow(t *testing.T) {
 			const noWindow = v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW
 
 			if got := readWindowCode(client.FocusNote(ctx, connect.NewRequest(&v1.FocusNoteRequest{Path: "notes/Heron.md"}))); got != noWindow.String() {
-				t.Errorf("FocusNote answered %s, want no window", got)
+				t.Errorf("FocusNote returned %s, want no window", got)
 			}
 			if got := readWindowCode(client.FocusPassages(ctx, connect.NewRequest(&v1.FocusPassagesRequest{Path: "library/Birds.pdf"}))); got != noWindow.String() {
-				t.Errorf("FocusPassages answered %s, want no window", got)
+				t.Errorf("FocusPassages returned %s, want no window", got)
 			}
 			if got := readWindowCode(client.ReadOpenTabs(ctx, connect.NewRequest(&v1.HostWindowServiceReadOpenTabsRequest{}))); got != noWindow.String() {
-				t.Errorf("ReadOpenTabs answered %s, want no window", got)
+				t.Errorf("ReadOpenTabs returned %s, want no window", got)
 			}
 		})
 	}
 }
 
-func TestHostWindowAnswersNotFoundForAPathTheVaultDoesNotHold(t *testing.T) {
-	window := &recordingWindow{err: fmt.Errorf("this vault holds nothing at library/Gone.pdf: %w", fs.ErrNotExist)}
+func TestHostWindowReturnsNotFoundForPathNotInVault(t *testing.T) {
+	window := &recordingWindow{err: fmt.Errorf("this vault contains nothing at library/Gone.pdf: %w", fs.ErrNotExist)}
 	client, _ := newWindowClient(t, window, "token-a")
 	ctx := t.Context()
 	const notFound = v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND
 
 	if got := readWindowCode(client.FocusNote(ctx, connect.NewRequest(&v1.FocusNoteRequest{Path: "notes/Gone.md"}))); got != notFound.String() {
-		t.Errorf("FocusNote answered %s, want not found", got)
+		t.Errorf("FocusNote returned %s, want not found", got)
 	}
 	if got := readWindowCode(client.FocusPassages(ctx, connect.NewRequest(&v1.FocusPassagesRequest{Path: "library/Gone.pdf"}))); got != notFound.String() {
-		t.Errorf("FocusPassages answered %s, want not found", got)
+		t.Errorf("FocusPassages returned %s, want not found", got)
 	}
 }
 
-func TestHostWindowRejectsAPlaceTheUseCaseRefusesAsAnInvalidArgument(t *testing.T) {
+func TestHostWindowReturnsUseCaseRejectionAsInvalidArgument(t *testing.T) {
 	window := &recordingWindow{err: fmt.Errorf("highlight at most 8 places of one document: %w", pluginport.ErrInvalidFocus)}
 	client, _ := newWindowClient(t, window, "token-a")
 	ctx := t.Context()
@@ -306,7 +306,7 @@ func TestHostWindowReportsAnyOtherFailureAsInternal(t *testing.T) {
 	}
 }
 
-// readWindowCode is the error code a served call answered with, or the status of a call that was
+// readWindowCode is the error code a served call returned with, or the status of a call that was
 // not served.
 func readWindowCode[T any, M interface {
 	*T
@@ -318,7 +318,7 @@ func readWindowCode[T any, M interface {
 	return M(res.Msg).GetError().String()
 }
 
-func TestHostWindowAnswersEveryFieldOfThePlaceEachReaderReported(t *testing.T) {
+func TestHostWindowReturnsEveryPlaceFieldEachReaderReported(t *testing.T) {
 	atStart, pastAnHour := 0.0, 3723.9
 	window := &recordingWindow{open: &domain.OpenTabs{ActiveID: "tab-1", Tabs: []domain.Tab{
 		{ID: "tab-1", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &domain.TabPlace{PositionSeconds: &atStart}},
@@ -334,7 +334,7 @@ func TestHostWindowAnswersEveryFieldOfThePlaceEachReaderReported(t *testing.T) {
 	}
 	tabs := got.Msg.GetTabs()
 	if len(tabs) != 4 {
-		t.Fatalf("answered %d tabs, want 4: %v", len(tabs), tabs)
+		t.Fatalf("returned %d tabs, want 4: %v", len(tabs), tabs)
 	}
 	if place := tabs[0].GetPlace(); place == nil || place.PositionSeconds == nil || place.GetPositionSeconds() != 0 {
 		t.Errorf("the recording at its start is at %v, want 0 seconds", place)
@@ -350,7 +350,7 @@ func TestHostWindowAnswersEveryFieldOfThePlaceEachReaderReported(t *testing.T) {
 	}
 }
 
-func TestHostWindowRefusesAPassageThatEndsPastThe32BitRangeBeforeTheWindowIsAsked(t *testing.T) {
+func TestHostWindowRejectsPassagePast32BitsBeforeCallingWindow(t *testing.T) {
 	window := &recordingWindow{}
 	client, _ := newWindowClient(t, window, "token-a")
 
@@ -361,8 +361,8 @@ func TestHostWindowRefusesAPassageThatEndsPastThe32BitRangeBeforeTheWindowIsAske
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("a passage past the 32-bit range got %v, want invalid argument", err)
 	}
-	if _, places, _ := window.getAsked(); len(places) != 0 {
-		t.Errorf("the window was asked %+v for a passage past the 32-bit range", places)
+	if _, places, _ := window.getRequests(); len(places) != 0 {
+		t.Errorf("the window received %+v for a passage past the 32-bit range", places)
 	}
 }
 
@@ -377,7 +377,7 @@ func TestHostWindowFocusesAPassageThatEndsAtThe32BitLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []domain.Place{{Path: "library/Birds.pdf", Ranges: []domain.ByteRange{{Start: math.MaxInt32 - 10, End: math.MaxInt32}}}}
-	if _, places, _ := window.getAsked(); !reflect.DeepEqual(places, want) {
-		t.Errorf("the window was asked %+v, want %+v", places, want)
+	if _, places, _ := window.getRequests(); !reflect.DeepEqual(places, want) {
+		t.Errorf("the window received %+v, want %+v", places, want)
 	}
 }

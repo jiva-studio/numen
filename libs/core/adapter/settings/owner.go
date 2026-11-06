@@ -35,7 +35,8 @@ var (
 	ErrOutOfRange = errors.New("out of range")
 )
 
-// noDeclaringPluginError is an owner that no plugin declares settings under. It is an ErrUndeclared.
+// noDeclaringPluginError is returned for an owner that no plugin declares settings under. It
+// wraps ErrUndeclared.
 type noDeclaringPluginError struct{ owner string }
 
 func (e noDeclaringPluginError) Error() string {

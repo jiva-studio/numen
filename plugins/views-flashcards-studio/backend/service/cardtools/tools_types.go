@@ -47,7 +47,7 @@ type CardModel struct {
 type Card struct {
 	CardID       string       `json:"cardId" jsonschema:"the stable identifier of the card, which every card tool takes; empty for a card written by hand, which gets one at the next write of the deck"`
 	SectionIndex int          `json:"sectionIndex" jsonschema:"the index of the section of the card in the deck, counted from 0; -1 for a card before the first section"`
-	CardModel    string       `json:"cardModel,omitempty" jsonschema:"the card model of the card, as the wikilink under its heading names it"`
+	CardModel    string       `json:"cardModel,omitempty" jsonschema:"the card model of the card, as named by the wikilink under its heading"`
 	Values       []FieldValue `json:"values,omitempty" jsonschema:"the field values, in file order"`
 }
 
@@ -192,7 +192,7 @@ func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 
 func describeCode(reason api.ErrorCode) string {
 	descriptions := map[api.ErrorCode]string{
-		api.ErrorCodeNotFound:       "the vault holds no note at this path",
+		api.ErrorCodeNotFound:       "the vault has no note at this path",
 		api.ErrorCodeNotANote:       "this is not a note the vault holds",
 		api.ErrorCodeNotText:        "this file is not text: some of it is not valid UTF-8, so open it as a file",
 		api.ErrorCodeTooLarge:       fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead", edit.MaxBytes),
@@ -204,7 +204,7 @@ func describeCode(reason api.ErrorCode) string {
 		api.ErrorCodeNotADeck:       "this note is not a deck",
 		api.ErrorCodeDeckTooLarge:   "this deck is larger than a deck is read at",
 		api.ErrorCodeNotAPreset:     "this note is not a preset",
-		api.ErrorCodeConflict:       "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now",
+		api.ErrorCodeConflict:       "the file changed since it was read, and nothing was written: read it again and write from its current content",
 	}
 	if text, ok := descriptions[reason]; ok {
 		return text
@@ -212,7 +212,7 @@ func describeCode(reason api.ErrorCode) string {
 	return string(reason)
 }
 
-// NoteCreated is the deck or the card model a create made.
+// NoteCreated is the deck or the card model a create call created.
 type NoteCreated struct {
 	Path  string `json:"path" jsonschema:"the path of the new file, relative to the vault folder"`
 	ID    string `json:"id" jsonschema:"the identifier of the new note"`

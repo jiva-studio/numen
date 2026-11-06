@@ -115,20 +115,20 @@ type PluginSearchIndex interface {
 	GetBestSimilarity(ctx context.Context, v domain.Vault, recipe string, query []float32) (float64, error)
 }
 
-// PluginPassageSearch is the search of the text of the vaults, as the plugins that call the host run it.
+// PluginPassageSearch searches the text of the vaults for the plugins that call the host.
 type PluginPassageSearch interface {
-	// SearchPassages is the text of the vault that answers the query, best first, from every source and
-	// every text version: by the words, and by the meaning where the installation has a model. An
-	// installation with no model answers by the words alone.
+	// SearchPassages returns the passages of the vault matching the query, best first, from every
+	// source and every text version: by keywords, and by embedding when the installation has a model.
+	// An installation with no model searches by keywords only.
 	SearchPassages(ctx context.Context, v domain.Vault, q PluginPassageQuery) ([]domain.Passage, error)
 }
 
-// PluginPassageQuery is a question to the passages of a vault.
+// PluginPassageQuery is a passage search request.
 type PluginPassageQuery struct {
 	Query string
-	// Limit is how many passages to return. Zero takes the default of the search.
+	// Limit is the maximum number of passages to return. Zero means the default of the search.
 	Limit int
-	// Kinds are the kinds of source to look in. Empty looks in every one.
+	// Kinds are the kinds of source to search. Empty means every kind.
 	Kinds []domain.SourceKind
 	// PathPrefix limits the sources to those whose path starts with it. Empty limits none.
 	PathPrefix string
@@ -144,7 +144,7 @@ type PluginSearchPolicy interface {
 	SetSearchFloor(ctx context.Context, v domain.Vault, recipe string, floor float64) error
 }
 
-// PluginSearch is the search index, the search of the text and the search floor of the vaults.
+// PluginSearch is the search index, the passage search and the similarity threshold of the vaults.
 type PluginSearch interface {
 	PluginSearchIndex
 	PluginPassageSearch

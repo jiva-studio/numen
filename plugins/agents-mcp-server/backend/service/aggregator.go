@@ -28,9 +28,9 @@ type ToolAggregator struct {
 	mu        sync.RWMutex
 	// registered maps the name of each tool on the MCP server to its declaration.
 	registered map[string]*sdk.Tool
-	// syncing is held for a whole sync, host call included, so the sync that finishes last is the
+	// syncMu is locked for the whole sync, host call included, so the sync that finishes last is the
 	// one that listed last.
-	syncing sync.Mutex
+	syncMu sync.Mutex
 	// sentences are the distinct instructions of the tools registered at the latest sync, in listing
 	// order.
 	sentences []string
@@ -42,7 +42,7 @@ func NewToolAggregator(client ToolClient, mcpServer *sdk.Server) *ToolAggregator
 		client:     client,
 		mcpServer:  mcpServer,
 		mu:         sync.RWMutex{},
-		syncing:    sync.Mutex{},
+		syncMu:     sync.Mutex{},
 		registered: make(map[string]*sdk.Tool),
 		sentences:  nil,
 	}
@@ -73,8 +73,8 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	if a.client == nil || a.mcpServer == nil {
 		return nil
 	}
-	a.syncing.Lock()
-	defer a.syncing.Unlock()
+	a.syncMu.Lock()
+	defer a.syncMu.Unlock()
 
 	listing, err := a.client.ListTools(ctx)
 	if err != nil {

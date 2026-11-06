@@ -33,14 +33,14 @@ service HostVaultService {
   rpc EnsureVaultIndexed(EnsureVaultIndexedRequest) returns (EnsureVaultIndexedResponse);
 
   // StatFile says what a file is now. A file that is not there is
-  // answered with the error code NOT_FOUND.
+  // returns the error code NOT_FOUND.
   rpc StatFile(StatFileRequest) returns (StatFileResponse);
 
   // ReadFile reads a whole file, with the file stat it had when it was read.
   rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
 
   // WriteFile replaces a file that has not changed since the file stat given.
-  // A file that moved past it is answered with the error code CONFLICT and
+  // A file changed since returns the error code CONFLICT and
   // nothing is written.
   rpc WriteFile(WriteFileRequest) returns (WriteFileResponse);
 
@@ -113,7 +113,7 @@ service HostVaultService {
   // It needs vault:read.
   rpc GetVaultProblems(GetVaultProblemsRequest) returns (GetVaultProblemsResponse);
 
-  // RenameNote gives a note another title and moves its file to the filename of
+  // RenameNote renames a note and moves its file to the filename of
   // that title, repairing the links that stop resolving. It needs vault:write.
   rpc RenameNote(HostVaultServiceRenameNoteRequest) returns (HostVaultServiceRenameNoteResponse);
 
@@ -121,7 +121,7 @@ service HostVaultService {
   // repairs the links that stop resolving. It needs vault:write.
   rpc MoveNotes(HostVaultServiceMoveNotesRequest) returns (HostVaultServiceMoveNotesResponse);
 
-  // RemoveNotes moves notes to the vault's trash. A folder is answered with
+  // RemoveNotes moves notes to the vault's trash. A folder returns
   // NOT_A_NOTE. It needs vault:write.
   rpc RemoveNotes(HostVaultServiceRemoveNotesRequest) returns (HostVaultServiceRemoveNotesResponse);
 
@@ -147,11 +147,11 @@ service HostVaultService {
   // RenameVault changes the name of a vault on the list. It needs vault:manage.
   rpc RenameVault(HostVaultServiceRenameVaultRequest) returns (HostVaultServiceRenameVaultResponse);
 
-  // RemoveVault takes a vault off the list and out of the index. The folder
+  // RemoveVault removes a vault from the list and from the index. The folder
   // stays. It needs vault:manage.
   rpc RemoveVault(HostVaultServiceRemoveVaultRequest) returns (HostVaultServiceRemoveVaultResponse);
 
-  // OpenVault makes the window show another vault. It answers before the window
+  // OpenVault makes the window show another vault. It returns before the window
   // changes vault. It needs vault:manage.
   rpc OpenVault(HostVaultServiceOpenVaultRequest) returns (HostVaultServiceOpenVaultResponse);
 
@@ -208,10 +208,10 @@ enum HostVaultErrorCode {
   // Every numbered "Untitled note N" name is taken.
   HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED = 11;
 
-  // The file is not text a note can carry.
+  // The file is not valid note text.
   HOST_VAULT_ERROR_CODE_NOT_TEXT = 12;
 
-  // The file is past the size a note is read at.
+  // The file exceeds the maximum note size.
   HOST_VAULT_ERROR_CODE_TOO_LARGE = 13;
 
   // The prose opens with a frontmatter delimiter, so writing it would put a
@@ -222,13 +222,12 @@ enum HostVaultErrorCode {
   // written.
   HOST_VAULT_ERROR_CODE_UNREADABLE = 15;
 
-  // A note cannot be called this: the title leaves nothing a file can be named
-  // after, it is more than one line, or a heading would read it back as
-  // something else.
+  // The title is invalid: it is empty after sanitising, spans lines, or parses
+  // as markup.
   HOST_VAULT_ERROR_CODE_INVALID_NAME = 16;
 
   // The change of a note failed for a reason with no code of its own; the
-  // detail of that note holds the core's error text.
+  // detail of that note contains the core's error text.
   HOST_VAULT_ERROR_CODE_INTERNAL = 17;
 
   // The call was cancelled before this note was changed: the note is as it was.
@@ -304,11 +303,11 @@ message StatFileResponse {
 
 message ReadFileRequest {
   string path = 1;
-  // Where a ranged read begins, in bytes.
+  // The start of a ranged read, in bytes.
   int64 start = 2;
-  // Set: read at most this many bytes from start as text, cut at whole
+  // Set: read at most this many bytes from start as text, truncated at whole
   // characters; zero or more than 16000 reads 16000. A range that is not UTF-8
-  // is answered NOT_TEXT, a folder or a path the vault does not list NOT_FOUND.
+  // returns NOT_TEXT, a folder or a path not in the vault NOT_FOUND.
   // Unset: read the whole file as bytes.
   optional int64 length = 3;
 }
@@ -317,7 +316,7 @@ message ReadFileResponse {
   HostVaultErrorCode error = 1;
   bytes content = 2;
   HostFileStat stat = 3;
-  // Where content begins in the file: start moved forward to a whole
+  // The start of content in the file: start moved forward to a whole
   // character. Zero for a whole read.
   int64 start = 4;
 }
@@ -573,14 +572,14 @@ message HostVaultProblem {
   // The target of the link the problem is about: its scheme and its value.
   string target_scheme = 4;
   string target_value = 5;
-  // The notes an ambiguous link could reach.
+  // The notes an ambiguous link could resolve to.
   repeated string candidates = 6;
 }
 
 message GetVaultProblemsResponse {
   HostVaultErrorCode error = 1;
   repeated HostVaultProblem problems = 2;
-  // The checks this answer covers.
+  // The checks this result covers.
   repeated string checks = 3;
 }
 
@@ -637,7 +636,7 @@ message HostNoteRemoval {
   string path = 1;
   // The path of the file in the trash.
   string trash_path = 2;
-  // The notes whose links now resolve to nothing.
+  // The notes whose links are now broken.
   repeated string broken_links = 3;
   // Why this note was not removed: NOT_FOUND, NOT_A_NOTE for a folder or a
   // file that is not a note, or INTERNAL.
@@ -733,14 +732,14 @@ message HostVaultServiceRemoveLinksResponse {
 message HostVaultServiceAddVaultRequest {
   // The folder, absolute on this machine.
   string root = 1;
-  // Empty takes the name of the folder.
+  // Empty means the name of the folder.
   string name = 2;
 }
 
 message HostVaultServiceAddVaultResponse {
   VaultsErrorCode error = 1;
   Vault vault = 2;
-  // The core's error text of a refusal; empty on success.
+  // The core's error text of a rejected call; empty on success.
   string detail = 3;
 }
 
@@ -752,7 +751,7 @@ message HostVaultServiceRenameVaultRequest {
 message HostVaultServiceRenameVaultResponse {
   VaultsErrorCode error = 1;
   Vault vault = 2;
-  // The core's error text of a refusal; empty on success.
+  // The core's error text of a rejected call; empty on success.
   string detail = 3;
 }
 
@@ -764,7 +763,7 @@ message HostVaultServiceRemoveVaultResponse {
   VaultsErrorCode error = 1;
   // The folder of the vault, which stays on the disk.
   string path = 2;
-  // The core's error text of a refusal; empty on success.
+  // The core's error text of a rejected call; empty on success.
   string detail = 3;
 }
 
@@ -774,7 +773,7 @@ message HostVaultServiceOpenVaultRequest {
 
 message HostVaultServiceOpenVaultResponse {
   VaultsErrorCode error = 1;
-  // The core's error text of a refusal; empty on success.
+  // The core's error text of a rejected call; empty on success.
   string detail = 2;
 }
 

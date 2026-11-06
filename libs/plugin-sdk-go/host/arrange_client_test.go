@@ -18,9 +18,9 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// arranging is a host of a vault of rivers that serves the calls renaming, moving and removing
-// notes, running checks and changing the list of vaults, and records what it was asked.
-type arranging struct {
+// fakeArrangeHost is a host of a vault of rivers that serves the calls renaming, moving and removing
+// notes, running checks and changing the list of vaults, and records the requests.
+type fakeArrangeHost struct {
 	numenv1connect.UnimplementedHostVaultServiceHandler
 	mu sync.Mutex
 	// noteError, when set, is the error of every rename of a note.
@@ -32,19 +32,19 @@ type arranging struct {
 	requests     []string
 }
 
-func (a *arranging) record(request string) {
+func (a *fakeArrangeHost) record(request string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.requests = append(a.requests, request)
 }
 
-func (a *arranging) getRequests() []string {
+func (a *fakeArrangeHost) getRequests() []string {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return slices.Clone(a.requests)
 }
 
-func (a *arranging) RenameNote(
+func (a *fakeArrangeHost) RenameNote(
 	_ context.Context, req *connect.Request[v1.HostVaultServiceRenameNoteRequest],
 ) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
 	a.record("rename " + req.Msg.GetPath() + " " + req.Msg.GetTitle())
@@ -57,7 +57,7 @@ func (a *arranging) RenameNote(
 	}), nil
 }
 
-func (a *arranging) MoveNotes(
+func (a *fakeArrangeHost) MoveNotes(
 	_ context.Context, req *connect.Request[v1.HostVaultServiceMoveNotesRequest],
 ) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error) {
 	a.record("move " + req.Msg.GetFolder())
@@ -69,7 +69,7 @@ func (a *arranging) MoveNotes(
 	}}), nil
 }
 
-func (a *arranging) RemoveNotes(
+func (a *fakeArrangeHost) RemoveNotes(
 	_ context.Context, req *connect.Request[v1.HostVaultServiceRemoveNotesRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error) {
 	a.record("remove " + req.Msg.GetPaths()[0])
@@ -80,7 +80,7 @@ func (a *arranging) RemoveNotes(
 	}}), nil
 }
 
-func (a *arranging) GetVaultProblems(
+func (a *fakeArrangeHost) GetVaultProblems(
 	_ context.Context, req *connect.Request[v1.GetVaultProblemsRequest],
 ) (*connect.Response[v1.GetVaultProblemsResponse], error) {
 	return connect.NewResponse(&v1.GetVaultProblemsResponse{
@@ -92,7 +92,7 @@ func (a *arranging) GetVaultProblems(
 	}), nil
 }
 
-func (a *arranging) GetNoteRefs(
+func (a *fakeArrangeHost) GetNoteRefs(
 	_ context.Context, req *connect.Request[v1.GetNoteRefsRequest],
 ) (*connect.Response[v1.GetNoteRefsResponse], error) {
 	notes := make([]*v1.HostNoteRef, 0, len(req.Msg.GetPaths()))
@@ -102,14 +102,14 @@ func (a *arranging) GetNoteRefs(
 	return connect.NewResponse(&v1.GetNoteRefsResponse{Notes: notes}), nil
 }
 
-func (a *arranging) ListHostVaults(context.Context, *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error) {
+func (a *fakeArrangeHost) ListHostVaults(context.Context, *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error) {
 	return connect.NewResponse(&v1.ListHostVaultsResponse{Vaults: []*v1.HostVaultInfo{
 		{Id: "v1", Name: "Rivers", Path: "/vaults/Rivers"},
 		{Id: "v2", Name: "Lakes", Path: "/vaults/Lakes", IsMissing: true},
 	}}), nil
 }
 
-func (a *arranging) AddVault(
+func (a *fakeArrangeHost) AddVault(
 	_ context.Context, req *connect.Request[v1.HostVaultServiceAddVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
 	a.record("add " + req.Msg.GetRoot() + " " + req.Msg.GetName())
@@ -119,7 +119,7 @@ func (a *arranging) AddVault(
 	return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Vault: &v1.Vault{Id: "v3", Name: req.Msg.GetName(), Path: req.Msg.GetRoot()}}), nil
 }
 
-func (a *arranging) RenameVault(
+func (a *fakeArrangeHost) RenameVault(
 	_ context.Context, req *connect.Request[v1.HostVaultServiceRenameVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error) {
 	a.record("rename vault " + req.Msg.GetId() + " " + req.Msg.GetName())
@@ -129,7 +129,7 @@ func (a *arranging) RenameVault(
 	return connect.NewResponse(&v1.HostVaultServiceRenameVaultResponse{Vault: &v1.Vault{Id: req.Msg.GetId(), Name: req.Msg.GetName(), Path: "/vaults/Lakes"}}), nil
 }
 
-func (a *arranging) RemoveVault(
+func (a *fakeArrangeHost) RemoveVault(
 	_ context.Context, req *connect.Request[v1.HostVaultServiceRemoveVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error) {
 	a.record("remove vault " + req.Msg.GetId())
@@ -139,14 +139,14 @@ func (a *arranging) RemoveVault(
 	return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Path: "/vaults/Lakes"}), nil
 }
 
-func (a *arranging) OpenVault(
+func (a *fakeArrangeHost) OpenVault(
 	_ context.Context, req *connect.Request[v1.HostVaultServiceOpenVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
 	a.record("open vault " + req.Msg.GetId())
 	return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Error: a.vaultsError, Detail: a.vaultsDetail}), nil
 }
 
-func arrangingClient(t *testing.T, a *arranging) *host.Client {
+func newFakeArrangeClient(t *testing.T, a *fakeArrangeHost) *host.Client {
 	t.Helper()
 	server := httptest.NewServer(handler(a))
 	t.Cleanup(server.Close)
@@ -154,9 +154,9 @@ func arrangingClient(t *testing.T, a *arranging) *host.Client {
 }
 
 func TestTheClientRenamesANoteAndReadsTheMove(t *testing.T) {
-	a := &arranging{}
+	a := &fakeArrangeHost{}
 
-	renamed, err := arrangingClient(t, a).RenameNote(t.Context(), "Danube.md", "Donau")
+	renamed, err := newFakeArrangeClient(t, a).RenameNote(t.Context(), "Danube.md", "Donau")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,11 +169,11 @@ func TestTheClientRenamesANoteAndReadsTheMove(t *testing.T) {
 		t.Errorf("the move came back as %+v", m)
 	}
 	if got := a.getRequests(); !slices.Equal(got, []string{"rename Danube.md Donau"}) {
-		t.Errorf("the host was asked %v", got)
+		t.Errorf("the host received %v", got)
 	}
 }
 
-func TestTheClientReturnsTheErrorCodeOfARefusedRenameAsItsError(t *testing.T) {
+func TestClientReturnsTheErrorCodeOfARejectedRename(t *testing.T) {
 	for code, want := range map[v1.HostVaultErrorCode]error{
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:      host.ErrNotExist,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:     host.ErrNotANote,
@@ -181,7 +181,7 @@ func TestTheClientReturnsTheErrorCodeOfARefusedRenameAsItsError(t *testing.T) {
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:       host.ErrStale,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:   domain.ErrInvalidName,
 	} {
-		_, err := arrangingClient(t, &arranging{noteError: code}).RenameNote(t.Context(), "Danube.md", "Donau")
+		_, err := newFakeArrangeClient(t, &fakeArrangeHost{noteError: code}).RenameNote(t.Context(), "Danube.md", "Donau")
 		if !errors.Is(err, want) {
 			t.Errorf("error %s: got %v, want %v", code, err, want)
 		}
@@ -189,9 +189,9 @@ func TestTheClientReturnsTheErrorCodeOfARefusedRenameAsItsError(t *testing.T) {
 }
 
 func TestTheClientMovesNotesAndReturnsEachFailure(t *testing.T) {
-	a := &arranging{}
+	a := &fakeArrangeHost{}
 
-	moves, err := arrangingClient(t, a).MoveNotes(t.Context(), []string{"Danube.md", "Nowhere.md", "Rivers", "Deltas.md"}, "Rivers")
+	moves, err := newFakeArrangeClient(t, a).MoveNotes(t.Context(), []string{"Danube.md", "Nowhere.md", "Rivers", "Deltas.md"}, "Rivers")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,12 +209,12 @@ func TestTheClientMovesNotesAndReturnsEachFailure(t *testing.T) {
 		}
 	}
 	if got := a.getRequests(); !slices.Equal(got, []string{"move Rivers"}) {
-		t.Errorf("the host was asked %v", got)
+		t.Errorf("the host received %v", got)
 	}
 }
 
 func TestTheClientRemovesNotesAndReturnsAFolderAsNotANote(t *testing.T) {
-	removals, err := arrangingClient(t, &arranging{}).RemoveNotes(t.Context(), []string{"Danube.md", "Rivers", "Nowhere.md"})
+	removals, err := newFakeArrangeClient(t, &fakeArrangeHost{}).RemoveNotes(t.Context(), []string{"Danube.md", "Rivers", "Nowhere.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,9 +234,9 @@ func TestTheClientRemovesNotesAndReturnsAFolderAsNotANote(t *testing.T) {
 }
 
 func TestTheClientRunsTheNamedChecks(t *testing.T) {
-	a := &arranging{}
+	a := &fakeArrangeHost{}
 
-	problems, err := arrangingClient(t, a).GetProblems(t.Context(), []string{"ambiguous", "dangling"})
+	problems, err := newFakeArrangeClient(t, a).GetProblems(t.Context(), []string{"ambiguous", "dangling"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,7 +256,7 @@ func TestTheClientRunsTheNamedChecks(t *testing.T) {
 }
 
 func TestTheClientReadsTheIdentifierOfEachNote(t *testing.T) {
-	notes, err := arrangingClient(t, &arranging{}).GetNotes(t.Context(), []string{"Danube.md"})
+	notes, err := newFakeArrangeClient(t, &fakeArrangeHost{}).GetNotes(t.Context(), []string{"Danube.md"})
 
 	if err != nil || notes["Danube.md"].ID != "01JRIVERDANUBE" {
 		t.Errorf("the notes came back as %+v (%v), want Danube.md with id 01JRIVERDANUBE", notes, err)
@@ -264,7 +264,7 @@ func TestTheClientReadsTheIdentifierOfEachNote(t *testing.T) {
 }
 
 func TestTheClientListsTheVaultsAndMarksAMissingFolder(t *testing.T) {
-	known, err := arrangingClient(t, &arranging{}).GetVaultList(t.Context())
+	known, err := newFakeArrangeClient(t, &fakeArrangeHost{}).GetVaultList(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,8 +279,8 @@ func TestTheClientListsTheVaultsAndMarksAMissingFolder(t *testing.T) {
 }
 
 func TestTheClientChangesTheListOfVaults(t *testing.T) {
-	a := &arranging{}
-	client := arrangingClient(t, a)
+	a := &fakeArrangeHost{}
+	client := newFakeArrangeClient(t, a)
 	ctx := t.Context()
 
 	added, addErr := client.AddVault(ctx, "/vaults/Seas", "Seas")
@@ -302,22 +302,22 @@ func TestTheClientChangesTheListOfVaults(t *testing.T) {
 	}
 	want := []string{"add /vaults/Seas Seas", "rename vault v2 Ponds", "remove vault v2", "open vault v1"}
 	if got := a.getRequests(); !slices.Equal(got, want) {
-		t.Errorf("the host was asked %v, want %v", got, want)
+		t.Errorf("the host received %v, want %v", got, want)
 	}
 }
 
-func TestTheClientReturnsEachVaultsErrorCodeAsItsErrorWithTheDetail(t *testing.T) {
+func TestClientReturnsEachVaultErrorCodeWithTheDetail(t *testing.T) {
 	for code, want := range map[v1.VaultsErrorCode]error{
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: host.ErrVaultNameTaken,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: host.ErrLastVault,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    host.ErrVaultShowing,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    host.ErrVaultActive,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  host.ErrUnknownVault,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: host.ErrVaultUnreadable,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       host.ErrVaultCopy,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       host.ErrVaultDuplicate,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   host.ErrVaultOverlaps,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:    host.ErrUnsavedChanges,
 	} {
-		client := arrangingClient(t, &arranging{vaultsError: code, vaultsDetail: "vault v2: refused by the core"})
+		client := newFakeArrangeClient(t, &fakeArrangeHost{vaultsError: code, vaultsDetail: "vault v2: refused by the core"})
 		ctx := t.Context()
 
 		_, addErr := client.AddVault(ctx, "/vaults/Seas", "")
@@ -336,13 +336,13 @@ func TestTheClientReturnsEachVaultsErrorCodeAsItsErrorWithTheDetail(t *testing.T
 	}
 }
 
-// detailedAdding is a host whose AddVault refuses the folder with the core's message.
-type detailedAdding struct {
-	arranging
+// addVaultErrorHost is a host whose AddVault rejects the folder with the core's message.
+type addVaultErrorHost struct {
+	fakeArrangeHost
 	detail string
 }
 
-func (a *detailedAdding) AddVault(
+func (a *addVaultErrorHost) AddVault(
 	context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
 	return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Error: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE, Detail: a.detail}), nil
@@ -350,7 +350,7 @@ func (a *detailedAdding) AddVault(
 
 func TestTheClientReturnsTheCoreMessageOfARejectedFolder(t *testing.T) {
 	const detail = "/Users/river is the user's home directory, and a vault is a folder inside it"
-	server := httptest.NewServer(handler(&detailedAdding{detail: detail}))
+	server := httptest.NewServer(handler(&addVaultErrorHost{detail: detail}))
 	t.Cleanup(server.Close)
 	client := host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 
@@ -360,26 +360,26 @@ func TestTheClientReturnsTheCoreMessageOfARejectedFolder(t *testing.T) {
 		t.Errorf("AddVault of the home folder returned %v, want ErrVaultUnreadable", err)
 	}
 	if err == nil || !strings.Contains(err.Error(), detail) {
-		t.Errorf("the error is %v, want it to carry %q", err, detail)
+		t.Errorf("the error is %v, want it to have %q", err, detail)
 	}
 }
 
-// detailedOpening is a host whose OpenVault rejects the open because the window has unsaved changes,
+// openVaultErrorHost is a host whose OpenVault rejects the open because the window has unsaved changes,
 // with the core's message.
-type detailedOpening struct {
-	arranging
+type openVaultErrorHost struct {
+	fakeArrangeHost
 	detail string
 }
 
-func (a *detailedOpening) OpenVault(
+func (a *openVaultErrorHost) OpenVault(
 	context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
 	return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Error: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED, Detail: a.detail}), nil
 }
 
-func TestTheClientReturnsUnsavedChangesWithTheCoreMessageOfARejectedOpen(t *testing.T) {
-	const detail = "open vault v2: the user is asked about unsaved changes in the window; ask again after they answer"
-	server := httptest.NewServer(handler(&detailedOpening{detail: detail}))
+func TestClientReturnsUnsavedChangesWithCoreMessageOfOpen(t *testing.T) {
+	const detail = "open vault v2: the window has unsaved changes and is prompting the user; retry after the prompt closes"
+	server := httptest.NewServer(handler(&openVaultErrorHost{detail: detail}))
 	t.Cleanup(server.Close)
 	client := host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 
@@ -393,8 +393,8 @@ func TestTheClientReturnsUnsavedChangesWithTheCoreMessageOfARejectedOpen(t *test
 	}
 }
 
-func TestErrUnsavedChangesContainsTheTextOfTheUserQuestion(t *testing.T) {
-	const want = "the user is asked about unsaved changes in the window; ask again after they answer"
+func TestErrUnsavedChangesContainsThePromptText(t *testing.T) {
+	const want = "the window has unsaved changes and is prompting the user; retry after the prompt closes"
 	if got := host.ErrUnsavedChanges.Error(); !strings.Contains(got, want) {
 		t.Errorf("ErrUnsavedChanges is %q, want it to contain %q", got, want)
 	}

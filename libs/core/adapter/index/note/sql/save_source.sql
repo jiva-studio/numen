@@ -1,7 +1,7 @@
 -- Returns the source's identity, which the note, its headings, its links, its
 -- problems and its chunks are stored against and its full-text row is keyed by.
 --
--- `recipe` is how the note was cut into chunks, and is set by every write. `content_hash` and
+-- `recipe` is the chunking method of the note, and is set by every write. `content_hash` and
 -- `producer` are set by every write too, and a note has neither.
 -- `file_id` and `content_hash_time` are kept by a write of the row's own hash,
 -- size and modification time, and cleared by any other.

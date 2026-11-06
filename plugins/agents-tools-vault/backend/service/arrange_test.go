@@ -89,7 +89,7 @@ func newSkyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 }
 
 // callTool calls the tool on the vault and returns its structured result, failing the test when the
-// tool is unknown or refuses.
+// tool is unknown or rejects.
 func callTool(t *testing.T, registry *tools.Registry, vaultID, name, arguments string) []byte {
 	t.Helper()
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: vaultID, Name: name, Arguments: []byte(arguments)})
@@ -100,13 +100,13 @@ func callTool(t *testing.T, registry *tools.Registry, vaultID, name, arguments s
 		t.Fatalf("call %s %s: error code %v", name, arguments, res.GetError())
 	}
 	if res.GetResult().GetIsError() {
-		t.Fatalf("call %s %s refused: %s", name, arguments, res.GetResult().GetText())
+		t.Fatalf("call %s %s rejected: %s", name, arguments, res.GetResult().GetText())
 	}
 	return res.GetResult().GetStructured()
 }
 
-// requireRefusal calls the tool and fails the test unless the tool is known and refuses the call.
-func requireRefusal(t *testing.T, registry *tools.Registry, vaultID, name, arguments string) {
+// requireRejection calls the tool and fails the test unless the tool is known and rejects the call.
+func requireRejection(t *testing.T, registry *tools.Registry, vaultID, name, arguments string) {
 	t.Helper()
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: vaultID, Name: name, Arguments: []byte(arguments)})
 	if err != nil {
@@ -116,7 +116,7 @@ func requireRefusal(t *testing.T, registry *tools.Registry, vaultID, name, argum
 		t.Fatalf("call %s: the tool is unknown", name)
 	}
 	if !res.GetResult().GetIsError() && res.GetError() == tools.ErrorCodeUnspecified {
-		t.Errorf("call %s %s was not refused: %s", name, arguments, res.GetResult().GetStructured())
+		t.Errorf("call %s %s was not rejected: %s", name, arguments, res.GetResult().GetStructured())
 	}
 }
 
@@ -222,9 +222,9 @@ func TestNoteListReturnsAtMostOneHundredNotesByDefault(t *testing.T) {
 	}
 }
 
-func TestNoteListRefusesALimitAboveFiveHundred(t *testing.T) {
+func TestNoteListRejectsALimitAboveFiveHundred(t *testing.T) {
 	_, registry := newSkyVault(t)
-	requireRefusal(t, registry, skyVault, "note_list", `{"limit":501}`)
+	requireRejection(t, registry, skyVault, "note_list", `{"limit":501}`)
 	callTool(t, registry, skyVault, "note_list", `{"limit":500}`)
 }
 
@@ -283,7 +283,7 @@ func TestNoteTitleListRejectsMoreThanFiftyPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	requireRefusal(t, registry, skyVault, "note_title_list", string(arguments))
+	requireRejection(t, registry, skyVault, "note_title_list", string(arguments))
 
 	fifty, err := json.Marshal(map[string][]string{"paths": paths[:50]})
 	if err != nil {
@@ -495,8 +495,8 @@ func TestVaultProblemListRunsTheDanglingCheckOnlyWhenNamed(t *testing.T) {
 
 func TestVaultProblemListRejectsAnUnknownCheckName(t *testing.T) {
 	_, registry := newSkyVault(t)
-	requireRefusal(t, registry, skyVault, "vault_problem_list", `{"checks":["spelling"]}`)
-	requireRefusal(t, registry, skyVault, "vault_problem_list", `{"checks":["parse","spelling"]}`)
+	requireRejection(t, registry, skyVault, "vault_problem_list", `{"checks":["spelling"]}`)
+	requireRejection(t, registry, skyVault, "vault_problem_list", `{"checks":["parse","spelling"]}`)
 }
 
 // getArrangeToolNames returns the note_list group: the tools that list, title and resolve notes, list vaults and check problems.
@@ -529,7 +529,7 @@ func TestNoteListGroupIsOnReadingAndFullServers(t *testing.T) {
 	}
 }
 
-func TestNoteListGroupRefusesCallWithoutVault(t *testing.T) {
+func TestNoteListGroupRejectsCallWithoutVault(t *testing.T) {
 	_, registry := newSkyVault(t)
 	arguments := map[string]string{
 		"note_list":          `{}`,
@@ -548,7 +548,7 @@ func TestNoteListGroupRefusesCallWithoutVault(t *testing.T) {
 			continue
 		}
 		if !res.GetResult().GetIsError() || res.GetResult().GetText() != name+": the call names no vault" {
-			t.Errorf("a call of %s naming no vault answered %v", name, res.GetResult())
+			t.Errorf("a call of %s naming no vault returned %v", name, res.GetResult())
 		}
 	}
 }

@@ -33,7 +33,7 @@ func TestHostSearchPassagesReturnPlacesAndCheckPermission(t *testing.T) {
 		Query: "heron", Limit: 5, Kinds: []string{"file"}, PathPrefix: "library/",
 	}))
 	if err != nil || got.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED || len(got.Msg.GetPassages()) != 2 {
-		t.Fatalf("answered %v (%v)", got.Msg, err)
+		t.Fatalf("returned %v (%v)", got.Msg, err)
 	}
 	first, second := got.Msg.GetPassages()[0], got.Msg.GetPassages()[1]
 	if first.GetPath() != "library/Birds.pdf" || first.GetText() != "the grey heron" || first.GetLocation() != "page 12" ||
@@ -72,10 +72,10 @@ func TestHostSearchPassagesRejectUnknownVaultAndKind(t *testing.T) {
 		t.Errorf("an unknown vault got %v, want not found", err)
 	}
 	if _, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron", Kinds: []string{"book"}})); readCode(t, err) != connect.CodeInvalidArgument {
-		t.Errorf("a kind the index does not hold got %v, want invalid argument", err)
+		t.Errorf("a kind the index does not have got %v, want invalid argument", err)
 	}
 	if len(search.passageQueries) != 0 {
-		t.Errorf("the search ran for a call that was refused: %+v", search.passageQueries)
+		t.Errorf("the search ran for a call that was rejected: %+v", search.passageQueries)
 	}
 }
 
@@ -84,11 +84,11 @@ func TestHostSearchWithoutIndexReportsNoIndex(t *testing.T) {
 	client := newSearchClient(t, fakeCallers, "token-a")
 	got, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron"}))
 	if err != nil || got.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL {
-		t.Errorf("answered %v (%v), want the no-index refusal", got.Msg, err)
+		t.Errorf("returned %v (%v), want the no-index error", got.Msg, err)
 	}
 }
 
-// farSearch answers with a passage of a text longer than a range on the wire can address.
+// farSearch returns a passage of a text longer than a range on the wire can address.
 type farSearch struct {
 	recordingSearch
 }
@@ -97,10 +97,10 @@ func (s *farSearch) SearchPassages(context.Context, domain.Vault, pluginport.Plu
 	return []domain.Passage{{Source: "library/Atlas.pdf", Text: "heron", Start: math.MaxInt32 - 5, Length: 10}}, nil
 }
 
-func TestHostSearchPassagesRefusePassageBeyondTheRangeOfTheWire(t *testing.T) {
+func TestHostSearchPassagesRejectsPassageBeyondWireRange(t *testing.T) {
 	client := newSearchClient(t, newSearchCallers(&farSearch{}), "token-a")
 	got, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.HostSearchServiceSearchPassagesRequest{Query: "heron"}))
 	if readCode(t, err) != connect.CodeOutOfRange {
-		t.Errorf("a passage ending past the largest range answered %v (%v), want out of range", got, err)
+		t.Errorf("a passage ending past the largest range returned %v (%v), want out of range", got, err)
 	}
 }

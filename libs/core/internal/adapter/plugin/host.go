@@ -115,13 +115,14 @@ type Host struct {
 	typeCache      contentTypeCache
 	clock          machineport.Clock
 	storage        storageRoots
-	// listenersMu orders the binding and closing of listener ports. It is taken before mu, never while mu is held.
+	// listenersMu serializes the binding and closing of listener ports. It is locked before mu,
+	// never while mu is locked.
 	listenersMu sync.Mutex
 	// listeners maps each plugin to its bound listener ports by listener name.
 	listeners map[string]map[string]listenerBinding
 	// listenerPorts maps each running plugin to the loopback port of each listener its ready line reported.
 	listenerPorts map[string]map[string]int
-	// reportedTargetFailures holds each plugin whose failed activation for a listener connection was
+	// reportedTargetFailures contains each plugin whose failed activation for a listener connection was
 	// reported, until the plugin activates or its failure is cleared.
 	reportedTargetFailures map[string]struct{}
 }
@@ -1289,7 +1290,7 @@ func (h *Host) getPluginConfigJSONLocked(pluginID string) (string, error) {
 }
 
 // SetPluginSetting persists one setting, then writes it to memory and notifies the plugin. A listener
-// port the host cannot bind is refused before it is persisted.
+// port the host cannot bind is rejected before it is persisted.
 func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value any) error {
 	if key == pluginport.SettingStoredSecrets {
 		return fmt.Errorf("plugin %s: %w: %s", pluginID, pluginport.ErrReservedSettingKey, key)

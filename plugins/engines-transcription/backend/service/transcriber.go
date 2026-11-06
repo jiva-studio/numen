@@ -28,10 +28,11 @@ type Files interface {
 	ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error)
 }
 
-// shownVault is implemented by Files that can name the vault the host shows. A recording asked for
-// in no vault is then claimed under that vault's id, the id a tool call names.
-type shownVault interface {
-	GetShownVault(ctx context.Context) (domain.VaultID, error)
+// activeVaultProvider is implemented by Files that can return the vault the host shows. A recording
+// requested with an empty vault ID is then claimed under the id of that vault, the id a tool call
+// names.
+type activeVaultProvider interface {
+	GetActiveVaultID(ctx context.Context) (domain.VaultID, error)
 }
 
 // Engines opens the model that transcribes a recording. The model is opened once and reused.
@@ -64,7 +65,7 @@ func NewTranscriber(files Files, stores host.Store, texts host.Texts, queue host
 	}
 }
 
-// Close stops every transcription and waits for them. A transcription asked for after Close is not
+// Close stops every transcription and waits for them. A transcription requested after Close is not
 // started.
 func (t *Transcriber) Close() {
 	t.mu.Lock()
@@ -89,13 +90,13 @@ func (t *Transcriber) withClosing(ctx context.Context) (context.Context, context
 	return runCtx, cancel
 }
 
-// getTaskID is what the transcription of one recording is called in the list of tasks.
+// getTaskID returns the id of the transcription of one recording in the list of tasks.
 func getTaskID(path string) string { return "transcription:" + path }
 
 var (
-	// errAlreadyTranscribing is a recording another run is transcribing.
+	// errAlreadyTranscribing is returned for a recording another run is transcribing.
 	errAlreadyTranscribing = errors.New("the recording is already being transcribed")
-	// errClosed is a transcription asked for after Close.
+	// errClosed is returned for a transcription requested after Close.
 	errClosed = errors.New("the transcriber is closed")
 )
 
@@ -109,14 +110,14 @@ func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path
 	if err != nil {
 		return err
 	}
-	return t.runClaimed(ctx, key, vault, path, func(ctx context.Context) ([]byte, error) {
+	return t.runTranscription(ctx, key, vault, path, func(ctx context.Context) ([]byte, error) {
 		return t.files.ReadFile(ctx, vault, path)
 	})
 }
 
-// Start claims the recording and transcribes it in the background, and is false where a run already
-// has it. The recording is read in the background as well, and a read that fails is the failure of
-// the task. Close cancels the transcription and waits for it.
+// Start claims the recording and transcribes it in the background, and returns false when a run
+// already has it. The recording is read in the background as well, and a failed read fails the
+// task. Close cancels the transcription and waits for it.
 func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path string) (bool, error) {
 	claimed, err := t.getClaimVault(ctx, vault)
 	if err != nil {
@@ -132,7 +133,7 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 	go func() {
 		// Run reports a failure as the task's error.
 		// gomutants:disable-next-line BRANCH_IF,CONDITIONALS_NEGATION reason="best-effort stderr diagnostic log does not affect transcription control flow"
-		if err := t.runClaimed(context.WithoutCancel(ctx), key, vault, path, func(ctx context.Context) ([]byte, error) {
+		if err := t.runTranscription(context.WithoutCancel(ctx), key, vault, path, func(ctx context.Context) ([]byte, error) {
 			return t.files.ReadFile(ctx, vault, path)
 		}); err != nil && !errors.Is(err, context.Canceled) {
 			fmt.Fprintf(os.Stderr, "engines-transcription: transcribe %s: %v\n", path, err)
@@ -141,7 +142,7 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 	return true, nil
 }
 
-// claimOrFail claims the recording, and returns the error that names why it cannot be claimed.
+// claimOrFail claims the recording, or returns the error that states why it cannot be claimed.
 func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, path string) (string, error) {
 	claimed, err := t.getClaimVault(ctx, vault)
 	if err != nil {
@@ -158,8 +159,8 @@ func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, pat
 	}
 }
 
-// runClaimed transcribes a claimed recording, reported as a task, and releases the claim.
-func (t *Transcriber) runClaimed(ctx context.Context, key string, vault domain.VaultID, path string, read readRecording) error {
+// runTranscription transcribes a claimed recording, reported as a task, and releases the claim.
+func (t *Transcriber) runTranscription(ctx context.Context, key string, vault domain.VaultID, path string, read readRecording) error {
 	defer t.clearRunning(key)
 	ctx, cancel := t.withClosing(ctx)
 	defer cancel()
@@ -174,8 +175,8 @@ func (t *Transcriber) runClaimed(ctx context.Context, key string, vault domain.V
 	return t.transcribe(ctx, vault, path, read)
 }
 
-// claim marks the recording as being transcribed and counts the run for Close, and is false where a
-// run already has it or the transcriber is closed. clearRunning releases the claim.
+// claim marks the recording as being transcribed and counts the run for Close, and returns false
+// when a run already has it or the transcriber is closed. clearRunning releases the claim.
 func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
 	key := getRunKey(vault, path)
 	t.mu.Lock()
@@ -188,21 +189,21 @@ func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
 	return key, true
 }
 
-// getRunKey is what a run claims the recording of a vault under.
+// getRunKey returns the key a run claims the recording of a vault with.
 func getRunKey(vault domain.VaultID, path string) string { return string(vault) + "\x00" + path }
 
-// isRunning reports whether a run holds the recording of the vault.
+// isRunning reports whether a run has claimed the recording of the vault.
 func (t *Transcriber) isRunning(vault domain.VaultID, path string) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.running[getRunKey(vault, path)]
 }
 
-// findLiveVersionFromWhole is the live version of the recording of the vault where its source chain
-// holds the plugin's whole transcript: the transcript itself, or a version made from it. A chain
-// through a partial transcript only is not returned: a run resumes it. The host keeps live only a
-// version whose chain matches the recording as it is now.
-func (t *Transcriber) findLiveVersionFromWhole(ctx context.Context, vault domain.VaultID, path string) (domain.TextVersion, bool, error) {
+// findLiveVersionOfWholeTranscript returns the live version of the recording of the vault when its
+// source chain contains the plugin's whole transcript: the transcript itself, or a version made from
+// it. A chain through a partial transcript only is not returned: a run resumes it. The host keeps
+// live only a version whose chain matches the recording as it is now.
+func (t *Transcriber) findLiveVersionOfWholeTranscript(ctx context.Context, vault domain.VaultID, path string) (domain.TextVersion, bool, error) {
 	listing, err := t.texts.With(vault).ListVersions(ctx, path)
 	if err != nil {
 		return domain.TextVersion{}, false, err
@@ -212,24 +213,24 @@ func (t *Transcriber) findLiveVersionFromWhole(ctx context.Context, vault domain
 		byID[version.GetID()] = version
 	}
 	live, isLive := byID[listing.Live]
-	visited := map[domain.TextVersionID]bool{}
-	for version, isFound := live, isLive; isFound && !visited[version.GetID()]; version, isFound = byID[version.Source] {
+	seenIDs := map[domain.TextVersionID]bool{}
+	for version, isFound := live, isLive; isFound && !seenIDs[version.GetID()]; version, isFound = byID[version.Source] {
 		if version.PluginID == PluginID && isWholeFile(version) {
 			return live, true, nil
 		}
-		visited[version.GetID()] = true
+		seenIDs[version.GetID()] = true
 	}
 	return domain.TextVersion{}, false, nil
 }
 
-// getClaimVault is the vault a run claims the recording in. No vault is the vault the host shows,
-// named by its id where the files can name it.
+// getClaimVault returns the vault a run claims the recording in. An empty vault ID means the vault
+// the host shows, returned by its id when the files can return it.
 func (t *Transcriber) getClaimVault(ctx context.Context, vault domain.VaultID) (domain.VaultID, error) {
-	resolver, isResolver := t.files.(shownVault)
+	resolver, isResolver := t.files.(activeVaultProvider)
 	if vault != "" || !isResolver {
 		return vault, nil
 	}
-	shown, err := resolver.GetShownVault(ctx)
+	shown, err := resolver.GetActiveVaultID(ctx)
 	if err != nil {
 		return "", fmt.Errorf("get the shown vault: %w", err)
 	}

@@ -26,35 +26,35 @@ const (
 
 // brokenVault is the vault of rivers whose change of Broken.md fails with an error that has no wire
 // code.
-type brokenVault struct{ *arrangingVault }
+type brokenVault struct{ *fakeNoteVault }
 
 func (b brokenVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
 	if from == brokenPath {
 		return domain.MoveResult{From: from, To: to}, errors.New(diskFull)
 	}
-	return b.arrangingVault.MoveNote(ctx, from, to)
+	return b.fakeNoteVault.MoveNote(ctx, from, to)
 }
 
 func (b brokenVault) RemoveNote(ctx context.Context, target string) (string, []string, error) {
 	if target == brokenPath {
 		return "", nil, errors.New(diskFull)
 	}
-	return b.arrangingVault.RemoveNote(ctx, target)
+	return b.fakeNoteVault.RemoveNote(ctx, target)
 }
 
 func (b brokenVault) RenameNote(ctx context.Context, from, title string) (string, bool, *domain.MoveResult, error) {
 	if from == brokenPath {
 		return "", false, nil, errors.New(diskFull)
 	}
-	return b.arrangingVault.RenameNote(ctx, from, title)
+	return b.fakeNoteVault.RenameNote(ctx, from, title)
 }
 
-func newBrokenClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *arrangingVault) {
+func newBrokenClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *fakeNoteVault) {
 	t.Helper()
-	vault := newArrangingVault()
-	hosted := newCallers(nil)
-	hosted.vault = brokenVault{vault}
-	endpoint := &Endpoint{callers: listCallers{callers: hosted, granted: []string{pluginport.PermissionVaultWrite}}}
+	vault := newFakeNoteVault()
+	hostCallers := newCallers(nil)
+	hostCallers.vault = brokenVault{vault}
+	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)
@@ -63,7 +63,7 @@ func newBrokenClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *arra
 	return client, vault
 }
 
-func TestAMoveAnswersAnErrorWithNoCodeAsInternalOnItsEntryAndMovesTheOthers(t *testing.T) {
+func TestMoveReturnsUncodedErrorAsInternalAndMovesTheOthers(t *testing.T) {
 	client, vault := newBrokenClient(t)
 
 	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
@@ -75,7 +75,7 @@ func TestAMoveAnswersAnErrorWithNoCodeAsInternalOnItsEntryAndMovesTheOthers(t *t
 
 	moves := res.Msg.GetMoves()
 	if res.Msg.GetError() != 0 || len(moves) != 4 {
-		t.Fatalf("the move answered error %v with %d entries, want 4 entries", res.Msg.GetError(), len(moves))
+		t.Fatalf("the move returned error %v with %d entries, want 4 entries", res.Msg.GetError(), len(moves))
 	}
 	if m := moves[1]; m.GetMove().GetFrom() != brokenPath || m.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL ||
 		!strings.Contains(m.GetDetail(), diskFull) {
@@ -96,7 +96,7 @@ func TestAMoveAnswersAnErrorWithNoCodeAsInternalOnItsEntryAndMovesTheOthers(t *t
 	}
 }
 
-func TestARemovalAnswersAnErrorWithNoCodeAsInternalOnItsEntryAndRemovesTheOthers(t *testing.T) {
+func TestRemovalReturnsUncodedErrorAsInternalAndRemovesOthers(t *testing.T) {
 	client, vault := newBrokenClient(t)
 
 	res, err := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
@@ -108,7 +108,7 @@ func TestARemovalAnswersAnErrorWithNoCodeAsInternalOnItsEntryAndRemovesTheOthers
 
 	removals := res.Msg.GetRemovals()
 	if res.Msg.GetError() != 0 || len(removals) != 3 {
-		t.Fatalf("the removal answered error %v with %d entries, want 3 entries", res.Msg.GetError(), len(removals))
+		t.Fatalf("the removal returned error %v with %d entries, want 3 entries", res.Msg.GetError(), len(removals))
 	}
 	if r := removals[1]; r.GetPath() != brokenPath || r.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL ||
 		!strings.Contains(r.GetDetail(), diskFull) {
@@ -125,7 +125,7 @@ func TestARemovalAnswersAnErrorWithNoCodeAsInternalOnItsEntryAndRemovesTheOthers
 	}
 }
 
-func TestARenameAnswersAnErrorWithNoCodeAsInternalWithTheDetail(t *testing.T) {
+func TestRenameReturnsUncodedErrorAsInternalWithTheDetail(t *testing.T) {
 	client, _ := newBrokenClient(t)
 
 	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: brokenPath, Title: "Mended"}))
@@ -134,11 +134,11 @@ func TestARenameAnswersAnErrorWithNoCodeAsInternalWithTheDetail(t *testing.T) {
 	}
 
 	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL || !strings.Contains(res.Msg.GetDetail(), diskFull) {
-		t.Errorf("the rename answered %v, want error INTERNAL with the detail %q", res.Msg, diskFull)
+		t.Errorf("the rename returned %v, want error INTERNAL with the detail %q", res.Msg, diskFull)
 	}
 }
 
-func TestARefusedRenameAnswersTheCoreTextInDetail(t *testing.T) {
+func TestRejectedRenameReturnsTheCoreTextInDetail(t *testing.T) {
 	client, _ := newBrokenClient(t)
 
 	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Nowhere.md", Title: "Elsewhere"}))
@@ -147,11 +147,11 @@ func TestARefusedRenameAnswersTheCoreTextInDetail(t *testing.T) {
 	}
 
 	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND || !strings.Contains(res.Msg.GetDetail(), "Nowhere.md") {
-		t.Errorf("the rename of Nowhere.md answered %v, want error NOT_FOUND with the core's text", res.Msg)
+		t.Errorf("the rename of Nowhere.md returned %v, want error NOT_FOUND with the core's text", res.Msg)
 	}
 }
 
-func TestARenameThatSucceedsAnswersNoDetail(t *testing.T) {
+func TestRenameThatSucceedsReturnsNoDetail(t *testing.T) {
 	client, _ := newBrokenClient(t)
 
 	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
@@ -160,6 +160,6 @@ func TestARenameThatSucceedsAnswersNoDetail(t *testing.T) {
 	}
 
 	if res.Msg.GetError() != 0 || res.Msg.GetDetail() != "" {
-		t.Errorf("the rename answered %v, want no error and no detail", res.Msg)
+		t.Errorf("the rename returned %v, want no error and no detail", res.Msg)
 	}
 }

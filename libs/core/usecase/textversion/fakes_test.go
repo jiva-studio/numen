@@ -265,7 +265,7 @@ func (c *minuteClock) Now() time.Time {
 	return c.now
 }
 
-// FindContentHash is the source row of the path, as the sources table holds it.
+// FindContentHash is the source row of the path, as the sources table has it.
 func (r memoryRepo) FindContentHash(_ context.Context, path string) (textport.ContentHash, bool, error) {
 	r.store.mu.Lock()
 	defer r.store.mu.Unlock()
@@ -273,8 +273,8 @@ func (r memoryRepo) FindContentHash(_ context.Context, path string) (textport.Co
 	return row, ok, nil
 }
 
-// SaveContentHash writes the record over the row of its path where the row holds
-// the record's size and modification time or already holds its hash. A path
+// SaveContentHash writes the record over the row of its path where the row has
+// the record's size and modification time or already has its hash. A path
 // with no row is not saved.
 func (r memoryRepo) SaveContentHash(_ context.Context, record textport.ContentHash) error {
 	r.store.mu.Lock()
@@ -290,13 +290,13 @@ func (r memoryRepo) SaveContentHash(_ context.Context, record textport.ContentHa
 	return nil
 }
 
-// addScannedSource puts the row a scan of the vault writes for a file: its
+// addScannedSource adds the row a scan of the vault writes for a file: its
 // path, size and modification time, with no hash.
 func (m *memoryVersions) addScannedSource(vault domain.VaultID, path string, size int64, modTime time.Time) {
 	m.addSource(vault, textport.ContentHash{Path: path, Size: size, ModTime: modTime})
 }
 
-// addSource puts a source row as it is given.
+// addSource adds a source row as it is given.
 func (m *memoryVersions) addSource(vault domain.VaultID, row textport.ContentHash) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

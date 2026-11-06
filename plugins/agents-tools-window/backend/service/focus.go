@@ -17,8 +17,8 @@ func addNoteFocus(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "note_focus",
 		Title: "Focus a note",
-		Description: "Make a note the current note of the window; the neighbourhood view is drawn " +
-			"around it. Call it only when the user asked to be taken to a note. Talking about one is " +
+		Description: "Make a note the current note of the window; the neighbourhood view is centred " +
+			"on it. Call it only when the user asked to be taken to a note. Talking about one is " +
 			"not asking, and neither is editing one: the call changes what the window shows. It " +
 			"returns no note content: `note_read` does that.",
 		Effect:       tools.ReadOnly,
@@ -45,7 +45,7 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 		Description: "Open a file of the vault in the window, scroll to the first passage and " +
 			"highlight every passage; a note opens whole with nothing highlighted. " +
 			"`library_search` returns the start and length of each passage; pass them unchanged. " +
-			"When several passages of one source answer a question, pass them all; the window " +
+			"When several passages of one source are relevant, pass them all; the window " +
 			"scrolls to the first. An empty list opens the file at its beginning. Call it only when " +
 			"the user asked to see a passage. Talking about a passage is not asking: the call " +
 			"changes what the window shows.",
@@ -72,32 +72,32 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 
 var errMissingTabID = errors.New("tabId is required")
 
-func addWindowFocusTab(registry *tools.Registry, on Host) error {
+func addWindowTabActivate(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
-		Name:  "window_focus_tab",
-		Title: "Focus window tab",
-		Description: "Make the open tab with the id the active tab of the window. Take the id from " +
-			"`window_tabs_get`. Call it only when the user asked for that tab: the call changes what " +
+		Name:  "window_tab_activate",
+		Title: "Activate window tab",
+		Description: "Make the open tab with the id the active tab of the window. Use an id from " +
+			"`window_tab_list`. Call it only when the user asked for that tab: the call changes what " +
 			"the window shows.",
 		Effect:       tools.ReadOnly,
 		Step:         tools.ByEffect,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{showSentence, tabIDSentence},
 		Requires:     []string{permissionWindowFocus},
-	}, func(ctx context.Context, in WindowFocusTabInput) (WindowFocusTabOutput, error) {
+	}, func(ctx context.Context, in WindowTabActivateInput) (WindowTabActivateOutput, error) {
 		if in.TabID == "" {
-			return WindowFocusTabOutput{}, errMissingTabID
+			return WindowTabActivateOutput{}, errMissingTabID
 		}
 		info, err := activateWindowTab(ctx, on, in.TabID)
 		if err != nil {
-			return WindowFocusTabOutput{}, err
+			return WindowTabActivateOutput{}, err
 		}
-		return WindowFocusTabOutput{Tab: info}, nil
+		return WindowTabActivateOutput{Tab: info}, nil
 	})
 }
 
-// activateWindowTab makes the open tab with the id the active tab and answers it as the window
-// reports it. A tab the window has not reported is an error, and the window is not asked. A tab the
+// activateWindowTab makes the open tab with the id the active tab and returns it as the window
+// reports it. A tab the window has not reported is an error, and the window is not called. A tab the
 // window does not show in time is an error in plain text.
 func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error) {
 	if on.Window == nil {
@@ -116,7 +116,7 @@ func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error)
 		return TabInfo{}, fmt.Errorf("no open tab has id %q", id)
 	}
 	if errors.Is(err, host.ErrTabNotShown) {
-		return TabInfo{}, fmt.Errorf("window_focus_tab: the window did not show tab %q within %s", id, tabActivationBound)
+		return TabInfo{}, fmt.Errorf("window_tab_activate: the window did not show tab %q within %s", id, tabActivationBound)
 	}
 	if err != nil {
 		return TabInfo{}, err
@@ -137,6 +137,6 @@ func isNotePath(filePath string) bool {
 	return strings.EqualFold(path.Ext(filePath), domain.NoteExtension)
 }
 
-// tabActivationBound is how long the host waits for the window to show an activated tab. The host
+// tabActivationBound is the time the host waits for the window to show an activated tab. The host
 // does not send its bound, so the text of the error names the default of the host.
 const tabActivationBound = "2 s"

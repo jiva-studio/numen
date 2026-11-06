@@ -58,7 +58,7 @@ func TestGetTextRangeReturnsTheSegmentsLimitedToTheRange(t *testing.T) {
 	}
 }
 
-func TestGetTextRangeMovesAStartInsideACharacterToTheNextCharacter(t *testing.T) {
+func TestGetTextRangeMovesStartInsideCharacterToNextCharacter(t *testing.T) {
 	s := newRiverScene(t)
 
 	// Byte 26 is the second byte of "о" in "морю".

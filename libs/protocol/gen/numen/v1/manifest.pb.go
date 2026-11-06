@@ -366,7 +366,7 @@ type ManifestListener struct {
 	Port int32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
 	// protocol is the transport, "tcp".
 	Protocol string `protobuf:"bytes,3,opt,name=protocol,proto3" json:"protocol,omitempty"`
-	// port_setting is the key of the plugin's number setting that holds the port the host binds; the
+	// port_setting is the key of the plugin's number setting that stores the port the host binds; the
 	// host binds again when the setting changes. Set exactly one of port and port_setting.
 	PortSetting   string `protobuf:"bytes,4,opt,name=port_setting,json=portSetting,proto3" json:"port_setting,omitempty"`
 	unknownFields protoimpl.UnknownFields

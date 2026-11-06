@@ -49,14 +49,14 @@ const (
 
 // HostWindowServiceClient is a client for the numen.v1.HostWindowService service.
 type HostWindowServiceClient interface {
-	// FocusNote makes a note the current one, and the neighbourhood view is drawn around it.
+	// FocusNote makes a note the current one, and the neighbourhood view is centred on it.
 	FocusNote(context.Context, *connect.Request[v1.FocusNoteRequest]) (*connect.Response[v1.FocusNoteResponse], error)
-	// FocusPassages opens a file in front of the person: the window goes to the first passage and
-	// lights all of them. No passages opens the file at its beginning.
+	// FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
+	// passages opens the file at its beginning.
 	FocusPassages(context.Context, *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error)
-	// ReadOpenTabs is the tabs the window last reported, and the active one.
+	// ReadOpenTabs returns the tabs the window last reported, and the active one.
 	ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error)
-	// ActivateTab makes the open tab with the id the active tab of the window, and answers the tab and
+	// ActivateTab makes the open tab with the id the active tab of the window, and returns the tab and
 	// the active id as the window reports them after the activation.
 	ActivateTab(context.Context, *connect.Request[v1.ActivateTabRequest]) (*connect.Response[v1.ActivateTabResponse], error)
 }
@@ -129,14 +129,14 @@ func (c *hostWindowServiceClient) ActivateTab(ctx context.Context, req *connect.
 
 // HostWindowServiceHandler is an implementation of the numen.v1.HostWindowService service.
 type HostWindowServiceHandler interface {
-	// FocusNote makes a note the current one, and the neighbourhood view is drawn around it.
+	// FocusNote makes a note the current one, and the neighbourhood view is centred on it.
 	FocusNote(context.Context, *connect.Request[v1.FocusNoteRequest]) (*connect.Response[v1.FocusNoteResponse], error)
-	// FocusPassages opens a file in front of the person: the window goes to the first passage and
-	// lights all of them. No passages opens the file at its beginning.
+	// FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
+	// passages opens the file at its beginning.
 	FocusPassages(context.Context, *connect.Request[v1.FocusPassagesRequest]) (*connect.Response[v1.FocusPassagesResponse], error)
-	// ReadOpenTabs is the tabs the window last reported, and the active one.
+	// ReadOpenTabs returns the tabs the window last reported, and the active one.
 	ReadOpenTabs(context.Context, *connect.Request[v1.HostWindowServiceReadOpenTabsRequest]) (*connect.Response[v1.HostWindowServiceReadOpenTabsResponse], error)
-	// ActivateTab makes the open tab with the id the active tab of the window, and answers the tab and
+	// ActivateTab makes the open tab with the id the active tab of the window, and returns the tab and
 	// the active id as the window reports them after the activation.
 	ActivateTab(context.Context, *connect.Request[v1.ActivateTabRequest]) (*connect.Response[v1.ActivateTabResponse], error)
 }

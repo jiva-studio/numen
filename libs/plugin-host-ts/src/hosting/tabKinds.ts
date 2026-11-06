@@ -5,7 +5,7 @@ import type { Selector, TabPlace, TabPlacement, TextRange } from '@numen/plugin-
 
 /**
  * Opens a file in its reader, at the location the selector names, with the ranges of its text
- * version lit; the first range is the one the reader goes to.
+ * version highlighted; the reader scrolls to the first range.
  */
 export type SourceReader = (
   path: string,
@@ -24,7 +24,7 @@ export interface TabTarget {
 }
 
 /**
- * The file one tab holds, and the place its reader last reported, as reported to an agent acting on
+ * The file one tab shows, and the place its reader last reported, as reported to an agent acting on
  * the user's behalf. The place is left out where the reader reported none.
  */
 export interface OpenTab {

@@ -73,10 +73,10 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 	return srv, nil
 }
 
-// newSyncMiddleware syncs the host tools before a listing of the tools and before the result that
-// carries the instructions, and writes the instructions of the latest sync into that result. The
-// SDK answers initialize, and server/discover of the stateless protocol, with the fixed
-// instructions of the server options.
+// newSyncMiddleware syncs the host tools before a listing of the tools and before the initialize
+// result, and writes the instructions of the latest sync into that result. The SDK returns the
+// fixed instructions of the server options for initialize, and for server/discover of the
+// stateless protocol.
 func newSyncMiddleware(aggregator *ToolAggregator) sdk.Middleware {
 	return func(next sdk.MethodHandler) sdk.MethodHandler {
 		return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {

@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
-// cancelledBatchVault is the geology vault whose host answers a move or a removal as a call that was
+// cancelledBatchVault is the geology vault whose host returns a move or a removal as a call that was
 // cancelled after the first note: the first note is changed, every other is not attempted.
 type cancelledBatchVault struct {
 	*hosttest.Vault
@@ -62,7 +62,7 @@ func newCancelledBatchRegistry(t *testing.T) *tools.Registry {
 	return registry
 }
 
-func TestNoteMoveOfACancelledCallReportsTheCompletedNoteAndTheNotAttemptedOnes(t *testing.T) {
+func TestCancelledNoteMoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
 	registry := newCancelledBatchRegistry(t)
 
 	var out noteMoveOutput
@@ -78,12 +78,12 @@ func TestNoteMoveOfACancelledCallReportsTheCompletedNoteAndTheNotAttemptedOnes(t
 		got := out.Moves[i+1]
 		want := "the call was cancelled before " + from + " was moved"
 		if got.From != from || got.To != "" || !strings.Contains(got.Error, want) {
-			t.Errorf("entry %d is %+v, want %s not moved with an error that says %q", i+1, got, from, want)
+			t.Errorf("entry %d is %+v, want %s not moved with an error containing %q", i+1, got, from, want)
 		}
 	}
 }
 
-func TestNoteRemoveOfACancelledCallReportsTheCompletedNoteAndTheNotAttemptedOnes(t *testing.T) {
+func TestCancelledNoteRemoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
 	registry := newCancelledBatchRegistry(t)
 
 	var out noteRemoveOutput
@@ -99,7 +99,7 @@ func TestNoteRemoveOfACancelledCallReportsTheCompletedNoteAndTheNotAttemptedOnes
 		got := out.Removals[i+1]
 		want := "the call was cancelled before " + target + " was removed"
 		if got.Path != target || got.TrashPath != "" || !strings.Contains(got.Error, want) {
-			t.Errorf("entry %d is %+v, want %s not removed with an error that says %q", i+1, got, target, want)
+			t.Errorf("entry %d is %+v, want %s not removed with an error containing %q", i+1, got, target, want)
 		}
 	}
 }

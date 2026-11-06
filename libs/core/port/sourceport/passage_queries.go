@@ -17,7 +17,7 @@ import (
 // Neither half returns the text: a passage is a location in a file, and the
 // file holds the words.
 type PassageQueries interface {
-	// FindLexical is the chunks of one vault whose text matches the words of `q.Text`,
+	// FindLexical returns the chunks of one vault whose text matches the words of `q.Text`,
 	// best first, at most `q.Limit` of them.
 	FindLexical(ctx context.Context, vaultID domain.VaultID, q LexicalQuery) ([]domain.Passage, error)
 
@@ -56,7 +56,7 @@ type LexicalQuery struct {
 	Text  string
 	Kinds []domain.SourceKind
 	// PathPrefix limits the sources to those whose path starts with it, and the
-	// index applies it before it cuts the list at Limit. Empty limits none.
+	// index applies it before it truncates the list to Limit. Empty limits none.
 	PathPrefix string
 	Limit      int
 	// IsGrowing marks the last word as possibly still being typed, and it is then

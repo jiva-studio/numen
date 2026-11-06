@@ -9,8 +9,8 @@ import (
 )
 
 // A client transport keeps a connection it dialed for a call that another connection served. Such a
-// connection carries no call, and Close does not wait for it.
-func TestCloseReturnsWhileAConnectionCarriesNoCall(t *testing.T) {
+// connection has no request in flight, and Close does not wait for it.
+func TestCloseReturnsWhileAConnectionHasNoRequest(t *testing.T) {
 	endpoint, err := Open(t.Context(), Address, newCallers(nil))
 	if err != nil {
 		t.Fatal(err)
@@ -30,9 +30,9 @@ func TestCloseReturnsWhileAConnectionCarriesNoCall(t *testing.T) {
 	select {
 	case err := <-closeResult:
 		if err != nil {
-			t.Errorf("Close with a connection that carries no call returned %v", err)
+			t.Errorf("Close with a connection with no request in flight returned %v", err)
 		}
 	case <-time.After(10 * time.Second):
-		t.Fatal("Close with a connection that carries no call did not return")
+		t.Fatal("Close with a connection with no request in flight did not return")
 	}
 }

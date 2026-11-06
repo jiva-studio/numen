@@ -39,7 +39,7 @@ func New(vault host.Vault, cards cards.Scenarios, deckedit deckedit.Scenarios) *
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
 	for _, add := range []func(*tools.Registry) error{
-		t.addCardCurrent,
+		t.addCardCurrentGet,
 		t.addCardCardModelList,
 		t.addCardCardModelRead,
 		t.addCardRead,

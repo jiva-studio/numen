@@ -178,8 +178,8 @@ func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 		Name:  "card_section_add",
 		Title: "Add a section",
-		Description: "Append a section to a deck. A section is a name for a range of cards and holds " +
-			"nothing else: no field, no card model and no schedule. `card_add` appends a card to " +
+		Description: "Append a section to a deck. A section is a name for a range of cards and has " +
+			"no other content: no field, no card model and no schedule. `card_add` appends a card to " +
 			"a section, and `card_read` returns the section index of each card. " +
 			"The fingerprint from `card_read` is required; a write against a changed deck is rejected.",
 	}, func(ctx context.Context, in cardSectionAddInput) (WriteOutcome, error) {

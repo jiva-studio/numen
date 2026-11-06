@@ -275,7 +275,7 @@ func (*ListToolsRequest) Descriptor() ([]byte, []int) {
 
 type ListToolsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The host answers the tools of the plugins it lists grouped by plugin, in
+	// The host returns the tools of the plugins it lists grouped by plugin, in
 	// the order of plugin ids.
 	Tools         []*PluginTool `protobuf:"bytes,1,rep,name=tools,proto3" json:"tools,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -344,9 +344,9 @@ type PluginTool struct {
 	// text. An agent server sends an agent the distinct sentences of the tools it
 	// offers, in listing order.
 	Instructions []string `protobuf:"bytes,9,rep,name=instructions,proto3" json:"instructions,omitempty"`
-	// The permissions the caller must hold besides the one of the effect, such
+	// The permissions the caller must have besides the one of the effect, such
 	// as vault:manage. The host lists and runs the tool only for a caller that
-	// holds all of them.
+	// has all of them.
 	Requires      []string `protobuf:"bytes,10,rep,name=requires,proto3" json:"requires,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -593,7 +593,7 @@ type ToolResult struct {
 	// The structured result as JSON, meeting the output schema. Empty where the
 	// tool listed none.
 	Structured []byte `protobuf:"bytes,2,opt,name=structured,proto3" json:"structured,omitempty"`
-	// Set when the tool ran and answered with an error; text then holds the
+	// Set when the tool ran and returned an error; text then contains the
 	// error message.
 	IsError       bool `protobuf:"varint,3,opt,name=is_error,json=isError,proto3" json:"is_error,omitempty"`
 	unknownFields protoimpl.UnknownFields

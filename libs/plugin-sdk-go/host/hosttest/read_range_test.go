@@ -24,11 +24,11 @@ func TestReadRangeReadsTheBytesFromStartAsTextWithTheFileStat(t *testing.T) {
 		t.Errorf("the range is %+v, want splits from 6", got)
 	}
 	if stat := statOf(t, v, "Rocks/Slate.md"); got.Stat.Size != stat.Size || !got.Stat.ModTime.Equal(stat.ModTime) {
-		t.Errorf("the range carries the stat %+v, want the stat of the file, %+v", got.Stat, stat)
+		t.Errorf("the range has the stat %+v, want the stat of the file, %+v", got.Stat, stat)
 	}
 }
 
-func TestReadRangeMovesTheStartForwardToAWholeCharacterAndEndsAtOne(t *testing.T) {
+func TestReadRangeSnapsStartForwardAndEndsOnAWholeCharacter(t *testing.T) {
 	v := hosttest.New("Geology")
 	// "ab" is bytes 0 and 1, "é" bytes 2 and 3, "cd" bytes 4 and 5.
 	v.File("Rocks/Gneiss.txt", "abécd")
@@ -50,7 +50,7 @@ func TestReadRangeMovesTheStartForwardToAWholeCharacterAndEndsAtOne(t *testing.T
 	}
 }
 
-func TestReadRangeOfZeroOrMoreThanTheMostReadsSixteenThousandBytes(t *testing.T) {
+func TestReadRangeOfZeroOrOverMaxReads16000Bytes(t *testing.T) {
 	v := hosttest.New("Geology")
 	v.File("Rocks/Sandstone.txt", strings.Repeat("s", 20000))
 

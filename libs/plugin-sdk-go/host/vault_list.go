@@ -8,41 +8,41 @@ import (
 )
 
 var (
-	// ErrVaultUnreadable is what an added folder gets when it is not a folder or cannot be read.
+	// ErrVaultUnreadable is returned when the folder to add is not a folder or cannot be read.
 	ErrVaultUnreadable = errors.New("the folder cannot be read as a vault")
-	// ErrVaultCopy is what an added folder gets when it carries the identity of a vault on the list
-	// whose folder still carries it.
-	ErrVaultCopy = errors.New("the folder is a copy of a vault on the list")
-	// ErrVaultOverlaps is what an added folder gets when it is inside a vault on the list or contains one.
+	// ErrVaultDuplicate is returned when the folder to add has the identity of a vault on the list
+	// whose folder still has it.
+	ErrVaultDuplicate = errors.New("the folder is a copy of a vault on the list")
+	// ErrVaultOverlaps is returned when the folder to add is inside a vault on the list or contains one.
 	ErrVaultOverlaps = errors.New("a vault cannot contain or be inside another vault")
-	// ErrVaultNameTaken is what a rename gets when another vault has the name.
+	// ErrVaultNameTaken is returned when a rename uses the name of another vault.
 	ErrVaultNameTaken = errors.New("another vault has this name")
-	// ErrLastVault is what a removal gets for the only vault of the installation.
+	// ErrLastVault is returned when the vault to remove is the only vault of the installation.
 	ErrLastVault = errors.New("the last vault cannot be removed")
-	// ErrVaultShowing is what a removal gets for the vault the window shows.
-	ErrVaultShowing = errors.New("the vault is open in the window")
-	// ErrUnsavedChanges is what an open gets while the window asks the user about unsaved changes.
-	// The window keeps its vault.
-	ErrUnsavedChanges = errors.New("the user is asked about unsaved changes in the window; ask again after they answer")
+	// ErrVaultActive is returned when the vault to remove is the one the window shows.
+	ErrVaultActive = errors.New("the vault is open in the window")
+	// ErrUnsavedChanges is returned by an open while the window prompts the user about unsaved
+	// changes. The window keeps its vault.
+	ErrUnsavedChanges = errors.New("the window has unsaved changes and is prompting the user; retry after the prompt closes")
 )
 
-// VaultEntry is a vault on the installation's list, and whether nothing is at its folder.
+// VaultEntry is a vault on the installation's list, and whether its folder is missing.
 type VaultEntry struct {
 	domain.Vault
 	IsMissing bool
 }
 
 // VaultList is the installation's list of vaults and the vault the window shows. GetVaultList needs
-// vault:read; the other calls need vault:manage. A vault that is not on the list is ErrUnknownVault.
+// vault:read; the other calls need vault:manage. A vault not on the list returns ErrUnknownVault.
 type VaultList interface {
 	GetVaultList(ctx context.Context) ([]VaultEntry, error)
-	// AddVault adds the folder at the absolute root. An empty name takes the folder's name.
+	// AddVault adds the folder at the absolute root. An empty name means the folder's name.
 	AddVault(ctx context.Context, root, name string) (domain.Vault, error)
 	RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error)
-	// RemoveVault takes the vault off the list and out of the index, and returns its folder, which
+	// RemoveVault removes the vault from the list and from the index, and returns its folder, which
 	// stays on the disk.
 	RemoveVault(ctx context.Context, id domain.VaultID) (folder string, err error)
-	// OpenVault makes the window show the vault and returns once the window shows it. A window with
-	// unsaved changes is ErrUnsavedChanges.
+	// OpenVault makes the window show the vault and returns once the window shows it. It returns
+	// ErrUnsavedChanges when the window has unsaved changes.
 	OpenVault(ctx context.Context, id domain.VaultID) error
 }

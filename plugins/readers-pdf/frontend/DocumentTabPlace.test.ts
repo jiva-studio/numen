@@ -1,6 +1,6 @@
 /**
  * The place a PDF tab saves and reports to the window: the page shown and the number of pages of the
- * document, when the reader goes to another page and when the window moves the tab to a passage. The
+ * document, when the reader navigates to another page and when the window moves the tab to a passage. The
  * tab's own reader runs over a made-up port.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -31,7 +31,7 @@ const RANGES: readonly TextRange[] = [
   { start: 2_310, end: 2_355 },
 ]
 
-/** Resolves once every pending request has been answered. */
+/** Resolves once every pending request has completed. */
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 /** A document of twelve pages whose layout arrives when `release` is called. */
@@ -100,7 +100,7 @@ describe('the place a PDF tab saves when the window moves it', () => {
   })
 })
 
-describe('the place a PDF tab saves when the reader goes to another page', () => {
+describe('the place a PDF tab saves when the reader navigates to another page', () => {
   it('is the page shown, from 1, and the number of pages of the document', async () => {
     const { documents, release } = createDocuments()
     release()
@@ -117,7 +117,7 @@ describe('the place a PDF tab saves when the reader goes to another page', () =>
 })
 
 describe('the place a PDF tab reports to the window', () => {
-  it('is the page shown, from 1, and the number of pages when the reader goes to another page', async () => {
+  it('is the page shown, from 1, and the page count when the reader navigates to another page', async () => {
     const { documents, release } = createDocuments()
     release()
     const { tab, reportPlace, reader } = mountTab(documents)

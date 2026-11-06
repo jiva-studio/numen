@@ -16,7 +16,7 @@ import (
 // TextClient works the text versions of a vault through HostTextService.
 type TextClient struct {
 	rpc numenv1connect.HostTextServiceClient
-	// vault is the identity of the vault the client works. Empty is the vault the window shows.
+	// vault is the identity of the vault the client calls. An empty vault ID means the vault the window shows.
 	vault string
 }
 

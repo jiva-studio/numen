@@ -12,34 +12,34 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// The user's own switch is rejected while a page asks; the user then answers the page, so nothing is
+// The user's own switch is rejected while a page prompts; the user then closes the prompt, so nothing is
 // unsaved. A plugin's open after that shows the vault.
-func TestPluginOpenVaultAfterTheUserAnswersTheSwitchQuestionShowsTheVault(t *testing.T) {
+func TestPluginOpenVaultAfterSwitchPromptClosesShowsVault(t *testing.T) {
 	f := openTwoVaults(t)
-	f.bindShow()
+	f.bindVaultSwitch()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
-	userAnswered := make(chan struct{})
-	f.answerAskingUntil(t, stream, userAnswered)
+	userResponded := make(chan struct{})
+	f.respondPromptUntil(t, stream, userResponded)
 
 	if err := f.installation.State.OpenVault(t.Context(), f.second, nil); err == nil {
-		t.Fatal("the user's switch while a page asks returned nil")
+		t.Fatal("the user's switch during a page prompt returned nil")
 	}
-	close(userAnswered)
+	close(userResponded)
 	waitCtx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 	if !f.installation.WaitForFlush(waitCtx) {
-		t.Fatal("the page's answer never completed the flush request")
+		t.Fatal("closing the prompt never completed the flush request")
 	}
 
 	list := editor.NewPluginVaultList(f.installation)
 	select {
 	case err := <-callOpenVault(t.Context(), list, f.second.ID):
 		if err != nil {
-			t.Errorf("the plugin's open after the user answered the page returned %v, want nil", err)
+			t.Errorf("the plugin's open after the prompt closed returned %v, want nil", err)
 		}
 	case <-time.After(20 * time.Second):
-		t.Fatal("the plugin's open after the user answered the page never returned")
+		t.Fatal("the plugin's open after the prompt closed never returned")
 	}
 	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s after the plugin's open, want %s", got.Name, f.second.Name)
@@ -48,7 +48,7 @@ func TestPluginOpenVaultAfterTheUserAnswersTheSwitchQuestionShowsTheVault(t *tes
 
 // A vault switch given a plugin's open that has ended takes the exclusion like
 // any other switch: during the user's close it is rejected and the close completes.
-func TestAVaultSwitchGivenAFinishedPluginOpenFailsDuringTheUsersClose(t *testing.T) {
+func TestVaultSwitchAfterPluginOpenFailsDuringUserClose(t *testing.T) {
 	f := openTwoVaults(t)
 	var mu sync.Mutex
 	var pluginOpenCtx context.Context
@@ -99,7 +99,7 @@ func TestAVaultSwitchGivenAFinishedPluginOpenFailsDuringTheUsersClose(t *testing
 	case <-secondFlush:
 	case <-time.After(5 * time.Second):
 		close(release)
-		t.Fatal("the user's close never asked the page to flush")
+		t.Fatal("the user's close never requested a flush from the page")
 	}
 	mu.Lock()
 	switchCtx, switchOpen := pluginOpenCtx, finishedOpen

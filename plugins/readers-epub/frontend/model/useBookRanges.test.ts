@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, reactive, ref } from 'vue'
 import type { TextRange } from '../types'
-import { useBookRanges, type RangedTab } from './useBookRanges'
+import { useBookRanges, type RangeTab } from './useBookRanges'
 
-/** A reader that records every call that lights ranges. */
+/** A reader that records every call that highlights ranges. */
 const createReader = (isLoading = false) => {
   const focusCalls: (readonly TextRange[])[] = []
   const reader = {
@@ -17,7 +17,7 @@ const createReader = (isLoading = false) => {
 }
 
 const createTab = (ranges: readonly TextRange[] | null = null) =>
-  reactive({ ranges }) as { ranges: readonly TextRange[] | null } & RangedTab
+  reactive({ ranges }) as { ranges: readonly TextRange[] | null } & RangeTab
 
 const RANGES: readonly TextRange[] = [
   { start: 6_500, end: 6_520 },
@@ -25,7 +25,7 @@ const RANGES: readonly TextRange[] = [
 ]
 
 describe('the ranges of a book tab', () => {
-  it('lights the ranges the tab opens with once the book is loaded', async () => {
+  it('highlights the ranges the tab opens with once the book is loaded', async () => {
     const { reader, focusCalls } = createReader(true)
     const tab = createTab(RANGES)
     useBookRanges(reader, () => tab)
@@ -38,7 +38,7 @@ describe('the ranges of a book tab', () => {
     expect(focusCalls).toStrictEqual([RANGES])
   })
 
-  it('lights the ranges set on the tab later, in their order', async () => {
+  it('highlights the ranges set on the tab later, in their order', async () => {
     const { reader, focusCalls } = createReader()
     const tab = createTab()
     useBookRanges(reader, () => tab)
@@ -49,7 +49,7 @@ describe('the ranges of a book tab', () => {
     expect(focusCalls).toStrictEqual([RANGES])
   })
 
-  it('lights the same ranges again when the window sets them anew', async () => {
+  it('highlights the same ranges again when the window sets them again', async () => {
     const { reader, focusCalls } = createReader()
     const tab = createTab()
     useBookRanges(reader, () => tab)
@@ -62,7 +62,7 @@ describe('the ranges of a book tab', () => {
     expect(focusCalls).toStrictEqual([RANGES, RANGES])
   })
 
-  it('reports the failure of lighting the ranges through the reader', async () => {
+  it('reports the failure of highlighting the ranges through the reader', async () => {
     const failure = new Error('the chapter at offset 6500 is not in the book')
     const reportFailure = vi.fn()
     const reader = {

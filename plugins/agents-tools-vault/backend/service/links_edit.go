@@ -13,8 +13,8 @@ import (
 
 // LinkAddition is one link to write into the frontmatter of a note.
 type LinkAddition struct {
-	From        string `json:"from" jsonschema:"path of the note the link is written in"`
-	Fingerprint string `json:"fingerprint" jsonschema:"the fingerprint note_read gave for the note; the same for every link written into one note"`
+	From        string `json:"from" jsonschema:"path of the source note"`
+	Fingerprint string `json:"fingerprint" jsonschema:"the fingerprint note_read returned for the note; the same for every link written into one note"`
 	To          string `json:"to" jsonschema:"the other note's name, or note://<identifier> when the name is ambiguous"`
 	Role        string `json:"role" jsonschema:"the kind of relationship: parent, child, jump, ref or attachment"`
 	Type        string `json:"type,omitempty" jsonschema:"an open type of the link, such as source"`
@@ -29,10 +29,10 @@ type LinkAddInput struct {
 
 // LinkAddItem is the outcome of writing one link.
 type LinkAddItem struct {
-	From        string `json:"from" jsonschema:"path of the note the link is written in"`
+	From        string `json:"from" jsonschema:"path of the source note"`
 	To          string `json:"to" jsonschema:"the target as given"`
 	Fingerprint string `json:"fingerprint,omitempty" jsonschema:"fingerprint of the note after the write, for its next write; absent when the link was not written"`
-	Error       string `json:"error,omitempty" jsonschema:"why the link was not written"`
+	Error       string `json:"error,omitempty" jsonschema:"error message when the link was not written"`
 }
 
 // LinkAddOutput is the output of the link_add tool.
@@ -42,10 +42,10 @@ type LinkAddOutput struct {
 
 // LinkUpdateInput is the input of the link_update tool.
 type LinkUpdateInput struct {
-	From        string `json:"from" jsonschema:"path of the note the link is written in"`
+	From        string `json:"from" jsonschema:"path of the source note"`
 	To          string `json:"to" jsonschema:"the target as it is written now"`
-	Fingerprint string `json:"fingerprint" jsonschema:"the fingerprint note_read gave for the note"`
-	Role        string `json:"role,omitempty" jsonschema:"the role the link carries: parent, child, jump, ref or attachment; kept when left out"`
+	Fingerprint string `json:"fingerprint" jsonschema:"the fingerprint note_read returned for the note"`
+	Role        string `json:"role,omitempty" jsonschema:"the link role: parent, child, jump, ref or attachment; kept when left out"`
 	Type        string `json:"type,omitempty" jsonschema:"the type of the link; kept when left out"`
 	Label       string `json:"label,omitempty" jsonschema:"a few words naming the relationship; kept when left out"`
 	Note        string `json:"note,omitempty" jsonschema:"why the link exists; kept when left out"`
@@ -53,9 +53,9 @@ type LinkUpdateInput struct {
 
 // LinkRemoveInput is the input of the link_remove tool.
 type LinkRemoveInput struct {
-	From        string `json:"from" jsonschema:"path of the note the link is written in"`
+	From        string `json:"from" jsonschema:"path of the source note"`
 	To          string `json:"to" jsonschema:"the target as it is written"`
-	Fingerprint string `json:"fingerprint" jsonschema:"the fingerprint note_read gave for the note"`
+	Fingerprint string `json:"fingerprint" jsonschema:"the fingerprint note_read returned for the note"`
 	Role        string `json:"role,omitempty" jsonschema:"remove only the link of this role; every link to the target when left out"`
 }
 
@@ -71,8 +71,8 @@ func (t *Tools) addLinkAdd(registry *tools.Registry) error {
 		Name:  "link_add",
 		Title: "Add Links",
 		Description: "Write up to 50 links into the frontmatter links of notes. Each link needs the fingerprint " +
-			"note_read gave for its note; the links into one note are one write and carry the same fingerprint. " +
-			"A stale fingerprint refuses the links of that note and leaves it unchanged.",
+			"note_read returned for its note; the links for one note are written together and need the same " +
+			"fingerprint. With a stale fingerprint, no link of that note is written and the note is unchanged.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{linkEditSentence},
@@ -85,8 +85,8 @@ func (t *Tools) addLinkUpdate(registry *tools.Registry) error {
 		Name:  "link_update",
 		Title: "Update Link",
 		Description: "Change the role, type, label or note of the links a note has to a target, keeping the " +
-			"target. Fields left out are kept. Needs the fingerprint note_read gave " +
-			"for the note, and a stale one is refused.",
+			"target. Fields left out are kept. Needs the fingerprint note_read returned " +
+			"for the note; a stale one is rejected.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{linkEditSentence},
@@ -99,15 +99,15 @@ func (t *Tools) addLinkRemove(registry *tools.Registry) error {
 		Name:  "link_remove",
 		Title: "Remove Links",
 		Description: "Remove the links a note has to a target from its frontmatter, or only the link of one " +
-			"role. The note at the other end is unchanged. Needs the fingerprint note_read gave for the note, " +
-			"and a stale one is refused.",
+			"role. The note at the other end is unchanged. Needs the fingerprint note_read returned for the note, " +
+			"and a stale one is rejected.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{linkEditSentence},
 	}, inVault(t, (*Tools).removeLinks))
 }
 
-// readAddition is the link to write and the baseline of its note, or why it cannot be written.
+// readAddition returns the link to write and the baseline of its note, or the validation error.
 func readAddition(in LinkAddition) (host.LinkAddition, error) {
 	link := domain.Link{
 		Target: domain.ParseAddress(in.To),
@@ -127,7 +127,7 @@ func readAddition(in LinkAddition) (host.LinkAddition, error) {
 	return host.LinkAddition{From: in.From, Baseline: baseline, Link: link}, nil
 }
 
-// readBaseline is the file stat of the note at notePath that the fingerprint note_read gave names.
+// readBaseline returns the file stat of the note at notePath that the note_read fingerprint encodes.
 func readBaseline(notePath, fingerprint string) (domain.FileStat, error) {
 	if strings.TrimSpace(notePath) == "" {
 		return domain.FileStat{}, errors.New("from is required")
@@ -140,13 +140,13 @@ func readBaseline(notePath, fingerprint string) (domain.FileStat, error) {
 	return baseline, nil
 }
 
-// checkWritable returns why the link cannot be written, as the notes library requires of a link.
+// checkWritable returns an error when the link breaks a rule the notes library sets for links.
 func checkWritable(link domain.Link) error {
 	if !domain.IsKnownRole(link.Role) {
-		return fmt.Errorf("%q is not a role a link can have: parent, child, jump, ref or attachment", link.Role)
+		return fmt.Errorf("invalid role %q: use parent, child, jump, ref or attachment", link.Role)
 	}
 	if !domain.IsWritableMarker(link.Marker) {
-		return fmt.Errorf("%q is not a marker a link can have", link.Marker)
+		return fmt.Errorf("invalid marker %q", link.Marker)
 	}
 	if link.Target.Value == "" {
 		return errors.New("to is required")
@@ -154,10 +154,10 @@ func checkWritable(link domain.Link) error {
 	return nil
 }
 
-// checkRole refuses a role no link can have. An empty role is none.
+// checkRole rejects a role no link can have. An empty role means no role.
 func checkRole(role domain.LinkRole) error {
 	if role != "" && !domain.IsKnownRole(role) {
-		return fmt.Errorf("%q is not a role a link can have: parent, child, jump, ref or attachment", role)
+		return fmt.Errorf("invalid role %q: use parent, child, jump, ref or attachment", role)
 	}
 	return nil
 }
@@ -194,7 +194,7 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 		return LinkAddOutput{}, fmt.Errorf("write the links: %w", err)
 	}
 	if len(added) != len(additions) {
-		return LinkAddOutput{}, fmt.Errorf("the host answered %d of %d links", len(added), len(additions))
+		return LinkAddOutput{}, fmt.Errorf("the host returned %d of %d links", len(added), len(additions))
 	}
 	for j, one := range added {
 		i := positions[j]
@@ -207,14 +207,14 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 	return out, nil
 }
 
-// findFingerprintConflicts is why the links into a note are not written, by the note: its links carry
-// two different fingerprints, and they are one write.
+// findFingerprintConflicts returns, by note path, the error for a note whose links have two different
+// fingerprints: the links for one note are written together.
 func findFingerprintConflicts(links []LinkAddition) map[string]error {
 	first := map[string]string{}
 	conflicts := map[string]error{}
 	for _, l := range links {
 		if fingerprint, isSeen := first[l.From]; isSeen && fingerprint != l.Fingerprint {
-			conflicts[l.From] = fmt.Errorf("the links into %s carry two different fingerprints, and they are one write", l.From)
+			conflicts[l.From] = fmt.Errorf("the links for %s have different fingerprints; the links for one note are written together", l.From)
 			continue
 		}
 		first[l.From] = l.Fingerprint
@@ -222,18 +222,18 @@ func findFingerprintConflicts(links []LinkAddition) map[string]error {
 	return conflicts
 }
 
-// describeLinkError is the error of an edit of the links of a note, naming the note when the
+// describeLinkError returns the error of an edit of the links of a note, naming the note when the
 // fingerprint is stale.
 func describeLinkError(notePath string, err error) error {
 	if errors.Is(err, host.ErrStale) {
-		return fmt.Errorf("%s changed since note_read gave the fingerprint; read it again: %w", notePath, err)
+		return fmt.Errorf("%s changed since note_read returned the fingerprint; read it again: %w", notePath, err)
 	}
 	return err
 }
 
 func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOutput, error) {
-	to := domain.ParseAddress(in.To)
-	if to.Value == "" {
+	target := domain.ParseAddress(in.To)
+	if target.Value == "" {
 		return LinkEditOutput{}, errors.New("to is required")
 	}
 	role := domain.LinkRole(in.Role)
@@ -245,7 +245,7 @@ func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOut
 		return LinkEditOutput{}, err
 	}
 	change := domain.Link{Role: role, Type: in.Type, Why: in.Note, Label: in.Label, Marker: domain.MarkerNone}
-	stat, err := t.vault.UpdateLinks(ctx, in.From, to, change, baseline)
+	stat, err := t.vault.UpdateLinks(ctx, in.From, target, change, baseline)
 	if err != nil {
 		return LinkEditOutput{}, describeLinkError(in.From, err)
 	}
@@ -253,8 +253,8 @@ func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOut
 }
 
 func (t *Tools) removeLinks(ctx context.Context, in LinkRemoveInput) (LinkEditOutput, error) {
-	to := domain.ParseAddress(in.To)
-	if to.Value == "" {
+	target := domain.ParseAddress(in.To)
+	if target.Value == "" {
 		return LinkEditOutput{}, errors.New("to is required")
 	}
 	role := domain.LinkRole(in.Role)
@@ -265,7 +265,7 @@ func (t *Tools) removeLinks(ctx context.Context, in LinkRemoveInput) (LinkEditOu
 	if err != nil {
 		return LinkEditOutput{}, err
 	}
-	stat, err := t.vault.RemoveLinks(ctx, in.From, to, role, baseline)
+	stat, err := t.vault.RemoveLinks(ctx, in.From, target, role, baseline)
 	if err != nil {
 		return LinkEditOutput{}, describeLinkError(in.From, err)
 	}

@@ -35,7 +35,7 @@ var errAnswerPending = errors.New("pending review confirmation")
 // page has written its pending state. A page holding text awaiting user
 // confirmation aborts the swap, as does a vault that fails to start: the window
 // stays on its current vault, and a window with no vault to fall back on reports
-// the error. The open is the plugin's open the change runs inside, nil for a change of the user.
+// the error. The open is the plugin open whose lock the switch shares, nil for a user vault switch.
 func (o *Installation) Show(ctx context.Context, v domain.Vault, open *PluginOpen) error {
 	if v.ID == o.State.GetCurrentVault().ID {
 		return nil

@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// prefixSpy records the path prefix each of the three searches is asked.
+// prefixSpy records the path prefix each of the three searches is requested.
 type prefixSpy struct {
 	lexical, named, nearest []string
 }
@@ -40,7 +40,7 @@ func TestSearchPassesPathPrefixToEveryRanking(t *testing.T) {
 	}
 	for name, got := range map[string][]string{"words": spy.lexical, "names": spy.named, "meaning": spy.nearest} {
 		if len(got) != 1 || got[0] != "library/" {
-			t.Errorf("the ranking by %s was asked for the prefix %q, want one call with library/", name, got)
+			t.Errorf("the ranking by %s received a request for the prefix %q, want one call with library/", name, got)
 		}
 	}
 }
