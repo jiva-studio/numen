@@ -99,6 +99,10 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	if moved.IsMoved {
 		res.Path, res.Moved = moved.To, &moved
 	}
+	if source == ByFilename && errors.Is(err, vaultport.ErrAlreadyExists) {
+		// A note its filename names was not written before the move, so it is as it was.
+		return res, domain.NewDetailError(fmt.Sprintf("%s already exists; %s is unchanged", to, path), err)
+	}
 	return res, err
 }
 
