@@ -6,7 +6,6 @@ import type { FilesTabState } from './types'
 
 export { FilesTab }
 export { createFilesKind, FILES } from './kind'
-export { createMenuItems, findMenuEntry } from './lib/menu'
 export { ROOT, createFileTree } from './model/useFileTree'
 export { useFilesTab } from './model/useFilesTab'
 export type { FilesTabDeps, FilesTabState } from './types'

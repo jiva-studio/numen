@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import type { AppInfo, SlotItem } from '@numen/plugin-sdk'
+import type { AppInfo, CommandItem, SlotItem } from '@numen/plugin-sdk'
 import TitleBar from './TitleBar.vue'
 import { TITLE_MIN_WIDTH } from '../lib/layout'
-import { command, separator, view } from '../testing/entries'
+import { command, separator, submenu, view } from '../testing/entries'
 
 interface Options {
   vaultName?: string
@@ -13,6 +13,7 @@ interface Options {
   isMaximized?: boolean
   commands?: readonly SlotItem[]
   status?: readonly SlotItem[]
+  listItems?: (command: string) => Promise<readonly CommandItem[]>
 }
 
 const mounted: VueWrapper[] = []
@@ -402,5 +403,64 @@ describe('the entries that do not fit', () => {
     await resize(wrapper, 2 * VIEW_WIDTH)
 
     expect(shownViews(wrapper)).toStrictEqual(['tasks', 'stats'])
+  })
+})
+
+describe('a command with items', () => {
+  const MOVE = command('tab.move', { hasItems: true, title: 'Move to window' })
+  const items = [
+    { id: 'w1', title: 'Window 1' },
+    { id: 'w2', title: 'Window 2' },
+  ]
+  const menuTexts = (): string[] =>
+    [...document.body.querySelectorAll('[role="menuitem"]')].map((one) => one.textContent!.trim())
+  const settle = async () => {
+    for (let round = 0; round < 4; round += 1) await nextTick()
+  }
+
+  it('opens a dropdown of the items the command lists', async () => {
+    const listItems = vi.fn(async () => items)
+    const wrapper = mountBar({ commands: [MOVE], listItems })
+
+    await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
+    await settle()
+
+    expect(listItems).toHaveBeenCalledWith(MOVE.command)
+    expect(menuTexts()).toStrictEqual(['Window 1', 'Window 2'])
+  })
+
+  it('shows a loading row while the items are read', async () => {
+    const wrapper = mountBar({ commands: [MOVE], listItems: () => new Promise(() => undefined) })
+
+    await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
+    await settle()
+
+    expect(menuTexts()).toStrictEqual(['Loading…'])
+  })
+
+  it('emits run-command with the command and the item picked as its argument', async () => {
+    const wrapper = mountBar({ commands: [MOVE], listItems: async () => items })
+
+    await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
+    await settle()
+    document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')[1]!.click()
+    await nextTick()
+
+    expect(wrapper.emitted('run-command')).toStrictEqual([[MOVE.command, 'w2']])
+  })
+
+  it('draws a command with items inside a submenu as a submenu of its items', async () => {
+    const wrapper = mountBar({
+      commands: [submenu('more', [MOVE], { title: 'More' })],
+      listItems: async () => items,
+    })
+
+    await wrapper.find('[data-title-bar-submenu="more"]').trigger('click')
+    await settle()
+
+    expect(menuTexts()).toStrictEqual(['Move to window ›'])
+    expect(document.body.querySelector('[role="menuitem"]')?.getAttribute('aria-haspopup')).toBe(
+      'menu',
+    )
   })
 })

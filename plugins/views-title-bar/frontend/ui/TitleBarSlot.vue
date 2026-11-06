@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * One slot of the bar: its commands as buttons, its submenus as buttons that open them, its views
- * in their places and its separators as gaps, each out of the area that drags the window.
+ * One slot of the bar: its commands as buttons, its submenus and its commands with items as buttons
+ * that open them, its views in their places and its separators as gaps, each out of the area that
+ * drags the window.
  */
 import type { Component } from 'vue'
-import type { AppInfo, SlotCommand, SlotItem } from '@numen/plugin-sdk'
+import type { AppInfo, CommandItem, SlotCommand, SlotItem } from '@numen/plugin-sdk'
 import { formatShortcut } from '../lib/shortcut'
 import { formatTooltip } from '../lib/title'
 import TitleBarMenuButton from './TitleBarMenuButton.vue'
@@ -19,10 +20,18 @@ const props = defineProps<{
   /** The fit keys of the entries the bar does not draw. */
   hidden: ReadonlySet<string>
   platform: AppInfo['platform']
+  /** The items a command lists. */
+  listItems: (command: string) => Promise<readonly CommandItem[]>
 }>()
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run-command', command: string): void }>()
+const emit = defineEmits<{ (event: 'run-command', command: string, argument?: string): void }>()
+
+/* -------------------------------- Handlers -------------------------------- */
+function onRunCommand(command: string, argument?: string): void {
+  if (argument === undefined) emit('run-command', command)
+  else emit('run-command', command, argument)
+}
 
 /* -------------------------------- Helpers --------------------------------- */
 function getTooltip(entry: SlotCommand): string {
@@ -45,6 +54,18 @@ function isDrawn(entry: SlotItem): boolean {
           :data-title-bar-entry="getKey(entry)"
           aria-hidden="true"
           style="--wails-draggable: no-drag"
+        />
+        <TitleBarMenuButton
+          v-else-if="entry.kind === 'command' && entry.hasItems"
+          :entries="[entry]"
+          :label="entry.title"
+          :icon="entry.icon"
+          :tooltip="getTooltip(entry)"
+          is-item-list
+          :list-items="listItems"
+          :data-title-bar-entry="getKey(entry)"
+          :data-title-bar-command="entry.command"
+          @run-command="onRunCommand"
         />
         <button
           v-else-if="entry.kind === 'command'"
@@ -69,7 +90,8 @@ function isDrawn(entry: SlotItem): boolean {
           :icon="entry.icon"
           :data-title-bar-entry="getKey(entry)"
           :data-title-bar-submenu="entry.submenu"
-          @run-command="(command) => emit('run-command', command)"
+          :list-items="listItems"
+          @run-command="onRunCommand"
         />
         <div
           v-else

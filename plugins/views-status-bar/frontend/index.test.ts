@@ -196,6 +196,14 @@ describe('a view', () => {
   })
 })
 
+/** The open menus, drawn at the end of the document. */
+const getMenus = (): HTMLElement[] => [
+  ...document.body.querySelectorAll<HTMLElement>('[role="menu"]'),
+]
+const getRows = (menu: HTMLElement | undefined): HTMLElement[] => [
+  ...(menu?.querySelectorAll<HTMLElement>(':scope > [role="menuitem"]') ?? []),
+]
+
 describe('a submenu', () => {
   const submenu = createSubmenu('words.more', 'Words', [
     createCommand('count', 'Count words'),
@@ -207,19 +215,20 @@ describe('a submenu', () => {
     const { context, view } = activateBar()
     context.slots.setEntries('statusBar.right', [submenu])
     const wrapper = mountBar(view)
-    expect(wrapper.find('[role="menu"]').exists()).toBe(false)
+    expect(getMenus()).toHaveLength(0)
 
     const trigger = wrapper.find('button[data-status-bar-entry]')
     expect(trigger.text()).toBe('Words')
     await trigger.trigger('click')
+    await flushPromises()
 
-    const menu = wrapper.find('[role="menu"]')
-    expect(menu.attributes('aria-label')).toBe('Words')
-    expect(menu.findAll(':scope > [role="menuitem"]').map((one) => one.text())).toStrictEqual([
+    const [menu] = getMenus()
+    expect(menu?.getAttribute('aria-label')).toBe('Words')
+    expect(getRows(menu).map((one) => one.textContent?.trim())).toStrictEqual([
       'Count words',
-      'Language',
+      'Language ›',
     ])
-    expect(menu.findAll(':scope > [role="separator"]')).toHaveLength(1)
+    expect(menu?.querySelectorAll(':scope > [role="separator"]')).toHaveLength(1)
   })
 
   it('runs a command of the list and closes it', async () => {
@@ -227,13 +236,15 @@ describe('a submenu', () => {
     context.slots.setEntries('statusBar.right', [submenu])
     const wrapper = mountBar(view)
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
 
-    await wrapper.find('[role="menuitem"]').trigger('click')
+    getRows(getMenus()[0])[0]!.click()
+    await flushPromises()
 
     expect(context.commands.getRuns()).toStrictEqual([
       { command: `${PLUGIN}:count`, target: undefined, argument: undefined },
     ])
-    expect(wrapper.find('[role="menu"]').exists()).toBe(false)
+    expect(getMenus()).toHaveLength(0)
   })
 
   it('opens a nested submenu from its row', async () => {
@@ -241,14 +252,17 @@ describe('a submenu', () => {
     context.slots.setEntries('statusBar.right', [submenu])
     const wrapper = mountBar(view)
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
 
-    const row = wrapper.findAll('[role="menuitem"]').find((one) => one.text() === 'Language')!
-    expect(row.attributes('aria-haspopup')).toBe('menu')
-    await row.trigger('click')
+    const row = getRows(getMenus()[0]).find((one) => one.textContent?.includes('Language'))!
+    expect(row.getAttribute('aria-haspopup')).toBe('menu')
+    row.click()
+    await flushPromises()
 
-    const nested = wrapper.find('[role="menu"][aria-label="Language"]')
-    expect(nested.text()).toBe('English')
-    await nested.find('[role="menuitem"]').trigger('click')
+    const nested = getMenus()[1]
+    expect(nested?.textContent?.trim()).toBe('English')
+    getRows(nested)[0]!.click()
+    await flushPromises()
     expect(context.commands.getRuns()).toStrictEqual([
       { command: `${PLUGIN}:english`, target: undefined, argument: undefined },
     ])
@@ -259,11 +273,12 @@ describe('a submenu', () => {
     context.slots.setEntries('statusBar.right', [submenu])
     const wrapper = mountBar(view)
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
 
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await flushPromises()
 
-    expect(wrapper.find('[role="menu"]').exists()).toBe(false)
+    expect(getMenus()).toHaveLength(0)
   })
 
   it('draws a view among its entries as a row that holds it', async () => {
@@ -274,7 +289,48 @@ describe('a submenu', () => {
     const wrapper = mountBar(view)
 
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
 
-    expect(wrapper.find('[role="menu"] [data-word-count]').text()).toBe('1 024 words')
+    expect(document.body.querySelector('[role="menu"] [data-word-count]')?.textContent).toBe(
+      '1 024 words',
+    )
+  })
+})
+
+describe('a command with items', () => {
+  const LANGUAGE = createCommand('lang', 'Language', { hasItems: true })
+
+  it('is a button that opens a dropdown of the items of the command', async () => {
+    const { context, view } = activateBar()
+    context.commands.setItems(LANGUAGE.command, [
+      { id: 'en', title: 'English' },
+      { id: 'sa', title: 'Sanskrit' },
+    ])
+    context.slots.setEntries('statusBar.right', [LANGUAGE])
+    const wrapper = mountBar(view)
+
+    await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
+
+    expect(getRows(getMenus()[0]).map((one) => one.textContent?.trim())).toStrictEqual([
+      'English',
+      'Sanskrit',
+    ])
+  })
+
+  it('runs the command with the item picked as its argument', async () => {
+    const { context, view } = activateBar()
+    context.commands.setItems(LANGUAGE.command, [{ id: 'sa', title: 'Sanskrit' }])
+    context.slots.setEntries('statusBar.right', [LANGUAGE])
+    const wrapper = mountBar(view)
+    await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
+
+    getRows(getMenus()[0])[0]!.click()
+    await flushPromises()
+
+    expect(context.commands.getRuns()).toStrictEqual([
+      { command: LANGUAGE.command, target: undefined, argument: 'sa' },
+    ])
   })
 })

@@ -5,23 +5,21 @@
 import { computed, ref, shallowRef, type Component } from 'vue'
 import type { TabMenu } from '@numen/shell'
 import {
+  createSlotMenu,
+  readCommandItemLists,
   SLOT,
   type CommandItem,
+  type CommandItemLists,
   type CommandsHost,
   type CommandTarget as RunTarget,
+  type Disposable,
   type SlotHost,
   type SlotItem,
+  type SlotMenu,
 } from '@numen/plugin-host'
 import type { useWindowTabs } from '@/entities/tab'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS } from '@/shared/words'
-import {
-  createSlotItems,
-  findSlotEntry,
-  listItemCommands,
-  parseItemRowId,
-  type SlotRowEntry,
-} from './tabMenuItems'
 
 export interface TabMenuDeps {
   /** The slots of the window; without them a tab has no menu. */
@@ -43,37 +41,33 @@ export interface TabMenuDeps {
 /** The extension that makes a file a note. */
 const NOTE_EXTENSION = '.md'
 
+/** The words of the rows the menu writes itself. */
+const MENU_WORDS = { loadingText: WORDS.loadingItems, emptyText: WORDS.noItems }
+
 /** The items of the commands of the open menu that offer them, read as the menu opens. */
 function useEntryItems(deps: Pick<TabMenuDeps, 'listItems' | 'reportError'>) {
-  const byKey = shallowRef<ReadonlyMap<string, readonly CommandItem[] | null>>(new Map())
-  let opening = 0
-  const set = (key: string, read: readonly CommandItem[] | null) => {
-    byKey.value = new Map([...byKey.value, [key, read]])
+  const lists = shallowRef<CommandItemLists>(new Map())
+  let reading: Disposable | null = null
+  const stop = () => {
+    reading?.dispose()
+    reading = null
   }
   const read = (entries: readonly SlotItem[], target: RunTarget) => {
-    const current = ++opening
-    byKey.value = new Map()
-    for (const entry of listItemCommands(entries)) {
-      set(entry.key, null)
-      ;(deps.listItems?.(entry.command, target) ?? Promise.resolve([]))
-        .then((found) => {
-          if (current === opening) set(entry.key, found)
-        })
-        .catch((error: unknown) => {
-          deps.reportError?.(error)
-          if (current === opening) set(entry.key, [])
-        })
-    }
+    stop()
+    reading = readCommandItemLists(
+      entries,
+      (command) => deps.listItems?.(command, target) ?? Promise.resolve([]),
+      (next) => (lists.value = next),
+      (error) => deps.reportError?.(error),
+    )
   }
-  return { byKey, read }
+  return { lists, read, stop }
 }
 
 /** The window a row stands for when it is an item of moving the tab; null for any other row. */
-const getMoveWindow = (entries: readonly SlotItem[], id: string | null): string | null => {
-  const picked = id === null ? null : parseItemRowId(id)
-  if (!picked) return null
-  const entry = findSlotEntry(entries, picked.key)
-  return entry?.kind === 'command' && entry.command === COMMAND.moveTabToWindow ? picked.item : null
+const getMoveWindow = (tree: SlotMenu, id: string | null): string | null => {
+  const pick = id === null ? undefined : tree.getPick(id)
+  return pick?.command === COMMAND.moveTabToWindow ? (pick.argument ?? null) : null
 }
 
 /** The target of a tab with the type of its note, where the type is read; without it otherwise. */
@@ -101,18 +95,15 @@ export function useTabMenu(deps: TabMenuDeps) {
   /** How many menus were requested or closed, which tells a read of a note type it is too late. */
   let requests = 0
 
+  const tree = computed(() => createSlotMenu(entries.value, entryItems.lists.value, MENU_WORDS))
+
   const menu = computed<TabMenu | null>(() => {
     if (tabId.value === null) return null
-    const items = createSlotItems(entries.value, {
-      byKey: entryItems.byKey.value,
-      loadingText: WORDS.loadingItems,
-      noneText: WORDS.noItems,
-    })
-    return { tab: tabId.value, at: position.value, items }
+    return { tab: tabId.value, at: position.value, items: tree.value.items }
   })
 
   const highlight = (id: string | null): void => {
-    const windowId = getMoveWindow(entries.value, id)
+    const windowId = getMoveWindow(tree.value, id)
     if (windowId === highlighted) return
     if (highlighted !== null) deps.onHighlight?.(highlighted, false)
     highlighted = windowId
@@ -122,6 +113,7 @@ export function useTabMenu(deps: TabMenuDeps) {
   const dismiss = (): void => {
     requests += 1
     highlight(null)
+    entryItems.stop()
     tabId.value = null
     openTarget.value = null
   }
@@ -153,29 +145,21 @@ export function useTabMenu(deps: TabMenuDeps) {
       .catch((error: unknown) => deps.reportError?.(error))
   }
 
-  /** Runs the command of the entry, with the item picked as its argument, over the tab. */
-  const runEntry = async (entry: SlotRowEntry, target: RunTarget, argument?: string) => {
-    if (entry.kind !== 'command' || (entry.hasItems && argument === undefined)) return
-    dismiss()
-    await deps.runCommand?.(entry.command, target, argument)
-  }
-
   /** Chooses the row `id` of the menu requested on `tab`; a menu since closed runs nothing. */
   const choose = (tab: string, id: string): void => {
     const target = openTarget.value
     if (tabId.value !== tab || !target) return
-    const picked = parseItemRowId(id)
-    const entry = findSlotEntry(entries.value, picked ? picked.key : id)
-    if (!entry) return
-    runEntry(entry, target, picked?.item).catch((error: unknown) => deps.reportError?.(error))
+    const pick = tree.value.getPick(id)
+    if (!pick) return
+    dismiss()
+    ;(deps.runCommand?.(pick.command, target, pick.argument) ?? Promise.resolve()).catch(
+      (error: unknown) => deps.reportError?.(error),
+    )
   }
 
   /** The icon of the command or submenu of the entry a row stands for. */
-  const getIcon = (id: string): Component | null => {
-    const entry = findSlotEntry(entries.value, id)
-    if (!entry || entry.kind === 'view') return null
-    return (entry.icon as Component | undefined) ?? null
-  }
+  const getIcon = (id: string): Component | null =>
+    (tree.value.getIcon(id) as Component | undefined) ?? null
 
   return { menu, open, choose, dismiss, highlight, getIcon }
 }

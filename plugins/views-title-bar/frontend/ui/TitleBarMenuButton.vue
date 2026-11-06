@@ -1,28 +1,43 @@
 <script setup lang="ts">
 /**
  * A button of the bar that opens a menu of slot entries: the menu of the commands that do not fit,
- * or a submenu a plugin placed in a slot. A pick emits the command of its row.
+ * a submenu a plugin placed in a slot, or the items of a command that lists them. The items of the
+ * commands of the menu are read as it opens. A pick emits the command of its row and its argument.
  */
-import { computed, ref, useTemplateRef, type Component } from 'vue'
+import { computed, onBeforeUnmount, ref, shallowRef, useTemplateRef, type Component } from 'vue'
 import { Menu, measureRect, type MenuTrigger } from '@numen/ui'
-import type { SlotItem } from '@numen/plugin-sdk'
-import { createBarMenu } from '../lib/menu'
+import {
+  createSlotMenu,
+  readCommandItemLists,
+  type CommandItem,
+  type CommandItemLists,
+  type Disposable,
+  type SlotItem,
+} from '@numen/plugin-sdk'
+import { TITLE_BAR_WORDS } from '../lib/words'
 
 defineOptions({ inheritAttrs: false })
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
-  entries: readonly SlotItem[]
-  /** What the button and its menu are called. */
-  label: string
-  /** The icon of the button; the label is written where there is none. */
-  icon?: unknown
-  /** The tooltip; the label where none is given. */
-  tooltip?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    entries: readonly SlotItem[]
+    /** What the button and its menu are called. */
+    label: string
+    /** The icon of the button; the label is written where there is none. */
+    icon?: unknown
+    /** The tooltip; the label where none is given. */
+    tooltip?: string
+    /** Whether the menu is the items of the one command of the entries, rather than its row. */
+    isItemList?: boolean
+    /** The items a command lists. */
+    listItems: (command: string) => Promise<readonly CommandItem[]>
+  }>(),
+  { isItemList: false },
+)
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run-command', command: string): void }>()
+const emit = defineEmits<{ (event: 'run-command', command: string, argument?: string): void }>()
 
 /* --------------------------------- State ---------------------------------- */
 const button = useTemplateRef<HTMLElement>('button')
@@ -30,31 +45,54 @@ const isOpen = ref(false)
 const trigger = ref<MenuTrigger>('pointer')
 const anchor = ref({ x: 0, y: 0 })
 const width = ref(0)
-const menu = computed(() => createBarMenu(props.entries))
-const isMenuOpen = computed(() => isOpen.value && menu.value.items.length > 0)
+const itemLists = shallowRef<CommandItemLists>(new Map())
+let reading: Disposable | null = null
+const menu = computed(() => createSlotMenu(props.entries, itemLists.value, TITLE_BAR_WORDS))
+const rows = computed(() => {
+  const [first] = menu.value.items
+  return props.isItemList && first?.children ? first.children : menu.value.items
+})
+const isMenuOpen = computed(() => isOpen.value && rows.value.length > 0)
+
+/* --------------------------------- Hooks ---------------------------------- */
+onBeforeUnmount(() => reading?.dispose())
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle(event: MouseEvent): void {
   if (isOpen.value) {
-    isOpen.value = false
+    onClose()
     return
   }
   const box = measureRect(button.value)
   anchor.value = { x: box?.left ?? 0, y: box?.bottom ?? 0 }
   width.value = box?.width ?? 0
   trigger.value = event.detail === 0 ? 'keyboard' : 'pointer'
+  reading?.dispose()
+  reading = readCommandItemLists(
+    props.entries,
+    props.listItems,
+    (lists) => (itemLists.value = lists),
+  )
   isOpen.value = true
 }
 
-function onChoose(id: string): void {
+function onClose(): void {
+  reading?.dispose()
+  reading = null
   isOpen.value = false
-  const command = menu.value.commands.get(id)
-  if (command !== undefined) emit('run-command', command)
+}
+
+function onChoose(id: string): void {
+  const pick = menu.value.getPick(id)
+  onClose()
+  if (!pick) return
+  if (pick.argument === undefined) emit('run-command', pick.command)
+  else emit('run-command', pick.command, pick.argument)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
 function getIcon(id: string): Component | undefined {
-  return menu.value.icons.get(id) as Component | undefined
+  return menu.value.getIcon(id) as Component | undefined
 }
 </script>
 
@@ -77,7 +115,7 @@ function getIcon(id: string): Component | undefined {
     <template v-else>{{ label }}</template>
   </button>
   <Menu
-    :items="menu.items"
+    :items="rows"
     :at="anchor"
     :asking="width"
     :from="button"
@@ -85,7 +123,7 @@ function getIcon(id: string): Component | undefined {
     :is-open="isMenuOpen"
     :name="label"
     @choose="onChoose"
-    @dismiss="isOpen = false"
+    @dismiss="onClose"
   >
     <template #icon="{ id }">
       <component :is="getIcon(id)" v-if="getIcon(id)" :size="16" />

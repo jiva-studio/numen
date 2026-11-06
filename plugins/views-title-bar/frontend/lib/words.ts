@@ -15,6 +15,10 @@ export interface TitleBarWords {
   readonly nothing: string
   /** The last row of that list, which creates a vault. */
   readonly createVault: string
+  /** The row of a menu of items that are being read. */
+  readonly loadingText: string
+  /** The row of a menu of a command that lists no item. */
+  readonly emptyText: string
 }
 
 export const TITLE_BAR_WORDS: TitleBarWords = {
@@ -28,4 +32,6 @@ export const TITLE_BAR_WORDS: TitleBarWords = {
   search: 'Search vaults',
   nothing: 'No vault found',
   createVault: 'Create vault',
+  loadingText: 'Loading…',
+  emptyText: 'No items',
 }

@@ -3,20 +3,17 @@
  */
 import { computed, ref, shallowRef, type Component } from 'vue'
 import {
+  createSlotMenu,
   formatErrorMessage,
   getFileName,
   NOTE_TYPE,
-  type CommandItem,
+  readCommandItemLists,
+  type CommandItemLists,
   type CommandTarget,
+  type Disposable,
 } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
-import {
-  createMenuItems,
-  findMenuEntry,
-  listItemCommands,
-  parseItemRowId,
-  TRASH_NOTE,
-} from '../lib/menu'
+import { TRASH_NOTE } from '../lib/menu'
 import { resolveRenamePath } from './rename'
 import { WORDS as words } from '../words'
 import type {
@@ -113,44 +110,35 @@ const getMenuTarget = (
         overPaths.filter((one) => one !== path),
       )
 
+/** The words of the rows the menu writes itself. */
+const MENU_WORDS = { loadingText: words.loadingItems, emptyText: words.noItems }
+
 function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   const menu = ref<MenuRequest | null>(null)
   const reportFailure = createFailureReporter(deps)
-  const items = shallowRef<ReadonlyMap<string, readonly CommandItem[] | null>>(new Map())
-
-  const setItems = (key: string, read: readonly CommandItem[] | null) => {
-    items.value = new Map([...items.value, [key, read]])
-  }
-
-  /** How many menus were opened, which tells the menu a read of items was made for. */
-  let openings = 0
+  const itemLists = shallowRef<CommandItemLists>(new Map())
+  let reading: Disposable | null = null
 
   /** Reads the items of the commands of the menu opened by the request, while it stays open. */
   const readItems = (request: MenuRequest) => {
-    const opening = ++openings
-    const isOpen = () => menu.value !== null && opening === openings
+    reading?.dispose()
     const target = getTarget(request.path)
-    for (const entry of listItemCommands(deps.getMenuEntries(target))) {
-      setItems(entry.key, null)
-      deps
-        .listItems(entry.command, target)
-        .then((read) => {
-          if (isOpen()) setItems(entry.key, read)
-        })
-        .catch((error: unknown) => {
-          reportFailure(error)
-          if (isOpen()) setItems(entry.key, [])
-        })
-    }
+    reading = readCommandItemLists(
+      deps.getMenuEntries(target),
+      (command) => deps.listItems(command, target),
+      (lists) => (itemLists.value = lists),
+      reportFailure,
+    )
   }
 
   const openMenu = (request: MenuRequest) => {
     menu.value = request
-    items.value = new Map()
     readItems(request)
   }
 
   const dismissMenu = () => {
+    reading?.dispose()
+    reading = null
     menu.value = null
   }
 
@@ -160,32 +148,22 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   const getTarget = (path: string | null): CommandTarget =>
     getMenuTarget(list, path, path === null ? [] : getOverPaths(path))
 
-  const getMenuItems = (path: string | null) =>
-    createMenuItems(deps.getMenuEntries(getTarget(path)), {
-      byKey: items.value,
-      loadingText: words.loadingItems,
-      noneText: words.noItems,
-    })
+  const getSlotMenu = (path: string | null) =>
+    createSlotMenu(deps.getMenuEntries(getTarget(path)), itemLists.value, MENU_WORDS)
 
-  const openEntries = computed(() =>
-    menu.value ? deps.getMenuEntries(getTarget(menu.value.path)) : [],
-  )
+  const openMenuTree = computed(() => (menu.value ? getSlotMenu(menu.value.path) : null))
 
-  const getMenuIcon = (id: string): Component | null => {
-    const entry = findMenuEntry(openEntries.value, id)
-    if (!entry || entry.kind === 'view') return null
-    return (entry.icon as Component | undefined) ?? null
-  }
+  const getMenuIcon = (id: string): Component | null =>
+    (openMenuTree.value?.getIcon(id) as Component | undefined) ?? null
 
   const chooseMenuItem = (id: string) => {
     const request = menu.value
     if (!request) return
     const target = getTarget(request.path)
-    const picked = parseItemRowId(id)
-    const entry = findMenuEntry(openEntries.value, picked ? picked.key : id)
-    menu.value = null
-    if (entry?.kind !== 'command' || (entry.hasItems && !picked)) return
-    deps.runCommand(entry.command, target, picked?.item).catch(reportFailure)
+    const pick = openMenuTree.value?.getPick(id)
+    dismissMenu()
+    if (!pick) return
+    deps.runCommand(pick.command, target, pick.argument).catch(reportFailure)
   }
 
   return {
@@ -194,7 +172,7 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
     dismissMenu,
     chooseMenuItem,
     getOverPaths,
-    getMenuItems,
+    getMenuItems: (path: string | null) => getSlotMenu(path).items,
     getMenuIcon,
   }
 }

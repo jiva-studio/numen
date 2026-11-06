@@ -9,9 +9,11 @@ export {
   TITLE_BAR_SLOT,
   VAULT_SUMMARY,
   createMockAgentHost,
+  createSlotMenu,
   formatFingerprint,
   getRelationErrorWords,
   isNotePath,
+  readCommandItemLists,
 } from '@numen/plugin-sdk'
 export type {
   AgentHost,
@@ -22,6 +24,7 @@ export type {
   Backlink,
   BufferHost,
   CommandItem,
+  CommandItemLists,
   CommandNote,
   CommandTarget,
   CommandsHost,

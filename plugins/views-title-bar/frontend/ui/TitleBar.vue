@@ -8,7 +8,13 @@
 import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { Ellipsis } from '@lucide/vue'
 import { SearchableListPopup, measureRect, type ListItem } from '@numen/ui'
-import { SLOT, type AppInfo, type SlotItem, type VaultsState } from '@numen/plugin-sdk'
+import {
+  SLOT,
+  type AppInfo,
+  type CommandItem,
+  type SlotItem,
+  type VaultsState,
+} from '@numen/plugin-sdk'
 import { getControls, type ButtonsSetting } from '../lib/frame'
 import { formatTitle } from '../lib/title'
 import { TITLE_BAR_WORDS } from '../lib/words'
@@ -42,6 +48,8 @@ const props = withDefaults(
     status?: readonly SlotItem[]
     /** Whether the window runs the command that creates a vault, drawn as the last row of the list. */
     canCreateVault?: boolean
+    /** The items a command lists, read as a menu with the command opens. */
+    listItems?: (command: string) => Promise<readonly CommandItem[]>
   }>(),
   {
     platform: 'windows',
@@ -52,6 +60,7 @@ const props = withDefaults(
     commands: () => [],
     status: () => [],
     canCreateVault: false,
+    listItems: async () => [],
   },
 )
 
@@ -60,7 +69,8 @@ const emit = defineEmits<{
   (event: 'minimize-window'): void
   (event: 'toggle-maximize-window'): void
   (event: 'close-window'): void
-  (event: 'run-command', command: string): void
+  /** A command was picked; with `argument`, the id of the item picked. */
+  (event: 'run-command', command: string, argument?: string): void
   /** A vault that is not the current one was chosen. */
   (event: 'switch-vault', id: string): void
   /** The last row of the list, which creates a vault, was chosen. */
@@ -147,8 +157,9 @@ function onDoubleClick(event: MouseEvent): void {
   emit('toggle-maximize-window')
 }
 
-function onRunCommand(command: string): void {
-  emit('run-command', command)
+function onRunCommand(command: string, argument?: string): void {
+  if (argument === undefined) emit('run-command', command)
+  else emit('run-command', command, argument)
 }
 </script>
 
@@ -190,6 +201,7 @@ function onRunCommand(command: string): void {
         :get-key="(entry) => getFitKey(SLOT.titleBarCommands, entry)"
         :hidden="fit.hidden"
         :platform="platform"
+        :list-items="listItems"
         @run-command="onRunCommand"
       />
 
@@ -199,6 +211,7 @@ function onRunCommand(command: string): void {
         :label="TITLE_BAR_WORDS.more"
         :icon="Ellipsis"
         data-title-bar-more
+        :list-items="listItems"
         @run-command="onRunCommand"
       />
 
@@ -228,6 +241,7 @@ function onRunCommand(command: string): void {
         :get-key="(entry) => getFitKey(SLOT.titleBarStatus, entry)"
         :hidden="fit.hidden"
         :platform="platform"
+        :list-items="listItems"
         @run-command="onRunCommand"
       />
     </div>
