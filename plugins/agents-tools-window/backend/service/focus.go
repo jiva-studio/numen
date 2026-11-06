@@ -45,11 +45,12 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 		Name:  "source_focus",
 		Title: "Focus passages of a file",
 		Description: "Open a file of the vault in the window, scroll to the first passage and " +
-			"highlight every passage. `library_search` returns the start and length of each " +
-			"passage; pass them unchanged. When several passages of one source answer a " +
-			"question, pass them all; the window scrolls to the first. An empty list opens the " +
-			"file at its beginning. Call it only when the user asked to see a passage. Talking " +
-			"about a passage is not asking: the call changes what the window shows.",
+			"highlight every passage; a note opens whole with nothing highlighted. " +
+			"`library_search` returns the start and length of each passage; pass them unchanged. " +
+			"When several passages of one source answer a question, pass them all; the window " +
+			"scrolls to the first. An empty list opens the file at its beginning. Call it only when " +
+			"the user asked to see a passage. Talking about a passage is not asking: the call " +
+			"changes what the window shows.",
 		Effect:  tools.ReadOnly,
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full},
@@ -61,7 +62,11 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 		if err := focusFile(ctx, on, in.Path, passages); err != nil {
 			return SourceFocusOutput{}, err
 		}
-		return SourceFocusOutput{Path: in.Path, HighlightCount: len(passages)}, nil
+		highlightCount := len(passages)
+		if isNotePath(in.Path) {
+			highlightCount = 0
+		}
+		return SourceFocusOutput{Path: in.Path, HighlightCount: highlightCount}, nil
 	})
 }
 

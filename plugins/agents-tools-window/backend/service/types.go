@@ -95,5 +95,5 @@ type SourceFocusInput struct {
 // SourceFocusOutput represents the result of source_focus.
 type SourceFocusOutput struct {
 	Path           string `json:"path" jsonschema:"the path of the opened file, relative to the vault folder"`
-	HighlightCount int    `json:"highlightCount" jsonschema:"the number of highlighted passages"`
+	HighlightCount int    `json:"highlightCount" jsonschema:"the number of highlighted passages; 0 for a note, which opens whole"`
 }
