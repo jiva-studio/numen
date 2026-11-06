@@ -70,7 +70,7 @@ watch(
 watch(
   () => props.state?.ranges,
   (ranges) => {
-    if (ranges && ranges.length > 0) reachSpans(...ranges).catch(() => undefined)
+    if (ranges && ranges.length > 0) reachSpans(...ranges).catch(tab.reportFailure)
   },
   { immediate: true },
 )

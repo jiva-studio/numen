@@ -8,9 +8,10 @@ import (
 // listenerProtocolTCP is the one transport a listener has.
 const listenerProtocolTCP = "tcp"
 
+// MinListenerPort and MaxListenerPort bound the port of a listener: the host binds no privileged port.
 const (
-	minListenerPort = 1024
-	maxListenerPort = 65535
+	MinListenerPort = 1024
+	MaxListenerPort = 65535
 )
 
 var listenerNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
@@ -68,8 +69,8 @@ func (m Manifest) checkListenerPort(declared Listener) error {
 		if !ok || setting.Type != settingTypeNumber {
 			return fmt.Errorf("%w: listener %q has port setting %q, which is not a number setting of the plugin", ErrInvalidContribution, declared.Name, declared.PortSetting)
 		}
-	case declared.Port < minListenerPort || declared.Port > maxListenerPort:
-		return fmt.Errorf("%w: listener %q has port %d, outside %d to %d, and no port setting", ErrInvalidContribution, declared.Name, declared.Port, minListenerPort, maxListenerPort)
+	case declared.Port < MinListenerPort || declared.Port > MaxListenerPort:
+		return fmt.Errorf("%w: listener %q has port %d, outside %d to %d, and no port setting", ErrInvalidContribution, declared.Name, declared.Port, MinListenerPort, MaxListenerPort)
 	}
 	return nil
 }

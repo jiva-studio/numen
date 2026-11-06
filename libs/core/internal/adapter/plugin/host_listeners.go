@@ -30,11 +30,6 @@ func checkReportedListeners(m manifest.Manifest, reported map[string]int) error 
 	return nil
 }
 
-const (
-	minListenerPort = 1024
-	maxListenerPort = 65535
-)
-
 var (
 	errListenerPortValue = errors.New("the port setting does not hold a port from 1024 to 65535")
 	// errListenerBind marks a failure of the plugin that a sync of its listeners recorded.
@@ -85,7 +80,7 @@ func readPort(value any) (int, bool) {
 	default:
 		return 0, false
 	}
-	if number != math.Trunc(number) || number < minListenerPort || number > maxListenerPort {
+	if number != math.Trunc(number) || number < manifest.MinListenerPort || number > manifest.MaxListenerPort {
 		return 0, false
 	}
 	return int(number), true

@@ -132,7 +132,10 @@ func (t *Tools) searchLibrary(ctx context.Context, in LibrarySearchInput) (Libra
 	if err != nil {
 		return out, fmt.Errorf("search the library: %w", err)
 	}
-	titles := t.getTitles(ctx, found)
+	titles, err := t.getTitles(ctx, found)
+	if err != nil {
+		return out, err
+	}
 	for _, passage := range found {
 		out.Matches = append(out.Matches, LibraryMatch{
 			Path:     passage.Path,
@@ -162,7 +165,7 @@ func parseKinds(named []string) ([]domain.SourceKind, error) {
 }
 
 // getTitles is the title of each source: a note's own, else the name of the file without its extension.
-func (t *Tools) getTitles(ctx context.Context, found []host.Passage) map[string]string {
+func (t *Tools) getTitles(ctx context.Context, found []host.Passage) (map[string]string, error) {
 	titles := make(map[string]string, len(found))
 	var notes []string
 	for _, passage := range found {
@@ -174,14 +177,14 @@ func (t *Tools) getTitles(ctx context.Context, found []host.Passage) map[string]
 	}
 	refs, err := t.vault.GetNotes(ctx, notes)
 	if err != nil {
-		return titles
+		return nil, fmt.Errorf("read the titles of the notes: %w", err)
 	}
 	for notePath, ref := range refs {
 		if ref.Title != "" {
 			titles[notePath] = ref.Title
 		}
 	}
-	return titles
+	return titles, nil
 }
 
 // formatAddress is where a passage is reached, as the window opens one.
@@ -233,7 +236,10 @@ func (t *Tools) readLibrary(ctx context.Context, in LibraryReadInput) (LibraryRe
 	if err != nil {
 		return LibraryReadOutput{}, fmt.Errorf("read the text of %s: %w", in.Path, err)
 	}
-	segments := getPlaces(text.GetSegments())
+	segments, err := getPlaces(text.GetSegments())
+	if err != nil {
+		return LibraryReadOutput{}, fmt.Errorf("read the text of %s: %w", in.Path, err)
+	}
 	from, to, err := pickRange(in, text.Text, segments)
 	if err != nil {
 		return LibraryReadOutput{}, fmt.Errorf("read the text of %s: %w", in.Path, err)
@@ -285,20 +291,20 @@ type selector struct {
 }
 
 // getPlaces is the segments with the byte range each holds.
-func getPlaces(segments []domain.TextSegment) []place {
+func getPlaces(segments []domain.TextSegment) ([]place, error) {
 	places := make([]place, 0, len(segments))
 	offset := 0
 	for _, segment := range segments {
 		var s selector
 		if segment.Selector != "" {
 			if err := json.Unmarshal([]byte(segment.Selector), &s); err != nil {
-				s = selector{Page: 0, CFI: "", T: nil}
+				return nil, fmt.Errorf("segment at byte %d has an invalid selector %q: %w", offset, segment.Selector, err)
 			}
 		}
 		places = append(places, place{start: offset, end: offset + len(segment.Text), selector: s})
 		offset += len(segment.Text)
 	}
-	return places
+	return places, nil
 }
 
 // pickRange is the byte range of the text a call asks for, on character boundaries.

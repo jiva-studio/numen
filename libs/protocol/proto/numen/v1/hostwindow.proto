@@ -53,8 +53,6 @@ message FocusPassagesRequest {
 
 message FocusPassagesResponse {
   HostWindowErrorCode error = 1;
-  reserved 2;
-  reserved "summary";
 }
 
 message HostWindowServiceReadOpenTabsRequest {}

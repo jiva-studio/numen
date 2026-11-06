@@ -153,7 +153,7 @@ func (f *File) UnmarshalJSON(raw []byte) error {
 func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) {
 	app, isObject := decodeObject(raw)
 	if !isObject {
-		f.AddNotice(fmt.Sprintf("%s is not an object of settings, and is ignored", OwnerApp))
+		f.AddNotice(fmt.Sprintf("numen.json: %s is not a JSON object; its settings are ignored", OwnerApp))
 		return false, nil
 	}
 	valid := map[string]any{}
@@ -164,14 +164,14 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 			continue
 		}
 		if err := checkValue(declared, nil, value); err != nil {
-			f.AddNotice(fmt.Sprintf("%s.%s is ignored: %v", OwnerApp, declared.Key, err))
+			f.AddNotice(fmt.Sprintf("numen.json: %q: %v; the value is ignored", OwnerApp+"."+declared.Key, err))
 			continue
 		}
 		storePath(valid, path, value)
 		hasInterfaceScale = hasInterfaceScale || declared.Key == keyInterfaceScale
 	}
 	for _, path := range listUndeclared(app) {
-		f.AddNotice(fmt.Sprintf("%s.%s is not a setting, and is ignored", OwnerApp, path))
+		f.AddNotice(fmt.Sprintf("numen.json: %q: no such setting; the value is ignored", OwnerApp+"."+path))
 	}
 	for section := range app {
 		if isOutsideDeclaration(section) {
@@ -198,12 +198,12 @@ func decodeObject(raw json.RawMessage) (map[string]any, bool) {
 // readPlugin reads the object of a plugin over the one the file holds.
 func (f *File) readPlugin(id string, raw json.RawMessage) {
 	if !manifest.IsValidID(id) {
-		f.AddNotice(fmt.Sprintf("%s is the id of no plugin, and is ignored", id))
+		f.AddNotice(fmt.Sprintf("numen.json: %s is not a valid plugin id; its settings are ignored", id))
 		return
 	}
 	values, isObject := decodeObject(raw)
 	if !isObject || values == nil {
-		f.AddNotice(fmt.Sprintf("%s is not an object of settings, and is ignored", id))
+		f.AddNotice(fmt.Sprintf("numen.json: %s is not a JSON object; its settings are ignored", id))
 		return
 	}
 	if f.Plugins == nil {

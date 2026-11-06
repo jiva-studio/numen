@@ -448,9 +448,9 @@ const file_numen_v1_hostwindow_proto_rawDesc = "" +
 	"\x06length\x18\x02 \x01(\x05R\x06length\"]\n" +
 	"\x14FocusPassagesRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x121\n" +
-	"\bpassages\x18\x02 \x03(\v2\x15.numen.v1.PassageSpanR\bpassages\"[\n" +
+	"\bpassages\x18\x02 \x03(\v2\x15.numen.v1.PassageSpanR\bpassages\"L\n" +
 	"\x15FocusPassagesResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05errorJ\x04\b\x02\x10\x03R\asummary\"&\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\"&\n" +
 	"$HostWindowServiceReadOpenTabsRequest\"\x9c\x01\n" +
 	"%HostWindowServiceReadOpenTabsResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12!\n" +

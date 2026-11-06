@@ -102,12 +102,12 @@ const listenerTokenPrefix = "listener."
 
 var errMalformedListenerToken = errors.New("malformed listener token in the ready line")
 
-// ParseHandshake reads a ready line: the port of the plugin's RPC server and one
-// listener.<name>=<port> token per listener it opened. ok is false for a line that is not a ready
-// line; err is set for a ready line with a malformed listener token.
+// ParseHandshake reads a ready line, one that starts with NUMEN_READY: the port of the plugin's RPC
+// server and one listener.<name>=<port> token per listener it opened. ok is false for a line that is
+// not a ready line; err is set for a ready line with a malformed listener token.
 func ParseHandshake(line string) (handshake Handshake, ok bool, err error) {
 	cleanLine := strings.TrimSpace(line)
-	if !strings.HasPrefix(cleanLine, "NUMEN_READY") && !strings.HasPrefix(cleanLine, "READY") {
+	if !strings.HasPrefix(cleanLine, "NUMEN_READY") {
 		return Handshake{}, false, nil
 	}
 	handshake = Handshake{Port: 0, Listeners: map[string]int{}}

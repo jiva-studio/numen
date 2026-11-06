@@ -8,6 +8,7 @@ import type { TextRange } from '../types'
 export interface RangedReader {
   readonly isLoading: Ref<boolean>
   focusSpans(...spans: readonly TextRange[]): Promise<void>
+  reportFailure(error: unknown): void
 }
 
 /** The tab as the window provides it: the ranges it is asked to light, the first to go to. */
@@ -23,7 +24,7 @@ export function useBookRanges(reader: RangedReader, getTab: () => RangedTab | un
     ([ranges, isLoading]) => {
       if (isLoading || !ranges || ranges.length === 0 || ranges === litRanges) return
       litRanges = ranges
-      reader.focusSpans(...ranges).catch(() => undefined)
+      reader.focusSpans(...ranges).catch(reader.reportFailure)
     },
     { immediate: true },
   )
