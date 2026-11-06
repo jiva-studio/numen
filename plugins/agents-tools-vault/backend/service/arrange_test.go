@@ -23,12 +23,12 @@ type noteEntry struct {
 type noteListOutput struct {
 	Notes      []noteEntry `json:"notes"`
 	Total      *int        `json:"total"`
-	NextOffset int         `json:"next_offset"`
+	NextOffset int         `json:"nextOffset"`
 }
 
 type noteTitlesOutput struct {
 	Notes        []noteEntry `json:"notes"`
-	MissingPaths []string    `json:"missing_paths"`
+	MissingPaths []string    `json:"missingPaths"`
 }
 
 type noteTitle struct {
@@ -49,8 +49,8 @@ type vaultEntry struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Folder    string `json:"folder"`
-	IsCurrent *bool  `json:"is_current"`
-	IsMissing *bool  `json:"is_missing"`
+	IsCurrent *bool  `json:"isCurrent"`
+	IsMissing *bool  `json:"isMissing"`
 }
 
 type vaultListOutput struct {
@@ -154,7 +154,7 @@ func TestNoteListReturnsNotesOrderedByPathWithTitles(t *testing.T) {
 		t.Errorf("total = %v, want 5", out.Total)
 	}
 	if out.NextOffset != 0 {
-		t.Errorf("next_offset = %d, want 0 when nothing is left", out.NextOffset)
+		t.Errorf("nextOffset = %d, want 0 when nothing is left", out.NextOffset)
 	}
 }
 
@@ -184,7 +184,7 @@ func TestNoteListPagesWithLimitAndOffset(t *testing.T) {
 		t.Errorf("total = %v, want 5 (the count before limit)", first.Total)
 	}
 	if first.NextOffset != 2 {
-		t.Errorf("next_offset = %d, want 2", first.NextOffset)
+		t.Errorf("nextOffset = %d, want 2", first.NextOffset)
 	}
 
 	var last noteListOutput
@@ -196,7 +196,7 @@ func TestNoteListPagesWithLimitAndOffset(t *testing.T) {
 		t.Errorf("total = %v, want 5 (the count before offset)", last.Total)
 	}
 	if last.NextOffset != 0 {
-		t.Errorf("next_offset = %d, want 0 when nothing is left", last.NextOffset)
+		t.Errorf("nextOffset = %d, want 0 when nothing is left", last.NextOffset)
 	}
 }
 
@@ -218,7 +218,7 @@ func TestNoteListReturnsAtMostOneHundredNotesByDefault(t *testing.T) {
 		t.Errorf("total = %v, want 120", out.Total)
 	}
 	if out.NextOffset != 100 {
-		t.Errorf("next_offset = %d, want 100", out.NextOffset)
+		t.Errorf("nextOffset = %d, want 100", out.NextOffset)
 	}
 }
 
@@ -243,7 +243,7 @@ func TestNoteTitlesReturnsTitlesAndMissingPaths(t *testing.T) {
 		t.Errorf("titles = %v, want %v", got, want)
 	}
 	if !slices.Equal(out.MissingPaths, []string{"Sky/Pulsar.md"}) {
-		t.Errorf("missing_paths = %v, want [Sky/Pulsar.md]", out.MissingPaths)
+		t.Errorf("missingPaths = %v, want [Sky/Pulsar.md]", out.MissingPaths)
 	}
 }
 
@@ -359,7 +359,7 @@ func TestVaultListReturnsEveryVaultAndMarksTheCalledOne(t *testing.T) {
 			t.Errorf("vault %s folder = %q, want %q", id, got.Folder, want.folder)
 		}
 		if got.IsCurrent == nil || *got.IsCurrent != want.isCurrent {
-			t.Errorf("vault %s is_current = %v, want %v", id, got.IsCurrent, want.isCurrent)
+			t.Errorf("vault %s isCurrent = %v, want %v", id, got.IsCurrent, want.isCurrent)
 		}
 	}
 }
@@ -377,7 +377,7 @@ func TestVaultListMarksAVaultWithoutItsFolderAsMissing(t *testing.T) {
 		byID[one.ID] = one
 	}
 	if got, ok := byID["garden-vault"]; !ok || got.IsMissing == nil || !*got.IsMissing {
-		t.Errorf("garden-vault = %+v, want it listed with is_missing true", got)
+		t.Errorf("garden-vault = %+v, want it listed with isMissing true", got)
 	}
 	if got, ok := byID[skyVault]; !ok || (got.IsMissing != nil && *got.IsMissing) {
 		t.Errorf("%s = %+v, want it listed and not missing", skyVault, got)
