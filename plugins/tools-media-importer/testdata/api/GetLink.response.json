@@ -1,7 +1,7 @@
 {
   "url": "https://www.youtube.com/watch?v=tidalmill01",
   "isCopyable": true,
-  "copySize": 6000,
   "isTextDeleted": false,
-  "embedPage": "embed?address=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dtidalmill01"
+  "media": "plugin://md.numen.tools.media.importer/0b5e1c.mp4",
+  "page": "plugin://md.numen.tools.media.importer/0b5e1c.html"
 }

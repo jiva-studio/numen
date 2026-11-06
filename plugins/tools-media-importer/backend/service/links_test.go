@@ -31,7 +31,7 @@ func TestCreateLinksMakesANoteOfEachWebAddressInTheFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if found.URL != videoAddress || found.EmbedPage == "" || found.CopySize == 0 {
+	if found.URL != videoAddress || found.Page == "" || found.Media == "" {
 		t.Errorf("the note created reads %+v", found)
 	}
 	if !strings.HasPrefix(created.Paths[0], "talks/") {
@@ -50,7 +50,7 @@ func TestGetLinkPropagatesStoreErrors(t *testing.T) {
 	es := &errListStore{Store: vault.Store()}
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, vault.Store())
-	hosted := link.Host{Vault: vault, Store: es, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{PluginID: PluginID, Vault: vault, Store: es, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
 	links := link.New(hosted,
 		func() link.Fetcher { return download.NewMock() },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
@@ -62,11 +62,6 @@ func TestGetLinkPropagatesStoreErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 	boom := errors.New("store failure")
-	es.listErr = boom
-	if _, err := svc.getLink(t.Context(), api.GetLinkRequest{Path: made.Path}); !errors.Is(err, boom) {
-		t.Errorf("getLink(FindCopy err) = %v, want %v", err, boom)
-	}
-	es.listErr = nil
 	es.readErr = boom
 	if _, err := svc.getLink(t.Context(), api.GetLinkRequest{Path: made.Path}); !errors.Is(err, boom) {
 		t.Errorf("getLink(IsTextDeleted err) = %v, want %v", err, boom)

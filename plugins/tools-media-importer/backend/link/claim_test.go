@@ -506,11 +506,11 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	}
 	l.release("text", made, made.Key)
 
-	l.claim("copy", made, made.Hash)
+	l.claim("copy", made, made.Key)
 	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrBeingFetched) || size != 0 {
 		t.Errorf("Copy while claimed = (%d, %v), want (0, ErrBeingFetched)", size, err)
 	}
-	l.release("copy", made, made.Hash)
+	l.release("copy", made, made.Key)
 
 	// reuseText error paths.
 	boom := errors.New("store failure")
@@ -643,17 +643,6 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	}
 	hs.listErr = nil
 
-	hs.readErr = func(name string) error {
-		if name == made.Key+recordExt {
-			return boom
-		}
-		return nil
-	}
-	if _, err := l.FindCopy(ctx, made); !errors.Is(err, boom) {
-		t.Errorf("FindCopy(readRecord err) = %v, want %v", err, boom)
-	}
-	hs.readErr = nil
-
 	// Copy error and boundary paths.
 	sf.canCopy = false
 	if size, err := l.Copy(ctx, made); !errors.Is(err, ErrNotCopyable) || size != 0 {
@@ -687,7 +676,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	hq.enqueueErr = nil
 
 	hs.deleteErr = func(name string) error {
-		if name == made.Hash+partExt {
+		if name == made.Key+partExt {
 			return boom
 		}
 		return nil
@@ -725,7 +714,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		t.Errorf("Copy(recordCopy readErr) = %v", err)
 	}
 	hs.readErr = nil
-	if err := hs.Delete(ctx, made.Hash+".mp4"); err != nil {
+	if err := hs.Delete(ctx, made.Key+".mp4"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -734,7 +723,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		t.Errorf("Copy(releaseErr) = %v", err)
 	}
 	hq.releaseErr = nil
-	if err := hs.Delete(ctx, made.Hash+".mp4"); err != nil {
+	if err := hs.Delete(ctx, made.Key+".mp4"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -756,48 +745,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		t.Fatalf("second Copy(1 byte) = (%d, %v), downloads=%d", size, err, sf.downloads)
 	}
 
-	// FindCopy rename error, writeRecord error, and chained edits.
-	edited1 := Link{Vault: made.Vault, Path: made.Path, Address: made.Address, Key: made.Key, Hash: "hash-edit-1"}
-	hs.listCalls = 0
-	hs.listErr = func(call int) error {
-		if call == 2 {
-			return boom
-		}
-		return nil
-	}
-	if _, err := l.FindCopy(ctx, edited1); !errors.Is(err, boom) {
-		t.Errorf("FindCopy(2nd list err) = %v", err)
-	}
-	hs.listErr = nil
-
-	hs.renameErr = boom
-	if _, err := l.FindCopy(ctx, edited1); !errors.Is(err, boom) {
-		t.Errorf("FindCopy(renameErr) = %v", err)
-	}
-	hs.renameErr = nil
-
-	hs.writeErr = func(name string) error {
-		if name == made.Key+recordExt {
-			return boom
-		}
-		return nil
-	}
-	if _, err := l.FindCopy(ctx, edited1); !errors.Is(err, boom) {
-		t.Errorf("FindCopy(writeRecord err) = %v", err)
-	}
-	hs.writeErr = nil
-
-	// Restore old file to test full chained rename across two edits.
-	if err := hs.Rename(ctx, "hash-edit-1.mp4", made.Hash+".mp4"); err != nil {
-		t.Fatal(err)
-	}
-	if size, err := l.FindCopy(ctx, edited1); err != nil || size != 1 {
-		t.Fatalf("FindCopy(edited1) = (%d, %v)", size, err)
-	}
-	edited2 := Link{Vault: made.Vault, Path: made.Path, Address: made.Address, Key: made.Key, Hash: "hash-edit-2"}
-	if size, err := l.FindCopy(ctx, edited2); err != nil || size != 1 {
-		t.Fatalf("FindCopy(edited2) = (%d, %v)", size, err)
-	}
+	edited2 := made
 
 	// DeleteCopy error and record clearing paths.
 	hs.listErr = func(int) error { return boom }
@@ -817,7 +765,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	}
 	hs.readErr = nil
 
-	if err := hs.Write(ctx, edited2.Hash+".mp4", []byte{1}); err != nil {
+	if err := hs.Write(ctx, edited2.Key+".mp4", []byte{1}); err != nil {
 		t.Fatal(err)
 	}
 	hs.writeErr = func(name string) error {

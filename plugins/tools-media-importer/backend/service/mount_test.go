@@ -103,7 +103,7 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 		return res.StatusCode
 	}
 
-	// Verify all mounted API methods and the embed route are reachable.
+	// Verify all mounted API methods are reachable.
 	if code := call(http.MethodPost, "/"+api.Service+"/"+api.MethodCreateLinks, `{"folder":"f","urls":["`+videoAddress+`"]}`); code != http.StatusOK {
 		t.Errorf("CreateLinks status = %d, want 200", code)
 	}
@@ -117,9 +117,6 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 		if code := call(http.MethodPost, "/"+api.Service+"/"+method, `{"path":"missing.md"}`); code != http.StatusNotFound {
 			t.Errorf("%s(missing.md) status = %d, want 404", method, code)
 		}
-	}
-	if code := call(http.MethodGet, server.RoutePrefix+embedPattern+"?address=not-a-url", ""); code != http.StatusBadRequest {
-		t.Errorf("embed route status = %d, want 400", code)
 	}
 	if code := call(http.MethodPost, "/numen.v1.PluginLifecycleService/Configure", `{"config":{"copyMaxSizeMb":"10"}}`); code != http.StatusOK {
 		t.Errorf("Configure RPC status = %d, want 200", code)

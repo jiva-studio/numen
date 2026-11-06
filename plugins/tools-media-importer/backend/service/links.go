@@ -59,17 +59,13 @@ func (s linkServer) getLink(ctx context.Context, req api.GetLinkRequest) (api.Ge
 	if err != nil {
 		return api.GetLinkResponse{}, err
 	}
-	size, err := s.links.FindCopy(ctx, found)
-	if err != nil {
-		return api.GetLinkResponse{}, err
-	}
 	isDeleted, err := s.links.IsTextDeleted(ctx, found)
 	if err != nil {
 		return api.GetLinkResponse{}, err
 	}
 	return api.GetLinkResponse{
-		URL: string(found.Address), IsCopyable: s.links.IsCopyable(found.Address), CopySize: size,
-		IsTextDeleted: isDeleted, EmbedPage: getEmbedPage(found.Address),
+		URL: string(found.Address), IsCopyable: s.links.IsCopyable(found.Address),
+		IsTextDeleted: isDeleted, Media: found.Media, Page: found.Page,
 	}, nil
 }
 
@@ -90,7 +86,7 @@ func (s linkServer) fetchText(ctx context.Context, req api.FetchTextRequest) (ap
 	if err != nil {
 		return api.FetchTextResponse{}, err
 	}
-	s.links.StartFetchText(ctx, found, req.IsUserStarted)
+	s.links.StartFetchText(ctx, found, req.IsForced)
 	return api.FetchTextResponse{}, nil
 }
 

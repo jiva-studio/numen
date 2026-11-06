@@ -85,7 +85,7 @@ func newWorld(t *testing.T) *world {
 		vault: vault, store: vault.Store(), texts: hosttest.NewTexts(vault.Vault().ID, pluginID),
 		queue: hosttest.NewQueue(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
 	}
-	w.links = link.New(link.Host{Vault: vault, Store: w.store, Texts: w.texts, Queue: w.queue, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
+	w.links = link.New(link.Host{PluginID: pluginID, Vault: vault, Store: w.store, Texts: w.texts, Queue: w.queue, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
 		func() link.Fetcher { return w.sites },
 		func() link.Settings { return link.Settings{CopyMaxSize: w.limit} })
 	w.texts.SetStore(pluginID, w.store)
@@ -178,12 +178,12 @@ func TestCaptionsAreTheTimedTextVersionOfTheirLink(t *testing.T) {
 	}
 }
 
-func TestFetchText_SkipsEmptyAddressUnlessUserStarted(t *testing.T) {
+func TestFetchText_SkipsEmptyAddressUnlessForced(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, silentAddress)
 
-	for _, isUserStarted := range []bool{true, false} {
-		if err := w.links.FetchText(t.Context(), made, isUserStarted); err != nil {
+	for _, isForced := range []bool{true, false} {
+		if err := w.links.FetchText(t.Context(), made, isForced); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -213,11 +213,11 @@ func TestCopyWritesTheVideoToTheKeyFile(t *testing.T) {
 	if size != int64(len(w.sites.clip)) {
 		t.Errorf("the copy came to %d bytes, want %d", size, len(w.sites.clip))
 	}
-	copied, err := w.store.Read(t.Context(), made.Hash+".mp4")
+	copied, err := w.store.Read(t.Context(), made.Key+".mp4")
 	if err != nil || !bytes.Equal(copied, w.sites.clip) {
 		t.Errorf("the folder keeps %d bytes (%v)", len(copied), err)
 	}
-	if _, err := w.store.Read(t.Context(), made.Hash+".part"); !errors.Is(err, host.ErrNotExist) {
+	if _, err := w.store.Read(t.Context(), made.Key+".part"); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("the copy arriving is left: %v", err)
 	}
 	if found, err := w.links.FindCopy(t.Context(), made); err != nil || found != size {
@@ -379,8 +379,63 @@ func TestTheCopyFollowsAnEditOfTheNote(t *testing.T) {
 	if found, err := w.links.FindCopy(t.Context(), edited); err != nil || found != size {
 		t.Errorf("the copy of the edited note is found as %d bytes (%v), want %d", found, err, size)
 	}
-	if _, err := w.store.Read(t.Context(), edited.Hash+".mp4"); err != nil {
-		t.Errorf("the copy is not kept under the hash of the edited note: %v", err)
+}
+
+func TestCopyWritesTheAddressOfTheMediaIntoTheNote(t *testing.T) {
+	w := newWorld(t)
+	made := w.create(t, videoAddress)
+
+	if _, err := w.links.Copy(t.Context(), made); err != nil {
+		t.Fatal(err)
+	}
+
+	read, err := w.links.Read(t.Context(), made.Path)
+	if want := "plugin://" + pluginID + "/" + made.Key + ".mp4"; err != nil || read.Media != want {
+		t.Errorf("the note holds media %q (%v), want %q", read.Media, err, want)
+	}
+	if err := w.links.DeleteCopy(t.Context(), read); err != nil {
+		t.Fatal(err)
+	}
+	if read, err := w.links.Read(t.Context(), made.Path); err != nil || read.Media != "" {
+		t.Errorf("after the deletion the note holds media %q (%v)", read.Media, err)
+	}
+}
+
+func TestTheTextStaysLiveWhenTheMediaAddressIsWritten(t *testing.T) {
+	w := newWorld(t)
+	made := w.create(t, videoAddress)
+	if err := w.links.FetchText(t.Context(), made, true); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := w.links.Copy(t.Context(), made); err != nil {
+		t.Fatal(err)
+	}
+
+	read, err := w.links.Read(t.Context(), made.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content, _ := w.vault.Content(made.Path)
+	w.texts.File(made.Path, []byte(content))
+	if text, err := w.links.ReadArticle(t.Context(), read); err != nil || text == "" {
+		t.Errorf("the note with its media reads %q (%v)", text, err)
+	}
+}
+
+func TestCreateWritesThePageThatFramesThePlayer(t *testing.T) {
+	w := newWorld(t)
+	made := w.create(t, "https://www.youtube.com/watch?v=tidalmill01")
+
+	if want := "plugin://" + pluginID + "/" + made.Key + ".html"; made.Page != want {
+		t.Fatalf("the note holds page %q, want %q", made.Page, want)
+	}
+	page, err := w.store.Read(t.Context(), made.Key+".html")
+	if err != nil || !strings.Contains(string(page), "https://www.youtube-nocookie.com/embed/tidalmill01") {
+		t.Errorf("the page reads %q (%v)", page, err)
+	}
+	if article := w.create(t, articleAddress); article.Page != "" {
+		t.Errorf("an article holds page %q", article.Page)
 	}
 }
 

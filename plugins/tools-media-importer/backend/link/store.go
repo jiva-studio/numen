@@ -13,14 +13,15 @@ import (
 )
 
 // What is kept for a link in the plugin's folder of the vault's store. The text is kept under the
-// key of the link's address, and the copy under the content hash of the note.
+// key of the link's address, and so are the copy and the page.
 //
 //   - `<key>.jsonl` is the text, in the common format of text versions. The host deletes it with
 //     the version.
 //   - `<key>.json` records what fetched the text, what kind it is and which file holds the copy. A
 //     record whose text is gone marks a version the user deleted.
 //   - `<key>.none` is an address that publishes no text.
-//   - `<hash>.part` is a copy arriving, and `<hash><ext>` the copy whole.
+//   - `<key>.part` is a copy arriving, and `<key><ext>` the copy whole.
+//   - `<key>.html` is the page that frames the player of the video.
 const (
 	textExt   = ".jsonl"
 	recordExt = ".json"
@@ -136,7 +137,7 @@ func (f folder) isKept(ctx context.Context, name string) (bool, error) {
 	return err == nil, err
 }
 
-// findCopy is the name and size of the copy kept under the hash, and false where none is.
+// findCopy is the name and size of the copy kept under the key, and false where none is.
 func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool, error) {
 	files, err := f.store.List(ctx)
 	if err != nil {
@@ -151,7 +152,7 @@ func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool
 	return host.StoreFile{Name: "", Size: 0}, false, nil
 }
 
-// isCopyOf reports whether a file of the folder is the whole copy kept under the hash.
+// isCopyOf reports whether a file of the folder is the whole copy kept under the key.
 func isCopyOf(name, hash string) bool {
 	ext := path.Ext(name)
 	return strings.TrimSuffix(name, ext) == hash && isCopyExt(strings.ToLower(ext))
@@ -166,7 +167,7 @@ func isCopyExt(ext string) bool {
 	return false
 }
 
-// deleteCopy takes away the copy kept under the hash, whole or arriving.
+// deleteCopy takes away the copy kept under the key, whole or arriving.
 func (f folder) deleteCopy(ctx context.Context, hash string) error {
 	files, err := f.store.List(ctx)
 	if err != nil {
