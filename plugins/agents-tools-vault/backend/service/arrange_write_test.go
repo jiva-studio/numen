@@ -17,14 +17,14 @@ const geologyVault = "geology-vault"
 type moveRecord struct {
 	From          string   `json:"from"`
 	To            string   `json:"to"`
-	RepairedNotes []string `json:"repairedNotes"`
-	BrokenLinks   []string `json:"brokenLinks"`
+	RepairedNotes []string `json:"repaired_notes"`
+	BrokenLinks   []string `json:"broken_links"`
 }
 
 type noteRenameOutput struct {
 	Path       string      `json:"path"`
 	Title      string      `json:"title"`
-	NameSource string      `json:"nameSource"`
+	NameSource string      `json:"name_source"`
 	Move       *moveRecord `json:"move"`
 }
 
@@ -40,8 +40,8 @@ type noteMoveOutput struct {
 
 type noteRemoveItem struct {
 	Path        string   `json:"path"`
-	TrashPath   string   `json:"trashPath"`
-	BrokenLinks []string `json:"brokenLinks"`
+	TrashPath   string   `json:"trash_path"`
+	BrokenLinks []string `json:"broken_links"`
 	Error       string   `json:"error"`
 }
 
@@ -110,7 +110,7 @@ func TestNoteRenameWithATitleKeyWritesTheTitleAndMovesTheFile(t *testing.T) {
 	decodeInto(t, callTool(t, registry, geologyVault, "note_rename",
 		`{"path":"Rocks/Basalt.md","title":"Flood Basalt"}`), &out)
 	if out.Path != "Rocks/Flood Basalt.md" || out.Title != "Flood Basalt" || out.NameSource != "frontmatter" {
-		t.Errorf("result = %+v, want Rocks/Flood Basalt.md, Flood Basalt, nameSource frontmatter", out)
+		t.Errorf("result = %+v, want Rocks/Flood Basalt.md, Flood Basalt, name_source frontmatter", out)
 	}
 	if out.Move == nil || out.Move.From != "Rocks/Basalt.md" || out.Move.To != "Rocks/Flood Basalt.md" {
 		t.Errorf("move = %+v, want from Rocks/Basalt.md to Rocks/Flood Basalt.md", out.Move)
@@ -129,7 +129,7 @@ func TestNoteRenameWithoutATitleKeyRenamesByFilename(t *testing.T) {
 	decodeInto(t, callTool(t, registry, geologyVault, "note_rename",
 		`{"path":"Fossils.md","title":"Ammonites"}`), &out)
 	if out.Path != "Ammonites.md" || out.Title != "Ammonites" || out.NameSource != "filename" {
-		t.Errorf("result = %+v, want Ammonites.md, Ammonites, nameSource filename", out)
+		t.Errorf("result = %+v, want Ammonites.md, Ammonites, name_source filename", out)
 	}
 	if out.Move == nil || out.Move.From != "Fossils.md" || out.Move.To != "Ammonites.md" {
 		t.Errorf("move = %+v, want from Fossils.md to Ammonites.md", out.Move)
@@ -257,10 +257,10 @@ func TestNoteRemoveMovesTheNoteToTheTrashAndReportsDanglingLinks(t *testing.T) {
 		t.Errorf("removal = %+v, want Rocks/Basalt.md without an error", got)
 	}
 	if !strings.HasPrefix(got.TrashPath, ".trash/") {
-		t.Errorf("trashPath = %q, want a path under .trash/", got.TrashPath)
+		t.Errorf("trash_path = %q, want a path under .trash/", got.TrashPath)
 	}
 	if len(got.BrokenLinks) != 1 || got.BrokenLinks[0] != "Minerals.md" {
-		t.Errorf("brokenLinks = %v, want [Minerals.md]", got.BrokenLinks)
+		t.Errorf("broken_links = %v, want [Minerals.md]", got.BrokenLinks)
 	}
 	requireContent(t, v, got.TrashPath, "---\ntitle: Basalt\n---\nA volcanic rock.\n")
 	requireAbsent(t, v, "Rocks/Basalt.md")

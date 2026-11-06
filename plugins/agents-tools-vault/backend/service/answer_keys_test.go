@@ -30,7 +30,7 @@ func collectPropertyNames(schema any, names map[string]bool) {
 	}
 }
 
-// getBranchToolNames is the tools this branch adds or changes, whose answers take camelCase keys.
+// getBranchToolNames is the tools this branch adds or changes, whose answers take snake_case keys.
 func getBranchToolNames() []string {
 	return []string{
 		"note_list", "note_titles", "note_resolve", "note_rename", "note_move", "note_remove",
@@ -39,14 +39,14 @@ func getBranchToolNames() []string {
 	}
 }
 
-func TestToolAnswersUseCamelCaseKeys(t *testing.T) {
+func TestToolAnswersUseSnakeCaseKeys(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
 	listing, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
 	present := map[string]bool{}
-	camelCase := regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
+	snakeCase := regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
 	for _, info := range listing.Tools {
 		if !slices.Contains(getBranchToolNames(), info.GetName()) {
 			continue
@@ -63,8 +63,8 @@ func TestToolAnswersUseCamelCaseKeys(t *testing.T) {
 		names := map[string]bool{}
 		collectPropertyNames(schema, names)
 		for name := range names {
-			if !camelCase.MatchString(name) {
-				t.Errorf("the answer of %s has the key %q, want camelCase", info.GetName(), name)
+			if !snakeCase.MatchString(name) {
+				t.Errorf("the answer of %s has the key %q, want snake_case", info.GetName(), name)
 			}
 		}
 	}
