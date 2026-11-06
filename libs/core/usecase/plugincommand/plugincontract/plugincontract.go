@@ -117,6 +117,7 @@ const (
 	PermissionNetworkOutbound   = pluginport.PermissionNetworkOutbound
 	PermissionVaultRead         = pluginport.PermissionVaultRead
 	PermissionVaultWrite        = pluginport.PermissionVaultWrite
+	PermissionVaultManage       = pluginport.PermissionVaultManage
 	PermissionWindowFocus       = pluginport.PermissionWindowFocus
 	MaxEmbeddedBytes            = pluginport.MaxEmbeddedBytes
 	MaxEmbeddedTexts            = pluginport.MaxEmbeddedTexts

@@ -17,6 +17,10 @@ const (
 	// PermissionVaultWrite allows modifying files in the active vault.
 	PermissionVaultWrite = "vault:write"
 
+	// PermissionVaultManage allows adding, renaming, removing and opening the vaults of the
+	// installation.
+	PermissionVaultManage = "vault:manage"
+
 	// PermissionNetworkOutbound allows outbound network requests.
 	PermissionNetworkOutbound = "network:outbound"
 
@@ -43,8 +47,8 @@ const (
 // PluginPermissions is every permission a manifest may declare, in its canonical spelling.
 func PluginPermissions() []string {
 	return []string{
-		PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound, PermissionAIComplete,
-		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus,
+		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionNetworkOutbound,
+		PermissionAIComplete, PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus,
 	}
 }
 
