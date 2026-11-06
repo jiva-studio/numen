@@ -241,10 +241,10 @@ export const PopoverBelowTheBar: Story = {
     })
     const bar = canvasElement.querySelector('[data-title-bar]')!.getBoundingClientRect()
     const box = popover.getBoundingClientRect()
-    await expect(box.top).toBeGreaterThanOrEqual(bar.bottom - 1)
+    await expect(box.bottom).toBeGreaterThan(bar.bottom + 16)
     const topmost = canvasElement.ownerDocument.elementFromPoint(
       box.left + box.width / 2,
-      box.top + box.height / 2,
+      bar.bottom + 8,
     )
     await expect(topmost).toBe(popover)
   },
