@@ -11,14 +11,13 @@ import (
 
 var _ VaultList = (*Client)(nil)
 
-// failNote converts the per-note failure of an answer into its error, nil when there is none.
+// failNote converts the per-note failure of an answer into its error, nil when there is none. A
+// failure the schema has no code for is UNSPECIFIED.
 func failNote(code *v1.ErrorCode) error {
 	if code == nil {
 		return nil
 	}
 	switch *code {
-	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
-		return nil
 	case v1.ErrorCode_ERROR_CODE_MISSING:
 		return ErrNotExist
 	case v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:
