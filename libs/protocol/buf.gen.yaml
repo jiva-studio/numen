@@ -6,7 +6,11 @@ version: v2
 plugins:
   - local: protoc-gen-go
     out: gen
-    opt: paths=source_relative
+    opt:
+      - paths=source_relative
+      # The hybrid API gives a field with presence, such as
+      # TabPlace.position_seconds, a Has method beside its exported field.
+      - apilevelMnumen/v1/workspace.proto=API_HYBRID
 
   - local: protoc-gen-connect-go
     out: gen

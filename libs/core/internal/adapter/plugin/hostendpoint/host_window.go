@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"math"
 	"net/http"
 	"slices"
 
@@ -107,7 +108,7 @@ func (e *windowEndpoint) ReadOpenTabs(
 	}
 	tabs := make([]*v1.Tab, 0, len(open.Tabs))
 	for _, tab := range open.Tabs {
-		tabs = append(tabs, &v1.Tab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, State: tab.State})
+		tabs = append(tabs, convertTabToWire(tab))
 	}
 	return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Tabs: tabs, ActiveId: open.ActiveID}), nil
 }
@@ -132,9 +133,29 @@ func (e *windowEndpoint) ActivateTab(
 	if index < 0 {
 		return connect.NewResponse(&v1.ActivateTabResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND}), nil
 	}
-	tab := open.Tabs[index]
 	return connect.NewResponse(&v1.ActivateTabResponse{
-		Tab:      &v1.Tab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, State: tab.State},
+		Tab:      convertTabToWire(open.Tabs[index]),
 		ActiveId: open.ActiveID,
 	}), nil
+}
+
+// convertTabToWire returns the tab as a plugin reads it: with the place its reader reported and
+// without the state its kind saved, which is private to the plugin of the kind.
+func convertTabToWire(tab domain.Tab) *v1.Tab {
+	out := &v1.Tab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title}
+	if place := tab.Place; place != nil {
+		out.Place = &v1.TabPlace{
+			Page:            clampToInt32(place.Page),
+			PageCount:       clampToInt32(place.PageCount),
+			PositionSeconds: place.PositionSeconds,
+			Cfi:             place.CFI,
+			Chapter:         place.Chapter,
+		}
+	}
+	return out
+}
+
+// clampToInt32 returns n, or the nearest 32-bit integer where n does not fit in one.
+func clampToInt32(n int) int32 {
+	return int32(max(min(n, math.MaxInt32), math.MinInt32))
 }

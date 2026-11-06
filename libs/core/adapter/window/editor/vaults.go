@@ -218,6 +218,7 @@ func (h *workspaceHandler) WriteOpenTabs(
 			Path:  one.GetPath(),
 			Title: one.GetTitle(),
 			State: one.GetState(),
+			Place: convertTabPlaceFromWire(one.GetPlace()),
 		})
 	}
 	h.state.openTabs.Store(&open)
@@ -338,6 +339,24 @@ func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {
 	out := make([]*v1.Range, 0, len(pos))
 	for _, span := range pos {
 		out = append(out, &v1.Range{Start: int32(span.Start), End: int32(span.End)})
+	}
+	return out
+}
+
+// convertTabPlaceFromWire returns the place a reader reported for a tab, nil where it reported none.
+func convertTabPlaceFromWire(place *v1.TabPlace) *domain.TabPlace {
+	if place == nil {
+		return nil
+	}
+	out := &domain.TabPlace{
+		Page:      int(place.GetPage()),
+		PageCount: int(place.GetPageCount()),
+		CFI:       place.GetCfi(),
+		Chapter:   place.GetChapter(),
+	}
+	if place.HasPositionSeconds() {
+		seconds := place.GetPositionSeconds()
+		out.PositionSeconds = &seconds
 	}
 	return out
 }

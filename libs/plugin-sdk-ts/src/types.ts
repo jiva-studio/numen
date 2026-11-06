@@ -71,6 +71,19 @@ export interface AppInfo {
   readonly platform: 'darwin' | 'windows' | 'linux'
 }
 
+// TabPlace is the place a reader tab shows, as its reader reports it. A field the reader does not
+// have is left out.
+export interface TabPlace {
+  // PDF: the page shown, from 1, and the number of pages.
+  readonly page?: number
+  readonly pageCount?: number
+  // Recording: seconds from the start.
+  readonly positionSeconds?: number
+  // EPUB: the CFI of the place shown, and the table-of-contents title there.
+  readonly cfi?: string
+  readonly chapter?: string
+}
+
 // ReaderTabState is the `state` prop the window passes the component of a reader tab.
 export interface ReaderTabState {
   readonly path: string
@@ -84,6 +97,8 @@ export interface ReaderTabState {
   // Saves the place the reader shows. The window keeps it with the tab and passes it back as
   // `selector` when the tab opens after a restart.
   savePlace(place: Selector): void
+  // Reports the place the reader shows to the window, which an agent reads with the open tabs.
+  reportPlace(place: TabPlace): void
 }
 
 // ReaderPaneProps describes the props passed to a reader component by the host pane wrapper.
@@ -134,7 +149,8 @@ export interface TabKindRegistration<State = unknown> {
   // A key struck while the tab is in front, answered with whether the tab took it.
   onKeyPress?(state: State, event: KeyboardEvent): boolean
   getTarget?(state: State): TabTarget
-  getOpenTab?(state: State): { readonly path: string }
+  // The file the tab holds, and the place its reader last reported, left out where it reported none.
+  getOpenTab?(state: State): { readonly path: string; readonly place?: TabPlace }
   // The window is going; what the tab holds is released without asking.
   onDestroy?(state: State, id: string): void
   // The tab moves to a vault path a tab linked to it moved to. A kind that declares it can be linked.

@@ -38,8 +38,8 @@ func addWindowTabsGet(registry *tools.Registry, on Host) error {
 		Name:  "window_tabs_get",
 		Title: "Get open window tabs",
 		Description: "List the open tabs of the window with their titles, paths, kinds and locations, " +
-			"and the identifier of the active tab. A tab whose saved state cannot be read carries an error " +
-			"in place of its location. Call it before describing the active tab.",
+			"and the identifier of the active tab. The location is the place the reader of the tab reported, " +
+			"omitted for a tab with none. Call it before describing the active tab.",
 		Effect:       tools.ReadOnly,
 		Step:         tools.ByEffect,
 		Servers:      []tools.Server{tools.Full, tools.Reading},
@@ -58,7 +58,6 @@ func addWindowTabsGet(registry *tools.Registry, on Host) error {
 					Path:     focus,
 					Title:    formatTitleFromPath(focus),
 					Location: nil,
-					Error:    "",
 					IsActive: true,
 				}
 				tabs = []TabInfo{inferredTab}
@@ -72,8 +71,8 @@ func addWindowTabsGet(registry *tools.Registry, on Host) error {
 	})
 }
 
-// readWindowTabs is the tabs the window last reported, each with the place it is open at or the
-// error of its saved state, and the active one. A host with no window has none.
+// readWindowTabs is the tabs the window last reported, each with the place it is open at, and the
+// active one. A host with no window has none.
 func readWindowTabs(ctx context.Context, on Host) ([]TabInfo, string, error) {
 	if on.Window == nil {
 		return nil, "", nil
@@ -92,25 +91,32 @@ func readWindowTabs(ctx context.Context, on Host) ([]TabInfo, string, error) {
 	return tabs, activeID, nil
 }
 
-// newTabInfo is the tab as a tool answers it, with the location read from its state, or the error
-// of a state that cannot be read. The tab is active where its id is the active id.
+// newTabInfo is the tab as a tool answers it, with the location its reader reported. The tab is
+// active where its id is the active id.
 func newTabInfo(tab host.OpenTab, activeID string) TabInfo {
-	info := TabInfo{
+	return TabInfo{
 		ID:       tab.ID,
 		Kind:     tab.Kind,
 		Path:     tab.Path,
 		Title:    tab.Title,
-		Location: nil,
-		Error:    "",
+		Location: newTabLocation(tab.Place),
 		IsActive: tab.ID != "" && tab.ID == activeID,
 	}
-	location, err := readTabLocation(tab)
-	if err != nil {
-		info.Error = err.Error()
-		return info
+}
+
+// newTabLocation is the place a reader reported as a tool answers it, nil for a tab whose reader
+// reported none.
+func newTabLocation(place *host.TabPlace) *TabLocation {
+	if place == nil || *place == (host.TabPlace{}) {
+		return nil
 	}
-	info.Location = location
-	return info
+	return &TabLocation{
+		Page:            place.Page,
+		PageCount:       place.PageCount,
+		PositionSeconds: place.PositionSeconds,
+		CFI:             place.CFI,
+		Chapter:         place.Chapter,
+	}
 }
 
 func addEditPreview(registry *tools.Registry, manager *WindowManager, vault host.Vault) error {

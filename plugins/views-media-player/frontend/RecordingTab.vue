@@ -32,8 +32,14 @@ const { now, runs, isPlaying, isUnplayable } = tab.playback
 const menuItems = tab.options.items
 
 /* --------------------------------- Hooks ---------------------------------- */
-/** Saves `ms` as the place the tab opens at after a restart. */
-const saveTime = (ms: number) => props.state?.savePlace?.(createTimeSelector(ms))
+/**
+ * Saves `ms` as the place the tab opens at after a restart, and reports it to the window in seconds
+ * from the start.
+ */
+const saveTime = (ms: number) => {
+  props.state?.savePlace?.(createTimeSelector(ms))
+  props.state?.reportPlace?.({ positionSeconds: Math.max(0, ms) / 1000 })
+}
 
 /** Moves playback to the first of the spans and saves that time before anything plays. */
 const reachSpans = async (...spans: readonly TextRange[]) => {

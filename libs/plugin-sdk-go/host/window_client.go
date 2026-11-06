@@ -85,7 +85,7 @@ func (c *Client) ReadOpenTabs(ctx context.Context) ([]OpenTab, string, error) {
 	}
 	tabs := make([]OpenTab, 0, len(res.Msg.GetTabs()))
 	for _, tab := range res.Msg.GetTabs() {
-		tabs = append(tabs, OpenTab{ID: tab.GetId(), Kind: tab.GetKind(), Path: tab.GetPath(), Title: tab.GetTitle(), State: tab.GetState()})
+		tabs = append(tabs, readOpenTab(tab))
 	}
 	return tabs, res.Msg.GetActiveId(), nil
 }
@@ -98,6 +98,23 @@ func (c *Client) ActivateTab(ctx context.Context, id string) (OpenTab, string, e
 	if err := readWindowError(res.Msg.GetError()); err != nil {
 		return OpenTab{}, "", err
 	}
-	tab := res.Msg.GetTab()
-	return OpenTab{ID: tab.GetId(), Kind: tab.GetKind(), Path: tab.GetPath(), Title: tab.GetTitle(), State: tab.GetState()}, res.Msg.GetActiveId(), nil
+	return readOpenTab(res.Msg.GetTab()), res.Msg.GetActiveId(), nil
+}
+
+// readOpenTab returns the tab with the place its reader reported.
+func readOpenTab(tab *v1.Tab) OpenTab {
+	out := OpenTab{ID: tab.GetId(), Kind: tab.GetKind(), Path: tab.GetPath(), Title: tab.GetTitle()}
+	if place := tab.GetPlace(); place != nil {
+		out.Place = &TabPlace{
+			Page:      int(place.GetPage()),
+			PageCount: int(place.GetPageCount()),
+			CFI:       place.GetCfi(),
+			Chapter:   place.GetChapter(),
+		}
+		if place.HasPositionSeconds() {
+			seconds := place.GetPositionSeconds()
+			out.Place.PositionSeconds = &seconds
+		}
+	}
+	return out
 }

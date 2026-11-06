@@ -97,8 +97,8 @@ func addWindowFocusTab(registry *tools.Registry, on Host) error {
 }
 
 // activateWindowTab makes the open tab with the id the active tab and answers it as the window
-// reports it. A tab the window has not reported, or one whose state cannot be read, is an error,
-// and the window is not asked.
+// reports it. A tab the window has not reported is an error, and the window is not asked. A tab the
+// window does not show in time is the error the host answers.
 func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error) {
 	if on.Window == nil {
 		return TabInfo{}, host.ErrNoWindow
@@ -110,9 +110,6 @@ func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error)
 	index := slices.IndexFunc(open, func(tab host.OpenTab) bool { return tab.ID == id })
 	if index < 0 {
 		return TabInfo{}, fmt.Errorf("no open tab has id %q", id)
-	}
-	if _, err := readTabLocation(open[index]); err != nil {
-		return TabInfo{}, err
 	}
 	tab, activeID, err := on.Window.ActivateTab(ctx, id)
 	if errors.Is(err, host.ErrNotExist) {

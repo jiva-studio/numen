@@ -19,6 +19,7 @@ import {
   type ReaderRegistration,
   type Selector,
   type TabKindRegistration,
+  type TabPlace,
   type TextRange,
 } from '@numen/plugin-sdk'
 import { adoptPluginStyle } from '../styles'
@@ -125,6 +126,10 @@ export function createReaderTabKind(
         savePlace: (next: Selector) => {
           state.place = next
         },
+        reported: null as TabPlace | null,
+        reportPlace: (next: TabPlace) => {
+          state.reported = next
+        },
       })
       return state
     },
@@ -157,7 +162,11 @@ export function createReaderTabKind(
         title: s?.title ?? '',
       }
     },
-    getOpenTab: (state: unknown) => ({ path: (state as { path?: string })?.path ?? '' }),
+    getOpenTab: (state: unknown) => {
+      const s = state as { path?: string; reported?: TabPlace | null } | undefined
+      const path = s?.path ?? ''
+      return s?.reported ? { path, place: { ...s.reported } } : { path }
+    },
   }
 }
 

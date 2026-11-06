@@ -3,11 +3,11 @@ package service
 
 import "time"
 
-// TabLocation is the place a tab is open at, read from the state its reader saved.
+// TabLocation is the place a tab is open at, as its reader reported it.
 type TabLocation struct {
 	Page            int      `json:"page,omitempty" jsonschema:"PDF: the page shown, from 1"`
 	PageCount       int      `json:"pageCount,omitempty" jsonschema:"PDF: the number of pages"`
-	PositionSeconds *float64 `json:"positionSeconds,omitempty" jsonschema:"recording: seconds from the start of the selection"`
+	PositionSeconds *float64 `json:"positionSeconds,omitempty" jsonschema:"recording: seconds from the start"`
 	CFI             string   `json:"cfi,omitempty" jsonschema:"EPUB: the CFI of the place shown"`
 	Chapter         string   `json:"chapter,omitempty" jsonschema:"EPUB: the table-of-contents title at the place"`
 }
@@ -19,7 +19,6 @@ type TabInfo struct {
 	Path     string       `json:"path,omitempty" jsonschema:"the path of the file in the tab, relative to the vault folder"`
 	Title    string       `json:"title,omitempty" jsonschema:"the tab title"`
 	Location *TabLocation `json:"location,omitempty" jsonschema:"the place the tab is open at, omitted for a tab with none"`
-	Error    string       `json:"error,omitempty" jsonschema:"what is wrong with the saved state of the tab, in place of its location; omitted where the state was read"`
 	IsActive bool         `json:"isActive,omitempty" jsonschema:"true for the active tab"`
 }
 
