@@ -25,7 +25,7 @@ export const parseFingerprint = (stat: string) => {
  */
 const ERROR_CODE: Record<number, ErrorCode | null> = {
   [ProtoErrorCode.UNSPECIFIED]: 'unreadable',
-  [ProtoErrorCode.MISSING]: 'missing',
+  [ProtoErrorCode.NOT_FOUND]: 'notFound',
   [ProtoErrorCode.NOT_A_NOTE]: 'notANote',
   [ProtoErrorCode.NOT_TEXT]: 'notText',
   [ProtoErrorCode.TOO_LARGE]: 'tooLarge',
@@ -33,7 +33,7 @@ const ERROR_CODE: Record<number, ErrorCode | null> = {
   [ProtoErrorCode.UNREADABLE]: 'unreadable',
   [ProtoErrorCode.ALREADY_EXISTS]: 'alreadyExists',
   [ProtoErrorCode.INVALID_NAME]: 'invalidName',
-  [ProtoErrorCode.STALE]: null,
+  [ProtoErrorCode.CONFLICT]: null,
 } satisfies Record<ProtoErrorCode, ErrorCode | null>
 
 /** What one answer encountered as an error, and nothing where it succeeded. */
@@ -43,4 +43,4 @@ export const findErrorCode = (from: { error?: number | undefined }): ErrorCode |
 
 /** Whether the file an answer is about had moved past what the caller read. */
 export const isStaleAnswer = (from: { error?: number | undefined }): boolean =>
-  from.error === ProtoErrorCode.STALE
+  from.error === ProtoErrorCode.CONFLICT

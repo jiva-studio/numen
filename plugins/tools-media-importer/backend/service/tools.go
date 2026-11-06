@@ -9,13 +9,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
-// instructions is the paragraph that tells an agent when to call url_import.
-const instructions = "Use url_import to add a web page or a video to the vault by its address. It creates a link " +
-	"note named after the address and fetches the text published there, the prose of an article or the " +
-	"captions of a video, before it returns; that text can be read and searched from then on. " +
-	"Write your own notes about the page as separate notes that link to the link note. Set downloadVideo " +
-	"only when the user wants the video on this disk: the download is large and runs in the background, " +
-	"and the result returns its task id."
+// The sentences that tell an agent when to call url_import.
+const (
+	importerUseSentence      = "Use url_import to add a web page or a video to the vault by its address."
+	importerFetchSentence    = "url_import creates a link note named after the address and fetches the text published there, the prose of an article or the captions of a video, before it returns; that text can be read and searched from then on."
+	importerOwnNotesSentence = "Write your own notes about the page as separate notes that link to the link note."
+	importerDownloadSentence = "Set downloadVideo only when the user wants the video on this disk: the download is large and runs in the background, and the result returns its task id."
+)
 
 var errNoVault = errors.New("the call names no vault")
 
@@ -51,7 +51,6 @@ func NewTools(links *link.Links) *Tools {
 // Registry registers and returns the import tool.
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
-	registry.SetInstructions(instructions)
 	err := tools.Add(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "url_import",
@@ -62,8 +61,9 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 			"address and holds only the address. An address that is not http or https is refused. A failed " +
 			"fetch is reported in error and the note is kept. With downloadVideo set, the video is also " +
 			"downloaded to this disk in the background, and the result returns the task id of the download.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{importerUseSentence, importerFetchSentence, importerOwnNotesSentence, importerDownloadSentence},
 	}, t.importURL)
 	if err != nil {
 		return nil, err

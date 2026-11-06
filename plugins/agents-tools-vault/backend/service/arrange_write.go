@@ -80,8 +80,9 @@ func (t *Tools) addNoteRename(registry *tools.Registry) error {
 		Description: "Give a note another title. The title is written in the title key when the note has one, " +
 			"else in the file name, and the file moves to the file name of the title. Links that named the " +
 			"note by its old name are written again by the host.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{noteRenameSentence, linkRewriteSentence},
 	}, inVault(t, (*Tools).renameNote))
 }
 
@@ -92,8 +93,9 @@ func (t *Tools) addNoteMove(registry *tools.Registry) error {
 		Title: "Move Notes",
 		Description: "Move up to 50 notes to a folder, keeping their file names; an empty folder is the vault " +
 			"root. Each path gets its own result, and a path that fails does not stop the others.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{noteMoveSentence, linkRewriteSentence},
 	}, inVault(t, (*Tools).moveNotes))
 }
 
@@ -104,8 +106,9 @@ func (t *Tools) addNoteRemove(registry *tools.Registry) error {
 		Title: "Remove Notes",
 		Description: "Move up to 50 notes to the vault's trash, from where they can be put back. A folder is " +
 			"refused. Each path gets its own result with the notes whose links reach nothing now.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{noteRemoveSentence},
 	}, inVault(t, (*Tools).removeNotes))
 }
 

@@ -35,15 +35,15 @@ const (
 // ErrorCode is why a note could not be read or written.
 //
 // Every code is spelled in the window as the same word in camel case, and
-// three do not read straight across: UNSPECIFIED is `unreadable` there, STALE
-// is carried as a question for the person and not a message, and the window
+// three do not read straight across: UNSPECIFIED is `unreadable` there,
+// CONFLICT is carried as a question for the person and not a message, and the window
 // holds one code of its own for a core it could not reach at all.
 type ErrorCode int32
 
 const (
 	ErrorCode_ERROR_CODE_UNSPECIFIED ErrorCode = 0
 	// Nothing is at the path. A read says so; a write creates the file.
-	ErrorCode_ERROR_CODE_MISSING ErrorCode = 1
+	ErrorCode_ERROR_CODE_NOT_FOUND ErrorCode = 1
 	// The file is in the vault and is not a note.
 	ErrorCode_ERROR_CODE_NOT_A_NOTE ErrorCode = 2
 	// The file is not text this can carry.
@@ -65,14 +65,14 @@ const (
 	ErrorCode_ERROR_CODE_INVALID_NAME ErrorCode = 8
 	// The file is no longer the one this caller read. Nothing was written, and
 	// the person chooses what happens to what they have.
-	ErrorCode_ERROR_CODE_STALE ErrorCode = 13
+	ErrorCode_ERROR_CODE_CONFLICT ErrorCode = 13
 )
 
 // Enum value maps for ErrorCode.
 var (
 	ErrorCode_name = map[int32]string{
 		0:  "ERROR_CODE_UNSPECIFIED",
-		1:  "ERROR_CODE_MISSING",
+		1:  "ERROR_CODE_NOT_FOUND",
 		2:  "ERROR_CODE_NOT_A_NOTE",
 		3:  "ERROR_CODE_NOT_TEXT",
 		4:  "ERROR_CODE_TOO_LARGE",
@@ -80,11 +80,11 @@ var (
 		6:  "ERROR_CODE_UNREADABLE",
 		7:  "ERROR_CODE_ALREADY_EXISTS",
 		8:  "ERROR_CODE_INVALID_NAME",
-		13: "ERROR_CODE_STALE",
+		13: "ERROR_CODE_CONFLICT",
 	}
 	ErrorCode_value = map[string]int32{
 		"ERROR_CODE_UNSPECIFIED":     0,
-		"ERROR_CODE_MISSING":         1,
+		"ERROR_CODE_NOT_FOUND":       1,
 		"ERROR_CODE_NOT_A_NOTE":      2,
 		"ERROR_CODE_NOT_TEXT":        3,
 		"ERROR_CODE_TOO_LARGE":       4,
@@ -92,7 +92,7 @@ var (
 		"ERROR_CODE_UNREADABLE":      6,
 		"ERROR_CODE_ALREADY_EXISTS":  7,
 		"ERROR_CODE_INVALID_NAME":    8,
-		"ERROR_CODE_STALE":           13,
+		"ERROR_CODE_CONFLICT":        13,
 	}
 )
 
@@ -365,18 +365,18 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x03max\x18\x02 \x01(\x01R\x03max\":\n" +
 	"\x0eReasoningLevel\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title*\x9a\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title*\x9f\x02\n" +
 	"\tErrorCode\x12\x1a\n" +
-	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x16\n" +
-	"\x12ERROR_CODE_MISSING\x10\x01\x12\x19\n" +
+	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14ERROR_CODE_NOT_FOUND\x10\x01\x12\x19\n" +
 	"\x15ERROR_CODE_NOT_A_NOTE\x10\x02\x12\x17\n" +
 	"\x13ERROR_CODE_NOT_TEXT\x10\x03\x12\x18\n" +
 	"\x14ERROR_CODE_TOO_LARGE\x10\x04\x12\x1e\n" +
 	"\x1aERROR_CODE_BODY_UNWRITABLE\x10\x05\x12\x19\n" +
 	"\x15ERROR_CODE_UNREADABLE\x10\x06\x12\x1d\n" +
 	"\x19ERROR_CODE_ALREADY_EXISTS\x10\a\x12\x1b\n" +
-	"\x17ERROR_CODE_INVALID_NAME\x10\b\x12\x14\n" +
-	"\x10ERROR_CODE_STALE\x10\rBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x17ERROR_CODE_INVALID_NAME\x10\b\x12\x17\n" +
+	"\x13ERROR_CODE_CONFLICT\x10\rBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_shared_proto_rawDescOnce sync.Once

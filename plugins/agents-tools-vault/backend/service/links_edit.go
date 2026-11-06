@@ -78,8 +78,9 @@ func (t *Tools) addLinkAdd(registry *tools.Registry) error {
 		Description: "Write up to 50 links into the frontmatter links of notes. Each link needs the fingerprint " +
 			"note_read gave for its note; the links into one note are one write and carry the same fingerprint. " +
 			"A stale fingerprint refuses the links of that note and leaves it unchanged.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{linkEditSentence},
 	}, inVault(t, (*Tools).addLinks))
 }
 
@@ -91,8 +92,9 @@ func (t *Tools) addLinkUpdate(registry *tools.Registry) error {
 		Description: "Change the role, type, label or note of the links a note has to a target, keeping the " +
 			"target. Fields left out are kept. Needs the fingerprint note_read gave " +
 			"for the note, and a stale one is refused.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{linkEditSentence},
 	}, inVault(t, (*Tools).updateLink))
 }
 
@@ -104,8 +106,9 @@ func (t *Tools) addLinkRemove(registry *tools.Registry) error {
 		Description: "Remove the links a note has to a target from its frontmatter, or only the link of one " +
 			"role. The note at the other end is unchanged. Needs the fingerprint note_read gave for the note, " +
 			"and a stale one is refused.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{linkEditSentence},
 	}, inVault(t, (*Tools).removeLinks))
 }
 

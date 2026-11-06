@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -245,5 +246,125 @@ func TestTheInstructionsOfTheCallerItselfAreNotListed(t *testing.T) {
 
 	if listing.GetInstructions() != atlasInstructions {
 		t.Errorf("the host lists the instructions %q to their own plugin, want only %q", listing.GetInstructions(), atlasInstructions)
+	}
+}
+
+const (
+	atlasOpenSentence   = "Open the atlas with atlas_open before you name a country."
+	atlasFoldSentence   = "Fold a map with atlas_fold along its printed creases."
+	atlasSharedSentence = "Close the atlas with atlas_close or atlas_fold when the reading ends."
+	zitherTuneSentence  = "Tune the zither with zither_tune, one string at a time."
+)
+
+// instructedTool is a tool of a test plugin that carries the instruction sentences given.
+func instructedTool(name string, effect v1.ToolEffect, sentences []string, servers ...v1.ToolServer) *v1.PluginTool {
+	tool := newPluginTool(name, effect, servers...)
+	tool.Instructions = sentences
+	return tool
+}
+
+func toolsPlugin(tools ...*v1.PluginTool) *instructedPlugin {
+	return &instructedPlugin{tools: tools}
+}
+
+// listReadingToolsOfHost lists, as the MCP plugin, the tools of the host offered on the reading server.
+func listReadingToolsOfHost(t *testing.T, host *plugin.Host) ([]*v1.PluginTool, string) {
+	t.Helper()
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
+	catalog := agenttoolsbridge.NewCatalog(host, agenttoolsbridge.Server(v1.ToolServer_TOOL_SERVER_READING))
+	return catalog.ListTools(t.Context(), mcpPlugin)
+}
+
+func TestTheHostJoinsTheDistinctSentencesOfAPluginsToolsIntoOneParagraph(t *testing.T) {
+	host := hostOver(t,
+		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
+			instructedTool("atlas_open", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasOpenSentence}),
+			instructedTool("atlas_fold", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasFoldSentence, atlasSharedSentence}),
+			instructedTool("atlas_close", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasSharedSentence}),
+		)),
+		mcpCaller(),
+	)
+
+	listing := listToolsOfHost(t, openToolsOfHost(t, host))
+
+	if want := atlasOpenSentence + " " + atlasFoldSentence + " " + atlasSharedSentence; listing.GetInstructions() != want {
+		t.Errorf("the host lists the instructions %q, want %q", listing.GetInstructions(), want)
+	}
+}
+
+func TestTheHostListsOneParagraphOfToolSentencesPerPluginInPluginIdOrder(t *testing.T) {
+	host := hostOver(t,
+		instructedAt(zitherPlugin, []string{"vault:read"}, toolsPlugin(
+			instructedTool("zither_tune", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{zitherTuneSentence}),
+		)),
+		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
+			instructedTool("atlas_open", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasOpenSentence}),
+			instructedTool("atlas_fold", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasFoldSentence}),
+		)),
+		mcpCaller(),
+	)
+
+	listing := listToolsOfHost(t, openToolsOfHost(t, host))
+
+	if want := atlasOpenSentence + " " + atlasFoldSentence + "\n\n" + zitherTuneSentence; listing.GetInstructions() != want {
+		t.Errorf("the host lists the instructions %q, want %q", listing.GetInstructions(), want)
+	}
+}
+
+// The MCP plugin holds vault:read only, so a read-write tool is not listed to it, and the host
+// endpoint offers the full server, so a tool offered on the reading server only is not listed.
+func TestTheSentenceOfAToolLeftOutIsNotListed(t *testing.T) {
+	burnSentence := "Burn the old maps with atlas_burn after you copy them."
+	lensSentence := "Read the small print with atlas_lens."
+	ledgerSentence := "Write the ledger with ledger_write in ink."
+	host := hostOver(t,
+		instructedAt(atlasPlugin, []string{"vault:read", "vault:write"}, toolsPlugin(
+			instructedTool("atlas_open", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasOpenSentence}),
+			instructedTool("atlas_burn", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, []string{burnSentence}),
+			instructedTool("atlas_lens", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{lensSentence}, v1.ToolServer_TOOL_SERVER_READING),
+		)),
+		instructedAt("md.test.ledger", []string{"vault:read", "vault:write"}, toolsPlugin(
+			instructedTool("ledger_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE, []string{ledgerSentence}),
+		)),
+		mcpCaller(),
+	)
+
+	listing := listToolsOfHost(t, openToolsOfHost(t, host))
+
+	if names := getToolNames(listing); !slices.Equal(names, []string{"atlas_open"}) {
+		t.Fatalf("the host lists the tools %v", names)
+	}
+	if listing.GetInstructions() != atlasOpenSentence {
+		t.Errorf("the host lists the instructions %q, want only %q", listing.GetInstructions(), atlasOpenSentence)
+	}
+}
+
+func TestTheReadingCatalogListsOnlySentencesOfReadingServerTools(t *testing.T) {
+	glanceSentence := "Glance at the atlas index with atlas_glance."
+	host := hostOver(t,
+		instructedAt(atlasPlugin, []string{"vault:read"}, toolsPlugin(
+			instructedTool("atlas_open", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasOpenSentence},
+				v1.ToolServer_TOOL_SERVER_FULL, v1.ToolServer_TOOL_SERVER_READING),
+			instructedTool("atlas_fold", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{atlasFoldSentence}, v1.ToolServer_TOOL_SERVER_FULL),
+			instructedTool("atlas_glance", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, []string{glanceSentence}),
+		)),
+		mcpCaller(),
+	)
+
+	specs, instructions := listReadingToolsOfHost(t, host)
+
+	names := make([]string, 0, len(specs))
+	for _, one := range specs {
+		names = append(names, one.GetName())
+	}
+	if !slices.Equal(names, []string{"atlas_open"}) {
+		t.Fatalf("the reading listing holds the tools %v", names)
+	}
+	if instructions != atlasOpenSentence {
+		t.Errorf("the reading listing holds the instructions %q, want only %q", instructions, atlasOpenSentence)
 	}
 }

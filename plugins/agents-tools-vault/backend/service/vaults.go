@@ -60,8 +60,9 @@ func (t *Tools) addVaultList(registry *tools.Registry) error {
 		Title: "List Vaults",
 		Description: "List every vault of the installation with its identifier, name and folder path. The vault this " +
 			"call works on is marked isCurrent, and a vault whose folder is gone is marked isMissing.",
-		Effect:  tools.ReadOnly,
-		Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect:       tools.ReadOnly,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{vaultListSentence},
 	}, inVault(t, (*Tools).listVaults))
 }
 
@@ -73,8 +74,9 @@ func (t *Tools) addVaultProblems(registry *tools.Registry) error {
 		Description: "Run checks over the vault and list the problems found: parse for files that could not be " +
 			"read, frontmatter for frontmatter that is not valid, ambiguous for links that several notes answer " +
 			"to, and dangling for links that reach no note. dangling runs only when named.",
-		Effect:  tools.ReadOnly,
-		Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect:       tools.ReadOnly,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{vaultProblemsSentence},
 	}, inVault(t, (*Tools).listVaultProblems))
 }
 

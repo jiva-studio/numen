@@ -23,22 +23,46 @@ func NewCatalog(host Host, server Server) *Catalog {
 }
 
 // ListTools lists the tools the caller is allowed: those the other plugins offer on the server,
-// whose effect the caller holds the permission of as well. The instructions are the paragraphs of
-// the plugins with at least one tool allowed, in the order of their ids, separated by an empty line.
+// whose effect the caller holds the permission of as well. The instructions hold one paragraph per
+// plugin with at least one tool allowed, in the order of plugin ids, separated by an empty line: the
+// paragraph the plugin set, else the distinct sentences of its allowed tools in listing order, joined
+// with one space.
 func (c *Catalog) ListTools(ctx context.Context, callerID string) (specs []*v1.PluginTool, instructions string) {
 	allowed := c.listAllowed(ctx, callerID)
 	specs = make([]*v1.PluginTool, 0, len(allowed))
 	var paragraphs []string
-	previous := ""
-	for _, one := range allowed {
-		specs = append(specs, one.spec)
-		// The tools of one plugin are listed together, so a paragraph is taken at its first tool.
-		if one.pluginID != previous && one.instructions != "" {
-			paragraphs = append(paragraphs, one.instructions)
+	// The tools of one plugin are listed together.
+	for start := 0; start < len(allowed); {
+		end := start + 1
+		for end < len(allowed) && allowed[end].pluginID == allowed[start].pluginID {
+			end++
 		}
-		previous = one.pluginID
+		for _, one := range allowed[start:end] {
+			specs = append(specs, one.spec)
+		}
+		if paragraph := getParagraph(allowed[start:end]); paragraph != "" {
+			paragraphs = append(paragraphs, paragraph)
+		}
+		start = end
 	}
 	return specs, strings.Join(paragraphs, "\n\n")
+}
+
+// getParagraph is the instructions of the tools of one plugin: the paragraph the plugin set, else
+// the distinct sentences of the tools in their order.
+func getParagraph(pluginTools []tool) string {
+	if paragraph := pluginTools[0].instructions; paragraph != "" {
+		return paragraph
+	}
+	var sentences []string
+	for _, one := range pluginTools {
+		for _, sentence := range one.spec.GetInstructions() {
+			if !slices.Contains(sentences, sentence) {
+				sentences = append(sentences, sentence)
+			}
+		}
+	}
+	return strings.Join(sentences, " ")
 }
 
 // CallTool runs the tool of the name on the plugin that lists it, in the vault given. A tool the

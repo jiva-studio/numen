@@ -35,8 +35,9 @@ func (t *Tools) addFileRead(registry *tools.Registry) error {
 		Title: "Read File",
 		Description: "Read the content or a byte range of a text file of the vault, as text. A file that is " +
 			"not text — a PDF, a book, a recording — is refused: library_read reads its text.",
-		Effect:  tools.ReadOnly,
-		Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect:       tools.ReadOnly,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{fileReadSentence},
 	}, inVault(t, (*Tools).readFile))
 }
 

@@ -12,6 +12,8 @@ func TestToolInfo_RoundTripsThroughTheWire(t *testing.T) {
 		Name: "greet", Title: "Greet", Description: "Greets.",
 		InputSchema: []byte(`{"type":"object"}`), OutputSchema: []byte(`{"type":"object"}`),
 		Effect: ReadWrite, Step: Move, Servers: []Server{Full, Reading},
+		Instructions: []string{"Greet each guest by name with greet.", "Call greet once per guest."},
+		Requires:     []string{"vault:manage", "index:read"},
 	}
 
 	got := readToolInfo(writeToolInfo(want))

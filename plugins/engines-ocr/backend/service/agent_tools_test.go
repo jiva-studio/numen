@@ -262,15 +262,6 @@ func TestRegistryListsRecognitionCreateOnTheFullServerOnly(t *testing.T) {
 	}
 }
 
-func TestTheInstructionsAreOneParagraphNamingRecognitionCreate(t *testing.T) {
-	if !strings.Contains(instructions, "recognition_create") {
-		t.Errorf("the instructions do not name recognition_create: %q", instructions)
-	}
-	if strings.Contains(strings.TrimSpace(instructions), "\n\n") {
-		t.Errorf("the instructions are more than one paragraph: %q", instructions)
-	}
-}
-
 func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 	s := newToolScene(t)
 
@@ -530,7 +521,7 @@ func TestRecognitionCreateRecognisesInTheVaultTheCallNames(t *testing.T) {
 	}
 }
 
-func TestRegistryListsTheRecognitionInstructions(t *testing.T) {
+func TestTheRecognitionToolCarriesItsInstructions(t *testing.T) {
 	s := newToolScene(t)
 
 	listing, err := s.registry.ListTools(t.Context())
@@ -538,14 +529,20 @@ func TestRegistryListsTheRecognitionInstructions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if listing.Instructions == "" || listing.Instructions != instructions {
-		t.Errorf("the registry lists the instructions %q, want %q", listing.Instructions, instructions)
+	if listing.Instructions != "" {
+		t.Errorf("the registry lists the paragraph %q; the instructions go on the tool", listing.Instructions)
 	}
-	if !strings.Contains(listing.Instructions, "recognition_create") {
-		t.Errorf("the listed instructions do not name recognition_create: %q", listing.Instructions)
+	sentences := getToolSentences(listing, "recognition_create")
+	if len(sentences) == 0 {
+		t.Fatal("recognition_create lists no instructions")
 	}
-	if strings.Contains(strings.TrimSpace(listing.Instructions), "\n\n") {
-		t.Errorf("the listed instructions are more than one paragraph: %q", listing.Instructions)
+	if !strings.Contains(strings.Join(sentences, " "), "recognition_create") {
+		t.Errorf("no instruction of recognition_create names it: %q", sentences)
+	}
+	for _, sentence := range sentences {
+		if !isOneSentence(sentence) {
+			t.Errorf("an instruction of recognition_create is not one sentence: %q", sentence)
+		}
 	}
 }
 

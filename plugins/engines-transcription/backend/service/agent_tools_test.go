@@ -255,15 +255,6 @@ func TestRegistryListsTranscriptCreateOnTheFullServerOnly(t *testing.T) {
 	}
 }
 
-func TestTheInstructionsAreOneParagraphNamingTranscriptCreate(t *testing.T) {
-	if !strings.Contains(instructions, "transcript_create") {
-		t.Errorf("the instructions do not name transcript_create: %q", instructions)
-	}
-	if strings.Contains(strings.TrimSpace(instructions), "\n\n") {
-		t.Errorf("the instructions are more than one paragraph: %q", instructions)
-	}
-}
-
 func TestTranscriptCreateReturnsBeforeTheTranscriptionEnds(t *testing.T) {
 	s := newToolScene(t)
 
@@ -648,7 +639,7 @@ func TestTranscriptCreateRefusesAFileThatIsNoRecording(t *testing.T) {
 	}
 }
 
-func TestRegistryListsTheTranscriptionInstructions(t *testing.T) {
+func TestTheTranscriptionToolCarriesItsInstructions(t *testing.T) {
 	s := newToolScene(t)
 
 	listing, err := s.registry.ListTools(t.Context())
@@ -656,14 +647,20 @@ func TestRegistryListsTheTranscriptionInstructions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if listing.Instructions == "" || listing.Instructions != instructions {
-		t.Errorf("the registry lists the instructions %q, want %q", listing.Instructions, instructions)
+	if listing.Instructions != "" {
+		t.Errorf("the registry lists the paragraph %q; the instructions go on the tool", listing.Instructions)
 	}
-	if !strings.Contains(listing.Instructions, "transcript_create") {
-		t.Errorf("the listed instructions do not name transcript_create: %q", listing.Instructions)
+	sentences := getToolSentences(listing, "transcript_create")
+	if len(sentences) == 0 {
+		t.Fatal("transcript_create lists no instructions")
 	}
-	if strings.Contains(strings.TrimSpace(listing.Instructions), "\n\n") {
-		t.Errorf("the listed instructions are more than one paragraph: %q", listing.Instructions)
+	if !strings.Contains(strings.Join(sentences, " "), "transcript_create") {
+		t.Errorf("no instruction of transcript_create names it: %q", sentences)
+	}
+	for _, sentence := range sentences {
+		if !isOneSentence(sentence) {
+			t.Errorf("an instruction of transcript_create is not one sentence: %q", sentence)
+		}
 	}
 }
 

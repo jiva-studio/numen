@@ -26,7 +26,7 @@ func TestWhichErrorCodeAnOutcomeIs(t *testing.T) {
 		want    v1.ErrorCode
 		is      bool
 	}{
-		"a note that is not there":  {note.Missing, v1.ErrorCode_ERROR_CODE_MISSING, true},
+		"a note that is not there":  {note.Missing, v1.ErrorCode_ERROR_CODE_NOT_FOUND, true},
 		"a file that is not a note": {note.NotANote, v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true},
 		"a file that is not text":   {note.NotText, v1.ErrorCode_ERROR_CODE_NOT_TEXT, true},
 		"a note past its bound":     {note.TooLarge, v1.ErrorCode_ERROR_CODE_TOO_LARGE, true},
@@ -53,7 +53,7 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 	}{
 		"the vault holds no note there": {
 			fmt.Errorf("read Old.md: %w", note.ErrNoNote),
-			v1.ErrorCode_ERROR_CODE_MISSING, true,
+			v1.ErrorCode_ERROR_CODE_NOT_FOUND, true,
 		},
 		"more text than a note is written with": {
 			fmt.Errorf("%w: 9 bytes", note.ErrTooLarge),

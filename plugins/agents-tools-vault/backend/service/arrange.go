@@ -67,34 +67,37 @@ type NoteResolveOutput struct {
 
 func (t *Tools) addNoteList(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:        tools.ByEffect,
-		Name:        "note_list",
-		Title:       "List Notes",
-		Description: "List the paths and titles of the notes in the vault or in one folder, ordered by path. The result is paged with limit and offset and gives the total count.",
-		Effect:      tools.ReadOnly,
-		Servers:     []tools.Server{tools.Full, tools.Reading},
+		Step:         tools.ByEffect,
+		Name:         "note_list",
+		Title:        "List Notes",
+		Description:  "List the paths and titles of the notes in the vault or in one folder, ordered by path. The result is paged with limit and offset and gives the total count.",
+		Effect:       tools.ReadOnly,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{noteListSentence},
 	}, inVault(t, (*Tools).listNotes))
 }
 
 func (t *Tools) addNoteTitles(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:        tools.ByEffect,
-		Name:        "note_titles",
-		Title:       "Get Note Titles",
-		Description: "Get the titles and identifiers of up to 50 notes by their paths. Paths that name no note are returned in missingPaths.",
-		Effect:      tools.ReadOnly,
-		Servers:     []tools.Server{tools.Full, tools.Reading},
+		Step:         tools.ByEffect,
+		Name:         "note_titles",
+		Title:        "Get Note Titles",
+		Description:  "Get the titles and identifiers of up to 50 notes by their paths. Paths that name no note are returned in missingPaths.",
+		Effect:       tools.ReadOnly,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{noteTitlesSentence},
 	}, inVault(t, (*Tools).getNoteTitles))
 }
 
 func (t *Tools) addNoteResolve(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:        tools.ByEffect,
-		Name:        "note_resolve",
-		Title:       "Resolve Note Name",
-		Description: "Get the paths of every note with the given file name, which is what a wikilink names. More than one path means the name is ambiguous.",
-		Effect:      tools.ReadOnly,
-		Servers:     []tools.Server{tools.Full, tools.Reading},
+		Step:         tools.ByEffect,
+		Name:         "note_resolve",
+		Title:        "Resolve Note Name",
+		Description:  "Get the paths of every note with the given file name, which is what a wikilink names. More than one path means the name is ambiguous.",
+		Effect:       tools.ReadOnly,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{noteResolveSentence},
 	}, inVault(t, (*Tools).resolveNoteName))
 }
 

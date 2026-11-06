@@ -104,9 +104,10 @@ func (t *Tools) addLibrarySearch(registry *tools.Registry) error {
 			"before concluding that a source does not cover a subject. For a question about a book, " +
 			"pass kinds [\"file\"]: a vault holds far more notes than books, and a search of every " +
 			"kind returns mostly notes.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.Search,
-		Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect:       tools.ReadOnly,
+		Step:         tools.Search,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{noteLinkSentence, passageLinkSentence, noFileLinkSentence, searchScopeSentence, userWordsSentence, truncatedSentence, bookKindSentence},
 	}, inVault(t, (*Tools).searchLibrary))
 }
 
@@ -203,9 +204,10 @@ func (t *Tools) addLibraryRead(registry *tools.Registry) error {
 			"A text file is read as it is. A file with no text version returns an error that names " +
 			"what makes one. file_read reads the bytes of a text file and refuses a binary; " +
 			"library_search finds the passage to read.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.ByEffect,
-		Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect:       tools.ReadOnly,
+		Step:         tools.ByEffect,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{passageLinkSentence, truncatedSentence, libraryReadSentence},
 	}, inVault(t, (*Tools).readLibrary))
 }
 

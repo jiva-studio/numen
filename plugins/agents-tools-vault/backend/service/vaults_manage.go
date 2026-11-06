@@ -67,8 +67,9 @@ func (t *Tools) addVaultAdd(registry *tools.Registry) error {
 		Title: "Add Vault",
 		Description: "Add a folder of this machine to the installation's list of vaults, by its absolute path. " +
 			"A folder inside a vault on the list, or one that holds one, is refused.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{vaultAddSentence},
 	}, inVault(t, (*Tools).addVault))
 }
 
@@ -79,8 +80,9 @@ func (t *Tools) addVaultRename(registry *tools.Registry) error {
 		Title: "Rename Vault",
 		Description: "Change the display name of a vault, named by its name, path or identifier. A name " +
 			"another vault has is refused.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{vaultRenameSentence},
 	}, inVault(t, (*Tools).renameVault))
 }
 
@@ -91,8 +93,9 @@ func (t *Tools) addVaultRemove(registry *tools.Registry) error {
 		Title: "Remove Vault",
 		Description: "Take a vault off the installation's list; its folder stays on the disk. The vault this " +
 			"call works on and the last vault are refused.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{vaultRemoveSentence},
 	}, inVault(t, (*Tools).removeVault))
 }
 
@@ -106,8 +109,9 @@ func (t *Tools) addVaultOpen(registry *tools.Registry) error {
 			"unsaved changes keeps its vault, asks the user about them, and the answer is an error; call it " +
 			"again after the user answers. Call it " +
 			"only when the user asks for it.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{vaultOpenSentence, vaultOpenAskSentence},
 	}, inVault(t, (*Tools).openVault))
 }
 

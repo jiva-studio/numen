@@ -66,7 +66,7 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     create: async () => ({ ok: true, value: { path: '' } }),
     relations: {
       roles: ['parent', 'child', 'jump'],
-      getConnection: async () => asFailure('missing'),
+      getConnection: async () => asFailure('notFound'),
       saveConnection: async () => asValue(undefined),
       removeSide: async () => asValue(undefined),
       removeConnection: async () => asValue(undefined),

@@ -13,7 +13,7 @@ type ErrorCode = string
 
 describe('what a failed call is reported as', () => {
   it.each<[ErrorCode, string]>([
-    ['missing', 'unreadable'],
+    ['notFound', 'unreadable'],
     ['alreadyExists', 'unreadable'],
     ['invalidName', 'unreadable'],
     ['tooLarge', 'tooLarge'],
@@ -187,7 +187,7 @@ describe('the queue of an open note', () => {
     })
 
     it('reports a note that is not there as missing', async () => {
-      const { queue, turned } = setup({ read: async () => asFailure('missing') })
+      const { queue, turned } = setup({ read: async () => asFailure('notFound') })
 
       await queue.read('a', 'Note.md', 2)
 

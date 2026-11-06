@@ -12,13 +12,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
-// instructions is the paragraph that tells an agent when to call recognition_create.
-const instructions = "Use recognition_create on a scanned PDF or an image that has no text layer, or on a file " +
-	"whose search results are unreadable text. Recognition is slow, up to an hour for a book. " +
-	"The call returns a task id at once and the recognition runs in the background; once it ends, " +
-	"the recognised text can be read and searched. Call it once per file: a second call " +
-	"while the first runs starts nothing and reports the state running, and a call on a file already " +
-	"recognised starts nothing and reports the state done with the version library_read reads."
+// The sentences that tell an agent when to call recognition_create.
+const (
+	recognitionUseSentence        = "Use recognition_create on a scanned PDF or an image that has no text layer, or on a file whose search results are unreadable text."
+	recognitionSlowSentence       = "Recognition is slow, up to an hour for a book."
+	recognitionBackgroundSentence = "recognition_create returns a task id at once and the recognition runs in the background; once it ends, the recognised text can be read and searched."
+	recognitionOnceSentence       = "Call recognition_create once per file: a second call while the first runs starts nothing and reports the state running, and a call on a file already recognised starts nothing and reports the state done with the version library_read reads."
+)
 
 // The states recognition_create reports.
 const (
@@ -70,7 +70,6 @@ func NewTools(recognitions *recognition.Recognition) *Tools {
 // Registry registers and returns the recognition tool.
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
-	registry.SetInstructions(instructions)
 	err := tools.Add(registry, tools.Spec{
 		Step:  tools.ByEffect,
 		Name:  "recognition_create",
@@ -81,8 +80,9 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 			"ends. A recognition takes up to an hour for a book. A file that is not in the vault is refused. A " +
 			"file that is already recognised is not recognised again: the call answers the state done and the " +
 			"version library_read reads, the recognised text or a version made from it.",
-		Effect:  tools.ReadWrite,
-		Servers: []tools.Server{tools.Full},
+		Effect:       tools.ReadWrite,
+		Servers:      []tools.Server{tools.Full},
+		Instructions: []string{recognitionUseSentence, recognitionSlowSentence, recognitionBackgroundSentence, recognitionOnceSentence},
 	}, t.createRecognition)
 	if err != nil {
 		return nil, err

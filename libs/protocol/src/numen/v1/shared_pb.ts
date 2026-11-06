@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEiLQoOUmVhc29uaW5nTGV2ZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSqaAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEh0KGUVSUk9SX0NPREVfQUxSRUFEWV9FWElTVFMQBxIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAIEhQKEEVSUk9SX0NPREVfU1RBTEUQDUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEiLQoOUmVhc29uaW5nTGV2ZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSqfAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIYChRFUlJPUl9DT0RFX05PVF9GT1VORBABEhkKFUVSUk9SX0NPREVfTk9UX0FfTk9URRACEhcKE0VSUk9SX0NPREVfTk9UX1RFWFQQAxIYChRFUlJPUl9DT0RFX1RPT19MQVJHRRAEEh4KGkVSUk9SX0NPREVfQk9EWV9VTldSSVRBQkxFEAUSGQoVRVJST1JfQ09ERV9VTlJFQURBQkxFEAYSHQoZRVJST1JfQ09ERV9BTFJFQURZX0VYSVNUUxAHEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9OQU1FEAgSFwoTRVJST1JfQ09ERV9DT05GTElDVBANQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * FileStat is which file this is: where it is filed, how big it is, and when
@@ -136,8 +136,8 @@ export const ReasoningLevelSchema: GenMessage<ReasoningLevel> = /*@__PURE__*/
  * ErrorCode is why a note could not be read or written.
  *
  * Every code is spelled in the window as the same word in camel case, and
- * three do not read straight across: UNSPECIFIED is `unreadable` there, STALE
- * is carried as a question for the person and not a message, and the window
+ * three do not read straight across: UNSPECIFIED is `unreadable` there,
+ * CONFLICT is carried as a question for the person and not a message, and the window
  * holds one code of its own for a core it could not reach at all.
  *
  * @generated from enum numen.v1.ErrorCode
@@ -151,9 +151,9 @@ export enum ErrorCode {
   /**
    * Nothing is at the path. A read says so; a write creates the file.
    *
-   * @generated from enum value: ERROR_CODE_MISSING = 1;
+   * @generated from enum value: ERROR_CODE_NOT_FOUND = 1;
    */
-  MISSING = 1,
+  NOT_FOUND = 1,
 
   /**
    * The file is in the vault and is not a note.
@@ -213,9 +213,9 @@ export enum ErrorCode {
    * The file is no longer the one this caller read. Nothing was written, and
    * the person chooses what happens to what they have.
    *
-   * @generated from enum value: ERROR_CODE_STALE = 13;
+   * @generated from enum value: ERROR_CODE_CONFLICT = 13;
    */
-  STALE = 13,
+  CONFLICT = 13,
 }
 
 /**

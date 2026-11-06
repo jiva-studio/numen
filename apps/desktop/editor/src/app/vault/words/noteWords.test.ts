@@ -34,7 +34,7 @@ describe('mapNoteResult', () => {
 
 describe('mapWriteResult', () => {
   it('calls a file that moved past the caller changed', () => {
-    expect(mapWriteResult({ error: NOTE_ERROR_CODE.STALE })).toEqual(asFailure('changed'))
+    expect(mapWriteResult({ error: NOTE_ERROR_CODE.CONFLICT })).toEqual(asFailure('changed'))
   })
 
   it('maps any other answer as a note result', () => {

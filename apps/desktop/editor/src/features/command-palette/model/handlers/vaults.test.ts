@@ -103,11 +103,12 @@ describe('showing another vault', () => {
   })
 
   it('says why it would not open, as an error, and draws nothing again', async () => {
-    const one = createWindow({ opened: 'showing' })
+    const one = createWindow({ opened: 'current' })
 
     await showVault('heat', one.on, words)
 
-    expect(one.messages).toStrictEqual([{ text: words.vaultErrors.showing, kind: 'error' }])
+    expect(words.vaultErrors.current).toBeTypeOf('string')
+    expect(one.messages).toStrictEqual([{ text: words.vaultErrors.current, kind: 'error' }])
     expect(one.calls.reload).not.toHaveBeenCalled()
   })
 })

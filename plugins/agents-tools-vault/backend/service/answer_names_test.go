@@ -328,16 +328,7 @@ func TestVaultToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 }
 
 func TestVaultInstructionsNameTheKeysInCamelCase(t *testing.T) {
-	_, svc := setupTestVault()
-	registry, err := svc.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	listing, err := registry.ListTools(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	instructions := listing.Instructions
+	instructions := joinToolInstructions(listVaultTools(t))
 	for _, want := range []string{"`uri`", "kinds", "isCurrent"} {
 		if !strings.Contains(instructions, want) {
 			t.Errorf("the instructions do not name %q:\n%s", want, instructions)
@@ -351,17 +342,17 @@ func TestVaultInstructionsNameTheKeysInCamelCase(t *testing.T) {
 }
 
 func TestVaultToolInstructionsContainNoNarrativeMarker(t *testing.T) {
-	l := newLibrary(t)
-	listing, err := l.calls.ListTools(t.Context())
-	if err != nil {
-		t.Fatal(err)
+	listing := listVaultTools(t)
+	if joinToolInstructions(listing) == "" {
+		t.Fatal("no tool lists instructions")
 	}
-	if listing.Instructions == "" {
-		t.Fatal("the registry lists no instructions")
-	}
-	for _, marker := range getNarrativeMarkers() {
-		if marker.MatchString(listing.Instructions) {
-			t.Errorf("the instructions match %s: %q", marker, listing.Instructions)
+	for _, tool := range listing.Tools {
+		for _, sentence := range tool.Instructions {
+			for _, marker := range getNarrativeMarkers() {
+				if marker.MatchString(sentence) {
+					t.Errorf("an instruction of %s matches %s: %q", tool.Name, marker, sentence)
+				}
+			}
 		}
 	}
 }

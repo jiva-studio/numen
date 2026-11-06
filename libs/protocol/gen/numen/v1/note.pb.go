@@ -1644,8 +1644,8 @@ func (x *WriteLinkRequest) GetLink() *Link {
 type WriteLinkResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was written, and why. A note that moved between being
-	// read and being written is ERROR_CODE_STALE, and the caller reads it again
-	// before asking for this.
+	// read and being written is ERROR_CODE_CONFLICT, and the caller reads it
+	// again before asking for this.
 	Error         *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2815,7 +2815,7 @@ type RenameNoteResponse struct {
 	Moved *MoveResult `protobuf:"bytes,4,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when the rename did not finish, and why. The note may already have been
 	// written: `path`, `title` and `by` say what stands. A note holding prose the
-	// caller never saw is ERROR_CODE_STALE, and nothing was written at all.
+	// caller never saw is ERROR_CODE_CONFLICT, and nothing was written at all.
 	Error *ErrorCode `protobuf:"varint,5,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Set when the rename reached the vault and the index could not be updated
 	// with it. Search answers about these files as it read them last, until a

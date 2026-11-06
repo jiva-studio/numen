@@ -38,9 +38,10 @@ func (t *Tools) addNoteSearch(registry *tools.Registry) error {
 		Title: "Search Notes",
 		Description: "Search the notes of the vault by title, path and text. It does not look into books, " +
 			"PDFs, scans or recordings: library_search finds the text of those.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.Search,
-		Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect:       tools.ReadOnly,
+		Step:         tools.Search,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{noteLinkSentence, passageLinkSentence, noFileLinkSentence, searchScopeSentence, userWordsSentence},
 	}, inVault(t, (*Tools).searchNotes))
 }
 

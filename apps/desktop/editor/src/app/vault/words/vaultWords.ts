@@ -68,10 +68,10 @@ const unvaulted: Record<VaultsErrorCodeValue, VaultErrorCode> = {
   [VAULTS_ERROR_CODE.OVERLAPS]: 'overlaps',
   [VAULTS_ERROR_CODE.NAME_TAKEN]: 'nameTaken',
   [VAULTS_ERROR_CODE.LAST_VAULT]: 'lastVault',
-  [VAULTS_ERROR_CODE.SHOWING]: 'showing',
-  [VAULTS_ERROR_CODE.UNKNOWN]: 'unknown',
+  [VAULTS_ERROR_CODE.CURRENT]: 'current',
+  [VAULTS_ERROR_CODE.NOT_FOUND]: 'notFound',
   [VAULTS_ERROR_CODE.NO_TRASH]: 'noTrash',
-  [VAULTS_ERROR_CODE.ASKING]: 'asking',
+  [VAULTS_ERROR_CODE.UNSAVED]: 'unsaved',
 }
 
 export const getVaultError = (from: {

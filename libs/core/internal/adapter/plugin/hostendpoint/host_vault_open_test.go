@@ -34,7 +34,7 @@ func openListEndpoint(t *testing.T, list pluginport.PluginVaultList) (*Endpoint,
 	return endpoint, numenv1connect.NewHostVaultServiceClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 }
 
-func TestOpenVaultWithUnsavedChangesReturnsAskingWithTheDetail(t *testing.T) {
+func TestOpenVaultWithUnsavedChangesReturnsUnsavedWithTheDetail(t *testing.T) {
 	list := newRecordingList()
 	unsaved := fmt.Errorf("open vault v2: %w", pluginport.ErrUnsavedChanges)
 	list.err = unsaved
@@ -50,8 +50,8 @@ func TestOpenVaultWithUnsavedChangesReturnsAskingWithTheDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.Failure == nil || res.Msg.GetFailure() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING {
-		t.Errorf("OpenVault of a window with unsaved changes returned %v, want failure ASKING", res.Msg)
+	if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED {
+		t.Errorf("OpenVault of a window with unsaved changes returned %v, want error UNSAVED", res.Msg)
 	}
 	const question = "the user is asked about unsaved changes in the window; ask again after they answer"
 	if detail := res.Msg.GetDetail(); !strings.Contains(detail, unsaved.Error()) || !strings.Contains(detail, question) {
@@ -69,7 +69,7 @@ func TestTwoOpenVaultCallsAtOnceBothReturnAndBothOpen(t *testing.T) {
 	for range 2 {
 		wg.Go(func() {
 			res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
-			if err != nil || res.Msg.Failure != nil {
+			if err != nil || res.Msg.GetError() != 0 {
 				t.Errorf("OpenVault of v2 returned %v (%v)", res, err)
 			}
 		})

@@ -251,8 +251,9 @@ func TestURLImportInstructionsAndDescriptionNameDownloadVideo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(listing.Instructions, "downloadVideo") || strings.Contains(listing.Instructions, "Set copy") {
-		t.Errorf("the instructions do not name downloadVideo in place of copy: %q", listing.Instructions)
+	instructions := strings.Join(getToolSentences(listing, "url_import"), " ")
+	if !strings.Contains(instructions, "downloadVideo") || strings.Contains(instructions, "Set copy") {
+		t.Errorf("the instructions do not name downloadVideo in place of copy: %q", instructions)
 	}
 	for _, info := range listing.Tools {
 		if description := info.GetDescription(); !strings.Contains(description, "downloadVideo") || strings.Contains(description, "copy set") {
@@ -288,12 +289,32 @@ func TestMediaImporterToolInstructionsContainNoNarrativeMarker(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if listing.Instructions == "" {
-		t.Fatal("the registry lists no instructions")
+	if len(getToolSentences(listing, "url_import")) == 0 {
+		t.Fatal("url_import lists no instructions")
 	}
-	for _, marker := range getNarrativeMarkers() {
-		if marker.MatchString(listing.Instructions) {
-			t.Errorf("the instructions match %s: %q", marker, listing.Instructions)
+	for _, info := range listing.Tools {
+		for _, sentence := range info.Instructions {
+			for _, marker := range getNarrativeMarkers() {
+				if marker.MatchString(sentence) {
+					t.Errorf("an instruction of %s matches %s: %q", info.GetName(), marker, sentence)
+				}
+			}
 		}
 	}
+}
+
+// getToolSentences is the instruction sentences the tool of the name lists.
+func getToolSentences(listing tools.Listing, name string) []string {
+	for _, info := range listing.Tools {
+		if info.GetName() == name {
+			return info.Instructions
+		}
+	}
+	return nil
+}
+
+// isOneSentence reports whether the text is one sentence: it ends with a full stop and holds no
+// other end of a sentence.
+func isOneSentence(text string) bool {
+	return strings.TrimSpace(text) == text && strings.HasSuffix(text, ".") && !regexp.MustCompile(`[.!?]\s+\S`).MatchString(text)
 }

@@ -24,12 +24,14 @@ message ListToolsRequest {}
 message ListToolsResponse {
   repeated PluginTool tools = 1;
 
-  // What an agent reads once before it calls the tools listed here: how they
-  // are used together, as plain text. A plugin answers with one paragraph for
-  // all its tools, empty where it has none. The host answers with the
-  // paragraphs of the plugins whose tools it lists, in the order of their ids,
-  // separated by an empty line; a plugin none of whose tools is listed adds
-  // nothing.
+  // The plugin paragraph: what an agent reads once before it calls the tools
+  // of one plugin, as plain text, empty where the plugin sets none. A plugin
+  // that sets it answers it in place of the instructions of its tools. The
+  // host answers one paragraph per plugin whose tools it lists, in the order
+  // of plugin ids, separated by an empty line: the plugin paragraph where the
+  // plugin set one, else the distinct instructions of its listed tools in
+  // listing order, joined with one space. A plugin none of whose tools is
+  // listed adds nothing.
   string instructions = 2;
 }
 
@@ -59,6 +61,11 @@ message PluginTool {
   repeated ToolServer servers = 7;
 
   ToolStep step = 8;
+
+  // The instructions about this tool, each one sentence of plain English. A
+  // sentence about several tools is attached to each of them with identical
+  // text.
+  repeated string instructions = 9;
 }
 
 // ToolEffect is what a tool does to the vault. The zero value means no effect
