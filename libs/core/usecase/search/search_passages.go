@@ -34,8 +34,8 @@ type PassageQuery struct {
 	PathPrefix string
 }
 
-// SearchPassages finds the text of a vault that answers a query, by the words and by the meaning, as
-// the window searches, for a caller that reads the passages rather than shows them.
+// SearchPassages finds the passages of a vault that answer a query, by the words and by the meaning,
+// with the parameters of the window search.
 type SearchPassages struct {
 	finder PassageFinder
 }
