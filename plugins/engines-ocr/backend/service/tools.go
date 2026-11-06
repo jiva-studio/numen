@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -36,7 +35,7 @@ type RecognitionCreateInput struct {
 type RecognitionCreateOutput struct {
 	TaskID string `json:"task_id" jsonschema:"the id of the recognition in the list of tasks"`
 	Path   string `json:"path" jsonschema:"the file; library_read and library_search read its text once it is recognised"`
-	State  string `json:"state" jsonschema:"started, or running where a recognition of this file started by this tool is still in progress and no second one was started"`
+	State  string `json:"state" jsonschema:"started, or running where a recognition of this file is already in progress and no second one was started"`
 }
 
 // Tools serves recognition_create, which starts recognitions that run until they end or Close.
@@ -111,8 +110,8 @@ func (t *Tools) createRecognition(ctx context.Context, in RecognitionCreateInput
 	return RecognitionCreateOutput{TaskID: recognition.GetTaskID(in.Path), Path: in.Path, State: state}, nil
 }
 
-// start runs the recognition of the file in the background, and reports running where one the tool
-// started still has it.
+// start runs the recognition of the file in the background, and reports running where another run
+// holds the file.
 func (t *Tools) start(ctx context.Context, vault domain.VaultID, path string) (string, error) {
 	key := string(vault) + "\x00" + path
 	t.mu.Lock()
@@ -120,20 +119,20 @@ func (t *Tools) start(ctx context.Context, vault domain.VaultID, path string) (s
 	if t.isClosed {
 		return "", errors.New("the plugin is stopping")
 	}
-	if t.running[key] != nil {
+	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	done, isStarted, err := t.recognitions.Start(runCtx, recognition.Request{Vault: vault, Path: path, IsUserStarted: true})
+	if err != nil || !isStarted {
+		cancel()
+		if err != nil {
+			return "", err
+		}
 		return stateRunning, nil
 	}
-	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	t.running[key] = cancel
 	t.wg.Go(func() {
-		defer t.clearRunning(key)
-		defer cancel()
-		// Recognise reports a failure as the task's error.
-		_, err := t.recognitions.Recognise(runCtx, recognition.Request{Vault: vault, Path: path, IsUserStarted: true})
-		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL reason="Stderr logging of background recognition failure does not affect tool state."
-		if err != nil && runCtx.Err() == nil {
-			fmt.Fprintf(os.Stderr, "engines-ocr: recognise %s: %v\n", path, err)
-		}
+		<-done
+		cancel()
+		t.clearRunning(key)
 	})
 	return stateStarted, nil
 }

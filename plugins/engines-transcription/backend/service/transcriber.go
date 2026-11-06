@@ -28,6 +28,12 @@ type Files interface {
 	ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error)
 }
 
+// shownVault is implemented by Files that can name the vault the host shows. A recording asked for
+// in no vault is then claimed under that vault's id, the id a tool call names.
+type shownVault interface {
+	GetShownVault(ctx context.Context) (domain.VaultID, error)
+}
+
 // Engines opens the model that transcribes a recording. The model is opened once and reused.
 type Engines func(ctx context.Context) (engine.TranscriberPort, error)
 
@@ -99,7 +105,7 @@ type readRecording func(ctx context.Context) ([]byte, error)
 // Transcribe transcribes a recording and returns once its transcript is written, with the error the
 // transcription stopped on. It ends when ctx ends or the plugin stops.
 func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path string) error {
-	key, err := t.claimOrFail(vault, path)
+	key, err := t.claimOrFail(ctx, vault, path)
 	if err != nil {
 		return err
 	}
@@ -112,7 +118,11 @@ func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path
 // has it. The recording is read in the background as well, and a read that fails is the failure of
 // the task. Close cancels the transcription and waits for it.
 func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path string) (bool, error) {
-	key, isClaimed := t.claim(vault, path)
+	claimed, err := t.getClaimVault(ctx, vault)
+	if err != nil {
+		return false, err
+	}
+	key, isClaimed := t.claim(claimed, path)
 	if !isClaimed {
 		if t.isClosing() {
 			return false, errClosed
@@ -132,8 +142,12 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 }
 
 // claimOrFail claims the recording, and returns the error that names why it cannot be claimed.
-func (t *Transcriber) claimOrFail(vault domain.VaultID, path string) (string, error) {
-	key, isClaimed := t.claim(vault, path)
+func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, path string) (string, error) {
+	claimed, err := t.getClaimVault(ctx, vault)
+	if err != nil {
+		return "", err
+	}
+	key, isClaimed := t.claim(claimed, path)
 	switch {
 	case isClaimed:
 		return key, nil
@@ -172,6 +186,20 @@ func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
 	t.running[key] = true
 	t.wg.Add(1)
 	return key, true
+}
+
+// getClaimVault is the vault a run claims the recording in. No vault is the vault the host shows,
+// named by its id where the files can name it.
+func (t *Transcriber) getClaimVault(ctx context.Context, vault domain.VaultID) (domain.VaultID, error) {
+	resolver, isResolver := t.files.(shownVault)
+	if vault != "" || !isResolver {
+		return vault, nil
+	}
+	shown, err := resolver.GetShownVault(ctx)
+	if err != nil {
+		return "", fmt.Errorf("get the shown vault: %w", err)
+	}
+	return shown, nil
 }
 
 func (t *Transcriber) clearRunning(key string) {

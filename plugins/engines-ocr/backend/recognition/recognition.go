@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"os"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -66,11 +68,17 @@ type Host struct {
 	Queue host.Queue
 }
 
-// Recognition reads files with the recogniser it opens.
+// ErrAlreadyRecognising is a file another run is recognising.
+var ErrAlreadyRecognising = errors.New("the file is already being recognised")
+
+// Recognition reads files with the recogniser it opens. One run at a time holds a file of a vault.
 type Recognition struct {
 	host      Host
 	open      func(ctx context.Context) (Recogniser, error)
 	documents *document.Reader
+
+	mu      sync.Mutex
+	running map[string]bool
 }
 
 // New is the recognition through the host, with what opens the recogniser when a page is first read.
@@ -78,7 +86,10 @@ func New(h Host, open func(ctx context.Context) (Recogniser, error)) (*Recogniti
 	if h.Vault == nil || h.Store == nil || h.Texts == nil || h.Queue == nil || open == nil {
 		return nil, errors.New("a recognition needs the vault, the store, the texts, the queue and a recogniser")
 	}
-	return &Recognition{host: h, open: open, documents: document.NewReader()}, nil
+	return &Recognition{
+		host: h, open: open, documents: document.NewReader(),
+		mu: sync.Mutex{}, running: map[string]bool{},
+	}, nil
 }
 
 // SetCompilationCache makes the reader of documents compile PDFium through cache.
@@ -108,8 +119,69 @@ type Result struct {
 // did not request skips a file whose pages have embedded text, and a file
 // already recognised in its current state. A failure is shown as a task until
 // the file is recognised again. A failure of a file that is no longer in the
-// vault ends the task instead, because nothing can recognise that file again.
+// vault ends the task instead, because nothing can recognise that file again. A file another run
+// holds is ErrAlreadyRecognising.
 func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error) {
+	key, err := r.claim(ctx, req)
+	if err != nil {
+		return Result{}, err
+	}
+	defer r.release(key)
+	return r.recogniseClaimed(ctx, req)
+}
+
+// Start claims the file and recognises it in the background under ctx, and is false where another
+// run holds the file. The channel is closed when the run ends.
+func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, bool, error) {
+	key, err := r.claim(ctx, req)
+	if errors.Is(err, ErrAlreadyRecognising) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		defer r.release(key)
+		// recogniseClaimed reports a failure as the task's error.
+		_, err := r.recogniseClaimed(ctx, req)
+		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL reason="Stderr logging of background recognition failure does not affect recognition state."
+		if err != nil && ctx.Err() == nil {
+			fmt.Fprintf(os.Stderr, "engines-ocr: recognise %s: %v\n", req.Path, err)
+		}
+	}()
+	return done, true, nil
+}
+
+// claim marks the file of the request as held by one run, keyed by the id of its vault. No vault is
+// the vault the host shows.
+func (r *Recognition) claim(ctx context.Context, req Request) (string, error) {
+	vault := req.Vault
+	if vault == "" {
+		shown, err := r.host.Vault.GetVault(ctx)
+		if err != nil {
+			return "", fmt.Errorf("get the shown vault: %w", err)
+		}
+		vault = shown.ID
+	}
+	key := string(vault) + "\x00" + req.Path
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.running[key] {
+		return "", fmt.Errorf("%s: %w", req.Path, ErrAlreadyRecognising)
+	}
+	r.running[key] = true
+	return key, nil
+}
+
+func (r *Recognition) release(key string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.running, key)
+}
+
+func (r *Recognition) recogniseClaimed(ctx context.Context, req Request) (Result, error) {
 	on := reach{vault: r.host.Vault, store: r.host.Store, texts: r.host.Texts}
 	if req.Vault != "" {
 		on = reach{vault: on.vault.With(req.Vault), store: on.store.With(req.Vault), texts: on.texts.With(req.Vault)}

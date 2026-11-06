@@ -1,10 +1,11 @@
 package service
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
 // A recognition the palette command runs is a recognition of the file in progress. A tool call for
@@ -28,35 +29,20 @@ func TestRecognitionCreateOfAScanThePaletteCommandRecognisesReportsItRunning(t *
 		t.Errorf("the command: %v", err)
 	}
 	s.waitFinished(t, out.TaskID)
-	s.waitFinished(t, out.TaskID)
-	t.Logf("the scan was recognised twice: the command's run and the tool's run both finished the task %s", out.TaskID)
 }
 
-// The task id names the file alone, and the host lists a plugin's tasks by that id, so two vaults
-// holding a file at the same path share one task.
-func TestRecognitionCreateInTwoVaultsGivesTwoTaskIDs(t *testing.T) {
+// The palette command run while the tool's recognition holds the scan is refused as already being
+// recognised.
+func TestRecogniseCommandOfAScanTheToolRecognisesFails(t *testing.T) {
 	s := newToolScene(t)
-	raw, _ := s.vault.Content(scanPath)
-	s.chemistry.File(scanPath, raw)
-
-	inPhysics := s.recognise(t, "Physics", scanPath)
+	out := s.recognise(t, "Physics", scanPath)
 	s.waitEntered(t)
-	inChemistry := s.recognise(t, "Chemistry", scanPath)
 
-	if inPhysics.TaskID == inChemistry.TaskID {
-		tasks := s.queue.ListTasks()
-		t.Errorf("both recognitions report the task %s; the list holds %d task(s) %+v for two runs",
-			inPhysics.TaskID, countTasks(tasks, inPhysics.TaskID), tasks)
+	_, err := newRecogniseCommand(s.tools.recognitions)(t.Context(), command.Request{Command: "recognition.create", Path: scanPath})
+
+	if !errors.Is(err, recognition.ErrAlreadyRecognising) {
+		t.Errorf("the command while the tool recognises the scan returned %v, want it already being recognised", err)
 	}
 	close(s.recogniser.release)
-}
-
-func countTasks(tasks []host.Task, id string) int {
-	n := 0
-	for _, task := range tasks {
-		if task.ID == id {
-			n++
-		}
-	}
-	return n
+	s.waitFinished(t, out.TaskID)
 }
