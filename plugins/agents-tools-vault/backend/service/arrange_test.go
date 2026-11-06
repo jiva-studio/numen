@@ -15,46 +15,46 @@ import (
 // skyVault is the identity of the invented astronomy vault the tests of this file call.
 const skyVault = "sky-vault"
 
-type listedNote struct {
+type noteEntry struct {
 	Path  string `json:"path"`
 	Title string `json:"title"`
 }
 
 type noteListOutput struct {
-	Notes      []listedNote `json:"notes"`
-	Total      *int         `json:"total"`
-	NextOffset int          `json:"next_offset"`
+	Notes      []noteEntry `json:"notes"`
+	Total      *int        `json:"total"`
+	NextOffset int         `json:"nextOffset"`
 }
 
 type noteTitlesOutput struct {
-	Notes   []listedNote `json:"notes"`
-	Missing []string     `json:"missing"`
+	Notes        []noteEntry `json:"notes"`
+	MissingPaths []string    `json:"missingPaths"`
 }
 
-type titledNote struct {
+type noteTitle struct {
 	Path  string  `json:"path"`
 	Title string  `json:"title"`
 	ID    *string `json:"id"`
 }
 
 type noteTitlesWithIDsOutput struct {
-	Notes []titledNote `json:"notes"`
+	Notes []noteTitle `json:"notes"`
 }
 
 type noteResolveOutput struct {
 	Paths *[]string `json:"paths"`
 }
 
-type listedVault struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Folder  string `json:"folder"`
-	Showing *bool  `json:"showing"`
-	Missing *bool  `json:"missing"`
+type vaultEntry struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Folder    string `json:"folder"`
+	IsCurrent *bool  `json:"isCurrent"`
+	IsMissing *bool  `json:"isMissing"`
 }
 
 type vaultListOutput struct {
-	Vaults []listedVault `json:"vaults"`
+	Vaults []vaultEntry `json:"vaults"`
 }
 
 type vaultProblem struct {
@@ -67,7 +67,7 @@ type vaultProblem struct {
 
 type vaultProblemsOutput struct {
 	Problems []vaultProblem `json:"problems"`
-	Ran      []string       `json:"ran"`
+	Checks   []string       `json:"checks"`
 }
 
 // newSkyVault is an invented vault of astronomy notes, with one file that is not a note and one
@@ -127,7 +127,7 @@ func decodeInto(t *testing.T, structured []byte, out any) {
 	}
 }
 
-func getPaths(notes []listedNote) []string {
+func getPaths(notes []noteEntry) []string {
 	out := make([]string, 0, len(notes))
 	for _, n := range notes {
 		out = append(out, n.Path)
@@ -140,7 +140,7 @@ func TestNoteListReturnsNotesOrderedByPathWithTitles(t *testing.T) {
 	var out noteListOutput
 	decodeInto(t, callTool(t, registry, skyVault, "note_list", `{}`), &out)
 
-	want := []listedNote{
+	want := []noteEntry{
 		{Path: "Sky/Comets.md", Title: "Comets and Their Tails"},
 		{Path: "Sky/Deep/Nebula.md", Title: "The Crab Nebula"},
 		{Path: "Sky/Orion.md", Title: "The Hunter Orion"},
@@ -154,7 +154,7 @@ func TestNoteListReturnsNotesOrderedByPathWithTitles(t *testing.T) {
 		t.Errorf("total = %v, want 5", out.Total)
 	}
 	if out.NextOffset != 0 {
-		t.Errorf("next_offset = %d, want 0 when nothing is left", out.NextOffset)
+		t.Errorf("nextOffset = %d, want 0 when nothing is left", out.NextOffset)
 	}
 }
 
@@ -184,7 +184,7 @@ func TestNoteListPagesWithLimitAndOffset(t *testing.T) {
 		t.Errorf("total = %v, want 5 (the count before limit)", first.Total)
 	}
 	if first.NextOffset != 2 {
-		t.Errorf("next_offset = %d, want 2", first.NextOffset)
+		t.Errorf("nextOffset = %d, want 2", first.NextOffset)
 	}
 
 	var last noteListOutput
@@ -196,7 +196,7 @@ func TestNoteListPagesWithLimitAndOffset(t *testing.T) {
 		t.Errorf("total = %v, want 5 (the count before offset)", last.Total)
 	}
 	if last.NextOffset != 0 {
-		t.Errorf("next_offset = %d, want 0 when nothing is left", last.NextOffset)
+		t.Errorf("nextOffset = %d, want 0 when nothing is left", last.NextOffset)
 	}
 }
 
@@ -218,7 +218,7 @@ func TestNoteListReturnsAtMostOneHundredNotesByDefault(t *testing.T) {
 		t.Errorf("total = %v, want 120", out.Total)
 	}
 	if out.NextOffset != 100 {
-		t.Errorf("next_offset = %d, want 100", out.NextOffset)
+		t.Errorf("nextOffset = %d, want 100", out.NextOffset)
 	}
 }
 
@@ -242,8 +242,8 @@ func TestNoteTitlesReturnsTitlesAndMissingPaths(t *testing.T) {
 	if len(got) != len(want) || got["Tides.md"] != want["Tides.md"] || got["Sky/Orion.md"] != want["Sky/Orion.md"] {
 		t.Errorf("titles = %v, want %v", got, want)
 	}
-	if !slices.Equal(out.Missing, []string{"Sky/Pulsar.md"}) {
-		t.Errorf("missing = %v, want [Sky/Pulsar.md]", out.Missing)
+	if !slices.Equal(out.MissingPaths, []string{"Sky/Pulsar.md"}) {
+		t.Errorf("missingPaths = %v, want [Sky/Pulsar.md]", out.MissingPaths)
 	}
 }
 
@@ -253,7 +253,7 @@ func TestNoteTitlesReturnsTheIdentifierOfANoteThatHasOne(t *testing.T) {
 
 	var out noteTitlesWithIDsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "note_titles", `{"paths":["Sky/Pulsar.md","Tides.md"]}`), &out)
-	byPath := map[string]titledNote{}
+	byPath := map[string]noteTitle{}
 	for _, n := range out.Notes {
 		byPath[n.Path] = n
 	}
@@ -291,8 +291,8 @@ func TestNoteTitlesRefusesMoreThanFiftyPaths(t *testing.T) {
 	}
 	var out noteTitlesOutput
 	decodeInto(t, callTool(t, registry, skyVault, "note_titles", string(fifty)), &out)
-	if len(out.Missing) != 50 {
-		t.Errorf("got %d missing paths, want 50", len(out.Missing))
+	if len(out.MissingPaths) != 50 {
+		t.Errorf("got %d missing paths, want 50", len(out.MissingPaths))
 	}
 }
 
@@ -336,16 +336,16 @@ func TestVaultListReturnsEveryVaultAndMarksTheCalledOne(t *testing.T) {
 	if len(out.Vaults) != 2 {
 		t.Fatalf("got %d vaults, want 2: %v", len(out.Vaults), out.Vaults)
 	}
-	byID := map[string]listedVault{}
+	byID := map[string]vaultEntry{}
 	for _, one := range out.Vaults {
 		byID[one.ID] = one
 	}
 	for id, want := range map[string]struct {
-		folder  string
-		showing bool
+		folder    string
+		isCurrent bool
 	}{
-		"garden-vault": {folder: "/vaults/garden-vault", showing: true},
-		skyVault:       {folder: "/vaults/" + skyVault, showing: false},
+		"garden-vault": {folder: "/vaults/garden-vault", isCurrent: true},
+		skyVault:       {folder: "/vaults/" + skyVault, isCurrent: false},
 	} {
 		got, ok := byID[id]
 		if !ok {
@@ -358,8 +358,8 @@ func TestVaultListReturnsEveryVaultAndMarksTheCalledOne(t *testing.T) {
 		if got.Folder != want.folder {
 			t.Errorf("vault %s folder = %q, want %q", id, got.Folder, want.folder)
 		}
-		if got.Showing == nil || *got.Showing != want.showing {
-			t.Errorf("vault %s showing = %v, want %v", id, got.Showing, want.showing)
+		if got.IsCurrent == nil || *got.IsCurrent != want.isCurrent {
+			t.Errorf("vault %s isCurrent = %v, want %v", id, got.IsCurrent, want.isCurrent)
 		}
 	}
 }
@@ -372,14 +372,14 @@ func TestVaultListMarksAVaultWithoutItsFolderAsMissing(t *testing.T) {
 
 	var out vaultListOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_list", `{}`), &out)
-	byID := map[string]listedVault{}
+	byID := map[string]vaultEntry{}
 	for _, one := range out.Vaults {
 		byID[one.ID] = one
 	}
-	if got, ok := byID["garden-vault"]; !ok || got.Missing == nil || !*got.Missing {
-		t.Errorf("garden-vault = %+v, want it listed with missing true", got)
+	if got, ok := byID["garden-vault"]; !ok || got.IsMissing == nil || !*got.IsMissing {
+		t.Errorf("garden-vault = %+v, want it listed with isMissing true", got)
 	}
-	if got, ok := byID[skyVault]; !ok || (got.Missing != nil && *got.Missing) {
+	if got, ok := byID[skyVault]; !ok || (got.IsMissing != nil && *got.IsMissing) {
 		t.Errorf("%s = %+v, want it listed and not missing", skyVault, got)
 	}
 }
@@ -406,8 +406,8 @@ func TestVaultProblemsRunsParseFrontmatterAndAmbiguousByDefault(t *testing.T) {
 
 	var out vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problems", `{}`), &out)
-	if !slices.Equal(out.Ran, getDefaultChecks()) {
-		t.Errorf("ran = %v, want %v", out.Ran, getDefaultChecks())
+	if !slices.Equal(out.Checks, getDefaultChecks()) {
+		t.Errorf("checks = %v, want %v", out.Checks, getDefaultChecks())
 	}
 	parse := filterProblems(out.Problems, "parse")
 	if len(parse) != 1 {
@@ -424,8 +424,8 @@ func TestVaultProblemsRunsOnlyTheParseCheckWhenNamed(t *testing.T) {
 
 	var out vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problems", `{"checks":["parse"]}`), &out)
-	if !slices.Equal(out.Ran, []string{"parse"}) {
-		t.Errorf("ran = %v, want [parse]", out.Ran)
+	if !slices.Equal(out.Checks, []string{"parse"}) {
+		t.Errorf("checks = %v, want [parse]", out.Checks)
 	}
 	if len(out.Problems) != 1 || out.Problems[0].Path != "Sky/Pulsar.md" || out.Problems[0].Check != "parse" {
 		t.Errorf("problems = %v, want one parse problem for Sky/Pulsar.md", out.Problems)
@@ -439,8 +439,8 @@ func TestVaultProblemsReturnsNoProblemsForValidNotes(t *testing.T) {
 	if len(out.Problems) != 0 {
 		t.Errorf("problems = %v, want none", out.Problems)
 	}
-	if !slices.Equal(out.Ran, getDefaultChecks()) {
-		t.Errorf("ran = %v, want %v", out.Ran, getDefaultChecks())
+	if !slices.Equal(out.Checks, getDefaultChecks()) {
+		t.Errorf("checks = %v, want %v", out.Checks, getDefaultChecks())
 	}
 }
 
@@ -476,14 +476,14 @@ func TestVaultProblemsRunsTheDanglingCheckOnlyWhenNamed(t *testing.T) {
 
 	var byDefault vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problems", `{}`), &byDefault)
-	if slices.Contains(byDefault.Ran, "dangling") || len(filterProblems(byDefault.Problems, "dangling")) != 0 {
+	if slices.Contains(byDefault.Checks, "dangling") || len(filterProblems(byDefault.Problems, "dangling")) != 0 {
 		t.Errorf("the default run checked dangling links: %+v", byDefault)
 	}
 
 	var named vaultProblemsOutput
 	decodeInto(t, callTool(t, registry, skyVault, "vault_problems", `{"checks":["dangling"]}`), &named)
-	if !slices.Equal(named.Ran, []string{"dangling"}) {
-		t.Errorf("ran = %v, want [dangling]", named.Ran)
+	if !slices.Equal(named.Checks, []string{"dangling"}) {
+		t.Errorf("checks = %v, want [dangling]", named.Checks)
 	}
 	if len(named.Problems) != 1 {
 		t.Fatalf("got %d problems, want 1: %v", len(named.Problems), named.Problems)

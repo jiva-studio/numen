@@ -14,18 +14,18 @@ import (
 // geologyVault is the identity of the invented geology vault the write tests call.
 const geologyVault = "geology-vault"
 
-type movedRecord struct {
-	From     string   `json:"from"`
-	To       string   `json:"to"`
-	Repaired []string `json:"repaired"`
-	Dangling []string `json:"dangling"`
+type moveRecord struct {
+	From          string   `json:"from"`
+	To            string   `json:"to"`
+	RepairedNotes []string `json:"repairedNotes"`
+	BrokenLinks   []string `json:"brokenLinks"`
 }
 
 type noteRenameOutput struct {
-	Path  string       `json:"path"`
-	Title string       `json:"title"`
-	By    string       `json:"by"`
-	Moved *movedRecord `json:"moved"`
+	Path       string      `json:"path"`
+	Title      string      `json:"title"`
+	NameSource string      `json:"nameSource"`
+	Move       *moveRecord `json:"move"`
 }
 
 type noteMoveItem struct {
@@ -35,18 +35,18 @@ type noteMoveItem struct {
 }
 
 type noteMoveOutput struct {
-	Moved []noteMoveItem `json:"moved"`
+	Moves []noteMoveItem `json:"moves"`
 }
 
 type noteRemoveItem struct {
-	Path     string   `json:"path"`
-	Trashed  string   `json:"trashed"`
-	Dangling []string `json:"dangling"`
-	Error    string   `json:"error"`
+	Path        string   `json:"path"`
+	TrashPath   string   `json:"trashPath"`
+	BrokenLinks []string `json:"brokenLinks"`
+	Error       string   `json:"error"`
 }
 
 type noteRemoveOutput struct {
-	Removed []noteRemoveItem `json:"removed"`
+	Removals []noteRemoveItem `json:"removals"`
 }
 
 // newGeologyVault is an invented vault of rocks and minerals. Minerals.md links to Basalt by name.
@@ -109,11 +109,11 @@ func TestNoteRenameWithATitleKeyWritesTheTitleAndMovesTheFile(t *testing.T) {
 	var out noteRenameOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_rename",
 		`{"path":"Rocks/Basalt.md","title":"Flood Basalt"}`), &out)
-	if out.Path != "Rocks/Flood Basalt.md" || out.Title != "Flood Basalt" || out.By != "frontmatter" {
-		t.Errorf("result = %+v, want Rocks/Flood Basalt.md, Flood Basalt, by frontmatter", out)
+	if out.Path != "Rocks/Flood Basalt.md" || out.Title != "Flood Basalt" || out.NameSource != "frontmatter" {
+		t.Errorf("result = %+v, want Rocks/Flood Basalt.md, Flood Basalt, nameSource frontmatter", out)
 	}
-	if out.Moved == nil || out.Moved.From != "Rocks/Basalt.md" || out.Moved.To != "Rocks/Flood Basalt.md" {
-		t.Errorf("moved = %+v, want from Rocks/Basalt.md to Rocks/Flood Basalt.md", out.Moved)
+	if out.Move == nil || out.Move.From != "Rocks/Basalt.md" || out.Move.To != "Rocks/Flood Basalt.md" {
+		t.Errorf("move = %+v, want from Rocks/Basalt.md to Rocks/Flood Basalt.md", out.Move)
 	}
 	content, ok := v.Content("Rocks/Flood Basalt.md")
 	if !ok || !strings.Contains(content, "title: Flood Basalt") {
@@ -128,11 +128,11 @@ func TestNoteRenameWithoutATitleKeyRenamesByFilename(t *testing.T) {
 	var out noteRenameOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_rename",
 		`{"path":"Fossils.md","title":"Ammonites"}`), &out)
-	if out.Path != "Ammonites.md" || out.Title != "Ammonites" || out.By != "filename" {
-		t.Errorf("result = %+v, want Ammonites.md, Ammonites, by filename", out)
+	if out.Path != "Ammonites.md" || out.Title != "Ammonites" || out.NameSource != "filename" {
+		t.Errorf("result = %+v, want Ammonites.md, Ammonites, nameSource filename", out)
 	}
-	if out.Moved == nil || out.Moved.From != "Fossils.md" || out.Moved.To != "Ammonites.md" {
-		t.Errorf("moved = %+v, want from Fossils.md to Ammonites.md", out.Moved)
+	if out.Move == nil || out.Move.From != "Fossils.md" || out.Move.To != "Ammonites.md" {
+		t.Errorf("move = %+v, want from Fossils.md to Ammonites.md", out.Move)
 	}
 	requireContent(t, v, "Ammonites.md", "Shells kept in limestone.\n")
 	requireAbsent(t, v, "Fossils.md")
@@ -190,16 +190,16 @@ func TestNoteMoveMovesEachPathInOrderAndReportsTheOneThatFails(t *testing.T) {
 	var out noteMoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_move",
 		`{"paths":["Rocks/Basalt.md","Rocks/Obsidian.md","Minerals.md"],"folder":"Archive"}`), &out)
-	if len(out.Moved) != 3 {
-		t.Fatalf("got %d moves, want 3: %+v", len(out.Moved), out.Moved)
+	if len(out.Moves) != 3 {
+		t.Fatalf("got %d moves, want 3: %+v", len(out.Moves), out.Moves)
 	}
-	if got := out.Moved[0]; got.From != "Rocks/Basalt.md" || got.To != "Archive/Basalt.md" || got.Error != "" {
+	if got := out.Moves[0]; got.From != "Rocks/Basalt.md" || got.To != "Archive/Basalt.md" || got.Error != "" {
 		t.Errorf("first = %+v, want Rocks/Basalt.md to Archive/Basalt.md", got)
 	}
-	if got := out.Moved[1]; got.From != "Rocks/Obsidian.md" || got.To != "" || got.Error == "" {
+	if got := out.Moves[1]; got.From != "Rocks/Obsidian.md" || got.To != "" || got.Error == "" {
 		t.Errorf("second = %+v, want Rocks/Obsidian.md with an error and no target", got)
 	}
-	if got := out.Moved[2]; got.From != "Minerals.md" || got.To != "Archive/Minerals.md" || got.Error != "" {
+	if got := out.Moves[2]; got.From != "Minerals.md" || got.To != "Archive/Minerals.md" || got.Error != "" {
 		t.Errorf("third = %+v, want Minerals.md to Archive/Minerals.md", got)
 	}
 	requireContent(t, v, "Archive/Basalt.md", "---\ntitle: Basalt\n---\nA volcanic rock.\n")
@@ -214,8 +214,8 @@ func TestNoteMoveOntoAnExistingFileReportsAnError(t *testing.T) {
 	var out noteMoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_move",
 		`{"paths":["Rocks/Granite.md"],"folder":"Archive"}`), &out)
-	if len(out.Moved) != 1 || out.Moved[0].From != "Rocks/Granite.md" || out.Moved[0].Error == "" {
-		t.Errorf("moved = %+v, want one error for Rocks/Granite.md", out.Moved)
+	if len(out.Moves) != 1 || out.Moves[0].From != "Rocks/Granite.md" || out.Moves[0].Error == "" {
+		t.Errorf("moves = %+v, want one error for Rocks/Granite.md", out.Moves)
 	}
 	requireContent(t, v, "Archive/Granite.md", "An older granite note.\n")
 	requireContent(t, v, "Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
@@ -226,8 +226,8 @@ func TestNoteMoveWithAnEmptyFolderMovesToTheVaultRoot(t *testing.T) {
 
 	var out noteMoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_move", `{"paths":["Rocks/Granite.md"],"folder":""}`), &out)
-	if len(out.Moved) != 1 || out.Moved[0].To != "Granite.md" || out.Moved[0].Error != "" {
-		t.Errorf("moved = %+v, want Rocks/Granite.md to Granite.md", out.Moved)
+	if len(out.Moves) != 1 || out.Moves[0].To != "Granite.md" || out.Moves[0].Error != "" {
+		t.Errorf("moves = %+v, want Rocks/Granite.md to Granite.md", out.Moves)
 	}
 	requireContent(t, v, "Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
 }
@@ -239,8 +239,8 @@ func TestNoteMoveOfMoreThanFiftyPathsIsRefused(t *testing.T) {
 	var out noteMoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_move",
 		makePathsArguments(t, 50, map[string]any{"folder": "Archive"})), &out)
-	if len(out.Moved) != 50 {
-		t.Errorf("got %d moves, want 50", len(out.Moved))
+	if len(out.Moves) != 50 {
+		t.Errorf("got %d moves, want 50", len(out.Moves))
 	}
 }
 
@@ -249,20 +249,20 @@ func TestNoteRemoveMovesTheNoteToTheTrashAndReportsDanglingLinks(t *testing.T) {
 
 	var out noteRemoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_remove", `{"paths":["Rocks/Basalt.md"]}`), &out)
-	if len(out.Removed) != 1 {
-		t.Fatalf("got %d removals, want 1: %+v", len(out.Removed), out.Removed)
+	if len(out.Removals) != 1 {
+		t.Fatalf("got %d removals, want 1: %+v", len(out.Removals), out.Removals)
 	}
-	got := out.Removed[0]
+	got := out.Removals[0]
 	if got.Path != "Rocks/Basalt.md" || got.Error != "" {
 		t.Errorf("removal = %+v, want Rocks/Basalt.md without an error", got)
 	}
-	if !strings.HasPrefix(got.Trashed, ".trash/") {
-		t.Errorf("trashed = %q, want a path under .trash/", got.Trashed)
+	if !strings.HasPrefix(got.TrashPath, ".trash/") {
+		t.Errorf("trashPath = %q, want a path under .trash/", got.TrashPath)
 	}
-	if len(got.Dangling) != 1 || got.Dangling[0] != "Minerals.md" {
-		t.Errorf("dangling = %v, want [Minerals.md]", got.Dangling)
+	if len(got.BrokenLinks) != 1 || got.BrokenLinks[0] != "Minerals.md" {
+		t.Errorf("brokenLinks = %v, want [Minerals.md]", got.BrokenLinks)
 	}
-	requireContent(t, v, got.Trashed, "---\ntitle: Basalt\n---\nA volcanic rock.\n")
+	requireContent(t, v, got.TrashPath, "---\ntitle: Basalt\n---\nA volcanic rock.\n")
 	requireAbsent(t, v, "Rocks/Basalt.md")
 }
 
@@ -272,16 +272,16 @@ func TestNoteRemoveReportsAFolderAndAMissingPathAndRemovesTheRest(t *testing.T) 
 	var out noteRemoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_remove",
 		`{"paths":["Rocks","Fossils.md","Rocks/Obsidian.md"]}`), &out)
-	if len(out.Removed) != 3 {
-		t.Fatalf("got %d removals, want 3: %+v", len(out.Removed), out.Removed)
+	if len(out.Removals) != 3 {
+		t.Fatalf("got %d removals, want 3: %+v", len(out.Removals), out.Removals)
 	}
-	if got := out.Removed[0]; got.Path != "Rocks" || got.Error == "" || got.Trashed != "" {
+	if got := out.Removals[0]; got.Path != "Rocks" || got.Error == "" || got.TrashPath != "" {
 		t.Errorf("first = %+v, want the folder Rocks with an error", got)
 	}
-	if got := out.Removed[1]; got.Path != "Fossils.md" || got.Error != "" || !strings.HasPrefix(got.Trashed, ".trash/") {
+	if got := out.Removals[1]; got.Path != "Fossils.md" || got.Error != "" || !strings.HasPrefix(got.TrashPath, ".trash/") {
 		t.Errorf("second = %+v, want Fossils.md trashed", got)
 	}
-	if got := out.Removed[2]; got.Path != "Rocks/Obsidian.md" || got.Error == "" {
+	if got := out.Removals[2]; got.Path != "Rocks/Obsidian.md" || got.Error == "" {
 		t.Errorf("third = %+v, want Rocks/Obsidian.md with an error", got)
 	}
 	requireContent(t, v, "Rocks/Basalt.md", "---\ntitle: Basalt\n---\nA volcanic rock.\n")
@@ -295,7 +295,7 @@ func TestNoteRemoveOfMoreThanFiftyPathsIsRefused(t *testing.T) {
 
 	var out noteRemoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_remove", makePathsArguments(t, 50, nil)), &out)
-	if len(out.Removed) != 50 {
-		t.Errorf("got %d removals, want 50", len(out.Removed))
+	if len(out.Removals) != 50 {
+		t.Errorf("got %d removals, want 50", len(out.Removals))
 	}
 }

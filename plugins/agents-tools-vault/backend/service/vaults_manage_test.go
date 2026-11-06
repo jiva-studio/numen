@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -16,27 +17,31 @@ const (
 	gardenFolder = "/vaults/garden-vault"
 )
 
-type vaultAddOutput struct {
-	Added  bool   `json:"added"`
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Folder string `json:"folder"`
-}
-
-type vaultRenameOutput struct {
+type vaultOutput struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
 	Folder string `json:"folder"`
 }
 
 type vaultRemoveOutput struct {
-	Removed bool   `json:"removed"`
-	Folder  string `json:"folder"`
+	Folder string `json:"folder"`
 }
 
-type vaultOpenOutput struct {
-	Opening bool   `json:"opening"`
-	Status  string `json:"status"`
+// requireKeys fails the test unless the answer has exactly the keys.
+func requireKeys(t *testing.T, structured []byte, want ...string) {
+	t.Helper()
+	var answer map[string]any
+	decodeInto(t, structured, &answer)
+	got := make([]string, 0, len(answer))
+	for key := range answer {
+		got = append(got, key)
+	}
+	slices.Sort(got)
+	want = slices.Clone(want)
+	slices.Sort(want)
+	if !slices.Equal(got, want) {
+		t.Errorf("answer %s has the keys %v, want %v", structured, got, want)
+	}
 }
 
 // newTwoVaults is the geology vault, which the calls work on, beside a garden vault whose name
@@ -59,11 +64,11 @@ func getGardenAddresses() map[string]string {
 }
 
 // getVaultsByID is the vaults vault_list gives, by identity.
-func getVaultsByID(t *testing.T, registry *tools.Registry) map[string]listedVault {
+func getVaultsByID(t *testing.T, registry *tools.Registry) map[string]vaultEntry {
 	t.Helper()
 	var out vaultListOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "vault_list", `{}`), &out)
-	byID := map[string]listedVault{}
+	byID := map[string]vaultEntry{}
 	for _, one := range out.Vaults {
 		byID[one.ID] = one
 	}
@@ -73,10 +78,12 @@ func getVaultsByID(t *testing.T, registry *tools.Registry) map[string]listedVaul
 func TestVaultAddAddsTheFolderAsAVaultWithTheName(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
 
-	var out vaultAddOutput
-	decodeInto(t, callTool(t, registry, geologyVault, "vault_add", `{"path":"/vaults/meadow","name":"Meadow"}`), &out)
-	if !out.Added || out.ID != "Meadow" || out.Name != "Meadow" || out.Folder != "/vaults/meadow" {
-		t.Errorf("result = %+v, want added, id Meadow, name Meadow, folder /vaults/meadow", out)
+	var out vaultOutput
+	answer := callTool(t, registry, geologyVault, "vault_add", `{"path":"/vaults/meadow","name":"Meadow"}`)
+	requireKeys(t, answer, "id", "name", "folder")
+	decodeInto(t, answer, &out)
+	if out.ID != "Meadow" || out.Name != "Meadow" || out.Folder != "/vaults/meadow" {
+		t.Errorf("result = %+v, want id Meadow, name Meadow, folder /vaults/meadow", out)
 	}
 	if got, ok := getVaultsByID(t, registry)["Meadow"]; !ok || got.Folder != "/vaults/meadow" {
 		t.Errorf("vault_list gives %+v for Meadow, want it listed at /vaults/meadow", got)
@@ -86,10 +93,12 @@ func TestVaultAddAddsTheFolderAsAVaultWithTheName(t *testing.T) {
 func TestVaultAddWithoutANameUsesTheFolderName(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
 
-	var out vaultAddOutput
-	decodeInto(t, callTool(t, registry, geologyVault, "vault_add", `{"path":"/vaults/meadow"}`), &out)
-	if !out.Added || out.Name != "meadow" || out.Folder != "/vaults/meadow" {
-		t.Errorf("result = %+v, want added, name meadow, folder /vaults/meadow", out)
+	var out vaultOutput
+	answer := callTool(t, registry, geologyVault, "vault_add", `{"path":"/vaults/meadow"}`)
+	requireKeys(t, answer, "id", "name", "folder")
+	decodeInto(t, answer, &out)
+	if out.Name != "meadow" || out.Folder != "/vaults/meadow" {
+		t.Errorf("result = %+v, want name meadow, folder /vaults/meadow", out)
 	}
 }
 
@@ -122,7 +131,7 @@ func TestVaultRenameNamesTheVaultByItsNameFolderOrID(t *testing.T) {
 			_, _, registry := newTwoVaults(t)
 			want := "Herb Garden " + kind
 
-			var out vaultRenameOutput
+			var out vaultOutput
 			decodeInto(t, callTool(t, registry, geologyVault, "vault_rename",
 				fmt.Sprintf(`{"vault":%q,"name":%q}`, address, want)), &out)
 			if out.ID != gardenID || out.Name != want || out.Folder != gardenFolder {
@@ -150,9 +159,11 @@ func TestVaultRemoveByNameFolderOrIDDropsTheVault(t *testing.T) {
 			_, _, registry := newTwoVaults(t)
 
 			var out vaultRemoveOutput
-			decodeInto(t, callTool(t, registry, geologyVault, "vault_remove", fmt.Sprintf(`{"vault":%q}`, address)), &out)
-			if !out.Removed || out.Folder != gardenFolder {
-				t.Errorf("result = %+v, want removed with folder %s", out, gardenFolder)
+			answer := callTool(t, registry, geologyVault, "vault_remove", fmt.Sprintf(`{"vault":%q}`, address))
+			decodeInto(t, answer, &out)
+			requireKeys(t, answer, "folder")
+			if out.Folder != gardenFolder {
+				t.Errorf("result = %+v, want folder %s", out, gardenFolder)
 			}
 			vaults := getVaultsByID(t, registry)
 			if _, ok := vaults[gardenID]; ok {
@@ -181,10 +192,12 @@ func TestVaultOpenOpensTheVaultByItsNameFolderOrID(t *testing.T) {
 		t.Run(kind, func(t *testing.T) {
 			geology, _, registry := newTwoVaults(t)
 
-			var out vaultOpenOutput
-			decodeInto(t, callTool(t, registry, geologyVault, "vault_open", fmt.Sprintf(`{"vault":%q}`, address)), &out)
-			if !out.Opening || out.Status == "" {
-				t.Errorf("result = %+v, want opening with a status", out)
+			var out vaultOutput
+			answer := callTool(t, registry, geologyVault, "vault_open", fmt.Sprintf(`{"vault":%q}`, address))
+			decodeInto(t, answer, &out)
+			requireKeys(t, answer, "id", "name", "folder")
+			if out.ID != gardenID || out.Name != gardenName || out.Folder != gardenFolder {
+				t.Errorf("result = %+v, want id %s, name %s, folder %s", out, gardenID, gardenName, gardenFolder)
 			}
 			opened, ok := geology.GetOpenedVault()
 			if !ok || string(opened.ID) != gardenID {

@@ -20,7 +20,7 @@ type linkAddItem struct {
 }
 
 type linkAddOutput struct {
-	Added []linkAddItem `json:"added"`
+	Results []linkAddItem `json:"results"`
 }
 
 type linkEditOutput struct {
@@ -88,22 +88,22 @@ func TestLinkAddWritesTheLinksIntoTheFrontmatterOfEachNote(t *testing.T) {
 		{"from":"Minerals.md","fingerprint":%q,"to":"Granite","role":"child"}]}`, basalt, basalt, minerals)
 	var out linkAddOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "link_add", arguments), &out)
-	if len(out.Added) != 3 {
-		t.Fatalf("got %d results, want 3: %+v", len(out.Added), out.Added)
+	if len(out.Results) != 3 {
+		t.Fatalf("got %d results, want 3: %+v", len(out.Results), out.Results)
 	}
 	for i, want := range []struct{ from, to string }{
 		{"Rocks/Basalt.md", "Granite"}, {"Rocks/Basalt.md", "Minerals"}, {"Minerals.md", "Granite"},
 	} {
-		if got := out.Added[i]; got.From != want.from || got.To != want.to || got.Error != "" || got.Fingerprint == "" {
+		if got := out.Results[i]; got.From != want.from || got.To != want.to || got.Error != "" || got.Fingerprint == "" {
 			t.Errorf("result %d = %+v, want %s to %s with a fingerprint and no error", i, got, want.from, want.to)
 		}
 	}
-	if out.Added[0].Fingerprint != out.Added[1].Fingerprint {
+	if out.Results[0].Fingerprint != out.Results[1].Fingerprint {
 		t.Errorf("the links into Rocks/Basalt.md carry fingerprints %q and %q, want one write",
-			out.Added[0].Fingerprint, out.Added[1].Fingerprint)
+			out.Results[0].Fingerprint, out.Results[1].Fingerprint)
 	}
-	if now := readFingerprint(t, registry, "Rocks/Basalt.md"); now != out.Added[0].Fingerprint {
-		t.Errorf("fingerprint of Rocks/Basalt.md = %q, want the one returned, %q", now, out.Added[0].Fingerprint)
+	if now := readFingerprint(t, registry, "Rocks/Basalt.md"); now != out.Results[0].Fingerprint {
+		t.Errorf("fingerprint of Rocks/Basalt.md = %q, want the one returned, %q", now, out.Results[0].Fingerprint)
 	}
 
 	content, _ := v.Content("Rocks/Basalt.md")
@@ -136,14 +136,14 @@ func TestLinkAddWithAnOldFingerprintSkipsOnlyThatNote(t *testing.T) {
 		{"from":"Minerals.md","fingerprint":%q,"to":"Granite","role":"child"}]}`, oldFingerprint, oldFingerprint, minerals)
 	var out linkAddOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "link_add", arguments), &out)
-	if len(out.Added) != 3 {
-		t.Fatalf("got %d results, want 3: %+v", len(out.Added), out.Added)
+	if len(out.Results) != 3 {
+		t.Fatalf("got %d results, want 3: %+v", len(out.Results), out.Results)
 	}
-	if out.Added[0].Error == "" || out.Added[1].Error == "" {
-		t.Errorf("results = %+v, want an error for each link into Rocks/Basalt.md", out.Added)
+	if out.Results[0].Error == "" || out.Results[1].Error == "" {
+		t.Errorf("results = %+v, want an error for each link into Rocks/Basalt.md", out.Results)
 	}
-	if out.Added[2].Error != "" {
-		t.Errorf("result of Minerals.md = %+v, want it written", out.Added[2])
+	if out.Results[2].Error != "" {
+		t.Errorf("result of Minerals.md = %+v, want it written", out.Results[2])
 	}
 	requireContent(t, v, "Rocks/Basalt.md", before)
 	if _, ok := findLink(readLinks(t, v, "Minerals.md"), "Granite", domain.RoleChild); !ok {
@@ -169,14 +169,14 @@ func TestLinkAddWithTwoFingerprintsForOneNoteRefusesBothLinks(t *testing.T) {
 				{"from":"Minerals.md","fingerprint":%q,"to":"Granite","role":"child"}]}`, first, second, minerals)
 			var out linkAddOutput
 			decodeInto(t, callTool(t, registry, geologyVault, "link_add", arguments), &out)
-			if len(out.Added) != 3 {
-				t.Fatalf("got %d results, want 3: %+v", len(out.Added), out.Added)
+			if len(out.Results) != 3 {
+				t.Fatalf("got %d results, want 3: %+v", len(out.Results), out.Results)
 			}
-			if out.Added[0].Error == "" || out.Added[1].Error == "" {
-				t.Errorf("results = %+v, want an error for each link into Rocks/Basalt.md", out.Added)
+			if out.Results[0].Error == "" || out.Results[1].Error == "" {
+				t.Errorf("results = %+v, want an error for each link into Rocks/Basalt.md", out.Results)
 			}
-			if out.Added[2].Error != "" {
-				t.Errorf("result of Minerals.md = %+v, want it written", out.Added[2])
+			if out.Results[2].Error != "" {
+				t.Errorf("result of Minerals.md = %+v, want it written", out.Results[2])
 			}
 			requireContent(t, v, "Rocks/Basalt.md", before)
 			if _, ok := findLink(readLinks(t, v, "Minerals.md"), "Granite", domain.RoleChild); !ok {
@@ -200,17 +200,17 @@ func TestLinkAddReportsAnUnknownRoleOrNoTargetPerLink(t *testing.T) {
 		{"from":"Rocks/Granite.md","fingerprint":%q,"to":"","role":"jump"}]}`, minerals, basalt, granite)
 	var out linkAddOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "link_add", arguments), &out)
-	if len(out.Added) != 3 {
-		t.Fatalf("got %d results, want 3: %+v", len(out.Added), out.Added)
+	if len(out.Results) != 3 {
+		t.Fatalf("got %d results, want 3: %+v", len(out.Results), out.Results)
 	}
-	if out.Added[0].Error == "" {
-		t.Errorf("result of the unknown role = %+v, want an error", out.Added[0])
+	if out.Results[0].Error == "" {
+		t.Errorf("result of the unknown role = %+v, want an error", out.Results[0])
 	}
-	if out.Added[1].Error != "" {
-		t.Errorf("result of Rocks/Basalt.md = %+v, want it written", out.Added[1])
+	if out.Results[1].Error != "" {
+		t.Errorf("result of Rocks/Basalt.md = %+v, want it written", out.Results[1])
 	}
-	if out.Added[2].Error == "" {
-		t.Errorf("result of the empty target = %+v, want an error", out.Added[2])
+	if out.Results[2].Error == "" {
+		t.Errorf("result of the empty target = %+v, want an error", out.Results[2])
 	}
 	requireContent(t, v, "Minerals.md", mineralsBefore)
 	requireContent(t, v, "Rocks/Granite.md", graniteBefore)
@@ -235,8 +235,8 @@ func TestLinkAddWithoutAFingerprintWritesNothing(t *testing.T) {
 	if !isRefused {
 		var out linkAddOutput
 		decodeInto(t, res.GetResult().GetStructured(), &out)
-		if len(out.Added) != 1 || out.Added[0].Error == "" {
-			t.Errorf("result = %+v, want the call refused or the link reported with an error", out.Added)
+		if len(out.Results) != 1 || out.Results[0].Error == "" {
+			t.Errorf("result = %+v, want the call refused or the link reported with an error", out.Results)
 		}
 	}
 	requireContent(t, v, "Rocks/Basalt.md", before)
@@ -263,8 +263,8 @@ func TestLinkAddOfMoreThanFiftyLinksIsRefused(t *testing.T) {
 	}
 	var out linkAddOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "link_add", string(raw)), &out)
-	if len(out.Added) != 50 {
-		t.Errorf("got %d results, want 50", len(out.Added))
+	if len(out.Results) != 50 {
+		t.Errorf("got %d results, want 50", len(out.Results))
 	}
 }
 
