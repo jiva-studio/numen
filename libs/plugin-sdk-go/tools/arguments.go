@@ -19,15 +19,18 @@ var quotedPattern = regexp.MustCompile(`"(?:[^"\\]|\\.)*"`)
 var keywordPattern = regexp.MustCompile(`^[A-Za-z]+(\[[^\]]*\])?: `)
 
 // readArguments validates the JSON arguments of a call against schema and decodes them into In. No
-// arguments are validated as the empty object and leave In zero.
+// arguments and JSON null are validated as the empty object and leave In zero.
 func readArguments[In any](schema *jsonschema.Resolved, arguments []byte) (In, error) {
 	var in In
-	var value any = map[string]any{}
 	if len(arguments) == 0 {
-		return in, validateArguments(schema, value)
+		return in, validateArguments(schema, map[string]any{})
 	}
+	var value any
 	if err := json.Unmarshal(arguments, &value); err != nil {
 		return in, fmt.Errorf("the arguments are not JSON: %w", err)
+	}
+	if value == nil {
+		return in, validateArguments(schema, map[string]any{})
 	}
 	if err := validateArguments(schema, value); err != nil {
 		return in, err

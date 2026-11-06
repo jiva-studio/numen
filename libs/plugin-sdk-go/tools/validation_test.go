@@ -48,10 +48,10 @@ func TestValidationMessagesNameTheArgumentInPlainWords(t *testing.T) {
 
 func TestReadPropertyPathReadsThePropertyNamesOfAPointer(t *testing.T) {
 	for pointer, want := range map[string]string{
-		"root":                               "",
+		"root":                                  "",
 		"/properties/location/properties/title": "location.title",
-		"/properties/properties":             "properties",
-		"/properties/a~1b/items":             "a/b",
+		"/properties/properties":                "properties",
+		"/properties/a~1b/items":                "a/b",
 	} {
 		got := ""
 		for i, name := range readPropertyPath(pointer) {
@@ -63,5 +63,23 @@ func TestReadPropertyPathReadsThePropertyNamesOfAPointer(t *testing.T) {
 		if got != want {
 			t.Errorf("readPropertyPath(%q) = %q, want %q", pointer, got, want)
 		}
+	}
+}
+
+func TestNullArgumentsAreTheEmptyObject(t *testing.T) {
+	registry, runs := newShelvingRegistry(t)
+
+	counted := invoke(t, registry, "shelf_count", []byte(`null`))
+	if counted.GetError() != ErrorCodeUnspecified || counted.GetResult().GetIsError() || runs.Load() != 1 {
+		t.Errorf("shelf_count with null arguments was answered %+v with the error code %v after %d runs",
+			counted.GetResult(), counted.GetError(), runs.Load())
+	}
+
+	shelved := invoke(t, registry, "shelve_book", []byte(`null`))
+	if text := shelved.GetResult().GetText(); !shelved.GetResult().GetIsError() || text != "the argument title is missing" {
+		t.Errorf("shelve_book with null arguments was answered %+v, want the error %q", shelved.GetResult(), "the argument title is missing")
+	}
+	if got := runs.Load(); got != 1 {
+		t.Errorf("the run functions were called %d times, want once", got)
 	}
 }
