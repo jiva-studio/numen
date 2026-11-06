@@ -494,3 +494,46 @@ func TestTeardownAllClosesTheListenerPort(t *testing.T) {
 
 	plugintest.WaitUntil(t, "the listener port to close", func() bool { return !isPortOpen(t, w.port) })
 }
+
+// writeFixedPortListenerPlugin writes a plugin under root whose manifest declares the listener mcp on
+// the fixed port.
+func writeFixedPortListenerPlugin(t *testing.T, root string, port int) {
+	t.Helper()
+	dir := filepath.Join(root, "relay")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	m := fmt.Sprintf(`{
+		"id": %q,
+		"name": "Relay",
+		"version": "1.0.0",
+		"description": "test plugin with a listener on a fixed port",
+		"targets": ["desktop.editor"],
+		"backend": {"entrypoint": "bin/relay"},
+		"contributes": {"listeners": [{"name": "mcp", "port": %d, "protocol": "tcp"}]},
+		"settings": []
+	}`, listenerPlugin, port)
+	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(m), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAListenerWithAFixedPortBindsThatPortAndForwardsTheBytes(t *testing.T) {
+	root := t.TempDir()
+	port := getFreePort(t)
+	writeFixedPortListenerPlugin(t, root, port)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
+	teardownAfter(t, host)
+	var started atomic.Int32
+	host.SetLauncher(startRelayLauncher(t, &started, "listener.mcp="+strconv.Itoa(serveEcho(t))))
+	discover(t, host)
+
+	conn := connectListener(t, port)
+
+	if reply := sendLine(t, conn, "fixed"); reply != "fixed" {
+		t.Errorf("reply = %q, want the echo of the line", reply)
+	}
+	if got := started.Load(); got != 1 {
+		t.Errorf("the plugin started %d times, want 1", got)
+	}
+}

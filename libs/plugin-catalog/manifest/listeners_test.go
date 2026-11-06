@@ -21,7 +21,8 @@ func TestReadManifestReadsTheListenersOfThePlugin(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(listenersManifestHead + `,
 		"contributes": {"listeners": [
 			{"name": "mcp", "portSetting": "port", "protocol": "tcp"},
-			{"name": "debug-console", "portSetting": "console-port", "protocol": "tcp"}
+			{"name": "debug-console", "portSetting": "console-port", "protocol": "tcp"},
+			{"name": "metrics", "port": 4200, "protocol": "tcp"}
 		]}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -30,6 +31,7 @@ func TestReadManifestReadsTheListenersOfThePlugin(t *testing.T) {
 	want := []manifest.Listener{
 		{Name: "mcp", PortSetting: "port", Protocol: "tcp"},
 		{Name: "debug-console", PortSetting: "console-port", Protocol: "tcp"},
+		{Name: "metrics", Port: 4200, Protocol: "tcp"},
 	}
 	if !slices.Equal(m.Contributes.Listeners, want) {
 		t.Errorf("listeners = %+v, want %+v", m.Contributes.Listeners, want)
@@ -59,7 +61,11 @@ func TestReadManifestRejectsAListenerTheHostCannotBind(t *testing.T) {
 		"a name with a dot":             `[{"name":"mcp.http","portSetting":"port","protocol":"tcp"}]`,
 		"a name starting with digit":    `[{"name":"3mcp","portSetting":"port","protocol":"tcp"}]`,
 		"a name ending in a hyphen":     `[{"name":"mcp-","portSetting":"port","protocol":"tcp"}]`,
-		"no port setting":               `[{"name":"mcp","protocol":"tcp"}]`,
+		"neither port nor port setting": `[{"name":"mcp","protocol":"tcp"}]`,
+		"both port and port setting":    `[{"name":"mcp","port":4200,"portSetting":"port","protocol":"tcp"}]`,
+		"a port below 1024":             `[{"name":"mcp","port":1023,"protocol":"tcp"}]`,
+		"a port above 65535":            `[{"name":"mcp","port":65536,"protocol":"tcp"}]`,
+		"a negative port":               `[{"name":"mcp","port":-4200,"protocol":"tcp"}]`,
 		"a port setting not declared":   `[{"name":"mcp","portSetting":"listen-port","protocol":"tcp"}]`,
 		"a port setting of type string": `[{"name":"mcp","portSetting":"host","protocol":"tcp"}]`,
 	}
@@ -69,6 +75,16 @@ func TestReadManifestRejectsAListenerTheHostCannotBind(t *testing.T) {
 
 		if !errors.Is(err, manifest.ErrInvalidContribution) {
 			t.Errorf("%s: error = %v, want an invalid contribution", name, err)
+		}
+	}
+}
+
+func TestReadManifestAcceptsTheLowestAndHighestFixedPort(t *testing.T) {
+	for _, port := range []string{"1024", "65535"} {
+		_, err := manifestjson.Read(strings.NewReader(listenersManifestHead +
+			`, "contributes": {"listeners": [{"name": "mcp", "port": ` + port + `, "protocol": "tcp"}]}}`))
+		if err != nil {
+			t.Errorf("port %s: error = %v, want none", port, err)
 		}
 	}
 }
