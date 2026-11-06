@@ -178,10 +178,14 @@ func newUndiscoveredListenerHost(t *testing.T, name string, defaultPort int, lis
 	return listenerHost{host: host, port: defaultPort, started: &started}
 }
 
+// discover discovers the plugins of host and fails the test when the listener plugin is not registered.
 func discover(t *testing.T, host *Host) {
 	t.Helper()
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
+	}
+	if _, ok := host.GetPluginStatus(listenerPlugin); !ok {
+		t.Fatalf("the plugin %s is not registered; statuses %+v", listenerPlugin, host.GetPluginStatuses())
 	}
 }
 
