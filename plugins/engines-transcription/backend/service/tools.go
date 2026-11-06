@@ -43,7 +43,7 @@ type TranscriptCreateOutput struct {
 	TaskID  string `json:"taskId" jsonschema:"the id of the transcription in the list of tasks"`
 	Path    string `json:"path" jsonschema:"the recording; library_read and library_search read its transcript"`
 	State   string `json:"state" jsonschema:"started; running where a transcription of this recording is already in progress and no second one was started; or done where the recording is already transcribed and nothing was started"`
-	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the text version that holds the transcript, the version library_read reads"`
+	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the live text version, the version library_read reads: the transcript, or a version made from it such as a proofread"`
 }
 
 // Tools serves transcript_create. The transcriptions it starts end with Transcriber.Close.
@@ -70,8 +70,9 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 			"text version of the recording; library_search and library_read read it as it is written. A " +
 			"transcription takes about as long as the recording. A file that is not in the vault, or is not an " +
 			"audio or video recording, is refused. A recording that is already transcribed is not transcribed " +
-			"again: the call answers the state done and the version that holds the transcript. A recording " +
-			"that cannot be read shows as the failure of its task in the list of tasks.",
+			"again: the call answers the state done and the version library_read reads, the transcript or a " +
+			"version made from it. A recording that cannot be read shows as the failure of its task in the list " +
+			"of tasks.",
 		Effect:  tools.ReadWrite,
 		Servers: []tools.Server{tools.Full},
 	}, t.createTranscript)
@@ -102,7 +103,7 @@ func (t *Tools) createTranscript(ctx context.Context, in TranscriptCreateInput) 
 	if t.transcriber.isRunning(vault, in.Path) {
 		return out, nil
 	}
-	version, isDone, err := t.transcriber.findWholeVersion(ctx, vault, in.Path)
+	version, isDone, err := t.transcriber.findLiveVersionFromWhole(ctx, vault, in.Path)
 	if err != nil {
 		return TranscriptCreateOutput{}, err
 	}

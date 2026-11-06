@@ -193,10 +193,11 @@ func (r *Recognition) getRunKey(ctx context.Context, vault domain.VaultID, fileP
 	return string(vault) + "\x00" + filePath, nil
 }
 
-// FindVersion is the live version of the file of the vault where the plugin named keeps it under
-// VersionKey, which a recognition writes only once it is complete. No vault is the vault the host
-// shows.
-func (r *Recognition) FindVersion(ctx context.Context, vault domain.VaultID, filePath, pluginID string) (domain.TextVersion, bool, error) {
+// FindLiveVersionFrom is the live version of the file of the vault where its source chain holds the
+// version the plugin named keeps under VersionKey: that version itself, or a version made from it.
+// A recognition writes VersionKey only once it is complete. The host keeps live only a version whose
+// chain matches the file as it is now. No vault is the vault the host shows.
+func (r *Recognition) FindLiveVersionFrom(ctx context.Context, vault domain.VaultID, filePath, pluginID string) (domain.TextVersion, bool, error) {
 	texts := r.host.Texts
 	if vault != "" {
 		texts = texts.With(vault)
@@ -205,10 +206,17 @@ func (r *Recognition) FindVersion(ctx context.Context, vault domain.VaultID, fil
 	if err != nil {
 		return domain.TextVersion{}, false, err
 	}
+	byID := make(map[domain.TextVersionID]domain.TextVersion, len(listing.Versions))
 	for _, version := range listing.Versions {
-		if version.GetID() == listing.Live && version.Key == VersionKey && version.PluginID == pluginID {
-			return version, true, nil
+		byID[version.GetID()] = version
+	}
+	live, isLive := byID[listing.Live]
+	visited := map[domain.TextVersionID]bool{}
+	for version, isFound := live, isLive; isFound && !visited[version.GetID()]; version, isFound = byID[version.Source] {
+		if version.Key == VersionKey && version.PluginID == pluginID {
+			return live, true, nil
 		}
+		visited[version.GetID()] = true
 	}
 	return domain.TextVersion{}, false, nil
 }

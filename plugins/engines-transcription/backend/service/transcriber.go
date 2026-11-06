@@ -198,17 +198,26 @@ func (t *Transcriber) isRunning(vault domain.VaultID, path string) bool {
 	return t.running[getRunKey(vault, path)]
 }
 
-// findWholeVersion is the live version of the recording of the vault where it is the plugin's whole
-// transcript. A live partial transcript is not returned: a run resumes it.
-func (t *Transcriber) findWholeVersion(ctx context.Context, vault domain.VaultID, path string) (domain.TextVersion, bool, error) {
+// findLiveVersionFromWhole is the live version of the recording of the vault where its source chain
+// holds the plugin's whole transcript: the transcript itself, or a version made from it. A chain
+// through a partial transcript only is not returned: a run resumes it. The host keeps live only a
+// version whose chain matches the recording as it is now.
+func (t *Transcriber) findLiveVersionFromWhole(ctx context.Context, vault domain.VaultID, path string) (domain.TextVersion, bool, error) {
 	listing, err := t.texts.With(vault).ListVersions(ctx, path)
 	if err != nil {
 		return domain.TextVersion{}, false, err
 	}
+	byID := make(map[domain.TextVersionID]domain.TextVersion, len(listing.Versions))
 	for _, version := range listing.Versions {
-		if version.GetID() == listing.Live && version.PluginID == PluginID && isWholeFile(version) {
-			return version, true, nil
+		byID[version.GetID()] = version
+	}
+	live, isLive := byID[listing.Live]
+	visited := map[domain.TextVersionID]bool{}
+	for version, isFound := live, isLive; isFound && !visited[version.GetID()]; version, isFound = byID[version.Source] {
+		if version.PluginID == PluginID && isWholeFile(version) {
+			return live, true, nil
 		}
+		visited[version.GetID()] = true
 	}
 	return domain.TextVersion{}, false, nil
 }

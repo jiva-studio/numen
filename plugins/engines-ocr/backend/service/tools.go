@@ -42,7 +42,7 @@ type RecognitionCreateOutput struct {
 	TaskID  string `json:"taskId" jsonschema:"the id of the recognition in the list of tasks"`
 	Path    string `json:"path" jsonschema:"the file; library_read and library_search read its text once it is recognised"`
 	State   string `json:"state" jsonschema:"started; running where a recognition of this file is already in progress and no second one was started; or done where the file is already recognised and nothing was started"`
-	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the text version that holds the recognised text, the version library_read reads"`
+	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the live text version, the version library_read reads: the recognised text, or a version made from it such as a proofread"`
 }
 
 // Tools serves recognition_create, which starts recognitions that run until they end or Close.
@@ -80,7 +80,7 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 			"as a text version of the file, which library_read and library_search read once the recognition " +
 			"ends. A recognition takes up to an hour for a book. A file that is not in the vault is refused. A " +
 			"file that is already recognised is not recognised again: the call answers the state done and the " +
-			"version that holds the text.",
+			"version library_read reads, the recognised text or a version made from it.",
 		Effect:  tools.ReadWrite,
 		Servers: []tools.Server{tools.Full},
 	}, t.createRecognition)
@@ -123,7 +123,7 @@ func (t *Tools) createRecognition(ctx context.Context, in RecognitionCreateInput
 	if isRunning {
 		return out, nil
 	}
-	version, isFound, err := t.recognitions.FindVersion(ctx, vault, in.Path, PluginID)
+	version, isFound, err := t.recognitions.FindLiveVersionFrom(ctx, vault, in.Path, PluginID)
 	if err != nil {
 		return RecognitionCreateOutput{}, err
 	}
