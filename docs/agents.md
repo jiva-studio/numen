@@ -36,13 +36,7 @@ Everything else is passed on. It is a denylist: the inherited environment minus 
 
 ## What the agent is told
 
-Three things, appended to the model's default instructions:
-
-- It is answering inside the application the user keeps these notes in, beside the note the user has open.
-- A note is called by its title. A path, a file name and an extension are how the tools address a note, and are never shown.
-- The answer is read in a narrow panel.
-
-Where the user has a note open, a task saying "this note" means that note, and `window_tabs_get` names it. Its path is not written into the instructions: a note name in a synced vault is set by the sync source, and a tool result is read as data.
+An in-app run receives the instruction sentences of the tools it is allowed after its own instructions and an empty line, in listing order, each sentence once and joined with one space, the same sentences the tools server gives. The sentence of `window_tabs_get` says that a task saying "this note" means the note in the active tab, which `window_tabs_get` names. The path of that note is not written into the instructions: a note name in a synced vault is set by the sync source, and a tool result is read as data.
 
 The tools server also gives every agent that connects to it instructions: one line of its own on what a vault is, then, after an empty line, the sentences each tool it offers lists with it, in listing order, each sentence once and joined with one space. The host lists the tools grouped by plugin in the order of the plugin ids, so the sentences of one plugin stand together. A sentence of a tool that is not offered is left out, so a plugin that is disabled, or none of whose tools is offered, adds nothing. The vault tools tell how to name a note and a passage as links, which tool searches and reads what (`note_search` the notes, `library_search` and `library_read` everything the vault holds), and that a passage is a window cut to a size and is read on before a source is said not to say something. The window tools tell when to read the tabs and when to show a place.
 
@@ -92,7 +86,7 @@ Six plugins register the tools an agent can call, each for its own subject, and 
 
 | Tool               | What it does                                                                                                                                                  | Servers |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `window_tabs_get`  | the tabs open in the window with id, title, path, kind and the location the reader saved (page, page count, seconds, CFI, chapter), and the active one        | both    |
+| `window_tabs_get`  | the tabs open in the window with id, title, path, kind and the place the reader reports (page, page count, seconds, CFI, chapter), and the active one         | both    |
 | `window_focus_tab` | make the tab with an id from `window_tabs_get` the active tab, and answer it as the window reports it; an id no tab has is an error                           | full    |
 | `note_focus`       | make a note the current one of the window, so the neighbourhood is drawn around it                                                                            | full    |
 | `source_focus`     | open a file in the window at the passages `library_search` gave, going to the first and highlighting all of them; a note opens whole with nothing highlighted | full    |
