@@ -14,7 +14,6 @@ type (
 	PluginCommand          = manifest.Command
 	PluginCommandArgument  = manifest.CommandArgument
 	PluginCondition        = when.Condition
-	PluginConditionResult  = when.Result
 	PluginContributes      = manifest.Contributes
 	PluginFrontend         = manifest.Frontend
 	PluginManifest         = manifest.Manifest

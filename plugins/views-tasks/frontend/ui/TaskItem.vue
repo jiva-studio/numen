@@ -9,8 +9,8 @@
  * A running task is reported again many times a second. The row is one component for the life of
  * the task and updates its text and ring in place; whether the pointer is on it is a flag of the
  * row, set by the pointer entering and leaving, so no update decides it. The detail line keeps the
- * last source a running task named, so a report without one does not take a line out of the row
- * and move it from under the pointer.
+ * last source a running task named, so a report without one neither removes a line from the row
+ * nor moves the row from under the pointer.
  *
  * A notice has an information icon on the left, all of its text on as many lines as it needs, and
  * a dismiss button with a cross that is always visible. It has no ring.

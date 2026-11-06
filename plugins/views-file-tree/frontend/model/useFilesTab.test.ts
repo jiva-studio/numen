@@ -688,7 +688,7 @@ describe('a field already holding a name, and a file rejected', () => {
 })
 
 describe('the target a command of the menu runs over', () => {
-  it('says whether the row is a folder', async () => {
+  it('reports whether the row is a folder', async () => {
     const { list, one, runs } = tab()
     await list.openFolder(ROOT)
 
