@@ -49,8 +49,6 @@ message ManifestContributes {
   string category = 3;
   // themes are the stylesheets the plugin adds to the list of themes.
   repeated ManifestTheme themes = 5;
-  // handles are the capabilities the plugin takes part in for files and notes of some types.
-  repeated ManifestHandle handles = 7;
   // readers are the tabs of the plugin's frontend that open files, each by the id the frontend
   // registers it under and the content types it opens.
   repeated ManifestReader readers = 9;
@@ -65,6 +63,10 @@ message ManifestContributes {
   // slots place the commands, views and submenus of the plugin in the slots of a window and in
   // submenus, see slots.json for the list of slots.
   repeated ManifestSlotEntry slots = 15;
+  // handlers are the plugin's handlers of shared commands.
+  repeated ManifestHandler handlers = 16;
+  // triggers run the plugin's handlers on events.
+  repeated ManifestTrigger triggers = 17;
 }
 
 // ManifestSlotEntry places one thing in a slot of a window, or in a submenu a plugin declares. The
@@ -98,13 +100,25 @@ message ManifestSlotEntry {
   string when = 9;
 }
 
-// ManifestHandle declares that the plugin takes part in a capability for files of some content
-// types and notes of some note types. The purpose is the id of the capability; the part of the
-// application that defines the capability owns the id and gives the declaration its meaning.
-message ManifestHandle {
-  string purpose = 1;
-  repeated string content_types = 2;
-  repeated string note_types = 3;
+// ManifestHandler is the plugin's handler of a shared command of libs/protocol/commands.json, which
+// its code registers under the full id of the command.
+message ManifestHandler {
+  // command is the full id of the shared command, such as app:file.createText.
+  string command = 1;
+  // title is what a person reads the handler as, such as "Recognize text".
+  string title = 2;
+  // when is the CEL condition under which the handler handles the command over the target.
+  string when = 3;
+}
+
+// ManifestTrigger runs the plugin's own handler of a shared command on an event.
+message ManifestTrigger {
+  // on is an event of libs/protocol/commands.json, such as file.added.
+  string on = 1;
+  // command is the full id of the shared command the plugin handles.
+  string command = 2;
+  // when is the CEL condition under which the event runs it, the settings as config.
+  string when = 3;
 }
 
 // ManifestTheme is a theme a plugin adds to the list of themes.

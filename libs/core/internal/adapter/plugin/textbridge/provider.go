@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"connectrpc.com/connect"
 
@@ -23,6 +24,7 @@ type Host interface {
 	pluginport.PluginResolver
 	pluginport.PluginActivator
 	ListExtensions(mask domain.ContentType) []string
+	GetContentType(name string) domain.ContentType
 }
 
 // Plugins is the enabled plugins that declare a text input, and their providers.
@@ -35,7 +37,10 @@ func NewPlugins(host Host) Plugins {
 	return Plugins{host: host}
 }
 
-// GetTextPlugins is every enabled plugin that declares a text provider handle, in the order of their ids.
+// createTextCommand is the shared command whose handlers make the text of files: the text plugins.
+const createTextCommand = "app:file.createText"
+
+// GetTextPlugins is every enabled plugin that handles createTextCommand, in the order of their ids.
 func (p Plugins) GetTextPlugins() []textport.TextPlugin {
 	var out []textport.TextPlugin
 	for _, info := range p.host.GetPluginInfos() {
@@ -43,35 +48,42 @@ func (p Plugins) GetTextPlugins() []textport.TextPlugin {
 		if !ok {
 			continue
 		}
-		handle, isDeclared := found.Manifest.GetHandle(pluginport.HandleTextProvider)
+		handler, isDeclared := found.Manifest.GetHandler(createTextCommand)
 		if !isDeclared {
 			continue
 		}
 		out = append(out, textport.TextPlugin{
-			ID: info.ID, Name: found.Manifest.Name, Files: p.getFileInput(handle.ContentTypes),
+			ID: info.ID, Name: found.Manifest.Name, Files: p.getFileInput(handler.When),
 		})
 	}
 	return out
 }
 
-// getFileInput is the extensions, each with its dot, that give a file one of the types.
-func (p Plugins) getFileInput(types []domain.ContentType) domain.FileInput {
+// getFileInput is the extensions, each with its dot, that give a file a type over which the condition
+// of the handler can hold: it names the content type, and it is not false over a file of that type.
+func (p Plugins) getFileInput(when string) domain.FileInput {
+	condition, err := pluginport.ParseCondition(when)
+	if err != nil || !slices.Contains(condition.Names(), "target.contentType") {
+		return nil
+	}
 	var out domain.FileInput
-	for _, one := range types {
-		for _, extension := range p.host.ListExtensions(one) {
+	for _, extension := range p.host.ListExtensions(domain.AnyContentType) {
+		name := "file." + extension
+		values := pluginport.GetTargetValues(name, string(p.host.GetContentType(name)), "")
+		if condition.Evaluate(values) != pluginport.ConditionFalse {
 			out = append(out, "."+extension)
 		}
 	}
 	return out
 }
 
-// OpenProvider is the text provider of an enabled plugin whose text provider handle names content types.
+// OpenProvider is the text provider of an enabled plugin that handles createTextCommand over files.
 func (p Plugins) OpenProvider(_ context.Context, pluginID string) (textport.TextProvider, error) {
 	found, ok := p.host.GetPlugin(pluginID)
 	if !ok {
 		return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled}
 	}
-	if handle, isDeclared := found.Manifest.GetHandle(pluginport.HandleTextProvider); !isDeclared || len(handle.ContentTypes) == 0 {
+	if handler, isDeclared := found.Manifest.GetHandler(createTextCommand); !isDeclared || len(p.getFileInput(handler.When)) == 0 {
 		return nil, fmt.Errorf("plugin %s makes no text of files on its own", pluginID)
 	}
 	return provider{service: bridge.Service[numenv1connect.TextProviderServiceClient]{

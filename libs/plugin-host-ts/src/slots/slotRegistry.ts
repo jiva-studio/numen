@@ -99,9 +99,26 @@ const getFullCommand = (entry: DeclaredSlotEntry, command: string): string =>
   command.includes(':') ? command : formatCommandId(entry.pluginId, command)
 
 /** Lays out the placed entries: groups in order, a separator between two of them. */
+/**
+ * The entries once each: a command several plugins place in one place, such as a shared command,
+ * stays where the first of them by group, order and plugin id places it.
+ */
+function dropRepeatedCommands(placed: readonly Placed[]): Placed[] {
+  const ordered = [...placed].sort(
+    (a, b) => compareGroups(a.entry.group ?? '', b.entry.group ?? '') || compareInGroup(a, b),
+  )
+  const placedCommands = new Set<string>()
+  return ordered.filter((one) => {
+    if (one.item.kind !== 'command') return true
+    if (placedCommands.has(one.item.command)) return false
+    placedCommands.add(one.item.command)
+    return true
+  })
+}
+
 function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
   const groups = new Map<string, Placed[]>()
-  for (const one of placed) {
+  for (const one of dropRepeatedCommands(placed)) {
     const name = one.entry.group ?? ''
     groups.set(name, [...(groups.get(name) ?? []), one])
   }

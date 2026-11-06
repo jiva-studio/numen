@@ -8,6 +8,7 @@ import type { SlotName } from './slotNames'
 
 export { SLOT, WINDOW_SLOTS, type SlotName } from './slotNames'
 export { WHEN_VARIABLES } from './whenVariables'
+export { SHARED_COMMANDS, TRIGGER_EVENTS } from './sharedCommands'
 
 // SlotPlace is a slot of the window or a submenu a plugin declares; a submenu is named by its id.
 export type SlotPlace = SlotName | (string & {})

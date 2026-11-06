@@ -29,6 +29,20 @@ type Copies struct {
 	stores pluginport.PluginStores
 }
 
+// getMediaCommand is the shared command whose handlers keep copies to play, until the media player
+// asks them for the copy itself and the core no longer looks the copies up.
+const getMediaCommand = "app:link.getMedia"
+
+// isKeeping reports whether the plugin handles getMediaCommand over the path.
+func isKeeping(manifest pluginport.PluginManifest, path, contentType, noteType string) bool {
+	handler, isDeclared := manifest.GetHandler(getMediaCommand)
+	if !isDeclared {
+		return false
+	}
+	condition, err := pluginport.ParseCondition(handler.When)
+	return err == nil && condition.Evaluate(pluginport.GetTargetValues(path, contentType, noteType)) != pluginport.ConditionFalse
+}
+
 // NewProxies returns the proxies for the plugins of the host and their folders in the vaults' stores.
 func NewProxies(host Host, stores pluginport.PluginStores) Copies {
 	return Copies{host: host, stores: stores}
@@ -44,7 +58,7 @@ func (c Copies) getKeepers(path string, noteType domain.NoteType) []string {
 		if !ok {
 			continue
 		}
-		if handle, isDeclared := found.Manifest.GetHandle(pluginport.HandlePlaybackCopy); isDeclared && handle.IsMatching(contentType, noteType) {
+		if isKeeping(found.Manifest, path, string(contentType), string(noteType)) {
 			out = append(out, info.ID)
 		}
 	}
@@ -61,7 +75,7 @@ func (c Copies) IsCopyingNotes() bool {
 		if !ok {
 			continue
 		}
-		if handle, isDeclared := found.Manifest.GetHandle(pluginport.HandlePlaybackCopy); isDeclared && handle.HasNoteTypes() {
+		if _, isDeclared := found.Manifest.GetHandler(getMediaCommand); isDeclared {
 			return true
 		}
 	}

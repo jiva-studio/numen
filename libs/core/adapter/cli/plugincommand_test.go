@@ -248,3 +248,5 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 		t.Fatalf("the help reads %q (%v)", help, err)
 	}
 }
+
+func (p *pluginCommands) ListHandlers() []plugincommand.HandlerEntry { return nil }

@@ -177,3 +177,5 @@ func TestListCommands_CarriesEveryArgumentWithItsRequirement(t *testing.T) {
 		t.Errorf("the wire carries %v, want %v", got, want)
 	}
 }
+
+func (pluginCommands) ListHandlers() []plugincommand.HandlerEntry { return nil }

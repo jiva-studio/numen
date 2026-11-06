@@ -319,3 +319,5 @@ func TestNewFileMenuRequiresVersionsCommandsTypesAndReaders(t *testing.T) {
 		t.Error("a file menu was made without readers")
 	}
 }
+
+func (p *commands) ListHandlers() []pluginport.PluginHandlerEntry { return nil }

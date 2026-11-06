@@ -64,3 +64,12 @@ export {
 } from './slots/slotRegistry'
 export { parseWhen, type WhenCondition, type WhenSettings, type WhenValues } from './when/when'
 export { getTargetValues } from './when/targetValues'
+export {
+  createSharedCommands,
+  type DeclaredHandler,
+  type HandlerCall,
+  type HandlerChoice,
+  type SharedCommandHandler,
+  type SharedCommands,
+} from './sharedCommands/sharedCommands'
+export type { TargetNote } from './when/targetValues'

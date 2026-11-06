@@ -56,6 +56,22 @@ func (c Commands) ListCommands() []pluginport.PluginCommandEntry {
 	return found
 }
 
+// ListHandlers lists the handlers of shared commands the manifests of the enabled plugins declare.
+// No plugin is started.
+func (c Commands) ListHandlers() []pluginport.PluginHandlerEntry {
+	var found []pluginport.PluginHandlerEntry
+	for _, info := range c.host.GetPluginInfos() {
+		plugin, isEnabled := c.host.GetPlugin(info.ID)
+		if !isEnabled {
+			continue
+		}
+		for _, handler := range plugin.Manifest.Contributes.Handlers {
+			found = append(found, pluginport.PluginHandlerEntry{PluginID: plugin.Manifest.ID, Handler: handler})
+		}
+	}
+	return found
+}
+
 // ListSlots lists the slot entries the manifests of the enabled plugins declare. No plugin is started.
 func (c Commands) ListSlots() []pluginport.PluginSlotEntry {
 	var found []pluginport.PluginSlotEntry
@@ -106,7 +122,11 @@ func (c Commands) RunCommand(
 	message := res.Msg.GetMessage()
 	switch res.Msg.GetError() {
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED:
-		return pluginport.PluginCommandResult{Message: message, OpenedPath: res.Msg.GetOpenedPath()}, nil
+		result := pluginport.PluginCommandResult{Message: message, OpenedPath: res.Msg.GetOpenedPath()}
+		if value := res.Msg.GetValue(); value != nil {
+			result.Value = value.AsInterface()
+		}
+		return result, nil
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND:
 		return pluginport.PluginCommandResult{}, fmt.Errorf("%w: %s", ErrUnknownCommand, call.Command)
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS:
@@ -138,6 +158,8 @@ type NoCommands struct{}
 func (NoCommands) ListCommands() []pluginport.PluginCommandEntry { return nil }
 
 func (NoCommands) ListSlots() []pluginport.PluginSlotEntry { return nil }
+
+func (NoCommands) ListHandlers() []pluginport.PluginHandlerEntry { return nil }
 
 func (NoCommands) GetParts(string) pluginport.PluginParts { return pluginport.PluginParts{} }
 

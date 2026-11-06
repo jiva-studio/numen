@@ -36,8 +36,6 @@ type Contributes struct {
 	Category string
 	// Themes are the stylesheets the plugin adds to the list of themes.
 	Themes []Theme
-	// Handles are the capabilities the plugin takes part in for files and notes of some types.
-	Handles []Handle
 	// Readers are the tabs of the plugin's frontend that open files, each by the id the frontend
 	// registers it under.
 	Readers []Reader
@@ -53,6 +51,10 @@ type Contributes struct {
 	Commands []Command
 	// Slots place the commands, views and submenus of the plugin in the slots of a window and in submenus.
 	Slots []SlotEntry
+	// Handlers are the plugin's handlers of shared commands.
+	Handlers []Handler
+	// Triggers run the plugin's handlers on events.
+	Triggers []Trigger
 }
 
 // HasTabKind reports whether the plugin registers the kind of tab.
@@ -95,7 +97,7 @@ func (m Manifest) listContributionIssues() []error {
 		issues = append(issues, fmt.Errorf("%w: feature %q has surrounding space", ErrInvalidContribution, c.Feature))
 	}
 	issues = append(issues, c.listThemeIssues()...)
-	issues = append(issues, m.listHandleIssues()...)
+	issues = append(issues, m.listHandlerIssues()...)
 	issues = append(issues, m.listReaderIssues()...)
 	issues = append(issues, m.listSlotIssues()...)
 	return append(issues, m.listFrameIssues()...)

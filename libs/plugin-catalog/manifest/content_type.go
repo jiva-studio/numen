@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/when"
 )
 
 // ErrInvalidReader is a reader declared wrongly.
@@ -31,14 +32,19 @@ func (m Manifest) ListContentHandlers() []domain.ContentHandler {
 	return out
 }
 
-// IsHandling reports whether a reader of the plugin, or a handle of it, takes a file of the type.
+// IsHandling reports whether a reader of the plugin takes a file of the type, or a handler of it
+// handles a shared command over such a file.
 func (m Manifest) IsHandling(contentType domain.ContentType) bool {
 	for _, reader := range m.Contributes.Readers {
 		if isAnyMatching(reader.ContentTypes, contentType) {
 			return true
 		}
 	}
-	return slices.ContainsFunc(m.Contributes.Handles, func(h Handle) bool { return isAnyMatching(h.ContentTypes, contentType) })
+	values := map[string]any{"target.contentType": string(contentType)}
+	return slices.ContainsFunc(m.Contributes.Handlers, func(h Handler) bool {
+		condition, err := when.Parse(h.When)
+		return err == nil && slices.Contains(condition.Names(), "target.contentType") && condition.Evaluate(values) != when.False
+	})
 }
 
 func isAnyMatching(masks []domain.ContentType, contentType domain.ContentType) bool {

@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
@@ -59,6 +60,9 @@ type Result struct {
 	// OpenedPath is the file a window opens once the command ran, relative to the vault folder. Empty
 	// for a command that leaves nothing to open.
 	OpenedPath string
+	// Value is what the command returns to its caller, as JSON holds it, such as the address of a
+	// copy to play; nil for a command that returns nothing.
+	Value any
 }
 
 // Handler runs the commands a plugin declares. On failure it returns an error
@@ -140,7 +144,16 @@ func readRequest(msg *v1.RunCommandRequest) Request {
 }
 
 func writeResult(result Result) *v1.RunCommandResponse {
-	return &v1.RunCommandResponse{Message: result.Message, OpenedPath: result.OpenedPath}
+	response := &v1.RunCommandResponse{Message: result.Message, OpenedPath: result.OpenedPath}
+	if result.Value == nil {
+		return response
+	}
+	value, err := structpb.NewValue(result.Value)
+	if err != nil {
+		return writeFailure(fmt.Errorf("the command returned a value that is no JSON: %w", err))
+	}
+	response.Value = value
+	return response
 }
 
 func writeFailure(err error) *v1.RunCommandResponse {

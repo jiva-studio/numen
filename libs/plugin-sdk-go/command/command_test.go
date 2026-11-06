@@ -60,6 +60,21 @@ func TestCommand_RunsWithFileAndArgumentsAndReturnsOutput(t *testing.T) {
 	}
 }
 
+func TestCommand_ReturnsTheValueItGivesItsCaller(t *testing.T) {
+	registry := New()
+	if err := registry.Add("app:link.getMedia", func(context.Context, Request) (Result, error) {
+		return Result{Value: "http://127.0.0.1:4010/copies/talk.mp4"}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	res := run(t, registry, &v1.RunCommandRequest{Command: "app:link.getMedia", Path: "links/talk.md"})
+
+	if res.GetValue().GetStringValue() != "http://127.0.0.1:4010/copies/talk.mp4" {
+		t.Errorf("the command answered %v", res)
+	}
+}
+
 func TestCommand_FailureReturnsCodeAndMessage(t *testing.T) {
 	cases := map[string]struct {
 		request *v1.RunCommandRequest

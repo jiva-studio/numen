@@ -14,6 +14,7 @@ describe('the target values', () => {
       'target.isFile': false,
       'target.contentType': '',
       'target.noteType': '',
+      'target.properties': {},
     })
   })
 
@@ -22,7 +23,7 @@ describe('the target values', () => {
       getTargetValues(
         { path: 'notes/Bees.md', isFolder: false, others: ['notes/Wasps.md'] },
         TYPES,
-        'link',
+        { type: 'link', properties: { media: 'talk.mp4' } },
       ),
     ).toStrictEqual({
       'target.isRoot': false,
@@ -32,6 +33,7 @@ describe('the target values', () => {
       'target.isFile': false,
       'target.contentType': 'text/markdown',
       'target.noteType': 'link',
+      'target.properties': { media: 'talk.mp4' },
     })
   })
 
@@ -43,6 +45,7 @@ describe('the target values', () => {
       'target.isFile': true,
       'target.contentType': 'application/pdf',
       'target.noteType': '',
+      'target.properties': {},
     })
   })
 
@@ -64,6 +67,7 @@ describe('the target values', () => {
       'target.isFile': false,
       'target.contentType': '',
       'target.noteType': '',
+      'target.properties': {},
     })
   })
 })

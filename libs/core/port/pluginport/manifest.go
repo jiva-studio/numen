@@ -20,7 +20,8 @@ type (
 	PluginManifest         = manifest.Manifest
 	PluginManifestSetting  = manifest.Setting
 	PluginNoteType         = manifest.NoteType
-	PluginHandle           = manifest.Handle
+	PluginHandler          = manifest.Handler
+	PluginTrigger          = manifest.Trigger
 	PluginReader           = manifest.Reader
 	PluginSecret           = manifest.Secret
 	PluginSettingsView     = manifest.SettingsView
@@ -42,8 +43,6 @@ const (
 	PermissionSearchPolicy    = manifest.PermissionSearchPolicy
 	PermissionNetworkAlias    = manifest.PermissionNetworkAlias
 	RuntimeONNX               = "onnxruntime"
-	HandlePlaybackCopy        = "playback-copy"
-	HandleTextProvider        = "text-provider"
 	ActivationEventAll        = manifest.ActivationEventAll
 	ConditionTrue             = when.True
 	ConditionFalse            = when.False
@@ -81,7 +80,7 @@ var (
 	ErrInvalidID              = manifest.ErrInvalidID
 	ErrInvalidNoteType        = manifest.ErrInvalidNoteType
 	ErrInvalidPermission      = manifest.ErrInvalidPermission
-	ErrInvalidHandle          = manifest.ErrInvalidHandle
+	ErrInvalidHandler         = manifest.ErrInvalidHandler
 	ErrInvalidReader          = manifest.ErrInvalidReader
 	ErrInvalidSecret          = manifest.ErrInvalidSecret
 	ErrInvalidService         = manifest.ErrInvalidService

@@ -87,3 +87,5 @@ func TestListCommands_ListsNoCommandOfASuspendedPlugin(t *testing.T) {
 		t.Errorf("got %v", items)
 	}
 }
+
+func (declaredByTwoPlugins) ListHandlers() []plugincommand.HandlerEntry { return nil }

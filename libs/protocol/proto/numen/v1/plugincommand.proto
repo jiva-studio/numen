@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "google/protobuf/struct.proto";
 import "numen/v1/manifest.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
@@ -41,6 +42,10 @@ message RunCommandResponse {
   // The file a window opens once the command ran, as a path relative to the
   // vault folder. Empty for a command that leaves nothing to open.
   string opened_path = 3;
+
+  // What the command returns to its caller, such as the address of a copy to play. Absent for a
+  // command that returns nothing.
+  google.protobuf.Value value = 4;
 }
 
 // CommandErrorCode is why a command was served and did not succeed.
@@ -82,6 +87,14 @@ message ListCommandsResponse {
   // The content type of a file by its extension, lowercase and without the dot, for every extension
   // the core knows a type of. The window derives target.contentType from it.
   map<string, string> content_type_by_extension = 3;
+  // The handlers of shared commands of every enabled plugin, in the order of the plugins' ids.
+  repeated PluginHandler handlers = 4;
+}
+
+// PluginHandler is one entry of contributes.handlers of a plugin.
+message PluginHandler {
+  string plugin_id = 1;
+  ManifestHandler handler = 2;
 }
 
 // PluginSlotEntry is one entry of contributes.slots of a plugin.
@@ -143,4 +156,7 @@ message RunPluginCommandResponse {
 
   // The file the window opens once the command ran. Empty for none.
   string opened_path = 3;
+
+  // What the command returns to its caller. Absent for a command that returns nothing.
+  google.protobuf.Value value = 4;
 }

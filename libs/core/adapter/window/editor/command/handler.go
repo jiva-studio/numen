@@ -8,6 +8,7 @@ import (
 	"math"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
@@ -54,6 +55,7 @@ func (h *Handler) ListCommands(
 	}
 	return connect.NewResponse(&v1.ListCommandsResponse{
 		Commands: commands, Slots: slots, ContentTypeByExtension: h.list.ListContentTypes(),
+		Handlers: newWireHandlers(h.list.ExecuteHandlers()),
 	}), nil
 }
 
@@ -74,9 +76,17 @@ func (h *Handler) RunPluginCommand(
 		}
 		return connect.NewResponse(&v1.RunPluginCommandResponse{Error: getErrorCode(err), Message: err.Error()}), nil
 	}
-	return connect.NewResponse(&v1.RunPluginCommandResponse{
-		Message: result.Message, OpenedPath: result.OpenedPath,
-	}), nil
+	response := &v1.RunPluginCommandResponse{Message: result.Message, OpenedPath: result.OpenedPath}
+	if result.Value != nil {
+		value, err := structpb.NewValue(result.Value)
+		if err != nil {
+			return connect.NewResponse(&v1.RunPluginCommandResponse{
+				Error: v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, Message: "the command returned a value that is no JSON: " + err.Error(),
+			}), nil
+		}
+		response.Value = value
+	}
+	return connect.NewResponse(response), nil
 }
 
 func getErrorCode(err error) v1.CommandErrorCode {
@@ -110,6 +120,17 @@ func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
 		When:      entry.Command.When,
 		Shortcut:  entry.Command.Shortcut,
 	}
+}
+
+// newWireHandlers are the handlers of shared commands as the schema carries them.
+func newWireHandlers(entries []plugincommand.HandlerEntry) []*v1.PluginHandler {
+	out := make([]*v1.PluginHandler, 0, len(entries))
+	for _, one := range entries {
+		out = append(out, &v1.PluginHandler{PluginId: one.PluginID, Handler: &v1.ManifestHandler{
+			Command: one.Handler.Command, Title: one.Handler.Title, When: one.Handler.When,
+		}})
+	}
+	return out
 }
 
 // newWireSlotEntry is a slot entry as the schema carries it.

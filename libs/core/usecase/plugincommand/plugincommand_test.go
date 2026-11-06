@@ -103,7 +103,7 @@ func TestACallThatDoesNotMeetItsDeclarationRunsNothing(t *testing.T) {
 		"a file of a type it does not run over": {
 			PluginID: "md.numen.a", Command: "convert", Path: "a.epub", Arguments: map[string]string{"pages": "1"},
 		},
-		"a required argument left out":        {PluginID: "md.numen.a", Command: "convert", Path: "a.pdf"},
+		"a required argument left out": {PluginID: "md.numen.a", Command: "convert", Path: "a.pdf"},
 		"an argument it does not take": {
 			PluginID: "md.numen.a", Command: "convert", Path: "a.pdf",
 			Arguments: map[string]string{"pages": "1", "colour": "red"},
@@ -248,3 +248,5 @@ func TestACommandOverNotesOfATypeRunsOverThoseNotesAlone(t *testing.T) {
 		t.Errorf("ran %+v, want the link note alone", declared.calls)
 	}
 }
+
+func (p *declaredCommands) ListHandlers() []plugincommand.HandlerEntry { return nil }

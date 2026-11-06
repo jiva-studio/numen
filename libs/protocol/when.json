@@ -25,6 +25,11 @@
       "about": "the type of the note, such as link; empty where the target is no note"
     },
     {
+      "name": "target.properties",
+      "type": "map",
+      "about": "the frontmatter properties of the note as they stand, read without knowing what they mean; empty where the target is no note"
+    },
+    {
       "name": "version.kind",
       "type": "string",
       "about": "the kind of the text version, as the plugin that made it names it"
@@ -111,6 +116,16 @@
           },
           "value": true
         }
+      ]
+    },
+    {
+      "when": "target.noteType == 'link' && has(target.properties.media)",
+      "values": [
+        {
+          "context": { "target.noteType": "link", "target.properties": { "media": "talk.mp4" } },
+          "value": true
+        },
+        { "context": { "target.noteType": "link", "target.properties": {} }, "value": false }
       ]
     },
     {

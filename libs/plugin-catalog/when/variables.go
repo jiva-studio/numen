@@ -12,6 +12,7 @@ func listVariables() []variable {
 		{name: "target.isFile", kind: kindBool},
 		{name: "target.contentType", kind: kindString},
 		{name: "target.noteType", kind: kindString},
+		{name: "target.properties", kind: kindMap},
 		{name: "version.kind", kind: kindString},
 		{name: "version.isLive", kind: kindBool},
 		{name: "window.isVaultOpen", kind: kindBool},

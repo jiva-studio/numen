@@ -15,6 +15,7 @@ const TITLES: Record<string, string> = {
   [`${HARBOR}:harbor.note`]: 'Harbor note',
   [`${TIDE}:tide.open`]: 'Open tide',
   'app:settings.open': 'Open settings',
+  'app:file.createText': 'Create text',
 }
 
 const NOTE: CommandTarget = { path: 'notes/Bees.md', title: 'Bees', isFolder: false, others: [] }
@@ -149,6 +150,31 @@ describe('the entries of a slot', () => {
     list.value = undefined
 
     expect(registry.getEntries('titleBar.commands')).toStrictEqual([])
+  })
+})
+
+describe('a command placed by several plugins', () => {
+  it('shows once in a place, where the first of them by group, order and plugin id places it', () => {
+    const { registry } = setup([
+      {
+        pluginId: LEDGER,
+        slot: 'fileTree.context',
+        command: 'app:file.createText',
+        group: '1-text',
+      },
+      {
+        pluginId: HARBOR,
+        slot: 'fileTree.context',
+        command: 'app:file.createText',
+        group: '1-text',
+      },
+      { pluginId: TIDE, slot: 'fileTree.context', command: 'tide.open', group: '0-open' },
+    ])
+
+    const items = registry.getEntries('fileTree.context', NOTE)
+
+    expect(describeSlot(items)).toStrictEqual([`${TIDE}:tide.open`, '|', 'app:file.createText'])
+    expect(items[2]).toMatchObject({ pluginId: HARBOR })
   })
 })
 

@@ -1,0 +1,45 @@
+{
+  "about": "The shared commands of the application and the events of triggers. A shared command does nothing by itself: plugins handle it in contributes.handlers, and the window runs the handler whose when holds, or offers the handlers as items where several do. A trigger in contributes.triggers runs its plugin's own handler on an event. `items` says where the items of a command come from: none, the handlers, the text versions of the file (the core), or the handler itself.",
+  "commands": [
+    {
+      "id": "app:file.createText",
+      "title": "Create text",
+      "about": "makes the text of a file, such as the text layer of a PDF or the transcript of a recording",
+      "items": "handlers"
+    },
+    {
+      "id": "app:version.delete",
+      "title": "Delete text",
+      "about": "deletes a text version of a file",
+      "items": "versions"
+    },
+    {
+      "id": "app:link.import",
+      "title": "Import link",
+      "about": "creates a link note",
+      "items": "handlers"
+    },
+    {
+      "id": "app:link.downloadMedia",
+      "title": "Download media",
+      "about": "downloads the media of a link note",
+      "items": "handler"
+    },
+    {
+      "id": "app:link.deleteMedia",
+      "title": "Delete media",
+      "about": "deletes the downloaded media of a link note",
+      "items": "handlers"
+    },
+    {
+      "id": "app:link.getMedia",
+      "title": "Get media",
+      "about": "returns the address a player plays the downloaded media of a link note from",
+      "items": "handlers"
+    }
+  ],
+  "events": [
+    { "name": "file.added", "about": "a file that is not a note was added to the vault" },
+    { "name": "note.added", "about": "a note was added to the vault" }
+  ]
+}

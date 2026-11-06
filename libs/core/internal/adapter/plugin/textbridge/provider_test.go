@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 
@@ -52,8 +53,8 @@ func (h *host) GetPluginInfos() []pluginport.PluginInfo {
 func (h *host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 	switch id {
 	case "org.example.ocr":
-		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Name: "Example OCR", Contributes: pluginport.PluginContributes{Handles: []pluginport.PluginHandle{
-			{Purpose: pluginport.HandleTextProvider, ContentTypes: []domain.ContentType{"application/pdf"}},
+		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Name: "Example OCR", Contributes: pluginport.PluginContributes{Handlers: []pluginport.PluginHandler{
+			{Command: "app:file.createText", Title: "Recognize text", When: "target.contentType == 'application/pdf'"},
 		}}}}, true
 	case "org.example.other":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}}, true
@@ -62,10 +63,17 @@ func (h *host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 }
 
 func (h *host) ListExtensions(mask domain.ContentType) []string {
-	if mask == "application/pdf" {
+	if mask == "application/pdf" || mask == domain.AnyContentType {
 		return []string{"pdf"}
 	}
 	return nil
+}
+
+func (h *host) GetContentType(name string) domain.ContentType {
+	if strings.HasSuffix(name, ".pdf") {
+		return "application/pdf"
+	}
+	return domain.UnknownContentType
 }
 
 func (h *host) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {

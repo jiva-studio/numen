@@ -20,6 +20,13 @@ type PluginSlotEntry struct {
 	Entry    manifest.SlotEntry
 }
 
+// PluginHandlerEntry is one handler of a shared command an enabled plugin declares, and the plugin
+// that declares it.
+type PluginHandlerEntry struct {
+	PluginID string
+	Handler  manifest.Handler
+}
+
 // PluginParts is what one plugin has and whether the host runs it.
 type PluginParts struct {
 	// HasBackend is set where the plugin declares a backend. A command is run in the backend only
@@ -50,6 +57,9 @@ type PluginCommandResult struct {
 	// OpenedPath is the file a window opens once the command ran, relative to the vault folder. Empty
 	// for a command that leaves nothing to open.
 	OpenedPath string
+	// Value is what the command returns to its caller, as JSON holds it: a string, a number, a
+	// boolean, a list or a map; nil for a command that returns nothing.
+	Value any
 }
 
 // CommandFailedError is a command the plugin ran and that failed, with the plugin's message.
@@ -70,6 +80,9 @@ type PluginCommands interface {
 	// ListSlots lists the slot entries of every enabled plugin, in the order of the plugins' ids and
 	// then of each manifest.
 	ListSlots() []PluginSlotEntry
+	// ListHandlers lists the handlers of shared commands of every enabled plugin, in the order of
+	// the plugins' ids and then of each manifest.
+	ListHandlers() []PluginHandlerEntry
 	// GetParts says what the plugin of the id has and whether it is suspended. A plugin that is not
 	// enabled has none.
 	GetParts(pluginID string) PluginParts

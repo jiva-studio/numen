@@ -7,6 +7,19 @@ import type { CommandTarget } from '@numen/plugin-sdk'
 /** What the derivation reads of a target. */
 export type TargetPath = Pick<CommandTarget, 'path' | 'isFolder' | 'others'>
 
+/** What a place read of a note before it asks: its type and its frontmatter properties. */
+export interface TargetNote {
+  readonly type?: string
+  readonly properties?: Readonly<Record<string, unknown>>
+}
+
+const NO_NOTE = { 'target.noteType': '', 'target.properties': {} } as const
+
+const getNoteValues = (note: TargetNote) => ({
+  'target.noteType': note.type ?? '',
+  'target.properties': note.properties ?? {},
+})
+
 /** The extension that makes a file a note. */
 const NOTE_EXTENSION = 'md'
 
@@ -18,6 +31,7 @@ const NO_TARGET = {
   'target.isFile': false,
   'target.contentType': '',
   'target.noteType': '',
+  'target.properties': {},
 } as const
 
 const getExtension = (path: string): string => {
@@ -28,13 +42,13 @@ const getExtension = (path: string): string => {
 
 /**
  * The target variables over the target: its content type by its extension from the table the core
- * sends, and its note type where the place read it. All are false or empty where there is no target.
+ * sends, and its note type and frontmatter properties where the place read them. All are false or empty where there is no target.
  */
 export function getTargetValues(
   target: TargetPath | undefined,
   contentTypes: Readonly<Record<string, string>>,
-  noteType = '',
-): Readonly<Record<string, boolean | string>> {
+  note: TargetNote = {},
+): Readonly<Record<string, unknown>> {
   if (!target) return NO_TARGET
   const { path, isFolder, others } = target
   const extension = isFolder ? '' : getExtension(path)
@@ -46,6 +60,6 @@ export function getTargetValues(
     'target.isNote': isNote,
     'target.isFile': !isFolder && !isNote && path !== '',
     'target.contentType': contentTypes[extension] ?? '',
-    'target.noteType': isNote ? noteType : '',
+    ...(isNote ? getNoteValues(note) : NO_NOTE),
   }
 }

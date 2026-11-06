@@ -35,9 +35,10 @@ func TestReadManifestReadsReaders(t *testing.T) {
 	}
 }
 
-func TestIsHandlingMatchesTheTypesOfTheHandlesOfThePlugin(t *testing.T) {
+func TestIsHandlingMatchesTheTypesTheHandlersOfThePluginHandle(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},
-		"contributes": {"handles": [{"purpose": "sample-purpose", "contentTypes": ["audio/*", "video/*"]}]}}`))
+		"contributes": {"handlers": [{"command": "app:file.createText", "title": "Transcribe",
+		"when": "target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')"}]}}`))
 	if err != nil {
 		t.Fatal(err)
 	}

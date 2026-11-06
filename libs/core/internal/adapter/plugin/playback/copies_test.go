@@ -33,8 +33,8 @@ func (host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 	switch id {
 	case "org.example.links":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{
-			ID: id, Contributes: pluginport.PluginContributes{Handles: []pluginport.PluginHandle{
-				{Purpose: pluginport.HandlePlaybackCopy, NoteTypes: []string{"link"}},
+			ID: id, Contributes: pluginport.PluginContributes{Handlers: []pluginport.PluginHandler{
+				{Command: "app:link.getMedia", Title: "Play", When: "target.noteType == 'link'"},
 			}},
 		}}, true
 	case "org.example.other":

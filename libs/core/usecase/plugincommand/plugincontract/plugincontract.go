@@ -27,6 +27,7 @@ type (
 	PluginCommandEntry     = pluginport.PluginCommandEntry
 	PluginCommandResult    = pluginport.PluginCommandResult
 	PluginSlotEntry        = pluginport.PluginSlotEntry
+	PluginHandlerEntry     = pluginport.PluginHandlerEntry
 	PluginContributes      = pluginport.PluginContributes
 	PluginCommands         = pluginport.PluginCommands
 	PluginParts            = pluginport.PluginParts
@@ -49,7 +50,7 @@ type (
 	PluginManifestSetting  = pluginport.PluginManifestSetting
 	PluginNoteType         = pluginport.PluginNoteType
 	PluginPersistHandler   = pluginport.PluginPersistHandler
-	PluginHandle           = pluginport.PluginHandle
+	PluginHandler          = pluginport.PluginHandler
 	PluginReader           = pluginport.PluginReader
 	PluginReaderInfo       = pluginport.PluginReaderInfo
 	PluginRegistryManager  = pluginport.PluginRegistryManager
@@ -127,8 +128,6 @@ const (
 	PluginProtocolVersion       = pluginport.PluginProtocolVersion
 	PluginWithoutBackend        = pluginport.PluginWithoutBackend
 	RuntimeONNX                 = pluginport.RuntimeONNX
-	HandlePlaybackCopy          = pluginport.HandlePlaybackCopy
-	HandleTextProvider          = pluginport.HandleTextProvider
 	ConfigPerformanceProfile    = pluginport.ConfigPerformanceProfile
 	SettingStoredSecrets        = pluginport.SettingStoredSecrets
 	SettingTypeEnum             = pluginport.SettingTypeEnum
@@ -160,7 +159,7 @@ var (
 	ErrInvalidID              = pluginport.ErrInvalidID
 	ErrInvalidNoteType        = pluginport.ErrInvalidNoteType
 	ErrInvalidPermission      = pluginport.ErrInvalidPermission
-	ErrInvalidHandle          = pluginport.ErrInvalidHandle
+	ErrInvalidHandler         = pluginport.ErrInvalidHandler
 	ErrInvalidReader          = pluginport.ErrInvalidReader
 	ErrInvalidSettingsView    = pluginport.ErrInvalidSettingsView
 	ErrInvalidSecret          = pluginport.ErrInvalidSecret
@@ -196,4 +195,17 @@ func PluginPermissions() []string { return pluginport.PluginPermissions() }
 
 func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, options PluginSettingOptions) PluginSetting {
 	return pluginport.NewPluginSetting(declared, defaultJSON, options)
+}
+
+// The when conditions of commands, handlers and triggers.
+type PluginCondition = pluginport.PluginCondition
+
+const ConditionFalse = pluginport.ConditionFalse
+
+// ParseCondition reads a when condition; see pluginport.ParseCondition.
+func ParseCondition(text string) (PluginCondition, error) { return pluginport.ParseCondition(text) }
+
+// GetTargetValues gives the target variables of a when condition; see pluginport.GetTargetValues.
+func GetTargetValues(path, contentType, noteType string) map[string]any {
+	return pluginport.GetTargetValues(path, contentType, noteType)
 }

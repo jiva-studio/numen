@@ -78,3 +78,5 @@ func TestTheWindowListsNoMenuEntriesWhereThereIsNoPluginHost(t *testing.T) {
 		t.Errorf("the window lists %+v", entries)
 	}
 }
+
+func (menuPlugins) ListHandlers() []plugincommand.HandlerEntry { return nil }

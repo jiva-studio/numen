@@ -41,7 +41,7 @@ func CreateTestPluginTree(t *testing.T, dir string) {
 		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
 		"contributes": {
-			"handles": [{"purpose": "text-provider", "contentTypes": ["application/pdf"]}]
+			"handlers": [{"command": "app:file.createText", "title": "Read", "when": "target.contentType == 'application/pdf'"}]
 		},
 		"permissions": ["vault:read"],
 		"services": ["numen.v1.TextProviderService"], "backend": {"entrypoint": "bin/sample"},

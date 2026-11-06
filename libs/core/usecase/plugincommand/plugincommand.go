@@ -24,6 +24,8 @@ type (
 	Entry = pluginport.PluginCommandEntry
 	// SlotEntry is one slot entry an enabled plugin declares, and the plugin that does.
 	SlotEntry = pluginport.PluginSlotEntry
+	// HandlerEntry is one handler of a shared command a plugin declares.
+	HandlerEntry = pluginport.PluginHandlerEntry
 	// Parts is what one plugin has and whether the host holds it suspended.
 	Parts = pluginport.PluginParts
 	// Command is a command as its manifest declares it.
@@ -100,6 +102,18 @@ func (u List) ExecuteSlots() []SlotEntry {
 		return nil
 	}
 	return slices.DeleteFunc(u.commands.ListSlots(), func(one SlotEntry) bool {
+		parts := u.commands.GetParts(one.PluginID)
+		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+	})
+}
+
+// ExecuteHandlers lists the handlers of shared commands of the enabled plugins, leaving out those of
+// a plugin the host holds suspended and of a plugin with neither a frontend nor a backend.
+func (u List) ExecuteHandlers() []HandlerEntry {
+	if u.commands == nil {
+		return nil
+	}
+	return slices.DeleteFunc(u.commands.ListHandlers(), func(one HandlerEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})

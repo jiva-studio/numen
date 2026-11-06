@@ -79,3 +79,5 @@ func TestACommandOfAPluginWithABackendIsRunInItsBackend(t *testing.T) {
 		t.Fatalf("the run answered %+v, %v", result, err)
 	}
 }
+
+func (p *mixedCommands) ListHandlers() []plugincommand.HandlerEntry { return nil }
