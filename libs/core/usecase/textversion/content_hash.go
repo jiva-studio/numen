@@ -84,9 +84,14 @@ func isRecordCurrent(record textport.ContentHash, stat domain.FileStat) bool {
 }
 
 // isRacy reports whether the file may have changed after it was hashed with
-// its modification time kept (git's racy check).
+// its modification time kept (git's racy check): its modification time lies
+// within one tick of the hash time. A modification time further ahead cannot be
+// kept by a later write, which stamps the current time.
 func isRacy(record textport.ContentHash) bool {
-	return record.HashTime.IsZero() || !record.ModTime.Before(record.HashTime.Add(-racyWindow))
+	if record.HashTime.IsZero() {
+		return true
+	}
+	return !record.ModTime.Before(record.HashTime.Add(-racyWindow)) && record.ModTime.Before(record.HashTime.Add(racyWindow))
 }
 
 // hashFile is domain.HashReader of the file at the path.
