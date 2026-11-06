@@ -39,7 +39,7 @@ const settle = async () => {
 
 function createPage() {
   const stream = createMockStream()
-  const reported: { token: string; result?: FlushResult }[] = []
+  const reported: { token: string; result: FlushResult | undefined }[] = []
   const page = createFileFlush(
     {
       watchQuit: stream.read,
@@ -57,8 +57,8 @@ function createPage() {
 
 const createConflict = (note: string): Conflict => ({
   note,
-  keep: async () => {},
-  take: async () => {},
+  keep: () => Promise.resolve(),
+  take: () => Promise.resolve(),
 })
 
 describe('a silent flush request', () => {
@@ -92,11 +92,11 @@ describe('a silent flush request', () => {
 
   it('writes the buffers and reports written once they are written', async () => {
     const { stream, reported, page } = createPage()
-    let finishWrite: (() => void) | null = null
+    const write: { finish: () => void } = { finish: () => undefined }
     const handler = vi.fn(
       () =>
         new Promise<void>((resolve) => {
-          finishWrite = resolve
+          write.finish = resolve
         }),
     )
     page.addHandler(handler)
@@ -106,7 +106,7 @@ describe('a silent flush request', () => {
     expect(handler).toHaveBeenCalledTimes(1)
     expect(reported).toEqual([])
 
-    finishWrite?.()
+    write.finish()
     await settle()
 
     expect(reported).toEqual([{ token: '1', result: 'written' }])
