@@ -14,15 +14,35 @@ import (
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
-// Arranger is the use cases that rename, move and remove the notes of a vault, repairing the links
-// that stop resolving, and that run the checks of a vault.
-type Arranger struct {
+// NoteChanges is the use cases that rename, move and remove the notes of a vault, repairing the
+// links that stop resolving.
+type NoteChanges struct {
 	Rename note.Rename
 	Move   note.Move
 	Remove note.RemoveNote
+}
+
+// Arranger is the use cases that change the notes of a vault and that run the checks of a vault.
+type Arranger struct {
+	Notes NoteChanges
+	// Window is the window's own NoteChanges, used for a call on the vault Shown names, so the
+	// window follows a note a plugin renames or moves. Without Shown every call uses Notes.
+	Window NoteChanges
+	Shown  func() (domain.Vault, bool)
 	// Checks runs the checks of a vault. Without it every call for the checks fails with
 	// completionport.ErrUnavailable.
 	Checks *vaults.GetProblems
+}
+
+// getChanges is the NoteChanges for a call on the vault.
+func (a Arranger) getChanges(v domain.Vault) NoteChanges {
+	if a.Shown == nil {
+		return a.Notes
+	}
+	if shown, isShown := a.Shown(); isShown && shown.ID == v.ID {
+		return a.Window
+	}
+	return a.Notes
 }
 
 func (a Vault) RenameNote(ctx context.Context, path, title string) (string, bool, *domain.MoveResult, error) {
@@ -30,7 +50,7 @@ func (a Vault) RenameNote(ctx context.Context, path, title string) (string, bool
 	if err != nil {
 		return "", false, nil, err
 	}
-	renamed, err := a.Arranger.Rename.Execute(ctx, v, path, title)
+	renamed, err := a.Arranger.getChanges(v).Rename.Execute(ctx, v, path, title)
 	if renamed.Moved != nil || err == nil {
 		a.notifyFileWritten()
 	}
@@ -42,7 +62,7 @@ func (a Vault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult
 	if err != nil {
 		return domain.MoveResult{From: from, To: to}, err
 	}
-	moved, err := a.Arranger.Move.Execute(ctx, v, from, to)
+	moved, err := a.Arranger.getChanges(v).Move.Execute(ctx, v, from, to)
 	if moved.IsMoved {
 		a.notifyFileWritten()
 	}
@@ -54,7 +74,7 @@ func (a Vault) RemoveNote(ctx context.Context, path string) (string, []string, e
 	if err != nil {
 		return "", nil, err
 	}
-	removed, err := a.Arranger.Remove.Execute(ctx, v, path, false)
+	removed, err := a.Arranger.getChanges(v).Remove.Execute(ctx, v, path, false)
 	if errors.Is(err, note.ErrFolder) {
 		return "", nil, fmt.Errorf("remove %s: %w", path, vaultport.ErrNotANote)
 	}

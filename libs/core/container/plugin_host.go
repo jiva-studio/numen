@@ -232,8 +232,9 @@ type PluginVaultHooks struct {
 	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
 	// Moved signals that something moved in some vault. When nil, the signal is the index file changing.
 	Moved func(ctx context.Context) (<-chan struct{}, error)
-	// Notes is the window's own use cases on notes, so the window follows a note a plugin renames
-	// or moves. The zero value is the host's own, which no window follows.
+	// Notes is the window's own use cases on notes, used for the vault current shows, so the window
+	// follows a note a plugin renames or moves there. The zero value is the host's own, which no
+	// window follows.
 	Notes note.Scenarios
 }
 
@@ -241,6 +242,10 @@ type PluginVaultHooks struct {
 // readers.
 func isBuilt(notes note.Scenarios) bool {
 	return notes.Move.Readers() != nil
+}
+
+func getNoteChanges(notes note.Scenarios) hostvault.NoteChanges {
+	return hostvault.NoteChanges{Rename: notes.Rename, Move: notes.Move, Remove: notes.RemoveNote}
 }
 
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
@@ -259,9 +264,12 @@ func (c Config) OpenPluginVault(
 		return err
 	}
 	scenarios := c.Notes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
-	arranger := scenarios
+	arranger := hostvault.Arranger{
+		Notes:  getNoteChanges(scenarios),
+		Checks: vault.NewStandardGetProblems(db.Problems()),
+	}
 	if isBuilt(hooks.Notes) {
-		arranger = hooks.Notes
+		arranger.Window, arranger.Shown = getNoteChanges(hooks.Notes), current
 	}
 	vaults := hostvault.Vault{
 		Current:     current,
@@ -271,17 +279,12 @@ func (c Config) OpenPluginVault(
 		Links:       db.Links(),
 		Connections: note.NewConnections(scenarios),
 		Problems:    db.Problems(),
-		Arranger: hostvault.Arranger{
-			Rename: arranger.Rename,
-			Move:   arranger.Move,
-			Remove: arranger.RemoveNote,
-			Checks: vault.NewStandardGetProblems(db.Problems()),
-		},
-		Stores:  derivedfile.PluginStores{Options: c.vaultOptions()},
-		Cache:   cache,
-		Watcher: c.VaultWatcher(),
-		Written: hooks.Written,
-		Vaults:  registry.List,
+		Arranger:    arranger,
+		Stores:      derivedfile.PluginStores{Options: c.vaultOptions()},
+		Cache:       cache,
+		Watcher:     c.VaultWatcher(),
+		Written:     hooks.Written,
+		Vaults:      registry.List,
 		Find: func(id domain.VaultID) (domain.Vault, error) {
 			found, isFound, err := registry.FindVault(string(id))
 			if err != nil {
