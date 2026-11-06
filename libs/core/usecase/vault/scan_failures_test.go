@@ -216,7 +216,7 @@ func TestAFailedWriteNamesTheFirstAndLastNoteOfTheGroup(t *testing.T) {
 	}
 
 	_, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "named"})
-	if err == nil || !strings.Contains(err.Error(), "index 3 notes of named, a.md to c.md: disk full") {
+	if err == nil || !strings.Contains(err.Error(), "3 notes of named, a.md to c.md, cannot be indexed: disk full") {
 		t.Errorf("error = %v, want the group named by its first and last note", err)
 	}
 }
