@@ -40,11 +40,11 @@ func (p Texts) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path
 // current content.
 func (p Texts) ListVersions(ctx context.Context, v domain.Vault, path string) (pluginport.PluginTextListing, error) {
 	contentHash, err := p.versions.GetContentHash(ctx, v, path)
-	if errors.Is(err, textversion.ErrNoVaultReader) {
-		return pluginport.PluginTextListing{}, err
+	if errors.Is(err, textversion.ErrFileUnreadable) {
+		return pluginport.PluginTextListing{}, fmt.Errorf("%w: %w", textport.ErrNoText, err)
 	}
 	if err != nil {
-		return pluginport.PluginTextListing{}, fmt.Errorf("%w: %w", textport.ErrNoText, err)
+		return pluginport.PluginTextListing{}, err
 	}
 	listing, err := p.versions.ListVersions(ctx, v, path, contentHash)
 	if err != nil {

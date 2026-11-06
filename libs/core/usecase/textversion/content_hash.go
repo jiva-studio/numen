@@ -17,22 +17,29 @@ import (
 // without its stat changing.
 const racyWindow = 2 * time.Second
 
-// ErrNoVaultReader wraps the failure to open the reader of a vault. The failure
-// to stat or read one file is returned without it.
-var ErrNoVaultReader = errors.New("the files of the vault cannot be read")
+// ErrFileUnreadable wraps the failure to stat, open or read the file whose
+// hash is asked for. A failure of the vault, of the index or of the context is
+// returned without it.
+var ErrFileUnreadable = errors.New("the file cannot be read")
 
 // GetContentHash is domain.HashContent of the file at the path as it is now. A
 // recorded hash whose stat equals the file's is returned without opening the
 // file; otherwise the file is hashed from a stream and the hash is recorded
-// with the stat.
+// with the stat. A file the vault ignores has no index row and is hashed
+// without a record.
+//
+// The record is a cache: a hash that cannot be recorded is returned all the same.
 func (u *Versions) GetContentHash(ctx context.Context, v domain.Vault, path string) (string, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {
-		return "", fmt.Errorf("%w: %w", ErrNoVaultReader, err)
+		return "", err
 	}
 	stat, err := reader.StatFile(ctx, path)
+	if errors.Is(err, vaultport.ErrNotANote) {
+		return hashFile(ctx, reader, path)
+	}
 	if err != nil {
-		return "", err
+		return "", markFileFailure(ctx, err)
 	}
 	repo, err := u.repos.Open(v)
 	if err != nil {
@@ -52,10 +59,19 @@ func (u *Versions) GetContentHash(ctx context.Context, v domain.Vault, path stri
 	err = repo.SaveContentHash(ctx, textport.ContentHash{
 		Path: path, Hash: hash, Size: stat.Size, ModTime: stat.ModTime, FileID: stat.FileID, HashTime: u.clock.Now(),
 	})
-	if err != nil {
-		return "", err
+	if err != nil && ctx.Err() != nil {
+		return "", ctx.Err()
 	}
 	return hash, nil
+}
+
+// markFileFailure wraps a failure of the file in ErrFileUnreadable, and
+// returns the end of the context as it is.
+func markFileFailure(ctx context.Context, err error) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	return fmt.Errorf("%w: %w", ErrFileUnreadable, err)
 }
 
 // isRecordCurrent reports whether the recorded hash is the hash of the file
@@ -77,8 +93,16 @@ func isRacy(record textport.ContentHash) bool {
 func hashFile(ctx context.Context, reader vaultport.VaultReader, path string) (hash string, err error) {
 	file, err := reader.Open(ctx, path)
 	if err != nil {
-		return "", err
+		return "", markFileFailure(ctx, err)
 	}
-	defer func() { err = errors.Join(err, file.Close()) }()
-	return domain.HashReader(file)
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			hash, err = "", errors.Join(err, markFileFailure(ctx, closeErr))
+		}
+	}()
+	hash, err = domain.HashReader(file)
+	if err != nil {
+		return "", markFileFailure(ctx, err)
+	}
+	return hash, nil
 }
