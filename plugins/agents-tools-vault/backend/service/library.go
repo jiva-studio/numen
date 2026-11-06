@@ -18,59 +18,59 @@ import (
 
 // LibrarySearchInput is the input of the library_search tool.
 type LibrarySearchInput struct {
-	Query      string   `json:"query" jsonschema:"words to look for, in the words of the text itself"`
+	Query      string   `json:"query" jsonschema:"words to search for, as they appear in the text"`
 	Limit      int      `json:"limit,omitempty" jsonschema:"how many passages to return (default: 20, max: 100)"`
-	Kinds      []string `json:"kinds,omitempty" jsonschema:"which sorts of file to look in: note for markdown notes, file for every other file (books, PDFs, recordings, scans); all of them when left out"`
-	PathPrefix string   `json:"path_prefix,omitempty" jsonschema:"only look in the files whose path starts with this, relative to the vault folder, such as library/"`
+	Kinds      []string `json:"kinds,omitempty" jsonschema:"the kinds of file to search: note for markdown notes, file for every other file (books, PDFs, recordings, scans); all kinds when left out"`
+	PathPrefix string   `json:"pathPrefix,omitempty" jsonschema:"search only the files whose path starts with this prefix, relative to the vault folder, such as library/"`
 }
 
 // LibraryMatch is a passage that answers a library search.
 type LibraryMatch struct {
-	Source   string `json:"source" jsonschema:"the file the text is read from, relative to the vault folder"`
+	Path     string `json:"path" jsonschema:"the path of the file the text is read from, relative to the vault folder"`
 	Title    string `json:"title" jsonschema:"the title of the note, else the name of the file"`
-	Location string `json:"location,omitempty" jsonschema:"the position in the source own numbering, such as a page, a chapter or a time; absent when the format offers none"`
-	Text     string `json:"text" jsonschema:"the words around the hit, cut to a size; it ends where it was cut, often mid-sentence"`
-	Start    int    `json:"start" jsonschema:"where the passage begins in the source's text, in bytes"`
-	Length   int    `json:"length" jsonschema:"how long the passage is, in bytes"`
-	Line     int    `json:"line,omitempty" jsonschema:"the line of the hit in a note, counted from the first line of its prose"`
-	URI      string `json:"uri" jsonschema:"the address of this passage; write it into your answer as a markdown link where you speak about the passage, so that the person can go to it"`
+	Location string `json:"location,omitempty" jsonschema:"the location in the numbering of the source, such as a page, a chapter or a time; absent when the format has none"`
+	Text     string `json:"text" jsonschema:"the text around the hit, truncated to a fixed size, often mid-sentence"`
+	Start    int    `json:"start" jsonschema:"the byte offset of the passage in the text of the file"`
+	Length   int    `json:"length" jsonschema:"the length of the passage in bytes"`
+	Line     int    `json:"line,omitempty" jsonschema:"the line of the hit in a note, counted from the first line of its body"`
+	URI      string `json:"uri" jsonschema:"the address of this passage; write it into the answer as a markdown link to the passage"`
 }
 
 // LibrarySearchOutput is the output of the library_search tool.
 type LibrarySearchOutput struct {
-	Query   string         `json:"query"`
-	Matches []LibraryMatch `json:"matches"`
+	Query   string         `json:"query" jsonschema:"the query searched for"`
+	Matches []LibraryMatch `json:"matches" jsonschema:"the matching passages, best first"`
 }
 
 // LibraryReadInput is the input of the library_read tool.
 type LibraryReadInput struct {
 	Path   string `json:"path" jsonschema:"the file's path relative to the vault folder"`
-	Page   int    `json:"page,omitempty" jsonschema:"read this page, counted from 1; for a source whose text has pages"`
-	Start  int    `json:"start,omitempty" jsonschema:"byte offset in the text to start reading from; the next of the previous answer continues it"`
+	Page   int    `json:"page,omitempty" jsonschema:"the page to read, counted from 1; for a source whose text has pages"`
+	Start  int    `json:"start,omitempty" jsonschema:"the byte offset in the text to start reading from; the nextStart of the previous answer continues it"`
 	Length int    `json:"length,omitempty" jsonschema:"how many bytes of text to read; at most 50000, and 20000 when left out"`
 }
 
-// LibraryLocation is a stretch of the text and the place the source numbers it by.
+// LibraryLocation is a range of the text and its location in the numbering of the source.
 type LibraryLocation struct {
-	Start       int     `json:"start" jsonschema:"where the stretch begins in the text, in bytes"`
-	Length      int     `json:"length" jsonschema:"how long the stretch is, in bytes"`
+	Start       int     `json:"start" jsonschema:"the byte offset of the range in the text"`
+	Length      int     `json:"length" jsonschema:"the length of the range in bytes"`
 	Page        int     `json:"page,omitempty" jsonschema:"the page, counted from 1"`
-	CFI         string  `json:"cfi,omitempty" jsonschema:"the position in a book"`
-	FromSeconds float64 `json:"from_seconds,omitempty" jsonschema:"where in the recording the stretch is spoken"`
-	ToSeconds   float64 `json:"to_seconds,omitempty" jsonschema:"where in the recording the stretch ends"`
+	CFI         string  `json:"cfi,omitempty" jsonschema:"the EPUB CFI of the range in a book"`
+	FromSeconds float64 `json:"fromSeconds,omitempty" jsonschema:"the start time of the range in the recording, in seconds"`
+	ToSeconds   float64 `json:"toSeconds,omitempty" jsonschema:"the end time of the range in the recording, in seconds"`
 }
 
 // LibraryReadOutput is the output of the library_read tool.
 type LibraryReadOutput struct {
-	Path      string            `json:"path"`
-	Kind      string            `json:"kind,omitempty" jsonschema:"what the text is, as the plugin that made it names it; absent for a text file"`
+	Path      string            `json:"path" jsonschema:"the path of the file, relative to the vault folder"`
+	Kind      string            `json:"kind,omitempty" jsonschema:"the kind of the text version, as the plugin that made it names it; absent for a text file"`
 	Version   string            `json:"version,omitempty" jsonschema:"the text version read"`
-	Text      string            `json:"text"`
-	Start     int               `json:"start" jsonschema:"where the text returned begins in the whole text, in bytes"`
-	Length    int               `json:"length" jsonschema:"how many bytes were returned"`
-	Size      int               `json:"size" jsonschema:"how long the whole text is, in bytes"`
-	Next      *int              `json:"next,omitempty" jsonschema:"the start to read next; absent at the end of the text"`
-	Locations []LibraryLocation `json:"locations,omitempty" jsonschema:"the places of the source that the returned text covers, in order"`
+	Text      string            `json:"text" jsonschema:"the text read"`
+	Start     int               `json:"start" jsonschema:"the byte offset of the returned text in the whole text"`
+	Length    int               `json:"length" jsonschema:"the length of the returned text in bytes"`
+	Size      int               `json:"size" jsonschema:"the length of the whole text in bytes"`
+	NextStart *int              `json:"nextStart,omitempty" jsonschema:"the start to read next; absent at the end of the text"`
+	Locations []LibraryLocation `json:"locations,omitempty" jsonschema:"the locations of the source the returned text covers, in order"`
 }
 
 // WithLibrary gives the tools the text versions and the search index of the vaults, which the tools
@@ -94,17 +94,16 @@ func (t *Tools) addLibrarySearch(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "library_search",
 		Title: "Search the library",
-		Description: "Search everything the vault holds — the notes, and the books, PDFs, scans and " +
-			"recordings filed beside them — for the words typed and for what they mean, in the index " +
-			"of their text. Returns passages, best first: the text around each hit, the file it was " +
-			"read from, where it sits (a page, a chapter, a time) and its address. A file answers with " +
-			"at most three passages, so a long book does not take the answer. " +
-			"note_search finds only notes, by their title, path and text; use library_search for the " +
+		Description: "Search the text index of everything the vault holds: the notes, and the books, " +
+			"PDFs, scans and recordings stored with them, by the words of the query and by their meaning. " +
+			"Returns passages, best first: the text around each hit, the path of the file, its location " +
+			"(a page, a chapter, a time) and its address. One file returns at most three passages. " +
+			"note_search searches only notes, by title, path and text; use library_search for the " +
 			"text of a book, a PDF or the transcript of a recording. " +
-			"A passage is a window cut to a size and it ends where it was cut, which is mid-sentence " +
-			"as often as not: read on with library_read before concluding that a source says nothing " +
-			"about something. When the person asks about a book, pass kinds [\"file\"]: a vault holds " +
-			"far more notes than books, and a search told to look everywhere answers with notes.",
+			"A passage is truncated to a fixed size, often mid-sentence: read on with library_read " +
+			"before concluding that a source does not cover a subject. For a question about a book, " +
+			"pass kinds [\"file\"]: a vault holds far more notes than books, and a search of every " +
+			"kind returns mostly notes.",
 		Effect:  tools.ReadOnly,
 		Step:    tools.Search,
 		Servers: []tools.Server{tools.Full, tools.Reading},
@@ -136,7 +135,7 @@ func (t *Tools) searchLibrary(ctx context.Context, in LibrarySearchInput) (Libra
 	titles := t.getTitles(ctx, found)
 	for _, passage := range found {
 		out.Matches = append(out.Matches, LibraryMatch{
-			Source:   passage.Path,
+			Path:     passage.Path,
 			Title:    titles[passage.Path],
 			Location: passage.Location,
 			Text:     passage.Text,
@@ -197,7 +196,7 @@ func (t *Tools) addLibraryRead(registry *tools.Registry) error {
 		Description: "Read the text of one file of the vault from its text version: the pages of a PDF, " +
 			"the chapters of a book, the transcript of a recording, the recognised text of a scan. " +
 			"Give a page, or a start and a length in bytes; the answer names the places the text " +
-			"covers, how long the whole text is, and where to start to read on. " +
+			"covers, the length of the whole text, and the start to read next. " +
 			"A text file is read as it is. A file with no text version returns an error that names " +
 			"what makes one. file_read reads the bytes of a text file and refuses a binary; " +
 			"library_search finds the passage to read.",
@@ -242,7 +241,7 @@ func (t *Tools) readLibrary(ctx context.Context, in LibraryReadInput) (LibraryRe
 	out := LibraryReadOutput{
 		Path: in.Path, Kind: string(live.Kind), Version: string(live.GetID()),
 		Text: text.Text[from:to], Start: from, Length: to - from, Size: len(text.Text),
-		Next: getNext(to, len(text.Text)), Locations: getLocations(segments, from, to),
+		NextStart: getNextStart(to, len(text.Text)), Locations: getLocations(segments, from, to),
 	}
 	return out, nil
 }
@@ -267,7 +266,7 @@ func (t *Tools) readPlainText(ctx context.Context, in LibraryReadInput) (Library
 	}
 	return LibraryReadOutput{
 		Path: in.Path, Kind: "", Version: "", Text: text[from:to], Start: from, Length: to - from, Size: len(text),
-		Next: getNext(to, len(text)), Locations: nil,
+		NextStart: getNextStart(to, len(text)), Locations: nil,
 	}, nil
 }
 
@@ -340,8 +339,8 @@ func alignRange(text string, from, end, length int) (int, int) {
 	return from, to
 }
 
-// getNext is where to read on after a range that ends at to, nil at the end of the text.
-func getNext(to, size int) *int {
+// getNextStart is where to read on after a range that ends at to, nil at the end of the text.
+func getNextStart(to, size int) *int {
 	if to >= size {
 		return nil
 	}

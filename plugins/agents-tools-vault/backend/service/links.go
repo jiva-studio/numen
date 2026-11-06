@@ -21,7 +21,7 @@ type ResolvedLinkItem struct {
 	Address     string `json:"address" jsonschema:"target link address as written"`
 	Role        string `json:"role,omitempty" jsonschema:"link role (e.g. parent, child, jump, ref)"`
 	Label       string `json:"label,omitempty" jsonschema:"link label"`
-	IsAmbiguous bool   `json:"is_ambiguous,omitempty" jsonschema:"true if link target matches multiple notes"`
+	IsAmbiguous bool   `json:"isAmbiguous,omitempty" jsonschema:"true if link target matches multiple notes"`
 }
 
 // LinkListOutput is the output of the link_list tool.

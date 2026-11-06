@@ -27,14 +27,14 @@ type ListedNote struct {
 type NoteListInput struct {
 	Folder string `json:"folder,omitempty" jsonschema:"list only the notes in this folder and its subfolders, relative to the vault folder; the whole vault when left out"`
 	Limit  int    `json:"limit,omitempty" jsonschema:"how many notes to return (default: 100, max: 500)"`
-	Offset int    `json:"offset,omitempty" jsonschema:"how many notes to skip; the next_offset of the previous result continues the list"`
+	Offset int    `json:"offset,omitempty" jsonschema:"how many notes to skip; the nextOffset of the previous result continues the list"`
 }
 
 // NoteListOutput is the output of the note_list tool.
 type NoteListOutput struct {
 	Notes      []ListedNote `json:"notes" jsonschema:"the notes of this page, ordered by path"`
 	Total      int          `json:"total" jsonschema:"number of notes that match, before limit and offset"`
-	NextOffset int          `json:"next_offset,omitempty" jsonschema:"the offset of the next page; absent on the last page"`
+	NextOffset int          `json:"nextOffset,omitempty" jsonschema:"the offset of the next page; absent on the last page"`
 }
 
 // NoteTitlesInput is the input of the note_titles tool.

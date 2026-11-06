@@ -12,8 +12,8 @@ import (
 type ListedVault struct {
 	ID        string `json:"id" jsonschema:"vault identifier, which stays the same when its folder moves"`
 	Name      string `json:"name" jsonschema:"vault display name"`
-	Folder    string `json:"folder" jsonschema:"vault root directory on this machine"`
-	IsShowing bool   `json:"showing" jsonschema:"true for the vault this call works on"`
+	Path      string `json:"path" jsonschema:"vault root directory on this machine"`
+	IsCurrent bool   `json:"isCurrent" jsonschema:"true for the vault this call works on"`
 }
 
 // VaultListInput is the input of the vault_list tool.
@@ -39,7 +39,7 @@ type VaultProblemItem struct {
 // VaultProblemsOutput is the output of the vault_problems tool.
 type VaultProblemsOutput struct {
 	Problems []VaultProblemItem `json:"problems"`
-	Ran      []string           `json:"ran" jsonschema:"the checks this result covers"`
+	Checks   []string           `json:"checks" jsonschema:"the checks this result covers"`
 }
 
 func (t *Tools) addVaultList(registry *tools.Registry) error {
@@ -47,7 +47,7 @@ func (t *Tools) addVaultList(registry *tools.Registry) error {
 		Step:        tools.ByEffect,
 		Name:        "vault_list",
 		Title:       "List Vaults",
-		Description: "List every vault of the installation with its identifier, name and folder. The vault this call works on is marked showing.",
+		Description: "List every vault of the installation with its identifier, name and folder path. The vault this call works on has isCurrent set.",
 		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).listVaults))
@@ -75,8 +75,8 @@ func (t *Tools) listVaults(ctx context.Context, _ VaultListInput) (VaultListOutp
 		out.Vaults = append(out.Vaults, ListedVault{
 			ID:        string(v.ID),
 			Name:      v.Name,
-			Folder:    v.Path,
-			IsShowing: v.ID == current,
+			Path:      v.Path,
+			IsCurrent: v.ID == current,
 		})
 	}
 	return out, nil
@@ -94,7 +94,7 @@ func (t *Tools) listVaultProblems(ctx context.Context, in VaultProblemsInput) (V
 	}
 	out := VaultProblemsOutput{
 		Problems: make([]VaultProblemItem, 0, len(problems)),
-		Ran:      []string{string(domain.CheckParse)},
+		Checks:   []string{string(domain.CheckParse)},
 	}
 	for _, p := range problems {
 		out.Problems = append(out.Problems, VaultProblemItem{Path: p.Path, Check: string(p.Kind), Detail: p.Detail})

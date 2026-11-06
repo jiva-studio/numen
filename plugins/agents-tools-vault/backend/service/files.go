@@ -87,9 +87,8 @@ type FileCreateInput struct {
 
 // FileCreateOutput is the output of the file_create tool.
 type FileCreateOutput struct {
-	Path    string `json:"path"`
-	Size    int    `json:"size"`
-	Success bool   `json:"success"`
+	Path string `json:"path" jsonschema:"the path of the created file, relative to the vault root"`
+	Size int    `json:"size" jsonschema:"the size of the created file in bytes"`
 }
 
 func (t *Tools) addFileCreate(registry *tools.Registry) error {
@@ -118,8 +117,7 @@ func (t *Tools) createFile(ctx context.Context, in FileCreateInput) (FileCreateO
 	}
 
 	return FileCreateOutput{
-		Path:    in.Path,
-		Size:    len(data),
-		Success: true,
+		Path: in.Path,
+		Size: len(data),
 	}, nil
 }

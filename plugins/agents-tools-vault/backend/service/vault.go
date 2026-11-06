@@ -17,7 +17,7 @@ type VaultInfoOutput struct {
 	ID        string `json:"id" jsonschema:"vault unique identifier"`
 	Name      string `json:"name" jsonschema:"vault display name"`
 	Path      string `json:"path" jsonschema:"vault root directory path on disk"`
-	NoteCount int    `json:"note_count" jsonschema:"total number of indexed notes in the vault"`
+	NoteCount int    `json:"noteCount" jsonschema:"total number of indexed notes in the vault"`
 }
 
 func (t *Tools) addVaultGet(registry *tools.Registry) error {
