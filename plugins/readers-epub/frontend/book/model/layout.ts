@@ -13,8 +13,8 @@ import type { Ref, ShallowRef } from 'vue'
 import { onNextFrame, doc } from '@numen/ui'
 import type { PageNavigationAction } from '@numen/ui'
 import { useBookColumns } from './columns'
-import { useBookTurns } from './turns'
-import { copyPaper } from './leaving'
+import { useBookTurns, getTurnTarget } from './turns'
+import { copyPaper, type LeavingSpread } from './leaving'
 import { findPending, whenArrived } from '../lib/pictures'
 import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
@@ -135,6 +135,8 @@ export interface BookSettlingOptions {
     readonly readColumns: (box: HTMLElement, text: HTMLElement) => void
     readonly findFragmentOffset: (frag: string) => number | undefined
     readonly markRuns: () => void
+    readonly markCopy: (copy: HTMLElement) => void
+    readonly unmarkCopy: (copy: HTMLElement) => void
     readonly isStood: { value: boolean }
   }
   readonly turns: {
@@ -142,7 +144,7 @@ export interface BookSettlingOptions {
     readonly enterSpread: (
       spread: number,
       way: BorderTurn['way'],
-      leaving: HTMLElement | undefined,
+      leaving: LeavingSpread | undefined,
     ) => void
     readonly getKeptOffset: () => number
     readonly keepOffset: (pos: number) => void
@@ -177,7 +179,18 @@ function holdUntilStood<T>(isStood: () => boolean, read: () => T): Readonly<Ref<
 /** Handles re-settling and watching dimensions / links in book layout. */
 export function createBookSettling(options: BookSettlingOptions) {
   /** The turn the next layout carries the columns in by, and the copy of the spread it carries out. */
-  let entry: { way: BorderTurn['way']; leaving: HTMLElement | undefined } | undefined
+  let entry: { way: BorderTurn['way']; leaving: LeavingSpread | undefined } | undefined
+
+  const removeCopy = (copy: HTMLElement) => {
+    copy.remove()
+    options.column.unmarkCopy(copy)
+  }
+
+  /** Copies the spread in front of `text` into `holder`, with its highlights. */
+  const createLeaving = (text: HTMLElement, holder: HTMLElement): LeavingSpread => {
+    const copy = copyPaper(text, holder, options.column.markCopy)
+    return { copy, target: getTurnTarget(text), remove: () => removeCopy(copy) }
+  }
 
   /**
    * Runs while the paper still holds the markup before. A page turn into this markup keeps a copy
@@ -185,13 +198,13 @@ export function createBookSettling(options: BookSettlingOptions) {
    */
   const prepareEntry = (led: BookLink | undefined) => {
     const holder = options.leaving.value
-    holder?.replaceChildren()
+    for (const copy of holder ? [...holder.children] : []) removeCopy(copy as HTMLElement)
     entry = undefined
     const way = options.takeBorderTurn()
     if (!way || led) return
     const text = options.paper.value
     const isShown = holder && text && options.column.isStood.value
-    entry = { way, leaving: isShown ? copyPaper(text, holder) : undefined }
+    entry = { way, leaving: isShown ? createLeaving(text, holder) : undefined }
   }
 
   /** `getKeep` is read when the columns are read, so a turn made since the request is kept. */
@@ -370,6 +383,8 @@ export function useBookLayout(options: BookLayoutOptions) {
       readColumns: column.readColumns,
       findFragmentOffset: column.findFragmentOffset,
       markRuns: column.markRuns,
+      markCopy: column.markCopy,
+      unmarkCopy: column.unmarkCopy,
       isStood: column.isStood,
     },
     turns: { stand, enterSpread, getKeptOffset, keepOffset, getSpreadOf, standing },

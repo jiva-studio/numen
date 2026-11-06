@@ -142,7 +142,7 @@ defineExpose({
           @auxclick="onFollow"
         />
         <!-- A copy of the spread a turn into another document carries out. -->
-        <div ref="leaving" class="book__leaving" aria-hidden="true" />
+        <div ref="leaving" class="book__leaving" inert />
       </div>
     </div>
 

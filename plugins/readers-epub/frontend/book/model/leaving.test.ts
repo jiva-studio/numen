@@ -1,7 +1,7 @@
 /**
  * The copy of the spread in front that a turn into another document carries out.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { copyPaper } from './leaving'
 
@@ -17,7 +17,7 @@ describe('copying the paper', () => {
   it('puts a copy of the text and its place into the holder', () => {
     const holder = document.createElement('div')
 
-    const copy = copyPaper(createPaper(), holder)
+    const copy = copyPaper(createPaper(), holder, vi.fn())
 
     expect(holder.children).toHaveLength(1)
     expect(holder.firstElementChild).toBe(copy)
@@ -27,18 +27,32 @@ describe('copying the paper', () => {
   })
 
   it('leaves no ids and no run offsets in the copy', () => {
-    const copy = copyPaper(createPaper(), document.createElement('div'))
+    const copy = copyPaper(createPaper(), document.createElement('div'), vi.fn())
 
     expect(copy.querySelectorAll('[id], [data-offset]')).toHaveLength(0)
   })
 
   it('replaces the copy the holder already holds', () => {
     const holder = document.createElement('div')
-    const first = copyPaper(createPaper(), holder)
+    const first = copyPaper(createPaper(), holder, vi.fn())
 
-    copyPaper(createPaper(), holder)
+    copyPaper(createPaper(), holder, vi.fn())
 
     expect(holder.children).toHaveLength(1)
     expect(holder.firstElementChild).not.toBe(first)
+  })
+
+  it('gives the copy to the marking while it still carries the run offsets', () => {
+    const offsets: string[] = []
+    const mark = vi.fn((copy: HTMLElement) => {
+      for (const run of copy.querySelectorAll<HTMLElement>('[data-offset]')) {
+        offsets.push(run.dataset['offset'] ?? '')
+      }
+    })
+
+    const copy = copyPaper(createPaper(), document.createElement('div'), mark)
+
+    expect(mark).toHaveBeenCalledExactlyOnceWith(copy)
+    expect(offsets).toStrictEqual(['10', '16'])
   })
 })

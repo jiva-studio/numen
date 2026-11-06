@@ -26,7 +26,8 @@ vi.mock('@numen/ui', async (importOriginal) => ({
   },
 }))
 vi.mock('./columns', () => ({ useBookColumns: () => fake.columns }))
-vi.mock('./turns', () => ({ useBookTurns: () => fake.turns }))
+/** The place the running turn of the paper goes to when the paper is copied. */
+vi.mock('./turns', () => ({ useBookTurns: () => fake.turns, getTurnTarget: () => -900 }))
 
 const KEPT = 77
 const SPREAD_OF = (pos: number) => pos + 1000
@@ -46,6 +47,8 @@ const setUp = () => {
     readColumns: vi.fn(),
     findFragmentOffset: vi.fn(),
     markRuns: vi.fn(),
+    markCopy: vi.fn(),
+    unmarkCopy: vi.fn(),
   }
   fake.turns = {
     front: ref({}),
@@ -70,6 +73,8 @@ const columns = () =>
     readColumns: ReturnType<typeof vi.fn>
     findFragmentOffset: ReturnType<typeof vi.fn>
     markRuns: ReturnType<typeof vi.fn>
+    markCopy: ReturnType<typeof vi.fn>
+    unmarkCopy: ReturnType<typeof vi.fn>
   }
 
 const turns = () =>
@@ -761,11 +766,40 @@ describe('a page turned into the adjacent document', () => {
     flushFrames()
 
     expect(turns().stand).not.toHaveBeenCalledWith(SPREAD_OF(200), 'auto')
-    expect(turns().enterSpread).toHaveBeenCalledExactlyOnceWith(
-      SPREAD_OF(200),
-      'next',
-      setup.holder.firstElementChild,
-    )
+    expect(turns().enterSpread).toHaveBeenCalledExactlyOnceWith(SPREAD_OF(200), 'next', {
+      copy: setup.holder.firstElementChild,
+      target: -900,
+      remove: expect.any(Function),
+    })
+  })
+
+  it('highlights the copy, and removes it with its highlights at the end of the turn', async () => {
+    const setup = room()
+    await turnIntoNext(setup, 200)
+    const copy = setup.holder.firstElementChild
+    expect(columns().markCopy).toHaveBeenCalledExactlyOnceWith(copy)
+    flushFrames()
+
+    const leaving = turns().enterSpread.mock.calls[0]?.[2] as { remove: () => void }
+    leaving.remove()
+
+    expect(setup.holder.children).toHaveLength(0)
+    expect(columns().unmarkCopy).toHaveBeenCalledExactlyOnceWith(copy)
+  })
+
+  it('removes the copy with its highlights when another document is drawn', async () => {
+    const setup = room()
+    await turnIntoNext(setup, 200)
+    const copy = setup.holder.firstElementChild
+    flushFrames()
+
+    setup.props.at = 310
+    setup.props.span = { start: 300, end: 400 }
+    setup.props.markup = '<p>three</p>'
+    await nextTick()
+
+    expect(setup.holder.children).toHaveLength(0)
+    expect(columns().unmarkCopy).toHaveBeenCalledExactlyOnceWith(copy)
   })
 
   it('lands at once where the owner moved the reader elsewhere', async () => {

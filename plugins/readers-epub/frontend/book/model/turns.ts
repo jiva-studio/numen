@@ -19,6 +19,7 @@ import {
 import type { PageNavigationAction } from '@numen/ui'
 import { goToPage } from '../lib/pageStep'
 import type { SettledBookProps } from '../lib/props'
+import type { LeavingSpread } from './leaving'
 
 /** Reading the width forces a layout pass, so the style written before it is applied first. */
 function flushLayout(element: HTMLElement): number {
@@ -58,6 +59,12 @@ interface RunningTurn {
 }
 
 const runningTurns = new WeakMap<HTMLElement, RunningTurn>()
+
+/** The `translate` in pixels a running turn of `text` goes to, or the one `text` has without a turn. */
+export function getTurnTarget(text: HTMLElement): number {
+  const target = Number.parseFloat(runningTurns.get(text)?.to ?? text.style.translate)
+  return Number.isFinite(target) ? target : 0
+}
 
 /** Stops the turn of a paper. The columns are where the last frame wrote them. */
 function stopTurn(text: HTMLElement): void {
@@ -155,9 +162,15 @@ export function useBookTurns(options: BookTurnsOptions) {
   /**
    * Shows `spread` after a turn into the adjacent document. The columns start one spread away on
    * the side the turn comes from and are carried to it, while `leaving`, a copy of the spread that
-   * was in front, is carried out by the same distance and removed at the end.
+   * was in front, is carried out and removed at the end. A copy taken during a running turn starts
+   * where that turn drew it and ends one spread past the place that turn was going to; the columns
+   * start the same distance away, so the two move by one distance and never overlap.
    */
-  const enterSpread = (spread: number, way: 'next' | 'back', leaving: HTMLElement | undefined) => {
+  const enterSpread = (
+    spread: number,
+    way: 'next' | 'back',
+    leaving: LeavingSpread | undefined,
+  ) => {
     const text = options.paper.value
     activeSpread.value = Math.min(Math.max(spread, 0), Math.max(options.spreadCount.value - 1, 0))
     if (!text) {
@@ -166,13 +179,14 @@ export function useBookTurns(options: BookTurnsOptions) {
     }
     const step = way === 'next' ? options.flow.value.width : -options.flow.value.width
     const rest = -getSpreadStart(options.flow.value, activeSpread.value)
+    const from = leaving ? Number.parseFloat(leaving.copy.style.translate) || 0 : 0
+    const remaining = leaving ? from - leaving.target : 0
     stopTurn(text)
-    text.style.translate = `${rest + step}px 0`
+    text.style.translate = `${rest + step + remaining}px 0`
     translatePaper(text, `${rest}px 0`, 'smooth')
     if (!leaving) return
-    const from = Number.parseFloat(leaving.style.translate) || 0
-    leaving.style.translate = `${from}px 0`
-    translatePaper(leaving, `${from - step}px 0`, 'smooth', () => leaving.remove())
+    leaving.copy.style.translate = `${from}px 0`
+    translatePaper(leaving.copy, `${leaving.target - step}px 0`, 'smooth', leaving.remove)
   }
 
   const announce = () => {
@@ -212,7 +226,7 @@ export function useBookTurns(options: BookTurnsOptions) {
   const getSpreadOf = (pos: number) => findSpreadAt(options.marks.value, options.flow.value, pos)
 
   /**
-   * The target of a page turn, and where it lands. Returns the offset asked of the owner when the
+   * Turns one page in the direction `way`. Returns the offset requested from the owner when the
    * turn goes past an end of the document.
    */
   const turn = (way: PageNavigationAction): number | undefined => {
