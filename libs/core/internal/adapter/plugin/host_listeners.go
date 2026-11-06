@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/portproxy"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
@@ -34,7 +35,11 @@ const (
 	maxListenerPort = 65535
 )
 
-var errListenerPortValue = errors.New("the port setting does not hold a port from 1024 to 65535")
+var (
+	errListenerPortValue = errors.New("the port setting does not hold a port from 1024 to 65535")
+	// errListenerBind marks a failure of the plugin that a sync of its listeners recorded.
+	errListenerBind = errors.New("listener port not bound")
+)
 
 // listenerBinding is a bound listener port and the proxy that forwards its connections.
 type listenerBinding struct {
@@ -135,6 +140,7 @@ func (h *Host) syncListeners(ctx context.Context, pluginID string) {
 			h.closeListener(pluginID, binding.proxy)
 		}
 	}
+	h.clearListenerFailure(pluginID)
 	if len(next) == 0 {
 		delete(h.listeners, pluginID)
 		return
@@ -192,8 +198,21 @@ func (h *Host) failListenerBind(pluginID string, err error) {
 	if isFailed {
 		return
 	}
-	h.recordActivationFailure(pluginID, err)
+	h.recordActivationFailure(pluginID, fmt.Errorf("%w: %w", errListenerBind, err))
 	h.deliverPluginFailures()
+}
+
+// clearListenerFailure forgets the failure of the plugin when a sync of its listeners recorded it.
+func (h *Host) clearListenerFailure(pluginID string) {
+	h.mu.RLock()
+	sup, ok := h.supervisors[pluginID]
+	h.mu.RUnlock()
+	if !ok {
+		return
+	}
+	if isFailed, cause := sup.GetActivationFailure(); isFailed && errors.Is(cause, errListenerBind) {
+		h.clearFailure(pluginID, sup)
+	}
 }
 
 // closeListenersLocked closes and forgets the bound ports of the plugin. The caller holds listenersMu.
@@ -223,16 +242,30 @@ func (h *Host) closeAllListeners() {
 // held until the connection ends, and the connection goes to the port its ready line reported.
 func (h *Host) createListenerTarget(pluginID, name string) portproxy.Target {
 	return func(ctx context.Context) (string, func(), error) {
-		if _, err := h.EnsureActive(ctx, pluginID); err != nil {
+		endpoint, err := h.EnsureActive(ctx, pluginID)
+		if err != nil {
 			return "", nil, fmt.Errorf("activate plugin %s for listener %s: %w", pluginID, name, err)
 		}
+		release := func() { h.releaseEndpoint(pluginID, endpoint) }
 		h.mu.RLock()
 		port, ok := h.listenerPorts[pluginID][name]
 		h.mu.RUnlock()
 		if !ok {
-			h.Release(pluginID)
+			release()
 			return "", nil, fmt.Errorf("plugin %s listener %s: %w", pluginID, name, errListenerNotReported)
 		}
-		return net.JoinHostPort(listenerAddressHost, strconv.Itoa(port)), func() { h.Release(pluginID) }, nil
+		return net.JoinHostPort(listenerAddressHost, strconv.Itoa(port)), release, nil
 	}
+}
+
+// releaseEndpoint gives back a lease taken with EnsureActive on the process that served endpoint. A
+// lease of a process that has stopped is not given back: the process that runs now holds its own.
+func (h *Host) releaseEndpoint(pluginID string, endpoint transport.Endpoint) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	sup, ok := h.supervisors[pluginID]
+	if !ok || h.endpoints[pluginID].Token != endpoint.Token {
+		return
+	}
+	sup.Release(h.clock.Now())
 }
