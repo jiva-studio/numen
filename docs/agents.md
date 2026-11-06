@@ -38,11 +38,11 @@ Everything else is passed on. It is a denylist: the inherited environment minus 
 
 Three things, appended to the model's default instructions:
 
-- It is answering inside the application the person keeps these notes in, beside the note they are looking at.
+- It is answering inside the application the user keeps these notes in, beside the note the user has open.
 - A note is called by its title. A path, a file name and an extension are how the tools address a note, and are never shown.
 - The answer is read in a narrow panel.
 
-Where the person has a note open, its path is named, and a task saying "this note" means that one.
+Where the user has a note open, its path is named, and a task saying "this note" means that one.
 
 The tools server also gives every agent that connects to it instructions: one line of its own on what a vault is, then the paragraph each plugin lists with its tools, in the order of the plugin ids. A plugin that is disabled, or none of whose tools is offered, adds nothing. The vault tools tell how to name a note and a passage as links, which tool searches and reads what (`note_search` the notes, `library_search` and `library_read` everything the vault holds), and that a passage is a window cut to a size and is read on before a source is said not to say something. The window tools tell when to read the tabs and when to show a place.
 
@@ -134,7 +134,7 @@ A tool is named for the subject it acts on, then what it does: `note_read`, `car
 
 ## The servers
 
-A tool declares the servers it is offered on: the full server, which gives an agent access to the whole vault, and the reading server, whose tools all read. A tool that writes is on the full server alone; a tool that reads is on both. `card_current` returns the card shown to the person in the window they run their cards in, and an empty deck between cards.
+A tool declares the servers it is offered on: the full server, which gives an agent access to the whole vault, and the reading server, whose tools all read. A tool that writes is on the full server alone; a tool that reads is on both. `card_current` returns the card shown to the person in the window they run their cards in, and an empty `path` between cards.
 
 The tools are registered by the plugins that own their subjects — `agents-tools-vault`, `agents-tools-window`, `views-flashcards-studio`, `engines-ocr`, `engines-transcription`, `tools-media-importer` — and `agents-mcp-server` gathers the tools of every plugin and of the host and serves them to an agent.
 

@@ -14,7 +14,7 @@ const instructions = "Use url_import to add a web page or a video to the vault b
 	"note named after the address and fetches the text published there, the prose of an article or the " +
 	"captions of a video, before it returns; that text can be read and searched from then on. " +
 	"Write your own notes about the page as separate notes that link to the link note. Set downloadVideo " +
-	"only when the person wants the video on this disk: the download is large and runs in the background, " +
+	"only when the user wants the video on this disk: the download is large and runs in the background, " +
 	"and the result returns its task id."
 
 var errNoVault = errors.New("the call names no vault")

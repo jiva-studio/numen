@@ -9,15 +9,15 @@ const ArrangeInstructions = "Use note_list to list the notes of the vault or of 
 	"note_rename gives a note another title and moves its file to the title's file name, note_move moves notes to a folder, and note_remove moves notes to the vault's trash, from where they can be put back; the host writes again the links that named a renamed or moved note by its old name. " +
 	"link_add, link_update and link_remove write the links in the frontmatter of a note and need the fingerprint note_read gave for that note; a stale fingerprint is refused, so read the note again. " +
 	"vault_add adds a folder as a vault, vault_rename changes the name of a vault, and vault_remove takes a vault off the list and leaves its folder on the disk. " +
-	"vault_open moves the person's window to another vault and ends this session's view of the vault it works on, so call it only when the person asks for it."
+	"vault_open switches the user's window to another vault and ends this session's access to the vault it works on, so call it only when the user asks for it."
 
 // citeInstructions is the instruction paragraph for naming notes and passages, and for note_search,
 // library_search, library_read and file_read.
-const citeInstructions = "Name a note you write about as a link with the title the person knows it by, for example [[Tidal pools]], where you write about it, not in a list at the end; a title several notes share is written as [[note://<identifier>]], which names one of them. " +
+const citeInstructions = "Name a note you write about as a link with its title, for example [[Tidal pools]], where you write about it, not in a list at the end; a title several notes share is written as [[note://<identifier>]], which names one of them. " +
 	"Write every passage of a book, a PDF or a recording that you write about as a markdown link to the address library_search returns for it under `uri`, in place, not in a list at the end, for example [the harbour chapter](numen:library%2FA%20Sea%20Atlas.pdf?start=40120&length=980). " +
 	"Never use file:// links for notes or books. " +
 	"note_search finds notes only; library_search finds passages in everything the vault holds: notes, books, PDFs, scans and recordings. library_read reads the text of one source a page or a range at a time, and file_read reads text files and refuses a binary. " +
-	"Search with the person's own words before your own. " +
+	"Search with the user's own words before your own. " +
 	"A passage is truncated, often mid-sentence: read on with library_read before you say that a source does not say something. " +
 	"For a question about a book, pass kinds [\"file\"] to library_search, because a vault holds far more notes than books."
 
