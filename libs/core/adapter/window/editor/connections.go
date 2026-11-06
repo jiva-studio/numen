@@ -223,13 +223,13 @@ func (h *noteHandler) ListBacklinks(
 	out := &v1.ListBacklinksResponse{}
 	for _, b := range found {
 		out.Backlinks = append(out.Backlinks, &v1.Backlink{
-			From:         &v1.Note{Path: b.From},
-			Role:         wire.ConvertRoleToWire(b.Role),
-			RoleFromHere: wire.ConvertRoleToWire(b.RoleFromHere),
-			Type:         b.Type,
-			Note:         b.Why,
-			Label:        b.Label,
-			Marker:       wire.ConvertMarkerToWire(b.Marker),
+			From:       &v1.Note{Path: b.From},
+			Role:       wire.ConvertRoleToWire(b.Role),
+			SourceRole: wire.ConvertRoleToWire(b.SourceRole),
+			Type:       b.Type,
+			Note:       b.Why,
+			Label:      b.Label,
+			Marker:     wire.ConvertMarkerToWire(b.Marker),
 		})
 	}
 	return connect.NewResponse(out), nil

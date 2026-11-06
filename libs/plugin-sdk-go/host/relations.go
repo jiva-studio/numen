@@ -196,7 +196,7 @@ func (c *Client) ListBacklinks(ctx context.Context, to string) ([]domain.Backlin
 	}
 	out := make([]domain.Backlink, 0, len(res.Msg.GetLinks()))
 	for _, one := range res.Msg.GetLinks() {
-		out = append(out, domain.Backlink{ResolvedLink: readLink(one), RoleFromHere: readRole(one.GetSourceRole())})
+		out = append(out, domain.Backlink{ResolvedLink: readLink(one), SourceRole: readRole(one.GetSourceRole())})
 	}
 	return out, nil
 }

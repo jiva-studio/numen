@@ -185,11 +185,11 @@ func (r ResolvedLink) InVault(writtenIn VaultID) (vault VaultID, crossed bool) {
 
 // Backlink is a link written in another note that resolves to the note asked
 // about. The embedded link keeps the role as written, relative to the note it is
-// written in; RoleFromHere is the role of that note relative to the one asked
+// written in; SourceRole is the role of that note relative to the one asked
 // about, and is empty for a role with no counterpart.
 type Backlink struct {
 	ResolvedLink
-	RoleFromHere LinkRole
+	SourceRole LinkRole
 }
 
 // AmbiguousLink is a link that several notes answer to. It resolved to the

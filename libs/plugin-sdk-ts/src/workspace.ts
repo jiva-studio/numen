@@ -123,7 +123,7 @@ export interface Backlink {
   // The role as written, relative to the note it is written in.
   readonly role: LinkRole | null
   // The role of the writing note relative to the note asked about; null where the role has no counterpart.
-  readonly roleFromHere: LinkRole | null
+  readonly sourceRole: LinkRole | null
   readonly type: string
   readonly reason: string
   readonly label: string

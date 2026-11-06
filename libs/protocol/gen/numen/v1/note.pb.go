@@ -2613,9 +2613,9 @@ type Backlink struct {
 	From *Note `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	// The role as written, which is relative to the note it is written in.
 	Role Role `protobuf:"varint,2,opt,name=role,proto3,enum=numen.v1.Role" json:"role,omitempty"`
-	// The role of that note relative to the note asked about. ROLE_UNSPECIFIED for
-	// a role with no counterpart.
-	RoleFromHere  Role   `protobuf:"varint,3,opt,name=role_from_here,json=roleFromHere,proto3,enum=numen.v1.Role" json:"role_from_here,omitempty"`
+	// The role of the note the link is written in, relative to the note asked about.
+	// ROLE_UNSPECIFIED for a role with no counterpart.
+	SourceRole    Role   `protobuf:"varint,3,opt,name=source_role,json=sourceRole,proto3,enum=numen.v1.Role" json:"source_role,omitempty"`
 	Type          string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
 	Note          string `protobuf:"bytes,5,opt,name=note,proto3" json:"note,omitempty"`
 	Label         string `protobuf:"bytes,6,opt,name=label,proto3" json:"label,omitempty"`
@@ -2668,9 +2668,9 @@ func (x *Backlink) GetRole() Role {
 	return Role_ROLE_UNSPECIFIED
 }
 
-func (x *Backlink) GetRoleFromHere() Role {
+func (x *Backlink) GetSourceRole() Role {
 	if x != nil {
-		return x.RoleFromHere
+		return x.SourceRole
 	}
 	return Role_ROLE_UNSPECIFIED
 }
@@ -3192,11 +3192,12 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x11is_name_exhausted\x18\x04 \x01(\bR\x0fisNameExhaustedB\b\n" +
 	"\x06_error\"*\n" +
 	"\x14ListBacklinksRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xf0\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xeb\x01\n" +
 	"\bBacklink\x12\"\n" +
 	"\x04from\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04from\x12\"\n" +
-	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x124\n" +
-	"\x0erole_from_here\x18\x03 \x01(\x0e2\x0e.numen.v1.RoleR\froleFromHere\x12\x12\n" +
+	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12/\n" +
+	"\vsource_role\x18\x03 \x01(\x0e2\x0e.numen.v1.RoleR\n" +
+	"sourceRole\x12\x12\n" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12\x12\n" +
 	"\x04note\x18\x05 \x01(\tR\x04note\x12\x14\n" +
 	"\x05label\x18\x06 \x01(\tR\x05label\x12(\n" +
@@ -3379,7 +3380,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	49, // 37: numen.v1.CreateRelatedNoteResponse.error:type_name -> numen.v1.ErrorCode
 	4,  // 38: numen.v1.Backlink.from:type_name -> numen.v1.Note
 	1,  // 39: numen.v1.Backlink.role:type_name -> numen.v1.Role
-	1,  // 40: numen.v1.Backlink.role_from_here:type_name -> numen.v1.Role
+	1,  // 40: numen.v1.Backlink.source_role:type_name -> numen.v1.Role
 	2,  // 41: numen.v1.Backlink.marker:type_name -> numen.v1.Marker
 	43, // 42: numen.v1.ListBacklinksResponse.backlinks:type_name -> numen.v1.Backlink
 	3,  // 43: numen.v1.RenameNoteResponse.name_source:type_name -> numen.v1.NameSource

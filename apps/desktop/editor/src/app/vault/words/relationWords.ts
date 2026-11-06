@@ -124,7 +124,7 @@ export const findRelationError = (answer: {
 interface BacklinkWire {
   readonly from?: { readonly path: string; readonly title: string } | undefined
   readonly role: NoteRoleCode
-  readonly roleFromHere: NoteRoleCode
+  readonly sourceRole: NoteRoleCode
   readonly type: string
   readonly note: string
   readonly label: string
@@ -136,7 +136,7 @@ export const mapBacklinks = (backlinks: readonly BacklinkWire[]): Backlink[] =>
   backlinks.map((one) => ({
     from: { path: one.from?.path ?? '', title: one.from?.title ?? '' },
     role: readRole(one.role),
-    roleFromHere: readRole(one.roleFromHere),
+    sourceRole: readRole(one.sourceRole),
     type: one.type,
     reason: one.note,
     label: one.label,
