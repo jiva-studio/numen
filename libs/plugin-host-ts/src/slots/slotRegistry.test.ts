@@ -1,7 +1,7 @@
 /** The entries of the slots of a window, as their owners read them. Every plugin here is invented. */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
-import type { SlotItem, CommandTarget } from '@numen/plugin-sdk'
+import type { CommandTarget, SlotItem } from '@numen/plugin-sdk'
 import { createSlotRegistry, type DeclaredSlotEntry, type SlotRegistryDeps } from './slotRegistry'
 
 const LEDGER = 'org.example.ledger'
@@ -196,6 +196,66 @@ describe('a submenu', () => {
     expect(describeSlot(registry.getEntries('fileTree.context'))).toStrictEqual([
       `${LEDGER}:ledger.open`,
     ])
+  })
+})
+
+describe('the condition of an entry', () => {
+  const FOLDER: CommandTarget = { path: 'notes', title: 'notes', isFolder: true, others: [] }
+  const ROOT: CommandTarget = { path: '', title: '', isFolder: true, others: [] }
+
+  it('leaves the entry out over a target where it is false', () => {
+    const { registry } = setup([
+      {
+        pluginId: LEDGER,
+        slot: 'fileTree.context',
+        command: 'ledger.open',
+        when: 'isFolder && !isRoot',
+      },
+      { pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.sum' },
+    ])
+
+    expect(describeSlot(registry.getEntries('fileTree.context', FOLDER))).toStrictEqual([
+      `${LEDGER}:ledger.open`,
+      `${LEDGER}:ledger.sum`,
+    ])
+    expect(describeSlot(registry.getEntries('fileTree.context', ROOT))).toStrictEqual([
+      `${LEDGER}:ledger.sum`,
+    ])
+    expect(describeSlot(registry.getEntries('fileTree.context', NOTE))).toStrictEqual([
+      `${LEDGER}:ledger.sum`,
+    ])
+  })
+
+  it('leaves out a submenu and its separator where it is false', () => {
+    const { registry } = setup([
+      { pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.sum', group: '0' },
+      {
+        pluginId: LEDGER,
+        slot: 'fileTree.context',
+        submenu: 'ledger.new',
+        title: 'New',
+        group: '1',
+        when: 'isMultiple',
+      },
+      { pluginId: LEDGER, slot: 'ledger.new', command: 'ledger.open' },
+    ])
+
+    expect(describeSlot(registry.getEntries('fileTree.context', FOLDER))).toStrictEqual([
+      `${LEDGER}:ledger.sum`,
+    ])
+  })
+
+  it('that is malformed leaves the entry out and is reported as an error', () => {
+    const { registry, reportIssue } = setup([
+      { pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.open', when: 'isFile' },
+    ])
+
+    expect(registry.getEntries('fileTree.context', FOLDER)).toStrictEqual([])
+    expect(reportIssue).toHaveBeenCalledWith(
+      LEDGER,
+      'slots: the condition "isFile" of "ledger.open" cannot be read: "isFile" is none of the keys isRoot, isFolder, isMultiple',
+      'error',
+    )
   })
 })
 

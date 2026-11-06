@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/when"
 )
 
 // ErrInvalidSlotEntry is an entry of contributes.slots a manifest declares wrongly.
@@ -37,6 +39,9 @@ type SlotEntry struct {
 	Group string
 	// Order sorts the entries of a group, lowest first; nil sorts after every order.
 	Order *int
+	// When is the condition over the target of the place under which the entry is drawn, a when
+	// clause of package when; empty is always.
+	When string
 }
 
 // placed is what the entry places, as its kind and id, such as command ledger.open.
@@ -94,6 +99,11 @@ func listSlotEntryIssues(entry SlotEntry, declared map[string]bool) []error {
 	}
 	if entry.Group != strings.TrimSpace(entry.Group) {
 		issues = append(issues, fmt.Errorf("%w: group %q has surrounding space", ErrInvalidSlotEntry, entry.Group))
+	}
+	if entry.When != "" {
+		if _, err := when.Parse(entry.When); err != nil {
+			issues = append(issues, fmt.Errorf("%w: when %q: %w", ErrInvalidSlotEntry, entry.When, err))
+		}
 	}
 	switch {
 	case entry.Command != "":

@@ -92,6 +92,10 @@ message ManifestSlotEntry {
   // order sorts the entries of a group, lowest first, then by plugin id. Absent sorts after every
   // order.
   optional int32 order = 8;
+  // when is a condition over the target of the place, such as "isFolder && !isMultiple": the keys
+  // isRoot, isFolder and isMultiple combined with &&, || and ! and parentheses. The entry is left out
+  // while it is false. Empty is always true.
+  string when = 9;
 }
 
 // ManifestHandle declares that the plugin takes part in a capability for files of some content

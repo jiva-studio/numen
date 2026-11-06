@@ -360,7 +360,11 @@ type ManifestSlotEntry struct {
 	Group string `protobuf:"bytes,7,opt,name=group,proto3" json:"group,omitempty"`
 	// order sorts the entries of a group, lowest first, then by plugin id. Absent sorts after every
 	// order.
-	Order         *int32 `protobuf:"varint,8,opt,name=order,proto3,oneof" json:"order,omitempty"`
+	Order *int32 `protobuf:"varint,8,opt,name=order,proto3,oneof" json:"order,omitempty"`
+	// when is a condition over the target of the place, such as "isFolder && !isMultiple": the keys
+	// isRoot, isFolder and isMultiple combined with &&, || and ! and parentheses. The entry is left out
+	// while it is false. Empty is always true.
+	When          string `protobuf:"bytes,9,opt,name=when,proto3" json:"when,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -462,6 +466,13 @@ func (x *ManifestSlotEntry) GetOrder() int32 {
 		return *x.Order
 	}
 	return 0
+}
+
+func (x *ManifestSlotEntry) GetWhen() string {
+	if x != nil {
+		return x.When
+	}
+	return ""
 }
 
 type isManifestSlotEntry_Placed interface {
@@ -1741,7 +1752,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	" \x03(\v2\x1a.numen.v1.ManifestNoteTypeR\tnoteTypes\x12#\n" +
 	"\rframe_origins\x18\v \x03(\tR\fframeOrigins\x125\n" +
 	"\bcommands\x18\f \x03(\v2\x19.numen.v1.ManifestCommandR\bcommands\x121\n" +
-	"\x05slots\x18\x0f \x03(\v2\x1b.numen.v1.ManifestSlotEntryR\x05slots\"\xe4\x01\n" +
+	"\x05slots\x18\x0f \x03(\v2\x1b.numen.v1.ManifestSlotEntryR\x05slots\"\xf8\x01\n" +
 	"\x11ManifestSlotEntry\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x1a\n" +
 	"\acommand\x18\x02 \x01(\tH\x00R\acommand\x12\x14\n" +
@@ -1750,7 +1761,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05title\x18\x05 \x01(\tR\x05title\x12\x12\n" +
 	"\x04icon\x18\x06 \x01(\tR\x04icon\x12\x14\n" +
 	"\x05group\x18\a \x01(\tR\x05group\x12\x19\n" +
-	"\x05order\x18\b \x01(\x05H\x01R\x05order\x88\x01\x01B\b\n" +
+	"\x05order\x18\b \x01(\x05H\x01R\x05order\x88\x01\x01\x12\x12\n" +
+	"\x04when\x18\t \x01(\tR\x04whenB\b\n" +
 	"\x06placedB\b\n" +
 	"\x06_order\"n\n" +
 	"\x0eManifestHandle\x12\x18\n" +

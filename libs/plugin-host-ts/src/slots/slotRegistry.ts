@@ -12,9 +12,13 @@ import {
   type SlotItem,
   type SlotPlace,
   type CommandTarget,
+  type Result,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { formatCommandId } from '../commandId'
+import { evaluateWhen } from '../when/evaluate'
+import { parseWhen, type WhenExpression } from '../when/parse'
+import { getTargetWhenValues } from './targetValues'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {
@@ -30,6 +34,8 @@ export interface DeclaredSlotEntry {
   readonly icon?: unknown
   readonly group?: string | undefined
   readonly order?: number | undefined
+  /** The condition over the target of the place under which the entry is drawn; empty is always. */
+  readonly when?: string | undefined
 }
 
 /** How a command available in a slot is drawn. */
@@ -245,10 +251,29 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
   }
   const declared = computed(() => readDeclared(deps.getEntries() ?? [], report))
 
+  // Each condition is read once, however often its entries are drawn.
+  const conditions = new Map<string, Result<WhenExpression, string>>()
+  const isDrawnOver = (entry: DeclaredSlotEntry, target: CommandTarget | undefined): boolean => {
+    if (!entry.when) return true
+    const parsed = conditions.get(entry.when) ?? parseWhen(entry.when)
+    conditions.set(entry.when, parsed)
+    if (!parsed.ok) {
+      const id = entry.command ?? entry.view ?? entry.submenu ?? ''
+      report(
+        entry.pluginId,
+        `slots: the condition "${entry.when}" of "${id}" cannot be read: ${parsed.error}`,
+        'error',
+      )
+      return false
+    }
+    return evaluateWhen(parsed.value, getTargetWhenValues(target))
+  }
+
   const toItem = (
     entry: DeclaredSlotEntry,
     target: CommandTarget | undefined,
   ): SlotItem | undefined => {
+    if (!isDrawnOver(entry, target)) return undefined
     if (entry.command) {
       const command = getFullCommand(entry, entry.command)
       return toCommandItem(entry, command, deps.findCommand(command, target))
@@ -293,5 +318,6 @@ export function readManifestSlotEntries(
     ...(one.icon ? { icon: getIcon(one.icon) } : {}),
     ...(one.group ? { group: one.group } : {}),
     ...(one.order === undefined ? {} : { order: one.order }),
+    ...(one.when ? { when: one.when } : {}),
   }))
 }

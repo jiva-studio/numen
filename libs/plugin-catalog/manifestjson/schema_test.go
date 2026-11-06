@@ -49,7 +49,7 @@ const everyFieldManifest = `{
 		"frameOrigins": ["https://player.example"],
 		"slots": [{"slot": "titleBar.commands", "command": "task.run", "group": "run", "order": 1},
 			{"slot": "titleBar", "view": "bar"},
-			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus"}]}
+			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus", "when": "isFolder"}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

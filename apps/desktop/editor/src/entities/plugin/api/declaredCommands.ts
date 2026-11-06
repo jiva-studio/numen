@@ -32,6 +32,7 @@ interface WireSlotEntry {
         readonly icon: string
         readonly group: string
         readonly order?: number | undefined
+        readonly when: string
       }
     | undefined
 }
@@ -55,6 +56,8 @@ export interface DeclaredSlot {
   readonly iconName?: string
   readonly group?: string
   readonly order?: number
+  /** The condition over the target of the place under which the entry is drawn. */
+  readonly when?: string
 }
 
 /** What the core lists of the enabled plugins: the commands they declare and where they place them. */
@@ -119,6 +122,13 @@ const readPlaced = (entry: WireSlotEntry['entry']) => {
   return kind && entry?.placed.value ? { [kind]: entry.placed.value } : {}
 }
 
+/** Where an entry goes among the others of its slot, and when it is drawn. */
+const readArrangement = (entry: WireSlotEntry['entry']) => ({
+  ...(entry?.group ? { group: entry.group } : {}),
+  ...(entry?.order === undefined ? {} : { order: entry.order }),
+  ...(entry?.when ? { when: entry.when } : {}),
+})
+
 const readSlotEntry = ({ pluginId, entry }: WireSlotEntry): DeclaredSlot => {
   return {
     pluginId,
@@ -126,8 +136,7 @@ const readSlotEntry = ({ pluginId, entry }: WireSlotEntry): DeclaredSlot => {
     ...readPlaced(entry),
     ...(entry?.title ? { title: entry.title } : {}),
     ...(entry?.icon ? { iconName: entry.icon } : {}),
-    ...(entry?.group ? { group: entry.group } : {}),
-    ...(entry?.order === undefined ? {} : { order: entry.order }),
+    ...readArrangement(entry),
   }
 }
 

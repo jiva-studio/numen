@@ -127,6 +127,7 @@ func newWireSlotEntry(one plugincommand.SlotEntry) *v1.PluginSlotEntry {
 		Title: one.Entry.Title,
 		Icon:  one.Entry.Icon,
 		Group: one.Entry.Group,
+		When:  one.Entry.When,
 	}
 	switch {
 	case one.Entry.Command != "":

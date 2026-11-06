@@ -29,6 +29,7 @@ describe('readManifestSlotEntries', () => {
         title: 'New ledger',
         icon: 'plus',
         group: '0-new',
+        when: 'isFolder && !isMultiple',
       },
     ])
 
@@ -48,6 +49,7 @@ describe('readManifestSlotEntries', () => {
         title: 'New ledger',
         icon: { iconName: 'plus' },
         group: '0-new',
+        when: 'isFolder && !isMultiple',
       },
     ])
   })

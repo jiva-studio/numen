@@ -28,6 +28,55 @@ const convert = {
   arguments: [],
 }
 
+describe('the slot entries the plugins declare', () => {
+  it('are read with what each places, its look, its group, its order and its condition', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      slots: [
+        {
+          pluginId: 'org.example.ledger',
+          entry: {
+            slot: 'fileTree.context',
+            placed: { case: 'submenu', value: 'ledger.new' },
+            title: 'New ledger',
+            icon: 'plus',
+            group: '0-new',
+            order: 0,
+            when: 'isFolder && !isMultiple',
+          },
+        },
+        {
+          pluginId: 'org.example.ledger',
+          entry: {
+            slot: 'titleBar.status',
+            placed: { case: 'view', value: 'balance' },
+            title: '',
+            icon: '',
+            group: '',
+            when: '',
+          },
+        },
+      ],
+    })
+
+    const { slots } = await listDeclaredCommands()
+
+    expect(slots).toStrictEqual([
+      {
+        pluginId: 'org.example.ledger',
+        slot: 'fileTree.context',
+        submenu: 'ledger.new',
+        title: 'New ledger',
+        iconName: 'plus',
+        group: '0-new',
+        order: 0,
+        when: 'isFolder && !isMultiple',
+      },
+      { pluginId: 'org.example.ledger', slot: 'titleBar.status', view: 'balance' },
+    ])
+  })
+})
+
 describe('the commands the plugins declare', () => {
   it('are read with their arguments in order', async () => {
     request.listCommands.mockResolvedValue({

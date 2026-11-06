@@ -90,11 +90,11 @@ type viewAndSubmenuPlugins struct{ menuPlacingPlugins }
 func (viewAndSubmenuPlugins) ListSlots() []plugincommand.SlotEntry {
 	return []plugincommand.SlotEntry{
 		{PluginID: "md.numen.tree", Entry: manifest.SlotEntry{Slot: "titleBar.status", View: "balance"}},
-		{PluginID: "md.numen.tree", Entry: manifest.SlotEntry{Slot: "fileTree.context", Submenu: "ledger.new", Title: "New ledger", Icon: "plus", Group: "0-new"}},
+		{PluginID: "md.numen.tree", Entry: manifest.SlotEntry{Slot: "fileTree.context", Submenu: "ledger.new", Title: "New ledger", Icon: "plus", Group: "0-new", When: "isFolder && !isMultiple"}},
 	}
 }
 
-func TestListCommands_CarriesAViewAndASubmenuWithTheirTitleAndIcon(t *testing.T) {
+func TestListCommands_CarriesAViewAndASubmenuWithTheirTitleIconAndCondition(t *testing.T) {
 	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(viewAndSubmenuPlugins{}, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
@@ -111,7 +111,7 @@ func TestListCommands_CarriesAViewAndASubmenuWithTheirTitleAndIcon(t *testing.T)
 		t.Errorf("the view came out as %v", view)
 	}
 	if submenu.GetSlot() != "fileTree.context" || submenu.GetSubmenu() != "ledger.new" || submenu.GetTitle() != "New ledger" ||
-		submenu.GetIcon() != "plus" || submenu.GetGroup() != "0-new" {
+		submenu.GetIcon() != "plus" || submenu.GetGroup() != "0-new" || submenu.GetWhen() != "isFolder && !isMultiple" {
 		t.Errorf("the submenu came out as %v", submenu)
 	}
 }

@@ -1,0 +1,91 @@
+{
+  "about": "The conditions of when clauses: the keys a condition may name, and the vectors the Go and the TypeScript readers are tested against. A condition combines keys with &&, || and ! and parentheses; ! binds tightest, then &&, then ||.",
+  "keys": [
+    { "name": "isRoot", "about": "the target is the root folder of the vault" },
+    { "name": "isFolder", "about": "the target is a folder" },
+    { "name": "isMultiple", "about": "the target is one of several paths selected together" }
+  ],
+  "valid": [
+    {
+      "when": "isFolder",
+      "keys": ["isFolder"],
+      "values": [
+        { "context": { "isFolder": true }, "value": true },
+        { "context": { "isFolder": false }, "value": false }
+      ]
+    },
+    {
+      "when": "!isRoot",
+      "keys": ["isRoot"],
+      "values": [
+        { "context": { "isRoot": true }, "value": false },
+        { "context": { "isRoot": false }, "value": true }
+      ]
+    },
+    {
+      "when": "isFolder && !isMultiple",
+      "keys": ["isFolder", "isMultiple"],
+      "values": [
+        { "context": { "isFolder": true, "isMultiple": false }, "value": true },
+        { "context": { "isFolder": true, "isMultiple": true }, "value": false },
+        { "context": { "isFolder": false, "isMultiple": false }, "value": false }
+      ]
+    },
+    {
+      "when": "isRoot || isFolder && isMultiple",
+      "keys": ["isRoot", "isFolder", "isMultiple"],
+      "values": [
+        { "context": { "isRoot": true, "isFolder": false, "isMultiple": false }, "value": true },
+        { "context": { "isRoot": false, "isFolder": true, "isMultiple": false }, "value": false },
+        { "context": { "isRoot": false, "isFolder": true, "isMultiple": true }, "value": true }
+      ]
+    },
+    {
+      "when": "(isRoot || isFolder) && isMultiple",
+      "keys": ["isRoot", "isFolder", "isMultiple"],
+      "values": [
+        { "context": { "isRoot": true, "isFolder": true, "isMultiple": false }, "value": false },
+        { "context": { "isRoot": false, "isFolder": true, "isMultiple": true }, "value": true }
+      ]
+    },
+    {
+      "when": "!(isFolder || isMultiple)",
+      "keys": ["isFolder", "isMultiple"],
+      "values": [
+        { "context": { "isFolder": false, "isMultiple": false }, "value": true },
+        { "context": { "isFolder": true, "isMultiple": false }, "value": false }
+      ]
+    },
+    {
+      "when": "!!isFolder",
+      "keys": ["isFolder"],
+      "values": [{ "context": { "isFolder": true }, "value": true }]
+    },
+    {
+      "when": "  isFolder&&isMultiple ",
+      "keys": ["isFolder", "isMultiple"],
+      "values": [{ "context": { "isFolder": true, "isMultiple": true }, "value": true }]
+    },
+    {
+      "when": "((isFolder)) || isFolder",
+      "keys": ["isFolder"],
+      "values": [{ "context": { "isFolder": false }, "value": false }]
+    }
+  ],
+  "invalid": [
+    { "when": "isFile", "about": "an unknown key" },
+    { "when": "IsFolder", "about": "a key in other case" },
+    { "when": "isFolder &&", "about": "a dangling operator" },
+    { "when": "&& isFolder", "about": "an operator first" },
+    { "when": "isFolder & isRoot", "about": "a single ampersand" },
+    { "when": "isFolder | isRoot", "about": "a single bar" },
+    { "when": "(isFolder", "about": "an unclosed parenthesis" },
+    { "when": "isFolder)", "about": "a stray parenthesis" },
+    { "when": "isFolder isRoot", "about": "two keys side by side" },
+    { "when": "()", "about": "an empty group" },
+    { "when": "isFolder == true", "about": "a comparison" },
+    { "when": "isFolder && !", "about": "a negation of nothing" },
+    { "when": " ", "about": "only space" },
+    { "when": "", "about": "nothing" }
+  ]
+}
