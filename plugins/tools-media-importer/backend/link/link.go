@@ -60,7 +60,7 @@ type Fetcher interface {
 	GetDownloadModel(address string) download.Model
 	GetMetadata(ctx context.Context, address string) (download.Metadata, error)
 	GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error)
-	Download(ctx context.Context, address string, into io.Writer) (download.Copy, error)
+	Download(ctx context.Context, address string, media download.Media, into io.Writer) (download.Copy, error)
 }
 
 // Clock gets the current time.
@@ -332,7 +332,7 @@ func (l *Links) StartFetch(ctx context.Context, link Link) {
 		defer cancel()
 		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, true))
 		if l.IsCopyable(link.Address) {
-			_, err := l.Copy(runCtx, link)
+			_, err := l.Copy(runCtx, link, download.MediaVideo)
 			reportBackgroundError(runCtx, "copy the video of", link, err)
 		}
 	})
@@ -347,12 +347,12 @@ func (l *Links) StartFetchText(ctx context.Context, link Link, isForced bool) {
 	})
 }
 
-// StartCopy copies the video of a link in the background. A failure is shown as its task.
-func (l *Links) StartCopy(ctx context.Context, link Link) {
+// StartCopy copies the media of a link in the background. A failure is shown as its task.
+func (l *Links) StartCopy(ctx context.Context, link Link, media download.Media) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		_, err := l.Copy(runCtx, link)
+		_, err := l.Copy(runCtx, link, media)
 		reportBackgroundError(runCtx, "copy the video of", link, err)
 	})
 }
@@ -499,16 +499,27 @@ func (l *Links) IsTextDeleted(ctx context.Context, link Link) (bool, error) {
 // copyChunk is how much of a copy is sent to the store in one call.
 const copyChunk = 1 << 20
 
-// Copy copies the video a link's address publishes into the plugin's folder, through the core's
-// queue, writes its address into the note under media, and returns its size. A copy already stored
-// is left as it is.
-func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
+// Copy copies the media a link's address publishes, the video or the sound alone, into the plugin's
+// folder, through the core's queue, writes its address into the note under media, and returns its
+// size. A copy of the same media already stored is left as it is; a copy of the other is replaced.
+func (l *Links) Copy(ctx context.Context, link Link, media download.Media) (int64, error) {
 	if !l.claim("copy", link, link.Key) {
 		return 0, ErrBeingFetched
 	}
 	defer l.release("copy", link, link.Key)
-	if size, err := l.FindCopy(ctx, link); err != nil || size > 0 {
+	folder := folder{store: l.getStore(link)}
+	rec, err := folder.readRecord(ctx, link.Key)
+	if err != nil {
+		return 0, err
+	}
+	size, err := l.FindCopy(ctx, link)
+	if err != nil || (size > 0 && rec.CopyMedia == media) {
 		return size, err
+	}
+	if size > 0 {
+		if err := folder.deleteCopy(ctx, link.Key); err != nil {
+			return 0, err
+		}
 	}
 	fetcher, settings := l.fetcher(), l.settings()
 	if !fetcher.CanCopy(string(link.Address)) {
@@ -519,12 +530,12 @@ func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitBytes, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
-	size, err := l.copy(ctx, fetcher, settings, link, task)
+	size, err = l.copy(ctx, fetcher, settings, link, media, task)
 	l.endTask(ctx, task, err)
 	return size, err
 }
 
-func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, link Link, task host.Task) (size int64, err error) {
+func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, link Link, media download.Media, task host.Task) (size int64, err error) {
 	meta, err := fetcher.GetMetadata(ctx, string(link.Address))
 	if err != nil {
 		return 0, err
@@ -555,7 +566,7 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 		pending:   nil,
 		byteCount: 0,
 	}
-	copied, err := fetcher.Download(ctx, string(link.Address), into)
+	copied, err := fetcher.Download(ctx, string(link.Address), media, into)
 	if err == nil {
 		err = into.flush()
 	}
@@ -570,21 +581,21 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	if err := store.Rename(ctx, part, name); err != nil {
 		return 0, err
 	}
-	if err := l.recordCopy(ctx, link, name); err != nil {
+	if err := l.recordCopy(ctx, link, name, media); err != nil {
 		return 0, err
 	}
 	_, err = l.setAddress(ctx, link, mediaKey, l.getAddress(name))
 	return into.byteCount, err
 }
 
-// recordCopy writes down the file the copy of a link is kept in.
-func (l *Links) recordCopy(ctx context.Context, link Link, name string) error {
+// recordCopy writes down the file the copy of a link is kept in, and what media it holds.
+func (l *Links) recordCopy(ctx context.Context, link Link, name string, media download.Media) error {
 	folder := folder{store: l.getStore(link)}
 	rec, err := folder.readRecord(ctx, link.Key)
 	if err != nil {
 		return err
 	}
-	rec.Address, rec.Copy = string(link.Address), name
+	rec.Address, rec.Copy, rec.CopyMedia = string(link.Address), name, media
 	return folder.writeRecord(ctx, link.Key, rec)
 }
 
@@ -599,7 +610,7 @@ func (l *Links) DeleteCopy(ctx context.Context, link Link) error {
 		return err
 	}
 	if hasRecord && rec.Copy != "" {
-		rec.Copy = ""
+		rec.Copy, rec.CopyMedia = "", ""
 		if err := folder.writeRecord(ctx, link.Key, rec); err != nil {
 			return err
 		}

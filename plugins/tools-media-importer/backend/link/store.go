@@ -48,6 +48,8 @@ type record struct {
 	Downloader string          `json:"downloader,omitempty"`
 	Kind       domain.TextKind `json:"kind,omitempty"`
 	Copy       string          `json:"copy,omitempty"`
+	// CopyMedia is what the copy holds, the video or the sound alone.
+	CopyMedia download.Media `json:"copyMedia,omitempty"`
 }
 
 // getKind returns the text kind a fetch produced: captions, or the prose of an article.
@@ -104,12 +106,12 @@ func (f folder) findRecord(ctx context.Context, key string) (record, bool, error
 	raw, err := f.store.Read(ctx, key+recordExt)
 	if errors.Is(err, host.ErrNotExist) {
 		// gomutants:disable-next-line RETURN_ZERO reason="explicit empty fields equal zero record"
-		return record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: ""}, false, nil
+		return record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: "", CopyMedia: ""}, false, nil
 	}
 	if err != nil {
 		return record{}, false, err
 	}
-	rec := record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: ""}
+	rec := record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: "", CopyMedia: ""}
 	return rec, true, json.Unmarshal(raw, &rec)
 }
 

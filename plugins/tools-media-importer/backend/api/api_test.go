@@ -14,7 +14,7 @@ func getContracts() map[string]plugintest.MessageContract {
 		MethodGetLink:     {Request: func() any { return &GetLinkRequest{} }, Response: func() any { return &GetLinkResponse{} }},
 		MethodReadArticle: {Request: func() any { return &ReadArticleRequest{} }, Response: func() any { return &ReadArticleResponse{} }},
 		MethodFetchText:   {Request: func() any { return &FetchTextRequest{} }, Response: func() any { return &FetchTextResponse{} }},
-		MethodCopyVideo:   {Request: func() any { return &CopyVideoRequest{} }, Response: func() any { return &CopyVideoResponse{} }},
+		MethodCopyMedia:   {Request: func() any { return &CopyMediaRequest{} }, Response: func() any { return &CopyMediaResponse{} }},
 		MethodDeleteCopy:  {Request: func() any { return &DeleteCopyRequest{} }, Response: func() any { return &DeleteCopyResponse{} }},
 		MethodCreateLinks: {Request: func() any { return &CreateLinksRequest{} }, Response: func() any { return &CreateLinksResponse{} }},
 	}

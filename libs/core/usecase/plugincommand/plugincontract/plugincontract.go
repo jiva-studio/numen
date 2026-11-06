@@ -138,6 +138,7 @@ const (
 )
 
 var (
+	GetSharedCommandArguments = pluginport.GetSharedCommandArguments
 	ErrDuplicateSettingKey    = pluginport.ErrDuplicateSettingKey
 	ErrEmptyID                = pluginport.ErrEmptyID
 	ErrEmptyName              = pluginport.ErrEmptyName

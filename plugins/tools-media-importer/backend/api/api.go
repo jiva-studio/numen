@@ -10,7 +10,7 @@ const (
 	MethodGetLink     = "GetLink"
 	MethodReadArticle = "ReadArticle"
 	MethodFetchText   = "FetchText"
-	MethodCopyVideo   = "CopyVideo"
+	MethodCopyMedia   = "CopyMedia"
 	MethodDeleteCopy  = "DeleteCopy"
 	MethodCreateLinks = "CreateLinks"
 )
@@ -55,13 +55,15 @@ type FetchTextRequest struct {
 // FetchTextResponse is the acknowledgement of a started fetch.
 type FetchTextResponse struct{}
 
-// CopyVideoRequest starts copying the video of the link note at Path.
-type CopyVideoRequest struct {
+// CopyMediaRequest starts copying the media of the link note at Path: the video, or with Kind
+// audio the sound alone.
+type CopyMediaRequest struct {
 	Path string `json:"path"`
+	Kind string `json:"kind"`
 }
 
-// CopyVideoResponse is the acknowledgement of a started copy.
-type CopyVideoResponse struct{}
+// CopyMediaResponse is the acknowledgement of a started copy.
+type CopyMediaResponse struct{}
 
 // DeleteCopyRequest deletes the stored video copy of the link note at Path.
 type DeleteCopyRequest struct {

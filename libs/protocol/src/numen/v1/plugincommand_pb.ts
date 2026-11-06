@@ -159,7 +159,7 @@ export type PluginHandler = Message<"numen.v1.PluginHandler"> & {
 
   /**
    * has_items is set for a handler whose when names version.*: it offers the text versions of the
-   * file over which it holds, made by its own plugin.
+   * file over which it holds.
    *
    * @generated from field: bool has_items = 3;
    */

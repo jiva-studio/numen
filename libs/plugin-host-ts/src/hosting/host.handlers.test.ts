@@ -150,6 +150,29 @@ describe('a shared command', () => {
     expect(host.getPaletteCommands()).toStrictEqual([])
   })
 
+  it('keeps the group a handler gives its items, and gives the plugin id to those without one', async () => {
+    const { host } = createHost([
+      { pluginId: SCANS, command: CREATE, title: 'Read the scan', hasItems: false },
+    ])
+    const context = host.createContext(
+      SCANS,
+      createMockManifest(SCANS, { name: 'Scans', version: '1' }),
+    )
+    context.registerCommand({
+      id: CREATE,
+      handler: vi.fn(),
+      listItems: () => [
+        { id: 'fast', title: 'Fast', group: 'speed' },
+        { id: 'slow', title: 'Slow' },
+      ],
+    })
+
+    expect(await host.listCommandItems(CREATE, SCAN)).toStrictEqual([
+      { id: `${SCANS}:fast`, title: 'Fast', group: 'speed' },
+      { id: `${SCANS}:slow`, title: 'Slow', group: SCANS },
+    ])
+  })
+
   it('reads the properties of a note in the conditions of its handlers', async () => {
     const { host } = createHost([
       {

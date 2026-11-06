@@ -109,6 +109,11 @@ func ParseCondition(text string) (PluginCondition, error) {
 // IsSharedCommand reports whether the full id is a shared command of libs/protocol/commands.json.
 func IsSharedCommand(id string) bool { return manifest.IsSharedCommand(id) }
 
+// GetSharedCommandArguments returns the arguments the shared command of the full id takes.
+func GetSharedCommandArguments(id string) []PluginCommandArgument {
+	return manifest.GetSharedCommandArguments(id)
+}
+
 // The events of libs/protocol/events.json a trigger runs on.
 const (
 	EventFileAdded   = manifest.EventFileAdded

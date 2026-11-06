@@ -70,7 +70,15 @@ type Provider interface {
 	GetText(ctx context.Context, address string, want PreferredCaptions) (Text, error)
 }
 
+// Media is what a download of an address brings: the video with its sound, or the sound alone.
+type Media string
+
+const (
+	MediaVideo Media = "video"
+	MediaAudio Media = "audio"
+)
+
 // Player is a provider that also fetches the bytes of the media to play.
 type Player interface {
-	Download(ctx context.Context, address string, into io.Writer) (Copy, error)
+	Download(ctx context.Context, address string, media Media, into io.Writer) (Copy, error)
 }

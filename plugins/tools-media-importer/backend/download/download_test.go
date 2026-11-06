@@ -124,7 +124,7 @@ func TestEmptyDownloaderRejectsAllOperationsWithNoTool(t *testing.T) {
 	if _, err := empty.GetText(t.Context(), "https://example.com", PreferredCaptions{}); !errors.Is(err, ErrNoTool) {
 		t.Errorf("GetText error = %v, want ErrNoTool", err)
 	}
-	if _, err := empty.Download(t.Context(), "https://example.com", io.Discard); !errors.Is(err, ErrNoTool) {
+	if _, err := empty.Download(t.Context(), "https://example.com", MediaVideo, io.Discard); !errors.Is(err, ErrNoTool) {
 		t.Errorf("Download error = %v, want ErrNoTool", err)
 	}
 	if _, err := empty.playerFor("https://example.com"); !errors.Is(err, ErrNoTool) {

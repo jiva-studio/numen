@@ -81,7 +81,7 @@
       {
         "on": "file.added",
         "command": "app:file.createText",
-        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.automaticCaptions == true"
+        "when": "target.noteType == 'link' && config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true"
       }
     ]
   },
@@ -125,6 +125,13 @@
       "title": "Automatic captions",
       "description": "Use auto-generated captions when a site has no others",
       "default": true
+    },
+    {
+      "key": "downloadCaptionsAutomatically",
+      "type": "boolean",
+      "title": "Download captions automatically",
+      "description": "Download the captions or the article of every link note added to the vault",
+      "default": false
     },
     {
       "key": "copyMaxSizeMb",

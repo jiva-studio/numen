@@ -28,8 +28,8 @@ function createLinks(isCopyable: boolean) {
     readArticle: async () => '',
     getSource: async () => ({ mediaUrl: '', mediaType: '' }),
     fetchText: async () => ({ ok: true, value: null }),
-    copyVideo: async (path) => {
-      copied.push(path)
+    copyMedia: async (path, kind) => {
+      copied.push(`${path} ${kind}`)
       return { ok: true, value: null }
     },
     deleteCopy: async () => ({ ok: true, value: null }),
@@ -42,15 +42,19 @@ const getHandler = (ctx: ReturnType<typeof createMockPluginContext>) =>
   ctx.getRegisteredCommands().find((one) => one.id === 'app:link.downloadMedia')
 
 describe('the handler of app:link.downloadMedia', () => {
-  it('offers the video of a link whose address publishes one, and downloads it', async () => {
+  it('offers the video and the sound of a link whose address publishes a video, and downloads the one picked', async () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
     const { links, copied } = createLinks(true)
     activate(ctx, undefined, links)
     const handler = getHandler(ctx)
 
-    expect(await handler?.listItems?.(CLIP)).toStrictEqual([{ id: 'video', title: 'Video' }])
+    expect(await handler?.listItems?.(CLIP)).toStrictEqual([
+      { id: 'video', title: 'Video' },
+      { id: 'audio', title: 'Audio' },
+    ])
+    await handler?.handler(CLIP, 'audio')
     await handler?.handler(CLIP, 'video')
-    expect(copied).toStrictEqual(['links/clip.md'])
+    expect(copied).toStrictEqual(['links/clip.md audio', 'links/clip.md video'])
   })
 
   it('offers nothing for a link whose address publishes no video', async () => {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
@@ -74,7 +75,7 @@ func newDownloadCopyCommand(links *link.Links) command.Run {
 		if err != nil {
 			return command.Result{}, err
 		}
-		size, err := links.Copy(ctx, found)
+		size, err := links.Copy(ctx, found, download.MediaVideo)
 		if errors.Is(err, link.ErrBeingFetched) {
 			return command.Result{Message: fmt.Sprintf("the media of %s is already being downloaded", req.Path), OpenedPath: ""}, nil
 		}

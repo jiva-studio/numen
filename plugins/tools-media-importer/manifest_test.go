@@ -3,6 +3,7 @@ package downloader
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -40,5 +41,39 @@ func TestManifestHandlesTheSharedCommandsOfLinks(t *testing.T) {
 	want := []string{"app:link.import", "app:file.createText", "app:link.downloadMedia", "app:link.deleteMedia", "app:version.delete"}
 	if !slices.Equal(got, want) || len(manifest.Contributes.Commands) != 0 {
 		t.Errorf("handlers %v and %d commands, want %v and none", got, len(manifest.Contributes.Commands), want)
+	}
+}
+
+// Captions are downloaded for a link note on its own only while the setting for it is on, which is
+// off by default.
+func TestManifestDownloadsCaptionsAutomaticallyOnlyWithItsSetting(t *testing.T) {
+	var manifest struct {
+		Contributes struct {
+			Triggers []struct {
+				On      string `json:"on"`
+				Command string `json:"command"`
+				When    string `json:"when"`
+			} `json:"triggers"`
+		} `json:"contributes"`
+		Settings []struct {
+			Key     string `json:"key"`
+			Default any    `json:"default"`
+		} `json:"settings"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	triggers := manifest.Contributes.Triggers
+	if len(triggers) != 1 || !strings.Contains(triggers[0].When, "config.md.numen.tools.media.importer.downloadCaptionsAutomatically == true") {
+		t.Errorf("the triggers are %+v", triggers)
+	}
+	found := slices.IndexFunc(manifest.Settings, func(one struct {
+		Key     string `json:"key"`
+		Default any    `json:"default"`
+	}) bool {
+		return one.Key == "downloadCaptionsAutomatically"
+	})
+	if found < 0 || manifest.Settings[found].Default != false {
+		t.Errorf("the setting downloadCaptionsAutomatically is missing or on by default: %+v", manifest.Settings)
 	}
 }

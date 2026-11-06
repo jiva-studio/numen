@@ -330,7 +330,7 @@ type PluginHandler struct {
 	PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	Handler  *ManifestHandler       `protobuf:"bytes,2,opt,name=handler,proto3" json:"handler,omitempty"`
 	// has_items is set for a handler whose when names version.*: it offers the text versions of the
-	// file over which it holds, made by its own plugin.
+	// file over which it holds.
 	HasItems      bool `protobuf:"varint,3,opt,name=has_items,json=hasItems,proto3" json:"has_items,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
