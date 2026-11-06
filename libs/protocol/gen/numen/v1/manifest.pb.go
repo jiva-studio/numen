@@ -1863,7 +1863,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xc9\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xc3\x04\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1886,7 +1886,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\foptions_from\x18\x13 \x01(\tR\voptionsFromB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_stepJ\x04\b\r\x10\x0e\"\x8d\x01\n" +
+	"\x05_step\"\x8d\x01\n" +
 	"\x0eManifestSecret\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +

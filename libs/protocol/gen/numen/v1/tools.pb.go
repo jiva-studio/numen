@@ -275,16 +275,9 @@ func (*ListToolsRequest) Descriptor() ([]byte, []int) {
 
 type ListToolsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Tools []*PluginTool          `protobuf:"bytes,1,rep,name=tools,proto3" json:"tools,omitempty"`
-	// The plugin paragraph: what an agent reads once before it calls the tools
-	// of one plugin, as plain text, empty where the plugin sets none. A plugin
-	// that sets it answers it in place of the instructions of its tools. The
-	// host answers one paragraph per plugin whose tools it lists, in the order
-	// of plugin ids, separated by an empty line: the plugin paragraph where the
-	// plugin set one, else the distinct instructions of its listed tools in
-	// listing order, joined with one space. A plugin none of whose tools is
-	// listed adds nothing.
-	Instructions  string `protobuf:"bytes,2,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	// The host answers the tools of the plugins it lists grouped by plugin, in
+	// the order of plugin ids.
+	Tools         []*PluginTool `protobuf:"bytes,1,rep,name=tools,proto3" json:"tools,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -326,13 +319,6 @@ func (x *ListToolsResponse) GetTools() []*PluginTool {
 	return nil
 }
 
-func (x *ListToolsResponse) GetInstructions() string {
-	if x != nil {
-		return x.Instructions
-	}
-	return ""
-}
-
 // PluginTool is one tool as an agent is told of it.
 type PluginTool struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -355,8 +341,13 @@ type PluginTool struct {
 	Step    ToolStep     `protobuf:"varint,8,opt,name=step,proto3,enum=numen.v1.ToolStep" json:"step,omitempty"`
 	// The instructions about this tool, each one sentence of plain English. A
 	// sentence about several tools is attached to each of them with identical
-	// text.
-	Instructions  []string `protobuf:"bytes,9,rep,name=instructions,proto3" json:"instructions,omitempty"`
+	// text. An agent server sends an agent the distinct sentences of the tools it
+	// offers, in listing order.
+	Instructions []string `protobuf:"bytes,9,rep,name=instructions,proto3" json:"instructions,omitempty"`
+	// The permissions the caller must hold besides the one of the effect, such
+	// as vault:manage. The host lists and runs the tool only for a caller that
+	// holds all of them.
+	Requires      []string `protobuf:"bytes,10,rep,name=requires,proto3" json:"requires,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -450,6 +441,13 @@ func (x *PluginTool) GetStep() ToolStep {
 func (x *PluginTool) GetInstructions() []string {
 	if x != nil {
 		return x.Instructions
+	}
+	return nil
+}
+
+func (x *PluginTool) GetRequires() []string {
+	if x != nil {
+		return x.Requires
 	}
 	return nil
 }
@@ -658,10 +656,9 @@ var File_numen_v1_tools_proto protoreflect.FileDescriptor
 const file_numen_v1_tools_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/tools.proto\x12\bnumen.v1\"\x12\n" +
-	"\x10ListToolsRequest\"c\n" +
+	"\x10ListToolsRequest\"?\n" +
 	"\x11ListToolsResponse\x12*\n" +
-	"\x05tools\x18\x01 \x03(\v2\x14.numen.v1.PluginToolR\x05tools\x12\"\n" +
-	"\finstructions\x18\x02 \x01(\tR\finstructions\"\xca\x02\n" +
+	"\x05tools\x18\x01 \x03(\v2\x14.numen.v1.PluginToolR\x05tools\"\xe6\x02\n" +
 	"\n" +
 	"PluginTool\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
@@ -672,7 +669,9 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\x06effect\x18\x06 \x01(\x0e2\x14.numen.v1.ToolEffectR\x06effect\x12.\n" +
 	"\aservers\x18\a \x03(\x0e2\x14.numen.v1.ToolServerR\aservers\x12&\n" +
 	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\x12\"\n" +
-	"\finstructions\x18\t \x03(\tR\finstructions\"\xdc\x01\n" +
+	"\finstructions\x18\t \x03(\tR\finstructions\x12\x1a\n" +
+	"\brequires\x18\n" +
+	" \x03(\tR\brequires\"\xdc\x01\n" +
 	"\x0fCallToolRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
 	"\targuments\x18\x02 \x01(\fR\targuments\x12@\n" +

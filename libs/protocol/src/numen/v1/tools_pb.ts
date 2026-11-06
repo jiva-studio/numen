@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/tools.proto.
  */
 export const file_numen_v1_tools: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS90b29scy5wcm90bxIIbnVtZW4udjEiEgoQTGlzdFRvb2xzUmVxdWVzdCJOChFMaXN0VG9vbHNSZXNwb25zZRIjCgV0b29scxgBIAMoCzIULm51bWVuLnYxLlBsdWdpblRvb2wSFAoMaW5zdHJ1Y3Rpb25zGAIgASgJIvABCgpQbHVnaW5Ub29sEgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSFAoMaW5wdXRfc2NoZW1hGAQgASgMEhUKDW91dHB1dF9zY2hlbWEYBSABKAwSJAoGZWZmZWN0GAYgASgOMhQubnVtZW4udjEuVG9vbEVmZmVjdBIlCgdzZXJ2ZXJzGAcgAygOMhQubnVtZW4udjEuVG9vbFNlcnZlchIgCgRzdGVwGAggASgOMhIubnVtZW4udjEuVG9vbFN0ZXASFAoMaW5zdHJ1Y3Rpb25zGAkgAygJIq0BCg9DYWxsVG9vbFJlcXVlc3QSDAoEbmFtZRgBIAEoCRIRCglhcmd1bWVudHMYAiABKAwSNwoHY29udGV4dBgDIAMoCzImLm51bWVuLnYxLkNhbGxUb29sUmVxdWVzdC5Db250ZXh0RW50cnkSEAoIdmF1bHRfaWQYBCABKAkaLgoMQ29udGV4dEVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiYAoQQ2FsbFRvb2xSZXNwb25zZRImCgVlcnJvchgBIAEoDjIXLm51bWVuLnYxLlRvb2xFcnJvckNvZGUSJAoGcmVzdWx0GAIgASgLMhQubnVtZW4udjEuVG9vbFJlc3VsdCJACgpUb29sUmVzdWx0EgwKBHRleHQYASABKAkSEgoKc3RydWN0dXJlZBgCIAEoDBIQCghpc19lcnJvchgDIAEoCCpgCgpUb29sRWZmZWN0EhsKF1RPT0xfRUZGRUNUX1VOU1BFQ0lGSUVEEAASGQoVVE9PTF9FRkZFQ1RfUkVBRF9PTkxZEAESGgoWVE9PTF9FRkZFQ1RfUkVBRF9XUklURRACKmUKCFRvb2xTdGVwEhkKFVRPT0xfU1RFUF9VTlNQRUNJRklFRBAAEhQKEFRPT0xfU1RFUF9TRUFSQ0gQARIUChBUT09MX1NURVBfUkVNT1ZFEAISEgoOVE9PTF9TVEVQX01PVkUQAypYCgpUb29sU2VydmVyEhsKF1RPT0xfU0VSVkVSX1VOU1BFQ0lGSUVEEAASFAoQVE9PTF9TRVJWRVJfRlVMTBABEhcKE1RPT0xfU0VSVkVSX1JFQURJTkcQAip1Cg1Ub29sRXJyb3JDb2RlEh8KG1RPT0xfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiAKHFRPT0xfRVJST1JfQ09ERV9VTktOT1dOX1RPT0wQARIhCh1UT09MX0VSUk9SX0NPREVfQkFEX0FSR1VNRU5UUxACMpwBChFQbHVnaW5Ub29sU2VydmljZRJECglMaXN0VG9vbHMSGi5udW1lbi52MS5MaXN0VG9vbHNSZXF1ZXN0GhsubnVtZW4udjEuTGlzdFRvb2xzUmVzcG9uc2USQQoIQ2FsbFRvb2wSGS5udW1lbi52MS5DYWxsVG9vbFJlcXVlc3QaGi5udW1lbi52MS5DYWxsVG9vbFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS90b29scy5wcm90bxIIbnVtZW4udjEiEgoQTGlzdFRvb2xzUmVxdWVzdCI4ChFMaXN0VG9vbHNSZXNwb25zZRIjCgV0b29scxgBIAMoCzIULm51bWVuLnYxLlBsdWdpblRvb2wiggIKClBsdWdpblRvb2wSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIUCgxpbnB1dF9zY2hlbWEYBCABKAwSFQoNb3V0cHV0X3NjaGVtYRgFIAEoDBIkCgZlZmZlY3QYBiABKA4yFC5udW1lbi52MS5Ub29sRWZmZWN0EiUKB3NlcnZlcnMYByADKA4yFC5udW1lbi52MS5Ub29sU2VydmVyEiAKBHN0ZXAYCCABKA4yEi5udW1lbi52MS5Ub29sU3RlcBIUCgxpbnN0cnVjdGlvbnMYCSADKAkSEAoIcmVxdWlyZXMYCiADKAkirQEKD0NhbGxUb29sUmVxdWVzdBIMCgRuYW1lGAEgASgJEhEKCWFyZ3VtZW50cxgCIAEoDBI3Cgdjb250ZXh0GAMgAygLMiYubnVtZW4udjEuQ2FsbFRvb2xSZXF1ZXN0LkNvbnRleHRFbnRyeRIQCgh2YXVsdF9pZBgEIAEoCRouCgxDb250ZXh0RW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJgChBDYWxsVG9vbFJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVG9vbEVycm9yQ29kZRIkCgZyZXN1bHQYAiABKAsyFC5udW1lbi52MS5Ub29sUmVzdWx0IkAKClRvb2xSZXN1bHQSDAoEdGV4dBgBIAEoCRISCgpzdHJ1Y3R1cmVkGAIgASgMEhAKCGlzX2Vycm9yGAMgASgIKmAKClRvb2xFZmZlY3QSGwoXVE9PTF9FRkZFQ1RfVU5TUEVDSUZJRUQQABIZChVUT09MX0VGRkVDVF9SRUFEX09OTFkQARIaChZUT09MX0VGRkVDVF9SRUFEX1dSSVRFEAIqZQoIVG9vbFN0ZXASGQoVVE9PTF9TVEVQX1VOU1BFQ0lGSUVEEAASFAoQVE9PTF9TVEVQX1NFQVJDSBABEhQKEFRPT0xfU1RFUF9SRU1PVkUQAhISCg5UT09MX1NURVBfTU9WRRADKlgKClRvb2xTZXJ2ZXISGwoXVE9PTF9TRVJWRVJfVU5TUEVDSUZJRUQQABIUChBUT09MX1NFUlZFUl9GVUxMEAESFwoTVE9PTF9TRVJWRVJfUkVBRElORxACKnUKDVRvb2xFcnJvckNvZGUSHwobVE9PTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIAocVE9PTF9FUlJPUl9DT0RFX1VOS05PV05fVE9PTBABEiEKHVRPT0xfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAIynAEKEVBsdWdpblRvb2xTZXJ2aWNlEkQKCUxpc3RUb29scxIaLm51bWVuLnYxLkxpc3RUb29sc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0VG9vbHNSZXNwb25zZRJBCghDYWxsVG9vbBIZLm51bWVuLnYxLkNhbGxUb29sUmVxdWVzdBoaLm51bWVuLnYxLkNhbGxUb29sUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.ListToolsRequest
@@ -30,23 +30,12 @@ export const ListToolsRequestSchema: GenMessage<ListToolsRequest> = /*@__PURE__*
  */
 export type ListToolsResponse = Message<"numen.v1.ListToolsResponse"> & {
   /**
+   * The host answers the tools of the plugins it lists grouped by plugin, in
+   * the order of plugin ids.
+   *
    * @generated from field: repeated numen.v1.PluginTool tools = 1;
    */
   tools: PluginTool[];
-
-  /**
-   * The plugin paragraph: what an agent reads once before it calls the tools
-   * of one plugin, as plain text, empty where the plugin sets none. A plugin
-   * that sets it answers it in place of the instructions of its tools. The
-   * host answers one paragraph per plugin whose tools it lists, in the order
-   * of plugin ids, separated by an empty line: the plugin paragraph where the
-   * plugin set one, else the distinct instructions of its listed tools in
-   * listing order, joined with one space. A plugin none of whose tools is
-   * listed adds nothing.
-   *
-   * @generated from field: string instructions = 2;
-   */
-  instructions: string;
 };
 
 /**
@@ -121,11 +110,21 @@ export type PluginTool = Message<"numen.v1.PluginTool"> & {
   /**
    * The instructions about this tool, each one sentence of plain English. A
    * sentence about several tools is attached to each of them with identical
-   * text.
+   * text. An agent server sends an agent the distinct sentences of the tools it
+   * offers, in listing order.
    *
    * @generated from field: repeated string instructions = 9;
    */
   instructions: string[];
+
+  /**
+   * The permissions the caller must hold besides the one of the effect, such
+   * as vault:manage. The host lists and runs the tool only for a caller that
+   * holds all of them.
+   *
+   * @generated from field: repeated string requires = 10;
+   */
+  requires: string[];
 };
 
 /**
