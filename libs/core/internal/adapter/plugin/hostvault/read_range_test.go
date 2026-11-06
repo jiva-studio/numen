@@ -52,7 +52,7 @@ func TestReadRangeMovesAStartInsideACharacterForwardToTheNextWholeCharacter(t *t
 	}
 }
 
-func TestReadRangeLeavesOffACharacterTheRangeEndsInside(t *testing.T) {
+func TestReadRangeOmitsACharacterTheRangeEndsInside(t *testing.T) {
 	access, _ := diskVault(t, riverFiles())
 
 	// "Ñandú" is Ñ (2 bytes), a, n, d, ú (2 bytes): the four bytes from 2 end inside ú.

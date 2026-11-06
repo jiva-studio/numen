@@ -90,23 +90,23 @@ func (l *linkingVault) AddLinks(_ context.Context, additions []pluginport.Plugin
 	defer l.mu.Unlock()
 	l.additions = append(l.additions, additions)
 	out := make([]pluginport.PluginLinkAdded, len(additions))
-	refused := map[string]error{}
+	rejected := map[string]error{}
 	for _, one := range additions {
-		if _, seen := refused[one.From]; !seen {
-			refused[one.From] = l.checkNote(one.From, one.Baseline)
+		if _, isChecked := rejected[one.From]; !isChecked {
+			rejected[one.From] = l.checkNote(one.From, one.Baseline)
 		}
 	}
-	written := map[string]domain.FileStat{}
+	savedStats := map[string]domain.FileStat{}
 	for i, one := range additions {
-		if err := refused[one.From]; err != nil {
+		if err := rejected[one.From]; err != nil {
 			out[i] = pluginport.PluginLinkAdded{Err: err}
 			continue
 		}
-		if _, done := written[one.From]; !done {
-			written[one.From] = l.write(one.From)
+		if _, isSaved := savedStats[one.From]; !isSaved {
+			savedStats[one.From] = l.write(one.From)
 		}
 		l.links[one.From] = append(l.links[one.From], one.Link.Target)
-		out[i] = pluginport.PluginLinkAdded{Stat: written[one.From]}
+		out[i] = pluginport.PluginLinkAdded{Stat: savedStats[one.From]}
 	}
 	return out, nil
 }
@@ -265,14 +265,14 @@ func TestAddLinksPassesEveryAdditionInOneCallAndAnswersOneResultPerLinkInOrder(t
 func TestAddLinksOverAStaleBaselineAnswersConflictForThatNoteAndWritesTheOthers(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
-	stale := vault.readBaseline(t, "Danube.md")
-	stale.Size++
+	outdated := vault.readBaseline(t, "Danube.md")
+	outdated.Size++
 	rhine := vault.readBaseline(t, "Rivers/Rhine.md")
 
 	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
-		{From: "Danube.md", Baseline: stale, To: "Deltas", Role: v1.Role_ROLE_CHILD},
+		{From: "Danube.md", Baseline: outdated, To: "Deltas", Role: v1.Role_ROLE_CHILD},
 		{From: "Rivers/Rhine.md", Baseline: rhine, To: "Danube", Role: v1.Role_ROLE_JUMP},
-		{From: "Danube.md", Baseline: stale, To: "Rivers/Rhine", Role: v1.Role_ROLE_REF},
+		{From: "Danube.md", Baseline: outdated, To: "Rivers/Rhine", Role: v1.Role_ROLE_REF},
 	}}))
 	if err != nil {
 		t.Fatal(err)
@@ -377,11 +377,11 @@ func TestUpdateLinksPassesTheChangeAndAnswersTheFileStatAfterTheWrite(t *testing
 func TestUpdateLinksOverAStaleBaselineAnswersConflict(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
-	stale := vault.readBaseline(t, "Deltas.md")
-	stale.ModTime++
+	outdated := vault.readBaseline(t, "Deltas.md")
+	outdated.ModTime++
 
 	res, err := client.UpdateLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceUpdateLinksRequest{
-		From: "Deltas.md", To: "Danube", Baseline: stale, Label: "flows from",
+		From: "Deltas.md", To: "Danube", Baseline: outdated, Label: "flows from",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -452,11 +452,11 @@ func TestRemoveLinksWithoutARolePassesNoRole(t *testing.T) {
 func TestRemoveLinksOverAStaleBaselineAnswersConflict(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, pluginport.PermissionVaultWrite)
-	stale := vault.readBaseline(t, "Deltas.md")
-	stale.Size--
+	outdated := vault.readBaseline(t, "Deltas.md")
+	outdated.Size--
 
 	res, err := client.RemoveLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveLinksRequest{
-		From: "Deltas.md", To: "Danube", Baseline: stale,
+		From: "Deltas.md", To: "Danube", Baseline: outdated,
 	}))
 	if err != nil {
 		t.Fatal(err)

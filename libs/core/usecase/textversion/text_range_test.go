@@ -26,7 +26,7 @@ func newRiverScene(t *testing.T) *scene {
 	return s
 }
 
-func TestGetTextRangeReturnsTheSegmentsCutToTheRange(t *testing.T) {
+func TestGetTextRangeReturnsTheSegmentsLimitedToTheRange(t *testing.T) {
 	for name, tc := range map[string]struct {
 		start, length int
 		wantStart     int
@@ -71,7 +71,7 @@ func TestGetTextRangeMovesAStartInsideACharacterToTheNextCharacter(t *testing.T)
 	}
 }
 
-func TestGetTextRangeEndsBeforeACharacterTheLengthCutsInTwo(t *testing.T) {
+func TestGetTextRangeEndsBeforeACharacterTheLengthSplits(t *testing.T) {
 	s := newRiverScene(t)
 
 	// Three bytes from the start end inside "е", the second letter.

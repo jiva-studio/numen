@@ -62,7 +62,7 @@ func newCancelledBatchRegistry(t *testing.T) *tools.Registry {
 	return registry
 }
 
-func TestNoteMoveOfACancelledCallReportsTheDoneNoteAndTheNotAttemptedOnes(t *testing.T) {
+func TestNoteMoveOfACancelledCallReportsTheCompletedNoteAndTheNotAttemptedOnes(t *testing.T) {
 	registry := newCancelledBatchRegistry(t)
 
 	var out noteMoveOutput
@@ -71,8 +71,8 @@ func TestNoteMoveOfACancelledCallReportsTheDoneNoteAndTheNotAttemptedOnes(t *tes
 	if len(out.Moves) != 3 {
 		t.Fatalf("got %d moves, want 3: %+v", len(out.Moves), out.Moves)
 	}
-	if done := out.Moves[0]; done.From != "Rocks/Basalt.md" || done.To != "Archive/Basalt.md" || done.Error != "" {
-		t.Errorf("the first entry is %+v, want Rocks/Basalt.md moved to Archive/Basalt.md with no error", done)
+	if completed := out.Moves[0]; completed.From != "Rocks/Basalt.md" || completed.To != "Archive/Basalt.md" || completed.Error != "" {
+		t.Errorf("the first entry is %+v, want Rocks/Basalt.md moved to Archive/Basalt.md with no error", completed)
 	}
 	for i, from := range []string{"Rocks/Granite.md", "Fossils.md"} {
 		got := out.Moves[i+1]
@@ -83,7 +83,7 @@ func TestNoteMoveOfACancelledCallReportsTheDoneNoteAndTheNotAttemptedOnes(t *tes
 	}
 }
 
-func TestNoteRemoveOfACancelledCallReportsTheDoneNoteAndTheNotAttemptedOnes(t *testing.T) {
+func TestNoteRemoveOfACancelledCallReportsTheCompletedNoteAndTheNotAttemptedOnes(t *testing.T) {
 	registry := newCancelledBatchRegistry(t)
 
 	var out noteRemoveOutput
@@ -92,8 +92,8 @@ func TestNoteRemoveOfACancelledCallReportsTheDoneNoteAndTheNotAttemptedOnes(t *t
 	if len(out.Removals) != 3 {
 		t.Fatalf("got %d removals, want 3: %+v", len(out.Removals), out.Removals)
 	}
-	if done := out.Removals[0]; done.Path != "Fossils.md" || done.TrashPath != ".trash/Fossils.md" || done.Error != "" {
-		t.Errorf("the first entry is %+v, want Fossils.md in .trash with no error", done)
+	if completed := out.Removals[0]; completed.Path != "Fossils.md" || completed.TrashPath != ".trash/Fossils.md" || completed.Error != "" {
+		t.Errorf("the first entry is %+v, want Fossils.md in .trash with no error", completed)
 	}
 	for i, target := range []string{"Rocks/Granite.md", "Rocks/Basalt.md"} {
 		got := out.Removals[i+1]

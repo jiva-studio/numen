@@ -26,9 +26,9 @@ func TestASearchClientSendsTheLimitUnchanged(t *testing.T) {
 	}
 }
 
-func TestASearchClientSendsAnUnknownKindAndReturnsTheHostRefusal(t *testing.T) {
-	const refusal = `"recording" is not a kind of source a search reaches: use "note" or "file"`
-	h := &passagesHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New(refusal))}
+func TestASearchClientSendsAnUnknownKindAndReturnsTheHostError(t *testing.T) {
+	const rejection = `"recording" is not a kind of source a search reaches: use "note" or "file"`
+	h := &passagesHost{status: connect.NewError(connect.CodeInvalidArgument, errors.New(rejection))}
 
 	_, err := dialPassages(t, h).SearchPassages(t.Context(), host.PassageQuery{
 		Query: "heron", Kinds: []domain.SourceKind{"recording", domain.KindNote},
@@ -37,7 +37,7 @@ func TestASearchClientSendsAnUnknownKindAndReturnsTheHostRefusal(t *testing.T) {
 	if got := h.request.GetKinds(); !slices.Equal(got, []string{"recording", "note"}) {
 		t.Errorf("the host received the kinds %v, want [recording note]", got)
 	}
-	if err == nil || !strings.Contains(err.Error(), refusal) {
-		t.Errorf("the search returned %v, want the host's refusal %q", err, refusal)
+	if err == nil || !strings.Contains(err.Error(), rejection) {
+		t.Errorf("the search returned %v, want the host's rejection %q", err, rejection)
 	}
 }

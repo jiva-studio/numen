@@ -88,7 +88,7 @@ func newShelfNotes(t *testing.T) *hosttest.Vault {
 	return v
 }
 
-func TestNoteListTakesAFolderWrittenWithADotSlashOrSlashes(t *testing.T) {
+func TestNoteListAcceptsAFolderWithADotSlashOrSlashes(t *testing.T) {
 	v := newShelfNotes(t)
 	_, registry := newRecordedSearch(t, v, nil)
 
@@ -103,7 +103,7 @@ func TestNoteListTakesAFolderWrittenWithADotSlashOrSlashes(t *testing.T) {
 	}
 }
 
-func TestNoteListFindsAComposedFolderWrittenDecomposed(t *testing.T) {
+func TestNoteListFindsAComposedFolderGivenDecomposed(t *testing.T) {
 	v := newShelfNotes(t)
 	_, registry := newRecordedSearch(t, v, nil)
 

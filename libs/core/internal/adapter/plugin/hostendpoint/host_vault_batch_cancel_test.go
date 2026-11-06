@@ -28,19 +28,19 @@ const (
 	changeThenCancelAndFail
 )
 
-// cancellingVault is the vault of rivers that cancels the call it serves on its change number at
+// cancellingVault is the vault of rivers that cancels the call it serves on its change number cancelIndex
 // (counted from one), as mode says.
 type cancellingVault struct {
 	*arrangingVault
-	cancel context.CancelFunc
-	at     int
-	mode   cancelMode
-	calls  int
+	cancel      context.CancelFunc
+	cancelIndex int
+	mode        cancelMode
+	calls       int
 }
 
 func (c *cancellingVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
 	c.calls++
-	if c.calls != c.at {
+	if c.calls != c.cancelIndex {
 		return c.arrangingVault.MoveNote(ctx, from, to)
 	}
 	if c.mode == cancelAndFail {
@@ -60,7 +60,7 @@ func (c *cancellingVault) MoveNote(ctx context.Context, from, to string) (domain
 
 func (c *cancellingVault) RemoveNote(ctx context.Context, target string) (string, []string, error) {
 	c.calls++
-	if c.calls != c.at {
+	if c.calls != c.cancelIndex {
 		return c.arrangingVault.RemoveNote(ctx, target)
 	}
 	if c.mode == cancelAndFail {
@@ -79,12 +79,12 @@ func (c *cancellingVault) RemoveNote(ctx context.Context, target string) (string
 }
 
 // newCancellingEndpoint is the vault endpoint over the vault of rivers that cancels the context it
-// returns on its change number at, with md.numen.a granted vault:write.
-func newCancellingEndpoint(t *testing.T, at int, mode cancelMode) (*vaultEndpoint, *cancellingVault, context.Context) {
+// returns on its change number cancelIndex, with md.numen.a granted vault:write.
+func newCancellingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (*vaultEndpoint, *cancellingVault, context.Context) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
-	vault := &cancellingVault{arrangingVault: newArrangingVault(), cancel: cancel, at: at, mode: mode}
+	vault := &cancellingVault{arrangingVault: newArrangingVault(), cancel: cancel, cancelIndex: cancelIndex, mode: mode}
 	hosted := newCallers(nil)
 	hosted.vault = vault
 	endpoint := newVaultEndpoint(&Endpoint{callers: listCallers{callers: hosted, granted: []string{pluginport.PermissionVaultWrite}}})
@@ -172,9 +172,9 @@ func TestAMoveWhoseNoteFailsOnTheCancelAnswersThatNoteAndTheRestAsNotAttempted(t
 	requireMoved(t, moves[0], "Danube.md", "Archive/Danube.md")
 	requireNotAttemptedMove(t, moves[1], "Rivers/Rhine.md")
 	requireNotAttemptedMove(t, moves[2], "Deltas.md")
-	for _, still := range []string{"Rivers/Rhine.md", "Deltas.md"} {
-		if _, found := vault.files[still]; !found {
-			t.Errorf("%s is not where it was", still)
+	for _, unchanged := range []string{"Rivers/Rhine.md", "Deltas.md"} {
+		if _, found := vault.files[unchanged]; !found {
+			t.Errorf("%s is not where it was", unchanged)
 		}
 	}
 }
@@ -260,9 +260,9 @@ func TestARemovalWhoseNoteFailsOnTheCancelAnswersThatNoteAndTheRestAsNotAttempte
 	requireRemoved(t, removals[0], "Danube.md")
 	requireNotAttemptedRemoval(t, removals[1], "Rivers/Rhine.md")
 	requireNotAttemptedRemoval(t, removals[2], "Deltas.md")
-	for _, still := range []string{"Rivers/Rhine.md", "Deltas.md"} {
-		if _, found := vault.files[still]; !found {
-			t.Errorf("%s was removed", still)
+	for _, unchanged := range []string{"Rivers/Rhine.md", "Deltas.md"} {
+		if _, found := vault.files[unchanged]; !found {
+			t.Errorf("%s was removed", unchanged)
 		}
 	}
 }

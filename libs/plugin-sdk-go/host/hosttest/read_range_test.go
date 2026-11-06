@@ -28,7 +28,7 @@ func TestReadRangeReadsTheBytesFromStartAsTextWithTheFileStat(t *testing.T) {
 	}
 }
 
-func TestReadRangeMovesTheStartForwardToAWholeCharacterAndCutsTheEndAtOne(t *testing.T) {
+func TestReadRangeMovesTheStartForwardToAWholeCharacterAndEndsAtOne(t *testing.T) {
 	v := hosttest.New("Geology")
 	// "ab" is bytes 0 and 1, "é" bytes 2 and 3, "cd" bytes 4 and 5.
 	v.File("Rocks/Gneiss.txt", "abécd")
@@ -120,7 +120,7 @@ var strataSegments = []domain.TextSegment{
 	{Text: "ice", Selector: `{"page":3}`},
 }
 
-func TestReadTextRangeReturnsTheSegmentsCutToTheRange(t *testing.T) {
+func TestReadTextRangeReturnsTheSegmentsLimitedToTheRange(t *testing.T) {
 	texts, id := newRangeTexts(t, strataSegments)
 
 	got, err := texts.ReadTextRange(t.Context(), "Strata.pdf", id, 2, 6)

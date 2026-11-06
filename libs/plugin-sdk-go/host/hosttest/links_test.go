@@ -277,12 +277,12 @@ func TestRemoveLinksOfARoleTheNoteDoesNotLinkWithIsAnError(t *testing.T) {
 
 func TestUpdateLinksAndRemoveLinksRefuseAStaleBaseline(t *testing.T) {
 	v := newRockVault(granitePair)
-	stale := statOf(t, v, basaltPath)
+	outdated := statOf(t, v, basaltPath)
 	makeStale(t, v, basaltPath)
 	before, _ := v.Content(basaltPath)
 
-	_, updateErr := v.UpdateLinks(t.Context(), basaltPath, nameAddress("Granite"), domain.Link{Label: "kin"}, stale)
-	_, removeErr := v.RemoveLinks(t.Context(), basaltPath, nameAddress("Granite"), "", stale)
+	_, updateErr := v.UpdateLinks(t.Context(), basaltPath, nameAddress("Granite"), domain.Link{Label: "kin"}, outdated)
+	_, removeErr := v.RemoveLinks(t.Context(), basaltPath, nameAddress("Granite"), "", outdated)
 
 	for call, err := range map[string]error{"UpdateLinks": updateErr, "RemoveLinks": removeErr} {
 		if !errors.Is(err, host.ErrStale) {

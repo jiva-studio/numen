@@ -35,9 +35,9 @@ type rangeCalls struct {
 // set for it, else as the fake host does, and records every ReadRange and Read.
 type rangeVault struct {
 	*hosttest.Vault
-	calls   *rangeCalls
-	answers map[string]host.FileRange
-	refused map[string]error
+	calls       *rangeCalls
+	answers     map[string]host.FileRange
+	rangeErrors map[string]error
 	// readRefused is the error a whole Read of the path is answered with.
 	readRefused map[string]error
 }
@@ -45,7 +45,7 @@ type rangeVault struct {
 func newRangeVault(v *hosttest.Vault) rangeVault {
 	return rangeVault{
 		Vault: v, calls: &rangeCalls{},
-		answers: map[string]host.FileRange{}, refused: map[string]error{}, readRefused: map[string]error{},
+		answers: map[string]host.FileRange{}, rangeErrors: map[string]error{}, readRefused: map[string]error{},
 	}
 }
 
@@ -58,7 +58,7 @@ func (r rangeVault) ReadRange(ctx context.Context, filePath string, start, lengt
 	if answer, isSet := r.answers[filePath]; isSet {
 		return answer, nil
 	}
-	if err := r.refused[filePath]; err != nil {
+	if err := r.rangeErrors[filePath]; err != nil {
 		return host.FileRange{}, err
 	}
 	return r.Vault.ReadRange(ctx, filePath, start, length)
@@ -182,7 +182,7 @@ func TestFileReadWithoutALengthAsksTheHostForSixteenThousandBytes(t *testing.T) 
 
 func TestFileReadOfARangeThatIsNotTextNamesLibraryRead(t *testing.T) {
 	_, vault, _, registry := newRangeLibrary(t)
-	vault.refused[guidePath] = fmt.Errorf("read %s: %w", guidePath, host.ErrNotText)
+	vault.rangeErrors[guidePath] = fmt.Errorf("read %s: %w", guidePath, host.ErrNotText)
 
 	failure := callFailure(t, registry, testVault, "file_read", `{"path":"`+guidePath+`"}`, nil)
 	want := guidePath + " is not a text file; library_read reads the text of a PDF, a book or a recording"
@@ -218,7 +218,7 @@ func TestLibraryReadOfABinaryLargerThanANoteNamesWhatMakesATextVersion(t *testin
 	l, vault, _, registry := newRangeLibrary(t)
 	l.vault.File(archivePath, "RIFF\x00\x00wave body")
 	vault.readRefused[archivePath] = errors.New("the host refused the call with the code HOST_VAULT_ERROR_CODE_TOO_LARGE")
-	vault.refused[archivePath] = fmt.Errorf("read %s: %w", archivePath, host.ErrNotText)
+	vault.rangeErrors[archivePath] = fmt.Errorf("read %s: %w", archivePath, host.ErrNotText)
 
 	failure := callFailure(t, registry, testVault, "library_read", `{"path":"`+archivePath+`"}`, nil)
 	want := archivePath + " has no text version; recognition_create or transcript_create makes one"

@@ -49,7 +49,7 @@ func statFile(t *testing.T, shared pluginport.PluginVault, path string) domain.F
 	return stat
 }
 
-func TestALinkAPluginAddsInTheShownVaultIsWrittenThroughTheWindowsNoteUseCases(t *testing.T) {
+func TestALinkAPluginAddsInTheShownVaultIsSavedThroughTheWindowsNoteUseCases(t *testing.T) {
 	notes := map[string]string{
 		"Danube.md": "# Danube\n\nA river of central Europe.\n",
 		"Rhine.md":  "# Rhine\n\nA river of western Europe.\n",
@@ -87,7 +87,7 @@ func TestALinkAPluginAddsInTheShownVaultIsWrittenThroughTheWindowsNoteUseCases(t
 	}
 }
 
-func TestALinkAPluginRemovesInTheShownVaultIsWrittenThroughTheWindowsNoteUseCases(t *testing.T) {
+func TestALinkAPluginRemovesInTheShownVaultIsSavedThroughTheWindowsNoteUseCases(t *testing.T) {
 	v, current, assembly := openPluginVault(t, getRivers())
 	hooks, index := openWindowScenarios(assembly)
 	shared, err := assembly.OpenPluginVault(current, hooks)
@@ -112,7 +112,7 @@ func TestALinkAPluginRemovesInTheShownVaultIsWrittenThroughTheWindowsNoteUseCase
 	}
 }
 
-func TestALinkAPluginAddsInAnotherVaultIsNotWrittenThroughTheWindowsNoteUseCases(t *testing.T) {
+func TestALinkAPluginAddsInAnotherVaultIsNotSavedThroughTheWindowsNoteUseCases(t *testing.T) {
 	other, current, assembly := openTwoPluginVaults(t)
 	hooks, index := openWindowScenarios(assembly)
 	shared, err := assembly.OpenPluginVault(current, hooks)
