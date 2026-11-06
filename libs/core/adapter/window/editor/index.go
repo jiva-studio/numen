@@ -111,8 +111,9 @@ func startIndexing(ctx context.Context, made Assembly, state *State, job indexJo
 
 	var running sync.WaitGroup
 
+	wakeTriggers := make(chan struct{}, 1)
 	read, run, refresh, unwatched := made.StartVault(
-		ctx, v, rebuild, newChangeReporter(state, worker), newErrorReporter(state))
+		ctx, v, rebuild, newChangeReporter(state, worker, wakeTriggers), newErrorReporter(state))
 	if unwatched != nil {
 		writeDiagnostic(state.reportTask, out, "not watching %s: %v\n", v.Name, unwatched)
 		state.WatchError.Store(unwatched.Error())
@@ -128,6 +129,16 @@ func startIndexing(ctx context.Context, made Assembly, state *State, job indexJo
 		defer running.Done()
 		session.Run(ctx, v, rebuild, read)
 	}()
+
+	if triggers := made.OpenTriggers(); triggers != nil {
+		running.Add(1)
+		go func() {
+			defer running.Done()
+			runTriggers(ctx, triggers, v, wakeTriggers, made.OpenWatchSettings(), func(err error) {
+				writeDiagnostic(state.reportTask, out, "run the triggers of %s: %v\n", v.Name, err)
+			})
+		}()
+	}
 
 	return refresh, running.Wait
 }
@@ -145,9 +156,10 @@ func newErrorReporter(state *State) windowport.ErrorHandler {
 }
 
 // newChangeReporter reports changes to the window and wakes the passes that
-// process them.
-func newChangeReporter(state *State, worker *indexing.Worker) func(paths, assets []string, reload bool) {
+// process them, the triggers among them.
+func newChangeReporter(state *State, worker *indexing.Worker, triggers chan<- struct{}) func(paths, assets []string, reload bool) {
 	return func(paths, assets []string, reload bool) {
+		signal(triggers)
 		// A client shows every file in the vault, so an asset is reported as a note is.
 		changePaths := slices.Concat(paths, assets)
 		state.ChangeEvents.publish(change{paths: changePaths, shouldReload: reload})

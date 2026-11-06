@@ -291,14 +291,23 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 		config.updateConfig(vars)
 	}
 	run := newProofreading(h, getProofreadKinds(), newAskModel(complete, config.getConfig), config.getConfig)
-	commands := command.New()
-	if err := commands.Add("proofreading.create", newProofreadCommand(run)); err != nil {
-		return err
-	}
-	if err := commands.Add("proofreading.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
+	commands, err := newCommands(run, h)
+	if err != nil {
 		return err
 	}
 	s.SetUpdateConfig(config.updateConfig)
 	command.Mount(s, commands)
 	return nil
+}
+
+// newCommands is the commands and the handlers the manifest declares.
+func newCommands(run *Proofreading, h Host) (*command.Registry, error) {
+	commands := command.New()
+	if err := commands.Add("proofreading.create", newProofreadCommand(run)); err != nil {
+		return nil, err
+	}
+	if err := commands.Add("app:version.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
+		return nil, err
+	}
+	return commands, nil
 }

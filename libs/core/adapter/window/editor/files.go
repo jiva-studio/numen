@@ -2,12 +2,14 @@ package editor
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io/fs"
 	"path/filepath"
 	"strings"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
@@ -118,11 +120,15 @@ func (h *fileHandler) ListFileKinds(
 	}
 	out := &v1.ListFileKindsResponse{Kinds: make([]*v1.FileKind, 0, len(listing.Entries))}
 	for _, one := range listing.Entries {
-		out.Kinds = append(out.Kinds, &v1.FileKind{
+		kind := &v1.FileKind{
 			Path:   one.Path,
 			IsNote: one.Kind == domain.KindNote,
 			Type:   convertNoteTypeToWire(listing.Types[one.Path]),
-		})
+		}
+		if properties, isNote := listing.Properties[one.Path]; isNote {
+			kind.Properties = newWireProperties(properties)
+		}
+		out.Kinds = append(out.Kinds, kind)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -252,4 +258,22 @@ func (h *fileHandler) removal(
 		return h.remove.Destroy(ctx, v, path)
 	}
 	return h.remove.Execute(ctx, v, path)
+}
+
+// newWireProperties is the frontmatter of a note as a Struct, read as JSON: a date becomes its text,
+// and a value JSON cannot hold leaves the frontmatter empty.
+func newWireProperties(properties map[string]any) *structpb.Struct {
+	raw, err := json.Marshal(properties)
+	if err != nil {
+		return &structpb.Struct{}
+	}
+	var plain map[string]any
+	if err := json.Unmarshal(raw, &plain); err != nil {
+		return &structpb.Struct{}
+	}
+	wire, err := structpb.NewStruct(plain)
+	if err != nil {
+		return &structpb.Struct{}
+	}
+	return wire
 }

@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"encoding/json"
+	"slices"
 	"testing"
 )
 
@@ -19,31 +20,25 @@ func TestManifestDeclaresNoProgramTheHostMustFind(t *testing.T) {
 	}
 }
 
-// The command that imports an address takes the address and nothing else: the palette asks only
-// required arguments, and a caller that is not a person has no option to ask for.
-func TestManifestDeclaresOneRequiredArgumentForLinkImport(t *testing.T) {
+// The plugin handles the shared commands of links, and creates the text of a link, as handlers.
+func TestManifestHandlesTheSharedCommandsOfLinks(t *testing.T) {
 	var manifest struct {
 		Contributes struct {
-			Commands []struct {
-				ID        string `json:"id"`
-				Arguments []struct {
-					Name     string `json:"name"`
-					Required bool   `json:"required"`
-				} `json:"arguments"`
-			} `json:"commands"`
+			Commands []json.RawMessage `json:"commands"`
+			Handlers []struct {
+				Command string `json:"command"`
+			} `json:"handlers"`
 		} `json:"contributes"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range manifest.Contributes.Commands {
-		if one.ID != "link.import" {
-			continue
-		}
-		if len(one.Arguments) != 1 || one.Arguments[0].Name != "address" || !one.Arguments[0].Required {
-			t.Errorf("link.import takes %+v, want the required argument address alone", one.Arguments)
-		}
-		return
+	var got []string
+	for _, one := range manifest.Contributes.Handlers {
+		got = append(got, one.Command)
 	}
-	t.Error("the manifest declares no link.import")
+	want := []string{"app:link.import", "app:file.createText", "app:link.downloadMedia", "app:link.deleteMedia", "app:version.delete"}
+	if !slices.Equal(got, want) || len(manifest.Contributes.Commands) != 0 {
+		t.Errorf("handlers %v and %d commands, want %v and none", got, len(manifest.Contributes.Commands), want)
+	}
 }
