@@ -108,7 +108,7 @@ function getRowIcon(id: string, isOpen: boolean): Component {
 }
 
 function getItemIcon(id: string): Component | null {
-  return props.state.getCommandIcon(id)
+  return props.state.getMenuIcon(id)
 }
 </script>
 

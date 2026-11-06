@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.flashcards.studio",
   "name": "Flashcards Studio",
-  "version": "2026.11.6",
+  "version": "2026.11.7",
   "protocol": 1,
   "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
@@ -92,7 +92,27 @@
         "title": "Open preset",
         "icon": "gauge",
         "scope": "note"
+      },
+      {
+        "id": "deck.new",
+        "title": "New deck",
+        "icon": "layers"
+      },
+      {
+        "id": "cardModel.new",
+        "title": "New card model",
+        "icon": "layout-template"
+      },
+      {
+        "id": "preset.new",
+        "title": "New preset",
+        "icon": "gauge"
       }
+    ],
+    "slots": [
+      { "slot": "fileTree.new", "command": "deck.new", "group": "1-cards", "order": 10 },
+      { "slot": "fileTree.new", "command": "cardModel.new", "group": "1-cards", "order": 20 },
+      { "slot": "fileTree.new", "command": "preset.new", "group": "1-cards", "order": 30 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

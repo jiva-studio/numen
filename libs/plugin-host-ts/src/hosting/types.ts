@@ -7,8 +7,6 @@ import type {
   AppInfo,
   BufferHost,
   CommandRegistration,
-  ContextMenuRegistration,
-  ContextMenuTarget,
   Disposable,
   DropHost,
   DropRegistration,
@@ -37,8 +35,6 @@ import type { Component } from 'vue'
 export type {
   AgentProviderRegistration,
   CommandRegistration,
-  ContextMenuRegistration,
-  ContextMenuTarget,
   Disposable,
   FileSelectEvent,
   PluginContext,
@@ -183,7 +179,6 @@ export interface PluginContextHost {
   openExternal(url: string): Promise<void>
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable
-  registerContextMenu(pluginId: string, registration: ContextMenuRegistration): Disposable
   registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
   registerView(pluginId: string, registration: ViewRegistration): Disposable
   mountView(capability: string, element: HTMLElement, context: unknown): MountedView

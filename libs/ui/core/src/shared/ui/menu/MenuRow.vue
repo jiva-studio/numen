@@ -58,6 +58,7 @@ defineExpose({ focus, getElement: () => row.value })
     :role="current === null ? 'menuitem' : 'menuitemradio'"
     :aria-checked="current === null ? undefined : item.id === current"
     :aria-haspopup="item.children && item.children.length > 0 ? 'menu' : undefined"
+    :aria-label="item.component ? item.text : undefined"
     tabindex="-1"
     :disabled="item.isDisabled"
     @focus="$emit('focus')"
@@ -69,7 +70,10 @@ defineExpose({ focus, getElement: () => row.value })
       <slot />
     </span>
     <span class="flex min-w-0 flex-1 flex-col">
-      <span class="menu__text">{{ item.text }}</span>
+      <span class="menu__text">
+        <component :is="item.component" v-if="item.component" />
+        <template v-else>{{ item.text }}</template>
+      </span>
       <span v-if="item.detail" class="menu__detail">{{ item.detail }}</span>
     </span>
     <span

@@ -14,4 +14,24 @@ export const APP_PLACEMENTS: MenuPlacement[] = [
     command: 'app:settings.open',
     group: 'settings',
   },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    location: 'fileTree.context',
+    command: 'app:note.open',
+    group: '0-open',
+    order: 10,
+  },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    location: 'fileTree.context',
+    command: 'app:note.copyPath',
+    group: '2-edit',
+    order: 20,
+  },
+  {
+    pluginId: APP_PLACEMENT_OWNER,
+    location: 'fileTree.context',
+    command: 'app:note.trash',
+    group: '9-remove',
+  },
 ]

@@ -1,5 +1,4 @@
-import { Gauge, Layers, LayoutTemplate } from '@lucide/vue'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext, type VaultFiles } from '@numen/plugin-sdk'
 import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
 import { createCardModelTabs } from './card-model/kind'
@@ -81,43 +80,29 @@ export function activate(context: PluginContext): void {
   })
 
   if (files) {
-    const getFolder = (path: string, isFolder: boolean): string => {
-      if (isFolder) return path
-      const idx = path.lastIndexOf('/')
-      return idx < 0 ? '' : path.slice(0, idx)
+    const commands: readonly (readonly [string, (folder: string) => Promise<unknown>])[] = [
+      ['deck.new', (folder) => cards.createDeck('New deck', folder)],
+      ['cardModel.new', (folder) => cards.createCardModel('New card model', folder, [])],
+      ['preset.new', (folder) => presets.createPreset('New preset', folder)],
+    ]
+    for (const [id, create] of commands) {
+      context.registerCommand({
+        id,
+        handler: async (note) => {
+          await create(await getFolderOf(files, note.path))
+        },
+      })
     }
-
-    context.registerContextMenu({
-      id: 'newDeck',
-      text: 'New deck',
-      icon: Layers,
-      parentId: 'new',
-      target: 'all',
-      handler: async (target) => {
-        await cards.createDeck('New deck', getFolder(target.path, target.isFolder))
-      },
-    })
-    context.registerContextMenu({
-      id: 'newCardModel',
-      text: 'New card model',
-      icon: LayoutTemplate,
-      parentId: 'new',
-      target: 'all',
-      handler: async (target) => {
-        await cards.createCardModel('New card model', getFolder(target.path, target.isFolder), [])
-      },
-    })
-    context.registerContextMenu({
-      id: 'newPreset',
-      text: 'New preset',
-      icon: Gauge,
-      parentId: 'new',
-      target: 'all',
-      handler: async (target) => {
-        await presets.createPreset('New preset', getFolder(target.path, target.isFolder))
-      },
-    })
   }
+}
+
+/** The folder a file is made in for a row: the row where it is a folder, else the folder holding it. */
+async function getFolderOf(files: VaultFiles, path: string): Promise<string> {
+  if (path === '') return ''
+  const slash = path.lastIndexOf('/')
+  const parent = slash < 0 ? '' : path.slice(0, slash)
+  const entries = await files.list(parent)
+  return entries.some((one) => one.path === path && one.isFolder) ? path : parent
 }
 
 export default definePlugin({

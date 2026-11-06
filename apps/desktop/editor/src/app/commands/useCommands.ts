@@ -3,7 +3,7 @@
  */
 
 import { formatErrorMessage } from '@numen/core-client'
-import { MENU_LOCATION, type Menus } from '@numen/plugin-host'
+import { SLOT, type SlotHost } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
   isChord,
@@ -16,6 +16,7 @@ import {
   type CommandDeps,
   type CommandTarget,
   type ResultChoice,
+  type SearchMenuDeps,
   type Notes,
   type NoteLookup,
   type PaletteLists,
@@ -72,13 +73,18 @@ export interface CommandsDepsOptions {
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@numen/plugin-host').PluginHost | undefined
-  /** The places plugins put their commands in. */
-  menus?: Menus
+  /** The slots of the window, of which the palette draws the menu of a search result. */
+  slots?: SlotHost
   /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
   /** The menu the text versions of the file in front make, read each time the palette opens. */
   fileMenuCommands?: FileMenuCommands
 }
+
+/** The menu of a search result: the entries of its slot over the note of the result. */
+const createSearchMenu = (slots: SlotHost | undefined): SearchMenuDeps => ({
+  getEntries: (target) => slots?.getEntries(SLOT.paletteSearchResult, target) ?? [],
+})
 
 /** What a chosen result is over, replacing the tab and the note of the window. */
 const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
@@ -102,7 +108,7 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const palette = useSearch(core, words, {
     coverage,
-    menu: { getEntries: () => options.menus?.getEntries(MENU_LOCATION.searchResult) ?? [] },
+    menu: createSearchMenu(options.slots),
     getTarget,
   })
   const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [

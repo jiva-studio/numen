@@ -5,7 +5,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { waitFor } from './waitFor'
 import { formatErrorMessage } from '@numen/core-client'
-import { TITLE_BAR_SLOT, type Menus } from '@numen/plugin-host'
+import { TITLE_BAR_SLOT, type SlotHost } from '@numen/plugin-host'
 import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
@@ -73,7 +73,8 @@ interface WindowCommandsOptions {
   pluginHost: import('@numen/plugin-host').PluginHost
   fileMenuCommands: ReturnType<typeof useFileMenuCommands>
   declaredCommands: ReturnType<typeof useDeclaredCommands>
-  menus: Menus
+  /** The slots of the window, read by the palette and the menu of a tab. */
+  slots?: SlotHost | undefined
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
@@ -81,7 +82,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
   return useCommands({
     declaredCommands: deps.declaredCommands,
     fileMenuCommands: deps.fileMenuCommands,
-    menus: deps.menus,
+    ...(deps.slots ? { slots: deps.slots } : {}),
     core,
     words,
     log: deps.log,
@@ -467,10 +468,6 @@ function initWindowKindsAndCommands(
     commandDeps: () => getCommands(ctx).commandDeps,
     tabLinks: base.tabLinks,
     tabSync,
-    getContextMenuItems: (target) => base.pluginHost.getContextMenuItems(target),
-    runContextMenu: (id, target) => base.pluginHost.runContextMenu(id, target),
-    getFileMenuItems: (path) => fileMenuCommands.getForFile(path),
-    getContextMenuIcon: (id) => base.pluginHost.getContextMenuIcon(id),
     getPluginCommandIcon: (id) => {
       const name = base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon
       return name ? getNamedIcon(name) : fileMenuCommands.getIcon(id)
@@ -500,8 +497,8 @@ function initWindowKindsAndCommands(
     log: base.log,
     pluginHost: base.pluginHost,
     declaredCommands: base.declaredCommands,
-    menus,
     fileMenuCommands,
+    slots: base.pluginHost.slots,
   })
 
   return { getTarget, runCommand, menuApi: { menus, runChoice: getCommands(ctx).runChoice } }
@@ -755,6 +752,7 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
+    slots: base.pluginHost.slots,
     isHighlighted,
     ...createWindowTabMoves(base, editing, closeTab),
   }

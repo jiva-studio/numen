@@ -22,6 +22,8 @@ export interface TabLinkMenuDeps {
   onMove?(tab: TabId, windowId: string): void
   /** Turns the highlight of another window on or off while the pointer is over its item. */
   onHighlight?(windowId: string, isOn: boolean): void
+  /** Whether the menu of the tab holds rows besides the rows of linking, detaching and moving. */
+  hasOtherRows?(tab: TabId): boolean
 }
 
 /** Returns the move targets, the asking state of the tab, and the highlight control. */
@@ -84,9 +86,10 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
 
   const { windows, isAsking, highlight } = createWindowMoves(deps, tabId)
 
-  /** Opens the menu on a tab; a tab that can be neither linked, detached nor moved has none. */
+  /** Opens the menu on a tab; a tab with no row to offer has none. */
   const open = (tab: TabId, where: { x: number; y: number }): void => {
-    if (!deps.isLinkable(tab) && !deps.onDetach && !deps.onMove) return
+    const hasLinkRows = deps.isLinkable(tab) || Boolean(deps.onDetach) || Boolean(deps.onMove)
+    if (!hasLinkRows && !deps.hasOtherRows?.(tab)) return
     tabId.value = tab
     coords.value = where
   }

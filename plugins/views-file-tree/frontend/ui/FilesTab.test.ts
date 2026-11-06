@@ -1,14 +1,16 @@
 /**
  * A files tab drawn, in a document.
  */
-import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { Menu, Tree } from '@numen/ui'
 import type { Entry } from '../types'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { createFileTree, ROOT } from '../model/useFileTree'
-import { renderDeps } from '../fixtures/host'
+import { ASK, NEW_MENU, OPEN, renderDeps, ROW_MENU, TRASH } from '../fixtures/host'
+
+enableAutoUnmount(afterEach)
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
@@ -38,8 +40,11 @@ const mountFiles = async (open: readonly string[] = []) => {
     openEntry: (entry) => {
       isDone.push(`lands file ${entry.path}`)
     },
-    runCommand: (id, paths, details) => {
-      isDone.push(`runs ${id} ${paths.join(' ')} ${details.name}`)
+    getMenuEntries: () => ROW_MENU,
+    runCommand: async (command, rowTarget) => {
+      isDone.push(
+        `runs ${command} ${[rowTarget.path, ...rowTarget.others].join(' ')} ${rowTarget.title}`,
+      )
     },
     movePath: async (from, to) => {
       isDone.push(`moves ${from} ${to}`)
@@ -205,63 +210,77 @@ describe('the menu on a row', () => {
   })
 
   const openMenu = async (path: string | null, selection: readonly string[] = []) => {
-    const { list, window } = await mountFiles()
-    if (selection.length) list.selectPaths(selection)
-    window.findComponent(Tree).vm.$emit('menu', path, { x: 4, y: 8 })
+    const mounted = await mountFiles()
+    if (selection.length) mounted.list.selectPaths(selection)
+    mounted.window.findComponent(Tree).vm.$emit('menu', path, { x: 4, y: 8 })
     await settle()
-    return window.findComponent(Menu).props('items') as readonly { id: string; group?: string }[]
+    return mounted
   }
 
-  const getItemIds = async (path: string | null, selection: readonly string[] = []) =>
-    (await openMenu(path, selection)).map((one) => one.id)
+  const getItems = (window: Awaited<ReturnType<typeof mountFiles>>['window']) =>
+    window.findComponent(Menu).props('items') as readonly {
+      id: string
+      group?: string
+      children?: readonly { id: string }[]
+    }[]
 
-  it('offers everything that can be done to a note it was requested for on', async () => {
-    expect(await getItemIds('Entropy.md')).toStrictEqual([
-      'app:note.open',
-      'travel',
-      'new',
-      'rename',
-      'app:note.copyPath',
-      'links',
-      'ask',
-      'app:note.trash',
+  it('draws a row per entry of the slot, in the order of the slot', async () => {
+    const { window } = await openMenu('Entropy.md')
+
+    expect(getItems(window).map((one) => one.id)).toStrictEqual(
+      ROW_MENU.filter((one) => one.kind !== 'separator').map((one) => one.key),
+    )
+  })
+
+  it('draws the groups the separators of the slot divide', async () => {
+    const { window } = await openMenu('Entropy.md')
+
+    expect(getItems(window).map((one) => one.group)).toStrictEqual([
+      '0',
+      '1',
+      '2',
+      '2',
+      '3',
+      '3',
+      '4',
     ])
   })
 
-  it('remains the items of a note in the groups they belong to', async () => {
-    expect((await openMenu('Entropy.md')).map((one) => one.group)).toStrictEqual([
-      'open',
-      'open',
-      'file',
-      'file',
-      'file',
-      'links',
-      'agent',
-      'app:note.trash',
-    ])
+  it('draws a submenu with its own entries', async () => {
+    const { window } = await openMenu('Entropy.md')
+
+    expect(
+      getItems(window)
+        .find((one) => one.id === NEW_MENU.key)
+        ?.children?.map((one) => one.id),
+    ).toStrictEqual(NEW_MENU.entries.map((one) => one.key))
   })
 
-  it('offers no command over a note on a file the vault holds no source for', async () => {
-    expect(await getItemIds('Cover.png')).toStrictEqual([
-      'new',
-      'rename',
-      'app:note.copyPath',
-      'app:note.trash',
-    ])
+  it('draws a command with the icon of its entry', async () => {
+    await openMenu('Entropy.md')
+
+    const rowOf = (text: string) =>
+      [...document.body.querySelectorAll('[role="menuitem"]')].find((one) =>
+        one.textContent?.includes(text),
+      )
+    expect(rowOf(OPEN.title)?.querySelector('svg')).not.toBeNull()
+    expect(rowOf(ASK.title)?.querySelector('svg')).toBeNull()
   })
 
-  it('offers no command over a note on a folder', async () => {
-    expect(await getItemIds('physics')).not.toContain('app:note.rename')
+  it('draws the component of a view in its row', async () => {
+    await openMenu('Entropy.md')
+
+    expect(document.body.querySelector('[role="menuitem"] em')?.textContent).toBe('sketch')
   })
 
-  it('offers what can be made at the root, requested off every row', async () => {
-    expect(await getItemIds(null)).toStrictEqual(['new'])
-  })
+  it('runs the command of the chosen entry over the row', async () => {
+    const { recorded, window } = await openMenu('Entropy.md', ['Entropy.md', 'Cover.png'])
 
-  it('offers removal alone over a selection of several', async () => {
-    expect(await getItemIds('Entropy.md', ['Entropy.md', 'Cover.png'])).toStrictEqual([
-      'app:note.trash',
-    ])
+    window.findComponent(Menu).vm.$emit('choose', TRASH.key)
+    await settle()
+
+    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
+    expect(window.findComponent(Menu).exists()).toBe(false)
   })
 })
 
@@ -275,7 +294,8 @@ describe('a folder that could not be read', () => {
     const tab: FilesTabState = useFilesTab(list, {
       ...renderDeps,
       openEntry: () => undefined,
-      runCommand: () => undefined,
+      getMenuEntries: () => [],
+      runCommand: async () => undefined,
       movePath: async () => undefined,
       setDraggedPaths: () => undefined,
       createFolder: async () => undefined,

@@ -3,7 +3,6 @@ import type {
   AppInfo,
   CommandNote,
   CommandRegistration,
-  ContextMenuRegistration,
   Disposable,
   FileSelectEvent,
   PluginContext,
@@ -50,7 +49,6 @@ export interface MockPluginContext extends PluginContext {
   getOpenedAddresses(): string[]
   getRegisteredTabKinds(): TabKindRegistration[]
   getRegisteredCommands(): CommandRegistration[]
-  getRegisteredContextMenus(): ContextMenuRegistration[]
   getRegisteredAgentProviders(): AgentProviderRegistration[]
   getRegisteredViews(): ViewRegistration[]
   getRegisteredDropHandlers(): DropRegistration[]
@@ -147,7 +145,6 @@ export function createMockPluginContext(
   const openedAddresses: string[] = []
   const tabKinds: TabKindRegistration[] = []
   const commands: CommandRegistration[] = []
-  const contextMenus: ContextMenuRegistration[] = []
   const agentProviders: AgentProviderRegistration[] = []
   const views: ViewRegistration[] = []
   const drops: DropRegistration[] = []
@@ -197,10 +194,6 @@ export function createMockPluginContext(
 
     registerCommand(registration: CommandRegistration): Disposable {
       return registerInList(commands, registration, subscriptions)
-    },
-
-    registerContextMenu(registration: ContextMenuRegistration): Disposable {
-      return registerInList(contextMenus, registration, subscriptions)
     },
 
     registerAgentProvider(registration: AgentProviderRegistration): Disposable {
@@ -313,10 +306,6 @@ export function createMockPluginContext(
 
     getRegisteredCommands(): CommandRegistration[] {
       return [...commands]
-    },
-
-    getRegisteredContextMenus(): ContextMenuRegistration[] {
-      return [...contextMenus]
     },
 
     getRegisteredAgentProviders(): AgentProviderRegistration[] {

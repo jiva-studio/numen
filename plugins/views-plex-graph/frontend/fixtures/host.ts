@@ -68,8 +68,6 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     },
     getMessageWriter: () => () => undefined,
     getToday: () => '2026-01-01',
-    getPathCommands: () => [],
-    runPathCommand: () => undefined,
     getCommandIcon: () => null,
     getEntryIcon: () => ({}),
   }

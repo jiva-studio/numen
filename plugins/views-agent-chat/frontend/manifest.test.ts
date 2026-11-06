@@ -90,3 +90,17 @@ describe('the readme', () => {
     expect(readme).toMatch(/title bar/i)
   })
 })
+
+describe('the menu of a row of the file tree', () => {
+  it('holds asking the agent about the note of the row', () => {
+    const { contributes } = JSON.parse(
+      readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
+    ) as { contributes: { slots?: readonly { slot: string }[] } }
+
+    expect(
+      (contributes.slots ?? []).filter((one) => one.slot === 'fileTree.context'),
+    ).toStrictEqual([
+      { slot: 'fileTree.context', command: 'note.ask', group: '5-agent', order: 10 },
+    ])
+  })
+})

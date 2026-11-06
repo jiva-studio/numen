@@ -95,7 +95,6 @@ function createFrontView(views: Readonly<ShallowRef<readonly PluginView[]>>) {
 const UNUSED_CAPABILITIES = {
   registerReader: () => NOTHING,
   registerCommand: () => NOTHING,
-  registerContextMenu: () => NOTHING,
   registerAgentProvider: () => NOTHING,
   registerSettingsView: () => NOTHING,
   registerStatusView: () => NOTHING,

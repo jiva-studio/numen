@@ -1,10 +1,5 @@
-import type { ContextMenuRegistration, ContextMenuTarget, MenuEntry } from '@numen/plugin-host'
-import type {
-  CommandDeps,
-  CommandTarget,
-  PathContribution,
-  SearchDeps,
-} from '@/features/command-palette'
+import type { MenuEntry } from '@numen/plugin-host'
+import type { CommandDeps, CommandTarget, SearchDeps } from '@/features/command-palette'
 import type { FileOpeners, useWindowTabs } from '@/entities/tab'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { NotePort } from '@/app/ports/notes'
@@ -31,10 +26,6 @@ export interface WindowKindsDeps {
   commandDeps: () => CommandDeps
   tabLinks?: TabLinksState
   tabSync?: ReturnType<typeof createTabSync>
-  getContextMenuItems?: (target: ContextMenuTarget) => readonly ContextMenuRegistration[]
-  runContextMenu?: (id: string, target: ContextMenuTarget) => Promise<boolean>
-  getFileMenuItems?: (path: string) => readonly PathContribution[]
-  getContextMenuIcon?: (id: string) => unknown
   /** The icon a plugin draws its command with, and nothing for one it draws none for. */
   getPluginCommandIcon?: (id: string) => unknown
   /** The commands the plugins declare over one note. */

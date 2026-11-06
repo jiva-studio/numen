@@ -83,7 +83,9 @@ func TestEveryCommandTheManifestDeclaresIsRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	commands, _ := newCommands(t)
-	runByTheFrontend := map[string]bool{"preset.open": true}
+	runByTheFrontend := map[string]bool{
+		"preset.open": true, "deck.new": true, "cardModel.new": true, "preset.new": true,
+	}
 
 	for _, declared := range manifest.Contributes.Commands {
 		if runByTheFrontend[declared.ID] {

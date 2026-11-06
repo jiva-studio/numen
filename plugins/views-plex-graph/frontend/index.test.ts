@@ -28,29 +28,50 @@ describe('view-plex-graph plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds subscriptions for tab kind, vault, commands and context menus, and releases all', () => {
+  it('holds subscriptions for tab kind, vault and commands, and releases all', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(10)
-    const menus = ctx.getRegisteredContextMenus()
-    expect(menus).toHaveLength(4)
-    expect(menus.map((m) => m.id)).toEqual(['travel', 'child', 'parent', 'jump'])
+    expect(ctx.subscriptions).toHaveLength(9)
 
     ctx.dispose()
     expect(ctx.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
-    expect(ctx.getRegisteredContextMenus()).toHaveLength(0)
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
 
-  it('registers the handlers that open the plex and show a note in it', () => {
+  it('registers the handlers that open the plex, show a note in it and make related notes', () => {
     const { ctx } = createContext()
     activate(ctx)
 
     expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
       'graph.open',
       'graph.showNote',
+      'relation.createChild',
+      'relation.createParent',
+      'relation.createJump',
+    ])
+  })
+
+  it('makes an untitled note in each relation to the note the command runs over', async () => {
+    const { host, recorded } = createHost({ opening: 'Root.md' })
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.plex.graph',
+      workspace: host.workspace,
+      notes: host.notes,
+      relations: host.relations,
+    })
+    activate(ctx)
+    const note = { path: 'Kelvin.md', title: 'Kelvin', type: 'note' }
+
+    await ctx.triggerCommand('relation.createChild', note)
+    await ctx.triggerCommand('relation.createParent', note)
+    await ctx.triggerCommand('relation.createJump', note)
+
+    expect(recorded.made).toStrictEqual([
+      ['Kelvin.md', 'child'],
+      ['Kelvin.md', 'parent'],
+      ['Kelvin.md', 'jump'],
     ])
   })
 
@@ -76,18 +97,9 @@ describe('view-plex-graph plugin', () => {
 
     await ctx.triggerCommand('graph.open')
     await ctx.triggerCommand('graph.showNote', { path: 'One.md', title: 'One', type: 'note' })
-    await ctx.getRegisteredContextMenus()[0]!.handler({
-      path: 'Two.md',
-      name: 'Two',
-      isFolder: false,
-      isNote: true,
-    })
 
     expect(openCalls).toStrictEqual([[PLEX, undefined]])
-    expect(navigateCalls).toStrictEqual([
-      [PLEX, 'One.md'],
-      [PLEX, 'Two.md'],
-    ])
+    expect(navigateCalls).toStrictEqual([[PLEX, 'One.md']])
   })
 
   it('asks every plex for its picture again when the vault changes', async () => {

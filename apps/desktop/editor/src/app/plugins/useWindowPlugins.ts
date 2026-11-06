@@ -12,6 +12,7 @@ import {
   createPluginTexts,
   openExternalUrl,
   type CommandDeclaration,
+  type PluginHost,
   type PluginLoader,
 } from '@numen/plugin-host'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
@@ -96,7 +97,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
 
   /* Stryker disable OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction: host and loader wiring forwards optional capabilities */
   const loaderHolder: { current?: PluginLoader } = {}
-  const pluginHost = createPluginHost({
+  const pluginHost: PluginHost = createPluginHost({
     ...(deps.getCommandDeclarations !== undefined
       ? { getCommandDeclarations: deps.getCommandDeclarations }
       : {}),

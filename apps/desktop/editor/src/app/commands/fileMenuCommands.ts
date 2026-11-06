@@ -6,7 +6,6 @@
  */
 import { computed, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import { runInBackground } from '@numen/ui'
 import { registerCommand, type Command } from '@/features/command-palette'
 import { getFileMenu, runFileMenuEntry, type FileMenuEntry } from '@/entities/text-version'
 import { WORDS } from '@/shared/words'
@@ -115,13 +114,6 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
     }
   }
 
-  const getForFile = (file: string): readonly Command[] => {
-    // Stryker disable next-line ConditionalExpression,OptionalChaining: load('') is a no-op and onError is optional
-    if (file) runInBackground(load(file), (error) => deps.onError?.(error))
-    const entries = entriesByPath.get(file)
-    return entries ? createFileMenuCommands(file, entries) : []
-  }
-
   const getIcon = (id: string) =>
     // Stryker disable next-line OptionalChaining: unmatched command id returns undefined
     createFileMenuCommands(menu.value.file, menu.value.entries).find((one) => one.id === id)?.icon
@@ -131,7 +123,6 @@ export function useFileMenuCommands(deps: FileMenuCommandsDeps = {}) {
       createFileMenuCommands(menu.value.file, menu.value.entries.filter(isOverVersion)),
     ),
     load,
-    getForFile,
     getIcon,
   }
 }

@@ -15,6 +15,7 @@ import {
   listFilePaths,
   openNote,
 } from '../../support/vault.js'
+import { getRow, showInFiles } from '../../support/layout.js'
 
 /** The node of the plex drawn for a note, by its title and what it is to the note in focus. */
 const getPlexNode = (page: Page, title: string, relation: string) =>
@@ -123,6 +124,46 @@ test.describe('Making a related note', () => {
       await expect(getPlexNode(page, fromTitle, 'jump')).toBeAttached()
     } finally {
       await destroyNote(request, from)
+    }
+  })
+})
+
+test.describe('The Relation submenu of a row of the file tree', () => {
+  test('makes an untitled child of the note of the row, joined below it', async ({
+    page,
+    request,
+  }) => {
+    const parentTitle = createUniqueTitle('Lagoon')
+    const parent = await createNote(request, parentTitle)
+    const before = new Set([
+      ...(await listFilePaths(request, '')),
+      ...(await listFilePaths(request, 'notes')),
+    ])
+    let made: string[] = []
+    try {
+      await openWorkspace(page)
+      await showInFiles(page, ['notes'])
+      await getRow(page, parent).click({ button: 'right' })
+      const relation = page.getByRole('menuitem', { name: 'Relation', exact: true })
+      await relation.focus()
+      await relation.press('ArrowRight')
+      await page.getByRole('menuitem', { name: 'New child note', exact: true }).click()
+
+      await expect
+        .poll(async () =>
+          [
+            ...(await listFilePaths(request, '')),
+            ...(await listFilePaths(request, 'notes')),
+          ].filter((one) => !before.has(one)),
+        )
+        .toHaveLength(1)
+      made = [
+        ...(await listFilePaths(request, '')),
+        ...(await listFilePaths(request, 'notes')),
+      ].filter((one) => !before.has(one))
+      expect((await getConnection(request, parent, made[0]!)).role).toBe('ROLE_CHILD')
+    } finally {
+      for (const one of [parent, ...made]) await destroyNote(request, one)
     }
   })
 })

@@ -180,7 +180,6 @@ describe('useFileMenuCommands', () => {
       ANSWER_WORDS,
     )
     expect(onError).toHaveBeenCalledWith(reloadError)
-    expect(menu.getForFile('books/Scan.pdf')).toStrictEqual([])
   })
 
   it('reports a failed run as an error', async () => {
@@ -263,45 +262,20 @@ describe('useFileMenuCommands', () => {
     ])
   })
 
-  it('loads and returns commands for a file requested through getForFile', async () => {
-    const loadErr = new Error('failed background load')
-    const get = vi
-      .fn()
-      .mockResolvedValueOnce([recognise, proofread])
-      .mockResolvedValueOnce([recognise, proofread])
-      .mockResolvedValueOnce([recognise, proofread])
-      .mockRejectedValueOnce(loadErr)
-    const onError = vi.fn()
-    const menu = useFileMenuCommands({ get, run: vi.fn(), onError })
+  it('draws the commands of a file it loaded with their icons, and keeps them while they stay the same', async () => {
+    const get = vi.fn().mockResolvedValue([recognise, proofread])
+    const menu = useFileMenuCommands({ get, run: vi.fn() })
 
-    // Empty file does not trigger load
-    expect(menu.getForFile('')).toStrictEqual([])
-    expect(get).not.toHaveBeenCalled()
-
-    expect(menu.getForFile('books/Scan.pdf')).toStrictEqual([])
-    await Promise.resolve()
-    await Promise.resolve()
+    await menu.load('books/Scan.pdf')
 
     expect(get).toHaveBeenCalledWith('books/Scan.pdf')
-    expect(menu.getForFile('books/Scan.pdf').map((one) => one.id)).toStrictEqual([
-      getFileMenuId(recognise),
-      getFileMenuId(proofread),
-    ])
     expect(menu.getIcon(getFileMenuId(proofread))).toBe(getNamedIcon('spell-check'))
 
-    // Reloading same file with identical entries preserves computed array reference
     const beforeSame = menu.paletteCommands.value
     await menu.load('books/Scan.pdf')
     expect(menu.paletteCommands.value).toBe(beforeSame)
 
-    // Loading a different file with the same entries updates the target file on the commands
     await menu.load('books/Other.pdf')
     expect(menu.paletteCommands.value[0]?.isAvailable(front('books/Other.pdf'), runs)).toBe(true)
-
-    // Background load error in getForFile is reported to onError
-    menu.getForFile('books/Broken.pdf')
-    await Promise.resolve()
-    await Promise.resolve()
-    expect(onError).toHaveBeenCalledWith(loadErr)
   })
 })

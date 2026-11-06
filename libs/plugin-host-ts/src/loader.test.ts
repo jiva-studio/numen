@@ -67,7 +67,6 @@ describe('createPluginLoader', () => {
           registerReader: vi.fn(() => ({ dispose: vi.fn() })),
           registerTabKind: vi.fn(() => ({ dispose: vi.fn() })),
           registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
-          registerContextMenu: vi.fn(() => ({ dispose: vi.fn() })),
           registerView: vi.fn(() => ({ dispose: vi.fn() })),
           registerSettingsView: vi.fn(() => ({ dispose: vi.fn() })),
           mountView: vi.fn(() => ({ focus: vi.fn(), dispose: vi.fn() })),

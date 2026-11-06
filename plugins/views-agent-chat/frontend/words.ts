@@ -11,8 +11,6 @@ export const WORDS = {
   stopped: 'Stopped',
   noTranscript: 'No messages yet',
   agent: 'Agent',
-  /** The command that queries a note. */
-  askAbout: 'Ask agent about note',
   reasoning: 'Reasoning',
   /** The model control where no agent can answer. */
   noAgent: 'No agent',

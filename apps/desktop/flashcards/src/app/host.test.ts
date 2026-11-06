@@ -119,7 +119,6 @@ describe('createShellHost', () => {
 
     context.registerReader?.({} as never).dispose()
     context.registerCommand?.({} as never).dispose()
-    context.registerContextMenu?.({} as never).dispose()
     context.registerAgentProvider?.({} as never).dispose()
     context.registerSettingsView?.({} as never).dispose()
     context.registerStatusView?.({} as never).dispose()

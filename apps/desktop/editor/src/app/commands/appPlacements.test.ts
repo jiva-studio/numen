@@ -43,12 +43,37 @@ const getCommands = (menus: ReturnType<typeof setup>) =>
 
 describe('the placements of the application', () => {
   it('are one list that places the settings command in the title bar in a group of its own', () => {
-    expect(APP_PLACEMENTS).toEqual([
+    expect(APP_PLACEMENTS.filter((one) => one.location === 'titleBar.commands')).toEqual([
       {
         pluginId: 'app',
         location: 'titleBar.commands',
         command: COMMAND.openSettings,
         group: 'settings',
+      },
+    ])
+  })
+
+  it('place the commands of the window over a row in the menu of the file tree', () => {
+    expect(APP_PLACEMENTS.filter((one) => one.location === 'fileTree.context')).toEqual([
+      {
+        pluginId: 'app',
+        location: 'fileTree.context',
+        command: COMMAND.openNote,
+        group: '0-open',
+        order: 10,
+      },
+      {
+        pluginId: 'app',
+        location: 'fileTree.context',
+        command: COMMAND.copyNotePath,
+        group: '2-edit',
+        order: 20,
+      },
+      {
+        pluginId: 'app',
+        location: 'fileTree.context',
+        command: COMMAND.trashNote,
+        group: '9-remove',
       },
     ])
   })

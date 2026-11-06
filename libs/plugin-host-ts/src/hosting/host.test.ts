@@ -160,7 +160,6 @@ describe('createPluginHost', () => {
       readers: new Map(),
       tabKinds: new Map(),
       commands: { value: new Map() },
-      contextMenus: { value: new Map() },
       settingsViews: { value: new Map() },
       agentProviders: new Map([
         [
@@ -276,41 +275,6 @@ describe('createPluginHost', () => {
     const host = createPluginHost(deps)
 
     expect(host.createContext('test.plugin').tasks).toBeUndefined()
-  })
-
-  it('registers context menu, removes it on dispose, and restores on reactivate', () => {
-    const { deps } = createMockDeps()
-    const host = createPluginHost(deps)
-    const ctx1 = host.createContext('sample.plugin')
-
-    ctx1.registerContextMenu({
-      id: 'menu-1',
-      text: 'Action 1',
-      target: 'note',
-      handler: vi.fn(() => Promise.resolve()),
-    })
-
-    expect(
-      host.getContextMenuItems({ path: 'test.md', isFolder: false, isNote: true }),
-    ).toHaveLength(1)
-
-    // Plugin is deactivated / disposed
-    host.disposePlugin('sample.plugin')
-    expect(
-      host.getContextMenuItems({ path: 'test.md', isFolder: false, isNote: true }),
-    ).toHaveLength(0)
-
-    // Plugin is reactivated (new context created and registered)
-    const ctx2 = host.createContext('sample.plugin')
-    ctx2.registerContextMenu({
-      id: 'menu-1',
-      text: 'Action 1',
-      target: 'note',
-      handler: vi.fn(() => Promise.resolve()),
-    })
-    expect(
-      host.getContextMenuItems({ path: 'test.md', isFolder: false, isNote: true }),
-    ).toHaveLength(1)
   })
 
   it('delegates getSetting and onSettingChange through host', () => {

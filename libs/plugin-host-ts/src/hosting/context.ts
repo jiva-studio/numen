@@ -6,7 +6,6 @@ import type {
   AgentProviderRegistration,
   BufferHost,
   CommandRegistration,
-  ContextMenuRegistration,
   Disposable,
   DropRegistration,
   FileSelectEvent,
@@ -219,10 +218,6 @@ function guardWorkspace(
       if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runCommand ${id}`)
       workspace.runCommand(id, target)
     },
-    runPathCommand: (id, target) => {
-      if (!READ_ONLY_COMMANDS.has(id)) requireWrite(`workspace.runPathCommand ${id}`)
-      workspace.runPathCommand(id, target)
-    },
   }
 }
 
@@ -289,8 +284,6 @@ function createRegistrations(pluginId: string, host: PluginContextHost, add: Tra
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>
       add(host.registerTabKind(pluginId, reg)),
     registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
-    registerContextMenu: (reg: ContextMenuRegistration) =>
-      add(host.registerContextMenu(pluginId, reg)),
     registerAgentProvider: (reg: AgentProviderRegistration) =>
       add(host.registerAgentProvider(pluginId, reg)),
     registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg)),

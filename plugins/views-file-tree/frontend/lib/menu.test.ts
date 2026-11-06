@@ -1,106 +1,77 @@
 /**
- * What the menu on a row of the tree offers: what the tab does itself, among the
- * window's commands over the row.
+ * The menu on a row of the tree, drawn from the entries of the slot `fileTree.context`.
  */
 import { describe, expect, it } from 'vitest'
 import { groupItems } from '@numen/ui'
-import type { Entry } from '../types'
-import { getPathCommands } from '../fixtures/host'
-import { createMenuItems, NEW_FOLDER, NEW_NOTE, OWN_IDS, RENAME } from './menu'
+import { createMenuItems, findMenuEntry } from './menu'
+import {
+  ASK,
+  COPY_PATH,
+  NEW_MENU,
+  OPEN,
+  RENAME_ENTRY,
+  separator,
+  SKETCH,
+  TRASH,
+} from '../fixtures/host'
 
-const entry = (overrides: Partial<Entry> = {}): Entry => ({
-  path: 'Entropy.md',
-  name: 'Entropy.md',
-  isFolder: false,
-  isNote: true,
-  type: 'note',
-  ...overrides,
-})
+/** The items as the menu draws them, by id, a rule marked before the first item of a group. */
+const getGroupedIds = (entries: Parameters<typeof createMenuItems>[0]): readonly string[] =>
+  groupItems([...createMenuItems(entries)]).map((one) => `${one.isRule ? '— ' : ''}${one.id}`)
 
-/** What the menu offers on one row, by the identity of each item, as it is drawn. */
-const getGroupedIds = (overrides: Partial<Entry> = {}, isSeveral = false): readonly string[] =>
-  groupItems([
-    ...createMenuItems(getPathCommands({ entry: entry(overrides), isSeveral }), isSeveral),
-  ]).map((one) => `${one.isRule ? '— ' : ''}${one.id}`)
-
-const getMenu = (overrides: Partial<Entry> = {}, isSeveral = false) =>
-  createMenuItems(getPathCommands({ entry: entry(overrides), isSeveral }), isSeveral)
-
-describe('the menu on a row standing for a note', () => {
-  it('opens it first, then what the tab does, then the rest of the window’s commands', () => {
-    expect(getGroupedIds()).toStrictEqual([
-      'app:note.open',
-      'travel',
-      '— new',
-      'rename',
-      'app:note.copyPath',
-      '— links',
-      '— ask',
-      '— app:note.trash',
-    ])
-
-    const menu = getMenu()
-    const newSubmenu = menu.find((one) => one.id === 'new')
-    expect(newSubmenu?.children?.map((c) => c.id)).toStrictEqual([NEW_NOTE, NEW_FOLDER])
-
-    const linksSubmenu = menu.find((one) => one.id === 'links')
-    expect(linksSubmenu?.children?.map((c) => c.id)).toStrictEqual([
-      'app:note.createChild',
-      'app:note.createParent',
-      'app:note.createJump',
-      'app:note.rename',
-    ])
+describe('the menu items of the entries of a slot', () => {
+  it('draws a row per command and a rule at each separator', () => {
+    expect(
+      getGroupedIds([OPEN, separator(1), RENAME_ENTRY, COPY_PATH, separator(2), TRASH]),
+    ).toStrictEqual([OPEN.key, `— ${RENAME_ENTRY.key}`, COPY_PATH.key, `— ${TRASH.key}`])
   })
-})
 
-describe('the menu on a row standing for any other file', () => {
-  it('remains what the tab does before the window’s commands, a run after the path', () => {
-    expect(getGroupedIds({ isNote: false, path: 'Lecture.mp3' })).toStrictEqual([
-      'new',
-      'rename',
-      'app:note.copyPath',
-      '— extract',
-      'refine',
-      '— app:note.trash',
+  it('draws a command under its title', () => {
+    expect(createMenuItems([RENAME_ENTRY])).toStrictEqual([
+      { id: RENAME_ENTRY.key, text: 'Rename', group: '0' },
     ])
   })
 
-  it('leaves no rule behind on a row that has no run, and treats a folder as a file', () => {
-    expect(getGroupedIds({ isNote: false, path: 'Cover.png' })).toStrictEqual([
-      'new',
-      'rename',
-      'app:note.copyPath',
-      '— app:note.trash',
+  it('draws a submenu as a row that opens its own entries', () => {
+    const [row] = createMenuItems([NEW_MENU])
+
+    expect(row?.text).toBe('New')
+    expect(row?.children?.map((one) => one.id)).toStrictEqual(
+      NEW_MENU.entries.map((one) => one.key),
+    )
+  })
+
+  it('draws a view as a row under the key of its entry', () => {
+    expect(createMenuItems([ASK, separator(1), SKETCH]).map((one) => one.id)).toStrictEqual([
+      ASK.key,
+      SKETCH.key,
     ])
-    expect(getGroupedIds({ isFolder: true, isNote: false, path: 'physics' })).toStrictEqual([
-      'new',
-      'rename',
-      'app:note.copyPath',
-      '— app:note.trash',
+  })
+
+  it('draws a view as a row holding its component, named by the id of the view', () => {
+    expect(createMenuItems([SKETCH])).toStrictEqual([
+      { id: SKETCH.key, text: 'sketch', group: '0', component: SKETCH.component },
     ])
   })
-})
 
-describe('the menu over a selection of several', () => {
-  it('offers the window’s commands alone, which mean something for all of them', () => {
-    expect(getGroupedIds({}, true)).toStrictEqual(['app:note.trash'])
+  it('draws nothing for a slot without entries', () => {
+    expect(createMenuItems([])).toStrictEqual([])
   })
 })
 
-describe('the menu off every row', () => {
-  it('offers what the tab makes at the root, and nothing to rename', () => {
-    const items = createMenuItems(null, false)
-    expect(items.map((one) => one.id)).toStrictEqual(['new'])
-    expect(items[0]?.children?.map((one) => one.id)).toStrictEqual([NEW_NOTE, NEW_FOLDER])
-  })
-})
+describe('the entry of a chosen item', () => {
+  it('is found at the top of the menu and inside a submenu', () => {
+    const entries = [OPEN, separator(1), NEW_MENU]
+    const inside = NEW_MENU.entries[0]!
 
-describe('what the tab does itself', () => {
-  it('is the files it makes and the rename, and none of the window’s commands', () => {
-    expect(OWN_IDS.has(NEW_NOTE)).toBe(true)
-    expect(OWN_IDS.has(NEW_FOLDER)).toBe(true)
-    expect(OWN_IDS.has(RENAME)).toBe(true)
-    expect(OWN_IDS.has('app:note.trash')).toBe(false)
-    expect(OWN_IDS.has('transcribe')).toBe(false)
+    expect(findMenuEntry(entries, OPEN.key)).toBe(OPEN)
+    expect(findMenuEntry(entries, inside.key)).toBe(inside)
+  })
+
+  it('is nothing for an id no entry carries, and for a separator', () => {
+    const entries = [OPEN, separator(1), TRASH]
+
+    expect(findMenuEntry(entries, 'md.numen.unknown/command/none')).toBeUndefined()
+    expect(findMenuEntry(entries, 'separator/1')).toBeUndefined()
   })
 })

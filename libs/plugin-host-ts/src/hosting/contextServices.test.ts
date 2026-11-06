@@ -19,7 +19,6 @@ import type { PluginContextHost } from './types'
 const createServices = () => {
   const workspace = {
     runCommand: vi.fn(),
-    runPathCommand: vi.fn(),
     openFile: vi.fn(),
     showError: vi.fn(),
   } as unknown as WorkspaceHost
@@ -278,7 +277,6 @@ describe('a file a plugin writes', () => {
 
 describe('a command a plugin runs over the vault', () => {
   const target = { path: 'a.md', title: 'A' }
-  const row = { paths: ['a.md'], name: 'a', isNote: true, isFolder: false }
 
   it.each([
     'app:note.trash',
@@ -291,11 +289,7 @@ describe('a command a plugin runs over the vault', () => {
     expect(() => context.workspace!.runCommand(id, target)).toThrowError(
       `Plugin "md.numen.sample" lacks required permission "vault:write" for workspace.runCommand ${id}`,
     )
-    expect(() => context.workspace!.runPathCommand(id, row)).toThrowError(
-      `Plugin "md.numen.sample" lacks required permission "vault:write" for workspace.runPathCommand ${id}`,
-    )
     expect(workspace.runCommand).not.toHaveBeenCalled()
-    expect(workspace.runPathCommand).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -307,10 +301,8 @@ describe('a command a plugin runs over the vault', () => {
     const { context, workspace } = createContext(['vault:write'])
 
     context.workspace!.runCommand(id, target)
-    context.workspace!.runPathCommand(id, row)
 
     expect(workspace.runCommand).toHaveBeenCalledWith(id, target)
-    expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
   })
 
   it.each([
@@ -323,10 +315,8 @@ describe('a command a plugin runs over the vault', () => {
     const { context, workspace } = createContext([])
 
     context.workspace!.runCommand(id, target)
-    context.workspace!.runPathCommand(id, row)
 
     expect(workspace.runCommand).toHaveBeenCalledWith(id, target)
-    expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
   })
 
   it('opens a file and shows an error without vault:write', () => {

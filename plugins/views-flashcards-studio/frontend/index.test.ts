@@ -203,7 +203,7 @@ describe('flashcards-studio plugin', () => {
     expect(ctx.getRegisteredTabKinds()).toHaveLength(3)
   })
 
-  it('registers context menu items when files service is available', async () => {
+  it('makes a deck, a card model and a preset in the folder of the row the command runs over', async () => {
     const createDeck = vi
       .spyOn(cards, 'createDeck')
       .mockResolvedValue({ ok: true, value: { path: 'Decks/New deck.md' } } as never)
@@ -214,26 +214,29 @@ describe('flashcards-studio plugin', () => {
       .spyOn(presets, 'createPreset')
       .mockResolvedValue({ ok: true, value: { path: 'Presets/New preset.md' } } as never)
     const { ctx } = createContext()
-    ;(ctx as unknown as { files: unknown }).files = {}
+    const root = [
+      { path: 'Decks', name: 'Decks', isFolder: true, isNote: false, type: 'note' },
+      { path: 'Lakes.md', name: 'Lakes.md', isFolder: false, isNote: true, type: 'deck' },
+    ]
+    ;(ctx as unknown as { files: unknown }).files = {
+      list: async (folder: string) => (folder === '' ? root : []),
+    }
 
     activate(ctx)
 
-    const menus = ctx.getRegisteredContextMenus()
-    expect(menus.map((m) => m.id)).toEqual(['newDeck', 'newCardModel', 'newPreset'])
-    expect(menus.every((m) => m.parentId === 'new')).toBe(true)
-
-    await menus[0]?.handler({ path: 'Decks', isFolder: true, isNote: false, isSeveral: false })
+    expect(ctx.getRegisteredCommands().map(({ id }) => id)).toStrictEqual([
+      'preset.open',
+      'deck.new',
+      'cardModel.new',
+      'preset.new',
+    ])
+    await ctx.triggerCommand('deck.new', { path: 'Decks', title: 'Decks', type: 'note' })
     expect(createDeck).toHaveBeenCalledWith('New deck', 'Decks')
-
-    await menus[1]?.handler({
-      path: 'Decks/One.md',
-      isFolder: false,
-      isNote: true,
-      isSeveral: false,
-    })
+    await ctx.triggerCommand('cardModel.new', { path: 'Decks/One.md', title: 'One', type: 'note' })
     expect(createCardModel).toHaveBeenCalledWith('New card model', 'Decks', [])
-
-    await menus[2]?.handler({ path: '', isFolder: false, isNote: false, isSeveral: false })
+    await ctx.triggerCommand('preset.new', { path: 'Lakes.md', title: 'Lakes', type: 'deck' })
     expect(createPreset).toHaveBeenCalledWith('New preset', '')
+    await ctx.triggerCommand('preset.new', { path: '', title: '', type: 'note' })
+    expect(createPreset).toHaveBeenLastCalledWith('New preset', '')
   })
 })

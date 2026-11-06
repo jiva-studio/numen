@@ -1,5 +1,4 @@
-import { Bot } from '@lucide/vue'
-import { CONVERSATION, definePlugin, NOTE_TARGET, type PluginContext } from '@numen/plugin-sdk'
+import { CONVERSATION, definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { useConversation } from './thread'
 import AgentTab from './ui/AgentTab.vue'
 import { ConversationView } from './conversation'
@@ -47,14 +46,6 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'note.ask',
     handler: (note) => askAbout(note.path),
-  })
-  context.registerContextMenu({
-    id: 'ask',
-    text: WORDS.askAbout,
-    group: 'agent',
-    target: NOTE_TARGET,
-    icon: Bot,
-    handler: (target) => askAbout(target.path),
   })
 }
 

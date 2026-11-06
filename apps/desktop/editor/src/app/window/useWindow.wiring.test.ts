@@ -248,7 +248,6 @@ beforeEach(() => {
     },
     openTabs: { getTabIcon: vi.fn(), pause: vi.fn(async () => undefined), resume: vi.fn() },
     fileMenu: {
-      getForFile: vi.fn(() => ['file-item']),
       getIcon: vi.fn((id: string) => (id === 'file:cmd' ? 'file-icon' : undefined)),
     },
     commands: {
@@ -268,9 +267,6 @@ beforeEach(() => {
         { id: 'org.example.sample:share.run', title: 'Share', icon: 'share' },
       ]),
       getRegisteredSettingsViews: vi.fn(() => ['view-1']),
-      getContextMenuItems: vi.fn(() => ['ctx-item']),
-      runContextMenu: vi.fn(),
-      getContextMenuIcon: vi.fn(() => 'ctx-icon'),
       statusViews: ref([]),
       getSlotView: vi.fn(() => ref(null)),
     },
@@ -705,11 +701,8 @@ describe('the services a plugin is given', () => {
     const target = window.getTarget()
     h.args.kinds.runCommand('cmd-1', target)
     expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-1', target)
-    expect(h.args.kinds.getContextMenuItems(target)).toEqual(['ctx-item'])
-    h.args.kinds.runContextMenu('ctx-1', target)
-    expect(h.f.pluginHost.runContextMenu).toHaveBeenCalledWith('ctx-1', target)
-    expect(h.args.kinds.getFileMenuItems('a.md')).toEqual(['file-item'])
-    expect(h.args.kinds.getContextMenuIcon('ctx-1')).toBe('ctx-icon')
+    expect(h.args.kinds).not.toHaveProperty('getContextMenuItems')
+    expect(h.args.kinds).not.toHaveProperty('getFileMenuItems')
     expect(h.args.kinds.getPluginCommandIcon('file:cmd')).toBe('file-icon')
 
     // tabsHold callbacks

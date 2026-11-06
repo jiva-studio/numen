@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.5",
+  "version": "2026.11.6",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
@@ -29,6 +29,21 @@
         "icon": "waypoints",
         "scope": "note",
         "shortcut": "mod+shift+p"
+      },
+      {
+        "id": "relation.createChild",
+        "title": "New child note",
+        "scope": "note"
+      },
+      {
+        "id": "relation.createParent",
+        "title": "New parent note",
+        "scope": "note"
+      },
+      {
+        "id": "relation.createJump",
+        "title": "New jump note",
+        "scope": "note"
       }
     ],
     "menus": [
@@ -39,6 +54,18 @@
         "order": 20
       },
       { "location": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 }
+    ],
+    "slots": [
+      { "slot": "fileTree.context", "command": "graph.showNote", "group": "0-open", "order": 20 },
+      {
+        "slot": "fileTree.context",
+        "submenu": "plex.relation",
+        "title": "Relation",
+        "group": "4-relation"
+      },
+      { "slot": "plex.relation", "command": "relation.createChild", "order": 10 },
+      { "slot": "plex.relation", "command": "relation.createParent", "order": 20 },
+      { "slot": "plex.relation", "command": "relation.createJump", "order": 30 }
     ]
   },
   "permissions": ["vault:read", "vault:write"],
