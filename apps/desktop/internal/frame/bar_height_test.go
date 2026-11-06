@@ -58,7 +58,11 @@ func TestBarHeightIsTheHeightOfTheBarOfThePlugin(t *testing.T) {
 	if match == nil {
 		t.Fatal("the .title-bar rule has no height in px")
 	}
-	if height, _ := strconv.Atoi(string(match[1])); BarHeight != height {
+	height, err := strconv.Atoi(string(match[1]))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if BarHeight != height {
 		t.Errorf("BarHeight = %d, the plugin draws a bar %d high", BarHeight, height)
 	}
 }
