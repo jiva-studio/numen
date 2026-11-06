@@ -1,5 +1,5 @@
 /**
- * Media and file menu calls over the window's transport.
+ * Address and file menu calls over the window's transport.
  */
 import { createClient } from '@connectrpc/connect'
 import { MediaService, TextVersionService } from '@numen/protocol'
@@ -9,22 +9,19 @@ import { transport } from './transport'
 const mediaClient = createClient(MediaService, transport)
 const textVersionClient = createClient(TextVersionService, transport)
 
-/** Where a media file of the vault is served from, and its content type. */
-export interface MediaSource {
-  readonly mediaUrl: string
+/** Where the bytes at an address are loaded from, and their content type; both empty where unknown. */
+export interface AddressSource {
+  readonly url: string
   readonly mediaType: string
 }
 
-/** Requests from the host the address and content type under which a vault media file is served. */
-export async function getMediaSource(path: string): Promise<MediaSource> {
-  const answer = await retryWhileBusy(() => mediaClient.getMediaSource({ path }))
-  return { mediaUrl: answer.src, mediaType: answer.mediaType }
-}
-
-/** Requests from the host the address at which a plugin's saved web page is served. */
-export async function getPageSource(pluginId: string, path: string): Promise<string> {
-  const answer = await retryWhileBusy(() => mediaClient.getPageSource({ pluginId, path }))
-  return answer.src
+/**
+ * Requests from the host where the file at an address is loaded from: a path of the vault, or
+ * `plugin://<plugin id>/<path>` for a file in that plugin's store of the vault.
+ */
+export async function resolveAddress(address: string): Promise<AddressSource> {
+  const answer = await retryWhileBusy(() => mediaClient.resolveAddress({ address }))
+  return { url: answer.src, mediaType: answer.mediaType }
 }
 
 /**

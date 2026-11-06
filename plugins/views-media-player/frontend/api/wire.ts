@@ -4,7 +4,7 @@
  */
 import {
   getFileMenu,
-  getMediaSource,
+  resolveAddress,
   runFileMenuEntry,
   type TaskHost,
   type VaultTexts,
@@ -34,7 +34,10 @@ const work = createWorkWatcher(
 )
 
 export const recordings: Recordings = {
-  getSource: (path) => getMediaSource(path),
+  getSource: async (path) => {
+    const source = await resolveAddress(path)
+    return { mediaUrl: source.url, mediaType: source.mediaType }
+  },
   ...createTranscripts(() => vaultTexts),
   getMenu: (path) => getFileMenu(path),
   runMenuEntry: (path, entry) => runFileMenuEntry(path, entry),

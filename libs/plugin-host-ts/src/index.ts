@@ -52,6 +52,7 @@ export type {
   PluginHostDeps,
   PluginPaletteCommand,
   CommandDeclaration,
+  HandlerDeclaration,
   TabActionHandler,
 } from './hosting/types'
 export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './hosting/tabKinds'

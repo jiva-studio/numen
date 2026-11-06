@@ -19,10 +19,11 @@ export interface GetLinkRequest {
 export interface GetLinkResponse {
   readonly url: string
   readonly isCopyable: boolean
-  /** The byte count of the stored copy, zero where none is kept. */
-  readonly copySize: number
   readonly isTextDeleted: boolean
-  readonly embedPage: string
+  /** The address of the downloaded media, empty where none is kept. */
+  readonly media: string
+  /** The address of the page that frames the player, empty where none is known. */
+  readonly page: string
 }
 
 export interface ReadArticleRequest {
@@ -35,7 +36,7 @@ export interface ReadArticleResponse {
 
 export interface FetchTextRequest {
   readonly path: string
-  readonly isUserStarted: boolean
+  readonly isForced: boolean
 }
 
 export type FetchTextResponse = Record<string, never>

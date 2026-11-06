@@ -35,9 +35,9 @@ func NewHandler(vaults VaultProvider, commands plugincommand.Commands, versions 
 	return &Handler{vaults: vaults, list: commands.List, run: commands.Run, versions: versions}
 }
 
-// ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them; a
-// command with items, whose condition names version.*, is marked. It carries the content type of a
-// file by its extension.
+// ListCommands lists the commands and the handlers of shared commands of every enabled plugin,
+// whichever part of the plugin runs them; one with items, whose condition names version.*, is marked.
+// It carries the content type of a file by its extension.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
@@ -51,8 +51,17 @@ func (h *Handler) ListCommands(
 	for _, one := range slotEntries {
 		slots = append(slots, newWireSlotEntry(one))
 	}
+	handlerEntries := h.list.ExecuteHandlers()
+	handlers := make([]*v1.PluginHandler, 0, len(handlerEntries))
+	for _, one := range handlerEntries {
+		handlers = append(handlers, &v1.PluginHandler{
+			PluginId: one.PluginID,
+			Handler:  &v1.ManifestHandler{Command: one.Command.ID, Title: one.Command.Title, When: one.Command.When},
+			HasItems: plugincommand.HasItems(one.Command),
+		})
+	}
 	return connect.NewResponse(&v1.ListCommandsResponse{
-		Commands: commands, Slots: slots, ContentTypeByExtension: h.list.ListContentTypes(),
+		Commands: commands, Slots: slots, ContentTypeByExtension: h.list.ListContentTypes(), Handlers: handlers,
 	}), nil
 }
 

@@ -14,6 +14,8 @@ type mixedCommands struct{ calls []plugincommand.Call }
 
 func (m *mixedCommands) ListSlots() []plugincommand.SlotEntry { return nil }
 
+func (m *mixedCommands) ListHandlers() []plugincommand.Entry { return nil }
+
 func (m *mixedCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"}},

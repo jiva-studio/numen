@@ -257,8 +257,11 @@ type ListCommandsResponse struct {
 	// The content type of a file by its extension, lowercase and without the dot, for every extension
 	// the core knows a type of. The window derives target.contentType from it.
 	ContentTypeByExtension map[string]string `protobuf:"bytes,3,rep,name=content_type_by_extension,json=contentTypeByExtension,proto3" json:"content_type_by_extension,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	// The handlers of shared commands of every enabled plugin, in the order of the plugins' ids and
+	// then of each manifest.
+	Handlers      []*PluginHandler `protobuf:"bytes,4,rep,name=handlers,proto3" json:"handlers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCommandsResponse) Reset() {
@@ -312,6 +315,78 @@ func (x *ListCommandsResponse) GetContentTypeByExtension() map[string]string {
 	return nil
 }
 
+func (x *ListCommandsResponse) GetHandlers() []*PluginHandler {
+	if x != nil {
+		return x.Handlers
+	}
+	return nil
+}
+
+// PluginHandler is one entry of contributes.handlers of a plugin. A handler runs with
+// RunPluginCommand under the full id of its shared command, and lists its items with
+// ListCommandItems.
+type PluginHandler struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Handler  *ManifestHandler       `protobuf:"bytes,2,opt,name=handler,proto3" json:"handler,omitempty"`
+	// has_items is set for a handler whose when names version.*: it offers the text versions of the
+	// file over which it holds, made by its own plugin.
+	HasItems      bool `protobuf:"varint,3,opt,name=has_items,json=hasItems,proto3" json:"has_items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PluginHandler) Reset() {
+	*x = PluginHandler{}
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PluginHandler) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PluginHandler) ProtoMessage() {}
+
+func (x *PluginHandler) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PluginHandler.ProtoReflect.Descriptor instead.
+func (*PluginHandler) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *PluginHandler) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *PluginHandler) GetHandler() *ManifestHandler {
+	if x != nil {
+		return x.Handler
+	}
+	return nil
+}
+
+func (x *PluginHandler) GetHasItems() bool {
+	if x != nil {
+		return x.HasItems
+	}
+	return false
+}
+
 // PluginSlotEntry is one entry of contributes.slots of a plugin.
 type PluginSlotEntry struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -323,7 +398,7 @@ type PluginSlotEntry struct {
 
 func (x *PluginSlotEntry) Reset() {
 	*x = PluginSlotEntry{}
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[4]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -335,7 +410,7 @@ func (x *PluginSlotEntry) String() string {
 func (*PluginSlotEntry) ProtoMessage() {}
 
 func (x *PluginSlotEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[4]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -348,7 +423,7 @@ func (x *PluginSlotEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginSlotEntry.ProtoReflect.Descriptor instead.
 func (*PluginSlotEntry) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *PluginSlotEntry) GetPluginId() string {
@@ -392,7 +467,7 @@ type PluginCommand struct {
 
 func (x *PluginCommand) Reset() {
 	*x = PluginCommand{}
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[5]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -404,7 +479,7 @@ func (x *PluginCommand) String() string {
 func (*PluginCommand) ProtoMessage() {}
 
 func (x *PluginCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[5]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -417,7 +492,7 @@ func (x *PluginCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginCommand.ProtoReflect.Descriptor instead.
 func (*PluginCommand) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PluginCommand) GetPluginId() string {
@@ -489,7 +564,7 @@ type CommandArgument struct {
 
 func (x *CommandArgument) Reset() {
 	*x = CommandArgument{}
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[6]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -501,7 +576,7 @@ func (x *CommandArgument) String() string {
 func (*CommandArgument) ProtoMessage() {}
 
 func (x *CommandArgument) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[6]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -514,7 +589,7 @@ func (x *CommandArgument) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandArgument.ProtoReflect.Descriptor instead.
 func (*CommandArgument) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CommandArgument) GetName() string {
@@ -554,7 +629,7 @@ type RunPluginCommandRequest struct {
 
 func (x *RunPluginCommandRequest) Reset() {
 	*x = RunPluginCommandRequest{}
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[7]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -566,7 +641,7 @@ func (x *RunPluginCommandRequest) String() string {
 func (*RunPluginCommandRequest) ProtoMessage() {}
 
 func (x *RunPluginCommandRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[7]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -579,7 +654,7 @@ func (x *RunPluginCommandRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunPluginCommandRequest.ProtoReflect.Descriptor instead.
 func (*RunPluginCommandRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RunPluginCommandRequest) GetPluginId() string {
@@ -630,7 +705,7 @@ type ListCommandItemsRequest struct {
 
 func (x *ListCommandItemsRequest) Reset() {
 	*x = ListCommandItemsRequest{}
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[8]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -642,7 +717,7 @@ func (x *ListCommandItemsRequest) String() string {
 func (*ListCommandItemsRequest) ProtoMessage() {}
 
 func (x *ListCommandItemsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[8]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -655,7 +730,7 @@ func (x *ListCommandItemsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCommandItemsRequest.ProtoReflect.Descriptor instead.
 func (*ListCommandItemsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListCommandItemsRequest) GetPluginId() string {
@@ -691,7 +766,7 @@ type ListCommandItemsResponse struct {
 
 func (x *ListCommandItemsResponse) Reset() {
 	*x = ListCommandItemsResponse{}
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[9]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -703,7 +778,7 @@ func (x *ListCommandItemsResponse) String() string {
 func (*ListCommandItemsResponse) ProtoMessage() {}
 
 func (x *ListCommandItemsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[9]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -716,7 +791,7 @@ func (x *ListCommandItemsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCommandItemsResponse.ProtoReflect.Descriptor instead.
 func (*ListCommandItemsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListCommandItemsResponse) GetItems() []*CommandItem {
@@ -752,7 +827,7 @@ type CommandItem struct {
 
 func (x *CommandItem) Reset() {
 	*x = CommandItem{}
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[10]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -764,7 +839,7 @@ func (x *CommandItem) String() string {
 func (*CommandItem) ProtoMessage() {}
 
 func (x *CommandItem) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[10]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -777,7 +852,7 @@ func (x *CommandItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandItem.ProtoReflect.Descriptor instead.
 func (*CommandItem) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CommandItem) GetId() string {
@@ -807,7 +882,7 @@ type RunPluginCommandResponse struct {
 
 func (x *RunPluginCommandResponse) Reset() {
 	*x = RunPluginCommandResponse{}
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[11]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -819,7 +894,7 @@ func (x *RunPluginCommandResponse) String() string {
 func (*RunPluginCommandResponse) ProtoMessage() {}
 
 func (x *RunPluginCommandResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugincommand_proto_msgTypes[11]
+	mi := &file_numen_v1_plugincommand_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -832,7 +907,7 @@ func (x *RunPluginCommandResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunPluginCommandResponse.ProtoReflect.Descriptor instead.
 func (*RunPluginCommandResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_plugincommand_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RunPluginCommandResponse) GetError() CommandErrorCode {
@@ -873,14 +948,19 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1f\n" +
 	"\vopened_path\x18\x03 \x01(\tR\n" +
 	"openedPath\"\x15\n" +
-	"\x13ListCommandsRequest\"\xbe\x02\n" +
+	"\x13ListCommandsRequest\"\xf3\x02\n" +
 	"\x14ListCommandsResponse\x123\n" +
 	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\x12/\n" +
 	"\x05slots\x18\x02 \x03(\v2\x19.numen.v1.PluginSlotEntryR\x05slots\x12u\n" +
-	"\x19content_type_by_extension\x18\x03 \x03(\v2:.numen.v1.ListCommandsResponse.ContentTypeByExtensionEntryR\x16contentTypeByExtension\x1aI\n" +
+	"\x19content_type_by_extension\x18\x03 \x03(\v2:.numen.v1.ListCommandsResponse.ContentTypeByExtensionEntryR\x16contentTypeByExtension\x123\n" +
+	"\bhandlers\x18\x04 \x03(\v2\x17.numen.v1.PluginHandlerR\bhandlers\x1aI\n" +
 	"\x1bContentTypeByExtensionEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"a\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"~\n" +
+	"\rPluginHandler\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x123\n" +
+	"\ahandler\x18\x02 \x01(\v2\x19.numen.v1.ManifestHandlerR\ahandler\x12\x1b\n" +
+	"\thas_items\x18\x03 \x01(\bR\bhasItems\"a\n" +
 	"\x0fPluginSlotEntry\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x121\n" +
 	"\x05entry\x18\x02 \x01(\v2\x1b.numen.v1.ManifestSlotEntryR\x05entry\"\xec\x01\n" +
@@ -951,51 +1031,55 @@ func file_numen_v1_plugincommand_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_plugincommand_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_plugincommand_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_numen_v1_plugincommand_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_numen_v1_plugincommand_proto_goTypes = []any{
 	(CommandErrorCode)(0),            // 0: numen.v1.CommandErrorCode
 	(*RunCommandRequest)(nil),        // 1: numen.v1.RunCommandRequest
 	(*RunCommandResponse)(nil),       // 2: numen.v1.RunCommandResponse
 	(*ListCommandsRequest)(nil),      // 3: numen.v1.ListCommandsRequest
 	(*ListCommandsResponse)(nil),     // 4: numen.v1.ListCommandsResponse
-	(*PluginSlotEntry)(nil),          // 5: numen.v1.PluginSlotEntry
-	(*PluginCommand)(nil),            // 6: numen.v1.PluginCommand
-	(*CommandArgument)(nil),          // 7: numen.v1.CommandArgument
-	(*RunPluginCommandRequest)(nil),  // 8: numen.v1.RunPluginCommandRequest
-	(*ListCommandItemsRequest)(nil),  // 9: numen.v1.ListCommandItemsRequest
-	(*ListCommandItemsResponse)(nil), // 10: numen.v1.ListCommandItemsResponse
-	(*CommandItem)(nil),              // 11: numen.v1.CommandItem
-	(*RunPluginCommandResponse)(nil), // 12: numen.v1.RunPluginCommandResponse
-	nil,                              // 13: numen.v1.RunCommandRequest.ArgumentsEntry
-	nil,                              // 14: numen.v1.ListCommandsResponse.ContentTypeByExtensionEntry
-	nil,                              // 15: numen.v1.RunPluginCommandRequest.ArgumentsEntry
-	(*ManifestSlotEntry)(nil),        // 16: numen.v1.ManifestSlotEntry
+	(*PluginHandler)(nil),            // 5: numen.v1.PluginHandler
+	(*PluginSlotEntry)(nil),          // 6: numen.v1.PluginSlotEntry
+	(*PluginCommand)(nil),            // 7: numen.v1.PluginCommand
+	(*CommandArgument)(nil),          // 8: numen.v1.CommandArgument
+	(*RunPluginCommandRequest)(nil),  // 9: numen.v1.RunPluginCommandRequest
+	(*ListCommandItemsRequest)(nil),  // 10: numen.v1.ListCommandItemsRequest
+	(*ListCommandItemsResponse)(nil), // 11: numen.v1.ListCommandItemsResponse
+	(*CommandItem)(nil),              // 12: numen.v1.CommandItem
+	(*RunPluginCommandResponse)(nil), // 13: numen.v1.RunPluginCommandResponse
+	nil,                              // 14: numen.v1.RunCommandRequest.ArgumentsEntry
+	nil,                              // 15: numen.v1.ListCommandsResponse.ContentTypeByExtensionEntry
+	nil,                              // 16: numen.v1.RunPluginCommandRequest.ArgumentsEntry
+	(*ManifestHandler)(nil),          // 17: numen.v1.ManifestHandler
+	(*ManifestSlotEntry)(nil),        // 18: numen.v1.ManifestSlotEntry
 }
 var file_numen_v1_plugincommand_proto_depIdxs = []int32{
-	13, // 0: numen.v1.RunCommandRequest.arguments:type_name -> numen.v1.RunCommandRequest.ArgumentsEntry
+	14, // 0: numen.v1.RunCommandRequest.arguments:type_name -> numen.v1.RunCommandRequest.ArgumentsEntry
 	0,  // 1: numen.v1.RunCommandResponse.error:type_name -> numen.v1.CommandErrorCode
-	6,  // 2: numen.v1.ListCommandsResponse.commands:type_name -> numen.v1.PluginCommand
-	5,  // 3: numen.v1.ListCommandsResponse.slots:type_name -> numen.v1.PluginSlotEntry
-	14, // 4: numen.v1.ListCommandsResponse.content_type_by_extension:type_name -> numen.v1.ListCommandsResponse.ContentTypeByExtensionEntry
-	16, // 5: numen.v1.PluginSlotEntry.entry:type_name -> numen.v1.ManifestSlotEntry
-	7,  // 6: numen.v1.PluginCommand.arguments:type_name -> numen.v1.CommandArgument
-	15, // 7: numen.v1.RunPluginCommandRequest.arguments:type_name -> numen.v1.RunPluginCommandRequest.ArgumentsEntry
-	11, // 8: numen.v1.ListCommandItemsResponse.items:type_name -> numen.v1.CommandItem
-	0,  // 9: numen.v1.ListCommandItemsResponse.error:type_name -> numen.v1.CommandErrorCode
-	0,  // 10: numen.v1.RunPluginCommandResponse.error:type_name -> numen.v1.CommandErrorCode
-	1,  // 11: numen.v1.PluginCommandService.RunCommand:input_type -> numen.v1.RunCommandRequest
-	3,  // 12: numen.v1.CommandService.ListCommands:input_type -> numen.v1.ListCommandsRequest
-	8,  // 13: numen.v1.CommandService.RunPluginCommand:input_type -> numen.v1.RunPluginCommandRequest
-	9,  // 14: numen.v1.CommandService.ListCommandItems:input_type -> numen.v1.ListCommandItemsRequest
-	2,  // 15: numen.v1.PluginCommandService.RunCommand:output_type -> numen.v1.RunCommandResponse
-	4,  // 16: numen.v1.CommandService.ListCommands:output_type -> numen.v1.ListCommandsResponse
-	12, // 17: numen.v1.CommandService.RunPluginCommand:output_type -> numen.v1.RunPluginCommandResponse
-	10, // 18: numen.v1.CommandService.ListCommandItems:output_type -> numen.v1.ListCommandItemsResponse
-	15, // [15:19] is the sub-list for method output_type
-	11, // [11:15] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	7,  // 2: numen.v1.ListCommandsResponse.commands:type_name -> numen.v1.PluginCommand
+	6,  // 3: numen.v1.ListCommandsResponse.slots:type_name -> numen.v1.PluginSlotEntry
+	15, // 4: numen.v1.ListCommandsResponse.content_type_by_extension:type_name -> numen.v1.ListCommandsResponse.ContentTypeByExtensionEntry
+	5,  // 5: numen.v1.ListCommandsResponse.handlers:type_name -> numen.v1.PluginHandler
+	17, // 6: numen.v1.PluginHandler.handler:type_name -> numen.v1.ManifestHandler
+	18, // 7: numen.v1.PluginSlotEntry.entry:type_name -> numen.v1.ManifestSlotEntry
+	8,  // 8: numen.v1.PluginCommand.arguments:type_name -> numen.v1.CommandArgument
+	16, // 9: numen.v1.RunPluginCommandRequest.arguments:type_name -> numen.v1.RunPluginCommandRequest.ArgumentsEntry
+	12, // 10: numen.v1.ListCommandItemsResponse.items:type_name -> numen.v1.CommandItem
+	0,  // 11: numen.v1.ListCommandItemsResponse.error:type_name -> numen.v1.CommandErrorCode
+	0,  // 12: numen.v1.RunPluginCommandResponse.error:type_name -> numen.v1.CommandErrorCode
+	1,  // 13: numen.v1.PluginCommandService.RunCommand:input_type -> numen.v1.RunCommandRequest
+	3,  // 14: numen.v1.CommandService.ListCommands:input_type -> numen.v1.ListCommandsRequest
+	9,  // 15: numen.v1.CommandService.RunPluginCommand:input_type -> numen.v1.RunPluginCommandRequest
+	10, // 16: numen.v1.CommandService.ListCommandItems:input_type -> numen.v1.ListCommandItemsRequest
+	2,  // 17: numen.v1.PluginCommandService.RunCommand:output_type -> numen.v1.RunCommandResponse
+	4,  // 18: numen.v1.CommandService.ListCommands:output_type -> numen.v1.ListCommandsResponse
+	13, // 19: numen.v1.CommandService.RunPluginCommand:output_type -> numen.v1.RunPluginCommandResponse
+	11, // 20: numen.v1.CommandService.ListCommandItems:output_type -> numen.v1.ListCommandItemsResponse
+	17, // [17:21] is the sub-list for method output_type
+	13, // [13:17] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_plugincommand_proto_init() }
@@ -1010,7 +1094,7 @@ func file_numen_v1_plugincommand_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_plugincommand_proto_rawDesc), len(file_numen_v1_plugincommand_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

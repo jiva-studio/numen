@@ -122,7 +122,10 @@
       "when": "target.noteType == 'link' && has(target.properties.media)",
       "values": [
         {
-          "context": { "target.noteType": "link", "target.properties": { "media": "plugin://org.example.links/talk.mp4" } },
+          "context": {
+            "target.noteType": "link",
+            "target.properties": { "media": "plugin://org.example.links/talk.mp4" }
+          },
           "value": true
         },
         { "context": { "target.noteType": "link", "target.properties": {} }, "value": false }

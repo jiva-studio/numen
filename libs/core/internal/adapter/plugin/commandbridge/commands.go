@@ -71,6 +71,25 @@ func (c Commands) ListSlots() []pluginport.PluginSlotEntry {
 	return found
 }
 
+// ListHandlers lists the handlers the manifests of the enabled plugins declare, each as a command under
+// the full id of its shared command. No plugin is started.
+func (c Commands) ListHandlers() []pluginport.PluginCommandEntry {
+	var found []pluginport.PluginCommandEntry
+	for _, info := range c.host.GetPluginInfos() {
+		plugin, isEnabled := c.host.GetPlugin(info.ID)
+		if !isEnabled {
+			continue
+		}
+		for _, handler := range plugin.Manifest.Contributes.Handlers {
+			found = append(found, pluginport.PluginCommandEntry{
+				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name,
+				Command: pluginport.PluginCommand{ID: handler.Command, Title: handler.Title, When: handler.When},
+			})
+		}
+	}
+	return found
+}
+
 // ListTriggers lists the triggers the manifests of the enabled plugins declare, leaving out those of a
 // plugin the host holds suspended. No plugin is started.
 func (c Commands) ListTriggers() []pluginport.PluginTriggerEntry {
@@ -154,6 +173,8 @@ type NoCommands struct{}
 func (NoCommands) ListCommands() []pluginport.PluginCommandEntry { return nil }
 
 func (NoCommands) ListSlots() []pluginport.PluginSlotEntry { return nil }
+
+func (NoCommands) ListHandlers() []pluginport.PluginCommandEntry { return nil }
 
 func (NoCommands) GetParts(string) pluginport.PluginParts { return pluginport.PluginParts{} }
 

@@ -2,17 +2,17 @@
  * What a link tab reads and does, as the plugin's backend and the window serve it.
  */
 
-/** One link: the address its note holds and the copy stored of its video. */
+/** One link: the address its note holds and the addresses of its media and of its player's page. */
 export interface LinkFacts {
   readonly url: string
   /** Whether a video is published at the address, so a copy of it can be made. */
   readonly isCopyable: boolean
-  /** How many bytes the copy holds, and zero where none is kept. */
-  readonly copySize: number
   /** Whether the text was fetched once and its version deleted since. */
   readonly isTextDeleted: boolean
-  /** The page below the plugin route that frames the player of the video, and empty where none is known. */
-  readonly embedPage: string
+  /** The address of the downloaded media the note holds, and empty where it holds none. */
+  readonly media: string
+  /** The address of the page that frames the player of the video, and empty where none is known. */
+  readonly page: string
 }
 
 /** Where a copy is played from, and what it is played as. */
@@ -29,14 +29,13 @@ export type Outcome<T> =
 export interface Links {
   getLink(path: string): Promise<Outcome<LinkFacts>>
   readArticle(path: string): Promise<string>
-  getSource(path: string): Promise<LinkSource>
-  /** Where a page below the plugin route is loaded from in a frame. */
-  getPageSource(page: string): Promise<string>
+  /** Where the file at an address is loaded from, and what it is played as. */
+  getSource(address: string): Promise<LinkSource>
   /**
-   * Starts fetching the text. A fetch not requested by the user does not restore
-   * a deleted text.
+   * Starts fetching the text. A fetch that is not forced does not restore a deleted text, and takes
+   * a stored text without fetching it.
    */
-  fetchText(path: string, isUserStarted: boolean): Promise<Outcome<null>>
+  fetchText(path: string, isForced: boolean): Promise<Outcome<null>>
   copyVideo(path: string): Promise<Outcome<null>>
   deleteCopy(path: string): Promise<Outcome<null>>
   /**

@@ -32,6 +32,8 @@ type pluginCommands struct {
 
 func (p pluginCommands) ListSlots() []plugincommand.SlotEntry { return nil }
 
+func (p pluginCommands) ListHandlers() []plugincommand.Entry { return nil }
+
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "org.example.sample", Command: plugincommand.Command{

@@ -17,6 +17,8 @@ type declaredByTwoPlugins struct{}
 
 func (declaredByTwoPlugins) ListSlots() []plugincommand.SlotEntry { return nil }
 
+func (declaredByTwoPlugins) ListHandlers() []plugincommand.Entry { return nil }
+
 func (declaredByTwoPlugins) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "md.numen.tree", Command: plugincommand.Command{

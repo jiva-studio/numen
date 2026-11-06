@@ -6,24 +6,34 @@ import type { CommandItem, CommandNote, CommandTarget } from '@numen/plugin-sdk'
 import { createPaletteCommand } from './available'
 import { readAvailableCommands } from './availableReader'
 import { isCommandAvailable } from './commandWhen'
+import { createHandlerApi, isSharedCommand } from './handlers'
 import { reportError, runCommand } from './events'
 import type { HostRegistry } from './registry'
 import { matchesShortcut } from './shortcuts'
 import type { PluginHostDeps } from './types'
 
-/** The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts. */
+/** The note a place's target is, by the note type the place read. */
+const toNote = (target: CommandTarget): CommandNote => ({ ...target, type: target.noteType ?? '' })
+
+/**
+ * The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts.
+ * A shared command offers and runs the handlers the plugins declare.
+ */
 export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
   const getAvailable = () => readAvailableCommands(deps, registry)
   const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
+  const handlers = createHandlerApi(deps, registry)
   return {
+    ...handlers,
     getPaletteCommands: () => getAvailable().map(createPaletteCommand),
     hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
     hasCommandItems: (id: string): boolean =>
-      registry.commands.value.get(id)?.reg.listItems !== undefined,
+      isSharedCommand(id) || registry.commands.value.get(id)?.reg.listItems !== undefined,
     listCommandItems: async (
       id: string,
       target: CommandTarget,
     ): Promise<readonly CommandItem[]> => {
+      if (isSharedCommand(id)) return handlers.listHandlerItems(id, toNote(target))
       const entry = registry.commands.value.get(id)
       try {
         return (await entry?.reg.listItems?.(target)) ?? []
@@ -33,6 +43,7 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
       }
     },
     executeCommand: async (id: string, note: CommandNote, argument?: string): Promise<boolean> => {
+      if (isSharedCommand(id)) return handlers.runSharedCommand(id, note, argument)
       const command = findAvailable(id)
       if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
       let entry = command.entry

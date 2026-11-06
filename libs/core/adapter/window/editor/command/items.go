@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
@@ -18,7 +19,7 @@ import (
 // VersionItems lists the text versions of a file a command with items offers, and runs the command
 // over one of them.
 type VersionItems interface {
-	ListVersionItems(ctx context.Context, v domain.Vault, path string, command plugincommand.Command) ([]textversion.VersionItem, error)
+	ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugincommand.Entry) ([]textversion.VersionItem, error)
 	RunVersionItem(ctx context.Context, v domain.Vault, path string, entry plugincommand.Entry, version domain.TextVersionID) (plugincommand.Result, error)
 }
 
@@ -40,7 +41,7 @@ func (h *Handler) ListCommandItems(
 	if h.versions == nil {
 		return newItemsFailure(errNoVersions), nil
 	}
-	versions, err := h.versions.ListVersionItems(ctx, h.vaults.GetCurrentVault(), r.Msg.GetPath(), entry.Command)
+	versions, err := h.versions.ListVersionItems(ctx, h.vaults.GetCurrentVault(), r.Msg.GetPath(), entry)
 	if err != nil {
 		return newItemsFailure(err), nil
 	}
@@ -73,9 +74,14 @@ func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandR
 	return result, true, err
 }
 
-// findEntry is the command of the id an enabled plugin declares, whichever part of it runs the command.
+// findEntry is the command of the id an enabled plugin declares, whichever part of it runs the command,
+// or its handler of the shared command of the id.
 func (h *Handler) findEntry(pluginID, command string) (plugincommand.Entry, bool) {
-	for _, one := range h.list.ExecuteAll() {
+	entries := h.list.ExecuteAll()
+	if pluginport.IsSharedCommand(command) {
+		entries = h.list.ExecuteHandlers()
+	}
+	for _, one := range entries {
 		if one.PluginID == pluginID && one.Command.ID == command {
 			return one, true
 		}

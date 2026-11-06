@@ -18,6 +18,7 @@ import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
 import { addListener, notifyListeners } from './events'
 import { createCommandApi } from './commandApi'
+import { isSharedCommand } from './handlers'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
@@ -78,11 +79,12 @@ function createRegistrationBridge(
         getContext: () => registry.contexts.get(pluginId),
       }),
     registerCommand: (pluginId, registration) => {
+      const holder = isSharedCommand(registration.id) ? registry.handlers : registry.commands
       const fullId = formatCommandId(pluginId, registration.id)
-      if (registry.commands.value.has(fullId)) {
+      if (holder.value.has(fullId)) {
         throw new Error(`Command "${fullId}" is already registered`)
       }
-      return addEntry(registry.commands, fullId, { pluginId, reg: registration })
+      return addEntry(holder, fullId, { pluginId, reg: registration })
     },
     registerSettingsView: (pluginId, registration) =>
       addEntry(registry.settingsViews, getSettingsViewKey(pluginId, registration.id), {
@@ -225,6 +227,7 @@ function createHostRegistry(): HostRegistry {
     readers: new Map(),
     tabKinds: new Map(),
     commands: shallowRef(new Map()),
+    handlers: shallowRef(new Map()),
     settingsViews: shallowRef(new Map()),
     agentProviders: new Map(),
     contexts: new Map(),

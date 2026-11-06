@@ -82,13 +82,22 @@ const getChildren = (expr: Expr): Expr[] => {
   return (CHILDREN[kind.case] as (value: unknown) => Expr[])(kind.value)
 }
 
-/** The variables the expression reads, each as declared, the settings as `config`. */
+/** The variables of the type map, whose keys a condition selects: `config` and `target.properties`. */
+const MAPS: readonly string[] = WHEN_VARIABLES.filter((one) => one.type === 'map').map(
+  (one) => one.name,
+)
+
+/** The variable a qualified name reads: itself, or the map variable it selects a key of. */
+const getVariableName = (qualified: string): string =>
+  MAPS.find((one) => qualified === one || qualified.startsWith(one + '.')) ?? qualified
+
+/** The variables the expression reads, each as declared, a key of a map as the map. */
 function collectNames(expr: Expr, names: Set<string>): void {
   const qualified = getQualifiedName(expr)
   if (qualified === undefined) {
     for (const one of getChildren(expr)) collectNames(one, names)
   } else {
-    names.add(qualified === 'config' || qualified.startsWith('config.') ? 'config' : qualified)
+    names.add(getVariableName(qualified))
   }
 }
 

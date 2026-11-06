@@ -116,8 +116,10 @@ func hasRequiredArgument(command pluginport.PluginCommand) bool {
 // VersionItem is a text version of a file that a command with items offers to run over.
 type VersionItem struct {
 	Version domain.TextVersionID
-	Kind    string
-	IsLive  bool
+	// PluginID is the plugin that made the version.
+	PluginID string
+	Kind     string
+	IsLive   bool
 }
 
 // getVersionValues gives the version variables of a when condition for one version of a file.
@@ -134,16 +136,17 @@ func listVersionItems(condition pluginport.PluginCondition, target map[string]an
 	for _, version := range versions {
 		isLive := hasLive && version.GetID() == live.GetID()
 		if condition.Evaluate(getVersionValues(target, version, isLive)) == pluginport.ConditionTrue {
-			items = append(items, VersionItem{Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive})
+			items = append(items, VersionItem{Version: version.GetID(), PluginID: version.PluginID, Kind: string(version.Kind), IsLive: isLive})
 		}
 	}
 	return items
 }
 
 // ListVersionItems lists the text versions of the file at the path over which the when condition of
-// the command holds; a command whose condition names no version.* variable has none.
-func (u *FileMenu) ListVersionItems(ctx context.Context, v domain.Vault, path string, command pluginport.PluginCommand) ([]VersionItem, error) {
-	condition, err := pluginport.ParseCondition(command.When)
+// the command holds; a command whose condition names no version.* variable has none. A handler of a
+// shared command offers only the versions its own plugin made.
+func (u *FileMenu) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry) ([]VersionItem, error) {
+	condition, err := pluginport.ParseCondition(entry.Command.When)
 	if err != nil || !condition.HasItems() {
 		return nil, err
 	}
@@ -156,7 +159,11 @@ func (u *FileMenu) ListVersionItems(ctx context.Context, v domain.Vault, path st
 		return nil, err
 	}
 	values := pluginport.GetTargetValues(path, string(u.types.GetContentType(path)), "")
-	return listVersionItems(condition, values, versions, live, hasLive), nil
+	items := listVersionItems(condition, values, versions, live, hasLive)
+	if pluginport.IsSharedCommand(entry.Command.ID) {
+		items = slices.DeleteFunc(items, func(item VersionItem) bool { return item.PluginID != entry.PluginID })
+	}
+	return items, nil
 }
 
 // RunVersionItem runs the command of the entry over the version of the file at the path, which it gets
@@ -165,7 +172,7 @@ func (u *FileMenu) ListVersionItems(ctx context.Context, v domain.Vault, path st
 func (u *FileMenu) RunVersionItem(
 	ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry, version domain.TextVersionID,
 ) (pluginport.PluginCommandResult, error) {
-	items, err := u.ListVersionItems(ctx, v, path, entry.Command)
+	items, err := u.ListVersionItems(ctx, v, path, entry)
 	if err != nil {
 		return pluginport.PluginCommandResult{}, err
 	}

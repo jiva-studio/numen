@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -187,7 +186,7 @@ func (p *pass) runFile(ctx context.Context, stat domain.FileStat) []error {
 // file.added where it has never run over the file, one on file.changed where it has run over another
 // content or the file is not new to the vault.
 func isDue(event string, hasRun, isNew bool) bool {
-	if event == manifest.EventFileAdded {
+	if event == pluginport.EventFileAdded {
 		return !hasRun
 	}
 	return hasRun || !isNew

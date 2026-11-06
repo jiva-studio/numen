@@ -173,7 +173,9 @@ export interface CommandNote extends CommandTarget {
 // manifest does not declare is never listed.
 export interface CommandRegistration {
   // The id as `<object>.<action>`, such as `tree.open`, as the manifest declares it. The host files
-  // the command under `<plugin id>:<id>`; registering the same full id twice throws.
+  // the command under `<plugin id>:<id>`; registering the same full id twice throws. The full id of a
+  // shared command, such as `app:file.createText`, registers the plugin's handler of it, which the
+  // manifest declares under `contributes.handlers`.
   id: string
   // Runs the command over the note; with `argument`, the id of the item picked.
   handler: (note: CommandNote, argument?: string) => void | Promise<void>

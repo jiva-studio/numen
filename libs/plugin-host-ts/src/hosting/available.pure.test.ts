@@ -12,6 +12,7 @@ function createRegistry(
 ): HostRegistry {
   return {
     commands: { value: new Map(handlers) },
+    handlers: { value: new Map() },
     activated: { value: new Set(activated) },
     disposed: new Set<string>(),
     reportedIssues: new Set<string>(),

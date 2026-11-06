@@ -93,6 +93,19 @@ func (u List) ExecuteAll() []Entry {
 	})
 }
 
+// ExecuteHandlers lists the handlers of shared commands of the enabled plugins, each as a command under
+// the full id of its shared command, leaving out those of a plugin the host holds suspended and of a
+// plugin with neither a frontend nor a backend.
+func (u List) ExecuteHandlers() []Entry {
+	if u.commands == nil {
+		return nil
+	}
+	return slices.DeleteFunc(u.commands.ListHandlers(), func(one Entry) bool {
+		parts := u.commands.GetParts(one.PluginID)
+		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+	})
+}
+
 // ExecuteSlots lists the slot entries of the enabled plugins, leaving out those of a plugin the host
 // holds suspended and of a plugin with neither a frontend nor a backend.
 func (u List) ExecuteSlots() []SlotEntry {
@@ -123,13 +136,17 @@ type Run struct {
 	readers  vaultport.VaultReaders
 }
 
-// Execute checks the call against the declaration and runs it over the vault. A call that does not
-// meet the declaration is ErrBadArguments, saying what is wrong, and nothing is run.
+// Execute checks the call against the declaration and runs it over the vault; a call of a shared
+// command runs the handler the plugin declares. A call that does not meet the declaration is
+// ErrBadArguments, saying what is wrong, and nothing is run.
 func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, error) {
 	if u.commands == nil {
 		return Result{}, ErrUnavailable
 	}
 	entries := u.commands.ListCommands()
+	if pluginport.IsSharedCommand(call.Command) {
+		entries = u.commands.ListHandlers()
+	}
 	if !u.commands.GetParts(call.PluginID).HasBackend {
 		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
 	}

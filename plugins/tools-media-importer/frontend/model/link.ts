@@ -37,7 +37,7 @@ export function useLink(links: Links | undefined, path: string) {
       }
       const [article, [played, framed]] = await Promise.all([
         activeLinks.readArticle(path),
-        readPlayback(activeLinks, path, facts.value),
+        readPlayback(activeLinks, facts.value),
       ])
       if (mine !== turn) return
       url.value = facts.value.url
@@ -94,14 +94,13 @@ export function useLink(links: Links | undefined, path: string) {
   }
 }
 
-/** Where the copy is played from, or else where the page that frames the player is loaded from. */
+/** Where the media are played from, or else where the page that frames the player is loaded from. */
 const readPlayback = async (
   links: Links,
-  path: string,
   facts: LinkFacts,
 ): Promise<readonly [LinkSource | null, string]> => {
-  if (facts.copySize > 0) return [await links.getSource(path), '']
-  if (facts.embedPage) return [null, await links.getPageSource(facts.embedPage)]
+  if (facts.media) return [await links.getSource(facts.media), '']
+  if (facts.page) return [null, (await links.getSource(facts.page)).mediaUrl]
   return [null, '']
 }
 

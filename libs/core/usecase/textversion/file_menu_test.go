@@ -66,6 +66,8 @@ type commands struct {
 
 func (c *commands) ListSlots() []pluginport.PluginSlotEntry { return nil }
 
+func (c *commands) ListHandlers() []pluginport.PluginCommandEntry { return nil }
+
 func (c *commands) ListCommands() []pluginport.PluginCommandEntry { return c.all }
 
 func (c *commands) GetParts(string) pluginport.PluginParts {
@@ -357,5 +359,29 @@ func TestNewFileMenuRequiresVersionsCommandsTypesAndReaders(t *testing.T) {
 	}
 	if _, err := textversion.NewFileMenu(s.versions, &commands{}, getPdfTypes(), nil); err == nil {
 		t.Error("a file menu was made without readers")
+	}
+}
+
+func TestAHandlerOfASharedCommandOffersOnlyTheVersionsItsPluginMade(t *testing.T) {
+	s := newScene(t)
+	deleteText := pluginport.PluginCommandEntry{PluginID: ocr, Command: pluginport.PluginCommand{
+		ID: "app:version.delete", Title: "Delete recognition", When: "version.kind != ''",
+	}}
+	menu, recorder := newMenu(t, s, deleteText)
+	s.requestText(t)
+	s.runEntry(t, ocr)
+
+	items, err := menu.ListVersionItems(t.Context(), s.vault, scanPath, deleteText)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 || items[0].PluginID != ocr {
+		t.Fatalf("the handler offers %+v, want the one version of %s", items, ocr)
+	}
+	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, deleteText, s.getReaderVersion()); !errors.Is(err, textversion.ErrInvalidVersion) {
+		t.Errorf("a version of another plugin: got %v, want ErrInvalidVersion", err)
+	}
+	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, deleteText, items[0].Version); err != nil || len(recorder.ran) != 1 {
+		t.Errorf("the version of the plugin: got %v, ran %+v", err, recorder.ran)
 	}
 }

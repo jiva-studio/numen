@@ -105,3 +105,12 @@ func PluginPermissions() []string { return manifest.PluginPermissions() }
 func ParseCondition(text string) (PluginCondition, error) {
 	return when.Parse(text)
 }
+
+// IsSharedCommand reports whether the full id is a shared command of libs/protocol/commands.json.
+func IsSharedCommand(id string) bool { return manifest.IsSharedCommand(id) }
+
+// The events of libs/protocol/events.json a trigger runs on.
+const (
+	EventFileAdded   = manifest.EventFileAdded
+	EventFileChanged = manifest.EventFileChanged
+)

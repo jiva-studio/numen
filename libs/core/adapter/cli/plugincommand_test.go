@@ -20,6 +20,8 @@ type pluginCommands struct {
 
 func (p *pluginCommands) ListSlots() []plugincommand.SlotEntry { return nil }
 
+func (p *pluginCommands) ListHandlers() []plugincommand.Entry { return nil }
+
 func (p *pluginCommands) ListCommands() []plugincommand.Entry { return p.entries }
 
 func (p *pluginCommands) GetParts(string) plugincommand.Parts {

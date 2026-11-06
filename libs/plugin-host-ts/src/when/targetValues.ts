@@ -18,6 +18,7 @@ const NO_TARGET = {
   'target.isFile': false,
   'target.contentType': '',
   'target.noteType': '',
+  'target.properties': {},
 } as const
 
 const getExtension = (path: string): string => {
@@ -28,13 +29,15 @@ const getExtension = (path: string): string => {
 
 /**
  * The target variables over the target: its content type by its extension from the table the core
- * sends, and its note type where the place read it. All are false or empty where there is no target.
+ * sends, and its note type and properties where the place read them. All are false or empty where
+ * there is no target.
  */
 export function getTargetValues(
   target: TargetPath | undefined,
   contentTypes: Readonly<Record<string, string>>,
   noteType = '',
-): Readonly<Record<string, boolean | string>> {
+  properties: Readonly<Record<string, unknown>> = {},
+): Readonly<Record<string, unknown>> {
   if (!target) return NO_TARGET
   const { path, isFolder, others } = target
   const extension = isFolder ? '' : getExtension(path)
@@ -47,5 +50,6 @@ export function getTargetValues(
     'target.isFile': !isFolder && !isNote && path !== '',
     'target.contentType': contentTypes[extension] ?? '',
     'target.noteType': isNote ? noteType : '',
+    'target.properties': isNote ? properties : {},
   }
 }

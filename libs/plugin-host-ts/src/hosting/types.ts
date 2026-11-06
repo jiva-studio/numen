@@ -7,6 +7,7 @@ import type {
   AppInfo,
   BackgroundTaskHost,
   BufferHost,
+  CommandItem,
   CommandRegistration,
   CommandsHost,
   Disposable,
@@ -65,6 +66,18 @@ export interface CommandDeclaration {
   readonly when?: string
 }
 
+/** One handler of a shared command as a plugin manifest declares it under `contributes.handlers`. */
+export interface HandlerDeclaration {
+  readonly pluginId: string
+  /** The full id of the shared command, such as `app:file.createText`. */
+  readonly command: string
+  readonly title: string
+  /** The CEL condition over which targets it handles the command; absent is every target. */
+  readonly when?: string
+  /** Set where its condition names `version.*`: the core lists the versions it offers as its items. */
+  readonly hasItems: boolean
+}
+
 export interface PluginPaletteCommand {
   readonly id: string
   readonly title: string
@@ -84,6 +97,21 @@ export interface PluginHostDeps {
   readonly getWindowValues?: () => WhenValues
   /** The commands the enabled plugins declare in their manifests; undefined until the first list has loaded. */
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
+  /** The handlers of shared commands the enabled plugins declare; undefined until the first list has loaded. */
+  readonly getHandlerDeclarations?: () => readonly HandlerDeclaration[] | undefined
+  /** The items the core lists for a handler that runs in its plugin's backend, over the target. */
+  readonly listBackendHandlerItems?: (
+    pluginId: string,
+    command: string,
+    target: CommandTarget,
+  ) => Promise<readonly CommandItem[]>
+  /** Runs a handler in its plugin's backend over the target; with `argument`, the id of the item picked. */
+  readonly runBackendHandler?: (
+    pluginId: string,
+    command: string,
+    target: CommandTarget,
+    argument?: string,
+  ) => Promise<void>
   /** Whether the plugin declares a frontend the window loads; where absent, every plugin does. */
   readonly hasPluginFrontend?: (pluginId: string) => boolean
   /** Whether the plugin declares a backend that runs the commands no frontend handler takes; where absent, none does. */

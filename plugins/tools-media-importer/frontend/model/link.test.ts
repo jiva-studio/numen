@@ -20,13 +20,12 @@ function createLinks(facts: LinkFacts) {
       return { ok: true, value: link.facts }
     },
     readArticle: async () => link.text,
-    getSource: async (path) => ({
-      mediaUrl: `http://127.0.0.1:1/t/v/${path}`,
-      mediaType: 'video/mp4',
+    getSource: async (address) => ({
+      mediaUrl: `http://127.0.0.1:1/t/${address.replace('plugin://', 'plugin/v/')}`,
+      mediaType: address.endsWith('.html') ? 'text/html' : 'video/mp4',
     }),
-    getPageSource: async (page) => `http://127.0.0.1:1/t/plugin/importer/${page}`,
-    fetchText: async (_, isUserStarted) => {
-      link.fetches.push(isUserStarted)
+    fetchText: async (_, isForced) => {
+      link.fetches.push(isForced)
       return { ok: true, value: null }
     },
     copyVideo: async (path) => {
@@ -35,7 +34,7 @@ function createLinks(facts: LinkFacts) {
     },
     deleteCopy: async (path) => {
       link.started.push(`delete ${path}`)
-      link.facts = { ...link.facts, copySize: 0 }
+      link.facts = { ...link.facts, media: '' }
       return { ok: true, value: null }
     },
     watchWork: (_, onChange) => {
@@ -52,9 +51,9 @@ const ARTICLE = 'http://tidal-mills.numen.test/history/rance'
 const FACTS: LinkFacts = {
   url: ARTICLE,
   isCopyable: false,
-  copySize: 0,
   isTextDeleted: false,
-  embedPage: '',
+  media: '',
+  page: '',
 }
 
 describe('useLink', () => {
@@ -113,9 +112,9 @@ describe('useLink', () => {
     const { link, links } = createLinks({
       url: 'https://videos.example/clip',
       isCopyable: true,
-      copySize: 0,
       isTextDeleted: false,
-      embedPage: '',
+      media: '',
+      page: '',
     })
     link.text = 'The tide comes in.'
     const tab = useLink(links, 'links/clip.md')
@@ -124,11 +123,11 @@ describe('useLink', () => {
     expect(tab.status.isCopyable.value).toBe(true)
 
     await tab.actions.copyVideo()
-    link.facts = { ...link.facts, copySize: 6000 }
+    link.facts = { ...link.facts, media: 'plugin://md.numen.tools.media.importer/clip.mp4' }
     link.onChange(false)
     await flushPromises()
     expect(tab.source.value).toEqual({
-      mediaUrl: 'http://127.0.0.1:1/t/v/links/clip.md',
+      mediaUrl: 'http://127.0.0.1:1/t/plugin/v/md.numen.tools.media.importer/clip.mp4',
       mediaType: 'video/mp4',
     })
 
@@ -154,14 +153,16 @@ describe('useLink of a video', () => {
     const { link, links } = createLinks({
       ...FACTS,
       isCopyable: true,
-      embedPage: 'embed?address=x',
+      page: 'plugin://md.numen.tools.media.importer/clip.html',
     })
     const tab = useLink(links, 'links/clip.md')
     await flushPromises()
-    expect(tab.embedSource.value).toBe('http://127.0.0.1:1/t/plugin/importer/embed?address=x')
+    expect(tab.embedSource.value).toBe(
+      'http://127.0.0.1:1/t/plugin/v/md.numen.tools.media.importer/clip.html',
+    )
     expect(tab.source.value).toBeNull()
 
-    link.facts = { ...link.facts, copySize: 6000 }
+    link.facts = { ...link.facts, media: 'plugin://md.numen.tools.media.importer/clip.mp4' }
     link.onChange(false)
     await flushPromises()
     expect(tab.embedSource.value).toBe('')

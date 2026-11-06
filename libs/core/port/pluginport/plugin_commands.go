@@ -70,6 +70,10 @@ type PluginCommands interface {
 	// ListSlots lists the slot entries of every enabled plugin, in the order of the plugins' ids and
 	// then of each manifest.
 	ListSlots() []PluginSlotEntry
+	// ListHandlers lists the handlers of shared commands of every enabled plugin, in the order of the
+	// plugins' ids and then of each manifest, each as a command under the full id of its shared
+	// command, with the handler's title and condition.
+	ListHandlers() []PluginCommandEntry
 	// GetParts says what the plugin of the id has and whether it is suspended. A plugin that is not
 	// enabled has none.
 	GetParts(pluginID string) PluginParts

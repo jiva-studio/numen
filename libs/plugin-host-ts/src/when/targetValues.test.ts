@@ -14,6 +14,7 @@ describe('the target values', () => {
       'target.isFile': false,
       'target.contentType': '',
       'target.noteType': '',
+      'target.properties': {},
     })
   })
 
@@ -32,7 +33,17 @@ describe('the target values', () => {
       'target.isFile': false,
       'target.contentType': 'text/markdown',
       'target.noteType': 'link',
+      'target.properties': {},
     })
+  })
+
+  it('carry the properties of a note, and none of a file that is no note', () => {
+    const properties = { url: 'https://bees.example/hive' }
+    const note = { path: 'notes/Bees.md', isFolder: false, others: [] }
+    const paper = { path: 'papers/Hive.pdf', isFolder: false, others: [] }
+
+    expect(getTargetValues(note, TYPES, 'link', properties)['target.properties']).toBe(properties)
+    expect(getTargetValues(paper, TYPES, '', properties)['target.properties']).toStrictEqual({})
   })
 
   it('are those of a file that is no note, with its content type by its extension in any case', () => {
@@ -43,6 +54,7 @@ describe('the target values', () => {
       'target.isFile': true,
       'target.contentType': 'application/pdf',
       'target.noteType': '',
+      'target.properties': {},
     })
   })
 
@@ -64,6 +76,7 @@ describe('the target values', () => {
       'target.isFile': false,
       'target.contentType': '',
       'target.noteType': '',
+      'target.properties': {},
     })
   })
 })

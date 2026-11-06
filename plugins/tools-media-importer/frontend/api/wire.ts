@@ -1,10 +1,9 @@
 /**
- * Wire adapter for the plugin's importer service, the window's MediaService and the plugin's tasks.
+ * Wire adapter for the plugin's importer service, the addresses the window resolves and the plugin's tasks.
  */
 import {
   createApi,
-  getMediaSource,
-  getPageSource,
+  resolveAddress,
   type ApiError,
   type Result,
   type TaskHost,
@@ -85,10 +84,11 @@ export const links: Links = {
     if (!result.ok) throw new Error(result.error.message)
     return result.value.text
   },
-  getSource: (path) => getMediaSource(path),
-  getPageSource: (page) => getPageSource(PLUGIN_ID, page),
-  fetchText: async (path, isUserStarted) =>
-    readOutcome(await call('FetchText', { path, isUserStarted })),
+  getSource: async (address) => {
+    const source = await resolveAddress(address)
+    return { mediaUrl: source.url, mediaType: source.mediaType }
+  },
+  fetchText: async (path, isForced) => readOutcome(await call('FetchText', { path, isForced })),
   copyVideo: async (path) => readOutcome(await call('CopyVideo', { path })),
   deleteCopy: async (path) => readOutcome(await call('DeleteCopy', { path })),
   watchWork: (path, onChange) => work.watch(path, onChange),

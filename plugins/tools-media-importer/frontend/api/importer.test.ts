@@ -18,16 +18,16 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
     response: {
       url: 'https://www.youtube.com/watch?v=tidalmill01',
       isCopyable: true,
-      copySize: 6000,
       isTextDeleted: false,
-      embedPage: 'embed?address=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dtidalmill01',
+      media: 'plugin://md.numen.tools.media.importer/0b5e1c.mp4',
+      page: 'plugin://md.numen.tools.media.importer/0b5e1c.html',
     },
   },
   ReadArticle: {
     request: { path: 'links/article.md' },
     response: { text: 'A tidal mill stored seawater.' },
   },
-  FetchText: { request: { path: 'links/clip.md', isUserStarted: true }, response: {} },
+  FetchText: { request: { path: 'links/clip.md', isForced: true }, response: {} },
   CopyVideo: { request: { path: 'links/clip.md' }, response: {} },
   DeleteCopy: { request: { path: 'links/clip.md' }, response: {} },
   CreateLinks: {

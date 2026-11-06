@@ -23,7 +23,7 @@ type versionItems struct {
 	ran []string
 }
 
-func (v *versionItems) ListVersionItems(_ context.Context, _ domain.Vault, path string, _ pluginport.PluginCommand) ([]textversion.VersionItem, error) {
+func (v *versionItems) ListVersionItems(_ context.Context, _ domain.Vault, path string, _ pluginport.PluginCommandEntry) ([]textversion.VersionItem, error) {
 	if path == "gone.mp3" {
 		return nil, errors.New("gone.mp3 is not in the vault")
 	}

@@ -1,0 +1,175 @@
+/**
+ * The shared commands: the handlers the plugins declare, offered as the items of the command over a
+ * target, and the run of the handler picked, in the frontend of its plugin or else in its backend.
+ */
+import { describe, expect, it, vi } from 'vitest'
+import { createMockManifest } from '@numen/core-client/testing'
+import type { CommandTarget } from '@numen/plugin-sdk'
+import { createPluginHost } from './host'
+import type { HandlerDeclaration, PluginHostDeps } from './types'
+
+const SCANS = 'org.example.scans'
+const TIDES = 'org.example.tides'
+const CREATE = 'app:file.createText'
+const DELETE = 'app:version.delete'
+const SCAN: CommandTarget = {
+  path: 'scans/mill.png',
+  title: 'mill',
+  isFolder: false,
+  others: [],
+  tab: '',
+}
+const NOTE: CommandTarget = {
+  path: 'notes/tide.md',
+  title: 'tide',
+  isFolder: false,
+  others: [],
+  tab: '',
+}
+
+const HANDLERS: readonly HandlerDeclaration[] = [
+  {
+    pluginId: TIDES,
+    command: CREATE,
+    title: 'Read the tide table',
+    when: "target.contentType == 'image/png'",
+    hasItems: false,
+  },
+  {
+    pluginId: SCANS,
+    command: CREATE,
+    title: 'Read the scan',
+    when: "target.contentType == 'image/png'",
+    hasItems: false,
+  },
+  {
+    pluginId: SCANS,
+    command: DELETE,
+    title: 'Delete the reading',
+    when: "version.kind == 'reading'",
+    hasItems: true,
+  },
+  {
+    pluginId: TIDES,
+    command: DELETE,
+    title: 'Delete the table',
+    when: "version.kind == 'table'",
+    hasItems: true,
+  },
+]
+
+function createHost(handlers: readonly HandlerDeclaration[] = HANDLERS) {
+  const runBackendHandler = vi.fn(async () => undefined)
+  const listBackendHandlerItems = vi.fn(async (pluginId: string) =>
+    pluginId === SCANS ? [{ id: 'org.example.scans/reading', title: 'reading' }] : [],
+  )
+  const deps: PluginHostDeps = {
+    getContentTypes: () => ({ png: 'image/png', md: 'text/markdown' }),
+    getHandlerDeclarations: () => handlers,
+    hasPluginFrontend: () => false,
+    listBackendHandlerItems,
+    runBackendHandler,
+    registerKind: vi.fn(() => vi.fn()),
+    registerExtensionReader: vi.fn(() => vi.fn()),
+    openTab: vi.fn(async () => 'tab-1'),
+  }
+  const host = createPluginHost(deps)
+  return { host, runBackendHandler, listBackendHandlerItems }
+}
+
+describe('a shared command', () => {
+  it('offers the handlers whose condition holds over the target, by plugin id and title', async () => {
+    const { host } = createHost()
+
+    expect(host.hasCommandItems(CREATE)).toBe(true)
+    expect(await host.listCommandItems(CREATE, SCAN)).toStrictEqual([
+      { id: SCANS, title: 'Read the scan' },
+      { id: TIDES, title: 'Read the tide table' },
+    ])
+    expect(await host.listCommandItems(CREATE, NOTE)).toStrictEqual([])
+  })
+
+  it('runs the handler of the plugin picked in its backend', async () => {
+    const { host, runBackendHandler } = createHost()
+
+    expect(await host.executeCommand(CREATE, { ...SCAN, type: '' }, TIDES)).toBe(true)
+    expect(runBackendHandler).toHaveBeenCalledWith(TIDES, CREATE, { ...SCAN, type: '' }, undefined)
+  })
+
+  it('runs its one matching handler without an argument, and nothing where several match', async () => {
+    const one = createHost(HANDLERS.filter((handler) => handler.pluginId === SCANS))
+    expect(await one.host.executeCommand(CREATE, { ...SCAN, type: '' })).toBe(true)
+    expect(one.runBackendHandler).toHaveBeenCalledWith(
+      SCANS,
+      CREATE,
+      { ...SCAN, type: '' },
+      undefined,
+    )
+
+    const several = createHost()
+    expect(await several.host.executeCommand(CREATE, { ...SCAN, type: '' })).toBe(false)
+    expect(several.runBackendHandler).not.toHaveBeenCalled()
+  })
+
+  it('offers the items of its handlers in one list, grouped by plugin, and runs the one picked', async () => {
+    const { host, runBackendHandler } = createHost()
+
+    expect(await host.listCommandItems(DELETE, SCAN)).toStrictEqual([
+      { id: `${SCANS}:org.example.scans/reading`, title: 'reading', group: SCANS },
+    ])
+    await host.executeCommand(DELETE, { ...SCAN, type: '' }, `${SCANS}:org.example.scans/reading`)
+    expect(runBackendHandler).toHaveBeenCalledWith(
+      SCANS,
+      DELETE,
+      { ...SCAN, type: '' },
+      'org.example.scans/reading',
+    )
+  })
+
+  it('runs a handler the frontend of its plugin registered there, with its own items', async () => {
+    const { host, runBackendHandler } = createHost([
+      { pluginId: SCANS, command: CREATE, title: 'Read the scan', hasItems: false },
+    ])
+    const context = host.createContext(
+      SCANS,
+      createMockManifest(SCANS, { name: 'Scans', version: '1' }),
+    )
+    const handler = vi.fn()
+    context.registerCommand({
+      id: CREATE,
+      handler,
+      listItems: () => [{ id: 'fast', title: 'Fast' }],
+    })
+
+    expect(await host.listCommandItems(CREATE, SCAN)).toStrictEqual([
+      { id: `${SCANS}:fast`, title: 'Fast', group: SCANS },
+    ])
+    await host.executeCommand(CREATE, { ...SCAN, type: '' }, `${SCANS}:fast`)
+    expect(handler).toHaveBeenCalledWith({ ...SCAN, type: '' }, 'fast')
+    expect(runBackendHandler).not.toHaveBeenCalled()
+    expect(host.getPaletteCommands()).toStrictEqual([])
+  })
+
+  it('reads the properties of a note in the conditions of its handlers', async () => {
+    const { host } = createHost([
+      {
+        pluginId: TIDES,
+        command: CREATE,
+        title: 'Download captions',
+        when: "target.noteType == 'link' && has(target.properties.url)",
+        hasItems: false,
+      },
+    ])
+
+    expect(
+      await host.listCommandItems(CREATE, {
+        ...NOTE,
+        noteType: 'link',
+        properties: { url: 'https://tides.example' },
+      }),
+    ).toStrictEqual([{ id: TIDES, title: 'Download captions' }])
+    expect(
+      await host.listCommandItems(CREATE, { ...NOTE, noteType: 'link', properties: {} }),
+    ).toStrictEqual([])
+  })
+})

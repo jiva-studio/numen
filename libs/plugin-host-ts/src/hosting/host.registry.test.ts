@@ -131,6 +131,7 @@ describe('a registration replaced under the same id', () => {
           readers: new Map(),
           tabKinds: new Map(),
           commands: { value: new Map() },
+          handlers: { value: new Map() },
           settingsViews: { value: new Map() },
           agentProviders: new Map(),
           contexts: new Map(),

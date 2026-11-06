@@ -53,6 +53,8 @@ type declaredCommands struct {
 
 func (d *declaredCommands) ListSlots() []plugincommand.SlotEntry { return nil }
 
+func (d *declaredCommands) ListHandlers() []plugincommand.Entry { return nil }
+
 func (d *declaredCommands) ListCommands() []plugincommand.Entry { return d.entries }
 
 func (d *declaredCommands) GetParts(string) plugincommand.Parts {

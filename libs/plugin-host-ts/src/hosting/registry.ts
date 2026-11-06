@@ -51,6 +51,8 @@ export interface HostRegistry {
   readonly readers: Map<string, RegisteredReader>
   readonly tabKinds: Map<string, RegisteredTabKind>
   readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
+  /** The handlers of shared commands the plugins registered, by `<plugin id>:<shared command id>`. */
+  readonly handlers: { value: ReadonlyMap<string, RegisteredCommand> }
   readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
   readonly agentProviders: Map<string, RegisteredAgentProvider>
   readonly contexts: Map<string, PluginContext>
@@ -168,6 +170,7 @@ export function disposePluginEntry(pluginId: string, parts: DisposalParts): void
   cleanupMapItems(registry.tabKinds, pluginId)
   cleanupProviderItems(registry.agentProviders, pluginId)
   removePluginItems(registry.commands, pluginId)
+  removePluginItems(registry.handlers, pluginId)
   removePluginItems(registry.settingsViews, pluginId)
   slotViews?.disposePlugin(pluginId)
   removePluginListeners(registry.vaultListeners, pluginId)
@@ -181,6 +184,7 @@ export function disposeAllEntries(parts: DisposalParts & { readonly deps: Plugin
     ...[...registry.readers.values()].map((r) => r.pluginId),
     ...[...registry.tabKinds.values()].map((t) => t.pluginId),
     ...[...registry.commands.value.values()].map((c) => c.pluginId),
+    ...[...registry.handlers.value.values()].map((c) => c.pluginId),
     ...[...registry.settingsViews.value.values()].map((v) => v.pluginId),
     ...[...registry.agentProviders.values()].map((p) => p.pluginId),
     ...(slotViews?.views.value ?? []).map((v) => v.pluginId),

@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { ManifestSlotEntry } from "./manifest_pb.js";
+import type { ManifestHandler, ManifestSlotEntry } from "./manifest_pb.js";
 import { file_numen_v1_manifest } from "./manifest_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugincommand.proto.
  */
 export const file_numen_v1_plugincommand: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiiQIKFExpc3RDb21tYW5kc1Jlc3BvbnNlEikKCGNvbW1hbmRzGAEgAygLMhcubnVtZW4udjEuUGx1Z2luQ29tbWFuZBIoCgVzbG90cxgCIAMoCzIZLm51bWVuLnYxLlBsdWdpblNsb3RFbnRyeRJdChljb250ZW50X3R5cGVfYnlfZXh0ZW5zaW9uGAMgAygLMjoubnVtZW4udjEuTGlzdENvbW1hbmRzUmVzcG9uc2UuQ29udGVudFR5cGVCeUV4dGVuc2lvbkVudHJ5Gj0KG0NvbnRlbnRUeXBlQnlFeHRlbnNpb25FbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlAKD1BsdWdpblNsb3RFbnRyeRIRCglwbHVnaW5faWQYASABKAkSKgoFZW50cnkYAiABKAsyGy5udW1lbi52MS5NYW5pZmVzdFNsb3RFbnRyeSKsAQoNUGx1Z2luQ29tbWFuZBIRCglwbHVnaW5faWQYASABKAkSCgoCaWQYAiABKAkSDQoFdGl0bGUYAyABKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50EgwKBGljb24YByABKAkSDAoEd2hlbhgKIAEoCRIQCghzaG9ydGN1dBgJIAEoCRIRCgloYXNfaXRlbXMYCyABKAgiQwoPQ29tbWFuZEFyZ3VtZW50EgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLaXNfcmVxdWlyZWQYAyABKAgi1AEKF1J1blBsdWdpbkNvbW1hbmRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIPCgdjb21tYW5kGAIgASgJEgwKBHBhdGgYAyABKAkSQwoJYXJndW1lbnRzGAQgAygLMjAubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QuQXJndW1lbnRzRW50cnkSEAoIYXJndW1lbnQYBSABKAkaMAoOQXJndW1lbnRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJLChdMaXN0Q29tbWFuZEl0ZW1zUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgRwYXRoGAMgASgJInwKGExpc3RDb21tYW5kSXRlbXNSZXNwb25zZRIkCgVpdGVtcxgBIAMoCzIVLm51bWVuLnYxLkNvbW1hbmRJdGVtEikKBWVycm9yGAIgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAMgASgJIigKC0NvbW1hbmRJdGVtEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJImsKGFJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLkNvbW1hbmRFcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCRITCgtvcGVuZWRfcGF0aBgDIAEoCSrHAQoQQ29tbWFuZEVycm9yQ29kZRIiCh5DT01NQU5EX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABImCiJDT01NQU5EX0VSUk9SX0NPREVfVU5LTk9XTl9DT01NQU5EEAESJAogQ09NTUFORF9FUlJPUl9DT0RFX0JBRF9BUkdVTUVOVFMQAhIdChlDT01NQU5EX0VSUk9SX0NPREVfRkFJTEVEEAMSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOQVZBSUxBQkxFEAQyXwoUUGx1Z2luQ29tbWFuZFNlcnZpY2USRwoKUnVuQ29tbWFuZBIbLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0GhwubnVtZW4udjEuUnVuQ29tbWFuZFJlc3BvbnNlMpUCCg5Db21tYW5kU2VydmljZRJNCgxMaXN0Q29tbWFuZHMSHS5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXF1ZXN0Gh4ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVzcG9uc2USWQoQUnVuUGx1Z2luQ29tbWFuZBIhLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0GiIubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlElkKEExpc3RDb21tYW5kSXRlbXMSIS5udW1lbi52MS5MaXN0Q29tbWFuZEl0ZW1zUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RDb21tYW5kSXRlbXNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_manifest]);
+  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QitAIKFExpc3RDb21tYW5kc1Jlc3BvbnNlEikKCGNvbW1hbmRzGAEgAygLMhcubnVtZW4udjEuUGx1Z2luQ29tbWFuZBIoCgVzbG90cxgCIAMoCzIZLm51bWVuLnYxLlBsdWdpblNsb3RFbnRyeRJdChljb250ZW50X3R5cGVfYnlfZXh0ZW5zaW9uGAMgAygLMjoubnVtZW4udjEuTGlzdENvbW1hbmRzUmVzcG9uc2UuQ29udGVudFR5cGVCeUV4dGVuc2lvbkVudHJ5EikKCGhhbmRsZXJzGAQgAygLMhcubnVtZW4udjEuUGx1Z2luSGFuZGxlcho9ChtDb250ZW50VHlwZUJ5RXh0ZW5zaW9uRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJhCg1QbHVnaW5IYW5kbGVyEhEKCXBsdWdpbl9pZBgBIAEoCRIqCgdoYW5kbGVyGAIgASgLMhkubnVtZW4udjEuTWFuaWZlc3RIYW5kbGVyEhEKCWhhc19pdGVtcxgDIAEoCCJQCg9QbHVnaW5TbG90RW50cnkSEQoJcGx1Z2luX2lkGAEgASgJEioKBWVudHJ5GAIgASgLMhsubnVtZW4udjEuTWFuaWZlc3RTbG90RW50cnkirAEKDVBsdWdpbkNvbW1hbmQSEQoJcGx1Z2luX2lkGAEgASgJEgoKAmlkGAIgASgJEg0KBXRpdGxlGAMgASgJEiwKCWFyZ3VtZW50cxgFIAMoCzIZLm51bWVuLnYxLkNvbW1hbmRBcmd1bWVudBIMCgRpY29uGAcgASgJEgwKBHdoZW4YCiABKAkSEAoIc2hvcnRjdXQYCSABKAkSEQoJaGFzX2l0ZW1zGAsgASgIIkMKD0NvbW1hbmRBcmd1bWVudBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhMKC2lzX3JlcXVpcmVkGAMgASgIItQBChdSdW5QbHVnaW5Db21tYW5kUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgRwYXRoGAMgASgJEkMKCWFyZ3VtZW50cxgEIAMoCzIwLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5EhAKCGFyZ3VtZW50GAUgASgJGjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiSwoXTGlzdENvbW1hbmRJdGVtc1JlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEg8KB2NvbW1hbmQYAiABKAkSDAoEcGF0aBgDIAEoCSJ8ChhMaXN0Q29tbWFuZEl0ZW1zUmVzcG9uc2USJAoFaXRlbXMYASADKAsyFS5udW1lbi52MS5Db21tYW5kSXRlbRIpCgVlcnJvchgCIAEoDjIaLm51bWVuLnYxLkNvbW1hbmRFcnJvckNvZGUSDwoHbWVzc2FnZRgDIAEoCSIoCgtDb21tYW5kSXRlbRIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCSJrChhSdW5QbHVnaW5Db21tYW5kUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5Db21tYW5kRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkSEwoLb3BlbmVkX3BhdGgYAyABKAkqxwEKEENvbW1hbmRFcnJvckNvZGUSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJgoiQ09NTUFORF9FUlJPUl9DT0RFX1VOS05PV05fQ09NTUFORBABEiQKIENPTU1BTkRfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAISHQoZQ09NTUFORF9FUlJPUl9DT0RFX0ZBSUxFRBADEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTkFWQUlMQUJMRRAEMl8KFFBsdWdpbkNvbW1hbmRTZXJ2aWNlEkcKClJ1bkNvbW1hbmQSGy5udW1lbi52MS5SdW5Db21tYW5kUmVxdWVzdBocLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXNwb25zZTKVAgoOQ29tbWFuZFNlcnZpY2USTQoMTGlzdENvbW1hbmRzEh0ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVxdWVzdBoeLm51bWVuLnYxLkxpc3RDb21tYW5kc1Jlc3BvbnNlElkKEFJ1blBsdWdpbkNvbW1hbmQSIS5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVxdWVzdBoiLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZRJZChBMaXN0Q29tbWFuZEl0ZW1zEiEubnVtZW4udjEuTGlzdENvbW1hbmRJdGVtc1JlcXVlc3QaIi5udW1lbi52MS5MaXN0Q29tbWFuZEl0ZW1zUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_manifest]);
 
 /**
  * @generated from message numen.v1.RunCommandRequest
@@ -122,6 +122,14 @@ export type ListCommandsResponse = Message<"numen.v1.ListCommandsResponse"> & {
    * @generated from field: map<string, string> content_type_by_extension = 3;
    */
   contentTypeByExtension: { [key: string]: string };
+
+  /**
+   * The handlers of shared commands of every enabled plugin, in the order of the plugins' ids and
+   * then of each manifest.
+   *
+   * @generated from field: repeated numen.v1.PluginHandler handlers = 4;
+   */
+  handlers: PluginHandler[];
 };
 
 /**
@@ -130,6 +138,40 @@ export type ListCommandsResponse = Message<"numen.v1.ListCommandsResponse"> & {
  */
 export const ListCommandsResponseSchema: GenMessage<ListCommandsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugincommand, 3);
+
+/**
+ * PluginHandler is one entry of contributes.handlers of a plugin. A handler runs with
+ * RunPluginCommand under the full id of its shared command, and lists its items with
+ * ListCommandItems.
+ *
+ * @generated from message numen.v1.PluginHandler
+ */
+export type PluginHandler = Message<"numen.v1.PluginHandler"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: numen.v1.ManifestHandler handler = 2;
+   */
+  handler?: ManifestHandler | undefined;
+
+  /**
+   * has_items is set for a handler whose when names version.*: it offers the text versions of the
+   * file over which it holds, made by its own plugin.
+   *
+   * @generated from field: bool has_items = 3;
+   */
+  hasItems: boolean;
+};
+
+/**
+ * Describes the message numen.v1.PluginHandler.
+ * Use `create(PluginHandlerSchema)` to create a new message.
+ */
+export const PluginHandlerSchema: GenMessage<PluginHandler> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugincommand, 4);
 
 /**
  * PluginSlotEntry is one entry of contributes.slots of a plugin.
@@ -153,7 +195,7 @@ export type PluginSlotEntry = Message<"numen.v1.PluginSlotEntry"> & {
  * Use `create(PluginSlotEntrySchema)` to create a new message.
  */
 export const PluginSlotEntrySchema: GenMessage<PluginSlotEntry> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 4);
+  messageDesc(file_numen_v1_plugincommand, 5);
 
 /**
  * PluginCommand is one command as a manifest declares it.
@@ -224,7 +266,7 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
  * Use `create(PluginCommandSchema)` to create a new message.
  */
 export const PluginCommandSchema: GenMessage<PluginCommand> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 5);
+  messageDesc(file_numen_v1_plugincommand, 6);
 
 /**
  * CommandArgument is one argument a command takes.
@@ -255,7 +297,7 @@ export type CommandArgument = Message<"numen.v1.CommandArgument"> & {
  * Use `create(CommandArgumentSchema)` to create a new message.
  */
 export const CommandArgumentSchema: GenMessage<CommandArgument> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 6);
+  messageDesc(file_numen_v1_plugincommand, 7);
 
 /**
  * @generated from message numen.v1.RunPluginCommandRequest
@@ -297,7 +339,7 @@ export type RunPluginCommandRequest = Message<"numen.v1.RunPluginCommandRequest"
  * Use `create(RunPluginCommandRequestSchema)` to create a new message.
  */
 export const RunPluginCommandRequestSchema: GenMessage<RunPluginCommandRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 7);
+  messageDesc(file_numen_v1_plugincommand, 8);
 
 /**
  * @generated from message numen.v1.ListCommandItemsRequest
@@ -327,7 +369,7 @@ export type ListCommandItemsRequest = Message<"numen.v1.ListCommandItemsRequest"
  * Use `create(ListCommandItemsRequestSchema)` to create a new message.
  */
 export const ListCommandItemsRequestSchema: GenMessage<ListCommandItemsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 8);
+  messageDesc(file_numen_v1_plugincommand, 9);
 
 /**
  * @generated from message numen.v1.ListCommandItemsResponse
@@ -356,7 +398,7 @@ export type ListCommandItemsResponse = Message<"numen.v1.ListCommandItemsRespons
  * Use `create(ListCommandItemsResponseSchema)` to create a new message.
  */
 export const ListCommandItemsResponseSchema: GenMessage<ListCommandItemsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 9);
+  messageDesc(file_numen_v1_plugincommand, 10);
 
 /**
  * CommandItem is one item a command offers: the id the run takes as its
@@ -381,7 +423,7 @@ export type CommandItem = Message<"numen.v1.CommandItem"> & {
  * Use `create(CommandItemSchema)` to create a new message.
  */
 export const CommandItemSchema: GenMessage<CommandItem> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 10);
+  messageDesc(file_numen_v1_plugincommand, 11);
 
 /**
  * @generated from message numen.v1.RunPluginCommandResponse
@@ -412,7 +454,7 @@ export type RunPluginCommandResponse = Message<"numen.v1.RunPluginCommandRespons
  * Use `create(RunPluginCommandResponseSchema)` to create a new message.
  */
 export const RunPluginCommandResponseSchema: GenMessage<RunPluginCommandResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 11);
+  messageDesc(file_numen_v1_plugincommand, 12);
 
 /**
  * CommandErrorCode is why a command was served and did not succeed.
