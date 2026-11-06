@@ -34,6 +34,7 @@ const PATH = 'library/Ferry at Dawn.epub'
 
 const CLOSING = 'and the bells of Gōpālapura rang across the water.'
 const OPENING = 'Śyāmalī carried'
+const THIRD_HEADING = 'Tṛtīya: the market'
 
 const ONE: Chapter = createChapter([
   { tag: 'h2', text: 'Prathama: the ghāṭ' },
@@ -61,7 +62,7 @@ const TWO: Chapter = createChapter(
 
 const THREE: Chapter = createChapter(
   [
-    { tag: 'h2', text: 'Tṛtīya: the market' },
+    { tag: 'h2', text: THIRD_HEADING },
     {
       tag: 'p',
       text: `${OPENING} the baskets of jāmun up the steps, and the śreṣṭhin counted them twice.`,
@@ -77,7 +78,7 @@ const getEndOf = (chapter: Chapter, words: string): number => chapter.span.end -
 /** A passage that begins at the end of the second chapter and runs into the third. */
 const ACROSS: TextRange = {
   start: getEndOf(TWO, CLOSING),
-  end: THREE.span.start + countBytes('Tṛtīya: the market') + countBytes(OPENING),
+  end: THREE.span.start + countBytes(THIRD_HEADING) + countBytes(OPENING),
 }
 
 /** A passage inside the second paragraph of the first chapter. */
@@ -208,9 +209,12 @@ export const PassageAcrossTwoChaptersInTheNext: Story = {
 
     await state.goToOffset(THREE.span.start)
 
-    await waitFor(async () => await expect(getLitText()).toStrictEqual([OPENING]), {
-      timeout: ITS_OWN_PACE,
-    })
+    // The heading of the third chapter is part of the passage, and the markup sets a line between
+    // the heading and the paragraph.
+    await waitFor(
+      async () => await expect(getLitText()).toStrictEqual([`${THIRD_HEADING}\n${OPENING}`]),
+      { timeout: ITS_OWN_PACE },
+    )
   },
 }
 
