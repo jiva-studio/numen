@@ -184,7 +184,7 @@ function createHostContextBridge(
     openExternal: (url) =>
       deps.openExternal
         ? deps.openExternal(url)
-        : Promise.reject(new ReportedError('the window opens no addresses')),
+        : Promise.reject(new ReportedError('This window cannot open web links')),
     ...createRegistrationBridge(deps, registry),
     ...createSharedBridge(shared),
     ...createSettingBridge(deps),
