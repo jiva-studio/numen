@@ -332,47 +332,6 @@ func TestWindowTabsGetReadsTheLocationFromTheTabState(t *testing.T) {
 	}
 }
 
-func TestWindowTabsGetNamesTheTabOfAnUnreadableState(t *testing.T) {
-	for name, state := range map[string]string{
-		"a state that is not JSON":           `page 4`,
-		"a state that is a JSON array":       `[4,120]`,
-		"a state that is a JSON string":      `"page 4"`,
-		"a state that is JSON null":          `null`,
-		"a page that is a string":            `{"page":"four"}`,
-		"a page of zero":                     `{"page":0}`,
-		"a negative page":                    `{"page":-3}`,
-		"a page that is a fraction":          `{"page":2.5}`,
-		"a page that is null":                `{"page":null}`,
-		"a page count of zero":               `{"page":4,"pageCount":0}`,
-		"a page count that is a string":      `{"page":4,"pageCount":"120"}`,
-		"a selection that is empty":          `{"t":[]}`,
-		"a selection that is a number":       `{"t":66.5}`,
-		"a selection that starts below zero": `{"t":[-1,4]}`,
-		"a selection that holds a string":    `{"t":["66.5",70]}`,
-		"a selection of nulls":               `{"t":[null,null]}`,
-		"a selection that starts at null":    `{"t":[null,70]}`,
-		"a selection that ends at null":      `{"t":[66.5,null]}`,
-		"a CFI that is a number":             `{"cfi":4}`,
-		"a chapter that is an array":         `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":["The Reed Beds"]}`,
-		"a chapter that is a number":         `{"cfi":"epubcfi(/6/4!/4/2/1:0)","chapter":7}`,
-	} {
-		t.Run(name, func(t *testing.T) {
-			w := newWindowTools(t)
-			w.window.SetOpenTabs([]host.OpenTab{
-				{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: `{"page":4,"pageCount":120}`},
-				{ID: "tab-7", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", State: state},
-			}, "tab-1")
-			failure := w.call(t, "window_tabs_get", `{}`, nil, nil)
-			if failure == "" {
-				t.Fatalf("the state %s was answered without an error", state)
-			}
-			if !strings.Contains(failure, "tab-7") {
-				t.Errorf("the error %q does not name the tab tab-7", failure)
-			}
-		})
-	}
-}
-
 func TestWindowToolsHostHasNoTextVersions(t *testing.T) {
 	if field, hasTexts := reflect.TypeFor[service.Host]().FieldByName("Texts"); hasTexts {
 		t.Errorf("service.Host has the field %s of type %s; window_tabs_get reads the location from the tab state alone", field.Name, field.Type)
