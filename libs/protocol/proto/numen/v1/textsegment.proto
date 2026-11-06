@@ -1,22 +1,9 @@
 syntax = "proto3";
 
+// The segments a text version is made of, and the codes a text call answers with.
 package numen.v1;
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
-
-// TextProviderService is served by every plugin whose manifest lists content
-// types in a `text-provider` handle. The host calls it for a file of one of those types that
-// has no live text; plugins never call one another's.
-//
-// A plugin writes each text it makes into its own folder of the vault's store,
-// as JSON Lines of TextSegment, and records it through
-// HostTextService.PutTextVersion. The host reads the file itself.
-service TextProviderService {
-  // CreateText asks the plugin to make text of a file. The work continues after
-  // the call returns, and the plugin records each version through
-  // HostTextService.PutTextVersion.
-  rpc CreateText(TextProviderServiceCreateTextRequest) returns (TextProviderServiceCreateTextResponse);
-}
 
 // TextErrorCode is the reason a served text call did not succeed. The zero
 // value is a call that succeeded.
@@ -45,13 +32,4 @@ message TextSegment {
   string text = 1;
   string heading = 2;
   string selector = 3;
-}
-
-message TextProviderServiceCreateTextRequest {
-  string vault_id = 1;
-  string path = 2;
-}
-
-message TextProviderServiceCreateTextResponse {
-  TextErrorCode error = 1;
 }

@@ -44,7 +44,7 @@ func CreateTestPluginTree(t *testing.T, dir string) {
 			"readers": [{"id": "pdf", "contentTypes": ["application/pdf"], "rank": "default"}]
 		},
 		"permissions": ["vault:read"],
-		"services": ["numen.v1.TextProviderService"], "backend": {"entrypoint": "bin/sample"},
+		"backend": {"entrypoint": "bin/sample"},
 		"frontend": {},
 		"settings": []
 	}`

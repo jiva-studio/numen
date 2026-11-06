@@ -609,7 +609,7 @@ var File_numen_v1_hosttext_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/hosttext.proto\x12\bnumen.v1\x1a\x1bnumen/v1/textprovider.proto\"\x98\x02\n" +
+	"\x17numen/v1/hosttext.proto\x12\bnumen.v1\x1a\x1anumen/v1/textsegment.proto\"\x98\x02\n" +
 	"\vTextVersion\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1b\n" +
@@ -715,7 +715,7 @@ func file_numen_v1_hosttext_proto_init() {
 	if File_numen_v1_hosttext_proto != nil {
 		return
 	}
-	file_numen_v1_textprovider_proto_init()
+	file_numen_v1_textsegment_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
