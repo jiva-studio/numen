@@ -29,16 +29,16 @@ const (
 	workDeadline = 5 * time.Minute
 )
 
-// heldRecogniser reads pages as the mock does, but each page waits until release is closed. The
+// blockingRecogniser reads pages as the mock does, but each page waits until release is closed. The
 // first page it is asked for closes entered.
-type heldRecogniser struct {
+type blockingRecogniser struct {
 	engine.MockRecogniser
 	entered   chan struct{}
 	enterOnce *sync.Once
 	release   chan struct{}
 }
 
-func (r heldRecogniser) Recognise(ctx context.Context, page image.Image) ([]recognition.Block, error) {
+func (r blockingRecogniser) Recognise(ctx context.Context, page image.Image) ([]recognition.Block, error) {
 	r.enterOnce.Do(func() { close(r.entered) })
 	select {
 	case <-r.release:
@@ -68,7 +68,7 @@ type toolScene struct {
 	chemistry  *hosttest.Vault
 	chemTexts  *hosttest.Texts
 	queue      finishingQueue
-	recogniser heldRecogniser
+	recogniser blockingRecogniser
 	tools      *Tools
 	registry   *tools.Registry
 }
@@ -99,7 +99,7 @@ func newToolScene(t *testing.T) *toolScene {
 	s := &toolScene{
 		vault: vault, texts: texts, chemistry: chemistry, chemTexts: chemTexts,
 		queue: finishingQueue{Queue: hosttest.NewQueue(), finished: make(chan string, 64)},
-		recogniser: heldRecogniser{
+		recogniser: blockingRecogniser{
 			entered: make(chan struct{}), enterOnce: &sync.Once{}, release: make(chan struct{}),
 		},
 	}
@@ -135,13 +135,13 @@ func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tool
 		res *tools.CallResponse
 		err error
 	}
-	answered := make(chan answer, 1)
+	responses := make(chan answer, 1)
 	go func() {
 		res, err := registry.InvokeTool(t.Context(), call)
-		answered <- answer{res: res, err: err}
+		responses <- answer{res: res, err: err}
 	}()
 	select {
-	case got := <-answered:
+	case got := <-responses:
 		if got.err != nil {
 			t.Fatalf("call %s: %v", call.Name, got.err)
 		}
@@ -205,7 +205,7 @@ func isListed(tasks []host.Task, id string) bool {
 	return slices.ContainsFunc(tasks, func(task host.Task) bool { return task.ID == id })
 }
 
-func TestRecognitionCreateIsOfferedOnTheFullServerAsAToolThatWrites(t *testing.T) {
+func TestRegistryListsRecognitionCreateOnTheFullServerOnly(t *testing.T) {
 	s := newToolScene(t)
 
 	infos, err := s.registry.ListToolInfos(t.Context())
@@ -219,7 +219,7 @@ func TestRecognitionCreateIsOfferedOnTheFullServerAsAToolThatWrites(t *testing.T
 		t.Errorf("recognition_create has effect %v, want ReadWrite", infos[0].GetEffect())
 	}
 	if !slices.Equal(infos[0].GetServers(), []tools.Server{tools.Full}) {
-		t.Errorf("recognition_create is offered on %v, want the full server alone", infos[0].GetServers())
+		t.Errorf("recognition_create is listed on %v, want the full server alone", infos[0].GetServers())
 	}
 }
 
@@ -239,7 +239,7 @@ func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 
 	want := RecognitionCreateOutput{TaskID: "recognise:" + scanPath, Path: scanPath, State: "started"}
 	if out != want {
-		t.Fatalf("recognition_create answered %+v, want %+v", out, want)
+		t.Fatalf("recognition_create returned %+v, want %+v", out, want)
 	}
 	s.waitEntered(t)
 	if tasks := s.queue.ListTasks(); !isListed(tasks, want.TaskID) {
@@ -267,7 +267,7 @@ func TestRecognitionCreateOfAScanBeingRecognisedReportsItRunning(t *testing.T) {
 
 	want := RecognitionCreateOutput{TaskID: first.TaskID, Path: scanPath, State: "running"}
 	if second != want {
-		t.Errorf("the second call answered %+v, want %+v", second, want)
+		t.Errorf("the second call returned %+v, want %+v", second, want)
 	}
 	close(s.recogniser.release)
 	s.waitFinished(t, first.TaskID)
@@ -281,7 +281,7 @@ func TestRecognitionCreateRefusesAFileNotInTheVault(t *testing.T) {
 	})
 
 	if !res.GetResult().GetIsRefusal() {
-		t.Errorf("a file that is not there answered %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
+		t.Errorf("a file that is not there returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("a refused call shows the tasks %+v", tasks)
@@ -296,7 +296,7 @@ func TestRecognitionCreateRefusesACallThatNamesNoVault(t *testing.T) {
 	})
 
 	if !res.GetResult().GetIsRefusal() {
-		t.Errorf("a call with no vault answered %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
+		t.Errorf("a call with no vault returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
 }
 
@@ -312,7 +312,7 @@ func TestRecognitionCreateRecognisesInTheVaultTheCallNames(t *testing.T) {
 
 	out := s.recognise(t, "Chemistry", chemistryScan)
 	if out.State != "started" || out.TaskID != "recognise:"+chemistryScan {
-		t.Fatalf("recognition_create in Chemistry answered %+v", out)
+		t.Fatalf("recognition_create in Chemistry returned %+v", out)
 	}
 	close(s.recogniser.release)
 	s.waitFinished(t, out.TaskID)

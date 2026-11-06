@@ -66,7 +66,7 @@ func (s inventedSites) GetText(ctx context.Context, address string, want downloa
 	case address == silentAddress:
 		return download.Text{}, download.ErrNothingDownloaded
 	case address == brokenAddress:
-		return download.Text{}, errors.New("the server answered 503 Service Unavailable")
+		return download.Text{}, errors.New("the server returned 503 Service Unavailable")
 	default:
 		return download.Text{Producer: "article", Title: articleTitle, Prose: articleProse}, nil
 	}
@@ -85,23 +85,24 @@ func (s inventedSites) Download(ctx context.Context, address string, into io.Wri
 // read the vault's files.
 type notedVault struct {
 	host.Vault
+	// texts is the texts of this vault, nil for a vault the scene does not hold.
 	texts *hosttest.Texts
+	// all is the texts of every vault of the scene, by identity.
+	all map[domain.VaultID]*hosttest.Texts
 }
 
 func (v notedVault) Create(ctx context.Context, path string, content []byte) error {
 	if err := v.Vault.Create(ctx, path, content); err != nil {
 		return err
 	}
-	v.texts.File(path, content)
+	if v.texts != nil {
+		v.texts.File(path, content)
+	}
 	return nil
 }
 
 func (v notedVault) With(id domain.VaultID) host.Vault {
-	texts, isTexts := v.texts.With(id).(*hosttest.Texts)
-	if !isTexts {
-		panic("the texts of another vault are not hosttest texts")
-	}
-	return notedVault{Vault: v.Vault.With(id), texts: texts}
+	return notedVault{Vault: v.Vault.With(id), texts: v.all[id], all: v.all}
 }
 
 // importScene is the import tool over the vault Mills, shown, and the vault Chemistry beside it.
@@ -132,7 +133,10 @@ func newImportScene(t *testing.T, release chan struct{}) *importScene {
 
 	sites := inventedSites{video: download.NewMock(), release: release}
 	hosted := link.Host{
-		Vault: notedVault{Vault: vault, texts: texts}, Store: store, Texts: texts, Queue: hosttest.NewQueue(),
+		Vault: notedVault{
+			Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts, "Chemistry": chemTexts},
+		},
+		Store: store, Texts: texts, Queue: hosttest.NewQueue(),
 		Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
@@ -164,13 +168,13 @@ func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tool
 		res *tools.CallResponse
 		err error
 	}
-	answered := make(chan answer, 1)
+	responses := make(chan answer, 1)
 	go func() {
 		res, err := registry.InvokeTool(t.Context(), call)
-		answered <- answer{res: res, err: err}
+		responses <- answer{res: res, err: err}
 	}()
 	select {
-	case got := <-answered:
+	case got := <-responses:
 		if got.err != nil {
 			t.Fatalf("call %s: %v", call.Name, got.err)
 		}
@@ -223,7 +227,7 @@ func hasVersion(t *testing.T, texts *hosttest.Texts, path string) bool {
 	return len(listing.Versions) > 0
 }
 
-func TestURLImportIsOfferedOnTheFullServerAsAToolThatWrites(t *testing.T) {
+func TestRegistryListsURLImportOnTheFullServerOnly(t *testing.T) {
 	s := newReleasedScene(t)
 
 	infos, err := s.registry.ListToolInfos(t.Context())
@@ -237,7 +241,7 @@ func TestURLImportIsOfferedOnTheFullServerAsAToolThatWrites(t *testing.T) {
 		t.Errorf("url_import has effect %v, want ReadWrite", infos[0].GetEffect())
 	}
 	if !slices.Equal(infos[0].GetServers(), []tools.Server{tools.Full}) {
-		t.Errorf("url_import is offered on %v, want the full server alone", infos[0].GetServers())
+		t.Errorf("url_import is listed on %v, want the full server alone", infos[0].GetServers())
 	}
 }
 
@@ -262,10 +266,10 @@ func TestURLImportMakesTheNoteInTheFolderAndReportsTheArticle(t *testing.T) {
 		t.Errorf("the vault holds the link notes %v, want %s alone", notes, out.Path)
 	}
 	if out.Title != articleTitle || out.Producer != "article" || out.Bytes <= 0 {
-		t.Errorf("url_import answered %+v, want the title %q, the producer article and the size of the text", out, articleTitle)
+		t.Errorf("url_import returned %+v, want the title %q, the producer article and the size of the text", out, articleTitle)
 	}
 	if out.IsNothing || out.Error != "" || out.CopyTaskID != "" || out.CopyError != "" {
-		t.Errorf("url_import answered %+v, want a fetched text and no copy", out)
+		t.Errorf("url_import returned %+v, want a fetched text and no copy", out)
 	}
 	if !hasVersion(t, s.texts, out.Path) {
 		t.Errorf("the note %s has no text version", out.Path)
@@ -278,7 +282,7 @@ func TestURLImportReportsTheCaptionsOfAVideo(t *testing.T) {
 	out := s.importURL(t, "Mills", URLImportInput{URL: videoAddress})
 
 	if out.Title != "Tidal mill at work" || out.Producer != "captions" || out.Bytes <= 0 || out.IsNothing || out.Error != "" {
-		t.Errorf("url_import answered %+v, want the captions of the video", out)
+		t.Errorf("url_import returned %+v, want the captions of the video", out)
 	}
 	if strings.Contains(out.Path, "/") {
 		t.Errorf("the note is at %q, want it at the root with no folder named", out.Path)
@@ -291,7 +295,7 @@ func TestURLImportReportsAnAddressThatPublishesNothing(t *testing.T) {
 	out := s.importURL(t, "Mills", URLImportInput{URL: silentAddress})
 
 	if !out.IsNothing || out.Error != "" || out.Bytes != 0 {
-		t.Errorf("url_import answered %+v, want nothing published and no failure", out)
+		t.Errorf("url_import returned %+v, want nothing published and no failure", out)
 	}
 	if notes := getLinkNotes(t, s.vault); !slices.Equal(notes, []string{out.Path}) {
 		t.Errorf("the vault holds the link notes %v, want %s alone", notes, out.Path)
@@ -311,7 +315,7 @@ func TestURLImportReportsAFailedFetchAndKeepsTheNote(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(out.Error, "503") || out.IsNothing {
-		t.Errorf("url_import answered %+v, want the failure of the fetch", out)
+		t.Errorf("url_import returned %+v, want the failure of the fetch", out)
 	}
 	if _, isKept := s.vault.Content(out.Path); out.Path == "" || !isKept {
 		t.Errorf("the note %q is not in the vault after the failed fetch", out.Path)
@@ -324,7 +328,7 @@ func TestURLImportRefusesWhatIsNoWebAddressAndMakesNoNote(t *testing.T) {
 	for _, raw := range []string{"not-a-url", "ftp://tides.example/archive", "tides.example/articles"} {
 		res := s.callImport(t, "Mills", URLImportInput{URL: raw})
 		if !res.GetResult().GetIsRefusal() {
-			t.Errorf("%q answered %s, want a refusal", raw, res.GetResult().GetStructured())
+			t.Errorf("%q returned %s, want a refusal", raw, res.GetResult().GetStructured())
 		}
 	}
 	if notes := getLinkNotes(t, s.vault); len(notes) != 0 {
@@ -338,7 +342,7 @@ func TestURLImportRefusesACallThatNamesNoVault(t *testing.T) {
 	res := s.callImport(t, "", URLImportInput{URL: articleAddress})
 
 	if !res.GetResult().GetIsRefusal() {
-		t.Errorf("a call with no vault answered %s, want a refusal", res.GetResult().GetStructured())
+		t.Errorf("a call with no vault returned %s, want a refusal", res.GetResult().GetStructured())
 	}
 	if notes := getLinkNotes(t, s.vault); len(notes) != 0 {
 		t.Errorf("the vault holds the link notes %v, want none", notes)
@@ -372,7 +376,7 @@ func TestURLImportStartsTheCopyAndAnswersBeforeItEnds(t *testing.T) {
 	out := s.importURL(t, "Mills", URLImportInput{URL: videoAddress, ShouldCopy: true})
 
 	if out.CopyTaskID != "copy:"+out.Path || out.CopyError != "" {
-		t.Errorf("url_import answered %+v, want the copy task copy:%s", out, out.Path)
+		t.Errorf("url_import returned %+v, want the copy task copy:%s", out, out.Path)
 	}
 	if hasCopy(t, s.store) {
 		t.Error("the copy is in the plugin's folder before the download was let through")
@@ -391,7 +395,7 @@ func TestURLImportMakesNoCopyUnlessAsked(t *testing.T) {
 	s.links.Wait()
 
 	if out.CopyTaskID != "" || out.CopyError != "" {
-		t.Errorf("url_import answered %+v, want no copy", out)
+		t.Errorf("url_import returned %+v, want no copy", out)
 	}
 	if hasCopy(t, s.store) {
 		t.Error("a video was copied with copy not asked")
@@ -405,9 +409,9 @@ func TestURLImportReportsAnAddressNothingCopies(t *testing.T) {
 	s.links.Wait()
 
 	if out.CopyError == "" || out.CopyTaskID != "" {
-		t.Errorf("url_import answered %+v, want the reason no copy was started", out)
+		t.Errorf("url_import returned %+v, want the reason no copy was started", out)
 	}
 	if out.Title != articleTitle || out.Error != "" {
-		t.Errorf("url_import answered %+v, want the article fetched", out)
+		t.Errorf("url_import returned %+v, want the article fetched", out)
 	}
 }

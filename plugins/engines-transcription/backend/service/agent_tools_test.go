@@ -25,16 +25,16 @@ const (
 	chemistrySound   = "RIFF the bytes of a titration lecture"
 )
 
-// heldModel hears recordings as the heard model does, but opening one waits until release is
+// blockingModel transcribes recordings as the heard model does, but opening one waits until release is
 // closed. The first recording it opens closes entered.
-type heldModel struct {
+type blockingModel struct {
 	*heardModel
 	entered   chan struct{}
 	enterOnce sync.Once
 	release   chan struct{}
 }
 
-func (m *heldModel) Open(ctx context.Context, raw []byte) (engine.Recording, error) {
+func (m *blockingModel) Open(ctx context.Context, raw []byte) (engine.Recording, error) {
 	m.enterOnce.Do(func() { close(m.entered) })
 	select {
 	case <-m.release:
@@ -62,7 +62,7 @@ type toolScene struct {
 	*scene
 	chemTexts *hosttest.Texts
 	finishing finishingQueue
-	held      *heldModel
+	blocking  *blockingModel
 	registry  *tools.Registry
 }
 
@@ -81,9 +81,9 @@ func newToolScene(t *testing.T) *toolScene {
 	s.chemTexts = chemTexts
 
 	s.finishing = finishingQueue{Queue: s.queue, finished: make(chan string, 64)}
-	s.held = &heldModel{heardModel: s.model, entered: make(chan struct{}), release: make(chan struct{})}
+	s.blocking = &blockingModel{heardModel: s.model, entered: make(chan struct{}), release: make(chan struct{})}
 	s.transcriber = NewTranscriber(vaultFiles{vault: s.vault}, s.store, s.texts, s.finishing,
-		func(context.Context) (engine.TranscriberPort, error) { return s.held, nil })
+		func(context.Context) (engine.TranscriberPort, error) { return s.blocking, nil })
 	t.Cleanup(s.transcriber.Close)
 	registry, err := NewTools(s.transcriber).Registry()
 	if err != nil {
@@ -100,13 +100,13 @@ func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tool
 		res *tools.CallResponse
 		err error
 	}
-	answered := make(chan answer, 1)
+	responses := make(chan answer, 1)
 	go func() {
 		res, err := registry.InvokeTool(t.Context(), call)
-		answered <- answer{res: res, err: err}
+		responses <- answer{res: res, err: err}
 	}()
 	select {
-	case got := <-answered:
+	case got := <-responses:
 		if got.err != nil {
 			t.Fatalf("call %s: %v", call.Name, got.err)
 		}
@@ -135,7 +135,7 @@ func (s *toolScene) createTranscript(t *testing.T, vault, path string) Transcrip
 func (s *toolScene) waitEntered(t *testing.T) {
 	t.Helper()
 	select {
-	case <-s.held.entered:
+	case <-s.blocking.entered:
 	case <-time.After(workDeadline):
 		t.Fatalf("no recording was opened within %v; tasks %+v", workDeadline, s.queue.ListTasks())
 	}
@@ -161,7 +161,7 @@ func isListed(tasks []host.Task, id string) bool {
 	return slices.ContainsFunc(tasks, func(task host.Task) bool { return task.ID == id })
 }
 
-func TestTranscriptCreateIsOfferedOnTheFullServerAsAToolThatWrites(t *testing.T) {
+func TestRegistryListsTranscriptCreateOnTheFullServerOnly(t *testing.T) {
 	s := newToolScene(t)
 
 	infos, err := s.registry.ListToolInfos(t.Context())
@@ -175,7 +175,7 @@ func TestTranscriptCreateIsOfferedOnTheFullServerAsAToolThatWrites(t *testing.T)
 		t.Errorf("transcript_create has effect %v, want ReadWrite", infos[0].GetEffect())
 	}
 	if !slices.Equal(infos[0].GetServers(), []tools.Server{tools.Full}) {
-		t.Errorf("transcript_create is offered on %v, want the full server alone", infos[0].GetServers())
+		t.Errorf("transcript_create is listed on %v, want the full server alone", infos[0].GetServers())
 	}
 }
 
@@ -195,14 +195,14 @@ func TestTranscriptCreateReturnsBeforeTheTranscriptionEnds(t *testing.T) {
 
 	want := TranscriptCreateOutput{TaskID: "transcription:" + lecture, Path: lecture, State: "started"}
 	if out != want {
-		t.Fatalf("transcript_create answered %+v, want %+v", out, want)
+		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
 	s.waitEntered(t)
 	if tasks := s.queue.ListTasks(); !isListed(tasks, want.TaskID) {
 		t.Errorf("the tasks %+v do not list %s while the transcription runs", tasks, want.TaskID)
 	}
 
-	close(s.held.release)
+	close(s.blocking.release)
 	s.waitFinished(t, want.TaskID)
 	s.transcriber.Close()
 
@@ -220,9 +220,9 @@ func TestTranscriptCreateOfARecordingBeingTranscribedReportsItRunning(t *testing
 
 	want := TranscriptCreateOutput{TaskID: first.TaskID, Path: lecture, State: "running"}
 	if second != want {
-		t.Errorf("the second call answered %+v, want %+v", second, want)
+		t.Errorf("the second call returned %+v, want %+v", second, want)
 	}
-	close(s.held.release)
+	close(s.blocking.release)
 	s.waitFinished(t, first.TaskID)
 }
 
@@ -234,7 +234,7 @@ func TestTranscriptCreateRefusesARecordingNotInTheVault(t *testing.T) {
 	})
 
 	if !res.GetResult().GetIsRefusal() {
-		t.Errorf("a recording that is not there answered %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
+		t.Errorf("a recording that is not there returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
 }
 
@@ -246,7 +246,7 @@ func TestTranscriptCreateRefusesACallThatNamesNoVault(t *testing.T) {
 	})
 
 	if !res.GetResult().GetIsRefusal() {
-		t.Errorf("a call with no vault answered %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
+		t.Errorf("a call with no vault returned %q %s, want a refusal", res.GetResult().GetText(), res.GetResult().GetStructured())
 	}
 }
 
@@ -262,9 +262,9 @@ func TestTranscriptCreateTranscribesInTheVaultTheCallNames(t *testing.T) {
 
 	out := s.createTranscript(t, "Chemistry", chemistryLecture)
 	if out.State != "started" || out.TaskID != "transcription:"+chemistryLecture {
-		t.Fatalf("transcript_create in Chemistry answered %+v", out)
+		t.Fatalf("transcript_create in Chemistry returned %+v", out)
 	}
-	close(s.held.release)
+	close(s.blocking.release)
 	s.waitFinished(t, out.TaskID)
 	s.transcriber.Close()
 
