@@ -98,15 +98,19 @@ type pluginVaultRelations interface {
 	CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error)
 }
 
-type PluginVaultReader interface {
-	pluginVaultNoteReader
-	pluginVaultLinkReader
+type pluginVaultFileReader interface {
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
 	// ReadRange reads at most length bytes of a file from start as text, cut at whole characters. A
 	// range that is not UTF-8 is ErrNotText; a folder or a path the vault does not list is
 	// fs.ErrNotExist.
 	ReadRange(ctx context.Context, path string, start, length int) (PluginFileRange, error)
+}
+
+type PluginVaultReader interface {
+	pluginVaultNoteReader
+	pluginVaultLinkReader
+	pluginVaultFileReader
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 }
 
@@ -157,6 +161,11 @@ type pluginVaultArranger interface {
 	// GetProblems runs the checks named, or every check that is not opt-in when none is named, and
 	// returns the names of the checks the answer covers and what they found.
 	GetProblems(ctx context.Context, checks []domain.Check) (checkNames []domain.Check, problems []domain.VaultProblem, err error)
+	pluginVaultLinkEditor
+}
+
+// pluginVaultLinkEditor edits the frontmatter links of the notes of a vault.
+type pluginVaultLinkEditor interface {
 	// AddLinks writes links into the frontmatter links of notes, grouped by note: the links of one
 	// note are one write against one file stat. The answer has one entry per addition, in order.
 	AddLinks(ctx context.Context, additions []PluginLinkAddition) ([]PluginLinkAdded, error)

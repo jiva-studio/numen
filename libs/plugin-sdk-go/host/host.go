@@ -125,19 +125,24 @@ type FileRange struct {
 	Stat  domain.FileStat
 }
 
-// FileAccess reads and writes the files of a vault.
-type FileAccess interface {
+// FileReader reads the files of a vault.
+type FileReader interface {
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	// Read returns the file with the file stat it had when it was read.
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
-	// Write replaces the file if it matches the baseline, and returns ErrStale if it does not.
-	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
-	// Create makes a file that is not there, else it returns ErrAlreadyExists.
-	Create(ctx context.Context, path string, content []byte) error
 	// ReadRange reads at most length bytes of the file from start as text, cut at whole characters.
 	// Zero or more than 16000 reads 16000. A range that is not UTF-8 is ErrNotText; a folder is
 	// ErrNotExist.
 	ReadRange(ctx context.Context, path string, start, length int) (FileRange, error)
+}
+
+// FileAccess reads and writes the files of a vault.
+type FileAccess interface {
+	FileReader
+	// Write replaces the file if it matches the baseline, and returns ErrStale if it does not.
+	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
+	// Create makes a file that is not there, else it returns ErrAlreadyExists.
+	Create(ctx context.Context, path string, content []byte) error
 	// Lock holds the vault's writers to this plugin until the release is called. The release returns
 	// the failure to release; the host frees a lock whose release failed after its timeout.
 	Lock(ctx context.Context) (release func() error, err error)

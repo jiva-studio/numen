@@ -447,10 +447,8 @@ func (s *Search) SearchPassages(_ context.Context, query host.PassageQuery) ([]h
 	if err != nil {
 		return nil, err
 	}
-	for _, kind := range query.Kinds {
-		if kind != domain.KindNote && kind != domain.KindFile {
-			return nil, fmt.Errorf("%q is not a kind of source a search reaches: use %q or %q", kind, domain.KindNote, domain.KindFile)
-		}
+	if err := checkKinds(query.Kinds); err != nil {
+		return nil, err
 	}
 	words := getWords(query.Query)
 	if len(words) == 0 {
@@ -509,4 +507,14 @@ func (s *Search) SetIndexedPassages(passages []host.Passage) {
 	if one, ok := s.lookupLocked(); ok {
 		one.indexed = slices.Clone(passages)
 	}
+}
+
+// checkKinds refuses a kind of source the search of the host does not reach, with the host's text.
+func checkKinds(kinds []domain.SourceKind) error {
+	for _, kind := range kinds {
+		if kind != domain.KindNote && kind != domain.KindFile {
+			return fmt.Errorf("%q is not a kind of source a search reaches: use %q or %q", kind, domain.KindNote, domain.KindFile)
+		}
+	}
+	return nil
 }

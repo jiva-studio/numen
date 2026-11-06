@@ -446,14 +446,14 @@ func checkReadRange(in LibraryReadInput) error {
 	return nil
 }
 
-// readEmptyPage is the answer for a page whose segments hold no text: none, at where the page is.
-func (t *Tools) readEmptyPage(ctx context.Context, path string, live domain.TextVersion, at int) (LibraryReadOutput, error) {
-	read, err := t.texts.ReadTextRange(ctx, path, live.GetID(), at, 1)
+// readEmptyPage is the answer for a page whose segments hold no text: no text, at the start of the page.
+func (t *Tools) readEmptyPage(ctx context.Context, path string, live domain.TextVersion, start int) (LibraryReadOutput, error) {
+	read, err := t.texts.ReadTextRange(ctx, path, live.GetID(), start, 1)
 	if err != nil {
 		return LibraryReadOutput{}, err
 	}
 	return LibraryReadOutput{
-		Path: path, Kind: string(live.Kind), Version: string(live.GetID()), Text: "", Start: at, Length: 0, Size: read.Size,
-		NextStart: getNextStart(at, read.Size), Locations: nil,
+		Path: path, Kind: string(live.Kind), Version: string(live.GetID()), Text: "", Start: start, Length: 0, Size: read.Size,
+		NextStart: getNextStart(start, read.Size), Locations: nil,
 	}, nil
 }
