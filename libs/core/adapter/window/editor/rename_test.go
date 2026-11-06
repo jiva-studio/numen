@@ -201,7 +201,7 @@ func TestTurningTheSettingPreservesTheRestOfTheFileAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(string(raw), `"textScale": 1.5`) {
-		t.Errorf("what the person typed was rewritten:\n%s", raw)
+		t.Errorf("what the user typed was rewritten:\n%s", raw)
 	}
 	if !strings.Contains(string(raw), `"syncTitleAndFilename": false`) {
 		t.Errorf("the setting is not in the file:\n%s", raw)
@@ -931,7 +931,7 @@ func TestANoteMadeInTheChildRelationIsTheParentsChild(t *testing.T) {
 		t.Errorf("the link does not relate the note it was made from as its child:\n%s", made)
 	}
 	if !strings.Contains(made, "label: follows from") {
-		t.Errorf("what the person wrote on the link is not in the note:\n%s", made)
+		t.Errorf("what the user wrote on the link is not in the note:\n%s", made)
 	}
 }
 

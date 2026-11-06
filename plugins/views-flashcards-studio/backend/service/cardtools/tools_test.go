@@ -92,8 +92,8 @@ func readVaultFile(t *testing.T, v domain.Vault, path string) string {
 	return string(raw)
 }
 
-// TestADeckIsReadAsCardsAndNotAsMarkdown. What comes back is the fields a
-// person filled in, named, so nothing has to parse a heading to find them.
+// TestADeckIsReadAsCardsAndNotAsMarkdown. The tool returns the fields the
+// user filled in, named, so nothing has to parse a heading to find them.
 func TestADeckIsReadAsCardsAndNotAsMarkdown(t *testing.T) {
 	session, _ := newSession(t, vault())
 
@@ -763,7 +763,7 @@ func TestEditingTheFirstFieldWritesTheHeadingAgain(t *testing.T) {
 // The current card is a tool response, so a deck name set by the author of the
 // vault content arrives at the agent as data. The host sends the current card with each call,
 // and the tool is offered only on the server of the review window.
-func TestTheCardInFrontOfThePersonIsAToolsAnswer(t *testing.T) {
+func TestCardCurrentReturnsTheOpenCard(t *testing.T) {
 	session, _ := newSession(t, vault())
 	type current struct {
 		Deck     string `json:"path"`
@@ -778,12 +778,12 @@ func TestTheCardInFrontOfThePersonIsAToolsAnswer(t *testing.T) {
 	}
 
 	if got := call[current](t, session, "card_current", map[string]any{}); got != on {
-		t.Errorf("the card in front of them is %+v", got)
+		t.Errorf("card_current returned %+v", got)
 	}
 
 	session.toolContext = nil
 	if got := call[current](t, session, "card_current", map[string]any{}); got != (current{}) {
-		t.Errorf("a window that says nothing has a card in front of the person: %+v", got)
+		t.Errorf("card_current without a tool context returned %+v, want an empty card", got)
 	}
 }
 

@@ -117,7 +117,7 @@ func TestFocusPassagesRefusesAPlaceItCannotShowAndDoesNotMoveTheWindow(t *testin
 		})
 	}
 	if len(view.requested) != 0 {
-		t.Errorf("the person was moved to %+v", view.requested)
+		t.Errorf("the user was moved to %+v", view.requested)
 	}
 }
 
@@ -129,6 +129,6 @@ func TestFocusPassagesOfAPathTheVaultDoesNotHoldIsNotFoundAndDoesNotMoveTheWindo
 		t.Errorf("a missing file answered %v, want fs.ErrNotExist saying the vault holds nothing there", err)
 	}
 	if len(view.requested) != 0 {
-		t.Errorf("the person was moved to %+v", view.requested)
+		t.Errorf("the user was moved to %+v", view.requested)
 	}
 }

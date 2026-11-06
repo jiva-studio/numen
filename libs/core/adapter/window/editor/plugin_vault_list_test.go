@@ -90,7 +90,7 @@ func TestPluginOpenVaultDuringWindowCloseKeepsTheCloseAndRejectsOpen(t *testing.
 
 	select {
 	case isFlushed := <-resolved:
-		t.Errorf("the close settled with %v before the page personAnswer: the plugin's decision called it off", isFlushed)
+		t.Errorf("the close settled with %v before the page answered: the plugin's decision called it off", isFlushed)
 		close(release)
 	case <-time.After(2 * time.Second):
 		close(release)
@@ -136,7 +136,7 @@ func TestTwoPluginOpenVaultDecisionsAtOnceAreNotAskingOfEachOther(t *testing.T) 
 		_, err := list.OpenVault(t.Context(), f.second.ID)
 		decided <- err
 	}()
-	// The second decision runs while the page has not personAnswer the first one.
+	// The second decision runs while the page has not answered the first one.
 	select {
 	case err := <-decided:
 		if errors.Is(err, pluginport.ErrVaultAsking) {
@@ -215,7 +215,7 @@ func startPluginDecision(t *testing.T, f *showing, flushRequest <-chan struct{},
 	return decided
 }
 
-// expectDecisionUnavailable checks that the plugin's decision gave way to the person's action.
+// expectDecisionUnavailable checks that the plugin's decision gave way to the user's action.
 func expectDecisionUnavailable(t *testing.T, decided <-chan error) {
 	t.Helper()
 	select {
@@ -250,7 +250,7 @@ func TestACloseDuringAPluginDecisionWithASilentPageClosesTheWindow(t *testing.T)
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 	defer cancel()
 	if !closeLikeTheApp(ctx, f.installation) {
-		t.Error("the person's close during a plugin's decision was refused: the window stays open")
+		t.Error("the user's close during a plugin's decision was refused: the window stays open")
 	}
 	expectDecisionUnavailable(t, decided)
 }
@@ -275,18 +275,18 @@ func TestAQuitDuringAPluginDecisionIsAccepted(t *testing.T) {
 	case isFlushed := <-resolved:
 		close(release)
 		if !isFlushed {
-			t.Error("the person's quit was refused while a plugin decided")
+			t.Error("the user's quit was refused while a plugin decided")
 		}
 	case <-time.After(2 * time.Second):
 		close(release)
 		if !<-resolved {
-			t.Error("the person's quit was refused while a plugin decided")
+			t.Error("the user's quit was refused while a plugin decided")
 		}
 	}
 	expectDecisionUnavailable(t, decided)
 }
 
-func TestAPersonsVaultSwitchDuringAPluginDecisionIsAccepted(t *testing.T) {
+func TestUserVaultSwitchDuringPluginDecisionIsAccepted(t *testing.T) {
 	f := openTwoVaults(t)
 	f.bindShow()
 	stream, isDone := f.watchQuit(t)
@@ -302,12 +302,12 @@ func TestAPersonsVaultSwitchDuringAPluginDecisionIsAccepted(t *testing.T) {
 	case err := <-switched:
 		close(release)
 		if err != nil {
-			t.Errorf("the person's own vault switch was refused while a plugin decided: %v", err)
+			t.Errorf("the user's own vault switch was refused while a plugin decided: %v", err)
 		}
 	case <-time.After(2 * time.Second):
 		close(release)
 		if err := <-switched; err != nil {
-			t.Errorf("the person's own vault switch was refused while a plugin decided: %v", err)
+			t.Errorf("the user's own vault switch was refused while a plugin decided: %v", err)
 		}
 	}
 	expectDecisionUnavailable(t, decided)
@@ -390,7 +390,7 @@ func TestTheSwapAfterADecisionShowsTheVault(t *testing.T) {
 	}
 }
 
-func TestADecisionDuringAPersonsSwitchIsUnavailable(t *testing.T) {
+func TestPluginDecisionDuringUserSwitchIsUnavailable(t *testing.T) {
 	f := openTwoVaults(t)
 	f.bindShow()
 	stream, isDone := f.watchQuit(t)
@@ -411,10 +411,10 @@ func TestADecisionDuringAPersonsSwitchIsUnavailable(t *testing.T) {
 	close(release)
 
 	if !errors.Is(err, pluginport.ErrUnavailable) {
-		t.Errorf("the decision during the person's switch returned %v, want ErrUnavailable", err)
+		t.Errorf("the decision during the user's switch returned %v, want ErrUnavailable", err)
 	}
 	if err := <-switched; err != nil {
-		t.Errorf("the person's switch returned %v", err)
+		t.Errorf("the user's switch returned %v", err)
 	}
 	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s", got.Name)
@@ -431,10 +431,10 @@ func (f *showing) reportFlush(t *testing.T, token string, result v1.FlushResult)
 	return err
 }
 
-// answerAskingUntil answers every flush with ASKING until personAnswer is closed, then answers the last
-// token with NOTHING, as a page whose person personAnswer its question.
+// answerAskingUntil answers every flush with ASKING until userAnswered is closed, then answers the last
+// token with NOTHING, as a page whose user has answered its question.
 func (f *showing) answerAskingUntil(
-	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], personAnswer <-chan struct{},
+	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userAnswered <-chan struct{},
 ) {
 	var mu sync.Mutex
 	last := ""
@@ -447,7 +447,7 @@ func (f *showing) answerAskingUntil(
 			last = stream.Msg().GetToken()
 			mu.Unlock()
 			select {
-			case <-personAnswer:
+			case <-userAnswered:
 				if f.reportFlush(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
 					return
 				}
@@ -459,7 +459,7 @@ func (f *showing) answerAskingUntil(
 		}
 	}()
 	go func() {
-		<-personAnswer
+		<-userAnswered
 		mu.Lock()
 		token := last
 		mu.Unlock()
@@ -483,27 +483,27 @@ func (f *showing) answerAll(t *testing.T, stream *connect.ServerStreamForClient[
 	}()
 }
 
-// A close refused because a page asks the person waits for the person's answer (closeLikeTheApp). A
-// plugin's decision that starts in that wait must not end the person's flush.
+// A close refused because a page asks the user waits for the user's answer (closeLikeTheApp). A
+// plugin's decision that starts in that wait must not end the user's flush.
 func TestAPluginDecisionDuringTheClosesQuestionKeepsTheCloseWaiting(t *testing.T) {
 	f := openTwoVaults(t)
 	f.bindShow()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
-	personAnswer := make(chan struct{})
-	f.answerAskingUntil(t, stream, personAnswer)
+	userAnswered := make(chan struct{})
+	f.answerAskingUntil(t, stream, userAnswered)
 
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 	defer cancel()
 	if f.installation.FlushPending(ctx) {
-		t.Fatal("the close flushed although the page asks the person")
+		t.Fatal("the close flushed although the page asks the user")
 	}
 	confirmed := make(chan bool, 1)
 	go func() { confirmed <- f.installation.WaitForFlush(ctx) }()
 	select {
 	case isFlushed := <-confirmed:
-		close(personAnswer)
-		t.Fatalf("the close's wait ended with %v before the person personAnswer", isFlushed)
+		close(userAnswered)
+		t.Fatalf("the close's wait ended with %v before the user answered", isFlushed)
 	case <-time.After(200 * time.Millisecond):
 	}
 
@@ -515,19 +515,19 @@ func TestAPluginDecisionDuringTheClosesQuestionKeepsTheCloseWaiting(t *testing.T
 
 	select {
 	case isFlushed := <-confirmed:
-		close(personAnswer)
-		t.Fatalf("the plugin's decision ended the close's wait for the person's answer with %v: the window stays open after the person answers", isFlushed)
+		close(userAnswered)
+		t.Fatalf("the plugin's decision ended the close's wait for the user's answer with %v: the window stays open after the user answers", isFlushed)
 	case <-time.After(500 * time.Millisecond):
 	}
-	close(personAnswer)
+	close(userAnswered)
 	if !<-confirmed {
-		t.Error("the close's wait ended unflushed after the person personAnswer")
+		t.Error("the close's wait ended unflushed after the user answered")
 	}
 }
 
-// One person switching vault again and again while plugins keep deciding: every switch of the person
+// The user switches vault again and again while plugins keep deciding: every switch of the user
 // is taken, none waits past its bound, and no decision is left holding the window.
-func TestAPersonsSwitchesAmidRepeatedPluginDecisionsAreAllTaken(t *testing.T) {
+func TestUserSwitchesAmidRepeatedPluginDecisionsAreAllTaken(t *testing.T) {
 	f := openTwoVaults(t)
 	f.bindShow()
 	stream, isDone := f.watchQuit(t)
@@ -569,27 +569,27 @@ func TestAPersonsSwitchesAmidRepeatedPluginDecisionsAreAllTaken(t *testing.T) {
 		select {
 		case err := <-switchResult:
 			if err != nil {
-				t.Errorf("switch %d of the person was refused amid plugin decisions: %v", i, err)
+				t.Errorf("switch %d of the user was refused amid plugin decisions: %v", i, err)
 			}
 		case <-time.After(15 * time.Second):
 			close(stop)
-			t.Fatalf("switch %d of the person never returned amid plugin decisions", i)
+			t.Fatalf("switch %d of the user never returned amid plugin decisions", i)
 		}
 	}
 	close(stop)
 	deciders.Wait()
 	t.Logf("decisions given %d, unavailable %d", given.Load(), unavailable.Load())
 	if v := unexpected.Load(); v != nil {
-		t.Errorf("a decision personAnswer other than ErrUnavailable or nil: %v", v)
+		t.Errorf("a decision returned other than ErrUnavailable or nil: %v", v)
 	}
 	if _, err := list.OpenVault(t.Context(), f.second.ID); err != nil {
 		t.Errorf("a decision after the storm returned %v: the exclusion is still held", err)
 	}
 }
 
-// Two person actions, a close and a vault switch, arrive while a plugin decides. Neither hangs, one of
+// Two user actions, a close and a vault switch, arrive while a plugin decides. Neither hangs, one of
 // them is taken, and the decision gives way.
-func TestTwoPersonActionsDuringAPluginDecisionBothReturn(t *testing.T) {
+func TestTwoUserActionsDuringPluginDecisionBothReturn(t *testing.T) {
 	f := openTwoVaults(t)
 	f.bindShow()
 	stream, isDone := f.watchQuit(t)
@@ -622,17 +622,17 @@ func TestTwoPersonActionsDuringAPluginDecisionBothReturn(t *testing.T) {
 		case switchErr = <-switched:
 		case isClosed = <-closed:
 		case <-time.After(20 * time.Second):
-			t.Fatal("a person's action never returned")
+			t.Fatal("a user's action never returned")
 		}
 	}
 	t.Logf("switch: %v, close: %v", switchErr, isClosed)
 	if switchErr != nil && !isClosed {
-		t.Error("neither the person's switch nor the person's close was taken")
+		t.Error("neither the user's switch nor the user's close was taken")
 	}
 }
 
 // A plugin call that ends during its decision (the host endpoint closes, the plugin hangs up) is
-// personAnswer unavailable and does not move the window.
+// returns unavailable and does not move the window.
 func TestAPluginCallThatEndsDuringItsDecisionIsUnavailable(t *testing.T) {
 	f := openTwoVaults(t)
 	f.bindShow()

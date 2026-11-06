@@ -159,7 +159,7 @@ func TestTheToolsThatMoveTheWindowAreOnTheFullServerOnly(t *testing.T) {
 	}
 }
 
-func TestNoteFocusDescriptionTellsWhenToMoveThePerson(t *testing.T) {
+func TestNoteFocusDescriptionExplainsWhenToMoveTheWindow(t *testing.T) {
 	w := newWindowTools(t)
 	description := w.getToolInfo(t, "note_focus").GetDescription()
 	for _, want := range []string{"neighbourhood", "asked to be taken to a note", "Talking about one is not asking", "`note_read`"} {
