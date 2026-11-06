@@ -13,7 +13,7 @@ function createFiles() {
     read: async (path) =>
       files.has(path)
         ? { ok: true, value: { body: files.get(path) ?? '', at: statFile(files.get(path) ?? '') } }
-        : { ok: false, error: 'missing' },
+        : { ok: false, error: 'notFound' },
     write: async (path, body, seen) => {
       const existing = files.get(path)
       if (

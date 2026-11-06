@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -373,7 +374,7 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Msg.Failure != nil || res.Msg.GetPath() != "Donau.md" || res.Msg.GetTitle() != "Donau" ||
+	if res.Msg.GetError() != 0 || res.Msg.GetPath() != "Donau.md" || res.Msg.GetTitle() != "Donau" ||
 		res.Msg.GetNameSource() != v1.NameSource_NAME_SOURCE_FILENAME {
 		t.Errorf("the rename returned %v", res.Msg)
 	}
@@ -386,8 +387,8 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if missing.Msg.Failure == nil || missing.Msg.GetFailure() != v1.ErrorCode_ERROR_CODE_MISSING {
-		t.Errorf("a rename of a missing note returned %v, want failure MISSING", missing.Msg)
+	if missing.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+		t.Errorf("a rename of a missing note returned %v, want error NOT_FOUND", missing.Msg)
 	}
 }
 
@@ -405,14 +406,14 @@ func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
 	if len(moves) != 3 {
 		t.Fatalf("the move returned %d entries, want 3: %v", len(moves), moves)
 	}
-	if moves[0].Failure != nil || moves[0].GetMove().GetFrom() != "Danube.md" || moves[0].GetMove().GetTo() != "Rivers/Danube.md" {
+	if moves[0].GetError() != 0 || moves[0].GetMove().GetFrom() != "Danube.md" || moves[0].GetMove().GetTo() != "Rivers/Danube.md" {
 		t.Errorf("the first entry is %v, want Danube.md moved to Rivers/Danube.md", moves[0])
 	}
-	if moves[1].GetMove().GetFrom() != "Nowhere.md" || moves[1].GetFailure() != v1.ErrorCode_ERROR_CODE_MISSING {
-		t.Errorf("the second entry is %v, want Nowhere.md with failure MISSING", moves[1])
+	if moves[1].GetMove().GetFrom() != "Nowhere.md" || moves[1].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+		t.Errorf("the second entry is %v, want Nowhere.md with error NOT_FOUND", moves[1])
 	}
-	if moves[2].GetMove().GetFrom() != "Deltas.md" || moves[2].GetFailure() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
-		t.Errorf("the third entry is %v, want Deltas.md with failure ALREADY_EXISTS", moves[2])
+	if moves[2].GetMove().GetFrom() != "Deltas.md" || moves[2].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS {
+		t.Errorf("the third entry is %v, want Deltas.md with error ALREADY_EXISTS", moves[2])
 	}
 
 	root, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{Paths: []string{"Rivers/Rhine.md"}}))
@@ -447,15 +448,15 @@ func TestARemovalReturnsTheTrashPathAndAFolderAsNotANote(t *testing.T) {
 	if len(removals) != 3 {
 		t.Fatalf("the removal returned %d entries, want 3: %v", len(removals), removals)
 	}
-	if removals[0].Failure != nil || removals[0].GetPath() != "Danube.md" || removals[0].GetTrashPath() != ".trash/Danube.md" ||
+	if removals[0].GetError() != 0 || removals[0].GetPath() != "Danube.md" || removals[0].GetTrashPath() != ".trash/Danube.md" ||
 		!slices.Equal(removals[0].GetBrokenLinks(), []string{"Deltas.md"}) {
 		t.Errorf("the first entry is %v, want Danube.md in .trash with Deltas.md dangling", removals[0])
 	}
-	if removals[1].GetPath() != "Rivers" || removals[1].Failure == nil || removals[1].GetFailure() != v1.ErrorCode_ERROR_CODE_NOT_A_NOTE {
-		t.Errorf("the folder entry is %v, want failure NOT_A_NOTE", removals[1])
+	if removals[1].GetPath() != "Rivers" || removals[1].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE {
+		t.Errorf("the folder entry is %v, want error NOT_A_NOTE", removals[1])
 	}
-	if removals[2].GetPath() != "Nowhere.md" || removals[2].GetFailure() != v1.ErrorCode_ERROR_CODE_MISSING {
-		t.Errorf("the third entry is %v, want failure MISSING", removals[2])
+	if removals[2].GetPath() != "Nowhere.md" || removals[2].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+		t.Errorf("the third entry is %v, want error NOT_FOUND", removals[2])
 	}
 	if !slices.Equal(vault.removed, []string{"Danube.md", "Rivers", "Nowhere.md"}) {
 		t.Errorf("the vault was asked to remove %v", vault.removed)
@@ -489,15 +490,16 @@ func TestNoteRefsCarryTheIdentifier(t *testing.T) {
 	}
 }
 
-func TestVaultListErrorsReturnTheirVaultsErrorCode(t *testing.T) {
+func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) {
 	for name, c := range map[string]struct {
 		err  error
 		want v1.VaultsErrorCode
 	}{
-		"name taken": {err: vaults.ErrNameTaken, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN},
-		"last vault": {err: vaults.ErrLastVault, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT},
-		"showing":    {err: vaults.ErrShowing, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING},
-		"unknown":    {err: vaults.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN},
+		"name taken":      {err: vaults.ErrNameTaken, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN},
+		"last vault":      {err: vaults.ErrLastVault, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT},
+		"current vault":   {err: vaults.ErrShowing, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT},
+		"no such vault":   {err: vaults.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND},
+		"unsaved changes": {err: pluginport.ErrUnsavedChanges, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED},
 	} {
 		t.Run(name, func(t *testing.T) {
 			list := newRecordingList()
@@ -508,15 +510,122 @@ func TestVaultListErrorsReturnTheirVaultsErrorCode(t *testing.T) {
 			added, addErr := client.AddVault(ctx, connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
 			renamed, renameErr := client.RenameVault(ctx, connect.NewRequest(&v1.HostVaultServiceRenameVaultRequest{Id: "v2", Name: "Ponds"}))
 			removed, removeErr := client.RemoveVault(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v2"}))
+			opened, openErr := client.OpenVault(ctx, connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
 
-			if addErr != nil || added.Msg.Failure == nil || added.Msg.GetFailure() != c.want {
-				t.Errorf("AddVault returned %v (%v), want failure %s", added, addErr, c.want)
+			for call, answer := range map[string]struct {
+				err    error
+				code   v1.VaultsErrorCode
+				detail string
+			}{
+				"AddVault":    {err: addErr, code: added.Msg.GetError(), detail: added.Msg.GetDetail()},
+				"RenameVault": {err: renameErr, code: renamed.Msg.GetError(), detail: renamed.Msg.GetDetail()},
+				"RemoveVault": {err: removeErr, code: removed.Msg.GetError(), detail: removed.Msg.GetDetail()},
+				"OpenVault":   {err: openErr, code: opened.Msg.GetError(), detail: opened.Msg.GetDetail()},
+			} {
+				if answer.err != nil || answer.code != c.want {
+					t.Errorf("%s answered %s (%v), want error %s", call, answer.code, answer.err, c.want)
+				}
+				if !strings.Contains(answer.detail, list.err.Error()) {
+					t.Errorf("%s answered the detail %q, want the core's text %q", call, answer.detail, list.err.Error())
+				}
 			}
-			if renameErr != nil || renamed.Msg.Failure == nil || renamed.Msg.GetFailure() != c.want {
-				t.Errorf("RenameVault returned %v (%v), want failure %s", renamed, renameErr, c.want)
+		})
+	}
+}
+
+func TestOpenVaultOfAnUnknownIdAnswersNotFoundWithTheDetail(t *testing.T) {
+	list := newRecordingList()
+	client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
+
+	res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v9"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND {
+		t.Errorf("OpenVault of v9 answered %v, want error NOT_FOUND", res.Msg)
+	}
+	if !strings.Contains(res.Msg.GetDetail(), "v9") {
+		t.Errorf("OpenVault of v9 answered the detail %q, want the core's text naming v9", res.Msg.GetDetail())
+	}
+	if got := list.getCalls(); len(got) != 0 {
+		t.Errorf("the list was asked for %v, want nothing", got)
+	}
+}
+
+func TestRemoveVaultOfAnUnknownIdAnswersNotFoundWithTheDetail(t *testing.T) {
+	client, _, _ := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultManage)
+
+	res, err := client.RemoveVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v9"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if res.Msg.GetError() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND || !strings.Contains(res.Msg.GetDetail(), "v9") {
+		t.Errorf("RemoveVault of v9 answered %v, want error NOT_FOUND with the core's text naming v9", res.Msg)
+	}
+}
+
+func TestVaultListChangesThatSucceedAnswerNoDetail(t *testing.T) {
+	client, _, _ := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultManage)
+	ctx := t.Context()
+
+	added, addErr := client.AddVault(ctx, connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
+	renamed, renameErr := client.RenameVault(ctx, connect.NewRequest(&v1.HostVaultServiceRenameVaultRequest{Id: "v2", Name: "Ponds"}))
+	removed, removeErr := client.RemoveVault(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v2"}))
+
+	if err := errors.Join(addErr, renameErr, removeErr); err != nil {
+		t.Fatal(err)
+	}
+	for call, detail := range map[string]string{
+		"AddVault": added.Msg.GetDetail(), "RenameVault": renamed.Msg.GetDetail(), "RemoveVault": removed.Msg.GetDetail(),
+	} {
+		if detail != "" {
+			t.Errorf("%s succeeded with the detail %q", call, detail)
+		}
+	}
+}
+
+// refusingVault is the vault of rivers whose rename of a note fails with err before any file moves.
+type refusingVault struct {
+	*arrangingVault
+	err error
+}
+
+func (r refusingVault) RenameNote(context.Context, string, string) (string, bool, *domain.MoveResult, error) {
+	return "", false, nil, r.err
+}
+
+func TestARefusedRenameAnswersItsCodeInError(t *testing.T) {
+	for name, c := range map[string]struct {
+		err  error
+		want v1.HostVaultErrorCode
+	}{
+		"invalid name":   {err: note.ErrInvalidName, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME},
+		"already exists": {err: vaultport.ErrAlreadyExists, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
+		"not found":      {err: vaultport.ErrNotExist, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
+		"conflict":       {err: vaultport.ErrStale, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
+	} {
+		t.Run(name, func(t *testing.T) {
+			hosted := newCallers(nil)
+			hosted.vault = refusingVault{arrangingVault: newArrangingVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)}
+			endpoint := &Endpoint{callers: listCallers{callers: hosted, granted: []string{pluginport.PermissionVaultWrite}}}
+			mux := http.NewServeMux()
+			mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+			server := httptest.NewServer(mux)
+			t.Cleanup(server.Close)
+			client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+
+			res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+			if err != nil {
+				t.Fatal(err)
 			}
-			if removeErr != nil || removed.Msg.Failure == nil || removed.Msg.GetFailure() != c.want {
-				t.Errorf("RemoveVault returned %v (%v), want failure %s", removed, removeErr, c.want)
+
+			if res.Msg.GetError() != c.want {
+				t.Errorf("the refused rename answered %v, want error %s", res.Msg, c.want)
+			}
+			if res.Msg.GetMove() != nil {
+				t.Errorf("the refused rename answered the move %v", res.Msg.GetMove())
 			}
 		})
 	}
@@ -530,21 +639,21 @@ func TestVaultListChangesReturnTheVaultAndTheFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if v := added.Msg.GetVault(); added.Msg.Failure != nil || v.GetId() != "v3" || v.GetName() != "Seas" || v.GetPath() != "/vaults/Seas" {
+	if v := added.Msg.GetVault(); added.Msg.GetError() != 0 || v.GetId() != "v3" || v.GetName() != "Seas" || v.GetPath() != "/vaults/Seas" {
 		t.Errorf("AddVault returned %v", added.Msg)
 	}
 	renamed, err := client.RenameVault(ctx, connect.NewRequest(&v1.HostVaultServiceRenameVaultRequest{Id: "v2", Name: "Ponds"}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if v := renamed.Msg.GetVault(); renamed.Msg.Failure != nil || v.GetId() != "v2" || v.GetName() != "Ponds" {
+	if v := renamed.Msg.GetVault(); renamed.Msg.GetError() != 0 || v.GetId() != "v2" || v.GetName() != "Ponds" {
 		t.Errorf("RenameVault returned %v", renamed.Msg)
 	}
 	removed, err := client.RemoveVault(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v2"}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if removed.Msg.Failure != nil || removed.Msg.GetPath() != "/vaults/Lakes" {
+	if removed.Msg.GetError() != 0 || removed.Msg.GetPath() != "/vaults/Lakes" {
 		t.Errorf("RemoveVault returned %v, want the folder /vaults/Lakes", removed.Msg)
 	}
 }
@@ -595,7 +704,7 @@ func TestOpenVaultAnswersAfterTheWindowShowsTheVault(t *testing.T) {
 
 	select {
 	case a := <-answerResult:
-		if a.err != nil || a.res.Msg.Failure != nil {
+		if a.err != nil || a.res.Msg.GetError() != 0 {
 			t.Errorf("OpenVault after the window showed the vault answered %v (%v)", a.res, a.err)
 		}
 	case <-time.After(10 * time.Second):
@@ -665,13 +774,13 @@ func TestAMoveReportsAPathOutsideTheVaultAndMovesTheOthers(t *testing.T) {
 	if res.Msg.GetError() != 0 || len(moves) != 3 {
 		t.Fatalf("the move returned error %v with %d entries, want 3 entries", res.Msg.GetError(), len(moves))
 	}
-	if moves[0].Failure != nil || moves[0].GetMove().GetTo() != "Archive/Danube.md" {
+	if moves[0].GetError() != 0 || moves[0].GetMove().GetTo() != "Archive/Danube.md" {
 		t.Errorf("the first entry is %v, want Danube.md moved to Archive/Danube.md", moves[0])
 	}
-	if moves[1].GetMove().GetFrom() != "../Baikal.md" || moves[1].Failure == nil {
-		t.Errorf("the second entry is %v, want ../Baikal.md with a failure", moves[1])
+	if moves[1].GetMove().GetFrom() != "../Baikal.md" || moves[1].GetError() == 0 {
+		t.Errorf("the second entry is %v, want ../Baikal.md with an error", moves[1])
 	}
-	if moves[2].Failure != nil || moves[2].GetMove().GetTo() != "Archive/Rhine.md" {
+	if moves[2].GetError() != 0 || moves[2].GetMove().GetTo() != "Archive/Rhine.md" {
 		t.Errorf("the third entry is %v, want Rivers/Rhine.md moved to Archive/Rhine.md", moves[2])
 	}
 	for _, target := range []string{"Archive/Danube.md", "Archive/Rhine.md"} {
@@ -695,13 +804,13 @@ func TestARemovalReportsAPathOutsideTheVaultAndRemovesTheOthers(t *testing.T) {
 	if res.Msg.GetError() != 0 || len(removals) != 3 {
 		t.Fatalf("the removal returned error %v with %d entries, want 3 entries", res.Msg.GetError(), len(removals))
 	}
-	if removals[0].Failure != nil || removals[0].GetTrashPath() != ".trash/Danube.md" {
+	if removals[0].GetError() != 0 || removals[0].GetTrashPath() != ".trash/Danube.md" {
 		t.Errorf("the first entry is %v, want Danube.md in .trash", removals[0])
 	}
-	if removals[1].GetPath() != "../Baikal.md" || removals[1].Failure == nil {
-		t.Errorf("the second entry is %v, want ../Baikal.md with a failure", removals[1])
+	if removals[1].GetPath() != "../Baikal.md" || removals[1].GetError() == 0 {
+		t.Errorf("the second entry is %v, want ../Baikal.md with an error", removals[1])
 	}
-	if removals[2].Failure != nil || removals[2].GetTrashPath() != ".trash/Rivers/Rhine.md" {
+	if removals[2].GetError() != 0 || removals[2].GetTrashPath() != ".trash/Rivers/Rhine.md" {
 		t.Errorf("the third entry is %v, want Rivers/Rhine.md in .trash", removals[2])
 	}
 	for _, target := range []string{"Danube.md", "Rivers/Rhine.md"} {
@@ -740,8 +849,8 @@ func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
 		t.Fatalf("the rename returned %v, want the move", err)
 	}
 
-	if res.Msg.Failure != nil || res.Msg.GetError() != 0 || res.Msg.GetPath() != "Donau.md" {
-		t.Errorf("the rename returned %v, want Donau.md with no failure", res.Msg)
+	if res.Msg.GetError() != 0 || res.Msg.GetPath() != "Donau.md" {
+		t.Errorf("the rename returned %v, want Donau.md with no error", res.Msg)
 	}
 	if moved := res.Msg.GetMove(); moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" {
 		t.Errorf("the move came out as %v, want Danube.md to Donau.md", moved)
@@ -780,8 +889,8 @@ func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if res.Msg.Failure == nil || res.Msg.GetFailure() != c.want {
-				t.Errorf("AddVault returned %v, want failure %s", res.Msg, c.want)
+			if res.Msg.GetError() != c.want {
+				t.Errorf("AddVault returned %v, want error %s", res.Msg, c.want)
 			}
 			if !strings.Contains(res.Msg.GetDetail(), c.message) {
 				t.Errorf("the detail is %q, want it to carry %q", res.Msg.GetDetail(), c.message)

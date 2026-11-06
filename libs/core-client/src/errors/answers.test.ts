@@ -32,17 +32,17 @@ describe('the file an answer came out of', () => {
 
 describe('what an error is called', () => {
   it('reads a file that moved past the caller off the answer that says so', () => {
-    expect(isStaleAnswer({ error: NOTE_ERROR_CODE.STALE })).toBe(true)
-    expect(isStaleAnswer({ error: NOTE_ERROR_CODE.MISSING })).toBe(false)
+    expect(isStaleAnswer({ error: NOTE_ERROR_CODE.CONFLICT })).toBe(true)
+    expect(isStaleAnswer({ error: NOTE_ERROR_CODE.NOT_FOUND })).toBe(false)
     expect(isStaleAnswer({})).toBe(false)
   })
 
   it('leaves a file that moved past the caller with no word', () => {
-    expect(findErrorCode({ error: NOTE_ERROR_CODE.STALE })).toBeNull()
+    expect(findErrorCode({ error: NOTE_ERROR_CODE.CONFLICT })).toBeNull()
   })
 
   it('reads an error off an answer that carries one', () => {
-    expect(findErrorCode({ error: NOTE_ERROR_CODE.MISSING })).toBe('missing')
+    expect(findErrorCode({ error: NOTE_ERROR_CODE.NOT_FOUND })).toBe('notFound')
     expect(findErrorCode({ error: NOTE_ERROR_CODE.TOO_LARGE })).toBe('tooLarge')
   })
 

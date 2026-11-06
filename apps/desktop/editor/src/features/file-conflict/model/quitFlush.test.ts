@@ -59,7 +59,7 @@ function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: bo
       reportedResults.push({ token, result })
     },
     read: async (path): Promise<NoteResult> =>
-      files.has(path) ? asValue({ body: files.get(path) ?? '' }) : asFailure('missing'),
+      files.has(path) ? asValue({ body: files.get(path) ?? '' }) : asFailure('notFound'),
     write: async (path, body): Promise<NoteResult> => {
       if (pendingWriteResolve) await new Promise<void>((through) => (pendingWriteResolve = through))
       writtenFiles.push({ path, body })

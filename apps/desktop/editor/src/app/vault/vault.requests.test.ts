@@ -76,7 +76,7 @@ describe('a note requested for', () => {
       value: { path: 'B.md', title: 'B', hasFrontmatter: true, moved: null },
     })
 
-    requestLog.renameNote.mockResolvedValue({ error: NOTE_ERROR_CODE.STALE })
+    requestLog.renameNote.mockResolvedValue({ error: NOTE_ERROR_CODE.CONFLICT })
     expect(await core.rename('A.md', 'B')).toEqual({ ok: false, error: 'changed' })
 
     requestLog.renameNote.mockResolvedValue({ error: NOTE_ERROR_CODE.ALREADY_EXISTS })
@@ -125,8 +125,8 @@ describe('a file requested for', () => {
     await core.remove('a.md', true)
     expect(requestLog.removeFile.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', destroy: true })
 
-    requestLog.removeFile.mockResolvedValue({ error: NOTE_ERROR_CODE.MISSING })
-    expect(await core.remove('a.md')).toEqual({ ok: false, error: 'missing' })
+    requestLog.removeFile.mockResolvedValue({ error: NOTE_ERROR_CODE.NOT_FOUND })
+    expect(await core.remove('a.md')).toEqual({ ok: false, error: 'notFound' })
   })
 
   it('is listed under its folder', async () => {
@@ -246,10 +246,10 @@ describe('a note followed', () => {
       },
     })
 
-    requestLog.getConnection.mockResolvedValueOnce({ error: NOTE_ERROR_CODE.MISSING })
+    requestLog.getConnection.mockResolvedValueOnce({ error: NOTE_ERROR_CODE.NOT_FOUND })
     expect(await core.relations.getConnection('a.md', 'b.md')).toEqual({
       ok: false,
-      error: 'missing',
+      error: 'notFound',
     })
     expect(requestLog.getConnection.mock.calls.at(-1)?.[0]).toEqual({
       first: 'a.md',
@@ -301,8 +301,8 @@ describe('a note followed', () => {
     expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'cycle' })
     requestLog.saveConnection.mockResolvedValueOnce({ isInvalid: true })
     expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'invalid' })
-    requestLog.saveConnection.mockResolvedValueOnce({ error: NOTE_ERROR_CODE.MISSING })
-    expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'missing' })
+    requestLog.saveConnection.mockResolvedValueOnce({ error: NOTE_ERROR_CODE.NOT_FOUND })
+    expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'notFound' })
   })
 
   it('has one side, or both, removed under the type of the records', async () => {
@@ -356,10 +356,10 @@ describe('a note followed', () => {
       error: 'nameExhausted',
     })
 
-    requestLog.createRelatedNote.mockResolvedValue({ error: NOTE_ERROR_CODE.MISSING })
+    requestLog.createRelatedNote.mockResolvedValue({ error: NOTE_ERROR_CODE.NOT_FOUND })
     expect(await core.relations.createRelated({ from: 'a.md', role: 'jump' })).toEqual({
       ok: false,
-      error: 'missing',
+      error: 'notFound',
     })
   })
 

@@ -709,10 +709,10 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   domain.ErrOverlaps,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: vaults.ErrNameTaken,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: vaults.ErrLastVault,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING:    vaults.ErrShowing,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN:    vaults.ErrUnknown,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    vaults.ErrShowing,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  vaults.ErrUnknown,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   machineport.ErrNoTrash,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING:     errAnswerPending,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:    errAnswerPending,
 	}, func(err error) v1.VaultsErrorCode {
 		reason, _ := vaultsErrorCodeBy(err)
 		return reason

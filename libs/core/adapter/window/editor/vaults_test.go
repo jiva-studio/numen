@@ -381,7 +381,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := forgot.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING {
+	if got := forgot.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT {
 		t.Errorf("removing the vault being shown was answered %v", got)
 	}
 
@@ -390,7 +390,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := erased.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING {
+	if got := erased.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT {
 		t.Errorf("trashing the vault being shown was answered %v", got)
 	}
 
@@ -464,7 +464,7 @@ func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 		"trash":  erase.Msg.GetError(),
 		"open":   open.Msg.GetError(),
 	} {
-		if got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN {
+		if got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND {
 			t.Errorf("%s of an identity on no list was answered %v", what, got)
 		}
 	}
@@ -545,7 +545,7 @@ func TestOpenVault_ErrorsWhilePageHasPendingQuestion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := out.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING {
+	if got := out.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED {
 		t.Errorf("a page holding a question was answered %v", got)
 	}
 }

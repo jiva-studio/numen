@@ -62,7 +62,7 @@ test.describe('Removing and renaming a note', () => {
       await expect(page.locator(`[data-tree-row="${target}"]`)).toHaveCount(0)
       await expect(getPlexNode(page, targetTitle, 'child')).toHaveCount(0)
       await expect(await openTaskList(page)).toContainText(`Broken links in: ${linker}`)
-      expect((await readNote(request, target)).error).toBe('ERROR_CODE_MISSING')
+      expect((await readNote(request, target)).error).toBe('ERROR_CODE_NOT_FOUND')
       expect(await listFilePaths(request, 'notes')).not.toContain(target)
       expect(await findTrashed(request, `${targetTitle}.md`)).toHaveLength(1)
       expect(await readVaultFile(request, linker)).toContain(targetTitle)
@@ -99,7 +99,7 @@ test.describe('Removing and renaming a note', () => {
       await expect(getNoteTab(page, notePath)).toHaveCount(0)
       await expect
         .poll(async () => (await readNote(request, notePath)).error)
-        .toBe('ERROR_CODE_MISSING')
+        .toBe('ERROR_CODE_NOT_FOUND')
       expect(await findTrashed(request, `${title}.md`)).toHaveLength(0)
     } finally {
       await destroyNote(request, notePath)

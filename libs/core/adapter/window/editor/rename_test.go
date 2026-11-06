@@ -293,7 +293,7 @@ func TestRenamingReturnsWhatItCouldNotName(t *testing.T) {
 	}{
 		"a note that is not there": {
 			path: "Missing.md",
-			want: v1.ErrorCode_ERROR_CODE_MISSING,
+			want: v1.ErrorCode_ERROR_CODE_NOT_FOUND,
 		},
 		"a file the vault does not hold as a note": {
 			path: "Reading.txt",
@@ -631,7 +631,7 @@ func TestRenamingANoteSavedElsewhereIsAQuestion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note written elsewhere came back as an error: %v", err)
 	}
-	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_CONFLICT {
 		t.Errorf("a note that changed was answered %v", code)
 	}
 	if isGone(t, f.installation.State.GetCurrentVault().Path, "Old.md") {
@@ -1371,7 +1371,7 @@ func TestAMoveOfAPathWithNothingAtItPreservesNothingPrior(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_MISSING {
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("a path with nothing at it was answered with %v", code)
 	}
 	if answer.Msg.GetMoved() != nil {
