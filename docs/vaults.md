@@ -107,7 +107,7 @@ Five tools:
 | `vault_add`    | put a folder on the list. With no path, this machine's own folder picker is shown to the person and what they choose is added; a person who closes it has chosen nothing, and the response says so. With a path, the folder at that path becomes a vault. Nothing already in the folder is moved or rewritten, and the vault's identity is written into it. |
 | `vault_rename` | rename a vault.                                                                                                                                                                                                                                                                                                                                             |
 | `vault_remove` | remove a vault from the list and the index.                                                                                                                                                                                                                                                                                                                 |
-| `vault_open`   | show another vault to the person. The agent's session ends with the vault it was serving.                                                                                                                                                                                                                                                                   |
+| `vault_open`   | show another vault to the user, and answer once the window shows it. The agent's session ends with the vault it was serving. A window with unsaved changes keeps its vault, and the answer is an error that asks the user to save them.                                                                                                                     |
 
 Every other tool operates on the vault `vault_list` marks with `isCurrent`, and no other.
 
@@ -119,6 +119,5 @@ Every other tool operates on the vault `vault_list` marks with `isCurrent`, and 
 
 - **On Windows a folder can be deleted outright.** Where the volume has no recycle bin, the shell deletes permanently and reports success, and no flag turns that into an error. "It goes to the trash and comes back" is accurate on Linux and not on Windows.
 - **The macOS trash is unverified.** It compiles and has never run: the selectors, the boolean return and the error out-parameter are untested until somebody runs it on a Mac.
-- **`vault_open` returns before the swap happens.** The swap closes the endpoint that carries the response, so the call cannot wait for it. Whether the response arrives before the transport closes is a race, and the tool reports this.
 - **The registry is not locked between processes.** Each write rewrites the whole file, so a window and a command line writing at once lose one of the two entirely. Inside one process it is locked.
 - **A failed task left in the list of what is being done survives a swap.** A cancelled one removes itself; one that failed stays until it is dismissed, and it remains after the vault it refers to is gone.
