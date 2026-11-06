@@ -95,9 +95,10 @@ const openAt =
 export const PlaceSavedAfterTheFocusMoves: Story = {
   render: openAt(RANGES),
   play: async () => {
-    await waitFor(async () => await expect(places.at(-1)).toStrictEqual({ page: 7, pageCount: 12 }), {
-      timeout: AT_ONCE,
-    })
+    await waitFor(
+      async () => await expect(places.at(-1)).toStrictEqual({ page: 7, pageCount: 12 }),
+      { timeout: AT_ONCE },
+    )
 
     // The turn to the page has settled by now, and nothing has moved the tab since.
     await new Promise((resolve) => setTimeout(resolve, 2 * AT_ONCE))

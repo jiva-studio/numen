@@ -48,7 +48,8 @@ export function useBookPlace(reader: PlacedReader, getTab: () => PlacedTab | und
       turn += 1
       const request = turn
       const cfi = await reader.getCfi(offset).catch(() => null)
-      if (request === turn && cfi !== null) getTab()?.savePlace?.(createPlace(cfi, reader.chapter.value))
+      if (request === turn && cfi !== null)
+        getTab()?.savePlace?.(createPlace(cfi, reader.chapter.value))
     },
   )
 }
