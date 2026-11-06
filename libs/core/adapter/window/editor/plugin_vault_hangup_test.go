@@ -24,10 +24,10 @@ func TestADecisionAfterACallThatEndedIsGiven(t *testing.T) {
 	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
 
 	ctx, hangUp := context.WithCancel(t.Context())
-	decided := make(chan error, 1)
+	result := make(chan error, 1)
 	go func() {
 		_, err := list.OpenVault(ctx, f.second.ID)
-		decided <- err
+		result <- err
 	}()
 	select {
 	case <-flushRequest:
@@ -36,7 +36,7 @@ func TestADecisionAfterACallThatEndedIsGiven(t *testing.T) {
 		t.Fatal("the decision never asked the page to flush")
 	}
 	hangUp()
-	if err := <-decided; !errors.Is(err, pluginport.ErrUnavailable) {
+	if err := <-result; !errors.Is(err, pluginport.ErrUnavailable) {
 		close(release)
 		t.Fatalf("the decision whose call ended returned %v, want ErrUnavailable", err)
 	}

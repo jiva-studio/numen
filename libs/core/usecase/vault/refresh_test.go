@@ -505,13 +505,13 @@ func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	written, err := os.Stat(filepath.Join(v.Path, "Note.md"))
+	stat, err := os.Stat(filepath.Join(v.Path, "Note.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
 	// The clock is set to the modification time, so the note is recent however long the scan took.
-	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), clock.NewFake(written.ModTime()))
+	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), clock.NewFake(stat.ModTime()))
 
 	refreshOne(t, refresh, v, "Note.md")
 

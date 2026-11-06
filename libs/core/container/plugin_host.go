@@ -238,9 +238,9 @@ type PluginVaultHooks struct {
 	Notes note.Scenarios
 }
 
-// isBuilt reports whether the use cases on notes were built. A zero Scenarios has a Move with no
-// readers.
-func isBuilt(notes note.Scenarios) bool {
+// hasReaders reports whether the use cases on notes have their vault readers, which a zero
+// Scenarios lacks.
+func hasReaders(notes note.Scenarios) bool {
 	return notes.Move.Readers() != nil
 }
 
@@ -268,8 +268,8 @@ func (c Config) OpenPluginVault(
 		Notes:  getNoteChanges(scenarios),
 		Checks: vault.NewStandardGetProblems(db.Problems()),
 	}
-	if isBuilt(hooks.Notes) {
-		arranger.Window, arranger.Shown = getNoteChanges(hooks.Notes), current
+	if hasReaders(hooks.Notes) {
+		arranger.Window, arranger.WindowVault = getNoteChanges(hooks.Notes), current
 	}
 	vaults := hostvault.Vault{
 		Current:     current,

@@ -99,7 +99,7 @@ func (e *vaultEndpoint) AddVault(
 	if err != nil {
 		return nil, err
 	}
-	added, addErr := list.AddVault(ctx, req.Msg.GetRoot(), req.Msg.GetName())
+	vault, addErr := list.AddVault(ctx, req.Msg.GetRoot(), req.Msg.GetName())
 	failure, err := answerVaults(addErr)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (e *vaultEndpoint) AddVault(
 	if failure != nil {
 		return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Failure: failure, Detail: addErr.Error()}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Vault: writeVault(added)}), nil
+	return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Vault: writeVault(vault)}), nil
 }
 
 func (e *vaultEndpoint) RenameVault(
@@ -117,12 +117,12 @@ func (e *vaultEndpoint) RenameVault(
 	if err != nil {
 		return nil, err
 	}
-	renamed, err := list.RenameVault(ctx, domain.VaultID(req.Msg.GetId()), req.Msg.GetName())
+	vault, err := list.RenameVault(ctx, domain.VaultID(req.Msg.GetId()), req.Msg.GetName())
 	failure, err := answerVaults(err)
 	if err != nil || failure != nil {
 		return connect.NewResponse(&v1.HostVaultServiceRenameVaultResponse{Failure: failure}), err
 	}
-	return connect.NewResponse(&v1.HostVaultServiceRenameVaultResponse{Vault: writeVault(renamed)}), nil
+	return connect.NewResponse(&v1.HostVaultServiceRenameVaultResponse{Vault: writeVault(vault)}), nil
 }
 
 func (e *vaultEndpoint) RemoveVault(
@@ -134,7 +134,7 @@ func (e *vaultEndpoint) RemoveVault(
 	}
 	id := domain.VaultID(req.Msg.GetId())
 	// The folder is read from the list before the vault leaves it.
-	removed, err := e.findVault(id)
+	entry, err := e.findVault(id)
 	if err == nil {
 		err = list.RemoveVault(ctx, id)
 	}
@@ -142,7 +142,7 @@ func (e *vaultEndpoint) RemoveVault(
 	if err != nil || failure != nil {
 		return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Failure: failure}), err
 	}
-	return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Path: removed.Path}), nil
+	return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Path: entry.Path}), nil
 }
 
 // OpenVault answers once the window has decided, before it changes vault: the change closes the
@@ -170,7 +170,7 @@ func (e *vaultEndpoint) OpenVault(
 		}
 	})
 	if !isStarted {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+		return nil, connect.NewError(connect.CodeUnavailable, errEndpointShutdown)
 	}
 	return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{}), nil
 }

@@ -78,9 +78,9 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) (func
 	}, nil
 }
 
-// errFlushRunning is a decision refused because the window has a request to the pages running, such
+// errFlushInProgress is a decision refused because the window has a request to the pages running, such
 // as a close waiting for the person to answer a page's question.
-var errFlushRunning = errors.New("the window is waiting for its pages")
+var errFlushInProgress = errors.New("the window is waiting for its pages")
 
 // decide asks the pages to save their unsaved changes under the exclusion a close and a change of
 // vault take, so it never cuts their request short, and refuses while a request of theirs runs. A
@@ -95,12 +95,12 @@ func (l pluginVaultList) decide(ctx context.Context, id domain.VaultID) error {
 		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, err)
 	}
 	defer end()
-	if l.state.Window.IsFlushRunning() {
-		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, errFlushRunning)
+	if l.state.Window.IsFlushOpen() {
+		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, errFlushInProgress)
 	}
-	limited, stop := context.WithTimeout(ctx, FlushTimeout)
+	flushCtx, stop := context.WithTimeout(ctx, FlushTimeout)
 	defer stop()
-	isFlushed := l.state.Window.RequestFlush(limited)
+	isFlushed := l.state.Window.RequestFlush(flushCtx)
 	switch {
 	case errors.Is(context.Cause(ctx), errPersonFirst):
 		return fmt.Errorf("open vault %s: %w: %w", id, pluginport.ErrUnavailable, errPersonFirst)

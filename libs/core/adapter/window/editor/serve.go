@@ -409,7 +409,8 @@ type shutdownState struct {
 // pluginDecision is a plugin's decision to open a vault, as a flush of the person cancels it.
 type pluginDecision struct {
 	cancel context.CancelCauseFunc
-	ended  chan struct{}
+	// end closes when the decision ends.
+	end chan struct{}
 }
 
 // errPersonFirst is the cause a plugin's decision is cancelled with when the person closes the window,
@@ -421,10 +422,10 @@ var errPersonFirst = errors.New("the person closed the window or changed its vau
 func (s *shutdownState) tryBegin() error {
 	s.mu.Lock()
 	for s.decision != nil {
-		running := s.decision
+		current := s.decision
 		s.mu.Unlock()
-		running.cancel(errPersonFirst)
-		<-running.ended
+		current.cancel(errPersonFirst)
+		<-current.end
 		s.mu.Lock()
 	}
 	defer s.mu.Unlock()
@@ -451,13 +452,13 @@ func (s *shutdownState) tryBeginDecision(cancel context.CancelCauseFunc) (func()
 	case s.isBusy:
 		return nil, errShutdownInProgress
 	}
-	running := &pluginDecision{cancel: cancel, ended: make(chan struct{})}
-	s.isBusy, s.decision = true, running
+	decision := &pluginDecision{cancel: cancel, end: make(chan struct{})}
+	s.isBusy, s.decision = true, decision
 	return func() {
 		s.mu.Lock()
 		s.isBusy, s.decision = false, nil
 		s.mu.Unlock()
-		close(running.ended)
+		close(decision.end)
 	}, nil
 }
 

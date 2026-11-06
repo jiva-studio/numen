@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 )
 
-var errClosing = errors.New("the host endpoint is closing")
+var errEndpointShutdown = errors.New("the host endpoint shuts down")
 
 // background is the work the endpoint finishes after it has answered the call that asked for it, such
 // as a change of the vault the window shows. It runs under a context the end of that call does not
@@ -17,7 +17,7 @@ type background struct {
 	cancels  map[int]context.CancelFunc
 	next     int
 	isClosed bool
-	running  sync.WaitGroup
+	workers  sync.WaitGroup
 	handle   atomic.Pointer[func(error)]
 }
 
@@ -28,18 +28,18 @@ func (b *background) start(ctx context.Context, work func(ctx context.Context)) 
 	if b.isClosed {
 		return false
 	}
-	detached, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	workCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	if b.cancels == nil {
 		b.cancels = map[int]context.CancelFunc{}
 	}
 	id := b.next
 	b.next++
 	b.cancels[id] = cancel
-	b.running.Add(1)
+	b.workers.Add(1)
 	go func() {
-		defer b.running.Done()
+		defer b.workers.Done()
 		defer b.finish(id)
-		work(detached)
+		work(workCtx)
 	}()
 	return true
 }
@@ -61,7 +61,7 @@ func (b *background) stop() {
 		cancel()
 	}
 	b.mu.Unlock()
-	b.running.Wait()
+	b.workers.Wait()
 }
 
 // report hands a failure of the work to the error handler, where one is set.
