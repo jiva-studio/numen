@@ -110,10 +110,9 @@ func TestTheReleaseOfACrashedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) 
 }
 
 func TestAPortSettingFixedAfterABindFailureClearsTheFailureAndServes(t *testing.T) {
-	w := newListenerHost(t)
-	if err := w.host.SetPluginSetting(t.Context(), listenerPlugin, "port", float64(80)); err != nil {
-		t.Logf("SetPluginSetting 80: %v", err)
-	}
+	w := newUndiscoveredListenerHost(t, "mcp", getFreePort(t), "listener.mcp="+strconv.Itoa(serveEcho(t)))
+	w.host.SetSettings(map[string]map[string]any{listenerPlugin: {"port": float64(80)}})
+	discover(t, w.host)
 	waitForFailure(t, w.host)
 	var cleared []string
 	w.host.SetOnFailureCleared(func(id string) { cleared = append(cleared, id) })

@@ -414,20 +414,6 @@ func TestAPortSettingOutOfRangeMakesThePluginFailed(t *testing.T) {
 	}
 }
 
-func TestAPortSettingChangedOutOfRangeMakesThePluginFailedAndClosesTheOldPort(t *testing.T) {
-	w := newListenerHost(t)
-	if !isPortOpen(t, w.port) {
-		t.Fatal("the default port is not bound")
-	}
-
-	if err := w.host.SetPluginSetting(t.Context(), listenerPlugin, "port", float64(80)); err != nil {
-		t.Logf("SetPluginSetting: %v", err)
-	}
-
-	waitForFailure(t, w.host)
-	plugintest.WaitUntil(t, "the old port to be closed", func() bool { return !isPortOpen(t, w.port) })
-}
-
 func TestAListenerPortThatIsTakenMakesThePluginFailed(t *testing.T) {
 	_, takenPort := listenLoopback(t)
 	w := newUndiscoveredListenerHost(t, "mcp", takenPort, "listener.mcp="+strconv.Itoa(serveEcho(t)))
@@ -437,19 +423,44 @@ func TestAListenerPortThatIsTakenMakesThePluginFailed(t *testing.T) {
 	waitForFailure(t, w.host)
 }
 
-func TestAPortSettingChangedToATakenPortMakesThePluginFailedAndClosesTheOldPort(t *testing.T) {
-	w := newListenerHost(t)
-	if !isPortOpen(t, w.port) {
-		t.Fatal("the default port is not bound")
+func TestAPortSettingChangedToAPortThatCannotBeBoundKeepsTheOldPortAndTheStatus(t *testing.T) {
+	changes := map[string]func(context.Context, *Host, any) error{
+		"SetPluginSetting": func(ctx context.Context, host *Host, value any) error {
+			return host.SetPluginSetting(ctx, listenerPlugin, "port", value)
+		},
+		"UpdatePluginSetting": func(ctx context.Context, host *Host, value any) error {
+			return host.UpdatePluginSetting(ctx, listenerPlugin, "port", value)
+		},
 	}
-	_, takenPort := listenLoopback(t)
-
-	if err := w.host.SetPluginSetting(t.Context(), listenerPlugin, "port", float64(takenPort)); err != nil {
-		t.Logf("SetPluginSetting: %v", err)
+	values := map[string]func(t *testing.T) any{
+		"port 80": func(*testing.T) any { return float64(80) },
+		"a taken port": func(t *testing.T) any {
+			_, takenPort := listenLoopback(t)
+			return float64(takenPort)
+		},
 	}
+	for changeName, change := range changes {
+		for valueName, getValue := range values {
+			t.Run(changeName+" to "+valueName, func(t *testing.T) {
+				w := newListenerHost(t)
+				if reply := sendLine(t, connectListener(t, w.port), "before"); reply != "before" {
+					t.Fatalf("reply = %q, want the echo of the line", reply)
+				}
+				value := getValue(t)
 
-	waitForFailure(t, w.host)
-	plugintest.WaitUntil(t, "the old port to be closed", func() bool { return !isPortOpen(t, w.port) })
+				if err := change(t.Context(), w.host, value); err == nil {
+					t.Errorf("changing the port setting to %v returned no error", value)
+				}
+
+				if status, _ := w.host.GetPluginStatus(listenerPlugin); status.Failed {
+					t.Errorf("status = %+v after the port setting change was refused, want not failed", status)
+				}
+				if reply := sendLine(t, connectListener(t, w.port), "kept"); reply != "kept" {
+					t.Errorf("reply = %q on the old port, want the echo of the line", reply)
+				}
+			})
+		}
+	}
 }
 
 func TestAPluginWhoseReadyLineDoesNotReportItsListenerFailsToActivate(t *testing.T) {

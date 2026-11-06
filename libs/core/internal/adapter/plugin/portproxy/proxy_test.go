@@ -4,10 +4,13 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
+	"slices"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -196,5 +199,178 @@ func TestOpenFailsOnAPortThatIsTaken(t *testing.T) {
 	if err == nil {
 		testsupport.Close(t, p)
 		t.Fatal("Open succeeded on a port that is taken")
+	}
+}
+
+// errorLog collects the errors a proxy reports and when each was reported.
+type errorLog struct {
+	mu    sync.Mutex
+	errs  []error
+	times []time.Time
+}
+
+func (l *errorLog) add(err error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.errs = append(l.errs, err)
+	l.times = append(l.times, time.Now())
+}
+
+func (l *errorLog) get() []error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return slices.Clone(l.errs)
+}
+
+func (l *errorLog) getTimes() []time.Time {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return slices.Clone(l.times)
+}
+
+// failingListener returns an EMFILE accept error from the first failures calls of Accept, or from
+// every call when failures is negative, and delegates to the loopback listener otherwise. After Close,
+// Accept returns net.ErrClosed.
+type failingListener struct {
+	net.Listener
+	mu       sync.Mutex
+	failures int
+	isClosed bool
+}
+
+func newFailingListener(t *testing.T, failures int) *failingListener {
+	t.Helper()
+	ln, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &failingListener{Listener: ln, failures: failures}
+}
+
+func (l *failingListener) Accept() (net.Conn, error) {
+	l.mu.Lock()
+	if l.isClosed {
+		l.mu.Unlock()
+		return nil, net.ErrClosed
+	}
+	if l.failures != 0 {
+		if l.failures > 0 {
+			l.failures--
+		}
+		l.mu.Unlock()
+		return nil, &net.OpError{Op: "accept", Net: "tcp", Err: syscall.EMFILE}
+	}
+	l.mu.Unlock()
+	return l.Listener.Accept()
+}
+
+func (l *failingListener) Close() error {
+	l.mu.Lock()
+	l.isClosed = true
+	l.mu.Unlock()
+	return l.Listener.Close()
+}
+
+func TestAnAcceptErrorIsReportedAndTheProxyKeepsAccepting(t *testing.T) {
+	echo := serveEcho(t)
+	ln := newFailingListener(t, 3)
+	var reports errorLog
+	p := newProxy(t.Context(), ln, func(context.Context) (string, func(), error) {
+		return echo, func() {}, nil
+	}, reports.add)
+	testsupport.CloseAfter(t, p)
+
+	conn := dial(t, ln.Addr().String())
+	if _, err := io.WriteString(conn, "after the accept errors\n"); err != nil {
+		t.Fatal(err)
+	}
+	reply, err := bufio.NewReader(conn).ReadString('\n')
+	if err != nil || reply != "after the accept errors\n" {
+		t.Fatalf("reply = %q, %v, want the echo of the line", reply, err)
+	}
+
+	errs := reports.get()
+	if len(errs) != 3 {
+		t.Fatalf("reported %d errors (%v), want the 3 accept errors", len(errs), errs)
+	}
+	for _, err := range errs {
+		if !errors.Is(err, syscall.EMFILE) {
+			t.Errorf("reported %v, want the accept error", err)
+		}
+	}
+}
+
+func TestTheProxyWaitsLongerAfterEachAcceptErrorAndCloseEndsTheWait(t *testing.T) {
+	ln := newFailingListener(t, -1)
+	var reports errorLog
+	p := newProxy(t.Context(), ln, func(context.Context) (string, func(), error) {
+		return "", nil, errors.New("unused")
+	}, reports.add)
+	testsupport.CloseAfter(t, p)
+
+	// The waits after the first 8 errors are 5, 10, ... 640 ms, 1275 ms in all; the 9th error is
+	// followed by a wait of 1 s.
+	testsupport.WaitFor(t, func() bool { return len(reports.get()) >= 9 })
+	times := reports.getTimes()
+	if elapsed := times[8].Sub(times[0]); elapsed < time.Second {
+		t.Errorf("9 accept errors were reported within %v, want the waits between them to add up to over 1s", elapsed)
+	}
+
+	closed := make(chan error, 1)
+	go func() { closed <- p.Close() }()
+	select {
+	case err := <-closed:
+		if err != nil {
+			t.Errorf("Close: %v", err)
+		}
+	case <-time.After(300 * time.Millisecond):
+		t.Fatal("Close did not return within 300ms while the proxy waited after an accept error")
+	}
+	for _, err := range reports.get() {
+		if errors.Is(err, net.ErrClosed) {
+			t.Errorf("reported %v, want the close of the listener not reported", err)
+		}
+	}
+}
+
+func TestATargetThatKeepsFailingIsReportedOncePerFailure(t *testing.T) {
+	echo := serveEcho(t)
+	targetErr := errors.New("plugin disabled")
+	isTargetOpened := []bool{false, false, false, true, false, false}
+	wantReports := []int{1, 1, 1, 1, 2, 2}
+	var openCount atomic.Int32
+	var reports errorLog
+	_, addr := openProxy(t, func(context.Context) (string, func(), error) {
+		i := int(openCount.Add(1)) - 1
+		if i >= len(isTargetOpened) || !isTargetOpened[i] {
+			return "", nil, targetErr
+		}
+		return echo, func() {}, nil
+	}, reports.add)
+
+	for i, isOpened := range isTargetOpened {
+		conn := dial(t, addr)
+		if isOpened {
+			line := fmt.Sprintf("connection %d\n", i+1)
+			if _, err := io.WriteString(conn, line); err != nil {
+				t.Fatal(err)
+			}
+			if reply, err := bufio.NewReader(conn).ReadString('\n'); err != nil || reply != line {
+				t.Fatalf("connection %d: reply = %q, %v, want the echo of the line", i+1, reply, err)
+			}
+		} else if _, err := conn.Read(make([]byte, 1)); err == nil {
+			t.Fatalf("connection %d stayed open after the target failed", i+1)
+		}
+		testsupport.Close(t, conn)
+
+		errs := reports.get()
+		if len(errs) != wantReports[i] {
+			t.Fatalf("after connection %d: reported %d errors (%v), want %d", i+1, len(errs), errs, wantReports[i])
+		}
+		for _, err := range errs {
+			if !errors.Is(err, targetErr) {
+				t.Errorf("reported %v, want the target error", err)
+			}
+		}
 	}
 }
