@@ -151,6 +151,41 @@ func TestLinkAddWithAnOldFingerprintSkipsOnlyThatNote(t *testing.T) {
 	}
 }
 
+func TestLinkAddWithTwoFingerprintsForOneNoteRefusesBothLinks(t *testing.T) {
+	for order, isOtherFirst := range map[string]bool{"current first": false, "other first": true} {
+		t.Run(order, func(t *testing.T) {
+			v, registry := newGeologyVault(t)
+			current := readFingerprint(t, registry, "Rocks/Basalt.md")
+			minerals := readFingerprint(t, registry, "Minerals.md")
+			before, _ := v.Content("Rocks/Basalt.md")
+			first, second := current, "1-1"
+			if isOtherFirst {
+				first, second = second, current
+			}
+
+			arguments := fmt.Sprintf(`{"links":[
+				{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Granite","role":"jump"},
+				{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Minerals","role":"parent"},
+				{"from":"Minerals.md","fingerprint":%q,"to":"Granite","role":"child"}]}`, first, second, minerals)
+			var out linkAddOutput
+			decodeInto(t, callTool(t, registry, geologyVault, "link_add", arguments), &out)
+			if len(out.Added) != 3 {
+				t.Fatalf("got %d results, want 3: %+v", len(out.Added), out.Added)
+			}
+			if out.Added[0].Error == "" || out.Added[1].Error == "" {
+				t.Errorf("results = %+v, want an error for each link into Rocks/Basalt.md", out.Added)
+			}
+			if out.Added[2].Error != "" {
+				t.Errorf("result of Minerals.md = %+v, want it written", out.Added[2])
+			}
+			requireContent(t, v, "Rocks/Basalt.md", before)
+			if _, ok := findLink(readLinks(t, v, "Minerals.md"), "Granite", domain.RoleChild); !ok {
+				t.Errorf("links of Minerals.md = %+v, want a child link to Granite", readLinks(t, v, "Minerals.md"))
+			}
+		})
+	}
+}
+
 func TestLinkAddReportsAnUnknownRoleOrNoTargetPerLink(t *testing.T) {
 	v, registry := newGeologyVault(t)
 	basalt := readFingerprint(t, registry, "Rocks/Basalt.md")
