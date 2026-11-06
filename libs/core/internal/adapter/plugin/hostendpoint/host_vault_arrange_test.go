@@ -863,20 +863,15 @@ func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
 		want    v1.VaultsErrorCode
 		message string
 	}{
-		"home folder": {
-			err:     fmt.Errorf("%w: %w", vaults.ErrUnreadable, errors.New("/Users/river is the user's home directory, and a vault is a folder inside it")),
+		"unreadable folder": {
+			err:     domain.NewDetailError("/vaults/Seas cannot be read as a vault: the folder is not there", vaults.ErrUnreadable),
 			want:    v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE,
-			message: "/Users/river is the user's home directory, and a vault is a folder inside it",
-		},
-		"filesystem root": {
-			err:     fmt.Errorf("%w: %w", vaults.ErrUnreadable, errors.New("/ is the root of this filesystem, and a vault is a folder somebody keeps notes in")),
-			want:    v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE,
-			message: "/ is the root of this filesystem, and a vault is a folder somebody keeps notes in",
+			message: "/vaults/Seas cannot be read as a vault: the folder is not there",
 		},
 		"folder inside a vault": {
-			err:     fmt.Errorf("/vaults/Rivers/Deltas lies inside Rivers: %w", domain.ErrOverlaps),
+			err:     domain.Vaults{{ID: "v1", Name: "Rivers", Path: "/vaults"}}.CheckOverlap("/vaults/Seas"),
 			want:    v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS,
-			message: "/vaults/Rivers/Deltas lies inside Rivers",
+			message: "/vaults/Seas is inside the vault Rivers; a vault cannot be inside another vault",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -892,8 +887,8 @@ func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
 			if res.Msg.GetError() != c.want {
 				t.Errorf("AddVault returned %v, want error %s", res.Msg, c.want)
 			}
-			if !strings.Contains(res.Msg.GetDetail(), c.message) {
-				t.Errorf("the detail is %q, want it to carry %q", res.Msg.GetDetail(), c.message)
+			if res.Msg.GetDetail() != c.message {
+				t.Errorf("the detail is %q, want %q", res.Msg.GetDetail(), c.message)
 			}
 		})
 	}
