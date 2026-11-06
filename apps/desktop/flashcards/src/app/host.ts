@@ -108,6 +108,12 @@ const UNUSED_CAPABILITIES = {
   emitFileSelect: () => undefined,
 } satisfies Partial<PluginContext>
 
+/** Adds the view to the list, and takes it out again on dispose. */
+const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginView): Disposable => {
+  views.value = [...views.value, view]
+  return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
+}
+
 /** The host of the window, whose plugins are given the agent where the window has one. */
 export function createShellHost(agent?: AgentHost) {
   const views = shallowRef<readonly PluginView[]>([])
@@ -121,10 +127,7 @@ export function createShellHost(agent?: AgentHost) {
   const front = createFrontView(views)
   const { tab, openTab, closeTab } = createWindowTab(() => front.value)
 
-  const addView = (view: PluginView): Disposable => {
-    views.value = [...views.value, view]
-    return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
-  }
+  const addView = (view: PluginView): Disposable => addPluginView(views, view)
 
   const createContext = (pluginId: string, manifest?: Manifest): PluginContext => {
     const subscriptions: Disposable[] = []
