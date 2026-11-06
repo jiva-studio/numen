@@ -12,5 +12,17 @@
   },
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "backend": { "entrypoint": "bin/agents-mcp-server" },
-  "services": ["md.numen.agents.mcp.server"]
+  "services": ["md.numen.agents.mcp.server"],
+  "settings": [
+    {
+      "key": "port",
+      "type": "number",
+      "title": "Port",
+      "description": "Local TCP port on 127.0.0.1 for external MCP clients (Streamable HTTP at /mcp)",
+      "default": 3333,
+      "min": 1024,
+      "max": 65535,
+      "step": 1
+    }
+  ]
 }
