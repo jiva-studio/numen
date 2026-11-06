@@ -9,7 +9,7 @@ import (
 
 const statusBarPlugin = "md.numen.views.statusBar"
 
-func TestAnUntouchedInstallationLeavesTheStatusBarPluginOff(t *testing.T) {
+func TestAnUntouchedInstallationDisablesTheStatusBarPlugin(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen.json")
 
 	cfg, err := openAt(path)
@@ -29,7 +29,7 @@ func TestAnUntouchedInstallationLeavesTheStatusBarPluginOff(t *testing.T) {
 	}
 }
 
-func TestAFileWithoutTheStatusBarPluginLeavesItOff(t *testing.T) {
+func TestAFileWithoutTheStatusBarPluginKeepsItDisabled(t *testing.T) {
 	cfg, err := openAt(write(t, `{"v": 1, "org.example.lantern": {"enabled": true}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -40,7 +40,7 @@ func TestAFileWithoutTheStatusBarPluginLeavesItOff(t *testing.T) {
 	}
 }
 
-func TestAFileThatTurnsTheStatusBarPluginOnKeepsItOn(t *testing.T) {
+func TestAFileThatEnablesTheStatusBarPluginKeepsItEnabled(t *testing.T) {
 	cfg, err := openAt(write(t, `{"v": 1, "`+statusBarPlugin+`": {"enabled": true}}`))
 	if err != nil {
 		t.Fatal(err)
