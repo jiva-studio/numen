@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
@@ -401,8 +402,10 @@ func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCo
 		t.Fatal(err)
 	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
+	// The clock stops once the files are settled, so a file a test writes afterwards stays recent
+	// however long the test takes.
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), testsupport.GetMachine(),
+		vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), clock.NewFake(testsupport.GetMachine().Now()),
 	)
 	return refresh, saves, db, v
 }
@@ -502,8 +505,13 @@ func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
+	written, err := os.Stat(filepath.Join(v.Path, "Note.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
-	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), testsupport.GetMachine())
+	// The clock is set to the modification time, so the note is recent however long the scan took.
+	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), clock.NewFake(written.ModTime()))
 
 	refreshOne(t, refresh, v, "Note.md")
 
