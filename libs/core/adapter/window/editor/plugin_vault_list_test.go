@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -56,21 +57,59 @@ func (f *showing) answerFlushes(
 	}()
 }
 
-// answerAskingOnce answers the first flush of the page with ASKING, as a page holding text it cannot
-// write without the user, and every later flush with NOTHING, as the page after the user resolved it.
-func (f *showing) answerAskingOnce(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse]) {
+// unsavedChangesText is what the unsaved-changes error of a plugin's open says while the user is asked.
+const unsavedChangesText = "the user is asked about unsaved changes in the window; ask again after they answer"
+
+// askingPage is a page that answers every flush with ASKING until the user answers its question,
+// and then reports the request it was asking in as WRITTEN.
+type askingPage struct {
+	mu         sync.Mutex
+	flushCount int
+	lastToken  string
+}
+
+func (p *askingPage) getFlushCount() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.flushCount
+}
+
+// answerAskingUntilAnswered starts an askingPage on the stream; closing userAnswered is the user's
+// answer to the page's question.
+func (f *showing) answerAskingUntilAnswered(
+	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], userAnswered <-chan struct{},
+) *askingPage {
+	page := &askingPage{}
 	go func() {
-		result := v1.FlushResult_FLUSH_RESULT_ASKING
 		for stream.Receive() {
 			if !stream.Msg().GetFlush() {
 				continue
 			}
+			page.mu.Lock()
+			page.flushCount++
+			page.lastToken = stream.Msg().GetToken()
+			page.mu.Unlock()
+			result := v1.FlushResult_FLUSH_RESULT_ASKING
+			select {
+			case <-userAnswered:
+				result = v1.FlushResult_FLUSH_RESULT_WRITTEN
+			default:
+			}
 			if f.reportFlush(t, stream.Msg().GetToken(), result) != nil {
 				return
 			}
-			result = v1.FlushResult_FLUSH_RESULT_NOTHING
 		}
 	}()
+	go func() {
+		<-userAnswered
+		page.mu.Lock()
+		token := page.lastToken
+		page.mu.Unlock()
+		if f.reportFlush(t, token, v1.FlushResult_FLUSH_RESULT_WRITTEN) != nil {
+			return
+		}
+	}()
+	return page
 }
 
 // callOpenVault runs the plugin's open of the vault and returns its result.
@@ -80,41 +119,68 @@ func callOpenVault(ctx context.Context, list pluginport.PluginVaultList, id doma
 	return result
 }
 
-func TestPluginOpenVaultWithUnsavedChangesInAPageReturnsUnsavedChanges(t *testing.T) {
+// requireUnsavedChanges fails the test unless the plugin's open returns ErrUnsavedChanges with its
+// text within immediateBound.
+func requireUnsavedChanges(t *testing.T, openResult <-chan error, action string) {
+	t.Helper()
+	select {
+	case err := <-openResult:
+		if !errors.Is(err, pluginport.ErrUnsavedChanges) {
+			t.Errorf("%s returned %v, want ErrUnsavedChanges", action, err)
+		} else if !strings.Contains(err.Error(), unsavedChangesText) {
+			t.Errorf("%s returned %q, want it to contain %q", action, err, unsavedChangesText)
+		}
+	case <-time.After(immediateBound):
+		t.Fatalf("%s did not return within %v", action, immediateBound)
+	}
+}
+
+func TestPluginOpenVaultWithUnsavedChangesInAPageAsksTheUserAndReturnsUnsavedChanges(t *testing.T) {
 	f := openTwoVaults(t)
 	f.bindShow()
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
-	f.answerAskingOnce(t, stream)
+	userAnswered := make(chan struct{})
+	answerUser := sync.OnceFunc(func() { close(userAnswered) })
+	t.Cleanup(answerUser)
+	page := f.answerAskingUntilAnswered(t, stream, userAnswered)
 	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
 
-	select {
-	case err := <-callOpenVault(t.Context(), list, f.second.ID):
-		if !errors.Is(err, pluginport.ErrUnsavedChanges) {
-			t.Errorf("the plugin's open while a page holds unsaved changes returned %v, want ErrUnsavedChanges", err)
-		}
-	case <-time.After(immediateBound):
-		t.Fatalf("the plugin's open while a page holds unsaved changes did not return within %v", immediateBound)
-	}
+	requireUnsavedChanges(t, callOpenVault(t.Context(), list, f.second.ID), "the plugin's open while a page holds unsaved changes")
 	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window shows %s after the plugin's open was rejected, want %s", got.Name, f.first.Name)
 	}
-	if f.installation.State.Window.IsFlushOpen() {
-		t.Error("the plugin's open left a flush request open")
+	if !f.installation.State.Window.IsQuestionOpen() {
+		t.Error("the plugin's open ended the flush request in which the page asks the user")
+	}
+	if got := page.getFlushCount(); got != 1 {
+		t.Errorf("the page received %d flush requests, want 1", got)
 	}
 
-	switched := make(chan error, 1)
-	go func() { switched <- f.installation.State.OpenVault(t.Context(), f.second) }()
+	requireUnsavedChanges(t, callOpenVault(t.Context(), list, f.second.ID), "a second plugin open while the user is asked")
+	if got := page.getFlushCount(); got != 1 {
+		t.Errorf("the page received %d flush requests after the second plugin open, want 1: the open sent a new one", got)
+	}
+	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
+		t.Errorf("the window shows %s after the second plugin open, want %s", got.Name, f.first.Name)
+	}
+
+	answerUser()
+	waitCtx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	if !f.installation.WaitForFlush(waitCtx) {
+		t.Fatal("the user's answer never completed the flush request")
+	}
 	select {
-	case err := <-switched:
+	case err := <-callOpenVault(t.Context(), list, f.second.ID):
 		if err != nil {
-			t.Errorf("the user's switch after the rejected plugin open returned %v", err)
+			t.Errorf("the plugin's open after the user answered returned %v, want nil", err)
 		}
-	case <-time.After(immediateBound):
-		t.Fatalf("the user's switch after the rejected plugin open did not return within %v", immediateBound)
+	case <-time.After(20 * time.Second):
+		t.Fatal("the plugin's open after the user answered never returned")
 	}
 	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
-		t.Errorf("the window shows %s after the user's switch, want %s", got.Name, f.second.Name)
+		t.Errorf("the window shows %s after the plugin's open, want %s", got.Name, f.second.Name)
 	}
 }
 

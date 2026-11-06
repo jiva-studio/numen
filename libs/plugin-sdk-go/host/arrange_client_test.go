@@ -380,7 +380,7 @@ func (a *detailedOpening) OpenVault(
 }
 
 func TestTheClientReturnsUnsavedChangesWithTheCoreMessageOfARejectedOpen(t *testing.T) {
-	const detail = "open vault v2: the window has unsaved changes; save them and ask again"
+	const detail = "open vault v2: the user is asked about unsaved changes in the window; ask again after they answer"
 	server := httptest.NewServer(handler(&detailedOpening{detail: detail}))
 	t.Cleanup(server.Close)
 	client := host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
@@ -392,5 +392,12 @@ func TestTheClientReturnsUnsavedChangesWithTheCoreMessageOfARejectedOpen(t *test
 	}
 	if err == nil || !strings.Contains(err.Error(), detail) {
 		t.Errorf("the error is %v, want it to contain %q", err, detail)
+	}
+}
+
+func TestErrUnsavedChangesContainsTheTextOfTheUserQuestion(t *testing.T) {
+	const want = "the user is asked about unsaved changes in the window; ask again after they answer"
+	if got := host.ErrUnsavedChanges.Error(); !strings.Contains(got, want) {
+		t.Errorf("ErrUnsavedChanges is %q, want it to contain %q", got, want)
 	}
 }

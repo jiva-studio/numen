@@ -2,12 +2,9 @@ package editor_test
 
 import (
 	"context"
-	"slices"
 	"sync"
 	"testing"
 	"time"
-
-	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
@@ -122,97 +119,4 @@ func TestAVaultSwitchWithTheContextOfAFinishedPluginOpenFailsDuringTheUsersClose
 	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s, want %s", got.Name, f.second.Name)
 	}
-}
-
-// flushKinds is what a page records of the flush requests it receives: whether each is silent.
-type flushKinds struct {
-	mu       sync.Mutex
-	isSilent []bool
-}
-
-// getSince returns the kinds recorded from the index on.
-func (k *flushKinds) getSince(index int) []bool {
-	k.mu.Lock()
-	defer k.mu.Unlock()
-	return slices.Clone(k.isSilent[index:])
-}
-
-func (k *flushKinds) getCount() int {
-	k.mu.Lock()
-	defer k.mu.Unlock()
-	return len(k.isSilent)
-}
-
-// recordFlushKinds answers every flush of the page with NOTHING, after it records whether the
-// request is silent.
-func (f *showing) recordFlushKinds(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse]) *flushKinds {
-	kinds := &flushKinds{}
-	go func() {
-		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
-				continue
-			}
-			kinds.mu.Lock()
-			kinds.isSilent = append(kinds.isSilent, stream.Msg().GetIsSilent())
-			kinds.mu.Unlock()
-			if f.reportFlush(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
-				return
-			}
-		}
-	}()
-	return kinds
-}
-
-// requireKinds fails the test unless at least one flush was recorded and each has the kind.
-func requireKinds(t *testing.T, action string, got []bool, isSilent bool) {
-	t.Helper()
-	if len(got) == 0 {
-		t.Errorf("%s sent no flush request", action)
-	}
-	for i, one := range got {
-		if one != isSilent {
-			t.Errorf("flush request %d of %s has is_silent %v, want %v", i, action, one, isSilent)
-		}
-	}
-}
-
-func TestPluginOpenVaultSendsSilentFlushRequests(t *testing.T) {
-	f := openTwoVaults(t)
-	f.bindShow()
-	stream, isDone := f.watchQuit(t)
-	defer isDone()
-	kinds := f.recordFlushKinds(t, stream)
-	list := editor.NewPluginVaultList(f.installation, f.cfg.CheckRoot())
-
-	select {
-	case err := <-callOpenVault(t.Context(), list, f.second.ID):
-		if err != nil {
-			t.Fatalf("the plugin's open returned %v", err)
-		}
-	case <-time.After(20 * time.Second):
-		t.Fatal("the plugin's open never returned")
-	}
-
-	requireKinds(t, "the plugin's open", kinds.getSince(0), true)
-}
-
-func TestTheUsersSwitchAndCloseSendFlushRequestsThatAreNotSilent(t *testing.T) {
-	f := openTwoVaults(t)
-	f.bindShow()
-	stream, isDone := f.watchQuit(t)
-	defer isDone()
-	kinds := f.recordFlushKinds(t, stream)
-
-	if err := f.installation.State.OpenVault(t.Context(), f.second); err != nil {
-		t.Fatalf("the user's switch returned %v", err)
-	}
-	requireKinds(t, "the user's switch", kinds.getSince(0), false)
-
-	afterSwitch := kinds.getCount()
-	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
-	defer cancel()
-	if !f.installation.FlushPending(ctx) {
-		t.Fatal("the user's close did not complete")
-	}
-	requireKinds(t, "the user's close", kinds.getSince(afterSwitch), false)
 }

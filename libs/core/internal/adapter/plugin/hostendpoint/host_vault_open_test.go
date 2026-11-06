@@ -53,8 +53,9 @@ func TestOpenVaultWithUnsavedChangesReturnsAskingWithTheDetail(t *testing.T) {
 	if res.Msg.Failure == nil || res.Msg.GetFailure() != v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING {
 		t.Errorf("OpenVault of a window with unsaved changes returned %v, want failure ASKING", res.Msg)
 	}
-	if detail := res.Msg.GetDetail(); !strings.Contains(detail, unsaved.Error()) || !strings.Contains(detail, "unsaved changes") {
-		t.Errorf("OpenVault of a window with unsaved changes has the detail %q, want it to contain %q", detail, unsaved.Error())
+	const question = "the user is asked about unsaved changes in the window; ask again after they answer"
+	if detail := res.Msg.GetDetail(); !strings.Contains(detail, unsaved.Error()) || !strings.Contains(detail, question) {
+		t.Errorf("OpenVault of a window with unsaved changes has the detail %q, want it to contain %q and %q", detail, unsaved.Error(), question)
 	}
 	if got := list.getCalls(); len(got) != 0 {
 		t.Errorf("the list opened %v, want nothing", got)
