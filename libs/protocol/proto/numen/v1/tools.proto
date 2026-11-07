@@ -64,6 +64,22 @@ message PluginTool {
   // as vault:manage. The host lists and runs the tool only for a caller that
   // has all of them.
   repeated string requires = 10;
+
+  // The hints an agent reads about the tool, set by the SDK from the effect,
+  // the step and the required permissions.
+  ToolHints hints = 11;
+}
+
+// ToolHints are the MCP annotations of a tool.
+message ToolHints {
+  // The tool changes nothing: the effect is READ_ONLY.
+  bool read_only = 1;
+  // The tool removes something: the effect is READ_WRITE and the step REMOVE.
+  bool destructive = 2;
+  // A repeated call with the same arguments has no further effect: the effect is READ_ONLY.
+  bool idempotent = 3;
+  // The tool reaches outside the machine: requires contains network:outbound.
+  bool open_world = 4;
 }
 
 // ToolEffect is what a tool does to the vault. The zero value means no effect
