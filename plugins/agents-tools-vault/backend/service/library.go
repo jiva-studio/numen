@@ -22,11 +22,13 @@ type LibrarySearchInput struct {
 	Folder string   `json:"folder,omitempty" jsonschema:"limit the result to this folder and its subfolders, relative to the vault folder; the whole vault when left out"`
 }
 
-// Place is a place in a source: a page of a PDF, a position in a recording, or a position in an EPUB.
+// Place is a place in a source: a page of a PDF, a position or range in a recording, or a position in
+// an EPUB.
 type Place struct {
 	Page            int      `json:"page,omitempty" jsonschema:"PDF: the page, from 1"`
 	PageCount       int      `json:"pageCount,omitempty" jsonschema:"PDF: the number of pages"`
 	PositionSeconds *float64 `json:"positionSeconds,omitempty" jsonschema:"recording: seconds from the start"`
+	EndSeconds      *float64 `json:"endSeconds,omitempty" jsonschema:"recording: seconds from the start to the end of the range"`
 	CFI             string   `json:"cfi,omitempty" jsonschema:"EPUB: the CFI of the place"`
 	Chapter         string   `json:"chapter,omitempty" jsonschema:"EPUB: the table-of-contents title at the place"`
 }
@@ -164,15 +166,18 @@ func getPassagePlace(passage host.Passage) *Place {
 	return place
 }
 
-// newPlace returns the place a selector names: its page, its CFI and the start of its time span. It
-// returns nil for a selector with none of them.
+// newPlace returns the place a selector names: its page, its CFI and the start and end of its time
+// span. The end is nil for a span with only a start. It returns nil for a selector with none of them.
 func newPlace(s selector) *Place {
 	if s.Page == 0 && s.CFI == "" && len(s.T) == 0 {
 		return nil
 	}
-	place := &Place{Page: s.Page, PageCount: 0, PositionSeconds: nil, CFI: s.CFI, Chapter: ""}
+	place := &Place{Page: s.Page, PageCount: 0, PositionSeconds: nil, EndSeconds: nil, CFI: s.CFI, Chapter: ""}
 	if len(s.T) > 0 {
 		place.PositionSeconds = &s.T[0]
+	}
+	if len(s.T) > 1 {
+		place.EndSeconds = &s.T[1]
 	}
 	return place
 }

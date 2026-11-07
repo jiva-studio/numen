@@ -42,7 +42,7 @@ type placeAnswer struct {
 
 // getPlaceKeys is the keys a place of any tool may have.
 func getPlaceKeys() []string {
-	return []string{"page", "pageCount", "positionSeconds", "cfi", "chapter"}
+	return []string{"page", "pageCount", "positionSeconds", "endSeconds", "cfi", "chapter"}
 }
 
 // librarySearchAnswer is the result of library_search with the tool's JSON keys.
