@@ -41,11 +41,7 @@ func (h *Host) ListDeclarations() []pluginport.SecretPermission {
 func (h *Host) listDeclarationsLocked() []pluginport.SecretPermission {
 	var declarations []pluginport.SecretPermission
 	for _, p := range h.getPluginsInOrderLocked() {
-		for _, declaration := range p.Manifest.Secrets {
-			declarations = append(declarations, pluginport.SecretPermission{
-				Plugin: p.Manifest.ID, Name: declaration.Name, Group: declaration.Group,
-			})
-		}
+		declarations = appendDeclarations(declarations, p)
 	}
 	return declarations
 }
@@ -267,6 +263,7 @@ func (h *Host) listInstalledDeclarationsLocked() []pluginport.SecretPermission {
 	return declarations
 }
 
+// appendDeclarations adds the secret declarations of the plugin to the list.
 func appendDeclarations(declarations []pluginport.SecretPermission, p manifest.Discovered) []pluginport.SecretPermission {
 	for _, declaration := range p.Manifest.Secrets {
 		declarations = append(declarations, pluginport.SecretPermission{
