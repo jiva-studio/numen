@@ -115,6 +115,24 @@ describe('the start of one plugin', () => {
     await started
   })
 
+  it('is going on again while a plugin that failed starts once more', async () => {
+    vi.useFakeTimers()
+    const broken = [ORCHARD]
+    const loader = createLoader({ [ORCHARD]: 1_000 }, { broken })
+    const started = startAll(loader)
+    await vi.runAllTimersAsync()
+    await started
+    broken.length = 0
+
+    const again = loader.activatePlugin(ORCHARD)
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(loader.isPluginStarting(ORCHARD)).toBe(true)
+    await vi.runAllTimersAsync()
+    expect(await again).toBe(true)
+    expect(loader.isPluginStarting(ORCHARD)).toBe(false)
+  })
+
   it('is not going on for a plugin that is turned off, once the plugins are listed', async () => {
     vi.useFakeTimers()
     const loader = createLoader({}, { disabled: [ORCHARD] })

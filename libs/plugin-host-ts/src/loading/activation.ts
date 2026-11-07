@@ -129,6 +129,8 @@ export async function activateEntry(
     limit.stop()
     return true
   }
+  // A new start is going on: the failure of an earlier one is no longer where the plugin stands.
+  if (ctx.failures.value.has(pluginId)) setFailure(ctx, pluginId, undefined)
   let isCancelled = false
   const number = (ctx.starts.get(pluginId) ?? 0) + 1
   ctx.starts.set(pluginId, number)
