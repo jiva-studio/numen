@@ -116,7 +116,7 @@ func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error)
 		return TabInfo{}, fmt.Errorf("no open tab has id %q", id)
 	}
 	if errors.Is(err, host.ErrTabNotShown) {
-		return TabInfo{}, fmt.Errorf("window_tab_activate: the window did not show tab %q within %s", id, tabActivationBound)
+		return TabInfo{}, fmt.Errorf("the window did not show tab %q within %s", id, tabActivationBound)
 	}
 	if err != nil {
 		return TabInfo{}, err
