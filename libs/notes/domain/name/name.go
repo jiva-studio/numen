@@ -94,3 +94,9 @@ func LinkName(target string) string {
 	}
 	return name
 }
+
+// HasPathPrefix reports whether the composed (NFC) form of the path starts with the composed form of
+// the prefix.
+func HasPathPrefix(path, prefix string) bool {
+	return strings.HasPrefix(norm.NFC.String(path), norm.NFC.String(prefix))
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
 	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -15,6 +16,16 @@ func getDefaultChecks() []notesdomain.Check {
 	return []notesdomain.Check{
 		notesdomain.CheckParse, notesdomain.CheckFrontmatter, notesdomain.CheckAmbiguous,
 	}
+}
+
+// getCheckList returns the name of every check, dangling last, separated by commas, as the host
+// lists them.
+func getCheckList() string {
+	names := make([]string, 0, len(getDefaultChecks())+1)
+	for _, check := range append(getDefaultChecks(), notesdomain.CheckDangling) {
+		names = append(names, string(check))
+	}
+	return strings.Join(names, ", ")
 }
 
 // GetProblems runs the named checks over the notes in the index, or every check that is not
@@ -31,7 +42,7 @@ func (v *Vault) GetProblems(ctx context.Context, checks []string) (host.VaultPro
 		for _, name := range checks {
 			check := notesdomain.Check(name)
 			if check != notesdomain.CheckDangling && !slices.Contains(getDefaultChecks(), check) {
-				return host.VaultProblems{}, fmt.Errorf("there is no %q check", name)
+				return host.VaultProblems{}, fmt.Errorf("%q is not a check; the checks are %s", name, getCheckList())
 			}
 			selectedChecks = append(selectedChecks, check)
 		}

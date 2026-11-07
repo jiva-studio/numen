@@ -6,7 +6,8 @@
 -- nothing enclosing it is its own, and is at its own beginning.
 --
 -- A path prefix limits the sources before the list is truncated to the limit, so the
--- limit counts the passages under it. The prefix is compared as text, and an empty
+-- limit counts the passages under it. The prefix is compared as text in its composed
+-- (NFC) form ?4 and its decomposed (NFD) form ?5, and an empty
 -- prefix limits none.
 WITH hits AS (
     SELECT chunks_fts.rowid, bm25(chunks_fts) AS rank
@@ -15,7 +16,7 @@ WITH hits AS (
     JOIN sources s ON s.id = c.source_id
     WHERE chunks_fts MATCH ?1
       AND c.vault_id = ?2
-      AND substr(s.path, 1, length(?4)) = ?4
+      AND (substr(s.path, 1, length(?4)) = ?4 OR substr(s.path, 1, length(?5)) = ?5)
     ORDER BY rank
     LIMIT ?3
 )

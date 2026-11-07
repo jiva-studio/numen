@@ -2,19 +2,11 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"slices"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
-
-// getCheckNames returns the checks vault_problem_list runs. dangling runs only when the call names it.
-func getCheckNames() []string {
-	return []string{string(domain.CheckParse), "frontmatter", "ambiguous", "dangling"}
-}
 
 // VaultEntry is a vault of the installation.
 type VaultEntry struct {
@@ -117,11 +109,6 @@ func (t *Tools) getVaultEntries(ctx context.Context) ([]host.VaultEntry, error) 
 }
 
 func (t *Tools) listVaultProblems(ctx context.Context, in VaultProblemListInput) (VaultProblemListOutput, error) {
-	for _, check := range in.Checks {
-		if !slices.Contains(getCheckNames(), check) {
-			return VaultProblemListOutput{}, fmt.Errorf("%q is not a check; the checks are %s", check, strings.Join(getCheckNames(), ", "))
-		}
-	}
 	problems, err := t.vault.GetProblems(ctx, in.Checks)
 	if err != nil {
 		return VaultProblemListOutput{}, err

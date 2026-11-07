@@ -7,7 +7,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"net/netip"
 	"net/url"
 	"strings"
 	"time"
@@ -48,12 +47,9 @@ func NewPages() *PageProvider {
 	client := new(http.Client)
 	client.Transport = transport
 	client.Timeout = 30 * time.Second
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+	client.CheckRedirect = func(_ *http.Request, via []*http.Request) error {
 		if len(via) >= 10 {
 			return errors.New("this address sends the fetch on and on")
-		}
-		if err := validateURL(req.URL.String()); err != nil {
-			return fmt.Errorf("this address sends the fetch to %s: %w", req.URL.Host, err)
 		}
 		return nil
 	}
@@ -107,25 +103,4 @@ func (p *PageProvider) GetText(ctx context.Context, target string, _ PreferredCa
 		return Text{Producer: "", Cues: nil, Prose: "", Title: "", Length: 0}, ErrNothingDownloaded
 	}
 	return Text{Producer: "article", Cues: nil, Prose: prose, Title: strings.TrimSpace(read.Title), Length: 0}, nil
-}
-
-func validateURL(raw string) error {
-	address, err := url.Parse(strings.TrimSpace(raw))
-	if err != nil {
-		return errors.New("not a web address")
-	}
-	scheme := strings.ToLower(address.Scheme)
-	if scheme != "http" && scheme != "https" {
-		return errors.New("not a web address")
-	}
-	host := strings.ToLower(address.Hostname())
-	if host == "" || host == "localhost" || strings.HasSuffix(host, ".localhost") {
-		return errors.New("local addresses not allowed")
-	}
-	if ip, err := netip.ParseAddr(strings.Trim(host, "[]")); err == nil {
-		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() {
-			return errors.New("local addresses not allowed")
-		}
-	}
-	return nil
 }

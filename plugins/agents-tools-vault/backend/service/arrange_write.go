@@ -35,7 +35,7 @@ type NoteRenameOutput struct {
 // NoteMoveInput is the input of the note_move tool.
 type NoteMoveInput struct {
 	Paths  []string `json:"paths" jsonschema:"paths of the notes, at most 50"`
-	Folder string   `json:"folder" jsonschema:"folder to move the notes to, relative to the vault folder; empty for the vault root"`
+	Folder string   `json:"folder,omitempty" jsonschema:"folder to move the notes to, relative to the vault folder; empty or absent for the vault root"`
 }
 
 // NoteMoveItem is the outcome of moving one note.
@@ -89,7 +89,7 @@ func (t *Tools) addNoteMove(registry *tools.Registry) error {
 		Step:  tools.Move,
 		Name:  "note_move",
 		Title: "Move Notes",
-		Description: "Move up to 50 notes to a folder, keeping their file names; an empty folder is the vault " +
+		Description: "Move up to 50 notes to a folder, keeping their file names; an empty or absent folder is the vault " +
 			"root. Each path gets its own result, and a path that fails does not stop the others.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
@@ -113,9 +113,6 @@ func (t *Tools) addNoteRemove(registry *tools.Registry) error {
 func (t *Tools) renameNote(ctx context.Context, in NoteRenameInput) (NoteRenameOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
 		return NoteRenameOutput{}, errors.New("path is required")
-	}
-	if strings.TrimSpace(in.Title) == "" {
-		return NoteRenameOutput{}, errors.New("title is required")
 	}
 	result, err := t.vault.RenameNote(ctx, in.Path, in.Title)
 	if err != nil {

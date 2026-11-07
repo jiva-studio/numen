@@ -2,6 +2,7 @@ package hosttest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path"
 	"sort"
@@ -89,7 +90,7 @@ func (v *Vault) RenameVault(ctx context.Context, id domain.VaultID, name string)
 	}
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return domain.Vault{}, domain.ErrInvalidName
+		return domain.Vault{}, errors.New("the new name is empty; a vault needs a name")
 	}
 	if other, isTaken := v.findByName(name); isTaken && other != target {
 		return domain.Vault{}, notesdomain.NewDetailError(

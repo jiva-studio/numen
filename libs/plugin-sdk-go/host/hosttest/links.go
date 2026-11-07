@@ -55,7 +55,7 @@ func checkWritable(one host.LinkAddition, additions []host.LinkAddition, grouped
 	case !domain.IsWritableMarker(one.Link.Marker):
 		return fmt.Errorf("%q is not a marker a link can have", one.Link.Marker)
 	case one.Link.Target.Value == "":
-		return errors.New("link target is empty")
+		return errors.New("a link needs somewhere to go")
 	case len(grouped) > 0 && additions[grouped[0]].Baseline != one.Baseline:
 		return fmt.Errorf("links for %s have different fingerprints", one.From)
 	}

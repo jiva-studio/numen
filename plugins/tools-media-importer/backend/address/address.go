@@ -3,7 +3,6 @@ package address
 
 import (
 	"errors"
-	"net/netip"
 	"net/url"
 	"strings"
 )
@@ -12,9 +11,8 @@ import (
 // What is at it is the fetcher's to say.
 type URL string
 
-// ErrNotAURL is anything a link cannot point at. Only `http` and `https`
-// are fetched, and only away from this machine: neither a scheme reaching a
-// file nor a host that is this machine is an address a link may carry.
+// ErrNotAURL is an address with a scheme other than `http` and `https`, or
+// with an empty host.
 var ErrNotAURL = errors.New("not a web address")
 
 // Parse reads a pasted address.
@@ -33,7 +31,7 @@ func Parse(raw string) (URL, error) {
 		return "", ErrNotAURL
 	}
 	address.Host = strings.ToLower(address.Host)
-	if address.Hostname() == "" || isLocalHost(address.Hostname()) {
+	if address.Hostname() == "" {
 		return "", ErrNotAURL
 	}
 	if port := address.Port(); port == "80" && address.Scheme == "http" ||
@@ -44,22 +42,6 @@ func Parse(raw string) (URL, error) {
 	address.User = nil
 	address.RawQuery = removeTrackingParams(address.Query()).Encode()
 	return URL(address.String()), nil
-}
-
-// isLocalHost reports whether a host is this machine. A file points at a
-// location a browser would visit, and services listening on this machine are
-// not that: an index, a window's own socket and other local processes are not
-// valid pasted addresses.
-func isLocalHost(host string) bool {
-	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
-		return true
-	}
-	address, err := netip.ParseAddr(strings.Trim(host, "[]"))
-	// gomutants:disable-next-line BRANCH_IF reason="zero netip.Addr returns false for IsLoopback and IsUnspecified"
-	if err != nil {
-		return false
-	}
-	return address.IsLoopback() || address.IsUnspecified()
 }
 
 // isTrackingParam reports whether the parameter says where a visitor came from, beside every name

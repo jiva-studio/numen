@@ -123,9 +123,6 @@ func (t *Tools) addVaultOpen(registry *tools.Registry) error {
 }
 
 func (t *Tools) addVault(ctx context.Context, in VaultAddInput) (VaultAddOutput, error) {
-	if strings.TrimSpace(in.Path) == "" {
-		return VaultAddOutput{}, errors.New("path is required")
-	}
 	vault, err := t.list.AddVault(ctx, in.Path, in.Name)
 	if err != nil {
 		return VaultAddOutput{}, err
@@ -134,9 +131,6 @@ func (t *Tools) addVault(ctx context.Context, in VaultAddInput) (VaultAddOutput,
 }
 
 func (t *Tools) renameVault(ctx context.Context, in VaultRenameInput) (VaultRenameOutput, error) {
-	if strings.TrimSpace(in.Name) == "" {
-		return VaultRenameOutput{}, errors.New("name is required")
-	}
 	target, err := t.findVault(ctx, in.Vault)
 	if err != nil {
 		return VaultRenameOutput{}, err

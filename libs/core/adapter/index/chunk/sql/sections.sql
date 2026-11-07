@@ -11,7 +11,7 @@ WITH hits AS (
     JOIN sources s ON s.id = c.source_id
     WHERE sections_fts MATCH ?1
       AND c.vault_id = ?2
-      AND substr(s.path, 1, length(?4)) = ?4
+      AND (substr(s.path, 1, length(?4)) = ?4 OR substr(s.path, 1, length(?5)) = ?5)
     ORDER BY rank
     LIMIT ?3
 )

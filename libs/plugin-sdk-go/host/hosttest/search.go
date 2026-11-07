@@ -9,6 +9,7 @@ import (
 	"sync"
 	"unicode"
 
+	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
@@ -461,7 +462,7 @@ func (s *Search) SearchPassages(_ context.Context, query host.PassageQuery) ([]h
 	var found []host.Passage
 	perSource := map[string]int{}
 	for _, passage := range one.indexed {
-		if !strings.HasPrefix(passage.Path, query.PathPrefix) || !hasKind(passage.Path, query.Kinds) ||
+		if !notesdomain.HasPathPrefix(passage.Path, query.PathPrefix) || !hasKind(passage.Path, query.Kinds) ||
 			!hasEveryWord(passage.Text, words) || perSource[passage.Path] >= host.MaxSearchedPassagesPerSource {
 			continue
 		}

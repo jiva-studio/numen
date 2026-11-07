@@ -242,7 +242,10 @@ func (v *Vault) check(ctx context.Context, filePath string) error {
 	if err := v.reach(); err != nil {
 		return err
 	}
-	if filePath == "" || strings.HasPrefix(filePath, "/") || path.Clean(filePath) != filePath || strings.HasPrefix(filePath, "..") {
+	if filePath == "" {
+		return fmt.Errorf("%w: it is empty", host.ErrOutside)
+	}
+	if strings.HasPrefix(filePath, "/") || path.Clean(filePath) != filePath || strings.HasPrefix(filePath, "..") {
 		return host.ErrOutside
 	}
 	return v.rejected[filePath]

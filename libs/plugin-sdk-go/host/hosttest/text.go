@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strconv"
 	"sync"
 	"time"
 
@@ -23,10 +24,15 @@ type Texts struct {
 	pluginID string
 }
 
-// textHost is the texts of every vault one host keeps, by identity.
+// defaultTextPageSize is the number of segments a page of ReadText holds, as in the core.
+const defaultTextPageSize = 1000
+
+// textHost is the texts of every vault one host keeps, by identity, and the number of segments
+// a page of ReadText holds in each of them.
 type textHost struct {
-	mu     sync.Mutex
-	worlds map[domain.VaultID]*textWorld
+	mu       sync.Mutex
+	worlds   map[domain.VaultID]*textWorld
+	pageSize int
 }
 
 // textWorld is what every plugin's view of one vault's texts shares.
@@ -45,8 +51,23 @@ var _ host.Texts = (*Texts)(nil)
 
 // NewTexts is the texts of the vault of the identity, as the plugin of the id works them.
 func NewTexts(vault domain.VaultID, pluginID string) *Texts {
-	vaults := &textHost{worlds: map[domain.VaultID]*textWorld{}}
+	vaults := &textHost{worlds: map[domain.VaultID]*textWorld{}, pageSize: defaultTextPageSize}
 	return &Texts{world: vaults.getWorld(vault), pluginID: pluginID}
+}
+
+// SetPageSize sets the number of segments a page of ReadText holds, in every vault of the host.
+func (t *Texts) SetPageSize(segments int) {
+	h := t.world.all
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.pageSize = segments
+}
+
+// getPageSize returns the number of segments a page of ReadText holds.
+func (h *textHost) getPageSize() int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.pageSize
 }
 
 // getWorld is the texts of the vault, made empty on first use.
@@ -173,20 +194,48 @@ func (t *Texts) ListVersions(ctx context.Context, path string) (host.TextListing
 	return listing, nil
 }
 
-// ReadText returns every segment of the version in one page.
-func (t *Texts) ReadText(ctx context.Context, path string, id domain.TextVersionID, _ string) (host.TextPage, error) {
+// ReadText returns the page of the version's segments that starts at the cursor: at most the page
+// size of segments, and the cursor of the next segment when more remain. A cursor is the decimal
+// index of a segment, empty for the first.
+func (t *Texts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
+	start := 0
+	if cursor != "" {
+		n, err := strconv.Atoi(cursor)
+		if err != nil || n < 0 {
+			return host.TextPage{}, host.ErrNotExist
+		}
+		start = n
+	}
+	segments, err := t.readSegments(ctx, path, id)
+	if err != nil {
+		return host.TextPage{}, err
+	}
+	if start > len(segments) {
+		return host.TextPage{}, host.ErrNotExist
+	}
+	end := min(start+t.world.all.getPageSize(), len(segments))
+	page := host.TextPage{Segments: segments[start:end]}
+	if end < len(segments) {
+		page.NextCursor = strconv.Itoa(end)
+	}
+	return page, nil
+}
+
+// readSegments returns every segment of the version, or host.ErrNotExist for a version that is
+// missing or whose file no longer has the hash it was recorded with.
+func (t *Texts) readSegments(ctx context.Context, path string, id domain.TextVersionID) ([]domain.TextSegment, error) {
 	w := t.world
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	i := w.indexOf(path, id)
 	if i < 0 {
-		return host.TextPage{}, host.ErrNotExist
+		return nil, host.ErrNotExist
 	}
 	segments, hash, err := w.readFile(ctx, w.versions[i])
 	if err != nil || hash != w.versions[i].TextHash {
-		return host.TextPage{}, host.ErrNotExist
+		return nil, host.ErrNotExist
 	}
-	return host.TextPage{Segments: segments}, nil
+	return segments, nil
 }
 
 // readFile returns the segments of a version's file and the hash of its bytes. The caller has the lock.
@@ -209,11 +258,11 @@ func (w *textWorld) indexOf(path string, id domain.TextVersionID) int {
 // ReadTextRange returns the segments of the version that cover the range of its whole text, truncated at
 // whole characters.
 func (t *Texts) ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (host.TextRange, error) {
-	page, err := t.ReadText(ctx, path, id, "")
+	segments, err := t.readSegments(ctx, path, id)
 	if err != nil {
 		return host.TextRange{}, err
 	}
-	text := notesdomain.NewVersionText(domain.TextVersion{}, page.Segments)
+	text := notesdomain.NewVersionText(domain.TextVersion{}, segments)
 	rangeStart, rangeEnd := getRange([]byte(text.Text), start, length)
 	return host.TextRange{Segments: text.GetSegmentsIn(rangeStart, rangeEnd), Start: rangeStart, Size: len(text.Text)}, nil
 }

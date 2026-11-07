@@ -126,31 +126,26 @@ export const destroyNote = async (request: APIRequestContext, notePath: string):
   await callRPC(request, 'FileService/RemoveFile', { path: notePath, destroy: true })
 }
 
-/** The notes the index has read, as the index stats plugin counts them. */
-export const countIndexedNotes = async (request: APIRequestContext): Promise<number> => {
-  const response = await request.put('/md.numen.tools.index.stats/GetStats', {
-    data: {},
-    headers: { 'Content-Type': 'application/json' },
-  })
-  if (!response.ok()) throw new Error(`reading the index stats returned ${response.status()}`)
-  const { kinds = [] } = (await response.json()) as {
-    kinds?: { kind?: string; sources?: number }[]
-  }
-  return kinds.find((one) => one.kind === 'notes')?.sources ?? 0
+/** Whether the index holds the note at the path: ResolveAddresses resolves the path to it. */
+const isIndexedNote = async (request: APIRequestContext, notePath: string): Promise<boolean> => {
+  const answer = await callRPC(request, 'NoteService/ResolveAddresses', { written: [notePath] })
+  const resolved = (answer['resolved'] as { path?: string }[] | undefined) ?? []
+  return resolved.some((one) => one.path === notePath)
 }
 
 /**
- * Deletes an indexed note file and returns once the index has dropped it. The
- * watcher reports the removal after RemoveFile returns, so a test that counts the vectors next
- * would count the vectors of the removed note too.
+ * Deletes a note file and returns once the index no longer holds its path, or at once when the
+ * index did not hold it. The watcher reports the removal after RemoveFile returns, so a test that
+ * counts the vectors next would count the vectors of the removed note too.
  */
 export const destroyIndexedNote = async (
   request: APIRequestContext,
   notePath: string,
 ): Promise<void> => {
-  const before = await countIndexedNotes(request)
+  const isIndexed = await isIndexedNote(request, notePath)
   await destroyNote(request, notePath)
-  await expect.poll(() => countIndexedNotes(request), { timeout: 45_000 }).toBeLessThan(before)
+  if (!isIndexed) return
+  await expect.poll(() => isIndexedNote(request, notePath), { timeout: 45_000 }).toBe(false)
 }
 
 /** The files under the vault's `.trash` folder whose name is `name`, as paths of the vault. */

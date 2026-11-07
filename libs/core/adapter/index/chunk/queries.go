@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"golang.org/x/text/unicode/norm"
 )
 
 // Queries answers questions about chunks in shapes other than chunks: where a
@@ -171,8 +172,9 @@ type passageSearch struct {
 
 // findPassages runs search.all, or search.kinds when the search is limited to
 // kinds, and reads the passages it returns. The sources are limited to those whose
-// path starts with the prefix of the query before the list is truncated to its limit. A
-// query with no words matches nothing.
+// path starts with the composed (NFC) or the decomposed (NFD) form of the prefix of
+// the query before the list is truncated to its limit. A query with no words
+// matches nothing.
 func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, query sourceport.LexicalQuery, search passageSearch) (_ []domain.Passage, err error) {
 	expression := Expression(query.Text, query.IsGrowing)
 	if expression == "" {
@@ -187,11 +189,12 @@ func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, quer
 	}
 
 	var rows *sql.Rows
+	composed, decomposed := norm.NFC.String(query.PathPrefix), norm.NFD.String(query.PathPrefix)
 	if len(query.Kinds) == 0 {
-		rows, err = q.db.QueryContext(ctx, search.all, expression, vault, query.Limit, query.PathPrefix)
+		rows, err = q.db.QueryContext(ctx, search.all, expression, vault, query.Limit, composed, decomposed)
 	} else {
 		kindFilter := formatKinds(query.Kinds)
-		rows, err = q.db.QueryContext(ctx, search.kinds, expression, vault, kindFilter, query.Limit, query.PathPrefix)
+		rows, err = q.db.QueryContext(ctx, search.kinds, expression, vault, kindFilter, query.Limit, composed, decomposed)
 	}
 	if err != nil {
 		return nil, err
@@ -288,8 +291,8 @@ func (q *Queries) hasOtherCoarseRecipe(ctx context.Context, recipe string) bool 
 	return err == nil && currentRecipe != "" && currentRecipe != recipe
 }
 
-// findNearestWithPrefix returns findNearestByBits limited to the sources whose path starts with pathPrefix,
-// k chunks of them.
+// findNearestWithPrefix returns findNearestByBits limited to the sources whose path starts with the
+// composed (NFC) or the decomposed (NFD) form of pathPrefix, k chunks of them.
 func (q *Queries) findNearestWithPrefix(ctx context.Context, vault int64, query []float32, k int, pathPrefix string) (_ []int64, err error) {
 	if pathPrefix == "" {
 		return q.findNearestByBits(ctx, vault, query, k)
@@ -298,7 +301,9 @@ func (q *Queries) findNearestWithPrefix(ctx context.Context, vault int64, query 
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, coarsePrefixSQL, vector.Bits(query), vault, pathPrefix, k, getUpperBound(pathPrefix))
+	composed, decomposed := norm.NFC.String(pathPrefix), norm.NFD.String(pathPrefix)
+	rows, err := q.db.QueryContext(ctx, coarsePrefixSQL, vector.Bits(query), vault, composed, k, getUpperBound(composed),
+		decomposed, getUpperBound(decomposed))
 	if err != nil {
 		return nil, err
 	}

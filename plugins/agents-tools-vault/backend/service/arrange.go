@@ -121,7 +121,8 @@ func (t *Tools) listNotes(ctx context.Context, in NoteListInput) (NoteListOutput
 		return NoteListOutput{}, err
 	}
 	if prefix := getFolderPrefix(in.Folder); prefix != "" {
-		paths = slices.DeleteFunc(paths, func(p string) bool { return !strings.HasPrefix(p, prefix) })
+		composed := norm.NFC.String(prefix)
+		paths = slices.DeleteFunc(paths, func(p string) bool { return !strings.HasPrefix(norm.NFC.String(p), composed) })
 	}
 	slices.Sort(paths)
 
@@ -179,7 +180,7 @@ func (t *Tools) resolveNoteName(ctx context.Context, in NoteResolveInput) (NoteR
 }
 
 // getFolderPrefix returns the folder in the form vault paths start with: without a leading "./" or
-// "/" and a trailing "/", composed (NFC), and followed by a slash, so "library" matches
+// "/" and a trailing "/", in the normal form given, and followed by a slash, so "library" matches
 // "library/a.pdf" and not "library2/a.pdf". The vault root is empty.
 func getFolderPrefix(folder string) string {
 	for {
@@ -193,5 +194,5 @@ func getFolderPrefix(folder string) string {
 	if folder == "" || folder == "." {
 		return ""
 	}
-	return norm.NFC.String(folder) + "/"
+	return folder + "/"
 }

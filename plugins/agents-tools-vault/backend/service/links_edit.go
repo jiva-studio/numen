@@ -120,10 +120,11 @@ func readAddition(in LinkAddition) (host.LinkAddition, error) {
 	if err := checkWritable(link); err != nil {
 		return host.LinkAddition{}, err
 	}
-	baseline, err := readBaseline(in.From, in.Fingerprint)
+	baseline, err := parseFingerprint(in.Fingerprint)
 	if err != nil {
 		return host.LinkAddition{}, err
 	}
+	baseline.Path = in.From
 	return host.LinkAddition{From: in.From, Baseline: baseline, Link: link}, nil
 }
 
@@ -147,9 +148,6 @@ func checkWritable(link domain.Link) error {
 	}
 	if !domain.IsWritableMarker(link.Marker) {
 		return fmt.Errorf("invalid marker %q", link.Marker)
-	}
-	if link.Target.Value == "" {
-		return errors.New("to is required")
 	}
 	return nil
 }
@@ -199,7 +197,7 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 	for j, one := range added {
 		i := positions[j]
 		if one.Err != nil {
-			out.Results[i].Error = describeLinkError(in.Links[i].From, one.Err).Error()
+			out.Results[i].Error = describeWriteError(in.Links[i].From, one.Err).Error()
 			continue
 		}
 		out.Results[i].Fingerprint = formatFingerprint(one.Stat)
@@ -222,9 +220,9 @@ func findFingerprintConflicts(links []LinkAddition) map[string]error {
 	return conflicts
 }
 
-// describeLinkError returns the error of an edit of the links of a note, naming the note when the
+// describeWriteError returns the error of a write of a note, naming the note when the
 // fingerprint is stale.
-func describeLinkError(notePath string, err error) error {
+func describeWriteError(notePath string, err error) error {
 	if errors.Is(err, host.ErrStale) {
 		return fmt.Errorf("%s changed since note_read returned the fingerprint; read it again: %w", notePath, err)
 	}
@@ -247,7 +245,7 @@ func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOut
 	change := domain.Link{Role: role, Type: in.Type, Why: in.Note, Label: in.Label, Marker: domain.MarkerNone}
 	stat, err := t.vault.UpdateLinks(ctx, in.From, target, change, baseline)
 	if err != nil {
-		return LinkEditOutput{}, describeLinkError(in.From, err)
+		return LinkEditOutput{}, describeWriteError(in.From, err)
 	}
 	return LinkEditOutput{Path: in.From, Fingerprint: formatFingerprint(stat)}, nil
 }
@@ -267,7 +265,7 @@ func (t *Tools) removeLinks(ctx context.Context, in LinkRemoveInput) (LinkEditOu
 	}
 	stat, err := t.vault.RemoveLinks(ctx, in.From, target, role, baseline)
 	if err != nil {
-		return LinkEditOutput{}, describeLinkError(in.From, err)
+		return LinkEditOutput{}, describeWriteError(in.From, err)
 	}
 	return LinkEditOutput{Path: in.From, Fingerprint: formatFingerprint(stat)}, nil
 }

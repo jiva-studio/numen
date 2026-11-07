@@ -2,6 +2,7 @@ package note
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -38,9 +39,14 @@ func NewAddLinks(linking EditLinks) AddLinks {
 	return AddLinks{linking: linking}
 }
 
+// ErrNotAttempted is the error of the links of a note that were not written because the call was
+// cancelled first.
+var ErrNotAttempted = errors.New("not attempted")
+
 // Execute writes the additions and answers for each one, in the order given. An
 // addition that cannot be written is rejected on its own and costs the others
-// nothing.
+// nothing. When ctx is cancelled, the links of every note not yet written get
+// ErrNotAttempted, and the results are returned with a nil error.
 func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkAddition) ([]LinkAdded, error) {
 	results := make([]LinkAdded, len(additions))
 	groups := newLinkGroups()
@@ -48,11 +54,15 @@ func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkA
 		results[i].Error = groups.add(i, add)
 	}
 	for _, from := range groups.order {
-		if err := ctx.Err(); err != nil {
-			return nil, err
+		var content domain.FileStat
+		err := ctx.Err()
+		if err == nil {
+			group := groups.links[from]
+			content, err = u.linking.Add(ctx, v, from, groups.stats[from], group[0], group[1:]...)
 		}
-		group := groups.links[from]
-		content, err := u.linking.Add(ctx, v, from, groups.stats[from], group[0], group[1:]...)
+		if err != nil && ctx.Err() != nil && !errors.Is(err, ErrIndexOutdated) {
+			err = fmt.Errorf("the call was cancelled before the links were added to %s: %w", from, ErrNotAttempted)
+		}
 		for _, i := range groups.positions[from] {
 			results[i].Error = err
 			if err == nil {

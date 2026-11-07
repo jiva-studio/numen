@@ -9,7 +9,7 @@ WITH hits AS (
     WHERE chunks_fts MATCH ?1
       AND c.vault_id = ?2
       AND s.kind IN (SELECT value FROM json_each(?3))
-      AND substr(s.path, 1, length(?5)) = ?5
+      AND (substr(s.path, 1, length(?5)) = ?5 OR substr(s.path, 1, length(?6)) = ?6)
     ORDER BY rank
     LIMIT ?4
 )

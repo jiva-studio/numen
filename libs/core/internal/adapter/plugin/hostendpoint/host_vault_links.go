@@ -2,6 +2,7 @@ package hostendpoint
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"connectrpc.com/connect"
@@ -11,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
@@ -54,8 +56,14 @@ func (e *vaultEndpoint) AddLinks(
 		return connect.NewResponse(&v1.HostVaultServiceAddLinksResponse{Error: code}), callErr
 	}
 	out := &v1.HostVaultServiceAddLinksResponse{Results: make([]*v1.HostLinkAdded, len(added))}
+	// The results already hold the cancellation of ctx: the links not written are ErrNotAttempted.
+	resultCtx := context.WithoutCancel(ctx)
 	for i, one := range added {
-		entry, code, callErr := writeLinkEdit(ctx, one.Stat, one.Err)
+		if errors.Is(one.Err, note.ErrNotAttempted) {
+			out.Results[i] = &v1.HostLinkAdded{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED, Detail: one.Err.Error()}
+			continue
+		}
+		entry, code, callErr := writeLinkEdit(resultCtx, one.Stat, one.Err)
 		if callErr != nil || code != 0 {
 			return connect.NewResponse(&v1.HostVaultServiceAddLinksResponse{Error: code}), callErr
 		}

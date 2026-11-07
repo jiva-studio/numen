@@ -146,6 +146,9 @@ func (t *Tools) writeWithFileStat(ctx context.Context, path, content, fpStr stri
 		return domain.FileStat{}, err
 	}
 	newFp, err := t.vault.Write(ctx, path, []byte(content), baseline)
+	if errors.Is(err, host.ErrStale) {
+		return domain.FileStat{}, describeWriteError(path, err)
+	}
 	if err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s cannot be written: %w", path, err)
 	}

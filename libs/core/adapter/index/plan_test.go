@@ -61,11 +61,11 @@ func getExpectedPlans() []struct {
 		{chunk.Statements(), "progress", []any{"model", 1, 0}, []string{"chunks_by_vault_parent", "vectors_by_hash"}},
 		// A search by words reads the full-text index and then the row each hit
 		// names. A virtual table reports itself as a scan and has no named index.
-		{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20, "notes/"}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
-		{chunk.Statements(), "lexical_kinds", []any{`"entropy"`, 1, `["note"]`, 20, "notes/"}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20, "notes/", "notes/"}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "lexical_kinds", []any{`"entropy"`, 1, `["note"]`, 20, "notes/", "notes/"}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
 		// A search by name reads its own full-text index the same way.
-		{chunk.Statements(), "sections", []any{`"entropy"`, 1, 20, "notes/"}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
-		{chunk.Statements(), "sections_kinds", []any{`"entropy"`, 1, `["note"]`, 20, "notes/"}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "sections", []any{`"entropy"`, 1, 20, "notes/", "notes/"}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "sections_kinds", []any{`"entropy"`, 1, `["note"]`, 20, "notes/", "notes/"}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
 		{chunk.Statements(), "clear_sections", []any{1}, []string{"chunks_by_source"}},
 		{chunk.Statements(), "clear_fts", []any{1}, []string{"chunks_by_source"}},
 		// Cutting a source again reads what it holds now, and then moves, writes or
@@ -79,7 +79,7 @@ func getExpectedPlans() []struct {
 		// The coarse pass under a path prefix finds the sources by the range of their
 		// paths, their chunks by source, and the vector of each chunk by its key: the
 		// "!" of the plan of the vector table is its lookup of one row by key.
-		{chunk.Statements(), "coarse_prefix", []any{getCoarse(), 1, "notes/", 10, "notes0"}, []string{"(vault_id=? AND path>? AND path<?)", "chunks_by_source", "SCAN v VIRTUAL TABLE INDEX 5:2!"}},
+		{chunk.Statements(), "coarse_prefix", []any{getCoarse(), 1, "notes/", 10, "notes0", "notes/", "notes0"}, []string{"(vault_id=? AND path>? AND path<?)", "chunks_by_source", "SCAN v VIRTUAL TABLE INDEX 5:2!"}},
 		{chunk.Statements(), "coarse", []any{getCoarse(), 1, 10}, []string{"chunks_vec"}},
 		// The cached hash of a file is its source row, found by vault and path. The
 		// vault is given by its identifier, then the path; a save gives the record's
