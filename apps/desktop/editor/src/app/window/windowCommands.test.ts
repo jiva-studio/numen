@@ -60,12 +60,15 @@ describe('the commands of the window', () => {
     expect(calls.map((ids) => ids.length)).toStrictEqual([3, 2])
   })
 
-  it('run a command with no target over the target of the tab in front', async () => {
+  it('run a command with no target, as a bar does, over the file of the tab in front, named as a menu names its target', async () => {
     const { commands, runCommand } = setup()
 
-    await commands.run('app:vault.create')
+    await commands.run('org.example.tide:chart.open')
 
-    expect(runCommand).toHaveBeenCalledExactlyOnceWith('app:vault.create', FRONT)
+    expect(runCommand).toHaveBeenCalledExactlyOnceWith('org.example.tide:chart.open', {
+      ...FRONT,
+      isTargetNamed: true,
+    })
   })
 
   it('run a command over the target given, its file and the others selected with it included, and mark the target named', async () => {

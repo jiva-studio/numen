@@ -23,10 +23,13 @@ interface WindowCommandsDeps {
 export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
   const ids = computed<readonly string[]>(() => [...deps.getAppIds(), ...deps.getPluginIds()])
 
-  /** The target of the tab in front, with what the run names in place of its own. */
+  /**
+   * The target of the tab in front, with what the run names in place of its own. A run that names
+   * no target, as from a bar, is over the file of the tab in front, named as a menu names its own.
+   */
   const getRunTarget = (target: RunTarget | undefined): CommandTarget => {
     const front = deps.getTarget()
-    if (!target) return front
+    if (!target) return { ...front, isTargetNamed: true }
     return {
       ...front,
       path: target.path,
