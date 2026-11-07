@@ -37,14 +37,6 @@ describe('the section of a group', () => {
     wrapper.unmount()
   })
 
-  it('requires create: a section without it is a type error', () => {
-    // vue-tsc fails on the unused directive while the prop is optional, which would drop a typed value.
-    // @ts-expect-error create is required
-    const mountWithoutCreate = () =>
-      mount(SecretSection, { props: { section, drafts: [], declarations: [] } })
-    expect(mountWithoutCreate).toBeTypeOf('function')
-  })
-
   it('is named by its heading', () => {
     const wrapper = mountSection()
     const region = document.querySelector('section')

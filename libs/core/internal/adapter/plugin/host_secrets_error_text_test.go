@@ -77,21 +77,25 @@ func assertOnlyPluginAndStatus(t *testing.T, where, text string, values []string
 	}
 }
 
-// errorTextCases are the values a plugin may put in its error text, and how it puts them.
-var errorTextCases = []struct {
+// getErrorTextCases returns the values a plugin may put in its error text, and how it puts them.
+func getErrorTextCases() []errorTextCase {
+	return []errorTextCase{
+		{"a value", []string{"ZKWQ"}, func(v []string) string { return pluginWords + " " + v[0] }},
+		{"two values where one is a prefix of the other", []string{"ZKWQ", "ZKWQXVJ"},
+			func(v []string) string { return pluginWords + " " + v[1] }},
+		{"the shorter of two values it starts", []string{"ZKWQXVJ", "ZKWQ"},
+			func(v []string) string { return pluginWords + " " + v[0] }},
+		{"a value with quotes and a backslash, escaped", []string{`ZK"W\Q`},
+			func(v []string) string { return fmt.Sprintf("%s %q", pluginWords, v[0]) }},
+		{"a value of one character", []string{"Q"}, func(_ []string) string { return pluginWords + " Q" }},
+		{"an empty value", []string{""}, func(_ []string) string { return pluginWords + " " }},
+	}
+}
+
+type errorTextCase struct {
 	name   string
 	values []string
 	say    func(values []string) string
-}{
-	{"a value", []string{"ZKWQ"}, func(v []string) string { return pluginWords + " " + v[0] }},
-	{"two values where one is a prefix of the other", []string{"ZKWQ", "ZKWQXVJ"},
-		func(v []string) string { return pluginWords + " " + v[1] }},
-	{"the shorter of two values it starts", []string{"ZKWQXVJ", "ZKWQ"},
-		func(v []string) string { return pluginWords + " " + v[0] }},
-	{"a value with quotes and a backslash, escaped", []string{`ZK"W\Q`},
-		func(v []string) string { return fmt.Sprintf("%s %q", pluginWords, v[0]) }},
-	{"a value of one character", []string{"Q"}, func(v []string) string { return pluginWords + " Q" }},
-	{"an empty value", []string{""}, func(v []string) string { return pluginWords + " " }},
 }
 
 // newErrorTextHost returns a host whose plugin may read one secret for each of the values.
@@ -116,7 +120,7 @@ func newErrorTextHost(t *testing.T, values []string) (*Host, *configured) {
 // nothing the plugin said, whatever the plugin put in its text. Neither the report to the error
 // handler, the failure passed on nor a log line holds it.
 func TestTheErrorOfAFailedConfigureContainsNoTextOfThePlugin(t *testing.T) {
-	for _, c := range errorTextCases {
+	for _, c := range getErrorTextCases() {
 		t.Run(c.name, func(t *testing.T) {
 			host, probe := newErrorTextHost(t, c.values)
 			reported, failed, logs := &collectErrors{}, &collectFailures{}, captureLogs(t)
@@ -146,7 +150,7 @@ func TestTheErrorOfAFailedConfigureContainsNoTextOfThePlugin(t *testing.T) {
 
 // The error the activation reports when the Configure of the activation fails holds the same.
 func TestTheReportOfAFailedActivationConfigureContainsNoTextOfThePlugin(t *testing.T) {
-	for _, c := range errorTextCases {
+	for _, c := range getErrorTextCases() {
 		t.Run(c.name, func(t *testing.T) {
 			host, probe := newErrorTextHost(t, c.values)
 			reported, logs := &collectErrors{}, captureLogs(t)

@@ -72,8 +72,10 @@ func (w *watchedContext) Done() <-chan struct{} {
 	return w.Context.Done()
 }
 
-// operationNames are the names of the keys of operations.
-var operationNames = []string{"ApplySecretChange", "RefreshSecrets", "NotifyPluginConfig"}
+// getOperationNames returns the names of the keys of operations.
+func getOperationNames() []string {
+	return []string{"ApplySecretChange", "RefreshSecrets", "NotifyPluginConfig"}
+}
 
 // operations are the calls that wait for the lock of the secret operations.
 func (c *cancelSetup) operations() map[string]func(ctx context.Context) error {
@@ -111,7 +113,7 @@ func (c *cancelSetup) assertNothingCommitted(t *testing.T, calls int) {
 // An operation whose context ends while it waits for the lock returns the context error at once and
 // commits nothing, and the lock stays usable for the operation after it.
 func TestAnOperationCancelledWhileItWaitsForTheLockReturnsAndCommitsNothing(t *testing.T) {
-	for _, name := range operationNames {
+	for _, name := range getOperationNames() {
 		t.Run(name, func(t *testing.T) {
 			c := newCancelSetup(t)
 			release, activation := c.holdLock(t)
@@ -156,7 +158,7 @@ func TestAnOperationCancelledWhileItWaitsForTheLockReturnsAndCommitsNothing(t *t
 // An operation whose context ended before the call returns the context error and commits nothing,
 // whether the lock is free or busy.
 func TestAnOperationCancelledBeforeTheCallReturnsAndCommitsNothing(t *testing.T) {
-	for _, name := range operationNames {
+	for _, name := range getOperationNames() {
 		for _, isLockBusy := range []bool{false, true} {
 			label := name + " with a free lock"
 			if isLockBusy {
