@@ -71,15 +71,19 @@ func TestCancelledWaitsForTheCredentialsLockAreBounded(t *testing.T) {
 // waitForLockWaiter returns once a goroutine is blocked on the lock of the credentials file.
 func waitForLockWaiter(t *testing.T) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
+	timeout := time.After(5 * time.Second)
 	buffer := make([]byte, 1<<20)
-	for time.Now().Before(deadline) {
+	for {
+		select {
+		case <-timeout:
+			t.Fatal("no goroutine waits for the lock of the credentials file")
+		default:
+		}
 		if strings.Contains(string(buffer[:runtime.Stack(buffer, true)]), "keychain.lockOpenFile") {
 			return
 		}
 		runtime.Gosched()
 	}
-	t.Fatal("no goroutine waits for the lock of the credentials file")
 }
 
 // A store is not locked while a write waits for the file lock: reads of the same store and of another
