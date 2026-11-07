@@ -425,7 +425,7 @@ if list, carried := server.ReadSecrets(secrets, server.SecretAPIKey); carried {
 
 A plugin that reads one key from different groups declares `apiKey` once for each, under conditions on one setting. `engines-embeddings` and `tools-proofreading` declare `apiKey` for the group `openrouter` while `provider` is `openrouter`, for the group `openai` while it is `openai`, and with no group while it is `custom`. `agents-numen` declares `apiKey` for the group `openrouter` with no condition.
 
-When the person deletes a secret the host removes its entry, its value and its permissions. Uninstalling a plugin removes its permissions, disabling it keeps them, and an update whose manifest no longer declares a name and group removes the permissions of that declaration. A group stays, with its secrets, when the last plugin that asks for it is removed.
+When the person deletes a secret the host removes its entry, its value and its permissions. Uninstalling a plugin removes its permissions at the next start, disabling it keeps them, and one manifest folder that cannot be read keeps all permissions until a start with none, and an update whose manifest no longer declares a name and group removes the permissions of that declaration. A group stays, with its secrets, when the last plugin that asks for it is removed.
 
 ## Asking the host
 
