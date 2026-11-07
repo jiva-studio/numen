@@ -83,6 +83,20 @@ func TestARequestWithTheBearerTokenIsServed(t *testing.T) {
 	}
 }
 
+func TestARequestWithAGeneratedHexTokenIsServed(t *testing.T) {
+	t.Parallel()
+	const generated = "a1b2c3d4e5f60718a1b2c3d4e5f60718a1b2c3d4e5f60718a1b2c3d4e5f60718"
+	_, url := newServedHandler(t, generated)
+
+	res := sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Authorization": "Bearer " + generated})
+
+	if res.StatusCode != http.StatusOK {
+		t.Errorf("an initialize with a 64-character hex token returned %d, want 200", res.StatusCode)
+	}
+	assertUnauthorizedResponse(t, sendRequest(t, http.MethodPost, url+"/mcp",
+		map[string]string{"Authorization": "Bearer " + generated[:63]}), "an initialize with the hex token cut short")
+}
+
 func TestARequestWithoutTheTokenGets401(t *testing.T) {
 	t.Parallel()
 	_, url := newServedHandler(t, gardenToken)

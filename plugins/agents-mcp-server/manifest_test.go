@@ -77,14 +77,15 @@ func TestManifestDeclaresTheMCPListenerOnThePortSetting(t *testing.T) {
 	}
 }
 
-func TestManifestDeclaresTheTokenSettingAsAStringWithoutADefault(t *testing.T) {
+func TestManifestDeclaresTheTokenSettingAsAGeneratedStringWithoutADefault(t *testing.T) {
 	t.Parallel()
 
 	type setting struct {
-		Key     string          `json:"key"`
-		Type    string          `json:"type"`
-		Title   string          `json:"title"`
-		Default json.RawMessage `json:"default"`
+		Key      string          `json:"key"`
+		Type     string          `json:"type"`
+		Title    string          `json:"title"`
+		Default  json.RawMessage `json:"default"`
+		Generate string          `json:"generate"`
 	}
 	var manifest struct {
 		Settings []setting `json:"settings"`
@@ -103,5 +104,8 @@ func TestManifestDeclaresTheTokenSettingAsAStringWithoutADefault(t *testing.T) {
 	}
 	if token.Default != nil {
 		t.Errorf("setting token has the default %s, want none", token.Default)
+	}
+	if token.Generate != "token" {
+		t.Errorf("setting token generates %q, want token, so the host gives it a value on load", token.Generate)
 	}
 }
