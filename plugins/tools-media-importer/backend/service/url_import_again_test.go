@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"path"
 	"slices"
 	"strings"
@@ -23,11 +24,13 @@ import (
 // revisedProse is what articleAddress publishes from the second fetch of its text on.
 const revisedProse = "The mill pond was dredged in spring, and the wheel now turns on both tides."
 
-// revisedSites is fakeSites whose article publishes revisedProse from the second fetch on.
+// revisedSites is fakeSites whose article publishes revisedProse from the second fetch on, or fails
+// with fetchErr where it is set.
 type revisedSites struct {
 	fakeSites
-	mu      sync.Mutex
-	fetches int
+	mu       sync.Mutex
+	fetches  int
+	fetchErr error
 }
 
 func (s *revisedSites) GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error) {
@@ -38,6 +41,9 @@ func (s *revisedSites) GetText(ctx context.Context, address string, want downloa
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.fetches++
+	if s.fetches > 1 && s.fetchErr != nil {
+		return download.Text{}, s.fetchErr
+	}
 	if s.fetches > 1 {
 		text.Prose = revisedProse
 	}
@@ -48,13 +54,20 @@ func (s *revisedSites) GetText(ctx context.Context, address string, want downloa
 // fetch.
 func newRevisedFixture(t *testing.T) *importFixture {
 	t.Helper()
+	return newRefetchFixture(t, nil)
+}
+
+// newRefetchFixture is newRevisedFixture whose fetches after the first fail with fetchErr where it
+// is set.
+func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
+	t.Helper()
 	release := make(chan struct{})
 	close(release)
 	vault := hosttest.New("Mills")
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
-	sites := &revisedSites{fakeSites: fakeSites{video: download.NewMock(), release: release}}
+	sites := &revisedSites{fakeSites: fakeSites{video: download.NewMock(), release: release}, fetchErr: fetchErr}
 	hosted := link.Host{
 		Vault: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}},
 		Store: store, Texts: texts, Queue: hosttest.NewQueue(),
@@ -199,5 +212,23 @@ func TestURLImportOntoFileThatIsNotItsLinkNoteIsRejected(t *testing.T) {
 				t.Errorf("%s reads %q after the rejected import, want it unchanged as %q", targetPath, after, content)
 			}
 		})
+	}
+}
+
+func TestURLImportWhoseFetchFailsReportsTheTextTheNoteHas(t *testing.T) {
+	s := newRefetchFixture(t, errors.New("the site is down"))
+	first := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "sources"})
+	if !first.HasText {
+		t.Fatalf("the first import returned %+v, want hasText", first)
+	}
+
+	second := s.importURL(t, "Mills", importArguments{URL: articleAddress, Folder: "sources"})
+
+	if second.Error == "" {
+		t.Errorf("the import whose fetch failed returned no error: %+v", second)
+	}
+	text := readLiveText(t, s.texts, first.Path)
+	if !second.HasText || second.Bytes != len(text) || second.Title != first.Title {
+		t.Errorf("the import whose fetch failed returned %+v, want hasText, bytes %d and the title %q of the text the note has", second, len(text), first.Title)
 	}
 }
