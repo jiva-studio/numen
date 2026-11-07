@@ -4,16 +4,16 @@ import { createMockPluginContext } from '@numen/plugin-sdk'
 import plugin, { activate, MediaRecordingTab, RecordingTab, RECORDER } from './index'
 import { recordings } from './api/wire'
 
-describe('media-player plugin', () => {
+describe('media-viewer plugin', () => {
   it('registers audio reader and recording tab kind upon activation', () => {
-    const context = createMockPluginContext({ pluginId: 'md.numen.views.media.player' })
+    const context = createMockPluginContext({ pluginId: 'md.numen.views.media.viewer' })
     const registerReaderSpy = vi.spyOn(context, 'registerReader')
     const registerTabKindSpy = vi.spyOn(context, 'registerTabKind')
 
     activate(context)
 
     expect(registerReaderSpy).toHaveBeenCalledWith({
-      id: 'media-player',
+      id: 'media-viewer',
       component: RecordingTab,
       title: 'Audio Player',
       icon: AudioLines,
@@ -30,7 +30,7 @@ describe('media-player plugin', () => {
   it('opens a tab to record in from its command', async () => {
     const kinds: (string | undefined)[] = []
     const context = createMockPluginContext({
-      pluginId: 'md.numen.views.media.player',
+      pluginId: 'md.numen.views.media.viewer',
       openTab: (kind) => {
         kinds.push(kind)
         return Promise.resolve('')
@@ -50,7 +50,7 @@ describe('media-player plugin', () => {
   })
 
   it('watches the work of every plugin on a recording through the task host', () => {
-    const context = createMockPluginContext({ pluginId: 'md.numen.views.media.player' })
+    const context = createMockPluginContext({ pluginId: 'md.numen.views.media.viewer' })
     const tasks = {
       watch: vi.fn(),
       watchAll: vi.fn((onTasks: (list: readonly { about: string }[]) => void) => {

@@ -26,33 +26,12 @@ export interface GetLinkResponse {
   readonly page: string
 }
 
-export interface ReadArticleRequest {
-  readonly path: string
-}
-
-export interface ReadArticleResponse {
-  readonly text: string
-}
-
-export interface FetchTextRequest {
-  readonly path: string
-  readonly isForced: boolean
-}
-
-export type FetchTextResponse = Record<string, never>
-
 export interface CopyMediaRequest {
   readonly path: string
   readonly kind: 'video' | 'audio'
 }
 
 export type CopyMediaResponse = Record<string, never>
-
-export interface DeleteCopyRequest {
-  readonly path: string
-}
-
-export type DeleteCopyResponse = Record<string, never>
 
 export interface CreateLinksRequest {
   readonly folder: string
@@ -66,9 +45,6 @@ export interface CreateLinksResponse {
 /** The request and response of each method by name. */
 export interface Methods {
   GetLink: { request: GetLinkRequest; response: GetLinkResponse }
-  ReadArticle: { request: ReadArticleRequest; response: ReadArticleResponse }
-  FetchText: { request: FetchTextRequest; response: FetchTextResponse }
   CopyMedia: { request: CopyMediaRequest; response: CopyMediaResponse }
-  DeleteCopy: { request: DeleteCopyRequest; response: DeleteCopyResponse }
   CreateLinks: { request: CreateLinksRequest; response: CreateLinksResponse }
 }

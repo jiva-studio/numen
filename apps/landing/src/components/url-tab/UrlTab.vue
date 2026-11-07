@@ -11,11 +11,11 @@
 import { computed, onMounted, onUnmounted, readonly, ref, useTemplateRef, watch } from 'vue'
 import MediaEmbed from './embed/MediaEmbed.vue'
 import MediaLayout from './MediaLayout.vue'
-import { useTranscript, type TranscriptOptions } from '@plugins/views-media-player/frontend/model/transcript'
-import type { Player } from '@plugins/views-media-player/frontend/model/player'
+import { useTranscript, type TranscriptOptions } from '@plugins/views-media-viewer/frontend/model/transcript'
+import type { Player } from '@plugins/views-media-viewer/frontend/model/player'
 import type { ReaderTabState, Selector } from '@numen/plugin-host'
-import type { Recordings, TextRange } from '@plugins/views-media-player/frontend/types'
-import { createTimeSelector, getSelectorStart } from '@plugins/views-media-player/frontend/lib/place'
+import type { Recordings, TextRange } from '@plugins/views-media-viewer/frontend/types'
+import { createTimeSelector, getSelectorStart } from '@plugins/views-media-viewer/frontend/lib/place'
 import { WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */

@@ -15,7 +15,7 @@ export function activate(context: PluginContext): void {
   bindCommands(context.commands)
   context.onVaultChange?.((event) => refreshRecordings(event.paths ?? []))
   context.registerReader({
-    id: 'media-player',
+    id: 'media-viewer',
     component: RecordingTab,
     title: 'Audio Player',
     icon: AudioLines,

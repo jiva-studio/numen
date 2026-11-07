@@ -109,10 +109,7 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	}
 	for _, method := range []string{
 		api.MethodGetLink,
-		api.MethodReadArticle,
-		api.MethodFetchText,
 		api.MethodCopyMedia,
-		api.MethodDeleteCopy,
 	} {
 		if code := call(http.MethodPost, "/"+api.Service+"/"+method, `{"path":"missing.md"}`); code != http.StatusNotFound {
 			t.Errorf("%s(missing.md) status = %d, want 404", method, code)

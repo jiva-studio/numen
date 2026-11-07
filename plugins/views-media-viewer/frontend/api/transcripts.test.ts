@@ -36,7 +36,7 @@ describe('the transcript of a recording', () => {
   })
 
   it('reads the live transcript and saves an edit as a version made from it', async () => {
-    const texts = createMockVaultTexts('md.numen.views.media-player')
+    const texts = createMockVaultTexts('md.numen.views.media.viewer')
     texts.setLive(transcript, getSegments(cues))
     const transcripts = createTranscripts(() => texts)
 

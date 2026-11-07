@@ -16,7 +16,7 @@ const (
 	pdfReader   = "org.numen.readers-pdf"
 	ocr         = "org.numen.engines-ocr"
 	proofreader = "org.numen.tools-proofreading"
-	player      = "org.numen.views-media-player"
+	player      = "org.numen.views-media-viewer"
 	scanPath    = "books/scan.pdf"
 
 	kindPage        domain.TextKind = "page-text"

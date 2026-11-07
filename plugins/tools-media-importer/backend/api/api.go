@@ -8,10 +8,7 @@ const Service = "md.numen.tools.media.importer"
 // Method names of the service.
 const (
 	MethodGetLink     = "GetLink"
-	MethodReadArticle = "ReadArticle"
-	MethodFetchText   = "FetchText"
 	MethodCopyMedia   = "CopyMedia"
-	MethodDeleteCopy  = "DeleteCopy"
 	MethodCreateLinks = "CreateLinks"
 )
 
@@ -35,26 +32,6 @@ type GetLinkResponse struct {
 	Page string `json:"page"`
 }
 
-// ReadArticleRequest requests the article text of the link note at Path.
-type ReadArticleRequest struct {
-	Path string `json:"path"`
-}
-
-// ReadArticleResponse holds the article text.
-type ReadArticleResponse struct {
-	Text string `json:"text"`
-}
-
-// FetchTextRequest starts fetching the text of the link note at Path.
-type FetchTextRequest struct {
-	Path string `json:"path"`
-	// IsForced fetches the text again where it is stored or its version was deleted.
-	IsForced bool `json:"isForced"`
-}
-
-// FetchTextResponse is the acknowledgement of a started fetch.
-type FetchTextResponse struct{}
-
 // CopyMediaRequest starts copying the media of the link note at Path: the video, or with Kind
 // audio the sound alone.
 type CopyMediaRequest struct {
@@ -64,14 +41,6 @@ type CopyMediaRequest struct {
 
 // CopyMediaResponse is the acknowledgement of a started copy.
 type CopyMediaResponse struct{}
-
-// DeleteCopyRequest deletes the stored video copy of the link note at Path.
-type DeleteCopyRequest struct {
-	Path string `json:"path"`
-}
-
-// DeleteCopyResponse is the acknowledgement of a deleted copy.
-type DeleteCopyResponse struct{}
 
 // CreateLinksRequest creates a link note in Folder for each web address in URLs.
 type CreateLinksRequest struct {

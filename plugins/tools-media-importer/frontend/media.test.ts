@@ -16,24 +16,13 @@ const CLIP: CommandNote = {
 /** The links of a vault whose one link publishes a video where isCopyable is set, and its copies. */
 function createLinks(isCopyable: boolean) {
   const copied: string[] = []
-  const facts: LinkFacts = {
-    url: 'https://videos.example/clip',
-    isCopyable,
-    isTextDeleted: false,
-    media: '',
-    page: '',
-  }
+  const facts: LinkFacts = { url: 'https://videos.example/clip', isCopyable }
   const links: Links = {
     getLink: async () => ({ ok: true, value: facts }),
-    readArticle: async () => '',
-    getSource: async () => ({ mediaUrl: '', mediaType: '' }),
-    fetchText: async () => ({ ok: true, value: null }),
     copyMedia: async (path, kind) => {
       copied.push(`${path} ${kind}`)
       return { ok: true, value: null }
     },
-    deleteCopy: async () => ({ ok: true, value: null }),
-    watchWork: () => () => undefined,
   }
   return { links, copied }
 }

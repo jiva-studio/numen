@@ -50,7 +50,7 @@ export const PLUGIN_TESTS = {
   'readers-pdf': ['scenarios/ocr-disabled.spec.ts', 'scenarios/recognition.spec.ts'],
   'tools-media-importer': ['scenarios/link.spec.ts'],
   'tools-proofreading': ['scenarios/proofreading.spec.ts'],
-  'views-media-player': ['scenarios/recording.spec.ts'],
+  'views-media-viewer': ['scenarios/recording.spec.ts'],
 }
 
 /** Paths the desktop window and its tests are built from; a change elsewhere runs no test. */
