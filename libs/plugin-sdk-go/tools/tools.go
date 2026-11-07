@@ -18,6 +18,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/google/jsonschema-go/jsonschema"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
@@ -402,7 +403,7 @@ func createHints(spec Spec) Hints {
 		ReadOnly:    spec.Effect == ReadOnly,
 		Destructive: spec.Effect == ReadWrite && spec.Step == Remove,
 		Idempotent:  spec.Effect == ReadOnly,
-		OpenWorld:   slices.Contains(spec.Requires, "network:outbound"),
+		OpenWorld:   slices.Contains(spec.Requires, host.PermissionNetworkOutbound),
 	}
 }
 
