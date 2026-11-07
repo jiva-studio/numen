@@ -1,6 +1,6 @@
 // Package trigger runs the triggers the enabled plugins declare: on file.added and file.changed, the
-// plugin's own handler of the trigger's command runs over the file while the trigger's condition
-// holds, once for each content of the file.
+// plugin's own handler of the trigger's command runs over the file while the trigger's condition and
+// the handler's own condition hold, once for each content of the file.
 package trigger
 
 import (
@@ -20,9 +20,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// Plugins is the triggers of the enabled plugins and the backends that run their handlers.
+// Plugins is the triggers and the handlers of the enabled plugins and the backends that run the
+// handlers.
 type Plugins interface {
 	pluginport.PluginTriggers
+	ListHandlers() []pluginport.PluginCommandEntry
 	RunCommand(ctx context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error)
 }
 
@@ -47,18 +49,19 @@ func NewTriggers(
 	return &Triggers{plugins: plugins, readers: readers, types: types, records: records, config: config}
 }
 
-// trigger is one trigger with its condition read.
+// trigger is one trigger with its condition and the condition of its handler read.
 type trigger struct {
 	entry     pluginport.PluginTriggerEntry
 	condition pluginport.PluginCondition
+	handler   pluginport.PluginCondition
 }
 
-// Execute runs every trigger over each file of the vault where its condition holds and it has not run
-// over the file's current content. A file the triggers have not seen before is added; a file whose
-// content differs from what a trigger last ran over is changed. A trigger on file.added runs over a
-// file it has never run over, and a trigger on file.changed over a file whose content changed since it
-// last ran, or that it has never run over and that the vault held before this run. A run that fails is
-// not recorded, and is tried again on the next run.
+// Execute runs every trigger over each file of the vault where its condition and the condition of its
+// handler hold and it has not run over the file's current content. A file the triggers have not seen
+// before is added; a file whose content differs from what a trigger last ran over is changed. A
+// trigger on file.added runs over a file it has never run over, and a trigger on file.changed over a
+// file whose content changed since it last ran, or that it has never run over and that the vault held
+// before this run. A run that fails is not recorded, and is tried again on the next run.
 func (u *Triggers) Execute(ctx context.Context, v domain.Vault) error {
 	u.mu.Lock()
 	defer u.mu.Unlock()
@@ -116,15 +119,28 @@ func (p *pass) writeRecord(ctx context.Context, record pluginport.TriggerRecord)
 	return nil
 }
 
-// readTriggers is the triggers of the enabled plugins whose condition can be read.
+// readTriggers is the triggers of the enabled plugins whose condition, and the condition of whose
+// handler, can be read.
 func (u *Triggers) readTriggers() []trigger {
+	handlers := map[[2]string]string{}
+	for _, entry := range u.plugins.ListHandlers() {
+		handlers[[2]string{entry.PluginID, entry.Command.ID}] = entry.Command.When
+	}
 	var out []trigger
 	for _, entry := range u.plugins.ListTriggers() {
+		handlerWhen, isHandled := handlers[[2]string{entry.PluginID, entry.Trigger.Command}]
+		if !isHandled {
+			continue
+		}
 		condition, err := pluginport.ParseCondition(entry.Trigger.When)
 		if err != nil {
 			continue
 		}
-		out = append(out, trigger{entry: entry, condition: condition})
+		handler, err := pluginport.ParseCondition(handlerWhen)
+		if err != nil {
+			continue
+		}
+		out = append(out, trigger{entry: entry, condition: condition, handler: handler})
 	}
 	return out
 }
@@ -175,7 +191,7 @@ func (p *pass) runFile(ctx context.Context, stat domain.FileStat) []error {
 		if hasRun && last == current.hash {
 			continue
 		}
-		if one.condition.Evaluate(p.getValues(ctx, current, one.condition)) != pluginport.ConditionTrue {
+		if !p.isTrue(ctx, current, one.condition) || !p.isTrue(ctx, current, one.handler) {
 			continue
 		}
 		if isDue(one.entry.Trigger.On, hasRun, current.isNew) {
@@ -229,6 +245,11 @@ func (p *pass) hashFile(ctx context.Context, path string) (hash string, err erro
 		err = errors.Join(err, content.Close())
 	}()
 	return domain.HashReader(content)
+}
+
+// isTrue reports whether the condition is true over the file.
+func (p *pass) isTrue(ctx context.Context, current *file, condition pluginport.PluginCondition) bool {
+	return condition.Evaluate(p.getValues(ctx, current, condition)) == pluginport.ConditionTrue
 }
 
 // getValues is the values a condition reads over the file: the target, read from the note where the

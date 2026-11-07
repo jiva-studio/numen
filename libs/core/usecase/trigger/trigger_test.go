@@ -142,12 +142,28 @@ type plugins struct {
 	triggers []pluginport.PluginTriggerEntry
 	ran      []string
 	failing  map[string]bool
+	// handlerWhen is the condition of the handler of each command, by its full id.
+	handlerWhen map[string]string
 }
 
 func (p *plugins) ListTriggers() []pluginport.PluginTriggerEntry {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return slices.Clone(p.triggers)
+}
+
+// ListHandlers lists a handler of each command a trigger runs, under the condition handlerWhen gives
+// its command, or none.
+func (p *plugins) ListHandlers() []pluginport.PluginCommandEntry {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	var out []pluginport.PluginCommandEntry
+	for _, one := range p.triggers {
+		out = append(out, pluginport.PluginCommandEntry{PluginID: one.PluginID, Command: pluginport.PluginCommand{
+			ID: one.Trigger.Command, When: p.handlerWhen[one.Trigger.Command],
+		}})
+	}
+	return out
 }
 
 func (p *plugins) RunCommand(_ context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
@@ -360,5 +376,15 @@ func TestAScanHashesAFileWithoutReadingItWhole(t *testing.T) {
 
 	if s.memoryVault.reads != 0 {
 		t.Errorf("the scan read %d files whole to hash them", s.memoryVault.reads)
+	}
+}
+
+func TestATriggerRunsOnlyWhereTheConditionOfItsHandlerIsTrue(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.png": "pixels"}, getRecognizeWhenOn())
+	s.plugins.handlerWhen = map[string]string{"app:version.delete": "target.contentType == 'image/png'"}
+	s.config = map[string]any{"org": map[string]any{"example": map[string]any{"scans": map[string]any{"isAutomatic": true}}}}
+
+	if got, want := s.scan(t), []string{scanner + " app:version.delete scans/b.png"}; !slices.Equal(got, want) {
+		t.Errorf("the scan ran %v, want %v", got, want)
 	}
 }
