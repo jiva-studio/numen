@@ -33,25 +33,17 @@ afterEach(() => {
 })
 
 describe('the place of the values on the page of secrets', () => {
-  it('names the keychain where a key store exists and no file is used', () => {
-    const wrapper = mountPage({ hasKeyStore: ref(true), credentialsPath: ref('') })
-    expect(root().textContent).toMatch(/system keychain/i)
+  it('names the keychain and the fallback file where no file is used', () => {
+    const wrapper = mountPage({ credentialsPath: ref('') })
+    expect(root().textContent).toMatch(
+      /kept in the system keychain or, where it is not available, in the file credentials\/credentials\.json/i,
+    )
     dispose(wrapper)
   })
 
   it('names the file where the key store keeps its values in a file', () => {
-    const wrapper = mountPage({
-      hasKeyStore: ref(true),
-      credentialsPath: ref('/home/someone/credentials.json'),
-    })
+    const wrapper = mountPage({ credentialsPath: ref('/home/someone/credentials.json') })
     expect(root().textContent).toContain('/home/someone/credentials.json')
-    dispose(wrapper)
-  })
-
-  it('says nothing about the place where no key store exists', () => {
-    const wrapper = mountPage({ hasKeyStore: ref(false), credentialsPath: ref('') })
-    expect(root().textContent).not.toMatch(/keychain/i)
-    expect(root().querySelector('.secrets-page__where')).toBeNull()
     dispose(wrapper)
   })
 })

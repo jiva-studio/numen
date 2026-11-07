@@ -117,15 +117,47 @@ type probe struct {
 	testsupport.PluginLifecycle
 	mu    sync.Mutex
 	calls []*v1.ConfigureRequest
+	// failure, while set, is what Configure answers; such a call is not added to calls.
+	failure error
+	// hold, while set, keeps Configure from answering until it is closed or the call ends.
+	hold chan struct{}
+	// entered, while set, receives a value each time Configure is called.
+	entered chan struct{}
 }
 
 func (p *probe) Configure(
-	_ context.Context, req *connect.Request[v1.ConfigureRequest],
+	ctx context.Context, req *connect.Request[v1.ConfigureRequest],
 ) (*connect.Response[v1.ConfigureResponse], error) {
 	p.mu.Lock()
+	hold, entered := p.hold, p.entered
+	p.mu.Unlock()
+	if entered != nil {
+		select {
+		case entered <- struct{}{}:
+		default:
+		}
+	}
+	if hold != nil {
+		select {
+		case <-hold:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	p.mu.Lock()
 	defer p.mu.Unlock()
+	if p.failure != nil {
+		return nil, p.failure
+	}
 	p.calls = append(p.calls, req.Msg)
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
+}
+
+// setFailure makes Configure answer with err until it is called with nil.
+func (p *probe) setFailure(err error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.failure = err
 }
 
 func (p *probe) count() int {
