@@ -249,7 +249,10 @@ func TestNoteMoveWithoutAFolderMovesToTheVaultRoot(t *testing.T) {
 func TestNoteMoveSchemaDoesNotRequireAFolder(t *testing.T) {
 	_, registry := newGeologyVault(t)
 	schema := getToolSchema(t, registry, "note_move", false)
-	required, _ := schema["required"].([]any)
+	required, ok := schema["required"].([]any)
+	if !ok {
+		t.Fatalf("the input schema of note_move has no required list: %v", schema)
+	}
 	for _, name := range required {
 		if name == "folder" {
 			t.Errorf("the input schema of note_move requires folder: %v", required)

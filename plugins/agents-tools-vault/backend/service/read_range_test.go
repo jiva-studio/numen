@@ -93,7 +93,7 @@ func (c countingTexts) With(id domain.VaultID) host.Texts {
 	return countingTexts{Texts: c.Texts.With(id), calls: c.calls}
 }
 
-func (c countingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
+func (c countingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, _ string) (host.TextPage, error) {
 	c.calls.mu.Lock()
 	c.calls.readTexts++
 	isRefused := c.calls.isReadTextRefused
@@ -312,7 +312,7 @@ func (r repeatingTexts) With(id domain.VaultID) host.Texts {
 	return repeatingTexts{Texts: r.Texts.With(id)}
 }
 
-func (r repeatingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
+func (r repeatingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, _ string) (host.TextPage, error) {
 	page, err := r.Texts.ReadText(ctx, path, id, "")
 	if err != nil {
 		return host.TextPage{}, err
