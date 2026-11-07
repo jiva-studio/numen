@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -11,7 +12,8 @@ import (
 const SecretAPIKey = "apiKey"
 
 // Secret is one allowed secret with its value. Printing or logging a Secret with any verb shows
-// its id, name and group and never its value; a plugin reads the value from the Value field.
+// its id, name and group and never its value, also when an encoder writes it; a plugin reads the
+// value from the Value field.
 type Secret struct{ ID, Name, Group, Value string }
 
 // String describes the secret without its value.
@@ -52,4 +54,14 @@ func ReadSecrets(secrets Secrets, name string) ([]Secret, bool) {
 		return nil, false
 	}
 	return list, true
+}
+
+// MarshalText encodes the secret as the text String returns, without its value.
+func (s Secret) MarshalText() ([]byte, error) {
+	return []byte(s.String()), nil
+}
+
+// MarshalJSON encodes the secret as the JSON text String returns, without its value.
+func (s Secret) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
 }
