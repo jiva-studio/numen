@@ -30,6 +30,8 @@ export interface PluginSecret {
   readonly name: string
   readonly title: string
   readonly description: string
+  /** Where the person finds the secrets for this declaration; empty for none. A hint, not a limit. */
+  readonly group: string
   readonly when?: PluginSettingCondition | undefined
 }
 
@@ -75,8 +77,9 @@ export interface PluginInfo {
   readonly hasBackend: boolean
   readonly settings: readonly PluginSettingInfo[]
   readonly capabilities: readonly string[]
+  /** The secrets the plugin declares. */
   readonly secrets: readonly PluginSecret[]
-  readonly storedSecrets: readonly string[]
+  /** The readers the plugin declares, each with the extensions of the files it opens. */
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
   readonly failure?: PluginFailure | undefined

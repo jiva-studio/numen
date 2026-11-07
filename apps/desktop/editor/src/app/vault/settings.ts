@@ -97,9 +97,9 @@ export const settingsCore: SettingsPort = {
           name: one.name,
           title: one.title || one.name,
           description: one.description,
+          group: one.group,
           when: readCondition(one.when),
         })),
-        storedSecrets: p.storedSecrets,
         hasFrontend: p.hasFrontend,
         hasBackend: p.hasBackend,
         readers: (p.readers ?? []).map((one) => ({ id: one.id, extensions: one.extensions })),
@@ -116,6 +116,18 @@ export const settingsCore: SettingsPort = {
         settings: (p.settings ?? []).map(readPluginSetting),
       })),
       app: (answer.app ?? []).map(readPluginSetting),
+      secrets: (answer.secrets ?? []).map((one) => ({
+        id: one.id,
+        name: one.name,
+        group: one.group,
+        allowed: one.allowed.map((entry) => ({
+          pluginId: entry.pluginId,
+          name: entry.name,
+          group: entry.group,
+        })),
+        hasValue: one.hasValue,
+      })),
+      credentialsPath: answer.credentialsPath ?? '',
     } satisfies Configuration
   },
   updateSettings: async (edits) => {
@@ -128,11 +140,30 @@ export const settingsCore: SettingsPort = {
       yield update.changed.map((one) => ({ at: [...one.at], value: one.value }))
     }
   },
-  writePluginSecret: async (pluginId, name, key) => {
-    await settingsService.writePluginSecret({ pluginId, name, key })
+  createSecret: async (group, name, value) => {
+    const answer = await settingsService.createSecret({ group, name, value })
+    return answer.id
   },
-  deletePluginSecret: async (pluginId, name) => {
-    await settingsService.deletePluginSecret({ pluginId, name })
+  renameSecret: async (id, name) => {
+    await settingsService.renameSecret({ id, name })
+  },
+  writeSecret: async (id, value) => {
+    await settingsService.writeSecret({ id, value })
+  },
+  deleteSecret: async (id) => {
+    await settingsService.deleteSecret({ id })
+  },
+  moveSecret: async (id, beforeId) => {
+    await settingsService.moveSecret({ id, beforeId })
+  },
+  renameSecretGroup: async (group, name) => {
+    await settingsService.renameSecretGroup({ group, name })
+  },
+  allowPluginSecret: async (secretId, pluginId, name, group) => {
+    await settingsService.allowPluginSecret({ secretId, pluginId, name, group })
+  },
+  denyPluginSecret: async (secretId, pluginId, name, group) => {
+    await settingsService.denyPluginSecret({ secretId, pluginId, name, group })
   },
   choosePluginPath: async (pluginId, key) => {
     const answer = await settingsService.choosePluginPath({ pluginId, key })

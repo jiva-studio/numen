@@ -65,9 +65,19 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
       )
       return promise
     },
-    writeSecret: (pluginId: string, name: string, key: string) =>
-      secrets.writeSecret(pluginId, name, key),
-    deleteSecret: (pluginId: string, name: string) => secrets.deleteSecret(pluginId, name),
+    secrets: rest.secrets,
+    credentialsPath: rest.credentialsPath,
+    createSecret: (group: string, name: string, value: string) =>
+      secrets.createSecret(group, name, value),
+    renameSecret: (id: string, name: string) => secrets.renameSecret(id, name),
+    writeSecret: (id: string, value: string) => secrets.writeSecret(id, value),
+    deleteSecret: (id: string) => secrets.deleteSecret(id),
+    moveSecret: (id: string, beforeId: string) => secrets.moveSecret(id, beforeId),
+    renameSecretGroup: (group: string, name: string) => secrets.renameSecretGroup(group, name),
+    allowPluginSecret: (secretId: string, pluginId: string, name: string, group: string) =>
+      secrets.allowPluginSecret(secretId, pluginId, name, group),
+    denyPluginSecret: (secretId: string, pluginId: string, name: string, group: string) =>
+      secrets.denyPluginSecret(secretId, pluginId, name, group),
     retryPlugin: (pluginId: string) => retry.retryPlugin(pluginId),
     choosePath: async (pluginId: string, key: string): Promise<string> => {
       try {

@@ -8,7 +8,6 @@ import { computed, ref } from 'vue'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
-import { SecretField } from '../secret-field'
 import SettingsViews from './SettingsViews.vue'
 import type { SettingsTabState } from '../../types'
 import { createSettingFields, type PluginInfo, type PluginSettingInfo } from '@/entities/settings'
@@ -25,14 +24,11 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 const fields = createSettingFields(() => props.state.installation)
-const {
-  getEnumOptions,
-  getEnumChoices,
-  getEnumValue,
-  getShownSettings,
-  getTopSecrets,
-  getSecretsAfter,
-} = createEnumFields(() => props.plugin, readSetting, isKeyRequested)
+const { getEnumOptions, getEnumChoices, getEnumValue, getShownSettings } = createEnumFields(
+  () => props.plugin,
+  readSetting,
+  isKeyRequested,
+)
 
 function isKeyRequested(key: string): boolean {
   return installation.value.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
@@ -62,14 +58,6 @@ function onPathClear(setting: PluginSettingInfo, targetPath?: string): void {
   pathProblems.value = { ...pathProblems.value, [setting.key]: '' }
   const current = getStringSetting(setting.key, setting.default)
   onSettingChange(setting.key, removePathEntry(current, targetPath))
-}
-
-function onSecretSave(name: string, key: string): void {
-  installation.value.writeSecret(props.plugin.id, name, key)
-}
-
-function onSecretDelete(name: string): void {
-  installation.value.deleteSecret(props.plugin.id, name)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -105,17 +93,6 @@ function getStringSetting(key: string, fallback: unknown): string {
 
 <template>
   <SettingsViews :state="props.state" :plugin="props.plugin" />
-
-  <SecretField
-    v-for="secret in getTopSecrets()"
-    :key="`${props.plugin.id}-${secret.name}`"
-    :at="`key-${props.plugin.id}-${secret.name}`"
-    :name="secret.title"
-    :is-stored="props.plugin.storedSecrets.includes(secret.name)"
-    :words="words"
-    @save="(key) => onSecretSave(secret.name, key)"
-    @delete="onSecretDelete(secret.name)"
-  />
 
   <template v-for="setting in getShownSettings()" :key="setting.key">
     <SettingRow
@@ -215,17 +192,6 @@ function getStringSetting(key: string, fallback: unknown): string {
         @change="(e) => writeDraft(setting.key, (e.target as HTMLInputElement).value)"
       />
     </SettingRow>
-
-    <SecretField
-      v-for="secret in getSecretsAfter(setting.key)"
-      :key="`${props.plugin.id}-${secret.name}`"
-      :at="`key-${props.plugin.id}-${secret.name}`"
-      :name="secret.title"
-      :is-stored="props.plugin.storedSecrets.includes(secret.name)"
-      :words="words"
-      @save="(key) => onSecretSave(secret.name, key)"
-      @delete="onSecretDelete(secret.name)"
-    />
   </template>
 </template>
 

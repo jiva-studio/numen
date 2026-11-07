@@ -146,7 +146,6 @@ const SCANNER: PluginInfo = {
   isActive: true,
   capabilities: [],
   secrets: [],
-  storedSecrets: [],
   hasFrontend: false,
   hasBackend: false,
   settings: [
@@ -371,7 +370,6 @@ describe('the settings tab', () => {
         isActive: true,
         capabilities: [],
         secrets: [],
-        storedSecrets: [],
         hasFrontend: false,
         hasBackend: false,
         settings: [],
@@ -384,7 +382,6 @@ describe('the settings tab', () => {
         isActive: true,
         capabilities: [],
         secrets: [],
-        storedSecrets: [],
         hasFrontend: false,
         hasBackend: false,
         settings: [],

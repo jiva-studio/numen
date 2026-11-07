@@ -6,7 +6,13 @@
 import { ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
 import { createRemoteValues } from '@numen/ui'
-import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '../lib/configuration'
+import type {
+  Model,
+  PluginInfo,
+  PluginSettingInfo,
+  Secret,
+  SettingEdit,
+} from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'
 
@@ -25,6 +31,8 @@ export interface SettingsStoreDeps {
     readonly models: readonly Model[]
     readonly plugins?: readonly PluginInfo[] | undefined
     readonly app?: readonly PluginSettingInfo[] | undefined
+    readonly secrets?: readonly Secret[] | undefined
+    readonly credentialsPath?: string | undefined
   }>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }
@@ -75,6 +83,20 @@ const getDeclaredDefault = (
     ?.default
 }
 
+/**
+ * What the vault answers about the settings, and nothing where it cannot be queried. That leaves
+ * the settings unchanged, and the window already reports the lost connection to the vault.
+ */
+const askVault = async (
+  core: SettingsStoreDeps,
+): Promise<Awaited<ReturnType<SettingsStoreDeps['getSettings']>> | undefined> => {
+  try {
+    return await core.getSettings()
+  } catch {
+    return undefined
+  }
+}
+
 export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
   const target = shallowRef<unknown>({})
@@ -84,6 +106,8 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const models = shallowRef<readonly Model[]>([])
   const plugins = shallowRef<readonly PluginInfo[]>([])
   const app = shallowRef<readonly PluginSettingInfo[]>([])
+  const secrets = shallowRef<readonly Secret[]>([])
+  const credentialsPath = ref('')
 
   const requested = createRemoteValues<SettingEdit>((values) =>
     core.updateSettings([...values.values()]),
@@ -92,14 +116,8 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   /** The settings values, requested once the window is up and after every write. */
   const start = async (): Promise<void> => {
     const pendingRead = requested.beginRead()
-    let answer: Awaited<ReturnType<SettingsStoreDeps['getSettings']>>
-    try {
-      answer = await core.getSettings()
-    } catch {
-      // A vault that cannot be queried leaves the settings unchanged, and the
-      // window already reports the lost connection to the vault.
-      return
-    }
+    const answer = await askVault(core)
+    if (answer === undefined) return
     let settingsFile: unknown
     try {
       settingsFile = JSON.parse(answer.written)
@@ -116,6 +134,8 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       models.value = answer.models
       plugins.value = answer.plugins ?? []
       app.value = answer.app ?? []
+      secrets.value = answer.secrets ?? []
+      credentialsPath.value = answer.credentialsPath ?? ''
     })
   }
 
@@ -171,6 +191,8 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     models,
     plugins,
     app,
+    secrets,
+    credentialsPath,
     start,
     getSetting,
     getCommittedSetting,

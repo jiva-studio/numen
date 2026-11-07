@@ -10,8 +10,14 @@ describe('the fields of a plugin', () => {
         { key: 'baseUrl', type: 'string', title: 'B', description: '', default: 'b' },
       ],
       secrets: [
-        { name: 's1', title: 'S1', description: '' },
-        { name: 's2', title: 'S2', description: '', when: { setting: 'baseUrl', is: ['b'] } },
+        { name: 's1', title: 'S1', description: '', group: '' },
+        {
+          name: 's2',
+          title: 'S2',
+          description: '',
+          group: '',
+          when: { setting: 'baseUrl', is: ['b'] },
+        },
       ],
     })
     const fields1 = createEnumFields(
@@ -24,7 +30,7 @@ describe('the fields of a plugin', () => {
 
     const withBaseUrlOnly = createPluginInfo('p', 'P', {
       settings: [{ key: 'baseUrl', type: 'string', title: 'B', description: '', default: 'b' }],
-      secrets: [{ name: 's1', title: 'S1', description: '' }],
+      secrets: [{ name: 's1', title: 'S1', description: '', group: '' }],
     })
     const fields2 = createEnumFields(
       () => withBaseUrlOnly,
@@ -35,7 +41,7 @@ describe('the fields of a plugin', () => {
 
     const withNeither = createPluginInfo('p', 'P', {
       settings: [{ key: 'other', type: 'string', title: 'O', description: '', default: 'o' }],
-      secrets: [{ name: 's1', title: 'S1', description: '' }],
+      secrets: [{ name: 's1', title: 'S1', description: '', group: '' }],
     })
     const fields3 = createEnumFields(
       () => withNeither,

@@ -11,6 +11,8 @@ export type {
   PluginSettingOption,
   PluginSettingCondition,
   PluginSecret,
+  Secret,
+  SecretPermission,
 } from './lib/configuration'
 export { getSettingAt, createSettingsStore } from './model/store'
 export { themes } from './api/theme'

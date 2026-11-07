@@ -327,6 +327,7 @@ describe('PluginDetail with settings that follow one another', () => {
         name: 'apiKey',
         title: 'API key',
         description: '',
+        group: '',
         when: { setting: 'provider', is: ['remote'] },
       },
     ],

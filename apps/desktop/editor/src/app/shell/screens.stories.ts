@@ -83,7 +83,6 @@ const plugin = (id: string, name: string, description: string): PluginInfo => ({
   settings: [],
   capabilities: [],
   secrets: [],
-  storedSecrets: [],
   hasFrontend: false,
   hasBackend: false,
 })
@@ -158,11 +157,30 @@ const INSTALLATION: Installation = {
       value: 1.25,
     },
   ]),
+  createSecret: async () => {
+    DONE.push('secret created')
+    return 's00000001'
+  },
+  renameSecret: () => {
+    DONE.push('secret renamed')
+  },
   writeSecret: () => {
-    DONE.push('key')
+    DONE.push('secret written')
   },
   deleteSecret: () => {
-    DONE.push('key gone')
+    DONE.push('secret deleted')
+  },
+  moveSecret: () => {
+    DONE.push('secret moved')
+  },
+  renameSecretGroup: () => {
+    DONE.push('secret group renamed')
+  },
+  allowPluginSecret: () => {
+    DONE.push('secret allowed')
+  },
+  denyPluginSecret: () => {
+    DONE.push('secret denied')
   },
   retryPlugin: () => {
     DONE.push('plugin retried')
