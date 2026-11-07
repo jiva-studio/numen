@@ -1,5 +1,10 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { getPaletteField, openWorkspace, runCommand } from '../../support/workspace.js'
+import {
+  getPaletteField,
+  openWorkspace,
+  runCommand,
+  runCommandOverItem,
+} from '../../support/workspace.js'
 import { deleteVaultFiles, listPluginFiles, restartPlugin } from '../../support/media.js'
 import { listFilePaths } from '../../support/vault.js'
 
@@ -38,48 +43,45 @@ test.describe('a link to a video', () => {
     deleteVaultFiles(...made.splice(0))
   })
 
-  test('Delete downloaded video takes the copy off the disk, and Download video brings it back', async ({
+  test('Delete media takes the copy off the disk, and Download media brings it back', async ({
     page,
   }) => {
     made.push(getLinkNote('tidalmill03'))
     await openWorkspace(page)
     await importAddress(page, 'https://www.youtube.com/watch?v=tidalmill03')
-    const tab = page.getByRole('tabpanel').filter({ hasText: CAPTION })
+    const tab = page.getByRole('tabpanel', { name: /tidalmill03/ })
     await expect(tab.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
     const copies = listCopies()
 
-    await tab.getByRole('button', { name: 'Delete downloaded video' }).click()
+    await runCommand(page, 'Delete media', /^Delete media$/)
 
     await expect(tab.getByRole('button', { name: /^Play/ })).toHaveCount(0)
-    await expect(tab.getByRole('button', { name: 'Download video' })).toBeVisible()
     await expect.poll(() => listCopies()).toHaveLength(copies.length - 1)
     await expect(tab.getByText(CAPTION)).toBeVisible()
 
-    await tab.getByRole('button', { name: 'Download video' }).click()
+    await runCommandOverItem(page, 'Download media', /^Download media$/, /^Video$/)
 
     await expect(tab.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
     await expect.poll(() => listCopies()).toHaveLength(copies.length)
   })
 
-  test('Download text again brings back the captions after Delete text', async ({
+  test('Download captions brings back the captions after Delete text', async ({
     page,
     request,
   }) => {
     made.push(getLinkNote('tidalmill04'))
     await openWorkspace(page)
     await importAddress(page, 'https://www.youtube.com/watch?v=tidalmill04')
-    const tab = page.getByRole('tabpanel').filter({ hasText: 'tidalmill04' })
+    const tab = page.getByRole('tabpanel', { name: /tidalmill04/ })
     await expect(tab.getByText(CAPTION)).toBeVisible({ timeout: 30_000 })
     await expect(tab.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
 
     await runCommand(page, 'Delete text', /^Delete text$/)
-    await expect(tab.getByText('The text of this link was deleted.')).toBeVisible()
     await expect(tab.getByText(CAPTION)).toHaveCount(0)
 
-    await tab.getByRole('button', { name: 'Download text again' }).click()
+    await runCommand(page, 'Download captions', /^Download captions$/)
 
     await expect(tab.getByText(CAPTION)).toBeVisible({ timeout: 30_000 })
-    await expect(tab.getByText('The text of this link was deleted.')).toHaveCount(0)
     expect(await listFilePaths(request)).toContain(getLinkNote('tidalmill04'))
   })
 })

@@ -51,18 +51,14 @@ test.describe('A link', () => {
   test('keeps its article deleted once the person deletes it', async ({ page }) => {
     await openWorkspace(page)
     await importAddress(page, `${ARTICLE_ADDRESS}?part=2`)
-    const tab = page.getByRole('tabpanel').filter({ hasText: 'tidal-mills.numen.test' })
+    const tab = page.getByRole('tabpanel', { name: /rance-part=2/ })
     await expect(tab.getByText(ARTICLE_TEXT)).toBeVisible({ timeout: 30_000 })
 
     await runCommand(page, 'Delete text', /^Delete text$/)
-    await expect(tab.getByText('The text of this link was deleted.')).toBeVisible({
-      timeout: 30_000,
-    })
+    await expect(tab.getByText(ARTICLE_TEXT)).toHaveCount(0, { timeout: 30_000 })
 
     await page.reload()
-    await expect(tab.getByText('The text of this link was deleted.')).toBeVisible({
-      timeout: 30_000,
-    })
+    await expect(tab).toBeVisible({ timeout: 30_000 })
     await expect(tab.getByText(ARTICLE_TEXT)).toHaveCount(0)
   })
 

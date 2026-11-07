@@ -496,7 +496,7 @@ const pdfPagesState = reactive<Record<string, number>>({
   'reading/Shannon 1948.pdf': PDF_DOCS['reading/Shannon 1948.pdf']!.firstPage,
 })
 
-/* ------------------- Real `RecordingTab` (Media Player) ------------------- */
+/* ------------------- Real `RecordingTab` (Media Viewer) ------------------- */
 const LECTURE_MEDIA_URL = '/lecture-4.mp3'
 
 const lectureCues = ref<Cue[]>([

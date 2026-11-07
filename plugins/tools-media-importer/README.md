@@ -7,7 +7,7 @@ Save web articles and online videos (such as YouTube lectures) into your vault f
 ## What You Can Do
 
 - **Save articles for offline reading**: Paste a web link to save a clean, readable copy of the article into your vault.
-- **Download videos and captions**: Save online videos along with their subtitles so you can watch them offline in the Media Player, search their transcripts, and quote from them in your notes.
+- **Download videos and captions**: Save online videos along with their subtitles so you can watch them offline in the Media Viewer, search their transcripts, and quote from them in your notes.
 
 ## Settings
 
