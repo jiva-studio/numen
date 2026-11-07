@@ -52,6 +52,7 @@ func (h *Host) discoverPlugins() error {
 			h.removeCacheDir(id)
 		}
 	}
+	h.pruneSecretPermissions()
 	return nil
 }
 

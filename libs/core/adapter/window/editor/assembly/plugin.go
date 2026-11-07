@@ -9,6 +9,7 @@ import (
 	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
 
@@ -29,8 +30,7 @@ type PluginCatalog = interface {
 }
 
 type pluginSecretAssembly interface {
-	OpenWritePluginSecret() *settings.WriteSecret
-	OpenDeletePluginSecret() *settings.DeleteSecret
+	OpenSecrets() *secret.Secrets
 	GetPluginCommands() plugincommand.Commands
 	// GetPluginCatalog is the catalog of plugins, and nil for an installation with none.
 	GetPluginCatalog() PluginCatalog

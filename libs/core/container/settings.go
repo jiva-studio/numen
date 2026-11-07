@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"runtime"
@@ -58,6 +59,9 @@ func (c Config) getCheckedSettingsAt(path string) (Settings, error) {
 	}
 	if c.PluginHost != nil {
 		target.DropInvalid(c.getDeclarations(), c.getRegistries())
+		target.DropInvalidSecrets(c.isSecretDeclared)
+	} else {
+		target.DropInvalidSecrets(func(pluginport.SecretPermission) bool { return true })
 	}
 	return target, nil
 }
@@ -100,6 +104,7 @@ func (c Config) SetSettings(s Settings) Config {
 			})
 		})
 		c.PluginHost.SetKeyStore(c.KeyStore)
+		c.setSecretSource()
 		c.setCompleter()
 		c.subscribeHost()
 	}
@@ -253,20 +258,27 @@ func (c Config) refreshSettingEvents() {
 }
 
 func (c Config) readSettingValues() (settingevents.Values, error) {
-	path, err := c.settingsFile()
-	if err != nil {
-		return nil, err
-	}
-	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
-		return c.listSettingValues(DefaultSettings())
-	}
-	target, err := c.getCheckedSettingsAt(path)
+	target, err := c.readCheckedSettings()
 	if err != nil {
 		return nil, err
 	}
 	return c.listSettingValues(target)
 }
 
+// readCheckedSettings reads the settings in force. A file that is not there is an unconfigured
+// installation, and reading does not write it.
+func (c Config) readCheckedSettings() (Settings, error) {
+	path, err := c.settingsFile()
+	if err != nil {
+		return Settings{}, err
+	}
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return DefaultSettings(), nil
+	}
+	return c.getCheckedSettingsAt(path)
+}
+
+// listDefaultSettingValues is the values of an installation with no settings file.
 func (c Config) listDefaultSettingValues() settingevents.Values {
 	values, err := c.listSettingValues(DefaultSettings())
 	if err != nil {
@@ -275,12 +287,12 @@ func (c Config) listDefaultSettingValues() settingevents.Values {
 	return values
 }
 
-// hostFieldEnabled and hostFieldStoredSecrets are the fields of the object of a plugin that the
-// host keeps. A plugin that has no stored value for the first is enabled.
-const (
-	hostFieldEnabled       = "enabled"
-	hostFieldStoredSecrets = pluginport.SettingStoredSecrets
-)
+// hostFieldEnabled is the field of the object of a plugin that the host keeps. A plugin that has no
+// stored value for it is enabled.
+const hostFieldEnabled = "enabled"
+
+// secretsPath is the path of the secrets section of the settings file, which the core writes.
+func secretsPath() []string { return []string{"secrets"} }
 
 func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
 	values := settingevents.Values{}
@@ -302,6 +314,14 @@ func (c Config) listSettingValues(target Settings) (settingevents.Values, error)
 	for _, plugin := range c.Plugins()() {
 		listPluginValues(target, plugin, add, values)
 	}
+	if len(target.Secrets) > 0 {
+		content, err := target.WriteSecretsJSON()
+		if err != nil {
+			failures = append(failures, err)
+		} else {
+			values[settingevents.JoinPath(secretsPath())] = content
+		}
+	}
 	return values, errors.Join(failures...)
 }
 
@@ -321,9 +341,6 @@ func listPluginValues(target Settings, plugin pluginport.PluginInfo, add func([]
 		}
 	}
 	add([]string{plugin.ID, hostFieldEnabled}, enabled)
-	if value, found := target.GetValue(plugin.ID, hostFieldStoredSecrets); found {
-		add([]string{plugin.ID, hostFieldStoredSecrets}, value)
-	}
 }
 
 func (c Config) subscribeHost() {
@@ -344,6 +361,12 @@ func (c Config) subscribeHost() {
 func (c Config) tellHost(batch []settingsport.Setting) {
 	notifyPluginSettings(c.PluginHost, batch, c.handleError)
 	for _, one := range batch {
+		if slices.Equal(one.Path, secretsPath()) {
+			if err := c.PluginHost.RefreshSecrets(context.Background()); err != nil {
+				c.handleError(fmt.Errorf("configure the plugins after the secrets changed: %w", err))
+			}
+			continue
+		}
 		if !slices.Equal(one.Path, profilePath()) {
 			continue
 		}
@@ -357,3 +380,8 @@ func (c Config) tellHost(batch []settingsport.Setting) {
 }
 
 func profilePath() []string { return []string{settings.OwnerApp, "performance", "profile"} }
+
+// isSecretDeclared reports whether an installed plugin declares the secret the permission names.
+func (c Config) isSecretDeclared(permission pluginport.SecretPermission) bool {
+	return slices.Contains(c.PluginHost.ListDeclarations(), permission)
+}

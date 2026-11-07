@@ -305,30 +305,6 @@ func (c Config) OpenPluginVault(
 	return vaults, nil
 }
 
-var errNoPluginHost = errors.New("this installation has no plugin host to keep a secret for")
-
-// GetPluginSecretWriter stores, on request from the window, the key of a secret a plugin
-// declares in its manifest, and passes the plugin the secrets it currently holds.
-func (c Config) GetPluginSecretWriter() func(ctx context.Context, pluginID, name, key string) error {
-	return func(ctx context.Context, pluginID, name, key string) error {
-		if c.PluginHost == nil {
-			return errNoPluginHost
-		}
-		return c.PluginHost.SetPluginSecret(ctx, pluginID, name, key)
-	}
-}
-
-// GetPluginSecretDeleter removes, on request from the window, the key of a secret a
-// plugin declares in its manifest, and passes the plugin the secrets it currently holds.
-func (c Config) GetPluginSecretDeleter() func(ctx context.Context, pluginID, name string) error {
-	return func(ctx context.Context, pluginID, name string) error {
-		if c.PluginHost == nil {
-			return errNoPluginHost
-		}
-		return c.PluginHost.DeletePluginSecret(ctx, pluginID, name)
-	}
-}
-
 // GetPluginDir is the folder of an installed plugin, and false for one not installed.
 func (c Config) GetPluginDir(id string) (string, bool) {
 	if c.PluginHost == nil {

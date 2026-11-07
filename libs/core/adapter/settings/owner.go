@@ -17,11 +17,8 @@ import (
 const OwnerApp = "app"
 
 // The fields of the object of a plugin that the host keeps. They are no settings of the manifest:
-// enabled holds a boolean, and storedSecrets the names of the secrets in the keychain.
-const (
-	fieldEnabled       = "enabled"
-	fieldStoredSecrets = "storedSecrets"
-)
+// enabled holds a boolean.
+const fieldEnabled = "enabled"
 
 // The reasons CheckWrite rejects a write.
 var (
@@ -108,8 +105,6 @@ func checkHostField(name string, value any) (reserved bool, err error) {
 		if _, isBool := value.(bool); !isBool && value != nil {
 			return true, fmt.Errorf("%w: expected true or false", ErrWrongType)
 		}
-		return true, nil
-	case fieldStoredSecrets:
 		return true, nil
 	}
 	return false, nil
@@ -240,11 +235,6 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 			continue
 		}
 		for _, key := range slices.Sorted(maps.Keys(f.Plugins[id])) {
-			if key == fieldStoredSecrets && !isListOfTexts(f.Plugins[id][key]) {
-				delete(f.Plugins[id], key)
-				f.AddNotice(fmt.Sprintf("numen.json: %q: wrong type: expected a list of secret names; the value is ignored", id+"."+key))
-				continue
-			}
 			if err := CheckWrite(declared, registries, []string{id, key}, f.Plugins[id][key]); err != nil {
 				delete(f.Plugins[id], key)
 				f.AddNotice(fmt.Sprintf("numen.json: %v; the value is ignored", err))
@@ -284,17 +274,4 @@ func (f *File) resetApp(declared pluginport.PluginManifestSetting) {
 	case keyProfile:
 		f.Performance = DefaultPerformance()
 	}
-}
-
-func isListOfTexts(value any) bool {
-	items, isList := value.([]any)
-	if !isList {
-		return false
-	}
-	for _, item := range items {
-		if _, isText := item.(string); !isText {
-			return false
-		}
-	}
-	return true
 }

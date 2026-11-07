@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
@@ -23,8 +24,14 @@ type File struct {
 	Window      Window               `json:"window"`
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
-	Plugins     map[string]map[string]any
-	Notices     []string
+	// Plugins holds the object of each plugin, keyed by plugin id.
+	Plugins map[string]map[string]any
+	// Secrets are the secrets in list order, which is the priority of each one inside its group. No
+	// value is part of the file.
+	Secrets []pluginport.Secret
+	// Notices are the warnings that reading the file produced, shown to the
+	// user. They are not written to the file.
+	Notices []string
 }
 
 // appObject is the object of the owner app as the file lays it out.
@@ -74,7 +81,8 @@ func (f File) WriteJSON() (string, error) {
 	return string(content), nil
 }
 
-// MarshalJSON writes the version, the object of the owner app, and the object of each plugin by id.
+// MarshalJSON writes the version, the object of the owner app, the secrets when there are any, and
+// the object of each plugin by id.
 func (f File) MarshalJSON() ([]byte, error) {
 	var out bytes.Buffer
 	out.WriteString(`{`)
@@ -84,6 +92,12 @@ func (f File) MarshalJSON() ([]byte, error) {
 	}{
 		{keyVersion, f.Version},
 		{OwnerApp, appObject{f.Appearance, f.Agent, f.Titles, f.Window, f.Performance, f.AI}},
+	}
+	if len(f.Secrets) > 0 {
+		members = append(members, struct {
+			key   string
+			value any
+		}{keySecrets, newSecretEntries(f.Secrets)})
 	}
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
 		members = append(members, struct {
@@ -132,6 +146,8 @@ func (f *File) UnmarshalJSON(raw []byte) error {
 				return err
 			}
 			hasInterfaceScale = has
+		case keySecrets:
+			f.readSecrets(root[key])
 		default:
 			f.readPlugin(key, root[key])
 		}
