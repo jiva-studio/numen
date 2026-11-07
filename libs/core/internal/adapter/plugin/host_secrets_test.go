@@ -500,6 +500,7 @@ func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 		pruned = append(pruned, declared)
 		return nil
 	}})
+	host.hasScanned = true
 
 	host.pruneSecretPermissions()
 	if len(pruned) != 1 || len(pruned[0]) != 1 || pruned[0][0].Plugin != secretPluginID {

@@ -92,13 +92,16 @@ type Host struct {
 	discoverMu       sync.RWMutex
 	failedPlugins    []pluginport.PluginFailure
 	problems         []manifestjson.DiscoveryProblem
-	completer        completionport.Completer
-	vault            pluginport.PluginVault
-	texts            pluginport.PluginTexts
-	window           pluginport.PluginWindow
-	vaultList        pluginport.PluginVaultList
-	search           pluginport.PluginSearch
-	keyStore         pluginport.KeyStore
+	// installed holds every plugin of the last scan whatever its target.
+	installed  []manifest.Discovered
+	hasScanned bool
+	completer  completionport.Completer
+	vault      pluginport.PluginVault
+	texts      pluginport.PluginTexts
+	window     pluginport.PluginWindow
+	vaultList  pluginport.PluginVaultList
+	search     pluginport.PluginSearch
+	keyStore   pluginport.KeyStore
 	// secretMu orders every operation on the secrets of every plugin and the Configure calls that
 	// deliver them. It is locked before mu, never while mu is locked.
 	secretMu     sync.Mutex

@@ -11,6 +11,7 @@ import (
 
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // SetKeyStore sets where the values of secrets are kept.
@@ -24,8 +25,9 @@ func (h *Host) SetKeyStore(store pluginport.KeyStore) {
 // declarations are dropped.
 func (h *Host) SetSecretSource(source pluginport.SecretSource) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
 	h.secretSource = source
+	h.mu.Unlock()
+	h.pruneSecretPermissions()
 }
 
 // ListDeclarations returns every secret declaration of every installed plugin, in the order of the
@@ -104,15 +106,16 @@ func (h *Host) hasSecretsChanged(ctx context.Context, pluginID string) bool {
 	return !wasDelivered || last != getSecretsSignature(secrets)
 }
 
-// pruneSecretPermissions drops the permissions of declarations that are gone. A scan that had
+// pruneSecretPermissions drops the permissions of declarations that are gone. It runs when the
+// scan and the secret source are both there, in whichever order they come. A scan that had
 // problems may have hidden an installed plugin, so it drops nothing.
 func (h *Host) pruneSecretPermissions() {
 	h.mu.RLock()
 	prune := h.secretSource.Prune
-	hasProblems := len(h.problems) > 0
-	declared := h.listDeclarationsLocked()
+	skip := !h.hasScanned || len(h.problems) > 0
+	declared := h.listInstalledDeclarationsLocked()
 	h.mu.RUnlock()
-	if prune == nil || hasProblems {
+	if prune == nil || skip {
 		return
 	}
 	if err := prune(declared); err != nil {
@@ -233,4 +236,31 @@ func (h *Host) runConfigWatchers(pluginID string) {
 	for _, fn := range watchers {
 		go fn()
 	}
+}
+
+// listInstalledDeclarationsLocked returns the declarations of every plugin installed in the plugin
+// folders whatever its target, and of the registered plugins that are not on disk. A host of one
+// target must not drop the permissions of a plugin that targets another window.
+func (h *Host) listInstalledDeclarationsLocked() []pluginport.SecretPermission {
+	var declarations []pluginport.SecretPermission
+	installed := make(map[string]bool, len(h.installed))
+	for _, p := range h.installed {
+		installed[p.Manifest.ID] = true
+		declarations = appendDeclarations(declarations, p)
+	}
+	for _, p := range h.getPluginsInOrderLocked() {
+		if !installed[p.Manifest.ID] {
+			declarations = appendDeclarations(declarations, p)
+		}
+	}
+	return declarations
+}
+
+func appendDeclarations(declarations []pluginport.SecretPermission, p manifest.Discovered) []pluginport.SecretPermission {
+	for _, declaration := range p.Manifest.Secrets {
+		declarations = append(declarations, pluginport.SecretPermission{
+			Plugin: p.Manifest.ID, Name: declaration.Name, Group: declaration.Group,
+		})
+	}
+	return declarations
 }
