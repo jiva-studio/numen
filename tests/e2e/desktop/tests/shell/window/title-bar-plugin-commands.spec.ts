@@ -2,7 +2,7 @@ import { test, expect, type Page } from '../../support/test.js'
 import { closeTab, getPaletteField, openWorkspace } from '../../support/workspace.js'
 import { getTab } from '../../support/layout.js'
 import { writeSetting } from '../../support/vault.js'
-import { usePlatformAgent } from '../../support/browser.js'
+import { setPlatformAgent } from '../../support/browser.js'
 
 /**
  * The buttons the plugins of the application place in `titleBar.commands`. They need a plugin that places
@@ -25,7 +25,7 @@ const listButtonIds = (page: Page): Promise<string[]> =>
 test.describe('Plugin buttons in the title bar', () => {
   // The widths below count the three window buttons the bar draws on Windows.
   test.beforeEach(async ({ page }) => {
-    await usePlatformAgent(page, 'windows')
+    await setPlatformAgent(page, 'windows')
   })
 
   test.afterEach(async ({ request }) => {

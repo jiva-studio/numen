@@ -41,7 +41,7 @@ const USER_AGENTS = {
  * Gives the page the user agent of the platform, which the plugins read as `context.app.platform`.
  * The engines of the projects name their own: Desktop Chrome names Windows and Desktop Safari macOS.
  */
-export const usePlatformAgent = async (
+export const setPlatformAgent = async (
   page: Page,
   platform: keyof typeof USER_AGENTS,
 ): Promise<void> => {
