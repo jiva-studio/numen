@@ -62,6 +62,7 @@ func (h *Handler) GetSettings(
 		}
 		reply.Secrets = newWireSecretEntries(listing.Entries)
 		reply.CredentialsPath = listing.CredentialsPath
+		reply.HasKeyStore = listing.HasKeyStore
 	}
 	return connect.NewResponse(reply), nil
 }

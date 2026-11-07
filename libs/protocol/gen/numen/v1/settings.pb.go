@@ -145,8 +145,10 @@ type GetSettingsResponse struct {
 	Secrets []*Secret `protobuf:"bytes,9,rep,name=secrets,proto3" json:"secrets,omitempty"`
 	// Empty while the system keychain is in use; otherwise the absolute path of the file the values are kept in.
 	CredentialsPath string `protobuf:"bytes,10,opt,name=credentials_path,json=credentialsPath,proto3" json:"credentials_path,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// True when the installation has a key store the values of secrets are kept in.
+	HasKeyStore   bool `protobuf:"varint,11,opt,name=has_key_store,json=hasKeyStore,proto3" json:"has_key_store,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetSettingsResponse) Reset() {
@@ -226,6 +228,13 @@ func (x *GetSettingsResponse) GetCredentialsPath() string {
 		return x.CredentialsPath
 	}
 	return ""
+}
+
+func (x *GetSettingsResponse) GetHasKeyStore() bool {
+	if x != nil {
+		return x.HasKeyStore
+	}
+	return false
 }
 
 // Model is one model a setting that names a model can be set to.
@@ -1839,7 +1848,7 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\x1a\x15numen/v1/shared.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\x9e\x02\n" +
+	"\x12GetSettingsRequest\"\xc2\x02\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
@@ -1848,7 +1857,8 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x03app\x18\b \x03(\v2\x17.numen.v1.PluginSettingR\x03app\x12*\n" +
 	"\asecrets\x18\t \x03(\v2\x10.numen.v1.SecretR\asecrets\x12)\n" +
 	"\x10credentials_path\x18\n" +
-	" \x01(\tR\x0fcredentialsPath\"\xce\x02\n" +
+	" \x01(\tR\x0fcredentialsPath\x12\"\n" +
+	"\rhas_key_store\x18\v \x01(\bR\vhasKeyStore\"\xce\x02\n" +
 	"\x05Model\x12\x19\n" +
 	"\bnamed_at\x18\x01 \x03(\tR\anamedAt\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
