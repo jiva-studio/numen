@@ -10,7 +10,7 @@ import {
   type ResolveModuleContext,
 } from '../module'
 import { PLUGIN_START_LIMIT_MS } from './limits'
-import { createStartContext } from './startContext'
+import { createStartScope, type StartScope } from './startContext'
 import { createStartLimit, type StartLimit } from './startLimit'
 
 export interface ActivePluginEntry {
@@ -47,13 +47,13 @@ function discardEntry(ctx: ActivateContext, pluginId: string): void {
 /** What a start ends with: whether the plugin became active, or 'expired' once it has passed its limit. */
 type StartOutcome = boolean | 'expired'
 
-/** One start of a plugin: its module, its number, its limit and whether it has been cancelled. */
+/** One start of a plugin: its module, its number, its limit and what it registers. */
 interface EntryStart {
   readonly module: unknown
   readonly number: number
   readonly limit: StartLimit
-  /** Whether the start has been cancelled at its limit. */
-  readonly isCancelled: () => boolean
+  /** What the start registers through its context, taken back when it is cancelled. */
+  readonly scope: StartScope
 }
 
 /** Activates the module the start has read, and marks the plugin active unless the limit has passed. */
@@ -68,19 +68,17 @@ async function activateModule(
   if (activate) {
     if (isLatest()) host.markPluginStarting?.(pluginId)
     await activate(
-      createStartContext(
-        host.createContext(pluginId, ctx.manifests.get(pluginId)),
-        start.isCancelled,
-      ),
+      start.scope.wrapContext(host.createContext(pluginId, ctx.manifests.get(pluginId))),
     )
     if (isLatest()) host.markPluginStarted?.(pluginId)
   }
-  if (start.isCancelled() || start.limit.isPassed()) {
+  if (start.scope.isCancelled() || start.limit.isPassed()) {
     if (isLatest()) discardEntry(ctx, pluginId)
     return 'expired'
   }
   activePlugins.value = new Map(activePlugins.value).set(pluginId, { pluginId, deactivate })
   setFailure(ctx, pluginId, undefined)
+  start.scope.end()
   return true
 }
 
@@ -95,7 +93,7 @@ async function startEntry(
   pluginId: string,
   start: EntryStart,
 ): Promise<StartOutcome> {
-  const isExpired = (): boolean => start.isCancelled() || start.limit.isPassed()
+  const isExpired = (): boolean => start.scope.isCancelled() || start.limit.isPassed()
   try {
     const resolved = await resolveModule(pluginId, start.module, ctx)
     if (isExpired()) return 'expired'
@@ -106,6 +104,7 @@ async function startEntry(
       if (ctx.starts.get(pluginId) === start.number) discardEntry(ctx, pluginId)
       return 'expired'
     }
+    start.scope.cancel()
     discardEntry(ctx, pluginId)
     setFailure(ctx, pluginId, getFailureMessage(error))
     ctx.reportError(pluginId, error)
@@ -131,18 +130,13 @@ export async function activateEntry(
   }
   // A new start is going on: the failure of an earlier one is no longer where the plugin stands.
   if (ctx.failures.value.has(pluginId)) setFailure(ctx, pluginId, undefined)
-  let isCancelled = false
+  const scope = createStartScope()
   const number = (ctx.starts.get(pluginId) ?? 0) + 1
   ctx.starts.set(pluginId, number)
-  const starting = startEntry(ctx, pluginId, {
-    module: begun.module,
-    limit,
-    isCancelled: () => isCancelled,
-    number,
-  })
+  const starting = startEntry(ctx, pluginId, { module: begun.module, limit, scope, number })
   const outcome = await Promise.race([starting, limit.expired]).finally(limit.stop)
   if (outcome !== 'expired') return outcome
-  isCancelled = true
+  scope.cancel()
   discardEntry(ctx, pluginId)
   const error = new Error(`the plugin did not start within ${PLUGIN_START_LIMIT_MS / 1000} s`)
   setFailure(ctx, pluginId, error.message)
