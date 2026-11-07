@@ -538,8 +538,8 @@ func (l *Links) beginCopy(ctx context.Context, link Link, media download.Media) 
 	return task, size, err
 }
 
-// prepareCopy points the note at a stored copy of the media asked for, or deletes a stored copy of
-// the other media and shows the task of the copy.
+// prepareCopy points the note at a stored copy of the media asked for, or shows the task of the
+// copy. A stored copy of the other media is kept until the new copy is stored.
 func (l *Links) prepareCopy(ctx context.Context, link Link, media download.Media) (*host.Task, int64, error) {
 	folder := folder{store: l.getStore(link)}
 	rec, err := folder.readRecord(ctx, link.Key)
@@ -554,11 +554,6 @@ func (l *Links) prepareCopy(ctx context.Context, link Link, media download.Media
 		// The copy is kept by the address and outlives a deleted note of it: a note made again
 		// points at it.
 		return nil, kept.Size, l.setAddress(ctx, link, mediaKey, l.getAddress(kept.Name))
-	}
-	if isKept && kept.Size > 0 {
-		if err := folder.deleteCopy(ctx, link.Key); err != nil {
-			return nil, 0, err
-		}
 	}
 	if !l.fetcher().CanCopy(string(link.Address)) {
 		return nil, 0, ErrNotCopyable
@@ -628,7 +623,10 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	if err := l.recordCopy(ctx, link, name, media); err != nil {
 		return 0, err
 	}
-	return into.byteCount, l.setAddress(ctx, link, mediaKey, l.getAddress(name))
+	if err := l.setAddress(ctx, link, mediaKey, l.getAddress(name)); err != nil {
+		return 0, err
+	}
+	return into.byteCount, folder{store: store}.deleteOtherCopies(ctx, link.Key, name)
 }
 
 // recordCopy writes down the file the copy of a link is kept in, and what media it holds.

@@ -157,3 +157,18 @@ func (f folder) deleteCopy(ctx context.Context, hash string) error {
 	}
 	return errors.Join(errs...)
 }
+
+// deleteOtherCopies takes away every whole copy kept under the key but the one in the named file.
+func (f folder) deleteOtherCopies(ctx context.Context, hash, name string) error {
+	files, err := f.store.List(ctx)
+	if err != nil {
+		return err
+	}
+	var errs []error
+	for _, one := range files {
+		if one.Name != name && isCopyOf(one.Name, hash) {
+			errs = append(errs, f.store.Delete(ctx, one.Name))
+		}
+	}
+	return errors.Join(errs...)
+}
