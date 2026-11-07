@@ -8,6 +8,7 @@ import {
 import { createNoteWithBody } from '../../support/layout.js'
 import { readBox } from '../../support/browser.js'
 import { openWorkspace } from '../../support/workspace.js'
+import { waitForCurrentVectors } from '../../support/index-stats.js'
 
 /** The title bar item that counts the vectors of the index. */
 const getItem = (page: Page): Locator => page.locator('.index-stats__label')
@@ -60,6 +61,7 @@ test.describe('the index stats item', () => {
   test('follows a note that is created, edited and removed', async ({ page, request }) => {
     await openWorkspace(page)
     const item = getItem(page)
+    await waitForCurrentVectors(page)
     const before = await readSettledVectors(item)
 
     const title = createUniqueTitle('Estuary ferry log')

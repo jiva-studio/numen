@@ -2,6 +2,7 @@ import { test, expect, type Locator } from '../../support/test.js'
 import { createUniqueTitle, destroyIndexedNote, writeSetting } from '../../support/vault.js'
 import { createNoteWithBody } from '../../support/layout.js'
 import { openWorkspace } from '../../support/workspace.js'
+import { waitForCurrentVectors } from '../../support/index-stats.js'
 
 const EMBEDDINGS_ID = 'md.numen.engines.embeddings'
 const MIN_CHUNK_LENGTH = [EMBEDDINGS_ID, 'minChunkLength']
@@ -59,6 +60,7 @@ test.describe('The smallest piece of text to index for meaning', () => {
     expect(LONG_BODY).toHaveLength(100)
     await openWorkspace(page)
     const item = getItem(page)
+    await waitForCurrentVectors(page)
     const before = await readSettledVectors(item)
 
     // With the default, the note of 100 characters gets a vector and the note of 10 does not.

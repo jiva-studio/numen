@@ -2,6 +2,7 @@ import { test, expect, type Locator } from '../../support/test.js'
 import { createUniqueTitle, destroyIndexedNote, writeSetting } from '../../support/vault.js'
 import { createNoteWithBody } from '../../support/layout.js'
 import { openWorkspace } from '../../support/workspace.js'
+import { waitForCurrentVectors } from '../../support/index-stats.js'
 
 const EMBEDDINGS_ID = 'md.numen.engines.embeddings'
 const CHUNK_TOKENS = [EMBEDDINGS_ID, 'chunkTokens']
@@ -52,6 +53,7 @@ test.describe('The longest chunk of a note, in tokens', () => {
     test.setTimeout(240_000)
     await openWorkspace(page)
     const item = getItem(page)
+    await waitForCurrentVectors(page)
     const before = await readSettledVectors(item)
     const path = await createNoteWithBody(
       request,
