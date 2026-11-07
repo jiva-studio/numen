@@ -24,9 +24,9 @@ folder=libs/core/adapter/index/migration
 # base carried and the file the change produced, so it excuses that state and
 # no other — no base cut after this reaches main hashes to collapsed, and an
 # edit to the file is refused here as anywhere.
-collapsed=e48740f85971cb1329e8696f46496ed03024ce0a
+collapsed=021d56652dad4f580e80d92a7396ea55b069b228
 kept=0001_index.sql
-produced=955856c716f6979be5fb493cba38003cbfe7852d
+produced=176233302a0286e9d26ead0b8b0bf02f25009a87
 
 # rule reads the folder as the base carries it against the folder as it stands.
 # The comparison is with the commit the branch would merge into, so what another
