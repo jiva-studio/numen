@@ -20,7 +20,7 @@ func TestAStringSettingMayAskTheHostToGenerateAToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a string setting with a generated token was rejected: %v", err)
 	}
-	if got := m.Settings[0].Generate; got != manifest.SettingGenerateToken || got != "token" {
+	if got := m.Settings[0].Generate; got != "token" {
 		t.Errorf("secret generates %q, want token", got)
 	}
 	if got := m.Settings[1].Generate; got != "" {

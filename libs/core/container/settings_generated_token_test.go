@@ -59,7 +59,10 @@ func loadTokenSettings(t *testing.T, cfg Config, plugins, path string) any {
 	if err := json.Unmarshal(raw, &file); err != nil {
 		t.Fatalf("numen.json is no object: %v\n%s", err, raw)
 	}
-	values, _ := file[tokenPlugin].(map[string]any)
+	values, ok := file[tokenPlugin].(map[string]any)
+	if !ok {
+		t.Fatalf("numen.json holds no settings of %s:\n%s", tokenPlugin, raw)
+	}
 	return values["token"]
 }
 
