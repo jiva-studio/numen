@@ -24,9 +24,8 @@ func TestCopyOfTheAudioDownloadsTheSoundAlone(t *testing.T) {
 	if err != nil || !bytes.Equal(copied, w.sites.clip) {
 		t.Errorf("the folder keeps %d bytes of sound (%v)", len(copied), err)
 	}
-	read, err := w.links.Read(t.Context(), made.Path)
-	if want := "plugin://" + pluginID + "/" + made.Key + ".m4a"; err != nil || read.Media != want {
-		t.Errorf("the note holds media %q (%v), want %q", read.Media, err, want)
+	if want, got := "plugin://"+pluginID+"/"+made.Key+".m4a", w.readProperty(t, made.Path, "media"); got != want {
+		t.Errorf("the note holds media %q, want %q", got, want)
 	}
 }
 
@@ -44,9 +43,8 @@ func TestCopyOfTheVideoReplacesTheSoundDownloadedBefore(t *testing.T) {
 	if _, err := w.store.Read(t.Context(), made.Key+".m4a"); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("the sound is still kept: %v", err)
 	}
-	read, err := w.links.Read(t.Context(), made.Path)
-	if want := "plugin://" + pluginID + "/" + made.Key + ".mp4"; err != nil || read.Media != want {
-		t.Errorf("the note holds media %q (%v), want %q", read.Media, err, want)
+	if want, got := "plugin://"+pluginID+"/"+made.Key+".mp4", w.readProperty(t, made.Path, "media"); got != want {
+		t.Errorf("the note holds media %q, want %q", got, want)
 	}
 	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); err != nil || len(w.sites.media) != 2 {
 		t.Errorf("a second copy of the video asked the site %v times (%v)", w.sites.media, err)

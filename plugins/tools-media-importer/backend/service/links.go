@@ -57,13 +57,8 @@ func (s linkServer) getLink(ctx context.Context, req api.GetLinkRequest) (api.Ge
 	if err != nil {
 		return api.GetLinkResponse{}, err
 	}
-	isDeleted, err := s.links.IsTextDeleted(ctx, found)
-	if err != nil {
-		return api.GetLinkResponse{}, err
-	}
 	return api.GetLinkResponse{
 		URL: string(found.Address), IsCopyable: s.links.IsCopyable(found.Address),
-		IsTextDeleted: isDeleted, Media: found.Media, Page: found.Page,
 	}, nil
 }
 

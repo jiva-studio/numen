@@ -84,11 +84,6 @@ func (f folder) writeText(ctx context.Context, key string, segments []domain.Tex
 	return f.writeRecord(ctx, key, rec)
 }
 
-// hasText reports whether the text of the key is kept.
-func (f folder) hasText(ctx context.Context, key string) (bool, error) {
-	return f.isKept(ctx, key+textExt)
-}
-
 func (f folder) writeRecord(ctx context.Context, key string, rec record) error {
 	raw, err := json.Marshal(rec)
 	// gomutants:disable-next-line BRANCH_IF reason="json.Marshal of string-only record struct cannot fail"
@@ -116,14 +111,6 @@ func (f folder) findRecord(ctx context.Context, key string) (record, bool, error
 func (f folder) readRecord(ctx context.Context, key string) (record, error) {
 	rec, _, err := f.findRecord(ctx, key)
 	return rec, err
-}
-
-func (f folder) isKept(ctx context.Context, name string) (bool, error) {
-	_, err := f.store.Read(ctx, name)
-	if errors.Is(err, host.ErrNotExist) {
-		return false, nil
-	}
-	return err == nil, err
 }
 
 // findCopy is the name and size of the copy kept under the key, and false where none is.

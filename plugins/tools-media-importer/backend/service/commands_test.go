@@ -168,7 +168,6 @@ func (f *configurableFetcher) Download(ctx context.Context, _ string, _ download
 type errListStore struct {
 	host.Store
 	listErr error
-	readErr error
 }
 
 func (s *errListStore) With(domain.VaultID) host.Store { return s }
@@ -178,13 +177,6 @@ func (s *errListStore) List(ctx context.Context) ([]host.StoreFile, error) {
 		return nil, s.listErr
 	}
 	return s.Store.List(ctx)
-}
-
-func (s *errListStore) Read(ctx context.Context, name string) ([]byte, error) {
-	if s.readErr != nil {
-		return nil, s.readErr
-	}
-	return s.Store.Read(ctx, name)
 }
 
 func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {

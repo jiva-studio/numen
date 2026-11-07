@@ -19,11 +19,6 @@ export interface GetLinkRequest {
 export interface GetLinkResponse {
   readonly url: string
   readonly isCopyable: boolean
-  readonly isTextDeleted: boolean
-  /** The address of the downloaded media, empty where none is kept. */
-  readonly media: string
-  /** The address of the page that frames the player, empty where none is known. */
-  readonly page: string
 }
 
 export interface CopyMediaRequest {

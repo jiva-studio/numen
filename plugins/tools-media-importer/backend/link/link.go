@@ -143,10 +143,6 @@ type Link struct {
 	Address address.URL
 	Key     string
 	URL     string
-	// Media and Page are the addresses the note holds of the downloaded media and of the page that
-	// frames the player, empty where it holds none.
-	Media string
-	Page  string
 }
 
 // Read is the link at a path of the vault the host shows.
@@ -181,7 +177,6 @@ func newLink(path string, parsed address.URL, raw []byte) Link {
 	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, raw)
 	return Link{
 		Vault: "", Path: path, Address: parsed, Key: getKey(parsed), URL: getText(note.Frontmatter[urlKey]),
-		Media: getText(note.Frontmatter[mediaKey]), Page: getText(note.Frontmatter[pageKey]),
 	}
 }
 
@@ -340,15 +335,6 @@ func (l *Links) StartFetch(ctx context.Context, link Link) {
 	})
 }
 
-// StartFetchText fetches the text of a link in the background. A failure is shown as its task.
-func (l *Links) StartFetchText(ctx context.Context, link Link) {
-	l.wg.Go(func() {
-		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
-		defer cancel()
-		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link))
-	})
-}
-
 // StartCopy copies the media of a link in the background. A failure is shown as its task.
 func (l *Links) StartCopy(ctx context.Context, link Link, media download.Media) {
 	l.wg.Go(func() {
@@ -432,16 +418,6 @@ func (l *Links) putVersion(ctx context.Context, link Link, kind domain.TextKind)
 		Kind: kind, File: link.Key + textExt,
 	})
 	return err
-}
-
-// IsTextDeleted reports whether the text of a link was fetched and its version deleted since.
-func (l *Links) IsTextDeleted(ctx context.Context, link Link) (bool, error) {
-	folder := folder{store: l.getStore(link)}
-	if rec, err := folder.readRecord(ctx, link.Key); err != nil || rec.Kind == "" {
-		return false, err
-	}
-	hasText, err := folder.hasText(ctx, link.Key)
-	return !hasText, err
 }
 
 // copyChunk is how much of a copy is sent to the store in one call.
@@ -563,34 +539,6 @@ func (l *Links) DeleteCopy(ctx context.Context, link Link) error {
 		}
 	}
 	return l.setAddress(ctx, link, mediaKey, "")
-}
-
-// ReadArticle is the text of the live version of a link, read in the link's vault, and nothing
-// where it has none.
-func (l *Links) ReadArticle(ctx context.Context, link Link) (string, error) {
-	texts := l.getTexts(link)
-	listing, err := texts.ListVersions(ctx, link.Path)
-	if err != nil || listing.Live == "" {
-		return "", err
-	}
-	for _, version := range listing.Versions {
-		if version.GetID() != listing.Live {
-			continue
-		}
-		whole, err := host.ReadWholeText(ctx, texts, version)
-		if err != nil {
-			return "", err
-		}
-		return whole.Text, nil
-	}
-	return "", nil
-}
-
-// GetTitle is what the page at a link's address calls itself, and nothing where no text was
-// fetched.
-func (l *Links) GetTitle(ctx context.Context, link Link) (string, error) {
-	rec, err := folder{store: l.getStore(link)}.readRecord(ctx, link.Key)
-	return rec.Title, err
 }
 
 // reportTask shows a task. A host that cannot show it leaves the work to go on unseen.

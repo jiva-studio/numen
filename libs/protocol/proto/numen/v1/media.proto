@@ -10,10 +10,9 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 // It is a service apart from the vault's notes: a window that serves the notes
 // to a network need not serve the files, and a binary mounts a service whole.
 service MediaService {
-  // ResolveAddress returns where the bytes of the file at an address are
-  // loaded from and the media type a player is told. An address is a path of
-  // the vault, or plugin://<plugin id>/<path> for a file in that plugin's store
-  // of the vault.
+  // ResolveAddress returns the address the bytes of a file are loaded from and
+  // the media type of those bytes. An address is a path of the vault, or
+  // plugin://<plugin id>/<path> for a file in that plugin's store of the vault.
   rpc ResolveAddress(ResolveAddressRequest) returns (ResolveAddressResponse);
 }
 

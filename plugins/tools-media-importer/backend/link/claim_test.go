@@ -113,33 +113,13 @@ func (s *hookStore) Rename(ctx context.Context, from, to string) error {
 
 type hookTexts struct {
 	host.Texts
-	withVault    domain.VaultID
-	listErr      error
-	listOverride *host.TextListing
-	readErr      error
-	putErr       error
+	withVault domain.VaultID
+	putErr    error
 }
 
 func (x *hookTexts) With(id domain.VaultID) host.Texts {
 	x.withVault = id
 	return x
-}
-
-func (x *hookTexts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
-	if x.listErr != nil {
-		return host.TextListing{}, x.listErr
-	}
-	if x.listOverride != nil {
-		return *x.listOverride, nil
-	}
-	return x.Texts.ListVersions(ctx, path)
-}
-
-func (x *hookTexts) ReadText(ctx context.Context, path string, version domain.TextVersionID, pageToken string) (host.TextPage, error) {
-	if x.readErr != nil {
-		return host.TextPage{}, x.readErr
-	}
-	return x.Texts.ReadText(ctx, path, version, pageToken)
 }
 
 func (x *hookTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.TextVersion, error) {
@@ -261,9 +241,6 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	hs.readErr = func(string) error { return boom }
 	if _, ok, err := f.findRecord(ctx, "k"); !errors.Is(err, boom) || ok {
 		t.Errorf("findRecord(error) = %v, %v", ok, err)
-	}
-	if kept, err := f.isKept(ctx, "k"); !errors.Is(err, boom) || kept {
-		t.Errorf("isKept(error) = %v, %v", kept, err)
 	}
 	hs.readErr = nil
 
@@ -473,7 +450,7 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 			return download.Text{}, errors.New("close did not cancel context")
 		}
 	}
-	l.StartFetchText(ctx, Link{Path: "notes/good.md", Address: "https://example.com/", Key: "k1"})
+	l.StartFetch(ctx, Link{Path: "notes/good.md", Address: "https://example.com/", Key: "k1"})
 	<-started
 	l.Close()
 	if !waited.Load() {
@@ -481,7 +458,7 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 	}
 }
 
-func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
+func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	ctx := t.Context()
 	l, v, _, hs, ht, hq, sf, maxSize := createTestLinks()
 	t.Cleanup(l.Close)
@@ -521,9 +498,6 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	if err := l.FetchText(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("FetchText(readRecord err) = %v, want %v", err, boom)
 	}
-	if deleted, err := l.IsTextDeleted(ctx, made); !errors.Is(err, boom) || deleted {
-		t.Errorf("IsTextDeleted(readRecord err) = (%v, %v)", deleted, err)
-	}
 	hs.readErr = nil
 
 	// FetchText when fetcher returns error, and when writeText fails.
@@ -550,37 +524,6 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	if err != nil || rec.Downloader != "tool v2" {
 		t.Errorf("record Downloader = %q (%v), want %q", rec.Downloader, err, "tool v2")
 	}
-
-	// ReadArticle when ListVersions fails.
-	ht.listErr = boom
-	if _, err := l.ReadArticle(ctx, made); !errors.Is(err, boom) {
-		t.Errorf("ReadArticle(ListVersions err) = %v, want %v", err, boom)
-	}
-	ht.listErr = nil
-
-	// Put another version before the live one.
-	liveListing, err := ht.Texts.ListVersions(ctx, made.Path)
-	if err != nil || len(liveListing.Versions) != 1 {
-		t.Fatalf("ListVersions = %+v (%v)", liveListing, err)
-	}
-	ht.listOverride = &host.TextListing{
-		Live: liveListing.Live,
-		Versions: []domain.TextVersion{
-			{PluginID: "other-plugin", Key: "other", SourceHash: "other-hash"},
-			liveListing.Versions[0],
-		},
-	}
-	// ReadArticle with non-live version first, and with ReadText error.
-	article, err := l.ReadArticle(ctx, made)
-	if err != nil || article != "body" {
-		t.Errorf("ReadArticle = %q (%v), want %q", article, err, "body")
-	}
-	ht.readErr = boom
-	if _, err := l.ReadArticle(ctx, made); !errors.Is(err, boom) {
-		t.Errorf("ReadArticle(ReadText err) = %v, want %v", err, boom)
-	}
-	ht.readErr = nil
-	ht.listOverride = nil
 
 	// endTask with canceled context still finishes the task using an uncanceled context.
 	canceledCtx, cancel := context.WithCancel(ctx)

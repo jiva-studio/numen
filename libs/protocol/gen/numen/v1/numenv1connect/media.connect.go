@@ -41,10 +41,9 @@ const (
 
 // MediaServiceClient is a client for the numen.v1.MediaService service.
 type MediaServiceClient interface {
-	// ResolveAddress returns where the bytes of the file at an address are
-	// loaded from and the media type a player is told. An address is a path of
-	// the vault, or plugin://<plugin id>/<path> for a file in that plugin's store
-	// of the vault.
+	// ResolveAddress returns the address the bytes of a file are loaded from and
+	// the media type of those bytes. An address is a path of the vault, or
+	// plugin://<plugin id>/<path> for a file in that plugin's store of the vault.
 	ResolveAddress(context.Context, *connect.Request[v1.ResolveAddressRequest]) (*connect.Response[v1.ResolveAddressResponse], error)
 }
 
@@ -80,10 +79,9 @@ func (c *mediaServiceClient) ResolveAddress(ctx context.Context, req *connect.Re
 
 // MediaServiceHandler is an implementation of the numen.v1.MediaService service.
 type MediaServiceHandler interface {
-	// ResolveAddress returns where the bytes of the file at an address are
-	// loaded from and the media type a player is told. An address is a path of
-	// the vault, or plugin://<plugin id>/<path> for a file in that plugin's store
-	// of the vault.
+	// ResolveAddress returns the address the bytes of a file are loaded from and
+	// the media type of those bytes. An address is a path of the vault, or
+	// plugin://<plugin id>/<path> for a file in that plugin's store of the vault.
 	ResolveAddress(context.Context, *connect.Request[v1.ResolveAddressRequest]) (*connect.Response[v1.ResolveAddressResponse], error)
 }
 

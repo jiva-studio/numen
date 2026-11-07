@@ -72,10 +72,9 @@ export const ResolveAddressResponseSchema: GenMessage<ResolveAddressResponse> = 
  */
 export const MediaService: GenService<{
   /**
-   * ResolveAddress returns where the bytes of the file at an address are
-   * loaded from and the media type a player is told. An address is a path of
-   * the vault, or plugin://<plugin id>/<path> for a file in that plugin's store
-   * of the vault.
+   * ResolveAddress returns the address the bytes of a file are loaded from and
+   * the media type of those bytes. An address is a path of the vault, or
+   * plugin://<plugin id>/<path> for a file in that plugin's store of the vault.
    *
    * @generated from rpc numen.v1.MediaService.ResolveAddress
    */

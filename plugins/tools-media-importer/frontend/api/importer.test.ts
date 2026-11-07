@@ -18,9 +18,6 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
     response: {
       url: 'https://www.youtube.com/watch?v=tidalmill01',
       isCopyable: true,
-      isTextDeleted: false,
-      media: 'plugin://md.numen.tools.media.importer/0b5e1c.mp4',
-      page: 'plugin://md.numen.tools.media.importer/0b5e1c.html',
     },
   },
   CopyMedia: { request: { path: 'links/clip.md', kind: 'audio' }, response: {} },

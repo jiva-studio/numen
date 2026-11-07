@@ -23,13 +23,6 @@ type GetLinkResponse struct {
 	URL string `json:"url"`
 	// IsCopyable is whether a video is published at the address.
 	IsCopyable bool `json:"isCopyable"`
-	// IsTextDeleted is whether the text was fetched once and its version deleted since.
-	IsTextDeleted bool `json:"isTextDeleted"`
-	// Media is the address of the downloaded media the note holds, empty where it holds none.
-	Media string `json:"media"`
-	// Page is the address of the page that frames the video player the note holds, empty where it
-	// holds none.
-	Page string `json:"page"`
 }
 
 // CopyMediaRequest starts copying the media of the link note at Path: the video, or with Kind

@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
@@ -111,6 +112,35 @@ func (w *world) create(t *testing.T, address string) link.Link {
 	return made
 }
 
+// readProperty is the text the note at path holds under a frontmatter key, empty where it holds none.
+func (w *world) readProperty(t *testing.T, path, key string) string {
+	t.Helper()
+	content, _ := w.vault.Content(path)
+	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, []byte(content))
+	value, _ := note.Frontmatter[key].(string)
+	return value
+}
+
+// readLiveText is the text of the live version of the note at path, empty where it has none.
+func (w *world) readLiveText(t *testing.T, path string) string {
+	t.Helper()
+	listing, err := w.texts.ListVersions(t.Context(), path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, version := range listing.Versions {
+		if version.GetID() != listing.Live {
+			continue
+		}
+		whole, err := host.ReadWholeText(t.Context(), w.texts, version)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return whole.Text
+	}
+	return ""
+}
+
 func TestCreateMakesANoteOfTypeLinkWithTheAddress(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, articleAddress)
@@ -152,12 +182,11 @@ func TestAnArticleIsThePlainTextVersionOfItsLink(t *testing.T) {
 	if kind := listing.Versions[0].Kind; kind != "article" {
 		t.Errorf("an article is %q text", kind)
 	}
-	text, err := w.links.ReadArticle(t.Context(), made)
-	if err != nil || text != "A tidal mill stored seawater behind a sluice gate." {
-		t.Errorf("the article reads %q (%v)", text, err)
+	if text := w.readLiveText(t, made.Path); text != "A tidal mill stored seawater behind a sluice gate." {
+		t.Errorf("the article reads %q", text)
 	}
-	if title, err := w.links.GetTitle(t.Context(), made); err != nil || title != "Tidal Mills" {
-		t.Errorf("the page is called %q (%v)", title, err)
+	if record, err := w.store.Read(t.Context(), made.Key+".json"); err != nil || !strings.Contains(string(record), `"Tidal Mills"`) {
+		t.Errorf("the record reads %s (%v), want the title Tidal Mills", record, err)
 	}
 	if tasks := w.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("tasks are left shown: %+v", tasks)
@@ -296,8 +325,8 @@ func TestFetchTextFetchesADeletedTextAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	w.deleteVersion(t, made)
-	if isDeleted, err := w.links.IsTextDeleted(t.Context(), made); err != nil || !isDeleted {
-		t.Errorf("IsTextDeleted = %v (%v); want true", isDeleted, err)
+	if text := w.readLiveText(t, made.Path); text != "" {
+		t.Errorf("the deleted article reads %q", text)
 	}
 
 	if err := w.links.FetchText(t.Context(), made); err != nil {
@@ -306,23 +335,20 @@ func TestFetchTextFetchesADeletedTextAgain(t *testing.T) {
 	if count := w.sites.texts.Load(); count != 2 {
 		t.Errorf("the address was asked %d times, want twice", count)
 	}
-	if text, err := w.links.ReadArticle(t.Context(), made); err != nil || text == "" {
-		t.Errorf("a second run leaves the article %q (%v)", text, err)
-	}
-	if isDeleted, err := w.links.IsTextDeleted(t.Context(), made); err != nil || isDeleted {
-		t.Errorf("IsTextDeleted after a fetch = %v (%v); want false", isDeleted, err)
+	if text := w.readLiveText(t, made.Path); text == "" {
+		t.Error("a second run leaves no article")
 	}
 }
 
-func TestFetchText_BackgroundFetchPopulatesNewLink(t *testing.T) {
+func TestFetchTextPutsTheArticleOfANewLink(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, articleAddress)
 
 	if err := w.links.FetchText(t.Context(), made); err != nil {
 		t.Fatal(err)
 	}
-	if text, err := w.links.ReadArticle(t.Context(), made); err != nil || text == "" {
-		t.Errorf("the article reads %q (%v)", text, err)
+	if text := w.readLiveText(t, made.Path); text == "" {
+		t.Error("the new link has no article")
 	}
 }
 
@@ -362,15 +388,18 @@ func TestCopyWritesTheAddressOfTheMediaIntoTheNote(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if want, got := "plugin://"+pluginID+"/"+made.Key+".mp4", w.readProperty(t, made.Path, "media"); got != want {
+		t.Errorf("the note holds media %q, want %q", got, want)
+	}
 	read, err := w.links.Read(t.Context(), made.Path)
-	if want := "plugin://" + pluginID + "/" + made.Key + ".mp4"; err != nil || read.Media != want {
-		t.Errorf("the note holds media %q (%v), want %q", read.Media, err, want)
+	if err != nil {
+		t.Fatal(err)
 	}
 	if err := w.links.DeleteCopy(t.Context(), read); err != nil {
 		t.Fatal(err)
 	}
-	if read, err := w.links.Read(t.Context(), made.Path); err != nil || read.Media != "" {
-		t.Errorf("after the deletion the note holds media %q (%v)", read.Media, err)
+	if got := w.readProperty(t, made.Path, "media"); got != "" {
+		t.Errorf("after the deletion the note holds media %q", got)
 	}
 }
 
@@ -385,14 +414,10 @@ func TestTheTextIsLiveAfterTheMediaAddressIsSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	read, err := w.links.Read(t.Context(), made.Path)
-	if err != nil {
-		t.Fatal(err)
-	}
 	content, _ := w.vault.Content(made.Path)
 	w.texts.File(made.Path, []byte(content))
-	if text, err := w.links.ReadArticle(t.Context(), read); err != nil || text == "" {
-		t.Errorf("the note with its media reads %q (%v)", text, err)
+	if text := w.readLiveText(t, made.Path); text == "" {
+		t.Error("the note with its media has no live text")
 	}
 }
 
@@ -469,15 +494,15 @@ func TestCreateWritesThePageThatFramesThePlayer(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, "https://www.youtube.com/watch?v=tidalmill01")
 
-	if want := "plugin://" + pluginID + "/" + made.Key + ".html"; made.Page != want {
-		t.Fatalf("the note holds page %q, want %q", made.Page, want)
+	if want, got := "plugin://"+pluginID+"/"+made.Key+".html", w.readProperty(t, made.Path, "page"); got != want {
+		t.Fatalf("the note holds page %q, want %q", got, want)
 	}
 	page, err := w.store.Read(t.Context(), made.Key+".html")
 	if err != nil || !strings.Contains(string(page), "https://www.youtube-nocookie.com/embed/tidalmill01") {
 		t.Errorf("the page reads %q (%v)", page, err)
 	}
-	if article := w.create(t, articleAddress); article.Page != "" {
-		t.Errorf("an article holds page %q", article.Page)
+	if article := w.create(t, articleAddress); w.readProperty(t, article.Path, "page") != "" {
+		t.Errorf("an article holds page %q", w.readProperty(t, article.Path, "page"))
 	}
 }
 

@@ -29,15 +29,16 @@ An address dragged out of a browser onto the files tree is the same gesture: the
 
 The plugin fetches the text when it makes the link. A run of `app:file.createText` (**Download captions**) fetches the text whoever started it, a person or the plugin's `file.added` trigger (setting `downloadCaptionsAutomatically`). Deleting the text version through the file's menu keeps the text deleted until **Download captions** fetches it again.
 
-Everything is kept in the plugin's folder of the vault's store, `.numen/md.numen.tools.media.importer/`. The text is kept under the hash of the address, `<key>`, and the copy under the content hash of the note, `<hash>`:
+Everything is kept in the plugin's folder of the vault's store, `.numen/md.numen.tools.media.importer/`. The text is kept under the hash of the address, `<key>`, and so are the copy and the page:
 
 | File          | What it holds                                                            |
 | ------------- | ------------------------------------------------------------------------ |
 | `<key>.jsonl` | the text, in the common format of text versions                          |
 | `<key>.json`  | how it was fetched: the address, the title, the tool, the kind, the copy |
-| `<hash>.mp4`  | the copy of a video; `<hash>.part` while the download is in progress     |
+| `<key>.mp4`   | the copy of a video; `<key>.part` while the download is in progress      |
+| `<key>.html`  | the page that frames the site's player                                   |
 
-A record of a kind whose `.jsonl` is gone is a text the person deleted. An edit of the note changes its hash; the plugin stores the text again as a version of the edited note and renames the copy, without fetching.
+A record of a kind whose `.jsonl` is gone is a text the person deleted. The text version is rooted in the note's `url`: an edit elsewhere in the note keeps it live, and a new `url` makes it not live.
 
 ## What a search returns
 
@@ -45,7 +46,7 @@ The text version is the link's text, split into passages as any source's text is
 
 ## A copy
 
-Importing an address (`app:link.import`) makes the link note and nothing else. **Download media** (`app:link.downloadMedia`) offers the video of a link whose address publishes one, and downloads it, up to the size `copyMaxSizeMb` sets, into the plugin's folder of the vault's store, through the core's queue and shown as a task; nothing downloaded goes into the vault. The plugin writes the address of the download into the note as `media: plugin://md.numen.tools.media.importer/<key>.mp4`, and of the page that frames the player as `page:`, which `resolveAddress` turns into the address the window plays or frames it from. **Delete media** (`app:link.deleteMedia`) deletes the download and takes `media` out of the note. **Download captions** (`app:file.createText`) fetches the text of a link note; with the setting `automaticCaptions` on, it runs when a link note is added.
+Importing an address (`app:link.import`) makes the link note and nothing else. **Download media** (`app:link.downloadMedia`) offers the video of a link whose address publishes one, and downloads it, up to the size `copyMaxSizeMb` sets, into the plugin's folder of the vault's store, through the core's queue and shown as a task; nothing downloaded goes into the vault. The plugin writes the address of the download into the note as `media: plugin://md.numen.tools.media.importer/<key>.mp4`, and of the page that frames the player as `page:`, which `resolveAddress` turns into the address the window plays or frames it from. **Delete media** (`app:link.deleteMedia`) deletes the download and takes `media` out of the note. **Download captions** (`app:file.createText`) fetches the text of a link note; with the setting `downloadCaptionsAutomatically` on, it runs when a link note is added.
 
 While no media are downloaded, the Media Viewer frames the site's player. The plugin declares `contributes.frameOrigins: ["https://www.youtube-nocookie.com"]` and writes a page that frames the player into its folder of the vault's store when it makes the link note, at the address the note holds under `page`. The viewer loads that page from the window's loopback socket (`resolveAddress`), not from the window's own scheme: a page of a scheme that is not http sends no Referer, and the site refuses to play for a page that sends none. The loopback page is served with `Referrer-Policy: strict-origin-when-cross-origin`.
 
