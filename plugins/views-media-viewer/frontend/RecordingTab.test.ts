@@ -28,7 +28,7 @@ const mountTab = (
   state = reactive({ path: 'talks/Ants.mp3' }),
   path = 'talks/Ants.mp3',
 ) => {
-  const { player, seeks, shown } = createPlayer()
+  const { player, seeks, surfaces } = createPlayer()
   const tab = mount(RecordingTab, {
     props: {
       path,
@@ -38,7 +38,7 @@ const mountTab = (
     },
     attachTo: document.body,
   })
-  return { tab, seeks, state, shown }
+  return { tab, seeks, state, surfaces }
 }
 
 describe('a recording tab', () => {
@@ -111,22 +111,22 @@ describe('a recording tab', () => {
       mediaType: 'video/mp4',
       pageUrl: '',
     })
-    const { tab, shown } = mountTab(recordings)
+    const { tab, surfaces } = mountTab(recordings)
     await flush()
 
     const surface = tab.find('.recording__video')
     expect(surface.exists()).toBe(true)
-    expect(shown).toStrictEqual([surface.element])
+    expect(surfaces).toStrictEqual([surface.element])
     tab.unmount()
   })
 
   it('draws no picture for a sound', async () => {
     const { recordings } = createRecordings()
-    const { tab, shown } = mountTab(recordings)
+    const { tab, surfaces } = mountTab(recordings)
     await flush()
 
     expect(tab.find('.recording__video').exists()).toBe(false)
-    expect(shown).toStrictEqual([])
+    expect(surfaces).toStrictEqual([])
     tab.unmount()
   })
 

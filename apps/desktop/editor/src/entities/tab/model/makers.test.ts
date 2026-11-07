@@ -9,18 +9,21 @@ import { writer } from '@/testing/writer'
 import { ERRORS } from '@/shared/words'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { fileOpeners } from './openers'
+import { createFileCreators, type VaultCreator } from './makers'
 
 /** Openers over a vault that names the tab kind of each note by its path. */
 const createOpeners = (tabKinds: Readonly<Record<string, string>> = {}) =>
   fileOpeners({
     fileKinds: async (paths) =>
       new Map(
-        paths
-          .filter((path) => tabKinds[path] !== undefined)
-          .map((path) => [path, { isNote: true, type: 'note', tabKind: tabKinds[path] }]),
+        paths.flatMap((path) => {
+          const tabKind = tabKinds[path]
+          return tabKind === undefined
+            ? []
+            : [[path, { isNote: true, type: 'note', tabKind }] as const]
+        }),
       ),
   })
-import { createFileCreators, type VaultCreator } from './makers'
 
 /** A vault stub that returns the configured result and records the creation requests. */
 const maker = (

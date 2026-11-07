@@ -69,7 +69,7 @@ export function createPlayer() {
   const position = ref(0)
   const seeks: [string, number][] = []
   /** The containers the element was drawn in, in order, and released from. */
-  const shown: HTMLElement[] = []
+  const surfaces: HTMLElement[] = []
   const released: HTMLElement[] = []
   const player: Player = {
     url,
@@ -91,13 +91,13 @@ export function createPlayer() {
     },
     getDuration: async () => 0,
     attach: (container) => {
-      shown.push(container)
+      surfaces.push(container)
     },
     release: (container) => {
       released.push(container)
     },
   }
-  return { player, seeks, shown, released }
+  return { player, seeks, surfaces, released }
 }
 
 /** Resolves once every pending request has been answered. */

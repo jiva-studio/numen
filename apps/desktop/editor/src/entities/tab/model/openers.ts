@@ -103,17 +103,21 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const readFile = (path: string, selector: Selector | null): void =>
     extensionReaders.get(getExtension(path))?.read(path, selector)
 
-  /** Opens the note in the tab kind the core chose for it; false where no tab kind takes it. */
+  /**
+   * Opens the note in the tab kind the core chose for it; false where no tab kind takes it or no
+   * frontend has registered that kind.
+   */
   const openNote = (
     path: string,
     kind: FileKind,
     title: string,
     placement?: OpenPlacement,
   ): boolean => {
-    if (!kind.isNote || !kind.tabKind) return false
+    const editor = kind.isNote && kind.tabKind ? editors.get(kind.tabKind) : undefined
+    if (!editor || !kind.tabKind) return false
     vault.reconcileTab?.(path, kind.tabKind)
     const { selector: _selector, ...rest } = placement ?? {}
-    editors.get(kind.tabKind)?.(path, title, rest)
+    editor(path, title, rest)
     return true
   }
 

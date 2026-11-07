@@ -28,16 +28,19 @@ func entry(pluginID, kind, when string, rank domain.HandlerRank) pluginport.Plug
 	}
 }
 
-var kinds = declared{
-	entry("org.example.cards", "deck", "target.noteType == 'deck'", domain.RankDefault),
-	entry("org.example.editor", "note", "target.isNote", domain.RankAlternate),
-	entry("org.example.viewer", "media", "has(target.properties.media) || target.noteType == 'link'", domain.RankDefault),
-	entry("org.example.zines", "zine", "target.noteType == 'deck'", domain.RankDefault),
-	entry("org.example.files", "files", "", domain.RankDefault),
+// getKinds is the tab kinds of an editor, a viewer and two plugins that both take decks.
+func getKinds() declared {
+	return declared{
+		entry("org.example.cards", "deck", "target.noteType == 'deck'", domain.RankDefault),
+		entry("org.example.editor", "note", "target.isNote", domain.RankAlternate),
+		entry("org.example.viewer", "media", "has(target.properties.media) || target.noteType == 'link'", domain.RankDefault),
+		entry("org.example.zines", "zine", "target.noteType == 'deck'", domain.RankDefault),
+		entry("org.example.files", "files", "", domain.RankDefault),
+	}
 }
 
-func TestChoose_OpensANoteInTheKindWhoseConditionHolds(t *testing.T) {
-	choose := tabkind.NewChoose(kinds, notes{})
+func TestChoose_OpensANoteInTheKindWhoseConditionMatches(t *testing.T) {
+	choose := tabkind.NewChoose(getKinds(), notes{})
 
 	cases := []struct {
 		name       string
@@ -58,7 +61,7 @@ func TestChoose_OpensANoteInTheKindWhoseConditionHolds(t *testing.T) {
 	}
 }
 
-func TestChoose_GivesNoKindWhereNoConditionHolds(t *testing.T) {
+func TestChoose_ReturnsNoKindWhenNoConditionMatches(t *testing.T) {
 	choose := tabkind.NewChoose(declared{entry("org.example.cards", "deck", "target.noteType == 'deck'", domain.RankDefault)}, notes{})
 
 	if got := choose.Execute("plain.md", domain.TypeNote, nil); got != "" {
@@ -66,7 +69,7 @@ func TestChoose_GivesNoKindWhereNoConditionHolds(t *testing.T) {
 	}
 }
 
-func TestChoose_GivesNoKindWithoutPlugins(t *testing.T) {
+func TestChoose_ReturnsNoKindWithoutPlugins(t *testing.T) {
 	if got := tabkind.NewChoose(nil, nil).Execute("plain.md", domain.TypeNote, nil); got != "" {
 		t.Errorf("kind = %q, want none", got)
 	}

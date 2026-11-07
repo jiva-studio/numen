@@ -570,26 +570,26 @@ describe('the length of a recording that does not hold the player', () => {
   })
 })
 
-describe('a video shown in a tab', () => {
+describe('a video surface in a tab', () => {
   it('draws the element in the container that shows it, and keeps it in the page once released', () => {
     const element = document.createElement('video')
     const plays = createMediaPlayer(() => element)
-    const shown = document.createElement('div')
+    const surface = document.createElement('div')
     const other = document.createElement('div')
-    document.body.append(shown, other)
+    document.body.append(surface, other)
 
     plays.load(TALK)
-    plays.attach(shown)
-    expect(element.parentElement).toBe(shown)
+    plays.attach(surface)
+    expect(element.parentElement).toBe(surface)
 
     plays.release(other)
-    expect(element.parentElement).toBe(shown)
+    expect(element.parentElement).toBe(surface)
 
-    plays.release(shown)
-    expect(shown.contains(element)).toBe(false)
+    plays.release(surface)
+    expect(surface.contains(element)).toBe(false)
     expect(element.isConnected).toBe(true)
     expect(element.parentElement?.hidden).toBe(true)
-    shown.remove()
+    surface.remove()
     other.remove()
   })
 })
