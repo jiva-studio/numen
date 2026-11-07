@@ -20,7 +20,7 @@ const props = defineProps<{
   drafts: readonly string[]
   declarations: readonly Declaration[]
   /** Creates the secret of a draft and resolves true when it was created; the field keeps a failed value. */
-  create?: ((name: string, value: string) => Promise<boolean>) | undefined
+  create: (name: string, value: string) => Promise<boolean>
 }>()
 
 const emit = defineEmits<{
@@ -105,7 +105,7 @@ function onMoveDown(index: number): void {
         v-if="section.isAsked && section.secrets.length === 0"
         :name="words.secretDefault"
         :can-discard="false"
-        :submit="create && ((value) => create!(words.secretDefault, value))"
+        :submit="(value) => create(words.secretDefault, value)"
       />
       <SecretRow
         v-for="(secret, index) in section.secrets"
@@ -126,7 +126,7 @@ function onMoveDown(index: number): void {
         :key="name"
         :name="name"
         can-discard
-        :submit="create && ((value) => create!(name, value))"
+        :submit="(value) => create(name, value)"
         @discard="emit('discard', name)"
       />
     </ul>
