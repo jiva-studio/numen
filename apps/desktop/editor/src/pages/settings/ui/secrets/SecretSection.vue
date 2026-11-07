@@ -3,7 +3,7 @@
  * The secrets of one group in priority order. A group a plugin asks for shows one empty secret
  * named Default while it has none. A group the person made can be renamed.
  */
-import { nextTick, ref, useTemplateRef } from 'vue'
+import { nextTick, ref, useId, useTemplateRef } from 'vue'
 import { Pencil, Plus } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
@@ -36,6 +36,7 @@ const emit = defineEmits<{
 const isRenaming = ref(false)
 const draftName = ref('')
 const nameInput = useTemplateRef<HTMLInputElement>('nameInput')
+const headingId = useId()
 
 /* -------------------------------- Handlers -------------------------------- */
 async function onStartRename(): Promise<void> {
@@ -69,7 +70,7 @@ function onMoveDown(index: number): void {
 </script>
 
 <template>
-  <section class="secret-section">
+  <section class="secret-section" :aria-labelledby="headingId">
     <div class="secret-section__header">
       <input
         v-if="isRenaming"
@@ -83,7 +84,7 @@ function onMoveDown(index: number): void {
         @change="onCommitRename"
         @blur="onCommitRename"
       />
-      <h2 v-else class="secret-section__name">{{ section.group }}</h2>
+      <h2 v-show="!isRenaming" :id="headingId" class="secret-section__name">{{ section.group }}</h2>
       <Button
         v-if="!section.isAsked && !isRenaming"
         variant="ghost"
