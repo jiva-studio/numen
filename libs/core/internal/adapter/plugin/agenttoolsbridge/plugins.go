@@ -66,7 +66,7 @@ func (p plugins) listTools(ctx context.Context, server Server, except string) []
 			// the tools of the others.
 			continue
 		}
-		for _, spec := range listed {
+		for _, spec := range listed.GetTools() {
 			if names[spec.GetName()] || !isAvailable(spec, server) || !hasPermission(info.Permissions, spec.GetEffect()) {
 				continue
 			}
@@ -77,8 +77,9 @@ func (p plugins) listTools(ctx context.Context, server Server, except string) []
 	return found
 }
 
-// listPluginTools lists the tools of one plugin, holding its reference for the length of the call.
-func (p plugins) listPluginTools(ctx context.Context, pluginID string) (tools []*v1.PluginTool, err error) {
+// listPluginTools lists the tools of one plugin, keeping a reference to it during
+// the call.
+func (p plugins) listPluginTools(ctx context.Context, pluginID string) (listing *v1.ListToolsResponse, err error) {
 	client, lease, err := bridge.Open(ctx, p.host, pluginID, numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
 		return nil, err
@@ -89,7 +90,7 @@ func (p plugins) listPluginTools(ctx context.Context, pluginID string) (tools []
 	if err != nil {
 		return nil, fmt.Errorf("list the tools of %s: %w", pluginID, err)
 	}
-	return res.Msg.GetTools(), nil
+	return res.Msg, nil
 }
 
 // callTool runs the tool on the plugin that listed it, in the scope of the run.
@@ -130,4 +131,29 @@ func hasPermission(permissions []string, effect v1.ToolEffect) bool {
 	}
 	return slices.Contains(permissions, pluginport.PermissionVaultRead) ||
 		slices.Contains(permissions, pluginport.PermissionVaultWrite)
+}
+
+// getPermissions returns the permissions of the plugin with the id, and none for a plugin the host does
+// not know.
+func (p plugins) getPermissions(pluginID string) []string {
+	for _, info := range p.host.GetPluginInfos() {
+		if info.ID == pluginID {
+			return info.Permissions
+		}
+	}
+	return nil
+}
+
+// listToolsFor returns the tools offered on the server for which the caller has the effect permission
+// and all required permissions. The caller's own tools are listed too.
+func (p plugins) listToolsFor(ctx context.Context, server Server, callerID string) []tool {
+	permissions := p.getPermissions(callerID)
+	all := p.listTools(ctx, server, "")
+	required := make([]tool, 0, len(all))
+	for _, one := range all {
+		if hasPermission(permissions, one.spec.GetEffect()) && hasAll(permissions, one.spec.GetRequires()) {
+			required = append(required, one)
+		}
+	}
+	return required
 }

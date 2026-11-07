@@ -238,7 +238,7 @@ func FindRemovedSources(
 			if err != nil {
 				return nil, err
 			}
-			if ok && text.Hash != "" {
+			if ok && text.ContentHash != "" {
 				out = append(out, text)
 			}
 		}
@@ -287,5 +287,5 @@ func findSameContent(ctx context.Context, reader vaultport.VaultReader, path str
 		return -1
 	}
 	hash := domain.HashContent(raw)
-	return slices.IndexFunc(removed, func(old sourceport.SourceText) bool { return old.Hash == hash })
+	return slices.IndexFunc(removed, func(old sourceport.SourceText) bool { return old.ContentHash == hash })
 }

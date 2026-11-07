@@ -149,15 +149,25 @@ export function useTranscript(
     return isWorking.value ? WORDS.transcribing : WORDS.silence
   })
 
-  /** Moves playback to the start time of the first of the spans. */
-  const reach = async (...spans: readonly TextRange[]) => {
+  /** Number of seek requests. */
+  let seekRequestCount = 0
+  /**
+   * Seeks playback to the start time of the first of the spans, and returns that time in
+   * milliseconds, or null when playback did not seek. A cue time that resolves after a later seek
+   * request is dropped.
+   */
+  const seekToSpans = async (...spans: readonly TextRange[]): Promise<number | null> => {
+    const request = ++seekRequestCount
     await firstRead
-    if (!isOpen || spans.length === 0) return
+    if (!isOpen || spans.length === 0) return null
     try {
       const ms = await recordings.findCueTime(path, spans[0]!)
-      if (isOpen && ms !== null) playback.controls.go(ms)
+      if (!isOpen || ms === null || request !== seekRequestCount) return null
+      playback.controls.go(ms)
+      return ms
     } catch (err) {
       if (isOpen) error.value = formatErrorMessage(err)
+      return null
     }
   }
 
@@ -207,7 +217,7 @@ export function useTranscript(
       isStartable,
       start: createText,
     },
-    navigation: { reach, goToLine },
+    navigation: { seekToSpans, goToLine },
     close,
   }
 }

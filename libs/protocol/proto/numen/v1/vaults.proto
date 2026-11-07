@@ -63,18 +63,18 @@ enum VaultsErrorCode {
   // It is the only vault this installation has.
   VAULTS_ERROR_CODE_LAST_VAULT = 5;
 
-  VAULTS_ERROR_CODE_SHOWING = 6;
+  // The vault is the one the window shows.
+  VAULTS_ERROR_CODE_CURRENT = 6;
 
   // No vault of that identity is on the list.
-  VAULTS_ERROR_CODE_UNKNOWN = 7;
+  VAULTS_ERROR_CODE_NOT_FOUND = 7;
 
   // This machine has no trash, so the folder stays where
   // it is and the vault stays on the list.
   VAULTS_ERROR_CODE_NO_TRASH = 8;
 
-  // A tab is holding text the person has to answer for, so the window stayed
-  // where it was.
-  VAULTS_ERROR_CODE_ASKING = 9;
+  // A tab has unsaved changes, so the window keeps the vault it shows.
+  VAULTS_ERROR_CODE_UNSAVED = 9;
 }
 
 // Vault is one vault the installation holds, as the list has it.

@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/workspace.proto.
  */
 export const file_numen_v1_workspace: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxImMKEERldGFjaFRhYlJlcXVlc3QSGgoDdGFiGAEgASgLMg0ubnVtZW4udjEuVGFiEgkKAXgYAiABKAUSCQoBeRgDIAEoBRINCgV3aWR0aBgEIAEoBRIOCgZoZWlnaHQYBSABKAUiPgoRRGV0YWNoVGFiUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5UYWJNb3ZlRXJyb3JDb2RlIhMKEVdhdGNoRm9jdXNSZXF1ZXN0IkMKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEh8KBnJhbmdlcxgCIAMoCzIPLm51bWVuLnYxLlJhbmdlIkYKFFdyaXRlT3BlblRhYnNSZXF1ZXN0EhsKBHRhYnMYASADKAsyDS5udW1lbi52MS5UYWISEQoJYWN0aXZlX2lkGAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSIVChNSZWFkT3BlblRhYnNSZXF1ZXN0IkYKFFJlYWRPcGVuVGFic1Jlc3BvbnNlEhsKBHRhYnMYASADKAsyDS5udW1lbi52MS5UYWISEQoJYWN0aXZlX2lkGAIgASgJIksKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSDQoFc3RhdGUYBSABKAkiKQoUV2F0Y2hUYWJMaW5rc1JlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJIsUBChVXYXRjaFRhYkxpbmtzUmVzcG9uc2USIwoFbGlua3MYASABKAsyEi5udW1lbi52MS5UYWJMaW5rc0gAEiUKBHN5bmMYAiABKAsyFS5udW1lbi52MS5UYWJQYXRoU3luY0gAEicKCW1vdmVkX3RhYhgDIAEoCzISLm51bWVuLnYxLk1vdmVkVGFiSAASLgoJaGlnaGxpZ2h0GAQgASgLMhkubnVtZW4udjEuV2luZG93SGlnaGxpZ2h0SABCBwoFZXZlbnQifQoIVGFiTGlua3MSJgoGZ3JvdXBzGAEgAygLMhYubnVtZW4udjEuVGFiTGlua0dyb3VwEiMKBHRhYnMYAiADKAsyFS5udW1lbi52MS5MaW5rYWJsZVRhYhIkCgd3aW5kb3dzGAMgAygLMhMubnVtZW4udjEuVGFiV2luZG93ImYKCVRhYldpbmRvdxIKCgJpZBgBIAEoCRIPCgdpc19tYWluGAIgASgIEhQKDGFjdGl2ZV90aXRsZRgDIAEoCRITCgthY3RpdmVfa2luZBgEIAEoCRIRCgl0YWJfY291bnQYBSABKAUiIAoPV2luZG93SGlnaGxpZ2h0Eg0KBWlzX29uGAEgASgIIl0KDFRhYkxpbmtHcm91cBIKCgJpZBgBIAEoCRITCgtjb2xvcl9pbmRleBgCIAEoBRIPCgd0YWJfaWRzGAMgAygJEgwKBHBhdGgYBCABKAkSDQoFdGl0bGUYBSABKAkiSQoLTGlua2FibGVUYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIRCgl3aW5kb3dfaWQYBCABKAkiUwoLVGFiUGF0aFN5bmMSEAoIZ3JvdXBfaWQYASABKAkSFQoNc291cmNlX3RhYl9pZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJIi8KGkNhbmNlbFdhdGNoVGFiTGlua3NSZXF1ZXN0EhEKCXdpbmRvd19pZBgBIAEoCSIdChtDYW5jZWxXYXRjaFRhYkxpbmtzUmVzcG9uc2UilQEKFFdyaXRlVGFiTGlua3NSZXF1ZXN0EhEKCXdpbmRvd19pZBgBIAEoCRIhCgRsaW5rGAIgASgLMhEubnVtZW4udjEuVGFiTGlua0gAEhcKDXVubGlua190YWJfaWQYAyABKAlIABIkCgR0YWJzGAQgASgLMhQubnVtZW4udjEuV2luZG93VGFic0gAQggKBmNoYW5nZSI3CgdUYWJMaW5rEhUKDXNvdXJjZV90YWJfaWQYASABKAkSFQoNdGFyZ2V0X3RhYl9pZBgCIAEoCSJWCgpXaW5kb3dUYWJzEiMKBHRhYnMYASADKAsyFS5udW1lbi52MS5MaW5rYWJsZVRhYhIjCgZ3aW5kb3cYAiABKAsyEy5udW1lbi52MS5UYWJXaW5kb3ciFwoVV3JpdGVUYWJMaW5rc1Jlc3BvbnNlIkgKElN5bmNUYWJQYXRoUmVxdWVzdBIVCg1zb3VyY2VfdGFiX2lkGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkiFQoTU3luY1RhYlBhdGhSZXNwb25zZSI7ChZSZWFkRGV0YWNoZWRUYWJSZXF1ZXN0Eg4KBnRhYl9pZBgBIAEoCRIRCgl3aW5kb3dfaWQYAiABKAkiRgoXUmVhZERldGFjaGVkVGFiUmVzcG9uc2USGgoDdGFiGAEgASgLMg0ubnVtZW4udjEuVGFiEg8KB21vdmVfaWQYAiABKAkiWQoOTW92ZVRhYlJlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJEhgKEHRhcmdldF93aW5kb3dfaWQYAiABKAkSGgoDdGFiGAMgASgLMg0ubnVtZW4udjEuVGFiIjwKD01vdmVUYWJSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLlRhYk1vdmVFcnJvckNvZGUiSgoUQWNjZXB0VGFiTW92ZVJlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJEg4KBnRhYl9pZBgCIAEoCRIPCgdtb3ZlX2lkGAMgASgJIjcKCE1vdmVkVGFiEhoKA3RhYhgBIAEoCzINLm51bWVuLnYxLlRhYhIPCgdtb3ZlX2lkGAIgASgJIkIKFUFjY2VwdFRhYk1vdmVSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLlRhYk1vdmVFcnJvckNvZGUiOgoWSGlnaGxpZ2h0V2luZG93UmVxdWVzdBIRCgl3aW5kb3dfaWQYASABKAkSDQoFaXNfb24YAiABKAgiGQoXSGlnaGxpZ2h0V2luZG93UmVzcG9uc2UqxQEKEFRhYk1vdmVFcnJvckNvZGUSIwofVEFCX01PVkVfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiUKIVRBQl9NT1ZFX0VSUk9SX0NPREVfV0lORE9XX0NMT1NFRBABEh8KG1RBQl9NT1ZFX0VSUk9SX0NPREVfVElNRU9VVBACEiEKHVRBQl9NT1ZFX0VSUk9SX0NPREVfTk9UX09XTkVSEAMSIQodVEFCX01PVkVfRVJST1JfQ09ERV9DQU5DRUxMRUQQBDLcBwoQV29ya3NwYWNlU2VydmljZRJJCgpXYXRjaEZvY3VzEhsubnVtZW4udjEuV2F0Y2hGb2N1c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEZvY3VzUmVzcG9uc2UwARJQCg1Xcml0ZU9wZW5UYWJzEh4ubnVtZW4udjEuV3JpdGVPcGVuVGFic1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVzcG9uc2USTQoMUmVhZE9wZW5UYWJzEh0ubnVtZW4udjEuUmVhZE9wZW5UYWJzUmVxdWVzdBoeLm51bWVuLnYxLlJlYWRPcGVuVGFic1Jlc3BvbnNlEkQKCURldGFjaFRhYhIaLm51bWVuLnYxLkRldGFjaFRhYlJlcXVlc3QaGy5udW1lbi52MS5EZXRhY2hUYWJSZXNwb25zZRJSCg1XYXRjaFRhYkxpbmtzEh4ubnVtZW4udjEuV2F0Y2hUYWJMaW5rc1JlcXVlc3QaHy5udW1lbi52MS5XYXRjaFRhYkxpbmtzUmVzcG9uc2UwARJiChNDYW5jZWxXYXRjaFRhYkxpbmtzEiQubnVtZW4udjEuQ2FuY2VsV2F0Y2hUYWJMaW5rc1JlcXVlc3QaJS5udW1lbi52MS5DYW5jZWxXYXRjaFRhYkxpbmtzUmVzcG9uc2USUAoNV3JpdGVUYWJMaW5rcxIeLm51bWVuLnYxLldyaXRlVGFiTGlua3NSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVUYWJMaW5rc1Jlc3BvbnNlEkoKC1N5bmNUYWJQYXRoEhwubnVtZW4udjEuU3luY1RhYlBhdGhSZXF1ZXN0Gh0ubnVtZW4udjEuU3luY1RhYlBhdGhSZXNwb25zZRJWCg9SZWFkRGV0YWNoZWRUYWISIC5udW1lbi52MS5SZWFkRGV0YWNoZWRUYWJSZXF1ZXN0GiEubnVtZW4udjEuUmVhZERldGFjaGVkVGFiUmVzcG9uc2USPgoHTW92ZVRhYhIYLm51bWVuLnYxLk1vdmVUYWJSZXF1ZXN0GhkubnVtZW4udjEuTW92ZVRhYlJlc3BvbnNlElAKDUFjY2VwdFRhYk1vdmUSHi5udW1lbi52MS5BY2NlcHRUYWJNb3ZlUmVxdWVzdBofLm51bWVuLnYxLkFjY2VwdFRhYk1vdmVSZXNwb25zZRJWCg9IaWdobGlnaHRXaW5kb3cSIC5udW1lbi52MS5IaWdobGlnaHRXaW5kb3dSZXF1ZXN0GiEubnVtZW4udjEuSGlnaGxpZ2h0V2luZG93UmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxImMKEERldGFjaFRhYlJlcXVlc3QSGgoDdGFiGAEgASgLMg0ubnVtZW4udjEuVGFiEgkKAXgYAiABKAUSCQoBeRgDIAEoBRINCgV3aWR0aBgEIAEoBRIOCgZoZWlnaHQYBSABKAUiPgoRRGV0YWNoVGFiUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5UYWJNb3ZlRXJyb3JDb2RlIhMKEVdhdGNoRm9jdXNSZXF1ZXN0IlMKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEh8KBnJhbmdlcxgCIAMoCzIPLm51bWVuLnYxLlJhbmdlEg4KBnRhYl9pZBgDIAEoCSJGChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UiFQoTUmVhZE9wZW5UYWJzUmVxdWVzdCJGChRSZWFkT3BlblRhYnNSZXNwb25zZRIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgCIAEoCSJuCgNUYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEg0KBXN0YXRlGAUgASgJEiEKBXBsYWNlGAYgASgLMhIubnVtZW4udjEuVGFiUGxhY2UifgoIVGFiUGxhY2USDAoEcGFnZRgBIAEoBRISCgpwYWdlX2NvdW50GAIgASgFEh0KEHBvc2l0aW9uX3NlY29uZHMYAyABKAFIAIgBARILCgNjZmkYBCABKAkSDwoHY2hhcHRlchgFIAEoCUITChFfcG9zaXRpb25fc2Vjb25kcyIpChRXYXRjaFRhYkxpbmtzUmVxdWVzdBIRCgl3aW5kb3dfaWQYASABKAkixQEKFVdhdGNoVGFiTGlua3NSZXNwb25zZRIjCgVsaW5rcxgBIAEoCzISLm51bWVuLnYxLlRhYkxpbmtzSAASJQoEc3luYxgCIAEoCzIVLm51bWVuLnYxLlRhYlBhdGhTeW5jSAASJwoJbW92ZWRfdGFiGAMgASgLMhIubnVtZW4udjEuTW92ZWRUYWJIABIuCgloaWdobGlnaHQYBCABKAsyGS5udW1lbi52MS5XaW5kb3dIaWdobGlnaHRIAEIHCgVldmVudCJ9CghUYWJMaW5rcxImCgZncm91cHMYASADKAsyFi5udW1lbi52MS5UYWJMaW5rR3JvdXASIwoEdGFicxgCIAMoCzIVLm51bWVuLnYxLkxpbmthYmxlVGFiEiQKB3dpbmRvd3MYAyADKAsyEy5udW1lbi52MS5UYWJXaW5kb3ciZgoJVGFiV2luZG93EgoKAmlkGAEgASgJEg8KB2lzX21haW4YAiABKAgSFAoMYWN0aXZlX3RpdGxlGAMgASgJEhMKC2FjdGl2ZV9raW5kGAQgASgJEhEKCXRhYl9jb3VudBgFIAEoBSIgCg9XaW5kb3dIaWdobGlnaHQSDQoFaXNfb24YASABKAgiXQoMVGFiTGlua0dyb3VwEgoKAmlkGAEgASgJEhMKC2NvbG9yX2luZGV4GAIgASgFEg8KB3RhYl9pZHMYAyADKAkSDAoEcGF0aBgEIAEoCRINCgV0aXRsZRgFIAEoCSJJCgtMaW5rYWJsZVRhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEg0KBXRpdGxlGAMgASgJEhEKCXdpbmRvd19pZBgEIAEoCSJTCgtUYWJQYXRoU3luYxIQCghncm91cF9pZBgBIAEoCRIVCg1zb3VyY2VfdGFiX2lkGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkiLwoaQ2FuY2VsV2F0Y2hUYWJMaW5rc1JlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJIh0KG0NhbmNlbFdhdGNoVGFiTGlua3NSZXNwb25zZSKVAQoUV3JpdGVUYWJMaW5rc1JlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJEiEKBGxpbmsYAiABKAsyES5udW1lbi52MS5UYWJMaW5rSAASFwoNdW5saW5rX3RhYl9pZBgDIAEoCUgAEiQKBHRhYnMYBCABKAsyFC5udW1lbi52MS5XaW5kb3dUYWJzSABCCAoGY2hhbmdlIjcKB1RhYkxpbmsSFQoNc291cmNlX3RhYl9pZBgBIAEoCRIVCg10YXJnZXRfdGFiX2lkGAIgASgJIlYKCldpbmRvd1RhYnMSIwoEdGFicxgBIAMoCzIVLm51bWVuLnYxLkxpbmthYmxlVGFiEiMKBndpbmRvdxgCIAEoCzITLm51bWVuLnYxLlRhYldpbmRvdyIXChVXcml0ZVRhYkxpbmtzUmVzcG9uc2UiSAoSU3luY1RhYlBhdGhSZXF1ZXN0EhUKDXNvdXJjZV90YWJfaWQYASABKAkSDAoEcGF0aBgCIAEoCRINCgV0aXRsZRgDIAEoCSIVChNTeW5jVGFiUGF0aFJlc3BvbnNlIjsKFlJlYWREZXRhY2hlZFRhYlJlcXVlc3QSDgoGdGFiX2lkGAEgASgJEhEKCXdpbmRvd19pZBgCIAEoCSJGChdSZWFkRGV0YWNoZWRUYWJSZXNwb25zZRIaCgN0YWIYASABKAsyDS5udW1lbi52MS5UYWISDwoHbW92ZV9pZBgCIAEoCSJZCg5Nb3ZlVGFiUmVxdWVzdBIRCgl3aW5kb3dfaWQYASABKAkSGAoQdGFyZ2V0X3dpbmRvd19pZBgCIAEoCRIaCgN0YWIYAyABKAsyDS5udW1lbi52MS5UYWIiPAoPTW92ZVRhYlJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuVGFiTW92ZUVycm9yQ29kZSJKChRBY2NlcHRUYWJNb3ZlUmVxdWVzdBIRCgl3aW5kb3dfaWQYASABKAkSDgoGdGFiX2lkGAIgASgJEg8KB21vdmVfaWQYAyABKAkiNwoITW92ZWRUYWISGgoDdGFiGAEgASgLMg0ubnVtZW4udjEuVGFiEg8KB21vdmVfaWQYAiABKAkiQgoVQWNjZXB0VGFiTW92ZVJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuVGFiTW92ZUVycm9yQ29kZSI6ChZIaWdobGlnaHRXaW5kb3dSZXF1ZXN0EhEKCXdpbmRvd19pZBgBIAEoCRINCgVpc19vbhgCIAEoCCIZChdIaWdobGlnaHRXaW5kb3dSZXNwb25zZSrFAQoQVGFiTW92ZUVycm9yQ29kZRIjCh9UQUJfTU9WRV9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJQohVEFCX01PVkVfRVJST1JfQ09ERV9XSU5ET1dfQ0xPU0VEEAESHwobVEFCX01PVkVfRVJST1JfQ09ERV9USU1FT1VUEAISIQodVEFCX01PVkVfRVJST1JfQ09ERV9OT1RfT1dORVIQAxIhCh1UQUJfTU9WRV9FUlJPUl9DT0RFX0NBTkNFTExFRBAEMtwHChBXb3Jrc3BhY2VTZXJ2aWNlEkkKCldhdGNoRm9jdXMSGy5udW1lbi52MS5XYXRjaEZvY3VzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoRm9jdXNSZXNwb25zZTABElAKDVdyaXRlT3BlblRhYnMSHi5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXNwb25zZRJNCgxSZWFkT3BlblRhYnMSHS5udW1lbi52MS5SZWFkT3BlblRhYnNSZXF1ZXN0Gh4ubnVtZW4udjEuUmVhZE9wZW5UYWJzUmVzcG9uc2USRAoJRGV0YWNoVGFiEhoubnVtZW4udjEuRGV0YWNoVGFiUmVxdWVzdBobLm51bWVuLnYxLkRldGFjaFRhYlJlc3BvbnNlElIKDVdhdGNoVGFiTGlua3MSHi5udW1lbi52MS5XYXRjaFRhYkxpbmtzUmVxdWVzdBofLm51bWVuLnYxLldhdGNoVGFiTGlua3NSZXNwb25zZTABEmIKE0NhbmNlbFdhdGNoVGFiTGlua3MSJC5udW1lbi52MS5DYW5jZWxXYXRjaFRhYkxpbmtzUmVxdWVzdBolLm51bWVuLnYxLkNhbmNlbFdhdGNoVGFiTGlua3NSZXNwb25zZRJQCg1Xcml0ZVRhYkxpbmtzEh4ubnVtZW4udjEuV3JpdGVUYWJMaW5rc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVRhYkxpbmtzUmVzcG9uc2USSgoLU3luY1RhYlBhdGgSHC5udW1lbi52MS5TeW5jVGFiUGF0aFJlcXVlc3QaHS5udW1lbi52MS5TeW5jVGFiUGF0aFJlc3BvbnNlElYKD1JlYWREZXRhY2hlZFRhYhIgLm51bWVuLnYxLlJlYWREZXRhY2hlZFRhYlJlcXVlc3QaIS5udW1lbi52MS5SZWFkRGV0YWNoZWRUYWJSZXNwb25zZRI+CgdNb3ZlVGFiEhgubnVtZW4udjEuTW92ZVRhYlJlcXVlc3QaGS5udW1lbi52MS5Nb3ZlVGFiUmVzcG9uc2USUAoNQWNjZXB0VGFiTW92ZRIeLm51bWVuLnYxLkFjY2VwdFRhYk1vdmVSZXF1ZXN0Gh8ubnVtZW4udjEuQWNjZXB0VGFiTW92ZVJlc3BvbnNlElYKD0hpZ2hsaWdodFdpbmRvdxIgLm51bWVuLnYxLkhpZ2hsaWdodFdpbmRvd1JlcXVlc3QaIS5udW1lbi52MS5IaWdobGlnaHRXaW5kb3dSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.DetachTabRequest
@@ -117,6 +117,13 @@ export type WatchFocusResponse = Message<"numen.v1.WatchFocusResponse"> & {
    * @generated from field: repeated numen.v1.Range ranges = 2;
    */
   ranges: Range[];
+
+  /**
+   * The id of an open tab to make active; when set, path and ranges are empty.
+   *
+   * @generated from field: string tab_id = 3;
+   */
+  tabId: string;
 };
 
 /**
@@ -251,6 +258,14 @@ export type Tab = Message<"numen.v1.Tab"> & {
    * @generated from field: string state = 5;
    */
   state: string;
+
+  /**
+   * Place is the place the reader of the tab reported; unset for a tab whose
+   * kind reports none.
+   *
+   * @generated from field: numen.v1.TabPlace place = 6;
+   */
+  place?: TabPlace | undefined;
 };
 
 /**
@@ -259,6 +274,56 @@ export type Tab = Message<"numen.v1.Tab"> & {
  */
 export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
   messageDesc(file_numen_v1_workspace, 8);
+
+/**
+ * TabPlace is the place a reader tab shows, as its reader reports it. Unset
+ * fields are places the reader does not have.
+ *
+ * @generated from message numen.v1.TabPlace
+ */
+export type TabPlace = Message<"numen.v1.TabPlace"> & {
+  /**
+   * Page is the page a PDF shows, from 1.
+   *
+   * @generated from field: int32 page = 1;
+   */
+  page: number;
+
+  /**
+   * PageCount is the number of pages of a PDF.
+   *
+   * @generated from field: int32 page_count = 2;
+   */
+  pageCount: number;
+
+  /**
+   * PositionSeconds is the time of a recording, in seconds from its start.
+   *
+   * @generated from field: optional double position_seconds = 3;
+   */
+  positionSeconds?: number | undefined;
+
+  /**
+   * Cfi is the EPUB CFI of the place shown.
+   *
+   * @generated from field: string cfi = 4;
+   */
+  cfi: string;
+
+  /**
+   * Chapter is the table-of-contents title of an EPUB at the place shown.
+   *
+   * @generated from field: string chapter = 5;
+   */
+  chapter: string;
+};
+
+/**
+ * Describes the message numen.v1.TabPlace.
+ * Use `create(TabPlaceSchema)` to create a new message.
+ */
+export const TabPlaceSchema: GenMessage<TabPlace> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 9);
 
 /**
  * @generated from message numen.v1.WatchTabLinksRequest
@@ -277,7 +342,7 @@ export type WatchTabLinksRequest = Message<"numen.v1.WatchTabLinksRequest"> & {
  * Use `create(WatchTabLinksRequestSchema)` to create a new message.
  */
 export const WatchTabLinksRequestSchema: GenMessage<WatchTabLinksRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 9);
+  messageDesc(file_numen_v1_workspace, 10);
 
 /**
  * @generated from message numen.v1.WatchTabLinksResponse
@@ -325,7 +390,7 @@ export type WatchTabLinksResponse = Message<"numen.v1.WatchTabLinksResponse"> & 
  * Use `create(WatchTabLinksResponseSchema)` to create a new message.
  */
 export const WatchTabLinksResponseSchema: GenMessage<WatchTabLinksResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 10);
+  messageDesc(file_numen_v1_workspace, 11);
 
 /**
  * TabLinks is the set of link groups of the vault, the linkable tabs of all
@@ -357,7 +422,7 @@ export type TabLinks = Message<"numen.v1.TabLinks"> & {
  * Use `create(TabLinksSchema)` to create a new message.
  */
 export const TabLinksSchema: GenMessage<TabLinks> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 11);
+  messageDesc(file_numen_v1_workspace, 12);
 
 /**
  * A TabWindow is the last report of a window about itself.
@@ -402,7 +467,7 @@ export type TabWindow = Message<"numen.v1.TabWindow"> & {
  * Use `create(TabWindowSchema)` to create a new message.
  */
 export const TabWindowSchema: GenMessage<TabWindow> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 12);
+  messageDesc(file_numen_v1_workspace, 13);
 
 /**
  * @generated from message numen.v1.WindowHighlight
@@ -419,7 +484,7 @@ export type WindowHighlight = Message<"numen.v1.WindowHighlight"> & {
  * Use `create(WindowHighlightSchema)` to create a new message.
  */
 export const WindowHighlightSchema: GenMessage<WindowHighlight> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 13);
+  messageDesc(file_numen_v1_workspace, 14);
 
 /**
  * A TabLinkGroup is two or more tabs that move to the same path together.
@@ -463,7 +528,7 @@ export type TabLinkGroup = Message<"numen.v1.TabLinkGroup"> & {
  * Use `create(TabLinkGroupSchema)` to create a new message.
  */
 export const TabLinkGroupSchema: GenMessage<TabLinkGroup> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 14);
+  messageDesc(file_numen_v1_workspace, 15);
 
 /**
  * A LinkableTab is an open tab whose kind supports navigation to a path.
@@ -500,7 +565,7 @@ export type LinkableTab = Message<"numen.v1.LinkableTab"> & {
  * Use `create(LinkableTabSchema)` to create a new message.
  */
 export const LinkableTabSchema: GenMessage<LinkableTab> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 15);
+  messageDesc(file_numen_v1_workspace, 16);
 
 /**
  * A TabPathSync is the new path of a linked tab.
@@ -534,7 +599,7 @@ export type TabPathSync = Message<"numen.v1.TabPathSync"> & {
  * Use `create(TabPathSyncSchema)` to create a new message.
  */
 export const TabPathSyncSchema: GenMessage<TabPathSync> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 16);
+  messageDesc(file_numen_v1_workspace, 17);
 
 /**
  * @generated from message numen.v1.CancelWatchTabLinksRequest
@@ -551,7 +616,7 @@ export type CancelWatchTabLinksRequest = Message<"numen.v1.CancelWatchTabLinksRe
  * Use `create(CancelWatchTabLinksRequestSchema)` to create a new message.
  */
 export const CancelWatchTabLinksRequestSchema: GenMessage<CancelWatchTabLinksRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 17);
+  messageDesc(file_numen_v1_workspace, 18);
 
 /**
  * @generated from message numen.v1.CancelWatchTabLinksResponse
@@ -564,7 +629,7 @@ export type CancelWatchTabLinksResponse = Message<"numen.v1.CancelWatchTabLinksR
  * Use `create(CancelWatchTabLinksResponseSchema)` to create a new message.
  */
 export const CancelWatchTabLinksResponseSchema: GenMessage<CancelWatchTabLinksResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 18);
+  messageDesc(file_numen_v1_workspace, 19);
 
 /**
  * @generated from message numen.v1.WriteTabLinksRequest
@@ -613,7 +678,7 @@ export type WriteTabLinksRequest = Message<"numen.v1.WriteTabLinksRequest"> & {
  * Use `create(WriteTabLinksRequestSchema)` to create a new message.
  */
 export const WriteTabLinksRequestSchema: GenMessage<WriteTabLinksRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 19);
+  messageDesc(file_numen_v1_workspace, 20);
 
 /**
  * @generated from message numen.v1.TabLink
@@ -635,7 +700,7 @@ export type TabLink = Message<"numen.v1.TabLink"> & {
  * Use `create(TabLinkSchema)` to create a new message.
  */
 export const TabLinkSchema: GenMessage<TabLink> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 20);
+  messageDesc(file_numen_v1_workspace, 21);
 
 /**
  * @generated from message numen.v1.WindowTabs
@@ -657,7 +722,7 @@ export type WindowTabs = Message<"numen.v1.WindowTabs"> & {
  * Use `create(WindowTabsSchema)` to create a new message.
  */
 export const WindowTabsSchema: GenMessage<WindowTabs> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 21);
+  messageDesc(file_numen_v1_workspace, 22);
 
 /**
  * @generated from message numen.v1.WriteTabLinksResponse
@@ -670,7 +735,7 @@ export type WriteTabLinksResponse = Message<"numen.v1.WriteTabLinksResponse"> & 
  * Use `create(WriteTabLinksResponseSchema)` to create a new message.
  */
 export const WriteTabLinksResponseSchema: GenMessage<WriteTabLinksResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 22);
+  messageDesc(file_numen_v1_workspace, 23);
 
 /**
  * @generated from message numen.v1.SyncTabPathRequest
@@ -699,7 +764,7 @@ export type SyncTabPathRequest = Message<"numen.v1.SyncTabPathRequest"> & {
  * Use `create(SyncTabPathRequestSchema)` to create a new message.
  */
 export const SyncTabPathRequestSchema: GenMessage<SyncTabPathRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 23);
+  messageDesc(file_numen_v1_workspace, 24);
 
 /**
  * @generated from message numen.v1.SyncTabPathResponse
@@ -712,7 +777,7 @@ export type SyncTabPathResponse = Message<"numen.v1.SyncTabPathResponse"> & {
  * Use `create(SyncTabPathResponseSchema)` to create a new message.
  */
 export const SyncTabPathResponseSchema: GenMessage<SyncTabPathResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 24);
+  messageDesc(file_numen_v1_workspace, 25);
 
 /**
  * @generated from message numen.v1.ReadDetachedTabRequest
@@ -737,7 +802,7 @@ export type ReadDetachedTabRequest = Message<"numen.v1.ReadDetachedTabRequest"> 
  * Use `create(ReadDetachedTabRequestSchema)` to create a new message.
  */
 export const ReadDetachedTabRequestSchema: GenMessage<ReadDetachedTabRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 25);
+  messageDesc(file_numen_v1_workspace, 26);
 
 /**
  * @generated from message numen.v1.ReadDetachedTabResponse
@@ -763,7 +828,7 @@ export type ReadDetachedTabResponse = Message<"numen.v1.ReadDetachedTabResponse"
  * Use `create(ReadDetachedTabResponseSchema)` to create a new message.
  */
 export const ReadDetachedTabResponseSchema: GenMessage<ReadDetachedTabResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 26);
+  messageDesc(file_numen_v1_workspace, 27);
 
 /**
  * @generated from message numen.v1.MoveTabRequest
@@ -796,7 +861,7 @@ export type MoveTabRequest = Message<"numen.v1.MoveTabRequest"> & {
  * Use `create(MoveTabRequestSchema)` to create a new message.
  */
 export const MoveTabRequestSchema: GenMessage<MoveTabRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 27);
+  messageDesc(file_numen_v1_workspace, 28);
 
 /**
  * @generated from message numen.v1.MoveTabResponse
@@ -816,7 +881,7 @@ export type MoveTabResponse = Message<"numen.v1.MoveTabResponse"> & {
  * Use `create(MoveTabResponseSchema)` to create a new message.
  */
 export const MoveTabResponseSchema: GenMessage<MoveTabResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 28);
+  messageDesc(file_numen_v1_workspace, 29);
 
 /**
  * @generated from message numen.v1.AcceptTabMoveRequest
@@ -847,7 +912,7 @@ export type AcceptTabMoveRequest = Message<"numen.v1.AcceptTabMoveRequest"> & {
  * Use `create(AcceptTabMoveRequestSchema)` to create a new message.
  */
 export const AcceptTabMoveRequestSchema: GenMessage<AcceptTabMoveRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 29);
+  messageDesc(file_numen_v1_workspace, 30);
 
 /**
  * MovedTab is a tab sent to a window by MoveTab, and the id of that move.
@@ -871,7 +936,7 @@ export type MovedTab = Message<"numen.v1.MovedTab"> & {
  * Use `create(MovedTabSchema)` to create a new message.
  */
 export const MovedTabSchema: GenMessage<MovedTab> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 30);
+  messageDesc(file_numen_v1_workspace, 31);
 
 /**
  * @generated from message numen.v1.AcceptTabMoveResponse
@@ -891,7 +956,7 @@ export type AcceptTabMoveResponse = Message<"numen.v1.AcceptTabMoveResponse"> & 
  * Use `create(AcceptTabMoveResponseSchema)` to create a new message.
  */
 export const AcceptTabMoveResponseSchema: GenMessage<AcceptTabMoveResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 31);
+  messageDesc(file_numen_v1_workspace, 32);
 
 /**
  * @generated from message numen.v1.HighlightWindowRequest
@@ -915,7 +980,7 @@ export type HighlightWindowRequest = Message<"numen.v1.HighlightWindowRequest"> 
  * Use `create(HighlightWindowRequestSchema)` to create a new message.
  */
 export const HighlightWindowRequestSchema: GenMessage<HighlightWindowRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 32);
+  messageDesc(file_numen_v1_workspace, 33);
 
 /**
  * @generated from message numen.v1.HighlightWindowResponse
@@ -928,7 +993,7 @@ export type HighlightWindowResponse = Message<"numen.v1.HighlightWindowResponse"
  * Use `create(HighlightWindowResponseSchema)` to create a new message.
  */
 export const HighlightWindowResponseSchema: GenMessage<HighlightWindowResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_workspace, 33);
+  messageDesc(file_numen_v1_workspace, 34);
 
 /**
  * TabMoveErrorCode is why a move of a tab was served and did not complete.

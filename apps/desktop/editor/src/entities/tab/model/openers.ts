@@ -99,9 +99,20 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const findFileIcon = (path: string): Component | undefined =>
     extensionReaders.get(getExtension(path))?.icon
 
-  /** A file opened in its reader at a place; a file no reader takes opens nothing. */
-  const readFile = (path: string, selector: Selector | null): void =>
-    extensionReaders.get(getExtension(path))?.read(path, selector)
+  /**
+   * Opens a file in its reader at a place, with text ranges highlighted; a file with no reader is not
+   * opened.
+   */
+  const readFile = (
+    path: string,
+    selector: Selector | null,
+    ranges?: readonly TextRange[],
+  ): void => {
+    const reader = extensionReaders.get(getExtension(path))
+    if (!reader) return
+    if (ranges) reader.read(path, selector, ranges)
+    else reader.read(path, selector)
+  }
 
   /**
    * Opens the note in the tab kind the core chose for it; false where no tab kind takes it or no
@@ -136,11 +147,11 @@ export function fileOpeners(vault: FileOpenerDeps) {
     readFile(path, placement?.selector ?? null)
   }
 
-  /** Opens a file with ranges of a note's text marked. */
-  const openFileAt = async (path: string, _spans: readonly TextRange[]): Promise<void> => {
+  /** Opens a file at ranges of its text: a note in its editor, whole, any other file in its reader. */
+  const openFileAt = async (path: string, spans: readonly TextRange[]): Promise<void> => {
     const kind = await fetchFileKind(vault, path)
     if (kind && openNote(path, kind, '')) return
-    readFile(path, null)
+    readFile(path, null, spans)
   }
 
   return {

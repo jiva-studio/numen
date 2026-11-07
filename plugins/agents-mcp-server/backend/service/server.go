@@ -21,25 +21,21 @@ type Server struct {
 	httpServer *http.Server
 	handler    http.Handler
 	aggregator *ToolAggregator
-	listener   net.Listener
 	actualAddr string
 	isClosed   bool
 	mu         sync.Mutex
 	// serveErr holds the errors of the HTTP servers other than their shutdown. Close returns it.
 	serveErr error
+	// newConns holds the accepted connections that have not sent a request yet. http.Server.Shutdown
+	// waits five seconds for such a connection, so its shutdown hook closes them.
+	newConns map[net.Conn]struct{}
+	// isShuttingDown is set by the shutdown hook of the HTTP server, after which trackConn closes a
+	// new connection at once.
+	isShuttingDown bool
 }
 
 // NewServer creates an MCP server with the provided configuration and host tool client.
 func NewServer(cfg Config, client ToolClient) (*Server, error) {
-	if cfg.Token == "" {
-		token, err := createRandomToken()
-		// gomutants:disable-next-line BRANCH_IF reason="createRandomToken fails only when crypto/rand.Read fails"
-		if err != nil {
-			return nil, fmt.Errorf("create auth token: %w", err)
-		}
-		cfg.Token = token
-	}
-
 	mcpServer := sdk.NewServer(
 		&sdk.Implementation{
 			Name:        "numen",
@@ -54,49 +50,121 @@ func NewServer(cfg Config, client ToolClient) (*Server, error) {
 
 	aggregator := NewToolAggregator(client, mcpServer)
 
-	mcpServer.AddReceivingMiddleware(func(next sdk.MethodHandler) sdk.MethodHandler {
-		return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
-			if method == "tools/list" {
-				reportSyncError(aggregator.SyncTools(ctx))
-			}
-			return next(ctx, method, req)
-		}
-	})
+	mcpServer.AddReceivingMiddleware(newSyncMiddleware(aggregator))
 
 	reportSyncError(aggregator.SyncTools(context.Background()))
 
 	srv := &Server{
-		config:     cfg,
-		mcpServer:  mcpServer,
-		httpServer: nil,
-		handler:    nil,
-		aggregator: aggregator,
-		listener:   nil,
-		actualAddr: "",
-		isClosed:   false,
-		mu:         sync.Mutex{},
-		serveErr:   nil,
+		config:         cfg,
+		mcpServer:      mcpServer,
+		httpServer:     nil,
+		handler:        nil,
+		aggregator:     aggregator,
+		actualAddr:     "",
+		isClosed:       false,
+		mu:             sync.Mutex{},
+		serveErr:       nil,
+		newConns:       make(map[net.Conn]struct{}),
+		isShuttingDown: false,
 	}
-	authHandler := srv.createHTTPHandler(mcpServer)
-	srv.handler = authHandler
-	srv.httpServer = newHTTPServer(authHandler)
+	srv.handler = srv.createHTTPHandler(mcpServer)
+	srv.httpServer = srv.newHTTPServer()
 
 	return srv, nil
+}
+
+// newSyncMiddleware syncs the host tools before a listing of the tools and before the initialize
+// result, and writes the instructions of the latest sync into that result. The SDK returns the
+// fixed instructions of the server options for initialize, and for server/discover of the
+// stateless protocol.
+func newSyncMiddleware(aggregator *ToolAggregator) sdk.Middleware {
+	return func(next sdk.MethodHandler) sdk.MethodHandler {
+		return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
+			switch method {
+			case "tools/list":
+				reportSyncError(aggregator.SyncTools(ctx))
+			case "initialize", "server/discover":
+				reportSyncError(aggregator.SyncTools(ctx))
+				result, err := next(ctx, method, req)
+				if err == nil {
+					writeInstructions(result, joinInstructions(aggregator.GetInstructions()))
+				}
+				return result, err
+			}
+			return next(ctx, method, req)
+		}
+	}
+}
+
+// writeInstructions sets the instructions of an initialize or a discover result. The SDK returns a
+// typed nil result with an error, as for a second initialize on a session.
+func writeInstructions(result sdk.Result, text string) {
+	switch res := result.(type) {
+	case *sdk.InitializeResult:
+		if res != nil {
+			res.Instructions = text
+		}
+	case *sdk.DiscoverResult:
+		if res != nil {
+			res.Instructions = text
+		}
+	}
 }
 
 // newServerOptions creates the options of the MCP server.
 func newServerOptions() *sdk.ServerOptions {
 	opts := new(sdk.ServerOptions)
-	opts.Instructions = "Numén notes and plugins tools server."
+	opts.Instructions = instructions
 	return opts
 }
 
-// newHTTPServer creates an HTTP server that serves handler.
-func newHTTPServer(handler http.Handler) *http.Server {
+// newHTTPServer creates an HTTP server that serves the handler of s and closes the connections
+// without a request on shutdown.
+func (s *Server) newHTTPServer() *http.Server {
 	httpSrv := new(http.Server)
-	httpSrv.Handler = handler
+	httpSrv.Handler = s.handler
 	httpSrv.ReadHeaderTimeout = 10 * time.Second
+	httpSrv.ConnState = s.trackConn
+	httpSrv.RegisterOnShutdown(s.closeNewConns)
 	return httpSrv
+}
+
+// trackConn records whether conn has sent a request yet and closes a connection accepted after the
+// HTTP server has started its shutdown.
+func (s *Server) trackConn(conn net.Conn, state http.ConnState) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if state != http.StateNew {
+		delete(s.newConns, conn)
+		return
+	}
+	if s.isShuttingDown {
+		closeConn(conn)
+		return
+	}
+	s.newConns[conn] = struct{}{}
+}
+
+// closeNewConns closes the connections that have not sent a request. http.Server.Shutdown runs it
+// after it has marked itself as shutting down, and from then on net/http drops a request it reads
+// on such a connection.
+func (s *Server) closeNewConns() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.isShuttingDown = true
+	for conn := range s.newConns {
+		closeConn(conn)
+		delete(s.newConns, conn)
+	}
+}
+
+// closeConn closes a connection that carries no request and writes a failure to the standard error
+// stream of the plugin process.
+func closeConn(conn net.Conn) {
+	// gomutants:disable-next-line CONDITIONALS_NEGATION reason="stderr diagnostic output does not affect program state"
+	if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+		fmt.Fprintf(os.Stderr, "close a connection without a request: %v\n", err)
+	}
 }
 
 // reportSyncError writes a failure to sync the host tools to the standard error stream of the
@@ -140,40 +208,11 @@ func newStreamableOptions() *sdk.StreamableHTTPOptions {
 	return opts
 }
 
-// Rebind updates the server address and token, restarting the listener when the address changes.
-func (s *Server) Rebind(ctx context.Context, cfg Config) error {
+// SetToken replaces the token a client authenticates with.
+func (s *Server) SetToken(token string) {
 	s.mu.Lock()
-	s.config.Token = cfg.Token
-	if cfg.Addr == "" || cfg.Addr == s.config.Addr || s.isClosed {
-		s.mu.Unlock()
-		return nil
-	}
-	oldListener := s.listener
-	s.config.Addr = cfg.Addr
-	s.mu.Unlock()
-
-	if oldListener != nil {
-		if err := oldListener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
-			return fmt.Errorf("close the listener on %s: %w", oldListener.Addr(), err)
-		}
-	}
-	ln, err := new(net.ListenConfig).Listen(context.WithoutCancel(ctx), "tcp", cfg.Addr)
-	if err != nil {
-		return fmt.Errorf("listen on %s: %w", cfg.Addr, err)
-	}
-	s.mu.Lock()
-	if s.isClosed {
-		s.mu.Unlock()
-		return ln.Close()
-	}
-	s.listener = ln
-	s.actualAddr = ln.Addr().String()
-	s.httpServer = newHTTPServer(s.handler)
-	httpSrv := s.httpServer
-	s.mu.Unlock()
-
-	go s.serveHTTP(httpSrv, ln)
-	return nil
+	defer s.mu.Unlock()
+	s.config.Token = token
 }
 
 // serveHTTP serves srv on ln until it is shut down or ln is closed, and keeps any other error for
@@ -188,21 +227,6 @@ func (s *Server) serveHTTP(srv *http.Server, ln net.Listener) {
 	s.mu.Unlock()
 }
 
-// Start opens the network listener and begins serving requests.
-func (s *Server) Start() error {
-	addr := s.config.Addr
-	if addr == "" {
-		addr = "127.0.0.1:0"
-	}
-
-	ln, err := new(net.ListenConfig).Listen(context.Background(), "tcp", addr)
-	if err != nil {
-		return fmt.Errorf("listen on %s: %w", addr, err)
-	}
-
-	return s.Serve(ln)
-}
-
 // Serve begins serving on the provided listener.
 func (s *Server) Serve(ln net.Listener) error {
 	s.mu.Lock()
@@ -210,7 +234,6 @@ func (s *Server) Serve(ln net.Listener) error {
 		s.mu.Unlock()
 		return errors.New("server is closed")
 	}
-	s.listener = ln
 	s.actualAddr = ln.Addr().String()
 	s.mu.Unlock()
 
@@ -278,9 +301,4 @@ func (s *Server) GetAggregator() *ToolAggregator {
 // GetMCPServer returns the underlying MCP SDK server.
 func (s *Server) GetMCPServer() *sdk.Server {
 	return s.mcpServer
-}
-
-// RunStdio runs the server over standard input and output streams.
-func (s *Server) RunStdio(ctx context.Context) error {
-	return s.mcpServer.Run(ctx, &sdk.StdioTransport{MaxLineLength: 0})
 }

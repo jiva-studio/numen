@@ -201,7 +201,7 @@ func TestTurningTheSettingPreservesTheRestOfTheFileAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(string(raw), `"textScale": 1.5`) {
-		t.Errorf("what the person typed was rewritten:\n%s", raw)
+		t.Errorf("what the user typed was rewritten:\n%s", raw)
 	}
 	if !strings.Contains(string(raw), `"syncTitleAndFilename": false`) {
 		t.Errorf("the setting is not in the file:\n%s", raw)
@@ -293,7 +293,7 @@ func TestRenamingReturnsWhatItCouldNotName(t *testing.T) {
 	}{
 		"a note that is not there": {
 			path: "Missing.md",
-			want: v1.ErrorCode_ERROR_CODE_MISSING,
+			want: v1.ErrorCode_ERROR_CODE_NOT_FOUND,
 		},
 		"a file the vault does not hold as a note": {
 			path: "Reading.txt",
@@ -631,7 +631,7 @@ func TestRenamingANoteSavedElsewhereIsAQuestion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note written elsewhere came back as an error: %v", err)
 	}
-	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_CONFLICT {
 		t.Errorf("a note that changed was answered %v", code)
 	}
 	if isGone(t, f.installation.State.GetCurrentVault().Path, "Old.md") {
@@ -931,7 +931,7 @@ func TestANoteMadeInTheChildRelationIsTheParentsChild(t *testing.T) {
 		t.Errorf("the link does not relate the note it was made from as its child:\n%s", made)
 	}
 	if !strings.Contains(made, "label: follows from") {
-		t.Errorf("what the person wrote on the link is not in the note:\n%s", made)
+		t.Errorf("what the user wrote on the link is not in the note:\n%s", made)
 	}
 }
 
@@ -1371,7 +1371,7 @@ func TestAMoveOfAPathWithNothingAtItPreservesNothingPrior(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_MISSING {
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("a path with nothing at it was answered with %v", code)
 	}
 	if answer.Msg.GetMoved() != nil {
@@ -1662,5 +1662,33 @@ func TestResolveAddressesRejectsAVaultTheWindowDoesNotShow(t *testing.T) {
 
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("got %v, want invalid argument", err)
+	}
+}
+
+func TestRenameTitledNoteOntoTakenNameFailsAndWritesNothing(t *testing.T) {
+	const old = "---\ntitle: Old\n---\n\nA measure.\n"
+	f := openWindow(t, nil, map[string]string{
+		"Old.md":     old,
+		"Entropy.md": "# Entropy\n",
+	})
+
+	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
+		Path: "Old.md", Title: "Entropy",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
+		t.Errorf("a name already taken returned %v", code)
+	}
+	if path := answer.Msg.GetPath(); path != "Old.md" {
+		t.Errorf("the note is filed at %q", path)
+	}
+	if now := fileAt(t, f.root, "Old.md"); now != old {
+		t.Errorf("the note was written although the rename failed:\n%s", now)
+	}
+	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {
+		t.Errorf("the note already there was written:\n%s", now)
 	}
 }

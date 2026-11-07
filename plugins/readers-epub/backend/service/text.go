@@ -201,7 +201,7 @@ func (s *TextServer) putText(ctx context.Context, req TextRequest, task host.Tas
 		return err
 	}
 	_, err = texts.PutVersion(ctx, host.TextPut{
-		Path: req.Path, Key: textKey, Source: "", Kind: textKind, SourceHash: read.hash, File: file,
+		Path: req.Path, Key: textKey, Source: "", Kind: textKind, InputHash: read.hash, File: file,
 	})
 	return err
 }

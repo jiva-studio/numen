@@ -119,7 +119,7 @@ func TestOnlyTheCoreReturnsWhichNoteIsMissing(t *testing.T) {
 	}{
 		"the vault holds no note there": {
 			err:  fmt.Errorf("read Old.md: %w", note.ErrNoNote),
-			want: v1.ErrorCode_ERROR_CODE_MISSING,
+			want: v1.ErrorCode_ERROR_CODE_NOT_FOUND,
 			is:   true,
 		},
 		"the vault itself is out of reach": {
@@ -200,7 +200,7 @@ func TestWriteNote_ReportsConflictOnUnreadDiskChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)
 	}
-	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_CONFLICT {
 		t.Errorf("a note that changed was answered %v", code)
 	}
 	if out.Msg.GetAt() != nil {
@@ -230,7 +230,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
+	if first.Msg.GetError() == v1.ErrorCode_ERROR_CODE_CONFLICT {
 		t.Fatal("the first write said the note changed")
 	}
 	if first.Msg.GetAt() == nil {
@@ -245,7 +245,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if second.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
+	if second.Msg.GetError() == v1.ErrorCode_ERROR_CODE_CONFLICT {
 		t.Error("the write after a write said the note changed")
 	}
 
@@ -318,7 +318,7 @@ func TestJoinNote_ReportsConflictWhenNoteChanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)
 	}
-	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
+	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_CONFLICT {
 		t.Errorf("a note that changed was answered %v", code)
 	}
 

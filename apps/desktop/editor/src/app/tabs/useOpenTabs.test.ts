@@ -11,7 +11,7 @@ interface Entry {
   title: string
   kind?: string
   icon?: object
-  openTab?: Record<string, string>
+  openTab?: Record<string, unknown>
   savedState?: unknown
   /** The tab is listed but the window cannot resolve it. */
   unresolved?: boolean
@@ -68,6 +68,87 @@ describe('the open tabs', () => {
       { id: 'c', kind: 'recording', title: 'C', path: 'c.mp3', state: '' },
       { id: 'd', kind: 'book', title: 'D', path: 'd.epub', state: '' },
     ])
+  })
+
+  it('lists each reader tab with the place its reader reported', () => {
+    const target = create([
+      { id: 'a', title: 'A', kind: 'note', openTab: { path: 'a.md' } },
+      {
+        id: 'b',
+        title: 'B',
+        kind: 'reader:reader-pdf',
+        openTab: { path: 'b.pdf', place: { page: 7, pageCount: 12 } },
+        savedState: { page: 7, pageCount: 12 },
+      },
+      {
+        id: 'c',
+        title: 'C',
+        kind: 'reader:recording',
+        openTab: { path: 'c.mp3', place: { positionSeconds: 0 } },
+      },
+      {
+        id: 'd',
+        title: 'D',
+        kind: 'reader:reader-epub',
+        openTab: {
+          path: 'd.epub',
+          place: { cfi: 'epubcfi(/6/4!/4/2/1:0)', chapter: 'The Reed Beds' },
+        },
+      },
+    ])
+
+    expect(target.open.value.tabs).toStrictEqual([
+      { id: 'a', kind: 'note', title: 'A', path: 'a.md', state: '' },
+      {
+        id: 'b',
+        kind: 'reader:reader-pdf',
+        title: 'B',
+        path: 'b.pdf',
+        state: '{"page":7,"pageCount":12}',
+        place: { page: 7, pageCount: 12 },
+      },
+      {
+        id: 'c',
+        kind: 'reader:recording',
+        title: 'C',
+        path: 'c.mp3',
+        state: '',
+        place: { positionSeconds: 0 },
+      },
+      {
+        id: 'd',
+        kind: 'reader:reader-epub',
+        title: 'D',
+        path: 'd.epub',
+        state: '',
+        place: { cfi: 'epubcfi(/6/4!/4/2/1:0)', chapter: 'The Reed Beds' },
+      },
+    ])
+  })
+
+  it('sends the core the place of each tab with the list', () => {
+    const target = create([
+      {
+        id: 'b',
+        title: 'B',
+        kind: 'reader:reader-pdf',
+        openTab: { path: 'b.pdf', place: { page: 3, pageCount: 12 } },
+      },
+    ])
+
+    expect(target.writeOpenTabs).toHaveBeenLastCalledWith({
+      activeId: 'b',
+      tabs: [
+        {
+          id: 'b',
+          kind: 'reader:reader-pdf',
+          title: 'B',
+          path: 'b.pdf',
+          state: '',
+          place: { page: 3, pageCount: 12 },
+        },
+      ],
+    })
   })
 
   it('lists a tab the window cannot resolve with an empty kind and path', () => {

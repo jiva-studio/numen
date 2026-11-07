@@ -1,5 +1,6 @@
 // Package service is the backend of the OCR plugin: the text provider that
-// recognises the text of a file on host request, and the recognise command.
+// recognises the text of a file on host request, the recognise command, and the agent tool
+// recognition_create.
 package service
 
 import (
@@ -164,9 +165,18 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	if err != nil {
 		return err
 	}
+	agentTools := NewTools(recognitions)
+	registry, err := agentTools.Registry()
+	if err != nil {
+		return err
+	}
 	s.SetUpdateConfig(models.updateConfig)
 	command.Mount(s, commands)
-	s.OnClose(models.close)
+	registry.Mount(s)
+	s.OnClose(func() error {
+		agentTools.Close()
+		return models.close()
+	})
 	return nil
 }
 

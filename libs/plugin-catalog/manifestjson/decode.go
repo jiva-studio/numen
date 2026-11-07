@@ -179,6 +179,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Slots:        newSlots(wire.GetSlots()),
 		Handlers:     newHandlers(wire.GetHandlers()),
 		Triggers:     newTriggers(wire.GetTriggers()),
+		Listeners:    newListeners(wire.GetListeners()),
 	}, nil
 }
 
@@ -270,6 +271,7 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Multiple:    one.GetMultiple(),
 			Preview:     one.GetPreview(),
 			OptionsFrom: one.GetOptionsFrom(),
+			Generate:    one.GetGenerate(),
 		})
 	}
 	return out, nil
@@ -509,4 +511,17 @@ func pruneOptionList(value any, path string, unknown []string) []string {
 		unknown = pruneUnknown(item, descriptor, fmt.Sprintf("%s[%d]", path, index), unknown)
 	}
 	return unknown
+}
+
+func newListeners(wire []*v1.ManifestListener) []manifest.Listener {
+	var out []manifest.Listener
+	for _, one := range wire {
+		out = append(out, manifest.Listener{
+			Name:        one.GetName(),
+			Port:        int(one.GetPort()),
+			PortSetting: one.GetPortSetting(),
+			Protocol:    one.GetProtocol(),
+		})
+	}
+	return out
 }

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/netip"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"connectrpc.com/connect"
@@ -48,6 +49,7 @@ type Callers interface {
 }
 
 type workServices interface {
+	windowServices
 	GetPluginWork() pluginport.PluginWork
 	GetPluginSearch() pluginport.PluginSearch
 	GetPluginTools() PluginTools
@@ -62,6 +64,13 @@ type Services interface {
 	workServices
 }
 
+type windowServices interface {
+	// GetPluginWindow returns the main window of the vault, or nil when the host has no window.
+	GetPluginWindow() pluginport.PluginWindow
+	// GetPluginVaultList returns the list of vaults plugins change, or nil when the host has no window.
+	GetPluginVaultList() pluginport.PluginVaultList
+}
+
 // Endpoint serves the calls plugins make to the host. It binds the loopback
 // interface and serves a call only for a token the host issued to a running
 // plugin.
@@ -72,6 +81,8 @@ type Endpoint struct {
 	port    int
 	// serveResult receives the error that ended the server other than a close, and is closed once the server no longer serves.
 	serveResult chan error
+	// callCount is the number of calls being served.
+	callCount atomic.Int64
 }
 
 // Open starts serving the host service on the address, which is a
@@ -99,7 +110,13 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostSearchServiceHandler(&searchEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: endpoint}))
-	endpoint.server = &http.Server{Handler: mux, ReadHeaderTimeout: hostEndpointHeaderTimeout}
+	mux.Handle(numenv1connect.NewHostWindowServiceHandler(&windowEndpoint{endpoint: endpoint}))
+	countingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		endpoint.callCount.Add(1)
+		defer endpoint.callCount.Add(-1)
+		mux.ServeHTTP(w, r)
+	})
+	endpoint.server = &http.Server{Handler: countingHandler, ReadHeaderTimeout: hostEndpointHeaderTimeout}
 	go func() {
 		defer close(endpoint.serveResult)
 		// Serve returns http.ErrServerClosed after Close.
@@ -121,7 +138,12 @@ func (e *Endpoint) Close(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, hostEndpointShutdownTolerance)
 	defer cancel()
 	if err := e.server.Shutdown(ctx); err != nil {
-		return fmt.Errorf("close host endpoint: %w", errors.Join(err, e.server.Close()))
+		// Shutdown waits up to 5 seconds for a connection that has sent no request.
+		isIdle := errors.Is(err, context.DeadlineExceeded) && e.callCount.Load() == 0
+		closeErr := e.server.Close()
+		if !isIdle || closeErr != nil {
+			return fmt.Errorf("close host endpoint: %w", errors.Join(err, closeErr))
+		}
 	}
 	if err := <-e.serveResult; err != nil {
 		return fmt.Errorf("serve host endpoint: %w", err)

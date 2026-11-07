@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -41,7 +42,7 @@ func fillVault(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte)
 
 	path := "library/" + stem + "-sections.pdf"
 	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
-		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "pdf",
+		Path: path, Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-" + path, Recipe: "pdf",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +253,7 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 	}
 
 	queries := db.ChunkQueries()
-	lexical, err := queries.FindLexical(ctx, getSecond().ID, "second", nil, 10, false)
+	lexical, err := queries.FindLexical(ctx, getSecond().ID, sourceport.LexicalQuery{Text: "second", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +266,7 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 		}
 	}
 
-	sections, err := queries.GetNamedPassages(ctx, getSecond().ID, "second section", nil, 10, false)
+	sections, err := queries.GetNamedPassages(ctx, getSecond().ID, sourceport.LexicalQuery{Text: "second section", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}

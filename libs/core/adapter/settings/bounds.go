@@ -28,5 +28,5 @@ type OutsideBounds struct {
 }
 
 func (o *OutsideBounds) Error() string {
-	return fmt.Sprintf("%s is %v, and goes from %v to %v", o.At, o.Number, o.Min, o.Max)
+	return fmt.Sprintf("%q: %v is out of range %v..%v", o.At, o.Number, o.Min, o.Max)
 }

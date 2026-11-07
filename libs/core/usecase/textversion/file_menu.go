@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
 // FileMenu is the text versions of a vault file that the commands of the
@@ -22,18 +21,15 @@ type FileMenu struct {
 	versions *Versions
 	commands pluginport.PluginCommands
 	types    contenttypeport.ContentTypeTable
-	readers  vaultport.VaultReaders
 }
 
-// NewFileMenu is the menu the plugin commands make of the files the readers open,
-// where the table gives the type of a file.
-func NewFileMenu(
-	versions *Versions, commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable, readers vaultport.VaultReaders,
-) (*FileMenu, error) {
-	if versions == nil || commands == nil || types == nil || readers == nil {
-		return nil, errors.New("a file menu needs text versions, plugin commands, a content type table and vault readers")
+// NewFileMenu returns the menu of plugin commands for the vault files, using the
+// table to find the type of a file.
+func NewFileMenu(versions *Versions, commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable) (*FileMenu, error) {
+	if versions == nil || commands == nil || types == nil {
+		return nil, errors.New("file menu: text versions, plugin commands and content type table are required")
 	}
-	return &FileMenu{versions: versions, commands: commands, types: types, readers: readers}, nil
+	return &FileMenu{versions: versions, commands: commands, types: types}, nil
 }
 
 // findLiveVersion is the live version of the file among its versions. The file is read and hashed
@@ -42,15 +38,11 @@ func (u *FileMenu) findLiveVersion(ctx context.Context, v domain.Vault, path str
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
 	}
-	reader, err := u.readers.Open(v)
-	if err != nil {
-		return domain.TextVersion{}, false, err
-	}
-	raw, err := reader.Read(ctx, path)
+	contentHash, err := u.versions.GetContentHash(ctx, v, path)
 	if err != nil {
 		return domain.TextVersion{}, false, fmt.Errorf("read %s: %w", path, err)
 	}
-	return u.versions.findLive(ctx, v, path, versions, domain.HashContent(raw))
+	return u.versions.findLive(ctx, v, path, versions, contentHash)
 }
 
 // VersionItem is a text version of a file that a command with items offers to run over.

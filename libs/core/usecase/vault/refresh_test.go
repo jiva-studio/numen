@@ -12,12 +12,14 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -44,8 +46,7 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
 	t.Helper()
 	found, err := db.Passages().FindLexical(
-		t.Context(), v.ID, query, []domain.SourceKind{domain.KindFile}, 10, false,
-	)
+		t.Context(), v.ID, sourceport.LexicalQuery{Text: query, Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,9 +179,9 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	testsupport.WriteBook(t, v.Path, book)
 	if err := db.Sources().SaveExtraction(t.Context(), v.ID, domain.SourceChunks{
 		Source: domain.Source{
-			FileStat: domain.FileStat{Path: book, Kind: domain.KindFile, Size: 1, ModTime: time.Unix(0, 1)},
-			Hash:     "a-hash",
-			Recipe:   "epub",
+			FileStat:    domain.FileStat{Path: book, Kind: domain.KindFile, Size: 1, ModTime: time.Unix(0, 1)},
+			ContentHash: "a-hash",
+			Recipe:      "epub",
 		},
 		Chunks: []domain.Chunk{{Start: 0, Length: 19, Text: "a reversible engine"}},
 	}); err != nil {
@@ -401,8 +402,10 @@ func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCo
 		t.Fatal(err)
 	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
+	// The clock stops once the files are settled, so a file a test writes afterwards stays recent
+	// however long the test takes.
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), testsupport.GetMachine(),
+		vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), clock.NewFake(testsupport.GetMachine().Now()),
 	)
 	return refresh, saves, db, v
 }
@@ -502,8 +505,13 @@ func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
+	stat, err := os.Stat(filepath.Join(v.Path, "Note.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
-	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), testsupport.GetMachine())
+	// The clock is set to the modification time, so the note is recent however long the scan took.
+	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), clock.NewFake(stat.ModTime()))
 
 	refreshOne(t, refresh, v, "Note.md")
 

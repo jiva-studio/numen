@@ -13,13 +13,20 @@ import type { Ref, ShallowRef } from 'vue'
 import { onNextFrame, doc } from '@numen/ui'
 import type { PageNavigationAction } from '@numen/ui'
 import { useBookColumns } from './columns'
-import { useBookTurns } from './turns'
+import { useBookTurns, getTurnTarget } from './turns'
+import { copyPaper, type LeavingSpread } from './leaving'
 import { findPending, whenArrived } from '../lib/pictures'
 import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
 /** How many turns wait for a document that is being drawn; a key held down asks for more. */
 const MAX_WAITING_TURNS = 8
+
+/**
+ * Frames without a change of size after which a resize is over. A pointer dragging a border
+ * reports at its own rate, so a drag can leave a frame or two without a change.
+ */
+const SETTLED_FRAMES = 4
 
 /** The document the columns stand for: its markup and where it begins in the book. */
 interface StoodFor {
@@ -35,16 +42,27 @@ interface StoodFor {
 export interface BookLayoutOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
+  /** The box beside the paper that holds the copy of the spread a turn into another document carries out. */
+  readonly leaving: Readonly<ShallowRef<HTMLElement | null>>
   readonly props: SettledBookProps
   readonly onMove: (pos: number) => void
   readonly takeLed: () => BookLink | undefined
   readonly getEdge: (of: HTMLElement) => number
 }
 
+/** A page turn past an end of the document: its direction and the offset it asked the owner for. */
+interface BorderTurn {
+  readonly way: 'next' | 'back'
+  readonly offset: number
+}
+
 interface BookWatchContext {
+  readonly prepareEntry: (led: BookLink | undefined) => void
   readonly settle: (getKeep: () => number, led?: BookLink) => void
   readonly settleKept: () => void
+  readonly settleResized: () => void
   readonly getKeptOffset: () => number
+  readonly keepOffset: (pos: number) => void
   readonly takeLed: () => BookLink | undefined
   readonly standing: { value: number }
   readonly getSpreadOf: (pos: number) => number
@@ -58,11 +76,11 @@ function watchBookLayout(
   context: BookWatchContext,
 ): void {
   watch(
-    [
-      () => signals.viewport.value.width,
-      () => signals.viewport.value.height,
-      () => signals.textSize.value,
-    ],
+    [() => signals.viewport.value.width, () => signals.viewport.value.height],
+    context.settleResized,
+  )
+  watch(
+    () => signals.textSize.value,
     () => {
       context.settle(context.getKeptOffset)
     },
@@ -72,6 +90,7 @@ function watchBookLayout(
     () => props.markup,
     () => {
       const place = context.takeLed()
+      context.prepareEntry(place)
       context.isStood.value = false
       context.standing.value = 0
       context.settle(() => props.at, place)
@@ -86,6 +105,7 @@ function watchBookLayout(
       if (pos < props.span.start || pos >= props.span.end) return
       const want = context.getSpreadOf(pos)
       if (want !== context.standing.value) context.stand(want, 'smooth')
+      context.keepOffset(pos)
     },
   )
 
@@ -101,22 +121,33 @@ function watchBookLayout(
 export interface BookSettlingOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
+  readonly leaving: Readonly<ShallowRef<HTMLElement | null>>
   readonly props: SettledBookProps
   readonly onMove: (pos: number) => void
   /** The document the columns last stood for. */
   readonly stoodFor: { value: StoodFor | null }
   readonly takeLed: () => BookLink | undefined
+  /** The page turn the markup now drawn answers, once; undefined after any other move. */
+  readonly takeBorderTurn: () => BorderTurn['way'] | undefined
   readonly column: {
     readonly measure: () => void
     readonly isMeasured: { readonly value: boolean }
     readonly readColumns: (box: HTMLElement, text: HTMLElement) => void
     readonly findFragmentOffset: (frag: string) => number | undefined
     readonly markRuns: () => void
+    readonly markCopy: (copy: HTMLElement) => void
+    readonly unmarkCopy: (copy: HTMLElement) => void
     readonly isStood: { value: boolean }
   }
   readonly turns: {
     readonly stand: (spread: number, how: 'smooth' | 'auto') => void
+    readonly enterSpread: (
+      spread: number,
+      way: BorderTurn['way'],
+      leaving: LeavingSpread | undefined,
+    ) => void
     readonly getKeptOffset: () => number
+    readonly keepOffset: (pos: number) => void
     readonly getSpreadOf: (pos: number) => number
     readonly standing: { value: number }
   }
@@ -147,6 +178,35 @@ function holdUntilStood<T>(isStood: () => boolean, read: () => T): Readonly<Ref<
 
 /** Handles re-settling and watching dimensions / links in book layout. */
 export function createBookSettling(options: BookSettlingOptions) {
+  /** The turn the next layout carries the columns in by, and the copy of the spread it carries out. */
+  let entry: { way: BorderTurn['way']; leaving: LeavingSpread | undefined } | undefined
+
+  const removeCopy = (copy: HTMLElement) => {
+    copy.remove()
+    options.column.unmarkCopy(copy)
+  }
+
+  /** Copies the spread in front of `text` into `holder`, with its highlights. */
+  const createLeaving = (text: HTMLElement, holder: HTMLElement): LeavingSpread => {
+    const copy = copyPaper(text, holder, options.column.markCopy)
+    return { copy, target: getTurnTarget(text), remove: () => removeCopy(copy) }
+  }
+
+  /**
+   * Runs while the paper still holds the markup before. A page turn into this markup keeps a copy
+   * of the spread in front to carry out; any other move drops the copies there are.
+   */
+  const prepareEntry = (led: BookLink | undefined) => {
+    const holder = options.leaving.value
+    for (const copy of holder ? [...holder.children] : []) removeCopy(copy as HTMLElement)
+    entry = undefined
+    const way = options.takeBorderTurn()
+    if (!way || led) return
+    const text = options.paper.value
+    const isShown = holder && text && options.column.isStood.value
+    entry = { way, leaving: isShown ? createLeaving(text, holder) : undefined }
+  }
+
   /** `getKeep` is read when the columns are read, so a turn made since the request is kept. */
   const lay = (getKeep: () => number, led?: BookLink) => {
     const box = options.area.value
@@ -158,16 +218,22 @@ export function createBookSettling(options: BookSettlingOptions) {
       led && (led.path === '' || led.path === options.props.path)
         ? options.column.findFragmentOffset(led.fragment)
         : undefined
-    options.turns.stand(options.turns.getSpreadOf(landed ?? keep), 'auto')
+    const spread = options.turns.getSpreadOf(landed ?? keep)
+    const entering = entry
+    entry = undefined
+    if (entering) options.turns.enterSpread(spread, entering.way, entering.leaving)
+    else options.turns.stand(spread, 'auto')
     if (landed !== undefined) options.onMove(landed)
     options.column.markRuns()
     options.stoodFor.value = { markup: options.props.markup, start: options.props.span.start }
     options.column.isStood.value = true
   }
 
+  let measuredSize = options.signals.viewport.value
   /** Reads the columns on the next frame, or once the pictures in them have arrived. */
   const settle = (getKeep: () => number, led?: BookLink) => {
     options.column.measure()
+    measuredSize = options.signals.viewport.value
     if (!options.column.isMeasured.value) return
     onNextFrame(() => {
       const text = options.paper.value
@@ -192,10 +258,41 @@ export function createBookSettling(options: BookSettlingOptions) {
     })
   }
 
+  /**
+   * Sets the columns again with the offset in front kept, once the area has kept one size for
+   * `SETTLED_FRAMES` frames. Reading the columns measures every run of the text, and a border being
+   * dragged changes the size on almost every frame. The size `settle` has just measured is the one
+   * the columns are read at, and no resize.
+   */
+  let framesSinceResize = 0
+  let isResizeQueued = false
+  const waitForSettledSize = () => {
+    onNextFrame(() => {
+      framesSinceResize += 1
+      if (framesSinceResize < SETTLED_FRAMES) {
+        waitForSettledSize()
+        return
+      }
+      isResizeQueued = false
+      settle(options.turns.getKeptOffset)
+    })
+  }
+  const settleResized = () => {
+    const { width, height } = options.signals.viewport.value
+    if (!isResizeQueued && width === measuredSize.width && height === measuredSize.height) return
+    framesSinceResize = 0
+    if (isResizeQueued) return
+    isResizeQueued = true
+    waitForSettledSize()
+  }
+
   watchBookLayout(options.props, options.signals, {
+    prepareEntry,
     settle,
     settleKept,
+    settleResized,
     getKeptOffset: options.turns.getKeptOffset,
+    keepOffset: options.turns.keepOffset,
     takeLed: options.takeLed,
     standing: options.turns.standing,
     getSpreadOf: options.turns.getSpreadOf,
@@ -215,7 +312,17 @@ export function useBookLayout(options: BookLayoutOptions) {
   const { textSize, viewport, isMeasured, flow, spreadCount, setting, marks, ...column } =
     useBookColumns(options)
 
-  const { front, leftInChapter, stand, getKeptOffset, getSpreadOf, turn, standing } = useBookTurns({
+  const {
+    front,
+    leftInChapter,
+    stand,
+    enterSpread,
+    getKeptOffset,
+    keepOffset,
+    getSpreadOf,
+    turn: turnPage,
+    standing,
+  } = useBookTurns({
     paper: options.paper,
     props: options.props,
     flow,
@@ -223,6 +330,22 @@ export function useBookLayout(options: BookLayoutOptions) {
     marks,
     onMove: options.onMove,
   })
+
+  /** The last page turn, while it is past an end of the document. */
+  let borderTurn: BorderTurn | undefined
+  const turn = (way: PageNavigationAction) => {
+    const offset = turnPage(way)
+    const isAcross = offset !== undefined && (way === 'next' || way === 'back')
+    borderTurn = isAcross ? { way, offset } : undefined
+  }
+  /** Whether the markup now drawn holds the offset the last turn asked for, and the reader is there. */
+  const takeBorderTurn = () => {
+    const last = borderTurn
+    borderTurn = undefined
+    if (!last || options.props.at !== last.offset) return undefined
+    const { start, end } = options.props.span
+    return last.offset >= start && last.offset < end ? last.way : undefined
+  }
 
   const stoodFor = shallowRef<StoodFor | null>(null)
   const isStoodForMarkup = () =>
@@ -249,18 +372,22 @@ export function useBookLayout(options: BookLayoutOptions) {
     area: options.area,
     stoodFor,
     paper: options.paper,
+    leaving: options.leaving,
     props: options.props,
     onMove: options.onMove,
     takeLed: options.takeLed,
+    takeBorderTurn,
     column: {
       measure: column.measure,
       isMeasured,
       readColumns: column.readColumns,
       findFragmentOffset: column.findFragmentOffset,
       markRuns: column.markRuns,
+      markCopy: column.markCopy,
+      unmarkCopy: column.unmarkCopy,
       isStood: column.isStood,
     },
-    turns: { stand, getKeptOffset, getSpreadOf, standing },
+    turns: { stand, enterSpread, getKeptOffset, keepOffset, getSpreadOf, standing },
     signals: { viewport, textSize },
   })
 

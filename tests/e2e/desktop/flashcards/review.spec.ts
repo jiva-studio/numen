@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { expect, test, type Page } from 'playwright/test'
+import { expect, test, type Page } from '../tests/support/certificate.js'
 import { STAND_IN_REPLY } from '../scripts/stand-ins.mjs'
 
 const vault = process.env.NUMEN_FLASHCARDS_VAULT ?? ''

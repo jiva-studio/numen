@@ -22,14 +22,14 @@ type NoteReadInput struct {
 type NoteReadOutput struct {
 	Path        string         `json:"path" jsonschema:"path of the note"`
 	Title       string         `json:"title" jsonschema:"title of the note"`
-	Content     string         `json:"content" jsonschema:"full raw markdown content of the file"`
+	Text        string         `json:"text" jsonschema:"full raw markdown content of the file"`
 	Body        string         `json:"body" jsonschema:"prose content of the note excluding frontmatter"`
 	Fingerprint string         `json:"fingerprint" jsonschema:"concurrency fingerprint for atomic writes"`
 	Frontmatter map[string]any `json:"frontmatter,omitempty" jsonschema:"parsed YAML frontmatter, if present"`
 }
 
 func (t *Tools) addNoteRead(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
 		Name:        "note_read",
 		Title:       "Read Note",
@@ -59,19 +59,19 @@ func (t *Tools) resolveNotePath(ctx context.Context, p string) string {
 
 func (t *Tools) readNote(ctx context.Context, in NoteReadInput) (NoteReadOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return NoteReadOutput{}, errors.New("path required")
+		return NoteReadOutput{}, errors.New("path is required")
 	}
 	path := t.resolveNotePath(ctx, in.Path)
 	data, fp, err := t.vault.Read(ctx, path)
 	if err != nil {
-		return NoteReadOutput{}, fmt.Errorf("read note %s: %w", path, err)
+		return NoteReadOutput{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
 
 	parsed := markdown.Parse(fp, data)
 	return NoteReadOutput{
 		Path:        path,
 		Title:       parsed.Title,
-		Content:     string(data),
+		Text:        string(data),
 		Body:        parsed.Body,
 		Fingerprint: formatFingerprint(fp),
 		Frontmatter: parsed.Frontmatter,
@@ -81,7 +81,7 @@ func (t *Tools) readNote(ctx context.Context, in NoteReadInput) (NoteReadOutput,
 // NoteWriteInput is the input of the note_write tool.
 type NoteWriteInput struct {
 	Path        string  `json:"path" jsonschema:"relative path to the note file"`
-	Content     *string `json:"content,omitempty" jsonschema:"markdown content to write"`
+	Text        *string `json:"text,omitempty" jsonschema:"markdown content to write"`
 	Fingerprint string  `json:"fingerprint,omitempty" jsonschema:"optional baseline fingerprint from note_read for optimistic concurrency"`
 }
 
@@ -93,7 +93,7 @@ type NoteWriteOutput struct {
 }
 
 func (t *Tools) addNoteWrite(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
 		Name:        "note_write",
 		Title:       "Write Note",
@@ -105,17 +105,17 @@ func (t *Tools) addNoteWrite(registry *tools.Registry) error {
 
 func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return NoteWriteOutput{}, errors.New("path required")
+		return NoteWriteOutput{}, errors.New("path is required")
 	}
 	path := in.Path
 	if !strings.HasSuffix(path, ".md") {
 		path += ".md"
 	}
 
-	if in.Content == nil {
-		return NoteWriteOutput{}, errors.New("content required")
+	if in.Text == nil {
+		return NoteWriteOutput{}, errors.New("text is required")
 	}
-	content := *in.Content
+	content := *in.Text
 
 	newFp, err := t.saveNoteContent(ctx, path, content, in.Fingerprint)
 	if err != nil {
@@ -123,7 +123,7 @@ func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutp
 	}
 
 	if err := t.vault.Scan(ctx, []string{path}); err != nil {
-		return NoteWriteOutput{}, fmt.Errorf("scan note %s: %w", path, err)
+		return NoteWriteOutput{}, fmt.Errorf("%s cannot be indexed: %w", path, err)
 	}
 
 	return NoteWriteOutput{
@@ -146,8 +146,11 @@ func (t *Tools) writeWithFileStat(ctx context.Context, path, content, fpStr stri
 		return domain.FileStat{}, err
 	}
 	newFp, err := t.vault.Write(ctx, path, []byte(content), baseline)
+	if errors.Is(err, host.ErrStale) {
+		return domain.FileStat{}, describeWriteError(path, err)
+	}
 	if err != nil {
-		return domain.FileStat{}, fmt.Errorf("write note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("%s cannot be written: %w", path, err)
 	}
 	return newFp, nil
 }
@@ -158,70 +161,70 @@ func (t *Tools) writeOrCreate(ctx context.Context, path, content string) (domain
 		return writtenFp, nil
 	}
 	if !errors.Is(err, host.ErrNotExist) {
-		return domain.FileStat{}, fmt.Errorf("write note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("%s cannot be written: %w", path, err)
 	}
 	if err := t.vault.Create(ctx, path, []byte(content)); err != nil {
-		return domain.FileStat{}, fmt.Errorf("create note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("%s cannot be created: %w", path, err)
 	}
 	newFp, err := t.vault.StatFile(ctx, path)
 	if err != nil {
-		return domain.FileStat{}, fmt.Errorf("stat note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
 	return newFp, nil
 }
 
 // HeadingItem is a heading of a note.
 type HeadingItem struct {
-	Level  int    `json:"level" jsonschema:"heading level (1 to 6)"`
-	Text   string `json:"text" jsonschema:"heading text"`
-	Line   int    `json:"line" jsonschema:"line index in the body"`
-	Offset int    `json:"offset" jsonschema:"byte offset in the body"`
+	Level int    `json:"level" jsonschema:"heading level (1 to 6)"`
+	Text  string `json:"text" jsonschema:"heading text"`
+	Line  int    `json:"line" jsonschema:"line of the heading in the body, counted from 1 at the first line of the body"`
+	Start int    `json:"start" jsonschema:"byte offset of the heading in the body"`
 }
 
-// NoteHeadingsInput is the input of the note_headings tool.
-type NoteHeadingsInput struct {
+// NoteHeadingListInput is the input of the note_heading_list tool.
+type NoteHeadingListInput struct {
 	Path string `json:"path" jsonschema:"relative path to the note file"`
 }
 
-// NoteHeadingsOutput is the output of the note_headings tool.
-type NoteHeadingsOutput struct {
+// NoteHeadingListOutput is the output of the note_heading_list tool.
+type NoteHeadingListOutput struct {
 	Path     string        `json:"path"`
 	Headings []HeadingItem `json:"headings"`
 }
 
-func (t *Tools) addNoteHeadings(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+func (t *Tools) addNoteHeadingList(registry *tools.Registry) error {
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
-		Name:        "note_headings",
+		Name:        "note_heading_list",
 		Title:       "Extract Note Headings",
 		Description: "Extract the outline and headings from a note in the vault.",
 		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, inVault(t, (*Tools).getNoteHeadings))
+	}, inVault(t, (*Tools).listNoteHeadings))
 }
 
-func (t *Tools) getNoteHeadings(ctx context.Context, in NoteHeadingsInput) (NoteHeadingsOutput, error) {
+func (t *Tools) listNoteHeadings(ctx context.Context, in NoteHeadingListInput) (NoteHeadingListOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return NoteHeadingsOutput{}, errors.New("path required")
+		return NoteHeadingListOutput{}, errors.New("path is required")
 	}
 	path := t.resolveNotePath(ctx, in.Path)
 	data, fp, err := t.vault.Read(ctx, path)
 	if err != nil {
-		return NoteHeadingsOutput{}, fmt.Errorf("read note %s: %w", path, err)
+		return NoteHeadingListOutput{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
 
 	parsed := markdown.Parse(fp, data)
 	items := make([]HeadingItem, 0, len(parsed.Headings))
 	for _, h := range parsed.Headings {
 		items = append(items, HeadingItem{
-			Level:  h.Level,
-			Text:   h.Text,
-			Line:   h.Line,
-			Offset: h.Offset,
+			Level: h.Level,
+			Text:  h.Text,
+			Line:  h.Line + 1,
+			Start: h.Offset,
 		})
 	}
 
-	return NoteHeadingsOutput{
+	return NoteHeadingListOutput{
 		Path:     path,
 		Headings: items,
 	}, nil

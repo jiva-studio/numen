@@ -2,6 +2,7 @@ package hostendpoint
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -38,7 +39,7 @@ func (m *memoryTexts) PutVersion(_ context.Context, v domain.Vault, pluginID str
 	defer m.mu.Unlock()
 	version := domain.TextVersion{
 		Path: params.Path, PluginID: pluginID, Key: params.Key, Source: params.Source, Kind: params.Kind,
-		SourceHash: params.SourceHash, File: params.File,
+		InputHash: params.InputHash, File: params.File,
 	}
 	m.versions[v.ID] = append(m.versions[v.ID], version)
 	return version, nil
@@ -97,7 +98,7 @@ func TestHostEndpointSavesListsReadsAndRemovesVersions(t *testing.T) {
 	client := newTextClient(t, fakeCallers, "token-a")
 
 	put, err := client.PutTextVersion(ctx, connect.NewRequest(&v1.PutTextVersionRequest{
-		Path: "a.pdf", Key: "k", Kind: "recognition", SourceHash: "f", File: "k.jsonl",
+		Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: "f", File: "k.jsonl",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -201,7 +202,7 @@ func TestTextCallsUseVaultFromHeader(t *testing.T) {
 	fakeCallers.texts = texts
 	client := newTextClient(t, fakeCallers, "token-a")
 
-	putRequest := connect.NewRequest(&v1.PutTextVersionRequest{Path: "a.pdf", Key: "k", Kind: "recognition", SourceHash: "f", File: "k.jsonl"})
+	putRequest := connect.NewRequest(&v1.PutTextVersionRequest{Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: "f", File: "k.jsonl"})
 	putRequest.Header().Set("Numen-Vault", "v2")
 	if _, err := client.PutTextVersion(ctx, putRequest); err != nil {
 		t.Fatal(err)
@@ -225,4 +226,8 @@ func TestTextCallsUseVaultFromHeader(t *testing.T) {
 	if connect.CodeOf(rejected) != connect.CodeNotFound {
 		t.Fatalf("an unknown vault was answered %v", rejected)
 	}
+}
+
+func (m *memoryTexts) ReadTextRange(context.Context, domain.Vault, string, domain.TextVersionID, int, int) (pluginport.PluginTextRange, error) {
+	return pluginport.PluginTextRange{}, errors.New("not implemented")
 }

@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"os"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -66,19 +68,29 @@ type Host struct {
 	Queue host.Queue
 }
 
-// Recognition reads files with the recogniser it opens.
+// ErrAlreadyRecognising is returned for a file another run is recognising.
+var ErrAlreadyRecognising = errors.New("the file is already being recognised")
+
+// Recognition reads files with the recogniser it opens. One run at a time locks a file of a vault.
 type Recognition struct {
 	host      Host
 	open      func(ctx context.Context) (Recogniser, error)
 	documents *document.Reader
+
+	mu      sync.Mutex
+	running map[string]bool
 }
 
-// New is the recognition through the host, with what opens the recogniser when a page is first read.
+// New returns the recognition through the host, with the function that opens the recogniser when a
+// page is first read.
 func New(h Host, open func(ctx context.Context) (Recogniser, error)) (*Recognition, error) {
 	if h.Vault == nil || h.Store == nil || h.Texts == nil || h.Queue == nil || open == nil {
 		return nil, errors.New("a recognition needs the vault, the store, the texts, the queue and a recogniser")
 	}
-	return &Recognition{host: h, open: open, documents: document.NewReader()}, nil
+	return &Recognition{
+		host: h, open: open, documents: document.NewReader(),
+		mu: sync.Mutex{}, running: map[string]bool{},
+	}, nil
 }
 
 // SetCompilationCache makes the reader of documents compile PDFium through cache.
@@ -102,14 +114,123 @@ type Result struct {
 
 // Recognise reads the file and stores its text version. A failure is shown as a task until
 // the file is recognised again. A failure of a file that is no longer in the
-// vault ends the task instead, because nothing can recognise that file again.
+// vault ends the task instead, because nothing can recognise that file again. For a file another
+// run has locked, it returns ErrAlreadyRecognising.
 func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error) {
+	key, err := r.claim(ctx, req)
+	if err != nil {
+		return Result{}, err
+	}
+	defer r.release(key)
+	return r.runRecognition(ctx, req)
+}
+
+// Start claims the file and recognises it in the background under ctx, and returns false when
+// another run has locked the file. The channel is closed when the run ends.
+func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, bool, error) {
+	key, err := r.claim(ctx, req)
+	if errors.Is(err, ErrAlreadyRecognising) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	runEnd := make(chan struct{})
+	go func() {
+		defer close(runEnd)
+		defer r.release(key)
+		// runRecognition reports a failure as the error of the task.
+		_, err := r.runRecognition(ctx, req)
+		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL reason="Stderr logging of background recognition failure does not affect recognition state."
+		if err != nil && ctx.Err() == nil {
+			fmt.Fprintf(os.Stderr, "engines-ocr: recognise %s: %v\n", req.Path, err)
+		}
+	}()
+	return runEnd, true, nil
+}
+
+// claim locks the file of the request for one run, keyed by the id of its vault. An empty vault ID
+// means the vault the host shows.
+func (r *Recognition) claim(ctx context.Context, req Request) (string, error) {
+	key, err := r.getRunKey(ctx, req.Vault, req.Path)
+	if err != nil {
+		return "", err
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.running[key] {
+		return "", fmt.Errorf("%s: %w", req.Path, ErrAlreadyRecognising)
+	}
+	r.running[key] = true
+	return key, nil
+}
+
+// IsRunning reports whether a run has locked the file of the vault. An empty vault ID means the vault
+// the host shows.
+func (r *Recognition) IsRunning(ctx context.Context, vault domain.VaultID, filePath string) (bool, error) {
+	key, err := r.getRunKey(ctx, vault, filePath)
+	if err != nil {
+		return false, err
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.running[key], nil
+}
+
+// getRunKey returns the lock key of the file of the vault. An empty vault ID means the vault the host
+// shows.
+func (r *Recognition) getRunKey(ctx context.Context, vault domain.VaultID, filePath string) (string, error) {
+	if vault == "" {
+		shown, err := r.host.Vault.GetVault(ctx)
+		if err != nil {
+			return "", fmt.Errorf("get the shown vault: %w", err)
+		}
+		vault = shown.ID
+	}
+	return string(vault) + "\x00" + filePath, nil
+}
+
+// FindLiveDerivedVersion returns the live version of the file of the vault when its source chain
+// contains the version the named plugin stores under VersionKey: that version itself, or a version
+// made from it. A recognition writes VersionKey only once it is complete. The host keeps live only a
+// version whose chain matches the file as it is now. An empty vault ID means the vault the host shows.
+func (r *Recognition) FindLiveDerivedVersion(ctx context.Context, vault domain.VaultID, filePath, pluginID string) (domain.TextVersion, bool, error) {
+	texts := r.host.Texts
+	if vault != "" {
+		texts = texts.With(vault)
+	}
+	listing, err := texts.ListVersions(ctx, filePath)
+	if err != nil {
+		return domain.TextVersion{}, false, err
+	}
+	byID := make(map[domain.TextVersionID]domain.TextVersion, len(listing.Versions))
+	for _, version := range listing.Versions {
+		byID[version.GetID()] = version
+	}
+	live, isLive := byID[listing.Live]
+	seenIDs := map[domain.TextVersionID]bool{}
+	for version, isFound := live, isLive; isFound && !seenIDs[version.GetID()]; version, isFound = byID[version.Source] {
+		if version.Key == VersionKey && version.PluginID == pluginID {
+			return live, true, nil
+		}
+		seenIDs[version.GetID()] = true
+	}
+	return domain.TextVersion{}, false, nil
+}
+
+func (r *Recognition) release(key string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.running, key)
+}
+
+func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, error) {
 	on := reach{vault: r.host.Vault, store: r.host.Store, texts: r.host.Texts}
 	if req.Vault != "" {
 		on = reach{vault: on.vault.With(req.Vault), store: on.store.With(req.Vault), texts: on.texts.With(req.Vault)}
 	}
 	task := host.Task{
-		ID: "recognise:" + req.Path, Title: "Recognising " + path.Base(req.Path), Detail: req.Path,
+		ID: GetTaskID(req.Path), Title: "Recognising " + path.Base(req.Path), Detail: req.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
 	}
 	res, err := r.recognise(ctx, on, req, &task)
@@ -124,6 +245,18 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 		return res, finishErr
 	}
 	return res, err
+}
+
+// GetTaskID returns the id of the recognition of a file in the list of tasks.
+func GetTaskID(filePath string) string { return "recognise:" + filePath }
+
+// StatFile returns the metadata of a file of a vault. An empty vault ID means the vault the host shows.
+func (r *Recognition) StatFile(ctx context.Context, vault domain.VaultID, filePath string) (domain.FileStat, error) {
+	on := r.host.Vault
+	if vault != "" {
+		on = on.With(vault)
+	}
+	return on.StatFile(ctx, filePath)
 }
 
 // isMissing reports whether the file is no longer in the vault.
@@ -241,7 +374,7 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 		return Result{}, err
 	}
 	_, err = on.texts.PutVersion(ctx, host.TextPut{
-		Path: rec.Path, Key: VersionKey, Source: "", Kind: textKind, SourceHash: rec.InputHash, File: file,
+		Path: rec.Path, Key: VersionKey, Source: "", Kind: textKind, InputHash: rec.InputHash, File: file,
 	})
 	if err != nil {
 		return Result{}, fmt.Errorf("report the recognition of %s: %w", rec.Path, err)

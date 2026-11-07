@@ -27,7 +27,7 @@ func openRepository(t *testing.T) *version.Repository {
 func newVersion(path, pluginID, key string) domain.TextVersion {
 	return domain.TextVersion{
 		Path: path, PluginID: pluginID, Key: key, Kind: "transcript", File: key + ".jsonl",
-		SourceHash: "s", Hash: "h", CreateTime: time.Date(2026, 4, 2, 10, 0, 0, 123, time.UTC),
+		InputHash: "s", TextHash: "h", CreateTime: time.Date(2026, 4, 2, 10, 0, 0, 123, time.UTC),
 	}
 }
 
@@ -56,11 +56,11 @@ func getIDs(t *testing.T, repo *version.Repository, path string) []domain.TextVe
 func TestSaveVersionKeepsTheOrderAndReplacesInPlace(t *testing.T) {
 	repo := openRepository(t)
 	first, second := newVersion("a.mp3", "p.one", "k"), newVersion("a.mp3", "p.two", "k")
-	first.SourceProperty, first.SourceHash = domain.TextSourceProperty{Key: "url", Value: "https://example.com/talk"}, ""
+	first.SourceProperty, first.InputHash = domain.TextSourceProperty{Key: "url", Value: "https://example.com/talk"}, ""
 	second.Source = first.GetID()
 	save(t, repo, first, second)
 
-	first.Hash, first.File = "h2", "k2.jsonl"
+	first.TextHash, first.File = "h2", "k2.jsonl"
 	save(t, repo, first)
 	got, err := repo.GetVersions(t.Context(), vault, "a.mp3")
 	if err != nil {

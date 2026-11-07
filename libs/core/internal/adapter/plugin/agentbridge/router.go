@@ -19,9 +19,19 @@ type RouterHost interface {
 	GetPluginInfos() []pluginport.PluginInfo
 }
 
-// NewRouter is a Router over the plugins of the host.
+// NewRouter returns a Router over the plugins of the host.
 func NewRouter(host RouterHost) *Router {
 	return &Router{host: host}
+}
+
+// ServeRun returns the agent that starts a run of the plugin with the id, wrapping the plugin's agent
+// with the tools the run is allowed.
+type ServeRun func(agent agentport.Agent, pluginID string) agentport.Agent
+
+// NewServingRouter returns a Router over the plugins of the host that starts each run through the agent
+// serve returns for the plugin that runs it.
+func NewServingRouter(host RouterHost, serve ServeRun) *Router {
+	return &Router{host: host, serve: serve}
 }
 
 // Router runs each task on the plugin that provides its agent program, and
@@ -29,6 +39,8 @@ func NewRouter(host RouterHost) *Router {
 // host.
 type Router struct {
 	host RouterHost
+	// serve wraps the agent each run is started through, nil for the agent of the plugin itself.
+	serve ServeRun
 
 	mu sync.Mutex
 	// providers holds the plugin that runs each program, by program.
@@ -37,11 +49,14 @@ type Router struct {
 	conversations map[string][]string
 }
 
-// getProviders are the identifiers of the plugins that run agent programs, in order.
+// getProviders are the identifiers of the enabled plugins that run agent programs, in order.
 func (r *Router) getProviders() []string {
 	var ids []string
 	for _, info := range r.host.GetPluginInfos() {
-		if slices.Contains(info.Capabilities, bridge.CapabilityAgentProvider) {
+		if !slices.Contains(info.Capabilities, bridge.CapabilityAgentProvider) {
+			continue
+		}
+		if _, ok := r.host.GetPlugin(info.ID); ok {
 			ids = append(ids, info.ID)
 		}
 	}
@@ -78,16 +93,26 @@ func (r *Router) GetPrograms(
 	return programs, errors.Join(failed...)
 }
 
-// listPrograms queries one provider for the programs it provides.
+// listPrograms queries one provider for the programs it provides. A provider disabled after
+// getProviders listed it provides none.
 func (r *Router) listPrograms(
 	ctx context.Context, id string, commands map[string][]string,
 ) (programs []agentport.AgentProgram, err error) {
 	agent, err := OpenForPlugin(ctx, r.host, id)
+	if isDisabled(err) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = errors.Join(err, agent.Close()) }()
 	return agent.GetPrograms(ctx, commands)
+}
+
+// isDisabled reports whether the error is the host refusing to activate a disabled plugin.
+func isDisabled(err error) bool {
+	var unavailable *pluginport.UnavailableError
+	return errors.As(err, &unavailable) && unavailable.Reason == pluginport.PluginDisabled
 }
 
 // setProviders keeps which plugin runs each program listed. The first plugin to list a program
@@ -150,7 +175,11 @@ func (r *Router) StartRun(ctx context.Context, task agentport.Task) (run agentpo
 			run = nil
 		}
 	}()
-	run, err = agent.StartRun(ctx, task)
+	var starter agentport.Agent = agent
+	if r.serve != nil {
+		starter = r.serve(agent, id)
+	}
+	run, err = starter.StartRun(ctx, task)
 	if err != nil {
 		return nil, err
 	}

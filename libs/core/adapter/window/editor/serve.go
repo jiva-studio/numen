@@ -289,6 +289,7 @@ func createWindow(
 	state := &State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
+		TabIDs:       newTabIDBroadcaster(),
 		TabLinks:     tabLinks,
 		Edits:        newEditBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
@@ -402,11 +403,34 @@ type shutdownState struct {
 	mu        sync.Mutex
 	isBusy    bool
 	isClosing bool
+	// pluginOpen is the running vault open of a plugin. A close, a quit or a user vault switch
+	// cancels it and waits for it to end.
+	pluginOpen *PluginOpen
 }
 
-// tryBegin starts a flush, or returns the reason one cannot start.
+// PluginOpen tracks a running plugin-initiated vault open; a user flush cancels it. A vault switch
+// given the running open shares the open's lock; a user vault switch is given nil.
+type PluginOpen struct {
+	cancel context.CancelCauseFunc
+	// end closes when the open ends.
+	end chan struct{}
+}
+
+// errCancelledByUser is the cause a plugin's vault open is cancelled with when the user closes the window,
+// quits or switches its vault.
+var errCancelledByUser = errors.New("the user closed the window or switched its vault")
+
+// tryBegin starts a flush, or returns the reason one cannot start. A running vault open of a plugin is
+// cancelled and waited for first.
 func (s *shutdownState) tryBegin() error {
 	s.mu.Lock()
+	for s.pluginOpen != nil {
+		current := s.pluginOpen
+		s.mu.Unlock()
+		current.cancel(errCancelledByUser)
+		<-current.end
+		s.mu.Lock()
+	}
 	defer s.mu.Unlock()
 
 	switch {
@@ -417,6 +441,47 @@ func (s *shutdownState) tryBegin() error {
 	}
 	s.isBusy = true
 	return nil
+}
+
+// tryBeginPluginOpen starts a plugin's vault open, which a tryBegin cancels with
+// errCancelledByUser. It returns the context of the open, the open and the function that ends it.
+// A vault switch given the open shares the open's lock.
+func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context, *PluginOpen, func(), error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	switch {
+	case s.isClosing:
+		return nil, nil, nil, errWindowClosing
+	case s.isBusy:
+		return nil, nil, nil, errShutdownInProgress
+	}
+	ctx, cancel := context.WithCancelCause(ctx)
+	open := &PluginOpen{cancel: cancel, end: make(chan struct{})}
+	s.isBusy, s.pluginOpen = true, open
+	return ctx, open, func() {
+		s.mu.Lock()
+		s.isBusy, s.pluginOpen = false, nil
+		s.mu.Unlock()
+		cancel(nil)
+		close(open.end)
+	}, nil
+}
+
+// tryBeginSwitch starts the flush of a vault switch and returns the function that ends it, and
+// whether the switch shares the lock of the running plugin open named by open. Such a switch takes no
+// lock of its own, and a nil open is a user vault switch.
+func (s *shutdownState) tryBeginSwitch(open *PluginOpen) (func(), bool, error) {
+	s.mu.Lock()
+	isInsidePluginOpen := open != nil && s.pluginOpen == open
+	s.mu.Unlock()
+	if isInsidePluginOpen {
+		return func() {}, true, nil
+	}
+	if err := s.tryBegin(); err != nil {
+		return nil, false, err
+	}
+	return s.endKeepOpen, false, nil
 }
 
 // isClosed is whether the window has closed.

@@ -82,6 +82,19 @@ export interface AppInfo {
   readonly platform: 'darwin' | 'windows' | 'linux'
 }
 
+// TabPlace is the place a reader tab shows, as its reader reports it. A field the reader does not
+// have is left out.
+export interface TabPlace {
+  // PDF: the page shown, from 1, and the number of pages.
+  readonly page?: number
+  readonly pageCount?: number
+  // Recording: seconds from the start.
+  readonly positionSeconds?: number
+  // EPUB: the CFI of the place shown, and the table-of-contents title there.
+  readonly cfi?: string
+  readonly chapter?: string
+}
+
 // ReaderTabState is the `state` prop the window passes the component of a reader tab.
 export interface ReaderTabState {
   readonly path: string
@@ -89,9 +102,14 @@ export interface ReaderTabState {
   // The location to show: the selector of a search hit, or the location saved before a restart. The
   // window sets a new object each time it requests a location; null shows the file from its start.
   readonly selector: Selector | null
+  // Byte ranges of the text version to highlight; the reader scrolls to the first. The window sets a
+  // new array each time it requests them; null when none is requested.
+  readonly ranges: readonly TextRange[] | null
   // Saves the place the reader shows. The window keeps it with the tab and passes it back as
   // `selector` when the tab opens after a restart.
   savePlace(place: Selector): void
+  // Reports the place the reader shows to the window, which an agent reads with the open tabs.
+  reportPlace(place: TabPlace): void
 }
 
 // ReaderPaneProps describes the props passed to a reader component by the host pane wrapper.
@@ -142,7 +160,8 @@ export interface TabKindRegistration<State = unknown> {
   // A key struck while the tab is in front, answered with whether the tab took it.
   onKeyPress?(state: State, event: KeyboardEvent): boolean
   getTarget?(state: State): TabTarget
-  getOpenTab?(state: State): { readonly path: string }
+  // Returns the file the tab shows, and the place its reader last reported, left out when it reported none.
+  getOpenTab?(state: State): { readonly path: string; readonly place?: TabPlace }
   // The window is going; what the tab holds is released without asking.
   onDestroy?(state: State, id: string): void
   // The tab moves to a vault path a tab linked to it moved to. A kind that declares it can be linked.

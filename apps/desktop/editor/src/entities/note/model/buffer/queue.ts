@@ -15,7 +15,7 @@ const TAB_CODES: ReadonlySet<string> = new Set<NoteErrorCode>([
 ])
 
 const TAB_CODE_OF: Readonly<Record<string, NoteErrorCode>> = {
-  missing: 'unreadable',
+  notFound: 'unreadable',
   alreadyExists: 'unreadable',
   invalidName: 'unreadable',
 }
@@ -40,7 +40,7 @@ function toReadResult(reply: NoteResult): ReadResult {
   if (reply.ok) {
     return { kind: 'body', body: reply.value.body, at: reply.value.at ?? '' }
   }
-  if (reply.error === 'missing') return { kind: 'missing' }
+  if (reply.error === 'notFound') return { kind: 'missing' }
   return { kind: 'error', error: convertErrorCode(reply.error) }
 }
 

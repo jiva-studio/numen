@@ -98,7 +98,7 @@ func (f *Files) OpenAt(path string, into Document) error {
 		// the same settings.
 		into.GetAppearance().InterfaceScale = getDesktopScale()
 		if err := f.write(path, into); err != nil && !isUnwritable(err) {
-			warn(into, "the settings could not be written to %s: %v", path, err)
+			warn(into, "%s: cannot write the file: %v; the default settings apply and are not saved", path, err)
 		}
 		return nil
 	}

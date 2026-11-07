@@ -4,6 +4,7 @@
   "version": "2026.11.7",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
+  "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "engines",

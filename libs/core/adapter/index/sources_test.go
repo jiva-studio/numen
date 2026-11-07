@@ -33,9 +33,9 @@ func saveThroughPort(t *testing.T, db *DB, vault domain.Vault, path string, pos 
 	}
 	if err := db.Sources().SaveExtraction(t.Context(), vault.ID, domain.SourceChunks{
 		Source: domain.Source{
-			FileStat: domain.FileStat{Path: path, Kind: domain.KindFile, Size: 1000, ModTime: pos},
-			Hash:     "hash-" + path,
-			Recipe:   "epub",
+			FileStat:    domain.FileStat{Path: path, Kind: domain.KindFile, Size: 1000, ModTime: pos},
+			ContentHash: "hash-" + path,
+			Recipe:      "epub",
 		},
 		Chunks: []domain.Chunk{{Start: 0, Length: 50 * len(texts), Text: strings.Join(texts, " "), Small: small}},
 	}); err != nil {
@@ -210,9 +210,9 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	sources := db.Sources()
 
 	if err := sources.SaveSource(ctx, getFirst().ID, domain.Source{
-		FileStat: domain.FileStat{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: getThisYear()},
-		Hash:     "hash-scan",
-		Producer: "ocr",
+		FileStat:    domain.FileStat{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: getThisYear()},
+		ContentHash: "hash-scan",
+		Producer:    "ocr",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -224,7 +224,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	if !target {
 		t.Fatal("the source saved is not held")
 	}
-	if read.Size != 4321 || !read.ModTime.Equal(getThisYear()) || read.Hash != "hash-scan" || read.Producer != "ocr" {
+	if read.Size != 4321 || !read.ModTime.Equal(getThisYear()) || read.ContentHash != "hash-scan" || read.Producer != "ocr" {
 		t.Errorf("the source reads back as %+v", read)
 	}
 	books, err := sources.GetFileStats(ctx, getFirst().ID, domain.KindFile)
@@ -291,9 +291,9 @@ func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	if err := db.Sources().SaveSource(ctx, getFirst().ID, domain.Source{
-		FileStat: domain.FileStat{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: getThisYear()},
-		Hash:     "hash-scan",
-		Producer: "ocr",
+		FileStat:    domain.FileStat{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: getThisYear()},
+		ContentHash: "hash-scan",
+		Producer:    "ocr",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -302,7 +302,7 @@ func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Path != "library/scan.pdf" || found[0].Producer != "ocr" || found[0].Hash != "hash-scan" {
+	if len(found) != 1 || found[0].Path != "library/scan.pdf" || found[0].Producer != "ocr" || found[0].ContentHash != "hash-scan" {
 		t.Errorf("the recognised sources are %+v", found)
 	}
 

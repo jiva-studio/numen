@@ -253,16 +253,23 @@ func openInstallation(
 		current := opened.GetCurrentVault()
 		return current, current.Path != ""
 	}
-	shared, err := made.OpenPluginVault(getShownVault, container.PluginVaultHooks{Written: func() {
-		if wake := opened.State.NotifyNoteWritten; wake != nil {
-			wake()
-		}
-	}})
+	shared, err := made.OpenPluginVault(getShownVault, container.PluginVaultHooks{
+		Written: func() {
+			if wake := opened.State.NotifyNoteWritten; wake != nil {
+				wake()
+			}
+		},
+		Notes: opened.Notes(),
+	})
 	if err != nil {
 		return shownInstallation{}, err
 	}
 	cfg.SetPluginVault(shared)
+	cfg.SetPluginVaultList(editor.NewPluginVaultList(opened))
 	cfg.SetPluginTexts()
+	// The plugin window reads the vault of the State on each call, so a vault opened later in the
+	// main window is served without a new binding.
+	cfg.SetPluginWindow(editor.NewPluginWindow(opened.State, made.GetNoteQueries(), made.GetVaultReaders()))
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 
@@ -364,9 +371,11 @@ func connectWindow(
 		importDroppedFiles(ctx, opened, event)
 	})
 
-	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
-		hooks.cfg.SetPluginVaultPath(v.Path)
-		err := opened.Show(ctx, v)
+	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *editor.PluginOpen) error {
+		err := opened.Show(ctx, v, open)
+		if err == nil {
+			hooks.cfg.SetPluginVaultPath(v.Path)
+		}
 		naming(opened.State.GetOpenTabs())
 		return err
 	}

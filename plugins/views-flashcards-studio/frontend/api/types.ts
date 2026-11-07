@@ -10,7 +10,7 @@
 
 /** ErrorCode names why a read or a write of a note failed. It is carried in the `error` field of a response; an empty value is no error. */
 export const ErrorCode = {
-  MISSING: 'missing',
+  NOT_FOUND: 'notFound',
   NOT_A_NOTE: 'not_a_note',
   NOT_TEXT: 'not_text',
   TOO_LARGE: 'too_large',
@@ -22,7 +22,7 @@ export const ErrorCode = {
   NOT_A_DECK: 'not_a_deck',
   DECK_TOO_LARGE: 'deck_too_large',
   NOT_A_PRESET: 'not_a_preset',
-  STALE: 'stale',
+  CONFLICT: 'conflict',
 } as const
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode]
 

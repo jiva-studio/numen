@@ -21,9 +21,9 @@ const open = () => {
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     createCardModel: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: '' }),
-    readDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
-    writeDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
-    readCardModel: async () => asFailure('missing' as const),
+    readDeck: async () => asFailure({ code: 'notFound' as const, bound: 0 }),
+    writeDeck: async () => asFailure({ code: 'notFound' as const, bound: 0 }),
+    readCardModel: async () => asFailure('notFound' as const),
     writeCardModel: async () => asValue({ at: '' }),
   }
   const presets: Presets = {

@@ -22,11 +22,16 @@ type Side = notesdomain.Side
 type RelatedNote = notesdomain.RelatedNote
 type Backlink = notesdomain.Backlink
 type VaultProblem = notesdomain.VaultProblem
+type MoveResult = notesdomain.MoveResult
 type TextVersion = notesdomain.TextVersion
 type TextVersionID = notesdomain.TextVersionID
 type TextKind = notesdomain.TextKind
 type TextSourceProperty = notesdomain.TextSourceProperty
 type TextSegment = notesdomain.TextSegment
+
+// Selector locates a segment of a text version in its file, as a JSON object. The key page is the PDF
+// page counted from 1, cfi the EPUB CFI, and t the span of a recording, [from, to] in seconds. Other
+// keys may be present and are ignored.
 type Selector = notesdomain.Selector
 type VersionText = notesdomain.VersionText
 type ByteRange = notesdomain.ByteRange
@@ -51,6 +56,12 @@ const (
 var ErrInvalidName = notesdomain.ErrInvalidName
 
 func Basename(path string) string { return notesdomain.Basename(path) }
+
+func ParseAddress(raw string) Address { return notesdomain.ParseAddress(raw) }
+
+func IsKnownRole(r LinkRole) bool { return notesdomain.IsKnownRole(r) }
+
+func IsWritableMarker(m LinkMarker) bool { return notesdomain.IsWritableMarker(m) }
 
 func Filename(title string) (filename string, exact bool, err error) {
 	return notesdomain.Filename(title)

@@ -50,7 +50,7 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 			if want := recipe(versionReader, extract.sizes()); source.Recipe != want {
 				t.Errorf("recipe = %q, want %q", source.Recipe, want)
 			}
-			if source.Hash == "" {
+			if source.ContentHash == "" {
 				t.Error("nothing addresses the content the chunks were cut from")
 			}
 			if source.FileStat.Size != int64(len(raw)) ||

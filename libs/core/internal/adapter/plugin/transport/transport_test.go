@@ -25,24 +25,24 @@ func TestGenerateAuthToken(t *testing.T) {
 	}
 }
 
-func TestParsePasseshake(t *testing.T) {
+func TestParseReadyLineRequiresNumenReadyPrefix(t *testing.T) {
 	tests := []struct {
 		line     string
 		wantPort int
 		wantOk   bool
 	}{
 		{line: "NUMEN_READY port=8080", wantPort: 8080, wantOk: true},
-		{line: "READY port=9999", wantPort: 9999, wantOk: true},
+		{line: "READY port=9999", wantPort: 0, wantOk: false},
 		{line: "info: server starting up...", wantPort: 0, wantOk: false},
 		{line: "NUMEN_READY port=invalid", wantPort: 0, wantOk: false},
 		{line: "NUMEN_READY other=123", wantPort: 0, wantOk: false},
 	}
 
 	for _, tt := range tests {
-		gotPort, gotOk := ParseHandshake(tt.line)
-		if gotOk != tt.wantOk || gotPort != tt.wantPort {
-			t.Errorf("ParseHandshake(%q) = (%d, %v), want (%d, %v)",
-				tt.line, gotPort, gotOk, tt.wantPort, tt.wantOk)
+		got, gotOk, err := ParseHandshake(tt.line)
+		if err != nil || gotOk != tt.wantOk || got.Port != tt.wantPort {
+			t.Errorf("ParseHandshake(%q) = (%d, %v, %v), want (%d, %v, nil)",
+				tt.line, got.Port, gotOk, err, tt.wantPort, tt.wantOk)
 		}
 	}
 }
@@ -52,12 +52,12 @@ func TestWaitForPasseshakeSuccess(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 200*time.Millisecond)
 	defer cancel()
 
-	port, err := WaitForHandshake(ctx, strings.NewReader(input))
+	handshake, err := WaitForHandshake(ctx, strings.NewReader(input))
 	if err != nil {
 		t.Fatalf("expected success, got error: %v", err)
 	}
-	if port != 12345 {
-		t.Fatalf("expected port 12345, got %d", port)
+	if handshake.Port != 12345 {
+		t.Fatalf("expected port 12345, got %d", handshake.Port)
 	}
 }
 

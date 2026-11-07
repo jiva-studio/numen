@@ -105,6 +105,39 @@ const (
 	// HostVaultServiceGetParseProblemsProcedure is the fully-qualified name of the HostVaultService's
 	// GetParseProblems RPC.
 	HostVaultServiceGetParseProblemsProcedure = "/numen.v1.HostVaultService/GetParseProblems"
+	// HostVaultServiceGetVaultProblemsProcedure is the fully-qualified name of the HostVaultService's
+	// GetVaultProblems RPC.
+	HostVaultServiceGetVaultProblemsProcedure = "/numen.v1.HostVaultService/GetVaultProblems"
+	// HostVaultServiceRenameNoteProcedure is the fully-qualified name of the HostVaultService's
+	// RenameNote RPC.
+	HostVaultServiceRenameNoteProcedure = "/numen.v1.HostVaultService/RenameNote"
+	// HostVaultServiceMoveNotesProcedure is the fully-qualified name of the HostVaultService's
+	// MoveNotes RPC.
+	HostVaultServiceMoveNotesProcedure = "/numen.v1.HostVaultService/MoveNotes"
+	// HostVaultServiceRemoveNotesProcedure is the fully-qualified name of the HostVaultService's
+	// RemoveNotes RPC.
+	HostVaultServiceRemoveNotesProcedure = "/numen.v1.HostVaultService/RemoveNotes"
+	// HostVaultServiceAddLinksProcedure is the fully-qualified name of the HostVaultService's AddLinks
+	// RPC.
+	HostVaultServiceAddLinksProcedure = "/numen.v1.HostVaultService/AddLinks"
+	// HostVaultServiceUpdateLinksProcedure is the fully-qualified name of the HostVaultService's
+	// UpdateLinks RPC.
+	HostVaultServiceUpdateLinksProcedure = "/numen.v1.HostVaultService/UpdateLinks"
+	// HostVaultServiceRemoveLinksProcedure is the fully-qualified name of the HostVaultService's
+	// RemoveLinks RPC.
+	HostVaultServiceRemoveLinksProcedure = "/numen.v1.HostVaultService/RemoveLinks"
+	// HostVaultServiceAddVaultProcedure is the fully-qualified name of the HostVaultService's AddVault
+	// RPC.
+	HostVaultServiceAddVaultProcedure = "/numen.v1.HostVaultService/AddVault"
+	// HostVaultServiceRenameVaultProcedure is the fully-qualified name of the HostVaultService's
+	// RenameVault RPC.
+	HostVaultServiceRenameVaultProcedure = "/numen.v1.HostVaultService/RenameVault"
+	// HostVaultServiceRemoveVaultProcedure is the fully-qualified name of the HostVaultService's
+	// RemoveVault RPC.
+	HostVaultServiceRemoveVaultProcedure = "/numen.v1.HostVaultService/RemoveVault"
+	// HostVaultServiceOpenVaultProcedure is the fully-qualified name of the HostVaultService's
+	// OpenVault RPC.
+	HostVaultServiceOpenVaultProcedure = "/numen.v1.HostVaultService/OpenVault"
 	// HostVaultServiceReadCacheProcedure is the fully-qualified name of the HostVaultService's
 	// ReadCache RPC.
 	HostVaultServiceReadCacheProcedure = "/numen.v1.HostVaultService/ReadCache"
@@ -131,12 +164,12 @@ type HostVaultServiceClient interface {
 	// caller asks again once WatchMoves tells it something moved.
 	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
 	// StatFile says what a file is now. A file that is not there is
-	// answered with the error code MISSING.
+	// returns the error code NOT_FOUND.
 	StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error)
 	// ReadFile reads a whole file, with the file stat it had when it was read.
 	ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error)
 	// WriteFile replaces a file that has not changed since the file stat given.
-	// A file that moved past it is answered with the error code STALE and
+	// A file changed since returns the error code CONFLICT and
 	// nothing is written.
 	WriteFile(context.Context, *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error)
 	// CreateFile makes a file that is not there yet. A file that is there is
@@ -185,6 +218,42 @@ type HostVaultServiceClient interface {
 	CreateRelatedNote(context.Context, *connect.Request[v1.HostVaultServiceCreateRelatedNoteRequest]) (*connect.Response[v1.HostVaultServiceCreateRelatedNoteResponse], error)
 	// GetParseProblems lists what parsing each file of the vault turned up.
 	GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error)
+	// GetVaultProblems runs the named checks of the vault (parse, frontmatter,
+	// ambiguous, dangling), or every check that is not opt-in when none is named.
+	// It needs vault:read.
+	GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error)
+	// RenameNote renames a note and moves its file to the filename of
+	// that title, repairing the links that stop resolving. It needs vault:write.
+	RenameNote(context.Context, *connect.Request[v1.HostVaultServiceRenameNoteRequest]) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error)
+	// MoveNotes moves notes to another folder, keeping their filenames, and
+	// repairs the links that stop resolving. It needs vault:write.
+	MoveNotes(context.Context, *connect.Request[v1.HostVaultServiceMoveNotesRequest]) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error)
+	// RemoveNotes moves notes to the vault's trash. A folder returns
+	// NOT_A_NOTE. It needs vault:write.
+	RemoveNotes(context.Context, *connect.Request[v1.HostVaultServiceRemoveNotesRequest]) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error)
+	// AddLinks writes links into the frontmatter links of notes. The links of one
+	// note are one write against one file stat, and succeed or fail together. At
+	// most 50 links. It needs vault:write.
+	AddLinks(context.Context, *connect.Request[v1.HostVaultServiceAddLinksRequest]) (*connect.Response[v1.HostVaultServiceAddLinksResponse], error)
+	// UpdateLinks changes the role, type, label and note of the links a note has
+	// to a target, keeping the target. An empty field is kept. It needs
+	// vault:write.
+	UpdateLinks(context.Context, *connect.Request[v1.HostVaultServiceUpdateLinksRequest]) (*connect.Response[v1.HostVaultServiceUpdateLinksResponse], error)
+	// RemoveLinks removes the frontmatter links a note has to a target, of every
+	// type, or only those of one role. The note at the other end is unchanged. It
+	// needs vault:write.
+	RemoveLinks(context.Context, *connect.Request[v1.HostVaultServiceRemoveLinksRequest]) (*connect.Response[v1.HostVaultServiceRemoveLinksResponse], error)
+	// AddVault adds a folder to the installation's list of vaults. It needs
+	// vault:manage.
+	AddVault(context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest]) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error)
+	// RenameVault changes the name of a vault on the list. It needs vault:manage.
+	RenameVault(context.Context, *connect.Request[v1.HostVaultServiceRenameVaultRequest]) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error)
+	// RemoveVault removes a vault from the list and from the index. The folder
+	// stays. It needs vault:manage.
+	RemoveVault(context.Context, *connect.Request[v1.HostVaultServiceRemoveVaultRequest]) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error)
+	// OpenVault makes the window show another vault. It returns before the window
+	// changes vault. It needs vault:manage.
+	OpenVault(context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest]) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error)
 	// ReadCache reads what the plugin kept for this vault under a name. The cache
 	// belongs to the installation and not to the vault, and can be made again.
 	ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error)
@@ -355,6 +424,72 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("GetParseProblems")),
 			connect.WithClientOptions(opts...),
 		),
+		getVaultProblems: connect.NewClient[v1.GetVaultProblemsRequest, v1.GetVaultProblemsResponse](
+			httpClient,
+			baseURL+HostVaultServiceGetVaultProblemsProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("GetVaultProblems")),
+			connect.WithClientOptions(opts...),
+		),
+		renameNote: connect.NewClient[v1.HostVaultServiceRenameNoteRequest, v1.HostVaultServiceRenameNoteResponse](
+			httpClient,
+			baseURL+HostVaultServiceRenameNoteProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("RenameNote")),
+			connect.WithClientOptions(opts...),
+		),
+		moveNotes: connect.NewClient[v1.HostVaultServiceMoveNotesRequest, v1.HostVaultServiceMoveNotesResponse](
+			httpClient,
+			baseURL+HostVaultServiceMoveNotesProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("MoveNotes")),
+			connect.WithClientOptions(opts...),
+		),
+		removeNotes: connect.NewClient[v1.HostVaultServiceRemoveNotesRequest, v1.HostVaultServiceRemoveNotesResponse](
+			httpClient,
+			baseURL+HostVaultServiceRemoveNotesProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("RemoveNotes")),
+			connect.WithClientOptions(opts...),
+		),
+		addLinks: connect.NewClient[v1.HostVaultServiceAddLinksRequest, v1.HostVaultServiceAddLinksResponse](
+			httpClient,
+			baseURL+HostVaultServiceAddLinksProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("AddLinks")),
+			connect.WithClientOptions(opts...),
+		),
+		updateLinks: connect.NewClient[v1.HostVaultServiceUpdateLinksRequest, v1.HostVaultServiceUpdateLinksResponse](
+			httpClient,
+			baseURL+HostVaultServiceUpdateLinksProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("UpdateLinks")),
+			connect.WithClientOptions(opts...),
+		),
+		removeLinks: connect.NewClient[v1.HostVaultServiceRemoveLinksRequest, v1.HostVaultServiceRemoveLinksResponse](
+			httpClient,
+			baseURL+HostVaultServiceRemoveLinksProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("RemoveLinks")),
+			connect.WithClientOptions(opts...),
+		),
+		addVault: connect.NewClient[v1.HostVaultServiceAddVaultRequest, v1.HostVaultServiceAddVaultResponse](
+			httpClient,
+			baseURL+HostVaultServiceAddVaultProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("AddVault")),
+			connect.WithClientOptions(opts...),
+		),
+		renameVault: connect.NewClient[v1.HostVaultServiceRenameVaultRequest, v1.HostVaultServiceRenameVaultResponse](
+			httpClient,
+			baseURL+HostVaultServiceRenameVaultProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("RenameVault")),
+			connect.WithClientOptions(opts...),
+		),
+		removeVault: connect.NewClient[v1.HostVaultServiceRemoveVaultRequest, v1.HostVaultServiceRemoveVaultResponse](
+			httpClient,
+			baseURL+HostVaultServiceRemoveVaultProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("RemoveVault")),
+			connect.WithClientOptions(opts...),
+		),
+		openVault: connect.NewClient[v1.HostVaultServiceOpenVaultRequest, v1.HostVaultServiceOpenVaultResponse](
+			httpClient,
+			baseURL+HostVaultServiceOpenVaultProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("OpenVault")),
+			connect.WithClientOptions(opts...),
+		),
 		readCache: connect.NewClient[v1.ReadCacheRequest, v1.ReadCacheResponse](
 			httpClient,
 			baseURL+HostVaultServiceReadCacheProcedure,
@@ -408,6 +543,17 @@ type hostVaultServiceClient struct {
 	joinNotes          *connect.Client[v1.HostVaultServiceJoinNotesRequest, v1.HostVaultServiceJoinNotesResponse]
 	createRelatedNote  *connect.Client[v1.HostVaultServiceCreateRelatedNoteRequest, v1.HostVaultServiceCreateRelatedNoteResponse]
 	getParseProblems   *connect.Client[v1.GetParseProblemsRequest, v1.GetParseProblemsResponse]
+	getVaultProblems   *connect.Client[v1.GetVaultProblemsRequest, v1.GetVaultProblemsResponse]
+	renameNote         *connect.Client[v1.HostVaultServiceRenameNoteRequest, v1.HostVaultServiceRenameNoteResponse]
+	moveNotes          *connect.Client[v1.HostVaultServiceMoveNotesRequest, v1.HostVaultServiceMoveNotesResponse]
+	removeNotes        *connect.Client[v1.HostVaultServiceRemoveNotesRequest, v1.HostVaultServiceRemoveNotesResponse]
+	addLinks           *connect.Client[v1.HostVaultServiceAddLinksRequest, v1.HostVaultServiceAddLinksResponse]
+	updateLinks        *connect.Client[v1.HostVaultServiceUpdateLinksRequest, v1.HostVaultServiceUpdateLinksResponse]
+	removeLinks        *connect.Client[v1.HostVaultServiceRemoveLinksRequest, v1.HostVaultServiceRemoveLinksResponse]
+	addVault           *connect.Client[v1.HostVaultServiceAddVaultRequest, v1.HostVaultServiceAddVaultResponse]
+	renameVault        *connect.Client[v1.HostVaultServiceRenameVaultRequest, v1.HostVaultServiceRenameVaultResponse]
+	removeVault        *connect.Client[v1.HostVaultServiceRemoveVaultRequest, v1.HostVaultServiceRemoveVaultResponse]
+	openVault          *connect.Client[v1.HostVaultServiceOpenVaultRequest, v1.HostVaultServiceOpenVaultResponse]
 	readCache          *connect.Client[v1.ReadCacheRequest, v1.ReadCacheResponse]
 	writeCache         *connect.Client[v1.WriteCacheRequest, v1.WriteCacheResponse]
 	watchMoves         *connect.Client[v1.WatchMovesRequest, v1.WatchMovesResponse]
@@ -534,6 +680,61 @@ func (c *hostVaultServiceClient) GetParseProblems(ctx context.Context, req *conn
 	return c.getParseProblems.CallUnary(ctx, req)
 }
 
+// GetVaultProblems calls numen.v1.HostVaultService.GetVaultProblems.
+func (c *hostVaultServiceClient) GetVaultProblems(ctx context.Context, req *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error) {
+	return c.getVaultProblems.CallUnary(ctx, req)
+}
+
+// RenameNote calls numen.v1.HostVaultService.RenameNote.
+func (c *hostVaultServiceClient) RenameNote(ctx context.Context, req *connect.Request[v1.HostVaultServiceRenameNoteRequest]) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
+	return c.renameNote.CallUnary(ctx, req)
+}
+
+// MoveNotes calls numen.v1.HostVaultService.MoveNotes.
+func (c *hostVaultServiceClient) MoveNotes(ctx context.Context, req *connect.Request[v1.HostVaultServiceMoveNotesRequest]) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error) {
+	return c.moveNotes.CallUnary(ctx, req)
+}
+
+// RemoveNotes calls numen.v1.HostVaultService.RemoveNotes.
+func (c *hostVaultServiceClient) RemoveNotes(ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveNotesRequest]) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error) {
+	return c.removeNotes.CallUnary(ctx, req)
+}
+
+// AddLinks calls numen.v1.HostVaultService.AddLinks.
+func (c *hostVaultServiceClient) AddLinks(ctx context.Context, req *connect.Request[v1.HostVaultServiceAddLinksRequest]) (*connect.Response[v1.HostVaultServiceAddLinksResponse], error) {
+	return c.addLinks.CallUnary(ctx, req)
+}
+
+// UpdateLinks calls numen.v1.HostVaultService.UpdateLinks.
+func (c *hostVaultServiceClient) UpdateLinks(ctx context.Context, req *connect.Request[v1.HostVaultServiceUpdateLinksRequest]) (*connect.Response[v1.HostVaultServiceUpdateLinksResponse], error) {
+	return c.updateLinks.CallUnary(ctx, req)
+}
+
+// RemoveLinks calls numen.v1.HostVaultService.RemoveLinks.
+func (c *hostVaultServiceClient) RemoveLinks(ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveLinksRequest]) (*connect.Response[v1.HostVaultServiceRemoveLinksResponse], error) {
+	return c.removeLinks.CallUnary(ctx, req)
+}
+
+// AddVault calls numen.v1.HostVaultService.AddVault.
+func (c *hostVaultServiceClient) AddVault(ctx context.Context, req *connect.Request[v1.HostVaultServiceAddVaultRequest]) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
+	return c.addVault.CallUnary(ctx, req)
+}
+
+// RenameVault calls numen.v1.HostVaultService.RenameVault.
+func (c *hostVaultServiceClient) RenameVault(ctx context.Context, req *connect.Request[v1.HostVaultServiceRenameVaultRequest]) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error) {
+	return c.renameVault.CallUnary(ctx, req)
+}
+
+// RemoveVault calls numen.v1.HostVaultService.RemoveVault.
+func (c *hostVaultServiceClient) RemoveVault(ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveVaultRequest]) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error) {
+	return c.removeVault.CallUnary(ctx, req)
+}
+
+// OpenVault calls numen.v1.HostVaultService.OpenVault.
+func (c *hostVaultServiceClient) OpenVault(ctx context.Context, req *connect.Request[v1.HostVaultServiceOpenVaultRequest]) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
+	return c.openVault.CallUnary(ctx, req)
+}
+
 // ReadCache calls numen.v1.HostVaultService.ReadCache.
 func (c *hostVaultServiceClient) ReadCache(ctx context.Context, req *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error) {
 	return c.readCache.CallUnary(ctx, req)
@@ -566,12 +767,12 @@ type HostVaultServiceHandler interface {
 	// caller asks again once WatchMoves tells it something moved.
 	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
 	// StatFile says what a file is now. A file that is not there is
-	// answered with the error code MISSING.
+	// returns the error code NOT_FOUND.
 	StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error)
 	// ReadFile reads a whole file, with the file stat it had when it was read.
 	ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error)
 	// WriteFile replaces a file that has not changed since the file stat given.
-	// A file that moved past it is answered with the error code STALE and
+	// A file changed since returns the error code CONFLICT and
 	// nothing is written.
 	WriteFile(context.Context, *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error)
 	// CreateFile makes a file that is not there yet. A file that is there is
@@ -620,6 +821,42 @@ type HostVaultServiceHandler interface {
 	CreateRelatedNote(context.Context, *connect.Request[v1.HostVaultServiceCreateRelatedNoteRequest]) (*connect.Response[v1.HostVaultServiceCreateRelatedNoteResponse], error)
 	// GetParseProblems lists what parsing each file of the vault turned up.
 	GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error)
+	// GetVaultProblems runs the named checks of the vault (parse, frontmatter,
+	// ambiguous, dangling), or every check that is not opt-in when none is named.
+	// It needs vault:read.
+	GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error)
+	// RenameNote renames a note and moves its file to the filename of
+	// that title, repairing the links that stop resolving. It needs vault:write.
+	RenameNote(context.Context, *connect.Request[v1.HostVaultServiceRenameNoteRequest]) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error)
+	// MoveNotes moves notes to another folder, keeping their filenames, and
+	// repairs the links that stop resolving. It needs vault:write.
+	MoveNotes(context.Context, *connect.Request[v1.HostVaultServiceMoveNotesRequest]) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error)
+	// RemoveNotes moves notes to the vault's trash. A folder returns
+	// NOT_A_NOTE. It needs vault:write.
+	RemoveNotes(context.Context, *connect.Request[v1.HostVaultServiceRemoveNotesRequest]) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error)
+	// AddLinks writes links into the frontmatter links of notes. The links of one
+	// note are one write against one file stat, and succeed or fail together. At
+	// most 50 links. It needs vault:write.
+	AddLinks(context.Context, *connect.Request[v1.HostVaultServiceAddLinksRequest]) (*connect.Response[v1.HostVaultServiceAddLinksResponse], error)
+	// UpdateLinks changes the role, type, label and note of the links a note has
+	// to a target, keeping the target. An empty field is kept. It needs
+	// vault:write.
+	UpdateLinks(context.Context, *connect.Request[v1.HostVaultServiceUpdateLinksRequest]) (*connect.Response[v1.HostVaultServiceUpdateLinksResponse], error)
+	// RemoveLinks removes the frontmatter links a note has to a target, of every
+	// type, or only those of one role. The note at the other end is unchanged. It
+	// needs vault:write.
+	RemoveLinks(context.Context, *connect.Request[v1.HostVaultServiceRemoveLinksRequest]) (*connect.Response[v1.HostVaultServiceRemoveLinksResponse], error)
+	// AddVault adds a folder to the installation's list of vaults. It needs
+	// vault:manage.
+	AddVault(context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest]) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error)
+	// RenameVault changes the name of a vault on the list. It needs vault:manage.
+	RenameVault(context.Context, *connect.Request[v1.HostVaultServiceRenameVaultRequest]) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error)
+	// RemoveVault removes a vault from the list and from the index. The folder
+	// stays. It needs vault:manage.
+	RemoveVault(context.Context, *connect.Request[v1.HostVaultServiceRemoveVaultRequest]) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error)
+	// OpenVault makes the window show another vault. It returns before the window
+	// changes vault. It needs vault:manage.
+	OpenVault(context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest]) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error)
 	// ReadCache reads what the plugin kept for this vault under a name. The cache
 	// belongs to the installation and not to the vault, and can be made again.
 	ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error)
@@ -786,6 +1023,72 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("GetParseProblems")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostVaultServiceGetVaultProblemsHandler := connect.NewUnaryHandler(
+		HostVaultServiceGetVaultProblemsProcedure,
+		svc.GetVaultProblems,
+		connect.WithSchema(hostVaultServiceMethods.ByName("GetVaultProblems")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceRenameNoteHandler := connect.NewUnaryHandler(
+		HostVaultServiceRenameNoteProcedure,
+		svc.RenameNote,
+		connect.WithSchema(hostVaultServiceMethods.ByName("RenameNote")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceMoveNotesHandler := connect.NewUnaryHandler(
+		HostVaultServiceMoveNotesProcedure,
+		svc.MoveNotes,
+		connect.WithSchema(hostVaultServiceMethods.ByName("MoveNotes")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceRemoveNotesHandler := connect.NewUnaryHandler(
+		HostVaultServiceRemoveNotesProcedure,
+		svc.RemoveNotes,
+		connect.WithSchema(hostVaultServiceMethods.ByName("RemoveNotes")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceAddLinksHandler := connect.NewUnaryHandler(
+		HostVaultServiceAddLinksProcedure,
+		svc.AddLinks,
+		connect.WithSchema(hostVaultServiceMethods.ByName("AddLinks")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceUpdateLinksHandler := connect.NewUnaryHandler(
+		HostVaultServiceUpdateLinksProcedure,
+		svc.UpdateLinks,
+		connect.WithSchema(hostVaultServiceMethods.ByName("UpdateLinks")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceRemoveLinksHandler := connect.NewUnaryHandler(
+		HostVaultServiceRemoveLinksProcedure,
+		svc.RemoveLinks,
+		connect.WithSchema(hostVaultServiceMethods.ByName("RemoveLinks")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceAddVaultHandler := connect.NewUnaryHandler(
+		HostVaultServiceAddVaultProcedure,
+		svc.AddVault,
+		connect.WithSchema(hostVaultServiceMethods.ByName("AddVault")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceRenameVaultHandler := connect.NewUnaryHandler(
+		HostVaultServiceRenameVaultProcedure,
+		svc.RenameVault,
+		connect.WithSchema(hostVaultServiceMethods.ByName("RenameVault")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceRemoveVaultHandler := connect.NewUnaryHandler(
+		HostVaultServiceRemoveVaultProcedure,
+		svc.RemoveVault,
+		connect.WithSchema(hostVaultServiceMethods.ByName("RemoveVault")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceOpenVaultHandler := connect.NewUnaryHandler(
+		HostVaultServiceOpenVaultProcedure,
+		svc.OpenVault,
+		connect.WithSchema(hostVaultServiceMethods.ByName("OpenVault")),
+		connect.WithHandlerOptions(opts...),
+	)
 	hostVaultServiceReadCacheHandler := connect.NewUnaryHandler(
 		HostVaultServiceReadCacheProcedure,
 		svc.ReadCache,
@@ -860,6 +1163,28 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceCreateRelatedNoteHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetParseProblemsProcedure:
 			hostVaultServiceGetParseProblemsHandler.ServeHTTP(w, r)
+		case HostVaultServiceGetVaultProblemsProcedure:
+			hostVaultServiceGetVaultProblemsHandler.ServeHTTP(w, r)
+		case HostVaultServiceRenameNoteProcedure:
+			hostVaultServiceRenameNoteHandler.ServeHTTP(w, r)
+		case HostVaultServiceMoveNotesProcedure:
+			hostVaultServiceMoveNotesHandler.ServeHTTP(w, r)
+		case HostVaultServiceRemoveNotesProcedure:
+			hostVaultServiceRemoveNotesHandler.ServeHTTP(w, r)
+		case HostVaultServiceAddLinksProcedure:
+			hostVaultServiceAddLinksHandler.ServeHTTP(w, r)
+		case HostVaultServiceUpdateLinksProcedure:
+			hostVaultServiceUpdateLinksHandler.ServeHTTP(w, r)
+		case HostVaultServiceRemoveLinksProcedure:
+			hostVaultServiceRemoveLinksHandler.ServeHTTP(w, r)
+		case HostVaultServiceAddVaultProcedure:
+			hostVaultServiceAddVaultHandler.ServeHTTP(w, r)
+		case HostVaultServiceRenameVaultProcedure:
+			hostVaultServiceRenameVaultHandler.ServeHTTP(w, r)
+		case HostVaultServiceRemoveVaultProcedure:
+			hostVaultServiceRemoveVaultHandler.ServeHTTP(w, r)
+		case HostVaultServiceOpenVaultProcedure:
+			hostVaultServiceOpenVaultHandler.ServeHTTP(w, r)
 		case HostVaultServiceReadCacheProcedure:
 			hostVaultServiceReadCacheHandler.ServeHTTP(w, r)
 		case HostVaultServiceWriteCacheProcedure:
@@ -971,6 +1296,50 @@ func (UnimplementedHostVaultServiceHandler) CreateRelatedNote(context.Context, *
 
 func (UnimplementedHostVaultServiceHandler) GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetParseProblems is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetVaultProblems is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) RenameNote(context.Context, *connect.Request[v1.HostVaultServiceRenameNoteRequest]) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.RenameNote is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) MoveNotes(context.Context, *connect.Request[v1.HostVaultServiceMoveNotesRequest]) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.MoveNotes is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) RemoveNotes(context.Context, *connect.Request[v1.HostVaultServiceRemoveNotesRequest]) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.RemoveNotes is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) AddLinks(context.Context, *connect.Request[v1.HostVaultServiceAddLinksRequest]) (*connect.Response[v1.HostVaultServiceAddLinksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.AddLinks is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) UpdateLinks(context.Context, *connect.Request[v1.HostVaultServiceUpdateLinksRequest]) (*connect.Response[v1.HostVaultServiceUpdateLinksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.UpdateLinks is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) RemoveLinks(context.Context, *connect.Request[v1.HostVaultServiceRemoveLinksRequest]) (*connect.Response[v1.HostVaultServiceRemoveLinksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.RemoveLinks is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) AddVault(context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest]) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.AddVault is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) RenameVault(context.Context, *connect.Request[v1.HostVaultServiceRenameVaultRequest]) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.RenameVault is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) RemoveVault(context.Context, *connect.Request[v1.HostVaultServiceRemoveVaultRequest]) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.RemoveVault is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) OpenVault(context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest]) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.OpenVault is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error) {

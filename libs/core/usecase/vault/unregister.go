@@ -11,7 +11,7 @@ import (
 )
 
 // ErrLastVault is the one vault an installation has left. It stays on the list.
-var ErrLastVault = errors.New("an installation keeps a vault")
+var ErrLastVault = errors.New("the last vault cannot be removed")
 
 // Unregister takes a vault off the list this installation keeps, and out of the
 // index. The folder stays where it is, with the identity it carries, and adding
@@ -35,7 +35,7 @@ func (u Unregister) Execute(ctx context.Context, v domain.Vault) error {
 	// The index goes first: no entry on the list points at rows that are gone.
 	// again.
 	if err := u.index.Unregister(ctx, v.ID); err != nil {
-		return fmt.Errorf("take %s out of the index: %w", v.Name, err)
+		return fmt.Errorf("the index cannot remove the vault %s: %w", v.Name, err)
 	}
 	return u.registry.Remove(v.ID)
 }
@@ -47,7 +47,7 @@ func keepTheLastVault(registry vaultport.VaultRegistry, v domain.Vault) error {
 		return err
 	}
 	if len(recognized) == 1 && recognized[0].ID == v.ID {
-		return fmt.Errorf("%w: %s is the only vault this installation has", ErrLastVault, v.Name)
+		return domain.NewDetailError(fmt.Sprintf("%s is the only vault; the last vault cannot be removed", v.Name), ErrLastVault)
 	}
 	return nil
 }
@@ -70,7 +70,7 @@ func (u Remove) Execute(ctx context.Context, id string, showing domain.VaultID, 
 		return err
 	}
 	if v.ID == showing {
-		return ErrShowing
+		return domain.NewDetailError(fmt.Sprintf("%s is the vault the window shows", v.Name), ErrShowing)
 	}
 	if trash {
 		_, err = u.erase.Execute(ctx, v)

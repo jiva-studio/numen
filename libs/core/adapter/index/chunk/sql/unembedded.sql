@@ -9,7 +9,7 @@
 -- text or the coarse pass holds no row for the chunk: a vector is kept by text
 -- and a coarse row by chunk, so two chunks of one text share the first and each
 -- need the second.
-SELECT c.id, s.path, COALESCE(s.producer, ''), COALESCE(s.hash, ''), c.start, c.length, COALESCE(c.location, ''), COALESCE(c.parent_id, 0), c.hash, s.modified_at, s.id
+SELECT c.id, s.path, COALESCE(s.producer, ''), COALESCE(s.content_hash, ''), c.start, c.length, COALESCE(c.location, ''), COALESCE(c.parent_id, 0), c.hash, s.modified_at, s.id
 FROM sources s
 CROSS JOIN chunks c ON c.source_id = s.id AND c.vault_id = s.vault_id
 LEFT JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?

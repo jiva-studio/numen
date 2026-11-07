@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -11,12 +10,21 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
+// Host provides the vault and its window to the window tools. A nil field means the host offers
+// none.
+type Host struct {
+	Vault  host.Vault
+	Window host.Window
+}
+
 // RegisterTools registers all window interaction and edit preview tools on the given registry.
-func RegisterTools(registry *tools.Registry, manager *WindowManager, vault host.Vault) error {
+func RegisterTools(registry *tools.Registry, manager *WindowManager, on Host) error {
 	for _, add := range []func(*tools.Registry) error{
-		func(r *tools.Registry) error { return addWindowTabsGet(r, manager) },
-		func(r *tools.Registry) error { return addWindowFocusTab(r, manager) },
-		func(r *tools.Registry) error { return addEditPreview(r, manager, vault) },
+		func(r *tools.Registry) error { return addWindowTabList(r, on) },
+		func(r *tools.Registry) error { return addWindowTabActivate(r, on) },
+		func(r *tools.Registry) error { return addNoteFocus(r, on) },
+		func(r *tools.Registry) error { return addSourceFocus(r, on) },
+		func(r *tools.Registry) error { return addNoteEditPreview(r, manager, on.Vault) },
 	} {
 		if err := add(registry); err != nil {
 			return err
@@ -25,171 +33,148 @@ func RegisterTools(registry *tools.Registry, manager *WindowManager, vault host.
 	return nil
 }
 
-func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
+func addWindowTabList(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
-		Name:  "window_tabs_get",
-		Title: "Get open window tabs",
-		Description: "Inspect currently open tabs in the user window, including their titles, " +
-			"paths, kinds, positions, and which tab is in front. Ask it before stating " +
-			"what is in front of the user.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.ByEffect,
-		Servers: []tools.Server{tools.Full, tools.Reading},
-	}, func(ctx context.Context, _ WindowTabsGetInput) (WindowTabsGetOutput, error) {
-		tabs, activeID := manager.GetOpenTabs()
-		requestContext := tools.GetCallContext(ctx)
-
+		Name:  "window_tab_list",
+		Title: "List open window tabs",
+		Description: "List the open tabs of the window with their titles, paths, kinds and places, " +
+			"and the identifier of the active tab. The place is the one the reader of the tab reported, " +
+			"omitted for a tab with none. Call it before describing the active tab.",
+		Effect:       tools.ReadOnly,
+		Step:         tools.ByEffect,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{tabListSentence},
+		Requires:     []string{host.PermissionWindowFocus},
+	}, func(ctx context.Context, _ WindowTabListInput) (WindowTabListOutput, error) {
+		tabs, activeID, err := readWindowTabs(ctx, on)
+		if err != nil {
+			return WindowTabListOutput{}, err
+		}
 		if len(tabs) == 0 {
-			if focus := requestContext["focus"]; focus != "" {
+			if focus := tools.GetCallContext(ctx)["focus"]; focus != "" {
 				inferredTab := TabInfo{
-					ID:       "front-tab",
+					TabID:    "front-tab",
 					Kind:     "",
 					Path:     focus,
 					Title:    formatTitleFromPath(focus),
-					Where:    "",
+					Place:    nil,
 					IsActive: true,
 				}
 				tabs = []TabInfo{inferredTab}
-				activeID = inferredTab.ID
+				activeID = inferredTab.TabID
 			}
 		}
-
-		summary := formatTabsSummary(tabs, activeID)
-		return WindowTabsGetOutput{
-			Tabs:     tabs,
-			ActiveID: activeID,
-			Summary:  summary,
+		return WindowTabListOutput{
+			Tabs:        tabs,
+			ActiveTabID: activeID,
 		}, nil
 	})
 }
 
-func addWindowFocusTab(registry *tools.Registry, manager *WindowManager) error {
-	return tools.Add(registry, tools.Spec{
-		Name:  "window_focus_tab",
-		Title: "Focus window tab",
-		Description: "Switch or focus a specific tab or note in the user window by tab ID, " +
-			"path, or title. Moves the window focus to the requested tab.",
-		Effect:  tools.ReadOnly,
-		Step:    tools.ByEffect,
-		Servers: []tools.Server{tools.Full, tools.Reading},
-	}, func(ctx context.Context, in WindowFocusTabInput) (WindowFocusTabOutput, error) {
-		tab, err := manager.FocusTab(ctx, in)
-		if err != nil {
-			return WindowFocusTabOutput{}, err
-		}
-		msg := fmt.Sprintf("focused tab %s", formatTabName(tab))
-		return WindowFocusTabOutput{
-			Success: true,
-			Tab:     tab,
-			Message: msg,
-		}, nil
-	})
+// readWindowTabs returns the tabs the window last reported, each with the place it is open at, and
+// the active one. A host with no window has none.
+func readWindowTabs(ctx context.Context, on Host) ([]TabInfo, string, error) {
+	if on.Window == nil {
+		return nil, "", nil
+	}
+	open, activeID, err := on.Window.ReadOpenTabs(ctx)
+	if errors.Is(err, host.ErrNoWindow) {
+		return nil, "", nil
+	}
+	if err != nil {
+		return nil, "", err
+	}
+	tabs := make([]TabInfo, 0, len(open))
+	for _, tab := range open {
+		tabs = append(tabs, newTabInfo(tab, activeID))
+	}
+	return tabs, activeID, nil
 }
 
-func addEditPreview(registry *tools.Registry, manager *WindowManager, vault host.Vault) error {
+// newTabInfo converts a tab to its tool output, with the place its reader reported. The tab is
+// active when its id is the active id.
+func newTabInfo(tab host.OpenTab, activeID string) TabInfo {
+	return TabInfo{
+		TabID:    tab.ID,
+		Kind:     tab.Kind,
+		Path:     tab.Path,
+		Title:    tab.Title,
+		Place:    newPlace(tab.Place),
+		IsActive: tab.ID != "" && tab.ID == activeID,
+	}
+}
+
+// newPlace converts the place a reader reported to its tool output, nil for a tab whose reader
+// reported none.
+func newPlace(place *host.TabPlace) *Place {
+	if place == nil || *place == (host.TabPlace{}) {
+		return nil
+	}
+	return &Place{
+		Page:            place.Page,
+		PageCount:       place.PageCount,
+		PositionSeconds: place.PositionSeconds,
+		CFI:             place.CFI,
+		Chapter:         place.Chapter,
+	}
+}
+
+func addNoteEditPreview(registry *tools.Registry, manager *WindowManager, vault host.Vault) error {
 	return tools.Add(registry, tools.Spec{
-		Name:  "edit_preview",
+		Name:  "note_edit_preview",
 		Title: "Preview note edit",
 		Description: "Propose changes to a note with an interactive diff preview in the editor " +
 			"without directly modifying the vault file.",
 		Effect:  tools.ReadOnly,
 		Step:    tools.ByEffect,
 		Servers: []tools.Server{tools.Full, tools.Reading},
-	}, func(ctx context.Context, in EditPreviewInput) (EditPreviewOutput, error) {
+	}, func(ctx context.Context, in NoteEditPreviewInput) (NoteEditPreviewOutput, error) {
 		if in.Path == "" {
-			return EditPreviewOutput{}, errors.New("path is required")
+			return NoteEditPreviewOutput{}, errors.New("path is required")
 		}
-		if in.ProposedContent == "" && in.Diff == "" {
-			return EditPreviewOutput{}, errors.New("either proposedContent or diff is required")
+		if in.ProposedText == "" && in.Diff == "" {
+			return NoteEditPreviewOutput{}, errors.New("either proposedText or diff is required")
 		}
 
 		diffText, additions, deletions := prepareDiff(ctx, in, vault)
 
 		previewID := manager.NextPreviewID()
-		preview := EditPreview{
-			ID:              previewID,
-			Path:            in.Path,
-			ProposedContent: in.ProposedContent,
-			OriginalContent: in.OriginalContent,
-			Diff:            diffText,
-			Additions:       additions,
-			Deletions:       deletions,
-			CreatedAt:       manager.GetNow(),
+		preview := NoteEditPreview{
+			ID:           previewID,
+			Path:         in.Path,
+			ProposedText: in.ProposedText,
+			OriginalText: in.OriginalText,
+			Diff:         diffText,
+			Additions:    additions,
+			Deletions:    deletions,
+			CreatedAt:    manager.GetNow(),
 		}
 		manager.SavePreview(preview)
 
-		summary := fmt.Sprintf("proposed changes to %s: +%d, -%d lines", in.Path, additions, deletions)
-		return EditPreviewOutput{
+		return NoteEditPreviewOutput{
 			PreviewID: previewID,
 			Path:      in.Path,
 			Diff:      diffText,
 			Additions: additions,
 			Deletions: deletions,
-			Status:    "preview_ready",
-			Summary:   summary,
 		}, nil
 	})
 }
 
-func prepareDiff(ctx context.Context, in EditPreviewInput, vault host.Vault) (string, int, int) {
+func prepareDiff(ctx context.Context, in NoteEditPreviewInput, vault host.Vault) (string, int, int) {
 	if in.Diff != "" {
 		additions, deletions := CountDiffChanges(in.Diff)
 		return in.Diff, additions, deletions
 	}
 
-	original := in.OriginalContent
+	original := in.OriginalText
 	if original == "" && vault != nil {
 		data, _, err := vault.Read(ctx, in.Path)
 		if err == nil {
 			original = string(data)
 		}
 	}
-	return CreateUnifiedDiff(in.Path, original, in.ProposedContent)
-}
-
-func formatTabsSummary(tabs []TabInfo, activeID string) string {
-	if len(tabs) == 0 {
-		return "the window has nothing open"
-	}
-	var activeTab *TabInfo
-	for i := range tabs {
-		if tabs[i].ID != "" && tabs[i].ID == activeID {
-			activeTab = &tabs[i]
-			break
-		}
-		if tabs[i].IsActive {
-			activeTab = &tabs[i]
-		}
-	}
-	if activeTab == nil {
-		activeTab = &tabs[0]
-	}
-	return describeTab(*activeTab)
-}
-
-func describeTab(t TabInfo) string {
-	name := formatTabName(t)
-	kind := t.Kind
-	if kind == "" {
-		kind = "tab"
-	}
-	if t.Title == "" && t.Path == "" {
-		return fmt.Sprintf("a tab of kind %q is in front of them", kind)
-	}
-	if t.Where != "" {
-		return fmt.Sprintf("the %s %s is in front of them, open at %s", kind, name, t.Where)
-	}
-	return fmt.Sprintf("the %s %s is in front of them", kind, name)
-}
-
-func formatTabName(t TabInfo) string {
-	switch {
-	case t.Title != "" && t.Path != "":
-		return fmt.Sprintf("%q at %s", t.Title, t.Path)
-	case t.Path != "":
-		return t.Path
-	}
-	return fmt.Sprintf("%q", t.Title)
+	return CreateUnifiedDiff(in.Path, original, in.ProposedText)
 }
 
 func formatTitleFromPath(filePath string) string {

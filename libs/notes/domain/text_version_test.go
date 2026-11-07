@@ -15,9 +15,9 @@ func isAllIntact(domain.TextVersion) bool { return true }
 
 func TestFindLiveVersionReturnsTheNewestValidVersion(t *testing.T) {
 	versions := []domain.TextVersion{
-		{Path: "a.pdf", PluginID: "fixer", Key: "b", Source: "reader/a", SourceHash: "ha", Hash: "hb", CreateTime: getEpoch().Add(time.Minute)},
-		{Path: "a.pdf", PluginID: "reader", Key: "a", SourceHash: "file-1", Hash: "ha", CreateTime: getEpoch()},
-		{Path: "a.pdf", PluginID: "stale", Key: "c", SourceHash: "old-file", Hash: "hc", CreateTime: getEpoch().Add(2 * time.Minute)},
+		{Path: "a.pdf", PluginID: "fixer", Key: "b", Source: "reader/a", InputHash: "ha", TextHash: "hb", CreateTime: getEpoch().Add(time.Minute)},
+		{Path: "a.pdf", PluginID: "reader", Key: "a", InputHash: "file-1", TextHash: "ha", CreateTime: getEpoch()},
+		{Path: "a.pdf", PluginID: "stale", Key: "c", InputHash: "old-file", TextHash: "hc", CreateTime: getEpoch().Add(2 * time.Minute)},
 	}
 	got, ok := domain.FindLiveVersion(versions, "file-1", nil, isAllIntact)
 	if !ok || got.GetID() != "fixer/b" {
@@ -27,8 +27,8 @@ func TestFindLiveVersionReturnsTheNewestValidVersion(t *testing.T) {
 
 func TestFindLiveVersionBreaksATieByListOrder(t *testing.T) {
 	versions := []domain.TextVersion{
-		{PluginID: "p", Key: "first", SourceHash: "f", CreateTime: getEpoch()},
-		{PluginID: "p", Key: "second", SourceHash: "f", CreateTime: getEpoch()},
+		{PluginID: "p", Key: "first", InputHash: "f", CreateTime: getEpoch()},
+		{PluginID: "p", Key: "second", InputHash: "f", CreateTime: getEpoch()},
 	}
 	got, _ := domain.FindLiveVersion(versions, "f", nil, isAllIntact)
 	if got.Key != "second" {
@@ -38,8 +38,8 @@ func TestFindLiveVersionBreaksATieByListOrder(t *testing.T) {
 
 func TestFindLiveVersionSkipsAVersionWhoseFileChanged(t *testing.T) {
 	versions := []domain.TextVersion{
-		{PluginID: "reader", Key: "a", SourceHash: "f", Hash: "ha", CreateTime: getEpoch()},
-		{PluginID: "fixer", Key: "b", Source: "reader/a", SourceHash: "ha", Hash: "hb", CreateTime: getEpoch().Add(time.Minute)},
+		{PluginID: "reader", Key: "a", InputHash: "f", TextHash: "ha", CreateTime: getEpoch()},
+		{PluginID: "fixer", Key: "b", Source: "reader/a", InputHash: "ha", TextHash: "hb", CreateTime: getEpoch().Add(time.Minute)},
 	}
 	got, ok := domain.FindLiveVersion(versions, "f", nil, func(v domain.TextVersion) bool { return v.PluginID != "fixer" })
 	if !ok || got.GetID() != "reader/a" {
@@ -49,8 +49,8 @@ func TestFindLiveVersionSkipsAVersionWhoseFileChanged(t *testing.T) {
 
 func TestIsChainValidFailsWhenTheSourceChanged(t *testing.T) {
 	versions := []domain.TextVersion{
-		{PluginID: "reader", Key: "a", SourceHash: "file-1", Hash: "ha-2"},
-		{PluginID: "fixer", Key: "b", Source: "reader/a", SourceHash: "ha-1", Hash: "hb"},
+		{PluginID: "reader", Key: "a", InputHash: "file-1", TextHash: "ha-2"},
+		{PluginID: "fixer", Key: "b", Source: "reader/a", InputHash: "ha-1", TextHash: "hb"},
 	}
 	if !domain.IsChainValid(versions, "reader/a", "file-1", nil) {
 		t.Fatal("the version from the file is valid")
@@ -61,7 +61,7 @@ func TestIsChainValidFailsWhenTheSourceChanged(t *testing.T) {
 }
 
 func TestIsChainValidFailsWhenTheFileChanged(t *testing.T) {
-	versions := []domain.TextVersion{{PluginID: "reader", Key: "a", SourceHash: "file-1"}}
+	versions := []domain.TextVersion{{PluginID: "reader", Key: "a", InputHash: "file-1"}}
 	if domain.IsChainValid(versions, "reader/a", "file-2", nil) {
 		t.Fatal("a version of other bytes of the file is valid")
 	}
@@ -76,8 +76,8 @@ func TestIsChainValidFailsOnAMissingSourceAndOnACycle(t *testing.T) {
 		t.Fatal("a version whose source is gone is valid")
 	}
 	cycle := []domain.TextVersion{
-		{PluginID: "p", Key: "x", Source: "p/y", SourceHash: "hy", Hash: "hx"},
-		{PluginID: "p", Key: "y", Source: "p/x", SourceHash: "hx", Hash: "hy"},
+		{PluginID: "p", Key: "x", Source: "p/y", InputHash: "hy", TextHash: "hx"},
+		{PluginID: "p", Key: "y", Source: "p/x", InputHash: "hx", TextHash: "hy"},
 	}
 	if domain.IsChainValid(cycle, "p/x", "f", nil) {
 		t.Fatal("a version reaching itself is valid")
@@ -86,7 +86,7 @@ func TestIsChainValidFailsOnAMissingSourceAndOnACycle(t *testing.T) {
 
 func getPropertyVersion() domain.TextVersion {
 	return domain.TextVersion{
-		Path: "link.md", PluginID: "importer", Key: "a", Hash: "ha",
+		Path: "link.md", PluginID: "importer", Key: "a", TextHash: "ha",
 		SourceProperty: domain.TextSourceProperty{Key: "url", Value: "https://example.com/talk"},
 	}
 }
@@ -117,7 +117,7 @@ func TestIsChainValidFailsAPropertyVersionWhenThePropertyChanged(t *testing.T) {
 func TestIsChainValidChainsAVersionDerivedFromAPropertyVersionByHash(t *testing.T) {
 	versions := []domain.TextVersion{
 		getPropertyVersion(),
-		{PluginID: "fixer", Key: "b", Source: "importer/a", SourceHash: "ha", Hash: "hb"},
+		{PluginID: "fixer", Key: "b", Source: "importer/a", InputHash: "ha", TextHash: "hb"},
 	}
 	if !domain.IsChainValid(versions, "fixer/b", "f", map[string]any{"url": "https://example.com/talk"}) {
 		t.Fatal("a version derived from a valid property version is not valid")
@@ -201,5 +201,35 @@ func TestVersionTextLocatesHeadingsAndSelectors(t *testing.T) {
 	}
 	if got := len(text.GetSegments()); got != 3 {
 		t.Fatalf("%d segments", got)
+	}
+}
+
+func TestGetSegmentsInTrimsSegmentsToRangeWithHeadingAndSelector(t *testing.T) {
+	text := domain.NewVersionText(domain.TextVersion{Kind: "recognition"}, []domain.TextSegment{
+		{Text: "abc", Heading: "One", Selector: "s1"},
+		{Text: "", Heading: "Empty"},
+		{Text: "defg", Selector: "s2"},
+		{Text: "hi", Heading: "Three", Selector: "s3"},
+	})
+	for name, tc := range map[string]struct {
+		from, to int
+		want     []domain.TextSegment
+	}{
+		"inside one":  {1, 2, []domain.TextSegment{{Text: "b", Heading: "One", Selector: "s1"}}},
+		"across two":  {2, 5, []domain.TextSegment{{Text: "c", Heading: "One", Selector: "s1"}, {Text: "de", Selector: "s2"}}},
+		"one whole":   {3, 7, []domain.TextSegment{{Text: "defg", Selector: "s2"}}},
+		"to the end":  {7, 9, []domain.TextSegment{{Text: "hi", Heading: "Three", Selector: "s3"}}},
+		"empty range": {4, 4, nil},
+	} {
+		got := text.GetSegmentsIn(tc.from, tc.to)
+		if len(got) != len(tc.want) {
+			t.Errorf("%s: got %+v, want %+v", name, got, tc.want)
+			continue
+		}
+		for i := range got {
+			if got[i] != tc.want[i] {
+				t.Errorf("%s: got %+v, want %+v", name, got, tc.want)
+			}
+		}
 	}
 }

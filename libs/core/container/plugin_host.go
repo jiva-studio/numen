@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
+	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -211,6 +212,14 @@ func (c Config) SetPluginVault(vault pluginport.PluginVault) {
 	}
 }
 
+// SetPluginVaultList sets the list of vaults exposed to plugins. Without one, calls that change
+// the list fail with ErrUnavailable.
+func (c Config) SetPluginVaultList(list pluginport.PluginVaultList) {
+	if c.PluginHost != nil {
+		c.PluginHost.SetPluginVaultList(list)
+	}
+}
+
 // OpenPluginCache is where a plugin keeps what it worked out for a vault: the folder the
 // configuration names for schedules, else the platform's cache location.
 func (c Config) OpenPluginCache() (pluginport.PluginCache, error) {
@@ -233,6 +242,22 @@ type PluginVaultHooks struct {
 	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
 	// Moved signals that something moved in some vault. When nil, the signal is the index file changing.
 	Moved func(ctx context.Context) (<-chan struct{}, error)
+	// Notes is the window's own use cases on notes, used for the vault the window shows, so the
+	// window follows a note a plugin renames or moves there. The zero value is the host's own, which no
+	// window follows.
+	Notes note.Scenarios
+}
+
+// hasReaders reports whether the use cases on notes have their vault readers, which a zero
+// Scenarios lacks.
+func hasReaders(notes note.Scenarios) bool {
+	return notes.Move.Readers() != nil
+}
+
+func getNoteChanges(notes note.Scenarios) hostvault.NoteChanges {
+	return hostvault.NoteChanges{
+		Rename: notes.Rename, Move: notes.Move, Remove: notes.RemoveNote, Links: notes.Linking, AddLinks: notes.AddLinks,
+	}
 }
 
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
@@ -251,6 +276,13 @@ func (c Config) OpenPluginVault(
 		return err
 	}
 	scenarios := c.Notes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
+	arranger := hostvault.Arranger{
+		Notes:  getNoteChanges(scenarios),
+		Checks: vault.NewStandardGetProblems(db.Problems()),
+	}
+	if hasReaders(hooks.Notes) {
+		arranger.Window, arranger.WindowVault = getNoteChanges(hooks.Notes), current
+	}
 	vaults := hostvault.Vault{
 		Current:     current,
 		Readers:     c.VaultReaders(),
@@ -259,6 +291,7 @@ func (c Config) OpenPluginVault(
 		Links:       db.Links(),
 		Connections: note.NewConnections(scenarios),
 		Problems:    db.Problems(),
+		Arranger:    arranger,
 		Stores:      derivedfile.PluginStores{Options: c.vaultOptions()},
 		Cache:       cache,
 		Watcher:     c.VaultWatcher(),
@@ -347,4 +380,13 @@ func (c Config) GetFrontendPluginIDs() []string {
 		ids = append(ids, info.ID)
 	}
 	return ids
+}
+
+// SetPluginWindow sets the window exposed to plugins. A host with no window sets none, and calls
+// fail with ErrNoWindow.
+func (c Config) SetPluginWindow(window pluginport.PluginWindow) {
+	if c.PluginHost != nil {
+		var host pluginport.PluginWindowHost = c.PluginHost
+		host.SetPluginWindow(window)
+	}
 }

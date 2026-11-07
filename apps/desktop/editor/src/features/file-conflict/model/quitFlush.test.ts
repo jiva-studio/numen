@@ -59,7 +59,7 @@ function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: bo
       reportedResults.push({ token, result })
     },
     read: async (path): Promise<NoteResult> =>
-      files.has(path) ? asValue({ body: files.get(path) ?? '' }) : asFailure('missing'),
+      files.has(path) ? asValue({ body: files.get(path) ?? '' }) : asFailure('notFound'),
     write: async (path, body): Promise<NoteResult> => {
       if (pendingWriteResolve) await new Promise<void>((through) => (pendingWriteResolve = through))
       writtenFiles.push({ path, body })
@@ -212,7 +212,7 @@ describe('a page holding text the file changed under', () => {
     mockStream.send({ token: '4', flush: true })
     await settle()
 
-    expect(fakeCore.reportedResults).toEqual([{ token: '4', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '4', result: 'unsaved' }])
     expect(going.conflicts.value.map((one) => one.note)).toEqual(['Note.md'])
   })
 
@@ -234,7 +234,7 @@ describe('a page holding text the file changed under', () => {
     mockStream.send({ token: '5', flush: true })
     await settle()
 
-    expect(fakeCore.reportedResults).toEqual([{ token: '5', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '5', result: 'unsaved' }])
 
     fakeCore.releaseWrites()
     await settle()
@@ -242,7 +242,7 @@ describe('a page holding text the file changed under', () => {
     // The write succeeded and the conflict remains, so the reported result is
     // unchanged.
     expect(fakeCore.writtenFiles).toEqual([{ path: 'Other.md', body: 'on its way' }])
-    expect(fakeCore.reportedResults).toEqual([{ token: '5', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '5', result: 'unsaved' }])
   })
 
   it('says it has written once every conflict is settled', async () => {
@@ -258,13 +258,13 @@ describe('a page holding text the file changed under', () => {
     mockStream.send({ token: '6', flush: true })
     await settle()
 
-    expect(fakeCore.reportedResults).toEqual([{ token: '6', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '6', result: 'unsaved' }])
 
     await going.conflicts.value.find((one) => one.note === 'One.md')?.keep()
     await settle()
 
     // One of the two conflicts is resolved, so the result is still pending.
-    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '6', result: 'asking' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '6', result: 'unsaved' })
     expect(going.conflicts.value.map((one) => one.note)).toEqual(['Two.md'])
 
     await going.conflicts.value.find((one) => one.note === 'Two.md')?.take()
@@ -294,7 +294,7 @@ describe('a page holding text the file changed under', () => {
 
     expect(going.conflicts.value).toEqual([])
     // The conflict is not resolved, so the result is still pending.
-    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '8', result: 'asking' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '8', result: 'unsaved' })
 
     // The result is still pending on the next flush request.
     mockStream.end()
@@ -302,7 +302,7 @@ describe('a page holding text the file changed under', () => {
     mockStream.send({ token: '9', flush: true })
     await settle()
 
-    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '9', result: 'asking' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '9', result: 'unsaved' })
   })
 
   it('says nothing under a token the stream took with it', async () => {
@@ -319,7 +319,7 @@ describe('a page holding text the file changed under', () => {
     mockStream.send({ token: '2', flush: true })
     await settle()
 
-    expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'unsaved' }])
 
     mockStream.end()
     await settle()
@@ -327,7 +327,7 @@ describe('a page holding text the file changed under', () => {
     await settle()
 
     // No result is reported for that token now, and the page has not been requested again.
-    expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'unsaved' }])
 
     mockStream.send({ token: '3', flush: true })
     await settle()
@@ -348,7 +348,7 @@ describe('a page holding text the file changed under', () => {
     mockStream.send({ token: '9', flush: true })
     await settle()
 
-    expect(fakeCore.reportedResults).toEqual([{ token: '9', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '9', result: 'unsaved' }])
 
     // The stream drops and the page reconnects under a new token.
     mockStream.end()
@@ -356,7 +356,7 @@ describe('a page holding text the file changed under', () => {
     mockStream.send({ token: '10', flush: true })
     await settle()
 
-    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '10', result: 'asking' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '10', result: 'unsaved' })
   })
 })
 
@@ -381,7 +381,7 @@ describe('the conflicts a person put off', () => {
     await settle()
 
     expect(getNotes(going)).toEqual(['Later.md'])
-    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '2', result: 'asking' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '2', result: 'unsaved' })
   })
 
   it('stay off the screen while other conflicts are raised, and the others stay drawn', async () => {

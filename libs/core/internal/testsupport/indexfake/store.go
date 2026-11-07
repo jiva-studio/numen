@@ -158,7 +158,7 @@ func (s *Store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 		// not from the file.
 		out = append(out, domain.Passage{
 			ChunkID: GetChunkID(c.ID), Source: c.Path, Start: c.Start, Length: c.Length, Location: c.Location,
-			Producer: src.Producer, SourceHash: src.Hash, ChunkHash: GetHash(c.Text),
+			Producer: src.Producer, ContentHash: src.ContentHash, ChunkHash: GetHash(c.Text),
 		})
 		lastChunk = c
 		if len(out) == limit {
@@ -274,8 +274,8 @@ func (s *Store) GetSourceText(_ context.Context, vaultID domain.VaultID, path st
 		FileStat: domain.FileStat{
 			Path: path, Size: src.FileStat.Size, ModTime: src.FileStat.ModTime,
 		},
-		Producer: src.Producer,
-		Hash:     src.Hash,
+		Producer:    src.Producer,
+		ContentHash: src.ContentHash,
 	}, true, nil
 }
 
@@ -284,9 +284,9 @@ func (s *Store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, 
 	for path, src := range s.Sources[vaultID] {
 		if src.FileStat.Kind == kind && src.Producer != "" {
 			out = append(out, sourceport.SourceText{
-				FileStat: domain.FileStat{Path: path},
-				Producer: src.Producer,
-				Hash:     src.Hash,
+				FileStat:    domain.FileStat{Path: path},
+				Producer:    src.Producer,
+				ContentHash: src.ContentHash,
 			})
 		}
 	}

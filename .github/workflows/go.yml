@@ -334,6 +334,12 @@ jobs:
         env:
           TMPDIR: /dev/shm
 
+      # The debug servers build only with numen_debug, so the run above skips their files.
+      - name: Run Go tests of the debug build
+        run: go test -race -tags numen_debug ./internal/debugserve ./app ./cmd/numen-flashcards
+        env:
+          TMPDIR: /dev/shm
+
       # With -race the link reuses every package the tests compiled.
       - name: Link the desktop binary
         run: go build -race -o /dev/null ./cmd/numen

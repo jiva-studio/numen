@@ -44,7 +44,7 @@ func (t vaultTexts) read(ctx context.Context, path string) (domain.VersionText, 
 		return domain.VersionText{}, err
 	}
 	hash := domain.HashContent(raw)
-	version := domain.TextVersion{Path: path, PluginID: TextReader, Key: hash[:12], SourceHash: hash, Hash: hash}
+	version := domain.TextVersion{Path: path, PluginID: TextReader, Key: hash[:12], InputHash: hash, TextHash: hash}
 	if bytes.HasPrefix(raw, []byte("%PDF-")) {
 		version.Kind = "page-text"
 		return domain.NewVersionText(version, splitAt(documentText, []int{0, 11}, nil)), nil
@@ -83,14 +83,14 @@ func splitAt(text string, starts []int, titles []string) []domain.TextSegment {
 	return parts
 }
 
-func (t vaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) (domain.TextVersionID, error) {
-	doc, err := t.GetLiveText(ctx, path, fileHash)
+func (t vaultTexts) FindLiveVersion(ctx context.Context, path, contentHash string) (domain.TextVersionID, error) {
+	doc, err := t.GetLiveText(ctx, path, contentHash)
 	return doc.Version().GetID(), err
 }
 
-func (t vaultTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
+func (t vaultTexts) GetLiveText(ctx context.Context, path, contentHash string) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
-	if err == nil && doc.Version().SourceHash != fileHash {
+	if err == nil && doc.Version().InputHash != contentHash {
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	return doc, err
@@ -108,4 +108,12 @@ func (t vaultTexts) GetVersionText(ctx context.Context, path string, id domain.T
 func (t vaultTexts) IsTextSource(ctx context.Context, path string) (bool, error) {
 	_, err := t.read(ctx, path)
 	return err == nil, nil
+}
+
+func (t vaultTexts) GetContentHash(ctx context.Context, path string) (string, error) {
+	raw, err := t.files.Read(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	return domain.HashContent(raw), nil
 }

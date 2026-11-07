@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/tools.proto.
  */
 export const file_numen_v1_tools: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS90b29scy5wcm90bxIIbnVtZW4udjEiEgoQTGlzdFRvb2xzUmVxdWVzdCI4ChFMaXN0VG9vbHNSZXNwb25zZRIjCgV0b29scxgBIAMoCzIULm51bWVuLnYxLlBsdWdpblRvb2wi2gEKClBsdWdpblRvb2wSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIUCgxpbnB1dF9zY2hlbWEYBCABKAwSFQoNb3V0cHV0X3NjaGVtYRgFIAEoDBIkCgZlZmZlY3QYBiABKA4yFC5udW1lbi52MS5Ub29sRWZmZWN0EiUKB3NlcnZlcnMYByADKA4yFC5udW1lbi52MS5Ub29sU2VydmVyEiAKBHN0ZXAYCCABKA4yEi5udW1lbi52MS5Ub29sU3RlcCKtAQoPQ2FsbFRvb2xSZXF1ZXN0EgwKBG5hbWUYASABKAkSEQoJYXJndW1lbnRzGAIgASgMEjcKB2NvbnRleHQYAyADKAsyJi5udW1lbi52MS5DYWxsVG9vbFJlcXVlc3QuQ29udGV4dEVudHJ5EhAKCHZhdWx0X2lkGAQgASgJGi4KDENvbnRleHRFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBImAKEENhbGxUb29sUmVzcG9uc2USJgoFZXJyb3IYASABKA4yFy5udW1lbi52MS5Ub29sRXJyb3JDb2RlEiQKBnJlc3VsdBgCIAEoCzIULm51bWVuLnYxLlRvb2xSZXN1bHQiQgoKVG9vbFJlc3VsdBIMCgR0ZXh0GAEgASgJEhIKCnN0cnVjdHVyZWQYAiABKAwSEgoKaXNfcmVmdXNhbBgDIAEoCCpgCgpUb29sRWZmZWN0EhsKF1RPT0xfRUZGRUNUX1VOU1BFQ0lGSUVEEAASGQoVVE9PTF9FRkZFQ1RfUkVBRF9PTkxZEAESGgoWVE9PTF9FRkZFQ1RfUkVBRF9XUklURRACKmUKCFRvb2xTdGVwEhkKFVRPT0xfU1RFUF9VTlNQRUNJRklFRBAAEhQKEFRPT0xfU1RFUF9TRUFSQ0gQARIUChBUT09MX1NURVBfUkVNT1ZFEAISEgoOVE9PTF9TVEVQX01PVkUQAypYCgpUb29sU2VydmVyEhsKF1RPT0xfU0VSVkVSX1VOU1BFQ0lGSUVEEAASFAoQVE9PTF9TRVJWRVJfRlVMTBABEhcKE1RPT0xfU0VSVkVSX1JFQURJTkcQAip1Cg1Ub29sRXJyb3JDb2RlEh8KG1RPT0xfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiAKHFRPT0xfRVJST1JfQ09ERV9VTktOT1dOX1RPT0wQARIhCh1UT09MX0VSUk9SX0NPREVfQkFEX0FSR1VNRU5UUxACMpwBChFQbHVnaW5Ub29sU2VydmljZRJECglMaXN0VG9vbHMSGi5udW1lbi52MS5MaXN0VG9vbHNSZXF1ZXN0GhsubnVtZW4udjEuTGlzdFRvb2xzUmVzcG9uc2USQQoIQ2FsbFRvb2wSGS5udW1lbi52MS5DYWxsVG9vbFJlcXVlc3QaGi5udW1lbi52MS5DYWxsVG9vbFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS90b29scy5wcm90bxIIbnVtZW4udjEiEgoQTGlzdFRvb2xzUmVxdWVzdCI4ChFMaXN0VG9vbHNSZXNwb25zZRIjCgV0b29scxgBIAMoCzIULm51bWVuLnYxLlBsdWdpblRvb2wipgIKClBsdWdpblRvb2wSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIUCgxpbnB1dF9zY2hlbWEYBCABKAwSFQoNb3V0cHV0X3NjaGVtYRgFIAEoDBIkCgZlZmZlY3QYBiABKA4yFC5udW1lbi52MS5Ub29sRWZmZWN0EiUKB3NlcnZlcnMYByADKA4yFC5udW1lbi52MS5Ub29sU2VydmVyEiAKBHN0ZXAYCCABKA4yEi5udW1lbi52MS5Ub29sU3RlcBIUCgxpbnN0cnVjdGlvbnMYCSADKAkSEAoIcmVxdWlyZXMYCiADKAkSIgoFaGludHMYCyABKAsyEy5udW1lbi52MS5Ub29sSGludHMiWwoJVG9vbEhpbnRzEhEKCXJlYWRfb25seRgBIAEoCBITCgtkZXN0cnVjdGl2ZRgCIAEoCBISCgppZGVtcG90ZW50GAMgASgIEhIKCm9wZW5fd29ybGQYBCABKAgirQEKD0NhbGxUb29sUmVxdWVzdBIMCgRuYW1lGAEgASgJEhEKCWFyZ3VtZW50cxgCIAEoDBI3Cgdjb250ZXh0GAMgAygLMiYubnVtZW4udjEuQ2FsbFRvb2xSZXF1ZXN0LkNvbnRleHRFbnRyeRIQCgh2YXVsdF9pZBgEIAEoCRouCgxDb250ZXh0RW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJgChBDYWxsVG9vbFJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVG9vbEVycm9yQ29kZRIkCgZyZXN1bHQYAiABKAsyFC5udW1lbi52MS5Ub29sUmVzdWx0IkAKClRvb2xSZXN1bHQSDAoEdGV4dBgBIAEoCRISCgpzdHJ1Y3R1cmVkGAIgASgMEhAKCGlzX2Vycm9yGAMgASgIKmAKClRvb2xFZmZlY3QSGwoXVE9PTF9FRkZFQ1RfVU5TUEVDSUZJRUQQABIZChVUT09MX0VGRkVDVF9SRUFEX09OTFkQARIaChZUT09MX0VGRkVDVF9SRUFEX1dSSVRFEAIqZQoIVG9vbFN0ZXASGQoVVE9PTF9TVEVQX1VOU1BFQ0lGSUVEEAASFAoQVE9PTF9TVEVQX1NFQVJDSBABEhQKEFRPT0xfU1RFUF9SRU1PVkUQAhISCg5UT09MX1NURVBfTU9WRRADKlgKClRvb2xTZXJ2ZXISGwoXVE9PTF9TRVJWRVJfVU5TUEVDSUZJRUQQABIUChBUT09MX1NFUlZFUl9GVUxMEAESFwoTVE9PTF9TRVJWRVJfUkVBRElORxACKnUKDVRvb2xFcnJvckNvZGUSHwobVE9PTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIAocVE9PTF9FUlJPUl9DT0RFX1VOS05PV05fVE9PTBABEiEKHVRPT0xfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAIynAEKEVBsdWdpblRvb2xTZXJ2aWNlEkQKCUxpc3RUb29scxIaLm51bWVuLnYxLkxpc3RUb29sc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0VG9vbHNSZXNwb25zZRJBCghDYWxsVG9vbBIZLm51bWVuLnYxLkNhbGxUb29sUmVxdWVzdBoaLm51bWVuLnYxLkNhbGxUb29sUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.ListToolsRequest
@@ -30,6 +30,9 @@ export const ListToolsRequestSchema: GenMessage<ListToolsRequest> = /*@__PURE__*
  */
 export type ListToolsResponse = Message<"numen.v1.ListToolsResponse"> & {
   /**
+   * The host returns the tools of the plugins it lists grouped by plugin, in
+   * the order of plugin ids.
+   *
    * @generated from field: repeated numen.v1.PluginTool tools = 1;
    */
   tools: PluginTool[];
@@ -103,6 +106,33 @@ export type PluginTool = Message<"numen.v1.PluginTool"> & {
    * @generated from field: numen.v1.ToolStep step = 8;
    */
   step: ToolStep;
+
+  /**
+   * The instructions about this tool, each one sentence of plain English. A
+   * sentence about several tools is attached to each of them with identical
+   * text. An agent server sends an agent the distinct sentences of the tools it
+   * offers, in listing order.
+   *
+   * @generated from field: repeated string instructions = 9;
+   */
+  instructions: string[];
+
+  /**
+   * The permissions the caller must have besides the one of the effect, such
+   * as vault:manage. The host lists and runs the tool only for a caller that
+   * has all of them.
+   *
+   * @generated from field: repeated string requires = 10;
+   */
+  requires: string[];
+
+  /**
+   * The hints an agent reads about the tool, set by the SDK from the effect,
+   * the step and the required permissions.
+   *
+   * @generated from field: numen.v1.ToolHints hints = 11;
+   */
+  hints?: ToolHints | undefined;
 };
 
 /**
@@ -111,6 +141,48 @@ export type PluginTool = Message<"numen.v1.PluginTool"> & {
  */
 export const PluginToolSchema: GenMessage<PluginTool> = /*@__PURE__*/
   messageDesc(file_numen_v1_tools, 2);
+
+/**
+ * ToolHints are the MCP annotations of a tool.
+ *
+ * @generated from message numen.v1.ToolHints
+ */
+export type ToolHints = Message<"numen.v1.ToolHints"> & {
+  /**
+   * The tool changes nothing: the effect is READ_ONLY.
+   *
+   * @generated from field: bool read_only = 1;
+   */
+  readOnly: boolean;
+
+  /**
+   * The tool removes something: the effect is READ_WRITE and the step REMOVE.
+   *
+   * @generated from field: bool destructive = 2;
+   */
+  destructive: boolean;
+
+  /**
+   * A repeated call with the same arguments has no further effect: the effect is READ_ONLY.
+   *
+   * @generated from field: bool idempotent = 3;
+   */
+  idempotent: boolean;
+
+  /**
+   * The tool reaches outside the machine: requires contains network:outbound.
+   *
+   * @generated from field: bool open_world = 4;
+   */
+  openWorld: boolean;
+};
+
+/**
+ * Describes the message numen.v1.ToolHints.
+ * Use `create(ToolHintsSchema)` to create a new message.
+ */
+export const ToolHintsSchema: GenMessage<ToolHints> = /*@__PURE__*/
+  messageDesc(file_numen_v1_tools, 3);
 
 /**
  * @generated from message numen.v1.CallToolRequest
@@ -156,7 +228,7 @@ export type CallToolRequest = Message<"numen.v1.CallToolRequest"> & {
  * Use `create(CallToolRequestSchema)` to create a new message.
  */
 export const CallToolRequestSchema: GenMessage<CallToolRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_tools, 3);
+  messageDesc(file_numen_v1_tools, 4);
 
 /**
  * @generated from message numen.v1.CallToolResponse
@@ -183,7 +255,7 @@ export type CallToolResponse = Message<"numen.v1.CallToolResponse"> & {
  * Use `create(CallToolResponseSchema)` to create a new message.
  */
 export const CallToolResponseSchema: GenMessage<CallToolResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_tools, 4);
+  messageDesc(file_numen_v1_tools, 5);
 
 /**
  * ToolResult is what a tool answered.
@@ -207,9 +279,12 @@ export type ToolResult = Message<"numen.v1.ToolResult"> & {
   structured: Uint8Array;
 
   /**
-   * @generated from field: bool is_refusal = 3;
+   * Set when the tool ran and returned an error; text then contains the
+   * error message.
+   *
+   * @generated from field: bool is_error = 3;
    */
-  isRefusal: boolean;
+  isError: boolean;
 };
 
 /**
@@ -217,7 +292,7 @@ export type ToolResult = Message<"numen.v1.ToolResult"> & {
  * Use `create(ToolResultSchema)` to create a new message.
  */
 export const ToolResultSchema: GenMessage<ToolResult> = /*@__PURE__*/
-  messageDesc(file_numen_v1_tools, 5);
+  messageDesc(file_numen_v1_tools, 6);
 
 /**
  * ToolEffect is what a tool does to the vault. The zero value means no effect

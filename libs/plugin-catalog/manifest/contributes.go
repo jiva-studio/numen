@@ -63,6 +63,8 @@ type Contributes struct {
 	Handlers []Handler
 	// Triggers run the plugin's own handlers over the files of events.
 	Triggers []Trigger
+	// Listeners are the TCP ports on 127.0.0.1 the host binds for the plugin while it is enabled.
+	Listeners []Listener
 }
 
 // HasTabKind reports whether the plugin registers the kind of tab.
@@ -109,6 +111,7 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, m.listSlotIssues()...)
 	issues = append(issues, m.listHandlerIssues()...)
 	issues = append(issues, m.listTriggerIssues()...)
+	issues = append(issues, m.listListenerIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
 

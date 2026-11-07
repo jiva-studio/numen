@@ -200,7 +200,7 @@ describe('writing a deck', () => {
   })
 
   it('says the file moved past what the window read', async () => {
-    replyWith({ error: 'stale' })
+    replyWith({ error: 'conflict' })
 
     const answer = await cards.writeDeck(
       'Deck.md',

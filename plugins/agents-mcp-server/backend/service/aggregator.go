@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 	"sync"
@@ -16,16 +17,23 @@ import (
 
 // ToolClient calls the host or plugin tool service.
 type ToolClient interface {
-	ListToolInfos(ctx context.Context) ([]*tools.ToolInfo, error)
+	ListTools(ctx context.Context) (tools.Listing, error)
 	InvokeTool(ctx context.Context, call tools.Call) (*tools.CallResponse, error)
 }
 
 // ToolAggregator discovers tools from the host and exposes them through an MCP server.
 type ToolAggregator struct {
-	client     ToolClient
-	mcpServer  *sdk.Server
-	mu         sync.RWMutex
-	registered map[string]bool
+	client    ToolClient
+	mcpServer *sdk.Server
+	mu        sync.RWMutex
+	// registered maps the name of each tool on the MCP server to its declaration.
+	registered map[string]*sdk.Tool
+	// syncMu is locked for the whole sync, host call included, so the sync that finishes last is the
+	// one that listed last.
+	syncMu sync.Mutex
+	// sentences are the distinct instructions of the tools registered at the latest sync, in listing
+	// order.
+	sentences []string
 }
 
 // NewToolAggregator creates a tool aggregator for the given host client and MCP server.
@@ -34,7 +42,9 @@ func NewToolAggregator(client ToolClient, mcpServer *sdk.Server) *ToolAggregator
 		client:     client,
 		mcpServer:  mcpServer,
 		mu:         sync.RWMutex{},
-		registered: make(map[string]bool),
+		syncMu:     sync.Mutex{},
+		registered: make(map[string]*sdk.Tool),
+		sentences:  nil,
 	}
 }
 
@@ -50,13 +60,23 @@ func (a *ToolAggregator) GetRegisteredTools() []string {
 	return names
 }
 
+// GetInstructions returns the distinct instructions of the tools registered at the latest sync, in
+// listing order, joined with one space.
+func (a *ToolAggregator) GetInstructions() string {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return strings.Join(a.sentences, " ")
+}
+
 // SyncTools queries the host for available tools and updates the MCP server registry.
 func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	if a.client == nil || a.mcpServer == nil {
 		return nil
 	}
+	a.syncMu.Lock()
+	defer a.syncMu.Unlock()
 
-	wireTools, err := a.client.ListToolInfos(ctx)
+	listing, err := a.client.ListTools(ctx)
 	if err != nil {
 		return fmt.Errorf("list host tools: %w", err)
 	}
@@ -64,48 +84,52 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	current := make(map[string]bool)
-	for _, wireTool := range wireTools {
-		name := wireTool.GetName()
-		if name == "" {
+	declared, sentences := readDeclarations(listing)
+	a.updateTools(declared)
+	a.registered = declared
+	a.sentences = sentences
+	return nil
+}
+
+// readDeclarations returns the MCP declarations of the listed tools by name, the last one listed
+// under a name winning, and the distinct instructions of the tools in listing order.
+func readDeclarations(listing tools.Listing) (map[string]*sdk.Tool, []string) {
+	declared := make(map[string]*sdk.Tool)
+	var sentences []string
+	for _, wireTool := range listing.Tools {
+		if wireTool.GetName() == "" {
 			continue
 		}
-		current[name] = true
-
-		declared := &sdk.Tool{
-			Meta:         nil,
-			Name:         name,
-			Title:        wireTool.GetTitle(),
-			Description:  wireTool.GetDescription(),
-			InputSchema:  sanitizeInputSchema(wireTool.GetInputSchema()),
-			OutputSchema: nil,
-			Icons:        nil,
-			Annotations: &sdk.ToolAnnotations{
-				DestructiveHint: nil,
-				IdempotentHint:  false,
-				OpenWorldHint:   nil,
-				ReadOnlyHint:    wireTool.GetEffect() == tools.ReadOnly,
-				Title:           "",
-			},
+		declared[wireTool.GetName()] = createTool(wireTool)
+		for _, sentence := range wireTool.GetInstructions() {
+			if !slices.Contains(sentences, sentence) {
+				sentences = append(sentences, sentence)
+			}
 		}
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="empty schema is omitted and valid JSON schema is longer than one byte"
-		if len(wireTool.GetOutputSchema()) > 0 {
-			declared.OutputSchema = json.RawMessage(wireTool.GetOutputSchema())
-		}
+	}
+	return declared, sentences
+}
 
-		toolName := name
-		a.mcpServer.AddTool(declared, func(callCtx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
+// updateTools adds to the MCP server the declared tools that are new or changed since the latest
+// sync, and removes the registered tools that are not declared. Each change makes the MCP server
+// notify the connected sessions that the tool list changed.
+func (a *ToolAggregator) updateTools(declared map[string]*sdk.Tool) {
+	for name, tool := range declared {
+		if previous, isRegistered := a.registered[name]; isRegistered && reflect.DeepEqual(previous, tool) {
+			continue
+		}
+		a.mcpServer.AddTool(tool, func(callCtx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 			var args json.RawMessage
 			if req.Params != nil {
 				args = req.Params.Arguments
 			}
-			return a.ExecuteTool(callCtx, toolName, args)
+			return a.ExecuteTool(callCtx, name, args)
 		})
 	}
 
 	var toRemove []string
 	for oldName := range a.registered {
-		if !current[oldName] {
+		if _, isDeclared := declared[oldName]; !isDeclared {
 			toRemove = append(toRemove, oldName)
 		}
 	}
@@ -113,9 +137,31 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	if len(toRemove) > 0 {
 		a.mcpServer.RemoveTools(toRemove...)
 	}
+}
 
-	a.registered = current
-	return nil
+// createTool creates the MCP declaration of a host tool. The annotations are the hints of the tool.
+func createTool(wireTool *tools.ToolInfo) *sdk.Tool {
+	hints := wireTool.GetHints()
+	tool := &sdk.Tool{
+		Meta:         nil,
+		Name:         wireTool.GetName(),
+		Title:        wireTool.GetTitle(),
+		Description:  wireTool.GetDescription(),
+		InputSchema:  readInputSchema(wireTool.GetInputSchema()),
+		OutputSchema: nil,
+		Icons:        nil,
+		Annotations: &sdk.ToolAnnotations{
+			DestructiveHint: &hints.Destructive,
+			IdempotentHint:  hints.Idempotent,
+			OpenWorldHint:   &hints.OpenWorld,
+			ReadOnlyHint:    hints.ReadOnly,
+			Title:           "",
+		},
+	}
+	if schema, isObject := readObject(wireTool.GetOutputSchema()); isObject && hasObjectType(schema) {
+		tool.OutputSchema = json.RawMessage(wireTool.GetOutputSchema())
+	}
+	return tool
 }
 
 // describeToolError is the message for the error code the host returned for the tool.
@@ -158,7 +204,7 @@ func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json
 		Meta:              nil,
 		Content:           nil,
 		StructuredContent: nil,
-		IsError:           wireResult.GetIsRefusal(),
+		IsError:           wireResult.GetIsError(),
 		InputRequests:     nil,
 		RequestState:      "",
 	}
@@ -194,18 +240,37 @@ func newErrorResult(message string) *sdk.CallToolResult {
 	}
 }
 
-// sanitizeInputSchema ensures the schema is non-nil and specifies an object type.
-func sanitizeInputSchema(raw []byte) json.RawMessage {
-	var schema map[string]any
-	if err := json.Unmarshal(raw, &schema); err != nil {
+// readInputSchema returns the input schema of a tool as a JSON object of type "object", which MCP
+// requires. A JSON object of another type or none is given the type "object" and keeps its other
+// keys; anything else is replaced by the empty object schema. The same rules are in
+// libs/core/internal/adapter/plugin/agenttoolsbridge/endpoint.go.
+func readInputSchema(raw []byte) json.RawMessage {
+	schema, isObject := readObject(raw)
+	if !isObject {
 		return json.RawMessage(`{"type":"object"}`)
 	}
-	if t, ok := schema["type"].(string); !ok || !strings.EqualFold(t, "object") {
-		schema["type"] = "object"
-		// gomutants:disable-next-line BRANCH_IF reason="json.Marshal on an unmarshaled map with a string entry cannot fail"
-		if encoded, err := json.Marshal(schema); err == nil {
-			return json.RawMessage(encoded)
-		}
+	if hasObjectType(schema) {
+		return json.RawMessage(raw)
 	}
-	return json.RawMessage(raw)
+	schema["type"] = json.RawMessage(`"object"`)
+	encoded, err := json.Marshal(schema)
+	if err != nil {
+		return json.RawMessage(`{"type":"object"}`)
+	}
+	return encoded
+}
+
+// readObject decodes raw as a JSON object, and reports false for anything else.
+func readObject(raw []byte) (map[string]json.RawMessage, bool) {
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &object); err != nil || object == nil {
+		return nil, false
+	}
+	return object, true
+}
+
+// hasObjectType reports whether the type of the schema is the string "object".
+func hasObjectType(schema map[string]json.RawMessage) bool {
+	var schemaType string
+	return json.Unmarshal(schema["type"], &schemaType) == nil && schemaType == "object"
 }

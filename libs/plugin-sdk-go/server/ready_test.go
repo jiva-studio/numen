@@ -33,7 +33,9 @@ func TestServeKeepsServingWhenOutputCannotSync(t *testing.T) {
 	go func() { serveErrCh <- s.Serve() }()
 	t.Cleanup(func() {
 		s.Lifecycle().TriggerShutdown()
-		<-serveErrCh
+		if err := <-serveErrCh; err != nil {
+			t.Errorf("Serve: %v", err)
+		}
 	})
 
 	deadline := time.After(5 * time.Second)

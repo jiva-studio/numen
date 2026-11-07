@@ -10,6 +10,7 @@ type (
 	// From name subpackage
 	SourceKind = name.SourceKind
 	FileStat   = name.FileStat
+	FileID     = name.FileID
 )
 
 const (
@@ -48,6 +49,9 @@ func ChooseMatch(from, target string, candidates []string) (bestMatch string, am
 
 // FoldName is the key under which two names are one name.
 func FoldName(text string) string { return name.FoldName(text) }
+
+// HasPathPrefix reports whether the path starts with the prefix when both are composed (NFC).
+func HasPathPrefix(path, prefix string) bool { return name.HasPathPrefix(path, prefix) }
 
 // Basename is the name a note is filed under: the last segment of its path,
 // without its extension.

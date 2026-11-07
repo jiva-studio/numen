@@ -253,7 +253,7 @@ Specific term rules:
 
 ### Vault and link formatting rules
 
-- **Books and passages:** `[Passage description](numen:<path>?start=<offset>&length=<len>)` (using the `at` field from `note_search` / `source_read`).
+- **Books and passages:** `[Passage description](numen:<path>?start=<offset>&length=<len>)` (using the `uri` field from `library_search`).
 - **Notes:** `[[Note Title]]` or `[[notes/path.md]]`.
 - **Prohibited:** Never format vault notes, books, or passages as `file://` URLs. The `file://` scheme is only for repository source code files.
 

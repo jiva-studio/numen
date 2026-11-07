@@ -28,6 +28,16 @@ type Search struct {
 	// Stats reads what the index holds for GetIndexStats.
 	Stats  *Stats
 	Policy search.FloorPolicy
+	// Passages is the passage search, over the same index and the model in Embedder.
+	Passages *search.SearchPassages
+}
+
+// SearchPassages returns passages matching the query by keywords and, when a model exists, by
+// embedding.
+func (s Search) SearchPassages(ctx context.Context, v domain.Vault, q pluginport.PluginPassageQuery) ([]domain.Passage, error) {
+	return s.Passages.Execute(ctx, v, search.PassageQuery{
+		Query: q.Query, Limit: q.Limit, Kinds: q.Kinds, PathPrefix: q.PathPrefix,
+	})
 }
 
 // getRecipe is the recipe of the model in use, or ErrNoModel.

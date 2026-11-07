@@ -68,9 +68,12 @@ func (d *DebugOptions) serveHTTP(
 	pages http.Handler,
 ) error {
 	opened.State.NotifyOpenTabs = func(domain.OpenTabs) {}
-	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
+	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *editor.PluginOpen) error {
+		if err := opened.Show(ctx, v, open); err != nil {
+			return err
+		}
 		cfg.SetPluginVaultPath(v.Path)
-		return opened.Show(ctx, v)
+		return nil
 	}
 	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.Services.NewHandler(pages), os.Stdout)
 }

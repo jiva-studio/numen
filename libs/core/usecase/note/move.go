@@ -117,6 +117,9 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 		return res, err
 	}
 	if err := writer.Move(ctx, from, to); err != nil {
+		if errors.Is(err, vaultport.ErrAlreadyExists) {
+			return res, domain.NewDetailError(fmt.Sprintf("%s already exists; %s is not moved", to, from), err)
+		}
 		return res, mapMissingNote(err)
 	}
 	res.IsMoved = true
@@ -144,7 +147,7 @@ func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, 
 	// the old name refers to a path with no file.
 	if u.Drawing != nil {
 		if err := u.Drawing(ctx, domain.Move{From: from, To: to}); err != nil {
-			return res, fmt.Errorf("tell the move of %s to %s: %w", from, to, err)
+			return res, fmt.Errorf("the window cannot show the move of %s to %s: %w", from, to, err)
 		}
 	}
 
@@ -277,7 +280,7 @@ func (u Move) repair(
 		return linkUntouched, nil
 	}
 	if err != nil {
-		return linkUntouched, fmt.Errorf("read %s: %w", in, err)
+		return linkUntouched, fmt.Errorf("%s cannot be read: %w", in, err)
 	}
 	doc, err := markdown.Open(raw)
 	if err != nil {

@@ -140,7 +140,7 @@ func TestBacklinksAreListedWithTheirRoles(t *testing.T) {
 	}
 	b := listed.Msg.GetBacklinks()[0]
 	if b.GetFrom().GetPath() != "Idea.md" || b.GetRole() != v1.Role_ROLE_PARENT ||
-		b.GetRoleFromHere() != v1.Role_ROLE_CHILD || b.GetMarker() != v1.Marker_MARKER_ARROW {
+		b.GetSourceRole() != v1.Role_ROLE_CHILD || b.GetMarker() != v1.Marker_MARKER_ARROW {
 		t.Errorf("backlink = %v", b)
 	}
 }

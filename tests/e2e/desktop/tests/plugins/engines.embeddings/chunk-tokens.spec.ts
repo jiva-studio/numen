@@ -1,5 +1,5 @@
 import { test, expect, type Locator } from '../../support/test.js'
-import { createUniqueTitle, destroyNote, writeSetting } from '../../support/vault.js'
+import { createUniqueTitle, destroyIndexedNote, writeSetting } from '../../support/vault.js'
 import { createNoteWithBody } from '../../support/layout.js'
 import { openWorkspace } from '../../support/workspace.js'
 
@@ -42,7 +42,7 @@ test.describe('The longest chunk of a note, in tokens', () => {
 
   test.afterEach(async ({ request }) => {
     await writeSetting(request, CHUNK_TOKENS, DEFAULT_CHUNK_TOKENS)
-    for (const path of notes.splice(0)) await destroyNote(request, path)
+    for (const path of notes.splice(0)) await destroyIndexedNote(request, path)
   })
 
   test('cuts the notes again when the setting is lowered, and back when it is restored', async ({

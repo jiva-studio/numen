@@ -47,12 +47,14 @@ export function useOpenTabs({
     activeId: getActiveTabId(),
     tabs: windowTabs.tabs.value.map(({ id, title }) => {
       const one = windowTabs.getTab(id)
+      const openTab = one?.kind.getOpenTab?.(one.state)
       return {
         id,
         kind: one?.kind.kind ?? '',
         title,
-        path: one?.kind.getOpenTab?.(one.state).path ?? '',
+        path: openTab?.path ?? '',
         state: formatSavedState(one && one.kind.getState?.(one.state)),
+        ...(openTab?.place ? { place: openTab.place } : {}),
       }
     }),
   })

@@ -1,11 +1,11 @@
 package service_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -19,12 +19,12 @@ func TestSearchToolsListHasOnlyNoteSearch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
-	infos, err := registry.ListToolInfos(t.Context())
+	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
 	names := map[string]bool{}
-	for _, info := range infos {
+	for _, info := range infos.Tools {
 		names[info.GetName()] = true
 	}
 	if names["search_query"] {
@@ -97,11 +97,11 @@ func TestNoteWriteInputHasNoBodyField(t *testing.T) {
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
-	infos, err := registry.ListToolInfos(t.Context())
+	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
-	for _, info := range infos {
+	for _, info := range infos.Tools {
 		if info.GetName() != "note_write" {
 			continue
 		}
@@ -114,13 +114,13 @@ func TestNoteWriteInputHasNoBodyField(t *testing.T) {
 		if _, ok := schema.Properties["body"]; ok {
 			t.Error("the input of note_write names body")
 		}
-		if _, ok := schema.Properties["content"]; !ok {
-			t.Error("the input of note_write does not name content")
+		if _, ok := schema.Properties["text"]; !ok {
+			t.Error("the input of note_write does not name text")
 		}
 	}
 }
 
-func TestNoteWriteWithBodyInsteadOfContentStoresNoText(t *testing.T) {
+func TestNoteWriteWithBodyInsteadOfTextStoresNoText(t *testing.T) {
 	vault, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
@@ -137,13 +137,17 @@ func TestNoteWriteWithBodyInsteadOfContentStoresNoText(t *testing.T) {
 	if content, ok := vault.Content("Orbit.md"); ok && strings.Contains(content, "Orbits curve.") {
 		t.Errorf("the text of the argument body was stored: %q", content)
 	}
-	if !res.GetResult().GetIsRefusal() {
-		t.Error("a call with body and no content was not refused")
+	if !res.GetResult().GetIsError() {
+		t.Error("a call with body and no text was not rejected")
 	}
 }
 
+// getRemovedToolNames returns the tool names that no plugin registers any more.
 func getRemovedToolNames() []string {
-	return []string{"search_query", "note_neighbourhood", "vault_info"}
+	return []string{
+		"search_query", "note_neighbourhood", "vault_info",
+		"window_tabs_get", "window_focus_tab", "vault_problems", "note_titles", "note_headings", "card_current", "edit_preview",
+	}
 }
 
 func TestToolsListHasOneNameForEachTool(t *testing.T) {
@@ -152,15 +156,15 @@ func TestToolsListHasOneNameForEachTool(t *testing.T) {
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
-	infos, err := registry.ListToolInfos(t.Context())
+	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
 	names := map[string]bool{}
-	for _, info := range infos {
+	for _, info := range infos.Tools {
 		names[info.GetName()] = true
 	}
-	for _, present := range []string{"note_search", "link_list", "vault_get"} {
+	for _, present := range []string{"note_search", "link_list", "vault_get", "vault_problem_list", "note_title_list", "note_heading_list"} {
 		if !names[present] {
 			t.Errorf("the tool %s is not listed", present)
 		}
@@ -205,6 +209,10 @@ func TestDocsNameEachToolOnce(t *testing.T) {
 
 func TestNoSourceFileNamesARemovedTool(t *testing.T) {
 	root := getRepoRoot(t)
+	removed := map[string]*regexp.Regexp{}
+	for _, name := range getRemovedToolNames() {
+		removed[name] = regexp.MustCompile(`\b` + regexp.QuoteMeta(name) + `\b`)
+	}
 	for _, top := range []string{"plugins", "docs"} {
 		err := filepath.WalkDir(filepath.Join(root, top), func(path string, entry fs.DirEntry, err error) error {
 			if err != nil {
@@ -227,10 +235,10 @@ func TestNoSourceFileNamesARemovedTool(t *testing.T) {
 			if !utf8.Valid(content) {
 				return nil
 			}
-			for _, removed := range getRemovedToolNames() {
-				if bytes.Contains(content, []byte(removed)) {
+			for name, pattern := range removed {
+				if pattern.Match(content) {
 					rel := strings.TrimPrefix(path, root)
-					t.Errorf("%s names the removed tool %s", rel, removed)
+					t.Errorf("%s names the removed tool %s", rel, name)
 				}
 			}
 			return nil

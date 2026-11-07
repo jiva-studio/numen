@@ -10,7 +10,8 @@ import { computed, shallowRef } from 'vue'
 
 import type { Flow, Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
-import { getEasedProgress, useBookTurns } from './turns'
+import { getEasedProgress, getTurnTarget, useBookTurns } from './turns'
+import type { LeavingSpread } from './leaving'
 
 const FLOW: Flow = { contentWidth: 4000, width: 1000, gap: 0, columns: 1 }
 const MARKS: readonly Mark[] = [
@@ -56,7 +57,7 @@ const setUp = (marks: readonly Mark[] = MARKS, offset = 0, rendered = true) => {
     marks: shallowRef(marks),
     onMove,
   })
-  return { turns, writes, onMove }
+  return { turns, writes, onMove, paper }
 }
 
 describe('how much of the chapter is still to come', () => {
@@ -148,6 +149,25 @@ describe('the offset kept in front', () => {
     turns.stand(3, 'auto')
 
     expect(turns.getKeptOffset()).toBe(7)
+  })
+
+  it('is the offset passed to keepOffset while its spread is in front', () => {
+    const { turns } = setUp()
+
+    turns.stand(2, 'auto')
+    turns.keepOffset(250)
+
+    expect(turns.getKeptOffset()).toBe(250)
+  })
+
+  it('is the first run of the spread in front once the kept offset is turned away from', () => {
+    const { turns } = setUp()
+
+    turns.stand(2, 'auto')
+    turns.keepOffset(250)
+    turns.stand(0, 'auto')
+
+    expect(turns.getKeptOffset()).toBe(0)
   })
 })
 
@@ -266,5 +286,105 @@ describe('the curve of a turn', () => {
 
   it('goes most of the way early, as the ease-out curve of the motion tokens does', () => {
     expect(getEasedProgress(0.2)).toBeGreaterThan(0.6)
+  })
+})
+
+describe('a spread entered from the adjacent document', () => {
+  const createLeaving = (translate: string, target = Number.parseFloat(translate)) => {
+    const holder = document.createElement('div')
+    const copy = document.createElement('div')
+    copy.style.translate = translate
+    holder.append(copy)
+    const leaving: LeavingSpread = { copy, target, remove: vi.fn(() => copy.remove()) }
+    return { holder, leaving }
+  }
+
+  it('starts one spread on the far side after a forward turn and carries the copy out the other way', () => {
+    const { turns, writes } = setUp()
+    const { holder, leaving } = createLeaving('-5000px 0')
+
+    turns.enterSpread(0, 'next', leaving)
+
+    expect(turns.standing.value).toBe(0)
+    expect(writes).toStrictEqual(['translate 1000px 0', 'translate 0px 0'])
+    expect(leaving.copy.style.translate).toBe('-6000px 0')
+    expect(leaving.remove).toHaveBeenCalledOnce()
+    expect(holder.children).toHaveLength(0)
+  })
+
+  it('starts one spread on the near side after a backward turn', () => {
+    const { turns, writes } = setUp()
+    const { leaving } = createLeaving('0px 0')
+
+    turns.enterSpread(3, 'back', leaving)
+
+    expect(turns.standing.value).toBe(3)
+    expect(writes).toStrictEqual(['translate -4000px 0', 'translate -3000px 0'])
+    expect(leaving.copy.style.translate).toBe('1000px 0')
+  })
+
+  it('carries a copy taken during a forward turn one spread past where that turn went', () => {
+    const { turns, writes } = setUp()
+    const { leaving } = createLeaving('-2600px 0', -3000)
+
+    turns.enterSpread(0, 'next', leaving)
+
+    expect(writes).toStrictEqual(['translate 1400px 0', 'translate 0px 0'])
+    expect(leaving.copy.style.translate).toBe('-4000px 0')
+  })
+
+  it('carries a copy taken during a backward turn one spread past where that turn went', () => {
+    const { turns, writes } = setUp()
+    const { leaving } = createLeaving('-1400px 0', -1000)
+
+    turns.enterSpread(3, 'back', leaving)
+
+    expect(writes).toStrictEqual(['translate -4400px 0', 'translate -3000px 0'])
+    expect(leaving.copy.style.translate).toBe('0px 0')
+  })
+
+  it('removes the copy without a drawn document', () => {
+    const { turns } = setUp(MARKS, 0, false)
+    const { holder, leaving } = createLeaving('0px 0')
+
+    turns.enterSpread(1, 'next', leaving)
+
+    expect(turns.standing.value).toBe(1)
+    expect(leaving.remove).toHaveBeenCalledOnce()
+    expect(holder.children).toHaveLength(0)
+  })
+})
+
+describe('the place a turn goes to', () => {
+  it('is the translate of the columns without a turn, or zero without one written', () => {
+    const paper = document.createElement('div')
+    expect(getTurnTarget(paper)).toBe(0)
+
+    paper.style.translate = '-2000px 0'
+
+    expect(getTurnTarget(paper)).toBe(-2000)
+  })
+
+  it('is the end of the turn under way, not the place its frames have reached', () => {
+    let now = 0
+    const queue: FrameRequestCallback[] = []
+    vi.spyOn(performance, 'now').mockImplementation(() => now)
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queue.push(callback)
+      return queue.length
+    })
+    vi.spyOn(window, 'getComputedStyle').mockReturnValue({
+      getPropertyValue: () => '200ms',
+    } as unknown as CSSStyleDeclaration)
+    const { turns, paper } = setUp()
+    turns.stand(0, 'auto')
+
+    turns.stand(2, 'smooth')
+    now += 20
+    queue.shift()?.(now)
+
+    expect(Number.parseFloat(paper.style.translate)).toBeGreaterThan(-2000)
+    expect(getTurnTarget(paper)).toBe(-2000)
+    vi.restoreAllMocks()
   })
 })

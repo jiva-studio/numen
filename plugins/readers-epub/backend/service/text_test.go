@@ -73,7 +73,7 @@ func TestTheTextOfABookIsItsLiveVersion(t *testing.T) {
 	if text.Version().Kind != textKind || !text.Version().IsFromFile() {
 		t.Errorf("version %+v, want a book text made from the file", text.Version())
 	}
-	if text.Version().SourceHash != domain.HashContent(raw) || text.Version().File != domain.HashContent(raw)+".jsonl" {
+	if text.Version().InputHash != domain.HashContent(raw) || text.Version().File != domain.HashContent(raw)+".jsonl" {
 		t.Errorf("version %+v does not name the file and the text as they are", text.Version())
 	}
 	if text.Text != book.Text {

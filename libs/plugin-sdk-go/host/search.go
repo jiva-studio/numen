@@ -25,11 +25,16 @@ var (
 	ErrInvalidQuery = errors.New("host: a query vector does not match the vectors of the index")
 )
 
-// The permissions of the search calls. The reads, the embedding included, need PermissionIndexRead, and
-// the floor needs PermissionSearchPolicy.
+// The permissions a plugin declares in its manifest. The search reads, the embedding included, need
+// PermissionIndexRead, and the search floor needs PermissionSearchPolicy. Adding, renaming, removing
+// and opening vaults needs PermissionVaultManage, every Window call needs PermissionWindowFocus, and a
+// request to the network needs PermissionNetworkOutbound.
 const (
-	PermissionIndexRead    = "index:read"
-	PermissionSearchPolicy = "search:policy"
+	PermissionIndexRead       = "index:read"
+	PermissionSearchPolicy    = "search:policy"
+	PermissionVaultManage     = "vault:manage"
+	PermissionWindowFocus     = "window:focus"
+	PermissionNetworkOutbound = "network:outbound"
 )
 
 // The limits the host applies to a search call.
@@ -145,6 +150,7 @@ type Search interface {
 	// installation has no such vault.
 	With(id domain.VaultID) Search
 	SearchIndex
+	passageSearch
 	SearchPolicy
 }
 
@@ -171,6 +177,59 @@ type SearchIndex interface {
 	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector
 	// under the recipe, and zero where the vault has none.
 	GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error)
+}
+
+// passageSearch searches the text of a vault. It needs the index:read permission.
+type passageSearch interface {
+	// SearchPassages returns the passages of the vault matching the query, best first, from the index of
+	// every source and every text version: by keywords, and by embedding when the installation has
+	// an embedding model. An installation with no model searches by keywords only, so the call
+	// does not return ErrNoModel. It returns at most MaxSearchedPassagesPerSource passages of one source.
+	SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error)
+}
+
+const (
+	// MaxSearchedPassagesPerSource is the maximum number of passages of one source a
+	// SearchPassages call returns.
+	MaxSearchedPassagesPerSource = 3
+	// DefaultSearchedPassages is the maximum number of passages a SearchPassages call returns when its limit
+	// is zero, and MaxSearchedPassages the maximum for any limit.
+	DefaultSearchedPassages = 20
+	MaxSearchedPassages     = 100
+)
+
+// PassageQuery is a passage search request.
+type PassageQuery struct {
+	Query string
+	// Limit is the maximum number of passages to return: DefaultSearchedPassages when zero, at
+	// most MaxSearchedPassages.
+	Limit int
+	// Kinds are the kinds of source to search, KindNote or KindFile. Empty means every kind.
+	Kinds []domain.SourceKind
+	// PathPrefix limits the search to the sources whose path starts with it, relative to the vault, in
+	// either Unicode form (NFC or NFD). The index applies it before it truncates the list to Limit. Empty
+	// means the whole vault.
+	PathPrefix string
+}
+
+// Passage is a span of source text matching a query.
+type Passage struct {
+	// Path is the file the text is read from, relative to the vault.
+	Path string
+	// Text is the text around the hit, truncated to a size and so possibly ending mid-sentence.
+	Text string
+	// Location is the location label in the source's numbering (page, chapter, time), empty
+	// when the format has none.
+	Location string
+	// Start and Length locate the whole passage in the source text, in bytes.
+	Start  int
+	Length int
+	// Line is the line of the hit, counted from 0 at the first line of the source's prose, for every
+	// source.
+	Line int
+	// Selector locates the hit in the text version, as JSON, with the keys of domain.Selector. Empty
+	// for a note.
+	Selector string
 }
 
 // SearchPolicy reads and sets the floor that a search by meaning applies to a vault. It needs the

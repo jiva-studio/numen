@@ -22,7 +22,8 @@ func NewCatalog(host Host, server Server) *Catalog {
 }
 
 // ListTools lists the tools the caller is allowed: those the other plugins offer on the server,
-// whose effect the caller holds the permission of as well.
+// for which the caller has the effect permission and all required permissions. The
+// tools of one plugin are listed together, in the order of plugin ids.
 func (c *Catalog) ListTools(ctx context.Context, callerID string) []*v1.PluginTool {
 	allowed := c.listAllowed(ctx, callerID)
 	specs := make([]*v1.PluginTool, 0, len(allowed))
@@ -45,20 +46,26 @@ func (c *Catalog) CallTool(
 	return c.plugins.callTool(ctx, allowed[index], arguments, callScope{vault: vault})
 }
 
-// listAllowed is the tools of the other plugins whose effect the caller holds the permission of.
+// listAllowed returns the tools of the other plugins for which the caller has the effect permission
+// and all required permissions.
 func (c *Catalog) listAllowed(ctx context.Context, callerID string) []tool {
-	var permissions []string
-	for _, info := range c.plugins.host.GetPluginInfos() {
-		if info.ID == callerID {
-			permissions = info.Permissions
-		}
-	}
+	permissions := c.plugins.getPermissions(callerID)
 	all := c.plugins.listTools(ctx, c.server, callerID)
 	allowed := make([]tool, 0, len(all))
 	for _, one := range all {
-		if hasPermission(permissions, one.spec.GetEffect()) {
+		if hasPermission(permissions, one.spec.GetEffect()) && hasAll(permissions, one.spec.GetRequires()) {
 			allowed = append(allowed, one)
 		}
 	}
 	return allowed
+}
+
+// hasAll reports whether the permissions contain every required one.
+func hasAll(permissions, required []string) bool {
+	for _, one := range required {
+		if !slices.Contains(permissions, one) {
+			return false
+		}
+	}
+	return true
 }

@@ -3,6 +3,7 @@ package hostendpoint
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"connectrpc.com/connect"
@@ -91,7 +92,7 @@ func (e *textEndpoint) PutTextVersion(
 	m := req.Msg
 	version, err := call.texts.PutVersion(ctx, call.vault, call.pluginID, pluginport.PluginTextPut{
 		Path: m.GetPath(), Key: m.GetKey(), Source: domain.TextVersionID(m.GetSourceVersionId()),
-		Kind: domain.TextKind(m.GetKind()), SourceHash: m.GetSourceHash(), File: m.GetFile(),
+		Kind: domain.TextKind(m.GetKind()), InputHash: m.GetInputHash(), File: m.GetFile(),
 		SourceProperty: domain.TextSourceProperty{Key: m.GetSourceProperty().GetKey(), Value: m.GetSourceProperty().GetValue()},
 	})
 	code, err := answerText(ctx, err)
@@ -154,6 +155,9 @@ func (e *textEndpoint) ReadText(
 	if call.texts == nil {
 		return connect.NewResponse(&v1.ReadTextResponse{Error: noTexts}), nil
 	}
+	if req.Msg.Length != nil {
+		return serveTextRange(ctx, call, req.Msg)
+	}
 	page, err := call.texts.ReadText(ctx, call.vault, req.Msg.GetPath(), domain.TextVersionID(req.Msg.GetVersionId()), req.Msg.GetCursor())
 	code, err := answerText(ctx, err)
 	if err != nil {
@@ -161,5 +165,23 @@ func (e *textEndpoint) ReadText(
 	}
 	return connect.NewResponse(&v1.ReadTextResponse{
 		Error: code, Segments: writeSegments(page.Segments), NextCursor: page.NextCursor,
+	}), nil
+}
+
+// serveTextRange serves a ReadText that sets a length: it returns the segments of the range, the start of the first
+// and the size of the whole text.
+func serveTextRange(ctx context.Context, call textCall, req *v1.ReadTextRequest) (*connect.Response[v1.ReadTextResponse], error) {
+	if req.GetStart() < 0 || req.GetLength() < 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("invalid range of the text of %s: start %d and length %d must be >= 0", req.GetPath(), req.GetStart(), req.GetLength()))
+	}
+	read, err := call.texts.ReadTextRange(ctx, call.vault, req.GetPath(), domain.TextVersionID(req.GetVersionId()),
+		int(req.GetStart()), int(req.GetLength()))
+	code, err := answerText(ctx, err)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&v1.ReadTextResponse{
+		Error: code, Segments: writeSegments(read.Segments), Start: int64(read.Start), Size: int64(read.Size),
 	}), nil
 }

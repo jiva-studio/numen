@@ -50,7 +50,7 @@ func TestTheStatementsAreTheOnesTheRepositoryRuns(t *testing.T) {
 func TestASavedSourceContainsWhatItWasGiven(t *testing.T) {
 	s := newStore(t)
 	err := s.db.Chunks().SaveSource(t.Context(), repoVaultA, chunk.Source{
-		Path: "books/a.epub", Kind: "book", Size: 77, MTime: 1234, Hash: "h1", Recipe: "r1", Producer: "ocr",
+		Path: "books/a.epub", Kind: "book", Size: 77, MTime: 1234, ContentHash: "h1", Recipe: "r1", Producer: "ocr",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -59,7 +59,7 @@ func TestASavedSourceContainsWhatItWasGiven(t *testing.T) {
 	var path, kind, hash, recipe, producer string
 	var size, mtime int64
 	if err := s.side.QueryRowContext(t.Context(),
-		`SELECT path, kind, size, modified_at, hash, recipe, producer FROM sources`).
+		`SELECT path, kind, size, modified_at, content_hash, recipe, producer FROM sources`).
 		Scan(&path, &kind, &size, &mtime, &hash, &recipe, &producer); err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestASavedSourceContainsWhatItWasGiven(t *testing.T) {
 func TestASourceSavedAgainKeepsItsRowAndConsumesTheNewValues(t *testing.T) {
 	s := newStore(t)
 	repo := s.db.Chunks()
-	first := chunk.Source{Path: "a.epub", Kind: "book", Size: 1, MTime: 10, Hash: "h1", Recipe: "r1", Producer: "p1"}
+	first := chunk.Source{Path: "a.epub", Kind: "book", Size: 1, MTime: 10, ContentHash: "h1", Recipe: "r1", Producer: "p1"}
 	if err := repo.SaveSource(t.Context(), repoVaultA, first); err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func TestASourceSavedAgainKeepsItsRowAndConsumesTheNewValues(t *testing.T) {
 	if n := s.count(`SELECT count(*) FROM sources WHERE size = 2 AND modified_at = 20`); n != 1 {
 		t.Errorf("the new size and time were not taken")
 	}
-	if n := s.count(`SELECT count(*) FROM sources WHERE hash IS NULL AND recipe IS NULL AND producer IS NULL`); n != 1 {
+	if n := s.count(`SELECT count(*) FROM sources WHERE content_hash IS NULL AND recipe IS NULL AND producer IS NULL`); n != 1 {
 		t.Errorf("an empty hash, recipe and producer are recorded as values, not as nothing")
 	}
 }
@@ -187,14 +187,14 @@ func TestAnExtractionIsASourceAndItsChunksTogether(t *testing.T) {
 	chunks := []chunk.Chunk{{Start: 0, Length: 20, Location: "ch 1", Text: "whole", Small: []chunk.Chunk{
 		{Start: 0, Length: 10, Text: "left"}, {Start: 10, Length: 10, Text: "right"},
 	}}}
-	src := chunk.Source{Path: "a.epub", Kind: "book", Size: 5, MTime: 9, Hash: "h", Recipe: "r", Producer: "p"}
+	src := chunk.Source{Path: "a.epub", Kind: "book", Size: 5, MTime: 9, ContentHash: "h", Recipe: "r", Producer: "p"}
 
 	if err := s.db.Chunks().SaveExtraction(t.Context(), repoVaultA, src, chunks); err != nil {
 		t.Fatal(err)
 	}
 
 	if n := s.count(`SELECT count(*) FROM sources WHERE path = 'a.epub' AND size = 5 AND modified_at = 9
-		AND hash = 'h' AND recipe = 'r' AND producer = 'p'`); n != 1 {
+		AND content_hash = 'h' AND recipe = 'r' AND producer = 'p'`); n != 1 {
 		t.Error("the source was not recorded as given")
 	}
 	if got := s.rowsOf(repoVaultA, "a.epub"); len(got) != 3 {

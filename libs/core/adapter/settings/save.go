@@ -107,15 +107,15 @@ func isFieldCovered(pos []string, field string) bool {
 
 // errNotASection is a name on the way to a setting that the file holds as
 // something other than an object.
-var errNotASection = errors.New("a setting goes inside a section")
+var errNotASection = errors.New("not a JSON object; a setting cannot be written inside it")
 
 // errRepeated is a name written twice in one section. The settings are read
 // from the last of the two, and a span is replaced at the first.
-var errRepeated = errors.New("a section holds one of a name")
+var errRepeated = errors.New("appears more than once")
 
 func applySetting(raw []byte, setting Setting) ([]byte, error) {
 	if len(setting.At) == 0 {
-		return nil, errors.New("a setting with no name")
+		return nil, errors.New("the setting path is empty")
 	}
 	value, err := json.Marshal(setting.Written)
 	if err != nil {
@@ -143,7 +143,7 @@ func replaceValueAt(object []byte, pos []string, value []byte, outer string) ([]
 		}
 		section, err := replaceValueAt(object[one.from:one.to], pos[1:], value, target.indent)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", one.key, err)
+			return nil, fmt.Errorf("%q: %w", one.key, err)
 		}
 		return splice(object, one.from, one.to, section), nil
 	}
@@ -213,7 +213,7 @@ func readMember(decoder *json.Decoder, object []byte, target shape) (member, err
 		return member{}, errNotASection
 	}
 	if target.hasKey(key) {
-		return member{}, fmt.Errorf("%s: %w", key, errRepeated)
+		return member{}, fmt.Errorf("%q %w", key, errRepeated)
 	}
 	one := member{key: key}
 	quoted, err := json.Marshal(key)
@@ -251,7 +251,7 @@ func (s shape) hasKey(key string) bool {
 func (s shape) appendMember(object []byte, pos []string, value []byte, outer string) ([]byte, error) {
 	name, err := json.Marshal(pos[0])
 	if err != nil {
-		return nil, fmt.Errorf("encode the name %q: %w", pos[0], err)
+		return nil, fmt.Errorf("encode the key %q: %w", pos[0], err)
 	}
 
 	if len(s.pairs) == 0 {
@@ -286,7 +286,7 @@ func wrapInSections(pos []string, value []byte, indent string) ([]byte, error) {
 	}
 	name, err := json.Marshal(pos[0])
 	if err != nil {
-		return nil, fmt.Errorf("encode the name %q: %w", pos[0], err)
+		return nil, fmt.Errorf("encode the key %q: %w", pos[0], err)
 	}
 	inside, err := wrapInSections(pos[1:], value, indent+"  ")
 	if err != nil {
@@ -348,7 +348,7 @@ type Files struct {
 }
 
 // ErrNoFiles is returned by a settings read or write that was given no Files.
-var ErrNoFiles = errors.New("settings access was given no files")
+var ErrNoFiles = errors.New("settings: no Files value was given")
 
 // NewFiles returns the access to settings files that one composition root holds.
 func NewFiles() *Files { return &Files{} }

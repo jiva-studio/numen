@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"crypto/sha256"
 	"encoding/hex"
+	"io"
 	"slices"
 	"strings"
 	"time"
@@ -34,11 +35,11 @@ type TextSourceProperty struct {
 // holds its segments.
 //
 // A version has one root. Source names another version of the same file, and
-// SourceHash is the Hash of that version. SourceProperty names a property of
-// the note, and SourceHash is empty. With neither, the version is made from
-// the file, and SourceHash is HashContent of the file. Hashes are as they were
+// InputHash is the TextHash of that version. SourceProperty names a property of
+// the note, and InputHash is empty. With neither, the version is made from
+// the file, and InputHash is HashContent of the file. Hashes are as they were
 // when the version was made. File is the name of the version's file in the
-// folder of PluginID; Hash is HashContent of that file's bytes when the version
+// folder of PluginID; TextHash is HashContent of that file's bytes when the version
 // was recorded.
 type TextVersion struct {
 	Path           string
@@ -48,8 +49,8 @@ type TextVersion struct {
 	SourceProperty TextSourceProperty
 	Kind           TextKind
 	File           string
-	SourceHash     string
-	Hash           string
+	InputHash      string
+	TextHash       string
 	CreateTime     time.Time
 }
 
@@ -76,12 +77,21 @@ func HashContent(raw []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// HashReader returns HashContent of the bytes of the reader, read as a stream.
+func HashReader(r io.Reader) (string, error) {
+	sum := sha256.New()
+	if _, err := io.Copy(sum, r); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(sum.Sum(nil)), nil
+}
+
 // IsChainValid reports whether every source in a version's chain, down to its
 // root, is still what it was when the version above it was made.
 //
-// fileHash is HashContent of the file as it is now, and properties is the
+// contentHash is HashContent of the file as it is now, and properties is the
 // note's frontmatter as it is now.
-func IsChainValid(versions []TextVersion, id TextVersionID, fileHash string, properties map[string]any) bool {
+func IsChainValid(versions []TextVersion, id TextVersionID, contentHash string, properties map[string]any) bool {
 	byID := make(map[TextVersionID]TextVersion, len(versions))
 	for _, v := range versions {
 		byID[v.GetID()] = v
@@ -97,11 +107,11 @@ func IsChainValid(versions []TextVersion, id TextVersionID, fileHash string, pro
 			return v.SourceProperty.isPropertyHeld(properties)
 		}
 		if v.IsFromFile() {
-			return v.SourceHash == fileHash
+			return v.InputHash == contentHash
 		}
 		source, ok := byID[v.Source]
-		// gomutants:disable-next-line EXPRESSION_REMOVE reason="a missing source either mismatches a non-empty SourceHash here or fails the byID lookup on the next iteration"
-		if !ok || source.Hash != v.SourceHash {
+		// gomutants:disable-next-line EXPRESSION_REMOVE reason="a missing source either mismatches a non-empty InputHash here or fails the byID lookup on the next iteration"
+		if !ok || source.TextHash != v.InputHash {
 			return false
 		}
 		id = v.Source
@@ -113,7 +123,7 @@ func IsChainValid(versions []TextVersion, id TextVersionID, fileHash string, pro
 // a later CreateTime; of two made at one instant the later in the list is
 // newer. The plugin that made a version need not be enabled.
 func FindLiveVersion(
-	versions []TextVersion, fileHash string, properties map[string]any, isIntact func(TextVersion) bool,
+	versions []TextVersion, contentHash string, properties map[string]any, isIntact func(TextVersion) bool,
 ) (TextVersion, bool) {
 	order := make([]int, len(versions))
 	for i := range order {
@@ -126,7 +136,7 @@ func FindLiveVersion(
 		return cmp.Compare(b, a)
 	})
 	for _, i := range order {
-		if IsChainValid(versions, versions[i].GetID(), fileHash, properties) && isIntact(versions[i]) {
+		if IsChainValid(versions, versions[i].GetID(), contentHash, properties) && isIntact(versions[i]) {
 			return versions[i], true
 		}
 	}

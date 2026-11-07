@@ -46,7 +46,7 @@ func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error)
 // newImportCommand makes the link note of an address in the root of the vault, and nothing else.
 func newImportCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		made, err := links.Create(ctx, "", req.Arguments.GetString(argumentAddress))
+		made, err := links.Create(ctx, "", "", req.Arguments.GetString(argumentAddress))
 		if err != nil {
 			return command.Result{}, err
 		}

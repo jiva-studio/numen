@@ -159,13 +159,6 @@ func TestPagesProviderConfigurationAndBodyLimit(t *testing.T) {
 	if tr.IdleConnTimeout != 90*time.Second || tr.TLSHandshakeTimeout != 10*time.Second || tr.ExpectContinueTimeout != 1*time.Second {
 		t.Errorf("timeouts = (%v, %v, %v), want (90s, 10s, 1s)", tr.IdleConnTimeout, tr.TLSHandshakeTimeout, tr.ExpectContinueTimeout)
 	}
-	localURL, err := url.Parse("http://127.0.0.1/secret")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := pages.client.CheckRedirect(&http.Request{URL: localURL}, nil); err == nil {
-		t.Error("CheckRedirect allowed local redirect")
-	}
 	body := &paddedHTMLReader{
 		prefix: "<html><head><title>T</title></head><body><article><p>Readability body text here.</p></article></body></html>",
 		total:  9 << 20,
@@ -184,5 +177,32 @@ func TestPagesProviderConfigurationAndBodyLimit(t *testing.T) {
 	}
 	if body.pos != 8<<20 {
 		t.Errorf("GetText read %d bytes, want %d", body.pos, 8<<20)
+	}
+}
+
+func TestPagesFollowARedirectToAnAddressOnThisMachine(t *testing.T) {
+	pages := NewPages()
+	via := make([]*http.Request, 9)
+	for _, raw := range []string{"http://127.0.0.1/secret", "http://192.168.1.10/"} {
+		target, err := url.Parse(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := pages.client.CheckRedirect(&http.Request{URL: target}, via); err != nil {
+			t.Errorf("CheckRedirect(%s) after 9 hops = %v, want nil", raw, err)
+		}
+		if err := pages.client.CheckRedirect(&http.Request{URL: target}, nil); err != nil {
+			t.Errorf("CheckRedirect(%s) = %v, want nil", raw, err)
+		}
+	}
+}
+
+func TestPagesStopAfterTenRedirects(t *testing.T) {
+	target, err := url.Parse("https://example.com/next")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := NewPages().client.CheckRedirect(&http.Request{URL: target}, make([]*http.Request, 10)); err == nil {
+		t.Error("CheckRedirect after 10 hops = nil, want an error")
 	}
 }

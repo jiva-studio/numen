@@ -29,7 +29,7 @@ func (u GetBacklinks) Execute(ctx context.Context, v domain.Vault, path string) 
 	out := make([]domain.Backlink, 0, len(links))
 	for _, l := range links {
 		inverse, _ := domain.GetInverseRole(l.Role)
-		out = append(out, domain.Backlink{ResolvedLink: l, RoleFromHere: inverse})
+		out = append(out, domain.Backlink{ResolvedLink: l, SourceRole: inverse})
 	}
 	return out, nil
 }

@@ -78,12 +78,12 @@ func (x *TextSourceProperty) GetValue() string {
 // TextVersion is the host's record of one text of a file.
 //
 // A version has one root. source_version_id names another version, and
-// source_hash is the hash of that version. source_property names a property of
+// input_hash is the hash of that version. source_property names a property of
 // the note: the version is live while the note's frontmatter holds the key as
-// that string, and source_hash is empty. With neither, the version is made from
-// the file, and source_hash is the SHA-256, in hex, of the file's bytes. file
+// that string, and input_hash is empty. With neither, the version is made from
+// the file, and input_hash is the SHA-256, in hex, of the file's bytes. file
 // is the name of the version's file in the folder of the plugin that made it;
-// hash is the SHA-256 of that file's bytes.
+// text_hash is the SHA-256 of that file's bytes.
 // kind is what the text is, as the plugin that made it names it;
 // the host compares it as an opaque string.
 type TextVersion struct {
@@ -94,8 +94,8 @@ type TextVersion struct {
 	Key              string                 `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
 	SourceVersionId  string                 `protobuf:"bytes,5,opt,name=source_version_id,json=sourceVersionId,proto3" json:"source_version_id,omitempty"`
 	Kind             string                 `protobuf:"bytes,6,opt,name=kind,proto3" json:"kind,omitempty"`
-	SourceHash       string                 `protobuf:"bytes,7,opt,name=source_hash,json=sourceHash,proto3" json:"source_hash,omitempty"`
-	Hash             string                 `protobuf:"bytes,8,opt,name=hash,proto3" json:"hash,omitempty"`
+	InputHash        string                 `protobuf:"bytes,7,opt,name=input_hash,json=inputHash,proto3" json:"input_hash,omitempty"`
+	TextHash         string                 `protobuf:"bytes,8,opt,name=text_hash,json=textHash,proto3" json:"text_hash,omitempty"`
 	CreateTimeUnixMs int64                  `protobuf:"varint,9,opt,name=create_time_unix_ms,json=createTimeUnixMs,proto3" json:"create_time_unix_ms,omitempty"`
 	File             string                 `protobuf:"bytes,10,opt,name=file,proto3" json:"file,omitempty"`
 	SourceProperty   *TextSourceProperty    `protobuf:"bytes,11,opt,name=source_property,json=sourceProperty,proto3" json:"source_property,omitempty"`
@@ -175,16 +175,16 @@ func (x *TextVersion) GetKind() string {
 	return ""
 }
 
-func (x *TextVersion) GetSourceHash() string {
+func (x *TextVersion) GetInputHash() string {
 	if x != nil {
-		return x.SourceHash
+		return x.InputHash
 	}
 	return ""
 }
 
-func (x *TextVersion) GetHash() string {
+func (x *TextVersion) GetTextHash() string {
 	if x != nil {
-		return x.Hash
+		return x.TextHash
 	}
 	return ""
 }
@@ -216,11 +216,11 @@ type PutTextVersionRequest struct {
 	Key             string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	SourceVersionId string                 `protobuf:"bytes,3,opt,name=source_version_id,json=sourceVersionId,proto3" json:"source_version_id,omitempty"`
 	Kind            string                 `protobuf:"bytes,4,opt,name=kind,proto3" json:"kind,omitempty"`
-	SourceHash      string                 `protobuf:"bytes,5,opt,name=source_hash,json=sourceHash,proto3" json:"source_hash,omitempty"`
+	InputHash       string                 `protobuf:"bytes,5,opt,name=input_hash,json=inputHash,proto3" json:"input_hash,omitempty"`
 	// file is the name of the version's file in the calling plugin's folder.
 	File string `protobuf:"bytes,6,opt,name=file,proto3" json:"file,omitempty"`
 	// source_property is set for a version made from a property of the note,
-	// with no source_version_id and no source_hash.
+	// with no source_version_id and no input_hash.
 	SourceProperty *TextSourceProperty `protobuf:"bytes,7,opt,name=source_property,json=sourceProperty,proto3" json:"source_property,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -284,9 +284,9 @@ func (x *PutTextVersionRequest) GetKind() string {
 	return ""
 }
 
-func (x *PutTextVersionRequest) GetSourceHash() string {
+func (x *PutTextVersionRequest) GetInputHash() string {
 	if x != nil {
-		return x.SourceHash
+		return x.InputHash
 	}
 	return ""
 }
@@ -562,8 +562,16 @@ type ReadTextRequest struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Path      string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	VersionId string                 `protobuf:"bytes,2,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
-	// cursor is the next_cursor of the page before, and empty for the first.
-	Cursor        string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	// cursor is the next_cursor of the page before, and empty for the first. Not
+	// used with a length.
+	Cursor string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	// The start of a ranged read in the whole text, in bytes.
+	Start int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
+	// Set: read the range from start of this many bytes, zero to the end,
+	// truncated at whole characters, as the segments it covers, each truncated to
+	// the range. Unset:
+	// read one page by cursor.
+	Length        *int64 `protobuf:"varint,5,opt,name=length,proto3,oneof" json:"length,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -619,12 +627,30 @@ func (x *ReadTextRequest) GetCursor() string {
 	return ""
 }
 
+func (x *ReadTextRequest) GetStart() int64 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *ReadTextRequest) GetLength() int64 {
+	if x != nil && x.Length != nil {
+		return *x.Length
+	}
+	return 0
+}
+
 type ReadTextResponse struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Segments []*TextSegment         `protobuf:"bytes,1,rep,name=segments,proto3" json:"segments,omitempty"`
 	// next_cursor is empty on the last page.
-	NextCursor    string        `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
-	Error         TextErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
+	NextCursor string        `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
+	Error      TextErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
+	// For a ranged read: the start of the first segment returned in the whole
+	// text, and the size of the whole text in bytes.
+	Start         int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
+	Size          int64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -680,6 +706,20 @@ func (x *ReadTextResponse) GetError() TextErrorCode {
 	return TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED
 }
 
+func (x *ReadTextResponse) GetStart() int64 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *ReadTextResponse) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
 var File_numen_v1_hosttext_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hosttext_proto_rawDesc = "" +
@@ -687,28 +727,28 @@ const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\x17numen/v1/hosttext.proto\x12\bnumen.v1\x1a\x1anumen/v1/textsegment.proto\"<\n" +
 	"\x12TextSourceProperty\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\"\xdf\x02\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"\xe6\x02\n" +
 	"\vTextVersion\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1b\n" +
 	"\tplugin_id\x18\x03 \x01(\tR\bpluginId\x12\x10\n" +
 	"\x03key\x18\x04 \x01(\tR\x03key\x12*\n" +
 	"\x11source_version_id\x18\x05 \x01(\tR\x0fsourceVersionId\x12\x12\n" +
-	"\x04kind\x18\x06 \x01(\tR\x04kind\x12\x1f\n" +
-	"\vsource_hash\x18\a \x01(\tR\n" +
-	"sourceHash\x12\x12\n" +
-	"\x04hash\x18\b \x01(\tR\x04hash\x12-\n" +
+	"\x04kind\x18\x06 \x01(\tR\x04kind\x12\x1d\n" +
+	"\n" +
+	"input_hash\x18\a \x01(\tR\tinputHash\x12\x1b\n" +
+	"\ttext_hash\x18\b \x01(\tR\btextHash\x12-\n" +
 	"\x13create_time_unix_ms\x18\t \x01(\x03R\x10createTimeUnixMs\x12\x12\n" +
 	"\x04file\x18\n" +
 	" \x01(\tR\x04file\x12E\n" +
-	"\x0fsource_property\x18\v \x01(\v2\x1c.numen.v1.TextSourcePropertyR\x0esourceProperty\"\xf9\x01\n" +
+	"\x0fsource_property\x18\v \x01(\v2\x1c.numen.v1.TextSourcePropertyR\x0esourceProperty\"\xf7\x01\n" +
 	"\x15PutTextVersionRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12*\n" +
 	"\x11source_version_id\x18\x03 \x01(\tR\x0fsourceVersionId\x12\x12\n" +
-	"\x04kind\x18\x04 \x01(\tR\x04kind\x12\x1f\n" +
-	"\vsource_hash\x18\x05 \x01(\tR\n" +
-	"sourceHash\x12\x12\n" +
+	"\x04kind\x18\x04 \x01(\tR\x04kind\x12\x1d\n" +
+	"\n" +
+	"input_hash\x18\x05 \x01(\tR\tinputHash\x12\x12\n" +
 	"\x04file\x18\x06 \x01(\tR\x04file\x12E\n" +
 	"\x0fsource_property\x18\a \x01(\v2\x1c.numen.v1.TextSourcePropertyR\x0esourceProperty\"x\n" +
 	"\x16PutTextVersionResponse\x12/\n" +
@@ -724,17 +764,22 @@ const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\x18ListTextVersionsResponse\x121\n" +
 	"\bversions\x18\x01 \x03(\v2\x15.numen.v1.TextVersionR\bversions\x12&\n" +
 	"\x0flive_version_id\x18\x02 \x01(\tR\rliveVersionId\x12-\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"\\\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"\x9a\x01\n" +
 	"\x0fReadTextRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x02 \x01(\tR\tversionId\x12\x16\n" +
-	"\x06cursor\x18\x03 \x01(\tR\x06cursor\"\x95\x01\n" +
+	"\x06cursor\x18\x03 \x01(\tR\x06cursor\x12\x14\n" +
+	"\x05start\x18\x04 \x01(\x03R\x05start\x12\x1b\n" +
+	"\x06length\x18\x05 \x01(\x03H\x00R\x06length\x88\x01\x01B\t\n" +
+	"\a_length\"\xbf\x01\n" +
 	"\x10ReadTextResponse\x121\n" +
 	"\bsegments\x18\x01 \x03(\v2\x15.numen.v1.TextSegmentR\bsegments\x12\x1f\n" +
 	"\vnext_cursor\x18\x02 \x01(\tR\n" +
 	"nextCursor\x12-\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error2\xe2\x02\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\x12\x14\n" +
+	"\x05start\x18\x04 \x01(\x03R\x05start\x12\x12\n" +
+	"\x04size\x18\x05 \x01(\x03R\x04size2\xe2\x02\n" +
 	"\x0fHostTextService\x12S\n" +
 	"\x0ePutTextVersion\x12\x1f.numen.v1.PutTextVersionRequest\x1a .numen.v1.PutTextVersionResponse\x12\\\n" +
 	"\x11RemoveTextVersion\x12\".numen.v1.RemoveTextVersionRequest\x1a#.numen.v1.RemoveTextVersionResponse\x12Y\n" +
@@ -799,6 +844,7 @@ func file_numen_v1_hosttext_proto_init() {
 		return
 	}
 	file_numen_v1_textsegment_proto_init()
+	file_numen_v1_hosttext_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

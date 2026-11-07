@@ -104,10 +104,10 @@ func describeCreateError(code api.ErrorCode) string {
 		return "something of that name is filed there already, so nothing was written"
 	case api.ErrorCodeInvalidName:
 		return "a note cannot be called that"
-	case api.ErrorCodeUnspecified, api.ErrorCodeMissing, api.ErrorCodeNotANote, api.ErrorCodeNotText,
+	case api.ErrorCodeUnspecified, api.ErrorCodeNotFound, api.ErrorCodeNotANote, api.ErrorCodeNotText,
 		api.ErrorCodeTooLarge, api.ErrorCodeBodyUnwritable, api.ErrorCodeUnreadable,
 		api.ErrorCodeNotACardModel, api.ErrorCodeNotADeck, api.ErrorCodeDeckTooLarge,
-		api.ErrorCodeNotAPreset, api.ErrorCodeStale:
+		api.ErrorCodeNotAPreset, api.ErrorCodeConflict:
 		// gomutants:disable-next-line BRANCH_CASE reason="Other error codes share the fallback message."
 		return "the file could not be made: " + string(code)
 	}

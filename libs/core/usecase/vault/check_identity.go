@@ -19,14 +19,14 @@ func NewCheckIdentity(identity vaultport.VaultIdentity) CheckIdentity {
 
 func (u CheckIdentity) Execute(v domain.Vault) error {
 	if err := u.identity.CheckReadable(v.Path); err != nil {
-		return fmt.Errorf("%w: %w", ErrUnreadable, err)
+		return domain.NewDetailError(fmt.Sprintf("%s cannot be read as a vault: %v", v.Path, err), ErrUnreadable, err)
 	}
 	carried, found, err := u.identity.GetVaultID(v.Path)
 	if err != nil {
 		return err
 	}
 	if !found || carried != v.ID {
-		return fmt.Errorf("%w: %s is no longer the vault %s", ErrUnreadable, v.Path, v.Name)
+		return domain.NewDetailError(fmt.Sprintf("%s is no longer the vault %s", v.Path, v.Name), ErrUnreadable)
 	}
 	return nil
 }

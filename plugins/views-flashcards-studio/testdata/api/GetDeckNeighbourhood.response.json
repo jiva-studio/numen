@@ -17,7 +17,7 @@
       "label": "",
       "isPointedAt": true,
       "isAmbiguous": false,
-      "error": "missing"
+      "error": "notFound"
     }
   ],
   "unread": 0

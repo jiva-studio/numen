@@ -52,7 +52,7 @@ func openUnembeddedDB(tb testing.TB, sources, per int) *DB {
 	for s := range sources {
 		path := fmt.Sprintf("library/book-%04d.epub", s)
 		if err := chunks.SaveSource(ctx, getBenchVault().ID, chunk.Source{
-			Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "epub",
+			Path: path, Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-" + path, Recipe: "epub",
 		}); err != nil {
 			tb.Fatal(err)
 		}

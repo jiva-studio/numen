@@ -114,15 +114,17 @@ CREATE VIRTUAL TABLE sections_fts USING fts5 (
 );
 
 CREATE TABLE sources (
-    id          INTEGER PRIMARY KEY,
-    vault_id    INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,
-    path        TEXT NOT NULL,
-    kind        TEXT NOT NULL,
-    size        INTEGER NOT NULL,
-    modified_at INTEGER NOT NULL,
-    hash        TEXT,
-    recipe      TEXT,
-    producer    TEXT,
+    id                INTEGER PRIMARY KEY,
+    vault_id          INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,
+    path              TEXT NOT NULL,
+    kind              TEXT NOT NULL,
+    size              INTEGER NOT NULL,
+    modified_at       INTEGER NOT NULL,
+    content_hash      TEXT,
+    recipe            TEXT,
+    producer          TEXT,
+    file_id           INTEGER,
+    content_hash_time INTEGER,
 
     UNIQUE (vault_id, path)
 );
@@ -138,8 +140,8 @@ CREATE TABLE text_versions (
     source_property_value TEXT NOT NULL DEFAULT '',
     kind                  TEXT NOT NULL,
     file                  TEXT NOT NULL,
-    source_hash           TEXT NOT NULL,
-    hash                  TEXT NOT NULL,
+    input_hash            TEXT NOT NULL,
+    text_hash             TEXT NOT NULL,
     create_time           INTEGER NOT NULL,
     UNIQUE (vault, path, plugin_id, key)
 );

@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
@@ -21,7 +21,7 @@ type SearchMatch struct {
 	Path    string `json:"path" jsonschema:"relative path to the note"`
 	Title   string `json:"title,omitempty" jsonschema:"title of the note"`
 	Snippet string `json:"snippet,omitempty" jsonschema:"matching text snippet or passage"`
-	Line    int    `json:"line,omitempty" jsonschema:"1-based line number of the match in note body"`
+	Line    int    `json:"line,omitempty" jsonschema:"line of the match in the note body, counted from 1 at the first line of the body"`
 	Score   int    `json:"score" jsonschema:"relevance score"`
 }
 
@@ -33,13 +33,15 @@ type NoteSearchOutput struct {
 }
 
 func (t *Tools) addNoteSearch(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
-		Name:        "note_search",
-		Title:       "Search Notes",
-		Description: "Search notes across the vault by title, path, and text content.",
-		Effect:      tools.ReadOnly,
-		Step:        tools.Search,
-		Servers:     []tools.Server{tools.Full, tools.Reading},
+	return addTool(registry, tools.Spec{
+		Name:  "note_search",
+		Title: "Search Notes",
+		Description: "Search the notes of the vault by title, path and text. It does not search books, " +
+			"PDFs, scans or recordings: library_search finds the text of those.",
+		Effect:       tools.ReadOnly,
+		Step:         tools.Search,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{noteLinkSentence, passageLinkSentence, noFileLinkSentence, searchScopeSentence, userWordsSentence},
 	}, inVault(t, (*Tools).searchNotes))
 }
 
@@ -57,7 +59,7 @@ func (t *Tools) searchNotes(ctx context.Context, in NoteSearchInput) (NoteSearch
 
 	noteRefs, err := t.vault.GetNotes(ctx, candidatePaths)
 	if err != nil {
-		return NoteSearchOutput{}, fmt.Errorf("get notes: %w", err)
+		return NoteSearchOutput{}, err
 	}
 	queryLower := strings.ToLower(q)
 	words := strings.Fields(queryLower)
@@ -170,7 +172,7 @@ func (t *Tools) scoreNoteContent(
 	queryLower string,
 	words []string,
 ) (int, string, int) {
-	data, _, err := t.vault.Read(ctx, path)
+	data, fp, err := t.vault.Read(ctx, path)
 	if err != nil {
 		return 0, "", 0
 	}
@@ -188,7 +190,7 @@ func (t *Tools) scoreNoteContent(
 		}
 	}
 
-	snippet, bestLine := findSnippet(content, queryLower, words)
+	snippet, bestLine := findSnippet(markdown.Parse(fp, data).Body, queryLower, words)
 	return score, snippet, bestLine
 }
 

@@ -35,6 +35,8 @@ export interface DisplayOptions {
    * first span is brought into view.
    */
   openFileAt?(path: string, spans: readonly TextRange[]): void
+  /** Activates the open tab with the id, on a request from outside the window. */
+  activateTab?(id: string): void
   /** What draws the page again, once another vault is under this window. */
   reload?(): void
 }
@@ -178,6 +180,7 @@ export function useWindowDisplay(
     reportChange: how.reportChange ?? (() => undefined),
     travelTo: how.travelTo ?? (() => undefined),
     openFileAt: how.openFileAt ?? (() => undefined),
+    activateTab: how.activateTab ?? (() => undefined),
   })
 
   return {

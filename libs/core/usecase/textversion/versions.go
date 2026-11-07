@@ -79,7 +79,7 @@ type VersionPut struct {
 	Source         domain.TextVersionID
 	SourceProperty domain.TextSourceProperty
 	Kind           domain.TextKind
-	SourceHash     string
+	InputHash      string
 	File           string
 }
 
@@ -92,7 +92,7 @@ func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID stri
 	}
 	return u.saveVersion(ctx, v, domain.TextVersion{
 		Path: params.Path, PluginID: pluginID, Key: params.Key, Source: params.Source,
-		SourceProperty: params.SourceProperty, Kind: params.Kind, File: params.File, SourceHash: params.SourceHash,
+		SourceProperty: params.SourceProperty, Kind: params.Kind, File: params.File, InputHash: params.InputHash,
 	})
 }
 
@@ -121,7 +121,7 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	if err != nil {
 		return domain.TextVersion{}, fmt.Errorf("%w: file %s of %s: %w", textport.ErrInvalidVersion, version.File, version.PluginID, err)
 	}
-	version.Hash = file.Hash
+	version.TextHash = file.TextHash
 	version.CreateTime = u.clock.Now()
 	if i := indexOf(versions, version.GetID()); i >= 0 {
 		version.CreateTime = versions[i].CreateTime
@@ -145,7 +145,7 @@ func checkVersionFields(version domain.TextVersion) error {
 // checkVersionSource reports a source that is the version itself or is no version of the path, and
 // a property root given with a source or a source hash.
 func checkVersionSource(version domain.TextVersion, versions []domain.TextVersion) error {
-	if version.IsFromProperty() && (version.Source != "" || version.SourceHash != "") {
+	if version.IsFromProperty() && (version.Source != "" || version.InputHash != "") {
 		return fmt.Errorf("%w: a version made from the property %s of %s has another source",
 			textport.ErrInvalidVersion, version.SourceProperty.Key, version.Path)
 	}
@@ -176,14 +176,14 @@ type Listing struct {
 }
 
 // ListVersions returns the versions of a file and the live one, evaluated for
-// the file content identified by fileHash.
-func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, fileHash string) (Listing, error) {
+// the file content identified by contentHash.
+func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, contentHash string) (Listing, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
 		return Listing{}, err
 	}
 	listing := Listing{Versions: versions}
-	live, ok, err := u.findLive(ctx, v, path, versions, fileHash)
+	live, ok, err := u.findLive(ctx, v, path, versions, contentHash)
 	if err != nil {
 		return Listing{}, err
 	}
@@ -197,7 +197,7 @@ func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, fileH
 // valid chain whose file still has the hash it was recorded with. The note's
 // properties are read only when a version was made from one.
 func (u *Versions) findLive(
-	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion, fileHash string,
+	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion, contentHash string,
 ) (domain.TextVersion, bool, error) {
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
@@ -214,9 +214,9 @@ func (u *Versions) findLive(
 	if err != nil {
 		return domain.TextVersion{}, false, err
 	}
-	live, ok := domain.FindLiveVersion(versions, fileHash, properties, func(version domain.TextVersion) bool {
+	live, ok := domain.FindLiveVersion(versions, contentHash, properties, func(version domain.TextVersion) bool {
 		file, err := files.ReadTextFile(ctx, version.PluginID, version.File)
-		return err == nil && file.Hash == version.Hash
+		return err == nil && file.TextHash == version.TextHash
 	})
 	return live, ok, nil
 }
@@ -278,7 +278,7 @@ func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit
 	}
 	return u.saveVersion(ctx, v, domain.TextVersion{
 		Path: edit.Path, PluginID: edit.PluginID, Key: key, Source: source.GetID(),
-		Kind: source.Kind, File: name, SourceHash: source.Hash,
+		Kind: source.Kind, File: name, InputHash: source.TextHash,
 	})
 }
 

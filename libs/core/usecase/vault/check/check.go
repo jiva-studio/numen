@@ -106,7 +106,7 @@ func (c Checks) getWanted(named []domain.Check) ([]Checker, error) {
 			}
 		}
 		if !found {
-			return nil, fmt.Errorf("there is no %q check; there is %s", name, list(c.Names()))
+			return nil, fmt.Errorf("%q is not a check; the checks are %s", name, list(c.Names()))
 		}
 	}
 	return out, nil

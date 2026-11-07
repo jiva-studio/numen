@@ -158,11 +158,11 @@ func TestAScanStopsAtTheFirstStepThatFails(t *testing.T) {
 		indexed int
 	}{
 		{"the vault cannot be opened", func(m *scanVault) { m.openErr = boom }, "boom", func(m *scanVault) bool { return m.registerCalled }, 0},
-		{"the vault cannot be registered", func(m *scanVault) { m.registerErr = boom }, "register vault: boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
-		{"the index cannot be read", func(m *scanVault) { m.knownErr = boom }, "read index: boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
+		{"the vault cannot be registered", func(m *scanVault) { m.registerErr = boom }, "the index cannot record the vault named: boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
+		{"the index cannot be read", func(m *scanVault) { m.knownErr = boom }, "the index of named cannot be read: boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
 		{"the walk fails", func(m *scanVault) { m.walkErr = boom }, "boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
-		{"the vault cannot be told which notes are gone", func(m *scanVault) { m.removeErr = boom }, "remove deleted notes: boom", func(m *scanVault) bool { return m.reports > 0 }, 1},
-		{"the index upkeep fails", func(m *scanVault) { m.reportErr = boom }, "index upkeep for named: boom", func(*scanVault) bool { return false }, 1},
+		{"the vault cannot be told which notes are gone", func(m *scanVault) { m.removeErr = boom }, "the deleted notes of named cannot be removed from the index: boom", func(m *scanVault) bool { return m.reports > 0 }, 1},
+		{"the index upkeep fails", func(m *scanVault) { m.reportErr = boom }, "the index upkeep of named failed: boom", func(*scanVault) bool { return false }, 1},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -216,7 +216,7 @@ func TestAFailedWriteNamesTheFirstAndLastNoteOfTheGroup(t *testing.T) {
 	}
 
 	_, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "named"})
-	if err == nil || !strings.Contains(err.Error(), "index 3 notes of named, a.md to c.md: disk full") {
+	if err == nil || !strings.Contains(err.Error(), "3 notes of named, a.md to c.md, cannot be indexed: disk full") {
 		t.Errorf("error = %v, want the group named by its first and last note", err)
 	}
 }

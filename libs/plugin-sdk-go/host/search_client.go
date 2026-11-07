@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"connectrpc.com/connect"
 
@@ -15,7 +16,7 @@ import (
 // SearchClient works the search index and the search floor through HostSearchService.
 type SearchClient struct {
 	rpc numenv1connect.HostSearchServiceClient
-	// vault is the identity of the vault the client works. Empty is the vault the window shows.
+	// vault is the identity of the vault the client calls. An empty vault ID means the vault the window shows.
 	vault string
 }
 
@@ -186,6 +187,31 @@ func (c *SearchClient) SampleSimilarities(ctx context.Context, recipe string, qu
 		SourceCount:  int(res.Msg.GetSourceCount()),
 		Rows:         rows,
 	}, nil
+}
+
+func (c *SearchClient) SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error) {
+	kinds := make([]string, len(query.Kinds))
+	for i, kind := range query.Kinds {
+		kinds[i] = string(kind)
+	}
+	res, err := c.rpc.SearchPassages(ctx, newSearchRequest(c, &v1.HostSearchServiceSearchPassagesRequest{
+		Query: query.Query, Limit: int32(min(max(query.Limit, math.MinInt32), math.MaxInt32)), Kinds: kinds, PathPrefix: query.PathPrefix,
+	}))
+	if err != nil {
+		return nil, readSearchCallError(err)
+	}
+	if err := readSearchError(res.Msg.GetError()); err != nil {
+		return nil, err
+	}
+	found := make([]Passage, len(res.Msg.GetPassages()))
+	for i, one := range res.Msg.GetPassages() {
+		start, end := int(one.GetRange().GetStart()), int(one.GetRange().GetEnd())
+		found[i] = Passage{
+			Path: one.GetPath(), Text: one.GetText(), Location: one.GetLocation(),
+			Start: start, Length: end - start, Line: int(one.GetLine()), Selector: one.GetSelector(),
+		}
+	}
+	return found, nil
 }
 
 func (c *SearchClient) GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error) {

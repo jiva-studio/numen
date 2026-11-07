@@ -101,19 +101,74 @@ func TestAWriteTheNoteChangedBelowIsRefusedForEveryLinkOfIt(t *testing.T) {
 	}
 }
 
-func TestACancelledCallWritesNothing(t *testing.T) {
+func TestACallCancelledBeforeTheFirstWriteReturnsNotAttemptedAndWritesNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	_, err := note.NewAddLinks(c.newEditLinks()).Execute(ctx, c.vault, []note.LinkAddition{
+	added, err := note.NewAddLinks(c.newEditLinks()).Execute(ctx, c.vault, []note.LinkAddition{
 		{From: "Heat.md", Link: toName("Entropy", domain.RoleRef)},
 	})
-	if !errors.Is(err, context.Canceled) {
-		t.Errorf("want the cancellation, got %v", err)
+	if err != nil {
+		t.Fatalf("Execute returned %v, want the results and no error", err)
+	}
+	if len(added) != 1 || !errors.Is(added[0].Error, note.ErrNotAttempted) {
+		t.Fatalf("Execute returned %+v, want one result with ErrNotAttempted", added)
 	}
 	if body := c.read(t, "Heat.md"); body != "# Heat\n" {
 		t.Errorf("the note was written anyway:\n%s", body)
+	}
+}
+
+func TestACallCancelledAfterTheFirstNoteReturnsItsResultAndNotAttemptedForTheRest(t *testing.T) {
+	t.Parallel()
+	c := openChanging(t, map[string]string{
+		"Heat.md": "# Heat\n", "Work.md": "# Work\n", "Order.md": "# Order\n",
+	})
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	cancelling := c
+	cancelling.index = func(ctx context.Context, v domain.Vault, paths []string) error {
+		err := c.index(ctx, v, paths)
+		cancel()
+		return err
+	}
+
+	added, err := note.NewAddLinks(cancelling.newEditLinks()).Execute(ctx, c.vault, []note.LinkAddition{
+		{From: "Heat.md", Link: toName("Entropy", domain.RoleRef)},
+		{From: "Work.md", Link: toName("Entropy", domain.RoleRef)},
+		{From: "Order.md", Link: toName("Entropy", domain.RoleRef)},
+	})
+	if err != nil {
+		t.Fatalf("Execute returned %v, want the results and no error", err)
+	}
+	if len(added) != 3 {
+		t.Fatalf("Execute returned %d results, want 3", len(added))
+	}
+	heat := c.read(t, "Heat.md")
+	if added[0].Error != nil || added[0].FileStat.Size != int64(len(heat)) {
+		t.Errorf("result 0 = %+v, want nil error and the file stat of the written note (size %d)", added[0], len(heat))
+	}
+	if !strings.Contains(heat, "Entropy") {
+		t.Errorf("the first note was not written:\n%s", heat)
+	}
+	for i, path := range map[int]string{1: "Work.md", 2: "Order.md"} {
+		if !errors.Is(added[i].Error, note.ErrNotAttempted) {
+			t.Errorf("result %d error = %v, want ErrNotAttempted", i, added[i].Error)
+			continue
+		}
+		if !strings.Contains(added[i].Error.Error(), path) {
+			t.Errorf("result %d error = %q, want it to name %s", i, added[i].Error, path)
+		}
+		if added[i].FileStat != (domain.FileStat{}) {
+			t.Errorf("result %d carries the file stat %+v, want none", i, added[i].FileStat)
+		}
+	}
+	if body := c.read(t, "Work.md"); body != "# Work\n" {
+		t.Errorf("Work.md was written after the cancellation:\n%s", body)
+	}
+	if body := c.read(t, "Order.md"); body != "# Order\n" {
+		t.Errorf("Order.md was written after the cancellation:\n%s", body)
 	}
 }

@@ -21,10 +21,10 @@ var (
 
 // TextPut is what a plugin reports of one of its text versions. The plugin writes the version's
 // file into its folder first, with WriteText; File is that file's name. A version has one root:
-// Source names the version the text was made from, and SourceHash is that version's Hash;
-// SourceProperty names a property of the note, with no Source and no SourceHash, and the version is
+// Source names the version the text was made from, and InputHash is that version's TextHash;
+// SourceProperty names a property of the note, with no Source and no InputHash, and the version is
 // live while the note holds the property's key as that string; with neither, the text is made from
-// the file, and SourceHash is HashContent of the file. Kind is what the text is, as the plugin names
+// the file, and InputHash is HashContent of the file. Kind is what the text is, as the plugin names
 // it. The host records the hash of the file.
 type TextPut struct {
 	Path           string
@@ -32,7 +32,7 @@ type TextPut struct {
 	Source         domain.TextVersionID
 	SourceProperty domain.TextSourceProperty
 	Kind           domain.TextKind
-	SourceHash     string
+	InputHash      string
 	File           string
 }
 
@@ -40,6 +40,14 @@ type TextPut struct {
 type TextListing struct {
 	Versions []domain.TextVersion
 	Live     domain.TextVersionID
+}
+
+// TextRange is a ranged read of a version: the segments that cover the range, each truncated to it, where
+// the first begins in the whole text, and the bytes of the whole text.
+type TextRange struct {
+	Segments []domain.TextSegment
+	Start    int
+	Size     int
 }
 
 // TextPage is one page of a version's segments. An empty NextCursor is the last page.
@@ -62,9 +70,17 @@ type Texts interface {
 	RemoveVersion(ctx context.Context, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.
 	ListVersions(ctx context.Context, path string) (TextListing, error)
+	textReader
+}
+
+// textReader reads the segments of the text versions of the vault.
+type textReader interface {
 	// ReadText is one page of any version's segments, read by the host from the version's file, or
 	// ErrNotExist.
 	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (TextPage, error)
+	// ReadTextRange returns the segments of a version that cover length bytes of its whole text from start,
+	// truncated at whole characters. A length of zero reads to the end.
+	ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (TextRange, error)
 }
 
 // errRepeatedCursor is a text that returned a page with the cursor it was requested with.

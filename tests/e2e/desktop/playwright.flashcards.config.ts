@@ -31,9 +31,17 @@ export default defineConfig({
     ignoreHTTPSErrors: true,
     reuseExistingServer: false,
     timeout: 30_000,
+    // Without a signal Playwright kills the script at once, and the certificate and the vault of
+    // the run stay in the temporary folder. SIGTERM reaches the script and the server.
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 } },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
+      // The certificate spec checks how Chromium is launched.
+      testIgnore: '**/*.chromium.spec.ts',
+    },
   ],
 })

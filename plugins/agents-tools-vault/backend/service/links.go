@@ -21,7 +21,7 @@ type ResolvedLinkItem struct {
 	Address     string `json:"address" jsonschema:"target link address as written"`
 	Role        string `json:"role,omitempty" jsonschema:"link role (e.g. parent, child, jump, ref)"`
 	Label       string `json:"label,omitempty" jsonschema:"link label"`
-	IsAmbiguous bool   `json:"is_ambiguous,omitempty" jsonschema:"true if link target matches multiple notes"`
+	IsAmbiguous bool   `json:"isAmbiguous,omitempty" jsonschema:"true if link target matches multiple notes"`
 }
 
 // LinkListOutput is the output of the link_list tool.
@@ -32,7 +32,7 @@ type LinkListOutput struct {
 }
 
 func (t *Tools) addLinkList(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
 		Name:        "link_list",
 		Title:       "List Links",
@@ -44,7 +44,7 @@ func (t *Tools) addLinkList(registry *tools.Registry) error {
 
 func (t *Tools) listLinks(ctx context.Context, in LinkListInput) (LinkListOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return LinkListOutput{}, errors.New("path required")
+		return LinkListOutput{}, errors.New("path is required")
 	}
 	path := t.resolveNotePath(ctx, in.Path)
 

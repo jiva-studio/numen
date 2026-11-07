@@ -38,15 +38,15 @@ func Statements() map[string]string { return sqlfile.Load(files, "sql").All() }
 // callers convert this error into an empty result.
 var errNoVault = errors.New("vault not in the index")
 
-// Source is a file the index has read, and what reading it produced. `Hash`,
+// Source is a file the index has read, and what reading it produced. `ContentHash`,
 // `Recipe` and `Producer` are empty until something computes them.
 type Source struct {
-	Path   string
-	Kind   string
-	Size   int64
-	MTime  int64
-	Hash   string
-	Recipe string
+	Path        string
+	Kind        string
+	Size        int64
+	MTime       int64
+	ContentHash string
+	Recipe      string
 
 	// Producer is what made the text this source's chunks are places in. Empty
 	// where the source's own bytes are the text.
@@ -123,7 +123,7 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s S
 		}
 		var row int64
 		if err := tx.QueryRowContext(ctx, getStatement("save_source"),
-			vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.Hash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&row); err != nil {
+			vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.ContentHash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&row); err != nil {
 			return fmt.Errorf("record the source %s: %w", s.Path, err)
 		}
 		return nil
@@ -143,7 +143,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID,
 		}
 		var source int64
 		if err := tx.QueryRowContext(ctx, getStatement("save_source"),
-			vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.Hash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&source); err != nil {
+			vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.ContentHash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&source); err != nil {
 			return fmt.Errorf("record the source %s: %w", s.Path, err)
 		}
 		if err := Replace(ctx, tx, source, vault, chunks); err != nil {

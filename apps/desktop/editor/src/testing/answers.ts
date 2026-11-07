@@ -148,13 +148,14 @@ export async function* pendingStream(): AsyncGenerator<never> {
  * window receives them on.
  */
 export const outside = (() => {
-  const queue: { path: string; ranges: { start: number; end: number }[] }[] = []
+  const queue: { path: string; ranges: { start: number; end: number }[]; tabId: string }[] = []
   let wake: (() => void) | null = null
   return {
     ask: (target: { path: string; start: number; length: number }) => {
       queue.push({
         path: target.path,
         ranges: [{ start: target.start, end: target.start + target.length }],
+        tabId: '',
       })
       wake?.()
       wake = null

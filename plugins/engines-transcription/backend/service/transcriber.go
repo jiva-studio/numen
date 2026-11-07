@@ -28,6 +28,13 @@ type Files interface {
 	ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error)
 }
 
+// activeVaultProvider is implemented by Files that can return the vault the host shows. A recording
+// requested with an empty vault ID is then claimed under the id of that vault, the id a tool call
+// names.
+type activeVaultProvider interface {
+	GetActiveVaultID(ctx context.Context) (domain.VaultID, error)
+}
+
 // Engines opens the model that transcribes a recording. The model is opened once and reused.
 type Engines func(ctx context.Context) (engine.TranscriberPort, error)
 
@@ -44,8 +51,9 @@ type Transcriber struct {
 	closeOnce sync.Once
 	wg        sync.WaitGroup
 
-	mu      sync.Mutex
-	running map[string]bool
+	mu       sync.Mutex
+	isClosed bool
+	running  map[string]bool
 }
 
 // NewTranscriber is the transcriber over what the host gives the plugin.
@@ -53,12 +61,16 @@ func NewTranscriber(files Files, stores host.Store, texts host.Texts, queue host
 	return &Transcriber{
 		files: files, stores: stores, texts: texts, queue: queue, engines: engines,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
-		mu: sync.Mutex{}, running: map[string]bool{},
+		mu: sync.Mutex{}, isClosed: false, running: map[string]bool{},
 	}
 }
 
-// Close stops every transcription and waits for them.
+// Close stops every transcription and waits for them. A transcription requested after Close is not
+// started.
 func (t *Transcriber) Close() {
+	t.mu.Lock()
+	t.isClosed = true
+	t.mu.Unlock()
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing channel cancels in-flight transcriptions"
 	t.closeOnce.Do(func() { close(t.closing) })
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Wait synchronizes shutdown with active goroutines"
@@ -78,22 +90,78 @@ func (t *Transcriber) withClosing(ctx context.Context) (context.Context, context
 	return runCtx, cancel
 }
 
-// getTaskID is what the transcription of one recording is called in the list of tasks.
+// getTaskID returns the id of the transcription of one recording in the list of tasks.
 func getTaskID(path string) string { return "transcription:" + path }
 
-// errAlreadyTranscribing is a recording another run is transcribing.
-var errAlreadyTranscribing = errors.New("the recording is already being transcribed")
+var (
+	// errAlreadyTranscribing is returned for a recording another run is transcribing.
+	errAlreadyTranscribing = errors.New("the recording is already being transcribed")
+	// errClosed is returned for a transcription requested after Close.
+	errClosed = errors.New("the transcriber is closed")
+)
+
+// readRecording returns the bytes of the recording a run transcribes.
+type readRecording func(ctx context.Context) ([]byte, error)
 
 // Transcribe transcribes a recording and returns once its transcript is written, with the error the
 // transcription stopped on. It ends when ctx ends or the plugin stops.
 func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path string) error {
-	key, isClaimed := t.claim(vault, path)
-	if !isClaimed {
-		return fmt.Errorf("%s: %w", path, errAlreadyTranscribing)
+	key, err := t.claimOrFail(ctx, vault, path)
+	if err != nil {
+		return err
 	}
+	return t.runTranscription(ctx, key, vault, path, func(ctx context.Context) ([]byte, error) {
+		return t.files.ReadFile(ctx, vault, path)
+	})
+}
+
+// Start claims the recording and transcribes it in the background, and returns false when a run
+// already has it. The recording is read in the background as well, and a failed read fails the
+// task. Close cancels the transcription and waits for it.
+func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path string) (bool, error) {
+	claimed, err := t.getClaimVault(ctx, vault)
+	if err != nil {
+		return false, err
+	}
+	key, isClaimed := t.claim(claimed, path)
+	if !isClaimed {
+		if t.isClosing() {
+			return false, errClosed
+		}
+		return false, nil
+	}
+	go func() {
+		// Run reports a failure as the task's error.
+		// gomutants:disable-next-line BRANCH_IF,CONDITIONALS_NEGATION reason="best-effort stderr diagnostic log does not affect transcription control flow"
+		if err := t.runTranscription(context.WithoutCancel(ctx), key, vault, path, func(ctx context.Context) ([]byte, error) {
+			return t.files.ReadFile(ctx, vault, path)
+		}); err != nil && !errors.Is(err, context.Canceled) {
+			fmt.Fprintf(os.Stderr, "engines-transcription: transcribe %s: %v\n", path, err)
+		}
+	}()
+	return true, nil
+}
+
+// claimOrFail claims the recording, or returns the error that states why it cannot be claimed.
+func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, path string) (string, error) {
+	claimed, err := t.getClaimVault(ctx, vault)
+	if err != nil {
+		return "", err
+	}
+	key, isClaimed := t.claim(claimed, path)
+	switch {
+	case isClaimed:
+		return key, nil
+	case t.isClosing():
+		return "", fmt.Errorf("%s: %w", path, errClosed)
+	default:
+		return "", fmt.Errorf("%s: %w", path, errAlreadyTranscribing)
+	}
+}
+
+// runTranscription transcribes a claimed recording, reported as a task, and releases the claim.
+func (t *Transcriber) runTranscription(ctx context.Context, key string, vault domain.VaultID, path string, read readRecording) error {
 	defer t.clearRunning(key)
-	t.wg.Add(1)
-	defer t.wg.Done()
 	ctx, cancel := t.withClosing(ctx)
 	defer cancel()
 
@@ -104,31 +172,88 @@ func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path
 	}); err != nil {
 		return err
 	}
-	return t.transcribe(ctx, vault, path)
+	return t.transcribe(ctx, vault, path, read)
 }
 
-// claim marks the recording as being transcribed, and is false where a run already has it.
+// claim marks the recording as being transcribed and counts the run for Close, and returns false
+// when a run already has it or the transcriber is closed. clearRunning releases the claim.
 func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
-	key := string(vault) + "\x00" + path
+	key := getRunKey(vault, path)
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if t.running[key] {
+	if t.isClosed || t.running[key] {
 		return key, false
 	}
 	t.running[key] = true
+	t.wg.Add(1)
 	return key, true
+}
+
+// getRunKey returns the key a run claims the recording of a vault with.
+func getRunKey(vault domain.VaultID, path string) string { return string(vault) + "\x00" + path }
+
+// isRunning reports whether a run has claimed the recording of the vault.
+func (t *Transcriber) isRunning(vault domain.VaultID, path string) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.running[getRunKey(vault, path)]
+}
+
+// findLiveVersionOfWholeTranscript returns the live version of the recording of the vault when its
+// source chain contains the plugin's whole transcript: the transcript itself, or a version made from
+// it. A chain through a partial transcript only is not returned: a run resumes it. The host keeps
+// live only a version whose chain matches the recording as it is now.
+func (t *Transcriber) findLiveVersionOfWholeTranscript(ctx context.Context, vault domain.VaultID, path string) (domain.TextVersion, bool, error) {
+	listing, err := t.texts.With(vault).ListVersions(ctx, path)
+	if err != nil {
+		return domain.TextVersion{}, false, err
+	}
+	byID := make(map[domain.TextVersionID]domain.TextVersion, len(listing.Versions))
+	for _, version := range listing.Versions {
+		byID[version.GetID()] = version
+	}
+	live, isLive := byID[listing.Live]
+	seenIDs := map[domain.TextVersionID]bool{}
+	for version, isFound := live, isLive; isFound && !seenIDs[version.GetID()]; version, isFound = byID[version.Source] {
+		if version.PluginID == PluginID && isWholeFile(version) {
+			return live, true, nil
+		}
+		seenIDs[version.GetID()] = true
+	}
+	return domain.TextVersion{}, false, nil
+}
+
+// getClaimVault returns the vault a run claims the recording in. An empty vault ID means the vault
+// the host shows, returned by its id when the files can return it.
+func (t *Transcriber) getClaimVault(ctx context.Context, vault domain.VaultID) (domain.VaultID, error) {
+	resolver, isResolver := t.files.(activeVaultProvider)
+	if vault != "" || !isResolver {
+		return vault, nil
+	}
+	shown, err := resolver.GetActiveVaultID(ctx)
+	if err != nil {
+		return "", fmt.Errorf("get the shown vault: %w", err)
+	}
+	return shown, nil
 }
 
 func (t *Transcriber) clearRunning(key string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	delete(t.running, key)
+	t.wg.Done()
+}
+
+func (t *Transcriber) isClosing() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.isClosed
 }
 
 // transcribe is one recording heard and reported. A failure stays in the list of tasks under the
 // recording until the next run of it.
-func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string) error {
-	err := t.run(ctx, vault, path)
+func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string, read readRecording) error {
+	err := t.run(ctx, vault, path, read)
 	switch {
 	case err == nil, errors.Is(err, context.Canceled):
 		t.finishTask(ctx, path)
@@ -153,8 +278,8 @@ type job struct {
 	turn     host.Turn
 }
 
-func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string) (err error) {
-	raw, err := t.files.ReadFile(ctx, vault, path)
+func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string, read readRecording) (err error) {
+	raw, err := read(ctx)
 	if err != nil {
 		return fmt.Errorf("read %s: %w", path, err)
 	}
@@ -211,14 +336,14 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 }
 
 // putWholeVersion puts the version of a transcript a run before this one finished, where the host
-// has no record of it.
+// has no record of it or records it on the partial file.
 func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
 	listing, err := j.texts.ListVersions(ctx, j.path)
 	if err != nil {
 		return err
 	}
 	for _, version := range listing.Versions {
-		if version.Key == j.key && version.PluginID == PluginID {
+		if version.Key == j.key && version.PluginID == PluginID && isWholeFile(version) {
 			return nil
 		}
 	}
@@ -228,7 +353,7 @@ func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
 // putVersion records the transcript in the file of the plugin's folder named.
 func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error {
 	_, err := j.texts.PutVersion(ctx, host.TextPut{
-		Path: j.path, Key: j.key, Source: "", Kind: textKind, SourceHash: j.fileHash, File: file,
+		Path: j.path, Key: j.key, Source: "", Kind: textKind, InputHash: j.fileHash, File: file,
 	})
 	return err
 }

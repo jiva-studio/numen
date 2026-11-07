@@ -8,8 +8,8 @@ export const VAULT_ERRORS: Record<VaultErrorCode, string> = {
   overlaps: 'folder is inside a vault already added, or contains one',
   nameTaken: 'a vault with this name exists',
   lastVault: 'the only vault cannot be removed',
-  showing: 'the open vault cannot be removed',
-  unknown: 'vault not in the list',
+  current: 'the open vault cannot be removed',
+  notFound: 'vault not in the list',
   noTrash: 'no trash on this system',
-  asking: 'a tab has an unresolved file conflict',
+  unsaved: 'a tab has an unresolved file conflict',
 }

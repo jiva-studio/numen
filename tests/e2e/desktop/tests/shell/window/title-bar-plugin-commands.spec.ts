@@ -160,8 +160,8 @@ test.describe('Plugin buttons in the title bar', () => {
   }) => {
     await openWorkspace(page)
 
-    const ids = await listButtonIds(page)
-    expect(ids.at(-1)).toBe(SETTINGS_BUTTON)
+    // The bar draws its buttons after the plex.
+    await expect.poll(async () => (await listButtonIds(page)).at(-1)).toBe(SETTINGS_BUTTON)
     await expect(getTab(page, 'Settings')).toHaveCount(0)
 
     await getButton(page, SETTINGS_BUTTON).click()

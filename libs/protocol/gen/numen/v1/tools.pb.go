@@ -274,8 +274,10 @@ func (*ListToolsRequest) Descriptor() ([]byte, []int) {
 }
 
 type ListToolsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tools         []*PluginTool          `protobuf:"bytes,1,rep,name=tools,proto3" json:"tools,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The host returns the tools of the plugins it lists grouped by plugin, in
+	// the order of plugin ids.
+	Tools         []*PluginTool `protobuf:"bytes,1,rep,name=tools,proto3" json:"tools,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -335,8 +337,20 @@ type PluginTool struct {
 	// hold and whether the tool is offered where nothing may be changed.
 	Effect ToolEffect `protobuf:"varint,6,opt,name=effect,proto3,enum=numen.v1.ToolEffect" json:"effect,omitempty"`
 	// The agent servers the tool is offered on. None is the full server alone.
-	Servers       []ToolServer `protobuf:"varint,7,rep,packed,name=servers,proto3,enum=numen.v1.ToolServer" json:"servers,omitempty"`
-	Step          ToolStep     `protobuf:"varint,8,opt,name=step,proto3,enum=numen.v1.ToolStep" json:"step,omitempty"`
+	Servers []ToolServer `protobuf:"varint,7,rep,packed,name=servers,proto3,enum=numen.v1.ToolServer" json:"servers,omitempty"`
+	Step    ToolStep     `protobuf:"varint,8,opt,name=step,proto3,enum=numen.v1.ToolStep" json:"step,omitempty"`
+	// The instructions about this tool, each one sentence of plain English. A
+	// sentence about several tools is attached to each of them with identical
+	// text. An agent server sends an agent the distinct sentences of the tools it
+	// offers, in listing order.
+	Instructions []string `protobuf:"bytes,9,rep,name=instructions,proto3" json:"instructions,omitempty"`
+	// The permissions the caller must have besides the one of the effect, such
+	// as vault:manage. The host lists and runs the tool only for a caller that
+	// has all of them.
+	Requires []string `protobuf:"bytes,10,rep,name=requires,proto3" json:"requires,omitempty"`
+	// The hints an agent reads about the tool, set by the SDK from the effect,
+	// the step and the required permissions.
+	Hints         *ToolHints `protobuf:"bytes,11,opt,name=hints,proto3" json:"hints,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -427,6 +441,100 @@ func (x *PluginTool) GetStep() ToolStep {
 	return ToolStep_TOOL_STEP_UNSPECIFIED
 }
 
+func (x *PluginTool) GetInstructions() []string {
+	if x != nil {
+		return x.Instructions
+	}
+	return nil
+}
+
+func (x *PluginTool) GetRequires() []string {
+	if x != nil {
+		return x.Requires
+	}
+	return nil
+}
+
+func (x *PluginTool) GetHints() *ToolHints {
+	if x != nil {
+		return x.Hints
+	}
+	return nil
+}
+
+// ToolHints are the MCP annotations of a tool.
+type ToolHints struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The tool changes nothing: the effect is READ_ONLY.
+	ReadOnly bool `protobuf:"varint,1,opt,name=read_only,json=readOnly,proto3" json:"read_only,omitempty"`
+	// The tool removes something: the effect is READ_WRITE and the step REMOVE.
+	Destructive bool `protobuf:"varint,2,opt,name=destructive,proto3" json:"destructive,omitempty"`
+	// A repeated call with the same arguments has no further effect: the effect is READ_ONLY.
+	Idempotent bool `protobuf:"varint,3,opt,name=idempotent,proto3" json:"idempotent,omitempty"`
+	// The tool reaches outside the machine: requires contains network:outbound.
+	OpenWorld     bool `protobuf:"varint,4,opt,name=open_world,json=openWorld,proto3" json:"open_world,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToolHints) Reset() {
+	*x = ToolHints{}
+	mi := &file_numen_v1_tools_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToolHints) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToolHints) ProtoMessage() {}
+
+func (x *ToolHints) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_tools_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToolHints.ProtoReflect.Descriptor instead.
+func (*ToolHints) Descriptor() ([]byte, []int) {
+	return file_numen_v1_tools_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ToolHints) GetReadOnly() bool {
+	if x != nil {
+		return x.ReadOnly
+	}
+	return false
+}
+
+func (x *ToolHints) GetDestructive() bool {
+	if x != nil {
+		return x.Destructive
+	}
+	return false
+}
+
+func (x *ToolHints) GetIdempotent() bool {
+	if x != nil {
+		return x.Idempotent
+	}
+	return false
+}
+
+func (x *ToolHints) GetOpenWorld() bool {
+	if x != nil {
+		return x.OpenWorld
+	}
+	return false
+}
+
 type CallToolRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The name the plugin listed the tool under.
@@ -449,7 +557,7 @@ type CallToolRequest struct {
 
 func (x *CallToolRequest) Reset() {
 	*x = CallToolRequest{}
-	mi := &file_numen_v1_tools_proto_msgTypes[3]
+	mi := &file_numen_v1_tools_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -461,7 +569,7 @@ func (x *CallToolRequest) String() string {
 func (*CallToolRequest) ProtoMessage() {}
 
 func (x *CallToolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_tools_proto_msgTypes[3]
+	mi := &file_numen_v1_tools_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -474,7 +582,7 @@ func (x *CallToolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallToolRequest.ProtoReflect.Descriptor instead.
 func (*CallToolRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_tools_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CallToolRequest) GetName() string {
@@ -518,7 +626,7 @@ type CallToolResponse struct {
 
 func (x *CallToolResponse) Reset() {
 	*x = CallToolResponse{}
-	mi := &file_numen_v1_tools_proto_msgTypes[4]
+	mi := &file_numen_v1_tools_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -530,7 +638,7 @@ func (x *CallToolResponse) String() string {
 func (*CallToolResponse) ProtoMessage() {}
 
 func (x *CallToolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_tools_proto_msgTypes[4]
+	mi := &file_numen_v1_tools_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -543,7 +651,7 @@ func (x *CallToolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallToolResponse.ProtoReflect.Descriptor instead.
 func (*CallToolResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_tools_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CallToolResponse) GetError() ToolErrorCode {
@@ -567,15 +675,17 @@ type ToolResult struct {
 	Text string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	// The structured result as JSON, meeting the output schema. Empty where the
 	// tool listed none.
-	Structured    []byte `protobuf:"bytes,2,opt,name=structured,proto3" json:"structured,omitempty"`
-	IsRefusal     bool   `protobuf:"varint,3,opt,name=is_refusal,json=isRefusal,proto3" json:"is_refusal,omitempty"`
+	Structured []byte `protobuf:"bytes,2,opt,name=structured,proto3" json:"structured,omitempty"`
+	// Set when the tool ran and returned an error; text then contains the
+	// error message.
+	IsError       bool `protobuf:"varint,3,opt,name=is_error,json=isError,proto3" json:"is_error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ToolResult) Reset() {
 	*x = ToolResult{}
-	mi := &file_numen_v1_tools_proto_msgTypes[5]
+	mi := &file_numen_v1_tools_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -587,7 +697,7 @@ func (x *ToolResult) String() string {
 func (*ToolResult) ProtoMessage() {}
 
 func (x *ToolResult) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_tools_proto_msgTypes[5]
+	mi := &file_numen_v1_tools_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -600,7 +710,7 @@ func (x *ToolResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolResult.ProtoReflect.Descriptor instead.
 func (*ToolResult) Descriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_tools_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ToolResult) GetText() string {
@@ -617,9 +727,9 @@ func (x *ToolResult) GetStructured() []byte {
 	return nil
 }
 
-func (x *ToolResult) GetIsRefusal() bool {
+func (x *ToolResult) GetIsError() bool {
 	if x != nil {
-		return x.IsRefusal
+		return x.IsError
 	}
 	return false
 }
@@ -631,7 +741,7 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\x14numen/v1/tools.proto\x12\bnumen.v1\"\x12\n" +
 	"\x10ListToolsRequest\"?\n" +
 	"\x11ListToolsResponse\x12*\n" +
-	"\x05tools\x18\x01 \x03(\v2\x14.numen.v1.PluginToolR\x05tools\"\xa6\x02\n" +
+	"\x05tools\x18\x01 \x03(\v2\x14.numen.v1.PluginToolR\x05tools\"\x91\x03\n" +
 	"\n" +
 	"PluginTool\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
@@ -641,7 +751,19 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\routput_schema\x18\x05 \x01(\fR\foutputSchema\x12,\n" +
 	"\x06effect\x18\x06 \x01(\x0e2\x14.numen.v1.ToolEffectR\x06effect\x12.\n" +
 	"\aservers\x18\a \x03(\x0e2\x14.numen.v1.ToolServerR\aservers\x12&\n" +
-	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\"\xdc\x01\n" +
+	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\x12\"\n" +
+	"\finstructions\x18\t \x03(\tR\finstructions\x12\x1a\n" +
+	"\brequires\x18\n" +
+	" \x03(\tR\brequires\x12)\n" +
+	"\x05hints\x18\v \x01(\v2\x13.numen.v1.ToolHintsR\x05hints\"\x89\x01\n" +
+	"\tToolHints\x12\x1b\n" +
+	"\tread_only\x18\x01 \x01(\bR\breadOnly\x12 \n" +
+	"\vdestructive\x18\x02 \x01(\bR\vdestructive\x12\x1e\n" +
+	"\n" +
+	"idempotent\x18\x03 \x01(\bR\n" +
+	"idempotent\x12\x1d\n" +
+	"\n" +
+	"open_world\x18\x04 \x01(\bR\topenWorld\"\xdc\x01\n" +
 	"\x0fCallToolRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
 	"\targuments\x18\x02 \x01(\fR\targuments\x12@\n" +
@@ -652,15 +774,14 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"o\n" +
 	"\x10CallToolResponse\x12-\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.ToolErrorCodeR\x05error\x12,\n" +
-	"\x06result\x18\x02 \x01(\v2\x14.numen.v1.ToolResultR\x06result\"_\n" +
+	"\x06result\x18\x02 \x01(\v2\x14.numen.v1.ToolResultR\x06result\"[\n" +
 	"\n" +
 	"ToolResult\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x1e\n" +
 	"\n" +
 	"structured\x18\x02 \x01(\fR\n" +
-	"structured\x12\x1d\n" +
-	"\n" +
-	"is_refusal\x18\x03 \x01(\bR\tisRefusal*`\n" +
+	"structured\x12\x19\n" +
+	"\bis_error\x18\x03 \x01(\bR\aisError*`\n" +
 	"\n" +
 	"ToolEffect\x12\x1b\n" +
 	"\x17TOOL_EFFECT_UNSPECIFIED\x10\x00\x12\x19\n" +
@@ -697,7 +818,7 @@ func file_numen_v1_tools_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_tools_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_numen_v1_tools_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_numen_v1_tools_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_v1_tools_proto_goTypes = []any{
 	(ToolEffect)(0),           // 0: numen.v1.ToolEffect
 	(ToolStep)(0),             // 1: numen.v1.ToolStep
@@ -706,28 +827,30 @@ var file_numen_v1_tools_proto_goTypes = []any{
 	(*ListToolsRequest)(nil),  // 4: numen.v1.ListToolsRequest
 	(*ListToolsResponse)(nil), // 5: numen.v1.ListToolsResponse
 	(*PluginTool)(nil),        // 6: numen.v1.PluginTool
-	(*CallToolRequest)(nil),   // 7: numen.v1.CallToolRequest
-	(*CallToolResponse)(nil),  // 8: numen.v1.CallToolResponse
-	(*ToolResult)(nil),        // 9: numen.v1.ToolResult
-	nil,                       // 10: numen.v1.CallToolRequest.ContextEntry
+	(*ToolHints)(nil),         // 7: numen.v1.ToolHints
+	(*CallToolRequest)(nil),   // 8: numen.v1.CallToolRequest
+	(*CallToolResponse)(nil),  // 9: numen.v1.CallToolResponse
+	(*ToolResult)(nil),        // 10: numen.v1.ToolResult
+	nil,                       // 11: numen.v1.CallToolRequest.ContextEntry
 }
 var file_numen_v1_tools_proto_depIdxs = []int32{
 	6,  // 0: numen.v1.ListToolsResponse.tools:type_name -> numen.v1.PluginTool
 	0,  // 1: numen.v1.PluginTool.effect:type_name -> numen.v1.ToolEffect
 	2,  // 2: numen.v1.PluginTool.servers:type_name -> numen.v1.ToolServer
 	1,  // 3: numen.v1.PluginTool.step:type_name -> numen.v1.ToolStep
-	10, // 4: numen.v1.CallToolRequest.context:type_name -> numen.v1.CallToolRequest.ContextEntry
-	3,  // 5: numen.v1.CallToolResponse.error:type_name -> numen.v1.ToolErrorCode
-	9,  // 6: numen.v1.CallToolResponse.result:type_name -> numen.v1.ToolResult
-	4,  // 7: numen.v1.PluginToolService.ListTools:input_type -> numen.v1.ListToolsRequest
-	7,  // 8: numen.v1.PluginToolService.CallTool:input_type -> numen.v1.CallToolRequest
-	5,  // 9: numen.v1.PluginToolService.ListTools:output_type -> numen.v1.ListToolsResponse
-	8,  // 10: numen.v1.PluginToolService.CallTool:output_type -> numen.v1.CallToolResponse
-	9,  // [9:11] is the sub-list for method output_type
-	7,  // [7:9] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	7,  // 4: numen.v1.PluginTool.hints:type_name -> numen.v1.ToolHints
+	11, // 5: numen.v1.CallToolRequest.context:type_name -> numen.v1.CallToolRequest.ContextEntry
+	3,  // 6: numen.v1.CallToolResponse.error:type_name -> numen.v1.ToolErrorCode
+	10, // 7: numen.v1.CallToolResponse.result:type_name -> numen.v1.ToolResult
+	4,  // 8: numen.v1.PluginToolService.ListTools:input_type -> numen.v1.ListToolsRequest
+	8,  // 9: numen.v1.PluginToolService.CallTool:input_type -> numen.v1.CallToolRequest
+	5,  // 10: numen.v1.PluginToolService.ListTools:output_type -> numen.v1.ListToolsResponse
+	9,  // 11: numen.v1.PluginToolService.CallTool:output_type -> numen.v1.CallToolResponse
+	10, // [10:12] is the sub-list for method output_type
+	8,  // [8:10] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_tools_proto_init() }
@@ -741,7 +864,7 @@ func file_numen_v1_tools_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_tools_proto_rawDesc), len(file_numen_v1_tools_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

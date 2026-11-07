@@ -192,9 +192,9 @@ func getText(value any) string {
 // getKey names what is stored for the text of an address.
 func getKey(parsed address.URL) string { return domain.HashContent([]byte(parsed)) }
 
-// Create makes the link note of an address in a folder of the vault the host shows, named by the
-// address.
-func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
+// Create creates the link note of an address in a folder of a vault, named by the address. An empty
+// vault ID means the vault the host shows.
+func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, error) {
 	parsed, err := address.Parse(raw)
 	if err != nil {
 		return Link{}, err
@@ -218,9 +218,10 @@ func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
 	if err := errors.Join(doc.SetScalar(typeKey, string(NoteType)), doc.SetScalar(urlKey, string(parsed))); err != nil {
 		return Link{}, err
 	}
+	target, store := l.getVaultByID(vault), l.getStoreByID(vault)
 	path := pathpkg.Join(folder, name+domain.NoteExtension)
 	key := getKey(parsed)
-	if page, ok, err := writePage(ctx, l.host.Store, key, parsed); err != nil {
+	if page, ok, err := writePage(ctx, store, key, parsed); err != nil {
 		return Link{}, err
 	} else if ok {
 		// gomutants:disable-next-line BRANCH_IF reason="SetScalar on a valid frontmatter key of a new document cannot fail"
@@ -229,10 +230,56 @@ func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
 		}
 	}
 	content := doc.Bytes()
-	if err := l.host.Vault.Create(ctx, path, content); err != nil {
+	if err := target.Create(ctx, path, content); err != nil {
 		return Link{}, err
 	}
-	return newLinkIn(ctx, l.host.Vault, path, parsed, content)
+	return newLinkIn(ctx, target, path, parsed, content)
+}
+
+// FindOrCreate calls Create and, when a file is already at the path of the note, returns the link
+// note there if it has the same address. Any other file at the path is an error naming the path,
+// and the file is unchanged.
+func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, error) {
+	made, err := l.Create(ctx, vault, folder, raw)
+	if !errors.Is(err, host.ErrAlreadyExists) {
+		return made, err
+	}
+	parsed, err := address.Parse(raw)
+	// gomutants:disable-next-line BRANCH_IF reason="Create parsed the same address before it opened the file"
+	if err != nil {
+		return Link{}, err
+	}
+	name, _, err := domain.Filename(string(parsed))
+	// gomutants:disable-next-line BRANCH_IF reason="Create named the same address before it opened the file"
+	if err != nil {
+		return Link{}, err
+	}
+	path := pathpkg.Join(folder, name+domain.NoteExtension)
+	found, err := readLink(ctx, l.getVaultByID(vault), path)
+	if err != nil && !errors.Is(err, ErrNotALink) {
+		return Link{}, err
+	}
+	if err != nil || found.Address != parsed {
+		return Link{}, fmt.Errorf("%s already exists and is not the link note of %s", path, parsed)
+	}
+	return found, nil
+}
+
+// getVaultByID returns the vault of the identity, or the vault the host shows for an empty one.
+func (l *Links) getVaultByID(vault domain.VaultID) host.Vault {
+	if vault == "" {
+		return l.host.Vault
+	}
+	return l.host.Vault.With(vault)
+}
+
+// getStoreByID returns the plugin's folder in the vault of the identity, or in the vault the host shows
+// for an empty one.
+func (l *Links) getStoreByID(vault domain.VaultID) host.Store {
+	if vault == "" {
+		return l.host.Store
+	}
+	return l.host.Store.With(vault)
 }
 
 // getAddress is the plugin:// address of a file of the plugin's folder.
@@ -260,20 +307,10 @@ func (l *Links) setAddress(ctx context.Context, link Link, key, value string) er
 }
 
 // getVault is the vault of the link.
-func (l *Links) getVault(link Link) host.Vault {
-	if link.Vault == "" {
-		return l.host.Vault
-	}
-	return l.host.Vault.With(link.Vault)
-}
+func (l *Links) getVault(link Link) host.Vault { return l.getVaultByID(link.Vault) }
 
 // getStore is the plugin's folder in the vault of the link.
-func (l *Links) getStore(link Link) host.Store {
-	if link.Vault == "" {
-		return l.host.Store
-	}
-	return l.host.Store.With(link.Vault)
-}
+func (l *Links) getStore(link Link) host.Store { return l.getStoreByID(link.Vault) }
 
 // getTexts is the text versions of the vault of the link.
 func (l *Links) getTexts(link Link) host.Texts {
@@ -363,6 +400,9 @@ const (
 
 func getTaskID(work, path string) string { return work + ":" + path }
 
+// GetCopyTaskID returns the id of the copy of the video of a link note in the list of tasks.
+func GetCopyTaskID(path string) string { return getTaskID("copy", path) }
+
 // FetchText fetches the text published at a link's address and stores it as a
 // text version of the link. An address that publishes no text stores nothing.
 func (l *Links) FetchText(ctx context.Context, link Link) error {
@@ -450,7 +490,7 @@ func (l *Links) Copy(ctx context.Context, link Link, media download.Media) (int6
 		return 0, ErrNotCopyable
 	}
 	task := host.Task{
-		ID: getTaskID("copy", link.Path), Title: copyingVideo, Detail: link.Path,
+		ID: GetCopyTaskID(link.Path), Title: copyingVideo, Detail: link.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitBytes, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
@@ -539,6 +579,43 @@ func (l *Links) DeleteCopy(ctx context.Context, link Link) error {
 		}
 	}
 	return l.setAddress(ctx, link, mediaKey, "")
+}
+
+// TextInfo describes the text fetched for the address of a link.
+type TextInfo struct {
+	Title    string
+	Producer string
+}
+
+// GetTextInfo returns the title and the producer of the text fetched for the address of a link. A
+// link with no text fetched has an empty title and producer.
+func (l *Links) GetTextInfo(ctx context.Context, link Link) (TextInfo, error) {
+	rec, err := folder{store: l.getStore(link)}.readRecord(ctx, link.Key)
+	if err != nil {
+		return TextInfo{}, err
+	}
+	return TextInfo{Title: rec.Title, Producer: rec.Producer}, nil
+}
+
+// ReadArticle is the text of the live version of a link, read in the link's vault, and nothing
+// where it has none.
+func (l *Links) ReadArticle(ctx context.Context, link Link) (string, error) {
+	texts := l.getTexts(link)
+	listing, err := texts.ListVersions(ctx, link.Path)
+	if err != nil || listing.Live == "" {
+		return "", err
+	}
+	for _, version := range listing.Versions {
+		if version.GetID() != listing.Live {
+			continue
+		}
+		whole, err := host.ReadWholeText(ctx, texts, version)
+		if err != nil {
+			return "", err
+		}
+		return whole.Text, nil
+	}
+	return "", nil
 }
 
 // reportTask shows a task. A host that cannot show it leaves the work to go on unseen.

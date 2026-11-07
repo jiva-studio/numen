@@ -108,19 +108,36 @@ const getPlaceInRun = (
   return undefined
 }
 
+/**
+ * Returns `span` clipped to the text of the rendered runs, so a span extending past this document
+ * keeps the part rendered here, or undefined when the span is wholly outside them. An empty span
+ * selects the run at its offset and is not clipped.
+ */
+const clipSpan = (runs: readonly Run[], span: TextRange): TextRange | undefined => {
+  const first = runs[0]
+  const last = runs.at(-1)
+  if (!first || !last) return undefined
+  if (span.end <= span.start) return span
+  const textEnd = last.at + countBytes(last.element.textContent ?? '')
+  if (span.end <= first.at || span.start >= textEnd) return undefined
+  return { start: Math.max(span.start, first.at), end: Math.min(span.end, textEnd) }
+}
+
 /** One stretch of the book's text as a range over the nodes the markup carries. */
 const rangeOver = (runs: readonly Run[], span: TextRange): Range | undefined => {
-  const opens = findRun(runs, span.start)
-  const closes = findRun(runs, span.end)
-  if (!opens || !closes) return undefined
-  const endBytes =
-    span.end > span.start ? span.end - closes.at : countBytes(closes.element.textContent ?? '')
-  const from = getPlaceInRun(opens.element, span.start - opens.at)
-  const to = getPlaceInRun(closes.element, endBytes)
-  if (!from || !to) return undefined
+  const clipped = clipSpan(runs, span)
+  if (!clipped) return undefined
+  const { start, end } = clipped
+  const startRun = findRun(runs, start)
+  const endRun = findRun(runs, end)
+  if (!startRun || !endRun) return undefined
+  const endBytes = end > start ? end - endRun.at : countBytes(endRun.element.textContent ?? '')
+  const startPoint = getPlaceInRun(startRun.element, start - startRun.at)
+  const endPoint = getPlaceInRun(endRun.element, endBytes)
+  if (!startPoint || !endPoint) return undefined
   const range = doc.createRange()
-  range.setStart(from.node, from.offset)
-  range.setEnd(to.node, to.offset)
+  range.setStart(startPoint.node, startPoint.offset)
+  range.setEnd(endPoint.node, endPoint.offset)
   return range
 }
 

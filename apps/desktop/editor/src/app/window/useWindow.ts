@@ -442,6 +442,7 @@ function initWindowServices(
       getCommands: () => getCommands(ctx),
       getKinds: () => getKinds(ctx),
       tabOpeners: base.tabOpeners,
+      windowTabs: base.windowTabs,
       getVaults: () => getVaults(ctx),
       notifyPlugins: (event) => base.pluginHost.notifyVaultChange(event),
       writeMessage: base.writeMessage,

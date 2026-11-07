@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hosttext.proto.
  */
 export const file_numen_v1_hosttext: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEiMAoSVGV4dFNvdXJjZVByb3BlcnR5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCSL1AQoLVGV4dFZlcnNpb24SCgoCaWQYASABKAkSDAoEcGF0aBgCIAEoCRIRCglwbHVnaW5faWQYAyABKAkSCwoDa2V5GAQgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAUgASgJEgwKBGtpbmQYBiABKAkSEwoLc291cmNlX2hhc2gYByABKAkSDAoEaGFzaBgIIAEoCRIbChNjcmVhdGVfdGltZV91bml4X21zGAkgASgDEgwKBGZpbGUYCiABKAkSNQoPc291cmNlX3Byb3BlcnR5GAsgASgLMhwubnVtZW4udjEuVGV4dFNvdXJjZVByb3BlcnR5IrUBChVQdXRUZXh0VmVyc2lvblJlcXVlc3QSDAoEcGF0aBgBIAEoCRILCgNrZXkYAiABKAkSGQoRc291cmNlX3ZlcnNpb25faWQYAyABKAkSDAoEa2luZBgEIAEoCRITCgtzb3VyY2VfaGFzaBgFIAEoCRIMCgRmaWxlGAYgASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgHIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSJoChZQdXRUZXh0VmVyc2lvblJlc3BvbnNlEiYKB3ZlcnNpb24YASABKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhImCgVlcnJvchgCIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUiNQoYUmVtb3ZlVGV4dFZlcnNpb25SZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDa2V5GAIgASgJIkMKGVJlbW92ZVRleHRWZXJzaW9uUmVzcG9uc2USJgoFZXJyb3IYASABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIicKF0xpc3RUZXh0VmVyc2lvbnNSZXF1ZXN0EgwKBHBhdGgYASABKAkihAEKGExpc3RUZXh0VmVyc2lvbnNSZXNwb25zZRInCgh2ZXJzaW9ucxgBIAMoCzIVLm51bWVuLnYxLlRleHRWZXJzaW9uEhcKD2xpdmVfdmVyc2lvbl9pZBgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUiQwoPUmVhZFRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSEgoKdmVyc2lvbl9pZBgCIAEoCRIOCgZjdXJzb3IYAyABKAkieAoQUmVhZFRleHRSZXNwb25zZRInCghzZWdtZW50cxgBIAMoCzIVLm51bWVuLnYxLlRleHRTZWdtZW50EhMKC25leHRfY3Vyc29yGAIgASgJEiYKBWVycm9yGAMgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZTLiAgoPSG9zdFRleHRTZXJ2aWNlElMKDlB1dFRleHRWZXJzaW9uEh8ubnVtZW4udjEuUHV0VGV4dFZlcnNpb25SZXF1ZXN0GiAubnVtZW4udjEuUHV0VGV4dFZlcnNpb25SZXNwb25zZRJcChFSZW1vdmVUZXh0VmVyc2lvbhIiLm51bWVuLnYxLlJlbW92ZVRleHRWZXJzaW9uUmVxdWVzdBojLm51bWVuLnYxLlJlbW92ZVRleHRWZXJzaW9uUmVzcG9uc2USWQoQTGlzdFRleHRWZXJzaW9ucxIhLm51bWVuLnYxLkxpc3RUZXh0VmVyc2lvbnNSZXF1ZXN0GiIubnVtZW4udjEuTGlzdFRleHRWZXJzaW9uc1Jlc3BvbnNlEkEKCFJlYWRUZXh0EhkubnVtZW4udjEuUmVhZFRleHRSZXF1ZXN0GhoubnVtZW4udjEuUmVhZFRleHRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_textsegment]);
+  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEiMAoSVGV4dFNvdXJjZVByb3BlcnR5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCSL5AQoLVGV4dFZlcnNpb24SCgoCaWQYASABKAkSDAoEcGF0aBgCIAEoCRIRCglwbHVnaW5faWQYAyABKAkSCwoDa2V5GAQgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAUgASgJEgwKBGtpbmQYBiABKAkSEgoKaW5wdXRfaGFzaBgHIAEoCRIRCgl0ZXh0X2hhc2gYCCABKAkSGwoTY3JlYXRlX3RpbWVfdW5peF9tcxgJIAEoAxIMCgRmaWxlGAogASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgLIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSK0AQoVUHV0VGV4dFZlcnNpb25SZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDa2V5GAIgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAMgASgJEgwKBGtpbmQYBCABKAkSEgoKaW5wdXRfaGFzaBgFIAEoCRIMCgRmaWxlGAYgASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgHIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSJoChZQdXRUZXh0VmVyc2lvblJlc3BvbnNlEiYKB3ZlcnNpb24YASABKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhImCgVlcnJvchgCIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUiNQoYUmVtb3ZlVGV4dFZlcnNpb25SZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDa2V5GAIgASgJIkMKGVJlbW92ZVRleHRWZXJzaW9uUmVzcG9uc2USJgoFZXJyb3IYASABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIicKF0xpc3RUZXh0VmVyc2lvbnNSZXF1ZXN0EgwKBHBhdGgYASABKAkihAEKGExpc3RUZXh0VmVyc2lvbnNSZXNwb25zZRInCgh2ZXJzaW9ucxgBIAMoCzIVLm51bWVuLnYxLlRleHRWZXJzaW9uEhcKD2xpdmVfdmVyc2lvbl9pZBgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUicgoPUmVhZFRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSEgoKdmVyc2lvbl9pZBgCIAEoCRIOCgZjdXJzb3IYAyABKAkSDQoFc3RhcnQYBCABKAMSEwoGbGVuZ3RoGAUgASgDSACIAQFCCQoHX2xlbmd0aCKVAQoQUmVhZFRleHRSZXNwb25zZRInCghzZWdtZW50cxgBIAMoCzIVLm51bWVuLnYxLlRleHRTZWdtZW50EhMKC25leHRfY3Vyc29yGAIgASgJEiYKBWVycm9yGAMgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZRINCgVzdGFydBgEIAEoAxIMCgRzaXplGAUgASgDMuICCg9Ib3N0VGV4dFNlcnZpY2USUwoOUHV0VGV4dFZlcnNpb24SHy5udW1lbi52MS5QdXRUZXh0VmVyc2lvblJlcXVlc3QaIC5udW1lbi52MS5QdXRUZXh0VmVyc2lvblJlc3BvbnNlElwKEVJlbW92ZVRleHRWZXJzaW9uEiIubnVtZW4udjEuUmVtb3ZlVGV4dFZlcnNpb25SZXF1ZXN0GiMubnVtZW4udjEuUmVtb3ZlVGV4dFZlcnNpb25SZXNwb25zZRJZChBMaXN0VGV4dFZlcnNpb25zEiEubnVtZW4udjEuTGlzdFRleHRWZXJzaW9uc1JlcXVlc3QaIi5udW1lbi52MS5MaXN0VGV4dFZlcnNpb25zUmVzcG9uc2USQQoIUmVhZFRleHQSGS5udW1lbi52MS5SZWFkVGV4dFJlcXVlc3QaGi5udW1lbi52MS5SZWFkVGV4dFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_textsegment]);
 
 /**
  * TextSourceProperty is a frontmatter property of a note that a text version
@@ -43,12 +43,12 @@ export const TextSourcePropertySchema: GenMessage<TextSourceProperty> = /*@__PUR
  * TextVersion is the host's record of one text of a file.
  *
  * A version has one root. source_version_id names another version, and
- * source_hash is the hash of that version. source_property names a property of
+ * input_hash is the hash of that version. source_property names a property of
  * the note: the version is live while the note's frontmatter holds the key as
- * that string, and source_hash is empty. With neither, the version is made from
- * the file, and source_hash is the SHA-256, in hex, of the file's bytes. file
+ * that string, and input_hash is empty. With neither, the version is made from
+ * the file, and input_hash is the SHA-256, in hex, of the file's bytes. file
  * is the name of the version's file in the folder of the plugin that made it;
- * hash is the SHA-256 of that file's bytes.
+ * text_hash is the SHA-256 of that file's bytes.
  * kind is what the text is, as the plugin that made it names it;
  * the host compares it as an opaque string.
  *
@@ -86,14 +86,14 @@ export type TextVersion = Message<"numen.v1.TextVersion"> & {
   kind: string;
 
   /**
-   * @generated from field: string source_hash = 7;
+   * @generated from field: string input_hash = 7;
    */
-  sourceHash: string;
+  inputHash: string;
 
   /**
-   * @generated from field: string hash = 8;
+   * @generated from field: string text_hash = 8;
    */
-  hash: string;
+  textHash: string;
 
   /**
    * @generated from field: int64 create_time_unix_ms = 9;
@@ -143,9 +143,9 @@ export type PutTextVersionRequest = Message<"numen.v1.PutTextVersionRequest"> & 
   kind: string;
 
   /**
-   * @generated from field: string source_hash = 5;
+   * @generated from field: string input_hash = 5;
    */
-  sourceHash: string;
+  inputHash: string;
 
   /**
    * file is the name of the version's file in the calling plugin's folder.
@@ -156,7 +156,7 @@ export type PutTextVersionRequest = Message<"numen.v1.PutTextVersionRequest"> & 
 
   /**
    * source_property is set for a version made from a property of the note,
-   * with no source_version_id and no source_hash.
+   * with no source_version_id and no input_hash.
    *
    * @generated from field: numen.v1.TextSourceProperty source_property = 7;
    */
@@ -292,11 +292,29 @@ export type ReadTextRequest = Message<"numen.v1.ReadTextRequest"> & {
   versionId: string;
 
   /**
-   * cursor is the next_cursor of the page before, and empty for the first.
+   * cursor is the next_cursor of the page before, and empty for the first. Not
+   * used with a length.
    *
    * @generated from field: string cursor = 3;
    */
   cursor: string;
+
+  /**
+   * The start of a ranged read in the whole text, in bytes.
+   *
+   * @generated from field: int64 start = 4;
+   */
+  start: bigint;
+
+  /**
+   * Set: read the range from start of this many bytes, zero to the end,
+   * truncated at whole characters, as the segments it covers, each truncated to
+   * the range. Unset:
+   * read one page by cursor.
+   *
+   * @generated from field: optional int64 length = 5;
+   */
+  length?: bigint | undefined;
 };
 
 /**
@@ -326,6 +344,19 @@ export type ReadTextResponse = Message<"numen.v1.ReadTextResponse"> & {
    * @generated from field: numen.v1.TextErrorCode error = 3;
    */
   error: TextErrorCode;
+
+  /**
+   * For a ranged read: the start of the first segment returned in the whole
+   * text, and the size of the whole text in bytes.
+   *
+   * @generated from field: int64 start = 4;
+   */
+  start: bigint;
+
+  /**
+   * @generated from field: int64 size = 5;
+   */
+  size: bigint;
 };
 
 /**

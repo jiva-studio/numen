@@ -45,7 +45,7 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 
 	if err := db.Chunks().SaveSource(ctx, getFirst().ID, chunk.Source{
 		Path: "library/tale.epub", Kind: "book", Size: 1000, MTime: 1,
-		Hash: "hash-tale", Recipe: "epub",
+		ContentHash: "hash-tale", Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}

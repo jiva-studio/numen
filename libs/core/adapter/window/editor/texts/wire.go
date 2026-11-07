@@ -25,7 +25,7 @@ func writeSegments(segments []domain.TextSegment) []*v1.TextSegment {
 func writeVersion(v domain.TextVersion) *v1.TextVersion {
 	return &v1.TextVersion{
 		Id: string(v.GetID()), Path: v.Path, PluginId: v.PluginID, Key: v.Key, SourceVersionId: string(v.Source),
-		Kind: string(v.Kind), SourceHash: v.SourceHash, Hash: v.Hash, CreateTimeUnixMs: v.CreateTime.UnixMilli(), File: v.File,
+		Kind: string(v.Kind), InputHash: v.InputHash, TextHash: v.TextHash, CreateTimeUnixMs: v.CreateTime.UnixMilli(), File: v.File,
 		SourceProperty: writeSourceProperty(v.SourceProperty),
 	}
 }

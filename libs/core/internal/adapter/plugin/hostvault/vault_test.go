@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -186,5 +187,57 @@ func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	}
 	if err := access.Scan(t.Context(), []string{"a.md"}); !errors.Is(err, ErrNoVault) {
 		t.Errorf("a scan was %v", err)
+	}
+}
+
+func TestAddLinksCancelledAfterTheFirstNoteSendsOneFileWriteNotification(t *testing.T) {
+	access, _ := diskVault(t, map[string]string{
+		"Danube.md": "# Danube\n", "Rhine.md": "# Rhine\n", "Volga.md": "# Volga\n",
+	})
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	writeCount := 0
+	access.Written = func() { writeCount++ }
+	cancelAfterIndex := func(context.Context, domain.Vault, []string) error {
+		cancel()
+		return nil
+	}
+	access.Arranger.Notes.AddLinks = note.NewAddLinks(note.NewEditLinks(
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, cancelAfterIndex, testsupport.NewClock()))
+	estuary := domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Estuary"}, Role: domain.RoleRef}
+
+	added, err := access.AddLinks(ctx, []pluginport.PluginLinkAddition{
+		{From: "Danube.md", Link: estuary}, {From: "Rhine.md", Link: estuary}, {From: "Volga.md", Link: estuary},
+	})
+	if err != nil {
+		t.Fatalf("AddLinks returned %v, want the results and no error", err)
+	}
+	if len(added) != 3 || added[0].Err != nil || !errors.Is(added[1].Err, note.ErrNotAttempted) || !errors.Is(added[2].Err, note.ErrNotAttempted) {
+		t.Fatalf("AddLinks returned %+v, want Danube.md written and the rest not attempted", added)
+	}
+	if writeCount != 1 {
+		t.Errorf("the file-written notification fired %d times, want 1", writeCount)
+	}
+}
+
+func TestAddLinksCancelledBeforeAnyWriteDoesNotNotify(t *testing.T) {
+	access, _ := diskVault(t, map[string]string{"Danube.md": "# Danube\n"})
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	writeCount := 0
+	access.Written = func() { writeCount++ }
+	access.Arranger.Notes.AddLinks = note.NewAddLinks(note.NewEditLinks(
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil, testsupport.NewClock()))
+	estuary := domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Estuary"}, Role: domain.RoleRef}
+
+	added, err := access.AddLinks(ctx, []pluginport.PluginLinkAddition{{From: "Danube.md", Link: estuary}})
+	if err != nil {
+		t.Fatalf("AddLinks returned %v, want the results and no error", err)
+	}
+	if len(added) != 1 || !errors.Is(added[0].Err, note.ErrNotAttempted) {
+		t.Fatalf("AddLinks returned %+v, want Danube.md not attempted", added)
+	}
+	if writeCount != 0 {
+		t.Errorf("the file-written notification fired %d times, want 0", writeCount)
 	}
 }

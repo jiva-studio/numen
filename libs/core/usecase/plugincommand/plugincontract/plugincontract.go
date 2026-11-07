@@ -36,6 +36,7 @@ type (
 	PluginDiscoverer       = pluginport.PluginDiscoverer
 	PluginEmbeddedTexts    = pluginport.PluginEmbeddedTexts
 	PluginEmbeddingState   = pluginport.PluginEmbeddingState
+	PluginFileRange        = pluginport.PluginFileRange
 	PluginExtensionStats   = pluginport.PluginExtensionStats
 	PluginIndexStats       = pluginport.PluginIndexStats
 	PluginEventEmitter     = pluginport.PluginEventEmitter
@@ -45,6 +46,8 @@ type (
 	PluginIndexState       = pluginport.PluginIndexState
 	PluginIndexStatus      = pluginport.PluginIndexStatus
 	PluginInfo             = pluginport.PluginInfo
+	PluginLinkAdded        = pluginport.PluginLinkAdded
+	PluginLinkAddition     = pluginport.PluginLinkAddition
 	PluginLifecycleManager = pluginport.PluginLifecycleManager
 	PluginManager          = pluginport.PluginManager
 	PluginManifest         = pluginport.PluginManifest
@@ -57,6 +60,8 @@ type (
 	PluginResolver         = pluginport.PluginResolver
 	PluginSearch           = pluginport.PluginSearch
 	PluginSearchIndex      = pluginport.PluginSearchIndex
+	PluginPassageQuery     = pluginport.PluginPassageQuery
+	PluginPassageSearch    = pluginport.PluginPassageSearch
 	PluginSearchPolicy     = pluginport.PluginSearchPolicy
 	PluginSearchFloor      = pluginport.PluginSearchFloor
 	PluginSimilarityQuery  = pluginport.PluginSimilarityQuery
@@ -77,10 +82,15 @@ type (
 	PluginTexts            = pluginport.PluginTexts
 	PluginTextListing      = pluginport.PluginTextListing
 	PluginTextPage         = pluginport.PluginTextPage
+	PluginTextRange        = pluginport.PluginTextRange
 	PluginTextPut          = pluginport.PluginTextPut
 	PluginTransport        = pluginport.PluginTransport
 	PluginVault            = pluginport.PluginVault
 	PluginVaultLifecycle   = pluginport.PluginVaultLifecycle
+	PluginWindow           = pluginport.PluginWindow
+	PluginWindowHost       = pluginport.PluginWindowHost
+	PluginVaultList        = pluginport.PluginVaultList
+	PluginVaultListHost    = pluginport.PluginVaultListHost
 	PluginVaultReader      = pluginport.PluginVaultReader
 	PluginVaultStore       = pluginport.PluginVaultStore
 	PluginVaultWriter      = pluginport.PluginVaultWriter
@@ -112,6 +122,8 @@ const (
 	PermissionNetworkOutbound   = pluginport.PermissionNetworkOutbound
 	PermissionVaultRead         = pluginport.PermissionVaultRead
 	PermissionVaultWrite        = pluginport.PermissionVaultWrite
+	PermissionVaultManage       = pluginport.PermissionVaultManage
+	PermissionWindowFocus       = pluginport.PermissionWindowFocus
 	MaxEmbeddedBytes            = pluginport.MaxEmbeddedBytes
 	MaxEmbeddedTexts            = pluginport.MaxEmbeddedTexts
 	MaxSampledQueries           = pluginport.MaxSampledQueries
@@ -173,6 +185,11 @@ var (
 	ErrNoKey                  = pluginport.ErrNoKey
 	ErrNoKeyStore             = pluginport.ErrNoKeyStore
 	ErrNoProvisioner          = pluginport.ErrNoProvisioner
+	ErrNoWindow               = pluginport.ErrNoWindow
+	ErrNotText                = pluginport.ErrNotText
+	ErrUnsavedChanges         = pluginport.ErrUnsavedChanges
+	ErrInvalidFocus           = pluginport.ErrInvalidFocus
+	ErrTabNotShown            = pluginport.ErrTabNotShown
 	ErrPathTraversal          = pluginport.ErrPathTraversal
 	ErrPermissionDenied       = pluginport.ErrPermissionDenied
 	ErrRangeInvalidBounds     = pluginport.ErrRangeInvalidBounds

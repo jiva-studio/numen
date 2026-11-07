@@ -35,18 +35,19 @@ var errAnswerPending = errors.New("pending review confirmation")
 // page has written its pending state. A page holding text awaiting user
 // confirmation aborts the swap, as does a vault that fails to start: the window
 // stays on its current vault, and a window with no vault to fall back on reports
-// the error.
-func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
+// the error. The open is the plugin open whose lock the switch shares, nil for a user vault switch.
+func (o *Installation) Show(ctx context.Context, v domain.Vault, open *PluginOpen) error {
 	if v.ID == o.State.GetCurrentVault().ID {
 		return nil
 	}
 	if err := o.checkIdentity.Execute(v); err != nil {
 		return err
 	}
-	if err := o.shutdown.tryBegin(); err != nil {
+	end, isInsidePluginOpen, err := o.shutdown.tryBeginSwitch(open)
+	if err != nil {
 		return err
 	}
-	defer o.shutdown.endKeepOpen()
+	defer end()
 	o.sessionMu.Lock()
 	defer o.sessionMu.Unlock()
 
@@ -57,12 +58,17 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if !flushPending(target, o.State.Window, &o.State.Writing) {
 		return errAnswerPending
 	}
+	// A plugin's open cancelled during the flush switches nothing.
+	if isInsidePluginOpen && ctx.Err() != nil {
+		o.State.Writing.open()
+		return context.Cause(ctx)
+	}
 
 	was := o.State.GetCurrentVault()
 	o.stopVault()
 	o.resetStatus()
 
-	err := o.startVault(ctx, v, false)
+	err = o.startVault(ctx, v, false)
 	if err != nil {
 		if back := o.startVault(ctx, was, false); back != nil {
 			// The window shows no vault and writes stay disabled.

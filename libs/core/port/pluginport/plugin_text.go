@@ -14,7 +14,7 @@ type PluginTextPut struct {
 	Source         domain.TextVersionID
 	SourceProperty domain.TextSourceProperty
 	Kind           domain.TextKind
-	SourceHash     string
+	InputHash      string
 	File           string
 }
 
@@ -31,6 +31,14 @@ type PluginTextPage struct {
 	NextCursor string
 }
 
+// PluginTextRange is a ranged read of a version: the segments, the start of the first in the whole
+// text, and the size of the whole text in bytes.
+type PluginTextRange struct {
+	Segments []domain.TextSegment
+	Start    int
+	Size     int
+}
+
 // PluginTexts is the text versions of the vaults, as the plugins that call the
 // host work them. Each call works the vault it is given.
 type PluginTexts interface {
@@ -42,6 +50,9 @@ type PluginTexts interface {
 	ListVersions(ctx context.Context, v domain.Vault, path string) (PluginTextListing, error)
 	// ReadText is one page of any version's segments, read from its file.
 	ReadText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, cursor string) (PluginTextPage, error)
+	// ReadTextRange returns the segments of a version that cover length bytes of its whole text from
+	// start, each truncated to the range at whole characters. A length of zero reads to the end.
+	ReadTextRange(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (PluginTextRange, error)
 }
 
 // PluginTextHost receives the text versions that plugins work on.

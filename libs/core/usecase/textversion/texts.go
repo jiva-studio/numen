@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 )
 
 // GetLiveText is the text of the file's live version, or textport.ErrNoText.
-func (u *Versions) GetLiveText(ctx context.Context, v domain.Vault, path, fileHash string) (domain.VersionText, error) {
+func (u *Versions) GetLiveText(ctx context.Context, v domain.Vault, path, contentHash string) (domain.VersionText, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
 		return domain.VersionText{}, err
 	}
-	live, ok, err := u.findLive(ctx, v, path, versions, fileHash)
+	live, ok, err := u.findLive(ctx, v, path, versions, contentHash)
 	if err != nil {
 		return domain.VersionText{}, err
 	}
@@ -61,11 +62,11 @@ func (u *Versions) GetTextPage(ctx context.Context, v domain.Vault, path string,
 		}
 		start = n
 	}
-	text, err := u.GetVersionText(ctx, v, path, id)
+	version, err := u.GetVersionText(ctx, v, path, id)
 	if err != nil {
 		return TextPage{}, err
 	}
-	segments := text.GetSegments()
+	segments := version.GetSegments()
 	if start > len(segments) {
 		return TextPage{}, fmt.Errorf("%w: cursor %q", textport.ErrNoText, cursor)
 	}
@@ -75,6 +76,33 @@ func (u *Versions) GetTextPage(ctx context.Context, v domain.Vault, path string,
 		page.NextCursor = strconv.Itoa(end)
 	}
 	return page, nil
+}
+
+// TextRange is the segments of a version that cover a range of its whole text, each truncated to
+// the range, the start of the first in the whole text, and the size of the whole text in bytes.
+type TextRange struct {
+	Segments []domain.TextSegment
+	Start    int
+	Size     int
+}
+
+// GetTextRange returns the segments of a version that cover length bytes of its whole text from
+// start, truncated at whole characters. A length of zero reads to the end.
+func (u *Versions) GetTextRange(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (TextRange, error) {
+	if start < 0 || length < 0 {
+		return TextRange{}, fmt.Errorf("invalid range of the text of %s: start %d and length %d must be >= 0", path, start, length)
+	}
+	version, err := u.GetVersionText(ctx, v, path, id)
+	if err != nil {
+		return TextRange{}, err
+	}
+	size := len(version.Text)
+	rangeStart, rangeEnd := min(start, size), size
+	if length > 0 && length < size-rangeStart {
+		rangeEnd = rangeStart + length
+	}
+	rangeStart, raw := text.WholeCharacters(rangeStart, []byte(version.Text[rangeStart:rangeEnd]), size)
+	return TextRange{Segments: version.GetSegmentsIn(rangeStart, rangeStart+len(raw)), Start: rangeStart, Size: size}, nil
 }
 
 // readText reads a version's file. It returns textport.ErrNoText when the file
@@ -88,7 +116,7 @@ func (u *Versions) readText(ctx context.Context, v domain.Vault, version domain.
 	if err != nil {
 		return domain.VersionText{}, fmt.Errorf("read text %s of %s: %w", version.GetID(), version.Path, err)
 	}
-	if file.Hash != version.Hash {
+	if file.TextHash != version.TextHash {
 		return domain.VersionText{}, fmt.Errorf("%w: the file of %s of %s changed", textport.ErrNoText, version.GetID(), version.Path)
 	}
 	return domain.NewVersionText(version, file.Segments), nil
@@ -104,8 +132,8 @@ type vaultTexts struct {
 	vault    domain.Vault
 }
 
-func (t vaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) (domain.TextVersionID, error) {
-	listing, err := t.versions.ListVersions(ctx, t.vault, path, fileHash)
+func (t vaultTexts) FindLiveVersion(ctx context.Context, path, contentHash string) (domain.TextVersionID, error) {
+	listing, err := t.versions.ListVersions(ctx, t.vault, path, contentHash)
 	if err != nil {
 		return "", err
 	}
@@ -115,8 +143,8 @@ func (t vaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) 
 	return listing.Live, nil
 }
 
-func (t vaultTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
-	return t.versions.GetLiveText(ctx, t.vault, path, fileHash)
+func (t vaultTexts) GetLiveText(ctx context.Context, path, contentHash string) (domain.VersionText, error) {
+	return t.versions.GetLiveText(ctx, t.vault, path, contentHash)
 }
 
 func (t vaultTexts) GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error) {
@@ -125,4 +153,8 @@ func (t vaultTexts) GetVersionText(ctx context.Context, path string, id domain.T
 
 func (t vaultTexts) IsTextSource(ctx context.Context, path string) (bool, error) {
 	return t.versions.IsTextSource(ctx, t.vault, path)
+}
+
+func (t vaultTexts) GetContentHash(ctx context.Context, path string) (string, error) {
+	return t.versions.GetContentHash(ctx, t.vault, path)
 }

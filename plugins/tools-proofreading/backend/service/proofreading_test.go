@@ -80,7 +80,7 @@ func (s *scene) hold(t *testing.T, pluginID, path, key string, kind domain.TextK
 		t.Fatal(err)
 	}
 	version, err := s.texts.As(pluginID).PutVersion(t.Context(), host.TextPut{
-		Path: path, Key: key, Kind: kind, SourceHash: domain.HashContent([]byte(raw)), File: key + ".jsonl",
+		Path: path, Key: key, Kind: kind, InputHash: domain.HashContent([]byte(raw)), File: key + ".jsonl",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -156,7 +156,7 @@ func TestProofreadMakesTheLiveVersionFromTheScan(t *testing.T) {
 	}
 
 	parts, live := s.readLive(t, scanPath)
-	if live.PluginID != PluginID || live.Source != scan.GetID() || live.SourceHash != scan.Hash || live.Kind != proofreadingKind {
+	if live.PluginID != PluginID || live.Source != scan.GetID() || live.InputHash != scan.TextHash || live.Kind != proofreadingKind {
 		t.Fatalf("the live version is %+v", live)
 	}
 	if res.Lines != 3 || res.Corrected != 1 {
@@ -374,7 +374,7 @@ func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 		t.Fatal(err)
 	}
 	scan, err := other.As(ocrID).PutVersion(t.Context(), host.TextPut{
-		Path: scanPath, Key: "recognition", Kind: kindRecognition, SourceHash: domain.HashContent([]byte("the scan")), File: "recognition.jsonl",
+		Path: scanPath, Key: "recognition", Kind: kindRecognition, InputHash: domain.HashContent([]byte("the scan")), File: "recognition.jsonl",
 	})
 	if err != nil {
 		t.Fatal(err)

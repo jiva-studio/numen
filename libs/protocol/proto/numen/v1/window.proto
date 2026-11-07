@@ -149,7 +149,7 @@ enum FlushResult {
 
   // Something this caller holds could not be written, and a person is being
   // asked what to do with it. The window stays until they answer.
-  FLUSH_RESULT_ASKING = 3;
+  FLUSH_RESULT_UNSAVED = 3;
 }
 
 message ReportFlushRequest {

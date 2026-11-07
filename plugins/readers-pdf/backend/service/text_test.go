@@ -121,7 +121,7 @@ func TestTheTextLayerOfAFileIsItsLiveVersion(t *testing.T) {
 	if text.Version().Kind != textKind {
 		t.Errorf("kind %q, want %q", text.Version().Kind, textKind)
 	}
-	if text.Version().SourceHash != domain.HashContent(raw) || !text.Version().IsFromFile() {
+	if text.Version().InputHash != domain.HashContent(raw) || !text.Version().IsFromFile() {
 		t.Errorf("version %+v is not made from the file as it is", text.Version())
 	}
 	if want := "Alpha beta gamma\nDelta epsilon zeta\n"; text.Text != want {
