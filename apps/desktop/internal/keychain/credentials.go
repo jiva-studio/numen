@@ -64,29 +64,29 @@ func (s *Store) readFromFile(name string) (string, error) {
 
 // writeToFile stores the key under the name in the file.
 func (s *Store) writeToFile(name, key string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	entries, err := s.readEntries()
-	if err != nil {
-		return err
-	}
-	entries[name] = key
-	return s.writeEntries(entries)
+	return s.changeEntries(func() error {
+		entries, err := s.readEntries()
+		if err != nil {
+			return err
+		}
+		entries[name] = key
+		return s.writeEntries(entries)
+	})
 }
 
 // removeFromFile removes the key stored under the name from the file, or fails with ErrNoKey.
 func (s *Store) removeFromFile(name string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	entries, err := s.readEntries()
-	if err != nil {
-		return err
-	}
-	if _, found := entries[name]; !found {
-		return fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
-	}
-	delete(entries, name)
-	return s.writeEntries(entries)
+	return s.changeEntries(func() error {
+		entries, err := s.readEntries()
+		if err != nil {
+			return err
+		}
+		if _, found := entries[name]; !found {
+			return fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
+		}
+		delete(entries, name)
+		return s.writeEntries(entries)
+	})
 }
 
 // writeEntries replaces the file with the entries through a temporary file and a rename, in a
