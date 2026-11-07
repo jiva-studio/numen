@@ -11,9 +11,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// GetFileKinds returns the files in the requested order, with the type of each note. The type is the
-// index's, and a note the index does not hold yet, such as one a plugin created in this session, is read
-// directly. A path with nothing at it is omitted, and each entry carries its path and kind.
+// GetFileKinds returns the files in the requested order, with the type and the frontmatter of each
+// note. The type is the index's, and a note the index does not hold yet, such as one a plugin created
+// in this session, gets the type its file declares. A path with nothing at it is omitted, and each
+// entry carries its path and kind.
 type GetFileKinds struct {
 	readers vaultport.VaultReaders
 	queries noteport.NoteQueries
@@ -46,23 +47,21 @@ func (u *GetFileKinds) Execute(ctx context.Context, v domain.Vault, paths []stri
 	if err != nil {
 		return Folder{}, err
 	}
-	types, err = readMissingTypes(ctx, reader, entries, refs, types)
+	properties, err := readNotes(ctx, reader, entries, refs, &types)
 	if err != nil {
 		return Folder{}, err
 	}
-	return Folder{Entries: entries, Types: types}, nil
+	return Folder{Entries: entries, Types: types, Properties: properties}, nil
 }
 
-// readMissingTypes adds the type of each note the types leave out, read from the note itself.
-func readMissingTypes(
+// readNotes reads the frontmatter of each note, and adds the type of each note the types leave out.
+func readNotes(
 	ctx context.Context, reader vaultport.VaultReader, entries []domain.Entry,
-	refs map[string]domain.FileStat, types map[string]domain.NoteType,
-) (map[string]domain.NoteType, error) {
+	refs map[string]domain.FileStat, types *map[string]domain.NoteType,
+) (map[string]map[string]any, error) {
+	properties := map[string]map[string]any{}
 	for _, entry := range entries {
 		if entry.Kind != domain.KindNote {
-			continue
-		}
-		if _, found := types[entry.Path]; found {
 			continue
 		}
 		raw, err := reader.Read(ctx, entry.Path)
@@ -72,10 +71,15 @@ func readMissingTypes(
 		if err != nil {
 			return nil, err
 		}
-		if types == nil {
-			types = make(map[string]domain.NoteType)
+		note := markdown.Parse(refs[entry.Path], raw)
+		properties[entry.Path] = note.Frontmatter
+		if _, found := (*types)[entry.Path]; found {
+			continue
 		}
-		types[entry.Path] = markdown.Parse(refs[entry.Path], raw).Type
+		if *types == nil {
+			*types = make(map[string]domain.NoteType)
+		}
+		(*types)[entry.Path] = note.Type
 	}
-	return types, nil
+	return properties, nil
 }

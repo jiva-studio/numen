@@ -2,7 +2,15 @@
  * Type declarations for the files tab domain.
  */
 import type { Component, Ref } from 'vue'
-import type { DroppedData, MenuEntry, PathMenuRow, PathRename, VaultEntry } from '@numen/plugin-sdk'
+import type { MenuItem } from '@numen/ui'
+import type {
+  CommandItem,
+  DroppedData,
+  PathRename,
+  SlotItem,
+  CommandTarget,
+  VaultEntry,
+} from '@numen/plugin-sdk'
 
 /** One file or folder of the vault, as represented by a row of the tree. */
 export type Entry = VaultEntry
@@ -33,18 +41,17 @@ export interface MenuRequest {
 /** Where dropped rows landed, as the tree reports it. */
 export type DropPosition = { readonly into: string | null } | { readonly before: string }
 
-export interface FileCommandTarget {
-  readonly name: string
-  readonly isNote: boolean
-  readonly isFolder: boolean
-}
-
 /** What a files tab requests from the window that hosts it. */
 export interface FilesTabDeps {
   /** Opens the file a row represents. */
   openEntry(entry: Entry): void
   onSelectPath?(path: string, state: FilesTabState): void
-  runCommand(id: string, paths: readonly string[], target: FileCommandTarget): void
+  /** The entries of the menu of a row, over the row it was opened on. */
+  getMenuEntries(target: CommandTarget): readonly SlotItem[]
+  /** The items a command of the menu offers over the row. */
+  listItems(command: string, target: CommandTarget): Promise<readonly CommandItem[]>
+  /** Runs a command of the window or of a plugin over the row; with `argument`, the one picked. */
+  runCommand(command: string, target: CommandTarget, argument?: string): Promise<void>
   movePath(from: string, to: string): Promise<void>
   setDraggedPaths(paths: readonly string[]): void
   createFolder(path: string): Promise<void>
@@ -54,9 +61,6 @@ export interface FilesTabDeps {
   /** Hands data dropped into the folder to the plugin that takes it; answers what it made. */
   dropData(folder: string, data: DroppedData): Promise<readonly string[]>
   showError(text: string): void
-  /** The window's commands over a row, in the order the menu draws them. */
-  getPathCommands(row: PathMenuRow): readonly MenuEntry[]
-  getCommandIcon(id: string): Component | null
   getEntryIcon(entry: Entry | null, isOpen: boolean): Component
 }
 
@@ -110,7 +114,8 @@ export interface FilesTabState {
   chooseMenuItem(id: string): void
   getNameOf(path: string): string
   /** The menu items: for the row the menu was opened on, or for no row. */
-  getMenuItems(path: string | null): readonly MenuEntry[]
-  getCommandIcon(id: string): Component | null
+  getMenuItems(path: string | null): readonly MenuItem[]
+  /** The icon of the command or submenu of the open menu drawn as the row `id`. */
+  getMenuIcon(id: string): Component | null
   getEntryIcon(entry: Entry | null, isOpen: boolean): Component
 }

@@ -11,10 +11,17 @@ import type { ErrorCode } from '@/shared/errors'
  */
 export type NoteType = string
 
-/** Whether a file is a note, and which type of note. A file that is no note opens in the reader of its content type. */
+/**
+ * Whether a file is a note, and which type of note. A note opens in the tab kind the core chooses for
+ * it; a note no tab kind takes and a file that is no note open in the reader of their content type.
+ */
 export interface FileKind {
   readonly isNote: boolean
   readonly type: NoteType
+  /** The kind of tab the note opens in; absent where no tab kind takes it. */
+  readonly tabKind?: string
+  /** The frontmatter of a note by its keys; absent for a file that is no note or a note without any. */
+  readonly properties?: Readonly<Record<string, unknown>>
 }
 
 export interface Entry {

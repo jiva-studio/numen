@@ -72,13 +72,13 @@ func (s fakeSites) GetText(ctx context.Context, address string, want download.Pr
 	}
 }
 
-func (s fakeSites) Download(ctx context.Context, address string, into io.Writer) (download.Copy, error) {
+func (s fakeSites) Download(ctx context.Context, address string, media download.Media, into io.Writer) (download.Copy, error) {
 	select {
 	case <-s.release:
 	case <-ctx.Done():
 		return download.Copy{}, ctx.Err()
 	}
-	return s.video.Download(ctx, address, into)
+	return s.video.Download(ctx, address, media, into)
 }
 
 // textVault is the vault whose texts compare versions with the notes it makes, as the host's texts

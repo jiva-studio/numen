@@ -120,11 +120,6 @@ const window = (
       openFile: (path, title, showing) => {
         isDone.push(`openFile ${path} ${title} ${showing}`)
       },
-      openNewFile: (path, title, options) => {
-        const type = typeof options === 'string' ? options : options.type
-        const showing = typeof options === 'object' ? options.where : undefined
-        isDone.push(`openNewFile ${type} ${path} ${title} ${showing}`)
-      },
     },
     vaults: {
       list: async () => ({ vaults: [createVault('physics', 'Physics')], showing: 'physics' }),
@@ -288,6 +283,21 @@ describe('a note made', () => {
     expect(one.actions[0]).toBe('createNote Entropy physics/Ontology.md child')
   })
 
+  it('relates to the note of a row it runs over, which is not the tab in front', async () => {
+    const one = window()
+    const row = front({ tab: '', kind: null, path: 'reef/Coral.md', title: 'Coral', file: '' })
+
+    await carry(createInvocation('app:note.createChild', row, 'Polyp'), one.on)
+    await carry(createInvocation('app:note.createParent', row, 'Atoll'), one.on)
+    await carry(createInvocation('app:note.createJump', row, 'Lagoon'), one.on)
+
+    expect(one.actions.filter((action) => action.startsWith('createNote'))).toStrictEqual([
+      'createNote Polyp reef/Coral.md child',
+      'createNote Atoll reef/Coral.md parent',
+      'createNote Lagoon reef/Coral.md jump',
+    ])
+  })
+
   it('relies on its own where no relation was requested for', async () => {
     const one = window()
 
@@ -312,7 +322,7 @@ describe('a note made', () => {
       one.on,
     )
 
-    expect(one.actions.at(-1)).toBe('openNewFile note Entropy.md Entropy split')
+    expect(one.actions.at(-1)).toBe('openFile Entropy.md Entropy split')
   })
 
   it('takes the person nowhere where the vault would not make it', async () => {
@@ -934,7 +944,7 @@ describe('the open files a command reaches', () => {
     return {
       actions: isDone,
       done: isDone,
-      notes: createNotes(stores, { openFile: vi.fn(), openNewFile: vi.fn() }),
+      notes: createNotes(stores, { openFile: vi.fn() }),
     }
   }
 

@@ -49,10 +49,6 @@ message ManifestContributes {
   string category = 3;
   // themes are the stylesheets the plugin adds to the list of themes.
   repeated ManifestTheme themes = 5;
-  // status_views are the components of the plugin's frontend the window draws in its status bar.
-  repeated ManifestStatusView status_views = 4;
-  // handles are the capabilities the plugin takes part in for files and notes of some types.
-  repeated ManifestHandle handles = 7;
   // readers are the tabs of the plugin's frontend that open files, each by the id the frontend
   // registers it under and the content types it opens.
   repeated ManifestReader readers = 9;
@@ -64,8 +60,14 @@ message ManifestContributes {
   // commands are the commands the plugin declares, whichever part of the plugin runs them. The
   // application learns which part from where the handler is registered.
   repeated ManifestCommand commands = 12;
-  // menus place commands in the named places the window draws.
-  repeated ManifestMenuEntry menus = 13;
+  // slots place the commands, views and submenus of the plugin in the slots of a window and in
+  // submenus, see slots.json for the list of slots.
+  repeated ManifestSlotEntry slots = 15;
+  // handlers are the plugin's handlers of shared commands, see commands.json for the list of shared
+  // commands.
+  repeated ManifestHandler handlers = 16;
+  // triggers run the plugin's own handlers on events, see events.json for the list of events.
+  repeated ManifestTrigger triggers = 17;
   // listeners are the ports the host binds for the plugin.
   repeated ManifestListener listeners = 14;
 }
@@ -85,25 +87,58 @@ message ManifestListener {
   string port_setting = 4;
 }
 
-// ManifestMenuEntry places one command in a named place of the window. The command is the id
-// the manifest declares it under, or the full id of a command of the application.
-message ManifestMenuEntry {
-  // location is the name of the place, such as titleBar.
-  string location = 1;
-  string command = 2;
-  // group names the entries a place draws together. Empty for none.
-  string group = 3;
-  // order sorts the entries of a group, lowest first. Absent sorts after every order.
-  optional int32 order = 4;
+// ManifestSlotEntry places one thing in a slot of a window, or in a submenu a plugin declares. The
+// owner of the slot draws a command, as a button in a bar and as a row in a menu; a view draws
+// itself; a submenu becomes a place other entries name as their slot.
+message ManifestSlotEntry {
+  // slot is a slot of the list in slots.json, or the id of a submenu.
+  string slot = 1;
+  oneof placed {
+    // command is the id the manifest declares the command under, or the full id of a command of
+    // another owner, such as app:settings.open.
+    string command = 2;
+    // view is the id the frontend registers the component under.
+    string view = 3;
+    // submenu is the id of the submenu the entry declares. It is unique among all plugins.
+    string submenu = 4;
+  }
+  // title is the title of a submenu.
+  string title = 5;
+  // icon is the kebab-case icon name of a submenu. Empty for none.
+  string icon = 6;
+  // group names the entries a slot draws together; groups sort alphanumerically, and an entry
+  // without one is in the last group. A separator is drawn between groups.
+  string group = 7;
+  // order sorts the entries of a group, lowest first, then by plugin id. Absent sorts after every
+  // order.
+  optional int32 order = 8;
+  // when is a condition over the target of the place, such as "isFolder && !isMultiple": the keys
+  // isRoot, isFolder and isMultiple combined with &&, || and ! and parentheses. The entry is left out
+  // while it is false. Empty is always true.
+  string when = 9;
 }
 
-// ManifestHandle declares that the plugin takes part in a capability for files of some content
-// types and notes of some note types. The purpose is the id of the capability; the part of the
-// application that defines the capability owns the id and gives the declaration its meaning.
-message ManifestHandle {
-  string purpose = 1;
-  repeated string content_types = 2;
-  repeated string note_types = 3;
+// ManifestHandler is the plugin's handler of a shared command of commands.json. The plugin's code
+// registers the handler under the full id of the command.
+message ManifestHandler {
+  // command is the full id of the shared command, such as app:file.createText.
+  string command = 1;
+  // title is what a person reads the handler as, such as Extract text layer.
+  string title = 2;
+  // when is the CEL condition over which targets the handler handles the command. Empty is every
+  // target.
+  string when = 3;
+}
+
+// ManifestTrigger runs the plugin's own handler of a shared command over the file of an event.
+message ManifestTrigger {
+  // on is the event of events.json, such as file.added.
+  string on = 1;
+  // command is the full id of the shared command whose handler of this plugin runs.
+  string command = 2;
+  // when is the CEL condition over the file and the settings under which the trigger runs. Empty is
+  // every file.
+  string when = 3;
 }
 
 // ManifestTheme is a theme a plugin adds to the list of themes.
@@ -119,13 +154,6 @@ message ManifestTheme {
   string file = 4;
 }
 
-// ManifestStatusView is a component of the plugin's frontend that the window draws in its status
-// bar.
-message ManifestStatusView {
-  // id is the id the frontend registers the component under.
-  string id = 1;
-}
-
 // ManifestTabKind is a kind of tab the plugin registers.
 message ManifestTabKind {
   // kind is the id the frontend registers the kind under.
@@ -133,6 +161,12 @@ message ManifestTabKind {
   string title = 2;
   // icon is the kebab-case name of an icon of the application's icon set.
   string icon = 3;
+  // when is the CEL condition over a note, such as "target.noteType == 'deck'", under which the note
+  // opens in a tab of this kind. Empty opens no note.
+  string when = 4;
+  // rank is default or alternate, as a reader's: among the kinds whose condition holds over a note,
+  // a default kind is chosen before an alternate one. Empty is default.
+  string rank = 5;
 }
 
 message ManifestDependency {
@@ -228,26 +262,15 @@ message ManifestCommandArgument {
   bool is_required = 4 [json_name = "required"];
 }
 
-// ManifestContextCondition holds while the context the window supplies has the key with one of the
-// values listed. The value `*` stands for any value of the key.
-message ManifestContextCondition {
-  string key = 1;
-  repeated string is = 2;
-}
-
 message ManifestCommand {
   string id = 1;
   string title = 2;
   string icon = 3;
-  repeated string content_types = 4;
-  repeated string note_types = 5;
-  // when are the conditions, all of which hold in the context the command is offered over. A
-  // command with conditions is offered over each context that meets them.
-  repeated ManifestContextCondition when = 6;
   repeated ManifestCommandArgument arguments = 7;
-  // scope is "note" for a command listed only while a note is in front. Empty is a command over the
-  // window.
-  string scope = 9;
+  // when is the CEL condition under which the command is available at all, over the variables of
+  // libs/protocol/when.json, such as "target.isNote". Empty is always. A command whose condition
+  // names version.* offers one item per text version of a file for which it holds.
+  string when = 11;
   // shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
   string shortcut = 10;
 }

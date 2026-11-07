@@ -56,6 +56,7 @@ defineExpose({ scrollToActive })
       :key="row.key"
       :row="row"
       :heading="headings[index]"
+      :has-separator="index > 0 && row.kind === 'item' && row.item.hasSeparator === true"
       :is-active="index === activeIndex"
       :is-current="row.kind === 'item' && row.item.id === current"
       @choose="$emit('choose', row.key)"

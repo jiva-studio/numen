@@ -6,22 +6,27 @@ import { formatErrorMessage } from '@numen/core-client'
 import type {
   AgentHost,
   AgentPort,
+  BackgroundTaskHost,
   BufferHost,
+  CommandsHost,
   MenuEntry,
   NoteRef,
   VaultFiles,
   VaultNotes,
   VaultRelations,
+  VaultsHost,
+  WindowHost,
   WorkspaceHost,
 } from '@numen/plugin-host'
-import type { SearchDeps } from '@/features/command-palette'
+import type { CommandTarget, SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
 import type { NoteCreator } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { Task } from '@/shared/notices/task'
 import type { NotePort } from '@/app/ports/notes'
+import type { FilePort } from '@/app/ports/files'
 import type { useSettings } from '../window/useSettings'
-import { createPathCommandHost, type PathCommandDeps } from './fileServices'
+import { createIconHost, type IconHostDeps } from './fileServices'
 import type { PluginNotes } from './pluginNotes'
 import type { NoteBuffer } from '@numen/plugin-host'
 
@@ -35,12 +40,22 @@ export interface PluginServices {
   buffers?: BufferHost
   /** The window's store of open notes, which the tabs of the note kind read and write through. */
   noteBuffer?: NoteBuffer
+  /** The commands of the window, which every plugin runs its commands through. */
+  commands?: CommandsHost
+  /** The vaults the window can show, which every plugin reads. */
+  vaults?: VaultsHost
+  /** The window the plugins run in. */
+  window?: WindowHost
   /** The window's task list, which each plugin's task host reads. */
   taskList?: Readonly<Ref<readonly Task[]>>
+  /** The background work of the window, which every plugin reads. */
+  backgroundTasks?: BackgroundTaskHost
 }
 
 /** What the window hands a plugin's tabs. */
-export interface WorkspaceHostDeps extends Omit<PathCommandDeps, 'reportError'> {
+export interface WorkspaceHostDeps extends IconHostDeps {
+  readonly getTarget: () => CommandTarget
+  readonly runCommand: (id: string, target: CommandTarget) => void
   readonly window: {
     readonly failure: Readonly<Ref<string>>
     readonly opening: Readonly<Ref<string>>
@@ -87,23 +102,21 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     },
     getNoteInFocus: () => deps.getNoteInFocus(),
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,
-    runCommand: (id, { path, title }) => deps.runCommand(id, { ...deps.getTarget(), path, title }),
     getNoteCommands: () => deps.getNoteCommands(),
     ask: (text) => deps.ask(text),
     showError: (text) => writeMessage(text, 'error'),
     getMessageWriter: (name) => deps.getMessageWriter(name),
     getToday: () => deps.today(),
-    ...createPathCommandHost({
-      ...deps,
+    ...createIconHost({
+      ...(deps.getPluginCommandIcon ? { getPluginCommandIcon: deps.getPluginCommandIcon } : {}),
       findFileIcon: tabOpeners.findFileIcon,
-      reportError: (error) => writeMessage(formatErrorMessage(error), 'error'),
     }),
   }
 }
 
 /** What the notes of the vault are read and written through. */
 export interface VaultNotesDeps {
-  readonly core: Pick<NotePort, 'neighbourhood' | 'headings'>
+  readonly core: Pick<NotePort, 'neighbourhood' | 'headings'> & Pick<FilePort, 'fileKinds'>
   readonly search: Pick<SearchDeps, 'names'>
   readonly making: NoteCreator
   readonly pluginNotes: PluginNotes
@@ -126,6 +139,7 @@ export function createVaultNotes({
     createUntitledNote: () => making.createUntitled(''),
     read: (path) => pluginNotes.readNote(path),
     write: (path, body) => pluginNotes.writeNote(path, body),
+    readProperties: async (path) => (await core.fileKinds([path])).get(path)?.properties ?? {},
   }
 }
 

@@ -15,8 +15,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
+	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 	windowport "github.com/jiva-studio/numen/libs/core/usecase/vault/windowcontract"
@@ -74,10 +76,12 @@ type Runtime[H, V any] struct {
 	PluginServicesFn         func() PluginServices
 	PluginCatalogFn          func() PluginCatalog
 	PluginCommandsFn         func() plugincommand.Commands
+	TabKindChoiceFn          func() *tabkind.Choose
 	AgentVal                 agentport.Agent
 	SetTextVersionListenerFn func(listener textport.VersionListener)
 	OpenFileMenuFn           func() *textversion.FileMenu
-	OpenProxyFn              func() *file.OpenProxy
+	OpenPluginFileFn         func() *file.OpenPluginFile
+	OpenTriggersFn           func() *trigger.Triggers
 	GetMediaTypeFn           func() *file.GetMediaType
 	OpenChoosePluginPathFn   func(dialog machineport.PathDialog) *settings.ChoosePluginPath
 	OpenFileTextFn           func() *textversion.FileText
@@ -162,12 +166,28 @@ func (e Runtime[H, V]) GetPluginCatalog() PluginCatalog {
 }
 func (e Runtime[H, V]) GetPluginCommands() plugincommand.Commands { return e.PluginCommandsFn() }
 func (e Runtime[H, V]) GetAgent() agentport.Agent                 { return e.AgentVal }
+
+// GetTabKindChoice is the choice of the kind of tab a note opens in, which chooses none where the
+// assembly names none.
+func (e Runtime[H, V]) GetTabKindChoice() *tabkind.Choose {
+	if e.TabKindChoiceFn == nil {
+		return tabkind.NewChoose(nil, nil)
+	}
+	return e.TabKindChoiceFn()
+}
 func (e Runtime[H, V]) SetTextVersionListener(listener textport.VersionListener) {
 	e.SetTextVersionListenerFn(listener)
 }
-func (e Runtime[H, V]) OpenFileMenu() *textversion.FileMenu { return e.OpenFileMenuFn() }
-func (e Runtime[H, V]) OpenProxy() *file.OpenProxy          { return e.OpenProxyFn() }
-func (e Runtime[H, V]) GetMediaType() *file.GetMediaType    { return e.GetMediaTypeFn() }
+func (e Runtime[H, V]) OpenFileMenu() *textversion.FileMenu  { return e.OpenFileMenuFn() }
+func (e Runtime[H, V]) OpenPluginFile() *file.OpenPluginFile { return e.OpenPluginFileFn() }
+
+func (e Runtime[H, V]) OpenTriggers() *trigger.Triggers {
+	if e.OpenTriggersFn == nil {
+		return nil
+	}
+	return e.OpenTriggersFn()
+}
+func (e Runtime[H, V]) GetMediaType() *file.GetMediaType { return e.GetMediaTypeFn() }
 func (e Runtime[H, V]) OpenChoosePluginPath(dialog machineport.PathDialog) *settings.ChoosePluginPath {
 	return e.OpenChoosePluginPathFn(dialog)
 }

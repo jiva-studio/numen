@@ -11,7 +11,8 @@ import (
 
 var (
 	// ErrInvalidVersion is what a put gets for a version with no key, no kind or no file, a file that
-	// is missing or is not JSON Lines of segments, or a source that is no other version of the file.
+	// is missing or is not JSON Lines of segments, a source that is no other version of the file, or a
+	// source property given with a source or a source hash.
 	ErrInvalidVersion = errors.New("host: the version is not valid")
 	// ErrNotOwner is what a call gets for a version of another plugin, or from a plugin that declares
 	// no text provider handle.
@@ -19,17 +20,20 @@ var (
 )
 
 // TextPut is what a plugin reports of one of its text versions. The plugin writes the version's
-// file into its folder first, with WriteText; File is that file's name. Source names the version the
-// text was made from, and is empty for the file itself. InputHash is HashContent of the
-// file for the first, and the TextHash of the source version for the second. Kind is the type of the text,
-// as the plugin names it. The host records the hash of the file.
+// file into its folder first, with WriteText; File is that file's name. A version has one root:
+// Source names the version the text was made from, and InputHash is that version's TextHash;
+// SourceProperty names a property of the note, with no Source and no InputHash, and the version is
+// live while the note holds the property's key as that string; with neither, the text is made from
+// the file, and InputHash is HashContent of the file. Kind is what the text is, as the plugin names
+// it. The host records the hash of the file.
 type TextPut struct {
-	Path      string
-	Key       string
-	Source    domain.TextVersionID
-	Kind      domain.TextKind
-	InputHash string
-	File      string
+	Path           string
+	Key            string
+	Source         domain.TextVersionID
+	SourceProperty domain.TextSourceProperty
+	Kind           domain.TextKind
+	InputHash      string
+	File           string
 }
 
 // TextListing is the versions of a file and the one the host shows, which is empty where none is live.

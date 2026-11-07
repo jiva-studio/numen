@@ -389,7 +389,7 @@ func TestRecognitionCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 	s := newToolFixture(t)
 	close(s.recogniser.release)
 	if _, err := s.recognitions.Recognise(t.Context(), recognition.Request{
-		Vault: "Physics", Path: scanPath, IsUserStarted: true,
+		Vault: "Physics", Path: scanPath,
 	}); err != nil {
 		t.Fatal(err)
 	}

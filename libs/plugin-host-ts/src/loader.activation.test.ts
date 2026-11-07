@@ -4,6 +4,7 @@ import type { PluginContext } from '@numen/plugin-sdk'
 import { createPluginHost } from './hosting/host'
 import type { CommandDeclaration, PluginHostDeps } from './hosting/types'
 import { createPluginLoader } from './loader'
+import { PLUGIN_START_LIMIT_MS } from './loading/limits'
 
 const PLUGIN = 'md.numen.views.plex.graph'
 
@@ -12,7 +13,7 @@ const showNote: CommandDeclaration = {
   pluginId: PLUGIN,
   id: 'graph.showNote',
   title: 'Show note in plex',
-  scope: 'note',
+  when: 'target.isNote',
 }
 
 /** A window with a plugin that has a frontend and no backend, and the commands its manifest declares. */
@@ -114,6 +115,83 @@ describe('a command whose handler is missing after the plugin has started', () =
       PLUGIN,
       'the command graph.showNote is declared in the manifest and has no handler',
     )
+  })
+})
+
+describe('the commands of a plugin that is turned off', () => {
+  it('are not reported as missing while its handlers are removed', async () => {
+    const { host, loader, reportCommandIssue } = createWindow((context) => {
+      context.registerCommand({ id: 'graph.open', handler: () => undefined })
+      context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+    })
+    await loader.start()
+    const reports = followCommands(host)
+
+    host.disposePlugin(PLUGIN)
+
+    expect(reportCommandIssue).not.toHaveBeenCalled()
+    expect(reports.at(-1)).toStrictEqual([])
+  })
+})
+
+describe('a plugin whose start passes PLUGIN_START_LIMIT_MS', () => {
+  it('holds no registration and stays inactive when its start ends later', async () => {
+    vi.useFakeTimers()
+    try {
+      const { host, loader, onError } = createWindow(async (context) => {
+        context.registerCommand({ id: 'graph.open', handler: () => undefined })
+        await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 1_000))
+        context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      })
+
+      const started = loader.start()
+      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 100)
+
+      expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
+      expect(onError).toHaveBeenCalledTimes(1)
+      expect(host.getRegisteredCommands()).toStrictEqual([])
+      await vi.advanceTimersByTimeAsync(1_000)
+      await started
+
+      expect(loader.isPluginActive(PLUGIN)).toBe(false)
+      expect(host.getRegisteredCommands()).toStrictEqual([])
+      expect(host.getPaletteCommands()).toStrictEqual([])
+      expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('a start cancelled at PLUGIN_START_LIMIT_MS that ends after a newer start', () => {
+  it('leaves what the newer start registered', async () => {
+    vi.useFakeTimers()
+    try {
+      let starts = 0
+      const { host, loader } = createWindow(async (context) => {
+        starts += 1
+        if (starts === 1) {
+          await new Promise((resolve) => setTimeout(resolve, PLUGIN_START_LIMIT_MS + 2_000))
+          return
+        }
+        context.registerCommand({ id: 'graph.open', handler: () => undefined })
+        context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      })
+      const started = loader.start()
+      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS + 100)
+      await started
+
+      expect(await loader.activatePlugin(PLUGIN)).toBe(true)
+      await vi.advanceTimersByTimeAsync(2_000)
+
+      expect(loader.isPluginActive(PLUGIN)).toBe(true)
+      expect(host.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
+        'graph.open',
+        'graph.showNote',
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

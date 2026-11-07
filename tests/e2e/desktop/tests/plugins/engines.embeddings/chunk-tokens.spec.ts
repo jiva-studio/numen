@@ -16,7 +16,7 @@ const LONG_BODY = Array.from(
     `Barge ${i + 1} carries barley, salted fish and the post across the estuary before the tide turns.`,
 ).join(' ')
 
-/** The status bar item that counts the vectors of the index. */
+/** The title bar item that counts the vectors of the index. */
 const getItem = (page: Parameters<typeof openWorkspace>[0]): Locator =>
   page.locator('.index-stats__label')
 

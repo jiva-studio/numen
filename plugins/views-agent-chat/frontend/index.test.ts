@@ -90,16 +90,24 @@ describe('view-agent-chat plugin', () => {
       'note.ask',
     ])
     await ctx.triggerCommand('chat.open')
-    await ctx.triggerCommand('note.ask', { path: 'One.md', title: 'One', type: 'note' })
-    await ctx.getRegisteredContextMenus()[0]!.handler({
-      path: 'Two.md',
-      name: 'Two',
+    await ctx.triggerCommand('note.ask', {
+      path: 'One.md',
+      title: 'One',
+      type: 'note',
       isFolder: false,
-      isNote: true,
+      others: [],
+      tab: '',
     })
 
     expect(openCalls).toStrictEqual([[AGENT, undefined]])
-    expect(recorded.questions).toStrictEqual(['One.md — ', 'Two.md — '])
+    expect(recorded.questions).toStrictEqual(['One.md — '])
+  })
+
+  it('holds the conversation view, the tab kind and its two commands, and nothing else', () => {
+    const { ctx } = createContext()
+    activate(ctx)
+
+    expect(ctx.subscriptions).toHaveLength(4)
   })
 
   it('refuses to activate in a window that offers no workspace or agent', () => {

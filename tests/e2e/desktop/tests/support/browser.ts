@@ -30,3 +30,22 @@ export const readBox = async (
   expect(box, 'the element is drawn').not.toBeNull()
   return { x: box?.x ?? 0, y: box?.y ?? 0, width: box?.width ?? 0, height: box?.height ?? 0 }
 }
+
+/** The user agent of a window on each platform, as its web view names the system. */
+const USER_AGENTS = {
+  windows: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/605.1.15 (KHTML, like Gecko)',
+  mac: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)',
+} as const
+
+/**
+ * Gives the page the user agent of the platform, which the plugins read as `context.app.platform`.
+ * The engines of the projects name their own: Desktop Chrome names Windows and Desktop Safari macOS.
+ */
+export const setPlatformAgent = async (
+  page: Page,
+  platform: keyof typeof USER_AGENTS,
+): Promise<void> => {
+  await page.addInitScript((agent) => {
+    Object.defineProperty(navigator, 'userAgent', { get: () => agent })
+  }, USER_AGENTS[platform])
+}

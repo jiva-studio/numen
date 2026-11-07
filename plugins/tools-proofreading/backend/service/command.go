@@ -13,7 +13,7 @@ import (
 func newProofreadCommand(proofreading *Proofreading) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		source := domain.TextVersionID(req.Arguments.GetString(command.ArgumentVersion))
-		res, err := proofreading.Proofread(ctx, Request{Vault: "", Path: req.Path, Source: source, IsUserStarted: true})
+		res, err := proofreading.Proofread(ctx, Request{Vault: "", Path: req.Path, Source: source})
 		if err != nil {
 			return command.Result{}, err
 		}

@@ -56,9 +56,14 @@ test.describe('the window shows no corner notices', () => {
     test('is a failed task, not a notice', async ({ page, request }) => {
       const before = await listFilePaths(request)
       await openWorkspace(page)
-      await runCommand(page, 'Import from URL', /^Import from URL/)
+      await runCommand(page, 'Import link', /^Import link/)
       await getPaletteField(page).fill(MISSING_PAGE_ADDRESS)
       await page.keyboard.press('Enter')
+      // Import link makes the link note alone; its text is fetched by a command over the note.
+      await expect(page.getByRole('tab', { name: /tide-tables/, selected: true })).toBeVisible({
+        timeout: 30_000,
+      })
+      await runCommand(page, 'Download captions', /^Download captions$/)
 
       const popover = await openTaskList(page)
       await expect(popover).toContainText('its text was not fetched')

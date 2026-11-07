@@ -247,7 +247,11 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 	f.dropInvalidApp(declared, registries)
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
 		if _, found := declared(id); !found {
+			isDefault := isDefaultPlugin(id, f.Plugins[id])
 			delete(f.Plugins, id)
+			if isDefault {
+				continue
+			}
 			f.AddNotice(fmt.Sprintf("numen.json: no installed plugin %s; its settings are ignored", id))
 			continue
 		}
@@ -294,8 +298,6 @@ func (f *File) resetApp(declared pluginport.PluginManifestSetting) {
 		f.Appearance.TextScale = getAppNumber(keyTextScale)
 	case keySyncNaming:
 		f.Titles = DefaultTitles()
-	case keyWindowButtons:
-		f.Window = DefaultWindow()
 	case keyProfile:
 		f.Performance = DefaultPerformance()
 	}

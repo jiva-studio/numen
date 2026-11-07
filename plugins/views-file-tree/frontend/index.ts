@@ -1,26 +1,41 @@
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type CommandNote, type PluginContext } from '@numen/plugin-sdk'
 import FilesTab from './ui/FilesTab.vue'
 import { createFilesKind, FILES } from './kind'
-import { createFileTree } from './model/useFileTree'
+import { createFileTree, ROOT } from './model/useFileTree'
+import type { FilesTabState } from './types'
 
 export { FilesTab }
 export { createFilesKind, FILES } from './kind'
-export { createMenuItems, NEW_FOLDER, NEW_NOTE, RENAME } from './lib/menu'
 export { ROOT, createFileTree } from './model/useFileTree'
 export { useFilesTab } from './model/useFilesTab'
 export type { FilesTabDeps, FilesTabState } from './types'
 export * from './words'
 
 export function activate(context: PluginContext): void {
-  const { workspace, files, drops } = context
+  const { workspace, files, drops, slots, commands } = context
   if (!workspace || !files) {
     throw new Error('a files tab needs the window it is drawn in and the files of the vault')
   }
-  const trees = createFilesKind({ workspace, files, ...(drops ? { drops } : {}) }, () =>
-    createFileTree(files),
+  const trees = createFilesKind(
+    {
+      workspace,
+      files,
+      ...(drops ? { drops } : {}),
+      ...(slots ? { slots } : {}),
+      ...(commands ? { commands } : {}),
+    },
+    () => createFileTree(files),
   )
   context.registerTabKind(trees.kind)
   context.onVaultChange((event) => trees.refresh(event))
+
+  /** The handler of a command over a row of the tab whose menu was opened last. */
+  const runOnTab =
+    (run: (state: FilesTabState, path: string) => Promise<void> | void) =>
+    async (note: CommandNote): Promise<void> => {
+      const state = trees.getMenuTab()
+      if (state) await run(state, note.path)
+    }
 
   context.registerCommand({
     id: 'tree.open',
@@ -33,6 +48,20 @@ export function activate(context: PluginContext): void {
     handler: async (note) => {
       await context.navigateTab?.(FILES, note.path)
     },
+  })
+  context.registerCommand({
+    id: 'tree.rename',
+    handler: runOnTab((state, path) => {
+      if (path !== ROOT) state.setRenamingPath(path)
+    }),
+  })
+  context.registerCommand({
+    id: 'tree.newNote',
+    handler: runOnTab((state, path) => state.createNote(path === ROOT ? null : path)),
+  })
+  context.registerCommand({
+    id: 'tree.newFolder',
+    handler: runOnTab((state, path) => state.createFolder(path === ROOT ? null : path)),
   })
 }
 

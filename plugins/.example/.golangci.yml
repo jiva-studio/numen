@@ -433,6 +433,9 @@ linters:
           files:
             - "**/libs/plugin-catalog/manifest/**"
             - "!$test"
+          allow:
+            # The manifest checks the when clauses of its slot entries with package when.
+            - "github.com/jiva-studio/numen/libs/plugin-catalog/when"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog"
               desc: "the manifest model depends on no other package of the catalog"

@@ -7,7 +7,7 @@
  * document and not off the wrapper.
  */
 import { describe, expect, it } from 'vitest'
-import { nextTick } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import { createMenuMount, settle } from './fixtures/mount'
 import type { MenuItem } from './items/item'
 import type { MenuProps } from './Menu.types'
@@ -407,5 +407,34 @@ describe('how tall it grows', () => {
     mountMenu({ viewport: { width: 900, height: 10 }, margin: 8 })
     await settle()
     expect(getFreeSpace()).toBe('0px')
+  })
+})
+
+describe('an item that holds a component', () => {
+  const Gauge = defineComponent({
+    name: 'TideGauge',
+    setup: () => () => h('em', { class: 'gauge' }, 'high tide'),
+  })
+  const WITH_GAUGE: MenuItem[] = [
+    { id: 'open', text: 'Open' },
+    { id: 'tide', text: 'Tide', component: Gauge },
+  ]
+
+  it('draws the component in place of its text, and the text of the other items', async () => {
+    mountMenu({ items: WITH_GAUGE })
+    await settle()
+
+    expect(choices()[0]?.textContent?.trim()).toBe('Open')
+    expect(choices()[1]?.querySelector('.gauge')?.textContent).toBe('high tide')
+  })
+
+  it('is named by its text, and returns its identifier when chosen', async () => {
+    const menu = mountMenu({ items: WITH_GAUGE })
+    await settle()
+
+    expect(choices()[1]?.getAttribute('aria-label')).toBe('Tide')
+    expect(choices()[0]?.hasAttribute('aria-label')).toBe(false)
+    choices()[1]?.click()
+    expect(menu.emitted('choose')).toStrictEqual([['tide']])
   })
 })

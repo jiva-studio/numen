@@ -3,7 +3,7 @@
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/shell'
-import type { PlacedCommand } from '@numen/plugin-host'
+import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { NoteType } from '@/entities/file'
@@ -110,10 +110,24 @@ interface BuildGroupsDeps {
   readonly texts: readonly Passage[]
   readonly meanings: readonly Passage[]
   readonly words: Words
-  readonly entries: readonly PlacedCommand[]
+  /** The entries of the menu of a result over its note. */
+  readonly getMenu: (target: RunTarget) => readonly SlotItem[]
   readonly isWorking: Record<SearchGroup, boolean>
   readonly getSilence: (id: SearchGroup) => string
 }
+
+/** The target the entries of the menu of a result run over: the note of the result. */
+const getNoteTarget = (path: string, title: string): RunTarget => ({
+  path,
+  title,
+  isFolder: false,
+  others: [],
+  tab: '',
+})
+
+/** The entries of the menu of a passage of a note; a passage of a file that is no note has none. */
+const getPassageMenu = (deps: BuildGroupsDeps, one: Passage): readonly SlotItem[] =>
+  one.isNote ? deps.getMenu(getNoteTarget(one.path, one.title)) : []
 
 function buildSearchGroups(deps: BuildGroupsDeps) {
   const hitsById = new Map<string, SearchHit>()
@@ -132,17 +146,23 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
     group(
       'names',
       deps.words.names,
-      deps.names.map((one) => createNameItem(one, deps.words, deps.entries)),
+      deps.names.map((one) =>
+        createNameItem(one, deps.words, deps.getMenu(getNoteTarget(one.path, one.title))),
+      ),
     ),
     group(
       'text',
       deps.words.text,
-      deps.texts.map((one) => createPassageItem('text', one, deps.words, deps.entries)),
+      deps.texts.map((one) =>
+        createPassageItem('text', one, deps.words, getPassageMenu(deps, one)),
+      ),
     ),
     group(
       'meaning',
       deps.words.meaning,
-      deps.meanings.map((one) => createPassageItem('meaning', one, deps.words, deps.entries)),
+      deps.meanings.map((one) =>
+        createPassageItem('meaning', one, deps.words, getPassageMenu(deps, one)),
+      ),
     ),
   ]
 
@@ -304,7 +324,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       texts: texts.value,
       meanings: meanings.value,
       words,
-      entries: how.menu?.getEntries() ?? [],
+      getMenu: (target) => how.menu?.getEntries(target) ?? [],
       isWorking: isWorking.value,
       getSilence: getEmptyGroupMessage,
     })

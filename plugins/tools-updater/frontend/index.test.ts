@@ -36,7 +36,7 @@ const setup = (answer: Status) => {
   const check = vi.fn(async () => ({ ok: true as const, value: answer }))
   const context = createMockPluginContext({
     pluginId: 'md.numen.tools.updater',
-    app: { version: '2026.9.0', build: 900, platform: 'windows' },
+    app: { name: 'numen', version: '2026.9.0', build: 900, platform: 'windows' },
     initialSettings: { checkIntervalHours: 2 },
   })
   activate(context, { api: { check }, timer })
@@ -48,20 +48,25 @@ describe('the updater frontend', () => {
     const { context } = setup(AVAILABLE)
 
     expect(UPDATE_VIEW).toBe('update')
-    expect(context.getRegisteredStatusViews().map((one) => one.id)).toEqual(['update'])
+    expect(context.getRegisteredSlotViews().map((one) => one.id)).toEqual(['update'])
   })
 
   it('checks the running build as the context describes it', async () => {
     const { check } = setup(AVAILABLE)
     await flush()
 
-    expect(check).toHaveBeenCalledWith({ version: '2026.9.0', build: 900, platform: 'windows' })
+    expect(check).toHaveBeenCalledWith({
+      name: 'numen',
+      version: '2026.9.0',
+      build: 900,
+      platform: 'windows',
+    })
   })
 
   it('draws the indicator for the update found, and the popover opens the download', async () => {
     const { context } = setup(AVAILABLE)
     await flush()
-    const component = context.getRegisteredStatusViews()[0]?.component as never
+    const component = context.getRegisteredSlotViews()[0]?.component as never
 
     const wrapper = mount(component)
     expect(wrapper.find('.update-indicator__label').text()).toBe('v2026.10.1')
@@ -77,7 +82,7 @@ describe('the updater frontend', () => {
   it('closes the popover on Escape and keeps the title and the version apart', async () => {
     const { context } = setup(AVAILABLE)
     await flush()
-    const wrapper = mount(context.getRegisteredStatusViews()[0]?.component as never, {
+    const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never, {
       attachTo: document.body,
     })
     await wrapper.find('.update-indicator__trigger').trigger('click')
@@ -96,7 +101,7 @@ describe('the updater frontend', () => {
     const { context } = setup({ state: 'current' })
     await flush()
 
-    const wrapper = mount(context.getRegisteredStatusViews()[0]?.component as never)
+    const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
     expect(wrapper.find('.update-indicator').exists()).toBe(false)
   })

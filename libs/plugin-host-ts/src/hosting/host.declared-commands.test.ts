@@ -3,7 +3,14 @@ import { createPluginHost } from './host'
 import { formatCommandId } from '../commandId'
 import type { CommandDeclaration, PluginHostDeps } from './types'
 
-const note = { path: 'a.md', title: 'A', type: 'note' as const }
+const note = {
+  path: 'a.md',
+  title: 'A',
+  type: 'note' as const,
+  isFolder: false,
+  others: [],
+  tab: '',
+}
 
 function declare(changes: Partial<CommandDeclaration> = {}): CommandDeclaration {
   return {
@@ -29,12 +36,12 @@ function createHost(declarations: CommandDeclaration[], extra: Partial<PluginHos
 }
 
 describe('the commands a plugin declares in its manifest', () => {
-  it('are listed with the title, icon, scope and shortcut of the declaration once the handler is registered', () => {
+  it('are listed with the title, icon, condition and shortcut of the declaration once the handler is registered', () => {
     const { host } = createHost([
       declare({
         id: 'tree.revealNote',
         title: 'Show note in file tree',
-        scope: 'note',
+        when: 'target.isNote',
       }),
     ])
 
@@ -46,7 +53,7 @@ describe('the commands a plugin declares in its manifest', () => {
         title: 'Show note in file tree',
         icon: 'folder-tree',
         shortcut: 'mod+shift+e',
-        scope: 'note',
+        when: 'target.isNote',
       },
     ])
   })

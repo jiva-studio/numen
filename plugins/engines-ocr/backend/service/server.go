@@ -161,12 +161,8 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	if err != nil {
 		return err
 	}
-	provider := recognition.NewProvider(recognitions)
-	commands := command.New()
-	if err := commands.Add("recognition.create", newRecogniseCommand(recognitions)); err != nil {
-		return err
-	}
-	if err := commands.Add("recognition.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
+	commands, err := newCommands(recognitions, h)
+	if err != nil {
 		return err
 	}
 	agentTools := NewTools(recognitions)
@@ -175,21 +171,31 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 		return err
 	}
 	s.SetUpdateConfig(models.updateConfig)
-	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
 	command.Mount(s, commands)
 	registry.Mount(s)
 	s.OnClose(func() error {
 		agentTools.Close()
-		provider.Close()
 		return models.close()
 	})
 	return nil
 }
 
-// newRecogniseCommand recognises the file named by the user and waits for completion.
+// newCommands is the handlers the manifest declares.
+func newCommands(recognitions *recognition.Recognition, h recognition.Host) (*command.Registry, error) {
+	commands := command.New()
+	if err := commands.Add("app:file.createText", newRecogniseCommand(recognitions)); err != nil {
+		return nil, err
+	}
+	if err := commands.Add("app:version.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
+		return nil, err
+	}
+	return commands, nil
+}
+
+// newRecogniseCommand recognises the file of the run and waits for completion.
 func newRecogniseCommand(recognitions *recognition.Recognition) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		res, err := recognitions.Recognise(ctx, recognition.Request{Vault: "", Path: req.Path, IsUserStarted: true})
+		res, err := recognitions.Recognise(ctx, recognition.Request{Vault: "", Path: req.Path})
 		if err != nil {
 			return command.Result{}, err
 		}

@@ -3,7 +3,8 @@ import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { LoaderHost } from './host'
 import { getPluginStyle, registerPluginStyle } from './styles'
-import { createPluginLoader, PLUGIN_SETTLE_MS, PLUGIN_WAIT_MS } from './loader'
+import { createPluginLoader } from './loader'
+import { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
 import { getLifecycleHooks, resolveModule } from './module'
 
 /** The loader, with a module registered under each plugin id. */
@@ -59,13 +60,12 @@ describe('createPluginLoader', () => {
           pluginId,
           target: 'desktop.test',
           subscriptions: [],
-          app: { version: '0.0.0-test', build: 1, platform: 'linux' },
+          app: { name: 'numen', version: '0.0.0-test', build: 1, platform: 'linux' },
           openExternal: vi.fn(async () => ({ ok: true as const, value: null })),
-          registerStatusView: vi.fn(() => ({ dispose: vi.fn() })),
+          registerSlotView: vi.fn(() => ({ dispose: vi.fn() })),
           registerReader: vi.fn(() => ({ dispose: vi.fn() })),
           registerTabKind: vi.fn(() => ({ dispose: vi.fn() })),
           registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
-          registerContextMenu: vi.fn(() => ({ dispose: vi.fn() })),
           registerView: vi.fn(() => ({ dispose: vi.fn() })),
           registerSettingsView: vi.fn(() => ({ dispose: vi.fn() })),
           mountView: vi.fn(() => ({ focus: vi.fn(), dispose: vi.fn() })),
@@ -462,7 +462,7 @@ describe('createPluginLoader failures, order and toggles', () => {
 
     const started = loader.start()
 
-    expect(read).toStrictEqual(['a', 'b', 'c'])
+    await vi.waitFor(() => expect(read).toStrictEqual(['a', 'b', 'c']))
     await started
   })
 
@@ -484,7 +484,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       const loader = registerModules(createPluginLoader({ host }), { slow, quick })
 
       const started = loader.start()
-      await vi.advanceTimersByTimeAsync(PLUGIN_WAIT_MS)
+      await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS)
       expect(log).toStrictEqual(['quick'])
       expect(loader.isPluginActive('slow')).toBe(false)
 
@@ -573,7 +573,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     await expect(wait).resolves.toBeUndefined()
   })
 
-  it('settles a wait for a plugin that is never activated after the settle time', async () => {
+  it('settles a wait for a plugin that is never activated after the start limit', async () => {
     vi.useFakeTimers()
     try {
       const { host } = createHost()
@@ -581,7 +581,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       const spy = vi.fn()
 
       const wait = loader.settlePlugin('never').then(spy)
-      await vi.advanceTimersByTimeAsync(PLUGIN_SETTLE_MS - 1)
+      await vi.advanceTimersByTimeAsync(PLUGIN_START_LIMIT_MS - 1)
       expect(spy).not.toHaveBeenCalled()
       await vi.advanceTimersByTimeAsync(1)
       await wait

@@ -6,7 +6,8 @@ import { ref } from 'vue'
 import {
   asValue,
   NOTE_TYPE,
-  type NoteRef,
+  type CommandTarget,
+  type CommandsHost,
   type OpenFileOptions,
   type VaultNotes,
   type VaultRelations,
@@ -29,7 +30,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   const recorded = {
     synced: [] as [string, string, string | undefined][],
     opened: [] as [string, OpenFileOptions | undefined][],
-    commands: [] as [string, NoteRef][],
+    commands: [] as [string, CommandTarget | undefined][],
     questions: [] as string[],
     errors: [] as string[],
     made: [] as [string, string][],
@@ -54,9 +55,6 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
       recorded.synced.push([tabId, path, title])
       return linked[tabId] ?? false
     },
-    runCommand: (id, target) => {
-      recorded.commands.push([id, target])
-    },
     getNoteCommands: () => [
       { id: 'org.example.sample:share.run', text: 'Share the note', group: NOTE_TYPE },
     ],
@@ -68,8 +66,6 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     },
     getMessageWriter: () => () => undefined,
     getToday: () => '2026-01-01',
-    getPathCommands: () => [],
-    runPathCommand: () => undefined,
     getCommandIcon: () => null,
     getEntryIcon: () => ({}),
   }
@@ -89,6 +85,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     createUntitledNote: async () => 'Untitled.md',
     read: async () => ({ body: '' }),
     write: async () => undefined,
+    readProperties: async () => ({}),
   }
 
   const relations: VaultRelations = {
@@ -109,8 +106,18 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     listBacklinks: async () => [],
   }
 
+  const commands: CommandsHost = {
+    getIds: () => [],
+    watch: () => ({ dispose: () => undefined }),
+    listItems: async () => [],
+    run: async (id, target) => {
+      recorded.commands.push([id, target])
+    },
+  }
+
   const host: PlexHost = {
     workspace,
+    commands,
     notes,
     relations,
     nesting: { isNesting, headings: ref(6) },

@@ -9,7 +9,7 @@ import { createNoteWithBody } from '../../support/layout.js'
 import { readBox } from '../../support/browser.js'
 import { openWorkspace } from '../../support/workspace.js'
 
-/** The status bar item that counts the vectors of the index. */
+/** The title bar item that counts the vectors of the index. */
 const getItem = (page: Page): Locator => page.locator('.index-stats__label')
 
 /** The vectors the item shows. */
@@ -48,7 +48,7 @@ test.describe('the index stats item', () => {
     for (const path of notes.splice(0)) await destroyIndexedNote(request, path)
   })
 
-  test('shows the number of vectors in the status bar', async ({ page }) => {
+  test('shows the number of vectors in the title bar', async ({ page }) => {
     await openWorkspace(page)
 
     const item = getItem(page)
@@ -79,7 +79,7 @@ test.describe('the index stats item', () => {
     await expect.poll(() => readVectors(item), { timeout: 45_000 }).toBe(before)
   })
 
-  test('opens the popover above the status bar, and closes it with Escape', async ({ page }) => {
+  test('opens the popover below the title bar, and closes it with Escape', async ({ page }) => {
     await openWorkspace(page)
     const item = getItem(page)
     await readSettledVectors(item)
@@ -94,12 +94,13 @@ test.describe('the index stats item', () => {
     await expect(popover.getByText('Chunks', { exact: true })).toBeVisible()
 
     const box = await readBox(popover)
-    const bar = await readBox(page.getByRole('region', { name: 'Status Bar' }))
+    const bar = await readBox(page.locator('[data-title-bar]'))
     const viewport = page.viewportSize()
     expect(box.x).toBeGreaterThanOrEqual(0)
     expect(box.y).toBeGreaterThanOrEqual(0)
     expect(box.x + box.width).toBeLessThanOrEqual(viewport?.width ?? 0)
-    expect(box.y + box.height).toBeLessThanOrEqual(bar.y)
+    expect(box.y).toBeGreaterThanOrEqual(bar.y + bar.height)
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport?.height ?? 0)
     const ground = await popover.evaluate((one) => getComputedStyle(one).backgroundColor)
     expect(ground).not.toBe('transparent')
     expect(ground).not.toMatch(/^rgba\(.*,\s*0\)$/)

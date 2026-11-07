@@ -1,9 +1,10 @@
 export { useCatalogEntries } from './model/catalogEntries'
 export {
-  canRunOn,
+  listDeclaredCommandItems,
   listDeclaredCommands,
   runDeclaredCommand,
+  runDeclaredHandler,
   type DeclaredCommand,
   type DeclaredList,
-  type DeclaredMenu,
+  type DeclaredSlot,
 } from './api/declaredCommands'

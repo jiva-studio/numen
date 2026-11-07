@@ -4,19 +4,30 @@
  * and the run handed to the plugin's backend.
  */
 import { computed, shallowRef, watch } from 'vue'
-import { formatCommandId, type CommandDeclaration, type MenuPlacement } from '@numen/plugin-host'
-import { registerCommand, type Command } from '@/features/command-palette'
+import {
+  formatCommandId,
+  type CommandDeclaration,
+  type HandlerDeclaration,
+  type WhenSettings,
+} from '@numen/plugin-host'
+import { registerCommand, type Command, type CommandTarget } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
-  canRunOn,
+  listDeclaredCommandItems,
   listDeclaredCommands,
   runDeclaredCommand,
   type DeclaredCommand,
-  type DeclaredMenu,
+  type DeclaredSlot,
 } from '@/entities/plugin'
+import {
+  EMPTY_WHEN_CONTEXT,
+  createWhenAvailability,
+  getWhenGroup,
+  type WindowWhenContext,
+} from './whenContext'
 
 /** What the palette files a command a plugin declares under: the plugin and the command's own id. */
-export const getPluginCommandId = (pluginId: string, commandId: string): string =>
+const getPluginCommandId = (pluginId: string, commandId: string): string =>
   formatCommandId(pluginId, commandId)
 
 /** What the palette files a declared command under. */
@@ -24,20 +35,28 @@ export const getPaletteId = (command: DeclaredCommand): string =>
   getPluginCommandId(command.pluginId, command.id)
 
 /**
- * The palette's commands for the declared ones. A command over files is offered
- * over a file of one of its content types, and one over none over anything.
+ * The palette's commands for the declared ones, each offered where its when condition holds over
+ * what is in front, while the vault accepts operations, and grouped by what the condition reads.
  */
 export function createDeclaredPaletteCommands(
   declared: readonly DeclaredCommand[],
+  context: WindowWhenContext = EMPTY_WHEN_CONTEXT,
+  listItems: typeof listDeclaredCommandItems = listDeclaredCommandItems,
 ): readonly Command[] {
+  const isWhenAvailable = createWhenAvailability(context)
   return declared.map((one): Command => {
-    const hasFiles = one.contentTypes.length > 0
     const required = one.arguments.filter(({ isRequired }) => isRequired)
     return {
       id: getPaletteId(one),
       text: one.title,
-      group: hasFiles ? 'file' : 'window',
+      group: getWhenGroup(one.when),
       ...(one.icon ? { icon: getNamedIcon(one.icon) } : {}),
+      ...(one.hasItems
+        ? {
+            input: 'items' as const,
+            listItems: (target: CommandTarget) => listItems(one, target.file || target.path),
+          }
+        : {}),
       ...(required.length > 0
         ? {
             input: 'arguments' as const,
@@ -48,10 +67,20 @@ export function createDeclaredPaletteCommands(
             })),
           }
         : {}),
-      isAvailable: (target) => target.isReady && (!hasFiles || canRunOn(one, target.file)),
+      ...(one.when ? { when: one.when } : {}),
+      // The versions a command with items runs over are the core's to list, over any file.
+      isAvailable: (target) =>
+        target.isReady &&
+        (one.hasItems ? (target.file || target.path) !== '' : isWhenAvailable(one.when, target)),
     }
   })
 }
+
+/** Whether two lists the core answered hold the same entries in the same order. */
+const isSameList = (
+  current: readonly unknown[] | undefined,
+  received: readonly unknown[],
+): boolean => current !== undefined && JSON.stringify(current) === JSON.stringify(received)
 
 export interface DeclaredCommandsDeps {
   readonly list?: typeof listDeclaredCommands
@@ -60,6 +89,8 @@ export interface DeclaredCommandsDeps {
   readonly isListed?: (id: string) => boolean
   /** Whether the plugin declares a backend; a command is run in a backend only where it does. */
   readonly hasBackend?: (pluginId: string) => boolean
+  /** The settings by their dotted keys, which the when conditions read as config. */
+  readonly getConfig?: () => WhenSettings
 }
 
 /** The declaration the plugin host receives for a declared command. */
@@ -68,7 +99,7 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
   id: command.id,
   title: command.title,
   ...(command.icon ? { icon: command.icon } : {}),
-  ...(command.scope ? { scope: command.scope } : {}),
+  ...(command.when ? { when: command.when } : {}),
   ...(command.shortcut ? { shortcut: command.shortcut } : {}),
 })
 
@@ -82,7 +113,13 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const isListed = deps.isListed ?? (() => false)
   const hasBackend = deps.hasBackend ?? (() => true)
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
-  const declaredMenus = shallowRef<readonly DeclaredMenu[] | undefined>(undefined)
+  const declaredSlots = shallowRef<readonly DeclaredSlot[] | undefined>(undefined)
+  const declaredHandlers = shallowRef<readonly HandlerDeclaration[] | undefined>(undefined)
+  const contentTypes = shallowRef<Readonly<Record<string, string>>>({})
+  const whenContext: WindowWhenContext = {
+    getContentTypes: () => contentTypes.value,
+    getConfig: deps.getConfig ?? (() => ({})),
+  }
   let newest = 0
   let unregisterAll: readonly (() => void)[] = []
 
@@ -103,7 +140,12 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
       for (const unregister of unregisterAll) unregister()
       unregisterAll = commands.map((one) =>
         registerCommand(getPaletteId(one), async (invocation, on) => {
-          const outcome = await run(one, { path: invocation.file, values: invocation.values ?? {} })
+          const outcome = await run(one, {
+            path: invocation.file,
+            values: invocation.values ?? {},
+            ...(invocation.isTargetNamed ? { isTargetNamed: true } : {}),
+            ...(one.hasItems ? { argument: invocation.name } : {}),
+          })
           if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
           const { message, openedPath } = outcome.value
           if (message) on.writeMessage(message, 'info')
@@ -114,19 +156,44 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     { flush: 'sync' },
   )
 
-  const load = async (): Promise<void> => {
+  let onFirstList: () => void = () => undefined
+  const firstList = new Promise<void>((resolve) => {
+    onFirstList = resolve
+  })
+
+  const read = async (): Promise<void> => {
     newest += 1
     const mine = newest
     const commands = await list()
     if (mine !== newest) return
-    declared.value = commands.commands
-    declaredMenus.value = commands.menus
+    // An answer equal to the lists held keeps them, so the commands are not registered again while
+    // the palette lists them.
+    if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
+    if (!isSameList(declaredSlots.value, commands.slots)) declaredSlots.value = commands.slots
+    const handlers = commands.handlers ?? []
+    if (!isSameList(declaredHandlers.value, handlers)) declaredHandlers.value = handlers
+    if (commands.contentTypes) contentTypes.value = commands.contentTypes
+    onFirstList()
   }
 
+  const load = (): Promise<void> =>
+    read().catch((error: unknown) => {
+      onFirstList()
+      throw error
+    })
+
   return {
-    paletteCommands: computed(() => createDeclaredPaletteCommands(backendCommands.value)),
+    /** Settles once the lists of a read are held, or a read has failed. */
+    waitForFirstList: (): Promise<void> => firstList,
+    paletteCommands: computed(() =>
+      createDeclaredPaletteCommands(backendCommands.value, whenContext),
+    ),
+    /** What the when conditions of the commands read besides their target. */
+    whenContext,
     commands: computed(() => declared.value),
-    placements: computed((): readonly MenuPlacement[] | undefined => declaredMenus.value),
+    slots: computed(() => declaredSlots.value),
+    /** The handlers of shared commands the enabled plugins declare; undefined until the first list. */
+    handlers: computed(() => declaredHandlers.value),
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load,
   }

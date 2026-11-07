@@ -268,9 +268,11 @@ func (h *workspaceHandler) DetachTab(
 	}
 	result := h.state.TabLinks.Detach(tab)
 	if err := h.state.DetachTab(ctx, DetachedTab{
-		ID: tab.ID,
-		X:  int(r.Msg.GetX()),
-		Y:  int(r.Msg.GetY()),
+		ID:     tab.ID,
+		X:      int(r.Msg.GetX()),
+		Y:      int(r.Msg.GetY()),
+		Width:  int(r.Msg.GetWidth()),
+		Height: int(r.Msg.GetHeight()),
 	}); err != nil {
 		h.state.TabLinks.CancelDetach(tab.ID)
 		return nil, err

@@ -3,9 +3,6 @@
  */
 import { shallowRef } from 'vue'
 import type {
-  CommandNote,
-  ContextMenuRegistration,
-  ContextMenuTarget,
   PluginContext,
   SettingsViewRegistration,
   VaultChangeEvent,
@@ -15,20 +12,19 @@ import type { Manifest } from '@numen/core-client'
 import { createAppInfo } from '../appInfo'
 import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
-import { createStatusViewRegistry, type StatusViewRegistry } from '../statusViews'
+import { createSlotRegistry } from '../slots/slotRegistry'
+import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views/slotViews'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
-import { addListener, notifyListeners, reportError, runCommand } from './events'
-import { createPaletteCommand } from './available'
-import { readAvailableCommands } from './availableReader'
-import { matchesShortcut } from './shortcuts'
+import { addListener, notifyListeners } from './events'
+import { createCommandApi } from './commandApi'
+import { isSharedCommand } from './handlers'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
   addEntry,
   disposeAllEntries,
   disposePluginEntry,
-  matchesContextMenuTarget,
   setStarting,
   type HostRegistry,
 } from './registry'
@@ -61,7 +57,6 @@ type RegistrationBridge = Pick<
   | 'registerReader'
   | 'registerTabKind'
   | 'registerCommand'
-  | 'registerContextMenu'
   | 'registerSettingsView'
   | 'registerAgentProvider'
 >
@@ -84,14 +79,13 @@ function createRegistrationBridge(
         getContext: () => registry.contexts.get(pluginId),
       }),
     registerCommand: (pluginId, registration) => {
+      const holder = isSharedCommand(registration.id) ? registry.handlers : registry.commands
       const fullId = formatCommandId(pluginId, registration.id)
-      if (registry.commands.value.has(fullId)) {
+      if (holder.value.has(fullId)) {
         throw new Error(`Command "${fullId}" is already registered`)
       }
-      return addEntry(registry.commands, fullId, { pluginId, reg: registration })
+      return addEntry(holder, fullId, { pluginId, reg: registration })
     },
-    registerContextMenu: (pluginId, registration) =>
-      addEntry(registry.contextMenus, registration.id, { pluginId, reg: registration }),
     registerSettingsView: (pluginId, registration) =>
       addEntry(registry.settingsViews, getSettingsViewKey(pluginId, registration.id), {
         pluginId,
@@ -138,17 +132,15 @@ function createSettingBridge(
   }
 }
 
+type SharedBridge = 'registerSlotView' | 'registerView' | 'mountView'
+
 /** The views, status views and drops a plugin registers, which the shared registries hold. */
-function createSharedBridge({
-  views,
-  drops,
-  statusViews,
-}: SharedRegistries): Pick<
-  PluginContextHost,
-  'registerStatusView' | 'registerView' | 'mountView' | 'registerDropHandler' | 'drops'
-> {
+function createSharedBridge(
+  shared: SharedRegistries,
+): Pick<PluginContextHost, SharedBridge | 'registerDropHandler' | 'drops'> {
+  const { views, drops, slotViews } = shared
   return {
-    registerStatusView: statusViews.registerStatusView,
+    registerSlotView: slotViews.registerSlotView,
     registerView: views.registerView,
     mountView: views.mountView,
     registerDropHandler: drops.registerDropHandler,
@@ -171,7 +163,7 @@ function createTabBridge(
 interface SharedRegistries {
   readonly views: ViewRegistry
   readonly drops: DropRegistry
-  readonly statusViews: StatusViewRegistry
+  readonly slotViews: SlotViewRegistry
 }
 
 function createHostContextBridge(
@@ -204,9 +196,13 @@ function createServiceBridge(
   | 'getRelations'
   | 'getFiles'
   | 'getAgent'
+  | 'getCommands'
+  | 'getVaults'
+  | 'getWindow'
   | 'getBuffers'
   | 'getNotices'
   | 'getTasks'
+  | 'getBackgroundTasks'
   | 'getTexts'
 > {
   return {
@@ -215,9 +211,13 @@ function createServiceBridge(
     getRelations: () => deps.getRelations?.(),
     getFiles: () => deps.getFiles?.(),
     getAgent: () => deps.getAgent?.(),
+    getCommands: () => deps.getCommands?.(),
+    getVaults: () => deps.getVaults?.(),
+    getWindow: () => deps.getWindow?.(),
     getBuffers: () => deps.getBuffers?.(),
     getNotices: (pluginId) => deps.getNotices?.(pluginId),
     getTasks: (pluginId) => deps.getTasks?.(pluginId),
+    getBackgroundTasks: () => deps.getBackgroundTasks?.(),
     getTexts: (pluginId) => deps.getTexts?.(pluginId),
   }
 }
@@ -227,7 +227,7 @@ function createHostRegistry(): HostRegistry {
     readers: new Map(),
     tabKinds: new Map(),
     commands: shallowRef(new Map()),
-    contextMenus: shallowRef(new Map()),
+    handlers: shallowRef(new Map()),
     settingsViews: shallowRef(new Map()),
     agentProviders: new Map(),
     contexts: new Map(),
@@ -238,64 +238,6 @@ function createHostRegistry(): HostRegistry {
     reportedIssues: new Set(),
     vaultListeners: new Set(),
     fileListeners: new Set(),
-  }
-}
-
-/** The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts. */
-function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
-  const getAvailable = () => readAvailableCommands(deps, registry)
-  const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
-  return {
-    getPaletteCommands: () => getAvailable().map(createPaletteCommand),
-    hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
-    executeCommand: async (id: string, note: CommandNote): Promise<boolean> => {
-      const command = findAvailable(id)
-      if (!command) return false
-      let entry = command.entry
-      if (!entry) {
-        await deps.waitForPlugin?.(command.declaration.pluginId)
-        entry = registry.commands.value.get(id)
-      }
-      if (!entry) return false
-      await runCommand(deps, entry, note)
-      return true
-    },
-    handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
-      for (const { entry, declaration } of getAvailable()) {
-        if (entry && matchesShortcut(event, declaration.shortcut)) {
-          getNote()
-            .then((note) => {
-              if (declaration.scope === 'note' && note.path === '') return
-              return runCommand(deps, entry, note)
-            })
-            .catch((error: unknown) => reportError(deps, entry.pluginId, error))
-          return true
-        }
-      }
-      return false
-    },
-  }
-}
-
-/** The context menu items the plugins registered. */
-function createContextMenuApi(registry: HostRegistry) {
-  return {
-    getContextMenuItems: (target: ContextMenuTarget): readonly ContextMenuRegistration[] => {
-      const items: ContextMenuRegistration[] = []
-      for (const { reg } of registry.contextMenus.value.values()) {
-        if (matchesContextMenuTarget(reg.target, target)) {
-          items.push(reg)
-        }
-      }
-      return items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    },
-    getContextMenuIcon: (id: string): unknown => registry.contextMenus.value.get(id)?.reg.icon,
-    runContextMenu: async (id: string, target: ContextMenuTarget): Promise<boolean> => {
-      const entry = registry.contextMenus.value.get(id)
-      if (!entry) return false
-      await entry.reg.handler(target)
-      return true
-    },
   }
 }
 
@@ -315,7 +257,6 @@ function createRegisteredApi(registry: HostRegistry) {
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
     getRegisteredTabKinds: () => [...registry.tabKinds.values()].map((t) => t.reg),
     getRegisteredCommands: () => [...registry.commands.value.values()].map((c) => c.reg),
-    getRegisteredContextMenus: () => [...registry.contextMenus.value.values()].map((c) => c.reg),
   }
 }
 
@@ -349,18 +290,27 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
 
 export function createPluginHost(deps: PluginHostDeps) {
   const registry = createHostRegistry()
-  const statusViews = createStatusViewRegistry()
+  const slotViews = createSlotViewRegistry(
+    deps.reportViewIssue ? { reportIssue: deps.reportViewIssue } : {},
+  )
   const contextHost = createHostContextBridge(deps, registry, {
     views: createViewRegistry(),
     drops: createDropRegistry(),
-    statusViews,
+    slotViews,
   })
-  const parts = { registry, statusViews, deps }
+  const slots = createSlotRegistry({
+    getEntries: () => deps.getSlotEntries?.(),
+    findCommand: (command, target) => deps.findSlotCommand?.(command, target),
+    findView: slotViews.findView,
+    ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
+    ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
+  })
+  contextHost.getSlots = () => slots
+  const parts = { registry, slotViews, deps }
 
   return {
     ...createContextApi(registry, contextHost),
     ...createCommandApi(deps, registry),
-    ...createContextMenuApi(registry),
     ...createRegisteredApi(registry),
     getSetting: contextHost.getSetting,
     onSettingChange: contextHost.onSettingChange,
@@ -368,9 +318,11 @@ export function createPluginHost(deps: PluginHostDeps) {
     notifyVaultChange: (event: VaultChangeEvent): void =>
       notifyListeners(registry.vaultListeners, event, deps),
     disposePlugin: (pluginId: string) => disposePluginEntry(pluginId, parts),
-    disposeAll: () => disposeAllEntries(registry, statusViews, deps),
-    /** The status bar views the plugins registered, in order of registration; reactive. */
-    statusViews: statusViews.views,
+    disposeAll: () => disposeAllEntries(parts),
+    /** The entries of the slots of the window, as their owners read them. */
+    slots,
+    /** The view a slot of the window draws, or null while no plugin registered one; reactive. */
+    getSlotView: slotViews.getSlotView,
   }
 }
 

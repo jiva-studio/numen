@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ManifestHandler, ManifestSlotEntry } from "./manifest_pb.js";
+import { file_numen_v1_manifest } from "./manifest_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/plugincommand.proto.
  */
 export const file_numen_v1_plugincommand: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiZgoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kEiMKBW1lbnVzGAIgAygLMhQubnVtZW4udjEuUGx1Z2luTWVudSJvCgpQbHVnaW5NZW51EhEKCXBsdWdpbl9pZBgBIAEoCRIQCghsb2NhdGlvbhgCIAEoCRIPCgdjb21tYW5kGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKBW9yZGVyGAUgASgFSACIAQFCCAoGX29yZGVyIsUBCg1QbHVnaW5Db21tYW5kEhEKCXBsdWdpbl9pZBgBIAEoCRIKCgJpZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIVCg1jb250ZW50X3R5cGVzGAQgAygJEhIKCmV4dGVuc2lvbnMYBiADKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50EgwKBGljb24YByABKAkSDQoFc2NvcGUYCCABKAkSEAoIc2hvcnRjdXQYCSABKAkiQwoPQ29tbWFuZEFyZ3VtZW50EgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLaXNfcmVxdWlyZWQYAyABKAgiwgEKF1J1blBsdWdpbkNvbW1hbmRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIPCgdjb21tYW5kGAIgASgJEgwKBHBhdGgYAyABKAkSQwoJYXJndW1lbnRzGAQgAygLMjAubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QuQXJndW1lbnRzRW50cnkaMAoOQXJndW1lbnRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJrChhSdW5QbHVnaW5Db21tYW5kUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5Db21tYW5kRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkSEwoLb3BlbmVkX3BhdGgYAyABKAkqxwEKEENvbW1hbmRFcnJvckNvZGUSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJgoiQ09NTUFORF9FUlJPUl9DT0RFX1VOS05PV05fQ09NTUFORBABEiQKIENPTU1BTkRfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAISHQoZQ09NTUFORF9FUlJPUl9DT0RFX0ZBSUxFRBADEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTkFWQUlMQUJMRRAEMl8KFFBsdWdpbkNvbW1hbmRTZXJ2aWNlEkcKClJ1bkNvbW1hbmQSGy5udW1lbi52MS5SdW5Db21tYW5kUmVxdWVzdBocLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXNwb25zZTK6AQoOQ29tbWFuZFNlcnZpY2USTQoMTGlzdENvbW1hbmRzEh0ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVxdWVzdBoeLm51bWVuLnYxLkxpc3RDb21tYW5kc1Jlc3BvbnNlElkKEFJ1blBsdWdpbkNvbW1hbmQSIS5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVxdWVzdBoiLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QitAIKFExpc3RDb21tYW5kc1Jlc3BvbnNlEikKCGNvbW1hbmRzGAEgAygLMhcubnVtZW4udjEuUGx1Z2luQ29tbWFuZBIoCgVzbG90cxgCIAMoCzIZLm51bWVuLnYxLlBsdWdpblNsb3RFbnRyeRJdChljb250ZW50X3R5cGVfYnlfZXh0ZW5zaW9uGAMgAygLMjoubnVtZW4udjEuTGlzdENvbW1hbmRzUmVzcG9uc2UuQ29udGVudFR5cGVCeUV4dGVuc2lvbkVudHJ5EikKCGhhbmRsZXJzGAQgAygLMhcubnVtZW4udjEuUGx1Z2luSGFuZGxlcho9ChtDb250ZW50VHlwZUJ5RXh0ZW5zaW9uRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJhCg1QbHVnaW5IYW5kbGVyEhEKCXBsdWdpbl9pZBgBIAEoCRIqCgdoYW5kbGVyGAIgASgLMhkubnVtZW4udjEuTWFuaWZlc3RIYW5kbGVyEhEKCWhhc19pdGVtcxgDIAEoCCJQCg9QbHVnaW5TbG90RW50cnkSEQoJcGx1Z2luX2lkGAEgASgJEioKBWVudHJ5GAIgASgLMhsubnVtZW4udjEuTWFuaWZlc3RTbG90RW50cnkirAEKDVBsdWdpbkNvbW1hbmQSEQoJcGx1Z2luX2lkGAEgASgJEgoKAmlkGAIgASgJEg0KBXRpdGxlGAMgASgJEiwKCWFyZ3VtZW50cxgFIAMoCzIZLm51bWVuLnYxLkNvbW1hbmRBcmd1bWVudBIMCgRpY29uGAcgASgJEgwKBHdoZW4YCiABKAkSEAoIc2hvcnRjdXQYCSABKAkSEQoJaGFzX2l0ZW1zGAsgASgIIkMKD0NvbW1hbmRBcmd1bWVudBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhMKC2lzX3JlcXVpcmVkGAMgASgIItQBChdSdW5QbHVnaW5Db21tYW5kUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgRwYXRoGAMgASgJEkMKCWFyZ3VtZW50cxgEIAMoCzIwLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5EhAKCGFyZ3VtZW50GAUgASgJGjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiSwoXTGlzdENvbW1hbmRJdGVtc1JlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEg8KB2NvbW1hbmQYAiABKAkSDAoEcGF0aBgDIAEoCSJ8ChhMaXN0Q29tbWFuZEl0ZW1zUmVzcG9uc2USJAoFaXRlbXMYASADKAsyFS5udW1lbi52MS5Db21tYW5kSXRlbRIpCgVlcnJvchgCIAEoDjIaLm51bWVuLnYxLkNvbW1hbmRFcnJvckNvZGUSDwoHbWVzc2FnZRgDIAEoCSIoCgtDb21tYW5kSXRlbRIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCSJrChhSdW5QbHVnaW5Db21tYW5kUmVzcG9uc2USKQoFZXJyb3IYASABKA4yGi5udW1lbi52MS5Db21tYW5kRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkSEwoLb3BlbmVkX3BhdGgYAyABKAkqxwEKEENvbW1hbmRFcnJvckNvZGUSIgoeQ09NTUFORF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJgoiQ09NTUFORF9FUlJPUl9DT0RFX1VOS05PV05fQ09NTUFORBABEiQKIENPTU1BTkRfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAISHQoZQ09NTUFORF9FUlJPUl9DT0RFX0ZBSUxFRBADEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTkFWQUlMQUJMRRAEMl8KFFBsdWdpbkNvbW1hbmRTZXJ2aWNlEkcKClJ1bkNvbW1hbmQSGy5udW1lbi52MS5SdW5Db21tYW5kUmVxdWVzdBocLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXNwb25zZTKVAgoOQ29tbWFuZFNlcnZpY2USTQoMTGlzdENvbW1hbmRzEh0ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVxdWVzdBoeLm51bWVuLnYxLkxpc3RDb21tYW5kc1Jlc3BvbnNlElkKEFJ1blBsdWdpbkNvbW1hbmQSIS5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVxdWVzdBoiLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXNwb25zZRJZChBMaXN0Q29tbWFuZEl0ZW1zEiEubnVtZW4udjEuTGlzdENvbW1hbmRJdGVtc1JlcXVlc3QaIi5udW1lbi52MS5MaXN0Q29tbWFuZEl0ZW1zUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_manifest]);
 
 /**
  * @generated from message numen.v1.RunCommandRequest
@@ -106,12 +108,28 @@ export type ListCommandsResponse = Message<"numen.v1.ListCommandsResponse"> & {
   commands: PluginCommand[];
 
   /**
-   * The menu entries of every enabled plugin, in the order of the plugins' ids and then of each
+   * The slot entries of every enabled plugin, in the order of the plugins' ids and then of each
    * manifest.
    *
-   * @generated from field: repeated numen.v1.PluginMenu menus = 2;
+   * @generated from field: repeated numen.v1.PluginSlotEntry slots = 2;
    */
-  menus: PluginMenu[];
+  slots: PluginSlotEntry[];
+
+  /**
+   * The content type of a file by its extension, lowercase and without the dot, for every extension
+   * the core knows a type of. The window derives target.contentType from it.
+   *
+   * @generated from field: map<string, string> content_type_by_extension = 3;
+   */
+  contentTypeByExtension: { [key: string]: string };
+
+  /**
+   * The handlers of shared commands of every enabled plugin, in the order of the plugins' ids and
+   * then of each manifest.
+   *
+   * @generated from field: repeated numen.v1.PluginHandler handlers = 4;
+   */
+  handlers: PluginHandler[];
 };
 
 /**
@@ -122,43 +140,62 @@ export const ListCommandsResponseSchema: GenMessage<ListCommandsResponse> = /*@_
   messageDesc(file_numen_v1_plugincommand, 3);
 
 /**
- * PluginMenu is one entry of contributes.menus of a plugin.
+ * PluginHandler is one entry of contributes.handlers of a plugin. A handler runs with
+ * RunPluginCommand under the full id of its shared command, and lists its items with
+ * ListCommandItems.
  *
- * @generated from message numen.v1.PluginMenu
+ * @generated from message numen.v1.PluginHandler
  */
-export type PluginMenu = Message<"numen.v1.PluginMenu"> & {
+export type PluginHandler = Message<"numen.v1.PluginHandler"> & {
   /**
    * @generated from field: string plugin_id = 1;
    */
   pluginId: string;
 
   /**
-   * @generated from field: string location = 2;
+   * @generated from field: numen.v1.ManifestHandler handler = 2;
    */
-  location: string;
+  handler?: ManifestHandler | undefined;
 
   /**
-   * @generated from field: string command = 3;
+   * has_items is set for a handler whose when names version.*: it offers the text versions of the
+   * file over which it holds.
+   *
+   * @generated from field: bool has_items = 3;
    */
-  command: string;
-
-  /**
-   * @generated from field: string group = 4;
-   */
-  group: string;
-
-  /**
-   * @generated from field: optional int32 order = 5;
-   */
-  order?: number | undefined;
+  hasItems: boolean;
 };
 
 /**
- * Describes the message numen.v1.PluginMenu.
- * Use `create(PluginMenuSchema)` to create a new message.
+ * Describes the message numen.v1.PluginHandler.
+ * Use `create(PluginHandlerSchema)` to create a new message.
  */
-export const PluginMenuSchema: GenMessage<PluginMenu> = /*@__PURE__*/
+export const PluginHandlerSchema: GenMessage<PluginHandler> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugincommand, 4);
+
+/**
+ * PluginSlotEntry is one entry of contributes.slots of a plugin.
+ *
+ * @generated from message numen.v1.PluginSlotEntry
+ */
+export type PluginSlotEntry = Message<"numen.v1.PluginSlotEntry"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: numen.v1.ManifestSlotEntry entry = 2;
+   */
+  entry?: ManifestSlotEntry | undefined;
+};
+
+/**
+ * Describes the message numen.v1.PluginSlotEntry.
+ * Use `create(PluginSlotEntrySchema)` to create a new message.
+ */
+export const PluginSlotEntrySchema: GenMessage<PluginSlotEntry> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugincommand, 5);
 
 /**
  * PluginCommand is one command as a manifest declares it.
@@ -186,23 +223,6 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
   title: string;
 
   /**
-   * The content types of the files the command runs over, such as
-   * text/markdown or audio/*; *\/* is a file of any type. None is a command
-   * over no file.
-   *
-   * @generated from field: repeated string content_types = 4;
-   */
-  contentTypes: string[];
-
-  /**
-   * The extensions, lowercase and without the dot, that give a file one of
-   * those types, and * where the command runs over a file of any type.
-   *
-   * @generated from field: repeated string extensions = 6;
-   */
-  extensions: string[];
-
-  /**
    * The arguments, in the order a person is asked for them.
    *
    * @generated from field: repeated numen.v1.CommandArgument arguments = 5;
@@ -218,11 +238,11 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
   icon: string;
 
   /**
-   * scope is "note" for a command listed only while a note is in front.
+   * when is the CEL condition under which the command is available, as the manifest declares it.
    *
-   * @generated from field: string scope = 8;
+   * @generated from field: string when = 10;
    */
-  scope: string;
+  when: string;
 
   /**
    * shortcut is the keystroke the plugin suggests for the command.
@@ -230,6 +250,15 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
    * @generated from field: string shortcut = 9;
    */
   shortcut: string;
+
+  /**
+   * has_items is set for a command that offers items, which a place reads
+   * with ListCommandItems and runs with the id of the one picked as the
+   * argument of RunPluginCommand.
+   *
+   * @generated from field: bool has_items = 11;
+   */
+  hasItems: boolean;
 };
 
 /**
@@ -237,7 +266,7 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
  * Use `create(PluginCommandSchema)` to create a new message.
  */
 export const PluginCommandSchema: GenMessage<PluginCommand> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 5);
+  messageDesc(file_numen_v1_plugincommand, 6);
 
 /**
  * CommandArgument is one argument a command takes.
@@ -268,7 +297,7 @@ export type CommandArgument = Message<"numen.v1.CommandArgument"> & {
  * Use `create(CommandArgumentSchema)` to create a new message.
  */
 export const CommandArgumentSchema: GenMessage<CommandArgument> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 6);
+  messageDesc(file_numen_v1_plugincommand, 7);
 
 /**
  * @generated from message numen.v1.RunPluginCommandRequest
@@ -295,6 +324,14 @@ export type RunPluginCommandRequest = Message<"numen.v1.RunPluginCommandRequest"
    * @generated from field: map<string, string> arguments = 4;
    */
   arguments: { [key: string]: string };
+
+  /**
+   * The id of the item picked, for a command that offers items; empty for
+   * any other command.
+   *
+   * @generated from field: string argument = 5;
+   */
+  argument: string;
 };
 
 /**
@@ -302,7 +339,91 @@ export type RunPluginCommandRequest = Message<"numen.v1.RunPluginCommandRequest"
  * Use `create(RunPluginCommandRequestSchema)` to create a new message.
  */
 export const RunPluginCommandRequestSchema: GenMessage<RunPluginCommandRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 7);
+  messageDesc(file_numen_v1_plugincommand, 8);
+
+/**
+ * @generated from message numen.v1.ListCommandItemsRequest
+ */
+export type ListCommandItemsRequest = Message<"numen.v1.ListCommandItemsRequest"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: string command = 2;
+   */
+  command: string;
+
+  /**
+   * The file the items are listed over, relative to the vault the window
+   * shows.
+   *
+   * @generated from field: string path = 3;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.ListCommandItemsRequest.
+ * Use `create(ListCommandItemsRequestSchema)` to create a new message.
+ */
+export const ListCommandItemsRequestSchema: GenMessage<ListCommandItemsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugincommand, 9);
+
+/**
+ * @generated from message numen.v1.ListCommandItemsResponse
+ */
+export type ListCommandItemsResponse = Message<"numen.v1.ListCommandItemsResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.CommandItem items = 1;
+   */
+  items: CommandItem[];
+
+  /**
+   * Set when the items could not be listed; the message then says why.
+   *
+   * @generated from field: numen.v1.CommandErrorCode error = 2;
+   */
+  error: CommandErrorCode;
+
+  /**
+   * @generated from field: string message = 3;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message numen.v1.ListCommandItemsResponse.
+ * Use `create(ListCommandItemsResponseSchema)` to create a new message.
+ */
+export const ListCommandItemsResponseSchema: GenMessage<ListCommandItemsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugincommand, 10);
+
+/**
+ * CommandItem is one item a command offers: the id the run takes as its
+ * argument, and what a person reads.
+ *
+ * @generated from message numen.v1.CommandItem
+ */
+export type CommandItem = Message<"numen.v1.CommandItem"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string title = 2;
+   */
+  title: string;
+};
+
+/**
+ * Describes the message numen.v1.CommandItem.
+ * Use `create(CommandItemSchema)` to create a new message.
+ */
+export const CommandItemSchema: GenMessage<CommandItem> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugincommand, 11);
 
 /**
  * @generated from message numen.v1.RunPluginCommandResponse
@@ -333,7 +454,7 @@ export type RunPluginCommandResponse = Message<"numen.v1.RunPluginCommandRespons
  * Use `create(RunPluginCommandResponseSchema)` to create a new message.
  */
 export const RunPluginCommandResponseSchema: GenMessage<RunPluginCommandResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugincommand, 8);
+  messageDesc(file_numen_v1_plugincommand, 12);
 
 /**
  * CommandErrorCode is why a command was served and did not succeed.
@@ -432,6 +553,18 @@ export const CommandService: GenService<{
     methodKind: "unary";
     input: typeof RunPluginCommandRequestSchema;
     output: typeof RunPluginCommandResponseSchema;
+  },
+  /**
+   * ListCommandItems lists the items a command offers over a path: for a
+   * command whose when names version.*, the text versions of the file over
+   * which it holds. A command without items offers none.
+   *
+   * @generated from rpc numen.v1.CommandService.ListCommandItems
+   */
+  listCommandItems: {
+    methodKind: "unary";
+    input: typeof ListCommandItemsRequestSchema;
+    output: typeof ListCommandItemsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_plugincommand, 1);

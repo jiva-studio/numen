@@ -7,9 +7,12 @@
  * to its maximum, one step apart. A setting flagged `preview` is applied while its row is focused
  * and restored when the step is left without a choice.
  */
+import { parseWhen } from '@numen/plugin-host'
 import type { Command, PaletteLists } from '@/features/command-palette'
+import { getPaletteValues } from '@/shared/paletteValues'
 import type { StepGroup, StepRow } from '@/shared/steps'
 import type { PluginSettingInfo, PluginSettingOption, SettingEdit } from '@/entities/settings'
+import { getSettingWhen, getSettingsConfig } from './settingsConfig'
 import { getNamedIcon } from '@/shared/icons'
 
 /** The owner whose settings the core declares. */
@@ -149,6 +152,25 @@ const getChoices = (setting: PluginSettingInfo, words: SettingWords): readonly C
 const getSettingPath = (owner: string, key: string): readonly string[] =>
   owner === APP_OWNER ? [APP_OWNER, ...key.split('.')] : [owner, key]
 
+/** The condition of the command of a setting and its availability under the settings as they stand. */
+function getSettingAvailability(
+  owner: SettingOwner,
+  setting: PluginSettingInfo,
+  getOwners: () => readonly SettingOwner[],
+): Pick<Command, 'when' | 'isAvailable'> {
+  const when = getSettingWhen(owner, setting)
+  const parsed = parseWhen(when)
+  return {
+    when,
+    isAvailable: (target) =>
+      parsed.ok &&
+      parsed.value.evaluate({
+        ...getPaletteValues(target, {}),
+        config: getSettingsConfig(getOwners()),
+      }),
+  }
+}
+
 export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
   /** The commands whose setting is previewed while its row has focus and is not yet restored. */
   const previewed = new Set<string>()
@@ -174,9 +196,9 @@ export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
           id: getSettingCommandId(owner.id, setting.key),
           text: owner.name ? `${owner.name}: ${setting.title}` : setting.title,
           group: 'settings' as const,
-          input: 'choice' as const,
+          input: 'items' as const,
           ...(setting.icon ? { icon: getNamedIcon(setting.icon) } : {}),
-          isAvailable: () => setting.isShown !== false,
+          ...getSettingAvailability(owner, setting, deps.getOwners),
         })),
     )
   }

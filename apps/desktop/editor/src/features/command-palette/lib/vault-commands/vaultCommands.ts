@@ -3,7 +3,7 @@
  */
 import { COMMAND } from '@/shared/commandIds'
 import { createRowKeys } from '../chords/chords'
-import { isAlwaysAvailable, isVaultOpen } from '../commands/availability'
+import { withWhen } from '../commands/availability'
 import type { Command } from '../../types'
 import type { Words } from '../../words'
 
@@ -14,28 +14,28 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     ...createRowKeys(COMMAND.goToNote, agent),
     group: 'vault',
     input: 'note',
-    isAvailable: (target) => target.isReady,
+    ...withWhen('window.isVaultReady'),
   },
   {
     id: COMMAND.openVault,
     text: words.openVault,
     group: 'vault',
     input: 'vault',
-    isAvailable: isAlwaysAvailable,
+    ...withWhen(''),
   },
   {
     id: COMMAND.createVault,
     text: words.newVault,
     ...createRowKeys(COMMAND.createVault, agent),
     group: 'vault',
-    isAvailable: isAlwaysAvailable,
+    ...withWhen(''),
   },
   {
     id: COMMAND.renameVault,
     text: words.renameVault,
     group: 'vault',
     input: 'name',
-    isAvailable: isVaultOpen,
+    ...withWhen('window.isVaultOpen'),
     getFieldText: (target) => target.vault.name,
   },
   {
@@ -44,7 +44,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     group: 'vault',
     input: 'vault',
     next: 'confirmation',
-    isAvailable: isAlwaysAvailable,
+    ...withWhen(''),
     answers: {
       keeps: words.keepsVault,
       retainedNotice: words.retainedNotice,
@@ -58,7 +58,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     group: 'vault',
     input: 'vault',
     next: 'retypedName',
-    isAvailable: isAlwaysAvailable,
+    ...withWhen(''),
     warns: { action: words.erases, detail: words.binned, back: words.typeVaultBack },
   },
 ]

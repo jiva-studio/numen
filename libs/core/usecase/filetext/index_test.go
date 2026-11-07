@@ -392,13 +392,13 @@ func timedParts() []domain.TextSegment {
 }
 
 // A recording with no text version is a source identified by its name, with
-// nothing to split into chunks; the plugins that run on their own are queried for its text.
+// nothing to split into chunks.
 func TestARecordingWithNoVersionIsASourceWithNoChunks(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)
 
-	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract, _ := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	res, err := extract.Execute(ctx, indexfake.GetFirst())
 	if err != nil {
 		t.Fatal(err)
@@ -411,9 +411,6 @@ func TestARecordingWithNoVersionIsASourceWithNoChunks(t *testing.T) {
 	}
 	if _, target := index.Sources[indexfake.GetFirst().ID][talkPath]; !target {
 		t.Error("the vault holds a recording the index does not")
-	}
-	if got := texts.getRequested(); !slices.Equal(got, []string{talkPath}) {
-		t.Errorf("text was asked for %v, want the recording", got)
 	}
 }
 
@@ -433,9 +430,6 @@ func TestIndexSkipsAFileWithNoTextSource(t *testing.T) {
 	}
 	if _, isIndexed := index.Sources[indexfake.GetFirst().ID]["pictures/cover.sample"]; isIndexed {
 		t.Error("the index holds a file that has no text")
-	}
-	if got := texts.getRequested(); len(got) != 0 {
-		t.Errorf("text was asked for %v, want none", got)
 	}
 }
 
@@ -534,9 +528,6 @@ func TestATextThatCannotBeReadIsReportedAndTheRunGoesOn(t *testing.T) {
 	}
 	if res.Unreadable != 1 || len(errs) != 1 {
 		t.Fatalf("the run reports %+v and the handler got %v, want one unreadable source reported", res, errs)
-	}
-	if got := texts.getRequested(); len(got) != 0 {
-		t.Fatalf("text was asked for %v while a provider failed", got)
 	}
 }
 

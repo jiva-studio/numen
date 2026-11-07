@@ -100,7 +100,7 @@ func TestOpenEngineReturnsMockRecogniser(t *testing.T) {
 	}
 }
 
-func TestRecogniseCommandReportsPages(t *testing.T) {
+func TestTheHandlerOfCreateTextReportsPages(t *testing.T) {
 	v := hosttest.New("Physics")
 	raw, err := os.ReadFile("../document/testdata/scan.pdf")
 	if err != nil {
@@ -125,14 +125,24 @@ func TestRecogniseCommandReportsPages(t *testing.T) {
 		})
 		recognitions.SetCompilationCache(compilation)
 	}
-	run := newRecogniseCommand(recognitions)
+	commands, err := newCommands(recognitions, recognition.Host{Vault: v, Store: v.Store(), Texts: texts, Queue: hosttest.NewQueue()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func(ctx context.Context, req command.Request) (command.Result, error) { return commands.RunCommand(ctx, req) }
 
-	res, err := run(t.Context(), command.Request{Command: "recognition.create", Path: "books/scan.pdf"})
+	res, err := run(t.Context(), command.Request{Command: "app:file.createText", Path: "books/scan.pdf"})
 	if err != nil || !strings.Contains(res.Message, "recognised 2 pages of books/scan.pdf") {
 		t.Fatalf("answered %+v (%v)", res, err)
 	}
-	if _, err := run(t.Context(), command.Request{Command: "recognition.create", Path: "books/gone.pdf"}); err == nil {
+	if _, err := run(t.Context(), command.Request{Command: "app:file.createText", Path: "books/gone.pdf"}); err == nil {
 		t.Fatal("a file that is not there was recognised")
+	}
+	if _, err := run(t.Context(), command.Request{Command: "app:version.delete", Path: "books/scan.pdf"}); !errors.Is(err, command.ErrBadArguments) {
+		t.Fatalf("a deletion naming no version answered %v, want ErrBadArguments", err)
+	}
+	if _, err := run(t.Context(), command.Request{Command: "recognition.create", Path: "books/scan.pdf"}); !errors.Is(err, command.ErrUnknownCommand) {
+		t.Fatalf("the command of before answered %v, want ErrUnknownCommand", err)
 	}
 
 	emptyRecognitions, err := recognition.New(
@@ -151,7 +161,7 @@ func TestRecogniseCommandReportsPages(t *testing.T) {
 		})
 		emptyRecognitions.SetCompilationCache(compilation)
 	}
-	emptyRes, err := newRecogniseCommand(emptyRecognitions)(t.Context(), command.Request{Command: "recognition.create", Path: "books/scan.pdf"})
+	emptyRes, err := newRecogniseCommand(emptyRecognitions)(t.Context(), command.Request{Command: "app:file.createText", Path: "books/scan.pdf"})
 	if err != nil || emptyRes.Message != "books/scan.pdf says nothing that could be read, and nothing was kept" {
 		t.Fatalf("empty scan answered %+v (%v)", emptyRes, err)
 	}

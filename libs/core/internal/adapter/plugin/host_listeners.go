@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/portproxy"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
@@ -256,7 +257,7 @@ func (h *Host) clearListenerFailure(pluginID string) {
 	if !ok {
 		return
 	}
-	if isFailed, cause := sup.GetActivationFailure(); isFailed && errors.Is(cause, errListenerBind) {
+	if cause := sup.GetActivationFailure(); cause != nil && errors.Is(cause, errListenerBind) {
 		h.clearFailure(pluginID, sup)
 	}
 }
@@ -327,4 +328,18 @@ func (h *Host) releaseEndpoint(pluginID string, endpoint transport.Endpoint) {
 		return
 	}
 	sup.Release(h.clock.Now())
+}
+
+// recordActivationFailure records a failed activation of the plugin, and returns the failure. A plugin that
+// already has a failure keeps it, and nil is returned.
+func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport.PluginFailure {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	sup, ok := h.supervisors[pluginID]
+	if !ok || !sup.RecordActivationFailure(h.clock.Now(), cause) {
+		return nil
+	}
+	failure := h.newPluginFailureLocked(pluginID, sup, cause)
+	h.failedPlugins = append(h.failedPlugins, failure)
+	return &failure
 }

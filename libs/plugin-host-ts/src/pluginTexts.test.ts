@@ -47,7 +47,7 @@ describe('the text versions a plugin view reads', () => {
       },
       createTextEdit: async () => ({}) as never,
     }
-    const live = await createPluginTexts(client, 'md.numen.views.media-player').readLiveText(
+    const live = await createPluginTexts(client, 'md.numen.views.media.viewer').readLiveText(
       'talks/morning.mp3',
     )
 
@@ -64,6 +64,33 @@ describe('the text versions a plugin view reads', () => {
     expect('selector' in (live?.segments[1] ?? {})).toBe(false)
   })
 
+  it('reads the note property a version was made from, and omits it for a version without one', async () => {
+    const linked = {
+      ...version,
+      pluginId: 'md.numen.tools.media-importer',
+      key: 'link',
+      sourceProperty: { key: 'url', value: 'https://example.org/talk' },
+    }
+    const client: TextClient = {
+      readLiveText: async (req) =>
+        ({
+          version: req.path === 'talks/link.md' ? linked : version,
+          segments: [],
+        }) as unknown as Awaited<ReturnType<TextClient['readLiveText']>>,
+      createTextEdit: async () => ({}) as never,
+    }
+    const texts = createPluginTexts(client, 'md.numen.views.media-player')
+
+    const fromProperty = await texts.readLiveText('talks/link.md')
+    const fromFile = await texts.readLiveText('talks/morning.mp3')
+
+    expect(fromProperty?.version.sourceProperty).toStrictEqual({
+      key: 'url',
+      value: 'https://example.org/talk',
+    })
+    expect('sourceProperty' in (fromFile?.version ?? {})).toBe(false)
+  })
+
   it('returns null when readLiveText answers without a version', async () => {
     const client: TextClient = {
       readLiveText: async () =>
@@ -72,7 +99,7 @@ describe('the text versions a plugin view reads', () => {
         >,
       createTextEdit: async () => ({}) as never,
     }
-    const live = await createPluginTexts(client, 'md.numen.views.media-player').readLiveText(
+    const live = await createPluginTexts(client, 'md.numen.views.media.viewer').readLiveText(
       'talks/missing.mp3',
     )
     expect(live).toBeNull()
@@ -80,17 +107,17 @@ describe('the text versions a plugin view reads', () => {
 
   it('saves an edit in the folder of the plugin it was made for', async () => {
     const requests: unknown[] = []
-    const texts = createPluginTexts(createClient(requests), 'md.numen.views.media-player')
+    const texts = createPluginTexts(createClient(requests), 'md.numen.views.media.viewer')
 
     const edit = await texts.createEdit('talks/morning.mp3', version.id, [
       { text: 'Good morning!\n', selector: { t: [0, 1.5] } },
       { text: 'Second line.\n', heading: 'Part 2' },
     ])
 
-    expect(edit.ok && edit.value.pluginId).toBe('md.numen.views.media-player')
+    expect(edit.ok && edit.value.pluginId).toBe('md.numen.views.media.viewer')
     expect(requests).toEqual([
       {
-        pluginId: 'md.numen.views.media-player',
+        pluginId: 'md.numen.views.media.viewer',
         path: 'talks/morning.mp3',
         sourceVersionId: version.id,
         segments: [

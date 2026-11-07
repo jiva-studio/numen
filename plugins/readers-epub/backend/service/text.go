@@ -42,7 +42,12 @@ type TextServer struct {
 	running  map[string]context.CancelFunc
 }
 
-var _ host.TextProvider = (*TextServer)(nil)
+// TextRequest names the book whose text is written, in the vault Vault names; empty is the vault the
+// host shows.
+type TextRequest struct {
+	Vault domain.VaultID
+	Path  string
+}
 
 // NewTextServer is the texts of the books read through files, written into store and reported to
 // texts, each written in a turn of queue.
@@ -117,9 +122,9 @@ func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string
 	return read, nil
 }
 
-// CreateText starts writing the text of a book as a version made from the file, and returns. The
+// CreateText starts writing the text of a book as a version made from the file, and returns.
 // A book whose text is being written already is not started again.
-func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) error {
+func (s *TextServer) CreateText(ctx context.Context, req TextRequest) error {
 	key := string(req.Vault) + "\x00" + req.Path
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -144,7 +149,7 @@ func (s *TextServer) finish(key string) {
 
 // writeText writes the text of a book in a turn of the queue. A failure stays shown as a task until
 // the text is written again.
-func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
+func (s *TextServer) writeText(ctx context.Context, req TextRequest) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="task counters and unit start at zero"
@@ -167,7 +172,7 @@ func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 
 // putText reports the text of a book as a version made from the file. A file that is no book, a
 // locked book and a book with no text get no version.
-func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task host.Task) (err error) {
+func (s *TextServer) putText(ctx context.Context, req TextRequest, task host.Task) (err error) {
 	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, OnWaiting: nil})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)

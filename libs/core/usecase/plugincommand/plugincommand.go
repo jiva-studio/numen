@@ -9,7 +9,6 @@ import (
 	"maps"
 	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -23,8 +22,8 @@ import (
 type (
 	// Entry is one command an enabled plugin declares, and the plugin that does.
 	Entry = pluginport.PluginCommandEntry
-	// MenuEntry is one menu entry an enabled plugin declares, and the plugin that does.
-	MenuEntry = pluginport.PluginMenuEntry
+	// SlotEntry is one slot entry an enabled plugin declares, and the plugin that does.
+	SlotEntry = pluginport.PluginSlotEntry
 	// Parts is what one plugin has and whether the host holds it suspended.
 	Parts = pluginport.PluginParts
 	// Command is a command as its manifest declares it.
@@ -94,13 +93,31 @@ func (u List) ExecuteAll() []Entry {
 	})
 }
 
-// ExecuteMenus lists the menu entries of the enabled plugins, leaving out those of a plugin the host
-// holds suspended and of a plugin with neither a frontend nor a backend.
-func (u List) ExecuteMenus() []MenuEntry {
+// ExecuteHandlers lists the handlers of shared commands of the enabled plugins, each as a command under
+// the full id of its shared command, leaving out those of a plugin the host holds suspended and of a
+// plugin with neither a frontend nor a backend.
+func (u List) ExecuteHandlers() []Entry {
 	if u.commands == nil {
 		return nil
 	}
-	return slices.DeleteFunc(u.commands.ListMenus(), func(one MenuEntry) bool {
+	return slices.DeleteFunc(u.commands.ListHandlers(), func(one Entry) bool {
+		parts := u.commands.GetParts(one.PluginID)
+		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+	})
+}
+
+// HasBackend reports whether the plugin has a backend that runs its commands and handlers.
+func (u List) HasBackend(pluginID string) bool {
+	return u.commands != nil && u.commands.GetParts(pluginID).HasBackend
+}
+
+// ExecuteSlots lists the slot entries of the enabled plugins, leaving out those of a plugin the host
+// holds suspended and of a plugin with neither a frontend nor a backend.
+func (u List) ExecuteSlots() []SlotEntry {
+	if u.commands == nil {
+		return nil
+	}
+	return slices.DeleteFunc(u.commands.ListSlots(), func(one SlotEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})
@@ -124,13 +141,17 @@ type Run struct {
 	readers  vaultport.VaultReaders
 }
 
-// Execute checks the call against the declaration and runs it over the vault. A call that does not
-// meet the declaration is ErrBadArguments, saying what is wrong, and nothing is run.
+// Execute checks the call against the declaration and runs it over the vault; a call of a shared
+// command runs the handler the plugin declares. A call that does not meet the declaration is
+// ErrBadArguments, saying what is wrong, and nothing is run.
 func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, error) {
 	if u.commands == nil {
 		return Result{}, ErrUnavailable
 	}
 	entries := u.commands.ListCommands()
+	if pluginport.IsSharedCommand(call.Command) {
+		entries = u.commands.ListHandlers()
+	}
 	if !u.commands.GetParts(call.PluginID).HasBackend {
 		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
 	}
@@ -149,6 +170,12 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, er
 	return u.commands.RunCommand(ctx, normalized)
 }
 
+// IsAvailable reports whether the condition of the command of the entry holds over the path, as a
+// run of it checks; a condition the core cannot decide holds.
+func (u Run) IsAvailable(ctx context.Context, v domain.Vault, entry Entry, path string) bool {
+	return u.checkPath(ctx, v, entry.Command, Call{PluginID: entry.PluginID, Command: entry.Command.ID, Path: path}) == nil
+}
+
 // checkCall reports the first way the call does not meet the declaration.
 func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, call Call) error {
 	if err := u.checkPath(ctx, v, declared, call); err != nil {
@@ -157,16 +184,23 @@ func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, ca
 	return checkArguments(declared, call)
 }
 
-// checkPath reports whether the call names a file the command can run over.
+// checkPath reports whether the condition of the command holds over the path of the call. A condition
+// that does not name the target, or depends on what the core does not know (the window, the settings,
+// whether a path of no known type is a folder), lets the call through.
 func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, call Call) error {
-	switch {
-	case declared.HasFiles() && (call.Path == "" || strings.HasSuffix(call.Path, "/")):
-		return fmt.Errorf("%w: %s runs over a file", ErrBadArguments, declared.ID)
-	case declared.HasFiles() && !declared.CanRunOn(u.getContentType(call.Path), u.readNoteType(ctx, v, declared, call.Path)):
-		return fmt.Errorf("%w: %s runs over files of %v and notes of types %v, and %s is none",
-			ErrBadArguments, declared.ID, declared.ContentTypes, declared.NoteTypes, call.Path)
-	case !declared.HasFiles() && call.Path != "":
-		return fmt.Errorf("%w: %s runs over no file", ErrBadArguments, declared.ID)
+	condition, err := pluginport.ParseCondition(declared.When)
+	if err != nil {
+		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
+	}
+	if !condition.NamesTarget() {
+		return nil
+	}
+	noteType, properties := u.readNote(ctx, v, condition, call.Path)
+	values := pluginport.GetTargetValues(call.Path, string(u.getContentType(call.Path)), string(noteType))
+	values["target.properties"] = properties
+	if condition.Evaluate(values) == pluginport.ConditionFalse {
+		return fmt.Errorf("%w: %s is not available over %q, as its condition %q does not hold there",
+			ErrBadArguments, declared.ID, call.Path, declared.When)
 	}
 	return nil
 }
@@ -223,32 +257,48 @@ func (u Run) getContentType(path string) domain.ContentType {
 	return u.types.GetContentType(path)
 }
 
-// readNoteType is the type of the note at the path where the command runs over notes of some type,
-// and no type where it runs over none, where the vault has no readers, or where the note cannot be
-// read.
-func (u Run) readNoteType(ctx context.Context, v domain.Vault, declared Command, path string) domain.NoteType {
-	if len(declared.NoteTypes) == 0 || u.readers == nil {
-		return ""
+// readNote is the type and the frontmatter of the note at the path where the condition names either,
+// and none where it does not, where the vault has no readers, or where the note cannot be read.
+func (u Run) readNote(
+	ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, path string,
+) (domain.NoteType, map[string]any) {
+	names := condition.Names()
+	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || u.readers == nil || path == "" {
+		return "", map[string]any{}
 	}
-	noteType, err := vaultport.ReadNoteType(ctx, u.readers, v, path)
+	noteType, properties, err := vaultport.ReadNote(ctx, u.readers, v, path)
 	if err != nil {
-		return ""
+		return "", map[string]any{}
 	}
-	return noteType
+	return noteType, properties
 }
 
-// ListExtensions lists, lowercase and without the dot, the extensions that give a file a type the
-// command runs over, and `*` alone where it runs over a file of any type.
-func (u List) ListExtensions(command Command) []string {
-	if slices.Contains(command.ContentTypes, domain.AnyContentType) {
-		return []string{"*"}
+// ListContentTypes gives the content type of a file by its extension, lowercase and without the dot,
+// for every extension the table knows a type of; the window derives target.contentType from it.
+func (u List) ListContentTypes() map[string]string {
+	out := map[string]string{}
+	if u.types == nil {
+		return out
 	}
-	var out []string
-	for _, one := range command.ContentTypes {
-		if u.types != nil {
-			out = append(out, u.types.ListExtensions(one)...)
-		}
+	for _, extension := range u.types.ListExtensions(domain.AnyContentType) {
+		out[extension] = string(u.types.GetContentType("file." + extension))
 	}
-	slices.Sort(out)
-	return slices.Compact(out)
+	return out
 }
+
+// HasItems reports whether the command offers one item per text version of a file: its condition
+// names version.*. A condition that cannot be read counts as having items, so it is listed nowhere.
+func HasItems(command Command) bool {
+	condition, err := pluginport.ParseCondition(command.When)
+	return err != nil || condition.HasItems()
+}
+
+// NamesTarget reports whether the condition of the command names the target it runs over, so a call
+// names a path.
+func NamesTarget(command Command) bool {
+	condition, err := pluginport.ParseCondition(command.When)
+	return err == nil && condition.NamesTarget()
+}
+
+// IsSharedCommand reports whether the full id is a shared command, which the handlers of plugins run.
+func IsSharedCommand(id string) bool { return pluginport.IsSharedCommand(id) }

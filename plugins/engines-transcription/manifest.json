@@ -1,35 +1,44 @@
 {
   "id": "md.numen.engines.transcription",
   "name": "Audio/Video Transcription",
-  "version": "2026.11.7",
+  "version": "2026.11.8",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "engines",
-    "handles": [
+    "slots": [
       {
-        "purpose": "text-provider"
-      }
-    ],
-    "commands": [
-      {
-        "id": "transcript.create",
-        "title": "Transcribe recording",
-        "icon": "audio-lines",
-        "contentTypes": ["audio/*", "video/*"]
+        "slot": "fileTree.context",
+        "command": "app:file.createText",
+        "group": "3-text",
+        "order": 10
       },
       {
-        "id": "transcript.delete",
+        "slot": "fileTree.context",
+        "command": "app:version.delete",
+        "group": "3-text",
+        "order": 90
+      }
+    ],
+    "handlers": [
+      {
+        "command": "app:file.createText",
+        "title": "Transcribe",
+        "when": "target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')"
+      },
+      {
+        "command": "app:version.delete",
         "title": "Delete transcript",
-        "icon": "trash-2",
-        "when": [
-          {
-            "key": "version.plugin",
-            "is": ["md.numen.engines.transcription"]
-          }
-        ]
+        "when": "version.kind == 'transcript'"
+      }
+    ],
+    "triggers": [
+      {
+        "on": "file.added",
+        "command": "app:file.createText",
+        "when": "(target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')) && config.md.numen.engines.transcription.transcribeAutomatically == true"
       }
     ]
   },
@@ -133,7 +142,6 @@
   "backend": {
     "entrypoint": "bin/engines-transcription"
   },
-  "services": ["numen.v1.TextProviderService"],
   "settings": [
     {
       "key": "model",
@@ -167,6 +175,13 @@
       ],
       "palette": true,
       "icon": "audio-lines"
+    },
+    {
+      "key": "transcribeAutomatically",
+      "type": "boolean",
+      "title": "Transcribe automatically",
+      "description": "Transcribe every recording added to the vault",
+      "default": false
     }
   ]
 }

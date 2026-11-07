@@ -17,14 +17,11 @@ const coreFolder = "core"
 // index database, their files in the plugin folders of each vault's store,
 // made by the enabled plugins that declare a text input.
 func (c Config) NewTextVersions(db *Index) (*textversion.Versions, error) {
-	var plugins interface {
-		textport.TextPlugins
-		textport.TextProviders
-	} = textbridge.NoPlugins{}
+	var plugins textport.TextPlugins = textbridge.NoPlugins{}
 	if c.PluginHost != nil && !c.SafeMode {
 		plugins = textbridge.NewPlugins(c.PluginHost)
 	}
-	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: c.vaultOptions()}, plugins, plugins, c.VaultReaders(), c.Clock())
+	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: c.vaultOptions()}, plugins, c.VaultReaders(), c.Clock())
 }
 
 // getTextReaders is the text versions sources are read from, or nil where the

@@ -19,12 +19,10 @@ var (
 )
 
 // Request is one text to proofread. Source is the version read, and empty for the live one.
-// IsUserStarted is set when a user requested it.
 type Request struct {
-	Vault         domain.VaultID
-	Path          string
-	Source        domain.TextVersionID
-	IsUserStarted bool
+	Vault  domain.VaultID
+	Path   string
+	Source domain.TextVersionID
 }
 
 // Result is what one proofreading did: the lines it read, the lines it put right, and the batches
@@ -54,7 +52,7 @@ func newProofreading(h Host, kinds map[domain.TextKind]bool, ask askModel, getCo
 func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, error) {
 	task := host.Task{
 		ID: "proofread:" + req.Path, Title: "Proofreading " + path.Base(req.Path), Detail: req.Path,
-		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: req.IsUserStarted,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
 	}
 	res, err := p.proofread(ctx, req, &task)
 	if err != nil && ctx.Err() == nil {
@@ -84,7 +82,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 		return Result{}, fmt.Errorf("read %s of %s: %w", source.GetID(), req.Path, err)
 	}
 
-	turn, err := p.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted, OnWaiting: nil})
+	turn, err := p.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: nil})
 	if err != nil {
 		return Result{}, fmt.Errorf("wait for a turn to proofread %s: %w", req.Path, err)
 	}
@@ -106,7 +104,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 		return Result{}, err
 	}
 	version, err := texts.PutVersion(ctx, host.TextPut{
-		Path: req.Path, Key: key, Source: source.GetID(), Kind: source.Kind,
+		Path: req.Path, Key: key, Source: source.GetID(), Kind: proofreadingKind,
 		InputHash: source.TextHash, File: getFileName(key),
 	})
 	if err != nil {

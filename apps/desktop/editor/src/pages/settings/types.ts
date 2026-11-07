@@ -32,7 +32,7 @@ export interface Installation {
    */
   writeSecret(pluginId: string, name: string, key: string): void
   deleteSecret(pluginId: string, name: string): void
-  /** A plugin the host suspends, started once more. */
+  /** A plugin whose last start failed, started once more. */
   retryPlugin(pluginId: string): void
   /**
    * Opens the machine's native picker for a plugin's setting of type file or folder, and

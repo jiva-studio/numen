@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.file.tree",
   "name": "File Tree Explorer",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "protocol": 1,
   "description": "Sidebar file browser for managing notes, books, and recordings",
   "capabilities": [],
@@ -27,10 +27,55 @@
         "id": "tree.revealNote",
         "title": "Show note in file tree",
         "icon": "folder-open",
-        "scope": "note"
+        "when": "target.isNote"
+      },
+      {
+        "id": "tree.rename",
+        "title": "Rename",
+        "icon": "pencil"
+      },
+      {
+        "id": "tree.newNote",
+        "title": "New note",
+        "icon": "file-plus"
+      },
+      {
+        "id": "tree.newFolder",
+        "title": "New folder",
+        "icon": "folder-plus"
       }
     ],
-    "menus": [{ "location": "titleBar", "command": "tree.open", "group": "navigate", "order": 10 }]
+    "slots": [
+      { "slot": "titleBar.commands", "command": "tree.open", "group": "navigate", "order": 10 },
+      {
+        "slot": "fileTree.context",
+        "submenu": "fileTree.new",
+        "title": "New",
+        "group": "1-new",
+        "when": "target.isFolder"
+      },
+      {
+        "slot": "fileTree.new",
+        "command": "tree.newNote",
+        "group": "0-tree",
+        "order": 10,
+        "when": "target.isFolder"
+      },
+      {
+        "slot": "fileTree.new",
+        "command": "tree.newFolder",
+        "group": "0-tree",
+        "order": 20,
+        "when": "target.isFolder"
+      },
+      {
+        "slot": "fileTree.context",
+        "command": "tree.rename",
+        "group": "2-edit",
+        "order": 10,
+        "when": "!target.isRoot && !target.isMultiple"
+      }
+    ]
   },
   "permissions": ["vault:read", "vault:write"],
   "frontend": {}

@@ -13,18 +13,17 @@ import (
 )
 
 // What is kept for a link in the plugin's folder of the vault's store. The text is kept under the
-// key of the link's address, and the copy under the content hash of the note.
+// key of the link's address, and so are the copy and the page.
 //
 //   - `<key>.jsonl` is the text, in the common format of text versions. The host deletes it with
 //     the version.
 //   - `<key>.json` records what fetched the text, what kind it is and which file holds the copy. A
 //     record whose text is gone marks a version the user deleted.
-//   - `<key>.none` is an address that publishes no text.
-//   - `<hash>.part` is a copy arriving, and `<hash><ext>` the copy whole.
+//   - `<key>.part` is a copy arriving, and `<key><ext>` the copy whole.
+//   - `<key>.html` is the page that frames the player of the video.
 const (
 	textExt   = ".jsonl"
 	recordExt = ".json"
-	noneExt   = ".none"
 	partExt   = ".part"
 )
 
@@ -47,6 +46,8 @@ type record struct {
 	Downloader string          `json:"downloader,omitempty"`
 	Kind       domain.TextKind `json:"kind,omitempty"`
 	Copy       string          `json:"copy,omitempty"`
+	// CopyMedia is what the copy holds, the video or the sound alone.
+	CopyMedia download.Media `json:"copyMedia,omitempty"`
 }
 
 // getKind returns the text kind a fetch produced: captions, or the prose of an article.
@@ -75,18 +76,12 @@ func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 	return segments, nil
 }
 
-// writeText keeps the text under the key with its record, and clears the mark of an address that
-// publishes none.
+// writeText keeps the text under the key with its record.
 func (f folder) writeText(ctx context.Context, key string, segments []domain.TextSegment, rec record) error {
 	if err := host.WriteText(ctx, f.store, key+textExt, segments); err != nil {
 		return err
 	}
-	return errors.Join(f.writeRecord(ctx, key, rec), f.store.Delete(ctx, key+noneExt))
-}
-
-// hasText reports whether the text of the key is kept.
-func (f folder) hasText(ctx context.Context, key string) (bool, error) {
-	return f.isKept(ctx, key+textExt)
+	return f.writeRecord(ctx, key, rec)
 }
 
 func (f folder) writeRecord(ctx context.Context, key string, rec record) error {
@@ -103,12 +98,12 @@ func (f folder) findRecord(ctx context.Context, key string) (record, bool, error
 	raw, err := f.store.Read(ctx, key+recordExt)
 	if errors.Is(err, host.ErrNotExist) {
 		// gomutants:disable-next-line RETURN_ZERO reason="explicit empty fields equal zero record"
-		return record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: ""}, false, nil
+		return record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: "", CopyMedia: ""}, false, nil
 	}
 	if err != nil {
 		return record{}, false, err
 	}
-	rec := record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: ""}
+	rec := record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: "", CopyMedia: ""}
 	return rec, true, json.Unmarshal(raw, &rec)
 }
 
@@ -118,36 +113,7 @@ func (f folder) readRecord(ctx context.Context, key string) (record, error) {
 	return rec, err
 }
 
-// markNoText marks the key as an address that publishes no text, and clears the title, producer and
-// kind an earlier fetch recorded. The record keeps the address and the copy.
-func (f folder) markNoText(ctx context.Context, key string) error {
-	rec, hasRecord, err := f.findRecord(ctx, key)
-	if err != nil {
-		return err
-	}
-	if hasRecord {
-		rec.Title, rec.Producer, rec.Kind = "", "", ""
-		if err := f.writeRecord(ctx, key, rec); err != nil {
-			return err
-		}
-	}
-	return f.store.Write(ctx, key+noneExt, nil)
-}
-
-// isNone reports whether the key is marked as an address that publishes no text.
-func (f folder) isNone(ctx context.Context, key string) (bool, error) {
-	return f.isKept(ctx, key+noneExt)
-}
-
-func (f folder) isKept(ctx context.Context, name string) (bool, error) {
-	_, err := f.store.Read(ctx, name)
-	if errors.Is(err, host.ErrNotExist) {
-		return false, nil
-	}
-	return err == nil, err
-}
-
-// findCopy is the name and size of the copy kept under the hash, and false where none is.
+// findCopy is the name and size of the copy kept under the key, and false where none is.
 func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool, error) {
 	files, err := f.store.List(ctx)
 	if err != nil {
@@ -162,7 +128,7 @@ func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool
 	return host.StoreFile{Name: "", Size: 0}, false, nil
 }
 
-// isCopyOf reports whether a file of the folder is the whole copy kept under the hash.
+// isCopyOf reports whether a file of the folder is the whole copy kept under the key.
 func isCopyOf(name, hash string) bool {
 	ext := path.Ext(name)
 	return strings.TrimSuffix(name, ext) == hash && isCopyExt(strings.ToLower(ext))
@@ -177,7 +143,7 @@ func isCopyExt(ext string) bool {
 	return false
 }
 
-// deleteCopy takes away the copy kept under the hash, whole or arriving.
+// deleteCopy takes away the copy kept under the key, whole or arriving.
 func (f folder) deleteCopy(ctx context.Context, hash string) error {
 	files, err := f.store.List(ctx)
 	if err != nil {

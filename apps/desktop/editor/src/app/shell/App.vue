@@ -5,21 +5,21 @@
  * The window's structure is defined in `window.ts`. This file holds what the user
  * sees of it, and the binding between the two.
  */
-import { computed, onMounted, onUnmounted } from 'vue'
-import { StatusBar, TitleBar, WorkspaceLayout } from '@numen/shell'
+import { onMounted, onUnmounted } from 'vue'
+import { WorkspaceLayout } from '@numen/shell'
+import { LoadingIndicator } from '@numen/ui'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
-import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
-import { StatusViewHost } from '@/features/status-views'
+import { TabLinkIndicator } from '@/features/tab-linking'
+import { StatusBarHost } from '@/features/status-bar-view'
+import { TitleBarHost } from '@/features/title-bar-view'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
-import { useWindowFrame } from '../window/useWindowFrame'
-import { useWindowTitleBar } from '../window/useTitleBarActions'
-import { useWindowVaultChoices } from '../window/useVaultChoices'
+import { useWindowTabMenu } from '../tabs/useTabMenu'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
@@ -35,13 +35,15 @@ const unsaved = {
 
 const {
   runCommand,
-  menus,
+  slots,
   runChoice,
   openCurrentVault,
+  readNoteKind,
   isLayoutReady,
   bootstrapFailure,
+  isStarted,
+  titleBarView,
   retryBootstrap,
-  windowButtons,
   openSettings,
   commands,
   pluginWays,
@@ -51,46 +53,27 @@ const {
   windowTabs,
   layout,
   vaultList,
-  statusBar,
-  statusViews,
+  statusBarView,
   palette,
   destinations,
   closeTab,
   getTabIcon,
-  getKindIcon,
   getTitle,
   getTarget,
   tabLinks,
-  windowId,
+  windowCommands,
   isHighlighted,
   highlightWindow,
-  isTabAsking,
   detachTab,
-  detachTabAt,
-  moveTab,
+  frame,
 } = useWindow()
 
-const frame = useWindowFrame(undefined, windowButtons)
-
-/** The vault the window shows; empty where none is open. */
-const vaultName = computed(
-  () => vaultList.value.vaults.find((one) => one.id === vaultList.value.showing)?.name ?? '',
-)
-
-const titleBar = useWindowTitleBar({ menus, vaultName, runCommand, getTarget })
-
-const vaultChoices = useWindowVaultChoices({ vaultList, runCommand, getTarget, commandDeps })
-
-const linkMenu = useTabLinkMenu({
-  tabLinks,
-  getTabs: () => windowTabs.tabs.value,
-  getKind: (id) => windowTabs.getTab(id)?.kind.kind,
-  isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
-  onDetach: detachTabAt,
-  windowId,
-  isAsking: isTabAsking,
-  onMove: moveTab,
+const tabMenu = useWindowTabMenu({
+  windowTabs,
   onHighlight: highlightWindow,
+  slots,
+  commands: windowCommands,
+  readNoteKind,
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -119,28 +102,15 @@ function onCloseTab(id: string, hold?: () => void) {
 function onShowTab(id: string) {
   windowTabs.onTabShown(id)
 }
-
-function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
-  linkMenu.open(tabId, position)
-}
 </script>
 
 <template>
-  <main :class="{ 'is-highlighted': isHighlighted }">
-    <TitleBar
-      :app-name="words.appName"
-      :vault-name="vaultName"
-      :controls="frame.controls.value"
-      :is-maximised="frame.isMaximised.value"
-      :actions="titleBar.actions.value"
-      :choices="vaultChoices.choices.value"
-      :words="vaultChoices.words"
-      @run="titleBar.run"
-      @choose="vaultChoices.choose"
-      @minimise="frame.minimise"
-      @toggle-maximise="frame.toggleMaximise"
-      @close="frame.close"
-    />
+  <!-- The window is drawn once the plugins of the window slots have started or the wait for them has
+       passed, so the layout does not move when the bar is drawn. -->
+  <LoadingIndicator v-if="!isStarted" class="starting" :label="words.appName" />
+
+  <main v-else :class="{ 'is-highlighted': isHighlighted }">
+    <TitleBarHost :view="titleBarView" />
 
     <CoreFailureNotice :failure="failure" />
 
@@ -148,11 +118,25 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       v-model="layout"
       class="below"
       :tabs="windowTabs.tabs.value"
+      :window-edge="titleBarView ? undefined : frame.windowEdge.value"
+      :tab-menu="tabMenu.menu.value"
       @close="onCloseTab"
       @show="onShowTab"
-      @tab-context-menu="onTabContextMenu"
+      @tab-context-menu="tabMenu.open"
+      @tab-menu-choose="tabMenu.choose"
+      @tab-menu-dismiss="tabMenu.dismiss"
+      @tab-menu-highlight="tabMenu.highlight"
       @tear-off="detachTab"
     >
+      <template #tab-menu-icon="{ id }">
+        <component
+          :is="tabMenu.getIcon(id)"
+          v-if="tabMenu.getIcon(id)"
+          class="tab-menu-icon"
+          aria-hidden="true"
+        />
+      </template>
+
       <template #icon="{ id }">
         <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />
         <TabLinkIndicator
@@ -193,37 +177,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       </template>
     </WorkspaceLayout>
 
-    <TabLinkMenu
-      v-if="linkMenu.tabId.value"
-      :tab-id="linkMenu.tabId.value"
-      :eligible-tabs="linkMenu.eligibleTabs.value"
-      :at="linkMenu.at.value"
-      :is-linked="linkMenu.isLinked.value"
-      :can-detach="linkMenu.canDetach.value"
-      :windows="linkMenu.windows.value"
-      :is-asking="linkMenu.isAsking.value"
-      :linked-target-title="linkMenu.linkedTargetTitle.value"
-      :get-tab-icon="getTabIcon"
-      :get-kind-icon="getKindIcon"
-      @link="linkMenu.link"
-      @unlink="linkMenu.unlink"
-      @detach="linkMenu.detach"
-      @move="linkMenu.move"
-      @highlight="linkMenu.highlight"
-      @close="linkMenu.close"
-    />
-
-    <StatusBar
-      :tasks="statusBar.tasks.value"
-      @cancel="statusBar.onCancelTask"
-      @retry="statusBar.onRetryTask"
-      @dismiss="statusBar.onDismissTask"
-      @action="statusBar.onActionTask"
-    >
-      <template #trailing>
-        <StatusViewHost :views="statusViews" />
-      </template>
-    </StatusBar>
+    <StatusBarHost :view="statusBarView" />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"
@@ -259,9 +213,19 @@ main.is-highlighted::after {
   pointer-events: none;
 }
 
+.starting {
+  height: 100vh;
+}
+
 .below {
   flex: 1;
   min-height: 0;
+}
+
+.tab-menu-icon {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  stroke-width: 1.75;
 }
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */

@@ -390,6 +390,8 @@ type DetachedTab struct {
 	ID string
 	// X and Y are the screen position of the new window.
 	X, Y int
+	// Width and Height are the size of the new window; 0 keeps the default size.
+	Width, Height int
 }
 
 func (v view) ActivateTab(_ context.Context, id string) error {

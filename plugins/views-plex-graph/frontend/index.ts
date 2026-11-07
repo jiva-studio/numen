@@ -1,17 +1,8 @@
-import { Waypoints } from '@lucide/vue'
-import {
-  definePlugin,
-  formatErrorMessage,
-  getRelationErrorWords,
-  NOTE_TARGET,
-  type ConnectionRole,
-  type PluginContext,
-} from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import PlexGraphView from './PlexGraphView.vue'
 import { createPlexKind, PLEX } from './kind'
 import { usePlexView } from './model/usePlexView'
 import { readNesting } from './model/nesting'
-import { WORDS } from './words'
 
 export { PlexGraphView, PlexGraphView as PlexTab }
 export { createPlexKind, PLEX } from './kind'
@@ -29,19 +20,17 @@ export function activate(context: PluginContext): void {
     )
   }
   const plexes = createPlexKind(
-    { workspace, notes, relations, nesting: readNesting(context) },
+    {
+      workspace,
+      ...(context.commands ? { commands: context.commands } : {}),
+      notes,
+      relations,
+      nesting: readNesting(context),
+    },
     () => usePlexView({ neighbourhood: (path) => notes.getNeighbourhood(path) }),
   )
   context.registerTabKind(plexes.kind)
   context.onVaultChange((event) => plexes.refresh(event))
-
-  const reportFailure = (error: unknown): void => workspace.showError(formatErrorMessage(error))
-
-  /** Makes an untitled note in a relation to another, and says why where the core made none. */
-  const createRelated = async (from: string, role: ConnectionRole): Promise<void> => {
-    const made = await relations.createRelated({ from, role })
-    if (!made.ok) workspace.showError(getRelationErrorWords(made.error))
-  }
 
   /** Opens the note in the plex that was last active, or in a new plex when none is open. */
   const travel = async (path: string): Promise<void> => {
@@ -57,42 +46,6 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'graph.showNote',
     handler: (note) => travel(note.path),
-  })
-
-  context.registerContextMenu({
-    id: 'travel',
-    text: WORDS.travel,
-    group: 'open',
-    target: NOTE_TARGET,
-    icon: Waypoints,
-    handler: (target) => travel(target.path),
-  })
-  context.registerContextMenu({
-    id: 'child',
-    text: WORDS.child,
-    parentId: 'relation',
-    target: NOTE_TARGET,
-    handler: (target) => {
-      createRelated(target.path, 'child').catch(reportFailure)
-    },
-  })
-  context.registerContextMenu({
-    id: 'parent',
-    text: WORDS.parent,
-    parentId: 'relation',
-    target: NOTE_TARGET,
-    handler: (target) => {
-      createRelated(target.path, 'parent').catch(reportFailure)
-    },
-  })
-  context.registerContextMenu({
-    id: 'jump',
-    text: WORDS.jump,
-    parentId: 'relation',
-    target: NOTE_TARGET,
-    handler: (target) => {
-      createRelated(target.path, 'jump').catch(reportFailure)
-    },
   })
 }
 

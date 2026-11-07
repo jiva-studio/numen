@@ -93,6 +93,7 @@ func (e *textEndpoint) PutTextVersion(
 	version, err := call.texts.PutVersion(ctx, call.vault, call.pluginID, pluginport.PluginTextPut{
 		Path: m.GetPath(), Key: m.GetKey(), Source: domain.TextVersionID(m.GetSourceVersionId()),
 		Kind: domain.TextKind(m.GetKind()), InputHash: m.GetInputHash(), File: m.GetFile(),
+		SourceProperty: domain.TextSourceProperty{Key: m.GetSourceProperty().GetKey(), Value: m.GetSourceProperty().GetValue()},
 	})
 	code, err := answerText(ctx, err)
 	if err != nil {

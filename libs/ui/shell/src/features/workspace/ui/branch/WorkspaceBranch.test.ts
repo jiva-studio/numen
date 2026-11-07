@@ -10,7 +10,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import WorkspaceBranch from './WorkspaceBranch.vue'
 import { WorkspacePane } from '../pane'
-import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
+import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { split, stack } from '../../fixtures/build'
 import { type Branch, type Tab, type TabId } from '../../lib/node'
 
@@ -36,6 +36,7 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
       TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
     focus: 'left',
     minimum: 220,
+    getStripEdge: () => NO_STRIP_EDGE,
     choose: vi.fn(),
     close: vi.fn(),
     lift: vi.fn(),

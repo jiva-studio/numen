@@ -3,9 +3,8 @@
  * few requests one kind makes of another.
  */
 import { computed, ref, watch, type Ref } from 'vue'
-import { waitFor } from './waitFor'
 import { formatErrorMessage } from '@numen/core-client'
-import type { Menus } from '@numen/plugin-host'
+import { SLOT, TITLE_BAR_SLOT, type SlotHost } from '@numen/plugin-host'
 import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
@@ -19,7 +18,7 @@ import {
 } from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
-import { createNoticeQueue } from '@numen/shell'
+import { createNoticeQueue, getTabPaneRect } from '@numen/shell'
 import { WORDS as words } from '@/shared/words'
 import { useTabLinks } from '@/features/tab-linking'
 import { createTabSync } from '../tabs/useTabSync'
@@ -34,15 +33,22 @@ import { useVaults } from './useVaults'
 import type { TabsHold } from '../commands/leaveVault'
 import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
-import { useCommands } from '../commands/useCommands'
-import { useDeclaredCommands } from '../commands/declaredCommands'
-import { createPluginMenus } from '../commands/pluginMenus'
+import { createPaletteItems, useCommands } from '../commands/useCommands'
+import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
+import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
+import { createWindowSlots } from './windowSlots'
+import { createBackendHandlers } from '../commands/backendHandlers'
+import { listDeclaredCommandItems, runDeclaredHandler } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
-import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
+import { useWindowFrame } from './useWindowFrame'
+import { createWindowHost } from './windowHost'
+import { createEditorVaults } from './windowVaults'
+import { createWindowCommands } from './windowCommands'
+import { createCommandNoteReader } from '../commands/usePluginCommands'
 import { useNoticeTasks } from '../shell/useNoticeTasks'
 import { useWindowKinds } from './useWindowKinds'
-import { useWindowStatusBar } from '../shell/useWindowStatusBar'
+import { createBackgroundTaskHost } from '../shell/backgroundTasks'
 import { resolveTaskAction } from '../shell/taskActions'
 import { useAppHotkeys } from '../commands/useAppHotkeys'
 import { useAppBootstrap } from './useAppBootstrap'
@@ -53,6 +59,7 @@ import {
 } from '../plugins/useWindowPlugins'
 import { createPluginNotes } from '../plugins/pluginNotes'
 
+import { getSettingsConfig } from './settingsConfig'
 import { createDisplayOptions, createTargetResolver } from './useWindowDisplayOptions'
 import type { PluginServices } from '../plugins/pluginServices'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -71,24 +78,26 @@ interface WindowCommandsOptions {
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
   pluginHost: import('@numen/plugin-host').PluginHost
-  fileMenuCommands: ReturnType<typeof useFileMenuCommands>
   declaredCommands: ReturnType<typeof useDeclaredCommands>
-  menus: Menus
+  /** The slots of the window, read by the palette and the menu of a tab. */
+  slots?: SlotHost | undefined
+  /** The commands of the window made as it runs, such as those over a tab. */
+  getAppCommands: () => readonly Command[]
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
   const { windowTabs, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
   return useCommands({
     declaredCommands: deps.declaredCommands,
-    fileMenuCommands: deps.fileMenuCommands,
-    menus: deps.menus,
+    ...(deps.slots ? { slots: deps.slots } : {}),
+    getAppCommands: deps.getAppCommands,
     core,
     words,
     log: deps.log,
     windowTabs,
     getTarget: deps.getTarget,
     knows: deps.knows,
-    kept: settings.paletteLists,
+    paletteLists: settings.paletteLists,
     runs: deps.runs,
     coverage: vaultsModule.coverage,
     making: editing.making,
@@ -113,8 +122,9 @@ interface AppLifecycleDeps {
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof createNoteEditors>
   pluginLoader: import('@numen/plugin-host').PluginLoader
+  /** Settles once the first list of the commands the plugins declare is held. */
+  waitForDeclaredCommands: () => Promise<void>
   /** True until every plugin the window starts has started or failed. */
-  arePluginsStarting: Ref<boolean>
   writeMessage: MessageWriter
   /** Called once the tabs the window opens with are open. */
   onLayoutStarted(): void
@@ -125,9 +135,6 @@ interface AppLifecycleDeps {
   /** Opens the tab of a detach and accepts it; runs in the background. */
   openDetachedTab(moved: MovedTab): void
 }
-
-/** How long a vault with no saved tabs waits for the plugins that place tabs. */
-const NEW_VAULT_PLUGINS_WAIT_MS = 5_000
 
 /** Returns the tab of a pending detach, or null when the request fails or none is pending. */
 const readDetachedTab = async (windowId: string, tabId: string) => {
@@ -150,7 +157,6 @@ const readSavedTabs = async () => {
 
 function initAppLifecycle(deps: AppLifecycleDeps) {
   const { vaultsModule, windowTabs, settings, window, editing } = deps
-  let pluginsStarted: Promise<void> = Promise.resolve()
   const startLayout = async () => {
     if (!vaultsModule.activeVault.value.id) return
     // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: location is always defined in the window environment
@@ -169,8 +175,8 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     if (saved.tabs.length > 0) {
       windowTabs.restoreTabs(parseSavedTabs(saved), saved.activeId)
     } else {
-      // A new vault places the tabs of the kinds registered, so it gives the plugins still starting a while longer.
-      await waitFor(pluginsStarted, NEW_VAULT_PLUGINS_WAIT_MS)
+      // A new vault places its tabs once the plugins of its tabs have started or failed.
+      await deps.pluginLoader.waitForTabPlugins()
       await windowTabs.openPlacedTabs((kind, error) =>
         deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
       )
@@ -183,17 +189,15 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     startSettings: () => settings.start(),
     startLayout,
     // The plugins the settings name are active before the layout opens the tabs of their kinds.
-    startPlugins: () => {
-      pluginsStarted = (async () => {
-        try {
-          const plugins = settings.rest.plugins.value
-          await deps.pluginLoader.trackPlugins(getFrontendPluginIds(plugins))
-          await deps.pluginLoader.start()
-        } finally {
-          deps.arePluginsStarting.value = false
-        }
-      })()
-      return pluginsStarted
+    startPlugins: async () => {
+      const plugins = settings.rest.plugins.value
+      await deps.pluginLoader.trackPlugins(getFrontendPluginIds(plugins))
+      await deps.pluginLoader.start()
+    },
+    // The title bar and the shortcuts read the commands the plugins declare, so the window waits for
+    // their first list as it waits for the plugins of the slots of the window.
+    waitForInterfacePlugins: async () => {
+      await Promise.all([deps.pluginLoader.waitForInterface(), deps.waitForDeclaredCommands()])
     },
     startWindow: () => {
       runInBackground(deps.tabLinkSession.start(), (error) =>
@@ -230,7 +234,76 @@ const getDeclaredCommandsDeps = (
   hasBackend: (pluginId: string): boolean =>
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.hasBackend ??
     true,
+  getConfig: () => getWindowConfig(settingsHolder.current),
 })
+
+/** The settings of the window as the when conditions read them, config by dotted key. */
+const getWindowConfig = (settings: ReturnType<typeof useSettings> | undefined) =>
+  settings
+    ? getSettingsConfig([
+        { id: 'app', name: '', settings: settings.rest.app.value },
+        ...settings.rest.plugins.value.map((one) => ({
+          id: one.id,
+          name: one.name,
+          settings: one.settings,
+        })),
+      ])
+    : {}
+
+/** What the window writes to the message log about a plugin, under the plugin's own writer. */
+function createPluginReports(
+  log: ReturnType<typeof createMessageLog>,
+  getPluginName: (pluginId: string) => string,
+) {
+  const write = (pluginId: string, text: string, severity: 'warning' | 'error') =>
+    log.getWriter(`plugin:${pluginId}`)(text, severity)
+  return {
+    reportViewIssue: (pluginId: string, message: string) =>
+      write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'error'),
+    reportCommandIssue: (pluginId: string, message: string) =>
+      write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'warning'),
+    reportError: (pluginId: string, error: unknown) =>
+      write(
+        pluginId,
+        words.pluginError(getPluginName(pluginId), formatErrorMessage(error)),
+        'error',
+      ),
+    reportLoadError: (pluginId: string, error: unknown) =>
+      write(
+        pluginId,
+        words.pluginStopped(
+          getPluginName(pluginId),
+          `${words.pluginLoadFailed}: ${formatErrorMessage(error)}`,
+        ),
+        'error',
+      ),
+  }
+}
+
+/** The handlers of shared commands the window runs in their plugins' backends. */
+const createWindowHandlers = (
+  declaredCommands: ReturnType<typeof useDeclaredCommands>,
+  writeMessage: (text: string, severity: 'info') => void,
+  tabOpeners: ReturnType<typeof fileOpeners>,
+  hostHolder: { current?: import('@numen/plugin-host').PluginHost },
+) =>
+  createBackendHandlers({
+    getHandlers: () => declaredCommands.handlers.value,
+    list: listDeclaredCommandItems,
+    run: runDeclaredHandler,
+    writeMessage,
+    openFile: (path) => tabOpeners.openFile(path, '', 'current').then(() => undefined),
+    notifyVaultChange: (paths) => hostHolder.current?.notifyVaultChange({ paths }),
+  })
+
+/** The type and the properties of the note at the path, which the menu of its tab is read over. */
+const readNoteKind = async (path: string) => {
+  const kind = (await core.fileKinds([path])).get(path)
+  return {
+    noteType: kind?.type ?? '',
+    ...(kind?.properties ? { properties: kind.properties } : {}),
+  }
+}
 
 function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
@@ -238,10 +311,11 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
-  const arePluginsStarting = ref(true)
+  // The plugin loader is made after the tabs; until then every plugin counts as starting.
+  const pluginStarts: { current?: (pluginId: string) => boolean } = {}
   const windowTabs = useWindowTabs({
     catalog: pluginCatalog,
-    arePluginsStarting,
+    isPluginStarting: (pluginId) => pluginStarts.current?.(pluginId) ?? true,
     enablePlugin: async (pluginId) => {
       await settingsHolder.current?.rest.writeSetting([pluginId, 'enabled'], true)
     },
@@ -266,36 +340,32 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const declaredCommands = useDeclaredCommands({
     ...getDeclaredCommandsDeps(hostHolder, settingsHolder),
   })
+  const appCommands: { current?: () => readonly Command[] } = {}
+  const slots = createWindowSlots({
+    declaredCommands,
+    hostHolder,
+    getAppCommands: () => appCommands.current?.() ?? [],
+    writeIssue: (pluginId, message, severity) =>
+      log.getWriter(`plugin:${pluginId}`)(`${getPluginName(pluginId)}: ${message}`, severity),
+  })
   const { pluginHost, pluginLoader } = createPluginSupport({
+    slots: slots.hostDeps,
     getCommandDeclarations: () => declaredCommands.declarations.value,
-    reportCommandIssue: (pluginId, message) =>
-      log.getWriter(`plugin:${pluginId}`)(`${getPluginName(pluginId)}: ${message}`, 'warning'),
+    handlers: createWindowHandlers(declaredCommands, writeMessage, tabOpeners, hostHolder),
     windowTabs,
     tabLinks,
     tabOpeners,
     settingsHolder,
     services: pluginServices,
     notices: pluginNotices,
-    reportError: (pluginId, error) =>
-      log.getWriter(`plugin:${pluginId}`)(
-        words.pluginError(getPluginName(pluginId), formatErrorMessage(error)),
-        'error',
-      ),
-    reportLoadError: (pluginId, error) => {
-      log.getWriter(`plugin:${pluginId}`)(
-        words.pluginStopped(
-          getPluginName(pluginId),
-          `${words.pluginLoadFailed}: ${formatErrorMessage(error)}`,
-        ),
-        'error',
-      )
-    },
+    ...createPluginReports(log, getPluginName),
     ...pluginNotes,
     resolveLink: async (from, address) => {
       const rawName = address.replace(/^name:\/\//, '')
       return (await core.resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
     },
   })
+  pluginStarts.current = pluginLoader.isPluginStarting
   hostHolder.current = pluginHost
   /* Stryker restore OptionalChaining,ObjectLiteral,StringLiteral,Regex */
   return {
@@ -304,7 +374,6 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     writeMessage,
     windowId,
     windowTabs,
-    arePluginsStarting,
     tabLinks,
     tabReports,
     tabOpeners,
@@ -314,6 +383,8 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     pluginServices,
     pluginNotices,
     pluginNotes,
+    slotWindowValues: slots.windowValues,
+    appCommands,
   }
 }
 
@@ -325,6 +396,8 @@ interface WindowContext {
   vaults?: ReturnType<typeof useVaults>
   /** Holds the open tabs back while the vault is switched; bound once the tabs are written. */
   tabsHold?: TabsHold
+  /** The commands over a tab, made once the moves of the tabs are. */
+  tabCommands?: TabCommands
 }
 
 function getCommands(ctx: WindowContext): NonNullable<WindowContext['commands']> {
@@ -410,24 +483,17 @@ function initWindowKindsAndCommands(
 ) {
   const { editing, settings, window, tabSync } = services
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
+  base.appCommands.current = () => ctx.tabCommands?.commands ?? []
+  base.slotWindowValues.current = () => {
+    const inFront = getTarget()
+    return {
+      'window.isVaultOpen': inFront.vault.id !== '',
+      'window.isVaultReady': inFront.isReady,
+      'window.isTabOpen': inFront.tab !== '',
+    }
+  }
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
-  let editorCommands: readonly Command[] | undefined
-  const menus = createPluginMenus({
-    getPlacements: () => base.declaredCommands.placements.value,
-    getPluginCommands: () => base.pluginHost.getPaletteCommands(),
-    getDeclaredCommands: () => base.declaredCommands.commands.value,
-    getEditorCommands: () => (editorCommands ??= createCommands(words)),
-    reportIssue: (pluginId, message) => {
-      const name = settings.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
-      base.log.getWriter(`plugin:${pluginId}`)(`${name}: ${message}`, 'warning')
-    },
-  })
-  const fileMenuCommands = useFileMenuCommands({
-    onRun: (file) => base.pluginHost.notifyVaultChange({ paths: [file] }),
-    onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
-  })
-
   ctx.kinds = useWindowKinds({
     core,
     log: base.log,
@@ -442,18 +508,19 @@ function initWindowKindsAndCommands(
     commandDeps: () => getCommands(ctx).commandDeps,
     tabLinks: base.tabLinks,
     tabSync,
-    getContextMenuItems: (target) => base.pluginHost.getContextMenuItems(target),
-    runContextMenu: (id, target) => base.pluginHost.runContextMenu(id, target),
-    getFileMenuItems: (path) => fileMenuCommands.getForFile(path),
-    getContextMenuIcon: (id) => base.pluginHost.getContextMenuIcon(id),
     getPluginCommandIcon: (id) => {
-      const name = base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon
-      return name ? getNamedIcon(name) : fileMenuCommands.getIcon(id)
+      const name =
+        base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon ??
+        base.declaredCommands.commands.value?.find((one) => getPaletteId(one) === id)?.icon
+      return name ? getNamedIcon(name) : undefined
     },
     getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
 
-  Object.assign(base.pluginServices, getKinds(ctx).services, { taskList: window.tasks })
+  Object.assign(base.pluginServices, getKinds(ctx).services, {
+    taskList: window.tasks,
+    backgroundTasks: createBackgroundTasks(base, window, settings),
+  })
 
   const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
 
@@ -475,11 +542,15 @@ function initWindowKindsAndCommands(
     log: base.log,
     pluginHost: base.pluginHost,
     declaredCommands: base.declaredCommands,
-    menus,
-    fileMenuCommands,
+    slots: base.pluginHost.slots,
+    getAppCommands: () => ctx.tabCommands?.commands ?? [],
   })
 
-  return { getTarget, runCommand, menuApi: { menus, runChoice: getCommands(ctx).runChoice } }
+  return {
+    getTarget,
+    runCommand,
+    menuApi: { slots: base.pluginHost.slots, runChoice: getCommands(ctx).runChoice },
+  }
 }
 
 function isSecondaryWindow(): boolean {
@@ -491,7 +562,8 @@ function isSecondaryWindow(): boolean {
 
 type WindowSettings = ReturnType<typeof useSettings>
 
-function createStatusBar(
+/** The tasks of the window, its messages and the notices of its plugins, as the plugins read them. */
+function createBackgroundTasks(
   base: WindowCore,
   window: WindowServices['window'],
   settings: WindowSettings,
@@ -502,13 +574,13 @@ function createStatusBar(
     window,
     settings,
   })
-  return useWindowStatusBar({
+  return createBackgroundTaskHost({
     tasks: computed(() => [...window.tasks.value, ...noticeTasks.value]),
     cancelTask: (id) => core.cancelTask(id),
     reportCancelError: (error) =>
       base.writeMessage(`The task was not cancelled: ${formatErrorMessage(error)}`, 'error'),
     resolveAction: resolveTaskAction,
-    onAction: (pluginId) => settings.configured.openSettings(pluginId),
+    openSettings: (pluginId) => settings.configured.openSettings(pluginId),
   })
 }
 
@@ -615,6 +687,7 @@ function createWindowTabMoves(
     notes,
     closeTab,
     writeMessage: base.writeMessage,
+    getPaneRect: (id) => getTabPaneRect(base.windowTabs.layout.value, id),
   })
   /** The mover writes its own errors; a failed highlight request is ignored. */
   const ignoreError = () => undefined
@@ -632,12 +705,98 @@ function createWindowTabMoves(
     },
     detachTab: (id: string, point: Point) =>
       runInBackground(mover.detachTab(id, point), ignoreError),
-    detachTabAt: (id: string, point: Point) =>
-      runInBackground(mover.detachTabAt(id, point), ignoreError),
+    detachTabInPlace: (id: string) => runInBackground(mover.detachTabInPlace(id), ignoreError),
     moveTab: (id: string, windowId: string) =>
       runInBackground(mover.moveTab(id, windowId), ignoreError),
   }
 }
+
+/** The commands of the window over a tab, registered for the palette and the menu of a tab. */
+function createWindowTabCommands(base: WindowCore, moves: ReturnType<typeof createWindowTabMoves>) {
+  const { windowTabs, tabLinks } = base
+  const tabCommands = createTabCommands({
+    tabLinks,
+    getTabs: () => windowTabs.tabs.value,
+    getKind: (id) => windowTabs.getTab(id)?.kind.kind,
+    isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
+    windowId: moves.windowId,
+    isAsking: moves.isTabAsking,
+    detach: moves.detachTabInPlace,
+    move: moves.moveTab,
+  })
+  tabCommands.register()
+  return tabCommands
+}
+
+/** Whether the window is drawn yet, why its workspace did not load, and the retry of the start. */
+const getBootstrapApi = (bootstrap: ReturnType<typeof useAppBootstrap>) => ({
+  bootstrapFailure: bootstrap.failure,
+  isStarted: bootstrap.isStarted,
+  retryBootstrap: bootstrap.retry,
+})
+
+/**
+ * The frame of the window, its slots and its commands, which its plugins and the menu of a tab read
+ * and run, and the vaults and the window its plugins read.
+ */
+function createWindowFrameServices(
+  base: WindowCore,
+  ctx: WindowContext,
+  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget' | 'runCommand'>,
+) {
+  const frame = useWindowFrame()
+  let tableIds: readonly string[] | undefined
+  const getAppCommands = () => ctx.tabCommands?.commands ?? []
+  const items = createPaletteItems(
+    {
+      getAppCommands,
+      declaredCommands: base.declaredCommands,
+      pluginHost: base.pluginHost,
+      getTarget: commands.getTarget,
+    },
+    createCommandNoteReader(core),
+    () => getCommands(ctx).commandDeps,
+  )
+  const windowCommands = createWindowCommands({
+    getAppIds: () => [
+      ...(tableIds ??= createCommands(words).map((one) => one.id)),
+      ...getAppCommands().map((one) => one.id),
+    ],
+    getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
+    runCommand: commands.runCommand,
+    listItems: items.listCommandItems,
+    runWithArgument: items.runWithArgument,
+    getTarget: commands.getTarget,
+  })
+  Object.assign(base.pluginServices, {
+    commands: windowCommands,
+    vaults: createEditorVaults({
+      vaultList: getVaults(ctx).vaultList,
+      getTarget: commands.getTarget,
+      commandDeps: getCommands(ctx).commandDeps,
+    }),
+    window: createWindowHost(frame, (error) =>
+      base.writeMessage(formatErrorMessage(error), 'error'),
+    ),
+  })
+  return { frame, slots: base.pluginHost.slots, windowCommands }
+}
+
+/** The views plugins draw in the window itself: the title bar and the status bar. */
+const getPluginViews = (pluginHost: import('@numen/plugin-host').PluginHost) => ({
+  titleBarView: pluginHost.getSlotView(TITLE_BAR_SLOT),
+  statusBarView: pluginHost.getSlotView(SLOT.statusBar),
+})
+
+/** The open tabs of the window, written while `isWriting` is on. */
+const useWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>
+  useOpenTabs({
+    core,
+    windowTabs: base.windowTabs,
+    isWriting,
+    reportError: (error) =>
+      base.writeMessage(`The open tabs were not saved: ${formatErrorMessage(error)}`, 'error'),
+  })
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
@@ -652,16 +811,12 @@ export const useWindow = () => {
   )
   const isWritingTabs = ref(false)
   const isLayoutReady = ref(false)
-  const openTabs = useOpenTabs({
-    core,
-    windowTabs: base.windowTabs,
-    isWriting: isWritingTabs,
-    reportError: (error) =>
-      base.writeMessage(`The open tabs were not saved: ${formatErrorMessage(error)}`, 'error'),
-  })
+  const openTabs = useWindowOpenTabs(base, isWritingTabs)
   ctx.tabsHold = openTabs
 
   const closeTab = createTabCloser(base)
+  const moves = createWindowTabMoves(base, editing, closeTab)
+  ctx.tabCommands = createWindowTabCommands(base, moves)
   const isHighlighted = ref(false)
   useAppHotkeys(getCommands(ctx).onKeyDown)
   const tabLinkSession = createWindowTabLinks(base, {
@@ -676,7 +831,7 @@ export const useWindow = () => {
     window,
     editing,
     pluginLoader: base.pluginLoader,
-    arePluginsStarting: base.arePluginsStarting,
+    waitForDeclaredCommands: () => base.declaredCommands.waitForFirstList(),
     writeMessage: base.writeMessage,
     tabLinkSession,
     windowId: base.windowId,
@@ -690,13 +845,12 @@ export const useWindow = () => {
   if (isSecondaryWindow()) closeWhenEmpty(base, isLayoutReady)
 
   const api = {
-    windowButtons: settings.windowButtons,
     runCommand,
     ...menuApi,
     openCurrentVault: () => openPlacedTabs(base),
+    readNoteKind,
     isLayoutReady,
-    bootstrapFailure: bootstrap.failure,
-    retryBootstrap: bootstrap.retry,
+    ...getBootstrapApi(bootstrap),
     openSettings: (pluginId?: string, filter?: string) =>
       settings.configured.openSettings(pluginId, filter),
     commands: getCommands(ctx).commands,
@@ -708,8 +862,7 @@ export const useWindow = () => {
     layout: base.windowTabs.layout,
     vaultList: getVaults(ctx).vaultList,
     log: base.log,
-    statusBar: createStatusBar(base, window, settings),
-    statusViews: base.pluginHost.statusViews,
+    ...getPluginViews(base.pluginHost),
     palette: getCommands(ctx).palette,
     destinations: getKinds(ctx).destinations,
     closeTab,
@@ -718,8 +871,9 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
+    ...createWindowFrameServices(base, ctx, { getTarget, runCommand }),
     isHighlighted,
-    ...createWindowTabMoves(base, editing, closeTab),
+    ...moves,
   }
   return api
 }

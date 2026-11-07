@@ -1,8 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
-import { VAULT_SUMMARY } from '@numen/plugin-host'
+import { INTERFACE_WAIT_MS, VAULT_SUMMARY, type PluginContext } from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
 
 const wire = vi.hoisted(() => {
@@ -633,14 +633,236 @@ describe('the appearance palette', () => {
   })
 })
 
+/** A plugin that draws the title bar: its manifest declares the view, and its frontend registers it. */
+const createBarPlugin = (pluginId: string) => ({
+  manifest: {
+    id: pluginId,
+    name: 'Bar',
+    version: '1.0.0',
+    frontend: {},
+    contributes: { slots: [{ slot: 'titleBar', view: 'bar' }] },
+  },
+  activate: (context: PluginContext) => {
+    context.registerSlotView({
+      id: 'bar',
+      component: defineComponent({
+        setup: () => {
+          const vaults = shallowRef(context.vaults!.getState())
+          context.vaults!.watch((state) => (vaults.value = state))
+          return () =>
+            h(
+              'header',
+              {
+                'data-title-bar': pluginId,
+                'data-maximized': String(context.window!.getState().isMaximized),
+              },
+              [
+                h('span', { 'data-title': '' }, context.app.name),
+                h('span', { 'data-vault': '' }, vaults.value.current?.name ?? ''),
+                h('span', { 'data-vaults': '' }, vaults.value.vaults.map((one) => one.id).join()),
+                h('button', {
+                  'data-switch': 'words',
+                  onClick: () => context.vaults!.switchTo('words'),
+                }),
+              ],
+            )
+        },
+      }),
+    })
+  },
+})
+
+/** The deps of a window whose plugins are the cards and the bar plugins given. */
+const createBarDeps = (plugins: readonly ReturnType<typeof createBarPlugin>[]) => {
+  const findPlugin = (url: string) => plugins.find((one) => url.includes(`/${one.manifest.id}/`))
+  return {
+    listPlugins: async () => ['md.numen.cards', ...plugins.map((one) => one.manifest.id)],
+    listVaults: async () => VAULTS,
+    fetch: (async (url: string) =>
+      new Response(
+        JSON.stringify(findPlugin(String(url))?.manifest ?? MANIFEST),
+      )) as unknown as typeof fetch,
+    dynamicImport: async (url: string) => {
+      const plugin = findPlugin(url)
+      return plugin ? { activate: plugin.activate } : { activate: activateCards }
+    },
+  }
+}
+
 describe('the title bar of the flashcards window', () => {
-  it('is drawn above the window, with the window controls', async () => {
+  it('is not drawn while no plugin draws it, and the window draws no buttons of its own', async () => {
     const window = mount(App, { props: { deps: createDeps() }, attachTo: document.body })
     mounted.push(window)
     await flushPromises()
 
-    expect(window.find('[data-title-bar]').exists()).toBe(true)
-    expect(window.find('[data-title]').text()).toBe('numen — flashcards')
-    expect(window.findAll('[data-title-bar] button')).toHaveLength(3)
+    expect(window.find('[data-title-bar]').exists()).toBe(false)
+    expect(window.find('[data-control]').exists()).toBe(false)
+  })
+
+  it('is drawn by the plugin that registers the view of the slot titleBar', async () => {
+    const window = mount(App, {
+      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+
+    expect(window.find('[data-title-bar="org.example.ledger"]').exists()).toBe(true)
+    expect(window.find('[data-title]').text()).toBe('numen')
+  })
+
+  it('gives the bar the vaults of the window, and the vault of the open review as the current one', async () => {
+    const window = mount(App, {
+      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+    expect(window.find('[data-vaults]').text()).toBe('physics,words')
+    expect(window.find('[data-vault]').text()).toBe('')
+
+    await window.findAll('.welcome-page__row--vault')[0]!.trigger('click')
+
+    expect(window.find('[data-vault]').text()).toBe('Physics')
+  })
+
+  it('opens the review on the vault the bar switches to', async () => {
+    const window = mount(App, {
+      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+
+    await window.find('[data-switch="words"]').trigger('click')
+    await flushPromises()
+
+    expect(window.find('.review').text()).toBe('Review of words')
+    expect(window.find('[data-vault]').text()).toBe('Words')
+  })
+
+  it('gives the bar the state of the window', async () => {
+    const window = mount(App, {
+      props: { deps: createBarDeps([createBarPlugin('org.example.ledger')]) },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+
+    expect(window.find('[data-title-bar]').attributes('data-maximized')).toBe('false')
+  })
+
+  it('is drawn by the plugin first by id, and the other plugin is reported', async () => {
+    let shell: ReturnType<typeof useShell> | undefined
+    const deps = createBarDeps([
+      createBarPlugin('org.example.ledger'),
+      createBarPlugin('org.example.harbor'),
+    ])
+    mounted.push(
+      mount(
+        defineComponent({
+          setup: () => {
+            shell = useShell(deps)
+            return () => h('div')
+          },
+        }),
+      ),
+    )
+    await flushPromises()
+
+    expect(shell?.plugins.titleBarView.value?.pluginId).toBe('org.example.harbor')
+    expect(
+      shell?.notices.notices.value.some(
+        (one) => one.severity === 'error' && one.text.includes('org.example.ledger'),
+      ),
+    ).toBe(true)
+  })
+
+  it('shows only the loading indicator while the plugins of the window slots start', async () => {
+    const window = mount(App, {
+      props: {
+        deps: { ...createDeps(), listPlugins: () => new Promise<string[]>(() => undefined) },
+      },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+
+    expect(window.find('[role="status"]').exists()).toBe(true)
+    expect(window.find('main').exists()).toBe(false)
+  })
+
+  it('draws the window at once when the bar has started, while another plugin still loads', async () => {
+    vi.useFakeTimers()
+    const deps = createBarDeps([createBarPlugin('org.example.ledger')])
+    const window = mount(App, {
+      props: {
+        deps: {
+          ...deps,
+          dynamicImport: (url: string) =>
+            url.includes('/md.numen.cards/')
+              ? new Promise<unknown>(() => undefined)
+              : deps.dynamicImport(url),
+        },
+      },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+
+    await vi.advanceTimersByTimeAsync(10)
+
+    expect(window.find('main').exists()).toBe(true)
+    expect(window.find('[data-title-bar="org.example.ledger"]').exists()).toBe(true)
+  })
+
+  it('draws the window at INTERFACE_WAIT_MS without a bar that has not started', async () => {
+    vi.useFakeTimers()
+    const deps = createBarDeps([createBarPlugin('org.example.ledger')])
+    const window = mount(App, {
+      props: {
+        deps: {
+          ...deps,
+          dynamicImport: (url: string) =>
+            url.includes('/org.example.ledger/')
+              ? new Promise<unknown>(() => undefined)
+              : deps.dynamicImport(url),
+        },
+      },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+
+    await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS - 1)
+    expect(window.find('main').exists()).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+
+    expect(window.find('main').exists()).toBe(true)
+    expect(window.find('[data-title-bar]').exists()).toBe(false)
+  })
+
+  it('draws a bar that starts after INTERFACE_WAIT_MS once it has started', async () => {
+    vi.useFakeTimers()
+    const deps = createBarDeps([createBarPlugin('org.example.ledger')])
+    const window = mount(App, {
+      props: {
+        deps: {
+          ...deps,
+          dynamicImport: async (url: string) => {
+            if (url.includes('/org.example.ledger/'))
+              await new Promise((resolve) => setTimeout(resolve, INTERFACE_WAIT_MS + 2_000))
+            return deps.dynamicImport(url)
+          },
+        },
+      },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+
+    await vi.advanceTimersByTimeAsync(INTERFACE_WAIT_MS)
+    expect(window.find('main').exists()).toBe(true)
+    expect(window.find('[data-title-bar]').exists()).toBe(false)
+    await vi.advanceTimersByTimeAsync(2_010)
+
+    expect(window.find('[data-title-bar="org.example.ledger"]').exists()).toBe(true)
   })
 })

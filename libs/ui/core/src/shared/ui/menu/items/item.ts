@@ -1,6 +1,7 @@
 /**
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
+import type { Component } from 'vue'
 import { getAdjacentPlace } from '@/shared/lib/dom/place'
 import { stepTo } from '@/shared/lib/dom/roving'
 import type { Position, Size } from '@/shared/lib/math/geometry'
@@ -25,6 +26,11 @@ export interface MenuItem {
   readonly group?: string
   /** Submenu items that expand from this row. */
   readonly children?: readonly MenuItem[]
+  /**
+   * A component the row holds in place of the text. The text stays the name the row is
+   * announced and found by.
+   */
+  readonly component?: Component
 }
 
 /** One item as rendered: its label, and the separator above it. */

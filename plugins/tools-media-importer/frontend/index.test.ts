@@ -1,45 +1,14 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import { activate, LINK, LinkTab } from './index'
-import { links as servedLinks } from './api/wire'
+import { activate } from './index'
 
 describe('the media importer frontend', () => {
-  it('opens a note of type link in its tab', () => {
+  it('registers no tab kind and no reader', () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
     activate(ctx)
 
+    expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredReaders()).toHaveLength(0)
-    const kind = ctx.getRegisteredTabKinds().find((one) => one.kind === LINK)
-    expect(LINK).toBe('link')
-    expect(kind?.component).toBe(LinkTab)
-    expect(kind?.getTitle?.(kind.open?.('links/Tidal mills.md', 'tab') as never)).toBe(
-      'Tidal mills',
-    )
-    expect(kind?.getTarget?.({ path: 'links/Tidal mills.md' })).toEqual({
-      path: 'links/Tidal mills.md',
-      file: 'links/Tidal mills.md',
-      title: 'Tidal mills',
-    })
-  })
-
-  it('watches the work of its own tasks through the task host', () => {
-    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
-    const tasks = {
-      watch: vi.fn((onTasks: (list: readonly { about: string }[]) => void) => {
-        onTasks([{ about: 'links/a.md' }])
-        return { dispose: () => undefined }
-      }),
-      watchAll: vi.fn(),
-    }
-    activate(Object.assign(ctx, { tasks }))
-    const changes: boolean[] = []
-
-    const stop = servedLinks.watchWork('links/a.md', (isWorking) => changes.push(isWorking))
-    stop()
-
-    expect(tasks.watch).toHaveBeenCalledTimes(1)
-    expect(tasks.watchAll).not.toHaveBeenCalled()
-    expect(changes).toEqual([true])
   })
 })
 

@@ -14,10 +14,10 @@ type PluginCommandEntry struct {
 	Command    PluginCommand
 }
 
-// PluginMenuEntry is one menu entry an enabled plugin declares, and the plugin that declares it.
-type PluginMenuEntry struct {
+// PluginSlotEntry is one slot entry an enabled plugin declares, and the plugin that declares it.
+type PluginSlotEntry struct {
 	PluginID string
-	Menu     manifest.Menu
+	Entry    manifest.SlotEntry
 }
 
 // PluginParts is what one plugin has and whether the host runs it.
@@ -67,9 +67,13 @@ type PluginCommands interface {
 	// ListCommands lists the commands of every enabled plugin, in the order of the plugins' ids and
 	// then of each manifest.
 	ListCommands() []PluginCommandEntry
-	// ListMenus lists the menu entries of every enabled plugin, in the order of the plugins' ids and
+	// ListSlots lists the slot entries of every enabled plugin, in the order of the plugins' ids and
 	// then of each manifest.
-	ListMenus() []PluginMenuEntry
+	ListSlots() []PluginSlotEntry
+	// ListHandlers lists the handlers of shared commands of every enabled plugin, in the order of the
+	// plugins' ids and then of each manifest, each as a command under the full id of its shared
+	// command, with the handler's title and condition.
+	ListHandlers() []PluginCommandEntry
 	// GetParts says what the plugin of the id has and whether it is suspended. A plugin that is not
 	// enabled has none.
 	GetParts(pluginID string) PluginParts

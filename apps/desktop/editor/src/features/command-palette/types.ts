@@ -6,9 +6,8 @@
  * available while a command runs are `model/deps.ts`.
  */
 import type { Component } from 'vue'
-import type { Selector } from '@numen/plugin-host'
+import type { CommandItem, Selector } from '@numen/plugin-host'
 import type { PaletteKeys } from '@numen/ui'
-import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
 import type { StepGroup } from '@/shared/steps'
@@ -30,12 +29,12 @@ export type CommandGroup = 'note' | 'file' | 'window' | 'settings' | 'vault'
 /**
  * The palette's current step: a prompt for one value, or the list of commands.
  * Each kind is a noun for what the person is asked: `name` is typed, `note` queries the
- * vault, `vault` queries the installation, `choice` offers an in-memory list,
+ * vault, `vault` queries the installation, `items` offers an in-memory list,
  * `confirmation` asks for a yes or a no, `retypedName` asks for the title typed again, and
  * `arguments` prompts for one of a command's `prompts`, one step per prompt.
  */
 export type Step =
-  'commands' | 'name' | 'note' | 'vault' | 'choice' | 'confirmation' | 'retypedName' | 'arguments'
+  'commands' | 'name' | 'note' | 'vault' | 'items' | 'confirmation' | 'retypedName' | 'arguments'
 
 /**
  * One value a command requires, entered in its own step. A step that is not
@@ -83,8 +82,15 @@ export interface CommandTarget {
   readonly line?: number
   /** The place in a file that is no note a command that opens it moves to. */
   readonly selector?: Selector
+  /** Whether the target at `path` is a folder; a note where absent. */
+  readonly isFolder?: boolean
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
+  /**
+   * Whether a place named it, as a row of the file tree or a tab menu does; the palette names none,
+   * and runs over the tab in front.
+   */
+  readonly isTargetNamed?: boolean
   readonly vault: VaultRef
   /**
    * Whether the vault accepts operations. A vault still being scanned does: the
@@ -113,6 +119,8 @@ export interface Command {
   readonly prompts?: readonly CommandPrompt[]
   /** The group it is offered in. */
   readonly group: CommandGroup
+  /** The CEL condition under which it is available, where it is given by one. */
+  readonly when?: string
   /** Whether it is offered at all over what is in front, in this window. */
   isAvailable(target: CommandTarget, runs: RunSupport): boolean
   getFieldText?(target: CommandTarget): string
@@ -121,6 +129,11 @@ export interface Command {
   readonly warns?: RetypeWords
   /** The command Shift and Enter reach on the same row. */
   readonly also?: string
+  /**
+   * The items it offers over the target, for a command whose step is a argument; the argument picked
+   * is the name of its invocation.
+   */
+  listItems?(target: CommandTarget): readonly CommandItem[] | Promise<readonly CommandItem[]>
 }
 
 /** One command as it is carried out: what it is over, and what was typed for it. */
@@ -142,6 +155,8 @@ export interface CommandInvocation {
   readonly line?: number
   /** The place in a file that is no note a command that opens it moves to. */
   readonly selector?: Selector
+  /** Whether the target at `path` is a folder; a note where absent. */
+  readonly isFolder?: boolean
   /** The other files it is over, beside the one at `path`. */
   readonly others: readonly string[]
   /**
@@ -155,6 +170,8 @@ export interface CommandInvocation {
   readonly tab: string
   /** What the `arguments` steps were answered, by the name of each prompt. */
   readonly values?: Readonly<Record<string, string>>
+  /** Whether a place named its target, as `CommandTarget` says. */
+  readonly isTargetNamed?: boolean
 }
 
 /**
@@ -213,12 +230,6 @@ export interface Notes {
    * current one.
    */
   openFile(path: string, title: string, showing: 'current' | 'split', at?: CommandPlace): void
-  /** Opens a file created by this command, as the type it was created as. */
-  openNewFile(
-    path: string,
-    title: string,
-    options: EditorKind | { type: EditorKind; where?: FilePlacement },
-  ): void
 }
 
 /**

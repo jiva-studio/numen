@@ -39,7 +39,7 @@ A recording is transcribed only when you ask. Recognising a scanned book and tra
 
 ## When there is no result
 
-A recording with no speech in it gets no transcript. A file the transcriber cannot open stays in the status bar with the reason.
+A recording with no speech in it gets no transcript. A file the transcriber cannot open stays in the list of background tasks with the reason.
 
 ## Editing the words
 
@@ -68,7 +68,7 @@ WebVTT is an existing standard format, which is its main advantage: it opens in 
 The [command line](/cli/) does the same run without a window, which suits a large folder you want to leave running overnight:
 
 ```sh
-numen-cli transcript.create Research "Lectures/Lecture 4.mp3"
+numen-cli app:file.createText Research "Lectures/Lecture 4.mp3"
 ```
 
 ## Finding a moment

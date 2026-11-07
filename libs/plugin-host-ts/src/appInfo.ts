@@ -3,6 +3,9 @@
  */
 import type { AppInfo } from '@numen/plugin-sdk'
 
+/** The name of the application, as its windows are titled. */
+const APP_NAME = 'numen'
+
 /** The version a build made without an injected version calls itself. */
 export const DEV_VERSION = '0.0.0-dev'
 
@@ -32,6 +35,7 @@ export function getPlatform(userAgent: string): AppInfo['platform'] {
 
 export function createAppInfo(source: AppInfoSource): AppInfo {
   return {
+    name: APP_NAME,
     version: source.version || DEV_VERSION,
     build: parseBuildNumber(source.build),
     platform: getPlatform(source.userAgent),

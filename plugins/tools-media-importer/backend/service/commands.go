@@ -6,21 +6,34 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
 // trueValue is the text of a true boolean argument or setting.
 const trueValue = "true"
 
-// newCommands is the commands the manifest declares.
+// The shared commands the plugin handles.
+const (
+	commandImport        = "app:link.import"
+	commandCreateText    = "app:file.createText"
+	commandDownloadMedia = "app:link.downloadMedia"
+	commandDeleteMedia   = "app:link.deleteMedia"
+	commandDeleteText    = "app:version.delete"
+)
+
+// argumentAddress is the argument of app:link.import that holds the web address.
+const argumentAddress = "address"
+
+// newCommands is the handlers the manifest declares.
 func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error) {
 	commands := command.New()
 	for id, run := range map[string]command.Run{
-		"link.import":        newImportCommand(links),
-		"link.downloadText":  newDownloadTextCommand(links),
-		"link.downloadVideo": newDownloadCopyCommand(links),
-		"link.deleteVideo":   newDeleteCopyCommand(links),
-		"link.deleteText":    command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID),
+		commandImport:        newImportCommand(links),
+		commandCreateText:    newDownloadTextCommand(links),
+		commandDownloadMedia: newDownloadCopyCommand(links),
+		commandDeleteMedia:   newDeleteCopyCommand(links),
+		commandDeleteText:    command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID),
 	} {
 		// gomutants:disable-next-line BRANCH_IF reason="registering distinct static command IDs on a new registry cannot fail"
 		if err := commands.Add(id, run); err != nil {
@@ -30,59 +43,50 @@ func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error)
 	return commands, nil
 }
 
-// newImportCommand makes the link note of an address in the root of the vault and fetches its text.
-// A video published there is copied in the background.
+// newImportCommand makes the link note of an address in the root of the vault, and nothing else.
 func newImportCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		made, err := links.Create(ctx, "", "", req.Arguments.GetString("address"))
+		made, err := links.Create(ctx, "", "", req.Arguments.GetString(argumentAddress))
 		if err != nil {
 			return command.Result{}, err
 		}
-		if err := links.FetchText(ctx, made, true); err != nil {
-			return command.Result{Message: "", OpenedPath: made.Path}, fmt.Errorf("%s is made, and its text was not fetched: %w", made.Path, err)
-		}
-		message := fmt.Sprintf("%s is made and its text fetched", made.Path)
-		if !links.IsCopyable(made.Address) {
-			return command.Result{Message: message, OpenedPath: made.Path}, nil
-		}
-		links.StartCopy(ctx, made)
-		return command.Result{Message: message + "; the video is being copied", OpenedPath: made.Path}, nil
+		return command.Result{Message: made.Path + " is made", OpenedPath: made.Path}, nil
 	}
 }
 
-// newDownloadTextCommand fetches the text of a link note again.
+// newDownloadTextCommand fetches the text of a link note.
 func newDownloadTextCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
 		if err != nil {
 			return command.Result{}, err
 		}
-		if err := links.FetchText(ctx, found, true); err != nil {
+		if err := links.FetchText(ctx, found); err != nil {
 			return command.Result{}, err
 		}
 		return command.Result{Message: fmt.Sprintf("the text of %s is fetched", req.Path), OpenedPath: ""}, nil
 	}
 }
 
-// newDownloadCopyCommand copies the video a link note points at.
+// newDownloadCopyCommand downloads the video a link note points at.
 func newDownloadCopyCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
 		if err != nil {
 			return command.Result{}, err
 		}
-		size, err := links.Copy(ctx, found)
+		size, err := links.Copy(ctx, found, download.MediaVideo)
 		if errors.Is(err, link.ErrBeingFetched) {
-			return command.Result{Message: fmt.Sprintf("a copy of %s is already being made", req.Path), OpenedPath: ""}, nil
+			return command.Result{Message: fmt.Sprintf("the media of %s is already being downloaded", req.Path), OpenedPath: ""}, nil
 		}
 		if err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: fmt.Sprintf("a copy of %s is kept", describeSize(size)), OpenedPath: ""}, nil
+		return command.Result{Message: fmt.Sprintf("%s of media are downloaded", describeSize(size)), OpenedPath: ""}, nil
 	}
 }
 
-// newDeleteCopyCommand removes the copy kept of a link note.
+// newDeleteCopyCommand deletes the media downloaded for a link note.
 func newDeleteCopyCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
@@ -92,11 +96,11 @@ func newDeleteCopyCommand(links *link.Links) command.Run {
 		if err := links.DeleteCopy(ctx, found); err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: fmt.Sprintf("the copy of %s is deleted", req.Path), OpenedPath: ""}, nil
+		return command.Result{Message: fmt.Sprintf("the media of %s are deleted", req.Path), OpenedPath: ""}, nil
 	}
 }
 
-// describeSize returns a size in the unit a user reads it in.
+// describeSize returns a size in the unit a person reads it in.
 func describeSize(bytes int64) string {
 	if bytes < 1<<20 {
 		return fmt.Sprintf("%d bytes", bytes)

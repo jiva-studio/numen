@@ -6,9 +6,9 @@ The recording itself is never moved, copied or renamed. It is played from where 
 
 ## Asking for a transcript
 
-A recording is transcribed when a person asks: **Transcribe** on the recording's menu and in the palette, the button where the transcript would be shown, or `numen-cli transcript.create <vault> <file>`. All of them run the plugin's command `transcript.create`, which the manifest declares over audio and video files and which waits until the transcript is written. The plugin does not run on its own. **Delete transcript** is the plugin's command `transcript.delete`: its manifest declares it for a file that has a transcript the plugin made (`when.hasOwnText`), and the plugin deletes the transcript and its record.
+A recording is transcribed when a person asks: **Transcribe** on the recording's menu and under **Create text** in the palette, the button where the transcript would be shown, or `numen-cli app:file.createText <vault> <file>`. All of them run the plugin's handler of the shared command `app:file.createText`, which the manifest declares over audio and video files and which waits until the transcript is written. The plugin runs on its own only with its setting `transcribeAutomatically`, through its `file.added` trigger. **Delete transcript** is the plugin's handler of the shared command `app:version.delete`, declared with the condition `version.kind == 'transcript'`, and the plugin deletes the transcript and its record.
 
-The run waits in the core's shared queue as a person's request, after any other work using the models and before work nobody requested, and is shown in the status bar as a task with the seconds transcribed out of the recording's total seconds. A run that cannot open the recording stays in the status bar with the reason.
+The run waits in the core's shared queue as a person's request, after any other work using the models and before work nobody requested, and is shown in the list of background tasks of the title bar as a task with the seconds transcribed out of the recording's total seconds. A run that cannot open the recording stays in that list with the reason.
 
 ## The files of one transcription
 
@@ -41,7 +41,7 @@ The version is stored after every batch, so the core splits the transcript into 
 
 ## An edit
 
-The transcript under the player is edited in place. The player saves the edit through the plugin SDK, and the core writes it as a new version made from the version shown, in the player's own folder `.numen/md.numen.views.media.player/`; it is the one shown from then on. Each save is a new version. Deleting the edit from the recording's menu restores the version it was made from.
+The transcript under the player is edited in place. The player saves the edit through the plugin SDK, and the core writes it as a new version made from the version shown, in the player's own folder `.numen/md.numen.views.media.viewer/`; it is the one shown from then on. Each save is a new version. Deleting the edit from the recording's menu restores the version it was made from.
 
 ## Deleting a transcript
 

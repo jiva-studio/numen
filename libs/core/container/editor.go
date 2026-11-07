@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
@@ -23,6 +24,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -103,6 +105,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		StartVaultFn:     cfg.startVault(db),
 		PluginServicesFn: cfg.GetPluginServices,
 		PluginCommandsFn: cfg.GetPluginCommands,
+		TabKindChoiceFn:  cfg.GetTabKindChoice,
 		PluginCatalogFn:  cfg.getEditorCatalog,
 		AgentVal:         cfg.getToolProvider(),
 		SetTextVersionListenerFn: func(listener textport.VersionListener) {
@@ -111,8 +114,11 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 			}
 		},
 		OpenFileMenuFn: cfg.openFileMenu,
-		OpenProxyFn: func() *file.OpenProxy {
-			return file.NewOpenProxy(cfg.VaultReaders(), cfg.Copies())
+		OpenTriggersFn: func() *trigger.Triggers {
+			return cfg.openTriggers(settings.NewGet(cfg.ReadSettings(), nil, cfg.Plugins(), cfg.listAppSettings))
+		},
+		OpenPluginFileFn: func() *file.OpenPluginFile {
+			return file.NewOpenPluginFile(derivedfile.PluginStores{Options: cfg.vaultOptions()})
 		},
 		GetMediaTypeFn: func() *file.GetMediaType {
 			return file.NewGetMediaType(sharedmimeinfo.Open())

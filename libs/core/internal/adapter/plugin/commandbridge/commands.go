@@ -56,16 +56,69 @@ func (c Commands) ListCommands() []pluginport.PluginCommandEntry {
 	return found
 }
 
-// ListMenus lists the menu entries the manifests of the enabled plugins declare. No plugin is started.
-func (c Commands) ListMenus() []pluginport.PluginMenuEntry {
-	var found []pluginport.PluginMenuEntry
+// ListTabKinds lists the tab kinds the manifests of the enabled plugins declare. No plugin is started.
+func (c Commands) ListTabKinds() []pluginport.PluginTabKindEntry {
+	var found []pluginport.PluginTabKindEntry
 	for _, info := range c.host.GetPluginInfos() {
 		plugin, isEnabled := c.host.GetPlugin(info.ID)
 		if !isEnabled {
 			continue
 		}
-		for _, menu := range plugin.Manifest.Contributes.Menus {
-			found = append(found, pluginport.PluginMenuEntry{PluginID: plugin.Manifest.ID, Menu: menu})
+		for _, kind := range plugin.Manifest.Contributes.TabKinds {
+			found = append(found, pluginport.PluginTabKindEntry{PluginID: plugin.Manifest.ID, TabKind: kind})
+		}
+	}
+	return found
+}
+
+// ListSlots lists the slot entries the manifests of the enabled plugins declare. No plugin is started.
+func (c Commands) ListSlots() []pluginport.PluginSlotEntry {
+	var found []pluginport.PluginSlotEntry
+	for _, info := range c.host.GetPluginInfos() {
+		plugin, isEnabled := c.host.GetPlugin(info.ID)
+		if !isEnabled {
+			continue
+		}
+		for _, entry := range plugin.Manifest.Contributes.Slots {
+			found = append(found, pluginport.PluginSlotEntry{PluginID: plugin.Manifest.ID, Entry: entry})
+		}
+	}
+	return found
+}
+
+// ListHandlers lists the handlers the manifests of the enabled plugins declare, each as a command under
+// the full id of its shared command. No plugin is started.
+func (c Commands) ListHandlers() []pluginport.PluginCommandEntry {
+	var found []pluginport.PluginCommandEntry
+	for _, info := range c.host.GetPluginInfos() {
+		plugin, isEnabled := c.host.GetPlugin(info.ID)
+		if !isEnabled {
+			continue
+		}
+		for _, handler := range plugin.Manifest.Contributes.Handlers {
+			found = append(found, pluginport.PluginCommandEntry{
+				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name,
+				Command: pluginport.PluginCommand{
+					ID: handler.Command, Title: handler.Title, When: handler.When,
+					Arguments: pluginport.GetSharedCommandArguments(handler.Command),
+				},
+			})
+		}
+	}
+	return found
+}
+
+// ListTriggers lists the triggers the manifests of the enabled plugins declare, leaving out those of a
+// plugin the host holds suspended. No plugin is started.
+func (c Commands) ListTriggers() []pluginport.PluginTriggerEntry {
+	var found []pluginport.PluginTriggerEntry
+	for _, info := range c.host.GetPluginInfos() {
+		plugin, isEnabled := c.host.GetPlugin(info.ID)
+		if !isEnabled || info.Failure != nil {
+			continue
+		}
+		for _, trigger := range plugin.Manifest.Contributes.Triggers {
+			found = append(found, pluginport.PluginTriggerEntry{PluginID: plugin.Manifest.ID, Trigger: trigger})
 		}
 	}
 	return found
@@ -137,7 +190,9 @@ type NoCommands struct{}
 
 func (NoCommands) ListCommands() []pluginport.PluginCommandEntry { return nil }
 
-func (NoCommands) ListMenus() []pluginport.PluginMenuEntry { return nil }
+func (NoCommands) ListSlots() []pluginport.PluginSlotEntry { return nil }
+
+func (NoCommands) ListHandlers() []pluginport.PluginCommandEntry { return nil }
 
 func (NoCommands) GetParts(string) pluginport.PluginParts { return pluginport.PluginParts{} }
 

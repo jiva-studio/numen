@@ -27,7 +27,7 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
-	hosted := link.Host{Vault: vault, Store: store, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{PluginID: PluginID, Vault: vault, Store: store, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
 	links := link.New(hosted,
 		func() link.Fetcher { return download.NewMock() },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
@@ -54,60 +54,47 @@ func newMockCommandsWithLinks(t *testing.T) (*command.Registry, *hosttest.Store,
 	return commands, store, links
 }
 
-func TestImportAnswersAtOnceAndCopiesTheVideoInTheBackground(t *testing.T) {
-	commands, store, links := newMockCommandsWithLinks(t)
+func TestImportMakesTheLinkNoteAndNothingElse(t *testing.T) {
+	commands, store := newMockCommands(t)
 
 	made, err := commands.RunCommand(t.Context(), command.Request{
-		Command: "link.import", Arguments: command.Arguments{"address": videoAddress},
+		Command: commandImport, Arguments: command.Arguments{argumentAddress: videoAddress},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantMsg := made.OpenedPath + " is made and its text fetched; the video is being copied"
-	if made.Message != wantMsg || made.OpenedPath == "" {
-		t.Fatalf("import answered %+v, want %q", made, wantMsg)
+	if made.OpenedPath == "" || made.Message != made.OpenedPath+" is made" {
+		t.Fatalf("import answered %+v", made)
 	}
-	links.Wait()
-	if !hasCopy(t, store) {
-		t.Error("the copy is not in the plugin's folder once the background copy ended")
+	if hasCopy(t, store) {
+		t.Error("the import downloaded the media")
 	}
 }
 
-func TestImportIgnoresAnArgumentWaitAndStillCopiesInTheBackground(t *testing.T) {
-	commands, _ := newMockCommands(t)
-
+func TestTheHandlersDownloadAndDeleteTheMediaAndTheText(t *testing.T) {
+	commands, store := newMockCommands(t)
 	made, err := commands.RunCommand(t.Context(), command.Request{
-		Command: "link.import", Arguments: command.Arguments{"address": videoAddress, "wait": "true"},
+		Command: commandImport, Arguments: command.Arguments{argumentAddress: videoAddress},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantMsg := made.OpenedPath + " is made and its text fetched; the video is being copied"
-	if made.Message != wantMsg {
-		t.Errorf("import answered %q, want %q", made.Message, wantMsg)
-	}
-}
-
-func TestImportCommands_DeleteAndDownloadCopyAndText(t *testing.T) {
-	commands, store, links := newMockCommandsWithLinks(t)
-	made, err := commands.RunCommand(t.Context(), command.Request{
-		Command: "link.import", Arguments: command.Arguments{"address": videoAddress},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	links.Wait()
 
 	for _, step := range []struct {
 		id      string
 		hasCopy bool
-	}{{"link.deleteVideo", false}, {"link.downloadVideo", true}, {"link.downloadText", true}} {
+	}{{commandDownloadMedia, true}, {commandDeleteMedia, false}, {commandCreateText, false}} {
 		answer, err := commands.RunCommand(t.Context(), command.Request{Command: step.id, Path: made.OpenedPath})
 		if err != nil || answer.Message == "" {
 			t.Fatalf("%s answered %+v (%v)", step.id, answer, err)
 		}
 		if hasCopy(t, store) != step.hasCopy {
 			t.Errorf("after %s the copy is kept: %v, want %v", step.id, !step.hasCopy, step.hasCopy)
+		}
+	}
+	for _, removed := range []string{"link.import", "link.downloadText", "link.deleteText", "link.downloadVideo", "link.deleteVideo"} {
+		if _, err := commands.RunCommand(t.Context(), command.Request{Command: removed, Path: made.OpenedPath}); !errors.Is(err, command.ErrUnknownCommand) {
+			t.Errorf("%s answered %v, want ErrUnknownCommand", removed, err)
 		}
 	}
 }
@@ -130,7 +117,7 @@ func hasCopy(t *testing.T, store *hosttest.Store) bool {
 func TestDeleteTextNeedsTheVersionTheHostNames(t *testing.T) {
 	commands, _ := newMockCommands(t)
 
-	_, err := commands.RunCommand(t.Context(), command.Request{Command: "link.deleteText", Path: "Mills.md"})
+	_, err := commands.RunCommand(t.Context(), command.Request{Command: commandDeleteText, Path: "Mills.md"})
 
 	if !errors.Is(err, command.ErrBadArguments) {
 		t.Fatalf("a deletion with no version: got %v, want ErrBadArguments", err)
@@ -162,7 +149,7 @@ func (f *configurableFetcher) GetText(context.Context, string, download.Preferre
 	return download.Text{Producer: "article", Title: "T", Prose: "prose"}, nil
 }
 
-func (f *configurableFetcher) Download(ctx context.Context, _ string, into io.Writer) (download.Copy, error) {
+func (f *configurableFetcher) Download(ctx context.Context, _ string, _ download.Media, into io.Writer) (download.Copy, error) {
 	if f.startedCh != nil {
 		close(f.startedCh)
 	}
@@ -181,7 +168,6 @@ func (f *configurableFetcher) Download(ctx context.Context, _ string, into io.Wr
 type errListStore struct {
 	host.Store
 	listErr error
-	readErr error
 }
 
 func (s *errListStore) With(domain.VaultID) host.Store { return s }
@@ -191,13 +177,6 @@ func (s *errListStore) List(ctx context.Context) ([]host.StoreFile, error) {
 		return nil, s.listErr
 	}
 	return s.Store.List(ctx)
-}
-
-func (s *errListStore) Read(ctx context.Context, name string) ([]byte, error) {
-	if s.readErr != nil {
-		return nil, s.readErr
-	}
-	return s.Store.Read(ctx, name)
 }
 
 func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
@@ -212,7 +191,7 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 	es := &errListStore{Store: vault.Store()}
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, vault.Store())
-	hosted := link.Host{Vault: vault, Store: es, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{PluginID: PluginID, Vault: vault, Store: es, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
 	cf := &configurableFetcher{}
 	links := link.New(hosted,
 		func() link.Fetcher { return cf },
@@ -225,94 +204,60 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 
 	// import with invalid address.
 	if _, err := commands.RunCommand(t.Context(), command.Request{
-		Command: "link.import", Arguments: command.Arguments{"address": "not-a-url"},
+		Command: commandImport, Arguments: command.Arguments{argumentAddress: "not-a-url"},
 	}); err == nil {
 		t.Error("import(not-a-url) succeeded")
 	}
-
-	// import when FetchText fails.
-	cf.textErr = errors.New("fetch failed")
 	res, err := commands.RunCommand(t.Context(), command.Request{
-		Command: "link.import", Arguments: command.Arguments{"address": "https://a1.example/fail-text"},
+		Command: commandImport, Arguments: command.Arguments{argumentAddress: "https://a3.example/video-bg"},
 	})
-	if err == nil || res.OpenedPath == "" {
-		t.Errorf("import(FetchText err) = (%+v, %v)", res, err)
-	}
-	cf.textErr = nil
-
-	// import when not copyable.
-	cf.canCopy = false
-	res, err = commands.RunCommand(t.Context(), command.Request{
-		Command: "link.import", Arguments: command.Arguments{"address": "https://a2.example/article-1"},
-	})
-	if err != nil || res.Message != res.OpenedPath+" is made and its text fetched" {
-		t.Errorf("import(article) = (%+v, %v)", res, err)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	// import when copyable without wait.
-	cf.canCopy = true
-	res, err = commands.RunCommand(t.Context(), command.Request{
-		Command: "link.import", Arguments: command.Arguments{"address": "https://a3.example/video-bg"},
-	})
-	if err != nil || res.Message != res.OpenedPath+" is made and its text fetched; the video is being copied" {
-		t.Errorf("import(bg copy) = (%+v, %v)", res, err)
-	}
-	links.Wait()
-
-	// import when copyable and Copy fails: the copy runs in the background, so the command still answers.
-	cf.copyErr = errors.New("copy failed")
-	res, err = commands.RunCommand(t.Context(), command.Request{
-		Command: "link.import", Arguments: command.Arguments{"address": "https://a4.example/video-fail"},
-	})
-	if err != nil || res.OpenedPath == "" {
-		t.Errorf("import(copy fail) = (%+v, %v)", res, err)
-	}
-	links.Wait()
-	cf.copyErr = nil
-
-	// link.downloadText, link.downloadVideo, link.deleteVideo on missing note.
-	for _, cmd := range []string{"link.downloadText", "link.downloadVideo", "link.deleteVideo"} {
+	// The handlers over a missing note.
+	for _, cmd := range []string{commandCreateText, commandDownloadMedia, commandDeleteMedia} {
 		if _, err := commands.RunCommand(t.Context(), command.Request{Command: cmd, Path: "missing.md"}); err == nil {
 			t.Errorf("%s(missing.md) succeeded", cmd)
 		}
 	}
 
-	// link.downloadText when FetchText fails.
+	// app:file.createText when FetchText fails.
 	cf.textErr = errors.New("fetch text failed")
-	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.downloadText", Path: res.OpenedPath}); err == nil {
-		t.Error("link.downloadText(err) succeeded")
+	if _, err := commands.RunCommand(t.Context(), command.Request{Command: commandCreateText, Path: res.OpenedPath}); err == nil {
+		t.Error("app:file.createText(err) succeeded")
 	}
 	cf.textErr = nil
 
-	// link.downloadVideo when Copy fails with non-ErrBeingFetched error.
+	// app:link.downloadMedia when Copy fails with non-ErrBeingFetched error.
 	cf.canCopy = false
-	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.downloadVideo", Path: res.OpenedPath}); err == nil {
-		t.Error("link.downloadVideo(not copyable) succeeded")
+	if _, err := commands.RunCommand(t.Context(), command.Request{Command: commandDownloadMedia, Path: res.OpenedPath}); err == nil {
+		t.Error("app:link.downloadMedia(not copyable) succeeded")
 	}
 	cf.canCopy = true
 
-	// link.downloadVideo when Copy is already in progress (ErrBeingFetched).
+	// app:link.downloadMedia when Copy is already in progress (ErrBeingFetched).
 	cf.startedCh = make(chan struct{})
 	cf.blockCh = make(chan struct{})
 	foundLink, err := links.Read(t.Context(), res.OpenedPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	links.StartCopy(t.Context(), foundLink)
+	links.StartCopy(t.Context(), foundLink, download.MediaVideo)
 	<-cf.startedCh
-	ans, callErr := commands.RunCommand(t.Context(), command.Request{Command: "link.downloadVideo", Path: res.OpenedPath})
+	ans, callErr := commands.RunCommand(t.Context(), command.Request{Command: commandDownloadMedia, Path: res.OpenedPath})
 	close(cf.blockCh)
 	links.Wait()
 	cf.startedCh = nil
 	cf.blockCh = nil
-	if callErr != nil || !strings.Contains(ans.Message, "already being made") {
-		t.Fatalf("link.downloadVideo(in progress) = (%+v, %v)", ans, callErr)
+	if callErr != nil || !strings.Contains(ans.Message, "already being downloaded") {
+		t.Fatalf("app:link.downloadMedia(in progress) = (%+v, %v)", ans, callErr)
 	}
 
-	// link.deleteVideo when DeleteCopy fails.
+	// app:link.deleteMedia when DeleteCopy fails.
 	es.listErr = errors.New("list error")
-	if _, err := commands.RunCommand(t.Context(), command.Request{Command: "link.deleteVideo", Path: res.OpenedPath}); err == nil {
-		t.Error("link.deleteVideo(listErr) succeeded")
+	if _, err := commands.RunCommand(t.Context(), command.Request{Command: commandDeleteMedia, Path: res.OpenedPath}); err == nil {
+		t.Error("app:link.deleteMedia(listErr) succeeded")
 	}
 	es.listErr = nil
 }

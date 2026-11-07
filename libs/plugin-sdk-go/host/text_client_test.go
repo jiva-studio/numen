@@ -113,34 +113,6 @@ func TestTheTextClientReadsEveryCodeAsItsError(t *testing.T) {
 	}
 }
 
-// recordingProvider is a provider that records each creation it receives.
-type recordingProvider struct {
-	requests []host.TextCreation
-}
-
-func (c *recordingProvider) CreateText(_ context.Context, req host.TextCreation) error {
-	c.requests = append(c.requests, req)
-	return nil
-}
-
-func TestProviderReceivesVaultAndPath(t *testing.T) {
-	provider := &recordingProvider{}
-	mux := http.NewServeMux()
-	mux.Handle(host.NewTextProviderHandler(provider))
-	server := httptest.NewServer(mux)
-	t.Cleanup(server.Close)
-	client := numenv1connect.NewTextProviderServiceClient(server.Client(), server.URL)
-
-	req := &v1.TextProviderServiceCreateTextRequest{VaultId: "v", Path: "a.pdf"}
-	if _, err := client.CreateText(t.Context(), connect.NewRequest(req)); err != nil {
-		t.Fatal(err)
-	}
-	want := []host.TextCreation{{Vault: "v", Path: "a.pdf"}}
-	if !slices.Equal(provider.requests, want) {
-		t.Fatalf("got %+v, want %+v", provider.requests, want)
-	}
-}
-
 func TestATextClientOfAnotherVaultNamesItOnEveryCall(t *testing.T) {
 	ctx := t.Context()
 	h := &textHost{}

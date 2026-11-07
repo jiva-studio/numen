@@ -16,7 +16,7 @@ const (
 	pdfReader   = "org.numen.readers-pdf"
 	ocr         = "org.numen.engines-ocr"
 	proofreader = "org.numen.tools-proofreading"
-	player      = "org.numen.views-media-player"
+	player      = "org.numen.views-media-viewer"
 	scanPath    = "books/scan.pdf"
 
 	kindPage        domain.TextKind = "page-text"
@@ -39,7 +39,6 @@ type scene struct {
 	reads   int
 	folders *memoryFiles
 	repo    *memoryVersions
-	made    providers
 	byID    map[string]*fakeProvider
 }
 
@@ -51,11 +50,7 @@ func newScene(t *testing.T) *scene {
 		files:    map[string][]byte{scanPath: []byte("%PDF scan, first printing")},
 		folders:  &memoryFiles{},
 		repo:     &memoryVersions{},
-		plugins: &plugins{all: []textport.TextPlugin{
-			{ID: ocr, Name: "OCR"},
-			{ID: pdfReader, Name: "PDF", Files: domain.FileInput{".pdf"}},
-			{ID: proofreader, Name: "Proofreading"},
-		}},
+		plugins:  &plugins{all: []string{ocr, pdfReader, proofreader}},
 	}
 	page := func(word string, n int) domain.TextSegment {
 		return domain.TextSegment{Text: word + " ", Selector: domain.Selector(`{"page":` + string(rune('1'+n)) + `}`)}
@@ -72,9 +67,8 @@ func newScene(t *testing.T) *scene {
 		make: func(_ string, source domain.VersionText, _ bool) []domain.TextSegment {
 			return []domain.TextSegment{{Text: strings.ReplaceAll(source.Text, "teh", "the")}}
 		}}
-	s.made = providers{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
 	s.byID = map[string]*fakeProvider{pdfReader: s.reader, ocr: s.ocr, proofreader: s.fixer}
-	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, s.made, readCounter{fileReaders: s.files, reads: &s.reads}, steppingClock())
+	versions, err := textversion.NewVersions(s.repo, s.folders, s.plugins, readCounter{fileReaders: s.files, reads: &s.reads}, steppingClock())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,12 +121,10 @@ func (s *scene) runEntry(t *testing.T, pluginID string) {
 	}
 }
 
-// requestText requests text for the scan from the standalone plugins.
+// requestText runs the PDF reader over the scan.
 func (s *scene) requestText(t *testing.T) {
 	t.Helper()
-	if err := s.versions.RequestText(t.Context(), s.vault, scanPath, s.getContentHash()); err != nil {
-		t.Fatal(err)
-	}
+	s.runEntry(t, pdfReader)
 }
 
 func (s *scene) getReaderVersion() domain.TextVersionID {
@@ -180,13 +172,6 @@ func TestADisabledPluginsVersionStaysLiveAndReadable(t *testing.T) {
 	text, err := s.versions.GetVersionText(t.Context(), s.vault, scanPath, c)
 	if err != nil || text.Text != "scanned teh " {
 		t.Fatalf("the version of a disabled plugin reads %q (%v)", text.Text, err)
-	}
-	if got := s.reader.getCreated(); got != 0 {
-		t.Fatalf("a file with a disabled plugin's live version asked the reader %d times", got)
-	}
-	s.requestText(t)
-	if got := s.reader.getCreated(); got != 0 {
-		t.Fatalf("RequestText asked the reader %d times for a file that has a live version", got)
 	}
 }
 
@@ -273,19 +258,6 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	}
 }
 
-func TestRequestTextAsksOncePerContentAndNotForALiveFile(t *testing.T) {
-	s := newScene(t)
-	for range 3 {
-		s.requestText(t)
-	}
-	if got := s.reader.getCreated(); got != 1 {
-		t.Fatalf("the reader was asked %d times, want 1", got)
-	}
-	if got := s.ocr.getCreated(); got != 0 {
-		t.Fatalf("the recogniser, which does not run on its own, was asked %d times", got)
-	}
-}
-
 func TestDeletePluginVersionsRemovesTheRecordsAndReportsTheFiles(t *testing.T) {
 	s := newScene(t)
 	s.runEntry(t, ocr)
@@ -343,7 +315,102 @@ func TestRecordVersionRejectsInvalidVersions(t *testing.T) {
 	}
 }
 
-func TestRecordVersionStoresTheTextHashAndCreateTime(t *testing.T) {
+func TestRecordVersionRejectsAPropertyWithAnotherRoot(t *testing.T) {
+	s := newScene(t)
+	ctx := t.Context()
+	s.files[talkPath] = []byte(talkNote)
+	if _, err := s.folders.WriteTextFile(ctx, ocr, "k.jsonl", []domain.TextSegment{{Text: "x"}}); err != nil {
+		t.Fatal(err)
+	}
+	other := s.putTalkVersion(t, "other", "")
+	property := domain.TextSourceProperty{Key: "url", Value: talkURL}
+	cases := map[string]textversion.VersionPut{
+		"a property and a source": {
+			Path: talkPath, Key: "k", Kind: kindRecognition, File: "k.jsonl",
+			SourceProperty: property, Source: other.GetID(), InputHash: other.TextHash,
+		},
+		"a property and a source hash": {
+			Path: talkPath, Key: "k", Kind: kindRecognition, File: "k.jsonl",
+			SourceProperty: property, InputHash: domain.HashContent(s.files[talkPath]),
+		},
+	}
+	for name, params := range cases {
+		if _, err := s.versions.PutVersion(ctx, s.vault, ocr, params); !errors.Is(err, textport.ErrInvalidVersion) {
+			t.Errorf("%s: got %v, want %v", name, err, textport.ErrInvalidVersion)
+		}
+	}
+}
+
+const (
+	talkPath = "links/talk.md"
+	talkURL  = "https://example.com/talk"
+	talkNote = "---\ntype: link\nurl: " + talkURL + "\ntitle: A talk\n---\nNotes on the talk.\n"
+)
+
+// putTalkVersion puts a version of the talk note made from its url property, with
+// the given key and text.
+func (s *scene) putTalkVersion(t *testing.T, key, text string) domain.TextVersion {
+	t.Helper()
+	ctx := t.Context()
+	if _, err := s.folders.WriteTextFile(ctx, ocr, key+".jsonl", []domain.TextSegment{{Text: text}}); err != nil {
+		t.Fatal(err)
+	}
+	version, err := s.versions.PutVersion(ctx, s.vault, ocr, textversion.VersionPut{
+		Path: talkPath, Key: key, Kind: kindRecognition, File: key + ".jsonl",
+		SourceProperty: domain.TextSourceProperty{Key: "url", Value: talkURL},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return version
+}
+
+// getTalkLive is the live version of the talk note as it reads now, and empty where none is.
+func (s *scene) getTalkLive(t *testing.T) domain.TextVersionID {
+	t.Helper()
+	listing, err := s.versions.ListVersions(t.Context(), s.vault, talkPath, domain.HashContent(s.files[talkPath]))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return listing.Live
+}
+
+func TestAPropertyVersionStaysLiveAfterAnEditElsewhereInTheNote(t *testing.T) {
+	s := newScene(t)
+	s.files[talkPath] = []byte(talkNote)
+	version := s.putTalkVersion(t, "article", "The article.")
+	if version.SourceProperty != (domain.TextSourceProperty{Key: "url", Value: talkURL}) || version.InputHash != "" {
+		t.Fatalf("recorded %+v, want the url property and no source hash", version)
+	}
+	s.files[talkPath] = []byte(strings.Replace(talkNote, "title: A talk", "title: A long talk", 1) + "More notes.\n")
+	if got := s.getTalkLive(t); got != version.GetID() {
+		t.Fatalf("after an edit of the title and body the live version is %q, want %q", got, version.GetID())
+	}
+	text, err := s.versions.GetLiveText(t.Context(), s.vault, talkPath, domain.HashContent(s.files[talkPath]))
+	if err != nil || text.Text != "The article." {
+		t.Fatalf("live text %q (%v)", text.Text, err)
+	}
+}
+
+func TestAPropertyVersionIsNotLiveOnceThePropertyChanges(t *testing.T) {
+	s := newScene(t)
+	s.files[talkPath] = []byte(talkNote)
+	s.putTalkVersion(t, "article", "The article.")
+	cases := map[string]string{
+		"another url":    strings.Replace(talkNote, talkURL, "https://example.com/other", 1),
+		"no url":         strings.Replace(talkNote, "url: "+talkURL+"\n", "", 1),
+		"a url list":     strings.Replace(talkNote, "url: "+talkURL, "url:\n  - "+talkURL, 1),
+		"no frontmatter": "Notes on the talk.\n",
+	}
+	for name, note := range cases {
+		s.files[talkPath] = []byte(note)
+		if got := s.getTalkLive(t); got != "" {
+			t.Errorf("%s: the live version is %q, want none", name, got)
+		}
+	}
+}
+
+func TestRecordVersionStoresTheFileHashAndCreateTime(t *testing.T) {
 	s := newScene(t)
 	ctx := t.Context()
 	params := textversion.VersionPut{Path: scanPath, Key: "k", Kind: kindRecognition, InputHash: s.getContentHash(), File: "k.jsonl"}

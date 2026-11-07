@@ -1,8 +1,9 @@
 // Package link keeps what is published at the addresses the vault's links hold. A link is a note of
 // type `link` whose frontmatter holds one address under `url`. The text published there, the prose
 // of an article or the captions of a video, is stored in the plugin's folder of the vault's store
-// and put to the host as a text version of the note; a video is copied into the same folder and
-// played through the host in place of the note.
+// and put to the host as a text version of the note. A video is downloaded into the same folder, and
+// the page that frames its player is written there; the note names both by their plugin:// addresses
+// under `media` and `page`.
 package link
 
 import (
@@ -30,9 +31,14 @@ const NoteType domain.NoteType = "link"
 
 // The frontmatter keys a link note is written with.
 const (
-	typeKey = "type"
-	urlKey  = "url"
+	typeKey  = "type"
+	urlKey   = "url"
+	mediaKey = "media"
+	pageKey  = "page"
 )
+
+// pluginScheme starts the address of a file in a plugin's store of the vault.
+const pluginScheme = "plugin://"
 
 var (
 	// ErrNotALink is a file that is not a link note holding a web address.
@@ -54,7 +60,7 @@ type Fetcher interface {
 	GetDownloadModel(address string) download.Model
 	GetMetadata(ctx context.Context, address string) (download.Metadata, error)
 	GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error)
-	Download(ctx context.Context, address string, into io.Writer) (download.Copy, error)
+	Download(ctx context.Context, address string, media download.Media, into io.Writer) (download.Copy, error)
 }
 
 // Clock gets the current time.
@@ -64,11 +70,13 @@ type Clock interface {
 
 // Host is what the plugin works through the host.
 type Host struct {
-	Vault host.Vault
-	Store host.Store
-	Texts host.Texts
-	Queue host.Queue
-	Clock Clock
+	// PluginID is the identity of the plugin, which the addresses of its files name.
+	PluginID string
+	Vault    host.Vault
+	Store    host.Store
+	Texts    host.Texts
+	Queue    host.Queue
+	Clock    Clock
 }
 
 // Settings are the user's fetch settings. CopyMaxSize is in bytes; zero means
@@ -125,16 +133,16 @@ func (l *Links) withClosing(ctx context.Context) (context.Context, context.Cance
 // Wait waits for every fetch started in the background.
 func (l *Links) Wait() { l.wg.Wait() }
 
-// Link is one link note. Key names the text stored for its address, and Hash is the content hash of
-// the note, which names the copy of its video and is the source hash of its text version. Vault is
-// the identity of the vault the note is in, read from the host when the note is read or made, so
-// the work on a link of the shown vault is keyed as that vault's and not as no vault.
+// Link is one link note. Key names the text stored for its address, and URL is the url property as
+// the note writes it, the root of its text version. Vault is the identity of the vault the note is
+// in, read from the host when the note is read or made, so the work on a link of the shown vault is
+// keyed as that vault's and not as no vault.
 type Link struct {
 	Vault   domain.VaultID
 	Path    string
 	Address address.URL
 	Key     string
-	Hash    string
+	URL     string
 }
 
 // Read is the link at a path of the vault the host shows.
@@ -165,7 +173,20 @@ func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) 
 }
 
 func newLink(path string, parsed address.URL, raw []byte) Link {
-	return Link{Vault: "", Path: path, Address: parsed, Key: getKey(parsed), Hash: domain.HashContent(raw)}
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="markdown.Parse ignores FileStat.Size"
+	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, raw)
+	return Link{
+		Vault: "", Path: path, Address: parsed, Key: getKey(parsed), URL: getText(note.Frontmatter[urlKey]),
+	}
+}
+
+// getText is the value of a frontmatter key that holds text, and empty for any other.
+func getText(value any) string {
+	text, isText := value.(string)
+	if !isText {
+		return ""
+	}
+	return text
 }
 
 // getKey names what is stored for the text of an address.
@@ -197,8 +218,17 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 	if err := errors.Join(doc.SetScalar(typeKey, string(NoteType)), doc.SetScalar(urlKey, string(parsed))); err != nil {
 		return Link{}, err
 	}
-	target := l.getVault(vault)
+	target, store := l.getVaultByID(vault), l.getStoreByID(vault)
 	path := pathpkg.Join(folder, name+domain.NoteExtension)
+	key := getKey(parsed)
+	if page, ok, err := writePage(ctx, store, key, parsed); err != nil {
+		return Link{}, err
+	} else if ok {
+		// gomutants:disable-next-line BRANCH_IF reason="SetScalar on a valid frontmatter key of a new document cannot fail"
+		if err := doc.SetScalar(pageKey, l.getAddress(page)); err != nil {
+			return Link{}, err
+		}
+	}
 	content := doc.Bytes()
 	if err := target.Create(ctx, path, content); err != nil {
 		return Link{}, err
@@ -225,7 +255,7 @@ func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, 
 		return Link{}, err
 	}
 	path := pathpkg.Join(folder, name+domain.NoteExtension)
-	found, err := readLink(ctx, l.getVault(vault), path)
+	found, err := readLink(ctx, l.getVaultByID(vault), path)
 	if err != nil && !errors.Is(err, ErrNotALink) {
 		return Link{}, err
 	}
@@ -235,21 +265,52 @@ func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, 
 	return found, nil
 }
 
-// getVault returns the vault of the identity, or the vault the host shows for an empty one.
-func (l *Links) getVault(vault domain.VaultID) host.Vault {
+// getVaultByID returns the vault of the identity, or the vault the host shows for an empty one.
+func (l *Links) getVaultByID(vault domain.VaultID) host.Vault {
 	if vault == "" {
 		return l.host.Vault
 	}
 	return l.host.Vault.With(vault)
 }
 
-// getStore is the plugin's folder in the vault of the link.
-func (l *Links) getStore(link Link) host.Store {
-	if link.Vault == "" {
+// getStoreByID returns the plugin's folder in the vault of the identity, or in the vault the host shows
+// for an empty one.
+func (l *Links) getStoreByID(vault domain.VaultID) host.Store {
+	if vault == "" {
 		return l.host.Store
 	}
-	return l.host.Store.With(link.Vault)
+	return l.host.Store.With(vault)
 }
+
+// getAddress is the plugin:// address of a file of the plugin's folder.
+func (l *Links) getAddress(name string) string {
+	return pluginScheme + l.host.PluginID + "/" + name
+}
+
+// setAddress writes the address under the key of the note's frontmatter, empty where value is empty.
+func (l *Links) setAddress(ctx context.Context, link Link, key, value string) error {
+	vault := l.getVault(link)
+	raw, stat, err := vault.Read(ctx, link.Path)
+	if err != nil {
+		return err
+	}
+	doc, err := markdown.Open(raw)
+	if err != nil {
+		return err
+	}
+	if err := doc.SetScalar(key, value); err != nil {
+		return err
+	}
+	content := doc.Bytes()
+	_, err = vault.Write(ctx, link.Path, content, stat)
+	return err
+}
+
+// getVault is the vault of the link.
+func (l *Links) getVault(link Link) host.Vault { return l.getVaultByID(link.Vault) }
+
+// getStore is the plugin's folder in the vault of the link.
+func (l *Links) getStore(link Link) host.Store { return l.getStoreByID(link.Vault) }
 
 // getTexts is the text versions of the vault of the link.
 func (l *Links) getTexts(link Link) host.Texts {
@@ -288,34 +349,13 @@ func getWorkName(work string, link Link, key string) string {
 // IsCopyable reports whether something on this machine copies what the address publishes.
 func (l *Links) IsCopyable(parsed address.URL) bool { return l.fetcher().CanCopy(string(parsed)) }
 
-// FindCopy is the size of the copy stored for a link, and zero where none is. A copy kept under the
-// hash the note had before an edit is renamed to the hash it has now, so the host finds it.
+// FindCopy is the size of the copy stored for a link, and zero where none is.
 func (l *Links) FindCopy(ctx context.Context, link Link) (int64, error) {
-	store := l.getStore(link)
-	folder := folder{store: store}
-	if found, ok, err := folder.findCopy(ctx, link.Hash); err != nil || ok {
-		return found.Size, err
-	}
-	rec, err := folder.readRecord(ctx, link.Key)
-	if err != nil || rec.Copy == "" {
+	found, ok, err := folder{store: l.getStore(link)}.findCopy(ctx, link.Key)
+	if err != nil || !ok {
 		return 0, err
 	}
-	files, err := store.List(ctx)
-	if err != nil {
-		return 0, err
-	}
-	for _, one := range files {
-		if one.Name != rec.Copy {
-			continue
-		}
-		target := link.Hash + pathpkg.Ext(one.Name)
-		if err := store.Rename(ctx, one.Name, target); err != nil {
-			return 0, err
-		}
-		rec.Copy = target
-		return one.Size, folder.writeRecord(ctx, link.Key, rec)
-	}
-	return 0, nil
+	return found.Size, nil
 }
 
 // StartFetch fetches the text of a link in the background, and a copy of the video where one is
@@ -324,29 +364,20 @@ func (l *Links) StartFetch(ctx context.Context, link Link) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, true))
+		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link))
 		if l.IsCopyable(link.Address) {
-			_, err := l.Copy(runCtx, link)
+			_, err := l.Copy(runCtx, link, download.MediaVideo)
 			reportBackgroundError(runCtx, "copy the video of", link, err)
 		}
 	})
 }
 
-// StartFetchText fetches the text of a link in the background. A failure is shown as its task.
-func (l *Links) StartFetchText(ctx context.Context, link Link, isUserStarted bool) {
+// StartCopy copies the media of a link in the background. A failure is shown as its task.
+func (l *Links) StartCopy(ctx context.Context, link Link, media download.Media) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, isUserStarted))
-	})
-}
-
-// StartCopy copies the video of a link in the background. A failure is shown as its task.
-func (l *Links) StartCopy(ctx context.Context, link Link) {
-	l.wg.Go(func() {
-		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
-		defer cancel()
-		_, err := l.Copy(runCtx, link)
+		_, err := l.Copy(runCtx, link, media)
 		reportBackgroundError(runCtx, "copy the video of", link, err)
 	})
 }
@@ -373,49 +404,21 @@ func getTaskID(work, path string) string { return work + ":" + path }
 func GetCopyTaskID(path string) string { return getTaskID("copy", path) }
 
 // FetchText fetches the text published at a link's address and stores it as a
-// text version of the link. An address that publishes no text is marked as such.
-// A fetch not requested by the user skips an address marked as publishing no
-// text and a text whose version the user deleted, and re-stores an existing text
-// as a version of the note as it currently reads, without fetching it.
-func (l *Links) FetchText(ctx context.Context, link Link, isUserStarted bool) error {
+// text version of the link. An address that publishes no text stores nothing.
+func (l *Links) FetchText(ctx context.Context, link Link) error {
 	if !l.claim("text", link, link.Key) {
 		return ErrBeingFetched
 	}
 	defer l.release("text", link, link.Key)
 	folder := folder{store: l.getStore(link)}
-	if !isUserStarted {
-		isDone, err := l.reuseText(ctx, folder, link)
-		if err != nil || isDone {
-			return err
-		}
-	}
 	task := host.Task{
 		ID: getTaskID("text", link.Path), Title: fetchingText, Detail: link.Path,
-		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: isUserStarted,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
 	err := l.fetchText(ctx, folder, link)
 	l.endTask(ctx, task, err)
 	return err
-}
-
-// reuseText completes a fetch not requested by the user from stored data and
-// reports whether it did.
-func (l *Links) reuseText(ctx context.Context, folder folder, link Link) (bool, error) {
-	if isNone, err := folder.isNone(ctx, link.Key); err != nil || isNone {
-		return true, err
-	}
-	rec, err := folder.readRecord(ctx, link.Key)
-	if err != nil || rec.Kind == "" {
-		return false, err
-	}
-	hasText, err := folder.hasText(ctx, link.Key)
-	if err != nil || !hasText {
-		// A text that was fetched earlier and is now absent is a version the user
-		// deleted.
-		return true, err
-	}
-	return true, l.ensureVersion(ctx, link, rec.Kind)
 }
 
 func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
@@ -424,7 +427,7 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 		Languages: settings.Captions, IsAutomatic: settings.IsAutomatic,
 	})
 	if errors.Is(err, download.ErrNothingDownloaded) {
-		return folder.markNoText(ctx, link.Key)
+		return nil
 	}
 	if err != nil {
 		return err
@@ -448,51 +451,39 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 	return l.putVersion(ctx, link, rec.Kind)
 }
 
-// ensureVersion puts the stored text of a link as its version where the note has none made from it
-// as it reads now.
-func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKind) error {
-	listing, err := l.getTexts(link).ListVersions(ctx, link.Path)
-	if err != nil {
-		return err
-	}
-	for _, version := range listing.Versions {
-		if version.Key == link.Key && version.InputHash == link.Hash {
-			return nil
-		}
-	}
-	return l.putVersion(ctx, link, kind)
-}
-
 // putVersion puts the text stored for a link to the host as the link's version.
 func (l *Links) putVersion(ctx context.Context, link Link, kind domain.TextKind) error {
 	_, err := l.getTexts(link).PutVersion(ctx, host.TextPut{
-		Path: link.Path, Key: link.Key, Source: "", Kind: kind, InputHash: link.Hash, File: link.Key + textExt,
+		Path: link.Path, Key: link.Key, SourceProperty: domain.TextSourceProperty{Key: urlKey, Value: link.URL},
+		Kind: kind, File: link.Key + textExt,
 	})
 	return err
-}
-
-// IsTextDeleted reports whether the text of a link was fetched and its version deleted since.
-func (l *Links) IsTextDeleted(ctx context.Context, link Link) (bool, error) {
-	folder := folder{store: l.getStore(link)}
-	if rec, err := folder.readRecord(ctx, link.Key); err != nil || rec.Kind == "" {
-		return false, err
-	}
-	hasText, err := folder.hasText(ctx, link.Key)
-	return !hasText, err
 }
 
 // copyChunk is how much of a copy is sent to the store in one call.
 const copyChunk = 1 << 20
 
-// Copy copies the video a link's address publishes into the plugin's folder, through the core's
-// queue, and returns its size. A copy already stored is left as it is.
-func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
-	if !l.claim("copy", link, link.Hash) {
+// Copy copies the media a link's address publishes, the video or the sound alone, into the plugin's
+// folder, through the core's queue, writes its address into the note under media, and returns its
+// size. A copy of the same media already stored is left as it is; a copy of the other is replaced.
+func (l *Links) Copy(ctx context.Context, link Link, media download.Media) (int64, error) {
+	if !l.claim("copy", link, link.Key) {
 		return 0, ErrBeingFetched
 	}
-	defer l.release("copy", link, link.Hash)
-	if size, err := l.FindCopy(ctx, link); err != nil || size > 0 {
+	defer l.release("copy", link, link.Key)
+	folder := folder{store: l.getStore(link)}
+	rec, err := folder.readRecord(ctx, link.Key)
+	if err != nil {
+		return 0, err
+	}
+	size, err := l.FindCopy(ctx, link)
+	if err != nil || (size > 0 && rec.CopyMedia == media) {
 		return size, err
+	}
+	if size > 0 {
+		if err := folder.deleteCopy(ctx, link.Key); err != nil {
+			return 0, err
+		}
 	}
 	fetcher, settings := l.fetcher(), l.settings()
 	if !fetcher.CanCopy(string(link.Address)) {
@@ -503,12 +494,12 @@ func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitBytes, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
-	size, err := l.copy(ctx, fetcher, settings, link, task)
+	size, err = l.copy(ctx, fetcher, settings, link, media, task)
 	l.endTask(ctx, task, err)
 	return size, err
 }
 
-func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, link Link, task host.Task) (size int64, err error) {
+func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, link Link, media download.Media, task host.Task) (size int64, err error) {
 	meta, err := fetcher.GetMetadata(ctx, string(link.Address))
 	if err != nil {
 		return 0, err
@@ -522,7 +513,7 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	}
 	defer func() { err = errors.Join(err, turn.Release()) }()
 
-	part := link.Hash + partExt
+	part := link.Key + partExt
 	store := l.getStore(link)
 	if err := store.Delete(ctx, part); err != nil {
 		return 0, err
@@ -539,7 +530,7 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 		pending:   nil,
 		byteCount: 0,
 	}
-	copied, err := fetcher.Download(ctx, string(link.Address), into)
+	copied, err := fetcher.Download(ctx, string(link.Address), media, into)
 	if err == nil {
 		err = into.flush()
 	}
@@ -550,35 +541,60 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	if !isCopyExt(ext) {
 		return 0, errors.Join(fmt.Errorf("a copy in a %q file is not played", ext), store.Delete(ctx, part))
 	}
-	if err := store.Rename(ctx, part, link.Hash+ext); err != nil {
+	name := link.Key + ext
+	if err := store.Rename(ctx, part, name); err != nil {
 		return 0, err
 	}
-	return into.byteCount, l.recordCopy(ctx, link, link.Hash+ext)
+	if err := l.recordCopy(ctx, link, name, media); err != nil {
+		return 0, err
+	}
+	return into.byteCount, l.setAddress(ctx, link, mediaKey, l.getAddress(name))
 }
 
-// recordCopy writes down the file the copy of a link is kept in.
-func (l *Links) recordCopy(ctx context.Context, link Link, name string) error {
+// recordCopy writes down the file the copy of a link is kept in, and what media it holds.
+func (l *Links) recordCopy(ctx context.Context, link Link, name string, media download.Media) error {
 	folder := folder{store: l.getStore(link)}
 	rec, err := folder.readRecord(ctx, link.Key)
 	if err != nil {
 		return err
 	}
-	rec.Address, rec.Copy = string(link.Address), name
+	rec.Address, rec.Copy, rec.CopyMedia = string(link.Address), name, media
 	return folder.writeRecord(ctx, link.Key, rec)
 }
 
-// DeleteCopy takes away the copy stored for a link.
+// DeleteCopy takes away the copy stored for a link, and its address from the note.
 func (l *Links) DeleteCopy(ctx context.Context, link Link) error {
 	folder := folder{store: l.getStore(link)}
-	if err := folder.deleteCopy(ctx, link.Hash); err != nil {
+	if err := folder.deleteCopy(ctx, link.Key); err != nil {
 		return err
 	}
 	rec, hasRecord, err := folder.findRecord(ctx, link.Key)
-	if err != nil || !hasRecord || rec.Copy == "" {
+	if err != nil {
 		return err
 	}
-	rec.Copy = ""
-	return folder.writeRecord(ctx, link.Key, rec)
+	if hasRecord && rec.Copy != "" {
+		rec.Copy, rec.CopyMedia = "", ""
+		if err := folder.writeRecord(ctx, link.Key, rec); err != nil {
+			return err
+		}
+	}
+	return l.setAddress(ctx, link, mediaKey, "")
+}
+
+// TextInfo describes the text fetched for the address of a link.
+type TextInfo struct {
+	Title    string
+	Producer string
+}
+
+// GetTextInfo returns the title and the producer of the text fetched for the address of a link. A
+// link with no text fetched has an empty title and producer.
+func (l *Links) GetTextInfo(ctx context.Context, link Link) (TextInfo, error) {
+	rec, err := folder{store: l.getStore(link)}.readRecord(ctx, link.Key)
+	if err != nil {
+		return TextInfo{}, err
+	}
+	return TextInfo{Title: rec.Title, Producer: rec.Producer}, nil
 }
 
 // ReadArticle is the text of the live version of a link, read in the link's vault, and nothing
@@ -600,36 +616,6 @@ func (l *Links) ReadArticle(ctx context.Context, link Link) (string, error) {
 		return whole.Text, nil
 	}
 	return "", nil
-}
-
-// GetTitle is what the page at a link's address calls itself, and nothing where no text was
-// fetched.
-func (l *Links) GetTitle(ctx context.Context, link Link) (string, error) {
-	rec, err := folder{store: l.getStore(link)}.readRecord(ctx, link.Key)
-	return rec.Title, err
-}
-
-// TextInfo describes the text fetched for a link. HasNoText is set for an address marked as
-// publishing no text.
-type TextInfo struct {
-	Title     string
-	Producer  string
-	HasNoText bool
-}
-
-// GetTextInfo returns the title and the producer of the text fetched for a link, and whether its
-// address publishes no text. A link with no text fetched has an empty title and producer.
-func (l *Links) GetTextInfo(ctx context.Context, link Link) (TextInfo, error) {
-	folder := folder{store: l.getStore(link)}
-	isNone, err := folder.isNone(ctx, link.Key)
-	if err != nil {
-		return TextInfo{}, err
-	}
-	rec, err := folder.readRecord(ctx, link.Key)
-	if err != nil {
-		return TextInfo{}, err
-	}
-	return TextInfo{Title: rec.Title, Producer: rec.Producer, HasNoText: isNone}, nil
 }
 
 // reportTask shows a task. A host that cannot show it leaves the work to go on unseen.

@@ -1,2 +1,2 @@
-// Package lifecycle tracks the process of one plugin through activation, failure and backoff.
+// Package lifecycle tracks the process of one plugin through activation and failure.
 package lifecycle

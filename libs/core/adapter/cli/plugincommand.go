@@ -48,7 +48,7 @@ func writePluginCommandUsage(r *reporter, deps Deps) {
 // over one, and a flag for each argument, an optional one in brackets.
 func getPluginCommandSynopsis(command plugincommand.Command) string {
 	words := []string{command.ID, "<vault>"}
-	if command.HasFiles() {
+	if plugincommand.NamesTarget(command) {
 		words = append(words, "<file>")
 	}
 	for _, argument := range command.Arguments {
@@ -71,26 +71,13 @@ func runPluginCommand(
 ) (err error) {
 	declared := entry.Command
 	usage := errors.New("usage: numen-cli " + getPluginCommandSynopsis(declared))
-	fs := flag.NewFlagSet(declared.ID, flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	arguments := map[string]string{}
-	for _, argument := range declared.Arguments {
-		set := func(value string) error {
-			arguments[argument.Name] = value
-			return nil
-		}
-		if argument.Type == plugincommand.ArgumentBoolean {
-			fs.BoolFunc(argument.Name, argument.Title, set)
-		} else {
-			fs.Func(argument.Name, argument.Title, set)
-		}
-	}
+	fs, arguments := newArgumentFlags(declared)
 	positional, err := parseInterspersed(fs, args)
 	if err != nil {
 		return fmt.Errorf("%w: %w", usage, err)
 	}
 	wanted := 1
-	if declared.HasFiles() {
+	if plugincommand.NamesTarget(declared) {
 		wanted = 2
 	}
 	if len(positional) != wanted {
@@ -107,13 +94,37 @@ func runPluginCommand(
 	defer closeInto(&err, closeRun)
 
 	call := plugincommand.Call{PluginID: entry.PluginID, Command: declared.ID, Arguments: arguments}
-	if declared.HasFiles() {
+	if plugincommand.NamesTarget(declared) {
 		call.Path = positional[1]
 	}
 	result, err := run.Execute(ctx, v, call)
 	if err != nil {
 		return err
 	}
+	return writeResult(out, result)
+}
+
+// newArgumentFlags is a flag for each argument of the command, and the values they are given, by name.
+func newArgumentFlags(declared plugincommand.Command) (*flag.FlagSet, map[string]string) {
+	fs := flag.NewFlagSet(declared.ID, flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	arguments := map[string]string{}
+	for _, argument := range declared.Arguments {
+		set := func(value string) error {
+			arguments[argument.Name] = value
+			return nil
+		}
+		if argument.Type == plugincommand.ArgumentBoolean {
+			fs.BoolFunc(argument.Name, argument.Title, set)
+		} else {
+			fs.Func(argument.Name, argument.Title, set)
+		}
+	}
+	return fs, arguments
+}
+
+// writeResult writes the message of a command that ran and the file it opened.
+func writeResult(out io.Writer, result plugincommand.Result) error {
 	r := newReporter(out)
 	if result.Message != "" {
 		r.Println(result.Message)

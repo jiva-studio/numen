@@ -12,6 +12,7 @@ import {
   createPluginTexts,
   openExternalUrl,
   type CommandDeclaration,
+  type PluginHostDeps,
   type PluginLoader,
 } from '@numen/plugin-host'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
@@ -39,8 +40,25 @@ export interface PluginSupportDeps {
   readonly notices?: NoticeQueue
   /** The commands the enabled plugins declare in their manifests. */
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
+  /** The handlers of shared commands the enabled plugins declare, and how their backends list and run them. */
+  readonly handlers?: Pick<
+    PluginHostDeps,
+    'getHandlerDeclarations' | 'listBackendHandlerItems' | 'runBackendHandler'
+  >
   /** Reports a command whose declaration and handler do not match. */
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
+  /** Reports a view of a slot that another plugin, first by plugin id, draws. */
+  readonly reportViewIssue?: (pluginId: string, message: string) => void
+  /** The entries of the slots of the window, how their commands are drawn and run, and their issues. */
+  readonly slots?: Pick<
+    PluginHostDeps,
+    | 'getSlotEntries'
+    | 'findSlotCommand'
+    | 'reportSlotIssue'
+    | 'getSlotWhenValues'
+    | 'getWindowValues'
+    | 'getContentTypes'
+  >
 }
 
 function createPluginSettingsAccessor(
@@ -72,10 +90,48 @@ function createPluginSettingsAccessor(
   return { getSetting, onSettingChange }
 }
 
+/** The services of the window a plugin context reads, as the window has made them. */
+function createServiceAccess(services: PluginServices | undefined) {
+  /* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
+  return {
+    getWorkspace: () => services?.workspace,
+    getNotes: () => services?.notes,
+    getRelations: () => services?.relations,
+    getFiles: () => services?.files,
+    getAgent: () => services?.agent,
+    getCommands: () => services?.commands,
+    getVaults: () => services?.vaults,
+    getWindow: () => services?.window,
+    getBuffers: () => services?.buffers,
+    getNoteBuffer: () => services?.noteBuffer,
+    getTasks: (pluginId: string) => {
+      const list = services?.taskList
+      return list ? createPluginTasks(list, pluginId) : undefined
+    },
+    getBackgroundTasks: () => services?.backgroundTasks,
+  }
+  /* Stryker restore OptionalChaining,ArrowFunction,ObjectLiteral */
+}
+
 function createNoticeAccess(queue: NoticeQueue) {
   return {
     getNotices: (pluginId: string) => createPluginNotices(queue, pluginId),
     clearNotices: (pluginId: string) => queue.clear(pluginId),
+  }
+}
+
+/** The commands and slot entries the plugins declare, and what the host reports about them. */
+function getHostDeclarations(deps: PluginSupportDeps) {
+  return {
+    ...deps.slots,
+    ...deps.handlers,
+    ...(deps.getCommandDeclarations !== undefined
+      ? { getCommandDeclarations: deps.getCommandDeclarations }
+      : {}),
+    ...(deps.reportViewIssue !== undefined ? { reportViewIssue: deps.reportViewIssue } : {}),
+    ...(deps.reportCommandIssue !== undefined
+      ? { reportCommandIssue: deps.reportCommandIssue }
+      : {}),
   }
 }
 
@@ -95,12 +151,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   /* Stryker disable OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction: host and loader wiring forwards optional capabilities */
   const loaderHolder: { current?: PluginLoader } = {}
   const pluginHost = createPluginHost({
-    ...(deps.getCommandDeclarations !== undefined
-      ? { getCommandDeclarations: deps.getCommandDeclarations }
-      : {}),
-    ...(deps.reportCommandIssue !== undefined
-      ? { reportCommandIssue: deps.reportCommandIssue }
-      : {}),
+    ...getHostDeclarations(deps),
     hasPluginFrontend: (pluginId) =>
       settingsHolder.current?.rest?.plugins?.value.find((plugin) => plugin.id === pluginId)
         ?.hasFrontend ?? true,
@@ -140,18 +191,8 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     closeTabsForPlugin,
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
-    getWorkspace: () => deps.services?.workspace,
-    getNotes: () => deps.services?.notes,
-    getRelations: () => deps.services?.relations,
-    getFiles: () => deps.services?.files,
-    getAgent: () => deps.services?.agent,
-    getBuffers: () => deps.services?.buffers,
-    getNoteBuffer: () => deps.services?.noteBuffer,
+    ...createServiceAccess(deps.services),
     ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),
-    getTasks: (pluginId) => {
-      const list = deps.services?.taskList
-      return list ? createPluginTasks(list, pluginId) : undefined
-    },
     getTexts: (pluginId: string) => createPluginTexts(texts, pluginId),
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })

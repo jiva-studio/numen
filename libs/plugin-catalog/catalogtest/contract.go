@@ -6,6 +6,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
@@ -38,7 +39,7 @@ func sampleEntry(id, version string, state catalog.State, category, kind string)
 		Description: "The " + kind + " plugin",
 		Category:    category,
 		Contributes: manifest.Contributes{
-			TabKinds: []manifest.TabKind{{Kind: kind, Title: "Tab " + kind, Icon: "layers"}},
+			TabKinds: []manifest.TabKind{{Kind: kind, Title: "Tab " + kind, Icon: "layers", When: "", Rank: domain.RankDefault}},
 			Feature:  kind + " feature",
 			Category: category,
 		},

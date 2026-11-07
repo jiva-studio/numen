@@ -3,6 +3,10 @@ import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
+import type { BackgroundTaskHost } from './backgroundTasks'
+import type { CommandItem, CommandsHost, CommandTarget } from './commands/commands'
+import type { SlotHost } from './slots/slots'
+import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
 import type { MountedView, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from './workspace'
@@ -50,20 +54,27 @@ export interface SettingsViewProps {
   readonly values: Readonly<Record<string, unknown>>
 }
 
-// StatusViewRegistration registers a component the window draws in its status bar. The manifest
-// declares the same id under `contributes.statusViews`. The component gets StatusViewProps as props.
-export interface StatusViewRegistration {
-  readonly id: string
-  readonly component: unknown
-}
-
-// StatusViewProps are the props the window passes the component of a status view.
+// StatusViewProps are the props the window passes the component of a view in a slot of a bar.
 export interface StatusViewProps {
   readonly pluginId: string
 }
 
+// SlotViewRegistration registers a component a slot draws. The manifest places it, as an entry
+// `{ "slot", "view" }` of `contributes.slots` with the same id, in the slots it is drawn in.
+export interface SlotViewRegistration {
+  readonly id: string
+  readonly component: unknown
+}
+
+// TITLE_BAR_SLOT is the slot at the top of a window. Its view draws the whole bar: the commands, the
+// title, the window buttons and the area that drags the window. The window passes it no props; it
+// reads its slots, the vaults and the window through `slots`, `vaults` and `window` of its context.
+export const TITLE_BAR_SLOT = 'titleBar'
+
 // AppInfo describes the application build a plugin runs in.
 export interface AppInfo {
+  // The name of the application, as a window title names it.
+  readonly name: string
   // The version the build calls itself, such as `2026.10.3` or `0.0.0-dev` for a manual build.
   readonly version: string
   // The build number; 0 where the build has none.
@@ -169,25 +180,27 @@ export interface TabKindRegistration<State = unknown> {
   placement?: TabPlacement
 }
 
-// CommandNote is the note a command runs over: the note in front, or the one a menu was opened on.
-// Its path is empty where there is none.
-export interface CommandNote {
-  readonly path: string
-  readonly title: string
+// CommandNote is what a command runs over, as its handler gets it: the target of the run, the note
+// in front where the run names none, and the type the vault files it as. Its path is empty where
+// there is none.
+export interface CommandNote extends CommandTarget {
   readonly type: NoteType
 }
-
-// NOTE_TARGET offers a context menu item on a note.
-export const NOTE_TARGET = 'note' as const
 
 // CommandRegistration binds the handler of a command the manifest declares under `contributes.commands`.
 // The title, icon, scope and shortcut are read from the declaration. A handler registered for an id the
 // manifest does not declare is never listed.
 export interface CommandRegistration {
   // The id as `<object>.<action>`, such as `tree.open`, as the manifest declares it. The host files
-  // the command under `<plugin id>:<id>`; registering the same full id twice throws.
+  // the command under `<plugin id>:<id>`; registering the same full id twice throws. The full id of a
+  // shared command, such as `app:file.createText`, registers the plugin's handler of it, which the
+  // manifest declares under `contributes.handlers`.
   id: string
-  handler: (note: CommandNote) => void | Promise<void>
+  // Runs the command over the note; with `argument`, the id of the item picked.
+  handler: (note: CommandNote, argument?: string) => void | Promise<void>
+  // The items the command offers over the target, computed each time a place asks; now or later.
+  // A command without it offers none.
+  listItems?: (target: CommandTarget) => readonly CommandItem[] | Promise<readonly CommandItem[]>
 }
 
 // AgentProviderRegistration registers an AI agent provider.
@@ -217,31 +230,6 @@ export interface FileSelectEvent {
   readonly title?: string
 }
 
-// ContextMenuTarget describes the subject the context menu is opened on.
-export interface ContextMenuTarget {
-  readonly path: string
-  readonly name?: string
-  readonly isFolder: boolean
-  readonly isNote: boolean
-  readonly isSeveral?: boolean
-}
-
-// ContextMenuRegistration registers an item to be contributed to the context menu.
-export interface ContextMenuRegistration {
-  readonly id: string
-  readonly text: string
-  readonly detail?: string
-  readonly group?: string
-  /** Submenu parent identifier (e.g. 'new' or 'relation'). */
-  readonly parentId?: string
-  /** Which target kinds this item applies to. */
-  readonly target?: 'all' | 'file' | 'folder' | 'root' | 'note' | readonly string[]
-  readonly order?: number
-  readonly isDisabled?: boolean // The icon the item is drawn with.
-  readonly icon?: unknown | ((target: ContextMenuTarget) => boolean)
-  readonly handler: (target: ContextMenuTarget) => void | Promise<void>
-}
-
 // PluginContext provides registration and host services to an activated plugin.
 export interface PluginContext {
   readonly pluginId: string
@@ -255,11 +243,12 @@ export interface PluginContext {
   registerReader(registration: ReaderRegistration): Disposable
   // Registers the component of the settings view the manifest declares under the same id.
   registerSettingsView(registration: SettingsViewRegistration): Disposable
-  // Registers the component of the status bar view the manifest declares under the same id.
-  registerStatusView(registration: StatusViewRegistration): Disposable
+  // Registers the component of the view the manifest places under the same id in
+  // `contributes.slots`, drawn in every slot the manifest places it in. An id the manifest places
+  // nowhere throws.
+  registerSlotView(registration: SlotViewRegistration): Disposable
   registerTabKind<State>(registration: TabKindRegistration<State>): Disposable
   registerCommand(registration: CommandRegistration): Disposable
-  registerContextMenu(registration: ContextMenuRegistration): Disposable
   registerAgentProvider(registration: AgentProviderRegistration): Disposable
   // Declares a view other plugins mount by its capability.
   registerView(registration: ViewRegistration): Disposable
@@ -295,6 +284,16 @@ export interface PluginContext {
   readonly notices?: NoticeHost
   // The tasks the plugins report, where the host offers them.
   readonly tasks?: TaskHost
+  // The commands of the window: which ones it runs now, and the one way to run a command.
+  readonly commands?: CommandsHost
+  // The slots of the window: the entries of a slot, read by its owner.
+  readonly slots?: SlotHost
+  // The vaults the window can show, where the host offers them.
+  readonly vaults?: VaultsHost
+  // The window the plugin runs in, where the host offers it.
+  readonly window?: WindowHost
+  // The background work of the window, where the host offers it.
+  readonly backgroundTasks?: BackgroundTaskHost
   // Declares the data dragged in from outside the window the plugin takes, where the host offers drops.
   registerDropHandler?(registration: DropRegistration): Disposable
   // Hands a drop to the plugin that takes it, where the host offers drops.

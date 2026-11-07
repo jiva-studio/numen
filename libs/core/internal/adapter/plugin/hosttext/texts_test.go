@@ -152,13 +152,7 @@ func (textFiles) WriteTextFile(context.Context, string, string, []domain.TextSeg
 
 type noPlugins struct{}
 
-func (noPlugins) GetTextPlugins() []textport.TextPlugin { return nil }
-
-type noProviders struct{}
-
-func (noProviders) OpenProvider(context.Context, string) (textport.TextProvider, error) {
-	return nil, errors.New("no provider")
-}
+func (noPlugins) IsEnabled(string) bool { return false }
 
 type fixedClock struct{ now time.Time }
 
@@ -166,7 +160,7 @@ func (c fixedClock) Now() time.Time { return c.now }
 
 func newTexts(t *testing.T, readers vaultport.VaultReaders, repo *mapsVersions) hosttext.Texts {
 	t.Helper()
-	versions, err := textversion.NewVersions(repo, textFiles{}, noPlugins{}, noProviders{}, readers, fixedClock{now: getMapsTime().Add(time.Hour)})
+	versions, err := textversion.NewVersions(repo, textFiles{}, noPlugins{}, readers, fixedClock{now: getMapsTime().Add(time.Hour)})
 	if err != nil {
 		t.Fatal(err)
 	}

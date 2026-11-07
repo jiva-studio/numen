@@ -38,6 +38,26 @@ func TestSecondaryWindowOptions_DropsSystemFrame(t *testing.T) {
 	}
 }
 
+func TestSecondaryWindowOptions_UsesDetachedSize(t *testing.T) {
+	opened, _ := windowOn(t)
+
+	got := getSecondaryWindowOptions(opened, editor.DetachedTab{ID: "a", Width: 640, Height: 480})
+
+	if got.Width != 640 || got.Height != 480 {
+		t.Errorf("size = %dx%d, want 640x480", got.Width, got.Height)
+	}
+}
+
+func TestSecondaryWindowOptions_UsesDefaultSizeWithoutOne(t *testing.T) {
+	opened, _ := windowOn(t)
+
+	got := getSecondaryWindowOptions(opened, editor.DetachedTab{ID: "a"})
+
+	if got.Width != 1280 || got.Height != 860 {
+		t.Errorf("size = %dx%d, want 1280x860", got.Width, got.Height)
+	}
+}
+
 func TestFatalReportPage_DrawsTitleBar(t *testing.T) {
 	page, err := fatalReport{}.page(container.NewConfig(container.Config{}), errFatalSample)
 	if err != nil {
@@ -71,7 +91,7 @@ func TestFatalReportPage_DrawsNoPluginAction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, unwanted := range []string{"data-title-bar-action", "data-title-bar-more", "/plugin/"} {
+	for _, unwanted := range []string{"data-title-bar-command", "data-title-bar-more", "/plugin/"} {
 		if strings.Contains(string(page), unwanted) {
 			t.Errorf("the report page contains %q", unwanted)
 		}

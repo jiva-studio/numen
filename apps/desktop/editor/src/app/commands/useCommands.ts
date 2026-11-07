@@ -3,12 +3,13 @@
  */
 
 import { formatErrorMessage } from '@numen/core-client'
-import { MENU_LOCATION, type Menus } from '@numen/plugin-host'
+import { SLOT, type SlotHost } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
   isChord,
   findChordCommand,
   runInvocation,
+  createInvocation,
   useCommandPalette,
   useSearch,
   ANSWER_WORDS,
@@ -16,6 +17,7 @@ import {
   type CommandDeps,
   type CommandTarget,
   type ResultChoice,
+  type SearchMenuDeps,
   type Notes,
   type NoteLookup,
   type PaletteLists,
@@ -23,11 +25,12 @@ import {
   type VaultRef,
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
-import { usePluginCommands } from './usePluginCommands'
+import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
+import { createItemLists } from './pluginItems'
+import { createCommandItems } from './commandItems'
 import { watchCommandLists } from './watchCommandLists'
 import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
-import type { FileMenuCommands } from './fileMenuCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
@@ -46,7 +49,7 @@ export interface CommandsDepsOptions {
   windowTabs: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
   knows: NoteLookup
-  kept: PaletteLists
+  paletteLists: PaletteLists
   runs: RunSupport
   coverage: () => IndexCoverage
   making: NoteCreator
@@ -72,13 +75,18 @@ export interface CommandsDepsOptions {
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@numen/plugin-host').PluginHost | undefined
-  /** The places plugins put their commands in. */
-  menus?: Menus
+  /** The slots of the window, of which the palette draws the menu of a search result. */
+  slots?: SlotHost
+  /** The commands of the window made as it runs, such as those over a tab. */
+  getAppCommands?: () => readonly Command[]
   /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
-  /** The menu the text versions of the file in front make, read each time the palette opens. */
-  fileMenuCommands?: FileMenuCommands
 }
+
+/** The menu of a search result: the entries of its slot over the note of the result. */
+const createSearchMenu = (slots: SlotHost | undefined): SearchMenuDeps => ({
+  getEntries: (target) => slots?.getEntries(SLOT.paletteSearchResult, target) ?? [],
+})
 
 /** What a chosen result is over, replacing the tab and the note of the window. */
 const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
@@ -91,28 +99,70 @@ const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
   ...(place.selector === undefined ? {} : { selector: place.selector }),
 })
 
-export function useCommands(options: CommandsDepsOptions) {
-  const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
-  const { pluginHost } = options
+/** The commands the palette lists beside its own table, as the window and its plugins make them. */
+const listExtraCommands = (
+  options: CommandsDepsOptions,
+  pluginEntries: readonly Command[],
+): readonly Command[] => [
+  ...(options.getAppCommands?.() ?? []),
+  ...(options.settingPalette?.getCommands() ?? []),
+  ...(options.declaredCommands?.paletteCommands.value ?? []),
+  ...pluginEntries,
+]
 
-  const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = usePluginCommands(
+/** The items of the commands of the palette, of the window and of the plugins, and their runs. */
+export function createPaletteItems(
+  options: Pick<
+    CommandsDepsOptions,
+    'getAppCommands' | 'declaredCommands' | 'pluginHost' | 'getTarget'
+  >,
+  getCommandNote: ReturnType<typeof createCommandNoteReader>,
+  getCommandDeps: () => CommandDeps,
+) {
+  const { pluginHost } = options
+  return createCommandItems({
+    getAppCommands: () => [
+      ...(options.getAppCommands?.() ?? []),
+      ...(options.declaredCommands?.paletteCommands.value ?? []),
+    ],
+    pluginHost,
+    getTarget: options.getTarget,
+    runApp: async (id, target, argument) => {
+      await runInvocation(createInvocation(id, target, argument), getCommandDeps(), ANSWER_WORDS)
+    },
+    runPlugin: async (id, target, argument) => {
+      await pluginHost?.executeCommand(id, await getCommandNote(target), { argument })
+    },
+    readTarget: async (target) => {
+      const { type, properties } = await getCommandNote(target)
+      return { ...target, noteType: type, ...(properties ? { properties } : {}) }
+    },
+  })
+}
+
+export function useCommands(options: CommandsDepsOptions) {
+  const { core, words, windowTabs, getTarget, knows, runs, coverage, writeMessage } = options
+  const { pluginHost, declaredCommands } = options
+  const plugins = usePluginCommands(
     core,
     pluginHost,
+    declaredCommands?.whenContext,
+    () => declaredCommands?.handlers.value,
   )
+  const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = plugins
 
   const palette = useSearch(core, words, {
     coverage,
-    menu: { getEntries: () => options.menus?.getEntries(MENU_LOCATION.searchResult) ?? [] },
+    menu: createSearchMenu(options.slots),
     getTarget,
   })
-  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
-    ...(options.settingPalette?.getCommands() ?? []),
-    ...(options.declaredCommands?.paletteCommands.value ?? []),
-    ...(options.fileMenuCommands?.paletteCommands.value ?? []),
-    ...getPaletteEntries(),
-  ])
+  const items = createPaletteItems(options, getCommandNote, () => commandDeps)
+  const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
+  const extra = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
+  const commands = useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, extra)
 
-  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open, getTarget)
+  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
+  resetWhenClosed(commands.open)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
@@ -125,12 +175,10 @@ export function useCommands(options: CommandsDepsOptions) {
   const reportError = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
 
   const runCommand = (id: string, target: CommandTarget, input?: string) => {
-    if (pluginHost?.hasCommand(id)) {
+    if (pluginHost && (pluginHost.hasCommand(id) || pluginHost.isSharedCommand(id))) {
       commands.setOpen(false)
       runInBackground(
-        getCommandNote(target.path, target.title).then((note) =>
-          pluginHost.executeCommand(id, note),
-        ),
+        getCommandNote(target).then((note) => pluginHost.executeCommand(id, note)),
         reportError,
       )
       return
@@ -161,7 +209,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
-    const getNote = () => getCommandNote(getTarget().path, getTarget().title)
+    const getNote = () => getCommandNote(getTarget())
     if (pluginHost?.handleShortcut(event, getNote)) return event.preventDefault()
     if (!isChord(event)) return
     const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)

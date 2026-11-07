@@ -2,7 +2,7 @@
  * How a plugin module is found and read: its stylesheet, its lifecycle hooks, its loader.
  */
 import { parseManifest, type Manifest } from '@numen/core-client'
-import type { PluginLifecycle } from '@numen/plugin-sdk'
+import { WINDOW_SLOTS, type PluginLifecycle, type SlotName } from '@numen/plugin-sdk'
 import { loadPluginStyle, unregisterPluginStyle } from './styles'
 
 /** The bundle every plugin frontend builds to, relative to the plugin folder. */
@@ -52,11 +52,14 @@ export interface LoadModuleOptions {
   readonly manifests: Map<string, Manifest>
 }
 
-async function loadDynamicModule(
+/** The manifest.json of a plugin, read from the window once and kept in `manifests`. */
+export async function readPluginManifest(
   pluginId: string,
-  options: LoadModuleOptions,
-): Promise<unknown | undefined> {
-  const { baseUrl, fetchFn, importFn, manifests } = options
+  options: Pick<LoadModuleOptions, 'baseUrl' | 'fetchFn' | 'manifests'>,
+): Promise<Manifest> {
+  const { baseUrl, fetchFn, manifests } = options
+  const cached = manifests.get(pluginId)
+  if (cached) return cached
   const res = await fetchFn(`${baseUrl}/${pluginId}/manifest.json`)
   if (!res.ok) {
     throw new Error(`manifest.json of plugin "${pluginId}" answered ${res.status}`)
@@ -65,8 +68,23 @@ async function loadDynamicModule(
   if (!parsed.ok) {
     throw new Error(`manifest.json of plugin "${pluginId}" is invalid: ${parsed.error}`)
   }
-  const manifest = parsed.value
-  manifests.set(pluginId, manifest)
+  manifests.set(pluginId, parsed.value)
+  return parsed.value
+}
+
+/** Whether the plugin fills a slot of the window itself, which the window waits for before it is drawn. */
+export function isWindowSlotManifest(manifest: Manifest): boolean {
+  return (manifest.contributes?.slots ?? []).some((one) =>
+    WINDOW_SLOTS.includes(one.slot as SlotName),
+  )
+}
+
+async function loadDynamicModule(
+  pluginId: string,
+  options: LoadModuleOptions,
+): Promise<unknown | undefined> {
+  const { baseUrl, fetchFn, importFn } = options
+  const manifest = await readPluginManifest(pluginId, options)
   if (manifest.frontend === undefined) return undefined
   const style = loadPluginStyle(pluginId, `${baseUrl}/${pluginId}/${FRONTEND_STYLES}`, fetchFn)
   const [loaded] = await Promise.all([

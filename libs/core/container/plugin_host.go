@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -87,6 +88,15 @@ func (c Config) GetPluginCommands() plugincommand.Commands {
 	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost), c.PluginHost, c.VaultReaders())
 }
 
+// GetTabKindChoice is the choice of the kind of tab a note opens in, over the tab kinds of the enabled
+// plugins. Where there is no plugin host it chooses none.
+func (c Config) GetTabKindChoice() *tabkind.Choose {
+	if c.PluginHost == nil {
+		return tabkind.NewChoose(nil, nil)
+	}
+	return tabkind.NewChoose(commandbridge.Open(c.PluginHost), c.PluginHost)
+}
+
 // OpenPluginCommands opens the index of the vault and lets the plugins work it, its text versions
 // and the queue through the host with no window, and answers how to run a command of theirs and
 // how to close what it opened.
@@ -148,7 +158,7 @@ func (c Config) GetPluginServices() PluginServices {
 	return servicebridge.Open(c.PluginHost)
 }
 
-// GetPluginRetrier restarts, on request from the window, a plugin the host has suspended.
+// GetPluginRetrier starts again, on request from the window, a plugin whose last start failed.
 func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
 	return func(ctx context.Context, pluginID string) (*pluginport.PluginFailure, error) {
 		if c.PluginHost == nil {
@@ -158,7 +168,7 @@ func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*
 	}
 }
 
-// ReportPluginFailures keeps one task in the list for each plugin the host suspends, with the reason as its
+// ReportPluginFailures keeps one task in the list for each plugin whose last start failed, with the reason as its
 // error, and takes it out when the host forgets the failure.
 func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 	if c.PluginHost == nil {

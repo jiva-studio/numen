@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-	"github.com/jiva-studio/numen/libs/notes/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
@@ -19,9 +18,4 @@ func IsNote(path string) bool {
 // type and is not read.
 func ReadNoteType(ctx context.Context, readers vaultport.VaultReaders, v domain.Vault, path string) (domain.NoteType, error) {
 	return vaultport.ReadNoteType(ctx, readers, v, path)
-}
-
-// getNoteType is the type a note's bytes carry.
-func getNoteType(raw []byte) domain.NoteType {
-	return markdown.Parse(domain.FileStat{}, raw).Type
 }

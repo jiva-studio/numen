@@ -31,7 +31,7 @@ func writeSecondPlugin(t *testing.T, dir string) {
 		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read"],
-		"services": ["numen.v1.TextProviderService"], "backend": {"entrypoint": "bin/second"},
+		"backend": {"entrypoint": "bin/second"},
 		"settings": []
 	}`, "\t", "")
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(body), 0o600); err != nil {

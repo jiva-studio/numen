@@ -170,95 +170,6 @@ func (t *stubTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.Te
 	return t.Texts.PutVersion(ctx, req)
 }
 
-func TestProviderCreateTextAndClose(t *testing.T) {
-	v := hosttest.New("Physics")
-	pngRaw := encodeTestPNG(t)
-	v.File("a.png", pngRaw)
-	v.File("b.png", pngRaw)
-	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
-	texts.SetStore("md.numen.engines.ocr", v.Store())
-
-	started := make(chan string, 4)
-	release := make(chan struct{})
-	var mu sync.Mutex
-	var calls int
-	var exitedAfterCancel int
-
-	recEngine := &stubRecogniser{
-		fn: func(ctx context.Context, _ image.Image) ([]Block, error) {
-			mu.Lock()
-			calls++
-			mu.Unlock()
-			started <- "started"
-			select {
-			case <-release:
-				return []Block{{Text: "hello"}}, nil
-			case <-ctx.Done():
-				mu.Lock()
-				exitedAfterCancel++
-				mu.Unlock()
-				return nil, ctx.Err()
-			}
-		},
-	}
-	r, err := New(
-		Host{Vault: v, Store: v.Store(), Texts: texts, Queue: &stubQueue{}},
-		func(context.Context) (Recogniser, error) { return recEngine, nil },
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	p := NewProvider(r)
-
-	if err := p.CreateText(t.Context(), host.TextCreation{Path: "a.png"}); err != nil {
-		t.Fatal(err)
-	}
-	<-started
-	if err := p.CreateText(t.Context(), host.TextCreation{Path: "a.png"}); err != nil {
-		t.Fatal(err)
-	}
-	release <- struct{}{}
-	p.Wait()
-
-	mu.Lock()
-	firstCalls := calls
-	mu.Unlock()
-	if firstCalls != 1 {
-		t.Fatalf("calls = %d, want 1 after duplicate in-flight CreateText", firstCalls)
-	}
-
-	v.File("a.png", pngRaw+"extra")
-	if err := p.CreateText(t.Context(), host.TextCreation{Path: "a.png"}); err != nil {
-		t.Fatal(err)
-	}
-	if err := p.CreateText(t.Context(), host.TextCreation{Path: "b.png"}); err != nil {
-		t.Fatal(err)
-	}
-	<-started
-	<-started
-
-	p.Close()
-
-	mu.Lock()
-	cancelledCount := exitedAfterCancel
-	beforeClosedCall := calls
-	mu.Unlock()
-	if cancelledCount != 2 {
-		t.Fatalf("cancelledCount = %d, want 2 after Close", cancelledCount)
-	}
-
-	if err := p.CreateText(t.Context(), host.TextCreation{Path: "a.png"}); err != nil {
-		t.Fatal(err)
-	}
-	p.Wait()
-	mu.Lock()
-	afterClosedCall := calls
-	mu.Unlock()
-	if afterClosedCall != beforeClosedCall {
-		t.Fatalf("CreateText ran after Close: %d vs %d", afterClosedCall, beforeClosedCall)
-	}
-}
-
 func TestReadRecordHandlesErrorsAndCorruptJSON(t *testing.T) {
 	v := hosttest.New("Physics")
 	readSentinel := errors.New("disk read failed")
@@ -485,25 +396,6 @@ func TestRecognitionVersionStorage(t *testing.T) {
 		t.Fatal("putVersion on non-empty record succeeded when Delete failed")
 	}
 
-	listErrTexts := &stubTexts{Texts: texts, listErr: errors.New("list failed")}
-	if ok, err := hasRecognition(t.Context(), listErrTexts, "books/scan.pdf", "h1"); ok || err == nil {
-		t.Fatalf("hasRecognition on ListVersions error: %v, %v", ok, err)
-	}
-
-	nonMatching := &stubTexts{
-		Texts: texts,
-		listRes: host.TextListing{
-			Versions: []domain.TextVersion{
-				{Key: "other", Kind: textKind, File: "a.jsonl", InputHash: "h1"},
-				{Key: VersionKey, Kind: "other", File: "a.jsonl", InputHash: "h1"},
-				{Key: VersionKey, Kind: textKind, Source: "parent", File: "a.jsonl", InputHash: "h1"},
-				{Key: VersionKey, Kind: textKind, File: "a.jsonl", InputHash: "h2"},
-			},
-		},
-	}
-	if ok, err := hasRecognition(t.Context(), nonMatching, "books/scan.pdf", "h1"); ok || err != nil {
-		t.Fatalf("hasRecognition on non-matching versions: %v, %v", ok, err)
-	}
 }
 
 func TestRecogniseErrorAndCancelPaths(t *testing.T) {
@@ -543,7 +435,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rCancel.Recognise(cancelCtx, Request{Path: "scan.png", IsUserStarted: true}); !errors.Is(err, context.Canceled) || res.Pages != 1 {
+	if res, err := rCancel.Recognise(cancelCtx, Request{Path: "scan.png"}); !errors.Is(err, context.Canceled) || res.Pages != 1 {
 		t.Fatalf("cancelled recognition returned %+v, %v; want Pages=1 and context.Canceled", res, err)
 	}
 	if len(qCancel.finished) != 1 {
@@ -559,33 +451,16 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rFinishErr.Recognise(t.Context(), Request{Path: "scan.png", IsUserStarted: true}); !errors.Is(err, finishSentinel) || res.Pages != 1 {
+	if res, err := rFinishErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, finishSentinel) || res.Pages != 1 {
 		t.Fatalf("FinishTask error returned %+v, %v", res, err)
 	}
 
-	// 4. Skipped recognition returns Pages: 0, IsSkipped: true.
 	qOK := &stubQueue{}
 	rOK, err := New(Host{Vault: v, Store: v.Store(), Texts: texts, Queue: qOK}, func(context.Context) (Recogniser, error) {
 		return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil
 	})
 	if err != nil {
 		t.Fatal(err)
-	}
-	if res, err := rOK.Recognise(t.Context(), Request{Path: "scan.png"}); err != nil || !res.IsSkipped || res.Pages != 0 || res.IsEmpty {
-		t.Fatalf("skipped recognition returned %+v, %v", res, err)
-	}
-
-	// 5. hasRecognition error in Recognise.
-	listSentinel := errors.New("list versions failed")
-	rListErr, err := New(
-		Host{Vault: v, Store: v.Store(), Texts: &stubTexts{Texts: texts, listErr: listSentinel}, Queue: qOK},
-		func(context.Context) (Recogniser, error) { return &stubRecogniser{}, nil },
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res, err := rListErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, listSentinel) || res != (Result{}) {
-		t.Fatalf("hasRecognition error returned %+v, %v", res, err)
 	}
 
 	// 6. readRecord error in Recognise.
@@ -597,13 +472,13 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := rStoreErr.Recognise(t.Context(), Request{Path: "scan.png", IsUserStarted: true}); !errors.Is(err, storeReadSentinel) {
+	if _, err := rStoreErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, storeReadSentinel) {
 		t.Fatalf("readRecord error returned %v", err)
 	}
 
 	// 7. Corrupt document open error in Recognise.
 	v.File("corrupt.png", "not-a-png")
-	if _, err := rOK.Recognise(t.Context(), Request{Path: "corrupt.png", IsUserStarted: true}); err == nil {
+	if _, err := rOK.Recognise(t.Context(), Request{Path: "corrupt.png"}); err == nil {
 		t.Fatal("corrupt image succeeded")
 	}
 
@@ -616,7 +491,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := rEnqueueErr.Recognise(t.Context(), Request{Path: "scan.png", IsUserStarted: true}); !errors.Is(err, enqueueSentinel) {
+	if _, err := rEnqueueErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, enqueueSentinel) {
 		t.Fatalf("EnqueueWork error returned %v", err)
 	}
 
@@ -629,7 +504,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := rOpenErr.Recognise(t.Context(), Request{Path: "scan.png", IsUserStarted: true}); !errors.Is(err, openSentinel) {
+	if _, err := rOpenErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, openSentinel) {
 		t.Fatalf("open error returned %v", err)
 	}
 
@@ -644,7 +519,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rReleaseErr.Recognise(t.Context(), Request{Path: "scan.png", IsUserStarted: true}); !errors.Is(err, releaseSentinel) || res.Pages != 1 {
+	if res, err := rReleaseErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || res.Pages != 1 {
 		t.Fatalf("turn release error returned %+v, %v", res, err)
 	}
 
@@ -657,7 +532,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := rReleaseAndReportErr.Recognise(t.Context(), Request{Path: "scan.png", IsUserStarted: true}); !errors.Is(err, releaseSentinel) || !errors.Is(err, reportSentinel) || res.Pages != 1 {
+	if res, err := rReleaseAndReportErr.Recognise(t.Context(), Request{Path: "scan.png"}); !errors.Is(err, releaseSentinel) || !errors.Is(err, reportSentinel) || res.Pages != 1 {
 		t.Fatalf("turn release + report error returned %+v, %v", res, err)
 	}
 }

@@ -17,7 +17,7 @@ func (u *Versions) GetLiveText(ctx context.Context, v domain.Vault, path, conten
 	if err != nil {
 		return domain.VersionText{}, err
 	}
-	live, ok, err := u.findLive(ctx, v, versions, contentHash)
+	live, ok, err := u.findLive(ctx, v, path, versions, contentHash)
 	if err != nil {
 		return domain.VersionText{}, err
 	}
@@ -149,10 +149,6 @@ func (t vaultTexts) GetLiveText(ctx context.Context, path, contentHash string) (
 
 func (t vaultTexts) GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error) {
 	return t.versions.GetVersionText(ctx, t.vault, path, id)
-}
-
-func (t vaultTexts) RequestText(ctx context.Context, path, contentHash string) error {
-	return t.versions.RequestText(ctx, t.vault, path, contentHash)
 }
 
 func (t vaultTexts) IsTextSource(ctx context.Context, path string) (bool, error) {

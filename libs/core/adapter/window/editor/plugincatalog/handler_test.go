@@ -20,7 +20,7 @@ func entry(id string, state catalog.State, kind string) catalog.Entry {
 	return catalog.Entry{
 		ID: id, Name: "Plugin " + id, Version: "1.0.0", Description: "d", Category: "views",
 		Contributes: manifest.Contributes{
-			TabKinds: []manifest.TabKind{{Kind: kind, Title: "Tab", Icon: "layers"}}, Feature: "a feature", Category: "views",
+			TabKinds: []manifest.TabKind{{Kind: kind, Title: "Tab", Icon: "layers", When: "", Rank: ""}}, Feature: "a feature", Category: "views",
 		},
 		Source: "", State: state,
 		Requirements:    manifest.Requirements{Targets: nil, Protocol: 0},

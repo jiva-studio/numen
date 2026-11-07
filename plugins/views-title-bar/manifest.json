@@ -1,0 +1,30 @@
+{
+  "id": "md.numen.views.titleBar",
+  "name": "Title bar",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Draws the bar at the top of each window: the commands, the vault and the window buttons",
+  "targets": ["desktop.editor", "desktop.flashcards"],
+  "contributes": {
+    "category": "views",
+    "slots": [{ "slot": "titleBar", "view": "bar" }]
+  },
+  "settings": [
+    {
+      "key": "buttons",
+      "type": "enum",
+      "title": "Window buttons",
+      "description": "Where the bar draws the minimize, maximize and close buttons on Linux: at the right like Windows, or at the left like macOS. Windows and macOS keep their own place.",
+      "default": "windows",
+      "options": [
+        {
+          "value": "windows",
+          "title": "Right",
+          "detail": "Square buttons at the right, as on Windows."
+        },
+        { "value": "mac", "title": "Left", "detail": "Round buttons at the left, as on macOS." }
+      ]
+    }
+  ],
+  "frontend": {}
+}

@@ -5,10 +5,11 @@ import type {
   AgentHost,
   AgentProviderRegistration,
   AppInfo,
+  BackgroundTaskHost,
   BufferHost,
+  CommandItem,
   CommandRegistration,
-  ContextMenuRegistration,
-  ContextMenuTarget,
+  CommandsHost,
   Disposable,
   DropHost,
   DropRegistration,
@@ -19,7 +20,9 @@ import type {
   PluginLifecycle,
   ReaderRegistration,
   SettingsViewRegistration,
-  StatusViewRegistration,
+  SlotViewRegistration,
+  SlotHost,
+  CommandTarget,
   TabKindRegistration,
   TaskHost,
   VaultChangeEvent,
@@ -28,23 +31,24 @@ import type {
   VaultNotes,
   VaultRelations,
   VaultTexts,
+  VaultsHost,
+  WindowHost,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from './tabKinds'
+import type { DeclaredSlotEntry, SlotCommandLook } from '../slots/slotRegistry'
+import type { WhenValues } from '../when/when'
 import type { Component } from 'vue'
 
 export type {
   AgentProviderRegistration,
   CommandRegistration,
-  ContextMenuRegistration,
-  ContextMenuTarget,
   Disposable,
   FileSelectEvent,
   PluginContext,
   PluginLifecycle,
   ReaderRegistration,
   SettingsViewRegistration,
-  StatusViewRegistration,
   TabKindRegistration,
   TaskHost,
   VaultChangeEvent,
@@ -58,16 +62,46 @@ export interface CommandDeclaration {
   /** The Lucide name of the icon it is drawn with. */
   readonly icon?: string
   readonly shortcut?: string
-  /** 'note' where it is listed only while a note is in front. */
-  readonly scope?: 'note'
+  /** The CEL condition under which it is available, as the manifest declares it; absent is always. */
+  readonly when?: string
+}
+
+/** One handler of a shared command as a plugin manifest declares it under `contributes.handlers`. */
+export interface HandlerDeclaration {
+  readonly pluginId: string
+  /** The full id of the shared command, such as `app:file.createText`. */
+  readonly command: string
+  readonly title: string
+  /** The CEL condition over which targets it handles the command; absent is every target. */
+  readonly when?: string
+  /** Set where its condition names `version.*`: the core lists the versions it offers as its items. */
+  readonly hasItems: boolean
+}
+
+/**
+ * One run of a handler in its plugin's backend: over the target, with `argument` the id of the item
+ * picked and `values` the values of the arguments the shared command declares, by name.
+ */
+export interface BackendHandlerRun {
+  readonly pluginId: string
+  readonly command: string
+  readonly target: CommandTarget
+  readonly argument?: string | undefined
+  readonly values?: Readonly<Record<string, string>> | undefined
+}
+
+/** What a run of a command is given: the id of the item picked, and the values of the arguments of a shared command by name. */
+export interface CommandRun {
+  readonly argument?: string | undefined
+  readonly values?: Readonly<Record<string, string>> | undefined
 }
 
 export interface PluginPaletteCommand {
   readonly id: string
   readonly title: string
   readonly shortcut?: string
-  /** 'note' where it is offered only while a note is in front. */
-  readonly scope?: 'note'
+  /** The CEL condition under which it is available; absent is always. */
+  readonly when?: string
   /** The Lucide name of the icon it is drawn with. */
   readonly icon?: string
 }
@@ -75,8 +109,22 @@ export interface PluginPaletteCommand {
 export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unknown
 
 export interface PluginHostDeps {
+  /** The content type of a file by its extension, as the core lists it, for the conditions of commands. */
+  readonly getContentTypes?: () => Readonly<Record<string, string>>
+  /** The window and settings variables the conditions of commands read: window.isVaultOpen and the others, and config. */
+  readonly getWindowValues?: () => WhenValues
   /** The commands the enabled plugins declare in their manifests; undefined until the first list has loaded. */
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
+  /** The handlers of shared commands the enabled plugins declare; undefined until the first list has loaded. */
+  readonly getHandlerDeclarations?: () => readonly HandlerDeclaration[] | undefined
+  /** The items the core lists for a handler that runs in its plugin's backend, over the target. */
+  readonly listBackendHandlerItems?: (
+    pluginId: string,
+    command: string,
+    target: CommandTarget,
+  ) => Promise<readonly CommandItem[]>
+  /** Runs a handler in its plugin's backend. */
+  readonly runBackendHandler?: (run: BackendHandlerRun) => Promise<void>
   /** Whether the plugin declares a frontend the window loads; where absent, every plugin does. */
   readonly hasPluginFrontend?: (pluginId: string) => boolean
   /** Whether the plugin declares a backend that runs the commands no frontend handler takes; where absent, none does. */
@@ -87,6 +135,8 @@ export interface PluginHostDeps {
   readonly waitForPlugin?: (pluginId: string) => Promise<void>
   /** Reports a command whose declaration and handler do not match. */
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
+  /** Reports a view of a slot that another plugin, first by plugin id, holds. */
+  readonly reportViewIssue?: (pluginId: string, message: string) => void
   readonly registerKind: (kind: AnyTabKind) => () => void
   readonly registerExtensionReader: (
     extension: string,
@@ -128,6 +178,12 @@ export interface PluginHostDeps {
   readonly getFiles?: () => VaultFiles | undefined
   /** The agent the window queries, once the window has created it. */
   readonly getAgent?: () => AgentHost | undefined
+  /** The commands of the window, once the window has made them. */
+  readonly getCommands?: () => CommandsHost | undefined
+  /** The vaults the window can show, once the window has made them. */
+  readonly getVaults?: () => VaultsHost | undefined
+  /** The window the plugins run in, once the window has made it. */
+  readonly getWindow?: () => WindowHost | undefined
   /** The open files of the window, once the window has made them. */
   readonly getBuffers?: () => BufferHost | undefined
   /** The window's store of open notes, which the tabs of the note kind read and write through. */
@@ -140,6 +196,23 @@ export interface PluginHostDeps {
   readonly getNotices?: (pluginId: string) => NoticeHost
   /** The tasks the plugins report, as one plugin watches them. */
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
+  /** The entries the enabled plugins and the window place in slots; undefined until the first list has loaded. */
+  readonly getSlotEntries?: () => readonly DeclaredSlotEntry[] | undefined
+  /** How a command of a slot entry is drawn over the target, and undefined while it is not available there. */
+  readonly findSlotCommand?: (
+    command: string,
+    target: CommandTarget | undefined,
+  ) => SlotCommandLook | undefined
+  /** The values the when conditions of slot entries read over the target of a slot: target, window and settings. */
+  readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
+  /** Receives what is wrong with the slot entries of a plugin. */
+  readonly reportSlotIssue?: (
+    pluginId: string,
+    message: string,
+    severity: 'warning' | 'error',
+  ) => void
+  /** The background work of the window, as every plugin reads and acts on it. */
+  readonly getBackgroundTasks?: () => BackgroundTaskHost | undefined
   /** Everything a plugin showed, taken away with the plugin. */
   readonly clearNotices?: (pluginId: string) => void
   /** The build the window is, as plugins read it from their context. */
@@ -174,12 +247,11 @@ export interface NoteBuffer {
 export interface PluginContextHost {
   registerReader(pluginId: string, registration: ReaderRegistration): Disposable
   registerSettingsView(pluginId: string, registration: SettingsViewRegistration): Disposable
-  registerStatusView(pluginId: string, registration: StatusViewRegistration): Disposable
+  registerSlotView(pluginId: string, slot: string, registration: SlotViewRegistration): Disposable
   readonly app: AppInfo
   openExternal(url: string): Promise<void>
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable
-  registerContextMenu(pluginId: string, registration: ContextMenuRegistration): Disposable
   registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
   registerView(pluginId: string, registration: ViewRegistration): Disposable
   mountView(capability: string, element: HTMLElement, context: unknown): MountedView
@@ -209,8 +281,13 @@ export interface PluginContextHost {
   getRelations?(): VaultRelations | undefined
   getFiles?(): VaultFiles | undefined
   getAgent?(): AgentHost | undefined
+  getCommands?(): CommandsHost | undefined
+  getVaults?(): VaultsHost | undefined
+  getWindow?(): WindowHost | undefined
   getBuffers?(): BufferHost | undefined
   getNotices?(pluginId: string): NoticeHost | undefined
   getTasks?(pluginId: string): TaskHost | undefined
+  getBackgroundTasks?(): BackgroundTaskHost | undefined
   getTexts?(pluginId: string): VaultTexts | undefined
+  getSlots?(): SlotHost | undefined
 }

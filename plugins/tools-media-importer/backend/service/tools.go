@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
@@ -97,18 +98,18 @@ func (t *Tools) importURL(ctx context.Context, in URLImportInput) (URLImportOutp
 
 // fetchText fetches the text of the link note and writes what was fetched into out.
 func (t *Tools) fetchText(ctx context.Context, made link.Link, out *URLImportOutput) error {
-	if err := t.links.FetchText(ctx, made, true); err != nil {
+	if err := t.links.FetchText(ctx, made); err != nil {
+		return err
+	}
+	text, err := t.links.ReadArticle(ctx, made)
+	if err != nil || text == "" {
 		return err
 	}
 	info, err := t.links.GetTextInfo(ctx, made)
 	if err != nil {
 		return err
 	}
-	text, err := t.links.ReadArticle(ctx, made)
-	if err != nil {
-		return err
-	}
-	out.Title, out.Producer, out.HasText, out.Bytes = info.Title, info.Producer, !info.HasNoText, len(text)
+	out.Title, out.Producer, out.HasText, out.Bytes = info.Title, info.Producer, true, len(text)
 	return nil
 }
 
@@ -119,6 +120,6 @@ func (t *Tools) startDownload(ctx context.Context, made link.Link, out *URLImpor
 		out.DownloadError = link.ErrNotCopyable.Error()
 		return
 	}
-	t.links.StartCopy(ctx, made)
+	t.links.StartCopy(ctx, made, download.MediaVideo)
 	out.DownloadTaskID = link.GetCopyTaskID(made.Path)
 }

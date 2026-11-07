@@ -13,6 +13,8 @@ export interface ListItem {
   readonly detail?: string
   /** The group it belongs to. Items of one group follow each other. */
   readonly group?: string
+  /** Whether a line is drawn above it, dividing it from the row before. */
+  readonly hasSeparator?: boolean
 }
 
 /** The key of the row that stands first, whatever it is made of. */

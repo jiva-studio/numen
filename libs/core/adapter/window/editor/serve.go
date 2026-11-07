@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/plugincatalog"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/tablinks"
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
@@ -300,7 +299,7 @@ func createWindow(
 	state.EmitEvent = made.EmitEvent
 	state.OpenTabsStore = made.GetOpenTabsStore()
 	readers := made.GetVaultReaders()
-	services.readFiles(readers, made.OpenProxy(), made.GetMediaType())
+	services.readFiles(readers, made.OpenPluginFile(), made.GetMediaType())
 	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
 	services.Note.getTypes = note.NewGetTypes(made.GetNoteQueries())
 	services.Note.getHeadings = note.NewGetHeadings(made.GetNoteQueries())
@@ -310,6 +309,7 @@ func createWindow(
 	services.Search.GetTypes = services.Note.getTypes
 	services.File.getFolderEntries = file.NewGetFolderEntries(readers, made.GetNoteQueries())
 	services.File.getFileKinds = file.NewGetFileKinds(readers, made.GetNoteQueries())
+	services.File.chooseTabKind = made.GetTabKindChoice()
 	services.File.createFolder = file.NewCreateFolder(made.GetVaultWriters())
 
 	// The editor is open on one vault, and answers which as itself.
@@ -354,12 +354,13 @@ func (o *Installation) wireUseCases() {
 	services.Settings.Get = made.OpenGetSettings()
 	services.PluginServices = made.GetPluginServices()
 	services.Playing.setPluginServices(services.PluginServices)
-	services.Command = command.NewHandler(o.State, made.GetPluginCommands())
+	var versions command.VersionItems
+	if menu := made.OpenFileMenu(); menu != nil {
+		versions = menu
+	}
+	services.Command = command.NewHandler(o.State, made.GetPluginCommands(), versions)
 	if plugins := made.GetPluginCatalog(); plugins != nil {
 		services.Catalog = plugincatalog.NewHandler(plugins)
-	}
-	if menu := made.OpenFileMenu(); menu != nil {
-		services.TextVersion = textmenu.NewHandler(o.State, menu)
 	}
 	if text := made.OpenFileText(); text != nil {
 		services.Text = texts.NewHandler(o.State, text)

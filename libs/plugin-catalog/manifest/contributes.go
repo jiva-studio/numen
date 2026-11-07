@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/when"
 )
 
 var (
@@ -24,12 +27,11 @@ type TabKind struct {
 	Title string
 	// Icon is the kebab-case name of an icon of the application's icon set. Empty is a kind without one.
 	Icon string
-}
-
-// StatusView is a component of the plugin's frontend that the window draws in its status bar.
-type StatusView struct {
-	// ID is the id the frontend registers the component under.
-	ID string
+	// When is the condition over a note under which the note opens in a tab of this kind. Empty opens
+	// no note.
+	When string
+	// Rank orders the kinds whose condition holds over a note: a default kind before an alternate one.
+	Rank domain.HandlerRank
 }
 
 // Contributes is what a plugin adds to the application, known before the frontend of the plugin is loaded.
@@ -42,10 +44,6 @@ type Contributes struct {
 	Category string
 	// Themes are the stylesheets the plugin adds to the list of themes.
 	Themes []Theme
-	// StatusViews are the components the window draws in its status bar.
-	StatusViews []StatusView
-	// Handles are the capabilities the plugin takes part in for files and notes of some types.
-	Handles []Handle
 	// Readers are the tabs of the plugin's frontend that open files, each by the id the frontend
 	// registers it under.
 	Readers []Reader
@@ -59,19 +57,14 @@ type Contributes struct {
 	// palette and the command line list them; a command is run by the frontend when the frontend
 	// registers a handler for it and by the backend otherwise.
 	Commands []Command
-	// Menus place commands in the named places the window draws.
-	Menus []Menu
+	// Slots place the commands, views and submenus of the plugin in the slots of a window and in submenus.
+	Slots []SlotEntry
+	// Handlers are the plugin's handlers of shared commands.
+	Handlers []Handler
+	// Triggers run the plugin's own handlers over the files of events.
+	Triggers []Trigger
 	// Listeners are the TCP ports on 127.0.0.1 the host binds for the plugin while it is enabled.
 	Listeners []Listener
-}
-
-// ListStatusViews returns the ids of the components the plugin registers for the status bar.
-func (c Contributes) ListStatusViews() []string {
-	ids := make([]string, 0, len(c.StatusViews))
-	for _, declared := range c.StatusViews {
-		ids = append(ids, declared.ID)
-	}
-	return ids
 }
 
 // HasTabKind reports whether the plugin registers the kind of tab.
@@ -100,13 +93,12 @@ func (c Contributes) ListTabKinds() []string {
 }
 
 // listContributionIssues checks that each kind of tab has a unique id and a title, that the icons and
-// the category are written as the application names them, that each status view has a unique id, and
-// that a plugin registering tabs or status views has a frontend to register them from.
+// the category are written as the application names them, and that a plugin registering tabs or views
+// has a frontend to register them from.
 func (m Manifest) listContributionIssues() []error {
 	var issues []error
 	c := m.Contributes
 	issues = append(issues, m.listFrontendIssues()...)
-	issues = append(issues, listStatusViewIssues(c.StatusViews)...)
 	issues = append(issues, listTabKindIssues(c.TabKinds)...)
 	if c.Category != "" && !categoryNamePattern.MatchString(c.Category) {
 		issues = append(issues, fmt.Errorf("%w: category %q is not lowercase words joined by hyphens", ErrInvalidContribution, c.Category))
@@ -115,26 +107,28 @@ func (m Manifest) listContributionIssues() []error {
 		issues = append(issues, fmt.Errorf("%w: feature %q has surrounding space", ErrInvalidContribution, c.Feature))
 	}
 	issues = append(issues, c.listThemeIssues()...)
-	issues = append(issues, m.listHandleIssues()...)
 	issues = append(issues, m.listReaderIssues()...)
-	issues = append(issues, m.listMenuIssues()...)
+	issues = append(issues, m.listSlotIssues()...)
+	issues = append(issues, m.listHandlerIssues()...)
+	issues = append(issues, m.listTriggerIssues()...)
 	issues = append(issues, m.listListenerIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
 
-// listFrontendIssues checks that a plugin registering tabs or status views has a frontend to register them from.
+// listFrontendIssues checks that a plugin registering tabs or views has a frontend to register them from.
 func (m Manifest) listFrontendIssues() []error {
 	var issues []error
 	if len(m.Contributes.TabKinds) > 0 && !m.HasFrontend() {
 		issues = append(issues, fmt.Errorf("%w: the plugin declares tab kinds and has no frontend to register them", ErrInvalidContribution))
 	}
-	if len(m.Contributes.StatusViews) > 0 && !m.HasFrontend() {
-		issues = append(issues, fmt.Errorf("%w: the plugin declares status views and has no frontend to register them", ErrInvalidContribution))
+	if m.Contributes.hasSlotViews() && !m.HasFrontend() {
+		issues = append(issues, fmt.Errorf("%w: the plugin places views in slots and has no frontend to register them", ErrInvalidContribution))
 	}
 	return issues
 }
 
-// listTabKindIssues checks that each kind of tab has a unique id and a title and an icon written as the application names it.
+// listTabKindIssues checks that each kind of tab has a unique id, a title, an icon written as the application
+// names it, a rank and a condition that can be read.
 func listTabKindIssues(kinds []TabKind) []error {
 	var issues []error
 	observed := map[string]bool{}
@@ -152,23 +146,12 @@ func listTabKindIssues(kinds []TabKind) []error {
 		if declared.Icon != "" && !iconNamePattern.MatchString(declared.Icon) {
 			issues = append(issues, fmt.Errorf("%w: tab kind %q has icon %q, which is not lowercase words joined by hyphens", ErrInvalidContribution, declared.Kind, declared.Icon))
 		}
-	}
-	return issues
-}
-
-// listStatusViewIssues checks that each status view has an id written as the frontend registers it
-// and that no id is declared twice.
-func listStatusViewIssues(views []StatusView) []error {
-	var issues []error
-	observed := map[string]bool{}
-	for _, declared := range views {
-		switch {
-		case !tabKindPattern.MatchString(declared.ID):
-			issues = append(issues, fmt.Errorf("%w: status view %q is not lowercase words", ErrInvalidContribution, declared.ID))
-		case observed[declared.ID]:
-			issues = append(issues, fmt.Errorf("%w: status view %q is declared twice", ErrInvalidContribution, declared.ID))
+		if !declared.Rank.IsValid() {
+			issues = append(issues, fmt.Errorf("%w: tab kind %q has rank %q, expected %q or %q", ErrInvalidContribution, declared.Kind, declared.Rank, domain.RankDefault, domain.RankAlternate))
 		}
-		observed[declared.ID] = true
+		if _, err := when.Parse(declared.When); err != nil {
+			issues = append(issues, fmt.Errorf("%w: tab kind %q: when: %w", ErrInvalidContribution, declared.Kind, err))
+		}
 	}
 	return issues
 }

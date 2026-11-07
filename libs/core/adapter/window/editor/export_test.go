@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	setting "github.com/jiva-studio/numen/libs/core/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
@@ -26,6 +27,8 @@ func (s *Services) FileMove() *vaults.Move   { return s.File.move }
 
 func (s *Services) SetFileMove(move *vaults.Move)  { s.File.move = move }
 func (s *Services) SetNoteWrite(write *note.Write) { s.Note.write = write }
+
+func (s *Services) SetTabKindChoice(choose *tabkind.Choose) { s.File.chooseTabKind = choose }
 
 // NewWireModels is the models as the wire carries them.
 func NewWireModels(target []setting.Model) []*v1.Model { return settings.NewWireModels(target) }

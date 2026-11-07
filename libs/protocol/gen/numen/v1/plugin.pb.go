@@ -871,7 +871,7 @@ type PluginInfo struct {
 	Secrets []*PluginSecret `protobuf:"bytes,9,rep,name=secrets,proto3" json:"secrets,omitempty"`
 	// The names of the secrets that have a key stored. A key never travels here.
 	StoredSecrets []string `protobuf:"bytes,10,rep,name=stored_secrets,json=storedSecrets,proto3" json:"stored_secrets,omitempty"`
-	// Set while the host suspends the plugin after it failed to start.
+	// Set while the last start of the plugin failed, until a start succeeds.
 	Failure *PluginFailure `protobuf:"bytes,13,opt,name=failure,proto3" json:"failure,omitempty"`
 	// Whether the plugin declares a frontend bundle a window loads.
 	HasFrontend bool `protobuf:"varint,14,opt,name=has_frontend,json=hasFrontend,proto3" json:"has_frontend,omitempty"`
@@ -1132,7 +1132,7 @@ func (x *PluginReader) GetExtensions() []string {
 	return nil
 }
 
-// PluginFailure is why a plugin is suspended, and when it was.
+// PluginFailure is why the last start of a plugin failed, and when.
 type PluginFailure struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// A short UI label for the failure, such as "Failed to start".

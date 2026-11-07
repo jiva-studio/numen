@@ -99,26 +99,20 @@ func (r *Recognition) SetCompilationCache(cache wazero.CompilationCache) {
 }
 
 // Request is one file to recognise. Vault is the vault that contains it, and is
-// empty for the vault the host currently shows. IsUserStarted is set when the
-// user requested it.
+// empty for the vault the host currently shows.
 type Request struct {
-	Vault         domain.VaultID
-	Path          string
-	IsUserStarted bool
+	Vault domain.VaultID
+	Path  string
 }
 
-// Result is the outcome of one recognition. IsSkipped is set for a file that
-// the user did not request and that has embedded text or was already
-// recognised. IsEmpty is set for a file from which the recogniser extracted no text.
+// Result is the outcome of one recognition. IsEmpty is set for a file from which the recogniser
+// extracted no text.
 type Result struct {
-	Pages     int
-	IsSkipped bool
-	IsEmpty   bool
+	Pages   int
+	IsEmpty bool
 }
 
-// Recognise reads the file and stores its text version. A run that the user
-// did not request skips a file whose pages have embedded text, and a file
-// already recognised in its current state. A failure is shown as a task until
+// Recognise reads the file and stores its text version. A failure is shown as a task until
 // the file is recognised again. A failure of a file that is no longer in the
 // vault ends the task instead, because nothing can recognise that file again. For a file another
 // run has locked, it returns ErrAlreadyRecognising.
@@ -237,7 +231,7 @@ func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, 
 	}
 	task := host.Task{
 		ID: GetTaskID(req.Path), Title: "Recognising " + path.Base(req.Path), Detail: req.Path,
-		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: req.IsUserStarted,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
 	}
 	res, err := r.recognise(ctx, on, req, &task)
 	if err != nil && ctx.Err() == nil && !isMissing(ctx, on.vault, req.Path) {
@@ -284,12 +278,6 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 		return Result{}, fmt.Errorf("read %s: %w", req.Path, err)
 	}
 	inputHash := domain.HashContent(raw)
-	if !req.IsUserStarted {
-		isRecognised, err := hasRecognition(ctx, on.texts, req.Path, inputHash)
-		if err != nil || isRecognised {
-			return Result{Pages: 0, IsSkipped: isRecognised, IsEmpty: false}, err
-		}
-	}
 	rec, err := readRecord(ctx, on.store, req.Path)
 	if err != nil {
 		return Result{}, err
@@ -300,11 +288,7 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Document implementations opened by Reader return nil on Close."
 	defer func() { err = errors.Join(err, doc.Close()) }()
-	if !req.IsUserStarted && doc.HasTextLayer() {
-		return Result{Pages: doc.GetPageCount(), IsSkipped: true, IsEmpty: false}, nil
-	}
-
-	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted, OnWaiting: nil})
+	turn, err := r.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: nil})
 	if err != nil {
 		return Result{}, fmt.Errorf("wait for a turn to recognise %s: %w", req.Path, err)
 	}
@@ -383,7 +367,7 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 		if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
 			return Result{}, err
 		}
-		return Result{Pages: rec.PageCount, IsSkipped: false, IsEmpty: true}, nil
+		return Result{Pages: rec.PageCount, IsEmpty: true}, nil
 	}
 	file := getVersionName(rec.Path)
 	if err := host.WriteText(ctx, store, file, text.GetSegments()); err != nil {
@@ -398,19 +382,5 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 	if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
 		return Result{}, err
 	}
-	return Result{Pages: rec.PageCount, IsSkipped: false, IsEmpty: false}, nil
-}
-
-// hasRecognition reports whether the file has a version of the plugin made from the content hash.
-func hasRecognition(ctx context.Context, texts host.Texts, path, inputHash string) (bool, error) {
-	listing, err := texts.ListVersions(ctx, path)
-	if err != nil {
-		return false, fmt.Errorf("list the versions of %s: %w", path, err)
-	}
-	for _, version := range listing.Versions {
-		if version.Key == VersionKey && version.Kind == textKind && version.IsFromFile() && version.InputHash == inputHash {
-			return true, nil
-		}
-	}
-	return false, nil
+	return Result{Pages: rec.PageCount, IsEmpty: false}, nil
 }

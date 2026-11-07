@@ -28,11 +28,12 @@ const PluginID = "md.numen.tools.media.importer"
 // openHostAt connects to the host at the endpoint.
 func openHostAt(endpoint hostcall.Endpoint) link.Host {
 	return link.Host{
-		Vault: host.NewClient(endpoint),
-		Store: host.NewStoreClient(endpoint),
-		Texts: host.NewTextClient(endpoint),
-		Queue: host.NewQueueClient(endpoint),
-		Clock: clock.System{},
+		PluginID: PluginID,
+		Vault:    host.NewClient(endpoint),
+		Store:    host.NewStoreClient(endpoint),
+		Texts:    host.NewTextClient(endpoint),
+		Queue:    host.NewQueueClient(endpoint),
+		Clock:    clock.System{},
 	}
 }
 
@@ -136,7 +137,6 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	}
 	command.Mount(s, commands)
 	registry.Mount(s)
-	s.RegisterRoute(embedPattern, http.HandlerFunc(serveEmbed))
 	s.OnClose(func() error {
 		links.Close()
 		return nil

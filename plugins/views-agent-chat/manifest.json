@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.agent.chat",
   "name": "Agent Chat",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Interactive chat tab for working with AI assistants",
   "capabilities": [],
@@ -27,10 +27,13 @@
         "id": "note.ask",
         "title": "Ask agent about note",
         "icon": "bot",
-        "scope": "note"
+        "when": "target.isNote"
       }
     ],
-    "menus": [{ "location": "titleBar", "command": "chat.open", "group": "navigate", "order": 30 }]
+    "slots": [
+      { "slot": "titleBar.commands", "command": "chat.open", "group": "navigate", "order": 30 },
+      { "slot": "fileTree.context", "command": "note.ask", "group": "5-agent", "order": 10 }
+    ]
   },
   "permissions": ["vault:read"],
   "settings": [

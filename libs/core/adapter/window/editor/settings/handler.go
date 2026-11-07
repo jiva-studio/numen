@@ -202,7 +202,7 @@ func (h *Handler) DeletePluginSecret(
 	return connect.NewResponse(&v1.DeletePluginSecretResponse{}), nil
 }
 
-// newWirePluginFailure is why the host suspends a plugin, as the wire carries it, and nil for a plugin it does not.
+// newWirePluginFailure is why the last start of a plugin failed, as the wire carries it, and nil where it did not.
 func newWirePluginFailure(failure *setting.PluginFailure) *v1.PluginFailure {
 	if failure == nil {
 		return nil
@@ -210,7 +210,7 @@ func newWirePluginFailure(failure *setting.PluginFailure) *v1.PluginFailure {
 	return &v1.PluginFailure{Reason: failure.Reason, Detail: failure.Detail, FailedAtUnixMs: failure.At.UnixMilli()}
 }
 
-// RetryPlugin starts a plugin the host suspends once more. A plugin that fails
+// RetryPlugin starts a plugin whose last start failed once more. A plugin that fails
 // again is answered with its reason, and one the host does not know is not found.
 func (h *Handler) RetryPlugin(
 	ctx context.Context, r *connect.Request[v1.RetryPluginRequest],

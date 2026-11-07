@@ -141,17 +141,14 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 	return cfg
 }
 
-// Mount registers the commands and the agent tool transcript_create on s over the host given. The model
+// Mount registers the handlers and the agent tool transcript_create on s over the host given. The model
 // is the mock one where isMock is set. The transcriptions and the model end with s.
 func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error {
 	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: newParakeetOpener(engine.NewRuntime()), current: nil}
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
-	commands := command.New()
-	if err := commands.Add("transcript.create", newTranscribeCommand(transcriber)); err != nil {
-		return err
-	}
-	if err := commands.Add("transcript.delete", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID)); err != nil {
+	commands, err := newCommands(transcriber, hosted)
+	if err != nil {
 		return err
 	}
 	registry, err := NewTools(transcriber, hosted.Vault).Registry()
@@ -167,7 +164,19 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error 
 	return nil
 }
 
-// newTranscribeCommand transcribes the recording the user named, in the vault the host has open, and
+// newCommands is the handlers the manifest declares.
+func newCommands(transcriber *Transcriber, hosted Host) (*command.Registry, error) {
+	commands := command.New()
+	if err := commands.Add("app:file.createText", newTranscribeCommand(transcriber)); err != nil {
+		return nil, err
+	}
+	if err := commands.Add("app:version.delete", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID)); err != nil {
+		return nil, err
+	}
+	return commands, nil
+}
+
+// newTranscribeCommand transcribes the recording of the run, in the vault the host has open, and
 // waits for it.
 func newTranscribeCommand(transcriber *Transcriber) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {

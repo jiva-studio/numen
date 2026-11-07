@@ -199,7 +199,7 @@ graph LR
 - `@numen/core-client` is private. Applications (`apps/*`) and the plugin host (`libs/plugin-host-ts`) use it; no plugin does.
 - `libs/plugin-manager` is a component library. It depends on `@numen/ui` only, takes data by props and emits events. It contains the view-model logic (filters, query parsing, states) and declares a port interface for the gateway; the application implements the gateway.
 
-**(g) The core knows no plugin by name.** Plugins are discovered through their manifests. A manifest declares what it contributes (`contributes`: `tabKinds`, `settingsViews`, `statusViews`, `themes`, `readers`, and the rest listed in `docs/plugins/README.md`). A plugin id appears nowhere in `libs/core`, `apps/*` or `libs/ui`. The plugin index is generated from the manifests at build time.
+**(g) The core knows no plugin by name.** Plugins are discovered through their manifests. A manifest declares what it contributes (`contributes`: `tabKinds`, `settingsViews`, `slots`, `themes`, `readers`, and the rest listed in `docs/plugins/README.md`). A plugin id appears nowhere in `libs/core`, `apps/*` or `libs/ui`. The plugin index is generated from the manifests at build time.
 
 **(h) The kernel contains defaults only.** The kernel contains the default theme, the effective search floor and its default value. Calibration, update checks and preset themes are plugins.
 

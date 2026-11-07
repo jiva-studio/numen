@@ -115,6 +115,22 @@ describe('files domain', () => {
     expect(kinds.get('a.bin')).toStrictEqual({ isNote: false, type: 'note' })
     expect(kinds.get('a.md')).toStrictEqual({ isNote: true, type: 'deck' })
   })
+
+  it('reads the properties of a note with its kind', async () => {
+    request.listFileKinds.mockResolvedValue({
+      kinds: [
+        { path: 'link.md', isNote: true, type: 'link', properties: { media: 'plugin://x/a.mp4' } },
+      ],
+    })
+
+    const kinds = await core.fileKinds(['link.md'])
+
+    expect(kinds.get('link.md')).toStrictEqual({
+      isNote: true,
+      type: 'link',
+      properties: { media: 'plugin://x/a.mp4' },
+    })
+  })
 })
 
 describe('settings domain', () => {

@@ -21,14 +21,24 @@ export interface TextSegment {
 // by "/".
 export type TextVersionId = string
 
+// TextSourceProperty is a frontmatter property of a note that a text version was made from: the key
+// and its string value.
+export interface TextSourceProperty {
+  readonly key: string
+  readonly value: string
+}
+
 // TextVersion is the host's record of one text of a file. `sourceVersionId` is empty for a version
-// made from the file itself. `file` is the version's file in the folder of the plugin that made it.
+// made from the file itself or from a note property. `sourceProperty` is set for a version made from
+// a property of the note, and the version is live while the note holds the key as that string.
+// `file` is the version's file in the folder of the plugin that made it.
 export interface TextVersion {
   readonly id: TextVersionId
   readonly path: string
   readonly pluginId: string
   readonly key: string
   readonly sourceVersionId: TextVersionId
+  readonly sourceProperty?: TextSourceProperty
   readonly kind: TextKind
   readonly file: string
   readonly createTime: Date

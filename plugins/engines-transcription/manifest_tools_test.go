@@ -18,7 +18,7 @@ func TestManifestDeclaresTheToolsCapability(t *testing.T) {
 	if !slices.Contains(manifest.Capabilities, "tools") {
 		t.Errorf("the capabilities are %v, want tools among them", manifest.Capabilities)
 	}
-	if manifest.Version != "2026.11.7" {
-		t.Errorf("the version is %s, want 2026.11.7", manifest.Version)
+	if manifest.Version != "2026.11.8" {
+		t.Errorf("the version is %s, want 2026.11.8", manifest.Version)
 	}
 }

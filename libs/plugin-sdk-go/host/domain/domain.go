@@ -26,6 +26,7 @@ type MoveResult = notesdomain.MoveResult
 type TextVersion = notesdomain.TextVersion
 type TextVersionID = notesdomain.TextVersionID
 type TextKind = notesdomain.TextKind
+type TextSourceProperty = notesdomain.TextSourceProperty
 type TextSegment = notesdomain.TextSegment
 
 // Selector locates a segment of a text version in its file, as a JSON object. The key page is the PDF

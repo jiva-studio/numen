@@ -2,7 +2,6 @@ package textversion_test
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -132,23 +131,17 @@ func (m *memoryFiles) has(key string) bool {
 	return ok
 }
 
-// plugins is the text plugins installed, each switched on or off.
+// plugins is the plugins installed, each switched on or off.
 type plugins struct {
 	mu       sync.Mutex
-	all      []textport.TextPlugin
+	all      []string
 	disabled map[string]bool
 }
 
-func (p *plugins) GetTextPlugins() []textport.TextPlugin {
+func (p *plugins) IsEnabled(pluginID string) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	var out []textport.TextPlugin
-	for _, one := range p.all {
-		if !p.disabled[one.ID] {
-			out = append(out, one)
-		}
-	}
-	return out
+	return slices.Contains(p.all, pluginID) && !p.disabled[pluginID]
 }
 
 func (p *plugins) setEnabled(id string, isEnabled bool) {
@@ -180,18 +173,7 @@ func (l *listener) take() []string {
 	return out
 }
 
-// providers returns for each plugin the provider it was given.
-type providers map[string]textport.TextProvider
-
-func (p providers) OpenProvider(_ context.Context, pluginID string) (textport.TextProvider, error) {
-	provider, ok := p[pluginID]
-	if !ok {
-		return nil, fmt.Errorf("no provider for %s", pluginID)
-	}
-	return provider, nil
-}
-
-// fakeProvider, on CreateText, makes a text with make, writes it into its
+// fakeProvider, on create, makes a text with make, writes it into its
 // folder and puts its version through the use case, the way a plugin calls the host.
 type fakeProvider struct {
 	pluginID string
@@ -206,11 +188,6 @@ type fakeProvider struct {
 
 	mu      sync.Mutex
 	created int
-}
-
-// CreateText makes the text of the file, as a plugin does on a host request.
-func (f *fakeProvider) CreateText(ctx context.Context, req textport.TextCreation) error {
-	return f.create(ctx, req.Path, "")
 }
 
 // create makes the text of the file, or of the version where source names one, as a plugin does

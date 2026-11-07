@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createNotes } from './notes'
 
 const create = () => {
-  const noteOpeners = { openFile: vi.fn(), openNewFile: vi.fn() }
+  const noteOpeners = { openFile: vi.fn() }
   return { noteOpeners, notes: createNotes([], noteOpeners) }
 }
 

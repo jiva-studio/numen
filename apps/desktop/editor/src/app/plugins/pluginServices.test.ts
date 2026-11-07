@@ -83,17 +83,10 @@ describe('the window a plugin is handed', () => {
     expect(createWorkspaceHost(unlinked).syncPath('plex:1', 'One.md')).toBe(false)
   })
 
-  it('runs a command over the note named, from the tab in front', () => {
-    const { workspace, deps } = createWorkspace()
+  it('runs no command itself: a plugin runs one through the commands of its context', () => {
+    const { workspace } = createWorkspace()
 
-    workspace.runCommand('rename', { path: 'One.md', title: 'One' })
-
-    expect(deps.runCommand).toHaveBeenCalledWith('rename', {
-      tab: 'plex:1',
-      kind: 'plex',
-      path: 'One.md',
-      title: 'One',
-    })
+    expect(workspace).not.toHaveProperty('runCommand')
   })
 
   it('lists the commands the plugins declare over a note', () => {
@@ -136,36 +129,28 @@ describe('the window a plugin opens files and reads the note in focus through', 
   })
 
   it('says why a file could not be opened with its runs marked or directly', async () => {
-    const runContextMenu = vi.fn(() => Promise.reject(new Error('ctx failed')))
     const { workspace, deps } = createWorkspace({
       tabOpeners: {
         openFile: vi.fn(() => Promise.reject(new Error('open failed'))),
         openFileAt: vi.fn(() => Promise.reject(new Error('no such file'))),
         findFileIcon: vi.fn(() => undefined),
       },
-      runContextMenu,
     })
 
     workspace.openFile('Gone.pdf')
     workspace.openFileAt('Gone.pdf', [])
-    workspace.runPathCommand('cmd', {
-      paths: ['Gone.pdf'],
-      name: 'Gone.pdf',
-      isNote: false,
-      isFolder: false,
-    })
     await new Promise((isDone) => setTimeout(isDone, 0))
 
-    expect(deps.writeMessage).toHaveBeenCalledTimes(3)
+    expect(deps.writeMessage).toHaveBeenCalledTimes(2)
     expect(deps.writeMessage).toHaveBeenNthCalledWith(1, expect.any(String), 'error')
     expect(deps.writeMessage).toHaveBeenNthCalledWith(2, expect.any(String), 'error')
-    expect(deps.writeMessage).toHaveBeenNthCalledWith(3, expect.any(String), 'error')
-    expect(
-      workspace.getPathCommands({
-        entry: { path: 'a.md', name: 'a.md', isFolder: false, isNote: true, type: 'note' },
-        isSeveral: false,
-      }).length,
-    ).toBeGreaterThan(0)
+  })
+
+  it('offers a plugin no commands over a row of the vault', () => {
+    const { workspace } = createWorkspace()
+
+    expect(workspace).not.toHaveProperty('getPathCommands')
+    expect(workspace).not.toHaveProperty('runPathCommand')
   })
 
   it('names the note the window relies on', () => {
@@ -261,6 +246,22 @@ describe('the notes of the vault a plugin is handed', () => {
         }),
       ),
       headings: vi.fn(() => Promise.resolve(new Map())),
+      fileKinds: vi.fn((paths: readonly string[]) =>
+        Promise.resolve(
+          new Map(
+            paths
+              .filter((path) => path.startsWith('links/'))
+              .map((path) => [
+                path,
+                {
+                  isNote: true,
+                  type: 'link',
+                  properties: { media: 'plugin://org.example.links/tide.mp4' },
+                },
+              ]),
+          ),
+        ),
+      ),
     }
     const search = {
       names: vi.fn(() =>
@@ -318,6 +319,16 @@ describe('the notes of the vault a plugin is handed', () => {
 
     expect(await notes.createUntitledNote()).toBe('Untitled.md')
     expect(making.createUntitled).toHaveBeenCalledWith('')
+  })
+
+  it('reads the frontmatter of a note, and nothing for a path holding no note', async () => {
+    const { notes, core } = createNotes()
+
+    expect(await notes.readProperties('links/tide.md')).toStrictEqual({
+      media: 'plugin://org.example.links/tide.mp4',
+    })
+    expect(await notes.readProperties('Gone.md')).toStrictEqual({})
+    expect(core.fileKinds).toHaveBeenCalledWith(['links/tide.md'])
   })
 
   it('makes no path where the note maker made no untitled note', async () => {
