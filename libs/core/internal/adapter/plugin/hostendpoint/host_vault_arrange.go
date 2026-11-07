@@ -33,7 +33,7 @@ func splitNoteError(ctx context.Context, err error) (noteCode, callCode v1.HostV
 	if errors.Is(err, hostvault.ErrNoVault) {
 		return 0, noVault, nil
 	}
-	code, ok := getErrorCode(err)
+	code, ok := getNoteErrorCode(err)
 	if !ok {
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, 0, nil
 	}

@@ -75,8 +75,9 @@ func (e *Endpoint) getVault(header http.Header) (pluginport.PluginVault, error) 
 	return linked, nil
 }
 
-// answer returns the response of a vault call that ended with err: an error with a code is that code,
-// the end of the caller's context is cancelled, and anything else is internal.
+// answer returns the response of a single vault call that ended with err: an error of the vault port,
+// the plugin port or the domain is its code, the end of the caller's context is cancelled, and anything
+// else is an internal error that carries the text of err.
 func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	if err == nil {
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED, nil
@@ -90,14 +91,23 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	return 0, connect.NewError(connect.CodeInternal, err)
 }
 
-// getErrorCode returns the HostVaultErrorCode of an error of the core, and false for an error that has
-// none. The errors of the vault port, the plugin port and the domain are matched first, then the error
-// codes wire.GetErrorCode gives the errors of a note.
+// getErrorCode returns the HostVaultErrorCode of an error of the vault port, the plugin port or the
+// domain, and false for any other error.
 func getErrorCode(err error) (v1.HostVaultErrorCode, bool) {
 	for _, entry := range getErrorEntries() {
 		if errors.Is(err, entry.err) {
 			return entry.code, true
 		}
+	}
+	return 0, false
+}
+
+// getNoteErrorCode returns the HostVaultErrorCode of the error of one note in a batch call: the code
+// getErrorCode gives, else the code of the note error wire.GetErrorCode gives, and false for an error
+// that has neither.
+func getNoteErrorCode(err error) (v1.HostVaultErrorCode, bool) {
+	if code, ok := getErrorCode(err); ok {
+		return code, true
 	}
 	noteCode, ok := wire.GetErrorCode(err)
 	if !ok {
