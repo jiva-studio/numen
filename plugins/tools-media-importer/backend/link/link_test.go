@@ -117,7 +117,10 @@ func (w *world) readProperty(t *testing.T, path, key string) string {
 	t.Helper()
 	content, _ := w.vault.Content(path)
 	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, []byte(content))
-	value, _ := note.Frontmatter[key].(string)
+	value, isText := note.Frontmatter[key].(string)
+	if !isText {
+		return ""
+	}
 	return value
 }
 
@@ -340,7 +343,7 @@ func TestFetchTextFetchesADeletedTextAgain(t *testing.T) {
 	}
 }
 
-func TestFetchTextPutsTheArticleOfANewLink(t *testing.T) {
+func TestFetchTextStoresTheArticleOfANewLink(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, articleAddress)
 

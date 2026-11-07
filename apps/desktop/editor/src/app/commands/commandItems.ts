@@ -59,5 +59,3 @@ export function createCommandItems(deps: CommandItemsDeps) {
         : deps.runPlugin(id, target, argument),
   }
 }
-
-export type CommandItems = ReturnType<typeof createCommandItems>

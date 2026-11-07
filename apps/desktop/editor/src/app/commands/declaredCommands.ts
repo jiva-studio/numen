@@ -27,7 +27,7 @@ import {
 } from './whenContext'
 
 /** What the palette files a command a plugin declares under: the plugin and the command's own id. */
-export const getPluginCommandId = (pluginId: string, commandId: string): string =>
+const getPluginCommandId = (pluginId: string, commandId: string): string =>
   formatCommandId(pluginId, commandId)
 
 /** What the palette files a declared command under. */

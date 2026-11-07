@@ -5,8 +5,6 @@
  */
 import { INTERFACE_WAIT_MS } from './limits'
 
-export { INTERFACE_WAIT_MS } from './limits'
-
 export interface InterfaceStartDeps<Loaded> {
   /** The enabled plugins, in the order they are activated. */
   readonly ids: readonly string[]

@@ -4,7 +4,6 @@ export { createFileCreators } from './model/makers'
 export { fileOpeners } from './model/openers'
 export type {
   FileOpener,
-  FilePlacement,
   FileOpeners,
   OpenPlacement,
   SourceReader,

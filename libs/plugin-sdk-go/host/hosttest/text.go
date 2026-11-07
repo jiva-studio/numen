@@ -113,21 +113,27 @@ func (t *Texts) TakeChanges() []string {
 	return out
 }
 
+// isValidPut is whether a put names its path, key, kind and file, has at most one root, and names
+// as its Source another version of the file; the caller holds the lock.
+func (w *textWorld) isValidPut(params host.TextPut, version domain.TextVersion) bool {
+	if params.Path == "" || params.Key == "" || params.Kind == "" || params.File == "" {
+		return false
+	}
+	if version.IsFromProperty() && (params.Source != "" || params.SourceHash != "") {
+		return false
+	}
+	return params.Source != version.GetID() && (params.Source == "" || w.indexOf(params.Path, params.Source) >= 0)
+}
+
 func (t *Texts) PutVersion(ctx context.Context, params host.TextPut) (domain.TextVersion, error) {
 	w := t.world
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if params.Path == "" || params.Key == "" || params.Kind == "" || params.File == "" {
-		return domain.TextVersion{}, host.ErrInvalidVersion
-	}
 	version := domain.TextVersion{
 		Path: params.Path, PluginID: t.pluginID, Key: params.Key, Source: params.Source, SourceProperty: params.SourceProperty,
 		Kind: params.Kind, File: params.File, SourceHash: params.SourceHash,
 	}
-	if version.IsFromProperty() && (params.Source != "" || params.SourceHash != "") {
-		return domain.TextVersion{}, host.ErrInvalidVersion
-	}
-	if params.Source == version.GetID() || (params.Source != "" && w.indexOf(params.Path, params.Source) < 0) {
+	if !w.isValidPut(params, version) {
 		return domain.TextVersion{}, host.ErrInvalidVersion
 	}
 	_, hash, err := w.readFile(ctx, version)

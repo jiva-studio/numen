@@ -21,12 +21,12 @@ export interface GetLinkResponse {
   readonly isCopyable: boolean
 }
 
-export interface CopyMediaRequest {
+interface CopyMediaRequest {
   readonly path: string
   readonly kind: 'video' | 'audio'
 }
 
-export type CopyMediaResponse = Record<string, never>
+type CopyMediaResponse = Record<string, never>
 
 export interface CreateLinksRequest {
   readonly folder: string

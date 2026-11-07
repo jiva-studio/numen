@@ -12,8 +12,6 @@ import { getPanes, WorkspaceLayout, type Workspace } from '@numen/shell'
 import { requests, forgetRequests } from './requests'
 import {
   folders,
-  declareCommand,
-  declared,
   forgetAnswers,
   mockVaultList,
   maker,
@@ -129,8 +127,6 @@ const getTabs = (window: VueWrapper): readonly { id: string; title: string }[] =
   }[]) ?? []
 
 export {
-  declareCommand,
-  declared,
   requests,
   cards,
   maker,

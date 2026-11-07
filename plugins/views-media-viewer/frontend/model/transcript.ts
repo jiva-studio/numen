@@ -17,7 +17,7 @@ import { WORDS } from '../words'
 export type TranscriptState = ReturnType<typeof useTranscript>
 
 /** How long the words have to have been still before they are written. */
-export const WRITE_IDLE_MS = 800
+const WRITE_IDLE_MS = 800
 
 /** What the window hands one recording tab, beside the application and the path. */
 export interface TranscriptOptions {

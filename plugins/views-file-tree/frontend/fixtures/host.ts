@@ -22,10 +22,10 @@ const TREE = 'md.numen.views.file.tree'
 const CHAT = 'org.example.chat'
 
 /** The icon a command or an entry is drawn with, one made-up component for each. */
-export const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
+const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
 
 /** A component a plugin draws itself in a row of the menu. */
-export const Sketch = () => h('em', 'sketch')
+const Sketch = () => h('em', 'sketch')
 
 const command = (pluginId: string, id: string, title: string, icon?: unknown): SlotCommand => ({
   kind: 'command',
@@ -38,17 +38,17 @@ const command = (pluginId: string, id: string, title: string, icon?: unknown): S
   hasItems: false,
 })
 
-export const separator = (index: number): SlotSeparator => ({
+const separator = (index: number): SlotSeparator => ({
   kind: 'separator',
   key: `separator/${index}`,
 })
 
 export const OPEN = command('app', 'note.open', 'Open note', Icon)
-export const RENAME_ENTRY = command(TREE, 'tree.rename', 'Rename')
-export const COPY_PATH = command('app', 'note.copyPath', 'Copy path')
+const RENAME_ENTRY = command(TREE, 'tree.rename', 'Rename')
+const COPY_PATH = command('app', 'note.copyPath', 'Copy path')
 export const TRASH = command('app', 'note.trash', 'Move to trash')
-export const NEW_NOTE_ENTRY = command(TREE, 'tree.newNote', 'New note')
-export const NEW_FOLDER_ENTRY = command(TREE, 'tree.newFolder', 'New folder')
+const NEW_NOTE_ENTRY = command(TREE, 'tree.newNote', 'New note')
+const NEW_FOLDER_ENTRY = command(TREE, 'tree.newFolder', 'New folder')
 export const ASK = command(CHAT, 'note.ask', 'Ask about the note')
 
 export const NEW_MENU: SlotSubmenu = {
@@ -60,7 +60,7 @@ export const NEW_MENU: SlotSubmenu = {
   entries: [NEW_NOTE_ENTRY, NEW_FOLDER_ENTRY],
 }
 
-export const SKETCH: SlotView = {
+const SKETCH: SlotView = {
   kind: 'view',
   key: `${CHAT}/view/sketch`,
   pluginId: CHAT,

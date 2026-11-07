@@ -113,23 +113,6 @@ export const declared = {
   slots: [] as PlacementAnswer[],
 }
 
-/** A command a plugin declares, with an icon and no input. */
-export const declareCommand = (
-  pluginId: string,
-  id: string,
-  title: string,
-  extras: Partial<DeclaredAnswer> = {},
-): DeclaredAnswer => ({
-  pluginId,
-  id,
-  title,
-  icon: 'waves',
-  contentTypes: [],
-  extensions: [],
-  arguments: [],
-  ...extras,
-})
-
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders: Record<string, readonly Entry[]> = {
   '': [

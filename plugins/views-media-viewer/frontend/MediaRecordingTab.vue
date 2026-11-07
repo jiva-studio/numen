@@ -6,10 +6,9 @@
 import MediaRecordingActions from './MediaRecordingActions.vue'
 import MediaRecordingMeter from './MediaRecordingMeter.vue'
 import MediaRecordingPreview from './MediaRecordingPreview.vue'
-import { useMediaRecording, type RecordingStatus } from './useMediaRecording'
+import { useMediaRecording } from './useMediaRecording'
 
 /* --------------------------------- Props ---------------------------------- */
-export type { RecordingStatus }
 
 const props = withDefaults(
   defineProps<{
