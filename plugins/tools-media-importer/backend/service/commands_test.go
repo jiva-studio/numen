@@ -72,7 +72,7 @@ func TestImportMakesTheLinkNoteAndNothingElse(t *testing.T) {
 }
 
 func TestTheHandlersDownloadAndDeleteTheMediaAndTheText(t *testing.T) {
-	commands, store := newMockCommands(t)
+	commands, store, links := newMockCommandsWithLinks(t)
 	made, err := commands.RunCommand(t.Context(), command.Request{
 		Command: commandImport, Arguments: command.Arguments{argumentAddress: videoAddress},
 	})
@@ -85,6 +85,7 @@ func TestTheHandlersDownloadAndDeleteTheMediaAndTheText(t *testing.T) {
 		hasCopy bool
 	}{{commandDownloadMedia, true}, {commandDeleteMedia, false}, {commandCreateText, false}} {
 		answer, err := commands.RunCommand(t.Context(), command.Request{Command: step.id, Path: made.OpenedPath})
+		links.Wait()
 		if err != nil || answer.Message == "" {
 			t.Fatalf("%s answered %+v (%v)", step.id, answer, err)
 		}
@@ -125,11 +126,13 @@ func TestDeleteTextNeedsTheVersionTheHostNames(t *testing.T) {
 }
 
 type configurableFetcher struct {
-	canCopy   bool
-	textErr   error
-	copyErr   error
-	startedCh chan struct{}
-	blockCh   chan struct{}
+	canCopy       bool
+	textErr       error
+	copyErr       error
+	startedCh     chan struct{}
+	blockCh       chan struct{}
+	textStartedCh chan struct{}
+	textBlockCh   chan struct{}
 }
 
 func (f *configurableFetcher) CanCopy(string) bool { return f.canCopy }
@@ -143,6 +146,12 @@ func (f *configurableFetcher) GetMetadata(context.Context, string) (download.Met
 }
 
 func (f *configurableFetcher) GetText(context.Context, string, download.PreferredCaptions) (download.Text, error) {
+	if f.textStartedCh != nil {
+		close(f.textStartedCh)
+	}
+	if f.textBlockCh != nil {
+		<-f.textBlockCh
+	}
 	if f.textErr != nil {
 		return download.Text{}, f.textErr
 	}
@@ -222,13 +231,6 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 		}
 	}
 
-	// app:file.createText when FetchText fails.
-	cf.textErr = errors.New("fetch text failed")
-	if _, err := commands.RunCommand(t.Context(), command.Request{Command: commandCreateText, Path: res.OpenedPath}); err == nil {
-		t.Error("app:file.createText(err) succeeded")
-	}
-	cf.textErr = nil
-
 	// app:link.downloadMedia when Copy fails with non-ErrBeingFetched error.
 	cf.canCopy = false
 	if _, err := commands.RunCommand(t.Context(), command.Request{Command: commandDownloadMedia, Path: res.OpenedPath}); err == nil {
@@ -260,4 +262,149 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 		t.Error("app:link.deleteMedia(listErr) succeeded")
 	}
 	es.listErr = nil
+}
+
+// handlerDeadline is how long a handler whose work runs as a task may take to answer.
+const handlerDeadline = 5 * time.Second
+
+// newConfiguredCommands is the plugin's commands over a vault holding the link note of an address
+// the fetcher answers, with the queue its tasks are shown on and the path of the note.
+func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Registry, *link.Links, *hosttest.Queue, string) {
+	t.Helper()
+	vault := hosttest.New("Mills")
+	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
+	texts.SetStore(PluginID, vault.Store())
+	queue := hosttest.NewQueue()
+	hosted := link.Host{PluginID: PluginID, Vault: vault, Store: vault.Store(), Texts: texts, Queue: queue, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	links := link.New(hosted,
+		func() link.Fetcher { return cf },
+		func() link.Settings { return link.Settings{IsAutomatic: true} })
+	t.Cleanup(links.Close)
+	commands, err := newCommands(links, hosted)
+	if err != nil {
+		t.Fatal(err)
+	}
+	made, err := commands.RunCommand(t.Context(), command.Request{
+		Command: commandImport, Arguments: command.Arguments{argumentAddress: "https://a3.example/video-bg"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return commands, links, queue, made.OpenedPath
+}
+
+// runWithin runs the handler and fails the test when it does not answer within handlerDeadline.
+func runWithin(t *testing.T, commands *command.Registry, req command.Request) (command.Result, error) {
+	t.Helper()
+	type answer struct {
+		res command.Result
+		err error
+	}
+	answers := make(chan answer, 1)
+	go func() {
+		res, err := commands.RunCommand(t.Context(), req)
+		answers <- answer{res, err}
+	}()
+	select {
+	case got := <-answers:
+		return got.res, got.err
+	case <-time.After(handlerDeadline):
+		t.Fatalf("%s did not answer within %v while its work ran", req.Command, handlerDeadline)
+		return command.Result{}, nil
+	}
+}
+
+// findTask returns the task of the id the queue shows.
+func findTask(queue *hosttest.Queue, id string) (host.Task, bool) {
+	for _, one := range queue.ListTasks() {
+		if one.ID == id {
+			return one, true
+		}
+	}
+	return host.Task{}, false
+}
+
+func TestDownloadCaptionsAnswersOnceItsTaskIsShown(t *testing.T) {
+	cf := &configurableFetcher{textStartedCh: make(chan struct{}), textBlockCh: make(chan struct{})}
+	commands, links, queue, path := newConfiguredCommands(t, cf)
+
+	res, err := runWithin(t, commands, command.Request{Command: commandCreateText, Path: path})
+
+	if err != nil || res.Message == "" {
+		t.Fatalf("app:file.createText answered %+v (%v)", res, err)
+	}
+	if _, isShown := findTask(queue, "text:"+path); !isShown {
+		t.Errorf("the fetch of the text is not shown as a task once the handler answered: %+v", queue.ListTasks())
+	}
+	<-cf.textStartedCh
+	close(cf.textBlockCh)
+	links.Wait()
+	if tasks := queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("the tasks %+v are still shown after the fetch ended", tasks)
+	}
+}
+
+func TestAFailedFetchOfTheCaptionsFailsTheTaskAndNotTheHandler(t *testing.T) {
+	cf := &configurableFetcher{textErr: errors.New("tide-tables answered 404 Not Found")}
+	commands, links, queue, path := newConfiguredCommands(t, cf)
+
+	_, err := runWithin(t, commands, command.Request{Command: commandCreateText, Path: path})
+	links.Wait()
+
+	if err != nil {
+		t.Errorf("app:file.createText answered %v, want the failure on its task alone", err)
+	}
+	task, isShown := findTask(queue, "text:"+path)
+	if !isShown || task.FailureReason != "tide-tables answered 404 Not Found" {
+		t.Errorf("the task of the fetch is %+v (shown: %v), want it failed with the reason", task, isShown)
+	}
+}
+
+func TestDownloadMediaAnswersOnceItsTaskIsShown(t *testing.T) {
+	cf := &configurableFetcher{canCopy: true, startedCh: make(chan struct{}), blockCh: make(chan struct{})}
+	commands, links, queue, path := newConfiguredCommands(t, cf)
+
+	res, err := runWithin(t, commands, command.Request{Command: commandDownloadMedia, Path: path})
+
+	if err != nil || res.Message == "" {
+		t.Fatalf("app:link.downloadMedia answered %+v (%v)", res, err)
+	}
+	if _, isShown := findTask(queue, link.GetCopyTaskID(path)); !isShown {
+		t.Errorf("the copy is not shown as a task once the handler answered: %+v", queue.ListTasks())
+	}
+	<-cf.startedCh
+	close(cf.blockCh)
+	links.Wait()
+	if tasks := queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("the tasks %+v are still shown after the copy ended", tasks)
+	}
+}
+
+func TestAFailedCopyFailsTheTaskAndNotTheHandler(t *testing.T) {
+	cf := &configurableFetcher{canCopy: true, copyErr: errors.New("the site answered 403 Forbidden")}
+	commands, links, queue, path := newConfiguredCommands(t, cf)
+
+	_, err := runWithin(t, commands, command.Request{Command: commandDownloadMedia, Path: path})
+	links.Wait()
+
+	if err != nil {
+		t.Errorf("app:link.downloadMedia answered %v, want the failure on its task alone", err)
+	}
+	task, isShown := findTask(queue, link.GetCopyTaskID(path))
+	if !isShown || !strings.Contains(task.FailureReason, "403 Forbidden") {
+		t.Errorf("the task of the copy is %+v (shown: %v), want it failed with the reason", task, isShown)
+	}
+}
+
+func TestDownloadMediaOfAnAddressNothingCopiesFailsBeforeAnyTask(t *testing.T) {
+	commands, _, queue, path := newConfiguredCommands(t, &configurableFetcher{canCopy: false})
+
+	_, err := runWithin(t, commands, command.Request{Command: commandDownloadMedia, Path: path})
+
+	if !errors.Is(err, link.ErrNotCopyable) {
+		t.Errorf("app:link.downloadMedia answered %v, want ErrNotCopyable", err)
+	}
+	if tasks := queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("the tasks %+v are shown for a copy that never started", tasks)
+	}
 }

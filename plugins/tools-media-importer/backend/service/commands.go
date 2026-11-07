@@ -54,35 +54,40 @@ func newImportCommand(links *link.Links) command.Run {
 	}
 }
 
-// newDownloadTextCommand fetches the text of a link note.
+// newDownloadTextCommand starts the fetch of the text of a link note and answers once its task is
+// shown. The task shows how the fetch ends.
 func newDownloadTextCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
 		if err != nil {
 			return command.Result{}, err
 		}
-		if err := links.FetchText(ctx, found); err != nil {
+		if err := links.StartTextFetch(ctx, found); err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: fmt.Sprintf("the text of %s is fetched", req.Path), OpenedPath: ""}, nil
+		return command.Result{Message: fmt.Sprintf("fetching the text of %s", req.Path), OpenedPath: ""}, nil
 	}
 }
 
-// newDownloadCopyCommand downloads the video a link note points at.
+// newDownloadCopyCommand starts the download of the video a link note points at and answers once
+// its task is shown. The task shows how the download ends.
 func newDownloadCopyCommand(links *link.Links) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		found, err := links.Read(ctx, req.Path)
 		if err != nil {
 			return command.Result{}, err
 		}
-		size, err := links.Copy(ctx, found, download.MediaVideo)
+		size, isStarted, err := links.StartMediaCopy(ctx, found, download.MediaVideo)
 		if errors.Is(err, link.ErrBeingFetched) {
 			return command.Result{Message: fmt.Sprintf("the media of %s is already being downloaded", req.Path), OpenedPath: ""}, nil
 		}
 		if err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: fmt.Sprintf("%s of media are downloaded", describeSize(size)), OpenedPath: ""}, nil
+		if !isStarted {
+			return command.Result{Message: fmt.Sprintf("%s of media are downloaded", describeSize(size)), OpenedPath: ""}, nil
+		}
+		return command.Result{Message: fmt.Sprintf("downloading the media of %s", req.Path), OpenedPath: ""}, nil
 	}
 }
 

@@ -126,8 +126,11 @@ test.describe('a link to an address that answers 404', () => {
 
     await page.locator('.tasks-status__trigger').click()
     const popover = page.locator('.task-popover')
-    await expect(popover).toContainText('Fetching the text of a link')
-    await expect(popover).toContainText('tide-tables answered 404 Not Found')
+    const failures = popover
+      .locator('.task-item')
+      .filter({ hasText: 'tide-tables answered 404 Not Found' })
+    await expect(failures).toHaveCount(1)
+    await expect(failures).toContainText('Fetching the text of a link')
     await expect(popover).not.toContainText('Numen is not responding')
   })
 })

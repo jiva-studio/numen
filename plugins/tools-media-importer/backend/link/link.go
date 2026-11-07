@@ -406,17 +406,46 @@ func GetCopyTaskID(path string) string { return getTaskID("copy", path) }
 // FetchText fetches the text published at a link's address and stores it as a
 // text version of the link. An address that publishes no text stores nothing.
 func (l *Links) FetchText(ctx context.Context, link Link) error {
-	if !l.claim("text", link, link.Key) {
-		return ErrBeingFetched
+	task, err := l.beginTextFetch(ctx, link)
+	if err != nil {
+		return err
 	}
-	defer l.release("text", link, link.Key)
-	folder := folder{store: l.getStore(link)}
+	return l.endTextFetch(ctx, link, task)
+}
+
+// StartTextFetch shows the task of the text of a link and fetches the text in the background. It
+// returns ErrBeingFetched, and starts nothing, when another run fetches the text. A failure of the
+// fetch is shown as the error of the task.
+func (l *Links) StartTextFetch(ctx context.Context, link Link) error {
+	task, err := l.beginTextFetch(ctx, link)
+	if err != nil {
+		return err
+	}
+	l.wg.Go(func() {
+		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
+		defer cancel()
+		reportBackgroundError(runCtx, "fetch the text of", link, l.endTextFetch(runCtx, link, task))
+	})
+	return nil
+}
+
+// beginTextFetch claims the text of a link for one run and shows its task.
+func (l *Links) beginTextFetch(ctx context.Context, link Link) (host.Task, error) {
+	if !l.claim("text", link, link.Key) {
+		return host.Task{}, ErrBeingFetched
+	}
 	task := host.Task{
 		ID: getTaskID("text", link.Path), Title: fetchingText, Detail: link.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
-	err := l.fetchText(ctx, folder, link)
+	return task, nil
+}
+
+// endTextFetch fetches the text of a claimed link, ends its task and releases the claim.
+func (l *Links) endTextFetch(ctx context.Context, link Link, task host.Task) error {
+	defer l.release("text", link, link.Key)
+	err := l.fetchText(ctx, folder{store: l.getStore(link)}, link)
 	l.endTask(ctx, task, err)
 	return err
 }
@@ -467,34 +496,75 @@ const copyChunk = 1 << 20
 // folder, through the core's queue, writes its address into the note under media, and returns its
 // size. A copy of the same media already stored is left as it is; a copy of the other is replaced.
 func (l *Links) Copy(ctx context.Context, link Link, media download.Media) (int64, error) {
-	if !l.claim("copy", link, link.Key) {
-		return 0, ErrBeingFetched
+	task, size, err := l.beginCopy(ctx, link, media)
+	if err != nil || task == nil {
+		return size, err
 	}
-	defer l.release("copy", link, link.Key)
+	return l.endCopy(ctx, link, media, *task)
+}
+
+// StartMediaCopy shows the task of the copy of the media of a link and copies them in the
+// background. Where the media asked for are already stored it starts nothing and returns their size
+// and false. It returns ErrBeingFetched where another run copies the media, and ErrNotCopyable where
+// nothing copies what the address publishes. A failure of the copy is shown as the error of the task.
+func (l *Links) StartMediaCopy(ctx context.Context, link Link, media download.Media) (int64, bool, error) {
+	task, size, err := l.beginCopy(ctx, link, media)
+	if err != nil || task == nil {
+		return size, false, err
+	}
+	l.wg.Go(func() {
+		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
+		defer cancel()
+		_, err := l.endCopy(runCtx, link, media, *task)
+		reportBackgroundError(runCtx, "copy the video of", link, err)
+	})
+	return 0, true, nil
+}
+
+// beginCopy claims the copy of a link for one run and shows its task. Where the media asked for are
+// already stored it releases the claim and returns their size and no task.
+func (l *Links) beginCopy(ctx context.Context, link Link, media download.Media) (*host.Task, int64, error) {
+	if !l.claim("copy", link, link.Key) {
+		return nil, 0, ErrBeingFetched
+	}
+	task, size, err := l.prepareCopy(ctx, link, media)
+	if err != nil || task == nil {
+		l.release("copy", link, link.Key)
+	}
+	return task, size, err
+}
+
+// prepareCopy deletes a stored copy of the other media and shows the task of the copy.
+func (l *Links) prepareCopy(ctx context.Context, link Link, media download.Media) (*host.Task, int64, error) {
 	folder := folder{store: l.getStore(link)}
 	rec, err := folder.readRecord(ctx, link.Key)
 	if err != nil {
-		return 0, err
+		return nil, 0, err
 	}
 	size, err := l.FindCopy(ctx, link)
 	if err != nil || (size > 0 && rec.CopyMedia == media) {
-		return size, err
+		return nil, size, err
 	}
 	if size > 0 {
 		if err := folder.deleteCopy(ctx, link.Key); err != nil {
-			return 0, err
+			return nil, 0, err
 		}
 	}
-	fetcher, settings := l.fetcher(), l.settings()
-	if !fetcher.CanCopy(string(link.Address)) {
-		return 0, ErrNotCopyable
+	if !l.fetcher().CanCopy(string(link.Address)) {
+		return nil, 0, ErrNotCopyable
 	}
 	task := host.Task{
 		ID: GetCopyTaskID(link.Path), Title: copyingVideo, Detail: link.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitBytes, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
-	size, err = l.copy(ctx, fetcher, settings, link, media, task)
+	return &task, 0, nil
+}
+
+// endCopy copies the media of a claimed link, ends its task and releases the claim.
+func (l *Links) endCopy(ctx context.Context, link Link, media download.Media, task host.Task) (int64, error) {
+	defer l.release("copy", link, link.Key)
+	size, err := l.copy(ctx, l.fetcher(), l.settings(), link, media, task)
 	l.endTask(ctx, task, err)
 	return size, err
 }
