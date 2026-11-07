@@ -97,3 +97,72 @@ describe('the commands with items in the palette', () => {
     expect(listCommandItems).not.toHaveBeenCalled()
   })
 })
+
+describe('a shared command in the palette', () => {
+  const CREATE_TEXT = 'app:file.createText'
+  const createShared = (): Command => ({
+    ...createCommand(CREATE_TEXT),
+    text: 'Create text',
+    input: 'items',
+  })
+
+  it('is listed by the title of its one handler over what is in front, and runs it with no pick', async () => {
+    const { removeEmptyCommands } = setUp({
+      [CREATE_TEXT]: [{ id: 'md.numen.engines.transcription', title: 'Transcribe' }],
+    })
+
+    removeEmptyCommands([createShared()])
+    await settle()
+    const [listed] = removeEmptyCommands([createShared()])
+
+    expect(listed?.text).toBe('Transcribe')
+    expect(listed?.input).toBeUndefined()
+  })
+
+  it('keeps its own title and its pick list where several handlers hold', async () => {
+    const { removeEmptyCommands } = setUp({
+      [CREATE_TEXT]: [
+        { id: 'md.numen.engines.ocr', title: 'Recognize text' },
+        { id: 'md.numen.readers.pdf', title: 'Extract text layer' },
+      ],
+    })
+
+    removeEmptyCommands([createShared()])
+    await settle()
+    const [listed] = removeEmptyCommands([createShared()])
+
+    expect(listed?.text).toBe('Create text')
+    expect(listed?.input).toBe('items')
+  })
+
+  it('keeps its own title where its one item is an item of a handler, in the group of its plugin', async () => {
+    const { removeEmptyCommands } = setUp({
+      'app:version.delete': [
+        {
+          id: 'md.numen.engines.transcription:t1',
+          title: 'transcript',
+          group: 'md.numen.engines.transcription',
+        },
+      ],
+    })
+    const shared = {
+      ...createCommand('app:version.delete'),
+      text: 'Delete text',
+      input: 'items' as const,
+    }
+
+    removeEmptyCommands([shared])
+    await settle()
+
+    expect(removeEmptyCommands([shared])[0]?.text).toBe('Delete text')
+  })
+
+  it('is the only kind of command a single item renames', async () => {
+    const { removeEmptyCommands } = setUp({ 'tab.move': [{ id: 'w1', title: 'Window 1' }] })
+
+    removeEmptyCommands([createCommand('tab.move')])
+    await settle()
+
+    expect(removeEmptyCommands([createCommand('tab.move')])[0]?.text).toBe('tab.move')
+  })
+})

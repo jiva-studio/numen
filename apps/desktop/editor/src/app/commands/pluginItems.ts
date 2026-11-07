@@ -1,11 +1,12 @@
 /**
  * The items of a plugin command as the pick list of the palette: a loading row while they arrive,
  * then the items the command offers over the target of the palette, stored until the palette closes
- * or opens again. A command whose items are read and are none is left out of the palette.
+ * or opens again. A command whose items are read and are none is left out of the palette, and a shared
+ * command whose one item is a handler is listed as that handler.
  */
 import { shallowRef, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
-import type { CommandItem, PluginHost } from '@numen/plugin-host'
+import { SHARED_COMMANDS, type CommandItem, type PluginHost } from '@numen/plugin-host'
 import type { Command, CommandTarget, PaletteLists, RunSupport } from '@/features/command-palette'
 import type { StepGroup } from '@/shared/steps'
 import { WORDS } from '@/shared/words'
@@ -65,13 +66,31 @@ function createPluginItems(deps: PluginItemsDeps) {
     return itemLists.value.get(command)?.length === 0
   }
 
+  /** The items of the command read over the target of the palette; undefined while they are read. */
+  const getRead = (command: string): readonly CommandItem[] | undefined => {
+    if (!deps.pluginHost?.hasCommandItems(command)) return undefined
+    ask(command)
+    return itemLists.value.get(command)
+  }
+
   /** Forgets the items asked for, so the next pick list asks again. */
   const reset = (): void => {
     requests.clear()
     itemLists.value = new Map()
   }
 
-  return { getGroups, isEmpty, reset }
+  return { getGroups, isEmpty, getRead, reset }
+}
+
+const isSharedCommand = (id: string): boolean => SHARED_COMMANDS.some((one) => one.id === id)
+
+/**
+ * The handler a shared command lists as its one item: an item that is a handler has no group, and
+ * one a handler offers of its own has the group of its plugin.
+ */
+const findOnlyHandler = (items: readonly CommandItem[] | undefined): CommandItem | undefined => {
+  const [only] = items ?? []
+  return items?.length === 1 && only?.group === undefined ? only : undefined
 }
 
 /** What the palette's lists are made of besides the plugin host. */
@@ -104,16 +123,26 @@ export function createItemLists(pluginHost: ItemHost, parts: PaletteParts) {
   /**
    * The commands without those that list no item over the target of the palette while it is open, as
    * VS Code shows no empty submenu. The items of each available command with items are read for it.
+   * A shared command with one handler over the target is listed by the title of that handler, and
+   * runs it with no pick, as the menus draw it.
    */
   const removeEmptyCommands = (commands: readonly Command[]): readonly Command[] => {
     if (!paletteOpen?.value) return commands
     const target = getTarget()
-    return commands.filter(
-      (one) =>
-        !pluginHost?.hasCommandItems(one.id) ||
-        !one.isAvailable(target, runs) ||
-        !items.isEmpty(one.id),
-    )
+    return commands
+      .filter(
+        (one) =>
+          !pluginHost?.hasCommandItems(one.id) ||
+          !one.isAvailable(target, runs) ||
+          !items.isEmpty(one.id),
+      )
+      .map((one) => {
+        if (!isSharedCommand(one.id) || !one.isAvailable(target, runs)) return one
+        const handler = findOnlyHandler(items.getRead(one.id))
+        if (!handler) return one
+        const { input: _input, ...rest } = one
+        return { ...rest, text: handler.title }
+      })
   }
   return { lists, resetWhenClosed, removeEmptyCommands }
 }
