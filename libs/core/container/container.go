@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -234,7 +235,16 @@ func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settings
 	if host == nil {
 		return
 	}
-	for _, one := range entries {
+	// The enabled entries go last: enabling a plugin generates the values of its settings that hold
+	// none, and a value in the same batch is in memory by then.
+	isEnabledEntry := func(one settingsport.Setting) bool {
+		return len(one.Path) == 2 && one.Path[1] == hostFieldEnabled
+	}
+	ordered := slices.Concat(
+		slices.DeleteFunc(slices.Clone(entries), isEnabledEntry),
+		slices.DeleteFunc(slices.Clone(entries), func(one settingsport.Setting) bool { return !isEnabledEntry(one) }),
+	)
+	for _, one := range ordered {
 		if !isPluginSetting(one.Path) {
 			continue
 		}
