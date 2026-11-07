@@ -108,8 +108,6 @@ type Host struct {
 	secretSource pluginport.SecretSource
 	// delivered is the list of secrets each plugin was last configured with, as a signature.
 	delivered map[string]string
-	// configure is the state of the Configure calls of each plugin that has had one.
-	configure map[string]*configureState
 	// awaitingFirstConfigure holds the plugins that are Active and have not yet been through the Configure of their activation.
 	awaitingFirstConfigure map[string]bool
 	// noKeyStoreOnce reports once that a secret cannot be read on a machine without a key store.
@@ -168,7 +166,6 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		completer:              nil,
 		keyStore:               nil,
 		delivered:              make(map[string]string),
-		configure:              make(map[string]*configureState),
 		awaitingFirstConfigure: make(map[string]bool),
 		hostEndpoint:           nil,
 		hostAddress:            hostendpoint.Address,
@@ -549,12 +546,8 @@ func (h *Host) dropEndpointOfStoppedPlugin(pluginID string) {
 	h.clearPluginTasks(pluginID)
 }
 
-// forgetEndpointLocked forgets the endpoint of the plugin and the ports its ready line reported, and
-// ends the Configure call that is on its way to the process that ended.
+// forgetEndpointLocked forgets the endpoint of the plugin and the ports its ready line reported.
 func (h *Host) forgetEndpointLocked(pluginID string) {
-	if state := h.configure[pluginID]; state != nil && state.cancel != nil {
-		state.cancel()
-	}
 	delete(h.endpoints, pluginID)
 	delete(h.listenerPorts, pluginID)
 }
@@ -694,13 +687,17 @@ func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *li
 	h.mu.Unlock()
 	sup.RecordActivationSuccess()
 
-	// The plugin also receives its settings on the next change, so a failed push leaves it running.
-	if err := h.NotifyPluginConfig(ctx, p.Manifest.ID); err != nil {
-		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, err))
-	}
+	// No secret operation runs between the Configure of the activation and the end of the wait for it.
+	// A failed push leaves the plugin running, and it gets its settings again on the next change.
+	h.secretMu.Lock()
+	readErr, configureErr := h.configurePluginLocked(ctx, p.Manifest.ID)
 	h.mu.Lock()
 	delete(h.awaitingFirstConfigure, p.Manifest.ID)
 	h.mu.Unlock()
+	h.secretMu.Unlock()
+	if err := errors.Join(readErr, configureErr); err != nil {
+		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, err))
+	}
 	return endpoint, nil
 }
 
@@ -1405,7 +1402,9 @@ func (h *Host) TogglePluginSetting(ctx context.Context, pluginID, key string) (b
 
 // NotifyPluginConfig sends the resolved configuration to a running plugin process.
 func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
-	readErr, configureErr := h.configurePlugin(ctx, pluginID)
+	h.secretMu.Lock()
+	defer h.secretMu.Unlock()
+	readErr, configureErr := h.configurePluginLocked(ctx, pluginID)
 	return errors.Join(readErr, configureErr)
 }
 
