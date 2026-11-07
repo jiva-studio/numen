@@ -25,7 +25,7 @@ export interface Declaration {
 const encoder = new TextEncoder()
 
 /** The order of two names by their UTF-8 bytes, which no locale changes. */
-export function compareNames(first: string, second: string): number {
+function compareNames(first: string, second: string): number {
   const one = encoder.encode(first)
   const other = encoder.encode(second)
   const shared = Math.min(one.length, other.length)

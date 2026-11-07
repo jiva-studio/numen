@@ -4,6 +4,7 @@
  * may read it. A value is entered here once and is never shown again.
  */
 import { computed, ref } from 'vue'
+import { Plus } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import {
@@ -16,6 +17,7 @@ import {
 import type { SettingsTabState } from '../../types'
 import { WORDS as words } from '../../words'
 import SecretDeleteDialog from './SecretDeleteDialog.vue'
+import SecretDraftRow from './SecretDraftRow.vue'
 import SecretSection from './SecretSection.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -40,6 +42,10 @@ const sections = computed(() =>
 )
 const declarations = computed(() => getDeclarations(plugins.value))
 const drafts = ref<readonly Draft[]>([])
+/** The group name typed for a secret in a group no section shows yet, or null while none is added. */
+const newGroup = ref<string | null>(null)
+const newGroupName = computed(() => (newGroup.value ?? '').trim())
+const newName = computed(() => getNextSecretName(getNamesInGroup(newGroupName.value)))
 const deleting = ref<Secret | null>(null)
 const readers = computed(() =>
   deleting.value ? getReaderNames(deleting.value, plugins.value) : [],
@@ -47,13 +53,16 @@ const readers = computed(() =>
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAdd(group: string): void {
-  const section = sections.value.find((one) => one.group === group)
-  const namesInGroup = [
-    ...(section?.secrets.map((one) => one.name) ?? []),
-    ...(section?.isAsked && section.secrets.length === 0 ? [words.secretDefault] : []),
-    ...getDraftNames(group),
-  ]
-  drafts.value = [...drafts.value, { group, name: getNextSecretName(namesInGroup) }]
+  drafts.value = [...drafts.value, { group, name: getNextSecretName(getNamesInGroup(group)) }]
+}
+
+function onOpenNewGroup(): void {
+  newGroup.value = ''
+}
+
+async function onCreateInNewGroup(value: string): Promise<void> {
+  const id = await installation.value.createSecret(newGroupName.value, newName.value, value)
+  if (id !== '') newGroup.value = null
 }
 
 function onDiscard(group: string, name: string): void {
@@ -79,6 +88,16 @@ function onConfirmDelete(): void {
 /* -------------------------------- Helpers --------------------------------- */
 function getDraftNames(group: string): readonly string[] {
   return drafts.value.filter((one) => one.group === group).map((one) => one.name)
+}
+
+/** The names a new secret of the group must not take: those in use and the Default of an empty asked group. */
+function getNamesInGroup(group: string): readonly string[] {
+  const section = sections.value.find((one) => one.group === group)
+  return [
+    ...(section?.secrets.map((one) => one.name) ?? []),
+    ...(section?.isAsked && section.secrets.length === 0 ? [words.secretDefault] : []),
+    ...getDraftNames(group),
+  ]
 }
 </script>
 
@@ -110,6 +129,34 @@ function getDraftNames(group: string): readonly string[] {
       @delete="(secret) => (deleting = secret)"
       @toggle="onToggle"
     />
+
+    <p v-if="sections.length === 0 && newGroup === null" class="secrets-page__empty">
+      {{ words.secretsEmpty }}
+    </p>
+
+    <div v-if="newGroup !== null" class="secrets-page__new">
+      <input
+        v-model="newGroup"
+        type="text"
+        :aria-label="words.secretNewGroup"
+        :placeholder="words.secretNewGroupPlaceholder"
+        class="secrets-page__new-group"
+        @keydown.esc="newGroup = null"
+      />
+      <ul v-if="newGroupName !== ''" class="secrets-page__new-secrets">
+        <SecretDraftRow
+          :key="newName"
+          :name="newName"
+          can-discard
+          @create="onCreateInNewGroup"
+          @discard="newGroup = null"
+        />
+      </ul>
+    </div>
+    <Button v-else variant="ghost" size="small" class="secrets-page__add" @click="onOpenNewGroup">
+      <Plus :size="14" aria-hidden="true" />
+      {{ words.secretAdd }}
+    </Button>
 
     <SecretDeleteDialog
       v-if="deleting"
@@ -155,5 +202,40 @@ function getDraftNames(group: string): readonly string[] {
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
   overflow-wrap: anywhere;
+}
+
+.secrets-page__empty {
+  margin: 0 0 var(--settings-apart);
+  color: var(--numen-hushed);
+}
+
+.secrets-page__add {
+  align-self: flex-start;
+  margin-inline-start: -0.5rem;
+}
+
+.secrets-page__new {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-block-end: var(--settings-apart);
+}
+
+.secrets-page__new-group {
+  box-sizing: border-box;
+  block-size: var(--numen-action-size);
+  padding: 0.25rem 0.625rem;
+  background-color: var(--numen-field-bg);
+  border: var(--numen-stroke) solid var(--numen-field-border);
+  border-radius: var(--numen-radius);
+  color: var(--numen-ink);
+  font-family: inherit;
+  font-size: var(--numen-text-2);
+}
+
+.secrets-page__new-secrets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 </style>

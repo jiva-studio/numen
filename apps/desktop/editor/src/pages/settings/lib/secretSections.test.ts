@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createPluginInfo } from '@/testing/installation'
 import {
-  compareNames,
   createSecretSections,
   getMenuSecrets,
   getNextSecretName,
@@ -42,9 +41,11 @@ describe('the sections of the secrets', () => {
   })
 
   it('order names by their bytes, uppercase before lowercase', () => {
-    expect(compareNames('B', 'a')).toBeLessThan(0)
-    expect(compareNames('ab', 'a')).toBeGreaterThan(0)
-    expect(compareNames('a', 'a')).toBe(0)
+    const sections = createSecretSections(
+      [],
+      [secret('s1', 'a', 'a'), secret('s2', 'b', 'B'), secret('s3', 'c', 'ab')],
+    )
+    expect(sections.map((one) => one.group)).toStrictEqual(['B', 'a', 'ab'])
   })
 })
 

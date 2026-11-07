@@ -98,3 +98,44 @@ export const DeletionAsksFirst: Story = {
     await expect(canvas.queryByRole('alertdialog')).toBeNull()
   },
 }
+
+const emptyInstallation = (): Installation => ({
+  ...createInstallation(),
+  plugins: ref([]),
+  secrets: ref([]),
+})
+
+const renderEmpty = () => ({
+  components: { SecretsPage },
+  setup: () => ({ state: { installation: emptyInstallation() } }),
+  template: `
+    <div class="numen" style="container-type:inline-size;inline-size:36rem;padding:1rem;background:var(--numen-surface);--settings-measure:54rem;--settings-apart:1.75rem;--settings-choice:16rem">
+      <SecretsPage :state="state" />
+    </div>
+  `,
+})
+
+/** With no secret and no plugin the page says so and offers to add one. */
+export const EmptyPageHasAddControl: Story = {
+  render: renderEmpty,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/No secrets yet/)).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Add secret' })).toBeVisible()
+  },
+}
+
+/** A group typed on the page opens a field for the value of its first secret. */
+export const AddsInATypedGroup: Story = {
+  render: renderEmpty,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Add secret' }))
+    await userEvent.type(canvas.getByLabelText('Group of the new secret'), 'Local Llama')
+    await expect(canvas.getByLabelText('Value of 1')).toBeVisible()
+    const column = canvasElement.firstElementChild!.getBoundingClientRect()
+    for (const row of canvasElement.querySelectorAll('li')) {
+      await expect(row.getBoundingClientRect().right).toBeLessThanOrEqual(column.right + 0.5)
+    }
+  },
+}
