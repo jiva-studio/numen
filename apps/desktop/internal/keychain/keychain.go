@@ -38,6 +38,8 @@ type Store struct {
 	isProbed bool
 	// isKeychainUp is the result of the probe.
 	isKeychainUp bool
+	// locks holds the waits for the lock on the credentials file.
+	locks lockRegistry
 }
 
 // NewStore returns a store that keeps keys in the system keychain, and in
