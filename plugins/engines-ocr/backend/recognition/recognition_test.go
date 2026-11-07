@@ -320,6 +320,10 @@ func TestRecogniseEmptyScanKeepsNothing(t *testing.T) {
 	if len(files) != 0 {
 		t.Errorf("a scan that says nothing keeps %+v", files)
 	}
+	tasks := s.queue.ListTasks()
+	if len(tasks) != 1 || tasks[0].FailureReason != "books/scan.pdf says nothing that could be read, and nothing was kept" {
+		t.Errorf("tasks %+v, want the task failed with what was read", tasks)
+	}
 }
 
 func TestRecogniseFailureReportsTaskError(t *testing.T) {

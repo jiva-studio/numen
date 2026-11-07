@@ -113,9 +113,9 @@ type Result struct {
 }
 
 // Recognise reads the file and stores its text version. A failure is shown as a task until
-// the file is recognised again. A failure of a file that is no longer in the
-// vault ends the task instead, because nothing can recognise that file again. For a file another
-// run has locked, it returns ErrAlreadyRecognising.
+// the file is recognised again, and so is a file from which nothing is read. A failure of a file
+// that is no longer in the vault ends the task instead, because nothing can recognise that file
+// again. For a file another run has locked, it returns ErrAlreadyRecognising.
 func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error) {
 	key, err := r.claim(ctx, req)
 	if err != nil {
@@ -240,6 +240,10 @@ func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, 
 			return res, errors.Join(err, reportErr)
 		}
 		return res, err
+	}
+	if err == nil && res.IsEmpty {
+		task.FailureReason = fmt.Sprintf("%s says nothing that could be read, and nothing was kept", req.Path)
+		return res, r.host.Queue.ReportTask(context.WithoutCancel(ctx), task)
 	}
 	if finishErr := r.host.Queue.FinishTask(context.WithoutCancel(ctx), task.ID); err == nil {
 		return res, finishErr
