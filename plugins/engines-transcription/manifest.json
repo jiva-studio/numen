@@ -31,7 +31,7 @@
       {
         "command": "app:version.delete",
         "title": "Delete transcript",
-        "when": "version.kind == 'transcript'"
+        "when": "version.pluginId == 'md.numen.engines.transcription' && version.kind == 'transcript'"
       }
     ],
     "triggers": [

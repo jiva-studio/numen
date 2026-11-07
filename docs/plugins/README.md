@@ -450,7 +450,7 @@ A plugin handles one in `contributes.handlers` with `{ "command", "title", "when
 "contributes": {
   "handlers": [
     { "command": "app:file.createText", "title": "Recognize text", "when": "target.contentType == 'image/png'" },
-    { "command": "app:version.delete", "title": "Delete recognition", "when": "version.kind == 'recognition'" }
+    { "command": "app:version.delete", "title": "Delete recognition", "when": "version.pluginId == 'org.example.scans' && version.kind == 'recognition'" }
   ],
   "slots": [{ "slot": "fileTree.context", "command": "app:file.createText", "group": "3-text" }]
 }
@@ -551,6 +551,7 @@ A condition, `when`, is an expression of [CEL](https://cel.dev), as a when claus
 | `target.noteType`     | string | The type of the note, such as `link`; empty where the target is no note.                                       |
 | `target.properties`   | map    | The frontmatter of the note by its keys, such as `target.properties.media`; empty where the target is no note. |
 | `version.kind`        | string | The kind of a text version of the file, as the plugin that made it names it.                                   |
+| `version.pluginId`    | string | The id of the plugin that made a text version of the file; a handler of `app:version.delete` names its own.    |
 | `version.isLive`      | bool   | The text version is the one shown and indexed now.                                                             |
 | `window.isVaultOpen`  | bool   | A vault is open in the window.                                                                                 |
 | `window.isVaultReady` | bool   | The vault of the window is open and accepts operations.                                                        |

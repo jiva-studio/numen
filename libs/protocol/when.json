@@ -35,6 +35,11 @@
       "about": "the kind of the text version, as the plugin that made it names it"
     },
     {
+      "name": "version.pluginId",
+      "type": "string",
+      "about": "the id of the plugin that made the text version"
+    },
+    {
       "name": "version.isLive",
       "type": "bool",
       "about": "the text version is the one shown and indexed now"
@@ -87,6 +92,19 @@
       "values": [
         { "context": { "version.isLive": true, "version.kind": "ocr" }, "value": true },
         { "context": { "version.isLive": false, "version.kind": "ocr" }, "value": false }
+      ]
+    },
+    {
+      "when": "version.pluginId == 'org.example.scans' && version.kind == 'recognition'",
+      "values": [
+        {
+          "context": { "version.pluginId": "org.example.scans", "version.kind": "recognition" },
+          "value": true
+        },
+        {
+          "context": { "version.pluginId": "org.example.viewer", "version.kind": "recognition" },
+          "value": false
+        }
       ]
     },
     {

@@ -27,7 +27,7 @@
       {
         "command": "app:version.delete",
         "title": "Delete proofreading",
-        "when": "version.kind == 'proofreading'"
+        "when": "version.pluginId == 'md.numen.tools.proofreading' && version.kind == 'proofreading'"
       }
     ]
   },

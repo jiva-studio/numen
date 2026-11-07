@@ -11,6 +11,7 @@ export const WHEN_VARIABLES = [
   { name: 'target.noteType', type: 'string' },
   { name: 'target.properties', type: 'map' },
   { name: 'version.kind', type: 'string' },
+  { name: 'version.pluginId', type: 'string' },
   { name: 'version.isLive', type: 'bool' },
   { name: 'window.isVaultOpen', type: 'bool' },
   { name: 'window.isVaultReady', type: 'bool' },

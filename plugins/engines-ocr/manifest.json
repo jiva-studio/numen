@@ -31,7 +31,7 @@
       {
         "command": "app:version.delete",
         "title": "Delete recognition",
-        "when": "version.kind == 'recognition'"
+        "when": "version.pluginId == 'md.numen.engines.ocr' && version.kind == 'recognition'"
       }
     ],
     "triggers": [

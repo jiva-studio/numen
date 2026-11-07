@@ -225,3 +225,21 @@ func TestAHandlerOfASharedCommandListsEveryVersionItsConditionMatches(t *testing
 		t.Errorf("a version of another plugin: got %v, ran %+v", err, recorder.ran)
 	}
 }
+
+func TestAHandlerWhoseConditionNamesItsPluginListsOnlyTheVersionsOfThatPlugin(t *testing.T) {
+	s := newScene(t)
+	deleteText := pluginport.PluginCommandEntry{PluginID: ocr, Command: pluginport.PluginCommand{
+		ID: "app:version.delete", Title: "Delete recognition", When: "version.pluginId == '" + ocr + "' && version.kind != ''",
+	}}
+	menu, _ := newMenu(t, s, deleteText)
+	s.requestText(t)
+	s.runEntry(t, ocr)
+
+	items, err := menu.ListVersionItems(t.Context(), s.vault, scanPath, deleteText)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 || items[0].Version == s.getReaderVersion() {
+		t.Errorf("the handler offers %+v, want the version of %s alone", items, ocr)
+	}
+}

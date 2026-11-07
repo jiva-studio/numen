@@ -14,6 +14,7 @@ func listVariables() []variable {
 		{name: "target.noteType", kind: kindString},
 		{name: "target.properties", kind: kindMap},
 		{name: "version.kind", kind: kindString},
+		{name: "version.pluginId", kind: kindString},
 		{name: "version.isLive", kind: kindBool},
 		{name: "window.isVaultOpen", kind: kindBool},
 		{name: "window.isVaultReady", kind: kindBool},

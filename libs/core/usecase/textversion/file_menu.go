@@ -56,6 +56,7 @@ type VersionItem struct {
 func getVersionValues(target map[string]any, version domain.TextVersion, isLive bool) map[string]any {
 	values := maps.Clone(target)
 	values["version.kind"] = string(version.Kind)
+	values["version.pluginId"] = version.PluginID
 	values["version.isLive"] = isLive
 	return values
 }

@@ -64,7 +64,7 @@
       {
         "command": "app:version.delete",
         "title": "Delete text",
-        "when": "version.kind in ['article', 'captions']"
+        "when": "version.pluginId == 'md.numen.tools.media.importer' && version.kind in ['article', 'captions']"
       }
     ],
     "triggers": [
