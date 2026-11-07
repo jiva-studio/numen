@@ -74,12 +74,13 @@ func (noListener) ReportVersionsChanged(domain.Vault, string) {}
 // VersionPut is what a plugin reports of one of its versions. File is the name
 // of the version's file in the plugin's folder, written before the put.
 type VersionPut struct {
-	Path       string
-	Key        string
-	Source     domain.TextVersionID
-	Kind       domain.TextKind
-	SourceHash string
-	File       string
+	Path           string
+	Key            string
+	Source         domain.TextVersionID
+	SourceProperty domain.TextSourceProperty
+	Kind           domain.TextKind
+	SourceHash     string
+	File           string
 }
 
 // PutVersion records a version of the plugin, or replaces the record of the
@@ -91,7 +92,7 @@ func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID stri
 	}
 	return u.saveVersion(ctx, v, domain.TextVersion{
 		Path: params.Path, PluginID: pluginID, Key: params.Key, Source: params.Source,
-		Kind: params.Kind, File: params.File, SourceHash: params.SourceHash,
+		SourceProperty: params.SourceProperty, Kind: params.Kind, File: params.File, SourceHash: params.SourceHash,
 	})
 }
 
@@ -141,8 +142,13 @@ func checkVersionFields(version domain.TextVersion) error {
 	return nil
 }
 
-// checkVersionSource reports a source that is the version itself or is no version of the path.
+// checkVersionSource reports a source that is the version itself or is no version of the path, and
+// a property root given with a source or a source hash.
 func checkVersionSource(version domain.TextVersion, versions []domain.TextVersion) error {
+	if version.IsFromProperty() && (version.Source != "" || version.SourceHash != "") {
+		return fmt.Errorf("%w: a version made from the property %s of %s has another source",
+			textport.ErrInvalidVersion, version.SourceProperty.Key, version.Path)
+	}
 	if version.Source == version.GetID() || (version.Source != "" && !hasVersion(versions, version.Source)) {
 		return fmt.Errorf("%w: %s is no other version of %s", textport.ErrInvalidVersion, version.Source, version.Path)
 	}
@@ -177,7 +183,7 @@ func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, fileH
 		return Listing{}, err
 	}
 	listing := Listing{Versions: versions}
-	live, ok, err := u.findLive(ctx, v, versions, fileHash)
+	live, ok, err := u.findLive(ctx, v, path, versions, fileHash)
 	if err != nil {
 		return Listing{}, err
 	}
@@ -188,16 +194,27 @@ func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, fileH
 }
 
 // findLive is the live version among a file's versions: the newest one with a
-// valid chain whose file still has the hash it was recorded with.
-func (u *Versions) findLive(ctx context.Context, v domain.Vault, versions []domain.TextVersion, fileHash string) (domain.TextVersion, bool, error) {
+// valid chain whose file still has the hash it was recorded with. The note's
+// properties are read only when a version was made from one.
+func (u *Versions) findLive(
+	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion, fileHash string,
+) (domain.TextVersion, bool, error) {
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
+	}
+	var properties map[string]any
+	if slices.ContainsFunc(versions, domain.TextVersion.IsFromProperty) {
+		_, read, err := vaultport.ReadNote(ctx, u.readers, v, path)
+		if err != nil {
+			return domain.TextVersion{}, false, fmt.Errorf("read the properties of %s: %w", path, err)
+		}
+		properties = read
 	}
 	files, err := u.files.Open(v)
 	if err != nil {
 		return domain.TextVersion{}, false, err
 	}
-	live, ok := domain.FindLiveVersion(versions, fileHash, func(version domain.TextVersion) bool {
+	live, ok := domain.FindLiveVersion(versions, fileHash, properties, func(version domain.TextVersion) bool {
 		file, err := files.ReadTextFile(ctx, version.PluginID, version.File)
 		return err == nil && file.Hash == version.Hash
 	})

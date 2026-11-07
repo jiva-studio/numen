@@ -50,7 +50,7 @@ func (u *FileMenu) findLiveVersion(ctx context.Context, v domain.Vault, path str
 	if err != nil {
 		return domain.TextVersion{}, false, fmt.Errorf("read %s: %w", path, err)
 	}
-	return u.versions.findLive(ctx, v, versions, domain.HashContent(raw))
+	return u.versions.findLive(ctx, v, path, versions, domain.HashContent(raw))
 }
 
 // VersionItem is a text version of a file that a command with items offers to run over.

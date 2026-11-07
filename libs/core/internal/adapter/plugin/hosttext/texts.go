@@ -27,8 +27,8 @@ func NewTexts(versions *textversion.Versions, readers vaultport.VaultReaders) Te
 // PutVersion records a version a plugin made of a file of the vault.
 func (p Texts) PutVersion(ctx context.Context, v domain.Vault, pluginID string, params pluginport.PluginTextPut) (domain.TextVersion, error) {
 	return p.versions.PutVersion(ctx, v, pluginID, textversion.VersionPut{
-		Path: params.Path, Key: params.Key, Source: params.Source, Kind: params.Kind,
-		SourceHash: params.SourceHash, File: params.File,
+		Path: params.Path, Key: params.Key, Source: params.Source, SourceProperty: params.SourceProperty,
+		Kind: params.Kind, SourceHash: params.SourceHash, File: params.File,
 	})
 }
 

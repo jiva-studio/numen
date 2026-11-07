@@ -16,7 +16,7 @@ func (u *Versions) GetLiveText(ctx context.Context, v domain.Vault, path, fileHa
 	if err != nil {
 		return domain.VersionText{}, err
 	}
-	live, ok, err := u.findLive(ctx, v, versions, fileHash)
+	live, ok, err := u.findLive(ctx, v, path, versions, fileHash)
 	if err != nil {
 		return domain.VersionText{}, err
 	}

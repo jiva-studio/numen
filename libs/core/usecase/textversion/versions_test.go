@@ -313,6 +313,101 @@ func TestRecordVersionRejectsInvalidVersions(t *testing.T) {
 	}
 }
 
+func TestRecordVersionRejectsAPropertyWithAnotherRoot(t *testing.T) {
+	s := newScene(t)
+	ctx := t.Context()
+	s.files[talkPath] = []byte(talkNote)
+	if _, err := s.folders.WriteTextFile(ctx, ocr, "k.jsonl", []domain.TextSegment{{Text: "x"}}); err != nil {
+		t.Fatal(err)
+	}
+	other := s.putTalkVersion(t, "other", "")
+	property := domain.TextSourceProperty{Key: "url", Value: talkURL}
+	cases := map[string]textversion.VersionPut{
+		"a property and a source": {
+			Path: talkPath, Key: "k", Kind: kindRecognition, File: "k.jsonl",
+			SourceProperty: property, Source: other.GetID(), SourceHash: other.Hash,
+		},
+		"a property and a source hash": {
+			Path: talkPath, Key: "k", Kind: kindRecognition, File: "k.jsonl",
+			SourceProperty: property, SourceHash: domain.HashContent(s.files[talkPath]),
+		},
+	}
+	for name, params := range cases {
+		if _, err := s.versions.PutVersion(ctx, s.vault, ocr, params); !errors.Is(err, textport.ErrInvalidVersion) {
+			t.Errorf("%s: got %v, want %v", name, err, textport.ErrInvalidVersion)
+		}
+	}
+}
+
+const (
+	talkPath = "links/talk.md"
+	talkURL  = "https://example.com/talk"
+	talkNote = "---\ntype: link\nurl: " + talkURL + "\ntitle: A talk\n---\nNotes on the talk.\n"
+)
+
+// putTalkVersion puts a version of the talk note made from its url property, with
+// the given key and text.
+func (s *scene) putTalkVersion(t *testing.T, key, text string) domain.TextVersion {
+	t.Helper()
+	ctx := t.Context()
+	if _, err := s.folders.WriteTextFile(ctx, ocr, key+".jsonl", []domain.TextSegment{{Text: text}}); err != nil {
+		t.Fatal(err)
+	}
+	version, err := s.versions.PutVersion(ctx, s.vault, ocr, textversion.VersionPut{
+		Path: talkPath, Key: key, Kind: kindRecognition, File: key + ".jsonl",
+		SourceProperty: domain.TextSourceProperty{Key: "url", Value: talkURL},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return version
+}
+
+// getTalkLive is the live version of the talk note as it reads now, and empty where none is.
+func (s *scene) getTalkLive(t *testing.T) domain.TextVersionID {
+	t.Helper()
+	listing, err := s.versions.ListVersions(t.Context(), s.vault, talkPath, domain.HashContent(s.files[talkPath]))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return listing.Live
+}
+
+func TestAPropertyVersionStaysLiveAfterAnEditElsewhereInTheNote(t *testing.T) {
+	s := newScene(t)
+	s.files[talkPath] = []byte(talkNote)
+	version := s.putTalkVersion(t, "article", "The article.")
+	if version.SourceProperty != (domain.TextSourceProperty{Key: "url", Value: talkURL}) || version.SourceHash != "" {
+		t.Fatalf("recorded %+v, want the url property and no source hash", version)
+	}
+	s.files[talkPath] = []byte(strings.Replace(talkNote, "title: A talk", "title: A long talk", 1) + "More notes.\n")
+	if got := s.getTalkLive(t); got != version.GetID() {
+		t.Fatalf("after an edit of the title and body the live version is %q, want %q", got, version.GetID())
+	}
+	text, err := s.versions.GetLiveText(t.Context(), s.vault, talkPath, domain.HashContent(s.files[talkPath]))
+	if err != nil || text.Text != "The article." {
+		t.Fatalf("live text %q (%v)", text.Text, err)
+	}
+}
+
+func TestAPropertyVersionIsNotLiveOnceThePropertyChanges(t *testing.T) {
+	s := newScene(t)
+	s.files[talkPath] = []byte(talkNote)
+	s.putTalkVersion(t, "article", "The article.")
+	cases := map[string]string{
+		"another url":    strings.Replace(talkNote, talkURL, "https://example.com/other", 1),
+		"no url":         strings.Replace(talkNote, "url: "+talkURL+"\n", "", 1),
+		"a url list":     strings.Replace(talkNote, "url: "+talkURL, "url:\n  - "+talkURL, 1),
+		"no frontmatter": "Notes on the talk.\n",
+	}
+	for name, note := range cases {
+		s.files[talkPath] = []byte(note)
+		if got := s.getTalkLive(t); got != "" {
+			t.Errorf("%s: the live version is %q, want none", name, got)
+		}
+	}
+}
+
 func TestRecordVersionStoresTheFileHashAndCreateTime(t *testing.T) {
 	s := newScene(t)
 	ctx := t.Context()

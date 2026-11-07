@@ -28,5 +28,14 @@ func writeVersion(v domain.TextVersion) *v1.TextVersion {
 		Hash:             v.Hash,
 		CreateTimeUnixMs: v.CreateTime.UnixMilli(),
 		File:             v.File,
+		SourceProperty:   writeSourceProperty(v.SourceProperty),
 	}
+}
+
+// writeSourceProperty is a version's source property as the protocol carries it, and nil for none.
+func writeSourceProperty(p domain.TextSourceProperty) *v1.TextSourceProperty {
+	if p.Key == "" {
+		return nil
+	}
+	return &v1.TextSourceProperty{Key: p.Key, Value: p.Value}
 }

@@ -19,7 +19,7 @@ func TestFindLiveVersionReturnsTheNewestValidVersion(t *testing.T) {
 		{Path: "a.pdf", PluginID: "reader", Key: "a", SourceHash: "file-1", Hash: "ha", CreateTime: getEpoch()},
 		{Path: "a.pdf", PluginID: "stale", Key: "c", SourceHash: "old-file", Hash: "hc", CreateTime: getEpoch().Add(2 * time.Minute)},
 	}
-	got, ok := domain.FindLiveVersion(versions, "file-1", isAllIntact)
+	got, ok := domain.FindLiveVersion(versions, "file-1", nil, isAllIntact)
 	if !ok || got.GetID() != "fixer/b" {
 		t.Fatalf("got %q (%v), want fixer/b", got.GetID(), ok)
 	}
@@ -30,7 +30,7 @@ func TestFindLiveVersionBreaksATieByListOrder(t *testing.T) {
 		{PluginID: "p", Key: "first", SourceHash: "f", CreateTime: getEpoch()},
 		{PluginID: "p", Key: "second", SourceHash: "f", CreateTime: getEpoch()},
 	}
-	got, _ := domain.FindLiveVersion(versions, "f", isAllIntact)
+	got, _ := domain.FindLiveVersion(versions, "f", nil, isAllIntact)
 	if got.Key != "second" {
 		t.Fatalf("got %q, want the later entry", got.Key)
 	}
@@ -41,7 +41,7 @@ func TestFindLiveVersionSkipsAVersionWhoseFileChanged(t *testing.T) {
 		{PluginID: "reader", Key: "a", SourceHash: "f", Hash: "ha", CreateTime: getEpoch()},
 		{PluginID: "fixer", Key: "b", Source: "reader/a", SourceHash: "ha", Hash: "hb", CreateTime: getEpoch().Add(time.Minute)},
 	}
-	got, ok := domain.FindLiveVersion(versions, "f", func(v domain.TextVersion) bool { return v.PluginID != "fixer" })
+	got, ok := domain.FindLiveVersion(versions, "f", nil, func(v domain.TextVersion) bool { return v.PluginID != "fixer" })
 	if !ok || got.GetID() != "reader/a" {
 		t.Fatalf("got %q (%v), want the version before the changed one", got.GetID(), ok)
 	}
@@ -52,35 +52,95 @@ func TestIsChainValidFailsWhenTheSourceChanged(t *testing.T) {
 		{PluginID: "reader", Key: "a", SourceHash: "file-1", Hash: "ha-2"},
 		{PluginID: "fixer", Key: "b", Source: "reader/a", SourceHash: "ha-1", Hash: "hb"},
 	}
-	if !domain.IsChainValid(versions, "reader/a", "file-1") {
+	if !domain.IsChainValid(versions, "reader/a", "file-1", nil) {
 		t.Fatal("the version from the file is valid")
 	}
-	if domain.IsChainValid(versions, "fixer/b", "file-1") {
+	if domain.IsChainValid(versions, "fixer/b", "file-1", nil) {
 		t.Fatal("a version made from other text of its source is valid")
 	}
 }
 
 func TestIsChainValidFailsWhenTheFileChanged(t *testing.T) {
 	versions := []domain.TextVersion{{PluginID: "reader", Key: "a", SourceHash: "file-1"}}
-	if domain.IsChainValid(versions, "reader/a", "file-2") {
+	if domain.IsChainValid(versions, "reader/a", "file-2", nil) {
 		t.Fatal("a version of other bytes of the file is valid")
 	}
 }
 
 func TestIsChainValidFailsOnAMissingSourceAndOnACycle(t *testing.T) {
-	if domain.IsChainValid(nil, "missing/id", "") {
+	if domain.IsChainValid(nil, "missing/id", "", nil) {
 		t.Fatal("an unknown version id is valid")
 	}
 	missing := []domain.TextVersion{{PluginID: "fixer", Key: "b", Source: "reader/a"}}
-	if domain.IsChainValid(missing, "fixer/b", "f") {
+	if domain.IsChainValid(missing, "fixer/b", "f", nil) {
 		t.Fatal("a version whose source is gone is valid")
 	}
 	cycle := []domain.TextVersion{
 		{PluginID: "p", Key: "x", Source: "p/y", SourceHash: "hy", Hash: "hx"},
 		{PluginID: "p", Key: "y", Source: "p/x", SourceHash: "hx", Hash: "hy"},
 	}
-	if domain.IsChainValid(cycle, "p/x", "f") {
+	if domain.IsChainValid(cycle, "p/x", "f", nil) {
 		t.Fatal("a version reaching itself is valid")
+	}
+}
+
+func getPropertyVersion() domain.TextVersion {
+	return domain.TextVersion{
+		Path: "link.md", PluginID: "importer", Key: "a", Hash: "ha",
+		SourceProperty: domain.TextSourceProperty{Key: "url", Value: "https://example.com/talk"},
+	}
+}
+
+func TestIsChainValidKeepsAPropertyVersionLiveWhileThePropertyHoldsItsValue(t *testing.T) {
+	versions := []domain.TextVersion{getPropertyVersion()}
+	properties := map[string]any{"url": "https://example.com/talk", "title": "Edited title"}
+	if !domain.IsChainValid(versions, "importer/a", "any-file-hash", properties) {
+		t.Fatal("a version made from a property that still holds its value is not valid")
+	}
+}
+
+func TestIsChainValidFailsAPropertyVersionWhenThePropertyChanged(t *testing.T) {
+	versions := []domain.TextVersion{getPropertyVersion()}
+	cases := map[string]map[string]any{
+		"another value": {"url": "https://example.com/other"},
+		"missing key":   {"title": "Talk"},
+		"no properties": nil,
+		"not a string":  {"url": []any{"https://example.com/talk"}},
+	}
+	for name, properties := range cases {
+		if domain.IsChainValid(versions, "importer/a", "f", properties) {
+			t.Fatalf("%s: a version made from a property that no longer holds its value is valid", name)
+		}
+	}
+}
+
+func TestIsChainValidChainsAVersionDerivedFromAPropertyVersionByHash(t *testing.T) {
+	versions := []domain.TextVersion{
+		getPropertyVersion(),
+		{PluginID: "fixer", Key: "b", Source: "importer/a", SourceHash: "ha", Hash: "hb"},
+	}
+	if !domain.IsChainValid(versions, "fixer/b", "f", map[string]any{"url": "https://example.com/talk"}) {
+		t.Fatal("a version derived from a valid property version is not valid")
+	}
+	if domain.IsChainValid(versions, "fixer/b", "f", map[string]any{"url": "https://example.com/other"}) {
+		t.Fatal("a version derived from a property version whose property changed is valid")
+	}
+}
+
+func TestFindLiveVersionKeepsAPropertyVersionLiveAfterAnEditOfTheNote(t *testing.T) {
+	versions := []domain.TextVersion{getPropertyVersion()}
+	got, ok := domain.FindLiveVersion(versions, "edited-file", map[string]any{"url": "https://example.com/talk"}, isAllIntact)
+	if !ok || got.GetID() != "importer/a" {
+		t.Fatalf("got %q (%v), want importer/a", got.GetID(), ok)
+	}
+	if _, ok := domain.FindLiveVersion(versions, "edited-file", map[string]any{"url": "https://example.com/new"}, isAllIntact); ok {
+		t.Fatal("a version made from a property that changed is live")
+	}
+}
+
+func TestIsFromFileIsFalseForAPropertyVersion(t *testing.T) {
+	if getPropertyVersion().IsFromFile() {
+		t.Fatal("a version made from a property is made from the file")
 	}
 }
 

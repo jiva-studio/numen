@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
@@ -392,6 +393,75 @@ func TestTheTextIsLiveAfterTheMediaAddressIsSet(t *testing.T) {
 	w.texts.File(made.Path, []byte(content))
 	if text, err := w.links.ReadArticle(t.Context(), read); err != nil || text == "" {
 		t.Errorf("the note with its media reads %q (%v)", text, err)
+	}
+}
+
+func TestTheTextIsMadeFromTheURLAsTheNoteWritesIt(t *testing.T) {
+	w := newWorld(t)
+	made := w.create(t, articleAddress)
+	if err := w.links.FetchText(t.Context(), made); err != nil {
+		t.Fatal(err)
+	}
+
+	listing, err := w.texts.ListVersions(t.Context(), made.Path)
+	if err != nil || len(listing.Versions) != 1 {
+		t.Fatalf("the versions are %+v (%v)", listing, err)
+	}
+	version := listing.Versions[0]
+	if want := (domain.TextSourceProperty{Key: "url", Value: articleAddress}); version.SourceProperty != want || version.SourceHash != "" {
+		t.Errorf("the version is made from %+v with source hash %q, want %+v and none", version.SourceProperty, version.SourceHash, want)
+	}
+}
+
+func TestTheTextStaysLiveAfterAnEditOfTheNote(t *testing.T) {
+	w := newWorld(t)
+	made := w.create(t, articleAddress)
+	if err := w.links.FetchText(t.Context(), made); err != nil {
+		t.Fatal(err)
+	}
+
+	edited := w.edit(t, made)
+
+	listing, err := w.texts.ListVersions(t.Context(), edited.Path)
+	if err != nil || listing.Live != domain.TextVersionID(pluginID+"/"+made.Key) {
+		t.Errorf("after an edit the live version is %q (%v)", listing.Live, err)
+	}
+}
+
+func TestTheTextIsNotLiveOnceTheURLChanges(t *testing.T) {
+	w := newWorld(t)
+	made := w.create(t, articleAddress)
+	if err := w.links.FetchText(t.Context(), made); err != nil {
+		t.Fatal(err)
+	}
+
+	content, _ := w.vault.Content(made.Path)
+	content = strings.Replace(content, "url: "+articleAddress, "url: https://example.org/another-mill", 1)
+	w.vault.File(made.Path, content)
+	w.texts.File(made.Path, []byte(content))
+
+	if listing, err := w.texts.ListVersions(t.Context(), made.Path); err != nil || listing.Live != "" {
+		t.Errorf("after the url changed the live version is %q (%v), want none", listing.Live, err)
+	}
+}
+
+func TestCopyPutsNoVersion(t *testing.T) {
+	w := newWorld(t)
+	made := w.create(t, videoAddress)
+	if err := w.links.FetchText(t.Context(), made); err != nil {
+		t.Fatal(err)
+	}
+	w.texts.TakeChanges()
+
+	read, err := w.links.Read(t.Context(), made.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.links.Copy(t.Context(), read, download.MediaVideo); err != nil {
+		t.Fatal(err)
+	}
+	if changes := w.texts.TakeChanges(); len(changes) != 0 {
+		t.Errorf("writing the media address put versions of %v", changes)
 	}
 }
 

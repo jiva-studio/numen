@@ -24,12 +24,13 @@ var (
 // file for the first, and the Hash of the source version for the second. Kind is what the text is,
 // as the plugin names it. The host records the hash of the file.
 type TextPut struct {
-	Path       string
-	Key        string
-	Source     domain.TextVersionID
-	Kind       domain.TextKind
-	SourceHash string
-	File       string
+	Path           string
+	Key            string
+	Source         domain.TextVersionID
+	SourceProperty domain.TextSourceProperty
+	Kind           domain.TextKind
+	SourceHash     string
+	File           string
 }
 
 // TextListing is the versions of a file and the one the host shows, which is empty where none is live.

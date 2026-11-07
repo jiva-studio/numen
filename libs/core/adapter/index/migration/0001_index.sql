@@ -128,17 +128,19 @@ CREATE TABLE sources (
 );
 
 CREATE TABLE text_versions (
-    id                INTEGER PRIMARY KEY,
-    vault             TEXT NOT NULL,
-    path              TEXT NOT NULL,
-    plugin_id         TEXT NOT NULL,
-    key               TEXT NOT NULL,
-    source_version_id TEXT NOT NULL,
-    kind              TEXT NOT NULL,
-    file              TEXT NOT NULL,
-    source_hash       TEXT NOT NULL,
-    hash              TEXT NOT NULL,
-    create_time       INTEGER NOT NULL,
+    id                    INTEGER PRIMARY KEY,
+    vault                 TEXT NOT NULL,
+    path                  TEXT NOT NULL,
+    plugin_id             TEXT NOT NULL,
+    key                   TEXT NOT NULL,
+    source_version_id     TEXT NOT NULL,
+    source_property_key   TEXT NOT NULL DEFAULT '',
+    source_property_value TEXT NOT NULL DEFAULT '',
+    kind                  TEXT NOT NULL,
+    file                  TEXT NOT NULL,
+    source_hash           TEXT NOT NULL,
+    hash                  TEXT NOT NULL,
+    create_time           INTEGER NOT NULL,
     UNIQUE (vault, path, plugin_id, key)
 );
 

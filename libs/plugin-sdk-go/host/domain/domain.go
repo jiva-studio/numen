@@ -25,6 +25,7 @@ type VaultProblem = notesdomain.VaultProblem
 type TextVersion = notesdomain.TextVersion
 type TextVersionID = notesdomain.TextVersionID
 type TextKind = notesdomain.TextKind
+type TextSourceProperty = notesdomain.TextSourceProperty
 type TextSegment = notesdomain.TextSegment
 type Selector = notesdomain.Selector
 type VersionText = notesdomain.VersionText

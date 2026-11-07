@@ -8,6 +8,7 @@ import (
 	"time"
 
 	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
+	notesmarkdown "github.com/jiva-studio/numen/libs/notes/markdown"
 	"github.com/jiva-studio/numen/libs/notes/textfile"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -120,8 +121,11 @@ func (t *Texts) PutVersion(ctx context.Context, params host.TextPut) (domain.Tex
 		return domain.TextVersion{}, host.ErrInvalidVersion
 	}
 	version := domain.TextVersion{
-		Path: params.Path, PluginID: t.pluginID, Key: params.Key, Source: params.Source, Kind: params.Kind,
-		File: params.File, SourceHash: params.SourceHash,
+		Path: params.Path, PluginID: t.pluginID, Key: params.Key, Source: params.Source, SourceProperty: params.SourceProperty,
+		Kind: params.Kind, File: params.File, SourceHash: params.SourceHash,
+	}
+	if version.IsFromProperty() && (params.Source != "" || params.SourceHash != "") {
+		return domain.TextVersion{}, host.ErrInvalidVersion
 	}
 	if params.Source == version.GetID() || (params.Source != "" && w.indexOf(params.Path, params.Source) < 0) {
 		return domain.TextVersion{}, host.ErrInvalidVersion
@@ -167,7 +171,7 @@ func (t *Texts) ListVersions(ctx context.Context, path string) (host.TextListing
 		_, hash, err := w.readFile(ctx, v)
 		return err == nil && hash == v.Hash
 	}
-	if live, ok := notesdomain.FindLiveVersion(listing.Versions, domain.HashContent(w.files[path]), isIntact); ok {
+	if live, ok := notesdomain.FindLiveVersion(listing.Versions, domain.HashContent(w.files[path]), w.readProperties(path), isIntact); ok {
 		listing.Live = live.GetID()
 	}
 	return listing, nil
@@ -204,4 +208,9 @@ func (w *textWorld) readFile(ctx context.Context, v domain.TextVersion) ([]domai
 
 func (w *textWorld) indexOf(path string, id domain.TextVersionID) int {
 	return slices.IndexFunc(w.versions, func(v domain.TextVersion) bool { return v.Path == path && v.GetID() == id })
+}
+
+// readProperties is the frontmatter of the file at the path, as File put it.
+func (w *textWorld) readProperties(path string) map[string]any {
+	return notesmarkdown.Parse(notesdomain.FileStat{Path: path}, w.files[path]).Frontmatter
 }

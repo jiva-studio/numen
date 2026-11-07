@@ -19,14 +19,14 @@ set -euo pipefail
 
 folder=libs/core/adapter/index/migration
 
-# The one rewrite that is not a fault: eleven files collapsed into one, once,
-# against a sequence no released build had run. It is recorded as the tree the
-# base carried and the file the collapse produced, so it excuses that state and
+# The one rewrite that is not a fault: 0001_index.sql changed in place, once,
+# against a sequence no released build has run. It is recorded as the tree the
+# base carried and the file the change produced, so it excuses that state and
 # no other — no base cut after this reaches main hashes to collapsed, and an
-# edit to the file that survived is refused here as anywhere.
-collapsed=e4bd40091e15a24a904179dbe17c5f830a785325
+# edit to the file is refused here as anywhere.
+collapsed=e48740f85971cb1329e8696f46496ed03024ce0a
 kept=0001_index.sql
-produced=5fdfb401c678de79cb5d32fab5050df2b26780cf
+produced=955856c716f6979be5fb493cba38003cbfe7852d
 
 # rule reads the folder as the base carries it against the folder as it stands.
 # The comparison is with the commit the branch would merge into, so what another
@@ -51,16 +51,15 @@ rule() {
 		return 2
 	fi
 
-	# The ten files the collapse took away are not read again; the one it left
-	# is compared against what it produced rather than against the base.
+	# The file the rewrite left is compared against what it produced.
 	if [[ "$(git rev-parse "$at:$folder")" = "$collapsed" ]]; then
 		if [[ ! -f "$folder/$kept" ]] ||
 			[[ "$(git hash-object --path "$folder/$kept" "$folder/$kept")" != "$produced" ]]; then
 			echo "M	$folder/$kept" >&2
-			echo "the migration the collapse left is not what it produced: add a new numbered file instead" >&2
+			echo "the migration the rewrite left is not what it produced: add a new numbered file instead" >&2
 			return 1
 		fi
-		echo "$at carries the collapsed sequence, and $kept is what the collapse produced"
+		echo "$at carries the rewritten sequence, and $kept is what the rewrite produced"
 		return 0
 	fi
 
