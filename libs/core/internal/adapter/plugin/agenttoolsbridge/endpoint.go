@@ -158,32 +158,41 @@ func (e *endpoint) shutdown(ctx context.Context) error {
 	}
 }
 
-// declareTool returns the tool as an MCP client sees it.
+// declareTool returns the tool as an MCP client sees it. The annotations are the hints of the tool.
 func declareTool(spec *v1.PluginTool) *sdk.Tool {
+	hints := spec.GetHints()
+	isDestructive, isOpenWorld := hints.GetDestructive(), hints.GetOpenWorld()
 	declared := &sdk.Tool{
 		Name:        spec.GetName(),
 		Title:       spec.GetTitle(),
 		Description: spec.GetDescription(),
 		InputSchema: readInputSchema(spec.GetInputSchema()),
-		Annotations: &sdk.ToolAnnotations{ReadOnlyHint: spec.GetEffect() == v1.ToolEffect_TOOL_EFFECT_READ_ONLY},
+		Annotations: &sdk.ToolAnnotations{
+			ReadOnlyHint:    hints.GetReadOnly(),
+			DestructiveHint: &isDestructive,
+			IdempotentHint:  hints.GetIdempotent(),
+			OpenWorldHint:   &isOpenWorld,
+		},
 	}
-	if output := spec.GetOutputSchema(); json.Valid(output) && isObject(output) {
-		declared.OutputSchema = json.RawMessage(output)
+	if schema, isObject := readObject(spec.GetOutputSchema()); isObject && hasObjectType(schema) {
+		declared.OutputSchema = json.RawMessage(spec.GetOutputSchema())
 	}
 	return declared
 }
 
-// readInputSchema is the input schema of a tool as a JSON object of type "object", which MCP
-// requires. A schema that is no object is replaced by the empty one.
+// readInputSchema returns the input schema of a tool as a JSON object of type "object", which MCP
+// requires. A JSON object of another type or none is given the type "object" and keeps its other
+// keys; anything else is replaced by the empty object schema. The same rules are in
+// plugins/agents-mcp-server/backend/service/aggregator.go.
 func readInputSchema(raw []byte) json.RawMessage {
-	var schema map[string]any
-	if err := json.Unmarshal(raw, &schema); err != nil || schema == nil {
+	schema, isObject := readObject(raw)
+	if !isObject {
 		return json.RawMessage(`{"type":"object"}`)
 	}
-	if schema["type"] == "object" {
+	if hasObjectType(schema) {
 		return json.RawMessage(raw)
 	}
-	schema["type"] = "object"
+	schema["type"] = json.RawMessage(`"object"`)
 	encoded, err := json.Marshal(schema)
 	if err != nil {
 		return json.RawMessage(`{"type":"object"}`)
@@ -191,9 +200,19 @@ func readInputSchema(raw []byte) json.RawMessage {
 	return encoded
 }
 
-func isObject(raw []byte) bool {
+// readObject decodes raw as a JSON object, and reports false for anything else.
+func readObject(raw []byte) (map[string]json.RawMessage, bool) {
 	var object map[string]json.RawMessage
-	return json.Unmarshal(raw, &object) == nil && object != nil
+	if err := json.Unmarshal(raw, &object); err != nil || object == nil {
+		return nil, false
+	}
+	return object, true
+}
+
+// hasObjectType reports whether the type of the schema is the string "object".
+func hasObjectType(schema map[string]json.RawMessage) bool {
+	var schemaType string
+	return json.Unmarshal(schema["type"], &schemaType) == nil && schemaType == "object"
 }
 
 // readResult is what the plugin answered, as the result an agent reads.
@@ -233,10 +252,16 @@ func createToken() (string, error) {
 	return hex.EncodeToString(raw), nil
 }
 
-// requireToken answers only the requests that present the token as a bearer.
+// requireToken rejects a request from a browser page outside the machine with 403, then answers only
+// the requests that present the token as a bearer. The same rules are in
+// plugins/agents-mcp-server/backend/service/auth.go.
 func requireToken(token string, next http.Handler) http.Handler {
 	expected := []byte("Bearer " + token)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if origins, hasOrigin := r.Header["Origin"]; hasOrigin && (len(origins) != 1 || !isLoopbackOrigin(origins[0])) {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 		presented := strings.TrimSpace(r.Header.Get("Authorization"))
 		if subtle.ConstantTimeCompare([]byte(presented), expected) != 1 {
 			w.Header().Set("WWW-Authenticate", `Bearer realm="numen"`)
@@ -245,4 +270,19 @@ func requireToken(token string, next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// isLoopbackOrigin reports whether origin is an http or https URL whose host is localhost or a
+// loopback IP address.
+func isLoopbackOrigin(origin string) bool {
+	parsed, err := url.Parse(origin)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return false
+	}
+	host := parsed.Hostname()
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
