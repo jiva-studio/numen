@@ -68,7 +68,7 @@ describe('the commands of the window', () => {
     expect(runCommand).toHaveBeenCalledExactlyOnceWith('app:vault.create', FRONT)
   })
 
-  it('run a command over the target given, the others selected with it included', async () => {
+  it('run a command over the target given, its file and the others selected with it included, and mark the target named', async () => {
     const { commands, runCommand } = setup()
     const target: RunTarget = {
       path: 'reef/Coral.md',
@@ -83,9 +83,11 @@ describe('the commands of the window', () => {
     expect(runCommand).toHaveBeenCalledExactlyOnceWith('app:note.trash', {
       ...FRONT,
       path: 'reef/Coral.md',
+      file: 'reef/Coral.md',
       title: 'Coral',
       isFolder: false,
       others: ['reef/Kelp.md'],
+      isTargetNamed: true,
     })
   })
 

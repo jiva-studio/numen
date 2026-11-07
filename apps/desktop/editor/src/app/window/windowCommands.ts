@@ -30,10 +30,12 @@ export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
     return {
       ...front,
       path: target.path,
+      file: target.path,
       title: target.title,
       isFolder: target.isFolder,
       others: target.others,
       tab: target.tab || front.tab,
+      isTargetNamed: true,
     }
   }
 

@@ -86,6 +86,11 @@ export interface CommandTarget {
   readonly isFolder?: boolean
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
+  /**
+   * Whether a place named it, as a row of the file tree or a tab menu does; the palette names none,
+   * and runs over the tab in front.
+   */
+  readonly isTargetNamed?: boolean
   readonly vault: VaultRef
   /**
    * Whether the vault accepts operations. A vault still being scanned does: the
@@ -165,6 +170,8 @@ export interface CommandInvocation {
   readonly tab: string
   /** What the `arguments` steps were answered, by the name of each prompt. */
   readonly values?: Readonly<Record<string, string>>
+  /** Whether a place named its target, as `CommandTarget` says. */
+  readonly isTargetNamed?: boolean
 }
 
 /**

@@ -23,11 +23,26 @@ const listCopies = (): string[] => listPluginFiles(IMPORTER).filter((name) => na
 /** The link note the importer names after a video's address, at the root of the vault. */
 const getLinkNote = (id: string): string => `https---www.youtube.com-watch-v=${id}.md`
 
-const importAddress = async (page: Page, address: string): Promise<void> => {
+/**
+ * Imports the address, which makes its link note alone, and waits for the note's tab, named `tab`,
+ * in front.
+ */
+const importAddress = async (page: Page, address: string, tab: RegExp): Promise<void> => {
   await runCommand(page, 'Import link', /^Import link/)
   await getPaletteField(page).fill(address)
   await page.keyboard.press('Enter')
+  await expect(page.getByRole('tab', { name: tab, selected: true })).toBeVisible({
+    timeout: 30_000,
+  })
 }
+
+/** Fetches the text of the link note in front: the captions of a video. */
+const downloadText = (page: Page): Promise<void> =>
+  runCommand(page, 'Download captions', /^Download captions$/)
+
+/** Downloads the video of the link note in front. */
+const downloadVideo = (page: Page): Promise<void> =>
+  runCommandOverItem(page, 'Download media', /^Download media$/, /^Video$/)
 
 test.describe('a link to a video', () => {
   test.describe.configure({ timeout: 120_000 })
@@ -48,7 +63,9 @@ test.describe('a link to a video', () => {
   }) => {
     made.push(getLinkNote('tidalmill03'))
     await openWorkspace(page)
-    await importAddress(page, 'https://www.youtube.com/watch?v=tidalmill03')
+    await importAddress(page, 'https://www.youtube.com/watch?v=tidalmill03', /tidalmill03/)
+    await downloadText(page)
+    await downloadVideo(page)
     const tab = page.getByRole('tabpanel', { name: /tidalmill03/ })
     await expect(tab.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
     const copies = listCopies()
@@ -71,7 +88,9 @@ test.describe('a link to a video', () => {
   }) => {
     made.push(getLinkNote('tidalmill04'))
     await openWorkspace(page)
-    await importAddress(page, 'https://www.youtube.com/watch?v=tidalmill04')
+    await importAddress(page, 'https://www.youtube.com/watch?v=tidalmill04', /tidalmill04/)
+    await downloadText(page)
+    await downloadVideo(page)
     const tab = page.getByRole('tabpanel', { name: /tidalmill04/ })
     await expect(tab.getByText(CAPTION)).toBeVisible({ timeout: 30_000 })
     await expect(tab.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
@@ -99,7 +118,8 @@ test.describe('a link to an address that answers 404', () => {
     const before = await listFilePaths(request)
     await openWorkspace(page)
 
-    await importAddress(page, MISSING_PAGE_ADDRESS)
+    await importAddress(page, MISSING_PAGE_ADDRESS, /tide-tables/)
+    await downloadText(page)
 
     await page.locator('.tasks-status__trigger').click()
     await expect(page.locator('.task-popover')).toContainText('its text was not fetched')
