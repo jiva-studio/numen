@@ -69,16 +69,16 @@ describe('createBackendHandlers', () => {
     expect(deps.notifyVaultChange).toHaveBeenCalledExactlyOnceWith(['talks/a.mp3'])
   })
 
-  it('fails with the error of a run that did not succeed', async () => {
+  it('writes the error of a run that did not succeed as the plugin words it', async () => {
     const { deps, handlers } = createWith({ ok: false, error: 'no audio' })
 
-    await expect(
-      handlers.runBackendHandler({
-        pluginId: 'md.ears',
-        command: 'app:file.createText',
-        target: TARGET,
-      }),
-    ).rejects.toThrow('no audio')
+    await handlers.runBackendHandler({
+      pluginId: 'md.ears',
+      command: 'app:file.createText',
+      target: TARGET,
+    })
+
+    expect(deps.writeMessage).toHaveBeenCalledExactlyOnceWith('no audio', 'error')
     expect(deps.openFile).not.toHaveBeenCalled()
     expect(deps.notifyVaultChange).not.toHaveBeenCalled()
   })

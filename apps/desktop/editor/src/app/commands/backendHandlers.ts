@@ -1,7 +1,7 @@
 /**
  * The handlers of shared commands that run in their plugins' backends: the declarations the core
- * lists, the items the core lists for one, and a run of one that writes its message, opens the file
- * it returns and tells the plugins that the file it ran over changed.
+ * lists, the items the core lists for one, and a run of one that writes its message or its error,
+ * opens the file it returns and tells the plugins that the file it ran over changed.
  */
 import type { HandlerDeclaration, PluginHostDeps } from '@numen/plugin-host'
 import type { listDeclaredCommandItems, runDeclaredHandler } from '@/entities/plugin'
@@ -11,7 +11,7 @@ export interface BackendHandlersDeps {
   readonly getHandlers: () => readonly HandlerDeclaration[] | undefined
   readonly list: typeof listDeclaredCommandItems
   readonly run: typeof runDeclaredHandler
-  readonly writeMessage: (text: string, severity: 'info') => void
+  readonly writeMessage: (text: string, severity: 'info' | 'error') => void
   readonly openFile: (path: string) => Promise<void>
   /** Tells the plugins of the window that the files changed; the core sends no change of a text version. */
   readonly notifyVaultChange: (paths: readonly string[]) => void
@@ -35,7 +35,7 @@ export function createBackendHandlers(
           ...(argument === undefined ? {} : { argument }),
         },
       )
-      if (!outcome.ok) throw new Error(outcome.error)
+      if (!outcome.ok) return deps.writeMessage(outcome.error, 'error')
       if (target.path !== '') deps.notifyVaultChange([target.path])
       const { message, openedPath } = outcome.value
       if (message) deps.writeMessage(message, 'info')

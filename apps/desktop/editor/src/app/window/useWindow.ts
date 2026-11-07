@@ -283,7 +283,7 @@ function createPluginReports(
 /** The handlers of shared commands the window runs in their plugins' backends. */
 const createWindowHandlers = (
   declaredCommands: ReturnType<typeof useDeclaredCommands>,
-  writeMessage: (text: string, severity: 'info') => void,
+  writeMessage: (text: string, severity: 'info' | 'error') => void,
   tabOpeners: ReturnType<typeof fileOpeners>,
   hostHolder: { current?: import('@numen/plugin-host').PluginHost },
 ) =>
