@@ -79,7 +79,7 @@ describe('the items of a plugin command', () => {
     const handler = vi.fn()
     context.registerCommand({ id: 'chart.move', handler, listItems: () => WINDOWS })
 
-    await host.executeCommand(`${TIDE}:chart.move`, NOTE, 'w2')
+    await host.executeCommand(`${TIDE}:chart.move`, NOTE, { argument: 'w2' })
 
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, 'w2')
   })

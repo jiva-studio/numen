@@ -64,7 +64,15 @@ describe('a shared command that asks for a value', () => {
       input: 'arguments',
       prompts: [{ name: 'address', title: 'Web address', isRequired: true }],
     })
-    expect(entry?.isAvailable?.({ path: '', file: '', isReady: true } as CommandTarget)).toBe(true)
+    const window = {
+      path: '',
+      file: '',
+      tab: '',
+      isReady: true,
+      vault: { id: 'v', name: 'Harbor' },
+    }
+
+    expect(entry?.isAvailable?.(window as CommandTarget)).toBe(true)
   })
 
   it('runs its handler with the values given', async () => {
@@ -94,8 +102,7 @@ describe('a shared command that asks for a value', () => {
     expect(host.executeCommand).toHaveBeenCalledWith(
       'app:link.import',
       expect.objectContaining({ path: '' }),
-      undefined,
-      { address: 'https://example.com/tides' },
+      { values: { address: 'https://example.com/tides' } },
     )
   })
 })

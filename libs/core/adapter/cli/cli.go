@@ -96,14 +96,19 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	case "help", "-h", "--help":
 		return writeUsage(out, deps)
 	default:
-		if handlers := listSharedHandlers(deps, rest[0]); len(handlers) > 0 {
-			return runSharedCommand(ctx, out, deps, handlers, rest[1:])
-		}
-		if entry, isDeclared := findPluginCommand(deps, rest[0]); isDeclared {
-			return runPluginCommand(ctx, out, deps, entry, rest[1:])
-		}
-		return fmt.Errorf("unknown command %q", rest[0])
+		return runCommandOfPlugins(ctx, out, deps, rest)
 	}
+}
+
+// runCommandOfPlugins runs a shared command through a handler, or a command a plugin declares.
+func runCommandOfPlugins(ctx context.Context, out io.Writer, deps Deps, rest []string) error {
+	if handlers := listSharedHandlers(deps, rest[0]); len(handlers) > 0 {
+		return runSharedCommand(ctx, out, deps, handlers, rest[1:])
+	}
+	if entry, isDeclared := findPluginCommand(deps, rest[0]); isDeclared {
+		return runPluginCommand(ctx, out, deps, entry, rest[1:])
+	}
+	return fmt.Errorf("unknown command %q", rest[0])
 }
 
 // writeUsage writes the usage text and the commands the enabled plugins declare.

@@ -82,7 +82,7 @@ func TestASharedCommandWithSeveralHandlersAndNoPluginPickedRunsNothing(t *testin
 	}
 }
 
-func TestASharedCommandOverAFileNoHandlerTakesRunsNothing(t *testing.T) {
+func TestSharedCommand_FileWithoutHandlerRunsNothing(t *testing.T) {
 	deps, declared := createSharedCommandDeps()
 
 	_, err := runWithDeps(deps, "app:file.createText", "notebook", "notes/tide.md")
@@ -92,7 +92,7 @@ func TestASharedCommandOverAFileNoHandlerTakesRunsNothing(t *testing.T) {
 	}
 }
 
-func TestASharedCommandTakesTheArgumentsItDeclares(t *testing.T) {
+func TestSharedCommand_DeclaredArgumentsAreFlags(t *testing.T) {
 	deps, declared := createSharedCommandDeps()
 
 	if _, err := runWithDeps(deps, "app:link.import", "notebook", "--address", "https://example.com/tides"); err != nil {

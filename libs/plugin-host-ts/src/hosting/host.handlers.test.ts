@@ -92,7 +92,7 @@ describe('a shared command', () => {
   it('runs the handler of the plugin picked in its backend', async () => {
     const { host, runBackendHandler } = createHost()
 
-    expect(await host.executeCommand(CREATE, { ...SCAN, type: '' }, TIDES)).toBe(true)
+    expect(await host.executeCommand(CREATE, { ...SCAN, type: '' }, { argument: TIDES })).toBe(true)
     expect(runBackendHandler).toHaveBeenCalledWith({
       pluginId: TIDES,
       command: CREATE,
@@ -112,8 +112,8 @@ describe('a shared command', () => {
     const window = { ...SCAN, path: '', title: '', type: '' }
 
     expect(
-      await host.executeCommand('app:link.import', window, undefined, {
-        address: 'https://example.com/tides',
+      await host.executeCommand('app:link.import', window, {
+        values: { address: 'https://example.com/tides' },
       }),
     ).toBe(true)
     expect(runBackendHandler).toHaveBeenCalledWith({
@@ -146,7 +146,13 @@ describe('a shared command', () => {
     expect(await host.listCommandItems(DELETE, SCAN)).toStrictEqual([
       { id: `${SCANS}:org.example.scans/reading`, title: 'reading', group: SCANS },
     ])
-    await host.executeCommand(DELETE, { ...SCAN, type: '' }, `${SCANS}:org.example.scans/reading`)
+    await host.executeCommand(
+      DELETE,
+      { ...SCAN, type: '' },
+      {
+        argument: `${SCANS}:org.example.scans/reading`,
+      },
+    )
     expect(runBackendHandler).toHaveBeenCalledWith({
       pluginId: SCANS,
       command: DELETE,
@@ -173,7 +179,7 @@ describe('a shared command', () => {
     expect(await host.listCommandItems(CREATE, SCAN)).toStrictEqual([
       { id: `${SCANS}:fast`, title: 'Fast', group: SCANS },
     ])
-    await host.executeCommand(CREATE, { ...SCAN, type: '' }, `${SCANS}:fast`)
+    await host.executeCommand(CREATE, { ...SCAN, type: '' }, { argument: `${SCANS}:fast` })
     expect(handler).toHaveBeenCalledWith({ ...SCAN, type: '' }, 'fast')
     expect(runBackendHandler).not.toHaveBeenCalled()
     expect(host.getPaletteCommands()).toStrictEqual([])

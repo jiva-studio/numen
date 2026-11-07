@@ -10,7 +10,7 @@ import { createHandlerApi, isSharedCommand } from './handlers'
 import { reportError, runCommand } from './events'
 import type { HostRegistry } from './registry'
 import { matchesShortcut } from './shortcuts'
-import type { PluginHostDeps } from './types'
+import type { CommandRun, PluginHostDeps } from './types'
 
 /** The note a place's target is, by the note type the place read. */
 const toNote = (target: CommandTarget): CommandNote => ({ ...target, type: target.noteType ?? '' })
@@ -46,10 +46,10 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
     executeCommand: async (
       id: string,
       note: CommandNote,
-      argument?: string,
-      values?: Readonly<Record<string, string>>,
+      run: CommandRun = {},
     ): Promise<boolean> => {
-      if (isSharedCommand(id)) return handlers.runSharedCommand(id, note, argument, values)
+      const { argument } = run
+      if (isSharedCommand(id)) return handlers.runSharedCommand(id, { note, ...run })
       const command = findAvailable(id)
       if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
       let entry = command.entry

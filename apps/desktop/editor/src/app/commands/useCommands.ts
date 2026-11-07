@@ -131,7 +131,7 @@ export function createPaletteItems(
       await runInvocation(createInvocation(id, target, argument), getCommandDeps(), ANSWER_WORDS)
     },
     runPlugin: async (id, target, argument) => {
-      await pluginHost?.executeCommand(id, await getCommandNote(target), argument)
+      await pluginHost?.executeCommand(id, await getCommandNote(target), { argument })
     },
     readTarget: async (target) => {
       const { type, properties } = await getCommandNote(target)
@@ -157,12 +157,7 @@ export function useCommands(options: CommandsDepsOptions) {
     getTarget,
   })
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
-  const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(
-    options.paletteLists,
-    items,
-    getTarget,
-    runs,
-  )
+  const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
   const extra = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
   const commands = useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, extra)
 

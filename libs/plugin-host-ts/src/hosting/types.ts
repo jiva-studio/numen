@@ -90,6 +90,12 @@ export interface BackendHandlerRun {
   readonly values?: Readonly<Record<string, string>> | undefined
 }
 
+/** What a run of a command is given: the id of the item picked, and the values of the arguments of a shared command by name. */
+export interface CommandRun {
+  readonly argument?: string | undefined
+  readonly values?: Readonly<Record<string, string>> | undefined
+}
+
 export interface PluginPaletteCommand {
   readonly id: string
   readonly title: string

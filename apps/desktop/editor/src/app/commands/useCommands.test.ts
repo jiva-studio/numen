@@ -486,7 +486,7 @@ describe('a plugin command with items in the palette', () => {
     expect(executeCommand).toHaveBeenCalledExactlyOnceWith(
       MOVE.id,
       expect.objectContaining({ path: 'Tide.md' }),
-      'w2',
+      { argument: 'w2' },
     )
   })
 

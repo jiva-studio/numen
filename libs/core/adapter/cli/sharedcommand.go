@@ -116,29 +116,44 @@ func runSharedCommand(
 	}
 	defer closeInto(&err, closeRun)
 
-	if picked != "" {
-		handlers = slices.DeleteFunc(handlers, func(one plugincommand.Entry) bool { return one.PluginID != picked })
-	} else {
-		handlers = slices.DeleteFunc(handlers, func(one plugincommand.Entry) bool { return !run.IsAvailable(ctx, v, one, path) })
-	}
-	switch {
-	case len(handlers) == 0 && picked != "":
-		return fmt.Errorf("%w: %s handles no %s", plugincommand.ErrUnknownCommand, picked, fs.Name())
-	case len(handlers) == 0:
-		return fmt.Errorf("%w: no plugin handles %s over %q", plugincommand.ErrBadArguments, fs.Name(), path)
-	case len(handlers) > 1:
-		plugins := make([]string, 0, len(handlers))
-		for _, one := range handlers {
-			plugins = append(plugins, one.PluginID)
-		}
-		return fmt.Errorf("several plugins handle %s over %q; pick one with --%s: %s",
-			fs.Name(), path, pluginFlag, strings.Join(plugins, ", "))
+	handler, err := pickHandler(handlers, picked, path, func(one plugincommand.Entry) bool {
+		return run.IsAvailable(ctx, v, one, path)
+	})
+	if err != nil {
+		return err
 	}
 	result, err := run.Execute(ctx, v, plugincommand.Call{
-		PluginID: handlers[0].PluginID, Command: handlers[0].Command.ID, Path: path, Arguments: arguments,
+		PluginID: handler.PluginID, Command: handler.Command.ID, Path: path, Arguments: arguments,
 	})
 	if err != nil {
 		return err
 	}
 	return writeResult(out, result)
+}
+
+// pickHandler is the handler of the plugin picked, or else the one handler available over the path.
+func pickHandler(
+	handlers []plugincommand.Entry, picked, path string, isAvailable func(plugincommand.Entry) bool,
+) (plugincommand.Entry, error) {
+	id := handlers[0].Command.ID
+	if picked != "" {
+		index := slices.IndexFunc(handlers, func(one plugincommand.Entry) bool { return one.PluginID == picked })
+		if index < 0 {
+			return plugincommand.Entry{}, fmt.Errorf("%w: %s handles no %s", plugincommand.ErrUnknownCommand, picked, id)
+		}
+		return handlers[index], nil
+	}
+	available := slices.DeleteFunc(slices.Clone(handlers), func(one plugincommand.Entry) bool { return !isAvailable(one) })
+	switch len(available) {
+	case 0:
+		return plugincommand.Entry{}, fmt.Errorf("%w: no plugin handles %s over %q", plugincommand.ErrBadArguments, id, path)
+	case 1:
+		return available[0], nil
+	}
+	plugins := make([]string, 0, len(available))
+	for _, one := range available {
+		plugins = append(plugins, one.PluginID)
+	}
+	return plugincommand.Entry{}, fmt.Errorf("several plugins handle %s over %q; pick one with --%s: %s",
+		id, path, pluginFlag, strings.Join(plugins, ", "))
 }

@@ -6,12 +6,7 @@
 import { shallowRef, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { CommandItem, PluginHost } from '@numen/plugin-host'
-import type {
-  Command,
-  CommandTarget,
-  PaletteLists,
-  RunSupport,
-} from '@/features/command-palette'
+import type { Command, CommandTarget, PaletteLists, RunSupport } from '@/features/command-palette'
 import type { StepGroup } from '@/shared/steps'
 import { WORDS } from '@/shared/words'
 
@@ -79,33 +74,46 @@ function createPluginItems(deps: PluginItemsDeps) {
   return { getGroups, isEmpty, reset }
 }
 
+/** What the palette's lists are made of besides the plugin host. */
+interface PaletteParts {
+  /** The lists the window keeps for the commands without items of a plugin. */
+  readonly paletteLists: PaletteLists
+  /** The target of the palette. */
+  readonly getTarget: () => CommandTarget
+  readonly runs: RunSupport
+}
+
 /**
  * The lists of the palette: the pick list of a plugin command with items, and the lists the window
  * keeps for every other command.
  */
-export function createItemLists(
-  windowLists: PaletteLists,
-  pluginHost: ItemHost,
-  getTarget: () => CommandTarget,
-  runs: RunSupport,
-) {
+export function createItemLists(pluginHost: ItemHost, parts: PaletteParts) {
+  const { paletteLists: windowLists, getTarget, runs } = parts
   const items = createPluginItems({ pluginHost, getTarget })
   const lists: PaletteLists = {
     getStepGroups: (command, typed) =>
       items.getGroups(command, typed) ?? windowLists.getStepGroups(command, typed),
     previewItem: (command, item) => windowLists.previewItem(command, item),
   }
+  let paletteOpen: Readonly<Ref<boolean>> | undefined
   /** Asks again for the items each time the palette opens or closes. */
   const resetWhenClosed = (isOpen: Readonly<Ref<boolean>>): void => {
+    paletteOpen = isOpen
     watch(isOpen, () => items.reset())
   }
   /**
-   * The commands without those that list no item over the target of the palette, as VS Code shows no
-   * empty submenu. The items of each available command with items are read for it.
+   * The commands without those that list no item over the target of the palette while it is open, as
+   * VS Code shows no empty submenu. The items of each available command with items are read for it.
    */
   const removeEmptyCommands = (commands: readonly Command[]): readonly Command[] => {
+    if (!paletteOpen?.value) return commands
     const target = getTarget()
-    return commands.filter((one) => !one.isAvailable(target, runs) || !items.isEmpty(one.id))
+    return commands.filter(
+      (one) =>
+        !pluginHost?.hasCommandItems(one.id) ||
+        !one.isAvailable(target, runs) ||
+        !items.isEmpty(one.id),
+    )
   }
   return { lists, resetWhenClosed, removeEmptyCommands }
 }

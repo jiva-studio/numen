@@ -8,7 +8,7 @@ import { formatCommandId } from '../commandId'
 import { isCommandAvailable } from './commandWhen'
 import { reportError, runCommand } from './events'
 import type { HostRegistry } from './registry'
-import type { HandlerDeclaration, PluginHostDeps } from './types'
+import type { CommandRun, HandlerDeclaration, PluginHostDeps } from './types'
 
 /** Joins the plugin id and the id of an item a handler offers, in the id of a shared command's item. */
 const ITEM_SEPARATOR = ':'
@@ -57,11 +57,9 @@ async function listOwnItems(
   return undefined
 }
 
-/** One run of a shared command: the note, the item picked and the values of its arguments by name. */
-interface SharedRun {
+/** One run of a shared command over the note. */
+interface SharedRun extends CommandRun {
   readonly note: CommandNote
-  readonly argument?: string | undefined
-  readonly values?: Readonly<Record<string, string>> | undefined
 }
 
 /**
@@ -153,11 +151,6 @@ export function createHandlerApi(deps: PluginHostDeps, registry: HostRegistry) {
     isSharedCommand,
     listHandlerItems: (command: string, note: CommandNote) =>
       listHandlerItems(parts, command, note),
-    runSharedCommand: (
-      command: string,
-      note: CommandNote,
-      argument?: string,
-      values?: Readonly<Record<string, string>>,
-    ) => runSharedCommand(parts, command, { note, argument, values }),
+    runSharedCommand: (command: string, run: SharedRun) => runSharedCommand(parts, command, run),
   }
 }

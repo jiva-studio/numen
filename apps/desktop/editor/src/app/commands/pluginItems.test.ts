@@ -35,8 +35,14 @@ const settle = async () => {
 function setUp(itemsById: Readonly<Record<string, readonly CommandItem[]>>) {
   const listCommandItems = vi.fn(async (id: string) => itemsById[id] ?? [])
   const host = { hasCommandItems: (id: string) => id in itemsById, listCommandItems }
-  const lists = createItemLists(WINDOW_LISTS, host, () => TARGET, RUNS)
-  return { ...lists, listCommandItems }
+  const lists = createItemLists(host, {
+    paletteLists: WINDOW_LISTS,
+    getTarget: () => TARGET,
+    runs: RUNS,
+  })
+  const isOpen = ref(true)
+  lists.resetWhenClosed(isOpen)
+  return { ...lists, listCommandItems, isOpen }
 }
 
 describe('the commands with items in the palette', () => {
@@ -45,20 +51,20 @@ describe('the commands with items in the palette', () => {
       'tab.move': [{ id: 'w1', title: 'Window 1' }],
       'version.delete': [],
     })
-    const listed = [createCommand('tab.move'), createCommand('version.delete'), createCommand('x')]
+    const palette = [createCommand('tab.move'), createCommand('version.delete'), createCommand('x')]
 
-    removeEmptyCommands(listed)
+    removeEmptyCommands(palette)
     await settle()
 
-    expect(removeEmptyCommands(listed).map((one) => one.id)).toStrictEqual(['tab.move', 'x'])
+    expect(removeEmptyCommands(palette).map((one) => one.id)).toStrictEqual(['tab.move', 'x'])
   })
 
   it('are listed while their items are being read', () => {
     const { removeEmptyCommands } = setUp({ 'version.delete': [] })
 
-    expect(removeEmptyCommands([createCommand('version.delete')]).map((one) => one.id)).toStrictEqual([
-      'version.delete',
-    ])
+    expect(
+      removeEmptyCommands([createCommand('version.delete')]).map((one) => one.id),
+    ).toStrictEqual(['version.delete'])
   })
 
   it('read no items of a command that is not available over what is in front', () => {
@@ -70,18 +76,24 @@ describe('the commands with items in the palette', () => {
   })
 
   it('are read again each time the palette opens', async () => {
-    const { removeEmptyCommands, resetWhenClosed, listCommandItems } = setUp({
-      'version.delete': [],
-    })
-    const isOpen = ref(false)
-    resetWhenClosed(isOpen)
+    const { removeEmptyCommands, isOpen, listCommandItems } = setUp({ 'version.delete': [] })
     removeEmptyCommands([createCommand('version.delete')])
     await settle()
 
+    isOpen.value = false
+    await nextTick()
     isOpen.value = true
     await nextTick()
     removeEmptyCommands([createCommand('version.delete')])
 
     expect(listCommandItems).toHaveBeenCalledTimes(2)
+  })
+
+  it('are all listed while the palette is closed, and no item is read', () => {
+    const { removeEmptyCommands, isOpen, listCommandItems } = setUp({ 'version.delete': [] })
+    isOpen.value = false
+
+    expect(removeEmptyCommands([createCommand('version.delete')])).toHaveLength(1)
+    expect(listCommandItems).not.toHaveBeenCalled()
   })
 })
