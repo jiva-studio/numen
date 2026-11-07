@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '../support/test.js'
 import {
+  getPaletteField,
   openVaultFile,
   openWorkspace,
   runCommand,
@@ -17,17 +18,26 @@ const MOCK_TRANSCRIPT = /Mock transcribed text/
 /** What the mock proofreader of `-debug-mock-ml` adds to the end of every line it puts right. */
 const PROOFREAD_MARK = 'proofread'
 
+/** Closes the palette: Escape leaves a pick list for the list of commands, and closes that list. */
+const closePalette = async (page: Page): Promise<void> => {
+  const field = getPaletteField(page)
+  for (let press = 0; press < 2 && (await field.isVisible()); press += 1) {
+    await page.keyboard.press('Escape')
+  }
+  await expect(field).toBeHidden()
+}
+
 /**
  * Waits until the pick list of deleting a proofreading offers the version a proofreading made of
  * the open file beside the one it was made from.
  */
 const expectProofreadVersion = async (page: Page): Promise<void> => {
   await expect(async () => {
-    await page.keyboard.press('Escape')
+    await closePalette(page)
     await runCommand(page, 'Delete text', /^Delete text/)
     await expect(page.getByRole('option')).toHaveCount(2, { timeout: 2_000 })
   }).toPass({ timeout: 90_000 })
-  await page.keyboard.press('Escape')
+  await closePalette(page)
 }
 
 /** Proofreads the live text version of the open file, picked from the versions the command lists. */
