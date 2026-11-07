@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"sync"
@@ -176,14 +177,18 @@ func newCommands(transcriber *Transcriber, hosted Host) (*command.Registry, erro
 	return commands, nil
 }
 
-// newTranscribeCommand transcribes the recording of the run, in the vault the host has open, and
-// waits for it.
+// newTranscribeCommand starts the transcription of the recording of the run, in the vault the host
+// has open, and answers once it is started. The task of the transcription shows how it ends.
 func newTranscribeCommand(transcriber *Transcriber) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		if err := transcriber.Transcribe(ctx, "", req.Path); err != nil {
+		isStarted, err := transcriber.Start(ctx, "", req.Path)
+		if err != nil {
 			return command.Result{}, err
 		}
-		return command.Result{Message: "transcribed " + req.Path, OpenedPath: ""}, nil
+		if !isStarted {
+			return command.Result{}, fmt.Errorf("%s: %w", req.Path, errAlreadyTranscribing)
+		}
+		return command.Result{Message: "transcribing " + req.Path, OpenedPath: ""}, nil
 	}
 }
 

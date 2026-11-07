@@ -37,6 +37,7 @@ type blockingRecogniser struct {
 	startCh   chan struct{}
 	startOnce *sync.Once
 	release   chan struct{}
+	failure   error
 }
 
 func (r blockingRecogniser) Recognise(ctx context.Context, page image.Image) ([]recognition.Block, error) {
@@ -45,6 +46,9 @@ func (r blockingRecogniser) Recognise(ctx context.Context, page image.Image) ([]
 	case <-r.release:
 	case <-ctx.Done():
 		return nil, ctx.Err()
+	}
+	if r.failure != nil {
+		return nil, r.failure
 	}
 	return r.MockRecogniser.Recognise(ctx, page)
 }

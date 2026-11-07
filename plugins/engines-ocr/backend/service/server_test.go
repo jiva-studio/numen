@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
@@ -16,16 +17,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
-
-type emptyRecogniser struct{}
-
-func (emptyRecogniser) GetRecognitionModel() recognition.Model {
-	return recognition.Model{Layout: "mock", Recogniser: "mock", DPI: 72, From: "mock"}
-}
-
-func (emptyRecogniser) Recognise(context.Context, image.Image) ([]recognition.Block, error) {
-	return nil, nil
-}
 
 // opened counts the recognisers a factory opened and the ones closed.
 type opened struct {
@@ -100,70 +91,91 @@ func TestOpenEngineReturnsMockRecogniser(t *testing.T) {
 	}
 }
 
-func TestTheHandlerOfCreateTextReportsPages(t *testing.T) {
-	v := hosttest.New("Physics")
-	raw, err := os.ReadFile("../document/testdata/scan.pdf")
+// runHandlerWithin runs the handler of the shared command and fails the test when it does not answer
+// within workDeadline.
+func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (command.Result, error) {
+	t.Helper()
+	commands, err := newCommands(s.tools, recognition.Host{Vault: s.vault, Store: s.vault.Store(), Texts: s.texts, Queue: s.queue})
 	if err != nil {
 		t.Fatal(err)
 	}
-	v.File("books/scan.pdf", string(raw))
-	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
-	texts.SetStore("md.numen.engines.ocr", v.Store())
-	recognitions, err := recognition.New(
-		recognition.Host{Vault: v, Store: v.Store(), Texts: texts, Queue: hosttest.NewQueue()},
-		func(context.Context) (recognition.Recogniser, error) { return engine.MockRecogniser{}, nil },
-	)
-	if err != nil {
-		t.Fatal(err)
+	type answer struct {
+		res command.Result
+		err error
 	}
-	if dir := os.Getenv("NUMEN_TEST_WASM_CACHE"); dir != "" {
-		compilation := wasm.NewCompilationCache(dir)
-		t.Cleanup(func() {
-			if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
-				t.Error(err)
-			}
-		})
-		recognitions.SetCompilationCache(compilation)
+	answers := make(chan answer, 1)
+	go func() {
+		res, err := commands.RunCommand(t.Context(), req)
+		answers <- answer{res, err}
+	}()
+	select {
+	case got := <-answers:
+		return got.res, got.err
+	case <-time.After(workDeadline):
+		t.Fatalf("%s did not answer within %v while the file was recognised", req.Command, workDeadline)
+		return command.Result{}, nil
 	}
-	commands, err := newCommands(recognitions, recognition.Host{Vault: v, Store: v.Store(), Texts: texts, Queue: hosttest.NewQueue()})
-	if err != nil {
-		t.Fatal(err)
-	}
-	run := func(ctx context.Context, req command.Request) (command.Result, error) { return commands.RunCommand(ctx, req) }
+}
 
-	res, err := run(t.Context(), command.Request{Command: "app:file.createText", Path: "books/scan.pdf"})
-	if err != nil || !strings.Contains(res.Message, "recognised 2 pages of books/scan.pdf") {
+func TestTheHandlerOfCreateTextAnswersWhileTheTaskRecognises(t *testing.T) {
+	s := newToolFixture(t)
+
+	res, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: scanPath})
+
+	if err != nil || res.Message != "recognising "+scanPath {
 		t.Fatalf("answered %+v (%v)", res, err)
 	}
-	if _, err := run(t.Context(), command.Request{Command: "app:file.createText", Path: "books/gone.pdf"}); err == nil {
-		t.Fatal("a file that is not there was recognised")
+	s.waitStarted(t)
+	close(s.recogniser.release)
+	s.waitFinished(t, recognition.GetTaskID(scanPath))
+	if !hasRecognition(t, s.texts, scanPath) {
+		t.Error("the scan has no recognition once its task ended")
 	}
-	if _, err := run(t.Context(), command.Request{Command: "app:version.delete", Path: "books/scan.pdf"}); !errors.Is(err, command.ErrBadArguments) {
-		t.Fatalf("a deletion naming no version answered %v, want ErrBadArguments", err)
-	}
-	if _, err := run(t.Context(), command.Request{Command: "recognition.create", Path: "books/scan.pdf"}); !errors.Is(err, command.ErrUnknownCommand) {
-		t.Fatalf("the command of before answered %v, want ErrUnknownCommand", err)
-	}
+}
 
-	emptyRecognitions, err := recognition.New(
-		recognition.Host{Vault: v, Store: v.Store(), Texts: texts, Queue: hosttest.NewQueue()},
-		func(context.Context) (recognition.Recogniser, error) { return emptyRecogniser{}, nil },
-	)
+func TestTheHandlerOfCreateTextLeavesAFailedRecognitionToItsTask(t *testing.T) {
+	s := newToolFixture(t)
+	s.recogniser.failure = errors.New("the page cannot be decoded")
+	close(s.recogniser.release)
+
+	_, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: scanPath})
+
 	if err != nil {
-		t.Fatal(err)
+		t.Errorf("a failed recognition was answered %v, want the failure on its task alone", err)
 	}
-	if dir := os.Getenv("NUMEN_TEST_WASM_CACHE"); dir != "" {
-		compilation := wasm.NewCompilationCache(dir)
-		t.Cleanup(func() {
-			if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
-				t.Error(err)
-			}
-		})
-		emptyRecognitions.SetCompilationCache(compilation)
+	deadline := time.Now().Add(workDeadline)
+	for !hasFailedTask(s.queue.Queue, recognition.GetTaskID(scanPath), "the page cannot be decoded") {
+		if time.Now().After(deadline) {
+			t.Fatalf("no task failed within %v; tasks %+v", workDeadline, s.queue.ListTasks())
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
-	emptyRes, err := newRecogniseCommand(emptyRecognitions)(t.Context(), command.Request{Command: "app:file.createText", Path: "books/scan.pdf"})
-	if err != nil || emptyRes.Message != "books/scan.pdf says nothing that could be read, and nothing was kept" {
-		t.Fatalf("empty scan answered %+v (%v)", emptyRes, err)
+}
+
+// hasFailedTask reports whether the queue shows the task of the id failed with a reason that holds the text.
+func hasFailedTask(queue *hosttest.Queue, id, text string) bool {
+	for _, one := range queue.ListTasks() {
+		if one.ID == id && strings.Contains(one.FailureReason, text) {
+			return true
+		}
+	}
+	return false
+}
+
+func TestTheHandlerOfCreateTextFailsBeforeAnyTask(t *testing.T) {
+	s := newToolFixture(t)
+
+	if _, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: "books/gone.pdf"}); err == nil {
+		t.Error("a file that is not there was answered as started")
+	}
+	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("the tasks %+v are shown for a file that is not there", tasks)
+	}
+	if _, err := s.runHandlerWithin(t, command.Request{Command: "app:version.delete", Path: scanPath}); !errors.Is(err, command.ErrBadArguments) {
+		t.Errorf("a deletion naming no version answered %v, want ErrBadArguments", err)
+	}
+	if _, err := s.runHandlerWithin(t, command.Request{Command: "recognition.create", Path: scanPath}); !errors.Is(err, command.ErrUnknownCommand) {
+		t.Errorf("the command of before answered %v, want ErrUnknownCommand", err)
 	}
 }
 

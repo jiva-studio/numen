@@ -294,29 +294,82 @@ func (s *scene) runHandler(t *testing.T, req command.Request) (command.Result, e
 	return commands.RunCommand(t.Context(), req)
 }
 
-func TestTheHandlerOfCreateTextWaitsForTheTranscript(t *testing.T) {
-	s := newScene(t)
-	res, err := s.runHandler(t, command.Request{Command: "app:file.createText", Path: lecture})
-	if err != nil || res.Message != "transcribed "+lecture {
-		t.Fatalf("answered %+v (%v)", res, err)
+// runHandlerWithin runs the handler of the shared command and fails the test when it does not answer
+// within workDeadline.
+func (s *toolFixture) runHandlerWithin(t *testing.T, req command.Request) (command.Result, error) {
+	t.Helper()
+	commands, err := newCommands(s.transcriber, Host{Vault: s.vault, Store: s.store, Texts: s.texts, Queue: s.finishing})
+	if err != nil {
+		t.Fatal(err)
 	}
-	if _, text := s.readLive(t); text != "first words\nsecond words\n" {
-		t.Errorf("the version reads %q once the command answered", text)
+	type answer struct {
+		res command.Result
+		err error
 	}
-	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
-		t.Errorf("the tasks %+v are still shown", tasks)
+	answers := make(chan answer, 1)
+	go func() {
+		res, err := commands.RunCommand(t.Context(), req)
+		answers <- answer{res, err}
+	}()
+	select {
+	case got := <-answers:
+		return got.res, got.err
+	case <-time.After(workDeadline):
+		t.Fatalf("%s did not answer within %v while the recording was transcribed", req.Command, workDeadline)
+		return command.Result{}, nil
 	}
 }
 
-func TestTheHandlerOfCreateTextReportsAnUnopenableRecording(t *testing.T) {
-	s := newScene(t)
-	s.model.isBroken = true
+func TestTheHandlerOfCreateTextAnswersWhileTheTaskTranscribes(t *testing.T) {
+	s := newToolFixture(t)
 
-	_, err := s.runHandler(t, command.Request{Command: "app:file.createText", Path: lecture})
+	res, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: lecture})
 
-	if err == nil || !strings.Contains(err.Error(), "cannot be opened") {
-		t.Errorf("a recording that cannot be opened was answered %v", err)
+	if err != nil || res.Message != "transcribing "+lecture {
+		t.Fatalf("answered %+v (%v)", res, err)
 	}
+	s.waitStarted(t)
+	close(s.blocking.release)
+	s.waitFinished(t, getTaskID(lecture))
+	if _, text := s.readLive(t); text != "first words\nsecond words\n" {
+		t.Errorf("the version reads %q once the task ended", text)
+	}
+}
+
+func TestCreateTextFailsTheTaskOfAnUnopenableRecording(t *testing.T) {
+	s := newToolFixture(t)
+	s.model.isBroken = true
+	close(s.blocking.release)
+
+	_, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: lecture})
+
+	if err != nil {
+		t.Errorf("a recording that cannot be opened was answered %v, want the failure on its task alone", err)
+	}
+	select {
+	case failed := <-s.finishing.failCh:
+		if failed.ID != getTaskID(lecture) || !strings.Contains(failed.FailureReason, "cannot be opened") {
+			t.Errorf("the failed task is %+v", failed)
+		}
+	case <-time.After(workDeadline):
+		t.Fatalf("no task failed within %v; tasks %+v", workDeadline, s.queue.ListTasks())
+	}
+}
+
+func TestTheHandlerOfCreateTextFailsForARecordingBeingTranscribed(t *testing.T) {
+	s := newToolFixture(t)
+	if _, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: lecture}); err != nil {
+		t.Fatal(err)
+	}
+	s.waitStarted(t)
+
+	_, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: lecture})
+
+	if !errors.Is(err, errAlreadyTranscribing) {
+		t.Errorf("a second run while the first transcribes answered %v, want errAlreadyTranscribing", err)
+	}
+	close(s.blocking.release)
+	s.waitFinished(t, getTaskID(lecture))
 }
 
 func TestTheHandlerOfDeleteTextNeedsAVersion(t *testing.T) {

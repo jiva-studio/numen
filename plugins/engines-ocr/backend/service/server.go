@@ -161,11 +161,11 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	if err != nil {
 		return err
 	}
-	commands, err := newCommands(recognitions, h)
+	agentTools := NewTools(recognitions)
+	commands, err := newCommands(agentTools, h)
 	if err != nil {
 		return err
 	}
-	agentTools := NewTools(recognitions)
 	registry, err := agentTools.Registry()
 	if err != nil {
 		return err
@@ -181,9 +181,9 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 }
 
 // newCommands is the handlers the manifest declares.
-func newCommands(recognitions *recognition.Recognition, h recognition.Host) (*command.Registry, error) {
+func newCommands(agentTools *Tools, h recognition.Host) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add("app:file.createText", newRecogniseCommand(recognitions)); err != nil {
+	if err := commands.Add("app:file.createText", newRecogniseCommand(agentTools)); err != nil {
 		return nil, err
 	}
 	if err := commands.Add("app:version.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
@@ -192,22 +192,21 @@ func newCommands(recognitions *recognition.Recognition, h recognition.Host) (*co
 	return commands, nil
 }
 
-// newRecogniseCommand recognises the file of the run and waits for completion.
-func newRecogniseCommand(recognitions *recognition.Recognition) command.Run {
+// newRecogniseCommand starts the recognition of the file of the run in the background, as the tool
+// does, and answers once it is started. The task of the recognition shows how it ends. A file that is
+// not there fails the run before anything starts.
+func newRecogniseCommand(agentTools *Tools) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		res, err := recognitions.Recognise(ctx, recognition.Request{Vault: "", Path: req.Path})
+		if _, err := agentTools.recognitions.StatFile(ctx, "", req.Path); err != nil {
+			return command.Result{}, err
+		}
+		state, err := agentTools.start(ctx, "", req.Path)
 		if err != nil {
 			return command.Result{}, err
 		}
-		if res.IsEmpty {
-			return command.Result{
-				Message:    fmt.Sprintf("%s says nothing that could be read, and nothing was kept", req.Path),
-				OpenedPath: "",
-			}, nil
+		if state == stateRunning {
+			return command.Result{}, fmt.Errorf("%s: %w", req.Path, recognition.ErrAlreadyRecognising)
 		}
-		return command.Result{
-			Message:    fmt.Sprintf("recognised %d pages of %s", res.Pages, req.Path),
-			OpenedPath: "",
-		}, nil
+		return command.Result{Message: "recognising " + req.Path, OpenedPath: ""}, nil
 	}
 }
