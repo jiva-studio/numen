@@ -95,7 +95,7 @@ test.describe('a link to a video', () => {
     await expect(tab.getByText(CAPTION)).toBeVisible({ timeout: 30_000 })
     await expect(tab.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
 
-    await runCommand(page, 'Delete text', /^Delete text$/)
+    await runCommandOverItem(page, 'Delete text', /^Delete text$/, /\(live\)$/)
     await expect(tab.getByText(CAPTION)).toHaveCount(0)
 
     await runCommand(page, 'Download captions', /^Download captions$/)
@@ -119,12 +119,15 @@ test.describe('a link to an address that answers 404', () => {
     await openWorkspace(page)
 
     await importAddress(page, MISSING_PAGE_ADDRESS, /tide-tables/)
-    await downloadText(page)
-
-    await page.locator('.tasks-status__trigger').click()
-    await expect(page.locator('.task-popover')).toContainText('its text was not fetched')
     const added = (await listFilePaths(request)).filter((one) => !before.includes(one))
     made.push(...added)
     expect(added).toEqual([expect.stringMatching(/unreachable\.numen\.test.*tide-tables\.md$/)])
+    await downloadText(page)
+
+    await page.locator('.tasks-status__trigger').click()
+    const popover = page.locator('.task-popover')
+    await expect(popover).toContainText('Fetching the text of a link')
+    await expect(popover).toContainText('tide-tables answered 404 Not Found')
+    await expect(popover).not.toContainText('Numen is not responding')
   })
 })
