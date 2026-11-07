@@ -135,7 +135,9 @@ const getShortcutChord = (shortcut, where) => {
  *   shortcut is drawn as.
  *
  * The manifest declares every command; the frontend scan only confirms that each id it
- * registers is declared, and the commands it registers are the frontend's.
+ * registers is declared, and the commands it registers are the frontend's. An id the manifest
+ * names under `contributes.handlers` is a shared command the frontend handles, and is no command
+ * of the plugin.
  */
 export const getPluginCommands = async (target, plugins = PLUGINS) => {
   const found = []
@@ -143,7 +145,10 @@ export const getPluginCommands = async (target, plugins = PLUGINS) => {
     if (!manifest.targets.includes(target)) continue
     const at = new URL(`${name}/`, plugins)
     const all = manifest.contributes?.commands ?? []
-    const registered = manifest.frontend ? readRegisteredIds(at, name) : []
+    const handled = (manifest.contributes?.handlers ?? []).map((one) => one.command)
+    const registered = (manifest.frontend ? readRegisteredIds(at, name) : []).filter(
+      (id) => !handled.includes(id),
+    )
     for (const id of registered) {
       if (!all.some((one) => one.id === id)) {
         fail(`${name} registers ${id}, which its manifest does not declare`)

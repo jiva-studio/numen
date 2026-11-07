@@ -1,7 +1,7 @@
 /**
  * The slot entries of the plugins in the tree: each names a slot of the window or a submenu a plugin
- * declares, and a command the manifest declares or the editor provides; the window and the host name no
- * plugin.
+ * declares, and a command the manifest declares, the editor provides or the application shares; the
+ * window and the host name no plugin.
  */
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -16,6 +16,11 @@ const SLOTS = JSON.parse(readFileSync(join(ROOT, 'libs/protocol/slots.json'), 'u
   (one) => one.name,
 )
 const APP_PREFIX = 'app:'
+const SHARED_COMMANDS = new Set(
+  JSON.parse(readFileSync(join(ROOT, 'libs/protocol/commands.json'), 'utf8')).commands.map(
+    (one) => one.id,
+  ),
+)
 
 const isTestFile = (name) => /\.(test|stories|spec)\.[cm]?[jt]s$/.test(name)
 
@@ -122,7 +127,10 @@ test('every slot entry of a manifest of the tree is in a known place and names a
       )
       if (!entry.command) continue
       if (entry.command.startsWith(APP_PREFIX)) {
-        assert.ok(editorCommands.has(entry.command), `${where} is no command of the editor`)
+        assert.ok(
+          editorCommands.has(entry.command) || SHARED_COMMANDS.has(entry.command),
+          `${where} is neither a command of the editor nor a shared command`,
+        )
         if (entry.slot === 'titleBar.commands') {
           assert.ok(
             editorCommands.get(entry.command)?.hasIconName,

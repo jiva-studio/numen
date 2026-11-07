@@ -1,6 +1,7 @@
 /**
  * The commands of the plugins in the tree: each is declared under `contributes.commands`, and the
- * frontend registers only the id and the handler.
+ * frontend registers only the id and the handler. A shared command the manifest handles under
+ * `contributes.handlers` is registered under its id, with the items of its menu or without.
  */
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
@@ -13,6 +14,10 @@ const listPluginRegistrations = (name) => {
   const frontend = join(PLUGINS_DIR, name, 'frontend')
   return existsSync(frontend) ? listRegistrations(frontend) : []
 }
+
+/** The shared commands a manifest handles under `contributes.handlers`. */
+const getHandledIds = (document) =>
+  new Set((document.contributes?.handlers ?? []).map((one) => one.command))
 
 test('no manifest of the tree declares commands at the top level', () => {
   for (const { name, document } of readPluginManifests()) {
@@ -33,24 +38,30 @@ test('every command a manifest declares has a title and an icon name', () => {
   }
 })
 
-test('a frontend registers a command with an id and a handler only', () => {
-  for (const { name } of readPluginManifests()) {
-    for (const { file, fields } of listPluginRegistrations(name)) {
+test('a frontend registers a command with an id and a handler, and a shared command its items', () => {
+  for (const { name, document } of readPluginManifests()) {
+    const handled = getHandledIds(document)
+    for (const { file, fields, id } of listPluginRegistrations(name)) {
       assert.ok(!fields.includes(UNREADABLE_FIELD), `${file} registers options this cannot read`)
+      const allowed =
+        handled.has(id) && fields.includes('listItems')
+          ? ['handler', 'id', 'listItems']
+          : ['handler', 'id']
       assert.deepEqual(
         [...fields].sort(),
-        ['handler', 'id'],
+        allowed,
         `${file} registers ${fields.join(', ')}`,
       )
     }
   }
 })
 
-test('every command a frontend registers is declared by its manifest', () => {
+test('every command a frontend registers is declared or handled by its manifest', () => {
   for (const { name, document } of readPluginManifests()) {
     const declared = new Set((document.contributes?.commands ?? []).map((one) => one.id))
+    const handled = getHandledIds(document)
     for (const { file, id } of listPluginRegistrations(name)) {
-      assert.ok(declared.has(id), `${file} registers ${id}, which ${name} does not declare`)
+      assert.ok(declared.has(id) || handled.has(id),`${file} registers ${id}, which ${name} does not declare`)
     }
   }
 })
