@@ -308,6 +308,10 @@ type repeatingTexts struct {
 	host.Texts
 }
 
+func (r repeatingTexts) With(id domain.VaultID) host.Texts {
+	return repeatingTexts{Texts: r.Texts.With(id)}
+}
+
 func (r repeatingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
 	page, err := r.Texts.ReadText(ctx, path, id, "")
 	if err != nil {

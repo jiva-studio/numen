@@ -104,7 +104,7 @@ func TestVaultAddWithoutANameUsesTheFolderName(t *testing.T) {
 
 func TestVaultAddWithoutAPathReturnsTheHostError(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
-	for _, arguments := range []string{`{}`, `{"name":"Meadow"}`} {
+	for _, arguments := range []string{`{"path":""}`, `{"path":"","name":"Meadow"}`} {
 		text := getRejectionText(t, registry, geologyVault, "vault_add", arguments)
 		if want := " is not an absolute path"; !strings.Contains(text, want) {
 			t.Errorf("vault_add %s gave %q, want the host's error %q", arguments, text, want)
