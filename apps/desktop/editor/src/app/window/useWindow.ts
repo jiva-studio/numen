@@ -285,6 +285,7 @@ const createWindowHandlers = (
   declaredCommands: ReturnType<typeof useDeclaredCommands>,
   writeMessage: (text: string, severity: 'info') => void,
   tabOpeners: ReturnType<typeof fileOpeners>,
+  hostHolder: { current?: import('@numen/plugin-host').PluginHost },
 ) =>
   createBackendHandlers({
     getHandlers: () => declaredCommands.handlers.value,
@@ -292,6 +293,7 @@ const createWindowHandlers = (
     run: runDeclaredHandler,
     writeMessage,
     openFile: (path) => tabOpeners.openFile(path, '', 'current').then(() => undefined),
+    notifyVaultChange: (paths) => hostHolder.current?.notifyVaultChange({ paths }),
   })
 
 /** The type and the properties of the note at the path, which the menu of its tab is read over. */
@@ -349,7 +351,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const { pluginHost, pluginLoader } = createPluginSupport({
     slots: slots.hostDeps,
     getCommandDeclarations: () => declaredCommands.declarations.value,
-    handlers: createWindowHandlers(declaredCommands, writeMessage, tabOpeners),
+    handlers: createWindowHandlers(declaredCommands, writeMessage, tabOpeners, hostHolder),
     windowTabs,
     tabLinks,
     tabOpeners,
