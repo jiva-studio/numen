@@ -1,7 +1,7 @@
 import { test, expect, type Locator, type Page } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace.js'
 import { writeSetting } from '../../support/vault.js'
-import { setPlatformAgent } from '../../support/browser.js'
+import { readFrameCalls, serveRuntime } from '../../support/runtime.js'
 
 /**
  * The title bar the Title bar plugin draws, the window without it, and the CSS markers the Wails
@@ -9,36 +9,6 @@ import { setPlatformAgent } from '../../support/browser.js'
  * runtime, which records the calls of the window buttons and names the platform.
  */
 const BAR_ID = 'md.numen.views.titleBar'
-
-type Platform = 'windows' | 'mac'
-
-/** A module in the place of /wails/runtime.js: the window state, and a list of the calls made. */
-const createRuntime = (platform: Platform): string => `
-const calls = (globalThis.__frameCalls ??= [])
-export const Window = {
-  Minimise: async () => { calls.push('Minimise') },
-  ToggleMaximise: async () => { calls.push('ToggleMaximise') },
-  Close: async () => { calls.push('Close') },
-  IsMaximised: async () => false,
-  IsFullscreen: async () => false,
-}
-export const System = {
-  IsMac: () => ${platform === 'mac'},
-  IsWindows: () => ${platform === 'windows'},
-  IsLinux: () => false,
-}
-`
-
-/** Serves the runtime of the platform, and names the platform in the user agent the plugins read. */
-const serveRuntime = async (page: Page, platform: Platform): Promise<void> => {
-  await setPlatformAgent(page, platform)
-  await page.route('**/wails/runtime.js', (route) =>
-    route.fulfill({ contentType: 'text/javascript', body: createRuntime(platform) }),
-  )
-}
-
-const readFrameCalls = (page: Page): Promise<string[]> =>
-  page.evaluate(() => [...((globalThis as { __frameCalls?: string[] }).__frameCalls ?? [])])
 
 /** The value of a custom property as the element computes it, inherited ones included. */
 const readProperty = (locator: Locator, name: string): Promise<string> =>
