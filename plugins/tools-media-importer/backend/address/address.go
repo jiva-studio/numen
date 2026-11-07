@@ -36,7 +36,7 @@ func Parse(raw string) (URL, error) {
 	}
 	if port := address.Port(); port == "80" && address.Scheme == "http" ||
 		port == "443" && address.Scheme == "https" {
-		address.Host = address.Hostname()
+		address.Host = strings.TrimSuffix(address.Host, ":"+port)
 	}
 	address.Fragment, address.RawFragment = "", ""
 	address.User = nil
