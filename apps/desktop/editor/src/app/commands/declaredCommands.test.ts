@@ -138,6 +138,40 @@ describe('a declared command with items', () => {
 })
 
 describe('a run of a declared command', () => {
+  it('sends that a place named its target', async () => {
+    const run = vi.fn().mockResolvedValue({ ok: true, value: { message: '', openedPath: '' } })
+    const declared = useDeclaredCommands({
+      list: async () => ({ commands: [createSample], slots: [] }),
+      run,
+    })
+    await declared.load()
+
+    await runInvocation(
+      {
+        id: getPaletteId(createSample),
+        path: 'Glaciers',
+        vault: { id: 'v', name: 'V' },
+        note: null,
+        title: 'Glaciers',
+        file: 'Glaciers',
+        others: [],
+        name: '',
+        kind: null,
+        tab: '',
+        values: { title: 'Moraines' },
+        isTargetNamed: true,
+      },
+      { writeMessage: vi.fn(), notes: { openFile: vi.fn() } } as unknown as CommandDeps,
+      ANSWER_WORDS,
+    )
+
+    expect(run).toHaveBeenCalledWith(createSample, {
+      path: 'Glaciers',
+      values: { title: 'Moraines' },
+      isTargetNamed: true,
+    })
+  })
+
   it('sends the file and values, writes the message and opens the returned path', async () => {
     const run = vi.fn().mockResolvedValue({
       ok: true,

@@ -208,6 +208,23 @@ describe('a run', () => {
     expect(request.runPluginCommand).toHaveBeenLastCalledWith(expect.objectContaining({ path: '' }))
   })
 
+  it('of a command over no file is handed the file a place named', async () => {
+    request.runPluginCommand.mockResolvedValue({
+      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      message: '',
+      openedPath: '',
+    })
+
+    await runDeclaredCommand(
+      { ...convert, when: 'window.isVaultReady' },
+      { path: 'Glaciers', values: {}, isTargetNamed: true },
+    )
+
+    expect(request.runPluginCommand).toHaveBeenLastCalledWith(
+      expect.objectContaining({ path: 'Glaciers' }),
+    )
+  })
+
   it('that did not succeed answers why', async () => {
     request.runPluginCommand.mockResolvedValue({
       error: COMMAND_ERROR_CODE.FAILED,

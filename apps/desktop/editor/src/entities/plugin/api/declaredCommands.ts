@@ -92,13 +92,14 @@ export interface DeclaredCommand {
 }
 
 /**
- * One run of a command: the file it is over, the values of its arguments by name, and for a command
- * that offers items the id of the one picked.
+ * One run of a command: the file it is over, the values of its arguments by name, for a command
+ * that offers items the id of the one picked, and whether a place named the file.
  */
 export interface DeclaredCommandRun {
   readonly path: string
   readonly values: Readonly<Record<string, string>>
   readonly argument?: string
+  readonly isTargetNamed?: boolean
 }
 
 /**
@@ -191,7 +192,10 @@ export async function runDeclaredHandler(
   return { ok: false, error: answer.message }
 }
 
-/** Runs the command in the backend of the plugin that declares it. */
+/**
+ * Runs the command in the backend of the plugin that declares it, over the file where its condition
+ * reads the target, it offers items, or a place named the file.
+ */
 export async function runDeclaredCommand(
   command: DeclaredCommand,
   run: DeclaredCommandRun,
@@ -199,7 +203,7 @@ export async function runDeclaredCommand(
   const answer = await pluginCommands.runPluginCommand({
     pluginId: command.pluginId,
     command: command.id,
-    path: isOverTarget(command) || command.hasItems ? run.path : '',
+    path: isOverTarget(command) || command.hasItems || run.isTargetNamed ? run.path : '',
     arguments: { ...run.values },
     ...(run.argument === undefined ? {} : { argument: run.argument }),
   })
