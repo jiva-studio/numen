@@ -438,6 +438,15 @@ describe('a command with items', () => {
     expect(menuTexts()).toStrictEqual(['Loading…'])
   })
 
+  it('opens no dropdown where the command lists no item', async () => {
+    const wrapper = mountBar({ commands: [MOVE], listItems: async () => [] })
+
+    await wrapper.find(`[data-title-bar-command="${MOVE.command}"]`).trigger('click')
+    await settle()
+
+    expect(menuTexts()).toStrictEqual([])
+  })
+
   it('emits run-command with the command and the item picked as its argument', async () => {
     const wrapper = mountBar({ commands: [MOVE], listItems: async () => items })
 

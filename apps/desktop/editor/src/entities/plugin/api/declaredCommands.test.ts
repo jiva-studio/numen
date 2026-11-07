@@ -315,7 +315,7 @@ describe('the handlers of shared commands', () => {
     ])
   })
 
-  it('run in the backend under the full id of the command, with the item picked', async () => {
+  it('run in the backend under the full id of the command, with the item picked and the values', async () => {
     request.runPluginCommand.mockResolvedValue({
       error: COMMAND_ERROR_CODE.UNSPECIFIED,
       message: 'Deleted',
@@ -324,8 +324,7 @@ describe('the handlers of shared commands', () => {
 
     const outcome = await runDeclaredHandler(
       { pluginId: 'org.example.ink', command: 'app:version.delete' },
-      'talks/a.mp3',
-      'v1',
+      { path: 'talks/a.mp3', values: { reason: 'stale' }, argument: 'v1' },
     )
 
     expect(outcome).toStrictEqual({ ok: true, value: { message: 'Deleted', openedPath: '' } })
@@ -333,7 +332,7 @@ describe('the handlers of shared commands', () => {
       pluginId: 'org.example.ink',
       command: 'app:version.delete',
       path: 'talks/a.mp3',
-      arguments: {},
+      arguments: { reason: 'stale' },
       argument: 'v1',
     })
   })
@@ -347,7 +346,7 @@ describe('the handlers of shared commands', () => {
     expect(
       await runDeclaredHandler(
         { pluginId: 'org.example.ink', command: 'app:version.delete' },
-        'a.mp3',
+        { path: 'a.mp3', values: {} },
       ),
     ).toStrictEqual({ ok: false, error: 'no such version' })
   })

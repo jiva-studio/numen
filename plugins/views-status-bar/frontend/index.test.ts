@@ -318,6 +318,18 @@ describe('a command with items', () => {
     ])
   })
 
+  it('opens no dropdown where the command lists no item', async () => {
+    const { context, view } = activateBar()
+    context.commands.setItems(LANGUAGE.command, [])
+    context.slots.setEntries('statusBar.right', [LANGUAGE])
+    const wrapper = mountBar(view)
+
+    await wrapper.find('button[data-status-bar-entry]').trigger('click')
+    await flushPromises()
+
+    expect(getMenus().flatMap((menu) => getRows(menu))).toStrictEqual([])
+  })
+
   it('runs the command with the item picked as its argument', async () => {
     const { context, view } = activateBar()
     context.commands.setItems(LANGUAGE.command, [{ id: 'sa', title: 'Sanskrit' }])

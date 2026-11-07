@@ -6,7 +6,7 @@ import type { CommandItem } from '../commands'
 import type { SlotCommand, SlotItem, SlotSeparator, SlotSubmenu, SlotView } from './slots'
 import { createSlotMenu, readCommandItemLists, type CommandItemLists } from './slotMenu'
 
-const WORDS = { loadingText: 'Loading…', emptyText: 'No items' }
+const WORDS = { loadingText: 'Loading…' }
 
 const command = (id: string, extra: Partial<SlotCommand> = {}): SlotCommand => ({
   kind: 'command',
@@ -91,12 +91,10 @@ describe('createSlotMenu', () => {
     expect(createSlotMenu([MOVE], new Map(), WORDS).items[0]?.children?.[0]?.text).toBe('Loading…')
   })
 
-  it('draws an empty row in the submenu of a command that lists no item', () => {
-    const menu = createSlotMenu([MOVE], lists([[MOVE, []]]), WORDS)
+  it('hides a command that lists no item, and leaves no group of it', () => {
+    const menu = createSlotMenu([OPEN, separator(1), MOVE], lists([[MOVE, []]]), WORDS)
 
-    expect(menu.items[0]?.children).toStrictEqual([
-      { id: `${MOVE.key}#empty`, text: 'No items', isDisabled: true },
-    ])
+    expect(menu.items.map((one) => one.id)).toStrictEqual([OPEN.key])
   })
 
   it('draws the items of a command as its submenu, with a separator where the group changes', () => {

@@ -4,7 +4,13 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { HandlerDeclaration, PluginHost } from '@numen/plugin-host'
-import type { CommandTarget } from '@/features/command-palette'
+import {
+  commands,
+  type AnswerWords,
+  type CommandDeps,
+  type CommandInvocation,
+  type CommandTarget,
+} from '@/features/command-palette'
 import type { VaultCore } from '../vault'
 import { usePluginCommands } from './usePluginCommands'
 
@@ -45,13 +51,51 @@ describe('a shared command in the palette', () => {
 })
 
 describe('a shared command that asks for a value', () => {
-  it('is not offered with a pick list of its handlers', () => {
-    const importer = { ...HANDLER, command: 'app:link.import', title: 'Import link' }
+  const importer = { ...HANDLER, command: 'app:link.import', title: 'Import link' }
 
-    const entries = usePluginCommands({} as VaultCore, createHost(), undefined, () => [
+  it('asks for its required arguments as a command of a manifest does', () => {
+    const [entry] = usePluginCommands({} as VaultCore, createHost(), undefined, () => [
       importer,
     ]).getPaletteEntries()
 
-    expect(entries).toStrictEqual([])
+    expect(entry).toMatchObject({
+      id: 'app:link.import',
+      text: 'Import link',
+      input: 'arguments',
+      prompts: [{ name: 'address', title: 'Web address', isRequired: true }],
+    })
+    expect(entry?.isAvailable?.({ path: '', file: '', isReady: true } as CommandTarget)).toBe(true)
+  })
+
+  it('runs its handler with the values given', async () => {
+    const host = createHost()
+    usePluginCommands(
+      { fileKinds: async () => new Map() } as unknown as VaultCore,
+      host,
+      undefined,
+      () => [importer],
+    )
+    const run = commands.get('app:link.import')
+
+    await run?.(
+      {
+        id: 'app:link.import',
+        path: '',
+        name: '',
+        title: '',
+        others: [],
+        tab: '',
+        values: { address: 'https://example.com/tides' },
+      } as unknown as CommandInvocation,
+      {} as CommandDeps,
+      {} as AnswerWords,
+    )
+
+    expect(host.executeCommand).toHaveBeenCalledWith(
+      'app:link.import',
+      expect.objectContaining({ path: '' }),
+      undefined,
+      { address: 'https://example.com/tides' },
+    )
   })
 })

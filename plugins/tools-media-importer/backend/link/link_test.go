@@ -141,7 +141,7 @@ func TestAnArticleIsThePlainTextVersionOfItsLink(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, articleAddress)
 
-	if err := w.links.FetchText(t.Context(), made, true); err != nil {
+	if err := w.links.FetchText(t.Context(), made); err != nil {
 		t.Fatal(err)
 	}
 	listing, err := w.texts.ListVersions(t.Context(), made.Path)
@@ -167,7 +167,7 @@ func TestCaptionsAreTheTimedTextVersionOfTheirLink(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
 
-	if err := w.links.FetchText(t.Context(), made, true); err != nil {
+	if err := w.links.FetchText(t.Context(), made); err != nil {
 		t.Fatal(err)
 	}
 	listing, err := w.texts.ListVersions(t.Context(), made.Path)
@@ -183,20 +183,17 @@ func TestCaptionsAreTheTimedTextVersionOfTheirLink(t *testing.T) {
 	}
 }
 
-func TestFetchText_SkipsEmptyAddressUnlessForced(t *testing.T) {
+func TestFetchText_AsksAnEmptyAddressOnEachRun(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, silentAddress)
 
-	for _, isForced := range []bool{true, false} {
-		if err := w.links.FetchText(t.Context(), made, isForced); err != nil {
+	for range 2 {
+		if err := w.links.FetchText(t.Context(), made); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if count := w.sites.texts.Load(); count != 1 {
-		t.Errorf("the address was asked %d times, want once", count)
-	}
-	if err := w.links.FetchText(t.Context(), made, true); err != nil || w.sites.texts.Load() != 2 {
-		t.Errorf("a person asking again asked the address %d times in all (%v)", w.sites.texts.Load(), err)
+	if count := w.sites.texts.Load(); count != 2 {
+		t.Errorf("the address was asked %d times, want twice", count)
 	}
 	listing, err := w.texts.ListVersions(t.Context(), made.Path)
 	if err != nil {
@@ -265,7 +262,7 @@ func TestCopyDeletesThePartialFileOnFailure(t *testing.T) {
 func TestTheTextIsStoredInTheCommonFormatAlone(t *testing.T) {
 	w := newWorld(t)
 	for _, made := range []link.Link{w.create(t, articleAddress), w.create(t, videoAddress)} {
-		if err := w.links.FetchText(t.Context(), made, true); err != nil {
+		if err := w.links.FetchText(t.Context(), made); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -291,36 +288,25 @@ func (w *world) deleteVersion(t *testing.T, made link.Link) {
 	}
 }
 
-func TestATextThePersonDeletedIsNotFetchedAgainUnlessAPersonAsks(t *testing.T) {
+func TestFetchTextFetchesADeletedTextAgain(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, articleAddress)
-	if err := w.links.FetchText(t.Context(), made, true); err != nil {
+	if err := w.links.FetchText(t.Context(), made); err != nil {
 		t.Fatal(err)
 	}
 	w.deleteVersion(t, made)
-
-	if err := w.links.FetchText(t.Context(), made, false); err != nil {
-		t.Fatal(err)
-	}
-	if count := w.sites.texts.Load(); count != 1 {
-		t.Errorf("a deleted text was fetched again: the address was asked %d times", count)
-	}
-	listing, err := w.texts.ListVersions(t.Context(), made.Path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(listing.Versions) != 0 {
-		t.Errorf("a deleted text has versions %+v", listing.Versions)
-	}
 	if isDeleted, err := w.links.IsTextDeleted(t.Context(), made); err != nil || !isDeleted {
 		t.Errorf("IsTextDeleted = %v (%v); want true", isDeleted, err)
 	}
 
-	if err := w.links.FetchText(t.Context(), made, true); err != nil {
+	if err := w.links.FetchText(t.Context(), made); err != nil {
 		t.Fatal(err)
 	}
+	if count := w.sites.texts.Load(); count != 2 {
+		t.Errorf("the address was asked %d times, want twice", count)
+	}
 	if text, err := w.links.ReadArticle(t.Context(), made); err != nil || text == "" {
-		t.Errorf("a person asking again leaves the article %q (%v)", text, err)
+		t.Errorf("a second run leaves the article %q (%v)", text, err)
 	}
 	if isDeleted, err := w.links.IsTextDeleted(t.Context(), made); err != nil || isDeleted {
 		t.Errorf("IsTextDeleted after a fetch = %v (%v); want false", isDeleted, err)
@@ -331,7 +317,7 @@ func TestFetchText_BackgroundFetchPopulatesNewLink(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, articleAddress)
 
-	if err := w.links.FetchText(t.Context(), made, false); err != nil {
+	if err := w.links.FetchText(t.Context(), made); err != nil {
 		t.Fatal(err)
 	}
 	if text, err := w.links.ReadArticle(t.Context(), made); err != nil || text == "" {
@@ -351,25 +337,6 @@ func (w *world) edit(t *testing.T, made link.Link) link.Link {
 		t.Fatal(err)
 	}
 	return edited
-}
-
-func TestAnEditedNoteGetsItsStoredTextWithoutAFetch(t *testing.T) {
-	w := newWorld(t)
-	made := w.create(t, articleAddress)
-	if err := w.links.FetchText(t.Context(), made, true); err != nil {
-		t.Fatal(err)
-	}
-	edited := w.edit(t, made)
-
-	if err := w.links.FetchText(t.Context(), edited, false); err != nil {
-		t.Fatal(err)
-	}
-	if count := w.sites.texts.Load(); count != 1 {
-		t.Errorf("the address was asked %d times, want once", count)
-	}
-	if text, err := w.links.ReadArticle(t.Context(), edited); err != nil || text == "" {
-		t.Errorf("the edited note reads %q (%v)", text, err)
-	}
 }
 
 func TestTheCopyFollowsAnEditOfTheNote(t *testing.T) {
@@ -409,7 +376,7 @@ func TestCopyWritesTheAddressOfTheMediaIntoTheNote(t *testing.T) {
 func TestTheTextIsLiveAfterTheMediaAddressIsSet(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
-	if err := w.links.FetchText(t.Context(), made, true); err != nil {
+	if err := w.links.FetchText(t.Context(), made); err != nil {
 		t.Fatal(err)
 	}
 
@@ -451,7 +418,7 @@ func TestFetchTextAfterACopyFetchesTheText(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := w.links.FetchText(t.Context(), made, false); err != nil {
+	if err := w.links.FetchText(t.Context(), made); err != nil {
 		t.Fatal(err)
 	}
 	if count := w.sites.texts.Load(); count != 1 {

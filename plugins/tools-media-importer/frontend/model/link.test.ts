@@ -9,7 +9,7 @@ function createLinks(facts: LinkFacts) {
     facts,
     text: '',
     calls: 0,
-    fetches: [] as boolean[],
+    fetches: [] as string[],
     started: [] as string[],
     onChange: (_: boolean): void => undefined,
     isStopped: false,
@@ -24,8 +24,8 @@ function createLinks(facts: LinkFacts) {
       mediaUrl: `http://127.0.0.1:1/t/${address.replace('plugin://', 'plugin/v/')}`,
       mediaType: address.endsWith('.html') ? 'text/html' : 'video/mp4',
     }),
-    fetchText: async (_, isForced) => {
-      link.fetches.push(isForced)
+    fetchText: async (path) => {
+      link.fetches.push(path)
       return { ok: true, value: null }
     },
     copyMedia: async (path) => {
@@ -80,14 +80,14 @@ describe('useLink', () => {
     expect(link.isStopped).toBe(true)
   })
 
-  it('requests the text of a link that has none once, not as a user-started fetch', async () => {
+  it('requests the text of a link that has none once', async () => {
     const { link, links } = createLinks(FACTS)
     useLink(links, 'links/rance.md')
     await flushPromises()
     link.onChange(false)
     await flushPromises()
 
-    expect(link.fetches).toEqual([false])
+    expect(link.fetches).toEqual(['links/rance.md'])
   })
 
   it('leaves a text the person deleted deleted, and says so', async () => {
@@ -105,7 +105,7 @@ describe('useLink', () => {
     await flushPromises()
 
     await tab.actions.fetchText()
-    expect(link.fetches).toEqual([true])
+    expect(link.fetches).toEqual(['links/rance.md'])
   })
 
   it('plays the copy once one is kept, and stops showing it once it is deleted', async () => {

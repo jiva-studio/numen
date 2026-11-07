@@ -475,7 +475,7 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 			return download.Text{}, errors.New("close did not cancel context")
 		}
 	}
-	l.StartFetchText(ctx, Link{Path: "notes/good.md", Address: "https://example.com/", Key: "k1"}, true)
+	l.StartFetchText(ctx, Link{Path: "notes/good.md", Address: "https://example.com/", Key: "k1"})
 	<-started
 	l.Close()
 	if !waited.Load() {
@@ -501,7 +501,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 
 	// Claim contention on FetchText and Copy.
 	l.claim("text", made, made.Key)
-	if err := l.FetchText(ctx, made, true); !errors.Is(err, ErrBeingFetched) {
+	if err := l.FetchText(ctx, made); !errors.Is(err, ErrBeingFetched) {
 		t.Errorf("FetchText while claimed = %v, want ErrBeingFetched", err)
 	}
 	l.release("text", made, made.Key)
@@ -512,28 +512,16 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	}
 	l.release("copy", made, made.Key)
 
-	// reuseText error paths.
+	// readRecord error paths.
 	boom := errors.New("store failure")
-	hs.readErr = func(name string) error {
-		if name == made.Key+noneExt {
-			return boom
-		}
-		return nil
-	}
-	if err := l.FetchText(ctx, made, false); !errors.Is(err, boom) {
-		t.Errorf("FetchText(isNone err) = %v, want %v", err, boom)
-	}
 	hs.readErr = func(name string) error {
 		if name == made.Key+recordExt {
 			return boom
 		}
 		return nil
 	}
-	if err := l.FetchText(ctx, made, false); !errors.Is(err, boom) {
+	if err := l.FetchText(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("FetchText(readRecord err) = %v, want %v", err, boom)
-	}
-	if err := l.FetchText(ctx, made, true); !errors.Is(err, boom) {
-		t.Errorf("FetchText(user readRecord err) = %v, want %v", err, boom)
 	}
 	if deleted, err := l.IsTextDeleted(ctx, made); !errors.Is(err, boom) || deleted {
 		t.Errorf("IsTextDeleted(readRecord err) = (%v, %v)", deleted, err)
@@ -542,19 +530,19 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 
 	// FetchText when fetcher returns error, and when writeText fails.
 	sf.textErr = boom
-	if err := l.FetchText(ctx, made, true); !errors.Is(err, boom) {
+	if err := l.FetchText(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("FetchText(fetcher err) = %v, want %v", err, boom)
 	}
 	sf.textErr = nil
 	hs.writeErr = func(string) error { return boom }
-	if err := l.FetchText(ctx, made, true); !errors.Is(err, boom) {
+	if err := l.FetchText(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("FetchText(writeText err) = %v, want %v", err, boom)
 	}
 	hs.writeErr = nil
 
 	// Successful FetchText records downloader and reports initial task with 0/0 counts.
 	hq.tasks = nil
-	if err := l.FetchText(ctx, made, true); err != nil {
+	if err := l.FetchText(ctx, made); err != nil {
 		t.Fatal(err)
 	}
 	if len(hq.tasks) == 0 || hq.tasks[0].CompletedCount != 0 || hq.tasks[0].TotalCount != 0 {
@@ -565,21 +553,21 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		t.Errorf("record Downloader = %q (%v), want %q", rec.Downloader, err, "tool v2")
 	}
 
-	// reuseText when hasText fails, when ListVersions fails, and when version is already present after another version.
+	// restoreText when hasText fails, when ListVersions fails, and when version is already present after another version.
 	hs.readErr = func(name string) error {
 		if name == made.Key+textExt {
 			return boom
 		}
 		return nil
 	}
-	if err := l.FetchText(ctx, made, false); !errors.Is(err, boom) {
-		t.Errorf("FetchText(hasText err) = %v, want %v", err, boom)
+	if err := l.restoreText(ctx, folder{store: hs}, made); !errors.Is(err, boom) {
+		t.Errorf("restoreText(hasText err) = %v, want %v", err, boom)
 	}
 	hs.readErr = nil
 
 	ht.listErr = boom
-	if err := l.FetchText(ctx, made, false); !errors.Is(err, boom) {
-		t.Errorf("FetchText(ListVersions err) = %v, want %v", err, boom)
+	if err := l.restoreText(ctx, folder{store: hs}, made); !errors.Is(err, boom) {
+		t.Errorf("restoreText(ListVersions err) = %v, want %v", err, boom)
 	}
 	if _, err := l.ReadArticle(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("ReadArticle(ListVersions err) = %v, want %v", err, boom)
@@ -599,8 +587,8 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		},
 	}
 	ht.putCalls = 0
-	if err := l.FetchText(ctx, made, false); err != nil || ht.putCalls != 0 {
-		t.Errorf("FetchText(already current) err=%v, putCalls=%d", err, ht.putCalls)
+	if err := l.restoreText(ctx, folder{store: hs}, made); err != nil || ht.putCalls != 0 {
+		t.Errorf("restoreText(already current) err=%v, putCalls=%d", err, ht.putCalls)
 	}
 
 	// ReadArticle with non-live version first, and with ReadText error.

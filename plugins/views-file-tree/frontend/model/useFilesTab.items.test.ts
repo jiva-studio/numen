@@ -110,12 +110,12 @@ describe('a command of the menu that offers choices', () => {
     ])
   })
 
-  it('says it has nothing to choose where it offers no choice', async () => {
+  it('is hidden where it offers no choice', async () => {
     const { one, answerChoices } = await setUp(async () => [])
 
     await answerChoices()
 
-    expect(getChildren(one)).toStrictEqual([{ text: WORDS.noItems, isDisabled: true }])
+    expect(one.getMenuItems('Scan.pdf').some((item) => item.id === VERSIONS.key)).toBe(false)
   })
 
   it('runs the command over the row with the id of the choice picked', async () => {
@@ -147,6 +147,6 @@ describe('a command of the menu that offers choices', () => {
 
     expect(runs).toStrictEqual([])
     expect(errors).toHaveLength(1)
-    expect(getChildren(one)).toStrictEqual([{ text: WORDS.noItems, isDisabled: true }])
+    expect(one.getMenuItems('Scan.pdf').some((item) => item.id === VERSIONS.key)).toBe(false)
   })
 })

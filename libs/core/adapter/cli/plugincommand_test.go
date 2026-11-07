@@ -14,13 +14,14 @@ import (
 
 // pluginCommands declares the commands it is given and records every call made to run one.
 type pluginCommands struct {
-	entries []plugincommand.Entry
-	calls   []plugincommand.Call
+	entries  []plugincommand.Entry
+	handlers []plugincommand.Entry
+	calls    []plugincommand.Call
 }
 
 func (p *pluginCommands) ListSlots() []plugincommand.SlotEntry { return nil }
 
-func (p *pluginCommands) ListHandlers() []plugincommand.Entry { return nil }
+func (p *pluginCommands) ListHandlers() []plugincommand.Entry { return p.handlers }
 
 func (p *pluginCommands) ListCommands() []plugincommand.Entry { return p.entries }
 

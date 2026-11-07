@@ -101,6 +101,30 @@ describe('a shared command', () => {
     })
   })
 
+  it('passes the values of the arguments of the command to the backend of its handler', async () => {
+    const importer: HandlerDeclaration = {
+      pluginId: TIDES,
+      command: 'app:link.import',
+      title: 'Import link',
+      hasItems: false,
+    }
+    const { host, runBackendHandler } = createHost([importer])
+    const window = { ...SCAN, path: '', title: '', type: '' }
+
+    expect(
+      await host.executeCommand('app:link.import', window, undefined, {
+        address: 'https://example.com/tides',
+      }),
+    ).toBe(true)
+    expect(runBackendHandler).toHaveBeenCalledWith({
+      pluginId: TIDES,
+      command: 'app:link.import',
+      target: window,
+      argument: undefined,
+      values: { address: 'https://example.com/tides' },
+    })
+  })
+
   it('runs its one matching handler without an argument, and nothing where several match', async () => {
     const one = createHost(HANDLERS.filter((handler) => handler.pluginId === SCANS))
     expect(await one.host.executeCommand(CREATE, { ...SCAN, type: '' })).toBe(true)

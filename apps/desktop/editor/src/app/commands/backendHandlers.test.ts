@@ -44,12 +44,12 @@ describe('createBackendHandlers', () => {
       command: 'app:file.createText',
       target: TARGET,
       argument: 'fast',
+      values: { language: 'en' },
     })
 
     expect(deps.run).toHaveBeenCalledWith(
       { pluginId: 'md.ears', command: 'app:file.createText' },
-      'talks/a.mp3',
-      'fast',
+      { path: 'talks/a.mp3', values: { language: 'en' }, argument: 'fast' },
     )
     expect(deps.writeMessage).toHaveBeenCalledWith('Transcribed', 'info')
     expect(deps.openFile).toHaveBeenCalledWith('talks/a.md')
