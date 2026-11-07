@@ -6,6 +6,8 @@ import {
   runCommandOverItem,
   waitForPassage,
 } from '../support/workspace.js'
+import { listFilePaths } from '../support/vault.js'
+import { deleteVaultFiles } from '../support/media.js'
 
 /** Served by the proxy `scripts/start-server.mjs` puts in front of every plain-http fetch. */
 const ARTICLE_ADDRESS = 'http://tidal-mills.numen.test/history/rance'
@@ -57,6 +59,17 @@ const downloadVideo = (page: Page): Promise<void> =>
   runCommandOverItem(page, 'Download media', /^Download media$/, /^Video$/)
 
 test.describe('A link', () => {
+  let before: string[] = []
+
+  test.beforeEach(async ({ request }) => {
+    before = await listFilePaths(request)
+  })
+
+  // The link notes a test made go, so the next run imports the same addresses again.
+  test.afterEach(async ({ request }) => {
+    deleteVaultFiles(...(await listFilePaths(request)).filter((one) => !before.includes(one)))
+  })
+
   test('to a page shows the article fetched from it, and the search finds it', async ({ page }) => {
     await openWorkspace(page)
     await importAddress(page, ARTICLE_ADDRESS, /rance(?!-part)/)
