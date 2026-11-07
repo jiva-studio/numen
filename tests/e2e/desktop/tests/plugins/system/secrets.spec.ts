@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import { test, expect, type Page } from '../../support/test.js'
 import { startOwnServer, type InstalledPlugin, type OwnServer } from '../../support/server.js'
-import { expectWorkspaceDrawn, runCommand } from '../../support/workspace.js'
+import { runCommand } from '../../support/workspace.js'
 
 const ONE = 'md.numen.test.probe-one'
 const TWO = 'md.numen.test.probe-two'
@@ -16,6 +16,8 @@ const TWO = 'md.numen.test.probe-two'
 const createProbe = (id: string, title: string, log: string): InstalledPlugin => ({
   id,
   files: {
+    // The plugin folder lies under the e2e package, whose package.json makes every file ESM; the probe is CommonJS.
+    'package.json': JSON.stringify({ type: 'commonjs' }),
     'manifest.json': JSON.stringify({
       id,
       name: title,
@@ -69,7 +71,7 @@ const parse = (body) => ({
     return entry
   }),
 })
-http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
   const chunks = []
   req.on('data', (c) => chunks.push(c))
   req.on('end', () => {
@@ -87,7 +89,8 @@ http.createServer((req, res) => {
       res.end()
     }
   })
-}).listen(port, '127.0.0.1', () => console.log('NUMEN_READY port=' + port))
+})
+server.listen(port, '127.0.0.1', () => console.log('NUMEN_READY port=' + server.address().port))
 `,
   },
 })
@@ -115,10 +118,13 @@ const readReceived = (log: string): Received[] => {
 /** The address of the server of this file, which the shared base address of the project does not name. */
 let serverUrl = ''
 
-/** Loads the window of the server of this file, so it reads the secrets the core holds now. */
+/**
+ * Loads the window of the server of this file, so it reads the secrets the core holds now. It waits
+ * for the tab bar only: the restored layout of the previous test may have no plex graph.
+ */
 const reopen = async (page: Page): Promise<void> => {
   await page.goto(serverUrl)
-  await expectWorkspaceDrawn(page)
+  await expect(page.getByRole('tablist').first()).toBeVisible()
 }
 
 const callOn = async (
@@ -207,18 +213,19 @@ test.describe('Secrets shared between plugins', () => {
     const second = await createSecret(page, 'openrouter', 'Bravo', 'invented-key-bravo')
     await allow(page, first, ONE)
     await allow(page, second, ONE)
-    await expect
-      .poll(() => readReceived(logs[ONE] as string).map((one) => one.id))
-      .toEqual([first, second])
+    // The server also holds the secrets of the previous tests, so only these two are compared.
+    const readOrder = (): string[] =>
+      readReceived(logs[ONE] as string)
+        .map((one) => one.id)
+        .filter((id) => id === first || id === second)
+    await expect.poll(readOrder).toEqual([first, second])
 
     await reopen(page)
     const settings = await openSecretsPage(page)
     const row = settings.getByRole('listitem').filter({ hasText: 'Bravo' })
     await row.getByRole('button', { name: /move up/i }).click()
 
-    await expect
-      .poll(() => readReceived(logs[ONE] as string).map((one) => one.id))
-      .toEqual([second, first])
+    await expect.poll(readOrder).toEqual([second, first])
   })
 
   test('lets a plugin read a secret of a group the person made, chosen from the menu on its page', async ({
