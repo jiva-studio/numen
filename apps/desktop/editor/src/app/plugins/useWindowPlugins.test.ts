@@ -38,6 +38,14 @@ const coreKind = (state: object): AnyTabKind => ({
   pane: {},
 })
 
+describe('the platform plugins read', () => {
+  it('is Windows where the window gives none, as the frame reports without the runtime', () => {
+    const { support } = createSupport()
+
+    expect(support.pluginHost.createContext('md.numen.a').app.platform).toBe('windows')
+  })
+})
+
 describe('closing the tabs of a plugin', () => {
   it('replaces the tabs of the kinds the plugin registered with placeholders', async () => {
     const { windowTabs, support } = createSupport()

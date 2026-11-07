@@ -31,6 +31,25 @@ const view = (kind: string, order?: number) => ({
 })
 
 describe('createShellHost', () => {
+  it('gives a plugin the platform of the window, not the one the user agent names', () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+    })
+    let platform: 'windows' | 'darwin' = 'windows'
+    const { host } = createShellHost(undefined, {}, () => platform)
+    const context = host.createContext('md.numen.example')
+    vi.unstubAllGlobals()
+
+    expect(context.app.platform).toBe('windows')
+    platform = 'darwin'
+    expect(context.app.platform).toBe('darwin')
+  })
+
+  it('gives a plugin Windows where the window gives no platform, as the frame does without the runtime', () => {
+    expect(createShellHost().host.createContext('md.numen.example').app.platform).toBe('windows')
+  })
+
   it('activates a plugin in the window of the flashcards target', () => {
     const { host } = createShellHost()
 

@@ -214,3 +214,23 @@ describe('the window with a plugin that draws the title bar', () => {
     expect(requests.opened).toStrictEqual(['trees'])
   })
 })
+
+describe('the platform the plugins of the window are given', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it.each([
+    ['windows', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15'],
+    ['darwin', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/605.1.15'],
+  ] as const)(
+    'is %s where the frame reports it and the user agent names another',
+    async (platform, agent) => {
+      vi.stubGlobal('navigator', { ...navigator, userAgent: agent })
+      frame.platform = platform
+      await mountWindow()
+
+      expect(hosts.current!.contextHost.app.platform).toBe(platform)
+    },
+  )
+})
