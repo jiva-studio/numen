@@ -3,6 +3,7 @@
 package keychain
 
 import (
+	"context"
 	"errors"
 	"os"
 
@@ -10,9 +11,9 @@ import (
 )
 
 // lockFile waits for the exclusive lock on the first byte of the file at path, creating the file
-// when it is missing, and returns the function that releases it. Windows drops the lock when the
-// handle closes.
-func lockFile(path string) (func() error, error) {
+// when it is missing, and returns the function that releases it. The wait ends with the context.
+// Windows drops the lock when the handle closes.
+func lockFile(ctx context.Context, path string) (func() error, error) {
 	name, err := windows.UTF16PtrFromString(path)
 	if err != nil {
 		return nil, &os.PathError{Op: "open", Path: path, Err: err}
@@ -30,8 +31,15 @@ func lockFile(path string) (func() error, error) {
 		return nil, &os.PathError{Op: "open", Path: path, Err: err}
 	}
 	file := os.NewFile(uintptr(handle), path)
-	var region windows.Overlapped
-	if err := windows.LockFileEx(handle, windows.LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &region); err != nil {
+	err = waitForLock(ctx, func() (bool, error) {
+		var region windows.Overlapped
+		err := windows.LockFileEx(handle, windows.LOCKFILE_EXCLUSIVE_LOCK|windows.LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0, &region)
+		if errors.Is(err, windows.ERROR_LOCK_VIOLATION) {
+			return false, nil
+		}
+		return err == nil, err
+	})
+	if err != nil {
 		return nil, errors.Join(err, file.Close())
 	}
 	return file.Close, nil

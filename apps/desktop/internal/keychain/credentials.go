@@ -1,6 +1,7 @@
 package keychain
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -63,8 +64,8 @@ func (s *Store) readFromFile(name string) (string, error) {
 }
 
 // writeToFile stores the key under the name in the file.
-func (s *Store) writeToFile(name, key string) error {
-	return s.changeEntries(func() error {
+func (s *Store) writeToFile(ctx context.Context, name, key string) error {
+	return s.changeEntries(ctx, func() error {
 		entries, err := s.readEntries()
 		if err != nil {
 			return err
@@ -75,8 +76,8 @@ func (s *Store) writeToFile(name, key string) error {
 }
 
 // removeFromFile removes the key stored under the name from the file, or fails with ErrNoKey.
-func (s *Store) removeFromFile(name string) error {
-	return s.changeEntries(func() error {
+func (s *Store) removeFromFile(ctx context.Context, name string) error {
+	return s.changeEntries(ctx, func() error {
 		entries, err := s.readEntries()
 		if err != nil {
 			return err

@@ -80,7 +80,7 @@ func (s *Store) SetKey(ctx context.Context, name, key string) error {
 		_, err := await(ctx, func() (struct{}, error) { return struct{}{}, keyring.Set(service, name, key) })
 		return readError(name, err)
 	}
-	return s.writeToFile(name, key)
+	return s.writeToFile(ctx, name, key)
 }
 
 // DeleteKey removes the key stored under the name, from the keychain and from the file.
@@ -103,7 +103,7 @@ func (s *Store) DeleteKey(ctx context.Context, name string) error {
 		}
 	}
 	if s.dir != "" {
-		switch err := s.removeFromFile(name); {
+		switch err := s.removeFromFile(ctx, name); {
 		case err == nil:
 			hasRemoved = true
 		case !errors.Is(err, pluginport.ErrNoKey):
