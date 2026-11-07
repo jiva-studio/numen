@@ -4,15 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"image"
-	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm"
 	ocr "github.com/jiva-studio/numen/plugins/engines-ocr"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
@@ -133,7 +130,7 @@ func TestTheHandlerOfCreateTextAnswersWhileTheTaskRecognises(t *testing.T) {
 	}
 }
 
-func TestTheHandlerOfCreateTextLeavesAFailedRecognitionToItsTask(t *testing.T) {
+func TestCreateTextFailsTheTaskOfAFailedRecognition(t *testing.T) {
 	s := newToolFixture(t)
 	s.recogniser.failure = errors.New("the page cannot be decoded")
 	close(s.recogniser.release)
