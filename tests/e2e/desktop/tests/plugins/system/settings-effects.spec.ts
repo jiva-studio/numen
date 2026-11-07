@@ -91,7 +91,7 @@ test.describe('Plugin settings take effect', () => {
     await settings.getByRole('button', { name: 'All plugins' }).click()
 
     await settings.getByRole('button', { name: /^Secrets$/ }).click()
-    const section = settings.getByRole('group', { name: 'openai' })
+    const section = settings.getByRole('region', { name: 'openai' })
     await section.getByLabel('Default').fill(value)
     await section.getByLabel('Default').press('Enter')
 

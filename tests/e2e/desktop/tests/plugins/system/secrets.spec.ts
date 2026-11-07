@@ -184,7 +184,7 @@ test.describe('Secrets shared between plugins', () => {
     const value = 'invented-harbour-key-one'
     await reopen(page)
     const settings = await openSecretsPage(page)
-    const section = settings.getByRole('group', { name: 'openrouter' })
+    const section = settings.getByRole('region', { name: 'openrouter' })
     await section.getByLabel('Default').fill(value)
     await section.getByLabel('Default').press('Enter')
 
@@ -231,7 +231,7 @@ test.describe('Secrets shared between plugins', () => {
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
     await settings.getByRole('button', { name: /Probe two/ }).click()
     await settings.getByRole('button', { name: /choose/i }).click()
-    await page.getByRole('menuitemcheckbox', { name: 'Trip' }).click()
+    await page.getByRole('option', { name: 'Trip' }).click()
 
     await expect.poll(() => readReceived(logs[TWO] as string).map((one) => one.id)).toContain(trip)
     expect(await page.content()).not.toContain(value)

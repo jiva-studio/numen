@@ -108,6 +108,9 @@ type Host struct {
 	secretSource pluginport.SecretSource
 	// delivered is the list of secrets each plugin was last configured with, as a signature.
 	delivered map[string]string
+	// attempted is the list of secrets a failed Configure of each plugin carried, as a signature, so
+	// that a plugin whose Configure fails is not configured again until its list changes.
+	attempted map[string]string
 	// awaitingFirstConfigure holds the plugins that are Active and have not yet been through the Configure of their activation.
 	awaitingFirstConfigure map[string]bool
 	// noKeyStoreOnce reports once that a secret cannot be read on a machine without a key store.
@@ -166,6 +169,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		completer:              nil,
 		keyStore:               nil,
 		delivered:              make(map[string]string),
+		attempted:              make(map[string]string),
 		awaitingFirstConfigure: make(map[string]bool),
 		hostEndpoint:           nil,
 		hostAddress:            hostendpoint.Address,
@@ -682,6 +686,7 @@ func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *li
 	}
 	h.mu.Lock()
 	delete(h.delivered, p.Manifest.ID)
+	delete(h.attempted, p.Manifest.ID)
 	h.awaitingFirstConfigure[p.Manifest.ID] = true
 	h.mu.Unlock()
 	sup.RecordActivationSuccess()
@@ -1404,9 +1409,16 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 
 // notifyPluginConfigLocked is NotifyPluginConfig for a caller holding secretMu.
 func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) error {
+	readErr, configureErr := h.configurePluginLocked(ctx, pluginID)
+	return errors.Join(readErr, configureErr)
+}
+
+// configurePluginLocked sends the configuration to the plugin and returns the failure to read its
+// secrets apart from the failure of the Configure call.
+func (h *Host) configurePluginLocked(ctx context.Context, pluginID string) (readErr, configureErr error) {
 	snapshot, isRunning, err := h.takeConfigSnapshot(pluginID)
 	if !isRunning || err != nil {
-		return err
+		return err, nil
 	}
 	secrets, failures := h.listConfigureSecrets(ctx, snapshot)
 	secretsErr := h.getSecretsError(failures)
@@ -1429,15 +1441,21 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	if err != nil {
 		var connectErr *connect.Error
 		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && len(snapshot.declared) == 0 {
-			return secretsErr
+			return secretsErr, nil
 		}
-		return errors.Join(secretsErr, fmt.Errorf("configure plugin %s: %w", pluginID, err))
+		h.mu.Lock()
+		if !h.awaitingFirstConfigure[pluginID] {
+			h.attempted[pluginID] = getSecretsSignature(secrets)
+		}
+		h.mu.Unlock()
+		return secretsErr, fmt.Errorf("configure plugin %s: %w", pluginID, err)
 	}
 	h.mu.Lock()
 	h.delivered[pluginID] = getSecretsSignature(secrets)
+	delete(h.attempted, pluginID)
 	h.mu.Unlock()
 	h.runConfigWatchers(pluginID)
-	return secretsErr
+	return secretsErr, nil
 }
 
 // configSnapshot is what a Configure call to one plugin is made of, taken while mu was held.

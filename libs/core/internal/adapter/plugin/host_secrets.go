@@ -85,8 +85,12 @@ func (h *Host) configureChangedLocked(ctx context.Context, forced []string) erro
 		if !slices.Contains(forced, id) && !h.hasSecretsChanged(ctx, id) {
 			continue
 		}
-		if err := h.notifyPluginConfigLocked(ctx, id); err != nil {
-			failures = append(failures, err)
+		readErr, configureErr := h.configurePluginLocked(ctx, id)
+		if configureErr != nil {
+			h.reportError(configureErr)
+		}
+		if readErr != nil {
+			failures = append(failures, readErr)
 		}
 	}
 	return errors.Join(failures...)
@@ -105,8 +109,12 @@ func (h *Host) hasSecretsChanged(ctx context.Context, pluginID string) bool {
 	if h.awaitingFirstConfigure[pluginID] {
 		return false
 	}
+	signature := getSecretsSignature(secrets)
+	if tried, hasFailed := h.attempted[pluginID]; hasFailed {
+		return tried != signature
+	}
 	last, wasDelivered := h.delivered[pluginID]
-	return !wasDelivered || last != getSecretsSignature(secrets)
+	return !wasDelivered || last != signature
 }
 
 // pruneSecretPermissions drops the permissions of declarations that are gone. It runs when the
