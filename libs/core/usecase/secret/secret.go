@@ -35,11 +35,11 @@ type operation struct {
 // getEntryName returns the name the value of a secret is stored under in the key store.
 func getEntryName(id string) string { return "secret/" + id }
 
-func invalid(format string, args ...any) error {
+func newInvalidError(format string, args ...any) error {
 	return fmt.Errorf("%w: %s", ErrInvalid, fmt.Sprintf(format, args...))
 }
 
-func notFound(id string) error { return fmt.Errorf("%w: %s", ErrNotFound, id) }
+func newNotFoundError(id string) error { return fmt.Errorf("%w: %s", ErrNotFound, id) }
 
 // setValue stores the value of the secret. The error never carries the value.
 func (o operation) setValue(ctx context.Context, id, value string) error {
@@ -78,7 +78,7 @@ func isNameTaken(list []Secret, group, name, exceptID string) bool {
 // checkName returns why the text is not a name of a secret or a group.
 func checkName(kind, name string) error {
 	if !pluginport.IsValidSecretName(name) {
-		return invalid("the %s is empty, has leading or trailing space or is over %d characters", kind, pluginport.MaxSecretNameLength)
+		return newInvalidError("the %s is empty, has leading or trailing space or is over %d characters", kind, pluginport.MaxSecretNameLength)
 	}
 	return nil
 }

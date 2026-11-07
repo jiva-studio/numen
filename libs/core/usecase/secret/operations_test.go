@@ -292,3 +292,32 @@ func TestListReportsWhetherAValueIsOnThisMachineAndNeverTheValue(t *testing.T) {
 		t.Errorf("listing = %+v", listing)
 	}
 }
+
+// undeletableStore refuses to delete.
+type undeletableStore struct{ keys }
+
+func (undeletableStore) DeleteKey(context.Context, string) error { return errLocked }
+
+func TestDeleteWithAFailingStoreRestoresTheEntryWithItsPermissionsAndNamesNoReader(t *testing.T) {
+	list := []secret.Secret{
+		{ID: "s00000001", Name: "First", Group: "g"},
+		{ID: "s00000002", Name: "Work", Group: "g", Allowed: []secret.Permission{getAlphaKey()}},
+		{ID: "s00000003", Name: "Last", Group: "g"},
+	}
+	f := newFixture(list...)
+	f.keys["secret/s00000002"] = "invented-value"
+	f.secrets = secret.NewSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil)
+
+	err := f.secrets.Delete.Execute(t.Context(), "s00000002")
+	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) {
+		t.Errorf("error = %v", err)
+	}
+	if !slices.EqualFunc(f.ledger.list, list, func(a, b secret.Secret) bool {
+		return a.ID == b.ID && slices.Equal(a.Allowed, b.Allowed)
+	}) {
+		t.Errorf("list = %v, want %v", f.ledger.list, list)
+	}
+	if len(f.plugins.readers) != 0 {
+		t.Errorf("readers = %v, want nobody", f.plugins.readers)
+	}
+}

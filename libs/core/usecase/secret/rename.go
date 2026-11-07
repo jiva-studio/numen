@@ -14,10 +14,10 @@ func (u *Rename) Execute(ctx context.Context, id, name string) error {
 		return nil, u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
 			index := getIndex(list, id)
 			if index < 0 {
-				return nil, notFound(id)
+				return nil, newNotFoundError(id)
 			}
 			if isNameTaken(list, list[index].Group, name, id) {
-				return nil, invalid("the name is taken in the group")
+				return nil, newInvalidError("the name is taken in the group")
 			}
 			list[index].Name = name
 			return list, nil

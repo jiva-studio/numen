@@ -25,7 +25,7 @@ func (u *Create) Execute(ctx context.Context, group, name, value string) (string
 			return nil, err
 		}
 		if isNameTaken(known, group, name, "") {
-			return nil, invalid("the name is taken in the group")
+			return nil, newInvalidError("the name is taken in the group")
 		}
 		if id, err = u.makeID(known); err != nil {
 			return nil, err
@@ -35,7 +35,7 @@ func (u *Create) Execute(ctx context.Context, group, name, value string) (string
 		}
 		change := func(list []Secret) ([]Secret, error) {
 			if isNameTaken(list, group, name, "") {
-				return nil, invalid("the name is taken in the group")
+				return nil, newInvalidError("the name is taken in the group")
 			}
 			return append(slices.Clone(list), Secret{ID: id, Name: name, Group: group}), nil
 		}
@@ -68,7 +68,7 @@ func checkNew(group, name, value string) error {
 		return err
 	}
 	if value == "" {
-		return invalid("the value is empty")
+		return newInvalidError("the value is empty")
 	}
 	return nil
 }

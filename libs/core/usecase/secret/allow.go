@@ -13,12 +13,12 @@ type Allow struct{ operation }
 func (u *Allow) Execute(ctx context.Context, secretID string, permission Permission) error {
 	return u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
 		if !slices.Contains(u.plugins.ListDeclarations(), permission) {
-			return nil, invalid("the plugin is not installed or does not declare that secret")
+			return nil, newInvalidError("the plugin is not installed or does not declare that secret")
 		}
 		return nil, u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
 			index := getIndex(list, secretID)
 			if index < 0 {
-				return nil, notFound(secretID)
+				return nil, newNotFoundError(secretID)
 			}
 			if !slices.Contains(list[index].Allowed, permission) {
 				list[index].Allowed = append(slices.Clone(list[index].Allowed), permission)
@@ -37,7 +37,7 @@ func (u *Deny) Execute(ctx context.Context, secretID string, permission Permissi
 		return nil, u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
 			index := getIndex(list, secretID)
 			if index < 0 {
-				return nil, notFound(secretID)
+				return nil, newNotFoundError(secretID)
 			}
 			list[index].Allowed = slices.DeleteFunc(slices.Clone(list[index].Allowed), func(one Permission) bool {
 				return one == permission

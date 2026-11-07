@@ -21,7 +21,7 @@ func (u *Move) Execute(ctx context.Context, id, beforeID string) error {
 func moveSecret(list []Secret, id, beforeID string) ([]Secret, error) {
 	index := getIndex(list, id)
 	if index < 0 {
-		return nil, notFound(id)
+		return nil, newNotFoundError(id)
 	}
 	moved := list[index]
 	if beforeID == id {
@@ -33,10 +33,10 @@ func moveSecret(list []Secret, id, beforeID string) ([]Secret, error) {
 	}
 	target := getIndex(rest, beforeID)
 	if target < 0 {
-		return nil, notFound(beforeID)
+		return nil, newNotFoundError(beforeID)
 	}
 	if rest[target].Group != moved.Group {
-		return nil, invalid("a secret moves inside its own group")
+		return nil, newInvalidError("a secret moves inside its own group")
 	}
 	return slices.Insert(rest, target, moved), nil
 }

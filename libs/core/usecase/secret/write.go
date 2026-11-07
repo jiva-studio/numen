@@ -8,7 +8,7 @@ type Write struct{ operation }
 // Execute stores the new value and configures the plugins that may read the secret.
 func (u *Write) Execute(ctx context.Context, id, value string) error {
 	if value == "" {
-		return invalid("the value is empty")
+		return newInvalidError("the value is empty")
 	}
 	return u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
 		list, err := u.ledger.GetSecrets()
@@ -17,7 +17,7 @@ func (u *Write) Execute(ctx context.Context, id, value string) error {
 		}
 		index := getIndex(list, id)
 		if index < 0 {
-			return nil, notFound(id)
+			return nil, newNotFoundError(id)
 		}
 		if err := u.setValue(ctx, id, value); err != nil {
 			return nil, err
