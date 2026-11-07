@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace.js'
 import { writeSetting } from '../../support/vault.js'
+import { usePlatformAgent } from '../../support/browser.js'
 
 /**
  * The title bar the Title bar plugin draws, the window without it, and the CSS markers the Wails
@@ -28,7 +29,9 @@ export const System = {
 }
 `
 
+/** Serves the runtime of the platform, and names the platform in the user agent the plugins read. */
 const serveRuntime = async (page: Page, platform: Platform): Promise<void> => {
+  await usePlatformAgent(page, platform)
   await page.route('**/wails/runtime.js', (route) =>
     route.fulfill({ contentType: 'text/javascript', body: createRuntime(platform) }),
   )
