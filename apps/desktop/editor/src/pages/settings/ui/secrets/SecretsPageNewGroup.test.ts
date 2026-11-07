@@ -90,7 +90,7 @@ describe('the page of secrets with no group', () => {
     dispose(wrapper)
   })
 
-  it('creates a secret in a group the person types, named 1', async () => {
+  it('creates a secret in a group the person types, named Default', async () => {
     const { installation, wrapper } = mountPage()
     await click(findButton(/add secret/i))
     expect(maskedInputs()).toHaveLength(0)
@@ -99,7 +99,7 @@ describe('the page of secrets with no group', () => {
     await enterText(input as HTMLInputElement, 'made-up-llama-value')
     expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
       'Local Llama',
-      '1',
+      'Default',
       'made-up-llama-value',
     )
     dispose(wrapper)

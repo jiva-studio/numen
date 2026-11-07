@@ -3,7 +3,7 @@
  * The page of secrets: every secret by group, in priority order, with the plugin declarations that
  * may read it. A value is entered here once and is never shown again.
  */
-import { computed, nextTick, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
@@ -33,11 +33,13 @@ interface Draft {
   readonly name: string
 }
 
+/** The longest name of a group, in characters; the core refuses a longer one. */
+const MAX_GROUP_LENGTH = 64
+
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 const plugins = computed(() => installation.value.plugins?.value ?? [])
 const credentialsPath = computed(() => installation.value.credentialsPath?.value ?? '')
-const hasKeyStore = computed(() => installation.value.hasKeyStore?.value ?? true)
 const sections = computed(() =>
   createSecretSections(plugins.value, installation.value.secrets?.value ?? []),
 )
@@ -46,11 +48,24 @@ const drafts = ref<readonly Draft[]>([])
 /** The group name typed for a secret in a group no section shows yet, or null while none is added. */
 const newGroup = ref<string | null>(null)
 const newGroupName = computed(() => (newGroup.value ?? '').trim())
+const isNewGroupTooLong = computed(() => [...newGroupName.value].length > MAX_GROUP_LENGTH)
 const newName = computed(() => getNextSecretName(getNamesInGroup(newGroupName.value)))
 const deleting = ref<Secret | null>(null)
 const deleteOpener = ref<HTMLElement | null>(null)
 const readers = computed(() =>
   deleting.value ? getReaderNames(deleting.value, plugins.value) : [],
+)
+
+/** Returns the focus to the button that opened the confirmation, if it is still there. */
+watch(
+  deleting,
+  (secret) => {
+    if (secret !== null) return
+    const opener = deleteOpener.value
+    deleteOpener.value = null
+    if (opener?.isConnected) opener.focus()
+  },
+  { flush: 'post' },
 )
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -62,9 +77,12 @@ function onOpenNewGroup(): void {
   newGroup.value = ''
 }
 
-async function onCreateInNewGroup(value: string): Promise<void> {
+async function onCreateInNewGroup(value: string): Promise<boolean> {
+  if (isNewGroupTooLong.value) return false
   const id = await installation.value.createSecret(newGroupName.value, newName.value, value)
-  if (id !== '') newGroup.value = null
+  if (id === '') return false
+  newGroup.value = null
+  return true
 }
 
 function onDiscard(group: string, name: string): void {
@@ -87,22 +105,13 @@ function onAskDelete(secret: Secret, opener: HTMLElement): void {
   deleteOpener.value = opener
 }
 
-async function onConfirmDelete(): Promise<void> {
+function onConfirmDelete(): void {
   if (deleting.value) installation.value.deleteSecret(deleting.value.id)
-  return onCloseDelete()
-}
-
-async function onCancelDelete(): Promise<void> {
-  return onCloseDelete()
-}
-
-/** Closes the confirmation and returns the focus to the button that opened it, if it is still there. */
-async function onCloseDelete(): Promise<void> {
-  const opener = deleteOpener.value
   deleting.value = null
-  deleteOpener.value = null
-  await nextTick()
-  if (opener?.isConnected) opener.focus()
+}
+
+function onCancelDelete(): void {
+  deleting.value = null
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -129,7 +138,7 @@ function getNamesInGroup(group: string): readonly string[] {
 
     <h1 class="secrets-page__title">{{ words.secretsTitle }}</h1>
     <p class="secrets-page__about">{{ words.secretsAbout }}</p>
-    <p v-if="hasKeyStore" class="secrets-page__where">
+    <p class="secrets-page__where">
       {{ credentialsPath === '' ? words.secretsKeychain : words.secretsFile(credentialsPath) }}
     </p>
 
@@ -163,12 +172,15 @@ function getNamesInGroup(group: string): readonly string[] {
         class="secrets-page__new-group"
         @keydown.esc="newGroup = null"
       />
+      <p v-if="isNewGroupTooLong" role="alert" class="secrets-page__new-error">
+        {{ words.secretGroupTooLong(MAX_GROUP_LENGTH) }}
+      </p>
       <ul v-if="newGroupName !== ''" class="secrets-page__new-secrets">
         <SecretDraftRow
           :key="newName"
           :name="newName"
           can-discard
-          @create="onCreateInNewGroup"
+          :submit="onCreateInNewGroup"
           @discard="newGroup = null"
         />
       </ul>
@@ -251,6 +263,12 @@ function getNamesInGroup(group: string): readonly string[] {
   color: var(--numen-ink);
   font-family: inherit;
   font-size: var(--numen-text-2);
+}
+
+.secrets-page__new-error {
+  margin: 0.5rem 0 0;
+  color: var(--numen-ink);
+  font-size: var(--numen-text-1);
 }
 
 .secrets-page__new-secrets {

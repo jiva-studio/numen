@@ -12,6 +12,8 @@ import SecretValueInput from './SecretValueInput.vue'
 defineProps<{
   name: string
   canDiscard: boolean
+  /** Creates the secret and resolves true when it was created; the field then keeps a failed value. */
+  submit?: ((value: string) => Promise<boolean>) | undefined
 }>()
 
 const emit = defineEmits<{
@@ -41,6 +43,7 @@ const emit = defineEmits<{
       class="secret-draft__value"
       :label="words.secretValue(name)"
       :placeholder="words.keyPlaceholder"
+      :submit="submit"
       @commit="(value) => emit('create', value)"
     />
   </li>

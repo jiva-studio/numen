@@ -51,6 +51,7 @@ describe('the sections of the secrets', () => {
 
 describe('the next name of a secret', () => {
   it('is the count plus one, and the first number not taken', () => {
+    expect(getNextSecretName([])).toBe('Default')
     expect(getNextSecretName(['Default'])).toBe('2')
     expect(getNextSecretName(['Work', 'Home'])).toBe('3')
     expect(getNextSecretName(['1', '3'])).toBe('4')

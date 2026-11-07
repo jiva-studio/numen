@@ -15,7 +15,8 @@ export const WORDS = {
   secretsTitle: 'Secrets',
   secretsAbout:
     'Keys and tokens for plugins. Enter a value once; it is never shown again. Allow each plugin declaration to read the secrets it needs.',
-  secretsKeychain: 'The values are kept in the system keychain, not in the settings file.',
+  secretsKeychain:
+    'The values are kept in the system keychain or, where it is not available, in the file credentials/credentials.json, not in the settings file.',
   secretsFile: (path: string) =>
     `The values are not in the system keychain on this machine. They are kept in a protected file: ${path}`,
   secretStored: 'Enter a new value',
@@ -32,6 +33,7 @@ export const WORDS = {
   secretsEmpty: 'No secrets yet. Add one to share a key or token between plugins.',
   secretNewGroup: 'Group of the new secret',
   secretNewGroupPlaceholder: 'Group name',
+  secretGroupTooLong: (limit: number) => `A group name has at most ${limit} characters.`,
   secretAllowedTo: 'Allowed to',
   secretGroupRename: 'Rename group',
   secretGroupRenameName: 'Name of the group',

@@ -2,13 +2,16 @@
 /**
  * A masked field a value is entered into. The value is sent once, on Enter, on leaving the field
  * or on a change, and the field is cleared as it is sent: nothing here keeps a value or shows one.
+ * With submit, the field keeps the value until submit resolves true, sends no second value while
+ * one is in flight, and sends a value that failed again only on Enter.
  */
 import { ref } from 'vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-defineProps<{
+const props = defineProps<{
   label: string
   placeholder: string
+  submit?: ((value: string) => Promise<boolean>) | undefined
 }>()
 
 const emit = defineEmits<{
@@ -17,13 +20,44 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const entry = ref('')
+const isSending = ref(false)
+/** The value whose last submit failed, until the field changes. */
+let failedValue: string | null = null
 
 /* -------------------------------- Handlers -------------------------------- */
-function onCommit(): void {
+async function onCommit(): Promise<void> {
   const value = entry.value.trim()
   if (value === '') return
+  if (props.submit) {
+    await submitValue(props.submit, value)
+    return
+  }
   entry.value = ''
   emit('commit', value)
+}
+
+function onCommitAgain(): Promise<void> {
+  failedValue = null
+  return onCommit()
+}
+
+function onInput(): void {
+  failedValue = null
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+async function submitValue(
+  submit: (value: string) => Promise<boolean>,
+  value: string,
+): Promise<void> {
+  if (isSending.value || value === failedValue) return
+  isSending.value = true
+  try {
+    if (await submit(value)) entry.value = ''
+    else failedValue = value
+  } finally {
+    isSending.value = false
+  }
 }
 </script>
 
@@ -38,7 +72,8 @@ function onCommit(): void {
     class="secret-value"
     @blur="onCommit"
     @change="onCommit"
-    @keydown.enter="onCommit"
+    @input="onInput"
+    @keydown.enter="onCommitAgain"
   />
 </template>
 

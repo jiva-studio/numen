@@ -91,10 +91,11 @@ export function getReaderNames(secret: Secret, plugins: readonly PluginInfo[]): 
 }
 
 /**
- * The name a new secret of a group gets: the next number after those already there, the first one
- * not in use.
+ * The name a new secret of a group gets: Default in a group with no secret, else the next number
+ * after those already there, the first one not in use.
  */
 export function getNextSecretName(namesInGroup: readonly string[]): string {
+  if (namesInGroup.length === 0) return 'Default'
   let number = namesInGroup.length + 1
   while (namesInGroup.includes(String(number))) number++
   return String(number)
