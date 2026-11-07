@@ -56,7 +56,7 @@ describe('createBackendHandlers', () => {
     expect(deps.openFile).toHaveBeenCalledWith('talks/a.md')
   })
 
-  it('tells the plugins that the file a handler ran over changed, so the views of it read it again', async () => {
+  it('notifies the plugins of a change to the file a handler ran over', async () => {
     const { deps, handlers } = createWith({ ok: true, value: { message: '', openedPath: '' } })
 
     await handlers.runBackendHandler({
