@@ -25,7 +25,7 @@ type FileReadInput struct {
 // FileReadOutput is the output of the file_read tool.
 type FileReadOutput struct {
 	Path        string `json:"path"`
-	Content     string `json:"content" jsonschema:"the bytes read as text"`
+	Text        string `json:"text" jsonschema:"the bytes read as text"`
 	Start       int    `json:"start" jsonschema:"starting byte offset of the returned slice"`
 	Length      int    `json:"length" jsonschema:"number of bytes in the returned slice"`
 	Size        int    `json:"size" jsonschema:"total size of the file in bytes"`
@@ -62,7 +62,7 @@ func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput,
 	}
 	return FileReadOutput{
 		Path:        in.Path,
-		Content:     read.Text,
+		Text:        read.Text,
 		Start:       read.Start,
 		Length:      len(read.Text),
 		Size:        int(read.Stat.Size),
@@ -72,8 +72,8 @@ func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput,
 
 // FileCreateInput is the input of the file_create tool.
 type FileCreateInput struct {
-	Path    string `json:"path" jsonschema:"the file's path relative to the vault root"`
-	Content string `json:"content" jsonschema:"raw content to write to the new file"`
+	Path string  `json:"path" jsonschema:"the file's path relative to the vault root"`
+	Text *string `json:"text,omitempty" jsonschema:"raw content to write to the new file"`
 }
 
 // FileCreateOutput is the output of the file_create tool.
@@ -98,7 +98,10 @@ func (t *Tools) createFile(ctx context.Context, in FileCreateInput) (FileCreateO
 		return FileCreateOutput{}, errors.New("path is required")
 	}
 
-	data := []byte(in.Content)
+	if in.Text == nil {
+		return FileCreateOutput{}, errors.New("text is required")
+	}
+	data := []byte(*in.Text)
 	if err := t.vault.Create(ctx, in.Path, data); err != nil {
 		return FileCreateOutput{}, fmt.Errorf("%s cannot be created: %w", in.Path, err)
 	}

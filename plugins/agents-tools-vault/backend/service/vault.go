@@ -9,7 +9,7 @@ import (
 
 // VaultInfoInput is the input of the vault_get tool.
 type VaultInfoInput struct {
-	ID string `json:"id,omitempty" jsonschema:"optional vault ID to query; defaults to the vault the call works"`
+	Vault string `json:"vault,omitempty" jsonschema:"the vault's name, path or identifier, as vault_list returns them; the vault of the call when left out"`
 }
 
 // VaultInfoOutput is the output of the vault_get tool.
@@ -25,7 +25,7 @@ func (t *Tools) addVaultGet(registry *tools.Registry) error {
 		Step:        tools.ByEffect,
 		Name:        "vault_get",
 		Title:       "Get Vault Info",
-		Description: "Get metadata, name, root path, and note count for the vault.",
+		Description: "Get the identifier, name, root path and note count of a vault, named by its name, path or identifier; the vault of the call when none is named.",
 		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).getVaultInfo))
@@ -33,8 +33,12 @@ func (t *Tools) addVaultGet(registry *tools.Registry) error {
 
 func (t *Tools) getVaultInfo(ctx context.Context, in VaultInfoInput) (VaultInfoOutput, error) {
 	v := t.vault
-	if in.ID != "" {
-		v = t.host.With(domain.VaultID(in.ID))
+	if in.Vault != "" {
+		target, err := t.findVault(ctx, in.Vault)
+		if err != nil {
+			return VaultInfoOutput{}, err
+		}
+		v = t.host.With(target.ID)
 	}
 
 	info, err := v.GetVault(ctx)

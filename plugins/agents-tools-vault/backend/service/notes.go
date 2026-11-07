@@ -22,7 +22,7 @@ type NoteReadInput struct {
 type NoteReadOutput struct {
 	Path        string         `json:"path" jsonschema:"path of the note"`
 	Title       string         `json:"title" jsonschema:"title of the note"`
-	Content     string         `json:"content" jsonschema:"full raw markdown content of the file"`
+	Text        string         `json:"text" jsonschema:"full raw markdown content of the file"`
 	Body        string         `json:"body" jsonschema:"prose content of the note excluding frontmatter"`
 	Fingerprint string         `json:"fingerprint" jsonschema:"concurrency fingerprint for atomic writes"`
 	Frontmatter map[string]any `json:"frontmatter,omitempty" jsonschema:"parsed YAML frontmatter, if present"`
@@ -71,7 +71,7 @@ func (t *Tools) readNote(ctx context.Context, in NoteReadInput) (NoteReadOutput,
 	return NoteReadOutput{
 		Path:        path,
 		Title:       parsed.Title,
-		Content:     string(data),
+		Text:        string(data),
 		Body:        parsed.Body,
 		Fingerprint: formatFingerprint(fp),
 		Frontmatter: parsed.Frontmatter,
@@ -81,7 +81,7 @@ func (t *Tools) readNote(ctx context.Context, in NoteReadInput) (NoteReadOutput,
 // NoteWriteInput is the input of the note_write tool.
 type NoteWriteInput struct {
 	Path        string  `json:"path" jsonschema:"relative path to the note file"`
-	Content     *string `json:"content,omitempty" jsonschema:"markdown content to write"`
+	Text        *string `json:"text,omitempty" jsonschema:"markdown content to write"`
 	Fingerprint string  `json:"fingerprint,omitempty" jsonschema:"optional baseline fingerprint from note_read for optimistic concurrency"`
 }
 
@@ -112,10 +112,10 @@ func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutp
 		path += ".md"
 	}
 
-	if in.Content == nil {
-		return NoteWriteOutput{}, errors.New("content is required")
+	if in.Text == nil {
+		return NoteWriteOutput{}, errors.New("text is required")
 	}
-	content := *in.Content
+	content := *in.Text
 
 	newFp, err := t.saveNoteContent(ctx, path, content, in.Fingerprint)
 	if err != nil {
@@ -175,10 +175,10 @@ func (t *Tools) writeOrCreate(ctx context.Context, path, content string) (domain
 
 // HeadingItem is a heading of a note.
 type HeadingItem struct {
-	Level  int    `json:"level" jsonschema:"heading level (1 to 6)"`
-	Text   string `json:"text" jsonschema:"heading text"`
-	Line   int    `json:"line" jsonschema:"line index in the body"`
-	Offset int    `json:"offset" jsonschema:"byte offset in the body"`
+	Level int    `json:"level" jsonschema:"heading level (1 to 6)"`
+	Text  string `json:"text" jsonschema:"heading text"`
+	Line  int    `json:"line" jsonschema:"line of the heading in the body, counted from 1 at the first line of the body"`
+	Start int    `json:"start" jsonschema:"byte offset of the heading in the body"`
 }
 
 // NoteHeadingListInput is the input of the note_heading_list tool.
@@ -217,10 +217,10 @@ func (t *Tools) listNoteHeadings(ctx context.Context, in NoteHeadingListInput) (
 	items := make([]HeadingItem, 0, len(parsed.Headings))
 	for _, h := range parsed.Headings {
 		items = append(items, HeadingItem{
-			Level:  h.Level,
-			Text:   h.Text,
-			Line:   h.Line,
-			Offset: h.Offset,
+			Level: h.Level,
+			Text:  h.Text,
+			Line:  h.Line + 1,
+			Start: h.Offset,
 		})
 	}
 

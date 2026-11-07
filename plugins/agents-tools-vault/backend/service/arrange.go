@@ -33,7 +33,7 @@ type NoteTitle struct {
 
 // NoteListInput is the input of the note_list tool.
 type NoteListInput struct {
-	Folder string `json:"folder,omitempty" jsonschema:"list only the notes in this folder and its subfolders, relative to the vault folder; the whole vault when left out"`
+	Folder string `json:"folder,omitempty" jsonschema:"limit the result to this folder and its subfolders, relative to the vault folder; the whole vault when left out"`
 	Limit  int    `json:"limit,omitempty" jsonschema:"how many notes to return (default: 100, max: 500)"`
 	Offset int    `json:"offset,omitempty" jsonschema:"how many notes to skip; the nextOffset of the previous result continues the list"`
 }

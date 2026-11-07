@@ -15,7 +15,7 @@ import (
 type LinkAddition struct {
 	From        string `json:"from" jsonschema:"path of the source note"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the fingerprint note_read returned for the note; the same for every link written into one note"`
-	To          string `json:"to" jsonschema:"the other note's name, or note://<identifier> when the name is ambiguous"`
+	Address     string `json:"address" jsonschema:"the other note's name, or note://<identifier> when the name is ambiguous"`
 	Role        string `json:"role" jsonschema:"the kind of relationship: parent, child, jump, ref or attachment"`
 	Type        string `json:"type,omitempty" jsonschema:"an open type of the link, such as source"`
 	Label       string `json:"label,omitempty" jsonschema:"a few words naming the relationship"`
@@ -30,7 +30,7 @@ type LinkAddInput struct {
 // LinkAddItem is the outcome of writing one link.
 type LinkAddItem struct {
 	From        string `json:"from" jsonschema:"path of the source note"`
-	To          string `json:"to" jsonschema:"the target as given"`
+	Address     string `json:"address" jsonschema:"the target as given"`
 	Fingerprint string `json:"fingerprint,omitempty" jsonschema:"fingerprint of the note after the write, for its next write; absent when the link was not written"`
 	Error       string `json:"error,omitempty" jsonschema:"error message when the link was not written"`
 }
@@ -43,7 +43,7 @@ type LinkAddOutput struct {
 // LinkUpdateInput is the input of the link_update tool.
 type LinkUpdateInput struct {
 	From        string `json:"from" jsonschema:"path of the source note"`
-	To          string `json:"to" jsonschema:"the target as it is written now"`
+	Address     string `json:"address" jsonschema:"the target as it is written now"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the fingerprint note_read returned for the note"`
 	Role        string `json:"role,omitempty" jsonschema:"the link role: parent, child, jump, ref or attachment; kept when left out"`
 	Type        string `json:"type,omitempty" jsonschema:"the type of the link; kept when left out"`
@@ -54,7 +54,7 @@ type LinkUpdateInput struct {
 // LinkRemoveInput is the input of the link_remove tool.
 type LinkRemoveInput struct {
 	From        string `json:"from" jsonschema:"path of the source note"`
-	To          string `json:"to" jsonschema:"the target as it is written"`
+	Address     string `json:"address" jsonschema:"the target as it is written"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the fingerprint note_read returned for the note"`
 	Role        string `json:"role,omitempty" jsonschema:"remove only the link of this role; every link to the target when left out"`
 }
@@ -110,7 +110,7 @@ func (t *Tools) addLinkRemove(registry *tools.Registry) error {
 // readAddition returns the link to write and the baseline of its note, or the validation error.
 func readAddition(in LinkAddition) (host.LinkAddition, error) {
 	link := domain.Link{
-		Target: domain.ParseAddress(in.To),
+		Target: domain.ParseAddress(in.Address),
 		Role:   domain.LinkRole(in.Role),
 		Type:   in.Type,
 		Why:    in.Note,
@@ -161,22 +161,15 @@ func checkRole(role domain.LinkRole) error {
 }
 
 func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, error) {
-	switch {
-	case len(in.Links) == 0:
+	if len(in.Links) == 0 {
 		return LinkAddOutput{}, errors.New("links is required")
-	case len(in.Links) > maxBatch:
-		return LinkAddOutput{}, fmt.Errorf("%d links given, at most %d are allowed", len(in.Links), maxBatch)
 	}
 	out := LinkAddOutput{Results: make([]LinkAddItem, len(in.Links))}
 	additions := make([]host.LinkAddition, 0, len(in.Links))
 	positions := make([]int, 0, len(in.Links))
-	conflicts := findFingerprintConflicts(in.Links)
 	for i, l := range in.Links {
-		out.Results[i] = LinkAddItem{From: l.From, To: l.To, Fingerprint: "", Error: ""}
+		out.Results[i] = LinkAddItem{From: l.From, Address: l.Address, Fingerprint: "", Error: ""}
 		addition, err := readAddition(l)
-		if err == nil {
-			err = conflicts[l.From]
-		}
 		if err != nil {
 			out.Results[i].Error = err.Error()
 			continue
@@ -205,21 +198,6 @@ func (t *Tools) addLinks(ctx context.Context, in LinkAddInput) (LinkAddOutput, e
 	return out, nil
 }
 
-// findFingerprintConflicts returns, by note path, the error for a note whose links have two different
-// fingerprints: the links for one note are written together.
-func findFingerprintConflicts(links []LinkAddition) map[string]error {
-	first := map[string]string{}
-	conflicts := map[string]error{}
-	for _, l := range links {
-		if fingerprint, isSeen := first[l.From]; isSeen && fingerprint != l.Fingerprint {
-			conflicts[l.From] = fmt.Errorf("the links for %s have different fingerprints; the links for one note are written together", l.From)
-			continue
-		}
-		first[l.From] = l.Fingerprint
-	}
-	return conflicts
-}
-
 // describeWriteError returns the error of a write of a note, naming the note when the
 // fingerprint is stale.
 func describeWriteError(notePath string, err error) error {
@@ -230,9 +208,9 @@ func describeWriteError(notePath string, err error) error {
 }
 
 func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOutput, error) {
-	target := domain.ParseAddress(in.To)
+	target := domain.ParseAddress(in.Address)
 	if target.Value == "" {
-		return LinkEditOutput{}, errors.New("to is required")
+		return LinkEditOutput{}, errors.New("address is required")
 	}
 	role := domain.LinkRole(in.Role)
 	if err := checkRole(role); err != nil {
@@ -251,9 +229,9 @@ func (t *Tools) updateLink(ctx context.Context, in LinkUpdateInput) (LinkEditOut
 }
 
 func (t *Tools) removeLinks(ctx context.Context, in LinkRemoveInput) (LinkEditOutput, error) {
-	target := domain.ParseAddress(in.To)
+	target := domain.ParseAddress(in.Address)
 	if target.Value == "" {
-		return LinkEditOutput{}, errors.New("to is required")
+		return LinkEditOutput{}, errors.New("address is required")
 	}
 	role := domain.LinkRole(in.Role)
 	if err := checkRole(role); err != nil {

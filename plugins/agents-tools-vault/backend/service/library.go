@@ -16,22 +16,31 @@ import (
 
 // LibrarySearchInput is the input of the library_search tool.
 type LibrarySearchInput struct {
-	Query      string   `json:"query" jsonschema:"words to search for, as they appear in the text"`
-	Limit      int      `json:"limit,omitempty" jsonschema:"how many passages to return (default: 20, max: 100)"`
-	Kinds      []string `json:"kinds,omitempty" jsonschema:"the kinds of file to search: note for markdown notes, file for every other file (books, PDFs, recordings, scans); all kinds when left out"`
-	PathPrefix string   `json:"pathPrefix,omitempty" jsonschema:"search only the files whose path starts with this prefix, relative to the vault folder, such as library/"`
+	Query  string   `json:"query" jsonschema:"words to search for, as they appear in the text"`
+	Limit  int      `json:"limit,omitempty" jsonschema:"how many passages to return (default: 20, max: 100)"`
+	Kinds  []string `json:"kinds,omitempty" jsonschema:"the kinds of file to search: note for markdown notes, file for every other file (books, PDFs, recordings, scans); all kinds when left out"`
+	Folder string   `json:"folder,omitempty" jsonschema:"limit the result to this folder and its subfolders, relative to the vault folder; the whole vault when left out"`
+}
+
+// Place is a place in a source: a page of a PDF, a position in a recording, or a position in an EPUB.
+type Place struct {
+	Page            int      `json:"page,omitempty" jsonschema:"PDF: the page, from 1"`
+	PageCount       int      `json:"pageCount,omitempty" jsonschema:"PDF: the number of pages"`
+	PositionSeconds *float64 `json:"positionSeconds,omitempty" jsonschema:"recording: seconds from the start"`
+	CFI             string   `json:"cfi,omitempty" jsonschema:"EPUB: the CFI of the place"`
+	Chapter         string   `json:"chapter,omitempty" jsonschema:"EPUB: the table-of-contents title at the place"`
 }
 
 // LibraryMatch is a passage that matches a library search.
 type LibraryMatch struct {
-	Path     string `json:"path" jsonschema:"the path of the source file, relative to the vault folder"`
-	Title    string `json:"title" jsonschema:"the title of the note, else the name of the file"`
-	Location string `json:"location,omitempty" jsonschema:"the location in the numbering of the source, such as a page, a chapter or a time; absent when the format has none"`
-	Text     string `json:"text" jsonschema:"the text around the hit, truncated to a fixed size, often mid-sentence"`
-	Start    int    `json:"start" jsonschema:"the byte offset of the passage in the text of the file"`
-	Length   int    `json:"length" jsonschema:"the length of the passage in bytes"`
-	Line     int    `json:"line,omitempty" jsonschema:"the line of the hit in a note, counted from the first line of its body"`
-	URI      string `json:"uri" jsonschema:"the address of this passage; use it as the target of a markdown link to the passage"`
+	Path   string `json:"path" jsonschema:"the path of the source file, relative to the vault folder"`
+	Title  string `json:"title" jsonschema:"the title of the note, else the name of the file"`
+	Place  *Place `json:"place,omitempty" jsonschema:"the place of the passage in the source; absent for a source with no pages, times or EPUB positions, such as a note"`
+	Text   string `json:"text" jsonschema:"the text around the hit, truncated to a fixed size, often mid-sentence"`
+	Start  int    `json:"start" jsonschema:"the byte offset of the passage in the text of the file"`
+	Length int    `json:"length" jsonschema:"the length of the passage in bytes"`
+	Line   int    `json:"line" jsonschema:"the line of the hit, counted from 1 at the first line of the text; for a note, the first line of its body"`
+	URI    string `json:"uri" jsonschema:"the address of this passage; use it as the target of a markdown link to the passage"`
 }
 
 // LibrarySearchOutput is the output of the library_search tool.
@@ -48,27 +57,24 @@ type LibraryReadInput struct {
 	Length int    `json:"length,omitempty" jsonschema:"bytes of text to read: default 20000 and at most 50000 for a text version; at most 16000 for a plain text file"`
 }
 
-// LibraryLocation is a range of the text and its location in the numbering of the source.
-type LibraryLocation struct {
-	Start       int     `json:"start" jsonschema:"the byte offset of the range in the text"`
-	Length      int     `json:"length" jsonschema:"the length of the range in bytes"`
-	Page        int     `json:"page,omitempty" jsonschema:"the page, counted from 1"`
-	CFI         string  `json:"cfi,omitempty" jsonschema:"the EPUB CFI of the range in a book"`
-	FromSeconds float64 `json:"fromSeconds,omitempty" jsonschema:"the start time of the range in the recording, in seconds"`
-	ToSeconds   float64 `json:"toSeconds,omitempty" jsonschema:"the end time of the range in the recording, in seconds"`
+// LibraryRange is a range of the text and the place in the source where it starts.
+type LibraryRange struct {
+	Start  int    `json:"start" jsonschema:"the byte offset of the range in the text"`
+	Length int    `json:"length" jsonschema:"the length of the range in bytes"`
+	Place  *Place `json:"place" jsonschema:"the place in the source where the range starts"`
 }
 
 // LibraryReadOutput is the output of the library_read tool.
 type LibraryReadOutput struct {
-	Path      string            `json:"path" jsonschema:"the path of the file, relative to the vault folder"`
-	Kind      string            `json:"kind,omitempty" jsonschema:"the kind of the text version, as set by the plugin that created it; absent for a text file"`
-	Version   string            `json:"version,omitempty" jsonschema:"the text version read"`
-	Text      string            `json:"text" jsonschema:"the text read"`
-	Start     int               `json:"start" jsonschema:"the byte offset of the returned text in the whole text"`
-	Length    int               `json:"length" jsonschema:"the length of the returned text in bytes"`
-	Size      int               `json:"size" jsonschema:"the length of the whole text in bytes"`
-	NextStart *int              `json:"nextStart,omitempty" jsonschema:"the start to read next; absent at the end of the text"`
-	Locations []LibraryLocation `json:"locations,omitempty" jsonschema:"the locations of the source the returned text covers, in order"`
+	Path      string         `json:"path" jsonschema:"the path of the file, relative to the vault folder"`
+	Kind      string         `json:"kind,omitempty" jsonschema:"the kind of the text version, as set by the plugin that created it; absent for a text file"`
+	Version   string         `json:"version,omitempty" jsonschema:"the text version read"`
+	Text      string         `json:"text" jsonschema:"the text read"`
+	Start     int            `json:"start" jsonschema:"the byte offset of the returned text in the whole text"`
+	Length    int            `json:"length" jsonschema:"the length of the returned text in bytes"`
+	Size      int            `json:"size" jsonschema:"the length of the whole text in bytes"`
+	NextStart *int           `json:"nextStart,omitempty" jsonschema:"the start to read next; absent at the end of the text"`
+	Ranges    []LibraryRange `json:"ranges,omitempty" jsonschema:"the ranges of the returned text with their places in the source, in order"`
 }
 
 // WithLibrary sets the text versions and the search index of the vaults that the library tools use.
@@ -90,7 +96,7 @@ func (t *Tools) addLibrarySearch(registry *tools.Registry) error {
 		Title: "Search the library",
 		Description: "Search the text index of all files in the vault: the notes, and the books, " +
 			"PDFs, scans and recordings stored with them, by the words of the query and by their meaning. " +
-			"Returns passages, best first: the text around each hit, the path of the file, its location " +
+			"Returns passages, best first: the text around each hit, the path of the file, its place " +
 			"(a page, a chapter, a time) and its address. One file returns at most three passages. " +
 			"note_search searches only notes, by title, path and text; use library_search for the " +
 			"text of a book, a PDF or the transcript of a recording. " +
@@ -119,7 +125,7 @@ func (t *Tools) searchLibrary(ctx context.Context, in LibrarySearchInput) (Libra
 		return out, errNoLibrary
 	}
 	found, err := t.search.SearchPassages(ctx, host.PassageQuery{
-		Query: in.Query, Limit: in.Limit, Kinds: kinds, PathPrefix: getFolderPrefix(in.PathPrefix),
+		Query: in.Query, Limit: in.Limit, Kinds: kinds, PathPrefix: getFolderPrefix(in.Folder),
 	})
 	if err != nil {
 		return out, fmt.Errorf("search the library: %w", err)
@@ -130,17 +136,45 @@ func (t *Tools) searchLibrary(ctx context.Context, in LibrarySearchInput) (Libra
 	}
 	for _, passage := range found {
 		out.Matches = append(out.Matches, LibraryMatch{
-			Path:     passage.Path,
-			Title:    titles[passage.Path],
-			Location: passage.Location,
-			Text:     passage.Text,
-			Start:    passage.Start,
-			Length:   passage.Length,
-			Line:     passage.Line,
-			URI:      formatAddress(passage.Path, passage.Start, passage.Length),
+			Path:   passage.Path,
+			Title:  titles[passage.Path],
+			Place:  getPassagePlace(passage),
+			Text:   passage.Text,
+			Start:  passage.Start,
+			Length: passage.Length,
+			Line:   passage.Line + 1,
+			URI:    formatAddress(passage.Path, passage.Start, passage.Length),
 		})
 	}
 	return out, nil
+}
+
+// getPassagePlace returns the place of a passage from its selector, with the heading label of the
+// passage as the chapter of an EPUB place. A selector that does not decode gives no page, CFI or
+// time. It returns nil for a passage with no place.
+func getPassagePlace(passage host.Passage) *Place {
+	var s selector
+	if passage.Selector != "" && json.Unmarshal([]byte(passage.Selector), &s) != nil {
+		s = selector{Page: 0, CFI: "", T: nil}
+	}
+	place := newPlace(s)
+	if place != nil && place.CFI != "" {
+		place.Chapter = passage.Location
+	}
+	return place
+}
+
+// newPlace returns the place a selector names: its page, its CFI and the start of its time span. It
+// returns nil for a selector with none of them.
+func newPlace(s selector) *Place {
+	if s.Page == 0 && s.CFI == "" && len(s.T) == 0 {
+		return nil
+	}
+	place := &Place{Page: s.Page, PageCount: 0, PositionSeconds: nil, CFI: s.CFI, Chapter: ""}
+	if len(s.T) > 0 {
+		place.PositionSeconds = &s.T[0]
+	}
+	return place
 }
 
 // getTitles returns the title of each source: a note's own, else the name of the file without its extension.
@@ -177,10 +211,10 @@ func (t *Tools) addLibraryRead(registry *tools.Registry) error {
 		Title: "Read the text of a file",
 		Description: "Read the text of one file of the vault from its text version: the pages of a PDF, " +
 			"the chapters of a book, the transcript of a recording, the recognised text of a scan. " +
-			"Give a page, or a start and a length in bytes; the result lists the locations the text " +
-			"covers, the length of the whole text, and the start to read next. " +
-			"A text file is read as it is. A file with no text version returns an error that names " +
-			"the tool that creates one. file_read reads the bytes of a text file and returns an error " +
+			"Give a page, or a start and a length in bytes; the result lists the ranges of the text with " +
+			"their places in the source, the length of the whole text, and the start to read next. " +
+			"A text file is read as it is. A file with no text version returns an error: it must be " +
+			"recognised or transcribed first. file_read reads the bytes of a text file and returns an error " +
 			"for a binary file; " +
 			"library_search finds the passage to read.",
 		Effect:       tools.ReadOnly,
@@ -235,7 +269,7 @@ func getReadLength(in LibraryReadInput) int {
 func (t *Tools) readPlainText(ctx context.Context, in LibraryReadInput) (LibraryReadOutput, error) {
 	read, err := t.vault.ReadRange(ctx, in.Path, in.Start, getReadLength(in))
 	if errors.Is(err, host.ErrNotText) {
-		return LibraryReadOutput{}, fmt.Errorf("%s has no text version; recognition_create or transcript_create makes one", in.Path)
+		return LibraryReadOutput{}, fmt.Errorf("%s has no text version; a recognition or a transcription creates one", in.Path)
 	}
 	if err != nil {
 		return LibraryReadOutput{}, fmt.Errorf("read %s: %w", in.Path, err)
@@ -250,7 +284,7 @@ func (t *Tools) readPlainText(ctx context.Context, in LibraryReadInput) (Library
 	end := read.Start + len(read.Text)
 	return LibraryReadOutput{
 		Path: in.Path, Kind: "", Version: "", Text: read.Text, Start: read.Start, Length: len(read.Text), Size: size,
-		NextStart: getNextStart(end, size), Locations: nil,
+		NextStart: getNextStart(end, size), Ranges: nil,
 	}, nil
 }
 
@@ -294,7 +328,7 @@ func (t *Tools) readVersion(ctx context.Context, in LibraryReadInput, live domai
 	return LibraryReadOutput{
 		Path: in.Path, Kind: string(live.Kind), Version: string(live.GetID()),
 		Text: text.String(), Start: read.Start, Length: text.Len(), Size: read.Size,
-		NextStart: getNextStart(end, read.Size), Locations: getLocations(places, read.Start, end),
+		NextStart: getNextStart(end, read.Size), Ranges: getRanges(places, read.Start, end),
 	}, nil
 }
 
@@ -405,28 +439,25 @@ func findPage(page int, places []place) (start, end int, err error) {
 	return start, end, nil
 }
 
-// getLocations returns the locations the range [rangeStart, rangeEnd) covers, in order.
-// Consecutive segments of one page are one location.
-func getLocations(places []place, rangeStart, rangeEnd int) []LibraryLocation {
-	var out []LibraryLocation
+// getRanges returns the ranges of the segments the range [rangeStart, rangeEnd) covers, in order,
+// each with its place. A segment with no place is left out, and consecutive segments of one page are
+// one range.
+func getRanges(places []place, rangeStart, rangeEnd int) []LibraryRange {
+	var out []LibraryRange
 	for _, p := range places {
 		start, end := max(p.start, rangeStart), min(p.end, rangeEnd)
 		if start >= end {
 			continue
 		}
-		s := p.selector
-		location := LibraryLocation{Start: start, Length: end - start, Page: s.Page, CFI: s.CFI, FromSeconds: 0, ToSeconds: 0}
-		if len(s.T) == 2 {
-			location.FromSeconds, location.ToSeconds = s.T[0], s.T[1]
-		}
-		if s.Page == 0 && s.CFI == "" && len(s.T) != 2 {
+		segmentPlace := newPlace(p.selector)
+		if segmentPlace == nil {
 			continue
 		}
-		if last := len(out) - 1; last >= 0 && s.Page > 0 && out[last].Page == s.Page {
+		if last := len(out) - 1; last >= 0 && segmentPlace.Page > 0 && out[last].Place.Page == segmentPlace.Page {
 			out[last].Length = end - out[last].Start
 			continue
 		}
-		out = append(out, location)
+		out = append(out, LibraryRange{Start: start, Length: end - start, Place: segmentPlace})
 	}
 	return out
 }
@@ -456,6 +487,6 @@ func (t *Tools) readEmptyPage(ctx context.Context, path string, live domain.Text
 	}
 	return LibraryReadOutput{
 		Path: path, Kind: string(live.Kind), Version: string(live.GetID()), Text: "", Start: start, Length: 0, Size: read.Size,
-		NextStart: getNextStart(start, read.Size), Locations: nil,
+		NextStart: getNextStart(start, read.Size), Ranges: nil,
 	}, nil
 }

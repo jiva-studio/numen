@@ -17,7 +17,7 @@ const (
 	noteTitleListSentence    = "Use note_title_list to get the titles and identifiers of notes whose paths you already have."
 	noteResolveSentence      = "Use note_resolve to get the paths of the notes a wikilink name points to; more than one path means the name is ambiguous."
 	vaultListSentence        = "vault_list lists every vault of the installation, marks the current vault with isCurrent and a vault whose folder is missing with isMissing."
-	vaultProblemListSentence = "vault_problem_list runs the parse, frontmatter and ambiguous checks over the vault, and the dangling check only when you name it."
+	vaultProblemListSentence = "vault_problem_list lists the problems its checks find in the vault, and runs the dangling check only when you name it."
 	noteRenameSentence       = "note_rename renames a note and moves its file to the file name of the new title."
 	noteMoveSentence         = "note_move moves notes to a folder."
 	noteRemoveSentence       = "note_remove moves notes to the vault's trash, from which they can be restored."

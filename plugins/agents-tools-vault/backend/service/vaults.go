@@ -27,7 +27,7 @@ type VaultListOutput struct {
 
 // VaultProblemListInput is the input of the vault_problem_list tool.
 type VaultProblemListInput struct {
-	Checks []string `json:"checks,omitempty" jsonschema:"the checks to run: parse, frontmatter, ambiguous and dangling; parse, frontmatter and ambiguous run when left out"`
+	Checks []string `json:"checks,omitempty" jsonschema:"the names of the checks to run, as the description lists them; the default checks when left out"`
 }
 
 // VaultProblemItem is a problem found in one file of the vault.
@@ -65,7 +65,8 @@ func (t *Tools) addVaultProblemList(registry *tools.Registry) error {
 		Title: "List Vault Problems",
 		Description: "Run checks over the vault and list the problems found: parse for files that could not be " +
 			"read, frontmatter for frontmatter that is not valid, ambiguous for links that resolve to several " +
-			"notes, and dangling for links that resolve to no note. dangling runs only when named.",
+			"notes, and dangling for links that resolve to no note. parse, frontmatter and ambiguous run by " +
+			"default; dangling runs only when named.",
 		Effect:       tools.ReadOnly,
 		Servers:      []tools.Server{tools.Full, tools.Reading},
 		Instructions: []string{vaultProblemListSentence},

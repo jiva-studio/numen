@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -13,7 +12,7 @@ import (
 // FileMove is the move of a note's file and the links the host rewrote for it.
 type FileMove struct {
 	From          string   `json:"from" jsonschema:"previous path of the note"`
-	To            string   `json:"to" jsonschema:"new path of the note"`
+	Path          string   `json:"path" jsonschema:"new path of the note"`
 	RepairedNotes []string `json:"repairedNotes" jsonschema:"paths of the notes whose links to the old name were rewritten"`
 	BrokenLinks   []string `json:"brokenLinks" jsonschema:"paths of the notes whose links to the old name could not be rewritten and are broken"`
 }
@@ -26,7 +25,7 @@ type NoteRenameInput struct {
 
 // NoteRenameOutput is the output of the note_rename tool.
 type NoteRenameOutput struct {
-	NewPath    string    `json:"newPath" jsonschema:"path of the note after the rename"`
+	Path       string    `json:"path" jsonschema:"path of the note after the rename"`
 	Title      string    `json:"title" jsonschema:"title of the note after the rename"`
 	NameSource string    `json:"nameSource" jsonschema:"where the title is written: frontmatter for the title key, filename for the file name"`
 	Move       *FileMove `json:"move,omitempty" jsonschema:"the move of the file; absent when the file kept its path"`
@@ -35,13 +34,13 @@ type NoteRenameOutput struct {
 // NoteMoveInput is the input of the note_move tool.
 type NoteMoveInput struct {
 	Paths  []string `json:"paths" jsonschema:"paths of the notes, at most 50"`
-	Folder string   `json:"folder,omitempty" jsonschema:"folder to move the notes to, relative to the vault folder; empty or absent for the vault root"`
+	Folder string   `json:"folder" jsonschema:"folder to move the notes to, relative to the vault folder; \"/\" for the vault root"`
 }
 
 // NoteMoveItem is the outcome of moving one note.
 type NoteMoveItem struct {
 	From          string   `json:"from" jsonschema:"path of the note as given"`
-	To            string   `json:"to,omitempty" jsonschema:"path of the note now; absent when it did not move"`
+	Path          string   `json:"path,omitempty" jsonschema:"path of the note now; absent when it did not move"`
 	RepairedNotes []string `json:"repairedNotes,omitempty" jsonschema:"paths of the notes whose links to the note were rewritten"`
 	BrokenLinks   []string `json:"brokenLinks,omitempty" jsonschema:"paths of the notes whose links to the note are now broken"`
 	Error         string   `json:"error,omitempty" jsonschema:"error message when the note was not moved"`
@@ -49,7 +48,7 @@ type NoteMoveItem struct {
 
 // NoteMoveOutput is the output of the note_move tool.
 type NoteMoveOutput struct {
-	Moves []NoteMoveItem `json:"moves" jsonschema:"one entry per path, in the order given"`
+	Results []NoteMoveItem `json:"results" jsonschema:"one entry per path, in the order given"`
 }
 
 // NoteRemoveInput is the input of the note_remove tool.
@@ -67,7 +66,7 @@ type NoteRemoveItem struct {
 
 // NoteRemoveOutput is the output of the note_remove tool.
 type NoteRemoveOutput struct {
-	Removals []NoteRemoveItem `json:"removals" jsonschema:"one entry per path, in the order given"`
+	Results []NoteRemoveItem `json:"results" jsonschema:"one entry per path, in the order given"`
 }
 
 func (t *Tools) addNoteRename(registry *tools.Registry) error {
@@ -89,7 +88,7 @@ func (t *Tools) addNoteMove(registry *tools.Registry) error {
 		Step:  tools.Move,
 		Name:  "note_move",
 		Title: "Move Notes",
-		Description: "Move up to 50 notes to a folder, keeping their file names; an empty or absent folder is the vault " +
+		Description: "Move up to 50 notes to a folder, keeping their file names; the folder \"/\" is the vault " +
 			"root. Each path gets its own result, and a path that fails does not stop the others.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
@@ -118,14 +117,14 @@ func (t *Tools) renameNote(ctx context.Context, in NoteRenameInput) (NoteRenameO
 	if err != nil {
 		return NoteRenameOutput{}, err
 	}
-	out := NoteRenameOutput{NewPath: result.Path, Title: result.Title, NameSource: "frontmatter", Move: nil}
+	out := NoteRenameOutput{Path: result.Path, Title: result.Title, NameSource: "frontmatter", Move: nil}
 	if result.IsFilenamed {
 		out.NameSource = "filename"
 	}
 	if result.Move != nil {
 		out.Move = &FileMove{
 			From:          result.Move.From,
-			To:            result.Move.To,
+			Path:          result.Move.To,
 			RepairedNotes: getPathList(result.Move.Repaired),
 			BrokenLinks:   getPathList(result.Move.Dangling),
 		}
@@ -137,25 +136,29 @@ func (t *Tools) moveNotes(ctx context.Context, in NoteMoveInput) (NoteMoveOutput
 	if err := checkPaths(in.Paths); err != nil {
 		return NoteMoveOutput{}, err
 	}
-	moves, err := t.vault.MoveNotes(ctx, in.Paths, strings.Trim(in.Folder, "/"))
+	folder := strings.TrimSpace(in.Folder)
+	if folder == "" {
+		return NoteMoveOutput{}, errors.New(`folder is empty; pass "/" for the vault root`)
+	}
+	moves, err := t.vault.MoveNotes(ctx, in.Paths, strings.Trim(folder, "/"))
 	if err != nil {
 		return NoteMoveOutput{}, err
 	}
-	out := NoteMoveOutput{Moves: make([]NoteMoveItem, 0, len(moves))}
+	out := NoteMoveOutput{Results: make([]NoteMoveItem, 0, len(moves))}
 	for _, m := range moves {
-		out.Moves = append(out.Moves, newNoteMoveItem(m))
+		out.Results = append(out.Results, newNoteMoveItem(m))
 	}
 	return out, nil
 }
 
 func newNoteMoveItem(m host.NoteMove) NoteMoveItem {
-	item := NoteMoveItem{From: m.Move.From, To: "", RepairedNotes: nil, BrokenLinks: nil, Error: ""}
+	item := NoteMoveItem{From: m.Move.From, Path: "", RepairedNotes: nil, BrokenLinks: nil, Error: ""}
 	if m.Err != nil {
 		item.Error = m.Err.Error()
 		return item
 	}
 	if m.Move.IsMoved {
-		item.To = m.Move.To
+		item.Path = m.Move.To
 	}
 	item.RepairedNotes, item.BrokenLinks = m.Move.Repaired, m.Move.Dangling
 	return item
@@ -169,24 +172,21 @@ func (t *Tools) removeNotes(ctx context.Context, in NoteRemoveInput) (NoteRemove
 	if err != nil {
 		return NoteRemoveOutput{}, err
 	}
-	out := NoteRemoveOutput{Removals: make([]NoteRemoveItem, 0, len(removals))}
+	out := NoteRemoveOutput{Results: make([]NoteRemoveItem, 0, len(removals))}
 	for _, r := range removals {
 		item := NoteRemoveItem{Path: r.Path, TrashPath: r.TrashPath, BrokenLinks: r.BrokenLinks, Error: ""}
 		if r.Err != nil {
 			item.TrashPath, item.BrokenLinks, item.Error = "", nil, r.Err.Error()
 		}
-		out.Removals = append(out.Removals, item)
+		out.Results = append(out.Results, item)
 	}
 	return out, nil
 }
 
-// checkPaths rejects a batch of no paths or of more than maxBatch.
+// checkPaths rejects a batch of no paths.
 func checkPaths(paths []string) error {
-	switch {
-	case len(paths) == 0:
+	if len(paths) == 0 {
 		return errors.New("paths is required")
-	case len(paths) > maxBatch:
-		return fmt.Errorf("%d paths given, at most %d are allowed", len(paths), maxBatch)
 	}
 	return nil
 }
