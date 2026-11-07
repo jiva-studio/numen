@@ -60,6 +60,8 @@ export interface VaultNotes {
   read(path: string): Promise<{ readonly body: string; readonly error?: string }>
   // Prose written into a note, keeping its frontmatter. Writes to one path are made in order.
   write(path: string, body: string): Promise<void>
+  // The frontmatter of the note at the path by its keys, and empty for a path holding no note.
+  readProperties(path: string): Promise<Readonly<Record<string, unknown>>>
 }
 
 // ConnectionRole is what the second note of a connection is to the first: its parent, its child, or a jump.

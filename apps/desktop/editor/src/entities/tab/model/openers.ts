@@ -1,17 +1,15 @@
 /**
  * The openers that display a vault file.
  *
- * A note opens in the editor of its type. Any other file opens in the reader
- * the core selects for its content type, which a plugin registers by extension.
- * A tab kind registers how it opens a file and holds no file state.
+ * A note opens in the tab kind the core chooses for it. A note no tab kind takes and
+ * any other file open in the reader the core selects for their content type, which a
+ * plugin registers by extension. A tab kind registers how it opens a file and holds no
+ * file state.
  */
 import type { Component } from 'vue'
 import type { Selector } from '@numen/plugin-host'
-import type { FileKind, NoteType } from '@/shared/model/fileTypes'
+import type { FileKind } from '@/shared/model/fileTypes'
 import type { TextRange } from '@/shared/textRange'
-
-/** What a file the window opens is opened as: which type of note it is, or the kind a plugin registers. */
-export type EditorKind = NoteType
 
 /** Where a file opens: in the current pane or in a split. */
 export type FilePlacement = 'current' | 'split'
@@ -21,12 +19,6 @@ export interface OpenPlacement {
   line?: number | undefined
   /** The place the reader of a file that is no note shows, such as a search hit. */
   selector?: Selector | undefined
-}
-
-export interface OpenNewFileOptions {
-  type: EditorKind
-  where?: FilePlacement | undefined
-  line?: number | undefined
 }
 
 /**
@@ -54,8 +46,8 @@ interface ExtensionReader {
   readonly icon: Component | undefined
 }
 
-/** The kind assumed for a file the vault cannot be queried about. */
-const ORDINARY: FileKind = { isNote: true, type: 'note' }
+/** The kind assumed for a file the vault cannot be queried about: it opens in its reader. */
+const UNKNOWN: FileKind = { isNote: false, type: '' }
 
 /** The extension of a path, lowercase and without the dot, and empty where it has none. */
 const getExtension = (path: string): string => {
@@ -70,22 +62,22 @@ const fetchFileKind = async (vault: FileOpenerDeps, path: string): Promise<FileK
   try {
     return (await vault.fileKinds([path])).get(path) ?? null
   } catch {
-    return ORDINARY
+    return UNKNOWN
   }
 }
 
 export function fileOpeners(vault: FileOpenerDeps) {
-  /** The editor for each note type, as registered by its tab kind. */
-  const editors = new Map<EditorKind, FileOpener>()
+  /** How each tab kind opens a file, by the kind. */
+  const editors = new Map<string, FileOpener>()
 
   /** The reader of each extension, as the core chose it for the extension's content type. */
   const extensionReaders = new Map<string, ExtensionReader>()
 
   /** A tab kind registers how it opens a file. */
-  const registerEditor = (type: EditorKind, open: FileOpener): (() => void) => {
-    editors.set(type, open)
+  const registerEditor = (kind: string, open: FileOpener): (() => void) => {
+    editors.set(kind, open)
     return () => {
-      if (editors.get(type) === open) editors.delete(type)
+      if (editors.get(kind) === open) editors.delete(kind)
     }
   }
 
@@ -111,26 +103,23 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const readFile = (path: string, selector: Selector | null): void =>
     extensionReaders.get(getExtension(path))?.read(path, selector)
 
-  /**
-   * Opens a newly created file as the kind it was created as, without querying
-   * the vault for its kind.
-   */
-  const openNewFile = (
+  /** Opens the note in the tab kind the core chose for it; false where no tab kind takes it. */
+  const openNote = (
     path: string,
+    kind: FileKind,
     title: string,
-    options: EditorKind | OpenNewFileOptions,
-  ): void => {
-    const type = typeof options === 'string' ? options : options.type
-    const placement = typeof options === 'string' ? undefined : options
-    vault.reconcileTab?.(path, type)
-    const editor = editors.get(type)
-    if (editor) editor(path, title, placement)
-    else readFile(path, null)
+    placement?: OpenPlacement,
+  ): boolean => {
+    if (!kind.isNote || !kind.tabKind) return false
+    vault.reconcileTab?.(path, kind.tabKind)
+    const { selector: _selector, ...rest } = placement ?? {}
+    editors.get(kind.tabKind)?.(path, title, rest)
+    return true
   }
 
   /**
-   * Opens a file: a note in the editor of its type, any other file in its reader
-   * at the given selector.
+   * Opens a file: a note in the tab kind the core chose for it, a note no tab kind takes and any
+   * other file in its reader at the given selector.
    */
   const openFile = async (
     path: string,
@@ -139,21 +128,14 @@ export function fileOpeners(vault: FileOpenerDeps) {
   ): Promise<void> => {
     const placement = typeof options === 'string' ? { where: options } : options
     const kind = await fetchFileKind(vault, path)
-    if (kind?.isNote) {
-      const { selector: _selector, ...rest } = placement ?? {}
-      openNewFile(path, title, { type: kind.type, ...rest })
-      return
-    }
+    if (kind && openNote(path, kind, title, placement)) return
     readFile(path, placement?.selector ?? null)
   }
 
   /** Opens a file with ranges of a note's text marked. */
   const openFileAt = async (path: string, _spans: readonly TextRange[]): Promise<void> => {
     const kind = await fetchFileKind(vault, path)
-    if (kind?.isNote) {
-      openNewFile(path, '', kind.type)
-      return
-    }
+    if (kind && openNote(path, kind, '')) return
     readFile(path, null)
   }
 
@@ -163,7 +145,6 @@ export function fileOpeners(vault: FileOpenerDeps) {
     findFileIcon,
     openFile,
     openFileAt,
-    openNewFile,
   }
 }
 

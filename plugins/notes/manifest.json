@@ -8,7 +8,13 @@
   "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [
-      { "kind": "note", "title": "Note", "icon": "file-text" },
+      {
+        "kind": "note",
+        "title": "Note",
+        "icon": "file-text",
+        "when": "target.noteType == 'note'",
+        "rank": "alternate"
+      },
       { "kind": "reader:markdown", "title": "Markdown Note Editor", "icon": "file-text" }
     ],
     "feature": "Markdown notes",

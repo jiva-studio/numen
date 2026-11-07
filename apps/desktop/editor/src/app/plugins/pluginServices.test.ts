@@ -246,6 +246,22 @@ describe('the notes of the vault a plugin is handed', () => {
         }),
       ),
       headings: vi.fn(() => Promise.resolve(new Map())),
+      fileKinds: vi.fn((paths: readonly string[]) =>
+        Promise.resolve(
+          new Map(
+            paths
+              .filter((path) => path.startsWith('links/'))
+              .map((path) => [
+                path,
+                {
+                  isNote: true,
+                  type: 'link',
+                  properties: { media: 'plugin://org.example.links/tide.mp4' },
+                },
+              ]),
+          ),
+        ),
+      ),
     }
     const search = {
       names: vi.fn(() =>
@@ -303,6 +319,16 @@ describe('the notes of the vault a plugin is handed', () => {
 
     expect(await notes.createUntitledNote()).toBe('Untitled.md')
     expect(making.createUntitled).toHaveBeenCalledWith('')
+  })
+
+  it('reads the frontmatter of a note, and nothing for a path holding no note', async () => {
+    const { notes, core } = createNotes()
+
+    expect(await notes.readProperties('links/tide.md')).toStrictEqual({
+      media: 'plugin://org.example.links/tide.mp4',
+    })
+    expect(await notes.readProperties('Gone.md')).toStrictEqual({})
+    expect(core.fileKinds).toHaveBeenCalledWith(['links/tide.md'])
   })
 
   it('makes no path where the note maker made no untitled note', async () => {

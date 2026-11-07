@@ -33,6 +33,7 @@ export const filesCore: FilesCore = {
         {
           isNote: one.isNote,
           type: mapNoteType(one.type),
+          ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           ...(one.properties && Object.keys(one.properties).length > 0
             ? { properties: one.properties }
             : {}),

@@ -8,7 +8,6 @@
 import type { Component } from 'vue'
 import type { CommandItem, Selector } from '@numen/plugin-host'
 import type { PaletteKeys } from '@numen/ui'
-import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
 import type { StepGroup } from '@/shared/steps'
@@ -224,12 +223,6 @@ export interface Notes {
    * current one.
    */
   openFile(path: string, title: string, showing: 'current' | 'split', at?: CommandPlace): void
-  /** Opens a file created by this command, as the type it was created as. */
-  openNewFile(
-    path: string,
-    title: string,
-    options: EditorKind | { type: EditorKind; where?: FilePlacement },
-  ): void
 }
 
 /**

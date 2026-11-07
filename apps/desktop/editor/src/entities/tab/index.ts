@@ -3,7 +3,6 @@ export { findTabKindIcon } from './lib/icons'
 export { createFileCreators } from './model/makers'
 export { fileOpeners } from './model/openers'
 export type {
-  EditorKind,
   FileOpener,
   FilePlacement,
   FileOpeners,

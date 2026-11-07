@@ -11,17 +11,20 @@
       {
         "kind": "deck",
         "title": "Deck",
-        "icon": "layers"
+        "icon": "layers",
+        "when": "target.noteType == 'deck'"
       },
       {
         "kind": "card-model",
         "title": "Card Model",
-        "icon": "layout-template"
+        "icon": "layout-template",
+        "when": "target.noteType == 'card-model'"
       },
       {
         "kind": "preset",
         "title": "Preset",
-        "icon": "gauge"
+        "icon": "gauge",
+        "when": "target.noteType == 'preset'"
       },
       {
         "kind": "flashcards.review",

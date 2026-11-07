@@ -84,10 +84,10 @@ describe('the files of the vault a plugin is handed', () => {
 describe('dynamic creator registration', () => {
   it('registers custom file creators, falls back to windowTabs, and handles errors', async () => {
     const writeMessage = vi.fn()
-    const openNewFile = vi.fn()
+    const openFile = vi.fn()
     const createFileOfKind = vi.fn()
     const makers = createFileMakers({
-      tabOpeners: { openNewFile } as never,
+      tabOpeners: { openFile } as never,
       windowTabs: { createFileOfKind },
       writeMessage,
       creators: {
