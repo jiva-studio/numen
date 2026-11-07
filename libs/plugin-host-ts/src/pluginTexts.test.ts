@@ -64,6 +64,33 @@ describe('the text versions a plugin view reads', () => {
     expect('selector' in (live?.segments[1] ?? {})).toBe(false)
   })
 
+  it('reads the note property a version was made from, and omits it for a version without one', async () => {
+    const linked = {
+      ...version,
+      pluginId: 'md.numen.tools.media-importer',
+      key: 'link',
+      sourceProperty: { key: 'url', value: 'https://example.org/talk' },
+    }
+    const client: TextClient = {
+      readLiveText: async (req) =>
+        ({
+          version: req.path === 'talks/link.md' ? linked : version,
+          segments: [],
+        }) as unknown as Awaited<ReturnType<TextClient['readLiveText']>>,
+      createTextEdit: async () => ({}) as never,
+    }
+    const texts = createPluginTexts(client, 'md.numen.views.media-player')
+
+    const fromProperty = await texts.readLiveText('talks/link.md')
+    const fromFile = await texts.readLiveText('talks/morning.mp3')
+
+    expect(fromProperty?.version.sourceProperty).toStrictEqual({
+      key: 'url',
+      value: 'https://example.org/talk',
+    })
+    expect('sourceProperty' in (fromFile?.version ?? {})).toBe(false)
+  })
+
   it('returns null when readLiveText answers without a version', async () => {
     const client: TextClient = {
       readLiveText: async () =>
