@@ -262,7 +262,7 @@ describe('a line of nothing but spaces', () => {
 })
 
 describe('lines that read areNeighbourhoodsEqual', () => {
-  it('leave the one that stayed where it was, and drop the other', () => {
+  it('keep the unchanged line and drop the other', () => {
     const was: readonly Cue[] = [
       { text: 'Again.', from: 0, to: 1_000 },
       { text: 'Again.', from: 1_000, to: 2_000 },
@@ -273,7 +273,7 @@ describe('lines that read areNeighbourhoodsEqual', () => {
 })
 
 describe('the words as the application gave them', () => {
-  it('are given back unchanged, so a transcript nobody edited is not written', () => {
+  it('are returned unchanged, so an unedited transcript is not written', () => {
     expect(isSame(applyCues(CUES, getText(CUES)), CUES)).toBe(true)
   })
 

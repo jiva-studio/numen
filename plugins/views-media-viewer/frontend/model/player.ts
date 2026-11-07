@@ -218,7 +218,7 @@ export function createMediaPlayer(create: MediaFactory = createVideoElement): Pl
         if (isDone) return
         isDone = true
         clearTimeout(timer)
-        // The element lets go of the recording's connection once its source is gone.
+        // Removing the source closes the connection of the element to the recording.
         probe.removeAttribute?.('src')
         probe.load?.()
         resolve(ms)

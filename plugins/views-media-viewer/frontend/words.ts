@@ -8,7 +8,7 @@ export const WORDS = {
   follow: 'Follow',
   /** The button that creates the text of a recording nothing was heard in. */
   transcribe: 'Transcribe',
-  /** The recording is being read, and what it holds is not known yet. */
+  /** The recording is being read, and its contents are not known yet. */
   loading: 'Loading…',
   /** Nothing has transcribed this recording. */
   silence: 'No transcript yet.',

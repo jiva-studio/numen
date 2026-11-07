@@ -134,7 +134,7 @@ const timeGutterTheme = EditorView.theme({
 
 /** The times of one editor, and what puts them there. */
 export interface TimeGutter {
-  /** The extension, put in the editor these are shown in. */
+  /** The editor extension that draws the times. */
   readonly extension: Extension
   /** What the editor shows now. */
   show(state: TimeGutterState): void

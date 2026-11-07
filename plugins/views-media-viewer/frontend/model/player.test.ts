@@ -425,7 +425,7 @@ describe('the element once it is made', () => {
     expect(element.preload).toBe('metadata')
   })
 
-  it('is told where a seek landed when the element says it has seeked', () => {
+  it('reports the position a seek reached when the element emits seeked', () => {
     const { plays, element, emit } = player()
     plays.load(TALK)
 

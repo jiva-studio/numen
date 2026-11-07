@@ -122,20 +122,26 @@ func (h *fileHandler) ListFileKinds(
 	}
 	out := &v1.ListFileKindsResponse{Kinds: make([]*v1.FileKind, 0, len(listing.Entries))}
 	for _, one := range listing.Entries {
-		kind := &v1.FileKind{
-			Path:   one.Path,
-			IsNote: one.Kind == domain.KindNote,
-			Type:   convertNoteTypeToWire(listing.Types[one.Path]),
-		}
-		if properties, isNote := listing.Properties[one.Path]; isNote {
-			kind.Properties = newWireProperties(properties)
-			if h.chooseTabKind != nil {
-				kind.TabKind = h.chooseTabKind.Execute(one.Path, listing.Types[one.Path], properties)
-			}
-		}
-		out.Kinds = append(out.Kinds, kind)
+		out.Kinds = append(out.Kinds, h.newWireFileKind(one, listing))
 	}
 	return connect.NewResponse(out), nil
+}
+
+// newWireFileKind is what the vault holds at the path of one entry: for a note, its frontmatter and
+// the kind of tab it opens in.
+func (h *fileHandler) newWireFileKind(one domain.Entry, listing file.Folder) *v1.FileKind {
+	kind := &v1.FileKind{
+		Path:   one.Path,
+		IsNote: one.Kind == domain.KindNote,
+		Type:   convertNoteTypeToWire(listing.Types[one.Path]),
+	}
+	if properties, isNote := listing.Properties[one.Path]; isNote {
+		kind.Properties = newWireProperties(properties)
+		if h.chooseTabKind != nil {
+			kind.TabKind = h.chooseTabKind.Execute(one.Path, listing.Types[one.Path], properties)
+		}
+	}
+	return kind
 }
 
 // CreateFolder puts an empty folder in the vault, with the folders above it.
