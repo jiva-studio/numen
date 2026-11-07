@@ -535,3 +535,23 @@ func TestALinkOfTheShownVaultCarriesItsIdentity(t *testing.T) {
 		t.Errorf("the link is made in %q and read in %q, want %q both times", made.Vault, read.Vault, vaultID)
 	}
 }
+
+// The copy is kept by the address, not by the note: a note of the address made again after the first
+// was deleted points at the copy kept from before.
+func TestCopyOfAStoredVideoSetsTheMediaOfANewNote(t *testing.T) {
+	w := newWorld(t)
+	first := w.create(t, videoAddress)
+	if _, err := w.links.Copy(t.Context(), first, download.MediaVideo); err != nil {
+		t.Fatal(err)
+	}
+	w.vault.Remove(first.Path)
+	again := w.create(t, videoAddress)
+
+	if _, err := w.links.Copy(t.Context(), again, download.MediaVideo); err != nil {
+		t.Fatal(err)
+	}
+
+	if want, got := "plugin://"+pluginID+"/"+again.Key+".mp4", w.readProperty(t, again.Path, "media"); got != want {
+		t.Errorf("the note made again holds media %q, want %q", got, want)
+	}
+}

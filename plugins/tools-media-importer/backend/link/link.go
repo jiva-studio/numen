@@ -7,6 +7,7 @@
 package link
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"errors"
@@ -302,6 +303,9 @@ func (l *Links) setAddress(ctx context.Context, link Link, key, value string) er
 		return err
 	}
 	content := doc.Bytes()
+	if bytes.Equal(content, raw) {
+		return nil
+	}
 	_, err = vault.Write(ctx, link.Path, content, stat)
 	return err
 }
@@ -534,18 +538,24 @@ func (l *Links) beginCopy(ctx context.Context, link Link, media download.Media) 
 	return task, size, err
 }
 
-// prepareCopy deletes a stored copy of the other media and shows the task of the copy.
+// prepareCopy points the note at a stored copy of the media asked for, or deletes a stored copy of
+// the other media and shows the task of the copy.
 func (l *Links) prepareCopy(ctx context.Context, link Link, media download.Media) (*host.Task, int64, error) {
 	folder := folder{store: l.getStore(link)}
 	rec, err := folder.readRecord(ctx, link.Key)
 	if err != nil {
 		return nil, 0, err
 	}
-	size, err := l.FindCopy(ctx, link)
-	if err != nil || (size > 0 && rec.CopyMedia == media) {
-		return nil, size, err
+	kept, isKept, err := folder.findCopy(ctx, link.Key)
+	if err != nil {
+		return nil, 0, err
 	}
-	if size > 0 {
+	if isKept && kept.Size > 0 && rec.CopyMedia == media {
+		// The copy is kept by the address and outlives a deleted note of it: a note made again
+		// points at it.
+		return nil, kept.Size, l.setAddress(ctx, link, mediaKey, l.getAddress(kept.Name))
+	}
+	if isKept && kept.Size > 0 {
 		if err := folder.deleteCopy(ctx, link.Key); err != nil {
 			return nil, 0, err
 		}
