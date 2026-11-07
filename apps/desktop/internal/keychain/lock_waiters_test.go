@@ -2,6 +2,7 @@ package keychain
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -102,7 +103,9 @@ func TestAWriteWaitingForTheCredentialsLockDoesNotHoldUpReads(t *testing.T) {
 	go func() { writing <- store.SetKey(ctx, "secret/b", "value-b") }()
 	t.Cleanup(func() {
 		cancel()
-		<-writing
+		if err := <-writing; err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
 	})
 	waitForLockWaiter(t)
 

@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -93,14 +92,76 @@ type configured struct {
 	calls         []*v1.ConfigureRequest
 	unimplemented bool
 	shutdowns     int
+	// failure, while set, is what Configure answers after it recorded the call.
+	failure error
+	// hold, while set, keeps Configure from answering until it is closed or the call ends.
+	hold chan struct{}
+	// entered, while set, receives a value each time a Configure call arrives.
+	entered chan struct{}
+	// delay is how long Configure takes to answer.
+	delay time.Duration
+}
+
+// setFailure makes Configure answer with err until it is called with nil.
+func (c *configured) setFailure(err error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.failure = err
+}
+
+// setHold keeps Configure from answering until the returned function is called, and returns the
+// channel that receives a value each time a call arrives.
+func (c *configured) setHold(t *testing.T) (entered <-chan struct{}, release func()) {
+	t.Helper()
+	hold, arrivals := make(chan struct{}), make(chan struct{}, 8)
+	c.mu.Lock()
+	c.hold, c.entered = hold, arrivals
+	c.mu.Unlock()
+	var once sync.Once
+	release = func() { once.Do(func() { close(hold) }) }
+	t.Cleanup(release)
+	return arrivals, release
+}
+
+// count returns the number of Configure calls received.
+func (c *configured) count() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return len(c.calls)
 }
 
 func (c *configured) Configure(
-	_ context.Context, req *connect.Request[v1.ConfigureRequest],
+	ctx context.Context, req *connect.Request[v1.ConfigureRequest],
 ) (*connect.Response[v1.ConfigureResponse], error) {
+	c.mu.Lock()
+	hold, entered, delay := c.hold, c.entered, c.delay
+	c.mu.Unlock()
+	if entered != nil {
+		select {
+		case entered <- struct{}{}:
+		default:
+		}
+	}
+	if hold != nil {
+		select {
+		case <-hold:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	if delay > 0 {
+		select {
+		case <-time.After(delay):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.calls = append(c.calls, req.Msg)
+	if c.failure != nil {
+		return nil, c.failure
+	}
 	if c.unimplemented {
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("no configure"))
 	}
@@ -410,10 +471,9 @@ func TestAPluginNamedByAnOperationIsConfiguredAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	plugintest.WaitUntil(t, "the replaced value is delivered", func() bool {
-		got := listed(t, probe, declared)
-		return len(got) == 1 && got[0].GetValue() == "value-replaced"
-	})
+	if got := listed(t, probe, declared); len(got) != 1 || got[0].GetValue() != "value-replaced" {
+		t.Errorf("delivered %v, want the replaced value", got)
+	}
 }
 
 // A refused operation configures no plugin.
@@ -539,16 +599,7 @@ func TestARestartedPluginWhoseFirstConfigureFailedIsConfiguredByTheNextRefresh(t
 	probe.mu.Lock()
 	probe.unimplemented = true
 	probe.mu.Unlock()
-	port := host.endpoints[secretPluginID].Port
-	sleeper := plugintest.StartSleepProcess(t).Process
-	host.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
-		return sleeper, plugintest.GetReadyOutput(port), nil
-	})
-	p := host.plugins[secretPluginID]
-	p.Manifest.Backend = pluginport.PluginBackend{Entrypoint: "bin/plugin"}
-	restarted := lifecycle.New(testsupport.GetMachine())
-	restarted.SetActivating()
-	if _, err := host.runActivation(t.Context(), p, restarted); err != nil {
+	if err := prepareActivation(t, host, false)(); err != nil {
 		t.Fatal(err)
 	}
 

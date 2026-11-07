@@ -2,7 +2,7 @@
  * The section of one group as a landmark: its accessible name is the heading with the group name.
  */
 import { afterEach, describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import SecretSection from './SecretSection.vue'
 
 const section = { group: 'harbour', isAsked: false, secrets: [] }
@@ -33,6 +33,28 @@ describe('the section of a group', () => {
     await wrapper.get('button[aria-label="Rename group"]').trigger('click')
     const id = document.querySelector('section')?.getAttribute('aria-labelledby') ?? ''
     expect(document.getElementById(id)?.textContent).toBe('harbour')
+    wrapper.unmount()
+  })
+
+  it('is renamed to the name without U+0085 at its ends, as the core trims it', async () => {
+    const wrapper = mountSection()
+    await wrapper.get('button[aria-label="Rename group"]').trigger('click')
+    const input = wrapper.get<HTMLInputElement>('input[type="text"]')
+    await input.setValue('\u0085quay')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+    expect(wrapper.emitted('rename-group')).toEqual([['quay']])
+    wrapper.unmount()
+  })
+
+  it('is renamed with U+FEFF kept at its ends, as the core keeps it', async () => {
+    const wrapper = mountSection()
+    await wrapper.get('button[aria-label="Rename group"]').trigger('click')
+    const input = wrapper.get<HTMLInputElement>('input[type="text"]')
+    await input.setValue('\uFEFFquay')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+    expect(wrapper.emitted('rename-group')).toEqual([['\uFEFFquay']])
     wrapper.unmount()
   })
 })

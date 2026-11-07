@@ -123,12 +123,15 @@ type probe struct {
 	hold chan struct{}
 	// entered, while set, receives a value each time Configure is called.
 	entered chan struct{}
+	// attempts counts every Configure call, answered or not.
+	attempts int
 }
 
 func (p *probe) Configure(
 	ctx context.Context, req *connect.Request[v1.ConfigureRequest],
 ) (*connect.Response[v1.ConfigureResponse], error) {
 	p.mu.Lock()
+	p.attempts++
 	hold, entered := p.hold, p.entered
 	p.mu.Unlock()
 	if entered != nil {
@@ -158,6 +161,13 @@ func (p *probe) setFailure(err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.failure = err
+}
+
+// attemptCount returns the number of Configure calls received, answered or not.
+func (p *probe) attemptCount() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.attempts
 }
 
 func (p *probe) count() int {

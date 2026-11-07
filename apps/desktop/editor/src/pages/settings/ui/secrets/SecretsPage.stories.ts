@@ -132,7 +132,7 @@ export const AddsInATypedGroup: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Add secret' }))
     await userEvent.type(canvas.getByLabelText('Group of the new secret'), 'Local Llama')
-    await expect(canvas.getByLabelText('Value of 1')).toBeVisible()
+    await expect(canvas.getByLabelText('Value of Default')).toBeVisible()
     const column = canvasElement.firstElementChild!.getBoundingClientRect()
     for (const row of canvasElement.querySelectorAll('li')) {
       await expect(row.getBoundingClientRect().right).toBeLessThanOrEqual(column.right + 0.5)

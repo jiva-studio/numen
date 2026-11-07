@@ -154,3 +154,40 @@ describe('a group name of more than 64 characters', () => {
     dispose(wrapper)
   })
 })
+
+describe('a secret that fails to be created from the control that adds a secret to a group', () => {
+  it('keeps the typed value in the field', async () => {
+    const createSecret = vi.fn(async () => '')
+    const { wrapper } = mountPage([secret('s00000001', 'Default', 'Local Llama')], { createSecret })
+    await click(findButtons(/add secret/i)[0] as HTMLElement)
+    const inputs = maskedInputs()
+    await enterText(inputs[inputs.length - 1] as HTMLInputElement, 'made-up-section-value')
+
+    expect(createSecret).toHaveBeenCalledWith('Local Llama', '2', 'made-up-section-value')
+    const after = maskedInputs()
+    expect((after[after.length - 1] as HTMLInputElement).value).toBe('made-up-section-value')
+    dispose(wrapper)
+  })
+})
+
+describe('the name of a group the person types', () => {
+  it('loses U+0085 at its ends, as the core trims it', async () => {
+    const { installation, wrapper } = mountPage()
+    await click(findButton(/add secret/i))
+    await typeGroup('\u0085abc')
+    await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
+
+    expect(installation.createSecret).toHaveBeenCalledWith('abc', 'Default', 'made-up-value')
+    dispose(wrapper)
+  })
+
+  it('keeps U+FEFF at its ends, as the core does', async () => {
+    const { installation, wrapper } = mountPage()
+    await click(findButton(/add secret/i))
+    await typeGroup('﻿abc')
+    await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
+
+    expect(installation.createSecret).toHaveBeenCalledWith('﻿abc', 'Default', 'made-up-value')
+    dispose(wrapper)
+  })
+})

@@ -13,8 +13,6 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 )
 
 var secretID = regexp.MustCompile(`^s[0-9a-f]{8}$`)
@@ -37,7 +35,7 @@ func TestAllowAndDenyChangeThePermissionAndThePluginsList(t *testing.T) {
 	before := w.counts()
 
 	w.allow(t, one, alphaID, "apiKey", "openrouter")
-	w.awaitIDs(t, alphaID, "apiKey", one)
+	w.assertIDs(t, alphaID, "apiKey", one)
 	if got := allowedOf(w.find(t, one)); !slices.Equal(got, []string{permission(alphaID, "apiKey", "openrouter")}) {
 		t.Errorf("allowed = %v", got)
 	}
@@ -46,7 +44,7 @@ func TestAllowAndDenyChangeThePermissionAndThePluginsList(t *testing.T) {
 	}
 
 	w.deny(t, one, alphaID, "apiKey", "openrouter")
-	w.awaitIDs(t, alphaID, "apiKey")
+	w.assertIDs(t, alphaID, "apiKey")
 	if got := allowedOf(w.find(t, one)); len(got) != 0 {
 		t.Errorf("allowed = %v after a deny", got)
 	}
@@ -126,7 +124,7 @@ func TestRenamingASecretChangesOnlyTheFile(t *testing.T) {
 	w := openSecretsWindow(t, `{}`)
 	one := w.create(t, "openrouter", "Work", "value-work")
 	w.allow(t, one, alphaID, "apiKey", "openrouter")
-	w.awaitIDs(t, alphaID, "apiKey", one)
+	w.assertIDs(t, alphaID, "apiKey", one)
 	keysBefore := w.keys.snapshot()
 
 	if _, err := w.client.RenameSecret(t.Context(), connect.NewRequest(&v1.RenameSecretRequest{Id: one, Name: "Office"})); err != nil {
@@ -158,7 +156,7 @@ func TestWritingASecretReplacesTheValueAndConfiguresThePluginsThatReadIt(t *test
 	w := openSecretsWindow(t, `{}`)
 	one := w.create(t, "openrouter", "Work", "value-old")
 	w.allow(t, one, alphaID, "apiKey", "openrouter")
-	w.awaitIDs(t, alphaID, "apiKey", one)
+	w.assertIDs(t, alphaID, "apiKey", one)
 	before := w.counts()
 
 	if _, err := w.client.WriteSecret(t.Context(), connect.NewRequest(&v1.WriteSecretRequest{Id: one, Value: "value-new"})); err != nil {
@@ -168,9 +166,9 @@ func TestWritingASecretReplacesTheValueAndConfiguresThePluginsThatReadIt(t *test
 	if w.keys.snapshot()["secret/"+one] != "value-new" {
 		t.Errorf("the key store holds %v", w.keys.snapshot())
 	}
-	plugintest.WaitUntil(t, "the plugin that reads the secret is configured again", func() bool {
-		return w.counts()[alphaID] > before[alphaID]
-	})
+	if w.counts()[alphaID] != before[alphaID]+1 {
+		t.Errorf("the plugin that reads the secret received %d calls, want 1", w.counts()[alphaID]-before[alphaID])
+	}
 	entry, _ := w.probes[alphaID].entry(t, "apiKey")
 	if entry.GetValues()[0].GetValue() != "value-new" {
 		t.Errorf("the plugin received %v", entry.GetValues())
@@ -267,16 +265,16 @@ func TestDeletingASecretRemovesItsEntryValueAndPermissionsAndConfiguresThePlugin
 	w.allow(t, one, alphaID, "apiKey", "openrouter")
 	w.allow(t, one, betaID, "apiKey", "openai")
 	w.allow(t, keep, betaID, "apiKey", "openai")
-	w.awaitIDs(t, alphaID, "apiKey", one)
-	w.awaitIDs(t, betaID, "apiKey", one, keep)
+	w.assertIDs(t, alphaID, "apiKey", one)
+	w.assertIDs(t, betaID, "apiKey", one, keep)
 	before := w.counts()
 
 	if _, err := w.client.DeleteSecret(t.Context(), connect.NewRequest(&v1.DeleteSecretRequest{Id: one})); err != nil {
 		t.Fatal(err)
 	}
 
-	w.awaitIDs(t, alphaID, "apiKey")
-	w.awaitIDs(t, betaID, "apiKey", keep)
+	w.assertIDs(t, alphaID, "apiKey")
+	w.assertIDs(t, betaID, "apiKey", keep)
 	if w.find(t, one) != nil || len(w.fileSecrets(t)) != 1 {
 		t.Errorf("the secret is still listed: %v", ids(w.secrets(t)))
 	}

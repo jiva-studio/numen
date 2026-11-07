@@ -27,6 +27,15 @@ func (w *window) awaitIDs(t *testing.T, pluginID, name string, want ...string) {
 	})
 }
 
+// assertIDs checks, at once, that the last Configure call of the plugin delivers exactly the secrets with those ids to the declaration.
+func (w *window) assertIDs(t *testing.T, pluginID, name string, want ...string) {
+	t.Helper()
+	got := w.probes[pluginID].ids(t, name)
+	if !slices.Equal(got, want) && (len(got) != 0 || len(want) != 0) {
+		t.Errorf("%s received %v for %s, want %v", pluginID, got, name, want)
+	}
+}
+
 func (w *window) counts() map[string]int {
 	counts := map[string]int{}
 	for id, one := range w.probes {
