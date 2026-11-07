@@ -155,7 +155,6 @@ func (w *lockWait) releaseUntaken() {
 	if w.file == nil {
 		return
 	}
-	//nolint:errcheck // closing the file drops the lock, and no caller is left to take a failure
-	w.file.Close()
+	w.err = errors.Join(w.err, w.file.Close())
 	w.file = nil
 }
