@@ -102,7 +102,7 @@ func TestEnablingAPluginTogetherWithATokenKeepsThePersonsToken(t *testing.T) {
 				return slices.Contains(updates, courierPlugin+".enabled") && slices.Contains(updates, courierPlugin+".token")
 			})
 			deadline := time.After(quiet)
-			for settled := false; !settled; {
+			for isQuiet := false; !isQuiet; {
 				select {
 				case batch := <-reader.changes:
 					for _, one := range batch {
@@ -111,7 +111,7 @@ func TestEnablingAPluginTogetherWithATokenKeepsThePersonsToken(t *testing.T) {
 						}
 					}
 				case <-deadline:
-					settled = true
+					isQuiet = true
 				}
 			}
 
