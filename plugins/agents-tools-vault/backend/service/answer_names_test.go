@@ -462,8 +462,8 @@ func TestLibraryReadReturnsRangesWithAPlace(t *testing.T) {
 	if !isPlace {
 		t.Fatalf("the first range is %v, want a place", first)
 	}
-	if seconds, ok := place["positionSeconds"]; !ok || seconds != float64(0) || len(place) != 1 {
-		t.Errorf("the place of the first range is %v, want positionSeconds 0 alone", place)
+	if seconds, ok := place["positionSeconds"]; !ok || seconds != float64(0) || place["endSeconds"] != 4.5 || len(place) != 2 {
+		t.Errorf("the place of the first range is %v, want positionSeconds 0 and endSeconds 4.5 alone", place)
 	}
 
 	schema := getToolSchema(t, l.registry, "library_read", true)
@@ -611,7 +611,7 @@ func TestNoteWriteAndFileCreateRejectTheContentArgument(t *testing.T) {
 	}
 	for name, arguments := range map[string]string{
 		"note_write":  `{"path":"Comet.md","content":"# Comet\nA tail of dust."}`,
-		"file_create": `{"path":"comet.txt","content":"a tail of dust"}`,
+		"file_create": `{"path":"comet.txt","text":"a tail of dust","content":"a tail of dust"}`,
 	} {
 		text := getRejectionText(t, registry, testVault, name, arguments)
 		if !strings.Contains(text, "content is not known") {
