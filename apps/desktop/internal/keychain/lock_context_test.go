@@ -17,7 +17,7 @@ func TestTheWaitForTheCredentialsLockEndsWithTheContext(t *testing.T) {
 	if err := store.SetKey(t.Context(), "secret/a", "value-a"); err != nil {
 		t.Fatal(err)
 	}
-	release, err := lockFile(t.Context(), filepath.Join(dir, credentialsFile+lockSuffix))
+	release, err := NewStore(dir).locks.lock(t.Context(), filepath.Join(dir, credentialsFile+lockSuffix))
 	if err != nil {
 		t.Fatal(err)
 	}

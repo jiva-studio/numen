@@ -162,7 +162,7 @@ func (f *Files) ChangeSecrets(path string, change func([]pluginport.Secret) ([]p
 	})
 }
 
-// normalize returns the list with no nil permission list, so that equal lists compare equal.
+// normalize returns the list with no nil permission list, and equal lists compare equal.
 func normalize(secrets []pluginport.Secret) []pluginport.Secret {
 	out := make([]pluginport.Secret, 0, len(secrets))
 	for _, secret := range secrets {

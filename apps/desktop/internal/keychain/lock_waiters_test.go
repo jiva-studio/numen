@@ -25,7 +25,7 @@ func countOpenFiles() (int, bool) {
 // test ends.
 func holdLock(t *testing.T, dir string) {
 	t.Helper()
-	release, err := lockFile(t.Context(), filepath.Join(dir, credentialsFile+lockSuffix))
+	release, err := NewStore(dir).locks.lock(t.Context(), filepath.Join(dir, credentialsFile+lockSuffix))
 	if err != nil {
 		t.Fatal(err)
 	}

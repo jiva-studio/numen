@@ -52,12 +52,6 @@ type lockRegistry struct {
 	waits map[string]*lockWait
 }
 
-// lockFile takes the exclusive lock on the file at path with a registry of its own.
-func lockFile(ctx context.Context, path string) (func() error, error) {
-	var registry lockRegistry
-	return registry.lock(ctx, path)
-}
-
 // lock takes the exclusive lock on the file at path, creating the file when it is missing, and
 // returns the function that releases it. The wait ends with the context. Callers that wait for the
 // same file share one wait, and the one that finds it ended takes the lock; a wait without callers
