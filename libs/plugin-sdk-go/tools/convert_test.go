@@ -14,6 +14,7 @@ func TestToolInfo_RoundTripsThroughTheWire(t *testing.T) {
 		Effect: ReadWrite, Step: Move, Servers: []Server{Full, Reading},
 		Instructions: []string{"Greet each guest by name with greet.", "Call greet once per guest."},
 		Requires:     []string{"vault:manage", "index:read"},
+		Hints:        Hints{Destructive: true, OpenWorld: true},
 	}
 
 	got := readToolInfo(writeToolInfo(want))

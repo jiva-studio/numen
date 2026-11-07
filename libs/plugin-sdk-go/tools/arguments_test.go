@@ -2,6 +2,8 @@ package tools
 
 import (
 	"context"
+	"errors"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -120,5 +122,178 @@ func TestNoArgumentsRunAToolWithoutRequiredArguments(t *testing.T) {
 	}
 	if got := runs.Load(); got != 1 {
 		t.Errorf("the run function was called %d times, want once", got)
+	}
+}
+
+type linkInput struct {
+	Target string `json:"target"`
+	Role   string `json:"role,omitempty"`
+	Rank   int    `json:"rank,omitempty"`
+	Weight uint   `json:"weight,omitempty"`
+}
+
+type placeInput struct {
+	Title string `json:"title"`
+	Row   int    `json:"row,omitempty"`
+}
+
+type groupInput struct {
+	Links []linkInput `json:"links"`
+}
+
+type catalogInput struct {
+	Place  placeInput   `json:"place"`
+	Links  []linkInput  `json:"links"`
+	Groups []groupInput `json:"groups,omitempty"`
+	Limit  int          `json:"limit,omitempty"`
+	Note   string       `json:"note,omitempty"`
+	Shelf  uint8        `json:"shelf,omitempty"`
+	Pair   [2]string    `json:"pair,omitempty"`
+}
+
+// catalogRuns records the arguments catalog_update ran with.
+type catalogRuns struct {
+	atomic.Int32
+
+	last atomic.Pointer[catalogInput]
+}
+
+// newCatalogRegistry adds catalog_update, whose place, place.title, links and the target of each
+// link are required and every other argument is optional. It records the arguments of each run.
+func newCatalogRegistry(t *testing.T) (*Registry, *catalogRuns) {
+	t.Helper()
+	registry := New()
+	runs := &catalogRuns{}
+	if err := Add(registry, Spec{Name: "catalog_update", Effect: ReadWrite}, func(_ context.Context, in catalogInput) (shelveOut, error) {
+		runs.Add(1)
+		runs.last.Store(&in)
+		return shelveOut{Shelved: in.Place.Title}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	return registry, runs
+}
+
+// runCatalog calls catalog_update with the arguments and returns what it ran with, failing the
+// test when the call returned an error.
+func runCatalog(t *testing.T, arguments string) catalogInput {
+	t.Helper()
+	registry, runs := newCatalogRegistry(t)
+	res := invoke(t, registry, "catalog_update", []byte(arguments))
+	if res.GetError() != ErrorCodeUnspecified || res.GetResult().GetIsError() || runs.Load() != 1 {
+		t.Fatalf("the arguments %s were returned %+v with the error code %v", arguments, res.GetResult(), res.GetError())
+	}
+	return *runs.last.Load()
+}
+
+func TestNullForAnOptionalArgumentIsReadAsAbsent(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		arguments string
+		want      catalogInput
+	}{
+		{
+			name:      "top level",
+			arguments: `{"place":{"title":"Ferns"},"links":[],"limit":null,"note":null,"groups":null,"shelf":null,"pair":null}`,
+			want:      catalogInput{Place: placeInput{Title: "Ferns"}, Links: []linkInput{}},
+		},
+		{
+			name:      "nested object",
+			arguments: `{"place":{"title":"Ferns","row":null},"links":[]}`,
+			want:      catalogInput{Place: placeInput{Title: "Ferns"}, Links: []linkInput{}},
+		},
+		{
+			name:      "item of an array",
+			arguments: `{"place":{"title":"Ferns"},"links":[{"target":"a.md","role":null},{"target":"b.md","role":"source","rank":null,"weight":null}],"limit":null}`,
+			want: catalogInput{
+				Place: placeInput{Title: "Ferns"},
+				Links: []linkInput{{Target: "a.md"}, {Target: "b.md", Role: "source"}},
+			},
+		},
+		{
+			name:      "item of an array inside an item of an array",
+			arguments: `{"place":{"title":"Ferns"},"links":[],"groups":[{"links":[{"target":"c.md","role":null}]}]}`,
+			want: catalogInput{
+				Place:  placeInput{Title: "Ferns"},
+				Links:  []linkInput{},
+				Groups: []groupInput{{Links: []linkInput{{Target: "c.md"}}}},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := runCatalog(t, tc.arguments); !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("catalog_update ran with %+v, want %+v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestAWholeNumberIsAcceptedForAnIntegerArgument(t *testing.T) {
+	for _, arguments := range []string{
+		`{"place":{"title":"Ferns","row":20.0},"links":[{"target":"a.md","rank":20.0,"weight":20.0}],"limit":20.0,"shelf":20.0}`,
+		`{"place":{"title":"Ferns","row":2e1},"links":[{"target":"a.md","rank":2e1,"weight":2E1}],"limit":2e1,"shelf":2.0e1}`,
+		`{"place":{"title":"Ferns","row":20},"links":[{"target":"a.md","rank":20,"weight":20}],"limit":20,"shelf":20}`,
+	} {
+		got := runCatalog(t, arguments)
+		if got.Limit != 20 || got.Place.Row != 20 || got.Shelf != 20 || len(got.Links) != 1 ||
+			got.Links[0].Rank != 20 || got.Links[0].Weight != 20 {
+			t.Errorf("the arguments %s ran catalog_update with %+v, want 20 for every integer", arguments, got)
+		}
+	}
+}
+
+func TestAFractionIsRejectedForAnIntegerArgument(t *testing.T) {
+	registry, runs := newCatalogRegistry(t)
+
+	for arguments, want := range map[string]string{
+		`{"place":{"title":"Ferns"},"links":[],"limit":20.5}`:                                  `catalog_update: the argument limit must be an integer, not a number`,
+		`{"place":{"title":"Ferns","row":0.5},"links":[]}`:                                     `catalog_update: the argument place.row must be an integer, not a number`,
+		`{"place":{"title":"Ferns"},"links":[{"target":"a.md"},{"target":"b.md","rank":1.5}]}`: `catalog_update: the argument links[1].rank must be an integer, not a number`,
+	} {
+		res := invoke(t, registry, "catalog_update", []byte(arguments))
+		if !res.GetResult().GetIsError() || res.GetResult().GetText() != want {
+			t.Errorf("the arguments %s were returned %+v, want the error %q", arguments, res.GetResult(), want)
+		}
+	}
+	if got := runs.Load(); got != 0 {
+		t.Errorf("catalog_update ran %d times on a fraction for an integer", got)
+	}
+}
+
+func TestToolAddPrefixesTheToolNameToAFailureOnce(t *testing.T) {
+	registry := New()
+	if err := Add(registry, Spec{Name: "shelf_count", Effect: ReadOnly}, func(context.Context, countIn) (countIn, error) {
+		return countIn{}, errors.New("the shelf is gone")
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := Add(registry, Spec{Name: "shelve_book", Effect: ReadWrite}, func(context.Context, shelveIn) (shelveOut, error) {
+		return shelveOut{}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct{ tool, arguments, want string }{
+		{"shelf_count", `{}`, "shelf_count: the shelf is gone"},
+		{"shelve_book", `{}`, "shelve_book: the argument title is missing"},
+		{"shelve_book", `{"title":"Ferns","count":"three"}`, "shelve_book: the argument count must be an integer, not a string"},
+	} {
+		res := invoke(t, registry, tc.tool, []byte(tc.arguments))
+		if res.GetError() != ErrorCodeUnspecified || !res.GetResult().GetIsError() || res.GetResult().GetText() != tc.want {
+			t.Errorf("%s %s returned %+v with the error code %v, want the error %q",
+				tc.tool, tc.arguments, res.GetResult(), res.GetError(), tc.want)
+		}
+	}
+}
+
+func TestErrorCodesOfACallCarryNoText(t *testing.T) {
+	registry, _ := newShelvingRegistry(t)
+
+	for name, arguments := range map[string]string{"shelf_drop": `{}`, "shelve_book": `[1]`} {
+		res := invoke(t, registry, name, []byte(arguments))
+		if res.GetError() == ErrorCodeUnspecified || res.GetResult() != nil {
+			t.Errorf("%s %s returned %+v with the error code %v, want an error code and no result",
+				name, arguments, res.GetResult(), res.GetError())
+		}
 	}
 }

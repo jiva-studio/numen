@@ -86,7 +86,7 @@ func TestACallRunsTheToolOnItsArgumentsAndAnswersStructured(t *testing.T) {
 func TestAToolThatReturnsAnErrorRanAndRefused(t *testing.T) {
 	answer := call(t, newRegistry(t), "greet", `{"name":""}`)
 
-	if !answer.GetResult().GetIsError() || answer.GetResult().GetText() != "recipient required" {
+	if !answer.GetResult().GetIsError() || answer.GetResult().GetText() != "greet: recipient required" {
 		t.Errorf("the call was answered %v", answer)
 	}
 }
