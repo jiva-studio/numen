@@ -13,6 +13,8 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 )
 
 var secretID = regexp.MustCompile(`^s[0-9a-f]{8}$`)
@@ -166,9 +168,9 @@ func TestWritingASecretReplacesTheValueAndConfiguresThePluginsThatReadIt(t *test
 	if w.keys.snapshot()["secret/"+one] != "value-new" {
 		t.Errorf("the key store holds %v", w.keys.snapshot())
 	}
-	if w.counts()[alphaID] <= before[alphaID] {
-		t.Error("the plugin that reads the secret was not configured again")
-	}
+	plugintest.WaitUntil(t, "the plugin that reads the secret is configured again", func() bool {
+		return w.counts()[alphaID] > before[alphaID]
+	})
 	entry, _ := w.probes[alphaID].entry(t, "apiKey")
 	if entry.GetValues()[0].GetValue() != "value-new" {
 		t.Errorf("the plugin received %v", entry.GetValues())

@@ -108,9 +108,8 @@ type Host struct {
 	secretSource pluginport.SecretSource
 	// delivered is the list of secrets each plugin was last configured with, as a signature.
 	delivered map[string]string
-	// attempted is the list of secrets a failed Configure of each plugin carried, as a signature, so
-	// that a plugin whose Configure fails is not configured again until its list changes.
-	attempted map[string]string
+	// configure is the state of the Configure calls of each plugin that has had one.
+	configure map[string]*configureState
 	// awaitingFirstConfigure holds the plugins that are Active and have not yet been through the Configure of their activation.
 	awaitingFirstConfigure map[string]bool
 	// noKeyStoreOnce reports once that a secret cannot be read on a machine without a key store.
@@ -169,7 +168,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		completer:              nil,
 		keyStore:               nil,
 		delivered:              make(map[string]string),
-		attempted:              make(map[string]string),
+		configure:              make(map[string]*configureState),
 		awaitingFirstConfigure: make(map[string]bool),
 		hostEndpoint:           nil,
 		hostAddress:            hostendpoint.Address,
@@ -550,7 +549,12 @@ func (h *Host) dropEndpointOfStoppedPlugin(pluginID string) {
 	h.clearPluginTasks(pluginID)
 }
 
+// forgetEndpointLocked forgets the endpoint of the plugin and the ports its ready line reported, and
+// ends the Configure call that is on its way to the process that ended.
 func (h *Host) forgetEndpointLocked(pluginID string) {
+	if state := h.configure[pluginID]; state != nil && state.cancel != nil {
+		state.cancel()
+	}
 	delete(h.endpoints, pluginID)
 	delete(h.listenerPorts, pluginID)
 }
@@ -686,7 +690,6 @@ func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *li
 	}
 	h.mu.Lock()
 	delete(h.delivered, p.Manifest.ID)
-	delete(h.attempted, p.Manifest.ID)
 	h.awaitingFirstConfigure[p.Manifest.ID] = true
 	h.mu.Unlock()
 	sup.RecordActivationSuccess()
@@ -1402,60 +1405,8 @@ func (h *Host) TogglePluginSetting(ctx context.Context, pluginID, key string) (b
 
 // NotifyPluginConfig sends the resolved configuration to a running plugin process.
 func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
-	h.secretMu.Lock()
-	defer h.secretMu.Unlock()
-	return h.notifyPluginConfigLocked(ctx, pluginID)
-}
-
-// notifyPluginConfigLocked is NotifyPluginConfig for a caller holding secretMu.
-func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) error {
-	readErr, configureErr := h.configurePluginLocked(ctx, pluginID)
+	readErr, configureErr := h.configurePlugin(ctx, pluginID)
 	return errors.Join(readErr, configureErr)
-}
-
-// configurePluginLocked sends the configuration to the plugin and returns the failure to read its
-// secrets apart from the failure of the Configure call.
-func (h *Host) configurePluginLocked(ctx context.Context, pluginID string) (readErr, configureErr error) {
-	snapshot, isRunning, err := h.takeConfigSnapshot(pluginID)
-	if !isRunning || err != nil {
-		return err, nil
-	}
-	secrets, failures := h.listConfigureSecrets(ctx, snapshot)
-	secretsErr := h.getSecretsError(failures)
-
-	httpClient := transport.EndpointClient(snapshot.endpoint)
-	client := numenv1connect.NewPluginLifecycleServiceClient(
-		httpClient,
-		transport.GetBaseURL(snapshot.endpoint),
-		connect.WithInterceptors(transport.AuthInterceptor(snapshot.endpoint.Token)),
-	)
-	req := connect.NewRequest(&v1.ConfigureRequest{
-		PluginId:          pluginID,
-		ConfigurationJson: snapshot.configJSON,
-		Values:            snapshot.values,
-		Secrets:           secrets,
-	})
-	configCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-	_, err = client.Configure(configCtx, req)
-	if err != nil {
-		var connectErr *connect.Error
-		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && len(snapshot.declared) == 0 {
-			return secretsErr, nil
-		}
-		h.mu.Lock()
-		if !h.awaitingFirstConfigure[pluginID] {
-			h.attempted[pluginID] = getSecretsSignature(secrets)
-		}
-		h.mu.Unlock()
-		return secretsErr, fmt.Errorf("configure plugin %s: %w", pluginID, err)
-	}
-	h.mu.Lock()
-	h.delivered[pluginID] = getSecretsSignature(secrets)
-	delete(h.attempted, pluginID)
-	h.mu.Unlock()
-	h.runConfigWatchers(pluginID)
-	return secretsErr, nil
 }
 
 // configSnapshot is what a Configure call to one plugin is made of, taken while mu was held.

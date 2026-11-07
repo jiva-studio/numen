@@ -410,9 +410,10 @@ func TestAPluginNamedByAnOperationIsConfiguredAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := listed(t, probe, declared); len(got) != 1 || got[0].GetValue() != "value-replaced" {
-		t.Errorf("delivered %v, want the replaced value", got)
-	}
+	plugintest.WaitUntil(t, "the replaced value is delivered", func() bool {
+		got := listed(t, probe, declared)
+		return len(got) == 1 && got[0].GetValue() == "value-replaced"
+	})
 }
 
 // A refused operation configures no plugin.

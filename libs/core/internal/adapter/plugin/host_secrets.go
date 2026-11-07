@@ -6,8 +6,15 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
+	"time"
+
+	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
@@ -46,50 +53,200 @@ func (h *Host) listDeclarationsLocked() []pluginport.SecretPermission {
 	return declarations
 }
 
+// configureState is what the host keeps for the Configure calls of one plugin.
+type configureState struct {
+	// sendMu orders the Configure calls to the plugin, so that the later one carries the later list.
+	sendMu sync.Mutex
+	// cancel ends the call that is in flight. Host.mu guards it and the fields below.
+	cancel context.CancelFunc
+	// isQueued is set while a delivery is waiting for the one in flight, and isDelivering while a
+	// goroutine runs the queued deliveries.
+	isQueued, isDelivering bool
+	// isForced is set when a queued delivery is owed even to a plugin whose list did not change.
+	isForced bool
+	// hasFailed is set while the plugin is marked as failed because of a Configure call.
+	hasFailed bool
+}
+
+// getConfigureState returns the state of the plugin's Configure calls, creating it.
+func (h *Host) getConfigureState(pluginID string) *configureState {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	state := h.configure[pluginID]
+	if state == nil {
+		state = &configureState{}
+		h.configure[pluginID] = state
+	}
+	return state
+}
+
 // ApplySecretChange runs change while no other secret operation runs, and then configures the
-// running plugins whose list of secrets changed, and those whose ids change returns.
+// running plugins whose list of secrets changed, and those whose ids change returns. The Configure
+// calls run after it returns and do not delay or fail it.
 func (h *Host) ApplySecretChange(ctx context.Context, change func() (readers []string, err error)) error {
 	h.secretMu.Lock()
-	defer h.secretMu.Unlock()
 	readers, err := change()
 	if err != nil {
+		h.secretMu.Unlock()
 		return err
 	}
-	return h.configureChangedLocked(ctx, readers)
+	ids := h.listPluginsToConfigure(ctx, readers)
+	h.secretMu.Unlock()
+	h.queueConfigure(context.WithoutCancel(ctx), ids, readers)
+	return nil
 }
 
 // RefreshSecrets configures the running plugins whose list of secrets differs from the one they
 // were last given.
 func (h *Host) RefreshSecrets(ctx context.Context) error {
 	h.secretMu.Lock()
-	defer h.secretMu.Unlock()
-	return h.configureChangedLocked(ctx, nil)
+	ids := h.listPluginsToConfigure(ctx, nil)
+	h.secretMu.Unlock()
+
+	var failures []error
+	for _, id := range ids {
+		readErr, configureErr := h.configurePlugin(ctx, id)
+		h.recordConfigureResult(id, configureErr)
+		if readErr != nil {
+			failures = append(failures, readErr)
+		}
+	}
+	return errors.Join(failures...)
 }
 
-// configureChangedLocked configures the plugins named in forced and every running plugin whose
-// list of secrets differs from the one it was last given.
-func (h *Host) configureChangedLocked(ctx context.Context, forced []string) error {
+// listPluginsToConfigure returns the ids of the plugins named in forced and of every running plugin
+// whose list of secrets differs from the one it was last given. The caller holds secretMu.
+func (h *Host) listPluginsToConfigure(ctx context.Context, forced []string) []string {
 	h.mu.RLock()
 	ids := make([]string, 0, len(h.plugins))
 	for _, p := range h.getPluginsInOrderLocked() {
 		ids = append(ids, p.Manifest.ID)
 	}
 	h.mu.RUnlock()
+	return slices.DeleteFunc(ids, func(id string) bool {
+		return !slices.Contains(forced, id) && !h.hasSecretsChanged(ctx, id)
+	})
+}
 
-	var failures []error
+// queueConfigure configures the plugins on goroutines of their own. A plugin is configured by one
+// goroutine at a time, and deliveries queued while it works are merged into one that reads the list
+// when it runs, so that the later list is the one the plugin ends with.
+func (h *Host) queueConfigure(ctx context.Context, ids, forced []string) {
 	for _, id := range ids {
-		if !slices.Contains(forced, id) && !h.hasSecretsChanged(ctx, id) {
-			continue
-		}
-		readErr, configureErr := h.configurePluginLocked(ctx, id)
-		if configureErr != nil {
-			h.reportError(configureErr)
-		}
-		if readErr != nil {
-			failures = append(failures, readErr)
+		state := h.getConfigureState(id)
+		h.mu.Lock()
+		state.isQueued = true
+		state.isForced = state.isForced || slices.Contains(forced, id)
+		start := !state.isDelivering
+		state.isDelivering = true
+		h.mu.Unlock()
+		if start {
+			go h.runQueuedConfigures(ctx, id, state)
 		}
 	}
-	return errors.Join(failures...)
+}
+
+// runQueuedConfigures configures the plugin until no delivery is queued.
+func (h *Host) runQueuedConfigures(ctx context.Context, pluginID string, state *configureState) {
+	for {
+		h.mu.Lock()
+		if !state.isQueued {
+			state.isDelivering = false
+			h.mu.Unlock()
+			return
+		}
+		state.isQueued = false
+		isForced := state.isForced
+		state.isForced = false
+		h.mu.Unlock()
+		if !isForced && !h.hasSecretsChangedUnderLock(ctx, pluginID) {
+			continue
+		}
+		readErr, configureErr := h.configurePlugin(ctx, pluginID)
+		if readErr != nil {
+			h.reportError(readErr)
+		}
+		h.recordConfigureResult(pluginID, configureErr)
+	}
+}
+
+// recordConfigureResult marks the plugin as failed when its Configure call failed, so that the
+// plugin page shows it, and clears the mark when a later call succeeded.
+func (h *Host) recordConfigureResult(pluginID string, configureErr error) {
+	state := h.getConfigureState(pluginID)
+	h.mu.Lock()
+	hadFailed := state.hasFailed
+	state.hasFailed = configureErr != nil
+	sup := h.supervisors[pluginID]
+	h.mu.Unlock()
+	switch {
+	case configureErr != nil:
+		if sup != nil && !sup.IsActivationFailed() {
+			h.recordActivationFailure(pluginID, configureErr)
+			h.deliverPluginFailures()
+		}
+	case hadFailed && sup != nil:
+		h.clearFailure(pluginID, sup)
+	}
+}
+
+// configurePlugin sends the configuration to the plugin and returns the failure to read its secrets
+// apart from the failure of the Configure call. The list of secrets is read when the call is about to
+// be sent. A call is not sent to a plugin that is not running, and its outcome is dropped when the
+// process it went to ended.
+func (h *Host) configurePlugin(ctx context.Context, pluginID string) (readErr, configureErr error) {
+	state := h.getConfigureState(pluginID)
+	state.sendMu.Lock()
+	defer state.sendMu.Unlock()
+
+	h.secretMu.Lock()
+	snapshot, isRunning, err := h.takeConfigSnapshot(pluginID)
+	if !isRunning || err != nil {
+		h.secretMu.Unlock()
+		return err, nil
+	}
+	secrets, failures := h.listConfigureSecrets(ctx, snapshot)
+	h.secretMu.Unlock()
+	secretsErr := h.getSecretsError(failures)
+
+	httpClient := transport.EndpointClient(snapshot.endpoint)
+	client := numenv1connect.NewPluginLifecycleServiceClient(
+		httpClient,
+		transport.GetBaseURL(snapshot.endpoint),
+		connect.WithInterceptors(transport.AuthInterceptor(snapshot.endpoint.Token)),
+	)
+	req := connect.NewRequest(&v1.ConfigureRequest{
+		PluginId:          pluginID,
+		ConfigurationJson: snapshot.configJSON,
+		Values:            snapshot.values,
+		Secrets:           secrets,
+	})
+	configCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	h.mu.Lock()
+	state.cancel = cancel
+	h.mu.Unlock()
+	_, err = client.Configure(configCtx, req)
+
+	h.mu.Lock()
+	state.cancel = nil
+	isCurrent := h.endpoints[pluginID].Token == snapshot.endpoint.Token
+	h.mu.Unlock()
+	if !isCurrent {
+		return secretsErr, nil
+	}
+	if err != nil {
+		var connectErr *connect.Error
+		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && len(snapshot.declared) == 0 {
+			return secretsErr, nil
+		}
+		return secretsErr, fmt.Errorf("configure plugin %s: %w", pluginID, err)
+	}
+	h.mu.Lock()
+	h.delivered[pluginID] = getSecretsSignature(secrets)
+	h.mu.Unlock()
+	h.runConfigWatchers(pluginID)
+	return secretsErr, nil
 }
 
 // hasSecretsChanged reports whether the list of secrets of a running plugin differs from the one
@@ -105,12 +262,8 @@ func (h *Host) hasSecretsChanged(ctx context.Context, pluginID string) bool {
 	if h.awaitingFirstConfigure[pluginID] {
 		return false
 	}
-	signature := getSecretsSignature(secrets)
-	if tried, hasFailed := h.attempted[pluginID]; hasFailed {
-		return tried != signature
-	}
 	last, wasDelivered := h.delivered[pluginID]
-	return !wasDelivered || last != signature
+	return !wasDelivered || last != getSecretsSignature(secrets)
 }
 
 // pruneSecretPermissions drops the permissions of declarations that are gone. It runs when the
@@ -271,4 +424,11 @@ func appendDeclarations(declarations []pluginport.SecretPermission, p manifest.D
 		})
 	}
 	return declarations
+}
+
+// hasSecretsChangedUnderLock is hasSecretsChanged for a caller that does not hold secretMu.
+func (h *Host) hasSecretsChangedUnderLock(ctx context.Context, pluginID string) bool {
+	h.secretMu.Lock()
+	defer h.secretMu.Unlock()
+	return h.hasSecretsChanged(ctx, pluginID)
 }

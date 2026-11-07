@@ -3,49 +3,60 @@ package plugin
 import (
 	"sync"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
+	pluginport "github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// collectErrors records the errors the host reports.
-type collectErrors struct {
-	mu     sync.Mutex
-	errors []error
+// collectFailures records the failures the host passes on.
+type collectFailures struct {
+	mu       sync.Mutex
+	failures []pluginport.PluginFailure
 }
 
-func (c *collectErrors) add(err error) {
+func (c *collectFailures) add(failure pluginport.PluginFailure) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.errors = append(c.errors, err)
+	c.failures = append(c.failures, failure)
 }
 
-func (c *collectErrors) count() int {
+func (c *collectFailures) count() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return len(c.errors)
+	return len(c.failures)
 }
 
-// A plugin whose Configure fails does not fail an operation that does not concern it: the failure
-// is reported through the error handler.
-func TestAFailingConfigureOfAnUnrelatedPluginDoesNotFailTheOperation(t *testing.T) {
+// A plugin whose Configure fails does not fail the operation that changed its list. The plugin is
+// marked as failed, once.
+func TestAFailingConfigureMarksThePluginAndDoesNotFailTheOperation(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
-	reported := &collectErrors{}
-	host.SetErrorHandler(reported.add)
+	failed := &collectFailures{}
+	host.SetOnPluginFailed(failed.add)
 	probe.mu.Lock()
 	probe.unimplemented = true
 	probe.mu.Unlock()
 
-	err := host.ApplySecretChange(t.Context(), func() ([]string, error) { return nil, nil })
-	if err != nil {
-		t.Errorf("the operation returned %v, want nil", err)
+	for range 2 {
+		err := host.ApplySecretChange(t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
+		if err != nil {
+			t.Errorf("the operation returned %v, want nil", err)
+		}
 	}
-	if reported.count() != 1 {
-		t.Errorf("%d failures reported, want 1", reported.count())
+	plugintest.WaitUntil(t, "the failure is passed on", func() bool { return failed.count() > 0 })
+	plugintest.WaitUntil(t, "both calls were made", func() bool {
+		probe.mu.Lock()
+		defer probe.mu.Unlock()
+		return len(probe.calls) >= 1
+	})
+	if failed.count() != 1 {
+		t.Errorf("%d failures passed on, want 1", failed.count())
 	}
 }
 
-// A plugin whose Configure failed with a list is not configured again until its list changes.
-func TestAFailedConfigureIsNotRepeatedWhileTheListIsTheSame(t *testing.T) {
+// A plugin whose Configure failed is configured again by the next refresh, whatever its list.
+func TestAFailedConfigureIsRepeatedByTheNextRefresh(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
-	host.SetErrorHandler(func(error) {})
+	host.SetOnPluginFailed(func(pluginport.PluginFailure) {})
 	probe.mu.Lock()
 	probe.unimplemented = true
 	probe.mu.Unlock()
@@ -58,35 +69,7 @@ func TestAFailedConfigureIsNotRepeatedWhileTheListIsTheSame(t *testing.T) {
 	probe.mu.Lock()
 	calls := len(probe.calls)
 	probe.mu.Unlock()
-	if calls != 1 {
-		t.Errorf("%d Configure calls over three refreshes of a failing plugin, want 1", calls)
-	}
-
-	host.SetSecretSource(allowOne(secretPluginID))
-	if err := host.RefreshSecrets(t.Context()); err != nil {
-		t.Fatal(err)
-	}
-	probe.mu.Lock()
-	defer probe.mu.Unlock()
-	if len(probe.calls) != 2 {
-		t.Errorf("%d Configure calls after the list changed, want 2", len(probe.calls))
-	}
-}
-
-// A plugin an operation names gets its failure reported, not returned.
-func TestAFailingConfigureOfANamedPluginIsReportedNotReturned(t *testing.T) {
-	host, probe := newSecretHost(t, newKeys(map[string]string{}))
-	reported := &collectErrors{}
-	host.SetErrorHandler(reported.add)
-	probe.mu.Lock()
-	probe.unimplemented = true
-	probe.mu.Unlock()
-
-	err := host.ApplySecretChange(t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
-	if err != nil {
-		t.Errorf("the operation returned %v, want nil", err)
-	}
-	if reported.count() != 1 {
-		t.Errorf("%d failures reported, want 1", reported.count())
+	if calls != 3 {
+		t.Errorf("%d Configure calls over three refreshes of a failing plugin, want 3", calls)
 	}
 }
