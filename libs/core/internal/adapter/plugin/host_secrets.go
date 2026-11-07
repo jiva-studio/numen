@@ -58,10 +58,13 @@ const configureCallTimeout = 3 * time.Second
 // ApplySecretChange runs change while no other secret operation runs. It then sends Configure to
 // each running plugin whose list of secrets differs from the one it had before change, and to each
 // plugin whose id change returns, and waits for every send. When a send fails the change stays
-// committed and the error names the plugin.
+// committed and the error names the plugin. It returns the context error, with change not run, when
+// ctx ends before the lock is free.
 func (h *Host) ApplySecretChange(ctx context.Context, change func() (readers []string, err error)) error {
-	h.secretMu.Lock()
-	defer h.secretMu.Unlock()
+	if err := h.lockSecrets(ctx); err != nil {
+		return err
+	}
+	defer h.unlockSecrets()
 	before := h.listSecretSignatures(ctx)
 	readers, err := change()
 	if err != nil {
@@ -80,8 +83,10 @@ func (h *Host) ApplySecretChange(ctx context.Context, change func() (readers []s
 // RefreshSecrets sends Configure to each running plugin whose list of secrets differs from the one
 // it was last given.
 func (h *Host) RefreshSecrets(ctx context.Context) error {
-	h.secretMu.Lock()
-	defer h.secretMu.Unlock()
+	if err := h.lockSecrets(ctx); err != nil {
+		return err
+	}
+	defer h.unlockSecrets()
 	h.mu.RLock()
 	ids := make([]string, 0, len(h.plugins))
 	for _, p := range h.getPluginsInOrderLocked() {
@@ -93,7 +98,7 @@ func (h *Host) RefreshSecrets(ctx context.Context) error {
 }
 
 // listSecretSignatures returns the signature of the list of secrets of every plugin. The caller
-// holds secretMu.
+// holds secretLock.
 func (h *Host) listSecretSignatures(ctx context.Context) map[string]string {
 	h.mu.RLock()
 	ids := make([]string, 0, len(h.plugins))
@@ -129,7 +134,7 @@ func (h *Host) isAwaitingFirstConfigure(pluginID string) bool {
 
 // configurePlugins sends Configure to the plugins in turn and returns the failures joined. A plugin
 // that awaits the Configure of its activation gets none, because that one reads the list as it is.
-// The caller holds secretMu.
+// The caller holds secretLock.
 func (h *Host) configurePlugins(ctx context.Context, ids []string) error {
 	var failures []error
 	for _, id := range ids {
@@ -144,7 +149,7 @@ func (h *Host) configurePlugins(ctx context.Context, ids []string) error {
 
 // configurePluginLocked sends the configuration to the plugin and returns the failure to read its
 // secrets apart from the failure of the Configure call. A plugin that is not running gets no call.
-// The caller holds secretMu.
+// The caller holds secretLock.
 func (h *Host) configurePluginLocked(ctx context.Context, pluginID string) (readErr, configureErr error) {
 	snapshot, isRunning, err := h.takeConfigSnapshot(pluginID)
 	if !isRunning || err != nil {
@@ -167,30 +172,20 @@ func (h *Host) configurePluginLocked(ctx context.Context, pluginID string) (read
 	})
 	configCtx, cancel := context.WithTimeout(ctx, configureCallTimeout)
 	defer cancel()
-	if _, err = client.Configure(configCtx, req); err != nil {
+	_, err = client.Configure(configCtx, req)
+	// A list that failed to arrive is remembered too, so a plain refresh does not send it again.
+	h.mu.Lock()
+	h.delivered[pluginID] = getSecretsSignature(secrets)
+	h.mu.Unlock()
+	if err != nil {
 		var connectErr *connect.Error
 		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && len(snapshot.declared) == 0 {
 			return secretsErr, nil
 		}
-		return secretsErr, fmt.Errorf("configure plugin %s: %s", pluginID, redactSecretValues(err.Error(), secrets))
+		return secretsErr, fmt.Errorf("configure plugin %s: %s", pluginID, describeConfigureFailure(err))
 	}
-	h.mu.Lock()
-	h.delivered[pluginID] = getSecretsSignature(secrets)
-	h.mu.Unlock()
 	h.runConfigWatchers(pluginID)
 	return secretsErr, nil
-}
-
-// redactSecretValues replaces each secret value in text.
-func redactSecretValues(text string, entries []*v1.ConfigureSecrets) string {
-	for _, entry := range entries {
-		for _, one := range entry.GetValues() {
-			if one.GetValue() != "" {
-				text = strings.ReplaceAll(text, one.GetValue(), "[removed]")
-			}
-		}
-	}
-	return text
 }
 
 // hasSecretsChanged reports whether the list of secrets of a running plugin differs from the one
@@ -368,4 +363,28 @@ func appendDeclarations(declarations []pluginport.SecretPermission, p manifest.D
 		})
 	}
 	return declarations
+}
+
+// lockSecrets waits for the lock of the secret operations until ctx ends.
+func (h *Host) lockSecrets(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	select {
+	case h.secretLock <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// unlockSecrets releases the lock taken by lockSecrets.
+func (h *Host) unlockSecrets() { <-h.secretLock }
+
+// describeConfigureFailure names the status of a failed Configure call and never the text of the plugin.
+func describeConfigureFailure(err error) string {
+	if connect.CodeOf(err) == connect.CodeDeadlineExceeded {
+		return "timed out"
+	}
+	return connect.CodeOf(err).String()
 }
