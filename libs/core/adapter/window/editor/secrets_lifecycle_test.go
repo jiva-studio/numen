@@ -27,8 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-const deltaID = "md.numen.test.delta"
-
 // Delta runs in the flashcards window only and asks for the group mistral.
 const deltaManifest = `{
 	"id": "md.numen.test.delta", "name": "Delta", "version": "1.0.0", "targets": ["desktop.flashcards"],
@@ -281,7 +279,7 @@ func TestAPluginThatBecomesActiveDuringASecretOperationIsConfiguredOnce(t *testi
 	release := make(chan struct{})
 	operationDone := make(chan error, 1)
 	go func() {
-		operationDone <- w.host.ApplySecretChange(context.Background(), func() ([]string, error) {
+		operationDone <- w.host.ApplySecretChange(t.Context(), func() ([]string, error) {
 			close(started)
 			<-release
 			return nil, nil
@@ -291,7 +289,7 @@ func TestAPluginThatBecomesActiveDuringASecretOperationIsConfiguredOnce(t *testi
 
 	activationDone := make(chan error, 1)
 	go func() {
-		_, err := w.host.EnsureActive(context.Background(), gammaID)
+		_, err := w.host.EnsureActive(t.Context(), gammaID)
 		activationDone <- err
 	}()
 	plugintest.WaitUntil(t, "the plugin is active", func() bool {
