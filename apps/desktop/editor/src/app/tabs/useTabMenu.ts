@@ -42,7 +42,7 @@ export interface TabMenuDeps {
 const NOTE_EXTENSION = '.md'
 
 /** The words of the rows the menu writes itself. */
-const MENU_WORDS = { loadingText: WORDS.loadingItems, emptyText: WORDS.noItems }
+const MENU_WORDS = { loadingText: WORDS.loadingItems }
 
 /** The items of the commands of the open menu that offer them, read as the menu opens. */
 function useEntryItems(deps: Pick<TabMenuDeps, 'listItems' | 'reportError'>) {

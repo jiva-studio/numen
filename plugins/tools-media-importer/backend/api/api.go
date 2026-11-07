@@ -48,8 +48,6 @@ type ReadArticleResponse struct {
 // FetchTextRequest starts fetching the text of the link note at Path.
 type FetchTextRequest struct {
 	Path string `json:"path"`
-	// IsForced fetches the text again where it is stored or its version was deleted.
-	IsForced bool `json:"isForced"`
 }
 
 // FetchTextResponse is the acknowledgement of a started fetch.

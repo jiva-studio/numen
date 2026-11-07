@@ -31,11 +31,8 @@ export interface Links {
   readArticle(path: string): Promise<string>
   /** Where the file at an address is loaded from, and what it is played as. */
   getSource(address: string): Promise<LinkSource>
-  /**
-   * Starts fetching the text. A fetch that is not forced does not restore a deleted text, and takes
-   * a stored text without fetching it.
-   */
-  fetchText(path: string, isForced: boolean): Promise<Outcome<null>>
+  /** Starts fetching the text from the address of the link. */
+  fetchText(path: string): Promise<Outcome<null>>
   /** Starts downloading the video of a link, or its sound alone. */
   copyMedia(path: string, kind: 'video' | 'audio'): Promise<Outcome<null>>
   deleteCopy(path: string): Promise<Outcome<null>>

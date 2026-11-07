@@ -1,11 +1,17 @@
 /**
  * The items of a plugin command as the pick list of the palette: a loading row while they arrive,
- * then the items the command offers over the target of the palette, stored until the palette closes.
+ * then the items the command offers over the target of the palette, stored until the palette closes
+ * or opens again. A command whose items are read and are none is left out of the palette.
  */
 import { shallowRef, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { CommandItem, PluginHost } from '@numen/plugin-host'
-import type { CommandTarget, PaletteLists } from '@/features/command-palette'
+import type {
+  Command,
+  CommandTarget,
+  PaletteLists,
+  RunSupport,
+} from '@/features/command-palette'
 import type { StepGroup } from '@/shared/steps'
 import { WORDS } from '@/shared/words'
 
@@ -57,13 +63,20 @@ function createPluginItems(deps: PluginItemsDeps) {
     return [{ id: command, title: '', items }]
   }
 
+  /** Whether the items of the command over the target of the palette are read and are none. */
+  const isEmpty = (command: string): boolean => {
+    if (!deps.pluginHost?.hasCommandItems(command)) return false
+    ask(command)
+    return itemLists.value.get(command)?.length === 0
+  }
+
   /** Forgets the items asked for, so the next pick list asks again. */
   const reset = (): void => {
     requests.clear()
     itemLists.value = new Map()
   }
 
-  return { getGroups, reset }
+  return { getGroups, isEmpty, reset }
 }
 
 /**
@@ -74,6 +87,7 @@ export function createItemLists(
   windowLists: PaletteLists,
   pluginHost: ItemHost,
   getTarget: () => CommandTarget,
+  runs: RunSupport,
 ) {
   const items = createPluginItems({ pluginHost, getTarget })
   const lists: PaletteLists = {
@@ -81,11 +95,17 @@ export function createItemLists(
       items.getGroups(command, typed) ?? windowLists.getStepGroups(command, typed),
     previewItem: (command, item) => windowLists.previewItem(command, item),
   }
-  /** Asks again for the items each time the palette opens after it closed. */
+  /** Asks again for the items each time the palette opens or closes. */
   const resetWhenClosed = (isOpen: Readonly<Ref<boolean>>): void => {
-    watch(isOpen, (open) => {
-      if (!open) items.reset()
-    })
+    watch(isOpen, () => items.reset())
   }
-  return { lists, resetWhenClosed }
+  /**
+   * The commands without those that list no item over the target of the palette, as VS Code shows no
+   * empty submenu. The items of each available command with items are read for it.
+   */
+  const removeEmptyCommands = (commands: readonly Command[]): readonly Command[] => {
+    const target = getTarget()
+    return commands.filter((one) => !one.isAvailable(target, runs) || !items.isEmpty(one.id))
+  }
+  return { lists, resetWhenClosed, removeEmptyCommands }
 }

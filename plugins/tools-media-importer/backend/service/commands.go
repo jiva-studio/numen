@@ -61,7 +61,7 @@ func newDownloadTextCommand(links *link.Links) command.Run {
 		if err != nil {
 			return command.Result{}, err
 		}
-		if err := links.FetchText(ctx, found, true); err != nil {
+		if err := links.FetchText(ctx, found); err != nil {
 			return command.Result{}, err
 		}
 		return command.Result{Message: fmt.Sprintf("the text of %s is fetched", req.Path), OpenedPath: ""}, nil

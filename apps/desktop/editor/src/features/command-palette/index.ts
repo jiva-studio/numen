@@ -27,6 +27,7 @@ export type { AnswerWords } from './words'
 export type {
   Command,
   CommandInvocation,
+  CommandPrompt,
   CommandPlace,
   CommandsDeps,
   CommandTarget,

@@ -24,8 +24,11 @@ export function createBackendHandlers(
     getHandlerDeclarations: deps.getHandlers,
     listBackendHandlerItems: (pluginId, command, target) =>
       deps.list({ pluginId, id: command }, target.path),
-    runBackendHandler: async ({ pluginId, command, target, argument }) => {
-      const outcome = await deps.run({ pluginId, command }, target.path, argument)
+    runBackendHandler: async ({ pluginId, command, target, argument, values }) => {
+      const outcome = await deps.run(
+        { pluginId, command },
+        { path: target.path, values: values ?? {}, ...(argument === undefined ? {} : { argument }) },
+      )
       if (!outcome.ok) throw new Error(outcome.error)
       const { message, openedPath } = outcome.value
       if (message) deps.writeMessage(message, 'info')

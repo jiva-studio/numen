@@ -20,8 +20,6 @@ export const WORDS = {
   appName: 'numen',
   /** The row of a submenu or a pick list of items while they are read. */
   loadingItems: 'Loading…',
-  /** The row of a submenu of a command that lists no item. */
-  noItems: 'No items',
   /** Status corner text shown while something about the vault is wrong. */
   unwatched: 'Vault changes not watched',
   unread: 'Vault unreadable',

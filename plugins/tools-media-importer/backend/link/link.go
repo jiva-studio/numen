@@ -337,7 +337,7 @@ func (l *Links) StartFetch(ctx context.Context, link Link) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, true))
+		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link))
 		if l.IsCopyable(link.Address) {
 			_, err := l.Copy(runCtx, link, download.MediaVideo)
 			reportBackgroundError(runCtx, "copy the video of", link, err)
@@ -346,11 +346,11 @@ func (l *Links) StartFetch(ctx context.Context, link Link) {
 }
 
 // StartFetchText fetches the text of a link in the background. A failure is shown as its task.
-func (l *Links) StartFetchText(ctx context.Context, link Link, isForced bool) {
+func (l *Links) StartFetchText(ctx context.Context, link Link) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, isForced))
+		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link))
 	})
 }
 
@@ -383,22 +383,13 @@ const (
 func getTaskID(work, path string) string { return work + ":" + path }
 
 // FetchText fetches the text published at a link's address and stores it as a
-// text version of the link. An address that publishes no text is marked as such.
-// A fetch that is not forced skips an address marked as publishing no text and a
-// text whose version the person deleted, and re-stores an existing text as a
-// version of the note as it currently reads, without fetching it.
-func (l *Links) FetchText(ctx context.Context, link Link, isForced bool) error {
+// text version of the link. An address that publishes no text stores nothing.
+func (l *Links) FetchText(ctx context.Context, link Link) error {
 	if !l.claim("text", link, link.Key) {
 		return ErrBeingFetched
 	}
 	defer l.release("text", link, link.Key)
 	folder := folder{store: l.getStore(link)}
-	if !isForced {
-		isDone, err := l.reuseText(ctx, folder, link)
-		if err != nil || isDone {
-			return err
-		}
-	}
 	task := host.Task{
 		ID: getTaskID("text", link.Path), Title: fetchingText, Detail: link.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: true,
@@ -409,35 +400,19 @@ func (l *Links) FetchText(ctx context.Context, link Link, isForced bool) error {
 	return err
 }
 
-// reuseText completes a fetch that is not forced from stored data and reports whether it did.
-func (l *Links) reuseText(ctx context.Context, folder folder, link Link) (bool, error) {
-	if isNone, err := folder.isNone(ctx, link.Key); err != nil || isNone {
-		return true, err
-	}
-	return l.restoreTextOf(ctx, folder, link)
-}
-
 // restoreText puts the stored text of a link as the version of the note as it reads now, where a
-// text is stored.
+// text is stored. A text that was fetched earlier and is now absent is a version the person deleted,
+// and stays deleted.
 func (l *Links) restoreText(ctx context.Context, folder folder, link Link) error {
-	_, err := l.restoreTextOf(ctx, folder, link)
-	return err
-}
-
-// restoreTextOf puts the stored text of a link as its version, and reports whether a text was
-// fetched for the link before, whether it is kept or the person deleted its version.
-func (l *Links) restoreTextOf(ctx context.Context, folder folder, link Link) (bool, error) {
 	rec, err := folder.readRecord(ctx, link.Key)
 	if err != nil || rec.Kind == "" {
-		return false, err
+		return err
 	}
 	hasText, err := folder.hasText(ctx, link.Key)
 	if err != nil || !hasText {
-		// A text that was fetched earlier and is now absent is a version the user
-		// deleted.
-		return true, err
+		return err
 	}
-	return true, l.ensureVersion(ctx, link, rec.Kind)
+	return l.ensureVersion(ctx, link, rec.Kind)
 }
 
 func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
@@ -446,7 +421,7 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 		Languages: settings.Captions, IsAutomatic: settings.IsAutomatic,
 	})
 	if errors.Is(err, download.ErrNothingDownloaded) {
-		return folder.markNone(ctx, link.Key)
+		return nil
 	}
 	if err != nil {
 		return err

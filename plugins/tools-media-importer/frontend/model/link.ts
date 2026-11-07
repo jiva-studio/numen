@@ -49,7 +49,7 @@ export function useLink(links: Links | undefined, path: string) {
       error.value = ''
       if (!article && !facts.value.isTextDeleted && !isWorking.value && !isFetchRequested) {
         isFetchRequested = true
-        await run(() => activeLinks.fetchText(path, false))
+        await run(() => activeLinks.fetchText(path))
       }
     } catch (failure) {
       if (mine === turn) error.value = describeFailure(failure)
@@ -83,7 +83,7 @@ export function useLink(links: Links | undefined, path: string) {
     reportFailure,
     error,
     actions: {
-      fetchText: () => run(() => activeLinks.fetchText(path, true)),
+      fetchText: () => run(() => activeLinks.fetchText(path)),
       copyVideo: () => run(() => activeLinks.copyMedia(path, 'video')),
       deleteCopy: async () => {
         await run(() => activeLinks.deleteCopy(path))

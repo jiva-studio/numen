@@ -36,7 +36,6 @@ export interface ReadArticleResponse {
 
 export interface FetchTextRequest {
   readonly path: string
-  readonly isForced: boolean
 }
 
 export type FetchTextResponse = Record<string, never>

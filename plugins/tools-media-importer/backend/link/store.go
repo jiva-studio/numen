@@ -19,13 +19,11 @@ import (
 //     the version.
 //   - `<key>.json` records what fetched the text, what kind it is and which file holds the copy. A
 //     record whose text is gone marks a version the user deleted.
-//   - `<key>.none` is an address that publishes no text.
 //   - `<key>.part` is a copy arriving, and `<key><ext>` the copy whole.
 //   - `<key>.html` is the page that frames the player of the video.
 const (
 	textExt   = ".jsonl"
 	recordExt = ".json"
-	noneExt   = ".none"
 	partExt   = ".part"
 )
 
@@ -78,13 +76,12 @@ func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 	return segments, nil
 }
 
-// writeText keeps the text under the key with its record, and clears the mark of an address that
-// publishes none.
+// writeText keeps the text under the key with its record.
 func (f folder) writeText(ctx context.Context, key string, segments []domain.TextSegment, rec record) error {
 	if err := host.WriteText(ctx, f.store, key+textExt, segments); err != nil {
 		return err
 	}
-	return errors.Join(f.writeRecord(ctx, key, rec), f.store.Delete(ctx, key+noneExt))
+	return f.writeRecord(ctx, key, rec)
 }
 
 // hasText reports whether the text of the key is kept.
@@ -119,16 +116,6 @@ func (f folder) findRecord(ctx context.Context, key string) (record, bool, error
 func (f folder) readRecord(ctx context.Context, key string) (record, error) {
 	rec, _, err := f.findRecord(ctx, key)
 	return rec, err
-}
-
-// markNone marks the key as an address that publishes no text.
-func (f folder) markNone(ctx context.Context, key string) error {
-	return f.store.Write(ctx, key+noneExt, nil)
-}
-
-// isNone reports whether the key is marked as an address that publishes no text.
-func (f folder) isNone(ctx context.Context, key string) (bool, error) {
-	return f.isKept(ctx, key+noneExt)
 }
 
 func (f folder) isKept(ctx context.Context, name string) (bool, error) {

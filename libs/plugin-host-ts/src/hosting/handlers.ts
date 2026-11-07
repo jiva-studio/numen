@@ -57,11 +57,21 @@ async function listOwnItems(
   return undefined
 }
 
-/** Runs the handler over the note with the argument: in its frontend, or else in its backend. */
+/** One run of a shared command: the note, the item picked and the values of its arguments by name. */
+interface SharedRun {
+  readonly note: CommandNote
+  readonly argument?: string | undefined
+  readonly values?: Readonly<Record<string, string>> | undefined
+}
+
+/**
+ * Runs the handler over the note with the argument: in its frontend, or else in its backend, which
+ * takes the values of the arguments too.
+ */
 async function runHandler(
   parts: HandlerParts,
   handler: HandlerDeclaration,
-  run: { readonly note: CommandNote; readonly argument?: string | undefined },
+  run: SharedRun,
 ): Promise<void> {
   const { deps } = parts
   let entry = findEntry(parts, handler)
@@ -70,7 +80,7 @@ async function runHandler(
     entry = findEntry(parts, handler)
   }
   if (entry) {
-    await runCommand(deps, entry, run)
+    await runCommand(deps, entry, { note: run.note, argument: run.argument })
     return
   }
   try {
@@ -79,6 +89,7 @@ async function runHandler(
       command: handler.command,
       target: run.note,
       argument: run.argument,
+      values: run.values,
     })
   } catch (error) {
     reportError(deps, handler.pluginId, error)
@@ -118,13 +129,13 @@ async function listHandlerItems(
 async function runSharedCommand(
   parts: HandlerParts,
   command: string,
-  run: { readonly note: CommandNote; readonly argument?: string | undefined },
+  run: SharedRun,
 ): Promise<boolean> {
-  const { note, argument } = run
+  const { note, argument, values } = run
   const handlers = listMatching(parts, command, note)
   if (argument === undefined) {
     if (handlers.length !== 1) return false
-    await runHandler(parts, handlers[0]!, { note })
+    await runHandler(parts, handlers[0]!, { note, values })
     return true
   }
   const separator = argument.indexOf(ITEM_SEPARATOR)
@@ -132,7 +143,7 @@ async function runSharedCommand(
   const handler = handlers.find((one) => one.pluginId === pluginId)
   if (!handler) return false
   const item = separator < 0 ? undefined : argument.slice(separator + 1)
-  await runHandler(parts, handler, { note, argument: item })
+  await runHandler(parts, handler, { note, argument: item, values })
   return true
 }
 
@@ -142,7 +153,11 @@ export function createHandlerApi(deps: PluginHostDeps, registry: HostRegistry) {
     isSharedCommand,
     listHandlerItems: (command: string, note: CommandNote) =>
       listHandlerItems(parts, command, note),
-    runSharedCommand: (command: string, note: CommandNote, argument?: string) =>
-      runSharedCommand(parts, command, { note, argument }),
+    runSharedCommand: (
+      command: string,
+      note: CommandNote,
+      argument?: string,
+      values?: Readonly<Record<string, string>>,
+    ) => runSharedCommand(parts, command, { note, argument, values }),
   }
 }

@@ -106,6 +106,11 @@ func (u List) ExecuteHandlers() []Entry {
 	})
 }
 
+// HasBackend reports whether the plugin has a backend that runs its commands and handlers.
+func (u List) HasBackend(pluginID string) bool {
+	return u.commands != nil && u.commands.GetParts(pluginID).HasBackend
+}
+
 // ExecuteSlots lists the slot entries of the enabled plugins, leaving out those of a plugin the host
 // holds suspended and of a plugin with neither a frontend nor a backend.
 func (u List) ExecuteSlots() []SlotEntry {
@@ -163,6 +168,12 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, er
 	normalized := call
 	normalized.Arguments = normalizeArguments(declared, call.Arguments)
 	return u.commands.RunCommand(ctx, normalized)
+}
+
+// IsAvailable reports whether the condition of the command of the entry holds over the path, as a
+// run of it checks; a condition the core cannot decide holds.
+func (u Run) IsAvailable(ctx context.Context, v domain.Vault, entry Entry, path string) bool {
+	return u.checkPath(ctx, v, entry.Command, Call{PluginID: entry.PluginID, Command: entry.Command.ID, Path: path}) == nil
 }
 
 // checkCall reports the first way the call does not meet the declaration.

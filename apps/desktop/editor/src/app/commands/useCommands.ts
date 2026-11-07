@@ -157,8 +157,13 @@ export function useCommands(options: CommandsDepsOptions) {
     getTarget,
   })
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
-  const { lists, resetWhenClosed } = createItemLists(options.paletteLists, items, getTarget)
-  const extra = () => listExtraCommands(options, getPaletteEntries())
+  const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(
+    options.paletteLists,
+    items,
+    getTarget,
+    runs,
+  )
+  const extra = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
   const commands = useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, extra)
 
   watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)

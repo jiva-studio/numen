@@ -12,7 +12,12 @@ import {
   type PluginPaletteCommand,
 } from '@numen/plugin-host'
 import type { WelcomeAction } from '@numen/shell'
-import { findShortcutKeys, registerCommand, type CommandTarget } from '@/features/command-palette'
+import {
+  findShortcutKeys,
+  registerCommand,
+  type CommandPrompt,
+  type CommandTarget,
+} from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import type { VaultCore } from '../vault'
 import {
@@ -56,26 +61,41 @@ export function usePluginCommands(
 ) {
   const isWhenAvailable = createWhenAvailability(context)
   const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []
-  /**
-   * The shared commands an enabled plugin handles that run over a file with no value asked for;
-   * their handlers are their items.
-   */
+  /** The shared commands an enabled plugin handles. */
   const getSharedCommands = (): readonly PluginPaletteCommand[] => {
     const handlers = getHandlers() ?? []
-    return SHARED_COMMANDS.filter(
-      (shared) =>
-        shared.arguments.every((one: { readonly isRequired: boolean }) => !one.isRequired) &&
-        handlers.some((one) => one.command === shared.id),
+    return SHARED_COMMANDS.filter((shared) =>
+      handlers.some((one) => one.command === shared.id),
     ).map(({ id, title }) => ({ id, title }))
   }
-  const getSharedEntries = () =>
-    getSharedCommands().map((cmd) => ({
+  /** The required arguments of a shared command, which the palette asks for one step each. */
+  const getSharedPrompts = (id: string): readonly CommandPrompt[] =>
+    (SHARED_COMMANDS.find((one) => one.id === id)?.arguments ?? [])
+      .filter((one) => one.isRequired)
+      .map(({ name, title, isRequired }) => ({ name, title, isRequired }))
+  /**
+   * A shared command as the palette lists it: one that asks for values has a step for each, and is
+   * available where one of its handlers is; any other runs over a file and its handlers are its items.
+   */
+  const createSharedEntry = (cmd: PluginPaletteCommand) => {
+    const prompts = getSharedPrompts(cmd.id)
+    if (prompts.length === 0) {
+      return { id: cmd.id, text: cmd.title, group: 'note' as const, input: 'items' as const, isAvailable: isOverFile }
+    }
+    return {
       id: cmd.id,
       text: cmd.title,
-      group: 'note' as const,
-      input: 'items' as const,
-      isAvailable: isOverFile,
-    }))
+      group: 'window' as const,
+      input: 'arguments' as const,
+      prompts,
+      isAvailable: (target: CommandTarget) =>
+        target.isReady &&
+        (getHandlers() ?? []).some(
+          (one) => one.command === cmd.id && isWhenAvailable(one.when, target),
+        ),
+    }
+  }
+  const getSharedEntries = () => getSharedCommands().map(createSharedEntry)
   /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
   const getPluginLooks = (cmd: PluginPaletteCommand) => {
     const keys = cmd.shortcut ? findShortcutKeys(cmd.shortcut, navigator.userAgent) : undefined
@@ -128,7 +148,9 @@ export function usePluginCommands(
         unregisterAll = list.map((cmd) =>
           registerCommand(cmd.id, async (invocation) => {
             const note = await getCommandNote(invocation)
-            if (pluginHost.hasCommandItems(cmd.id) && invocation.name !== '') {
+            if (invocation.values) {
+              await pluginHost.executeCommand(cmd.id, note, undefined, invocation.values)
+            } else if (pluginHost.hasCommandItems(cmd.id) && invocation.name !== '') {
               await pluginHost.executeCommand(cmd.id, note, invocation.name)
             } else await pluginHost.executeCommand(cmd.id, note)
           }),

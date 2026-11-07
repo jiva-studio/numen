@@ -420,6 +420,12 @@ numen-cli deck.create notebook --title "Spanish verbs"
 
 It starts the plugin host without a window, lets the plugins use the vault through the host, prints what the plugin returned and the file it names, and `numen-cli help` lists the commands the enabled plugins declare. Of two plugins that declare one id, the command line runs that of the lower plugin id; the palette offers both.
 
+A shared command is a subcommand under its full id, run through `RunPluginCommand` with the id of the shared command, as the window runs it. The command line runs the one backend handler whose condition holds over the file; where several hold, `--plugin <id>` picks one, and without it nothing runs. A handler that offers items is not run from the command line:
+
+```bash
+numen-cli app:file.createText notebook scans/mill.pdf --plugin md.numen.engines.ocr
+```
+
 ## Shared commands and handlers
 
 A shared command is a command of the application that does nothing by itself: plugins handle it. The shared commands are declared once, in `libs/protocol/commands.json`, which the manifest check and the SDK (`SHARED_COMMANDS`) read:
@@ -446,7 +452,9 @@ A plugin handles one in `contributes.handlers` with `{ "command", "title", "when
 
 Run over a target, a shared command offers the handlers whose condition holds there as its items (`context.commands.listItems(command, target)`), each with the plugin id as its id and the handler's title; a place draws a single one as a row of that title and several as a submenu. Where those handlers offer items of their own, the command offers theirs instead, in one list, each with the plugin id as its `group`, and a place draws a separator between two groups. A handler offers items of its own with `listItems` of its registration; a backend handler whose `when` names `version.*` offers the text versions of the file over which it holds, listed by the core, as `has_items` of the handler in `ListCommands` tells the window. `context.commands.run(command, target, argument)` runs the handler of the plugin the argument names, or with `<plugin id>:<item id>` that handler with its item; without an argument it runs the one handler whose condition holds, and nothing where several or none do. `numen.v1.CommandService.ListCommands` lists the handlers of the enabled plugins as `handlers`, and `RunPluginCommand` and `ListCommandItems` take a handler by its plugin id and the full id of its shared command.
 
-A shared command placed in a slot by several plugins shows once.
+The palette asks for the required `arguments` a shared command declares in `commands.json`, one step each, as for a command of a manifest, and passes the values to the handler's backend as the `arguments` of `RunPluginCommand`; the core checks them against `commands.json` for every handler.
+
+A shared command placed in a slot by several plugins shows once. A command with items whose list is empty is hidden in every place: the menus, the bars' dropdowns and the palette.
 
 ## Triggers
 

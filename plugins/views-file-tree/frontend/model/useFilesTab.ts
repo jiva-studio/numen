@@ -111,7 +111,7 @@ const getMenuTarget = (
       )
 
 /** The words of the rows the menu writes itself. */
-const MENU_WORDS = { loadingText: words.loadingItems, emptyText: words.noItems }
+const MENU_WORDS = { loadingText: words.loadingItems }
 
 function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   const menu = ref<MenuRequest | null>(null)

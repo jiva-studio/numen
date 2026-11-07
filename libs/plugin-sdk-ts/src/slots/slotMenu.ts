@@ -18,8 +18,6 @@ export type CommandItemLists = ReadonlyMap<SlotEntryKey, readonly CommandItem[] 
 export interface SlotMenuWords {
   // The row of a submenu whose items are being read.
   readonly loadingText: string
-  // The row of a submenu of a command that lists no item.
-  readonly emptyText: string
 }
 
 // SlotMenuPick is what a row runs: a command, with the id of an item as its argument.
@@ -59,14 +57,8 @@ function createItemsRow(entry: SlotCommand, group: string, parts: MenuParts): Me
       children: [{ id: `${entry.key}#loading`, text: parts.words.loadingText, isDisabled: true }],
     }
   }
+  if (list.length === 0) return null
   const isShared = isSharedCommand(entry.command)
-  if (list.length === 0) {
-    if (isShared) return null
-    return {
-      ...row,
-      children: [{ id: `${entry.key}#empty`, text: parts.words.emptyText, isDisabled: true }],
-    }
-  }
   const children = list.map((item): MenuItem => {
     const id = `${entry.key}${ITEM_MARK}${item.id}`
     parts.picks.set(id, { command: entry.command, argument: item.id })
@@ -115,10 +107,9 @@ function createRows(entries: readonly SlotItem[], parts: MenuParts): MenuItem[] 
 
 /**
  * Builds the menu tree of the entries with the item lists read for their commands. A command with
- * items is a submenu of them, with a loading row while its list is read and an empty row where it
- * lists none; a separator is drawn where the group of two items differs. A shared command with one
- * handler is the row of that handler, and one that lists no item is hidden. A submenu with no rows
- * is hidden.
+ * items is a submenu of them, with a loading row while its list is read, and is hidden where it lists
+ * none; a separator is drawn where the group of two items differs. A shared command with one handler
+ * is the row of that handler. A submenu with no rows is hidden.
  */
 export function createSlotMenu(
   entries: readonly SlotItem[],

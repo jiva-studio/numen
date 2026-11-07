@@ -71,20 +71,7 @@ func runPluginCommand(
 ) (err error) {
 	declared := entry.Command
 	usage := errors.New("usage: numen-cli " + getPluginCommandSynopsis(declared))
-	fs := flag.NewFlagSet(declared.ID, flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	arguments := map[string]string{}
-	for _, argument := range declared.Arguments {
-		set := func(value string) error {
-			arguments[argument.Name] = value
-			return nil
-		}
-		if argument.Type == plugincommand.ArgumentBoolean {
-			fs.BoolFunc(argument.Name, argument.Title, set)
-		} else {
-			fs.Func(argument.Name, argument.Title, set)
-		}
-	}
+	fs, arguments := newArgumentFlags(declared)
 	positional, err := parseInterspersed(fs, args)
 	if err != nil {
 		return fmt.Errorf("%w: %w", usage, err)
@@ -114,6 +101,30 @@ func runPluginCommand(
 	if err != nil {
 		return err
 	}
+	return writeResult(out, result)
+}
+
+// newArgumentFlags is a flag for each argument of the command, and the values they are given, by name.
+func newArgumentFlags(declared plugincommand.Command) (*flag.FlagSet, map[string]string) {
+	fs := flag.NewFlagSet(declared.ID, flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	arguments := map[string]string{}
+	for _, argument := range declared.Arguments {
+		set := func(value string) error {
+			arguments[argument.Name] = value
+			return nil
+		}
+		if argument.Type == plugincommand.ArgumentBoolean {
+			fs.BoolFunc(argument.Name, argument.Title, set)
+		} else {
+			fs.Func(argument.Name, argument.Title, set)
+		}
+	}
+	return fs, arguments
+}
+
+// writeResult writes the message of a command that ran and the file it opened.
+func writeResult(out io.Writer, result plugincommand.Result) error {
 	r := newReporter(out)
 	if result.Message != "" {
 		r.Println(result.Message)

@@ -87,7 +87,7 @@ func (s linkServer) fetchText(ctx context.Context, req api.FetchTextRequest) (ap
 	if err != nil {
 		return api.FetchTextResponse{}, err
 	}
-	s.links.StartFetchText(ctx, found, req.IsForced)
+	s.links.StartFetchText(ctx, found)
 	return api.FetchTextResponse{}, nil
 }
 

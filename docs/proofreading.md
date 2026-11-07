@@ -117,7 +117,7 @@ A proofreading waits in the core's shared queue and shows its progress as a task
 
 The version shown, searched and passed to the next processor is the newest live one. A proofreading made from a recognition is live while the OCR plugin and the proofreading plugin are both enabled and the recognition is unchanged. With the OCR plugin off, both the recognition and the version made from it are dead, and the file falls back to the newest live version left — a PDF's own text layer, or a proofreading made from it. With the OCR plugin on again, the proofreading of the recognition is shown again.
 
-**Delete proofreading** in the file's menu is the plugin's command `proofreading.delete`, declared with the condition `version.kind == 'proofreading'`: a version the plugin writes has the kind `proofreading` of its own, whatever the kind of its source, so the menu offers the deletion over the proofread versions alone, and the plugin deletes the version and its file.
+**Delete proofreading** in the file's menu is the plugin's handler of the shared command `app:version.delete`, declared with the condition `version.kind == 'proofreading'`: a version the plugin writes has the kind `proofreading` of its own, whatever the kind of its source, so the menu offers the deletion over the proofread versions alone, and the plugin deletes the version and its file.
 
 ## Settings
 

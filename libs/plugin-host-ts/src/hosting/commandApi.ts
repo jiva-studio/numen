@@ -42,8 +42,14 @@ export function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
         return []
       }
     },
-    executeCommand: async (id: string, note: CommandNote, argument?: string): Promise<boolean> => {
-      if (isSharedCommand(id)) return handlers.runSharedCommand(id, note, argument)
+    /** Runs the command with the item picked; a shared command's handler gets the values of its arguments too. */
+    executeCommand: async (
+      id: string,
+      note: CommandNote,
+      argument?: string,
+      values?: Readonly<Record<string, string>>,
+    ): Promise<boolean> => {
+      if (isSharedCommand(id)) return handlers.runSharedCommand(id, note, argument, values)
       const command = findAvailable(id)
       if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
       let entry = command.entry

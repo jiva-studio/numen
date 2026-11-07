@@ -78,12 +78,16 @@ export interface HandlerDeclaration {
   readonly hasItems: boolean
 }
 
-/** One run of a handler in its plugin's backend: over the target, with `argument` the id of the item picked. */
+/**
+ * One run of a handler in its plugin's backend: over the target, with `argument` the id of the item
+ * picked and `values` the values of the arguments the shared command declares, by name.
+ */
 export interface BackendHandlerRun {
   readonly pluginId: string
   readonly command: string
   readonly target: CommandTarget
   readonly argument?: string | undefined
+  readonly values?: Readonly<Record<string, string>> | undefined
 }
 
 export interface PluginPaletteCommand {

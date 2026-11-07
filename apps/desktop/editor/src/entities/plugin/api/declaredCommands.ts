@@ -170,18 +170,20 @@ export async function listDeclaredCommands(): Promise<DeclaredList> {
   }
 }
 
-/** Runs the plugin's handler of the shared command in its backend, over the file, with the item picked. */
+/**
+ * Runs the plugin's handler of the shared command in its backend, over the file, with the values of
+ * the arguments the command declares and the item picked.
+ */
 export async function runDeclaredHandler(
   handler: Pick<HandlerDeclaration, 'pluginId' | 'command'>,
-  path: string,
-  argument?: string,
+  run: DeclaredCommandRun,
 ): Promise<DeclaredCommandOutcome> {
   const answer = await pluginCommands.runPluginCommand({
     pluginId: handler.pluginId,
     command: handler.command,
-    path,
-    arguments: {},
-    ...(argument === undefined ? {} : { argument }),
+    path: run.path,
+    arguments: { ...run.values },
+    ...(run.argument === undefined ? {} : { argument: run.argument }),
   })
   if (answer.error === COMMAND_ERROR_CODE.UNSPECIFIED) {
     return { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
