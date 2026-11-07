@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
@@ -57,7 +58,7 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Title: "Import a URL",
 		Description: "Create a link note for a web address and fetch the text published there before returning: " +
 			"the captions of a video with their times, or the prose of an article. The text is stored as a text " +
-			"version of the note, which library_search and library_read read. The note is named after the " +
+			"version of the note, which can be read and searched. The note is named after the " +
 			"address and contains only the address; the link note of the same address already in the folder is " +
 			"kept, and its text is fetched again. An address that is not http or https is rejected. A failed " +
 			"fetch is reported in error and the note is kept. With downloadVideo set, the video is also " +
@@ -65,7 +66,7 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{importerUseSentence, importerFetchSentence, importerOwnNotesSentence, importerDownloadSentence},
-		Requires:     []string{"network:outbound"},
+		Requires:     []string{host.PermissionNetworkOutbound},
 	}, t.importURL)
 	if err != nil {
 		return nil, err

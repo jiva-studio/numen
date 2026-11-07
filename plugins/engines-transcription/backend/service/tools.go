@@ -17,7 +17,7 @@ const (
 	transcriptUseSentence        = "Use transcript_create on an audio or video recording of the vault that has no transcript, when its words are needed now."
 	transcriptSlowSentence       = "Transcription is slow, about as long as the recording itself."
 	transcriptBackgroundSentence = "transcript_create returns a task id at once and the transcription runs in the background; the transcript can be read and searched as it is written."
-	transcriptOnceSentence       = "Call transcript_create once per recording: a second call while the first runs starts nothing and reports the state running, and a call on a recording already transcribed starts nothing and reports the state done with the version library_read reads."
+	transcriptOnceSentence       = "Call transcript_create once per recording: a second call while the first runs starts nothing and reports the state running, and a call on a recording already transcribed starts nothing and reports the state done with the version that is read."
 )
 
 // The states transcript_create reports.
@@ -41,9 +41,9 @@ type TranscriptCreateInput struct {
 // TranscriptCreateOutput is the output of the transcript_create tool.
 type TranscriptCreateOutput struct {
 	TaskID  string `json:"taskId" jsonschema:"the id of the transcription in the list of tasks"`
-	Path    string `json:"path" jsonschema:"the recording; library_read and library_search read its transcript"`
+	Path    string `json:"path" jsonschema:"the recording; its transcript can be read and searched"`
 	State   string `json:"state" jsonschema:"started; running when a transcription of this recording is already in progress and no second one was started; or done when the recording is already transcribed and nothing was started"`
-	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the live text version, the version library_read reads: the transcript, or a version made from it such as a proofread"`
+	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the live text version, the version that is read: the transcript, or a version made from it such as a proofread"`
 }
 
 // Tools serves transcript_create. The transcriptions it starts end with Transcriber.Close.
@@ -67,10 +67,10 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Title: "Transcribe a recording",
 		Description: "Start the transcription of one audio or video recording of the vault, with the model the " +
 			"plugin's setting selects, and return its task id without waiting. The transcript is stored as a " +
-			"text version of the recording; library_search and library_read read it as it is written. A " +
+			"text version of the recording, which is read and searched as it is written. A " +
 			"transcription takes about as long as the recording. A file that is not in the vault, or is not an " +
 			"audio or video recording, is rejected. A recording that is already transcribed is not transcribed " +
-			"again: the call returns the state done and the version library_read reads, the transcript or a " +
+			"again: the call returns the state done and the version that is read, the transcript or a " +
 			"version made from it. A recording that cannot be read is reported as a failed task in the list " +
 			"of tasks.",
 		Effect:       tools.ReadWrite,

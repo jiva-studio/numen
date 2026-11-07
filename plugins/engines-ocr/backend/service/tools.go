@@ -17,7 +17,7 @@ const (
 	recognitionUseSentence        = "Use recognition_create on a scanned PDF or an image that has no text layer, or on a file whose search results are unreadable text."
 	recognitionSlowSentence       = "Recognition is slow, up to an hour for a book."
 	recognitionBackgroundSentence = "recognition_create returns a task id at once and the recognition runs in the background; once it ends, the recognised text can be read and searched."
-	recognitionOnceSentence       = "Call recognition_create once per file: a second call while the first runs starts nothing and reports the state running, and a call on a file already recognised starts nothing and reports the state done with the version library_read reads."
+	recognitionOnceSentence       = "Call recognition_create once per file: a second call while the first runs starts nothing and reports the state running, and a call on a file already recognised starts nothing and reports the state done with the version that is read."
 )
 
 // The states recognition_create reports.
@@ -40,9 +40,9 @@ type RecognitionCreateInput struct {
 // RecognitionCreateOutput is the output of the recognition_create tool.
 type RecognitionCreateOutput struct {
 	TaskID  string `json:"taskId" jsonschema:"the id of the recognition in the list of tasks"`
-	Path    string `json:"path" jsonschema:"the file; library_read and library_search read its text once it is recognised"`
+	Path    string `json:"path" jsonschema:"the file; its text can be read and searched once it is recognised"`
 	State   string `json:"state" jsonschema:"started; running when a recognition of this file is already in progress and no second one was started; or done when the file is already recognised and nothing was started"`
-	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the live text version, the version library_read reads: the recognised text, or a version made from it such as a proofread"`
+	Version string `json:"version,omitempty" jsonschema:"with the state done, the id of the live text version, the version that is read: the recognised text, or a version made from it such as a proofread"`
 }
 
 // Tools serves recognition_create, which starts recognitions that run until they end or Close.
@@ -76,10 +76,10 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Title: "Recognise a scanned document",
 		Description: "Start the text recognition of one scanned PDF or image of the vault, with the model the " +
 			"plugin's setting selects, and return its task id without waiting. The recognised text is stored " +
-			"as a text version of the file, which library_read and library_search read once the recognition " +
+			"as the text version of the file, which is read and searched once the recognition " +
 			"ends. A recognition takes up to an hour for a book. A file that is not in the vault is rejected. A " +
 			"file that is already recognised is not recognised again: the call returns the state done and the " +
-			"version library_read reads, the recognised text or a version made from it.",
+			"version that is read, the recognised text or a version made from it.",
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{recognitionUseSentence, recognitionSlowSentence, recognitionBackgroundSentence, recognitionOnceSentence},
