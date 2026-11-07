@@ -114,13 +114,13 @@ func TestNoteWriteInputHasNoBodyField(t *testing.T) {
 		if _, ok := schema.Properties["body"]; ok {
 			t.Error("the input of note_write names body")
 		}
-		if _, ok := schema.Properties["content"]; !ok {
-			t.Error("the input of note_write does not name content")
+		if _, ok := schema.Properties["text"]; !ok {
+			t.Error("the input of note_write does not name text")
 		}
 	}
 }
 
-func TestNoteWriteWithBodyInsteadOfContentStoresNoText(t *testing.T) {
+func TestNoteWriteWithBodyInsteadOfTextStoresNoText(t *testing.T) {
 	vault, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
@@ -138,7 +138,7 @@ func TestNoteWriteWithBodyInsteadOfContentStoresNoText(t *testing.T) {
 		t.Errorf("the text of the argument body was stored: %q", content)
 	}
 	if !res.GetResult().GetIsError() {
-		t.Error("a call with body and no content was not refused")
+		t.Error("a call with body and no text was not rejected")
 	}
 }
 

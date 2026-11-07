@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -215,11 +216,7 @@ func TestHostWindowReturnsOpenTabsWithPlacesAndNoState(t *testing.T) {
 	if tabs[0].GetPlace() != nil {
 		t.Errorf("the note tab has the place %v, want none", tabs[0].GetPlace())
 	}
-	for _, tab := range tabs {
-		if tab.GetState() != "" {
-			t.Errorf("the tab %s has the state %q of its kind, want none", tab.GetId(), tab.GetState())
-		}
-	}
+	requireOpenTabMessage(t, (&v1.HostWindowServiceReadOpenTabsResponse{}).ProtoReflect().Descriptor(), "tabs")
 	if !slices.Equal(fakeCallers.checked, []string{"md.numen.a window:focus"}) {
 		t.Errorf("checked %v, want window:focus checked once", fakeCallers.checked)
 	}
@@ -379,5 +376,18 @@ func TestHostWindowFocusesAPassageThatEndsAtThe32BitLimit(t *testing.T) {
 	want := []domain.Place{{Path: "library/Birds.pdf", Ranges: []domain.ByteRange{{Start: math.MaxInt32 - 10, End: math.MaxInt32}}}}
 	if _, places, _ := window.getRequests(); !reflect.DeepEqual(places, want) {
 		t.Errorf("the window received %+v, want %+v", places, want)
+	}
+}
+
+// requireOpenTabMessage fails the test unless the field of the message is an OpenTab, the tab a plugin
+// reads, which has no state.
+func requireOpenTabMessage(t *testing.T, message protoreflect.MessageDescriptor, field protoreflect.Name) {
+	t.Helper()
+	tab := message.Fields().ByName(field).Message()
+	if want := (&v1.OpenTab{}).ProtoReflect().Descriptor().FullName(); tab == nil || tab.FullName() != want {
+		t.Fatalf("the field %s of %s is not a %s", field, message.FullName(), want)
+	}
+	if state := tab.Fields().ByName("state"); state != nil {
+		t.Errorf("the tab %s a plugin reads has the field state", tab.FullName())
 	}
 }

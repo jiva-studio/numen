@@ -43,10 +43,10 @@ func TestWindowTabActivateActivatesTheTabWithTheID(t *testing.T) {
 	if failure := w.call(t, "window_tab_activate", `{"tabId":"tab-2"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if out.Tab.ID != "tab-2" || out.Tab.Kind != "reader:reader-pdf" || out.Tab.Path != guidePath || out.Tab.Title != "Bird Guide" || !out.Tab.IsActive {
+	if out.Tab.TabID != "tab-2" || out.Tab.Kind != "reader:reader-pdf" || out.Tab.Path != guidePath || out.Tab.Title != "Bird Guide" || !out.Tab.IsActive {
 		t.Errorf("returned %+v, want tab-2 of the guide, active", out.Tab)
 	}
-	requireLocation(t, "the returned tab", out.Tab.Location, `{"page":88,"pageCount":120}`)
+	requirePlace(t, "the returned tab", out.Tab.Place, `{"page":88,"pageCount":120}`)
 	if activated := w.window.GetActivatedTabs(); !slices.Equal(activated, []string{"tab-2"}) {
 		t.Errorf("the window activated %v, want [tab-2]", activated)
 	}
@@ -168,7 +168,7 @@ func TestWindowTabActivateReturnsIsActiveFromTheWindow(t *testing.T) {
 	if failure := w.call(t, "window_tab_activate", `{"tabId":"tab-2"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if out.Tab.ID != "tab-2" || out.Tab.IsActive {
+	if out.Tab.TabID != "tab-2" || out.Tab.IsActive {
 		t.Errorf("returned %+v, want tab-2 with isActive false", out.Tab)
 	}
 }
@@ -214,10 +214,10 @@ func TestWindowTabActivateActivatesATabOnce(t *testing.T) {
 	if failure := w.call(t, "window_tab_activate", `{"tabId":"tab-4"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if n := calls.Load(); n != 1 || out.Tab.ID != "tab-4" || !out.Tab.IsActive {
+	if n := calls.Load(); n != 1 || out.Tab.TabID != "tab-4" || !out.Tab.IsActive {
 		t.Errorf("the window received %d times and returned %+v, want once and tab-4 active", n, out.Tab)
 	}
-	requireLocation(t, "the returned tab", out.Tab.Location, `{"page":2,"pageCount":120}`)
+	requirePlace(t, "the returned tab", out.Tab.Place, `{"page":2,"pageCount":120}`)
 }
 
 // lateWindow is a window that does not show the requested tab in time: ActivateTab returns the error

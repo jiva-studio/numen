@@ -207,7 +207,7 @@ func TestPluginOpenVaultWithoutUnsavedChangesShowsVaultFirst(t *testing.T) {
 	if got := f.state(t).GetName(); got != f.second.Name {
 		t.Errorf("the window state names %q when the plugin's open returned, want %q", got, f.second.Name)
 	}
-	if f.installation.State.Window.IsFlushOpen() {
+	if f.isFlushRequestedOfANewPage(t, 500*time.Millisecond) {
 		t.Error("the plugin's open left a flush request open")
 	}
 }
@@ -246,7 +246,7 @@ func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 		close(userResponded)
 		t.Fatalf("the plugin's open during the close prompt did not return within %v", immediateBound)
 	}
-	if !f.installation.State.Window.IsFlushOpen() {
+	if !f.isFlushRequestedOfANewPage(t, 5*time.Second) {
 		t.Error("the plugin's open ended the flush request of the user's close")
 	}
 	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
@@ -732,5 +732,32 @@ func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	}
 	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window shows %s after a plugin call that ended", got.Name)
+	}
+}
+
+// isFlushRequestedOfANewPage connects one more page to the window and reports whether it receives a
+// flush request within the wait. The window sends one to a page that connects only while a flush
+// request is open. The page reports NOTHING for it and disconnects.
+func (f *showing) isFlushRequestedOfANewPage(t *testing.T, wait time.Duration) bool {
+	t.Helper()
+	stream, isDone := f.watchQuit(t)
+	defer isDone()
+	tokens := make(chan string, 1)
+	go func() {
+		for stream.Receive() {
+			if stream.Msg().GetFlush() {
+				tokens <- stream.Msg().GetToken()
+				return
+			}
+		}
+	}()
+	select {
+	case token := <-tokens:
+		if err := f.reportFlush(t, token, v1.FlushResult_FLUSH_RESULT_NOTHING); err != nil {
+			t.Fatalf("report the flush of the new page: %v", err)
+		}
+		return true
+	case <-time.After(wait):
+		return false
 	}
 }

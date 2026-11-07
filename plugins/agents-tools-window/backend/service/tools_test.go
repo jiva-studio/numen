@@ -101,8 +101,17 @@ func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
 	if output.Tabs[0].Path != "notes/inferred.md" {
 		t.Errorf("Tabs[0].Path = %q, want notes/inferred.md", output.Tabs[0].Path)
 	}
-	if output.ActiveID != "front-tab" {
-		t.Errorf("ActiveID = %q, want front-tab", output.ActiveID)
+	var keys struct {
+		ActiveTabID string `json:"activeTabId"`
+		Tabs        []struct {
+			TabID string `json:"tabId"`
+		} `json:"tabs"`
+	}
+	if err := json.Unmarshal(resp.GetResult().GetStructured(), &keys); err != nil {
+		t.Fatalf("unmarshal output: %v", err)
+	}
+	if keys.ActiveTabID != "front-tab" || len(keys.Tabs) != 1 || keys.Tabs[0].TabID != "front-tab" {
+		t.Errorf("the result is %s, want activeTabId front-tab and the tab front-tab", resp.GetResult().GetStructured())
 	}
 	if output.Tabs[0].Title != "inferred" {
 		t.Errorf("Tabs[0].Title = %q, want inferred", output.Tabs[0].Title)

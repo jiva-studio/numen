@@ -43,9 +43,7 @@ func TestHostWindowActivateTabReturnsTabPlaceAndActiveID(t *testing.T) {
 	if readerTab.GetId() != "tab-2" || readerTab.GetPlace().GetPage() != 4 || readerTab.GetPlace().GetPageCount() != 80 || reader.Msg.GetActiveId() != "tab-2" {
 		t.Errorf("returned %v, want tab-2 at page 4 of 80, active", reader.Msg)
 	}
-	if readerTab.GetState() != "" {
-		t.Errorf("returned tab-2 with the state %q of its kind, want none", readerTab.GetState())
-	}
+	requireOpenTabMessage(t, (&v1.ActivateTabResponse{}).ProtoReflect().Descriptor(), "tab")
 }
 
 func TestHostWindowActivateTabReturnsNotFoundForUnknownID(t *testing.T) {

@@ -62,9 +62,9 @@ func (h *windowHost) ReadOpenTabs(_ context.Context, req *connect.Request[v1.Hos
 	}
 	return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{
 		ActiveId: "tab-2",
-		Tabs: []*v1.Tab{
+		Tabs: []*v1.OpenTab{
 			{Id: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
-			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &v1.TabPlace{Page: 4, PageCount: 80}},
+			{Id: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &v1.TabPlace{Page: 4, PageCount: 80}},
 			{Id: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &v1.TabPlace{PositionSeconds: new(float64)}},
 			{Id: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &v1.TabPlace{Cfi: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
 		},
@@ -187,5 +187,19 @@ func TestClientReturnsAnInvalidPassageAsTheHostRejectedIt(t *testing.T) {
 	err := c.FocusPassages(t.Context(), "library/Birds.pdf", []host.PassageSpan{{Start: -1, Length: 4}})
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("got %v, want the invalid argument the host returned", err)
+	}
+}
+
+func TestThePermissionConstantsAreThePermissionStrings(t *testing.T) {
+	for got, want := range map[string]string{
+		host.PermissionIndexRead:       "index:read",
+		host.PermissionSearchPolicy:    "search:policy",
+		host.PermissionVaultManage:     "vault:manage",
+		host.PermissionWindowFocus:     "window:focus",
+		host.PermissionNetworkOutbound: "network:outbound",
+	} {
+		if got != want {
+			t.Errorf("the permission constant is %q, want %q", got, want)
+		}
 	}
 }

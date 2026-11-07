@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -250,4 +251,44 @@ func TestTranscriptionToolSchemasUseLowerCamelCaseProperties(t *testing.T) {
 			t.Errorf("the schema of %s names the property %q, which is not lowerCamelCase", tool, name)
 		}
 	}, func(string, string) {})
+}
+
+func TestTranscriptionToolTextsNameNoToolOfAnotherPlugin(t *testing.T) {
+	s := newToolFixture(t)
+	foreign := getForeignToolNames()
+	visitEveryToolSchema(t, s.registry, func(string, string) {}, func(tool, text string) {
+		for _, name := range foreign {
+			if strings.Contains(text, name) {
+				t.Errorf("a description of %s or its schema names %s: %q", tool, name, text)
+			}
+		}
+	})
+	listing, err := s.registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, info := range listing.Tools {
+		for _, sentence := range info.Instructions {
+			for _, name := range foreign {
+				if strings.Contains(sentence, name) {
+					t.Errorf("an instruction of %s names %s: %q", info.GetName(), name, sentence)
+				}
+			}
+		}
+	}
+}
+
+// getForeignToolNames is the tools of the other plugins: the vault, window, OCR, transcription,
+// importer and flashcard tools, without the tools of this plugin.
+func getForeignToolNames() []string {
+	all := []string{
+		"note_read", "note_write", "note_heading_list", "note_search", "note_list", "note_title_list",
+		"note_resolve", "note_rename", "note_move", "note_remove", "link_list", "link_add", "link_update",
+		"link_remove", "file_read", "file_create", "library_read", "library_search", "vault_get", "vault_list",
+		"vault_problem_list", "vault_add", "vault_rename", "vault_remove", "vault_open",
+		"note_focus", "source_focus", "window_tab_list", "window_tab_activate", "note_edit_preview",
+		"recognition_create", "transcript_create", "url_import",
+		"card_add", "card_read", "card_edit", "card_remove", "card_current_get", "card_deck_create",
+	}
+	return slices.DeleteFunc(all, func(name string) bool { return name == "transcript_create" })
 }

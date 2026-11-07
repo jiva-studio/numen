@@ -311,7 +311,7 @@ func getFailingCalls() []struct{ name, arguments string } {
 		{"vault_problem_list", `{"checks":["spelling"]}`},
 		{"note_read", `{"path":"Rocks/Obsidian.md"}`},
 		{"note_read", `{"path":""}`},
-		{"note_write", `{"path":"","content":"Pumice floats."}`},
+		{"note_write", `{"path":"","text":"Pumice floats."}`},
 		{"note_heading_list", `{"path":"Rocks/Obsidian.md"}`},
 		{"note_list", `{"limit":-1}`},
 		{"note_resolve", `{"name":""}`},

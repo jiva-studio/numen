@@ -14,7 +14,7 @@ import (
 
 type linkAddItem struct {
 	From        string `json:"from"`
-	To          string `json:"to"`
+	Address     string `json:"address"`
 	Fingerprint string `json:"fingerprint"`
 	Error       string `json:"error"`
 }
@@ -83,9 +83,9 @@ func TestLinkAddWritesTheLinksIntoTheFrontmatterOfEachNote(t *testing.T) {
 	minerals := readFingerprint(t, registry, "Minerals.md")
 
 	arguments := fmt.Sprintf(`{"links":[
-		{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Granite","role":"jump","label":"cousin","note":"both are igneous"},
-		{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Minerals","role":"parent","type":"source"},
-		{"from":"Minerals.md","fingerprint":%q,"to":"Granite","role":"child"}]}`, basalt, basalt, minerals)
+		{"from":"Rocks/Basalt.md","fingerprint":%q,"address":"Granite","role":"jump","label":"cousin","note":"both are igneous"},
+		{"from":"Rocks/Basalt.md","fingerprint":%q,"address":"Minerals","role":"parent","type":"source"},
+		{"from":"Minerals.md","fingerprint":%q,"address":"Granite","role":"child"}]}`, basalt, basalt, minerals)
 	var out linkAddOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "link_add", arguments), &out)
 	if len(out.Results) != 3 {
@@ -94,7 +94,7 @@ func TestLinkAddWritesTheLinksIntoTheFrontmatterOfEachNote(t *testing.T) {
 	for i, want := range []struct{ from, to string }{
 		{"Rocks/Basalt.md", "Granite"}, {"Rocks/Basalt.md", "Minerals"}, {"Minerals.md", "Granite"},
 	} {
-		if got := out.Results[i]; got.From != want.from || got.To != want.to || got.Error != "" || got.Fingerprint == "" {
+		if got := out.Results[i]; got.From != want.from || got.Address != want.to || got.Error != "" || got.Fingerprint == "" {
 			t.Errorf("result %d = %+v, want %s to %s with a fingerprint and no error", i, got, want.from, want.to)
 		}
 	}
@@ -131,9 +131,9 @@ func TestLinkAddWithAnOldFingerprintSkipsOnlyThatNote(t *testing.T) {
 	minerals := readFingerprint(t, registry, "Minerals.md")
 
 	arguments := fmt.Sprintf(`{"links":[
-		{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Granite","role":"jump"},
-		{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Minerals","role":"parent"},
-		{"from":"Minerals.md","fingerprint":%q,"to":"Granite","role":"child"}]}`, oldFingerprint, oldFingerprint, minerals)
+		{"from":"Rocks/Basalt.md","fingerprint":%q,"address":"Granite","role":"jump"},
+		{"from":"Rocks/Basalt.md","fingerprint":%q,"address":"Minerals","role":"parent"},
+		{"from":"Minerals.md","fingerprint":%q,"address":"Granite","role":"child"}]}`, oldFingerprint, oldFingerprint, minerals)
 	var out linkAddOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "link_add", arguments), &out)
 	if len(out.Results) != 3 {
@@ -151,34 +151,35 @@ func TestLinkAddWithAnOldFingerprintSkipsOnlyThatNote(t *testing.T) {
 	}
 }
 
-func TestLinkAddWithTwoFingerprintsForOneNoteRejectsBothLinks(t *testing.T) {
+func TestLinkAddSendsTwoFingerprintsOfOneNoteToTheHost(t *testing.T) {
 	for order, isOtherFirst := range map[string]bool{"current first": false, "other first": true} {
 		t.Run(order, func(t *testing.T) {
-			v, registry := newGeologyVault(t)
+			v, calls, registry := newLinkHostVault(t)
 			current := readFingerprint(t, registry, "Rocks/Basalt.md")
 			minerals := readFingerprint(t, registry, "Minerals.md")
-			before, _ := v.Content("Rocks/Basalt.md")
 			first, second := current, "1-1"
 			if isOtherFirst {
 				first, second = second, current
 			}
 
 			arguments := fmt.Sprintf(`{"links":[
-				{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Granite","role":"jump"},
-				{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Minerals","role":"parent"},
-				{"from":"Minerals.md","fingerprint":%q,"to":"Granite","role":"child"}]}`, first, second, minerals)
+				{"from":"Rocks/Basalt.md","fingerprint":%q,"address":"Granite","role":"jump"},
+				{"from":"Rocks/Basalt.md","fingerprint":%q,"address":"Minerals","role":"child"},
+				{"from":"Minerals.md","fingerprint":%q,"address":"Granite","role":"child"}]}`, first, second, minerals)
 			var out linkAddOutput
 			decodeInto(t, callTool(t, registry, geologyVault, "link_add", arguments), &out)
+			if len(calls.additions) != 1 || len(calls.additions[0]) != 3 {
+				t.Fatalf("the host received the additions %+v, want one call of the three links", calls.additions)
+			}
 			if len(out.Results) != 3 {
 				t.Fatalf("got %d results, want 3: %+v", len(out.Results), out.Results)
 			}
-			if out.Results[0].Error == "" || out.Results[1].Error == "" {
-				t.Errorf("results = %+v, want an error for each link into Rocks/Basalt.md", out.Results)
+			if out.Results[1].Error == "" {
+				t.Errorf("result of the second link into Rocks/Basalt.md = %+v, want the error of the host", out.Results[1])
 			}
 			if out.Results[2].Error != "" {
 				t.Errorf("result of Minerals.md = %+v, want it written", out.Results[2])
 			}
-			requireContent(t, v, "Rocks/Basalt.md", before)
 			if _, ok := findLink(readLinks(t, v, "Minerals.md"), "Granite", domain.RoleChild); !ok {
 				t.Errorf("links of Minerals.md = %+v, want a child link to Granite", readLinks(t, v, "Minerals.md"))
 			}
@@ -195,9 +196,9 @@ func TestLinkAddReportsAnUnknownRoleOrNoTargetPerLink(t *testing.T) {
 	graniteBefore, _ := v.Content("Rocks/Granite.md")
 
 	arguments := fmt.Sprintf(`{"links":[
-		{"from":"Minerals.md","fingerprint":%q,"to":"Granite","role":"sideways"},
-		{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Granite","role":"jump"},
-		{"from":"Rocks/Granite.md","fingerprint":%q,"to":"","role":"jump"}]}`, minerals, basalt, granite)
+		{"from":"Minerals.md","fingerprint":%q,"address":"Granite","role":"sideways"},
+		{"from":"Rocks/Basalt.md","fingerprint":%q,"address":"Granite","role":"jump"},
+		{"from":"Rocks/Granite.md","fingerprint":%q,"address":"","role":"jump"}]}`, minerals, basalt, granite)
 	var out linkAddOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "link_add", arguments), &out)
 	if len(out.Results) != 3 {
@@ -223,7 +224,7 @@ func TestLinkAddWithoutAFingerprintWritesNothing(t *testing.T) {
 	v, registry := newGeologyVault(t)
 	before, _ := v.Content("Rocks/Basalt.md")
 
-	arguments := `{"links":[{"from":"Rocks/Basalt.md","to":"Granite","role":"jump"}]}`
+	arguments := `{"links":[{"from":"Rocks/Basalt.md","address":"Granite","role":"jump"}]}`
 	res, err := registry.InvokeTool(t.Context(), tools.Call{VaultID: geologyVault, Name: "link_add", Arguments: []byte(arguments)})
 	if err != nil {
 		t.Fatalf("call link_add: %v", err)
@@ -242,29 +243,89 @@ func TestLinkAddWithoutAFingerprintWritesNothing(t *testing.T) {
 	requireContent(t, v, "Rocks/Basalt.md", before)
 }
 
-func TestLinkAddOfMoreThanFiftyLinksIsRejected(t *testing.T) {
-	_, registry := newGeologyVault(t)
+func TestLinkAddOfFiftyOneLinksSendsThemToTheHost(t *testing.T) {
+	_, calls, registry := newLinkHostVault(t)
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
 	links := make([]map[string]string, 51)
 	for i := range links {
 		links[i] = map[string]string{
-			"from": "Rocks/Basalt.md", "fingerprint": fingerprint, "to": fmt.Sprintf("Pebble %d", i), "role": "jump",
+			"from": "Rocks/Basalt.md", "fingerprint": fingerprint, "address": fmt.Sprintf("Pebble %d", i), "role": "jump",
 		}
 	}
 	raw, err := json.Marshal(map[string]any{"links": links})
 	if err != nil {
 		t.Fatal(err)
 	}
-	requireRejection(t, registry, geologyVault, "link_add", string(raw))
 
-	raw, err = json.Marshal(map[string]any{"links": links[:50]})
-	if err != nil {
-		t.Fatal(err)
-	}
 	var out linkAddOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "link_add", string(raw)), &out)
-	if len(out.Results) != 50 {
-		t.Errorf("got %d results, want 50", len(out.Results))
+	if len(calls.additions) != 1 || len(calls.additions[0]) != 51 {
+		t.Errorf("the host received the additions of %d calls, want one call of 51 links", len(calls.additions))
+	}
+	if len(out.Results) != 51 {
+		t.Errorf("got %d results, want 51", len(out.Results))
+	}
+}
+
+func TestLinkToolsNameTheTargetAddress(t *testing.T) {
+	_, registry := newLinkedGeologyVault(t)
+	basalt := readFingerprint(t, registry, "Rocks/Basalt.md")
+
+	answer := decodeAnswer(t, callTool(t, registry, geologyVault, "link_add", fmt.Sprintf(
+		`{"links":[{"from":"Rocks/Basalt.md","fingerprint":%q,"address":"Fossils","role":"jump"}]}`, basalt)))
+	results := requireList(t, "answer[results]", answer["results"])
+	if len(results) != 1 {
+		t.Fatalf("results = %v, want one", results)
+	}
+	result, isObject := results[0].(map[string]any)
+	if !isObject {
+		t.Fatalf("the result is %v, not an object", results[0])
+	}
+	requireKeys(t, "a result of link_add", result, []string{"from", "address", "fingerprint"}, []string{"to"})
+	if result["address"] != "Fossils" {
+		t.Errorf("the result of link_add has the address %v, want Fossils", result["address"])
+	}
+
+	requireKeys(t, "the input schema of a link of link_add", getSchemaProperties(t, getToolSchema(t, registry, "link_add", false), "links"),
+		[]string{"address"}, []string{"to"})
+	requireKeys(t, "the output schema of a result of link_add", getSchemaProperties(t, getToolSchema(t, registry, "link_add", true), "results"),
+		[]string{"address"}, []string{"to"})
+	for _, name := range []string{"link_update", "link_remove"} {
+		requireKeys(t, "the input schema of "+name, getSchemaProperties(t, getToolSchema(t, registry, name, false)),
+			[]string{"address"}, []string{"to"})
+	}
+}
+
+func TestLinkToolsRejectTheToArgument(t *testing.T) {
+	v, registry := newLinkedGeologyVault(t)
+	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
+	before, _ := v.Content("Rocks/Basalt.md")
+
+	for name, arguments := range map[string]string{
+		"link_add":    fmt.Sprintf(`{"links":[{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"Fossils","role":"jump"}]}`, fingerprint),
+		"link_update": fmt.Sprintf(`{"from":"Rocks/Basalt.md","to":"Minerals","fingerprint":%q,"label":"made of"}`, fingerprint),
+		"link_remove": fmt.Sprintf(`{"from":"Rocks/Basalt.md","to":"Granite","fingerprint":%q}`, fingerprint),
+	} {
+		text := getRejectionText(t, registry, geologyVault, name, arguments)
+		if !strings.Contains(text, "to is not known") && !strings.Contains(text, "address is missing") {
+			t.Errorf("%s with the argument to gave the error %q, want to rejected as not known or address as missing", name, text)
+		}
+	}
+	requireContent(t, v, "Rocks/Basalt.md", before)
+}
+
+func TestLinkEditWithAnEmptyAddressIsRejected(t *testing.T) {
+	_, registry := newLinkedGeologyVault(t)
+	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
+
+	for name, arguments := range map[string]string{
+		"link_update": fmt.Sprintf(`{"from":"Rocks/Basalt.md","address":"","fingerprint":%q,"label":"made of"}`, fingerprint),
+		"link_remove": fmt.Sprintf(`{"from":"Rocks/Basalt.md","address":"","fingerprint":%q}`, fingerprint),
+	} {
+		text := getRejectionText(t, registry, geologyVault, name, arguments)
+		if want := name + ": address is required"; text != want {
+			t.Errorf("%s with an empty address gave the error %q, want %q", name, text, want)
+		}
 	}
 }
 
@@ -274,7 +335,7 @@ func TestLinkUpdateChangesTheLabelAndKeepsTheRoleLeftOut(t *testing.T) {
 
 	var out linkEditOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "link_update", fmt.Sprintf(
-		`{"from":"Rocks/Basalt.md","to":"Minerals","fingerprint":%q,"label":"made of"}`, fingerprint)), &out)
+		`{"from":"Rocks/Basalt.md","address":"Minerals","fingerprint":%q,"label":"made of"}`, fingerprint)), &out)
 	if out.Path != "Rocks/Basalt.md" || out.Fingerprint == "" {
 		t.Errorf("result = %+v, want Rocks/Basalt.md with a fingerprint", out)
 	}
@@ -298,7 +359,7 @@ func TestLinkUpdateKeepsTheFieldsLeftOut(t *testing.T) {
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
 
 	callTool(t, registry, geologyVault, "link_update", fmt.Sprintf(
-		`{"from":"Rocks/Basalt.md","to":"Granite","fingerprint":%q,"role":"ref"}`, fingerprint))
+		`{"from":"Rocks/Basalt.md","address":"Granite","fingerprint":%q,"role":"ref"}`, fingerprint))
 	links := readLinks(t, v, "Rocks/Basalt.md")
 	if len(links) != 1 {
 		t.Fatalf("got %d links, want 1: %+v", len(links), links)
@@ -320,7 +381,7 @@ func TestLinkUpdateWithAnOldFingerprintIsRejected(t *testing.T) {
 	before, _ := v.Content("Rocks/Basalt.md")
 
 	requireRejection(t, registry, geologyVault, "link_update", fmt.Sprintf(
-		`{"from":"Rocks/Basalt.md","to":"Minerals","fingerprint":%q,"label":"made of"}`, oldFingerprint))
+		`{"from":"Rocks/Basalt.md","address":"Minerals","fingerprint":%q,"label":"made of"}`, oldFingerprint))
 	requireContent(t, v, "Rocks/Basalt.md", before)
 }
 
@@ -330,9 +391,9 @@ func TestLinkUpdateWithMissingOrUnknownFieldsIsRejected(t *testing.T) {
 	before, _ := v.Content("Rocks/Basalt.md")
 
 	for _, arguments := range []string{
-		`{"from":"Rocks/Basalt.md","to":"Minerals","label":"made of"}`,
-		fmt.Sprintf(`{"from":"Rocks/Basalt.md","to":"Fossils","fingerprint":%q,"label":"none"}`, fingerprint),
-		fmt.Sprintf(`{"from":"Rocks/Basalt.md","to":"Minerals","fingerprint":%q,"role":"sideways"}`, fingerprint),
+		`{"from":"Rocks/Basalt.md","address":"Minerals","label":"made of"}`,
+		fmt.Sprintf(`{"from":"Rocks/Basalt.md","address":"Fossils","fingerprint":%q,"label":"none"}`, fingerprint),
+		fmt.Sprintf(`{"from":"Rocks/Basalt.md","address":"Minerals","fingerprint":%q,"role":"sideways"}`, fingerprint),
 	} {
 		requireRejection(t, registry, geologyVault, "link_update", arguments)
 	}
@@ -345,7 +406,7 @@ func TestLinkRemoveRemovesEveryLinkToTheTarget(t *testing.T) {
 
 	var out linkEditOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "link_remove", fmt.Sprintf(
-		`{"from":"Rocks/Basalt.md","to":"Granite","fingerprint":%q}`, fingerprint)), &out)
+		`{"from":"Rocks/Basalt.md","address":"Granite","fingerprint":%q}`, fingerprint)), &out)
 	if out.Path != "Rocks/Basalt.md" || out.Fingerprint == "" {
 		t.Errorf("result = %+v, want Rocks/Basalt.md with a fingerprint", out)
 	}
@@ -363,7 +424,7 @@ func TestLinkRemoveWithARoleRemovesOnlyTheLinkOfThatRole(t *testing.T) {
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
 
 	callTool(t, registry, geologyVault, "link_remove", fmt.Sprintf(
-		`{"from":"Rocks/Basalt.md","to":"Granite","fingerprint":%q,"role":"ref"}`, fingerprint))
+		`{"from":"Rocks/Basalt.md","address":"Granite","fingerprint":%q,"role":"ref"}`, fingerprint))
 	links := readLinks(t, v, "Rocks/Basalt.md")
 	if _, ok := findLink(links, "Granite", domain.RoleRef); ok {
 		t.Errorf("links = %+v, want the ref to Granite removed", links)
@@ -384,7 +445,7 @@ func TestLinkRemoveWithAnOldFingerprintIsRejected(t *testing.T) {
 	before, _ := v.Content("Rocks/Basalt.md")
 
 	requireRejection(t, registry, geologyVault, "link_remove", fmt.Sprintf(
-		`{"from":"Rocks/Basalt.md","to":"Granite","fingerprint":%q}`, oldFingerprint))
+		`{"from":"Rocks/Basalt.md","address":"Granite","fingerprint":%q}`, oldFingerprint))
 	requireContent(t, v, "Rocks/Basalt.md", before)
 }
 
@@ -394,9 +455,9 @@ func TestLinkRemoveWithoutAFingerprintOrAMatchingLinkIsRejected(t *testing.T) {
 	before, _ := v.Content("Rocks/Basalt.md")
 
 	for _, arguments := range []string{
-		`{"from":"Rocks/Basalt.md","to":"Granite"}`,
-		fmt.Sprintf(`{"from":"Rocks/Basalt.md","to":"Fossils","fingerprint":%q}`, fingerprint),
-		fmt.Sprintf(`{"from":"Rocks/Basalt.md","to":"Granite","fingerprint":%q,"role":"child"}`, fingerprint),
+		`{"from":"Rocks/Basalt.md","address":"Granite"}`,
+		fmt.Sprintf(`{"from":"Rocks/Basalt.md","address":"Fossils","fingerprint":%q}`, fingerprint),
+		fmt.Sprintf(`{"from":"Rocks/Basalt.md","address":"Granite","fingerprint":%q,"role":"child"}`, fingerprint),
 	} {
 		requireRejection(t, registry, geologyVault, "link_remove", arguments)
 	}

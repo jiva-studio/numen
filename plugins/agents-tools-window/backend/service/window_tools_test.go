@@ -104,42 +104,42 @@ func isOnServer(info *tools.ToolInfo, server tools.Server) bool {
 	return slices.Contains(info.GetServers(), server)
 }
 
-// tabOutput is one tab as returned by a tool. Location is the raw JSON of the location key, nil where
+// tabOutput is one tab as returned by a tool. Place is the raw JSON of the place key, nil where
 // the key is absent.
 type tabOutput struct {
-	ID       string          `json:"id"`
+	TabID    string          `json:"tabId"`
 	Kind     string          `json:"kind"`
 	Path     string          `json:"path"`
 	Title    string          `json:"title"`
-	Location json.RawMessage `json:"location"`
+	Place    json.RawMessage `json:"place"`
 	IsActive bool            `json:"isActive"`
 }
 
 type tabsOutput struct {
-	Tabs     []tabOutput `json:"tabs"`
-	ActiveID string      `json:"activeId"`
+	Tabs        []tabOutput `json:"tabs"`
+	ActiveTabID string      `json:"activeTabId"`
 }
 
-// requireLocation fails the test unless the location is the JSON object want, or absent where want
+// requirePlace fails the test unless the place is the JSON object want, or absent where want
 // is empty.
-func requireLocation(t *testing.T, what string, location json.RawMessage, want string) {
+func requirePlace(t *testing.T, what string, place json.RawMessage, want string) {
 	t.Helper()
 	if want == "" {
-		if location != nil {
-			t.Errorf("%s has the location %s, want none", what, location)
+		if place != nil {
+			t.Errorf("%s has the place %s, want none", what, place)
 		}
 		return
 	}
 	var got, wanted map[string]any
-	if err := json.Unmarshal(location, &got); err != nil {
-		t.Errorf("%s has the location %s, want %s", what, location, want)
+	if err := json.Unmarshal(place, &got); err != nil {
+		t.Errorf("%s has the place %s, want %s", what, place, want)
 		return
 	}
 	if err := json.Unmarshal([]byte(want), &wanted); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(got, wanted) {
-		t.Errorf("%s has the location %s, want %s", what, location, want)
+		t.Errorf("%s has the place %s, want %s", what, place, want)
 	}
 }
 
@@ -160,13 +160,13 @@ func TestTheToolsThatMoveTheWindowAreOnTheFullServerOnly(t *testing.T) {
 func TestNoteFocusDescriptionExplainsWhenToMoveTheWindow(t *testing.T) {
 	w := newWindowTools(t)
 	description := w.getToolInfo(t, "note_focus").GetDescription()
-	for _, want := range []string{"neighbourhood", "asked to be taken to a note", "Talking about one is not asking", "`note_read`"} {
+	for _, want := range []string{"neighbourhood", "asked to be taken to a note", "Talking about one is not asking", "read the note for its content"} {
 		if !strings.Contains(description, want) {
 			t.Errorf("the description of note_focus does not contain %q: %s", want, description)
 		}
 	}
 	sourceDescription := w.getToolInfo(t, "source_focus").GetDescription()
-	for _, want := range []string{"`library_search`", "start", "length", "first", "Talking about a passage is not asking"} {
+	for _, want := range []string{"a search of the library returns", "start", "length", "first", "Talking about a passage is not asking"} {
 		if !strings.Contains(sourceDescription, want) {
 			t.Errorf("the description of source_focus does not contain %q: %s", want, sourceDescription)
 		}
@@ -269,24 +269,24 @@ func TestWindowTabListReturnsTheTabsOfTheWindow(t *testing.T) {
 		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
 	}, "tab-2")
 
-	if len(out.Tabs) != 2 || out.ActiveID != "tab-2" {
+	if len(out.Tabs) != 2 || out.ActiveTabID != "tab-2" {
 		t.Fatalf("returned %+v", out)
 	}
 	first, second := out.Tabs[0], out.Tabs[1]
-	if first.ID != "tab-1" || first.Kind != "note" || first.Path != notePath || first.Title != "Grey Heron" || first.IsActive {
+	if first.TabID != "tab-1" || first.Kind != "note" || first.Path != notePath || first.Title != "Grey Heron" || first.IsActive {
 		t.Errorf("the first tab is %+v", first)
 	}
-	requireLocation(t, "the note tab", first.Location, "")
-	if second.ID != "tab-2" || second.Path != guidePath || !second.IsActive {
+	requirePlace(t, "the note tab", first.Place, "")
+	if second.TabID != "tab-2" || second.Path != guidePath || !second.IsActive {
 		t.Errorf("the second tab is %+v", second)
 	}
-	requireLocation(t, "the PDF tab", second.Location, `{"page":4,"pageCount":120}`)
+	requirePlace(t, "the PDF tab", second.Place, `{"page":4,"pageCount":120}`)
 }
 
 // seconds is a time of a recording, from its start.
 func seconds(n float64) *float64 { return &n }
 
-func TestWindowTabListReturnsTheLocationTheReaderReported(t *testing.T) {
+func TestWindowTabListReturnsThePlaceTheReaderReported(t *testing.T) {
 	for name, tc := range map[string]struct {
 		tab  host.OpenTab
 		want string
@@ -326,12 +326,12 @@ func TestWindowTabListReturnsTheLocationTheReaderReported(t *testing.T) {
 			if len(out.Tabs) != 1 {
 				t.Fatalf("returned %+v, want one tab", out.Tabs)
 			}
-			requireLocation(t, "the tab", out.Tabs[0].Location, tc.want)
+			requirePlace(t, "the tab", out.Tabs[0].Place, tc.want)
 		})
 	}
 }
 
-// The location comes from the place the reader reported alone, so window_tab_list has no saved state
+// The place comes from the place the reader reported alone, so window_tab_list has no saved state
 // to fail on and returns no error for any tab.
 func TestWindowTabListReturnsNoErrorForAnyTab(t *testing.T) {
 	w := newWindowTools(t)
@@ -348,17 +348,17 @@ func TestWindowTabListReturnsNoErrorForAnyTab(t *testing.T) {
 	}
 	for _, tab := range out.Tabs {
 		if message, hasError := tab["error"]; hasError {
-			t.Errorf("the tab %s returns the error %s", tab["id"], message)
+			t.Errorf("the tab %s returns the error %s", tab["tabId"], message)
 		}
 	}
 	if _, hasError := reflect.TypeFor[service.TabInfo]().FieldByName("Error"); hasError {
-		t.Error("service.TabInfo has the field Error; a tab whose reader reported no place has no location and no error")
+		t.Error("service.TabInfo has the field Error; a tab whose reader reported no place has no place and no error")
 	}
 }
 
 func TestWindowToolsHostHasNoTextVersions(t *testing.T) {
 	if field, hasTexts := reflect.TypeFor[service.Host]().FieldByName("Texts"); hasTexts {
-		t.Errorf("service.Host has the field %s of type %s; window_tab_list reads the location from the place the reader reported alone", field.Name, field.Type)
+		t.Errorf("service.Host has the field %s of type %s; window_tab_list reads the place from the place the reader reported alone", field.Name, field.Type)
 	}
 }
 
@@ -371,10 +371,10 @@ func TestWindowTabListUsesTheCallFocusWithoutAWindow(t *testing.T) {
 	if failure := w.call(t, "window_tab_list", `{}`, map[string]string{"focus": "notes/Inferred.md"}, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if len(out.Tabs) != 1 || out.Tabs[0].Path != "notes/Inferred.md" || out.ActiveID != "front-tab" || out.Tabs[0].Title != "Inferred" {
+	if len(out.Tabs) != 1 || out.Tabs[0].Path != "notes/Inferred.md" || out.ActiveTabID != "front-tab" || out.Tabs[0].Title != "Inferred" {
 		t.Fatalf("returned %+v, want the focus of the call as the one tab", out)
 	}
-	requireLocation(t, "the tab of the focus", out.Tabs[0].Location, "")
+	requirePlace(t, "the tab of the focus", out.Tabs[0].Place, "")
 
 	var none tabsOutput
 	if failure := w.call(t, "window_tab_list", `{}`, nil, &none); failure != "" {
@@ -393,7 +393,7 @@ func TestWindowTabListPrefersWindowTabsToTheCallFocus(t *testing.T) {
 	if failure := w.call(t, "window_tab_list", `{}`, map[string]string{"focus": "notes/Inferred.md"}, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if len(out.Tabs) != 1 || out.Tabs[0].Path != notePath || out.ActiveID != "tab-1" {
+	if len(out.Tabs) != 1 || out.Tabs[0].Path != notePath || out.ActiveTabID != "tab-1" {
 		t.Errorf("returned %+v, want the tab of the window", out)
 	}
 }

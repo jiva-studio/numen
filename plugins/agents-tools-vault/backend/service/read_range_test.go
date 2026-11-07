@@ -150,7 +150,7 @@ func TestFileReadReturnsTheRangeTheHostGaveAndTheSizeOfTheFile(t *testing.T) {
 	stat := domain.FileStat{Path: "data.txt", Size: 4096, ModTime: time.Unix(0, 1700000000000000000)}
 	vault.answers["data.txt"] = host.FileRange{Text: "line 2", Start: 8, Stat: stat}
 
-	var out service.FileReadOutput
+	var out fileReadAnswer
 	if failure := callFailure(t, registry, testVault, "file_read", `{"path":"data.txt","start":7,"length":6}`, &out); failure != "" {
 		t.Fatal(failure)
 	}
@@ -160,7 +160,7 @@ func TestFileReadReturnsTheRangeTheHostGaveAndTheSizeOfTheFile(t *testing.T) {
 	if len(vault.calls.reads) != 0 {
 		t.Errorf("file_read read %v whole, want only the range", vault.calls.reads)
 	}
-	if out.Path != "data.txt" || out.Content != "line 2" || out.Start != 8 || out.Length != 6 || out.Size != 4096 {
+	if out.Path != "data.txt" || out.Text != "line 2" || out.Start != 8 || out.Length != 6 || out.Size != 4096 {
 		t.Errorf("file_read returned %+v, want line 2 from 8 for 6 bytes of a file of 4096", out)
 	}
 	if want := "4096-" + strconv.FormatInt(stat.ModTime.UnixNano(), 10); out.Fingerprint != want {
@@ -195,11 +195,11 @@ func TestFileReadMovesAStartInsideACharacterToTheNextCharacter(t *testing.T) {
 	l := newLibrary(t)
 	l.vault.File("notes/Moor.txt", "Öl und Ödland")
 
-	var out service.FileReadOutput
+	var out fileReadAnswer
 	if failure := l.call(t, "file_read", `{"path":"notes/Moor.txt","start":1,"length":5}`, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if out.Content != "l un" || out.Start != 2 || out.Length != 4 || out.Size != len("Öl und Ödland") {
+	if out.Text != "l un" || out.Start != 2 || out.Length != 4 || out.Size != len("Öl und Ödland") {
 		t.Errorf("file_read from the middle of Ö gave %+v, want l un from 2 for 4 bytes of %d", out, len("Öl und Ödland"))
 	}
 }
@@ -265,12 +265,12 @@ func TestLibraryReadByStartAndLengthReadsOnlyThatTextRange(t *testing.T) {
 		t.Errorf("library_read gave %q at %d for %d of %d next %v, want %q at 3 for 10 of %d next 13",
 			out.Text, out.Start, out.Length, out.Size, out.NextStart, whole[3:13], len(whole))
 	}
-	if len(out.Locations) != 1 || out.Locations[0].Page != 1 || out.Locations[0].Start != 3 || out.Locations[0].Length != 10 {
-		t.Errorf("locations %+v, want page 1 from 3 for 10", out.Locations)
+	if len(out.Ranges) != 1 || getPlacePage(out.Ranges[0].Place) != 1 || out.Ranges[0].Start != 3 || out.Ranges[0].Length != 10 {
+		t.Errorf("ranges %+v, want page 1 from 3 for 10", out.Ranges)
 	}
 }
 
-func TestLibraryReadOfAPageReturnsItsLocationsViaATextRange(t *testing.T) {
+func TestLibraryReadOfAPageReturnsItsRangesViaATextRange(t *testing.T) {
 	_, _, counted, registry := newRangeLibrary(t)
 
 	var out libraryReadAnswer
@@ -283,8 +283,8 @@ func TestLibraryReadOfAPageReturnsItsLocationsViaATextRange(t *testing.T) {
 	if out.Size != len(pageOne)+len(pageTwo)+len(pageThree) || out.Kind != "page-text" {
 		t.Errorf("size %d kind %q", out.Size, out.Kind)
 	}
-	if len(out.Locations) != 1 || out.Locations[0].Page != 2 || out.Locations[0].Start != len(pageOne) || out.Locations[0].Length != len(pageTwo) {
-		t.Errorf("locations %+v, want the one page, its two segments joined", out.Locations)
+	if len(out.Ranges) != 1 || getPlacePage(out.Ranges[0].Place) != 2 || out.Ranges[0].Start != len(pageOne) || out.Ranges[0].Length != len(pageTwo) {
+		t.Errorf("ranges %+v, want the one page, its two segments joined", out.Ranges)
 	}
 	if out.NextStart == nil || *out.NextStart != len(pageOne)+len(pageTwo) {
 		t.Fatalf("next %v, want the end of the page", out.NextStart)
@@ -297,7 +297,7 @@ func TestLibraryReadOfAPageReturnsItsLocationsViaATextRange(t *testing.T) {
 	if failure := callFailure(t, registry, testVault, "library_read", `{"path":"`+guidePath+`","start":`+strconv.Itoa(*out.NextStart)+`}`, &rest); failure != "" {
 		t.Fatal(failure)
 	}
-	if rest.Text != pageThree || rest.NextStart != nil || len(rest.Locations) != 1 || rest.Locations[0].Page != 3 {
+	if rest.Text != pageThree || rest.NextStart != nil || len(rest.Ranges) != 1 || getPlacePage(rest.Ranges[0].Place) != 3 {
 		t.Errorf("the continuation is %+v, want page 3 and no next", rest)
 	}
 }
@@ -339,8 +339,8 @@ func TestLibraryReadOfAPageStartingOnTheSecondHostPageReturnsThatPage(t *testing
 	if out.Text != pageThree || out.Start != len(pageOne)+len(pageTwo) || out.Length != len(pageThree) || out.NextStart != nil {
 		t.Errorf("page 3 is %q at %d for %d next %v, want %q at %d and no next", out.Text, out.Start, out.Length, out.NextStart, pageThree, len(pageOne)+len(pageTwo))
 	}
-	if len(out.Locations) != 1 || out.Locations[0].Page != 3 {
-		t.Errorf("locations %+v, want page 3", out.Locations)
+	if len(out.Ranges) != 1 || getPlacePage(out.Ranges[0].Place) != 3 {
+		t.Errorf("ranges %+v, want page 3", out.Ranges)
 	}
 }
 

@@ -31,18 +31,32 @@ const (
 	talkThird  = "Today we speak about the heron. "
 )
 
+// placeAnswer is a place a tool reports, with the tool's JSON keys.
+type placeAnswer struct {
+	Page            int      `json:"page"`
+	PageCount       int      `json:"pageCount"`
+	PositionSeconds *float64 `json:"positionSeconds"`
+	CFI             string   `json:"cfi"`
+	Chapter         string   `json:"chapter"`
+}
+
+// getPlaceKeys is the keys a place of any tool may have.
+func getPlaceKeys() []string {
+	return []string{"page", "pageCount", "positionSeconds", "cfi", "chapter"}
+}
+
 // librarySearchAnswer is the result of library_search with the tool's JSON keys.
 type librarySearchAnswer struct {
 	Query   string `json:"query"`
 	Matches []struct {
-		Path     string `json:"path"`
-		Title    string `json:"title"`
-		Location string `json:"location"`
-		Text     string `json:"text"`
-		Start    int    `json:"start"`
-		Length   int    `json:"length"`
-		Line     int    `json:"line"`
-		URI      string `json:"uri"`
+		Path   string       `json:"path"`
+		Title  string       `json:"title"`
+		Place  *placeAnswer `json:"place"`
+		Text   string       `json:"text"`
+		Start  int          `json:"start"`
+		Length int          `json:"length"`
+		Line   int          `json:"line"`
+		URI    string       `json:"uri"`
 	} `json:"matches"`
 }
 
@@ -56,14 +70,37 @@ type libraryReadAnswer struct {
 	Length    int    `json:"length"`
 	Size      int    `json:"size"`
 	NextStart *int   `json:"nextStart"`
-	Locations []struct {
-		Start       int     `json:"start"`
-		Length      int     `json:"length"`
-		Page        int     `json:"page"`
-		CFI         string  `json:"cfi"`
-		FromSeconds float64 `json:"fromSeconds"`
-		ToSeconds   float64 `json:"toSeconds"`
-	} `json:"locations"`
+	Ranges    []struct {
+		Start  int          `json:"start"`
+		Length int          `json:"length"`
+		Place  *placeAnswer `json:"place"`
+	} `json:"ranges"`
+}
+
+// fileReadAnswer is the result of file_read with the tool's JSON keys.
+type fileReadAnswer struct {
+	Path        string `json:"path"`
+	Text        string `json:"text"`
+	Start       int    `json:"start"`
+	Length      int    `json:"length"`
+	Size        int    `json:"size"`
+	Fingerprint string `json:"fingerprint"`
+}
+
+// getPlacePage is the page of the place, and zero for no place.
+func getPlacePage(place *placeAnswer) int {
+	if place == nil {
+		return 0
+	}
+	return place.Page
+}
+
+// getPlaceSeconds is the position of the place in seconds, and -1 for no place or no position.
+func getPlaceSeconds(place *placeAnswer) float64 {
+	if place == nil || place.PositionSeconds == nil {
+		return -1
+	}
+	return *place.PositionSeconds
 }
 
 type library struct {
@@ -156,19 +193,26 @@ func TestLibrarySearchFindsPDFPassageWithPageAndAddress(t *testing.T) {
 		t.Fatalf("matches %+v", out.Matches)
 	}
 	pdf := out.Matches[0]
-	if pdf.Path != guidePath || pdf.Title != "Bird Guide" || pdf.Location != "page 2" || pdf.Text != "The grey heron stands in the reeds" ||
+	if pdf.Path != guidePath || pdf.Title != "Bird Guide" || pdf.Text != "The grey heron stands in the reeds" ||
 		pdf.Start != 41 || pdf.Length != 56 {
 		t.Errorf("the PDF passage is %+v", pdf)
+	}
+	if getPlacePage(pdf.Place) != 2 || pdf.Place.Chapter != "" {
+		t.Errorf("the place of the PDF passage is %+v, want page 2 and no chapter", pdf.Place)
 	}
 	if want := "numen:" + url.PathEscape(guidePath) + "?start=41&length=56"; pdf.URI != want {
 		t.Errorf("the address is %q, want %q", pdf.URI, want)
 	}
 	note := out.Matches[1]
-	if note.Title != "Herons of the Marsh" || note.Path != "notes/Herons.md" || note.Location != "" {
-		t.Errorf("the note passage is %+v, want the title of the note", note)
+	if note.Title != "Herons of the Marsh" || note.Path != "notes/Herons.md" || note.Place != nil {
+		t.Errorf("the note passage is %+v, want the title of the note and no place", note)
 	}
-	if talk := out.Matches[2]; talk.Path != talkPath || talk.Location != "00:04" || talk.Title != "Marsh Talk" {
+	talk := out.Matches[2]
+	if talk.Path != talkPath || talk.Title != "Marsh Talk" {
 		t.Errorf("the transcript passage is %+v", talk)
+	}
+	if getPlaceSeconds(talk.Place) != 4.5 || talk.Place.Chapter != "" {
+		t.Errorf("the place of the transcript passage is %+v, want 4.5 seconds and no chapter", talk.Place)
 	}
 }
 
@@ -234,12 +278,12 @@ func TestLibrarySearchSchemaNamesTheAddressURI(t *testing.T) {
 	}
 }
 
-func TestLibrarySearchLimitsItToAKindAndAPathPrefix(t *testing.T) {
+func TestLibrarySearchLimitsItToAKindAndAFolder(t *testing.T) {
 	l := newLibrary(t)
 	var files, notes, narrowed librarySearchAnswer
 	l.call(t, "library_search", `{"query":"heron","kinds":["file"]}`, &files)
 	l.call(t, "library_search", `{"query":"heron","kinds":["note"]}`, &notes)
-	l.call(t, "library_search", `{"query":"heron","pathPrefix":"recordings/","limit":1}`, &narrowed)
+	l.call(t, "library_search", `{"query":"heron","folder":"recordings/","limit":1}`, &narrowed)
 	if got := getMatchPaths(files); !slices.Equal(got, []string{guidePath, talkPath}) {
 		t.Errorf("the files that match are %v", got)
 	}
@@ -336,14 +380,14 @@ func TestLibraryReadReturnsTranscriptTimes(t *testing.T) {
 	l := newLibrary(t)
 	var out libraryReadAnswer
 	l.call(t, "library_read", `{"path":"`+talkPath+`"}`, &out)
-	if out.Text != talkSecond+talkThird || out.Kind != "transcript" || len(out.Locations) != 2 {
+	if out.Text != talkSecond+talkThird || out.Kind != "transcript" || len(out.Ranges) != 2 {
 		t.Fatalf("transcript %+v", out)
 	}
-	if first := out.Locations[0]; first.FromSeconds != 0 || first.ToSeconds != 4.5 || first.Start != 0 || first.Length != len(talkSecond) {
-		t.Errorf("first location %+v", first)
+	if first := out.Ranges[0]; getPlaceSeconds(first.Place) != 0 || first.Start != 0 || first.Length != len(talkSecond) {
+		t.Errorf("first range %+v, want the place at 0 seconds", first)
 	}
-	if second := out.Locations[1]; second.FromSeconds != 4.5 || second.ToSeconds != 9 || second.Start != len(talkSecond) {
-		t.Errorf("second location %+v", second)
+	if second := out.Ranges[1]; getPlaceSeconds(second.Place) != 4.5 || second.Start != len(talkSecond) || second.Length != len(talkThird) {
+		t.Errorf("second range %+v, want the place at 4.5 seconds", second)
 	}
 }
 
@@ -353,7 +397,7 @@ func TestLibraryReadReadsATextFileThatNeedsNoTextVersion(t *testing.T) {
 	if failure := l.call(t, "library_read", `{"path":"data.txt"}`, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if out.Text != "line 1\nline 2\nline 3\n" || out.Size != 21 || out.Kind != "" || len(out.Locations) != 0 {
+	if out.Text != "line 1\nline 2\nline 3\n" || out.Size != 21 || out.Kind != "" || len(out.Ranges) != 0 {
 		t.Errorf("text file %+v", out)
 	}
 }
@@ -382,13 +426,13 @@ func TestFileReadRejectsABinaryAndNamesLibraryRead(t *testing.T) {
 			t.Errorf("file_read of %s rejected with %q, want the path and library_read named", path, failure)
 		}
 	}
-	var md service.FileReadOutput
-	if failure := l.call(t, "file_read", `{"path":"Entropy.md"}`, &md); failure != "" || !strings.Contains(md.Content, "Disorder grows.") {
+	var md fileReadAnswer
+	if failure := l.call(t, "file_read", `{"path":"Entropy.md"}`, &md); failure != "" || !strings.Contains(md.Text, "Disorder grows.") {
 		t.Errorf("a markdown file gave %q and %+v", failure, md)
 	}
-	var txt service.FileReadOutput
-	if failure := l.call(t, "file_read", `{"path":"data.txt","start":7,"length":6}`, &txt); failure != "" || txt.Content != "line 2" {
-		t.Errorf("a byte range of a text file gave %q and %q", failure, txt.Content)
+	var txt fileReadAnswer
+	if failure := l.call(t, "file_read", `{"path":"data.txt","start":7,"length":6}`, &txt); failure != "" || txt.Text != "line 2" {
+		t.Errorf("a byte range of a text file gave %q and %q", failure, txt.Text)
 	}
 }
 
@@ -443,9 +487,9 @@ func TestARangeOverTheBinaryTailOfATextFileIsNotText(t *testing.T) {
 	l := newLibrary(t)
 	text := strings.Repeat("plain text line\n", 1000)
 	l.vault.File("export.dat", text+"\xff\xfe binary tail")
-	var head service.FileReadOutput
-	if failure := l.call(t, "file_read", `{"path":"export.dat"}`, &head); failure != "" || head.Content != text {
-		t.Errorf("file_read of the text before the binary tail gave %q and %d bytes, want the 16000 bytes of text", failure, len(head.Content))
+	var head fileReadAnswer
+	if failure := l.call(t, "file_read", `{"path":"export.dat"}`, &head); failure != "" || head.Text != text {
+		t.Errorf("file_read of the text before the binary tail gave %q and %d bytes, want the 16000 bytes of text", failure, len(head.Text))
 	}
 	if failure := l.call(t, "file_read", `{"path":"export.dat","start":16000}`, nil); !strings.Contains(failure, "library_read") {
 		t.Errorf("file_read of the binary tail gave %q, want an error", failure)

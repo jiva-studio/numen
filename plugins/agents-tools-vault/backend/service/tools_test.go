@@ -94,7 +94,7 @@ func TestNoteWrite(t *testing.T) {
 	callReq := tools.Call{
 		VaultID:   testVault,
 		Name:      "note_write",
-		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nGravity attracts."}`),
+		Arguments: []byte(`{"path":"Gravity.md","text":"# Gravity\nGravity attracts."}`),
 	}
 	res, err := registry.InvokeTool(ctx, callReq)
 	if err != nil {
@@ -115,7 +115,7 @@ func TestNoteWrite(t *testing.T) {
 	callReq2 := tools.Call{
 		VaultID: testVault,
 		Name:    "note_write",
-		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nGravity bends spacetime.","fingerprint":"` +
+		Arguments: []byte(`{"path":"Gravity.md","text":"# Gravity\nGravity bends spacetime.","fingerprint":"` +
 			writeOut.Fingerprint + `"}`),
 	}
 	res2, err := registry.InvokeTool(ctx, callReq2)
@@ -130,7 +130,7 @@ func TestNoteWrite(t *testing.T) {
 	callReq3 := tools.Call{
 		VaultID: testVault,
 		Name:    "note_write",
-		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nConflict.","fingerprint":"` +
+		Arguments: []byte(`{"path":"Gravity.md","text":"# Gravity\nConflict.","fingerprint":"` +
 			writeOut.Fingerprint + `"}`),
 	}
 	res3, err := registry.InvokeTool(ctx, callReq3)
@@ -327,12 +327,12 @@ func TestFileReadAndCreate(t *testing.T) {
 	if res.GetResult().GetIsError() {
 		t.Fatalf("file_read refused: %s", res.GetResult().GetText())
 	}
-	var readOut service.FileReadOutput
+	var readOut fileReadAnswer
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &readOut); err != nil {
 		t.Fatalf("unmarshal file_read: %v", err)
 	}
-	if readOut.Content != "line 1" {
-		t.Errorf("file_read content = %q, want 'line 1'", readOut.Content)
+	if readOut.Text != "line 1" {
+		t.Errorf("file_read content = %q, want 'line 1'", readOut.Text)
 	}
 	if readOut.Length != 6 {
 		t.Errorf("file_read length = %d, want 6", readOut.Length)
@@ -342,7 +342,7 @@ func TestFileReadAndCreate(t *testing.T) {
 	createReq := tools.Call{
 		VaultID:   testVault,
 		Name:      "file_create",
-		Arguments: []byte(`{"path":"new_data.txt","content":"hello world"}`),
+		Arguments: []byte(`{"path":"new_data.txt","text":"hello world"}`),
 	}
 	createRes, err := registry.InvokeTool(ctx, createReq)
 	if err != nil {

@@ -9,7 +9,7 @@ func TestNoteReadAndFileCreateOutsideVaultOmitTheHostPrefix(t *testing.T) {
 	_, registry := newGeologyVault(t)
 	for name, arguments := range map[string]string{
 		"note_read":   `{"path":"../outside.md"}`,
-		"file_create": `{"path":"../outside.md","content":"Pumice floats."}`,
+		"file_create": `{"path":"../outside.md","text":"Pumice floats."}`,
 	} {
 		text := getRejectionText(t, registry, geologyVault, name, arguments)
 		if !strings.HasPrefix(text, name+": ") {

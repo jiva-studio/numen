@@ -36,7 +36,7 @@ func (h *activateHost) ActivateTab(_ context.Context, req *connect.Request[v1.Ac
 		return connect.NewResponse(&v1.ActivateTabResponse{Error: h.code}), nil
 	}
 	return connect.NewResponse(&v1.ActivateTabResponse{
-		Tab:      &v1.Tab{Id: req.Msg.GetTabId(), Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":12,"pageCount":80}`, Place: &v1.TabPlace{Page: 12, PageCount: 80}},
+		Tab:      &v1.OpenTab{Id: req.Msg.GetTabId(), Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", Place: &v1.TabPlace{Page: 12, PageCount: 80}},
 		ActiveId: "tab-1",
 	}), nil
 }

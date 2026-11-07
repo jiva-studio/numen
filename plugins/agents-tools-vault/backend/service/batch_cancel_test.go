@@ -68,16 +68,16 @@ func TestCancelledNoteMoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
 	var out noteMoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_move",
 		`{"paths":["Rocks/Basalt.md","Rocks/Granite.md","Fossils.md"],"folder":"Archive"}`), &out)
-	if len(out.Moves) != 3 {
-		t.Fatalf("got %d moves, want 3: %+v", len(out.Moves), out.Moves)
+	if len(out.Results) != 3 {
+		t.Fatalf("got %d moves, want 3: %+v", len(out.Results), out.Results)
 	}
-	if completed := out.Moves[0]; completed.From != "Rocks/Basalt.md" || completed.To != "Archive/Basalt.md" || completed.Error != "" {
+	if completed := out.Results[0]; completed.From != "Rocks/Basalt.md" || completed.Path != "Archive/Basalt.md" || completed.Error != "" {
 		t.Errorf("the first entry is %+v, want Rocks/Basalt.md moved to Archive/Basalt.md with no error", completed)
 	}
 	for i, from := range []string{"Rocks/Granite.md", "Fossils.md"} {
-		got := out.Moves[i+1]
+		got := out.Results[i+1]
 		want := "the call was cancelled before " + from + " was moved"
-		if got.From != from || got.To != "" || !strings.Contains(got.Error, want) {
+		if got.From != from || got.Path != "" || !strings.Contains(got.Error, want) {
 			t.Errorf("entry %d is %+v, want %s not moved with an error containing %q", i+1, got, from, want)
 		}
 	}
@@ -89,14 +89,14 @@ func TestCancelledNoteRemoveReportsCompletedAndNotAttemptedNotes(t *testing.T) {
 	var out noteRemoveOutput
 	decodeInto(t, callTool(t, registry, geologyVault, "note_remove",
 		`{"paths":["Fossils.md","Rocks/Granite.md","Rocks/Basalt.md"]}`), &out)
-	if len(out.Removals) != 3 {
-		t.Fatalf("got %d removals, want 3: %+v", len(out.Removals), out.Removals)
+	if len(out.Results) != 3 {
+		t.Fatalf("got %d removals, want 3: %+v", len(out.Results), out.Results)
 	}
-	if completed := out.Removals[0]; completed.Path != "Fossils.md" || completed.TrashPath != ".trash/Fossils.md" || completed.Error != "" {
+	if completed := out.Results[0]; completed.Path != "Fossils.md" || completed.TrashPath != ".trash/Fossils.md" || completed.Error != "" {
 		t.Errorf("the first entry is %+v, want Fossils.md in .trash with no error", completed)
 	}
 	for i, target := range []string{"Rocks/Granite.md", "Rocks/Basalt.md"} {
-		got := out.Removals[i+1]
+		got := out.Results[i+1]
 		want := "the call was cancelled before " + target + " was removed"
 		if got.Path != target || got.TrashPath != "" || !strings.Contains(got.Error, want) {
 			t.Errorf("entry %d is %+v, want %s not removed with an error containing %q", i+1, got, target, want)

@@ -30,7 +30,7 @@ func TestLibrarySearchSendsEveryFolderPrefixFormWithASlash(t *testing.T) {
 
 	for _, prefix := range []string{"./library", "/library/", "library", "library/"} {
 		var out librarySearchAnswer
-		if failure := callFailure(t, registry, testVault, "library_search", `{"query":"tea","pathPrefix":"`+prefix+`"}`, &out); failure != "" {
+		if failure := callFailure(t, registry, testVault, "library_search", `{"query":"tea","folder":"`+prefix+`"}`, &out); failure != "" {
 			t.Fatalf("library_search with the prefix %q rejected: %s", prefix, failure)
 		}
 		queries := calls.getQueries()
@@ -47,7 +47,7 @@ func TestLibrarySearchSendsADecomposedPrefixDecomposedAndFindsTheComposedShelf(t
 	calls, registry := newRecordedSearch(t, hosttest.New(testVault), shelfPassages())
 
 	var out librarySearchAnswer
-	if failure := callFailure(t, registry, testVault, "library_search", `{"query":"tea","pathPrefix":"`+shelfNFD+`"}`, &out); failure != "" {
+	if failure := callFailure(t, registry, testVault, "library_search", `{"query":"tea","folder":"`+shelfNFD+`"}`, &out); failure != "" {
 		t.Fatal(failure)
 	}
 	queries := calls.getQueries()
@@ -64,7 +64,7 @@ func TestLibrarySearchWithoutAPrefixSearchesTheWholeVault(t *testing.T) {
 
 	for _, prefix := range []string{"", "./", "/"} {
 		var out librarySearchAnswer
-		if failure := callFailure(t, registry, testVault, "library_search", `{"query":"tea","pathPrefix":"`+prefix+`"}`, &out); failure != "" {
+		if failure := callFailure(t, registry, testVault, "library_search", `{"query":"tea","folder":"`+prefix+`"}`, &out); failure != "" {
 			t.Fatal(failure)
 		}
 		queries := calls.getQueries()

@@ -2,13 +2,17 @@ package service_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
 // decodeAnswer decodes a structured tool answer into a map of its top-level keys.
@@ -280,10 +284,10 @@ func TestLibrarySearchReturnsThePathKeyOfAMatch(t *testing.T) {
 	requireKeys(t, "the output schema of a library_search match", properties, []string{"path"}, []string{"source"})
 }
 
-func TestLibrarySearchAcceptsThePathPrefixArgument(t *testing.T) {
+func TestLibrarySearchAcceptsTheFolderArgument(t *testing.T) {
 	l := newLibrary(t)
 	var narrowed librarySearchAnswer
-	if failure := l.call(t, "library_search", `{"query":"heron","pathPrefix":"recordings/"}`, &narrowed); failure != "" {
+	if failure := l.call(t, "library_search", `{"query":"heron","folder":"recordings/"}`, &narrowed); failure != "" {
 		t.Fatal(failure)
 	}
 	if got := getMatchPaths(narrowed); !slices.Equal(got, []string{talkPath}) {
@@ -291,7 +295,489 @@ func TestLibrarySearchAcceptsThePathPrefixArgument(t *testing.T) {
 	}
 
 	properties := getSchemaProperties(t, getToolSchema(t, l.registry, "library_search", false))
-	requireKeys(t, "the input schema of library_search", properties, []string{"pathPrefix"}, []string{"path_prefix"})
+	requireKeys(t, "the input schema of library_search", properties, []string{"folder"}, []string{"pathPrefix", "path_prefix"})
+}
+
+func TestLibrarySearchFolderHasTheDescriptionOfTheNoteListFolder(t *testing.T) {
+	_, registry := newGeologyVault(t)
+	getDescription := func(tool string) string {
+		folder, ok := getSchemaProperties(t, getToolSchema(t, registry, tool, false))["folder"].(map[string]any)
+		if !ok {
+			t.Fatalf("the input schema of %s has no folder", tool)
+		}
+		description, _ := folder["description"].(string)
+		return description
+	}
+	if search, list := getDescription("library_search"), getDescription("note_list"); search != list {
+		t.Errorf("the folder of library_search is described as %q, want the text of note_list %q", search, list)
+	}
+}
+
+func TestLibrarySearchRejectsThePathPrefixArgument(t *testing.T) {
+	l := newLibrary(t)
+	if failure := l.call(t, "library_search", `{"query":"heron","pathPrefix":"recordings/"}`, nil); !strings.Contains(failure, "pathPrefix is not known") {
+		t.Errorf("library_search with pathPrefix gave %q, want the argument rejected as not known", failure)
+	}
+}
+
+func TestLibrarySearchReturnsThePlaceKeyOfAMatch(t *testing.T) {
+	l := newLibrary(t)
+	answer := decodeAnswer(t, callTool(t, l.registry, testVault, "library_search", `{"query":"heron"}`))
+	matches := requireList(t, "answer[matches]", answer["matches"])
+	if len(matches) != 3 {
+		t.Fatalf("matches = %v, want three", matches)
+	}
+	for _, m := range matches {
+		match, isObject := m.(map[string]any)
+		if !isObject {
+			t.Fatalf("a match is %v, not an object", m)
+		}
+		requireKeys(t, "a match of library_search", match, nil, []string{"location"})
+		if match["path"] == "notes/Herons.md" {
+			requireKeys(t, "the note match of library_search", match, nil, []string{"place"})
+			continue
+		}
+		requireKeys(t, "a file match of library_search", match, []string{"place"}, nil)
+	}
+
+	properties := getSchemaProperties(t, getToolSchema(t, l.registry, "library_search", true), "matches")
+	requireKeys(t, "the output schema of a library_search match", properties, []string{"place"}, []string{"location"})
+	requireExactSchemaKeys(t, "the output schema of a library_search place",
+		getSchemaProperties(t, getToolSchema(t, l.registry, "library_search", true), "matches", "place"), getPlaceKeys())
+}
+
+// requireExactSchemaKeys fails the test unless the schema properties are exactly the keys.
+func requireExactSchemaKeys(t *testing.T, what string, properties map[string]any, want []string) {
+	t.Helper()
+	got := make([]string, 0, len(properties))
+	for key := range properties {
+		got = append(got, key)
+	}
+	slices.Sort(got)
+	want = slices.Sorted(slices.Values(want))
+	if !slices.Equal(got, want) {
+		t.Errorf("%s has the keys %v, want %v", what, got, want)
+	}
+}
+
+// newPlacedLibrary is the invented library whose search index has a passage of a PDF page, of an EPUB
+// position, of a recording at its start, and one whose selector does not decode.
+func newPlacedLibrary(t *testing.T) library {
+	t.Helper()
+	l := newLibrary(t)
+	l.search.SetIndexedPassages([]host.Passage{
+		{Path: guidePath, Text: "egret on page five", Location: "Waders", Start: 10, Length: 18, Selector: `{"page":5,"boxes":[[0,0,1,1]]}`},
+		{Path: "library/Marsh Book.epub", Text: "egret in the reeds", Location: "The Reed Beds", Start: 20, Length: 18, Selector: `{"cfi":"epubcfi(/6/4!/4/2/1:0)"}`},
+		{Path: talkPath, Text: "egret at the start", Location: "00:00", Start: 0, Length: 18, Selector: `{"t":[0,3.5]}`},
+		{Path: "library/Pond.pdf", Text: "egret by the pond", Location: "Ponds", Start: 0, Length: 17, Selector: `{"page":"two"}`},
+	})
+	return l
+}
+
+func TestLibrarySearchReadsThePlaceFromTheSelectorAndLocation(t *testing.T) {
+	l := newPlacedLibrary(t)
+	var out librarySearchAnswer
+	if failure := l.call(t, "library_search", `{"query":"egret"}`, &out); failure != "" {
+		t.Fatal(failure)
+	}
+	places := map[string]*placeAnswer{}
+	for _, m := range out.Matches {
+		places[m.Path] = m.Place
+	}
+	if len(places) != 4 {
+		t.Fatalf("matches = %+v, want four", out.Matches)
+	}
+	if pdf := places[guidePath]; getPlacePage(pdf) != 5 || pdf.Chapter != "" || pdf.CFI != "" || pdf.PositionSeconds != nil {
+		t.Errorf("the place of the PDF passage is %+v, want page 5 and no chapter", pdf)
+	}
+	if book := places["library/Marsh Book.epub"]; book == nil || book.CFI != "epubcfi(/6/4!/4/2/1:0)" || book.Chapter != "The Reed Beds" || book.Page != 0 {
+		t.Errorf("the place of the EPUB passage is %+v, want its CFI in The Reed Beds", book)
+	}
+	if talk := places[talkPath]; getPlaceSeconds(talk) != 0 || talk.Chapter != "" {
+		t.Errorf("the place of the recording passage is %+v, want positionSeconds 0 and no chapter", talk)
+	}
+	if pond := places["library/Pond.pdf"]; pond != nil {
+		t.Errorf("the place of the passage with a selector that does not decode and no cfi is %+v, want none", pond)
+	}
+}
+
+func TestLibrarySearchReturnsPositionSecondsZero(t *testing.T) {
+	l := newPlacedLibrary(t)
+	answer := decodeAnswer(t, callTool(t, l.registry, testVault, "library_search", `{"query":"egret"}`))
+	for _, m := range requireList(t, "answer[matches]", answer["matches"]) {
+		match, isObject := m.(map[string]any)
+		if !isObject || match["path"] != talkPath {
+			continue
+		}
+		place, isPlace := match["place"].(map[string]any)
+		if !isPlace {
+			t.Fatalf("the recording match is %v, want a place", match)
+		}
+		if seconds, ok := place["positionSeconds"]; !ok || seconds != float64(0) {
+			t.Errorf("the place of the recording match is %v, want positionSeconds 0", place)
+		}
+		return
+	}
+	t.Errorf("library_search returned no match of %s: %v", talkPath, answer)
+}
+
+func TestLibrarySearchReturnsTheLineCountedFromOne(t *testing.T) {
+	l := newLibrary(t)
+	l.search.SetIndexedPassages([]host.Passage{
+		{Path: "notes/Herons.md", Text: "Herons fish at dusk in the marsh.", Start: 0, Length: 33, Line: 0},
+		{Path: "Entropy.md", Text: "Disorder grows in the marsh.", Start: 10, Length: 28, Line: 1},
+	})
+	answer := decodeAnswer(t, callTool(t, l.registry, testVault, "library_search", `{"query":"marsh"}`))
+	lines := map[any]any{}
+	for _, m := range requireList(t, "answer[matches]", answer["matches"]) {
+		if match, isObject := m.(map[string]any); isObject {
+			lines[match["path"]] = match["line"]
+		}
+	}
+	if lines["notes/Herons.md"] != float64(1) {
+		t.Errorf("the passage on the first line of the body has the line %v, want 1: %v", lines["notes/Herons.md"], answer)
+	}
+	if lines["Entropy.md"] != float64(2) {
+		t.Errorf("the passage on the second line of the body has the line %v, want 2: %v", lines["Entropy.md"], answer)
+	}
+}
+
+func TestLibraryReadReturnsRangesWithAPlace(t *testing.T) {
+	l := newLibrary(t)
+	answer := decodeAnswer(t, callTool(t, l.registry, testVault, "library_read", `{"path":"`+talkPath+`"}`))
+	requireKeys(t, "the answer of library_read", answer, []string{"ranges"}, []string{"locations"})
+	ranges := requireList(t, "answer[ranges]", answer["ranges"])
+	if len(ranges) != 2 {
+		t.Fatalf("ranges = %v, want two", ranges)
+	}
+	first, isObject := ranges[0].(map[string]any)
+	if !isObject {
+		t.Fatalf("a range is %v, not an object", ranges[0])
+	}
+	requireExactSchemaKeys(t, "the first range of library_read", first, []string{"start", "length", "place"})
+	place, isPlace := first["place"].(map[string]any)
+	if !isPlace {
+		t.Fatalf("the first range is %v, want a place", first)
+	}
+	if seconds, ok := place["positionSeconds"]; !ok || seconds != float64(0) || len(place) != 1 {
+		t.Errorf("the place of the first range is %v, want positionSeconds 0 alone", place)
+	}
+
+	schema := getToolSchema(t, l.registry, "library_read", true)
+	requireKeys(t, "the output schema of library_read", getSchemaProperties(t, schema), []string{"ranges"}, []string{"locations"})
+	requireExactSchemaKeys(t, "the output schema of a library_read range", getSchemaProperties(t, schema, "ranges"), []string{"start", "length", "place"})
+	requireExactSchemaKeys(t, "the output schema of a library_read place", getSchemaProperties(t, schema, "ranges", "place"), getPlaceKeys())
+}
+
+func TestLibraryReadReturnsThePageAndTheCFIOfARange(t *testing.T) {
+	l := newLibrary(t)
+	const bookPath = "library/Marsh Book.epub"
+	file := []byte("PK\x03\x04epub body")
+	l.vault.File(bookPath, string(file))
+	l.texts.File(bookPath, file)
+	putText(t, l.texts, readerID, bookPath, "book-text", file, []domain.TextSegment{
+		{Text: "The reed beds at dawn. ", Selector: `{"cfi":"epubcfi(/6/4!/4/2/1:0)"}`},
+		{Text: "No place here. "},
+	})
+	var book libraryReadAnswer
+	if failure := l.call(t, "library_read", `{"path":"`+bookPath+`"}`, &book); failure != "" {
+		t.Fatal(failure)
+	}
+	if len(book.Ranges) != 1 || book.Ranges[0].Place == nil || book.Ranges[0].Place.CFI != "epubcfi(/6/4!/4/2/1:0)" {
+		t.Errorf("the ranges of the book are %+v, want one with the CFI and none for the segment with no place", book.Ranges)
+	}
+
+	var guide libraryReadAnswer
+	if failure := l.call(t, "library_read", `{"path":"`+guidePath+`","page":2}`, &guide); failure != "" {
+		t.Fatal(failure)
+	}
+	if len(guide.Ranges) != 1 || getPlacePage(guide.Ranges[0].Place) != 2 || guide.Ranges[0].Length != len(pageTwo) {
+		t.Errorf("the ranges of page 2 are %+v, want one range of page 2 over its two segments", guide.Ranges)
+	}
+}
+
+func TestLibraryReadOfAFileWithNoTextVersionNamesNoTool(t *testing.T) {
+	l := newLibrary(t)
+	failure := l.call(t, "library_read", `{"path":"`+scanPath+`"}`, nil)
+	if !strings.Contains(failure, "no text version") {
+		t.Fatalf("library_read of a scan with no text version gave %q, want no text version", failure)
+	}
+	for _, name := range getForeignToolNames() {
+		if strings.Contains(failure, name) {
+			t.Errorf("library_read of a scan with no text version gave %q, which names %s", failure, name)
+		}
+	}
+	if !strings.Contains(failure, "recognition") || !strings.Contains(failure, "transcription") {
+		t.Errorf("library_read of a scan with no text version gave %q, want a recognition or a transcription named", failure)
+	}
+}
+
+func TestVaultToolTextsNameNoToolOfAnotherPlugin(t *testing.T) {
+	_, withVaultList := newGeologyVault(t)
+	for _, registry := range []*tools.Registry{newLibrary(t).registry, withVaultList} {
+		visitEveryToolSchema(t, registry, func(string, string) {}, func(tool, text string) {
+			for _, name := range getForeignToolNames() {
+				if strings.Contains(text, name) {
+					t.Errorf("a description of %s or its schema names %s: %q", tool, name, text)
+				}
+			}
+		})
+	}
+	for _, tool := range listVaultTools(t).Tools {
+		for _, sentence := range tool.Instructions {
+			for _, name := range getForeignToolNames() {
+				if strings.Contains(sentence, name) {
+					t.Errorf("an instruction of %s names %s: %q", tool.Name, name, sentence)
+				}
+			}
+		}
+	}
+}
+
+func TestLibraryReadDescriptionNamesRecognitionAndTranscription(t *testing.T) {
+	l := newLibrary(t)
+	listing, err := l.registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, info := range listing.Tools {
+		if info.GetName() != "library_read" {
+			continue
+		}
+		description := info.GetDescription()
+		if strings.Contains(description, "names the tool") {
+			t.Errorf("the description of library_read is %q, want no error that names a tool", description)
+		}
+		if !strings.Contains(description, "recognised") || !strings.Contains(description, "transcribed") {
+			t.Errorf("the description of library_read is %q, want the file recognised or transcribed first", description)
+		}
+	}
+}
+
+// getForeignToolNames is the tools of the window, OCR, transcription, importer and flashcard plugins.
+func getForeignToolNames() []string {
+	return []string{
+		"recognition_create", "transcript_create", "url_import",
+		"note_focus", "source_focus", "window_tab_list", "window_tab_activate", "note_edit_preview",
+		"card_add", "card_read", "card_edit", "card_remove", "card_current_get", "card_deck_create",
+	}
+}
+
+func TestNoteReadAndFileReadReturnTheTextKey(t *testing.T) {
+	_, svc := setupTestVault()
+	registry, err := svc.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	note := decodeAnswer(t, callTool(t, registry, testVault, "note_read", `{"path":"Heat.md"}`))
+	requireKeys(t, "the answer of note_read", note, []string{"text", "body"}, []string{"content"})
+	if want := "# Heat\nHeat flows from hot to cold.\nReferences [[Entropy]]."; note["text"] != want {
+		t.Errorf("note_read returned the text %q, want the whole file %q", note["text"], want)
+	}
+	file := decodeAnswer(t, callTool(t, registry, testVault, "file_read", `{"path":"data.txt"}`))
+	requireKeys(t, "the answer of file_read", file, []string{"text"}, []string{"content"})
+
+	requireKeys(t, "the output schema of note_read", getSchemaProperties(t, getToolSchema(t, registry, "note_read", true)),
+		[]string{"text", "body"}, []string{"content"})
+	requireKeys(t, "the output schema of file_read", getSchemaProperties(t, getToolSchema(t, registry, "file_read", true)),
+		[]string{"text"}, []string{"content"})
+}
+
+func TestNoteWriteAndFileCreateTakeTheTextArgument(t *testing.T) {
+	v, svc := setupTestVault()
+	registry, err := svc.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	callTool(t, registry, testVault, "note_write", `{"path":"Orbit.md","text":"# Orbit\nOrbits curve."}`)
+	requireContent(t, v, "Orbit.md", "# Orbit\nOrbits curve.")
+	callTool(t, registry, testVault, "file_create", `{"path":"orbits.txt","text":"perihelion"}`)
+	requireContent(t, v, "orbits.txt", "perihelion")
+
+	for _, name := range []string{"note_write", "file_create"} {
+		requireKeys(t, "the input schema of "+name, getSchemaProperties(t, getToolSchema(t, registry, name, false)),
+			[]string{"text"}, []string{"content"})
+	}
+}
+
+func TestNoteWriteAndFileCreateRejectTheContentArgument(t *testing.T) {
+	v, svc := setupTestVault()
+	registry, err := svc.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, arguments := range map[string]string{
+		"note_write":  `{"path":"Comet.md","content":"# Comet\nA tail of dust."}`,
+		"file_create": `{"path":"comet.txt","content":"a tail of dust"}`,
+	} {
+		text := getRejectionText(t, registry, testVault, name, arguments)
+		if !strings.Contains(text, "content is not known") {
+			t.Errorf("%s with the argument content gave the error %q, want content rejected as not known", name, text)
+		}
+	}
+	requireAbsent(t, v, "Comet.md")
+	requireAbsent(t, v, "comet.txt")
+}
+
+func TestNoteHeadingListReturnsTheStartAndTheLineCountedFromOne(t *testing.T) {
+	_, svc := setupTestVault()
+	registry, err := svc.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	answer := decodeAnswer(t, callTool(t, registry, testVault, "note_heading_list", `{"path":"Entropy.md"}`))
+	headings := requireList(t, "answer[headings]", answer["headings"])
+	if len(headings) != 2 {
+		t.Fatalf("headings = %v, want two", headings)
+	}
+	body := "# Entropy\nEntropy is thermodynamic disorder.\n## Second Law\nEntropy increases.\nSee also [[Heat]]."
+	for i, want := range []struct {
+		line  float64
+		start int
+	}{{1, 0}, {3, strings.Index(body, "## Second Law")}} {
+		heading, isObject := headings[i].(map[string]any)
+		if !isObject {
+			t.Fatalf("a heading is %v, not an object", headings[i])
+		}
+		requireKeys(t, "a heading of note_heading_list", heading, []string{"start", "line"}, []string{"offset"})
+		if heading["line"] != want.line || heading["start"] != float64(want.start) {
+			t.Errorf("heading %d is %v, want line %v and start %d", i, heading, want.line, want.start)
+		}
+	}
+
+	requireKeys(t, "the output schema of a heading", getSchemaProperties(t, getToolSchema(t, registry, "note_heading_list", true), "headings"),
+		[]string{"start", "line"}, []string{"offset"})
+}
+
+func TestNoteSearchReturnsTheLineCountedInTheBody(t *testing.T) {
+	_, svc := setupTestVault()
+	registry, err := svc.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out struct {
+		Matches []struct {
+			Path string `json:"path"`
+			Line int    `json:"line"`
+		} `json:"matches"`
+	}
+	for query, want := range map[string]int{"thermodynamic": 2, "Second Law": 3} {
+		decodeInto(t, callTool(t, registry, testVault, "note_search", `{"query":"`+query+`"}`), &out)
+		found := false
+		for _, m := range out.Matches {
+			if m.Path == "Entropy.md" {
+				found = true
+				if m.Line != want {
+					t.Errorf("the match of %q in Entropy.md has the line %d, want %d of the body", query, m.Line, want)
+				}
+			}
+		}
+		if !found {
+			t.Errorf("note_search of %q did not find Entropy.md: %+v", query, out.Matches)
+		}
+	}
+}
+
+func TestNoteSearchReturnsLineOneForAMatchOnTheFirstBodyLine(t *testing.T) {
+	v, svc := setupTestVault()
+	v.File("Comet.md", "---\ntitle: Comet\n---\nIcy nucleus of dust.\nA tail.")
+	registry, err := svc.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out struct {
+		Matches []struct {
+			Path string `json:"path"`
+			Line int    `json:"line"`
+		} `json:"matches"`
+	}
+	decodeInto(t, callTool(t, registry, testVault, "note_search", `{"query":"icy nucleus"}`), &out)
+	for _, m := range out.Matches {
+		if m.Path == "Comet.md" {
+			if m.Line != 1 {
+				t.Errorf("the match on the first body line of Comet.md has the line %d, want 1", m.Line)
+			}
+			return
+		}
+	}
+	t.Errorf("note_search did not find Comet.md: %+v", out.Matches)
+}
+
+func TestVaultGetFindsTheVaultByItsNameFolderOrIdentifier(t *testing.T) {
+	for setup, isListed := range map[string]bool{"with a vault list": true, "without a vault list": false} {
+		t.Run(setup, func(t *testing.T) {
+			geology, _, withList := newTwoVaults(t)
+			registry := withList
+			if !isListed {
+				unlisted, err := service.New(geology).Registry()
+				if err != nil {
+					t.Fatal(err)
+				}
+				registry = unlisted
+			}
+			for how, address := range getGardenAddresses() {
+				answer := decodeAnswer(t, callTool(t, registry, geologyVault, "vault_get", fmt.Sprintf(`{"vault":%q}`, address)))
+				if answer["id"] != gardenID || answer["name"] != gardenName || answer["path"] != gardenFolder {
+					t.Errorf("vault_get by its %s %q returned %v, want the garden vault", how, address, answer)
+				}
+			}
+			own := decodeAnswer(t, callTool(t, registry, geologyVault, "vault_get", `{}`))
+			if own["id"] != geologyVault {
+				t.Errorf("vault_get with no vault returned %v, want the vault of the call", own)
+			}
+		})
+	}
+}
+
+func TestVaultGetAcceptsTheVaultArgumentAndRejectsTheID(t *testing.T) {
+	_, _, registry := newTwoVaults(t)
+	requireKeys(t, "the input schema of vault_get", getSchemaProperties(t, getToolSchema(t, registry, "vault_get", false)),
+		[]string{"vault"}, []string{"id"})
+	text := getRejectionText(t, registry, geologyVault, "vault_get", `{"id":"`+gardenID+`"}`)
+	if !strings.Contains(text, "id is not known") {
+		t.Errorf("vault_get with the argument id gave the error %q, want id rejected as not known", text)
+	}
+}
+
+func TestVaultProblemListNamesTheChecksInItsDescriptionOnly(t *testing.T) {
+	_, registry := newSkyVault(t)
+	listing, err := registry.ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	checks := []string{"parse", "frontmatter", "ambiguous", "dangling"}
+	for _, info := range listing.Tools {
+		if info.GetName() != "vault_problem_list" {
+			continue
+		}
+		for _, check := range checks {
+			if !regexp.MustCompile(`\b` + check + `\b`).MatchString(info.GetDescription()) {
+				t.Errorf("the description of vault_problem_list does not name the check %s: %q", check, info.GetDescription())
+			}
+		}
+	}
+	field, ok := getSchemaProperties(t, getToolSchema(t, registry, "vault_problem_list", false))["checks"].(map[string]any)
+	if !ok {
+		t.Fatal("the input schema of vault_problem_list has no checks")
+	}
+	description, _ := field["description"].(string)
+	for _, check := range checks {
+		if regexp.MustCompile(`\b` + check + `\b`).MatchString(description) {
+			t.Errorf("the checks of vault_problem_list are described as %q, which names the check %s", description, check)
+		}
+	}
+	for _, tool := range listVaultTools(t).Tools {
+		if tool.Name != "vault_problem_list" {
+			continue
+		}
+		for _, sentence := range tool.Instructions {
+			for _, check := range checks[:3] {
+				if regexp.MustCompile(`\b` + check + `\b`).MatchString(sentence) {
+					t.Errorf("an instruction of vault_problem_list names the check %s: %q", check, sentence)
+				}
+			}
+		}
+	}
 }
 
 func TestFileCreateReturnsThePathAndSizeWithoutSuccess(t *testing.T) {
@@ -300,7 +786,7 @@ func TestFileCreateReturnsThePathAndSizeWithoutSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	answer := decodeAnswer(t, callTool(t, registry, testVault, "file_create", `{"path":"orbits.txt","content":"perihelion"}`))
+	answer := decodeAnswer(t, callTool(t, registry, testVault, "file_create", `{"path":"orbits.txt","text":"perihelion"}`))
 	requireKeys(t, "the answer of file_create", answer, []string{"path", "size"}, []string{"success"})
 	if answer["path"] != "orbits.txt" || answer["size"] != float64(len("perihelion")) {
 		t.Errorf("file_create returned %v, want orbits.txt of 10 bytes", answer)
@@ -331,7 +817,7 @@ func TestVaultInstructionsNameTheKeysInCamelCase(t *testing.T) {
 			t.Errorf("the instructions do not name %q:\n%s", want, instructions)
 		}
 	}
-	for _, old := range []string{"showing", "path_prefix", "next_offset", "next_start", "is_current", "note_count"} {
+	for _, old := range []string{"showing", "path_prefix", "pathPrefix", "next_offset", "next_start", "is_current", "note_count"} {
 		if strings.Contains(instructions, old) {
 			t.Errorf("the instructions name %q:\n%s", old, instructions)
 		}

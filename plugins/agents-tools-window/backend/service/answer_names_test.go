@@ -2,8 +2,11 @@ package service_test
 
 import (
 	"encoding/json"
+	"maps"
 	"net/http/httptest"
 	"regexp"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -208,35 +211,125 @@ func (w windowTools) getAnswer(t *testing.T, name, arguments string) map[string]
 	return decodeAnswer(t, res.GetResult().GetStructured())
 }
 
-func TestWindowTabListReturnsLocationAndIsActive(t *testing.T) {
+func TestWindowTabListReturnsPlaceTabIDAndIsActive(t *testing.T) {
 	w := newWindowTools(t)
 	w.window.SetOpenTabs([]host.OpenTab{
 		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
 		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
 	}, "tab-2")
 	answer := w.getAnswer(t, "window_tab_list", `{}`)
-	requireKeys(t, "the answer of window_tab_list", answer, []string{"tabs", "activeId"}, []string{"summary"})
+	requireKeys(t, "the answer of window_tab_list", answer, []string{"tabs", "activeTabId"}, []string{"summary", "activeId"})
+	if answer["activeTabId"] != "tab-2" {
+		t.Errorf("activeTabId = %v, want tab-2", answer["activeTabId"])
+	}
 	list := requireList(t, "answer[tabs]", answer["tabs"])
 	if len(list) != 2 {
 		t.Fatalf("tabs = %v, want two", answer["tabs"])
 	}
 	active := requireObject(t, "list[1]", list[1])
-	requireKeys(t, "the active tab", active, []string{"location", "isActive"}, []string{"where", "active"})
-	location := requireObject(t, "the location of the active tab", active["location"])
-	if location["page"] != float64(4) || location["pageCount"] != float64(120) || len(location) != 2 || active["isActive"] != true {
-		t.Errorf("the active tab is %v, want location {page 4, pageCount 120} and isActive true", active)
+	requireKeys(t, "the active tab", active, []string{"tabId", "place", "isActive"}, []string{"id", "location", "where", "active"})
+	place := requireObject(t, "the place of the active tab", active["place"])
+	if active["tabId"] != "tab-2" || place["page"] != float64(4) || place["pageCount"] != float64(120) || len(place) != 2 || active["isActive"] != true {
+		t.Errorf("the active tab is %v, want tab-2 at place {page 4, pageCount 120} and isActive true", active)
 	}
 	inactive := requireObject(t, "list[0]", list[0])
-	requireKeys(t, "the inactive note tab", inactive, nil, []string{"where", "active", "location"})
+	requireKeys(t, "the inactive note tab", inactive, []string{"tabId"}, []string{"id", "where", "active", "location", "place"})
 	if inactive["isActive"] == true {
 		t.Errorf("the inactive tab is %v, want isActive not true", inactive)
 	}
 
 	schema := getToolSchema(t, w.registry, "window_tab_list", true)
-	requireKeys(t, "the output schema of window_tab_list", getSchemaProperties(t, schema), []string{"tabs"}, []string{"summary"})
-	requireKeys(t, "the output schema of a tab", getSchemaProperties(t, schema, "tabs"), []string{"location", "isActive"}, []string{"where", "active"})
-	requireKeys(t, "the output schema of a tab location", getSchemaProperties(t, schema, "tabs", "location"),
-		[]string{"page", "pageCount", "positionSeconds", "cfi", "chapter"}, nil)
+	requireKeys(t, "the output schema of window_tab_list", getSchemaProperties(t, schema), []string{"tabs", "activeTabId"}, []string{"summary", "activeId"})
+	requireKeys(t, "the output schema of a tab", getSchemaProperties(t, schema, "tabs"),
+		[]string{"tabId", "place", "isActive"}, []string{"id", "location", "where", "active"})
+	requireExactKeys(t, "the output schema of a tab place", getSchemaProperties(t, schema, "tabs", "place"), getPlaceKeys())
+}
+
+// getPlaceKeys is the keys a place of any tool may have.
+func getPlaceKeys() []string {
+	return []string{"page", "pageCount", "positionSeconds", "cfi", "chapter"}
+}
+
+// requireExactKeys fails the test unless the object has exactly the keys.
+func requireExactKeys(t *testing.T, what string, object map[string]any, want []string) {
+	t.Helper()
+	got := make([]string, 0, len(object))
+	for key := range object {
+		got = append(got, key)
+	}
+	slices.Sort(got)
+	want = slices.Sorted(slices.Values(want))
+	if !slices.Equal(got, want) {
+		t.Errorf("%s has the keys %v, want %v", what, got, want)
+	}
+}
+
+func TestWindowTabListReturnsThePlaceOfAPDFARecordingAtItsStartAndAnEPUB(t *testing.T) {
+	w := newWindowTools(t)
+	atStart := 0.0
+	w.window.SetOpenTabs([]host.OpenTab{
+		{ID: "tab-1", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
+		{ID: "tab-2", Kind: "recording", Path: talkPath, Title: "Marsh Talk", Place: &host.TabPlace{PositionSeconds: &atStart}},
+		{ID: "tab-3", Kind: "reader:reader-epub", Path: bookPath, Title: "Marsh Book", Place: &host.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+	}, "tab-1")
+	list := requireList(t, "answer[tabs]", w.getAnswer(t, "window_tab_list", `{}`)["tabs"])
+	if len(list) != 3 {
+		t.Fatalf("tabs = %v, want three", list)
+	}
+	for i, want := range []map[string]any{
+		{"page": float64(4), "pageCount": float64(120)},
+		{"positionSeconds": float64(0)},
+		{"cfi": "epubcfi(/6/4!/4/2/1:0)", "chapter": "The Reed Beds"},
+	} {
+		tab := requireObject(t, "a tab", list[i])
+		place := requireObject(t, "the place of a tab", tab["place"])
+		if !maps.Equal(place, want) {
+			t.Errorf("the place of %v is %v, want %v", tab["tabId"], place, want)
+		}
+	}
+}
+
+func TestWindowToolTextsNameNoToolOfAnotherPlugin(t *testing.T) {
+	w := newWindowTools(t)
+	foreign := getForeignToolNames()
+	visitEveryToolSchema(t, w.registry, func(string, string) {}, func(tool, text string) {
+		for _, name := range foreign {
+			if strings.Contains(text, name) {
+				t.Errorf("a description of %s or its schema names %s: %q", tool, name, text)
+			}
+		}
+	})
+	handler, err := service.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "window-token", "NUMEN_HOST_PORT": "1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	web := httptest.NewServer(handler)
+	t.Cleanup(web.Close)
+	listing, err := tools.NewClient(hostcall.Endpoint{BaseURL: web.URL, Token: "window-token"}).ListTools(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tool := range listing.Tools {
+		for _, sentence := range tool.Instructions {
+			for _, name := range foreign {
+				if strings.Contains(sentence, name) {
+					t.Errorf("an instruction of %s names %s: %q", tool.GetName(), name, sentence)
+				}
+			}
+		}
+	}
+}
+
+// getForeignToolNames is the tools of the vault, OCR, transcription, importer and flashcard plugins.
+func getForeignToolNames() []string {
+	return []string{
+		"note_read", "note_write", "note_heading_list", "note_search", "note_list", "note_title_list",
+		"note_resolve", "note_rename", "note_move", "note_remove", "link_list", "link_add", "link_update",
+		"link_remove", "file_read", "file_create", "library_read", "library_search", "vault_get", "vault_list",
+		"vault_problem_list", "vault_add", "vault_rename", "vault_remove", "vault_open",
+		"recognition_create", "transcript_create", "url_import",
+		"card_add", "card_read", "card_edit", "card_remove", "card_current_get", "card_deck_create",
+	}
 }
 
 func TestNoteFocusReturnsTheNoteKey(t *testing.T) {
@@ -286,12 +379,15 @@ func TestWindowTabActivateReturnsTheTabOnly(t *testing.T) {
 	answer := w.getAnswer(t, "window_tab_activate", `{"tabId":"tab-1"}`)
 	requireKeys(t, "the answer of window_tab_activate", answer, []string{"tab"}, []string{"success", "message"})
 	tab := requireObject(t, "answer[tab]", answer["tab"])
-	if tab["id"] != "tab-1" || tab["path"] != notePath {
+	requireKeys(t, "the tab of window_tab_activate", tab, []string{"tabId"}, []string{"id"})
+	if tab["tabId"] != "tab-1" || tab["path"] != notePath {
 		t.Errorf("tab = %v, want tab-1 at %s", answer["tab"], notePath)
 	}
 
 	schema := getToolSchema(t, w.registry, "window_tab_activate", true)
 	requireKeys(t, "the output schema of window_tab_activate", getSchemaProperties(t, schema), []string{"tab"}, []string{"success", "message"})
+	requireKeys(t, "the output schema of the tab of window_tab_activate", getSchemaProperties(t, schema, "tab"),
+		[]string{"tabId", "place"}, []string{"id", "location"})
 }
 
 func TestNoteEditPreviewReturnsTheDiffOnly(t *testing.T) {
