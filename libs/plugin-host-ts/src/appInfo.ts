@@ -14,7 +14,8 @@ export interface AppInfoSource {
   readonly version?: string | undefined
   /** The build number injected while the page is built, as text. */
   readonly build?: string | undefined
-  readonly userAgent: string
+  /** The platform the window runs on, as its Wails runtime reports it; read on each access. */
+  readonly getPlatform: () => AppInfo['platform']
 }
 
 /** The build number a text holds; 0 where it holds none. */
@@ -25,19 +26,13 @@ export function parseBuildNumber(text: string | undefined): number {
   return Number.isSafeInteger(value) && value > 0 ? value : 0
 }
 
-/** The operating system a user agent names; linux for any it does not recognize. */
-export function getPlatform(userAgent: string): AppInfo['platform'] {
-  const agent = userAgent.toLowerCase()
-  if (agent.includes('mac') || agent.includes('darwin')) return 'darwin'
-  if (agent.includes('win')) return 'windows'
-  return 'linux'
-}
-
 export function createAppInfo(source: AppInfoSource): AppInfo {
   return {
     name: APP_NAME,
     version: source.version || DEV_VERSION,
     build: parseBuildNumber(source.build),
-    platform: getPlatform(source.userAgent),
+    get platform() {
+      return source.getPlatform()
+    },
   }
 }

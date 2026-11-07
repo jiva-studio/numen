@@ -19,6 +19,7 @@ import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/shell'
 import type { useSettings } from '../window/useSettings'
+import type { WindowPlatform } from '../window/useWindowFrame'
 import { texts } from '@/shared/clients'
 
 export interface PluginSupportDeps {
@@ -26,6 +27,11 @@ export interface PluginSupportDeps {
   readonly tabLinks: ReturnType<typeof useTabLinks>
   readonly tabOpeners: ReturnType<typeof fileOpeners>
   readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
+  /**
+   * The platform the frame of the window reports, which plugins read as `context.app.platform`.
+   * Windows where none is given, as the frame reports without the Wails runtime.
+   */
+  readonly getPlatform?: () => WindowPlatform
   readonly readNote?: (
     path: string,
   ) => Promise<{ body?: string; error?: string } | string | undefined>
@@ -163,7 +169,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     app: createAppInfo({
       version: import.meta.env.VITE_NUMEN_VERSION,
       build: import.meta.env.VITE_NUMEN_BUILD,
-      userAgent: navigator.userAgent,
+      getPlatform: deps.getPlatform ?? (() => 'windows'),
     }),
     openExternal: (url) => openExternalUrl(url),
     ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),

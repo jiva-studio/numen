@@ -172,7 +172,7 @@ function createHostContextBridge(
   shared: SharedRegistries,
 ): PluginContextHost {
   return {
-    app: deps.app ?? createAppInfo({ userAgent: '' }),
+    app: deps.app ?? createAppInfo({ getPlatform: () => 'linux' }),
     openExternal: (url) =>
       deps.openExternal
         ? deps.openExternal(url)

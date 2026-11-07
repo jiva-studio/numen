@@ -311,6 +311,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
+  const frame = useWindowFrame()
   // The plugin loader is made after the tabs; until then every plugin counts as starting.
   const pluginStarts: { current?: (pluginId: string) => boolean } = {}
   const windowTabs = useWindowTabs({
@@ -356,6 +357,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     tabLinks,
     tabOpeners,
     settingsHolder,
+    getPlatform: () => frame.platform.value,
     services: pluginServices,
     notices: pluginNotices,
     ...createPluginReports(log, getPluginName),
@@ -369,6 +371,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   hostHolder.current = pluginHost
   /* Stryker restore OptionalChaining,ObjectLiteral,StringLiteral,Regex */
   return {
+    frame,
     declaredCommands,
     log,
     writeMessage,
@@ -744,7 +747,7 @@ function createWindowFrameServices(
   ctx: WindowContext,
   commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget' | 'runCommand'>,
 ) {
-  const frame = useWindowFrame()
+  const { frame } = base
   let tableIds: readonly string[] | undefined
   const getAppCommands = () => ctx.tabCommands?.commands ?? []
   const items = createPaletteItems(

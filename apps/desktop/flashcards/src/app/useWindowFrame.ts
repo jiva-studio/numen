@@ -7,7 +7,7 @@ import { getCurrentScope, onScopeDispose, ref, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 
 /** The operating system of the window, as `runtime.GOOS` names it. */
-type WindowPlatform = 'darwin' | 'windows' | 'linux'
+export type WindowPlatform = 'darwin' | 'windows' | 'linux'
 
 /** The path the window serves its Wails runtime module at. */
 const RUNTIME_PATH = '/wails/runtime.js'

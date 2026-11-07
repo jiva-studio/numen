@@ -17,7 +17,7 @@ import { runInBackground } from '@numen/ui'
 import { agentService, noteService, pluginService, vaultsService } from '@/shared/clients'
 import { createWindowAgent, type WindowAgentClient } from './agent'
 import { createShellHost, type ShellServices } from './host'
-import { useWindowFrame } from './useWindowFrame'
+import { useWindowFrame, type WindowFrame } from './useWindowFrame'
 import { createWindowHost } from './windowHost'
 import { createWindowVaults } from './windowVaults'
 import { createWindowCommands } from './windowCommands'
@@ -71,9 +71,10 @@ function fillServices(
   services: ShellServices,
   window: Pick<ReturnType<typeof createShellHost>, 'tab' | 'openTab' | 'notices'> & {
     readonly vaults: ReturnType<typeof useVaults>['vaults']
+    readonly frame: WindowFrame
   },
 ): void {
-  const { tab, notices } = window
+  const { tab, notices, frame } = window
   Object.assign(services, {
     commands: createWindowCommands(),
     vaults: createWindowVaults({
@@ -81,7 +82,7 @@ function fillServices(
       getTabVault: () => tab.value?.vault ?? null,
       openTab: window.openTab,
     }),
-    window: createWindowHost(useWindowFrame(), (error) =>
+    window: createWindowHost(frame, (error) =>
       notices.show(WINDOW_SOURCE, formatErrorMessage(error), 'error'),
     ),
   })
@@ -93,9 +94,11 @@ export function useShell(deps: ShellDeps = {}) {
     deps.linkClient ?? noteService,
   )
   const services: ShellServices = {}
+  const frame = useWindowFrame()
   const { host, front, tab, openTab, notices, mountView, titleBarView } = createShellHost(
     windowAgent.agent,
     services,
+    () => frame.platform.value,
   )
   const loader = createPluginLoader({
     host,
@@ -107,7 +110,7 @@ export function useShell(deps: ShellDeps = {}) {
   const { vaults, isListing } = useVaults(deps.listVaults ?? listVaults, (text) =>
     notices.show(WINDOW_SOURCE, text, 'error'),
   )
-  fillServices(services, { vaults, tab, openTab, notices })
+  fillServices(services, { vaults, tab, openTab, notices, frame })
   const onKeyDown = createWindowKeys({
     getTab: () => tab.value,
     getVaults: () => (front.value ? vaults.value : []),

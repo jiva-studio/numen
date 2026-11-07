@@ -31,6 +31,7 @@ import {
 } from '@numen/plugin-host'
 import { createNoticeQueue } from '@numen/shell'
 import { createNamedIcon } from '@numen/ui'
+import type { WindowPlatform } from './useWindowFrame'
 
 /** The target of this window, which names the plugins it loads. */
 export const TARGET = 'desktop.flashcards'
@@ -175,8 +176,14 @@ const registerInSlots = (
 /**
  * The host of the window, whose plugins are given the agent where the window has one, and the
  * vaults and the window the services hold when the plugin starts.
+ * The platform plugins read is the one `getPlatform` reports: Windows where none is given, as the
+ * frame reports without the Wails runtime.
  */
-export function createShellHost(agent?: AgentHost, services: ShellServices = {}) {
+export function createShellHost(
+  agent?: AgentHost,
+  services: ShellServices = {},
+  getPlatform: () => WindowPlatform = () => 'windows',
+) {
   const views = shallowRef<readonly PluginView[]>([])
   const contexts = new Map<string, PluginContext>()
   const declaredViews = createViewRegistry()
@@ -204,7 +211,7 @@ export function createShellHost(agent?: AgentHost, services: ShellServices = {})
       app: createAppInfo({
         version: import.meta.env.VITE_NUMEN_VERSION,
         build: import.meta.env.VITE_NUMEN_BUILD,
-        userAgent: navigator.userAgent,
+        getPlatform,
       }),
       openExternal: createExternalOpener((url) => openExternalUrl(url)),
       registerTabKind: (registration) =>
