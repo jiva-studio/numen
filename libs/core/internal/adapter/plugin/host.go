@@ -1107,8 +1107,9 @@ func (h *Host) createRPCShutdown(endpoint transport.Endpoint, gracePeriod time.D
 // SetPersistHandler registers a callback that writes plugin settings changes into core configuration.
 func (h *Host) SetPersistHandler(handler PersistHandler) {
 	h.mu.Lock()
-	defer h.mu.Unlock()
 	h.persistHandler = handler
+	h.mu.Unlock()
+	h.fillGeneratedSettings()
 }
 
 // SetSettings loads persisted plugin configurations into host memory.
@@ -1123,6 +1124,7 @@ func (h *Host) SetSettings(all map[string]map[string]any) {
 		}
 	}
 	h.mu.Unlock()
+	h.fillGeneratedSettings()
 	h.syncAllListeners(context.Background())
 }
 
@@ -1159,6 +1161,8 @@ func (h *Host) applyEnabledChange(ctx context.Context, pluginID string, value an
 	var stopErr error
 	if !enabled {
 		stopErr = h.stopPlugin(ctx, pluginID)
+	} else {
+		h.fillGeneratedSettings()
 	}
 	h.mu.RLock()
 	sup := h.supervisors[pluginID]

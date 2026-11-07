@@ -31,7 +31,8 @@ const everyFieldManifest = `{
 			"min": 1, "max": 2, "step": 1, "accept": [".txt"], "multiple": true},
 		{"key": "sub", "type": "enum", "title": "Sub", "optionsBy": {"setting": "mode", "options": {"a": ["x"], "b": ["y"]}},
 			"when": {"setting": "mode", "is": ["a"]}},
-		{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes", "preview": true}
+		{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes", "preview": true},
+		{"key": "token", "type": "string", "title": "Token", "generate": "token"}
 	],
 	"secrets": [{"name": "apiKey", "title": "Key", "description": "d", "when": {"setting": "mode", "is": ["a"]}}],
 	"services": ["numen.v1.Full"],
@@ -139,7 +140,7 @@ func TestTheSampleManifestIsReadWithEveryFieldMapped(t *testing.T) {
 			t.Errorf("%s holds its zero value in every instance of the sample: a mapping for it is untested", name)
 		}
 	}
-	if len(m.Settings) != 3 || len(m.Settings[1].OptionsBy.Options["a"]) != 1 || m.Settings[1].OptionsBy.Options["a"][0].Value != "x" {
+	if len(m.Settings) != 4 || len(m.Settings[1].OptionsBy.Options["a"]) != 1 || m.Settings[1].OptionsBy.Options["a"][0].Value != "x" {
 		t.Errorf("optionsBy = %+v", m.Settings)
 	}
 	if len(m.Contributes.NoteTypes) != 1 || m.Contributes.NoteTypes[0].Headings == nil || !slices.Equal(*m.Contributes.NoteTypes[0].Headings, []int{1, 2}) || !slices.Equal(m.Contributes.NoteTypes[0].IDHeadingLevels, []int{3}) {

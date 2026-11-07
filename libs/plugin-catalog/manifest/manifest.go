@@ -118,6 +118,9 @@ var (
 // SettingTypeString is the type of a setting that holds a text string.
 const SettingTypeString = "string"
 
+// SettingGenerateToken makes the host store 32 random bytes in hex in a setting that holds no value.
+const SettingGenerateToken = "token"
+
 // SettingTypeEnum is the type of a setting that holds one of its options.
 const SettingTypeEnum = "enum"
 
@@ -172,6 +175,8 @@ type Setting struct {
 	// OptionsFrom names a registry the options are listed from, such as the installed themes.
 	// Empty where the setting lists its own options.
 	OptionsFrom string
+	// Generate names the value the host stores when the setting holds none. Empty generates nothing.
+	Generate string
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
@@ -508,7 +513,27 @@ func listManifestSettingIssue(s Setting, key string) []error {
 	if s.Type == "range" && s.Min != nil && s.Max != nil && *s.Min > *s.Max {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrRangeInvalidBounds, key))
 	}
+	issues = append(issues, listGenerateSettingIssues(s, key)...)
 	return append(issues, listFileSettingIssues(s, key)...)
+}
+
+// listGenerateSettingIssues checks that a generated value is a token, on a string setting without a
+// default.
+func listGenerateSettingIssues(s Setting, key string) []error {
+	if s.Generate == "" {
+		return nil
+	}
+	var issues []error
+	if s.Generate != SettingGenerateToken {
+		issues = append(issues, fmt.Errorf("%w: %s generates %q, and the host generates only %q", ErrInvalidSetting, key, s.Generate, SettingGenerateToken))
+	}
+	if s.Type != SettingTypeString {
+		issues = append(issues, fmt.Errorf("%w: %s generates a value and is no string setting", ErrInvalidSetting, key))
+	}
+	if s.Default != nil {
+		issues = append(issues, fmt.Errorf("%w: %s generates a value and declares a default", ErrInvalidSetting, key))
+	}
+	return issues
 }
 
 // listFileSettingIssues checks that only a file setting accepts extensions, each with its leading dot,

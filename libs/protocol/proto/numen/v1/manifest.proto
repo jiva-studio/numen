@@ -200,6 +200,8 @@ message ManifestSetting {
   bool preview = 18;
   // options_from names a registry the options are listed from, such as the installed themes.
   string options_from = 19;
+  // generate makes the host fill an empty value; "token" is 32 random bytes in hex.
+  string generate = 20;
 }
 
 message ManifestSecret {

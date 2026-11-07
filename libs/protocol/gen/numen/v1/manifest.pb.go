@@ -1120,7 +1120,9 @@ type ManifestSetting struct {
 	// value on leaving.
 	Preview bool `protobuf:"varint,18,opt,name=preview,proto3" json:"preview,omitempty"`
 	// options_from names a registry the options are listed from, such as the installed themes.
-	OptionsFrom   string `protobuf:"bytes,19,opt,name=options_from,json=optionsFrom,proto3" json:"options_from,omitempty"`
+	OptionsFrom string `protobuf:"bytes,19,opt,name=options_from,json=optionsFrom,proto3" json:"options_from,omitempty"`
+	// generate makes the host fill an empty value; "token" is 32 random bytes in hex.
+	Generate      string `protobuf:"bytes,20,opt,name=generate,proto3" json:"generate,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1270,6 +1272,13 @@ func (x *ManifestSetting) GetPreview() bool {
 func (x *ManifestSetting) GetOptionsFrom() string {
 	if x != nil {
 		return x.OptionsFrom
+	}
+	return ""
+}
+
+func (x *ManifestSetting) GetGenerate() string {
+	if x != nil {
+		return x.Generate
 	}
 	return ""
 }
@@ -1863,7 +1872,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xc3\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xdf\x04\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1883,7 +1892,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x06accept\x18\x10 \x03(\tR\x06accept\x12\x1a\n" +
 	"\bmultiple\x18\x11 \x01(\bR\bmultiple\x12\x18\n" +
 	"\apreview\x18\x12 \x01(\bR\apreview\x12!\n" +
-	"\foptions_from\x18\x13 \x01(\tR\voptionsFromB\x06\n" +
+	"\foptions_from\x18\x13 \x01(\tR\voptionsFrom\x12\x1a\n" +
+	"\bgenerate\x18\x14 \x01(\tR\bgenerateB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_step\"\x8d\x01\n" +

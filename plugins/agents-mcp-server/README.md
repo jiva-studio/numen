@@ -15,7 +15,7 @@ While the plugin is enabled, Numen listens on `127.0.0.1` at the plugin's **Port
 
 - **Streamable HTTP endpoint**: `http://127.0.0.1:3333/mcp`
 
-A client authenticates with the header `Authorization: Bearer <token>`, where `<token>` is the value of the plugin's **Token** setting on its page in the settings. The setting is empty until you type a token, and while it is empty the server returns 401 for every request. A changed token takes effect at once. A request sent from a web page whose origin is not `localhost` or a loopback address gets 403.
+A client authenticates with the header `Authorization: Bearer <token>`, where `<token>` is the value of the plugin's **Token** setting on its page in the settings. Numen generates the token, 64 hexadecimal characters, when it first loads the enabled plugin; copy it from the setting into the client configuration. You can replace it with a token of your own, and while the setting is empty the server returns 401 for every request. A changed token takes effect at once. A request sent from a web page whose origin is not `localhost` or a loopback address gets 403.
 
 ### Example JSON Configuration (`mcpServers`)
 
