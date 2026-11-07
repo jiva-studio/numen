@@ -33,7 +33,6 @@ export interface SettingsStoreDeps {
     readonly app?: readonly PluginSettingInfo[] | undefined
     readonly secrets?: readonly Secret[] | undefined
     readonly credentialsPath?: string | undefined
-    readonly hasKeyStore?: boolean | undefined
   }>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }
@@ -134,7 +133,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const app = shallowRef<readonly PluginSettingInfo[]>([])
   const secrets = shallowRef<readonly Secret[]>([])
   const credentialsPath = ref('')
-  const hasKeyStore = ref(true)
 
   const requested = createRemoteValues<SettingEdit>((values) =>
     core.updateSettings([...values.values()]),
@@ -154,7 +152,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       app.value = answer.app ?? []
       secrets.value = answer.secrets ?? []
       credentialsPath.value = answer.credentialsPath ?? ''
-      hasKeyStore.value = answer.hasKeyStore ?? true
     })
   }
 
@@ -212,7 +209,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     app,
     secrets,
     credentialsPath,
-    hasKeyStore,
     start,
     getSetting,
     getCommittedSetting,

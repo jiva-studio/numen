@@ -16,8 +16,6 @@ type Listing struct {
 	Entries []Entry
 	// CredentialsPath is empty while the system keychain is in use.
 	CredentialsPath string
-	// HasKeyStore is false on a machine that has no key store, where every value fails to be kept.
-	HasKeyStore bool
 }
 
 // List reads the secrets without their values.
@@ -32,7 +30,7 @@ func (u *List) Execute(ctx context.Context) (Listing, error) {
 	if err != nil {
 		return Listing{}, err
 	}
-	listing := Listing{Entries: make([]Entry, 0, len(list)), HasKeyStore: u.keys != nil}
+	listing := Listing{Entries: make([]Entry, 0, len(list))}
 	for _, one := range list {
 		listing.Entries = append(listing.Entries, Entry{Secret: one, HasValue: u.hasValue(ctx, one.ID)})
 	}

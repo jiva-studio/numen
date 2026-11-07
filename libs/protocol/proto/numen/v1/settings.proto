@@ -104,9 +104,6 @@ message GetSettingsResponse {
 
   // Empty while the system keychain is in use; otherwise the absolute path of the file the values are kept in.
   string credentials_path = 10;
-
-  // True when the installation has a key store the values of secrets are kept in.
-  bool has_key_store = 11;
 }
 
 // Model is one model a setting that names a model can be set to.
