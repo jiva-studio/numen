@@ -105,7 +105,7 @@ func (c *Client) ActivateTab(ctx context.Context, id string) (OpenTab, string, e
 }
 
 // readOpenTab returns the tab with the place its reader reported.
-func readOpenTab(tab *v1.Tab) OpenTab {
+func readOpenTab(tab *v1.OpenTab) OpenTab {
 	out := OpenTab{ID: tab.GetId(), Kind: tab.GetKind(), Path: tab.GetPath(), Title: tab.GetTitle()}
 	if place := tab.GetPlace(); place != nil {
 		out.Place = &TabPlace{

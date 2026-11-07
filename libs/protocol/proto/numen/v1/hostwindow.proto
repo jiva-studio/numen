@@ -43,7 +43,7 @@ message FocusNoteResponse {
   string id = 4;
 }
 
-// A PassageSpan is a byte range in a file's text version, as library_search returns it.
+// A PassageSpan is a byte range in a file's text version, as a passage search returns it.
 message PassageSpan {
   int32 start = 1;
   int32 length = 2;
@@ -58,11 +58,31 @@ message FocusPassagesResponse {
   HostWindowErrorCode error = 1;
 }
 
+// An OpenTab is a tab of the window as a plugin reads it.
+message OpenTab {
+  // Id is what the window calls this tab, which the active id names.
+  string id = 1;
+
+  // Kind is the registered name of the tab kind.
+  string kind = 2;
+
+  // Path is the file the tab holds, relative to the vault, and empty for a tab
+  // holding no file.
+  string path = 3;
+
+  // Title is what the tab is called, as the person reads it.
+  string title = 4;
+
+  // Place is the place the reader of the tab reported; unset for a tab whose
+  // kind reports none.
+  TabPlace place = 5;
+}
+
 message HostWindowServiceReadOpenTabsRequest {}
 
 message HostWindowServiceReadOpenTabsResponse {
   HostWindowErrorCode error = 1;
-  repeated Tab tabs = 2;
+  repeated OpenTab tabs = 2;
   string active_id = 3;
 }
 
@@ -72,6 +92,6 @@ message ActivateTabRequest {
 
 message ActivateTabResponse {
   HostWindowErrorCode error = 1;
-  Tab tab = 2;
+  OpenTab tab = 2;
   string active_id = 3;
 }

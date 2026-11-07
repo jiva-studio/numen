@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Tab } from "./workspace_pb.js";
+import type { TabPlace } from "./workspace_pb.js";
 import { file_numen_v1_workspace } from "./workspace_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostwindow.proto.
  */
 export const file_numen_v1_hostwindow: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiLAoLUGFzc2FnZVNwYW4SDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIk0KFEZvY3VzUGFzc2FnZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkSJwoIcGFzc2FnZXMYAiADKAsyFS5udW1lbi52MS5QYXNzYWdlU3BhbiJFChVGb2N1c1Bhc3NhZ2VzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlIiYKJEhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVxdWVzdCKFAQolSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RXaW5kb3dFcnJvckNvZGUSGwoEdGFicxgCIAMoCzINLm51bWVuLnYxLlRhYhIRCglhY3RpdmVfaWQYAyABKAkiJAoSQWN0aXZhdGVUYWJSZXF1ZXN0Eg4KBnRhYl9pZBgBIAEoCSJyChNBY3RpdmF0ZVRhYlJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFdpbmRvd0Vycm9yQ29kZRIaCgN0YWIYAiABKAsyDS5udW1lbi52MS5UYWISEQoJYWN0aXZlX2lkGAMgASgJKokBChNIb3N0V2luZG93RXJyb3JDb2RlEiYKIkhPU1RfV0lORE9XX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIkCiBIT1NUX1dJTkRPV19FUlJPUl9DT0RFX05PX1dJTkRPVxABEiQKIEhPU1RfV0lORE9XX0VSUk9SX0NPREVfTk9UX0ZPVU5EEAIy6AIKEUhvc3RXaW5kb3dTZXJ2aWNlEkQKCUZvY3VzTm90ZRIaLm51bWVuLnYxLkZvY3VzTm90ZVJlcXVlc3QaGy5udW1lbi52MS5Gb2N1c05vdGVSZXNwb25zZRJQCg1Gb2N1c1Bhc3NhZ2VzEh4ubnVtZW4udjEuRm9jdXNQYXNzYWdlc1JlcXVlc3QaHy5udW1lbi52MS5Gb2N1c1Bhc3NhZ2VzUmVzcG9uc2USbwoMUmVhZE9wZW5UYWJzEi4ubnVtZW4udjEuSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXF1ZXN0Gi8ubnVtZW4udjEuSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXNwb25zZRJKCgtBY3RpdmF0ZVRhYhIcLm51bWVuLnYxLkFjdGl2YXRlVGFiUmVxdWVzdBodLm51bWVuLnYxLkFjdGl2YXRlVGFiUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_workspace]);
+  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiLAoLUGFzc2FnZVNwYW4SDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIk0KFEZvY3VzUGFzc2FnZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkSJwoIcGFzc2FnZXMYAiADKAsyFS5udW1lbi52MS5QYXNzYWdlU3BhbiJFChVGb2N1c1Bhc3NhZ2VzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlImMKB09wZW5UYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEiEKBXBsYWNlGAUgASgLMhIubnVtZW4udjEuVGFiUGxhY2UiJgokSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXF1ZXN0IokBCiVIb3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1Jlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFdpbmRvd0Vycm9yQ29kZRIfCgR0YWJzGAIgAygLMhEubnVtZW4udjEuT3BlblRhYhIRCglhY3RpdmVfaWQYAyABKAkiJAoSQWN0aXZhdGVUYWJSZXF1ZXN0Eg4KBnRhYl9pZBgBIAEoCSJ2ChNBY3RpdmF0ZVRhYlJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFdpbmRvd0Vycm9yQ29kZRIeCgN0YWIYAiABKAsyES5udW1lbi52MS5PcGVuVGFiEhEKCWFjdGl2ZV9pZBgDIAEoCSqJAQoTSG9zdFdpbmRvd0Vycm9yQ29kZRImCiJIT1NUX1dJTkRPV19FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASJAogSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9OT19XSU5ET1cQARIkCiBIT1NUX1dJTkRPV19FUlJPUl9DT0RFX05PVF9GT1VORBACMugCChFIb3N0V2luZG93U2VydmljZRJECglGb2N1c05vdGUSGi5udW1lbi52MS5Gb2N1c05vdGVSZXF1ZXN0GhsubnVtZW4udjEuRm9jdXNOb3RlUmVzcG9uc2USUAoNRm9jdXNQYXNzYWdlcxIeLm51bWVuLnYxLkZvY3VzUGFzc2FnZXNSZXF1ZXN0Gh8ubnVtZW4udjEuRm9jdXNQYXNzYWdlc1Jlc3BvbnNlEm8KDFJlYWRPcGVuVGFicxIuLm51bWVuLnYxLkhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVxdWVzdBovLm51bWVuLnYxLkhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVzcG9uc2USSgoLQWN0aXZhdGVUYWISHC5udW1lbi52MS5BY3RpdmF0ZVRhYlJlcXVlc3QaHS5udW1lbi52MS5BY3RpdmF0ZVRhYlJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_workspace]);
 
 /**
  * @generated from message numen.v1.FocusNoteRequest
@@ -66,7 +66,7 @@ export const FocusNoteResponseSchema: GenMessage<FocusNoteResponse> = /*@__PURE_
   messageDesc(file_numen_v1_hostwindow, 1);
 
 /**
- * A PassageSpan is a byte range in a file's text version, as library_search returns it.
+ * A PassageSpan is a byte range in a file's text version, as a passage search returns it.
  *
  * @generated from message numen.v1.PassageSpan
  */
@@ -129,6 +129,57 @@ export const FocusPassagesResponseSchema: GenMessage<FocusPassagesResponse> = /*
   messageDesc(file_numen_v1_hostwindow, 4);
 
 /**
+ * An OpenTab is a tab of the window as a plugin reads it.
+ *
+ * @generated from message numen.v1.OpenTab
+ */
+export type OpenTab = Message<"numen.v1.OpenTab"> & {
+  /**
+   * Id is what the window calls this tab, which the active id names.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * Kind is the registered name of the tab kind.
+   *
+   * @generated from field: string kind = 2;
+   */
+  kind: string;
+
+  /**
+   * Path is the file the tab holds, relative to the vault, and empty for a tab
+   * holding no file.
+   *
+   * @generated from field: string path = 3;
+   */
+  path: string;
+
+  /**
+   * Title is what the tab is called, as the person reads it.
+   *
+   * @generated from field: string title = 4;
+   */
+  title: string;
+
+  /**
+   * Place is the place the reader of the tab reported; unset for a tab whose
+   * kind reports none.
+   *
+   * @generated from field: numen.v1.TabPlace place = 5;
+   */
+  place?: TabPlace | undefined;
+};
+
+/**
+ * Describes the message numen.v1.OpenTab.
+ * Use `create(OpenTabSchema)` to create a new message.
+ */
+export const OpenTabSchema: GenMessage<OpenTab> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostwindow, 5);
+
+/**
  * @generated from message numen.v1.HostWindowServiceReadOpenTabsRequest
  */
 export type HostWindowServiceReadOpenTabsRequest = Message<"numen.v1.HostWindowServiceReadOpenTabsRequest"> & {
@@ -139,7 +190,7 @@ export type HostWindowServiceReadOpenTabsRequest = Message<"numen.v1.HostWindowS
  * Use `create(HostWindowServiceReadOpenTabsRequestSchema)` to create a new message.
  */
 export const HostWindowServiceReadOpenTabsRequestSchema: GenMessage<HostWindowServiceReadOpenTabsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 5);
+  messageDesc(file_numen_v1_hostwindow, 6);
 
 /**
  * @generated from message numen.v1.HostWindowServiceReadOpenTabsResponse
@@ -151,9 +202,9 @@ export type HostWindowServiceReadOpenTabsResponse = Message<"numen.v1.HostWindow
   error: HostWindowErrorCode;
 
   /**
-   * @generated from field: repeated numen.v1.Tab tabs = 2;
+   * @generated from field: repeated numen.v1.OpenTab tabs = 2;
    */
-  tabs: Tab[];
+  tabs: OpenTab[];
 
   /**
    * @generated from field: string active_id = 3;
@@ -166,7 +217,7 @@ export type HostWindowServiceReadOpenTabsResponse = Message<"numen.v1.HostWindow
  * Use `create(HostWindowServiceReadOpenTabsResponseSchema)` to create a new message.
  */
 export const HostWindowServiceReadOpenTabsResponseSchema: GenMessage<HostWindowServiceReadOpenTabsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 6);
+  messageDesc(file_numen_v1_hostwindow, 7);
 
 /**
  * @generated from message numen.v1.ActivateTabRequest
@@ -183,7 +234,7 @@ export type ActivateTabRequest = Message<"numen.v1.ActivateTabRequest"> & {
  * Use `create(ActivateTabRequestSchema)` to create a new message.
  */
 export const ActivateTabRequestSchema: GenMessage<ActivateTabRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 7);
+  messageDesc(file_numen_v1_hostwindow, 8);
 
 /**
  * @generated from message numen.v1.ActivateTabResponse
@@ -195,9 +246,9 @@ export type ActivateTabResponse = Message<"numen.v1.ActivateTabResponse"> & {
   error: HostWindowErrorCode;
 
   /**
-   * @generated from field: numen.v1.Tab tab = 2;
+   * @generated from field: numen.v1.OpenTab tab = 2;
    */
-  tab?: Tab | undefined;
+  tab?: OpenTab | undefined;
 
   /**
    * @generated from field: string active_id = 3;
@@ -210,7 +261,7 @@ export type ActivateTabResponse = Message<"numen.v1.ActivateTabResponse"> & {
  * Use `create(ActivateTabResponseSchema)` to create a new message.
  */
 export const ActivateTabResponseSchema: GenMessage<ActivateTabResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 8);
+  messageDesc(file_numen_v1_hostwindow, 9);
 
 /**
  * HostWindowErrorCode is the reason a window call was not served. UNSPECIFIED means success.

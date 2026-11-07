@@ -501,8 +501,7 @@ type Tab struct {
 	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
 	// State is the JSON the plugin owning the kind saved for the tab, such as the
 	// place it shows. The core and the window store it unread; empty for a tab
-	// whose kind saves none. A plugin reading the tabs through the host receives
-	// it empty and reads the place instead.
+	// whose kind saves none.
 	State string `protobuf:"bytes,5,opt,name=state,proto3" json:"state,omitempty"`
 	// Place is the place the reader of the tab reported; unset for a tab whose
 	// kind reports none.

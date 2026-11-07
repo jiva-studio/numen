@@ -186,7 +186,7 @@ func (x *FocusNoteResponse) GetId() string {
 	return ""
 }
 
-// A PassageSpan is a byte range in a file's text version, as library_search returns it.
+// A PassageSpan is a byte range in a file's text version, as a passage search returns it.
 type PassageSpan struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Start         int32                  `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
@@ -335,6 +335,90 @@ func (x *FocusPassagesResponse) GetError() HostWindowErrorCode {
 	return HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED
 }
 
+// An OpenTab is a tab of the window as a plugin reads it.
+type OpenTab struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Id is what the window calls this tab, which the active id names.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Kind is the registered name of the tab kind.
+	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	// Path is the file the tab holds, relative to the vault, and empty for a tab
+	// holding no file.
+	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+	// Title is what the tab is called, as the person reads it.
+	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	// Place is the place the reader of the tab reported; unset for a tab whose
+	// kind reports none.
+	Place         *TabPlace `protobuf:"bytes,5,opt,name=place,proto3" json:"place,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenTab) Reset() {
+	*x = OpenTab{}
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenTab) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenTab) ProtoMessage() {}
+
+func (x *OpenTab) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenTab.ProtoReflect.Descriptor instead.
+func (*OpenTab) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *OpenTab) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *OpenTab) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *OpenTab) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *OpenTab) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *OpenTab) GetPlace() *TabPlace {
+	if x != nil {
+		return x.Place
+	}
+	return nil
+}
+
 type HostWindowServiceReadOpenTabsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -343,7 +427,7 @@ type HostWindowServiceReadOpenTabsRequest struct {
 
 func (x *HostWindowServiceReadOpenTabsRequest) Reset() {
 	*x = HostWindowServiceReadOpenTabsRequest{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[5]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -355,7 +439,7 @@ func (x *HostWindowServiceReadOpenTabsRequest) String() string {
 func (*HostWindowServiceReadOpenTabsRequest) ProtoMessage() {}
 
 func (x *HostWindowServiceReadOpenTabsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[5]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -368,13 +452,13 @@ func (x *HostWindowServiceReadOpenTabsRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use HostWindowServiceReadOpenTabsRequest.ProtoReflect.Descriptor instead.
 func (*HostWindowServiceReadOpenTabsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{6}
 }
 
 type HostWindowServiceReadOpenTabsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         HostWindowErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostWindowErrorCode" json:"error,omitempty"`
-	Tabs          []*Tab                 `protobuf:"bytes,2,rep,name=tabs,proto3" json:"tabs,omitempty"`
+	Tabs          []*OpenTab             `protobuf:"bytes,2,rep,name=tabs,proto3" json:"tabs,omitempty"`
 	ActiveId      string                 `protobuf:"bytes,3,opt,name=active_id,json=activeId,proto3" json:"active_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -382,7 +466,7 @@ type HostWindowServiceReadOpenTabsResponse struct {
 
 func (x *HostWindowServiceReadOpenTabsResponse) Reset() {
 	*x = HostWindowServiceReadOpenTabsResponse{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[6]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -394,7 +478,7 @@ func (x *HostWindowServiceReadOpenTabsResponse) String() string {
 func (*HostWindowServiceReadOpenTabsResponse) ProtoMessage() {}
 
 func (x *HostWindowServiceReadOpenTabsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[6]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -407,7 +491,7 @@ func (x *HostWindowServiceReadOpenTabsResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use HostWindowServiceReadOpenTabsResponse.ProtoReflect.Descriptor instead.
 func (*HostWindowServiceReadOpenTabsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *HostWindowServiceReadOpenTabsResponse) GetError() HostWindowErrorCode {
@@ -417,7 +501,7 @@ func (x *HostWindowServiceReadOpenTabsResponse) GetError() HostWindowErrorCode {
 	return HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *HostWindowServiceReadOpenTabsResponse) GetTabs() []*Tab {
+func (x *HostWindowServiceReadOpenTabsResponse) GetTabs() []*OpenTab {
 	if x != nil {
 		return x.Tabs
 	}
@@ -440,7 +524,7 @@ type ActivateTabRequest struct {
 
 func (x *ActivateTabRequest) Reset() {
 	*x = ActivateTabRequest{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[7]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -452,7 +536,7 @@ func (x *ActivateTabRequest) String() string {
 func (*ActivateTabRequest) ProtoMessage() {}
 
 func (x *ActivateTabRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[7]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -465,7 +549,7 @@ func (x *ActivateTabRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActivateTabRequest.ProtoReflect.Descriptor instead.
 func (*ActivateTabRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ActivateTabRequest) GetTabId() string {
@@ -478,7 +562,7 @@ func (x *ActivateTabRequest) GetTabId() string {
 type ActivateTabResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         HostWindowErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostWindowErrorCode" json:"error,omitempty"`
-	Tab           *Tab                   `protobuf:"bytes,2,opt,name=tab,proto3" json:"tab,omitempty"`
+	Tab           *OpenTab               `protobuf:"bytes,2,opt,name=tab,proto3" json:"tab,omitempty"`
 	ActiveId      string                 `protobuf:"bytes,3,opt,name=active_id,json=activeId,proto3" json:"active_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -486,7 +570,7 @@ type ActivateTabResponse struct {
 
 func (x *ActivateTabResponse) Reset() {
 	*x = ActivateTabResponse{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[8]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -498,7 +582,7 @@ func (x *ActivateTabResponse) String() string {
 func (*ActivateTabResponse) ProtoMessage() {}
 
 func (x *ActivateTabResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[8]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -511,7 +595,7 @@ func (x *ActivateTabResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActivateTabResponse.ProtoReflect.Descriptor instead.
 func (*ActivateTabResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ActivateTabResponse) GetError() HostWindowErrorCode {
@@ -521,7 +605,7 @@ func (x *ActivateTabResponse) GetError() HostWindowErrorCode {
 	return HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *ActivateTabResponse) GetTab() *Tab {
+func (x *ActivateTabResponse) GetTab() *OpenTab {
 	if x != nil {
 		return x.Tab
 	}
@@ -554,17 +638,23 @@ const file_numen_v1_hostwindow_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x121\n" +
 	"\bpassages\x18\x02 \x03(\v2\x15.numen.v1.PassageSpanR\bpassages\"L\n" +
 	"\x15FocusPassagesResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\"&\n" +
-	"$HostWindowServiceReadOpenTabsRequest\"\x9c\x01\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\"\x81\x01\n" +
+	"\aOpenTab\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
+	"\x05title\x18\x04 \x01(\tR\x05title\x12(\n" +
+	"\x05place\x18\x05 \x01(\v2\x12.numen.v1.TabPlaceR\x05place\"&\n" +
+	"$HostWindowServiceReadOpenTabsRequest\"\xa0\x01\n" +
 	"%HostWindowServiceReadOpenTabsResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12!\n" +
-	"\x04tabs\x18\x02 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x1b\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12%\n" +
+	"\x04tabs\x18\x02 \x03(\v2\x11.numen.v1.OpenTabR\x04tabs\x12\x1b\n" +
 	"\tactive_id\x18\x03 \x01(\tR\bactiveId\"+\n" +
 	"\x12ActivateTabRequest\x12\x15\n" +
-	"\x06tab_id\x18\x01 \x01(\tR\x05tabId\"\x88\x01\n" +
+	"\x06tab_id\x18\x01 \x01(\tR\x05tabId\"\x8c\x01\n" +
 	"\x13ActivateTabResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12\x1f\n" +
-	"\x03tab\x18\x02 \x01(\v2\r.numen.v1.TabR\x03tab\x12\x1b\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12#\n" +
+	"\x03tab\x18\x02 \x01(\v2\x11.numen.v1.OpenTabR\x03tab\x12\x1b\n" +
 	"\tactive_id\x18\x03 \x01(\tR\bactiveId*\x89\x01\n" +
 	"\x13HostWindowErrorCode\x12&\n" +
 	"\"HOST_WINDOW_ERROR_CODE_UNSPECIFIED\x10\x00\x12$\n" +
@@ -589,7 +679,7 @@ func file_numen_v1_hostwindow_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_hostwindow_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_hostwindow_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_numen_v1_hostwindow_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_hostwindow_proto_goTypes = []any{
 	(HostWindowErrorCode)(0),                      // 0: numen.v1.HostWindowErrorCode
 	(*FocusNoteRequest)(nil),                      // 1: numen.v1.FocusNoteRequest
@@ -597,33 +687,35 @@ var file_numen_v1_hostwindow_proto_goTypes = []any{
 	(*PassageSpan)(nil),                           // 3: numen.v1.PassageSpan
 	(*FocusPassagesRequest)(nil),                  // 4: numen.v1.FocusPassagesRequest
 	(*FocusPassagesResponse)(nil),                 // 5: numen.v1.FocusPassagesResponse
-	(*HostWindowServiceReadOpenTabsRequest)(nil),  // 6: numen.v1.HostWindowServiceReadOpenTabsRequest
-	(*HostWindowServiceReadOpenTabsResponse)(nil), // 7: numen.v1.HostWindowServiceReadOpenTabsResponse
-	(*ActivateTabRequest)(nil),                    // 8: numen.v1.ActivateTabRequest
-	(*ActivateTabResponse)(nil),                   // 9: numen.v1.ActivateTabResponse
-	(*Tab)(nil),                                   // 10: numen.v1.Tab
+	(*OpenTab)(nil),                               // 6: numen.v1.OpenTab
+	(*HostWindowServiceReadOpenTabsRequest)(nil),  // 7: numen.v1.HostWindowServiceReadOpenTabsRequest
+	(*HostWindowServiceReadOpenTabsResponse)(nil), // 8: numen.v1.HostWindowServiceReadOpenTabsResponse
+	(*ActivateTabRequest)(nil),                    // 9: numen.v1.ActivateTabRequest
+	(*ActivateTabResponse)(nil),                   // 10: numen.v1.ActivateTabResponse
+	(*TabPlace)(nil),                              // 11: numen.v1.TabPlace
 }
 var file_numen_v1_hostwindow_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.FocusNoteResponse.error:type_name -> numen.v1.HostWindowErrorCode
 	3,  // 1: numen.v1.FocusPassagesRequest.passages:type_name -> numen.v1.PassageSpan
 	0,  // 2: numen.v1.FocusPassagesResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	0,  // 3: numen.v1.HostWindowServiceReadOpenTabsResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	10, // 4: numen.v1.HostWindowServiceReadOpenTabsResponse.tabs:type_name -> numen.v1.Tab
-	0,  // 5: numen.v1.ActivateTabResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	10, // 6: numen.v1.ActivateTabResponse.tab:type_name -> numen.v1.Tab
-	1,  // 7: numen.v1.HostWindowService.FocusNote:input_type -> numen.v1.FocusNoteRequest
-	4,  // 8: numen.v1.HostWindowService.FocusPassages:input_type -> numen.v1.FocusPassagesRequest
-	6,  // 9: numen.v1.HostWindowService.ReadOpenTabs:input_type -> numen.v1.HostWindowServiceReadOpenTabsRequest
-	8,  // 10: numen.v1.HostWindowService.ActivateTab:input_type -> numen.v1.ActivateTabRequest
-	2,  // 11: numen.v1.HostWindowService.FocusNote:output_type -> numen.v1.FocusNoteResponse
-	5,  // 12: numen.v1.HostWindowService.FocusPassages:output_type -> numen.v1.FocusPassagesResponse
-	7,  // 13: numen.v1.HostWindowService.ReadOpenTabs:output_type -> numen.v1.HostWindowServiceReadOpenTabsResponse
-	9,  // 14: numen.v1.HostWindowService.ActivateTab:output_type -> numen.v1.ActivateTabResponse
-	11, // [11:15] is the sub-list for method output_type
-	7,  // [7:11] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	11, // 3: numen.v1.OpenTab.place:type_name -> numen.v1.TabPlace
+	0,  // 4: numen.v1.HostWindowServiceReadOpenTabsResponse.error:type_name -> numen.v1.HostWindowErrorCode
+	6,  // 5: numen.v1.HostWindowServiceReadOpenTabsResponse.tabs:type_name -> numen.v1.OpenTab
+	0,  // 6: numen.v1.ActivateTabResponse.error:type_name -> numen.v1.HostWindowErrorCode
+	6,  // 7: numen.v1.ActivateTabResponse.tab:type_name -> numen.v1.OpenTab
+	1,  // 8: numen.v1.HostWindowService.FocusNote:input_type -> numen.v1.FocusNoteRequest
+	4,  // 9: numen.v1.HostWindowService.FocusPassages:input_type -> numen.v1.FocusPassagesRequest
+	7,  // 10: numen.v1.HostWindowService.ReadOpenTabs:input_type -> numen.v1.HostWindowServiceReadOpenTabsRequest
+	9,  // 11: numen.v1.HostWindowService.ActivateTab:input_type -> numen.v1.ActivateTabRequest
+	2,  // 12: numen.v1.HostWindowService.FocusNote:output_type -> numen.v1.FocusNoteResponse
+	5,  // 13: numen.v1.HostWindowService.FocusPassages:output_type -> numen.v1.FocusPassagesResponse
+	8,  // 14: numen.v1.HostWindowService.ReadOpenTabs:output_type -> numen.v1.HostWindowServiceReadOpenTabsResponse
+	10, // 15: numen.v1.HostWindowService.ActivateTab:output_type -> numen.v1.ActivateTabResponse
+	12, // [12:16] is the sub-list for method output_type
+	8,  // [8:12] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostwindow_proto_init() }
@@ -638,7 +730,7 @@ func file_numen_v1_hostwindow_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostwindow_proto_rawDesc), len(file_numen_v1_hostwindow_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

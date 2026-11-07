@@ -241,8 +241,7 @@ export type Tab = Message<"numen.v1.Tab"> & {
   /**
    * State is the JSON the plugin owning the kind saved for the tab, such as the
    * place it shows. The core and the window store it unread; empty for a tab
-   * whose kind saves none. A plugin reading the tabs through the host receives
-   * it empty and reads the place instead.
+   * whose kind saves none.
    *
    * @generated from field: string state = 5;
    */

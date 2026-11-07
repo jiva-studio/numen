@@ -113,7 +113,7 @@ func (e *windowEndpoint) ReadOpenTabs(
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.HostWindowServiceReadOpenTabsResponse{Error: code}), err
 	}
-	tabs := make([]*v1.Tab, 0, len(open.Tabs))
+	tabs := make([]*v1.OpenTab, 0, len(open.Tabs))
 	for _, tab := range open.Tabs {
 		tabs = append(tabs, convertTabToWire(tab))
 	}
@@ -146,10 +146,10 @@ func (e *windowEndpoint) ActivateTab(
 	}), nil
 }
 
-// convertTabToWire returns the tab as a plugin reads it: with the place its reader reported and
-// without the state its kind saved, which is private to the plugin of the kind.
-func convertTabToWire(tab domain.Tab) *v1.Tab {
-	out := &v1.Tab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title}
+// convertTabToWire returns the tab as a plugin reads it: with the place its reader reported. The
+// state its kind saved is private to the plugin of the kind and is not sent.
+func convertTabToWire(tab domain.Tab) *v1.OpenTab {
+	out := &v1.OpenTab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title}
 	if place := tab.Place; place != nil {
 		out.Place = &v1.TabPlace{
 			Page:            clampToInt32(place.Page),
