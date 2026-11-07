@@ -155,7 +155,9 @@ func newFrontend(wire *v1.ManifestFrontend) *manifest.Frontend {
 func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) {
 	var kinds []manifest.TabKind
 	for _, one := range wire.GetTabKinds() {
-		kinds = append(kinds, manifest.TabKind{Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon()})
+		kinds = append(kinds, manifest.TabKind{
+			Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon(), When: one.GetWhen(), Rank: newTabKindRank(one.GetRank()),
+		})
 	}
 	var themes []manifest.Theme
 	for _, one := range wire.GetThemes() {

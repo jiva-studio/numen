@@ -24,6 +24,7 @@ import type { NoteCreator } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { Task } from '@/shared/notices/task'
 import type { NotePort } from '@/app/ports/notes'
+import type { FilePort } from '@/app/ports/files'
 import type { useSettings } from '../window/useSettings'
 import { createIconHost, type IconHostDeps } from './fileServices'
 import type { PluginNotes } from './pluginNotes'
@@ -115,7 +116,7 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
 
 /** What the notes of the vault are read and written through. */
 export interface VaultNotesDeps {
-  readonly core: Pick<NotePort, 'neighbourhood' | 'headings'>
+  readonly core: Pick<NotePort, 'neighbourhood' | 'headings'> & Pick<FilePort, 'fileKinds'>
   readonly search: Pick<SearchDeps, 'names'>
   readonly making: NoteCreator
   readonly pluginNotes: PluginNotes
@@ -138,6 +139,7 @@ export function createVaultNotes({
     createUntitledNote: () => making.createUntitled(''),
     read: (path) => pluginNotes.readNote(path),
     write: (path, body) => pluginNotes.writeNote(path, body),
+    readProperties: async (path) => (await core.fileKinds([path])).get(path)?.properties ?? {},
   }
 }
 

@@ -85,6 +85,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     createUntitledNote: async () => 'Untitled.md',
     read: async () => ({ body: '' }),
     write: async () => undefined,
+    readProperties: async () => ({}),
   }
 
   const relations: VaultRelations = {

@@ -41,7 +41,7 @@ const everyFieldManifest = `{
 		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false},
 			{"name": "m", "title": "M", "type": "number", "required": true}],
 		"shortcut": "mod+shift+r"}],
-		"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views",
+		"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge", "when": "target.noteType == 'full'", "rank": "alternate"}], "feature": "full tabs", "category": "views",
 		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
 		"handlers": [{"command": "app:file.createText", "title": "Transcribe", "when": "target.contentType.startsWith('audio/')"}],
 		"triggers": [{"on": "file.added", "command": "app:file.createText", "when": "config.org.example.full.mode == 'a'"}],

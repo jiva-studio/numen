@@ -6,7 +6,7 @@ Cleans up spelling, punctuation, and recognition errors in audio transcripts and
 
 ## What You Can Do
 
-- **Fix transcription and OCR mistakes**: Click **Proofread** in the Media Player or right-click a transcribed recording or recognized PDF in the sidebar to produce a clean, readable version.
+- **Fix transcription and OCR mistakes**: Click **Proofread** in the Media Viewer or right-click a transcribed recording or recognized PDF in the sidebar to produce a clean, readable version.
 - **Keep the original versions**: Proofreading creates a new text version alongside the original transcript or scan recognition, so you can switch back and forth at any time.
 
 ## Settings

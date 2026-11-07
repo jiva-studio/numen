@@ -94,6 +94,11 @@ message FileKind {
   // The frontmatter of the note by its keys, which when conditions read as
   // target.properties. Empty for a path holding no note.
   google.protobuf.Struct properties = 6;
+
+  // The kind of tab the note opens in: of the tab kinds of the enabled plugins whose when condition
+  // holds over the note, the one chosen as a reader is. Empty where none holds, and for a path
+  // holding no note.
+  string tab_kind = 7;
 }
 
 message MoveFileRequest {

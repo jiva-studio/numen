@@ -1,6 +1,6 @@
 # Importing an address
 
-A person pastes an address into the palette and gets a link: a note of type `link` that holds the address. The Media Importer plugin (`tools-media-importer`) fetches what is published there into a text version of the note, copies a video to play from this disk, and opens the note in its tab. The core has no special handling for links; it knows only the note types, text versions and copies that plugins register.
+A person pastes an address into the palette and gets a link: a note of type `link` that holds the address. The Media Importer plugin (`tools-media-importer`) fetches what is published there into a text version of the note, and copies a video to play from this disk. The note opens in the Media Viewer (`views-media-viewer`), whose tab kind takes notes of type `link` and notes with `media`. The core has no special handling for links; it knows only the note types, text versions and copies that plugins register.
 
 ## The gesture
 
@@ -14,7 +14,7 @@ url: https://www.youtube.com/watch?v=A4OZ4L9TCpM
 ---
 ```
 
-The plugin does not manage what a person writes below the frontmatter; the tab shows the address, the copy and the text.
+The plugin does not manage what a person writes below the frontmatter; the viewer shows the copy, or the site's player, and the text.
 
 At the command line the same run is `numen-cli app:link.import <vault> --address <url>`. Over a link note, `numen-cli app:file.createText <vault> <note>` fetches the text, `app:link.downloadMedia` downloads the video and `app:link.deleteMedia` removes it; the plugin handles these shared commands over notes of type `link`.
 
@@ -27,7 +27,7 @@ An address dragged out of a browser onto the files tree is the same gesture: the
 | a video somebody published captions for | the captions, one segment each, with `t` in the selector (`transcript`) |
 | anything else                           | the prose the page is written around (`article`)                        |
 
-The plugin fetches the text when it makes the link, and when the link's tab opens on a link that has none. A run of `app:file.createText` fetches the text whoever started it, a person or the plugin's `file.added` trigger (setting `downloadCaptionsAutomatically`). Deleting the text version through the file's menu keeps the text deleted: the tab shows this, and **Download text again** in the tab or **Create text** fetches it again.
+The plugin fetches the text when it makes the link. A run of `app:file.createText` (**Download captions**) fetches the text whoever started it, a person or the plugin's `file.added` trigger (setting `downloadCaptionsAutomatically`). Deleting the text version through the file's menu keeps the text deleted until **Download captions** fetches it again.
 
 Everything is kept in the plugin's folder of the vault's store, `.numen/md.numen.tools.media.importer/`. The text is kept under the hash of the address, `<key>`, and the copy under the content hash of the note, `<hash>`:
 
@@ -47,7 +47,7 @@ The text version is the link's text, split into passages as any source's text is
 
 Importing an address (`app:link.import`) makes the link note and nothing else. **Download media** (`app:link.downloadMedia`) offers the video of a link whose address publishes one, and downloads it, up to the size `copyMaxSizeMb` sets, into the plugin's folder of the vault's store, through the core's queue and shown as a task; nothing downloaded goes into the vault. The plugin writes the address of the download into the note as `media: plugin://md.numen.tools.media.importer/<key>.mp4`, and of the page that frames the player as `page:`, which `resolveAddress` turns into the address the window plays or frames it from. **Delete media** (`app:link.deleteMedia`) deletes the download and takes `media` out of the note. **Download captions** (`app:file.createText`) fetches the text of a link note; with the setting `automaticCaptions` on, it runs when a link note is added.
 
-While no media are downloaded, the tab frames the site's player. The plugin declares `contributes.frameOrigins: ["https://www.youtube-nocookie.com"]` and writes a page that frames the player into its folder of the vault's store when it makes the link note, at the address the note holds under `page`. The tab loads that page from the window's loopback socket (`resolveAddress`), not from the window's own scheme: a page of a scheme that is not http sends no Referer, and the site refuses to play for a page that sends none. The loopback page is served with `Referrer-Policy: strict-origin-when-cross-origin`.
+While no media are downloaded, the Media Viewer frames the site's player. The plugin declares `contributes.frameOrigins: ["https://www.youtube-nocookie.com"]` and writes a page that frames the player into its folder of the vault's store when it makes the link note, at the address the note holds under `page`. The viewer loads that page from the window's loopback socket (`resolveAddress`), not from the window's own scheme: a page of a scheme that is not http sends no Referer, and the site refuses to play for a page that sends none. The loopback page is served with `Referrer-Policy: strict-origin-when-cross-origin`.
 
 ## The tools
 

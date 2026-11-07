@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/when"
 )
 
 var (
@@ -24,6 +27,11 @@ type TabKind struct {
 	Title string
 	// Icon is the kebab-case name of an icon of the application's icon set. Empty is a kind without one.
 	Icon string
+	// When is the condition over a note under which the note opens in a tab of this kind. Empty opens
+	// no note.
+	When string
+	// Rank orders the kinds whose condition holds over a note: a default kind before an alternate one.
+	Rank domain.HandlerRank
 }
 
 // Contributes is what a plugin adds to the application, known before the frontend of the plugin is loaded.
@@ -116,7 +124,8 @@ func (m Manifest) listFrontendIssues() []error {
 	return issues
 }
 
-// listTabKindIssues checks that each kind of tab has a unique id and a title and an icon written as the application names it.
+// listTabKindIssues checks that each kind of tab has a unique id, a title, an icon written as the application
+// names it, a rank and a condition that can be read.
 func listTabKindIssues(kinds []TabKind) []error {
 	var issues []error
 	observed := map[string]bool{}
@@ -133,6 +142,12 @@ func listTabKindIssues(kinds []TabKind) []error {
 		}
 		if declared.Icon != "" && !iconNamePattern.MatchString(declared.Icon) {
 			issues = append(issues, fmt.Errorf("%w: tab kind %q has icon %q, which is not lowercase words joined by hyphens", ErrInvalidContribution, declared.Kind, declared.Icon))
+		}
+		if !declared.Rank.IsValid() {
+			issues = append(issues, fmt.Errorf("%w: tab kind %q has rank %q, expected %q or %q", ErrInvalidContribution, declared.Kind, declared.Rank, domain.RankDefault, domain.RankAlternate))
+		}
+		if _, err := when.Parse(declared.When); err != nil {
+			issues = append(issues, fmt.Errorf("%w: tab kind %q: when: %w", ErrInvalidContribution, declared.Kind, err))
 		}
 	}
 	return issues

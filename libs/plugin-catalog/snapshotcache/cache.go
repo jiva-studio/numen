@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
@@ -145,7 +146,7 @@ func newEntryFile(entry catalog.Entry) entryFile {
 func newEntry(stored entryFile) catalog.Entry {
 	var kinds []manifest.TabKind
 	for _, kind := range stored.TabKinds {
-		kinds = append(kinds, manifest.TabKind{Kind: kind.Kind, Title: kind.Title, Icon: kind.Icon})
+		kinds = append(kinds, manifest.TabKind{Kind: kind.Kind, Title: kind.Title, Icon: kind.Icon, When: "", Rank: domain.RankDefault})
 	}
 	return catalog.Entry{
 		ID:              stored.ID,

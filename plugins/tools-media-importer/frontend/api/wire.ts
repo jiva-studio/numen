@@ -1,18 +1,10 @@
 /**
- * Wire adapter for the plugin's importer service, the addresses the window resolves and the plugin's tasks.
+ * Wire adapter for the plugin's importer service.
  */
-import {
-  createApi,
-  resolveAddress,
-  type ApiError,
-  type Result,
-  type TaskHost,
-  UNAVAILABLE,
-} from '@numen/plugin-sdk'
+import { createApi, type ApiError, type Result, UNAVAILABLE } from '@numen/plugin-sdk'
 import type { Links, Outcome } from '../types'
 import { WORDS as words } from '../words'
 import { ErrorCode, SERVICE, type Methods } from './importer'
-import { createWorkWatcher } from './work'
 
 /** The id the manifest declares the plugin under. */
 export const PLUGIN_ID = 'md.numen.tools.media.importer'
@@ -21,13 +13,6 @@ const BUSY_ATTEMPTS = 5
 const BUSY_DELAY_MS = 1000
 
 const api = createApi(SERVICE)
-
-let taskHost: TaskHost | undefined
-
-/** Sets the task host the plugin was activated with. */
-export const setTaskHost = (host: TaskHost | undefined) => {
-  taskHost = host
-}
 
 /** The message displayed to the user for a method failure. */
 export const describeError = (error: ApiError): string => {
@@ -63,35 +48,13 @@ const callWhileBusy = async <M extends keyof Methods>(
 const readOutcome = (result: Result<unknown, ApiError>): Outcome<null> =>
   result.ok ? { ok: true, value: null } : { ok: false, error: describeError(result.error) }
 
-// Without a task host there is nothing to unsubscribe.
-const work = createWorkWatcher(
-  (onTasks) => taskHost?.watch(onTasks) ?? { dispose: () => undefined },
-)
-
-/** Notifies open tabs on the named paths to reload their link. */
-export const refreshLinks = (paths: readonly string[]): void => {
-  work.refresh(paths)
-}
-
 export const links: Links = {
   getLink: async (path) => {
     const result = await callWhileBusy('GetLink', { path })
     if (!result.ok) return { ok: false, error: describeError(result.error) }
     return { ok: true, value: result.value }
   },
-  readArticle: async (path) => {
-    const result = await callWhileBusy('ReadArticle', { path })
-    if (!result.ok) throw new Error(result.error.message)
-    return result.value.text
-  },
-  getSource: async (address) => {
-    const source = await resolveAddress(address)
-    return { mediaUrl: source.url, mediaType: source.mediaType }
-  },
-  fetchText: async (path) => readOutcome(await call('FetchText', { path })),
   copyMedia: async (path, kind) => readOutcome(await call('CopyMedia', { path, kind })),
-  deleteCopy: async (path) => readOutcome(await call('DeleteCopy', { path })),
-  watchWork: (path, onChange) => work.watch(path, onChange),
 }
 
 /** Creates a link note of each web address in the folder; returns the paths of the notes. */

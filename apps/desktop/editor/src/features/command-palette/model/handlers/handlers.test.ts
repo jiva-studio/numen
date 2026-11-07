@@ -120,11 +120,6 @@ const window = (
       openFile: (path, title, showing) => {
         isDone.push(`openFile ${path} ${title} ${showing}`)
       },
-      openNewFile: (path, title, options) => {
-        const type = typeof options === 'string' ? options : options.type
-        const showing = typeof options === 'object' ? options.where : undefined
-        isDone.push(`openNewFile ${type} ${path} ${title} ${showing}`)
-      },
     },
     vaults: {
       list: async () => ({ vaults: [createVault('physics', 'Physics')], showing: 'physics' }),
@@ -327,7 +322,7 @@ describe('a note made', () => {
       one.on,
     )
 
-    expect(one.actions.at(-1)).toBe('openNewFile note Entropy.md Entropy split')
+    expect(one.actions.at(-1)).toBe('openFile Entropy.md Entropy split')
   })
 
   it('takes the person nowhere where the vault would not make it', async () => {
@@ -949,7 +944,7 @@ describe('the open files a command reaches', () => {
     return {
       actions: isDone,
       done: isDone,
-      notes: createNotes(stores, { openFile: vi.fn(), openNewFile: vi.fn() }),
+      notes: createNotes(stores, { openFile: vi.fn() }),
     }
   }
 

@@ -41,7 +41,7 @@ The version is stored after every batch, so the core splits the transcript into 
 
 ## An edit
 
-The transcript under the player is edited in place. The player saves the edit through the plugin SDK, and the core writes it as a new version made from the version shown, in the player's own folder `.numen/md.numen.views.media.player/`; it is the one shown from then on. Each save is a new version. Deleting the edit from the recording's menu restores the version it was made from.
+The transcript under the player is edited in place. The player saves the edit through the plugin SDK, and the core writes it as a new version made from the version shown, in the player's own folder `.numen/md.numen.views.media.viewer/`; it is the one shown from then on. Each save is a new version. Deleting the edit from the recording's menu restores the version it was made from.
 
 ## Deleting a transcript
 

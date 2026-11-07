@@ -144,6 +144,12 @@ message ManifestTabKind {
   string title = 2;
   // icon is the kebab-case name of an icon of the application's icon set.
   string icon = 3;
+  // when is the CEL condition over a note, such as "target.noteType == 'deck'", under which the note
+  // opens in a tab of this kind. Empty opens no note.
+  string when = 4;
+  // rank is default or alternate, as a reader's: among the kinds whose condition holds over a note,
+  // a default kind is chosen before an alternate one. Empty is default.
+  string rank = 5;
 }
 
 message ManifestDependency {

@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -84,6 +85,15 @@ func (c Config) GetPluginCommands() plugincommand.Commands {
 		return plugincommand.NewCommands(nil, nil, nil)
 	}
 	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost), c.PluginHost, c.VaultReaders())
+}
+
+// GetTabKindChoice is the choice of the kind of tab a note opens in, over the tab kinds of the enabled
+// plugins. Where there is no plugin host it chooses none.
+func (c Config) GetTabKindChoice() *tabkind.Choose {
+	if c.PluginHost == nil {
+		return tabkind.NewChoose(nil, nil)
+	}
+	return tabkind.NewChoose(commandbridge.Open(c.PluginHost), c.PluginHost)
 }
 
 // OpenPluginCommands opens the index of the vault and lets the plugins work it, its text versions

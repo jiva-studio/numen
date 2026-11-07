@@ -22,10 +22,7 @@ func mountAPI(s *server.Server, links *link.Links) error {
 	service := linkServer{links: links}
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetLink, service.getLink)
-	server.Handle(a, api.MethodReadArticle, service.readArticle)
-	server.Handle(a, api.MethodFetchText, service.fetchText)
 	server.Handle(a, api.MethodCopyMedia, service.copyMedia)
-	server.Handle(a, api.MethodDeleteCopy, service.deleteCopy)
 	server.Handle(a, api.MethodCreateLinks, service.createLinks)
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="compile-time API service and method constants are valid so a.Err() is always nil"
 	return a.Err()
@@ -70,27 +67,6 @@ func (s linkServer) getLink(ctx context.Context, req api.GetLinkRequest) (api.Ge
 	}, nil
 }
 
-func (s linkServer) readArticle(ctx context.Context, req api.ReadArticleRequest) (api.ReadArticleResponse, error) {
-	found, err := s.readLink(ctx, req.Path)
-	if err != nil {
-		return api.ReadArticleResponse{}, err
-	}
-	text, err := s.links.ReadArticle(ctx, found)
-	if err != nil {
-		return api.ReadArticleResponse{}, err
-	}
-	return api.ReadArticleResponse{Text: text}, nil
-}
-
-func (s linkServer) fetchText(ctx context.Context, req api.FetchTextRequest) (api.FetchTextResponse, error) {
-	found, err := s.readLink(ctx, req.Path)
-	if err != nil {
-		return api.FetchTextResponse{}, err
-	}
-	s.links.StartFetchText(ctx, found)
-	return api.FetchTextResponse{}, nil
-}
-
 func (s linkServer) copyMedia(ctx context.Context, req api.CopyMediaRequest) (api.CopyMediaResponse, error) {
 	found, err := s.readLink(ctx, req.Path)
 	if err != nil {
@@ -102,17 +78,6 @@ func (s linkServer) copyMedia(ctx context.Context, req api.CopyMediaRequest) (ap
 	}
 	s.links.StartCopy(ctx, found, media)
 	return api.CopyMediaResponse{}, nil
-}
-
-func (s linkServer) deleteCopy(ctx context.Context, req api.DeleteCopyRequest) (api.DeleteCopyResponse, error) {
-	found, err := s.readLink(ctx, req.Path)
-	if err != nil {
-		return api.DeleteCopyResponse{}, err
-	}
-	if err := s.links.DeleteCopy(ctx, found); err != nil {
-		return api.DeleteCopyResponse{}, err
-	}
-	return api.DeleteCopyResponse{}, nil
 }
 
 // createLinks creates a link note of each web address in the folder and starts fetching what is

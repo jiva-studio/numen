@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
@@ -32,6 +33,24 @@ func TestAManifestDeclaresTheTabsFeatureAndCategoryOfThePlugin(t *testing.T) {
 	}
 }
 
+func TestATabKindDeclaresTheNotesItOpensAndItsRank(t *testing.T) {
+	m, err := manifestjson.Read(strings.NewReader(contributesHead + `,"contributes":{"tabKinds":[
+		{"kind":"deck","title":"Deck","when":"target.noteType == 'deck'"},
+		{"kind":"note","title":"Note","when":"target.isNote","rank":"alternate"}]}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	deck, _ := m.Contributes.GetTabKind("deck")
+	note, _ := m.Contributes.GetTabKind("note")
+	if deck.When != "target.noteType == 'deck'" || deck.Rank != domain.RankDefault {
+		t.Errorf("the deck kind = %+v, want its condition and the default rank", deck)
+	}
+	if note.When != "target.isNote" || note.Rank != domain.RankAlternate {
+		t.Errorf("the note kind = %+v, want its condition and the alternate rank", note)
+	}
+}
+
 func TestAContributionThatTheApplicationCannotUseIsRefused(t *testing.T) {
 	cases := map[string]string{
 		"a kind in capitals":    `{"tabKinds":[{"kind":"Plex","title":"P"}]}`,
@@ -39,6 +58,8 @@ func TestAContributionThatTheApplicationCannotUseIsRefused(t *testing.T) {
 		"a kind declared twice": `{"tabKinds":[{"kind":"plex","title":"P"},{"kind":"plex","title":"Q"}]}`,
 		"a kind with no title":  `{"tabKinds":[{"kind":"plex","title":" "}]}`,
 		"an icon in capitals":   `{"tabKinds":[{"kind":"plex","title":"P","icon":"Waypoints"}]}`,
+		"an unreadable when":    `{"tabKinds":[{"kind":"plex","title":"P","when":"target.isRemote"}]}`,
+		"an unknown rank":       `{"tabKinds":[{"kind":"plex","title":"P","rank":"first"}]}`,
 		"a category with space": `{"category":"my views"}`,
 		"a padded feature":      `{"feature":" plex "}`,
 	}
