@@ -110,7 +110,7 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 	}
 
 	s.vault = "unknown-vault"
-	if got := getToolError(t, s, "card_read", map[string]any{"path": "Animals.md"}); got != "the agent vault is not registered in this installation" {
+	if got := getToolError(t, s, "card_read", map[string]any{"path": "Animals.md"}); got != "card_read: the agent vault is not registered in this installation" {
 		t.Errorf("a call naming an unknown vault answered %q", got)
 	}
 
@@ -125,7 +125,7 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 		"card_model_create": {"title": "M", "fields": []string{"Name"}, "templates": []any{}},
 		"card_field_rename": {"path": "Animal.md", "from": "Name", "to": "Species"},
 	} {
-		if got := getToolError(t, s, toolName, args); got != "the call names no vault" {
+		if got := getToolError(t, s, toolName, args); got != toolName+": the call names no vault" {
 			t.Errorf("%s naming no vault answered %q", toolName, got)
 		}
 	}
@@ -137,8 +137,8 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 		t.Fatal(err)
 	}
 	errSession := &session{registry: errReg, vault: garden.ID}
-	if got := getToolError(t, errSession, "card_read", map[string]any{"path": "Animals.md"}); got != "transport down" {
-		t.Errorf("got %q, want transport down", got)
+	if got := getToolError(t, errSession, "card_read", map[string]any{"path": "Animals.md"}); got != "card_read: transport down" {
+		t.Errorf("got %q, want card_read: transport down", got)
 	}
 	fv.getVaultErr = nil
 	fv.opErr = errors.New("io down")

@@ -144,14 +144,14 @@ func (p plugins) getPermissions(pluginID string) []string {
 	return nil
 }
 
-// listToolsFor returns the tools offered on the server for which the caller has all required
-// permissions. The caller's own tools are listed too.
+// listToolsFor returns the tools offered on the server for which the caller has the effect permission
+// and all required permissions. The caller's own tools are listed too.
 func (p plugins) listToolsFor(ctx context.Context, server Server, callerID string) []tool {
 	permissions := p.getPermissions(callerID)
 	all := p.listTools(ctx, server, "")
 	required := make([]tool, 0, len(all))
 	for _, one := range all {
-		if hasAll(permissions, one.spec.GetRequires()) {
+		if hasPermission(permissions, one.spec.GetEffect()) && hasAll(permissions, one.spec.GetRequires()) {
 			required = append(required, one)
 		}
 	}

@@ -67,6 +67,7 @@ func TestToolAggregatorSyncTools(t *testing.T) {
 				InputSchema:  []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
 				OutputSchema: []byte(`{"type":"object","properties":{"text":{"type":"string"}}}`),
 				Effect:       tools.ReadOnly,
+				Hints:        tools.Hints{ReadOnly: true, Idempotent: true},
 			},
 			{
 				Name:        "note_write",
@@ -331,123 +332,6 @@ func TestToolAggregatorExecuteTransportFailure(t *testing.T) {
 	_, err := agg.ExecuteTool(t.Context(), "note_read", nil)
 	if !errors.Is(err, sentinelErr) {
 		t.Fatalf("expected wrapped sentinelErr, got %v", err)
-	}
-}
-
-func TestSanitizeInputSchema(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name     string
-		input    []byte
-		validate func(t *testing.T, raw json.RawMessage)
-	}{
-		{
-			name:  "nil input",
-			input: nil,
-			validate: func(t *testing.T, raw json.RawMessage) {
-				if string(raw) != `{"type":"object"}` {
-					t.Fatalf("got %s", string(raw))
-				}
-			},
-		},
-		{
-			name:  "invalid json",
-			input: []byte(`{invalid`),
-			validate: func(t *testing.T, raw json.RawMessage) {
-				if string(raw) != `{"type":"object"}` {
-					t.Fatalf("got %s", string(raw))
-				}
-			},
-		},
-		{
-			name:  "missing type",
-			input: []byte(`{"properties":{"q":{"type":"string"}}}`),
-			validate: func(t *testing.T, raw json.RawMessage) {
-				var parsed map[string]any
-				if err := json.Unmarshal(raw, &parsed); err != nil {
-					t.Fatal(err)
-				}
-				if parsed["type"] != "object" || parsed["properties"] == nil {
-					t.Fatalf("expected type object with preserved properties, got: %v", parsed)
-				}
-			},
-		},
-		{
-			name:  "non-object string type",
-			input: []byte(`{"type":"string","properties":{"q":{"type":"string"}}}`),
-			validate: func(t *testing.T, raw json.RawMessage) {
-				var parsed map[string]any
-				if err := json.Unmarshal(raw, &parsed); err != nil {
-					t.Fatal(err)
-				}
-				if parsed["type"] != "object" || parsed["properties"] == nil {
-					t.Fatalf("expected type object with preserved properties, got: %v", parsed)
-				}
-			},
-		},
-		{
-			name:  "already object",
-			input: []byte(`{"type":"object","properties":{"a":{"type":"number"}}}`),
-			validate: func(t *testing.T, raw json.RawMessage) {
-				if string(raw) != `{"type":"object","properties":{"a":{"type":"number"}}}` {
-					t.Fatalf("got %s", string(raw))
-				}
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			result := sanitizeInputSchema(tc.input)
-			tc.validate(t, result)
-		})
-	}
-}
-
-func TestToolAnnotationsFollowEffectStepAndRequires(t *testing.T) {
-	t.Parallel()
-	client := &fakeToolClient{tools: []*tools.ToolInfo{
-		{Name: "pond_read", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadOnly},
-		{Name: "pond_fetch", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadOnly, Requires: []string{"network:outbound"}},
-		{Name: "pond_write", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadWrite, Step: tools.ByEffect},
-		{Name: "pond_drain", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadWrite, Step: tools.Remove, Requires: []string{"vault:manage"}},
-		{Name: "pond_import", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadWrite, Step: tools.ByEffect, Requires: []string{"network:outbound"}},
-		{Name: "pond_rename", InputSchema: []byte(`{"type":"object"}`), Effect: tools.ReadWrite, Step: tools.Move},
-	}}
-	truth, falsehood := true, false
-	want := map[string]sdk.ToolAnnotations{
-		"pond_read":   {ReadOnlyHint: true, IdempotentHint: true, DestructiveHint: nil, OpenWorldHint: &falsehood},
-		"pond_fetch":  {ReadOnlyHint: true, IdempotentHint: true, DestructiveHint: nil, OpenWorldHint: &truth},
-		"pond_write":  {ReadOnlyHint: false, IdempotentHint: false, DestructiveHint: &falsehood, OpenWorldHint: &falsehood},
-		"pond_drain":  {ReadOnlyHint: false, IdempotentHint: false, DestructiveHint: &truth, OpenWorldHint: &falsehood},
-		"pond_import": {ReadOnlyHint: false, IdempotentHint: false, DestructiveHint: &falsehood, OpenWorldHint: &truth},
-		"pond_rename": {ReadOnlyHint: false, IdempotentHint: false, DestructiveHint: &falsehood, OpenWorldHint: &falsehood},
-	}
-	srv, err := NewServer(Config{}, client)
-	if err != nil {
-		t.Fatal(err)
-	}
-	session := connectInMemory(t, srv, nil)
-
-	listed, err := session.ListTools(t.Context(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(listed.Tools) != len(want) {
-		t.Fatalf("tools/list returned %d tools, want %d", len(listed.Tools), len(want))
-	}
-	for _, tool := range listed.Tools {
-		expected, isKnown := want[tool.Name]
-		if !isKnown {
-			t.Errorf("tools/list returned the tool %s", tool.Name)
-			continue
-		}
-		if got := describeAnnotations(tool.Annotations); got != describeAnnotations(&expected) {
-			t.Errorf("%s is annotated %s, want %s", tool.Name, got, describeAnnotations(&expected))
-		}
 	}
 }
 

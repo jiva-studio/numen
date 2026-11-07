@@ -139,42 +139,29 @@ func (a *ToolAggregator) updateTools(declared map[string]*sdk.Tool) {
 	}
 }
 
-// createTool creates the MCP declaration of a host tool.
+// createTool creates the MCP declaration of a host tool. The annotations are the hints of the tool.
 func createTool(wireTool *tools.ToolInfo) *sdk.Tool {
+	hints := wireTool.GetHints()
 	tool := &sdk.Tool{
 		Meta:         nil,
 		Name:         wireTool.GetName(),
 		Title:        wireTool.GetTitle(),
 		Description:  wireTool.GetDescription(),
-		InputSchema:  sanitizeInputSchema(wireTool.GetInputSchema()),
+		InputSchema:  readInputSchema(wireTool.GetInputSchema()),
 		OutputSchema: nil,
 		Icons:        nil,
-		Annotations:  createAnnotations(wireTool),
+		Annotations: &sdk.ToolAnnotations{
+			DestructiveHint: &hints.Destructive,
+			IdempotentHint:  hints.Idempotent,
+			OpenWorldHint:   &hints.OpenWorld,
+			ReadOnlyHint:    hints.ReadOnly,
+			Title:           "",
+		},
 	}
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="empty schema is omitted and valid JSON schema is longer than one byte"
-	if len(wireTool.GetOutputSchema()) > 0 {
+	if schema, isObject := readObject(wireTool.GetOutputSchema()); isObject && hasObjectType(schema) {
 		tool.OutputSchema = json.RawMessage(wireTool.GetOutputSchema())
 	}
 	return tool
-}
-
-// createAnnotations creates the MCP hints of a host tool from its effect, its step and the
-// permissions it requires.
-func createAnnotations(wireTool *tools.ToolInfo) *sdk.ToolAnnotations {
-	isReadOnly := wireTool.GetEffect() == tools.ReadOnly
-	isOpenWorld := slices.Contains(wireTool.GetRequires(), "network:outbound")
-	var isDestructive *bool
-	if !isReadOnly {
-		isRemove := wireTool.GetStep() == tools.Remove
-		isDestructive = &isRemove
-	}
-	return &sdk.ToolAnnotations{
-		DestructiveHint: isDestructive,
-		IdempotentHint:  isReadOnly,
-		OpenWorldHint:   &isOpenWorld,
-		ReadOnlyHint:    isReadOnly,
-		Title:           "",
-	}
 }
 
 // describeToolError is the message for the error code the host returned for the tool.
@@ -253,18 +240,37 @@ func newErrorResult(message string) *sdk.CallToolResult {
 	}
 }
 
-// sanitizeInputSchema ensures the schema is non-nil and specifies an object type.
-func sanitizeInputSchema(raw []byte) json.RawMessage {
-	var schema map[string]any
-	if err := json.Unmarshal(raw, &schema); err != nil {
+// readInputSchema returns the input schema of a tool as a JSON object of type "object", which MCP
+// requires. A JSON object of another type or none is given the type "object" and keeps its other
+// keys; anything else is replaced by the empty object schema. The same rules are in
+// libs/core/internal/adapter/plugin/agenttoolsbridge/endpoint.go.
+func readInputSchema(raw []byte) json.RawMessage {
+	schema, isObject := readObject(raw)
+	if !isObject {
 		return json.RawMessage(`{"type":"object"}`)
 	}
-	if t, ok := schema["type"].(string); !ok || !strings.EqualFold(t, "object") {
-		schema["type"] = "object"
-		// gomutants:disable-next-line BRANCH_IF reason="json.Marshal on an unmarshaled map with a string entry cannot fail"
-		if encoded, err := json.Marshal(schema); err == nil {
-			return json.RawMessage(encoded)
-		}
+	if hasObjectType(schema) {
+		return json.RawMessage(raw)
 	}
-	return json.RawMessage(raw)
+	schema["type"] = json.RawMessage(`"object"`)
+	encoded, err := json.Marshal(schema)
+	if err != nil {
+		return json.RawMessage(`{"type":"object"}`)
+	}
+	return encoded
+}
+
+// readObject decodes raw as a JSON object, and reports false for anything else.
+func readObject(raw []byte) (map[string]json.RawMessage, bool) {
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &object); err != nil || object == nil {
+		return nil, false
+	}
+	return object, true
+}
+
+// hasObjectType reports whether the type of the schema is the string "object".
+func hasObjectType(schema map[string]json.RawMessage) bool {
+	var schemaType string
+	return json.Unmarshal(schema["type"], &schemaType) == nil && schemaType == "object"
 }

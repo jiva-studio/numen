@@ -103,17 +103,14 @@ func New() *Registry {
 // from In and Out; an Out that is not a struct is returned as text. The arguments of a call are
 // validated against the schema of In before run is called, and arguments that do not match it are
 // rejected with an error result naming the argument. A run that returns an error returns
-// an error result.
+// an error result. The text of every error result starts with the tool name and ": ". The hints of
+// the tool are set from the effect, the step and the required permissions.
 func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in In) (Out, error)) error {
 	inputSchema, err := createSchema(reflect.TypeFor[In]())
 	if err != nil {
 		return fmt.Errorf("tool %s: arguments: %w", spec.Name, err)
 	}
 	input, err := json.Marshal(inputSchema)
-	if err != nil {
-		return fmt.Errorf("tool %s: arguments: %w", spec.Name, err)
-	}
-	resolved, err := inputSchema.Resolve(nil)
 	if err != nil {
 		return fmt.Errorf("tool %s: arguments: %w", spec.Name, err)
 	}
@@ -135,15 +132,16 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 			Step:         writeStep(spec.Step),
 			Instructions: slices.Clone(spec.Instructions),
 			Requires:     slices.Clone(spec.Requires),
+			Hints:        writeHints(createHints(spec)),
 		},
 		run: func(ctx context.Context, arguments []byte) *v1.ToolResult {
-			in, err := readArguments[In](resolved, arguments)
+			in, err := readArguments[In](inputSchema, arguments)
 			if err != nil {
-				return &v1.ToolResult{Text: err.Error(), IsError: true}
+				return &v1.ToolResult{Text: spec.Name + ": " + err.Error(), IsError: true}
 			}
 			out, err := run(ctx, in)
 			if err != nil {
-				return &v1.ToolResult{Text: err.Error(), IsError: true}
+				return &v1.ToolResult{Text: spec.Name + ": " + err.Error(), IsError: true}
 			}
 			return writeResult(out)
 		},
@@ -247,12 +245,17 @@ func isStruct(t reflect.Type) bool {
 }
 
 // createSchema creates the JSON schema of a struct, and an object schema without properties for
-// any other type.
+// any other type. The schema of a pointer to a struct has the type object alone.
 func createSchema(t reflect.Type) (*jsonschema.Schema, error) {
 	if !isStruct(t) {
-		return &jsonschema.Schema{Type: "object"}, nil
+		return &jsonschema.Schema{Type: typeObject}, nil
 	}
-	return jsonschema.ForType(t, &jsonschema.ForOptions{})
+	schema, err := jsonschema.ForType(t, &jsonschema.ForOptions{})
+	if err != nil {
+		return nil, err
+	}
+	schema.Type, schema.Types = typeObject, nil
+	return schema, nil
 }
 
 // schemaOf is the JSON schema of a struct as a JSON object, and an empty object schema for any
@@ -376,6 +379,31 @@ type ToolInfo struct {
 	Servers      []Server
 	Instructions []string
 	Requires     []string
+	Hints        Hints
+}
+
+// Hints are the MCP annotations of a tool.
+type Hints struct {
+	// ReadOnly is a tool that changes nothing.
+	ReadOnly bool
+	// Destructive is a tool that removes something.
+	Destructive bool
+	// Idempotent is a tool whose repeated call with the same arguments has no further effect.
+	Idempotent bool
+	// OpenWorld is a tool that reaches outside the machine.
+	OpenWorld bool
+}
+
+// createHints returns the hints of the tool spec describes: a read-only tool is read-only and
+// idempotent, a read-write tool of the step Remove is destructive, and a tool that requires
+// network:outbound reaches the open world.
+func createHints(spec Spec) Hints {
+	return Hints{
+		ReadOnly:    spec.Effect == ReadOnly,
+		Destructive: spec.Effect == ReadWrite && spec.Step == Remove,
+		Idempotent:  spec.Effect == ReadOnly,
+		OpenWorld:   slices.Contains(spec.Requires, "network:outbound"),
+	}
 }
 
 func (t *ToolInfo) GetName() string {
@@ -446,6 +474,13 @@ func (t *ToolInfo) GetRequires() []string {
 		return nil
 	}
 	return t.Requires
+}
+
+func (t *ToolInfo) GetHints() Hints {
+	if t == nil {
+		return Hints{}
+	}
+	return t.Hints
 }
 
 // Listing is the list of tools a PluginToolService returns.
