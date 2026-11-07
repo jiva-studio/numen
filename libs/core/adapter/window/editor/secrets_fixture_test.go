@@ -229,7 +229,9 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 
 	probes := map[string]*probe{alphaID: {}, betaID: {}, gammaID: {}}
 	ports := map[string]int{}
+	processes := map[string]*os.Process{}
 	for id, one := range probes {
+		processes[id] = plugintest.StartSleepProcess(t).Process
 		mux := http.NewServeMux()
 		mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(one))
 		server := httptest.NewServer(mux)
@@ -237,7 +239,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 		ports[id] = plugintest.GetPort(t, server)
 	}
 	host.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		return plugintest.StartSleepProcess(t).Process, plugintest.GetReadyOutput(ports[p.Manifest.ID]), nil
+		return processes[p.Manifest.ID], plugintest.GetReadyOutput(ports[p.Manifest.ID]), nil
 	})
 
 	configDir := t.TempDir()

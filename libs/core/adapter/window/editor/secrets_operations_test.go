@@ -2,6 +2,7 @@ package editor_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -338,8 +339,9 @@ func TestUninstallingAPluginRemovesItsPermissionsAndDisablingKeepsThem(t *testin
 	if got := allowedOf(w.find(t, one)); !slices.Equal(got, []string{permission(alphaID, "apiKey", "openrouter")}) {
 		t.Errorf("allowed = %v after an uninstall, want only alpha", got)
 	}
-	if strings.Contains(w.readFile(t), betaID) {
-		t.Error("the file still names the uninstalled plugin")
+	// A disable writes the plugin's own entry to numen.json, so only the secrets section is checked.
+	if strings.Contains(fmt.Sprint(w.fileSecrets(t)), betaID) {
+		t.Error("the secrets section still names the uninstalled plugin")
 	}
 }
 

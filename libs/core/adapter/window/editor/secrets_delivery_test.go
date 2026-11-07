@@ -212,7 +212,13 @@ func (w *window) editFile(t *testing.T, change func(secrets []map[string]any) []
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(w.file, out, 0o600); err != nil {
+	// An editor saves by replacing the file. A write in place passes through an empty file, which a
+	// reader of the settings may take for an installation with no settings.
+	draft := w.file + ".edit"
+	if err := os.WriteFile(draft, out, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(draft, w.file); err != nil {
 		t.Fatal(err)
 	}
 }

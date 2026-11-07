@@ -724,7 +724,7 @@ func TestLifecycleServer_EdgeCases(t *testing.T) {
 	}
 
 	var zeroLS LifecycleServer
-	if err := zeroLS.configure(t.Context(), map[string]string{"z": "1"}); err != nil {
+	if err := zeroLS.configureWith(t.Context(), map[string]string{"z": "1"}, nil); err != nil {
 		t.Fatal(err)
 	}
 	if v, ok := zeroLS.GetConfig("z"); !ok || v != "1" {
