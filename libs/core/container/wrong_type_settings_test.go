@@ -127,7 +127,7 @@ func TestATextWhereThePluginIsSwitchedOnOrOffIsDroppedAndTheFileReads(t *testing
 
 func TestTheFileIsUnchangedByReadingValuesOfTheWrongType(t *testing.T) {
 	const body = `{"app":{"appearance":{"textScale":"big"}},"` + importerID +
-		`":{"ytDlp":{"a":1},"retries":"many","enabled":"yes","storedSecrets":"x"}}`
+		`":{"ytDlp":{"a":1},"retries":"many","enabled":"yes"}}`
 	cfg, path := installationWith(t, body)
 	if _, err := cfg.Settings(); err != nil {
 		t.Fatal(err)

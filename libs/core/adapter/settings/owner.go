@@ -100,14 +100,13 @@ func wrapAt(label string, err error) error {
 }
 
 func checkHostField(name string, value any) (reserved bool, err error) {
-	switch name {
-	case fieldEnabled:
-		if _, isBool := value.(bool); !isBool && value != nil {
-			return true, fmt.Errorf("%w: expected true or false", ErrWrongType)
-		}
-		return true, nil
+	if name != fieldEnabled {
+		return false, nil
 	}
-	return false, nil
+	if _, isBool := value.(bool); !isBool && value != nil {
+		return true, fmt.Errorf("%w: expected true or false", ErrWrongType)
+	}
+	return true, nil
 }
 
 func checkValue(declared pluginport.PluginManifestSetting, registries Registries, value any) error {

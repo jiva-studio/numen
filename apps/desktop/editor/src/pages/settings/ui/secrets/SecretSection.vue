@@ -153,7 +153,7 @@ function onMoveDown(index: number): void {
 .secret-section__name {
   margin: 0;
   color: var(--numen-ink);
-  font-size: var(--numen-text-3, 1rem);
+  font-size: var(--numen-text-3);
   font-weight: 600;
 }
 
