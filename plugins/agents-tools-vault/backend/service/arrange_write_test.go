@@ -289,7 +289,10 @@ func TestNoteMoveSchemaRequiresTheFolderAndNamesTheVaultRootSlash(t *testing.T) 
 	if !ok {
 		t.Fatalf("the input schema of note_move has no folder property: %v", schema)
 	}
-	description, _ := folder["description"].(string)
+	description, isText := folder["description"].(string)
+	if !isText {
+		t.Fatalf("the folder of note_move has no description: %v", folder)
+	}
 	if !strings.Contains(description, `"/"`) || !strings.Contains(description, "vault root") {
 		t.Errorf("the folder of note_move is described as %q, want it to name \"/\" as the vault root", description)
 	}

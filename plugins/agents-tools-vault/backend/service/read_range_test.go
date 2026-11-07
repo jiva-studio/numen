@@ -204,16 +204,16 @@ func TestFileReadMovesAStartInsideACharacterToTheNextCharacter(t *testing.T) {
 	}
 }
 
-func TestLibraryReadOfNonTextFileNamesTheTextVersionTools(t *testing.T) {
+func TestLibraryReadOfNonTextFileStatesThatARecognitionOrTranscriptionCreatesOne(t *testing.T) {
 	l := newLibrary(t)
 	failure := l.call(t, "library_read", `{"path":"`+scanPath+`"}`, nil)
-	want := scanPath + " has no text version; recognition_create or transcript_create makes one"
+	want := scanPath + " has no text version; a recognition or a transcription creates one"
 	if !strings.Contains(failure, want) {
 		t.Errorf("library_read of a scan with no text version gave %q, want %q", failure, want)
 	}
 }
 
-func TestLibraryReadOfLargeBinaryNamesTheTextVersionTools(t *testing.T) {
+func TestLibraryReadOfLargeBinaryStatesThatARecognitionOrTranscriptionCreatesOne(t *testing.T) {
 	const archivePath = "recordings/Long Night.wav"
 	l, vault, _, registry := newRangeLibrary(t)
 	l.vault.File(archivePath, "RIFF\x00\x00wave body")
@@ -221,7 +221,7 @@ func TestLibraryReadOfLargeBinaryNamesTheTextVersionTools(t *testing.T) {
 	vault.rangeErrors[archivePath] = fmt.Errorf("read %s: %w", archivePath, host.ErrNotText)
 
 	failure := callFailure(t, registry, testVault, "library_read", `{"path":"`+archivePath+`"}`, nil)
-	want := archivePath + " has no text version; recognition_create or transcript_create makes one"
+	want := archivePath + " has no text version; a recognition or a transcription creates one"
 	if !strings.Contains(failure, want) || strings.Contains(failure, "TOO_LARGE") {
 		t.Errorf("library_read of a large recording with no text version gave %q, want %q", failure, want)
 	}

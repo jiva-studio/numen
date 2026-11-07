@@ -305,7 +305,10 @@ func TestLibrarySearchFolderHasTheDescriptionOfTheNoteListFolder(t *testing.T) {
 		if !ok {
 			t.Fatalf("the input schema of %s has no folder", tool)
 		}
-		description, _ := folder["description"].(string)
+		description, isText := folder["description"].(string)
+		if !isText {
+			t.Fatalf("the folder of %s has no description: %v", tool, folder)
+		}
 		return description
 	}
 	if search, list := getDescription("library_search"), getDescription("note_list"); search != list {
@@ -760,7 +763,10 @@ func TestVaultProblemListNamesTheChecksInItsDescriptionOnly(t *testing.T) {
 	if !ok {
 		t.Fatal("the input schema of vault_problem_list has no checks")
 	}
-	description, _ := field["description"].(string)
+	description, isText := field["description"].(string)
+	if !isText {
+		t.Fatalf("the checks of vault_problem_list have no description: %v", field)
+	}
 	for _, check := range checks {
 		if regexp.MustCompile(`\b` + check + `\b`).MatchString(description) {
 			t.Errorf("the checks of vault_problem_list are described as %q, which names the check %s", description, check)
