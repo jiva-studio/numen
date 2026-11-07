@@ -8,6 +8,7 @@ import { computed, ref } from 'vue'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
+import PluginSecretField from './PluginSecret.vue'
 import SettingsViews from './SettingsViews.vue'
 import type { SettingsTabState } from '../../types'
 import { createSettingFields, type PluginInfo, type PluginSettingInfo } from '@/entities/settings'
@@ -24,11 +25,14 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 const fields = createSettingFields(() => props.state.installation)
-const { getEnumOptions, getEnumChoices, getEnumValue, getShownSettings } = createEnumFields(
-  () => props.plugin,
-  readSetting,
-  isKeyRequested,
-)
+const {
+  getEnumOptions,
+  getEnumChoices,
+  getEnumValue,
+  getShownSettings,
+  getTopSecrets,
+  getSecretsAfter,
+} = createEnumFields(() => props.plugin, readSetting, isKeyRequested)
 
 function isKeyRequested(key: string): boolean {
   return installation.value.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
@@ -93,6 +97,8 @@ function getStringSetting(key: string, fallback: unknown): string {
 
 <template>
   <SettingsViews :state="props.state" :plugin="props.plugin" />
+
+  <PluginSecretField :state="state" :plugin="plugin" :secrets="getTopSecrets()" />
 
   <template v-for="setting in getShownSettings()" :key="setting.key">
     <SettingRow
@@ -192,6 +198,8 @@ function getStringSetting(key: string, fallback: unknown): string {
         @change="(e) => writeDraft(setting.key, (e.target as HTMLInputElement).value)"
       />
     </SettingRow>
+
+    <PluginSecretField :state="state" :plugin="plugin" :secrets="getSecretsAfter(setting.key)" />
   </template>
 </template>
 

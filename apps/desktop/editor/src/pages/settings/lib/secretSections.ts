@@ -2,7 +2,7 @@
  * The page of secrets and the menu of a secret field, as plain data: the sections of the secrets
  * by group, the plugin declarations that may be allowed a secret, and the order of the menu.
  */
-import type { PluginInfo, Secret } from '@/entities/settings'
+import type { PluginInfo, PluginSecret, Secret } from '@/entities/settings'
 
 /** The secrets of one group in priority order. */
 export interface SecretSection {
@@ -36,18 +36,21 @@ export function compareNames(first: string, second: string): number {
   return one.length - other.length
 }
 
+/** The declaration of one secret of a plugin. */
+export function getDeclaration(plugin: PluginInfo, secret: PluginSecret): Declaration {
+  return {
+    pluginId: plugin.id,
+    pluginName: plugin.name,
+    name: secret.name,
+    group: secret.group,
+    title: secret.title,
+    description: secret.description,
+  }
+}
+
 /** Every secret the installed plugins declare. */
 export function getDeclarations(plugins: readonly PluginInfo[]): readonly Declaration[] {
-  return plugins.flatMap((plugin) =>
-    plugin.secrets.map((one) => ({
-      pluginId: plugin.id,
-      pluginName: plugin.name,
-      name: one.name,
-      group: one.group,
-      title: one.title,
-      description: one.description,
-    })),
-  )
+  return plugins.flatMap((plugin) => plugin.secrets.map((one) => getDeclaration(plugin, one)))
 }
 
 /**
