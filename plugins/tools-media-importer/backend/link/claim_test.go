@@ -118,7 +118,6 @@ type hookTexts struct {
 	listOverride *host.TextListing
 	readErr      error
 	putErr       error
-	putCalls     int
 }
 
 func (x *hookTexts) With(id domain.VaultID) host.Texts {
@@ -144,7 +143,6 @@ func (x *hookTexts) ReadText(ctx context.Context, path string, version domain.Te
 }
 
 func (x *hookTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.TextVersion, error) {
-	x.putCalls++
 	if x.putErr != nil {
 		return domain.TextVersion{}, x.putErr
 	}
@@ -553,28 +551,14 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		t.Errorf("record Downloader = %q (%v), want %q", rec.Downloader, err, "tool v2")
 	}
 
-	// restoreText when hasText fails, when ListVersions fails, and when version is already present after another version.
-	hs.readErr = func(name string) error {
-		if name == made.Key+textExt {
-			return boom
-		}
-		return nil
-	}
-	if err := l.restoreText(ctx, folder{store: hs}, made); !errors.Is(err, boom) {
-		t.Errorf("restoreText(hasText err) = %v, want %v", err, boom)
-	}
-	hs.readErr = nil
-
+	// ReadArticle when ListVersions fails.
 	ht.listErr = boom
-	if err := l.restoreText(ctx, folder{store: hs}, made); !errors.Is(err, boom) {
-		t.Errorf("restoreText(ListVersions err) = %v, want %v", err, boom)
-	}
 	if _, err := l.ReadArticle(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("ReadArticle(ListVersions err) = %v, want %v", err, boom)
 	}
 	ht.listErr = nil
 
-	// Put another version before the matching one and verify ensureVersion finds the matching one without calling PutVersion.
+	// Put another version before the live one.
 	liveListing, err := ht.Texts.ListVersions(ctx, made.Path)
 	if err != nil || len(liveListing.Versions) != 1 {
 		t.Fatalf("ListVersions = %+v (%v)", liveListing, err)
@@ -586,11 +570,6 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 			liveListing.Versions[0],
 		},
 	}
-	ht.putCalls = 0
-	if err := l.restoreText(ctx, folder{store: hs}, made); err != nil || ht.putCalls != 0 {
-		t.Errorf("restoreText(already current) err=%v, putCalls=%d", err, ht.putCalls)
-	}
-
 	// ReadArticle with non-live version first, and with ReadText error.
 	article, err := l.ReadArticle(ctx, made)
 	if err != nil || article != "body" {

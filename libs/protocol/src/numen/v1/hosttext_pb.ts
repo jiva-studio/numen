@@ -12,15 +12,43 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hosttext.proto.
  */
 export const file_numen_v1_hosttext: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEivgEKC1RleHRWZXJzaW9uEgoKAmlkGAEgASgJEgwKBHBhdGgYAiABKAkSEQoJcGx1Z2luX2lkGAMgASgJEgsKA2tleRgEIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgFIAEoCRIMCgRraW5kGAYgASgJEhMKC3NvdXJjZV9oYXNoGAcgASgJEgwKBGhhc2gYCCABKAkSGwoTY3JlYXRlX3RpbWVfdW5peF9tcxgJIAEoAxIMCgRmaWxlGAogASgJIn4KFVB1dFRleHRWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2tleRgCIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgDIAEoCRIMCgRraW5kGAQgASgJEhMKC3NvdXJjZV9oYXNoGAUgASgJEgwKBGZpbGUYBiABKAkiaAoWUHV0VGV4dFZlcnNpb25SZXNwb25zZRImCgd2ZXJzaW9uGAEgASgLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SJgoFZXJyb3IYAiABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIjUKGFJlbW92ZVRleHRWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2tleRgCIAEoCSJDChlSZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSInChdMaXN0VGV4dFZlcnNpb25zUmVxdWVzdBIMCgRwYXRoGAEgASgJIoQBChhMaXN0VGV4dFZlcnNpb25zUmVzcG9uc2USJwoIdmVyc2lvbnMYASADKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhIXCg9saXZlX3ZlcnNpb25faWQYAiABKAkSJgoFZXJyb3IYAyABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIkMKD1JlYWRUZXh0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhIKCnZlcnNpb25faWQYAiABKAkSDgoGY3Vyc29yGAMgASgJIngKEFJlYWRUZXh0UmVzcG9uc2USJwoIc2VnbWVudHMYASADKAsyFS5udW1lbi52MS5UZXh0U2VnbWVudBITCgtuZXh0X2N1cnNvchgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUy4gIKD0hvc3RUZXh0U2VydmljZRJTCg5QdXRUZXh0VmVyc2lvbhIfLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVxdWVzdBogLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVzcG9uc2USXAoRUmVtb3ZlVGV4dFZlcnNpb24SIi5udW1lbi52MS5SZW1vdmVUZXh0VmVyc2lvblJlcXVlc3QaIy5udW1lbi52MS5SZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlElkKEExpc3RUZXh0VmVyc2lvbnMSIS5udW1lbi52MS5MaXN0VGV4dFZlcnNpb25zUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RUZXh0VmVyc2lvbnNSZXNwb25zZRJBCghSZWFkVGV4dBIZLm51bWVuLnYxLlJlYWRUZXh0UmVxdWVzdBoaLm51bWVuLnYxLlJlYWRUZXh0UmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_textsegment]);
+  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEiMAoSVGV4dFNvdXJjZVByb3BlcnR5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCSL1AQoLVGV4dFZlcnNpb24SCgoCaWQYASABKAkSDAoEcGF0aBgCIAEoCRIRCglwbHVnaW5faWQYAyABKAkSCwoDa2V5GAQgASgJEhkKEXNvdXJjZV92ZXJzaW9uX2lkGAUgASgJEgwKBGtpbmQYBiABKAkSEwoLc291cmNlX2hhc2gYByABKAkSDAoEaGFzaBgIIAEoCRIbChNjcmVhdGVfdGltZV91bml4X21zGAkgASgDEgwKBGZpbGUYCiABKAkSNQoPc291cmNlX3Byb3BlcnR5GAsgASgLMhwubnVtZW4udjEuVGV4dFNvdXJjZVByb3BlcnR5IrUBChVQdXRUZXh0VmVyc2lvblJlcXVlc3QSDAoEcGF0aBgBIAEoCRILCgNrZXkYAiABKAkSGQoRc291cmNlX3ZlcnNpb25faWQYAyABKAkSDAoEa2luZBgEIAEoCRITCgtzb3VyY2VfaGFzaBgFIAEoCRIMCgRmaWxlGAYgASgJEjUKD3NvdXJjZV9wcm9wZXJ0eRgHIAEoCzIcLm51bWVuLnYxLlRleHRTb3VyY2VQcm9wZXJ0eSJoChZQdXRUZXh0VmVyc2lvblJlc3BvbnNlEiYKB3ZlcnNpb24YASABKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhImCgVlcnJvchgCIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUiNQoYUmVtb3ZlVGV4dFZlcnNpb25SZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDa2V5GAIgASgJIkMKGVJlbW92ZVRleHRWZXJzaW9uUmVzcG9uc2USJgoFZXJyb3IYASABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIicKF0xpc3RUZXh0VmVyc2lvbnNSZXF1ZXN0EgwKBHBhdGgYASABKAkihAEKGExpc3RUZXh0VmVyc2lvbnNSZXNwb25zZRInCgh2ZXJzaW9ucxgBIAMoCzIVLm51bWVuLnYxLlRleHRWZXJzaW9uEhcKD2xpdmVfdmVyc2lvbl9pZBgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUiQwoPUmVhZFRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSEgoKdmVyc2lvbl9pZBgCIAEoCRIOCgZjdXJzb3IYAyABKAkieAoQUmVhZFRleHRSZXNwb25zZRInCghzZWdtZW50cxgBIAMoCzIVLm51bWVuLnYxLlRleHRTZWdtZW50EhMKC25leHRfY3Vyc29yGAIgASgJEiYKBWVycm9yGAMgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZTLiAgoPSG9zdFRleHRTZXJ2aWNlElMKDlB1dFRleHRWZXJzaW9uEh8ubnVtZW4udjEuUHV0VGV4dFZlcnNpb25SZXF1ZXN0GiAubnVtZW4udjEuUHV0VGV4dFZlcnNpb25SZXNwb25zZRJcChFSZW1vdmVUZXh0VmVyc2lvbhIiLm51bWVuLnYxLlJlbW92ZVRleHRWZXJzaW9uUmVxdWVzdBojLm51bWVuLnYxLlJlbW92ZVRleHRWZXJzaW9uUmVzcG9uc2USWQoQTGlzdFRleHRWZXJzaW9ucxIhLm51bWVuLnYxLkxpc3RUZXh0VmVyc2lvbnNSZXF1ZXN0GiIubnVtZW4udjEuTGlzdFRleHRWZXJzaW9uc1Jlc3BvbnNlEkEKCFJlYWRUZXh0EhkubnVtZW4udjEuUmVhZFRleHRSZXF1ZXN0GhoubnVtZW4udjEuUmVhZFRleHRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_textsegment]);
+
+/**
+ * TextSourceProperty is a frontmatter property of a note that a text version
+ * was made from: the key and its string value.
+ *
+ * @generated from message numen.v1.TextSourceProperty
+ */
+export type TextSourceProperty = Message<"numen.v1.TextSourceProperty"> & {
+  /**
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * @generated from field: string value = 2;
+   */
+  value: string;
+};
+
+/**
+ * Describes the message numen.v1.TextSourceProperty.
+ * Use `create(TextSourcePropertySchema)` to create a new message.
+ */
+export const TextSourcePropertySchema: GenMessage<TextSourceProperty> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hosttext, 0);
 
 /**
  * TextVersion is the host's record of one text of a file.
  *
- * source_version_id is empty for a version made from the file. source_hash is
- * the SHA-256, in hex, of the file's bytes for such a version, and the hash of
- * the source version otherwise. file is the name of the version's file in the
- * folder of the plugin that made it; hash is the SHA-256 of that file's bytes.
+ * A version has one root. source_version_id names another version, and
+ * source_hash is the hash of that version. source_property names a property of
+ * the note: the version is live while the note's frontmatter holds the key as
+ * that string, and source_hash is empty. With neither, the version is made from
+ * the file, and source_hash is the SHA-256, in hex, of the file's bytes. file
+ * is the name of the version's file in the folder of the plugin that made it;
+ * hash is the SHA-256 of that file's bytes.
  * kind is what the text is, as the plugin that made it names it;
  * the host compares it as an opaque string.
  *
@@ -76,6 +104,11 @@ export type TextVersion = Message<"numen.v1.TextVersion"> & {
    * @generated from field: string file = 10;
    */
   file: string;
+
+  /**
+   * @generated from field: numen.v1.TextSourceProperty source_property = 11;
+   */
+  sourceProperty?: TextSourceProperty | undefined;
 };
 
 /**
@@ -83,7 +116,7 @@ export type TextVersion = Message<"numen.v1.TextVersion"> & {
  * Use `create(TextVersionSchema)` to create a new message.
  */
 export const TextVersionSchema: GenMessage<TextVersion> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 0);
+  messageDesc(file_numen_v1_hosttext, 1);
 
 /**
  * @generated from message numen.v1.PutTextVersionRequest
@@ -120,6 +153,14 @@ export type PutTextVersionRequest = Message<"numen.v1.PutTextVersionRequest"> & 
    * @generated from field: string file = 6;
    */
   file: string;
+
+  /**
+   * source_property is set for a version made from a property of the note,
+   * with no source_version_id and no source_hash.
+   *
+   * @generated from field: numen.v1.TextSourceProperty source_property = 7;
+   */
+  sourceProperty?: TextSourceProperty | undefined;
 };
 
 /**
@@ -127,7 +168,7 @@ export type PutTextVersionRequest = Message<"numen.v1.PutTextVersionRequest"> & 
  * Use `create(PutTextVersionRequestSchema)` to create a new message.
  */
 export const PutTextVersionRequestSchema: GenMessage<PutTextVersionRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 1);
+  messageDesc(file_numen_v1_hosttext, 2);
 
 /**
  * @generated from message numen.v1.PutTextVersionResponse
@@ -149,7 +190,7 @@ export type PutTextVersionResponse = Message<"numen.v1.PutTextVersionResponse"> 
  * Use `create(PutTextVersionResponseSchema)` to create a new message.
  */
 export const PutTextVersionResponseSchema: GenMessage<PutTextVersionResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 2);
+  messageDesc(file_numen_v1_hosttext, 3);
 
 /**
  * @generated from message numen.v1.RemoveTextVersionRequest
@@ -171,7 +212,7 @@ export type RemoveTextVersionRequest = Message<"numen.v1.RemoveTextVersionReques
  * Use `create(RemoveTextVersionRequestSchema)` to create a new message.
  */
 export const RemoveTextVersionRequestSchema: GenMessage<RemoveTextVersionRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 3);
+  messageDesc(file_numen_v1_hosttext, 4);
 
 /**
  * @generated from message numen.v1.RemoveTextVersionResponse
@@ -188,7 +229,7 @@ export type RemoveTextVersionResponse = Message<"numen.v1.RemoveTextVersionRespo
  * Use `create(RemoveTextVersionResponseSchema)` to create a new message.
  */
 export const RemoveTextVersionResponseSchema: GenMessage<RemoveTextVersionResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 4);
+  messageDesc(file_numen_v1_hosttext, 5);
 
 /**
  * @generated from message numen.v1.ListTextVersionsRequest
@@ -205,7 +246,7 @@ export type ListTextVersionsRequest = Message<"numen.v1.ListTextVersionsRequest"
  * Use `create(ListTextVersionsRequestSchema)` to create a new message.
  */
 export const ListTextVersionsRequestSchema: GenMessage<ListTextVersionsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 5);
+  messageDesc(file_numen_v1_hosttext, 6);
 
 /**
  * @generated from message numen.v1.ListTextVersionsResponse
@@ -234,7 +275,7 @@ export type ListTextVersionsResponse = Message<"numen.v1.ListTextVersionsRespons
  * Use `create(ListTextVersionsResponseSchema)` to create a new message.
  */
 export const ListTextVersionsResponseSchema: GenMessage<ListTextVersionsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 6);
+  messageDesc(file_numen_v1_hosttext, 7);
 
 /**
  * @generated from message numen.v1.ReadTextRequest
@@ -263,7 +304,7 @@ export type ReadTextRequest = Message<"numen.v1.ReadTextRequest"> & {
  * Use `create(ReadTextRequestSchema)` to create a new message.
  */
 export const ReadTextRequestSchema: GenMessage<ReadTextRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 7);
+  messageDesc(file_numen_v1_hosttext, 8);
 
 /**
  * @generated from message numen.v1.ReadTextResponse
@@ -292,7 +333,7 @@ export type ReadTextResponse = Message<"numen.v1.ReadTextResponse"> & {
  * Use `create(ReadTextResponseSchema)` to create a new message.
  */
 export const ReadTextResponseSchema: GenMessage<ReadTextResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hosttext, 8);
+  messageDesc(file_numen_v1_hosttext, 9);
 
 /**
  * HostTextService serves the text versions of a vault to the plugins. The host

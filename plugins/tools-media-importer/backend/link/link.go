@@ -133,16 +133,16 @@ func (l *Links) withClosing(ctx context.Context) (context.Context, context.Cance
 // Wait waits for every fetch started in the background.
 func (l *Links) Wait() { l.wg.Wait() }
 
-// Link is one link note. Key names the text stored for its address, and Hash is the content hash of
-// the note, which names the copy of its video and is the source hash of its text version. Vault is
-// the identity of the vault the note is in, read from the host when the note is read or made, so
-// the work on a link of the shown vault is keyed as that vault's and not as no vault.
+// Link is one link note. Key names the text stored for its address, and URL is the url property as
+// the note writes it, the root of its text version. Vault is the identity of the vault the note is
+// in, read from the host when the note is read or made, so the work on a link of the shown vault is
+// keyed as that vault's and not as no vault.
 type Link struct {
 	Vault   domain.VaultID
 	Path    string
 	Address address.URL
 	Key     string
-	Hash    string
+	URL     string
 	// Media and Page are the addresses the note holds of the downloaded media and of the page that
 	// frames the player, empty where it holds none.
 	Media string
@@ -180,7 +180,7 @@ func newLink(path string, parsed address.URL, raw []byte) Link {
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="markdown.Parse ignores FileStat.Size"
 	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, raw)
 	return Link{
-		Vault: "", Path: path, Address: parsed, Key: getKey(parsed), Hash: domain.HashContent(raw),
+		Vault: "", Path: path, Address: parsed, Key: getKey(parsed), URL: getText(note.Frontmatter[urlKey]),
 		Media: getText(note.Frontmatter[mediaKey]), Page: getText(note.Frontmatter[pageKey]),
 	}
 }
@@ -245,8 +245,7 @@ func (l *Links) getAddress(name string) string {
 	return pluginScheme + l.host.PluginID + "/" + name
 }
 
-// setAddress writes the address under the key of the note's frontmatter, empty where value is empty,
-// and puts the stored text as the version of the note as it reads then.
+// setAddress writes the address under the key of the note's frontmatter, empty where value is empty.
 func (l *Links) setAddress(ctx context.Context, link Link, key, value string) error {
 	vault := l.getVault(link)
 	raw, stat, err := vault.Read(ctx, link.Path)
@@ -261,12 +260,8 @@ func (l *Links) setAddress(ctx context.Context, link Link, key, value string) er
 		return err
 	}
 	content := doc.Bytes()
-	if _, err := vault.Write(ctx, link.Path, content, stat); err != nil {
-		return err
-	}
-	updated := newLink(link.Path, link.Address, content)
-	updated.Vault = link.Vault
-	return l.restoreText(ctx, folder{store: l.getStore(updated)}, updated)
+	_, err = vault.Write(ctx, link.Path, content, stat)
+	return err
 }
 
 // getVault is the vault of the link.
@@ -400,21 +395,6 @@ func (l *Links) FetchText(ctx context.Context, link Link) error {
 	return err
 }
 
-// restoreText puts the stored text of a link as the version of the note as it reads now, where a
-// text is stored. A text that was fetched earlier and is now absent is a version the person deleted,
-// and stays deleted.
-func (l *Links) restoreText(ctx context.Context, folder folder, link Link) error {
-	rec, err := folder.readRecord(ctx, link.Key)
-	if err != nil || rec.Kind == "" {
-		return err
-	}
-	hasText, err := folder.hasText(ctx, link.Key)
-	if err != nil || !hasText {
-		return err
-	}
-	return l.ensureVersion(ctx, link, rec.Kind)
-}
-
 func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 	fetcher, settings := l.fetcher(), l.settings()
 	fetched, err := fetcher.GetText(ctx, string(link.Address), download.PreferredCaptions{
@@ -445,25 +425,11 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 	return l.putVersion(ctx, link, rec.Kind)
 }
 
-// ensureVersion puts the stored text of a link as its version where the note has none made from it
-// as it reads now.
-func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKind) error {
-	listing, err := l.getTexts(link).ListVersions(ctx, link.Path)
-	if err != nil {
-		return err
-	}
-	for _, version := range listing.Versions {
-		if version.Key == link.Key && version.SourceHash == link.Hash {
-			return nil
-		}
-	}
-	return l.putVersion(ctx, link, kind)
-}
-
 // putVersion puts the text stored for a link to the host as the link's version.
 func (l *Links) putVersion(ctx context.Context, link Link, kind domain.TextKind) error {
 	_, err := l.getTexts(link).PutVersion(ctx, host.TextPut{
-		Path: link.Path, Key: link.Key, Source: "", Kind: kind, SourceHash: link.Hash, File: link.Key + textExt,
+		Path: link.Path, Key: link.Key, SourceProperty: domain.TextSourceProperty{Key: urlKey, Value: link.URL},
+		Kind: kind, File: link.Key + textExt,
 	})
 	return err
 }
