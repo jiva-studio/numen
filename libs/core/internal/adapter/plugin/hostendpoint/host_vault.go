@@ -75,7 +75,8 @@ func (e *Endpoint) getVault(header http.Header) (pluginport.PluginVault, error) 
 	return linked, nil
 }
 
-// answer, the end of the caller's context is cancelled, and anything else is internal.
+// answer returns the response of a vault call that ended with err: an error with a code is that code,
+// the end of the caller's context is cancelled, and anything else is internal.
 func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	if err == nil {
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED, nil
@@ -83,49 +84,66 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	if code, ok := getVaultErrorCode(err); ok {
-		return code, nil
-	}
-	if code, ok := getDomainErrorCode(err); ok {
+	if code, ok := getErrorCode(err); ok {
 		return code, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }
 
-// getVaultErrorCode is the code of an error the vault port defines.
-func getVaultErrorCode(err error) (v1.HostVaultErrorCode, bool) {
-	switch {
-	case errors.Is(err, hostvault.ErrNoVault):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT, true
-	case errors.Is(err, vaultport.ErrStale):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT, true
-	case errors.Is(err, vaultport.ErrAlreadyExists):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS, true
-	case errors.Is(err, vaultport.ErrLockedByAnother):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED, true
-	case errors.Is(err, vaultport.ErrNotANote):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE, true
-	case errors.Is(err, vaultport.ErrOutside):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT, true
-	case errors.Is(err, fs.ErrNotExist):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND, true
-	case errors.Is(err, pluginport.ErrNotText):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT, true
+// getErrorCode returns the HostVaultErrorCode of an error of the core, and false for an error that has
+// none. The errors of the vault port, the plugin port and the domain are matched first, then the error
+// codes wire.GetErrorCode gives the errors of a note.
+func getErrorCode(err error) (v1.HostVaultErrorCode, bool) {
+	for _, entry := range getErrorEntries() {
+		if errors.Is(err, entry.err) {
+			return entry.code, true
+		}
 	}
-	return 0, false
+	noteCode, ok := wire.GetErrorCode(err)
+	if !ok {
+		return 0, false
+	}
+	code, ok := getNoteErrorCodes()[noteCode]
+	return code, ok
 }
 
-// getDomainErrorCode is the code of an error the domain defines.
-func getDomainErrorCode(err error) (v1.HostVaultErrorCode, bool) {
-	switch {
-	case errors.Is(err, domain.ErrHierarchyCycle):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE, true
-	case errors.Is(err, domain.ErrInvalidConnection), errors.Is(err, domain.ErrNotCreatable):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION, true
-	case errors.Is(err, domain.ErrNoFreeName):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED, true
+// errorEntry is an error of the core and the code a vault call answers it with.
+type errorEntry struct {
+	err  error
+	code v1.HostVaultErrorCode
+}
+
+// getErrorEntries returns the errors of the vault port, the plugin port and the domain with their codes.
+func getErrorEntries() []errorEntry {
+	return []errorEntry{
+		{hostvault.ErrNoVault, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT},
+		{vaultport.ErrOutside, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT},
+		{vaultport.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
+		{vaultport.ErrAlreadyExists, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
+		{vaultport.ErrLockedByAnother, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED},
+		{vaultport.ErrNotANote, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
+		{fs.ErrNotExist, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
+		{pluginport.ErrNotText, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT},
+		{domain.ErrHierarchyCycle, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE},
+		{domain.ErrInvalidConnection, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION},
+		{domain.ErrNotCreatable, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION},
+		{domain.ErrNoFreeName, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED},
 	}
-	return 0, false
+}
+
+// getNoteErrorCodes returns the HostVaultErrorCode of each error code of a note.
+func getNoteErrorCodes() map[v1.ErrorCode]v1.HostVaultErrorCode {
+	return map[v1.ErrorCode]v1.HostVaultErrorCode{
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:       v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND,
+		v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:      v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE,
+		v1.ErrorCode_ERROR_CODE_NOT_TEXT:        v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT,
+		v1.ErrorCode_ERROR_CODE_TOO_LARGE:       v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_TOO_LARGE,
+		v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE,
+		v1.ErrorCode_ERROR_CODE_UNREADABLE:      v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNREADABLE,
+		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:  v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS,
+		v1.ErrorCode_ERROR_CODE_INVALID_NAME:    v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME,
+		v1.ErrorCode_ERROR_CODE_CONFLICT:        v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT,
+	}
 }
 
 const noVault = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT

@@ -14,53 +14,13 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
-	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
-	vaultport "github.com/jiva-studio/numen/libs/core/usecase/vault/vaultcontract"
 )
 
 // batchLimit is the maximum number of notes one call moves or removes.
 const batchLimit = 50
 
 var errBatchTooLarge = fmt.Errorf("too many notes: at most %d per call", batchLimit)
-
-// getNoteErrorCode returns the error code of a note that was not changed, and false for an error that
-// has no code.
-func getNoteErrorCode(err error) (v1.HostVaultErrorCode, bool) {
-	if errors.Is(err, vaultport.ErrOutside) {
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT, true
-	}
-	if code, ok := wire.GetErrorCode(err); ok {
-		return convertNoteErrorCode(code), true
-	}
-	return getVaultErrorCode(err)
-}
-
-// convertNoteErrorCode returns the HostVaultErrorCode of a per-note error code.
-func convertNoteErrorCode(code v1.ErrorCode) v1.HostVaultErrorCode {
-	switch code {
-	case v1.ErrorCode_ERROR_CODE_NOT_FOUND:
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND
-	case v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE
-	case v1.ErrorCode_ERROR_CODE_NOT_TEXT:
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT
-	case v1.ErrorCode_ERROR_CODE_TOO_LARGE:
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_TOO_LARGE
-	case v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE:
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE
-	case v1.ErrorCode_ERROR_CODE_UNREADABLE:
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNREADABLE
-	case v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS
-	case v1.ErrorCode_ERROR_CODE_INVALID_NAME:
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME
-	case v1.ErrorCode_ERROR_CODE_CONFLICT:
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT
-	case v1.ErrorCode_ERROR_CODE_UNSPECIFIED:
-	}
-	return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
-}
 
 // splitNoteError splits the error of a change of one note into the error code of that note and the
 // error code of the call: a vault the host does not show returns NO_VAULT for the call, a cancelled
@@ -73,7 +33,7 @@ func splitNoteError(ctx context.Context, err error) (noteCode, callCode v1.HostV
 	if errors.Is(err, hostvault.ErrNoVault) {
 		return 0, noVault, nil
 	}
-	code, ok := getNoteErrorCode(err)
+	code, ok := getErrorCode(err)
 	if !ok {
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, 0, nil
 	}

@@ -241,10 +241,6 @@ func (w *Window) RequestFlush(ctx context.Context) bool {
 	return !request.isPending() && w.clients.getRunning() == request
 }
 
-// IsFlushOpen reports whether a request is running: one that waits for its clients, or for a
-// client's user prompt to close.
-func (w *Window) IsFlushOpen() bool { return w.clients.getRunning() != nil }
-
 // IsQuestionOpen reports whether the running request has a client awaiting a user decision with
 // its work unwritten.
 func (w *Window) IsQuestionOpen() bool {
