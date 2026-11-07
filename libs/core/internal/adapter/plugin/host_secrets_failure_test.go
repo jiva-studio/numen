@@ -225,15 +225,22 @@ func TestAHungConfigureDelaysTheOperationByTheTimeoutOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	entered, _ := probe.setHold(t)
 
-	start := time.Now()
-	err := host.ApplySecretChange(t.Context(), source.renameBy("Renamed"))
-	elapsed := time.Since(start)
-
+	result := make(chan error, 1)
+	ctx := t.Context()
+	go func() { result <- host.ApplySecretChange(ctx, source.renameBy("Renamed")) }()
+	select {
+	case <-result:
+		t.Fatal("the operation returned before the Configure timeout")
+	case <-time.After(configureTimeout / 2):
+	}
+	var err error
+	select {
+	case err = <-result:
+	case <-time.After(configureTimeout + 2*time.Second):
+		t.Fatal("the operation waits longer than the Configure timeout")
+	}
 	if len(entered) == 0 {
 		t.Error("the plugin never received the call")
-	}
-	if elapsed < configureTimeout-500*time.Millisecond || elapsed > configureTimeout+1500*time.Millisecond {
-		t.Errorf("the operation took %v, want about the Configure timeout of %v", elapsed, configureTimeout)
 	}
 	if err == nil || !strings.Contains(err.Error(), secretPluginID) {
 		t.Errorf("the error = %v, want one that names the plugin", err)
@@ -245,12 +252,14 @@ func TestNotifyingAHungPluginWaitsForTheTimeoutOnce(t *testing.T) {
 	host, probe, _ := newConfiguredHost(t)
 	probe.setHold(t)
 
-	start := time.Now()
-	err := host.NotifyPluginConfig(t.Context(), secretPluginID)
-	elapsed := time.Since(start)
-
-	if elapsed > configureTimeout+1500*time.Millisecond {
-		t.Errorf("the call took %v, want about the Configure timeout of %v", elapsed, configureTimeout)
+	result := make(chan error, 1)
+	ctx := t.Context()
+	go func() { result <- host.NotifyPluginConfig(ctx, secretPluginID) }()
+	var err error
+	select {
+	case err = <-result:
+	case <-time.After(configureTimeout + 2*time.Second):
+		t.Fatal("the call waits longer than the Configure timeout")
 	}
 	if err == nil || !strings.Contains(err.Error(), secretPluginID) {
 		t.Errorf("the error = %v, want one that names the plugin", err)

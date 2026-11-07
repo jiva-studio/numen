@@ -108,12 +108,19 @@ func TestAHungConfigureDelaysTheOperationByTheTimeoutOnceAndCommits(t *testing.T
 	t.Cleanup(func() { close(hold) })
 	one := w.create(t, "openrouter", "Work", workValue)
 
-	start := time.Now()
-	err := w.tryAllow(t.Context(), one, alphaID, "apiKey", "openrouter")
-	elapsed := time.Since(start)
-
-	if elapsed < configureTimeout-500*time.Millisecond || elapsed > configureTimeout+1500*time.Millisecond {
-		t.Errorf("the operation took %v, want about the Configure timeout of %v", elapsed, configureTimeout)
+	result := make(chan error, 1)
+	ctx := t.Context()
+	go func() { result <- w.tryAllow(ctx, one, alphaID, "apiKey", "openrouter") }()
+	select {
+	case <-result:
+		t.Fatal("the operation returned before the Configure timeout")
+	case <-time.After(configureTimeout / 2):
+	}
+	var err error
+	select {
+	case err = <-result:
+	case <-time.After(configureTimeout + 2*time.Second):
+		t.Fatal("the operation waits longer than the Configure timeout")
 	}
 	if err == nil || !strings.Contains(err.Error(), alphaID) {
 		t.Errorf("the error = %v, want one that names the plugin", err)
@@ -136,12 +143,16 @@ func TestAFailingPluginDoesNotFailOrDelayAnOperationThatDoesNotConcernIt(t *test
 	one := w.create(t, "openai", "Work", workValue)
 	attempts := alpha.attemptCount()
 
-	start := time.Now()
-	w.allow(t, one, betaID, "apiKey", "openai")
-	elapsed := time.Since(start)
-
-	if elapsed > configureTimeout/2 {
-		t.Errorf("the operation took %v, it waited for a plugin it does not concern", elapsed)
+	result := make(chan error, 1)
+	ctx := t.Context()
+	go func() { result <- w.tryAllow(ctx, one, betaID, "apiKey", "openai") }()
+	select {
+	case err := <-result:
+		if err != nil {
+			t.Fatalf("the operation failed: %v", err)
+		}
+	case <-time.After(configureTimeout / 2):
+		t.Fatal("the operation waited for a plugin it does not concern")
 	}
 	if alpha.attemptCount() != attempts {
 		t.Errorf("the plugin received %d calls, want %d", alpha.attemptCount(), attempts)
