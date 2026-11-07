@@ -37,14 +37,14 @@ func addWindowTabList(registry *tools.Registry, on Host) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "window_tab_list",
 		Title: "List open window tabs",
-		Description: "List the open tabs of the window with their titles, paths, kinds and locations, " +
-			"and the identifier of the active tab. The location is the place the reader of the tab reported, " +
+		Description: "List the open tabs of the window with their titles, paths, kinds and places, " +
+			"and the identifier of the active tab. The place is the one the reader of the tab reported, " +
 			"omitted for a tab with none. Call it before describing the active tab.",
 		Effect:       tools.ReadOnly,
 		Step:         tools.ByEffect,
 		Servers:      []tools.Server{tools.Full, tools.Reading},
 		Instructions: []string{tabListSentence},
-		Requires:     []string{permissionWindowFocus},
+		Requires:     []string{host.PermissionWindowFocus},
 	}, func(ctx context.Context, _ WindowTabListInput) (WindowTabListOutput, error) {
 		tabs, activeID, err := readWindowTabs(ctx, on)
 		if err != nil {
@@ -53,20 +53,20 @@ func addWindowTabList(registry *tools.Registry, on Host) error {
 		if len(tabs) == 0 {
 			if focus := tools.GetCallContext(ctx)["focus"]; focus != "" {
 				inferredTab := TabInfo{
-					ID:       "front-tab",
+					TabID:    "front-tab",
 					Kind:     "",
 					Path:     focus,
 					Title:    formatTitleFromPath(focus),
-					Location: nil,
+					Place:    nil,
 					IsActive: true,
 				}
 				tabs = []TabInfo{inferredTab}
-				activeID = inferredTab.ID
+				activeID = inferredTab.TabID
 			}
 		}
 		return WindowTabListOutput{
-			Tabs:     tabs,
-			ActiveID: activeID,
+			Tabs:        tabs,
+			ActiveTabID: activeID,
 		}, nil
 	})
 }
@@ -91,26 +91,26 @@ func readWindowTabs(ctx context.Context, on Host) ([]TabInfo, string, error) {
 	return tabs, activeID, nil
 }
 
-// newTabInfo converts a tab to its tool output, with the location its reader reported. The tab is
+// newTabInfo converts a tab to its tool output, with the place its reader reported. The tab is
 // active when its id is the active id.
 func newTabInfo(tab host.OpenTab, activeID string) TabInfo {
 	return TabInfo{
-		ID:       tab.ID,
+		TabID:    tab.ID,
 		Kind:     tab.Kind,
 		Path:     tab.Path,
 		Title:    tab.Title,
-		Location: newTabLocation(tab.Place),
+		Place:    newPlace(tab.Place),
 		IsActive: tab.ID != "" && tab.ID == activeID,
 	}
 }
 
-// newTabLocation converts the place a reader reported to its tool output, nil for a tab whose
-// reader reported none.
-func newTabLocation(place *host.TabPlace) *TabLocation {
+// newPlace converts the place a reader reported to its tool output, nil for a tab whose reader
+// reported none.
+func newPlace(place *host.TabPlace) *Place {
 	if place == nil || *place == (host.TabPlace{}) {
 		return nil
 	}
-	return &TabLocation{
+	return &Place{
 		Page:            place.Page,
 		PageCount:       place.PageCount,
 		PositionSeconds: place.PositionSeconds,

@@ -1,9 +1,5 @@
 package service
 
-// permissionWindowFocus is the permission a caller needs to read the tabs of the window and change
-// what it shows.
-const permissionWindowFocus = "window:focus"
-
 // The instructions of the window tools, each one sentence. A sentence of a tool offered on the
 // reading server names no tool offered on the full server alone.
 const (

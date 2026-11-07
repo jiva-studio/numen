@@ -20,12 +20,12 @@ func addNoteFocus(registry *tools.Registry, on Host) error {
 		Description: "Make a note the current note of the window; the neighbourhood view is centred " +
 			"on it. Call it only when the user asked to be taken to a note. Talking about one is " +
 			"not asking, and neither is editing one: the call changes what the window shows. It " +
-			"returns no note content: `note_read` does that.",
+			"returns no note content: read the note for its content.",
 		Effect:       tools.ReadOnly,
 		Step:         tools.ByEffect,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{showSentence},
-		Requires:     []string{permissionWindowFocus},
+		Requires:     []string{host.PermissionWindowFocus},
 	}, func(ctx context.Context, in NoteFocusInput) (NoteFocusOutput, error) {
 		if on.Window == nil {
 			return NoteFocusOutput{}, host.ErrNoWindow
@@ -44,7 +44,7 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 		Title: "Focus passages of a file",
 		Description: "Open a file of the vault in the window, scroll to the first passage and " +
 			"highlight every passage; a note opens whole with nothing highlighted. " +
-			"`library_search` returns the start and length of each passage; pass them unchanged. " +
+			"Pass the start and length of each passage unchanged, as a search of the library returns them. " +
 			"When several passages of one source are relevant, pass them all; the window " +
 			"scrolls to the first. An empty list opens the file at its beginning. Call it only when " +
 			"the user asked to see a passage. Talking about a passage is not asking: the call " +
@@ -53,7 +53,7 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 		Step:         tools.ByEffect,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{showSentence, passagesSentence},
-		Requires:     []string{permissionWindowFocus},
+		Requires:     []string{host.PermissionWindowFocus},
 	}, func(ctx context.Context, in SourceFocusInput) (SourceFocusOutput, error) {
 		passages := make([]host.PassageSpan, 0, len(in.Passages))
 		for _, passage := range in.Passages {
@@ -83,7 +83,7 @@ func addWindowTabActivate(registry *tools.Registry, on Host) error {
 		Step:         tools.ByEffect,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{showSentence, tabIDSentence},
-		Requires:     []string{permissionWindowFocus},
+		Requires:     []string{host.PermissionWindowFocus},
 	}, func(ctx context.Context, in WindowTabActivateInput) (WindowTabActivateOutput, error) {
 		if in.TabID == "" {
 			return WindowTabActivateOutput{}, errMissingTabID

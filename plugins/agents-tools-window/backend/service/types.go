@@ -3,8 +3,8 @@ package service
 
 import "time"
 
-// TabLocation is the place a tab is open at, as its reader reported it.
-type TabLocation struct {
+// Place is a place in a file: a page of a PDF, a position in a recording, or a position in an EPUB.
+type Place struct {
 	Page            int      `json:"page,omitempty" jsonschema:"PDF: the page shown, from 1"`
 	PageCount       int      `json:"pageCount,omitempty" jsonschema:"PDF: the number of pages"`
 	PositionSeconds *float64 `json:"positionSeconds,omitempty" jsonschema:"recording: seconds from the start"`
@@ -14,12 +14,12 @@ type TabLocation struct {
 
 // TabInfo describes an open tab in the user window.
 type TabInfo struct {
-	ID       string       `json:"id" jsonschema:"the identifier of the tab"`
-	Kind     string       `json:"kind" jsonschema:"the kind of the tab (e.g. note, document, book, recording, plex)"`
-	Path     string       `json:"path,omitempty" jsonschema:"the path of the file in the tab, relative to the vault folder"`
-	Title    string       `json:"title,omitempty" jsonschema:"the tab title"`
-	Location *TabLocation `json:"location,omitempty" jsonschema:"the place the tab is open at, omitted for a tab with none"`
-	IsActive bool         `json:"isActive,omitempty" jsonschema:"true for the active tab"`
+	TabID    string `json:"tabId" jsonschema:"the identifier of the tab"`
+	Kind     string `json:"kind" jsonschema:"the kind of the tab (e.g. note, document, book, recording, plex)"`
+	Path     string `json:"path,omitempty" jsonschema:"the path of the file in the tab, relative to the vault folder"`
+	Title    string `json:"title,omitempty" jsonschema:"the tab title"`
+	Place    *Place `json:"place,omitempty" jsonschema:"the place the tab is open at, omitted for a tab with none"`
+	IsActive bool   `json:"isActive,omitempty" jsonschema:"true for the active tab"`
 }
 
 // WindowTabListInput represents the arguments for window_tab_list.
@@ -27,8 +27,8 @@ type WindowTabListInput struct{}
 
 // WindowTabListOutput represents the result of inspecting open window tabs.
 type WindowTabListOutput struct {
-	Tabs     []TabInfo `json:"tabs" jsonschema:"the open tabs, in window order"`
-	ActiveID string    `json:"activeId,omitempty" jsonschema:"the identifier of the active tab"`
+	Tabs        []TabInfo `json:"tabs" jsonschema:"the open tabs, in window order"`
+	ActiveTabID string    `json:"activeTabId,omitempty" jsonschema:"the identifier of the active tab"`
 }
 
 // WindowTabActivateInput represents the arguments for window_tab_activate.
@@ -87,10 +87,10 @@ type NoteFocusOutput struct {
 	Note FocusedNote `json:"note" jsonschema:"the focused note"`
 }
 
-// Passage is a run of a file's text version in bytes, as library_search returns it.
+// Passage is a run of a file's text version in bytes, as a search of the library returns it.
 type Passage struct {
-	Start  int `json:"start" jsonschema:"the byte offset of the passage in the text of the file, as library_search returns it"`
-	Length int `json:"length" jsonschema:"the length of the passage in bytes, as library_search returns it"`
+	Start  int `json:"start" jsonschema:"the byte offset of the passage in the text of the file, as a search of the library returns it"`
+	Length int `json:"length" jsonschema:"the length of the passage in bytes, as a search of the library returns it"`
 }
 
 // SourceFocusInput represents the arguments for source_focus.
