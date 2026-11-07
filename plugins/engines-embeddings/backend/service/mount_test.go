@@ -28,7 +28,7 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 	token := hostcall.WithBearer("linked-token")
 
 	_, err = server.NewLifecycleClient(web.Client(), web.URL, token).Configure(t.Context(),
-		map[string]string{"baseUrl": remote.URL, "apiKey": "remote-key"})
+		map[string]string{"baseUrl": remote.URL, "provider": "custom"}, keysOf("remote-key"))
 	if err != nil {
 		t.Fatalf("Configure: %v", err)
 	}

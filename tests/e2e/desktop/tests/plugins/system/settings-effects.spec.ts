@@ -7,22 +7,33 @@ const NOTES_ID = 'md.numen.notes'
 const PDF_ID = 'md.numen.readers.pdf'
 const EMBEDDINGS_ID = 'md.numen.engines.embeddings'
 
-const readStoredSecrets = async (page: Page, pluginId: string): Promise<string[]> => {
+interface ListedSecret {
+  readonly id: string
+  readonly name: string
+  readonly group: string
+  readonly hasValue: boolean
+}
+
+/** The secrets the core lists. A value is never answered. */
+const readSecrets = async (page: Page): Promise<ListedSecret[]> => {
   const answer = await callRPC(page.request, 'SettingsService/GetSettings', {})
-  const plugins = (answer['plugins'] ?? []) as { id?: string; storedSecrets?: string[] }[]
-  return plugins.find((one) => one.id === pluginId)?.storedSecrets ?? []
+  return (answer['secrets'] ?? []) as ListedSecret[]
+}
+
+/** Deletes every secret, so the next test starts with none. */
+const deleteSecrets = async (page: Page): Promise<void> => {
+  for (const one of await readSecrets(page)) {
+    await callRPC(page.request, 'SettingsService/DeleteSecret', { id: one.id })
+  }
 }
 
 test.describe('Plugin settings take effect', () => {
-  test.afterEach(async ({ request }) => {
+  test.afterEach(async ({ page, request }) => {
     await writeSetting(request, [NOTES_ID, 'lineNumbers'], false)
     await writeSetting(request, [NOTES_ID, 'softWrap'], true)
     await writeSetting(request, [PDF_ID, 'defaultZoom'], 'page')
     await writeSetting(request, [EMBEDDINGS_ID, 'provider'], 'local')
-    await callRPC(request, 'SettingsService/DeletePluginSecret', {
-      pluginId: EMBEDDINGS_ID,
-      name: 'apiKey',
-    }).catch(() => undefined)
+    await deleteSecrets(page)
   })
 
   test('draws line numbers and no soft wrap in a note once the notes settings say so', async ({
@@ -64,43 +75,48 @@ test.describe('Plugin settings take effect', () => {
     })
   }
 
-  test('keeps an API key out of the page, shows it as set, and clears it with the delete button', async ({
+  test('keeps a secret value out of the page after it is entered and deletes the secret after a confirmation', async ({
     page,
-    request,
   }) => {
-    await writeSetting(request, [EMBEDDINGS_ID, 'provider'], 'custom')
+    const value = 'sk-invented-harbour-key'
+    await writeSetting(page.request, [EMBEDDINGS_ID, 'provider'], 'openai')
     await openWorkspace(page)
     await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
+
     await settings.getByRole('button', { name: /Vector Embeddings/ }).click()
     const field = settings.getByRole('textbox', { name: 'API key' })
     await expect(field).toHaveAttribute('type', 'password')
-    await expect(settings.getByRole('button', { name: 'Delete the key' })).toHaveCount(0)
-    expect(await readStoredSecrets(page, EMBEDDINGS_ID)).toEqual([])
+    await expect(field).not.toBeEditable()
+    await settings.getByRole('button', { name: 'All plugins' }).click()
 
-    await field.fill('sk-invented-harbour-key')
-    await field.press('Enter')
+    await settings.getByRole('button', { name: /^Secrets$/ }).click()
+    const section = settings.getByRole('group', { name: 'openai' })
+    await section.getByLabel('Default').fill(value)
+    await section.getByLabel('Default').press('Enter')
 
-    await expect.poll(() => readStoredSecrets(page, EMBEDDINGS_ID)).toEqual(['apiKey'])
-    await expect(field).toHaveValue('')
-    await expect(field).toHaveAttribute('placeholder', '••••••••')
+    await expect
+      .poll(async () => (await readSecrets(page)).map((one) => one.name))
+      .toEqual(['Default'])
+    expect((await readSecrets(page))[0]).toMatchObject({ group: 'openai', hasValue: true })
+    await expect(section.getByLabel('Default')).toHaveValue('')
+    expect(await page.content()).not.toContain(value)
 
     await page.reload()
     await runCommand(page, 'Open settings', /^Open settings$/)
     const reloaded = page.getByRole('tabpanel', { name: /Settings/ })
-    await reloaded.getByRole('button', { name: /Vector Embeddings/ }).click()
-    await expect(reloaded.getByRole('textbox', { name: 'API key' })).toHaveValue('')
-    await expect(reloaded.getByRole('textbox', { name: 'API key' })).toHaveAttribute(
-      'placeholder',
-      '••••••••',
-    )
-    expect(await page.content()).not.toContain('sk-invented-harbour-key')
+    await reloaded.getByRole('button', { name: /^Secrets$/ }).click()
+    expect(await page.content()).not.toContain(value)
 
-    const deleteButton = reloaded.getByRole('button', { name: 'Delete the key' })
-    await expect(deleteButton).toHaveAttribute('title', 'Delete the key')
-    await deleteButton.click()
+    await reloaded
+      .getByRole('listitem')
+      .filter({ hasText: 'Default' })
+      .getByRole('button', { name: /delete/i })
+      .click()
+    const confirmation = page.getByRole('alertdialog')
+    await expect(confirmation).toBeVisible()
+    await confirmation.getByRole('button', { name: /delete/i }).click()
 
-    await expect.poll(() => readStoredSecrets(page, EMBEDDINGS_ID)).toEqual([])
-    await expect(reloaded.getByRole('button', { name: 'Delete the key' })).toHaveCount(0)
+    await expect.poll(() => readSecrets(page)).toEqual([])
   })
 })

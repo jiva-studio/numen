@@ -136,29 +136,6 @@ describe('PluginDetail', () => {
     expect(recordedWrites).toStrictEqual([{ at: ['test.plugin', 'enabled'], value: 'false' }])
   })
 
-  it('saves and deletes secret fields', () => {
-    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
-      secrets: [{ name: 'AUTH_TOKEN', title: 'AUTH_TOKEN', description: '' }],
-      storedSecrets: ['AUTH_TOKEN'],
-    })
-    const { wrapper, writeSecret, deleteSecret } = createDetail(plugin)
-
-    const secretField = wrapper.findComponent(SecretField)
-    expect(secretField.exists()).toBe(true)
-    expect(secretField.props('name')).toBe('AUTH_TOKEN')
-    expect(secretField.props('isStored')).toBe(true)
-
-    secretField.vm.$emit('save', 'secret-key-123')
-    expect(writeSecret).toHaveBeenCalledExactlyOnceWith(
-      'test.plugin',
-      'AUTH_TOKEN',
-      'secret-key-123',
-    )
-
-    secretField.vm.$emit('delete')
-    expect(deleteSecret).toHaveBeenCalledExactlyOnceWith('test.plugin', 'AUTH_TOKEN')
-  })
-
   it('handles declarative settings controls: Switch, NumberField, Slider, Select, text input', async () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine', {
       settings: [
