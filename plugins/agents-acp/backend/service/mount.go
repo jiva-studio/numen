@@ -22,7 +22,7 @@ func Mount(s *server.Server) error {
 }
 
 func mount(s *server.Server, agent *agentServer) error {
-	s.SetUpdateConfig(agent.applyConfig)
+	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agent.applyConfig(values) })
 	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
 	return nil
 }

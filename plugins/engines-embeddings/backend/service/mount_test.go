@@ -52,7 +52,7 @@ func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
 	go func() {
 		defer close(isDone)
 		for range 200 {
-			srv.updateConfig(map[string]string{"model": "bge-m3"})
+			srv.updateConfig(map[string]string{"model": "bge-m3"}, nil)
 		}
 	}()
 

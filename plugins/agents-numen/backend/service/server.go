@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 // ProgramName is the identifier a task uses to select the agent, and the key of its settings section.
@@ -59,17 +60,13 @@ type Server struct {
 	registry agentrun.Registry
 }
 
-// Configure applies the settings: the base URL of the chat API, the key sent to it and the model
-// used when a task names none. A setting absent from the values keeps its current value, and an empty
-// key means no key.
+// Configure applies the settings: the base URL of the chat API and the model used when a task names
+// none. A setting absent from the values keeps its current value.
 func (s *Server) Configure(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if base, ok := values[SettingBaseURL]; ok {
 		s.baseURL = base
-	}
-	if key, ok := values[SettingAPIKey]; ok {
-		s.key = key
 	}
 	if name, ok := values[SettingModel]; ok {
 		s.model = name
@@ -90,6 +87,24 @@ func (s *Server) Configure(values map[string]string) {
 	s.models, s.isListed = nil, false
 }
 
+// ApplySecrets applies the key sent to the chat API: the first secret of the list the host passes for
+// the declaration apiKey. An empty list means no key, and a call that does not carry the declaration
+// keeps the current key.
+func (s *Server) ApplySecrets(secrets server.Secrets) {
+	list, carried := server.ReadSecrets(secrets, SettingAPIKey)
+	if !carried {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.key = ""
+	if len(list) > 0 {
+		s.key = list[0].Value
+	}
+	s.models, s.isListed = nil, false
+}
+
+// readPositive reads a whole number above zero from a setting value.
 func readPositive(text string) (int, bool) {
 	val, err := strconv.Atoi(text)
 	return val, err == nil && val > 0

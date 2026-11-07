@@ -4,10 +4,19 @@ package server
 // the service it calls.
 const SecretAPIKey = "apiKey"
 
-// ReadSecret returns the key that a Configure call passes under the name of a
-// secret the plugin declares, and whether the call carries that secret. An
-// empty key means the host holds none, and the plugin discards the one it has.
-func ReadSecret(values map[string]string, name string) (string, bool) {
-	key, found := values[name]
-	return key, found
+// Secret is one allowed secret with its value.
+type Secret struct{ ID, Name, Group, Value string }
+
+// Secrets holds, for each active declaration of the plugin, the allowed secrets in the order the
+// host chose.
+type Secrets map[string][]Secret
+
+// ReadSecrets returns the secrets a Configure call passes for a declaration, and whether the call
+// carries that declaration. An empty list means no secret, and the plugin discards the ones it has.
+func ReadSecrets(secrets Secrets, name string) ([]Secret, bool) {
+	list, found := secrets[name]
+	if !found {
+		return nil, false
+	}
+	return list, true
 }

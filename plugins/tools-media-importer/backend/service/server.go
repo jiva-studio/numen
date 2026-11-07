@@ -122,7 +122,7 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	if err != nil {
 		return err
 	}
-	s.SetUpdateConfig(f.updateConfig)
+	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { f.updateConfig(values) })
 	// gomutants:disable-next-line BRANCH_IF reason="mountAPI with static service and method constants never returns an error"
 	if err := mountAPI(s, links); err != nil {
 		return err
