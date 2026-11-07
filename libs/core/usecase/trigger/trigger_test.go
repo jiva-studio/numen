@@ -30,6 +30,7 @@ type memoryVault struct {
 	files map[string]string
 	times map[string]time.Time
 	reads int
+	opens int
 }
 
 func newMemoryVault(files map[string]string) *memoryVault {
@@ -83,9 +84,21 @@ func (s *memoryVault) Read(_ context.Context, path string) ([]byte, error) {
 	return []byte(content), nil
 }
 
-func (s *memoryVault) Open(context.Context, string) (io.ReadSeekCloser, error) {
-	return nil, errors.ErrUnsupported
+func (s *memoryVault) Open(_ context.Context, path string) (io.ReadSeekCloser, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	content, ok := s.files[path]
+	if !ok {
+		return nil, vaultport.ErrNotExist
+	}
+	s.opens++
+	return nopCloser{strings.NewReader(content)}, nil
 }
+
+// nopCloser is a reader of a string that has nothing to close.
+type nopCloser struct{ *strings.Reader }
+
+func (nopCloser) Close() error { return nil }
 
 func (s *memoryVault) StatFile(_ context.Context, path string) (domain.FileStat, error) {
 	s.mu.Lock()
@@ -319,11 +332,11 @@ func TestAFailedRunIsTriedAgainOnTheNextScan(t *testing.T) {
 func TestAScanReadsNoFileWhenNothingChanged(t *testing.T) {
 	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a", "scans/b.png": "pixels"}, getExtractOnAdd())
 	s.scan(t)
-	before := s.memoryVault.reads
+	before := s.memoryVault.reads + s.memoryVault.opens
 
 	s.scan(t)
-	if s.memoryVault.reads != before {
-		t.Errorf("a scan over unchanged files read %d files", s.memoryVault.reads-before)
+	if s.memoryVault.reads+s.memoryVault.opens != before {
+		t.Errorf("a scan over unchanged files read %d files", s.memoryVault.reads+s.memoryVault.opens-before)
 	}
 }
 
@@ -338,5 +351,14 @@ func TestATriggerOnFileAddedRunsOverAFileDeletedAndAddedAgainWithTheSameContent(
 	s.memoryVault.put("scans/a.pdf", "%PDF a")
 	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
 		t.Errorf("the file added again ran %v, want %v", got, want)
+	}
+}
+
+func TestAScanHashesAFileWithoutReadingItWhole(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, getExtractOnAdd())
+	s.scan(t)
+
+	if s.memoryVault.reads != 0 {
+		t.Errorf("the scan read %d files whole to hash them", s.memoryVault.reads)
 	}
 }

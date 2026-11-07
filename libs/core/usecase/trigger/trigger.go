@@ -150,7 +150,8 @@ type pass struct {
 	isChanged bool
 }
 
-// file is one file as a pass reads it: its content is read once, and only where it is needed.
+// file is one file as a pass reads it: its content is read whole once, and only where a condition
+// reads the note.
 type file struct {
 	stat    domain.FileStat
 	hash    string
@@ -202,21 +203,32 @@ func isDue(event string, hasRun, isNew bool) bool {
 	return hasRun || !isNew
 }
 
-// readFile is the file with the hash of its content, read only where its size or its modification
+// readFile is the file with the hash of its content, hashed only where its size or its modification
 // time differ from what the record holds.
 func (p *pass) readFile(ctx context.Context, stat domain.FileStat) (*file, error) {
 	known, isKnown := p.state.Files[stat.Path]
 	if isKnown && known.Size == stat.Size && known.ModTime.Equal(stat.ModTime) {
 		return &file{stat: stat, hash: known.Hash}, nil
 	}
-	raw, err := p.reader.Read(ctx, stat.Path)
+	hash, err := p.hashFile(ctx, stat.Path)
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", stat.Path, err)
 	}
-	hash := domain.HashContent(raw)
 	p.state.Files[stat.Path] = pluginport.TriggerFile{Size: stat.Size, ModTime: stat.ModTime, Hash: hash}
 	p.isChanged = true
-	return &file{stat: stat, hash: hash, isNew: !isKnown, raw: raw}, nil
+	return &file{stat: stat, hash: hash, isNew: !isKnown}, nil
+}
+
+// hashFile is domain.HashReader of the file at the path, read as a stream.
+func (p *pass) hashFile(ctx context.Context, path string) (hash string, err error) {
+	content, err := p.reader.Open(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		err = errors.Join(err, content.Close())
+	}()
+	return domain.HashReader(content)
 }
 
 // getValues is the values a condition reads over the file: the target, read from the note where the
