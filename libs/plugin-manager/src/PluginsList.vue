@@ -4,6 +4,7 @@
  * plugin pages and the system settings.
  */
 import { computed } from 'vue'
+import { Button } from '@numen/ui'
 import PluginRow from './PluginRow.vue'
 import SystemRow from './SystemRow.vue'
 import {
@@ -48,6 +49,10 @@ function onSelectSystem(): void {
   emit('select-plugin', 'system')
 }
 
+function onSelectSecrets(): void {
+  emit('select-plugin', 'secrets')
+}
+
 function onTogglePlugin(pluginId: string, isEnabled: boolean): void {
   emit('toggle-enabled', pluginId, isEnabled)
 }
@@ -68,6 +73,7 @@ function isPluginEnabled(pluginId: string): boolean {
         class="plugins-list__search-input"
         aria-label="Search plugins"
       />
+      <Button variant="outline" @click="onSelectSecrets">{{ words.secrets }}</Button>
     </div>
 
     <div class="plugins-list__items">
@@ -99,12 +105,15 @@ function isPluginEnabled(pluginId: string): boolean {
 }
 
 .plugins-list__search {
+  display: flex;
+  gap: 0.5rem;
   margin-block-end: 1rem;
 }
 
 .plugins-list__search-input {
   box-sizing: border-box;
-  inline-size: 100%;
+  flex: 1 1 auto;
+  min-inline-size: 0;
   padding: 0.5rem 0.75rem;
   background-color: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-rule);

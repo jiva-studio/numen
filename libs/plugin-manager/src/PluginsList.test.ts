@@ -104,6 +104,15 @@ describe('PluginsList', () => {
     expect(wrapper.emitted('select-plugin')).toStrictEqual([['sample.notes'], ['system']])
   })
 
+  it('emits select-plugin with secrets for the Secrets button, whatever the query', async () => {
+    const wrapper = mountList({ query: 'notes' })
+
+    const button = wrapper.findAll('button').find((one) => one.text() === 'Secrets')
+    await button?.trigger('click')
+
+    expect(wrapper.emitted('select-plugin')).toStrictEqual([['secrets']])
+  })
+
   it('emits toggle-enabled with the id and the new state', () => {
     const wrapper = mountList()
 
