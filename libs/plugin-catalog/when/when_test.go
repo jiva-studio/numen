@@ -87,7 +87,7 @@ func TestAnInvalidConditionIsAnError(t *testing.T) {
 func TestAnEmptyConditionIsAlwaysTrueAndNamesNothing(t *testing.T) {
 	condition := parse(t, "")
 
-	if condition.Evaluate(nil) != when.True || len(condition.Names()) != 0 || condition.HasItems() {
+	if condition.Evaluate(nil) != when.True || len(condition.ListNames()) != 0 || condition.HasItems() {
 		t.Errorf("the empty condition came out as %+v", condition)
 	}
 }
@@ -95,10 +95,10 @@ func TestAnEmptyConditionIsAlwaysTrueAndNamesNothing(t *testing.T) {
 func TestAConditionNamesItsVariables(t *testing.T) {
 	condition := parse(t, "target.isNote && window.isVaultReady || config.editor.lineNumbers == true")
 
-	if names := condition.Names(); !slices.Equal(names, []string{"config", "target.isNote", "window.isVaultReady"}) {
+	if names := condition.ListNames(); !slices.Equal(names, []string{"config", "target.isNote", "window.isVaultReady"}) {
 		t.Errorf("names = %v", names)
 	}
-	if condition.HasItems() || !condition.NamesTarget() {
+	if condition.HasItems() || !condition.HasTargetVariable() {
 		t.Errorf("a condition over the target has items or names no target: %+v", condition)
 	}
 }

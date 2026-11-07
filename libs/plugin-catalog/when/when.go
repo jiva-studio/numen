@@ -94,23 +94,23 @@ func Parse(text string) (Condition, error) {
 	return Condition{program: program, names: names}, nil
 }
 
-// Names gives the variables the condition names, sorted.
-func (c Condition) Names() []string {
+// ListNames lists the variables the condition names, sorted.
+func (c Condition) ListNames() []string {
 	return slices.Clone(c.names)
 }
 
 // HasItems reports whether the condition names a variable of a text version: its command offers one
 // item for each version of a file over which the condition holds.
 func (c Condition) HasItems() bool {
-	return c.isNaming("version.")
+	return c.hasVariablePrefix("version.")
 }
 
-// NamesTarget reports whether the condition names a variable of the target.
-func (c Condition) NamesTarget() bool {
-	return c.isNaming("target.")
+// HasTargetVariable reports whether the condition names a variable of the target.
+func (c Condition) HasTargetVariable() bool {
+	return c.hasVariablePrefix("target.")
 }
 
-func (c Condition) isNaming(prefix string) bool {
+func (c Condition) hasVariablePrefix(prefix string) bool {
 	return slices.ContainsFunc(c.names, func(name string) bool { return strings.HasPrefix(name, prefix) })
 }
 

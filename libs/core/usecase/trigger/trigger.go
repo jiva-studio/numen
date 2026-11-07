@@ -258,7 +258,7 @@ func (p *pass) getValues(ctx context.Context, current *file, condition pluginpor
 	if current.values != nil {
 		return current.values
 	}
-	names := condition.Names()
+	names := condition.ListNames()
 	isReadingNote := slices.ContainsFunc(names, func(name string) bool {
 		return name == "target.noteType" || strings.HasPrefix(name, "target.properties")
 	})

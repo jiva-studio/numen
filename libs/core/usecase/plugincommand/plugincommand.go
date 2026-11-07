@@ -192,7 +192,7 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	if err != nil {
 		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
 	}
-	if !condition.NamesTarget() {
+	if !condition.HasTargetVariable() {
 		return nil
 	}
 	noteType, properties := u.readNote(ctx, v, condition, call.Path)
@@ -262,7 +262,7 @@ func (u Run) getContentType(path string) domain.ContentType {
 func (u Run) readNote(
 	ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, path string,
 ) (domain.NoteType, map[string]any) {
-	names := condition.Names()
+	names := condition.ListNames()
 	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || u.readers == nil || path == "" {
 		return "", map[string]any{}
 	}
@@ -293,11 +293,11 @@ func HasItems(command Command) bool {
 	return err != nil || condition.HasItems()
 }
 
-// NamesTarget reports whether the condition of the command names the target it runs over, so a call
-// names a path.
-func NamesTarget(command Command) bool {
+// HasTargetVariable reports whether the condition of the command names the target it runs over, so a
+// call names a path.
+func HasTargetVariable(command Command) bool {
 	condition, err := pluginport.ParseCondition(command.When)
-	return err == nil && condition.NamesTarget()
+	return err == nil && condition.HasTargetVariable()
 }
 
 // IsSharedCommand reports whether the full id is a shared command, which the handlers of plugins run.

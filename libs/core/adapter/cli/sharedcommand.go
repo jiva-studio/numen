@@ -40,7 +40,7 @@ func listRunnableHandlers(deps Deps) []plugincommand.Entry {
 
 // isOverFile reports whether a handler of the shared command runs over a file, so a run names one.
 func isOverFile(handlers []plugincommand.Entry) bool {
-	return slices.ContainsFunc(handlers, func(one plugincommand.Entry) bool { return plugincommand.NamesTarget(one.Command) })
+	return slices.ContainsFunc(handlers, func(one plugincommand.Entry) bool { return plugincommand.HasTargetVariable(one.Command) })
 }
 
 // getSharedCommandSynopsis is how a shared command is typed: its id, the vault, the file where a
@@ -48,7 +48,7 @@ func isOverFile(handlers []plugincommand.Entry) bool {
 func getSharedCommandSynopsis(handlers []plugincommand.Entry) string {
 	declared := handlers[0].Command
 	for _, one := range handlers {
-		if plugincommand.NamesTarget(one.Command) {
+		if plugincommand.HasTargetVariable(one.Command) {
 			declared.When = one.Command.When
 		}
 	}

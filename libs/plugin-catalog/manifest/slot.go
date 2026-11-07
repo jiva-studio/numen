@@ -44,8 +44,8 @@ type SlotEntry struct {
 	When string
 }
 
-// placed is what the entry places, as its kind and id, such as command ledger.open.
-func (e SlotEntry) placed() (kind, id string) {
+// getPlaced returns what the entry places, as its kind and id, such as command ledger.open.
+func (e SlotEntry) getPlaced() (kind, id string) {
 	switch {
 	case e.Command != "":
 		return "command", e.Command
@@ -71,7 +71,7 @@ func (m Manifest) listSlotIssues() []error {
 	windowViews := map[string]bool{}
 	for _, entry := range m.Contributes.Slots {
 		issues = append(issues, listSlotEntryIssues(entry, declared)...)
-		kind, id := entry.placed()
+		kind, id := entry.getPlaced()
 		key := placement{entry.Slot, kind, id}
 		if kind != "" && observed[key] {
 			issues = append(issues, fmt.Errorf("%w: %s %q is placed twice in %q", ErrInvalidSlotEntry, kind, id, entry.Slot))
