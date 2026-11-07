@@ -140,9 +140,13 @@ type GetSettingsResponse struct {
 	Plugins []*PluginInfo `protobuf:"bytes,7,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	// The settings of the owner app, declared by the core in the format of a manifest setting. The
 	// window reads their defaults, bounds and options from here.
-	App           []*PluginSetting `protobuf:"bytes,8,rep,name=app,proto3" json:"app,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	App []*PluginSetting `protobuf:"bytes,8,rep,name=app,proto3" json:"app,omitempty"`
+	// Every secret in priority order, without its value.
+	Secrets []*Secret `protobuf:"bytes,9,rep,name=secrets,proto3" json:"secrets,omitempty"`
+	// Empty while the system keychain is in use; otherwise the absolute path of the file the values are kept in.
+	CredentialsPath string `protobuf:"bytes,10,opt,name=credentials_path,json=credentialsPath,proto3" json:"credentials_path,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetSettingsResponse) Reset() {
@@ -208,6 +212,20 @@ func (x *GetSettingsResponse) GetApp() []*PluginSetting {
 		return x.App
 	}
 	return nil
+}
+
+func (x *GetSettingsResponse) GetSecrets() []*Secret {
+	if x != nil {
+		return x.Secrets
+	}
+	return nil
+}
+
+func (x *GetSettingsResponse) GetCredentialsPath() string {
+	if x != nil {
+		return x.CredentialsPath
+	}
+	return ""
 }
 
 // Model is one model a setting that names a model can be set to.
@@ -549,32 +567,33 @@ func (*WriteSettingsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{7}
 }
 
-type WritePluginSecretRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The plugin, by its id.
-	PluginId string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	// The secret, by the name the plugin's manifest declares it under.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// The key to keep. It is never answered back.
-	Key           string `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+// Secret is one secret as the window sees it. A value never travels.
+type Secret struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Id      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name    string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Group   string                 `protobuf:"bytes,3,opt,name=group,proto3" json:"group,omitempty"`
+	Allowed []*SecretPermission    `protobuf:"bytes,4,rep,name=allowed,proto3" json:"allowed,omitempty"`
+	// False when the value is not on this machine.
+	HasValue      bool `protobuf:"varint,5,opt,name=has_value,json=hasValue,proto3" json:"has_value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *WritePluginSecretRequest) Reset() {
-	*x = WritePluginSecretRequest{}
+func (x *Secret) Reset() {
+	*x = Secret{}
 	mi := &file_numen_v1_settings_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *WritePluginSecretRequest) String() string {
+func (x *Secret) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WritePluginSecretRequest) ProtoMessage() {}
+func (*Secret) ProtoMessage() {}
 
-func (x *WritePluginSecretRequest) ProtoReflect() protoreflect.Message {
+func (x *Secret) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_settings_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -586,52 +605,71 @@ func (x *WritePluginSecretRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WritePluginSecretRequest.ProtoReflect.Descriptor instead.
-func (*WritePluginSecretRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use Secret.ProtoReflect.Descriptor instead.
+func (*Secret) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *WritePluginSecretRequest) GetPluginId() string {
+func (x *Secret) GetId() string {
 	if x != nil {
-		return x.PluginId
+		return x.Id
 	}
 	return ""
 }
 
-func (x *WritePluginSecretRequest) GetName() string {
+func (x *Secret) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *WritePluginSecretRequest) GetKey() string {
+func (x *Secret) GetGroup() string {
 	if x != nil {
-		return x.Key
+		return x.Group
 	}
 	return ""
 }
 
-type WritePluginSecretResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+func (x *Secret) GetAllowed() []*SecretPermission {
+	if x != nil {
+		return x.Allowed
+	}
+	return nil
+}
+
+func (x *Secret) GetHasValue() bool {
+	if x != nil {
+		return x.HasValue
+	}
+	return false
+}
+
+// SecretPermission is one declaration of a plugin that may read a secret.
+type SecretPermission struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Name     string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// The group of the declaration, empty for none.
+	Group         string `protobuf:"bytes,3,opt,name=group,proto3" json:"group,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *WritePluginSecretResponse) Reset() {
-	*x = WritePluginSecretResponse{}
+func (x *SecretPermission) Reset() {
+	*x = SecretPermission{}
 	mi := &file_numen_v1_settings_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *WritePluginSecretResponse) String() string {
+func (x *SecretPermission) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WritePluginSecretResponse) ProtoMessage() {}
+func (*SecretPermission) ProtoMessage() {}
 
-func (x *WritePluginSecretResponse) ProtoReflect() protoreflect.Message {
+func (x *SecretPermission) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_settings_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -643,85 +681,113 @@ func (x *WritePluginSecretResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WritePluginSecretResponse.ProtoReflect.Descriptor instead.
-func (*WritePluginSecretResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use SecretPermission.ProtoReflect.Descriptor instead.
+func (*SecretPermission) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{9}
 }
 
-type DeletePluginSecretRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The plugin, by its id.
-	PluginId string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	// The secret, by the name the plugin's manifest declares it under.
-	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeletePluginSecretRequest) Reset() {
-	*x = DeletePluginSecretRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeletePluginSecretRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeletePluginSecretRequest) ProtoMessage() {}
-
-func (x *DeletePluginSecretRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeletePluginSecretRequest.ProtoReflect.Descriptor instead.
-func (*DeletePluginSecretRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *DeletePluginSecretRequest) GetPluginId() string {
+func (x *SecretPermission) GetPluginId() string {
 	if x != nil {
 		return x.PluginId
 	}
 	return ""
 }
 
-func (x *DeletePluginSecretRequest) GetName() string {
+func (x *SecretPermission) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-type DeletePluginSecretResponse struct {
+func (x *SecretPermission) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
+}
+
+type CreateSecretRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Group         string                 `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Value         string                 `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeletePluginSecretResponse) Reset() {
-	*x = DeletePluginSecretResponse{}
+func (x *CreateSecretRequest) Reset() {
+	*x = CreateSecretRequest{}
+	mi := &file_numen_v1_settings_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSecretRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSecretRequest) ProtoMessage() {}
+
+func (x *CreateSecretRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSecretRequest.ProtoReflect.Descriptor instead.
+func (*CreateSecretRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *CreateSecretRequest) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
+}
+
+func (x *CreateSecretRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateSecretRequest) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+type CreateSecretResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateSecretResponse) Reset() {
+	*x = CreateSecretResponse{}
 	mi := &file_numen_v1_settings_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeletePluginSecretResponse) String() string {
+func (x *CreateSecretResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeletePluginSecretResponse) ProtoMessage() {}
+func (*CreateSecretResponse) ProtoMessage() {}
 
-func (x *DeletePluginSecretResponse) ProtoReflect() protoreflect.Message {
+func (x *CreateSecretResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_settings_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -733,9 +799,657 @@ func (x *DeletePluginSecretResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeletePluginSecretResponse.ProtoReflect.Descriptor instead.
-func (*DeletePluginSecretResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateSecretResponse.ProtoReflect.Descriptor instead.
+func (*CreateSecretResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *CreateSecretResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type RenameSecretRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RenameSecretRequest) Reset() {
+	*x = RenameSecretRequest{}
+	mi := &file_numen_v1_settings_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RenameSecretRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RenameSecretRequest) ProtoMessage() {}
+
+func (x *RenameSecretRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RenameSecretRequest.ProtoReflect.Descriptor instead.
+func (*RenameSecretRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *RenameSecretRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *RenameSecretRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type RenameSecretResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RenameSecretResponse) Reset() {
+	*x = RenameSecretResponse{}
+	mi := &file_numen_v1_settings_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RenameSecretResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RenameSecretResponse) ProtoMessage() {}
+
+func (x *RenameSecretResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RenameSecretResponse.ProtoReflect.Descriptor instead.
+func (*RenameSecretResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{13}
+}
+
+type WriteSecretRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WriteSecretRequest) Reset() {
+	*x = WriteSecretRequest{}
+	mi := &file_numen_v1_settings_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WriteSecretRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WriteSecretRequest) ProtoMessage() {}
+
+func (x *WriteSecretRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WriteSecretRequest.ProtoReflect.Descriptor instead.
+func (*WriteSecretRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *WriteSecretRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *WriteSecretRequest) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+type WriteSecretResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WriteSecretResponse) Reset() {
+	*x = WriteSecretResponse{}
+	mi := &file_numen_v1_settings_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WriteSecretResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WriteSecretResponse) ProtoMessage() {}
+
+func (x *WriteSecretResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WriteSecretResponse.ProtoReflect.Descriptor instead.
+func (*WriteSecretResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{15}
+}
+
+type DeleteSecretRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSecretRequest) Reset() {
+	*x = DeleteSecretRequest{}
+	mi := &file_numen_v1_settings_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSecretRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSecretRequest) ProtoMessage() {}
+
+func (x *DeleteSecretRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSecretRequest.ProtoReflect.Descriptor instead.
+func (*DeleteSecretRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *DeleteSecretRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type DeleteSecretResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSecretResponse) Reset() {
+	*x = DeleteSecretResponse{}
+	mi := &file_numen_v1_settings_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSecretResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSecretResponse) ProtoMessage() {}
+
+func (x *DeleteSecretResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSecretResponse.ProtoReflect.Descriptor instead.
+func (*DeleteSecretResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{17}
+}
+
+type MoveSecretRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Inside one group; empty means the end of the group.
+	BeforeId      string `protobuf:"bytes,2,opt,name=before_id,json=beforeId,proto3" json:"before_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoveSecretRequest) Reset() {
+	*x = MoveSecretRequest{}
+	mi := &file_numen_v1_settings_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoveSecretRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveSecretRequest) ProtoMessage() {}
+
+func (x *MoveSecretRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveSecretRequest.ProtoReflect.Descriptor instead.
+func (*MoveSecretRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *MoveSecretRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *MoveSecretRequest) GetBeforeId() string {
+	if x != nil {
+		return x.BeforeId
+	}
+	return ""
+}
+
+type MoveSecretResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoveSecretResponse) Reset() {
+	*x = MoveSecretResponse{}
+	mi := &file_numen_v1_settings_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoveSecretResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveSecretResponse) ProtoMessage() {}
+
+func (x *MoveSecretResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveSecretResponse.ProtoReflect.Descriptor instead.
+func (*MoveSecretResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{19}
+}
+
+type RenameSecretGroupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Group         string                 `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RenameSecretGroupRequest) Reset() {
+	*x = RenameSecretGroupRequest{}
+	mi := &file_numen_v1_settings_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RenameSecretGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RenameSecretGroupRequest) ProtoMessage() {}
+
+func (x *RenameSecretGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RenameSecretGroupRequest.ProtoReflect.Descriptor instead.
+func (*RenameSecretGroupRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *RenameSecretGroupRequest) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
+}
+
+func (x *RenameSecretGroupRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type RenameSecretGroupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RenameSecretGroupResponse) Reset() {
+	*x = RenameSecretGroupResponse{}
+	mi := &file_numen_v1_settings_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RenameSecretGroupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RenameSecretGroupResponse) ProtoMessage() {}
+
+func (x *RenameSecretGroupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RenameSecretGroupResponse.ProtoReflect.Descriptor instead.
+func (*RenameSecretGroupResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{21}
+}
+
+type AllowPluginSecretRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SecretId      string                 `protobuf:"bytes,1,opt,name=secret_id,json=secretId,proto3" json:"secret_id,omitempty"`
+	PluginId      string                 `protobuf:"bytes,2,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Group         string                 `protobuf:"bytes,4,opt,name=group,proto3" json:"group,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AllowPluginSecretRequest) Reset() {
+	*x = AllowPluginSecretRequest{}
+	mi := &file_numen_v1_settings_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AllowPluginSecretRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AllowPluginSecretRequest) ProtoMessage() {}
+
+func (x *AllowPluginSecretRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AllowPluginSecretRequest.ProtoReflect.Descriptor instead.
+func (*AllowPluginSecretRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *AllowPluginSecretRequest) GetSecretId() string {
+	if x != nil {
+		return x.SecretId
+	}
+	return ""
+}
+
+func (x *AllowPluginSecretRequest) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *AllowPluginSecretRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *AllowPluginSecretRequest) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
+}
+
+type AllowPluginSecretResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AllowPluginSecretResponse) Reset() {
+	*x = AllowPluginSecretResponse{}
+	mi := &file_numen_v1_settings_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AllowPluginSecretResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AllowPluginSecretResponse) ProtoMessage() {}
+
+func (x *AllowPluginSecretResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AllowPluginSecretResponse.ProtoReflect.Descriptor instead.
+func (*AllowPluginSecretResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{23}
+}
+
+type DenyPluginSecretRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SecretId      string                 `protobuf:"bytes,1,opt,name=secret_id,json=secretId,proto3" json:"secret_id,omitempty"`
+	PluginId      string                 `protobuf:"bytes,2,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Group         string                 `protobuf:"bytes,4,opt,name=group,proto3" json:"group,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DenyPluginSecretRequest) Reset() {
+	*x = DenyPluginSecretRequest{}
+	mi := &file_numen_v1_settings_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DenyPluginSecretRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DenyPluginSecretRequest) ProtoMessage() {}
+
+func (x *DenyPluginSecretRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DenyPluginSecretRequest.ProtoReflect.Descriptor instead.
+func (*DenyPluginSecretRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *DenyPluginSecretRequest) GetSecretId() string {
+	if x != nil {
+		return x.SecretId
+	}
+	return ""
+}
+
+func (x *DenyPluginSecretRequest) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *DenyPluginSecretRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DenyPluginSecretRequest) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
+}
+
+type DenyPluginSecretResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DenyPluginSecretResponse) Reset() {
+	*x = DenyPluginSecretResponse{}
+	mi := &file_numen_v1_settings_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DenyPluginSecretResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DenyPluginSecretResponse) ProtoMessage() {}
+
+func (x *DenyPluginSecretResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DenyPluginSecretResponse.ProtoReflect.Descriptor instead.
+func (*DenyPluginSecretResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{25}
 }
 
 type RetryPluginRequest struct {
@@ -748,7 +1462,7 @@ type RetryPluginRequest struct {
 
 func (x *RetryPluginRequest) Reset() {
 	*x = RetryPluginRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[12]
+	mi := &file_numen_v1_settings_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -760,7 +1474,7 @@ func (x *RetryPluginRequest) String() string {
 func (*RetryPluginRequest) ProtoMessage() {}
 
 func (x *RetryPluginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[12]
+	mi := &file_numen_v1_settings_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -773,7 +1487,7 @@ func (x *RetryPluginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetryPluginRequest.ProtoReflect.Descriptor instead.
 func (*RetryPluginRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *RetryPluginRequest) GetPluginId() string {
@@ -793,7 +1507,7 @@ type RetryPluginResponse struct {
 
 func (x *RetryPluginResponse) Reset() {
 	*x = RetryPluginResponse{}
-	mi := &file_numen_v1_settings_proto_msgTypes[13]
+	mi := &file_numen_v1_settings_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -805,7 +1519,7 @@ func (x *RetryPluginResponse) String() string {
 func (*RetryPluginResponse) ProtoMessage() {}
 
 func (x *RetryPluginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[13]
+	mi := &file_numen_v1_settings_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -818,7 +1532,7 @@ func (x *RetryPluginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetryPluginResponse.ProtoReflect.Descriptor instead.
 func (*RetryPluginResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *RetryPluginResponse) GetFailure() string {
@@ -839,7 +1553,7 @@ type ChoosePluginPathRequest struct {
 
 func (x *ChoosePluginPathRequest) Reset() {
 	*x = ChoosePluginPathRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[14]
+	mi := &file_numen_v1_settings_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -851,7 +1565,7 @@ func (x *ChoosePluginPathRequest) String() string {
 func (*ChoosePluginPathRequest) ProtoMessage() {}
 
 func (x *ChoosePluginPathRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[14]
+	mi := &file_numen_v1_settings_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -864,7 +1578,7 @@ func (x *ChoosePluginPathRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChoosePluginPathRequest.ProtoReflect.Descriptor instead.
 func (*ChoosePluginPathRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ChoosePluginPathRequest) GetPluginId() string {
@@ -895,7 +1609,7 @@ type ChoosePluginPathResponse struct {
 
 func (x *ChoosePluginPathResponse) Reset() {
 	*x = ChoosePluginPathResponse{}
-	mi := &file_numen_v1_settings_proto_msgTypes[15]
+	mi := &file_numen_v1_settings_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -907,7 +1621,7 @@ func (x *ChoosePluginPathResponse) String() string {
 func (*ChoosePluginPathResponse) ProtoMessage() {}
 
 func (x *ChoosePluginPathResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[15]
+	mi := &file_numen_v1_settings_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -920,7 +1634,7 @@ func (x *ChoosePluginPathResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChoosePluginPathResponse.ProtoReflect.Descriptor instead.
 func (*ChoosePluginPathResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ChoosePluginPathResponse) GetPath() string {
@@ -953,7 +1667,7 @@ type GetPluginDataRequest struct {
 
 func (x *GetPluginDataRequest) Reset() {
 	*x = GetPluginDataRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[16]
+	mi := &file_numen_v1_settings_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -965,7 +1679,7 @@ func (x *GetPluginDataRequest) String() string {
 func (*GetPluginDataRequest) ProtoMessage() {}
 
 func (x *GetPluginDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[16]
+	mi := &file_numen_v1_settings_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -978,7 +1692,7 @@ func (x *GetPluginDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPluginDataRequest.ProtoReflect.Descriptor instead.
 func (*GetPluginDataRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *GetPluginDataRequest) GetPluginId() string {
@@ -998,7 +1712,7 @@ type GetPluginDataResponse struct {
 
 func (x *GetPluginDataResponse) Reset() {
 	*x = GetPluginDataResponse{}
-	mi := &file_numen_v1_settings_proto_msgTypes[17]
+	mi := &file_numen_v1_settings_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1010,7 +1724,7 @@ func (x *GetPluginDataResponse) String() string {
 func (*GetPluginDataResponse) ProtoMessage() {}
 
 func (x *GetPluginDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[17]
+	mi := &file_numen_v1_settings_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1023,7 +1737,7 @@ func (x *GetPluginDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPluginDataResponse.ProtoReflect.Descriptor instead.
 func (*GetPluginDataResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *GetPluginDataResponse) GetFileCount() int32 {
@@ -1049,7 +1763,7 @@ type DeletePluginDataRequest struct {
 
 func (x *DeletePluginDataRequest) Reset() {
 	*x = DeletePluginDataRequest{}
-	mi := &file_numen_v1_settings_proto_msgTypes[18]
+	mi := &file_numen_v1_settings_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1061,7 +1775,7 @@ func (x *DeletePluginDataRequest) String() string {
 func (*DeletePluginDataRequest) ProtoMessage() {}
 
 func (x *DeletePluginDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[18]
+	mi := &file_numen_v1_settings_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1074,7 +1788,7 @@ func (x *DeletePluginDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePluginDataRequest.ProtoReflect.Descriptor instead.
 func (*DeletePluginDataRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *DeletePluginDataRequest) GetPluginId() string {
@@ -1092,7 +1806,7 @@ type DeletePluginDataResponse struct {
 
 func (x *DeletePluginDataResponse) Reset() {
 	*x = DeletePluginDataResponse{}
-	mi := &file_numen_v1_settings_proto_msgTypes[19]
+	mi := &file_numen_v1_settings_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1104,7 +1818,7 @@ func (x *DeletePluginDataResponse) String() string {
 func (*DeletePluginDataResponse) ProtoMessage() {}
 
 func (x *DeletePluginDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_settings_proto_msgTypes[19]
+	mi := &file_numen_v1_settings_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1117,7 +1831,7 @@ func (x *DeletePluginDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePluginDataResponse.ProtoReflect.Descriptor instead.
 func (*DeletePluginDataResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_settings_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{33}
 }
 
 var File_numen_v1_settings_proto protoreflect.FileDescriptor
@@ -1125,13 +1839,16 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\x1a\x15numen/v1/shared.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\xc7\x01\n" +
+	"\x12GetSettingsRequest\"\x9e\x02\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
 	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12.\n" +
 	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\x12)\n" +
-	"\x03app\x18\b \x03(\v2\x17.numen.v1.PluginSettingR\x03app\"\xce\x02\n" +
+	"\x03app\x18\b \x03(\v2\x17.numen.v1.PluginSettingR\x03app\x12*\n" +
+	"\asecrets\x18\t \x03(\v2\x10.numen.v1.SecretR\asecrets\x12)\n" +
+	"\x10credentials_path\x18\n" +
+	" \x01(\tR\x0fcredentialsPath\"\xce\x02\n" +
 	"\x05Model\x12\x19\n" +
 	"\bnamed_at\x18\x01 \x03(\tR\anamedAt\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -1151,16 +1868,54 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\achanged\x18\x01 \x03(\v2\x11.numen.v1.SettingR\achanged\"E\n" +
 	"\x14WriteSettingsRequest\x12-\n" +
 	"\bsettings\x18\x01 \x03(\v2\x11.numen.v1.SettingR\bsettings\"\x17\n" +
-	"\x15WriteSettingsResponse\"]\n" +
-	"\x18WritePluginSecretRequest\x12\x1b\n" +
+	"\x15WriteSettingsResponse\"\x95\x01\n" +
+	"\x06Secret\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05group\x18\x03 \x01(\tR\x05group\x124\n" +
+	"\aallowed\x18\x04 \x03(\v2\x1a.numen.v1.SecretPermissionR\aallowed\x12\x1b\n" +
+	"\thas_value\x18\x05 \x01(\bR\bhasValue\"Y\n" +
+	"\x10SecretPermission\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x10\n" +
-	"\x03key\x18\x03 \x01(\tR\x03key\"\x1b\n" +
-	"\x19WritePluginSecretResponse\"L\n" +
-	"\x19DeletePluginSecretRequest\x12\x1b\n" +
-	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x1c\n" +
-	"\x1aDeletePluginSecretResponse\"1\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05group\x18\x03 \x01(\tR\x05group\"U\n" +
+	"\x13CreateSecretRequest\x12\x14\n" +
+	"\x05group\x18\x01 \x01(\tR\x05group\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05value\x18\x03 \x01(\tR\x05value\"&\n" +
+	"\x14CreateSecretResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"9\n" +
+	"\x13RenameSecretRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x16\n" +
+	"\x14RenameSecretResponse\":\n" +
+	"\x12WriteSecretRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"\x15\n" +
+	"\x13WriteSecretResponse\"%\n" +
+	"\x13DeleteSecretRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x16\n" +
+	"\x14DeleteSecretResponse\"@\n" +
+	"\x11MoveSecretRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
+	"\tbefore_id\x18\x02 \x01(\tR\bbeforeId\"\x14\n" +
+	"\x12MoveSecretResponse\"D\n" +
+	"\x18RenameSecretGroupRequest\x12\x14\n" +
+	"\x05group\x18\x01 \x01(\tR\x05group\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x1b\n" +
+	"\x19RenameSecretGroupResponse\"~\n" +
+	"\x18AllowPluginSecretRequest\x12\x1b\n" +
+	"\tsecret_id\x18\x01 \x01(\tR\bsecretId\x12\x1b\n" +
+	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x14\n" +
+	"\x05group\x18\x04 \x01(\tR\x05group\"\x1b\n" +
+	"\x19AllowPluginSecretResponse\"}\n" +
+	"\x17DenyPluginSecretRequest\x12\x1b\n" +
+	"\tsecret_id\x18\x01 \x01(\tR\bsecretId\x12\x1b\n" +
+	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x14\n" +
+	"\x05group\x18\x04 \x01(\tR\x05group\"\x1a\n" +
+	"\x18DenyPluginSecretResponse\"1\n" +
 	"\x12RetryPluginRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\"/\n" +
 	"\x13RetryPluginResponse\x12\x18\n" +
@@ -1186,12 +1941,19 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x14PRESENCE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PRESENCE_PRESENT\x10\x01\x12\x18\n" +
 	"\x14PRESENCE_NOT_FETCHED\x10\x02\x12\x1d\n" +
-	"\x19PRESENCE_NOTHING_TO_FETCH\x10\x032\x96\x06\n" +
+	"\x19PRESENCE_NOTHING_TO_FETCH\x10\x032\xf0\t\n" +
 	"\x0fSettingsService\x12J\n" +
 	"\vGetSettings\x12\x1c.numen.v1.GetSettingsRequest\x1a\x1d.numen.v1.GetSettingsResponse\x12P\n" +
-	"\rWriteSettings\x12\x1e.numen.v1.WriteSettingsRequest\x1a\x1f.numen.v1.WriteSettingsResponse\x12\\\n" +
-	"\x11WritePluginSecret\x12\".numen.v1.WritePluginSecretRequest\x1a#.numen.v1.WritePluginSecretResponse\x12_\n" +
-	"\x12DeletePluginSecret\x12#.numen.v1.DeletePluginSecretRequest\x1a$.numen.v1.DeletePluginSecretResponse\x12J\n" +
+	"\rWriteSettings\x12\x1e.numen.v1.WriteSettingsRequest\x1a\x1f.numen.v1.WriteSettingsResponse\x12M\n" +
+	"\fCreateSecret\x12\x1d.numen.v1.CreateSecretRequest\x1a\x1e.numen.v1.CreateSecretResponse\x12M\n" +
+	"\fRenameSecret\x12\x1d.numen.v1.RenameSecretRequest\x1a\x1e.numen.v1.RenameSecretResponse\x12J\n" +
+	"\vWriteSecret\x12\x1c.numen.v1.WriteSecretRequest\x1a\x1d.numen.v1.WriteSecretResponse\x12M\n" +
+	"\fDeleteSecret\x12\x1d.numen.v1.DeleteSecretRequest\x1a\x1e.numen.v1.DeleteSecretResponse\x12G\n" +
+	"\n" +
+	"MoveSecret\x12\x1b.numen.v1.MoveSecretRequest\x1a\x1c.numen.v1.MoveSecretResponse\x12\\\n" +
+	"\x11RenameSecretGroup\x12\".numen.v1.RenameSecretGroupRequest\x1a#.numen.v1.RenameSecretGroupResponse\x12\\\n" +
+	"\x11AllowPluginSecret\x12\".numen.v1.AllowPluginSecretRequest\x1a#.numen.v1.AllowPluginSecretResponse\x12Y\n" +
+	"\x10DenyPluginSecret\x12!.numen.v1.DenyPluginSecretRequest\x1a\".numen.v1.DenyPluginSecretResponse\x12J\n" +
 	"\vRetryPlugin\x12\x1c.numen.v1.RetryPluginRequest\x1a\x1d.numen.v1.RetryPluginResponse\x12Y\n" +
 	"\x10ChoosePluginPath\x12!.numen.v1.ChoosePluginPathRequest\x1a\".numen.v1.ChoosePluginPathResponse\x12P\n" +
 	"\rGetPluginData\x12\x1e.numen.v1.GetPluginDataRequest\x1a\x1f.numen.v1.GetPluginDataResponse\x12Y\n" +
@@ -1211,65 +1973,93 @@ func file_numen_v1_settings_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_settings_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_numen_v1_settings_proto_goTypes = []any{
-	(Presence)(0),                      // 0: numen.v1.Presence
-	(*GetSettingsRequest)(nil),         // 1: numen.v1.GetSettingsRequest
-	(*GetSettingsResponse)(nil),        // 2: numen.v1.GetSettingsResponse
-	(*Model)(nil),                      // 3: numen.v1.Model
-	(*Setting)(nil),                    // 4: numen.v1.Setting
-	(*WatchSettingsRequest)(nil),       // 5: numen.v1.WatchSettingsRequest
-	(*WatchSettingsResponse)(nil),      // 6: numen.v1.WatchSettingsResponse
-	(*WriteSettingsRequest)(nil),       // 7: numen.v1.WriteSettingsRequest
-	(*WriteSettingsResponse)(nil),      // 8: numen.v1.WriteSettingsResponse
-	(*WritePluginSecretRequest)(nil),   // 9: numen.v1.WritePluginSecretRequest
-	(*WritePluginSecretResponse)(nil),  // 10: numen.v1.WritePluginSecretResponse
-	(*DeletePluginSecretRequest)(nil),  // 11: numen.v1.DeletePluginSecretRequest
-	(*DeletePluginSecretResponse)(nil), // 12: numen.v1.DeletePluginSecretResponse
-	(*RetryPluginRequest)(nil),         // 13: numen.v1.RetryPluginRequest
-	(*RetryPluginResponse)(nil),        // 14: numen.v1.RetryPluginResponse
-	(*ChoosePluginPathRequest)(nil),    // 15: numen.v1.ChoosePluginPathRequest
-	(*ChoosePluginPathResponse)(nil),   // 16: numen.v1.ChoosePluginPathResponse
-	(*GetPluginDataRequest)(nil),       // 17: numen.v1.GetPluginDataRequest
-	(*GetPluginDataResponse)(nil),      // 18: numen.v1.GetPluginDataResponse
-	(*DeletePluginDataRequest)(nil),    // 19: numen.v1.DeletePluginDataRequest
-	(*DeletePluginDataResponse)(nil),   // 20: numen.v1.DeletePluginDataResponse
-	(*PluginInfo)(nil),                 // 21: numen.v1.PluginInfo
-	(*PluginSetting)(nil),              // 22: numen.v1.PluginSetting
-	(*ReasoningLevel)(nil),             // 23: numen.v1.ReasoningLevel
+	(Presence)(0),                     // 0: numen.v1.Presence
+	(*GetSettingsRequest)(nil),        // 1: numen.v1.GetSettingsRequest
+	(*GetSettingsResponse)(nil),       // 2: numen.v1.GetSettingsResponse
+	(*Model)(nil),                     // 3: numen.v1.Model
+	(*Setting)(nil),                   // 4: numen.v1.Setting
+	(*WatchSettingsRequest)(nil),      // 5: numen.v1.WatchSettingsRequest
+	(*WatchSettingsResponse)(nil),     // 6: numen.v1.WatchSettingsResponse
+	(*WriteSettingsRequest)(nil),      // 7: numen.v1.WriteSettingsRequest
+	(*WriteSettingsResponse)(nil),     // 8: numen.v1.WriteSettingsResponse
+	(*Secret)(nil),                    // 9: numen.v1.Secret
+	(*SecretPermission)(nil),          // 10: numen.v1.SecretPermission
+	(*CreateSecretRequest)(nil),       // 11: numen.v1.CreateSecretRequest
+	(*CreateSecretResponse)(nil),      // 12: numen.v1.CreateSecretResponse
+	(*RenameSecretRequest)(nil),       // 13: numen.v1.RenameSecretRequest
+	(*RenameSecretResponse)(nil),      // 14: numen.v1.RenameSecretResponse
+	(*WriteSecretRequest)(nil),        // 15: numen.v1.WriteSecretRequest
+	(*WriteSecretResponse)(nil),       // 16: numen.v1.WriteSecretResponse
+	(*DeleteSecretRequest)(nil),       // 17: numen.v1.DeleteSecretRequest
+	(*DeleteSecretResponse)(nil),      // 18: numen.v1.DeleteSecretResponse
+	(*MoveSecretRequest)(nil),         // 19: numen.v1.MoveSecretRequest
+	(*MoveSecretResponse)(nil),        // 20: numen.v1.MoveSecretResponse
+	(*RenameSecretGroupRequest)(nil),  // 21: numen.v1.RenameSecretGroupRequest
+	(*RenameSecretGroupResponse)(nil), // 22: numen.v1.RenameSecretGroupResponse
+	(*AllowPluginSecretRequest)(nil),  // 23: numen.v1.AllowPluginSecretRequest
+	(*AllowPluginSecretResponse)(nil), // 24: numen.v1.AllowPluginSecretResponse
+	(*DenyPluginSecretRequest)(nil),   // 25: numen.v1.DenyPluginSecretRequest
+	(*DenyPluginSecretResponse)(nil),  // 26: numen.v1.DenyPluginSecretResponse
+	(*RetryPluginRequest)(nil),        // 27: numen.v1.RetryPluginRequest
+	(*RetryPluginResponse)(nil),       // 28: numen.v1.RetryPluginResponse
+	(*ChoosePluginPathRequest)(nil),   // 29: numen.v1.ChoosePluginPathRequest
+	(*ChoosePluginPathResponse)(nil),  // 30: numen.v1.ChoosePluginPathResponse
+	(*GetPluginDataRequest)(nil),      // 31: numen.v1.GetPluginDataRequest
+	(*GetPluginDataResponse)(nil),     // 32: numen.v1.GetPluginDataResponse
+	(*DeletePluginDataRequest)(nil),   // 33: numen.v1.DeletePluginDataRequest
+	(*DeletePluginDataResponse)(nil),  // 34: numen.v1.DeletePluginDataResponse
+	(*PluginInfo)(nil),                // 35: numen.v1.PluginInfo
+	(*PluginSetting)(nil),             // 36: numen.v1.PluginSetting
+	(*ReasoningLevel)(nil),            // 37: numen.v1.ReasoningLevel
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
-	21, // 1: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
-	22, // 2: numen.v1.GetSettingsResponse.app:type_name -> numen.v1.PluginSetting
-	4,  // 3: numen.v1.Model.writes:type_name -> numen.v1.Setting
-	0,  // 4: numen.v1.Model.presence:type_name -> numen.v1.Presence
-	23, // 5: numen.v1.Model.reasoning_levels:type_name -> numen.v1.ReasoningLevel
-	4,  // 6: numen.v1.WatchSettingsResponse.changed:type_name -> numen.v1.Setting
-	4,  // 7: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	1,  // 8: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
-	7,  // 9: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
-	9,  // 10: numen.v1.SettingsService.WritePluginSecret:input_type -> numen.v1.WritePluginSecretRequest
-	11, // 11: numen.v1.SettingsService.DeletePluginSecret:input_type -> numen.v1.DeletePluginSecretRequest
-	13, // 12: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
-	15, // 13: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
-	17, // 14: numen.v1.SettingsService.GetPluginData:input_type -> numen.v1.GetPluginDataRequest
-	19, // 15: numen.v1.SettingsService.DeletePluginData:input_type -> numen.v1.DeletePluginDataRequest
-	5,  // 16: numen.v1.SettingsService.WatchSettings:input_type -> numen.v1.WatchSettingsRequest
-	2,  // 17: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
-	8,  // 18: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
-	10, // 19: numen.v1.SettingsService.WritePluginSecret:output_type -> numen.v1.WritePluginSecretResponse
-	12, // 20: numen.v1.SettingsService.DeletePluginSecret:output_type -> numen.v1.DeletePluginSecretResponse
-	14, // 21: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
-	16, // 22: numen.v1.SettingsService.ChoosePluginPath:output_type -> numen.v1.ChoosePluginPathResponse
-	18, // 23: numen.v1.SettingsService.GetPluginData:output_type -> numen.v1.GetPluginDataResponse
-	20, // 24: numen.v1.SettingsService.DeletePluginData:output_type -> numen.v1.DeletePluginDataResponse
-	6,  // 25: numen.v1.SettingsService.WatchSettings:output_type -> numen.v1.WatchSettingsResponse
-	17, // [17:26] is the sub-list for method output_type
-	8,  // [8:17] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	35, // 1: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
+	36, // 2: numen.v1.GetSettingsResponse.app:type_name -> numen.v1.PluginSetting
+	9,  // 3: numen.v1.GetSettingsResponse.secrets:type_name -> numen.v1.Secret
+	4,  // 4: numen.v1.Model.writes:type_name -> numen.v1.Setting
+	0,  // 5: numen.v1.Model.presence:type_name -> numen.v1.Presence
+	37, // 6: numen.v1.Model.reasoning_levels:type_name -> numen.v1.ReasoningLevel
+	4,  // 7: numen.v1.WatchSettingsResponse.changed:type_name -> numen.v1.Setting
+	4,  // 8: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
+	10, // 9: numen.v1.Secret.allowed:type_name -> numen.v1.SecretPermission
+	1,  // 10: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
+	7,  // 11: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
+	11, // 12: numen.v1.SettingsService.CreateSecret:input_type -> numen.v1.CreateSecretRequest
+	13, // 13: numen.v1.SettingsService.RenameSecret:input_type -> numen.v1.RenameSecretRequest
+	15, // 14: numen.v1.SettingsService.WriteSecret:input_type -> numen.v1.WriteSecretRequest
+	17, // 15: numen.v1.SettingsService.DeleteSecret:input_type -> numen.v1.DeleteSecretRequest
+	19, // 16: numen.v1.SettingsService.MoveSecret:input_type -> numen.v1.MoveSecretRequest
+	21, // 17: numen.v1.SettingsService.RenameSecretGroup:input_type -> numen.v1.RenameSecretGroupRequest
+	23, // 18: numen.v1.SettingsService.AllowPluginSecret:input_type -> numen.v1.AllowPluginSecretRequest
+	25, // 19: numen.v1.SettingsService.DenyPluginSecret:input_type -> numen.v1.DenyPluginSecretRequest
+	27, // 20: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
+	29, // 21: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
+	31, // 22: numen.v1.SettingsService.GetPluginData:input_type -> numen.v1.GetPluginDataRequest
+	33, // 23: numen.v1.SettingsService.DeletePluginData:input_type -> numen.v1.DeletePluginDataRequest
+	5,  // 24: numen.v1.SettingsService.WatchSettings:input_type -> numen.v1.WatchSettingsRequest
+	2,  // 25: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
+	8,  // 26: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
+	12, // 27: numen.v1.SettingsService.CreateSecret:output_type -> numen.v1.CreateSecretResponse
+	14, // 28: numen.v1.SettingsService.RenameSecret:output_type -> numen.v1.RenameSecretResponse
+	16, // 29: numen.v1.SettingsService.WriteSecret:output_type -> numen.v1.WriteSecretResponse
+	18, // 30: numen.v1.SettingsService.DeleteSecret:output_type -> numen.v1.DeleteSecretResponse
+	20, // 31: numen.v1.SettingsService.MoveSecret:output_type -> numen.v1.MoveSecretResponse
+	22, // 32: numen.v1.SettingsService.RenameSecretGroup:output_type -> numen.v1.RenameSecretGroupResponse
+	24, // 33: numen.v1.SettingsService.AllowPluginSecret:output_type -> numen.v1.AllowPluginSecretResponse
+	26, // 34: numen.v1.SettingsService.DenyPluginSecret:output_type -> numen.v1.DenyPluginSecretResponse
+	28, // 35: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
+	30, // 36: numen.v1.SettingsService.ChoosePluginPath:output_type -> numen.v1.ChoosePluginPathResponse
+	32, // 37: numen.v1.SettingsService.GetPluginData:output_type -> numen.v1.GetPluginDataResponse
+	34, // 38: numen.v1.SettingsService.DeletePluginData:output_type -> numen.v1.DeletePluginDataResponse
+	6,  // 39: numen.v1.SettingsService.WatchSettings:output_type -> numen.v1.WatchSettingsResponse
+	25, // [25:40] is the sub-list for method output_type
+	10, // [10:25] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_settings_proto_init() }
@@ -1285,7 +2075,7 @@ func file_numen_v1_settings_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_settings_proto_rawDesc), len(file_numen_v1_settings_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   20,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -54,7 +54,10 @@ type Secret struct {
 	Name        string
 	Title       string
 	Description string
-	When        *Condition
+	// When is the condition under which the secret is shown and handed to the plugin.
+	When *Condition
+	// Group is where the person finds the secrets for this declaration. It is a hint and not a limit.
+	Group string
 }
 
 // GetSecretNames returns the names of the secrets the plugin declares.

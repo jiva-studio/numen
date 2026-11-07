@@ -20,9 +20,29 @@
       "name": "apiKey",
       "title": "API key",
       "description": "Key of the remote service",
+      "group": "openrouter",
       "when": {
         "setting": "provider",
-        "is": ["openrouter", "openai", "custom"]
+        "is": ["openrouter"]
+      }
+    },
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "Key of the remote service",
+      "group": "openai",
+      "when": {
+        "setting": "provider",
+        "is": ["openai"]
+      }
+    },
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "Key of the remote service",
+      "when": {
+        "setting": "provider",
+        "is": ["custom"]
       }
     }
   ],

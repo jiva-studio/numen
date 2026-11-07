@@ -3,9 +3,11 @@ package manifest
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -91,11 +93,6 @@ var (
 	ErrNoBackend              = errors.New("only a backend serves this, and the plugin declares none")
 )
 
-// SettingStoredSecrets is the setting under which the host records, for a plugin,
-// the names of its secrets that have a key in the key store. It holds names and
-// never a key, and neither a setting nor a secret of a manifest takes the name.
-const SettingStoredSecrets = "storedSecrets"
-
 // IsValidID reports whether the text is the shape of a plugin id: two or more dot-separated
 // segments of letters, digits, _ or -. The ids `app` and `v`, which the first level of the
 // settings file keeps, are no plugin ids.
@@ -105,7 +102,8 @@ func IsValidID(id string) bool { return manifestIDPattern.MatchString(id) }
 // host runs the plugin. No setting of a manifest takes the name.
 const SettingEnabled = "enabled"
 
-func listReservedSettingKeys() []string { return []string{SettingStoredSecrets, SettingEnabled} }
+// listReservedSettingKeys returns the fields of the object of a plugin the host keeps for itself.
+func listReservedSettingKeys() []string { return []string{SettingEnabled} }
 
 var (
 	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
@@ -177,13 +175,26 @@ type Manifest struct {
 	Permissions      []string
 	Dependencies     []DependencyRequirement
 	Backend          Backend
-	Frontend         *Frontend
-	Settings         []Setting
-	Secrets          []Secret
-	Services         []string
-	SettingsViews    []SettingsView
-	Contributes      Contributes
-	Warnings         []string
+	// Frontend is nil for a plugin without a frontend.
+	Frontend *Frontend
+	Settings []Setting
+	// Secrets are the names of the secrets, such as an API key, that the plugin
+	// requests the host to store. The host passes them as Configure values,
+	// empty while a secret has no key, and never puts one in the environment or
+	// on the command line.
+	Secrets []Secret
+	// Services are the services the plugin serves to the windows, by their full names. A window that
+	// receives a call for one forwards it to the plugin; a service the host serves itself is never
+	// forwarded.
+	Services []string
+	// SettingsViews are the components of the plugin's frontend the settings page draws among the
+	// settings of the plugin, each by the id the frontend registers it under.
+	SettingsViews []SettingsView
+	// Contributes is what the plugin adds to the application, groups before its frontend is loaded.
+	Contributes Contributes
+	// Warnings are the findings of the reader that do not make the manifest invalid, such as a key the
+	// schema does not name. The reader fills them and a manifest built in code has none.
+	Warnings []string
 }
 
 // NoteType declares one type of note and how the index keeps the notes of it.
@@ -408,25 +419,88 @@ func (m Manifest) listActivationEventIssues() []error {
 	return issues
 }
 
+// maxSecretGroupLength is the longest group name of a secret declaration, in characters.
+const maxSecretGroupLength = 64
+
 func (m Manifest) listSecretIssues() []error {
 	var issues []error
-	observed := make(map[string]bool, len(m.Secrets))
 	for _, secret := range m.Secrets {
 		name := secret.Name
 		issues = append(issues, m.listConditionIssues("secret "+name, secret.When)...)
+		issues = append(issues, listSecretGroupIssues(secret)...)
 		switch {
 		case !manifestSecretPattern.MatchString(name):
 			issues = append(issues, fmt.Errorf("%w: %q is not letters, digits, _ or -", ErrInvalidSecret, name))
 		case slices.Contains(listReservedSettingKeys(), name):
 			issues = append(issues, fmt.Errorf("%w: secret %q", ErrReservedSettingKey, name))
-		case observed[name]:
-			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidSecret, name))
 		case slices.ContainsFunc(m.Settings, func(s Setting) bool { return s.Key == name }):
 			issues = append(issues, fmt.Errorf("%w: %q is also a setting", ErrInvalidSecret, name))
 		}
-		observed[name] = true
+	}
+	return append(issues, listRepeatedSecretIssues(m.Secrets)...)
+}
+
+// listSecretGroupIssues checks that a declared group is trimmed, non-empty and short.
+func listSecretGroupIssues(secret Secret) []error {
+	group := secret.Group
+	if group == "" {
+		return nil
+	}
+	switch {
+	case strings.TrimSpace(group) != group:
+		return []error{fmt.Errorf("%w: group %q of %q has leading or trailing space", ErrInvalidSecret, group, secret.Name)}
+	case utf8.RuneCountInString(group) > maxSecretGroupLength:
+		return []error{fmt.Errorf("%w: group of %q is longer than %d characters", ErrInvalidSecret, secret.Name, maxSecretGroupLength)}
+	}
+	return nil
+}
+
+// listRepeatedSecretIssues checks that a name repeats only under conditions on one setting whose
+// value lists share no value, and that a name and group pair is declared once.
+func listRepeatedSecretIssues(secrets []Secret) []error {
+	var issues []error
+	byName := make(map[string][]Secret, len(secrets))
+	for _, secret := range secrets {
+		byName[secret.Name] = append(byName[secret.Name], secret)
+	}
+	for _, name := range slices.Sorted(maps.Keys(byName)) {
+		declared := byName[name]
+		if len(declared) < 2 {
+			continue
+		}
+		if !isDisjoint(declared) {
+			issues = append(issues, fmt.Errorf("%w: %q is declared twice without conditions on one setting that exclude each other", ErrInvalidSecret, name))
+			continue
+		}
+		groups := make(map[string]bool, len(declared))
+		for _, secret := range declared {
+			if groups[secret.Group] {
+				issues = append(issues, fmt.Errorf("%w: %q is declared twice for the group %q", ErrInvalidSecret, name, secret.Group))
+			}
+			groups[secret.Group] = true
+		}
 	}
 	return issues
+}
+
+// isDisjoint reports whether every declaration has a condition, all on one setting, and no two
+// condition lists share a value.
+func isDisjoint(declared []Secret) bool {
+	values := make(map[string]bool)
+	for _, secret := range declared {
+		if secret.When == nil || secret.When.Setting != declared[0].When.Setting {
+			return false
+		}
+		for _, is := range secret.When.Is {
+			if values[is] {
+				return false
+			}
+		}
+		for _, is := range secret.When.Is {
+			values[is] = true
+		}
+	}
+	return true
 }
 
 func listManifestSettingIssues(settings []Setting) []error {

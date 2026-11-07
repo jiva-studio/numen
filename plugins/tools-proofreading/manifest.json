@@ -47,9 +47,29 @@
       "name": "apiKey",
       "title": "API key",
       "description": "API key for the remote chat service",
+      "group": "openrouter",
       "when": {
         "setting": "provider",
-        "is": ["openrouter", "openai", "custom"]
+        "is": ["openrouter"]
+      }
+    },
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "API key for the remote chat service",
+      "group": "openai",
+      "when": {
+        "setting": "provider",
+        "is": ["openai"]
+      }
+    },
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "API key for the remote chat service",
+      "when": {
+        "setting": "provider",
+        "is": ["custom"]
       }
     }
   ],
