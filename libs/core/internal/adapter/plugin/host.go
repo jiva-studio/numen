@@ -1685,6 +1685,9 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*pluginport.Pl
 	if !recognized {
 		return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginNotInstalled, Err: errPluginNotFound}
 	}
+	h.mu.Lock()
+	delete(h.reportedTargetFailures, pluginID)
+	h.mu.Unlock()
 	defer h.syncListenersAndReport(ctx, pluginID)
 
 	_, err := h.EnsureActive(ctx, pluginID)
