@@ -63,12 +63,14 @@ test.describe('the window shows no corner notices', () => {
       await expect(page.getByRole('tab', { name: /tide-tables/, selected: true })).toBeVisible({
         timeout: 30_000,
       })
+      made.push(...(await listFilePaths(request)).filter((one) => !before.includes(one)))
       await runCommand(page, 'Download captions', /^Download captions$/)
 
       const popover = await openTaskList(page)
-      await expect(popover).toContainText('its text was not fetched')
+      await expect(popover).toContainText('Fetching the text of a link')
+      await expect(popover).toContainText('tide-tables answered 404 Not Found')
+      await expect(popover).not.toContainText('Numen is not responding')
       await expectNoCorner(page)
-      made.push(...(await listFilePaths(request)).filter((one) => !before.includes(one)))
     })
   })
 
