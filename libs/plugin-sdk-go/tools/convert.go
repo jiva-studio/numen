@@ -120,6 +120,7 @@ func readToolInfo(t *v1.PluginTool) *ToolInfo {
 		Servers:      readServers(t.GetServers()),
 		Instructions: t.GetInstructions(),
 		Requires:     t.GetRequires(),
+		Hints:        readHints(t.GetHints()),
 	}
 }
 
@@ -138,6 +139,7 @@ func writeToolInfo(t *ToolInfo) *v1.PluginTool {
 		Servers:      writeServers(t.Servers),
 		Instructions: t.Instructions,
 		Requires:     t.Requires,
+		Hints:        writeHints(t.Hints),
 	}
 }
 
@@ -169,4 +171,22 @@ func writeCallResponse(res *CallResponse) *v1.CallToolResponse {
 		}
 	}
 	return out
+}
+
+func readHints(hints *v1.ToolHints) Hints {
+	return Hints{
+		ReadOnly:    hints.GetReadOnly(),
+		Destructive: hints.GetDestructive(),
+		Idempotent:  hints.GetIdempotent(),
+		OpenWorld:   hints.GetOpenWorld(),
+	}
+}
+
+func writeHints(hints Hints) *v1.ToolHints {
+	return &v1.ToolHints{
+		ReadOnly:    hints.ReadOnly,
+		Destructive: hints.Destructive,
+		Idempotent:  hints.Idempotent,
+		OpenWorld:   hints.OpenWorld,
+	}
 }
