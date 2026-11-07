@@ -76,8 +76,8 @@ func HashContent(raw []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// IsChainValid reports whether every source in a version's chain, down to the
-// file, is still what it was when the version above it was made.
+// IsChainValid reports whether every source in a version's chain, down to its
+// root, is still what it was when the version above it was made.
 //
 // fileHash is HashContent of the file as it is now, and properties is the
 // note's frontmatter as it is now.

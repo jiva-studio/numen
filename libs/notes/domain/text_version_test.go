@@ -91,7 +91,7 @@ func getPropertyVersion() domain.TextVersion {
 	}
 }
 
-func TestIsChainValidKeepsAPropertyVersionLiveWhileThePropertyHoldsItsValue(t *testing.T) {
+func TestIsChainValidAcceptsAPropertyVersionWhileThePropertyIsUnchanged(t *testing.T) {
 	versions := []domain.TextVersion{getPropertyVersion()}
 	properties := map[string]any{"url": "https://example.com/talk", "title": "Edited title"}
 	if !domain.IsChainValid(versions, "importer/a", "any-file-hash", properties) {

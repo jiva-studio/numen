@@ -445,7 +445,7 @@ func TestTheTextIsNotLiveOnceTheURLChanges(t *testing.T) {
 	}
 }
 
-func TestCopyPutsNoVersion(t *testing.T) {
+func TestCopyRecordsNoVersion(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
 	if err := w.links.FetchText(t.Context(), made); err != nil {
