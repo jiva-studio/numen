@@ -8,6 +8,7 @@ import { Pencil, Plus } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import type { Declaration, SecretSection } from '../../lib/secretSections'
+import { trimGroupName } from '../../lib/trimGroupName'
 import { WORDS as words } from '../../words'
 import SecretDraftRow from './SecretDraftRow.vue'
 import SecretRow from './SecretRow.vue'
@@ -18,12 +19,13 @@ const props = defineProps<{
   /** The names of the secrets of the group not created yet. */
   drafts: readonly string[]
   declarations: readonly Declaration[]
+  /** Creates the secret of a draft and resolves true when it was created; the field keeps a failed value. */
+  create?: ((name: string, value: string) => Promise<boolean>) | undefined
 }>()
 
 const emit = defineEmits<{
   (e: 'add'): void
   (e: 'rename-group', name: string): void
-  (e: 'create', name: string, value: string): void
   (e: 'discard', name: string): void
   (e: 'move', id: string, beforeId: string): void
   (e: 'rename', id: string, name: string): void
@@ -49,7 +51,7 @@ async function onStartRename(): Promise<void> {
 function onCommitRename(): void {
   if (!isRenaming.value) return
   isRenaming.value = false
-  const name = draftName.value.trim()
+  const name = trimGroupName(draftName.value)
   if (name !== '' && name !== props.section.group) emit('rename-group', name)
 }
 
@@ -103,7 +105,7 @@ function onMoveDown(index: number): void {
         v-if="section.isAsked && section.secrets.length === 0"
         :name="words.secretDefault"
         :can-discard="false"
-        @create="(value) => emit('create', words.secretDefault, value)"
+        :submit="create && ((value) => create!(words.secretDefault, value))"
       />
       <SecretRow
         v-for="(secret, index) in section.secrets"
@@ -124,7 +126,7 @@ function onMoveDown(index: number): void {
         :key="name"
         :name="name"
         can-discard
-        @create="(value) => emit('create', name, value)"
+        :submit="create && ((value) => create!(name, value))"
         @discard="emit('discard', name)"
       />
     </ul>

@@ -15,6 +15,7 @@ import {
   type Declaration,
 } from '../../lib/secretSections'
 import type { SettingsTabState } from '../../types'
+import { MAX_GROUP_LENGTH, trimGroupName } from '../../lib/trimGroupName'
 import { WORDS as words } from '../../words'
 import SecretDeleteDialog from './SecretDeleteDialog.vue'
 import SecretDraftRow from './SecretDraftRow.vue'
@@ -33,9 +34,6 @@ interface Draft {
   readonly name: string
 }
 
-/** The longest name of a group, in characters; the core refuses a longer one. */
-const MAX_GROUP_LENGTH = 64
-
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 const plugins = computed(() => installation.value.plugins?.value ?? [])
@@ -47,7 +45,7 @@ const declarations = computed(() => getDeclarations(plugins.value))
 const drafts = ref<readonly Draft[]>([])
 /** The group name typed for a secret in a group no section shows yet, or null while none is added. */
 const newGroup = ref<string | null>(null)
-const newGroupName = computed(() => (newGroup.value ?? '').trim())
+const newGroupName = computed(() => trimGroupName(newGroup.value ?? ''))
 const isNewGroupTooLong = computed(() => [...newGroupName.value].length > MAX_GROUP_LENGTH)
 const newName = computed(() => getNextSecretName(getNamesInGroup(newGroupName.value)))
 const deleting = ref<Secret | null>(null)
@@ -89,9 +87,10 @@ function onDiscard(group: string, name: string): void {
   drafts.value = drafts.value.filter((one) => one.group !== group || one.name !== name)
 }
 
-async function onCreate(group: string, name: string, value: string): Promise<void> {
+async function onCreate(group: string, name: string, value: string): Promise<boolean> {
   const id = await installation.value.createSecret(group, name, value)
   if (id !== '') onDiscard(group, name)
+  return id !== ''
 }
 
 function onToggle(secret: Secret, declaration: Declaration, isAllowed: boolean): void {
@@ -150,7 +149,7 @@ function getNamesInGroup(group: string): readonly string[] {
       :declarations="declarations"
       @add="onAdd(section.group)"
       @rename-group="(name) => installation.renameSecretGroup(section.group, name)"
-      @create="(name, value) => onCreate(section.group, name, value)"
+      :create="(name, value) => onCreate(section.group, name, value)"
       @discard="(name) => onDiscard(section.group, name)"
       @move="(id, beforeId) => installation.moveSecret(id, beforeId)"
       @rename="(id, name) => installation.renameSecret(id, name)"
