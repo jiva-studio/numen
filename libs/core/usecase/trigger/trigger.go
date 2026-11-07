@@ -95,15 +95,25 @@ func (u *Triggers) Execute(ctx context.Context, v domain.Vault) error {
 		return nil
 	})
 	if err != nil {
-		return err
+		// The runs made before the walk ended are kept, so the next pass does not run them again.
+		return errors.Join(err, pass.writeRecord(context.WithoutCancel(ctx), record))
 	}
 	pass.forgetUnseen()
-	if pass.isChanged {
-		if err := record.Write(ctx, pass.state); err != nil {
-			return fmt.Errorf("write the record of the triggers: %w", err)
-		}
+	if err := pass.writeRecord(ctx, record); err != nil {
+		return err
 	}
 	return errors.Join(failures...)
+}
+
+// writeRecord writes the record of the pass where the pass changed it.
+func (p *pass) writeRecord(ctx context.Context, record pluginport.TriggerRecord) error {
+	if !p.isChanged {
+		return nil
+	}
+	if err := record.Write(ctx, p.state); err != nil {
+		return fmt.Errorf("write the record of the triggers: %w", err)
+	}
+	return nil
 }
 
 // readTriggers is the triggers of the enabled plugins whose condition can be read.
