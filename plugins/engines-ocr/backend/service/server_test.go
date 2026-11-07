@@ -140,12 +140,13 @@ func TestCreateTextFailsTheTaskOfAFailedRecognition(t *testing.T) {
 	if err != nil {
 		t.Errorf("a failed recognition was answered %v, want the failure on its task alone", err)
 	}
-	deadline := time.Now().Add(workDeadline)
+	deadline := time.After(workDeadline)
 	for !hasFailedTask(s.queue.Queue, recognition.GetTaskID(scanPath), "the page cannot be decoded") {
-		if time.Now().After(deadline) {
+		select {
+		case <-deadline:
 			t.Fatalf("no task failed within %v; tasks %+v", workDeadline, s.queue.ListTasks())
+		case <-time.After(10 * time.Millisecond):
 		}
-		time.Sleep(10 * time.Millisecond)
 	}
 }
 
