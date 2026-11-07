@@ -25,11 +25,16 @@ var (
 	ErrInvalidQuery = errors.New("host: a query vector does not match the vectors of the index")
 )
 
-// The permissions of the search calls. The reads, the embedding included, need PermissionIndexRead, and
-// the floor needs PermissionSearchPolicy.
+// The permissions a plugin declares in its manifest. The search reads, the embedding included, need
+// PermissionIndexRead, and the search floor needs PermissionSearchPolicy. Adding, renaming, removing
+// and opening vaults needs PermissionVaultManage, every Window call needs PermissionWindowFocus, and a
+// request to the network needs PermissionNetworkOutbound.
 const (
-	PermissionIndexRead    = "index:read"
-	PermissionSearchPolicy = "search:policy"
+	PermissionIndexRead       = "index:read"
+	PermissionSearchPolicy    = "search:policy"
+	PermissionVaultManage     = "vault:manage"
+	PermissionWindowFocus     = "window:focus"
+	PermissionNetworkOutbound = "network:outbound"
 )
 
 // The limits the host applies to a search call.
@@ -145,7 +150,7 @@ type Search interface {
 	// installation has no such vault.
 	With(id domain.VaultID) Search
 	SearchIndex
-	PassageSearch
+	passageSearch
 	SearchPolicy
 }
 
@@ -174,8 +179,8 @@ type SearchIndex interface {
 	GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error)
 }
 
-// PassageSearch searches the text of a vault. It needs the index:read permission.
-type PassageSearch interface {
+// passageSearch searches the text of a vault. It needs the index:read permission.
+type passageSearch interface {
 	// SearchPassages returns the passages of the vault matching the query, best first, from the index of
 	// every source and every text version: by keywords, and by embedding when the installation has
 	// an embedding model. An installation with no model searches by keywords only, so the call
@@ -201,8 +206,9 @@ type PassageQuery struct {
 	Limit int
 	// Kinds are the kinds of source to search, KindNote or KindFile. Empty means every kind.
 	Kinds []domain.SourceKind
-	// PathPrefix limits the search to the sources whose path starts with it, relative to the vault.
-	// The index applies it before it truncates the list to Limit. Empty means the whole vault.
+	// PathPrefix limits the search to the sources whose path starts with it, relative to the vault, in
+	// either Unicode form (NFC or NFD). The index applies it before it truncates the list to Limit. Empty
+	// means the whole vault.
 	PathPrefix string
 }
 
@@ -218,10 +224,11 @@ type Passage struct {
 	// Start and Length locate the whole passage in the source text, in bytes.
 	Start  int
 	Length int
-	// Line is the line of the hit counted from the first line of the source's prose, and zero for
-	// a source that has no lines.
+	// Line is the line of the hit, counted from 0 at the first line of the source's prose, for every
+	// source.
 	Line int
-	// Selector locates the hit in the text version, as JSON. Empty for a note.
+	// Selector locates the hit in the text version, as JSON, with the keys of domain.Selector. Empty
+	// for a note.
 	Selector string
 }
 

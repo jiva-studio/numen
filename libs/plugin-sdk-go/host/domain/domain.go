@@ -14,7 +14,6 @@ type NoteRef = notesdomain.NoteRef
 type NoteType = notesdomain.NoteType
 type ResolvedLink = notesdomain.ResolvedLink
 type Link = notesdomain.Link
-type LinkKey = notesdomain.LinkKey
 type Address = notesdomain.Address
 type LinkRole = notesdomain.LinkRole
 type LinkMarker = notesdomain.LinkMarker
@@ -28,6 +27,10 @@ type TextVersion = notesdomain.TextVersion
 type TextVersionID = notesdomain.TextVersionID
 type TextKind = notesdomain.TextKind
 type TextSegment = notesdomain.TextSegment
+
+// Selector locates a segment of a text version in its file, as a JSON object. The key page is the PDF
+// page counted from 1, cfi the EPUB CFI, and t the span of a recording, [from, to] in seconds. Other
+// keys may be present and are ignored.
 type Selector = notesdomain.Selector
 type VersionText = notesdomain.VersionText
 type ByteRange = notesdomain.ByteRange

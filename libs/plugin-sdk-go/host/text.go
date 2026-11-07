@@ -66,11 +66,11 @@ type Texts interface {
 	RemoveVersion(ctx context.Context, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.
 	ListVersions(ctx context.Context, path string) (TextListing, error)
-	TextReader
+	textReader
 }
 
-// TextReader reads the segments of the text versions of the vault.
-type TextReader interface {
+// textReader reads the segments of the text versions of the vault.
+type textReader interface {
 	// ReadText is one page of any version's segments, read by the host from the version's file, or
 	// ErrNotExist.
 	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (TextPage, error)

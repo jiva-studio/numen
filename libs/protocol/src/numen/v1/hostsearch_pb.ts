@@ -542,7 +542,8 @@ export type HostSearchServiceSearchPassagesRequest = Message<"numen.v1.HostSearc
 
   /**
    * Limits the search to the sources whose path starts with it, relative to the
-   * vault. The index applies it, so the limit counts passages under the prefix.
+   * vault, in either Unicode form (NFC or NFD). The index applies it, so the
+   * limit counts passages under the prefix.
    * Empty means the whole vault.
    *
    * @generated from field: string path_prefix = 4;

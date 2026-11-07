@@ -130,7 +130,8 @@ type PluginPassageQuery struct {
 	Limit int
 	// Kinds are the kinds of source to search. Empty means every kind.
 	Kinds []domain.SourceKind
-	// PathPrefix limits the sources to those whose path starts with it. Empty limits none.
+	// PathPrefix limits the sources to those whose path starts with it, in either Unicode form (NFC or
+	// NFD). Empty limits none.
 	PathPrefix string
 }
 

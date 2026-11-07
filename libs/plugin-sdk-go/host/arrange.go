@@ -39,10 +39,10 @@ type VaultProblems struct {
 	Found  []domain.VaultProblem
 }
 
-// NoteArranger renames, moves and removes the notes of a vault, with the links that stop resolving
+// noteArranger renames, moves and removes the notes of a vault, with the links that stop resolving
 // repaired by the host, and runs the checks of the vault. The changes need vault:write and the checks
 // vault:read.
-type NoteArranger interface {
+type noteArranger interface {
 	// RenameNote renames the note and moves its file to the filename of the new title.
 	RenameNote(ctx context.Context, path, title string) (NoteRename, error)
 	// MoveNotes moves each note to the folder, keeping its filename. An empty folder is the vault root.

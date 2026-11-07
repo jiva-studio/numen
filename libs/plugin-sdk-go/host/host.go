@@ -153,7 +153,7 @@ type FileAccess interface {
 type VaultNotes interface {
 	NoteLookup
 	LinkLookup
-	NoteArranger
+	noteArranger
 	LinkEditor
 }
 

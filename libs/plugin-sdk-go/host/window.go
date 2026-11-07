@@ -35,7 +35,10 @@ type TabPlace struct {
 	CFI, Chapter string
 }
 
-// PassageSpan is a byte range in a file's text version, as library_search returns it.
+// PassageSpan is a byte range in a file's text version, as a passage search returns it. A passage
+// address has the form numen:<path>?start=<bytes>&length=<bytes>: the path relative to the vault,
+// percent-encoded as one path segment (url.PathEscape), and start and length the byte range of the
+// passage in the file's text version.
 type PassageSpan struct{ Start, Length int }
 
 // Window is the main window of the plugin's vault. Every call needs window:focus. A path with no file

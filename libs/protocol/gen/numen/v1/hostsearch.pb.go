@@ -1180,7 +1180,8 @@ type HostSearchServiceSearchPassagesRequest struct {
 	// The kinds of source to search, "note" or "file". Empty means every kind.
 	Kinds []string `protobuf:"bytes,3,rep,name=kinds,proto3" json:"kinds,omitempty"`
 	// Limits the search to the sources whose path starts with it, relative to the
-	// vault. The index applies it, so the limit counts passages under the prefix.
+	// vault, in either Unicode form (NFC or NFD). The index applies it, so the
+	// limit counts passages under the prefix.
 	// Empty means the whole vault.
 	PathPrefix    string `protobuf:"bytes,4,opt,name=path_prefix,json=pathPrefix,proto3" json:"path_prefix,omitempty"`
 	unknownFields protoimpl.UnknownFields
