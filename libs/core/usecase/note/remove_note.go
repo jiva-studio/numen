@@ -11,7 +11,7 @@ import (
 
 // ErrFolder reports an attempt to remove a path that is a folder. Notes are
 // removed one by one.
-var ErrFolder = errors.New("this is a folder, and this removes notes: name the notes to remove")
+var ErrFolder = errors.New("the path is a folder; pass the paths of the notes to remove")
 
 // RemoveNote removes one note, to the trash or permanently, and rejects a folder.
 type RemoveNote struct {

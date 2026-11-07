@@ -4,7 +4,8 @@
 // It is also the core's shared queue of heavy work and its list of tasks.
 //
 // The host identifies the calling plugin by its token. A call on the vault that reads requires
-// vault:read and one that changes anything requires vault:write; the plugin's own folder requires no
+// vault:read and one that changes anything requires vault:write; a call that changes the list of
+// vaults or the vault the window shows requires vault:manage. The plugin's own folder requires no
 // permission.
 package host
 
@@ -20,15 +21,15 @@ import (
 
 var (
 	// ErrNoVault is what a call gets while the host shows no vault.
-	ErrNoVault = errors.New("host: no vault is shown")
+	ErrNoVault = errors.New("no vault is shown")
 	// ErrOutside is what a path that does not stay in the vault gets.
-	ErrOutside = errors.New("host: not a path inside the vault")
+	ErrOutside = errors.New("the path is outside the vault")
 	// ErrStale is what a write gets when the file changed since the baseline.
 	ErrStale = notesedit.ErrStale
 	// ErrAlreadyExists is what a create gets when a file is already there.
-	ErrAlreadyExists = errors.New("host: a file is already there")
-	// ErrLockedByAnother is what a name gets when another program holds the file.
-	ErrLockedByAnother = errors.New("host: the file is held by another program")
+	ErrAlreadyExists = errors.New("the file already exists")
+	// ErrLockedByAnother is returned when another program has locked the file.
+	ErrLockedByAnother = errors.New("the file is locked by another program")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
 	ErrNotANote = notesedit.ErrNotANote
 	// ErrInvalidConnection is what a connection gets that is not one: a role no connection
@@ -39,9 +40,13 @@ var (
 	// ErrNoFreeName is what a new untitled note gets when every numbered name is taken.
 	ErrNoFreeName = notesdomain.ErrNoFreeName
 	// ErrUnknownVault is what a call gets when it names a vault the installation does not know.
-	ErrUnknownVault = errors.New("host: no such vault")
+	ErrUnknownVault = errors.New("the vault is not on the list")
 	// ErrNotExist is fs.ErrNotExist: a file, a note or a name that is not there.
 	ErrNotExist = fs.ErrNotExist
+	// ErrNotAttempted is returned for a note of a batch when the call was cancelled before it was changed.
+	ErrNotAttempted = errors.New("the call was cancelled before this note was changed")
+	// ErrNotText is returned by a ranged read for bytes that are not UTF-8.
+	ErrNotText = errors.New("the file is not text")
 )
 
 type IndexStatus int
@@ -112,11 +117,28 @@ type VaultIndex interface {
 	Watch(ctx context.Context) (<-chan Change, error)
 }
 
-// FileAccess reads and writes the files of a vault.
-type FileAccess interface {
+// FileRange is a ranged read of a file: the text, where it begins in the file, and the file stat of
+// the file it was read from.
+type FileRange struct {
+	Text  string
+	Start int
+	Stat  domain.FileStat
+}
+
+// FileReader reads the files of a vault.
+type FileReader interface {
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	// Read returns the file with the file stat it had when it was read.
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
+	// ReadRange reads at most length bytes of the file from start as text, truncated at whole characters.
+	// Zero or more than 16000 reads 16000. A range that is not UTF-8 returns ErrNotText; a folder returns
+	// ErrNotExist.
+	ReadRange(ctx context.Context, path string, start, length int) (FileRange, error)
+}
+
+// FileAccess reads and writes the files of a vault.
+type FileAccess interface {
+	FileReader
 	// Write replaces the file if it matches the baseline, and returns ErrStale if it does not.
 	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	// Create makes a file that is not there, else it returns ErrAlreadyExists.
@@ -126,10 +148,13 @@ type FileAccess interface {
 	Lock(ctx context.Context) (release func() error, err error)
 }
 
-// VaultNotes reads the notes of a vault and the links between them.
+// VaultNotes reads the notes of a vault and the links between them, renames, moves and removes the
+// notes, and edits their frontmatter links.
 type VaultNotes interface {
 	NoteLookup
 	LinkLookup
+	noteArranger
+	LinkEditor
 }
 
 // NoteLookup finds notes by path, name and type.

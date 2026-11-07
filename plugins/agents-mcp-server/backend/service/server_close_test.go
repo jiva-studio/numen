@@ -44,7 +44,7 @@ func waitSignal(t *testing.T, ch <-chan struct{}, msg string) {
 func TestServerCloseAnswersRequestReadBeforeClose(t *testing.T) {
 	t.Parallel()
 
-	srv, err := NewServer(Config{Addr: "127.0.0.1:0", Token: "tok"}, nil)
+	srv, err := NewServer(Config{Token: "tok"}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,9 +64,7 @@ func TestServerCloseAnswersRequestReadBeforeClose(t *testing.T) {
 		close(handlerStarted)
 		handler.ServeHTTP(w, r)
 	})
-	if err := srv.Start(); err != nil {
-		t.Fatal(err)
-	}
+	serveOnLoopback(t, srv)
 
 	conn, err := new(net.Dialer).DialContext(t.Context(), "tcp", srv.actualAddr)
 	if err != nil {

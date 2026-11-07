@@ -96,7 +96,7 @@ func newWorld(t *testing.T) *world {
 // create makes the link note of an address, and gives the texts its file as the host would.
 func (w *world) create(t *testing.T, address string) link.Link {
 	t.Helper()
-	made, err := w.links.Create(t.Context(), "links", address)
+	made, err := w.links.Create(t.Context(), "", "links", address)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,10 +120,10 @@ func TestCreateMakesANoteOfTypeLinkWithTheAddress(t *testing.T) {
 	if err != nil || read != made {
 		t.Errorf("the link reads back as %+v (%v), want %+v", read, err, made)
 	}
-	if _, err := w.links.Create(t.Context(), "links", articleAddress); !errors.Is(err, host.ErrAlreadyExists) {
+	if _, err := w.links.Create(t.Context(), "", "links", articleAddress); !errors.Is(err, host.ErrAlreadyExists) {
 		t.Errorf("a second link of one address was answered %v", err)
 	}
-	if _, err := w.links.Create(t.Context(), "", "file:///etc/passwd"); !errors.Is(err, address.ErrNotAURL) {
+	if _, err := w.links.Create(t.Context(), "", "", "file:///etc/passwd"); !errors.Is(err, address.ErrNotAURL) {
 		t.Errorf("a file address was answered %v", err)
 	}
 	w.vault.File("notes/plain.md", "---\ntype: deck\nurl: https://a.example/\n---\n")
@@ -191,7 +191,7 @@ func TestFetchText_SkipsEmptyAddressUnlessUserStarted(t *testing.T) {
 		t.Errorf("the address was asked %d times, want once", count)
 	}
 	if err := w.links.FetchText(t.Context(), made, true); err != nil || w.sites.texts.Load() != 2 {
-		t.Errorf("a person asking again asked the address %d times in all (%v)", w.sites.texts.Load(), err)
+		t.Errorf("after a user request the address was fetched %d times in all (%v)", w.sites.texts.Load(), err)
 	}
 	listing, err := w.texts.ListVersions(t.Context(), made.Path)
 	if err != nil {
@@ -286,7 +286,7 @@ func (w *world) deleteVersion(t *testing.T, made link.Link) {
 	}
 }
 
-func TestATextThePersonDeletedIsNotFetchedAgainUnlessAPersonAsks(t *testing.T) {
+func TestFetchTextSkipsDeletedTextUnlessUserRequested(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, articleAddress)
 	if err := w.links.FetchText(t.Context(), made, true); err != nil {
@@ -315,7 +315,7 @@ func TestATextThePersonDeletedIsNotFetchedAgainUnlessAPersonAsks(t *testing.T) {
 		t.Fatal(err)
 	}
 	if text, err := w.links.ReadArticle(t.Context(), made); err != nil || text == "" {
-		t.Errorf("a person asking again leaves the article %q (%v)", text, err)
+		t.Errorf("after a user request the article is %q (%v)", text, err)
 	}
 	if isDeleted, err := w.links.IsTextDeleted(t.Context(), made); err != nil || isDeleted {
 		t.Errorf("IsTextDeleted after a fetch = %v (%v); want false", isDeleted, err)

@@ -2,6 +2,7 @@ package vectors
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -35,18 +36,18 @@ func (t vaultBookTexts) read(ctx context.Context, path string) (domain.VersionTe
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	hash := domain.HashContent(raw)
-	version := domain.TextVersion{Path: path, PluginID: "test.books", Key: hash[:8], Kind: "book-text", SourceHash: hash}
+	version := domain.TextVersion{Path: path, PluginID: "test.books", Key: hash[:8], Kind: "book-text", InputHash: hash}
 	return domain.NewVersionText(version, parts), nil
 }
 
-func (t vaultBookTexts) FindLiveVersion(ctx context.Context, path, fileHash string) (domain.TextVersionID, error) {
-	doc, err := t.GetLiveText(ctx, path, fileHash)
+func (t vaultBookTexts) FindLiveVersion(ctx context.Context, path, contentHash string) (domain.TextVersionID, error) {
+	doc, err := t.GetLiveText(ctx, path, contentHash)
 	return doc.Version().GetID(), err
 }
 
-func (t vaultBookTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
+func (t vaultBookTexts) GetLiveText(ctx context.Context, path, contentHash string) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
-	if err == nil && doc.Version().SourceHash != fileHash {
+	if err == nil && doc.Version().InputHash != contentHash {
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	return doc, err
@@ -63,3 +64,12 @@ func (t vaultBookTexts) GetVersionText(ctx context.Context, path string, id doma
 func (vaultBookTexts) RequestText(context.Context, string, string) error { return nil }
 
 func (vaultBookTexts) IsTextSource(context.Context, string) (bool, error) { return true, nil }
+
+func (t vaultBookTexts) GetContentHash(ctx context.Context, path string) (_ string, err error) {
+	file, err := t.files.Open(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	defer func() { err = errors.Join(err, file.Close()) }()
+	return domain.HashReader(file)
+}

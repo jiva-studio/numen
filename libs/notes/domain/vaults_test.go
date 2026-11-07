@@ -33,8 +33,8 @@ func TestCheckOverlap_FolderContainingVaultFails(t *testing.T) {
 	if !errors.Is(err, domain.ErrOverlaps) {
 		t.Fatalf("CheckOverlap error = %v, want ErrOverlaps", err)
 	}
-	if got := err.Error(); !strings.Contains(got, "Vault /notes/deep") || !strings.Contains(got, "holds") {
-		t.Errorf("CheckOverlap error = %q, want it to name the vault it holds", got)
+	if got := err.Error(); !strings.Contains(got, "Vault /notes/deep") || !strings.Contains(got, "contains") {
+		t.Errorf("CheckOverlap error = %q, want it to name the vault it contains", got)
 	}
 }
 
@@ -136,5 +136,31 @@ func TestAnOverlapIsFoundAfterTheVaultAtTheSamePath(t *testing.T) {
 
 	if !errors.Is(err, domain.ErrOverlaps) {
 		t.Fatalf("CheckOverlap error = %v, want ErrOverlaps", err)
+	}
+}
+
+func TestCheckOverlapOfFolderInsideVaultNamesPathAndVault(t *testing.T) {
+	vs := domain.Vaults{{ID: "a", Name: "Rivers", Path: "/vaults/rivers"}}
+
+	err := vs.CheckOverlap("/vaults/rivers/deltas")
+
+	if !errors.Is(err, domain.ErrOverlaps) {
+		t.Fatalf("CheckOverlap error = %v, want ErrOverlaps", err)
+	}
+	if want := "/vaults/rivers/deltas is inside the vault Rivers; a vault cannot be inside another vault"; err.Error() != want {
+		t.Errorf("CheckOverlap error = %q, want %q", err.Error(), want)
+	}
+}
+
+func TestCheckOverlapOfFolderContainingVaultNamesPathAndVault(t *testing.T) {
+	vs := domain.Vaults{{ID: "a", Name: "Rivers", Path: "/vaults/rivers"}}
+
+	err := vs.CheckOverlap("/vaults")
+
+	if !errors.Is(err, domain.ErrOverlaps) {
+		t.Fatalf("CheckOverlap error = %v, want ErrOverlaps", err)
+	}
+	if want := "/vaults contains the vault Rivers; a vault cannot contain another vault"; err.Error() != want {
+		t.Errorf("CheckOverlap error = %q, want %q", err.Error(), want)
 	}
 }

@@ -33,10 +33,12 @@ const ConfigPerformanceProfile = "host.performanceProfile"
 const (
 	PermissionVaultRead       = manifest.PermissionVaultRead
 	PermissionVaultWrite      = manifest.PermissionVaultWrite
+	PermissionVaultManage     = manifest.PermissionVaultManage
 	PermissionNetworkOutbound = manifest.PermissionNetworkOutbound
 	PermissionAIComplete      = manifest.PermissionAIComplete
 	PermissionIndexRead       = manifest.PermissionIndexRead
 	PermissionSearchPolicy    = manifest.PermissionSearchPolicy
+	PermissionWindowFocus     = manifest.PermissionWindowFocus
 	PermissionNetworkAlias    = manifest.PermissionNetworkAlias
 	RuntimeONNX               = "onnxruntime"
 	HandlePlaybackCopy        = "playback-copy"

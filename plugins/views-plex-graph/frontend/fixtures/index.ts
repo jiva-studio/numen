@@ -125,12 +125,12 @@ export const createVault = (takes = true, connection: Connection | null = null) 
   const editor: PlexEditor = {
     createRelated: async ({ from, role, title }) => {
       createdItem.push([from, role])
-      return takes ? asValue(title ? `${title}.md` : 'Made.md') : asFailure('missing')
+      return takes ? asValue(title ? `${title}.md` : 'Made.md') : asFailure('notFound')
     },
     join: async (from, to, side) => {
       if (side.label !== undefined) joined.push([from, to, side.role, side.label])
       else joined.push([from, to, side.role])
-      return takes && !notJoinedPaths.has(to) ? asValue(undefined) : asFailure('missing')
+      return takes && !notJoinedPaths.has(to) ? asValue(undefined) : asFailure('notFound')
     },
     getConnection: async (first, second, type = '') =>
       asValue(
@@ -149,7 +149,7 @@ export const createVault = (takes = true, connection: Connection | null = null) 
     },
     removeConnection: async (first, second) => {
       removed.push([first, second])
-      return takes ? asValue(undefined) : asFailure('missing')
+      return takes ? asValue(undefined) : asFailure('notFound')
     },
   }
   return { editor, made: createdItem, joined, saved, removed, notJoinedPaths }

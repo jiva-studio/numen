@@ -22,6 +22,8 @@ service PluginToolService {
 message ListToolsRequest {}
 
 message ListToolsResponse {
+  // The host returns the tools of the plugins it lists grouped by plugin, in
+  // the order of plugin ids.
   repeated PluginTool tools = 1;
 }
 
@@ -51,6 +53,33 @@ message PluginTool {
   repeated ToolServer servers = 7;
 
   ToolStep step = 8;
+
+  // The instructions about this tool, each one sentence of plain English. A
+  // sentence about several tools is attached to each of them with identical
+  // text. An agent server sends an agent the distinct sentences of the tools it
+  // offers, in listing order.
+  repeated string instructions = 9;
+
+  // The permissions the caller must have besides the one of the effect, such
+  // as vault:manage. The host lists and runs the tool only for a caller that
+  // has all of them.
+  repeated string requires = 10;
+
+  // The hints an agent reads about the tool, set by the SDK from the effect,
+  // the step and the required permissions.
+  ToolHints hints = 11;
+}
+
+// ToolHints are the MCP annotations of a tool.
+message ToolHints {
+  // The tool changes nothing: the effect is READ_ONLY.
+  bool read_only = 1;
+  // The tool removes something: the effect is READ_WRITE and the step REMOVE.
+  bool destructive = 2;
+  // A repeated call with the same arguments has no further effect: the effect is READ_ONLY.
+  bool idempotent = 3;
+  // The tool reaches outside the machine: requires contains network:outbound.
+  bool open_world = 4;
 }
 
 // ToolEffect is what a tool does to the vault. The zero value means no effect
@@ -131,7 +160,9 @@ message ToolResult {
   // tool listed none.
   bytes structured = 2;
 
-  bool is_refusal = 3;
+  // Set when the tool ran and returned an error; text then contains the
+  // error message.
+  bool is_error = 3;
 }
 
 // ToolErrorCode is why a call was served and not run.

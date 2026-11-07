@@ -107,7 +107,7 @@ func (u EditLinks) Update(
 			return err
 		}
 		if changed == 0 {
-			return fmt.Errorf("no link to %s is written here", to)
+			return fmt.Errorf("no link to %s is written here", to.GetWritten())
 		}
 		return nil
 	})
@@ -149,7 +149,26 @@ func (u EditLinks) Remove(
 			return err
 		}
 		if removed == 0 {
-			return fmt.Errorf("no link to %s is written here", key.Target)
+			return fmt.Errorf("no link to %s is written here", key.Target.GetWritten())
+		}
+		return nil
+	})
+}
+
+// RemoveTargetLinks removes every frontmatter record the note has to the target, of every type, in
+// one read and one write; only those of the role when one is given.
+func (u EditLinks) RemoveTargetLinks(
+	ctx context.Context, v domain.Vault, from string, to domain.Address, role domain.LinkRole, stat domain.FileStat,
+) (domain.FileStat, error) {
+	e := u.newEdit()
+	e.FileStat = stat
+	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
+		removed, err := doc.RemoveTargetLinks(to, role)
+		if err != nil {
+			return err
+		}
+		if removed == 0 {
+			return fmt.Errorf("no link to %s is written here", to.GetWritten())
 		}
 		return nil
 	})

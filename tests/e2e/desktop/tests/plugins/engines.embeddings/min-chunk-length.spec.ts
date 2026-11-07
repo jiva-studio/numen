@@ -1,5 +1,5 @@
 import { test, expect, type Locator } from '../../support/test.js'
-import { createUniqueTitle, destroyNote, writeSetting } from '../../support/vault.js'
+import { createUniqueTitle, destroyIndexedNote, writeSetting } from '../../support/vault.js'
 import { createNoteWithBody } from '../../support/layout.js'
 import { openWorkspace } from '../../support/workspace.js'
 
@@ -47,7 +47,7 @@ test.describe('The smallest piece of text to index for meaning', () => {
 
   test.afterEach(async ({ request }) => {
     await writeSetting(request, MIN_CHUNK_LENGTH, DEFAULT_MIN_CHUNK_LENGTH)
-    for (const path of notes.splice(0)) await destroyNote(request, path)
+    for (const path of notes.splice(0)) await destroyIndexedNote(request, path)
   })
 
   test('gives a short piece no vector, until the setting lets it have one', async ({

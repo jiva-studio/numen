@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -74,7 +75,9 @@ func (e *Endpoint) getVault(header http.Header) (pluginport.PluginVault, error) 
 	return linked, nil
 }
 
-// answer, the end of the caller's context is cancelled, and anything else is internal.
+// answer returns the response of a single vault call that ended with err: an error of the vault port,
+// the plugin port or the domain is its code, the end of the caller's context is cancelled, and anything
+// else is an internal error that carries the text of err.
 func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	if err == nil {
 		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED, nil
@@ -82,47 +85,75 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	if code, ok := getVaultErrorCode(err); ok {
-		return code, nil
-	}
-	if code, ok := getDomainErrorCode(err); ok {
+	if code, ok := getErrorCode(err); ok {
 		return code, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }
 
-// getVaultErrorCode is the code of an error the vault port defines.
-func getVaultErrorCode(err error) (v1.HostVaultErrorCode, bool) {
-	switch {
-	case errors.Is(err, hostvault.ErrNoVault):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT, true
-	case errors.Is(err, vaultport.ErrStale):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE, true
-	case errors.Is(err, vaultport.ErrAlreadyExists):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS, true
-	case errors.Is(err, vaultport.ErrLockedByAnother):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER, true
-	case errors.Is(err, vaultport.ErrNotANote):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE, true
-	case errors.Is(err, vaultport.ErrOutside):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE, true
-	case errors.Is(err, fs.ErrNotExist):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING, true
+// getErrorCode returns the HostVaultErrorCode of an error of the vault port, the plugin port or the
+// domain, and false for any other error.
+func getErrorCode(err error) (v1.HostVaultErrorCode, bool) {
+	for _, entry := range getErrorEntries() {
+		if errors.Is(err, entry.err) {
+			return entry.code, true
+		}
 	}
 	return 0, false
 }
 
-// getDomainErrorCode is the code of an error the domain defines.
-func getDomainErrorCode(err error) (v1.HostVaultErrorCode, bool) {
-	switch {
-	case errors.Is(err, domain.ErrHierarchyCycle):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE, true
-	case errors.Is(err, domain.ErrInvalidConnection), errors.Is(err, domain.ErrNotCreatable):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION, true
-	case errors.Is(err, domain.ErrNoFreeName):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED, true
+// getNoteErrorCode returns the HostVaultErrorCode of the error of one note in a batch call: the code
+// getErrorCode gives, else the code of the note error wire.GetErrorCode gives, and false for an error
+// that has neither.
+func getNoteErrorCode(err error) (v1.HostVaultErrorCode, bool) {
+	if code, ok := getErrorCode(err); ok {
+		return code, true
 	}
-	return 0, false
+	noteCode, ok := wire.GetErrorCode(err)
+	if !ok {
+		return 0, false
+	}
+	code, ok := getNoteErrorCodes()[noteCode]
+	return code, ok
+}
+
+// errorEntry is an error of the core and the code a vault call answers it with.
+type errorEntry struct {
+	err  error
+	code v1.HostVaultErrorCode
+}
+
+// getErrorEntries returns the errors of the vault port, the plugin port and the domain with their codes.
+func getErrorEntries() []errorEntry {
+	return []errorEntry{
+		{hostvault.ErrNoVault, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT},
+		{vaultport.ErrOutside, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT},
+		{vaultport.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
+		{vaultport.ErrAlreadyExists, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
+		{vaultport.ErrLockedByAnother, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED},
+		{vaultport.ErrNotANote, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
+		{fs.ErrNotExist, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
+		{pluginport.ErrNotText, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT},
+		{domain.ErrHierarchyCycle, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE},
+		{domain.ErrInvalidConnection, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION},
+		{domain.ErrNotCreatable, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION},
+		{domain.ErrNoFreeName, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED},
+	}
+}
+
+// getNoteErrorCodes returns the HostVaultErrorCode of each error code of a note.
+func getNoteErrorCodes() map[v1.ErrorCode]v1.HostVaultErrorCode {
+	return map[v1.ErrorCode]v1.HostVaultErrorCode{
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:       v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND,
+		v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:      v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE,
+		v1.ErrorCode_ERROR_CODE_NOT_TEXT:        v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT,
+		v1.ErrorCode_ERROR_CODE_TOO_LARGE:       v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_TOO_LARGE,
+		v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE,
+		v1.ErrorCode_ERROR_CODE_UNREADABLE:      v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNREADABLE,
+		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:  v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS,
+		v1.ErrorCode_ERROR_CODE_INVALID_NAME:    v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME,
+		v1.ErrorCode_ERROR_CODE_CONFLICT:        v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT,
+	}
 }
 
 const noVault = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT
@@ -208,9 +239,10 @@ func (e *vaultEndpoint) ListHostVaults(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	list := e.endpoint.callers.GetPluginVaultList()
 	out := make([]*v1.HostVaultInfo, 0, len(recognized))
 	for _, one := range recognized {
-		out = append(out, &v1.HostVaultInfo{Id: string(one.ID), Name: one.Name, Path: one.Path})
+		out = append(out, &v1.HostVaultInfo{Id: string(one.ID), Name: one.Name, Path: one.Path, IsMissing: list != nil && list.IsMissing(one)})
 	}
 	return connect.NewResponse(&v1.ListHostVaultsResponse{Vaults: out}), nil
 }
@@ -301,6 +333,9 @@ func (e *vaultEndpoint) ReadFile(
 	}
 	if vault == nil {
 		return connect.NewResponse(&v1.ReadFileResponse{Error: noVault}), nil
+	}
+	if req.Msg.Length != nil {
+		return serveFileRange(ctx, vault, req.Msg)
 	}
 	content, pos, err := vault.Read(ctx, req.Msg.GetPath())
 	code, err := answer(ctx, err)
@@ -419,7 +454,7 @@ func (e *vaultEndpoint) GetNoteRefs(
 	notes := make([]*v1.HostNoteRef, 0, len(target))
 	for _, path := range req.Msg.GetPaths() {
 		if one, found := target[path]; found {
-			notes = append(notes, &v1.HostNoteRef{Path: one.Path, Title: one.Title})
+			notes = append(notes, &v1.HostNoteRef{Path: one.Path, Title: one.Title, Id: one.ID})
 		}
 	}
 	return connect.NewResponse(&v1.GetNoteRefsResponse{Notes: notes}), nil
@@ -519,7 +554,7 @@ func (e *vaultEndpoint) GetBacklinks(
 	withRoles := writeLinks(links)
 	for i, l := range links {
 		inverse, _ := domain.GetInverseRole(l.Role)
-		withRoles[i].RoleFromHere = wire.ConvertRoleToWire(inverse)
+		withRoles[i].SourceRole = wire.ConvertRoleToWire(inverse)
 	}
 	return connect.NewResponse(&v1.GetBacklinksResponse{Links: withRoles}), nil
 }
@@ -534,13 +569,13 @@ func (e *vaultEndpoint) ResolveLinks(
 	if vault == nil {
 		return connect.NewResponse(&v1.ResolveLinksResponse{Error: noVault}), nil
 	}
-	reached, err := vault.ResolveLinks(ctx, req.Msg.GetPath(), req.Msg.GetWritten())
+	resolvedLinks, err := vault.ResolveLinks(ctx, req.Msg.GetPath(), req.Msg.GetAddresses())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ResolveLinksResponse{Error: code}), err
 	}
-	links := make(map[string]*v1.HostLink, len(reached))
-	for content, one := range reached {
+	links := make(map[string]*v1.HostLink, len(resolvedLinks))
+	for content, one := range resolvedLinks {
 		links[content] = writeLink(one)
 	}
 	return connect.NewResponse(&v1.ResolveLinksResponse{Links: links}), nil
@@ -583,7 +618,7 @@ func (e *vaultEndpoint) ReadCache(
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ReadCacheResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.ReadCacheResponse{Found: found, Content: content}), nil
+	return connect.NewResponse(&v1.ReadCacheResponse{IsFound: found, Content: content}), nil
 }
 
 func (e *vaultEndpoint) WriteCache(
@@ -651,4 +686,21 @@ func followVault(
 			}
 		}
 	}
+}
+
+// serveFileRange serves a ReadFile that sets a length: it returns the text of the range, its start and
+// the file stat.
+func serveFileRange(ctx context.Context, vault pluginport.PluginVault, req *v1.ReadFileRequest) (*connect.Response[v1.ReadFileResponse], error) {
+	if req.GetStart() < 0 || req.GetLength() < 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("invalid range of %s: start %d and length %d must be >= 0", req.GetPath(), req.GetStart(), req.GetLength()))
+	}
+	read, err := vault.ReadRange(ctx, req.GetPath(), int(req.GetStart()), int(min(req.GetLength(), math.MaxInt32)))
+	code, err := answer(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.ReadFileResponse{Error: code}), err
+	}
+	return connect.NewResponse(&v1.ReadFileResponse{
+		Content: []byte(read.Text), Stat: writeFileStat(read.Stat), Start: int64(read.Start),
+	}), nil
 }

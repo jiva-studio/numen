@@ -145,7 +145,7 @@ describe('putting a deck on a preset', () => {
   })
 
   it('says the file moved past what the window read', async () => {
-    replyWith({ error: 'stale' })
+    replyWith({ error: 'conflict' })
 
     expect(await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual(
       asFailure('changed'),
@@ -323,7 +323,7 @@ describe('writing into a preset the window read', () => {
   })
 
   it('says the file moved past what the window read', async () => {
-    replyWith({ error: 'stale' })
+    replyWith({ error: 'conflict' })
 
     expect(await presets.write('Daily.md', DEFAULTS, '12 34 Daily.md')).toEqual(
       asFailure('changed'),

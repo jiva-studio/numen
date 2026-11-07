@@ -121,9 +121,31 @@ export const listFiles = async (request: APIRequestContext, folder = ''): Promis
 export const listFilePaths = async (request: APIRequestContext, folder = ''): Promise<string[]> =>
   (await listFiles(request, folder)).filter((one) => !one.isFolder).map((one) => one.path)
 
-/** Takes a note off the disk, and nothing where it is already gone. */
+/** Deletes a note file, and does nothing when it is already gone. */
 export const destroyNote = async (request: APIRequestContext, notePath: string): Promise<void> => {
   await callRPC(request, 'FileService/RemoveFile', { path: notePath, destroy: true })
+}
+
+/** Whether the index holds the note at the path: ResolveAddresses resolves the path to it. */
+const isIndexedNote = async (request: APIRequestContext, notePath: string): Promise<boolean> => {
+  const answer = await callRPC(request, 'NoteService/ResolveAddresses', { written: [notePath] })
+  const resolved = (answer['resolved'] as { path?: string }[] | undefined) ?? []
+  return resolved.some((one) => one.path === notePath)
+}
+
+/**
+ * Deletes a note file and returns once the index no longer holds its path, or at once when the
+ * index did not hold it. The watcher reports the removal after RemoveFile returns, so a test that
+ * counts the vectors next would count the vectors of the removed note too.
+ */
+export const destroyIndexedNote = async (
+  request: APIRequestContext,
+  notePath: string,
+): Promise<void> => {
+  const isIndexed = await isIndexedNote(request, notePath)
+  await destroyNote(request, notePath)
+  if (!isIndexed) return
+  await expect.poll(() => isIndexedNote(request, notePath), { timeout: 45_000 }).toBe(false)
 }
 
 /** The files under the vault's `.trash` folder whose name is `name`, as paths of the vault. */

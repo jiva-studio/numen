@@ -15,107 +15,75 @@ import (
 func TestRegisterTools(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	listed, err := registry.ListToolInfos(t.Context())
+	listed, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("ListTools: %v", err)
 	}
 
-	names := make([]string, 0, len(listed))
-	for _, tool := range listed {
+	names := make([]string, 0, len(listed.Tools))
+	for _, tool := range listed.Tools {
 		names = append(names, tool.GetName())
 	}
 
-	for _, expected := range []string{"window_tabs_get", "window_focus_tab", "edit_preview"} {
-		if !slices.Contains(names, expected) {
-			t.Errorf("ListTools missing %q, got %v", expected, names)
-		}
+	slices.Sort(names)
+	if want := []string{"note_edit_preview", "note_focus", "source_focus", "window_tab_activate", "window_tab_list"}; !slices.Equal(names, want) {
+		t.Errorf("ListTools returns %v, want %v", names, want)
 	}
 
 	// Registering duplicate tools returns an error.
-	if err := RegisterTools(registry, mgr, nil); err == nil {
+	if err := RegisterTools(registry, mgr, Host{}); err == nil {
 		t.Errorf("expected error when registering duplicate tools")
 	}
 }
 
-func TestWindowTabsGetEmpty(t *testing.T) {
+func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_tabs_get",
+		Name:      "window_tab_list",
 		Arguments: []byte(`{}`),
 	})
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
 	result := resp.GetResult()
-	if result.GetIsRefusal() {
+	if result.GetIsError() {
 		t.Fatalf("unexpected refusal: %s", result.GetText())
 	}
 
-	var output WindowTabsGetOutput
+	var output WindowTabListOutput
 	if err := json.Unmarshal(result.GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
 	if len(output.Tabs) != 0 {
 		t.Errorf("len(Tabs) = %d, want 0", len(output.Tabs))
 	}
-	if output.Summary != "the window has nothing open" {
-		t.Errorf("summary = %q, want 'the window has nothing open'", output.Summary)
-	}
-}
-
-func TestWindowTabsGetWithTabs(t *testing.T) {
-	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
-	mgr.SetOpenTabs([]TabInfo{
-		{ID: "tab-1", Kind: "note", Path: "notes/daily.md", Title: "daily"},
-		{ID: "tab-2", Kind: "document", Path: "docs/spec.pdf", Title: "Specification", Where: "page 3 of 10"},
-	}, "tab-2")
-
-	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
-		t.Fatalf("RegisterTools: %v", err)
-	}
-
-	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_tabs_get",
-		Arguments: []byte(`{}`),
-	})
-	if err != nil {
-		t.Fatalf("CallTool: %v", err)
-	}
-
-	var output WindowTabsGetOutput
-	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
+	var keys map[string]json.RawMessage
+	if err := json.Unmarshal(result.GetStructured(), &keys); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
-	if len(output.Tabs) != 2 {
-		t.Fatalf("len(Tabs) = %d, want 2", len(output.Tabs))
-	}
-	if output.ActiveID != "tab-2" {
-		t.Errorf("ActiveID = %q, want tab-2", output.ActiveID)
-	}
-	if !strings.Contains(output.Summary, "Specification") || !strings.Contains(output.Summary, "page 3 of 10") {
-		t.Errorf("Summary = %q, want to mention Specification and page 3 of 10", output.Summary)
+	if _, hasSummary := keys["summary"]; hasSummary {
+		t.Errorf("the result has a summary: %s", result.GetStructured())
 	}
 }
 
-func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
+func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_tabs_get",
+		Name:      "window_tab_list",
 		Arguments: []byte(`{}`),
 		Context:   map[string]string{"focus": "notes/inferred.md"},
 	})
@@ -123,7 +91,7 @@ func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 		t.Fatalf("CallTool: %v", err)
 	}
 
-	var output WindowTabsGetOutput
+	var output WindowTabListOutput
 	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -133,132 +101,24 @@ func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 	if output.Tabs[0].Path != "notes/inferred.md" {
 		t.Errorf("Tabs[0].Path = %q, want notes/inferred.md", output.Tabs[0].Path)
 	}
-	if output.ActiveID != "front-tab" {
-		t.Errorf("ActiveID = %q, want front-tab", output.ActiveID)
+	var keys struct {
+		ActiveTabID string `json:"activeTabId"`
+		Tabs        []struct {
+			TabID string `json:"tabId"`
+		} `json:"tabs"`
 	}
-	if !strings.Contains(output.Summary, "inferred") {
-		t.Errorf("Summary = %q, want to mention inferred", output.Summary)
-	}
-
-	// When open tabs already exist, context focus does not override them.
-	mgr.SetOpenTabs([]TabInfo{
-		{ID: "tab-1", Kind: "note", Path: "notes/real.md", Title: "real"},
-	}, "tab-1")
-	resp, err = registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_tabs_get",
-		Arguments: []byte(`{}`),
-		Context:   map[string]string{"focus": "notes/inferred.md"},
-	})
-	if err != nil {
-		t.Fatalf("CallTool: %v", err)
-	}
-	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
+	if err := json.Unmarshal(resp.GetResult().GetStructured(), &keys); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
-	if output.ActiveID != "tab-1" || len(output.Tabs) != 1 || output.Tabs[0].Path != "notes/real.md" {
-		t.Errorf("expected real tab preserved, got %+v", output)
+	if keys.ActiveTabID != "front-tab" || len(keys.Tabs) != 1 || keys.Tabs[0].TabID != "front-tab" {
+		t.Errorf("the result is %s, want activeTabId front-tab and the tab front-tab", resp.GetResult().GetStructured())
+	}
+	if output.Tabs[0].Title != "inferred" {
+		t.Errorf("Tabs[0].Title = %q, want inferred", output.Tabs[0].Title)
 	}
 }
 
-func TestFormatTabsSummaryAndDescribeTab(t *testing.T) {
-	// Empty ID on first tab with empty activeID does not match activeID; picks IsActive tab.
-	tabs := []TabInfo{
-		{ID: "", Kind: "note", Path: "notes/a.md", Title: "A"},
-		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B", IsActive: true},
-	}
-	if got := formatTabsSummary(tabs, ""); got != `the note "B" at notes/b.md is in front of them` {
-		t.Errorf("formatTabsSummary empty activeID = %q", got)
-	}
-
-	// Exact activeID match stops search before a later IsActive tab.
-	tabsBoth := []TabInfo{
-		{ID: "t1", Kind: "note", Path: "notes/a.md", Title: "A"},
-		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B", IsActive: true},
-	}
-	if got := formatTabsSummary(tabsBoth, "t1"); got != `the note "A" at notes/a.md is in front of them` {
-		t.Errorf("formatTabsSummary activeID match = %q", got)
-	}
-
-	// Fallback to first tab when neither activeID nor IsActive matches.
-	tabsNone := []TabInfo{
-		{ID: "t1", Kind: "", Path: "notes/a.md", Title: ""},
-		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B"},
-	}
-	if got := formatTabsSummary(tabsNone, "missing"); got != `the tab notes/a.md is in front of them` {
-		t.Errorf("formatTabsSummary fallback = %q", got)
-	}
-
-	// describeTab with neither Title nor Path.
-	if got := describeTab(TabInfo{Kind: "canvas"}); got != `a tab of kind "canvas" is in front of them` {
-		t.Errorf("describeTab empty title/path = %q", got)
-	}
-
-	// describeTab with Title only (no Path).
-	if got := describeTab(TabInfo{Kind: "note", Title: "Untracked"}); got != `the note "Untracked" is in front of them` {
-		t.Errorf("describeTab title only = %q", got)
-	}
-}
-
-func TestWindowFocusTab(t *testing.T) {
-	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
-	mgr.SetOpenTabs([]TabInfo{
-		{ID: "t1", Kind: "note", Path: "notes/a.md", Title: "A"},
-		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B"},
-	}, "t1")
-
-	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
-		t.Fatalf("RegisterTools: %v", err)
-	}
-
-	// Focus existing tab by ID
-	args := marshalJSON(t, WindowFocusTabInput{TabID: "t2"})
-	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_focus_tab",
-		Arguments: args,
-	})
-	if err != nil {
-		t.Fatalf("CallTool: %v", err)
-	}
-	var output WindowFocusTabOutput
-	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
-		t.Fatalf("unmarshal output: %v", err)
-	}
-	if !output.Success || output.Tab.ID != "t2" {
-		t.Errorf("output = %+v, want Success true and Tab.ID t2", output)
-	}
-
-	// Focus new note by Path
-	args = marshalJSON(t, WindowFocusTabInput{Path: "notes/c.md"})
-	resp, err = registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_focus_tab",
-		Arguments: args,
-	})
-	if err != nil {
-		t.Fatalf("CallTool: %v", err)
-	}
-	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
-		t.Fatalf("unmarshal output: %v", err)
-	}
-	if !output.Success || output.Tab.Path != "notes/c.md" {
-		t.Errorf("output = %+v, want Success true and Tab.Path notes/c.md", output)
-	}
-
-	// Focus with empty arguments produces refusal
-	args = marshalJSON(t, WindowFocusTabInput{})
-	resp, err = registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "window_focus_tab",
-		Arguments: args,
-	})
-	if err != nil {
-		t.Fatalf("CallTool: %v", err)
-	}
-	if !resp.GetResult().GetIsRefusal() {
-		t.Errorf("expected refusal for empty focus arguments")
-	}
-}
-
-func TestEditPreviewFromVault(t *testing.T) {
+func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	vault := hosttest.New("test-vault")
 	ctx := t.Context()
@@ -267,27 +127,27 @@ func TestEditPreviewFromVault(t *testing.T) {
 	}
 
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, vault); err != nil {
+	if err := RegisterTools(registry, mgr, Host{Vault: vault}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	input := EditPreviewInput{
-		Path:            "notes/sample.md",
-		ProposedContent: "hello world\nline 2 modified\nnew line\n",
+	input := NoteEditPreviewInput{
+		Path:         "notes/sample.md",
+		ProposedText: "hello world\nline 2 modified\nnew line\n",
 	}
 	args := marshalJSON(t, input)
 	resp, err := registry.InvokeTool(ctx, tools.Call{
-		Name:      "edit_preview",
+		Name:      "note_edit_preview",
 		Arguments: args,
 	})
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if resp.GetResult().GetIsRefusal() {
+	if resp.GetResult().GetIsError() {
 		t.Fatalf("refusal: %s", resp.GetResult().GetText())
 	}
 
-	var output EditPreviewOutput
+	var output NoteEditPreviewOutput
 	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -307,27 +167,27 @@ func TestEditPreviewFromVault(t *testing.T) {
 	}
 }
 
-func TestEditPreviewWithDirectDiff(t *testing.T) {
+func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
 	customDiff := "--- a/notes/custom.md\n+++ b/notes/custom.md\n@@ -1 +1 @@\n-old\n+new\n"
-	args := marshalJSON(t, EditPreviewInput{
+	args := marshalJSON(t, NoteEditPreviewInput{
 		Path: "notes/custom.md",
 		Diff: customDiff,
 	})
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "edit_preview",
+		Name:      "note_edit_preview",
 		Arguments: args,
 	})
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
 
-	var output EditPreviewOutput
+	var output NoteEditPreviewOutput
 	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -338,21 +198,21 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 		t.Errorf("got +%d, -%d; want +1, -1", output.Additions, output.Deletions)
 	}
 
-	// Explicit OriginalContent takes precedence over vault content, and works with nil vault.
+	// Explicit OriginalText takes precedence over vault content, and works with nil vault.
 	vault := hosttest.New("test-vault")
 	if err := vault.Create(t.Context(), "notes/override.md", []byte("vault line\n")); err != nil {
 		t.Fatalf("create vault file: %v", err)
 	}
 	registryWithVault := tools.New()
-	if err := RegisterTools(registryWithVault, mgr, vault); err != nil {
+	if err := RegisterTools(registryWithVault, mgr, Host{Vault: vault}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 	respOverride, err := registryWithVault.InvokeTool(t.Context(), tools.Call{
-		Name: "edit_preview",
-		Arguments: marshalJSON(t, EditPreviewInput{
-			Path:            "notes/override.md",
-			OriginalContent: "explicit original\n",
-			ProposedContent: "explicit proposed\n",
+		Name: "note_edit_preview",
+		Arguments: marshalJSON(t, NoteEditPreviewInput{
+			Path:         "notes/override.md",
+			OriginalText: "explicit original\n",
+			ProposedText: "explicit proposed\n",
 		}),
 	})
 	if err != nil {
@@ -362,15 +222,15 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 		t.Fatalf("unmarshal override output: %v", err)
 	}
 	if !strings.Contains(output.Diff, "-explicit original") {
-		t.Errorf("expected diff against OriginalContent, got %s", output.Diff)
+		t.Errorf("expected diff against OriginalText, got %s", output.Diff)
 	}
 
-	// Nil vault with empty OriginalContent diffs against empty string.
+	// Nil vault with empty OriginalText diffs against empty string.
 	respNilVault, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name: "edit_preview",
-		Arguments: marshalJSON(t, EditPreviewInput{
-			Path:            "notes/new.md",
-			ProposedContent: "brand new\n",
+		Name: "note_edit_preview",
+		Arguments: marshalJSON(t, NoteEditPreviewInput{
+			Path:         "notes/new.md",
+			ProposedText: "brand new\n",
 		}),
 	})
 	if err != nil {
@@ -384,36 +244,36 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 	}
 }
 
-func TestEditPreviewValidation(t *testing.T) {
+func TestNoteEditPreviewRejectsMissingArguments(t *testing.T) {
 	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
-	if err := RegisterTools(registry, mgr, nil); err != nil {
+	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
 	// Missing path
-	args := marshalJSON(t, EditPreviewInput{ProposedContent: "abc"})
+	args := marshalJSON(t, NoteEditPreviewInput{ProposedText: "abc"})
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "edit_preview",
+		Name:      "note_edit_preview",
 		Arguments: args,
 	})
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if !resp.GetResult().GetIsRefusal() {
+	if !resp.GetResult().GetIsError() {
 		t.Errorf("expected refusal for missing path")
 	}
 
 	// Missing content and diff
-	args = marshalJSON(t, EditPreviewInput{Path: "notes/a.md"})
+	args = marshalJSON(t, NoteEditPreviewInput{Path: "notes/a.md"})
 	resp, err = registry.InvokeTool(t.Context(), tools.Call{
-		Name:      "edit_preview",
+		Name:      "note_edit_preview",
 		Arguments: args,
 	})
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if !resp.GetResult().GetIsRefusal() {
+	if !resp.GetResult().GetIsError() {
 		t.Errorf("expected refusal for missing content and diff")
 	}
 }

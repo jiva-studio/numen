@@ -242,12 +242,12 @@
   {
     "Kind": "table",
     "Name": "sources",
-    "Body": "CREATE TABLE sources (\n    id          INTEGER PRIMARY KEY,\n    vault_id    INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,\n    path        TEXT NOT NULL,\n    kind        TEXT NOT NULL,\n    size        INTEGER NOT NULL,\n    modified_at INTEGER NOT NULL,\n    hash        TEXT,\n    recipe      TEXT,\n    producer    TEXT,\n\n    UNIQUE (vault_id, path)\n)"
+    "Body": "CREATE TABLE sources (\n    id                INTEGER PRIMARY KEY,\n    vault_id          INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,\n    path              TEXT NOT NULL,\n    kind              TEXT NOT NULL,\n    size              INTEGER NOT NULL,\n    modified_at       INTEGER NOT NULL,\n    content_hash      TEXT,\n    recipe            TEXT,\n    producer          TEXT,\n    file_id           INTEGER,\n    content_hash_time INTEGER,\n\n    UNIQUE (vault_id, path)\n)"
   },
   {
     "Kind": "table",
     "Name": "text_versions",
-    "Body": "CREATE TABLE text_versions (\n    id                INTEGER PRIMARY KEY,\n    vault             TEXT NOT NULL,\n    path              TEXT NOT NULL,\n    plugin_id         TEXT NOT NULL,\n    key               TEXT NOT NULL,\n    source_version_id TEXT NOT NULL,\n    kind              TEXT NOT NULL,\n    file              TEXT NOT NULL,\n    source_hash       TEXT NOT NULL,\n    hash              TEXT NOT NULL,\n    create_time       INTEGER NOT NULL,\n    UNIQUE (vault, path, plugin_id, key)\n)"
+    "Body": "CREATE TABLE text_versions (\n    id                INTEGER PRIMARY KEY,\n    vault             TEXT NOT NULL,\n    path              TEXT NOT NULL,\n    plugin_id         TEXT NOT NULL,\n    key               TEXT NOT NULL,\n    source_version_id TEXT NOT NULL,\n    kind              TEXT NOT NULL,\n    file              TEXT NOT NULL,\n    input_hash        TEXT NOT NULL,\n    text_hash         TEXT NOT NULL,\n    create_time       INTEGER NOT NULL,\n    UNIQUE (vault, path, plugin_id, key)\n)"
   },
   {
     "Kind": "table",

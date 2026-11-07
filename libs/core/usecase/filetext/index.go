@@ -285,7 +285,7 @@ func (u Index) recordIfOutdated(
 	source sourceport.SourceText,
 	res *IndexResult,
 ) error {
-	live, err := on.texts.FindLiveVersion(ctx, source.Path, source.Hash)
+	live, err := on.texts.FindLiveVersion(ctx, source.Path, source.ContentHash)
 	switch {
 	case err == nil && string(live) == source.Producer:
 		return nil
@@ -421,7 +421,7 @@ func (u Index) source(
 	if err != nil {
 		return fmt.Errorf("stat %s: %w", path, err)
 	}
-	raw, err := on.files.Read(ctx, path)
+	hash, err := on.texts.GetContentHash(ctx, path)
 	if errors.Is(err, vaultport.ErrNotExist) {
 		res.Vanished++
 		return nil
@@ -436,7 +436,6 @@ func (u Index) source(
 		res.Unreadable++
 		return nil
 	}
-	hash := domain.HashContent(raw)
 	doc, err := on.texts.GetLiveText(ctx, path, hash)
 	if err != nil {
 		if ctx.Err() != nil {
@@ -445,16 +444,16 @@ func (u Index) source(
 		if ref.Kind == domain.KindNote && errors.Is(err, textport.ErrNoText) {
 			return u.dropVersionOfNote(ctx, v, path)
 		}
-		return u.saveWithoutText(ctx, v, on, domain.Source{FileStat: ref, Hash: hash}, err, res)
+		return u.saveWithoutText(ctx, v, on, domain.Source{FileStat: ref, ContentHash: hash}, err, res)
 	}
 
 	chunks := chunksOf(doc, sizes, u.Legibility)
 	extraction := domain.SourceChunks{
 		Source: domain.Source{
-			FileStat: ref,
-			Hash:     hash,
-			Recipe:   recipe(versionReader, sizes),
-			Producer: string(doc.Version().GetID()),
+			FileStat:    ref,
+			ContentHash: hash,
+			Recipe:      recipe(versionReader, sizes),
+			Producer:    string(doc.Version().GetID()),
 		},
 		Chunks: chunks,
 	}
@@ -486,7 +485,7 @@ func (u Index) saveWithoutText(
 		return fmt.Errorf("write the chunks of %s: %w", source.FileStat.Path, err)
 	}
 	if errors.Is(readErr, textport.ErrNoText) {
-		if err := on.texts.RequestText(ctx, source.FileStat.Path, source.Hash); err != nil {
+		if err := on.texts.RequestText(ctx, source.FileStat.Path, source.ContentHash); err != nil {
 			u.reportError(fmt.Errorf("ask for the text of %s: %w", source.FileStat.Path, err))
 		}
 	}
@@ -570,7 +569,7 @@ func (u Index) open(v domain.Vault) (openVault, error) {
 		return openVault{}, err
 	}
 	if u.texts == nil {
-		return openVault{files: files, texts: noTexts{}}, nil
+		return openVault{files: files, texts: noTexts{files: files}}, nil
 	}
 	texts, err := u.texts.Open(v)
 	if err != nil {
@@ -581,7 +580,19 @@ func (u Index) open(v domain.Vault) (openVault, error) {
 
 // noTexts is a vault with no text versions: every file has no text, and no
 // text is requested.
-type noTexts struct{}
+type noTexts struct {
+	files vaultport.VaultReader
+}
+
+// GetContentHash hashes the file from a stream on every call: with no versions there is no record to keep.
+func (t noTexts) GetContentHash(ctx context.Context, path string) (_ string, err error) {
+	file, err := t.files.Open(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	defer func() { err = errors.Join(err, file.Close()) }()
+	return domain.HashReader(file)
+}
 
 func (noTexts) FindLiveVersion(context.Context, string, string) (domain.TextVersionID, error) {
 	return "", textport.ErrNoText

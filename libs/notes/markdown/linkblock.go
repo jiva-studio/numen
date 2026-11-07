@@ -212,6 +212,21 @@ func findRecords(entries []entry, link domain.Link, also []domain.Address) ([]en
 // RemoveLink takes out every entry that matches the key: the target, the type,
 // and the role when one is named. An empty block goes with them.
 func (d *Document) RemoveLink(key domain.LinkKey) (int, error) {
+	return d.removeEntries(func(link domain.Link) bool {
+		return link.Target == key.Target && link.Type == key.Type && (key.Role == "" || link.Role == key.Role)
+	})
+}
+
+// RemoveTargetLinks removes every entry to the target, of every type, and only those of the role
+// when one is given. A block left empty is removed too.
+func (d *Document) RemoveTargetLinks(target domain.Address, role domain.LinkRole) (int, error) {
+	return d.removeEntries(func(link domain.Link) bool {
+		return link.Target == target && (role == "" || link.Role == role)
+	})
+}
+
+// removeEntries removes every entry whose link matches, and the block when no entry is left.
+func (d *Document) removeEntries(matches func(domain.Link) bool) (int, error) {
 	b, err := d.block()
 	if err != nil {
 		return 0, err
@@ -220,8 +235,7 @@ func (d *Document) RemoveLink(key domain.LinkKey) (int, error) {
 	removed, keptCount := 0, 0
 	for i := len(b.entries) - 1; i >= 0; i-- {
 		e := b.entries[i]
-		if e.link.Target != key.Target || e.link.Type != key.Type ||
-			(key.Role != "" && e.link.Role != key.Role) {
+		if !matches(e.link) {
 			keptCount++
 			continue
 		}

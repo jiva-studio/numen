@@ -250,8 +250,7 @@ func makeCodexCommand(runCtx context.Context, req *agentrun.Request, customPath 
 	)
 	if req.ToolsURL != "" {
 		mcpURL := fmt.Sprintf(`mcp_servers.numen.url=%q`, req.ToolsURL)
-		mcpHeader := fmt.Sprintf(`mcp_servers.numen.http_headers={"Authorization"="Bearer %s"}`, req.ToolsToken)
-		args = append(args, "-c", mcpURL, "-c", mcpHeader)
+		args = append(args, "-c", mcpURL, "-c", `mcp_servers.numen.bearer_token_env_var="NUMEN_TOKEN"`)
 	}
 	args = appendModelArguments(args, req)
 	args = append(args, req.Prompt)

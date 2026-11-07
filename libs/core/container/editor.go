@@ -104,7 +104,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		PluginServicesFn: cfg.GetPluginServices,
 		PluginCommandsFn: cfg.GetPluginCommands,
 		PluginCatalogFn:  cfg.getEditorCatalog,
-		AgentVal:         cfg.serveTools(provider),
+		AgentVal:         cfg.getToolProvider(),
 		SetTextVersionListenerFn: func(listener textport.VersionListener) {
 			if cfg.TextVersions != nil {
 				cfg.TextVersions.SetListener(listener)
@@ -187,7 +187,7 @@ func (c Config) openFileMenu() *textversion.FileMenu {
 	if c.PluginHost != nil && !c.SafeMode {
 		commands, types = commandbridge.Open(c.PluginHost), c.PluginHost
 	}
-	menu, err := textversion.NewFileMenu(c.TextVersions, commands, types, c.VaultReaders())
+	menu, err := textversion.NewFileMenu(c.TextVersions, commands, types)
 	if err != nil {
 		c.handleError(err)
 		return nil
@@ -199,7 +199,7 @@ func (c Config) openFileText() *textversion.FileText {
 	if c.TextVersions == nil {
 		return nil
 	}
-	text, err := textversion.NewFileText(c.TextVersions, c.VaultReaders())
+	text, err := textversion.NewFileText(c.TextVersions)
 	if err != nil {
 		c.handleError(err)
 		return nil

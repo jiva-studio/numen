@@ -145,9 +145,9 @@ describe('what the tab says went wrong', () => {
   }
 
   it('offers reading the file again along with what it says', async () => {
-    const { tab, recorded } = mountWithError(words.notRead('missing'))
+    const { tab, recorded } = mountWithError(words.notRead('notFound'))
     const alert = tab.get('[role="alert"]')
-    expect(alert.text()).toContain(words.notRead('missing'))
+    expect(alert.text()).toContain(words.notRead('notFound'))
     await alert.get('button').trigger('click')
     expect(recorded).toStrictEqual(['reload'])
   })

@@ -329,6 +329,47 @@ describe('createReaderTabKind (place)', () => {
     expect(kind.getState?.(state)).toBeUndefined()
   })
 
+  it('reports to the open tabs the last place the reader reports', () => {
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const state = kind.open('library/Wading Birds.pdf', 'tab') as {
+      reportPlace: (place: unknown) => void
+    }
+
+    state.reportPlace({ page: 7, pageCount: 12 })
+    state.reportPlace({ page: 8, pageCount: 12 })
+
+    expect(kind.getOpenTab?.(state)).toStrictEqual({
+      path: 'library/Wading Birds.pdf',
+      place: { page: 8, pageCount: 12 },
+    })
+  })
+
+  it('leaves the place out of the open tab while the reader has reported none', () => {
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+
+    const state = kind.open('library/Wading Birds.pdf', 'tab', { page: 4 })
+
+    expect(kind.getOpenTab?.(state)).toStrictEqual({ path: 'library/Wading Birds.pdf' })
+  })
+
+  it('keeps the place it saves for a restart apart from the place it reports', () => {
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const state = kind.open('talks/Heron Talk.mp3', 'tab') as {
+      savePlace: (place: unknown) => void
+      reportPlace: (place: unknown) => void
+    }
+
+    state.savePlace({ t: [66.5, 70] })
+    expect(kind.getOpenTab?.(state)).toStrictEqual({ path: 'talks/Heron Talk.mp3' })
+
+    state.reportPlace({ positionSeconds: 66.5 })
+    expect(kind.getState?.(state)).toEqual({ t: [66.5, 70] })
+    expect(kind.getOpenTab?.(state)).toStrictEqual({
+      path: 'talks/Heron Talk.mp3',
+      place: { positionSeconds: 66.5 },
+    })
+  })
+
   it('carries the icon the reader registers', () => {
     const icon = { name: 'Icon' }
     const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null, icon })

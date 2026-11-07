@@ -31,8 +31,6 @@ func getServerPort(t *testing.T, rawURL string) string {
 func TestMountAndConfigure(t *testing.T) {
 	t.Setenv("NUMEN_HOST_PORT", "")
 	t.Setenv("NUMEN_PLUGIN_TOKEN", "")
-	t.Setenv("MCP_PORT", "")
-	t.Setenv("MCP_TOKEN", "")
 
 	host := &standInHost{}
 	mux := http.NewServeMux()
@@ -41,23 +39,12 @@ func TestMountAndConfigure(t *testing.T) {
 	t.Cleanup(served.Close)
 	hostPort := getServerPort(t, served.URL)
 
-	// Reserve an ephemeral port so we can verify s.Close() releases srv's listener.
-	probeLn, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	rebindAddr := probeLn.Addr().String()
-	if err := probeLn.Close(); err != nil {
-		t.Fatal(err)
-	}
-
 	s := server.New(server.WithPort(0))
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount failed: %v", err)
 	}
 
-	_, err = s.Lifecycle().ApplyConfig(t.Context(), map[string]string{
-		"addr":               rebindAddr,
+	_, err := s.Lifecycle().ApplyConfig(t.Context(), map[string]string{
 		"token":              "configured-token",
 		"NUMEN_HOST_PORT":    hostPort,
 		"NUMEN_PLUGIN_TOKEN": "plugin-token",
@@ -76,16 +63,9 @@ func TestMountAndConfigure(t *testing.T) {
 	if err := s.Close(); err != nil {
 		t.Errorf("close failed: %v", err)
 	}
-
-	// Verify OnClose closed srv's listener on rebindAddr.
-	verifyLn, err := new(net.ListenConfig).Listen(t.Context(), "tcp", rebindAddr)
-	if err != nil {
-		t.Fatalf("expected listener on %s to be closed after s.Close(), got: %v", rebindAddr, err)
-	}
-	cleanup.Close(t, verifyLn)
 }
 
-func TestMountFromEnvAndStartError(t *testing.T) {
+func TestMountFromEnv(t *testing.T) {
 	host := &standInHost{}
 	mux := http.NewServeMux()
 	mux.Handle(tools.NewServiceHandler(host))
@@ -95,7 +75,6 @@ func TestMountFromEnvAndStartError(t *testing.T) {
 
 	t.Setenv("NUMEN_HOST_PORT", hostPort)
 	t.Setenv("NUMEN_PLUGIN_TOKEN", "plugin-token")
-	t.Setenv("MCP_PORT", "")
 
 	s := server.New(server.WithPort(0))
 	if err := Mount(s); err != nil {
@@ -118,13 +97,6 @@ func TestMountFromEnvAndStartError(t *testing.T) {
 	host.mu.Unlock()
 	if syncCalls < 2 {
 		t.Fatalf("expected at least 2 host sync calls (initial + configure), got %d", syncCalls)
-	}
-
-	// Mount fails when srv.Start() cannot listen on MCP_PORT.
-	t.Setenv("MCP_PORT", "invalid-port")
-	sErr := server.New(server.WithPort(0))
-	if err := Mount(sErr); err == nil {
-		t.Fatal("expected Mount to fail with invalid MCP_PORT")
 	}
 }
 
@@ -175,19 +147,14 @@ func TestStreamableHTTPEndpoint(t *testing.T) {
 		},
 	}
 
-	cfg := Config{
-		Addr:  "127.0.0.1:0",
-		Token: "stream-token",
-	}
+	cfg := Config{Token: "stream-token"}
 
 	srv, err := NewServer(cfg, hostClient)
 	if err != nil {
 		t.Fatalf("NewServer failed: %v", err)
 	}
 
-	if err := srv.Start(); err != nil {
-		t.Fatalf("srv.Start failed: %v", err)
-	}
+	serveOnLoopback(t, srv)
 	defer func() {
 		if err := srv.Close(t.Context()); err != nil {
 			t.Error(err)

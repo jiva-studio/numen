@@ -2,6 +2,7 @@ package recognition
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -62,10 +63,11 @@ func (p *Provider) CreateText(ctx context.Context, req host.TextCreation) error 
 	p.wg.Go(func() {
 		defer p.finish(key)
 		defer cancel()
-		// Recognise reports a failure as a task error. A recognition ended by Close is not a failure.
+		// Recognise reports a failure as a task error. A recognition ended by Close is not a failure,
+		// and a file another run has locked is skipped.
 		_, err := p.recognition.Recognise(runCtx, Request{Vault: req.Vault, Path: req.Path, IsUserStarted: false})
 		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL reason="Stderr logging of background recognition failure does not affect provider state."
-		if err != nil && runCtx.Err() == nil {
+		if err != nil && runCtx.Err() == nil && !errors.Is(err, ErrAlreadyRecognising) {
 			fmt.Fprintf(os.Stderr, "engines-ocr: recognise %s: %v\n", req.Path, err)
 		}
 	})

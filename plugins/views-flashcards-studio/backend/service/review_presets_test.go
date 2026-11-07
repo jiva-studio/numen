@@ -168,7 +168,7 @@ func TestGetVaultDeckPreset_UnreadablePresetMatchesEditorError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := out.Error; got != api.ErrorCodeMissing {
+	if got := out.Error; got != api.ErrorCodeNotFound {
 		t.Errorf("a preset that is not there fails as %v", got)
 	}
 	if out.Preset != nil {

@@ -28,7 +28,7 @@ func TestCardToolsHelpersAndBounds(t *testing.T) {
 
 	stat := domain.FileStat{Size: 123, ModTime: time.Unix(0, 456)}
 	out := newWriteOutcome("Deck.md", deckedit.EditResult{FileStat: stat, Cards: 7})
-	if out.Path != "Deck.md" || out.Cards != 7 || out.Fingerprint != "123-456" {
+	if out.Path != "Deck.md" || out.Total != 7 || out.Fingerprint != "123-456" {
 		t.Fatalf("unexpected WriteOutcome: %+v", out)
 	}
 

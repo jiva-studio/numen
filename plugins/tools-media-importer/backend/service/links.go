@@ -119,7 +119,7 @@ func (s linkServer) deleteCopy(ctx context.Context, req api.DeleteCopyRequest) (
 func (s linkServer) createLinks(ctx context.Context, req api.CreateLinksRequest) (api.CreateLinksResponse, error) {
 	out := api.CreateLinksResponse{Paths: []string{}}
 	for _, raw := range req.URLs {
-		made, err := s.links.Create(ctx, req.Folder, raw)
+		made, err := s.links.Create(ctx, "", req.Folder, raw)
 		if errors.Is(err, address.ErrNotAURL) {
 			continue
 		}

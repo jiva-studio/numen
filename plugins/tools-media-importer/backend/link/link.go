@@ -171,9 +171,9 @@ func newLink(path string, parsed address.URL, raw []byte) Link {
 // getKey names what is stored for the text of an address.
 func getKey(parsed address.URL) string { return domain.HashContent([]byte(parsed)) }
 
-// Create makes the link note of an address in a folder of the vault the host shows, named by the
-// address.
-func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
+// Create creates the link note of an address in a folder of a vault, named by the address. An empty
+// vault ID means the vault the host shows.
+func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, error) {
 	parsed, err := address.Parse(raw)
 	if err != nil {
 		return Link{}, err
@@ -197,12 +197,50 @@ func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
 	if err := errors.Join(doc.SetScalar(typeKey, string(NoteType)), doc.SetScalar(urlKey, string(parsed))); err != nil {
 		return Link{}, err
 	}
+	target := l.getVault(vault)
 	path := pathpkg.Join(folder, name+domain.NoteExtension)
 	content := doc.Bytes()
-	if err := l.host.Vault.Create(ctx, path, content); err != nil {
+	if err := target.Create(ctx, path, content); err != nil {
 		return Link{}, err
 	}
-	return newLinkIn(ctx, l.host.Vault, path, parsed, content)
+	return newLinkIn(ctx, target, path, parsed, content)
+}
+
+// FindOrCreate calls Create and, when a file is already at the path of the note, returns the link
+// note there if it has the same address. Any other file at the path is an error naming the path,
+// and the file is unchanged.
+func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, error) {
+	made, err := l.Create(ctx, vault, folder, raw)
+	if !errors.Is(err, host.ErrAlreadyExists) {
+		return made, err
+	}
+	parsed, err := address.Parse(raw)
+	// gomutants:disable-next-line BRANCH_IF reason="Create parsed the same address before it opened the file"
+	if err != nil {
+		return Link{}, err
+	}
+	name, _, err := domain.Filename(string(parsed))
+	// gomutants:disable-next-line BRANCH_IF reason="Create named the same address before it opened the file"
+	if err != nil {
+		return Link{}, err
+	}
+	path := pathpkg.Join(folder, name+domain.NoteExtension)
+	found, err := readLink(ctx, l.getVault(vault), path)
+	if err != nil && !errors.Is(err, ErrNotALink) {
+		return Link{}, err
+	}
+	if err != nil || found.Address != parsed {
+		return Link{}, fmt.Errorf("%s already exists and is not the link note of %s", path, parsed)
+	}
+	return found, nil
+}
+
+// getVault returns the vault of the identity, or the vault the host shows for an empty one.
+func (l *Links) getVault(vault domain.VaultID) host.Vault {
+	if vault == "" {
+		return l.host.Vault
+	}
+	return l.host.Vault.With(vault)
 }
 
 // getStore is the plugin's folder in the vault of the link.
@@ -331,6 +369,9 @@ const (
 
 func getTaskID(work, path string) string { return work + ":" + path }
 
+// GetCopyTaskID returns the id of the copy of the video of a link note in the list of tasks.
+func GetCopyTaskID(path string) string { return getTaskID("copy", path) }
+
 // FetchText fetches the text published at a link's address and stores it as a
 // text version of the link. An address that publishes no text is marked as such.
 // A fetch not requested by the user skips an address marked as publishing no
@@ -383,7 +424,7 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 		Languages: settings.Captions, IsAutomatic: settings.IsAutomatic,
 	})
 	if errors.Is(err, download.ErrNothingDownloaded) {
-		return folder.markNone(ctx, link.Key)
+		return folder.markNoText(ctx, link.Key)
 	}
 	if err != nil {
 		return err
@@ -415,7 +456,7 @@ func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKi
 		return err
 	}
 	for _, version := range listing.Versions {
-		if version.Key == link.Key && version.SourceHash == link.Hash {
+		if version.Key == link.Key && version.InputHash == link.Hash {
 			return nil
 		}
 	}
@@ -425,7 +466,7 @@ func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKi
 // putVersion puts the text stored for a link to the host as the link's version.
 func (l *Links) putVersion(ctx context.Context, link Link, kind domain.TextKind) error {
 	_, err := l.getTexts(link).PutVersion(ctx, host.TextPut{
-		Path: link.Path, Key: link.Key, Source: "", Kind: kind, SourceHash: link.Hash, File: link.Key + textExt,
+		Path: link.Path, Key: link.Key, Source: "", Kind: kind, InputHash: link.Hash, File: link.Key + textExt,
 	})
 	return err
 }
@@ -458,7 +499,7 @@ func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
 		return 0, ErrNotCopyable
 	}
 	task := host.Task{
-		ID: getTaskID("copy", link.Path), Title: copyingVideo, Detail: link.Path,
+		ID: GetCopyTaskID(link.Path), Title: copyingVideo, Detail: link.Path,
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitBytes, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
@@ -566,6 +607,29 @@ func (l *Links) ReadArticle(ctx context.Context, link Link) (string, error) {
 func (l *Links) GetTitle(ctx context.Context, link Link) (string, error) {
 	rec, err := folder{store: l.getStore(link)}.readRecord(ctx, link.Key)
 	return rec.Title, err
+}
+
+// TextInfo describes the text fetched for a link. HasNoText is set for an address marked as
+// publishing no text.
+type TextInfo struct {
+	Title     string
+	Producer  string
+	HasNoText bool
+}
+
+// GetTextInfo returns the title and the producer of the text fetched for a link, and whether its
+// address publishes no text. A link with no text fetched has an empty title and producer.
+func (l *Links) GetTextInfo(ctx context.Context, link Link) (TextInfo, error) {
+	folder := folder{store: l.getStore(link)}
+	isNone, err := folder.isNone(ctx, link.Key)
+	if err != nil {
+		return TextInfo{}, err
+	}
+	rec, err := folder.readRecord(ctx, link.Key)
+	if err != nil {
+		return TextInfo{}, err
+	}
+	return TextInfo{Title: rec.Title, Producer: rec.Producer, HasNoText: isNone}, nil
 }
 
 // reportTask shows a task. A host that cannot show it leaves the work to go on unseen.

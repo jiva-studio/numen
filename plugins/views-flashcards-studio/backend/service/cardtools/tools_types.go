@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/edit"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
@@ -38,58 +39,58 @@ type CardModel struct {
 	// Name is the text of a card's wikilink. A link is resolved by path and by filename, so
 	// the name that resolves to this card model is its filename without the extension.
 	Name   string   `json:"name" jsonschema:"the name to write in a card's wikilink, which is the filename without its extension"`
-	Title  string   `json:"title" jsonschema:"what the card model is called, which is what a person sees"`
-	Fields []string `json:"fields,omitempty" jsonschema:"what a card cut by this card model is asked for, in order; absent for a card model that could not be read"`
+	Title  string   `json:"title" jsonschema:"the title of the card model"`
+	Fields []string `json:"fields,omitempty" jsonschema:"the field names of the card model, in order; absent for a card model that could not be read"`
 }
 
 // Card is one card as a deck answers with it.
 type Card struct {
-	CardID    string       `json:"cardId" jsonschema:"what the card is for as long as it exists, and how every tool here addresses it; empty for a card typed in by hand, which is given one the next time the deck is written"`
-	Section   int          `json:"section" jsonschema:"where the section of this card is in the deck's sections, counted from the first; -1 for a card standing before the first section"`
-	CardModel string       `json:"cardModel,omitempty" jsonschema:"the card model this card is cut by, as the wikilink beneath its heading names it"`
-	Values    []FieldValue `json:"values,omitempty" jsonschema:"what the card holds, in the order it is in the file"`
+	CardID       string       `json:"cardId" jsonschema:"the stable identifier of the card, which every card tool takes; empty for a card written by hand, which gets one at the next write of the deck"`
+	SectionIndex int          `json:"sectionIndex" jsonschema:"the index of the section of the card in the deck, counted from 0; -1 for a card before the first section"`
+	CardModel    string       `json:"cardModel,omitempty" jsonschema:"the card model of the card, as named by the wikilink under its heading"`
+	Values       []FieldValue `json:"values,omitempty" jsonschema:"the field values, in file order"`
 }
 
 // FieldValue is the text of one of a card's fields.
 type FieldValue struct {
 	Field string `json:"field" jsonschema:"the field's name, spelled as the card model declares it"`
-	Text  string `json:"text" jsonschema:"the HTML under that heading"`
+	Text  string `json:"text" jsonschema:"the HTML of the field value"`
 }
 
-// Fault is one thing wrong with a deck, on the card it is against.
-type Fault struct {
-	Card int    `json:"card" jsonschema:"where the card is in the deck, counted from its first card; -1 for a fault against no card"`
-	Why  string `json:"why" jsonschema:"what is wrong, and what the application did about it"`
+// Problem is one problem of a deck, on the card it concerns.
+type Problem struct {
+	CardIndex int    `json:"cardIndex" jsonschema:"the index of the card in the deck, counted from 0; -1 for a problem of no card"`
+	Message   string `json:"message" jsonschema:"the problem and the action the application took"`
 }
 
-// CurrentCard is the card the user is viewing, as reported to an agent. The deck is the file containing it.
+// CurrentCard is the card the user is viewing, as reported to an agent. The path is the deck file containing it.
 type CurrentCard struct {
-	Deck     string `json:"deck" jsonschema:"the deck the card is in, by the path the vault files it under; empty when no card is in front of them"`
-	Card     string `json:"card,omitempty" jsonschema:"the card's id, as card_read gives it"`
-	Template string `json:"template,omitempty" jsonschema:"the template it is being shown through, spelled as the card model writes it"`
+	Path         string `json:"path" jsonschema:"the path of the deck of the card, relative to the vault folder; empty when no card is open"`
+	CardID       string `json:"cardId,omitempty" jsonschema:"the id of the card, as card_read returns it"`
+	TemplateName string `json:"templateName,omitempty" jsonschema:"the name of the template the card is shown with, as the card model spells it"`
 }
 
 // CardTemplate is one way a card model shows a card.
 type CardTemplate struct {
-	Name  string `json:"name" jsonschema:"what the template is called"`
-	Front string `json:"front" jsonschema:"what is shown before the answer, as HTML with {{Field}} where a value goes"`
-	Back  string `json:"back" jsonschema:"what is shown after it"`
+	Name  string `json:"name" jsonschema:"the name of the template"`
+	Front string `json:"front" jsonschema:"the front side, as HTML with {{Field}} placeholders for the values"`
+	Back  string `json:"back" jsonschema:"the back side, as HTML with {{Field}} placeholders for the values"`
 }
 
 // WriteOutcome is what a deck became: where it is, and what to present at the next write of it.
 type WriteOutcome struct {
-	Path        string `json:"path"`
-	Fingerprint string `json:"fingerprint" jsonschema:"hand this to the next write of this deck without reading it back"`
-	Cards       int    `json:"cards" jsonschema:"how many cards the deck now holds"`
-	CardID      string `json:"cardId,omitempty" jsonschema:"the card id the card just written is addressed by, for as long as it exists"`
+	Path        string `json:"path" jsonschema:"the path of the deck, relative to the vault folder"`
+	Fingerprint string `json:"fingerprint" jsonschema:"the new deck fingerprint; pass it to the next write of this deck"`
+	Total       int    `json:"total" jsonschema:"the number of cards in the deck"`
+	CardID      string `json:"cardId,omitempty" jsonschema:"the identifier of the written card"`
 }
 
 func newWriteOutcome(path string, edited deckedit.EditResult) WriteOutcome {
-	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.FileStat), Cards: edited.Cards, CardID: ""}
+	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.FileStat), Total: edited.Cards, CardID: ""}
 }
 
 func newCard(card format.Card) Card {
-	out := Card{CardID: string(card.CardID), Section: card.Section, CardModel: card.CardModelLink, Values: nil}
+	out := Card{CardID: string(card.CardID), SectionIndex: card.Section, CardModel: card.CardModelLink, Values: nil}
 	for _, v := range card.Values {
 		out.Values = append(out.Values, FieldValue{Field: v.Field, Text: v.Text})
 	}
@@ -120,16 +121,16 @@ func newTemplates(templates []format.CardTemplate) []CardTemplate {
 	return out
 }
 
-// faults lists the problems of a deck, each on the card it concerns. The position is counted from
+// getProblems lists the problems of a deck, each on the card it concerns. The position is counted from
 // the deck's first card, whichever range of cards a call requested.
-func faults(problems []format.Problem) []Fault {
+func getProblems(problems []format.Problem) []Problem {
 	// gomutants:disable-next-line INTEGER_DECREMENT,BRANCH_IF reason="Slice length is never negative, and an empty slice with omitempty serializes identically to nil."
 	if len(problems) == 0 {
 		return nil
 	}
-	out := make([]Fault, 0, len(problems))
+	out := make([]Problem, 0, len(problems))
 	for _, p := range problems {
-		out = append(out, Fault{Card: p.Card, Why: p.Detail})
+		out = append(out, Problem{CardIndex: p.Card, Message: p.Detail})
 	}
 	return out
 }
@@ -174,7 +175,7 @@ func parseFingerprint(s string) (domain.FileStat, error) {
 func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 	switch o {
 	case edit.Missing:
-		return api.ErrorCodeMissing, true
+		return api.ErrorCodeNotFound, true
 	case edit.NotANote:
 		return api.ErrorCodeNotANote, true
 	case edit.NotText:
@@ -191,8 +192,8 @@ func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 
 func describeCode(reason api.ErrorCode) string {
 	descriptions := map[api.ErrorCode]string{
-		api.ErrorCodeMissing:        "the vault holds no note at this path",
-		api.ErrorCodeNotANote:       "this is not a note the vault holds",
+		api.ErrorCodeNotFound:       "the vault has no note at this path",
+		api.ErrorCodeNotANote:       "this file is not a note",
 		api.ErrorCodeNotText:        "this file is not text: some of it is not valid UTF-8, so open it as a file",
 		api.ErrorCodeTooLarge:       fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead", edit.MaxBytes),
 		api.ErrorCodeBodyUnwritable: "this text opens with a frontmatter delimiter, so it cannot be written into a note",
@@ -203,10 +204,24 @@ func describeCode(reason api.ErrorCode) string {
 		api.ErrorCodeNotADeck:       "this note is not a deck",
 		api.ErrorCodeDeckTooLarge:   "this deck is larger than a deck is read at",
 		api.ErrorCodeNotAPreset:     "this note is not a preset",
-		api.ErrorCodeStale:          "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now",
+		api.ErrorCodeConflict:       "the file changed since it was read, and nothing was written: read it again and write from its current content",
 	}
 	if text, ok := descriptions[reason]; ok {
 		return text
 	}
 	return string(reason)
+}
+
+// NoteCreated is the deck or the card model a create call created.
+type NoteCreated struct {
+	Path  string `json:"path" jsonschema:"the path of the new file, relative to the vault folder"`
+	ID    string `json:"id" jsonschema:"the identifier of the new note"`
+	Title string `json:"title" jsonschema:"the title of the new note"`
+}
+
+func newNoteCreated(created cards.CreateNoteResult, err error) (NoteCreated, error) {
+	if err != nil {
+		return NoteCreated{}, err
+	}
+	return NoteCreated{Path: created.Path, ID: created.ID, Title: created.Title}, nil
 }

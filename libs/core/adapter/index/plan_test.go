@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/note"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/version"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
@@ -60,11 +61,11 @@ func getExpectedPlans() []struct {
 		{chunk.Statements(), "progress", []any{"model", 1, 0}, []string{"chunks_by_vault_parent", "vectors_by_hash"}},
 		// A search by words reads the full-text index and then the row each hit
 		// names. A virtual table reports itself as a scan and has no named index.
-		{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
-		{chunk.Statements(), "lexical_kinds", []any{`"entropy"`, 1, `["note"]`, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20, "notes/", "notes/"}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "lexical_kinds", []any{`"entropy"`, 1, `["note"]`, 20, "notes/", "notes/"}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
 		// A search by name reads its own full-text index the same way.
-		{chunk.Statements(), "sections", []any{`"entropy"`, 1, 20}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
-		{chunk.Statements(), "sections_kinds", []any{`"entropy"`, 1, `["note"]`, 20}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "sections", []any{`"entropy"`, 1, 20, "notes/", "notes/"}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "sections_kinds", []any{`"entropy"`, 1, `["note"]`, 20, "notes/", "notes/"}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
 		{chunk.Statements(), "clear_sections", []any{1}, []string{"chunks_by_source"}},
 		{chunk.Statements(), "clear_fts", []any{1}, []string{"chunks_by_source"}},
 		// Cutting a source again reads what it holds now, and then moves, writes or
@@ -75,7 +76,17 @@ func getExpectedPlans() []struct {
 		// The coarse pass reads the vector index. That it stays inside one vault is
 		// asserted in TestTheCoarsePassIsConstrainedInsideTheQuery and
 		// TestTheCoarsePassStaysInsideItsVault.
+		// The coarse pass under a path prefix finds the sources by the range of their
+		// paths, their chunks by source, and the vector of each chunk by its key: the
+		// "!" of the plan of the vector table is its lookup of one row by key.
+		{chunk.Statements(), "coarse_prefix", []any{getCoarse(), 1, "notes/", 10, "notes0", "notes/", "notes0"}, []string{"(vault_id=? AND path>? AND path<?)", "chunks_by_source", "SCAN v VIRTUAL TABLE INDEX 5:2!"}},
 		{chunk.Statements(), "coarse", []any{getCoarse(), 1, 10}, []string{"chunks_vec"}},
+		// The cached hash of a file is its source row, found by vault and path. The
+		// vault is given by its identifier, then the path; a save gives the record's
+		// hash, size, modification time, file id and hash time, the vault and path, and
+		// the size, modification time and hash the row must have.
+		{version.Statements(), "find_content_hash", []any{"first", "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)"}},
+		{version.Statements(), "save_content_hash", []any{"h", 1, 1, 7, 9, "first", "folder/note-00001.md", 1, 1, "h"}, []string{"(vault_id=? AND path=?)"}},
 	}
 }
 
@@ -110,7 +121,12 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 	}
 
 	for _, q := range getExpectedPlans() {
-		plan := planFor(ctx, t, db, q.statements[q.name], q.args)
+		statement, ok := q.statements[q.name]
+		if !ok {
+			t.Errorf("there is no statement %s", q.name)
+			continue
+		}
+		plan := planFor(ctx, t, db, statement, q.args)
 		t.Logf("%s:\n    %s", q.name, strings.Join(plan, "\n    "))
 
 		joined := strings.Join(plan, "\n")

@@ -35,6 +35,10 @@ func (versionTexts) RequestText(context.Context, string, string) error { return 
 
 func (versionTexts) IsTextSource(context.Context, string) (bool, error) { return true, nil }
 
+func (t versionTexts) GetContentHash(context.Context, string) (string, error) {
+	return t.text.Version().InputHash, nil
+}
+
 func TestAPassageOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
@@ -48,8 +52,8 @@ func TestAPassageOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
 	whole := segments[0].Text + segments[1].Text
 	if err := c.db.Sources().SaveExtraction(ctx, c.first.ID, domain.SourceChunks{
 		Source: domain.Source{
-			FileStat: domain.FileStat{Path: path, Kind: domain.KindFile, Size: 1},
-			Hash:     "h", Recipe: "r", Producer: string(version.GetID()),
+			FileStat:    domain.FileStat{Path: path, Kind: domain.KindFile, Size: 1},
+			ContentHash: "h", Recipe: "r", Producer: string(version.GetID()),
 		},
 		Chunks: []domain.Chunk{
 			{Start: 0, Length: len(whole), Text: whole, Opens: []string{"zzqqxx"}},

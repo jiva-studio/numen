@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// looking is a window that records the places it is requested to show.
+// looking is a window that records the places it receives.
 type looking struct {
 	requested []domain.Place
 	fails     error
@@ -24,6 +24,7 @@ func (l *looking) FocusPlace(_ context.Context, pos domain.Place) error {
 }
 func (l *looking) ShowMove(context.Context, domain.Move) error { return nil }
 func (l *looking) ShowEdit(context.Context, domain.Edit) error { return nil }
+func (l *looking) ActivateTab(context.Context, string) error   { return nil }
 
 func TestFocusingANoteInsertsItInFrontOfThePerson(t *testing.T) {
 	t.Parallel()

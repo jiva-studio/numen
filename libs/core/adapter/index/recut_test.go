@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
@@ -503,7 +504,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 		t.Errorf("%d full-text rows name a chunk that is gone", got)
 	}
 
-	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, opening, nil, 10, false)
+	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: opening, Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -515,7 +516,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 			t.Errorf("%s answered for a word of %s", p.Source, n.FileStat.Path)
 		}
 	}
-	typed, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, "wordzz", nil, 10, false)
+	typed, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "wordzz", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -619,7 +620,7 @@ func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 	n := parseNote("notes/Entropy.md", body)
 	save(t, db, getFirst(), n)
 
-	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, "Sectiona", nil, 10, false)
+	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Sectiona", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -779,7 +780,7 @@ func checkVaultsAnswerOnlyForThemselves(t *testing.T, db *DB) {
 		{getSecond(), "quasar", true},
 		{getFirst(), "quasar", false},
 	} {
-		found, err := db.ChunkQueries().FindLexical(t.Context(), ask.vault.ID, ask.word, nil, 10, false)
+		found, err := db.ChunkQueries().FindLexical(t.Context(), ask.vault.ID, sourceport.LexicalQuery{Text: ask.word, Kinds: nil, Limit: 10})
 		if err != nil {
 			t.Fatal(err)
 		}

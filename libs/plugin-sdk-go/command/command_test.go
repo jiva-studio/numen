@@ -109,7 +109,7 @@ func TestNewDeleteTextRunDeletesTheVersionTheHostNames(t *testing.T) {
 	if err := host.WriteText(ctx, store, "k.jsonl", []domain.TextSegment{{Text: "a"}}); err != nil {
 		t.Fatal(err)
 	}
-	version, err := texts.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", SourceHash: domain.HashContent(file), File: "k.jsonl"})
+	version, err := texts.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: domain.HashContent(file), File: "k.jsonl"})
 	if err != nil {
 		t.Fatal(err)
 	}

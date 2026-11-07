@@ -5,35 +5,38 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
-// Mount registers the window tools on s, working the vault through the host the
+// Mount registers the window tools on s, using the vault and the window of the host the
 // environment names.
 func Mount(s *server.Server) error {
-	return mount(s, connectVault(host.NewClientFromEnv()))
+	return mount(s, connectHost(hostcall.FromEnv()))
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in.
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return mount(s, connectVault(host.NewClientFromVars(vars)))
+		return mount(s, connectHost(hostcall.FromVars(vars)))
 	})
 }
 
-// connectVault is the vault of the host client, or no vault where the host cannot be reached.
-func connectVault(client *host.Client, err error) host.Vault {
+// connectHost returns the vault and the window of the host at the endpoint, or none when the
+// endpoint is not configured.
+func connectHost(endpoint hostcall.Endpoint, err error) Host {
 	if err != nil {
-		return nil
+		return Host{}
 	}
-	return client
+	client := host.NewClient(endpoint)
+	return Host{Vault: client, Window: client}
 }
 
-func mount(s *server.Server, vault host.Vault) error {
+func mount(s *server.Server, on Host) error {
 	manager := NewManager(clock.System{})
 	registry := tools.New()
-	if err := RegisterTools(registry, manager, vault); err != nil {
+	if err := RegisterTools(registry, manager, on); err != nil {
 		return err
 	}
 	registry.Mount(s)

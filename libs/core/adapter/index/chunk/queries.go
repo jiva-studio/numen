@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"golang.org/x/text/unicode/norm"
 )
 
 // Queries answers questions about chunks in shapes other than chunks: where a
@@ -49,8 +50,8 @@ type Passage struct {
 	// Producer is what made the text this chunk is a place in. Empty where the
 	// source's own bytes are the text, which is the ordinary case.
 	Producer string
-	// Hash addresses the content of the source, and is what the 	// recognition of it are kept under.
-	Hash string
+	// ContentHash is the SHA-256 of the source content; text versions are stored under it.
+	ContentHash string
 	// ChunkHash addresses the text this chunk held when the index cut it.
 	ChunkHash string
 	// MTime is when the source was last modified.
@@ -141,13 +142,13 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 //
 // The result is the large chunk enclosing each hit, which is what a result
 // displays.
-func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
-	if limit <= 0 {
+func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query sourceport.LexicalQuery) ([]domain.Passage, error) {
+	if query.Limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
-		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", limit)
+		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", query.Limit)
 	}
-	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, passageSearch{all: lexicalSQL, kinds: lexicalKindsSQL})
+	return q.findPassages(ctx, vaultID, query, passageSearch{all: lexicalSQL, kinds: lexicalKindsSQL})
 }
 
 // GetNamedPassages returns the sections of one vault whose names match the
@@ -155,11 +156,11 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 //
 // A section is represented by the chunk it opens, so a result is the chapter
 // about the query and not the paragraph that repeats the name most often.
-func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
-	if limit <= 0 {
-		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
+func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query sourceport.LexicalQuery) ([]domain.Passage, error) {
+	if query.Limit <= 0 {
+		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", query.Limit)
 	}
-	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, passageSearch{all: sectionsSQL, kinds: sectionsKindsSQL})
+	return q.findPassages(ctx, vaultID, query, passageSearch{all: sectionsSQL, kinds: sectionsKindsSQL})
 }
 
 // passageSearch is a full-text statement over every source, and its variant
@@ -170,8 +171,12 @@ type passageSearch struct {
 }
 
 // findPassages runs search.all, or search.kinds when the search is limited to
-// kinds, and reads the passages it returns. An empty expression matches nothing.
-func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expression string, of []domain.SourceKind, limit int, search passageSearch) (_ []domain.Passage, err error) {
+// kinds, and reads the passages it returns. The sources are limited to those whose
+// path starts with the composed (NFC) or the decomposed (NFD) form of the prefix of
+// the query before the list is truncated to its limit. A query with no words
+// matches nothing.
+func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, query sourceport.LexicalQuery, search passageSearch) (_ []domain.Passage, err error) {
+	expression := Expression(query.Text, query.IsGrowing)
 	if expression == "" {
 		return nil, nil
 	}
@@ -184,11 +189,12 @@ func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expr
 	}
 
 	var rows *sql.Rows
-	if len(of) == 0 {
-		rows, err = q.db.QueryContext(ctx, search.all, expression, vault, limit)
+	composed, decomposed := norm.NFC.String(query.PathPrefix), norm.NFD.String(query.PathPrefix)
+	if len(query.Kinds) == 0 {
+		rows, err = q.db.QueryContext(ctx, search.all, expression, vault, query.Limit, composed, decomposed)
 	} else {
-		wanted := formatKinds(of)
-		rows, err = q.db.QueryContext(ctx, search.kinds, expression, vault, wanted, limit)
+		kindFilter := formatKinds(query.Kinds)
+		rows, err = q.db.QueryContext(ctx, search.kinds, expression, vault, kindFilter, query.Limit, composed, decomposed)
 	}
 	if err != nil {
 		return nil, err
@@ -199,7 +205,7 @@ func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expr
 	for rows.Next() {
 		var p domain.Passage
 		var row int64
-		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.Producer, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
 			return nil, err
 		}
 		p.ChunkID = ID(row)
@@ -229,7 +235,7 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, searc
 		return nil, err
 	}
 
-	item, err := q.findNearestByBits(ctx, vault, search.Vector, search.Limit*coarseCandidates)
+	item, err := q.findNearestWithPrefix(ctx, vault, search.Vector, search.Limit*coarseCandidates, search.PathPrefix)
 	if err != nil {
 		if q.hasOtherCoarseRecipe(ctx, search.Recipe) {
 			return nil, nil
@@ -285,6 +291,50 @@ func (q *Queries) hasOtherCoarseRecipe(ctx context.Context, recipe string) bool 
 	return err == nil && currentRecipe != "" && currentRecipe != recipe
 }
 
+// findNearestWithPrefix returns findNearestByBits limited to the sources whose path starts with the
+// composed (NFC) or the decomposed (NFD) form of pathPrefix, k chunks of them.
+func (q *Queries) findNearestWithPrefix(ctx context.Context, vault int64, query []float32, k int, pathPrefix string) (_ []int64, err error) {
+	if pathPrefix == "" {
+		return q.findNearestByBits(ctx, vault, query, k)
+	}
+	ctx, err = sqlwrite.Uninterrupted(ctx)
+	if err != nil {
+		return nil, err
+	}
+	composed, decomposed := norm.NFC.String(pathPrefix), norm.NFD.String(pathPrefix)
+	rows, err := q.db.QueryContext(ctx, coarsePrefixSQL, vector.Bits(query), vault, composed, k, getUpperBound(composed),
+		decomposed, getUpperBound(decomposed))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+
+	var kept []int64
+	for rows.Next() {
+		var chunk int64
+		if err := rows.Scan(&chunk); err != nil {
+			return nil, err
+		}
+		kept = append(kept, chunk)
+	}
+	return kept, rows.Err()
+}
+
+// getUpperBound returns the least value above every path that starts with prefix, by bytes: the
+// prefix with its trailing 0xFF bytes removed and its last byte incremented. If every byte is 0xFF,
+// no TEXT value is greater, so the bound is a BLOB, which SQLite sorts above every TEXT.
+func getUpperBound(prefix string) any {
+	end := []byte(prefix)
+	for len(end) > 0 && end[len(end)-1] == 0xFF {
+		end = end[:len(end)-1]
+	}
+	if len(end) == 0 {
+		return []byte{0xFF}
+	}
+	end[len(end)-1]++
+	return string(end)
+}
+
 // findNearestByBits is the pass over the bit vectors: the chunks of one vault whose signs
 // stand nearest the query's, by Hamming distance, k of them.
 func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []float32, k int) (_ []int64, err error) {
@@ -329,7 +379,7 @@ func (q *Queries) getEnclosingPassages(ctx context.Context, vault int64, chunks 
 	for _, chunk := range chunks {
 		p := domain.Passage{ChunkID: ID(chunk)}
 		err := enclosing.QueryRowContext(ctx, chunk, vault).
-			Scan(&p.Source, &p.Kind, &p.Producer, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt)
+			Scan(&p.Source, &p.Kind, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.HitAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}
@@ -357,7 +407,7 @@ func (q *Queries) Passage(ctx context.Context, vaultID domain.VaultID, chunk int
 
 func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
 	p := Passage{Chunk: chunk}
-	err := row.Scan(&p.Path, &p.Producer, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent)
+	err := row.Scan(&p.Path, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.Parent)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Passage{}, false, nil
 	}
@@ -423,7 +473,7 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 	var out []Passage
 	for rows.Next() {
 		var p Passage
-		if err := rows.Scan(&p.Chunk, &p.Path, &p.Producer, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.ChunkHash, &p.MTime, &p.Source); err != nil {
+		if err := rows.Scan(&p.Chunk, &p.Path, &p.Producer, &p.ContentHash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.ChunkHash, &p.MTime, &p.Source); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -528,11 +578,11 @@ func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte
 // SourceText is one source whose text a producer made: where the file is, what
 // made the text, and the hash the files of that recognition are kept under.
 type SourceText struct {
-	Path     string
-	Producer string
-	Hash     string
-	Size     int64
-	MTime    int64
+	Path        string
+	Producer    string
+	ContentHash string
+	Size        int64
+	MTime       int64
 }
 
 // GetSourceText is what one source's text came from, and false where the index holds
@@ -546,7 +596,7 @@ func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, pat
 		return SourceText{}, false, err
 	}
 	found := SourceText{Path: path}
-	err = q.db.QueryRowContext(ctx, sourceTextSQL, vault, path).Scan(&found.Producer, &found.Hash, &found.Size, &found.MTime)
+	err = q.db.QueryRowContext(ctx, sourceTextSQL, vault, path).Scan(&found.Producer, &found.ContentHash, &found.Size, &found.MTime)
 	if errors.Is(err, sql.ErrNoRows) {
 		return SourceText{}, false, nil
 	}
@@ -579,7 +629,7 @@ func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.Vault
 	var out []SourceText
 	for rows.Next() {
 		var r SourceText
-		if err := rows.Scan(&r.Path, &r.Producer, &r.Hash); err != nil {
+		if err := rows.Scan(&r.Path, &r.Producer, &r.ContentHash); err != nil {
 			return nil, err
 		}
 		out = append(out, r)

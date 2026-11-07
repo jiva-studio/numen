@@ -740,7 +740,7 @@ func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 	testsupport.CloseAfter(t, f.installation)
 
 	page := openQuitStream(t, f)
-	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
+	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_UNSAVED })
 
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
@@ -776,7 +776,7 @@ func TestFlushPending_ClosesAfterPromptsResolved(t *testing.T) {
 	testsupport.CloseAfter(t, f.installation)
 
 	page := openQuitStream(t, f)
-	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
+	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_UNSAVED })
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
@@ -819,14 +819,14 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 	page.answerFlushes(func(_ string) v1.FlushResult {
 		asks++
 		if asks == 1 {
-			return v1.FlushResult_FLUSH_RESULT_ASKING
+			return v1.FlushResult_FLUSH_RESULT_UNSAVED
 		}
 		// Page behavior after the user has chosen what happens to the text.
 		if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 			Path: "Note.md",
 			Body: "typed and never saved\n",
 		})); err != nil {
-			return v1.FlushResult_FLUSH_RESULT_ASKING
+			return v1.FlushResult_FLUSH_RESULT_UNSAVED
 		}
 		return v1.FlushResult_FLUSH_RESULT_WRITTEN
 	})
@@ -863,7 +863,7 @@ func TestFlushPending_BoundsWaitForDepartedPageWithQuestion(t *testing.T) {
 	testsupport.CloseAfter(t, f.installation)
 
 	page := openQuitStream(t, f)
-	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
+	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_UNSAVED })
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
@@ -897,7 +897,7 @@ func TestAPageThatReachesBackRaisesItsQuestionAgain(t *testing.T) {
 	testsupport.CloseAfter(t, f.installation)
 
 	first := openQuitStream(t, f)
-	first.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
+	first.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_UNSAVED })
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
@@ -910,7 +910,7 @@ func TestAPageThatReachesBackRaisesItsQuestionAgain(t *testing.T) {
 	if back.token == first.token {
 		t.Fatalf("the page that came back listens under the token that went, %q", back.token)
 	}
-	back.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
+	back.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_UNSAVED })
 
 	again, cancelAgain := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelAgain()

@@ -25,6 +25,6 @@ type SourceQueries interface {
 // made the text, and the hash the files of that recognition are kept under.
 type SourceText struct {
 	domain.FileStat
-	Producer string
-	Hash     string
+	Producer    string
+	ContentHash string
 }

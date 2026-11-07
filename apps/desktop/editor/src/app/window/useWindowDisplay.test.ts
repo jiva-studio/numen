@@ -66,7 +66,7 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     create: async () => ({ ok: true, value: { path: '' } }),
     relations: {
       roles: ['parent', 'child', 'jump'],
-      getConnection: async () => asFailure('missing'),
+      getConnection: async () => asFailure('notFound'),
       saveConnection: async () => asValue(undefined),
       removeSide: async () => asValue(undefined),
       removeConnection: async () => asValue(undefined),
@@ -371,7 +371,7 @@ describe('a note requested for from outside the window', () => {
   it('is put in front of the person, wherever the window draws it', async () => {
     const core = fake({
       watchFocus: async function* () {
-        yield { path: 'Wanted.md', ranges: [] }
+        yield { path: 'Wanted.md', ranges: [], tabId: '' }
       },
     })
     const one = createDisplay(core)
@@ -379,6 +379,32 @@ describe('a note requested for from outside the window', () => {
     await one.window.watch()
 
     expect(one.travelled).toStrictEqual(['Wanted.md'])
+  })
+})
+
+describe('a tab requested from outside the window', () => {
+  it('activates the tab with the id and does not navigate', async () => {
+    const core = fake({
+      watchFocus: async function* () {
+        yield { path: '', ranges: [], tabId: 'tab-2' }
+      },
+    })
+    const activated: string[] = []
+    const travelled: string[] = []
+    const window = useWindowDisplay(core, {
+      wait: async () => window.close(),
+      travelTo: (path) => {
+        travelled.push(path)
+      },
+      activateTab: (id) => {
+        activated.push(id)
+      },
+    })
+
+    await window.watch()
+
+    expect(activated).toStrictEqual(['tab-2'])
+    expect(travelled).toStrictEqual([])
   })
 })
 
@@ -395,7 +421,11 @@ describe('a place inside a source requested for from outside the window', () => 
   it('opens the document it remains in, and asks for no note at all', async () => {
     const core = fake({
       watchFocus: async function* () {
-        yield { path: 'library/mahabharata.epub', ranges: [{ start: 40_512, end: 40_543 }] }
+        yield {
+          path: 'library/mahabharata.epub',
+          ranges: [{ start: 40_512, end: 40_543 }],
+          tabId: '',
+        }
       },
     })
     const { window, opened, travelled } = createRecordingWindow(core)
@@ -417,6 +447,7 @@ describe('a place inside a source requested for from outside the window', () => 
             // A span reaching nowhere is no place, and is not lit.
             { start: 42_000, end: 42_000 },
           ],
+          tabId: '',
         }
       },
     })
@@ -430,7 +461,7 @@ describe('a place inside a source requested for from outside the window', () => 
   it('asks for the note itself where the focus names no run of a source', async () => {
     const core = fake({
       watchFocus: async function* () {
-        yield { path: 'Wanted.md', ranges: [{ start: 0, end: 0 }] }
+        yield { path: 'Wanted.md', ranges: [{ start: 0, end: 0 }], tabId: '' }
       },
     })
     const { window, opened, travelled } = createRecordingWindow(core)
@@ -448,7 +479,7 @@ describe('a vault that could not be read', () => {
     const core = fake({
       getInitialOpenPath: async () => null,
       watchFocus: async function* () {
-        yield { path: 'Focused.md', ranges: [] }
+        yield { path: 'Focused.md', ranges: [], tabId: '' }
       },
       state: async () => ({
         ...resolved,

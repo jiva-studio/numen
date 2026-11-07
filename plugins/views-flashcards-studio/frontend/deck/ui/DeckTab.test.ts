@@ -100,7 +100,7 @@ const mountDeck = async (
         at: 'read',
       }),
     writeDeck: async () => asValue({ at: 'written' }),
-    readCardModel: async () => asFailure('missing' as const),
+    readCardModel: async () => asFailure('notFound' as const),
     writeCardModel: async () => asValue({ at: '' }),
   }
 

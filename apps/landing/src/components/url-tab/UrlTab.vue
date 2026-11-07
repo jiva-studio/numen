@@ -11,11 +11,17 @@
 import { computed, onMounted, onUnmounted, readonly, ref, useTemplateRef, watch } from 'vue'
 import MediaEmbed from './embed/MediaEmbed.vue'
 import MediaLayout from './MediaLayout.vue'
-import { useTranscript, type TranscriptOptions } from '@plugins/views-media-player/frontend/model/transcript'
+import {
+  useTranscript,
+  type TranscriptOptions,
+} from '@plugins/views-media-player/frontend/model/transcript'
 import type { Player } from '@plugins/views-media-player/frontend/model/player'
 import type { ReaderTabState, Selector } from '@numen/plugin-host'
 import type { Recordings, TextRange } from '@plugins/views-media-player/frontend/types'
-import { createTimeSelector, getSelectorStart } from '@plugins/views-media-player/frontend/lib/place'
+import {
+  createTimeSelector,
+  getSelectorStart,
+} from '@plugins/views-media-player/frontend/lib/place'
 import { WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -76,7 +82,7 @@ const isFramedPage = computed(() => url.value !== '' && !url.value.endsWith('.mp
 onMounted(() => {
   if (props.state) {
     const shared = props.state as Record<string, unknown>
-    shared.focusSpans = (...spans: readonly TextRange[]) => tab.navigation.reach(...spans)
+    shared.focusSpans = (...spans: readonly TextRange[]) => tab.navigation.seekToSpans(...spans)
   }
 })
 

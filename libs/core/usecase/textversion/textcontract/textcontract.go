@@ -4,6 +4,8 @@ package textcontract
 import "github.com/jiva-studio/numen/libs/core/port/textport"
 
 type (
+	ContentHash         = textport.ContentHash
+	ContentHashes       = textport.ContentHashes
 	TextCreation        = textport.TextCreation
 	TextFile            = textport.TextFile
 	TextFileStores      = textport.TextFileStores

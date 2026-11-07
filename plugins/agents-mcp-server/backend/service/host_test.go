@@ -23,12 +23,12 @@ type standInHost struct {
 	calls   []tools.Call
 }
 
-func (h *standInHost) ListToolInfos(_ context.Context, header http.Header) ([]*tools.ToolInfo, error) {
+func (h *standInHost) ListTools(_ context.Context, header http.Header) (tools.Listing, error) {
 	h.record(header, nil)
-	return []*tools.ToolInfo{{
+	return tools.Listing{Tools: []*tools.ToolInfo{{
 		Name: "note_read", Title: "Read a note", Effect: tools.ReadOnly,
 		InputSchema: []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
-	}}, nil
+	}}}, nil
 }
 
 func (h *standInHost) InvokeTool(_ context.Context, header http.Header, call tools.Call) (*tools.CallResponse, error) {

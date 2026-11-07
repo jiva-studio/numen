@@ -32,10 +32,10 @@ type Versions struct {
 
 // request identifies one automatic request to a plugin for text of one file content.
 type request struct {
-	vault    domain.VaultID
-	path     string
-	fileHash string
-	pluginID string
+	vault       domain.VaultID
+	path        string
+	contentHash string
+	pluginID    string
 }
 
 // NewVersions returns the versions use case. It takes the version repositories,
@@ -85,12 +85,12 @@ func (noListener) ReportVersionsChanged(domain.Vault, string) {}
 // VersionPut is what a plugin reports of one of its versions. File is the name
 // of the version's file in the plugin's folder, written before the put.
 type VersionPut struct {
-	Path       string
-	Key        string
-	Source     domain.TextVersionID
-	Kind       domain.TextKind
-	SourceHash string
-	File       string
+	Path      string
+	Key       string
+	Source    domain.TextVersionID
+	Kind      domain.TextKind
+	InputHash string
+	File      string
 }
 
 // PutVersion records a version of the plugin, or replaces the record of the
@@ -102,7 +102,7 @@ func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID stri
 	}
 	return u.saveVersion(ctx, v, domain.TextVersion{
 		Path: params.Path, PluginID: pluginID, Key: params.Key, Source: params.Source,
-		Kind: params.Kind, File: params.File, SourceHash: params.SourceHash,
+		Kind: params.Kind, File: params.File, InputHash: params.InputHash,
 	})
 }
 
@@ -131,7 +131,7 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	if err != nil {
 		return domain.TextVersion{}, fmt.Errorf("%w: file %s of %s: %w", textport.ErrInvalidVersion, version.File, version.PluginID, err)
 	}
-	version.Hash = file.Hash
+	version.TextHash = file.TextHash
 	version.CreateTime = u.clock.Now()
 	if i := indexOf(versions, version.GetID()); i >= 0 {
 		version.CreateTime = versions[i].CreateTime
@@ -181,14 +181,14 @@ type Listing struct {
 }
 
 // ListVersions returns the versions of a file and the live one, evaluated for
-// the file content identified by fileHash.
-func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, fileHash string) (Listing, error) {
+// the file content identified by contentHash.
+func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, contentHash string) (Listing, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
 		return Listing{}, err
 	}
 	listing := Listing{Versions: versions}
-	live, ok, err := u.findLive(ctx, v, versions, fileHash)
+	live, ok, err := u.findLive(ctx, v, versions, contentHash)
 	if err != nil {
 		return Listing{}, err
 	}
@@ -200,7 +200,7 @@ func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, fileH
 
 // findLive is the live version among a file's versions: the newest one with a
 // valid chain whose file still has the hash it was recorded with.
-func (u *Versions) findLive(ctx context.Context, v domain.Vault, versions []domain.TextVersion, fileHash string) (domain.TextVersion, bool, error) {
+func (u *Versions) findLive(ctx context.Context, v domain.Vault, versions []domain.TextVersion, contentHash string) (domain.TextVersion, bool, error) {
 	if len(versions) == 0 {
 		return domain.TextVersion{}, false, nil
 	}
@@ -208,9 +208,9 @@ func (u *Versions) findLive(ctx context.Context, v domain.Vault, versions []doma
 	if err != nil {
 		return domain.TextVersion{}, false, err
 	}
-	live, ok := domain.FindLiveVersion(versions, fileHash, func(version domain.TextVersion) bool {
+	live, ok := domain.FindLiveVersion(versions, contentHash, func(version domain.TextVersion) bool {
 		file, err := files.ReadTextFile(ctx, version.PluginID, version.File)
-		return err == nil && file.Hash == version.Hash
+		return err == nil && file.TextHash == version.TextHash
 	})
 	return live, ok, nil
 }
@@ -272,7 +272,7 @@ func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit
 	}
 	return u.saveVersion(ctx, v, domain.TextVersion{
 		Path: edit.Path, PluginID: edit.PluginID, Key: key, Source: source.GetID(),
-		Kind: source.Kind, File: name, SourceHash: source.Hash,
+		Kind: source.Kind, File: name, InputHash: source.TextHash,
 	})
 }
 
@@ -297,12 +297,12 @@ func (u *Versions) createText(ctx context.Context, req textport.TextCreation, pl
 // RequestText requests text of the file from each enabled plugin that runs
 // automatically and reads the file, once for each content of the file. A file
 // with a live version is not requested.
-func (u *Versions) RequestText(ctx context.Context, v domain.Vault, path, fileHash string) error {
+func (u *Versions) RequestText(ctx context.Context, v domain.Vault, path, contentHash string) error {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
 		return err
 	}
-	if _, ok, err := u.findLive(ctx, v, versions, fileHash); err != nil || ok {
+	if _, ok, err := u.findLive(ctx, v, versions, contentHash); err != nil || ok {
 		return err
 	}
 	var failures []error
@@ -310,7 +310,7 @@ func (u *Versions) RequestText(ctx context.Context, v domain.Vault, path, fileHa
 		if !plugin.Files.IsFileAccepted(path) {
 			continue
 		}
-		key := request{vault: v.ID, path: path, fileHash: fileHash, pluginID: plugin.ID}
+		key := request{vault: v.ID, path: path, contentHash: contentHash, pluginID: plugin.ID}
 		if !u.markRequested(key) {
 			continue
 		}

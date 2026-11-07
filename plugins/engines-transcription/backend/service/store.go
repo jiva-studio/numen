@@ -28,6 +28,9 @@ func getFileName(key string) string    { return key + ".jsonl" }
 func getPartialName(key string) string { return key + ".partial.jsonl" }
 func getReachedName(key string) string { return key + ".reached" }
 
+// isWholeFile reports whether the version is kept in the whole transcript file of its key.
+func isWholeFile(version domain.TextVersion) bool { return version.File == getFileName(version.Key) }
+
 // reached is how far a partial transcript got: the millisecond of the recording, and the size of
 // the partial file at that moment.
 type reached struct {

@@ -66,6 +66,23 @@ message ManifestContributes {
   repeated ManifestCommand commands = 12;
   // menus place commands in the named places the window draws.
   repeated ManifestMenuEntry menus = 13;
+  // listeners are the ports the host binds for the plugin.
+  repeated ManifestListener listeners = 14;
+}
+
+// ManifestListener is a TCP port on 127.0.0.1 the host binds for the plugin while the plugin is
+// enabled. The host starts the plugin on a connection and forwards its bytes to the port the
+// plugin reports for the listener in its ready line.
+message ManifestListener {
+  // name identifies the listener within the plugin; lowercase words joined by hyphens.
+  string name = 1;
+  // port is a fixed port the host binds, 1024 to 65535. Set exactly one of port and port_setting.
+  int32 port = 2;
+  // protocol is the transport, "tcp".
+  string protocol = 3;
+  // port_setting is the key of the plugin's number setting that stores the port the host binds; the
+  // host binds again when the setting changes. Set exactly one of port and port_setting.
+  string port_setting = 4;
 }
 
 // ManifestMenuEntry places one command in a named place of the window. The command is the id
@@ -173,7 +190,6 @@ message ManifestSetting {
   optional double min = 9;
   optional double max = 10;
   optional double step = 11;
-  reserved 13;
   ManifestOptionsBy options_by = 14;
   ManifestCondition when = 15;
   repeated string accept = 16;
@@ -184,6 +200,8 @@ message ManifestSetting {
   bool preview = 18;
   // options_from names a registry the options are listed from, such as the installed themes.
   string options_from = 19;
+  // generate makes the host fill an empty value; "token" is 32 random bytes in hex.
+  string generate = 20;
 }
 
 message ManifestSecret {

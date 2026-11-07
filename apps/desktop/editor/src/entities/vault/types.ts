@@ -33,10 +33,10 @@ export type VaultErrorCode =
   | 'overlaps'
   | 'nameTaken'
   | 'lastVault'
-  | 'showing'
-  | 'unknown'
+  | 'current'
+  | 'notFound'
   | 'noTrash'
-  | 'asking'
+  | 'unsaved'
 
 /** The vaults an installation holds, and what changes them. */
 export interface Vaults {

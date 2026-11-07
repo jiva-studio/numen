@@ -32,25 +32,63 @@ const { now, runs, isPlaying, isUnplayable } = tab.playback
 const menuItems = tab.options.items
 
 /* --------------------------------- Hooks ---------------------------------- */
+/**
+ * Saves `ms` as the place the tab opens at after a restart, and reports it to the window in seconds
+ * from the start.
+ */
+const saveTime = (ms: number) => {
+  props.state?.savePlace?.(createTimeSelector(ms))
+  props.state?.reportPlace?.({ positionSeconds: Math.max(0, ms) / 1000 })
+}
+
+/** Seeks playback to the first of the spans and saves that time before playback starts. */
+const seekToSpans = async (...spans: readonly TextRange[]) => {
+  const ms = await tab.navigation.seekToSpans(...spans)
+  if (ms !== null) saveTime(ms)
+}
+
 onMounted(() => {
   if (props.state) {
     const shared = props.state as Record<string, unknown>
-    shared.focusSpans = (...spans: readonly TextRange[]) => tab.navigation.reach(...spans)
+    shared.focusSpans = seekToSpans
   }
 })
 
-// The window sets a selector for a search hit and for the place saved before a restart.
+/** Seeks playback to the start of a selector and returns it, or null when the selector has none. */
+const seekToSelector = (selector: Selector | null | undefined): number | null => {
+  const start = getSelectorStart(selector)
+  if (start !== null) tab.playback.controls.go(start)
+  return start
+}
+
+// The window sets a selector for a search hit and for the place saved before a restart. The one the
+// tab opens with is already stored by the window, so it is reported and only a later one is saved.
+const initialTime = seekToSelector(props.state?.selector)
+if (initialTime !== null) props.state?.reportPlace?.({ positionSeconds: initialTime / 1000 })
 watch(
   () => props.state?.selector,
   (selector: Selector | null | undefined) => {
-    const start = getSelectorStart(selector)
-    if (start !== null) tab.playback.controls.go(start)
+    const start = seekToSelector(selector)
+    if (start !== null) saveTime(start)
+  },
+)
+
+// The window sets a new array on each request, so playback seeks to the same ranges again.
+watch(
+  () => props.state?.ranges,
+  (ranges) => {
+    if (ranges && ranges.length > 0) seekToSpans(...ranges).catch(tab.reportFailure)
   },
   { immediate: true },
 )
 
-/** Saves the current playback time as the place the tab opens at after a restart. */
-const savePlace = () => props.state?.savePlace?.(createTimeSelector(now.value))
+/**
+ * Saves the current playback time as the place the tab opens at after a restart. While the shared
+ * player is playing another recording this tab has no time of its own, so nothing is saved.
+ */
+const savePlace = () => {
+  if (tab.playback.isLoaded.value) saveTime(now.value)
+}
 
 // Saved when playback stops and every ten seconds of it, so a restart loses at most that much.
 watch(isPlaying, (playing) => {
@@ -83,7 +121,7 @@ function onPause() {
 
 function onSeek(ms: number) {
   tab.playback.controls.go(ms)
-  props.state?.savePlace?.(createTimeSelector(ms))
+  saveTime(ms)
 }
 </script>
 

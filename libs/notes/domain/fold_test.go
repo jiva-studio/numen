@@ -83,3 +83,25 @@ func TestTheKeyIsComposed(t *testing.T) {
 		}
 	}
 }
+
+func TestHasPathPrefixMatchesComposedAndDecomposedForms(t *testing.T) {
+	composed := norm.NFC.String("Bücher")
+	decomposed := norm.NFD.String("Bücher")
+	for _, one := range []struct {
+		path, prefix string
+		want         bool
+	}{
+		{composed + "/Teebuch.md", composed + "/", true},
+		{composed + "/Teebuch.md", decomposed + "/", true},
+		{decomposed + "/Teebuch.md", composed + "/", true},
+		{decomposed + "/Teebuch.md", decomposed + "/", true},
+		{"library/Tea.md", "library/", true},
+		{"library2/x", "library/", false},
+		{"library/Tea.md", "", true},
+		{composed + "/Teebuch.md", "library/", false},
+	} {
+		if got := domain.HasPathPrefix(one.path, one.prefix); got != one.want {
+			t.Errorf("HasPathPrefix(%+q, %+q) = %v, want %v", one.path, one.prefix, got, one.want)
+		}
+	}
+}

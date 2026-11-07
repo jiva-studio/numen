@@ -57,7 +57,7 @@ func TestGetLinkPropagatesStoreErrors(t *testing.T) {
 	t.Cleanup(links.Close)
 	svc := linkServer{links: links}
 
-	made, err := links.Create(t.Context(), "talks", videoAddress)
+	made, err := links.Create(t.Context(), "", "talks", videoAddress)
 	if err != nil {
 		t.Fatal(err)
 	}

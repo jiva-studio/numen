@@ -21,14 +21,28 @@ type Tools struct {
 	host host.Vault
 	// vault is the vault of the call being served.
 	vault host.Vault
+	// texts and search are the text versions and the search index. On the tools they are those of
+	// every vault, and nil until WithLibrary; on the tools of a call they are those of its vault.
+	texts  host.Texts
+	search host.Search
+	// list is the installation's list of vaults. The tools that change the list are registered only
+	// when it is given.
+	list host.VaultList
 }
 
 // New creates a Tools instance.
 func New(vault host.Vault) *Tools {
-	return &Tools{host: vault, vault: nil}
+	return &Tools{host: vault, vault: nil, texts: nil, search: nil, list: nil}
 }
 
-// inVault runs the tool on the vault the call names. A call that names none is refused.
+// WithVaultList sets the installation's list of vaults, which vault_list reads and the
+// tools that add, rename, remove and open vaults change.
+func (t *Tools) WithVaultList(list host.VaultList) *Tools {
+	t.list = list
+	return t
+}
+
+// inVault runs the tool on the vault the call names. A call that names no vault returns an error.
 func inVault[In, Out any](t *Tools, run func(*Tools, context.Context, In) (Out, error)) func(context.Context, In) (Out, error) {
 	return func(ctx context.Context, in In) (Out, error) {
 		id := tools.GetVault(ctx)
@@ -36,23 +50,47 @@ func inVault[In, Out any](t *Tools, run func(*Tools, context.Context, In) (Out, 
 			var none Out
 			return none, errNoVault
 		}
-		return run(&Tools{host: t.host, vault: t.host.With(domain.VaultID(id))}, ctx, in)
+		call := &Tools{host: t.host, vault: t.host.With(domain.VaultID(id)), texts: nil, search: nil, list: t.list}
+		if t.texts != nil {
+			call.texts = t.texts.With(domain.VaultID(id))
+		}
+		if t.search != nil {
+			call.search = t.search.With(domain.VaultID(id))
+		}
+		return run(call, ctx, in)
 	}
 }
 
 // Registry registers and returns all vault tools.
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
-	for _, add := range []func(*tools.Registry) error{
+	adds := []func(*tools.Registry) error{
 		t.addNoteRead,
 		t.addNoteWrite,
-		t.addNoteHeadings,
+		t.addNoteHeadingList,
 		t.addNoteSearch,
+		t.addNoteList,
+		t.addNoteTitleList,
+		t.addNoteResolve,
+		t.addLibrarySearch,
+		t.addLibraryRead,
 		t.addLinkList,
 		t.addVaultGet,
+		t.addVaultList,
+		t.addVaultProblemList,
 		t.addFileRead,
 		t.addFileCreate,
-	} {
+		t.addNoteRename,
+		t.addNoteMove,
+		t.addNoteRemove,
+		t.addLinkAdd,
+		t.addLinkUpdate,
+		t.addLinkRemove,
+	}
+	if t.list != nil {
+		adds = append(adds, t.addVaultAdd, t.addVaultRename, t.addVaultRemove, t.addVaultOpen)
+	}
+	for _, add := range adds {
 		if err := add(registry); err != nil {
 			return nil, err
 		}
@@ -70,7 +108,7 @@ func formatFingerprint(ref domain.FileStat) string {
 
 func parseFingerprint(s string) (domain.FileStat, error) {
 	if s == "" {
-		return domain.FileStat{}, errors.New("fingerprint required")
+		return domain.FileStat{}, errors.New("fingerprint is required")
 	}
 	sizeStr, mtimeStr, found := strings.Cut(s, "-")
 	if !found {
@@ -89,4 +127,10 @@ func parseFingerprint(s string) (domain.FileStat, error) {
 		modTime = time.Unix(0, nanos)
 	}
 	return domain.FileStat{Path: "", Kind: "", Size: size, ModTime: modTime}, nil
+}
+
+// addTool adds the tool to the registry. tools.Add starts the text of every error of the tool with
+// the tool name.
+func addTool[In, Out any](registry *tools.Registry, spec tools.Spec, run func(context.Context, In) (Out, error)) error {
+	return tools.Add(registry, spec, run)
 }

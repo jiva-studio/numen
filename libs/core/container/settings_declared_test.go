@@ -1,10 +1,15 @@
 package container
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
@@ -97,5 +102,84 @@ func TestAWriteOfSeveralSettingsIsRefusedWholeWhenOneIsRefused(t *testing.T) {
 	}
 	if strings.Contains(string(raw), "dark") {
 		t.Errorf("the accepted half was written:\n%s", raw)
+	}
+}
+
+const relayPlugin = "org.example.relay"
+
+// writeRelayPlugin puts a plugin in a folder whose listener relay takes its port from the setting
+// port, with defaultPort as its default, and returns the folder.
+func writeRelayPlugin(t *testing.T, defaultPort int) string {
+	t.Helper()
+	root := t.TempDir()
+	dir := filepath.Join(root, "relay")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifest := fmt.Sprintf(`{
+		"id": %q,
+		"name": "Relay",
+		"version": "1.0.0",
+		"targets": ["desktop.editor"],
+		"backend": {"entrypoint": "bin/relay"},
+		"contributes": {"listeners": [{"name": "relay", "portSetting": "port", "protocol": "tcp"}]},
+		"settings": [
+			{"key": "port", "type": "number", "title": "Port", "default": %d, "step": 1},
+			{"key": "greeting", "type": "string", "title": "Greeting", "default": "good morning"}
+		]
+	}`, relayPlugin, defaultPort)
+	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return root
+}
+
+// listenOnLoopback binds a free loopback port until the test ends and returns it.
+func listenOnLoopback(t *testing.T) (net.Listener, int) {
+	t.Helper()
+	ln, err := new(net.ListenConfig).Listen(t.Context(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := ln.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			t.Errorf("close the listener: %v", err)
+		}
+	})
+	addr, ok := ln.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("listener address %v is not TCP", ln.Addr())
+	}
+	return ln, addr.Port
+}
+
+func TestSettingsWriteOfUsedPluginPortFailsAndKeepsTheFile(t *testing.T) {
+	free, defaultPort := listenOnLoopback(t)
+	if err := free.Close(); err != nil {
+		t.Fatal(err)
+	}
+	_, takenPort := listenOnLoopback(t)
+	cfg, path := writeSettings(t, `{}`)
+	host := NewPluginHost("desktop.editor", writeRelayPlugin(t, defaultPort))
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Errorf("TeardownAll: %v", err)
+		}
+	})
+	cfg.PluginHost = host
+
+	err := writeAt(cfg, fmt.Sprint(takenPort), relayPlugin, "port")
+	if !errors.Is(err, settingsport.ErrNotASetting) {
+		t.Errorf("writing the taken port %d gave %v", takenPort, err)
+	}
+	raw, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if string(raw) != `{}` {
+		t.Errorf("the file is now:\n%s", raw)
+	}
+	if err := writeAt(cfg, `"good evening"`, relayPlugin, "greeting"); err != nil {
+		t.Errorf("writing greeting gave %v", err)
 	}
 }

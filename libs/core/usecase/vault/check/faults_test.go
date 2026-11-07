@@ -152,7 +152,7 @@ func TestAnUnknownCheckIsRefusedWithTheNamesThereAre(t *testing.T) {
 	if err == nil {
 		t.Fatal("want an error")
 	}
-	if want := `there is no "spelling" check; there is first, second`; err.Error() != want {
+	if want := `"spelling" is not a check; the checks are first, second`; err.Error() != want {
 		t.Errorf("the error is %q, want %q", err, want)
 	}
 }

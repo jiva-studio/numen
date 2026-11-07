@@ -401,7 +401,7 @@ describe('a note renamed', () => {
     expect(one.notices).toStrictEqual([])
   })
 
-  it('says the name was taken, and that the note carries the new one', async () => {
+  it('shows a name-taken error, and the note keeps its name', async () => {
     const one = window({ renamed: asFailure('alreadyExists' as const) })
 
     await carry(createInvocation('app:note.rename', front(), 'Entropy'), one.on)
@@ -493,7 +493,7 @@ describe('a note removed', () => {
   })
 
   it('keeps the tab of a note the vault would not remove', async () => {
-    const one = window({ removed: asFailure('missing' as const) })
+    const one = window({ removed: asFailure('notFound' as const) })
 
     await carry(createInvocation('app:note.trash', front(), '', 'active'), one.on)
 
@@ -501,11 +501,11 @@ describe('a note removed', () => {
   })
 
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
-    const one = window({ removed: asFailure('missing' as const) })
+    const one = window({ removed: asFailure('notFound' as const) })
 
     await carry(createInvocation('app:note.trash', front()), one.on)
 
-    expect(one.notices).toStrictEqual([words.errors.missing])
+    expect(one.notices).toStrictEqual([words.errors.notFound])
     expect(one.actions.at(-1)).toBe('remove physics/Ontology.md false')
   })
 
@@ -561,7 +561,7 @@ describe('several files removed at once', () => {
         remove: async (path, destroy) => {
           one.actions.push(`remove ${path} ${destroy}`)
           return path === 'physics/Ontology.md'
-            ? asFailure('missing' as const)
+            ? asFailure('notFound' as const)
             : createRemoveResult()
         },
       },
@@ -573,7 +573,7 @@ describe('several files removed at once', () => {
       'remove physics/Ontology.md false',
       'remove physics/Heat.pdf false',
     ])
-    expect(one.notices).toStrictEqual([words.errors.missing])
+    expect(one.notices).toStrictEqual([words.errors.notFound])
   })
 })
 
@@ -762,12 +762,12 @@ describe('another vault under this window', () => {
   })
 
   it('leaves the page at its current position where the vault would not open', async () => {
-    const one = window({ turnedDown: 'showing' })
+    const one = window({ turnedDown: 'current' })
 
     await carry(createInvocation('app:vault.open', heat()), one.on)
 
     expect(one.actions).toStrictEqual(['opens vault heat'])
-    expect(one.notices).toStrictEqual([words.vaultErrors.showing])
+    expect(one.notices).toStrictEqual([words.vaultErrors.current])
   })
 })
 
@@ -866,11 +866,11 @@ describe('a vault taken off the list', () => {
   })
 
   it('says the vault in front of the person, which the window relies on', async () => {
-    const one = window({ turnedDown: 'showing' })
+    const one = window({ turnedDown: 'current' })
 
     await carry(createInvocation('app:vault.remove', front()), one.on)
 
-    expect(one.notices).toStrictEqual([words.vaultErrors.showing])
+    expect(one.notices).toStrictEqual([words.vaultErrors.current])
   })
 })
 
@@ -1034,7 +1034,7 @@ describe('what the voice says in which severity', () => {
   it('cautions that a move waits on the person, and errors on failure', async () => {
     const pendingItem = window({ isAsking: true })
     const acquiredItem = window({ movement: { ok: false, error: 'alreadyExists' } })
-    const failingWindow = window({ movement: { ok: false, error: 'missing' } })
+    const failingWindow = window({ movement: { ok: false, error: 'notFound' } })
 
     await carry(createInvocation('app:file.move', front(), 'notes/Ontology.md'), pendingItem.on)
     await carry(createInvocation('app:file.move', front(), 'notes/Ontology.md'), acquiredItem.on)
@@ -1042,7 +1042,7 @@ describe('what the voice says in which severity', () => {
 
     expect(pendingItem.severities).toStrictEqual(['warning'])
     expect(acquiredItem.severities).toStrictEqual(['error'])
-    expect(failingWindow.notices).toStrictEqual([words.errors.missing])
+    expect(failingWindow.notices).toStrictEqual([words.errors.notFound])
     expect(failingWindow.severities).toStrictEqual(['error'])
   })
 
@@ -1075,7 +1075,7 @@ describe('what the voice says in which severity', () => {
   })
 
   it('errors on a removal the vault rejected, and cautions on one that waits', async () => {
-    const failingWindow = window({ removed: asFailure('missing' as const) })
+    const failingWindow = window({ removed: asFailure('notFound' as const) })
     const pendingItem = window({ isAsking: true })
 
     await carry(createInvocation('app:note.trash', front()), failingWindow.on)
@@ -1171,5 +1171,17 @@ describe('the command of a setting', () => {
 
     expect(one.notices).toStrictEqual(['value out of range'])
     expect(one.severities).toStrictEqual(['error'])
+  })
+})
+
+describe('a note renamed onto a name another file has', () => {
+  it('shows the error and changes nothing in the window', async () => {
+    const one = window({ renamed: asFailure('alreadyExists' as const) })
+
+    await carry(createInvocation('app:note.rename', front(), 'Entropy'), one.on)
+
+    expect(one.notices).toStrictEqual([words.errors.alreadyExists])
+    expect(one.severities).toStrictEqual(['error'])
+    expect(one.actions).toStrictEqual(['flushPending active', 'rename physics/Ontology.md Entropy'])
   })
 })

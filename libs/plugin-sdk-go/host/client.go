@@ -15,10 +15,11 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// Client works the vault through HostVaultService.
+// Client calls HostVaultService for the vault and HostWindowService for its window.
 type Client struct {
-	rpc numenv1connect.HostVaultServiceClient
-	// vault is the identity of the vault the client works. Empty is the vault the window shows.
+	rpc    numenv1connect.HostVaultServiceClient
+	window numenv1connect.HostWindowServiceClient
+	// vault is the identity of the vault the client calls. An empty vault ID means the vault the window shows.
 	vault string
 }
 
@@ -67,7 +68,10 @@ func NewClient(endpoint hostcall.Endpoint) *Client {
 
 // NewClientOver connects to the host at the endpoint through the given HTTP client.
 func NewClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
-	return &Client{rpc: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
+	return &Client{
+		rpc:    numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+		window: numenv1connect.NewHostWindowServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+	}
 }
 
 // readError converts the failure of a call into its error: a vault the host does not know is ErrUnknownVault.
@@ -78,32 +82,33 @@ func readError(err error) error {
 	return err
 }
 
-func fail(code v1.HostVaultErrorCode) error {
-	switch code {
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED:
-		return nil
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:
-		return ErrNoVault
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING:
-		return ErrNotExist
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE:
-		return ErrOutside
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE:
-		return ErrStale
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS:
-		return ErrAlreadyExists
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER:
-		return ErrLockedByAnother
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:
-		return ErrNotANote
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION:
-		return ErrInvalidConnection
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE:
-		return ErrHierarchyCycle
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED:
-		return ErrNoFreeName
+// getHostVaultErrors returns the error of each error code of a call on a vault.
+func getHostVaultErrors() map[v1.HostVaultErrorCode]error {
+	return map[v1.HostVaultErrorCode]error{
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:           ErrNoVault,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:          ErrNotExist,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT:      ErrOutside,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:           ErrStale,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS:     ErrAlreadyExists,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED:             ErrLockedByAnother,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:         ErrNotANote,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION: ErrInvalidConnection,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE:    ErrHierarchyCycle,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED:     ErrNoFreeName,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:       domain.ErrInvalidName,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT:           ErrNotText,
+		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED:      ErrNotAttempted,
 	}
-	return fmt.Errorf("host: rejected with code %s", code)
+}
+
+func fail(code v1.HostVaultErrorCode) error {
+	if code == v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED {
+		return nil
+	}
+	if err, isKnown := getHostVaultErrors()[code]; isKnown {
+		return err
+	}
+	return fmt.Errorf("the host returned the error code %s", code)
 }
 
 func readFileStat(f *v1.HostFileStat) domain.FileStat {
@@ -194,6 +199,18 @@ func (c *Client) Read(ctx context.Context, path string) ([]byte, domain.FileStat
 	return res.Msg.GetContent(), readFileStat(res.Msg.GetStat()), nil
 }
 
+func (c *Client) ReadRange(ctx context.Context, path string, start, length int) (FileRange, error) {
+	size := int64(length)
+	res, err := c.rpc.ReadFile(ctx, request(c, &v1.ReadFileRequest{Path: path, Start: int64(start), Length: &size}))
+	if err != nil {
+		return FileRange{}, readError(err)
+	}
+	if err := fail(res.Msg.GetError()); err != nil {
+		return FileRange{}, err
+	}
+	return FileRange{Text: string(res.Msg.GetContent()), Start: int(res.Msg.GetStart()), Stat: readFileStat(res.Msg.GetStat())}, nil
+}
+
 func (c *Client) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
 	res, err := c.rpc.WriteFile(ctx, request(c, &v1.WriteFileRequest{
 		Path: path, Content: content, Baseline: writeFileStat(baseline),
@@ -250,7 +267,7 @@ func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domai
 	}
 	out := make(map[string]domain.NoteRef, len(res.Msg.GetNotes()))
 	for _, one := range res.Msg.GetNotes() {
-		out[one.GetPath()] = domain.NoteRef{Path: one.GetPath(), Title: one.GetTitle()}
+		out[one.GetPath()] = domain.NoteRef{Path: one.GetPath(), Title: one.GetTitle(), ID: one.GetId()}
 	}
 	return out, nil
 }
@@ -315,7 +332,7 @@ func (c *Client) GetBacklinks(ctx context.Context, to string) ([]domain.Resolved
 }
 
 func (c *Client) ResolveLinks(ctx context.Context, from string, targets []string) (map[string]domain.ResolvedLink, error) {
-	res, err := c.rpc.ResolveLinks(ctx, request(c, &v1.ResolveLinksRequest{Path: from, Written: targets}))
+	res, err := c.rpc.ResolveLinks(ctx, request(c, &v1.ResolveLinksRequest{Path: from, Addresses: targets}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -352,7 +369,7 @@ func (c *Client) ReadCache(ctx context.Context, name string) ([]byte, bool, erro
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, false, err
 	}
-	return res.Msg.GetContent(), res.Msg.GetFound(), nil
+	return res.Msg.GetContent(), res.Msg.GetIsFound(), nil
 }
 
 func (c *Client) WriteCache(ctx context.Context, name string, content []byte) error {

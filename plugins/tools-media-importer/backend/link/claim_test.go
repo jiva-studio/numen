@@ -488,7 +488,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	l, v, _, hs, ht, hq, sf, maxSize := createTestLinks()
 	t.Cleanup(l.Close)
 
-	made, err := l.Create(ctx, "links", "https://example.com/a")
+	made, err := l.Create(ctx, "", "links", "https://example.com/a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -594,7 +594,7 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	ht.listOverride = &host.TextListing{
 		Live: liveListing.Live,
 		Versions: []domain.TextVersion{
-			{PluginID: "other-plugin", Key: "other", SourceHash: "other-hash"},
+			{PluginID: "other-plugin", Key: "other", InputHash: "other-hash"},
 			liveListing.Versions[0],
 		},
 	}

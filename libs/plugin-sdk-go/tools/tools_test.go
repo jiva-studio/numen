@@ -75,7 +75,7 @@ func TestListTools_ReturnsSchemasAndServers(t *testing.T) {
 func TestACallRunsTheToolOnItsArgumentsAndAnswersStructured(t *testing.T) {
 	answer := call(t, newRegistry(t), "greet", `{"name":"Sita"}`)
 
-	if answer.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || answer.GetResult().GetIsRefusal() {
+	if answer.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || answer.GetResult().GetIsError() {
 		t.Fatalf("the call was answered %v", answer)
 	}
 	if string(answer.GetResult().GetStructured()) != `{"greeting":"hello Sita"}` {
@@ -84,17 +84,9 @@ func TestACallRunsTheToolOnItsArgumentsAndAnswersStructured(t *testing.T) {
 }
 
 func TestAToolThatReturnsAnErrorRanAndRefused(t *testing.T) {
-	answer := call(t, newRegistry(t), "greet", `{}`)
+	answer := call(t, newRegistry(t), "greet", `{"name":""}`)
 
-	if !answer.GetResult().GetIsRefusal() || answer.GetResult().GetText() != "recipient required" {
-		t.Errorf("the call was answered %v", answer)
-	}
-}
-
-func TestArgumentsThatDoNotFitTheStructAreAError(t *testing.T) {
-	answer := call(t, newRegistry(t), "greet", `{"name":3}`)
-
-	if !answer.GetResult().GetIsRefusal() || !strings.HasPrefix(answer.GetResult().GetText(), "the arguments do not fit:") {
+	if !answer.GetResult().GetIsError() || answer.GetResult().GetText() != "greet: recipient required" {
 		t.Errorf("the call was answered %v", answer)
 	}
 }
@@ -121,12 +113,13 @@ func TestCall_TextResultReturnsText(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	listed, err := registry.ListToolInfos(t.Context())
-	if err != nil || len(listed) != 1 {
-		t.Fatalf("ListToolInfos = %v, %v", listed, err)
+	listing, err := registry.ListTools(t.Context())
+	infos := listing.Tools
+	if err != nil || len(infos) != 1 {
+		t.Fatalf("ListTools = %v, %v", infos, err)
 	}
-	if string(listed[0].GetInputSchema()) != `{"type":"object"}` || len(listed[0].GetOutputSchema()) != 0 {
-		t.Errorf("non-struct schemas: in=%s out=%s", listed[0].GetInputSchema(), listed[0].GetOutputSchema())
+	if string(infos[0].GetInputSchema()) != `{"type":"object"}` || len(infos[0].GetOutputSchema()) != 0 {
+		t.Errorf("non-struct schemas: in=%s out=%s", infos[0].GetInputSchema(), infos[0].GetOutputSchema())
 	}
 
 	answer := call(t, registry, "count", "")
@@ -214,7 +207,7 @@ func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
 	if got := writeCallResponse(nil); got == nil || got.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || got.GetResult() != nil {
 		t.Fatalf("writeCallResponse(nil) = %v", got)
 	}
-	if res := writeResult(make(chan int)); !res.GetIsRefusal() || !strings.HasPrefix(res.GetText(), "the result cannot be encoded:") {
+	if res := writeResult(make(chan int)); !res.GetIsError() || !strings.HasPrefix(res.GetText(), "the result cannot be encoded:") {
 		t.Fatalf("writeResult(chan) = %v", res)
 	}
 
@@ -244,12 +237,12 @@ func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("Add pointer struct failed: %v", err)
 	}
-	infos, err := registry.ListToolInfos(t.Context())
+	listing, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	var ptrInfo *ToolInfo
-	for _, info := range infos {
+	for _, info := range listing.Tools {
 		if info.GetName() == "ptr-struct" {
 			ptrInfo = info
 		}

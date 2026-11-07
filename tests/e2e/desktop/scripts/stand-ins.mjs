@@ -103,7 +103,7 @@ const createToolCalls = (request) => {
       type: 'function',
       function: {
         name: NOTE_WRITE_TOOL,
-        arguments: JSON.stringify({ path: TOOL_NOTE_PATH, content: TOOL_NOTE_TEXT }),
+        arguments: JSON.stringify({ path: TOOL_NOTE_PATH, text: TOOL_NOTE_TEXT }),
       },
     },
   ]

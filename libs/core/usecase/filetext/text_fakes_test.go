@@ -2,6 +2,7 @@ package filetext
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"sync"
@@ -45,7 +46,7 @@ func (s *libraryTexts) put(v domain.Vault, path, pluginID string, kind domain.Te
 	defer s.mu.Unlock()
 	raw := s.shelves[v.ID].Files[path].Raw
 	version := domain.TextVersion{
-		Path: path, PluginID: pluginID, Key: fmt.Sprint(len(s.extra[path])), Kind: kind, SourceHash: domain.HashContent(raw),
+		Path: path, PluginID: pluginID, Key: fmt.Sprint(len(s.extra[path])), Kind: kind, InputHash: domain.HashContent(raw),
 	}
 	s.extra[path] = append(s.extra[path], placedVersion{version: version, parts: parts})
 	return version
@@ -74,7 +75,7 @@ type libraryVaultTexts struct {
 }
 
 // findLive is the live version of a file and its parts.
-func (t libraryVaultTexts) findLive(ctx context.Context, path, fileHash string) (placedVersion, error) {
+func (t libraryVaultTexts) findLive(ctx context.Context, path, contentHash string) (placedVersion, error) {
 	s := t.texts
 	s.mu.Lock()
 	failure := s.failure
@@ -84,42 +85,42 @@ func (t libraryVaultTexts) findLive(ctx context.Context, path, fileHash string) 
 		return placedVersion{}, failure
 	}
 	for i := len(extra) - 1; i >= 0; i-- {
-		if extra[i].version.SourceHash == fileHash {
+		if extra[i].version.InputHash == contentHash {
 			return extra[i], nil
 		}
 	}
 	s.mu.Lock()
-	made, isMade := s.books[path+"|"+fileHash]
+	made, isMade := s.books[path+"|"+contentHash]
 	s.mu.Unlock()
 	if isMade {
 		return made, nil
 	}
 	file, ok := s.shelves[t.vault.ID].Files[path]
-	if !ok || domain.HashContent(file.Raw) != fileHash {
+	if !ok || domain.HashContent(file.Raw) != contentHash {
 		return placedVersion{}, textport.ErrNoText
 	}
 	parts, err := indexfake.ReadBookSegments(file.Raw)
 	if err != nil {
 		return placedVersion{}, textport.ErrNoText
 	}
-	version := domain.TextVersion{Path: path, PluginID: bookReader, Key: fileHash[:8], Kind: "book-text", SourceHash: fileHash}
+	version := domain.TextVersion{Path: path, PluginID: bookReader, Key: contentHash[:8], Kind: "book-text", InputHash: contentHash}
 	made = placedVersion{version: version, parts: parts}
 	s.mu.Lock()
-	s.books[path+"|"+fileHash] = made
+	s.books[path+"|"+contentHash] = made
 	s.mu.Unlock()
 	return made, nil
 }
 
-func (t libraryVaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) (domain.TextVersionID, error) {
-	live, err := t.findLive(ctx, path, fileHash)
+func (t libraryVaultTexts) FindLiveVersion(ctx context.Context, path, contentHash string) (domain.TextVersionID, error) {
+	live, err := t.findLive(ctx, path, contentHash)
 	if err != nil {
 		return "", err
 	}
 	return live.version.GetID(), nil
 }
 
-func (t libraryVaultTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
-	live, err := t.findLive(ctx, path, fileHash)
+func (t libraryVaultTexts) GetLiveText(ctx context.Context, path, contentHash string) (domain.VersionText, error) {
+	live, err := t.findLive(ctx, path, contentHash)
 	if err != nil {
 		return domain.VersionText{}, err
 	}
@@ -165,4 +166,14 @@ func (s *libraryTexts) leaveOut(path string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.outside[path] = true
+}
+
+// GetContentHash hashes the file from a stream of the fake vault, which counts it as a read.
+func (t libraryVaultTexts) GetContentHash(ctx context.Context, path string) (_ string, err error) {
+	file, err := t.texts.shelves[t.vault.ID].Open(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	defer func() { err = errors.Join(err, file.Close()) }()
+	return domain.HashReader(file)
 }

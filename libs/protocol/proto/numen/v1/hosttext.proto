@@ -35,10 +35,10 @@ service HostTextService {
 
 // TextVersion is the host's record of one text of a file.
 //
-// source_version_id is empty for a version made from the file. source_hash is
+// source_version_id is empty for a version made from the file. input_hash is
 // the SHA-256, in hex, of the file's bytes for such a version, and the hash of
 // the source version otherwise. file is the name of the version's file in the
-// folder of the plugin that made it; hash is the SHA-256 of that file's bytes.
+// folder of the plugin that made it; text_hash is the SHA-256 of that file's bytes.
 // kind is what the text is, as the plugin that made it names it;
 // the host compares it as an opaque string.
 message TextVersion {
@@ -48,8 +48,8 @@ message TextVersion {
   string key = 4;
   string source_version_id = 5;
   string kind = 6;
-  string source_hash = 7;
-  string hash = 8;
+  string input_hash = 7;
+  string text_hash = 8;
   int64 create_time_unix_ms = 9;
   string file = 10;
 }
@@ -59,7 +59,7 @@ message PutTextVersionRequest {
   string key = 2;
   string source_version_id = 3;
   string kind = 4;
-  string source_hash = 5;
+  string input_hash = 5;
   // file is the name of the version's file in the calling plugin's folder.
   string file = 6;
 }
@@ -92,8 +92,16 @@ message ListTextVersionsResponse {
 message ReadTextRequest {
   string path = 1;
   string version_id = 2;
-  // cursor is the next_cursor of the page before, and empty for the first.
+  // cursor is the next_cursor of the page before, and empty for the first. Not
+  // used with a length.
   string cursor = 3;
+  // The start of a ranged read in the whole text, in bytes.
+  int64 start = 4;
+  // Set: read the range from start of this many bytes, zero to the end,
+  // truncated at whole characters, as the segments it covers, each truncated to
+  // the range. Unset:
+  // read one page by cursor.
+  optional int64 length = 5;
 }
 
 message ReadTextResponse {
@@ -101,4 +109,8 @@ message ReadTextResponse {
   // next_cursor is empty on the last page.
   string next_cursor = 2;
   TextErrorCode error = 3;
+  // For a ranged read: the start of the first segment returned in the whole
+  // text, and the size of the whole text in bytes.
+  int64 start = 4;
+  int64 size = 5;
 }

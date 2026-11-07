@@ -7,7 +7,7 @@ import { ErrorCode as ProtoErrorCode } from '../../api/types'
 
 /** The error code a call of this plugin answers with. */
 export type ErrorCode =
-  | 'missing'
+  | 'notFound'
   | 'notANote'
   | 'notText'
   | 'tooLarge'
@@ -21,9 +21,9 @@ export type ErrorCode =
   | 'deckTooLarge'
   | 'notAPreset'
 
-/** The code for each schema code, and null for `STALE`: the window prompts the user about that one. */
+/** The code for each schema code, and null for `CONFLICT`: the window prompts the user about that one. */
 const ERROR_CODE: Readonly<Record<ProtoErrorCode, ErrorCode | null>> = {
-  [ProtoErrorCode.MISSING]: 'missing',
+  [ProtoErrorCode.NOT_FOUND]: 'notFound',
   [ProtoErrorCode.NOT_A_NOTE]: 'notANote',
   [ProtoErrorCode.NOT_TEXT]: 'notText',
   [ProtoErrorCode.TOO_LARGE]: 'tooLarge',
@@ -35,12 +35,12 @@ const ERROR_CODE: Readonly<Record<ProtoErrorCode, ErrorCode | null>> = {
   [ProtoErrorCode.NOT_A_DECK]: 'notADeck',
   [ProtoErrorCode.DECK_TOO_LARGE]: 'deckTooLarge',
   [ProtoErrorCode.NOT_A_PRESET]: 'notAPreset',
-  [ProtoErrorCode.STALE]: null,
+  [ProtoErrorCode.CONFLICT]: null,
 }
 
 /** The message for each error code. */
 export const ERRORS: Readonly<Record<ErrorCode, string>> = {
-  missing: 'note not in the vault',
+  notFound: 'note not in the vault',
   notANote: 'not a note',
   notText: 'not a text file',
   tooLarge: 'note too large',
@@ -57,7 +57,7 @@ export const ERRORS: Readonly<Record<ErrorCode, string>> = {
 
 /** The message for a schema code that has no code of its own. */
 const SCHEMA_ONLY_WORDS: Readonly<Partial<Record<ProtoErrorCode, string>>> = {
-  [ProtoErrorCode.STALE]: 'not saved: the note changed on disk',
+  [ProtoErrorCode.CONFLICT]: 'not saved: the note changed on disk',
 }
 
 /** The message for a schema code that this build does not know. */
@@ -69,7 +69,7 @@ export const findErrorCode = (from: { error?: ProtoErrorCode | undefined }): Err
 
 /** Whether the file an answer is about had moved past what the caller read. */
 export const isStaleAnswer = (from: { error?: ProtoErrorCode | undefined }): boolean =>
-  from.error === ProtoErrorCode.STALE
+  from.error === ProtoErrorCode.CONFLICT
 
 /** The message for one error code. */
 export const getErrorWords = (code: ErrorCode): string => ERRORS[code]

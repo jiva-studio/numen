@@ -158,6 +158,40 @@ func TestRemoveLinkAddressesATypeAndKeepsTheOthers(t *testing.T) {
 	}
 }
 
+func TestRemoveTargetLinksRemovesEntriesOfEveryType(t *testing.T) {
+	const front = "---\nlinks:\n  - to: B\n    role: parent\n  - to: C\n    role: ref\n" +
+		"  - to: B\n    role: ref\n    type: preset\n  - to: B\n    role: parent\n    type: topic\n---\n"
+	for role, tc := range map[domain.LinkRole]struct {
+		removed   int
+		remaining []string
+	}{"": {3, []string{"ref name://C"}}, domain.RoleParent: {2, []string{"ref name://C", "ref name://B"}}} {
+		doc, err := markdown.Open([]byte(front))
+		if err != nil {
+			t.Fatal(err)
+		}
+		removed, err := doc.RemoveTargetLinks(domain.ParseAddress("B"), role)
+		if err != nil || removed != tc.removed {
+			t.Errorf("role %q: removed %d, err %v", role, removed, err)
+		}
+		if got := targets(parse(t, string(doc.Bytes()))); strings.Join(got, ",") != strings.Join(tc.remaining, ",") {
+			t.Errorf("role %q: links = %v, want %v", role, got, tc.remaining)
+		}
+	}
+}
+
+func TestRemoveTargetLinksRemovesBlockWithLastEntry(t *testing.T) {
+	doc, err := markdown.Open([]byte("---\ntitle: A\nlinks:\n  - to: B\n    role: parent\n  - to: B\n    type: topic\n---\nbody\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if removed, err := doc.RemoveTargetLinks(domain.ParseAddress("B"), ""); err != nil || removed != 2 {
+		t.Fatalf("removed %d, err %v", removed, err)
+	}
+	if got := string(doc.Bytes()); got != "---\ntitle: A\n---\nbody\n" {
+		t.Errorf("the note is %q, want the title and the body only", got)
+	}
+}
+
 func TestTheFixtureVaultContainsARecordWithAMarker(t *testing.T) {
 	n := parseFile(t, "Thermodynamics.md")
 

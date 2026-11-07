@@ -26,14 +26,24 @@ const (
 // The reasons CheckWrite rejects a write.
 var (
 	// ErrUndeclared is a key that its owner does not declare, or an owner that has no declaration.
-	ErrUndeclared = errors.New("the setting is not declared")
+	ErrUndeclared = errors.New("no such setting")
 	// ErrWrongType is a value of another type than the declaration states.
-	ErrWrongType = errors.New("the value is of the wrong type")
+	ErrWrongType = errors.New("wrong type")
 	// ErrNotAnOption is a value that is none of the options of an enum setting.
-	ErrNotAnOption = errors.New("the value is none of the options")
+	ErrNotAnOption = errors.New("not one of the options")
 	// ErrOutOfRange is a number outside the bounds of a range or a number setting.
-	ErrOutOfRange = errors.New("the number is outside the bounds")
+	ErrOutOfRange = errors.New("out of range")
 )
+
+// noDeclaringPluginError is returned for an owner that no plugin declares settings under. It
+// wraps ErrUndeclared.
+type noDeclaringPluginError struct{ owner string }
+
+func (e noDeclaringPluginError) Error() string {
+	return fmt.Sprintf("%q: no plugin declares settings under this name", e.owner)
+}
+
+func (e noDeclaringPluginError) Is(target error) bool { return target == ErrUndeclared }
 
 // Declarations returns the settings an owner declares, and false for an owner that has no declaration.
 type Declarations func(owner string) ([]pluginport.PluginManifestSetting, bool)
@@ -51,12 +61,12 @@ type Registries func(name string) ([]string, bool)
 func CheckWrite(declared Declarations, registries Registries, path []string, value any) error {
 	label := strings.Join(path, ".")
 	if len(path) < 2 {
-		return fmt.Errorf("%w: %q names no key of an owner", ErrUndeclared, label)
+		return fmt.Errorf("%q: %w", label, ErrUndeclared)
 	}
 	owner, key := path[0], path[1:]
 	settings, found := declared(owner)
 	if !found {
-		return fmt.Errorf("%w: %q has no owner that declares settings", ErrUndeclared, label)
+		return noDeclaringPluginError{owner: owner}
 	}
 	name, err := getSettingName(owner, key, value)
 	if err != nil || name == "" {
@@ -64,7 +74,7 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 	}
 	index := slices.IndexFunc(settings, func(one pluginport.PluginManifestSetting) bool { return one.Key == name })
 	if index < 0 {
-		return fmt.Errorf("%w: %q", ErrUndeclared, label)
+		return fmt.Errorf("%q: %w", label, ErrUndeclared)
 	}
 	return wrapAt(label, checkValue(settings[index], registries, value))
 }
@@ -80,7 +90,7 @@ func getSettingName(owner string, key []string, value any) (string, error) {
 		return strings.Join(key, "."), nil
 	}
 	if len(key) != 1 {
-		return "", fmt.Errorf("%w: a key of a plugin is one segment", ErrUndeclared)
+		return "", fmt.Errorf("%w: a plugin setting key is a single name", ErrUndeclared)
 	}
 	if reserved, err := checkHostField(key[0], value); reserved {
 		return "", err
@@ -93,7 +103,7 @@ func wrapAt(label string, err error) error {
 	if err == nil {
 		return nil
 	}
-	return fmt.Errorf("%s: %w", label, err)
+	return fmt.Errorf("%q: %w", label, err)
 }
 
 // checkHostField checks a field the host keeps in the object of a plugin, and reports whether the
@@ -102,7 +112,7 @@ func checkHostField(name string, value any) (reserved bool, err error) {
 	switch name {
 	case fieldEnabled:
 		if _, isBool := value.(bool); !isBool && value != nil {
-			return true, fmt.Errorf("%w: enabled holds true or false", ErrWrongType)
+			return true, fmt.Errorf("%w: expected true or false", ErrWrongType)
 		}
 		return true, nil
 	case fieldStoredSecrets:
@@ -124,7 +134,7 @@ func checkValue(declared pluginport.PluginManifestSetting, registries Registries
 		}
 	case "string", "file":
 		if _, isText := value.(string); !isText {
-			return fmt.Errorf("%w: expected text", ErrWrongType)
+			return fmt.Errorf("%w: expected a string", ErrWrongType)
 		}
 	case "number", "range":
 		return checkNumber(declared, value)
@@ -141,14 +151,14 @@ func checkNumber(declared pluginport.PluginManifestSetting, value any) error {
 		return fmt.Errorf("%w: expected a number", ErrWrongType)
 	}
 	if (declared.Min != nil && number < *declared.Min) || (declared.Max != nil && number > *declared.Max) {
-		return fmt.Errorf("%w: %v goes from %s to %s", ErrOutOfRange, number, formatLimit(declared.Min), formatLimit(declared.Max))
+		return fmt.Errorf("%v is %w %s..%s", number, ErrOutOfRange, formatLimit(declared.Min, "-inf"), formatLimit(declared.Max, "+inf"))
 	}
 	return nil
 }
 
-func formatLimit(limit *float64) string {
+func formatLimit(limit *float64, unbounded string) string {
 	if limit == nil {
-		return "no bound"
+		return unbounded
 	}
 	return fmt.Sprint(*limit)
 }
@@ -173,7 +183,7 @@ func toNumber(value any) (float64, bool) {
 func checkOption(declared pluginport.PluginManifestSetting, registries Registries, value any) error {
 	text, isText := value.(string)
 	if !isText {
-		return fmt.Errorf("%w: expected one of the options", ErrWrongType)
+		return fmt.Errorf("%w: expected a string", ErrWrongType)
 	}
 	switch {
 	case declared.OptionsFrom != "":
@@ -182,12 +192,12 @@ func checkOption(declared pluginport.PluginManifestSetting, registries Registrie
 		}
 		names, found := registries(declared.OptionsFrom)
 		if found && !slices.Contains(names, text) {
-			return fmt.Errorf("%w: %q is not in %s", ErrNotAnOption, text, declared.OptionsFrom)
+			return fmt.Errorf("%q is %w listed in %s", text, ErrNotAnOption, declared.OptionsFrom)
 		}
 	case declared.OptionsBy != nil:
 	default:
 		if _, isOption := declared.Options.Find(text); !isOption {
-			return fmt.Errorf("%w: %q", ErrNotAnOption, text)
+			return fmt.Errorf("%q is %w", text, ErrNotAnOption)
 		}
 	}
 	return nil
@@ -238,18 +248,18 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
 		if _, found := declared(id); !found {
 			delete(f.Plugins, id)
-			f.AddNotice(fmt.Sprintf("%s is the object of no plugin that is installed, and is ignored", id))
+			f.AddNotice(fmt.Sprintf("numen.json: no installed plugin %s; its settings are ignored", id))
 			continue
 		}
 		for _, key := range slices.Sorted(maps.Keys(f.Plugins[id])) {
 			if key == fieldStoredSecrets && !isListOfTexts(f.Plugins[id][key]) {
 				delete(f.Plugins[id], key)
-				f.AddNotice(fmt.Sprintf("%s.%s: wrong type, expected a list of the names of the secrets, and is ignored", id, key))
+				f.AddNotice(fmt.Sprintf("numen.json: %q: wrong type: expected a list of secret names; the value is ignored", id+"."+key))
 				continue
 			}
 			if err := CheckWrite(declared, registries, []string{id, key}, f.Plugins[id][key]); err != nil {
 				delete(f.Plugins[id], key)
-				f.AddNotice(fmt.Sprintf("%v, and is ignored", err))
+				f.AddNotice(fmt.Sprintf("numen.json: %v; the value is ignored", err))
 			}
 		}
 	}
@@ -266,7 +276,7 @@ func (f *File) dropInvalidApp(declared Declarations, registries Registries) {
 		}
 		if err := CheckWrite(declared, registries, path, value); err != nil {
 			f.resetApp(one)
-			f.AddNotice(fmt.Sprintf("%v, and the default %v stands", err, one.Default))
+			f.AddNotice(fmt.Sprintf("numen.json: %v; the default %v applies", err, one.Default))
 		}
 	}
 }

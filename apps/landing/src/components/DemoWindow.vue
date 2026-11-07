@@ -1645,7 +1645,7 @@ const plexState = createPlexTab(plexView, {
         side.role === 'parent' || side.role === 'jump' ? side.role : 'child'
       return joinNotesInVault(fromPath, toPath, relation, side.label)
         ? asValue(undefined)
-        : asFailure('missing')
+        : asFailure('notFound')
     },
     getConnection: async (first, second, type = '') => {
       const firstLabel = EDGE_LABELS[`${first}->${second}`]
@@ -1672,7 +1672,7 @@ const plexState = createPlexTab(plexView, {
       const { first, second } = connection
       const noteA = notesByPath[first]
       const noteB = notesByPath[second]
-      if (!noteA || !noteB) return asFailure('missing')
+      if (!noteA || !noteB) return asFailure('notFound')
       noteA.parents = noteA.parents.filter((p) => p !== second)
       noteA.jumps = noteA.jumps.filter((j) => j !== second)
       noteB.parents = noteB.parents.filter((p) => p !== first)
@@ -1691,7 +1691,7 @@ const plexState = createPlexTab(plexView, {
     removeConnection: async (first, second) => {
       const noteA = notesByPath[first]
       const noteB = notesByPath[second]
-      if (!noteA || !noteB) return asFailure('missing')
+      if (!noteA || !noteB) return asFailure('notFound')
       noteA.parents = noteA.parents.filter((p) => p !== second)
       noteA.jumps = noteA.jumps.filter((j) => j !== second)
       noteB.parents = noteB.parents.filter((p) => p !== first)

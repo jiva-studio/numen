@@ -445,7 +445,7 @@ func TestASectionContainsOneOfAName(t *testing.T) {
 		err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord"))
 		if err == nil {
 			t.Errorf("%s: a repeated name took a setting", what)
-		} else if !strings.Contains(err.Error(), "one of a name") {
+		} else if !strings.Contains(err.Error(), "appears more than once") {
 			t.Errorf("%s: said %q, wanted it to name the trouble", what, err)
 		}
 		raw, readErr := os.ReadFile(path)

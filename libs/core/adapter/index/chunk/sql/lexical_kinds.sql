@@ -1,5 +1,6 @@
 -- The chunks of one vault whose text matches the words typed, restricted to
--- chosen source kinds, best first.
+-- chosen source kinds, best first. A path prefix limits the sources before the
+-- list is truncated to the limit.
 WITH hits AS (
     SELECT chunks_fts.rowid, bm25(chunks_fts) AS rank
     FROM chunks_fts
@@ -8,10 +9,11 @@ WITH hits AS (
     WHERE chunks_fts MATCH ?1
       AND c.vault_id = ?2
       AND s.kind IN (SELECT value FROM json_each(?3))
+      AND (substr(s.path, 1, length(?5)) = ?5 OR substr(s.path, 1, length(?6)) = ?6)
     ORDER BY rank
     LIMIT ?4
 )
-SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.hash, ''),
+SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.content_hash, ''),
        COALESCE(p.start, c.start),
        COALESCE(p.length, c.length),
        COALESCE(p.location, c.location, ''),

@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/textport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
 // FileText is the live text of a vault file and the user's edits of it, for the
@@ -16,29 +15,24 @@ import (
 // now.
 type FileText struct {
 	versions *Versions
-	readers  vaultport.VaultReaders
 }
 
-// NewFileText is the text the versions give the files the readers open.
-func NewFileText(versions *Versions, readers vaultport.VaultReaders) (*FileText, error) {
-	if versions == nil || readers == nil {
-		return nil, errors.New("a file text needs text versions and vault readers")
+// NewFileText returns the text of the vault files from their text versions.
+func NewFileText(versions *Versions) (*FileText, error) {
+	if versions == nil {
+		return nil, errors.New("file text: text versions are required")
 	}
-	return &FileText{versions: versions, readers: readers}, nil
+	return &FileText{versions: versions}, nil
 }
 
 // ReadLiveText is the live version of a file and its text, and false where
 // none is live.
 func (u *FileText) ReadLiveText(ctx context.Context, v domain.Vault, path string) (domain.VersionText, bool, error) {
-	reader, err := u.readers.Open(v)
-	if err != nil {
-		return domain.VersionText{}, false, err
-	}
-	raw, err := reader.Read(ctx, path)
+	contentHash, err := u.versions.GetContentHash(ctx, v, path)
 	if err != nil {
 		return domain.VersionText{}, false, fmt.Errorf("read %s: %w", path, err)
 	}
-	text, err := u.versions.GetLiveText(ctx, v, path, domain.HashContent(raw))
+	text, err := u.versions.GetLiveText(ctx, v, path, contentHash)
 	if errors.Is(err, textport.ErrNoText) {
 		return domain.VersionText{}, false, nil
 	}

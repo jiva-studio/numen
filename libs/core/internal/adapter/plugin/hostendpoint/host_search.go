@@ -3,6 +3,8 @@ package hostendpoint
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math"
 	"net/http"
 
 	"connectrpc.com/connect"
@@ -213,6 +215,58 @@ func (e *searchEndpoint) GetBestSimilarity(
 		return connect.NewResponse(&v1.GetBestSimilarityResponse{Error: code}), err
 	}
 	return connect.NewResponse(&v1.GetBestSimilarityResponse{Similarity: best}), nil
+}
+
+func (e *searchEndpoint) SearchPassages(
+	ctx context.Context, req *connect.Request[v1.HostSearchServiceSearchPassagesRequest],
+) (*connect.Response[v1.HostSearchServiceSearchPassagesResponse], error) {
+	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	if err != nil {
+		return nil, err
+	}
+	if code := call.getRefusal(true); code != 0 {
+		return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Error: code}), nil
+	}
+	kinds := make([]domain.SourceKind, len(req.Msg.GetKinds()))
+	for i, kind := range req.Msg.GetKinds() {
+		switch one := domain.SourceKind(kind); one {
+		case domain.KindNote, domain.KindFile:
+			kinds[i] = one
+		default:
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source kind %q: use %q or %q", kind, domain.KindNote, domain.KindFile))
+		}
+	}
+	found, err := call.search.SearchPassages(ctx, call.vault, pluginport.PluginPassageQuery{
+		Query: req.Msg.GetQuery(), Limit: int(req.Msg.GetLimit()), Kinds: kinds, PathPrefix: req.Msg.GetPathPrefix(),
+	})
+	code, err := answerSearch(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Error: code}), err
+	}
+	passages, err := writePassages(found)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&v1.HostSearchServiceSearchPassagesResponse{Passages: passages}), nil
+}
+
+// writePassages converts the passages to the wire. A passage whose end or line exceeds int32 returns an
+// error, not a wrapped offset.
+func writePassages(found []domain.Passage) ([]*v1.Passage, error) {
+	passages := make([]*v1.Passage, len(found))
+	for i, one := range found {
+		end := one.Start + one.Length
+		if one.Start < 0 || one.Length < 0 || end > math.MaxInt32 || one.Line < 0 || one.Line > math.MaxInt32 {
+			return nil, connect.NewError(connect.CodeOutOfRange, fmt.Errorf("the passage of %s at %d+%d, line %d, exceeds the 32-bit range", one.Source, one.Start, one.Length, one.Line))
+		}
+		passages[i] = &v1.Passage{
+			Path: one.Source, Text: one.Text, Location: one.Location,
+			Range:    &v1.Range{Start: int32(one.Start), End: int32(end)},
+			Line:     int32(one.Line),
+			Selector: string(one.Selector),
+		}
+	}
+	return passages, nil
 }
 
 func (e *searchEndpoint) GetSearchFloor(

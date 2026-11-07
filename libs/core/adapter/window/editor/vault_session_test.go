@@ -26,6 +26,7 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -175,7 +176,7 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 		t.Errorf("the window says it is showing %q, want %s", got, string(f.first.ID))
 	}
 
-	if err := f.installation.Show(t.Context(), f.second); err != nil {
+	if err := f.installation.Show(t.Context(), f.second, nil); err != nil {
 		t.Fatalf("the second vault would not open: %v", err)
 	}
 	f.read(t)
@@ -222,7 +223,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 		}
 	}()
 
-	if err := f.installation.Show(t.Context(), f.second); err != nil {
+	if err := f.installation.Show(t.Context(), f.second, nil); err != nil {
 		t.Fatalf("the second vault would not open: %v", err)
 	}
 	f.read(t)
@@ -240,7 +241,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	// The swap closes writes on the old vault; the new vault accepts edits.
 	if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: enthalpy,
-		Body: "what a person typed in the vault that arrived\n",
+		Body: "what the user typed in the vault that arrived\n",
 	})); err != nil {
 		t.Errorf("the vault that arrived cannot be written in: %v", err)
 	}
@@ -269,7 +270,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 	f := openTwoVaults(t)
 
-	if err := f.installation.Show(t.Context(), f.second); err != nil {
+	if err := f.installation.Show(t.Context(), f.second, nil); err != nil {
 		t.Fatalf("the second vault would not open: %v", err)
 	}
 	if err := f.installation.Close(); err != nil {
@@ -292,7 +293,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 func TestTheVaultThatWentIsNoLongerFollowed(t *testing.T) {
 	f := openTwoVaults(t)
 
-	if err := f.installation.Show(t.Context(), f.second); err != nil {
+	if err := f.installation.Show(t.Context(), f.second, nil); err != nil {
 		t.Fatalf("the second vault would not open: %v", err)
 	}
 	f.read(t)
@@ -342,7 +343,7 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 func TestTheVaultAlreadyShownIsNotOpenedAgain(t *testing.T) {
 	f := openTwoVaults(t)
 
-	if err := f.installation.Show(t.Context(), f.first); err != nil {
+	if err := f.installation.Show(t.Context(), f.first, nil); err != nil {
 		t.Fatalf("the vault already shown failed: %v", err)
 	}
 	if state := f.state(t); !state.GetScan().GetIsReady() {
@@ -375,7 +376,7 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 			f := openTwoVaults(t)
 			one.spoil(t, f.second)
 
-			if err := f.installation.Show(t.Context(), f.second); err == nil {
+			if err := f.installation.Show(t.Context(), f.second, nil); err == nil {
 				t.Fatal("the window opened a vault it cannot read")
 			}
 			state := f.state(t)
@@ -423,7 +424,7 @@ func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 	defer isDone()
 
 	swapped := make(chan error, 1)
-	go func() { swapped <- f.installation.Show(t.Context(), f.second) }()
+	go func() { swapped <- f.installation.Show(t.Context(), f.second, nil) }()
 
 	select {
 	case err := <-swapped:
@@ -457,7 +458,7 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
-				Result: v1.FlushResult_FLUSH_RESULT_ASKING,
+				Result: v1.FlushResult_FLUSH_RESULT_UNSAVED,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -467,8 +468,8 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
-	if err := f.installation.Show(ctx, f.second); err == nil {
-		t.Fatal("a page holding work a person has to answer for did not call the swap off")
+	if err := f.installation.Show(ctx, f.second, nil); err == nil {
+		t.Fatal("a page with unsaved changes that prompts the user did not cancel the switch")
 	}
 
 	select {
@@ -527,7 +528,7 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 		t.Fatal("the close never asked the page for what it holds")
 	}
 
-	if err := f.installation.Show(t.Context(), f.second); err == nil {
+	if err := f.installation.Show(t.Context(), f.second, nil); err == nil {
 		t.Fatal("a vault was opened while the window was settling to close")
 	}
 	close(release)
@@ -574,7 +575,7 @@ func TestWriteNote_IndexFailureStillSucceeds(t *testing.T) {
 
 	answer, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Note.md",
-		Body: "what the person typed\n",
+		Body: "what the user typed\n",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -590,7 +591,7 @@ func TestWriteNote_IndexFailureStillSucceeds(t *testing.T) {
 	if !answer.Msg.GetIsIndexOutdated() {
 		t.Error("the save is answered as findable and search does not hold it")
 	}
-	if target := onDisk(t, f.root, "Note.md"); !strings.Contains(target, "what the person typed") {
+	if target := onDisk(t, f.root, "Note.md"); !strings.Contains(target, "what the user typed") {
 		t.Errorf("the note on disk is %q", target)
 	}
 }
@@ -604,7 +605,7 @@ func TestASaveTheIndexCameLevelWithReturnsNothingIsPrior(t *testing.T) {
 
 	answer, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Note.md",
-		Body: "what the person typed\n",
+		Body: "what the user typed\n",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -627,7 +628,7 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 		t.Helper()
 		if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 			Path: "Note.md",
-			Body: "what the person typed\n",
+			Body: "what the user typed\n",
 		})); err != nil {
 			t.Fatal(err)
 		}
@@ -636,7 +637,7 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	save()
 	pos := findUpdateIndexTask(t, f)
 	if pos == nil || pos.GetError() == "" {
-		t.Fatalf("what a person is shown after a save search cannot see is %+v", pos)
+		t.Fatalf("what the user is shown after a save search cannot see is %+v", pos)
 	}
 
 	// The index stays behind until a later write updates it, and that write
@@ -644,7 +645,7 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(func(context.Context, domain.Vault, []string) error { return nil })
 	save()
 	if offset := findUpdateIndexTask(t, f); offset != nil {
-		t.Errorf("the index came level and a person is still shown %+v", offset)
+		t.Errorf("the index came level and the user is still shown %+v", offset)
 	}
 }
 
@@ -771,9 +772,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	}
 
 	found, err := installation.Passages().FindLexical(
-		t.Context(), installation.GetCurrentVault().ID, "tetragrammaton",
-		[]domain.SourceKind{domain.KindNote}, 10, false,
-	)
+		t.Context(), installation.GetCurrentVault().ID, sourceport.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -855,10 +854,10 @@ func TestOpenWindow_NoVaultCreatesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(target) != 0 {
-		t.Errorf("%d things were made where this person keeps documents: %v", len(target), target)
+		t.Errorf("%d things were made where this user keeps documents: %v", len(target), target)
 	}
 	if _, err := os.Stat(filepath.Join(os.Getenv("HOME"), "Documents")); err == nil {
-		t.Error("a documents folder was made in this person's home")
+		t.Error("a documents folder was made in this user's home")
 	}
 
 	registry, err := f.cfg.Registry()
@@ -873,9 +872,8 @@ func TestOpenWindow_NoVaultCreatesNothing(t *testing.T) {
 	}
 }
 
-// TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens. These run before a
-// person can do anything, and one of them refusing is a window that never comes
-// up.
+// TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens. These run before the
+// user can do anything; if one fails, the window never opens.
 func TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	f := openEmptyWindow(t)
 

@@ -76,7 +76,7 @@ func TestAQuestionEndsTheRoundAndNotTheWait(t *testing.T) {
 
 	request := pages.startRequest()
 	<-notified
-	pages.recordFlush(token, flushAsking)
+	pages.recordFlush(token, flushUnsaved)
 
 	if !request.isPending() {
 		t.Error("a question was raised and the request does not say so")
@@ -104,7 +104,7 @@ func TestOneQuestionAmongManyPagesKeepsTheWindow(t *testing.T) {
 	<-notifiedFirst
 	<-notifiedSecond
 	pages.recordFlush(first, flushWritten)
-	pages.recordFlush(second, flushAsking)
+	pages.recordFlush(second, flushUnsaved)
 
 	if !request.isPending() {
 		t.Error("a question was raised and the request does not say so")
@@ -204,7 +204,7 @@ func TestAPageThatGoesWithAQuestionActiveIsStillPending(t *testing.T) {
 	token, notified, isDone := pages.registerClient()
 	first := pages.startRequest()
 	<-notified
-	pages.recordFlush(token, flushAsking)
+	pages.recordFlush(token, flushUnsaved)
 
 	isDone()
 
@@ -231,7 +231,7 @@ func TestAPageThatGoesWithAQuestionActiveIsStillPending(t *testing.T) {
 		t.Fatal("the page that came back was never asked")
 	}
 
-	pages.recordFlush(again, flushAsking)
+	pages.recordFlush(again, flushUnsaved)
 	if !second.isPending() {
 		t.Error("the page raised its question again and the request does not say so")
 	}
@@ -249,7 +249,7 @@ func TestFlushCoordinator_DepartedPageWithQuestionIsNotPending(t *testing.T) {
 	token, notified, isDone := pages.registerClient()
 	pages.startRequest()
 	<-notified
-	pages.recordFlush(token, flushAsking)
+	pages.recordFlush(token, flushUnsaved)
 	isDone()
 
 	request := pages.startRequest()

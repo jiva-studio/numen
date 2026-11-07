@@ -195,7 +195,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	// has none: a note written into a vault the moment it opens is indexed
 	// here or nowhere.
 	if err := u.vaults.Register(ctx, v.ID); err != nil {
-		return RefreshResult{}, fmt.Errorf("register vault: %w", err)
+		return RefreshResult{}, fmt.Errorf("the index cannot record the vault %s: %w", v.Name, err)
 	}
 	// The same bounds a scan writes in. One event can name a whole folder — a
 	// checkout, a restore, a sync client unpacking an archive — so the number of
@@ -217,20 +217,20 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	}
 
 	if err := group.flush(ctx); err != nil {
-		return res, fmt.Errorf("index: %w", err)
+		return res, fmt.Errorf("the notes of %s cannot be indexed: %w", v.Name, err)
 	}
 	u.writeLedger(v, recorded)
 	if err := u.followRenames(ctx, v, reader, res); err != nil {
-		return res, fmt.Errorf("follow renames: %w", err)
+		return res, fmt.Errorf("the renamed notes of %s cannot be tracked: %w", v.Name, err)
 	}
 	// Both leave the index, and they leave it for different reasons: one path
 	// has nothing at it, the other has something that is not a note.
 	removed := append(append([]string(nil), res.Removed...), res.LeftAlone...)
 	if err := u.notes.Remove(ctx, v.ID, removed); err != nil {
-		return res, fmt.Errorf("remove: %w", err)
+		return res, fmt.Errorf("the removed notes of %s cannot be removed from the index: %w", v.Name, err)
 	}
 	if err := u.dropSources(ctx, v, removed); err != nil {
-		return res, fmt.Errorf("remove: %w", err)
+		return res, fmt.Errorf("the sources of the removed notes of %s cannot be removed from the index: %w", v.Name, err)
 	}
 	return res, nil
 }
@@ -262,7 +262,7 @@ func (u Refresh) refreshPath(ctx context.Context, run *refreshRun, path string) 
 		return nil
 	}
 	if err := group.add(ctx, markdown.Parse(ref, raw), len(raw)); err != nil {
-		return fmt.Errorf("index: %w", err)
+		return fmt.Errorf("%s cannot be indexed: %w", path, err)
 	}
 	res.Indexed = append(res.Indexed, path)
 	if u.isRecent(ref.ModTime) {

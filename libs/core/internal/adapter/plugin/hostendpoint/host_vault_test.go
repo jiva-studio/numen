@@ -133,6 +133,22 @@ func (m *memoryVault) Read(_ context.Context, path string) ([]byte, domain.FileS
 	return []byte(m.files[path]), pos, nil
 }
 
+func (m *memoryVault) ReadRange(context.Context, string, int, int) (pluginport.PluginFileRange, error) {
+	return pluginport.PluginFileRange{}, errors.New("not implemented")
+}
+
+func (m *memoryVault) AddLinks(context.Context, []pluginport.PluginLinkAddition) ([]pluginport.PluginLinkAdded, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (m *memoryVault) UpdateLinks(context.Context, string, domain.Address, domain.Link, domain.FileStat) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("not implemented")
+}
+
+func (m *memoryVault) RemoveLinks(context.Context, string, domain.Address, domain.LinkRole, domain.FileStat) (domain.FileStat, error) {
+	return domain.FileStat{}, errors.New("not implemented")
+}
+
 func (m *memoryVault) Write(_ context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -279,6 +295,22 @@ func (m *memoryVault) GetParseProblems(context.Context) ([]domain.VaultProblem, 
 	return []domain.VaultProblem{{Path: "samples/A.md", Detail: "an entry has no role"}}, nil
 }
 
+func (m *memoryVault) RenameNote(context.Context, string, string) (string, bool, *domain.MoveResult, error) {
+	return "", false, nil, errors.ErrUnsupported
+}
+
+func (m *memoryVault) MoveNote(context.Context, string, string) (domain.MoveResult, error) {
+	return domain.MoveResult{}, errors.ErrUnsupported
+}
+
+func (m *memoryVault) RemoveNote(context.Context, string) (string, []string, error) {
+	return "", nil, errors.ErrUnsupported
+}
+
+func (m *memoryVault) GetProblems(context.Context, []domain.Check) ([]domain.Check, []domain.VaultProblem, error) {
+	return nil, nil, errors.ErrUnsupported
+}
+
 func (m *memoryVault) ReadCache(_ context.Context, pluginID, name string) ([]byte, bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -360,7 +392,7 @@ func TestReadFile_ReturnsContentAndStat(t *testing.T) {
 		t.Errorf("the file came back as %v", res.Msg)
 	}
 	missing, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "nothing.md"}))
-	if err != nil || missing.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING {
+	if err != nil || missing.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
 		t.Errorf("a file that is not there was answered %v (%v)", missing.Msg, err)
 	}
 }
@@ -382,7 +414,7 @@ func TestAFileIsSavedOnlyOverWhatWasRead(t *testing.T) {
 		Path: "samples/A.md", Content: []byte("again"), Baseline: read.Msg.GetStat(),
 	}))
 
-	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE {
+	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT {
 		t.Errorf("a write over what moved was answered %v (%v)", second.Msg, err)
 	}
 	if vault.files["samples/A.md"] != "new" {
@@ -468,7 +500,7 @@ func TestGetNoteRefs_ReturnsIndexedNotesAndLinks(t *testing.T) {
 	if err != nil || len(back.Msg.GetLinks()) != 1 {
 		t.Errorf("the backlinks were %v (%v)", back.Msg, err)
 	}
-	resolved, err := client.ResolveLinks(ctx, connect.NewRequest(&v1.ResolveLinksRequest{Path: "samples/A.md", Written: []string{"Animal"}}))
+	resolved, err := client.ResolveLinks(ctx, connect.NewRequest(&v1.ResolveLinksRequest{Path: "samples/A.md", Addresses: []string{"Animal"}}))
 	if err != nil || resolved.Msg.GetLinks()["Animal"].GetTo() != "Animal.md" {
 		t.Errorf("the resolved links were %v (%v)", resolved.Msg, err)
 	}
@@ -483,7 +515,7 @@ func TestCache_ReadWriteIsPerPlugin(t *testing.T) {
 	ctx := t.Context()
 
 	before, err := client.ReadCache(ctx, connect.NewRequest(&v1.ReadCacheRequest{Name: "schedules"}))
-	if err != nil || before.Msg.GetFound() {
+	if err != nil || before.Msg.GetIsFound() {
 		t.Fatalf("an empty cache answered %v (%v)", before.Msg, err)
 	}
 	if _, err := client.WriteCache(ctx, connect.NewRequest(&v1.WriteCacheRequest{Name: "schedules", Content: []byte("{}")})); err != nil {
@@ -491,7 +523,7 @@ func TestCache_ReadWriteIsPerPlugin(t *testing.T) {
 	}
 	after, err := client.ReadCache(ctx, connect.NewRequest(&v1.ReadCacheRequest{Name: "schedules"}))
 
-	if err != nil || !after.Msg.GetFound() || string(after.Msg.GetContent()) != "{}" {
+	if err != nil || !after.Msg.GetIsFound() || string(after.Msg.GetContent()) != "{}" {
 		t.Errorf("the cache answered %v (%v)", after.Msg, err)
 	}
 }
@@ -714,7 +746,7 @@ func TestAConnectionThatCannotBeSavedAnswersWithItsReason(t *testing.T) {
 	}{
 		"a cycle":          {domain.ErrHierarchyCycle, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE},
 		"an invalid one":   {domain.ErrInvalidConnection, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION},
-		"a stale note":     {vaultport.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE},
+		"a stale note":     {vaultport.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
 		"an exhausted set": {domain.ErrNoFreeName, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -801,7 +833,7 @@ func TestABacklinkCarriesItsRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 		t.Fatalf("the answer was %v (%v)", res.Msg, err)
 	}
 	link := res.Msg.GetLinks()[0]
-	if link.GetRole() != v1.Role_ROLE_PARENT || link.GetRoleFromHere() != v1.Role_ROLE_CHILD ||
+	if link.GetRole() != v1.Role_ROLE_PARENT || link.GetSourceRole() != v1.Role_ROLE_CHILD ||
 		link.GetMarker() != v1.Marker_MARKER_ARROW || link.GetNote() != "because" {
 		t.Errorf("the backlink came out as %v", link)
 	}

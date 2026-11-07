@@ -111,14 +111,14 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	out := make([]domain.Passage, 0, len(found))
 	for _, p := range found {
 		out = append(out, domain.Passage{
-			ChunkID:    chunk.ID(p.Chunk),
-			Source:     p.Path,
-			Producer:   p.Producer,
-			SourceHash: p.Hash,
-			Start:      p.Start,
-			Length:     p.Length,
-			Location:   p.Location,
-			ChunkHash:  p.ChunkHash,
+			ChunkID:     chunk.ID(p.Chunk),
+			Source:      p.Path,
+			Producer:    p.Producer,
+			ContentHash: p.ContentHash,
+			Start:       p.Start,
+			Length:      p.Length,
+			Location:    p.Location,
+			ChunkHash:   p.ChunkHash,
 		})
 	}
 	next := after
@@ -178,13 +178,13 @@ func parseCursorNumbers(after embeddingport.ChunkCursor, parts []string) ([]int6
 
 func newChunkSource(s domain.Source) chunk.Source {
 	return chunk.Source{
-		Path:     s.FileStat.Path,
-		Kind:     string(s.FileStat.Kind),
-		Size:     s.FileStat.Size,
-		MTime:    chunk.ConvertTimeToNanos(s.FileStat.ModTime),
-		Hash:     s.Hash,
-		Recipe:   s.Recipe,
-		Producer: s.Producer,
+		Path:        s.FileStat.Path,
+		Kind:        string(s.FileStat.Kind),
+		Size:        s.FileStat.Size,
+		MTime:       chunk.ConvertTimeToNanos(s.FileStat.ModTime),
+		ContentHash: s.ContentHash,
+		Recipe:      s.Recipe,
+		Producer:    s.Producer,
 	}
 }
 
@@ -201,9 +201,9 @@ func (s queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path
 		return sourceport.SourceText{}, false, err
 	}
 	return sourceport.SourceText{
-		FileStat: domain.FileStat{Path: found.Path, Size: found.Size, ModTime: chunk.ConvertNanosToTime(found.MTime)},
-		Producer: found.Producer,
-		Hash:     found.Hash,
+		FileStat:    domain.FileStat{Path: found.Path, Size: found.Size, ModTime: chunk.ConvertNanosToTime(found.MTime)},
+		Producer:    found.Producer,
+		ContentHash: found.ContentHash,
 	}, true, nil
 }
 
@@ -216,9 +216,9 @@ func (s queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultI
 	out := make([]sourceport.SourceText, 0, len(found))
 	for _, r := range found {
 		out = append(out, sourceport.SourceText{
-			FileStat: domain.FileStat{Path: r.Path},
-			Producer: r.Producer,
-			Hash:     r.Hash,
+			FileStat:    domain.FileStat{Path: r.Path},
+			Producer:    r.Producer,
+			ContentHash: r.ContentHash,
 		})
 	}
 	return out, nil

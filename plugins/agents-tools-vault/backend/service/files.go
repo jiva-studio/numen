@@ -8,20 +8,24 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
+
+// fileReadMost is the maximum number of bytes one file_read returns, the maximum the host reads at once.
+const fileReadMost = 16000
 
 // FileReadInput is the input of the file_read tool.
 type FileReadInput struct {
 	Path   string `json:"path" jsonschema:"the file's path relative to the vault root"`
 	Start  int    `json:"start,omitempty" jsonschema:"byte offset to start reading from"`
-	Length int    `json:"length,omitempty" jsonschema:"how many bytes to read; 0 or omitted reads to end of file"`
+	Length int    `json:"length,omitempty" jsonschema:"how many bytes to read, at most 16000; 16000 when left out"`
 }
 
 // FileReadOutput is the output of the file_read tool.
 type FileReadOutput struct {
 	Path        string `json:"path"`
-	Content     string `json:"content" jsonschema:"the bytes read as text"`
+	Text        string `json:"text" jsonschema:"the bytes read as text"`
 	Start       int    `json:"start" jsonschema:"starting byte offset of the returned slice"`
 	Length      int    `json:"length" jsonschema:"number of bytes in the returned slice"`
 	Size        int    `json:"size" jsonschema:"total size of the file in bytes"`
@@ -29,67 +33,57 @@ type FileReadOutput struct {
 }
 
 func (t *Tools) addFileRead(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
-		Step:        tools.ByEffect,
-		Name:        "file_read",
-		Title:       "Read File",
-		Description: "Read raw content or a byte range of any file in the vault.",
-		Effect:      tools.ReadOnly,
-		Servers:     []tools.Server{tools.Full, tools.Reading},
+	return addTool(registry, tools.Spec{
+		Step:  tools.ByEffect,
+		Name:  "file_read",
+		Title: "Read File",
+		Description: "Read the content or a byte range of a text file of the vault, as text. A file that is " +
+			"not text — a PDF, a book, a recording — returns an error; library_read reads its text.",
+		Effect:       tools.ReadOnly,
+		Servers:      []tools.Server{tools.Full, tools.Reading},
+		Instructions: []string{fileReadSentence},
 	}, inVault(t, (*Tools).readFile))
 }
 
 func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return FileReadOutput{}, errors.New("path required")
+		return FileReadOutput{}, errors.New("path is required")
 	}
-
-	data, fp, err := t.vault.Read(ctx, in.Path)
+	length := in.Length
+	if length <= 0 || length > fileReadMost {
+		length = fileReadMost
+	}
+	read, err := t.vault.ReadRange(ctx, in.Path, max(in.Start, 0), length)
+	if errors.Is(err, host.ErrNotText) {
+		return FileReadOutput{}, fmt.Errorf("%s is not a text file; library_read reads the text of a PDF, a book or a recording", in.Path)
+	}
 	if err != nil {
-		return FileReadOutput{}, fmt.Errorf("read file %s: %w", in.Path, err)
+		return FileReadOutput{}, fmt.Errorf("%s cannot be read: %w", in.Path, err)
 	}
-
-	start := in.Start
-	if start < 0 {
-		start = 0
-	}
-
-	var slice []byte
-	if start >= len(data) {
-		slice = []byte{}
-	} else {
-		end := len(data)
-		if in.Length > 0 && start+in.Length < end {
-			end = start + in.Length
-		}
-		slice = data[start:end]
-	}
-
 	return FileReadOutput{
 		Path:        in.Path,
-		Content:     string(slice),
-		Start:       start,
-		Length:      len(slice),
-		Size:        len(data),
-		Fingerprint: formatFingerprint(fp),
+		Text:        read.Text,
+		Start:       read.Start,
+		Length:      len(read.Text),
+		Size:        int(read.Stat.Size),
+		Fingerprint: formatFingerprint(read.Stat),
 	}, nil
 }
 
 // FileCreateInput is the input of the file_create tool.
 type FileCreateInput struct {
-	Path    string `json:"path" jsonschema:"the file's path relative to the vault root"`
-	Content string `json:"content" jsonschema:"raw content to write to the new file"`
+	Path string `json:"path" jsonschema:"the file's path relative to the vault root"`
+	Text string `json:"text" jsonschema:"raw content to write to the new file"`
 }
 
 // FileCreateOutput is the output of the file_create tool.
 type FileCreateOutput struct {
-	Path    string `json:"path"`
-	Size    int    `json:"size"`
-	Success bool   `json:"success"`
+	Path string `json:"path" jsonschema:"the path of the created file, relative to the vault root"`
+	Size int    `json:"size" jsonschema:"the size of the created file in bytes"`
 }
 
 func (t *Tools) addFileCreate(registry *tools.Registry) error {
-	return tools.Add(registry, tools.Spec{
+	return addTool(registry, tools.Spec{
 		Step:        tools.ByEffect,
 		Name:        "file_create",
 		Title:       "Create File",
@@ -101,21 +95,20 @@ func (t *Tools) addFileCreate(registry *tools.Registry) error {
 
 func (t *Tools) createFile(ctx context.Context, in FileCreateInput) (FileCreateOutput, error) {
 	if strings.TrimSpace(in.Path) == "" {
-		return FileCreateOutput{}, errors.New("path required")
+		return FileCreateOutput{}, errors.New("path is required")
 	}
 
-	data := []byte(in.Content)
+	data := []byte(in.Text)
 	if err := t.vault.Create(ctx, in.Path, data); err != nil {
-		return FileCreateOutput{}, fmt.Errorf("create file %s: %w", in.Path, err)
+		return FileCreateOutput{}, fmt.Errorf("%s cannot be created: %w", in.Path, err)
 	}
 
 	if err := t.vault.Scan(ctx, []string{in.Path}); err != nil {
-		return FileCreateOutput{}, fmt.Errorf("scan file %s: %w", in.Path, err)
+		return FileCreateOutput{}, fmt.Errorf("%s cannot be indexed: %w", in.Path, err)
 	}
 
 	return FileCreateOutput{
-		Path:    in.Path,
-		Size:    len(data),
-		Success: true,
+		Path: in.Path,
+		Size: len(data),
 	}, nil
 }

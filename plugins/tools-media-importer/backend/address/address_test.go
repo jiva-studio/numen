@@ -78,19 +78,26 @@ func TestReadingWhatWasReadReachesTheSame(t *testing.T) {
 	}
 }
 
-// A note points to addresses a browser can reach, and this machine is not one.
-// Services listening here, such as an index or the window's own socket, are
-// not valid link targets.
-func TestAnAddressOnThisMachineIsNoAddressToPointAt(t *testing.T) {
-	for _, raw := range []string{
-		"http://localhost:9200/_all/_search",
-		"http://127.0.0.1:8080/",
-		"https://[::1]/admin",
-		"http://0.0.0.0:5432/",
-		"http://numen.localhost/",
+func TestParseAcceptsAnAddressOnThisMachine(t *testing.T) {
+	for _, one := range []struct {
+		input string
+		want  string
+	}{
+		{"http://localhost:9200/x", "http://localhost:9200/x"},
+		{"http://127.0.0.1:8080/", "http://127.0.0.1:8080/"},
+		{"https://[::1]/admin", "https://[::1]/admin"},
+		{"http://0.0.0.0:5432/", "http://0.0.0.0:5432/"},
+		{"http://numen.localhost/", "http://numen.localhost/"},
+		{"HTTP://LOCALHOST:80/x", "http://localhost/x"},
+		{"https://[::1]:443/admin", "https://[::1]/admin"},
 	} {
-		if _, err := address.Parse(raw); !errors.Is(err, address.ErrNotAURL) {
-			t.Errorf("%s is read as an address to point at", raw)
+		got, err := address.Parse(one.input)
+		if err != nil {
+			t.Errorf("%q: %v", one.input, err)
+			continue
+		}
+		if string(got) != one.want {
+			t.Errorf("%q parsed as %q, want %q", one.input, string(got), one.want)
 		}
 	}
 }

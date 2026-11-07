@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	"connectrpc.com/connect"
@@ -143,7 +144,7 @@ func (s *vaultsHandler) OpenVault(
 	}
 	v, err := s.find.Execute(r.Msg.GetId())
 	if err == nil {
-		err = s.state.OpenVault(ctx, v)
+		err = s.state.OpenVault(ctx, v, nil)
 	}
 	if err == nil {
 		return connect.NewResponse(&v1.OpenVaultResponse{}), nil
@@ -185,13 +186,13 @@ func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 	case errors.Is(err, vaults.ErrLastVault):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
 	case errors.Is(err, vaults.ErrShowing):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT, true
 	case errors.Is(err, vaults.ErrUnknown), errors.Is(err, vaults.ErrNoName):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, vaults.ErrNoTrash):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH, true
 	case errors.Is(err, errAnswerPending):
-		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING, true
+		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED, true
 	default:
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED, false
 	}
@@ -218,9 +219,11 @@ func (h *workspaceHandler) WriteOpenTabs(
 			Path:  one.GetPath(),
 			Title: one.GetTitle(),
 			State: one.GetState(),
+			Place: convertTabPlaceFromWire(one.GetPlace()),
 		})
 	}
 	h.state.openTabs.Store(&open)
+	h.state.openTabsReports.notify()
 	if h.state.NotifyOpenTabs != nil {
 		h.state.NotifyOpenTabs(open)
 	}
@@ -296,39 +299,70 @@ func (h *workspaceHandler) WatchFocus(
 	_ *connect.Request[v1.WatchFocusRequest],
 	out *connect.ServerStream[v1.WatchFocusResponse],
 ) error {
-	line, isDone := h.state.Places.subscribe()
-	defer isDone()
+	places, stopPlaces := h.state.Places.subscribe()
+	defer stopPlaces()
+	tabIDs, stopTabIDs := h.state.TabIDs.subscribe()
+	defer stopTabIDs()
 
 	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
 
 	for {
-		select {
-		case <-ctx.Done():
+		msg, isOpen := receiveFocus(ctx, repeat.C, places, tabIDs)
+		if !isOpen {
 			return nil
-		case <-repeat.C:
-			// An empty response is a keepalive that fails when the client has disconnected.
-			if err := out.Send(&v1.WatchFocusResponse{}); err != nil {
-				return err
-			}
-		case pos, open := <-line:
-			if !open {
-				return nil
-			}
-			if err := out.Send(&v1.WatchFocusResponse{
-				Path:   pos.Path,
-				Ranges: convertByteRangesToWire(pos.Ranges),
-			}); err != nil {
-				return err
-			}
+		}
+		if err := out.Send(msg); err != nil {
+			return err
 		}
 	}
 }
 
+// receiveFocus waits for the next message of the focus stream: a keepalive at each tick, a tab id
+// to make active, or a place. It reports false once the context ends or a subscription closes.
+func receiveFocus(
+	ctx context.Context, tick <-chan time.Time, places <-chan domain.Place, tabIDs <-chan string,
+) (*v1.WatchFocusResponse, bool) {
+	select {
+	case <-ctx.Done():
+		return nil, false
+	case <-tick:
+		// An empty response is a keepalive that fails when the client has disconnected.
+		return &v1.WatchFocusResponse{}, true
+	case id, isOpen := <-tabIDs:
+		return &v1.WatchFocusResponse{TabId: id}, isOpen
+	case pos, isOpen := <-places:
+		return &v1.WatchFocusResponse{Path: pos.Path, Ranges: convertByteRangesToWire(pos.Ranges)}, isOpen
+	}
+}
+
+// convertByteRangesToWire returns the ranges as the window receives them, in 32-bit offsets. A
+// range whose start or end exceeds 32 bits is left out.
 func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {
 	out := make([]*v1.Range, 0, len(pos))
 	for _, span := range pos {
+		if span.Start < math.MinInt32 || span.Start > math.MaxInt32 || span.End < math.MinInt32 || span.End > math.MaxInt32 {
+			continue
+		}
 		out = append(out, &v1.Range{Start: int32(span.Start), End: int32(span.End)})
+	}
+	return out
+}
+
+// convertTabPlaceFromWire returns the place a reader reported for a tab, nil when it reported none.
+func convertTabPlaceFromWire(place *v1.TabPlace) *domain.TabPlace {
+	if place == nil {
+		return nil
+	}
+	out := &domain.TabPlace{
+		Page:      int(place.GetPage()),
+		PageCount: int(place.GetPageCount()),
+		CFI:       place.GetCfi(),
+		Chapter:   place.GetChapter(),
+	}
+	if place.PositionSeconds != nil {
+		seconds := place.GetPositionSeconds()
+		out.PositionSeconds = &seconds
 	}
 	return out
 }

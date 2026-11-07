@@ -62,3 +62,19 @@ describe('a change of the vault', () => {
     )
   })
 })
+
+describe('a tab requested from outside the window', () => {
+  it('shows the tab with the id in the window tabs', () => {
+    const { wiring } = createWiring(() => Promise.resolve())
+    const show = vi.fn()
+    const options = createDisplayOptions({
+      ...wiring,
+      windowTabs: { handle: { show } },
+    } as unknown as DisplayWiring)
+
+    options.activateTab('tab-2')
+
+    expect(show).toHaveBeenCalledTimes(1)
+    expect(show).toHaveBeenCalledWith('tab-2')
+  })
+})

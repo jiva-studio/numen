@@ -140,7 +140,7 @@ const vault = (
       cards = deck.cards
       return asValue({ at: 'written' })
     },
-    readCardModel: async () => asFailure('missing' as const),
+    readCardModel: async () => asFailure('notFound' as const),
     writeCardModel: async () => asValue({ at: '' }),
   }
 

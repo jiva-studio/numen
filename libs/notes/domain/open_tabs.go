@@ -33,4 +33,22 @@ type Tab struct {
 	Title string
 	// State is the JSON the plugin owning the kind saved, empty where it saved none.
 	State string
+	// Place is the place the reader of the tab reported, nil for a tab whose kind reports none.
+	Place *TabPlace
+}
+
+// TabPlace is the place a reader tab shows, as its reader reports it. A zero field is a place
+// the reader does not have.
+type TabPlace struct {
+	// Page is the page a PDF shows, from 1.
+	Page int
+	// PageCount is the number of pages of a PDF.
+	PageCount int
+	// PositionSeconds is the time of a recording, in seconds from its start; nil for a tab that
+	// is not a recording.
+	PositionSeconds *float64
+	// CFI is the EPUB CFI of the place shown.
+	CFI string
+	// Chapter is the table-of-contents title of an EPUB at the place shown.
+	Chapter string
 }

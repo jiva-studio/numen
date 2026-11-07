@@ -20,7 +20,7 @@ func cutPieces(t *testing.T, db *DB) {
 
 	if err := db.Chunks().SaveSource(ctx, getFirst().ID, chunk.Source{
 		Path: "library/pages.epub", Kind: "book", Size: 1000, MTime: 1,
-		Hash: "hash-pages", Recipe: "epub",
+		ContentHash: "hash-pages", Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}

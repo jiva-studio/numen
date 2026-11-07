@@ -21,7 +21,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	a, err := ocr.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", SourceHash: domain.HashContent(file), File: "k.jsonl"})
+	a, err := ocr.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: domain.HashContent(file), File: "k.jsonl"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 	if err := host.WriteText(ctx, fixer.GetStore("org.example.fixer"), "b.jsonl", []domain.TextSegment{{Text: "the end"}}); err != nil {
 		t.Fatal(err)
 	}
-	b, err := fixer.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "b", Source: a.GetID(), Kind: "recognition", SourceHash: a.Hash, File: "b.jsonl"})
+	b, err := fixer.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "b", Source: a.GetID(), Kind: "recognition", InputHash: a.TextHash, File: "b.jsonl"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestDeleteTextRemovesVersionRecordAndFile(t *testing.T) {
 	if err := host.WriteText(ctx, store, "k.jsonl", []domain.TextSegment{{Text: "a"}}); err != nil {
 		t.Fatal(err)
 	}
-	a, err := ocr.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", SourceHash: domain.HashContent(file), File: "k.jsonl"})
+	a, err := ocr.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: domain.HashContent(file), File: "k.jsonl"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,5 +139,95 @@ func TestDeleteTextRemovesVersionRecordAndFile(t *testing.T) {
 	}
 	if err := host.DeleteText(ctx, ocr, store, "org.example.ocr", "a.pdf", a.GetID()); !errors.Is(err, host.ErrNotExist) {
 		t.Fatalf("a version already deleted: got %v, want ErrNotExist", err)
+	}
+}
+
+// putFiveSegments is a version of a.pdf, made by the plugin of texts, whose file holds the five
+// segments "s0 " to "s4 ".
+func putFiveSegments(t *testing.T, texts *hosttest.Texts) domain.TextVersion {
+	t.Helper()
+	file := []byte("%PDF")
+	texts.File("a.pdf", file)
+	segments := make([]domain.TextSegment, 5)
+	for i := range segments {
+		segments[i] = domain.TextSegment{Text: "s" + string(rune('0'+i)) + " "}
+	}
+	if err := host.WriteText(t.Context(), texts.GetStore("org.example.ocr"), "k.jsonl", segments); err != nil {
+		t.Fatal(err)
+	}
+	version, err := texts.PutVersion(t.Context(), host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: domain.HashContent(file), File: "k.jsonl"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return version
+}
+
+func getSegmentTexts(segments []domain.TextSegment) []string {
+	out := make([]string, len(segments))
+	for i, one := range segments {
+		out[i] = one.Text
+	}
+	return out
+}
+
+func TestReadTextReturnsPagesOfThePageSizeWithTheCursorOfTheNextSegment(t *testing.T) {
+	texts := hosttest.NewTexts("v1", "org.example.ocr")
+	version := putFiveSegments(t, texts)
+	texts.SetPageSize(2)
+
+	for _, one := range []struct {
+		cursor, next string
+		want         []string
+	}{
+		{"", "2", []string{"s0 ", "s1 "}},
+		{"2", "4", []string{"s2 ", "s3 "}},
+		{"4", "", []string{"s4 "}},
+		{"5", "", []string{}},
+	} {
+		page, err := texts.ReadText(t.Context(), "a.pdf", version.GetID(), one.cursor)
+		if err != nil {
+			t.Fatalf("ReadText at the cursor %q: %v", one.cursor, err)
+		}
+		if got := getSegmentTexts(page.Segments); !slices.Equal(got, one.want) || page.NextCursor != one.next {
+			t.Errorf("ReadText at the cursor %q returned %q with the next cursor %q, want %q and %q", one.cursor, got, page.NextCursor, one.want, one.next)
+		}
+	}
+}
+
+func TestReadTextReturnsUpToAThousandSegmentsInOnePageByDefault(t *testing.T) {
+	texts := hosttest.NewTexts("v1", "org.example.ocr")
+	file := []byte("%PDF")
+	texts.File("a.pdf", file)
+	segments := make([]domain.TextSegment, 1001)
+	for i := range segments {
+		segments[i] = domain.TextSegment{Text: "w "}
+	}
+	if err := host.WriteText(t.Context(), texts.GetStore("org.example.ocr"), "k.jsonl", segments); err != nil {
+		t.Fatal(err)
+	}
+	version, err := texts.PutVersion(t.Context(), host.TextPut{Path: "a.pdf", Key: "k", Kind: "recognition", InputHash: domain.HashContent(file), File: "k.jsonl"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	first, err := texts.ReadText(t.Context(), "a.pdf", version.GetID(), "")
+	if err != nil || len(first.Segments) != 1000 || first.NextCursor != "1000" {
+		t.Fatalf("the first page has %d segments and the next cursor %q (%v), want 1000 and \"1000\"", len(first.Segments), first.NextCursor, err)
+	}
+	last, err := texts.ReadText(t.Context(), "a.pdf", version.GetID(), first.NextCursor)
+	if err != nil || len(last.Segments) != 1 || last.NextCursor != "" {
+		t.Errorf("the last page has %d segments and the next cursor %q (%v), want 1 and none", len(last.Segments), last.NextCursor, err)
+	}
+}
+
+func TestReadTextAtACursorThatIsNotANumberOrPastTheEndIsNotExist(t *testing.T) {
+	texts := hosttest.NewTexts("v1", "org.example.ocr")
+	version := putFiveSegments(t, texts)
+	texts.SetPageSize(2)
+
+	for _, cursor := range []string{"two", "-1", "6"} {
+		if _, err := texts.ReadText(t.Context(), "a.pdf", version.GetID(), cursor); !errors.Is(err, host.ErrNotExist) {
+			t.Errorf("ReadText at the cursor %q returned %v, want host.ErrNotExist", cursor, err)
+		}
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/settingevents"
@@ -51,10 +50,6 @@ func (c Config) Vaults(registry vaultport.VaultRegistry, db *Index, notes note.M
 // AddVault registers a new vault in the registry with the given root path and name.
 func (c Config) AddVault(registry vaultport.VaultRegistry, root, name string) (domain.Vault, error) {
 	return vault.NewAdd(c.VaultIdentity(), registry, c.Clock()).Execute(root, name)
-}
-
-func (c Config) CheckRoot() *vault.CheckRoot {
-	return vault.NewCheckRoot(c.VaultIdentity(), filesystem.HomeFolder{})
 }
 
 func (c Config) GetKnownVaults(registry vaultport.VaultRegistry) *vault.GetKnownVaults {

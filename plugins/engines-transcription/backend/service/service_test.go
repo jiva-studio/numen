@@ -158,7 +158,7 @@ func TestTranscribeWritesATranscriptVersionInTheCommonFormat(t *testing.T) {
 
 	version, text := s.readLive(t)
 	fileHash := domain.HashContent([]byte(lectureSound))
-	if version.Kind != textKind || version.Key != fileHash || version.SourceHash != fileHash || version.File != fileHash+".jsonl" || !version.IsFromFile() {
+	if version.Kind != textKind || version.Key != fileHash || version.InputHash != fileHash || version.File != fileHash+".jsonl" || !version.IsFromFile() {
 		t.Errorf("the version is %+v, want a transcript from the file in %s.jsonl", version, fileHash)
 	}
 	if text != "first words\nsecond words\n" {
@@ -609,7 +609,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		Versions: []domain.TextVersion{
 			{Key: "other", PluginID: PluginID},
 			{Key: "k1", PluginID: "other.plugin"},
-			{Key: "k1", PluginID: PluginID},
+			{Key: "k1", PluginID: PluginID, File: getFileName("k1")},
 		},
 	}
 	if err := s.transcriber.putWholeVersion(ctx, j); err != nil || ft.puts != 0 {

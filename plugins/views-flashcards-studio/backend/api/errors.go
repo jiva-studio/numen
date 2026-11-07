@@ -6,7 +6,7 @@ type ErrorCode string
 // ErrorCode values.
 const (
 	ErrorCodeUnspecified    ErrorCode = ""
-	ErrorCodeMissing        ErrorCode = "missing"
+	ErrorCodeNotFound       ErrorCode = "notFound"
 	ErrorCodeNotANote       ErrorCode = "not_a_note"
 	ErrorCodeNotText        ErrorCode = "not_text"
 	ErrorCodeTooLarge       ErrorCode = "too_large"
@@ -18,7 +18,7 @@ const (
 	ErrorCodeNotADeck       ErrorCode = "not_a_deck"
 	ErrorCodeDeckTooLarge   ErrorCode = "deck_too_large"
 	ErrorCodeNotAPreset     ErrorCode = "not_a_preset"
-	ErrorCodeStale          ErrorCode = "stale"
+	ErrorCodeConflict       ErrorCode = "conflict"
 )
 
 // FileStat identifies a version of a file: its path, its size in bytes and its modification time in

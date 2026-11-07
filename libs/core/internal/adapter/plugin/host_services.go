@@ -58,6 +58,34 @@ func (h *Host) GetPluginTexts() pluginport.PluginTexts {
 	return h.texts
 }
 
+// SetPluginWindow sets the window exposed to plugins. Nil means none.
+func (h *Host) SetPluginWindow(window pluginport.PluginWindow) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.window = window
+}
+
+// GetPluginWindow returns the window exposed to plugins, or nil.
+func (h *Host) GetPluginWindow() pluginport.PluginWindow {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.window
+}
+
+// SetPluginVaultList sets the list of vaults exposed to plugins. Nil means none.
+func (h *Host) SetPluginVaultList(list pluginport.PluginVaultList) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.vaultList = list
+}
+
+// GetPluginVaultList returns the list of vaults exposed to plugins, or nil.
+func (h *Host) GetPluginVaultList() pluginport.PluginVaultList {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.vaultList
+}
+
 // SetCompleter sets what answers the completions plugins ask for. The host
 // endpoint starts serving when the first plugin launches after it is set.
 func (h *Host) SetCompleter(completer completionport.Completer) {

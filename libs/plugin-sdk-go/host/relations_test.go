@@ -81,7 +81,7 @@ func (r *relating) GetBacklinks(
 ) (*connect.Response[v1.GetBacklinksResponse], error) {
 	return connect.NewResponse(&v1.GetBacklinksResponse{Links: []*v1.HostLink{{
 		From: "idea.md", To: "area.md", TargetScheme: "name", TargetValue: "Area",
-		Role: v1.Role_ROLE_PARENT, RoleFromHere: v1.Role_ROLE_CHILD, Marker: v1.Marker_MARKER_ARROW, Note: "n",
+		Role: v1.Role_ROLE_PARENT, SourceRole: v1.Role_ROLE_CHILD, Marker: v1.Marker_MARKER_ARROW, Note: "n",
 	}}}), nil
 }
 
@@ -177,7 +177,7 @@ func TestABacklinkCarriesItsRoleFromTheNoteAskedAbout(t *testing.T) {
 		t.Fatalf("got %+v (%v)", got, err)
 	}
 	b := got[0]
-	if b.From != "idea.md" || b.Role != domain.RoleParent || b.RoleFromHere != domain.RoleChild ||
+	if b.From != "idea.md" || b.Role != domain.RoleParent || b.SourceRole != domain.RoleChild ||
 		b.Marker != domain.MarkerArrow || b.Why != "n" {
 		t.Errorf("backlink = %+v", b)
 	}

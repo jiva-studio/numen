@@ -3,13 +3,14 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/embedding.proto";
+import "numen/v1/search.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
 // HostSearchService is the search index and the search floor of a vault, as a
 // plugin reads and sets them. The host identifies the plugin by its token.
-// GetEmbeddingState, GetIndexStats, EmbedTexts, SampleSimilarities and
-// GetBestSimilarity need index:read; GetSearchFloor and SetSearchFloor need
+// GetEmbeddingState, GetIndexStats, EmbedTexts, SampleSimilarities,
+// GetBestSimilarity and SearchPassages need index:read; GetSearchFloor and SetSearchFloor need
 // search:policy.
 //
 // Numen-Vault works the vault of that identity; without it a call works the
@@ -47,6 +48,12 @@ service HostSearchService {
   // GetBestSimilarity is the cosine similarity of the passage of the vault
   // nearest a vector under the recipe, and zero when the vault has none.
   rpc GetBestSimilarity(GetBestSimilarityRequest) returns (GetBestSimilarityResponse);
+
+  // SearchPassages returns passages matching the query, from the index of every
+  // source and every text version: by keywords, and by embedding when the
+  // installation has an embedding model. It is the search the window runs, with
+  // the window's similarity threshold.
+  rpc SearchPassages(HostSearchServiceSearchPassagesRequest) returns (HostSearchServiceSearchPassagesResponse);
 
   // GetSearchFloor is the floor a search by meaning applies to the vault under
   // the recipe, and where it comes from.
@@ -250,4 +257,27 @@ message SetSearchFloorRequest {
 
 message SetSearchFloorResponse {
   HostSearchErrorCode error = 1;
+}
+
+message HostSearchServiceSearchPassagesRequest {
+  string query = 1;
+
+  // Maximum passages to return. Zero means the number the host chooses.
+  int32 limit = 2;
+
+  // The kinds of source to search, "note" or "file". Empty means every kind.
+  repeated string kinds = 3;
+
+  // Limits the search to the sources whose path starts with it, relative to the
+  // vault, in either Unicode form (NFC or NFD). The index applies it, so the
+  // limit counts passages under the prefix.
+  // Empty means the whole vault.
+  string path_prefix = 4;
+}
+
+message HostSearchServiceSearchPassagesResponse {
+  HostSearchErrorCode error = 1;
+
+  // Matching passages, best first, at most three of one source.
+  repeated Passage passages = 2;
 }

@@ -1,13 +1,16 @@
 package textversion_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
 	"io/fs"
 	"path"
 	"reflect"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -36,7 +39,31 @@ func (r fileReader) Read(_ context.Context, path string) ([]byte, error) {
 	return raw, nil
 }
 
-// readCounter counts the files read through the readers it wraps.
+func (r fileReader) Open(_ context.Context, path string) (io.ReadSeekCloser, error) {
+	raw, ok := r.files[path]
+	if !ok {
+		return nil, fs.ErrNotExist
+	}
+	return memoryFile{bytes.NewReader(raw)}, nil
+}
+
+// StatFile gives every file of the map the same modification time.
+func (r fileReader) StatFile(_ context.Context, path string) (domain.FileStat, error) {
+	raw, ok := r.files[path]
+	if !ok {
+		return domain.FileStat{}, fs.ErrNotExist
+	}
+	return domain.FileStat{Path: path, Kind: domain.KindFile, Size: int64(len(raw)), ModTime: getFilesTime()}, nil
+}
+
+func getFilesTime() time.Time { return time.Date(2026, 2, 1, 8, 0, 0, 0, time.UTC) }
+
+// memoryFile is a file stored in memory, with nothing to release.
+type memoryFile struct{ *bytes.Reader }
+
+func (memoryFile) Close() error { return nil }
+
+// readCounter counts the files read or opened through the readers it wraps.
 type readCounter struct {
 	fileReaders
 	reads *int
@@ -55,6 +82,11 @@ type countingReader struct {
 func (r countingReader) Read(ctx context.Context, path string) ([]byte, error) {
 	*r.reads++
 	return r.VaultReader.Read(ctx, path)
+}
+
+func (r countingReader) Open(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	*r.reads++
+	return r.VaultReader.Open(ctx, path)
 }
 
 // commands offers the commands it holds, and records each run.
@@ -125,7 +157,7 @@ func ownedBy(pluginID string) []pluginport.PluginContextCondition {
 func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (*textversion.FileMenu, *commands) {
 	t.Helper()
 	recorder := &commands{all: entries}
-	menu, err := textversion.NewFileMenu(s.versions, recorder, getPdfTypes(), fileReaders(s.files))
+	menu, err := textversion.NewFileMenu(s.versions, recorder, getPdfTypes())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,21 +244,20 @@ func TestFileMenuMatchesLiveVersionToCommandOwner(t *testing.T) {
 
 func TestFileMenuWithoutVersionListsTypeCommandsUnread(t *testing.T) {
 	s := newScene(t)
-	reads := 0
 	recorder := &commands{all: []pluginport.PluginCommandEntry{getRecogniseCommand(), getProofreadCommand(), getDeleteProofreadingCommand()}}
-	menu, err := textversion.NewFileMenu(s.versions, recorder, getPdfTypes(), readCounter{fileReaders: s.files, reads: &reads})
+	menu, err := textversion.NewFileMenu(s.versions, recorder, getPdfTypes())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	entries, err := menu.GetMenu(t.Context(), s.vault, scanPath)
 	want := []textversion.MenuEntry{{PluginID: ocr, PluginName: "OCR", Command: "recognition.create", Title: "Recognise text", Icon: "scan-text"}}
-	if err != nil || !slices.Equal(entries, want) || reads != 0 {
-		t.Fatalf("a file with no version gets %+v (%v) after %d reads, want %+v and no read", entries, err, reads, want)
+	if err != nil || !slices.Equal(entries, want) || s.reads != 0 {
+		t.Fatalf("a file with no version gets %+v (%v) after %d reads, want %+v and no read", entries, err, s.reads, want)
 	}
 	s.requestText(t)
-	if _, err := menu.GetMenu(t.Context(), s.vault, scanPath); err != nil || reads != 1 {
-		t.Fatalf("a file with a version was read %d times (%v), want once", reads, err)
+	if _, err := menu.GetMenu(t.Context(), s.vault, scanPath); err != nil || s.reads != 1 {
+		t.Fatalf("a file with a version was read %d times (%v), want once", s.reads, err)
 	}
 }
 
@@ -306,18 +337,15 @@ func TestFileMenuRejectsRunningUnofferedEntry(t *testing.T) {
 	}
 }
 
-func TestNewFileMenuRequiresVersionsCommandsTypesAndReaders(t *testing.T) {
+func TestNewFileMenuRequiresVersionsCommandsAndTypes(t *testing.T) {
 	s := newScene(t)
-	if _, err := textversion.NewFileMenu(nil, &commands{}, getPdfTypes(), fileReaders{}); err == nil {
+	if _, err := textversion.NewFileMenu(nil, &commands{}, getPdfTypes()); err == nil {
 		t.Error("a file menu was made without versions")
 	}
-	if _, err := textversion.NewFileMenu(s.versions, nil, getPdfTypes(), fileReaders{}); err == nil {
+	if _, err := textversion.NewFileMenu(s.versions, nil, getPdfTypes()); err == nil {
 		t.Error("a file menu was made without commands")
 	}
-	if _, err := textversion.NewFileMenu(s.versions, &commands{}, nil, fileReaders{}); err == nil {
+	if _, err := textversion.NewFileMenu(s.versions, &commands{}, nil); err == nil {
 		t.Error("a file menu was made without a content type table")
-	}
-	if _, err := textversion.NewFileMenu(s.versions, &commands{}, getPdfTypes(), nil); err == nil {
-		t.Error("a file menu was made without readers")
 	}
 }

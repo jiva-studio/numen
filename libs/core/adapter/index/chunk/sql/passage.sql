@@ -2,7 +2,7 @@
 --
 -- `parent_id` is the large chunk this one is inside, and is zero for a large
 -- chunk, which is inside nothing.
-SELECT s.path, COALESCE(s.producer, ''), COALESCE(s.hash, ''), c.start, c.length, COALESCE(c.location, ''), COALESCE(c.parent_id, 0)
+SELECT s.path, COALESCE(s.producer, ''), COALESCE(s.content_hash, ''), c.start, c.length, COALESCE(c.location, ''), COALESCE(c.parent_id, 0)
 FROM chunks c
 JOIN sources s ON s.id = c.source_id
 WHERE c.id = ? AND c.vault_id = ?;

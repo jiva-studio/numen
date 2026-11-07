@@ -9,7 +9,7 @@ import { shallowRef, type Ref } from 'vue'
 import { createFollower } from '@numen/ui'
 
 /** Outcome of a flush: everything written, or a user decision pending. */
-export type FlushResult = 'written' | 'asking'
+export type FlushResult = 'written' | 'unsaved'
 
 /** What the flush needs of the core. */
 export interface FlushDeps {
@@ -103,7 +103,7 @@ function createFlushReporter(
     if (token === null) return
     const all = registry.refresh()
     if (all.length === 0 && writing !== null) return
-    const result: FlushResult = all.length > 0 ? 'asking' : 'written'
+    const result: FlushResult = all.length > 0 ? 'unsaved' : 'written'
     if (result === lastResult) return
     lastResult = result
     await core.reportFlush(token, result)

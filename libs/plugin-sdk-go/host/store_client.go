@@ -15,7 +15,7 @@ import (
 // StoreClient works the plugin's folder through HostStoreService.
 type StoreClient struct {
 	rpc numenv1connect.HostStoreServiceClient
-	// vault is the identity of the vault the client works. Empty is the vault the window shows.
+	// vault is the identity of the vault the client calls. An empty vault ID means the vault the window shows.
 	vault string
 }
 

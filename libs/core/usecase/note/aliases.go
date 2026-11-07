@@ -38,6 +38,7 @@ type (
 
 var (
 	ErrInvalidName = query.ErrInvalidName
+	ErrNoNotePath  = query.ErrNoNotePath
 )
 
 func NewCutNotes(maxTokens int) chunking.CutNotes { return query.NewCutNotes(maxTokens) }

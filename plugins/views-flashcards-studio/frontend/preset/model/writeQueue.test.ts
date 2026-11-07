@@ -61,7 +61,7 @@ describe('one write', () => {
 
   it('says an error as an error', async () => {
     const queue = createWriteQueue()
-    const { core } = createCore({ ok: false, error: 'missing' } as PresetWriteResult)
+    const { core } = createCore({ ok: false, error: 'notFound' } as PresetWriteResult)
     const { messages, writeMessage } = createMessages()
 
     await sendWrite(queue, createWriteOpts(core, writeMessage))

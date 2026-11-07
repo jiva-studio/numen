@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
@@ -37,7 +38,7 @@ func TestNoteRead(t *testing.T) {
 	if res.GetError() != tools.ErrorCodeUnspecified {
 		t.Fatalf("unexpected tool error code: %v", res.GetError())
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
@@ -69,7 +70,7 @@ func TestNoteRead(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res2.GetResult().GetIsRefusal() {
+	if res2.GetResult().GetIsError() {
 		t.Fatalf("tool refused for Heat: %s", res2.GetResult().GetText())
 	}
 	var out2 service.NoteReadOutput
@@ -93,13 +94,13 @@ func TestNoteWrite(t *testing.T) {
 	callReq := tools.Call{
 		VaultID:   testVault,
 		Name:      "note_write",
-		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nGravity attracts."}`),
+		Arguments: []byte(`{"path":"Gravity.md","text":"# Gravity\nGravity attracts."}`),
 	}
 	res, err := registry.InvokeTool(ctx, callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 	var writeOut service.NoteWriteOutput
@@ -114,14 +115,14 @@ func TestNoteWrite(t *testing.T) {
 	callReq2 := tools.Call{
 		VaultID: testVault,
 		Name:    "note_write",
-		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nGravity bends spacetime.","fingerprint":"` +
+		Arguments: []byte(`{"path":"Gravity.md","text":"# Gravity\nGravity bends spacetime.","fingerprint":"` +
 			writeOut.Fingerprint + `"}`),
 	}
 	res2, err := registry.InvokeTool(ctx, callReq2)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res2.GetResult().GetIsRefusal() {
+	if res2.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res2.GetResult().GetText())
 	}
 
@@ -129,19 +130,22 @@ func TestNoteWrite(t *testing.T) {
 	callReq3 := tools.Call{
 		VaultID: testVault,
 		Name:    "note_write",
-		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nConflict.","fingerprint":"` +
+		Arguments: []byte(`{"path":"Gravity.md","text":"# Gravity\nConflict.","fingerprint":"` +
 			writeOut.Fingerprint + `"}`),
 	}
 	res3, err := registry.InvokeTool(ctx, callReq3)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if !res3.GetResult().GetIsRefusal() {
+	if !res3.GetResult().GetIsError() {
 		t.Error("expected refusal on stale fingerprint write")
+	}
+	if text := res3.GetResult().GetText(); !strings.Contains(text, "read it again") {
+		t.Errorf("the error of a stale fingerprint is %q, want it to contain %q", text, "read it again")
 	}
 }
 
-func TestNoteHeadings(t *testing.T) {
+func TestNoteHeadingListReturnsHeadings(t *testing.T) {
 	ctx := t.Context()
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
@@ -151,18 +155,18 @@ func TestNoteHeadings(t *testing.T) {
 
 	callReq := tools.Call{
 		VaultID:   testVault,
-		Name:      "note_headings",
+		Name:      "note_heading_list",
 		Arguments: []byte(`{"path":"Entropy.md"}`),
 	}
 	res, err := registry.InvokeTool(ctx, callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
-	var out service.NoteHeadingsOutput
+	var out service.NoteHeadingListOutput
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
@@ -189,7 +193,7 @@ func testSearchQuery(t *testing.T, registry *tools.Registry, toolName string) {
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
@@ -237,7 +241,7 @@ func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName str
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
@@ -275,7 +279,7 @@ func testVaultInfoQuery(t *testing.T, registry *tools.Registry, toolName string)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
@@ -320,15 +324,15 @@ func TestFileReadAndCreate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call file_read: %v", err)
 	}
-	if res.GetResult().GetIsRefusal() {
+	if res.GetResult().GetIsError() {
 		t.Fatalf("file_read refused: %s", res.GetResult().GetText())
 	}
-	var readOut service.FileReadOutput
+	var readOut fileReadAnswer
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &readOut); err != nil {
 		t.Fatalf("unmarshal file_read: %v", err)
 	}
-	if readOut.Content != "line 1" {
-		t.Errorf("file_read content = %q, want 'line 1'", readOut.Content)
+	if readOut.Text != "line 1" {
+		t.Errorf("file_read content = %q, want 'line 1'", readOut.Text)
 	}
 	if readOut.Length != 6 {
 		t.Errorf("file_read length = %d, want 6", readOut.Length)
@@ -338,13 +342,13 @@ func TestFileReadAndCreate(t *testing.T) {
 	createReq := tools.Call{
 		VaultID:   testVault,
 		Name:      "file_create",
-		Arguments: []byte(`{"path":"new_data.txt","content":"hello world"}`),
+		Arguments: []byte(`{"path":"new_data.txt","text":"hello world"}`),
 	}
 	createRes, err := registry.InvokeTool(ctx, createReq)
 	if err != nil {
 		t.Fatalf("call file_create: %v", err)
 	}
-	if createRes.GetResult().GetIsRefusal() {
+	if createRes.GetResult().GetIsError() {
 		t.Fatalf("file_create refused: %s", createRes.GetResult().GetText())
 	}
 
@@ -353,7 +357,7 @@ func TestFileReadAndCreate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("call file_create duplicate: %v", err)
 	}
-	if !createAgainRes.GetResult().GetIsRefusal() {
+	if !createAgainRes.GetResult().GetIsError() {
 		t.Error("expected refusal creating file that already exists")
 	}
 }
@@ -366,23 +370,23 @@ func TestListTools(t *testing.T) {
 		t.Fatalf("registry: %v", err)
 	}
 
-	listed, err := registry.ListToolInfos(ctx)
+	listed, err := registry.ListTools(ctx)
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
 
 	expectedTools := map[string]bool{
-		"note_read":     false,
-		"note_write":    false,
-		"note_headings": false,
-		"note_search":   false,
-		"link_list":     false,
-		"vault_get":     false,
-		"file_read":     false,
-		"file_create":   false,
+		"note_read":         false,
+		"note_write":        false,
+		"note_heading_list": false,
+		"note_search":       false,
+		"link_list":         false,
+		"vault_get":         false,
+		"file_read":         false,
+		"file_create":       false,
 	}
 
-	for _, tool := range listed {
+	for _, tool := range listed.Tools {
 		if _, ok := expectedTools[tool.GetName()]; ok {
 			expectedTools[tool.GetName()] = true
 		}
@@ -427,7 +431,7 @@ func TestACallWorksTheVaultItNames(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.GetResult().GetIsRefusal() || res.GetResult().GetText() != "the call names no vault" {
+	if !res.GetResult().GetIsError() || res.GetResult().GetText() != "note_read: the call names no vault" {
 		t.Errorf("a call naming no vault answered %v", res.GetResult())
 	}
 }

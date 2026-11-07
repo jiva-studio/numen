@@ -30,7 +30,7 @@ var ErrExist = edit.ErrExist
 // ErrOutside is what a path that does not stay in the vault gets. It is not
 // "no note": a caller asking for something outside has made a mistake worth
 // hearing about, and "no such note" would hide it.
-var ErrOutside = errors.New("not a path inside the vault")
+var ErrOutside = errors.New("the path is outside the vault")
 
 // IsNoNote reports whether an error means there is no note at the path: nothing
 // exists there, or the file there is one the vault ignores.

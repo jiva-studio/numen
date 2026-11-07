@@ -179,6 +179,9 @@ fs.writeFileSync(
       'md.numen.agents.codex': { enabled: false },
       'md.numen.agents.antigravity': { enabled: false },
       'md.numen.agents.acp': { enabled: false },
+      // The host binds the MCP server's listener port 5000 above the server's port, outside the ports
+      // of the other servers of a parallel run (10 apart) and of the flashcards server (3457).
+      'md.numen.agents.mcp.server': { port: Number(port) + 5000 },
     },
     null,
     2,

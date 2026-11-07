@@ -116,7 +116,7 @@ func countByText(rows map[textOf][]int64) map[textOf]int {
 func cutSource(t *testing.T, db *DB, path string, chunks []chunk.Chunk) int64 {
 	t.Helper()
 	if err := db.Chunks().SaveSource(t.Context(), getFirst().ID, chunk.Source{
-		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "epub",
+		Path: path, Kind: "book", Size: 1000, MTime: 1, ContentHash: "hash-" + path, Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}

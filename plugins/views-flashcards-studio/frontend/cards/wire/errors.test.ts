@@ -10,7 +10,7 @@ import {
 
 describe('errors', () => {
   it('translates every note code of the schema into the plugin code', () => {
-    expect(findErrorCode({ error: ProtoErrorCode.MISSING })).toBe('missing')
+    expect(findErrorCode({ error: ProtoErrorCode.NOT_FOUND })).toBe('notFound')
     expect(findErrorCode({ error: ProtoErrorCode.NOT_A_NOTE })).toBe('notANote')
     expect(findErrorCode({ error: ProtoErrorCode.INVALID_NAME })).toBe('invalidName')
     expect(findErrorCode({ error: ProtoErrorCode.UNREADABLE })).toBe('unreadable')
@@ -25,16 +25,18 @@ describe('errors', () => {
 
   it('returns no code for a success or a stale write', () => {
     expect(findErrorCode({})).toBeNull()
-    expect(findErrorCode({ error: ProtoErrorCode.STALE })).toBeNull()
-    expect(isStaleAnswer({ error: ProtoErrorCode.STALE })).toBe(true)
-    expect(isStaleAnswer({ error: ProtoErrorCode.MISSING })).toBe(false)
+    expect(findErrorCode({ error: ProtoErrorCode.CONFLICT })).toBeNull()
+    expect(isStaleAnswer({ error: ProtoErrorCode.CONFLICT })).toBe(true)
+    expect(isStaleAnswer({ error: ProtoErrorCode.NOT_FOUND })).toBe(false)
   })
 
   it('formats each schema code in the words of its plugin code', () => {
     expect(formatErrorCodeMessage(undefined)).toBe('')
-    expect(formatErrorCodeMessage(ProtoErrorCode.MISSING)).toBe(ERRORS.missing)
+    expect(formatErrorCodeMessage(ProtoErrorCode.NOT_FOUND)).toBe(ERRORS.notFound)
     expect(formatErrorCodeMessage(ProtoErrorCode.NOT_A_DECK)).toBe(ERRORS.notADeck)
-    expect(formatErrorCodeMessage(ProtoErrorCode.STALE)).toBe('not saved: the note changed on disk')
+    expect(formatErrorCodeMessage(ProtoErrorCode.CONFLICT)).toBe(
+      'not saved: the note changed on disk',
+    )
     expect(formatErrorCodeMessage('future_code' as ProtoErrorCode)).toBe('internal error')
   })
 

@@ -9,7 +9,7 @@ import (
 )
 
 func TestTheNoticesOfTheSettingsReachTheWindowAsNoticesAndNotAsFailedTasks(t *testing.T) {
-	const notice = "md.numen.proofreading is the object of no plugin that is installed, and is ignored"
+	const notice = "numen.json: no installed plugin md.numen.proofreading; its settings are ignored"
 	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
 
 	(&Installation{State: state}).Report([]string{notice})

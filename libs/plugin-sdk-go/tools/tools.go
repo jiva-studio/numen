@@ -18,6 +18,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/google/jsonschema-go/jsonschema"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
@@ -71,6 +72,13 @@ type Spec struct {
 	Step Step
 	// Servers are the servers the tool is offered on. None is the full server alone.
 	Servers []Server
+	// Instructions are the sentences an agent reads about the tool before it calls it, each one
+	// sentence. A sentence about several tools is attached to each of them with identical text; the
+	// host lists it once.
+	Instructions []string
+	// Requires are the permissions the caller must have besides the one of the effect, such as
+	// vault:manage. The host lists and runs the tool only for a caller that has all of them.
+	Requires []string
 }
 
 // ErrDuplicate is a second tool added under a name.
@@ -92,10 +100,18 @@ func New() *Registry {
 	return &Registry{}
 }
 
-// Add adds the tool run answers for. The schemas of the arguments and of the result are derived
-// from In and Out; an Out that is not a struct is answered as text. A run that returns an error is
+// Add adds the tool that run implements. The schemas of the arguments and of the result are derived
+// from In and Out; an Out that is not a struct is returned as text. The arguments of a call are
+// validated against the schema of In before run is called, and arguments that do not match it are
+// rejected with an error result naming the argument. A run that returns an error returns
+// an error result. The text of every error result starts with the tool name and ": ". The hints of
+// the tool are set from the effect, the step and the required permissions.
 func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in In) (Out, error)) error {
-	input, err := schemaOf(reflect.TypeFor[In]())
+	inputSchema, err := createSchema(reflect.TypeFor[In]())
+	if err != nil {
+		return fmt.Errorf("tool %s: arguments: %w", spec.Name, err)
+	}
+	input, err := json.Marshal(inputSchema)
 	if err != nil {
 		return fmt.Errorf("tool %s: arguments: %w", spec.Name, err)
 	}
@@ -115,17 +131,18 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 			Effect:       writeEffect(spec.Effect),
 			Servers:      writeServers(spec.Servers),
 			Step:         writeStep(spec.Step),
+			Instructions: slices.Clone(spec.Instructions),
+			Requires:     slices.Clone(spec.Requires),
+			Hints:        writeHints(createHints(spec)),
 		},
 		run: func(ctx context.Context, arguments []byte) *v1.ToolResult {
-			var in In
-			if len(arguments) > 0 {
-				if err := json.Unmarshal(arguments, &in); err != nil {
-					return &v1.ToolResult{Text: fmt.Sprintf("the arguments do not fit: %v", err), IsRefusal: true}
-				}
+			in, err := readArguments[In](inputSchema, arguments)
+			if err != nil {
+				return &v1.ToolResult{Text: spec.Name + ": " + err.Error(), IsError: true}
 			}
 			out, err := run(ctx, in)
 			if err != nil {
-				return &v1.ToolResult{Text: err.Error(), IsRefusal: true}
+				return &v1.ToolResult{Text: spec.Name + ": " + err.Error(), IsError: true}
 			}
 			return writeResult(out)
 		},
@@ -228,13 +245,24 @@ func isStruct(t reflect.Type) bool {
 	return t.Kind() == reflect.Struct
 }
 
+// createSchema creates the JSON schema of a struct, and an object schema without properties for
+// any other type. The schema of a pointer to a struct has the type object alone.
+func createSchema(t reflect.Type) (*jsonschema.Schema, error) {
+	if !isStruct(t) {
+		return &jsonschema.Schema{Type: typeObject}, nil
+	}
+	schema, err := jsonschema.ForType(t, &jsonschema.ForOptions{})
+	if err != nil {
+		return nil, err
+	}
+	schema.Type, schema.Types = typeObject, nil
+	return schema, nil
+}
+
 // schemaOf is the JSON schema of a struct as a JSON object, and an empty object schema for any
 // other type.
 func schemaOf(t reflect.Type) ([]byte, error) {
-	if !isStruct(t) {
-		return []byte(`{"type":"object"}`), nil
-	}
-	schema, err := jsonschema.ForType(t, &jsonschema.ForOptions{})
+	schema, err := createSchema(t)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +274,7 @@ func schemaOf(t reflect.Type) ([]byte, error) {
 func writeResult(out any) *v1.ToolResult {
 	encoded, err := json.Marshal(out)
 	if err != nil {
-		return &v1.ToolResult{Text: fmt.Sprintf("the result cannot be encoded: %v", err), IsRefusal: true}
+		return &v1.ToolResult{Text: fmt.Sprintf("the result cannot be encoded: %v", err), IsError: true}
 	}
 	if isObject(encoded) {
 		return &v1.ToolResult{Structured: encoded}
@@ -296,7 +324,7 @@ func (c *Call) GetContext() map[string]string {
 type CallResult struct {
 	Text       string
 	Structured []byte
-	IsRefusal  bool
+	IsError    bool
 }
 
 func (r *CallResult) GetText() string {
@@ -313,11 +341,11 @@ func (r *CallResult) GetStructured() []byte {
 	return r.Structured
 }
 
-func (r *CallResult) GetIsRefusal() bool {
+func (r *CallResult) GetIsError() bool {
 	if r == nil {
 		return false
 	}
-	return r.IsRefusal
+	return r.IsError
 }
 
 // CallResponse is the response from a tool invocation.
@@ -350,6 +378,33 @@ type ToolInfo struct {
 	Effect       Effect
 	Step         Step
 	Servers      []Server
+	Instructions []string
+	Requires     []string
+	Hints        Hints
+}
+
+// Hints are the MCP annotations of a tool.
+type Hints struct {
+	// ReadOnly is a tool that changes nothing.
+	ReadOnly bool
+	// Destructive is a tool that removes something.
+	Destructive bool
+	// Idempotent is a tool whose repeated call with the same arguments has no further effect.
+	Idempotent bool
+	// OpenWorld is a tool that reaches outside the machine.
+	OpenWorld bool
+}
+
+// createHints returns the hints of the tool spec describes: a read-only tool is read-only and
+// idempotent, a read-write tool of the step Remove is destructive, and a tool that requires
+// network:outbound reaches the open world.
+func createHints(spec Spec) Hints {
+	return Hints{
+		ReadOnly:    spec.Effect == ReadOnly,
+		Destructive: spec.Effect == ReadWrite && spec.Step == Remove,
+		Idempotent:  spec.Effect == ReadOnly,
+		OpenWorld:   slices.Contains(spec.Requires, host.PermissionNetworkOutbound),
+	}
 }
 
 func (t *ToolInfo) GetName() string {
@@ -408,18 +463,48 @@ func (t *ToolInfo) GetServers() []Server {
 	return t.Servers
 }
 
-// ListToolInfos returns the tools in the registry.
-func (r *Registry) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
+func (t *ToolInfo) GetInstructions() []string {
+	if t == nil {
+		return nil
+	}
+	return t.Instructions
+}
+
+func (t *ToolInfo) GetRequires() []string {
+	if t == nil {
+		return nil
+	}
+	return t.Requires
+}
+
+func (t *ToolInfo) GetHints() Hints {
+	if t == nil {
+		return Hints{}
+	}
+	return t.Hints
+}
+
+// Listing is the list of tools a PluginToolService returns.
+type Listing struct {
+	Tools []*ToolInfo
+}
+
+func readListing(res *v1.ListToolsResponse) Listing {
+	out := make([]*ToolInfo, len(res.GetTools()))
+	for i, t := range res.GetTools() {
+		out[i] = readToolInfo(t)
+	}
+	return Listing{Tools: out}
+}
+
+// ListTools returns the tools in the registry.
+func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
 	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	// gomutants:disable-next-line
 	if err != nil {
-		return nil, err
+		return Listing{}, err
 	}
-	out := make([]*ToolInfo, len(res.Msg.GetTools()))
-	for i, t := range res.Msg.GetTools() {
-		out[i] = readToolInfo(t)
-	}
-	return out, nil
+	return readListing(res.Msg), nil
 }
 
 // InvokeTool invokes a tool in the registry.
@@ -438,7 +523,7 @@ func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, er
 
 // Client calls a PluginToolService endpoint.
 type Client interface {
-	ListToolInfos(ctx context.Context) ([]*ToolInfo, error)
+	ListTools(ctx context.Context) (Listing, error)
 	InvokeTool(ctx context.Context, call Call) (*CallResponse, error)
 }
 
@@ -453,16 +538,12 @@ func NewClient(endpoint hostcall.Endpoint) Client {
 	}
 }
 
-func (c *rpcClient) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
+func (c *rpcClient) ListTools(ctx context.Context) (Listing, error) {
 	res, err := c.rpc.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
-		return nil, err
+		return Listing{}, err
 	}
-	out := make([]*ToolInfo, len(res.Msg.GetTools()))
-	for i, t := range res.Msg.GetTools() {
-		out[i] = readToolInfo(t)
-	}
-	return out, nil
+	return readListing(res.Msg), nil
 }
 
 func (c *rpcClient) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
@@ -480,7 +561,7 @@ func (c *rpcClient) InvokeTool(ctx context.Context, call Call) (*CallResponse, e
 
 // ServiceHandler handles tool listing and invocation with request headers.
 type ServiceHandler interface {
-	ListToolInfos(ctx context.Context, header http.Header) ([]*ToolInfo, error)
+	ListTools(ctx context.Context, header http.Header) (Listing, error)
 	InvokeTool(ctx context.Context, header http.Header, call Call) (*CallResponse, error)
 }
 
@@ -493,12 +574,12 @@ func (a *serviceAdapter) ListTools(
 	ctx context.Context,
 	req *connect.Request[v1.ListToolsRequest],
 ) (*connect.Response[v1.ListToolsResponse], error) {
-	infos, err := a.h.ListToolInfos(ctx, req.Header())
+	listing, err := a.h.ListTools(ctx, req.Header())
 	if err != nil {
 		return nil, err
 	}
-	wire := make([]*v1.PluginTool, len(infos))
-	for i, t := range infos {
+	wire := make([]*v1.PluginTool, len(listing.Tools))
+	for i, t := range listing.Tools {
 		wire[i] = writeToolInfo(t)
 	}
 	return connect.NewResponse(&v1.ListToolsResponse{Tools: wire}), nil

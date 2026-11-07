@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"unicode/utf8"
 
 	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -36,6 +37,7 @@ type Vault struct {
 	scanned    [][]string
 	watches    []chan host.Change
 	unknown    bool
+	isMissing  bool
 	state      host.IndexState
 	moves      []chan struct{}
 	folder     *folder
@@ -91,6 +93,10 @@ func newVault(v domain.Vault, files store) *Vault {
 type world struct {
 	mu      sync.Mutex
 	members []*Vault
+	// openedVault is the vault OpenVault last opened, nil before any.
+	openedVault *Vault
+	// hasUnsavedChanges makes OpenVault return host.ErrUnsavedChanges.
+	hasUnsavedChanges bool
 }
 
 // Vault is the vault as the host names it: its identity, its name and where it is.
@@ -236,7 +242,10 @@ func (v *Vault) check(ctx context.Context, filePath string) error {
 	if err := v.reach(); err != nil {
 		return err
 	}
-	if filePath == "" || strings.HasPrefix(filePath, "/") || path.Clean(filePath) != filePath || strings.HasPrefix(filePath, "..") {
+	if filePath == "" {
+		return fmt.Errorf("%w: it is empty", host.ErrOutside)
+	}
+	if strings.HasPrefix(filePath, "/") || path.Clean(filePath) != filePath || strings.HasPrefix(filePath, "..") {
 		return host.ErrOutside
 	}
 	return v.rejected[filePath]
@@ -262,6 +271,21 @@ func (v *Vault) StatFile(ctx context.Context, filePath string) (domain.FileStat,
 		return domain.FileStat{}, host.ErrNotANote
 	}
 	return at, err
+}
+
+func (v *Vault) ReadRange(ctx context.Context, filePath string, start, length int) (host.FileRange, error) {
+	content, stat, err := v.Read(ctx, filePath)
+	if err != nil {
+		return host.FileRange{}, err
+	}
+	if length <= 0 || length > maxReadLength {
+		length = maxReadLength
+	}
+	rangeStart, rangeEnd := getRange(content, start, length)
+	if !utf8.Valid(content[rangeStart:rangeEnd]) {
+		return host.FileRange{}, fmt.Errorf("read %s from %d: %w", filePath, rangeStart, host.ErrNotText)
+	}
+	return host.FileRange{Text: string(content[rangeStart:rangeEnd]), Start: rangeStart, Stat: stat}, nil
 }
 
 func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileStat, error) {
@@ -426,10 +450,14 @@ func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedL
 	if err := v.gate(ctx); err != nil {
 		return nil, err
 	}
-	notes := v.parsed()
+	return v.getBacklinks(v.parsed(), to), nil
+}
+
+// getBacklinks returns the links of the notes that point to the note at to. The caller has the lock.
+func (v *Vault) getBacklinks(notes map[string]domain.Note, to string) []domain.ResolvedLink {
 	target, ok := notes[to]
 	if !ok {
-		return nil, nil
+		return nil
 	}
 	base := notesdomain.FoldName(domain.Basename(to))
 	var out []domain.ResolvedLink
@@ -447,7 +475,7 @@ func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedL
 			}
 		}
 	}
-	return out, nil
+	return out
 }
 
 // ResolveLinks answers each written link by the links the note holds whose target is written so.

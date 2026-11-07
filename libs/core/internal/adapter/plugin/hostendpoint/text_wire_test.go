@@ -18,7 +18,7 @@ func TestWriteSegmentsCarriesTextHeadingAndSelector(t *testing.T) {
 
 func TestWriteVersionCarriesTheSourceKindAndFile(t *testing.T) {
 	got := writeVersion(domain.TextVersion{
-		Path: "a.mp3", PluginID: "p.x", Key: "k", Source: "q.y/s", Kind: "transcript", File: "k.jsonl", SourceHash: "s", Hash: "h",
+		Path: "a.mp3", PluginID: "p.x", Key: "k", Source: "q.y/s", Kind: "transcript", File: "k.jsonl", InputHash: "s", TextHash: "h",
 	})
 	if got.GetId() != "p.x/k" || got.GetSourceVersionId() != "q.y/s" || got.GetKind() != "transcript" || got.GetFile() != "k.jsonl" {
 		t.Fatalf("got %+v", got)
