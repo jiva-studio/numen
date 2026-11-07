@@ -68,9 +68,9 @@ func TestAPluginWhoseConfigureFailsKeepsThePermissionAndShowsNoFailureOrValue(t 
 	}
 }
 
-// A plugin whose Configure failed receives the list from the next refresh, and from the next
-// operation that changes its list.
-func TestAPluginWhoseConfigureFailedReceivesTheListFromTheNextRefreshAndOperation(t *testing.T) {
+// A plugin whose Configure failed is not sent the same list by a bare refresh, and receives the list
+// with the next operation that changes it.
+func TestAPluginWhoseConfigureFailedReceivesTheListWithTheNextOperationThatChangesIt(t *testing.T) {
 	w := openSecretsWindow(t, `{}`)
 	alpha := w.probes[alphaID]
 	alpha.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
@@ -80,20 +80,17 @@ func TestAPluginWhoseConfigureFailedReceivesTheListFromTheNextRefreshAndOperatio
 	}
 
 	alpha.setFailure(nil)
+	attempts := alpha.attemptCount()
 	if err := w.host.RefreshSecrets(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	w.assertIDs(t, alphaID, "apiKey", one)
-
-	alpha.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
-	two := w.create(t, "openrouter", "Home", "value-of-the-home-key")
-	if err := w.tryAllow(t.Context(), two, alphaID, "apiKey", "openrouter"); err == nil {
-		t.Fatal("the operation returned nil although the plugin did not accept the list")
+	if alpha.attemptCount() != attempts {
+		t.Errorf("a bare refresh sent the list again: %d calls, want %d", alpha.attemptCount(), attempts)
 	}
-	alpha.setFailure(nil)
-	three := w.create(t, "openrouter", "Third", "value-of-the-third-key")
-	w.allow(t, three, alphaID, "apiKey", "openrouter")
-	w.assertIDs(t, alphaID, "apiKey", one, two, three)
+
+	two := w.create(t, "openrouter", "Home", "value-of-the-home-key")
+	w.allow(t, two, alphaID, "apiKey", "openrouter")
+	w.assertIDs(t, alphaID, "apiKey", one, two)
 }
 
 // A plugin that never answers delays the operation by the Configure timeout, once, and the operation
@@ -112,8 +109,8 @@ func TestAHungConfigureDelaysTheOperationByTheTimeoutOnceAndCommits(t *testing.T
 	ctx := t.Context()
 	go func() { result <- w.tryAllow(ctx, one, alphaID, "apiKey", "openrouter") }()
 	select {
-	case <-result:
-		t.Fatal("the operation returned before the Configure timeout")
+	case early := <-result:
+		t.Fatalf("the operation returned %v before the Configure timeout", early)
 	case <-time.After(configureTimeout / 2):
 	}
 	var err error

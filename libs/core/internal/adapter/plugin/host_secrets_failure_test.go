@@ -410,8 +410,8 @@ func TestAHungConfigureDelaysTheOperationByTheTimeoutOnce(t *testing.T) {
 	ctx := t.Context()
 	go func() { result <- host.ApplySecretChange(ctx, source.renameBy("Renamed")) }()
 	select {
-	case <-result:
-		t.Fatal("the operation returned before the Configure timeout")
+	case early := <-result:
+		t.Fatalf("the operation returned %v before the Configure timeout", early)
 	case <-time.After(configureCallTimeout / 2):
 	}
 	var err error
