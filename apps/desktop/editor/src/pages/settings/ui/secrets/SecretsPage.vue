@@ -3,7 +3,7 @@
  * The page of secrets: every secret by group, in priority order, with the plugin declarations that
  * may read it. A value is entered here once and is never shown again.
  */
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
@@ -47,6 +47,7 @@ const newGroup = ref<string | null>(null)
 const newGroupName = computed(() => (newGroup.value ?? '').trim())
 const newName = computed(() => getNextSecretName(getNamesInGroup(newGroupName.value)))
 const deleting = ref<Secret | null>(null)
+const deleteOpener = ref<HTMLElement | null>(null)
 const readers = computed(() =>
   deleting.value ? getReaderNames(deleting.value, plugins.value) : [],
 )
@@ -80,9 +81,27 @@ function onToggle(secret: Secret, declaration: Declaration, isAllowed: boolean):
   else installation.value.denyPluginSecret(secret.id, pluginId, name, group)
 }
 
-function onConfirmDelete(): void {
+function onAskDelete(secret: Secret, opener: HTMLElement): void {
+  deleting.value = secret
+  deleteOpener.value = opener
+}
+
+async function onConfirmDelete(): Promise<void> {
   if (deleting.value) installation.value.deleteSecret(deleting.value.id)
+  return onCloseDelete()
+}
+
+async function onCancelDelete(): Promise<void> {
+  return onCloseDelete()
+}
+
+/** Closes the confirmation and returns the focus to the button that opened it, if it is still there. */
+async function onCloseDelete(): Promise<void> {
+  const opener = deleteOpener.value
   deleting.value = null
+  deleteOpener.value = null
+  await nextTick()
+  if (opener?.isConnected) opener.focus()
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -126,7 +145,7 @@ function getNamesInGroup(group: string): readonly string[] {
       @move="(id, beforeId) => installation.moveSecret(id, beforeId)"
       @rename="(id, name) => installation.renameSecret(id, name)"
       @write="(id, value) => installation.writeSecret(id, value)"
-      @delete="(secret) => (deleting = secret)"
+      @delete="onAskDelete"
       @toggle="onToggle"
     />
 
@@ -163,7 +182,7 @@ function getNamesInGroup(group: string): readonly string[] {
       :name="deleting.name"
       :readers="readers"
       @confirm="onConfirmDelete"
-      @cancel="deleting = null"
+      @cancel="onCancelDelete"
     />
   </div>
 </template>

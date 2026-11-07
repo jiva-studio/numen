@@ -25,7 +25,7 @@ const emit = defineEmits<{
   (e: 'move-down'): void
   (e: 'rename', name: string): void
   (e: 'write', value: string): void
-  (e: 'delete'): void
+  (e: 'delete', opener: HTMLElement): void
   (e: 'toggle', declaration: Declaration, isAllowed: boolean): void
 }>()
 
@@ -51,6 +51,10 @@ function onCommitRename(): void {
 
 function onCancelRename(): void {
   isRenaming.value = false
+}
+
+function onDelete(event: MouseEvent): void {
+  if (event.currentTarget instanceof HTMLElement) emit('delete', event.currentTarget)
 }
 </script>
 
@@ -108,7 +112,7 @@ function onCancelRename(): void {
         size="icon-small"
         :aria-label="words.secretDelete"
         :title="words.secretDelete"
-        @click="emit('delete')"
+        @click="onDelete"
       >
         <Trash2 :size="14" aria-hidden="true" />
       </Button>

@@ -28,7 +28,7 @@ const emit = defineEmits<{
   (e: 'move', id: string, beforeId: string): void
   (e: 'rename', id: string, name: string): void
   (e: 'write', id: string, value: string): void
-  (e: 'delete', secret: Secret): void
+  (e: 'delete', secret: Secret, opener: HTMLElement): void
   (e: 'toggle', secret: Secret, declaration: Declaration, isAllowed: boolean): void
 }>()
 
@@ -116,7 +116,7 @@ function onMoveDown(index: number): void {
         @move-down="onMoveDown(index)"
         @rename="(name) => emit('rename', secret.id, name)"
         @write="(value) => emit('write', secret.id, value)"
-        @delete="emit('delete', secret)"
+        @delete="(opener) => emit('delete', secret, opener)"
         @toggle="(declaration, isAllowed) => emit('toggle', secret, declaration, isAllowed)"
       />
       <SecretDraftRow
