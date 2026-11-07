@@ -87,6 +87,9 @@ test.describe('Workspace Layout and Split Panes', () => {
     await expect(getTab(page, 'sample.pdf')).toBeVisible()
     await expect(getTab(page, 'Files')).toBeVisible()
     await expect(getTab(page, 'Thermodynamics')).toBeVisible()
-    expect((await readOpenTabs(request)).tabs.map((one) => one.path).sort()).toEqual(before)
+    // The window writes its tabs to the core after it draws them.
+    await expect
+      .poll(async () => (await readOpenTabs(request)).tabs.map((one) => one.path).sort())
+      .toEqual(before)
   })
 })
