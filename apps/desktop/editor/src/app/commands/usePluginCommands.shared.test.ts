@@ -10,6 +10,7 @@ import {
   type CommandDeps,
   type CommandInvocation,
   type CommandTarget,
+  type RunSupport,
 } from '@/features/command-palette'
 import type { VaultCore } from '../vault'
 import { usePluginCommands } from './usePluginCommands'
@@ -20,6 +21,8 @@ const HANDLER: HandlerDeclaration = {
   title: 'Extract text layer',
   hasItems: false,
 }
+
+const RUNS: RunSupport = { canRun: () => true, cannotRun: () => undefined }
 
 const createHost = () =>
   ({
@@ -45,8 +48,8 @@ describe('a shared command in the palette', () => {
     ]).getPaletteEntries()
     const target = { path: 'scan.pdf', file: 'scan.pdf', isReady: true } as CommandTarget
 
-    expect(entry?.isAvailable?.(target)).toBe(true)
-    expect(entry?.isAvailable?.({ ...target, path: '', file: '' })).toBe(false)
+    expect(entry?.isAvailable(target, RUNS)).toBe(true)
+    expect(entry?.isAvailable({ ...target, path: '', file: '' }, RUNS)).toBe(false)
   })
 })
 
@@ -72,7 +75,7 @@ describe('a shared command that asks for a value', () => {
       vault: { id: 'v', name: 'Harbor' },
     }
 
-    expect(entry?.isAvailable?.(window as CommandTarget)).toBe(true)
+    expect(entry?.isAvailable(window as CommandTarget, RUNS)).toBe(true)
   })
 
   it('runs its handler with the values given', async () => {

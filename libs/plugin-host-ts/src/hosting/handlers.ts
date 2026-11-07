@@ -58,7 +58,7 @@ async function listOwnItems(
 }
 
 /** One run of a shared command over the note. */
-interface SharedRun extends CommandRun {
+export interface SharedRun extends CommandRun {
   readonly note: CommandNote
 }
 
