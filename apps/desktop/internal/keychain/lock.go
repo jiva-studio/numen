@@ -49,8 +49,8 @@ func lockFile(ctx context.Context, path string) (func() error, error) {
 		return file.Close, nil
 	case <-ctx.Done():
 		go func() {
-			<-locked
-			if err := file.Close(); err != nil {
+			lockErr := <-locked
+			if err := file.Close(); err != nil || lockErr != nil {
 				return
 			}
 		}()
