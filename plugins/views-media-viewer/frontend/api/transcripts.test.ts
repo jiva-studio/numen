@@ -57,4 +57,25 @@ describe('the transcript of a recording', () => {
     expect(await transcripts.readTranscript('talks/river.mp3')).toEqual([])
     await expect(transcripts.writeTranscript('talks/river.mp3', cues)).rejects.toThrow()
   })
+
+  it('reads a live text without times as its prose, and no cues', async () => {
+    const texts = createMockVaultTexts('md.numen.views.media.viewer')
+    const article = { ...transcript, path: 'links/tide.md', kind: 'article' }
+    texts.setLive(article, [{ text: 'A tidal mill stored seawater.\n' }, { text: 'It turned at the ebb.\n' }])
+    const transcripts = createTranscripts(() => texts)
+
+    expect(await transcripts.readArticle('links/tide.md')).toBe(
+      'A tidal mill stored seawater.\nIt turned at the ebb.',
+    )
+    expect(await transcripts.readTranscript('links/tide.md')).toEqual([])
+  })
+
+  it('reads no prose where the live text has times or there is none', async () => {
+    const texts = createMockVaultTexts('md.numen.views.media.viewer')
+    texts.setLive(transcript, getSegments(cues))
+    const transcripts = createTranscripts(() => texts)
+
+    expect(await transcripts.readArticle('talks/river.mp3')).toBe('')
+    expect(await transcripts.readArticle('talks/none.mp3')).toBe('')
+  })
 })

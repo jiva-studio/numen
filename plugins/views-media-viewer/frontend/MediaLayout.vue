@@ -2,7 +2,8 @@
 /**
  * A recording and its transcript: the player at the top of the pane, and the transcript text below it.
  *
- * The player is provided through the slot, as is any tab-specific content shown over it.
+ * The player is provided through the slot, as is any tab-specific content shown over it: the
+ * picture of a video or the page that frames a player.
  */
 import { computed } from 'vue'
 import MediaActions from './MediaActions.vue'
@@ -34,6 +35,7 @@ function onToggleFollow() {
 
 <template>
   <div class="media">
+    <slot name="picture" />
     <div class="media__head">
       <slot name="player" />
 

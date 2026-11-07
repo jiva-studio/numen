@@ -54,7 +54,7 @@ const isTimed = (live: LiveText): boolean =>
 /** The transcript calls of a recording tab, over the texts the plugin's context gives. */
 export const createTranscripts = (
   getTexts: () => VaultTexts | undefined,
-): Pick<Recordings, 'readTranscript' | 'writeTranscript' | 'findCueTime'> => {
+): Pick<Recordings, 'readTranscript' | 'readArticle' | 'writeTranscript' | 'findCueTime'> => {
   const readLive = async (path: string): Promise<LiveText | null> => {
     const texts = getTexts()
     if (texts === undefined) return null
@@ -65,6 +65,11 @@ export const createTranscripts = (
     readTranscript: async (path) => {
       const live = await readLive(path)
       return live === null ? [] : getCues(live.segments)
+    },
+    readArticle: async (path) => {
+      const live = await getTexts()?.readLiveText(path)
+      if (!live || isTimed(live)) return ''
+      return live.segments.map((segment) => removeTrailingLineBreaks(segment.text)).join('\n')
     },
     writeTranscript: async (path, cues) => {
       const texts = getTexts()

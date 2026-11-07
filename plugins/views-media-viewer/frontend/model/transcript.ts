@@ -1,6 +1,7 @@
 /**
  * The state of one recording tab: playback position, transcript cues, the current cue,
- * the edited text, and whether its text can be created.
+ * the edited text, a live text without times shown as it is, the page that frames the
+ * player while there is no media, and whether its text can be created.
  */
 import { computed, ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
@@ -57,12 +58,15 @@ export function useTranscript(
   const checkOpen = () => isOpen
 
   const cues = shallowRef<readonly Cue[]>([])
+  /** Whether the live text has no times, such as an article: it is shown as it is and not edited. */
+  const isArticle = ref(false)
+  const pageUrl = ref('')
   const canCreateText = ref(false)
   const isWorking = ref(false)
   const isLoading = ref(true)
   const error = ref('')
   const following = ref(true)
-  const isEditable = computed(() => !isWorking.value)
+  const isEditable = computed(() => !isWorking.value && !isArticle.value)
   const requests = createRequestGuard()
 
   const playback = usePlayback(audioPlayer, plays, checkOpen)
@@ -79,16 +83,19 @@ export function useTranscript(
   const readRecording = async () => {
     const mine = requests.begin()
     try {
-      const [source, transcriptCues, isCreatable] = await Promise.all([
+      const [source, transcriptCues, article, isCreatable] = await Promise.all([
         recordings.getSource(path),
         recordings.readTranscript(path),
+        recordings.readArticle(path),
         recordings.canCreateText(path),
       ])
       if (!mine.isLatest()) return
       playback.setSource(source)
+      pageUrl.value = source.pageUrl
       cues.value = transcriptCues
+      isArticle.value = transcriptCues.length === 0 && article !== ''
       canCreateText.value = isCreatable
-      draft.setText(getText(transcriptCues))
+      draft.setText(isArticle.value ? article : getText(transcriptCues))
       error.value = ''
     } catch (err) {
       if (!mine.isLatest()) return
@@ -121,7 +128,9 @@ export function useTranscript(
   }
 
   const isSettled = computed(() => !isLoading.value && !isWorking.value)
-  const isStartable = computed(() => isSettled.value && !lines.timed.value && canCreateText.value)
+  const isStartable = computed(
+    () => isSettled.value && !lines.timed.value && !isArticle.value && canCreateText.value,
+  )
 
   const createText = async () => {
     if (!isOpen) return
@@ -175,6 +184,8 @@ export function useTranscript(
     lines,
     content: {
       cues,
+      isArticle,
+      pageUrl,
       isWorking,
       isLoading,
       isEditable,

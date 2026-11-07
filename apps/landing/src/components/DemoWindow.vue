@@ -92,7 +92,7 @@ import RecordingTab from '@plugins/views-media-viewer/frontend/RecordingTab.vue'
 import { DEMO_COMMAND } from './demoCommands'
 import UrlTab from './url-tab/UrlTab.vue'
 import type { Cue } from '@plugins/views-media-viewer/frontend/lib/cues'
-import { createAudioPlayer } from '@plugins/views-media-viewer/frontend/model/player'
+import { createMediaPlayer } from '@plugins/views-media-viewer/frontend/model/player'
 import type { Recordings } from '@plugins/views-media-viewer/frontend/types'
 import DeckTab from '@plugins/views-flashcards-studio/frontend/deck/ui/DeckTab.vue'
 import { createMarks } from '@plugins/views-flashcards-studio/frontend/cards'
@@ -696,7 +696,7 @@ const youtubeCues = ref<Cue[]>([
   },
 ])
 
-const demoAudioPlayer = createAudioPlayer()
+const demoAudioPlayer = createMediaPlayer()
 
 function getCuesRefForPath(path: string) {
   return path === YOUTUBE_LINK_PATH ? youtubeCues : lectureCues
@@ -705,9 +705,10 @@ function getCuesRefForPath(path: string) {
 const demoRecordings: Recordings = {
   getSource: async (path) =>
     path === YOUTUBE_LINK_PATH
-      ? { mediaUrl: YOUTUBE_EMBED_URL, mediaType: 'text/html' }
-      : { mediaUrl: LECTURE_MEDIA_URL, mediaType: 'audio/mpeg' },
+      ? { mediaUrl: YOUTUBE_EMBED_URL, mediaType: 'text/html', pageUrl: '' }
+      : { mediaUrl: LECTURE_MEDIA_URL, mediaType: 'audio/mpeg', pageUrl: '' },
   readTranscript: async (path) => getCuesRefForPath(path).value,
+  readArticle: async () => '',
   writeTranscript: async (path, text) => {
     const targetCues = getCuesRefForPath(path)
     const paragraphs = text.split(/\n\n+/).filter(Boolean)

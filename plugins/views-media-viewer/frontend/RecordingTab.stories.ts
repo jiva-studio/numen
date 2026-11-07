@@ -41,8 +41,9 @@ const SPOKEN: readonly Cue[] = SAID.reduce<Cue[]>((cues, text) => {
 
 /** A recording that answers with these words, and whether a plugin creates its text. */
 const createRecordings = (cues: readonly Cue[], canCreateText: boolean): Recordings => ({
-  getSource: async () => ({ mediaUrl: MEDIA, mediaType: 'audio/mpeg' }),
+  getSource: async () => ({ mediaUrl: MEDIA, mediaType: 'audio/mpeg', pageUrl: '' }),
   readTranscript: async () => cues,
+  readArticle: async () => '',
   writeTranscript: async () => undefined,
   findCueTime: async () => null,
   canCreateText: async () => canCreateText,
@@ -66,6 +67,8 @@ const createPlayer = (isPlaying: boolean): Player => ({
   pause: () => undefined,
   seek: () => undefined,
   getDuration: async () => RUNS,
+  attach: () => undefined,
+  release: () => undefined,
 })
 
 const meta: Meta = {

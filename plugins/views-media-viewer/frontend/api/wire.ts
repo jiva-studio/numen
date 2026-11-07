@@ -1,14 +1,16 @@
 /**
  * Wire adapter for media, the creation of text and plugin tasks; the transcript is
- * read and edited through the plugin SDK.
+ * read and edited, and the properties of a note read, through the plugin SDK.
  */
 import {
   resolveAddress,
   type CommandsHost,
   type TaskHost,
+  type VaultNotes,
   type VaultTexts,
 } from '@numen/plugin-sdk'
 import type { Recordings } from '../types'
+import { createSources } from './sources'
 import { createTextCommand } from './text'
 import { createWorkWatcher } from './work'
 import { createTranscripts } from './transcripts'
@@ -28,6 +30,14 @@ export const bindTexts = (texts: VaultTexts | undefined): void => {
   vaultTexts = texts
 }
 
+/** The notes of the vault, as the plugin's context gave them when it was activated. */
+let vaultNotes: VaultNotes | undefined
+
+/** Keeps the notes the plugin's context gives, which the media of a note are read through. */
+export const bindNotes = (notes: VaultNotes | undefined): void => {
+  vaultNotes = notes
+}
+
 /** The commands of the window, as the plugin's context gave them when it was activated. */
 let commandsHost: CommandsHost | undefined
 
@@ -42,10 +52,7 @@ const work = createWorkWatcher(
 )
 
 export const recordings: Recordings = {
-  getSource: async (path) => {
-    const source = await resolveAddress(path)
-    return { mediaUrl: source.url, mediaType: source.mediaType }
-  },
+  ...createSources(() => vaultNotes, resolveAddress),
   ...createTranscripts(() => vaultTexts),
   ...createTextCommand(() => commandsHost),
   watchWork: (path, onChange) => work.watch(path, onChange),

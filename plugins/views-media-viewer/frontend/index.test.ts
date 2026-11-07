@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { AudioLines } from '@lucide/vue'
 import { createMockPluginContext } from '@numen/plugin-sdk'
-import plugin, { activate, MediaRecordingTab, RecordingTab, RECORDER } from './index'
+import plugin, { activate, MEDIA, MediaRecordingTab, RecordingTab, RECORDER } from './index'
 import { recordings } from './api/wire'
 
 describe('media-viewer plugin', () => {
@@ -24,6 +24,23 @@ describe('media-viewer plugin', () => {
       kind: 'recording',
       component: MediaRecordingTab,
       title: 'Record Audio',
+    })
+  })
+
+  it('registers the tab kind a note with media opens in, titled by the note', () => {
+    const context = createMockPluginContext({ pluginId: 'md.numen.views.media.viewer' })
+
+    activate(context)
+
+    const kind = context.getRegisteredTabKinds().find((one) => one.kind === MEDIA)
+    expect(MEDIA).toBe('media')
+    expect(kind?.component).toBe(RecordingTab)
+    const state = kind?.open?.('links/Tidal mills.md', 'tab')
+    expect(kind?.getTitle?.(state as never)).toBe('Tidal mills')
+    expect(kind?.getTarget?.(state as never)).toStrictEqual({
+      path: 'links/Tidal mills.md',
+      file: 'links/Tidal mills.md',
+      title: 'Tidal mills',
     })
   })
 

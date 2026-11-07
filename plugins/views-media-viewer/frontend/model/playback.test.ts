@@ -11,7 +11,7 @@ const TALK = 'http://127.0.0.1:1/token/v/talk.mp3'
 const OTHER = 'http://127.0.0.1:1/token/v/other.mp3'
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-const FILE: RecordingSource = { mediaUrl: TALK, mediaType: 'audio/mpeg' }
+const FILE: RecordingSource = { mediaUrl: TALK, mediaType: 'audio/mpeg', pageUrl: '' }
 
 /** The window's single player, with the calls made on it recorded. */
 const createPlayer = () => {
@@ -25,6 +25,8 @@ const createPlayer = () => {
   const pause = vi.fn<() => void>()
   const seek = vi.fn<(url: string, ms: number) => void>()
   const getDuration = vi.fn<(url: string) => Promise<number>>(async () => 0)
+  const attach = vi.fn<(container: HTMLElement) => void>()
+  const release = vi.fn<(container: HTMLElement) => void>()
   const audioPlayer: Player = {
     url,
     position,
@@ -36,6 +38,8 @@ const createPlayer = () => {
     pause,
     seek,
     getDuration,
+    attach,
+    release,
   }
   return {
     audioPlayer,

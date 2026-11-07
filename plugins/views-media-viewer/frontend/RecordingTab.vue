@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
- * A recording tab: the controls its sound is played by at the top of the pane, and under them the
- * transcript.
+ * A recording tab: the picture of a video or the page that frames a player, the controls its sound
+ * is played by, and under them the text: a transcript, captions or an article.
  *
- * Audio plays through the window's single player, so the controls only report the user's actions.
+ * Media plays through the window's single player, so the controls only report the user's actions.
  */
-import { onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import Player from './Player.vue'
+import VideoSurface from './VideoSurface.vue'
 import MediaLayout from './MediaLayout.vue'
 import { useTranscript, type TranscriptOptions } from './model/transcript'
 import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
@@ -28,7 +29,10 @@ const props = defineProps<{
 const targetPath = props.path || props.file || props.state?.path || props.state?.file || ''
 
 const tab = useTranscript(props.recordings, targetPath, props.how)
-const { now, runs, isPlaying, isUnplayable } = tab.playback
+const { now, runs, isPlaying, isUnplayable, isVideo, isLoaded, url } = tab.playback
+const { pageUrl } = tab.content
+/** Whether there is media to play: a note that names neither media nor a page draws no player. */
+const hasMedia = computed(() => url.value !== '' || !targetPath.toLowerCase().endsWith('.md'))
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
@@ -84,7 +88,18 @@ function onSeek(ms: number) {
 
 <template>
   <MediaLayout :state="tab">
-    <template #player>
+    <template #picture>
+      <iframe
+        v-if="pageUrl"
+        class="recording__page"
+        :src="pageUrl"
+        :title="words.page"
+        allow="fullscreen; picture-in-picture; encrypted-media"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+      />
+      <VideoSurface v-else-if="isVideo" :player="tab.playback.player" :is-shown="isLoaded" />
+    </template>
+    <template v-if="!pageUrl && hasMedia" #player>
       <Player
         v-if="!isUnplayable"
         class="recording__player"
@@ -105,6 +120,14 @@ function onSeek(ms: number) {
 .recording__player {
   flex: 1;
   min-inline-size: 0;
+}
+
+.recording__page {
+  flex: none;
+  inline-size: 100%;
+  aspect-ratio: 16 / 9;
+  max-block-size: 24rem;
+  border: 0;
 }
 
 .recording__note {

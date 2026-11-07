@@ -5,7 +5,7 @@
  * tests exercise it through a stand-in element.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createAudioPlayer, createMediaTypeProbe, type AudioFactory } from './player'
+import { createMediaPlayer, createMediaTypeProbe, type MediaFactory } from './player'
 import { WORDS } from '../words'
 
 const TALK = 'http://127.0.0.1:1/files/w/v/talk.mp3'
@@ -99,8 +99,8 @@ function createElement() {
 /** A player over a fake element, and that element. */
 const player = () => {
   const element = createElement()
-  const getElement: AudioFactory = () => element.element as unknown as HTMLAudioElement
-  return { plays: createAudioPlayer(getElement), ...element }
+  const getElement: MediaFactory = () => element.element as unknown as HTMLMediaElement
+  return { plays: createMediaPlayer(getElement), ...element }
 }
 
 describe('a recording loaded', () => {
@@ -353,9 +353,9 @@ describe('the element a window plays through', () => {
   it('is made once, and listened to once, however many recordings are opened', () => {
     let made = 0
     const element = createElement()
-    const plays = createAudioPlayer(() => {
+    const plays = createMediaPlayer(() => {
       made++
-      return element.element as unknown as HTMLAudioElement
+      return element.element as unknown as HTMLMediaElement
     })
 
     for (let index = 0; index < 100; index++)
@@ -367,7 +367,7 @@ describe('the element a window plays through', () => {
   })
 
   it('plays nothing and says so where the window has no element to give', () => {
-    const plays = createAudioPlayer(() => {
+    const plays = createMediaPlayer(() => {
       throw new Error('this window plays no sound')
     })
 
@@ -525,10 +525,10 @@ describe('the length of a recording that does not hold the player', () => {
   /** A player whose every element is kept, the first being the one it plays through. */
   const createPlayers = () => {
     const made: ReturnType<typeof createElement>[] = []
-    const plays = createAudioPlayer(() => {
+    const plays = createMediaPlayer(() => {
       const one = createElement()
       made.push(one)
-      return one.element as unknown as HTMLAudioElement
+      return one.element as unknown as HTMLMediaElement
     })
     return { plays, made }
   }
@@ -567,5 +567,29 @@ describe('the length of a recording that does not hold the player', () => {
     made[0]!.setError(4)
 
     await expect(length).resolves.toBe(0)
+  })
+})
+
+describe('a video shown in a tab', () => {
+  it('draws the element in the container that shows it, and keeps it in the page once released', () => {
+    const element = document.createElement('video')
+    const plays = createMediaPlayer(() => element)
+    const shown = document.createElement('div')
+    const other = document.createElement('div')
+    document.body.append(shown, other)
+
+    plays.load(TALK)
+    plays.attach(shown)
+    expect(element.parentElement).toBe(shown)
+
+    plays.release(other)
+    expect(element.parentElement).toBe(shown)
+
+    plays.release(shown)
+    expect(shown.contains(element)).toBe(false)
+    expect(element.isConnected).toBe(true)
+    expect(element.parentElement?.hidden).toBe(true)
+    shown.remove()
+    other.remove()
   })
 })

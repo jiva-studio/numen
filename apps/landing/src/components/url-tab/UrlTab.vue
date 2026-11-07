@@ -60,6 +60,8 @@ const framePlayer: Player = {
     player.value?.seek(framePosition.value)
   },
   getDuration: () => Promise.resolve(0),
+  attach: () => undefined,
+  release: () => undefined,
 }
 
 const tab = useTranscript(props.recordings, targetPath, {

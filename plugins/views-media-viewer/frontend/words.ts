@@ -1,6 +1,8 @@
-/** The strings of a recording tab: the player, the transcript, and the actions available on it. */
+/** The strings of a recording tab: the player, the text, and the actions available on it. */
 export const WORDS = {
   player: 'Recording',
+  /** The page that frames the player of a video. */
+  page: 'Video player',
   transcript: 'Transcript',
   /** The view scrolls to keep the current line visible. */
   follow: 'Follow',
@@ -13,7 +15,7 @@ export const WORDS = {
   /** A run is in progress, and more words arrive as they are transcribed. */
   transcribing: 'Transcribing…',
   /** This window cannot play this type of audio. */
-  unplayable: 'Audio playback not supported here.',
+  unplayable: 'Media playback not supported here.',
   /** The player stopped with no error code. */
   unreadable: 'Recording failed to play.',
   /** The user or the window stopped the loading. */

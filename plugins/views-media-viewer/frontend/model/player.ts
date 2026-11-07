@@ -1,6 +1,7 @@
 /**
- * The single audio output, backed by one element that belongs to no tab and is not
- * in the page, so a tab moved between panes keeps playing without a gap.
+ * The single media output, backed by one element that belongs to no tab. A tab showing a video
+ * draws the element and gives it back to a hidden holder in the page when it stops showing it; the
+ * element never leaves the page, so a tab moved between panes keeps playing without a gap.
  *
  * One recording plays at a time: starting a recording replaces the one playing.
  */
@@ -65,12 +66,20 @@ export interface Player {
    * own, so the recording that holds the player keeps it. Zero where it cannot be read.
    */
   getDuration(url: string): Promise<number>
+  /** Draws the element in the container, which shows the picture of a video. */
+  attach(container: HTMLElement): void
+  /** Moves the element from the container to the hidden holder; a container not holding it is left alone. */
+  release(container: HTMLElement): void
 }
 
-/** Creates the audio element. Tests substitute their own. */
-export type AudioFactory = () => HTMLAudioElement
+/** Creates the media element. Tests substitute their own. */
+export type MediaFactory = () => HTMLMediaElement
 
-const createAudioElement: AudioFactory = () => new Audio()
+const createVideoElement: MediaFactory = () => {
+  const video = doc.createElement('video')
+  video.playsInline = true
+  return video
+}
 
 /**
  * Reports the length of the element's recording in milliseconds, zero while it is unknown, each
@@ -81,7 +90,7 @@ const createAudioElement: AudioFactory = () => new Audio()
  * loadedmetadata, then sets the estimated length without another durationchange. The length is
  * read again at each of these, and polled while it is still unknown.
  */
-function watchDuration(audio: HTMLAudioElement, onDuration: (ms: number) => void): () => void {
+function watchDuration(audio: HTMLMediaElement, onDuration: (ms: number) => void): () => void {
   let poll: ReturnType<typeof setInterval> | undefined
   const stopPoll = () => {
     clearInterval(poll)
@@ -109,7 +118,7 @@ function watchDuration(audio: HTMLAudioElement, onDuration: (ms: number) => void
 }
 
 function bindAudioListeners(
-  audio: HTMLAudioElement,
+  audio: HTMLMediaElement,
   state: {
     position: Ref<number>
     duration: Ref<number>
@@ -144,18 +153,28 @@ function bindAudioListeners(
  * One sound, played through one element made when it is first wanted. The
  * element is never put in the page, so nothing that is drawn can take it away.
  */
-export function createAudioPlayer(create: AudioFactory = createAudioElement): Player {
+export function createMediaPlayer(create: MediaFactory = createVideoElement): Player {
   const url = ref('')
   const position = ref(0)
   const duration = ref(0)
   const isPlaying = ref(false)
   const error = ref('')
 
-  let element: HTMLAudioElement | null = null
+  let element: HTMLMediaElement | null = null
+  /** The hidden holder the element is kept in while no tab shows it, made when first needed. */
+  let holder: HTMLElement | null = null
 
-  const getElement = (): HTMLAudioElement | null => {
+  const getHolder = (): HTMLElement => {
+    if (holder) return holder
+    holder = doc.createElement('div')
+    holder.hidden = true
+    doc.body.append(holder)
+    return holder
+  }
+
+  const getElement = (): HTMLMediaElement | null => {
     if (element) return element
-    let audio: HTMLAudioElement
+    let audio: HTMLMediaElement
     try {
       audio = create()
     } catch {
@@ -169,7 +188,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
   }
 
   /** Put a recording in the player, and give the element it is in, or null where it is not there. */
-  const load = (next: string): HTMLAudioElement | null => {
+  const load = (next: string): HTMLMediaElement | null => {
     const audio = getElement()
     if (!audio || !next) return null
     if (url.value === next) return audio
@@ -187,7 +206,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
 
   const readLength = (next: string): Promise<number> =>
     new Promise((resolve) => {
-      let probe: HTMLAudioElement
+      let probe: HTMLMediaElement
       try {
         probe = create()
       } catch {
@@ -263,11 +282,20 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     },
 
     getDuration,
+
+    attach: (container) => {
+      const media = getElement()
+      if (media) container.append(media)
+    },
+
+    release: (container) => {
+      if (element && element.parentElement === container) getHolder().append(element)
+    },
   }
 }
 
-/** The one player this window has. Every recording is played through it. */
-export const player: Player = createAudioPlayer()
+/** The one player this window has. Every recording and video is played through it. */
+export const player: Player = createMediaPlayer()
 
 /** Reports whether a media type can be played. */
 export type MediaTypeProbe = (type: string) => boolean
@@ -276,7 +304,8 @@ export type MediaTypeProbe = (type: string) => boolean
 const probeWindow: MediaTypeProbe = (type) => {
   try {
     const mediaType = type === 'audio/vnd.wave' ? 'audio/wav' : type
-    return doc.createElement('audio').canPlayType(mediaType) !== ''
+    const kind = mediaType.startsWith('video/') ? 'video' : 'audio'
+    return doc.createElement(kind).canPlayType(mediaType) !== ''
   } catch {
     // A probe that throws counts as unsupported.
     return false

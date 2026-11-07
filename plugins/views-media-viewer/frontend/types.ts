@@ -1,10 +1,12 @@
 /** The requests a recording tab makes to the application, and their results. */
 import type { Cue } from './lib/cues'
 
-/** Where a recording is played from, and what it is played as. */
+/** Where a recording is played from and what it is played as, or the page that frames its player. */
 export interface RecordingSource {
   readonly mediaUrl: string
   readonly mediaType: string
+  /** Where the page that frames the player is loaded from, while there is no media; empty otherwise. */
+  readonly pageUrl: string
 }
 
 /** A run of the transcript's text, as the window counts it. */
@@ -19,6 +21,8 @@ export interface Recordings {
   getSource(path: string): Promise<RecordingSource>
   /** The words heard in the recording, in the order they were spoken. */
   readTranscript(path: string): Promise<readonly Cue[]>
+  /** The prose of a live text without times, such as an article, and empty otherwise. */
+  readArticle(path: string): Promise<string>
   /** The transcript as the user has edited it, saved against the recording. */
   writeTranscript(path: string, cues: readonly Cue[]): Promise<void>
   /** The millisecond a span of the words is played from, and null where no cue holds it. */

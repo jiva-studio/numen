@@ -1,17 +1,26 @@
 import { AudioLines } from '@lucide/vue'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, getFileStem, type PluginContext } from '@numen/plugin-sdk'
 import RecordingTab from './RecordingTab.vue'
 import MediaRecordingTab from './MediaRecordingTab.vue'
-import { bindCommands, bindTexts, refreshRecordings, setTaskHost } from './api/wire'
+import { bindCommands, bindNotes, bindTexts, refreshRecordings, setTaskHost } from './api/wire'
 
 export { RecordingTab, MediaRecordingTab }
 
 /** The tab kind in which a new recording is made. */
 export const RECORDER = 'recording'
 
+/** The tab kind a note with media opens in, as the manifest's when condition selects it. */
+export const MEDIA = 'media'
+
+/** What a note's tab holds: the path of the note. */
+interface MediaTabState {
+  readonly path: string
+}
+
 export function activate(context: PluginContext): void {
   setTaskHost(context.tasks)
   bindTexts(context.texts)
+  bindNotes(context.notes)
   bindCommands(context.commands)
   context.onVaultChange?.((event) => refreshRecordings(event.paths ?? []))
   context.registerReader({
@@ -26,6 +35,16 @@ export function activate(context: PluginContext): void {
     kind: RECORDER,
     component: MediaRecordingTab,
     title: 'Record Audio',
+  })
+
+  context.registerTabKind<MediaTabState>({
+    kind: MEDIA,
+    component: RecordingTab,
+    open: (path) => ({ path }),
+    getTitle: (state) => getFileStem(state.path),
+    identity: (path) => path,
+    getTarget: (state) => ({ path: state.path, file: state.path, title: getFileStem(state.path) }),
+    getOpenTab: (state) => ({ path: state.path }),
   })
 
   context.registerCommand({

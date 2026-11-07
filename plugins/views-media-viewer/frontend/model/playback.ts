@@ -36,6 +36,8 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
   const isPlayable = computed(() => url.value !== '' && plays(type.value))
   /** True once the source is known and its address or media type cannot play in this window. */
   const isUnplayable = computed(() => isSourceRead.value && !isPlayable.value)
+  /** Whether the source is a video, whose picture the tab draws while it holds the player. */
+  const isVideo = computed(() => type.value.startsWith('video/'))
 
   const go = (ms: number) => {
     if (!isOpen()) return
@@ -82,7 +84,10 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
   }
 
   return {
+    player: audioPlayer,
     url,
+    isLoaded,
+    isVideo,
     runs,
     now,
     isPlaying,

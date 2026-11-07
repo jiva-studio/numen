@@ -19,6 +19,8 @@ export function createRecordings(cues: readonly Cue[] = CUES, canCreateText = fa
   const state = {
     cues,
     canCreateText,
+    /** The prose of a live text without times, and empty where the live text has times. */
+    article: '',
     reads: 0,
     writes: [] as (readonly Cue[])[],
     textRuns: 0,
@@ -29,12 +31,13 @@ export function createRecordings(cues: readonly Cue[] = CUES, canCreateText = fa
     isWatched: false,
   }
   const recordings: Recordings = {
-    getSource: async () => ({ mediaUrl: TALK_URL, mediaType: 'audio/mpeg' }),
+    getSource: async () => ({ mediaUrl: TALK_URL, mediaType: 'audio/mpeg', pageUrl: '' }),
     readTranscript: async () => {
       state.reads++
       if (state.readError) throw state.readError
       return state.cues
     },
+    readArticle: async () => state.article,
     writeTranscript: async (_, next) => {
       state.writes.push(next)
     },
@@ -65,6 +68,9 @@ export function createPlayer() {
   const url = ref('')
   const position = ref(0)
   const seeks: [string, number][] = []
+  /** The containers the element was drawn in, in order, and released from. */
+  const shown: HTMLElement[] = []
+  const released: HTMLElement[] = []
   const player: Player = {
     url,
     position,
@@ -84,8 +90,14 @@ export function createPlayer() {
       seeks.push([next, ms])
     },
     getDuration: async () => 0,
+    attach: (container) => {
+      shown.push(container)
+    },
+    release: (container) => {
+      released.push(container)
+    },
   }
-  return { player, seeks }
+  return { player, seeks, shown, released }
 }
 
 /** Resolves once every pending request has been answered. */

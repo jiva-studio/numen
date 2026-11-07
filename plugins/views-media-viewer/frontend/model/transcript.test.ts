@@ -49,6 +49,20 @@ describe('a recording firstRead', () => {
   })
 })
 
+describe('a live text without times', () => {
+  it('shows as prose without times, is not edited, and offers no Transcribe', async () => {
+    const setup = createRecordings([], true)
+    setup.state.article = 'A tidal mill stored seawater.\nIt turned at the ebb.'
+    const { tab } = open(setup)
+    await tab.content.firstRead
+
+    expect(tab.draft.prose.value).toBe('A tidal mill stored seawater.\nIt turned at the ebb.')
+    expect(tab.lines.timed.value).toBe(false)
+    expect(tab.content.isEditable.value).toBe(false)
+    expect(tab.options.isStartable.value).toBe(false)
+  })
+})
+
 describe('creating the text of a recording', () => {
   it('is offered where nothing was heard and a plugin creates the text of the file', async () => {
     const { tab } = open(createRecordings([], true))
