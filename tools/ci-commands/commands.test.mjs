@@ -40,6 +40,7 @@ test('a plugin is read with its settings, declared and registered commands', () 
           version: '1.0.0',
           targets: ['desktop.editor'],
           frontend: { entrypoint: 'dist/index.js' },
+          backend: { entrypoint: 'bin/tools-lantern' },
           settings: [{ title: 'Glow', palette: true }, { title: 'Hidden' }],
           contributes: {
             commands: [
@@ -98,6 +99,7 @@ test('a plugin is read with its settings, declared and registered commands', () 
             },
             { id: 'wick.trim', text: 'Trim the wick', group: 'note' },
           ],
+          handled: ['app:file.createText'],
         },
       ])
     },

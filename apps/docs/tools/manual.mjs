@@ -37,6 +37,11 @@ const GO = new URL('../../../libs/core/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
 
+/** The shared commands of the application, which plugins handle. */
+const SHARED = JSON.parse(
+  await readFile(new URL('../../../libs/protocol/commands.json', import.meta.url), 'utf8'),
+)
+
 /**
  * Where a written block begins and ends. A page carrying a picture is MDX, and
  * MDX has no HTML comment: what looks like one is markup it tries to read.
@@ -229,6 +234,21 @@ const checkSettingCommands = async () => {
   }
 }
 
+/**
+ * The shared commands a plugin handles, in the order libs/protocol/commands.json lists them: over
+ * the note where the command declares no required argument, and over the window where it asks for
+ * one, as the window's sharedCommands.ts files them.
+ */
+const getSharedRows = (plugins) => {
+  const handled = new Set(plugins.flatMap((one) => one.handled))
+  return SHARED.commands
+    .filter((one) => handled.has(one.id))
+    .map((one) => ({
+      text: one.title,
+      group: (one.arguments ?? []).some((argument) => argument.required) ? 'window' : 'note',
+    }))
+}
+
 /** Every command the palette offers, in the order it draws them. */
 const commands = async () => {
   const words = await read(UI, 'words.ts')
@@ -271,6 +291,7 @@ const commands = async () => {
         key: chord ? chordOf(chord) : '',
       })),
     ),
+    ...getSharedRows(plugins),
   ].map((row) => ({ key: '', ...row }))
 
   const groups = [
