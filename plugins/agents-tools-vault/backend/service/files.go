@@ -72,8 +72,8 @@ func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput,
 
 // FileCreateInput is the input of the file_create tool.
 type FileCreateInput struct {
-	Path string  `json:"path" jsonschema:"the file's path relative to the vault root"`
-	Text *string `json:"text,omitempty" jsonschema:"raw content to write to the new file"`
+	Path string `json:"path" jsonschema:"the file's path relative to the vault root"`
+	Text string `json:"text" jsonschema:"raw content to write to the new file"`
 }
 
 // FileCreateOutput is the output of the file_create tool.
@@ -98,10 +98,7 @@ func (t *Tools) createFile(ctx context.Context, in FileCreateInput) (FileCreateO
 		return FileCreateOutput{}, errors.New("path is required")
 	}
 
-	if in.Text == nil {
-		return FileCreateOutput{}, errors.New("text is required")
-	}
-	data := []byte(*in.Text)
+	data := []byte(in.Text)
 	if err := t.vault.Create(ctx, in.Path, data); err != nil {
 		return FileCreateOutput{}, fmt.Errorf("%s cannot be created: %w", in.Path, err)
 	}
