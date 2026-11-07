@@ -1,5 +1,11 @@
 import { test, expect, type Page } from '../support/test.js'
-import { getPaletteField, openWorkspace, runCommand, waitForPassage } from '../support/workspace.js'
+import {
+  getPaletteField,
+  openWorkspace,
+  runCommand,
+  runCommandOverItem,
+  waitForPassage,
+} from '../support/workspace.js'
 
 /** Served by the proxy `scripts/start-server.mjs` puts in front of every plain-http fetch. */
 const ARTICLE_ADDRESS = 'http://tidal-mills.numen.test/history/rance'
@@ -29,16 +35,32 @@ const readOpenPaths = async (page: Page): Promise<string[]> => {
   return (open.tabs ?? []).map((tab) => tab.path ?? '')
 }
 
-const importAddress = async (page: Page, address: string): Promise<void> => {
+/**
+ * Imports the address, which makes its link note alone, and waits for the note's tab, named `tab`,
+ * in front.
+ */
+const importAddress = async (page: Page, address: string, tab: RegExp): Promise<void> => {
   await runCommand(page, 'Import link', /^Import link/)
   await getPaletteField(page).fill(address)
   await page.keyboard.press('Enter')
+  await expect(page.getByRole('tab', { name: tab, selected: true })).toBeVisible({
+    timeout: 30_000,
+  })
 }
+
+/** Fetches the text of the link note in front: the article of a page, the captions of a video. */
+const downloadText = (page: Page): Promise<void> =>
+  runCommand(page, 'Download captions', /^Download captions$/)
+
+/** Downloads the video of the link note in front. */
+const downloadVideo = (page: Page): Promise<void> =>
+  runCommandOverItem(page, 'Download media', /^Download media$/, /^Video$/)
 
 test.describe('A link', () => {
   test('to a page shows the article fetched from it, and the search finds it', async ({ page }) => {
     await openWorkspace(page)
-    await importAddress(page, ARTICLE_ADDRESS)
+    await importAddress(page, ARTICLE_ADDRESS, /rance(?!-part)/)
+    await downloadText(page)
 
     await expect(page.getByRole('tabpanel').getByText(ARTICLE_TEXT)).toBeVisible({
       timeout: 30_000,
@@ -50,7 +72,8 @@ test.describe('A link', () => {
 
   test('keeps its article deleted once the person deletes it', async ({ page }) => {
     await openWorkspace(page)
-    await importAddress(page, `${ARTICLE_ADDRESS}?part=2`)
+    await importAddress(page, `${ARTICLE_ADDRESS}?part=2`, /rance-part=2/)
+    await downloadText(page)
     const tab = page.getByRole('tabpanel', { name: /rance-part=2/ })
     await expect(tab.getByText(ARTICLE_TEXT)).toBeVisible({ timeout: 30_000 })
 
@@ -64,7 +87,9 @@ test.describe('A link', () => {
 
   test('to a video keeps a copy that plays', async ({ page }) => {
     await openWorkspace(page)
-    await importAddress(page, VIDEO_ADDRESS)
+    await importAddress(page, VIDEO_ADDRESS, /tidalmill01/)
+    await downloadText(page)
+    await downloadVideo(page)
 
     const tab = page
       .getByRole('tabpanel')
@@ -80,7 +105,9 @@ test.describe('A link', () => {
   test('to a video opens from the files tab with its copy and its captions', async ({ page }) => {
     test.setTimeout(120_000)
     await openWorkspace(page)
-    await importAddress(page, SECOND_VIDEO_ADDRESS)
+    await importAddress(page, SECOND_VIDEO_ADDRESS, /tidalmill02/)
+    await downloadText(page)
+    await downloadVideo(page)
     const caption = 'The mill pond fills behind the gate.'
     const imported = page.getByRole('tabpanel').filter({ hasText: caption })
     await expect(imported.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
