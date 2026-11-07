@@ -157,6 +157,24 @@ describe('a shared command in the palette', () => {
     expect(removeEmptyCommands([shared])[0]?.text).toBe('Delete text')
   })
 
+  it('that asks for its arguments keeps its steps where one handler holds', async () => {
+    const IMPORT = 'app:link.import'
+    const { removeEmptyCommands } = setUp({
+      [IMPORT]: [{ id: 'md.numen.tools.media.importer', title: 'Import link' }],
+    })
+    const shared: Command = {
+      ...createCommand(IMPORT),
+      text: 'Import link',
+      input: 'arguments',
+      prompts: [{ name: 'address', title: 'Address', isRequired: true }],
+    }
+
+    removeEmptyCommands([shared])
+    await settle()
+
+    expect(removeEmptyCommands([shared])[0]?.input).toBe('arguments')
+  })
+
   it('is the only kind of command a single item renames', async () => {
     const { removeEmptyCommands } = setUp({ 'tab.move': [{ id: 'w1', title: 'Window 1' }] })
 

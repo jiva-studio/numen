@@ -123,8 +123,9 @@ export function createItemLists(pluginHost: ItemHost, parts: PaletteParts) {
   /**
    * The commands without those that list no item over the target of the palette while it is open, as
    * VS Code shows no empty submenu. The items of each available command with items are read for it.
-   * A shared command with one handler over the target is listed by the title of that handler, and
-   * runs it with no pick, as the menus draw it.
+   * A shared command whose handlers are its pick list, with one handler over the target, is listed by
+   * the title of that handler and runs it with no pick, as the menus draw it; one that asks for its
+   * arguments keeps its steps.
    */
   const removeEmptyCommands = (commands: readonly Command[]): readonly Command[] => {
     if (!paletteOpen?.value) return commands
@@ -137,7 +138,9 @@ export function createItemLists(pluginHost: ItemHost, parts: PaletteParts) {
           !items.isEmpty(one.id),
       )
       .map((one) => {
-        if (!isSharedCommand(one.id) || !one.isAvailable(target, runs)) return one
+        if (!isSharedCommand(one.id) || one.input !== 'items' || !one.isAvailable(target, runs)) {
+          return one
+        }
         const handler = findOnlyHandler(items.getRead(one.id))
         if (!handler) return one
         const { input: _input, ...rest } = one
