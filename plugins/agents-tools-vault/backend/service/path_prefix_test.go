@@ -43,7 +43,7 @@ func TestLibrarySearchSendsEveryFolderPrefixFormWithASlash(t *testing.T) {
 	}
 }
 
-func TestLibrarySearchSendsADecomposedPrefixComposed(t *testing.T) {
+func TestLibrarySearchSendsADecomposedPrefixDecomposedAndFindsTheComposedShelf(t *testing.T) {
 	calls, registry := newRecordedSearch(t, hosttest.New(testVault), shelfPassages())
 
 	var out librarySearchAnswer
@@ -51,8 +51,8 @@ func TestLibrarySearchSendsADecomposedPrefixComposed(t *testing.T) {
 		t.Fatal(failure)
 	}
 	queries := calls.getQueries()
-	if len(queries) != 1 || queries[0].PathPrefix != shelfNFC+"/" {
-		t.Errorf("the decomposed prefix was sent to the host as %+v, want %q", queries, shelfNFC+"/")
+	if len(queries) != 1 || queries[0].PathPrefix != shelfNFD+"/" {
+		t.Errorf("the decomposed prefix was sent to the host as %+v, want %q", queries, shelfNFD+"/")
 	}
 	if got := getMatchPaths(out); !slices.Equal(got, []string{shelfNFC + "/Teebuch.pdf"}) {
 		t.Errorf("the decomposed prefix found %v, want the book of the shelf", got)
@@ -113,5 +113,20 @@ func TestNoteListFindsAComposedFolderGivenDecomposed(t *testing.T) {
 	}
 	if got := getPaths(out.Notes); !slices.Equal(got, []string{shelfNFC + "/Lied.md"}) {
 		t.Errorf("note_list of the decomposed folder listed %v, want the note of the shelf", got)
+	}
+}
+
+func TestNoteListFindsADecomposedFolderGivenComposed(t *testing.T) {
+	v := hosttest.New(testVault)
+	v.File(shelfNFD+"/Lied.md", "---\ntitle: Lied\n---\nA song.")
+	v.File("notes/Tea.md", "---\ntitle: Tea\n---\nGreen tea.")
+	_, registry := newRecordedSearch(t, v, nil)
+
+	var out noteListOutput
+	if failure := callFailure(t, registry, testVault, "note_list", `{"folder":"`+shelfNFC+`"}`, &out); failure != "" {
+		t.Fatal(failure)
+	}
+	if got := getPaths(out.Notes); !slices.Equal(got, []string{shelfNFD + "/Lied.md"}) {
+		t.Errorf("note_list of the composed folder listed %v, want the decomposed note of the shelf", got)
 	}
 }

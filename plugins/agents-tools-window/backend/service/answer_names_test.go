@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http/httptest"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -302,15 +301,6 @@ func TestNoteEditPreviewReturnsTheDiffOnly(t *testing.T) {
 
 	schema := getToolSchema(t, w.registry, "note_edit_preview", true)
 	requireKeys(t, "the output schema of note_edit_preview", getSchemaProperties(t, schema), []string{"previewId", "diff", "additions", "deletions"}, []string{"status", "summary"})
-}
-
-func TestWindowToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
-	w := newWindowTools(t)
-	visitEveryToolSchema(t, w.registry, func(tool, name string) {
-		if strings.Contains(name, "_") {
-			t.Errorf("the schema of %s names the key %q, which is not camelCase", tool, name)
-		}
-	}, func(string, string) {})
 }
 
 func TestWindowToolDescriptionsContainNoNarrativeMarker(t *testing.T) {

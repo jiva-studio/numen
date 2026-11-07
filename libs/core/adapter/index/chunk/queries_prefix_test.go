@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -122,6 +123,49 @@ func TestFindNearestWithinPathPrefixFindsAPathThatIsNotUTF8(t *testing.T) {
 		}
 		if sources := slices.Compact(getSources(got)); !slices.Equal(sources, []string{want}) {
 			t.Errorf("under %q the passages are of %q, want only %q", prefix, sources, want)
+		}
+	}
+}
+
+// The two forms of the invented shelf "Bücher": ü as one character (NFC), and as u followed by a
+// combining diaeresis (NFD), as some file systems store it.
+const (
+	shelfComposed   = "Bücher"
+	shelfDecomposed = "Bücher"
+)
+
+// openShelfIndex is an index of two invented sources, the tea book of the shelf in the folder form
+// given and library/Tea.md, each with a section named Tea and an embedding.
+func openShelfIndex(t *testing.T, shelf string) (*index.DB, string) {
+	t.Helper()
+	db := openIndex(t)
+	book := shelf + "/Teebuch.md"
+	for _, path := range []string{book, "library/Tea.md"} {
+		source{path: path, kind: "note", hash: "h-" + path, large: "tea", opens: []string{"Tea"}, smalls: []string{"tea"}}.save(t, db)
+		embed(t, db, vaultA, path, 0xF0)
+	}
+	return db, book
+}
+
+func TestAPathPrefixMatchesTheFolderInEitherNormalForm(t *testing.T) {
+	for _, stored := range []string{shelfDecomposed, shelfComposed} {
+		db, book := openShelfIndex(t, stored)
+		queries := db.ChunkQueries()
+		for _, prefix := range []string{shelfComposed + "/", shelfDecomposed + "/"} {
+			lexical, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "tea", Limit: 10, PathPrefix: prefix})
+			if err != nil || !slices.Equal(slices.Compact(getSources(lexical)), []string{book}) {
+				t.Errorf("stored %+q, prefix %+q: FindLexical found %+q, %v, want only %+q", stored, prefix, getSources(lexical), err, book)
+			}
+			named, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "tea", Limit: 10, PathPrefix: prefix})
+			if err != nil || !slices.Equal(slices.Compact(getSources(named)), []string{book}) {
+				t.Errorf("stored %+q, prefix %+q: GetNamedPassages found %+q, %v, want only %+q", stored, prefix, getSources(named), err, book)
+			}
+			nearest, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{
+				Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1, PathPrefix: prefix,
+			})
+			if err != nil || !slices.Equal(slices.Compact(getSources(nearest)), []string{book}) {
+				t.Errorf("stored %+q, prefix %+q: FindNearest found %+q, %v, want only %+q", stored, prefix, getSources(nearest), err, book)
+			}
 		}
 	}
 }

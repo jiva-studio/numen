@@ -51,6 +51,22 @@ func TestTheSearchAppliesThePathPrefixBeforeTheLimitAndTheKinds(t *testing.T) {
 	}
 }
 
+func TestTheSearchMatchesThePathPrefixInEitherNormalForm(t *testing.T) {
+	composed, decomposed := "B\u00fccher", "Bu\u0308cher"
+	search := newSearch()
+	search.SetIndexedPassages([]host.Passage{
+		{Path: composed + "/Teebuch.pdf", Text: "black tea from the hills", Start: 0, Length: 24},
+		{Path: decomposed + "/Kaffee.pdf", Text: "dark tea and coffee", Start: 0, Length: 19},
+		{Path: "library/Tea.pdf", Text: "green tea leaves", Start: 0, Length: 16},
+	})
+
+	for _, prefix := range []string{composed + "/", decomposed + "/"} {
+		got, err := search.SearchPassages(t.Context(), host.PassageQuery{Query: "tea", PathPrefix: prefix})
+		if err != nil || len(got) != 2 || got[0].Path != composed+"/Teebuch.pdf" || got[1].Path != decomposed+"/Kaffee.pdf" {
+			t.Errorf("the passages under %+q are %+v, %v, want the two of the shelf", prefix, got, err)
+		}
+	}
+}
 func TestSearchPassagesNeedsPermissionAndVaultButNoModel(t *testing.T) {
 	search := hosttest.NewSearch("physics")
 	search.SetIndexedPassages(getIndexedPassages())

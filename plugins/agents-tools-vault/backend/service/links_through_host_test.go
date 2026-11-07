@@ -212,6 +212,32 @@ func TestLinkAddRejectsAnUnknownRoleBeforeCallingTheHost(t *testing.T) {
 	}
 }
 
+func TestLinkAddSendsAnEmptyFromOrToToTheHostAndReturnsItsErrors(t *testing.T) {
+	v, calls, registry := newLinkHostVault(t)
+	basalt := readFingerprint(t, registry, "Rocks/Basalt.md")
+	before, _ := v.Content("Rocks/Basalt.md")
+
+	arguments := fmt.Sprintf(`{"links":[
+		{"from":"","fingerprint":%q,"to":"Fossils","role":"jump"},
+		{"from":"Rocks/Basalt.md","fingerprint":%q,"to":"","role":"jump"}]}`, basalt, basalt)
+	var out linkAddOutput
+	decodeInto(t, callTool(t, registry, geologyVault, "link_add", arguments), &out)
+
+	if len(calls.additions) != 1 || len(calls.additions[0]) != 2 {
+		t.Fatalf("the host received the additions %+v, want one call with both links", calls.additions)
+	}
+	if len(out.Results) != 2 {
+		t.Fatalf("results = %+v, want 2", out.Results)
+	}
+	if want := "the path is outside the vault: it is empty"; !strings.Contains(out.Results[0].Error, want) {
+		t.Errorf("result of the empty from = %+v, want the host's error %q", out.Results[0], want)
+	}
+	if want := "a link needs somewhere to go"; !strings.Contains(out.Results[1].Error, want) {
+		t.Errorf("result of the empty to = %+v, want the host's error %q", out.Results[1], want)
+	}
+	requireContent(t, v, "Rocks/Basalt.md", before)
+}
+
 func TestLinkUpdateSendsTheChangeToTheHostAndWritesNoFile(t *testing.T) {
 	v, calls, registry := newLinkHostVault(t)
 	stat := statOf(t, v, "Rocks/Basalt.md")

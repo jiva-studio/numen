@@ -12,6 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/usecase/note"
+
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -285,4 +287,73 @@ func TestRemovalTrashedBeforeCancelReturnsThatNoteAsRemoved(t *testing.T) {
 	requireRemoved(t, removals[0], "Danube.md")
 	requireRemoved(t, removals[1], "Rivers/Rhine.md")
 	requireNotAttemptedRemoval(t, removals[2], "Deltas.md")
+}
+
+// cancellingLinkVault is the linking vault that writes the links of the first note of a call,
+// cancels the call, and returns note.ErrNotAttempted for the links of every later note, as the
+// core vault does.
+type cancellingLinkVault struct {
+	*linkingVault
+	cancel context.CancelFunc
+}
+
+func (c *cancellingLinkVault) AddLinks(ctx context.Context, additions []pluginport.PluginLinkAddition) ([]pluginport.PluginLinkAdded, error) {
+	first := additions[0].From
+	var written []pluginport.PluginLinkAddition
+	for _, one := range additions {
+		if one.From == first {
+			written = append(written, one)
+		}
+	}
+	added, err := c.linkingVault.AddLinks(ctx, written)
+	if err != nil {
+		return nil, err
+	}
+	c.cancel()
+	out := make([]pluginport.PluginLinkAdded, len(additions))
+	next := 0
+	for i, one := range additions {
+		if one.From == first {
+			out[i] = added[next]
+			next++
+			continue
+		}
+		out[i] = pluginport.PluginLinkAdded{
+			Err: fmt.Errorf("the call was cancelled before the links were added to %s: %w", one.From, note.ErrNotAttempted),
+		}
+	}
+	return out, nil
+}
+
+func TestAddLinksCancelledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	t.Cleanup(cancel)
+	vault := &cancellingLinkVault{linkingVault: newLinkingVault(), cancel: cancel}
+	hostCallers := newCallers(nil)
+	hostCallers.vault = vault
+	endpoint := newVaultEndpoint(&Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}})
+	batch := getCancelledBatch()
+	links := make([]*v1.HostLinkAddition, len(batch))
+	for i, from := range batch {
+		links[i] = &v1.HostLinkAddition{From: from, Baseline: vault.readBaseline(t, from), To: "Estuary", Role: v1.Role_ROLE_REF}
+	}
+
+	res, err := endpoint.AddLinks(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: links})))
+	if err != nil {
+		t.Fatalf("the cancelled link addition failed as a whole: %v", err)
+	}
+
+	results := res.Msg.GetResults()
+	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED || len(results) != 3 {
+		t.Fatalf("AddLinks returned error %v with %d results, want no call error and 3 results", res.Msg.GetError(), len(results))
+	}
+	if r := results[0]; r.GetError() != 0 || r.GetDetail() != "" || r.GetStat().GetPath() != "Danube.md" || r.GetStat().GetSize() == 0 {
+		t.Errorf("result 0 is %v, want the file stat of Danube.md after the write and no error", r)
+	}
+	for i, from := range batch[1:] {
+		want := "the call was cancelled before the links were added to " + from + ": " + note.ErrNotAttempted.Error()
+		if r := results[i+1]; r.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED || r.GetStat() != nil || r.GetDetail() != want {
+			t.Errorf("result %d is %v, want NOT_ATTEMPTED with the detail %q and no file stat", i+1, r, want)
+		}
+	}
 }

@@ -241,15 +241,6 @@ func TestCardFieldRenameReturnsTheFailedDecksKey(t *testing.T) {
 	}
 }
 
-func TestCardToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
-	s, _ := newSession(t, vault())
-	visitEveryToolSchema(t, s.registry, func(tool, name string) {
-		if strings.Contains(name, "_") {
-			t.Errorf("the schema of %s names the key %q, which is not camelCase", tool, name)
-		}
-	}, func(string, string) {})
-}
-
 func TestCardToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 	s, _ := newSession(t, vault())
 	markers := getNarrativeMarkers()

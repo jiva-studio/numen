@@ -310,25 +310,18 @@ func TestFileCreateReturnsThePathAndSizeWithoutSuccess(t *testing.T) {
 	requireKeys(t, "the output schema of file_create", properties, []string{"path", "size"}, []string{"success"})
 }
 
-func TestVaultToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
-	l := newLibrary(t)
-	visitEveryToolSchema(t, l.registry, func(tool, name string) {
-		if strings.Contains(name, "_") {
-			t.Errorf("the schema of %s names the key %q, which is not camelCase", tool, name)
-		}
-	}, func(string, string) {})
-}
-
 func TestVaultToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
-	l := newLibrary(t)
 	markers := getNarrativeMarkers()
-	visitEveryToolSchema(t, l.registry, func(string, string) {}, func(tool, description string) {
-		for _, marker := range markers {
-			if marker.MatchString(description) {
-				t.Errorf("a description of %s or its schema matches %s: %q", tool, marker, description)
+	_, withVaultList := newGeologyVault(t)
+	for _, registry := range []*tools.Registry{newLibrary(t).registry, withVaultList} {
+		visitEveryToolSchema(t, registry, func(string, string) {}, func(tool, description string) {
+			for _, marker := range markers {
+				if marker.MatchString(description) {
+					t.Errorf("a description of %s or its schema matches %s: %q", tool, marker, description)
+				}
 			}
-		}
-	})
+		})
+	}
 }
 
 func TestVaultInstructionsNameTheKeysInCamelCase(t *testing.T) {

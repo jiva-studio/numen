@@ -493,10 +493,14 @@ func TestVaultProblemListRunsTheDanglingCheckOnlyWhenNamed(t *testing.T) {
 	}
 }
 
-func TestVaultProblemListRejectsAnUnknownCheckName(t *testing.T) {
+func TestVaultProblemListOfAnUnknownCheckNameReturnsTheHostError(t *testing.T) {
 	_, registry := newSkyVault(t)
-	requireRejection(t, registry, skyVault, "vault_problem_list", `{"checks":["spelling"]}`)
-	requireRejection(t, registry, skyVault, "vault_problem_list", `{"checks":["parse","spelling"]}`)
+	want := `"spelling" is not a check; the checks are parse, frontmatter, ambiguous, dangling`
+	for _, arguments := range []string{`{"checks":["spelling"]}`, `{"checks":["parse","spelling"]}`} {
+		if text := getRejectionText(t, registry, skyVault, "vault_problem_list", arguments); !strings.Contains(text, want) {
+			t.Errorf("vault_problem_list %s gave %q, want the host's error %q", arguments, text, want)
+		}
+	}
 }
 
 // getArrangeToolNames returns the note_list group: the tools that list, title and resolve notes, list vaults and check problems.

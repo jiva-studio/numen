@@ -287,9 +287,68 @@ func TestLibraryReadOfAPageReturnsItsLocationsViaATextRange(t *testing.T) {
 		t.Errorf("locations %+v, want the one page, its two segments joined", out.Locations)
 	}
 	if out.NextStart == nil || *out.NextStart != len(pageOne)+len(pageTwo) {
-		t.Errorf("next %v, want the end of the page", out.NextStart)
+		t.Fatalf("next %v, want the end of the page", out.NextStart)
 	}
 	if len(counted.ranges) != 1 || counted.ranges[0].Start != len(pageOne) {
 		t.Errorf("the host received the text ranges %+v, want one from the start of page 2", counted.ranges)
+	}
+
+	var rest libraryReadAnswer
+	if failure := callFailure(t, registry, testVault, "library_read", `{"path":"`+guidePath+`","start":`+strconv.Itoa(*out.NextStart)+`}`, &rest); failure != "" {
+		t.Fatal(failure)
+	}
+	if rest.Text != pageThree || rest.NextStart != nil || len(rest.Locations) != 1 || rest.Locations[0].Page != 3 {
+		t.Errorf("the continuation is %+v, want page 3 and no next", rest)
+	}
+}
+
+// repeatingTexts is the texts of the host that return the first page of every version again for
+// the cursor of the page after it.
+type repeatingTexts struct {
+	host.Texts
+}
+
+func (r repeatingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
+	page, err := r.Texts.ReadText(ctx, path, id, "")
+	if err != nil {
+		return host.TextPage{}, err
+	}
+	if len(page.Segments) > 1 {
+		page.Segments = page.Segments[:1]
+	}
+	page.NextCursor = "1"
+	return page, nil
+}
+
+func TestLibraryReadOfAPageStartingOnTheSecondHostPageReturnsThatPage(t *testing.T) {
+	l := newLibrary(t)
+	l.texts.SetPageSize(2)
+	registry, err := service.New(l.vault).WithLibrary(l.texts, l.search).Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out libraryReadAnswer
+	if failure := callFailure(t, registry, testVault, "library_read", `{"path":"`+guidePath+`","page":3}`, &out); failure != "" {
+		t.Fatal(failure)
+	}
+	if out.Text != pageThree || out.Start != len(pageOne)+len(pageTwo) || out.Length != len(pageThree) || out.NextStart != nil {
+		t.Errorf("page 3 is %q at %d for %d next %v, want %q at %d and no next", out.Text, out.Start, out.Length, out.NextStart, pageThree, len(pageOne)+len(pageTwo))
+	}
+	if len(out.Locations) != 1 || out.Locations[0].Page != 3 {
+		t.Errorf("locations %+v, want page 3", out.Locations)
+	}
+}
+
+func TestLibraryReadOfAPageFailsWhenTheHostReturnsTheSameCursorTwice(t *testing.T) {
+	l := newLibrary(t)
+	registry, err := service.New(l.vault).WithLibrary(repeatingTexts{Texts: l.texts}, l.search).Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	failure := callFailure(t, registry, testVault, "library_read", `{"path":"`+guidePath+`","page":3}`, nil)
+	if want := `returned the page at "1" twice`; !strings.Contains(failure, want) {
+		t.Errorf("library_read over a host that repeats the cursor 1 gave %q, want it to contain %q", failure, want)
 	}
 }

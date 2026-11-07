@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/url"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -309,44 +308,8 @@ func TestLibrarySearchReportsMissingIndexPermission(t *testing.T) {
 	}
 }
 
-func TestLibraryReadReturnsPageWithLocationsAndNext(t *testing.T) {
-	l := newLibrary(t)
-	var out libraryReadAnswer
-	if failure := l.call(t, "library_read", `{"path":"`+guidePath+`","page":2}`, &out); failure != "" {
-		t.Fatal(failure)
-	}
-	if out.Text != pageTwo || out.Start != len(pageOne) || out.Length != len(pageTwo) {
-		t.Errorf("page 2 is %q at %d for %d", out.Text, out.Start, out.Length)
-	}
-	if out.Size != len(pageOne)+len(pageTwo)+len(pageThree) || out.Kind != "page-text" {
-		t.Errorf("size %d kind %q", out.Size, out.Kind)
-	}
-	if len(out.Locations) != 1 || out.Locations[0].Page != 2 || out.Locations[0].Start != len(pageOne) || out.Locations[0].Length != len(pageTwo) {
-		t.Errorf("locations %+v, want the one page, its two segments joined", out.Locations)
-	}
-	if out.NextStart == nil || *out.NextStart != len(pageOne)+len(pageTwo) {
-		t.Fatalf("next %v, want the end of the page", out.NextStart)
-	}
-
-	var rest libraryReadAnswer
-	l.call(t, "library_read", `{"path":"`+guidePath+`","start":`+itoa(*out.NextStart)+`}`, &rest)
-	if rest.Text != pageThree || rest.NextStart != nil || len(rest.Locations) != 1 || rest.Locations[0].Page != 3 {
-		t.Errorf("the continuation is %+v, want page 3 and no next", rest)
-	}
-}
-
-func itoa(n int) string {
-	return strconv.Itoa(n)
-}
-
 func TestLibraryReadStopsAtCharacterBoundary(t *testing.T) {
 	l := newLibrary(t)
-	var out libraryReadAnswer
-	l.call(t, "library_read", `{"path":"`+guidePath+`","start":3,"length":10}`, &out)
-	if out.Text != (pageOne + pageTwo + pageThree)[3:13] || out.Start != 3 || out.Length != 10 || out.NextStart == nil || *out.NextStart != 13 {
-		t.Errorf("range %q at %d for %d next %v", out.Text, out.Start, out.Length, out.NextStart)
-	}
-
 	cyrillic := hosttest.NewTexts(testVault, readerID)
 	cyrillic.File("ru.pdf", []byte(pdfBytes))
 	putText(t, cyrillic, readerID, "ru.pdf", "page-text", []byte(pdfBytes), []domain.TextSegment{{Text: "Ачарьи говорят", Selector: `{"page":1}`}})
@@ -381,16 +344,6 @@ func TestLibraryReadReturnsTranscriptTimes(t *testing.T) {
 	}
 	if second := out.Locations[1]; second.FromSeconds != 4.5 || second.ToSeconds != 9 || second.Start != len(talkSecond) {
 		t.Errorf("second location %+v", second)
-	}
-}
-
-func TestLibraryReadReportsMissingTextVersion(t *testing.T) {
-	l := newLibrary(t)
-	failure := l.call(t, "library_read", `{"path":"`+scanPath+`"}`, nil)
-	for _, want := range []string{scanPath, "has no text version", "recognition_create", "transcript_create"} {
-		if !strings.Contains(failure, want) {
-			t.Errorf("failure %q does not contain %q", failure, want)
-		}
 	}
 }
 

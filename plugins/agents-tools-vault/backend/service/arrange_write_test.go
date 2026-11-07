@@ -3,6 +3,7 @@ package service_test
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -232,6 +233,33 @@ func TestNoteMoveWithAnEmptyFolderMovesToTheVaultRoot(t *testing.T) {
 	requireContent(t, v, "Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
 }
 
+func TestNoteMoveWithoutAFolderMovesToTheVaultRoot(t *testing.T) {
+	v, registry := newGeologyVault(t)
+	v.File("Rivers/Rhine.md", "---\ntitle: Rhine\n---\nA river of the Alps.\n")
+
+	var out noteMoveOutput
+	decodeInto(t, callTool(t, registry, geologyVault, "note_move", `{"paths":["Rivers/Rhine.md"]}`), &out)
+	if len(out.Moves) != 1 || out.Moves[0].From != "Rivers/Rhine.md" || out.Moves[0].To != "Rhine.md" || out.Moves[0].Error != "" {
+		t.Errorf("moves = %+v, want Rivers/Rhine.md to Rhine.md", out.Moves)
+	}
+	requireContent(t, v, "Rhine.md", "---\ntitle: Rhine\n---\nA river of the Alps.\n")
+	requireAbsent(t, v, "Rivers/Rhine.md")
+}
+
+func TestNoteMoveSchemaDoesNotRequireAFolder(t *testing.T) {
+	_, registry := newGeologyVault(t)
+	schema := getToolSchema(t, registry, "note_move", false)
+	required, _ := schema["required"].([]any)
+	for _, name := range required {
+		if name == "folder" {
+			t.Errorf("the input schema of note_move requires folder: %v", required)
+		}
+	}
+	if !slices.Contains(required, any("paths")) {
+		t.Errorf("the input schema of note_move requires %v, want paths", required)
+	}
+}
+
 func TestNoteMoveOfMoreThanFiftyPathsIsRejected(t *testing.T) {
 	_, registry := newGeologyVault(t)
 	requireRejection(t, registry, geologyVault, "note_move", makePathsArguments(t, 51, map[string]any{"folder": "Archive"}))
@@ -308,4 +336,16 @@ func TestNoteRenameOntoTakenFilenameReturnsPathAndUnchangedNote(t *testing.T) {
 	if want := "note_rename: Rocks/Granite.md already exists; Rocks/Basalt.md is unchanged"; text != want {
 		t.Errorf("the error is %q, want %q", text, want)
 	}
+}
+
+func TestNoteRenameToAnEmptyTitleReturnsTheHostError(t *testing.T) {
+	v, registry := newGeologyVault(t)
+	before, _ := v.Content("Rocks/Basalt.md")
+
+	text := getRejectionText(t, registry, geologyVault, "note_rename", `{"path":"Rocks/Basalt.md","title":""}`)
+
+	if want := `a note cannot be given this title: "" generates empty filename`; !strings.Contains(text, want) {
+		t.Errorf("note_rename to an empty title gave %q, want the host's error %q", text, want)
+	}
+	requireContent(t, v, "Rocks/Basalt.md", before)
 }

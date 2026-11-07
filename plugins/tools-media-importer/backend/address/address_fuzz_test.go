@@ -50,7 +50,7 @@ func FuzzParseWebAddress(f *testing.F) {
 			return
 		}
 
-		// The parsed address must not refer to a local resource, and must not carry
+		// The parsed address must use http or https, and must not carry
 		// a username and password into a run's arguments.
 		switch {
 		case !strings.HasPrefix(string(parsed), "http://") &&

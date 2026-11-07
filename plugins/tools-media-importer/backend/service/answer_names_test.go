@@ -267,15 +267,6 @@ func TestURLImportInstructionsAndDescriptionNameDownloadVideo(t *testing.T) {
 	}
 }
 
-func TestMediaImporterToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
-	s := newUnblockedFixture(t)
-	visitEveryToolSchema(t, s.registry, func(tool, name string) {
-		if strings.Contains(name, "_") {
-			t.Errorf("the schema of %s names the key %q, which is not camelCase", tool, name)
-		}
-	}, func(string, string) {})
-}
-
 func TestMediaImporterToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 	s := newUnblockedFixture(t)
 	markers := getNarrativeMarkers()

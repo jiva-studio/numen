@@ -209,8 +209,8 @@ func TestLinkAddReportsAnUnknownRoleOrNoTargetPerLink(t *testing.T) {
 	if out.Results[1].Error != "" {
 		t.Errorf("result of Rocks/Basalt.md = %+v, want it written", out.Results[1])
 	}
-	if out.Results[2].Error == "" {
-		t.Errorf("result of the empty target = %+v, want an error", out.Results[2])
+	if want := "a link needs somewhere to go"; !strings.Contains(out.Results[2].Error, want) {
+		t.Errorf("result of the empty target = %+v, want the host's error %q", out.Results[2], want)
 	}
 	requireContent(t, v, "Minerals.md", mineralsBefore)
 	requireContent(t, v, "Rocks/Granite.md", graniteBefore)

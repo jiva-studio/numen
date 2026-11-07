@@ -102,26 +102,27 @@ func TestVaultAddWithoutANameUsesTheFolderName(t *testing.T) {
 	}
 }
 
-func TestVaultAddWithoutAPathIsRejected(t *testing.T) {
+func TestVaultAddWithoutAPathReturnsTheHostError(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
-	requireRejection(t, registry, geologyVault, "vault_add", `{}`)
-	requireRejection(t, registry, geologyVault, "vault_add", `{"name":"Meadow"}`)
+	for _, arguments := range []string{`{}`, `{"name":"Meadow"}`} {
+		text := getRejectionText(t, registry, geologyVault, "vault_add", arguments)
+		if want := " is not an absolute path"; !strings.Contains(text, want) {
+			t.Errorf("vault_add %s gave %q, want the host's error %q", arguments, text, want)
+		}
+	}
 	if got := getVaultsByID(t, registry); len(got) != 2 {
 		t.Errorf("vault_list gives %d vaults, want the 2 there were: %v", len(got), got)
 	}
 }
 
-func TestVaultAddOfAFolderInsideAVaultIsRejected(t *testing.T) {
+func TestVaultRenameToAnEmptyNameReturnsTheHostError(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
-	requireRejection(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
-}
-
-func TestVaultAddOfAnOverlappingFolderReportsTheHostReason(t *testing.T) {
-	_, _, registry := newTwoVaults(t)
-
-	text := getRejectionText(t, registry, geologyVault, "vault_add", `{"path":"/vaults/garden-vault/Seeds"}`)
-	if reason := "a vault cannot be inside another vault"; !strings.Contains(text, reason) {
-		t.Errorf("the error %q does not have the reason %q", text, reason)
+	text := getRejectionText(t, registry, geologyVault, "vault_rename", fmt.Sprintf(`{"vault":%q,"name":""}`, gardenID))
+	if want := "the new name is empty; a vault needs a name"; !strings.Contains(text, want) {
+		t.Errorf("vault_rename to an empty name gave %q, want the host's error %q", text, want)
+	}
+	if got := getVaultsByID(t, registry)[gardenID]; got.Name != gardenName {
+		t.Errorf("vault_list gives the name %q, want %q kept", got.Name, gardenName)
 	}
 }
 

@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
@@ -138,6 +139,9 @@ func TestNoteWrite(t *testing.T) {
 	}
 	if !res3.GetResult().GetIsError() {
 		t.Error("expected refusal on stale fingerprint write")
+	}
+	if text := res3.GetResult().GetText(); !strings.Contains(text, "read it again") {
+		t.Errorf("the error of a stale fingerprint is %q, want it to contain %q", text, "read it again")
 	}
 }
 

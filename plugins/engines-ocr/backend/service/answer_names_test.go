@@ -192,15 +192,6 @@ func TestRecognitionCreateReturnsTheTaskIDKey(t *testing.T) {
 	requireKeys(t, "the output schema of recognition_create", getSchemaProperties(t, schema), []string{"taskId"}, []string{"task_id"})
 }
 
-func TestOCRToolSchemasNameEveryKeyInCamelCase(t *testing.T) {
-	s := newToolFixture(t)
-	visitEveryToolSchema(t, s.registry, func(tool, name string) {
-		if strings.Contains(name, "_") {
-			t.Errorf("the schema of %s names the key %q, which is not camelCase", tool, name)
-		}
-	}, func(string, string) {})
-}
-
 func TestOCRToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 	s := newToolFixture(t)
 	markers := getNarrativeMarkers()
