@@ -73,4 +73,6 @@ export interface Configuration {
   readonly secrets?: readonly Secret[] | undefined
   /** The file the secret values are kept in where the system keychain is not in use, else empty. */
   readonly credentialsPath?: string | undefined
+  /** Whether the installation has a key store the secret values are kept in. */
+  readonly hasKeyStore?: boolean | undefined
 }

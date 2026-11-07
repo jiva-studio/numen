@@ -73,6 +73,8 @@ export interface Installation {
    * where it is.
    */
   readonly credentialsPath?: Readonly<Ref<string>>
+  /** Whether the installation has a key store; the page names the keychain only where it does. */
+  readonly hasKeyStore?: Readonly<Ref<boolean>>
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>
 }

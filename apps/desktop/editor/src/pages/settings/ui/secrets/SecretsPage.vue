@@ -37,6 +37,7 @@ interface Draft {
 const installation = computed(() => props.state.installation)
 const plugins = computed(() => installation.value.plugins?.value ?? [])
 const credentialsPath = computed(() => installation.value.credentialsPath?.value ?? '')
+const hasKeyStore = computed(() => installation.value.hasKeyStore?.value ?? true)
 const sections = computed(() =>
   createSecretSections(plugins.value, installation.value.secrets?.value ?? []),
 )
@@ -128,7 +129,7 @@ function getNamesInGroup(group: string): readonly string[] {
 
     <h1 class="secrets-page__title">{{ words.secretsTitle }}</h1>
     <p class="secrets-page__about">{{ words.secretsAbout }}</p>
-    <p class="secrets-page__where">
+    <p v-if="hasKeyStore" class="secrets-page__where">
       {{ credentialsPath === '' ? words.secretsKeychain : words.secretsFile(credentialsPath) }}
     </p>
 

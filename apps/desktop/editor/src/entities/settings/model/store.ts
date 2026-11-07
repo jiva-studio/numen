@@ -33,6 +33,7 @@ export interface SettingsStoreDeps {
     readonly app?: readonly PluginSettingInfo[] | undefined
     readonly secrets?: readonly Secret[] | undefined
     readonly credentialsPath?: string | undefined
+    readonly hasKeyStore?: boolean | undefined
   }>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }
@@ -97,6 +98,31 @@ const askVault = async (
   }
 }
 
+/**
+ * The settings the vault wrote, and nothing where no settings can be read out of the text. That is
+ * not a vault that has gone away, and a write followed by it leaves the person watching their
+ * setting go back with no word for it.
+ */
+const parseSettingsText = (text: string): unknown => {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return undefined
+  }
+}
+
+/** What the vault answers about the settings and the settings it wrote, or nothing where either cannot be read. */
+const readVault = async (core: SettingsStoreDeps, words: Words, say: MessageWriter) => {
+  const answer = await askVault(core)
+  if (answer === undefined) return undefined
+  const file = parseSettingsText(answer.written)
+  if (file === undefined) {
+    say(words.unreadSettings, 'error')
+    return undefined
+  }
+  return { answer, file }
+}
+
 export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
   const target = shallowRef<unknown>({})
@@ -108,6 +134,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const app = shallowRef<readonly PluginSettingInfo[]>([])
   const secrets = shallowRef<readonly Secret[]>([])
   const credentialsPath = ref('')
+  const hasKeyStore = ref(true)
 
   const requested = createRemoteValues<SettingEdit>((values) =>
     core.updateSettings([...values.values()]),
@@ -116,26 +143,18 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   /** The settings values, requested once the window is up and after every write. */
   const start = async (): Promise<void> => {
     const pendingRead = requested.beginRead()
-    const answer = await askVault(core)
-    if (answer === undefined) return
-    let settingsFile: unknown
-    try {
-      settingsFile = JSON.parse(answer.written)
-    } catch {
-      // The vault answered with something no settings can be read out of. It is
-      // not a vault that has gone away, and a write followed by this leaves the
-      // person watching their setting go back with no word for it.
-      say(words.unreadSettings, 'error')
-      return
-    }
+    const read = await readVault(core, words, say)
+    if (read === undefined) return
+    const { answer } = read
     requested.takeRead(pendingRead, () => {
-      target.value = settingsFile
+      target.value = read.file
       path.value = answer.path
       models.value = answer.models
       plugins.value = answer.plugins ?? []
       app.value = answer.app ?? []
       secrets.value = answer.secrets ?? []
       credentialsPath.value = answer.credentialsPath ?? ''
+      hasKeyStore.value = answer.hasKeyStore ?? true
     })
   }
 
@@ -193,6 +212,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     app,
     secrets,
     credentialsPath,
+    hasKeyStore,
     start,
     getSetting,
     getCommittedSetting,

@@ -75,6 +75,7 @@ describe('every setting', () => {
       app: [],
       secrets: [],
       credentialsPath: '',
+      hasKeyStore: true,
     })
   })
 

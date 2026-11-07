@@ -128,6 +128,7 @@ export const settingsCore: SettingsPort = {
         hasValue: one.hasValue,
       })),
       credentialsPath: answer.credentialsPath ?? '',
+      hasKeyStore: answer.hasKeyStore ?? true,
     } satisfies Configuration
   },
   updateSettings: async (edits) => {

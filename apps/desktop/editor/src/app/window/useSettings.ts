@@ -67,6 +67,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     },
     secrets: rest.secrets,
     credentialsPath: rest.credentialsPath,
+    hasKeyStore: rest.hasKeyStore,
     createSecret: (group: string, name: string, value: string) =>
       secrets.createSecret(group, name, value),
     renameSecret: (id: string, name: string) => secrets.renameSecret(id, name),
