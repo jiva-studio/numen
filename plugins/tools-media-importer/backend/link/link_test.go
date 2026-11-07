@@ -255,14 +255,17 @@ func TestCopyWritesTheVideoToTheKeyFile(t *testing.T) {
 	if _, err := w.store.Read(t.Context(), made.Key+".part"); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("the copy arriving is left: %v", err)
 	}
-	if found, err := w.links.FindCopy(t.Context(), made); err != nil || found != size {
-		t.Errorf("the copy is found as %d bytes (%v)", found, err)
+	if again, err := w.links.Copy(t.Context(), made, download.MediaVideo); err != nil || again != size || len(w.sites.media) != 1 {
+		t.Errorf("a second copy came to %d bytes (%v) and asked the site %v", again, err, w.sites.media)
 	}
 	if err := w.links.DeleteCopy(t.Context(), made); err != nil {
 		t.Fatal(err)
 	}
-	if found, err := w.links.FindCopy(t.Context(), made); err != nil || found != 0 {
-		t.Errorf("a deleted copy is found as %d bytes (%v)", found, err)
+	if _, err := w.store.Read(t.Context(), made.Key+".mp4"); !errors.Is(err, host.ErrNotExist) {
+		t.Errorf("a deleted copy is still kept: %v", err)
+	}
+	if got := w.readProperty(t, made.Path, "media"); got != "" {
+		t.Errorf("the note of a deleted copy holds media %q", got)
 	}
 }
 
@@ -378,8 +381,8 @@ func TestTheCopyFollowsAnEditOfTheNote(t *testing.T) {
 	}
 	edited := w.edit(t, made)
 
-	if found, err := w.links.FindCopy(t.Context(), edited); err != nil || found != size {
-		t.Errorf("the copy of the edited note is found as %d bytes (%v), want %d", found, err, size)
+	if again, err := w.links.Copy(t.Context(), edited, download.MediaVideo); err != nil || again != size || len(w.sites.media) != 1 {
+		t.Errorf("the copy of the edited note came to %d bytes (%v) and asked the site %v, want %d", again, err, w.sites.media, size)
 	}
 }
 

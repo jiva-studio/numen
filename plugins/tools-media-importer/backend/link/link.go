@@ -353,15 +353,6 @@ func getWorkName(work string, link Link, key string) string {
 // IsCopyable reports whether something on this machine copies what the address publishes.
 func (l *Links) IsCopyable(parsed address.URL) bool { return l.fetcher().CanCopy(string(parsed)) }
 
-// FindCopy is the size of the copy stored for a link, and zero where none is.
-func (l *Links) FindCopy(ctx context.Context, link Link) (int64, error) {
-	found, ok, err := folder{store: l.getStore(link)}.findCopy(ctx, link.Key)
-	if err != nil || !ok {
-		return 0, err
-	}
-	return found.Size, nil
-}
-
 // StartFetch fetches the text of a link in the background, and a copy of the video where one is
 // published. A failure is shown as the task of the work that failed.
 func (l *Links) StartFetch(ctx context.Context, link Link) {

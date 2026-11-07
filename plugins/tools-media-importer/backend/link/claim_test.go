@@ -533,23 +533,10 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 		t.Errorf("endTask finishCtx err = %v, want nil", hq.finishCtx)
 	}
 
-	// FindCopy error and edge paths.
+	// Copy fails where the folder cannot be listed.
 	hs.listErr = func(int) error { return boom }
-	if _, err := l.FindCopy(ctx, made); !errors.Is(err, boom) {
-		t.Errorf("FindCopy(list err) = %v, want %v", err, boom)
-	}
 	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
-		t.Errorf("Copy(FindCopy err) = %v, want %v", err, boom)
-	}
-	hs.listErr = func(call int) error {
-		if call == 2 {
-			return boom
-		}
-		return nil
-	}
-	// rec.Copy is currently "", so FindCopy returns before the 2nd List call.
-	if size, err := l.FindCopy(ctx, made); err != nil || size != 0 {
-		t.Errorf("FindCopy(empty Copy) = (%d, %v), want (0, nil)", size, err)
+		t.Errorf("Copy(list err) = %v, want %v", err, boom)
 	}
 	hs.listErr = nil
 
