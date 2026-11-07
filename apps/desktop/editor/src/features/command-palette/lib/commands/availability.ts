@@ -10,7 +10,7 @@ import type { CommandTarget } from '../../types'
  * The availability of a command of the application by its condition, read once. Its conditions read
  * the window and whether the target is a note or a file, not content types or settings.
  */
-export function whenAvailable(when: string): (target: CommandTarget) => boolean {
+export function createAvailabilityCheck(when: string): (target: CommandTarget) => boolean {
   const parsed = parseWhen(when)
   if (!parsed.ok) throw new Error(parsed.error)
   return (target) => parsed.value.evaluate(getPaletteValues(target, {}))
@@ -21,5 +21,5 @@ export const withWhen = (
   when: string,
 ): { readonly when: string; isAvailable(target: CommandTarget): boolean } => ({
   when,
-  isAvailable: whenAvailable(when),
+  isAvailable: createAvailabilityCheck(when),
 })

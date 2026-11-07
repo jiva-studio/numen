@@ -140,8 +140,18 @@ export function createPaletteItems(
   })
 }
 
+/** The palette of the commands, which lists the extra commands beside its own table. */
+function useWindowCommandPalette(
+  options: CommandsDepsOptions,
+  lists: PaletteLists,
+  listExtras: () => readonly Command[],
+) {
+  const { core, words, getTarget, knows, runs } = options
+  return useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, listExtras)
+}
+
 export function useCommands(options: CommandsDepsOptions) {
-  const { core, words, windowTabs, getTarget, knows, runs, coverage, writeMessage } = options
+  const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
   const { pluginHost, declaredCommands } = options
   const plugins = usePluginCommands(
     core,
@@ -158,8 +168,8 @@ export function useCommands(options: CommandsDepsOptions) {
   })
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
-  const extra = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
-  const commands = useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, extra)
+  const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
+  const commands = useWindowCommandPalette(options, lists, listExtras)
 
   watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
   resetWhenClosed(commands.open)

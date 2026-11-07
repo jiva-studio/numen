@@ -22,7 +22,7 @@ import type { VaultCore } from '../vault'
 import {
   EMPTY_WHEN_CONTEXT,
   createWhenAvailability,
-  namesNote,
+  hasNoteVariable,
   type WindowWhenContext,
 } from './whenContext'
 import { createSharedCommands } from './sharedCommands'
@@ -75,7 +75,7 @@ export function usePluginCommands(
       id: cmd.id,
       text: cmd.title,
       ...getPluginLooks(cmd),
-      group: namesNote(cmd.when) ? ('note' as const) : ('window' as const),
+      group: hasNoteVariable(cmd.when) ? ('note' as const) : ('window' as const),
       ...(cmd.when ? { when: cmd.when } : {}),
       ...(pluginHost?.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
       isAvailable: (target: CommandTarget) => isWhenAvailable(cmd.when, target),
@@ -89,14 +89,14 @@ export function usePluginCommands(
    */
   const pluginWays = computed<readonly WelcomeAction[]>(() =>
     getPluginCommands()
-      .filter((cmd) => !namesNote(cmd.when) && cmd.shortcut)
+      .filter((cmd) => !hasNoteVariable(cmd.when) && cmd.shortcut)
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
 
   /** The commands the plugins declare over one note, in the words the palette offers them by. */
   const getNoteCommands = (): readonly MenuEntry[] =>
     getPluginCommands()
-      .filter((cmd) => namesNote(cmd.when))
+      .filter((cmd) => hasNoteVariable(cmd.when))
       .map((cmd) => ({ id: cmd.id, text: cmd.title, group: 'note' }))
 
   const getCommandNote = createCommandNoteReader(core)

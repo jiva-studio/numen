@@ -1,7 +1,7 @@
 /** The when conditions of the plugins' commands over what is in front of the palette. Every plugin is invented. */
 import { describe, expect, it } from 'vitest'
 import type { CommandTarget } from '@/features/command-palette'
-import { createWhenAvailability, getWhenGroup, namesNote } from './whenContext'
+import { createWhenAvailability, getWhenGroup, hasNoteVariable } from './whenContext'
 
 const target = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab-1',
@@ -47,7 +47,7 @@ describe('the group of a command in the palette', () => {
   })
 
   it('reads target.isNote, or not', () => {
-    expect(namesNote('!target.isNote')).toBe(true)
-    expect(namesNote('target.isFile')).toBe(false)
+    expect(hasNoteVariable('!target.isNote')).toBe(true)
+    expect(hasNoteVariable('target.isFile')).toBe(false)
   })
 })
