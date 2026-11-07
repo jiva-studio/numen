@@ -102,6 +102,9 @@ func (h *Host) hasSecretsChanged(ctx context.Context, pluginID string) bool {
 	secrets, _ := h.listConfigureSecrets(ctx, snapshot)
 	h.mu.RLock()
 	defer h.mu.RUnlock()
+	if h.awaitingFirstConfigure[pluginID] {
+		return false
+	}
 	last, wasDelivered := h.delivered[pluginID]
 	return !wasDelivered || last != getSecretsSignature(secrets)
 }

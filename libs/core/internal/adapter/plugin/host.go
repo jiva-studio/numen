@@ -108,6 +108,8 @@ type Host struct {
 	secretSource pluginport.SecretSource
 	// delivered is the list of secrets each plugin was last configured with, as a signature.
 	delivered map[string]string
+	// awaitingFirstConfigure holds the plugins that are Active and have not yet been through the Configure of their activation.
+	awaitingFirstConfigure map[string]bool
 	// noKeyStoreOnce reports once that a secret cannot be read on a machine without a key store.
 	noKeyStoreOnce sync.Once
 	hostEndpoint   *hostendpoint.Endpoint
@@ -164,6 +166,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		completer:              nil,
 		keyStore:               nil,
 		delivered:              make(map[string]string),
+		awaitingFirstConfigure: make(map[string]bool),
 		hostEndpoint:           nil,
 		hostAddress:            hostendpoint.Address,
 		dependencies:           nil,
@@ -677,12 +680,19 @@ func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *li
 		h.failActivation(ctx, p.Manifest.ID, sup, err)
 		return endpoint, err
 	}
+	h.mu.Lock()
+	delete(h.delivered, p.Manifest.ID)
+	h.awaitingFirstConfigure[p.Manifest.ID] = true
+	h.mu.Unlock()
 	sup.RecordActivationSuccess()
 
 	// The plugin also receives its settings on the next change, so a failed push leaves it running.
 	if err := h.NotifyPluginConfig(ctx, p.Manifest.ID); err != nil {
 		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, err))
 	}
+	h.mu.Lock()
+	delete(h.awaitingFirstConfigure, p.Manifest.ID)
+	h.mu.Unlock()
 	return endpoint, nil
 }
 

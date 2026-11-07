@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -83,13 +84,6 @@ func (k *keys) DeleteKey(_ context.Context, name string) error {
 	}
 	delete(k.item, name)
 	return nil
-}
-
-func (k *keys) hold(name string) (string, bool) {
-	k.mu.Lock()
-	defer k.mu.Unlock()
-	key, found := k.item[name]
-	return key, found
 }
 
 // configured records the Configure calls a plugin receives.
@@ -529,5 +523,44 @@ func TestTheSignatureOfAListContainsNoValue(t *testing.T) {
 	entries[0].Values[0].Name = "Home"
 	if getSecretsSignature(entries) == signature {
 		t.Error("the signature ignores the name of a secret")
+	}
+}
+
+// A plugin that restarts, and whose first Configure fails, is configured again by the next refresh
+// although its list of secrets did not change.
+func TestARestartedPluginWhoseFirstConfigureFailedIsConfiguredByTheNextRefresh(t *testing.T) {
+	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
+	host.SetSecretSource(allowOne(secretPluginID))
+	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+		t.Fatal(err)
+	}
+
+	probe.mu.Lock()
+	probe.unimplemented = true
+	probe.mu.Unlock()
+	port := host.endpoints[secretPluginID].Port
+	sleeper := plugintest.StartSleepProcess(t).Process
+	host.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+		return sleeper, plugintest.GetReadyOutput(port), nil
+	})
+	p := host.plugins[secretPluginID]
+	p.Manifest.Backend = pluginport.PluginBackend{Entrypoint: "bin/plugin"}
+	restarted := lifecycle.New(testsupport.GetMachine())
+	restarted.SetActivating()
+	if _, err := host.runActivation(t.Context(), p, restarted); err != nil {
+		t.Fatal(err)
+	}
+
+	probe.mu.Lock()
+	probe.unimplemented = false
+	before := len(probe.calls)
+	probe.mu.Unlock()
+	if err := host.RefreshSecrets(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	probe.mu.Lock()
+	defer probe.mu.Unlock()
+	if len(probe.calls) != before+1 {
+		t.Errorf("the refresh sent %d Configure calls to the restarted plugin, want 1", len(probe.calls)-before)
 	}
 }
