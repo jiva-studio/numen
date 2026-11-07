@@ -392,7 +392,7 @@ func TestWindowTabActivateReturnsTheTabOnly(t *testing.T) {
 
 func TestNoteEditPreviewReturnsTheDiffOnly(t *testing.T) {
 	w := newWindowTools(t)
-	answer := w.getAnswer(t, "note_edit_preview", `{"path":"notes/Heron.md","proposedContent":"Herons fish at dawn."}`)
+	answer := w.getAnswer(t, "note_edit_preview", `{"path":"notes/Heron.md","proposedText":"Herons fish at dawn."}`)
 	requireKeys(t, "the answer of note_edit_preview", answer, []string{"previewId", "path", "diff", "additions", "deletions"}, []string{"status", "summary"})
 
 	schema := getToolSchema(t, w.registry, "note_edit_preview", true)

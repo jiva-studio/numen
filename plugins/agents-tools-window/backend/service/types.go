@@ -43,10 +43,10 @@ type WindowTabActivateOutput struct {
 
 // NoteEditPreviewInput represents the arguments for note_edit_preview.
 type NoteEditPreviewInput struct {
-	Path            string `json:"path" jsonschema:"the note to propose changes to, by its path relative to the vault folder"`
-	ProposedContent string `json:"proposedContent,omitempty" jsonschema:"the proposed new content of the note"`
-	OriginalContent string `json:"originalContent,omitempty" jsonschema:"optional baseline content to diff against if not reading from vault"`
-	Diff            string `json:"diff,omitempty" jsonschema:"optional unified diff patch to preview directly"`
+	Path         string `json:"path" jsonschema:"the note to propose changes to, by its path relative to the vault folder"`
+	ProposedText string `json:"proposedText,omitempty" jsonschema:"the proposed new text of the note"`
+	OriginalText string `json:"originalText,omitempty" jsonschema:"optional baseline text to diff against if not reading from vault"`
+	Diff         string `json:"diff,omitempty" jsonschema:"optional unified diff patch to preview directly"`
 }
 
 // NoteEditPreviewOutput represents the result of generating an edit preview.
@@ -60,14 +60,14 @@ type NoteEditPreviewOutput struct {
 
 // NoteEditPreview stores a pending or proposed edit preview.
 type NoteEditPreview struct {
-	ID              string
-	Path            string
-	ProposedContent string
-	OriginalContent string
-	Diff            string
-	Additions       int
-	Deletions       int
-	CreatedAt       time.Time
+	ID           string
+	Path         string
+	ProposedText string
+	OriginalText string
+	Diff         string
+	Additions    int
+	Deletions    int
+	CreatedAt    time.Time
 }
 
 // NoteFocusInput represents the arguments for note_focus.

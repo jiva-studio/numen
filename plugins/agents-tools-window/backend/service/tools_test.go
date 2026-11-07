@@ -132,8 +132,8 @@ func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 	}
 
 	input := NoteEditPreviewInput{
-		Path:            "notes/sample.md",
-		ProposedContent: "hello world\nline 2 modified\nnew line\n",
+		Path:         "notes/sample.md",
+		ProposedText: "hello world\nline 2 modified\nnew line\n",
 	}
 	args := marshalJSON(t, input)
 	resp, err := registry.InvokeTool(ctx, tools.Call{
@@ -198,7 +198,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 		t.Errorf("got +%d, -%d; want +1, -1", output.Additions, output.Deletions)
 	}
 
-	// Explicit OriginalContent takes precedence over vault content, and works with nil vault.
+	// Explicit OriginalText takes precedence over vault content, and works with nil vault.
 	vault := hosttest.New("test-vault")
 	if err := vault.Create(t.Context(), "notes/override.md", []byte("vault line\n")); err != nil {
 		t.Fatalf("create vault file: %v", err)
@@ -210,9 +210,9 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 	respOverride, err := registryWithVault.InvokeTool(t.Context(), tools.Call{
 		Name: "note_edit_preview",
 		Arguments: marshalJSON(t, NoteEditPreviewInput{
-			Path:            "notes/override.md",
-			OriginalContent: "explicit original\n",
-			ProposedContent: "explicit proposed\n",
+			Path:         "notes/override.md",
+			OriginalText: "explicit original\n",
+			ProposedText: "explicit proposed\n",
 		}),
 	})
 	if err != nil {
@@ -222,15 +222,15 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 		t.Fatalf("unmarshal override output: %v", err)
 	}
 	if !strings.Contains(output.Diff, "-explicit original") {
-		t.Errorf("expected diff against OriginalContent, got %s", output.Diff)
+		t.Errorf("expected diff against OriginalText, got %s", output.Diff)
 	}
 
-	// Nil vault with empty OriginalContent diffs against empty string.
+	// Nil vault with empty OriginalText diffs against empty string.
 	respNilVault, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name: "note_edit_preview",
 		Arguments: marshalJSON(t, NoteEditPreviewInput{
-			Path:            "notes/new.md",
-			ProposedContent: "brand new\n",
+			Path:         "notes/new.md",
+			ProposedText: "brand new\n",
 		}),
 	})
 	if err != nil {
@@ -252,7 +252,7 @@ func TestNoteEditPreviewRejectsMissingArguments(t *testing.T) {
 	}
 
 	// Missing path
-	args := marshalJSON(t, NoteEditPreviewInput{ProposedContent: "abc"})
+	args := marshalJSON(t, NoteEditPreviewInput{ProposedText: "abc"})
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "note_edit_preview",
 		Arguments: args,

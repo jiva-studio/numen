@@ -132,22 +132,22 @@ func addNoteEditPreview(registry *tools.Registry, manager *WindowManager, vault 
 		if in.Path == "" {
 			return NoteEditPreviewOutput{}, errors.New("path is required")
 		}
-		if in.ProposedContent == "" && in.Diff == "" {
-			return NoteEditPreviewOutput{}, errors.New("either proposedContent or diff is required")
+		if in.ProposedText == "" && in.Diff == "" {
+			return NoteEditPreviewOutput{}, errors.New("either proposedText or diff is required")
 		}
 
 		diffText, additions, deletions := prepareDiff(ctx, in, vault)
 
 		previewID := manager.NextPreviewID()
 		preview := NoteEditPreview{
-			ID:              previewID,
-			Path:            in.Path,
-			ProposedContent: in.ProposedContent,
-			OriginalContent: in.OriginalContent,
-			Diff:            diffText,
-			Additions:       additions,
-			Deletions:       deletions,
-			CreatedAt:       manager.GetNow(),
+			ID:           previewID,
+			Path:         in.Path,
+			ProposedText: in.ProposedText,
+			OriginalText: in.OriginalText,
+			Diff:         diffText,
+			Additions:    additions,
+			Deletions:    deletions,
+			CreatedAt:    manager.GetNow(),
 		}
 		manager.SavePreview(preview)
 
@@ -167,14 +167,14 @@ func prepareDiff(ctx context.Context, in NoteEditPreviewInput, vault host.Vault)
 		return in.Diff, additions, deletions
 	}
 
-	original := in.OriginalContent
+	original := in.OriginalText
 	if original == "" && vault != nil {
 		data, _, err := vault.Read(ctx, in.Path)
 		if err == nil {
 			original = string(data)
 		}
 	}
-	return CreateUnifiedDiff(in.Path, original, in.ProposedContent)
+	return CreateUnifiedDiff(in.Path, original, in.ProposedText)
 }
 
 func formatTitleFromPath(filePath string) string {
