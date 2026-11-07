@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -50,6 +51,7 @@ type fileHandler struct {
 	state            *State
 	getFolderEntries *file.GetFolderEntries
 	getFileKinds     *file.GetFileKinds
+	chooseTabKind    *tabkind.Choose
 	createFolder     *file.CreateFolder
 	move             *vaults.Move
 	remove           *note.Remove
@@ -86,7 +88,7 @@ func (h *fileHandler) ListFiles(
 }
 
 // ListFileKinds returns what the vault holds at each of the given paths, so the
-// client opens each path in the editor made for it.
+// client opens each path in the editor made for it: a note in the kind of tab the core chooses for it.
 //
 // Whether a note exists is read from the vault and its type from the index, or
 // from the note itself when nothing has scanned it yet, so a file a plugin has
@@ -127,6 +129,9 @@ func (h *fileHandler) ListFileKinds(
 		}
 		if properties, isNote := listing.Properties[one.Path]; isNote {
 			kind.Properties = newWireProperties(properties)
+			if h.chooseTabKind != nil {
+				kind.TabKind = h.chooseTabKind.Execute(one.Path, listing.Types[one.Path], properties)
+			}
 		}
 		out.Kinds = append(out.Kinds, kind)
 	}

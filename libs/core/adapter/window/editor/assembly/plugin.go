@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 )
 
 // PluginServices is where this window forwards the calls it receives for the services plugins serve.
@@ -47,6 +48,8 @@ type pluginWorkAssembly interface {
 type PluginAssembly interface {
 	GetPluginDir(id string) (string, bool)
 	GetPluginServices() PluginServices
+	// GetTabKindChoice is the choice of the kind of tab a note opens in.
+	GetTabKindChoice() *tabkind.Choose
 	GetAgent() agentport.Agent
 	pluginSecretAssembly
 	pluginWorkAssembly

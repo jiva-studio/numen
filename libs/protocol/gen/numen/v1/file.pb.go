@@ -305,7 +305,11 @@ type FileKind struct {
 	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	// The frontmatter of the note by its keys, which when conditions read as
 	// target.properties. Empty for a path holding no note.
-	Properties    *structpb.Struct `protobuf:"bytes,6,opt,name=properties,proto3" json:"properties,omitempty"`
+	Properties *structpb.Struct `protobuf:"bytes,6,opt,name=properties,proto3" json:"properties,omitempty"`
+	// The kind of tab the note opens in: of the tab kinds of the enabled plugins whose when condition
+	// holds over the note, the one chosen as a reader is. Empty where none holds, and for a path
+	// holding no note.
+	TabKind       string `protobuf:"bytes,7,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -366,6 +370,13 @@ func (x *FileKind) GetProperties() *structpb.Struct {
 		return x.Properties
 	}
 	return nil
+}
+
+func (x *FileKind) GetTabKind() string {
+	if x != nil {
+		return x.TabKind
+	}
+	return ""
 }
 
 type MoveFileRequest struct {
@@ -801,14 +812,15 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x14ListFileKindsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"A\n" +
 	"\x15ListFileKindsResponse\x12(\n" +
-	"\x05kinds\x18\x01 \x03(\v2\x12.numen.v1.FileKindR\x05kinds\"\x84\x01\n" +
+	"\x05kinds\x18\x01 \x03(\v2\x12.numen.v1.FileKindR\x05kinds\"\x9f\x01\n" +
 	"\bFileKind\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x17\n" +
 	"\ais_note\x18\x05 \x01(\bR\x06isNote\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x127\n" +
 	"\n" +
 	"properties\x18\x06 \x01(\v2\x17.google.protobuf.StructR\n" +
-	"properties\"5\n" +
+	"properties\x12\x19\n" +
+	"\btab_kind\x18\a \x01(\tR\atabKind\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\"\xb3\x01\n" +

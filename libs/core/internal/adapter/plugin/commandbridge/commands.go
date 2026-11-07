@@ -56,6 +56,21 @@ func (c Commands) ListCommands() []pluginport.PluginCommandEntry {
 	return found
 }
 
+// ListTabKinds lists the tab kinds the manifests of the enabled plugins declare. No plugin is started.
+func (c Commands) ListTabKinds() []pluginport.PluginTabKindEntry {
+	var found []pluginport.PluginTabKindEntry
+	for _, info := range c.host.GetPluginInfos() {
+		plugin, isEnabled := c.host.GetPlugin(info.ID)
+		if !isEnabled {
+			continue
+		}
+		for _, kind := range plugin.Manifest.Contributes.TabKinds {
+			found = append(found, pluginport.PluginTabKindEntry{PluginID: plugin.Manifest.ID, TabKind: kind})
+		}
+	}
+	return found
+}
+
 // ListSlots lists the slot entries the manifests of the enabled plugins declare. No plugin is started.
 func (c Commands) ListSlots() []pluginport.PluginSlotEntry {
 	var found []pluginport.PluginSlotEntry

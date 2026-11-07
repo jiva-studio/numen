@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/trigger"
@@ -75,6 +76,7 @@ type Runtime[H, V any] struct {
 	PluginServicesFn         func() PluginServices
 	PluginCatalogFn          func() PluginCatalog
 	PluginCommandsFn         func() plugincommand.Commands
+	TabKindChoiceFn          func() *tabkind.Choose
 	AgentVal                 agentport.Agent
 	SetTextVersionListenerFn func(listener textport.VersionListener)
 	OpenFileMenuFn           func() *textversion.FileMenu
@@ -164,6 +166,15 @@ func (e Runtime[H, V]) GetPluginCatalog() PluginCatalog {
 }
 func (e Runtime[H, V]) GetPluginCommands() plugincommand.Commands { return e.PluginCommandsFn() }
 func (e Runtime[H, V]) GetAgent() agentport.Agent                 { return e.AgentVal }
+
+// GetTabKindChoice is the choice of the kind of tab a note opens in, which chooses none where the
+// assembly names none.
+func (e Runtime[H, V]) GetTabKindChoice() *tabkind.Choose {
+	if e.TabKindChoiceFn == nil {
+		return tabkind.NewChoose(nil, nil)
+	}
+	return e.TabKindChoiceFn()
+}
 func (e Runtime[H, V]) SetTextVersionListener(listener textport.VersionListener) {
 	e.SetTextVersionListenerFn(listener)
 }

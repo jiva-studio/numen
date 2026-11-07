@@ -723,7 +723,13 @@ type ManifestTabKind struct {
 	Kind  string `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	// icon is the kebab-case name of an icon of the application's icon set.
-	Icon          string `protobuf:"bytes,3,opt,name=icon,proto3" json:"icon,omitempty"`
+	Icon string `protobuf:"bytes,3,opt,name=icon,proto3" json:"icon,omitempty"`
+	// when is the CEL condition over a note, such as "target.noteType == 'deck'", under which the note
+	// opens in a tab of this kind. Empty opens no note.
+	When string `protobuf:"bytes,4,opt,name=when,proto3" json:"when,omitempty"`
+	// rank is default or alternate, as a reader's: among the kinds whose condition holds over a note,
+	// a default kind is chosen before an alternate one. Empty is default.
+	Rank          string `protobuf:"bytes,5,opt,name=rank,proto3" json:"rank,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -775,6 +781,20 @@ func (x *ManifestTabKind) GetTitle() string {
 func (x *ManifestTabKind) GetIcon() string {
 	if x != nil {
 		return x.Icon
+	}
+	return ""
+}
+
+func (x *ManifestTabKind) GetWhen() string {
+	if x != nil {
+		return x.When
+	}
+	return ""
+}
+
+func (x *ManifestTabKind) GetRank() string {
+	if x != nil {
+		return x.Rank
 	}
 	return ""
 }
@@ -1779,11 +1799,13 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"appearance\x18\x03 \x01(\tR\n" +
 	"appearance\x12\x12\n" +
-	"\x04file\x18\x04 \x01(\tR\x04file\"O\n" +
+	"\x04file\x18\x04 \x01(\tR\x04file\"w\n" +
 	"\x0fManifestTabKind\x12\x12\n" +
 	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
-	"\x04icon\x18\x03 \x01(\tR\x04icon\"\x9f\x02\n" +
+	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x12\n" +
+	"\x04when\x18\x04 \x01(\tR\x04when\x12\x12\n" +
+	"\x04rank\x18\x05 \x01(\tR\x04rank\"\x9f\x02\n" +
 	"\x12ManifestDependency\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +
