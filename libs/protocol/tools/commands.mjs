@@ -82,4 +82,4 @@ const ts = [
 ].join('\n')
 
 write('../../plugin-catalog/manifest/shared_commands.go', go)
-write('../../plugin-sdk-ts/src/sharedCommands.ts', ts)
+write('../../plugin-sdk-ts/src/commands/sharedCommands.ts', ts)

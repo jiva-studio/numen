@@ -2,7 +2,7 @@
  * The commands of the window: which ones it runs now, the items a command offers, and the one way
  * a plugin runs a command, its own or another's, from a button, a menu row or its code.
  */
-import type { Disposable } from './types'
+import type { Disposable } from '../types'
 
 // CommandTarget is what a command runs over: the file or folder a row of the file tree was opened
 // on, the file of a tab, the note of a search result or the note a plugin names. A bar has none.

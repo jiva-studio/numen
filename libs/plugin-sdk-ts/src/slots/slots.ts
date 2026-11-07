@@ -5,7 +5,7 @@
  */
 import type { Disposable } from '../types'
 import type { SlotName } from './slotNames'
-import type { CommandTarget } from '../commands'
+import type { CommandTarget } from '../commands/commands'
 
 export { SLOT, WINDOW_SLOTS, type SlotName } from './slotNames'
 export { WHEN_VARIABLES } from './whenVariables'

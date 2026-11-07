@@ -5,8 +5,8 @@
  */
 import type { Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
-import type { CommandItem } from '../commands'
-import { SHARED_COMMANDS } from '../sharedCommands'
+import type { CommandItem } from '../commands/commands'
+import { SHARED_COMMANDS } from '../commands/sharedCommands'
 import type { Disposable } from '../types'
 import type { SlotCommand, SlotEntryKey, SlotItem } from './slots'
 

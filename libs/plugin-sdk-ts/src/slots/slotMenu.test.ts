@@ -2,7 +2,7 @@
  * The menu tree of the entries of a slot, and the item lists read for their commands.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { CommandItem } from '../commands'
+import type { CommandItem } from '../commands/commands'
 import type { SlotCommand, SlotItem, SlotSeparator, SlotSubmenu, SlotView } from './slots'
 import { createSlotMenu, readCommandItemLists, type CommandItemLists } from './slotMenu'
 
