@@ -43,7 +43,7 @@ test('a plugin is read with its settings, declared and registered commands', () 
           settings: [{ title: 'Glow', palette: true }, { title: 'Hidden' }],
           contributes: {
             commands: [
-              { id: 'file.light', title: 'Light a file', contentTypes: ['text/plain'] },
+              { id: 'file.light', title: 'Light a file', when: "target.contentType == 'text/plain'" },
               { id: 'room.light', title: 'Light the room' },
               {
                 id: 'text.dim',
@@ -51,7 +51,7 @@ test('a plugin is read with its settings, declared and registered commands', () 
                 when: "version.plugin == 'md.numen.tools.lantern'",
               },
               { id: 'lamp.create', title: 'New lamp', shortcut: 'mod+shift+l' },
-              { id: 'wick.trim', title: 'Trim the wick', scope: 'note' },
+              { id: 'wick.trim', title: 'Trim the wick', when: 'target.isNote' },
             ],
             handlers: [{ command: 'app:file.createText', title: 'Read the lantern' }],
           },

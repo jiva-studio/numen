@@ -121,6 +121,15 @@ const getShortcutChord = (shortcut, where) => {
   return { letter, shift: modifiers.includes('shift') }
 }
 
+/** The palette group of a command by its when condition, as the window's getWhenGroup reads it. */
+const getWhenGroup = (when) => {
+  if (/\btarget\.isNote\b/.test(when)) return 'note'
+  return /\btarget\.\w/.test(when) ? 'file' : 'window'
+}
+
+/** Whether a when condition names a text version, so the command lists one item per version. */
+const isOverVersion = (when) => /\bversion\.\w/.test(when)
+
 /**
  * Every plugin the window `target` loads, in the order the host lists them —
  * by id — with the commands it adds to the palette:
@@ -128,11 +137,13 @@ const getShortcutChord = (shortcut, where) => {
  * - `settings`, each setting its manifest offers in the palette, drawn as the
  *   plugin's name and the setting's title;
  * - `declared`, each command its manifest declares that the palette shows,
- *   over a file where it names the files' extensions and over the window where
- *   it names none;
+ *   leaving out the ones whose condition names a text version;
  * - `commands`, each command its manifest declares that its frontend registers a
- *   handler for, over the note in front or over the window, with the chord its
- *   shortcut is drawn as.
+ *   handler for, with the chord its shortcut is drawn as.
+ *
+ * A command is in the group the window files it under by its condition: over the note where it
+ * reads target.isNote, over a file where it reads another field of target, and over the window
+ * where it reads none.
  *
  * The manifest declares every command; the frontend scan only confirms that each id it
  * registers is declared, and the commands it registers are the frontend's. An id the manifest
@@ -160,14 +171,14 @@ export const getPluginCommands = async (target, plugins = PLUGINS) => {
         .filter((one) => one.palette)
         .map((one) => ({ text: `${manifest.name}: ${one.title}`, group: 'settings' })),
       declared: all
-        .filter((one) => !registered.includes(one.id) && one.when.length === 0)
-        .map((one) => ({ text: one.title, group: one.contentTypes.length ? 'file' : 'window' })),
+        .filter((one) => !registered.includes(one.id) && !isOverVersion(one.when))
+        .map((one) => ({ text: one.title, group: getWhenGroup(one.when) })),
       commands: all
         .filter((one) => registered.includes(one.id))
         .map((one) => ({
           id: one.id,
           text: one.title,
-          group: one.scope === 'note' ? 'note' : 'window',
+          group: getWhenGroup(one.when),
           ...(one.shortcut ? { chord: getShortcutChord(one.shortcut, name) } : {}),
         })),
     })
