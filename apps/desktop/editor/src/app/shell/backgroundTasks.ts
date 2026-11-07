@@ -73,6 +73,10 @@ export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): Backgrou
     for (const id of cancellingIds.value) {
       if (!listedIds.has(id)) cancellingIds.value.delete(id)
     }
+    // A dismissal holds while the task is listed, so a later run of the same work under the same id shows.
+    for (const id of dismissedIds.value) {
+      if (!listedIds.has(id)) dismissedIds.value.delete(id)
+    }
   })
 
   const cancel = async (id: string): Promise<void> => {
