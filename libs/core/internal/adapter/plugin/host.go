@@ -1097,9 +1097,15 @@ func (h *Host) isPluginEnabled(pluginID string) bool {
 	return h.isPluginEnabledLocked(pluginID)
 }
 
+// isPluginEnabledLocked reads the stored and declared settings alone: the agents found on the machine,
+// which getPluginSettingsLocked adds by searching PATH, have no part in it, and a listing of the
+// commands asks this for every plugin and extension.
 func (h *Host) isPluginEnabledLocked(pluginID string) bool {
-	settings := h.getPluginSettingsLocked(pluginID)
-	if val, ok := settings["enabled"].(bool); ok {
+	settings := maps.Clone(h.settings[pluginID])
+	if p, ok := h.plugins[pluginID]; ok {
+		settings = p.Manifest.ResolveSettings(settings)
+	}
+	if val, ok := settings[settingEnabled].(bool); ok {
 		return val
 	}
 	return true
