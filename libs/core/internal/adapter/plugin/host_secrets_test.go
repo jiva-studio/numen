@@ -587,32 +587,22 @@ func TestTheSignatureOfAListContainsNoValue(t *testing.T) {
 	}
 }
 
-// A plugin that restarts, and whose first Configure fails, is configured again by the next refresh
-// although its list of secrets did not change.
-func TestARestartedPluginWhoseFirstConfigureFailedIsConfiguredByTheNextRefresh(t *testing.T) {
+// A plugin between its activation and the Configure of that activation is not due one: the
+// Configure of the activation reads the list as it is, so a refresh sends nothing to it.
+func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	host.SetSecretSource(allowOne(secretPluginID))
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
-		t.Fatal(err)
-	}
+	host.mu.Lock()
+	host.awaitingFirstConfigure[secretPluginID] = true
+	host.mu.Unlock()
 
-	probe.mu.Lock()
-	probe.unimplemented = true
-	probe.mu.Unlock()
-	if err := prepareActivation(t, host, false)(); err != nil {
-		t.Fatal(err)
+	if host.hasSecretsChanged(t.Context(), secretPluginID) {
+		t.Error("a plugin that awaits the Configure of its activation is due a Configure")
 	}
-
-	probe.mu.Lock()
-	probe.unimplemented = false
-	before := len(probe.calls)
-	probe.mu.Unlock()
 	if err := host.RefreshSecrets(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	probe.mu.Lock()
-	defer probe.mu.Unlock()
-	if len(probe.calls) != before+1 {
-		t.Errorf("the refresh sent %d Configure calls to the restarted plugin, want 1", len(probe.calls)-before)
+	if probe.count() != 0 {
+		t.Errorf("the refresh sent %d Configure calls to a plugin that awaits its activation Configure", probe.count())
 	}
 }

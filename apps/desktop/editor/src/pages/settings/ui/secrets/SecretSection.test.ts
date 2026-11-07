@@ -1,16 +1,16 @@
 /**
  * The section of one group as a landmark: its accessible name is the heading with the group name.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import SecretSection from './SecretSection.vue'
 
 const section = { group: 'harbour', isAsked: false, secrets: [] }
 
-const mountSection = () =>
+const mountSection = (create = vi.fn(async () => true)) =>
   mount(SecretSection, {
     attachTo: document.body,
-    props: { section, drafts: [], declarations: [] },
+    props: { section, drafts: [], declarations: [], create },
   })
 
 afterEach(() => {
@@ -18,6 +18,33 @@ afterEach(() => {
 })
 
 describe('the section of a group', () => {
+  it('creates the secret of a group a plugin asks for through create', async () => {
+    const create = vi.fn(async () => true)
+    const wrapper = mount(SecretSection, {
+      attachTo: document.body,
+      props: {
+        section: { group: 'harbour', isAsked: true, secrets: [] },
+        drafts: [],
+        declarations: [],
+        create,
+      },
+    })
+    const input = wrapper.get<HTMLInputElement>('input[type="password"]')
+    await input.setValue('a-made-up-key')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+    expect(create).toHaveBeenCalledWith('Default', 'a-made-up-key')
+    wrapper.unmount()
+  })
+
+  it('requires create: a section without it is a type error', () => {
+    // vue-tsc fails on the unused directive while the prop is optional, which would drop a typed value.
+    // @ts-expect-error create is required
+    const mountWithoutCreate = () =>
+      mount(SecretSection, { props: { section, drafts: [], declarations: [] } })
+    expect(mountWithoutCreate).toBeTypeOf('function')
+  })
+
   it('is named by its heading', () => {
     const wrapper = mountSection()
     const region = document.querySelector('section')
