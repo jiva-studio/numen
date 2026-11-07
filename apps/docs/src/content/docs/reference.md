@@ -132,6 +132,7 @@ The settings of the plugin Document OCR.
 | `customModelPath` | text | paddleOCR text recognition model in ONNX format. |
 | `customDictPath` | text | UTF-8 text, one character per line. Empty for a model that includes its own. |
 | `dpi` | text | resolution a page is rendered at before recognition. One of `150`, `200`, `300`, `400`, `600`. |
+| `recognizeAutomatically` | yes or no | recognize the text of every PDF and image added to the vault. |
 
 ### `md.numen.engines.transcription`
 
@@ -140,6 +141,7 @@ The settings of the plugin Audio/Video Transcription.
 | | | |
 | --- | --- | --- |
 | `model` | text | speech recognition model downloaded from Hugging Face. Parakeet v3 supports 25 European languages with automatic language detection; Parakeet v2 is English-only. One of `parakeet-tdt-0.6b-v3-int8`, `parakeet-tdt-0.6b-v2-int8`. |
+| `transcribeAutomatically` | yes or no | transcribe every recording added to the vault. |
 
 ### `md.numen.notes`
 
@@ -168,6 +170,7 @@ The settings of the plugin Media Importer.
 | `ffmpeg` | text | path to the ffmpeg program. |
 | `captions` | text | caption languages in order of preference, comma-separated. |
 | `automaticCaptions` | yes or no | use auto-generated captions when a site has no others. |
+| `downloadCaptionsAutomatically` | yes or no | download the captions or the article of every link note added to the vault. |
 | `copyMaxSizeMb` | a number | maximum video download size in megabytes; 0 for no limit. From 0 to 100000. |
 
 ### `md.numen.tools.proofreading`

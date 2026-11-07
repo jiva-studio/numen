@@ -47,11 +47,7 @@ test('a frontend registers a command with an id and a handler, and a shared comm
         handled.has(id) && fields.includes('listItems')
           ? ['handler', 'id', 'listItems']
           : ['handler', 'id']
-      assert.deepEqual(
-        [...fields].sort(),
-        allowed,
-        `${file} registers ${fields.join(', ')}`,
-      )
+      assert.deepEqual([...fields].sort(), allowed, `${file} registers ${fields.join(', ')}`)
     }
   }
 })
@@ -61,7 +57,10 @@ test('every command a frontend registers is declared or handled by its manifest'
     const declared = new Set((document.contributes?.commands ?? []).map((one) => one.id))
     const handled = getHandledIds(document)
     for (const { file, id } of listPluginRegistrations(name)) {
-      assert.ok(declared.has(id) || handled.has(id),`${file} registers ${id}, which ${name} does not declare`)
+      assert.ok(
+        declared.has(id) || handled.has(id),
+        `${file} registers ${id}, which ${name} does not declare`,
+      )
     }
   }
 })

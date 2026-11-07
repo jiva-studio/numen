@@ -10,7 +10,13 @@ const manifest = JSON.parse(
 ) as {
   contributes: {
     commands?: readonly unknown[]
-    slots?: readonly { slot: string; command?: string; view?: string; group?: string; order?: number }[]
+    slots?: readonly {
+      slot: string
+      command?: string
+      view?: string
+      group?: string
+      order?: number
+    }[]
   }
 }
 

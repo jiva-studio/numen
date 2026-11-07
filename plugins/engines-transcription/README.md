@@ -12,5 +12,5 @@ Turns your audio and video recordings into interactive, time-stamped transcripts
 ## Settings
 
 - **Model**:
-  - **Parakeet TDT 0.6B v3** *(default)*: Supports 25 European languages and detects the spoken language automatically.
+  - **Parakeet TDT 0.6B v3** _(default)_: Supports 25 European languages and detects the spoken language automatically.
   - **Parakeet TDT 0.6B v2**: Optimized specifically for English recordings.

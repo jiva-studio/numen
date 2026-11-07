@@ -5,7 +5,11 @@ import { createSources } from './sources'
 /** Resolves an address to a loopback URL, typed by its extension. */
 const resolve = async (address: string): Promise<AddressSource> => ({
   url: `http://127.0.0.1:1/token/${address}`,
-  mediaType: address.endsWith('.mp4') ? 'video/mp4' : address.endsWith('.html') ? 'text/html' : 'audio/mpeg',
+  mediaType: address.endsWith('.mp4')
+    ? 'video/mp4'
+    : address.endsWith('.html')
+      ? 'text/html'
+      : 'audio/mpeg',
 })
 
 /** The notes of a vault, each with its frontmatter. */

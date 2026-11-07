@@ -145,7 +145,9 @@ export const getScopePaths = (scope) => {
   if (tokens.includes('all')) return undefined
   const named = tokens.filter((one) => one !== 'none')
   if (named.length === 0) return []
-  return [...new Set(['tests/shell/', ...named.map(getTokenPath)])].sort((a, b) => a.localeCompare(b))
+  return [...new Set(['tests/shell/', ...named.map(getTokenPath)])].sort((a, b) =>
+    a.localeCompare(b),
+  )
 }
 
 /** The jobs that run `paths` (every test when undefined): each engine split into shards of SHARD_SECONDS. */

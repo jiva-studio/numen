@@ -55,7 +55,12 @@ describe('the updater frontend', () => {
     const { check } = setup(AVAILABLE)
     await flush()
 
-    expect(check).toHaveBeenCalledWith({ name: 'numen', version: '2026.9.0', build: 900, platform: 'windows' })
+    expect(check).toHaveBeenCalledWith({
+      name: 'numen',
+      version: '2026.9.0',
+      build: 900,
+      platform: 'windows',
+    })
   })
 
   it('draws the indicator for the update found, and the popover opens the download', async () => {

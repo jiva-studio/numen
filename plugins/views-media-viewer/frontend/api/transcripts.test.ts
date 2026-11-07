@@ -61,7 +61,10 @@ describe('the transcript of a recording', () => {
   it('reads a live text without times as its prose, and no cues', async () => {
     const texts = createMockVaultTexts('md.numen.views.media.viewer')
     const article = { ...transcript, path: 'links/tide.md', kind: 'article' }
-    texts.setLive(article, [{ text: 'A tidal mill stored seawater.\n' }, { text: 'It turned at the ebb.\n' }])
+    texts.setLive(article, [
+      { text: 'A tidal mill stored seawater.\n' },
+      { text: 'It turned at the ebb.\n' },
+    ])
     const transcripts = createTranscripts(() => texts)
 
     expect(await transcripts.readArticle('links/tide.md')).toBe(

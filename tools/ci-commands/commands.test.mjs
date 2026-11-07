@@ -44,7 +44,11 @@ test('a plugin is read with its settings, declared and registered commands', () 
           settings: [{ title: 'Glow', palette: true }, { title: 'Hidden' }],
           contributes: {
             commands: [
-              { id: 'file.light', title: 'Light a file', when: "target.contentType == 'text/plain'" },
+              {
+                id: 'file.light',
+                title: 'Light a file',
+                when: "target.contentType == 'text/plain'",
+              },
               { id: 'room.light', title: 'Light the room' },
               {
                 id: 'text.dim',
