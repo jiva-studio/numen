@@ -29,7 +29,6 @@ func TestTheWaitForTheCredentialsLockEndsWithTheContext(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(t.Context(), 300*time.Millisecond)
 	defer cancel()
-	started := time.Now()
 	result := make(chan error, 1)
 	go func() { result <- store.SetKey(ctx, "secret/b", "value-b") }()
 
@@ -38,11 +37,8 @@ func TestTheWaitForTheCredentialsLockEndsWithTheContext(t *testing.T) {
 		if !errors.Is(err, context.DeadlineExceeded) {
 			t.Errorf("SetKey returned %v, want the deadline", err)
 		}
-		if elapsed := time.Since(started); elapsed > time.Second {
-			t.Errorf("SetKey returned after %v, want about 300ms", elapsed)
-		}
-	case <-time.After(3 * time.Second):
-		t.Fatal("SetKey still waits for the lock 3s after its context ended")
+	case <-time.After(time.Second):
+		t.Fatal("SetKey still waits for the lock 1s after its 300ms context")
 	}
 
 	readCtx, stop := context.WithTimeout(t.Context(), time.Second)

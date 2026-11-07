@@ -6,16 +6,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 // lockSuffix is added to the name of the credentials file to name the file its writers lock, which
 // lies beside the credentials folder. The credentials file cannot be locked, since every write
 // renames a new file over it.
 const lockSuffix = ".lock"
-
-// lockPollInterval is how long a writer waits between two attempts to take the lock.
-const lockPollInterval = 10 * time.Millisecond
 
 // changeEntries runs work under an exclusive lock that every writer of the file takes, in this
 // process and in any other, so that a write reads the file after the writes before it ended. The
@@ -34,20 +30,30 @@ func (s *Store) changeEntries(ctx context.Context, work func() error) (err error
 	return work()
 }
 
-// waitForLock calls tryLock until it takes the lock or fails, and stops with the context.
-func waitForLock(ctx context.Context, tryLock func() (isLocked bool, err error)) error {
-	timer := time.NewTimer(0)
-	defer timer.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-timer.C:
+// lockFile takes the exclusive lock on the file at path, creating the file when it is missing, and
+// returns the function that releases it. The wait ends with the context. The system call that
+// waits cannot be stopped, so it is left to finish by itself: it releases the lock as soon as it
+// takes it, and the file is closed then.
+func lockFile(ctx context.Context, path string) (func() error, error) {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil, err
+	}
+	locked := make(chan error, 1)
+	go func() { locked <- lockOpenFile(file) }()
+	select {
+	case err := <-locked:
+		if err != nil {
+			return nil, errors.Join(err, file.Close())
 		}
-		isLocked, err := tryLock()
-		if err != nil || isLocked {
-			return err
-		}
-		timer.Reset(lockPollInterval)
+		return file.Close, nil
+	case <-ctx.Done():
+		go func() {
+			<-locked
+			if err := file.Close(); err != nil {
+				return
+			}
+		}()
+		return nil, ctx.Err()
 	}
 }
