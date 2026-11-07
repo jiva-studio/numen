@@ -26,41 +26,43 @@ type schemaCase struct {
 	output string
 }
 
-var schemaCases = []schemaCase{
-	{
-		name:            "an object of type object",
-		schema:          []byte(`{"type":"object","properties":{"title":{"type":"string"},"author":{"type":"string"}},"required":["title"]}`),
-		input:           `{"type":"object","properties":{"title":{"type":"string"},"author":{"type":"string"}},"required":["title"]}`,
-		isInputAsListed: true,
-		output:          `{"type":"object","properties":{"title":{"type":"string"},"author":{"type":"string"}},"required":["title"]}`,
-	},
-	{
-		name:   "an object without a type",
-		schema: []byte(`{"properties":{"pond":{"type":"string"}},"required":["pond"]}`),
-		input:  `{"type":"object","properties":{"pond":{"type":"string"}},"required":["pond"]}`,
-	},
-	{
-		name:   "an object of type string",
-		schema: []byte(`{"type":"string","properties":{"pond":{"type":"string"}}}`),
-		input:  `{"type":"object","properties":{"pond":{"type":"string"}}}`,
-	},
-	{
-		name:   "an object whose type is a list",
-		schema: []byte(`{"type":["null","object"],"properties":{"pond":{"type":"string"}}}`),
-		input:  `{"type":"object","properties":{"pond":{"type":"string"}}}`,
-	},
-	{
-		name:   "an object of type Object in capitals",
-		schema: []byte(`{"type":"Object"}`),
-		input:  `{"type":"object"}`,
-	},
-	{name: "the empty object", schema: []byte(`{}`), input: `{"type":"object"}`},
-	{name: "no bytes", schema: nil, input: `{"type":"object"}`},
-	{name: "invalid JSON", schema: []byte(`{"type":`), input: `{"type":"object"}`},
-	{name: "null", schema: []byte(`null`), input: `{"type":"object"}`},
-	{name: "an array", schema: []byte(`[{"type":"object"}]`), input: `{"type":"object"}`},
-	{name: "a string", schema: []byte(`"object"`), input: `{"type":"object"}`},
-	{name: "a number", schema: []byte(`7`), input: `{"type":"object"}`},
+func getSchemaCases() []schemaCase {
+	return []schemaCase{
+		{
+			name:            "an object of type object",
+			schema:          []byte(`{"type":"object","properties":{"title":{"type":"string"},"author":{"type":"string"}},"required":["title"]}`),
+			input:           `{"type":"object","properties":{"title":{"type":"string"},"author":{"type":"string"}},"required":["title"]}`,
+			isInputAsListed: true,
+			output:          `{"type":"object","properties":{"title":{"type":"string"},"author":{"type":"string"}},"required":["title"]}`,
+		},
+		{
+			name:   "an object without a type",
+			schema: []byte(`{"properties":{"pond":{"type":"string"}},"required":["pond"]}`),
+			input:  `{"type":"object","properties":{"pond":{"type":"string"}},"required":["pond"]}`,
+		},
+		{
+			name:   "an object of type string",
+			schema: []byte(`{"type":"string","properties":{"pond":{"type":"string"}}}`),
+			input:  `{"type":"object","properties":{"pond":{"type":"string"}}}`,
+		},
+		{
+			name:   "an object whose type is a list",
+			schema: []byte(`{"type":["null","object"],"properties":{"pond":{"type":"string"}}}`),
+			input:  `{"type":"object","properties":{"pond":{"type":"string"}}}`,
+		},
+		{
+			name:   "an object of type Object in capitals",
+			schema: []byte(`{"type":"Object"}`),
+			input:  `{"type":"object"}`,
+		},
+		{name: "the empty object", schema: []byte(`{}`), input: `{"type":"object"}`},
+		{name: "no bytes", schema: nil, input: `{"type":"object"}`},
+		{name: "invalid JSON", schema: []byte(`{"type":`), input: `{"type":"object"}`},
+		{name: "null", schema: []byte(`null`), input: `{"type":"object"}`},
+		{name: "an array", schema: []byte(`[{"type":"object"}]`), input: `{"type":"object"}`},
+		{name: "a string", schema: []byte(`"object"`), input: `{"type":"object"}`},
+		{name: "a number", schema: []byte(`7`), input: `{"type":"object"}`},
+	}
 }
 
 // assertDeclaredSchemas fails the test unless the declared tool carries the schemas of the case.
@@ -94,7 +96,7 @@ func isSameJSON(a, b []byte) bool {
 }
 
 func TestTheRunEndpointDeclaresTheSchemasOfATool(t *testing.T) {
-	for _, tc := range schemaCases {
+	for _, tc := range getSchemaCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			declared := declareTool(&v1.PluginTool{
 				Name: "pond_read", Effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY, InputSchema: tc.schema, OutputSchema: tc.schema,
@@ -117,32 +119,34 @@ type hintCase struct {
 	readOnly, idempotent, destructive, openWorld bool
 }
 
-var hintCases = []hintCase{
-	{
-		name: "a removing tool that needs the network with the hints of a local read", effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE,
-		step: v1.ToolStep_TOOL_STEP_REMOVE, requires: []string{"network:outbound"},
-		hints:    &v1.ToolHints{ReadOnly: true, Idempotent: true},
-		readOnly: true, idempotent: true,
-	},
-	{
-		name: "a local read with the hints of a removing tool that needs the network", effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY,
-		hints:       &v1.ToolHints{Destructive: true, OpenWorld: true},
-		destructive: true, openWorld: true,
-	},
-	{
-		name: "a moving tool with the destructive hint", effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE, step: v1.ToolStep_TOOL_STEP_MOVE,
-		hints:       &v1.ToolHints{Destructive: true},
-		destructive: true,
-	},
-	{
-		name: "a read that needs the network with no hints", effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY,
-		requires: []string{"network:outbound"},
-	},
-	{
-		name: "a removing tool with every hint", effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE, step: v1.ToolStep_TOOL_STEP_REMOVE,
-		hints:    &v1.ToolHints{ReadOnly: true, Destructive: true, Idempotent: true, OpenWorld: true},
-		readOnly: true, idempotent: true, destructive: true, openWorld: true,
-	},
+func getHintCases() []hintCase {
+	return []hintCase{
+		{
+			name: "a removing tool that needs the network with the hints of a local read", effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE,
+			step: v1.ToolStep_TOOL_STEP_REMOVE, requires: []string{"network:outbound"},
+			hints:    &v1.ToolHints{ReadOnly: true, Idempotent: true},
+			readOnly: true, idempotent: true,
+		},
+		{
+			name: "a local read with the hints of a removing tool that needs the network", effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY,
+			hints:       &v1.ToolHints{Destructive: true, OpenWorld: true},
+			destructive: true, openWorld: true,
+		},
+		{
+			name: "a moving tool with the destructive hint", effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE, step: v1.ToolStep_TOOL_STEP_MOVE,
+			hints:       &v1.ToolHints{Destructive: true},
+			destructive: true,
+		},
+		{
+			name: "a read that needs the network with no hints", effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY,
+			requires: []string{"network:outbound"},
+		},
+		{
+			name: "a removing tool with every hint", effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE, step: v1.ToolStep_TOOL_STEP_REMOVE,
+			hints:    &v1.ToolHints{ReadOnly: true, Destructive: true, Idempotent: true, OpenWorld: true},
+			readOnly: true, idempotent: true, destructive: true, openWorld: true,
+		},
+	}
 }
 
 // describeAnnotations writes the hints of annotations, with nil for an unset hint.
@@ -169,7 +173,7 @@ func (tc hintCase) describeWant() string {
 }
 
 func TestTheRunEndpointAnnotatesAToolFromItsHintsOnly(t *testing.T) {
-	for _, tc := range hintCases {
+	for _, tc := range getHintCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			declared := declareTool(&v1.PluginTool{
 				Name: "pond_drain", Effect: tc.effect, Step: tc.step, Requires: tc.requires, Hints: tc.hints,

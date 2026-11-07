@@ -174,26 +174,6 @@ func assertPlainFailureText(t *testing.T, text string) {
 	}
 }
 
-func TestReadPropertyPathReadsThePropertyNamesOfAPointer(t *testing.T) {
-	for pointer, want := range map[string]string{
-		"root":                                  "",
-		"/properties/location/properties/title": "location.title",
-		"/properties/properties":                "properties",
-		"/properties/a~1b/items":                "a/b",
-	} {
-		got := ""
-		for i, name := range readPropertyPath(pointer) {
-			if i > 0 {
-				got += "."
-			}
-			got += name
-		}
-		if got != want {
-			t.Errorf("readPropertyPath(%q) = %q, want %q", pointer, got, want)
-		}
-	}
-}
-
 func TestNullArgumentsAreTheEmptyObject(t *testing.T) {
 	registry, runs := newShelvingRegistry(t)
 

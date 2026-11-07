@@ -31,17 +31,20 @@ func newHintedRegistry(t *testing.T) *Registry {
 	return registry
 }
 
-var wantHints = map[string]Hints{
-	"pond_read":   {ReadOnly: true, Idempotent: true},
-	"pond_search": {ReadOnly: true, Idempotent: true},
-	"pond_fetch":  {ReadOnly: true, Idempotent: true, OpenWorld: true},
-	"pond_write":  {},
-	"pond_drain":  {Destructive: true},
-	"pond_rename": {},
-	"pond_import": {OpenWorld: true},
+func getWantHints() map[string]Hints {
+	return map[string]Hints{
+		"pond_read":   {ReadOnly: true, Idempotent: true},
+		"pond_search": {ReadOnly: true, Idempotent: true},
+		"pond_fetch":  {ReadOnly: true, Idempotent: true, OpenWorld: true},
+		"pond_write":  {},
+		"pond_drain":  {Destructive: true},
+		"pond_rename": {},
+		"pond_import": {OpenWorld: true},
+	}
 }
 
 func TestToolAddSetsTheHintsOfTheToolOnTheWire(t *testing.T) {
+	wantHints := getWantHints()
 	res, err := registryHandler{registry: newHintedRegistry(t)}.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -64,6 +67,7 @@ func TestToolAddSetsTheHintsOfTheToolOnTheWire(t *testing.T) {
 }
 
 func TestToolHintsAreReadFromTheRegistryAndOverTheWire(t *testing.T) {
+	wantHints := getWantHints()
 	registry := newHintedRegistry(t)
 	local, err := registry.ListTools(t.Context())
 	if err != nil {
@@ -87,22 +91,22 @@ func TestToolHintsAreReadFromTheRegistryAndOverTheWire(t *testing.T) {
 }
 
 func TestServiceHandlerToolHintsAreSentOverTheWire(t *testing.T) {
-	sent := []*ToolInfo{
+	wire := []*ToolInfo{
 		{Name: "pond_drain", Effect: ReadOnly, Hints: Hints{Destructive: true, OpenWorld: true}},
 		{Name: "pond_read", Effect: ReadWrite, Step: Remove, Hints: Hints{ReadOnly: true, Idempotent: true}},
 		{Name: "pond_write", Effect: ReadWrite},
 	}
 
-	listing, err := serveHandler(t, listingHandler{listing: Listing{Tools: sent}}).ListTools(t.Context())
+	listing, err := serveHandler(t, listingHandler{listing: Listing{Tools: wire}}).ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(listing.Tools) != len(sent) {
-		t.Fatalf("the client read %d tools, want %d", len(listing.Tools), len(sent))
+	if len(listing.Tools) != len(wire) {
+		t.Fatalf("the client read %d tools, want %d", len(listing.Tools), len(wire))
 	}
 	for i, info := range listing.Tools {
-		if got, want := info.GetHints(), sent[i].Hints; got != want {
+		if got, want := info.GetHints(), wire[i].Hints; got != want {
 			t.Errorf("the client read the hints of %s as %+v, want %+v", info.GetName(), got, want)
 		}
 	}

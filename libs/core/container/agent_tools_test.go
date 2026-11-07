@@ -568,9 +568,9 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 }
 
 // An in-app run lists only the tools whose effect permission the agent plugin holds: an agent
-// plugin with vault:read alone is offered the READ_ONLY tools and neither offered nor able to call
+// plugin with vault:read alone lists the READ_ONLY tools and neither lists nor can call
 // a READ_WRITE one, although the plugin of that tool holds vault:write.
-func TestAnInAppRunOfAReadOnlyAgentPluginIsNotOfferedAReadWriteTool(t *testing.T) {
+func TestAnInAppRunOfAnAgentPluginWithVaultReadListsNoReadWriteTool(t *testing.T) {
 	agent := &toolAgent{calls: []toolCall{{name: "note_write", arguments: `{"path":"Garden.md"}`}}}
 	vault := &toolPlugin{tools: []*v1.PluginTool{
 		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READ_ONLY),
