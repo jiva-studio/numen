@@ -47,9 +47,8 @@ func createTriggerConfig(settingsFile string, app []pluginport.PluginSetting, pl
 	}
 	config := map[string]any{}
 	add := func(owner string, path []string, settings []pluginport.PluginSetting) {
-		values, _ := file[owner].(map[string]any)
 		for _, one := range settings {
-			value, isWritten := findSettingValue(values, one.Key)
+			value, isWritten := findSettingValue(file[owner], one.Key)
 			if !isWritten && json.Unmarshal([]byte(one.DefaultJSON), &value) != nil {
 				continue
 			}
@@ -63,13 +62,15 @@ func createTriggerConfig(settingsFile string, app []pluginport.PluginSetting, pl
 	return config, nil
 }
 
-// findSettingValue returns the value of a key in the object of an owner: under the whole key, or
-// through nested objects, one for each dot.
-func findSettingValue(values map[string]any, key string) (any, bool) {
-	if value, found := values[key]; found {
-		return value, true
+// findSettingValue returns the value of a key in the member of an owner, which holds none unless it
+// is an object: under the whole key, or through nested objects, one for each dot.
+func findSettingValue(owner any, key string) (any, bool) {
+	if values, isObject := owner.(map[string]any); isObject {
+		if value, found := values[key]; found {
+			return value, true
+		}
 	}
-	var current any = values
+	current := owner
 	for _, part := range strings.Split(key, ".") {
 		level, isObject := current.(map[string]any)
 		if !isObject {
