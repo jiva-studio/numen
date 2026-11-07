@@ -13,7 +13,7 @@ Disable the Vector Embeddings plugin. Search is then names and words alone, noth
 
 ## Using a service
 
-In the settings of the Vector Embeddings plugin, set the provider to `openai`, `openrouter` or `custom`, the service URL, and the model name. Any service that supports the standard embeddings request will work. The service's key is a secret: enter it once on the Secrets page of the settings, in the group `openrouter` or `openai`, and allow the plugin to read it. The settings file holds no key.
+In the settings of the Vector Embeddings plugin, set the provider to `openai`, `openrouter` or `custom`, the service URL, and the model name. Any service that supports the standard embeddings request will work. The service's key is a secret: enter it once on the Secrets page of the settings, in the group `openrouter` or `openai`, and allow the plugin to read it. A custom service has no group of its own: its key is a secret of any group that the plugin is allowed to read. The settings file holds no key.
 
 ## Changing the model
 
