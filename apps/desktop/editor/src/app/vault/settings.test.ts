@@ -260,7 +260,7 @@ describe('the secrets', () => {
 })
 
 describe('an operation on a secret', () => {
-  const operations: readonly [string, () => Promise<unknown>, string, unknown][] = [
+  const operations: readonly [string, () => Promise<unknown>, keyof typeof request, unknown][] = [
     [
       'createSecret',
       () => core.createSecret('openrouter', 'Work', 'value-typed-once'),
