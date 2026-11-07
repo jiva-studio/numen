@@ -173,6 +173,14 @@ const registerInSlots = (
   return { dispose: () => registrations.forEach((one) => one.dispose()) }
 }
 
+/** The build the plugins of the window read, on the platform `getPlatform` reports. */
+const createWindowAppInfo = (getPlatform: () => WindowPlatform) =>
+  createAppInfo({
+    version: import.meta.env.VITE_NUMEN_VERSION,
+    build: import.meta.env.VITE_NUMEN_BUILD,
+    getPlatform,
+  })
+
 /**
  * The host of the window, whose plugins are given the agent where the window has one, and the
  * vaults and the window the services hold when the plugin starts.
@@ -208,11 +216,7 @@ export function createShellHost(
       pluginId,
       target: TARGET,
       subscriptions,
-      app: createAppInfo({
-        version: import.meta.env.VITE_NUMEN_VERSION,
-        build: import.meta.env.VITE_NUMEN_BUILD,
-        getPlatform,
-      }),
+      app: createWindowAppInfo(getPlatform),
       openExternal: createExternalOpener((url) => openExternalUrl(url)),
       registerTabKind: (registration) =>
         add(addView({ pluginId, registration: registration as TabKindRegistration })),
