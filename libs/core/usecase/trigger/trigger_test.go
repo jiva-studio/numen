@@ -47,6 +47,13 @@ func (s *memoryVault) put(path, content string) {
 	s.times[path] = time.Unix(int64(1_700_000_000+len(s.times)*100+len(content)), 0)
 }
 
+func (s *memoryVault) remove(path string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.files, path)
+	delete(s.times, path)
+}
+
 func (s *memoryVault) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
 	s.mu.Lock()
 	paths := slices.Sorted(maps.Keys(s.files))
@@ -317,5 +324,19 @@ func TestAScanReadsNoFileWhenNothingChanged(t *testing.T) {
 	s.scan(t)
 	if s.memoryVault.reads != before {
 		t.Errorf("a scan over unchanged files read %d files", s.memoryVault.reads-before)
+	}
+}
+
+func TestATriggerOnFileAddedRunsOverAFileDeletedAndAddedAgainWithTheSameContent(t *testing.T) {
+	s := newScene(t, map[string]string{"scans/a.pdf": "%PDF a"}, getExtractOnAdd())
+	s.scan(t)
+
+	s.memoryVault.remove("scans/a.pdf")
+	if got := s.scan(t); len(got) != 0 {
+		t.Fatalf("a scan without the file ran %v", got)
+	}
+	s.memoryVault.put("scans/a.pdf", "%PDF a")
+	if got, want := s.scan(t), []string{scanner + " app:file.createText scans/a.pdf"}; !slices.Equal(got, want) {
+		t.Errorf("the file added again ran %v, want %v", got, want)
 	}
 }
