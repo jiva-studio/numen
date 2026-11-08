@@ -1,4 +1,5 @@
-package container
+// Package search wires search, search policy, vectors and chunking.
+package search
 
 import "github.com/jiva-studio/numen/libs/core/usecase/note"
 

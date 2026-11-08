@@ -1,11 +1,11 @@
-package container
+package settings
 
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
+	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/themebridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
@@ -25,23 +25,22 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 			say,
 		),
 		InterfaceScaleBounds: theme.Bounds{
-			Min: settings.GetInterfaceScaleBounds().Min, Max: settings.GetInterfaceScaleBounds().Max,
+			Min: settingsadapter.GetInterfaceScaleBounds().Min, Max: settingsadapter.GetInterfaceScaleBounds().Max,
 		},
 		TextScaleBounds: theme.Bounds{
-			Min: settings.GetTextScaleBounds().Min, Max: settings.GetTextScaleBounds().Max,
+			Min: settingsadapter.GetTextScaleBounds().Min, Max: settingsadapter.GetTextScaleBounds().Max,
 		},
 	}, err
 }
 
-// CheckInterfaceScale is an error naming the scale where the interface scale setting does not take
-// it.
+// CheckInterfaceScale returns an error when scale is outside the interface scale bounds.
 func CheckInterfaceScale(name string, scale float64) error {
-	return settings.GetInterfaceScaleBounds().Check(name, scale)
+	return settingsadapter.GetInterfaceScaleBounds().Check(name, scale)
 }
 
-// CheckTextScale is an error naming the scale where the text scale setting does not take it.
+// CheckTextScale returns an error when scale is outside the text scale bounds.
 func CheckTextScale(name string, scale float64) error {
-	return settings.GetTextScaleBounds().Check(name, scale)
+	return settingsadapter.GetTextScaleBounds().Check(name, scale)
 }
 
 func (c Config) getCatalogue() (theme.Catalogue, error) {
@@ -54,26 +53,26 @@ func (c Config) getCatalogue() (theme.Catalogue, error) {
 
 func (c Config) openCatalogue() (theme.Catalogue, error) {
 	if c.ThemesPath != "" {
-		return theme.OpenAt(c.ThemesPath, c.getResources().watches)
+		return theme.OpenAt(c.ThemesPath, c.Watches)
 	}
-	if folder, selected := c.getAdjacentPath("themes"); selected {
-		return theme.OpenAt(folder, c.getResources().watches)
+	if folder, selected := c.GetAdjacentPath("themes"); selected {
+		return theme.OpenAt(folder, c.Watches)
 	}
-	return theme.Open(c.getResources().watches)
+	return theme.Open(c.Watches)
 }
 
 func (c Config) readAppearance(scales *theme.Scales) (theme.Appearance, error) {
-	path, err := c.settingsFile()
+	path, err := c.SettingsFile()
 	if err != nil {
 		return theme.Appearance{}, err
 	}
-	activeSettings, err := c.getSettingsAt(path)
+	activeSettings, err := c.GetSettingsAt(path)
 	if err != nil {
 		return theme.Appearance{}, err
 	}
 	current := theme.Appearance{
 		ThemeName:      activeSettings.Appearance.Theme,
-		Mode:           settings.Mode(activeSettings.Appearance.Mode),
+		Mode:           settingsadapter.Mode(activeSettings.Appearance.Mode),
 		InterfaceScale: activeSettings.Appearance.InterfaceScale,
 		TextScale:      activeSettings.Appearance.TextScale,
 	}
@@ -82,13 +81,13 @@ func (c Config) readAppearance(scales *theme.Scales) (theme.Appearance, error) {
 }
 
 func (c Config) writeAppearance(selectedVal theme.Appearance, scales *theme.Scales) error {
-	appearance := func(key string) []string { return []string{settings.OwnerApp, "appearance", key} }
+	appearance := func(key string) []string { return []string{settingsadapter.OwnerApp, "appearance", key} }
 	values := []struct {
 		path  []string
 		value any
 	}{
 		{appearance("theme"), selectedVal.ThemeName},
-		{appearance("mode"), settings.GetModeName(selectedVal.Mode)},
+		{appearance("mode"), settingsadapter.GetModeName(selectedVal.Mode)},
 	}
 	if selectedVal.InterfaceScale > 0 {
 		values = append(values, struct {
@@ -102,6 +101,7 @@ func (c Config) writeAppearance(selectedVal theme.Appearance, scales *theme.Scal
 			value any
 		}{appearance("textScale"), selectedVal.TextScale})
 	}
+
 	writing := make([]settingsport.Setting, 0, len(values))
 	for _, one := range values {
 		encoded, err := json.Marshal(one.value)
@@ -110,7 +110,7 @@ func (c Config) writeAppearance(selectedVal theme.Appearance, scales *theme.Scal
 		}
 		writing = append(writing, settingsport.Setting{Path: one.path, JSON: string(encoded)})
 	}
-	if err := c.writeSettings(writing); err != nil {
+	if err := c.WriteSettings(writing); err != nil {
 		return err
 	}
 	scales.ClearSizes(selectedVal)

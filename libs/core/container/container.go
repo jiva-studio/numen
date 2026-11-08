@@ -7,39 +7,27 @@ package container
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
-	"os"
-	"path/filepath"
-	"slices"
-	"strings"
+	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
+	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
+	pluginswiring "github.com/jiva-studio/numen/libs/core/container/plugins"
+	searchwiring "github.com/jiva-studio/numen/libs/core/container/search"
+	settingswiring "github.com/jiva-studio/numen/libs/core/container/settings"
+	vaultwiring "github.com/jiva-studio/numen/libs/core/container/vault"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/trash"
-	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
-
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/port/settingsport"
-	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
+	"github.com/jiva-studio/numen/libs/core/usecase/secret"
+	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 )
 
 // Config is what the user may point somewhere else. Empty fields mean the
@@ -83,24 +71,52 @@ type Config struct {
 	Resources *Resources
 
 	agentProvider agentport.AgentProvider
-	programs      *settings.ProgramList
+	programs      *settingsadapter.ProgramList
 }
 
-// NewPluginHost creates and initializes a plugin host for the specified target and search directories.
-// The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
-// provider NUMEN_ONNX_PROVIDER names (auto when unset).
-func NewPluginHost(target string, dirs ...string) *plugin.Host {
-	host := plugin.NewHost(clock.System{}, target, dirs...)
-	host.SetContentTypeTable(sharedmimeinfo.Open())
-	host.SetDependencies(newDependencies(""))
-	if err := host.Discover(); err != nil {
-		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
+// Resources is what every part a container assembles shares: the write lock of each vault, the
+// folder watches and the access to the settings file. An application builds one with
+// NewResources and names it in its Config.
+type Resources struct {
+	vaultLocks      *vaultwriter.Locks
+	watches         *vaultwatch.Hub
+	settingsFiles   *settingsadapter.Files
+	settingEvents   *settingevents.Events
+	secretGate      *secret.Gate
+	subscribedHosts sync.Map
+}
+
+// NewResources returns the resources of one container.
+func NewResources() *Resources {
+	return &Resources{
+		vaultLocks:    vaultwriter.NewLocks(),
+		watches:       vaultwatch.NewHub(),
+		settingsFiles: settingsadapter.NewFiles(),
+		settingEvents: settingevents.New(),
+		secretGate:    secret.NewGate(),
 	}
-	return host
+}
+
+// NewConfig returns c with the resources of one container. A Config built without NewConfig and
+// without Resources opens writers, watches and settings that refuse to work.
+func NewConfig(c Config) Config {
+	if c.Resources == nil {
+		c.Resources = NewResources()
+	}
+	if c.Chunks == nil {
+		c.Chunks = &ChunkTokens{}
+	}
+	return c
+}
+
+func (c Config) getResources() *Resources {
+	if c.Resources != nil {
+		return c.Resources
+	}
+	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil}
 }
 
 // Clock is the clock every scenario assembled here is handed.
-
 func (c Config) Clock() machineport.Clock {
 	if c.Now != nil {
 		return c.Now
@@ -112,185 +128,6 @@ func (c Config) handleError(err error) {
 	if c.ErrorHandler != nil {
 		c.ErrorHandler(err)
 	}
-}
-
-// SyncSetting returns whether note title and filename synchronization is enabled.
-func (c Config) SyncSetting() note.SyncSetting {
-	return func() note.SyncTitleAndFilename {
-		target, err := c.Settings()
-		if err != nil {
-			c.handleError(fmt.Errorf("read settings: %w", err))
-		}
-		return note.SyncTitleAndFilename(target.Sync())
-	}
-}
-
-// ReadSettings returns a function that reads settings as JSON and returns the settings file path.
-func (c Config) ReadSettings() func() (string, string, error) {
-	return func() (string, string, error) {
-		path, err := c.settingsFile()
-		if err != nil {
-			return "", "", err
-		}
-		target, err := c.getCheckedSettingsAt(path)
-		if err != nil {
-			return "", path, err
-		}
-		content, err := target.WriteJSON()
-		return content, path, err
-	}
-}
-
-// GetSettingsWriter patches specific settings paths in the configuration file. The readers of the
-// setting-changed event receive the settings whose value changed.
-func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
-	return c.writeSettings
-}
-
-func (c Config) writeSettings(entries []settingsport.Setting) error {
-	target := make([]settings.Setting, 0, len(entries))
-	for _, one := range entries {
-		var value json.RawMessage
-		if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
-			return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
-		}
-		target = append(target, settings.Setting{At: one.Path, Written: value})
-	}
-	if err := c.checkWrites(entries); err != nil {
-		return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
-	}
-	path, err := c.settingsFile()
-	if err != nil {
-		return err
-	}
-	into := DefaultSettings()
-	if err := c.getResources().settingsFiles.Save(path, &into, target...); err != nil {
-		return err
-	}
-	c.refreshSettingEvents()
-	return nil
-}
-
-func (c Config) checkWrites(entries []settingsport.Setting) error {
-	declarations := c.getDeclarations()
-	registries := c.getRegistries()
-	for _, one := range entries {
-		var val any
-		if err := json.Unmarshal([]byte(one.JSON), &val); err != nil {
-			return err
-		}
-		if err := settings.CheckWrite(declarations, registries, one.Path, val); err != nil {
-			return err
-		}
-		if c.PluginHost != nil && isPluginSetting(one.Path) {
-			if err := c.PluginHost.CheckPluginSetting(one.Path[0], one.Path[1], val); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func isPluginSetting(path []string) bool {
-	return len(path) == 2 && path[0] != settings.OwnerApp
-}
-
-func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting, report func(error)) {
-	if host == nil {
-		return
-	}
-	// The enabled entries go last: enabling a plugin generates the values of its settings that hold
-	// none, and a value in the same batch is in memory by then.
-	isEnabledEntry := func(one settingsport.Setting) bool {
-		return len(one.Path) == 2 && one.Path[1] == hostFieldEnabled
-	}
-	ordered := slices.Concat(
-		slices.DeleteFunc(slices.Clone(entries), isEnabledEntry),
-		slices.DeleteFunc(slices.Clone(entries), func(one settingsport.Setting) bool { return !isEnabledEntry(one) }),
-	)
-	for _, one := range ordered {
-		if !isPluginSetting(one.Path) {
-			continue
-		}
-		var val any
-		if err := json.Unmarshal([]byte(one.JSON), &val); err == nil {
-			if err := host.UpdatePluginSetting(context.Background(), one.Path[0], one.Path[1], val); err != nil {
-				report(fmt.Errorf("update plugin setting %s: %w", strings.Join(one.Path, "."), err))
-			}
-		}
-	}
-}
-
-func (c Config) settingsFile() (string, error) {
-	if c.SettingsPath != "" {
-		return c.SettingsPath, nil
-	}
-	if file, selected := c.getAdjacentPath("numen.json"); selected {
-		return file, nil
-	}
-	return settings.Path()
-}
-
-func (c Config) getAdjacentPath(name string) (string, bool) {
-	if c.RegistryPath == "" {
-		return "", false
-	}
-	return filepath.Join(filepath.Dir(c.RegistryPath), name), true
-}
-
-// Registry opens the vault registry for this installation.
-func (c Config) Registry() (vaultport.VaultRegistry, error) {
-	if c.RegistryPath != "" {
-		return appstate.OpenAt(c.RegistryPath), nil
-	}
-	return appstate.Open()
-}
-
-// VaultReaders opens vaults for reading.
-func (c Config) VaultReaders() vaultport.VaultReaders {
-	return vaultreader.Readers{Options: c.vaultOptions()}
-}
-
-// VaultWriters opens vaults for write operations.
-func (c Config) VaultWriters() vaultport.VaultWriters {
-	return vaultwriter.VaultWriters{Options: c.vaultOptions(), Locks: c.getResources().vaultLocks}
-}
-
-// GetImportedFiles opens files imported from outside the vault.
-func (c Config) GetImportedFiles() sourceport.ImportedFiles {
-	return filesystem.ImportedFiles{}
-}
-
-// VaultWatcher monitors vaults for external filesystem changes.
-func (c Config) VaultWatcher() vaultport.VaultWatcher {
-	return vaultwatch.Watcher{Options: c.vaultOptions(), Hub: c.getResources().watches}
-}
-
-// VaultIdentity provides vault identification.
-func (c Config) VaultIdentity() vaultport.VaultIdentity {
-	return vaultreader.Identity{Options: c.vaultOptions()}
-}
-
-// Trash provides trash and recycling operations.
-func (c Config) Trash() machineport.Trash { return trash.New(c.Clock()) }
-
-func (c Config) vaultOptions() vaultconfig.Options {
-	return vaultconfig.Options{
-		ServiceDir: c.ServiceDir,
-	}
-}
-
-// ErrNoIndexPath is a configuration that names no index database.
-var ErrNoIndexPath = errors.New("the configuration names no index database: the application sets IndexPath")
-
-func (c Config) indexPath() (string, error) {
-	if c.IndexPath == "" {
-		return "", ErrNoIndexPath
-	}
-	if err := os.MkdirAll(filepath.Dir(c.IndexPath), 0o755); err != nil {
-		return "", err
-	}
-	return c.IndexPath, nil
 }
 
 // GetWait is the wait every scenario assembled here is handed, bound to this
@@ -316,5 +153,110 @@ func (c Config) GetWait() machineport.Wait {
 func (c Config) GetDelay() machineport.Delay {
 	return func(d time.Duration, f func()) func() bool {
 		return time.AfterFunc(d, f).Stop
+	}
+}
+
+func (c Config) settings() settingswiring.Config {
+	res := c.getResources()
+	return settingswiring.Config{
+		SettingsPath:     c.SettingsPath,
+		ThemesPath:       c.ThemesPath,
+		RegistryPath:     c.RegistryPath,
+		InterfaceScale:   c.InterfaceScale,
+		TextScale:        c.TextScale,
+		Hardware:         c.Hardware,
+		ResolvedCompute:  c.ResolvedCompute,
+		PluginHost:       c.PluginHost,
+		KeyStore:         c.KeyStore,
+		Watches:          res.watches,
+		SettingsFiles:    res.settingsFiles,
+		SettingEvents:    res.settingEvents,
+		SecretGate:       res.secretGate,
+		SubscribedHosts:  &res.subscribedHosts,
+		ErrorHandler:     c.handleError,
+		AgentProvider:    c.AgentProvider,
+		GetAgentPrograms: c.plugins().GetAgentPrograms,
+		SetSecretSource:  c.plugins().SetSecretSource,
+		SetCompleter:     c.plugins().SetCompleter,
+	}
+}
+
+func (c Config) search() searchwiring.Config {
+	v := c.vaultBase()
+	return searchwiring.Config{
+		ServiceDir:         c.ServiceDir,
+		ShouldRebuildIndex: c.ShouldRebuildIndex,
+		Chunks:             c.Chunks,
+		ResolvedCompute:    c.ResolvedCompute,
+		PluginHost:         c.PluginHost,
+		Clock:              c.Clock(),
+		VaultReaders:       v.VaultReaders(),
+		TextReaders:        v.GetTextReaders(),
+		ErrorHandler:       c.handleError,
+		ResolvePlugin:      c.plugins().ResolvePlugin,
+	}
+}
+
+func (c Config) vaultBase() vaultwiring.Config {
+	res := c.getResources()
+	return vaultwiring.Config{
+		IndexPath:    c.IndexPath,
+		RegistryPath: c.RegistryPath,
+		ServiceDir:   c.ServiceDir,
+		SafeMode:     c.SafeMode,
+		Clock:        c.Clock(),
+		PluginHost:   c.PluginHost,
+		TextVersions: c.TextVersions,
+		TextReaders:  c.TextReaders,
+		VaultLocks:   res.vaultLocks,
+		Watches:      res.watches,
+		ErrorHandler: c.handleError,
+	}
+}
+
+func (c Config) vault() vaultwiring.Config {
+	v := c.vaultBase()
+	s := c.search()
+	v.SyncSetting = c.settings().SyncSetting()
+	v.CutNotes = s.CutNotes()
+	v.SetNoteCut = s.SetNoteCut
+	return v
+}
+
+func (c Config) plugins() pluginswiring.Config {
+	res := c.getResources()
+	v := c.vaultBase()
+	s := settingswiring.Config{
+		SettingsPath:  c.SettingsPath,
+		ThemesPath:    c.ThemesPath,
+		RegistryPath:  c.RegistryPath,
+		PluginHost:    c.PluginHost,
+		Watches:       res.watches,
+		SettingsFiles: res.settingsFiles,
+		SettingEvents: res.settingEvents,
+		ErrorHandler:  c.handleError,
+	}
+	return pluginswiring.Config{
+		PluginCachePath:       c.PluginCachePath,
+		ServiceDir:            c.ServiceDir,
+		SafeMode:              c.SafeMode,
+		PluginHost:            c.PluginHost,
+		PluginCatalog:         c.PluginCatalog,
+		PluginDirs:            c.PluginDirs,
+		KeyStore:              c.KeyStore,
+		SettingsFiles:         res.settingsFiles,
+		SecretGate:            res.secretGate,
+		Programs:              c.programs,
+		VaultReaders:          v.VaultReaders(),
+		VaultWriters:          v.VaultWriters(),
+		VaultWatcher:          v.VaultWatcher(),
+		ErrorHandler:          c.handleError,
+		SettingsFile:          s.SettingsFile,
+		ReadCheckedSettings:   s.ReadCheckedSettings,
+		GetSettingsOrDefaults: s.GetSettingsOrDefaults,
+		RefreshSettingEvents:  s.RefreshSettingEvents,
+		MakeRefresh:           func(db *Index, notes noteRepository) vaultRefresh { return c.vault().MakeRefresh(db, notes) },
+		BuildNotes:            c.Notes,
+		Moves:                 v.Moves,
 	}
 }

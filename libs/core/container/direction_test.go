@@ -23,7 +23,7 @@ func listOutward() []string {
 func getRefusedImports(path string) (forbidden []string, named bool) {
 	target := strings.TrimPrefix(path, module)
 	switch {
-	case target == "container":
+	case isUnder(target, "container"):
 		return []string{wire}, true
 	case strings.HasPrefix(target, "adapter/"),
 		strings.HasPrefix(target, "internal/adapter/"),
