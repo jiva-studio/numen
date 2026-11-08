@@ -125,14 +125,14 @@ func TestACallCancelledBeforeItStartsReturnsAndSendsNothing(t *testing.T) {
 func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefreshConfiguresThePlugin(t *testing.T) {
 	c := newCancelSetup(t)
 	calls := c.probe.count()
-	if err := c.host.secrets.lockSecrets(t.Context()); err != nil {
+	if err := c.host.configure.lockDelivery(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	isLocked := true
 	unlock := func() {
 		if isLocked {
 			isLocked = false
-			c.host.secrets.unlockSecrets()
+			c.host.configure.unlockDelivery()
 		}
 	}
 	defer unlock()
@@ -142,7 +142,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 	activation := make(chan error, 1)
 	go func() { activation <- activate(ctx) }()
 	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return c.host.secrets.isAwaitingFirstConfigure(secretPluginID)
+		return c.host.configure.isAwaitingFirstConfigure(secretPluginID)
 	})
 	cancel()
 	select {
@@ -153,7 +153,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 	case <-time.After(configureCallTimeout):
 		t.Fatal("the activation still waits for the lock after its context ended")
 	}
-	if c.host.secrets.isAwaitingFirstConfigure(secretPluginID) {
+	if c.host.configure.isAwaitingFirstConfigure(secretPluginID) {
 		t.Error("the plugin still awaits a Configure that will not be sent")
 	}
 

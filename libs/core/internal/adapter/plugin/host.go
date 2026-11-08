@@ -98,7 +98,9 @@ type Host struct {
 	window                 pluginport.PluginWindow
 	vaultList              pluginport.PluginVaultList
 	search                 pluginport.PluginSearch
+	keyStore               keyStoreHolder
 	secrets                *secretDelivery
+	configure              *configureDelivery
 	hostEndpoint           *hostendpoint.Endpoint
 	hostAddress            string
 	dependencies           pluginport.DependencyCatalog
@@ -156,10 +158,10 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		listenerPorts:          make(map[string]map[string]int),
 		reportedTargetFailures: make(map[string]struct{}),
 	}
-	h.secrets = newSecretDelivery(secretHost{
+	h.secrets = newSecretDelivery(&h.keyStore, h.reportError)
+	h.configure = newConfigureDelivery(configureHost{
 		getConfigSnapshot: h.getConfigSnapshot,
 		listPluginIDs:     h.listPluginIDs,
-		reportError:       h.reportError,
 	})
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -651,18 +653,18 @@ func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *li
 		h.failActivation(ctx, p.Manifest.ID, sup, err)
 		return endpoint, err
 	}
-	h.secrets.markAwaitingFirstConfigure(p.Manifest.ID)
+	h.configure.markAwaitingFirstConfigure(p.Manifest.ID)
 	h.clearFailure(p.Manifest.ID, sup)
 
 	// No refresh runs between the Configure of the activation and the end of the wait for it.
 	// A failed push leaves the plugin running, and it gets its settings again on the next change.
-	if lockErr := h.secrets.lockSecrets(ctx); lockErr != nil {
-		h.secrets.clearAwaitingFirstConfigure(p.Manifest.ID)
+	if lockErr := h.configure.lockDelivery(ctx); lockErr != nil {
+		h.configure.clearAwaitingFirstConfigure(p.Manifest.ID)
 		return endpoint, lockErr
 	}
-	configureErr := h.secrets.configurePlugin(ctx, p.Manifest.ID)
-	h.secrets.clearAwaitingFirstConfigure(p.Manifest.ID)
-	h.secrets.unlockSecrets()
+	configureErr := h.configure.configurePlugin(ctx, p.Manifest.ID)
+	h.configure.clearAwaitingFirstConfigure(p.Manifest.ID)
+	h.configure.unlockDelivery()
 	if configureErr != nil {
 		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, configureErr))
 	}
@@ -1355,23 +1357,11 @@ func (h *Host) TogglePluginSetting(ctx context.Context, pluginID, key string) (b
 
 // NotifyPluginConfig sends the resolved configuration to a running plugin process.
 func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
-	if err := h.secrets.lockSecrets(ctx); err != nil {
+	if err := h.configure.lockDelivery(ctx); err != nil {
 		return err
 	}
-	defer h.secrets.unlockSecrets()
-	return h.secrets.configurePlugin(ctx, pluginID)
-}
-
-// configSnapshot is what a Configure call to one plugin is made of, read while mu is held.
-type configSnapshot struct {
-	pluginID   string
-	endpoint   transport.Endpoint
-	configJSON string
-	values     map[string]string
-	declared   []manifest.SecretDeclaration
-	requested  []string
-	store      pluginport.KeyStore
-	source     pluginport.SecretSource
+	defer h.configure.unlockDelivery()
+	return h.configure.configurePlugin(ctx, pluginID)
 }
 
 func (h *Host) getConfigSnapshot(pluginID string) (configSnapshot, bool, error) {
@@ -1399,8 +1389,9 @@ func (h *Host) getConfigSnapshot(pluginID string) (configSnapshot, bool, error) 
 		endpoint:   endpoint,
 		configJSON: cfgJSON,
 		values:     values,
-		declared:   h.listActiveDeclarationsLocked(pluginID, rawSettings),
-		requested:  secret.ListAskedGroups(h.listDeclarationsLocked()),
+		getExtra: h.secrets.newExtra(
+			pluginID, h.listActiveDeclarationsLocked(pluginID, rawSettings), secret.ListAskedGroups(h.listDeclarationsLocked()),
+		),
 	}, true, nil
 }
 
