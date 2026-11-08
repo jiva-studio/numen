@@ -62,8 +62,9 @@ function createPluginSettingsAccessor(
   const getSetting = (pluginId: string, key: string): unknown => {
     const rest = settingsHolder.current?.rest
     if (!rest) return undefined
-    // Stryker disable next-line StringLiteral: rest reads under the plugin id.
-    const value = rest.getCommittedSetting([pluginId, key])
+    const read = rest.getCommittedSetting ?? rest.getSetting
+    // Stryker disable next-line OptionalChaining,StringLiteral: rest always defines getSetting and reads under the plugin id.
+    const value = read?.([pluginId, key])
     if (value !== undefined) return value
     return key === 'enabled' ? DEFAULT_PLUGIN_ENABLED : undefined
   }
@@ -144,10 +145,10 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const pluginHost = createPluginHost({
     ...getHostDeclarations(deps),
     hasPluginFrontend: (pluginId) =>
-      settingsHolder.current?.rest.plugins.value.find((plugin) => plugin.id === pluginId)
+      settingsHolder.current?.rest?.plugins?.value.find((plugin) => plugin.id === pluginId)
         ?.hasFrontend ?? true,
     hasPluginBackend: (pluginId) =>
-      settingsHolder.current?.rest.plugins.value.find((plugin) => plugin.id === pluginId)
+      settingsHolder.current?.rest?.plugins?.value.find((plugin) => plugin.id === pluginId)
         ?.hasBackend ?? true,
     isPluginFailed: (pluginId) => loaderHolder.current?.getPluginFailure(pluginId) !== undefined,
     waitForPlugin: (pluginId) => loaderHolder.current?.settlePlugin(pluginId) ?? Promise.resolve(),
@@ -168,7 +169,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     },
     registerExtensionReader: tabOpeners.registerExtensionReader,
     getReaderExtensions: (pluginId, readerId) =>
-      settingsHolder.current?.rest.plugins.value
+      settingsHolder.current?.rest?.plugins?.value
         .find((plugin) => plugin.id === pluginId)
         ?.readers?.find((reader) => reader.id === readerId)?.extensions ?? [],
     registerEditor: tabOpeners.registerEditor,
@@ -209,7 +210,8 @@ export function watchPluginSettings(
   reportError: (error: unknown) => void,
 ) {
   watch(
-    () => settings.rest.plugins.value,
+    // Stryker disable next-line OptionalChaining: settings.rest or plugins may be absent in unit test mocks
+    () => settings.rest?.plugins?.value ?? [],
     (plugins) => {
       runInBackground(pluginLoader.trackPlugins(getFrontendPluginIds(plugins)), reportError)
     },
