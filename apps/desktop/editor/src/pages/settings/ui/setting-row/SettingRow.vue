@@ -21,6 +21,8 @@ const props = defineProps<{
 defineSlots<{
   /** The control, given the id of the title that labels it. */
   default(props: { labelledBy: string }): unknown
+  /** An action placed after the title and its info tooltip. */
+  action?(): unknown
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -39,6 +41,7 @@ const trimmedDetail = computed(() => props.detail.trim())
           :label="words.aboutSetting(name)"
           :text="trimmedDetail"
         />
+        <slot name="action" />
       </span>
     </div>
     <div class="settings__value">

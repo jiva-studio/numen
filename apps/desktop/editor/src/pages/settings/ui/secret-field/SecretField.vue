@@ -3,10 +3,10 @@
  * The secret one declaration of a plugin reads: a masked field that shows no value and takes none,
  * and an arrow that opens the secrets to choose from. A click on a secret allows the declaration
  * to read it, or stops it, as the check box on the page of secrets does. Where the declared group
- * has no secret, a button opens the page of secrets.
+ * has no secret, an icon button beside the name opens the page of secrets.
  */
 import { computed, ref, useTemplateRef } from 'vue'
-import { Check, ChevronDown } from '@lucide/vue'
+import { Check, ChevronDown, KeyRound } from '@lucide/vue'
 import { Button, SearchableListPopup, measureRect, type ListItem } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import {
@@ -50,6 +50,8 @@ const summary = computed(() => {
   const names = secrets.value.filter((one) => allowedIds.value.has(one.id)).map((one) => one.name)
   return names.length === 0 ? words.secretFieldNone : names.join(', ')
 })
+/** The id SettingRow gives the name it labels the field by. */
+const labelledBy = computed(() => `settings-${props.at}`)
 const hasOwnSecrets = computed(() => hasGroupSecrets(props.sections, props.declaration))
 const groupOf = (id: string): string => secrets.value.find((one) => one.id === id)?.group ?? ''
 
@@ -71,7 +73,19 @@ function onChoose(id: string): void {
 </script>
 
 <template>
-  <SettingRow v-slot="{ labelledBy }" :at="at" :name="name" :detail="detail">
+  <SettingRow :at="at" :name="name" :detail="detail">
+    <template v-if="!hasOwnSecrets && declaration.group !== ''" #action>
+      <Button
+        variant="ghost"
+        size="icon-small"
+        :aria-label="words.secretOpenPage"
+        :title="words.secretOpenPage"
+        @click="emit('open-secrets')"
+      >
+        <KeyRound :size="14" aria-hidden="true" />
+      </Button>
+    </template>
+
     <span ref="trigger" class="settings__secret">
       <input
         type="password"
@@ -94,18 +108,11 @@ function onChoose(id: string): void {
       >
         <ChevronDown :size="14" aria-hidden="true" />
       </Button>
-      <Button
-        v-if="!hasOwnSecrets && declaration.group !== ''"
-        variant="outline"
-        size="small"
-        @click="emit('open-secrets')"
-      >
-        {{ words.secretOpenPage }}
-      </Button>
     </span>
 
     <SearchableListPopup
       v-if="anchor"
+      :model-value="null"
       v-model:query="query"
       :items="items"
       :label="words.secretChoose"
