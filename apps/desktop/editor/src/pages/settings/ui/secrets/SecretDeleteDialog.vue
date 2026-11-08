@@ -1,17 +1,14 @@
 <script setup lang="ts">
 /**
- * The confirmation before a secret is deleted. It names the plugins that can read the secret, and
- * the keyboard starts on Cancel.
+ * The confirmation before a secret or a group is deleted, with the question it asks as text. The
+ * keyboard starts on Cancel.
  */
 import { onMounted, useTemplateRef } from 'vue'
 import { Button } from '@numen/ui'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-defineProps<{
-  name: string
-  readers: readonly string[]
-}>()
+withDefaults(defineProps<{ text: string; label?: string }>(), { label: words.secretDelete })
 
 const emit = defineEmits<{
   (e: 'confirm'): void
@@ -30,13 +27,8 @@ onMounted(() => {
 
 <template>
   <div class="secret-dialog__backdrop" @keydown.esc="emit('cancel')">
-    <div
-      class="secret-dialog"
-      role="alertdialog"
-      aria-modal="true"
-      :aria-label="words.secretDelete"
-    >
-      <p class="secret-dialog__text">{{ words.secretDeleteAsking(name, readers) }}</p>
+    <div class="secret-dialog" role="alertdialog" aria-modal="true" :aria-label="label">
+      <p class="secret-dialog__text">{{ text }}</p>
       <div class="secret-dialog__answers">
         <Button variant="danger" size="small" @click="emit('confirm')">
           {{ words.secretDeleteConfirm }}

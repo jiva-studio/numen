@@ -37,6 +37,11 @@ export const WORDS = {
   secretAllowedTo: 'Allowed to',
   secretGroupRename: 'Rename group',
   secretGroupRenameName: 'Name of the group',
+  secretGroupDelete: 'Delete group',
+  secretGroupDeleteAsking: (group: string, count: number, readers: readonly string[]) =>
+    `Delete the group ${group} with its ${count === 1 ? '1 secret' : `${count} secrets`}? Their values are removed from this machine${
+      readers.length === 0 ? '.' : `, and ${readers.join(', ')} can no longer read them.`
+    }`,
   secretDeleteAsking: (name: string, readers: readonly string[]) =>
     readers.length === 0
       ? `Delete ${name}? Its value is removed from this machine.`

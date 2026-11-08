@@ -4,7 +4,7 @@
  * named Default while it has none. A group the person made can be renamed.
  */
 import { nextTick, ref, useId, useTemplateRef } from 'vue'
-import { Pencil, Plus } from '@lucide/vue'
+import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import type { Declaration, SecretSection } from '../../lib/secretSections'
@@ -26,6 +26,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'add'): void
   (e: 'rename-group', name: string): void
+  (e: 'delete-group', opener: HTMLElement): void
   (e: 'discard', name: string): void
   (e: 'move', id: string, beforeId: string): void
   (e: 'rename', id: string, name: string): void
@@ -57,6 +58,10 @@ function onCommitRename(): void {
 
 function onCancelRename(): void {
   isRenaming.value = false
+}
+
+function onDeleteGroup(event: MouseEvent): void {
+  if (event.currentTarget instanceof HTMLElement) emit('delete-group', event.currentTarget)
 }
 
 function onMoveUp(index: number): void {
@@ -97,6 +102,16 @@ function onMoveDown(index: number): void {
         @click="onStartRename"
       >
         <Pencil :size="14" aria-hidden="true" />
+      </Button>
+      <Button
+        v-if="!section.isAsked && section.secrets.length > 0 && !isRenaming"
+        variant="ghost"
+        size="icon-small"
+        :aria-label="words.secretGroupDelete"
+        :title="words.secretGroupDelete"
+        @click="onDeleteGroup"
+      >
+        <Trash2 :size="14" aria-hidden="true" />
       </Button>
     </div>
 

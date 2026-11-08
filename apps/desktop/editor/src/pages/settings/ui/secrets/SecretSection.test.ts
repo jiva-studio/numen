@@ -77,3 +77,36 @@ describe('the section of a group', () => {
     wrapper.unmount()
   })
 })
+
+describe('the deletion of a group', () => {
+  const secret = { id: 's1', name: 'Work', group: 'harbour', allowed: [], hasValue: true }
+  const mountWith = (isAsked: boolean, secrets: readonly (typeof secret)[]) =>
+    mount(SecretSection, {
+      attachTo: document.body,
+      props: {
+        section: { group: 'harbour', isAsked, secrets },
+        drafts: [],
+        declarations: [],
+        create: vi.fn(async () => true),
+      },
+    })
+
+  it('emits delete-group from the button of a group the person made', async () => {
+    const wrapper = mountWith(false, [secret])
+    await wrapper.get('button[aria-label="Delete group"]').trigger('click')
+    expect(wrapper.emitted('delete-group')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('has no button for a group a plugin asks for', () => {
+    const wrapper = mountWith(true, [secret])
+    expect(wrapper.find('button[aria-label="Delete group"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('has no button for a group with no secret', () => {
+    const wrapper = mountWith(false, [])
+    expect(wrapper.find('button[aria-label="Delete group"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+})

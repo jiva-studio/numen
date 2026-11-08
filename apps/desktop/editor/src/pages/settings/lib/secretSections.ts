@@ -3,6 +3,7 @@
  * by group, the plugin declarations that may be allowed a secret, and the order of the menu.
  */
 import type { PluginInfo, PluginSecret, Secret } from '@/entities/settings'
+import { WORDS } from '../words'
 
 /** The secrets of one group in priority order. */
 export interface SecretSection {
@@ -120,4 +121,24 @@ export function hasGroupSecrets(
   declaration: Declaration,
 ): boolean {
   return sections.some((one) => one.group === declaration.group && one.secrets.length > 0)
+}
+
+/** What the person asked to delete: one secret, or every secret of a group. */
+export type DeletionTarget =
+  | { readonly kind: 'secret'; readonly secret: Secret }
+  | { readonly kind: 'group'; readonly section: SecretSection }
+
+/** The ids of the secrets a deletion removes. */
+export function getDeletionIds(target: DeletionTarget): readonly string[] {
+  return target.kind === 'secret' ? [target.secret.id] : target.section.secrets.map((one) => one.id)
+}
+
+/** The question the confirmation asks, naming the plugins that lose a secret. */
+export function getDeletionText(target: DeletionTarget, plugins: readonly PluginInfo[]): string {
+  if (target.kind === 'secret') {
+    return WORDS.secretDeleteAsking(target.secret.name, getReaderNames(target.secret, plugins))
+  }
+  const { group, secrets } = target.section
+  const readers = new Set(secrets.flatMap((one) => getReaderNames(one, plugins)))
+  return WORDS.secretGroupDeleteAsking(group, secrets.length, [...readers])
 }

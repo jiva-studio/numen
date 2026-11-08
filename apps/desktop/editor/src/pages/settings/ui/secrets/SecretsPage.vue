@@ -3,7 +3,7 @@
  * The page of secrets: every secret by group, in priority order, with the plugin declarations that
  * may read it. A value is entered here once and is never shown again.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
@@ -11,10 +11,11 @@ import {
   createSecretSections,
   getDeclarations,
   getNextSecretName,
-  getReaderNames,
   type Declaration,
+  type SecretSection as SectionData,
 } from '../../lib/secretSections'
 import type { SettingsTabState } from '../../types'
+import { useSecretDeletion } from '../../model/secretDeletion'
 import { MAX_GROUP_LENGTH, trimGroupName } from '../../lib/trimGroupName'
 import { WORDS as words } from '../../words'
 import SecretDeleteDialog from './SecretDeleteDialog.vue'
@@ -48,22 +49,9 @@ const newGroup = ref<string | null>(null)
 const newGroupName = computed(() => trimGroupName(newGroup.value ?? ''))
 const isNewGroupTooLong = computed(() => [...newGroupName.value].length > MAX_GROUP_LENGTH)
 const newName = computed(() => getNextSecretName(getNamesInGroup(newGroupName.value)))
-const deleting = ref<Secret | null>(null)
-const deleteOpener = ref<HTMLElement | null>(null)
-const readers = computed(() =>
-  deleting.value ? getReaderNames(deleting.value, plugins.value) : [],
-)
-
-/** Returns the focus to the button that opened the confirmation, if it is still there. */
-watch(
-  deleting,
-  (secret) => {
-    if (secret !== null) return
-    const opener = deleteOpener.value
-    deleteOpener.value = null
-    if (opener?.isConnected) opener.focus()
-  },
-  { flush: 'post' },
+const deletion = useSecretDeletion(
+  (id) => installation.value.deleteSecret(id),
+  () => plugins.value,
 )
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -100,17 +88,11 @@ function onToggle(secret: Secret, declaration: Declaration, isAllowed: boolean):
 }
 
 function onAskDelete(secret: Secret, opener: HTMLElement): void {
-  deleting.value = secret
-  deleteOpener.value = opener
+  deletion.ask({ kind: 'secret', secret }, opener)
 }
 
-function onConfirmDelete(): void {
-  if (deleting.value) installation.value.deleteSecret(deleting.value.id)
-  deleting.value = null
-}
-
-function onCancelDelete(): void {
-  deleting.value = null
+function onAskDeleteGroup(section: SectionData, opener: HTMLElement): void {
+  deletion.ask({ kind: 'group', section }, opener)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -155,6 +137,7 @@ function getNamesInGroup(group: string): readonly string[] {
       @rename="(id, name) => installation.renameSecret(id, name)"
       @write="(id, value) => installation.writeSecret(id, value)"
       @delete="onAskDelete"
+      @delete-group="(opener) => onAskDeleteGroup(section, opener)"
       @toggle="onToggle"
     />
 
@@ -190,11 +173,11 @@ function getNamesInGroup(group: string): readonly string[] {
     </Button>
 
     <SecretDeleteDialog
-      v-if="deleting"
-      :name="deleting.name"
-      :readers="readers"
-      @confirm="onConfirmDelete"
-      @cancel="onCancelDelete"
+      v-if="deletion.target.value"
+      :text="deletion.text.value"
+      :label="deletion.isGroup.value ? words.secretGroupDelete : words.secretDelete"
+      @confirm="deletion.confirm"
+      @cancel="deletion.cancel"
     />
   </div>
 </template>
