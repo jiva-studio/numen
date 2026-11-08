@@ -71,6 +71,11 @@ onMounted(async () => {
   rowList.value?.scrollToActive()
 })
 
+// A new item in force puts the keyboard back on it, over a row the pointer rests on.
+watch(model, () => {
+  activeKey.value = null
+})
+
 watch([activeIndex, model], async () => {
   await nextTick()
   rowList.value?.scrollToActive()

@@ -186,6 +186,16 @@ describe('the keyboard', () => {
     expect(getOptions(list)).toHaveLength(4)
   })
 
+  it('returns to the item in force when it changes from outside, over a row under the pointer', async () => {
+    const list = mountList({ modelValue: 'opus' })
+    await getOptions(list)[2]!.trigger('pointerenter')
+    expect(getActive(list)).toBe(2)
+
+    await list.setProps({ modelValue: 'sonnet' })
+
+    expect(getActive(list)).toBe(1)
+  })
+
   it('returns to the first row as the query changes', async () => {
     const list = mountList({ modelValue: 'sonnet' })
     expect(getActive(list)).toBe(1)
