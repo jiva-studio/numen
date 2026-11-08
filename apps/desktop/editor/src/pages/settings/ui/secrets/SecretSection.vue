@@ -3,8 +3,9 @@
  * The secrets of one group in priority order. A group a plugin asks for shows one empty secret
  * named Default while it has none. A group the person made can be renamed.
  */
-import { nextTick, onMounted, ref, useId, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, ref, useId, useTemplateRef } from 'vue'
 import { Pencil, Plus, Trash2 } from '@lucide/vue'
+import { getServiceInfo } from '@numen/core-client'
 import { Button } from '@numen/ui'
 import type { Secret } from '@/entities/settings'
 import {
@@ -44,6 +45,8 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const isRenaming = ref(false)
 const draftName = ref('')
+const isTooLong = ref(false)
+const info = computed(() => getServiceInfo(props.section.group))
 const nameInput = useTemplateRef<HTMLInputElement>('nameInput')
 const headingId = useId()
 
@@ -54,6 +57,7 @@ onMounted(async () => {
 /* -------------------------------- Handlers -------------------------------- */
 async function onStartRename(): Promise<void> {
   draftName.value = props.section.group
+  isTooLong.value = false
   isRenaming.value = true
   await nextTick()
   nameInput.value?.focus()
@@ -62,14 +66,16 @@ async function onStartRename(): Promise<void> {
 
 function onCommitRename(): void {
   if (!isRenaming.value) return
-  isRenaming.value = false
   const name = trimGroupName(draftName.value)
-  if (name === '' || name === props.section.group) return
-  if ([...name].length <= MAX_GROUP_LENGTH) emit('rename-group', name)
+  isTooLong.value = [...name].length > MAX_GROUP_LENGTH
+  if (isTooLong.value) return
+  isRenaming.value = false
+  if (name !== '' && name !== props.section.group) emit('rename-group', name)
 }
 
 function onCancelRename(): void {
   isRenaming.value = false
+  isTooLong.value = false
 }
 
 function onDeleteGroup(event: MouseEvent): void {
@@ -91,19 +97,28 @@ function onMoveDown(index: number): void {
 <template>
   <section class="secret-section" :aria-labelledby="headingId">
     <div class="secret-section__header">
-      <input
-        v-if="isRenaming"
-        ref="nameInput"
-        v-model="draftName"
-        type="text"
-        :aria-label="words.secretGroupRenameName"
-        class="secret-section__name-input"
-        @keydown.enter="onCommitRename"
-        @keydown.esc="onCancelRename"
-        @change="onCommitRename"
-        @blur="onCommitRename"
-      />
-      <h2 v-show="!isRenaming" :id="headingId" class="secret-section__name">{{ section.group }}</h2>
+      <div class="secret-section__title">
+        <input
+          v-if="isRenaming"
+          ref="nameInput"
+          v-model="draftName"
+          type="text"
+          :aria-label="words.secretGroupRenameName"
+          :aria-invalid="isTooLong"
+          class="secret-section__name-input"
+          @keydown.enter="onCommitRename"
+          @keydown.esc="onCancelRename"
+          @change="onCommitRename"
+          @blur="onCommitRename"
+        />
+        <p v-if="isTooLong" role="alert" class="secret-section__error">
+          {{ words.secretGroupTooLong(MAX_GROUP_LENGTH) }}
+        </p>
+        <h2 v-show="!isRenaming" :id="headingId" class="secret-section__name">{{ info.title }}</h2>
+        <p v-if="info.description !== '' && !isRenaming" class="secret-section__about">
+          {{ info.description }}
+        </p>
+      </div>
       <Button
         v-if="!section.isAsked && !isRenaming"
         class="secret-section__tool"
@@ -184,7 +199,28 @@ function onMoveDown(index: number): void {
   align-items: center;
   gap: 0.25rem;
   padding-block-end: 0.375rem;
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
+}
+
+.secret-section__title {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-inline-size: 0;
+}
+
+.secret-section__about,
+.secret-section__error {
+  margin: 0;
+  font-size: var(--numen-text-1);
+}
+
+.secret-section__about {
+  color: var(--numen-hushed);
+}
+
+.secret-section__error {
+  color: var(--numen-ink);
 }
 
 .secret-section__name {

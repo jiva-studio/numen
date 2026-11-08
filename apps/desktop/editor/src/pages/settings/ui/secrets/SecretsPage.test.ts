@@ -108,7 +108,7 @@ afterEach(() => {
 describe('the page of secrets', () => {
   it('has a section for each group, the groups plugins ask for by name and then the ones the person made by name', () => {
     const { wrapper } = mountPage()
-    const order = ['openai', 'openrouter', 'travel'].map((group) => findText(group))
+    const order = ['OpenAI', 'OpenRouter', 'travel'].map((group) => findText(group))
     expect(order.every((one) => one !== null)).toBe(true)
     const positions = order.map((one) => positionOf(one as HTMLElement))
     expect(positions).toStrictEqual([...positions].sort((a, b) => a - b))
@@ -125,11 +125,11 @@ describe('the page of secrets', () => {
 
   it('shows a group a plugin asks for with no secret as one empty secret named Default', () => {
     const { wrapper } = mountPage()
-    const openai = findText('openai') as HTMLElement
+    const openai = findText('OpenAI') as HTMLElement
     const fallback = findText('Default') as HTMLElement
     expect(fallback).not.toBeNull()
     expect(positionOf(fallback)).toBeGreaterThan(positionOf(openai))
-    expect(positionOf(fallback)).toBeLessThan(positionOf(findText('openrouter') as HTMLElement))
+    expect(positionOf(fallback)).toBeLessThan(positionOf(findText('OpenRouter') as HTMLElement))
     dispose(wrapper)
   })
 
@@ -274,7 +274,7 @@ describe('the page of secrets', () => {
 
   it('adds a secret with the next number as its name and stores it when a value is entered', async () => {
     const { installation, wrapper } = mountPage()
-    const openrouter = sectionOf('openrouter')
+    const openrouter = sectionOf('OpenRouter')
     await click(findButton(/add/i, openrouter))
     const draft = findText('3') as HTMLElement
     expect(draft).not.toBeNull()
@@ -298,7 +298,7 @@ describe('the page of secrets', () => {
   it('renames a group the person made and not a group a plugin asks for', async () => {
     const { installation, wrapper } = mountPage()
     const travel = sectionOf('travel')
-    const openrouter = sectionOf('openrouter')
+    const openrouter = sectionOf('OpenRouter')
     expect(findButtons(/rename group/i, openrouter)).toHaveLength(0)
 
     await click(findButton(/rename group/i, travel))

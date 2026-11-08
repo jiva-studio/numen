@@ -34,6 +34,7 @@ export const WORDS = {
   secretGroupRename: 'Rename group',
   secretGroupRenameName: 'Name of the group',
   secretGroupDelete: 'Delete group',
+  secretGroupTooLong: (limit: number) => `Use at most ${limit} characters.`,
   secretGroupDeleteAsking: (group: string, count: number, readers: readonly string[]) =>
     `Delete the group ${group} with its ${count === 1 ? '1 secret' : `${count} secrets`}? Their values are removed from this machine${
       readers.length === 0 ? '.' : `, and ${readers.join(', ')} can no longer read them.`

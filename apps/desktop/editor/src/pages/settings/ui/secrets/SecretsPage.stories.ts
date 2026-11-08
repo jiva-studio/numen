@@ -77,7 +77,10 @@ type Story = StoryObj<typeof meta>
 export const SectionsFitTheColumn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('heading', { name: 'openrouter' })).toBeVisible()
+    await expect(canvas.getByRole('heading', { name: 'OpenRouter' })).toBeVisible()
+    await expect(
+      canvas.getByText('One key for many AI models from different providers.'),
+    ).toBeVisible()
     await expect(canvas.getByRole('heading', { name: 'travel' })).toBeVisible()
     const column = canvasElement.firstElementChild!.getBoundingClientRect()
     for (const row of canvasElement.querySelectorAll('li')) {
