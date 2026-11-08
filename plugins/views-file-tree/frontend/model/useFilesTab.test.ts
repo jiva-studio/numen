@@ -407,6 +407,14 @@ describe('an item chosen in the menu on a row', () => {
     return pendingState
   }
 
+  it('runs the copy of the path over the row the menu was opened on', async () => {
+    const { recorded, one } = await openRowMenu('physics/Kelvin.md')
+
+    one.chooseMenuItem('app:note.copyPath')
+
+    expect(recorded).toStrictEqual(['runs app:note.copyPath physics/Kelvin.md Kelvin.md'])
+  })
+
   it('puts the name of the row in a field, and asks the window for nothing', async () => {
     const { recorded, one } = await openRowMenu()
 
