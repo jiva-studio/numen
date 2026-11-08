@@ -147,6 +147,7 @@ func (f *fakeChat) getPieces(reply message) []string {
 }
 
 func writeEvents(tb testing.TB, w http.ResponseWriter, data []string) {
+	tb.Helper()
 	w.Header().Set("Content-Type", "text/event-stream")
 	flusher, ok := w.(http.Flusher)
 	if !ok {

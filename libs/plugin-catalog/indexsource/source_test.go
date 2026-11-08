@@ -41,6 +41,7 @@ func writeIndex(t *testing.T, path string, manifests []map[string]any) {
 
 func TestTheIndexSourceSatisfiesTheSourceContract(t *testing.T) {
 	catalogtest.RunSourceContract(t, func(t *testing.T, entries []catalog.Entry) catalog.Source {
+		t.Helper()
 		path := filepath.Join(t.TempDir(), indexsource.FileName)
 		manifests := make([]map[string]any, 0, len(entries))
 		for _, entry := range entries {

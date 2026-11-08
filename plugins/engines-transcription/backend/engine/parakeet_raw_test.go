@@ -30,6 +30,7 @@ func openCachedTranscriber(tb testing.TB) *Transcriber {
 }
 
 func makeFrames(tb testing.TB, width int) map[string]*ort.Value {
+	tb.Helper()
 	data := make([]float32, encoded*width)
 	seed := uint32(1)
 	for i := range data {

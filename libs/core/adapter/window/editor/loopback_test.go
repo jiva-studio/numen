@@ -67,6 +67,7 @@ func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 }
 
 func ask(tb testing.TB, handler http.Handler, url string) *httptest.ResponseRecorder {
+	tb.Helper()
 	out := httptest.NewRecorder()
 	handler.ServeHTTP(out, httptest.NewRequestWithContext(tb.Context(), http.MethodGet, url, nil))
 	return out

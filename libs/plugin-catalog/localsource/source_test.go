@@ -51,6 +51,7 @@ func manifestOf(entry catalog.Entry) map[string]any {
 func TestTheLocalSourceSatisfiesTheSourceContract(t *testing.T) {
 	disabledEntries := catalogtest.OnDiskEntries()
 	catalogtest.RunSourceContract(t, func(t *testing.T, entries []catalog.Entry) catalog.Source {
+		t.Helper()
 		dir := t.TempDir()
 		off := map[string]bool{}
 		for _, entry := range entries {
