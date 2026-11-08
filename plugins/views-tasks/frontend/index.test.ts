@@ -82,7 +82,9 @@ describe('the summary', () => {
     context.backgroundTasks.setTasks([running('b'), running('c')])
     await flushPromises()
     expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3')
-    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe('1 of 3 tasks done')
+    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe(
+      '1 of 3 tasks done',
+    )
     expect(wrapper.find('.tasks-status__trigger').attributes('title')).toBe('1 of 3 tasks done')
 
     context.backgroundTasks.setTasks([running('c'), running('d')])
@@ -98,9 +100,7 @@ describe('the summary', () => {
     const { context, view } = activateTasks()
     const wrapper = mountTasks(view)
 
-    context.backgroundTasks.setTasks([
-      createTask({ id: 'a', state: 'running', done: 1, total: 2 }),
-    ])
+    context.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running', done: 1, total: 2 })])
     await flushPromises()
 
     const fill = wrapper.find('.tasks-status__ring-fill')
@@ -120,7 +120,9 @@ describe('the summary', () => {
 
     expect(wrapper.find('.tasks-status__summary').text()).toBe('Idle')
     expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe('2 failed')
-    expect(wrapper.find('.tasks-status__trigger').classes()).toContain('tasks-status__trigger--failed')
+    expect(wrapper.find('.tasks-status__trigger').classes()).toContain(
+      'tasks-status__trigger--failed',
+    )
   })
 
   it('keeps the text of the chip and tints it when some task failed while others run', async () => {

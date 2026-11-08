@@ -52,7 +52,10 @@ export interface TaskBatch {
  * The batch the chip counts: every task seen since the window was last idle, the ones that ended
  * as done, and how far the whole batch has come. A task that failed is neither done nor active.
  */
-export function summarizeBatch(tasks: readonly BackgroundTask[], seen: ReadonlySet<string>): TaskBatch {
+export function summarizeBatch(
+  tasks: readonly BackgroundTask[],
+  seen: ReadonlySet<string>,
+): TaskBatch {
   const total = seen.size
   if (total === 0) return { total: 0, done: 0, fraction: 0 }
   const active = tasks.filter(isActive)
