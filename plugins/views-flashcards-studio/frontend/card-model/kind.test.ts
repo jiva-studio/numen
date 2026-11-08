@@ -337,6 +337,22 @@ describe('a card model the vault rejected', () => {
 
     expect(tab.errorMessage.value).toBe(words.notSaved)
   })
+
+  it('writes an edit made after a write that did not reach the vault', async () => {
+    const answers: Parameters<typeof vault>[0] = { wrote: 'unreachable' }
+    const { cardModels, tab, writtenFiles } = await open(answers)
+    const id = cardModels.store.getOpenIds()[0] ?? ''
+
+    tab.addField('Weight')
+    await cardModels.store.flushPending(id)
+    delete answers.wrote
+    tab.addField('Depth')
+    await cardModels.store.flushPending(id)
+
+    expect(writtenFiles.at(-1)).toMatch(/^Animal\.md Height, Life span, Weight, Depth \|/)
+    expect(tab.note.value.state).toBe('clean')
+    expect(tab.errorMessage.value).toBe('')
+  })
 })
 
 describe('what is wrong with a card model', () => {

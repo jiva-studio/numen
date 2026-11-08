@@ -76,6 +76,47 @@ describe('openNotes for flashcards studio', () => {
     await vi.waitFor(() => expect(store.getOpenNote('tab-1').isRead).toBe(true))
   })
 
+  it('writes an edit made after a write failed with a retryable error', async () => {
+    const write = vi
+      .fn<Notes['write']>()
+      .mockResolvedValueOnce(asFailure('unreachable'))
+      .mockResolvedValue(asValue({ body: '', at: 'v2' }))
+    const notes: Notes = { read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })), write }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+    store.setBody('tab-1', 'first edit')
+    await store.flushPending('tab-1')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'error', error: 'unreachable' })
+
+    store.setBody('tab-1', 'second edit')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'unsaved', error: null })
+    await store.flushPending('tab-1')
+
+    expect(write).toHaveBeenLastCalledWith('Decks.md', 'second edit', {
+      prose: 'initial',
+      stat: 'v1',
+    })
+    expect(store.getOpenNote('tab-1').state).toBe('clean')
+  })
+
+  it('keeps a write error that an edit cannot fix, and writes nothing', async () => {
+    const write = vi.fn<Notes['write']>().mockResolvedValue(asFailure('notADeck'))
+    const notes: Notes = { read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })), write }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+    store.setBody('tab-1', 'first edit')
+    await store.flushPending('tab-1')
+    store.setBody('tab-1', 'second edit')
+    await store.flushPending('tab-1')
+
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'error', error: 'notANote' })
+    expect(write).toHaveBeenCalledTimes(1)
+  })
+
   it('marks error when read fails or throws', async () => {
     const notes: Notes = {
       read: vi.fn(async () => asFailure('notADeck')),
