@@ -358,7 +358,7 @@ func (c Config) tellHost(batch []settingsport.Setting) {
 	notifyPluginSettings(c.PluginHost, batch, c.handleError)
 	for _, one := range batch {
 		if slices.Equal(one.Path, secretsPath()) {
-			if err := c.PluginHost.RefreshSecrets(context.Background()); err != nil {
+			if err := c.PluginHost.Refresh(context.Background()); err != nil {
 				c.handleError(fmt.Errorf("configure the plugins after the secrets changed: %w", err))
 			}
 			continue

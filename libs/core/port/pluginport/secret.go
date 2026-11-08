@@ -36,10 +36,11 @@ type SecretLedger interface {
 type SecretPlugins interface {
 	// ListDeclarations returns every secret declaration of every installed plugin.
 	ListDeclarations() []SecretPermission
-	// ApplySecretChange runs change while no other secret operation runs, and then configures the
-	// plugins whose secrets changed. change returns the ids of the plugins to configure although
-	// their list of secrets did not change.
-	ApplySecretChange(ctx context.Context, change func() (readers []string, err error)) error
+	// Refresh configures each running plugin whose list of secrets differs from the one it holds,
+	// and each plugin named in forced although its list did not change, and waits for every send.
+	// An operation calls it after its change is committed, with the plugins that read the secret it
+	// wrote. The error names the plugin whose send failed.
+	Refresh(ctx context.Context, forced ...string) error
 }
 
 // SecretSource is where the host reads the list of secrets from and how it removes the permissions

@@ -48,6 +48,8 @@ type Secrets map[string][]Secret
 
 // ReadSecrets returns the secrets a Configure call passes for a declaration, and whether the call
 // carries that declaration. An empty list means no secret, and the plugin discards the ones it has.
+// The list holds the secrets the host could read: one it could not read is absent, so the plugin
+// does not keep it.
 func ReadSecrets(secrets Secrets, name string) ([]Secret, bool) {
 	list, found := secrets[name]
 	if !found {

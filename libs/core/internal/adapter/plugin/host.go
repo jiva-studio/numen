@@ -157,9 +157,9 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		reportedTargetFailures: make(map[string]struct{}),
 	}
 	h.secrets = newSecretDelivery(secretHost{
-		takeConfigSnapshot: h.takeConfigSnapshot,
-		listPluginIDs:      h.listPluginIDs,
-		reportError:        h.reportError,
+		getConfigSnapshot: h.getConfigSnapshot,
+		listPluginIDs:     h.listPluginIDs,
+		reportError:       h.reportError,
 	})
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
@@ -663,20 +663,20 @@ func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *li
 		h.failActivation(ctx, p.Manifest.ID, sup, err)
 		return endpoint, err
 	}
-	h.secrets.startActivation(p.Manifest.ID)
+	h.secrets.markAwaitingFirstConfigure(p.Manifest.ID)
 	sup.RecordActivationSuccess()
 
-	// No secret operation runs between the Configure of the activation and the end of the wait for it.
+	// No refresh runs between the Configure of the activation and the end of the wait for it.
 	// A failed push leaves the plugin running, and it gets its settings again on the next change.
 	if lockErr := h.secrets.lockSecrets(ctx); lockErr != nil {
-		h.secrets.endActivation(p.Manifest.ID)
+		h.secrets.clearAwaitingFirstConfigure(p.Manifest.ID)
 		return endpoint, lockErr
 	}
-	readErr, configureErr := h.secrets.configurePlugin(ctx, p.Manifest.ID)
-	h.secrets.endActivation(p.Manifest.ID)
+	configureErr := h.secrets.configurePlugin(ctx, p.Manifest.ID)
+	h.secrets.clearAwaitingFirstConfigure(p.Manifest.ID)
 	h.secrets.unlockSecrets()
-	if err := errors.Join(readErr, configureErr); err != nil {
-		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, err))
+	if configureErr != nil {
+		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, configureErr))
 	}
 	return endpoint, nil
 }
@@ -1386,11 +1386,10 @@ func (h *Host) NotifyPluginConfig(ctx context.Context, pluginID string) error {
 		return err
 	}
 	defer h.secrets.unlockSecrets()
-	readErr, configureErr := h.secrets.configurePlugin(ctx, pluginID)
-	return errors.Join(readErr, configureErr)
+	return h.secrets.configurePlugin(ctx, pluginID)
 }
 
-// configSnapshot is what a Configure call to one plugin is made of, taken while mu was held.
+// configSnapshot is what a Configure call to one plugin is made of, read while mu is held.
 type configSnapshot struct {
 	pluginID   string
 	endpoint   transport.Endpoint
@@ -1402,7 +1401,7 @@ type configSnapshot struct {
 	source     pluginport.SecretSource
 }
 
-func (h *Host) takeConfigSnapshot(pluginID string) (configSnapshot, bool, error) {
+func (h *Host) getConfigSnapshot(pluginID string) (configSnapshot, bool, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	endpoint, hasEndpoint := h.endpoints[pluginID]

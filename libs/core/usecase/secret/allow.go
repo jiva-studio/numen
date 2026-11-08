@@ -11,7 +11,7 @@ type Allow struct{ operation }
 // Execute adds the permission; one that is there already is kept as it is. It fails where the
 // plugin is not installed or does not declare the name and group.
 func (u *Allow) Execute(ctx context.Context, secretID string, permission Permission) error {
-	return u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
+	return u.apply(ctx, func() ([]string, error) {
 		if !slices.Contains(u.plugins.ListDeclarations(), permission) {
 			return nil, newInvalidError("the plugin is not installed or does not declare that secret")
 		}
@@ -33,7 +33,7 @@ type Deny struct{ operation }
 
 // Execute removes the permission; one that is not there is not an error.
 func (u *Deny) Execute(ctx context.Context, secretID string, permission Permission) error {
-	return u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
+	return u.apply(ctx, func() ([]string, error) {
 		return nil, u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
 			index := getIndex(list, secretID)
 			if index < 0 {

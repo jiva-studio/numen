@@ -5,6 +5,7 @@ import (
 	"errors"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -27,16 +28,18 @@ func (l *ledger) ChangeSecrets(change func([]secret.Secret) ([]secret.Secret, er
 
 // plugins is a host that declares the given declarations and records the readers an operation names.
 type plugins struct {
+	mu       sync.Mutex
 	declared []secret.Permission
 	readers  []string
 }
 
 func (p *plugins) ListDeclarations() []secret.Permission { return p.declared }
 
-func (p *plugins) ApplySecretChange(_ context.Context, change func() ([]string, error)) error {
-	readers, err := change()
-	p.readers = readers
-	return err
+func (p *plugins) Refresh(_ context.Context, forced ...string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.readers = forced
+	return nil
 }
 
 // keys is a key store held in memory.
@@ -81,7 +84,7 @@ func newFixture(list ...secret.Secret) fixture {
 		counter++
 		return "s0000000" + string(rune('0'+counter)), nil
 	}
-	f.secrets = secret.NewSecrets(f.ledger, f.keys, f.plugins, newID, func() string { return "/credentials.json" })
+	f.secrets = secret.NewSecrets(f.ledger, f.keys, f.plugins, newID, func() string { return "/credentials.json" }, nil)
 	return f
 }
 
@@ -134,7 +137,7 @@ func (failingStore) SetKey(context.Context, string, string) error { return errLo
 
 func TestCreateWithAFailingStoreIsAKeyStoreErrorWithoutTheValueAndWritesNoEntry(t *testing.T) {
 	f := newFixture()
-	f.secrets = secret.NewSecrets(f.ledger, failingStore{keys{}}, f.plugins, func() (string, error) { return "s00000001", nil }, nil)
+	f.secrets = secret.NewSecrets(f.ledger, failingStore{keys{}}, f.plugins, func() (string, error) { return "s00000001", nil }, nil, nil)
 
 	_, err := f.secrets.Create.Execute(t.Context(), "g", "N", "value-that-must-stay-secret")
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) || strings.Contains(err.Error(), "value-that-must-stay-secret") {
@@ -293,7 +296,7 @@ func TestDeleteWithAFailingStoreRestoresTheEntryWithItsPermissionsAndNamesNoRead
 	}
 	f := newFixture(list...)
 	f.keys["secret/s00000002"] = "invented-value"
-	f.secrets = secret.NewSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil)
+	f.secrets = secret.NewSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil, nil)
 
 	err := f.secrets.Delete.Execute(t.Context(), "s00000002")
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) {

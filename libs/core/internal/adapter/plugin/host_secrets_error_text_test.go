@@ -123,7 +123,7 @@ func TestTheErrorOfAFailedConfigureContainsNoTextOfThePlugin(t *testing.T) {
 			host.SetOnPluginFailed(failed.add)
 			probe.setFailure(connect.NewError(connect.CodeInternal, errors.New(c.say(c.values))))
 
-			err := host.ApplySecretChange(t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
+			err := applyChange(host, t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
 
 			if err == nil {
 				t.Fatal("the operation returned nil although the plugin did not accept the list")

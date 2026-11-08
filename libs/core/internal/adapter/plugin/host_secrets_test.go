@@ -96,6 +96,7 @@ type configured struct {
 	hold          chan struct{}
 	entered       chan struct{}
 	delay         time.Duration
+	during        func()
 }
 
 func (c *configured) setFailure(err error) {
@@ -126,8 +127,11 @@ func (c *configured) Configure(
 	ctx context.Context, req *connect.Request[v1.ConfigureRequest],
 ) (*connect.Response[v1.ConfigureResponse], error) {
 	c.mu.Lock()
-	hold, entered, delay := c.hold, c.entered, c.delay
+	hold, entered, delay, during := c.hold, c.entered, c.delay, c.during
 	c.mu.Unlock()
+	if during != nil {
+		during()
+	}
 	if entered != nil {
 		select {
 		case entered <- struct{}{}:
@@ -356,9 +360,9 @@ func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
 var errLockedKeychain = errors.New("the keychain is locked")
 
 // A key store that fails to read an allowed secret is an error naming it, the plugin is still
-// configured with everything else, and the declaration is not carried, so the plugin keeps the
-// secrets it has.
-func TestAKeyStoreThatCannotBeReadFailsLoudlyAndTheDeclarationIsNotCarried(t *testing.T) {
+// configured with everything else, and the entry of the declaration is sent with no value, so the
+// plugin drops the secrets it may no longer hold.
+func TestAKeyStoreThatCannotBeReadFailsLoudlyAndTheDeclarationIsSentEmpty(t *testing.T) {
 	store := newKeys(map[string]string{})
 	store.failed = errLockedKeychain
 	host, probe := newSecretHost(t, store)
@@ -371,8 +375,8 @@ func TestAKeyStoreThatCannotBeReadFailsLoudlyAndTheDeclarationIsNotCarried(t *te
 	if probe.last(t).GetValues()["model"] != "sonnet" {
 		t.Error("the other settings were not passed on")
 	}
-	if got := probe.last(t).GetSecrets(); len(got) != 0 {
-		t.Errorf("the call carries %v, want no entry for a declaration that could not be read", got)
+	if got := listed(t, probe, declared); len(got) != 0 {
+		t.Errorf("the entry carries %v, want no value", got)
 	}
 }
 
@@ -430,7 +434,7 @@ func TestARefreshConfiguresOnlyAPluginWhoseListChanged(t *testing.T) {
 	}
 	calls := len(probe.calls)
 
-	if err := host.RefreshSecrets(t.Context()); err != nil {
+	if err := host.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if len(probe.calls) != calls {
@@ -438,7 +442,7 @@ func TestARefreshConfiguresOnlyAPluginWhoseListChanged(t *testing.T) {
 	}
 
 	host.SetSecretSource(allowOne(secretPluginID))
-	if err := host.RefreshSecrets(t.Context()); err != nil {
+	if err := host.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if len(probe.calls) != calls+1 || len(listed(t, probe, declared)) != 1 {
@@ -455,7 +459,7 @@ func TestAPluginNamedByAnOperationIsConfiguredAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := host.ApplySecretChange(t.Context(), func() ([]string, error) {
+	err := applyChange(host, t.Context(), func() ([]string, error) {
 		return []string{secretPluginID}, store.SetKey(t.Context(), "secret/"+secretID, "value-replaced")
 	})
 	if err != nil {
@@ -475,46 +479,38 @@ func TestAnOperationThatFailsConfiguresNoPlugin(t *testing.T) {
 	calls := len(probe.calls)
 	errRefused := errors.New("refused")
 
-	err := host.ApplySecretChange(t.Context(), func() ([]string, error) { return []string{secretPluginID}, errRefused })
+	err := applyChange(host, t.Context(), func() ([]string, error) { return []string{secretPluginID}, errRefused })
 	if !errors.Is(err, errRefused) || len(probe.calls) != calls {
 		t.Errorf("error = %v, %d calls, want the refusal and %d calls", err, len(probe.calls), calls)
 	}
 }
 
-// Two operations run one at a time, and a Configure from elsewhere waits for the one in flight.
-func TestOperationsAndConfigureRunOneAtATime(t *testing.T) {
-	host, _ := newSecretHost(t, newKeys(map[string]string{}))
-	entered, gate := make(chan struct{}, 1), make(chan struct{})
+// A refresh and a Configure from elsewhere run one at a time.
+func TestARefreshAndAConfigureRunOneAtATime(t *testing.T) {
+	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
+	source := newListing("Work")
+	host.SetSecretSource(source.source())
+	entered, release := probe.setHold(t)
 
-	firstDone := make(chan error, 1)
-	go func() {
-		firstDone <- host.ApplySecretChange(t.Context(), func() ([]string, error) {
-			entered <- struct{}{}
-			<-gate
-			return nil, nil
-		})
-	}()
+	refreshDone := make(chan error, 1)
+	go func() { refreshDone <- host.Refresh(t.Context()) }()
 	<-entered
-
-	secondDone := make(chan error, 1)
-	go func() {
-		secondDone <- host.ApplySecretChange(t.Context(), func() ([]string, error) { return nil, nil })
-	}()
 	configureDone := make(chan error, 1)
 	go func() { configureDone <- host.NotifyPluginConfig(t.Context(), secretPluginID) }()
 	select {
-	case err := <-secondDone:
-		t.Fatalf("an operation ran while another was in flight: %v", err)
 	case err := <-configureDone:
-		t.Fatalf("a Configure ran during an operation: %v", err)
+		t.Fatalf("a Configure ran during a refresh: %v", err)
 	case <-time.After(100 * time.Millisecond):
 	}
 
-	close(gate)
-	for _, result := range []chan error{firstDone, secondDone, configureDone} {
+	release()
+	for _, result := range []chan error{refreshDone, configureDone} {
 		if err := <-result; err != nil {
 			t.Fatal(err)
 		}
+	}
+	if probe.count() != 2 {
+		t.Errorf("%d Configure calls, want 2", probe.count())
 	}
 }
 
@@ -559,24 +555,6 @@ func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 	}
 }
 
-// The signature of a list names the declarations and the secrets and holds no value.
-func TestTheSignatureOfAListContainsNoValue(t *testing.T) {
-	entries := []*v1.ConfigureSecrets{{
-		Name: "apiKey", Group: "openrouter",
-		Values: []*v1.SecretValue{{Id: secretID, Name: "Work", Group: "openrouter", Value: fromKeychain}},
-	}}
-	signature := getSecretsSignature(entries)
-	assertNoKey(t, "the signature", signature, fromKeychain)
-	entries[0].Values[0].Value = "another"
-	if getSecretsSignature(entries) != signature {
-		t.Error("the signature follows the value")
-	}
-	entries[0].Values[0].Name = "Home"
-	if getSecretsSignature(entries) == signature {
-		t.Error("the signature ignores the name of a secret")
-	}
-}
-
 // A plugin between its activation and the Configure of that activation is not due one: the
 // Configure of the activation reads the list as it is, so a refresh sends nothing to it.
 func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
@@ -586,10 +564,7 @@ func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
 	host.secrets.awaitingFirstConfigure[secretPluginID] = true
 	host.secrets.mu.Unlock()
 
-	if host.secrets.hasSecretsChanged(t.Context(), secretPluginID) {
-		t.Error("a plugin that awaits the Configure of its activation is due a Configure")
-	}
-	if err := host.RefreshSecrets(t.Context()); err != nil {
+	if err := host.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != 0 {

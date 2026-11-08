@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -193,7 +192,7 @@ func TestAFailedConfigureKeepsTheChangeAndNamesThePluginWithoutTheValue(t *testi
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("rejected the key "+fromKeychain)))
 
 	committed := false
-	err := host.ApplySecretChange(t.Context(), func() ([]string, error) {
+	err := applyChange(host, t.Context(), func() ([]string, error) {
 		committed = true
 		source.rename("Renamed")
 		return nil, nil
@@ -233,13 +232,13 @@ func TestARefreshAfterAFailedSendDoesNotSendTheSameListAgain(t *testing.T) {
 	reported := &collectErrors{}
 	host.SetErrorHandler(reported.add)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
-	if err := host.ApplySecretChange(t.Context(), source.renameBy("Renamed")); err == nil {
+	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err == nil {
 		t.Fatal("the operation returned nil although the plugin did not accept the list")
 	}
 	probe.setFailure(nil)
 	calls := probe.count()
 
-	if err := host.RefreshSecrets(t.Context()); err != nil {
+	if err := host.Refresh(t.Context()); err != nil {
 		t.Errorf("the refresh returned %v, want the failure to reach the person once", err)
 	}
 	if probe.count() != calls {
@@ -254,14 +253,14 @@ func TestARefreshAfterAFailedSendDoesNotSendTheSameListAgain(t *testing.T) {
 func TestARefreshSendsToAFailedPluginWhoseListChanged(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
-	if err := host.ApplySecretChange(t.Context(), source.renameBy("Renamed")); err == nil {
+	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err == nil {
 		t.Fatal("the operation returned nil although the plugin did not accept the list")
 	}
 	probe.setFailure(nil)
 	calls := probe.count()
 	source.rename("Renamed again")
 
-	if err := host.RefreshSecrets(t.Context()); err != nil {
+	if err := host.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+1 || deliveredName(t, probe) != "Renamed again" {
@@ -275,13 +274,13 @@ func TestARefreshSendsToAFailedPluginWhoseListChanged(t *testing.T) {
 func TestAnOperationThatNamesAFailedPluginSendsToIt(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
-	if err := host.ApplySecretChange(t.Context(), source.renameBy("Renamed")); err == nil {
+	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err == nil {
 		t.Fatal("the operation returned nil although the plugin did not accept the list")
 	}
 	probe.setFailure(nil)
 	calls := probe.count()
 
-	err := host.ApplySecretChange(t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
+	err := applyChange(host, t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,7 +294,7 @@ func TestAnOperationThatNamesAFailedPluginSendsToIt(t *testing.T) {
 func TestARestartedPluginIsSentTheListThatFailedBefore(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
-	if err := host.ApplySecretChange(t.Context(), source.renameBy("Renamed")); err == nil {
+	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err == nil {
 		t.Fatal("the operation returned nil although the plugin did not accept the list")
 	}
 	probe.setFailure(nil)
@@ -308,7 +307,7 @@ func TestARestartedPluginIsSentTheListThatFailedBefore(t *testing.T) {
 		t.Fatalf("%d Configure calls after the restart, last list %q, want %d and the list that failed",
 			probe.count(), deliveredName(t, probe), calls+1)
 	}
-	if err := host.RefreshSecrets(t.Context()); err != nil {
+	if err := host.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+1 {
@@ -333,7 +332,7 @@ func TestAFailedActivationConfigureIsReportedOnceAndNotSentAgainByARefresh(t *te
 			probe.count(), reported.count(), calls+1)
 	}
 	probe.setFailure(nil)
-	if err := host.RefreshSecrets(t.Context()); err != nil {
+	if err := host.Refresh(t.Context()); err != nil {
 		t.Errorf("the refresh returned %v", err)
 	}
 	if probe.count() != calls+1 || reported.count() != 1 {
@@ -342,7 +341,7 @@ func TestAFailedActivationConfigureIsReportedOnceAndNotSentAgainByARefresh(t *te
 	}
 
 	source.rename("Renamed")
-	if err := host.RefreshSecrets(t.Context()); err != nil {
+	if err := host.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+2 || deliveredName(t, probe) != "Renamed" {
@@ -356,13 +355,13 @@ func TestAFailedActivationConfigureIsReportedOnceAndNotSentAgainByARefresh(t *te
 func TestTheNextOperationThatChangesTheListOfAFailedPluginSendsAgain(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
-	if err := host.ApplySecretChange(t.Context(), source.renameBy("Renamed")); err == nil {
+	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err == nil {
 		t.Fatal("the operation returned nil although the plugin did not accept the list")
 	}
 	probe.setFailure(nil)
 	calls := probe.count()
 
-	if err := host.ApplySecretChange(t.Context(), source.renameBy("Renamed again")); err != nil {
+	if err := applyChange(host, t.Context(), source.renameBy("Renamed again")); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+1 || deliveredName(t, probe) != "Renamed again" {
@@ -376,12 +375,12 @@ func TestTheNextOperationThatChangesTheListOfAFailedPluginSendsAgain(t *testing.
 func TestAnOperationThatDoesNotChangeTheListOfAFailingPluginDoesNotSendToIt(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
-	if err := host.ApplySecretChange(t.Context(), source.renameBy("Renamed")); err == nil {
+	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err == nil {
 		t.Fatal("the operation returned nil although the plugin did not accept the list")
 	}
 	calls := probe.count()
 
-	if err := host.ApplySecretChange(t.Context(), func() ([]string, error) { return nil, nil }); err != nil {
+	if err := applyChange(host, t.Context(), func() ([]string, error) { return nil, nil }); err != nil {
 		t.Errorf("an operation that does not concern the plugin returned %v", err)
 	}
 	if probe.count() != calls {
@@ -399,7 +398,7 @@ func TestAHungConfigureDelaysTheOperationByTheTimeoutOnce(t *testing.T) {
 
 	result := make(chan error, 1)
 	ctx := t.Context()
-	go func() { result <- host.ApplySecretChange(ctx, source.renameBy("Renamed")) }()
+	go func() { result <- applyChange(host, ctx, source.renameBy("Renamed")) }()
 	select {
 	case early := <-result:
 		t.Fatalf("the operation returned %v before the Configure timeout", early)
@@ -419,9 +418,9 @@ func TestAHungConfigureDelaysTheOperationByTheTimeoutOnce(t *testing.T) {
 	}
 
 	followUps := map[string]func() error{
-		"the refresh after the operation": func() error { return host.RefreshSecrets(ctx) },
+		"the refresh after the operation": func() error { return host.Refresh(ctx) },
 		"an operation that concerns no plugin": func() error {
-			return host.ApplySecretChange(ctx, func() ([]string, error) { return nil, nil })
+			return applyChange(host, ctx, func() ([]string, error) { return nil, nil })
 		},
 	}
 	for name, run := range followUps {
@@ -468,7 +467,7 @@ func TestTheOperationReturnsOnlyAfterThePluginAnswered(t *testing.T) {
 	probe.mu.Unlock()
 	calls := probe.count()
 
-	if err := host.ApplySecretChange(t.Context(), source.renameBy("Renamed")); err != nil {
+	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+1 || deliveredName(t, probe) != "Renamed" {
@@ -476,71 +475,68 @@ func TestTheOperationReturnsOnlyAfterThePluginAnswered(t *testing.T) {
 	}
 }
 
-// The lock of the secret operations is held while the Configure call is on its way, so a second
-// operation changes the list only after the first one's call was answered.
-func TestTheLockIsHeldWhileTheConfigureIsSent(t *testing.T) {
+// A Configure handler that asks the host for another refresh does not deadlock the round: the
+// refresh waits for the lock until its own context ends, and the round and the lock go on.
+func TestAConfigureHandlerThatCallsBackIntoTheHostDoesNotDeadlockTheRound(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
-	entered, release := probe.setHold(t)
-	calls := probe.count()
-
-	first := make(chan error, 1)
-	go func() { first <- host.ApplySecretChange(t.Context(), source.renameBy("First")) }()
-	<-entered
-
-	var secondRan atomic.Bool
-	second := make(chan error, 1)
-	go func() {
-		second <- host.ApplySecretChange(t.Context(), func() ([]string, error) {
-			secondRan.Store(true)
-			source.rename("Second")
-			return nil, nil
-		})
-	}()
-	time.Sleep(150 * time.Millisecond)
-	if secondRan.Load() {
-		t.Error("a second operation ran while the Configure call of the first was on its way")
+	source.rename("Renamed")
+	nested := make(chan error, 1)
+	probe.mu.Lock()
+	probe.during = func() {
+		ctx, cancel := context.WithTimeout(t.Context(), 200*time.Millisecond)
+		defer cancel()
+		nested <- host.Refresh(ctx)
 	}
+	probe.mu.Unlock()
 
-	release()
-	for _, result := range []chan error{first, second} {
-		if err := <-result; err != nil {
-			t.Fatal(err)
+	result := make(chan error, 1)
+	go func() { result <- host.Refresh(t.Context()) }()
+	select {
+	case err := <-result:
+		if err != nil {
+			t.Errorf("the round returned %v", err)
 		}
+	case <-time.After(configureCallTimeout + 2*time.Second):
+		t.Fatal("the round is stuck behind a handler that called back")
 	}
-	if probe.count() != calls+2 || deliveredName(t, probe) != "Second" {
-		t.Errorf("%d Configure calls, last list %q, want %d and the later list", probe.count(), deliveredName(t, probe), calls+2)
+	if err := <-nested; !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("the nested refresh returned %v, want the end of its own context", err)
+	}
+	probe.mu.Lock()
+	probe.during = nil
+	probe.mu.Unlock()
+	source.rename("Again")
+	if err := host.Refresh(t.Context()); err != nil {
+		t.Fatalf("the lock stays held after the round: %v", err)
+	}
+	if got := deliveredName(t, probe); got != "Again" {
+		t.Errorf("the plugin holds %q, want the list of the refresh after the round", got)
 	}
 }
 
-// An operation that runs while the plugin starts, before the Configure of its activation reads the
-// list, leaves the plugin one Configure of the activation with the new list.
-func TestAnOperationBeforeTheActivationConfigureEndsWithOneCallWithTheNewList(t *testing.T) {
+// A refresh that comes while a plugin awaits the Configure of its activation does not send it an
+// older list: the plugin ends with one call, carrying the list as it is.
+func TestARefreshBeforeTheActivationConfigureSendsOneCallWithTheNewList(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	activate := prepareActivation(t, host, true)
 	calls := probe.count()
-
-	gate, entered := make(chan struct{}), make(chan struct{})
-	operation := make(chan error, 1)
-	go func() {
-		operation <- host.ApplySecretChange(t.Context(), func() ([]string, error) {
-			close(entered)
-			<-gate
-			source.rename("Renamed")
-			return nil, nil
-		})
-	}()
-	<-entered
+	if err := host.secrets.lockSecrets(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	activation := make(chan error, 1)
 	go func() { activation <- activate() }()
 	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
 		return host.secrets.isAwaitingFirstConfigure(secretPluginID)
 	})
-	close(gate)
+	source.rename("Renamed")
+	refresh := make(chan error, 1)
+	go func() { refresh <- host.Refresh(t.Context()) }()
+	host.secrets.unlockSecrets()
 
-	if err := <-operation; err != nil {
+	if err := <-activation; err != nil {
 		t.Fatal(err)
 	}
-	if err := <-activation; err != nil {
+	if err := <-refresh; err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+1 || deliveredName(t, probe) != "Renamed" {
@@ -548,9 +544,9 @@ func TestAnOperationBeforeTheActivationConfigureEndsWithOneCallWithTheNewList(t 
 	}
 }
 
-// An operation that runs while the Configure of the activation is on its way waits for it, and then
+// A refresh that comes while the Configure of the activation is on its way waits for it, and then
 // sends the new list, so the plugin ends with it.
-func TestAnOperationDuringTheActivationConfigureEndsWithTheNewListInThePlugin(t *testing.T) {
+func TestARefreshDuringTheActivationConfigureWaitsAndThenSendsTheNewList(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	activate := prepareActivation(t, host, true)
 	calls := probe.count()
@@ -560,29 +556,24 @@ func TestAnOperationDuringTheActivationConfigureEndsWithTheNewListInThePlugin(t 
 	go func() { activation <- activate() }()
 	<-entered
 
-	var ran atomic.Bool
-	operation := make(chan error, 1)
-	go func() {
-		operation <- host.ApplySecretChange(t.Context(), func() ([]string, error) {
-			ran.Store(true)
-			source.rename("Renamed")
-			return nil, nil
-		})
-	}()
-	time.Sleep(150 * time.Millisecond)
-	if ran.Load() {
-		t.Error("the operation ran while the Configure of the activation was on its way")
+	source.rename("Renamed")
+	refresh := make(chan error, 1)
+	go func() { refresh <- host.Refresh(t.Context()) }()
+	select {
+	case err := <-refresh:
+		t.Fatalf("the refresh ran while the Configure of the activation was on its way: %v", err)
+	case <-time.After(150 * time.Millisecond):
 	}
 	release()
 
 	if err := <-activation; err != nil {
 		t.Fatal(err)
 	}
-	if err := <-operation; err != nil {
+	if err := <-refresh; err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+2 || deliveredName(t, probe) != "Renamed" {
-		t.Errorf("%d Configure calls, last list %q, want %d (the activation, then the operation) and the new list",
+		t.Errorf("%d Configure calls, last list %q, want %d (the activation, then the refresh) and the new list",
 			probe.count(), deliveredName(t, probe), calls+2)
 	}
 }
@@ -592,7 +583,7 @@ func TestRenamingTheGroupOfASecretSendsOneConfigure(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	calls := probe.count()
 
-	err := host.ApplySecretChange(t.Context(), func() ([]string, error) {
+	err := applyChange(host, t.Context(), func() ([]string, error) {
 		source.regroup("mistral")
 		return nil, nil
 	})
@@ -625,7 +616,7 @@ func TestTheErrorNamesEveryPluginWhoseSendFailed(t *testing.T) {
 	}
 	secondCalls, thirdCalls := secondProbe.count(), thirdProbe.count()
 
-	err := host.ApplySecretChange(t.Context(), source.renameBy("Renamed"))
+	err := applyChange(host, t.Context(), source.renameBy("Renamed"))
 	if err == nil {
 		t.Fatal("the operation returned nil although two plugins did not accept the list")
 	}

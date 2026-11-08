@@ -79,7 +79,7 @@ func TestAPluginWhoseConfigureFailedReceivesTheListWithTheNextOperationThatChang
 
 	alpha.setFailure(nil)
 	attempts := alpha.attemptCount()
-	if err := w.host.RefreshSecrets(t.Context()); err != nil {
+	if err := w.host.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if alpha.attemptCount() != attempts {

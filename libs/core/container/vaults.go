@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -82,6 +83,7 @@ type Resources struct {
 	watches        *vaultwatch.Hub
 	settingsFiles  *settings.Files
 	settingEvents  *settingevents.Events
+	secretGate     *secret.Gate
 	hostSubscribed sync.Once
 }
 
@@ -92,6 +94,7 @@ func NewResources() *Resources {
 		watches:       vaultwatch.NewHub(),
 		settingsFiles: settings.NewFiles(),
 		settingEvents: settingevents.New(),
+		secretGate:    secret.NewGate(),
 	}
 }
 
@@ -111,5 +114,5 @@ func (c Config) getResources() *Resources {
 	if c.Resources != nil {
 		return c.Resources
 	}
-	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil}
+	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil}
 }

@@ -148,11 +148,10 @@ type PluginSettingDeclarer interface {
 type pluginSecretConfigurator interface {
 	SetKeyStore(store KeyStore)
 	SetSecretSource(source SecretSource)
-	// RefreshSecrets configures the running plugins whose list of secrets differs from the one they
-	// were last given.
-	RefreshSecrets(ctx context.Context) error
+	// Refresh configures the running plugins whose list of secrets differs from the one they were
+	// last given, and the plugins named in forced.
+	Refresh(ctx context.Context, forced ...string) error
 	ListDeclarations() []SecretPermission
-	ApplySecretChange(ctx context.Context, change func() (readers []string, err error)) error
 }
 
 type pluginSettingsPush interface {

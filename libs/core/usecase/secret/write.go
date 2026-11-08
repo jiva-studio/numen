@@ -10,7 +10,7 @@ func (u *Write) Execute(ctx context.Context, id, value string) error {
 	if value == "" {
 		return newInvalidError("the value is empty")
 	}
-	return u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
+	return u.apply(ctx, func() ([]string, error) {
 		list, err := u.ledger.GetSecrets()
 		if err != nil {
 			return nil, err

@@ -10,7 +10,7 @@ func (u *Rename) Execute(ctx context.Context, id, name string) error {
 	if err := checkName("name", name); err != nil {
 		return err
 	}
-	return u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
+	return u.apply(ctx, func() ([]string, error) {
 		return nil, u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
 			index := getIndex(list, id)
 			if index < 0 {

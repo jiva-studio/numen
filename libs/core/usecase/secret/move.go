@@ -11,7 +11,7 @@ type Move struct{ operation }
 // Execute puts the secret before the secret beforeID, or at the end of the list, which is the end
 // of its group, where beforeID is empty.
 func (u *Move) Execute(ctx context.Context, id, beforeID string) error {
-	return u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
+	return u.apply(ctx, func() ([]string, error) {
 		return nil, u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {
 			return moveSecret(list, id, beforeID)
 		})

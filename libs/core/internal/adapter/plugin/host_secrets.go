@@ -36,24 +36,19 @@ func (h *Host) listDeclarationsLocked() []pluginport.SecretPermission {
 	return declarations
 }
 
-// ApplySecretChange runs change while no other secret operation runs. It then sends Configure to
-// each running plugin whose list of secrets differs from the one it had before change, and to each
-// plugin whose id change returns, and waits for every send. When a send fails the change stays
-// committed and the error names the plugin. It returns the context error, with change not run, when
-// ctx ends before the lock is free.
-func (h *Host) ApplySecretChange(ctx context.Context, change func() (readers []string, err error)) error {
-	return h.secrets.applyChange(ctx, change)
-}
-
-// RefreshSecrets sends Configure to each running plugin whose list of secrets differs from the one
-// it was last given.
-func (h *Host) RefreshSecrets(ctx context.Context) error {
-	return h.secrets.refresh(ctx)
+// Refresh sends Configure to each running plugin whose list of secrets differs from the one it was
+// last given, and to each plugin in forced, and waits for every send. A secret operation calls it
+// after its change is committed. The error names each plugin whose send failed and holds no value.
+// A plugin counts as given the list only after a send that succeeded with every value read. Where
+// ctx ends first or the call times out, the plugin stays due for the next refresh. Where the plugin
+// answered with an error, a plain refresh does not send the same list again.
+func (h *Host) Refresh(ctx context.Context, forced ...string) error {
+	return h.secrets.refresh(ctx, forced)
 }
 
 // WatchPluginConfig registers fn to run each time the plugin has been given its configuration.
-// fn runs on its own goroutine, so it may call the plugin, which a caller holding the lock of the
-// secrets could not do. The returned function removes the registration.
+// fn runs on its own goroutine, so it may call the plugin while the delivery of secrets is locked.
+// The returned function removes the registration.
 func (h *Host) WatchPluginConfig(pluginID string, fn func()) (stop func()) {
 	return h.secrets.watchPluginConfig(pluginID, fn)
 }

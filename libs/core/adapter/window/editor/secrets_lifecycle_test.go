@@ -273,11 +273,9 @@ func TestAPluginThatBecomesActiveDuringASecretOperationIsConfiguredOnce(t *testi
 	release := make(chan struct{})
 	operationDone := make(chan error, 1)
 	go func() {
-		operationDone <- w.host.ApplySecretChange(t.Context(), func() ([]string, error) {
-			close(started)
-			<-release
-			return nil, nil
-		})
+		close(started)
+		<-release
+		operationDone <- w.host.Refresh(t.Context())
 	}()
 	<-started
 

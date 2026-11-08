@@ -364,7 +364,7 @@ func (c Config) OpenSecrets() *secret.Secrets {
 	if c.PluginHost != nil {
 		plugins = c.PluginHost
 	}
-	return secret.NewSecrets(c.openSecretLedger(), c.KeyStore, plugins, newSecretID, c.getCredentialsPath)
+	return secret.NewSecrets(c.openSecretLedger(), c.KeyStore, plugins, newSecretID, c.getCredentialsPath, c.getResources().secretGate)
 }
 
 func (c Config) getCredentialsPath() string {

@@ -14,7 +14,7 @@ func (u *RenameGroup) Execute(ctx context.Context, group, name string) error {
 	if err := checkName("group", name); err != nil {
 		return err
 	}
-	return u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
+	return u.apply(ctx, func() ([]string, error) {
 		requested := ListAskedGroups(u.plugins.ListDeclarations())
 		if slices.Contains(requested, group) {
 			return nil, newInvalidError("a group an installed plugin asks for cannot be renamed")

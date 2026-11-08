@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -15,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
@@ -25,13 +25,21 @@ const configureCallTimeout = 3 * time.Second
 
 // secretHost is what secretDelivery reads from the host that owns it.
 type secretHost struct {
-	takeConfigSnapshot func(pluginID string) (configSnapshot, bool, error)
-	listPluginIDs      func() []string
-	reportError        func(err error)
+	getConfigSnapshot func(pluginID string) (configSnapshot, bool, error)
+	listPluginIDs     func() []string
+	reportError       func(err error)
 }
 
 // secretDelivery gives the plugins their secrets: it keeps what each plugin was last given and
-// sends Configure when that changes.
+// sends Configure when that changes. The lock makes the rounds of sends one at a time and is held
+// for the sends only, never while a secret is written.
+//
+// A list counts as held only after a send that succeeded with every value read. After any other
+// outcome the plugin is forgotten and the next refresh sends again. The one exception is a plugin
+// that answered with an error of its own: that list is kept in rejected, and a refresh does not send
+// it again until the list changes, an operation names the plugin or the process restarts. A send cut
+// short by the context of the caller, a cancel or a timeout, says nothing about the plugin and is
+// never kept as rejected.
 type secretDelivery struct {
 	host                   secretHost
 	lock                   chan struct{}
@@ -39,6 +47,7 @@ type secretDelivery struct {
 	keyStore               pluginport.KeyStore
 	source                 pluginport.SecretSource
 	delivered              map[string]string
+	rejected               map[string]string
 	awaitingFirstConfigure map[string]bool
 	configWatchers         map[string]map[int]func()
 	nextWatcher            int
@@ -50,6 +59,7 @@ func newSecretDelivery(host secretHost) *secretDelivery {
 		host:                   host,
 		lock:                   make(chan struct{}, 1),
 		delivered:              make(map[string]string),
+		rejected:               make(map[string]string),
 		awaitingFirstConfigure: make(map[string]bool),
 	}
 }
@@ -72,8 +82,8 @@ func (d *secretDelivery) getSource() pluginport.SecretSource {
 	return d.source
 }
 
-func (d *secretDelivery) takeSnapshot(pluginID string) (configSnapshot, bool, error) {
-	snapshot, isRunning, err := d.host.takeConfigSnapshot(pluginID)
+func (d *secretDelivery) getSnapshot(pluginID string) (configSnapshot, bool, error) {
+	snapshot, isRunning, err := d.host.getConfigSnapshot(pluginID)
 	if !isRunning || err != nil {
 		return snapshot, isRunning, err
 	}
@@ -98,14 +108,15 @@ func (d *secretDelivery) lockSecrets(ctx context.Context) error {
 
 func (d *secretDelivery) unlockSecrets() { <-d.lock }
 
-func (d *secretDelivery) startActivation(pluginID string) {
+func (d *secretDelivery) markAwaitingFirstConfigure(pluginID string) {
 	d.mu.Lock()
 	delete(d.delivered, pluginID)
+	delete(d.rejected, pluginID)
 	d.awaitingFirstConfigure[pluginID] = true
 	d.mu.Unlock()
 }
 
-func (d *secretDelivery) endActivation(pluginID string) {
+func (d *secretDelivery) clearAwaitingFirstConfigure(pluginID string) {
 	d.mu.Lock()
 	delete(d.awaitingFirstConfigure, pluginID)
 	d.mu.Unlock()
@@ -117,55 +128,23 @@ func (d *secretDelivery) isAwaitingFirstConfigure(pluginID string) bool {
 	return d.awaitingFirstConfigure[pluginID]
 }
 
-func (d *secretDelivery) applyChange(ctx context.Context, change func() (readers []string, err error)) error {
+func (d *secretDelivery) forget(pluginIDs []string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for _, id := range pluginIDs {
+		delete(d.delivered, id)
+		delete(d.rejected, id)
+	}
+}
+
+func (d *secretDelivery) refresh(ctx context.Context, forced []string) error {
+	d.forget(forced)
 	if err := d.lockSecrets(ctx); err != nil {
 		return err
 	}
 	defer d.unlockSecrets()
-	before := d.listSecretSignatures(ctx)
-	readers, err := change()
-	if err != nil {
-		return err
-	}
-	var ids []string
-	for id, signature := range before {
-		if slices.Contains(readers, id) || d.getSecretsSignatureOf(ctx, id) != signature {
-			ids = append(ids, id)
-		}
-	}
-	slices.Sort(ids)
-	return d.configurePlugins(ctx, ids)
-}
-
-func (d *secretDelivery) refresh(ctx context.Context) error {
-	if err := d.lockSecrets(ctx); err != nil {
-		return err
-	}
-	defer d.unlockSecrets()
-	ids := slices.DeleteFunc(d.host.listPluginIDs(), func(id string) bool { return !d.hasSecretsChanged(ctx, id) })
-	return d.configurePlugins(ctx, ids)
-}
-
-func (d *secretDelivery) listSecretSignatures(ctx context.Context) map[string]string {
 	ids := d.host.listPluginIDs()
-	signatures := make(map[string]string, len(ids))
-	for _, id := range ids {
-		signatures[id] = d.getSecretsSignatureOf(ctx, id)
-	}
-	return signatures
-}
-
-func (d *secretDelivery) getSecretsSignatureOf(ctx context.Context, pluginID string) string {
-	snapshot, isRunning, err := d.takeSnapshot(pluginID)
-	if !isRunning || err != nil || d.isAwaitingFirstConfigure(pluginID) {
-		return ""
-	}
-	secrets, _ := d.listConfigureSecrets(ctx, snapshot, false)
-	return "list:" + getSecretsSignature(secrets)
-}
-
-func (d *secretDelivery) configurePlugins(ctx context.Context, ids []string) error {
-	failures := make([][2]error, len(ids))
+	failures := make([]error, len(ids))
 	var group sync.WaitGroup
 	for i, id := range ids {
 		if d.isAwaitingFirstConfigure(id) {
@@ -174,103 +153,87 @@ func (d *secretDelivery) configurePlugins(ctx context.Context, ids []string) err
 		group.Add(1)
 		go func() {
 			defer group.Done()
-			readErr, configureErr := d.configurePlugin(ctx, id)
-			failures[i] = [2]error{configureErr, readErr}
+			failures[i] = d.refreshPlugin(ctx, id)
 		}()
 	}
 	group.Wait()
-	var joined []error
-	for _, pair := range failures {
-		joined = append(joined, pair[0], pair[1])
-	}
-	return errors.Join(joined...)
+	return errors.Join(failures...)
 }
 
-func (d *secretDelivery) configurePlugin(ctx context.Context, pluginID string) (readErr, configureErr error) {
-	snapshot, isRunning, err := d.takeSnapshot(pluginID)
+func (d *secretDelivery) refreshPlugin(ctx context.Context, pluginID string) error {
+	snapshot, isRunning, err := d.getSnapshot(pluginID)
 	if !isRunning || err != nil {
-		return err, nil
+		return nil
 	}
-	secrets, failures := d.listConfigureSecrets(ctx, snapshot, true)
-	secretsErr := d.getSecretsError(failures)
-
-	httpClient := transport.EndpointClient(snapshot.endpoint)
-	client := numenv1connect.NewPluginLifecycleServiceClient(
-		httpClient,
-		transport.GetBaseURL(snapshot.endpoint),
-		connect.WithInterceptors(transport.AuthInterceptor(snapshot.endpoint.Token)),
-	)
-	req := connect.NewRequest(&v1.ConfigureRequest{
-		PluginId:          pluginID,
-		ConfigurationJson: snapshot.configJSON,
-		Values:            snapshot.values,
-		Secrets:           secrets,
-	})
-	listed, _ := d.listConfigureSecrets(ctx, snapshot, false)
-	signature := getSecretsSignature(listed)
-	configCtx, cancel := context.WithTimeout(ctx, configureCallTimeout)
-	defer cancel()
-	_, err = client.Configure(configCtx, req)
-	// A list that failed to arrive is remembered too, so a plain refresh does not send it again.
-	d.mu.Lock()
-	d.delivered[pluginID] = signature
-	d.mu.Unlock()
-	if err != nil {
-		var connectErr *connect.Error
-		if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && len(snapshot.declared) == 0 {
-			return secretsErr, nil
-		}
-		return secretsErr, fmt.Errorf("configure plugin %s: %s", pluginID, describeConfigureFailure(err))
+	lists, listErr := d.listAllowed(snapshot)
+	if listErr == nil && !d.isDue(pluginID, getSignature(lists)) {
+		return nil
 	}
-	d.runConfigWatchers(pluginID)
-	return secretsErr, nil
+	return d.deliver(ctx, snapshot, lists, listErr)
 }
 
-func (d *secretDelivery) hasSecretsChanged(ctx context.Context, pluginID string) bool {
-	snapshot, isRunning, err := d.takeSnapshot(pluginID)
+func (d *secretDelivery) configurePlugin(ctx context.Context, pluginID string) error {
+	snapshot, isRunning, err := d.getSnapshot(pluginID)
 	if !isRunning || err != nil {
-		return false
+		return err
 	}
-	secrets, _ := d.listConfigureSecrets(ctx, snapshot, false)
+	lists, listErr := d.listAllowed(snapshot)
+	return d.deliver(ctx, snapshot, lists, listErr)
+}
+
+func (d *secretDelivery) isDue(pluginID, signature string) bool {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	if d.awaitingFirstConfigure[pluginID] {
 		return false
 	}
-	last, wasDelivered := d.delivered[pluginID]
-	return !wasDelivered || last != getSecretsSignature(secrets)
+	if last, isDelivered := d.delivered[pluginID]; isDelivered && last == signature {
+		return false
+	}
+	last, isRejected := d.rejected[pluginID]
+	return !isRejected || last != signature
 }
 
-func (d *secretDelivery) listConfigureSecrets(ctx context.Context, snapshot configSnapshot, withValues bool) ([]*v1.ConfigureSecrets, []error) {
+// allowedList is one declaration of a plugin with the secrets allowed to it, in the order they are sent.
+type allowedList struct {
+	declaration manifest.Secret
+	secrets     []secret.Secret
+}
+
+func (d *secretDelivery) listAllowed(snapshot configSnapshot) ([]allowedList, error) {
 	if len(snapshot.declared) == 0 {
 		return nil, nil
 	}
 	var list []secret.Secret
+	var listErr error
 	if snapshot.source.List != nil {
-		var err error
-		if list, err = snapshot.source.List(); err != nil {
-			return nil, []error{fmt.Errorf("read the secrets of plugin %s: %w", snapshot.pluginID, err)}
+		if list, listErr = snapshot.source.List(); listErr != nil {
+			list = nil
+			listErr = fmt.Errorf("read the secrets of plugin %s: %w", snapshot.pluginID, listErr)
 		}
 	}
 	page := secret.ListInPageOrder(list, snapshot.requested)
-	var entries []*v1.ConfigureSecrets
-	var failures []error
+	lists := make([]allowedList, 0, len(snapshot.declared))
 	for _, declaration := range snapshot.declared {
-		allowed := secret.ListAllowed(page, secret.Permission{
-			Plugin: snapshot.pluginID, Name: declaration.Name, Group: declaration.Group,
+		lists = append(lists, allowedList{
+			declaration: declaration,
+			secrets: secret.ListAllowed(page, secret.Permission{
+				Plugin: snapshot.pluginID, Name: declaration.Name, Group: declaration.Group,
+			}),
 		})
-		if !withValues {
-			entries = append(entries, &v1.ConfigureSecrets{Name: declaration.Name, Group: declaration.Group, Values: describeSecretValues(allowed)})
-			continue
-		}
-		values, err := readSecretValues(ctx, snapshot.store, allowed)
+	}
+	return lists, listErr
+}
+
+func readEntries(ctx context.Context, snapshot configSnapshot, lists []allowedList) ([]*v1.ConfigureSecrets, []error) {
+	entries := make([]*v1.ConfigureSecrets, 0, len(lists))
+	var failures []error
+	for _, list := range lists {
+		values, err := readSecretValues(ctx, snapshot.store, list.secrets)
 		if err != nil {
-			failures = append(failures, fmt.Errorf("read secret %s of plugin %s: %w", declaration.Name, snapshot.pluginID, err))
-			if !errors.Is(err, pluginport.ErrNoKeyStore) {
-				continue
-			}
+			failures = append(failures, fmt.Errorf("read secret %s of plugin %s: %w", list.declaration.Name, snapshot.pluginID, err))
 		}
-		entries = append(entries, &v1.ConfigureSecrets{Name: declaration.Name, Group: declaration.Group, Values: values})
+		entries = append(entries, &v1.ConfigureSecrets{Name: list.declaration.Name, Group: list.declaration.Group, Values: values})
 	}
 	return entries, failures
 }
@@ -287,42 +250,96 @@ func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []
 			values = append(values, &v1.SecretValue{Id: one.ID, Name: one.Name, Group: one.Group, Value: value})
 		case errors.Is(err, pluginport.ErrNoKey):
 		default:
-			return nil, err
+			return values, err
 		}
 	}
 	return values, nil
 }
 
-func describeSecretValues(secrets []secret.Secret) []*v1.SecretValue {
-	values := make([]*v1.SecretValue, 0, len(secrets))
-	for _, one := range secrets {
-		values = append(values, &v1.SecretValue{Id: one.ID, Name: one.Name, Group: one.Group})
+func (d *secretDelivery) deliver(ctx context.Context, snapshot configSnapshot, lists []allowedList, listErr error) error {
+	entries, failures := readEntries(ctx, snapshot, lists)
+	readErr := d.getReadError(listErr, failures)
+	isConfigured, sendErr := d.sendConfigure(ctx, snapshot, entries)
+	d.recordOutcome(ctx, snapshot.pluginID, getSignature(lists), sendErr, readErr)
+	if sendErr == nil && isConfigured {
+		d.runConfigWatchers(snapshot.pluginID)
 	}
-	return values
+	return errors.Join(sendErr, readErr)
 }
 
-func getSecretsSignature(entries []*v1.ConfigureSecrets) string {
+func (d *secretDelivery) recordOutcome(ctx context.Context, pluginID, signature string, sendErr, readErr error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	switch {
+	case sendErr == nil && readErr == nil:
+		d.delivered[pluginID] = signature
+		delete(d.rejected, pluginID)
+	case sendErr == nil:
+		delete(d.delivered, pluginID)
+		delete(d.rejected, pluginID)
+	case isCallerFailure(ctx, sendErr):
+		delete(d.delivered, pluginID)
+	default:
+		delete(d.delivered, pluginID)
+		d.rejected[pluginID] = signature
+	}
+}
+
+func isCallerFailure(ctx context.Context, err error) bool {
+	if ctx.Err() != nil {
+		return true
+	}
+	code := connect.CodeOf(err)
+	return code == connect.CodeCanceled || code == connect.CodeDeadlineExceeded
+}
+
+func (d *secretDelivery) sendConfigure(ctx context.Context, snapshot configSnapshot, entries []*v1.ConfigureSecrets) (bool, error) {
+	client := numenv1connect.NewPluginLifecycleServiceClient(
+		transport.EndpointClient(snapshot.endpoint),
+		transport.GetBaseURL(snapshot.endpoint),
+		connect.WithInterceptors(transport.AuthInterceptor(snapshot.endpoint.Token)),
+	)
+	req := connect.NewRequest(&v1.ConfigureRequest{
+		PluginId:          snapshot.pluginID,
+		ConfigurationJson: snapshot.configJSON,
+		Values:            snapshot.values,
+		Secrets:           entries,
+	})
+	callCtx, cancel := context.WithTimeout(ctx, configureCallTimeout)
+	defer cancel()
+	_, err := client.Configure(callCtx, req)
+	if err == nil {
+		return true, nil
+	}
+	var connectErr *connect.Error
+	if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented && len(snapshot.declared) == 0 {
+		return false, nil
+	}
+	return false, fmt.Errorf("configure plugin %s: %s", snapshot.pluginID, getConfigureFailureText(err))
+}
+
+func getSignature(lists []allowedList) string {
 	var signature strings.Builder
-	for _, entry := range entries {
-		fmt.Fprintf(&signature, "%q/%q:", entry.GetName(), entry.GetGroup())
-		for _, value := range entry.GetValues() {
-			fmt.Fprintf(&signature, "%q/%q/%q,", value.GetId(), value.GetName(), value.GetGroup())
+	for _, list := range lists {
+		fmt.Fprintf(&signature, "%q/%q:", list.declaration.Name, list.declaration.Group)
+		for _, one := range list.secrets {
+			fmt.Fprintf(&signature, "%q/%q/%q,", one.ID, one.Name, one.Group)
 		}
 		signature.WriteString(";")
 	}
 	return signature.String()
 }
 
-func (d *secretDelivery) getSecretsError(failures []error) error {
-	var notified []error
+func (d *secretDelivery) getReadError(listErr error, failures []error) error {
+	problems := []error{listErr}
 	for _, failure := range failures {
 		if errors.Is(failure, pluginport.ErrNoKeyStore) {
 			d.noKeyStoreOnce.Do(func() { d.host.reportError(failure) })
 			continue
 		}
-		notified = append(notified, failure)
+		problems = append(problems, failure)
 	}
-	return errors.Join(notified...)
+	return errors.Join(problems...)
 }
 
 func (d *secretDelivery) watchPluginConfig(pluginID string, fn func()) (stop func()) {
@@ -356,7 +373,7 @@ func (d *secretDelivery) runConfigWatchers(pluginID string) {
 	}
 }
 
-func describeConfigureFailure(err error) string {
+func getConfigureFailureText(err error) string {
 	if connect.CodeOf(err) == connect.CodeDeadlineExceeded {
 		return "timed out"
 	}

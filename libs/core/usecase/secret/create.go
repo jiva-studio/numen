@@ -19,7 +19,7 @@ func (u *Create) Execute(ctx context.Context, group, name, value string) (string
 		return "", err
 	}
 	var id string
-	err := u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
+	err := u.apply(ctx, func() ([]string, error) {
 		known, err := u.ledger.GetSecrets()
 		if err != nil {
 			return nil, err
@@ -40,7 +40,7 @@ func (u *Create) Execute(ctx context.Context, group, name, value string) (string
 			return append(slices.Clone(list), Secret{ID: id, Name: name, Group: group}), nil
 		}
 		if err := u.ledger.ChangeSecrets(change); err != nil {
-			return nil, errors.Join(err, u.deleteValue(ctx, id))
+			return nil, errors.Join(err, u.deleteValue(context.WithoutCancel(ctx), id))
 		}
 		return nil, nil
 	})

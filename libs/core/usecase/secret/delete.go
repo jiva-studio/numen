@@ -13,7 +13,7 @@ type Delete struct{ operation }
 // When the value cannot be removed the entry returns to its place with its permissions, so the
 // value stays named and the call can be repeated.
 func (u *Delete) Execute(ctx context.Context, id string) error {
-	return u.plugins.ApplySecretChange(ctx, func() ([]string, error) {
+	return u.apply(ctx, func() ([]string, error) {
 		var removed Secret
 		var index int
 		err := u.ledger.ChangeSecrets(func(list []Secret) ([]Secret, error) {

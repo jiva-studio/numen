@@ -30,6 +30,44 @@ type operation struct {
 	ledger  pluginport.SecretLedger
 	keys    pluginport.KeyStore
 	plugins pluginport.SecretPlugins
+	gate    *Gate
+}
+
+// Gate lets one operation at a time change the key store and the list. Operations of every window
+// share one gate, so two of them never interleave the steps of their changes.
+type Gate struct{ slot chan struct{} }
+
+// NewGate returns a gate that no operation holds.
+func NewGate() *Gate { return &Gate{slot: make(chan struct{}, 1)} }
+
+func (g *Gate) enter(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	select {
+	case g.slot <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (g *Gate) leave() { <-g.slot }
+
+func (o operation) apply(ctx context.Context, change func() (readers []string, err error)) error {
+	readers, err := o.change(ctx, change)
+	if err != nil {
+		return err
+	}
+	return o.plugins.Refresh(ctx, readers...)
+}
+
+func (o operation) change(ctx context.Context, change func() ([]string, error)) ([]string, error) {
+	if err := o.gate.enter(ctx); err != nil {
+		return nil, err
+	}
+	defer o.gate.leave()
+	return change()
 }
 
 // GetEntryName returns the name the value of a secret is stored under in the key store, which the
@@ -107,11 +145,15 @@ type Secrets struct {
 
 // NewSecrets returns the use cases over the list, the key store and the plugin host. newID makes
 // the id of a new secret and credentialsPath answers where the values are kept when it is a file.
+// Use cases that share a gate never change the key store and the list at once; a nil gate is a new one.
 func NewSecrets(
 	ledger pluginport.SecretLedger, keys pluginport.KeyStore, plugins pluginport.SecretPlugins,
-	newID func() (string, error), credentialsPath func() string,
+	newID func() (string, error), credentialsPath func() string, gate *Gate,
 ) *Secrets {
-	base := operation{ledger: ledger, keys: keys, plugins: plugins}
+	if gate == nil {
+		gate = NewGate()
+	}
+	base := operation{ledger: ledger, keys: keys, plugins: plugins, gate: gate}
 	return &Secrets{
 		Create:      &Create{operation: base, newID: newID},
 		Rename:      &Rename{operation: base},
@@ -129,14 +171,11 @@ func NewSecrets(
 }
 
 // NoPlugins replaces the plugin host where the installation has none: no plugin declares a
-// secret, and an operation runs as it is.
+// secret, and an operation only changes the list.
 type NoPlugins struct{}
 
 // ListDeclarations returns no declaration.
 func (NoPlugins) ListDeclarations() []Permission { return nil }
 
-// ApplySecretChange runs change.
-func (NoPlugins) ApplySecretChange(_ context.Context, change func() ([]string, error)) error {
-	_, err := change()
-	return err
-}
+// Refresh configures no plugin.
+func (NoPlugins) Refresh(context.Context, ...string) error { return nil }

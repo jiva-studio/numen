@@ -66,7 +66,7 @@ func TestAWatcherRunsWhenASecretIsHandedToThePlugin(t *testing.T) {
 	var runs atomic.Int32
 	host.WatchPluginConfig(secretPluginID, func() { runs.Add(1) })
 
-	err := host.ApplySecretChange(t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
+	err := applyChange(host, t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
 	if err != nil {
 		t.Fatal(err)
 	}
