@@ -47,7 +47,7 @@ type EmbeddingProfile struct {
 type Priority int
 
 const (
-	// PriorityBackground is work nobody waits on, such as indexing.
+	// PriorityBackground is work that serves no person's action, such as indexing.
 	PriorityBackground Priority = iota
 	// PriorityInteractive is a person's action, such as a search or a check of a line.
 	PriorityInteractive

@@ -73,13 +73,13 @@ func (w *Waits) AwaitCount(t *testing.T, count int) {
 func (w *Waits) Elapse(d time.Duration) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	kept := w.pending[:0]
+	remaining := w.pending[:0]
 	for _, one := range w.pending {
 		if one.duration == d {
 			close(one.elapsed)
 			continue
 		}
-		kept = append(kept, one)
+		remaining = append(remaining, one)
 	}
-	w.pending = kept
+	w.pending = remaining
 }

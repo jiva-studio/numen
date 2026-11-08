@@ -164,7 +164,6 @@ func readModelStatus(ctx context.Context, err error) error {
 	return connect.NewError(connect.CodeInternal, err)
 }
 
-// readPriority maps the wire priority to the port one. An unspecified priority is background.
 func readPriority(priority v1.Priority) modelcallport.Priority {
 	if priority == v1.Priority_PRIORITY_INTERACTIVE {
 		return modelcallport.PriorityInteractive

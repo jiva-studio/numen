@@ -46,7 +46,7 @@ A plugin compiled into the core is called through the in-process pipe, as a plug
 
 ### Priority
 
-`CompleteRequest` and `EmbedRequest` carry a `Priority`: `connection.PriorityInteractive` for a person's action (a search, a check of a line) and `connection.PriorityBackground` for work nobody waits on (indexing). A request that sets none is background. `GetEmbeddingProfile` is background.
+`CompleteRequest` and `EmbedRequest` carry a `Priority`: `connection.PriorityInteractive` for a person's action (a search, a check of a line) and `connection.PriorityBackground` for work that serves no person's action (indexing). A request that sets none is background. `GetEmbeddingProfile` is background.
 
 ### Queue of a connection
 

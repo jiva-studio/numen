@@ -306,12 +306,12 @@ func TestATimedOutWaitIsSkippedAsBusyAndTheNextRowServes(t *testing.T) {
 	s.world.Provider.Block(addressLimited)
 	s.complete(t.Context(), consumerID, "running", connectionport.PriorityBackground)
 	s.awaitEntered(t)
-	waiting := s.complete(t.Context(), otherConsumerID, "waiting", connectionport.PriorityInteractive)
+	queued := s.complete(t.Context(), otherConsumerID, "waiting", connectionport.PriorityInteractive)
 	s.world.Waits.AwaitCount(t, 1)
 
 	s.world.Waits.Elapse(time.Minute)
 
-	if err := awaitDone(t, waiting); err != nil {
+	if err := awaitDone(t, queued); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(s.world.Provider.CallsTo(addressTwo)); got != 1 {
@@ -327,12 +327,12 @@ func TestATimedOutWaitSetsNoCooldown(t *testing.T) {
 	s.world.Provider.Block(addressLimited)
 	running := s.complete(t.Context(), consumerID, "running", connectionport.PriorityBackground)
 	s.awaitEntered(t)
-	waiting := s.complete(t.Context(), consumerID, "waiting", connectionport.PriorityInteractive)
+	queued := s.complete(t.Context(), consumerID, "waiting", connectionport.PriorityInteractive)
 	s.world.Waits.AwaitCount(t, 1)
 	s.world.Waits.Elapse(time.Minute)
 
 	var all *connectionport.AllFailedError
-	if err := awaitDone(t, waiting); !errors.As(err, &all) || len(all.Failures) != 1 ||
+	if err := awaitDone(t, queued); !errors.As(err, &all) || len(all.Failures) != 1 ||
 		all.Failures[0].ConnectionName != "Limited" || all.Failures[0].Reason != "busy" {
 		t.Fatalf("err = %v, want Limited: busy", err)
 	}
@@ -345,7 +345,7 @@ func TestATimedOutWaitSetsNoCooldown(t *testing.T) {
 	}
 }
 
-func TestACancelledQueuedCallLeavesTheQueueAndTakesNoSlot(t *testing.T) {
+func TestACancelledQueuedCallIsRemovedFromTheQueueAndFreesNoSlot(t *testing.T) {
 	s := newQueueSetup(t, 1)
 	s.world.Provider.Block(addressLimited)
 	running := s.complete(t.Context(), consumerID, "running", connectionport.PriorityBackground)

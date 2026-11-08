@@ -44,8 +44,6 @@ type waiter struct {
 	isReady bool
 }
 
-// acquire returns the release of a slot of the connection. A capacity below 1 is no limit. It fails with
-// errQueueTimeout when the wait for its priority ends first and with the error of ctx when ctx ends first.
 func (q *queues) acquire(ctx context.Context, connectionID string, capacity int, priority connectionport.Priority) (func(), error) {
 	if capacity < 1 {
 		return func() {}, nil
@@ -83,20 +81,19 @@ func (q *queues) acquire(ctx context.Context, connectionID string, capacity int,
 	}
 }
 
-// startTimer ends the channel it returns when the wait for the priority is over, and stop ends the timer.
 func (q *queues) startTimer(ctx context.Context, priority connectionport.Priority) (<-chan struct{}, func()) {
 	timerCtx, cancel := context.WithCancel(ctx)
 	timedOut := make(chan struct{})
-	stopped := make(chan struct{})
+	timerDone := make(chan struct{})
 	go func() {
-		defer close(stopped)
+		defer close(timerDone)
 		if q.wait(timerCtx, getQueueWait(priority)) == nil {
 			close(timedOut)
 		}
 	}()
 	return timedOut, func() {
 		cancel()
-		<-stopped
+		<-timerDone
 	}
 }
 
@@ -107,8 +104,6 @@ func getQueueWait(priority connectionport.Priority) time.Duration {
 	return BackgroundWait
 }
 
-// leave removes a waiter that gave up. A slot granted in the same moment is kept when keepGranted is
-// set, and given back otherwise.
 func (q *queues) leave(connectionID string, one *waiter, reason error, keepGranted bool) (func(), error) {
 	q.mu.Lock()
 	if one.isReady {
@@ -148,8 +143,8 @@ func (q *queues) release(connectionID string) {
 	q.grant(connectionID, queued)
 }
 
-// grant gives the free slots to the waiters, the head of the interactive list first. The caller holds mu.
 func (q *queues) grant(connectionID string, queued *line) {
+	// The caller holds mu. The head of the interactive list goes first.
 	for queued.running < queued.capacity {
 		var next *waiter
 		switch {
@@ -167,8 +162,8 @@ func (q *queues) grant(connectionID string, queued *line) {
 	}
 }
 
-// drop forgets a connection that runs and holds nothing. The caller holds mu.
 func (q *queues) drop(connectionID string, queued *line) {
+	// The caller holds mu.
 	if queued.running == 0 && len(queued.interactive) == 0 && len(queued.background) == 0 {
 		delete(q.lines, connectionID)
 	}

@@ -279,7 +279,7 @@ export enum Priority {
   INTERACTIVE = 1,
 
   /**
-   * PRIORITY_BACKGROUND is a call made for work nobody waits on, such as indexing.
+   * PRIORITY_BACKGROUND is a call made for work that serves no person's action, such as indexing.
    *
    * @generated from enum value: PRIORITY_BACKGROUND = 2;
    */

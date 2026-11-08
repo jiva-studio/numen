@@ -29,7 +29,7 @@ const (
 	Priority_PRIORITY_UNSPECIFIED Priority = 0
 	// PRIORITY_INTERACTIVE is a call made for a person's action, such as a search or a check of a line.
 	Priority_PRIORITY_INTERACTIVE Priority = 1
-	// PRIORITY_BACKGROUND is a call made for work nobody waits on, such as indexing.
+	// PRIORITY_BACKGROUND is a call made for work that serves no person's action, such as indexing.
 	Priority_PRIORITY_BACKGROUND Priority = 2
 )
 

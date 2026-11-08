@@ -14,9 +14,9 @@ import (
 
 var errPluginToken = errors.New("ModelService is not served to a plugin")
 
-// refuseToken fails a request that carries a token. A window sends none; a plugin process sends the
-// token the host issued it, and ModelService names the plugin it acts for in the request.
 func refuseToken(header http.Header) error {
+	// A window sends no token; a plugin process sends the one the host issued it, and these calls name the
+	// plugin they act for in the request.
 	if header.Get("Authorization") != "" {
 		return connect.NewError(connect.CodePermissionDenied, errPluginToken)
 	}
@@ -96,7 +96,6 @@ func (h *Handler) GetEmbeddingProfile(
 	}), nil
 }
 
-// readPriority maps the wire priority to the port one. An unspecified priority is background.
 func readPriority(priority v1.Priority) modelcallport.Priority {
 	if priority == v1.Priority_PRIORITY_INTERACTIVE {
 		return modelcallport.PriorityInteractive
