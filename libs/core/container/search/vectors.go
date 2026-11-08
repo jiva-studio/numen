@@ -1,4 +1,4 @@
-package container
+package search
 
 import (
 	"context"
@@ -6,15 +6,18 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/core/usecase/run"
-
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/usecase/run"
 )
 
 // EmbedderReady reports whether an embedding plugin is enabled.
 func (c Config) EmbedderReady() bool {
-	return c.hasPlugin(bridge.CapabilityEmbedding)
+	if c.ResolvePlugin == nil {
+		return false
+	}
+	_, err := c.ResolvePlugin(bridge.CapabilityEmbedding)
+	return err == nil
 }
 
 // Embedders returns the embedder that produces the vectors a vault is searched
@@ -24,7 +27,7 @@ func (c Config) EmbedderReady() bool {
 // An installation with no embedding plugin enabled has neither, and no error:
 // search answers on the words of the full-text index alone.
 func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
-	embedder, closeEmbedder, err := c.openEmbedder(ctx, newModelReadReporter(tasks))
+	embedder, closeEmbedder, err := c.openEmbedder(ctx, NewModelReadReporter(tasks))
 	if err != nil {
 		return nil, nil, func() error { return nil }, err
 	}
@@ -40,7 +43,8 @@ func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() er
 // readingTheModel is the ID of the task that reports a read of the embedding model that failed.
 const readingTheModel = "read embedding model"
 
-func newModelReadReporter(tasks *run.Tasks) func(error) {
+// NewModelReadReporter returns a callback that records an embedding model read failure in tasks.
+func NewModelReadReporter(tasks *run.Tasks) func(error) {
 	if tasks == nil {
 		return nil
 	}
@@ -50,22 +54,22 @@ func newModelReadReporter(tasks *run.Tasks) func(error) {
 }
 
 func (c Config) openEmbedder(ctx context.Context, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
-	host, err := c.resolvePlugin(bridge.CapabilityEmbedding)
+	host, err := c.ResolvePlugin(bridge.CapabilityEmbedding)
 	if errors.Is(err, completionport.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
 	}
 	if err != nil {
 		return nil, nil, err
 	}
-	bridge, err := embedderbridge.Open(ctx, host)
+	opened, err := embedderbridge.Open(ctx, host)
 	if err != nil {
 		return nil, nil, err
 	}
 	if onReadError != nil {
-		bridge.OnModelReadError(onReadError)
+		opened.OnModelReadError(onReadError)
 	}
-	followChunkTokens(c.Chunks, bridge, bridge.OnModelChange)
-	return bridge, bridge.Close, nil
+	followChunkTokens(c.Chunks, opened, opened.OnModelChange)
+	return opened, opened.Close, nil
 }
 
 func followChunkTokens(cell *ChunkTokens, embedder embeddingport.Embedder, onChange func(func())) {

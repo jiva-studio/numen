@@ -1,4 +1,4 @@
-package container
+package plugins
 
 import (
 	"context"
@@ -8,15 +8,20 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
+	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/servicebridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
@@ -35,7 +40,21 @@ var errSafeMode = errors.New("numen is running in safe mode")
 
 const pluginFailureTaskPrefix = "plugin-failed:"
 
-func (c Config) resolvePlugin(capability string) (pluginport.PluginManager, error) {
+// NewPluginHost creates and initializes a plugin host for the specified target and search directories.
+// The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
+// provider NUMEN_ONNX_PROVIDER names (auto when unset).
+func NewPluginHost(target string, dirs ...string) *plugin.Host {
+	host := plugin.NewHost(clock.System{}, target, dirs...)
+	host.SetContentTypeTable(sharedmimeinfo.Open())
+	host.SetDependencies(newDependencies(""))
+	if err := host.Discover(); err != nil {
+		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
+	}
+	return host
+}
+
+// ResolvePlugin resolves the plugin manager for capability when available and not in safe mode.
+func (c Config) ResolvePlugin(capability string) (pluginport.PluginManager, error) {
 	if c.PluginHost == nil {
 		return nil, &pluginport.UnavailableError{Capability: capability, Reason: pluginport.PluginNotInstalled}
 	}
@@ -48,19 +67,17 @@ func (c Config) resolvePlugin(capability string) (pluginport.PluginManager, erro
 	return c.PluginHost, nil
 }
 
-func (c Config) hasPlugin(capability string) bool {
-	_, err := c.resolvePlugin(capability)
+// HasPlugin reports whether capability is resolved by an active plugin.
+func (c Config) HasPlugin(capability string) bool {
+	_, err := c.ResolvePlugin(capability)
 	return err == nil
 }
 
-// SetSafeMode is the configuration started in safe mode or out of it, and its plugin host with it.
-// In safe mode the host stops every plugin it runs and starts none.
-func (c Config) SetSafeMode(enabled bool) Config {
-	c.SafeMode = enabled
+// SetSafeMode updates safe mode on the plugin host when present.
+func (c Config) SetSafeMode(enabled bool) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetSafeMode(enabled)
 	}
-	return c
 }
 
 // SetPluginVaultPath is the vault the plugins' paths are inside.
@@ -84,46 +101,7 @@ func (c Config) GetPluginCommands() plugincommand.Commands {
 	if c.PluginHost == nil {
 		return plugincommand.NewCommands(nil, nil, nil)
 	}
-	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost), c.PluginHost, c.VaultReaders())
-}
-
-// OpenPluginCommands opens the index of the vault and lets the plugins work it, its text versions
-// and the queue through the host with no window, and answers how to run a command of theirs and
-// how to close what it opened.
-func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-	db, err := c.OpenIndex(ctx)
-	if err != nil {
-		return plugincommand.Run{}, nil, err
-	}
-	if _, err := c.OpenPluginWork(ctx, db, v); err != nil {
-		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
-	}
-	return c.GetPluginCommands().Run, db.Close, nil
-}
-
-// OpenPluginWork lets the plugins work one vault, its text versions and the queue through the host
-// with no window, over the index given. The configuration it returns reads the text of a file
-// through the text versions, as a window does.
-func (c Config) OpenPluginWork(ctx context.Context, db *Index, v domain.Vault) (Config, error) {
-	c.SetPluginVaultPath(v.Path)
-	versions, err := c.NewTextVersions(db)
-	if err != nil {
-		return c, err
-	}
-	c.TextVersions = versions
-	registry, err := c.Registry()
-	if err != nil {
-		return c, err
-	}
-	current := func() (domain.Vault, bool) { return v, true }
-	vault, err := c.OpenPluginVault(registry, db, current, PluginVaultHooks{})
-	if err != nil {
-		return c, err
-	}
-	c.SetPluginWork(run.NewTasks(), &run.Lock{})
-	c.SetPluginVault(vault)
-	c.SetPluginTexts()
-	return c, nil
+	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost), c.PluginHost, c.VaultReaders)
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
@@ -182,11 +160,12 @@ func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 // SetPluginWork opens the lock the models are held under and the list of tasks to the plugins.
 func (c Config) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginWork(run.NewPluginWork(models, tasks, c.getPluginName))
+		c.PluginHost.SetPluginWork(run.NewPluginWork(models, tasks, c.GetPluginName))
 	}
 }
 
-func (c Config) getPluginName(pluginID string) string {
+// GetPluginName returns the manifest name of pluginID, or pluginID if unknown.
+func (c Config) GetPluginName(pluginID string) string {
 	if found, isKnown := c.PluginHost.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
 		return found.Manifest.Name
 	}
@@ -195,9 +174,9 @@ func (c Config) getPluginName(pluginID string) string {
 
 // SetPluginVault is the vault the plugins use through the host. Without one, a plugin that requires
 // the vault receives an error stating that the host provides none.
-func (c Config) SetPluginVault(vault pluginport.PluginVault) {
+func (c Config) SetPluginVault(v pluginport.PluginVault) {
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginVault(vault)
+		c.PluginHost.SetPluginVault(v)
 	}
 }
 
@@ -243,19 +222,19 @@ func getNoteChanges(notes note.Scenarios) hostvault.NoteChanges {
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
 // index that holds them: the one current names, else the one a call names by identity.
 func (c Config) OpenPluginVault(
-	registry vaultport.VaultRegistry, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+	registry vaultport.VaultRegistry, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) (pluginport.PluginVault, error) {
 	cache, err := c.OpenPluginCache()
 	if err != nil {
 		return nil, err
 	}
-	refresh := makeRefresh(c, db, db.Notes())
+	refresh := c.MakeRefresh(db, db.Notes())
 	queries := db.Queries()
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
-	scenarios := c.Notes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
+	scenarios := c.BuildNotes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
 	arranger := hostvault.Arranger{
 		Notes:  getNoteChanges(scenarios),
 		Checks: vault.NewStandardGetProblems(db.Problems()),
@@ -265,16 +244,16 @@ func (c Config) OpenPluginVault(
 	}
 	vaults := hostvault.Vault{
 		Current:     current,
-		Readers:     c.VaultReaders(),
-		Writers:     c.VaultWriters(),
+		Readers:     c.VaultReaders,
+		Writers:     c.VaultWriters,
 		Notes:       queries,
 		Links:       db.Links(),
 		Connections: note.NewConnections(scenarios),
 		Problems:    db.Problems(),
 		Arranger:    arranger,
-		Stores:      derivedfile.PluginStores{Options: c.vaultOptions()},
+		Stores:      derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}},
 		Cache:       cache,
-		Watcher:     c.VaultWatcher(),
+		Watcher:     c.VaultWatcher,
 		Written:     hooks.Written,
 		Vaults:      registry.List,
 		Find: func(id domain.VaultID) (domain.Vault, error) {
@@ -347,6 +326,14 @@ func (c Config) SetPluginWindow(window pluginport.PluginWindow) {
 	}
 }
 
+// EmitPluginEvent broadcasts event to the plugin host when present.
+func (c Config) EmitPluginEvent(event string) {
+	if c.PluginHost != nil {
+		var emitter pluginport.PluginEventEmitter = c.PluginHost
+		emitter.EmitEvent(event)
+	}
+}
+
 // credentialsLocator is a key store that keeps its values in a file when the machine has no keychain.
 type credentialsLocator interface {
 	// GetCredentialsPath returns the file the values are kept in, or the empty text while the
@@ -354,8 +341,8 @@ type credentialsLocator interface {
 	GetCredentialsPath(ctx context.Context) string
 }
 
-func (c Config) openSecretLedger() *settings.SecretLedger {
-	return settings.NewSecretLedger(c.getResources().settingsFiles, c.settingsFile, c.readCheckedSettings, c.refreshSettingEvents)
+func (c Config) openSecretLedger() *settingsadapter.SecretLedger {
+	return settingsadapter.NewSecretLedger(c.SettingsFiles, c.SettingsFile, c.ReadCheckedSettings, c.RefreshSettingEvents)
 }
 
 // OpenSecrets returns the use cases on the secrets shared between plugins.
@@ -364,7 +351,7 @@ func (c Config) OpenSecrets() *secret.Secrets {
 	if c.PluginHost != nil {
 		plugins = c.PluginHost
 	}
-	return secret.NewSecrets(c.openSecretLedger(), c.KeyStore, plugins, newSecretID, c.getCredentialsPath, c.getResources().secretGate)
+	return secret.NewSecrets(c.openSecretLedger(), c.KeyStore, plugins, newSecretID, c.getCredentialsPath, c.SecretGate)
 }
 
 func (c Config) getCredentialsPath() string {
@@ -383,7 +370,11 @@ func newSecretID() (string, error) {
 	return "s" + hex.EncodeToString(random[:]), nil
 }
 
-func (c Config) setSecretSource() {
+// SetSecretSource configures the secret ledger and pruner on the plugin host.
+func (c Config) SetSecretSource() {
+	if c.PluginHost == nil {
+		return
+	}
 	ledger := c.openSecretLedger()
 	c.PluginHost.SetSecretSource(pluginport.SecretSource{
 		List:  ledger.GetSecrets,

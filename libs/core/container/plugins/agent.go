@@ -1,4 +1,4 @@
-package container
+package plugins
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
+	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/completion"
 )
 
-// programsLimit is how long the providers have to list the programs they run.
-const programsLimit = 8 * time.Second
+// ProgramsLimit is how long the providers have to list the programs they run.
+const ProgramsLimit = 8 * time.Second
 
 // AgentProvider runs tasks on the programs the plugins with the agent provider capability run. It
 // is nil where there is no plugin host, or the host is in safe mode.
@@ -31,12 +31,13 @@ func (c Config) AgentProvider() agentport.AgentProvider {
 // not hold the window back.
 const programsWait = time.Second
 
-func (c Config) getAgentPrograms(provider agentport.AgentProvider, target settings.Agent) []agentport.AgentProgram {
+// GetAgentPrograms lists the agent programs from provider, using the cached program list when set.
+func (c Config) GetAgentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentport.AgentProgram {
 	if provider == nil {
 		return nil
 	}
 	list := func() []agentport.AgentProgram {
-		ctx, stop := context.WithTimeout(context.Background(), programsLimit)
+		ctx, stop := context.WithTimeout(context.Background(), ProgramsLimit)
 		defer stop()
 		programs, err := provider.GetPrograms(ctx, target.GetCommands())
 		if err != nil {
@@ -44,16 +45,16 @@ func (c Config) getAgentPrograms(provider agentport.AgentProvider, target settin
 		}
 		return programs
 	}
-	if c.programs == nil {
+	if c.Programs == nil {
 		return list()
 	}
-	return c.programs.Get(programsWait, list)
+	return c.Programs.Get(programsWait, list)
 }
 
 var errNoCompletionProvider = errors.New("no plugin host runs agent programs")
 
 func (c Config) completionAgentSettings() completion.AgentSettings {
-	target := c.getSettingsOrDefaults().Agent
+	target := c.GetSettingsOrDefaults().Agent
 	return completion.AgentSettings{
 		IsNamed:  target.IsNamed(),
 		Use:      target.GetUse(),
@@ -75,13 +76,14 @@ func (c Config) newCompletionRouter() (*completion.Router, error) {
 	}
 	return completion.NewRouter(
 		func() completion.Config {
-			return completion.Config{Default: completion.Route(c.getSettingsOrDefaults().AI.Default)}
+			return completion.Config{Default: completion.Route(c.GetSettingsOrDefaults().AI.Default)}
 		},
 		completion.NewPrograms(provider, c.completionAgentSettings),
 	)
 }
 
-func (c Config) setCompleter() {
+// SetCompleter wires the completion router onto the plugin host when supported.
+func (c Config) SetCompleter() {
 	if c.PluginHost == nil || c.SafeMode {
 		return
 	}
@@ -100,14 +102,15 @@ func (c Config) setCompleter() {
 // plugins. Each run connects to the tools of the plugins on an endpoint of its own. It is nil where
 // AgentProvider is nil.
 func (c Config) GetSettingsAgent() agentport.Agent {
-	provider := c.getToolProvider()
+	provider := c.GetToolProvider()
 	if provider == nil {
 		return nil
 	}
 	return completion.NewSettingsAgent(completion.NewPrograms(provider, c.completionAgentSettings))
 }
 
-func (c Config) getToolProvider() agentport.AgentProvider {
+// GetToolProvider returns an agent provider that attaches plugin tools to each run.
+func (c Config) GetToolProvider() agentport.AgentProvider {
 	if c.PluginHost == nil || c.SafeMode {
 		return nil
 	}

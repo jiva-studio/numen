@@ -138,7 +138,7 @@ func TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if isAdapter(pkg) || pkg == "container" {
+		if isAdapter(pkg) || isUnder(pkg, "container") {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
@@ -174,7 +174,7 @@ func TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt(t *testing.T) {
 }
 
 func isMachinery(pkg string) bool {
-	return pkg == "container" || strings.HasPrefix(pkg, "internal/test")
+	return isUnder(pkg, "container") || strings.HasPrefix(pkg, "internal/test")
 }
 
 func isShared(pkg string) bool {
@@ -1031,7 +1031,7 @@ func isAdapter(pkg string) bool {
 func getRefusal(from, to string) string {
 	switch {
 	case isAdapter(from) || isShared(from):
-		if to == "container" {
+		if isUnder(to, "container") {
 			return "an adapter is given what it needs and assembles nothing"
 		}
 		if isAdapter(to) && !sibling(from, to) {
@@ -1043,14 +1043,14 @@ func getRefusal(from, to string) string {
 		if isUnder(to, "port") && getDriving()[family(from)] {
 			return "a driving adapter calls the use case layer and imports no port directly"
 		}
-	case from == "container":
+	case isUnder(from, "container"):
 		if !isAssembled(to) {
 			return "the composition root assembles the core and does none of its work"
 		}
 	// Fixtures build the real adapters, and only a test is compiled from them.
 	case strings.HasPrefix(from, "internal/test"):
 	default:
-		if isAdapter(to) || to == "container" {
+		if isAdapter(to) || isUnder(to, "container") {
 			return "the core reaches no adapter and nothing that assembles one"
 		}
 	}
@@ -1067,7 +1067,7 @@ func isAmong(these []string, pkg string) bool {
 }
 
 func isAssembled(to string) bool {
-	return to == "container" || to == "domain" || isUnder(to, "port") ||
+	return isUnder(to, "container") || to == "domain" || isUnder(to, "port") ||
 		isAdapter(to) || strings.HasPrefix(to, "usecase/")
 }
 

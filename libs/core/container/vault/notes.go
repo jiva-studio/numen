@@ -1,4 +1,4 @@
-package container
+package vault
 
 import (
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
@@ -27,7 +27,7 @@ func (c Config) Notes(
 ) note.Scenarios {
 	readers := c.VaultReaders()
 	writers := c.VaultWriters()
-	now := c.Clock()
+	now := c.Clock
 
 	// One note.Move settles every note that travelled, whether a rename sent it
 	// or a move did.
@@ -35,7 +35,7 @@ func (c Config) Notes(
 		Readers: readers, Writers: writers, Links: links, Names: queries,
 		Sources: sources, Index: index, Now: now,
 	})
-	mover.Sync = c.SyncSetting()
+	mover.Sync = c.SyncSetting
 
 	linking := note.NewEditLinks(readers, writers, index, now)
 	remove := note.NewRemove(writers, links, indexed, index)
@@ -78,10 +78,12 @@ func (c Config) FocusNote(queries noteport.NoteQueries, view windowport.Window) 
 	return note.NewFocusNote(queries, view)
 }
 
+// GetNamedPaths builds the note named paths query use case.
 func (Config) GetNamedPaths(queries noteport.NoteQueries) *note.GetNamedPaths {
 	return note.NewGetNamedPaths(queries)
 }
 
+// Read builds the vault file reader use case.
 func (c Config) Read() file.Read {
 	return file.Read{Readers: c.VaultReaders()}
 }
