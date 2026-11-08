@@ -42,9 +42,8 @@ export class ApplicationDriver {
       await page.keyboard.press('Control+p')
       await expect(field).toBeVisible()
       await field.fill(label)
-      await expect(command).toBeVisible({ timeout: 3_000 })
+      await command.click({ timeout: 3_000 })
     }).toPass({ timeout: COMMAND_LIMIT_MS })
-    await command.click()
   }
 
   async enter(value: string): Promise<void> {
