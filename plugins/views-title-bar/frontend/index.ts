@@ -5,13 +5,7 @@
 import { defineComponent, h, shallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import {
-  BUTTONS_SETTING,
-  HIDE_IN_FULLSCREEN_SETTING,
-  isBarShown,
-  readButtonsSetting,
-  readHideInFullscreenSetting,
-} from './lib/frame'
+import { BUTTONS_SETTING, readButtonsSetting } from './lib/frame'
 import { useTitleBarHosts } from './model/useTitleBarHosts'
 import TitleBar from './ui/TitleBar.vue'
 
@@ -29,12 +23,6 @@ export function createTitleBarView(context: PluginContext) {
   context.onSettingChange(BUTTONS_SETTING, (value) => {
     buttons.value = readButtonsSetting(value)
   })
-  const hideInFullscreen = shallowRef(
-    readHideInFullscreenSetting(context.getSetting(HIDE_IN_FULLSCREEN_SETTING)),
-  )
-  context.onSettingChange(HIDE_IN_FULLSCREEN_SETTING, (value) => {
-    hideInFullscreen.value = readHideInFullscreenSetting(value)
-  })
   const reportError = (error: unknown): void =>
     context.notices?.show(error instanceof Error ? error.message : String(error), 'error')
   return defineComponent({
@@ -42,37 +30,34 @@ export function createTitleBarView(context: PluginContext) {
     setup: () => {
       const hosts = useTitleBarHosts(context)
       return () =>
-        !isBarShown(hideInFullscreen.value, hosts.window.value.isFullscreen)
-          ? null
-          : h(TitleBar, {
-              appName: context.app.name,
-              platform: context.app.platform,
-              buttons: buttons.value,
-              isMaximized: hosts.window.value.isMaximized,
-              isFullscreen: hosts.window.value.isFullscreen,
-              vaults: hosts.vaults.value,
-              commands: hosts.commands.value,
-              status: hosts.status.value,
-              canCreateVault: hosts.commandIds.value.includes(CREATE_VAULT),
-              listItems: (command: string) =>
-                context.commands?.listItems(command) ?? Promise.resolve([]),
-              reportError,
-              onRunCommand: (command: string, itemId?: string) => {
-                if (context.commands) {
-                  runInBackground(context.commands.run(command, undefined, itemId), reportError)
-                }
-              },
-              onSwitchVault: (id: string) => {
-                if (context.vaults) runInBackground(context.vaults.switchTo(id), reportError)
-              },
-              onCreateVault: () => {
-                if (context.commands)
-                  runInBackground(context.commands.run(CREATE_VAULT), reportError)
-              },
-              onMinimizeWindow: () => context.window?.minimize(),
-              onToggleMaximizeWindow: () => context.window?.toggleMaximize(),
-              onCloseWindow: () => context.window?.close(),
-            })
+        h(TitleBar, {
+          appName: context.app.name,
+          platform: context.app.platform,
+          buttons: buttons.value,
+          isMaximized: hosts.window.value.isMaximized,
+          isFullscreen: hosts.window.value.isFullscreen,
+          vaults: hosts.vaults.value,
+          commands: hosts.commands.value,
+          status: hosts.status.value,
+          canCreateVault: hosts.commandIds.value.includes(CREATE_VAULT),
+          listItems: (command: string) =>
+            context.commands?.listItems(command) ?? Promise.resolve([]),
+          reportError,
+          onRunCommand: (command: string, itemId?: string) => {
+            if (context.commands) {
+              runInBackground(context.commands.run(command, undefined, itemId), reportError)
+            }
+          },
+          onSwitchVault: (id: string) => {
+            if (context.vaults) runInBackground(context.vaults.switchTo(id), reportError)
+          },
+          onCreateVault: () => {
+            if (context.commands) runInBackground(context.commands.run(CREATE_VAULT), reportError)
+          },
+          onMinimizeWindow: () => context.window?.minimize(),
+          onToggleMaximizeWindow: () => context.window?.toggleMaximize(),
+          onCloseWindow: () => context.window?.close(),
+        })
     },
   })
 }

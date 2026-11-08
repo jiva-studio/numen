@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.titleBar",
   "name": "Title bar",
-  "version": "2026.11.2",
+  "version": "2026.11.1",
   "protocol": 1,
   "description": "Draws the bar at the top of each window: the commands, the vault and the window buttons",
   "targets": ["desktop.editor", "desktop.flashcards"],
@@ -31,13 +31,6 @@
           "when": "app.platform != 'darwin'"
         }
       ]
-    },
-    {
-      "key": "hideInFullscreen",
-      "type": "boolean",
-      "title": "Hide in full screen",
-      "description": "Draw no bar while the window is in full screen, so the tabs start at the top of the window. The bar is drawn again when the window leaves full screen.",
-      "default": false
     }
   ],
   "frontend": {}

@@ -18,19 +18,6 @@ export function readButtonsSetting(value: unknown): ButtonsSetting {
   return value === 'mac' || value === 'none' ? value : 'windows'
 }
 
-/** The key of the setting that hides the bar while the window is in full screen. */
-export const HIDE_IN_FULLSCREEN_SETTING = 'hideInFullscreen'
-
-/** A value of the setting `hideInFullscreen`; only `true` turns it on. */
-export function readHideInFullscreenSetting(value: unknown): boolean {
-  return value === true
-}
-
-/** Whether the bar is drawn: not while the setting hides it and the window is in full screen. */
-export function isBarShown(hideInFullscreen: boolean, isFullscreen: boolean): boolean {
-  return !(hideInFullscreen && isFullscreen)
-}
-
 /**
  * macOS keeps the system buttons whatever the setting says. Windows and Linux draw them where the
  * setting `buttons` says, or not at all.

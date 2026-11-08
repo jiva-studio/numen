@@ -477,62 +477,6 @@ describe('the window buttons by the setting', () => {
   })
 })
 
-describe('the setting hideInFullscreen', () => {
-  const setFullscreen = async (context: MockPluginContext, isFullscreen: boolean) => {
-    context.window.setState({ isMaximized: false, isFullscreen })
-    await nextTick()
-  }
-
-  it('is declared as a boolean that is off by default', () => {
-    const setting = manifest.settings.find((one) => one.key === 'hideInFullscreen')
-
-    expect(setting).toMatchObject({ type: 'boolean', default: false })
-  })
-
-  it('draws the bar in full screen while the setting is off', async () => {
-    const { context, bar } = mountBar()
-
-    await setFullscreen(context, true)
-
-    expect(bar.find('[data-title-bar]').exists()).toBe(true)
-  })
-
-  it('draws no bar in full screen while the setting is on, and draws it again after', async () => {
-    const { context, bar } = mountBar({ settings: { hideInFullscreen: true } })
-    expect(bar.find('[data-title-bar]').exists()).toBe(true)
-
-    await setFullscreen(context, true)
-    expect(bar.find('[data-title-bar]').exists()).toBe(false)
-    expect(bar.html()).not.toContain('title-bar')
-
-    await setFullscreen(context, false)
-    expect(bar.find('[data-title-bar]').exists()).toBe(true)
-  })
-
-  it('draws no bar in a window that opens in full screen with the setting on', () => {
-    const { context, view: component } = activateBar({ settings: { hideInFullscreen: true } })
-    context.window.setState({ isMaximized: false, isFullscreen: true })
-
-    const bar = mount(component, { attachTo: document.body })
-    mounted.push(bar)
-
-    expect(bar.find('[data-title-bar]').exists()).toBe(false)
-  })
-
-  it('follows a change of the setting in full screen', async () => {
-    const { context, bar } = mountBar()
-    await setFullscreen(context, true)
-
-    context.setSetting('hideInFullscreen', true)
-    await nextTick()
-    expect(bar.find('[data-title-bar]').exists()).toBe(false)
-
-    context.setSetting('hideInFullscreen', false)
-    await nextTick()
-    expect(bar.find('[data-title-bar]').exists()).toBe(true)
-  })
-})
-
 describe('the window buttons on Linux', () => {
   it('stand at the right while the setting says nothing', () => {
     const { bar } = mountBar({ platform: 'linux' })
