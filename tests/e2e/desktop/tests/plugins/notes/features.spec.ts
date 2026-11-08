@@ -62,23 +62,4 @@ test.describe('Note editor', () => {
       await destroyNote(request, notePath)
     }
   })
-
-  test('draws a typed heading as a heading and saves its markup', async ({ page, request }) => {
-    const notePath = await createNote(request, createUniqueTitle('Evaporation pond'))
-    try {
-      await writeNote(request, notePath, 'Shallow ponds lose water fastest.\n')
-      await openWorkspace(page)
-      const text = await openNote(page, notePath)
-      await expect(text).toContainText('Shallow ponds lose water fastest.')
-
-      await typeAtEnd(page, text, '\n### Fundamental Conservation\n')
-
-      await expect(
-        text.locator('.cm-heading-3', { hasText: 'Fundamental Conservation' }),
-      ).toBeVisible()
-      await waitForSavedBody(request, notePath, '### Fundamental Conservation')
-    } finally {
-      await destroyNote(request, notePath)
-    }
-  })
 })

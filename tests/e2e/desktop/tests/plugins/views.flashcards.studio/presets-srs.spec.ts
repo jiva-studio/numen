@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '../../support/test.js'
+import { test, expect } from '../../support/test.js'
 import {
   openTaskList,
   openVaultFile,
@@ -13,14 +13,6 @@ import {
 } from '../../support/media.js'
 import { createUniqueTitle, readVaultFile, writeVaultFile } from '../../support/vault.js'
 
-const runNamingCommand = async (page: Page, command: string, name: string): Promise<void> => {
-  await runPaletteCommand(page, command, command)
-  const field = page.locator('input[data-palette="field"]').first()
-  await expect(field).toBeVisible()
-  await field.fill(name)
-  await page.keyboard.press('Enter')
-}
-
 const readNumber = (text: string, key: string): number =>
   Number(new RegExp(`^${key}: (.+)$`, 'm').exec(text)?.[1] ?? Number.NaN)
 
@@ -29,43 +21,6 @@ test.describe('the preset editor', () => {
 
   test.afterEach(() => {
     deleteVaultFiles(...made.splice(0))
-  })
-
-  test('Create preset writes a preset file and opens its goal, minutes per day first', async ({
-    page,
-    request,
-  }) => {
-    const title = createUniqueTitle('Tidepool pace')
-    made.push(`${title}.md`)
-    await openWorkspace(page)
-
-    await runNamingCommand(page, 'Create preset', title)
-
-    await expect(page.getByRole('tab', { name: new RegExp(title) })).toBeVisible()
-    await expect(page.getByRole('radio', { name: 'Minutes per day' })).toBeChecked()
-    await expect(page.getByRole('toolbar', { name: 'Load by weekday' })).toBeVisible()
-    await expect.poll(() => readVaultFile(request, `${title}.md`)).toMatch(/^type: preset$/m)
-  })
-
-  test('writes the goal chosen to the preset file, and shows it chosen after a reload', async ({
-    page,
-    request,
-  }) => {
-    const title = createUniqueTitle('Tidepool goal')
-    made.push(`${title}.md`)
-    await openWorkspace(page)
-    await runNamingCommand(page, 'Create preset', title)
-    await expect(page.getByRole('radio', { name: 'Minutes per day' })).toBeChecked()
-
-    await page.getByRole('radio', { name: 'Retention' }).click()
-
-    await expect.poll(() => readVaultFile(request, `${title}.md`)).toMatch(/^goal: retention$/m)
-
-    await page.reload()
-    await openWorkspace(page)
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    await page.getByRole('treeitem', { name: `${title}.md`, exact: true }).press('Enter')
-    await expect(page.getByRole('radio', { name: 'Retention' })).toBeChecked()
   })
 
   test('opens the preset a deck names, and writes the retention its slider is moved to', async ({

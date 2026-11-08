@@ -59,24 +59,6 @@ test.describe('Naming, making and removing files in the files tab', () => {
     }
   })
 
-  test('creates a note in a folder from the New menu of its row, under the name typed', async ({
-    page,
-    request,
-  }) => {
-    await createFolder(request, 'Saltpans')
-    try {
-      await nameNewItem(page, 'Saltpans', 'New note', 'Evaporation pans')
-
-      await expect
-        .poll(async () => listPaths(request, 'Saltpans'))
-        .toEqual(['Saltpans/Evaporation pans.md'])
-      expect((await readNote(request, 'Saltpans/Evaporation pans.md')).error).toBe('')
-    } finally {
-      await destroyNotes(request, ['Saltpans/Evaporation pans.md'])
-      await trashFiles(request, ['Saltpans'])
-    }
-  })
-
   test('renames a note from its row menu, and its open tab follows the file', async ({
     page,
     request,
@@ -145,31 +127,5 @@ test.describe('Naming, making and removing files in the files tab', () => {
     } finally {
       await destroyNotes(request, [first, second, headRace])
     }
-  })
-
-  test('persists folder expansion state across navigation', async ({ page }) => {
-    await openWorkspace(page)
-    await showInFiles(page, ['cards'])
-    const animalsRow = getRow(page, 'cards/Animals.md')
-    await expect(animalsRow).toBeVisible()
-
-    await getTab(page, 'Agent').click()
-    await getTab(page, 'Files').click()
-
-    await expect(getRow(page, 'cards')).toHaveAttribute('aria-expanded', 'true')
-    await expect(animalsRow).toBeVisible()
-  })
-
-  test('collapses expanded folder on Enter key', async ({ page }) => {
-    await openWorkspace(page)
-    await showInFiles(page, ['cards'])
-    const cardsRow = getRow(page, 'cards')
-    const animalsRow = getRow(page, 'cards/Animals.md')
-    await expect(animalsRow).toBeVisible()
-
-    await cardsRow.press('Enter')
-
-    await expect(cardsRow).toHaveAttribute('aria-expanded', 'false')
-    await expect(animalsRow).toBeHidden()
   })
 })

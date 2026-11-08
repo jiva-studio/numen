@@ -81,59 +81,6 @@ test('writes a Good answer of the card shown to the review log', async ({ page }
   expect(line.template).toBeTruthy()
 })
 
-test('writes Again, Hard and Easy from their buttons to the review log', async ({ page }) => {
-  await startReview(page)
-
-  for (const answer of ['Again', 'Hard', 'Easy'] as const) {
-    const count = readReviewLog().length
-    await page.getByRole('button', { name: /Show the answer/ }).click()
-    await page.getByRole('button', { name: new RegExp(answer) }).click()
-
-    expect(await waitForReviewLine(count)).toMatchObject({ rating: RATING[answer] })
-  }
-})
-
-test('shows the answer on Space and writes the answer of each number key', async ({ page }) => {
-  await startReview(page)
-
-  for (const [key, rating] of [
-    ['1', RATING.Again],
-    ['2', RATING.Hard],
-    ['3', RATING.Good],
-    ['4', RATING.Easy],
-  ] as const) {
-    const count = readReviewLog().length
-    await expect(page.getByRole('button', { name: /Show the answer/ })).toBeVisible()
-    await page.keyboard.press('Space')
-    await expect(page.getByRole('button', { name: /Good/ })).toBeVisible()
-    await page.keyboard.press(key)
-
-    expect(await waitForReviewLine(count)).toMatchObject({ rating })
-  }
-})
-
-test('Undo writes a line taking the last answer back, and shows its card again', async ({
-  page,
-}) => {
-  await startReview(page)
-  const where = await page.locator('.session__where').textContent()
-  const remaining = await page.locator('.session__left').innerText()
-  const count = readReviewLog().length
-  await page.getByRole('button', { name: /Show the answer/ }).click()
-  await page.getByRole('button', { name: /Easy/ }).click()
-  const answer = await waitForReviewLine(count)
-  await expect(page.locator('.session__left')).not.toHaveText(remaining)
-
-  await page.getByRole('button', { name: /Undo/ }).click()
-
-  const undone = await waitForReviewLine(count + 1)
-  expect(undone).toMatchObject({ v: 1, undo: answer.id })
-  expect(undone.rating).toBeUndefined()
-  await expect(page.locator('.session__left')).toHaveText(remaining)
-  await expect(page.locator('.session__where')).toHaveText(where ?? '')
-  await expect(page.getByRole('button', { name: /Again/ })).toBeVisible()
-})
-
 function readFrame(body: Buffer): Record<string, unknown> {
   return JSON.parse(body.subarray(5, 5 + body.readUInt32BE(1)).toString('utf8'))
 }

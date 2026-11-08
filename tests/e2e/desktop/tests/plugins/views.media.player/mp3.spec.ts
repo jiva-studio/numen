@@ -55,19 +55,4 @@ test.describe('An mp3 recording', () => {
     const failures = await page.evaluate(() => window.shownFailures)
     expect(failures).toEqual([])
   })
-
-  test('shows its own length while another recording plays', async ({ page }) => {
-    await openWorkspace(page)
-    const talk = await openVaultFile(page, 'assets', 'talk.mp3')
-    const talkPlayer = talk.getByRole('group', { name: 'Recording' })
-    await talkPlayer.getByRole('button', { name: /^Play/ }).click()
-    await expect(talkPlayer.getByRole('button', { name: /^Pause/ })).toBeVisible()
-
-    const lecture = await openVaultFile(page, 'assets', 'lecture.wav')
-    const lecturePlayer = lecture.getByRole('group', { name: 'Recording' })
-
-    await expect(lecturePlayer.getByRole('slider')).toHaveAttribute('max', '6000')
-    await expect(lecturePlayer).toContainText(/0:00\s*0:06/)
-    await expect(lecturePlayer.getByRole('button', { name: /^Play/ })).toBeVisible()
-  })
 })

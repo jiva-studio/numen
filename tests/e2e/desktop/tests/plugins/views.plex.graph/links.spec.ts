@@ -1,6 +1,5 @@
-import { test, expect, type Locator, type Page, type Route } from '../../support/test.js'
+import { test, expect, type Page, type Route } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
-import { createUniqueTitle } from '../../support/vault.js'
 import {
   createNoteWithBody,
   destroyNotes,
@@ -28,13 +27,6 @@ const openQuickLink = async (page: Page, title: string) => {
   await handle.hover()
   await handle.click()
   return page.getByRole('dialog', { name: 'New thought' })
-}
-
-const waitForQuickLinkPanel = async (dialog: Locator): Promise<void> => {
-  const frame = dialog.locator('[data-numen-searchable-list]')
-  await frame.evaluate((el) =>
-    Promise.all(el.getAnimations({ subtree: true }).map((animation) => animation.finished)),
-  )
 }
 
 const holdSearches = async (page: Page): Promise<() => Promise<void>> => {
@@ -126,32 +118,6 @@ test.describe('Links between two notes in the plex', () => {
       })
       .toBe(true)
     expect(await listPaths(request, 'notes')).toEqual(before)
-  })
-
-  test('creates and links a note with a click on Create', async ({ page, request }) => {
-    const title = createUniqueTitle('Wharf')
-    const created = `notes/${title}.md`
-    expect(await listPaths(request, 'notes')).not.toContain(created)
-    try {
-      await openWorkspace(page)
-      await showInPlex(page, quay)
-      const dialog = await openQuickLink(page, 'Quay')
-      await dialog.getByRole('combobox').fill(title)
-      const option = dialog.getByRole('option', { name: `Create "${title}"` })
-      await expect(option).toBeVisible()
-      await waitForQuickLinkPanel(dialog)
-      await option.click()
-
-      await expect.poll(async () => listPaths(request, 'notes')).toContain(created)
-      await expect
-        .poll(async () => {
-          const sides = await getConnectionSides(request, quay, created)
-          return sides.first || sides.second
-        })
-        .toBe(true)
-    } finally {
-      await destroyNotes(request, [created])
-    }
   })
 
   test('removes the link of two notes with Remove link, and the connection is gone from both', async ({

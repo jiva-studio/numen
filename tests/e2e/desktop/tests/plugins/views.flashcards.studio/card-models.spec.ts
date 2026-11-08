@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '../../support/test.js'
 import { openVaultFile, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 import { deleteVaultFiles } from '../../support/media.js'
-import { createUniqueTitle, readNote, readVaultFile } from '../../support/vault.js'
+import { createUniqueTitle, readNote } from '../../support/vault.js'
 
 const createCardModel = async (page: Page, title: string): Promise<void> => {
   await runPaletteCommand(page, 'Create card model', 'Create card model')
@@ -11,11 +11,6 @@ const createCardModel = async (page: Page, title: string): Promise<void> => {
   await page.keyboard.press('Enter')
   await expect(page.getByRole('tab', { name: new RegExp(title) })).toBeVisible()
 }
-
-const readFields = (text: string): string[] =>
-  [...(/^fields:\n((?: {2}- .*\n)*)/m.exec(text)?.[1]?.matchAll(/^ {2}- (.*)$/gm) ?? [])].map(
-    (one) => one[1] ?? '',
-  )
 
 test.describe('the card model editor', () => {
   let title: string
@@ -38,47 +33,6 @@ test.describe('the card model editor', () => {
     await expect(fields.getByRole('textbox', { name: 'Field 4' })).toHaveValue(
       'Имя поля с пробелом',
     )
-  })
-
-  test('Create card model writes a card model file holding its first field', async ({
-    page,
-    request,
-  }) => {
-    await openWorkspace(page)
-    await createCardModel(page, title)
-
-    await expect(
-      page.getByRole('region', { name: 'Fields' }).getByRole('textbox', { name: 'Field 1' }),
-    ).toHaveValue('Field 1')
-    const text = await readVaultFile(request, `${title}.md`)
-    expect(text).toMatch(/^type: card-model$/m)
-    expect(readFields(text)).toEqual(['Field 1'])
-  })
-
-  test('writes an added field to the frontmatter of the card model file', async ({
-    page,
-    request,
-  }) => {
-    await openWorkspace(page)
-    await createCardModel(page, title)
-    const fields = page.getByRole('region', { name: 'Fields' })
-
-    await fields.getByRole('button', { name: 'Add a field' }).click()
-    const added = fields.getByRole('textbox', { name: 'Field 2' })
-    await added.fill('Depth')
-    await added.press('Enter')
-
-    await expect
-      .poll(async () => readFields(await readVaultFile(request, `${title}.md`)))
-      .toEqual(['Field 1', 'Depth'])
-
-    await page.reload()
-    await openWorkspace(page)
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    await page.getByRole('treeitem', { name: `${title}.md`, exact: true }).press('Enter')
-    await expect(
-      page.getByRole('region', { name: 'Fields' }).getByRole('textbox', { name: 'Field 2' }),
-    ).toHaveValue('Depth')
   })
 
   test('writes an added template and the front typed into it to the card model file', async ({

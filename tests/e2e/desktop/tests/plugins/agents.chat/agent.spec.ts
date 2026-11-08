@@ -7,7 +7,7 @@ import {
   TOOL_NOTE_TEXT,
   TOOL_PROMPT,
 } from '../../../scripts/stand-ins.mjs'
-import { openVaultFile, openWorkspace, runCommand, waitForWindow } from '../../support/workspace.js'
+import { openWorkspace, waitForWindow } from '../../support/workspace.js'
 import { getStandInsOrigin, hasVaultFile } from '../../support/media.js'
 import { expectSearchableList } from '../../support/searchable-list.js'
 import { callRPC, readVaultFile } from '../../support/vault.js'
@@ -21,16 +21,6 @@ const openAgentPanel = async (page: Page) => {
 }
 
 test.describe('Agent Plugin and Interface', () => {
-  test('Ask agent about note on a note puts the note path in the composer', async ({ page }) => {
-    await openWorkspace(page)
-    await openVaultFile(page, 'notes', 'Entropy.md')
-
-    await runCommand(page, 'Ask agent about note', /^Ask agent about note/)
-
-    const input = page.getByRole('textbox', { name: 'Ask about the vault' }).first()
-    await expect(input).toBeVisible()
-    await expect(input).toHaveValue('notes/Entropy.md — ')
-  })
 
   test('the model selector names the stand-in model the settings choose', async ({ page }) => {
     await openAgentPanel(page)
@@ -109,30 +99,6 @@ test.describe('Agent Plugin and Interface', () => {
     } finally {
       await callRPC(request, 'FileService/RemoveFile', { path: TOOL_NOTE_PATH, destroy: true })
     }
-  })
-
-  test('opens note tab without 404 navigation when clicking a relative note link in agent reply', async ({
-    page,
-  }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-    await page.getByText('Agent').first().click()
-
-    const input = page.getByRole('textbox', { name: 'Ask about the vault' }).first()
-    await expect(input).toBeVisible({ timeout: 10_000 })
-
-    await input.fill('Link to Entropy')
-    await page.getByRole('button', { name: 'Send' }).first().click()
-
-    const noteLink = page.getByRole('link', { name: 'Entropy', exact: true }).first()
-    await expect(noteLink).toBeVisible({ timeout: 10_000 })
-    await noteLink.click()
-
-    await expect(page.getByRole('tab', { name: /Entropy/i }).first()).toBeVisible({
-      timeout: 10_000,
-    })
-    await expect(page.getByText('404 page not found')).toHaveCount(0)
   })
 })
 

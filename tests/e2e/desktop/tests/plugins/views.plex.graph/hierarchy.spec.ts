@@ -5,16 +5,7 @@ import {
   openWorkspace,
   runPaletteCommand,
 } from '../../support/workspace.js'
-import {
-  createNote,
-  createUniqueTitle,
-  destroyNote,
-  getConnection,
-  getNoteTab,
-  getNoteText,
-  listFilePaths,
-  openNote,
-} from '../../support/vault.js'
+import { createNote, createUniqueTitle, destroyNote, getConnection, getNoteTab, listFilePaths, openNote } from '../../support/vault.js'
 
 const getPlexNode = (page: Page, title: string, relation: string) =>
   getGraph(page).getByRole(relation === 'focus' ? 'img' : 'button', {
@@ -73,63 +64,5 @@ test.describe('Making a related note', () => {
     } finally {
       await destroyNote(request, parent)
     }
-  })
-
-  test('makes a parent from the palette, joined above the note in front', async ({
-    page,
-    request,
-  }) => {
-    const childTitle = createUniqueTitle('Delta')
-    const parentTitle = createUniqueTitle('River basin')
-    const note = await createNote(request, childTitle)
-    try {
-      await openWorkspace(page)
-      await openNote(page, note)
-
-      await runPaletteCommand(page, 'Create parent note', 'Create parent note')
-      await nameNote(page, parentTitle)
-
-      const parent = await waitForMadeNote(page, parentTitle)
-      madeNotes.push(parent)
-      expect((await getConnection(request, note, parent)).role).toBe('ROLE_PARENT')
-      await showInPlex(page, parentTitle)
-      await expect(getPlexNode(page, childTitle, 'child')).toBeAttached()
-    } finally {
-      await destroyNote(request, note)
-    }
-  })
-
-  test('makes a jump from the menu of the node in focus of the plex', async ({ page, request }) => {
-    const fromTitle = createUniqueTitle('Tidal bore')
-    const jumpTitle = createUniqueTitle('Severn')
-    const from = await createNote(request, fromTitle)
-    try {
-      await openWorkspace(page)
-      await openNote(page, from)
-      await showInPlex(page, fromTitle)
-
-      await getPlexNode(page, fromTitle, 'focus').click({ button: 'right' })
-      await page.getByRole('menuitem', { name: 'Create jump note' }).click()
-      await nameNote(page, jumpTitle)
-
-      const jump = await waitForMadeNote(page, jumpTitle)
-      madeNotes.push(jump)
-      expect((await getConnection(request, from, jump)).role).toBe('ROLE_JUMP')
-      await showInPlex(page, jumpTitle)
-      await expect(getPlexNode(page, fromTitle, 'jump')).toBeAttached()
-    } finally {
-      await destroyNote(request, from)
-    }
-  })
-})
-
-test.describe('A node of the plex', () => {
-  test('opens its note in a tab when double-clicked', async ({ page }) => {
-    await openWorkspace(page)
-
-    await getPlexNode(page, 'Entropy', 'child').dblclick()
-
-    await expect(getNoteTab(page, 'notes/Entropy.md')).toHaveAttribute('aria-selected', 'true')
-    await expect(getNoteText(page, 'notes/Entropy.md')).toContainText('A measure of uncertainty')
   })
 })

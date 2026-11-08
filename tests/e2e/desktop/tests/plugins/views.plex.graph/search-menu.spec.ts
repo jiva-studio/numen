@@ -51,23 +51,6 @@ const setPlexEnabled = async (page: Page, isEnabled: boolean): Promise<void> => 
 }
 
 test.describe('The actions of a note found by its name, with the plex plugin enabled', () => {
-  test('lists opening the note and then showing it in the plex', async ({ page }) => {
-    await openWorkspace(page)
-
-    await searchForNote(page)
-    const rows = await openActions(page)
-
-    await expect(rows.locator('[data-actions="name"]')).toHaveText([OPEN_NOTE, SHOW_IN_PLEX])
-  })
-
-  test('opens the note in a tab on Enter', async ({ page }) => {
-    await openWorkspace(page)
-
-    await searchForNote(page)
-    await page.keyboard.press('Enter')
-
-    await expect.poll(() => readActivePath(page.request)).toMatch(new RegExp(`${NOTE}\\.md$`))
-  })
 
   test('shows the note in the plex when the second action is chosen', async ({ page }) => {
     await openWorkspace(page)

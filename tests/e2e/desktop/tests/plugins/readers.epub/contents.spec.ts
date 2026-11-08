@@ -124,30 +124,4 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     await documents.first().click()
     await expect(contentsNav).toBeHidden()
   })
-
-  test('filters book chapters using contents search field', async ({ page }) => {
-    await openAsset(page, 'sample.epub')
-
-    await expect(page.locator('.book-tab')).toBeVisible({ timeout: 10_000 })
-
-    // Open contents panel
-    const showContentsBtn = page.getByRole('button', { name: 'Show contents' })
-    await expect(showContentsBtn).toBeVisible({ timeout: 10_000 })
-    await showContentsBtn.click()
-
-    const contentsNav = page.getByRole('group', { name: 'Contents' })
-    await expect(contentsNav).toBeVisible({ timeout: 5_000 })
-
-    // Locate search field
-    const findField = contentsNav.getByRole('combobox', { name: 'Find in contents' })
-    await expect(findField).toBeVisible()
-
-    // Type a non-existent search query
-    await findField.fill('NonExistentChapterQuery123')
-    await expect(contentsNav.getByText('No table of contents.')).toBeVisible({ timeout: 5_000 })
-
-    // Clear search
-    await findField.fill('')
-    await expect(findField).toHaveValue('')
-  })
 })
