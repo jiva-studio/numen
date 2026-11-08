@@ -42,6 +42,18 @@ export const parseTime = (time: string): number => {
   return Number(hit[1]) * 60 + Number(hit[2])
 }
 
+export const assertEntry = (entry: string, path: string, isFolder: boolean): void => {
+  if (entry !== 'file' && entry !== 'folder') throw new Error(`"${entry}" is not a file or a folder`)
+  if ((entry === 'folder') !== isFolder) {
+    throw new Error(`"${path}" is a ${isFolder ? 'folder' : 'file'}, not a ${entry}`)
+  }
+}
+
+export const getAncestors = (entryPath: string): string[] => {
+  const parts = entryPath.split('/').slice(0, -1)
+  return parts.map((_, index) => parts.slice(0, index + 1).join('/'))
+}
+
 export type PaletteField = 'name' | 'item' | 'text'
 
 const PALETTE_FIELDS: Record<string, PaletteField> = { Name: 'name', Search: 'item' }

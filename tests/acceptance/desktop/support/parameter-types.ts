@@ -17,3 +17,9 @@ defineParameterType({
   regexp: /page|time/,
   transformer: (position: string) => position,
 })
+
+defineParameterType({
+  name: 'entry',
+  regexp: /file|folder/,
+  transformer: (entry: string) => entry,
+})
