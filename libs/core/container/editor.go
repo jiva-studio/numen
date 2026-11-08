@@ -4,11 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestlist"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
-	"github.com/jiva-studio/numen/libs/core/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -18,13 +13,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
-	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -55,7 +47,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 	provider := cfg.AgentProvider()
 	return EditorAssembly{
 		PluginDirFn:        cfg.GetPluginDir,
-		EmitEventFn:        cfg.emitPluginEvent,
+		EmitEventFn:        cfg.plugins().EmitPluginEvent,
 		RegistryVal:        registry,
 		VaultReadersFn:     cfg.VaultReaders,
 		VaultWritersFn:     cfg.VaultWriters,
@@ -71,12 +63,12 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		PassageQueriesFn:   func() sourceport.PassageQueries { return db.Passages() },
 		CloseIndexFn:       func() error { return db.Close() },
 		OpenGetSettingsFn: func() *settings.Get {
-			return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins(), cfg.listAppSettings)
+			return settings.NewGet(cfg.ReadSettings(), cfg.modelsForProvider(provider), cfg.Plugins(), cfg.settings().ListAppSettings)
 		},
-		OpenWriteSettingsFn:    func() *settings.Write { return settings.NewWrite(cfg.GetSettingsWriter()) },
-		OpenWatchSettingsFn:    func() *settings.Watch { return settings.NewWatch(cfg.SubscribeSettingChanges) },
+		OpenWriteSettingsFn:    cfg.settings().OpenWriteSettings,
+		OpenWatchSettingsFn:    cfg.settings().OpenWatchSettings,
 		OpenSecretsFn:          cfg.OpenSecrets,
-		OpenRetryPluginFn:      cfg.openRetryPlugin,
+		OpenRetryPluginFn:      func() *settings.RetryPlugin { return cfg.settings().OpenRetryPlugin(cfg.GetPluginRetrier()) },
 		ReportPluginFailuresFn: func(tasks *run.Tasks) { cfg.ReportPluginFailures(tasks); cfg.ReportDependencies(tasks) },
 		SetPluginWorkFn:        cfg.SetPluginWork,
 		IsRebuildingIndexVal:   cfg.ShouldRebuildIndex,
@@ -106,42 +98,23 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		PluginCommandsFn:         cfg.GetPluginCommands,
 		OpenChooseTabKindFn:      cfg.OpenChooseTabKind,
 		PluginCatalogFn:          cfg.getEditorCatalog,
-		AgentVal:                 cfg.getToolProvider(),
-		SetTextVersionListenerFn: cfg.setTextVersionListener,
-		ReportTextFilesChangedFn: cfg.reportTextFilesChanged,
-		OpenVersionItemsFn:       cfg.openVersionItems,
+		AgentVal:                 cfg.plugins().GetToolProvider(),
+		SetTextVersionListenerFn: cfg.vault().SetTextVersionListener,
+		ReportTextFilesChangedFn: cfg.vault().ReportTextFilesChanged,
+		OpenVersionItemsFn:       cfg.plugins().OpenVersionItems,
 		WatchPluginChangesFn:     cfg.WatchPluginChanges,
-		OpenTriggersFn:           cfg.openTriggers,
-		OpenPluginFileFn: func() *file.OpenPluginFile {
-			return file.NewOpenPluginFile(derivedfile.PluginStores{Options: cfg.vaultOptions()})
-		},
-		GetMediaTypeFn: func() *file.GetMediaType {
-			return file.NewGetMediaType(sharedmimeinfo.Open())
-		},
+		OpenTriggersFn:           cfg.plugins().OpenTriggers,
+		OpenPluginFileFn:         cfg.vault().OpenPluginFile,
+		GetMediaTypeFn:           cfg.vault().GetMediaType,
 		OpenChoosePluginPathFn: func(dialog machineport.PathDialog) *settings.ChoosePluginPath {
-			return settings.NewChoosePluginPath(dialog, cfg.Plugins(), cfg.GetSettingsWriter())
+			return cfg.settings().OpenChoosePluginPath(dialog)
 		},
-		OpenFileTextFn:   cfg.openFileText,
-		OpenPluginDataFn: cfg.openPluginData,
+		OpenFileTextFn:   cfg.vault().OpenFileText,
+		OpenPluginDataFn: cfg.vault().OpenPluginData,
 		OpenPluginVaultFn: func(current func() (domain.Vault, bool), hooks PluginVaultHooks) (pluginport.PluginVault, error) {
 			return cfg.OpenPluginVault(registry, db, current, hooks)
 		},
 	}
-}
-
-func (c Config) emitPluginEvent(event string) {
-	if c.PluginHost != nil {
-		var emitter pluginport.PluginEventEmitter = c.PluginHost
-		emitter.EmitEvent(event)
-	}
-}
-
-func (c Config) openRetryPlugin() *settings.RetryPlugin {
-	retry, err := settings.NewRetryPlugin(c.GetPluginRetrier())
-	if err != nil {
-		return nil
-	}
-	return retry
 }
 
 func (c Config) startVault(db *Index) func(
@@ -177,34 +150,4 @@ func (c Config) startVault(db *Index) func(
 		open := opening.Begin(ctx, v)
 		return open.Read, open.Run, opening.GetRefresh(), open.GetUnwatchedReason()
 	}
-}
-
-func (c Config) openVersionItems() *textversion.VersionItems {
-	if c.TextVersions == nil {
-		return nil
-	}
-	commands := pluginCommands{manifestlist.NoManifests{}, commandbridge.NoCommands{}}
-	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
-	if c.PluginHost != nil && !c.SafeMode {
-		commands, types = c.openPluginCommands(), c.PluginHost
-	}
-	run := plugincommand.NewCommands(commands, types, c.VaultReaders(), c.getWhenConfig()).Run
-	menu, err := textversion.NewVersionItems(c.TextVersions, run, types)
-	if err != nil {
-		c.handleError(err)
-		return nil
-	}
-	return menu
-}
-
-func (c Config) openFileText() *textversion.FileText {
-	if c.TextVersions == nil {
-		return nil
-	}
-	text, err := textversion.NewFileText(c.TextVersions)
-	if err != nil {
-		c.handleError(err)
-		return nil
-	}
-	return text
 }

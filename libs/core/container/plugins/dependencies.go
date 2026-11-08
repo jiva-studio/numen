@@ -1,24 +1,24 @@
-package container
+// Package plugins wires the plugin catalog, plugin host, agent provider and dependencies.
+package plugins
 
 import (
 	"os"
 	"path/filepath"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/provision"
-	"github.com/jiva-studio/numen/libs/core/usecase/run"
-
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/usecase/run"
 )
 
 const dependencyTaskPrefix = "provision:"
 
-// envMockML names the variable that runs the plugins on mock models.
-const envMockML = "NUMEN_MOCK_ML"
+// EnvMockML names the variable that runs the plugins on mock models.
+const EnvMockML = "NUMEN_MOCK_ML"
 
 func newDependencies(defaultDir string) *provision.Registry {
-	if os.Getenv(envMockML) == "true" {
+	if os.Getenv(EnvMockML) == "true" {
 		return provision.NewRegistry(newPlaceholders())
 	}
 	dir := defaultDir

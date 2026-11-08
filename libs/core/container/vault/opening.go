@@ -1,21 +1,22 @@
-package container
+package vault
 
 import (
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/usecase/vault"
+	vaultusecase "github.com/jiva-studio/numen/libs/core/usecase/vault"
 )
 
 // VaultOpener is how this installation opens a vault.
-type VaultOpener = vault.VaultOpener
+type VaultOpener = vaultusecase.VaultOpener
 
 // VaultChanges is what an opener reports to its callers.
-type VaultChanges = vault.VaultChanges
+type VaultChanges = vaultusecase.VaultChanges
 
 // OpenVault is one vault an application has opened.
-type OpenVault = vault.OpenVault
+type OpenVault = vaultusecase.OpenVault
 
-type bufferedNoteRepository = vault.BufferedNoteRepository
+// BufferedNoteRepository records note writes during a vault walk.
+type BufferedNoteRepository = vaultusecase.BufferedNoteRepository
 
 // VaultOpener is how this installation opens a vault, the way the settings say
 // one is read and watched.
@@ -28,23 +29,26 @@ func (c Config) VaultOpener(db *Index) *VaultOpener {
 func (c Config) VaultOpenerWith(
 	db *Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) *VaultOpener {
-	scan := vault.NewScan(
+	scan := vaultusecase.NewScan(
 		walking,
 		db.Vaults(),
 		db.Notes(),
 		db.Queries(),
 		db.Maintenance(),
 	)
-	c.setNoteCut(&scan, db)
+	if c.SetNoteCut != nil {
+		c.SetNoteCut(&scan, db)
+	}
 	scan.Walks = db.Walks()
 
-	buffered := &bufferedNoteRepository{NoteRepository: db.Notes()}
-	return vault.ConfigureVaultOpener(watcher, scan, buffered, makeRefresh(c, db, buffered))
+	buffered := &BufferedNoteRepository{NoteRepository: db.Notes()}
+	return vaultusecase.ConfigureVaultOpener(watcher, scan, buffered, c.MakeRefresh(db, buffered))
 }
 
-func makeRefresh(c Config, db *Index, notes noteport.NoteRepository) vault.Refresh {
-	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources(), c.Clock())
-	refresh.Cut = c.CutNotes()
+// MakeRefresh builds a vault refresh use case over db and notes.
+func (c Config) MakeRefresh(db *Index, notes noteport.NoteRepository) vaultusecase.Refresh {
+	refresh := vaultusecase.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources(), c.Clock)
+	refresh.Cut = c.CutNotes
 	refresh.Ledger = db.Ledger()
 	return refresh
 }
