@@ -117,7 +117,7 @@ type Result struct {
 // that is no longer in the vault ends the task instead, because nothing can recognise that file
 // again. For a file another run has locked, it returns ErrAlreadyRecognising.
 func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error) {
-	key, err := r.claim(ctx, req)
+	req, key, err := r.claim(ctx, req)
 	if err != nil {
 		return Result{}, err
 	}
@@ -126,9 +126,10 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 }
 
 // Start claims the file and recognises it in the background under ctx, and returns false when
-// another run has locked the file. The channel is closed when the run ends.
+// another run has locked the file. An empty vault is the vault the host shows when Start is called,
+// and the run reads and writes only that vault. The channel is closed when the run ends.
 func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, bool, error) {
-	key, err := r.claim(ctx, req)
+	req, key, err := r.claim(ctx, req)
 	if errors.Is(err, ErrAlreadyRecognising) {
 		return nil, false, nil
 	}
@@ -149,41 +150,47 @@ func (r *Recognition) Start(ctx context.Context, req Request) (<-chan struct{}, 
 	return runEnd, true, nil
 }
 
-func (r *Recognition) claim(ctx context.Context, req Request) (string, error) {
-	key, err := r.getRunKey(ctx, req.Vault, req.Path)
+func (r *Recognition) claim(ctx context.Context, req Request) (Request, string, error) {
+	vault, err := r.getVaultID(ctx, req.Vault)
 	if err != nil {
-		return "", err
+		return Request{}, "", err
 	}
+	req.Vault = vault
+	key := getRunKey(req.Vault, req.Path)
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.running[key] {
-		return "", fmt.Errorf("%s: %w", req.Path, ErrAlreadyRecognising)
+		return Request{}, "", fmt.Errorf("%s: %w", req.Path, ErrAlreadyRecognising)
 	}
 	r.running[key] = true
-	return key, nil
+	return req, key, nil
 }
 
 // IsRunning reports whether a run has locked the file of the vault. An empty vault ID means the vault
 // the host shows.
 func (r *Recognition) IsRunning(ctx context.Context, vault domain.VaultID, filePath string) (bool, error) {
-	key, err := r.getRunKey(ctx, vault, filePath)
+	vault, err := r.getVaultID(ctx, vault)
 	if err != nil {
 		return false, err
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.running[key], nil
+	return r.running[getRunKey(vault, filePath)], nil
 }
 
-func (r *Recognition) getRunKey(ctx context.Context, vault domain.VaultID, filePath string) (string, error) {
-	if vault == "" {
-		shown, err := r.host.Vault.GetVault(ctx)
-		if err != nil {
-			return "", fmt.Errorf("get the shown vault: %w", err)
-		}
-		vault = shown.ID
+func (r *Recognition) getVaultID(ctx context.Context, vault domain.VaultID) (domain.VaultID, error) {
+	if vault != "" {
+		return vault, nil
 	}
-	return string(vault) + "\x00" + filePath, nil
+	shown, err := r.host.Vault.GetVault(ctx)
+	if err != nil {
+		return "", fmt.Errorf("get the shown vault: %w", err)
+	}
+	return shown.ID, nil
+}
+
+func getRunKey(vault domain.VaultID, filePath string) string {
+	return string(vault) + "\x00" + filePath
 }
 
 // FindLiveDerivedVersion returns the live version of the file of the vault when its source chain
