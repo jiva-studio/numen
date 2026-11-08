@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
-import { test, expect } from '../../support/test.js'
-import { readOwner, writeSetting } from '../../support/vault.js'
+import { test, expect } from '../support/test.js'
+import { readOwner, writeSetting } from '../support/vault.js'
 
 interface Row {
   pid: number

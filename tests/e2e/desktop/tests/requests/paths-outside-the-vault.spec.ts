@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { test, expect, type APIRequestContext } from '../../support/test.js'
-import { getVaultPath, readNote } from '../../support/vault.js'
+import { test, expect, type APIRequestContext } from '../support/test.js'
+import { getVaultPath, readNote } from '../support/vault.js'
 
 const askRPC = async (request: APIRequestContext, method: string, data: object) => {
   const answer = await request.post(`/numen.v1.${method}`, {
