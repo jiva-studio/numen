@@ -1,48 +1,40 @@
 package secret
 
-import (
-	"context"
-	"errors"
-)
+import "slices"
 
-// Entry is a secret as the window sees it: whether a value is on this machine, never the value.
-type Entry struct {
-	Secret
-	HasValue bool
-}
-
-// Listing is every secret in list order and where the values are kept when it is a file.
+// Listing is the secrets as the window shows them: the sections of the page in order, the menu of
+// every declaration, and where the values are kept when it is a file. No value and no flag about
+// a value is part of it, and the key store is not read.
 type Listing struct {
-	Entries         []Entry
+	Sections        []Section
+	Menus           []Menu
 	CredentialsPath string
 }
 
-// List reads the secrets without their values.
+// List reads the secrets from the list, without their values.
 type List struct {
 	operation
 	credentialsPath func() string
 }
 
-// Execute returns the valid secrets and whether each has a value on this machine.
-func (u *List) Execute(ctx context.Context) (Listing, error) {
+// Execute returns the sections of the page and the menu of each declaration of the installed plugins.
+func (u *List) Execute() (Listing, error) {
 	list, err := u.ledger.GetSecrets()
 	if err != nil {
 		return Listing{}, err
 	}
-	listing := Listing{Entries: make([]Entry, 0, len(list))}
-	for _, one := range list {
-		listing.Entries = append(listing.Entries, Entry{Secret: one, HasValue: u.hasValue(ctx, one.ID)})
+	declarations := u.plugins.ListDeclarations()
+	listing := Listing{Sections: ListSections(list, ListAskedGroups(declarations))}
+	var seen []Permission
+	for _, one := range declarations {
+		if slices.Contains(seen, one) {
+			continue
+		}
+		seen = append(seen, one)
+		listing.Menus = append(listing.Menus, Menu{Declaration: one, Secrets: ListMenu(listing.Sections, one)})
 	}
 	if u.credentialsPath != nil {
 		listing.CredentialsPath = u.credentialsPath()
 	}
 	return listing, nil
-}
-
-func (u *List) hasValue(ctx context.Context, id string) bool {
-	if u.keys == nil {
-		return false
-	}
-	value, err := u.keys.GetKey(ctx, GetEntryName(id))
-	return err == nil && !errors.Is(err, context.Canceled) && value != ""
 }

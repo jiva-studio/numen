@@ -71,9 +71,13 @@ type secretKeys struct {
 	mu      sync.Mutex
 	items   map[string]string
 	failSet error
+	reads   int
 }
 
 func (k *secretKeys) GetKey(_ context.Context, name string) (string, error) {
+	k.mu.Lock()
+	k.reads++
+	k.mu.Unlock()
 	k.mu.Lock()
 	defer k.mu.Unlock()
 	if value, found := k.items[name]; found {
@@ -372,7 +376,29 @@ func (w *window) get(t *testing.T) *v1.GetSettingsResponse {
 	return response.Msg
 }
 
-func (w *window) secrets(t *testing.T) []*v1.Secret { return w.get(t).GetSecrets() }
+func (w *window) secrets(t *testing.T) []*v1.Secret {
+	t.Helper()
+	var secrets []*v1.Secret
+	for _, section := range w.get(t).GetSecretSections() {
+		secrets = append(secrets, section.GetSecrets()...)
+	}
+	return secrets
+}
+
+func (w *window) hasValue(t *testing.T, id string) bool {
+	t.Helper()
+	response, err := w.client.ListSecretStates(t.Context(), connect.NewRequest(&v1.ListSecretStatesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range response.Msg.GetStates() {
+		if one.GetId() == id {
+			return one.GetHasValue()
+		}
+	}
+	t.Fatalf("no state for %s", id)
+	return false
+}
 
 func (w *window) find(t *testing.T, id string) *v1.Secret {
 	t.Helper()

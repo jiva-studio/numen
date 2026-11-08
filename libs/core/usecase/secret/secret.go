@@ -95,11 +95,13 @@ type Secrets struct {
 	Rename      *Rename
 	Write       *Write
 	Delete      *Delete
+	DeleteGroup *DeleteGroup
 	Move        *Move
 	RenameGroup *RenameGroup
 	Allow       *Allow
 	Deny        *Deny
 	List        *List
+	ListStates  *ListStates
 	Prune       *Prune
 }
 
@@ -115,11 +117,13 @@ func NewSecrets(
 		Rename:      &Rename{operation: base},
 		Write:       &Write{operation: base},
 		Delete:      &Delete{operation: base},
+		DeleteGroup: &DeleteGroup{operation: base},
 		Move:        &Move{operation: base},
 		RenameGroup: &RenameGroup{operation: base},
 		Allow:       &Allow{operation: base},
 		Deny:        &Deny{operation: base},
 		List:        &List{operation: base, credentialsPath: credentialsPath},
+		ListStates:  &ListStates{operation: base},
 		Prune:       &Prune{operation: base},
 	}
 }

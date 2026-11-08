@@ -50,7 +50,7 @@ message SecretValue {
   string id = 1;
   string name = 2;
   string group = 3;
-  string value = 4;
+  string value = 4 [debug_redact = true];
 }
 
 message ConfigureResponse {

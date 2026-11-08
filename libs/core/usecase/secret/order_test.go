@@ -76,3 +76,48 @@ func TestADeclarationWithNoGroupReceivesTheAllowedSecretsInTheOrderOfThePage(t *
 		t.Errorf("list = %v, want the order of the page", got)
 	}
 }
+
+func TestThePageComparesNamesByTheirUTF8BytesNotByUTF16Units(t *testing.T) {
+	list := []secret.Secret{
+		{ID: "s1", Group: "\U0001D49C"}, {ID: "s2", Group: "ｱ"}, {ID: "s3", Group: "Z"}, {ID: "s4", Group: "a"},
+	}
+	if got := idsOf(secret.ListInPageOrder(list, nil)); !slices.Equal(got, []string{"s3", "s4", "s2", "s1"}) {
+		t.Errorf("page = %v, want s3 s4 s2 s1", got)
+	}
+}
+
+func TestThePageKeepsTheOrderOfTheListInsideAGroup(t *testing.T) {
+	list := []secret.Secret{{ID: "s1", Group: "openai"}, {ID: "s2", Group: "other"}, {ID: "s3", Group: "openai"}}
+	if got := idsOf(secret.ListInPageOrder(list, []string{"openai"})); !slices.Equal(got, []string{"s1", "s3", "s2"}) {
+		t.Errorf("page = %v, want s1 s3 s2", got)
+	}
+}
+
+func TestSectionsKeepAnAskedGroupWithNoSecretAndMarkTheAskedGroups(t *testing.T) {
+	list := []secret.Secret{{ID: "s1", Group: "mine"}, {ID: "s2", Group: "openai"}}
+	got := secret.ListSections(list, []string{"anthropic", "openai"})
+	if len(got) != 3 {
+		t.Fatalf("sections = %+v", got)
+	}
+	if got[0].Group != "anthropic" || !got[0].IsAsked || len(got[0].Secrets) != 0 {
+		t.Errorf("first section = %+v, want the asked group with no secret", got[0])
+	}
+	if got[1].Group != "openai" || !got[1].IsAsked || got[2].Group != "mine" || got[2].IsAsked {
+		t.Errorf("sections = %+v", got)
+	}
+}
+
+func TestAMenuListsTheSecretsOfTheDeclaredGroupFirstThenTheOthersInPageOrder(t *testing.T) {
+	list := []secret.Secret{
+		{ID: "mine", Group: "home"}, {ID: "a1", Group: "openai"}, {ID: "r1", Group: "openrouter"}, {ID: "r2", Group: "openrouter"},
+	}
+	page := secret.ListSections(list, []string{"openai", "openrouter"})
+	declaration := secret.Permission{Plugin: "a.b", Name: "key", Group: "openrouter"}
+	if got := idsOf(secret.ListMenu(page, declaration)); !slices.Equal(got, []string{"r1", "r2", "a1", "mine"}) {
+		t.Errorf("menu = %v", got)
+	}
+	none := secret.Permission{Plugin: "a.b", Name: "key"}
+	if got := idsOf(secret.ListMenu(page, none)); !slices.Equal(got, []string{"a1", "r1", "r2", "mine"}) {
+		t.Errorf("menu with no group = %v", got)
+	}
+}

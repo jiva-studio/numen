@@ -110,7 +110,7 @@ func TestACreatedSecretGoesToTheEndOfItsGroupWithItsValueInTheKeyStore(t *testin
 	if w.keys.snapshot()["secret/"+first] != "value-work" || w.keys.snapshot()["secret/"+last] != "value-home" {
 		t.Errorf("the key store holds %v", w.keys.snapshot())
 	}
-	if !w.find(t, first).GetHasValue() {
+	if !w.hasValue(t, first) {
 		t.Error("a secret with a value reports none")
 	}
 	entries := w.fileSecrets(t)
@@ -131,7 +131,7 @@ func TestRenamingASecretChangesOnlyTheFile(t *testing.T) {
 	}
 
 	got := w.find(t, one)
-	if got.GetName() != "Office" || len(got.GetAllowed()) != 1 || !got.GetHasValue() {
+	if got.GetName() != "Office" || len(got.GetAllowed()) != 1 || !w.hasValue(t, one) {
 		t.Errorf("secret = %v, want the new name with its permission and value", got)
 	}
 	if after := w.keys.snapshot(); !slices.Equal(keysOf(after), keysOf(keysBefore)) || after["secret/"+one] != "value-work" {
@@ -308,7 +308,7 @@ func TestSecretsOfAGroupNoPluginAsksForRemainWhenItsLastPluginIsUninstalled(t *t
 	}
 
 	got := w.find(t, one)
-	if got == nil || got.GetGroup() != "openai" || !got.GetHasValue() {
+	if got == nil || got.GetGroup() != "openai" || !w.hasValue(t, one) {
 		t.Errorf("secret = %v, want it kept in openai", got)
 	}
 	if len(w.fileSecrets(t)) != 1 {
@@ -428,7 +428,7 @@ func TestTheGroupsAPluginAsksForAreDerivedFromTheDeclarations(t *testing.T) {
 	if want := []string{"mistral", "openai", "openrouter"}; !slices.Equal(slices.Compact(asked), want) {
 		t.Errorf("the groups plugins ask for are %v, want %v", slices.Compact(asked), want)
 	}
-	if len(got.GetSecrets()) != 0 {
-		t.Errorf("a new installation lists %v", got.GetSecrets())
+	if len(w.secrets(t)) != 0 {
+		t.Errorf("a new installation lists %v", ids(w.secrets(t)))
 	}
 }

@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0It8BChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEiEKB3NlY3JldHMYCSADKAsyEC5udW1lbi52MS5TZWNyZXQSGAoQY3JlZGVudGlhbHNfcGF0aBgKIAEoCSLxAQoFTW9kZWwSEAoIbmFtZWRfYXQYASADKAkSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRINCgVncm91cBgEIAEoCRISCgppc19kZWZhdWx0GAUgASgIEiEKBndyaXRlcxgGIAMoCzIRLm51bWVuLnYxLlNldHRpbmcSJAoIcHJlc2VuY2UYByABKA4yEi5udW1lbi52MS5QcmVzZW5jZRIyChByZWFzb25pbmdfbGV2ZWxzGAggAygLMhgubnVtZW4udjEuUmVhc29uaW5nTGV2ZWwSGQoRZGVmYXVsdF9yZWFzb25pbmcYCSABKAkiJAoHU2V0dGluZxIKCgJhdBgBIAMoCRINCgV2YWx1ZRgCIAEoCSIWChRXYXRjaFNldHRpbmdzUmVxdWVzdCI7ChVXYXRjaFNldHRpbmdzUmVzcG9uc2USIgoHY2hhbmdlZBgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciOwoUV3JpdGVTZXR0aW5nc1JlcXVlc3QSIwoIc2V0dGluZ3MYASADKAsyES5udW1lbi52MS5TZXR0aW5nIhcKFVdyaXRlU2V0dGluZ3NSZXNwb25zZSJxCgZTZWNyZXQSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVncm91cBgDIAEoCRIrCgdhbGxvd2VkGAQgAygLMhoubnVtZW4udjEuU2VjcmV0UGVybWlzc2lvbhIRCgloYXNfdmFsdWUYBSABKAgiQgoQU2VjcmV0UGVybWlzc2lvbhIRCglwbHVnaW5faWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVncm91cBgDIAEoCSJBChNDcmVhdGVTZWNyZXRSZXF1ZXN0Eg0KBWdyb3VwGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFdmFsdWUYAyABKAkiIgoUQ3JlYXRlU2VjcmV0UmVzcG9uc2USCgoCaWQYASABKAkiLwoTUmVuYW1lU2VjcmV0UmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJIhYKFFJlbmFtZVNlY3JldFJlc3BvbnNlIi8KEldyaXRlU2VjcmV0UmVxdWVzdBIKCgJpZBgBIAEoCRINCgV2YWx1ZRgCIAEoCSIVChNXcml0ZVNlY3JldFJlc3BvbnNlIiEKE0RlbGV0ZVNlY3JldFJlcXVlc3QSCgoCaWQYASABKAkiFgoURGVsZXRlU2VjcmV0UmVzcG9uc2UiMgoRTW92ZVNlY3JldFJlcXVlc3QSCgoCaWQYASABKAkSEQoJYmVmb3JlX2lkGAIgASgJIhQKEk1vdmVTZWNyZXRSZXNwb25zZSI3ChhSZW5hbWVTZWNyZXRHcm91cFJlcXVlc3QSDQoFZ3JvdXAYASABKAkSDAoEbmFtZRgCIAEoCSIbChlSZW5hbWVTZWNyZXRHcm91cFJlc3BvbnNlIl0KGEFsbG93UGx1Z2luU2VjcmV0UmVxdWVzdBIRCglzZWNyZXRfaWQYASABKAkSEQoJcGx1Z2luX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSDQoFZ3JvdXAYBCABKAkiGwoZQWxsb3dQbHVnaW5TZWNyZXRSZXNwb25zZSJcChdEZW55UGx1Z2luU2VjcmV0UmVxdWVzdBIRCglzZWNyZXRfaWQYASABKAkSEQoJcGx1Z2luX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSDQoFZ3JvdXAYBCABKAkiGgoYRGVueVBsdWdpblNlY3JldFJlc3BvbnNlIicKElJldHJ5UGx1Z2luUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiJgoTUmV0cnlQbHVnaW5SZXNwb25zZRIPCgdmYWlsdXJlGAEgASgJIjkKF0Nob29zZVBsdWdpblBhdGhSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRILCgNrZXkYAiABKAkiTAoYQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIEg8KB3Byb2JsZW0YAyABKAkiKQoUR2V0UGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIj8KFUdldFBsdWdpbkRhdGFSZXNwb25zZRISCgpmaWxlX2NvdW50GAEgASgFEhIKCmJ5dGVfY291bnQYAiABKAMiLAoXRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIhoKGERlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZSpzCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhQKEFBSRVNFTkNFX1BSRVNFTlQQARIYChRQUkVTRU5DRV9OT1RfRkVUQ0hFRBACEh0KGVBSRVNFTkNFX05PVEhJTkdfVE9fRkVUQ0gQAzLwCQoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USTQoMQ3JlYXRlU2VjcmV0Eh0ubnVtZW4udjEuQ3JlYXRlU2VjcmV0UmVxdWVzdBoeLm51bWVuLnYxLkNyZWF0ZVNlY3JldFJlc3BvbnNlEk0KDFJlbmFtZVNlY3JldBIdLm51bWVuLnYxLlJlbmFtZVNlY3JldFJlcXVlc3QaHi5udW1lbi52MS5SZW5hbWVTZWNyZXRSZXNwb25zZRJKCgtXcml0ZVNlY3JldBIcLm51bWVuLnYxLldyaXRlU2VjcmV0UmVxdWVzdBodLm51bWVuLnYxLldyaXRlU2VjcmV0UmVzcG9uc2USTQoMRGVsZXRlU2VjcmV0Eh0ubnVtZW4udjEuRGVsZXRlU2VjcmV0UmVxdWVzdBoeLm51bWVuLnYxLkRlbGV0ZVNlY3JldFJlc3BvbnNlEkcKCk1vdmVTZWNyZXQSGy5udW1lbi52MS5Nb3ZlU2VjcmV0UmVxdWVzdBocLm51bWVuLnYxLk1vdmVTZWNyZXRSZXNwb25zZRJcChFSZW5hbWVTZWNyZXRHcm91cBIiLm51bWVuLnYxLlJlbmFtZVNlY3JldEdyb3VwUmVxdWVzdBojLm51bWVuLnYxLlJlbmFtZVNlY3JldEdyb3VwUmVzcG9uc2USXAoRQWxsb3dQbHVnaW5TZWNyZXQSIi5udW1lbi52MS5BbGxvd1BsdWdpblNlY3JldFJlcXVlc3QaIy5udW1lbi52MS5BbGxvd1BsdWdpblNlY3JldFJlc3BvbnNlElkKEERlbnlQbHVnaW5TZWNyZXQSIS5udW1lbi52MS5EZW55UGx1Z2luU2VjcmV0UmVxdWVzdBoiLm51bWVuLnYxLkRlbnlQbHVnaW5TZWNyZXRSZXNwb25zZRJKCgtSZXRyeVBsdWdpbhIcLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVxdWVzdBodLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVzcG9uc2USWQoQQ2hvb3NlUGx1Z2luUGF0aBIhLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXF1ZXN0GiIubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlElAKDUdldFBsdWdpbkRhdGESHi5udW1lbi52MS5HZXRQbHVnaW5EYXRhUmVxdWVzdBofLm51bWVuLnYxLkdldFBsdWdpbkRhdGFSZXNwb25zZRJZChBEZWxldGVQbHVnaW5EYXRhEiEubnVtZW4udjEuRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QaIi5udW1lbi52MS5EZWxldGVQbHVnaW5EYXRhUmVzcG9uc2USUgoNV2F0Y2hTZXR0aW5ncxIeLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1Jlc3BvbnNlMAFCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin, file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IqACChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEhgKEGNyZWRlbnRpYWxzX3BhdGgYCiABKAkSMAoPc2VjcmV0X3NlY3Rpb25zGAsgAygLMhcubnVtZW4udjEuU2VjcmV0U2VjdGlvbhIqCgxzZWNyZXRfbWVudXMYDCADKAsyFC5udW1lbi52MS5TZWNyZXRNZW51SgQICRAKIvEBCgVNb2RlbBIQCghuYW1lZF9hdBgBIAMoCRIMCgRuYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKCmlzX2RlZmF1bHQYBSABKAgSIQoGd3JpdGVzGAYgAygLMhEubnVtZW4udjEuU2V0dGluZxIkCghwcmVzZW5jZRgHIAEoDjISLm51bWVuLnYxLlByZXNlbmNlEjIKEHJlYXNvbmluZ19sZXZlbHMYCCADKAsyGC5udW1lbi52MS5SZWFzb25pbmdMZXZlbBIZChFkZWZhdWx0X3JlYXNvbmluZxgJIAEoCSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlImQKBlNlY3JldBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWdyb3VwGAMgASgJEisKB2FsbG93ZWQYBCADKAsyGi5udW1lbi52MS5TZWNyZXRQZXJtaXNzaW9uSgQIBRAGIlMKDVNlY3JldFNlY3Rpb24SDQoFZ3JvdXAYASABKAkSEAoIaXNfYXNrZWQYAiABKAgSIQoHc2VjcmV0cxgDIAMoCzIQLm51bWVuLnYxLlNlY3JldCJQCgpTZWNyZXRNZW51EhEKCXBsdWdpbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWdyb3VwGAMgASgJEhIKCnNlY3JldF9pZHMYBCADKAkiQgoQU2VjcmV0UGVybWlzc2lvbhIRCglwbHVnaW5faWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVncm91cBgDIAEoCSJGChNDcmVhdGVTZWNyZXRSZXF1ZXN0Eg0KBWdyb3VwGAEgASgJEgwKBG5hbWUYAiABKAkSEgoFdmFsdWUYAyABKAlCA4ABASIiChRDcmVhdGVTZWNyZXRSZXNwb25zZRIKCgJpZBgBIAEoCSIvChNSZW5hbWVTZWNyZXRSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkiFgoUUmVuYW1lU2VjcmV0UmVzcG9uc2UiNAoSV3JpdGVTZWNyZXRSZXF1ZXN0EgoKAmlkGAEgASgJEhIKBXZhbHVlGAIgASgJQgOAAQEiFQoTV3JpdGVTZWNyZXRSZXNwb25zZSIhChNEZWxldGVTZWNyZXRSZXF1ZXN0EgoKAmlkGAEgASgJIhYKFERlbGV0ZVNlY3JldFJlc3BvbnNlIikKGERlbGV0ZVNlY3JldEdyb3VwUmVxdWVzdBINCgVncm91cBgBIAEoCSIbChlEZWxldGVTZWNyZXRHcm91cFJlc3BvbnNlIhkKF0xpc3RTZWNyZXRTdGF0ZXNSZXF1ZXN0IkEKGExpc3RTZWNyZXRTdGF0ZXNSZXNwb25zZRIlCgZzdGF0ZXMYASADKAsyFS5udW1lbi52MS5TZWNyZXRTdGF0ZSIsCgtTZWNyZXRTdGF0ZRIKCgJpZBgBIAEoCRIRCgloYXNfdmFsdWUYAiABKAgiMgoRTW92ZVNlY3JldFJlcXVlc3QSCgoCaWQYASABKAkSEQoJYmVmb3JlX2lkGAIgASgJIhQKEk1vdmVTZWNyZXRSZXNwb25zZSI3ChhSZW5hbWVTZWNyZXRHcm91cFJlcXVlc3QSDQoFZ3JvdXAYASABKAkSDAoEbmFtZRgCIAEoCSIbChlSZW5hbWVTZWNyZXRHcm91cFJlc3BvbnNlIl0KGEFsbG93UGx1Z2luU2VjcmV0UmVxdWVzdBIRCglzZWNyZXRfaWQYASABKAkSEQoJcGx1Z2luX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSDQoFZ3JvdXAYBCABKAkiGwoZQWxsb3dQbHVnaW5TZWNyZXRSZXNwb25zZSJcChdEZW55UGx1Z2luU2VjcmV0UmVxdWVzdBIRCglzZWNyZXRfaWQYASABKAkSEQoJcGx1Z2luX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSDQoFZ3JvdXAYBCABKAkiGgoYRGVueVBsdWdpblNlY3JldFJlc3BvbnNlIicKElJldHJ5UGx1Z2luUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiJgoTUmV0cnlQbHVnaW5SZXNwb25zZRIPCgdmYWlsdXJlGAEgASgJIjkKF0Nob29zZVBsdWdpblBhdGhSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRILCgNrZXkYAiABKAkiTAoYQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIEg8KB3Byb2JsZW0YAyABKAkiKQoUR2V0UGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIj8KFUdldFBsdWdpbkRhdGFSZXNwb25zZRISCgpmaWxlX2NvdW50GAEgASgFEhIKCmJ5dGVfY291bnQYAiABKAMiLAoXRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIhoKGERlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZSpzCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhQKEFBSRVNFTkNFX1BSRVNFTlQQARIYChRQUkVTRU5DRV9OT1RfRkVUQ0hFRBACEh0KGVBSRVNFTkNFX05PVEhJTkdfVE9fRkVUQ0gQAzKpCwoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USTQoMQ3JlYXRlU2VjcmV0Eh0ubnVtZW4udjEuQ3JlYXRlU2VjcmV0UmVxdWVzdBoeLm51bWVuLnYxLkNyZWF0ZVNlY3JldFJlc3BvbnNlEk0KDFJlbmFtZVNlY3JldBIdLm51bWVuLnYxLlJlbmFtZVNlY3JldFJlcXVlc3QaHi5udW1lbi52MS5SZW5hbWVTZWNyZXRSZXNwb25zZRJKCgtXcml0ZVNlY3JldBIcLm51bWVuLnYxLldyaXRlU2VjcmV0UmVxdWVzdBodLm51bWVuLnYxLldyaXRlU2VjcmV0UmVzcG9uc2USTQoMRGVsZXRlU2VjcmV0Eh0ubnVtZW4udjEuRGVsZXRlU2VjcmV0UmVxdWVzdBoeLm51bWVuLnYxLkRlbGV0ZVNlY3JldFJlc3BvbnNlElwKEURlbGV0ZVNlY3JldEdyb3VwEiIubnVtZW4udjEuRGVsZXRlU2VjcmV0R3JvdXBSZXF1ZXN0GiMubnVtZW4udjEuRGVsZXRlU2VjcmV0R3JvdXBSZXNwb25zZRJZChBMaXN0U2VjcmV0U3RhdGVzEiEubnVtZW4udjEuTGlzdFNlY3JldFN0YXRlc1JlcXVlc3QaIi5udW1lbi52MS5MaXN0U2VjcmV0U3RhdGVzUmVzcG9uc2USRwoKTW92ZVNlY3JldBIbLm51bWVuLnYxLk1vdmVTZWNyZXRSZXF1ZXN0GhwubnVtZW4udjEuTW92ZVNlY3JldFJlc3BvbnNlElwKEVJlbmFtZVNlY3JldEdyb3VwEiIubnVtZW4udjEuUmVuYW1lU2VjcmV0R3JvdXBSZXF1ZXN0GiMubnVtZW4udjEuUmVuYW1lU2VjcmV0R3JvdXBSZXNwb25zZRJcChFBbGxvd1BsdWdpblNlY3JldBIiLm51bWVuLnYxLkFsbG93UGx1Z2luU2VjcmV0UmVxdWVzdBojLm51bWVuLnYxLkFsbG93UGx1Z2luU2VjcmV0UmVzcG9uc2USWQoQRGVueVBsdWdpblNlY3JldBIhLm51bWVuLnYxLkRlbnlQbHVnaW5TZWNyZXRSZXF1ZXN0GiIubnVtZW4udjEuRGVueVBsdWdpblNlY3JldFJlc3BvbnNlEkoKC1JldHJ5UGx1Z2luEhwubnVtZW4udjEuUmV0cnlQbHVnaW5SZXF1ZXN0Gh0ubnVtZW4udjEuUmV0cnlQbHVnaW5SZXNwb25zZRJZChBDaG9vc2VQbHVnaW5QYXRoEiEubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QaIi5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USUAoNR2V0UGx1Z2luRGF0YRIeLm51bWVuLnYxLkdldFBsdWdpbkRhdGFSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0UGx1Z2luRGF0YVJlc3BvbnNlElkKEERlbGV0ZVBsdWdpbkRhdGESIS5udW1lbi52MS5EZWxldGVQbHVnaW5EYXRhUmVxdWVzdBoiLm51bWVuLnYxLkRlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZRJSCg1XYXRjaFNldHRpbmdzEh4ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5XYXRjaFNldHRpbmdzUmVzcG9uc2UwAUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_plugin, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -82,18 +82,26 @@ export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
   app: PluginSetting[];
 
   /**
-   * Every secret in priority order, without its value.
-   *
-   * @generated from field: repeated numen.v1.Secret secrets = 9;
-   */
-  secrets: Secret[];
-
-  /**
    * Empty while the system keychain is in use; otherwise the absolute path of the file the values are kept in.
    *
    * @generated from field: string credentials_path = 10;
    */
   credentialsPath: string;
+
+  /**
+   * The secrets by group in the order of the page of secrets: the groups the installed plugins ask
+   * for by name, then the groups the person made by name. A value never travels.
+   *
+   * @generated from field: repeated numen.v1.SecretSection secret_sections = 11;
+   */
+  secretSections: SecretSection[];
+
+  /**
+   * For each secret a plugin declares, the secrets its menu offers in order.
+   *
+   * @generated from field: repeated numen.v1.SecretMenu secret_menus = 12;
+   */
+  secretMenus: SecretMenu[];
 };
 
 /**
@@ -300,13 +308,6 @@ export type Secret = Message<"numen.v1.Secret"> & {
    * @generated from field: repeated numen.v1.SecretPermission allowed = 4;
    */
   allowed: SecretPermission[];
-
-  /**
-   * False when the value is not on this machine.
-   *
-   * @generated from field: bool has_value = 5;
-   */
-  hasValue: boolean;
 };
 
 /**
@@ -315,6 +316,75 @@ export type Secret = Message<"numen.v1.Secret"> & {
  */
 export const SecretSchema: GenMessage<Secret> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 8);
+
+/**
+ * SecretSection is the secrets of one group in priority order. A group a plugin asks for is a
+ * section while it holds no secret.
+ *
+ * @generated from message numen.v1.SecretSection
+ */
+export type SecretSection = Message<"numen.v1.SecretSection"> & {
+  /**
+   * @generated from field: string group = 1;
+   */
+  group: string;
+
+  /**
+   * True when an installed plugin asks for the group by name.
+   *
+   * @generated from field: bool is_asked = 2;
+   */
+  isAsked: boolean;
+
+  /**
+   * @generated from field: repeated numen.v1.Secret secrets = 3;
+   */
+  secrets: Secret[];
+};
+
+/**
+ * Describes the message numen.v1.SecretSection.
+ * Use `create(SecretSectionSchema)` to create a new message.
+ */
+export const SecretSectionSchema: GenMessage<SecretSection> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 9);
+
+/**
+ * SecretMenu is the secrets the menu of one secret declaration of a plugin offers: those of the
+ * declared group first, then the others in the order of the page.
+ *
+ * @generated from message numen.v1.SecretMenu
+ */
+export type SecretMenu = Message<"numen.v1.SecretMenu"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * The group of the declaration, empty for none.
+   *
+   * @generated from field: string group = 3;
+   */
+  group: string;
+
+  /**
+   * @generated from field: repeated string secret_ids = 4;
+   */
+  secretIds: string[];
+};
+
+/**
+ * Describes the message numen.v1.SecretMenu.
+ * Use `create(SecretMenuSchema)` to create a new message.
+ */
+export const SecretMenuSchema: GenMessage<SecretMenu> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 10);
 
 /**
  * SecretPermission is one declaration of a plugin that may read a secret.
@@ -345,7 +415,7 @@ export type SecretPermission = Message<"numen.v1.SecretPermission"> & {
  * Use `create(SecretPermissionSchema)` to create a new message.
  */
 export const SecretPermissionSchema: GenMessage<SecretPermission> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 9);
+  messageDesc(file_numen_v1_settings, 11);
 
 /**
  * @generated from message numen.v1.CreateSecretRequest
@@ -372,7 +442,7 @@ export type CreateSecretRequest = Message<"numen.v1.CreateSecretRequest"> & {
  * Use `create(CreateSecretRequestSchema)` to create a new message.
  */
 export const CreateSecretRequestSchema: GenMessage<CreateSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 10);
+  messageDesc(file_numen_v1_settings, 12);
 
 /**
  * @generated from message numen.v1.CreateSecretResponse
@@ -389,7 +459,7 @@ export type CreateSecretResponse = Message<"numen.v1.CreateSecretResponse"> & {
  * Use `create(CreateSecretResponseSchema)` to create a new message.
  */
 export const CreateSecretResponseSchema: GenMessage<CreateSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 11);
+  messageDesc(file_numen_v1_settings, 13);
 
 /**
  * @generated from message numen.v1.RenameSecretRequest
@@ -411,7 +481,7 @@ export type RenameSecretRequest = Message<"numen.v1.RenameSecretRequest"> & {
  * Use `create(RenameSecretRequestSchema)` to create a new message.
  */
 export const RenameSecretRequestSchema: GenMessage<RenameSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 12);
+  messageDesc(file_numen_v1_settings, 14);
 
 /**
  * @generated from message numen.v1.RenameSecretResponse
@@ -424,7 +494,7 @@ export type RenameSecretResponse = Message<"numen.v1.RenameSecretResponse"> & {
  * Use `create(RenameSecretResponseSchema)` to create a new message.
  */
 export const RenameSecretResponseSchema: GenMessage<RenameSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 13);
+  messageDesc(file_numen_v1_settings, 15);
 
 /**
  * @generated from message numen.v1.WriteSecretRequest
@@ -446,7 +516,7 @@ export type WriteSecretRequest = Message<"numen.v1.WriteSecretRequest"> & {
  * Use `create(WriteSecretRequestSchema)` to create a new message.
  */
 export const WriteSecretRequestSchema: GenMessage<WriteSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 14);
+  messageDesc(file_numen_v1_settings, 16);
 
 /**
  * @generated from message numen.v1.WriteSecretResponse
@@ -459,7 +529,7 @@ export type WriteSecretResponse = Message<"numen.v1.WriteSecretResponse"> & {
  * Use `create(WriteSecretResponseSchema)` to create a new message.
  */
 export const WriteSecretResponseSchema: GenMessage<WriteSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 15);
+  messageDesc(file_numen_v1_settings, 17);
 
 /**
  * @generated from message numen.v1.DeleteSecretRequest
@@ -476,7 +546,7 @@ export type DeleteSecretRequest = Message<"numen.v1.DeleteSecretRequest"> & {
  * Use `create(DeleteSecretRequestSchema)` to create a new message.
  */
 export const DeleteSecretRequestSchema: GenMessage<DeleteSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 16);
+  messageDesc(file_numen_v1_settings, 18);
 
 /**
  * @generated from message numen.v1.DeleteSecretResponse
@@ -489,7 +559,91 @@ export type DeleteSecretResponse = Message<"numen.v1.DeleteSecretResponse"> & {
  * Use `create(DeleteSecretResponseSchema)` to create a new message.
  */
 export const DeleteSecretResponseSchema: GenMessage<DeleteSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 17);
+  messageDesc(file_numen_v1_settings, 19);
+
+/**
+ * @generated from message numen.v1.DeleteSecretGroupRequest
+ */
+export type DeleteSecretGroupRequest = Message<"numen.v1.DeleteSecretGroupRequest"> & {
+  /**
+   * @generated from field: string group = 1;
+   */
+  group: string;
+};
+
+/**
+ * Describes the message numen.v1.DeleteSecretGroupRequest.
+ * Use `create(DeleteSecretGroupRequestSchema)` to create a new message.
+ */
+export const DeleteSecretGroupRequestSchema: GenMessage<DeleteSecretGroupRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 20);
+
+/**
+ * @generated from message numen.v1.DeleteSecretGroupResponse
+ */
+export type DeleteSecretGroupResponse = Message<"numen.v1.DeleteSecretGroupResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.DeleteSecretGroupResponse.
+ * Use `create(DeleteSecretGroupResponseSchema)` to create a new message.
+ */
+export const DeleteSecretGroupResponseSchema: GenMessage<DeleteSecretGroupResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 21);
+
+/**
+ * @generated from message numen.v1.ListSecretStatesRequest
+ */
+export type ListSecretStatesRequest = Message<"numen.v1.ListSecretStatesRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.ListSecretStatesRequest.
+ * Use `create(ListSecretStatesRequestSchema)` to create a new message.
+ */
+export const ListSecretStatesRequestSchema: GenMessage<ListSecretStatesRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 22);
+
+/**
+ * @generated from message numen.v1.ListSecretStatesResponse
+ */
+export type ListSecretStatesResponse = Message<"numen.v1.ListSecretStatesResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.SecretState states = 1;
+   */
+  states: SecretState[];
+};
+
+/**
+ * Describes the message numen.v1.ListSecretStatesResponse.
+ * Use `create(ListSecretStatesResponseSchema)` to create a new message.
+ */
+export const ListSecretStatesResponseSchema: GenMessage<ListSecretStatesResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 23);
+
+/**
+ * SecretState reports whether the value of one secret is on this machine.
+ *
+ * @generated from message numen.v1.SecretState
+ */
+export type SecretState = Message<"numen.v1.SecretState"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: bool has_value = 2;
+   */
+  hasValue: boolean;
+};
+
+/**
+ * Describes the message numen.v1.SecretState.
+ * Use `create(SecretStateSchema)` to create a new message.
+ */
+export const SecretStateSchema: GenMessage<SecretState> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 24);
 
 /**
  * @generated from message numen.v1.MoveSecretRequest
@@ -513,7 +667,7 @@ export type MoveSecretRequest = Message<"numen.v1.MoveSecretRequest"> & {
  * Use `create(MoveSecretRequestSchema)` to create a new message.
  */
 export const MoveSecretRequestSchema: GenMessage<MoveSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 18);
+  messageDesc(file_numen_v1_settings, 25);
 
 /**
  * @generated from message numen.v1.MoveSecretResponse
@@ -526,7 +680,7 @@ export type MoveSecretResponse = Message<"numen.v1.MoveSecretResponse"> & {
  * Use `create(MoveSecretResponseSchema)` to create a new message.
  */
 export const MoveSecretResponseSchema: GenMessage<MoveSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 19);
+  messageDesc(file_numen_v1_settings, 26);
 
 /**
  * @generated from message numen.v1.RenameSecretGroupRequest
@@ -548,7 +702,7 @@ export type RenameSecretGroupRequest = Message<"numen.v1.RenameSecretGroupReques
  * Use `create(RenameSecretGroupRequestSchema)` to create a new message.
  */
 export const RenameSecretGroupRequestSchema: GenMessage<RenameSecretGroupRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 20);
+  messageDesc(file_numen_v1_settings, 27);
 
 /**
  * @generated from message numen.v1.RenameSecretGroupResponse
@@ -561,7 +715,7 @@ export type RenameSecretGroupResponse = Message<"numen.v1.RenameSecretGroupRespo
  * Use `create(RenameSecretGroupResponseSchema)` to create a new message.
  */
 export const RenameSecretGroupResponseSchema: GenMessage<RenameSecretGroupResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 21);
+  messageDesc(file_numen_v1_settings, 28);
 
 /**
  * @generated from message numen.v1.AllowPluginSecretRequest
@@ -593,7 +747,7 @@ export type AllowPluginSecretRequest = Message<"numen.v1.AllowPluginSecretReques
  * Use `create(AllowPluginSecretRequestSchema)` to create a new message.
  */
 export const AllowPluginSecretRequestSchema: GenMessage<AllowPluginSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 22);
+  messageDesc(file_numen_v1_settings, 29);
 
 /**
  * @generated from message numen.v1.AllowPluginSecretResponse
@@ -606,7 +760,7 @@ export type AllowPluginSecretResponse = Message<"numen.v1.AllowPluginSecretRespo
  * Use `create(AllowPluginSecretResponseSchema)` to create a new message.
  */
 export const AllowPluginSecretResponseSchema: GenMessage<AllowPluginSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 23);
+  messageDesc(file_numen_v1_settings, 30);
 
 /**
  * @generated from message numen.v1.DenyPluginSecretRequest
@@ -638,7 +792,7 @@ export type DenyPluginSecretRequest = Message<"numen.v1.DenyPluginSecretRequest"
  * Use `create(DenyPluginSecretRequestSchema)` to create a new message.
  */
 export const DenyPluginSecretRequestSchema: GenMessage<DenyPluginSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 24);
+  messageDesc(file_numen_v1_settings, 31);
 
 /**
  * @generated from message numen.v1.DenyPluginSecretResponse
@@ -651,7 +805,7 @@ export type DenyPluginSecretResponse = Message<"numen.v1.DenyPluginSecretRespons
  * Use `create(DenyPluginSecretResponseSchema)` to create a new message.
  */
 export const DenyPluginSecretResponseSchema: GenMessage<DenyPluginSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 25);
+  messageDesc(file_numen_v1_settings, 32);
 
 /**
  * @generated from message numen.v1.RetryPluginRequest
@@ -670,7 +824,7 @@ export type RetryPluginRequest = Message<"numen.v1.RetryPluginRequest"> & {
  * Use `create(RetryPluginRequestSchema)` to create a new message.
  */
 export const RetryPluginRequestSchema: GenMessage<RetryPluginRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 26);
+  messageDesc(file_numen_v1_settings, 33);
 
 /**
  * @generated from message numen.v1.RetryPluginResponse
@@ -689,7 +843,7 @@ export type RetryPluginResponse = Message<"numen.v1.RetryPluginResponse"> & {
  * Use `create(RetryPluginResponseSchema)` to create a new message.
  */
 export const RetryPluginResponseSchema: GenMessage<RetryPluginResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 27);
+  messageDesc(file_numen_v1_settings, 34);
 
 /**
  * @generated from message numen.v1.ChoosePluginPathRequest
@@ -713,7 +867,7 @@ export type ChoosePluginPathRequest = Message<"numen.v1.ChoosePluginPathRequest"
  * Use `create(ChoosePluginPathRequestSchema)` to create a new message.
  */
 export const ChoosePluginPathRequestSchema: GenMessage<ChoosePluginPathRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 28);
+  messageDesc(file_numen_v1_settings, 35);
 
 /**
  * @generated from message numen.v1.ChoosePluginPathResponse
@@ -746,7 +900,7 @@ export type ChoosePluginPathResponse = Message<"numen.v1.ChoosePluginPathRespons
  * Use `create(ChoosePluginPathResponseSchema)` to create a new message.
  */
 export const ChoosePluginPathResponseSchema: GenMessage<ChoosePluginPathResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 29);
+  messageDesc(file_numen_v1_settings, 36);
 
 /**
  * @generated from message numen.v1.GetPluginDataRequest
@@ -763,7 +917,7 @@ export type GetPluginDataRequest = Message<"numen.v1.GetPluginDataRequest"> & {
  * Use `create(GetPluginDataRequestSchema)` to create a new message.
  */
 export const GetPluginDataRequestSchema: GenMessage<GetPluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 30);
+  messageDesc(file_numen_v1_settings, 37);
 
 /**
  * @generated from message numen.v1.GetPluginDataResponse
@@ -785,7 +939,7 @@ export type GetPluginDataResponse = Message<"numen.v1.GetPluginDataResponse"> & 
  * Use `create(GetPluginDataResponseSchema)` to create a new message.
  */
 export const GetPluginDataResponseSchema: GenMessage<GetPluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 31);
+  messageDesc(file_numen_v1_settings, 38);
 
 /**
  * @generated from message numen.v1.DeletePluginDataRequest
@@ -802,7 +956,7 @@ export type DeletePluginDataRequest = Message<"numen.v1.DeletePluginDataRequest"
  * Use `create(DeletePluginDataRequestSchema)` to create a new message.
  */
 export const DeletePluginDataRequestSchema: GenMessage<DeletePluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 32);
+  messageDesc(file_numen_v1_settings, 39);
 
 /**
  * @generated from message numen.v1.DeletePluginDataResponse
@@ -815,7 +969,7 @@ export type DeletePluginDataResponse = Message<"numen.v1.DeletePluginDataRespons
  * Use `create(DeletePluginDataResponseSchema)` to create a new message.
  */
 export const DeletePluginDataResponseSchema: GenMessage<DeletePluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 33);
+  messageDesc(file_numen_v1_settings, 40);
 
 /**
  * Presence is what a model's files are on this machine. It says where files
@@ -928,6 +1082,27 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof DeleteSecretRequestSchema;
     output: typeof DeleteSecretResponseSchema;
+  },
+  /**
+   * DeleteSecretGroup removes every secret of a group with its values and its permissions.
+   *
+   * @generated from rpc numen.v1.SettingsService.DeleteSecretGroup
+   */
+  deleteSecretGroup: {
+    methodKind: "unary";
+    input: typeof DeleteSecretGroupRequestSchema;
+    output: typeof DeleteSecretGroupResponseSchema;
+  },
+  /**
+   * ListSecretStates tells for each secret whether its value is on this machine. It reads the key
+   * store once for each secret, so only the page of secrets asks for it.
+   *
+   * @generated from rpc numen.v1.SettingsService.ListSecretStates
+   */
+  listSecretStates: {
+    methodKind: "unary";
+    input: typeof ListSecretStatesRequestSchema;
+    output: typeof ListSecretStatesResponseSchema;
   },
   /**
    * MoveSecret changes the priority of a secret inside its group.

@@ -364,7 +364,7 @@ func TestASecretWithNoValueOnThisMachineIsReportedAndDeliveredToNoPlugin(t *test
 	w := openSecretsWindow(t, imported)
 
 	got := w.find(t, "s0000abcd")
-	if got == nil || got.GetHasValue() {
+	if got == nil || w.hasValue(t, "s0000abcd") {
 		t.Fatalf("secret = %v, want one that reports no value", got)
 	}
 	if ids := w.probes[alphaID].ids(t, "apiKey"); len(ids) != 0 {

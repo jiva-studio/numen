@@ -280,19 +280,6 @@ func TestPruneKeepsTheDeclaredPermissionsAndDropsTheRest(t *testing.T) {
 	}
 }
 
-func TestListReportsWhetherAValueIsOnThisMachineAndNeverTheValue(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000001", Name: "Here", Group: "g"}, secret.Secret{ID: "s00000002", Name: "Away", Group: "g"})
-	f.keys["secret/s00000001"] = "value-that-must-stay-secret"
-
-	listing, err := f.secrets.List.Execute(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !listing.Entries[0].HasValue || listing.Entries[1].HasValue || listing.CredentialsPath != "/credentials.json" {
-		t.Errorf("listing = %+v", listing)
-	}
-}
-
 // undeletableStore refuses to delete.
 type undeletableStore struct{ keys }
 

@@ -52,11 +52,12 @@ func (h *Handler) GetSettings(
 		App:     newWirePluginSettings(got.App),
 	}
 	if h.Secrets != nil {
-		listing, err := h.Secrets.List.Execute(ctx)
+		listing, err := h.Secrets.List.Execute()
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		reply.Secrets = newWireSecretEntries(listing.Entries)
+		reply.SecretSections = newWireSecretSections(listing.Sections)
+		reply.SecretMenus = newWireSecretMenus(listing.Menus)
 		reply.CredentialsPath = listing.CredentialsPath
 	}
 	return connect.NewResponse(reply), nil

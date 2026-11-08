@@ -60,6 +60,12 @@ const (
 	// SettingsServiceDeleteSecretProcedure is the fully-qualified name of the SettingsService's
 	// DeleteSecret RPC.
 	SettingsServiceDeleteSecretProcedure = "/numen.v1.SettingsService/DeleteSecret"
+	// SettingsServiceDeleteSecretGroupProcedure is the fully-qualified name of the SettingsService's
+	// DeleteSecretGroup RPC.
+	SettingsServiceDeleteSecretGroupProcedure = "/numen.v1.SettingsService/DeleteSecretGroup"
+	// SettingsServiceListSecretStatesProcedure is the fully-qualified name of the SettingsService's
+	// ListSecretStates RPC.
+	SettingsServiceListSecretStatesProcedure = "/numen.v1.SettingsService/ListSecretStates"
 	// SettingsServiceMoveSecretProcedure is the fully-qualified name of the SettingsService's
 	// MoveSecret RPC.
 	SettingsServiceMoveSecretProcedure = "/numen.v1.SettingsService/MoveSecret"
@@ -106,6 +112,11 @@ type SettingsServiceClient interface {
 	WriteSecret(context.Context, *connect.Request[v1.WriteSecretRequest]) (*connect.Response[v1.WriteSecretResponse], error)
 	// DeleteSecret removes a secret with its value and its permissions.
 	DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error)
+	// DeleteSecretGroup removes every secret of a group with its values and its permissions.
+	DeleteSecretGroup(context.Context, *connect.Request[v1.DeleteSecretGroupRequest]) (*connect.Response[v1.DeleteSecretGroupResponse], error)
+	// ListSecretStates tells for each secret whether its value is on this machine. It reads the key
+	// store once for each secret, so only the page of secrets asks for it.
+	ListSecretStates(context.Context, *connect.Request[v1.ListSecretStatesRequest]) (*connect.Response[v1.ListSecretStatesResponse], error)
 	// MoveSecret changes the priority of a secret inside its group.
 	MoveSecret(context.Context, *connect.Request[v1.MoveSecretRequest]) (*connect.Response[v1.MoveSecretResponse], error)
 	// RenameSecretGroup changes the group of all the secrets of a group the person made.
@@ -184,6 +195,18 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(settingsServiceMethods.ByName("DeleteSecret")),
 			connect.WithClientOptions(opts...),
 		),
+		deleteSecretGroup: connect.NewClient[v1.DeleteSecretGroupRequest, v1.DeleteSecretGroupResponse](
+			httpClient,
+			baseURL+SettingsServiceDeleteSecretGroupProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("DeleteSecretGroup")),
+			connect.WithClientOptions(opts...),
+		),
+		listSecretStates: connect.NewClient[v1.ListSecretStatesRequest, v1.ListSecretStatesResponse](
+			httpClient,
+			baseURL+SettingsServiceListSecretStatesProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("ListSecretStates")),
+			connect.WithClientOptions(opts...),
+		),
 		moveSecret: connect.NewClient[v1.MoveSecretRequest, v1.MoveSecretResponse](
 			httpClient,
 			baseURL+SettingsServiceMoveSecretProcedure,
@@ -249,6 +272,8 @@ type settingsServiceClient struct {
 	renameSecret      *connect.Client[v1.RenameSecretRequest, v1.RenameSecretResponse]
 	writeSecret       *connect.Client[v1.WriteSecretRequest, v1.WriteSecretResponse]
 	deleteSecret      *connect.Client[v1.DeleteSecretRequest, v1.DeleteSecretResponse]
+	deleteSecretGroup *connect.Client[v1.DeleteSecretGroupRequest, v1.DeleteSecretGroupResponse]
+	listSecretStates  *connect.Client[v1.ListSecretStatesRequest, v1.ListSecretStatesResponse]
 	moveSecret        *connect.Client[v1.MoveSecretRequest, v1.MoveSecretResponse]
 	renameSecretGroup *connect.Client[v1.RenameSecretGroupRequest, v1.RenameSecretGroupResponse]
 	allowPluginSecret *connect.Client[v1.AllowPluginSecretRequest, v1.AllowPluginSecretResponse]
@@ -288,6 +313,16 @@ func (c *settingsServiceClient) WriteSecret(ctx context.Context, req *connect.Re
 // DeleteSecret calls numen.v1.SettingsService.DeleteSecret.
 func (c *settingsServiceClient) DeleteSecret(ctx context.Context, req *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error) {
 	return c.deleteSecret.CallUnary(ctx, req)
+}
+
+// DeleteSecretGroup calls numen.v1.SettingsService.DeleteSecretGroup.
+func (c *settingsServiceClient) DeleteSecretGroup(ctx context.Context, req *connect.Request[v1.DeleteSecretGroupRequest]) (*connect.Response[v1.DeleteSecretGroupResponse], error) {
+	return c.deleteSecretGroup.CallUnary(ctx, req)
+}
+
+// ListSecretStates calls numen.v1.SettingsService.ListSecretStates.
+func (c *settingsServiceClient) ListSecretStates(ctx context.Context, req *connect.Request[v1.ListSecretStatesRequest]) (*connect.Response[v1.ListSecretStatesResponse], error) {
+	return c.listSecretStates.CallUnary(ctx, req)
 }
 
 // MoveSecret calls numen.v1.SettingsService.MoveSecret.
@@ -352,6 +387,11 @@ type SettingsServiceHandler interface {
 	WriteSecret(context.Context, *connect.Request[v1.WriteSecretRequest]) (*connect.Response[v1.WriteSecretResponse], error)
 	// DeleteSecret removes a secret with its value and its permissions.
 	DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error)
+	// DeleteSecretGroup removes every secret of a group with its values and its permissions.
+	DeleteSecretGroup(context.Context, *connect.Request[v1.DeleteSecretGroupRequest]) (*connect.Response[v1.DeleteSecretGroupResponse], error)
+	// ListSecretStates tells for each secret whether its value is on this machine. It reads the key
+	// store once for each secret, so only the page of secrets asks for it.
+	ListSecretStates(context.Context, *connect.Request[v1.ListSecretStatesRequest]) (*connect.Response[v1.ListSecretStatesResponse], error)
 	// MoveSecret changes the priority of a secret inside its group.
 	MoveSecret(context.Context, *connect.Request[v1.MoveSecretRequest]) (*connect.Response[v1.MoveSecretResponse], error)
 	// RenameSecretGroup changes the group of all the secrets of a group the person made.
@@ -426,6 +466,18 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 		connect.WithSchema(settingsServiceMethods.ByName("DeleteSecret")),
 		connect.WithHandlerOptions(opts...),
 	)
+	settingsServiceDeleteSecretGroupHandler := connect.NewUnaryHandler(
+		SettingsServiceDeleteSecretGroupProcedure,
+		svc.DeleteSecretGroup,
+		connect.WithSchema(settingsServiceMethods.ByName("DeleteSecretGroup")),
+		connect.WithHandlerOptions(opts...),
+	)
+	settingsServiceListSecretStatesHandler := connect.NewUnaryHandler(
+		SettingsServiceListSecretStatesProcedure,
+		svc.ListSecretStates,
+		connect.WithSchema(settingsServiceMethods.ByName("ListSecretStates")),
+		connect.WithHandlerOptions(opts...),
+	)
 	settingsServiceMoveSecretHandler := connect.NewUnaryHandler(
 		SettingsServiceMoveSecretProcedure,
 		svc.MoveSecret,
@@ -494,6 +546,10 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 			settingsServiceWriteSecretHandler.ServeHTTP(w, r)
 		case SettingsServiceDeleteSecretProcedure:
 			settingsServiceDeleteSecretHandler.ServeHTTP(w, r)
+		case SettingsServiceDeleteSecretGroupProcedure:
+			settingsServiceDeleteSecretGroupHandler.ServeHTTP(w, r)
+		case SettingsServiceListSecretStatesProcedure:
+			settingsServiceListSecretStatesHandler.ServeHTTP(w, r)
 		case SettingsServiceMoveSecretProcedure:
 			settingsServiceMoveSecretHandler.ServeHTTP(w, r)
 		case SettingsServiceRenameSecretGroupProcedure:
@@ -543,6 +599,14 @@ func (UnimplementedSettingsServiceHandler) WriteSecret(context.Context, *connect
 
 func (UnimplementedSettingsServiceHandler) DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.DeleteSecret is not implemented"))
+}
+
+func (UnimplementedSettingsServiceHandler) DeleteSecretGroup(context.Context, *connect.Request[v1.DeleteSecretGroupRequest]) (*connect.Response[v1.DeleteSecretGroupResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.DeleteSecretGroup is not implemented"))
+}
+
+func (UnimplementedSettingsServiceHandler) ListSecretStates(context.Context, *connect.Request[v1.ListSecretStatesRequest]) (*connect.Response[v1.ListSecretStatesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.ListSecretStates is not implemented"))
 }
 
 func (UnimplementedSettingsServiceHandler) MoveSecret(context.Context, *connect.Request[v1.MoveSecretRequest]) (*connect.Response[v1.MoveSecretResponse], error) {
