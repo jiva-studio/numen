@@ -15,6 +15,7 @@ type (
 	PluginCommandArgument  = manifest.CommandArgument
 	PluginCondition        = when.Condition
 	PluginConditionResult  = when.Result
+	PluginConditions       = when.Conditions
 	PluginContributes      = manifest.Contributes
 	PluginFrontend         = manifest.Frontend
 	PluginManifest         = manifest.Manifest
@@ -104,9 +105,10 @@ func PluginCapabilities() []string { return manifest.PluginCapabilities() }
 
 func PluginPermissions() []string { return manifest.PluginPermissions() }
 
-// ParseCondition reads the when condition of a command or a slot entry; see package when.
-func ParseCondition(text string) (PluginCondition, error) {
-	return when.Parse(text)
+// NewConditions makes the reader of the when conditions of the manifests, which compiles each text
+// once; see package when.
+func NewConditions() *PluginConditions {
+	return when.NewConditions()
 }
 
 // IsSharedCommand reports whether the full id is a shared command of libs/protocol/commands.json.

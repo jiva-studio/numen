@@ -63,17 +63,22 @@ type Condition struct {
 
 var errNotCondition = errors.New("the expression gives no true or false")
 
-// getEnvironment is the one CEL environment of the variables of when.json.
-var getEnvironment = sync.OnceValues(func() (*cel.Env, error) {
+func newEnvironment() (*cel.Env, error) {
 	options := make([]cel.EnvOption, 0, len(listVariables()))
 	for _, one := range listVariables() {
 		options = append(options, cel.Variable(one.name, one.kind.getType()))
 	}
 	return cel.NewEnv(options...)
-})
+}
 
-// compiled holds the condition read from each text, valid or not, by the text.
-var compiled sync.Map
+// Conditions reads conditions over one CEL environment, made on its first use, and keeps the condition
+// read from each text, so a text is compiled once. It is safe to use from several goroutines.
+type Conditions struct {
+	getEnvironment func() (*cel.Env, error)
+
+	mu       sync.Mutex
+	compiled map[string]cacheEntry
+}
 
 // cacheEntry is the condition read from a text, or the error of reading it.
 type cacheEntry struct {
@@ -81,27 +86,43 @@ type cacheEntry struct {
 	err       error
 }
 
-// Parse reads the condition. It fails on an expression that is malformed, names a variable that is
-// not declared, mixes types or gives no true or false. The empty text is a condition that always holds.
-// A text is compiled once; a later Parse of it returns the same condition.
-func Parse(text string) (Condition, error) {
+// NewConditions makes a Conditions that has read no condition.
+func NewConditions() *Conditions {
+	return &Conditions{getEnvironment: sync.OnceValues(newEnvironment), compiled: map[string]cacheEntry{}}
+}
+
+// Parse reads the condition as the package's Parse does, and returns the condition read before for a
+// text it has read.
+func (c *Conditions) Parse(text string) (Condition, error) {
 	if text == "" {
 		return Condition{}, nil
 	}
-	if found, isCompiled := compiled.Load(text); isCompiled {
-		one := found.(cacheEntry)
+	c.mu.Lock()
+	one, isCompiled := c.compiled[text]
+	c.mu.Unlock()
+	if isCompiled {
 		return one.condition, one.err
 	}
-	condition, err := compile(text)
-	compiled.Store(text, cacheEntry{condition: condition, err: err})
-	return condition, err
-}
-
-func compile(text string) (Condition, error) {
-	environment, err := getEnvironment()
+	environment, err := c.getEnvironment()
 	if err != nil {
 		return Condition{}, fmt.Errorf("the variables of when: %w", err)
 	}
+	condition, err := compile(environment, text)
+	c.mu.Lock()
+	c.compiled[text] = cacheEntry{condition: condition, err: err}
+	c.mu.Unlock()
+	return condition, err
+}
+
+// Parse reads the condition. It fails on an expression that is malformed, names a variable that is
+// not declared, mixes types or gives no true or false. The empty text is a condition that always holds.
+// It makes a new environment for the one text; a caller that evaluates conditions reads them through
+// Conditions.
+func Parse(text string) (Condition, error) {
+	return NewConditions().Parse(text)
+}
+
+func compile(environment *cel.Env, text string) (Condition, error) {
 	checked, issues := environment.Compile(text)
 	if issues.Err() != nil {
 		return Condition{}, fmt.Errorf("%q: %w", text, issues.Err())

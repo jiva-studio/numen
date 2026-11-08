@@ -54,7 +54,7 @@ func (h *Handler) listItems(ctx context.Context, path, pluginID, commandID strin
 	if !found {
 		return newItemsFailure(fmt.Errorf("%w: %s of %s", plugincommand.ErrUnknownCommand, commandID, pluginID))
 	}
-	if !plugincommand.HasItems(entry.Command) {
+	if !h.list.HasItems(entry.Command) {
 		return &v1.CommandItemList{}
 	}
 	if h.versions == nil {
@@ -110,7 +110,7 @@ func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandR
 		return result, true, err
 	}
 	entry, found := h.findEntry(msg.GetPluginId(), msg.GetCommand())
-	hasItems := found && plugincommand.HasItems(entry.Command)
+	hasItems := found && h.list.HasItems(entry.Command)
 	switch {
 	case !hasItems:
 		return plugincommand.Result{}, false, nil

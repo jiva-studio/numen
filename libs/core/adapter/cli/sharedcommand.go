@@ -20,18 +20,18 @@ func listSharedHandlers(deps Deps, id string) []plugincommand.Entry {
 	return deps.PluginCommands().List.ListSharedHandlers(id)
 }
 
-func isOverFile(handlers []plugincommand.Entry) bool {
-	return slices.ContainsFunc(handlers, func(one plugincommand.Entry) bool { return plugincommand.HasTargetVariable(one.Command) })
+func isOverFile(list plugincommand.List, handlers []plugincommand.Entry) bool {
+	return slices.ContainsFunc(handlers, func(one plugincommand.Entry) bool { return list.HasTargetVariable(one.Command) })
 }
 
-func getSharedCommandSynopsis(handlers []plugincommand.Entry) string {
+func getSharedCommandSynopsis(list plugincommand.List, handlers []plugincommand.Entry) string {
 	declared := handlers[0].Command
 	for _, one := range handlers {
-		if plugincommand.HasTargetVariable(one.Command) {
+		if list.HasTargetVariable(one.Command) {
 			declared.When = one.Command.When
 		}
 	}
-	return getPluginCommandSynopsis(declared) + " [--" + pluginFlag + " <id>]"
+	return getPluginCommandSynopsis(list, declared) + " [--" + pluginFlag + " <id>]"
 }
 
 func writeSharedCommandUsage(r *reporter, deps Deps) {
@@ -51,7 +51,7 @@ func writeSharedCommandUsage(r *reporter, deps Deps) {
 	r.Println("\nshared commands, run by the handler of a plugin:")
 	for _, id := range ids {
 		of := listSharedHandlers(deps, id)
-		r.Printf("  numen-cli %s\n", getSharedCommandSynopsis(of))
+		r.Printf("  numen-cli %s\n", getSharedCommandSynopsis(deps.PluginCommands().List, of))
 		for _, one := range of {
 			r.Printf("      %s (%s)\n", one.Command.Title, one.PluginID)
 		}
@@ -61,7 +61,8 @@ func writeSharedCommandUsage(r *reporter, deps Deps) {
 func runSharedCommand(
 	ctx context.Context, out io.Writer, deps Deps, handlers []plugincommand.Entry, args []string,
 ) (err error) {
-	usage := errors.New("usage: numen-cli " + getSharedCommandSynopsis(handlers))
+	list := deps.PluginCommands().List
+	usage := errors.New("usage: numen-cli " + getSharedCommandSynopsis(list, handlers))
 	fs, arguments := newArgumentFlags(handlers[0].Command)
 	picked := ""
 	fs.StringVar(&picked, pluginFlag, "", "the plugin whose handler runs")
@@ -70,7 +71,7 @@ func runSharedCommand(
 		return fmt.Errorf("%w: %w", usage, err)
 	}
 	wanted := 1
-	if isOverFile(handlers) {
+	if isOverFile(list, handlers) {
 		wanted = 2
 	}
 	if len(positional) != wanted {

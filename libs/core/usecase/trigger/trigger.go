@@ -45,7 +45,8 @@ type Triggers struct {
 	versions Versions
 	config   pluginport.WhenConfig
 
-	mu sync.Mutex
+	conditions *pluginport.PluginConditions
+	mu         sync.Mutex
 }
 
 // NewTriggers runs the triggers of the plugins with run over the files the readers open, the table
@@ -54,7 +55,10 @@ func NewTriggers(
 	plugins Plugins, run CommandRun, readers vaultport.VaultReaders, types contenttypeport.ContentTypeTable,
 	versions Versions, config pluginport.WhenConfig,
 ) *Triggers {
-	return &Triggers{plugins: plugins, run: run, readers: readers, types: types, versions: versions, config: config}
+	return &Triggers{
+		plugins: plugins, run: run, readers: readers, types: types, versions: versions, config: config,
+		conditions: pluginport.NewConditions(),
+	}
 }
 
 // ExecuteAll runs every trigger over each file of the vault where its condition and the condition of
@@ -131,11 +135,11 @@ func (u *Triggers) readTriggers() []trigger {
 		if !isHandled {
 			continue
 		}
-		condition, err := pluginport.ParseCondition(entry.Trigger.When)
+		condition, err := u.conditions.Parse(entry.Trigger.When)
 		if err != nil {
 			continue
 		}
-		handler, err := pluginport.ParseCondition(handlerWhen)
+		handler, err := u.conditions.Parse(handlerWhen)
 		if err != nil {
 			continue
 		}

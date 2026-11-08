@@ -13,9 +13,10 @@ import (
 
 // Choose gives a note the kind of tab it opens in, from the tab kinds of the enabled plugins.
 type Choose struct {
-	kinds  pluginport.PluginTabKinds
-	types  contenttypeport.ContentTypeTable
-	config pluginport.WhenConfig
+	kinds      pluginport.PluginTabKinds
+	types      contenttypeport.ContentTypeTable
+	config     pluginport.WhenConfig
+	conditions *pluginport.PluginConditions
 }
 
 // NewChoose makes the choice over the tab kinds, the table that gives a file its type, and the
@@ -24,7 +25,7 @@ func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTyp
 	if kinds == nil || types == nil {
 		return nil, errors.New("the choice of a tab kind needs the tab kinds and the content type table")
 	}
-	return &Choose{kinds: kinds, types: types, config: config}, nil
+	return &Choose{kinds: kinds, types: types, config: config, conditions: pluginport.NewConditions()}, nil
 }
 
 // Execute gives the kind of tab the note at the path opens in: of the kinds whose when condition
@@ -39,7 +40,7 @@ func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[s
 		if one.TabKind.When == "" {
 			continue
 		}
-		condition, err := pluginport.ParseCondition(one.TabKind.When)
+		condition, err := u.conditions.Parse(one.TabKind.When)
 		if err != nil {
 			continue
 		}

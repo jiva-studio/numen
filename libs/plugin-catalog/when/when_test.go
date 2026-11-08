@@ -122,10 +122,13 @@ func TestAConditionOverAValueNotGivenIsUnknown(t *testing.T) {
 
 func TestAConditionIsCompiledOnceForItsText(t *testing.T) {
 	const text = "target.isNote && !target.versions.exists(v, v.kind == 'recognition' && v.isLive)"
-	parse(t, text)
+	compiler := when.NewConditions()
+	if _, err := compiler.Parse(text); err != nil {
+		t.Fatal(err)
+	}
 
 	allocations := testing.AllocsPerRun(20, func() {
-		if _, err := when.Parse(text); err != nil {
+		if _, err := compiler.Parse(text); err != nil {
 			t.Fatal(err)
 		}
 	})

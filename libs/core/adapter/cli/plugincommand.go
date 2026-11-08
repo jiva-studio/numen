@@ -36,13 +36,13 @@ func writePluginCommandUsage(r *reporter, deps Deps) {
 	}
 	r.Println("\ncommands of the plugins:")
 	for _, entry := range entries {
-		r.Printf("  numen-cli %s\n      %s\n", getPluginCommandSynopsis(entry.Command), entry.Command.Title)
+		r.Printf("  numen-cli %s\n      %s\n", getPluginCommandSynopsis(deps.PluginCommands().List, entry.Command), entry.Command.Title)
 	}
 }
 
-func getPluginCommandSynopsis(command plugincommand.Command) string {
+func getPluginCommandSynopsis(list plugincommand.List, command plugincommand.Command) string {
 	words := []string{command.ID, "<vault>"}
-	if plugincommand.HasTargetVariable(command) {
+	if list.HasTargetVariable(command) {
 		words = append(words, "<file>")
 	}
 	for _, argument := range command.Arguments {
@@ -62,14 +62,15 @@ func runPluginCommand(
 	ctx context.Context, out io.Writer, deps Deps, entry plugincommand.Entry, args []string,
 ) (err error) {
 	declared := entry.Command
-	usage := errors.New("usage: numen-cli " + getPluginCommandSynopsis(declared))
+	list := deps.PluginCommands().List
+	usage := errors.New("usage: numen-cli " + getPluginCommandSynopsis(list, declared))
 	fs, arguments := newArgumentFlags(declared)
 	positional, err := parseInterspersed(fs, args)
 	if err != nil {
 		return fmt.Errorf("%w: %w", usage, err)
 	}
 	wanted := 1
-	if plugincommand.HasTargetVariable(declared) {
+	if list.HasTargetVariable(declared) {
 		wanted = 2
 	}
 	if len(positional) != wanted {
@@ -86,7 +87,7 @@ func runPluginCommand(
 	defer closeInto(&err, closeRun)
 
 	call := plugincommand.Call{PluginID: entry.PluginID, Command: declared.ID, Arguments: arguments}
-	if plugincommand.HasTargetVariable(declared) {
+	if list.HasTargetVariable(declared) {
 		call.Path = positional[1]
 	}
 	result, err := run.Execute(ctx, v, call)

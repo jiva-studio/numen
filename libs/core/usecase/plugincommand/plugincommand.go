@@ -65,16 +65,18 @@ func NewCommands(
 	commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable, readers vaultport.VaultReaders,
 	config pluginport.WhenConfig,
 ) Commands {
+	conditions := pluginport.NewConditions()
 	return Commands{
-		List: List{commands: commands, types: types},
-		Run:  Run{commands: commands, types: types, readers: readers, config: config},
+		List: List{commands: commands, types: types, conditions: conditions},
+		Run:  Run{commands: commands, types: types, readers: readers, config: config, conditions: conditions},
 	}
 }
 
 // List lists the commands the enabled plugins declare.
 type List struct {
-	commands pluginport.PluginCommands
-	types    contenttypeport.ContentTypeTable
+	commands   pluginport.PluginCommands
+	types      contenttypeport.ContentTypeTable
+	conditions *pluginport.PluginConditions
 }
 
 // Execute lists the commands that a plugin backend runs. Where there is no plugin host it lists none.
@@ -138,10 +140,11 @@ func (u List) Find(id string) (Entry, bool) {
 
 // Run runs one command in the backend of the plugin that declares it.
 type Run struct {
-	commands pluginport.PluginCommands
-	types    contenttypeport.ContentTypeTable
-	readers  vaultport.VaultReaders
-	config   pluginport.WhenConfig
+	commands   pluginport.PluginCommands
+	types      contenttypeport.ContentTypeTable
+	readers    vaultport.VaultReaders
+	config     pluginport.WhenConfig
+	conditions *pluginport.PluginConditions
 }
 
 // Execute checks the call against the declaration and runs it over the vault; a call of a shared
@@ -185,11 +188,11 @@ func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, ca
 	if err := u.checkPath(ctx, v, declared, call); err != nil {
 		return err
 	}
-	return checkArguments(declared, call)
+	return checkArguments(declared, call, hasItems(u.conditions, declared))
 }
 
 func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, call Call) error {
-	condition, err := pluginport.ParseCondition(declared.When)
+	condition, err := u.conditions.Parse(declared.When)
 	if err != nil {
 		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
 	}
@@ -207,9 +210,9 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	return nil
 }
 
-func checkArguments(declared Command, call Call) error {
+func checkArguments(declared Command, call Call, hasItems bool) error {
 	for _, name := range slices.Sorted(maps.Keys(call.Arguments)) {
-		if name == ArgumentVersion && HasItems(declared) {
+		if name == ArgumentVersion && hasItems {
 			continue
 		}
 		argument, isDeclared := declared.GetArgument(name)
@@ -288,15 +291,19 @@ func (u List) ListContentTypes() map[string]string {
 
 // HasItems reports whether the command offers one item per text version of a file: its condition
 // names version.*. A condition that cannot be read counts as having items, so it is listed nowhere.
-func HasItems(command Command) bool {
-	condition, err := pluginport.ParseCondition(command.When)
+func (u List) HasItems(command Command) bool {
+	return hasItems(u.conditions, command)
+}
+
+func hasItems(conditions *pluginport.PluginConditions, command Command) bool {
+	condition, err := conditions.Parse(command.When)
 	return err != nil || condition.HasItems()
 }
 
 // HasTargetVariable reports whether the condition of the command names the target it runs over, so a
 // call names a path.
-func HasTargetVariable(command Command) bool {
-	condition, err := pluginport.ParseCondition(command.When)
+func (u List) HasTargetVariable(command Command) bool {
+	condition, err := u.conditions.Parse(command.When)
 	return err == nil && condition.HasTargetVariable()
 }
 

@@ -17,9 +17,10 @@ import (
 // enabled plugins whose condition names version.* offer as their items, and
 // the run of such a command over one of them.
 type VersionItems struct {
-	versions *Versions
-	run      CommandRun
-	types    contenttypeport.ContentTypeTable
+	versions   *Versions
+	run        CommandRun
+	types      contenttypeport.ContentTypeTable
+	conditions *pluginport.PluginConditions
 }
 
 // NewVersionItems returns the version items of the vault files, run with run and using the table
@@ -28,7 +29,7 @@ func NewVersionItems(versions *Versions, run CommandRun, types contenttypeport.C
 	if versions == nil || run == nil || types == nil {
 		return nil, errors.New("version items: text versions, the run of commands and content type table are required")
 	}
-	return &VersionItems{versions: versions, run: run, types: types}, nil
+	return &VersionItems{versions: versions, run: run, types: types, conditions: pluginport.NewConditions()}, nil
 }
 
 // CommandRun runs a command of a plugin checked against its declaration: its backend, its condition
@@ -69,7 +70,7 @@ func listVersionItems(condition pluginport.PluginCondition, target pluginport.Ta
 // ListVersionItems lists the text versions of the file at the path over which the when condition of
 // the command holds; a command whose condition names no version.* variable has none.
 func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry) ([]VersionItem, error) {
-	condition, err := pluginport.ParseCondition(entry.Command.When)
+	condition, err := u.conditions.Parse(entry.Command.When)
 	if err != nil || !condition.HasItems() {
 		return nil, err
 	}

@@ -44,7 +44,7 @@ func (h *Handler) ListCommands(
 	entries := h.list.ExecuteAll()
 	commands := make([]*v1.PluginCommand, 0, len(entries))
 	for _, one := range entries {
-		commands = append(commands, newWireCommand(one))
+		commands = append(commands, newWireCommand(h.list, one))
 	}
 	slotEntries := h.list.ExecuteSlots()
 	slots := make([]*v1.PluginSlotEntry, 0, len(slotEntries))
@@ -57,7 +57,7 @@ func (h *Handler) ListCommands(
 		handlers = append(handlers, &v1.PluginHandler{
 			PluginId: one.PluginID,
 			Handler:  &v1.ManifestHandler{Command: one.Command.ID, Title: one.Command.Title, When: one.Command.When},
-			HasItems: plugincommand.HasItems(one.Command),
+			HasItems: h.list.HasItems(one.Command),
 		})
 	}
 	return connect.NewResponse(&v1.ListCommandsResponse{
@@ -105,7 +105,7 @@ func getErrorCode(err error) v1.CommandErrorCode {
 	return v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
 }
 
-func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
+func newWireCommand(list plugincommand.List, entry plugincommand.Entry) *v1.PluginCommand {
 	arguments := make([]*v1.CommandArgument, 0, len(entry.Command.Arguments))
 	for _, one := range entry.Command.Arguments {
 		arguments = append(arguments, &v1.CommandArgument{
@@ -122,7 +122,7 @@ func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
 		Arguments: arguments,
 		When:      entry.Command.When,
 		Shortcut:  entry.Command.Shortcut,
-		HasItems:  plugincommand.HasItems(entry.Command),
+		HasItems:  list.HasItems(entry.Command),
 	}
 }
 
