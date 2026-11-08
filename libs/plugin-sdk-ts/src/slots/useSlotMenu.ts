@@ -74,6 +74,37 @@ interface Opening {
   lists: CommandItemLists
 }
 
+function startHold(
+  opening: Opening,
+  events: EventTarget | undefined,
+  onHoldOver: (opening: Opening) => void,
+  onCancel: () => void,
+): () => void {
+  const timer = setTimeout(() => {
+    opening.isHoldOver = true
+    onHoldOver(opening)
+  }, MENU_HOLD_MS)
+  const stopListening = listenForCancel(events, onCancel)
+  return () => {
+    clearTimeout(timer)
+    stopListening()
+  }
+}
+
+function runRead<T>(
+  read: () => SlotMenuRequest<T> | Promise<SlotMenuRequest<T>>,
+  onRequest: (request: SlotMenuRequest<T>) => void,
+  onError: (error: unknown) => void,
+): void {
+  try {
+    const request = read()
+    if (request instanceof Promise) request.then(onRequest, onError)
+    else onRequest(request)
+  } catch (error: unknown) {
+    onError(error)
+  }
+}
+
 /**
  * Runs the menu opens of a slot owner. `open` reads the entries and target, synchronously where
  * `read` returns no promise, then the items of every command that offers them. The menu is
@@ -143,15 +174,7 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
     close()
     const opening: Opening = { isCurrent: true, isHoldOver: false, lists: new Map() }
     current = opening
-    const timer = setTimeout(() => {
-      opening.isHoldOver = true
-      show(opening)
-    }, MENU_HOLD_MS)
-    const stopListening = listenForCancel(options.events ?? globalThis.document, close)
-    stopOpening = () => {
-      clearTimeout(timer)
-      stopListening()
-    }
+    stopOpening = startHold(opening, options.events ?? globalThis.document, show, close)
     const fail = (error: unknown): void => {
       if (!opening.isCurrent) return
       close()
@@ -162,13 +185,7 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
       if (request.entries.length === 0) close()
       else readLists(opening, request)
     }
-    try {
-      const request = read()
-      if (request instanceof Promise) request.then(proceed, fail)
-      else proceed(request)
-    } catch (error: unknown) {
-      fail(error)
-    }
+    runRead(read, proceed, fail)
   }
 
   const pick = (id: string): SlotMenuChoice<T> | undefined => {

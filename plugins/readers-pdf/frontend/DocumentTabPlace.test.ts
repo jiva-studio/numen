@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, shallowRef } from 'vue'
+import { h, shallowRef } from 'vue'
 import type { Selector, TabPlace } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
 import { useDocumentReader } from './model/useDocumentReader'
@@ -13,14 +13,11 @@ import { useDocumentTab } from './model/useDocumentTab'
 import type { Documents, TextRange } from './types'
 
 vi.mock('./reader', () => ({
-  Reader: defineComponent({
-    name: 'Reader',
-    setup: () => () => h('div', { class: 'reader-stub' }),
-  }),
+  Reader: { name: 'Reader', render: () => h('div', { class: 'reader-stub' }) },
 }))
 
 vi.mock('@numen/ui', () => ({
-  LoadingIndicator: defineComponent({ setup: () => () => h('span') }),
+  LoadingIndicator: { render: () => h('span') },
 }))
 
 const PATH = 'library/Wading Birds.pdf'
