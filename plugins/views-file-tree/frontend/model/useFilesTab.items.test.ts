@@ -147,11 +147,11 @@ describe('a command of the menu that offers choices', () => {
       .children![0]!.id
 
     await answerChoices()
+    expect(one.getMenuItems('Scan.pdf').some((item) => item.id === VERSIONS.key)).toBe(false)
     one.chooseMenuItem(loading)
 
     expect(runs).toStrictEqual([])
     expect(errors).toHaveLength(1)
-    expect(one.getMenuItems('Scan.pdf').some((item) => item.id === VERSIONS.key)).toBe(false)
   })
 })
 

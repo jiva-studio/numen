@@ -519,6 +519,7 @@ describe('an item chosen in the menu on a row', () => {
   it('passes the whole selection, on a row standing in it', async () => {
     const pendingState = await openRowMenu()
     pendingState.list.selectPaths(['Entropy.md', 'Cover.png'])
+    pendingState.one.openMenu({ path: 'Entropy.md', at: { x: 0, y: 0 } })
 
     pendingState.one.chooseMenuItem(TRASH.key)
 
@@ -530,6 +531,7 @@ describe('an item chosen in the menu on a row', () => {
   it('passes the one row, on a row standing outside the selection', async () => {
     const pendingState = await openRowMenu()
     pendingState.list.selectPaths(['Cover.png'])
+    pendingState.one.openMenu({ path: 'Entropy.md', at: { x: 0, y: 0 } })
 
     pendingState.one.chooseMenuItem(TRASH.key)
 
