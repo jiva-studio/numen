@@ -17,10 +17,13 @@ export function createMockAgentHost(steps: readonly AgentStep[] = []): MockAgent
   const finished: string[] = []
   let unreachable = ''
   return {
-    async *ask(query) {
-      queries.push(query)
-      for await (const step of steps) yield step
-    },
+    ask: (query) => ({
+      [Symbol.asyncIterator]: () => {
+        queries.push(query)
+        const remaining = steps[Symbol.iterator]()
+        return { next: () => Promise.resolve(remaining.next()) }
+      },
+    }),
     finish: (conversation) => {
       finished.push(conversation)
       return Promise.resolve()

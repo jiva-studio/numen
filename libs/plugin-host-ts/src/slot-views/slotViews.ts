@@ -26,7 +26,12 @@ export interface SlotViewRegistry {
    */
   findView(this: void, pluginId: string, view: string): unknown
   readonly views: Readonly<ShallowRef<readonly DeclaredSlotView[]>>
-  registerSlotView(this: void, pluginId: string, slot: string, registration: SlotViewRegistration): Disposable
+  registerSlotView(
+    this: void,
+    pluginId: string,
+    slot: string,
+    registration: SlotViewRegistration,
+  ): Disposable
   /** The view a window slot draws, or null while no plugin registered one; reactive. */
   getSlotView(this: void, slot: string): ComputedRef<DeclaredSlotView | null>
   /** Removes every view the plugin registered. */
