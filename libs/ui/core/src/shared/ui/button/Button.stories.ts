@@ -72,6 +72,19 @@ export const Playground: Story = {}
 /** The small size, which is what a quiet action beside a heading takes. */
 export const Small: Story = { args: { size: 'small' } }
 
+/**
+ * The solid button is the default one, such as the answer of a banner. Its
+ * ground is painted, so its text does not rest on the window; the text
+ * contrast on that ground is measured in `Contrast.stories.ts`.
+ */
+export const Filled: Story = {
+  args: { size: 'small' },
+  play: async ({ canvasElement }) => {
+    const solid = getComputedStyle(within(canvasElement).getByRole('button', { name: 'solid' }))
+    await expect(solid.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+  },
+}
+
 /** Nothing to press: dimmed, and out of the pointer's way. */
 export const Disabled: Story = {
   args: { isDisabled: true },
