@@ -67,7 +67,7 @@ func TestAFailedPathAnswersItsStatusWithTheRetryAfter(t *testing.T) {
 	}
 }
 
-func TestADelayedRequestIsCountedAsAbortedWhenTheClientLeaves(t *testing.T) {
+func TestADelayedRequestIsCountedAsAbortedWhenTheClientDisconnects(t *testing.T) {
 	fake := New(Config{})
 	fake.Delay("/models", time.Minute)
 	ts := httptest.NewServer(fake)

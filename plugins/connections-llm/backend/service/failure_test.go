@@ -89,15 +89,15 @@ func TestACancelledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 10*time.Second)
 	ctx, cancel := context.WithCancel(newContext(t))
-	done := make(chan error, 1)
+	result := make(chan error, 1)
 	go func() {
 		_, err := New().Complete(ctx, newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
-		done <- err
+		result <- err
 	}()
 	waitForRequest(t, fake)
 	cancel()
 
-	if err := <-done; !errors.Is(err, context.Canceled) {
+	if err := <-result; !errors.Is(err, context.Canceled) {
 		t.Errorf("err = %v, want context.Canceled", err)
 	}
 	select {

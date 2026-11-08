@@ -30,7 +30,7 @@ func TestTheSettingRequestTimeoutSetsTheLimitOfBothOperations(t *testing.T) {
 	}
 }
 
-func TestASettingThatIsNotAPositiveNumberLeavesTheDefault(t *testing.T) {
+func TestASettingThatIsNotAPositiveNumberKeepsTheDefault(t *testing.T) {
 	call := newCall("openai", "https://api.openai.com/v1", testKey, "m")
 	for _, value := range []string{"", "soon", "0", "-3", "NaN", "Inf"} {
 		svc := New()
@@ -77,7 +77,7 @@ func TestTheLongLimitBelongsToTheAddressAndTheModel(t *testing.T) {
 	}
 }
 
-func TestAFailedFirstRequestLeavesTheLongLimit(t *testing.T) {
+func TestAFailedFirstRequestKeepsTheLongLimit(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	fake.Fail("/chat/completions", 503, "")
 	svc := New()

@@ -13,35 +13,32 @@ import (
 	"time"
 )
 
-type refusedError struct{ reason string }
+type addressError struct{ reason string }
 
-func (e *refusedError) Error() string { return e.reason }
+func (e *addressError) Error() string { return e.reason }
 
 type loopbackOnlyKey struct{}
 
-// parseAddress accepts an http or https address with a host and no credentials. A key goes over
-// http only to a loopback host, and link-local, unspecified, multicast and cloud metadata hosts are
-// refused. The host name is resolved at dial time, where checkResolved looks at the result.
 func parseAddress(address string, hasKey bool) (*url.URL, error) {
 	parsed, err := url.Parse(address)
 	if err != nil {
-		return nil, &refusedError{"the address is not a URL"}
+		return nil, &addressError{"the address is not a URL"}
 	}
 	if parsed.Scheme != schemeHTTP && parsed.Scheme != "https" {
-		return nil, &refusedError{"the address must start with http:// or https://"}
+		return nil, &addressError{"the address must start with http:// or https://"}
 	}
 	host := strings.TrimSuffix(strings.ToLower(parsed.Hostname()), ".")
 	if host == "" {
-		return nil, &refusedError{"the address has no host"}
+		return nil, &addressError{"the address has no host"}
 	}
 	if parsed.User != nil {
-		return nil, &refusedError{"the address holds a user name or a password"}
+		return nil, &addressError{"the address holds a user name or a password"}
 	}
 	if isForbiddenHost(host) {
-		return nil, &refusedError{"the address names a host that is not allowed"}
+		return nil, &addressError{"the address names a host that is not allowed"}
 	}
 	if parsed.Scheme == schemeHTTP && hasKey && !isLoopbackHost(host) {
-		return nil, &refusedError{"a key is sent over http only to this computer"}
+		return nil, &addressError{"a key is sent over http only to this computer"}
 	}
 	return parsed, nil
 }
@@ -76,15 +73,13 @@ func isForbiddenAddress(ip netip.Addr) bool {
 	return ip.IsUnspecified() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast()
 }
 
-// checkResolved refuses a resolved address a key must not reach: forbidden addresses always, and
-// every address but a loopback one when the key travels over http.
 func checkResolved(ip netip.Addr, isLoopbackRequired bool) error {
 	ip = ip.Unmap().WithZone("")
 	if isForbiddenAddress(ip) {
-		return &refusedError{"the address resolves to a host that is not allowed"}
+		return &addressError{"the address resolves to a host that is not allowed"}
 	}
 	if isLoopbackRequired && !ip.IsLoopback() {
-		return &refusedError{"a key is sent over http only to this computer"}
+		return &addressError{"a key is sent over http only to this computer"}
 	}
 	return nil
 }
@@ -92,7 +87,7 @@ func checkResolved(ip netip.Addr, isLoopbackRequired bool) error {
 func controlDial(ctx context.Context, _, address string, _ syscall.RawConn) error {
 	target, err := netip.ParseAddrPort(address)
 	if err != nil {
-		return &refusedError{fmt.Sprintf("the dialed address %q is not an IP address", address)}
+		return &addressError{fmt.Sprintf("the dialed address %q is not an IP address", address)}
 	}
 	isLoopbackRequired, ok := ctx.Value(loopbackOnlyKey{}).(bool)
 	return checkResolved(target.Addr(), ok && isLoopbackRequired)
@@ -135,7 +130,7 @@ func newClient() *http.Client {
 	}
 }
 
-func isRefused(err error) bool {
-	var refused *refusedError
-	return errors.As(err, &refused)
+func isAddressError(err error) bool {
+	var invalid *addressError
+	return errors.As(err, &invalid)
 }

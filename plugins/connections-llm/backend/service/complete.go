@@ -70,8 +70,6 @@ func (s *Service) Complete(ctx context.Context, call connection.Call, request co
 	return connection.CompleteResult{Text: answer.Choices[0].Message.Content}, nil
 }
 
-// getReasoningLevels returns the levels a model of a type takes: every model of OpenRouter, the
-// reasoning models of OpenAI, and none for other servers, which give no list of levels.
 func getReasoningLevels(typeID, model string) []connection.ReasoningLevel {
 	switch typeID {
 	case typeOpenRouter:

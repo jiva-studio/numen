@@ -27,23 +27,23 @@ func TestEmbedSendsTheTextsAndReturnsOneVectorForEach(t *testing.T) {
 			t.Errorf("vector %d is not the vector of %q", i, text)
 		}
 	}
-	sent := fake.Requests()
-	if len(sent) != 1 || sent[0].Path != "/embeddings" || sent[0].Header.Get("Authorization") != "Bearer "+testKey {
-		t.Fatalf("requests = %+v", sent)
+	requests := fake.Requests()
+	if len(requests) != 1 || requests[0].Path != "/embeddings" || requests[0].Header.Get("Authorization") != "Bearer "+testKey {
+		t.Fatalf("requests = %+v", requests)
 	}
 	var body struct {
 		Model string   `json:"model"`
 		Input []string `json:"input"`
 	}
-	if err := json.Unmarshal(sent[0].Body, &body); err != nil {
+	if err := json.Unmarshal(requests[0].Body, &body); err != nil {
 		t.Fatal(err)
 	}
 	if body.Model != "text-embedding-3-small" || !slices.Equal(body.Input, texts) {
-		t.Errorf("body = %s", sent[0].Body)
+		t.Errorf("body = %s", requests[0].Body)
 	}
 }
 
-func TestEmbedOrdersTheVectorsByTheIndexTheServiceGives(t *testing.T) {
+func TestEmbedOrdersTheVectorsByTheIndexInTheAnswer(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		body := `{"data":[{"index":1,"embedding":[0,1]},{"index":0,"embedding":[1,0]}]}`
 		if _, err := w.Write([]byte(body)); err != nil {
@@ -146,7 +146,7 @@ func TestTheProfileOfAKnownModelIsReadWithNoRequest(t *testing.T) {
 	}
 }
 
-func TestTheProfileOfAnUnknownModelSaysSo(t *testing.T) {
+func TestTheProfileOfAnUnknownModelIsMarkedUnknown(t *testing.T) {
 	_, address := startFake(t, fakeopenai.Config{})
 	profile, err := New().GetModelProfile(newContext(t), newCall("openai-compatible", address, "", "nomic-embed-text"))
 	if err != nil {

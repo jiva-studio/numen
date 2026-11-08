@@ -62,10 +62,10 @@ func TestAnAddressWithoutAKeyMayUsePlainHTTPOnAPrivateNetwork(t *testing.T) {
 
 func TestAResolvedAddressIsCheckedBeforeAConnectionIsMade(t *testing.T) {
 	cases := []struct {
-		address   string
-		hasKey    bool
-		isPlain   bool
-		isRefused bool
+		address        string
+		hasKey         bool
+		isPlain        bool
+		isAddressError bool
 	}{
 		{"127.0.0.1", true, true, false},
 		{"::1", true, true, false},
@@ -84,8 +84,8 @@ func TestAResolvedAddressIsCheckedBeforeAConnectionIsMade(t *testing.T) {
 	}
 	for _, one := range cases {
 		err := checkResolved(netip.MustParseAddr(one.address), one.hasKey && one.isPlain)
-		if (err != nil) != one.isRefused {
-			t.Errorf("%s (key over http %v): err = %v, refused %v", one.address, one.hasKey && one.isPlain, err, one.isRefused)
+		if (err != nil) != one.isAddressError {
+			t.Errorf("%s (key over http %v): err = %v, refused %v", one.address, one.hasKey && one.isPlain, err, one.isAddressError)
 		}
 	}
 }
@@ -108,7 +108,7 @@ func TestTheClientRefusesToConnectToAForbiddenAddress(t *testing.T) {
 		}
 		t.Fatal("the client connected to 0.0.0.0")
 	}
-	if !isRefused(err) {
+	if !isAddressError(err) {
 		t.Errorf("err = %v, want a refusal", err)
 	}
 }

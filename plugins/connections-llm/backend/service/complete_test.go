@@ -27,23 +27,23 @@ func TestCompleteSendsAChatRequestAndReturnsTheAnswer(t *testing.T) {
 	if result.Text != "echo: fix this line" {
 		t.Errorf("text = %q", result.Text)
 	}
-	sent := fake.Requests()
-	if len(sent) != 1 || sent[0].Method != "POST" || sent[0].Path != "/chat/completions" {
-		t.Fatalf("requests = %+v", sent)
+	requests := fake.Requests()
+	if len(requests) != 1 || requests[0].Method != "POST" || requests[0].Path != "/chat/completions" {
+		t.Fatalf("requests = %+v", requests)
 	}
-	if got := sent[0].Header.Get("Authorization"); got != "Bearer "+testKey {
+	if got := requests[0].Header.Get("Authorization"); got != "Bearer "+testKey {
 		t.Errorf("Authorization = %q", got)
 	}
 	var body map[string]any
-	if err := json.Unmarshal(sent[0].Body, &body); err != nil {
+	if err := json.Unmarshal(requests[0].Body, &body); err != nil {
 		t.Fatal(err)
 	}
 	messages, ok := body["messages"].([]any)
 	if !ok || len(messages) != 2 {
-		t.Fatalf("body = %s", sent[0].Body)
+		t.Fatalf("body = %s", requests[0].Body)
 	}
 	if body["model"] != "openai/gpt-4o-mini" || body["temperature"] != 0.25 || body["max_tokens"] != float64(300) {
-		t.Errorf("body = %s", sent[0].Body)
+		t.Errorf("body = %s", requests[0].Body)
 	}
 	first, ok := messages[0].(map[string]any)
 	if !ok {
@@ -64,7 +64,7 @@ func TestCompleteSendsNoKeyHeaderWhenTheConnectionHasNoKey(t *testing.T) {
 	}
 }
 
-func TestCompleteOmitsTheOptionsTheRequestLeavesOut(t *testing.T) {
+func TestCompleteOmitsTheOptionsTheRequestDoesNotSet(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	if _, err := New().Complete(newContext(t), newCall("openai-compatible", address, "", "m"), oneUserMessage("hi")); err != nil {
 		t.Fatal(err)
@@ -123,7 +123,7 @@ func TestCompleteNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 	}
 }
 
-func TestCompleteStopsOnAReasoningLevelTheModelDoesNotTake(t *testing.T) {
+func TestCompleteStopsOnAReasoningLevelThatTheModelRejects(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	for typeID, model := range map[string]string{"openai-compatible": "qwen2.5:14b", "openai": "gpt-4o-mini"} {
 		call := newCall(typeID, address, "", model)

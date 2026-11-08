@@ -29,16 +29,14 @@ type Model struct {
 }
 
 // Config sets what the server answers. A zero Config serves no key check, no models and vectors of
-// DefaultDimensions.
+// DefaultDimensions. When APIKey is set, every request must carry it as a bearer token. With IsLabelled,
+// Models carry the architecture and the supported parameters OpenRouter gives, and EmbeddingModels are
+// listed at /embeddings/models, which OpenRouter serves.
 type Config struct {
-	// APIKey, when set, is the bearer token every request must carry.
-	APIKey     string
-	Dimensions int
-	// Models are listed at /models. With IsLabelled the entries carry the architecture and the
-	// supported parameters OpenRouter gives.
-	Models     []Model
-	IsLabelled bool
-	// EmbeddingModels are listed at /embeddings/models, which OpenRouter serves.
+	APIKey          string
+	Dimensions      int
+	Models          []Model
+	IsLabelled      bool
 	EmbeddingModels []Model
 }
 
@@ -83,7 +81,7 @@ func (s *Server) Fail(path string, status int, retryAfter string) {
 	s.behavior[path] = one
 }
 
-// Delay makes a path wait before it answers. The wait ends when the client goes away.
+// Delay makes a path wait before it answers. The wait ends when the client disconnects.
 func (s *Server) Delay(path string, wait time.Duration) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

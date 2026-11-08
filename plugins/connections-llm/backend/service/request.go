@@ -102,7 +102,7 @@ func classifyTransportError(parent, limit context.Context, err error) error {
 	switch {
 	case parent.Err() != nil:
 		return parent.Err()
-	case isRefused(err):
+	case isAddressError(err):
 		return connection.NewStopError(connection.ReasonBadRequest)
 	case errors.Is(limit.Err(), context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded):
 		return connection.NewTryNextError(connection.ReasonTimeout, 0)
@@ -110,8 +110,6 @@ func classifyTransportError(parent, limit context.Context, err error) error {
 	return connection.NewTryNextError(connection.ReasonUnreachable, 0)
 }
 
-// mapStatus turns the status of a failed answer into a failure. Nothing of the answer but its status
-// and its Retry-After leaves this function.
 func mapStatus(response *http.Response) error {
 	switch status := response.StatusCode; {
 	case status == http.StatusUnauthorized || status == http.StatusForbidden:
@@ -128,8 +126,6 @@ func mapStatus(response *http.Response) error {
 	return connection.NewStopError(connection.ReasonUnknown)
 }
 
-// parseRetryAfter reads a Retry-After value, a number of seconds or an HTTP date, as the wait from
-// now. A value that is neither, or that is not in the future, is no wait.
 func parseRetryAfter(value string, now time.Time) time.Duration {
 	value = strings.TrimSpace(value)
 	if seconds, err := strconv.ParseInt(value, 10, 32); err == nil {

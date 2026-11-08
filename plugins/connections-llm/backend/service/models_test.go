@@ -47,7 +47,7 @@ func TestOpenRouterModelsCarryTheOperationsTheServiceLabelsThemWith(t *testing.T
 	}
 }
 
-func TestModelsOfAServiceThatGivesNoLabelsAreListedForEveryOperation(t *testing.T) {
+func TestModelsOfAServiceWithoutLabelsAreListedForEveryOperation(t *testing.T) {
 	_, address := startFake(t, fakeopenai.Config{Models: []fakeopenai.Model{{ID: "qwen2.5:14b"}, {ID: "nomic-embed-text"}}})
 	for _, operation := range []string{"complete", "embed"} {
 		models, err := New().ListModels(newContext(t), newCall("openai-compatible", address, "", ""), operation)

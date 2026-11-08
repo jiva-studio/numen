@@ -61,7 +61,7 @@
       {
         "id": "openai-compatible",
         "title": "OpenAI-compatible server",
-        "description": "A server that speaks the OpenAI API, such as Ollama or LM Studio.",
+        "description": "A server with the OpenAI API, such as Ollama or LM Studio.",
         "operations": ["complete", "embed"],
         "fields": [
           {

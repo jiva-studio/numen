@@ -36,7 +36,10 @@ const (
 	firstRequestLimit = 10 * time.Minute
 )
 
-// Service carries out the operations of the connection types of the plugin.
+// Service carries out the operations of the connection types of the plugin. It sends a request only
+// to an http or https address with a host and no credentials. A key goes over http only to a loopback
+// address. Link-local, unspecified, multicast and cloud metadata addresses are rejected when the
+// address is read and again when the host name is resolved. Redirects are not followed.
 type Service struct {
 	mu      sync.Mutex
 	timeout time.Duration
