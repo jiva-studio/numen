@@ -5,6 +5,9 @@ import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client
 import { VAULT_SUMMARY, type PluginContext } from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
 
+// jsdom draws no layout, and the palette scrolls the highlighted row into view.
+Element.prototype.scrollIntoView = () => undefined
+
 const wire = vi.hoisted(() => {
   async function* waits(): AsyncGenerator<never> {
     await new Promise<never>(() => undefined)
