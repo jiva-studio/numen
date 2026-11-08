@@ -39,7 +39,7 @@ export const feedTask = async (page: Page, id: string, every: number): Promise<v
           isCancellable: true,
         }
       }
-      const original = window.fetch
+      const original = window.fetch.bind(window)
       window.fetch = (input, init) => {
         const url =
           typeof input === 'string' ? input : input instanceof URL ? input.href : input.url

@@ -15,17 +15,18 @@ vi.mock('@/app/plugins/agentPort', () => ({
 
 const themesResponse = {
   themes: {
-    getAppearance: async () => ({
-      themes: [
-        { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
-        { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
-      ],
-      applied: mockVaultState.applied,
-      mode: mockVaultState.mode,
-      sizes: mockVaultState.sizes,
-      bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
-    }),
-    readTheme: async (name: string) => `:root { --numen-surface: ${name} }`,
+    getAppearance: () =>
+      Promise.resolve({
+        themes: [
+          { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
+          { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
+        ],
+        applied: mockVaultState.applied,
+        mode: mockVaultState.mode,
+        sizes: mockVaultState.sizes,
+        bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
+      }),
+    readTheme: (name: string) => Promise.resolve(`:root { --numen-surface: ${name} }`),
     watchThemes: pendingStream,
   },
 }
@@ -39,8 +40,9 @@ vi.mock('@/entities/settings', async (original) => ({
 
 // The window is shown with the plugins `declared` names; none declares a command to begin with.
 const declaredCommandsResponse = {
-  listDeclaredCommands: async () => ({ commands: declared.commands, slots: declared.slots }),
-  runDeclaredCommand: async () => ({ ok: false as const, error: 'no plugin declares it' }),
+  listDeclaredCommands: () =>
+    Promise.resolve({ commands: declared.commands, slots: declared.slots }),
+  runDeclaredCommand: () => Promise.resolve({ ok: false as const, error: 'no plugin declares it' }),
 }
 
 vi.mock('@/entities/plugin/api/declaredCommands', async (original) => ({

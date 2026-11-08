@@ -35,24 +35,24 @@ export type VaultErrorCode =
 
 /** The vaults an installation holds, and what changes them. */
 export interface Vaults {
-  list(): Promise<VaultList>
+  list: () => Promise<VaultList>
   /**
    * Opens the native folder picker. It resolves to the chosen folder, or to an
    * empty string when the picker is dismissed.
    */
-  choose(title: string): Promise<string>
+  choose: (title: string) => Promise<string>
   /**
    * Adds a folder to the list as a vault. The folder is assigned an identity
    * that stays with it when it moves.
    */
-  add(path: string, name: string): Promise<VaultResult>
+  add: (path: string, name: string) => Promise<VaultResult>
   /** Sets the display name of a vault. The folder keeps its filesystem name. */
-  rename(id: string, name: string): Promise<VaultResult>
+  rename: (id: string, name: string) => Promise<VaultResult>
   /**
    * Removes a vault from the list. The folder stays in place, and is moved to
    * the system trash when `trash` is true.
    */
-  remove(id: string, trash: boolean): Promise<VaultErrorCode | null>
+  remove: (id: string, trash: boolean) => Promise<VaultErrorCode | null>
   /** Shows another vault in this window, replacing the current one. */
-  open(id: string): Promise<VaultErrorCode | null>
+  open: (id: string) => Promise<VaultErrorCode | null>
 }

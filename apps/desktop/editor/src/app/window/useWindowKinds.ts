@@ -65,7 +65,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     const last = [...windowTabs.tabs.value]
       .reverse()
       .map((one) => windowTabs.getTab(one.id))
-      .find((one) => one?.kind.isTool && one.kind.navigate && one.kind.getTarget)
+      .find((one) => one?.kind.isTool && one.kind.navigate !== undefined && one.kind.getTarget !== undefined)
     const target = last?.kind.getTarget!(last.state)
     return { path: target?.path ?? '', title: target?.title ?? '' }
   }

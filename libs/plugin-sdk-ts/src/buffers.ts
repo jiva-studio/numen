@@ -2,7 +2,7 @@ import type { Disposable } from './types'
 
 // FileBuffers are the open files of one kind a plugin's tabs edit.
 export interface FileBuffers {
-  flush(): Promise<void>
+  flush: () => Promise<void>
 }
 
 // BufferHost carries what a window does with the files its tabs hold open, when it quits.

@@ -19,16 +19,17 @@ export function createMockAgentHost(steps: readonly AgentStep[] = []): MockAgent
   return {
     async *ask(query) {
       queries.push(query)
-      yield* steps
+      for await (const step of steps) yield step
     },
-    finish: async (conversation) => {
+    finish: (conversation) => {
       finished.push(conversation)
+      return Promise.resolve()
     },
-    resolveLinks: async () => [],
+    resolveLinks: () => Promise.resolve([]),
     getUnreachable: () => unreachable,
     getSetting: () => undefined,
     // The mock host keeps no settings.
-    writeSetting: async () => undefined,
+    writeSetting: () => Promise.resolve(),
     getModelsAt: () => [],
     getQueries: () => [...queries],
     getFinished: () => [...finished],

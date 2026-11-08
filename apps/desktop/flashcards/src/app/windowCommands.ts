@@ -13,9 +13,7 @@ export function createWindowCommands(): CommandsHost {
       handler(NO_IDS)
       return { dispose: () => undefined }
     },
-    listItems: async () => [],
-    run: async (command) => {
-      throw new Error(`The flashcards window runs no command ${command}`)
-    },
+    listItems: () => Promise.resolve([]),
+    run: (command) => Promise.reject(new Error(`The flashcards window runs no command ${command}`)),
   }
 }

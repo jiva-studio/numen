@@ -47,12 +47,12 @@ export interface TabLinksState {
   readonly groups: ReadonlyMap<string, TabLinkGroup>
   readonly tabs: readonly LinkableTab[]
   readonly windows: readonly TabWindow[]
-  linkTabs(sourceTabId: TabId, targetTabId: TabId): void
-  unlinkTab(tabId: TabId): void
-  getGroupOf(tabId: TabId): TabLinkGroup | null
-  getLinkedTargets(tabId: TabId): readonly TabId[]
+  linkTabs: (sourceTabId: TabId, targetTabId: TabId) => void
+  unlinkTab: (tabId: TabId) => void
+  getGroupOf: (tabId: TabId) => TabLinkGroup | null
+  getLinkedTargets: (tabId: TabId) => readonly TabId[]
   /** Replaces the groups and tabs with a snapshot from the core. */
-  applySnapshot(snapshot: TabLinksSnapshot): void
+  applySnapshot: (snapshot: TabLinksSnapshot) => void
 }
 
 export interface EligibleLinkTab {

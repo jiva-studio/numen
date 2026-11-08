@@ -149,6 +149,14 @@ export async function* pendingStream(): AsyncGenerator<never> {
 export const outside = (() => {
   const queue: { path: string; ranges: { start: number; end: number }[]; tabId: string }[] = []
   let wake: (() => void) | null = null
+  async function* stream() {
+    for (;;) {
+      while (queue.length > 0) yield queue.shift()!
+      await new Promise<void>((woken) => {
+        wake = woken
+      })
+    }
+  }
   return {
     ask: (target: { path: string; start: number; length: number }) => {
       queue.push({
@@ -160,14 +168,7 @@ export const outside = (() => {
       wake = null
     },
     forget: () => queue.splice(0),
-    stream: async function* () {
-      for (;;) {
-        while (queue.length > 0) yield queue.shift()!
-        await new Promise<void>((woken) => {
-          wake = woken
-        })
-      }
-    },
+    stream,
   }
 })()
 

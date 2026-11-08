@@ -16,13 +16,13 @@ export interface DropRegistration {
 // DropHost is how a view hands a drop to the plugin that takes it.
 export interface DropHost {
   // Whether a plugin takes data of one of the types.
-  canDrop(types: readonly string[]): boolean
+  canDrop: (types: readonly string[]) => boolean
   // Hands what was dropped into the folder to the first plugin that takes one of its types, and
   // answers the paths of what it made; none where no plugin takes it.
-  drop(folder: string, data: DroppedData): Promise<readonly string[]>
+  drop: (folder: string, data: DroppedData) => Promise<readonly string[]>
 }
 
 // DropRegistry keeps the drops plugins register and hands each drop to the one that takes it.
 export interface DropRegistry extends DropHost {
-  registerDropHandler(pluginId: string, registration: DropRegistration): Disposable
+  registerDropHandler: (pluginId: string, registration: DropRegistration) => Disposable
 }

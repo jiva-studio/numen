@@ -7,22 +7,22 @@ import { INTERFACE_WAIT_MS } from '@numen/plugin-host'
 import { waitFor } from './waitFor'
 
 export interface BootstrapDeps {
-  loadVaults(): Promise<void>
-  startSettings(): Promise<void>
-  startWindow(): Promise<void>
-  startEditing(): void
-  startLayout(): Promise<void>
+  loadVaults: () => Promise<void>
+  startSettings: () => Promise<void>
+  startWindow: () => Promise<void>
+  startEditing: () => void
+  startLayout: () => Promise<void>
   /** Starts every plugin; settles once all have started or failed. */
-  startPlugins?(): Promise<void>
+  startPlugins?: () => Promise<void>
   /** Settles once the plugins of the window slots have started or failed. */
-  waitForInterfacePlugins?(): Promise<void>
-  closeWindow(): void
-  closeEditing(): void
-  closeTabs(): void
-  closeSettings(): void
-  closePlugins?(): void | Promise<void>
+  waitForInterfacePlugins?: () => Promise<void>
+  closeWindow: () => void
+  closeEditing: () => void
+  closeTabs: () => void
+  closeSettings: () => void
+  closePlugins?: () => void | Promise<void>
   /** Receives the failure of a start or a close that is not awaited. */
-  reportError(error: unknown): void
+  reportError: (error: unknown) => void
 }
 
 /** How long one of the steps the workspace depends on may take before the window says it could not load. */
