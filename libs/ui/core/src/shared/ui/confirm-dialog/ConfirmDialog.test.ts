@@ -38,6 +38,13 @@ describe('ConfirmDialog', () => {
     expect(box.text()).toContain('Delete the note?')
   })
 
+  it('points the dialog at its question as the description', () => {
+    const dialog = mountDialog()
+    const describedBy = dialog.get('[role="alertdialog"]').attributes('aria-describedby')
+    expect(describedBy).toBeTruthy()
+    expect(document.getElementById(describedBy!)?.textContent).toBe('Delete the note?')
+  })
+
   it('starts focus on the cancel button', () => {
     mountDialog()
     expect(document.activeElement?.textContent?.trim()).toBe('Cancel')

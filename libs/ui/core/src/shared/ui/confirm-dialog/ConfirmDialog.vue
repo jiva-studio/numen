@@ -4,9 +4,10 @@
  * cancel button; Escape, a press on the backdrop and the cancel button all emit `cancel`, and
  * Tab stays between the two buttons.
  */
-import { onMounted, useTemplateRef } from 'vue'
+import { onMounted, useId, useTemplateRef } from 'vue'
 import Button from '../button/Button.vue'
 
+/* --------------------------------- Props ---------------------------------- */
 withDefaults(
   defineProps<{
     text: string
@@ -23,14 +24,18 @@ const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 
+/* ---------------------------------- State --------------------------------- */
+const textId = useId()
 const dialog = useTemplateRef<HTMLElement>('dialog')
 const cancel = useTemplateRef<InstanceType<typeof Button>>('cancel')
 
+/* ---------------------------------- Hooks --------------------------------- */
 onMounted(() => {
   const element = cancel.value?.$el
   if (element instanceof HTMLElement) element.focus()
 })
 
+/* -------------------------------- Handlers -------------------------------- */
 function onKeepFocus(event: KeyboardEvent): void {
   const buttons = Array.from(dialog.value?.querySelectorAll<HTMLElement>('button') ?? [])
   const first = buttons[0]
@@ -60,13 +65,14 @@ function onKeepFocus(event: KeyboardEvent): void {
       role="alertdialog"
       aria-modal="true"
       :aria-label="label"
+      :aria-describedby="textId"
       :class="[
         'bg-raised text-ink rounded-node font-sans text-base',
         'flex max-w-md flex-col gap-3 border p-4',
         tone === 'danger' ? 'border-alarm' : 'border-field-rule',
       ]"
     >
-      <p class="m-0">{{ text }}</p>
+      <p :id="textId" class="m-0">{{ text }}</p>
       <div class="flex justify-end gap-1.5">
         <Button :variant="tone === 'danger' ? 'danger' : 'solid'" @click="emit('confirm')">
           {{ confirmText }}
